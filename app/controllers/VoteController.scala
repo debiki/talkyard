@@ -76,7 +76,7 @@ object VoteController extends mvc.Controller {
         request.dao.deleteVote(request.userIdData, pageId, postId, voteType)
 
         // Now create the vote.
-        val vote = PostActionDto(id = PageParts.UnassignedId, postId = postId,
+        val vote = RawPostAction(id = PageParts.UnassignedId, postId = postId,
           creationDati = request.ctime, userIdData = request.userIdData, payload = voteType)
         val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
           "DwE48FK9", s"Page `$pageId' not found")

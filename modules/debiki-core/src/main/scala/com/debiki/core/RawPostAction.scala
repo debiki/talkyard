@@ -30,8 +30,7 @@ import FlagType.FlagType
   * that edit and affect these posts. (This is the action, a.k.a. command,
   * design pattern.)
   *
-  * PostActionDto is a rather stupid data transfer object (DTO): it's used
-  * by DbDao (database data-access-object), when saving and loading pages.
+  * RawPostAction is used by DbDao (database data-access-object), when saving and loading pages.
   * If you want some more functionality, use the PostAction:s Post and Patch instead.
   * (That's what you almost have to do anyway because that's what
   * Debate(/PageParts/whatever) gives you.)
@@ -41,7 +40,7 @@ import FlagType.FlagType
   * @param payload What this action does. For example, creates a new post,
   * edits a post, flags it, closes a thread, etcetera.
   */
-case class PostActionDto[P](   // caused weird compilation errors:  [P <: PostActionPayload](
+case class RawPostAction[P](   // caused weird compilation errors:  [P <: PostActionPayload](
   id: ActionId,
   creationDati: ju.Date,
   payload: P,
@@ -68,7 +67,7 @@ case class PostActionDto[P](   // caused weird compilation errors:  [P <: PostAc
 
 
 
-object PostActionDto {
+object RawPostAction {
 
   def forNewPost(
       id: ActionId,
@@ -82,7 +81,7 @@ object PostActionDto {
     if (Some(id) == parentPostId)
       assErr("DwE23GFf0")
 
-    PostActionDto(
+    RawPostAction(
       id, creationDati, postId = id, userIdData = userIdData,
       payload = PAP.CreatePost(
         parentPostId = parentPostId, text = text,
@@ -115,7 +114,7 @@ object PostActionDto {
 
 
   def copyCreatePost(
-        old: PostActionDto[PAP.CreatePost],
+        old: RawPostAction[PAP.CreatePost],
         id: ActionId = PageParts.NoId,
         creationDati: ju.Date = null,
         loginId: String = null,
@@ -124,8 +123,8 @@ object PostActionDto {
         parentPostId: Option[PostId] = null,
         text: String = null,
         markup: String = null,
-        approval: Option[Approval] = null): PostActionDto[PAP.CreatePost] = {
-    val theCopy = PostActionDto(
+        approval: Option[Approval] = null): RawPostAction[PAP.CreatePost] = {
+    val theCopy = RawPostAction(
       id = if (id != PageParts.NoId) id else old.id,
       postId = if (id != PageParts.NoId) id else old.id, // same as id
       creationDati =  if (creationDati ne null) creationDati else old.creationDati,
@@ -153,14 +152,14 @@ object PostActionDto {
         userIdData: UserIdData,
         text: String, autoApplied: Boolean, approval: Option[Approval],
         newMarkup: Option[String] = None) =
-    PostActionDto(
+    RawPostAction(
       id, ctime, postId = postId, userIdData = userIdData,
       payload = PAP.EditPost(
         text = text, newMarkup = newMarkup, autoApplied = autoApplied, approval = approval))
 
 
   def copyEditPost(
-        old: PostActionDto[PAP.EditPost],
+        old: RawPostAction[PAP.EditPost],
         id: ActionId = PageParts.NoId,
         postId: ActionId = PageParts.NoId,
         createdAt: ju.Date = null,
@@ -171,7 +170,7 @@ object PostActionDto {
         autoApplied: Option[Boolean] = None,
         approval: Option[Approval] = null,
         newMarkup: Option[String] = null) =
-    PostActionDto(
+    RawPostAction(
       id = if (id != PageParts.NoId) id else old.id,
       postId = if (postId != PageParts.NoId) postId else old.postId,
       creationDati =  if (createdAt ne null) createdAt else old.creationDati,
@@ -189,7 +188,7 @@ object PostActionDto {
 
 
   def copyApplyEdit(
-        old: PostActionDto[PAP.EditApp],
+        old: RawPostAction[PAP.EditApp],
         id: ActionId = PageParts.NoId,
         postId: ActionId = PageParts.NoId,
         createdAt: ju.Date = null,
@@ -198,7 +197,7 @@ object PostActionDto {
         ip: String = null,
         editId: ActionId = PageParts.NoId,
         approval: Option[Approval] = null) =
-    PostActionDto(
+    RawPostAction(
       id = if (id != PageParts.NoId) id else old.id,
       postId = if (postId != PageParts.NoId) postId else old.postId,
       creationDati =  if (createdAt ne null) createdAt else old.creationDati,
@@ -218,22 +217,22 @@ object PostActionDto {
         postId: ActionId,
         userIdData: UserIdData,
         ctime: ju.Date,
-        approval: Option[Approval]): PostActionDto[PAP.ReviewPost] =
-    PostActionDto(
+        approval: Option[Approval]): RawPostAction[PAP.ReviewPost] =
+    RawPostAction(
       id, creationDati = ctime, postId = postId, userIdData = userIdData,
       payload = PAP.ReviewPost(approval))
 
 
   def copyReviewPost(
-        old: PostActionDto[PAP.ReviewPost],
+        old: RawPostAction[PAP.ReviewPost],
         id: ActionId = PageParts.NoId,
         postId: ActionId = PageParts.NoId,
         loginId: String = null,
         userId: String = null,
         createdAt: ju.Date = null,
         ip: String = null,
-        approval: Option[Approval] = null): PostActionDto[PAP.ReviewPost] =
-    PostActionDto(
+        approval: Option[Approval] = null): RawPostAction[PAP.ReviewPost] =
+    RawPostAction(
       id = if (id != PageParts.NoId) id else old.id,
       creationDati = if (createdAt ne null) createdAt else old.creationDati,
       postId = if (postId != PageParts.NoId) postId else old.postId,
@@ -252,7 +251,7 @@ object PostActionDto {
         postIdToDelete: ActionId,
         userIdData: UserIdData,
         createdAt: ju.Date) =
-    PostActionDto(
+    RawPostAction(
       id, creationDati = createdAt, postId = postIdToDelete, userIdData = userIdData,
       payload = if (andReplies) PAP.DeleteTree else PAP.DeletePost)
 

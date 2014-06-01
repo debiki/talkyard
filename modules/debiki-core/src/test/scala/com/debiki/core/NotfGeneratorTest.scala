@@ -22,7 +22,7 @@ import java.{util => ju}
 import org.specs2.mutable._
 import org.specs2.execute.Pending
 import NotfOfPageAction.Type._
-import PostActionDto.{copyCreatePost, copyReviewPost}
+import RawPostAction.{copyCreatePost, copyReviewPost}
 import Prelude._
 
 
@@ -42,7 +42,7 @@ trait NotfGeneratorTestValues {
   val rawBodyAuthzApproved = copyCreatePost(rawBody, approval = Some(Approval.AuthoritativeUser))
 
   val approvalOfBody =
-    PostActionDto.toReviewPost(2, postId = rawBody.id,
+    RawPostAction.toReviewPost(2, postId = rawBody.id,
       UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
       ctime = new ju.Date(11000), approval = Some(Approval.Manual))
   val rejectionOfBody = copyReviewPost(approvalOfBody, id = 3, approval = None)
@@ -56,7 +56,7 @@ trait NotfGeneratorTestValues {
   val rawReplyAuthzApproved = copyCreatePost(rawReply, approval = Some(Approval.AuthoritativeUser))
 
   val approvalOfReply =
-    PostActionDto.toReviewPost(12, postId = rawReply.id,
+    RawPostAction.toReviewPost(12, postId = rawReply.id,
       UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
       ctime = new ju.Date(11000), approval = Some(Approval.Manual))
   val rejectionOfReply = copyReviewPost(approvalOfReply, id = 13, approval = None)
@@ -73,12 +73,12 @@ trait NotfGeneratorTestValues {
 
 class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
 
-  def genNotfs(user: User, page: PageParts, actions: PostActionDto[_]*) =
+  def genNotfs(user: User, page: PageParts, actions: RawPostAction[_]*) =
     NotfGenerator(page, actions).generateNotfs
 
   def checkThatFor(notf: NotfOfPageAction, recipient: User, actor: User,
-        recipientAction: PostActionDto[_], actorAction: PostActionDto[_],
-        triggerAction: PostActionDto[_]) = {
+        recipientAction: RawPostAction[_], actorAction: RawPostAction[_],
+        triggerAction: RawPostAction[_]) = {
     notf.recipientUserId must_== recipient.id
 
     notf.recipientActionId must_== recipientAction.id
@@ -115,7 +115,7 @@ class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
     }
 
     "generate a notf for other auto approved replies" in {
-      def test(reply: PostActionDto[PostActionPayload.CreatePost]) = {
+      def test(reply: RawPostAction[PostActionPayload.CreatePost]) = {
         val notfs = genNotfs(bodyAuthor, PageWithApprovedBody, reply)
         notfs.length must_== 1
         val notf = notfs.head

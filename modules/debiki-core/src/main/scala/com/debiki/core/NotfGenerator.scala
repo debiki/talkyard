@@ -26,7 +26,7 @@ import Prelude._
  * Analyzes page actions, e.g. replies and their approvals, and
  * generates and returns the appropriate notifications.
  */
-case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActionDto[_]]) {
+case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[RawPostAction[_]]) {
 
   def page = pageExclNewActions
 
@@ -38,13 +38,13 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[PostActi
     action.payload match {
       case p: PostActionPayload.CreatePost =>
         makePersonalReplyNotf(
-          new Post(page, action.asInstanceOf[PostActionDto[PAP.CreatePost]]))
+          new Post(page, action.asInstanceOf[RawPostAction[PAP.CreatePost]]))
       case e: PAP.EditPost =>
         Nil  // fix later, see "Note:" below
       case app: PAP.EditApp =>
         Nil  // fix later, see note above
       case _: PAP.ReviewPost =>
-        makeReviewNotfs(new Review(page, action.asInstanceOf[PostActionDto[PAP.ReviewPost]]))
+        makeReviewNotfs(new Review(page, action.asInstanceOf[RawPostAction[PAP.ReviewPost]]))
       case flag: PAP.Flag =>
         Nil  // fix later, see note above
       case _ =>

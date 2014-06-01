@@ -84,7 +84,7 @@ object DummyPage {
     List(DummyAuthorLogin), List(DummyAuthorIdty), List(DummyAuthorUser))
 
 
-  private def dummyTitle(texts: Texts) = PostActionDto(
+  private def dummyTitle(texts: Texts) = RawPostAction(
     id = PageParts.TitleId,
     postId = PageParts.TitleId,
     creationDati = new ju.Date,

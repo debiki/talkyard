@@ -214,7 +214,7 @@ object AutoApprover {
 
   private def _considerFlags(recentActions: List[PostAction[_]]): Option[Approval] = {
     def isFlag(rawPostAction: PostAction[_]) = rawPostAction match {
-      case a: PostActionDto[_] => a.payload.isInstanceOf[PostActionPayload.Flag]
+      case a: RawPostAction[_] => a.payload.isInstanceOf[PostActionPayload.Flag]
       case _ => false
     }
 

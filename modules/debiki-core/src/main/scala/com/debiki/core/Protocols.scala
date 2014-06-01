@@ -122,7 +122,7 @@ object Protocols {
 
     val id = (json \ "postId").as[ActionId]
 
-    val creationPostActionDto = PostActionDto[PAP.CreatePost](
+    val creationPostActionDto = RawPostAction[PAP.CreatePost](
       id = id,
       creationDati = (json \ "createdAt").as[ju.Date],
       payload = payload,

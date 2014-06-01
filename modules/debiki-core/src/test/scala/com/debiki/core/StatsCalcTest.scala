@@ -57,7 +57,7 @@ object Util {
   }
 
   /*
-  val post = PostActionDto(
+  val post = RawPostAction(
     id = 1001, postId = 1001, creationDati = new ju.Date, loginId = "?", userId = "?",
     newIp = None, payload = PostActionPayload.CreatePost(parentPostId = Some(1000),
       text = "test", markup = "", approval = Some(Approval.WellBehavedUser)))

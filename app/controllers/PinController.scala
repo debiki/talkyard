@@ -36,13 +36,13 @@ object PinController extends mvc.Controller {
 
   def pinAtPosition = PostJsonAction(maxLength = 1000) { apiReq =>
 
-    val pageIdsAndActions: Seq[(PageId, PostActionDto[PAP.PinPostAtPosition])] =
+    val pageIdsAndActions: Seq[(PageId, RawPostAction[PAP.PinPostAtPosition])] =
       for (pinPostJson <- apiReq.body.as[Vector[JsObject]]) yield {
         val pageId = (pinPostJson \ "pageId").as[PageId]
         val postId = (pinPostJson \ "postId").as[PostId]
         val position = (pinPostJson \ "position").as[Int]
         val payload = PAP.PinPostAtPosition(position)
-        val action = PostActionDto(
+        val action = RawPostAction(
           PageParts.UnassignedId, apiReq.ctime, payload, postId = postId,
           userIdData = apiReq.userIdData)
         (pageId, action)

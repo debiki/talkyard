@@ -52,7 +52,7 @@ object Application extends mvc.Controller {
           throwBadReq("DwE93Kf3", "Invalid flag type")
       }
 
-    val flag = PostActionDto(id = PageParts.UnassignedId, creationDati = request.ctime,
+    val flag = RawPostAction(id = PageParts.UnassignedId, creationDati = request.ctime,
       payload = PostActionPayload.Flag(tyype = tyype, reason = reason),
       postId = postId, userIdData = request.userIdData)
 
@@ -62,7 +62,7 @@ object Application extends mvc.Controller {
     val anyPrelApprovalCancellation =
       if (!flaggedPost.currentVersionPrelApproved) Nil
       else {
-        PostActionDto.forCancellationOfPrelApproval
+        RawPostAction.forCancellationOfPrelApproval
       } */
 
     val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
@@ -99,7 +99,7 @@ object Application extends mvc.Controller {
       throwForbidden("DwE74GKt5", "You may not delete that whole comment tree")
     }
 
-    val deletion = PostActionDto.toDeletePost(andReplies = wholeTree,
+    val deletion = RawPostAction.toDeletePost(andReplies = wholeTree,
       id = PageParts.UnassignedId, postIdToDelete = postId,
       userIdData = pageReq.userIdData,
       createdAt = pageReq.ctime)

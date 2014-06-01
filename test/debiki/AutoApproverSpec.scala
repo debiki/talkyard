@@ -147,30 +147,30 @@ class AutoApproverSpec extends Specification with Mockito {
 
 
   def testUserPageBody(implicit testUserId: String) =
-    PostActionDto.forNewPageBody(creationDati = startDati,
+    RawPostAction.forNewPageBody(creationDati = startDati,
       userIdData = UserIdData.newTest(loginId = testUserLoginId, userId = testUserId),
       text = "täxt-tåxt",
       pageRole = PageRole.Generic, approval = None)
 
   val testUserReplyAId = 2
   def testUserReplyA(implicit testUserId: String) =
-    PostActionDto.copyCreatePost(testUserPageBody, id = testUserReplyAId,
+    RawPostAction.copyCreatePost(testUserPageBody, id = testUserReplyAId,
       parentPostId = Some(testUserPageBody.id))
 
   val testUserReplyBId = 3
   def testUserReplyB(implicit testUserId: String) =
-    PostActionDto.copyCreatePost(testUserPageBody, id = testUserReplyBId,
+    RawPostAction.copyCreatePost(testUserPageBody, id = testUserReplyBId,
       parentPostId = Some(testUserPageBody.id))
 
   def manyTestUserReplies(num: Int)(implicit testUserId: String)
-        : List[PostActionDto[PAP.CreatePost]] =
+        : List[RawPostAction[PAP.CreatePost]] =
     (101 to (100 + num)).toList map { postId =>
-      PostActionDto.copyCreatePost(testUserPageBody, id = postId,
+      RawPostAction.copyCreatePost(testUserPageBody, id = postId,
         parentPostId = Some(testUserPageBody.id))
     }
 
 
-  val approvalOfReplyA: PostActionDto[PAP.ReviewPost] = PostActionDto.toReviewPost(
+  val approvalOfReplyA: RawPostAction[PAP.ReviewPost] = RawPostAction.toReviewPost(
     id = 10002, postId = testUserReplyAId, SystemUser.UserIdData,
     ctime = later(10), approval = Some(Approval.Manual))
 
@@ -179,29 +179,29 @@ class AutoApproverSpec extends Specification with Mockito {
 
   val veryRecentApprovalOfReplyA = approvalOfReplyA.copy(creationDati = later(100))
 
-  val approvalOfReplyB: PostActionDto[PAP.ReviewPost] =
+  val approvalOfReplyB: RawPostAction[PAP.ReviewPost] =
     approvalOfReplyA.copy(id = 10003, postId = testUserReplyBId)
 
   val prelApprovalOfReplyB = approvalOfReplyB.copy(payload = PAP.PrelApprovePost)
 
-  val rejectionOfReplyA: PostActionDto[PAP.ReviewPost] =
+  val rejectionOfReplyA: RawPostAction[PAP.ReviewPost] =
     approvalOfReplyA.copy(id = 10004, payload = PAP.RejectPost)
 
-  val flagOfReplyA = PostActionDto[PAP.Flag](id = 10005, later(20),
+  val flagOfReplyA = RawPostAction[PAP.Flag](id = 10005, later(20),
     PAP.Flag(tyype = FlagType.Other, reason = ""), postId = testUserReplyAId,
     SystemUser.UserIdData)
 
-  val deletionOfReplyA: PostActionDto[_] = PostActionDto.toDeletePost(
+  val deletionOfReplyA: RawPostAction[_] = RawPostAction.toDeletePost(
     andReplies = false, id = 10006, postIdToDelete = testUserReplyAId,
     SystemUser.UserIdData, createdAt = later(30))
 
-  def replyAUnapprovedAndBPrelApproved(implicit testUserId: String): List[PostActionDto[_]] =
+  def replyAUnapprovedAndBPrelApproved(implicit testUserId: String): List[RawPostAction[_]] =
     List(testUserReplyA, testUserReplyB, prelApprovalOfReplyB)
 
-  def replyAAndBBothPrelApproved(implicit testUserId: String): List[PostActionDto[_]] =
+  def replyAAndBBothPrelApproved(implicit testUserId: String): List[RawPostAction[_]] =
     List(testUserReplyA, prelApprovalOfReplyA, testUserReplyB, prelApprovalOfReplyB)
 
-  def replyAPrelApprovedAndBManApproved(implicit testUserId: String): List[PostActionDto[_]] =
+  def replyAPrelApprovedAndBManApproved(implicit testUserId: String): List[RawPostAction[_]] =
     List(testUserReplyA, testUserReplyB, approvalOfReplyB)
 
   val (guestLogin, openidLogin) = {
@@ -212,7 +212,7 @@ class AutoApproverSpec extends Specification with Mockito {
   }
 
 
-  def newDaoMock(actionDtos: List[PostActionDto[_]], login: Login, testUserId: String) = {
+  def newDaoMock(actionDtos: List[RawPostAction[_]], login: Login, testUserId: String) = {
 
     val actions: Seq[PostAction[_]] = {
       val page = PageParts("pageid") ++ actionDtos

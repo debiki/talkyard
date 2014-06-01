@@ -320,10 +320,10 @@ object Utils extends Results with http.ContentTypes {
 
   /** Groups a list of (PageId, Action) by page id, so it becomes a Map[PageId, Seq[Action]].
     */
-  implicit class ActionsByPageIdGrouper[A](pageIdsAndActions: Seq[(PageId, PostActionDto[A])]) {
-    def groupedByPageId: Map[PageId, Seq[PostActionDto[A]]] =
+  implicit class ActionsByPageIdGrouper[A](pageIdsAndActions: Seq[(PageId, RawPostAction[A])]) {
+    def groupedByPageId: Map[PageId, Seq[RawPostAction[A]]] =
       pageIdsAndActions groupBy (_._1) mapValues {
-        pageIdsAndActions: Seq[(PageId, PostActionDto[A])] =>
+        pageIdsAndActions: Seq[(PageId, RawPostAction[A])] =>
           pageIdsAndActions.map(_._2)
       }
   }

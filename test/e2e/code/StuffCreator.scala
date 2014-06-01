@@ -87,7 +87,7 @@ trait StuffCreator {
   /**
    * A loginGrant for a certain user that creates all stuff.
    */
-  private lazy val (loginGrant: LoginGrant, postTemplate: PostActionDto[PAP.CreatePost]) = {
+  private lazy val (loginGrant: LoginGrant, postTemplate: RawPostAction[PAP.CreatePost]) = {
 
     val loginAttempt = OpenIdLoginAttempt(prevLoginId = None, ip = "1.1.1.1",
       date = new ju.Date, openIdDetails = OpenIdDetails(
@@ -97,7 +97,7 @@ trait StuffCreator {
 
     val loginGrant = firstSiteDao.saveLogin(loginAttempt)
 
-    val postTemplate = PostActionDto.forNewPost(
+    val postTemplate = RawPostAction.forNewPost(
       id = UnassignedId, parentPostId = None, creationDati = new ju.Date,
       userIdData = UserIdData.newTest(loginId = loginGrant.login.id, userId = loginGrant.user.id),
       text = "", markup = "para",
@@ -156,7 +156,7 @@ trait StuffCreator {
 
 
   private def createCodePage(siteId: String, folder: String, slug: String, text: String) {
-    val body = PostActionDto.copyCreatePost(postTemplate,
+    val body = RawPostAction.copyCreatePost(postTemplate,
       id = PageParts.BodyId, text = text, markup = Markup.Code.id)
     val pagePath = PagePath(
       firstSiteId, folder, pageId = None, showId = false, pageSlug = slug)
@@ -177,11 +177,11 @@ trait StuffCreator {
         title: String,
         body: Option[String]): TestPage = {
 
-    val titlePost = PostActionDto.copyCreatePost(postTemplate,
+    val titlePost = RawPostAction.copyCreatePost(postTemplate,
       id = PageParts.TitleId, text = title)
 
     val bodyPost = body map { text =>
-      PostActionDto.copyCreatePost(postTemplate, id = PageParts.BodyId, text = text)
+      RawPostAction.copyCreatePost(postTemplate, id = PageParts.BodyId, text = text)
     }
 
     val pagePath = PagePath(

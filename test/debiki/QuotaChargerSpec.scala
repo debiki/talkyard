@@ -374,7 +374,7 @@ class QuotaChargerSpec
     val creationDati = new ju.Date
     val pageId = dao.nextPageId()
     val pageRole = PageRole.Generic
-    val pageBody = PostActionDto.forNewPageBody("Page body.", creationDati, pageRole,
+    val pageBody = RawPostAction.forNewPageBody("Page body.", creationDati, pageRole,
       UserIdData.newTest(loginId = loginId, userId = author.id),
       approval = Some(Approval.Preliminary))
     val actions = PageParts(pageId, actionDtos = List(pageBody))

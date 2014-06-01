@@ -212,7 +212,7 @@ object Templates {
       oidOpLocalId = "provider.com/local/id",
       firstName = "Laban", email = "oid@email.hmm", country = "Sweden"))
 
-  val post = PostActionDto.forNewPost(id = UnassignedId, creationDati = new ju.Date,
+  val post = RawPostAction.forNewPost(id = UnassignedId, creationDati = new ju.Date,
     userIdData = UserIdData.newTest(loginId = "?", userId = "?"),
     parentPostId = Some(PageParts.BodyId),
     text = "", markup = "para", approval = None)
@@ -319,7 +319,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "throw error for an invalid login id" in {
       val debateBadLogin = PageParts(guid = "?", actionDtos =
-          PostActionDto.copyCreatePost(T.post, id = PageParts.BodyId, parentPostId = None,
+          RawPostAction.copyCreatePost(T.post, id = PageParts.BodyId, parentPostId = None,
             loginId = "99999", userId = "99999")::Nil) // bad ids
       //SLog.info("Expecting ORA-02291: integrity constraint log message ------")
       dao.createPage(Page.newPage(
@@ -431,7 +431,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Page creation
 
-    lazy val ex1_rootPost = PostActionDto.copyCreatePost(T.post,
+    lazy val ex1_rootPost = RawPostAction.copyCreatePost(T.post,
       id = PageParts.BodyId, parentPostId = None,
       loginId = loginId, userId = globalUserId, text = ex1_postText)
 
@@ -1028,7 +1028,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         "tool", "cats", "mats", "run", "runs", "mammoth", "ignores","ignoring", "ignored")
 
       def newPage(pageRole: PageRole, ancestorPageIds: List[PageId], pageSlug: String,
-            posts: PostActionDto[PAP.CreatePost]*) =
+            posts: RawPostAction[PAP.CreatePost]*) =
         Page(
           PageMeta.forNewPage(pageRole, loginGrant.user, PageParts("?"), now,
             parentPageId = ancestorPageIds.headOption),
@@ -1050,26 +1050,26 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "create a forum, two categories with one topic each" in {
-        val baseBody = PostActionDto.copyCreatePost(T.post,
+        val baseBody = RawPostAction.copyCreatePost(T.post,
           id = PageParts.BodyId, parentPostId = None, text = "search test forum body",
           loginId = loginId, userId = globalUserId, approval = Some(Approval.WellBehavedUser))
 
-        val forumOneBody = PostActionDto.copyCreatePost(baseBody,
+        val forumOneBody = RawPostAction.copyCreatePost(baseBody,
           text = s"SearchTest ForumOne, ForumPageBody, $Aardvark")
 
-        val forumTwoBody = PostActionDto.copyCreatePost(baseBody,
+        val forumTwoBody = RawPostAction.copyCreatePost(baseBody,
           text = s"SearchTest ForumTwo, ForumPageBody, $Aardvark")
 
-        val topicOneBody = PostActionDto.copyCreatePost(baseBody,
+        val topicOneBody = RawPostAction.copyCreatePost(baseBody,
           text = s"SearchTest TopicOne, TopicPageBody, $Aardvark")
 
-        val topicTwoBody = PostActionDto.copyCreatePost(baseBody,
+        val topicTwoBody = RawPostAction.copyCreatePost(baseBody,
           text = s"SearchTest TopicTwo, TopicPageBody, $Aardvark")
 
-        val genericPageBody = PostActionDto.copyCreatePost(baseBody,
+        val genericPageBody = RawPostAction.copyCreatePost(baseBody,
           text = s"SearchTest GenericPageBody, $Aardvark")
 
-        val htmlForumBody = PostActionDto.copyCreatePost(baseBody,
+        val htmlForumBody = RawPostAction.copyCreatePost(baseBody,
           text = HtmlText)
 
         forumGroup = dao.createPage(newPage(
@@ -1259,13 +1259,13 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Page actions
 
-    lazy val ex2_emptyPost = PostActionDto.copyCreatePost(T.post,
+    lazy val ex2_emptyPost = RawPostAction.copyCreatePost(T.post,
       parentPostId = Some(PageParts.BodyId), text = "", loginId = loginId, userId = globalUserId)
     var ex2_id = PageParts.NoId
     "save an empty root post child post" in {
       testPage += loginGrant.user
       dao.savePageActions(testPage, List(ex2_emptyPost)) must beLike {
-        case (_, List(p: PostActionDto[PAP.CreatePost])) =>
+        case (_, List(p: RawPostAction[PAP.CreatePost])) =>
           ex2_id = p.id
           p must matchPost(ex2_emptyPost, id = ex2_id)
       }
@@ -1281,7 +1281,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "vote on a post" >> {
 
-      lazy val LikeVote = PostActionDto(UnassignedId, new ju.Date, postId = PageParts.BodyId,
+      lazy val LikeVote = RawPostAction(UnassignedId, new ju.Date, postId = PageParts.BodyId,
         userIdData = UserIdData.newTest(loginId, userId = globalUserId), payload = PAP.VoteLike)
       lazy val WrongVote = LikeVote.copy(payload = PAP.VoteWrong)
       lazy val OffTopicVote = LikeVote.copy(payload = PAP.VoteOffTopic)
@@ -1301,11 +1301,11 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         ok
       }
 
-      def saveAndLoadVote[A](vote: PostActionDto[A]) {
-        var savedVote: PostActionDto[A] = null
+      def saveAndLoadVote[A](vote: RawPostAction[A]) {
+        var savedVote: RawPostAction[A] = null
 
         dao.savePageActions(testPage, List(vote)) must beLike {
-          case (_, List(vote: PostActionDto[A])) =>
+          case (_, List(vote: RawPostAction[A])) =>
             savedVote = vote
             vote must_== vote.copy(id = savedVote.id)
         }
@@ -1335,13 +1335,13 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     def testSaveLoadReview(isApproved: Boolean) {
-      var reviewSaved: PostActionDto[PAP.ReviewPost] = null
+      var reviewSaved: RawPostAction[PAP.ReviewPost] = null
       val approval = if (isApproved) Some(Approval.Manual) else None
-      val reviewNoId = PostActionDto.toReviewPost(
+      val reviewNoId = RawPostAction.toReviewPost(
          UnassignedId, postId = ex1_rootPost.id,
         UserIdData.newTest(loginId, userId = globalUserId), ctime = now, approval = approval)
       dao.savePageActions(testPage, List(reviewNoId)) must beLike {
-        case (_, List(review: PostActionDto[PAP.ReviewPost])) =>
+        case (_, List(review: RawPostAction[PAP.ReviewPost])) =>
           reviewSaved = review
           review must_== reviewNoId.copy(id = review.id)
       }
@@ -1363,9 +1363,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "Pin post at position" in {
         val position = 1
-        var savedPin: PostActionDto[_] = null
+        var savedPin: RawPostAction[_] = null
         val payload = PAP.PinPostAtPosition(position)
-        val action = PostActionDto[PAP.PinPostAtPosition](
+        val action = RawPostAction[PAP.PinPostAtPosition](
           id = PageParts.UnassignedId,
           creationDati = new ju.Date,
           payload = payload,
@@ -1373,7 +1373,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           UserIdData.newTest(loginId, userId = globalUserId))
 
         dao.savePageActions(testPage, List(action)) must beLike {
-          case (_, List(pinAction: PostActionDto[_])) =>
+          case (_, List(pinAction: RawPostAction[_])) =>
             savedPin = pinAction
             ok
         }
@@ -1383,7 +1383,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             val pinAction =
               page.actionDtos.find(_.payload.isInstanceOf[PAP.PinPostAtPosition])
               .getOrElse(fail("No PinPostAtPosition found"))
-              .asInstanceOf[PostActionDto[PAP.PinPostAtPosition]]
+              .asInstanceOf[RawPostAction[PAP.PinPostAtPosition]]
             pinAction.postId must_== ex1_rootPost.id
             pinAction.payload.position must_== position
             val pinnedPost = page.getPost_!(ex1_rootPost.id)
@@ -1406,15 +1406,15 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "create a post to edit" >> {
       // Make post creation action
-      lazy val postNoId = PostActionDto.copyCreatePost(T.post,
+      lazy val postNoId = RawPostAction.copyCreatePost(T.post,
         parentPostId = Some(PageParts.BodyId), text = "Initial text",
         loginId = loginId, userId = globalUserId, markup = "dmd0")
 
-      var post: PostActionDto[PAP.CreatePost] = null
+      var post: RawPostAction[PAP.CreatePost] = null
 
       "save post" in {
         post = dao.savePageActions(testPage, List(postNoId))._2.head
-          .asInstanceOf[PostActionDto[PAP.CreatePost]]
+          .asInstanceOf[RawPostAction[PAP.CreatePost]]
         post.payload.text must_== "Initial text"
         post.payload.markup must_== "dmd0"
         exEdit_postId = post.id
@@ -1427,17 +1427,17 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "edit the post" in {
         // Make edit actions
         val patchText = makePatch(from = post.payload.text, to = newText)
-        val editNoId = PostActionDto.toEditPost(
+        val editNoId = RawPostAction.toEditPost(
           id = UnassignedId, postId = post.id, ctime = now,
           UserIdData.newTest(loginId, userId = globalUserId),
           text = patchText, newMarkup = None,
           approval = None, autoApplied = false)
-        val publNoId = PostActionDto[PAP.EditApp](
+        val publNoId = RawPostAction[PAP.EditApp](
           id = UnassignedId2, now, PAP.EditApp(editId = UnassignedId, approval = None),
           postId = post.id, UserIdData.newTest(loginId, userId = globalUserId))
 
         // Save
-        val List(edit: PostActionDto[PAP.EditPost], publ: PostActionDto[PAP.EditApp]) =
+        val List(edit: RawPostAction[PAP.EditPost], publ: RawPostAction[PAP.EditApp]) =
           dao.savePageActions(testPage, List(editNoId, publNoId))._2
 
         exEdit_editId = edit.id
@@ -1454,17 +1454,17 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "change the markup type" in {
         // Make edit actions
-        val editNoId = PostActionDto.toEditPost(
+        val editNoId = RawPostAction.toEditPost(
           id = UnassignedId, postId = post.id, ctime = now,
           UserIdData.newTest(loginId, userId = globalUserId),
           text = "", newMarkup = Some("html"),
           approval = None, autoApplied = false)
-        val publNoId = PostActionDto[PAP.EditApp](
+        val publNoId = RawPostAction[PAP.EditApp](
           id = UnassignedId2, now, PAP.EditApp(editId = UnassignedId, approval = None),
           postId = post.id, UserIdData.newTest(loginId, userId = globalUserId))
 
         // Save
-        val List(edit: PostActionDto[PAP.EditPost], publ: PostActionDto[PAP.EditApp]) =
+        val List(edit: RawPostAction[PAP.EditPost], publ: RawPostAction[PAP.EditApp]) =
           dao.savePageActions(testPage, List(editNoId, publNoId))._2
 
         // Verify markup type changed
@@ -1752,14 +1752,14 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "load relevant OpenID logins, when loading a Page" in {
       // Save a post, using the OpenID login. Load the page and verify
       // the OpenID identity and user were loaded with the page.
-      val newPost = PostActionDto.copyCreatePost(T.post,
+      val newPost = RawPostAction.copyCreatePost(T.post,
         parentPostId = Some(PageParts.BodyId), text = "",
         loginId = exOpenId_loginGrant.login.id,
         userId = exOpenId_loginGrant.user.id)
       var postId = PageParts.NoId
       testPage += exOpenId_loginGrant.user
       dao.savePageActions(testPage, List(newPost)) must beLike {
-        case (_, List(savedPost: PostActionDto[PAP.CreatePost])) =>
+        case (_, List(savedPost: RawPostAction[PAP.CreatePost])) =>
           postId = savedPost.id
           savedPost must matchPost(newPost, id = postId)
       }
@@ -2847,7 +2847,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       var homepageId = "?"
 
-      val homepageTitle = PostActionDto.forNewTitleBySystem(
+      val homepageTitle = RawPostAction.forNewTitleBySystem(
         "Default Homepage", creationDati = now)
 
       def createWebsite(suffix: String): Option[(Tenant, User)] = {
@@ -3169,7 +3169,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
 
     // -------------
-    //val ex3_emptyPost = PostActionDto.copyCreatePost(T.post,
+    //val ex3_emptyPost = RawPostAction.copyCreatePost(T.post,
     // parentPostId = Page.BodyId, text = "Lemmings!")
     //"create many many random posts" in {
     //  for (i <- 1 to 10000) {

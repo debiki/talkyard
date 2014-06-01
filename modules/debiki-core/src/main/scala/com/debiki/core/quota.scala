@@ -157,7 +157,7 @@ object ResourceUse {
      login: Login = null,
      identity: Identity = null,
      user: User = null,
-     actions: Seq[PostActionDto[_]] = Nil,
+     actions: Seq[RawPostAction[_]] = Nil,
      page: PageParts = null,
      notfs: Seq[NotfOfPageAction] = Nil,
      email: Email = null)

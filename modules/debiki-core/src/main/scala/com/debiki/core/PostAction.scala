@@ -27,12 +27,12 @@ import FlagType.FlagType
 
 /** Represents a part of a page (e.g. the title, the body, or a comment — a "Post")
   * or a change to a part of the page (e.g. an edit of a comment — a "Patch").
-  * PostAction wraps the PostActionDto instance that created / changed the page part,
+  * PostAction wraps the RawPostAction instance that created / changed the page part,
   * and adds utility methods.
   */
 class PostAction[P](  // [P <: PostActionPayload] causes compilation errors
   val page: PageParts,
-  val actionDto: PostActionDto[P]) {
+  val actionDto: RawPostAction[P]) {
 
   def postId = actionDto.postId
   def payload: P = actionDto.payload
@@ -111,7 +111,7 @@ class ApplyPatchAction(page: PageParts, val editApp: PostAction[PAP.EditApp])
 
 
 
-class Review(page: PageParts, val review: PostActionDto[PAP.ReviewPost])
+class Review(page: PageParts, val review: RawPostAction[PAP.ReviewPost])
   extends PostAction(page, review) with MaybeApproval {
 
   def directApproval = review.payload.approval

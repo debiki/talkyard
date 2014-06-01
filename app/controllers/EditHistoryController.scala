@@ -104,7 +104,7 @@ object EditHistoryController extends mvc.Controller {
 
 
   private def _applyAndUndoEdits(changes: List[(HistoryEdit, ActionId)],
-        pageReq: PageRequest[_]): (PageNoPath, Seq[PostActionDto[_]]) = {
+        pageReq: PageRequest[_]): (PageNoPath, Seq[RawPostAction[_]]) = {
 
     val approval = AutoApprover.perhapsApprove(pageReq)
 
@@ -144,7 +144,7 @@ object EditHistoryController extends mvc.Controller {
 
       histEdit match {
         case HistoryEdit.ApplyEdit =>
-          PostActionDto[PostActionPayload.EditApp](
+          RawPostAction[PostActionPayload.EditApp](
             id = PageParts.UnassignedId - sno, pageReq.ctime,
             PostActionPayload.EditApp(editId = actionId, approval = approval),
             postId = postAffected.id, userIdData = pageReq.userIdData)

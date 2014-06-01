@@ -20,7 +20,7 @@ package com.debiki.core
 import com.debiki.core.{PostActionPayload => PAP}
 import org.specs2.mutable._
 import java.{util => ju}
-import PostActionDto.copyCreatePost
+import RawPostAction.copyCreatePost
 import Prelude._
 
 
@@ -32,7 +32,7 @@ object PostTestValues extends PostTestValues
 trait PostTestValues {
 
   val postSkeleton =
-    PostActionDto(id = 101, postId = 101, creationDati = new ju.Date(1000),
+    RawPostAction(id = 101, postId = 101, creationDati = new ju.Date(1000),
       userIdData = UserIdData.newTest("101", userId = "?"),
       payload = PostActionPayload.CreatePost(
         parentPostId = None,
@@ -98,7 +98,7 @@ class PostTest extends Specification with PostTestValues {
     }
 
     "list ancestors" >> {
-      def ancestorIdsOf(postDto: PostActionDto[PAP.CreatePost]) =
+      def ancestorIdsOf(postDto: RawPostAction[PAP.CreatePost]) =
         PageWithThreeComments.getPost_!(postDto.id).ancestorPosts.map(_.id)
 
       ancestorIdsOf(rawBody) must_== Nil

@@ -26,7 +26,7 @@ import FlagType.FlagType
 
 
 
-class Patch(debate: PageParts, val edit: PostActionDto[PAP.EditPost])
+class Patch(debate: PageParts, val edit: RawPostAction[PAP.EditPost])
   extends PostAction[PAP.EditPost](debate, edit) with MaybeApproval with PostActionActedUpon {
 
   def post = debate.getPost(edit.postId)
