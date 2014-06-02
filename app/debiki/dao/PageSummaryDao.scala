@@ -58,8 +58,8 @@ trait PageSummaryDao {
    * They're ignored because I don't think it matters terribly much if e.g.
    * the reply count for one topic is +-1 incorrect... once a year or so?
    */
-  def loadPageSummaries(pageIds: Seq[String]): Map[String, PageSummary] = {
-    var summariesById = Map[String, PageSummary]()
+  def loadPageSummaries(pageIds: Seq[PageId]): Map[PageId, PageSummary] = {
+    var summariesById = Map[PageId, PageSummary]()
 
     for {
       pageId <- pageIds
@@ -147,9 +147,9 @@ trait CachingPageSummaryDao extends PageSummaryDao {
   }
 
 
-  override def loadPageSummaries(pageIds: Seq[String]): Map[String, PageSummary] = {
-    var summariesById = Map[String, PageSummary]()
-    var idsNotCached = List[String]()
+  override def loadPageSummaries(pageIds: Seq[PageId]): Map[PageId, PageSummary] = {
+    var summariesById = Map[PageId, PageSummary]()
+    var idsNotCached = List[PageId]()
 
     // Look up summaries in cache.
     for (pageId <- pageIds) {
@@ -172,7 +172,7 @@ trait CachingPageSummaryDao extends PageSummaryDao {
   }
 
 
-  private def cacheKey(pageId: String, otherSiteId: String = null): CacheKey = {
+  private def cacheKey(pageId: PageId, otherSiteId: SiteId = null): CacheKey = {
     val theSiteId = if (otherSiteId ne null) otherSiteId else siteId
     CacheKey(theSiteId, s"$pageId|PageSummary")
   }

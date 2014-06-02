@@ -74,7 +74,7 @@ abstract class SiteDbDao {
 
   // ----- Websites (formerly "tenants")
 
-  def siteId: String
+  def siteId: SiteId
 
   /**
    * Loads the tenant for this dao.
@@ -89,7 +89,7 @@ abstract class SiteDbDao {
    */
   def createWebsite(name: Option[String], address: Option[String],
         embeddingSiteUrl: Option[String], ownerIp: String,
-        ownerLoginId: String, ownerIdentity: Identity, ownerRole: User)
+        ownerLoginId: LoginId, ownerIdentity: Identity, ownerRole: User)
         : Option[(Tenant, User)]
 
   def addTenantHost(host: TenantHost)
@@ -110,7 +110,7 @@ abstract class SiteDbDao {
   /**
    * Updates the specified login with logout IP and timestamp.
    */
-  def saveLogout(loginId: String, logoutIp: String)
+  def saveLogout(loginId: LoginId, logoutIp: String)
 
   def loadLogin(loginId: LoginId): Option[Login]
 
@@ -126,7 +126,7 @@ abstract class SiteDbDao {
    */
   def createPage(page: Page): Page
 
-  def loadPageMeta(pageId: String): Option[PageMeta]
+  def loadPageMeta(pageId: PageId): Option[PageMeta]
 
   def loadPageMetasAsMap(pageIds: Seq[PageId], anySiteId: Option[SiteId] = None)
         : Map[PageId, PageMeta]
@@ -149,13 +149,13 @@ abstract class SiteDbDao {
 
   // ----- Moving and renaming pages
 
-  def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String)
+  def movePages(pageIds: Seq[PageId], fromFolder: String, toFolder: String)
 
   /**
    * Throws a PathClashException if there's already a page in the
    * `newFolder` with slug `newSlug` and if no ids are shown.
    */
-  def moveRenamePage(pageId: String,
+  def moveRenamePage(pageId: PageId,
         newFolder: Option[String] = None, showId: Option[Boolean] = None,
         newSlug: Option[String] = None): PagePath
 
@@ -179,13 +179,13 @@ abstract class SiteDbDao {
   /**
    * Loads the canonical path to pageId.
    */
-  def lookupPagePath(pageId: String): Option[PagePath]
+  def lookupPagePath(pageId: PageId): Option[PagePath]
 
   /**
    * Loads all PagePaths that map to pageId. The canonical path is placed first
    * and the tail consists only of any redirection paths.
    */
-  def lookupPagePathAndRedirects(pageId: String): List[PagePath]
+  def lookupPagePathAndRedirects(pageId: PageId): List[PagePath]
 
   def listPagePaths(
         pageRanges: PathRanges,
@@ -193,7 +193,7 @@ abstract class SiteDbDao {
         orderOffset: PageOrderOffset,
         limit: Int): Seq[PagePathAndMeta]
 
-  def listChildPages(parentPageIds: Seq[String], orderOffset: PageOrderOffset,
+  def listChildPages(parentPageIds: Seq[PageId], orderOffset: PageOrderOffset,
         limit: Int, filterPageRole: Option[PageRole] = None): Seq[PagePathAndMeta]
 
 
@@ -217,13 +217,13 @@ abstract class SiteDbDao {
     * Some(PageParts(the-page-id)) if it exists but is empty.
     * Loads another site's page, if siteId is specified.
     */
-  def loadPageParts(debateId: String, tenantId: Option[String] = None): Option[PageParts]
+  def loadPageParts(debateId: PageId, tenantId: Option[SiteId] = None): Option[PageParts]
 
   /**
    * For each PagePath, loads a Page (well, Debate) with actions loaded
    * only for Page.BodyId and Page.TitleId. Also loads the authors.
    */
-  def loadPageBodiesTitles(pageIds: Seq[String]): Map[String, PageParts]
+  def loadPageBodiesTitles(pageIds: Seq[PageId]): Map[PageId, PageParts]
 
   /** Loads posts that have e.g. been created, edited, flagged recently.
     *
@@ -266,12 +266,12 @@ abstract class SiteDbDao {
     */
   def changePassword(identity: PasswordIdentity, newPasswordSaltHash: String): Boolean
 
-  def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)]
+  def loadIdtyAndUser(forLoginId: LoginId): Option[(Identity, User)]
 
   /**
    * Also loads details like OpenID local identifier, endpoint and version info.
    */
-  def loadIdtyDetailsAndUser(forLoginId: String = null,
+  def loadIdtyDetailsAndUser(forLoginId: LoginId = null,
         forOpenIdDetails: OpenIdDetails = null,
         forEmailAddr: String = null): Option[(Identity, User)]
 
@@ -290,7 +290,7 @@ abstract class SiteDbDao {
 
   def saveNotfs(notfs: Seq[NotfOfPageAction])
 
-  def loadNotfsForRole(roleId: String): Seq[NotfOfPageAction]
+  def loadNotfsForRole(roleId: RoleId): Seq[NotfOfPageAction]
 
   def loadNotfByEmailId(emailId: String): Option[NotfOfPageAction]
 
@@ -311,17 +311,17 @@ abstract class SiteDbDao {
 
   // ----- User configuration
 
-  def configRole(loginId: String, ctime: ju.Date, roleId: String,
+  def configRole(loginId: LoginId, ctime: ju.Date, roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
         isOwner: Option[Boolean] = None)
 
-  def configIdtySimple(loginId: String, ctime: ju.Date,
+  def configIdtySimple(loginId: LoginId, ctime: ju.Date,
                        emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
 
   // ----- Full text search
 
-  def fullTextSearch(phrase: String, anyRootPageId: Option[String]): Future[FullTextSearchResult]
+  def fullTextSearch(phrase: String, anyRootPageId: Option[PageId]): Future[FullTextSearchResult]
 
   /** Unindexes everything on some pages. Intended for test suites only.
     * Returns the number of *posts* that were unindexed.
@@ -354,9 +354,9 @@ abstract class SystemDbDao {
   def createFirstSite(firstSiteData: FirstSiteData): Tenant
 
   // COULD rename to loadWebsitesByIds
-  def loadTenants(tenantIds: Seq[String]): Seq[Tenant]
+  def loadTenants(tenantIds: Seq[SiteId]): Seq[Tenant]
 
-  def loadSite(siteId: String): Option[Tenant] =
+  def loadSite(siteId: SiteId): Option[Tenant] =
     loadTenants(Seq(siteId)).headOption
 
   // COULD rename to findWebsitesCanonicalHost
@@ -471,7 +471,7 @@ class ChargingSiteDbDao(
    */
   def createWebsite(name: Option[String], address: Option[String],
         embeddingSiteUrl: Option[String], ownerIp: String,
-        ownerLoginId: String, ownerIdentity: Identity, ownerRole: User)
+        ownerLoginId: LoginId, ownerIdentity: Identity, ownerRole: User)
         : Option[(Tenant, User)] = {
 
     // SHOULD consume IP quota — but not tenant quota!? — when generating
@@ -523,7 +523,7 @@ class ChargingSiteDbDao(
     loginGrant
   }
 
-  def saveLogout(loginId: String, logoutIp: String) = {
+  def saveLogout(loginId: LoginId, logoutIp: String) = {
     _chargeForOneWriteReq()
     _spi.saveLogout(loginId, logoutIp)
   }
@@ -546,7 +546,7 @@ class ChargingSiteDbDao(
     _spi.createPage(page)
   }
 
-  def loadPageMeta(pageId: String): Option[PageMeta] = {
+  def loadPageMeta(pageId: PageId): Option[PageMeta] = {
     _chargeForOneReadReq()
     _spi.loadPageMeta(pageId)
   }
@@ -581,12 +581,12 @@ class ChargingSiteDbDao(
     _spi.loadSettings(targets)
   }
 
-  def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String) {
+  def movePages(pageIds: Seq[PageId], fromFolder: String, toFolder: String) {
     _chargeForOneWriteReq()
     _spi.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
   }
 
-  def moveRenamePage(pageId: String,
+  def moveRenamePage(pageId: PageId,
         newFolder: Option[String] = None, showId: Option[Boolean] = None,
         newSlug: Option[String] = None): PagePath = {
     _chargeForOneWriteReq()
@@ -609,12 +609,12 @@ class ChargingSiteDbDao(
     _spi.checkPagePath(pathToCheck)
   }
 
-  def lookupPagePath(pageId: String): Option[PagePath] = {
+  def lookupPagePath(pageId: PageId): Option[PagePath] = {
     _chargeForOneReadReq()
     _spi.lookupPagePath(pageId)
   }
 
-  def lookupPagePathAndRedirects(pageId: String): List[PagePath] = {
+  def lookupPagePathAndRedirects(pageId: PageId): List[PagePath] = {
     _chargeForOneReadReq()
     _spi.lookupPagePathAndRedirects(pageId)
   }
@@ -628,7 +628,7 @@ class ChargingSiteDbDao(
     _spi.listPagePaths(pageRanges, include, orderOffset, limit)
   }
 
-  def listChildPages(parentPageIds: Seq[String], orderOffset: PageOrderOffset,
+  def listChildPages(parentPageIds: Seq[PageId], orderOffset: PageOrderOffset,
         limit: Int, filterPageRole: Option[PageRole])
         : Seq[PagePathAndMeta] = {
     _chargeForOneReadReq()
@@ -650,7 +650,7 @@ class ChargingSiteDbDao(
     _spi.deleteVote(userIdData, pageId, postId, voteType)
   }
 
-  def loadPageParts(debateId: String, tenantId: Option[String]): Option[PageParts] = {
+  def loadPageParts(debateId: PageId, tenantId: Option[SiteId]): Option[PageParts] = {
     _chargeForOneReadReq()
     _spi.loadPageParts(debateId, tenantId)
   }
@@ -667,7 +667,7 @@ class ChargingSiteDbDao(
 
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,
-        byIdentity: Option[String] = None,
+        byIdentity: Option[IdentityId] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
         limit: Int): (Seq[PostAction[_]], People) = {
     _chargeForOneReadReq()
@@ -690,12 +690,12 @@ class ChargingSiteDbDao(
     _spi.changePassword(identity, newPasswordSaltHash)
   }
 
-  def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] = {
+  def loadIdtyAndUser(forLoginId: LoginId): Option[(Identity, User)] = {
     _chargeForOneReadReq()
     _spi.loadIdtyAndUser(forLoginId)
   }
 
-  def loadIdtyDetailsAndUser(forLoginId: String = null,
+  def loadIdtyDetailsAndUser(forLoginId: LoginId = null,
         forOpenIdDetails: OpenIdDetails = null,
         forEmailAddr: String = null): Option[(Identity, User)] = {
     _chargeForOneReadReq()
@@ -735,7 +735,7 @@ class ChargingSiteDbDao(
     _spi.saveNotfs(notfs)
   }
 
-  def loadNotfsForRole(roleId: String): Seq[NotfOfPageAction] = {
+  def loadNotfsForRole(roleId: RoleId): Seq[NotfOfPageAction] = {
     _chargeForOneReadReq()
     _spi.loadNotfsForRole(roleId)
   }
@@ -777,7 +777,7 @@ class ChargingSiteDbDao(
 
   // ----- User configuration
 
-  def configRole(loginId: String, ctime: ju.Date, roleId: String,
+  def configRole(loginId: LoginId, ctime: ju.Date, roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean],
         isOwner: Option[Boolean]) =  {
     // When auditing of changes to roles has been implemented,
@@ -790,7 +790,7 @@ class ChargingSiteDbDao(
       emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
   }
 
-  def configIdtySimple(loginId: String, ctime: ju.Date,
+  def configIdtySimple(loginId: LoginId, ctime: ju.Date,
         emailAddr: String, emailNotfPrefs: EmailNotfPrefs) = {
     _chargeForOneWriteReq()
     _spi.configIdtySimple(loginId = loginId, ctime = ctime,
@@ -801,7 +801,7 @@ class ChargingSiteDbDao(
 
   // ----- Full text search
 
-  def fullTextSearch(phrase: String, anyRootPageId: Option[String])
+  def fullTextSearch(phrase: String, anyRootPageId: Option[PageId])
         : Future[FullTextSearchResult] = {
     _chargeForOneReadReq() // should charge much more?
     _spi.fullTextSearch(phrase, anyRootPageId)
@@ -835,16 +835,16 @@ object DbDao {
   class PageNotFoundException(message: String) extends RuntimeException(message)
 
   case class PageNotFoundByIdException(
-    tenantId: String,
-    pageId: String,
+    tenantId: SiteId,
+    pageId: PageId,
     details: Option[String] = None)
     extends PageNotFoundException(
       s"Found no page with id: $pageId, tenant id: $tenantId" +
         prettyDetails(details))
 
   case class PageNotFoundByIdAndRoleException(
-    tenantId: String,
-    pageId: String,
+    tenantId: SiteId,
+    pageId: PageId,
     pageRole: PageRole,
     details: Option[String] = None)
     extends PageNotFoundException(

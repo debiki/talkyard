@@ -160,7 +160,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   }
 
 
-  private def knownOrigins(siteId: String): List[String] =
+  private def knownOrigins(siteId: SiteId): List[String] =
     lookupInCache[List[String]](originsKey(siteId)) getOrElse Nil
 
 

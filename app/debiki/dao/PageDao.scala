@@ -93,7 +93,7 @@ trait PageDao {
     siteDbDao.deleteVote(userIdData, pageId, postId, voteType)
   }
 
-  def loadPageParts(debateId: String): Option[PageParts] =
+  def loadPageParts(debateId: PageId): Option[PageParts] =
     siteDbDao.loadPageParts(debateId)
 
 
@@ -101,7 +101,7 @@ trait PageDao {
     loadPageAnyTenant(tenantId = sitePageId.siteId, pageId = sitePageId.pageId)
 
 
-  def loadPageAnyTenant(tenantId: String, pageId: String): Option[PageParts] =
+  def loadPageAnyTenant(tenantId: SiteId, pageId: PageId): Option[PageParts] =
     siteDbDao.loadPageParts(pageId, tenantId = Some(tenantId))
 
 }
@@ -190,14 +190,14 @@ trait CachingPageDao extends PageDao {
   }
 
 
-  override def loadPageParts(pageId: String): Option[PageParts] =
+  override def loadPageParts(pageId: PageId): Option[PageParts] =
     lookupInCache[PageParts](_pageActionsKey(pageId),
       orCacheAndReturn = {
         super.loadPageParts(pageId)
       })
 
 
-  def _pageActionsKey(pageId: String) = CacheKey(siteId, s"$pageId|PageActions")
+  def _pageActionsKey(pageId: PageId) = CacheKey(siteId, s"$pageId|PageActions")
 
 }
 

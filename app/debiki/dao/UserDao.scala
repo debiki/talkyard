@@ -42,7 +42,7 @@ trait UserDao {
     siteDbDao.saveLogin(loginAttempt)
 
 
-  def saveLogout(loginId: String, logoutIp: String) =
+  def saveLogout(loginId: LoginId, logoutIp: String) =
     siteDbDao.saveLogout(loginId, logoutIp)
 
 
@@ -50,11 +50,11 @@ trait UserDao {
     siteDbDao.loadLogin(loginId)
 
 
-  def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] =
+  def loadIdtyAndUser(forLoginId: LoginId): Option[(Identity, User)] =
     siteDbDao.loadIdtyAndUser(forLoginId)
 
 
-  def loadIdtyDetailsAndUser(forLoginId: String = null,
+  def loadIdtyDetailsAndUser(forLoginId: LoginId = null,
         forOpenIdDetails: OpenIdDetails = null,
         forEmailAddr: String = null): Option[(Identity, User)] =
     // Don't cache this, because this function is rarely called
@@ -92,14 +92,14 @@ trait UserDao {
   }
 
 
-  def configRole(loginId: String, ctime: ju.Date, roleId: String,
+  def configRole(loginId: LoginId, ctime: ju.Date, roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
         isOwner: Option[Boolean] = None) =
     siteDbDao.configRole(loginId = loginId, ctime = ctime,
       roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
 
 
-  def configIdtySimple(loginId: String, ctime: ju.Date,
+  def configIdtySimple(loginId: LoginId, ctime: ju.Date,
         emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
     siteDbDao.configIdtySimple(loginId = loginId, ctime = ctime,
       emailAddr = emailAddr,
@@ -128,14 +128,14 @@ trait CachingUserDao extends UserDao {
   }
 
 
-  override def saveLogout(loginId: String, logoutIp: String) {
+  override def saveLogout(loginId: LoginId, logoutIp: String) {
     super.saveLogout(loginId, logoutIp)
     // There'll be no more requests with this login id.
     removeFromCache(key(loginId))
   }
 
 
-  override def loadIdtyAndUser(forLoginId: String): Option[(Identity, User)] = {
+  override def loadIdtyAndUser(forLoginId: LoginId): Option[(Identity, User)] = {
     lookupInCache[(Identity, User)](
       key(forLoginId),
       orCacheAndReturn = super.loadIdtyAndUser(forLoginId),
@@ -143,7 +143,7 @@ trait CachingUserDao extends UserDao {
   }
 
 
-  override def configRole(loginId: String, ctime: ju.Date, roleId: String,
+  override def configRole(loginId: LoginId, ctime: ju.Date, roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean],
         isOwner: Option[Boolean]) {
     super.configRole(loginId = loginId, ctime = ctime,
@@ -152,7 +152,7 @@ trait CachingUserDao extends UserDao {
   }
 
 
-  override def configIdtySimple(loginId: String, ctime: ju.Date,
+  override def configIdtySimple(loginId: LoginId, ctime: ju.Date,
                        emailAddr: String, emailNotfPrefs: EmailNotfPrefs) {
     super.configIdtySimple(
       loginId = loginId,
@@ -163,7 +163,7 @@ trait CachingUserDao extends UserDao {
   }
 
 
-  private def key(loginId: String) = CacheKey(siteId, s"$loginId|UserByLoginId")
+  private def key(loginId: LoginId) = CacheKey(siteId, s"$loginId|UserByLoginId")
 
 }
 
