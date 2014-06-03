@@ -17,9 +17,6 @@
       <div>
         <a class='action-description' href='{{post.url}}'>{{post.description}}</a>
 
-        <a class='inline-action new-flags-link' ng-hide='post.hideNewFlagsLink'>
-          {{post.numPendingFlags}} flags
-        </a>
         <a class='inline-action old-flags-link' ng-hide='post.hideOldFlagsLink'>
           {{post.numHandledFlags}} old flags
         </a>
@@ -44,6 +41,20 @@
         <span class='inline-message'>{{post.inlineMessage}}</span>
       </div>
       <span class='action-path'>{{post.pageName}}</span>
+      <div class="flags" ng-if="post.pendingFlags">
+        <div class="flags-header">{{ post.numPendingFlags }} new flags:</div>
+        <ol>
+          <li ng-repeat="flag in post.pendingFlags">
+            Type: {{ flag.flagType }}, reason: {{ flagReason }}, by:
+            <a href="/-/users/#/id/{{ flag.flaggerId }}">{{ flag.flaggerDisplayName }}</a>
+          </li>
+        </ol>
+        <div class="flag-actions">
+          <button class="btn btn-default">Hide post</button>
+          <button class="btn btn-default">Delete post</button>
+          <button class="btn btn-default">Clear flags</button>
+        </div>
+      </div>
     </td>
 
 

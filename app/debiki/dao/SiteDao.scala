@@ -18,6 +18,7 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}
@@ -132,6 +133,10 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
   def loadPostsRecentlyActive(limit: Int): (Seq[Post], People) =
     siteDbDao.loadPostsRecentlyActive(limit, offset = 0)
+
+  def loadFlags(pagePostIds: Seq[PagePostId])
+        : (Map[PagePostId, Seq[RawPostAction[PAP.Flag]]], People) =
+    siteDbDao.loadFlags(pagePostIds)
 
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,

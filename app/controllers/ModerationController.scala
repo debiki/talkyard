@@ -20,6 +20,7 @@ package controllers
 import actions.ApiActions._
 import actions.PageActions._
 import com.debiki.core._
+import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.Prelude._
 import controllers.Utils._
 import debiki._
@@ -28,9 +29,6 @@ import play.api._
 import play.api.libs.json._
 import play.api.libs.json.Json.toJson
 import play.api.mvc.{Action => _, _}
-import requests.DebikiRequest
-import DebikiHttp._
-import Utils.ValidationImplicits._
 
 
 /** Lists posts that require attention, e.g. because they've been flagged or edited
@@ -69,10 +67,14 @@ object ModerationController extends mvc.Controller {
     val (posts, people: People) =
       request.dao.loadPostsRecentlyActive(limit = ActionCountLimit)
 
+    val (flagsByPostId, flaggers: People) =
+      request.dao.loadFlags(posts.filter(_.numPendingFlags > 0).map(_.pagePostId))
+
     val pageMetaByPageId = request.dao.loadPageMetasAsMap(posts.map(_.pageParts.pageId).distinct)
 
     OkSafeJson(toJson(Map(
-      "actions" -> JsArray(posts.map(jsonForPost(_, pageMetaByPageId))),
+      "actions" -> JsArray(posts.map(jsonForPost(
+          _, pageMetaByPageId, flagsByPostId, flaggers))),
       "postTextLengthLimit" -> JsNumber(PostTextLengthLimit),
       // This limit is only approximate, if you list pages both
       // by folder path and by page id. see
@@ -82,8 +84,9 @@ object ModerationController extends mvc.Controller {
   }
 
 
-  private def jsonForPost(action: PostAction[_], pageMetaByPageId: Map[PageId, PageMeta])
-        : JsValue = {
+  private def jsonForPost(action: PostAction[_], pageMetaByPageId: Map[PageId, PageMeta],
+        flagsByPostId: Map[PagePostId, Seq[RawPostAction[PAP.Flag]]], flaggers: People): JsValue = {
+
     val pageName = pageMetaByPageId.get(action.page.id)
       .map(_.cachedTitle getOrElse "(Unnamed page)")
       .getOrElse("(Page not found)")
@@ -132,6 +135,20 @@ object ModerationController extends mvc.Controller {
         if (post.numFlags > 0) {
           data += "numPendingFlags" -> JsNumber(post.numPendingFlags)
           data += "numHandledFlags" -> JsNumber(post.numHandledFlags)
+        }
+
+        if (post.numPendingFlags > 0) {
+          val flags = flagsByPostId.get(post.pagePostId) getOrElse Nil
+          val jsFlags = flags map { flag =>
+            val flaggerName =
+              flaggers.user(flag.userId).map(_.displayName).getOrElse("(Deleted user?)")
+            Json.obj(
+              "flaggerId" -> flag.userId,
+              "flaggerDisplayName" -> flaggerName,
+              "flagType" -> flag.payload.tyype.toString,
+              "flagReason" -> flag.payload.reason)
+          }
+          data += "pendingFlags" -> JsArray(jsFlags)
         }
 
       case _ =>

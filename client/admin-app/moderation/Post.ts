@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../shared/plain-old-javascript.d.ts" />
+/// <reference path="Flag.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin.moderation {
@@ -50,7 +51,8 @@ export class Post {
     public createdAt: Date,
     public numHandledFlags: number,
     public numPendingFlags: number,
-    public numPendingEditSuggestions: number) {
+    public numPendingEditSuggestions: number,
+    public pendingFlags: Flag[]) {
 
     if (this.numHandledFlags == null)
       this.numHandledFlags = 0;
@@ -82,6 +84,13 @@ export class Post {
 
 
   public static fromJson(json: any) {
+    var pendingFlags: Flag[] = [];
+    if (json.pendingFlags) {
+      pendingFlags = json.pendingFlags.map(flagJson => {
+        return Flag.fromJson(flagJson);
+      });
+    }
+
     return new Post(
       json.id,
       json.type,
@@ -96,7 +105,8 @@ export class Post {
       json.createdAt,
       json.numHandledFlags,
       json.numPendingFlags,
-      json.numPendingEditSuggestions);
+      json.numPendingEditSuggestions,
+      pendingFlags);
   }
 
 

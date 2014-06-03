@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import com.debiki.core.{PostActionPayload => PAP}
 import com.google.{common => guava}
 import java.{util => ju}
 import org.mindrot.jbcrypt.BCrypt
@@ -232,6 +233,11 @@ abstract class SiteDbDao {
     * that needs to be reviewed, then posts that have been edited, and so on.
     */
   def loadPostsRecentlyActive(limit: Int, offset: Int): (Seq[Post], People)
+
+  /** Loads flags for the specified posts.
+    */
+  def loadFlags(pagePostIds: Seq[PagePostId])
+        : (Map[PagePostId, Seq[RawPostAction[PAP.Flag]]], People)
 
   /**
    * Loads at most `limit` recent posts, conducted e.g. at `fromIp`.
@@ -663,6 +669,12 @@ class ChargingSiteDbDao(
   def loadPostsRecentlyActive(limit: Int, offset: Int): (Seq[Post], People) = {
     _chargeForOneReadReq()
     _spi.loadPostsRecentlyActive(limit, offset = offset)
+  }
+
+  def loadFlags(pagePostIds: Seq[PagePostId])
+        : (Map[PagePostId, Seq[RawPostAction[PAP.Flag]]], People) = {
+    _chargeForOneReadReq()
+    _spi.loadFlags(pagePostIds)
   }
 
   def loadRecentActionExcerpts(

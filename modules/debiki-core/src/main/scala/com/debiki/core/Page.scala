@@ -402,7 +402,9 @@ object PageOrderOffset {
 
 
 
-case class PagePostId(pageId: PageId, postId: PostId)
+case class PagePostId(pageId: PageId, postId: PostId) {
+  def toList: List[AnyRef] = List(pageId, postId.asInstanceOf[AnyRef])
+}
 
 
 case class Category(categoryName: String, pageId: String, subCategories: Seq[Category])

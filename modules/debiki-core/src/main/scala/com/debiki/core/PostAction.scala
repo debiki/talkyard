@@ -63,8 +63,11 @@ class PostAction[P](  // [P <: PostActionPayload] causes compilation errors
   def user : Option[User] = page.people.user(userIdData.userId)
   def user_! : User = user.getOrDie("DwE3905FU0", s"No user for action `$id', page `${page.id}'")
 
+
   def ip: String = userIdData.ip
   def ipSaltHash: String = saltAndHashIp(ip)
+
+  def pagePostId = PagePostId(page.id, postId)
 }
 
 
