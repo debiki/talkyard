@@ -93,7 +93,7 @@ object MovePageController extends mvc.Controller {
         // The Admin SPA needs to know that [a page other than the one we
         // wanted to move] has been moved.
         OkSafeJson(toJson(Map(
-          "pagePushedToPrevLoc" -> ListController.jsonFor(pushedPagePath))))
+          "pagePushedToPrevLoc" -> ListController.jsonForPath(pushedPagePath))))
     }
   }
 

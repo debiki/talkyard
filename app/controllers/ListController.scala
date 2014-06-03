@@ -87,7 +87,7 @@ object ListController extends mvc.Controller {
         val pageNode = renderPageListHtml(pathsAndDetails)
         OkHtml(<html><body>{pageNode}</body></html>)
       case DebikiHttp.ContentType.Json =>
-        OkSafeJson(toJson(Map("pages" -> pathsAndDetails.map(jsonFor(_)))))
+        OkSafeJson(toJson(Map("pages" -> pathsAndDetails.map(jsonForPathAndMeta(_)))))
     }
   }
 
@@ -192,7 +192,7 @@ object ListController extends mvc.Controller {
     val usersAndIdEndpoints = request.dao.listUsers(UserQuery())
     OkSafeJson(toJson(Map("users" -> (
       usersAndIdEndpoints map { case (user, identityEndpoints) =>
-        _jsonFor(user)
+        jsonForUser(user)
       }))))
   }
 
@@ -275,13 +275,13 @@ object ListController extends mvc.Controller {
   }
 
 
-  def jsonFor(pagePath: PagePath): JsValue =
-    toJson(_jsonMapFor(pagePath))
+  def jsonForPath(pagePath: PagePath): JsValue =
+    toJson(jsonMapForPath(pagePath))
 
 
   // COULD move to other file, e.g. DebikiJson.scala?
-  def jsonFor(pathAndMeta: PagePathAndMeta): JsValue = {
-    var data = _jsonMapFor(pathAndMeta.path)
+  private def jsonForPathAndMeta(pathAndMeta: PagePathAndMeta): JsValue = {
+    var data = jsonMapForPath(pathAndMeta.path)
     def pageMeta = pathAndMeta.meta
 
     data += "role" -> JsString(pageMeta.pageRole.toString)
@@ -300,13 +300,13 @@ object ListController extends mvc.Controller {
   }
 
 
-  private def _jsonMapFor(pagePath: PagePath): Map[String, JsString] = Map(
+  private def jsonMapForPath(pagePath: PagePath): Map[String, JsString] = Map(
     "id" -> JsString(pagePath.pageId.get),
     "folder" -> JsString(pagePath.folder),
     "path" -> JsString(pagePath.value))
 
 
-  private def _jsonFor(user: User): JsValue = {
+  private def jsonForUser(user: User): JsValue = {
     var info = Map[String, JsValue](
       "id" -> JsString(user.id),
       "displayName" -> JsString(user.displayName),
@@ -318,20 +318,6 @@ object ListController extends mvc.Controller {
 
     toJson(info)
   }
-
-
-  /*
-  private def _jsonFor(flags: List[Flag]): JsValue = {
-    def jsonForFlag(flag: Flag): JsValue = {
-      var data = Map[String, JsValue](
-        "cdati" -> JsString(toIso8601T(flag.ctime)),
-        "reason" -> JsString(flag.reason.toString))
-        // COULD: "userId" -> JsString(flag.user_!.id)
-      if (flag.details nonEmpty) data += "details" -> JsString(flag.details)
-      toJson(data)
-    }
-    JsArray(flags map (jsonForFlag _))
-  } */
 
 }
 
