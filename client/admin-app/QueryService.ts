@@ -27,7 +27,7 @@
 
 export class QueryService {
 
-  private RecentPostsUrl = '/?list-actions.json';
+  private RecentPostsUrl = '/-/list-recent-posts';
   private PagesUrl = '/-/list-pages?in-tree';
   private ApprovePostUrl = '/-/approve';
   private RejectPostUrl = '/-/reject';
