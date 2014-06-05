@@ -33,8 +33,7 @@ export class Post {
   public inlineMessage = '';
 
   public hideViewSuggsLink = true;
-  public hideRejectBtn = true;
-  public hideDeleteBtn = true;
+  public hideRejectAndDeleteBtns = true;
 
 
   constructor(
@@ -67,13 +66,13 @@ export class Post {
       case 'NewPrelApproved':
       case 'EditsPrelApproved':
         this.approveBtnText = 'Okay';
-        this.hideRejectBtn = false;
+        this.hideRejectAndDeleteBtns = false;
         this.hideViewSuggsLink = true;
         break;
       case 'New':
       case 'NewEdits':
         this.approveBtnText = 'Approve';
-        this.hideRejectBtn = false;
+        this.hideRejectAndDeleteBtns = false;
         this.hideViewSuggsLink = true;
         break;
       default:
@@ -134,7 +133,7 @@ export class Post {
     var text;
     switch (this.status) {
       case 'New': text = 'New ' + what; break; // COULD to lowercase
-      case 'NewPrelApproved': text = 'New '+ what +', prel. approved'; break; // COULD lowercase
+      case 'NewPrelApproved': text = 'New '+ what +', preliminarily approved'; break; // COULD lowercase
       case 'Approved': text = what; break;
       case 'Rejected': text = what +', rejected'; break;
       case 'EditsRejected': text = what +', edits rejected'; break;

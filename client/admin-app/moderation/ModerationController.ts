@@ -29,8 +29,10 @@ interface ModerationScope extends RootScope {
   /** Returns HTML that will be trusted by AngularJS, can be bound by ng-bind-html.*/
   textOrDiffFor(post: Post): any;
   approve(post: Post);
-  reject(post: Post);
+  rejectAndSendPm(post: Post);
+  hideFlaggedSendPm(post: Post);
   delete(post: Post);
+  clearFlags(post: Post);
 }
 
 
@@ -54,19 +56,26 @@ class ModerationController {
       doInlineAction(queryService.approvePost, post, 'Approved.');
     }
 
-    $scope.reject = (post: Post) => {
-      doInlineAction(queryService.rejectPost, post, 'Rejected.');
+    $scope.rejectAndSendPm = (post: Post) => {
+      doInlineAction(queryService.rejectAndSendPm, post, 'Rejected.');
+    }
+
+    $scope.hideFlaggedSendPm = (post: Post) => {
+      doInlineAction(queryService.hideFlaggedPostSendPm, post, 'Hidden.');
     }
 
     $scope.delete = (post: Post) => {
       doInlineAction(queryService.deletePost, post, 'Deleted.');
     }
 
+    $scope.clearFlags = (post: Post) => {
+      doInlineAction(queryService.clearFlags, post, 'Flags cleared.');
+    }
 
     var doInlineAction = (queryServiceFn: (_: Post) => ng.IPromise<void>, post: Post,
         doneMessage: string) => {
       post.approveBtnText = '';
-      post.hideRejectBtn = true;
+      post.hideRejectAndDeleteBtns = true;
       post.hideViewSuggsLink = true;
       post.inlineMessage = 'Wait...';
       queryServiceFn.call(queryService, post).then((data) => {

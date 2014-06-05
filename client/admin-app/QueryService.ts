@@ -31,7 +31,6 @@ export class QueryService {
   private PagesUrl = '/-/list-pages?in-tree';
   private ApprovePostUrl = '/-/approve';
   private RejectPostUrl = '/-/reject';
-  private DeletePostUrl = '/-/delete';
   private LoadSiteSettingsUrl = '/-/load-site-settings';
   private LoadSectionSettingsUrl = '/-/load-section-settings';
   private SaveSettingUrl = '/-/save-setting';
@@ -113,14 +112,21 @@ export class QueryService {
     return this.doSomethingWithPost(post, this.ApprovePostUrl);
   }
 
-  public rejectPost(post: moderation.Post): ng.IPromise<void> {
+  public rejectAndSendPm(post: moderation.Post): ng.IPromise<void> {
     return this.doSomethingWithPost(post, this.RejectPostUrl);
   }
 
-  public deletePost(post: moderation.Post): ng.IPromise<void> {
-    throw "Unimplemented [DwE254FGU9]";
+  public hideFlaggedPostSendPm(post: moderation.Post): ng.IPromise<void> {
+    return this.doSomethingWithPost(post, '/-/hide-flagged-send-pm');
   }
 
+  public deletePost(post: moderation.Post): ng.IPromise<void> {
+    return this.doSomethingWithPost(post, '/-/delete');
+  }
+
+  public clearFlags(post: moderation.Post): ng.IPromise<void> {
+    return this.doSomethingWithPost(post, '/-/clear-flags');
+  }
 
   private doSomethingWithPost(post: moderation.Post, actionUrl: string): ng.IPromise<void> {
     var deferred = this.$q.defer<void>();
