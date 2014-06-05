@@ -20,27 +20,18 @@
         <a class='inline-action old-flags-link' ng-hide='post.hideOldFlagsLink'>
           {{post.numHandledFlags}} old flags
         </a>
-        <!-- Info to construct this HTML is currently not saved in DW1_POSTS:
-        <div class='inline-flags' ng-hide='post.hideFlagsLink'>
-          <a class='inline-action flags-link'>
-            Flagged: {{post.prettyFlags}}
-          </a>
-          <span class='first-flagger'>
-            First flagged by <a href="{{post.firstFlaggerUrl}}">{{post.firstFlaggerName}}</a><br>
-            from IP <a href="{{post.firstFlaggerIpUrl}}">{{post.firstFlaggerIp}}</a>
-          </span>
-        </div> -->
-
-        <a class='inline-action approve-action' ng-click='approve(post)' ng-hide='post.approveBtnText.isEmpty'>{{post.approveBtnText}}</a>
-        <a class='inline-action reject-action' ng-click='reject(post)' ng-hide='post.hideRejectBtn'>Reject</a>
-
-        <a class='inline-action delete-action' ng-click='delete(post)' ng-hide='post.hideDeleteBtn'>Delete</a>
 
         <a class='inline-action suggestions-link' ng-hide='post.hideViewSuggsLink'>{{post.numPendingEditSuggestions}} improvement suggestions</a>
-
-        <span class='inline-message'>{{post.inlineMessage}}</span>
       </div>
+
       <span class='action-path'>{{post.pageName}}</span>
+
+      <div class="approval-actions" ng-if="post.pendingFlags.length == 0">
+        <button class="btn btn-default" ng-click='approve(post)' ng-hide='!post.approveBtnText'>{{post.approveBtnText}}</button>
+        <button class="btn btn-default" ng-click='reject(post)' ng-hide='post.hideRejectBtn'>Reject</button>
+        <button class="btn btn-default" ng-click='delete(post)' ng-hide='post.hideDeleteBtn'>Delete</button>
+      </div>
+
       <div class="flags" ng-if="post.pendingFlags">
         <div class="flags-header">{{ post.numPendingFlags }} new flags:</div>
         <ol>
@@ -55,6 +46,8 @@
           <button class="btn btn-default">Clear flags</button>
         </div>
       </div>
+
+      <span class='inline-message'>{{post.inlineMessage}}</span>
     </td>
 
 
@@ -65,13 +58,6 @@
     <td class='post-text' ng-bind-html="textOrDiffFor(post)"></td>
 
   </tr>
-  <!-- Place the text on a separate row, if narrow screen.
-    TODO when AngularJS 1.2 released, use ng-repeat-start/end
-  <tr class='post-text'
-      ng-if="smallScreen"
-      ng-bind-html="textOrDiff(action)">
-   </tr>
-   -->
 </tbody>
 </table>
 </nav>
