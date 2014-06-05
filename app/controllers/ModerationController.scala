@@ -18,21 +18,21 @@
 package controllers
 
 import actions.ApiActions._
-import actions.PageActions._
 import com.debiki.core._
 import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.Prelude._
 import controllers.Utils._
-import debiki._
+import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.libs.json._
 import play.api.libs.json.Json.toJson
 import play.api.mvc.{Action => _, _}
+import requests._
 
 
-/** Lists posts that require attention, e.g. because they've been flagged or edited
-  * or needs to be approved. And after that, list recently modified posts.
+/** Lists posts for the moderation page, and approves/rejects/deletes posts
+  * that are new or have been flagged.
   */
 object ModerationController extends mvc.Controller {
 
@@ -41,6 +41,59 @@ object ModerationController extends mvc.Controller {
   val PostTextLengthLimit = 500
 
 
+  def approve = PostJsonAction(maxLength = 5000) { apiReq =>
+    review(apiReq, shallApprove = true)
+  }
+
+
+  def reject = PostJsonAction(maxLength = 5000) { apiReq =>
+    review(apiReq, shallApprove = false)
+  }
+
+
+  def hideFlaggedPostSendPm = PostJsonAction(maxLength = 5000) { apiReq =>
+    ???
+  }
+
+
+  def deletePost = PostJsonAction(maxLength = 5000) { apiReq =>
+    ???
+  }
+
+
+  def clearFlags = PostJsonAction(maxLength = 5000) { apiReq =>
+    ???
+  }
+
+
+  private def review(apiReq: JsonPostRequest, shallApprove: Boolean): mvc.PlainResult = {
+
+    if (!apiReq.theUser.isAdmin)
+      throwForbidden("DwE4LU90", "Insufficient permissions")
+
+    // Play throws java.util.NoSuchElementException: key not found: pageId
+    // and e.g. new RuntimeException("String expected")
+    // on invalid JSON structure. COULD in some way convert to 400 Bad Request
+    // instead of failing with 500 Internal Server Error in Prod mode.
+    val reviewsByPageId: Map[String, List[RawPostAction[PAP.ReviewPost]]] =
+      Utils.parsePageActionIds(apiReq.body.as[List[Map[String, String]]]) { actionId =>
+        RawPostAction.toReviewPost(
+          id = PageParts.UnassignedId, postId = actionId,
+          userIdData = apiReq.userIdData, ctime = apiReq.ctime,
+          approval = (if (shallApprove) Some(Approval.Manual) else None))
+      }
+
+    reviewsByPageId foreach { case (pageId, reviews) =>
+      apiReq.dao.savePageActionsGenNotfs(pageId, reviews, apiReq.meAsPeople_!)
+    }
+
+    Ok
+  }
+
+
+  /** Lists posts that require attention, e.g. because they've been flagged or edited
+    * or needs to be approved. And after that, list recently modified posts.
+    */
   def listRecentPosts = AdminGetAction { request =>
 
     /*

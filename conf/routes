@@ -94,6 +94,11 @@ GET   /-/privacy-policy         controllers.LegalController.viewPrivacyPolicyPag
 GET   /-/load-special-content   controllers.SpecialContentController.loadContent(rootPageId, contentId)
 POST  /-/save-special-content   controllers.SpecialContentController.saveContent
 
+POST  /-/approve                controllers.ModerationController.approve
+POST  /-/reject                 controllers.ModerationController.reject
+POST  /-/hide-flagged-send-pm   controllers.ModerationController.hideFlaggedPostSendPm
+POST  /-/delete                 controllers.ModerationController.deletePost
+POST  /-/clear-flags            controllers.ModerationController.clearFlags
 GET   /-/list-recent-posts      controllers.ModerationController.listRecentPosts
 
 GET   /-/users/                 controllers.UserController.viewUserPage
@@ -114,8 +119,8 @@ POST  /-/improve                controllers.EditHistoryController.handleForm(pag
 POST  /-/pin-at-position        controllers.PinController.pinAtPosition
 #POST /-/move-pages             controllers.MovePageController.movePages
 POST  /-/move-rename-page       controllers.MovePageController.moveRenamePage
-POST  /-/approve                controllers.ReviewController.approve
-POST  /-/reject                 controllers.ReviewController.reject
+
+
 POST  /-/collapse-post          controllers.CloseCollapseController.collapsePost
 POST  /-/collapse-tree          controllers.CloseCollapseController.collapseTree
 POST  /-/close-tree             controllers.CloseCollapseController.closeTree
