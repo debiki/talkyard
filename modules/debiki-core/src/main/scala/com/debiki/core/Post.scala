@@ -584,21 +584,30 @@ case class Post(
   private def treeDeletion: Option[PostAction[PAP.DeleteTree.type]] =
     findLastAction(PAP.DeleteTree)
 
+  private def postHiddenAction: Option[PostAction[PAP.HidePost.type]] =
+    findLastAction(PAP.HidePost)
   def postDeletedAt: Option[ju.Date] =
     postDeletion.map(_.creationDati) orElse state.postDeletedAt
 
   def treeDeletedAt: Option[ju.Date] =
     treeDeletion.map(_.creationDati) orElse state.treeDeletedAt
 
+  def postHiddenAt: Option[ju.Date] =
+    postHiddenAction.map(_.creationDati) orElse state.postHiddenAt
   def postDeleterUserId: Option[String] =
-    postDeletion.map(_.userId) orElse unimplemented("DwE6XD43")
+    postDeletion.map(_.userId) orElse state.postDeletedById
 
   def treeDeleterUserId: Option[String] =
-    treeDeletion.map(_.userId) orElse unimplemented("DwE8QB91")
+    treeDeletion.map(_.userId) orElse state.treeDeletedById
+
+  def postHiddenById: Option[String] =
+    postHiddenAction.map(_.userId) orElse state.postHiddenById
 
   def isPostDeleted: Boolean = postDeletedAt.nonEmpty
   def isTreeDeleted: Boolean = treeDeletedAt.nonEmpty
   def isDeletedSomehow: Boolean = isPostDeleted || isTreeDeleted
+
+  def isPostHidden: Boolean = postHiddenAt.nonEmpty
 
 
   /** How many people have up/downvoted this post. Might be a tiny bit

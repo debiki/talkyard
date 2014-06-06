@@ -57,7 +57,27 @@ object ModerationController extends mvc.Controller {
 
 
   def deletePost = PostJsonAction(maxLength = 5000) { apiReq =>
-    ???
+    val pageIdsAndActions: Seq[(PageId, RawPostAction[PAP.DeletePost.type])] =
+      for (pinPostJson <- apiReq.body.as[Vector[JsObject]]) yield {
+        val pageId = (pinPostJson \ "pageId").as[PageId]
+        val postId = (pinPostJson \ "postId").as[PostId]
+        val action = RawPostAction(
+          PageParts.UnassignedId, apiReq.ctime, PAP.DeletePost, postId = postId,
+          userIdData = apiReq.userIdData)
+        (pageId, action)
+      }
+
+    pageIdsAndActions.groupedByPageId foreach { case (pageId, actions) =>
+      val permsOnPage = apiReq.dao.loadPermsOnPage(apiReq, pageId)
+      if (!permsOnPage.pinReplies)
+        throwForbidden("DwE95Xf2", "Insufficient permissions to pin post")
+
+      require(actions.length == 1, "Id assignment assumes only one action per page [DwE70UF8]")
+      apiReq.dao.savePageActionsGenNotfs(pageId, actions, apiReq.meAsPeople_!)
+    }
+
+    // The client already knows where to place the pinned post, so simply:
+    Ok
   }
 
 

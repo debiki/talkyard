@@ -193,6 +193,11 @@ object PostActionPayload {
   case class Delete(targetActionId: ActionId) extends PostActionPayload
 
 
+  /** Hides a post, e.g. because it was flagged as spam.
+    */
+  case object HidePost extends PostActionPayload
+
+
   /** Flags a post as e.g. spam, or inappropriate (offensive, illegal, whatever).
     */
   case class Flag(tyype: FlagType, reason: String) extends PostActionPayload

@@ -83,7 +83,7 @@ trait PostActionActedUpon {
 
   protected def findLastAction[P <: PostActionPayload](payload: P): Option[PostAction[P]] =
     actions.find { action =>
-      action.payload == payload  // && !action.wasUndone
+      action.payload == payload  // && !action.isDeleted
     }.asInstanceOf[Option[PostAction[P]]]
 
 }

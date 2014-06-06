@@ -117,17 +117,18 @@ export class QueryService {
   }
 
   public hideFlaggedPostSendPm(post: moderation.Post): ng.IPromise<void> {
-    return this.doSomethingWithPost(post, '/-/hide-flagged-send-pm');
+    return this.doSomethingWithPost2(post, '/-/hide-flagged-send-pm');
   }
 
   public deletePost(post: moderation.Post): ng.IPromise<void> {
-    return this.doSomethingWithPost(post, '/-/delete');
+    return this.doSomethingWithPost2(post, '/-/delete');
   }
 
   public clearFlags(post: moderation.Post): ng.IPromise<void> {
-    return this.doSomethingWithPost(post, '/-/clear-flags');
+    return this.doSomethingWithPost2(post, '/-/clear-flags');
   }
 
+  /** Deprecated. Sends posts as strings not numbers. */
   private doSomethingWithPost(post: moderation.Post, actionUrl: string): ng.IPromise<void> {
     var deferred = this.$q.defer<void>();
     this.$http.post(actionUrl, this.postToJson(post)).success((data) => {
@@ -136,9 +137,21 @@ export class QueryService {
     return deferred.promise;
   }
 
+  private doSomethingWithPost2(post: moderation.Post, actionUrl: string): ng.IPromise<void> {
+    var deferred = this.$q.defer<void>();
+    this.$http.post(actionUrl, this.postToJson2(post)).success((data) => {
+      deferred.resolve();
+    });
+    return deferred.promise;
+  }
 
+  /** Deprecated. Sends posts as strings not numbers. */
   private postToJson(post: moderation.Post): string {
     return '[{ "pageId": "'+ post.pageId +'", "actionId": "'+ post.id +'" }]';
+  }
+
+  private postToJson2(post: moderation.Post): string {
+    return '[{ "pageId": "'+ post.pageId +'", "postId": '+ post.id +' }]';
   }
 }
 
