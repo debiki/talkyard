@@ -211,7 +211,7 @@ object PostActionPayload {
 
 object FlagType extends Enumeration {
   type FlagType = Value
-  val Spam, Illegal, /* Copyright Violation */ CopyVio, Other = Value
+  val Spam, Inapt, Other = Value
 }
 
 
