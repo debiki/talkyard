@@ -110,7 +110,6 @@ object PageParts {
           }
         case a: PAP.EditApp => a.copy(editId = rmpd(a.editId))
         case d: PAP.Delete => d.copy(targetActionId = rmpd(d.targetActionId))
-        case u: PAP.Undo => u.copy(targetActionId = rmpd(u.targetActionId))
         case x => x
       }
       action.copy(id = remaps(action.id), postId = rmpd(action.postId), payload = remappedPayload)
@@ -235,7 +234,6 @@ abstract class PostActionsWrapper { self: PageParts =>
 
       action.payload match {
         case _: PAP.CreatePost => // doesn't affect any post; creates a new one
-        case PAP.Undo(targetActionId) => addActionByTargetId(targetActionId)
         case PAP.Delete(targetActionId) => addActionByTargetId(targetActionId)
         case e: PAP.EditApp => addActionByTargetId(e.editId)
         case _: PAP => addActionByTargetId(action.postId)

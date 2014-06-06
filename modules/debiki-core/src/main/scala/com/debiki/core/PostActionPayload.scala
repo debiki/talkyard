@@ -193,14 +193,6 @@ object PostActionPayload {
   case class Delete(targetActionId: ActionId) extends PostActionPayload
 
 
-  /** Undoes another action, e.g. an Undo with targetActionId = a CloseTree action
-    * would reopen the closed tree.
-    *
-    * Requires another coulmn in DW1_PAGE_ACTIONS, namely TARGET_ACTION_ID.
-    */
-  case class Undo(targetActionId: ActionId) extends PostActionPayload
-
-
   /** Flags a post as e.g. spam, or inappropriate (offensive, illegal, whatever).
     */
   case class Flag(tyype: FlagType, reason: String) extends PostActionPayload
