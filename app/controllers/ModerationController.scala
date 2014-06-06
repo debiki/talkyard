@@ -186,8 +186,22 @@ object ModerationController extends mvc.Controller {
           data += "unapprovedText" -> JsString(text take PostTextLengthLimit)
         }
 
+        post.postDeletedAt foreach { date =>
+          data += "postDeletedAt" -> JsString(toIso8601T(date))
+        }
+
+        post.treeDeletedAt foreach { date =>
+          data += "treeDeletedAt" -> JsString(toIso8601T(date))
+        }
+
+        post.postHiddenAt foreach { date =>
+          data += "postHiddenAt" -> JsString(toIso8601T(date))
+        }
+
         val status =
-          if (post.currentVersionPrelApproved) {
+          if (post.isDeletedSomehow) "Deleted"
+          else if (post.isPostHidden) "Hidden"
+          else if (post.currentVersionPrelApproved) {
             if (post.someVersionPermanentlyApproved) "EditsPrelApproved"
             else "NewPrelApproved"
           }

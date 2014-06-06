@@ -63,6 +63,11 @@ export class Post {
       this.numPendingEditSuggestions = 0;
 
     switch (this.status) {
+      case 'Deleted':
+      case 'Hidden':
+        this.hideRejectAndDeleteBtns = true;
+        this.hideViewSuggsLink = true;
+        break;
       case 'NewPrelApproved':
       case 'EditsPrelApproved':
         this.approveBtnText = 'Okay';
@@ -136,6 +141,8 @@ export class Post {
       case 'NewPrelApproved': text = 'New '+ what +', preliminarily approved'; break; // COULD lowercase
       case 'Approved': text = what; break;
       case 'Rejected': text = what +', rejected'; break;
+      case 'Deleted': text = what +', deleted'; break;
+      case 'Hidden': text = what +', hidden'; break;
       case 'EditsRejected': text = what +', edits rejected'; break;
       case 'NewEdits': text = what +', edited'; break;
       case 'EditsPrelApproved': text = what +', edits prel. approved'; break;
@@ -153,6 +160,8 @@ export class Post {
       case 'Approved':
         return escapeHtml(this.approvedText);
       case 'Rejected':
+      case 'Deleted':
+      case 'Hidden':
         // Sometimes `unapprovedText` is undefined, nevertheless the post was rejected.
         return escapeHtml(this.unapprovedText || this.approvedText);
       case 'EditsRejected':
