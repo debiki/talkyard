@@ -148,8 +148,8 @@ object HtmlPostRenderer {
 
   private def renderDeletedComment(post: Post, wholeTree: Boolean = false): RenderedPost = {
     val deleterUserId =
-      if (wholeTree) post.treeDeleterUserId.get
-      else post.postDeleterUserId.get
+      if (wholeTree) post.treeDeletedById.get
+      else post.postDeletedById.get
     // COULD add itemscope and itemtype attrs, http://schema.org/Comment
     val byWhom =
       if (post.userId == deleterUserId) "comment author"

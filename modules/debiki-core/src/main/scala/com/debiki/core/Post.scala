@@ -578,27 +578,29 @@ case class Post(
   def isTreeClosed: Boolean = treeClosedAt.nonEmpty
 
 
-  private def postDeletion: Option[PostAction[PAP.DeletePost.type]] =
+  private def postDeletedAction: Option[PostAction[PAP.DeletePost.type]] =
     findLastAction(PAP.DeletePost)
 
-  private def treeDeletion: Option[PostAction[PAP.DeleteTree.type]] =
+  private def treeDeletedAction: Option[PostAction[PAP.DeleteTree.type]] =
     findLastAction(PAP.DeleteTree)
 
   private def postHiddenAction: Option[PostAction[PAP.HidePost.type]] =
     findLastAction(PAP.HidePost)
+
   def postDeletedAt: Option[ju.Date] =
-    postDeletion.map(_.creationDati) orElse state.postDeletedAt
+    postDeletedAction.map(_.creationDati) orElse state.postDeletedAt
 
   def treeDeletedAt: Option[ju.Date] =
-    treeDeletion.map(_.creationDati) orElse state.treeDeletedAt
+    treeDeletedAction.map(_.creationDati) orElse state.treeDeletedAt
 
   def postHiddenAt: Option[ju.Date] =
     postHiddenAction.map(_.creationDati) orElse state.postHiddenAt
-  def postDeleterUserId: Option[String] =
-    postDeletion.map(_.userId) orElse state.postDeletedById
 
-  def treeDeleterUserId: Option[String] =
-    treeDeletion.map(_.userId) orElse state.treeDeletedById
+  def postDeletedById: Option[String] =
+    postDeletedAction.map(_.userId) orElse state.postDeletedById
+
+  def treeDeletedById: Option[String] =
+    treeDeletedAction.map(_.userId) orElse state.treeDeletedById
 
   def postHiddenById: Option[String] =
     postHiddenAction.map(_.userId) orElse state.postHiddenById
