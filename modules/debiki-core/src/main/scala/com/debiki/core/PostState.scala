@@ -128,6 +128,8 @@ class PostState(
     else creationAction.payload.approval
   }
 
+  def postId = creationAction.postId
+
   require(lastAuthoritativeReviewDati.isEmpty || lastReviewDati.isDefined)
   require(lastApprovalDati.isEmpty || lastReviewDati.isDefined)
   require(lastApprovedText.isEmpty || lastApprovalDati.isDefined)

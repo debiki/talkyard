@@ -170,7 +170,7 @@ object ModerationController extends mvc.Controller {
       "pageName" -> JsString(pageName),
       "type" -> JsString(classNameOf(action)),
       "userId" -> JsString(action.userId),
-      "userDisplayName" -> JsString(action.user_!.displayName),
+      "userDisplayName" -> JsString(action.user.map(_.displayName) getOrElse "(Unknown user)"),
       "cdati" -> JsString(toIso8601T(action.creationDati)))
 
     action.loginId foreach { id =>

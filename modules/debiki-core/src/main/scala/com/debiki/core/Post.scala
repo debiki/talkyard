@@ -333,12 +333,14 @@ case class Post(
   }
 
 
-  /** When this post was last edited, reverted, deleted, collapsed, flagged, anything
-    * except up/downvotes. Used when sorting posts in the activity list in the admin UI.
-    *
-    * Currently only considers edits (could fix...)
+  /** When this post was last edited, reverted, deleted, or hidden.
+    * Used when sorting posts in the activity list in the admin UI.
     */
-  def lastActedUponAt = textLastEditedOrRevertedAt
+  def lastActedUponAt = new ju.Date(Seq(
+      textLastEditedOrRevertedAt.getTime,
+      postDeletedAt.map(_.getTime).getOrElse(0: Long),
+      treeDeletedAt.map(_.getTime).getOrElse(0: Long),
+      postHiddenAt.map(_.getTime).getOrElse(0: Long)).max)
 
 
   /** The most recent reviews, or Nil if all most recent reviews might not
