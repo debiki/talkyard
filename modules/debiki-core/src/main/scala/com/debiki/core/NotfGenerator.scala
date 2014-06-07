@@ -43,8 +43,8 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[RawPostA
         Nil  // fix later, see "Note:" below
       case app: PAP.EditApp =>
         Nil  // fix later, see note above
-      case _: PAP.ReviewPost =>
-        makeReviewNotfs(new Review(page, action.asInstanceOf[RawPostAction[PAP.ReviewPost]]))
+      case _: PAP.ApprovePost =>
+        makeReviewNotfs(new Review(page, action.asInstanceOf[RawPostAction[PAP.ApprovePost]]))
       case flag: PAP.Flag =>
         Nil  // fix later, see note above
       case _ =>
@@ -104,10 +104,6 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[RawPostA
     lazy val postReviewed: Post = review.target.asInstanceOf[Post]
     lazy val userReviewed = postReviewed.user_!
     lazy val reviewer = review.user_!
-
-    // If the postReviewed was rejected, don't notify anyone.
-    if (review.directApproval.isEmpty)
-      return Nil
 
     // If the postReviewed has already been permanently approved, a notification
     // has already been generated. Don't send another notification, *even* if

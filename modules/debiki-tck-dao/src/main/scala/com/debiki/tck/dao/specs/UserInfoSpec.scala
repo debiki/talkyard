@@ -82,7 +82,7 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
 
     "add a comment, find one action" in {
       val (page2, comment2) = siteUtils.addComment(guestLoginGrant, page, CommentText)
-      page = siteUtils.review(passwordLoginGrant, page2, comment2.id, Some(Approval.Manual))
+      page = siteUtils.review(passwordLoginGrant, page2, comment2.id, Approval.Manual)
       comment = page.parts.getPost(comment2.id) getOrElse fail("Comment not found")
       siteUtils.dao.loadUserInfoAndStats(guestUser.id) mustBe Some(
         UserInfoAndStats(info = guestUser, stats = UserStats.Zero.copy(
@@ -267,10 +267,10 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
 
 
   def review(loginGrant: LoginGrant, page: PageNoPath, postId: PostId,
-        anyApproval: Option[Approval]): PageNoPath = {
+        approval: Approval): PageNoPath = {
     val reviewNoId = RawPostAction.toReviewPost(
       id = PageParts.UnassignedId, postId = postId, userIdData = loginGrant.testUserIdData,
-      ctime = new ju.Date(), approval = anyApproval)
+      ctime = new ju.Date(), approval = approval)
     val (updatedPage, review) = dao.savePageActions(page + loginGrant.user, reviewNoId::Nil)
     updatedPage
   }

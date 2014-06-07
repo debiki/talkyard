@@ -207,7 +207,7 @@ abstract class PostActionsWrapper { self: PageParts =>
         case _: PAP.CreatePost => new Post(self, actionAs[PAP.CreatePost])
         case _: PAP.EditPost => new Patch(self, actionAs[PAP.EditPost])
         //case _: PAP.ApplyEdit => new ApplyPatchAction(self, actionAs[PAP.PAP.ApplyEdit])
-        case _: PAP.ReviewPost => new Review(self, actionAs[PAP.ReviewPost])
+        case _: PAP.ApprovePost => new Review(self, actionAs[PAP.ApprovePost])
         case _ => new PostAction(self, actionDto)
       }
       addAction(action)

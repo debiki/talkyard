@@ -222,21 +222,21 @@ object RawPostAction {
         postId: ActionId,
         userIdData: UserIdData,
         ctime: ju.Date,
-        approval: Option[Approval]): RawPostAction[PAP.ReviewPost] =
+        approval: Approval): RawPostAction[PAP.ApprovePost] =
     RawPostAction(
       id, creationDati = ctime, postId = postId, userIdData = userIdData,
-      payload = PAP.ReviewPost(approval))
+      payload = PAP.ApprovePost(approval))
 
 
   def copyReviewPost(
-        old: RawPostAction[PAP.ReviewPost],
+        old: RawPostAction[PAP.ApprovePost],
         id: ActionId = PageParts.NoId,
         postId: ActionId = PageParts.NoId,
         loginId: String = null,
         userId: String = null,
         createdAt: ju.Date = null,
         ip: String = null,
-        approval: Option[Approval] = null): RawPostAction[PAP.ReviewPost] =
+        approval: Approval = null): RawPostAction[PAP.ApprovePost] =
     RawPostAction(
       id = if (id != PageParts.NoId) id else old.id,
       creationDati = if (createdAt ne null) createdAt else old.creationDati,
@@ -247,7 +247,7 @@ object RawPostAction {
         ip = if (ip ne null) ip else old.userIdData.ip,
         browserIdCookie = old.userIdData.browserIdCookie,
         browserFingerprint = old.userIdData.browserFingerprint),
-      payload = if (approval ne null) PAP.ReviewPost(approval) else old.payload)
+      payload = if (approval ne null) PAP.ApprovePost(approval) else old.payload)
 
 
   def toDeletePost(

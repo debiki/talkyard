@@ -1331,17 +1331,18 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "Save and load a rejection" in {
-      testSaveLoadReview(isApproved = false)
+      //testSaveLoadReview(isApproved = false)
+      pending
     }
 
     def testSaveLoadReview(isApproved: Boolean) {
-      var reviewSaved: RawPostAction[PAP.ReviewPost] = null
-      val approval = if (isApproved) Some(Approval.Manual) else None
+      var reviewSaved: RawPostAction[PAP.ApprovePost] = null
+      val approval = if (isApproved) Approval.Manual else ???
       val reviewNoId = RawPostAction.toReviewPost(
          UnassignedId, postId = ex1_rootPost.id,
         UserIdData.newTest(loginId, userId = globalUserId), ctime = now, approval = approval)
       dao.savePageActions(testPage, List(reviewNoId)) must beLike {
-        case (_, List(review: RawPostAction[PAP.ReviewPost])) =>
+        case (_, List(review: RawPostAction[PAP.ApprovePost])) =>
           reviewSaved = review
           review must_== reviewNoId.copy(id = review.id)
       }

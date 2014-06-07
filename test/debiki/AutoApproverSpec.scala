@@ -170,7 +170,7 @@ class AutoApproverSpec extends Specification with Mockito {
     }
 
 
-  val approvalOfReplyA: RawPostAction[PAP.ReviewPost] = RawPostAction.toReviewPost(
+  val approvalOfReplyA: RawPostAction[PAP.ApprovePost] = RawPostAction.toReviewPost(
     id = 10002, postId = testUserReplyAId, SystemUser.UserIdData,
     ctime = later(10), approval = Some(Approval.Manual))
 
@@ -179,12 +179,12 @@ class AutoApproverSpec extends Specification with Mockito {
 
   val veryRecentApprovalOfReplyA = approvalOfReplyA.copy(creationDati = later(100))
 
-  val approvalOfReplyB: RawPostAction[PAP.ReviewPost] =
+  val approvalOfReplyB: RawPostAction[PAP.ApprovePost] =
     approvalOfReplyA.copy(id = 10003, postId = testUserReplyBId)
 
   val prelApprovalOfReplyB = approvalOfReplyB.copy(payload = PAP.PrelApprovePost)
 
-  val rejectionOfReplyA: RawPostAction[PAP.ReviewPost] =
+  val rejectionOfReplyA: RawPostAction[PAP.ApprovePost] =
     approvalOfReplyA.copy(id = 10004, payload = PAP.RejectPost)
 
   val flagOfReplyA = RawPostAction[PAP.Flag](id = 10005, creationDati = later(20),

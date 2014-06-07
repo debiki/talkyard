@@ -104,13 +104,11 @@ object PostActionPayload {
 
   /** Approves comments and edits.
     */
-  case class ReviewPost(approval: Option[Approval]) extends PostActionPayload {
-    require(approval.isDefined) // I'm replacing rejections with DeletePost
-  }
+  case class ApprovePost(approval: Approval) extends PostActionPayload
 
-  val PrelApprovePost = ReviewPost(Some(Approval.Preliminary))
-  val WellBehavedApprovePost = ReviewPost(Some(Approval.WellBehavedUser))
-  val ManuallyApprovePost = ReviewPost(Some(Approval.Manual))
+  val PrelApprovePost = ApprovePost(Approval.Preliminary)
+  val WellBehavedApprovePost = ApprovePost(Approval.WellBehavedUser)
+  val ManuallyApprovePost = ApprovePost(Approval.Manual)
 
 
   class Vote extends PostActionPayload

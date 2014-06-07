@@ -42,7 +42,7 @@ object ModerationController extends mvc.Controller {
 
 
   def approve = PostJsonAction(maxLength = 5000) { apiReq =>
-    review2(apiReq, PAP.ReviewPost(Some(Approval.AuthoritativeUser)),
+    review2(apiReq, PAP.ApprovePost(Approval.AuthoritativeUser),
       (perms) => apiReq.theUser.isAdmin)
   }
 
