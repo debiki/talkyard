@@ -231,8 +231,7 @@ case class BrowserPagePatcher(
 
   private def jsonForPost(post: Post): JsPatch = {
     val (headAndBodyHtml, actionsHtml) = {
-      val pageStats = new PageStats(post.page, PageTrust(post.page))
-      val renderer = HtmlPostRenderer(post.page, pageStats, hostAndPort = request.host,
+      val renderer = HtmlPostRenderer(post.page, hostAndPort = request.host,
         showUnapproved = showUnapproved)
       val renderedPost = renderer.renderPost(post.id, uncollapse = true)
       val headAndBodyHtml = lw.Html5.toString(renderedPost.headAndBodyHtml)
@@ -257,8 +256,7 @@ case class BrowserPagePatcher(
     // an unapplied edit suggestion does affect the action list, i.e. `jsActionsHtml`
     // below: a pen icon with num-pending-suggestions might appear.
     val (jsHeadAndBodyHtml, jsActionsHtml) = {
-        val pageStats = new PageStats(page, PageTrust(page))
-        val renderer = HtmlPostRenderer(page, pageStats, hostAndPort = request.host,
+        val renderer = HtmlPostRenderer(page, hostAndPort = request.host,
           showUnapproved = showUnapproved)
         val renderedPost = renderer.renderPost(edit.post_!.id, uncollapse = true)
         val headAndBodyHtml = lw.Html5.toString(renderedPost.headAndBodyHtml)

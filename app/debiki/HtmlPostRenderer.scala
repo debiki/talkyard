@@ -22,7 +22,6 @@ import com.debiki.core._
 import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
 import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
-import FlagType.FlagType
 import Prelude._
 import HtmlUtils._
 import HtmlPostRenderer._
@@ -71,7 +70,6 @@ object ShowUnapproved {
 
 case class HtmlPostRenderer(
   page: PageParts,
-  pageStats: PageStats,
   hostAndPort: String,
   nofollowArticle: Boolean = true,
   showUnapproved: ShowUnapproved = ShowUnapproved.None) {
@@ -110,7 +108,7 @@ case class HtmlPostRenderer(
         RenderedPostHeader(Nil)
       }
       else {
-        renderPostHeader(post, Some(pageStats))
+        renderPostHeader(post)
       }
 
     val postBody = renderPostBody(post, hostAndPort, nofollowArticle,
@@ -154,11 +152,10 @@ object HtmlPostRenderer {
     val byWhom =
       if (post.userId == deleterUserId) "comment author"
       else "a moderator"
-    val (topFlags, _) = renderFlags(post)
     val html =
       <div id={htmlIdOf(post)} class='dw-p dw-p-dl'>
         <div class='dw-p-hd'>{
-          if (wholeTree) "Thread" else "1 comment" } deleted by { byWhom }{ topFlags }{/*
+          if (wholeTree) "Thread" else "1 comment" } deleted by { byWhom }{/*
           For now, don't show name of deleter, because then Mallory could choose
            a terribly illegal name that would be shown also after the post had
            been deleted.  by { _linkTo(deleter.user_!)
@@ -190,21 +187,14 @@ object HtmlPostRenderer {
 
 
   /** Renders a .dw-p-hd tag reading:
-    *  "By (author) (date), improved by (editor)
-    *    Flagged (top flags)"
-    * If anyPageStats is None, skips "Flagged ... " statistics/info.
+    *  "By (author) (date), improved by (editor)."
     */
-  def renderPostHeader(post: Post, anyPageStats: Option[PageStats])
-        : RenderedPostHeader = {
+  def renderPostHeader(post: Post): RenderedPostHeader = {
     if (post.loginId == DummyPage.DummyAuthorLogin.id)
       return RenderedPostHeader(Nil)
 
     def page = post.debate
     val author = post.user_!
-
-    val (flagsTop: NodeSeq, flagsDetails: NodeSeq) =
-      if (anyPageStats.isDefined) renderFlags(post)
-      else (Nil: NodeSeq, Nil: NodeSeq)
 
     val editInfo =
       // If closed: <span class='dw-p-re-cnt'>{count} replies</span>
@@ -270,41 +260,10 @@ object HtmlPostRenderer {
       <div class={"dw-p-hd" + cssArticlePostHeader}>
         { anyPin }{ permalink }
         By { _linkTo(author)}{ dateAbbr(post.creationDati, "dw-p-at")
-        }{ flagsTop }{ editInfo }{ likeVotes }{ isWrongVotes }{ offTopicVotes }.{ flagsDetails }
+        }{ editInfo }{ likeVotes }{ isWrongVotes }{ offTopicVotes }.
       </div>
 
     RenderedPostHeader(html = commentHtml)
-  }
-
-
-  private def renderFlags(post: Post): (NodeSeq, NodeSeq) = {
-    if (post.flags isEmpty)
-      return (Nil: NodeSeq, Nil: NodeSeq)
-
-    import HtmlForms.FlagForm.prettify
-    val mtime = toIso8601T(post.lastFlag.get.ctime)
-    val fbr = post.flagsByTypeSorted
-
-    val topFlags =
-      <span class='dw-p-flgs-top'>, flagged <em>{
-        prettify(fbr.head._1).toLowerCase
-      }</em></span>
-
-    val allFlagListItems =
-      for ((r: FlagType, fs: List[RawPostAction[PostActionPayload.Flag]]) <- fbr) yield
-        <li class="dw-flg">{
-          // The `×' is the multiplication sign, "\u00D7".
-          prettify(r).toLowerCase +" × "+ fs.length.toString
-        } </li>
-
-    val allFlags =
-      <div class='dw-p-flgs-all' data-mtime={mtime}>{
-        post.flags.length } flags: <ol class='dw-flgs'>{
-          allFlagListItems
-        }</ol>
-      </div>
-
-    (topFlags, allFlags)
   }
 
 
@@ -392,7 +351,10 @@ object HtmlPostRenderer {
       <a class="dw-a dw-a-offtopic icon-split" title="Click if you think this post is off-topic"
         >Off-Topic</a>
 
+    /*
     // ----- Flag links
+    // No, don't show. The hive mind tendency might cause people to flag just because others
+    // have already flagged. Or, if flags are shown, people might use them as downvotes.
 
     if (post.numFlags > 0) {
       val pendingClass = if (post.numPendingFlags == 0) "" else " dw-a-pending-review"
@@ -401,6 +363,7 @@ object HtmlPostRenderer {
       if (post.numPendingFlags == 0) suggestionsOld ++= html
       else suggestionsNew ++= html
     }
+    */
 
     moreActionLinks ++= <a class="dw-a dw-a-flag icon-flag">Report</a>
 

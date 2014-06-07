@@ -79,7 +79,7 @@ trait RenderedPageHtmlDao {
       if (!renderSettings.showAuthorAndDate) Nil
       else {
         page.body map { bodyPost =>
-          HtmlPostRenderer.renderPostHeader(bodyPost, anyPageStats = None)
+          HtmlPostRenderer.renderPostHeader(bodyPost)
         } map (_.html) getOrElse Nil
       }
 

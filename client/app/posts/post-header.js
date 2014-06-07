@@ -37,32 +37,6 @@ d.i.makePostHeaderPretty = function($hdr) {
     return $('<abbr title="'+ title +'">'+ d.u.prettyTimeBetween(then, now) +
         '</abbr>');
   };
-
-  // Show detailed rating and flags info, on post header click.
-  // Show exact creation date and edit date, if you click again.
-  // On a third click, hide everything.
-  if ($hdr.dwPostHeaderFindStats().length
-      ) $hdr.css('cursor', 'help').click(function(event) {
-    if ($(event.target).is('a'))
-      return;  // don't expand header on link click
-    var $i = $(this);
-    var $stats = $i.dwPostHeaderFindStats();
-    var $times = $i.dwPostHeaderFindExactTimes();
-    if ($stats.is(':hidden')) {
-      $stats.show();
-    }
-    /// Skip this for now, rewrite so dates are appended, don't
-    /// insert in the middle.
-    // else if ($times.is(':hidden')) {
-    //  $times.show();
-    else {
-      $times.hide();
-      $stats.hide();
-    }
-    // This might have expanded the post, so redraw arrows.
-    $i.closest('.dw-p').each(d.i.SVG.$drawParents);
-  });
-
 };
 
 

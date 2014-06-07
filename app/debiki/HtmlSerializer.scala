@@ -290,7 +290,7 @@ case class HtmlPageSerializer(
 
 
   private def postRenderer =
-    HtmlPostRenderer(page, pageStats, hostAndPort, nofollowArticle,
+    HtmlPostRenderer(page, hostAndPort, nofollowArticle,
       showUnapproved = showUnapproved)
 
   /** A CSS class that causes comments to be laid out horizontally, in two dimensions.
