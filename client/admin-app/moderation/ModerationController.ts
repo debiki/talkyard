@@ -69,6 +69,7 @@ class ModerationController {
     }
 
     $scope.clearFlags = (post: Post) => {
+      post.clearFlags();
       doInlineAction(queryService.clearFlags, post, 'Flags cleared.');
     }
 

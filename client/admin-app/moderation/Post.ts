@@ -173,6 +173,12 @@ export class Post {
     }
   }
 
+
+  public clearFlags() {
+    this.numHandledFlags += this.numPendingFlags;
+    this.numPendingFlags = 0;
+    this.pendingFlags = [];
+  }
 }
 
 
