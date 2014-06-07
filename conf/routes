@@ -95,7 +95,7 @@ GET   /-/load-special-content   controllers.SpecialContentController.loadContent
 POST  /-/save-special-content   controllers.SpecialContentController.saveContent
 
 POST  /-/approve                controllers.ModerationController.approve
-POST  /-/reject                 controllers.ModerationController.reject
+POST  /-/hide-new-send-pm       controllers.ModerationController.hideNewPostSendPm
 POST  /-/hide-flagged-send-pm   controllers.ModerationController.hideFlaggedPostSendPm
 POST  /-/delete                 controllers.ModerationController.deletePost
 POST  /-/clear-flags            controllers.ModerationController.clearFlags

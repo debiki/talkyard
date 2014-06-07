@@ -477,6 +477,13 @@ case class Post(
       state.lastManualApprovalDati)
 
 
+  def lastManuallyApprovedById: Option[UserId] = {
+    if (state.lastManualApprovalDati == lastManualApprovalDati)
+      return state.lastManuallyApprovedById
+
+    _reviewsDescTime.find(_.directApproval == Some(Approval.Manual)).map(_.userId)
+  }
+
   def lastReviewWasApproval: Option[Boolean] =
     if (lastReviewDati.isEmpty) None
     else Some(lastReviewDati == lastApprovalDati)

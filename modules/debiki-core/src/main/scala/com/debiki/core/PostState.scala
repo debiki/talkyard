@@ -34,6 +34,7 @@ object PostState {
       lastApprovedText = None,
       lastPermanentApprovalDati = None,
       lastManualApprovalDati = None,
+      lastManuallyApprovedById = None,
       lastEditAppliedAt = None,
       lastEditRevertedAt = None,
       lastEditorId = None,
@@ -93,6 +94,7 @@ class PostState(
   val lastApprovedText: Option[String],
   val lastPermanentApprovalDati: Option[ju.Date],
   val lastManualApprovalDati: Option[ju.Date],
+  val lastManuallyApprovedById: Option[UserId],
   val lastEditAppliedAt: Option[ju.Date],
   val lastEditRevertedAt: Option[ju.Date],
   val lastEditorId: Option[String],
@@ -135,6 +137,7 @@ class PostState(
   require(lastApprovedText.isEmpty || lastApprovalDati.isDefined)
   require(lastPermanentApprovalDati.isEmpty || lastApprovalDati.isDefined)
   require(lastManualApprovalDati.isEmpty || lastPermanentApprovalDati.isDefined)
+  require(lastManualApprovalDati.isEmpty == lastManuallyApprovedById.isEmpty)
   require(lastEditAppliedAt.isDefined == lastEditorId.isDefined)
 
   require(numEditSuggestions >= 0)
