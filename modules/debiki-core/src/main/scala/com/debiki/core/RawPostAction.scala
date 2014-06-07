@@ -45,10 +45,13 @@ case class RawPostAction[P](   // caused weird compilation errors:  [P <: PostAc
   creationDati: ju.Date,
   payload: P,
   postId: ActionId,
-  userIdData: UserIdData) {
+  userIdData: UserIdData,
+  deletedAt: Option[ju.Date] = None,
+  deletedById: Option[UserId] = None) {
 
   require(id != PageParts.NoId)
   require(payload.isInstanceOf[PAP]) // for now, until above template constraint works
+  require(deletedAt.isDefined == deletedById.isDefined, "DwE806FW1")
 
   def ctime = creationDati
 
@@ -63,6 +66,8 @@ case class RawPostAction[P](   // caused weird compilation errors:  [P <: PostAc
   def browserIdCookie = userIdData.browserIdCookie
 
   def textLengthUtf8: Int = payload.asInstanceOf[PAP].textLengthUtf8
+
+  def isDeleted = deletedAt.nonEmpty
 }
 
 

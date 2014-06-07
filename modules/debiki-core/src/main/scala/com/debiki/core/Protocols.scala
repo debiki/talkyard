@@ -133,7 +133,7 @@ object Protocols {
       creationDati = (json \ "createdAt").as[ju.Date],
       payload = payload,
       postId = id,
-      UserIdData(
+      userIdData = UserIdData(
         loginId = (json \ "loginId").asOpt[String],
         userId = (json \ "userId").as[String],
         ip = (json \ "ip").as[String],  // <- might fail? I just changed the field from newIp to ip

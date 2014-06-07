@@ -202,6 +202,11 @@ object PostActionPayload {
     */
   case class Flag(tyype: FlagType, reason: String) extends PostActionPayload
 
+
+  /** Deletes all flags for the relevant post.
+    */
+  case object ClearFlags extends PostActionPayload
+
 }
 
 

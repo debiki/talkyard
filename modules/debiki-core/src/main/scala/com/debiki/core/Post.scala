@@ -640,7 +640,9 @@ case class Post(
       flagsPendingReview: List[RawPostAction[PAP.Flag]],
       flagsReviewed: List[RawPostAction[PAP.Flag]]) =
     flagsDescTime span { flag =>
-      if (lastAuthoritativeReviewDati isEmpty) true
+      if (flag.isDeleted) false
+      // Old: (I'll use isDeleted instead?)
+      else if (lastAuthoritativeReviewDati isEmpty) true
       else lastAuthoritativeReviewDati.get.getTime <= flag.ctime.getTime
     }
 

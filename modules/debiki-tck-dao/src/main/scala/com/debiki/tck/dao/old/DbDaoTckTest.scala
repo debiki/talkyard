@@ -1370,7 +1370,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           creationDati = new ju.Date,
           payload = payload,
           postId = ex1_rootPost.id,
-          UserIdData.newTest(loginId, userId = globalUserId))
+          userIdData = UserIdData.newTest(loginId, userId = globalUserId))
 
         dao.savePageActions(testPage, List(action)) must beLike {
           case (_, List(pinAction: RawPostAction[_])) =>
@@ -1433,8 +1433,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           text = patchText, newMarkup = None,
           approval = None, autoApplied = false)
         val publNoId = RawPostAction[PAP.EditApp](
-          id = UnassignedId2, now, PAP.EditApp(editId = UnassignedId, approval = None),
-          postId = post.id, UserIdData.newTest(loginId, userId = globalUserId))
+          id = UnassignedId2, creationDati = now,
+          payload = PAP.EditApp(editId = UnassignedId, approval = None),
+          postId = post.id, userIdData = UserIdData.newTest(loginId, userId = globalUserId))
 
         // Save
         val List(edit: RawPostAction[PAP.EditPost], publ: RawPostAction[PAP.EditApp]) =
@@ -1460,8 +1461,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           text = "", newMarkup = Some("html"),
           approval = None, autoApplied = false)
         val publNoId = RawPostAction[PAP.EditApp](
-          id = UnassignedId2, now, PAP.EditApp(editId = UnassignedId, approval = None),
-          postId = post.id, UserIdData.newTest(loginId, userId = globalUserId))
+          id = UnassignedId2, creationDati = now,
+          payload = PAP.EditApp(editId = UnassignedId, approval = None),
+          postId = post.id, userIdData = UserIdData.newTest(loginId, userId = globalUserId))
 
         // Save
         val List(edit: RawPostAction[PAP.EditPost], publ: RawPostAction[PAP.EditApp]) =

@@ -52,40 +52,47 @@ object ModerationController extends mvc.Controller {
 
 
   def hideFlaggedPostSendPm = PostJsonAction(maxLength = 5000) { apiReq =>
-    ???
+    review2(apiReq, PAP.HidePost, (perms) => apiReq.theUser.isAdmin)
   }
 
 
   def deletePost = PostJsonAction(maxLength = 5000) { apiReq =>
-    val pageIdsAndActions: Seq[(PageId, RawPostAction[PAP.DeletePost.type])] =
-      for (pinPostJson <- apiReq.body.as[Vector[JsObject]]) yield {
-        val pageId = (pinPostJson \ "pageId").as[PageId]
-        val postId = (pinPostJson \ "postId").as[PostId]
-        val action = RawPostAction(
-          PageParts.UnassignedId, apiReq.ctime, PAP.DeletePost, postId = postId,
+    review2(apiReq, PAP.DeletePost, (perms) => perms.pinReplies)
+  }
+
+
+  def clearFlags = PostJsonAction(maxLength = 5000) { apiReq =>
+    review2(apiReq, PAP.ClearFlags, (perms) => apiReq.theUser.isAdmin)
+  }
+
+
+  private def review2[A](apiReq: JsonPostRequest, payload: A, permsTest: (PermsOnPage) => Boolean)
+        : mvc.PlainResult = {
+    val pageIdsAndActions: Seq[(PageId, RawPostAction[A])] =
+      for (postIdJson <- apiReq.body.as[Vector[JsObject]]) yield {
+        val pageId = (postIdJson \ "pageId").as[PageId]
+        val postId = (postIdJson \ "postId").as[PostId]
+        val action = RawPostAction[A](
+          PageParts.UnassignedId, apiReq.ctime, payload, postId = postId,
           userIdData = apiReq.userIdData)
         (pageId, action)
       }
 
     pageIdsAndActions.groupedByPageId foreach { case (pageId, actions) =>
       val permsOnPage = apiReq.dao.loadPermsOnPage(apiReq, pageId)
-      if (!permsOnPage.pinReplies)
-        throwForbidden("DwE95Xf2", "Insufficient permissions to pin post")
+      if (!permsTest(permsOnPage))
+        throwForbidden("DwE95Xf2", s"Insufficient permissions, payload: ${classNameOf(payload)}")
 
       require(actions.length == 1, "Id assignment assumes only one action per page [DwE70UF8]")
       apiReq.dao.savePageActionsGenNotfs(pageId, actions, apiReq.meAsPeople_!)
     }
 
-    // The client already knows where to place the pinned post, so simply:
+    // The client already knows how to update the page on status 200 OK.
     Ok
   }
 
 
-  def clearFlags = PostJsonAction(maxLength = 5000) { apiReq =>
-    ???
-  }
-
-
+  @deprecated("Use review2 instead", "now")
   private def review(apiReq: JsonPostRequest, shallApprove: Boolean): mvc.PlainResult = {
 
     if (!apiReq.theUser.isAdmin)
@@ -226,7 +233,7 @@ object ModerationController extends mvc.Controller {
 
         if (post.numPendingFlags > 0) {
           val flags = flagsByPostId.get(post.pagePostId) getOrElse Nil
-          val jsFlags = flags map { flag =>
+          val jsFlags = flags.filter(_.deletedAt.isEmpty) map { flag =>
             val flaggerName =
               flaggers.user(flag.userId).map(_.displayName).getOrElse("(Deleted user?)")
             Json.obj(
