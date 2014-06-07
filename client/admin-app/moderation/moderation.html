@@ -28,7 +28,7 @@
 
       <div class="approval-actions" ng-if="post.pendingFlags.length == 0">
         <button class="btn btn-default" ng-click='approve(post)' ng-hide='!post.approveBtnText'>{{post.approveBtnText}}</button>
-        <button class="btn btn-default" ng-click='rejectAndSendPm(post)' ng-hide='post.hideRejectAndDeleteBtns'>Hide + send PM</button>
+        <!-- <button class="btn btn-default" ng-click='rejectAndSendPm(post)' ng-hide='post.hideRejectAndDeleteBtns'>Hide + send PM</button> -->
         <button class="btn btn-default" ng-click='delete(post)' ng-hide='post.hideRejectAndDeleteBtns'>Delete</button>
       </div>
 
@@ -41,7 +41,7 @@
           </li>
         </ol>
         <div class="flag-actions">
-          <button class="btn btn-default" ng-click="hideFlaggedSendPm(post)">Hide post + send PM</button>
+          <!-- <button class="btn btn-default" ng-click="hideFlaggedSendPm(post)">Hide post + send PM</button> -->
           <button class="btn btn-default" ng-click="delete(post)">Delete post</button>
           <button class="btn btn-default" ng-click="clearFlags(post)">Clear flags</button>
         </div>
