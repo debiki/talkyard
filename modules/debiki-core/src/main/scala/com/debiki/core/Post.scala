@@ -368,7 +368,7 @@ case class Post(
     // or EditApp is simply ignored.)
 
     val explicitReviewsDescTime =
-      actions.filter(_.isInstanceOf[Review]).sortBy(-_.creationDati.getTime).
+      actions.filter(_.isInstanceOf[ApprovePostAction]).sortBy(-_.creationDati.getTime).
       asInstanceOf[List[PostAction[_] with MaybeApproval]]
 
     var implicitApprovals = List[PostAction[_] with MaybeApproval]()
@@ -476,6 +476,13 @@ case class Post(
       _reviewsDescTime.find(_.directApproval == Some(Approval.Manual)).map(_.creationDati),
       state.lastManualApprovalDati)
 
+
+  def lastManuallyApprovedById: Option[UserId] = {
+    if (state.lastManualApprovalDati == lastManualApprovalDati)
+      return state.lastManuallyApprovedById
+
+    _reviewsDescTime.find(_.directApproval == Some(Approval.Manual)).map(_.userId)
+  }
 
   def lastReviewWasApproval: Option[Boolean] =
     if (lastReviewDati.isEmpty) None

@@ -42,12 +42,13 @@ object ModerationController extends mvc.Controller {
 
 
   def approve = PostJsonAction(maxLength = 5000) { apiReq =>
-    review(apiReq, shallApprove = true)
+    review2(apiReq, PAP.ApprovePost(Approval.AuthoritativeUser),
+      (perms) => apiReq.theUser.isAdmin)
   }
 
 
-  def reject = PostJsonAction(maxLength = 5000) { apiReq =>
-    review(apiReq, shallApprove = false)
+  def hideNewPostSendPm = PostJsonAction(maxLength = 5000) { apiReq =>
+    ???
   }
 
 
@@ -57,7 +58,7 @@ object ModerationController extends mvc.Controller {
 
 
   def deletePost = PostJsonAction(maxLength = 5000) { apiReq =>
-    review2(apiReq, PAP.DeletePost, (perms) => perms.pinReplies)
+    review2(apiReq, PAP.DeletePost, (perms) => apiReq.theUser.isAdmin)
   }
 
 
@@ -88,32 +89,6 @@ object ModerationController extends mvc.Controller {
     }
 
     // The client already knows how to update the page on status 200 OK.
-    Ok
-  }
-
-
-  @deprecated("Use review2 instead", "now")
-  private def review(apiReq: JsonPostRequest, shallApprove: Boolean): mvc.PlainResult = {
-
-    if (!apiReq.theUser.isAdmin)
-      throwForbidden("DwE4LU90", "Insufficient permissions")
-
-    // Play throws java.util.NoSuchElementException: key not found: pageId
-    // and e.g. new RuntimeException("String expected")
-    // on invalid JSON structure. COULD in some way convert to 400 Bad Request
-    // instead of failing with 500 Internal Server Error in Prod mode.
-    val reviewsByPageId: Map[String, List[RawPostAction[PAP.ReviewPost]]] =
-      Utils.parsePageActionIds(apiReq.body.as[List[Map[String, String]]]) { actionId =>
-        RawPostAction.toReviewPost(
-          id = PageParts.UnassignedId, postId = actionId,
-          userIdData = apiReq.userIdData, ctime = apiReq.ctime,
-          approval = (if (shallApprove) Some(Approval.Manual) else None))
-      }
-
-    reviewsByPageId foreach { case (pageId, reviews) =>
-      apiReq.dao.savePageActionsGenNotfs(pageId, reviews, apiReq.meAsPeople_!)
-    }
-
     Ok
   }
 

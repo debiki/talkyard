@@ -207,7 +207,7 @@ abstract class PostActionsWrapper { self: PageParts =>
         case _: PAP.CreatePost => new Post(self, actionAs[PAP.CreatePost])
         case _: PAP.EditPost => new Patch(self, actionAs[PAP.EditPost])
         //case _: PAP.ApplyEdit => new ApplyPatchAction(self, actionAs[PAP.PAP.ApplyEdit])
-        case _: PAP.ReviewPost => new Review(self, actionAs[PAP.ReviewPost])
+        case _: PAP.ApprovePost => new ApprovePostAction(self, actionAs[PAP.ApprovePost])
         case _ => new PostAction(self, actionDto)
       }
       addAction(action)
@@ -526,12 +526,12 @@ case class PageParts (
 
 
   // -------- Reviews (manual approvals and rejections, no auto approvals)
-
-  def getReview(reviewId: ActionId): Option[Review] = getActionById(reviewId) match {
-    case p @ Some(_: Review) => p.asInstanceOf[Option[Review]]
+/*
+  def getReview(reviewId: ActionId): Option[ApprovePostAction] = getActionById(reviewId) match {
+    case p @ Some(_: ApprovePostAction) => p.asInstanceOf[Option[ApprovePostAction]]
     case None => None
     case x => runErr("DwE0GK43", s"Action `$reviewId' is no Review but a: ${classNameOf(x)}")
-  }
+  } */
 
 
   // -------- Construction

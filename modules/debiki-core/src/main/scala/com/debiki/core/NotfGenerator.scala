@@ -43,8 +43,8 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[RawPostA
         Nil  // fix later, see "Note:" below
       case app: PAP.EditApp =>
         Nil  // fix later, see note above
-      case _: PAP.ReviewPost =>
-        makeReviewNotfs(new Review(page, action.asInstanceOf[RawPostAction[PAP.ReviewPost]]))
+      case _: PAP.ApprovePost =>
+        makeApprovalNotfs(new ApprovePostAction(page, action.asInstanceOf[RawPostAction[PAP.ApprovePost]]))
       case flag: PAP.Flag =>
         Nil  // fix later, see note above
       case _ =>
@@ -54,7 +54,7 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[RawPostA
 
 
   private def makePersonalReplyNotf(post: Post,
-          review: Option[Review] = None): List[NotfOfPageAction] = {
+          review: Option[ApprovePostAction] = None): List[NotfOfPageAction] = {
 
     val (triggerAction, approvalOpt) =
       review.map(r => (r, r.directApproval)) getOrElse (
@@ -96,34 +96,29 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[RawPostA
   }
 
 
-  private def makeReviewNotfs(review: Review): List[NotfOfPageAction] = {
+  private def makeApprovalNotfs(approval: ApprovePostAction): List[NotfOfPageAction] = {
     // For now, only consider approvals of posts.
-    if (!review.target.isInstanceOf[Post])
+    if (!approval.target.isInstanceOf[Post])
       return Nil
 
-    lazy val postReviewed: Post = review.target.asInstanceOf[Post]
-    lazy val userReviewed = postReviewed.user_!
-    lazy val reviewer = review.user_!
+    lazy val postApproved: Post = approval.target.asInstanceOf[Post]
+    lazy val approver = approval.user_!
 
-    // If the postReviewed was rejected, don't notify anyone.
-    if (review.directApproval.isEmpty)
-      return Nil
-
-    // If the postReviewed has already been permanently approved, a notification
+    // If the postApproved has already been permanently approved, a notification
     // has already been generated. Don't send another notification, *even* if
-    // the postReviewed has been *edited* and it's the edits that we're approving.
+    // the postApproved has been *edited* and it's the edits that we're approving.
     // (This could happen if the post is WellBehavedUser-approved on creation,
     // or if it is approved manually, then edited, and a new approval that concerns
     // the edits is saved.)
     val alreadySavedNotf =
-      postReviewed.lastPermanentApprovalDati.map(
-        _.getTime < review.creationDati.getTime) == Some(true)
+      postApproved.lastPermanentApprovalDati.map(
+        _.getTime < approval.creationDati.getTime) == Some(true)
     if (alreadySavedNotf)
       return Nil
 
-    // If the postReviewed is a reply to the reviewer, don't notify her.
+    // If the postApproved is a reply to the approver, don't notify her.
     // (She has obviously read the reply already.)
-    if (Some(reviewer.id) == postReviewed.parentPost.map(_.user_!.id))
+    if (Some(approver.id) == postApproved.parentPost.map(_.user_!.id))
       return Nil
 
     /*
@@ -134,30 +129,30 @@ case class NotfGenerator(pageExclNewActions: PageParts, newActions: Seq[RawPostA
     // Notifier.scala to send such notifications at most once a week? (unless
     // there are also other notfs, then they'd be sent at the same time)
     //
-    // (Could skip this if reviewer == userReviewed, but needn't care about
+    // (Could skip this if approver == userApproved, but needn't care about
     // that case, because moderators' actions are auto approved and we
     // won't get to here.)
     val authorNotf = NotfOfPageAction(
-       ctime = review.creationDati,
-       recipientUserId = userReviewed.id,
+       ctime = approval.creationDati,
+       recipientUserId = userApproved.id,
        pageTitle = page.approvedTitleText.getOrElse("Unnamed page"),
        pageId = page.id,
        eventType = NotfOfPageAction.Type.MyPostApproved,
-       eventActionId = review.id,
-       triggerActionId = review.id,
-       recipientActionId = postReviewed.id,
-       recipientUserDispName = userReviewed.displayName,
-       eventUserDispName = reviewer.displayName,
+       eventActionId = approval.id,
+       triggerActionId = approval.id,
+       recipientActionId = postApproved.id,
+       recipientUserDispName = userApproved.displayName,
+       eventUserDispName = approver.displayName,
        triggerUserDispName = None, // (skip, same as event user disp name)
-       emailPending = userReviewed.emailNotfPrefs == EmailNotfPrefs.Receive)
+       emailPending = userApproved.emailNotfPrefs == EmailNotfPrefs.Receive)
        */
 
-    // If the postReviewed is a reply to some other comment,
+    // If the postApproved is a reply to some other comment,
     // notify the the author of that other comment, that s/he has a reply
     // (that has been approved).
     val notfToAuthorOfParentPost =
-      if (postReviewed.parentPost.isEmpty) Nil
-      else makePersonalReplyNotf(postReviewed, Some(review))
+      if (postApproved.parentPost.isEmpty) Nil
+      else makePersonalReplyNotf(postApproved, Some(approval))
 
     //authorNotf ::
     notfToAuthorOfParentPost

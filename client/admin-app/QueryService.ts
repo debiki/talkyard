@@ -29,8 +29,6 @@ export class QueryService {
 
   private RecentPostsUrl = '/-/list-recent-posts';
   private PagesUrl = '/-/list-pages?in-tree';
-  private ApprovePostUrl = '/-/approve';
-  private RejectPostUrl = '/-/reject';
   private LoadSiteSettingsUrl = '/-/load-site-settings';
   private LoadSectionSettingsUrl = '/-/load-section-settings';
   private SaveSettingUrl = '/-/save-setting';
@@ -109,11 +107,11 @@ export class QueryService {
 
 
   public approvePost(post: moderation.Post): ng.IPromise<void> {
-    return this.doSomethingWithPost(post, this.ApprovePostUrl);
+    return this.doSomethingWithPost2(post, '/-/approve');
   }
 
-  public rejectAndSendPm(post: moderation.Post): ng.IPromise<void> {
-    return this.doSomethingWithPost(post, this.RejectPostUrl);
+  public hideNewPostSendPm(post: moderation.Post): ng.IPromise<void> {
+    return this.doSomethingWithPost2(post, '/-/hide-new-send-pm');
   }
 
   public hideFlaggedPostSendPm(post: moderation.Post): ng.IPromise<void> {
@@ -128,26 +126,12 @@ export class QueryService {
     return this.doSomethingWithPost2(post, '/-/clear-flags');
   }
 
-  /** Deprecated. Sends posts as strings not numbers. */
-  private doSomethingWithPost(post: moderation.Post, actionUrl: string): ng.IPromise<void> {
-    var deferred = this.$q.defer<void>();
-    this.$http.post(actionUrl, this.postToJson(post)).success((data) => {
-      deferred.resolve();
-    });
-    return deferred.promise;
-  }
-
   private doSomethingWithPost2(post: moderation.Post, actionUrl: string): ng.IPromise<void> {
     var deferred = this.$q.defer<void>();
     this.$http.post(actionUrl, this.postToJson2(post)).success((data) => {
       deferred.resolve();
     });
     return deferred.promise;
-  }
-
-  /** Deprecated. Sends posts as strings not numbers. */
-  private postToJson(post: moderation.Post): string {
-    return '[{ "pageId": "'+ post.pageId +'", "actionId": "'+ post.id +'" }]';
   }
 
   private postToJson2(post: moderation.Post): string {

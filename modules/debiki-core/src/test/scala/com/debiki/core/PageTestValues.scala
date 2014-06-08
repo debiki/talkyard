@@ -19,7 +19,7 @@ package com.debiki.core
 
 import com.debiki.core.{PostActionPayload => PAP}
 import java.{util => ju}
-import RawPostAction.{copyCreatePost, copyReviewPost}
+import RawPostAction.{copyCreatePost, copyApprovePost}
 import Prelude._
 
 
@@ -53,11 +53,11 @@ trait PageTestValues {
   val bodySkeletonPrelApproved =
     copyCreatePost(bodySkeleton, approval = Some(Approval.Preliminary))
 
-  val bodyApprovalSkeleton = RawPostAction.toReviewPost(
+  val bodyApprovalSkeleton = RawPostAction.toApprovePost(
     11, postId = bodySkeleton.id, UserIdData.newTest("111", userId = "?"),
-        ctime = new ju.Date(11000), approval = Some(Approval.Manual))
+        ctime = new ju.Date(11000), approval = Approval.Manual)
 
-  val bodyRejectionSkeleton = copyReviewPost(bodyApprovalSkeleton, approval = None)
+  val bodyRejectionSkeleton = bodyApprovalSkeleton.copy(payload = PAP.DeletePost)
 
   val editSkeleton =
     RawPostAction.toEditPost(
@@ -81,11 +81,11 @@ trait PageTestValues {
         userIdData = UserIdData.newTest("115", userId = "?"), creationDati = new ju.Date(15000),
         payload = PAP.Delete(editSkeleton.id))
 
-  val approvalOfEditApp = RawPostAction.toReviewPost(id = 16, postId = editAppSkeleton.postId,
+  val approvalOfEditApp = RawPostAction.toApprovePost(id = 16, postId = editAppSkeleton.postId,
         userIdData = UserIdData.newTest("116", userId = "?"), ctime = new ju.Date(16000),
-        approval = Some(Approval.Manual))
+        approval = Approval.Manual)
 
-  val rejectionOfEditApp = copyReviewPost(approvalOfEditApp, approval = None)
+  val rejectionOfEditApp = ??? // copyApprovePost(approvalOfEditApp, approval = None)
 
   /* val ratingOfBody = Rating(17, postId = bodySkeleton.id,
     userIdData = UserIdData.newTest("117", userId = "?"), ctime = new ju.Date(17000), tags = Nil)
@@ -130,11 +130,15 @@ trait PageTestValues {
       RawPostAction.copyApplyEdit(editAppSkeleton, approval = Some(Approval.Preliminary))
 
   lazy val PageWithEditManuallyAppliedAndPrelApprovedThenRejected =
+    ??? /*
     PageWithEditManuallyAppliedAndPrelApproved + rejectionOfEditApp
+    */
 
   lazy val PageWithEditManuallyAppliedAndRejected =
+    ??? /*
     EmptyPage + bodySkeletonAutoApproved + editSkeleton +
      editAppSkeleton + rejectionOfEditApp
+     */
 
   lazy val PageWithEditManuallyAppliedNothingApproved =
     EmptyPage + bodySkeleton + editSkeleton + editAppSkeleton
