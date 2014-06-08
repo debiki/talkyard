@@ -94,14 +94,10 @@ abstract class DebikiBrowserSpec extends FreeSpec with WebBrowser
       }
       catch {
         case ex: org.openqa.selenium.WebDriverException =>
-          var devToolsOpened =
-            ex.getMessage.contains("disconnected") && ex.getMessage.contains("Inspector.detached")
-          // This weird exception message is thrown sometimes when I click-open Dev Tools:
-          devToolsOpened ||= ex.getMessage.contains("Cannot call method 'click' of null")
-          if (devToolsOpened) {
+          if (isDevToolsOpenedException(ex)) {
             // Someone apparently opened Chrome Debugger Tools, fine.
           }
-          else if (ex.getMessage.contains("chrome not reachable")) {
+          else if (isBrowserClosedException(ex)) {
             System.out.println("Stopping test, Chrome closed")
             closed = true
           }
@@ -111,6 +107,60 @@ abstract class DebikiBrowserSpec extends FreeSpec with WebBrowser
       }
     }
   }
+
+
+  /** Calls super.eventually, but aborts if the browser window is closed.
+    */
+  override def eventually[T](fun: => T)(implicit config: PatienceConfig): T = {
+    var browserWindowClosed = false
+    val result: Any = super.eventually({
+      try {
+        if (browserWindowClosed)
+          ()
+        else
+          fun
+      }
+      catch {
+        case ex: org.openqa.selenium.NoSuchWindowException =>
+          browserWindowClosed = true
+        case ex: org.openqa.selenium.WebDriverException =>
+          if (isBrowserClosedException(ex)) {
+            browserWindowClosed = true
+          }
+          else {
+            // Fine, continue as usual.
+            throw ex
+          }
+      }
+    })(config)
+    if (browserWindowClosed)
+      fail("Browser window closed")
+    else
+      result.asInstanceOf[T]
+  }
+
+
+  /** Needed or the Scala compiler doesn't know if to call DebikiBrowserSpec.eventually
+    * or Eventually.eventually.
+    */
+  override def eventually[T](timeout: org.scalatest.concurrent.PatienceConfiguration.Timeout)
+        (fun: => T)(implicit config: PatienceConfig): T =
+    eventually(fun)(PatienceConfig(timeout.value, config.interval))
+
+
+  private def isDevToolsOpenedException(ex: org.openqa.selenium.WebDriverException): Boolean = {
+    var devToolsOpened =
+      ex.getMessage.contains("disconnected") && ex.getMessage.contains("Inspector.detached")
+    // This weird exception message is thrown sometimes when I click-open Dev Tools:
+    devToolsOpened ||= ex.getMessage.contains("Cannot call method 'click' of null")
+    devToolsOpened
+  }
+
+
+  private def isBrowserClosedException(ex: org.openqa.selenium.WebDriverException): Boolean = {
+    ex.getMessage.contains("chrome not reachable")
+  }
+
 }
 
 
