@@ -268,7 +268,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
 
   def review(loginGrant: LoginGrant, page: PageNoPath, postId: PostId,
         approval: Approval): PageNoPath = {
-    val reviewNoId = RawPostAction.toReviewPost(
+    val reviewNoId = RawPostAction.toApprovePost(
       id = PageParts.UnassignedId, postId = postId, userIdData = loginGrant.testUserIdData,
       ctime = new ju.Date(), approval = approval)
     val (updatedPage, review) = dao.savePageActions(page + loginGrant.user, reviewNoId::Nil)

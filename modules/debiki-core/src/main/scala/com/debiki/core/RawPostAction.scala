@@ -217,7 +217,7 @@ object RawPostAction {
         approval = if (approval ne null) approval else old.payload.approval))
 
 
-  def toReviewPost(
+  def toApprovePost(
         id: ActionId,
         postId: ActionId,
         userIdData: UserIdData,
@@ -228,7 +228,7 @@ object RawPostAction {
       payload = PAP.ApprovePost(approval))
 
 
-  def copyReviewPost(
+  def copyApprovePost(
         old: RawPostAction[PAP.ApprovePost],
         id: ActionId = PageParts.NoId,
         postId: ActionId = PageParts.NoId,

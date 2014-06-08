@@ -1338,7 +1338,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     def testSaveLoadReview(isApproved: Boolean) {
       var reviewSaved: RawPostAction[PAP.ApprovePost] = null
       val approval = if (isApproved) Approval.Manual else ???
-      val reviewNoId = RawPostAction.toReviewPost(
+      val reviewNoId = RawPostAction.toApprovePost(
          UnassignedId, postId = ex1_rootPost.id,
         UserIdData.newTest(loginId, userId = globalUserId), ctime = now, approval = approval)
       dao.savePageActions(testPage, List(reviewNoId)) must beLike {

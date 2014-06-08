@@ -368,7 +368,7 @@ case class Post(
     // or EditApp is simply ignored.)
 
     val explicitReviewsDescTime =
-      actions.filter(_.isInstanceOf[Review]).sortBy(-_.creationDati.getTime).
+      actions.filter(_.isInstanceOf[ApprovePostAction]).sortBy(-_.creationDati.getTime).
       asInstanceOf[List[PostAction[_] with MaybeApproval]]
 
     var implicitApprovals = List[PostAction[_] with MaybeApproval]()
