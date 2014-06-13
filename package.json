@@ -1,9 +1,9 @@
 {
   "author": "Kaj Magnus Lindberg",
   "name": "debiki-client",
-  "description": "Javascripts and styles for Debiki's hosting service",
+  "description": "Javascripts and styles for Debiki",
   "version": "0.0.1",
-  "homepage": "www.debiki.com",
+  "homepage": "http://www.debiki.com",
   "repository": {
     "type": "git",
     "url": ""
@@ -13,11 +13,9 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "chai": "1.0.4",
-    "sinon": "1.3.4",
-    "sinon-chai": "2.1.2",
     "prelude-ls": "~0.6.0",
     "gulp": "^3.6.0",
+    "gulp-angular-templatecache": "~1.2.0",
     "gulp-tsc": "^0.7.0",
     "gulp-livescript": "^0.2.1",
     "gulp-stylus": "^0.2.1",
