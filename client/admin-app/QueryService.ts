@@ -122,6 +122,10 @@ export class QueryService {
     return this.doSomethingWithPost2(post, '/-/delete');
   }
 
+  public deleteFlaggedPost(post: moderation.Post): ng.IPromise<void> {
+    return this.doSomethingWithPost2(post, '/-/delete-flagged');
+  }
+
   public clearFlags(post: moderation.Post): ng.IPromise<void> {
     return this.doSomethingWithPost2(post, '/-/clear-flags');
   }

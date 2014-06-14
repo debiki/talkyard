@@ -57,7 +57,8 @@ trait PageTestValues {
     11, postId = bodySkeleton.id, UserIdData.newTest("111", userId = "?"),
         ctime = new ju.Date(11000), approval = Approval.Manual)
 
-  val bodyRejectionSkeleton = bodyApprovalSkeleton.copy(payload = PAP.DeletePost)
+  val bodyRejectionSkeleton = bodyApprovalSkeleton.copy(
+    payload = PAP.DeletePost(clearFlags = false))
 
   val editSkeleton =
     RawPostAction.toEditPost(

@@ -258,7 +258,7 @@ object RawPostAction {
         createdAt: ju.Date) =
     RawPostAction(
       id, creationDati = createdAt, postId = postIdToDelete, userIdData = userIdData,
-      payload = if (andReplies) PAP.DeleteTree else PAP.DeletePost)
+      payload = if (andReplies) PAP.DeleteTree else PAP.DeletePost(clearFlags = false))
 
 }
 

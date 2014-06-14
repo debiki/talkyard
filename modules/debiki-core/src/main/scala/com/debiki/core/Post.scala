@@ -587,14 +587,14 @@ case class Post(
   def isTreeClosed: Boolean = treeClosedAt.nonEmpty
 
 
-  private def postDeletedAction: Option[PostAction[PAP.DeletePost.type]] =
-    findLastAction(PAP.DeletePost)
+  private def postDeletedAction: Option[PostAction[PAP.DeletePost]] =
+    findLastActionByType[PAP.DeletePost]
 
   private def treeDeletedAction: Option[PostAction[PAP.DeleteTree.type]] =
     findLastAction(PAP.DeleteTree)
 
-  private def postHiddenAction: Option[PostAction[PAP.HidePost.type]] =
-    findLastAction(PAP.HidePost)
+  private def postHiddenAction: Option[PostAction[PAP.HidePostClearFlags.type]] =
+    findLastAction(PAP.HidePostClearFlags)
 
   def postDeletedAt: Option[ju.Date] =
     postDeletedAction.map(_.creationDati) orElse state.postDeletedAt

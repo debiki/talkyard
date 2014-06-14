@@ -30,8 +30,9 @@ interface ModerationScope extends RootScope {
   textOrDiffFor(post: Post): any;
   approve(post: Post);
   hideNewSendPm(post: Post);
-  hideFlaggedSendPm(post: Post);
   delete(post: Post);
+  hideFlaggedSendPm(post: Post);
+  deleteFlagged(post: Post);
   clearFlags(post: Post);
 }
 
@@ -66,6 +67,10 @@ class ModerationController {
 
     $scope.delete = (post: Post) => {
       doInlineAction(queryService.deletePost, post, 'Deleted.');
+    }
+
+    $scope.deleteFlagged = (post: Post) => {
+      doInlineAction(queryService.deleteFlaggedPost, post, 'Deleted.');
     }
 
     $scope.clearFlags = (post: Post) => {

@@ -178,7 +178,7 @@ object PostActionPayload {
 
   /** Deletes a single comment.
     */
-  case object DeletePost extends PostActionPayload
+  case class DeletePost(clearFlags: Boolean) extends PostActionPayload
 
 
   /** Deletes a comment and all replies, recursively.
@@ -192,9 +192,9 @@ object PostActionPayload {
   case class Delete(targetActionId: ActionId) extends PostActionPayload
 
 
-  /** Hides a post, e.g. because it was flagged as spam.
+  /** Hides a post, e.g. because it was flagged as spam, and clears any flags.
     */
-  case object HidePost extends PostActionPayload
+  case object HidePostClearFlags extends PostActionPayload
 
 
   /** Flags a post as e.g. spam, or inappropriate (offensive, illegal, whatever).

@@ -339,9 +339,9 @@ class ModerationSpec extends DebikiBrowserSpec
   }
 
 
-  def findAnyInlineButton(pageId: String, postId: PostId) = {
+  def findAnyInlineButton(pageId: String, postId: PostId): Option[Element] = {
     val query = findPostElemXpath(pageId, postId) + "//button"
-    find(xpath(query))
+    findAll(xpath(query)).filter(_.isDisplayed).toList.headOption
   }
 
 

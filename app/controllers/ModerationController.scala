@@ -53,12 +53,17 @@ object ModerationController extends mvc.Controller {
 
 
   def hideFlaggedPostSendPm = PostJsonAction(maxLength = 5000) { apiReq =>
-    review2(apiReq, PAP.HidePost, (perms) => apiReq.theUser.isAdmin)
+    review2(apiReq, PAP.HidePostClearFlags, (perms) => apiReq.theUser.isAdmin)
   }
 
 
   def deletePost = PostJsonAction(maxLength = 5000) { apiReq =>
-    review2(apiReq, PAP.DeletePost, (perms) => apiReq.theUser.isAdmin)
+    review2(apiReq, PAP.DeletePost(clearFlags = false), (perms) => apiReq.theUser.isAdmin)
+  }
+
+
+  def deleteFlaggedPost = PostJsonAction(maxLength = 5000) { apiReq =>
+    review2(apiReq, PAP.DeletePost(clearFlags = true), (perms) => apiReq.theUser.isAdmin)
   }
 
 

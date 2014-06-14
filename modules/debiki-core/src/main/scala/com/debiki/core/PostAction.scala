@@ -20,6 +20,7 @@ package com.debiki.core
 import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
 import com.debiki.core.{PostActionPayload => PAP}
+import scala.reflect.ClassTag
 import Prelude._
 import PageParts._
 import FlagType.FlagType
@@ -81,9 +82,20 @@ trait PostActionActedUpon {
 
   protected def actions: List[PostAction[_]] = self.page.getActionsByTargetId(id)
 
+
   protected def findLastAction[P <: PostActionPayload](payload: P): Option[PostAction[P]] =
     actions.find { action =>
       action.payload == payload  // && !action.isDeleted
+    }.asInstanceOf[Option[PostAction[P]]]
+
+
+  protected def findLastActionByType[P <: PostActionPayload](implicit classTag: ClassTag[P])
+        : Option[PostAction[P]] =
+    actions.find { action =>
+      if (classTag.runtimeClass.isInstance(action.payload))
+        true
+      else
+        false
     }.asInstanceOf[Option[PostAction[P]]]
 
 }

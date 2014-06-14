@@ -98,6 +98,7 @@ POST  /-/approve                controllers.ModerationController.approve
 POST  /-/hide-new-send-pm       controllers.ModerationController.hideNewPostSendPm
 POST  /-/hide-flagged-send-pm   controllers.ModerationController.hideFlaggedPostSendPm
 POST  /-/delete                 controllers.ModerationController.deletePost
+POST  /-/delete-flagged         controllers.ModerationController.deleteFlaggedPost
 POST  /-/clear-flags            controllers.ModerationController.clearFlags
 GET   /-/list-recent-posts      controllers.ModerationController.listRecentPosts
 
