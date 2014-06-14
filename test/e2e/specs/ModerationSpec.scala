@@ -227,6 +227,19 @@ class ModerationSpec extends DebikiBrowserSpec
         }
       }
 
+      "find no action buttons at handled posts" in {
+        reloadPage()
+        eventually {
+          findClearFlagsLink(testPage.id, postId_gu5) must be (defined)
+          findDeleteNewPostLink(testPage.id, postId_gu7) must be (defined)
+          findAnyInlineButton(testPage.id, postId_gu2) must be (empty)
+          findAnyInlineButton(testPage.id, postId_gu3) must be (empty)
+          findAnyInlineButton(testPage.id, postId_gu4) must be (empty)
+          findAnyInlineButton(testPage.id, postId_gu6) must be (empty)
+          findAnyInlineButton(testPage.id, postId_ad8) must be (empty)
+        }
+      }
+
       "return to page again" in {
         clickGoBackToSite()
       }
@@ -318,17 +331,26 @@ class ModerationSpec extends DebikiBrowserSpec
   private def findPostInlineSomething(
         pageId: String, postId: PostId, cssClass: String, text: String = null)
         : Option[Element] = {
-    val query =
-      // Find the link to the comment
-      s"//a[@href='/-$pageId#post-$postId' and " +
-            "contains(concat(' ', @class, ' '), ' action-description ')]" +
-      // Find the <td> in which the link and inline actions are located
-      "/../.." +
-      // Find approve/reject/etc link or inline information
+    val query = findPostElemXpath(pageId, postId) +
       s"//*[contains(concat(' ', @class, ' '), ' $cssClass ')]"
     var anyElem = find(xpath(query))
     if (text ne null) anyElem = anyElem filter { _.text == text }
     anyElem
+  }
+
+
+  def findAnyInlineButton(pageId: String, postId: PostId) = {
+    val query = findPostElemXpath(pageId, postId) + "//button"
+    find(xpath(query))
+  }
+
+
+  private def findPostElemXpath(pageId: String, postId: PostId) = {
+    // Find the link to the comment
+    s"//a[@href='/-$pageId#post-$postId' and " +
+      "contains(concat(' ', @class, ' '), ' action-description ')]" +
+      // Find the <td> in which the link and inline actions are located
+      "/../.."
   }
 
 }
