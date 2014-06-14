@@ -165,7 +165,7 @@ class EditActivitySpec extends DebikiBrowserSpec
     "the dashboard activity list lists all comments" - {
 
       "goto Admin dashbar" in {
-        clickGotoDashbarActivityTab()
+        clickGotoModerationPage()
       }
 
       "find listed all new comments" in {
@@ -233,7 +233,7 @@ class EditActivitySpec extends DebikiBrowserSpec
     "the admin can view posts and suggestions in the dashboard activity list" - {
 
       "goto Admin dashboard activity tab" in {
-        clickGotoDashbarActivityTab()
+        clickGotoModerationPage()
       }
 
       "find listed all comments and edit suggestions of admin's comments" in {
@@ -315,7 +315,7 @@ class EditActivitySpec extends DebikiBrowserSpec
       "goto Admin dashbar" in {
         logout()
         cheatLoginAsAdmin()
-        clickGotoDashbarActivityTab()
+        clickGotoModerationPage()
       }
 
       "find listed the Guest and Gmail users' applied but unapproved edit suggestions" in {

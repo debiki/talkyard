@@ -216,11 +216,17 @@ trait StuffTestClicker extends DebikiSelectors {
   }
 
 
-  def clickGotoDashbarActivityTab() {
+  def clickGotoModerationPage() {
     val dashboardLink = cssSelector("a[href*='/-/admin']")
     scrollIntoView(dashboardLink)
     click on dashboardLink
-    click on linkText("Activity")
+    click on linkText("Moderation")
+  }
+
+
+  def clickGoBackToSite() {
+    click on partialLinkText("Return to site")
+    reloadPageWaitForLoginLinks()
   }
 
 

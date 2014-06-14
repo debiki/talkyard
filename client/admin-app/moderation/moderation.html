@@ -27,9 +27,9 @@
       <span class='action-path'>{{post.pageName}}</span>
 
       <div class="approval-actions" ng-if="post.pendingFlags.length == 0">
-        <button class="btn btn-default" ng-click='approve(post)' ng-hide='!post.approveBtnText'>{{post.approveBtnText}}</button>
-        <!-- <button class="btn btn-default" ng-click='hideNewSendPm(post)' ng-hide='post.hideRejectAndDeleteBtns'>Hide + ask author to improve it</button> -->
-        <button class="btn btn-default" ng-click='delete(post)' ng-hide='post.hideRejectAndDeleteBtns'>Delete</button>
+        <button class="btn btn-default approve-new-post" ng-click='approve(post)' ng-hide='!post.approveBtnText'>{{post.approveBtnText}}</button>
+        <!-- <button class="btn btn-default hide-new-post-send-pm" ng-click='hideNewSendPm(post)' ng-hide='post.hideRejectAndDeleteBtns'>Hide + ask author to improve it</button> -->
+        <button class="btn btn-default delete-new-post" ng-click='delete(post)' ng-hide='post.hideRejectAndDeleteBtns'>Delete</button>
       </div>
 
       <div class="flags" ng-if="post.pendingFlags">
@@ -42,8 +42,8 @@
         </ol>
         <div class="flag-actions">
           <!-- <button class="btn btn-default" ng-click="hideFlaggedSendPm(post)">Hide post + send PM</button> -->
-          <button class="btn btn-default" ng-click="delete(post)">Delete post</button>
-          <button class="btn btn-default" ng-click="clearFlags(post)">Clear flags</button>
+          <button class="btn btn-default delete-flagged-post" ng-click="delete(post)">Delete post</button>
+          <button class="btn btn-default clear-flags" ng-click="clearFlags(post)">Clear flags</button>
         </div>
       </div>
 
