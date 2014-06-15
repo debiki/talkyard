@@ -38,7 +38,6 @@ d.i.$showFlagForm = function(event) {
 function initFlagDialog(flagDialog, postId) {
   var $form = flagDialog.children('form');
 
-  $form.find('.dw-submit-set input').hide(); // use jQuery UI's buttons instead
   $form.find('.dw-f-flg-rsns').buttonset();
 
   // In case there are many flag forms: (currently there're 2: the cloned template,
@@ -49,20 +48,23 @@ function initFlagDialog(flagDialog, postId) {
 
   flagDialog.dialog($.extend({}, d.i.jQueryDialogDestroy, {
     width: d.i.mobileWidthOr(430),
-    buttons: {
-      'Cancel': function() {
-        $(this).dialog('close');
-      },
-      'Submit': function() {
-        // COULD ensure details specified if "Others" reason selected.
-        // COULD show a "Submitting..." message.
-        if (!d.i.Me.isLoggedIn())
-          $form.each(d.i.$loginThenSubmit)
-        else
-          $form.submit();
-      }
-    }
   }));
+
+  $form.find('.dw-fi-submit').click(function() {
+    // COULD ensure details specified if "Others" reason selected.
+    // COULD show a "Submitting..." message.
+    if (!d.i.Me.isLoggedIn()) {
+      $form.each(d.i.$loginThenSubmit);
+    }
+    else {
+      $form.submit();
+    }
+    $form.find('.dw-fi-submit').attr('disabled', 'disabled');
+  });
+
+  $form.find('.dw-fi-cancel').click(function() {
+    flagDialog.dialog('close');
+  });
 
   // {{{ How to enable the submit button on radio button click?
   // Below button(option ...) stuff results in:

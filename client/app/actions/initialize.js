@@ -110,6 +110,11 @@ d.i.shohwActionLinksOnHoverPost  = function(post) {
   $post.add($actions).mouseenter(function() {
     var $i = $(this);
 
+    // If a more-actions dropdown has been opened, let it stay in focus, don't
+    // show any new actions.
+    if ($('.dw-p-as-more:visible').length)
+      return;
+
     // If actions are already shown for an inline child post, ignore event.
     // (Sometimes the mouseenter event is fired first for an inline child
     // post, then for its parent — and then actions should be shown for the
@@ -128,6 +133,11 @@ d.i.shohwActionLinksOnHoverPost  = function(post) {
   });
 
   $thread.mouseleave(function() {
+    // If a more-actions dropdown has been opened, let it stay in focus, don't
+    // show any new actions.
+    if ($('.dw-p-as-more:visible').length)
+      return;
+
     // If this is an inline post, show the action menu for the parent post
     // since we're hovering that post now.
     $(this).closest('.dw-p').each(d.i.$showActions);

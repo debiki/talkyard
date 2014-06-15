@@ -36,7 +36,12 @@ trait CancelAllOnFirstFailure extends SuiteMixin {
       cancel
     }
     else try {
-      super.withFixture(test)
+      val outcome = super.withFixture(test)
+      if (outcome.isExceptional) {
+        System.out.println("Canceling tests, error: " + outcome.toString)
+        anyFailure = true
+      }
+      outcome
     }
     catch {
       case ex: TestPendingException =>

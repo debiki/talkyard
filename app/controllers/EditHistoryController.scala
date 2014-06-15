@@ -145,8 +145,8 @@ object EditHistoryController extends mvc.Controller {
       histEdit match {
         case HistoryEdit.ApplyEdit =>
           RawPostAction[PostActionPayload.EditApp](
-            id = PageParts.UnassignedId - sno, pageReq.ctime,
-            PostActionPayload.EditApp(editId = actionId, approval = approval),
+            id = PageParts.UnassignedId - sno, creationDati = pageReq.ctime,
+            payload = PostActionPayload.EditApp(editId = actionId, approval = approval),
             postId = postAffected.id, userIdData = pageReq.userIdData)
         case HistoryEdit.DeleteEditApp =>
           unimplemented("Undoing applied edits.")

@@ -29,8 +29,11 @@ interface ModerationScope extends RootScope {
   /** Returns HTML that will be trusted by AngularJS, can be bound by ng-bind-html.*/
   textOrDiffFor(post: Post): any;
   approve(post: Post);
-  reject(post: Post);
+  hideNewSendPm(post: Post);
   delete(post: Post);
+  hideFlaggedSendPm(post: Post);
+  deleteFlagged(post: Post);
+  clearFlags(post: Post);
 }
 
 
@@ -54,19 +57,33 @@ class ModerationController {
       doInlineAction(queryService.approvePost, post, 'Approved.');
     }
 
-    $scope.reject = (post: Post) => {
-      doInlineAction(queryService.rejectPost, post, 'Rejected.');
+    $scope.hideNewSendPm = (post: Post) => {
+      doInlineAction(queryService.hideNewPostSendPm, post, 'Rejected.');
+    }
+
+    $scope.hideFlaggedSendPm = (post: Post) => {
+      post.clearFlags();
+      doInlineAction(queryService.hideFlaggedPostSendPm, post, 'Hidden.');
     }
 
     $scope.delete = (post: Post) => {
       doInlineAction(queryService.deletePost, post, 'Deleted.');
     }
 
+    $scope.deleteFlagged = (post: Post) => {
+      post.clearFlags();
+      doInlineAction(queryService.deleteFlaggedPost, post, 'Deleted.');
+    }
+
+    $scope.clearFlags = (post: Post) => {
+      post.clearFlags();
+      doInlineAction(queryService.clearFlags, post, 'Flags cleared.');
+    }
 
     var doInlineAction = (queryServiceFn: (_: Post) => ng.IPromise<void>, post: Post,
         doneMessage: string) => {
       post.approveBtnText = '';
-      post.hideRejectBtn = true;
+      post.hideRejectAndDeleteBtns = true;
       post.hideViewSuggsLink = true;
       post.inlineMessage = 'Wait...';
       queryServiceFn.call(queryService, post).then((data) => {

@@ -333,12 +333,14 @@ case class Post(
   }
 
 
-  /** When this post was last edited, reverted, deleted, collapsed, flagged, anything
-    * except up/downvotes. Used when sorting posts in the activity list in the admin UI.
-    *
-    * Currently only considers edits (could fix...)
+  /** When this post was last edited, reverted, deleted, or hidden.
+    * Used when sorting posts in the activity list in the admin UI.
     */
-  def lastActedUponAt = textLastEditedOrRevertedAt
+  def lastActedUponAt = new ju.Date(Seq(
+      textLastEditedOrRevertedAt.getTime,
+      postDeletedAt.map(_.getTime).getOrElse(0: Long),
+      treeDeletedAt.map(_.getTime).getOrElse(0: Long),
+      postHiddenAt.map(_.getTime).getOrElse(0: Long)).max)
 
 
   /** The most recent reviews, or Nil if all most recent reviews might not
@@ -366,7 +368,7 @@ case class Post(
     // or EditApp is simply ignored.)
 
     val explicitReviewsDescTime =
-      actions.filter(_.isInstanceOf[Review]).sortBy(-_.creationDati.getTime).
+      actions.filter(_.isInstanceOf[ApprovePostAction]).sortBy(-_.creationDati.getTime).
       asInstanceOf[List[PostAction[_] with MaybeApproval]]
 
     var implicitApprovals = List[PostAction[_] with MaybeApproval]()
@@ -475,6 +477,13 @@ case class Post(
       state.lastManualApprovalDati)
 
 
+  def lastManuallyApprovedById: Option[UserId] = {
+    if (state.lastManualApprovalDati == lastManualApprovalDati)
+      return state.lastManuallyApprovedById
+
+    _reviewsDescTime.find(_.directApproval == Some(Approval.Manual)).map(_.userId)
+  }
+
   def lastReviewWasApproval: Option[Boolean] =
     if (lastReviewDati.isEmpty) None
     else Some(lastReviewDati == lastApprovalDati)
@@ -578,27 +587,38 @@ case class Post(
   def isTreeClosed: Boolean = treeClosedAt.nonEmpty
 
 
-  private def postDeletion: Option[PostAction[PAP.DeletePost.type]] =
-    findLastAction(PAP.DeletePost)
+  private def postDeletedAction: Option[PostAction[PAP.DeletePost]] =
+    findLastActionByType[PAP.DeletePost]
 
-  private def treeDeletion: Option[PostAction[PAP.DeleteTree.type]] =
+  private def treeDeletedAction: Option[PostAction[PAP.DeleteTree.type]] =
     findLastAction(PAP.DeleteTree)
 
+  private def postHiddenAction: Option[PostAction[PAP.HidePostClearFlags.type]] =
+    findLastAction(PAP.HidePostClearFlags)
+
   def postDeletedAt: Option[ju.Date] =
-    postDeletion.map(_.creationDati) orElse state.postDeletedAt
+    postDeletedAction.map(_.creationDati) orElse state.postDeletedAt
 
   def treeDeletedAt: Option[ju.Date] =
-    treeDeletion.map(_.creationDati) orElse state.treeDeletedAt
+    treeDeletedAction.map(_.creationDati) orElse state.treeDeletedAt
 
-  def postDeleterUserId: Option[String] =
-    postDeletion.map(_.userId) orElse unimplemented("DwE6XD43")
+  def postHiddenAt: Option[ju.Date] =
+    postHiddenAction.map(_.creationDati) orElse state.postHiddenAt
 
-  def treeDeleterUserId: Option[String] =
-    treeDeletion.map(_.userId) orElse unimplemented("DwE8QB91")
+  def postDeletedById: Option[String] =
+    postDeletedAction.map(_.userId) orElse state.postDeletedById
+
+  def treeDeletedById: Option[String] =
+    treeDeletedAction.map(_.userId) orElse state.treeDeletedById
+
+  def postHiddenById: Option[String] =
+    postHiddenAction.map(_.userId) orElse state.postHiddenById
 
   def isPostDeleted: Boolean = postDeletedAt.nonEmpty
   def isTreeDeleted: Boolean = treeDeletedAt.nonEmpty
   def isDeletedSomehow: Boolean = isPostDeleted || isTreeDeleted
+
+  def isPostHidden: Boolean = postHiddenAt.nonEmpty
 
 
   /** How many people have up/downvoted this post. Might be a tiny bit
@@ -627,7 +647,9 @@ case class Post(
       flagsPendingReview: List[RawPostAction[PAP.Flag]],
       flagsReviewed: List[RawPostAction[PAP.Flag]]) =
     flagsDescTime span { flag =>
-      if (lastAuthoritativeReviewDati isEmpty) true
+      if (flag.isDeleted) false
+      // Old: (I'll use isDeleted instead?)
+      else if (lastAuthoritativeReviewDati isEmpty) true
       else lastAuthoritativeReviewDati.get.getTime <= flag.ctime.getTime
     }
 

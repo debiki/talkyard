@@ -58,7 +58,8 @@ class PagePartsDeletionTest extends FreeSpec with MustMatchers {
     nextId(), creationDati = time(101), postId = p.id,
       userIdData = SystemUser.UserIdData, payload = PAP.DeleteTree)
 
-  val delete_d = delete_p_tree.copy(id = nextId(), postId = d.id, payload = PAP.DeletePost)
+  val delete_d = delete_p_tree.copy(id = nextId(), postId = d.id,
+    payload = PAP.DeletePost(clearFlags = false))
 
   val pageNoDeletes =
     PageParts("pnd", rawActions = gp::p::c::d::e::Nil)

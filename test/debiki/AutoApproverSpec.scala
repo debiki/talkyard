@@ -170,26 +170,26 @@ class AutoApproverSpec extends Specification with Mockito {
     }
 
 
-  val approvalOfReplyA: RawPostAction[PAP.ReviewPost] = RawPostAction.toReviewPost(
+  val approvalOfReplyA: RawPostAction[PAP.ApprovePost] = RawPostAction.toApprovePost(
     id = 10002, postId = testUserReplyAId, SystemUser.UserIdData,
-    ctime = later(10), approval = Some(Approval.Manual))
+    ctime = later(10), approval = Approval.Manual)
 
   val wellBehavedApprovalOfReplyA = approvalOfReplyA.copy(payload = PAP.WellBehavedApprovePost)
   val prelApprovalOfReplyA = approvalOfReplyA.copy(payload = PAP.PrelApprovePost)
 
   val veryRecentApprovalOfReplyA = approvalOfReplyA.copy(creationDati = later(100))
 
-  val approvalOfReplyB: RawPostAction[PAP.ReviewPost] =
+  val approvalOfReplyB: RawPostAction[PAP.ApprovePost] =
     approvalOfReplyA.copy(id = 10003, postId = testUserReplyBId)
 
   val prelApprovalOfReplyB = approvalOfReplyB.copy(payload = PAP.PrelApprovePost)
 
-  val rejectionOfReplyA: RawPostAction[PAP.ReviewPost] =
-    approvalOfReplyA.copy(id = 10004, payload = PAP.RejectPost)
+  val rejectionOfReplyA: RawPostAction[PAP.DeletePost.type] =
+    approvalOfReplyA.copy(id = 10004, payload = PAP.DeletePost)
 
-  val flagOfReplyA = RawPostAction[PAP.Flag](id = 10005, later(20),
-    PAP.Flag(tyype = FlagType.Other, reason = ""), postId = testUserReplyAId,
-    SystemUser.UserIdData)
+  val flagOfReplyA = RawPostAction[PAP.Flag](id = 10005, creationDati = later(20),
+    payload = PAP.Flag(tyype = FlagType.Other, reason = ""), postId = testUserReplyAId,
+    userIdData = SystemUser.UserIdData)
 
   val deletionOfReplyA: RawPostAction[_] = RawPostAction.toDeletePost(
     andReplies = false, id = 10006, postIdToDelete = testUserReplyAId,

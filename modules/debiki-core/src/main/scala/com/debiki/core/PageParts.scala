@@ -110,7 +110,6 @@ object PageParts {
           }
         case a: PAP.EditApp => a.copy(editId = rmpd(a.editId))
         case d: PAP.Delete => d.copy(targetActionId = rmpd(d.targetActionId))
-        case u: PAP.Undo => u.copy(targetActionId = rmpd(u.targetActionId))
         case x => x
       }
       action.copy(id = remaps(action.id), postId = rmpd(action.postId), payload = remappedPayload)
@@ -208,7 +207,7 @@ abstract class PostActionsWrapper { self: PageParts =>
         case _: PAP.CreatePost => new Post(self, actionAs[PAP.CreatePost])
         case _: PAP.EditPost => new Patch(self, actionAs[PAP.EditPost])
         //case _: PAP.ApplyEdit => new ApplyPatchAction(self, actionAs[PAP.PAP.ApplyEdit])
-        case _: PAP.ReviewPost => new Review(self, actionAs[PAP.ReviewPost])
+        case _: PAP.ApprovePost => new ApprovePostAction(self, actionAs[PAP.ApprovePost])
         case _ => new PostAction(self, actionDto)
       }
       addAction(action)
@@ -235,7 +234,6 @@ abstract class PostActionsWrapper { self: PageParts =>
 
       action.payload match {
         case _: PAP.CreatePost => // doesn't affect any post; creates a new one
-        case PAP.Undo(targetActionId) => addActionByTargetId(targetActionId)
         case PAP.Delete(targetActionId) => addActionByTargetId(targetActionId)
         case e: PAP.EditApp => addActionByTargetId(e.editId)
         case _: PAP => addActionByTargetId(action.postId)
@@ -528,12 +526,12 @@ case class PageParts (
 
 
   // -------- Reviews (manual approvals and rejections, no auto approvals)
-
-  def getReview(reviewId: ActionId): Option[Review] = getActionById(reviewId) match {
-    case p @ Some(_: Review) => p.asInstanceOf[Option[Review]]
+/*
+  def getReview(reviewId: ActionId): Option[ApprovePostAction] = getActionById(reviewId) match {
+    case p @ Some(_: ApprovePostAction) => p.asInstanceOf[Option[ApprovePostAction]]
     case None => None
     case x => runErr("DwE0GK43", s"Action `$reviewId' is no Review but a: ${classNameOf(x)}")
-  }
+  } */
 
 
   // -------- Construction

@@ -18,6 +18,7 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}
@@ -84,7 +85,7 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
   def createWebsite(name: Option[String], address: Option[String],
         embeddingSiteUrl: Option[String], ownerIp: String,
-        ownerLoginId: String, ownerIdentity: Identity, ownerRole: User)
+        ownerLoginId: LoginId, ownerIdentity: Identity, ownerRole: User)
         : Option[(Tenant, User)] =
     siteDbDao.createWebsite(name = name, address = address,
       embeddingSiteUrl, ownerIp = ownerIp,
@@ -99,7 +100,7 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
   // ----- List pages
 
-  def listChildPages(parentPageIds: Seq[String], orderOffset: PageOrderOffset,
+  def listChildPages(parentPageIds: Seq[PageId], orderOffset: PageOrderOffset,
         limit: Int, filterPageRole: Option[PageRole] = None)
         : Seq[PagePathAndMeta] =
     siteDbDao.listChildPages(parentPageIds, orderOffset, limit = limit, filterPageRole)
@@ -127,15 +128,19 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
   /**
    * Loads articles (title + body) e.g. for inclusion on a blog post list page.
    */
-  def loadPageBodiesTitles(pageIds: Seq[String]): Map[String, PageParts] =
+  def loadPageBodiesTitles(pageIds: Seq[PageId]): Map[PageId, PageParts] =
     siteDbDao.loadPageBodiesTitles(pageIds)
 
   def loadPostsRecentlyActive(limit: Int): (Seq[Post], People) =
     siteDbDao.loadPostsRecentlyActive(limit, offset = 0)
 
+  def loadFlags(pagePostIds: Seq[PagePostId])
+        : (Map[PagePostId, Seq[RawPostAction[PAP.Flag]]], People) =
+    siteDbDao.loadFlags(pagePostIds)
+
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,
-        byIdentity: Option[String] = None,
+        byIdentity: Option[IdentityId] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
         limit: Int): (Seq[PostAction[_]], People) =
     siteDbDao.loadRecentActionExcerpts(fromIp = fromIp,
@@ -144,7 +149,7 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
   // ----- Full text search
 
-  def fullTextSearch(phrase: String, anyRootPageId: Option[String]): Future[FullTextSearchResult] =
+  def fullTextSearch(phrase: String, anyRootPageId: Option[PageId]): Future[FullTextSearchResult] =
     siteDbDao.fullTextSearch(phrase, anyRootPageId)
 
 
@@ -163,7 +168,7 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
   def saveNotfs(notfs: Seq[NotfOfPageAction]) =
     siteDbDao.saveNotfs(notfs)
 
-  def loadNotfsForRole(roleId: String): Seq[NotfOfPageAction] =
+  def loadNotfsForRole(roleId: RoleId): Seq[NotfOfPageAction] =
     siteDbDao.loadNotfsForRole(roleId)
 
   def loadNotfByEmailId(emailId: String): Option[NotfOfPageAction] =

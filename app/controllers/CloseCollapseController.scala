@@ -57,8 +57,6 @@ object CloseCollapseController extends mvc.Controller {
     if (!apiReq.user_!.isAdmin)
       throwForbidden("DwE95Xf2", "Insufficient permissions to close and reopen threads")
 
-    // *WARNING* duplicated code, see AppReview (and info on how to resolve issue).
-
     // Play throws java.util.NoSuchElementException: key not found: pageId
     // and e.g. new RuntimeException("String expected")
     // on invalid JSON structure. COULD in some way convert to 400 Bad Request

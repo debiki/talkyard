@@ -50,7 +50,7 @@ object HtmlForms {
     }
     import FlagType._
     def prettify(tyype: FlagType): String = (tyype match {  // i18n
-      case CopyVio => "Copyright Violation"
+      case Inapt => "Inappropriate"
       case x => x.toString
     })
   }
@@ -243,8 +243,7 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
           }
           import FlagType._
           input("spam", Spam) ++
-          input("copy", CopyVio) ++
-          input("ilgl", Illegal) ++
+          input("inapt", Inapt) ++
           input("othr", Other)
         }</div>
         <div>

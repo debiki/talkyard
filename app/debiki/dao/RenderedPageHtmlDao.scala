@@ -79,7 +79,7 @@ trait RenderedPageHtmlDao {
       if (!renderSettings.showAuthorAndDate) Nil
       else {
         page.body map { bodyPost =>
-          HtmlPostRenderer.renderPostHeader(bodyPost, anyPageStats = None)
+          HtmlPostRenderer.renderPostHeader(bodyPost)
         } map (_.html) getOrElse Nil
       }
 
@@ -160,7 +160,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   }
 
 
-  private def knownOrigins(siteId: String): List[String] =
+  private def knownOrigins(siteId: SiteId): List[String] =
     lookupInCache[List[String]](originsKey(siteId)) getOrElse Nil
 
 

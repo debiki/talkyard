@@ -45,10 +45,13 @@ case class RawPostAction[P](   // caused weird compilation errors:  [P <: PostAc
   creationDati: ju.Date,
   payload: P,
   postId: ActionId,
-  userIdData: UserIdData) {
+  userIdData: UserIdData,
+  deletedAt: Option[ju.Date] = None,
+  deletedById: Option[UserId] = None) {
 
   require(id != PageParts.NoId)
   require(payload.isInstanceOf[PAP]) // for now, until above template constraint works
+  require(deletedAt.isDefined == deletedById.isDefined, "DwE806FW1")
 
   def ctime = creationDati
 
@@ -63,6 +66,8 @@ case class RawPostAction[P](   // caused weird compilation errors:  [P <: PostAc
   def browserIdCookie = userIdData.browserIdCookie
 
   def textLengthUtf8: Int = payload.asInstanceOf[PAP].textLengthUtf8
+
+  def isDeleted = deletedAt.nonEmpty
 }
 
 
@@ -212,26 +217,26 @@ object RawPostAction {
         approval = if (approval ne null) approval else old.payload.approval))
 
 
-  def toReviewPost(
+  def toApprovePost(
         id: ActionId,
         postId: ActionId,
         userIdData: UserIdData,
         ctime: ju.Date,
-        approval: Option[Approval]): RawPostAction[PAP.ReviewPost] =
+        approval: Approval): RawPostAction[PAP.ApprovePost] =
     RawPostAction(
       id, creationDati = ctime, postId = postId, userIdData = userIdData,
-      payload = PAP.ReviewPost(approval))
+      payload = PAP.ApprovePost(approval))
 
 
-  def copyReviewPost(
-        old: RawPostAction[PAP.ReviewPost],
+  def copyApprovePost(
+        old: RawPostAction[PAP.ApprovePost],
         id: ActionId = PageParts.NoId,
         postId: ActionId = PageParts.NoId,
         loginId: String = null,
         userId: String = null,
         createdAt: ju.Date = null,
         ip: String = null,
-        approval: Option[Approval] = null): RawPostAction[PAP.ReviewPost] =
+        approval: Approval = null): RawPostAction[PAP.ApprovePost] =
     RawPostAction(
       id = if (id != PageParts.NoId) id else old.id,
       creationDati = if (createdAt ne null) createdAt else old.creationDati,
@@ -242,7 +247,7 @@ object RawPostAction {
         ip = if (ip ne null) ip else old.userIdData.ip,
         browserIdCookie = old.userIdData.browserIdCookie,
         browserFingerprint = old.userIdData.browserFingerprint),
-      payload = if (approval ne null) PAP.ReviewPost(approval) else old.payload)
+      payload = if (approval ne null) PAP.ApprovePost(approval) else old.payload)
 
 
   def toDeletePost(
@@ -253,7 +258,7 @@ object RawPostAction {
         createdAt: ju.Date) =
     RawPostAction(
       id, creationDati = createdAt, postId = postIdToDelete, userIdData = userIdData,
-      payload = if (andReplies) PAP.DeleteTree else PAP.DeletePost)
+      payload = if (andReplies) PAP.DeleteTree else PAP.DeletePost(clearFlags = false))
 
 }
 

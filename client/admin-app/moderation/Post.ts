@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../shared/plain-old-javascript.d.ts" />
+/// <reference path="Flag.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin.moderation {
@@ -32,8 +33,7 @@ export class Post {
   public inlineMessage = '';
 
   public hideViewSuggsLink = true;
-  public hideRejectBtn = true;
-  public hideDeleteBtn = true;
+  public hideRejectAndDeleteBtns = true;
 
 
   constructor(
@@ -50,7 +50,8 @@ export class Post {
     public createdAt: Date,
     public numHandledFlags: number,
     public numPendingFlags: number,
-    public numPendingEditSuggestions: number) {
+    public numPendingEditSuggestions: number,
+    public pendingFlags: Flag[]) {
 
     if (this.numHandledFlags == null)
       this.numHandledFlags = 0;
@@ -62,16 +63,21 @@ export class Post {
       this.numPendingEditSuggestions = 0;
 
     switch (this.status) {
+      case 'Deleted':
+      case 'Hidden':
+        this.hideRejectAndDeleteBtns = true;
+        this.hideViewSuggsLink = true;
+        break;
       case 'NewPrelApproved':
       case 'EditsPrelApproved':
         this.approveBtnText = 'Okay';
-        this.hideRejectBtn = false;
+        this.hideRejectAndDeleteBtns = false;
         this.hideViewSuggsLink = true;
         break;
       case 'New':
       case 'NewEdits':
         this.approveBtnText = 'Approve';
-        this.hideRejectBtn = false;
+        this.hideRejectAndDeleteBtns = false;
         this.hideViewSuggsLink = true;
         break;
       default:
@@ -82,6 +88,13 @@ export class Post {
 
 
   public static fromJson(json: any) {
+    var pendingFlags: Flag[] = [];
+    if (json.pendingFlags) {
+      pendingFlags = json.pendingFlags.map(flagJson => {
+        return Flag.fromJson(flagJson);
+      });
+    }
+
     return new Post(
       json.id,
       json.type,
@@ -96,7 +109,8 @@ export class Post {
       json.createdAt,
       json.numHandledFlags,
       json.numPendingFlags,
-      json.numPendingEditSuggestions);
+      json.numPendingEditSuggestions,
+      pendingFlags);
   }
 
 
@@ -124,9 +138,11 @@ export class Post {
     var text;
     switch (this.status) {
       case 'New': text = 'New ' + what; break; // COULD to lowercase
-      case 'NewPrelApproved': text = 'New '+ what +', prel. approved'; break; // COULD lowercase
+      case 'NewPrelApproved': text = 'New '+ what +', preliminarily approved'; break; // COULD lowercase
       case 'Approved': text = what; break;
       case 'Rejected': text = what +', rejected'; break;
+      case 'Deleted': text = what +', deleted'; break;
+      case 'Hidden': text = what +', hidden'; break;
       case 'EditsRejected': text = what +', edits rejected'; break;
       case 'NewEdits': text = what +', edited'; break;
       case 'EditsPrelApproved': text = what +', edits prel. approved'; break;
@@ -144,6 +160,8 @@ export class Post {
       case 'Approved':
         return escapeHtml(this.approvedText);
       case 'Rejected':
+      case 'Deleted':
+      case 'Hidden':
         // Sometimes `unapprovedText` is undefined, nevertheless the post was rejected.
         return escapeHtml(this.unapprovedText || this.approvedText);
       case 'EditsRejected':
@@ -155,6 +173,12 @@ export class Post {
     }
   }
 
+
+  public clearFlags() {
+    this.numHandledFlags += this.numPendingFlags;
+    this.numPendingFlags = 0;
+    this.pendingFlags = [];
+  }
 }
 
 

@@ -16,26 +16,29 @@
  */
 
 //------------------------------------------------------------------------------
-   module debiki2.admin {
+   module debiki2.admin.moderation {
 //------------------------------------------------------------------------------
 
 
-/**
- * Navigates back to the page that the user viewed before s/he opened the admin app,
- * or to the homepage ('/') if that's not possible.
- */
-export function goBackToSite() {
-  // The return-to-URL-path must start with '/' so we know it refers to something
-  // in the same site. Allowing links to other sites would be a security issue.
-  var anyReturnToPathHits = location.toString().match(/\?returnTo=(\/[^#]+)/);
-  if (anyReturnToPathHits) {
-    var returnToPath = anyReturnToPathHits[1];
-    window.location.replace(returnToPath);
+export class Flag {
+
+  constructor(
+    public flaggerId: string,
+    public flaggerDisplayName: string,
+    public flagType: string,
+    public flagReason: string) {
   }
-  else {
-    window.location.replace('/');
+
+
+  public static fromJson(json: any) {
+    return new Flag(
+      json.flaggerId,
+      json.flaggerDisplayName,
+      json.flagType,
+      json.flagReason);
   }
-};
+
+}
 
 
 //------------------------------------------------------------------------------

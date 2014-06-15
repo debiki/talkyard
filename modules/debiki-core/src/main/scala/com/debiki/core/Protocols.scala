@@ -36,6 +36,8 @@ private[core]
 object Protocols {
 
 
+  // COULD move to debiki-dao-rdb and include only a few fields, don't need to index
+  // *everything*. And rename to Post.jsonToFullTextSearchIndex?
   def postToJson(post: Post): JsObject = {
 
     def toDateStringOrNull(anyDate: Option[ju.Date]): JsValue =
@@ -67,6 +69,7 @@ object Protocols {
       "lastApprovedText" -> getTextOrNull(post.approvedText),
       "lastPermanentApprovalDati" -> toDateStringOrNull(post.lastPermanentApprovalDati),
       "lastManualApprovalDati" -> toDateStringOrNull(post.lastManualApprovalDati),
+      "lastManuallyApprovedById" -> getTextOrNull(post.lastManuallyApprovedById),
       "lastEditAppliedAt" -> toDateStringOrNull(post.lastEditAppliedAt),
       "lastEditRevertedAt" -> toDateStringOrNull(post.lastEditRevertedAt),
       "lastEditorId" -> getTextOrNull(post.lastEditorId),
@@ -75,7 +78,11 @@ object Protocols {
       "treeCollapsedAt" -> toDateStringOrNull(post.treeCollapsedAt),
       "treeClosedAt" -> toDateStringOrNull(post.treeClosedAt),
       "postDeletedAt" -> toDateStringOrNull(post.postDeletedAt),
+      "postDeletedById" -> getTextOrNull(post.postDeletedById),
       "treeDeletedAt" -> toDateStringOrNull(post.treeDeletedAt),
+      "treeDeletedById" -> getTextOrNull(post.treeDeletedById),
+      "postHiddenAt" -> toDateStringOrNull(post.postHiddenAt),
+      "postHiddenById" -> getTextOrNull(post.postHiddenById),
       "numEditSuggestionsPending" -> post.numPendingEditSuggestions,
       "numEditsAppliedUnreviewed" -> post.numEditsAppliedUnreviewed,
       "numEditsAppldPrelApproved" -> post.numEditsAppldPrelApproved,
@@ -127,7 +134,7 @@ object Protocols {
       creationDati = (json \ "createdAt").as[ju.Date],
       payload = payload,
       postId = id,
-      UserIdData(
+      userIdData = UserIdData(
         loginId = (json \ "loginId").asOpt[String],
         userId = (json \ "userId").as[String],
         ip = (json \ "ip").as[String],  // <- might fail? I just changed the field from newIp to ip
@@ -167,6 +174,7 @@ object Protocols {
       lastApprovedText            = (json \ "lastApprovedText").asOpt[String],
       lastPermanentApprovalDati   = (json \ "lastPermanentApprovalDati").asOpt[ju.Date],
       lastManualApprovalDati      = (json \ "lastManualApprovalDati").asOpt[ju.Date],
+      lastManuallyApprovedById    = (json \ "lastManuallyApprovedById").asOpt[UserId],
       lastEditAppliedAt           = (json \ "lastEditAppliedAt").asOpt[ju.Date],
       lastEditRevertedAt          = (json \ "lastEditRevertedAt").asOpt[ju.Date],
       lastEditorId                = (json \ "lastEditorId").asOpt[String],
@@ -175,7 +183,11 @@ object Protocols {
       treeCollapsedAt             = (json \ "treeCollapsedAt").asOpt[ju.Date],
       treeClosedAt                = (json \ "treeClosedAt").asOpt[ju.Date],
       postDeletedAt               = (json \ "postDeletedAt").asOpt[ju.Date],
+      postDeletedById             = (json \ "postDeletedById").asOpt[String],
       treeDeletedAt               = (json \ "treeDeletedAt").asOpt[ju.Date],
+      treeDeletedById             = (json \ "treeDeletedById").asOpt[String],
+      postHiddenAt                = (json \ "postHiddenAt").asOpt[ju.Date],
+      postHiddenById              = (json \ "postHiddenById").asOpt[String],
       numEditSuggestions          = (json \ "numEditSuggestionsPending").as[Int],
       numEditsAppliedUnreviewed   = (json \ "numEditsAppliedUnreviewed").as[Int],
       numEditsAppldPrelApproved   = (json \ "numEditsAppldPrelApproved").as[Int],

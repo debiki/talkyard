@@ -20,6 +20,7 @@ package com.debiki.core
 import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
 import com.debiki.core.{PostActionPayload => PAP}
+import scala.reflect.ClassTag
 import Prelude._
 import PageParts._
 import FlagType.FlagType
@@ -63,8 +64,11 @@ class PostAction[P](  // [P <: PostActionPayload] causes compilation errors
   def user : Option[User] = page.people.user(userIdData.userId)
   def user_! : User = user.getOrDie("DwE3905FU0", s"No user for action `$id', page `${page.id}'")
 
+
   def ip: String = userIdData.ip
   def ipSaltHash: String = saltAndHashIp(ip)
+
+  def pagePostId = PagePostId(page.id, postId)
 }
 
 
@@ -78,9 +82,20 @@ trait PostActionActedUpon {
 
   protected def actions: List[PostAction[_]] = self.page.getActionsByTargetId(id)
 
+
   protected def findLastAction[P <: PostActionPayload](payload: P): Option[PostAction[P]] =
     actions.find { action =>
-      action.payload == payload  // && !action.wasUndone
+      action.payload == payload  // && !action.isDeleted
+    }.asInstanceOf[Option[PostAction[P]]]
+
+
+  protected def findLastActionByType[P <: PostActionPayload](implicit classTag: ClassTag[P])
+        : Option[PostAction[P]] =
+    actions.find { action =>
+      if (classTag.runtimeClass.isInstance(action.payload))
+        true
+      else
+        false
     }.asInstanceOf[Option[PostAction[P]]]
 
 }
@@ -111,11 +126,11 @@ class ApplyPatchAction(page: PageParts, val editApp: PostAction[PAP.EditApp])
 
 
 
-class Review(page: PageParts, val review: RawPostAction[PAP.ReviewPost])
-  extends PostAction(page, review) with MaybeApproval {
+class ApprovePostAction(page: PageParts, val rawApproval: RawPostAction[PAP.ApprovePost])
+  extends PostAction(page, rawApproval) with MaybeApproval {
 
-  def directApproval = review.payload.approval
-  lazy val target: Post = page.getPost(review.postId) getOrDie "DwE93UX7"
+  def directApproval = Some(rawApproval.payload.approval)
+  lazy val target: Post = page.getPost(rawApproval.postId) getOrDie "DwE93UX7"
 
 }
 

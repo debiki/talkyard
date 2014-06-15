@@ -28,12 +28,12 @@ trait PagePathMetaDao {
   self: SiteDao =>
 
   /*
-  def movePages(pageIds: Seq[String], fromFolder: String, toFolder: String) =
+  def movePages(pageIds: Seq[PageId], fromFolder: String, toFolder: String) =
     siteDbDao.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
     */
 
 
-  def moveRenamePage(pageId: String, newFolder: Option[String] = None,
+  def moveRenamePage(pageId: PageId, newFolder: Option[String] = None,
         showId: Option[Boolean] = None, newSlug: Option[String] = None)
         : PagePath =
     siteDbDao.moveRenamePage(pageId = pageId, newFolder = newFolder,
@@ -49,15 +49,15 @@ trait PagePathMetaDao {
     siteDbDao.checkPagePath(pathToCheck)
 
 
-  def lookupPagePath(pageId: String): Option[PagePath] =
+  def lookupPagePath(pageId: PageId): Option[PagePath] =
     siteDbDao.lookupPagePath(pageId = pageId)
 
 
-  def lookupPagePathAndRedirects(pageId: String): List[PagePath] =
+  def lookupPagePathAndRedirects(pageId: PageId): List[PagePath] =
     siteDbDao.lookupPagePathAndRedirects(pageId)
 
 
-  def loadPageMeta(pageId: String): Option[PageMeta] =
+  def loadPageMeta(pageId: PageId): Option[PageMeta] =
     siteDbDao.loadPageMeta(pageId)
 
 
@@ -76,7 +76,7 @@ trait PagePathMetaDao {
     siteDbDao.loadCategoryTree(rootPageId)
 
 
-  def loadPageMetaAndPath(pageId: String): Option[PagePathAndMeta] = {
+  def loadPageMetaAndPath(pageId: PageId): Option[PagePathAndMeta] = {
     // I don't think writing a dedicated SQL query that does this in one
     // roundtrip is worth the trouble? Won't work with NoSQL databases anyway?
     val anyMeta = loadPageMeta(pageId)
@@ -94,7 +94,7 @@ trait PagePathMetaDao {
   /**
    * Returns a list like: grandparent-meta :: parent-meta :: meta-for-pageId :: Nil
    */
-  final def listAncestorsAndOwnMeta(pageId: String): List[(PagePath, PageMeta)] = {
+  final def listAncestorsAndOwnMeta(pageId: PageId): List[(PagePath, PageMeta)] = {
     var curPageMeta = loadPageMeta(pageId)
     var curPagePath = lookupPagePath(pageId)
     var result: List[(PagePath, PageMeta)] = Nil
@@ -132,7 +132,7 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
   }
 
 
-  override def moveRenamePage(pageId: String, newFolder: Option[String] = None,
+  override def moveRenamePage(pageId: PageId, newFolder: Option[String] = None,
         showId: Option[Boolean] = None, newSlug: Option[String] = None)
         : PagePath = {
     _removeCachedPathsTo(pageId)
@@ -181,14 +181,14 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
   }
 
 
-  override def lookupPagePath(pageId: String): Option[PagePath] =
+  override def lookupPagePath(pageId: PageId): Option[PagePath] =
     lookupInCache(
       _pathByPageIdKey(pageId),
       orCacheAndReturn =
         super.lookupPagePath(pageId = pageId))
 
 
-  private def _removeCachedPathsTo(pageId: String) {
+  private def _removeCachedPathsTo(pageId: PageId) {
     // Remove cache entries from id to path,
     // and from a browser's specified path to the correct path with id.
     super.lookupPagePath(pageId) foreach { oldPath =>
@@ -208,7 +208,7 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
   }
 
 
-  override def loadPageMeta(pageId: String): Option[PageMeta] =
+  override def loadPageMeta(pageId: PageId): Option[PageMeta] =
     lookupInCache[PageMeta](
       pageMetaByIdKey(SitePageId(siteId, pageId)),
       orCacheAndReturn = super.loadPageMeta(pageId))
@@ -241,7 +241,7 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
   private def _pathWithIdByPathKey(pagePath: PagePath) =
     CacheKey(pagePath.siteId, s"${pagePath.value}|PagePathByPath")
 
-  private def _pathByPageIdKey(pageId: String) =
+  private def _pathByPageIdKey(pageId: PageId) =
     CacheKey(siteId, s"$pageId|PagePathById")
 
   private def pageMetaByIdKey(sitePageId: SitePageId) =

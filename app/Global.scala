@@ -137,10 +137,6 @@ object Global extends GlobalSettings {
       case ("list-newest-pages.json", GET) =>
         ListController.listNewestPages(pagePath, DebikiHttp.ContentType.Json)
         */
-      case ("list-actions", GET) =>
-        ListController.listActions(pagePath, DebikiHttp.ContentType.Html)
-      case ("list-actions.json", GET) =>
-        ListController.listActions(pagePath, DebikiHttp.ContentType.Json)
       case ("feed", GET) =>
         Application.feed(pagePath)
       case ("act", GET) =>

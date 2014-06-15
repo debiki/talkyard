@@ -22,7 +22,7 @@ import java.{util => ju}
 import org.specs2.mutable._
 import org.specs2.execute.Pending
 import NotfOfPageAction.Type._
-import RawPostAction.{copyCreatePost, copyReviewPost}
+import RawPostAction.{copyCreatePost, copyApprovePost}
 import Prelude._
 
 
@@ -42,10 +42,10 @@ trait NotfGeneratorTestValues {
   val rawBodyAuthzApproved = copyCreatePost(rawBody, approval = Some(Approval.AuthoritativeUser))
 
   val approvalOfBody =
-    RawPostAction.toReviewPost(2, postId = rawBody.id,
+    RawPostAction.toApprovePost(2, postId = rawBody.id,
       UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
       ctime = new ju.Date(11000), approval = Some(Approval.Manual))
-  val rejectionOfBody = copyReviewPost(approvalOfBody, id = 3, approval = None)
+  val rejectionOfBody = copyApprovePost(approvalOfBody, id = 3, approval = None)
 
   val rawReply = copyCreatePost(PostTestValues.postSkeleton,
     id = 11, loginId = replyAuthorLogin.id, userId = replyAuthor.id,
@@ -56,10 +56,10 @@ trait NotfGeneratorTestValues {
   val rawReplyAuthzApproved = copyCreatePost(rawReply, approval = Some(Approval.AuthoritativeUser))
 
   val approvalOfReply =
-    RawPostAction.toReviewPost(12, postId = rawReply.id,
+    RawPostAction.toApprovePost(12, postId = rawReply.id,
       UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
       ctime = new ju.Date(11000), approval = Some(Approval.Manual))
-  val rejectionOfReply = copyReviewPost(approvalOfReply, id = 13, approval = None)
+  val rejectionOfReply = copyApprovePost(approvalOfReply, id = 13, approval = None)
 
   val EmptyPage = PageParts("pageId") ++ (People() +
     bodyAuthor + replyAuthor + reviewer +

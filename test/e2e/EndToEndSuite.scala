@@ -40,6 +40,7 @@ class EndToEndSuite extends Suites(
   //new AdminDashboardSpec, -- broken, I've totally rewritten the admin section
   new AnonLoginSpec,
   new VoteSpec)
+  // new PinPostSpec,
   // new ForumSpec)         -- broken, I've totally rewritten the forum stuff
   //new StyleSiteSpecSpec)  -- broken, I've totally rewritten the admin section
   with StartServerAndChromeDriverFactory

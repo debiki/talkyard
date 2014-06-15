@@ -34,6 +34,7 @@ object PostState {
       lastApprovedText = None,
       lastPermanentApprovalDati = None,
       lastManualApprovalDati = None,
+      lastManuallyApprovedById = None,
       lastEditAppliedAt = None,
       lastEditRevertedAt = None,
       lastEditorId = None,
@@ -42,7 +43,11 @@ object PostState {
       treeCollapsedAt = None,
       treeClosedAt = None,
       postDeletedAt = None,
+      postDeletedById = None,
       treeDeletedAt = None,
+      treeDeletedById = None,
+      postHiddenAt = None,
+      postHiddenById = None,
       0, 0, 0, 0, 0,
       PostVoteState(), PostVoteState(), 0, 0,
       PostVoteState(), PostVoteState(), 0, 0,
@@ -89,6 +94,7 @@ class PostState(
   val lastApprovedText: Option[String],
   val lastPermanentApprovalDati: Option[ju.Date],
   val lastManualApprovalDati: Option[ju.Date],
+  val lastManuallyApprovedById: Option[UserId],
   val lastEditAppliedAt: Option[ju.Date],
   val lastEditRevertedAt: Option[ju.Date],
   val lastEditorId: Option[String],
@@ -97,7 +103,11 @@ class PostState(
   val treeCollapsedAt: Option[ju.Date],
   val treeClosedAt: Option[ju.Date],
   val postDeletedAt: Option[ju.Date],
+  val postDeletedById: Option[UserId],
   val treeDeletedAt: Option[ju.Date],
+  val treeDeletedById: Option[UserId],
+  val postHiddenAt: Option[ju.Date],
+  val postHiddenById: Option[UserId],
   val numEditSuggestions: Int,
   val numEditsAppliedUnreviewed: Int,
   val numEditsAppldPrelApproved: Int,
@@ -120,11 +130,14 @@ class PostState(
     else creationAction.payload.approval
   }
 
+  def postId = creationAction.postId
+
   require(lastAuthoritativeReviewDati.isEmpty || lastReviewDati.isDefined)
   require(lastApprovalDati.isEmpty || lastReviewDati.isDefined)
   require(lastApprovedText.isEmpty || lastApprovalDati.isDefined)
   require(lastPermanentApprovalDati.isEmpty || lastApprovalDati.isDefined)
   require(lastManualApprovalDati.isEmpty || lastPermanentApprovalDati.isDefined)
+  require(lastManualApprovalDati.isEmpty == lastManuallyApprovedById.isEmpty)
   require(lastEditAppliedAt.isDefined == lastEditorId.isDefined)
 
   require(numEditSuggestions >= 0)

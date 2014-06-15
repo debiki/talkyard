@@ -27,11 +27,8 @@
 
 export class QueryService {
 
-  private RecentPostsUrl = '/?list-actions.json';
+  private RecentPostsUrl = '/-/list-recent-posts';
   private PagesUrl = '/-/list-pages?in-tree';
-  private ApprovePostUrl = '/-/approve';
-  private RejectPostUrl = '/-/reject';
-  private DeletePostUrl = '/-/delete';
   private LoadSiteSettingsUrl = '/-/load-site-settings';
   private LoadSectionSettingsUrl = '/-/load-section-settings';
   private SaveSettingUrl = '/-/save-setting';
@@ -110,29 +107,39 @@ export class QueryService {
 
 
   public approvePost(post: moderation.Post): ng.IPromise<void> {
-    return this.doSomethingWithPost(post, this.ApprovePostUrl);
+    return this.doSomethingWithPost2(post, '/-/approve');
   }
 
-  public rejectPost(post: moderation.Post): ng.IPromise<void> {
-    return this.doSomethingWithPost(post, this.RejectPostUrl);
+  public hideNewPostSendPm(post: moderation.Post): ng.IPromise<void> {
+    return this.doSomethingWithPost2(post, '/-/hide-new-send-pm');
+  }
+
+  public hideFlaggedPostSendPm(post: moderation.Post): ng.IPromise<void> {
+    return this.doSomethingWithPost2(post, '/-/hide-flagged-send-pm');
   }
 
   public deletePost(post: moderation.Post): ng.IPromise<void> {
-    throw "Unimplemented [DwE254FGU9]";
+    return this.doSomethingWithPost2(post, '/-/delete');
   }
 
+  public deleteFlaggedPost(post: moderation.Post): ng.IPromise<void> {
+    return this.doSomethingWithPost2(post, '/-/delete-flagged');
+  }
 
-  private doSomethingWithPost(post: moderation.Post, actionUrl: string): ng.IPromise<void> {
+  public clearFlags(post: moderation.Post): ng.IPromise<void> {
+    return this.doSomethingWithPost2(post, '/-/clear-flags');
+  }
+
+  private doSomethingWithPost2(post: moderation.Post, actionUrl: string): ng.IPromise<void> {
     var deferred = this.$q.defer<void>();
-    this.$http.post(actionUrl, this.postToJson(post)).success((data) => {
+    this.$http.post(actionUrl, this.postToJson2(post)).success((data) => {
       deferred.resolve();
     });
     return deferred.promise;
   }
 
-
-  private postToJson(post: moderation.Post): string {
-    return '[{ "pageId": "'+ post.pageId +'", "actionId": "'+ post.id +'" }]';
+  private postToJson2(post: moderation.Post): string {
+    return '[{ "pageId": "'+ post.pageId +'", "postId": '+ post.id +' }]';
   }
 }
 

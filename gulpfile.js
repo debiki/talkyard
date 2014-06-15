@@ -128,7 +128,6 @@ var debikiDesktopFiles = [
       'target/client/shared/login-dialog/login-openid-dialog-html.js',
       'target/client/app/actions/edit/markup.js',
       'target/client/page/scripts/debiki-merge-changes.js',
-      'target/client/app/minimap/minimap.js',
       //'target/client/app/posts/monitor-reading-progress-unused.js',
       'target/client/app/posts/patch-page.js',
       'target/client/app/actions/pin.js',
@@ -151,6 +150,7 @@ var debikiDesktopFiles = [
       'target/client/all-typescript.js',
       'target/client/admin-app-angular-templates.js',
       'target/client/page-app-angular-templates.js',
+      'target/client/app/minimap/minimap.js',
       'target/client/app/startup.js'];
 
 
@@ -203,7 +203,6 @@ var debikiTouchFiles = [
       'target/client/shared/login-dialog/login-openid-dialog-html.js',
       'target/client/app/actions/edit/markup.js',
       'target/client/page/scripts/debiki-merge-changes.js',
-      'target/client/app/minimap/minimap.js',
       //'target/client/app/posts/monitor-reading-progress-unused.js',
       'target/client/app/posts/patch-page.js',
       'target/client/app/actions/pin.js',
@@ -224,6 +223,7 @@ var debikiTouchFiles = [
       'target/client/all-typescript.js',
       'target/client/admin-app-angular-templates.js',
       'target/client/page-app-angular-templates.js',
+      'target/client/app/minimap/minimap.js',
       'target/client/app/startup.js'];
 
 

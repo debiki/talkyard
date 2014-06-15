@@ -47,10 +47,10 @@ if !Modernizr.canvas || !Modernizr.csspositionfixed
   return
 
 
-DebikiPageModule = angular.module 'DebikiPageModule'
+DebikiApp = angular.module 'DebikiApp'
 
 
-DebikiPageModule.directive 'dwMinimap', [dwMinimap]
+DebikiApp.directive 'dwMinimap', [dwMinimap]
 
 
 $document = $(document)

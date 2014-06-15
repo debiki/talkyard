@@ -87,7 +87,7 @@ object ListController extends mvc.Controller {
         val pageNode = renderPageListHtml(pathsAndDetails)
         OkHtml(<html><body>{pageNode}</body></html>)
       case DebikiHttp.ContentType.Json =>
-        OkSafeJson(toJson(Map("pages" -> pathsAndDetails.map(jsonFor(_)))))
+        OkSafeJson(toJson(Map("pages" -> pathsAndDetails.map(jsonForPathAndMeta(_)))))
     }
   }
 
@@ -133,57 +133,6 @@ object ListController extends mvc.Controller {
   }*/
 
 
-  def listActions(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
-        PageGetAction(pathIn, pageMustExist = false) { pageReq =>
-
-    if (!pageReq.user_!.isAdmin) {
-      // If ever allowing non-admins to list actions, by default,
-      // show only the user's own actions, and replies to them.  ?
-      throwForbidden("DwE401zG7", "Insufficient permissions to list actions")
-    }
-
-    /*
-    val fromIpOpt = pageReq.queryString.getEmptyAsNone("from-ip")
-    val byIdtyOpt = pageReq.queryString.getEmptyAsNone("by-identity")
-    val pathRanges = {
-      import pageReq.pagePath
-      if (pagePath.isFolderOrIndexPage)
-        Utils.parsePathRanges(pagePath.folder, pageReq.queryString)
-      else throwBadReq(
-        "DwE92GK31", "Currently you cannot list actions on single pages. "+
-        "Try with http://server-address/?list-actions")
-    }
-
-    val (actions, people: People) = pageReq.dao.loadRecentActionExcerpts(
-      fromIp = fromIpOpt, byIdentity = byIdtyOpt, pathRanges = pathRanges,
-      limit = ActionCountLimit)
-
-    // COULD rename this function to listPosts?
-    // Or:  ?list-actions&type=posts&...
-    def posts = actions filter (_.isInstanceOf[Post])
-      */
-
-    val (posts, people: People) =
-      pageReq.dao.loadPostsRecentlyActive(limit = ActionCountLimit)
-
-    val pageMetaByPageId = pageReq.dao.loadPageMetasAsMap(posts.map(_.pageParts.pageId).distinct)
-
-    contentType match {
-      case DebikiHttp.ContentType.Html =>
-        unimplemented // Ok(views.html.listActions(actions))
-      case DebikiHttp.ContentType.Json =>
-        OkSafeJson(toJson(Map(
-          "actions" -> JsArray(posts.map(jsonForPost(_, pageMetaByPageId))),
-          "postTextLengthLimit" -> JsNumber(PostTextLengthLimit),
-          // This limit is only approximate, if you list pages both
-          // by folder path and by page id. see
-          //   RdbSiteDao.loadRecentActionExcerpts(),
-          // which does a `(select ... limit ...) union (select ... limit ...)`.
-          "actionCountApproxLimit" -> JsNumber(ActionCountLimit))))
-    }
-  }
-
-
   def listUsers = GetAction { implicit request =>
     if (!request.user_!.isAdmin) {
       // Could list the current user itself only. But for now:
@@ -192,7 +141,7 @@ object ListController extends mvc.Controller {
     val usersAndIdEndpoints = request.dao.listUsers(UserQuery())
     OkSafeJson(toJson(Map("users" -> (
       usersAndIdEndpoints map { case (user, identityEndpoints) =>
-        _jsonFor(user)
+        jsonForUser(user)
       }))))
   }
 
@@ -203,85 +152,13 @@ object ListController extends mvc.Controller {
   }
 
 
-  private def jsonForPost(action: PostAction[_], pageMetaByPageId: Map[PageId, PageMeta])
-        : JsValue = {
-    val pageName = pageMetaByPageId.get(action.page.id)
-      .map(_.cachedTitle getOrElse "(Unnamed page)")
-      .getOrElse("(Page not found)")
-
-    var data = Map[String, JsValue](
-      "id" -> JsString(action.id.toString),
-      "pageId" -> JsString(action.page.id),
-      "pageName" -> JsString(pageName),
-      "type" -> JsString(classNameOf(action)),
-      "userId" -> JsString(action.userId),
-      "userDisplayName" -> JsString(action.user_!.displayName),
-      "cdati" -> JsString(toIso8601T(action.creationDati)))
-
-    action.loginId foreach { id =>
-      data += "loginId" -> JsString(id)
-    }
-
-    action match {
-      case post: Post =>
-        post.approvedText foreach { text =>
-          data += "approvedText" -> JsString(text take PostTextLengthLimit)
-        }
-        post.unapprovedText foreach { text =>
-          data += "unapprovedText" -> JsString(text take PostTextLengthLimit)
-        }
-
-        val status =
-          if (post.currentVersionPrelApproved) {
-            if (post.someVersionPermanentlyApproved) "EditsPrelApproved"
-            else "NewPrelApproved"
-          }
-          else if (post.currentVersionApproved) "Approved"
-          else if (post.currentVersionRejected) {
-            if (post.someVersionPermanentlyApproved) "EditsRejected"
-            else "Rejected"
-          }
-          else if (post.someVersionPermanentlyApproved) "NewEdits"
-          else "New"
-
-        data += "status" -> JsString(status)
-
-        if (post.numEditsToReview > 0)
-          data += "numEditsToReview" -> JsNumber(post.numEditsToReview)
-        if (post.numPendingEditSuggestions > 0)
-          data += "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions)
-        if (post.numFlags > 0) {
-          data += "numPendingFlags" -> JsNumber(post.numPendingFlags)
-          data += "numHandledFlags" -> JsNumber(post.numHandledFlags)
-        }
-
-        // This info is currently not present in DW1_POSTS and is thus not available
-        // in `post` (since it's loaded from DW1_POSTS, not constructed from DW1_PAGE_ACTIONS.
-        /*
-        if (post.numFlags > 0) {
-          data += "flagCountsByReason" -> toJson(post.flagsByReason map { case (reason, flags) =>
-            (reason.toString, flags.length)
-          })
-          data += "firstPendingFlaggerUrl" -> JsString("FIRST_FLAGGER_URL")
-          data += "firstPendingFlaggerName" -> JsString("FIRST_FLAGGER_NAME")
-          data += "firstPendingFlaggerIp" -> JsString("FIRST_FLAGGER_IP")
-          data += "firstPendingFlaggerIpUrl" -> JsString("FIRST_FLAGGER_IP_URL")
-        } */
-
-      case _ =>
-    }
-
-    toJson(data)
-  }
-
-
-  def jsonFor(pagePath: PagePath): JsValue =
-    toJson(_jsonMapFor(pagePath))
+  def jsonForPath(pagePath: PagePath): JsValue =
+    toJson(jsonMapForPath(pagePath))
 
 
   // COULD move to other file, e.g. DebikiJson.scala?
-  def jsonFor(pathAndMeta: PagePathAndMeta): JsValue = {
-    var data = _jsonMapFor(pathAndMeta.path)
+  private def jsonForPathAndMeta(pathAndMeta: PagePathAndMeta): JsValue = {
+    var data = jsonMapForPath(pathAndMeta.path)
     def pageMeta = pathAndMeta.meta
 
     data += "role" -> JsString(pageMeta.pageRole.toString)
@@ -300,13 +177,13 @@ object ListController extends mvc.Controller {
   }
 
 
-  private def _jsonMapFor(pagePath: PagePath): Map[String, JsString] = Map(
+  private def jsonMapForPath(pagePath: PagePath): Map[String, JsString] = Map(
     "id" -> JsString(pagePath.pageId.get),
     "folder" -> JsString(pagePath.folder),
     "path" -> JsString(pagePath.value))
 
 
-  private def _jsonFor(user: User): JsValue = {
+  private def jsonForUser(user: User): JsValue = {
     var info = Map[String, JsValue](
       "id" -> JsString(user.id),
       "displayName" -> JsString(user.displayName),
@@ -318,20 +195,6 @@ object ListController extends mvc.Controller {
 
     toJson(info)
   }
-
-
-  /*
-  private def _jsonFor(flags: List[Flag]): JsValue = {
-    def jsonForFlag(flag: Flag): JsValue = {
-      var data = Map[String, JsValue](
-        "cdati" -> JsString(toIso8601T(flag.ctime)),
-        "reason" -> JsString(flag.reason.toString))
-        // COULD: "userId" -> JsString(flag.user_!.id)
-      if (flag.details nonEmpty) data += "details" -> JsString(flag.details)
-      toJson(data)
-    }
-    JsArray(flags map (jsonForFlag _))
-  } */
 
 }
 

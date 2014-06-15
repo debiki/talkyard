@@ -102,14 +102,13 @@ object PostActionPayload {
   case class EditApp(editId: ActionId, approval: Option[Approval]) extends PostActionPayload
 
 
-  /** Approves and rejects comments and edits of the related post.
+  /** Approves comments and edits.
     */
-  case class ReviewPost(approval: Option[Approval]) extends PostActionPayload
+  case class ApprovePost(approval: Approval) extends PostActionPayload
 
-  val RejectPost = ReviewPost(approval = None)
-  val PrelApprovePost = ReviewPost(Some(Approval.Preliminary))
-  val WellBehavedApprovePost = ReviewPost(Some(Approval.WellBehavedUser))
-  val ManuallyApprovePost = ReviewPost(Some(Approval.Manual))
+  val PrelApprovePost = ApprovePost(Approval.Preliminary)
+  val WellBehavedApprovePost = ApprovePost(Approval.WellBehavedUser)
+  val ManuallyApprovePost = ApprovePost(Approval.Manual)
 
 
   class Vote extends PostActionPayload
@@ -179,7 +178,7 @@ object PostActionPayload {
 
   /** Deletes a single comment.
     */
-  case object DeletePost extends PostActionPayload
+  case class DeletePost(clearFlags: Boolean) extends PostActionPayload
 
 
   /** Deletes a comment and all replies, recursively.
@@ -193,17 +192,19 @@ object PostActionPayload {
   case class Delete(targetActionId: ActionId) extends PostActionPayload
 
 
-  /** Undoes another action, e.g. an Undo with targetActionId = a CloseTree action
-    * would reopen the closed tree.
-    *
-    * Requires another coulmn in DW1_PAGE_ACTIONS, namely TARGET_ACTION_ID.
+  /** Hides a post, e.g. because it was flagged as spam, and clears any flags.
     */
-  case class Undo(targetActionId: ActionId) extends PostActionPayload
+  case object HidePostClearFlags extends PostActionPayload
 
 
   /** Flags a post as e.g. spam, or inappropriate (offensive, illegal, whatever).
     */
   case class Flag(tyype: FlagType, reason: String) extends PostActionPayload
+
+
+  /** Deletes all flags for the relevant post.
+    */
+  case object ClearFlags extends PostActionPayload
 
 }
 
@@ -211,7 +212,7 @@ object PostActionPayload {
 
 object FlagType extends Enumeration {
   type FlagType = Value
-  val Spam, Illegal, /* Copyright Violation */ CopyVio, Other = Value
+  val Spam, Inapt, Other = Value
 }
 
 

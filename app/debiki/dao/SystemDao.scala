@@ -47,10 +47,10 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
     systemDbDao.createFirstSite(firstSiteData)
 
   // COULD rename to loadWebsitesByIds
-  def loadTenants(tenantIds: Seq[String]): Seq[Tenant] =
+  def loadTenants(tenantIds: Seq[SiteId]): Seq[Tenant] =
     systemDbDao.loadTenants(tenantIds)
 
-  def loadSite(siteId: String): Option[Tenant] =
+  def loadSite(siteId: SiteId): Option[Tenant] =
     systemDbDao.loadTenants(Seq(siteId)).headOption
 
   // COULD rename to findWebsitesCanonicalHost

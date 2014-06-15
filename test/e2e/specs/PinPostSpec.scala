@@ -21,6 +21,7 @@ import com.debiki.core.ActionId
 import com.debiki.core.Prelude._
 import com.debiki.core.PageRole
 import com.debiki.core.PageParts
+import com.debiki.core.{PostActionPayload => PAP}
 import org.openqa.selenium.interactions.Actions
 import org.scalatest.time.{Span, Seconds}
 import org.scalatest.DoNotDiscover
@@ -41,7 +42,7 @@ with StartServerAndChromeDriverFactory
 @test.tags.EndToEndTest
 @DoNotDiscover
 class PinPostSpec extends DebikiBrowserSpec
-  with TestReplyer with TestLoginner with TestRater with TestPinner {
+  with TestReplyer with TestLoginner with TestVoter with TestPinner {
 
   lazy val testPage = createTestPage(PageRole.Generic,
     title = "Pin Posts Test 73kdEf0", body = Some("Pin posts test 6P8GK03."))
@@ -94,9 +95,9 @@ class PinPostSpec extends DebikiBrowserSpec
       }
 
       "rate #gu1 boring and #gm2 boring, #ad3 interesting" in {
-        rateComment(postId_gu1, BadRating)
-        rateComment(postId_gm2, GoodRating)
-        rateComment(postId_ad3, BadRating)
+        toggleVote(postId_gu1, PAP.VoteWrong)
+        toggleVote(postId_gm2, PAP.VoteLike)
+        toggleVote(postId_ad3, PAP.VoteWrong)
       }
 
       "all comments sorted correctly after reload" in {
