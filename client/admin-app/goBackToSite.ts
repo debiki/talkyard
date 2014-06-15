@@ -19,37 +19,24 @@
    module debiki2.admin {
 //------------------------------------------------------------------------------
 
-var numStepsBack = undefined;
-
 
 /**
  * Navigates back to the page that the user viewed before s/he opened the admin app,
  * or to the homepage ('/') if that's not possible.
  */
 export function goBackToSite() {
-  if (!numStepsBack) {
-    window.location.replace('/');
+  // The return-to-URL-path must start with '/' so we know it refers to something
+  // in the same site. Allowing links to other sites would be a security issue.
+  var anyReturnToPathHits = location.toString().match(/\?returnTo=(\/[^#]+)/);
+  if (anyReturnToPathHits) {
+    var returnToPath = anyReturnToPathHits[1];
+    window.location.replace(returnToPath);
   }
   else {
-    history.go(-numStepsBack);
+    window.location.replace('/');
   }
 };
 
-
-// Increment `numStepsBack` when the HTML5 pushState method is invoked.
-try {
-  var origPushState = history.pushState;
-  history.pushState = function() {
-    if (!numStepsBack) {
-      numStepsBack = 1;
-    }
-    numStepsBack += 1;
-    return origPushState.apply(history, arguments);
-  }
-}
-catch (error) {
-  // Leave `numStepsBack` undefined; go to '/' when clicking 'Back to site'.
-}
 
 //------------------------------------------------------------------------------
    }
