@@ -62,6 +62,7 @@ class ModerationController {
     }
 
     $scope.hideFlaggedSendPm = (post: Post) => {
+      post.clearFlags();
       doInlineAction(queryService.hideFlaggedPostSendPm, post, 'Hidden.');
     }
 
@@ -70,6 +71,7 @@ class ModerationController {
     }
 
     $scope.deleteFlagged = (post: Post) => {
+      post.clearFlags();
       doInlineAction(queryService.deleteFlaggedPost, post, 'Deleted.');
     }
 
