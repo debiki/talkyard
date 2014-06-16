@@ -111,6 +111,12 @@ object PostActionPayload {
   val ManuallyApprovePost = ApprovePost(Approval.Manual)
 
 
+  /** Rejects all edits that have been applied since the last time the post
+    * was approved.
+    */
+  case class RejectEdits(deleteEdits: Boolean) extends PostActionPayload
+
+
   class Vote extends PostActionPayload
 
   /** The user liked the post, e.g. because it's funny or informative. */

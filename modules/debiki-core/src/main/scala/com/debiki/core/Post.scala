@@ -38,6 +38,12 @@ import FlagType.FlagType
   * Preliminarily approved (by the computer, automatically — it guesses / uses heuristics).
   * Permanently reviewed (by a moderator, or a well-behaved user).
   * Authoritatively reviewed (by a moderator but not a well-behaved user).
+  *
+  * COULD rewrite, simplify. Currently there're lots of small functions that
+  * independently of each other examines all past actions and determines the current
+  * state of something. — It'd be easier to start with a state, either blank
+  * if the post is completely new, or a state loaded from DW1_POSTS. And then
+  * loop through all actions and update the state once and for all.
   */
 case class Post(
     pageParts: PageParts,
@@ -368,7 +374,9 @@ case class Post(
     // or EditApp is simply ignored.)
 
     val explicitReviewsDescTime =
-      actions.filter(_.isInstanceOf[ApprovePostAction]).sortBy(-_.creationDati.getTime).
+      actions.filter(action =>
+        action.isInstanceOf[ApprovePostAction] || action.isInstanceOf[RejectEditsAction])
+        .sortBy(-_.creationDati.getTime).
       asInstanceOf[List[PostAction[_] with MaybeApproval]]
 
     var implicitApprovals = List[PostAction[_] with MaybeApproval]()

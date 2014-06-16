@@ -44,8 +44,11 @@ trait NotfGeneratorTestValues {
   val approvalOfBody =
     RawPostAction.toApprovePost(2, postId = rawBody.id,
       UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
-      ctime = new ju.Date(11000), approval = Some(Approval.Manual))
-  val rejectionOfBody = copyApprovePost(approvalOfBody, id = 3, approval = None)
+      ctime = new ju.Date(11000), approval = Approval.Manual)
+  val rejectionOfBody =
+    RawPostAction.toDeletePost(andReplies = false, id = 3, postIdToDelete = rawBody.id,
+      UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
+      createdAt = new ju.Date(11000))
 
   val rawReply = copyCreatePost(PostTestValues.postSkeleton,
     id = 11, loginId = replyAuthorLogin.id, userId = replyAuthor.id,
@@ -58,8 +61,11 @@ trait NotfGeneratorTestValues {
   val approvalOfReply =
     RawPostAction.toApprovePost(12, postId = rawReply.id,
       UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
-      ctime = new ju.Date(11000), approval = Some(Approval.Manual))
-  val rejectionOfReply = copyApprovePost(approvalOfReply, id = 13, approval = None)
+      ctime = new ju.Date(11000), approval = Approval.Manual)
+  val rejectionOfReply =  RawPostAction.toDeletePost(
+    andReplies = false, 13, postIdToDelete = rawReply.id,
+    UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
+    createdAt = new ju.Date(11000))
 
   val EmptyPage = PageParts("pageId") ++ (People() +
     bodyAuthor + replyAuthor + reviewer +

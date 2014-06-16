@@ -18,55 +18,55 @@
 package com.debiki.core
 
 import com.debiki.core.{PostActionPayload => PAP}
-import org.specs2.mutable._
+import org.scalatest.{FreeSpec, MustMatchers}
 import Prelude._
 import java.{util => ju}
 
 
-class PagePartsTest extends Specification with PageTestValues {
+class PagePartsTest extends FreeSpec with MustMatchers with PageTestValues {
 
-  "A page" can {
+  "A page can" - {
 
-    "have a body" >> {
+    "have a body" - {
       "unapproved" in {
         val page = EmptyPage + bodySkeleton
-        page.body_!.directApproval must_== None
-        page.body_!.currentVersionReviewed must_== false
-        page.body_!.currentVersionRejected must_== false
-        page.body_!.currentVersionApproved must_== false
-        page.body_!.initiallyApproved must_== false
-        page.body_!.lastApprovalDati must_== None
-        page.body_!.lastManualApprovalDati must_== None
-        page.body_!.currentText must_== textInitially
+        page.body_!.directApproval mustBe None
+        page.body_!.currentVersionReviewed mustBe false
+        page.body_!.currentVersionRejected mustBe false
+        page.body_!.currentVersionApproved mustBe false
+        page.body_!.initiallyApproved mustBe false
+        page.body_!.lastApprovalDati mustBe None
+        page.body_!.lastManualApprovalDati mustBe None
+        page.body_!.currentText mustBe textInitially
       }
 
       "approved, automatically, permanently" in {
         val page = EmptyPage + bodySkeletonAutoApproved
-        page.body_!.currentVersionReviewed must_== true
-        page.body_!.currentVersionRejected must_== false
-        page.body_!.currentVersionApproved must_== true
-        page.body_!.currentVersionPrelApproved must_== false
-        page.body_!.someVersionPermanentlyApproved must_== true
-        page.body_!.initiallyApproved must_== true
-        page.body_!.lastApprovalDati must_== Some(bodySkeleton.ctime)
-        page.body_!.lastManualApprovalDati must_== None
-        page.body_!.currentText must_== textInitially
+        page.body_!.currentVersionReviewed mustBe true
+        page.body_!.currentVersionRejected mustBe false
+        page.body_!.currentVersionApproved mustBe true
+        page.body_!.currentVersionPrelApproved mustBe false
+        page.body_!.someVersionPermanentlyApproved mustBe true
+        page.body_!.initiallyApproved mustBe true
+        page.body_!.lastApprovalDati mustBe Some(bodySkeleton.ctime)
+        page.body_!.lastManualApprovalDati mustBe None
+        page.body_!.currentText mustBe textInitially
       }
 
       "approved, automatically, preliminarily" in {
         val page = EmptyPage + bodySkeletonPrelApproved
-        page.body_!.currentVersionReviewed must_== true // by the computer
-        page.body_!.currentVersionRejected must_== false
-        page.body_!.currentVersionApproved must_== true
-        page.body_!.currentVersionPrelApproved must_== true
-        page.body_!.someVersionPermanentlyApproved must_== false
-        page.body_!.initiallyApproved must_== true
-        page.body_!.lastPermanentApprovalDati must_== None
-        page.body_!.lastApprovalDati must_== Some(page.body_!.creationDati)
-        page.body_!.lastApprovalType must_== page.body_!.directApproval
-        page.body_!.lastApprovalDati must_== Some(bodySkeleton.ctime)
-        page.body_!.lastManualApprovalDati must_== None
-        page.body_!.currentText must_== textInitially
+        page.body_!.currentVersionReviewed mustBe true // by the computer
+        page.body_!.currentVersionRejected mustBe false
+        page.body_!.currentVersionApproved mustBe true
+        page.body_!.currentVersionPrelApproved mustBe true
+        page.body_!.someVersionPermanentlyApproved mustBe false
+        page.body_!.initiallyApproved mustBe true
+        page.body_!.lastPermanentApprovalDati mustBe None
+        page.body_!.lastApprovalDati mustBe Some(page.body_!.creationDati)
+        page.body_!.lastApprovalType mustBe page.body_!.directApproval
+        page.body_!.lastApprovalDati mustBe Some(bodySkeleton.ctime)
+        page.body_!.lastManualApprovalDati mustBe None
+        page.body_!.currentText mustBe textInitially
       }
 
       "approved, automatically, permanently, then rejected" in {
@@ -82,45 +82,52 @@ class PagePartsTest extends Specification with PageTestValues {
         // But there are no such edits, so the rejection has no effect.
       }
 
-      "approved, automatically, preliminarily, then rejected" in {
+      "approved, automatically, preliminarily, then deleted" in {
         // The rejection cancels all effects of the preliminary approval.
-        val page = EmptyPage + bodySkeletonPrelApproved + bodyRejectionSkeleton
-        _verifyBodyCorrectlyRejected(page)
+        val page = EmptyPage + bodySkeletonPrelApproved + bodyDeletionSkeleton
+        _verifyBodyCorrectlyDeleted(page, prelApproved = true)
       }
 
       "approved, manually" in {
         val page = EmptyPage + bodySkeleton +
            bodyApprovalSkeleton
-        page.body_!.currentVersionReviewed must_== true
-        page.body_!.currentVersionRejected must_== false
-        page.body_!.currentVersionApproved must_== true
-        page.body_!.currentVersionPrelApproved must_== false
-        page.body_!.someVersionPermanentlyApproved must_== true
-        page.body_!.initiallyApproved must_== false
-        page.body_!.lastApprovalDati must_== Some(bodyApprovalSkeleton.ctime)
-        page.body_!.lastManualApprovalDati must_==
+        page.body_!.currentVersionReviewed mustBe true
+        page.body_!.currentVersionRejected mustBe false
+        page.body_!.currentVersionApproved mustBe true
+        page.body_!.currentVersionPrelApproved mustBe false
+        page.body_!.someVersionPermanentlyApproved mustBe true
+        page.body_!.initiallyApproved mustBe false
+        page.body_!.lastApprovalDati mustBe Some(bodyApprovalSkeleton.ctime)
+        page.body_!.lastManualApprovalDati mustBe
            Some(bodyApprovalSkeleton.ctime)
-        page.body_!.currentText must_== textInitially
+        page.body_!.currentText mustBe textInitially
       }
 
       "rejected" in {
-        val page = EmptyPage + bodySkeleton + bodyRejectionSkeleton
-        _verifyBodyCorrectlyRejected(page)
+        val page = EmptyPage + bodySkeleton + bodyDeletionSkeleton
+        _verifyBodyCorrectlyDeleted(page, prelApproved = false)
       }
 
-      def _verifyBodyCorrectlyRejected(page: PageParts) {
+      def _verifyBodyCorrectlyDeleted(page: PageParts, prelApproved: Boolean) {
         val body = page.body_!
-        body.currentVersionReviewed must_== true
-        body.currentVersionRejected must_== true
-        body.currentVersionApproved must_== false
-        body.currentVersionPrelApproved must_== false
-        body.someVersionPermanentlyApproved must_== false
-        body.initiallyApproved must_== false
-        body.lastPermanentApprovalDati must_== None
-        body.lastApprovalType must_== None
-        body.lastApprovalDati must_== None
-        body.lastManualApprovalDati must_== None
-        body.currentText must_== textInitially
+        body.isPostDeleted mustBe true
+        body.currentVersionReviewed mustBe prelApproved
+        body.currentVersionRejected mustBe false
+        body.currentVersionApproved mustBe prelApproved
+        body.currentVersionPrelApproved mustBe prelApproved
+        body.someVersionPermanentlyApproved mustBe false
+        body.initiallyApproved mustBe prelApproved
+        body.lastPermanentApprovalDati mustBe None
+        if (prelApproved) {
+          body.lastApprovalType mustBe Some(Approval.Preliminary)
+          body.lastApprovalDati mustBe Some(bodySkeletonPrelApproved.ctime)
+        }
+        else {
+          body.lastApprovalType mustBe None
+          body.lastApprovalDati mustBe None
+        }
+        body.lastManualApprovalDati mustBe None
+        body.currentText mustBe textInitially
       }
     }
 
@@ -130,23 +137,23 @@ class PagePartsTest extends Specification with PageTestValues {
         bodySkeleton.copy(payload = bodySkeleton.payload.copy(
           approval = Some(Approval.WellBehavedUser)))
       val page = EmptyPage + body + editSkeleton
-      page.body_!.currentText must_== textInitially
-      page.body_!.textLastEditedAt must_== page.body_!.creationDati
+      page.body_!.currentText mustBe textInitially
+      page.body_!.textLastEditedAt mustBe page.body_!.creationDati
 
-      page.body_!.editsDeletedDescTime must beEmpty
-      page.body_!.editsAppliedDescTime must beEmpty
-      page.body_!.editsRevertedDescTime must beEmpty
-      page.body_!.editsPendingDescTime must beLike {
+      page.body_!.editsDeletedDescTime must be (empty)
+      page.body_!.editsAppliedDescTime must be (empty)
+      page.body_!.editsRevertedDescTime must be (empty)
+      page.body_!.editsPendingDescTime match {
         case List(edit) =>
-          edit.id must_== editSkeleton.id
-          edit.creationDati must_== editSkeleton.ctime
-          edit.applicationDati must_== None
-          edit.revertionDati must_== None
-          edit.deletedAt must_== None
-          edit.isPending must_== true
-          edit.isApplied must_== false
-          edit.isReverted must_== false
-          edit.isDeleted must_== false
+          edit.id mustBe editSkeleton.id
+          edit.creationDati mustBe editSkeleton.ctime
+          edit.applicationDati mustBe None
+          edit.revertionDati mustBe None
+          edit.deletedAt mustBe None
+          edit.isPending mustBe true
+          edit.isApplied mustBe false
+          edit.isReverted mustBe false
+          edit.isDeleted mustBe false
       }
     }
 
@@ -156,27 +163,27 @@ class PagePartsTest extends Specification with PageTestValues {
       pending /*
       val page = EmptyPage + bodySkeletonAutoApproved +
          editSkeleton + deletionOfEdit
-      page.body_!.currentText must_== textInitially
-      page.body_!.textLastEditedAt must_== page.body_!.creationDati
+      page.body_!.currentText mustBe textInitially
+      page.body_!.textLastEditedAt mustBe page.body_!.creationDati
 
-      page.body_!.editsPendingDescTime must beEmpty
-      page.body_!.editsAppliedDescTime must beEmpty
-      page.body_!.editsRevertedDescTime must beEmpty
-      page.body_!.editsDeletedDescTime must beLike {
+      page.body_!.editsPendingDescTime must be (empty)
+      page.body_!.editsAppliedDescTime must be (empty)
+      page.body_!.editsRevertedDescTime must be (empty)
+      page.body_!.editsDeletedDescTime match {
         case List(edit) =>
-          edit.id must_== editSkeleton.id
-          edit.applicationDati must_== None
-          edit.revertionDati must_== None
-          edit.deletedAt must_== Some(deletionOfEdit.ctime)
-          edit.isPending must_== false
-          edit.isApplied must_== false
-          edit.isReverted must_== false
-          edit.isDeleted must_== true
+          edit.id mustBe editSkeleton.id
+          edit.applicationDati mustBe None
+          edit.revertionDati mustBe None
+          edit.deletedAt mustBe Some(deletionOfEdit.ctime)
+          edit.isPending mustBe false
+          edit.isApplied mustBe false
+          edit.isReverted mustBe false
+          edit.isDeleted mustBe true
       } */
     }
 
 
-    "have a body, with an edit, applied" >> {
+    "have a body, with an edit, applied" - {
 
       "automatically" in {
         _testImpl(autoApplied = true)
@@ -190,27 +197,27 @@ class PagePartsTest extends Specification with PageTestValues {
         val PageWithEditApplied(page, edit, editApplDati) =
            makePageWithEditApplied(autoApplied)
 
-        page.body_!.currentText must_== textAfterFirstEdit
-        page.body_!.textLastEditedAt must_== editApplDati
+        page.body_!.currentText mustBe textAfterFirstEdit
+        page.body_!.textLastEditedAt mustBe editApplDati
 
-        page.body_!.editsPendingDescTime must beEmpty
-        page.body_!.editsDeletedDescTime must beEmpty
-        page.body_!.editsRevertedDescTime must beEmpty
-        page.body_!.editsAppliedDescTime must beLike {
+        page.body_!.editsPendingDescTime must be (empty)
+        page.body_!.editsDeletedDescTime must be (empty)
+        page.body_!.editsRevertedDescTime must be (empty)
+        page.body_!.editsAppliedDescTime match {
           case List(edit) =>
-            edit.id must_== editSkeleton.id
-            edit.applicationDati must_== Some(editApplDati)
-            edit.revertionDati must_== None
-            edit.deletedAt must_== None
-            edit.isPending must_== false
-            edit.isApplied must_== true
-            edit.isReverted must_== false
-            edit.isDeleted must_== false
+            edit.id mustBe editSkeleton.id
+            edit.applicationDati mustBe Some(editApplDati)
+            edit.revertionDati mustBe None
+            edit.deletedAt mustBe None
+            edit.isPending mustBe false
+            edit.isApplied mustBe true
+            edit.isReverted mustBe false
+            edit.isDeleted mustBe false
         }
       }
     }
 
-    "have a body, with an edit, applied" >> {
+    "have a body, with an edit, applied" - {
 
       "automatically, then reverted & deleted (cannot revert only)" in {
         // I've set `isDeleted = false` in Patch.scala, for now.
@@ -238,30 +245,30 @@ class PagePartsTest extends Specification with PageTestValues {
              (pageNotReverted + deletionOfEditApp, deletionOfEditApp.ctime)
 
         val body = page.body_!
-        body.currentText must_== textInitially
-        body.textLastEditedOrRevertedAt must_== revertionDati
+        body.currentText mustBe textInitially
+        body.textLastEditedOrRevertedAt mustBe revertionDati
 
         // If `autoApplied` the Edit is deleted, otherwise it's pending again.
-        if (autoApplied) body.editsPendingDescTime must beEmpty
+        if (autoApplied) body.editsPendingDescTime must be (empty)
         else findEditInList(body.editsPendingDescTime)
 
         if (autoApplied) findEditInList(body.editsDeletedDescTime)
-        else body.editsDeletedDescTime must beEmpty
+        else body.editsDeletedDescTime must be (empty)
 
-        body.editsAppliedDescTime must beEmpty
+        body.editsAppliedDescTime must be (empty)
         findEditInList(body.editsRevertedDescTime)
 
-        def findEditInList(list: List[Patch]) = list must beLike {
+        def findEditInList(list: List[Patch]) = list match {
           case List(edit) =>
-            edit.id must_== editSkeleton.id
-            edit.applicationDati must_== None
-            edit.revertionDati must_== Some(revertionDati)
-            edit.deletedAt must_==
+            edit.id mustBe editSkeleton.id
+            edit.applicationDati mustBe None
+            edit.revertionDati mustBe Some(revertionDati)
+            edit.deletedAt mustBe
                (if (autoApplied) Some(revertionDati) else None)
-            edit.isPending must_== !autoApplied
-            edit.isApplied must_== false
-            edit.isReverted must_== true
-            edit.isDeleted must_== autoApplied
+            edit.isPending mustBe !autoApplied
+            edit.isApplied mustBe false
+            edit.isReverted mustBe true
+            edit.isDeleted mustBe autoApplied
         }
       }*/
 
@@ -275,47 +282,47 @@ class PagePartsTest extends Specification with PageTestValues {
         val page = pageNotReverted + deletionOfEditApp + deletionAfterRevertion
 
         val body = page.body_!
-        body.currentText must_== textInitially
+        body.currentText mustBe textInitially
         // When the edit itself was deleted doesn't matter, only when it
         // was reverted.
-        body.textLastEditedOrRevertedAt must_== deletionOfEditApp.ctime
+        body.textLastEditedOrRevertedAt mustBe deletionOfEditApp.ctime
 
-        body.editsPendingDescTime must beEmpty
-        body.editsAppliedDescTime must beEmpty
+        body.editsPendingDescTime must be (empty)
+        body.editsAppliedDescTime must be (empty)
         findEditIn(body.editsRevertedDescTime)
         findEditIn(body.editsDeletedDescTime)
 
-        def findEditIn(list: List[Patch]) = list must beLike {
+        def findEditIn(list: List[Patch]) = list match {
           case List(edit) =>
-            edit.id must_== editSkeleton.id
-            edit.applicationDati must_== None
-            edit.revertionDati must_== Some(deletionOfEditApp.ctime)
-            edit.deletedAt must_== Some(deletionAfterRevertion.ctime)
-            edit.isPending must_== false
-            edit.isApplied must_== false
-            edit.isReverted must_== true
-            edit.isDeleted must_== true
+            edit.id mustBe editSkeleton.id
+            edit.applicationDati mustBe None
+            edit.revertionDati mustBe Some(deletionOfEditApp.ctime)
+            edit.deletedAt mustBe Some(deletionAfterRevertion.ctime)
+            edit.isPending mustBe false
+            edit.isApplied mustBe false
+            edit.isReverted mustBe true
+            edit.isDeleted mustBe true
         }*/
       }
     }
 
 
 
-    "have a body, with an edit, applied, and" >> {
+    "have a body, with an edit, applied, and" - {
 
       "unapproved" in {
         val page = EmptyPage + bodySkeletonAutoApproved +
            editSkeleton + editAppSkeleton // not approved
 
-        page.body_!.currentVersionReviewed must_== false
-        page.body_!.currentVersionRejected must_== false
-        page.body_!.currentVersionApproved must_== false
-        page.body_!.someVersionApproved must_== true
-        page.body_!.initiallyApproved must_== true
-        page.body_!.lastReviewDati must_== Some(page.body_!.creationDati)
-        page.body_!.lastApprovalDati must_== Some(page.body_!.creationDati)
-        page.body_!.lastManualApprovalDati must_== None
-        page.body_!.currentText must_== textAfterFirstEdit
+        page.body_!.currentVersionReviewed mustBe false
+        page.body_!.currentVersionRejected mustBe false
+        page.body_!.currentVersionApproved mustBe false
+        page.body_!.someVersionApproved mustBe true
+        page.body_!.initiallyApproved mustBe true
+        page.body_!.lastReviewDati mustBe Some(page.body_!.creationDati)
+        page.body_!.lastApprovalDati mustBe Some(page.body_!.creationDati)
+        page.body_!.lastManualApprovalDati mustBe None
+        page.body_!.currentText mustBe textAfterFirstEdit
         testEditLists(page.body_!)
       }
 
@@ -369,64 +376,64 @@ class PagePartsTest extends Specification with PageTestValues {
 
       def _testRejectedEdit(page: PageParts) {
         val body = page.body_!
-        body.currentVersionReviewed must_== true
-        body.currentVersionRejected must_== true
-        body.currentVersionApproved must_== false
-        body.currentVersionPrelApproved must_== false
-        body.someVersionPermanentlyApproved must_== true
-        body.someVersionApproved must_== true
-        body.initiallyApproved must_== true
-        body.lastReviewDati must_== Some(rejectionOfEditApp.ctime)
-        body.lastApprovalDati must_== Some(page.body_!.creationDati)
-        body.lastManualApprovalDati must_== None
-        body.currentText must_== textAfterFirstEdit
+        body.currentVersionReviewed mustBe true
+        body.currentVersionRejected mustBe true
+        body.currentVersionApproved mustBe false
+        body.currentVersionPrelApproved mustBe false
+        body.someVersionPermanentlyApproved mustBe true
+        body.someVersionApproved mustBe true
+        body.initiallyApproved mustBe true
+        body.lastReviewDati mustBe Some(rejectionOfEditApp.ctime)
+        body.lastApprovalDati mustBe Some(page.body_!.creationDati)
+        body.lastManualApprovalDati mustBe None
+        body.currentText mustBe textAfterFirstEdit
         testEditLists(body)
       }
 
       def testEditLists(post: Post) {
-        post.editsPendingDescTime must beEmpty
-        post.editsDeletedDescTime must beEmpty
-        post.editsRevertedDescTime must beEmpty
-        post.editsAppliedDescTime must beLike {
+        post.editsPendingDescTime must be (empty)
+        post.editsDeletedDescTime must be (empty)
+        post.editsRevertedDescTime must be (empty)
+        post.editsAppliedDescTime match {
           case List(edit) =>
-            edit.id must_== editSkeleton.id
-            edit.applicationDati must_== Some(editAppSkeleton.ctime)
-            edit.isPending must_== false
-            edit.isApplied must_== true
-            edit.isReverted must_== false
-            edit.isDeleted must_== false
+            edit.id mustBe editSkeleton.id
+            edit.applicationDati mustBe Some(editAppSkeleton.ctime)
+            edit.isPending mustBe false
+            edit.isApplied mustBe true
+            edit.isReverted mustBe false
+            edit.isDeleted mustBe false
         }
       }
 
       def _testApprovedEdit(post: Post, approvalDati: ju.Date,
             manualApprovalDati: Option[ju.Date], preliminarily: Boolean) {
-        post.currentVersionReviewed must_== true //
-        post.currentVersionRejected must_== false
-        post.currentVersionApproved must_== true
-        post.currentVersionPrelApproved must_== preliminarily
-        post.someVersionPermanentlyApproved must_== true // orig version aprvd
-        post.someVersionApproved must_== true
+        post.currentVersionReviewed mustBe true //
+        post.currentVersionRejected mustBe false
+        post.currentVersionApproved mustBe true
+        post.currentVersionPrelApproved mustBe preliminarily
+        post.someVersionPermanentlyApproved mustBe true // orig version aprvd
+        post.someVersionApproved mustBe true
 
         if (preliminarily)
-          post.lastPermanentApprovalDati must_== Some(post.creationDati)
+          post.lastPermanentApprovalDati mustBe Some(post.creationDati)
         // Could test other cases:
-        // post.lastPermanentApproval must_== (
+        // post.lastPermanentApproval mustBe (
         //  if (preliminarily) post.action
         //  else if (manualApproval) manualApproval // missing
         //  else the-edit)
-        // post.lastApproval must_== ....)
+        // post.lastApproval mustBe ....)
 
-        post.initiallyApproved must_== true
-        post.lastReviewDati must_== Some(approvalDati)
-        post.lastApprovalDati must_== Some(approvalDati)
-        post.lastManualApprovalDati must_== manualApprovalDati
-        post.currentText must_== textAfterFirstEdit
+        post.initiallyApproved mustBe true
+        post.lastReviewDati mustBe Some(approvalDati)
+        post.lastApprovalDati mustBe Some(approvalDati)
+        post.lastManualApprovalDati mustBe manualApprovalDati
+        post.currentText mustBe textAfterFirstEdit
         testEditLists(post)
       }
     }
 
 
-    "have a body, with one edit, pending, and a more recent edit that is" >> {
+    "have a body, with one edit, pending, and a more recent edit that is" - {
       "pending" in {
         // text = textApproved = textInitially
       }
@@ -450,7 +457,7 @@ class PagePartsTest extends Specification with PageTestValues {
     }
 
 
-    "have a body, with one approved edit, and another that is" >> {
+    "have a body, with one approved edit, and another that is" - {
 
       "pending" in {
         // text = textApproved = textAfterFirstEdit
