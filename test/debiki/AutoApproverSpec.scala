@@ -95,7 +95,7 @@ class AutoApproverSpec extends Specification with Mockito {
     def method = "METHOD"
     def version = "1.1"
     def queryString = Map.empty
-    def headers = null
+    def headers = play.api.test.FakeHeaders()
     lazy val remoteAddress = Ip
     def username = None
     val body = ()
@@ -183,9 +183,6 @@ class AutoApproverSpec extends Specification with Mockito {
     approvalOfReplyA.copy(id = 10003, postId = testUserReplyBId)
 
   val prelApprovalOfReplyB = approvalOfReplyB.copy(payload = PAP.PrelApprovePost)
-
-  val rejectionOfReplyA: RawPostAction[PAP.DeletePost.type] =
-    approvalOfReplyA.copy(id = 10004, payload = PAP.DeletePost)
 
   val flagOfReplyA = RawPostAction[PAP.Flag](id = 10005, creationDati = later(20),
     payload = PAP.Flag(tyype = FlagType.Other, reason = ""), postId = testUserReplyAId,
@@ -285,8 +282,9 @@ class AutoApproverSpec extends Specification with Mockito {
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.WellBehavedUser)
       }
 
-      "not approve any further comments, when one comment rejected" >> {
-        val dao = newDaoMock(rejectionOfReplyA::replyAPrelApprovedAndBManApproved, guestLogin, testUserId)
+      "not approve any further comments, when one comment deleted" >> {
+        val dao = newDaoMock(
+          deletionOfReplyA::replyAPrelApprovedAndBManApproved, guestLogin, testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== None
       }
 

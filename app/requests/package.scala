@@ -57,7 +57,8 @@ package object requests {
     * the dwCoFakeIp cookie.)
     */
   def realOrFakeIpOf(request: play.api.mvc.Request[_]): String = {
-    if (Play.isProd)
+    val isProd = Play.maybeApplication.map(_.mode == play.api.Mode.Prod) == Some(true)
+    if (isProd)
       request.remoteAddress
     else
       request.queryString.get("fakeIp").flatMap(_.headOption).orElse(
