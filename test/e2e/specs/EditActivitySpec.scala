@@ -32,7 +32,6 @@ import test.e2e.code._
   * in SBT:  test-only test.e2e.specs.EditActivitySpecRunner
   * in test:console:  (new test.e2e.specs.EditActivitySpecRunner).execute()
   */
-@DoNotDiscover
 class EditActivitySpecRunner extends org.scalatest.Suites(new EditActivitySpec)
 with StartServerAndChromeDriverFactory
 
@@ -365,7 +364,7 @@ class EditActivitySpec extends DebikiBrowserSpec
         numSuggestions: Int = -1) {
     val commentLink = find(cssSelector(s"a[href='/-${testPage.id}#post-$postId']")).
       getOrElse(fail(s"Comment `$postId' not listed"))
-    commentLink.text must be === commentStatusText
+    commentLink.text.toLowerCase mustBe commentStatusText.toLowerCase
 
     if (numSuggestions != -1) {
       val link = findImprovementSuggestionsLink(testPage.id, postId)
@@ -380,7 +379,7 @@ class EditActivitySpec extends DebikiBrowserSpec
 
   object CommentStatusText {
     val ApprovedComment = "Comment"
-    val PrelApprovedComment = "New comment, prel. approved"
+    val PrelApprovedComment = "New comment, preliminarily approved"
     val UnapprovedComment = "New comment"
     val UnapprovedEdits = "Comment, edited"
   }
