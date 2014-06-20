@@ -21,6 +21,9 @@ import com.debiki.core.{PostId, PageId}
 import test.e2e.code._
 
 
+/** Methods for the moderation page, e.g. to approve and delete comments and
+  * check flags.
+  */
 trait TestModeration {
   self: DebikiBrowserSpec with StuffTestClicker =>
 

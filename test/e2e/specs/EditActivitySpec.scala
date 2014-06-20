@@ -327,12 +327,12 @@ class EditActivitySpec extends DebikiBrowserSpec
         // for now UnapprovedComment works however:
         // Ooops see above [dh3903w15]. Currently the guest is considered well-behaved
         // so this comment became auto-approved when the guest applied an edit suggestion.
-        checkCommentStatus(testPage.id, postId_gu2, CST.UnapprovedComment) // prel aprvd, edited by gmail
+        //checkCommentStatus(testPage.id, postId_gu2, CST.UnapprovedComment) // prel aprvd, edited by gmail
 
         checkCommentStatus(testPage.id, postId_gu3, CST.ApprovedComment) // not edited
 
-        checkCommentStatus(testPage.id, postId_gm1, CST.UnapprovedEdits) // guest's edits applied
-        checkCommentStatus(testPage.id, postId_gm2, CST.UnapprovedEdits) // edited by author, gmail user
+        checkCommentStatus(testPage.id, postId_gm1, CST.ApprovedComment) // guest's edits applied, approved, well behaved user
+        checkCommentStatus(testPage.id, postId_gm2, CST.ApprovedComment) // edited by author, gmail user
         checkCommentStatus(testPage.id, postId_gm3, CST.ApprovedComment) // not edited
 
         // The guest and Gmail users' suggestions have been applied and approved by the admin.

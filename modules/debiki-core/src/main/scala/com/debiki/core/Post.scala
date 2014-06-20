@@ -468,6 +468,23 @@ case class Post(
         review.directApproval.map(_.isPermanent) == Some(true))
 
 
+  private lazy val anyLastManualApprovalAction: Option[ApprovePostAction] = {
+    val anyManualApproval =
+      _reviewsDescTime find { review =>
+        review.payload match {
+          case approvePostAction: PAP.ApprovePost =>
+            if (approvePostAction.approval.isAuthoritative)
+              true
+            else
+              false
+          case _ =>
+            false
+        }
+      }
+    anyManualApproval.asInstanceOf[Option[ApprovePostAction]]
+  }
+
+
   def lastPermanentApprovalDati: Option[ju.Date] =
     anyMaxDate(lastPermanentApproval.map(_.creationDati), state.lastPermanentApprovalDati)
 
@@ -481,7 +498,7 @@ case class Post(
 
   def lastManualApprovalDati: Option[ju.Date] =
     anyMaxDate(
-      _reviewsDescTime.find(_.directApproval == Some(Approval.Manual)).map(_.creationDati),
+      anyLastManualApprovalAction.map(_.creationDati),
       state.lastManualApprovalDati)
 
 
@@ -489,7 +506,7 @@ case class Post(
     if (state.lastManualApprovalDati == lastManualApprovalDati)
       return state.lastManuallyApprovedById
 
-    _reviewsDescTime.find(_.directApproval == Some(Approval.Manual)).map(_.userId)
+    anyLastManualApprovalAction.map(_.userId)
   }
 
   def lastReviewWasApproval: Option[Boolean] =

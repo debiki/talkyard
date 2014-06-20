@@ -194,12 +194,13 @@ object AutoApprover {
 
       // After any manual approval, consider this user being a well behaved user.
       // And continue automatically approving a well behaved user.
-      post.lastApprovalType foreach { approval =>
-        val startConsiderWellBehaved = approval == Approval.Manual
-        val alreadyConsideredWellBehaved = approval == Approval.WellBehavedUser
-        if (alreadyConsideredWellBehaved || startConsiderWellBehaved) {
-          anyCurrentApproval = Some(Approval.WellBehavedUser)
-        }
+      // Ooops, this makes any user well behaved, if anything from the same ip number has
+      // been manually approved. Well, not totally unreasonable, could tweak this
+      // behavior later.
+      val startConsiderWellBehaved = post.someVersionManuallyApproved
+      val alreadyConsideredWellBehaved = post.lastApprovalType.map(_ == Approval.WellBehavedUser)
+      if (startConsiderWellBehaved || alreadyConsideredWellBehaved == Some(true)) {
+        anyCurrentApproval = Some(Approval.WellBehavedUser)
       }
     }
 
