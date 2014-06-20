@@ -157,7 +157,7 @@ d.i.makeCurUser = function() {
       markMyActions(myPageData);
       // In `myPageData.threadsByPageId` are any not-yet-approved comments
       // by the current user. Insert them into the page:
-      d.i.patchPage(myPageData);
+      d.i.patchPage(myPageData, { overwriteTrees: true });
     }
 
     function markMyActions(actions) {
