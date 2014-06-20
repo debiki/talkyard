@@ -44,7 +44,7 @@ trait NotfGeneratorTestValues {
   val approvalOfBody =
     RawPostAction.toApprovePost(2, postId = rawBody.id,
       UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
-      ctime = new ju.Date(11000), approval = Approval.Manual)
+      ctime = new ju.Date(11000), approval = Approval.AuthoritativeUser)
   val rejectionOfBody =
     RawPostAction.toDeletePost(andReplies = false, id = 3, postIdToDelete = rawBody.id,
       UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
@@ -61,7 +61,7 @@ trait NotfGeneratorTestValues {
   val approvalOfReply =
     RawPostAction.toApprovePost(12, postId = rawReply.id,
       UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
-      ctime = new ju.Date(11000), approval = Approval.Manual)
+      ctime = new ju.Date(11000), approval = Approval.AuthoritativeUser)
   val rejectionOfReply =  RawPostAction.toDeletePost(
     andReplies = false, 13, postIdToDelete = rawReply.id,
     UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),

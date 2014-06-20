@@ -172,7 +172,7 @@ class AutoApproverSpec extends Specification with Mockito {
 
   val approvalOfReplyA: RawPostAction[PAP.ApprovePost] = RawPostAction.toApprovePost(
     id = 10002, postId = testUserReplyAId, SystemUser.UserIdData,
-    ctime = later(10), approval = Approval.Manual)
+    ctime = later(10), approval = Approval.AuthoritativeUser)
 
   val wellBehavedApprovalOfReplyA = approvalOfReplyA.copy(payload = PAP.WellBehavedApprovePost)
   val prelApprovalOfReplyA = approvalOfReplyA.copy(payload = PAP.PrelApprovePost)

@@ -56,17 +56,11 @@ object Approval {
    */
   case object AuthoritativeUser extends Approval(isPermanent = true, isAuthoritative = true)
 
-  /**
-   * When an authoritative user manually approved something.
-   */
-  case object Manual extends Approval(isPermanent = true, isAuthoritative = true)
-
 
   def parse(text: String): Approval = text match {
     case "Preliminary" => Preliminary
     case "WellBehavedUser" => WellBehavedUser
     case "AuthoritativeUser" => AuthoritativeUser
-    case "Manual" => Manual
     case _ => illArgErr("DwE931k35", s"Bad approval value: `$text'")
   }
 

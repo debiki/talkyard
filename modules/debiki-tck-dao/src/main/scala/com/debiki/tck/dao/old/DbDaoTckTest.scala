@@ -1337,7 +1337,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     def testSaveLoadReview(isApproved: Boolean) {
       var reviewSaved: RawPostAction[PAP.ApprovePost] = null
-      val approval = if (isApproved) Approval.Manual else ???
+      val approval = if (isApproved) Approval.AuthoritativeUser else ???
       val reviewNoId = RawPostAction.toApprovePost(
          UnassignedId, postId = ex1_rootPost.id,
         UserIdData.newTest(loginId, userId = globalUserId), ctime = now, approval = approval)

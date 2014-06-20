@@ -108,7 +108,6 @@ object PostActionPayload {
 
   val PrelApprovePost = ApprovePost(Approval.Preliminary)
   val WellBehavedApprovePost = ApprovePost(Approval.WellBehavedUser)
-  val ManuallyApprovePost = ApprovePost(Approval.Manual)
 
 
   /** Rejects all edits that have been applied since the last time the post

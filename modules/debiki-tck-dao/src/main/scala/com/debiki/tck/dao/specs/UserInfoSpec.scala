@@ -82,7 +82,7 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
 
     "add a comment, find one action" in {
       val (page2, comment2) = siteUtils.addComment(guestLoginGrant, page, CommentText)
-      page = siteUtils.review(passwordLoginGrant, page2, comment2.id, Approval.Manual)
+      page = siteUtils.review(passwordLoginGrant, page2, comment2.id, Approval.AuthoritativeUser)
       comment = page.parts.getPost(comment2.id) getOrElse fail("Comment not found")
       siteUtils.dao.loadUserInfoAndStats(guestUser.id) mustBe Some(
         UserInfoAndStats(info = guestUser, stats = UserStats.Zero.copy(

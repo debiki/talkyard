@@ -55,7 +55,7 @@ trait PageTestValues {
 
   val bodyApprovalSkeleton = RawPostAction.toApprovePost(
     11, postId = bodySkeleton.id, UserIdData.newTest("111", userId = "?"),
-        ctime = new ju.Date(11000), approval = Approval.Manual)
+        ctime = new ju.Date(11000), approval = Approval.AuthoritativeUser)
 
   val bodyDeletionSkeleton = bodyApprovalSkeleton.copy(
     payload = PAP.DeletePost(clearFlags = false))
@@ -84,7 +84,7 @@ trait PageTestValues {
 
   val approvalOfEditApp = RawPostAction.toApprovePost(id = 16, postId = editAppSkeleton.postId,
         userIdData = UserIdData.newTest("116", userId = "?"), ctime = new ju.Date(16000),
-        approval = Approval.Manual)
+        approval = Approval.AuthoritativeUser)
 
   val rejectionOfEditApp = RawPostAction.toRejectEdits(id = 16, postId = editAppSkeleton.postId,
         UserIdData.newTest("116", userId = "?"), createdAt = new ju.Date(16000),
