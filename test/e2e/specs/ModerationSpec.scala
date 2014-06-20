@@ -85,10 +85,10 @@ class ModerationSpec extends DebikiBrowserSpec
         isPostApproved(postId_gu2) mustBe true
         isPostApproved(postId_gu3) mustBe true
         /*
-        isPostApproved(postId_gu3) mustBe false
         isPostApproved(postId_gu4) mustBe false
         isPostApproved(postId_gu5) mustBe false
         isPostApproved(postId_gu6) mustBe false
+        isPostApproved(postId_gu7) mustBe false
         */
       }
 
@@ -98,10 +98,10 @@ class ModerationSpec extends DebikiBrowserSpec
         isPostApproved(postId_gu2) mustBe true
         isPostApproved(postId_gu3) mustBe true
         /*
-        isPostApproved(postId_gu3) mustBe false
         isPostApproved(postId_gu4) mustBe false
         isPostApproved(postId_gu5) mustBe false
         isPostApproved(postId_gu6) mustBe false
+        isPostApproved(postId_gu7) mustBe false
         */
       }
 
@@ -109,14 +109,12 @@ class ModerationSpec extends DebikiBrowserSpec
         logout()
         reloadPage()
         waitUntilUserSpecificDataHandled()
-        findPost(postId_gu2) must be('defined)
-        findPost(postId_gu3) must be('defined)
-        /*
-        findPost(postId_gu3) must be('empty)
-        findPost(postId_gu4) must be('empty)
-        findPost(postId_gu5) must be('empty)
-        findPost(postId_gu6) must be('empty)
-        */
+        findPost(postId_gu2) must be(defined)
+        findPost(postId_gu3) must be(defined)
+        findPost(postId_gu4) must be(empty)
+        findPost(postId_gu5) must be(empty)
+        findPost(postId_gu6) must be(empty)
+        findPost(postId_gu7) must be(empty)
       }
 
       "login as admin, add comments: #ad8" in {
@@ -150,7 +148,7 @@ class ModerationSpec extends DebikiBrowserSpec
         checkCommentStatus(testPage.id, postId_gu3, CommentStatusText.PrelApprovedComment)
 
         for (postId <- List(postId_gu4, postId_gu5, postId_gu6, postId_gu7))
-          checkCommentStatus(testPage.id, postId, CommentStatusText.PrelApprovedComment)
+          checkCommentStatus(testPage.id, postId, CommentStatusText.UnapprovedComment)
           // checkCommentStatus(postId, CommentStatusText.UnapprovedComment)
 
         for (postId <- List(postId_ad8))
