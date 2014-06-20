@@ -130,6 +130,10 @@ export class QueryService {
     return this.doSomethingWithPost2(post, '/-/clear-flags');
   }
 
+  public rejectEdits(post: moderation.Post): ng.IPromise<void> {
+    return this.doSomethingWithPost2(post, '/-/reject-edits');
+  }
+
   private doSomethingWithPost2(post: moderation.Post, actionUrl: string): ng.IPromise<void> {
     var deferred = this.$q.defer<void>();
     this.$http.post(actionUrl, this.postToJson2(post)).success((data) => {

@@ -34,6 +34,7 @@ interface ModerationScope extends RootScope {
   hideFlaggedSendPm(post: Post);
   deleteFlagged(post: Post);
   clearFlags(post: Post);
+  rejectEdits(post: Post);
 }
 
 
@@ -80,11 +81,17 @@ class ModerationController {
       doInlineAction(queryService.clearFlags, post, 'Flags cleared.');
     }
 
+    $scope.rejectEdits = (post: Post) => {
+      post.rejectEdits();
+      doInlineAction(queryService.rejectEdits, post, 'Edits rejected.');
+    }
+
     var doInlineAction = (queryServiceFn: (_: Post) => ng.IPromise<void>, post: Post,
         doneMessage: string) => {
       post.approveBtnText = '';
-      post.hideRejectAndDeleteBtns = true;
+      post.hideDeleteBtn = true;
       post.hideViewSuggsLink = true;
+      post.hideRejectEditsBtn = true;
       post.inlineMessage = 'Wait...';
       queryServiceFn.call(queryService, post).then((data) => {
         post.inlineMessage = doneMessage;

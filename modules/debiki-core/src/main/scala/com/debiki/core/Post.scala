@@ -312,11 +312,11 @@ case class Post(
     * need to be reviewed.
     */
   def numEditsToReview = {
-    val numNew = lastPermanentApprovalDati match {
+    val numNew = lastRejectedOrPermApprovedAt match {
       case None => editsAppliedDescTime.length
-      case Some(permApprovalDati) =>
+      case Some(date) =>
         (editsAppliedDescTime takeWhile { patch =>
-          permApprovalDati.getTime < patch.applicationDati.get.getTime
+          date.getTime < patch.applicationDati.get.getTime
         }).length
     }
     state.numEditsToReview + numNew
@@ -482,6 +482,16 @@ case class Post(
         }
       }
     anyManualApproval.asInstanceOf[Option[ApprovePostAction]]
+  }
+
+
+  def lastRejectedOrPermApprovedAt: Option[ju.Date] = {
+    val lastRejectionOrPermApproval = _reviewsDescTime find {
+      case _: RejectEditsAction => true
+      case x if x.directApproval.map(_.isPermanent) == Some(true) => true
+      case _ => false
+    }
+    lastRejectionOrPermApproval.map(_.creationDati)
   }
 
 

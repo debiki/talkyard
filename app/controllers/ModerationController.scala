@@ -72,6 +72,11 @@ object ModerationController extends mvc.Controller {
   }
 
 
+  def rejectEdits = PostJsonAction(maxLength = 5000) { apiReq =>
+    review2(apiReq, PAP.RejectEdits(deleteEdits = false), (perms) => apiReq.theUser.isAdmin)
+  }
+
+
   private def review2[A](apiReq: JsonPostRequest, payload: A, permsTest: (PermsOnPage) => Boolean)
         : mvc.PlainResult = {
     val pageIdsAndActions: Seq[(PageId, RawPostAction[A])] =
