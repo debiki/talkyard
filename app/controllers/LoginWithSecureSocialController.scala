@@ -76,11 +76,14 @@ object LoginWithSecureSocialController extends mvc.Controller {
   }
 
 
-  private def handleAuthImpl(provider: String)(request: GetRequest) = {
+  private def handleAuthImpl(provider: String)(request: GetRequest): SimpleResult = {
     Registry.providers.get(provider) match {
       case Some(p) => {
         try {
-          p.authenticate()(request.request).fold( result => result , {
+          p.authenticate()(request.request).fold({
+            result: Result =>
+              result.asInstanceOf[SimpleResult]
+          }, {
             ssid: securesocial.core.Identity =>
               val ssUser = ssid.asInstanceOf[securesocial.core.SocialUser]
               completeAuthentication(ssUser, request)
@@ -103,7 +106,7 @@ object LoginWithSecureSocialController extends mvc.Controller {
 
 
   private def completeAuthentication(secureSocialCoreUser: securesocial.core.SocialUser,
-        request: GetRequest): PlainResult = {
+        request: GetRequest): SimpleResult = {
 
     Logger.debug(s"User logged in : [$secureSocialCoreUser]")
 

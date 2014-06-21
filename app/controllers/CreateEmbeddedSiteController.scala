@@ -110,7 +110,7 @@ object CreateEmbeddedSiteController extends mvc.Controller {
          "Please use an account that has an email address")
 
     def _showLoginPageAgain(errorCode: String, errorMessage: String)
-          : PlainResult = {
+          : SimpleResult = {
       // For now:
       throwForbidden(errorCode, errorMessage)
       // Could instead show this page, + helpful info on why failed:

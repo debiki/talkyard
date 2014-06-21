@@ -63,6 +63,7 @@ object ApplicationBuild extends Build {
     // This (JDBC and PostgerSQL) makes the database evolutions script in
     // debiki-dao-rdb work. Otherwise not needed.
     jdbc,
+    cache,
     // There's a PostgreSQL 903 build number too but it's not in the Maven repos.
     // PostgreSQL 9.2 drivers are also not in the Maven repos (as of May 2013).
     "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
@@ -94,8 +95,9 @@ object ApplicationBuild extends Build {
 
 
   // Make `idea with-sources` work in subprojects.
+  // No longer needed, don't know why.
   override def settings =
-    super.settings ++ org.sbtidea.SbtIdeaPlugin.ideaSettings ++
+    super.settings ++
     // By default, sbteclipse skips parent projects.
     // See the "skipParents" section, here:
     // https://github.com/typesafehub/sbteclipse/wiki/Using-sbteclipse
@@ -124,7 +126,7 @@ object ApplicationBuild extends Build {
     Keys.fork in Test := false, // or cannot place breakpoints in test suites
     Keys.compile in Compile <<=
        (Keys.compile in Compile).dependsOn(compileRhinoTask),
-    playPackageEverything <<= playPackageEverything dependsOn compileJsAndCss,
+    /// playPackageEverything <<= playPackageEverything dependsOn compileJsAndCss,
     unmanagedClasspath in Compile <+= (baseDirectory) map { bd =>
       Attributed.blank(bd / "target/scala-2.10/compiledjs-classes")
     },

@@ -19,17 +19,22 @@ resolvers ++= Seq("snapshots" at "http://oss.sonatype.org/content/repositories/s
                     "releases"  at "http://oss.sonatype.org/content/repositories/releases")
 
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("play" % "sbt-plugin" % "2.1.3")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.2.3")
 
 
 // The SBT-Idea plugin, https://github.com/mpeltonen/sbt-idea
+// Don't know if this is really needed? Seems to work anyway forn new projects.
+// However, to attach Play's own sources, open a Play class for which sources
+// are missing, and click "Attach soruces" in the upper right corner in Idea,
+// and choose <play-dist-folder>/framework/src/.
 // ---------------------------------------------------------------
 resolvers += "sbt-idea-repo" at "http://mpeltonen.github.com/maven/"
 
 // libraryDependencies += "com.github.mpeltonen" %% "sbt-idea" % "0.10.0"
-addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.1.0-M2-TYPESAFE")
+//addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.1.0-M2-TYPESAFE")
 //addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.1.0")
 //addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.5.1")
+addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.6.0")
 
 
 // Eclipse project files

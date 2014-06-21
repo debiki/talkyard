@@ -26,6 +26,7 @@ import play.api._
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action => _, _}
 import requests._
+import scala.concurrent.Future
 import controllers.Utils
 
 
@@ -36,27 +37,36 @@ import controllers.Utils
 object ApiActions {
 
 
-  def GetAction(f: GetRequest => Result) =
+  def AsyncGetAction(f: GetRequest => Future[SimpleResult]): mvc.Action[Option[Any]] =
+    ??? // PlainApiAction(BodyParsers.parse.empty)(f)
+
+  def GetAction(f: GetRequest => SimpleResult) =
     PlainApiAction(BodyParsers.parse.empty)(f)
 
 
-  def AdminGetAction(f: GetRequest => Result) =
+  def AdminGetAction(f: GetRequest => SimpleResult) =
     PlainApiAction(BodyParsers.parse.empty, adminOnly = true)(f)
 
 
   def JsonOrFormDataPostAction
         (maxBytes: Int)
-        (f: ApiRequest[JsonOrFormDataBody] => Result) =
+        (f: ApiRequest[JsonOrFormDataBody] => SimpleResult) =
     PlainApiAction[JsonOrFormDataBody](
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
+
+  def AsyncJsonOrFormDataPostAction
+        (maxBytes: Int)
+        (f: ApiRequest[JsonOrFormDataBody] => Future[SimpleResult]): mvc.Action[JsonOrFormDataBody] =
+    ??? // PlainApiAction[JsonOrFormDataBody](
+      //JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
   /**
    * @deprecated Use ApiRequest[JsonOrFormDataBody] instead
    */
   def PostFormDataAction
         (maxUrlEncFormBytes: Int)
-        (f: FormDataPostRequest => Result) =
+        (f: FormDataPostRequest => SimpleResult) =
     PlainApiAction[Map[String, Seq[String]]](
       BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(f)
 
@@ -68,27 +78,27 @@ object ApiActions {
    */
   def PostJsonAction
         (maxLength: Int)
-        (f: JsonPostRequest => Result) =
+        (f: JsonPostRequest => SimpleResult) =
     PlainApiAction[JsValue](
       BodyParsers.parse.json(maxLength = maxLength))(f)
 
 
   def AdminPostJsonAction
         (maxLength: Int)
-        (f: JsonPostRequest => Result) =
+        (f: JsonPostRequest => SimpleResult) =
     PlainApiAction[JsValue](
       BodyParsers.parse.json(maxLength = maxLength), adminOnly = true)(f)
 
 
   private def PlainApiAction[A]
         (parser: BodyParser[A], adminOnly: Boolean = false)
-        (f: ApiRequest[A] => Result) =
+        (f: ApiRequest[A] => SimpleResult): mvc.Action[A] =
       ApiActionImpl[A](parser, adminOnly)(f)
 
 
   private def ApiActionImpl[A]
         (parser: BodyParser[A], adminOnly: Boolean)
-        (f: ApiRequest[A] => Result) =
+        (f: ApiRequest[A] => SimpleResult): mvc.Action[A] =
     SafeActions.CheckSidAction[A](parser) { (sidOk, xsrfOk, browserId, request) =>
 
       val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)

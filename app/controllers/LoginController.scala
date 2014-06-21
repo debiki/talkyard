@@ -25,6 +25,7 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
+import scala.concurrent.Future
 import Utils.{OkHtml}
 
 
@@ -41,13 +42,13 @@ import Utils.{OkHtml}
 object LoginController extends mvc.Controller {
 
 
-  def loginWith(provider: String, returnToUrl: String) = ExceptionActionNoBody {
+  def loginWith(provider: String, returnToUrl: String) = AsyncExceptionActionNoBody {
         implicit reqest =>
     asyncLogin(provider = provider, returnToUrl = returnToUrl)
   }
 
 
-  def loginWithPostData(returnToUrl: String) = ExceptionAction(
+  def loginWithPostData(returnToUrl: String) = AsyncExceptionAction(
         parse.urlFormEncoded(maxLength = 200)) { implicit request =>
     // For now. Should handle guest login forms too.
     LoginWithOpenIdController.asyncLoginWithPostData(returnToUrl = "")
@@ -55,14 +56,14 @@ object LoginController extends mvc.Controller {
 
 
   def asyncLogin(provider: String, returnToUrl: String)
-        (implicit request: Request[Option[Any]]): Result = {
+        (implicit request: Request[Option[Any]]): Future[SimpleResult] = {
 
-    def loginWithOpenId(identifier: String): AsyncResult = {
+    def loginWithOpenId(identifier: String): Future[SimpleResult] = {
       LoginWithOpenIdController.asyncLogin(openIdIdentifier = identifier,
         returnToUrl = returnToUrl)(request)
     }
 
-    def loginWithSecureSocial(provider: String): Result = {
+    def loginWithSecureSocial(provider: String): Future[SimpleResult] = {
       LoginWithSecureSocialController.startAuthentication(
         provider, returnToUrl = returnToUrl)(request)
     }

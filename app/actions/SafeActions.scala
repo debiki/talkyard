@@ -27,6 +27,7 @@ import play.api._
 import play.api.Play.current
 import play.api.mvc.{Action => _, _}
 import requests._
+import scala.concurrent.Future
 
 
 /**
@@ -42,7 +43,7 @@ object SafeActions {
    * or the session id is invalid.
    */
   def CheckSidActionNoBody
-        (f: (SidStatus, XsrfOk, Option[BrowserId], Request[Option[Any]]) => Result) =
+        (f: (SidStatus, XsrfOk, Option[BrowserId], Request[Option[Any]]) => SimpleResult) =
     CheckSidAction(BodyParsers.parse.empty)(f)
 
 
@@ -61,7 +62,7 @@ object SafeActions {
   // COULD rename to CheckSidAndXsrfAction?
   def CheckSidAction[A]
         (parser: BodyParser[A], maySetCookies: Boolean = true)
-        (f: (SidStatus, XsrfOk, Option[BrowserId], Request[A]) => Result) =
+        (f: (SidStatus, XsrfOk, Option[BrowserId], Request[A]) => SimpleResult): mvc.Action[A] =
     ExceptionAction[A](parser) { request =>
 
       val (sidStatus, xsrfOk, newCookies) =
@@ -127,10 +128,10 @@ object SafeActions {
    * e.g. 403 Forbidden and a user friendly message,
    * instead of 500 Internal Server Error and a stack trace or Ooops message.
    */
-  def ExceptionAction[A](parser: BodyParser[A])(f: Request[A] => Result) =
+  def ExceptionAction[A](parser: BodyParser[A])(f: Request[A] => SimpleResult): mvc.Action[A] =
         mvc.Action[A](parser) { request =>
 
-    def exceptionRecoverer: PartialFunction[Throwable, PlainResult] = {
+    def exceptionRecoverer: PartialFunction[Throwable, SimpleResult] = {
       case DebikiHttp.ResultException(result) => result
       case ex: play.api.libs.json.JsResultException =>
         Results.BadRequest(s"Bad JSON: $ex [error DwE70KX3]")
@@ -139,31 +140,59 @@ object SafeActions {
     // An exception might be thrown before any async computation is started,
     // or whilst any async computation happens. So check for any exception twice:
 
-    var perhapsAsyncResult = try {
+    var result = try {
       f(request)
     }
     catch exceptionRecoverer
 
-    import scala.concurrent.ExecutionContext.Implicits.global
-
     if (!Play.isProd) {
       val anyNewFakeIp = request.queryString.get("fakeIp").flatMap(_.headOption)
       anyNewFakeIp foreach { fakeIp =>
-        perhapsAsyncResult = perhapsAsyncResult.withCookies(Cookie("dwCoFakeIp", fakeIp))
+        result = result.withCookies(Cookie("dwCoFakeIp", fakeIp))
       }
     }
 
-    perhapsAsyncResult match {
-      case AsyncResult(futureResultMaybeException) =>
-        val futureResult = futureResultMaybeException recover exceptionRecoverer
-        AsyncResult(futureResult)
-      case x => x
-    }
+    result
   }
 
 
-  def ExceptionActionNoBody(f: Request[Option[Any]] => Result) =
+  def ExceptionActionNoBody(f: Request[Option[Any]] => SimpleResult) =
     ExceptionAction(BodyParsers.parse.empty)(f)
+
+
+  def AsyncExceptionAction[A](parser: BodyParser[A])(f: Request[A] => Future[SimpleResult]) =
+    mvc.Action[A](parser) { request =>
+
+      def exceptionRecoverer: PartialFunction[Throwable, SimpleResult] = {
+        case DebikiHttp.ResultException(result) => result
+        case ex: play.api.libs.json.JsResultException =>
+          Results.BadRequest(s"Bad JSON: $ex [error DwE70KX3]")
+      }
+
+      var asyncResult = f(request)
+
+      import scala.concurrent.ExecutionContext.Implicits.global
+
+      ??? /*
+      if (!Play.isProd) {
+        val anyNewFakeIp = request.queryString.get("fakeIp").flatMap(_.headOption)
+        anyNewFakeIp foreach { fakeIp =>
+          asyncResult = a.withCookies(Cookie("dwCoFakeIp", fakeIp))
+        }
+      }
+
+      perhapsAsyncResult match {
+        case AsyncResult(futureResultMaybeException) =>
+          val futureResult = futureResultMaybeException recover exceptionRecoverer
+          AsyncResult(futureResult)
+        case x => x
+      }
+      */
+    }
+
+
+  def AsyncExceptionActionNoBody(f: Request[Option[Any]] => Future[SimpleResult]) =
+    AsyncExceptionAction(BodyParsers.parse.empty)(f)
 
 }
 

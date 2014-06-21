@@ -56,14 +56,14 @@ object LoginWithOpenIdController extends mvc.Controller {
 
 
   // COULD change to an ErrorAction, and use throwBadReq instead of BadRequest.
-  def loginPost = mvc.Action(parse.urlFormEncoded(maxLength = 200)) {
+  def loginPost = mvc.Action.async(parse.urlFormEncoded(maxLength = 200)) {
         request =>
     asyncLoginWithPostData(returnToUrl = "")(request)
   }
 
 
   def asyncLoginWithPostData(returnToUrl: String)(
-        implicit request: Request[Map[String, Seq[String]]]): AsyncResult = {
+        implicit request: Request[Map[String, Seq[String]]]): Future[SimpleResult] = {
     // (From the spec: The form field's "name" attribute should have the value
     // "openid_identifier", so that User-Agents can automatically
     // determine that this is an OpenID form.
@@ -74,7 +74,7 @@ object LoginWithOpenIdController extends mvc.Controller {
 
 
   def asyncLogin(returnToUrl: String, openIdIdentifier: String)
-       (implicit request: Request[_]): AsyncResult = {
+       (implicit request: Request[_]): Future[SimpleResult] = {
 
     val realm = _wildcardRealmFor(request.host)
 
@@ -91,14 +91,20 @@ object LoginWithOpenIdController extends mvc.Controller {
     val futureResult = futureUrl.map((url: String) => {
       Logger.trace("OpenID provider redirection URL discovered: " + url)
       Redirect(url)
-    }).recover(_ match {
+    }).recover(
+      ???
+      )
+    /*
+    case t: Throwable => t match {
       case NonFatal(exception) =>
         Logger.debug("OpenID provider redirection URL error, OpenId: " +
-          openIdIdentifier +", error: "+ exception)
-        Redirect(routes.LoginWithOpenIdController.loginGet)
-    })
+          openIdIdentifier + ", error: " + exception)
+        Future(Redirect(routes.LoginWithOpenIdController.loginGet))
+    }: PartialFunction[Throwable, Future[SimpleResult]])
+    */
 
-    AsyncResult(futureResult)
+    futureResult
+    //AsyncResult(futureResult)
   }
 
 

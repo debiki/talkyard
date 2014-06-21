@@ -47,14 +47,14 @@ object PageActions {
   def PageGetAction
         (pathIn: PagePath, pageMustExist: Boolean = true, fixPath: Boolean = true,
          maySetCookies: Boolean = true)
-        (f: PageGetRequest => PlainResult) =
+        (f: PageGetRequest => SimpleResult) =
     PageReqAction(BodyParsers.parse.empty)(
       pathIn, pageMustExist, fixPath = fixPath, maySetCookies = maySetCookies)(f)
 
 
   def FolderGetAction
         (pathIn: PagePath)
-        (f: PageGetRequest => PlainResult) =
+        (f: PageGetRequest => SimpleResult) =
     FolderReqAction(BodyParsers.parse.empty)(pathIn)(f)
 
 
@@ -65,7 +65,7 @@ object PageActions {
   def PagePostAction
         (maxUrlEncFormBytes: Int)
         (pathIn: PagePath, pageMustExist: Boolean = true, fixPath: Boolean = true)
-        (f: PagePostRequest => PlainResult) =
+        (f: PagePostRequest => SimpleResult) =
     PageReqAction(
       BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(
       pathIn, pageMustExist, fixPath = fixPath)(f)
@@ -80,7 +80,7 @@ object PageActions {
   def PagePostAction2
         (maxBytes: Int)
         (pathIn: PagePath, pageMustExist: Boolean = true, fixPath: Boolean = true)
-        (f: PagePostRequest2 => PlainResult) =
+        (f: PagePostRequest2 => SimpleResult) =
     PageReqAction(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(
       pathIn, pageMustExist, fixPath = fixPath)(f)
@@ -90,7 +90,7 @@ object PageActions {
         (parser: BodyParser[A])
         (pathIn: PagePath, pageMustExist: Boolean, fixPath: Boolean,
          maySetCookies: Boolean = true)
-        (f: PageRequest[A] => PlainResult)
+        (f: PageRequest[A] => SimpleResult)
         = CheckPathAction[A](parser)(
             pathIn, maySetCookies = maySetCookies, fixPath = fixPath) {
       (sidStatus, xsrfOk, browserId, pathOkOpt, dao, request) =>
@@ -144,7 +144,7 @@ object PageActions {
   def FolderReqAction[A]
         (parser: BodyParser[A])
         (pathIn: PagePath)
-        (f: PageRequest[A] => PlainResult)
+        (f: PageRequest[A] => SimpleResult)
     = SafeActions.CheckSidAction[A](parser, maySetCookies = true) {
         (sidStatus, xsrfOk, browserId, request) =>
 
@@ -198,7 +198,7 @@ object PageActions {
   def CheckPathActionNoBody
         (pathIn: PagePath)
         (f: (SidStatus, XsrfOk, Option[BrowserId], Option[PagePath], SiteDao,
-           Request[Option[Any]]) => PlainResult) =
+           Request[Option[Any]]) => SimpleResult) =
     CheckPathAction(BodyParsers.parse.empty)(pathIn)(f)
 
 
@@ -206,7 +206,7 @@ object PageActions {
         (parser: BodyParser[A])
         (pathIn: PagePath, maySetCookies: Boolean = true, fixPath: Boolean = true)
         (f: (SidStatus, XsrfOk, Option[BrowserId], Option[PagePath], SiteDao, Request[A]) =>
-           PlainResult) =
+           SimpleResult) =
     SafeActions.CheckSidAction[A](parser, maySetCookies = maySetCookies) {
         (sidStatus, xsrfOk, browserId, request) =>
       val dao = Globals.siteDao(siteId = pathIn.tenantId,

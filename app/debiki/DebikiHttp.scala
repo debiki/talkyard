@@ -60,25 +60,25 @@ object DebikiHttp {
 
   private def R = Results
 
-  def BadReqResult(errCode: String, message: String): PlainResult =
+  def BadReqResult(errCode: String, message: String): SimpleResult =
     R.BadRequest("400 Bad Request\n"+ message +" [error "+ errCode +"]")
 
   // There's currently no WWW-Authenticate header
   // field in the response though!
-  def UnauthorizedResult(errCode: String, message: String): PlainResult =
+  def UnauthorizedResult(errCode: String, message: String): SimpleResult =
     R.Unauthorized("401 Unauthorized\n"+ message +" [error "+ errCode +"]")
 
-  def ForbiddenResult(errCode: String, message: String): PlainResult =
+  def ForbiddenResult(errCode: String, message: String): SimpleResult =
     R.Forbidden("403 Forbidden\n"+ message +" [error "+ errCode +"]")
 
-  def NotFoundResult(errCode: String, message: String): PlainResult =
+  def NotFoundResult(errCode: String, message: String): SimpleResult =
     R.NotFound("404 Not Found\n"+ message +" [error "+ errCode +"]")
 
-  def EntityTooLargeResult(errCode: String, message: String): PlainResult =
+  def EntityTooLargeResult(errCode: String, message: String): SimpleResult =
     R.EntityTooLarge("413 Request Entity Too Large\n"+
        message +" [error "+ errCode +"]")
 
-  def InternalErrorResult(errCode: String, message: String): PlainResult =
+  def InternalErrorResult(errCode: String, message: String): SimpleResult =
     R.InternalServerError(
       "500 Internal Server Error\n"+ message +" [error "+ errCode +"]")
 
@@ -86,7 +86,7 @@ object DebikiHttp {
    * Thrown on error, caught in Global.onError, which returns the wrapped
    * result to the browser.
    */
-  case class ResultException(result: PlainResult) extends QuickException
+  case class ResultException(result: SimpleResult) extends QuickException
 
   def throwRedirect(url: String) =
     throw ResultException(R.Redirect(url))
@@ -218,7 +218,7 @@ object DebikiHttp {
   // Javascript shows these dialogs as modal dialogs.
 
   def OkDialogResult(title: String, summary: String, details: String)
-        : PlainResult =
+        : SimpleResult =
     OkHtml(<html><body>{
       HtmlForms.respDlgOk(title, summary, details)
     }</body></html>)
@@ -232,7 +232,7 @@ object DebikiHttp {
 
   def ForbiddenDialogResult(
         errCode: String,  title: String, summary: String, details: String)
-        : PlainResult =
+        : SimpleResult =
     ForbiddenHtml(errorDialogXml(errCode, title, summary, details))
 
 
