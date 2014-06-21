@@ -518,7 +518,7 @@ case class HtmlPageSerializer(
         post <- sortPostsDescFitness(posts)
         if !post.isTreeDeleted || showStubsForDeleted
         if !(post.isPostDeleted && post.replies.isEmpty) || showStubsForDeleted
-        if showUnapproved.shallShow(post)
+        if post.someVersionApproved || showUnapproved.shallShow(post)
       } {
         val thread = renderThread(post, parentHorizontal, uncollapseFirst)
         threadNodes ++= thread

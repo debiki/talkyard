@@ -135,5 +135,13 @@ class ApprovePostAction(page: PageParts, val rawApproval: RawPostAction[PAP.Appr
 }
 
 
+class RejectEditsAction(page: PageParts, val rawRejection: RawPostAction[PAP.RejectEdits])
+  extends PostAction(page, rawRejection) with MaybeApproval {
+
+  def directApproval = None
+  lazy val target: Post = page.getPost(rawRejection.postId) getOrDie "DwE1dUI8"
+
+}
+
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
 

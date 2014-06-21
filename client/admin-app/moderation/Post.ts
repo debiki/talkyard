@@ -33,7 +33,8 @@ export class Post {
   public inlineMessage = '';
 
   public hideViewSuggsLink = true;
-  public hideRejectAndDeleteBtns = true;
+  public hideDeleteBtn = true;
+  public hideRejectEditsBtn = true;
 
 
   constructor(
@@ -65,20 +66,20 @@ export class Post {
     switch (this.status) {
       case 'Deleted':
       case 'Hidden':
-        this.hideRejectAndDeleteBtns = true;
-        this.hideViewSuggsLink = true;
+        this.hideDeleteBtn = true;
         break;
       case 'NewPrelApproved':
       case 'EditsPrelApproved':
         this.approveBtnText = 'Okay';
-        this.hideRejectAndDeleteBtns = false;
-        this.hideViewSuggsLink = true;
+        this.hideDeleteBtn = false;
         break;
       case 'New':
+        this.approveBtnText = 'Approve';
+        this.hideDeleteBtn = false;
+        break;
       case 'NewEdits':
         this.approveBtnText = 'Approve';
-        this.hideRejectAndDeleteBtns = false;
-        this.hideViewSuggsLink = true;
+        this.hideRejectEditsBtn = false;
         break;
       default:
         this.hideViewSuggsLink = this.numPendingEditSuggestions == 0;
@@ -178,6 +179,13 @@ export class Post {
     this.numHandledFlags += this.numPendingFlags;
     this.numPendingFlags = 0;
     this.pendingFlags = [];
+  }
+
+
+  public rejectEdits() {
+    this.status = 'EditsRejected';
+    this.approveBtnText = null;
+    this.hideRejectEditsBtn = true;
   }
 }
 

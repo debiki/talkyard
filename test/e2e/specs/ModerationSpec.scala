@@ -42,7 +42,7 @@ with StartServerAndChromeDriverFactory
 @test.tags.EndToEndTest
 @DoNotDiscover
 class ModerationSpec extends DebikiBrowserSpec
-  with TestReplyer with TestLoginner with TestFlagger {
+  with TestReplyer with TestLoginner with TestFlagger with TestModeration {
 
   lazy val testPage = createTestPage(PageRole.Generic,
     title = "ModerationSpec Page Title", body = Some("ModerationSpec page body."))
@@ -85,10 +85,10 @@ class ModerationSpec extends DebikiBrowserSpec
         isPostApproved(postId_gu2) mustBe true
         isPostApproved(postId_gu3) mustBe true
         /*
-        isPostApproved(postId_gu3) mustBe false
         isPostApproved(postId_gu4) mustBe false
         isPostApproved(postId_gu5) mustBe false
         isPostApproved(postId_gu6) mustBe false
+        isPostApproved(postId_gu7) mustBe false
         */
       }
 
@@ -98,10 +98,10 @@ class ModerationSpec extends DebikiBrowserSpec
         isPostApproved(postId_gu2) mustBe true
         isPostApproved(postId_gu3) mustBe true
         /*
-        isPostApproved(postId_gu3) mustBe false
         isPostApproved(postId_gu4) mustBe false
         isPostApproved(postId_gu5) mustBe false
         isPostApproved(postId_gu6) mustBe false
+        isPostApproved(postId_gu7) mustBe false
         */
       }
 
@@ -109,14 +109,12 @@ class ModerationSpec extends DebikiBrowserSpec
         logout()
         reloadPage()
         waitUntilUserSpecificDataHandled()
-        findPost(postId_gu2) must be('defined)
-        findPost(postId_gu3) must be('defined)
-        /*
-        findPost(postId_gu3) must be('empty)
-        findPost(postId_gu4) must be('empty)
-        findPost(postId_gu5) must be('empty)
-        findPost(postId_gu6) must be('empty)
-        */
+        findPost(postId_gu2) must be(defined)
+        findPost(postId_gu3) must be(defined)
+        findPost(postId_gu4) must be(empty)
+        findPost(postId_gu5) must be(empty)
+        findPost(postId_gu6) must be(empty)
+        findPost(postId_gu7) must be(empty)
       }
 
       "login as admin, add comments: #ad8" in {
@@ -145,16 +143,16 @@ class ModerationSpec extends DebikiBrowserSpec
       "find listed all new comments" in {
         // The first comment might take a while to load.
         eventually {
-          checkCommentStatus(postId_gu2, CommentStatusText.PrelApprovedComment)
+          checkCommentStatus(testPage.id, postId_gu2, CommentStatusText.PrelApprovedComment)
         }
-        checkCommentStatus(postId_gu3, CommentStatusText.PrelApprovedComment)
+        checkCommentStatus(testPage.id, postId_gu3, CommentStatusText.PrelApprovedComment)
 
         for (postId <- List(postId_gu4, postId_gu5, postId_gu6, postId_gu7))
-          checkCommentStatus(postId, CommentStatusText.PrelApprovedComment)
+          checkCommentStatus(testPage.id, postId, CommentStatusText.UnapprovedComment)
           // checkCommentStatus(postId, CommentStatusText.UnapprovedComment)
 
         for (postId <- List(postId_ad8))
-          checkCommentStatus(postId, CommentStatusText.ApprovedComment)
+          checkCommentStatus(testPage.id, postId, CommentStatusText.ApprovedComment)
       }
 
       "approve comments except #gu6, 7" in {
@@ -261,96 +259,6 @@ class ModerationSpec extends DebikiBrowserSpec
 
     }
 
-  }
-
-
-  // For a discussion page. Should be moved to a page object?
-  def waitUntilUserSpecificDataHandled() {
-    eventually {
-      find(cssSelector(".dw-user-page-data")) must be('empty)
-    }
-  }
-
-
-  // For the admin dashboard. Should be moved to a page object?
-  def checkCommentStatus(postId: PostId, commentStatusText: String) {
-    val commentLink = find(cssSelector(s"a[href='/-${testPage.id}#post-$postId']")).
-      getOrElse(fail(s"Comment `$postId' not listed"))
-    commentLink.text.toLowerCase mustBe commentStatusText.toLowerCase
-  }
-
-
-  object CommentStatusText {
-    val ApprovedComment = "Comment"
-    val PrelApprovedComment = "New comment, preliminarily approved"
-    val UnapprovedComment = "New comment"
-    val UnapprovedEdits = "Comment, edited"
-  }
-
-
-  def findApproveNewPostLink(pageId: String, postId: PostId) =
-    findPostInlineSomething(pageId, postId, cssClass = "approve-new-post")
-
-  def clickApproveNewPost(pageId: String, postId: PostId) =
-    click on findApproveNewPostLink(pageId, postId).getOrElse(fail(
-      s"Approve new post link missing, page id: $pageId, post id: $postId"))
-
-  def findPostApprovedMessage(pageId: String, postId: PostId) =
-    findPostInlineSomething(pageId, postId, cssClass = "inline-message", text = "Approved.")
-
-
-  def findDeleteNewPostLink(pageId: String, postId: PostId) =
-    findPostInlineSomething(pageId, postId, cssClass = "delete-new-post")
-
-  def clickDeleteNewPost(pageId: String, postId: PostId) =
-    click on findDeleteNewPostLink(pageId, postId).getOrElse(fail(
-      s"Delete new post link missing, page id: $pageId, post id: $postId"))
-
-  def findDeleteFlaggedPostLink(pageId: String, postId: PostId) =
-    findPostInlineSomething(pageId, postId, cssClass = "delete-flagged-post")
-
-  def clickDeleteFlaggedPost(pageId: String, postId: PostId) =
-    click on findDeleteFlaggedPostLink(pageId, postId).getOrElse(fail(
-      s"Delete flagged post link missing, page id: $pageId, post id: $postId"))
-
-  def findPostDeletedMessage(pageId: String, postId: PostId) =
-    findPostInlineSomething(pageId, postId, cssClass = "inline-message", text = "Deleted.")
-
-
-  def findClearFlagsLink(pageId: String, postId: PostId) =
-    findPostInlineSomething(pageId, postId, cssClass = "clear-flags")
-
-  def clickClearFlags(pageId: String, postId: PostId) =
-    click on findClearFlagsLink(pageId, postId).getOrElse(fail(
-      s"Clear flags link missing, page id: $pageId, post id: $postId"))
-
-  def findFlagsClearedMessage(pageId: String, postId: PostId) =
-    findPostInlineSomething(pageId, postId, cssClass = "inline-message", text = "Flags cleared.")
-
-
-  private def findPostInlineSomething(
-        pageId: String, postId: PostId, cssClass: String, text: String = null)
-        : Option[Element] = {
-    val query = findPostElemXpath(pageId, postId) +
-      s"//*[contains(concat(' ', @class, ' '), ' $cssClass ')]"
-    var anyElem = find(xpath(query))
-    if (text ne null) anyElem = anyElem filter { _.text == text }
-    anyElem
-  }
-
-
-  def findAnyInlineButton(pageId: String, postId: PostId): Option[Element] = {
-    val query = findPostElemXpath(pageId, postId) + "//button"
-    findAll(xpath(query)).filter(_.isDisplayed).toList.headOption
-  }
-
-
-  private def findPostElemXpath(pageId: String, postId: PostId) = {
-    // Find the link to the comment
-    s"//a[@href='/-$pageId#post-$postId' and " +
-      "contains(concat(' ', @class, ' '), ' action-description ')]" +
-      // Find the <td> in which the link and inline actions are located
-      "/../.."
   }
 
 }

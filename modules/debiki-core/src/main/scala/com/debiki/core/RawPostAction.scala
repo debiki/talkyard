@@ -250,6 +250,17 @@ object RawPostAction {
       payload = if (approval ne null) PAP.ApprovePost(approval) else old.payload)
 
 
+  def toRejectEdits(
+    id: ActionId,
+    postId: ActionId,
+    userIdData: UserIdData,
+    createdAt: ju.Date,
+    deleteEdits: Boolean): RawPostAction[PAP.RejectEdits] =
+      RawPostAction(
+        id, creationDati = createdAt, postId = postId, userIdData = userIdData,
+        payload = PAP.RejectEdits(deleteEdits))
+
+
   def toDeletePost(
         andReplies: Boolean,
         id: ActionId,

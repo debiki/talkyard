@@ -52,8 +52,7 @@ sealed abstract class ShowUnapproved {
 object ShowUnapproved {
 
   case object None extends ShowUnapproved {
-    override def shallShow(post: Post) =
-      post.someVersionApproved
+    override def shallShow(post: Post) = false
   }
 
   case object All extends ShowUnapproved {

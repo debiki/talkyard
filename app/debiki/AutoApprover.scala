@@ -183,9 +183,8 @@ object AutoApprover {
       if (post.currentVersionRejected)
         return None
 
-      // For now, assume an old post was "bad" if it is both flagged and deleted.
-      // In the future: Perhaps allow moderators to clarify why they deleted the post?
-      if (post.isDeletedSomehow && post.numFlags > 0)
+      // Assume an old post was "bad" if it has been deleted by anyone but the author.
+      if (post.isPostDeleted && post.postDeletedById != Some(post.userId))
         return None
 
       // If any recent post flagged, but the flags haven't been reviewed,
@@ -195,12 +194,13 @@ object AutoApprover {
 
       // After any manual approval, consider this user being a well behaved user.
       // And continue automatically approving a well behaved user.
-      post.lastApprovalType foreach { approval =>
-        val startConsiderWellBehaved = approval == Approval.Manual
-        val alreadyConsideredWellBehaved = approval == Approval.WellBehavedUser
-        if (alreadyConsideredWellBehaved || startConsiderWellBehaved) {
-          anyCurrentApproval = Some(Approval.WellBehavedUser)
-        }
+      // Ooops, this makes any user well behaved, if anything from the same ip number has
+      // been manually approved. Well, not totally unreasonable, could tweak this
+      // behavior later.
+      val startConsiderWellBehaved = post.someVersionManuallyApproved
+      val alreadyConsideredWellBehaved = post.lastApprovalType.map(_ == Approval.WellBehavedUser)
+      if (startConsiderWellBehaved || alreadyConsideredWellBehaved == Some(true)) {
+        anyCurrentApproval = Some(Approval.WellBehavedUser)
       }
     }
 

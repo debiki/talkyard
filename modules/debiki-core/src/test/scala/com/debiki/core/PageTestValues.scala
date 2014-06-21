@@ -55,9 +55,9 @@ trait PageTestValues {
 
   val bodyApprovalSkeleton = RawPostAction.toApprovePost(
     11, postId = bodySkeleton.id, UserIdData.newTest("111", userId = "?"),
-        ctime = new ju.Date(11000), approval = Approval.Manual)
+        ctime = new ju.Date(11000), approval = Approval.AuthoritativeUser)
 
-  val bodyRejectionSkeleton = bodyApprovalSkeleton.copy(
+  val bodyDeletionSkeleton = bodyApprovalSkeleton.copy(
     payload = PAP.DeletePost(clearFlags = false))
 
   val editSkeleton =
@@ -73,9 +73,9 @@ trait PageTestValues {
       payload = PAP.Delete(editSkeleton.id))
 
   val editAppSkeleton =
-    RawPostAction[PAP.EditApp](id = 14, new ju.Date(14000),
-      PAP.EditApp(editSkeleton.id, approval = None),
-      postId = editSkeleton.postId, UserIdData.newTest("114", userId = "?"))
+    RawPostAction[PAP.EditApp](id = 14, creationDati = new ju.Date(14000),
+      payload = PAP.EditApp(editSkeleton.id, approval = None),
+      postId = editSkeleton.postId, userIdData = UserIdData.newTest("114", userId = "?"))
 
   val deletionOfEditApp =
     RawPostAction(id = 15, postId = editAppSkeleton.postId,
@@ -84,9 +84,11 @@ trait PageTestValues {
 
   val approvalOfEditApp = RawPostAction.toApprovePost(id = 16, postId = editAppSkeleton.postId,
         userIdData = UserIdData.newTest("116", userId = "?"), ctime = new ju.Date(16000),
-        approval = Approval.Manual)
+        approval = Approval.AuthoritativeUser)
 
-  val rejectionOfEditApp = ??? // copyApprovePost(approvalOfEditApp, approval = None)
+  val rejectionOfEditApp = RawPostAction.toRejectEdits(id = 16, postId = editAppSkeleton.postId,
+        UserIdData.newTest("116", userId = "?"), createdAt = new ju.Date(16000),
+        deleteEdits = false)
 
   /* val ratingOfBody = Rating(17, postId = bodySkeleton.id,
     userIdData = UserIdData.newTest("117", userId = "?"), ctime = new ju.Date(17000), tags = Nil)
@@ -131,15 +133,11 @@ trait PageTestValues {
       RawPostAction.copyApplyEdit(editAppSkeleton, approval = Some(Approval.Preliminary))
 
   lazy val PageWithEditManuallyAppliedAndPrelApprovedThenRejected =
-    ??? /*
     PageWithEditManuallyAppliedAndPrelApproved + rejectionOfEditApp
-    */
 
   lazy val PageWithEditManuallyAppliedAndRejected =
-    ??? /*
     EmptyPage + bodySkeletonAutoApproved + editSkeleton +
      editAppSkeleton + rejectionOfEditApp
-     */
 
   lazy val PageWithEditManuallyAppliedNothingApproved =
     EmptyPage + bodySkeleton + editSkeleton + editAppSkeleton

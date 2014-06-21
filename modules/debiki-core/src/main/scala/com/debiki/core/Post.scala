@@ -38,6 +38,12 @@ import FlagType.FlagType
   * Preliminarily approved (by the computer, automatically — it guesses / uses heuristics).
   * Permanently reviewed (by a moderator, or a well-behaved user).
   * Authoritatively reviewed (by a moderator but not a well-behaved user).
+  *
+  * COULD rewrite, simplify. Currently there're lots of small functions that
+  * independently of each other examines all past actions and determines the current
+  * state of something. — It'd be easier to start with a state, either blank
+  * if the post is completely new, or a state loaded from DW1_POSTS. And then
+  * loop through all actions and update the state once and for all.
   */
 case class Post(
     pageParts: PageParts,
@@ -306,11 +312,11 @@ case class Post(
     * need to be reviewed.
     */
   def numEditsToReview = {
-    val numNew = lastPermanentApprovalDati match {
+    val numNew = lastRejectedOrPermApprovedAt match {
       case None => editsAppliedDescTime.length
-      case Some(permApprovalDati) =>
+      case Some(date) =>
         (editsAppliedDescTime takeWhile { patch =>
-          permApprovalDati.getTime < patch.applicationDati.get.getTime
+          date.getTime < patch.applicationDati.get.getTime
         }).length
     }
     state.numEditsToReview + numNew
@@ -368,7 +374,9 @@ case class Post(
     // or EditApp is simply ignored.)
 
     val explicitReviewsDescTime =
-      actions.filter(_.isInstanceOf[ApprovePostAction]).sortBy(-_.creationDati.getTime).
+      actions.filter(action =>
+        action.isInstanceOf[ApprovePostAction] || action.isInstanceOf[RejectEditsAction])
+        .sortBy(-_.creationDati.getTime).
       asInstanceOf[List[PostAction[_] with MaybeApproval]]
 
     var implicitApprovals = List[PostAction[_] with MaybeApproval]()
@@ -460,6 +468,33 @@ case class Post(
         review.directApproval.map(_.isPermanent) == Some(true))
 
 
+  private lazy val anyLastManualApprovalAction: Option[ApprovePostAction] = {
+    val anyManualApproval =
+      _reviewsDescTime find { review =>
+        review.payload match {
+          case approvePostAction: PAP.ApprovePost =>
+            if (approvePostAction.approval.isAuthoritative)
+              true
+            else
+              false
+          case _ =>
+            false
+        }
+      }
+    anyManualApproval.asInstanceOf[Option[ApprovePostAction]]
+  }
+
+
+  def lastRejectedOrPermApprovedAt: Option[ju.Date] = {
+    val lastRejectionOrPermApproval = _reviewsDescTime find {
+      case _: RejectEditsAction => true
+      case x if x.directApproval.map(_.isPermanent) == Some(true) => true
+      case _ => false
+    }
+    lastRejectionOrPermApproval.map(_.creationDati)
+  }
+
+
   def lastPermanentApprovalDati: Option[ju.Date] =
     anyMaxDate(lastPermanentApproval.map(_.creationDati), state.lastPermanentApprovalDati)
 
@@ -473,7 +508,7 @@ case class Post(
 
   def lastManualApprovalDati: Option[ju.Date] =
     anyMaxDate(
-      _reviewsDescTime.find(_.directApproval == Some(Approval.Manual)).map(_.creationDati),
+      anyLastManualApprovalAction.map(_.creationDati),
       state.lastManualApprovalDati)
 
 
@@ -481,7 +516,7 @@ case class Post(
     if (state.lastManualApprovalDati == lastManualApprovalDati)
       return state.lastManuallyApprovedById
 
-    _reviewsDescTime.find(_.directApproval == Some(Approval.Manual)).map(_.userId)
+    anyLastManualApprovalAction.map(_.userId)
   }
 
   def lastReviewWasApproval: Option[Boolean] =

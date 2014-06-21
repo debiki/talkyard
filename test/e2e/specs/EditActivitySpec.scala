@@ -32,7 +32,6 @@ import test.e2e.code._
   * in SBT:  test-only test.e2e.specs.EditActivitySpecRunner
   * in test:console:  (new test.e2e.specs.EditActivitySpecRunner).execute()
   */
-@DoNotDiscover
 class EditActivitySpecRunner extends org.scalatest.Suites(new EditActivitySpec)
 with StartServerAndChromeDriverFactory
 
@@ -63,7 +62,7 @@ with StartServerAndChromeDriverFactory
 @test.tags.EndToEndTest
 @DoNotDiscover
 class EditActivitySpec extends DebikiBrowserSpec
-  with TestReplyer with TestLoginner with TestEditor {
+  with TestReplyer with TestLoginner with TestEditor with TestModeration {
 
   lazy val testPage = createTestPage(PageRole.Generic,
     title = "Edit Suggestions Test 5902RK", body = Some("Edit suggestions test 10EIJ55."))
@@ -171,26 +170,26 @@ class EditActivitySpec extends DebikiBrowserSpec
       "find listed all new comments" in {
         // The first comment might take a while to load.
         eventually {
-          checkCommentStatus(postId_gu1, CommentStatusText.PrelApprovedComment)
+          checkCommentStatus(testPage.id, postId_gu1, CommentStatusText.PrelApprovedComment)
         }
-        checkCommentStatus(postId_gu2, CommentStatusText.PrelApprovedComment)
+        checkCommentStatus(testPage.id, postId_gu2, CommentStatusText.PrelApprovedComment)
 
         for (postId <- List(postId_gu3, postId_gm1, postId_gm2, postId_gm3))
-          checkCommentStatus(postId, CommentStatusText.UnapprovedComment)
+          checkCommentStatus(testPage.id, postId, CommentStatusText.UnapprovedComment)
 
         for (postId <- List(postId_ad1, postId_ad2, postId_ad3, postId_ad4, postId_ad5))
-          checkCommentStatus(postId, CommentStatusText.ApprovedComment)
+          checkCommentStatus(testPage.id, postId, CommentStatusText.ApprovedComment)
       }
 
       "approve comments" in {
         val unapprovedCommentIds = List(postId_gu3, postId_gm1, postId_gm2, postId_gm3)
 
         for (postId <- unapprovedCommentIds)
-          click on findApprovePostLink(testPage.id, postId).getOrElse(
+          click on findApproveNewPostLink(testPage.id, postId).getOrElse(
             fail(s"No approval link found for comment `$postId'"))
 
         for (postId <- unapprovedCommentIds) eventually {
-          findPostApprovedText(testPage.id, postId) getOrElse
+          findPostApprovedMessage(testPage.id, postId) getOrElse
             fail(s"Comment `$postId' was never approved")
         }
       }
@@ -200,8 +199,7 @@ class EditActivitySpec extends DebikiBrowserSpec
     "let people edit each other's comments" - {
 
       s"return to discussion" in {
-        goBack()
-        reloadPage()
+        clickGoBackToSite()
       }
 
       s"login as Guest, edit #gu1, #gm1, #ad1, #ad4" in {
@@ -241,29 +239,29 @@ class EditActivitySpec extends DebikiBrowserSpec
 
         // The first comment might take a while to load.
         eventually {
-          checkCommentStatus(postId_gu1, CST.PrelApprovedComment)
+          checkCommentStatus(testPage.id, postId_gu1, CST.PrelApprovedComment)
         }
 
         // The Gmail user's edits of #gu2 are not indicated before the preliminary
         // approval of the comment has been upheld.
-        checkCommentStatus(postId_gu2, CST.PrelApprovedComment)  // edited by gmail user
-        checkCommentStatus(postId_gu3, CST.ApprovedComment)   // not edited
+        checkCommentStatus(testPage.id, postId_gu2, CST.PrelApprovedComment)  // edited by gmail user
+        checkCommentStatus(testPage.id, postId_gu3, CST.ApprovedComment)   // not edited
 
         // This one has 1 suggestion by Gmail user.
-        checkCommentStatus(postId_gm1, CST.ApprovedComment, numSuggestions = 1) // guest
+        checkCommentStatus(testPage.id, postId_gm1, CST.ApprovedComment, numSuggestions = 1) // guest
 
         // This one was edited by its author, the gmail user, and it was auto-approved,
         // well behaved user.
-        checkCommentStatus(postId_gm2, CST.ApprovedComment)
+        checkCommentStatus(testPage.id, postId_gm2, CST.ApprovedComment)
 
-        checkCommentStatus(postId_gm3, CST.ApprovedComment)  // not edited
+        checkCommentStatus(testPage.id, postId_gm3, CST.ApprovedComment)  // not edited
 
         // The guest and Gmail users have edited admin's comments 1, 2, 4, 5.
-        checkCommentStatus(postId_ad1, CST.ApprovedComment, numSuggestions = 1) // guest
-        checkCommentStatus(postId_ad2, CST.ApprovedComment, numSuggestions = 1) // gmail
-        checkCommentStatus(postId_ad3, CST.ApprovedComment)  // admin edited it
-        checkCommentStatus(postId_ad4, CST.ApprovedComment, numSuggestions = 1) // guest
-        checkCommentStatus(postId_ad5, CST.ApprovedComment, numSuggestions = 1) // gmail
+        checkCommentStatus(testPage.id, postId_ad1, CST.ApprovedComment, numSuggestions = 1) // guest
+        checkCommentStatus(testPage.id, postId_ad2, CST.ApprovedComment, numSuggestions = 1) // gmail
+        checkCommentStatus(testPage.id, postId_ad3, CST.ApprovedComment)  // admin edited it
+        checkCommentStatus(testPage.id, postId_ad4, CST.ApprovedComment, numSuggestions = 1) // guest
+        checkCommentStatus(testPage.id, postId_ad5, CST.ApprovedComment, numSuggestions = 1) // gmail
       }
     }
 
@@ -271,8 +269,7 @@ class EditActivitySpec extends DebikiBrowserSpec
     "people applies each other's edit suggestion" - {
 
       s"return to discussion" in {
-        goBack()
-        reloadPage()
+        clickGoBackToSite()
       }
 
       s"Admin approves suggestions to comment #ad1 and #ad2" in {
@@ -322,7 +319,7 @@ class EditActivitySpec extends DebikiBrowserSpec
         val CST = CommentStatusText
 
         eventually {
-          checkCommentStatus(postId_gu1, CST.PrelApprovedComment)
+          checkCommentStatus(testPage.id, postId_gu1, CST.PrelApprovedComment)
         }
 
         // Comment #gu2 is prel approved and there's a suggestion that the Guest has applied.
@@ -330,88 +327,25 @@ class EditActivitySpec extends DebikiBrowserSpec
         // for now UnapprovedComment works however:
         // Ooops see above [dh3903w15]. Currently the guest is considered well-behaved
         // so this comment became auto-approved when the guest applied an edit suggestion.
-        checkCommentStatus(postId_gu2, CST.UnapprovedComment) // prel aprvd, edited by gmail
+        //checkCommentStatus(testPage.id, postId_gu2, CST.UnapprovedComment) // prel aprvd, edited by gmail
 
-        checkCommentStatus(postId_gu3, CST.ApprovedComment) // not edited
+        checkCommentStatus(testPage.id, postId_gu3, CST.ApprovedComment) // not edited
 
-        checkCommentStatus(postId_gm1, CST.UnapprovedEdits) // guest's edits applied
-        checkCommentStatus(postId_gm2, CST.UnapprovedEdits) // edited by author, gmail user
-        checkCommentStatus(postId_gm3, CST.ApprovedComment) // not edited
+        checkCommentStatus(testPage.id, postId_gm1, CST.ApprovedComment) // guest's edits applied, approved, well behaved user
+        checkCommentStatus(testPage.id, postId_gm2, CST.ApprovedComment) // edited by author, gmail user
+        checkCommentStatus(testPage.id, postId_gm3, CST.ApprovedComment) // not edited
 
         // The guest and Gmail users' suggestions have been applied and approved by the admin.
-        checkCommentStatus(postId_ad1, CST.ApprovedComment, numSuggestions = 0) // guest
-        checkCommentStatus(postId_ad2, CST.ApprovedComment, numSuggestions = 0) // gmail
-        checkCommentStatus(postId_ad3, CST.ApprovedComment)  // admin edited it
+        checkCommentStatus(testPage.id, postId_ad1, CST.ApprovedComment, numSuggestions = 0) // guest
+        checkCommentStatus(testPage.id, postId_ad2, CST.ApprovedComment, numSuggestions = 0) // gmail
+        checkCommentStatus(testPage.id, postId_ad3, CST.ApprovedComment)  // admin edited it
 
         // These suggestions should have been rejected, but not implemented (search
         // for a "pending" test, above), neither the test or the feature.
-        checkCommentStatus(postId_ad4, CST.ApprovedComment, numSuggestions = 1) // guest
-        checkCommentStatus(postId_ad5, CST.ApprovedComment, numSuggestions = 1) // gmail
+        checkCommentStatus(testPage.id, postId_ad4, CST.ApprovedComment, numSuggestions = 1) // guest
+        checkCommentStatus(testPage.id, postId_ad5, CST.ApprovedComment, numSuggestions = 1) // gmail
       }
     }
-  }
-
-
-  // For a discussion page. Should be moved to a page object?
-  def waitUntilUserSpecificDataHandled() {
-    eventually {
-      find(cssSelector(".dw-user-page-data")) must be('empty)
-    }
-  }
-
-
-  // For the admin dashboard. Should be moved to a page object?
-  def checkCommentStatus(postId: ActionId, commentStatusText: String,
-        numSuggestions: Int = -1) {
-    val commentLink = find(cssSelector(s"a[href='/-${testPage.id}#post-$postId']")).
-      getOrElse(fail(s"Comment `$postId' not listed"))
-    commentLink.text must be === commentStatusText
-
-    if (numSuggestions != -1) {
-      val link = findImprovementSuggestionsLink(testPage.id, postId)
-      val isVisible = link.map(_.isDisplayed) == Some(true)
-      if (numSuggestions == 0 && isVisible)
-        fail(s"Improvement suggestions incorrectly listed for post `$postId'")
-      if (numSuggestions >= 1 && !isVisible)
-        fail(s"No improvement suggestions listed for post `$postId'")
-    }
-  }
-
-
-  object CommentStatusText {
-    val ApprovedComment = "Comment"
-    val PrelApprovedComment = "New comment, prel. approved"
-    val UnapprovedComment = "New comment"
-    val UnapprovedEdits = "Comment, edited"
-  }
-
-
-  def findApprovePostLink(pageId: String, postId: ActionId) =
-    findPostInlineSomething(pageId, postId, cssClass = "approve-action", text = "Approve")
-
-
-  def findPostApprovedText(pageId: String, postId: ActionId) =
-    findPostInlineSomething(pageId, postId, cssClass = "inline-message", text = "Approved.")
-
-
-  def findImprovementSuggestionsLink(pageId: String, postId: ActionId) =
-    findPostInlineSomething(pageId, postId, "suggestions-link")
-
-
-  private def findPostInlineSomething(
-        pageId: String, postId: ActionId, cssClass: String, text: String = null)
-        : Option[Element] = {
-    val query =
-      // Find the link to the comment
-      s"//a[@href='/-$pageId#post-$postId' and " +
-            "contains(concat(' ', @class, ' '), ' action-description ')]" +
-      // Find the <div> in which the link and inline actions are located
-      "/.." +
-      // Find approve/reject/etcetera link or inline information
-      s"//*[contains(concat(' ', @class, ' '), ' $cssClass ')]"
-    var anyElem = find(xpath(query))
-    if (text ne null) anyElem = anyElem filter { _.text == text }
-    anyElem
   }
 
 }

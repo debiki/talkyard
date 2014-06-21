@@ -108,7 +108,15 @@ object PostActionPayload {
 
   val PrelApprovePost = ApprovePost(Approval.Preliminary)
   val WellBehavedApprovePost = ApprovePost(Approval.WellBehavedUser)
-  val ManuallyApprovePost = ApprovePost(Approval.Manual)
+
+
+  /** Rejects all edits that have been applied since the last time the post
+    * was approved.
+    */
+  case class RejectEdits(deleteEdits: Boolean) extends PostActionPayload {
+    if (deleteEdits)
+      unimplemented("RejectEdits(deleteEdits = true) not implemented")
+  }
 
 
   class Vote extends PostActionPayload

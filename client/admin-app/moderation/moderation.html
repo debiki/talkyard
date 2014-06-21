@@ -29,7 +29,8 @@
       <div class="approval-actions" ng-if="post.pendingFlags.length == 0">
         <button class="btn btn-default approve-new-post" ng-click='approve(post)' ng-hide='!post.approveBtnText'>{{post.approveBtnText}}</button>
         <!-- <button class="btn btn-default hide-new-post-send-pm" ng-click='hideNewSendPm(post)' ng-hide='post.hideRejectAndDeleteBtns'>Hide + ask author to improve it</button> -->
-        <button class="btn btn-default delete-new-post" ng-click='delete(post)' ng-hide='post.hideRejectAndDeleteBtns'>Delete</button>
+        <button class="btn btn-default delete-new-post" ng-click='delete(post)' ng-hide='post.hideDeleteBtn'>Delete</button>
+        <button class="btn btn-default reject-edits" ng-click='rejectEdits(post)' ng-hide='post.hideRejectEditsBtn'>Reject edits</button>
       </div>
 
       <div class="flags" ng-if="post.pendingFlags">

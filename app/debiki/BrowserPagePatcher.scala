@@ -229,7 +229,7 @@ case class BrowserPagePatcher(
   }
 
 
-  private def jsonForPost(post: Post): JsPatch = {
+  def jsonForPost(post: Post): JsPatch = {
     val (headAndBodyHtml, actionsHtml) = {
       val renderer = HtmlPostRenderer(post.page, hostAndPort = request.host,
         showUnapproved = showUnapproved)
