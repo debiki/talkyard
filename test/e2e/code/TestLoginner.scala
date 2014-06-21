@@ -21,6 +21,8 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
 import org.openqa.selenium
+import play.{api => p}
+import play.api.Play.current
 
 
 /** Logs in as guest or a certain Gmail OpenID user or as admin.
@@ -147,8 +149,15 @@ trait TestLoginner extends DebikiSelectors {
       eventually {
         click on "Email"
       }
-      val gmailAddr = debiki.Utils.getConfigStringOrDie("debiki.test.gmail.address")
-      val gmailPswd = debiki.Utils.getConfigStringOrDie("debiki.test.gmail.password")
+
+      def getConfigOrCancel(configValueName: String) = {
+        val anyConfigValue = p.Play.configuration.getString(configValueName)
+        anyConfigValue getOrElse cancel(o"""No Gmail test user credentials provided (config
+          value '$configValueName' not specified), skipping test""")
+      }
+      val gmailAddr = getConfigOrCancel("debiki.test.gmail.address")
+      val gmailPswd = getConfigOrCancel("debiki.test.gmail.password")
+
       pressKeys(gmailAddr)
       click on "Passwd"
       pressKeys(gmailPswd)
