@@ -39,7 +39,9 @@ class EndToEndSuite extends Suites(
   new DeleteActivitySpec,
   //new AdminDashboardSpec, -- broken, I've totally rewritten the admin section
   new AnonLoginSpec,
-  new VoteSpec)
+  new VoteSpec,
+  new ModerationSpec,
+  new EditActivitySpec)
   // new PinPostSpec,
   // new ForumSpec)         -- broken, I've totally rewritten the forum stuff
   //new StyleSiteSpecSpec)  -- broken, I've totally rewritten the admin section
