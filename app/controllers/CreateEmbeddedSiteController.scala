@@ -26,6 +26,7 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
+import play.api.mvc.BodyParsers.parse.empty
 import play.api.Logger.logger
 import requests._
 import Utils.ValidationImplicits._
@@ -55,8 +56,8 @@ object CreateEmbeddedSiteController extends mvc.Controller {
   }
 
 
-  def showSiteOwnerForm() = CheckSidActionNoBody { (sidOk, xsrfOk, browserId, request) =>
-    Ok(views.html.login.loginPage(xsrfToken = xsrfOk.value,
+  def showSiteOwnerForm() = SessionAction(empty) { request: SessionRequestNoBody =>
+    Ok(views.html.login.loginPage(xsrfToken = request.xsrfOk.value,
       returnToUrl = routes.CreateEmbeddedSiteController.showEmbeddingSiteUrlForm.url,
       title = "Choose Website Owner Account",
       providerLoginMessage = "It will become the owner of the embedded discussions.",

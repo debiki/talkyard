@@ -17,6 +17,7 @@
 
 package actions
 
+import actions.SafeActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -145,22 +146,21 @@ object PageActions {
         (parser: BodyParser[A])
         (pathIn: PagePath)
         (f: PageRequest[A] => SimpleResult)
-    = SafeActions.CheckSidAction[A](parser, maySetCookies = true) {
-        (sidStatus, xsrfOk, browserId, request) =>
+    = SessionAction[A](parser) { request: SessionRequest[A] =>
 
     if (!pathIn.isFolderOrIndexPage)
-      throwBadReq("DwE903XH3", s"Call on folders only, not pages: ${request.uri}")
+      throwBadReq("DwE903XH3", s"Call on folders only, not pages: ${request.underlying.uri}")
 
     val dao = Globals.siteDao(siteId = pathIn.tenantId,
-      ip = realOrFakeIpOf(request), sidStatus.roleId)
+      ip = realOrFakeIpOf(request.underlying), request.sidStatus.roleId)
 
-    val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidStatus, dao)
+    val (identity, user) = Utils.loadIdentityAndUserOrThrow(request.sidStatus, dao)
 
     // Load permissions.
     val permsReq = PermsOnPageQuery(
       tenantId = pathIn.tenantId,
-      ip = realOrFakeIpOf(request),
-      loginId = sidStatus.loginId,
+      ip = realOrFakeIpOf(request.underlying),
+      loginId = request.sidStatus.loginId,
       identity = identity,
       user = user,
       pagePath = pathIn,
@@ -172,9 +172,9 @@ object PageActions {
 
     // Construct the actual request. COULD create and use a FolderRequest instead.
     val pageReq = PageRequest[A](
-      sid = sidStatus,
-      xsrfToken = xsrfOk,
-      browserId = browserId,
+      sid = request.sidStatus,
+      xsrfToken = request.xsrfOk,
+      browserId = request.browserId,
       identity = identity,
       user = user,
       pageExists = false,
@@ -182,7 +182,7 @@ object PageActions {
       pageMeta = None,
       permsOnPage = permsOnPage,
       dao = dao,
-      request = request)()
+      request = request.underlying)()
 
     val result = f(pageReq)
     result
@@ -207,20 +207,20 @@ object PageActions {
         (pathIn: PagePath, maySetCookies: Boolean = true, fixPath: Boolean = true)
         (f: (SidStatus, XsrfOk, Option[BrowserId], Option[PagePath], SiteDao, Request[A]) =>
            SimpleResult) =
-    SafeActions.CheckSidAction[A](parser, maySetCookies = maySetCookies) {
-        (sidStatus, xsrfOk, browserId, request) =>
+    SessionActionMaybeCookies(maySetCookies)(parser) { request: SessionRequest[A] =>
       val dao = Globals.siteDao(siteId = pathIn.tenantId,
-         ip = realOrFakeIpOf(request), sidStatus.roleId)
+         ip = realOrFakeIpOf(request.underlying), request.sidStatus.roleId)
       dao.checkPagePath(pathIn) match {
         case Some(correct: PagePath) =>
           if (correct.value == pathIn.value) {
-            f(sidStatus, xsrfOk, browserId, Some(correct), dao, request)
+            f(request.sidStatus, request.xsrfOk, request.browserId, Some(correct), dao,
+              request.underlying)
           } else if (!fixPath) {
-            f(sidStatus, xsrfOk, browserId, None, dao, request)
+            f(request.sidStatus, request.xsrfOk, request.browserId, None, dao, request.underlying)
           } else {
             Results.MovedPermanently(correct.value)
           }
-        case None => f(sidStatus, xsrfOk, browserId, None, dao, request)
+        case None => f(request.sidStatus, request.xsrfOk, request.browserId, None, dao, request.underlying)
       }
     }
 

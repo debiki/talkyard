@@ -28,6 +28,7 @@ import play.api.Play.current
 import play.api.mvc.{Action => _, _}
 import requests._
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
 /**
@@ -38,13 +39,13 @@ import scala.concurrent.Future
 object SafeActions {
 
 
-  /**
-   * Throws 403 Forbidden if the xsrf token (for POST requests)
-   * or the session id is invalid.
-   */
-  def CheckSidActionNoBody
-        (f: (SidStatus, XsrfOk, Option[BrowserId], Request[Option[Any]]) => SimpleResult) =
-    CheckSidAction(BodyParsers.parse.empty)(f)
+  case class SessionRequest[A](
+    sidStatus: SidStatus,
+    xsrfOk: XsrfOk,
+    browserId: Option[BrowserId],
+    underlying: Request[A])
+
+  type SessionRequestNoBody = SessionRequest[Option[Any]]
 
 
   /**
@@ -55,10 +56,55 @@ object SafeActions {
    *
    * Throws Forbidden, and deletes the SID cookie, if any SID login id
    * doesn't map to any login entry.
-   *
-   * @param f The SidStatus passed to `f` is either SidAbsent or a SidOk.
-   * @param maySetCookies Set to false for JS and CSS so the replies can be cached by servers.
+   * The SidStatusRequest.sidStatus passed to the action is either SidAbsent or a SidOk.
    */
+  val SessionAction = SessionActionMaybeCookies(maySetCookies = true)
+
+
+  /** No cookies, so JS and CSS can be cached by servers.
+    */
+  val SessionActionNoCookies = SessionActionMaybeCookies(maySetCookies = false)
+
+
+  def SessionActionMaybeCookies(maySetCookies: Boolean) = new ActionBuilder[SessionRequest] {
+    override def invokeBlock[A](
+        request: Request[A],
+        block: SessionRequest[A] => Future[SimpleResult]) = {
+
+      val (sidStatus, xsrfOk, newCookies) =
+        DebikiSecurity.checkSidAndXsrfToken(request, maySetCookies = maySetCookies)
+
+      val (anyBrowserId, moreNewCookies) =
+        BrowserId.checkBrowserId(request, maySetCookies = maySetCookies)
+
+      val resultOldCookies: Future[SimpleResult] =
+        block(SessionRequest(sidStatus, xsrfOk, anyBrowserId, request)) recover {
+          case e: Utils.LoginNotFoundException =>
+            // This might happen if I manually deleted stuff from the
+            // database during development, or if the server has fallbacked
+            // to a standby database.
+            throw ResultException(InternalErrorResult(
+              "DwE034ZQ3", "Internal error, please try again, sorry. "+
+                "(A certain login id has become invalid. You now have "+
+                "a new id, but you will probably need to login again.)")
+              .discardingCookies(DiscardingCookie("dwCoSid")))
+        }
+
+      val resultOkSid =
+        if (newCookies.isEmpty && moreNewCookies.isEmpty) resultOldCookies
+        else {
+          assert(maySetCookies)
+          resultOldCookies map { result =>
+            result
+              .withCookies((newCookies ::: moreNewCookies): _*)
+              .withHeaders(MakeInternetExplorerSaveIframeCookiesHeader)
+          }
+        }
+
+      resultOkSid
+    }
+  }
+
   // COULD rename to CheckSidAndXsrfAction?
   def CheckSidAction[A]
         (parser: BodyParser[A], maySetCookies: Boolean = true)
@@ -130,7 +176,6 @@ object SafeActions {
    */
   object ExceptionAction extends ActionBuilder[Request] {
     def invokeBlock[A](request: Request[A], block: Request[A] => Future[SimpleResult]) = {
-      import scala.concurrent.ExecutionContext.Implicits.global
       var futureResult = block(request) recover {
         case DebikiHttp.ResultException(result) => result
         case ex: play.api.libs.json.JsResultException =>

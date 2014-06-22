@@ -17,6 +17,7 @@
 
 package actions
 
+import actions.SafeActions.{SessionAction, SessionRequest}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -99,20 +100,20 @@ object ApiActions {
   private def ApiActionImpl[A]
         (parser: BodyParser[A], adminOnly: Boolean)
         (f: ApiRequest[A] => SimpleResult): mvc.Action[A] =
-    SafeActions.CheckSidAction[A](parser) { (sidOk, xsrfOk, browserId, request) =>
+    SessionAction[A](parser) { request: SessionRequest[A] =>
 
-      val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
+      val tenantId = DebikiHttp.lookupTenantIdOrThrow(request.underlying, Globals.systemDao)
 
       val dao = Globals.siteDao(siteId = tenantId,
-         ip = realOrFakeIpOf(request), sidOk.roleId)
+         ip = realOrFakeIpOf(request.underlying), request.sidStatus.roleId)
 
-      val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidOk, dao)
+      val (identity, user) = Utils.loadIdentityAndUserOrThrow(request.sidStatus, dao)
 
       if (adminOnly && user.map(_.isAdmin) != Some(true))
         throwForbidden("DwE1GfK7", "Please login as admin")
 
       val apiRequest = ApiRequest[A](
-        sidOk, xsrfOk, browserId, identity, user, dao, request)
+        request.sidStatus, request.xsrfOk, request.browserId, identity, user, dao, request.underlying)
 
       val result = f(apiRequest)
       result

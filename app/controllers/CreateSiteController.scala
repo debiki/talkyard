@@ -28,6 +28,7 @@ import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import play.api.Play.current
+import play.api.mvc.BodyParsers.parse.empty
 import requests._
 import Utils.ValidationImplicits._
 
@@ -64,9 +65,9 @@ object CreateSiteController extends mvc.Controller {
   }
 
 
-  def showWebsiteOwnerForm(siteType: String) = CheckSidActionNoBody {
-        (sidOk, xsrfOk, browserId, request) =>
-    Ok(views.html.login.loginPage(xsrfToken = xsrfOk.value,
+  def showWebsiteOwnerForm(siteType: String) = SessionAction(empty) {
+        request: SessionRequestNoBody =>
+    Ok(views.html.login.loginPage(xsrfToken = request.xsrfOk.value,
       returnToUrl = routes.CreateSiteController.showSiteTypeForm(siteType).url,
       title = "Choose Website Owner Account",
       providerLoginMessage = "It will become the owner of the new website.",
@@ -197,7 +198,7 @@ object CreateSiteController extends mvc.Controller {
   }
 
 
-  def welcomeOwner() = CheckSidActionNoBody { (sidOk, xsrfOk, browserId, request) =>
+  def welcomeOwner() = SessionAction(empty) { _: SessionRequestNoBody =>
     // SHOULD log in user, so s/he can create pages or choose a template.
     // Like so? Pass a magic token in the URL, which is valid for 1 minute,
     // and then, here, check if DW1_LOGINS has *no logins* for the new websitew
