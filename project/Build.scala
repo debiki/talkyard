@@ -126,7 +126,7 @@ object ApplicationBuild extends Build {
     Keys.fork in Test := false, // or cannot place breakpoints in test suites
     Keys.compile in Compile <<=
        (Keys.compile in Compile).dependsOn(compileRhinoTask),
-    /// playPackageEverything <<= playPackageEverything dependsOn compileJsAndCss,
+    (packageBin in Compile) <<= (packageBin in Compile) dependsOn compileJsAndCss,
     unmanagedClasspath in Compile <+= (baseDirectory) map { bd =>
       Attributed.blank(bd / "target/scala-2.10/compiledjs-classes")
     },
