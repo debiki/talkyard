@@ -128,71 +128,25 @@ object SafeActions {
    * e.g. 403 Forbidden and a user friendly message,
    * instead of 500 Internal Server Error and a stack trace or Ooops message.
    */
-  def ExceptionAction[A](parser: BodyParser[A])(f: Request[A] => SimpleResult): mvc.Action[A] =
-        mvc.Action[A](parser) { request =>
-
-    def exceptionRecoverer: PartialFunction[Throwable, SimpleResult] = {
-      case DebikiHttp.ResultException(result) => result
-      case ex: play.api.libs.json.JsResultException =>
-        Results.BadRequest(s"Bad JSON: $ex [error DwE70KX3]")
-    }
-
-    // An exception might be thrown before any async computation is started,
-    // or whilst any async computation happens. So check for any exception twice:
-
-    var result = try {
-      f(request)
-    }
-    catch exceptionRecoverer
-
-    if (!Play.isProd) {
-      val anyNewFakeIp = request.queryString.get("fakeIp").flatMap(_.headOption)
-      anyNewFakeIp foreach { fakeIp =>
-        result = result.withCookies(Cookie("dwCoFakeIp", fakeIp))
-      }
-    }
-
-    result
-  }
-
-
-  def ExceptionActionNoBody(f: Request[Option[Any]] => SimpleResult) =
-    ExceptionAction(BodyParsers.parse.empty)(f)
-
-
-  def AsyncExceptionAction[A](parser: BodyParser[A])(f: Request[A] => Future[SimpleResult]) =
-    mvc.Action[A](parser) { request =>
-
-      def exceptionRecoverer: PartialFunction[Throwable, SimpleResult] = {
+  object ExceptionAction extends ActionBuilder[Request] {
+    def invokeBlock[A](request: Request[A], block: Request[A] => Future[SimpleResult]) = {
+      import scala.concurrent.ExecutionContext.Implicits.global
+      var futureResult = block(request) recover {
         case DebikiHttp.ResultException(result) => result
         case ex: play.api.libs.json.JsResultException =>
           Results.BadRequest(s"Bad JSON: $ex [error DwE70KX3]")
       }
-
-      var asyncResult = f(request)
-
-      import scala.concurrent.ExecutionContext.Implicits.global
-
-      ??? /*
       if (!Play.isProd) {
         val anyNewFakeIp = request.queryString.get("fakeIp").flatMap(_.headOption)
         anyNewFakeIp foreach { fakeIp =>
-          asyncResult = a.withCookies(Cookie("dwCoFakeIp", fakeIp))
+          futureResult = futureResult map { simpleResult =>
+            simpleResult.withCookies(Cookie("dwCoFakeIp", fakeIp))
+          }
         }
       }
-
-      perhapsAsyncResult match {
-        case AsyncResult(futureResultMaybeException) =>
-          val futureResult = futureResultMaybeException recover exceptionRecoverer
-          AsyncResult(futureResult)
-        case x => x
-      }
-      */
+      futureResult
     }
-
-
-  def AsyncExceptionActionNoBody(f: Request[Option[Any]] => Future[SimpleResult]) =
-    AsyncExceptionAction(BodyParsers.parse.empty)(f)
+  }
 
 }
 

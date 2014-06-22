@@ -25,6 +25,7 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
+import play.api.mvc.BodyParsers.parse.empty
 import scala.concurrent.Future
 import Utils.{OkHtml}
 
@@ -42,13 +43,13 @@ import Utils.{OkHtml}
 object LoginController extends mvc.Controller {
 
 
-  def loginWith(provider: String, returnToUrl: String) = AsyncExceptionActionNoBody {
+  def loginWith(provider: String, returnToUrl: String) = ExceptionAction.async(empty) {
         implicit reqest =>
     asyncLogin(provider = provider, returnToUrl = returnToUrl)
   }
 
 
-  def loginWithPostData(returnToUrl: String) = AsyncExceptionAction(
+  def loginWithPostData(returnToUrl: String) = ExceptionAction.async(
         parse.urlFormEncoded(maxLength = 200)) { implicit request =>
     // For now. Should handle guest login forms too.
     LoginWithOpenIdController.asyncLoginWithPostData(returnToUrl = "")
