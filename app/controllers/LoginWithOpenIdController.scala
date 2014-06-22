@@ -91,20 +91,14 @@ object LoginWithOpenIdController extends mvc.Controller {
     val futureResult = futureUrl.map((url: String) => {
       Logger.trace("OpenID provider redirection URL discovered: " + url)
       Redirect(url)
-    }).recover(
-      ???
-      )
-    /*
-    case t: Throwable => t match {
+    }) recover {
       case NonFatal(exception) =>
-        Logger.debug("OpenID provider redirection URL error, OpenId: " +
-          openIdIdentifier + ", error: " + exception)
-        Future(Redirect(routes.LoginWithOpenIdController.loginGet))
-    }: PartialFunction[Throwable, Future[SimpleResult]])
-    */
+        Logger.debug(o"""OpenID provider redirection URL error, OpenId:
+          $openIdIdentifier, error: $exception""")
+        Redirect(routes.LoginWithOpenIdController.loginGet)
+    }
 
     futureResult
-    //AsyncResult(futureResult)
   }
 
 
@@ -147,28 +141,26 @@ object LoginWithOpenIdController extends mvc.Controller {
   private val _IpRegex = """\d+\.\d+\.\d+\.\d+(:\d+)?""".r
 
 
-  def loginCallback(returnToUrl: String) = mvc.Action { request =>
+  def loginCallback(returnToUrl: String) = mvc.Action.async { request =>
     val qs = request.queryString
     lazy val id =
       qs.get("openid.claimedId").flatMap(_.headOption).orElse(
         qs.get("openid.identity"))
     Logger.trace("Verifying OpenID: "+ id +" ...")
 
-    val futureResult = oid.OpenID.verifiedId(request)
-      .map(userInfo =>
-        _handleLoginOk(request, userInfo, returnToUrl))
-      .recover(_ match {
-        case NonFatal(exception) =>
-          _handleLoginFailure(request, exception, returnToUrl)
-      })
+    val futureResult = oid.OpenID.verifiedId(request) map { userInfo =>
+      _handleLoginOk(request, userInfo, returnToUrl)
+    } recover {
+      case NonFatal(exception) =>
+        _handleLoginFailure(request, exception, returnToUrl)
+    }
 
-    AsyncResult(futureResult)
+    futureResult
   }
 
 
   private def _handleLoginOk(
-        request: Request[AnyContent], info: oid.UserInfo, returnToUrl: String)
-        : Result = {
+        request: Request[AnyContent], info: oid.UserInfo, returnToUrl: String): SimpleResult = {
 
     Logger.trace("OpenID verified okay: " + info.id +
        ", attributes: " + info.attributes)
