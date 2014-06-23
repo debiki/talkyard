@@ -104,14 +104,15 @@ object ApiActions {
     }
 
     override def invokeBlock[A](
-        baseRequest: Request[A],
-        block: ApiRequest[A] => Future[SimpleResult]) = {
-      val request = baseRequest.asInstanceOf[SessionRequest[A]]
+        genericRequest: Request[A], block: ApiRequest[A] => Future[SimpleResult]) = {
 
-      val tenantId = DebikiHttp.lookupTenantIdOrThrow(request.underlying, Globals.systemDao)
+      // We've wrapped PlainApiActionImpl in a SessionAction which only provides SessionRequest:s.
+      val request = genericRequest.asInstanceOf[SessionRequest[A]]
+
+      val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
 
       val dao = Globals.siteDao(siteId = tenantId,
-         ip = realOrFakeIpOf(request.underlying), request.sidStatus.roleId)
+         ip = realOrFakeIpOf(request), request.sidStatus.roleId)
 
       val (identity, user) = Utils.loadIdentityAndUserOrThrow(request.sidStatus, dao)
 
@@ -119,7 +120,7 @@ object ApiActions {
         throwForbidden("DwE1GfK7", "Please login as admin")
 
       val apiRequest = ApiRequest[A](
-        request.sidStatus, request.xsrfOk, request.browserId, identity, user, dao, request.underlying)
+        request.sidStatus, request.xsrfOk, request.browserId, identity, user, dao, request)
 
       val result = block(apiRequest)
       result

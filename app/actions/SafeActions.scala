@@ -75,8 +75,7 @@ object SafeActions {
     }
 
     override def invokeBlock[A](
-        request: Request[A],
-        block: SessionRequest[A] => Future[SimpleResult]) = {
+        request: Request[A], block: SessionRequest[A] => Future[SimpleResult]) = {
 
       val (sidStatus, xsrfOk, newCookies) =
         DebikiSecurity.checkSidAndXsrfToken(request, maySetCookies = maySetCookies)
@@ -146,6 +145,7 @@ object SafeActions {
    * instead of 500 Internal Server Error and a stack trace or Ooops message.
    */
   object ExceptionAction extends ActionBuilder[Request] {
+
     def invokeBlock[A](request: Request[A], block: Request[A] => Future[SimpleResult]) = {
       var futureResult = try {
         block(request)
