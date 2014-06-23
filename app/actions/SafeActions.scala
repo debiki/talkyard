@@ -25,7 +25,7 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.Play.current
-import play.api.mvc.{Action => _, _}
+import play.api.mvc._
 import requests._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,7 +43,7 @@ object SafeActions {
     sidStatus: SidStatus,
     xsrfOk: XsrfOk,
     browserId: Option[BrowserId],
-    underlying: Request[A])
+    underlying: Request[A]) extends WrappedRequest(underlying)
 
   type SessionRequestNoBody = SessionRequest[Option[Any]]
 
@@ -67,6 +67,13 @@ object SafeActions {
 
 
   def SessionActionMaybeCookies(maySetCookies: Boolean) = new ActionBuilder[SessionRequest] {
+
+    override def composeAction[A](action: Action[A]) = {
+      ExceptionAction.async(action.parser) { request: Request[A] =>
+        action(request)
+      }
+    }
+
     override def invokeBlock[A](
         request: Request[A],
         block: SessionRequest[A] => Future[SimpleResult]) = {
@@ -77,8 +84,15 @@ object SafeActions {
       val (anyBrowserId, moreNewCookies) =
         BrowserId.checkBrowserId(request, maySetCookies = maySetCookies)
 
+      // Parts of `block` might be executed asynchronously. However any LoginNotFoundException
+      // should happen before the async parts, because access control should be done
+      // before any async computations are started. So I don't try to recover
+      // any AsyncResult(future-result-that-might-be-a-failure) here.
       val resultOldCookies: Future[SimpleResult] =
-        block(SessionRequest(sidStatus, xsrfOk, anyBrowserId, request)) recover {
+        try {
+          block(SessionRequest(sidStatus, xsrfOk, anyBrowserId, request))
+        }
+        catch {
           case e: Utils.LoginNotFoundException =>
             // This might happen if I manually deleted stuff from the
             // database during development, or if the server has fallbacked
@@ -104,49 +118,6 @@ object SafeActions {
       resultOkSid
     }
   }
-
-  // COULD rename to CheckSidAndXsrfAction?
-  def CheckSidAction[A]
-        (parser: BodyParser[A], maySetCookies: Boolean = true)
-        (f: (SidStatus, XsrfOk, Option[BrowserId], Request[A]) => SimpleResult): mvc.Action[A] =
-    ExceptionAction[A](parser) { request =>
-
-      val (sidStatus, xsrfOk, newCookies) =
-         DebikiSecurity.checkSidAndXsrfToken(request, maySetCookies = maySetCookies)
-
-      val (anyBrowserId, moreNewCookies) =
-        BrowserId.checkBrowserId(request, maySetCookies = maySetCookies)
-
-      // Parts of `f` might be executed asynchronously. However any LoginNotFoundException
-      // should happen before the async parts, because access control should be done
-      // before any async computations are started. So I don't try to recover
-      // any AsyncResult(future-result-that-might-be-a-failure) here.
-
-      val resultOldCookies = try {
-        f(sidStatus, xsrfOk, anyBrowserId, request)
-      } catch {
-        case e: Utils.LoginNotFoundException =>
-          // This might happen if I manually deleted stuff from the
-          // database during development, or if the server has fallbacked
-          // to a standby database.
-          throw ResultException(InternalErrorResult(
-            "DwE034ZQ3", "Internal error, please try again, sorry. "+
-               "(A certain login id has become invalid. You now have "+
-               "a new id, but you will probably need to login again.)")
-             .discardingCookies(DiscardingCookie("dwCoSid")))
-      }
-
-      val resultOkSid =
-        if (newCookies.isEmpty && moreNewCookies.isEmpty) resultOldCookies
-        else {
-          assert(maySetCookies)
-          resultOldCookies
-            .withCookies((newCookies ::: moreNewCookies): _*)
-            .withHeaders(MakeInternetExplorerSaveIframeCookiesHeader)
-        }
-
-      resultOkSid
-    }
 
 
   /** IE9 blocks cookies in iframes unless the site in the iframe clarifies its
@@ -176,7 +147,16 @@ object SafeActions {
    */
   object ExceptionAction extends ActionBuilder[Request] {
     def invokeBlock[A](request: Request[A], block: Request[A] => Future[SimpleResult]) = {
-      var futureResult = block(request) recover {
+      var futureResult = try {
+        block(request)
+      }
+      catch {
+        case DebikiHttp.ResultException(result) =>
+          Future.successful(result)
+        case ex: play.api.libs.json.JsResultException =>
+          Future.successful(Results.BadRequest(s"Bad JSON: $ex [error DwE70KX3]"))
+      }
+      futureResult = futureResult recover {
         case DebikiHttp.ResultException(result) => result
         case ex: play.api.libs.json.JsResultException =>
           Results.BadRequest(s"Bad JSON: $ex [error DwE70KX3]")
