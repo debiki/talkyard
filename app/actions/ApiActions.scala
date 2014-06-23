@@ -25,7 +25,7 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.libs.json.JsValue
-import play.api.mvc.{Action => _, _}
+import play.api.mvc._
 import requests._
 import scala.concurrent.Future
 import controllers.Utils
@@ -46,13 +46,13 @@ object ApiActions {
 
 
   def AdminGetAction(f: GetRequest => SimpleResult) =
-    PlainApiAction(BodyParsers.parse.empty, adminOnly = true)(f)
+    PlainApiActionAdminOnly(BodyParsers.parse.empty)(f)
 
 
   def JsonOrFormDataPostAction
         (maxBytes: Int)
         (f: ApiRequest[JsonOrFormDataBody] => SimpleResult) =
-    PlainApiAction[JsonOrFormDataBody](
+    PlainApiAction(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
 
@@ -68,7 +68,7 @@ object ApiActions {
   def PostFormDataAction
         (maxUrlEncFormBytes: Int)
         (f: FormDataPostRequest => SimpleResult) =
-    PlainApiAction[Map[String, Seq[String]]](
+    PlainApiAction(
       BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(f)
 
 
@@ -80,27 +80,33 @@ object ApiActions {
   def PostJsonAction
         (maxLength: Int)
         (f: JsonPostRequest => SimpleResult) =
-    PlainApiAction[JsValue](
+    PlainApiAction(
       BodyParsers.parse.json(maxLength = maxLength))(f)
 
 
   def AdminPostJsonAction
         (maxLength: Int)
         (f: JsonPostRequest => SimpleResult) =
-    PlainApiAction[JsValue](
-      BodyParsers.parse.json(maxLength = maxLength), adminOnly = true)(f)
+    PlainApiActionAdminOnly(
+      BodyParsers.parse.json(maxLength = maxLength))(f)
 
 
-  private def PlainApiAction[A]
-        (parser: BodyParser[A], adminOnly: Boolean = false)
-        (f: ApiRequest[A] => SimpleResult): mvc.Action[A] =
-      ApiActionImpl[A](parser, adminOnly)(f)
+  private val PlainApiAction = PlainApiActionImpl(adminOnly = false)
+  private val PlainApiActionAdminOnly = PlainApiActionImpl(adminOnly = true)
 
 
-  private def ApiActionImpl[A]
-        (parser: BodyParser[A], adminOnly: Boolean)
-        (f: ApiRequest[A] => SimpleResult): mvc.Action[A] =
-    SessionAction[A](parser) { request: SessionRequest[A] =>
+  private def PlainApiActionImpl(adminOnly: Boolean) = new ActionBuilder[ApiRequest] {
+
+    override def composeAction[A](action: Action[A]) = {
+      SessionAction.async(action.parser) { request: Request[A] =>
+        action(request)
+      }
+    }
+
+    override def invokeBlock[A](
+        baseRequest: Request[A],
+        block: ApiRequest[A] => Future[SimpleResult]) = {
+      val request = baseRequest.asInstanceOf[SessionRequest[A]]
 
       val tenantId = DebikiHttp.lookupTenantIdOrThrow(request.underlying, Globals.systemDao)
 
@@ -115,9 +121,9 @@ object ApiActions {
       val apiRequest = ApiRequest[A](
         request.sidStatus, request.xsrfOk, request.browserId, identity, user, dao, request.underlying)
 
-      val result = f(apiRequest)
+      val result = block(apiRequest)
       result
     }
-
+  }
 }
 
