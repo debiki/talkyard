@@ -39,7 +39,7 @@ object ApiActions {
 
 
   def AsyncGetAction(f: GetRequest => Future[SimpleResult]): mvc.Action[Option[Any]] =
-    ??? // PlainApiAction(BodyParsers.parse.empty)(f)
+    PlainApiAction.async(BodyParsers.parse.empty)(f)
 
   def GetAction(f: GetRequest => SimpleResult) =
     PlainApiAction(BodyParsers.parse.empty)(f)
@@ -59,8 +59,8 @@ object ApiActions {
   def AsyncJsonOrFormDataPostAction
         (maxBytes: Int)
         (f: ApiRequest[JsonOrFormDataBody] => Future[SimpleResult]): mvc.Action[JsonOrFormDataBody] =
-    ??? // PlainApiAction[JsonOrFormDataBody](
-      //JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
+    PlainApiAction.async(
+      JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
   /**
    * @deprecated Use ApiRequest[JsonOrFormDataBody] instead
