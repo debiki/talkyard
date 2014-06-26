@@ -15,4 +15,7 @@ libraryDependencies ++= Seq(
 // See: https://groups.google.com/forum/?fromgroups=#!topic/simple-build-tool/bkF1IDZj4L0
 ideaPackagePrefix := None
 
+// Makes `dependency-graph` work.
+net.virtualvoid.sbt.graph.Plugin.graphSettings
+
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

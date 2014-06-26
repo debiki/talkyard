@@ -43,3 +43,7 @@ addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.1.1")
 // And see `override def settings =` in Build.scala.
 // Generate Eclipse project files like so: `eclipse with-source=true` (in SBT)
 
+
+// Dependency tree, https://github.com/jrudolph/sbt-dependency-graph
+// ---------------------------------------------------------------
+addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.4")
