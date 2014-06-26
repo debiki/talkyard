@@ -22,7 +22,9 @@ import com.debiki.core._
 import debiki.TemplateRenderer
 import java.{util => ju}
 import play.api._
+import play.api.mvc.SimpleResult
 import requests._
+import scala.concurrent.Future
 import Prelude._
 
 
@@ -36,24 +38,24 @@ object FullTextSearchController extends mvc.Controller {
   private val SearchResultsTemplate = "searchResults"
 
 
-  def searchWholeSiteFor(phrase: String) = GetAction { apiReq =>
+  def searchWholeSiteFor(phrase: String) = AsyncGetAction { apiReq =>
     searchImpl(phrase, anyRootPageId = None, apiReq)
   }
 
 
-  def searchWholeSite() = JsonOrFormDataPostAction(maxBytes = 200) {
+  def searchWholeSite() = AsyncJsonOrFormDataPostAction(maxBytes = 200) {
         apiReq: ApiRequest[JsonOrFormDataBody] =>
     val searchPhrase = apiReq.body.getOrThrowBadReq(SearchPhraseFieldName)
     searchImpl(searchPhrase, anyRootPageId = None, apiReq)
   }
 
 
-  def searchSiteSectionFor(phrase: String, pageId: String) = GetAction { apiReq =>
+  def searchSiteSectionFor(phrase: String, pageId: String) = AsyncGetAction { apiReq =>
     searchImpl(phrase, anyRootPageId = Some(pageId), apiReq)
   }
 
 
-  def searchSiteSection(pageId: String) = JsonOrFormDataPostAction(maxBytes = 200) {
+  def searchSiteSection(pageId: String) = AsyncJsonOrFormDataPostAction(maxBytes = 200) {
         apiReq: ApiRequest[JsonOrFormDataBody] =>
     val searchPhrase = apiReq.body.getOrThrowBadReq(SearchPhraseFieldName)
     searchImpl(searchPhrase, anyRootPageId = Some(pageId), apiReq)
@@ -61,7 +63,7 @@ object FullTextSearchController extends mvc.Controller {
 
 
   private def searchImpl(phrase: String, anyRootPageId: Option[String],
-        apiReq:  DebikiRequest[_]) = {
+        apiReq:  DebikiRequest[_]): Future[SimpleResult] = {
 
     import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -74,7 +76,7 @@ object FullTextSearchController extends mvc.Controller {
       Ok(htmlStr) as HTML
     }
 
-    mvc.AsyncResult(futureResponse)
+    futureResponse
   }
 
 }

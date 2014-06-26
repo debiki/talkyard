@@ -23,6 +23,7 @@ import com.debiki.core.Prelude._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
+import play.api.mvc.BodyParsers.parse.empty
 import Utils.{OkHtml}
 
 
@@ -36,7 +37,7 @@ object LoginPopupController extends mvc.Controller {
     * iframes — only the iframe would be disabled by the modal dialog, but not
     * the rest of the page.
     */
-  def showLoginPopup(mode: String) = ExceptionActionNoBody { request =>
+  def showLoginPopup(mode: String) = ExceptionAction(empty) { request =>
     Ok(views.html.login.loginPopup(
       mode = mode,
       serverAddress = s"//${request.host}")) as HTML

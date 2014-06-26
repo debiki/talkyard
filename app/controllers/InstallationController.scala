@@ -19,7 +19,7 @@ package controllers
 
 import actions.ApiActions._
 import actions.PageActions._
-import actions.SafeActions.{ExceptionAction, ExceptionActionNoBody}
+import actions.SafeActions.ExceptionAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -28,6 +28,8 @@ import debiki.dao.ConfigValueDao
 import java.{util => ju}
 import play.api._
 import play.api.libs.json._
+import play.api.mvc.BodyParsers.parse.empty
+import scala.concurrent.Future
 
 
 
@@ -58,7 +60,7 @@ object InstallationController extends mvc.Controller {
   private val FirstSitePasswordCookieName = "dwCoFirstSitePswd"
 
 
-  def viewInstallationPage() = ExceptionActionNoBody { request =>
+  def viewInstallationPage() = ExceptionAction(empty) { request =>
     Globals.systemDao.checkInstallationStatus() match {
       case InstallationStatus.CreateFirstSite =>
         showPasswordInputLogPassword(request)

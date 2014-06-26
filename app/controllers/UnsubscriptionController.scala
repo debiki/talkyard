@@ -23,10 +23,8 @@ import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
-import play.api.data._
-import play.api.mvc.BodyParsers.parse
-import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
+import play.api.mvc.BodyParsers.parse.empty
 import requests.realOrFakeIpOf
 import Prelude._
 import Utils.{OkHtml}
@@ -70,7 +68,7 @@ object UnsubscriptionController extends mvc.Controller {
     })
 
 
-  def showForm(tenantId: String) = ExceptionActionNoBody { implicit request =>
+  def showForm(tenantId: String) = ExceptionAction(empty) { implicit request =>
     Ok(views.html.unsubscribePage(emailId, doWhat, nextPage))
   }
 

@@ -78,7 +78,7 @@ object ModerationController extends mvc.Controller {
 
 
   private def review2[A](apiReq: JsonPostRequest, payload: A, permsTest: (PermsOnPage) => Boolean)
-        : mvc.PlainResult = {
+        : mvc.SimpleResult = {
     val pageIdsAndActions: Seq[(PageId, RawPostAction[A])] =
       for (postIdJson <- apiReq.body.as[Vector[JsObject]]) yield {
         val pageId = (postIdJson \ "pageId").as[PageId]

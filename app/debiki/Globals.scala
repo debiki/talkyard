@@ -135,7 +135,7 @@ class Globals {
 
 
   private def shutdownActorAndWait(actorRef: ActorRef): Boolean = {
-    val future = gracefulStop(actorRef, state.ShutdownTimeout)(Akka.system)
+    val future = gracefulStop(actorRef, state.ShutdownTimeout)
     val stopped = Await.result(future, state.ShutdownTimeout)
     stopped
   }

@@ -17,6 +17,7 @@
 
 package actions
 
+import actions.SafeActions.{SessionAction, SessionRequest}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -24,8 +25,9 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.libs.json.JsValue
-import play.api.mvc.{Action => _, _}
+import play.api.mvc._
 import requests._
+import scala.concurrent.Future
 import controllers.Utils
 
 
@@ -36,28 +38,37 @@ import controllers.Utils
 object ApiActions {
 
 
-  def GetAction(f: GetRequest => Result) =
+  def AsyncGetAction(f: GetRequest => Future[SimpleResult]): mvc.Action[Option[Any]] =
+    PlainApiAction.async(BodyParsers.parse.empty)(f)
+
+  def GetAction(f: GetRequest => SimpleResult) =
     PlainApiAction(BodyParsers.parse.empty)(f)
 
 
-  def AdminGetAction(f: GetRequest => Result) =
-    PlainApiAction(BodyParsers.parse.empty, adminOnly = true)(f)
+  def AdminGetAction(f: GetRequest => SimpleResult) =
+    PlainApiActionAdminOnly(BodyParsers.parse.empty)(f)
 
 
   def JsonOrFormDataPostAction
         (maxBytes: Int)
-        (f: ApiRequest[JsonOrFormDataBody] => Result) =
-    PlainApiAction[JsonOrFormDataBody](
+        (f: ApiRequest[JsonOrFormDataBody] => SimpleResult) =
+    PlainApiAction(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
+
+  def AsyncJsonOrFormDataPostAction
+        (maxBytes: Int)
+        (f: ApiRequest[JsonOrFormDataBody] => Future[SimpleResult]): mvc.Action[JsonOrFormDataBody] =
+    PlainApiAction.async(
+      JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
   /**
    * @deprecated Use ApiRequest[JsonOrFormDataBody] instead
    */
   def PostFormDataAction
         (maxUrlEncFormBytes: Int)
-        (f: FormDataPostRequest => Result) =
-    PlainApiAction[Map[String, Seq[String]]](
+        (f: FormDataPostRequest => SimpleResult) =
+    PlainApiAction(
       BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(f)
 
 
@@ -68,45 +79,52 @@ object ApiActions {
    */
   def PostJsonAction
         (maxLength: Int)
-        (f: JsonPostRequest => Result) =
-    PlainApiAction[JsValue](
+        (f: JsonPostRequest => SimpleResult) =
+    PlainApiAction(
       BodyParsers.parse.json(maxLength = maxLength))(f)
 
 
   def AdminPostJsonAction
         (maxLength: Int)
-        (f: JsonPostRequest => Result) =
-    PlainApiAction[JsValue](
-      BodyParsers.parse.json(maxLength = maxLength), adminOnly = true)(f)
+        (f: JsonPostRequest => SimpleResult) =
+    PlainApiActionAdminOnly(
+      BodyParsers.parse.json(maxLength = maxLength))(f)
 
 
-  private def PlainApiAction[A]
-        (parser: BodyParser[A], adminOnly: Boolean = false)
-        (f: ApiRequest[A] => Result) =
-      ApiActionImpl[A](parser, adminOnly)(f)
+  private val PlainApiAction = PlainApiActionImpl(adminOnly = false)
+  private val PlainApiActionAdminOnly = PlainApiActionImpl(adminOnly = true)
 
 
-  private def ApiActionImpl[A]
-        (parser: BodyParser[A], adminOnly: Boolean)
-        (f: ApiRequest[A] => Result) =
-    SafeActions.CheckSidAction[A](parser) { (sidOk, xsrfOk, browserId, request) =>
+  private def PlainApiActionImpl(adminOnly: Boolean) = new ActionBuilder[ApiRequest] {
+
+    override def composeAction[A](action: Action[A]) = {
+      SessionAction.async(action.parser) { request: Request[A] =>
+        action(request)
+      }
+    }
+
+    override def invokeBlock[A](
+        genericRequest: Request[A], block: ApiRequest[A] => Future[SimpleResult]) = {
+
+      // We've wrapped PlainApiActionImpl in a SessionAction which only provides SessionRequest:s.
+      val request = genericRequest.asInstanceOf[SessionRequest[A]]
 
       val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
 
       val dao = Globals.siteDao(siteId = tenantId,
-         ip = realOrFakeIpOf(request), sidOk.roleId)
+         ip = realOrFakeIpOf(request), request.sidStatus.roleId)
 
-      val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidOk, dao)
+      val (identity, user) = Utils.loadIdentityAndUserOrThrow(request.sidStatus, dao)
 
       if (adminOnly && user.map(_.isAdmin) != Some(true))
         throwForbidden("DwE1GfK7", "Please login as admin")
 
       val apiRequest = ApiRequest[A](
-        sidOk, xsrfOk, browserId, identity, user, dao, request)
+        request.sidStatus, request.xsrfOk, request.browserId, identity, user, dao, request)
 
-      val result = f(apiRequest)
+      val result = block(apiRequest)
       result
     }
-
+  }
 }
 
