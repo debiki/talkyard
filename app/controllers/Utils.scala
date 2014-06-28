@@ -90,7 +90,7 @@ object Utils extends Results with http.ContentTypes {
     Ok("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+ xmlNode) as contentType
 
 
-  def renderOrRedirect(pageReq: PageRequest[_]): PlainResult = {
+  def renderOrRedirect(pageReq: PageRequest[_]): SimpleResult = {
     if (isAjax(pageReq.request)) {
       val pageHtml = pageReq.dao.renderTemplate(pageReq)
       Ok(pageHtml) as HTML

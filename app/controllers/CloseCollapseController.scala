@@ -52,7 +52,7 @@ object CloseCollapseController extends mvc.Controller {
 
 
   private def closeOrReopenTree(apiReq: JsonPostRequest, payload: PostActionPayload)
-        : mvc.PlainResult = {
+        : mvc.SimpleResult = {
 
     if (!apiReq.user_!.isAdmin)
       throwForbidden("DwE95Xf2", "Insufficient permissions to close and reopen threads")

@@ -56,14 +56,14 @@ object LoginWithOpenIdController extends mvc.Controller {
 
 
   // COULD change to an ErrorAction, and use throwBadReq instead of BadRequest.
-  def loginPost = mvc.Action(parse.urlFormEncoded(maxLength = 200)) {
+  def loginPost = mvc.Action.async(parse.urlFormEncoded(maxLength = 200)) {
         request =>
     asyncLoginWithPostData(returnToUrl = "")(request)
   }
 
 
   def asyncLoginWithPostData(returnToUrl: String)(
-        implicit request: Request[Map[String, Seq[String]]]): AsyncResult = {
+        implicit request: Request[Map[String, Seq[String]]]): Future[SimpleResult] = {
     // (From the spec: The form field's "name" attribute should have the value
     // "openid_identifier", so that User-Agents can automatically
     // determine that this is an OpenID form.
@@ -74,7 +74,7 @@ object LoginWithOpenIdController extends mvc.Controller {
 
 
   def asyncLogin(returnToUrl: String, openIdIdentifier: String)
-       (implicit request: Request[_]): AsyncResult = {
+       (implicit request: Request[_]): Future[SimpleResult] = {
 
     val realm = _wildcardRealmFor(request.host)
 
@@ -91,14 +91,14 @@ object LoginWithOpenIdController extends mvc.Controller {
     val futureResult = futureUrl.map((url: String) => {
       Logger.trace("OpenID provider redirection URL discovered: " + url)
       Redirect(url)
-    }).recover(_ match {
+    }) recover {
       case NonFatal(exception) =>
-        Logger.debug("OpenID provider redirection URL error, OpenId: " +
-          openIdIdentifier +", error: "+ exception)
+        Logger.debug(o"""OpenID provider redirection URL error, OpenId:
+          $openIdIdentifier, error: $exception""")
         Redirect(routes.LoginWithOpenIdController.loginGet)
-    })
+    }
 
-    AsyncResult(futureResult)
+    futureResult
   }
 
 
@@ -141,28 +141,26 @@ object LoginWithOpenIdController extends mvc.Controller {
   private val _IpRegex = """\d+\.\d+\.\d+\.\d+(:\d+)?""".r
 
 
-  def loginCallback(returnToUrl: String) = mvc.Action { request =>
+  def loginCallback(returnToUrl: String) = mvc.Action.async { request =>
     val qs = request.queryString
     lazy val id =
       qs.get("openid.claimedId").flatMap(_.headOption).orElse(
         qs.get("openid.identity"))
     Logger.trace("Verifying OpenID: "+ id +" ...")
 
-    val futureResult = oid.OpenID.verifiedId(request)
-      .map(userInfo =>
-        _handleLoginOk(request, userInfo, returnToUrl))
-      .recover(_ match {
-        case NonFatal(exception) =>
-          _handleLoginFailure(request, exception, returnToUrl)
-      })
+    val futureResult = oid.OpenID.verifiedId(request) map { userInfo =>
+      _handleLoginOk(request, userInfo, returnToUrl)
+    } recover {
+      case NonFatal(exception) =>
+        _handleLoginFailure(request, exception, returnToUrl)
+    }
 
-    AsyncResult(futureResult)
+    futureResult
   }
 
 
   private def _handleLoginOk(
-        request: Request[AnyContent], info: oid.UserInfo, returnToUrl: String)
-        : Result = {
+        request: Request[AnyContent], info: oid.UserInfo, returnToUrl: String): SimpleResult = {
 
     Logger.trace("OpenID verified okay: " + info.id +
        ", attributes: " + info.attributes)

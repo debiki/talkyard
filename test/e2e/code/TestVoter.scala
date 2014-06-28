@@ -83,6 +83,10 @@ trait TestVoter {
         scrollIntoView(action)
         click on action
     }
+
+    // Hide the more-actions dropdown by clicking again.
+    if (voteType == PAP.VoteOffTopic)
+      clickShowMoreActions(postId)
   }
 
 }
