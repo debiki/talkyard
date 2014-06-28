@@ -94,9 +94,8 @@ class Globals {
         shut down last time? Please hit CTRL+C to kill it. [DwE83KJ9]""")
 
     _state = new State
-    state.quotaManager.scheduleCleanups()
-
     state.systemDao.applyEvolutions()
+    state.quotaManager.scheduleCleanups()
 
     // For now, disable in dev mode — because of the port conflict that
     // causes an error on reload and restart, see below (search for "conflict").
