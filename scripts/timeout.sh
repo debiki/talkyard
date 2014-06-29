@@ -5,10 +5,15 @@
 # From here: http://stackoverflow.com/a/687994/694469
 # which copied it from here:
 # http://www.bashcookbook.com/bashinfo/source/bash-4.0/examples/scripts/timeout3
+#
 # Licese: "feel free to include it anywhere"? See below.
+#
 # (Bash seems to have a built-in `timeout` command but it doesn't seem to print
 # the output of the-proces-that-might-timeout to the console, and the `--foreground`
 # flag resulted in the process not timing out at all.)
+#
+# I've tweaked the script to 1) echo some info and 2) kill the whole proces group
+# not just the process and 3) update a certain target/tests-timed-out file on timeout.
 # ---
 #
 # The Bash shell script executes a command with a time-out.
@@ -82,6 +87,11 @@ if (($# == 0 || interval <= 0)); then
     exit 1
 fi
 
+the_command="$@"
+process_id=$$
+# See http://stackoverflow.com/a/15139734/694469
+process_group_id="$( ps -o pgid "$process_id" | grep [0-9] | tr -d ' ' )"
+
 # kill -0 pid   Exit code indicates if a signal may be sent to $pid process.
 (
     ((t = timeout))
@@ -94,10 +104,18 @@ fi
 
     # Be nice, post SIGTERM first.
     # The 'exit 0' below will be executed if any preceeding command fails.
-    kill -s SIGTERM $$ && kill -0 $$ || exit 0
+    echo "$the_command" >> target/tests-timed-out
+    # (This prints in red.)
+    echo -e "\e[00;31mTimeout after $timeout seconds. Stopping process $process_id, group $process_group_id, command: $the_command\e[00m"
+    # kill -s SIGTERM $$ && kill -0 $$ || exit 0
+    kill -s SIGTERM -$process_group_id && kill -0 $$ || exit 0
+    echo "Waiting before killing process $process_id, group $process_group_id, command: $the_command"
     sleep $delay
-    kill -s SIGKILL $$
+    echo "Killing process $process_id, group $process_group_id, command: $the_command"
+    # kill -s SIGKILL $$
+    kill -s SIGKILL -$process_group_id
 ) 2> /dev/null &
 
+echo "Starting with $timeout seconds timeout: $the_command"
 exec "$@"
 
