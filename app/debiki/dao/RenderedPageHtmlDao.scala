@@ -65,7 +65,8 @@ trait RenderedPageHtmlDao {
       horizontalComments = renderSettings.horizontalComments,
       // Use follow links for the article, unless it's a forum topic — anyone
       // may start a new forum topic.
-      nofollowArticle = pageReq.pageRole_! == PageRole.ForumTopic)
+      nofollowArticle = pageReq.pageRole_! == PageRole.ForumTopic,
+      showEmbeddedCommentsToolbar = pageReq.pageRole_! == PageRole.EmbeddedComments)
 
     val pageTitle =
       if (!renderSettings.showTitle) Nil

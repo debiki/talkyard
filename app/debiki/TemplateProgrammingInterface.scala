@@ -180,7 +180,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   def debikiDashbar = xml.Unparsed(views.html.dashbar().body)
 
   def loginLinkAndUserName =
-    HtmlPageSerializer.loginInfo(debikiRequest.user.map(_.displayName))
+    HtmlPageSerializer.loginInfo(debikiRequest.user.map(_.displayName), buttonsNotLinks = false)
 
 
   def xsrfToken: String = debikiRequest.xsrfToken.value

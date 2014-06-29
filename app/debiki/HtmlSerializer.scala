@@ -218,15 +218,24 @@ object HtmlPageSerializer {
 
 
   /** XML for the user name and login/out links.
-   */
-  def loginInfo(userName: Option[String]): NodeSeq = {
-    <span class='dw-u-info'>
-      <span class='dw-u-name'>{userName.getOrElse("")}</span>
-    </span>
-    <span class='dw-u-lgi-lgo'>
-      <span class='dw-a-login'>Login</span>
-      <span class='dw-a-logout'>Logout</span>
-    </span>
+    */
+  def loginInfo(userName: Option[String], buttonsNotLinks: Boolean): NodeSeq = {
+    val userInfo =
+      <span class='dw-u-info'>
+        <span class='dw-u-name'>{userName.getOrElse("")}</span>
+      </span>
+
+    val loginBtn =
+      if (buttonsNotLinks) <button class='dw-a-login btn btn-default'>Login</button>
+      else <span class='dw-a-login'>Login</span>
+
+    val logoutBtn =
+      if (buttonsNotLinks) <button class='dw-a-logout btn btn-default'>Logout</button>
+      else <span class='dw-a-logout'>Logout</span>
+
+    return <span class='dw-u-lgi-lgo'>{
+      userInfo ++ loginBtn ++ logoutBtn
+    }</span>
   }
 
 
@@ -279,7 +288,8 @@ case class HtmlPageSerializer(
   horizontalComments: Boolean,
   nofollowArticle: Boolean = true,
   showUnapproved: ShowUnapproved = ShowUnapproved.None,
-  showStubsForDeleted: Boolean = false) {
+  showStubsForDeleted: Boolean = false,
+  showEmbeddedCommentsToolbar: Boolean = false) {
 
   import HtmlPageSerializer._
 
@@ -399,10 +409,21 @@ case class HtmlPageSerializer(
 
 
   private def makeCommentsToolbar(): NodeSeq = {
-    <div class="dw-cmts-tlbr">
-      <span class="dw-cmts-count">{ page.commentCount } comments</span>
-      { HtmlPageSerializer.loginInfo(userName = None) /* name updated via Javascript */ }
-    </div>
+    val userName = None // name updated via Javascript
+    if (showEmbeddedCommentsToolbar) {
+      <div class="dw-cmts-tlbr dw-embedded">
+        <span class="dw-cmts-count">{ page.commentCount } comments</span>
+        <button class="dw-a dw-a-reply icon-reply btn btn-default"
+                style="float: none; margin: 0 15px 0 3px;">Reply</button>
+        { HtmlPageSerializer.loginInfo(userName, buttonsNotLinks = true) }
+      </div>
+    }
+    else {
+      <div class="dw-cmts-tlbr">
+        <span class="dw-cmts-count">{ page.commentCount } comments</span>
+        { HtmlPageSerializer.loginInfo(userName, buttonsNotLinks = false) }
+      </div>
+    }
   }
 
 
