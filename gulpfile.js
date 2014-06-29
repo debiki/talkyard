@@ -534,9 +534,17 @@ gulp.task('build-themes', function () {
   var themeNames = listDirectories(themeDir);
 
   function listDirectories(baseDirectory) {
-    var dirs = fs.readdirSync(baseDirectory).filter(function(file) {
-      return fs.statSync(path.join(baseDirectory, file)).isDirectory();
-    });
+    var dirs = [];
+    try {
+      var dirs = fs.readdirSync(baseDirectory).filter(function(file) {
+        return fs.statSync(path.join(baseDirectory, file)).isDirectory();
+      });
+    }
+    catch (error) {
+      // Ignore this, there seems to be no themes. (This happens if `themeDir`
+      // is a broken softlink, which happens if this project debiki-server isn't
+      // placed in a parent project folder with a ../themes/ folder.)
+    }
     return dirs;
   }
 

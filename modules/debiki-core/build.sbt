@@ -16,7 +16,7 @@ libraryDependencies ++= Seq(
   "org.mindrot" % "jbcrypt" % "0.3m", // perhaps try to move to debiki-server?
   "junit" % "junit" % "4.7" % "test",
   "org.specs2" %% "specs2" % "1.14" % "test",
-  "org.scalatest" % "scalatest_2.10" % "2.1.5" % "test"
+  "org.scalatest" %% "scalatest" % "2.2.0" % "test"
 )
 
 scalacOptions += "-deprecation"

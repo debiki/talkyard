@@ -8,7 +8,7 @@ scalaVersion := "2.10.3"
 
 libraryDependencies ++= Seq(
   "junit" % "junit" % "4.7",
-  "org.scalatest" % "scalatest_2.10" % "2.1.5",
+  "org.scalatest" %% "scalatest" % "2.2.0",
   "org.specs2" %% "specs2" % "1.14"  // shouldn't use no more, ScalaTest is better
 )
 

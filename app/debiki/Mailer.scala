@@ -24,24 +24,49 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.simpleemail._
 import com.amazonaws.services.simpleemail.model._
 import com.debiki.core._
+import debiki.dao.SiteDao
 import debiki.dao.SiteDaoFactory
 import java.{util => ju}
+import play.{api => p}
+import play.api.Play.current
 import Prelude._
 
 
 
 object Mailer {
 
-  /**
-   * Starts a single email sending actor.
-   *
-   * BUG: SHOULD terminate it before shutdown, in a manner that
-   * doesn't accidentally forget forever to send some emails.
-   * (Also se Notifier.scala)
-   */
+
+  /** Starts a single email sending actor.
+    *
+    * If no email settings have been configured, uses an actor that doesn't send any
+    * emails but instead logs them to the console.
+    *
+    * BUG: SHOULD terminate it before shutdown, in a manner that
+    * doesn't accidentally forget forever to send some emails.
+    * (Also se Notifier.scala)
+    */
   def startNewActor(actorSystem: ActorSystem, daoFactory: SiteDaoFactory): ActorRef = {
-    val actorRef = actorSystem.actorOf(
-      Props(new Mailer(daoFactory)), name = s"MailerActor-$testInstanceCounter")
+    val anyAccessKeyId = p.Play.configuration.getString("aws.accessKeyId")
+    val anySecretKey = p.Play.configuration.getString("aws.secretKey")
+
+    val actorRef = (anyAccessKeyId, anySecretKey) match {
+      case (Some(accessKeyId), Some(secretKey)) =>
+        actorSystem.actorOf(
+          Props(new Mailer(daoFactory, accessKeyId, secretKey = secretKey)),
+          name = s"MailerActor-$testInstanceCounter")
+      case _ =>
+        p.Logger.info("I won't send any emails, because:")
+        if (anySecretKey.isEmpty) {
+          p.Logger.info("No aws.secretKey configured.")
+        }
+        if (anyAccessKeyId.isEmpty) {
+          p.Logger.info("No aws.accessKeyId configured.")
+        }
+        actorSystem.actorOf(
+          Props(new ConsoleMailer(daoFactory)),
+          name = s"ConsoleMailerActor-$testInstanceCounter")
+    }
+
     testInstanceCounter += 1
     actorRef
   }
@@ -87,15 +112,13 @@ object Mailer {
  * possible to get back AWS' email guid from Apache Common email lib, or is it?
  * (That guid can be used to track bounces etcetera I think.)
  */
-class Mailer(val daoFactory: SiteDaoFactory) extends Actor {
+class Mailer(val daoFactory: SiteDaoFactory, accessKeyId: String, secretKey: String) extends Actor {
 
 
   val logger = play.api.Logger("app.mailer")
 
 
   private val _awsClient = {
-    val accessKeyId = Utils.getConfigStringOrDie("aws.accessKeyId")
-    val secretKey = Utils.getConfigStringOrDie("aws.secretKey")
     new AmazonSimpleEmailServiceClient(
        new BasicAWSCredentials(accessKeyId, secretKey))
   }
@@ -128,10 +151,7 @@ class Mailer(val daoFactory: SiteDaoFactory) extends Actor {
     // — don't send those emails, to keep down the bounce rate.
     if (emailToSend.sentTo.endsWith("example.com") ||
         emailToSend.sentTo.endsWith("ex.com")) {
-      // Pretend it's been sent, and make it available for end-to-end tests.
-      val emailSent = emailToSend.copy(sentOn = now)
-      tenantDao.updateSentEmail(emailSent)
-      Mailer.EndToEndTest.mostRecentEmailSent = Some(emailSent)
+      ConsoleMailer.fakeSendAndWriteToConsole(emailToSend, tenantDao)
       return
     }
 
@@ -217,6 +237,39 @@ class Mailer(val daoFactory: SiteDaoFactory) extends Actor {
         logger.trace("Uninteresting stack trace: "+ ex.printStackTrace);
         Left(ex.toString)
     }
+  }
+
+}
+
+
+
+/** Writes emails to the console, does not actually send them anywhere.
+  * Used if no email settings have been configured.
+  */
+class ConsoleMailer(val daoFactory: SiteDaoFactory) extends Actor {
+
+  def receive = {
+    case (email: Email, siteId: String) =>
+      val siteDao = daoFactory.newSiteDao(QuotaConsumers(tenantId = siteId))
+      ConsoleMailer.fakeSendAndWriteToConsole(email, siteDao)
+  }
+
+}
+
+
+
+object ConsoleMailer {
+
+  /** Pretends the email has been sent and makes it available for end-to-end tests.
+    */
+  def fakeSendAndWriteToConsole(email: Email, siteDao: SiteDao) {
+    play.api.Logger.debug(i"""
+      |Fake-sending email (only logging it to the console):
+      |  $email
+      |""")
+    val emailSent = email.copy(sentOn = Some(new ju.Date))
+    siteDao.updateSentEmail(emailSent)
+    Mailer.EndToEndTest.mostRecentEmailSent = Some(emailSent)
   }
 
 }
