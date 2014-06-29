@@ -83,7 +83,7 @@ object ApplicationBuild extends Build {
     "rhino" % "js" % "1.7R2",
     "org.yaml" % "snakeyaml" % "1.11",
     "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
-    "org.scalatest" % "scalatest_2.10" % "2.1.5" % "test", // but prefer ScalaTest
+    "org.scalatest" %% "scalatest" % "2.2.0" % "test", // but prefer ScalaTest
     // Use a recent Selenium driver, otherwise it won't work with the version of Firefox,
     // that your OS has probably upgraded to some days/months ago.
     // See: http://stackoverflow.com/a/13049150/694469
