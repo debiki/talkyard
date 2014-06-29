@@ -159,7 +159,12 @@ class ModerationSpec extends DebikiBrowserSpec
         val someUnapprovedCommentIds =
           List(postId_gu2, postId_gu3, postId_gu4, postId_gu5)
 
-        for (postId <- someUnapprovedCommentIds)
+        // Without `eventually`, this fails when run via Jenkins, only via Jenkins, weird.
+        eventually {
+          clickApproveNewPost(testPage.id, someUnapprovedCommentIds.head)
+        }
+
+        for (postId <- someUnapprovedCommentIds.tail)
           clickApproveNewPost(testPage.id, postId)
 
         for (postId <- someUnapprovedCommentIds) eventually {
