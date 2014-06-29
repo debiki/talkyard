@@ -6,7 +6,9 @@
 # which copied it from here:
 # http://www.bashcookbook.com/bashinfo/source/bash-4.0/examples/scripts/timeout3
 #
-# Licese: "feel free to include it anywhere"? See below.
+# Licese: Apparently GPL-3.0, because these COPYING files are the GPL-3.0 license text:
+# http://www.bashcookbook.com/bashinfo/source/bash-4.0/COPYING
+# http://www.bashcookbook.com/bashinfo/source/COPYING
 #
 # (Bash seems to have a built-in `timeout` command but it doesn't seem to print
 # the output of the-proces-that-might-timeout to the console, and the `--foreground`
