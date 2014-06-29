@@ -7,7 +7,7 @@ set -x
 # The `play` command should be provided either as a softlink in scripts/, or as an env variable
 # (define the env variable e.g. like so  $ export play=/mnt/tmp/dev/play-2.2.3/play  ).
 if [ -z "$play" ]; then
-  play=scripts/play-2.2.3
+  export play=scripts/play-2.2.3
 fi
 
 $play  "$@" "project debiki-core" test
@@ -26,4 +26,6 @@ $play  "$@" \
   "test-only debiki.AutoApproverSpec" \
   "test-only test.e2e.EndToEndSuite" \
   "test-only debiki.QuotaChargerSpecRunner"
+
+scripts/run-embedded-comments-tests.sh
 
