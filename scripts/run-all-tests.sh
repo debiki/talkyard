@@ -33,6 +33,7 @@ rm -f target/tests-timed-out
 make compile_javascript
 npm install
 bower install
+gulp
 
 
 # Although these debiki-core tests take only perhaps 15 seconds (starting Java takes long),
