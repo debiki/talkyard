@@ -20,7 +20,7 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
-var NO_ID = 0;
+var NO_ID = -1;
 
 
 // Shows a reply form, either below the relevant post, or inside it,
@@ -31,6 +31,12 @@ d.i.$showReplyForm = function(event, opt_where) {
   // Warning: Some duplicated code, see .dw-r-tag click() above.
   var $thread = $(this).closest('.dw-t');
   var $replyAction = $thread.find('> .dw-p-as > .dw-a-reply');
+  if (!$replyAction.length) {
+    // This is an embedded comments page and the reply button clicked is in the
+    // comments toolbar.
+    d.u.bugIf(!$thread.is('.dw-depth-0'));
+    $replyAction = $('.dw-cmts-tlbr .dw-a-reply');
+  }
   var $post = $thread.children('.dw-p');
   var anyParentPageId = $post.dwPageMeta().parentPageId;
 
