@@ -35,7 +35,7 @@ with StartServerAndChromeDriverFactory
 
 
 /** Runs the AnonLoginSpecForEmbeddedComments suite
-  * in SBT:  test-only test.e2e.specs.AnonLoginSpecForEmbeddedCommentsRunner
+  * in SBT:  test-only test.e2e.specs.AnonLoginSpecForEmbeddedCommentsRunner_NothingPreLoaded
   * In test:console:  (new test.e2e.specs.AnonLoginSpecForEmbeddedCommentsRunner).execute()
   */
 class AnonLoginSpecForEmbeddedCommentsRunner_NothingPreLoaded

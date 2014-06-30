@@ -132,10 +132,16 @@ trait TestReplyer {
     pageSource contains "Comment pending moderation"
 
 
-  def articleReplyLink =
-    // Check reply link location for both horizontal and vertical layouts.
-    find(cssSelector(".dw-p-as-hz > .dw-a-reply")).orElse(
-      find(cssSelector(".dw-ar-t > .dw-p-as > .dw-a-reply"))).get
+  def articleReplyLink = {
+    // Check reply link location for horizontal, vertical layouts and embedded
+    // comments pages.
+    val anyHorizontalReplyBtn = find(cssSelector(".dw-p-as-hz > .dw-a-reply"))
+    val anyVerticalReplyBtn = find(cssSelector(".dw-ar-t > .dw-p-as > .dw-a-reply"))
+    val anyEmbeddedCommentsToolbarBtn = find(cssSelector(".dw-cmts-tlbr .dw-a-reply"))
+    val anyBtn = anyHorizontalReplyBtn orElse anyVerticalReplyBtn orElse
+      anyEmbeddedCommentsToolbarBtn
+    anyBtn.get
+  }
 
 
 }

@@ -29,7 +29,6 @@ import test.e2e.code._
   * In Play:   test-only test.e2e.specs.CreateEmbeddedCommentsSiteGmailLoginSpecRunner
   * In test:console:  (new test.e2e.specs.CreateEmbeddedCommentsSiteGmailLoginSpecRunner).execute()
   */
-@DoNotDiscover
 class CreateEmbeddedCommentsSiteGmailLoginSpecRunner
   extends org.scalatest.Suites(new CreateEmbeddedCommentsSiteGmailLoginSpec)
   with StartServerAndChromeDriverFactory
@@ -43,7 +42,6 @@ class CreateEmbeddedCommentsSiteGmailLoginSpecRunner
   * In test:console:
   *   (new test.e2e.specs.CreateEmbeddedCommentsSiteNewPasswordAccountSpecRunner).execute()
   */
-@DoNotDiscover
 class CreateEmbeddedCommentsSiteNewPasswordAccountSpecRunner
   extends org.scalatest.Suites(new CreateEmbeddedCommentsSiteNewPasswordAccountSpec)
   with StartServerAndChromeDriverFactory
@@ -272,7 +270,9 @@ abstract class CreateEmbeddedCommentsSiteSpecConstructor
       click on cssSelector(s"a[href='$adminPageUrl']")
       loginToAdminPage()
       eventually {
-        pageSource must include ("Admin Page")
+        pageSource must include ("Settings")
+        pageSource must include ("Special Contents")
+        pageSource must include ("Moderation")
       }
     }
 
@@ -285,14 +285,14 @@ abstract class CreateEmbeddedCommentsSiteSpecConstructor
 
     "find empty page list" in {
       // Test bug: It might be empty simply because the page list doesn't load that quickly.
-      find(cssSelector("table.page-table tbody tr")) mustEqual None
+      // ???
       pending
     }
 
     "find empty activity list" in {
       // Test bug: It might be empty simply because the activity list doesn't load that quickly.
-      click on linkText("Activity")
-      find(cssSelector("[ng-controller='ActionListCtrl'] tbody tr")) mustEqual None
+      click on linkText("Moderation")
+      find(cssSelector("table tbody tr")) mustEqual None
       pending
     }
 
@@ -315,7 +315,7 @@ abstract class CreateEmbeddedCommentsSiteSpecConstructor
     "add a reply, as guest" in {
       logoutIfLoggedIn()
       loginAsGuestInPopup("TestGuest")
-      replyToComment(postId = 1, text = GuestReplyText)
+      replyToComment(postId = 2, text = GuestReplyText)
     }
 
     "reload page, find both replies" in {
