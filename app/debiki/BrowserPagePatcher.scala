@@ -151,8 +151,11 @@ case class BrowserPagePatcher(
         (Some(PageParts.BodyId), request.dao.loadWholeSiteSettings().horizontalComments)
     }
 
+    val postsReadStats = request.dao.loadPostsReadStats(page.id)
+
     val serializer = HtmlPageSerializer(
-      page, PageTrust(page), pageRoot, request.host, showUnapproved = showUnapproved,
+      page, PageTrust(page), postsReadStats,
+      pageRoot, request.host, showUnapproved = showUnapproved,
       showStubsForDeleted = showStubsForDeleted,
       horizontalComments = horizontalComments.valueIsTrue)
 

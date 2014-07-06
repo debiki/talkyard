@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2012-2014 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -61,7 +61,9 @@ trait RenderedPageHtmlDao {
         : RenderedPage = {
 
     val page = pageReq.pageDesiredVersionWithDummies_!
-    val renderer = HtmlPageSerializer(page, PageTrust(page), pageReq.pageRoot, pageReq.host,
+    val postsReadStats = pageReq.dao.loadPostsReadStats(page.id)
+    val renderer = HtmlPageSerializer(page, PageTrust(page),
+      postsReadStats, pageReq.pageRoot, pageReq.host,
       horizontalComments = renderSettings.horizontalComments,
       // Use follow links for the article, unless it's a forum topic — anyone
       // may start a new forum topic.

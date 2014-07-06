@@ -93,6 +93,17 @@ trait PageDao {
     siteDbDao.deleteVote(userIdData, pageId, postId, voteType)
   }
 
+
+  def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId],
+        actionMakingThemRead: RawPostAction[_]) {
+    siteDbDao.updatePostsReadStats(pageId, postIdsRead, actionMakingThemRead)
+  }
+
+
+  def loadPostsReadStats(pageId: PageId): PostsReadStats =
+    siteDbDao.loadPostsReadStats(pageId)
+
+
   def loadPageParts(debateId: PageId): Option[PageParts] =
     siteDbDao.loadPageParts(debateId)
 

@@ -283,6 +283,7 @@ object HtmlPageSerializer {
 case class HtmlPageSerializer(
   page : PageParts,
   pageTrust: PageTrust,
+  postsReadStats: PostsReadStats,
   pageRoot: AnyPageRoot,
   hostAndPort: String,
   horizontalComments: Boolean,
@@ -293,7 +294,7 @@ case class HtmlPageSerializer(
 
   import HtmlPageSerializer._
 
-  private lazy val pageStats = new PageStats(page, pageTrust)
+  private lazy val pageStats = new PageStats(page, pageTrust, postsReadStats)
 
   //private def lastChange: Option[String] =
   //  page.lastOrLaterChangeDate.map(toIso8601(_))
@@ -497,13 +498,17 @@ case class HtmlPageSerializer(
         return false
 
       // Place interesting posts first.
-      // ---- In the future, perhaps something like this again, when I'm taking into
-      // account how many people have viewed the post:
+      // ---- In the future, perhaps something like this again, when I've updated
+      // PageStats to take into account how many times a post has been read:
       //val fitnessA = pageStats.ratingStatsFor(a.id).fitnessDefaultTags.lowerLimit
       //val fitnessB = pageStats.ratingStatsFor(b.id).fitnessDefaultTags.lowerLimit
       // ---- But for now: ------
-      val fitnessA = a.numLikeVotes
-      val fitnessB = b.numLikeVotes
+      def fitness(post: Post): Float = {
+        val readCount = postsReadStats.readerIdsByPostId.get(post.id).map(_.size).getOrElse(0)
+        post.numLikeVotes.toFloat / Math.max(1, readCount)
+      }
+      val fitnessA = fitness(a)
+      val fitnessB = fitness(b)
       // ------------------------
       if (fitnessA > fitnessB)
         return true

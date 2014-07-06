@@ -47,11 +47,13 @@ function toggleVoteImpl(voteBtn, voteType) {
   }
 
   var action;
+  var postIdsRead;
   if (voteBtn.is('.dw-my-vote')) {
     action = 'DeleteVote';
   }
   else {
     action = 'CreateVote';
+    postIdsRead = findPostIdsRead(post);
   }
 
   d.u.postJson({
@@ -60,7 +62,8 @@ function toggleVoteImpl(voteBtn, voteType) {
         pageId: d.i.pageId,
         postId: postId,
         vote: voteType,
-        action: action
+        action: action,
+        postIdsRead: postIdsRead
       },
       error: d.i.showServerResponseDialog,
       success: onVoteToggled
@@ -75,9 +78,34 @@ function toggleVoteImpl(voteBtn, voteType) {
       voteBtn.removeClass('dw-my-vote');
     }
     //post.each(d.i.SVG.$drawParentsAndTree); -- why would this be needed?
+       // -- Because elem might grow if "1 people likes this" appears, would need to redraw.
   };
 };
 
 
+function findPostIdsRead(postVotedOn) {
+  var postIdsRead = [];
+  var parentThreads = postVotedOn.parents('.dw-t');
+  parentThreads.each(function() {
+    var parentThread = $(this);
+    var prevSiblings;
+    if (parentThread.is('li')) {
+      // Vertical layout, each thread directly in its own <li>.
+      prevSiblings = parentThread.prevAll('.dw-t');
+    }
+    else {
+      // Horizontal layout. Each thread is wrapped in an <li>, for styling purposes.
+      var prevListItems = parentThread.closest('li').prevAll();
+      prevSiblings = prevListItems.children('.dw-t');
+    }
+    var parentAndSiblings = parentThread.add(prevSiblings);
+    var posts = parentAndSiblings.children('.dw-p');
+    posts.each(function() {
+      postIdsRead.push($(this).dwPostId());
+    });
+  });
+  return postIdsRead;
+}
 
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list

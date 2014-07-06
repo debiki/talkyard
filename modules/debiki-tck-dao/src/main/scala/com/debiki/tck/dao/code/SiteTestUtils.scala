@@ -19,6 +19,7 @@
 package com.debiki.tck.dao.code
 
 import com.debiki.core._
+import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.Prelude._
 import java.{util => ju}
 
@@ -48,7 +49,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
 
   val DefaultPasswordUserName = "PasswordUser"
 
-  def createPasswordRole(): (Identity, User) = {
+  def createPasswordRole(): (PasswordIdentity, User) = {
     val email = "pswd-test@ex.com"
     val hash = DbDao.saltAndHashPassword(defaultPassword)
     val identityNoId = PasswordIdentity(
@@ -109,15 +110,16 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
   }
 
 
-  def vote(loginGrant: LoginGrant, page: PageNoPath, postId: PostId,
-        voteType: PostActionPayload.Vote) {
-    val vote = RawPostAction(
+  def vote(loginGrant: LoginGrant, pageNoVote: PageNoPath, postId: PostId, voteType: PAP.Vote)
+        : (PageNoPath, RawPostAction[PAP.Vote]) = {
+    val voteNoId = RawPostAction(
       id = PageParts.UnassignedId,
       postId = postId,
       creationDati = new ju.Date(),
       userIdData = loginGrant.testUserIdData,
       payload = voteType)
-    dao.savePageActions(page, vote::Nil)
+    val (pageWithVote, List(vote)) = dao.savePageActions(pageNoVote, voteNoId::Nil)
+    (pageWithVote, vote.asInstanceOf[RawPostAction[PAP.Vote]])
   }
 }
 

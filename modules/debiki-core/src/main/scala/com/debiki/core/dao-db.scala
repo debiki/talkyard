@@ -214,6 +214,13 @@ abstract class SiteDbDao {
   def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
         voteType: PostActionPayload.Vote)
 
+  /** Remembers that the specified posts have been read by the user that did the action.
+    */
+  def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId],
+        actionMakingThemRead: RawPostAction[_])
+
+  def loadPostsReadStats(pageId: PageId): PostsReadStats
+
   /** Returns None if the page doesn't exist, and a
     * Some(PageParts(the-page-id)) if it exists but is empty.
     * Loads another site's page, if siteId is specified.
@@ -654,6 +661,17 @@ class ChargingSiteDbDao(
         voteType: PostActionPayload.Vote) {
     _chargeForOneWriteReq()
     _spi.deleteVote(userIdData, pageId, postId, voteType)
+  }
+
+  def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId],
+        actionMakingThemRead: RawPostAction[_]) {
+    _chargeForOneWriteReq()
+    _spi.updatePostsReadStats(pageId, postIdsRead, actionMakingThemRead)
+  }
+
+  def loadPostsReadStats(pageId: PageId): PostsReadStats = {
+    _chargeForOneReadReq()
+    _spi.loadPostsReadStats(pageId)
   }
 
   def loadPageParts(debateId: PageId, tenantId: Option[SiteId]): Option[PageParts] = {

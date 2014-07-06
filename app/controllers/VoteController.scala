@@ -20,6 +20,7 @@ package controllers
 import actions.ApiActions.PostJsonAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import collection.immutable
 import debiki._
 import debiki.DebikiHttp._
 import play.api._
@@ -38,6 +39,7 @@ object VoteController extends mvc.Controller {
     *   postId: 123
     *   vote: "VoteLike"      # or "VoteWrong" or "VoteOffTopic"
     *   action: "CreateVote"  # or "DeleteVote"
+    *   postIdsRead: [1, 9, 53, 82]
     */
   def handleVotes = PostJsonAction(maxLength = 500) { request: JsonPostRequest =>
     val body = request.body
@@ -45,6 +47,13 @@ object VoteController extends mvc.Controller {
     val postId = (body \ "postId").as[PostId]
     val voteStr = (body \ "vote").as[String]
     val actionStr = (body \ "action").as[String]
+    val postIdsReadSeq = (body \ "postIdsRead").as[immutable.Seq[PostId]]
+
+    val postIdsRead = postIdsReadSeq.toSet
+    if (postIdsReadSeq.length != postIdsRead.size)
+      throwBadReq("DwE942F0", "Duplicate postIdsRead")
+    if (!postIdsRead.contains(postId))
+      throwBadReq("DwE46F82", "postId not part of postIdsRead")
 
     val delete: Boolean = actionStr match {
       case "CreateVote" => false
@@ -83,6 +92,8 @@ object VoteController extends mvc.Controller {
 
         val (updatedPage, _) =
           pageReq.dao.savePageActionsGenNotfs(pageReq, vote::Nil)
+
+        pageReq.dao.updatePostsReadStats(pageId, postIdsRead, vote)
 
         (pageReq, updatedPage.parts)
       }
