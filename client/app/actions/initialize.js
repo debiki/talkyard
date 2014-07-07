@@ -72,9 +72,9 @@ function bindActionLinksImpl(anyPost, bindFoldLinks) {
   // delegation is used instead).
 
   // Actions that are always shown:
-  $('.dw-a-reply').click(d.i.$showReplyForm);
-  $('.dw-a-like').click(d.i.$toggleVote('VoteLike'));
-  $('.dw-a-wrong').click(d.i.$toggleVote('VoteWrong'));
+  $actions.find('.dw-a-reply').click(d.i.$showReplyForm);
+  $actions.find('.dw-a-like').click(d.i.$toggleVote('VoteLike'));
+  $actions.find('.dw-a-wrong').click(d.i.$toggleVote('VoteWrong'));
 
   // Actions shown on More dropdown click:
   $actions.find('.dw-a-offtopic').click(d.i.$toggleVote('VoteOffTopic'));
