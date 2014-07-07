@@ -38,6 +38,12 @@ trait PageDao {
   def createPage(page: Page): Page = siteDbDao.createPage(page)
 
 
+  final def savePageActionGenNotfs[A](pageReq: PageRequest[_], action: RawPostAction[A]) = {
+    val (pageAfter, actionsWithId) = savePageActionsGenNotfs(pageReq, Seq(action))
+    (pageAfter, actionsWithId.head.asInstanceOf[RawPostAction[A]])
+  }
+
+
   /** Saves page actions and places messages in users' inboxes, as needed.
     * Returns a pair with 1) the page including new actions plus the current user,
     * and 2) the actions, but with ids assigned.
