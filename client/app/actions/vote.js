@@ -99,7 +99,9 @@ function findPostIdsRead(postVotedOn) {
       prevSiblings = prevListItems.children('.dw-t');
     }
     var parentAndSiblings = parentThread.add(prevSiblings);
-    var posts = parentAndSiblings.children('.dw-p');
+    // `[id]` skips a dummy posts with no id, which represents the article
+    // on embedded comment pages.
+    var posts = parentAndSiblings.children('.dw-p[id]');
     posts.each(function() {
       postIdsRead.push($(this).dwPostId());
     });
