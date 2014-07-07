@@ -603,7 +603,9 @@ case class Post(
 
 
   // If there is no parent post, considers all other posts with no parents its siblings.
-  def siblingsAndMe: List[Post] = debate.repliesTo(parentIdOrNoId)
+  def siblingsAndMe: List[Post] =
+    if (PageParts.isArticleOrConfigPostId(id)) List(this)
+    else page.repliesTo(parentIdOrNoId)
 
 
   def postCollapsedAt: Option[ju.Date] =
