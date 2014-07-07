@@ -95,6 +95,7 @@ d.i.$initPost = function() {
 
 function initStep1() {
   d.i.bindActionLinksForAllPosts();
+  d.i.bindActionLinkForEmbeddedCommentsToolbar();
 };
 
 

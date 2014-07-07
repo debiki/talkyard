@@ -23,12 +23,12 @@ var $ = d.i.$;
 
 
 d.i.bindActionAndFoldLinksForSinglePost = function(post) {
-  bindActionLinksImpl(post, true)
+  bindActionLinksImpl(post, true);
 };
 
 
 d.i.bindActionLinksForSinglePost = function(post) {
-  bindActionLinksImpl(post, false)
+  bindActionLinksImpl(post, false);
 };
 
 
@@ -91,6 +91,11 @@ function bindActionLinksImpl(anyPost, bindFoldLinks) {
   $actions.addClass('dw-p-as-dimmed');
 
   $collapses.click(d.i.$toggleCollapsed);
+};
+
+
+d.i.bindActionLinkForEmbeddedCommentsToolbar = function() {
+  $('.dw-cmts-tlbr.dw-embedded .dw-a-reply').click(d.i.$showReplyForm);
 };
 
 
