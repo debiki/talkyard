@@ -282,7 +282,6 @@ object HtmlPageSerializer {
 
 case class HtmlPageSerializer(
   page : PageParts,
-  pageTrust: PageTrust,
   postsReadStats: PostsReadStats,
   pageRoot: AnyPageRoot,
   hostAndPort: String,
@@ -290,14 +289,10 @@ case class HtmlPageSerializer(
   nofollowArticle: Boolean = true,
   showUnapproved: ShowUnapproved = ShowUnapproved.None,
   showStubsForDeleted: Boolean = false,
-  showEmbeddedCommentsToolbar: Boolean = false) {
+  showEmbeddedCommentsToolbar: Boolean = false,
+  debugStats: Boolean = false) {
 
   import HtmlPageSerializer._
-
-  private lazy val pageStats = new PageStats(page, pageTrust, postsReadStats)
-
-  //private def lastChange: Option[String] =
-  //  page.lastOrLaterChangeDate.map(toIso8601(_))
 
 
   private def postRenderer =
@@ -474,6 +469,7 @@ case class HtmlPageSerializer(
     * until I've changed the Javascript code?
     */
   private def sortPostsDescFitness(posts: Seq[Post]): Seq[Post] = {
+
     // COULD sort by *subthread* ratings instead (but not by rating of
     // deleted comment, since it's not visible).
     // Could skip sorting inline posts, since sorted by position later
@@ -498,18 +494,8 @@ case class HtmlPageSerializer(
         return false
 
       // Place interesting posts first.
-      // ---- In the future, perhaps something like this again, when I've updated
-      // PageStats to take into account how many times a post has been read:
-      //val fitnessA = pageStats.ratingStatsFor(a.id).fitnessDefaultTags.lowerLimit
-      //val fitnessB = pageStats.ratingStatsFor(b.id).fitnessDefaultTags.lowerLimit
-      // ---- But for now: ------
-      def fitness(post: Post): Float = {
-        val readCount = postsReadStats.readerIdsByPostId.get(post.id).map(_.size).getOrElse(0)
-        post.numLikeVotes.toFloat / Math.max(1, readCount)
-      }
-      val fitnessA = fitness(a)
-      val fitnessB = fitness(b)
-      // ------------------------
+      val fitnessA = isLikedConfidenceIntervalLowerBound(a)
+      val fitnessB = isLikedConfidenceIntervalLowerBound(b)
       if (fitnessA > fitnessB)
         return true
       if (fitnessA < fitnessB)
@@ -523,6 +509,15 @@ case class HtmlPageSerializer(
     }
 
     posts.sortWith(sortFn)
+  }
+
+
+  private def isLikedConfidenceIntervalLowerBound(post: Post): Float = {
+    val readCount = postsReadStats.readerIdsByPostId.get(post.id).map(_.size).getOrElse(1)
+    val numLikes = post.numLikeVotes
+    val avgLikes = numLikes.toFloat / math.max(1, readCount)
+    Distributions.binPropConfIntACLowerBound(
+      sampleSize = readCount, proportionOfSuccesses = avgLikes, percent = 80.0f)
   }
 
 
@@ -597,12 +592,6 @@ case class HtmlPageSerializer(
     val horizontal = isRoot // (post.where.isDefined && depth == 1 && replies.length > 1) ||
 
     val cssThreadDeleted = if (post.isTreeDeleted) " dw-t-dl" else ""
-    val postFitness = pageStats.ratingStatsFor(post.id).fitnessDefaultTags
-      // For now: If with a probability of 90%, most people find this post
-      // boring/faulty/off-topic, and if, on average,
-      // more than two out of three people think so too, then fold it.
-      // Also fold inline threads (except for root post inline replies)
-      // -- they confuse people (my father), in their current shape.
 
     val renderedComment: RenderedPost =
       postRenderer.renderPost(post.id, uncollapse = uncollapseFirst)
@@ -620,7 +609,6 @@ case class HtmlPageSerializer(
     val (cssFolded, foldLinkText) = {
       val shallFoldPost =
         !uncollapseFirst && (
-        (postFitness.upperLimit < 0.5f && postFitness.observedMean < 0.333f) ||
           // isInlineNonRootChild ||
           post.isTreeCollapsed)
 
@@ -655,6 +643,7 @@ case class HtmlPageSerializer(
       val cssHoriz = if (horizontal) s" $horizontalCommentsCss" else ""
       <li id={cssThreadId} class={"dw-t "+ cssInlineThread +
              cssFolded + cssHoriz + cssThreadDeleted}>{
+        anyDebugStats(post) ++
         foldLink ++
         renderedComment.headAndBodyHtml ++
         myActionsIfVerticalLayout ++
@@ -687,6 +676,26 @@ case class HtmlPageSerializer(
     <ol class="dw-res dw-zd">{/* COULD rename dw-res to dw-ts, "threads"/"tree" */}
       <li><a class="dw-z">Click to show {posts.length} threads</a></li>
     </ol>
+  }
+
+
+  private def anyDebugStats(post: Post): NodeSeq = {
+    if (!debugStats)
+      return Nil
+
+    // Dupl code, but for debugging only. See function isLikedConfidenceIntervalLowerBound().
+    val readCount = postsReadStats.readerIdsByPostId.get(post.id).map(_.size).getOrElse(1)
+    val numLikes = post.numLikeVotes.toFloat
+    val avgLikes = numLikes.toFloat / math.max(readCount, 1)
+    val isLikedConfidenceIntervalLowerBound = Distributions.binPropConfIntACLowerBound(
+      sampleSize = readCount, proportionOfSuccesses = avgLikes, percent = 80.0f)
+
+    <span>
+      like votes: { numLikes },
+      read count: { readCount },
+      avgLikes: { avgLikes },
+      conf int lower bound: { isLikedConfidenceIntervalLowerBound }
+    </span>
   }
 
 }

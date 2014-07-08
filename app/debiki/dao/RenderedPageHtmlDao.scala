@@ -62,13 +62,14 @@ trait RenderedPageHtmlDao {
 
     val page = pageReq.pageDesiredVersionWithDummies_!
     val postsReadStats = pageReq.dao.loadPostsReadStats(page.id)
-    val renderer = HtmlPageSerializer(page, PageTrust(page),
+    val renderer = HtmlPageSerializer(page,
       postsReadStats, pageReq.pageRoot, pageReq.host,
       horizontalComments = renderSettings.horizontalComments,
       // Use follow links for the article, unless it's a forum topic — anyone
       // may start a new forum topic.
       nofollowArticle = pageReq.pageRole_! == PageRole.ForumTopic,
-      showEmbeddedCommentsToolbar = pageReq.pageRole_! == PageRole.EmbeddedComments)
+      showEmbeddedCommentsToolbar = pageReq.pageRole_! == PageRole.EmbeddedComments,
+      debugStats = pageReq.debugStats)
 
     val pageTitle =
       if (!renderSettings.showTitle) Nil
@@ -118,11 +119,16 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
 
   override def renderPage(pageReq: PageRequest[_], renderSettings: RenderPageSettings)
         : RenderedPage = {
+
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
-    if (pageReq.pageExists && pageReq.pageRoot == Some(PageParts.BodyId) &&
-        pageReq.oldPageVersion.isEmpty) {
+    var useCache = pageReq.pageExists
+    useCache &= pageReq.pageRoot == Some(PageParts.BodyId)
+    useCache &= pageReq.oldPageVersion.isEmpty
+    useCache &= !pageReq.debugStats
+
+    if (useCache) {
       val key = _pageHtmlKey(SitePageId(siteId, pageReq.pageId_!), origin = pageReq.host)
       lookupInCache(key, orCacheAndReturn = {
         rememberOrigin(pageReq.host)
@@ -130,7 +136,6 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
       }) getOrDie "DwE93IB7"
     }
     else {
-      // Bypass cache.
       super.renderPage(pageReq, renderSettings)
     }
   }
