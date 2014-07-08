@@ -513,7 +513,7 @@ case class HtmlPageSerializer(
 
 
   private def isLikedConfidenceIntervalLowerBound(post: Post): Float = {
-    val readCount = postsReadStats.readerIdsByPostId.get(post.id).map(_.size).getOrElse(1)
+    val readCount = postsReadStats.readCountFor(post.id)
     val numLikes = post.numLikeVotes
     val avgLikes = numLikes.toFloat / math.max(1, readCount)
     Distributions.binPropConfIntACLowerBound(
@@ -684,7 +684,7 @@ case class HtmlPageSerializer(
       return Nil
 
     // Dupl code, but for debugging only. See function isLikedConfidenceIntervalLowerBound().
-    val readCount = postsReadStats.readerIdsByPostId.get(post.id).map(_.size).getOrElse(1)
+    val readCount = postsReadStats.readCountFor(post.id)
     val numLikes = post.numLikeVotes.toFloat
     val avgLikes = numLikes.toFloat / math.max(readCount, 1)
     val isLikedConfidenceIntervalLowerBound = Distributions.binPropConfIntACLowerBound(

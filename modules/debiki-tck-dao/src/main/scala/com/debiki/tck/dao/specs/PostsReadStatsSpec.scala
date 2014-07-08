@@ -45,12 +45,15 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
     var passwordLoginGrant: LoginGrant = null
     var guestLoginGrant: LoginGrant = null
     var guestUser: User = null
+    val GuestIp = "0.0.0.1"
+    val GuestIp2 = "0.0.0.2"
+    val PasswordIp = "0.0.1.0"
 
     "create a password role and a page and comment #2" in {
       val (identity, user) = siteUtils.createPasswordRole()
       passwordIdentity = identity
       passwordRole = user
-      passwordLoginGrant = siteUtils.login(passwordIdentity)
+      passwordLoginGrant = siteUtils.login(passwordIdentity, ip = PasswordIp)
 
       page = siteUtils.createPageAndBody(
         passwordLoginGrant, PageRole.ForumTopic, PageText).withoutPath
@@ -61,7 +64,7 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
     }
 
     "login as guest, add comment #3" in {
-      guestLoginGrant = siteUtils.loginAsGuest(name = "Test Guest")
+      guestLoginGrant = siteUtils.loginAsGuest(name = "Test Guest", ip = GuestIp)
       guestUser = guestLoginGrant.user
       val (tmpPage, tmpPost3) = siteUtils.addComment(guestLoginGrant, page, "Guest comment")
       page = siteUtils.review(passwordLoginGrant, tmpPage, tmpPost3.id, Approval.AuthoritativeUser)
@@ -70,12 +73,12 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
 
     "find no posts read stats, for non-existing page" in {
       siteUtils.dao.loadPostsReadStats("non_existing_page") mustBe
-        PostsReadStats("non_existing_page", Map.empty)
+        PostsReadStats("non_existing_page", Map.empty, Map.empty)
     }
 
     "find no posts read stats, for page with no votes" in {
       siteUtils.dao.loadPostsReadStats(page.id) mustBe
-        PostsReadStats(page.id, Map.empty)
+        PostsReadStats(page.id, Map.empty, Map.empty)
     }
 
     "add some post read stats" in {
@@ -86,9 +89,12 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
 
     "find posts read stats" in {
       val stats = siteUtils.dao.loadPostsReadStats(page.id)
-      stats mustBe PostsReadStats(page.id, Map(
-        PageParts.BodyId -> Set(guestUser.id),
-        post2.id -> Set(guestUser.id)))
+      stats mustBe PostsReadStats(
+        page.id,
+        Map(
+          PageParts.BodyId -> Set(GuestIp),
+          post2.id -> Set(GuestIp)),
+        Map.empty)
     }
 
     "add even more post read stats" in {
@@ -100,12 +106,25 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
 
     "find more posts read stats" in {
       val stats = siteUtils.dao.loadPostsReadStats(page.id)
-      stats mustBe PostsReadStats(page.id, Map(
-        PageParts.BodyId -> Set(guestUser.id, passwordRole.id),
-        post2.id -> Set(guestUser.id, passwordRole.id)))
+      stats mustBe PostsReadStats(
+        page.id,
+        Map(
+          PageParts.BodyId -> Set(GuestIp),
+          post2.id -> Set(GuestIp)),
+        Map(
+          PageParts.BodyId -> Set(passwordRole.id),
+          post2.id -> Set(passwordRole.id)))
     }
 
-    "not fail on duplicated inserts" in {
+    "not fail on duplicated ip inserts" in {
+      pending
+    }
+
+    "not fail on duplicated guest id inserts" in {
+      pending
+    }
+
+    "not fail on duplicated role inserts" in {
       // Now the password user votes again, and attempts to update the posts-read-stats for
       // posts 1 and 2 again.
       val (tmpPage, dummyVote) = siteUtils.vote(passwordLoginGrant, page, post3.id, PAP.VoteLike)
@@ -116,10 +135,15 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
 
     "find even more posts read stats" in {
       val stats = siteUtils.dao.loadPostsReadStats(page.id)
-      stats mustBe PostsReadStats(page.id, Map(
-        PageParts.BodyId -> Set(guestUser.id, passwordRole.id),
-        post2.id -> Set(guestUser.id, passwordRole.id),
-        post3.id -> Set(passwordRole.id)))
+      stats mustBe PostsReadStats(
+        page.id,
+        Map(
+          PageParts.BodyId -> Set(GuestIp),
+          post2.id -> Set(GuestIp)),
+        Map(
+          PageParts.BodyId -> Set(passwordRole.id),
+          post2.id -> Set(passwordRole.id),
+          post3.id -> Set(passwordRole.id)))
     }
   }
 

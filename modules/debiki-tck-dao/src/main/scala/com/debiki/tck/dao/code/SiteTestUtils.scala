@@ -66,16 +66,16 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
     name = "GuestName", email = "guest-email@ex.com", location = "", website = "")
 
 
-  def loginAsGuest(name: String) = {
-    dao.saveLogin(defaultGuestLoginAttempt.copy(name = name))
+  def loginAsGuest(name: String, ip: String = "0.0.0.1") = {
+    dao.saveLogin(defaultGuestLoginAttempt.copy(name = name, ip = ip))
   }
 
 
-  def login(identity: Identity): LoginGrant = {
+  def login(identity: Identity, ip: String = "0.0.1.0"): LoginGrant = {
     identity match {
       case passwordIdentity: PasswordIdentity =>
         dao.saveLogin(PasswordLoginAttempt(
-          ip = "11.12.13.14", date = new ju.Date(), prevLoginId = None,
+          ip = ip, date = new ju.Date(), prevLoginId = None,
           email = passwordIdentity.email, password = defaultPassword))
       case _ =>
         ???

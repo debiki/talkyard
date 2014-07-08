@@ -18,8 +18,17 @@
 package com.debiki.core
 
 
-/** Data on how many times each post on a certain page has been read.
+/** Data on by which [guest ips] and roles each post on a certain page has been read.
   */
-case class PostsReadStats(pageId: PageId, readerIdsByPostId: Map[PostId, Set[UserId]]) {
+case class PostsReadStats(
+  pageId: PageId,
+  guestIpsByPostId: Map[PostId, Set[String]],
+  roleIdsByPostId: Map[PostId, Set[RoleId]]) {
+
+  def readCountFor(postId: PostId) = {
+    val numGuestIps = guestIpsByPostId.get(postId).map(_.size) getOrElse 0
+    val numRoleIds = roleIdsByPostId.get(postId).map(_.size) getOrElse 0
+    numGuestIps + numRoleIds
+  }
 
 }
