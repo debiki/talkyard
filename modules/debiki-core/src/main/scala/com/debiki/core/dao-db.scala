@@ -205,7 +205,14 @@ abstract class SiteDbDao {
     * and generates notifications (for example, if you save a reply to Alice,
     * a notification to Alice is generated).
     */
-  def savePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
+  final def savePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
+        : (PageNoPath, List[RawPostAction[_]]) = {
+    ActionChecker.checkActions(page, actions)
+    doSavePageActions(page, actions)
+  }
+
+  /** Don't call, implementation detail. */
+  def doSavePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
         : (PageNoPath, List[RawPostAction[_]])
 
   /** Deletes a vote. If there's a user id, deletes the vote by user id (guest or role),
@@ -651,10 +658,10 @@ class ChargingSiteDbDao(
 
   // ----- Actions
 
-  def savePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
+  def doSavePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
         : (PageNoPath, List[RawPostAction[_]]) = {
     _chargeFor(ResUsg.forStoring(actions = actions))
-    _spi.savePageActions(page, actions)
+    _spi.doSavePageActions(page, actions)
   }
 
   def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
