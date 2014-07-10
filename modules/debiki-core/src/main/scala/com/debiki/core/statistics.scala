@@ -95,16 +95,24 @@ object Distributions {
   def binPropConfIntACLowerBound(
       sampleSize: Float, proportionOfSuccesses: Float, percent: Float)
       : Float = {
+    if (sampleSize == 0f)
+      return BinProp80ConfIntACNoSamples
+
+    binPropImpl(sampleSize, proportionOfSuccesses, percent)
+  }
+
+
+  def binPropImpl(sampleSize: Float, proportionOfSuccesses: Float, percent: Float): Float = {
     require(percent == 80.0f)
     require(sampleSize >= 0f)
     require(proportionOfSuccesses >= 0f)
-    // Skip this check; there're a few old liked posts with read count 0; the proportion can be > 1.
-    //require(proportionOfSuccesses <= 1f)
+    require(proportionOfSuccesses <= 1f)
+
     val adjustment = 4f
     val n_ = sampleSize + adjustment
     val p_ = (proportionOfSuccesses * sampleSize + adjustment * 0.5f) / n_
     require(p_ >= 0f)
-    //require(p_ <= 1f) // no, there're some liked posts with read count 0 --> can be > 1
+    require(p_ <= 1f)
 
     // With a probability of 90%, a random value from a
     // standard normal distribution (usually denoted Z) is > 1.28.
@@ -117,12 +125,14 @@ object Distributions {
     lowerBound.toFloat
   }
 
+
   /** Pre-calculated binomial proportion 80% confidence interval,
    *  for a binomial proportion with no samples (!),
    *  calculated using the Agresti-Coull (AC) method.
    */
-  val binProp80ConfIntACNoSamples: Float = binPropConfIntACLowerBound(
+  val BinProp80ConfIntACNoSamples: Float = binPropImpl(
                 sampleSize = 0f, proportionOfSuccesses = 0f, percent = 80.0f)
+
 }
 
 

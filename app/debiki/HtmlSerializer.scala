@@ -513,11 +513,14 @@ case class HtmlPageSerializer(
 
 
   private def isLikedConfidenceIntervalLowerBound(post: Post): Float = {
-    val readCount = postsReadStats.readCountFor(post.id)
     val numLikes = post.numLikeVotes
+    // In case there for some weird reason are liked posts with no read count,
+    // set readCount to at least numLikes.
+    val readCount = math.max(postsReadStats.readCountFor(post.id), numLikes)
     val avgLikes = numLikes.toFloat / math.max(1, readCount)
-    Distributions.binPropConfIntACLowerBound(
+    val lowerBound = Distributions.binPropConfIntACLowerBound(
       sampleSize = readCount, proportionOfSuccesses = avgLikes, percent = 80.0f)
+    lowerBound
   }
 
 
