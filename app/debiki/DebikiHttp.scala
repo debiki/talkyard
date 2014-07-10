@@ -117,6 +117,12 @@ object DebikiHttp {
   def throwEntityTooLarge(errCode: String, message: String) =
     throw ResultException(EntityTooLargeResult(errCode, message))
 
+  /** Happens e.g. if the user attempts to upvote his/her own comment or
+    * vote twice on another comment.
+    */
+  def throwConflict(errCode: String, message: String) =
+    throw ResultException(R.Conflict(s"409 Conflict\n$message [error $errCode]"))
+
   def logAndThrowInternalError(errCode: String, message: String = "")
         (implicit logger: play.api.Logger) = {
     logger.error("Internal error: "+ message +" ["+ errCode +"]")

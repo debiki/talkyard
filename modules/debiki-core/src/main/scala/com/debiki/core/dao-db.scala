@@ -869,6 +869,10 @@ object DbDao {
 
   case object BadPasswordException extends RuntimeException("Bad password")
 
+  case object DuplicateVoteException extends RuntimeException("Duplicate vote")
+
+  case object LikesOwnPostException extends RuntimeException("One may not upvote ones own post")
+
   class PageNotFoundException(message: String) extends RuntimeException(message)
 
   case class PageNotFoundByIdException(

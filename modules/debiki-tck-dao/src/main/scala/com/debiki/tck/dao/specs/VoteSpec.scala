@@ -19,6 +19,7 @@
 package com.debiki.tck.dao.specs
 
 import com.debiki.core._
+import com.debiki.core.DbDao.{DuplicateVoteException, LikesOwnPostException}
 import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.Prelude._
 import com.debiki.tck.dao.DbDaoSpec
@@ -139,25 +140,25 @@ class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
 
     "one cannot vote more than once on the same post" - {
       "guest 2 votes on post #3 again" in {
-        an [Exception] must be thrownBy {
+        an [DuplicateVoteException.type] must be thrownBy {
           siteUtils.vote(guestLoginGrant2, page, post3.id, PAP.VoteLike)
         }
-        an [Exception] must be thrownBy {
+        an [DuplicateVoteException.type] must be thrownBy {
           siteUtils.vote(guestLoginGrant2, page, post3.id, PAP.VoteWrong)
         }
-        an [Exception] must be thrownBy {
+        an [DuplicateVoteException.type] must be thrownBy {
           val (tmpPageC, _) = siteUtils.vote(guestLoginGrant2, page, post3.id, PAP.VoteOffTopic)
         }
       }
 
       "password user 4 votes on post #2 again" in {
-        an [Exception] must be thrownBy {
+        an [DuplicateVoteException.type] must be thrownBy {
           siteUtils.vote(passwordLoginGrant4, page, post2.id, PAP.VoteLike)
         }
-        an [Exception] must be thrownBy {
+        an [DuplicateVoteException.type] must be thrownBy {
           siteUtils.vote(passwordLoginGrant4, page, post2.id, PAP.VoteWrong)
         }
-        an [Exception] must be thrownBy {
+        an [DuplicateVoteException.type] must be thrownBy {
           siteUtils.vote(passwordLoginGrant4, page, post2.id, PAP.VoteOffTopic)
         }
       }
@@ -169,13 +170,13 @@ class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
 
     "one cannot Like ones own post" - {
       "guest 2 attempts to like his own comment #2" in {
-        an [Exception] must be thrownBy {
+        an [LikesOwnPostException.type] must be thrownBy {
           siteUtils.vote(guestLoginGrant2, page, post2.id, PAP.VoteLike)
         }
       }
 
       "password user 4 attempts to like his own comment #4" in {
-        an [Exception] must be thrownBy {
+        an [LikesOwnPostException.type] must be thrownBy {
           siteUtils.vote(passwordLoginGrant4, page, post4.id, PAP.VoteLike)
         }
       }

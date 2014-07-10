@@ -98,7 +98,16 @@ object VoteController extends mvc.Controller {
         val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
           "DwE48FK9", s"Page `$pageId' not found")
 
-        val (updatedPage, voteWithId) = pageReq.dao.savePageActionGenNotfs(pageReq, voteNoId)
+        val (updatedPage, voteWithId) = try {
+          pageReq.dao.savePageActionGenNotfs(pageReq, voteNoId)
+        }
+        catch {
+          case DbDao.DuplicateVoteException =>
+            throwConflict("DwE26FX0", "Duplicate votes")
+          case DbDao.LikesOwnPostException =>
+            throwBadReq("DwE84QM0", "Cannot like own post")
+        }
+
         pageReq.dao.updatePostsReadStats(pageId, postIdsRead, voteWithId)
 
         (pageReq, updatedPage.parts)

@@ -40,7 +40,7 @@ object ActionChecker {
         // One may not like ones own post.
         val post = page.parts.getPost_!(action.postId)
         if (post.userId == action.userId) {
-          throw new Exception("One must not like ones own post") // OwnPostVoteException
+          throw DbDao.LikesOwnPostException
         }
       case _ =>
         // Cold add many kinds of tests, later.
