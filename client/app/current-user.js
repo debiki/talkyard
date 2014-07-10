@@ -93,6 +93,7 @@ d.i.makeCurUser = function() {
   function clearMyPageInfo() {
     $('.dw-p-by-me').removeClass('dw-p-by-me');
     $('.dw-my-vote').removeClass('dw-my-vote');
+    $('.dw-my-post').removeClass('dw-my-post');
     setPermsOnPage({});
   }
 
@@ -305,8 +306,10 @@ d.i.markMyPost = function(postId) {
 };
 
 
-/** Enables and disables action links, based on the user's `permsOnPage`.
-  */
+/**
+ * Enables and disables action links, based on the user's `permsOnPage`
+ * and based on whom the user is (not Like ones own posts).
+ */
 d.i.showAllowedActionsOnly = function(anyRootPost) {
   var permsOnPage = d.i.Me.getPermsOnPage();
   function showHideActionLinks(permission, selector) {
@@ -326,6 +329,17 @@ d.i.showAllowedActionsOnly = function(anyRootPost) {
       'deleteAnyReply', '.dw-a-delete, .dw-a-undelete');
   showHideActionLinks(
       'pinReplies', '.dw-a-pin');
+
+  // Hide Like button for ones own posts.
+  var posts = anyRootPost ? $(anyRootPost).find('.dw-p').add(anyRootPost) : $('.dw-p');
+  posts.each(function() {
+    var post = $(this);
+    if (post.dwAuthorId() === d.i.Me.getUserId()) {
+      var thread = post.closest('.dw-t');
+      var likeBtn = thread.find('> .dw-p-as .dw-a-like');
+      likeBtn.addClass('dw-my-post');
+    }
+  });
 }
 
 
