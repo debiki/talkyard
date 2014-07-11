@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2012, 2014 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -116,6 +116,10 @@ object Mailer {
 
 
 /** Sends emails via SMTP. Does not handle any incoming mail.
+  *
+  * In the past I was using Amazon AWS SES API, but now plain SMTP
+  * is used instead. I removed the SES code in commit
+  * 0489d88e on 2014-07-11: "Send emails via SMTP, not Amazon AWS' SES API."
   */
 class Mailer(
   val daoFactory: SiteDaoFactory,
