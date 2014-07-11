@@ -205,7 +205,14 @@ abstract class SiteDbDao {
     * and generates notifications (for example, if you save a reply to Alice,
     * a notification to Alice is generated).
     */
-  def savePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
+  final def savePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
+        : (PageNoPath, List[RawPostAction[_]]) = {
+    ActionChecker.checkActions(page, actions)
+    doSavePageActions(page, actions)
+  }
+
+  /** Don't call, implementation detail. */
+  def doSavePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
         : (PageNoPath, List[RawPostAction[_]])
 
   /** Deletes a vote. If there's a user id, deletes the vote by user id (guest or role),
@@ -213,6 +220,13 @@ abstract class SiteDbDao {
     */
   def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
         voteType: PostActionPayload.Vote)
+
+  /** Remembers that the specified posts have been read by the user that did the action.
+    */
+  def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId],
+        actionMakingThemRead: RawPostAction[_])
+
+  def loadPostsReadStats(pageId: PageId): PostsReadStats
 
   /** Returns None if the page doesn't exist, and a
     * Some(PageParts(the-page-id)) if it exists but is empty.
@@ -644,16 +658,27 @@ class ChargingSiteDbDao(
 
   // ----- Actions
 
-  def savePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
+  def doSavePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
         : (PageNoPath, List[RawPostAction[_]]) = {
     _chargeFor(ResUsg.forStoring(actions = actions))
-    _spi.savePageActions(page, actions)
+    _spi.doSavePageActions(page, actions)
   }
 
   def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
         voteType: PostActionPayload.Vote) {
     _chargeForOneWriteReq()
     _spi.deleteVote(userIdData, pageId, postId, voteType)
+  }
+
+  def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId],
+        actionMakingThemRead: RawPostAction[_]) {
+    _chargeForOneWriteReq()
+    _spi.updatePostsReadStats(pageId, postIdsRead, actionMakingThemRead)
+  }
+
+  def loadPostsReadStats(pageId: PageId): PostsReadStats = {
+    _chargeForOneReadReq()
+    _spi.loadPostsReadStats(pageId)
   }
 
   def loadPageParts(debateId: PageId, tenantId: Option[SiteId]): Option[PageParts] = {
@@ -843,6 +868,10 @@ object DbDao {
     extends RuntimeException(message)
 
   case object BadPasswordException extends RuntimeException("Bad password")
+
+  case object DuplicateVoteException extends RuntimeException("Duplicate vote")
+
+  case object LikesOwnPostException extends RuntimeException("One may not upvote ones own post")
 
   class PageNotFoundException(message: String) extends RuntimeException(message)
 

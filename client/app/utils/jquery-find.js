@@ -63,6 +63,11 @@ $.fn.dwPostId = function() {
 };
 
 
+$.fn.dwAuthorId = function() {
+  return this.find('.dw-p-by').data('dw-u-id');
+};
+
+
 /**
  * Calculataes how deeply nested a thread is, in comparison to the start
  * of the disuccion on the current page (which might not be the article,

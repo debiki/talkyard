@@ -152,10 +152,17 @@ trait StuffTestClicker extends DebikiSelectors {
     // Consider the page loaded when login/out links appear.
     waitForLoginLinks()
 
-    // Add the magic fake IP cookie. This cannot be done until after the URL has been
-    // opened (above), or Chrome throws an error: "Cookies are disabled inside 'data:' URLs".
-    add cookie ("dwCoFakeIp", s"0.0.0.$currentFakeIpNr")
-    currentFakeIpNr += 1
+    // This cannot be done until after the URL has been opened (above), or Chrome
+    // throws an error: "Cookies are disabled inside 'data:' URLs".
+    fakeNewIp()
+  }
+
+
+  def reloadPageAndFakeNewIp() {
+    reloadPage()
+    switchToAnyEmbeddedCommentsIframe()
+    waitForLoginLinks()
+    fakeNewIp()
   }
 
 
@@ -172,6 +179,13 @@ trait StuffTestClicker extends DebikiSelectors {
       val logoutinkWebElem = find(AnyLogoutLink)
       assert(loginLinkWebElem.isDefined || logoutinkWebElem.isDefined)
     }
+  }
+
+
+  def fakeNewIp() {
+    // Add/update the magic fake IP cookie.
+    add cookie ("dwCoFakeIp", s"0.0.0.$currentFakeIpNr")
+    currentFakeIpNr += 1
   }
 
 

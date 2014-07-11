@@ -19,6 +19,7 @@
 package com.debiki.tck.dao.code
 
 import com.debiki.core._
+import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.Prelude._
 import java.{util => ju}
 
@@ -48,7 +49,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
 
   val DefaultPasswordUserName = "PasswordUser"
 
-  def createPasswordRole(): (Identity, User) = {
+  def createPasswordRole(): (PasswordIdentity, User) = {
     val email = "pswd-test@ex.com"
     val hash = DbDao.saltAndHashPassword(defaultPassword)
     val identityNoId = PasswordIdentity(
@@ -65,16 +66,16 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
     name = "GuestName", email = "guest-email@ex.com", location = "", website = "")
 
 
-  def loginAsGuest(name: String) = {
-    dao.saveLogin(defaultGuestLoginAttempt.copy(name = name))
+  def loginAsGuest(name: String, ip: String = "0.0.0.1") = {
+    dao.saveLogin(defaultGuestLoginAttempt.copy(name = name, ip = ip))
   }
 
 
-  def login(identity: Identity): LoginGrant = {
+  def login(identity: Identity, ip: String = "0.0.1.0"): LoginGrant = {
     identity match {
       case passwordIdentity: PasswordIdentity =>
         dao.saveLogin(PasswordLoginAttempt(
-          ip = "11.12.13.14", date = new ju.Date(), prevLoginId = None,
+          ip = ip, date = new ju.Date(), prevLoginId = None,
           email = passwordIdentity.email, password = defaultPassword))
       case _ =>
         ???
@@ -109,15 +110,16 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
   }
 
 
-  def vote(loginGrant: LoginGrant, page: PageNoPath, postId: PostId,
-        voteType: PostActionPayload.Vote) {
-    val vote = RawPostAction(
+  def vote(loginGrant: LoginGrant, pageNoVote: PageNoPath, postId: PostId, voteType: PAP.Vote)
+        : (PageNoPath, RawPostAction[PAP.Vote]) = {
+    val voteNoId = RawPostAction(
       id = PageParts.UnassignedId,
       postId = postId,
       creationDati = new ju.Date(),
       userIdData = loginGrant.testUserIdData,
       payload = voteType)
-    dao.savePageActions(page, vote::Nil)
+    val (pageWithVote, List(vote)) = dao.savePageActions(pageNoVote, voteNoId::Nil)
+    (pageWithVote, vote.asInstanceOf[RawPostAction[PAP.Vote]])
   }
 }
 

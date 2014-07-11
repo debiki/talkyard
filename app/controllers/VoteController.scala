@@ -20,6 +20,7 @@ package controllers
 import actions.ApiActions.PostJsonAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import collection.immutable
 import debiki._
 import debiki.DebikiHttp._
 import play.api._
@@ -38,6 +39,7 @@ object VoteController extends mvc.Controller {
     *   postId: 123
     *   vote: "VoteLike"      # or "VoteWrong" or "VoteOffTopic"
     *   action: "CreateVote"  # or "DeleteVote"
+    *   postIdsRead: [1, 9, 53, 82]
     */
   def handleVotes = PostJsonAction(maxLength = 500) { request: JsonPostRequest =>
     val body = request.body
@@ -45,11 +47,26 @@ object VoteController extends mvc.Controller {
     val postId = (body \ "postId").as[PostId]
     val voteStr = (body \ "vote").as[String]
     val actionStr = (body \ "action").as[String]
+    val postIdsReadSeq = (body \ "postIdsRead").asOpt[immutable.Seq[PostId]]
+
+    val postIdsRead = postIdsReadSeq.getOrElse(Nil).toSet
 
     val delete: Boolean = actionStr match {
       case "CreateVote" => false
       case "DeleteVote" => true
       case _ => throwBadReq("DwE42GPJ0", s"Bad action: $actionStr")
+    }
+
+    // Check for bad requests
+    if (delete) {
+      if (postIdsReadSeq.isDefined)
+        throwBadReq("DwE30Df5", "postIdsReadSeq specified when deleting a vote")
+    }
+    else {
+      if (postIdsReadSeq.map(_.length) != Some(postIdsRead.size))
+        throwBadReq("DwE942F0", "Duplicate ids in postIdsRead")
+      if (!postIdsRead.contains(postId))
+        throwBadReq("DwE46F82", "postId not part of postIdsRead")
     }
 
     val voteType: PostActionPayload.Vote = voteStr match {
@@ -76,13 +93,22 @@ object VoteController extends mvc.Controller {
         request.dao.deleteVote(request.userIdData, pageId, postId, voteType)
 
         // Now create the vote.
-        val vote = RawPostAction(id = PageParts.UnassignedId, postId = postId,
+        val voteNoId = RawPostAction(id = PageParts.UnassignedId, postId = postId,
           creationDati = request.ctime, userIdData = request.userIdData, payload = voteType)
         val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
           "DwE48FK9", s"Page `$pageId' not found")
 
-        val (updatedPage, _) =
-          pageReq.dao.savePageActionsGenNotfs(pageReq, vote::Nil)
+        val (updatedPage, voteWithId) = try {
+          pageReq.dao.savePageActionGenNotfs(pageReq, voteNoId)
+        }
+        catch {
+          case DbDao.DuplicateVoteException =>
+            throwConflict("DwE26FX0", "Duplicate votes")
+          case DbDao.LikesOwnPostException =>
+            throwBadReq("DwE84QM0", "Cannot like own post")
+        }
+
+        pageReq.dao.updatePostsReadStats(pageId, postIdsRead, voteWithId)
 
         (pageReq, updatedPage.parts)
       }

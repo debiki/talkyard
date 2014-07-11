@@ -495,7 +495,8 @@ case class LoginGrant(
   def email: String = user.email
 
   /** For test suites. */
-  def testUserIdData = UserIdData.newTest(login.id, userId = user.id)
+  def testUserIdData =
+    UserIdData.newTest(login.id, userId = user.id, ip = login.ip)
 }
 
 

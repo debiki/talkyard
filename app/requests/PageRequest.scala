@@ -398,6 +398,12 @@ case class PageRequest[A](
     }
   }
 
+
+  /** If we should include comment vote and read count statistics in the html.
+    */
+  def debugStats: Boolean =
+    request.queryString.getEmptyAsNone("debugStats") == Some("true")
+
 }
 
 

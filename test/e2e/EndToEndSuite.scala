@@ -40,6 +40,7 @@ class EndToEndSuite extends Suites(
   //new AdminDashboardSpec, -- broken, I've totally rewritten the admin section
   new AnonLoginSpec,
   new VoteSpec,
+  new InterestingFirstSpec,
   new ModerationSpec,
   new EditActivitySpec)
   // new PinPostSpec,
@@ -73,6 +74,7 @@ class EndToEndSuiteForEmbeddedComments extends Suites(
   new AnonLoginSpecForEmbeddedComments_jQuery21AndModernizr27PreLoaded,
   new AnonLoginSpecForEmbeddedComments_jQuery17AndModernizr25PreLoaded,
   // Currently doesn't work, fails after reloading page:  new VoteSpecForEmbeddedComments,
+  new InterestingFirstSpecEmbedded,
   new CreateEmbeddedCommentsSiteGmailLoginSpec,
   new CreateEmbeddedCommentsSiteNewPasswordAccountSpec,
   new CreateEmbeddedCommentsSiteOldPasswordAccountSpec)

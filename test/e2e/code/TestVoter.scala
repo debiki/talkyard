@@ -17,7 +17,7 @@
 
 package test.e2e.code
 
-import com.debiki.core.PostId
+import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.{PostActionPayload => PAP}
 
@@ -62,6 +62,17 @@ trait TestVoter {
   }
 
 
+  def likePost(postId: PostId) {
+    // Wait until the server has replied and the Like vote has been highlighted.
+    toggleVote(postId, PAP.VoteLike) // could verify that this actually toggles the vote on
+    eventually {
+      val likeLinks = findAll(cssSelector(s"#dw-t-$postId > .dw-p-as .dw-a-like.dw-my-vote"))
+      val anySelectedLikeLink = likeLinks.filter(_.isDisplayed).toSeq.headOption
+      anySelectedLikeLink mustBe defined
+    }
+  }
+
+
   def toggleVote(postId: PostId, voteType: PAP.Vote) {
     showActionLinks(postId)
     if (voteType == PAP.VoteOffTopic)
@@ -87,6 +98,33 @@ trait TestVoter {
     // Hide the more-actions dropdown by clicking again.
     if (voteType == PAP.VoteOffTopic)
       clickShowMoreActions(postId)
+  }
+
+
+  /** Verifies that replies to a certain post are sorted correctly.
+    * Specify PageParts.NoId for any id to match.
+    * Example: (verifies post 3 is first followed by no. 4)
+    *   checkSortOrder(PageParts.BodyId, Seq(3, 4, NoId, NoId))
+    */
+  def checkSortOrder(parentPostId: PostId, correctSortOrder: Seq[PostId]) {
+    val correctOrder = correctSortOrder.map(postId => s"post-$postId").toVector
+    val replyElems = {
+      if (parentPostId == PageParts.BodyId) {
+        findAll(cssSelector(".dw-depth-0 > .dw-res > li > .dw-t > .dw-p")).toVector
+      }
+      else {
+        findAll(cssSelector(s"#dw-t-$parentPostId > .dw-res > .dw-t > .dw-p")).toVector
+      }
+    }
+    val actualIds = replyElems.map(_.attribute("id") getOrDie "DwE8G0D33")
+    for ((correctId, actualId) <- correctOrder.zip(actualIds)) {
+      if (correctId == s"post-${PageParts.NoId}") {
+        // Ignore, any id ok.
+      }
+      else {
+        correctId mustBe actualId
+      }
+    }
   }
 
 }
