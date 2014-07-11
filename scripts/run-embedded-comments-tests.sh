@@ -27,7 +27,7 @@ cd test/resources/embedding-pages/
 http-server &
 popd
 
-set_timeout 300
+set_timeout 500
 $timeout_play  "$@"  "test-only test.e2e.EndToEndSuiteForEmbeddedComments"
 if [ $? -ne 0 ]; then
   echo "$@" >> target/tests-failed

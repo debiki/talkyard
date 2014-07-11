@@ -23,7 +23,7 @@ d.i.$toggleVote = function(voteType) {
   return function(event) {
     toggleVoteImpl($(this), voteType);
     return false;
-  }
+  };
 };
 
 
@@ -32,7 +32,7 @@ function toggleVoteImpl(voteBtn, voteType) {
   var post = thread.children('.dw-p');
   var postId = post.dwPostId();
 
-  var voteType;
+  var voteType = undefined;
   if (voteBtn.is('.dw-a-like')) {
     voteType = 'VoteLike';
   }
@@ -47,7 +47,7 @@ function toggleVoteImpl(voteBtn, voteType) {
   }
 
   var action;
-  var postIdsRead;
+  var postIdsRead = undefined;
   if (voteBtn.is('.dw-my-vote')) {
     action = 'DeleteVote';
   }
