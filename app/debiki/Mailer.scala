@@ -19,10 +19,7 @@ package debiki
 
 import akka.actor._
 import akka.actor.Actor._
-import com.amazonaws.AmazonClientException
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.services.simpleemail._
-import com.amazonaws.services.simpleemail.model._
+import org.apache.commons.{mail => acm}
 import com.debiki.core._
 import debiki.dao.SiteDao
 import debiki.dao.SiteDaoFactory
@@ -46,22 +43,43 @@ object Mailer {
     * (Also se Notifier.scala)
     */
   def startNewActor(actorSystem: ActorSystem, daoFactory: SiteDaoFactory): ActorRef = {
+    val config = p.Play.configuration
+    val anySmtpServerName = config.getString("debiki.smtp.server")
+    val anySmtpPort = config.getInt("debiki.smtp.port")
+    val anySmtpUserName = config.getString("debiki.smtp.user")
+    val anySmtpPassword = config.getString("debiki.smtp.password")
+    val anyUseSslOrTls = config.getBoolean("debiki.smtp.useSslOrTls")
+    val anyFromAddress = config.getString("debiki.smtp.fromAddress")
+
     val anyAccessKeyId = p.Play.configuration.getString("aws.accessKeyId")
     val anySecretKey = p.Play.configuration.getString("aws.secretKey")
 
-    val actorRef = (anyAccessKeyId, anySecretKey) match {
-      case (Some(accessKeyId), Some(secretKey)) =>
+    val actorRef =
+        (anySmtpServerName, anySmtpPort, anySmtpUserName, anySmtpPassword, anyFromAddress) match {
+      case (Some(serverName), Some(port), Some(userName), Some(password), Some(fromAddress)) =>
+        val useSslOrTls = anyUseSslOrTls getOrElse {
+          p.Logger.info(o"""Email config value debiki.smtp.useSslOrTls not configured,
+            defaulting to true.""")
+          true
+        }
         actorSystem.actorOf(
-          Props(new Mailer(daoFactory, accessKeyId, secretKey = secretKey)),
+          Props(new Mailer(
+            daoFactory,
+            serverName = serverName,
+            port = port,
+            useSslOrTls = useSslOrTls,
+            userName = userName,
+            password = password,
+            fromAddress = fromAddress)),
           name = s"MailerActor-$testInstanceCounter")
       case _ =>
-        p.Logger.info("I won't send any emails, because:")
-        if (anySecretKey.isEmpty) {
-          p.Logger.info("No aws.secretKey configured.")
-        }
-        if (anyAccessKeyId.isEmpty) {
-          p.Logger.info("No aws.accessKeyId configured.")
-        }
+        var message = "I won't send emails, because:"
+        if (anySmtpServerName.isEmpty) message += " No debiki.smtp.server configured."
+        if (anySmtpPort.isEmpty) message += " No debiki.smtp.port configured."
+        if (anySmtpUserName.isEmpty) message += " No debiki.smtp.user configured."
+        if (anySmtpPassword.isEmpty) message += " No debiki.smtp.password configured."
+        if (anyFromAddress.isEmpty) message += " No debiki.smtp.fromAddress configured."
+        p.Logger.info(message)
         actorSystem.actorOf(
           Props(new ConsoleMailer(daoFactory)),
           name = s"ConsoleMailerActor-$testInstanceCounter")
@@ -97,31 +115,19 @@ object Mailer {
 
 
 
-/**
- * Sends emails, via Amazon Web Services (AWS) Simple Email Service (SES).
- * For each email, saves its AWS SES message id to the database.
- * (The message id identifies the email in bounce/rejection/complaint emails
- * from e.g. the recipient's email system.)
- *
- * As of right now, only sends emails. Does not handle incoming mail (there is
- * no incoming mail, instead such mail ends up in a certain Google Domains
- * account instead, namely support at debiki dot se (as of today 2012-03-30).
- *
- * COULD rewrite to use Apache Common's email module instead, and not
- * depend on AWS classes and to not need the AWS access key. But it's not
- * possible to get back AWS' email guid from Apache Common email lib, or is it?
- * (That guid can be used to track bounces etcetera I think.)
- */
-class Mailer(val daoFactory: SiteDaoFactory, accessKeyId: String, secretKey: String) extends Actor {
+/** Sends emails via SMTP. Does not handle any incoming mail.
+  */
+class Mailer(
+  val daoFactory: SiteDaoFactory,
+  val serverName: String,
+  val port: Int,
+  val useSslOrTls: Boolean,
+  val userName: String,
+  val password: String,
+  val fromAddress: String) extends Actor {
 
 
   val logger = play.api.Logger("app.mailer")
-
-
-  private val _awsClient = {
-    new AmazonSimpleEmailServiceClient(
-       new BasicAWSCredentials(accessKeyId, secretKey))
-  }
 
 
   /**
@@ -132,20 +138,17 @@ class Mailer(val daoFactory: SiteDaoFactory, accessKeyId: String, secretKey: Str
    */
   def receive = {
     case (email: Email, tenantId: String) =>
-      _sendEmail(email, tenantId)
-
+      sendEmail(email, tenantId)
     /*
     case Bounce/Rejection/Complaint/Other =>
      */
   }
 
 
-  private def _sendEmail(emailToSend: Email, tenantId: String) {
+  private def sendEmail(emailToSend: Email, tenantId: String) {
 
     val tenantDao = daoFactory.newSiteDao(QuotaConsumers(tenantId = tenantId))
     val now = Some(new ju.Date)
-
-    logger.debug(s"Sending email: $emailToSend")
 
     // I often use @example.com, or simply @ex.com, when posting test comments
     // — don't send those emails, to keep down the bounce rate.
@@ -155,88 +158,45 @@ class Mailer(val daoFactory: SiteDaoFactory, accessKeyId: String, secretKey: Str
       return
     }
 
-    val awsSendReq = _makeAwsSendReq(emailToSend)
-    val emailSentOrFailed = _tellAwsToSendEmail(awsSendReq) match {
-      case Right(awsEmailId) =>
-        val email = emailToSend.copy(sentOn = now,
-          providerEmailId = Some(awsEmailId))
+    logger.debug(s"Sending email: $emailToSend")
+
+    val apacheCommonsEmail  = makeApacheCommonsEmail(emailToSend)
+    val emailSentOrFailed =
+      try {
+        apacheCommonsEmail.send()
+        // Nowadays not using Amazon's SES api, so no provider email id is available.
+        val email = emailToSend.copy(sentOn = now, providerEmailId = None)
         logger.trace("Email sent: "+ email)
         email
-      case Left(error) =>
-        // Could shorten the subject and body, the exact text doesn't
-        // matter?? only the text length could possibly be related
-        // to the failure?? (Well unless AWS censors "ugly" or spam
-        // like words?)
-        //subject = "("+ subjContent.getData.length +" chars)",
-        //bodyHtmlText = "("+ htmlContent.getData.length +" chars)",
-        val email = emailToSend.copy(sentOn = now, failureText = Some(error))
-        logger.warn("Error sending email: "+ email)
-        email
-    }
+      }
+      catch {
+        case ex: acm.EmailException =>
+          var message = ex.getMessage
+          if (ex.getCause ne null) {
+            message += "\nCaused by: " + ex.getCause.getMessage
+          }
+          val email = emailToSend.copy(sentOn = now, failureText = Some(message))
+          logger.warn("Error sending email: "+ email)
+          email
+      }
 
     tenantDao.updateSentEmail(emailSentOrFailed)
   }
 
 
-  private def _makeAwsSendReq(email: Email): SendEmailRequest = {
+  private def makeApacheCommonsEmail(email: Email): acm.HtmlEmail = {
+    val apacheCommonsEmail = new acm.HtmlEmail()
+    apacheCommonsEmail.setHostName(serverName)
+    apacheCommonsEmail.setSmtpPort(port)
+    apacheCommonsEmail.setAuthenticator(new acm.DefaultAuthenticator(userName, password))
+    apacheCommonsEmail.setSSLOnConnect(useSslOrTls)
 
-    val toAddresses = new ju.ArrayList[String]
-    toAddresses.add(email.sentTo)
-    val dest = (new Destination).withToAddresses(toAddresses)
+    apacheCommonsEmail.addTo(email.sentTo)
+    apacheCommonsEmail.setFrom(fromAddress)
 
-    val subjContent = (new Content).withData(email.subject)
-    val htmlContent = (new Content).withData(email.bodyHtmlText)
-    val body = (new Body).withHtml(htmlContent)
-    val mess = (new Message).withSubject(subjContent).withBody(body)
-
-    val awsSendReq = (new SendEmailRequest)
-       .withSource("support@debiki.se")
-       .withDestination(dest)
-       .withMessage(mess)
-
-    awsSendReq
-  }
-
-
-  /**
-   * Makes a network call to Amazon SES to send the message; returns either
-   * the AWS SES message id, or an error message.
-   *
-   * Perhaps good reading:
-   * http://colinmackay.co.uk/blog/2011/11/18/handling-bounces-on-amazon-ses/
-   */
-  private def _tellAwsToSendEmail(awsSendReq: SendEmailRequest)
-        : Either[String, String] = {
-
-    // Amazon SES automatically intercepts all bounces and complaints,
-    // and then forwards them to you.
-    //   http://aws.amazon.com/ses/faqs/#38
-
-    // When using sendEmail(), Amazon SES sends feedback to the email
-    // address in the ReturnPath parameter. If not specified, then
-    // feedback is sent to the email address in the Source parameter.
-    //  http://aws.amazon.com/ses/faqs/#39
-
-    try {
-      // The AWS request blocks until completed.
-      val result: SendEmailResult = _awsClient.sendEmail(awsSendReq)
-      val messageId: String = result.getMessageId
-      logger.debug("Email sent, AWS SES message id: "+ messageId)
-      Right(messageId)
-    }
-    catch  {
-      //case ex: ThrottlingException =>
-      // We're sending too much email, or sending at too fast a rate.
-      //case ex: MessageRejectedException
-      //case ex: AmazonClientException =>
-      //case ex: AmazonServiceException
-      // Unexpected errors:
-      case ex: Exception =>
-        logger.warn("AWS SES sendEmail() failure: "+
-           classNameOf(ex) +": "+ ex.toString)
-        logger.trace("Uninteresting stack trace: "+ ex.printStackTrace);
-        Left(ex.toString)
-    }
+    apacheCommonsEmail.setSubject(email.subject)
+    apacheCommonsEmail.setHtmlMsg(email.bodyHtmlText)
+    apacheCommonsEmail
   }
 
 }

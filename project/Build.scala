@@ -67,8 +67,7 @@ object ApplicationBuild extends Build {
     // There's a PostgreSQL 903 build number too but it's not in the Maven repos.
     // PostgreSQL 9.2 drivers are also not in the Maven repos (as of May 2013).
     "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
-    // For sending email via Amazon Simple Email Service (SES).
-    "com.amazonaws" % "aws-java-sdk" % "1.3.4",
+    "org.apache.commons" % "commons-email" % "1.3.3",
     "com.google.guava" % "guava" % "13.0.1",
     // JSR 305 is requried by Guava, at build time only (so specify "provided"
     // so it won't be included in the JAR), or there's this weird error: """
