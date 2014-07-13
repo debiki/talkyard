@@ -15,30 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-//------------------------------------------------------------------------------
-   $(function() {
-//------------------------------------------------------------------------------
-
 "use strict";
-
-
-// Import LiveScript's prelude, http://gkz.github.com/prelude-ls/.
-prelude.installPrelude(window);
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 
 d.i.TitleId = 0;
 d.i.BodyId = 1;
 
-// Use singl column layout if max width/height < 1000 px.
-// (If height > 1000 but width < 1000, the user can rotate the device.)
-if (d.i.singleColumnLayout) {
-  $('.dw-hz').removeClass('dw-hz');
-}
-
 
 // Remembers grandparent openers even if the parent opener is closed.
-d.i.windowOpeners = (function() {
+function findWindowOpeners() {
   var curOpener = window.opener;
   var openers = [];
   while (curOpener) {
@@ -46,14 +32,14 @@ d.i.windowOpeners = (function() {
     curOpener = curOpener.opener;
   }
   return openers;
-})();
+};
 
 
 // Debiki convention: Dialog elem tabindexes should vary from 101 to 109.
 // HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
 d.i.DEBIKI_TABINDEX_DIALOG_MAX = 109;
 
-d.i.rootPostId = (function() {
+function findRootPostId() {
   // The root post has depth 0. However both the title and the article have
   // depth 0, if they're present. Prefer to use the article as root post if present,
   // so replies will be laid out horizontally. Otherwise simply choose nodes[0].
@@ -63,10 +49,7 @@ d.i.rootPostId = (function() {
   var id = rootPostNode.length && rootPostNode.attr('id') ?
       rootPostNode.attr('id').substr(5) : undefined; // drops initial `dw-t-'
   return id;
-})();
-
-
-d.i.Me = d.i.makeCurUser();
+};
 
 
 // Activates mouseenter/leave functionality, draws arrows to child threads, etc.
@@ -392,18 +375,28 @@ function renderEmptyPage() {
 
 
 d.i.startup = function() {
-  if ($('.dw-page').length) {
-    renderPageEtc();
-  }
-  else {
-    // Skip most of the rendering step, since there is no Debiki page present.
-    renderEmptyPage();
-  }
+  $(function() {
+    // Import LiveScript's prelude, http://gkz.github.com/prelude-ls/.
+    prelude.installPrelude(window);
+
+    // Use single column layout if max width/height < 1000 px.
+    // (If height > 1000 but width < 1000, the user can rotate the device.)
+    if (d.i.singleColumnLayout) {
+      $('.dw-hz').removeClass('dw-hz');
+    }
+
+    d.i.windowOpeners = findWindowOpeners();
+    d.i.rootPostId = findRootPostId();
+    d.i.Me = d.i.makeCurUser();
+
+    if ($('.dw-page').length) {
+      renderPageEtc();
+    }
+    else {
+      // Skip most of the rendering step, since there is no Debiki page present.
+      renderEmptyPage();
+    }
+  });
 };
-
-
-//------------------------------------------------------------------------------
-   }); // end jQuery onload
-//------------------------------------------------------------------------------
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
