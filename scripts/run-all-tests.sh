@@ -15,8 +15,10 @@ if [ "$1" = "timeout" ]; then
   shift
   echo "Using timeouts, which includes running each test suite in its own process group; CTRL-C won't work."
   timeout="timeout"
+  setsid=setsid
 else
   echo "Not using timeouts, tests will run until completed or forever if they don't terminate."
+  setsid=''
 fi
 
 function set_timeout {
@@ -39,12 +41,12 @@ gulp
 # Although these debiki-core tests take only perhaps 15 seconds (starting Java takes long),
 # set a long timeout in case we need to compile and build everything.
 set_timeout 300
-setsid  scripts/run-test-suite.sh  $timeout_args  "$@"  "project debiki-core"  test
+$setsid  scripts/run-test-suite.sh  $timeout_args  "$@"  "project debiki-core"  test
 
 # In debiki-dao-rdb there're two test suites but usually they break if I run them via "test",
 # but "test-only" works:
 set_timeout 180
-setsid  scripts/run-test-suite.sh  $timeout_args  "$@"  "project debiki-dao-rdb" \
+$setsid  scripts/run-test-suite.sh  $timeout_args  "$@"  "project debiki-dao-rdb" \
   "test-only com.debiki.dao.rdb.RdbDaoSuite" \
   "test-only com.debiki.dao.rdb.RdbDaoSpecOld"
 
@@ -52,13 +54,13 @@ setsid  scripts/run-test-suite.sh  $timeout_args  "$@"  "project debiki-dao-rdb"
 # list exactly which tests in debiki-server to run:
 # (And run QuotaChargerSpecRunner last, it takes rather long.)
 set_timeout 600
-setsid  scripts/run-test-suite.sh  $timeout_args  "$@" \
+$setsid  scripts/run-test-suite.sh  $timeout_args  "$@" \
   "test-only debiki.BrowserPagePatcherSpec" \
   "test-only debiki.AutoApproverSpec" \
   "test-only test.e2e.EndToEndSuite" \
   "test-only debiki.QuotaChargerSpecRunner"
 
-setsid  scripts/run-embedded-comments-tests.sh  $timeout  "$@"
+$setsid  scripts/run-embedded-comments-tests.sh  $timeout  "$@"
 
 
 exit_status=0
