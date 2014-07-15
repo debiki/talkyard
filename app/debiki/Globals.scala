@@ -145,7 +145,7 @@ class Globals {
     val ShutdownTimeout = 30 seconds
 
     val dbDaoFactory = new RdbDaoFactory(
-      Akka.system, anyFullTextSearchDbPath, Play.isTest,
+      makeDataSource(), Akka.system, anyFullTextSearchDbPath, Play.isTest,
       fastStartSkipSearch = fastStartSkipSearch)
 
     val quotaManager = new QuotaManager(Akka.system, systemDao, freeDollarsToEachNewSite)
@@ -189,6 +189,19 @@ class Globals {
     // base domain only, e.g. host.example.com but not sub.host.example.com,
     // if the cert was issued for *.example.com.
     val siteByIdHostnameRegex: Regex = s"""^$SiteByIdHostnamePrefix(.*)\\.$baseDomain""".r
+
+    private def makeDataSource() = {
+      //val dataSourceName = if (Play.isTest) "test" else "default"
+      //val dataSource = p.db.DB.getDataSource(dataSourceName)
+      val dataSource = Debiki.getPostgreSqlDataSource()
+      val db = new Rdb(dataSource)
+
+      // Log which database we've connected to.
+      //val boneDataSource = dataSource.asInstanceOf[com.jolbox.bonecp.BoneCPDataSource]
+      //p.Logger.info(o"""Connected to database:
+      //  ${boneDataSource.getJdbcUrl} as user ${boneDataSource.getUsername}.""")
+      db
+    }
   }
 
 }
