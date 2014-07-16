@@ -110,8 +110,7 @@ object CreateEmbeddedSiteController extends mvc.Controller {
       "DwE56Yr5", "Cannot create website: User's email address unknown. " +
          "Please use an account that has an email address")
 
-    def _showLoginPageAgain(errorCode: String, errorMessage: String)
-          : SimpleResult = {
+    def _showLoginPageAgain(errorCode: String, errorMessage: String): Result = {
       // For now:
       throwForbidden(errorCode, errorMessage)
       // Could instead show this page, + helpful info on why failed:

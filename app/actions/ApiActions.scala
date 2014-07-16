@@ -38,27 +38,27 @@ import controllers.Utils
 object ApiActions {
 
 
-  def AsyncGetAction(f: GetRequest => Future[SimpleResult]): mvc.Action[Option[Any]] =
+  def AsyncGetAction(f: GetRequest => Future[Result]): mvc.Action[Option[Any]] =
     PlainApiAction.async(BodyParsers.parse.empty)(f)
 
-  def GetAction(f: GetRequest => SimpleResult) =
+  def GetAction(f: GetRequest => Result) =
     PlainApiAction(BodyParsers.parse.empty)(f)
 
 
-  def AdminGetAction(f: GetRequest => SimpleResult) =
+  def AdminGetAction(f: GetRequest => Result) =
     PlainApiActionAdminOnly(BodyParsers.parse.empty)(f)
 
 
   def JsonOrFormDataPostAction
         (maxBytes: Int)
-        (f: ApiRequest[JsonOrFormDataBody] => SimpleResult) =
+        (f: ApiRequest[JsonOrFormDataBody] => Result) =
     PlainApiAction(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
 
   def AsyncJsonOrFormDataPostAction
         (maxBytes: Int)
-        (f: ApiRequest[JsonOrFormDataBody] => Future[SimpleResult]): mvc.Action[JsonOrFormDataBody] =
+        (f: ApiRequest[JsonOrFormDataBody] => Future[Result]): mvc.Action[JsonOrFormDataBody] =
     PlainApiAction.async(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
@@ -67,7 +67,7 @@ object ApiActions {
    */
   def PostFormDataAction
         (maxUrlEncFormBytes: Int)
-        (f: FormDataPostRequest => SimpleResult) =
+        (f: FormDataPostRequest => Result) =
     PlainApiAction(
       BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(f)
 
@@ -79,14 +79,14 @@ object ApiActions {
    */
   def PostJsonAction
         (maxLength: Int)
-        (f: JsonPostRequest => SimpleResult) =
+        (f: JsonPostRequest => Result) =
     PlainApiAction(
       BodyParsers.parse.json(maxLength = maxLength))(f)
 
 
   def AdminPostJsonAction
         (maxLength: Int)
-        (f: JsonPostRequest => SimpleResult) =
+        (f: JsonPostRequest => Result) =
     PlainApiActionAdminOnly(
       BodyParsers.parse.json(maxLength = maxLength))(f)
 
@@ -104,7 +104,7 @@ object ApiActions {
     }
 
     override def invokeBlock[A](
-        genericRequest: Request[A], block: ApiRequest[A] => Future[SimpleResult]) = {
+        genericRequest: Request[A], block: ApiRequest[A] => Future[Result]) = {
 
       // We've wrapped PlainApiActionImpl in a SessionAction which only provides SessionRequest:s.
       val request = genericRequest.asInstanceOf[SessionRequest[A]]

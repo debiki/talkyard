@@ -75,7 +75,7 @@ object SafeActions {
     }
 
     override def invokeBlock[A](
-        request: Request[A], block: SessionRequest[A] => Future[SimpleResult]) = {
+        request: Request[A], block: SessionRequest[A] => Future[Result]) = {
 
       val (sidStatus, xsrfOk, newCookies) =
         DebikiSecurity.checkSidAndXsrfToken(request, maySetCookies = maySetCookies)
@@ -87,7 +87,7 @@ object SafeActions {
       // should happen before the async parts, because access control should be done
       // before any async computations are started. So I don't try to recover
       // any AsyncResult(future-result-that-might-be-a-failure) here.
-      val resultOldCookies: Future[SimpleResult] =
+      val resultOldCookies: Future[Result] =
         try {
           block(SessionRequest(sidStatus, xsrfOk, anyBrowserId, request))
         }
@@ -146,7 +146,7 @@ object SafeActions {
    */
   object ExceptionAction extends ActionBuilder[Request] {
 
-    def invokeBlock[A](request: Request[A], block: Request[A] => Future[SimpleResult]) = {
+    def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]) = {
       var futureResult = try {
         block(request)
       }
