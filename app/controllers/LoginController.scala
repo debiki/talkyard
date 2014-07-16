@@ -64,10 +64,11 @@ object LoginController extends mvc.Controller {
         returnToUrl = returnToUrl)(request)
     }
 
-    def loginWithSecureSocial(provider: String): Future[SimpleResult] = {
+    /*
+    def loginWithSecureSocial(provider: String): Future[Result] = {
       LoginWithSecureSocialController.startAuthentication(
         provider, returnToUrl = returnToUrl)(request)
-    }
+    } */
 
     provider match {
       case "google" =>
@@ -75,7 +76,9 @@ object LoginController extends mvc.Controller {
       case "yahoo" =>
         loginWithOpenId(IdentityOpenId.ProviderIdentifier.Yahoo)
       case "facebook" =>
+        ??? /*
         loginWithSecureSocial(securesocial.core.providers.FacebookProvider.Facebook)
+        */
       case x =>
         unimplemented("Logging in with SecureSocial from here")
         // Or forward to LoginWithSecureSocialController.handleAuth in some manner?

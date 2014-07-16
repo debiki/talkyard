@@ -291,11 +291,13 @@ case class OpenIdLoginAttempt(
 }
 
 
+/*
 case class SecureSocialLoginAttempt(
   ip: String,
   date: ju.Date,
   prevLoginId: Option[LoginId],
   secureSocialCoreUser: securesocial.core.SocialUser) extends LoginAttempt
+  */
 
 
 case class Login(
@@ -458,6 +460,7 @@ object IdentityOpenId {
 }
 
 
+/*
 case class SecureSocialIdentity(
   id: IdentityId,
   override val userId: UserId,
@@ -474,7 +477,7 @@ object SecureSocialIdentity {
   def displayNameFor(secureSocialCoreIdentity: securesocial.core.Identity): String =
     if (secureSocialCoreIdentity.firstName.nonEmpty) secureSocialCoreIdentity.firstName
     else secureSocialCoreIdentity.fullName
-}
+} */
 
 
 case class LoginGrant(
