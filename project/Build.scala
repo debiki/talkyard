@@ -17,7 +17,6 @@
 
 import sbt._
 import Keys._
-import play.Project._
 import com.typesafe.sbteclipse.plugin.EclipsePlugin.EclipseKeys
 import java.{net => jn}
 
@@ -62,8 +61,8 @@ object ApplicationBuild extends Build {
   val appDependencies = Seq(
     // This (JDBC and PostgerSQL) makes the database evolutions script in
     // debiki-dao-rdb work. Otherwise not needed.
-    jdbc,
-    cache,
+    play.Play.autoImport.jdbc,
+    play.Play.autoImport.cache,
     // There's a PostgreSQL 903 build number too but it's not in the Maven repos.
     // PostgreSQL 9.2 drivers are also not in the Maven repos (as of May 2013).
     "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
@@ -103,24 +102,22 @@ object ApplicationBuild extends Build {
     Seq(EclipseKeys.skipParents := false, resolvers := Seq())
 
 
-  val main = play.Project(appName, appVersion, appDependencies
-    ).settings(
-      mainSettings: _*
-    ).dependsOn(
-      debikiCore, debikiDaoRdb, secureSocial
-    ).aggregate(
-      secureSocial
-    )
+  val main = Project(appName, file(".")).enablePlugins(play.PlayScala)
+    .settings(mainSettings: _*)
+    .dependsOn(debikiCore, debikiDaoRdb) //, secureSocial)
+    .aggregate(secureSocial)
 
 
   def mainSettings = List(
-    scalaVersion := "2.10.3",
+    version := appVersion,
+    libraryDependencies ++= appDependencies,
+    scalaVersion := "2.11.1",
     compileRhinoTask := { "make compile_javascript"! },
     compileJsAndCss := { "gulp release"! },
 
     // Make Gulp bundle JS files and CSS automatically.
-    playOnStarted += startGulpTask,
-    playOnStopped += stopGulpTask,
+    ///playOnStarted += startGulpTask,
+    ///playOnStopped += stopGulpTask,
 
     Keys.fork in Test := false, // or cannot place breakpoints in test suites
     Keys.compile in Compile <<=
