@@ -38,7 +38,7 @@ import controllers.Utils
 object ApiActions {
 
 
-  def AsyncGetAction(f: GetRequest => Future[Result]): mvc.Action[Option[Any]] =
+  def AsyncGetAction(f: GetRequest => Future[Result]): mvc.Action[Unit] =
     PlainApiAction.async(BodyParsers.parse.empty)(f)
 
   def GetAction(f: GetRequest => Result) =

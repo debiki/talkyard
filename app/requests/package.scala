@@ -25,7 +25,7 @@ package object requests {
 
   /** A request with no post data.
     */
-  type GetRequest = ApiRequest[Option[Any]]
+  type GetRequest = ApiRequest[Unit]
 
 
   /** A request with form data.
@@ -40,7 +40,7 @@ package object requests {
   /**
    * A PageRequest with no post data.
    */
-  type PageGetRequest = PageRequest[Option[Any]]
+  type PageGetRequest = PageRequest[Unit]
 
 
   /**

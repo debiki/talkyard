@@ -198,7 +198,7 @@ object PageActions {
   def CheckPathActionNoBody
         (pathIn: PagePath)
         (f: (SidStatus, XsrfOk, Option[BrowserId], Option[PagePath], SiteDao,
-           Request[Option[Any]]) => Result) =
+           Request[Unit]) => Result) =
     CheckPathAction(BodyParsers.parse.empty)(pathIn)(f)
 
 

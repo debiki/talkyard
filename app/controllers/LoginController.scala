@@ -57,7 +57,7 @@ object LoginController extends mvc.Controller {
 
 
   def asyncLogin(provider: String, returnToUrl: String)
-        (implicit request: Request[Option[Any]]): Future[Result] = {
+        (implicit request: Request[Unit]): Future[Result] = {
 
     def loginWithOpenId(identifier: String): Future[Result] = {
       LoginWithOpenIdController.asyncLogin(openIdIdentifier = identifier,

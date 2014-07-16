@@ -45,7 +45,7 @@ object SafeActions {
     browserId: Option[BrowserId],
     underlying: Request[A]) extends WrappedRequest(underlying)
 
-  type SessionRequestNoBody = SessionRequest[Option[Any]]
+  type SessionRequestNoBody = SessionRequest[Unit]
 
 
   /**
