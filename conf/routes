@@ -27,9 +27,9 @@ POST  /-/logout                 controllers.LoginController.logout
 
 POST  /-/login-guest            controllers.LoginAsGuestController.loginGuest
 POST  /-/login-password         controllers.LoginWithPasswordController.login
-GET   /-/api/login-openid       controllers.LoginWithOpenIdController.loginGet
-POST  /-/api/login-openid       controllers.LoginWithOpenIdController.loginPost
-GET   /-/api/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)
+#GET   /-/api/login-openid       controllers.LoginWithOpenIdController.loginGet
+#POST  /-/api/login-openid       controllers.LoginWithOpenIdController.loginPost
+#GET   /-/api/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)
 #GET   /-/login-securesocial/:provider       controllers.LoginWithSecureSocialController.startAuthentication(provider, returnToUrl)
 #GET   /-/login-securesocial-popup/:provider controllers.LoginWithSecureSocialController.startAuthenticationInPopupWindow(provider)
 #GET   /-/login-securesocial-clbk/:provider  controllers.LoginWithSecureSocialController.authenticate(provider)

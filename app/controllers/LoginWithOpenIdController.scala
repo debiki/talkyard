@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+/*
 package controllers
 
 import actions.PageActions._
@@ -270,4 +270,4 @@ object LoginWithOpenIdController extends mvc.Controller {
     //  "OpenID login failure" -> t.toString)
   }
 
-}
+} */

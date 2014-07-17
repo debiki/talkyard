@@ -51,18 +51,21 @@ object LoginController extends mvc.Controller {
 
   def loginWithPostData(returnToUrl: String) = ExceptionAction.async(
         parse.urlFormEncoded(maxLength = 200)) { implicit request =>
+    ??? /*
     // For now. Should handle guest login forms too.
     LoginWithOpenIdController.asyncLoginWithPostData(returnToUrl = "")
+    */
   }
 
 
   def asyncLogin(provider: String, returnToUrl: String)
         (implicit request: Request[Unit]): Future[Result] = {
 
+    /*
     def loginWithOpenId(identifier: String): Future[Result] = {
       LoginWithOpenIdController.asyncLogin(openIdIdentifier = identifier,
         returnToUrl = returnToUrl)(request)
-    }
+    } */
 
     /*
     def loginWithSecureSocial(provider: String): Future[Result] = {
@@ -72,9 +75,13 @@ object LoginController extends mvc.Controller {
 
     provider match {
       case "google" =>
+        ??? /*
         loginWithOpenId(IdentityOpenId.ProviderIdentifier.Google)
+        */
       case "yahoo" =>
+        ??? /*
         loginWithOpenId(IdentityOpenId.ProviderIdentifier.Yahoo)
+        */
       case "facebook" =>
         ??? /*
         loginWithSecureSocial(securesocial.core.providers.FacebookProvider.Facebook)
