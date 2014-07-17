@@ -113,7 +113,7 @@ object CreatePageController extends mvc.Controller {
     val pageReq = {
       val newPagePath = newPagePathFromUrl(pageReqOrig, pageId)
       val request =
-        try { PageRequest(pageReqOrig, newPagePath) }
+        try { PageRequest.basedOnApiRequest(pageReqOrig, newPagePath) }
         catch {
           case ex: PathClashException =>
             val duplicateIdInfo =

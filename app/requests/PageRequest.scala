@@ -42,7 +42,7 @@ object PageRequest {
    * path, if you specify an almost correct path (e.g. superfluous
    * trailing '/').
    */
-  def apply[A](
+  def basedOnApiRequest[A](
     apiRequest: DebikiRequest[A],
     pagePath: PagePath,
     pageMightExist: Boolean = true,
@@ -139,7 +139,7 @@ object PageRequest {
           throwBadReq("DwE390SD3", "Bad path for page id "+ pageId +": "+ x)
       }
     val pagePathWithId = pagePathPerhapsId.copy(pageId = Some(pageId))
-    PageRequest(apiRequest, pagePathWithId, pageMightExist = pageMightExist)
+    PageRequest.basedOnApiRequest(apiRequest, pagePathWithId, pageMightExist = pageMightExist)
   }
 
 
@@ -150,7 +150,8 @@ object PageRequest {
     // remove `checkPagePath` in PageRequest.apply(..) above.
     apiRequest.dao.lookupPagePath(pageId) match {
       case Some(pagePath) =>
-        Some(PageRequest(apiRequest, pagePath, pageMustExist = true, fixBadPath = true))
+        Some(PageRequest.basedOnApiRequest(
+          apiRequest, pagePath, pageMustExist = true, fixBadPath = true))
       case None =>
         None
     }
