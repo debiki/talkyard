@@ -4,14 +4,14 @@
 # The Javascript file debiki-pagedown.min.js is concatenated and minified
 # by gulpfile.js.
 
-DESTDIR=target/scala-2.10/compiledjs-classes/
+DESTDIR=target/scala-2.11/compiledjs-classes/
 CLASSDIR=${DESTDIR}compiledjs/
 HTML_SANITIZER_JS=client/third-party/html-sanitizer-bundle.js
 PAGEDOWN_JS=public/res/debiki-pagedown.js
 # RHINOJAR=target/js-1.7R2.jar
 RHINOJAR=target/rhino1_7R2/js.jar
 
-SBT_CLASSDIR_ROOT=target/scala-2.10/classes/
+SBT_CLASSDIR_ROOT=target/scala-2.11/classes/
 
 help:
 	@echo Open the Makefile and read it.
