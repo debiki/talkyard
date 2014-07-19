@@ -34,6 +34,7 @@ POST  /-/login-password         controllers.LoginWithPasswordController.login
 #GET   /-/login-securesocial-popup/:provider controllers.LoginWithSecureSocialController.startAuthenticationInPopupWindow(provider)
 #GET   /-/login-securesocial-clbk/:provider  controllers.LoginWithSecureSocialController.authenticate(provider)
 #POST  /-/login-securesocial-clbk/:provider  controllers.LoginWithSecureSocialController.authenticateByPost(provider)
+GET   /-/login-securesocial-clbk/:provider  controllers.LoginWithSilhouetteController.finishAuthentication(provider)
 
 GET   /-/api/logout             controllers.LoginController.logout
 POST  /-/api/logout             controllers.LoginController.logout

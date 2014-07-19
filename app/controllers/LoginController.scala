@@ -83,7 +83,8 @@ object LoginController extends mvc.Controller {
         loginWithOpenId(IdentityOpenId.ProviderIdentifier.Yahoo)
         */
       case "facebook" =>
-        ??? /*
+        LoginWithSilhouetteController.startAuthentication("facebook", "/-/admin", request)
+        /*
         loginWithSecureSocial(securesocial.core.providers.FacebookProvider.Facebook)
         */
       case x =>
