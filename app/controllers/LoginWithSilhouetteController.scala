@@ -24,7 +24,8 @@ import com.mohiva.play.silhouette.core.providers.OAuth2Settings
 import com.mohiva.play.silhouette.core.providers.oauth2.FacebookProvider
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.core.{exceptions => siex}
-import debiki.DebikiHttp._
+import java.{util => ju}
+import play.{api => p}
 import play.api.mvc._
 import play.api.mvc.BodyParsers.parse.empty
 import play.api.Play
@@ -73,25 +74,55 @@ object LoginWithSilhouetteController extends Controller {
       case Left(result) =>
         Future.successful(result)
       case Right(profile: provider.Profile) =>
-        System.out.println(s"Logged in: $profile")
-
-        val response = request.cookies.get(ReturnToUrlCookieName) match {
-          case Some(returnToUrlCookie) =>
-            Redirect(returnToUrlCookie.value).discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
-          case None =>
-            // We're logging in in a popup.
-            Ok(views.html.login.loginPopupCallback("LoginOk",
-              s"You have been logged in, welcome ${profile}", //${loginGrant.displayName}!",
-              anyReturnToUrl = None))
-        }
-        Future.successful(response)
-
+        loginAndRedirect(request, profile)
     }.recoverWith({
       case e: siex.AccessDeniedException =>
         Future.successful(Results.Forbidden)
       case e: siex.AuthenticationException =>
         Future.successful(Results.Forbidden)
     })
+  }
+
+
+  private def loginAndRedirect(request: Request[Unit], profile: CommonSocialProfile[_])
+        : Future[Result] = {
+
+    p.Logger.debug(s"User logged in : $profile")
+
+    val siteId = debiki.DebikiHttp.lookupTenantIdOrThrow(request, debiki.Globals.systemDao)
+    val dao = debiki.Globals.siteDao(siteId, ip = request.remoteAddress)
+
+    val loginAttempt = OpenAuthLoginAttempt(
+      ip = request.remoteAddress,
+      date = new ju.Date,
+      prevLoginId = None, // for now
+      OpenAuthDetails(
+        providerId = profile.loginInfo.providerID,
+        providerKey = profile.loginInfo.providerKey,
+        firstName = profile.firstName,
+        fullName = profile.fullName,
+        email = profile.email,
+        avatarUrl = profile.avatarURL))
+
+    val loginGrant: LoginGrant = dao.saveLogin(loginAttempt)
+
+    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(Some(loginGrant))
+    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant)
+    val newSessionCookies = userConfigCookie::sidAndXsrfCookies
+
+    val response = request.cookies.get(ReturnToUrlCookieName) match {
+      case Some(returnToUrlCookie) =>
+        Redirect(returnToUrlCookie.value).discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
+      case None =>
+        // We're logging in in a popup.
+        Ok(views.html.login.loginPopupCallback("LoginOk",
+          s"You have been logged in, welcome ${loginGrant.displayName}!",
+          anyReturnToUrl = None))
+    }
+
+    // PostgreSQL doesn't support async requests; everything above has happened already.
+    Future.successful(
+      response.withCookies(newSessionCookies: _*))
   }
 
 
