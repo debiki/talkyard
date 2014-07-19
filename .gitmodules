@@ -10,9 +10,6 @@
 [submodule "modules/jquery-waypoints"]
 	path = modules/jquery-waypoints
 	url = https://github.com/imakewebthings/jquery-waypoints.git
-[submodule "modules/securesocial-git"]
-	path = modules/securesocial-git
-	url = git://github.com/kajmagnus79/securesocial.git
 [submodule "modules/codemirror"]
 	path = modules/codemirror
 	url = https://github.com/marijnh/CodeMirror.git
