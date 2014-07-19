@@ -61,18 +61,18 @@ d.i.showLoginDialog = function(mode)
     false
 
   dialog.find('#dw-lgi-google').click ->
-    loginGoogleYahoo("https://www.google.com/accounts/o8/id")
+    openOpenAuthLoginWindow('google')
 
   dialog.find('#dw-lgi-yahoo').click ->
-    loginGoogleYahoo("http://me.yahoo.com/")
+    submitOpenIdLoginForm("http://me.yahoo.com/")
 
   dialog.find('#dw-lgi-facebook').click ->
-    openSecureSocialLoginWindow('facebook')
+    openOpenAuthLoginWindow('facebook')
 
   /**
    * Logs in at Google or Yahoo by submitting an OpenID login form in a popup.
    */
-  function loginGoogleYahoo(openidIdentifier)
+  function submitOpenIdLoginForm(openidIdentifier)
     form = $("""
       <form action="#{d.i.serverOrigin}/-/api/login-openid" method="POST">
         <input type="text" name="openid_identifier" value="#openidIdentifier">
@@ -86,8 +86,8 @@ d.i.showLoginDialog = function(mode)
     form.submit()
     false
 
-  function openSecureSocialLoginWindow(provider)
-    url = "#{d.i.serverOrigin}/-/login-securesocial-popup/#provider"
+  function openOpenAuthLoginWindow(provider)
+    url = "#{d.i.serverOrigin}/-/login-openauth-popup/#provider"
     if d.i.isInLoginPopup
       window.location = url
     else

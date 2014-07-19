@@ -29,7 +29,7 @@ POST  /-/login-password         controllers.LoginWithPasswordController.login
 #GET   /-/api/login-openid       controllers.LoginWithOpenIdController.loginGet
 #POST  /-/api/login-openid       controllers.LoginWithOpenIdController.loginPost
 #GET   /-/api/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)
-#GET   /-/login-securesocial-popup/:provider controllers.LoginWithSecureSocialController.startAuthenticationInPopupWindow(provider)
+GET   /-/login-openauth-popup/:provider controllers.LoginWithOpenAuthController.startAuthenticationInPopupWindow(provider)
 GET   /-/auth-callback/:provider controllers.LoginWithOpenAuthController.finishAuthentication(provider)
 
 GET   /-/api/logout             controllers.LoginController.logout

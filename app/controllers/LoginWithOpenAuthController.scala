@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import com.mohiva.play.silhouette.core.providers._
 import com.mohiva.play.silhouette.core.providers.OAuth2Settings
 import com.mohiva.play.silhouette.core.providers.oauth2.FacebookProvider
+import com.mohiva.play.silhouette.core.providers.oauth2.GoogleProvider
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.core.{exceptions => siex}
 import java.{util => ju}
@@ -42,12 +43,24 @@ object LoginWithOpenAuthController extends Controller {
   private val ReturnToUrlCookieName = "dwCoReturnToUrl"
 
 
+  /** The authentication flow starts here, if it happens in the main window and you
+    * thus have a page you want to return to afterwards.
+    */
   def startAuthentication(provider: String, returnToUrl: String, request: Request[Unit]) = {
     val futureResponse = authenticate(provider, request)
     futureResponse map { response =>
       response.withCookies(
         Cookie(name = ReturnToUrlCookieName, value = returnToUrl))
     }
+  }
+
+
+  /** The authentication starts here if it happens in a popup. Then, afterwards,
+    * the popup window will be sent some Javascript that tells the popup opener
+    * what has happened (i.e. that the user logged in).
+    */
+  def startAuthenticationInPopupWindow(provider: String) = Action.async(empty) { request =>
+    authenticate(provider, request)
   }
 
 
@@ -66,6 +79,8 @@ object LoginWithOpenAuthController extends Controller {
     val provider: SocialProvider[_] with CommonSocialProfileBuilder[_] = providerName match {
       case silhouette.core.providers.oauth2.FacebookProvider.Facebook =>
         facebookProvider(request)
+      case silhouette.core.providers.oauth2.GoogleProvider.Google =>
+        googleProvider(request)
       case x =>
         return Future.successful(Results.Forbidden(s"Bad provider: `$providerName' [DwE2F0D6]"))
     }
@@ -86,8 +101,7 @@ object LoginWithOpenAuthController extends Controller {
 
   private def loginAndRedirect(request: Request[Unit], profile: CommonSocialProfile[_])
         : Future[Result] = {
-
-    p.Logger.debug(s"User logged in : $profile")
+    p.Logger.debug(s"User logging in: $profile")
 
     val siteId = debiki.DebikiHttp.lookupTenantIdOrThrow(request, debiki.Globals.systemDao)
     val dao = debiki.Globals.siteDao(siteId, ip = request.remoteAddress)
@@ -133,17 +147,34 @@ object LoginWithOpenAuthController extends Controller {
     new silhouette.core.utils.PlayHTTPLayer
 
 
+  private def googleProvider(request: Request[Unit])
+        : GoogleProvider with CommonSocialProfileBuilder[OAuth2Info] = {
+    GoogleProvider(CacheLayer, HttpLayer, OAuth2Settings(
+      authorizationURL = Play.configuration.getString("silhouette.google.authorizationURL").get,
+      accessTokenURL = Play.configuration.getString("silhouette.google.accessTokenURL").get,
+      redirectURL = buildRedirectUrl(request, "google"),
+      clientID = Play.configuration.getString("silhouette.google.clientID").get,
+      clientSecret = Play.configuration.getString("silhouette.google.clientSecret").get,
+      scope = Play.configuration.getString("silhouette.google.scope")))
+  }
+
+
   private def facebookProvider(request: Request[Unit])
         : FacebookProvider with CommonSocialProfileBuilder[OAuth2Info] = {
-    val scheme = if (request.secure) "https" else "http"
-    val origin = s"$scheme://${request.host}"
     FacebookProvider(CacheLayer, HttpLayer, OAuth2Settings(
       authorizationURL = Play.configuration.getString("silhouette.facebook.authorizationURL").get,
       accessTokenURL = Play.configuration.getString("silhouette.facebook.accessTokenURL").get,
-      redirectURL = origin + routes.LoginWithOpenAuthController.finishAuthentication("facebook").url,
+      redirectURL = buildRedirectUrl(request, "facebook"),
       clientID = Play.configuration.getString("silhouette.facebook.clientID").get,
       clientSecret = Play.configuration.getString("silhouette.facebook.clientSecret").get,
       scope = Play.configuration.getString("silhouette.facebook.scope")))
+  }
+
+
+  private def buildRedirectUrl(request: Request[_], provider: String) = {
+    val scheme = if (request.secure) "https" else "http"
+    val origin = s"$scheme://${request.host}"
+    origin + routes.LoginWithOpenAuthController.finishAuthentication(provider).url
   }
 
 }
