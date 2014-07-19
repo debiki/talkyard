@@ -61,8 +61,13 @@ object LoginWithSilhouetteController extends Controller {
     *   https://github.com/mohiva/play-silhouette-seed/blob/master/
     *                     app/controllers/SocialAuthController.scala#L32
     */
-  private def authenticate(provider: String, request: Request[Unit]) = {
-    val provider: SocialProvider[_] with CommonSocialProfileBuilder[_] = facebookProvider
+  private def authenticate(providerName: String, request: Request[Unit]): Future[Result] = {
+    val provider: SocialProvider[_] with CommonSocialProfileBuilder[_] = providerName match {
+      case silhouette.core.providers.oauth2.FacebookProvider.Facebook =>
+        facebookProvider(request)
+      case x =>
+        return Future.successful(Results.Forbidden(s"Bad provider: `$providerName' [DwE2F0D6]"))
+    }
     val authFutureResult = provider.authenticate()(request)
     authFutureResult.flatMap {
       case Left(result) =>
@@ -89,17 +94,22 @@ object LoginWithSilhouetteController extends Controller {
     })
   }
 
-  val cacheLayer =
+
+  private val CacheLayer =
     new silhouette.contrib.utils.PlayCacheLayer
 
-  val httpLayer =
+  private val HttpLayer =
     new silhouette.core.utils.PlayHTTPLayer
 
-  def facebookProvider: FacebookProvider with CommonSocialProfileBuilder[OAuth2Info] = {
-    FacebookProvider(cacheLayer, httpLayer, OAuth2Settings(
+
+  private def facebookProvider(request: Request[Unit])
+        : FacebookProvider with CommonSocialProfileBuilder[OAuth2Info] = {
+    val scheme = if (request.secure) "https" else "http"
+    val origin = s"$scheme://${request.host}"
+    FacebookProvider(CacheLayer, HttpLayer, OAuth2Settings(
       authorizationURL = Play.configuration.getString("silhouette.facebook.authorizationURL").get,
       accessTokenURL = Play.configuration.getString("silhouette.facebook.accessTokenURL").get,
-      redirectURL = "http://localhost:9000" + routes.LoginWithSilhouetteController.finishAuthentication("facebook").url,
+      redirectURL = origin + routes.LoginWithSilhouetteController.finishAuthentication("facebook").url,
       clientID = Play.configuration.getString("silhouette.facebook.clientID").get,
       clientSecret = Play.configuration.getString("silhouette.facebook.clientSecret").get,
       scope = Play.configuration.getString("silhouette.facebook.scope")))
