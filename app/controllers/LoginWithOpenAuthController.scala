@@ -37,7 +37,7 @@ import scala.concurrent.Future
 
 /** OpenAuth 1 and 2 login, provided by Silhouette, e.g. for Facebook and Twitter.
   */
-object LoginWithSilhouetteController extends Controller {
+object LoginWithOpenAuthController extends Controller {
 
   private val ReturnToUrlCookieName = "dwCoReturnToUrl"
 
@@ -140,7 +140,7 @@ object LoginWithSilhouetteController extends Controller {
     FacebookProvider(CacheLayer, HttpLayer, OAuth2Settings(
       authorizationURL = Play.configuration.getString("silhouette.facebook.authorizationURL").get,
       accessTokenURL = Play.configuration.getString("silhouette.facebook.accessTokenURL").get,
-      redirectURL = origin + routes.LoginWithSilhouetteController.finishAuthentication("facebook").url,
+      redirectURL = origin + routes.LoginWithOpenAuthController.finishAuthentication("facebook").url,
       clientID = Play.configuration.getString("silhouette.facebook.clientID").get,
       clientSecret = Play.configuration.getString("silhouette.facebook.clientSecret").get,
       scope = Play.configuration.getString("silhouette.facebook.scope")))

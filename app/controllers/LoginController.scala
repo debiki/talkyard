@@ -71,7 +71,7 @@ object LoginController extends mvc.Controller {
         loginWithOpenId(IdentityOpenId.ProviderIdentifier.Yahoo)
         */
       case provider =>
-        LoginWithSilhouetteController.startAuthentication(provider, returnToUrl, request)
+        LoginWithOpenAuthController.startAuthentication(provider, returnToUrl, request)
     }
   }
 
