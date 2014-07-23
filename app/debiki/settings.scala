@@ -92,6 +92,8 @@ case class Settings(settingsChain: SettingsChain) {
   val companyFullName = derive("companyFullName", "Unnamed Company Full Name")
   val companyShortName = derive("companyShortName", "Unnamed Company")
 
+  val googleUniversalAnalyticsTrackingId = derive("googleUniversalAnalyticsTrackingId", "")
+
 
   private def derive(settingName: String, default: Any) =
     settingsChain.deriveSetting(settingName, default)
@@ -105,7 +107,8 @@ case class Settings(settingsChain: SettingsChain) {
       "logoUrlOrHtml" -> jsonFor(logoUrlOrHtml),
       "companyDomain" -> jsonFor(companyDomain),
       "companyFullName" -> jsonFor(companyFullName),
-      "companyShortName" -> jsonFor(companyShortName))
+      "companyShortName" -> jsonFor(companyShortName),
+      "googleUniversalAnalyticsTrackingId" -> jsonFor(googleUniversalAnalyticsTrackingId))
 
 
   private def jsonFor(setting: AnySetting): JsObject = {

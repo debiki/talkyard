@@ -33,7 +33,8 @@ export class Settings {
       public title: Setting<string>,
       public description: Setting<string>, 
       public logoUrlOrHtml: Setting<string>,
-      public horizontalComments: Setting<boolean>) {
+      public horizontalComments: Setting<boolean>,
+      public googleUniversalAnalyticsTrackingId: Setting<string>) {
   }
 
   static fromJsonMap(target: SettingsTarget, json) {
@@ -45,7 +46,8 @@ export class Settings {
         this.makeSetting<string>(target, 'title', json),
         this.makeSetting<string>(target, 'description', json),
         this.makeSetting<string>(target, 'logoUrlOrHtml', json),
-        this.makeSetting<boolean>(target, 'horizontalComments', json));
+        this.makeSetting<boolean>(target, 'horizontalComments', json),
+        this.makeSetting<string>(target, 'googleUniversalAnalyticsTrackingId', json));
   }
 
   private static makeSetting<T>(target: SettingsTarget, name: string, valueMap): Setting<T> {

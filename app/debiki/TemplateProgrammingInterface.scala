@@ -261,6 +261,13 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   def companyShortName = debikiRequest.siteSettings.companyShortName
 
 
+  def anyGoogleUniversalAnalyticsScript = {
+    val trackingId = debikiRequest.siteSettings.googleUniversalAnalyticsTrackingId.value.toString
+    if (trackingId.nonEmpty) views.html.googleAnalytics(trackingId).body
+    else ""
+  }
+
+
   def specialContentPages = debikiRequest.dao.specialContentPages
 
 
