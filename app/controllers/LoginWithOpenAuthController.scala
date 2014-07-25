@@ -19,10 +19,10 @@ package controllers
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import com.mohiva.play.silhouette.contrib.services.PlayOAuth1Service
 import com.mohiva.play.silhouette.core.providers._
-import com.mohiva.play.silhouette.core.providers.OAuth2Settings
-import com.mohiva.play.silhouette.core.providers.oauth2.FacebookProvider
-import com.mohiva.play.silhouette.core.providers.oauth2.GoogleProvider
+import com.mohiva.play.silhouette.core.providers.oauth1.TwitterProvider
+import com.mohiva.play.silhouette.core.providers.oauth2._
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.core.{exceptions => siex}
 import java.{util => ju}
@@ -77,10 +77,14 @@ object LoginWithOpenAuthController extends Controller {
     */
   private def authenticate(providerName: String, request: Request[Unit]): Future[Result] = {
     val provider: SocialProvider[_] with CommonSocialProfileBuilder[_] = providerName match {
-      case silhouette.core.providers.oauth2.FacebookProvider.Facebook =>
+      case FacebookProvider.Facebook =>
         facebookProvider(request)
-      case silhouette.core.providers.oauth2.GoogleProvider.Google =>
+      case GoogleProvider.Google =>
         googleProvider(request)
+      case TwitterProvider.Twitter =>
+        twitterProvider(request)
+      case GitHubProvider.GitHub =>
+        githubProvider(request)
       case x =>
         return Future.successful(Results.Forbidden(s"Bad provider: `$providerName' [DwE2F0D6]"))
     }
@@ -168,6 +172,31 @@ object LoginWithOpenAuthController extends Controller {
       clientID = Play.configuration.getString("silhouette.facebook.clientID").get,
       clientSecret = Play.configuration.getString("silhouette.facebook.clientSecret").get,
       scope = Play.configuration.getString("silhouette.facebook.scope")))
+  }
+
+
+  private def twitterProvider(request: Request[Unit])
+        : TwitterProvider with CommonSocialProfileBuilder[OAuth1Info] = {
+    val settings = OAuth1Settings(
+      requestTokenURL = Play.configuration.getString("silhouette.twitter.requestTokenURL").get,
+      accessTokenURL = Play.configuration.getString("silhouette.twitter.accessTokenURL").get,
+      authorizationURL = Play.configuration.getString("silhouette.twitter.authorizationURL").get,
+      callbackURL = buildRedirectUrl(request, "twitter"),
+      consumerKey = Play.configuration.getString("silhouette.twitter.consumerKey").get,
+      consumerSecret = Play.configuration.getString("silhouette.twitter.consumerSecret").get)
+    TwitterProvider(CacheLayer, HttpLayer, new PlayOAuth1Service(settings), settings)
+  }
+
+
+  private def githubProvider(request: Request[Unit])
+        : GitHubProvider with CommonSocialProfileBuilder[OAuth2Info] = {
+    GitHubProvider(CacheLayer, HttpLayer, OAuth2Settings(
+      authorizationURL = Play.configuration.getString("silhouette.github.authorizationURL").get,
+      accessTokenURL = Play.configuration.getString("silhouette.github.accessTokenURL").get,
+      redirectURL = buildRedirectUrl(request, "github"),
+      clientID = Play.configuration.getString("silhouette.github.clientID").get,
+      clientSecret = Play.configuration.getString("silhouette.github.clientSecret").get,
+      scope = Play.configuration.getString("silhouette.github.scope")))
   }
 
 

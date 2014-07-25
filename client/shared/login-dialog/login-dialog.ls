@@ -69,8 +69,14 @@ d.i.showLoginDialog = function(mode)
   dialog.find('#dw-lgi-facebook').click ->
     openOpenAuthLoginWindow('facebook')
 
+  dialog.find('#dw-lgi-twitter').click ->
+    openOpenAuthLoginWindow('twitter')
+
+  dialog.find('#dw-lgi-github').click ->
+    openOpenAuthLoginWindow('github')
+
   /**
-   * Logs in at Google or Yahoo by submitting an OpenID login form in a popup.
+   * Logs in at Yahoo by submitting an OpenID login form in a popup.
    */
   function submitOpenIdLoginForm(openidIdentifier)
     form = $("""
@@ -180,10 +186,19 @@ function loginDialogHtml
           <span class="icon-facebook"></span>
           Facebook
         </a>
-        <a id="dw-lgi-yahoo" class="btn btn-default" tabindex="113">
+        <a id="dw-lgi-twitter" class="btn btn-default" tabindex="113">
+          <span class="icon-twitter"></span>
+          Twitter
+        </a>
+        <a id="dw-lgi-github" class="btn btn-default" tabindex="113">
+          <span class="icon-github"></span>
+          GitHub
+        </a>
+        <!--
+        <a id="dw-lgi-yahoo" class="btn btn-default" tabindex="114">
           <span class="icon-yahoo"></span>
           Yahoo!
-        </a>
+        </a> -->
       </div>
 
       <p id="dw-lgi-or-login-using">Or, alternatively:</p>

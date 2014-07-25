@@ -70,24 +70,27 @@ h1 {
            href="@routes.LoginController.loginWith("google", returnToUrl = returnToUrl).url">
           <i class="icon-google-plus"></i>Google</a>
       </li>
-      <!--
-      <li>
-        <a class="btn login-link-twitter"
-           href="@routes.LoginController.loginWith("twitter", returnToUrl = returnToUrl).url">
-          <i class="icon-twitter"></i>Twitter</a>
-      </li>
-      -->
       <li>
         <a class="btn login-link-facebook"
            href="@routes.LoginController.loginWith("facebook", returnToUrl = returnToUrl).url">
           <i class="icon-facebook"></i>Facebook</a>
       </li>
       <li>
+        <a class="btn login-link-twitter"
+           href="@routes.LoginController.loginWith("twitter", returnToUrl = returnToUrl).url">
+          <i class="icon-twitter"></i>Twitter</a>
+      </li>
+      <li>
+        <a class="btn login-link-github"
+           href="@routes.LoginController.loginWith("github", returnToUrl = returnToUrl).url">
+          <i class="icon-github"></i>GitHub</a>
+      </li>
+      <!--
+      <li>
         <a class="btn login-link-yahoo"
            href="@routes.LoginController.loginWith("yahoo", returnToUrl = returnToUrl).url">
         <i class="icon-yahoo"></i>Yahoo</a>
       </li>
-      <!--
       <li ng-hide="isOpenIdFormVisible">
         <a class="btn login-link-openid" ng-click="showOpenIdForm()">
         <i class="icon-openid"></i>OpenID</a>
