@@ -441,7 +441,7 @@ case class OpenIdDetails(
   oidClaimedId: String,
   oidOpLocalId: String,
   firstName: String,
-  email: String,
+  email: Option[String],
   country: String) {
 
   def isGoogleLogin = oidEndpoint == IdentityOpenId.GoogleEndpoint
