@@ -30,7 +30,7 @@ POST  /-/login-password         controllers.LoginWithPasswordController.login
 #POST  /-/api/login-openid       controllers.LoginWithOpenIdController.loginPost
 #GET   /-/api/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)
 GET   /-/login-openauth-popup/:provider controllers.LoginWithOpenAuthController.startAuthenticationInPopupWindow(provider)
-GET   /-/auth-callback/:provider controllers.LoginWithOpenAuthController.finishAuthentication(provider)
+GET   /-/login-auth-callback/:provider controllers.LoginWithOpenAuthController.finishAuthentication(provider)
 
 GET   /-/api/logout             controllers.LoginController.logout
 POST  /-/api/logout             controllers.LoginController.logout
