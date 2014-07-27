@@ -24,8 +24,10 @@ import com.debiki.core.Prelude._
 import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.EmailNotfPrefs.EmailNotfPrefs
 import java.{util => ju}
+import org.specs2.execute.FailureException
 import org.specs2.mutable._
 import org.specs2.matcher.ThrownMessages
+import org.specs2.execute.Failure
 import scala.collection.{mutable => mut}
 import scala.util.control.Breaks._
 import DebikiSpecs._
@@ -210,7 +212,7 @@ object Templates {
       oidEndpoint = "provider.com/endpoint", oidVersion = "2",
       oidRealm = "example.com", oidClaimedId = "claimed-id.com",
       oidOpLocalId = "provider.com/local/id",
-      firstName = "Laban", email = "oid@email.hmm", country = "Sweden"))
+      firstName = "Laban", email = Some("oid@email.hmm"), country = "Sweden"))
 
   val post = RawPostAction.forNewPost(id = UnassignedId, creationDati = new ju.Date,
     userIdData = UserIdData.newTest(loginId = "?", userId = "?"),
@@ -227,6 +229,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
   sequential  // so e.g. loginId inited before used in ctors
 
   val T = Templates
+
+  def throwFailure(x: String) =
+    throw new FailureException(Failure(x))
 
   step {
     // It takes so terribly long to compile this huge file, so it's interesting
@@ -290,14 +295,15 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "lookup tenant by id, and find all hosts" in {
       val tenants = systemDbDao.loadTenants(defaultTenantId::Nil)
-      tenants must beLike {
+      tenants must be like {
         case List(tenant) =>
           tenant.id must_== defaultTenantId
           tenant.name must_== Some("Test")
           tenant.embeddingSiteUrl must_== None
           tenant.hosts must_== List(TenantHost(
              "test.ex.com", TenantHost.RoleCanonical, TenantHost.HttpsNone))
-        case x => failure(s"Found wrong tenants: $x")
+        case x =>
+          ko(s"Found wrong tenants: $x")
       }
     }
 
@@ -525,7 +531,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       val pathsAndPages = dao.loadPageBodiesTitles(path.pageId.get::Nil)
       pathsAndPages.size must_== 1
-      pathsAndPages.get(path.pageId.get) must beLike { case Some(page) =>
+      pathsAndPages.get(path.pageId.get) must be like { case Some(page) =>
         val bodyText = page.body.map(_.currentText)
         bodyText must beSome
         bodyText.get.length must be_>(0)
@@ -664,6 +670,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val childs = dao.listChildPages(Seq(blogMainPageId),
           PageOrderOffset.ByPublTime, limit = 10)
         testFoundChild(childs)
+        ok
       }
 
       "find child pages also when page role specified" in {
@@ -671,6 +678,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           PageOrderOffset.ByPublTime, limit = 10,
           filterPageRole = Some(PageRole.BlogPost))
         testFoundChild(childs)
+        ok
       }
 
       "find no child pages of the wrong page role" in {
@@ -681,11 +689,11 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "can update meta info, and parent page child count"  in {
-        val blogArticleMeta = dao.loadPageMeta(blogArticleId) match {
+        val blogArticleMeta: PageMeta = dao.loadPageMeta(blogArticleId) match {
           case Some(pageMeta: PageMeta) =>
             testBlogArticleMeta(pageMeta) // extra test
             pageMeta
-          case x => failure(s"Bad meta: $x")
+          case x => throwFailure(s"Bad meta: $x")
         }
         // Edit meta (but not page role, cannot be changed)
         val nextDay = new ju.Date(
@@ -739,7 +747,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "cannot change page role" in {
         val blogArticleMeta = dao.loadPageMeta(blogArticleId) match {
           case Some(pageMeta: PageMeta) => pageMeta
-          case x => failure(s"Bad meta: $x")
+          case x => throwFailure(s"Bad meta: $x")
         }
         val newMeta = blogArticleMeta.copy(pageRole = PageRole.ForumCategory)
         dao.updatePageMeta(
@@ -927,6 +935,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         rawSettings.foreach { settings =>
           settings.valuesBySettingName.isEmpty must_== true
         }
+        ok
       }
 
       "save and load site settings" >> {
@@ -1047,6 +1056,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "wait until search engine started" in {
         waitUntilSearchEngineStarted()
+        ok
       }
 
       "create a forum, two categories with one topic each" in {
@@ -1218,6 +1228,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             }
           }
         }
+        ok
       }
     }
 
@@ -1228,26 +1239,26 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     lazy val exPagePath = defaultPagePath.copy(pageId = Some(testPage.id))
     "recognize its correct PagePath" in {
-      dao.checkPagePath(exPagePath) must beLike {
+      dao.checkPagePath(exPagePath) must be like {
         case Some(correctPath: PagePath) =>
           correctPath must matchPagePath(exPagePath)
-        case p => failure(s"Bad path: $p")
+        case p => ko(s"Bad path: $p")
       }
     }
 
     "correct an incorrect PagePath name" in {
-      dao.checkPagePath(exPagePath.copy(pageSlug = "incorrect")) must beLike {
+      dao.checkPagePath(exPagePath.copy(pageSlug = "incorrect")) must be like {
         case Some(correctPath: PagePath) =>
           correctPath must matchPagePath(exPagePath)
-        case p => failure(s"Bad path: $p")
+        case p => ko(s"Bad path: $p")
       }
     }
 
     "correct an incorrect PagePath folder" in {
-      dao.checkPagePath(exPagePath.copy(folder = "/incorrect/")) must beLike {
+      dao.checkPagePath(exPagePath.copy(folder = "/incorrect/")) must be like {
         case Some(correctPath: PagePath) =>
           correctPath must matchPagePath(exPagePath)
-        case p => failure(s"Bad path: $p")
+        case p => ko(s"Bad path: $p")
       }
     }
 
@@ -1286,21 +1297,6 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       lazy val WrongVote = LikeVote.copy(payload = PAP.VoteWrong)
       lazy val OffTopicVote = LikeVote.copy(payload = PAP.VoteOffTopic)
 
-      "save and load a Like vote" in {
-        saveAndLoadVote(LikeVote)
-        ok
-      }
-
-      "save and load a Wrong vote" in {
-        saveAndLoadVote(WrongVote)
-        ok
-      }
-
-      "save and load a OffTopic vote" in {
-        saveAndLoadVote(OffTopicVote)
-        ok
-      }
-
       def saveAndLoadVote[A](vote: RawPostAction[A]) {
         var savedVote: RawPostAction[A] = null
 
@@ -1321,6 +1317,21 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           }
         }
       }
+
+      "save and load a Like vote" in {
+        saveAndLoadVote(LikeVote)
+        ok
+      }
+
+      "save and load a Wrong vote" in {
+        saveAndLoadVote(WrongVote)
+        ok
+      }
+
+      "save and load a OffTopic vote" in {
+        saveAndLoadVote(OffTopicVote)
+        ok
+      }
     }
 
 
@@ -1328,6 +1339,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "Save and load an approval" in {
       testSaveLoadReview(isApproved = true)
+      ok
     }
 
     "Save and load a rejection" in {
@@ -1514,6 +1526,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           (ipMatches || targetActionIpMatches) must_== true
         }
         */
+        pending
       }
 
       "from IP, find `limit`" in {
@@ -1528,6 +1541,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
         ownActions.length must_== 2
         */
+        pending
       }
 
       "by identity id, find nothing" in {
@@ -1539,6 +1553,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "by identity id, find ..." in {
         // Not implemented, because no OpenID identity currently does anything.
+        pending
       }
 
       "by path, find nothing, in non existing tree and folder" in {
@@ -1621,7 +1636,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       exOpenId_loginReq.user.id must_== exOpenId_loginReq.identity.userId
       exOpenId_loginReq.user must matchUser(
           displayName = T.openIdLoginAttempt.openIdDetails.firstName,
-          email = T.openIdLoginAttempt.openIdDetails.email,
+          email = T.openIdLoginAttempt.openIdDetails.email.get,
           country = T.openIdLoginAttempt.openIdDetails.country,
           website = "",
           isSuperAdmin = Boolean.box(false))
@@ -1680,6 +1695,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       exOpenId_userIds.contains(grant.user.id) must_== false
       exOpenId_userIds += grant.user.id
       exOpenId_loginGrant_2 = grant
+      ok
     }
 
     var exGmailLoginGrant: LoginGrant = null
@@ -1691,7 +1707,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           oidEndpoint = IdentityOpenId.GoogleEndpoint,
           oidRealm = "some.realm.com",
           oidClaimedId = "google.claimed.id",
-          email = "example@gmail.com"))
+          email = Some("example@gmail.com")))
       exGmailLoginGrant = dao.saveLogin(loginAttempt)
       val grant = exGmailLoginGrant
       exOpenId_userIds.contains(grant.user.id) must_== false
@@ -1724,7 +1740,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val openIdDetails = OpenIdDetails(
          oidEndpoint = IdentityOpenId.GoogleEndpoint,
          oidVersion = "?", oidRealm = "?", oidClaimedId = "?",
-         oidOpLocalId = "?", firstName = "?", email = "example@gmail.com",
+         oidOpLocalId = "?", firstName = "?", email = Some("example@gmail.com"),
          country = "?")
       dao.loadIdtyDetailsAndUser(forOpenIdDetails = openIdDetails) must beLike {
         case Some((identity, user)) =>
@@ -1795,7 +1811,6 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- SecureSocial identities
 
-
     "Login with a SecureSocialIdentity, create associated User" >> {
 
       val theFirstName = "SecureSocialFirstName1"
@@ -1804,34 +1819,29 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val theChangedFirstName = "NewSecureSocialFirstName1"
       val theChangedEmail = "changed-securesocial-user@ex.com"
 
-      val theSecureSocialIdentityId = securesocial.core.IdentityId("userId", "providerId")
-
       val the2ndEmail = "the-2nd-securesocial-user@ex.com"
-      val the2ndSecureSocialIdentityId = theSecureSocialIdentityId.copy(userId = "newUserId")
-
       val the3rdEmail = "the-3rd-securesocial-user@ex.com"
-      val the3rdSecureSocialIdentityId = theSecureSocialIdentityId.copy(providerId = "newPrvdrId")
 
-      val theSecureSocialCoreUser = securesocial.core.SocialUser(
-        theSecureSocialIdentityId,
-        firstName = theFirstName,
-        lastName = "SecureSocialLastName",
-        fullName = "SecureSocialFirstName SecureSocialLastName",
+      val theOpenAuthDetails = OpenAuthDetails(
+        providerId = "providerId",
+        providerKey = "userId",
+        firstName = Some(theFirstName),
+        lastName = Some("SecureSocialLastName"),
+        fullName = Some("SecureSocialFirstName SecureSocialLastName"),
         email = Some(theEmail),
-        avatarUrl = Some("http://avatar.url"),
-        authMethod = securesocial.core.AuthenticationMethod.OAuth2)
+        avatarUrl = Some("http://avatar.url"))
 
-      val theChangedSecureSocialUser = theSecureSocialCoreUser.copy(
-        firstName = theChangedFirstName, email = Some(theChangedEmail))
+      val theChangedOpenAuthDetails = theOpenAuthDetails.copy(
+        firstName = Some(theChangedFirstName), email = Some(theChangedEmail))
 
-      val the2ndSecureSocialUser = theSecureSocialCoreUser.copy(
-        the2ndSecureSocialIdentityId, email = Some(the2ndEmail))
+      val the2ndOpenAuthDetails = theOpenAuthDetails.copy(
+        providerKey = "newUserId", email = Some(the2ndEmail))
 
-      val the3rdSecureSocialUser = theSecureSocialCoreUser.copy(
-        the3rdSecureSocialIdentityId, email = Some(the3rdEmail))
+      val the3rdOpenAuthDetails = theOpenAuthDetails.copy(
+        providerId = "newPrvdrId", email = Some(the3rdEmail))
 
-      val theFirstLoginAttempt = SecureSocialLoginAttempt(
-        ip = "1.2.3.4", date = now, prevLoginId = None, theSecureSocialCoreUser)
+      val theFirstLoginAttempt = OpenAuthLoginAttempt(
+        ip = "1.2.3.4", date = now, prevLoginId = None, theOpenAuthDetails)
 
       var theUser: User = null
       var theFirstLoginGrant: LoginGrant = null
@@ -1841,11 +1851,11 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "create" in {
         theFirstLoginGrant = dao.saveLogin(theFirstLoginAttempt)
-        val theIdentity = theFirstLoginGrant.identity.asInstanceOf[SecureSocialIdentity]
-        theIdentity.secureSocialCoreUser must_== theSecureSocialCoreUser
+        val theIdentity = theFirstLoginGrant.identity.asInstanceOf[OpenAuthIdentity]
+        theIdentity.openAuthDetails must_== theOpenAuthDetails
         theUser = theFirstLoginGrant.user
-        theUser.displayName must_== theSecureSocialCoreUser.firstName
-        Some(theUser.email) must_== theSecureSocialCoreUser.email
+        Some(theUser.displayName) must_== theOpenAuthDetails.firstName
+        Some(theUser.email) must_== theOpenAuthDetails.email
         ok
       }
 
@@ -1862,31 +1872,30 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "update the SecureSocialIdentity, if attributes changed" in {
-        val loginAttempt = theFirstLoginAttempt.copy(
-          secureSocialCoreUser = theChangedSecureSocialUser)
+        val loginAttempt = theFirstLoginAttempt.copy(openAuthDetails = theChangedOpenAuthDetails)
         theChangedLoginGrant = dao.saveLogin(loginAttempt)
         theChangedLoginGrant.login.id must_!= theFirstLoginGrant.login.id
         theChangedLoginGrant.user must_== theFirstLoginGrant.user
-        val ssIdentity = theChangedLoginGrant.identity.asInstanceOf[SecureSocialIdentity]
+        val ssIdentity = theChangedLoginGrant.identity.asInstanceOf[OpenAuthIdentity]
         ssIdentity.id must_== theFirstLoginGrant.identity.id
         ssIdentity.userId must_== theUser.id
-        ssIdentity.secureSocialCoreUser.copy(
-            firstName = theChangedFirstName, email = Some(theChangedEmail)) must_==
-          theChangedSecureSocialUser
+        ssIdentity.openAuthDetails.copy(
+            firstName = Some(theChangedFirstName), email = Some(theChangedEmail)) must_==
+          theChangedOpenAuthDetails
         ok
       }
 
       "create new SecureSocialIdentity and User for a new provider user id" in {
         the2ndUsersLoginGrant = dao.saveLogin(
-          theFirstLoginAttempt.copy(secureSocialCoreUser = the2ndSecureSocialUser))
+          theFirstLoginAttempt.copy(openAuthDetails = the2ndOpenAuthDetails))
 
         val loginGrant = the2ndUsersLoginGrant
         loginGrant.login.id must_!= theFirstLoginGrant.login.id
         loginGrant.login.id must_!= theChangedLoginGrant.login.id
 
-        val ssIdentity = loginGrant.identity.asInstanceOf[SecureSocialIdentity]
+        val ssIdentity = loginGrant.identity.asInstanceOf[OpenAuthIdentity]
         ssIdentity.id must_!= theFirstLoginGrant.identity.id
-        ssIdentity.secureSocialCoreUser must_== the2ndSecureSocialUser
+        ssIdentity.openAuthDetails must_== the2ndOpenAuthDetails
 
         loginGrant.user must_== theChangedLoginGrant.user.copy(
           id = loginGrant.user.id, email = the2ndEmail)
@@ -1895,17 +1904,17 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "create new SecureSocialIdentity and User for a new provider id, same user id" in {
         the3rdUsersLoginGrant = dao.saveLogin(
-          theFirstLoginAttempt.copy(secureSocialCoreUser = the3rdSecureSocialUser))
+          theFirstLoginAttempt.copy(openAuthDetails = the3rdOpenAuthDetails))
 
         val loginGrant = the3rdUsersLoginGrant
         loginGrant.login.id must_!= theFirstLoginGrant.login.id
         loginGrant.login.id must_!= theChangedLoginGrant.login.id
         loginGrant.login.id must_!= the2ndUsersLoginGrant.login.id
 
-        val ssIdentity = loginGrant.identity.asInstanceOf[SecureSocialIdentity]
+        val ssIdentity = loginGrant.identity.asInstanceOf[OpenAuthIdentity]
         ssIdentity.id must_!= theFirstLoginGrant.identity.id
         ssIdentity.id must_!= the2ndUsersLoginGrant.identity.id
-        ssIdentity.secureSocialCoreUser must_== the3rdSecureSocialUser
+        ssIdentity.openAuthDetails must_== the3rdOpenAuthDetails
 
         loginGrant.user.id must_!= theFirstLoginGrant.user.id
         loginGrant.user.id must_!= the2ndUsersLoginGrant.user.id
@@ -2208,6 +2217,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "save an email, connect it to the notification, to the unauth. user" in {
         dao.saveUnsentEmailConnectToNotfs(emailToSend, unauUserNotfSaved::Nil)
           // must throwNothing (how to test that?)
+        pending
       }
 
       "skip notf, when loading notfs to mail out; email already created" in {
@@ -2222,16 +2232,17 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "load the notification, find it connected to the email" in {
         // BROKEN many notfs might map to 1 email!
-        dao.loadNotfByEmailId(emailToSend.id) must beLike {
+        dao.loadNotfByEmailId(emailToSend.id) must be like {
           case Some(notf) =>
             notf.emailId must_== Some(emailToSend.id)
-          case None => failure("No notf found")
+          case None => ko("No notf found")
         }
       }
 
       "update the email, to sent status" in {
         dao.updateSentEmail(emailSentOk)
         // must throwNothing (how to test that?)
+        pending
       }
 
       "load the email again, find it in okay status" in {
@@ -2242,6 +2253,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "update the email, to failed status" in {
         dao.updateSentEmail(emailSentFailed)
         // must throwNothing (how to test that?)
+        pending
       }
 
       "load the email again, find it in failed status" in {
@@ -2252,6 +2264,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "update the failed email to sent status (simulates a re-send)" in {
         dao.updateSentEmail(emailSentOk)
         // must throwNothing (how to test that?)
+        pending
       }
 
       "load the email yet again, find it in sent status" in {
@@ -2266,6 +2279,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           ctime = loginGrant.login.date, emailAddr = emailSentOk.sentTo,
           emailNotfPrefs = EmailNotfPrefs.DontReceive)
         // must throwNothing (how to test that?)
+        pending
       }
 
       // COULD verify email prefs changed to DontReceive?
@@ -2294,19 +2308,21 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "save an email, connect it to a notification, to an auth. user" in {
         dao.saveUnsentEmailConnectToNotfs(emailToSend, auUserNotfSaved::Nil)
         // must throwNothing (how to test that?)
+        pending
       }
 
       "load the notification, find it connected to the email" in {
-        dao.loadNotfByEmailId(emailToSend.id) must beLike {
+        dao.loadNotfByEmailId(emailToSend.id) must be like {
           case Some(notf) =>
             notf.emailId must_== Some(emailToSend.id)
-          case None => failure("No notf found")
+          case None => ko("No notf found")
         }
       }
 
       "update the email, to sent status" in {
         dao.updateSentEmail(emailSentOk)
         // must throwNothing (how to test that?)
+        pending
       }
 
       "load the email, find it in sent status" in {
@@ -2321,6 +2337,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           ctime = loginGrant.login.date, roleId = loginGrant.user.id,
           emailNotfPrefs = Some(EmailNotfPrefs.DontReceive))
         // must throwNothing (how to test that?)
+        ok
       }
 
       // COULD verify email prefs changed to DontReceive?
@@ -2613,7 +2630,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "move new homepage back to its previous location" in {
-        dao.movePageToItsPreviousLocation(homepagePathNoId) must beLike {
+        dao.movePageToItsPreviousLocation(homepagePathNoId) must be like {
           case Some(pagePath) =>
             pagePath.pageSlug must_== "new-homepage"
             pagePath.folder must_== "/"
@@ -2638,7 +2655,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val pagePath =
         PagePath.fromUrlPath(defaultTenantId, path = path) match {
           case PagePath.Parsed.Good(path) => path.copy(showId = showId)
-          case x => failure(s"Test broken, bad path: $x")
+          case x => throwFailure(s"Test broken, bad path: $x")
         }
       dao.createPage(Page.newEmptyPage(PageRole.Generic, pagePath,
         author = loginGrant.user))
@@ -2653,6 +2670,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "create page /f/ and /f/page" in {
         page_f_index = createPage("/f/")
         page_f_page = createPage("/f/page")
+        ok
       }
 
       "reject new page /f/ and /f/page, since would overwrite paths" in {
@@ -2712,6 +2730,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         page_g_2 = createPage("/g/2")
         page_g_page = createPage("/g/page")
         page_g_page_2 = createPage("/g/page-2")
+        ok
       }
 
       "refuse to move /g/2 to /g/ — would overwrite path" in {
@@ -2892,7 +2911,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val embeddingSiteUrl = "embedding.exmple.com"
         createEmbeddedSite(embeddingSiteUrl) must beLike {
           case Some((site, user)) =>
-            systemDbDao.loadSite(site.id) must beLike {
+            systemDbDao.loadSite(site.id) must be like {
               case Some(site) =>
                 site.name must_== None
                 site.hosts.length must_== 0
@@ -2926,7 +2945,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         // new login, identity and user.
         newWebsiteDao().loadPageParts(homepageId) must beLike {
           case Some(page: PageParts) =>
-            page.title must beLike {
+            page.title must be like {
               case Some(title) =>
                 title.currentText must_== homepageTitle.payload.text
                 title.login must_== None
@@ -2962,6 +2981,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "do nothin, if nothing to do" in {
         systemDbDao.useMoreQuotaUpdateLimits(Map[QuotaConsumer, QuotaDelta]())
           // ... should throw nothing
+        pending
       }
 
       lazy val initialQuotaUse = QuotaUse(paid = 0, free = 200, freeload = 300)

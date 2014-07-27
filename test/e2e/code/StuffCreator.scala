@@ -93,7 +93,7 @@ trait StuffCreator {
       date = new ju.Date, openIdDetails = OpenIdDetails(
       oidEndpoint = "http://test-endpoint.com", oidVersion = "", oidRealm = "",
       oidClaimedId = "StuffCreatorClaimedId", oidOpLocalId = "StuffCreatorLocalId",
-      firstName = "Stuff-Creator", email = "stuff-creator@example.com", country = ""))
+      firstName = "Stuff-Creator", email = Some("stuff-creator@example.com"), country = ""))
 
     val loginGrant = firstSiteDao.saveLogin(loginAttempt)
 

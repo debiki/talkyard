@@ -85,6 +85,7 @@ class PreludeTest extends Specification {
         ("aoeiABCDEFGHIJKLMNOPQRSTUVWXYZ" intersect s) must_== ""
         s.length must be_>=(5)
       }
+      ok
     }
   }
 

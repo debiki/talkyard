@@ -102,7 +102,7 @@ trait TestLoginner extends DebikiSelectors {
       openIdDetails = OpenIdDetails(
       oidEndpoint = "http://test-endpoint.com", oidVersion = "",
       oidRealm = "", oidClaimedId = "TestAdminClaimedId", oidOpLocalId = "TestAdminLocalId",
-      firstName = "TestAdmin", email = "test-admin@example.com", country = ""))
+      firstName = "TestAdmin", email = Some("test-admin@example.com"), country = ""))
 
     val dao = debiki.Globals.siteDao(firstSiteId, ip = "1.1.1.1")
     val loginGrant = dao.saveLogin(loginAttempt)
