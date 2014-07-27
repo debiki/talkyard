@@ -174,8 +174,20 @@ object DebikiHttp {
   def lookupTenantIdOrThrow(request: DebikiRequest[_], systemDao: SystemDao): String =
     lookupTenantIdOrThrow(request.request, systemDao)
 
-  def lookupTenantIdOrThrow(request: RequestHeader, systemDao: SystemDao)
-        : String = {
+  def lookupTenantIdOrThrow(request: RequestHeader, systemDao: SystemDao): String = {
+    lookupTenantIdOrThrow(request.secure, request.host, request.uri, systemDao)
+  }
+
+  def lookupTenantIdOrThrow(url: String, systemDao: SystemDao): String = {
+    val (scheme, separatorHostPathQuery) = url.span(_ != ':')
+    val secure = scheme == "https"
+    val (host, pathAndQuery) =
+      separatorHostPathQuery.drop(3).span(_ != '/') // drop(3) drops "://"
+    lookupTenantIdOrThrow(secure, host = host, pathAndQuery, systemDao)
+  }
+
+  def lookupTenantIdOrThrow(secure: Boolean, host: String, pathAndQuery: String,
+        systemDao: SystemDao): String = {
 
     // Do this:
     // - If the hostname is like: site-<id>.<baseDomain>, e.g. site-123.debiki.com if
@@ -184,7 +196,7 @@ object DebikiHttp {
     //   <link rel='canonical'> to that address (not implemented).
     // - If the hostname is <whatever> then lookup site id by hostname.
 
-    val siteId = request.host match {
+    val siteId = host match {
       case debiki.Globals.siteByIdHostnameRegex(siteId) =>
         systemDao.loadSite(siteId) match {
           case None =>
@@ -195,14 +207,14 @@ object DebikiHttp {
         }
         siteId
       case _ =>
-        systemDao.lookupTenant(scheme = "http", // for now
-             host = request.host) match {
+        val scheme = if (secure) "https" else "http"
+        systemDao.lookupTenant(scheme, host = host) match {
           case found: FoundChost =>
             found.tenantId
           case found: FoundAlias =>
             found.role match {
               case TenantHost.RoleRedirect =>
-                throwRedirect(found.canonicalHostUrl + request.path)
+                throwRedirect(found.canonicalHostUrl + pathAndQuery)
               case TenantHost.RoleLink =>
                 unimplemented("<link rel='canonical'>")
               case _ =>
