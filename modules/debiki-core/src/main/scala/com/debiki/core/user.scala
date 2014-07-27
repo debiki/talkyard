@@ -291,13 +291,14 @@ case class OpenIdLoginAttempt(
 }
 
 
-/*
-case class SecureSocialLoginAttempt(
+case class OpenAuthLoginAttempt(
   ip: String,
   date: ju.Date,
   prevLoginId: Option[LoginId],
-  secureSocialCoreUser: securesocial.core.SocialUser) extends LoginAttempt
-  */
+  openAuthDetails: OpenAuthDetails) extends LoginAttempt {
+
+  def profileProviderAndKey = openAuthDetails.providerIdAndKey
+}
 
 
 case class Login(
@@ -440,7 +441,7 @@ case class OpenIdDetails(
   oidClaimedId: String,
   oidOpLocalId: String,
   firstName: String,
-  email: String,
+  email: Option[String],
   country: String) {
 
   def isGoogleLogin = oidEndpoint == IdentityOpenId.GoogleEndpoint
@@ -460,24 +461,31 @@ object IdentityOpenId {
 }
 
 
-/*
-case class SecureSocialIdentity(
+case class OpenAuthIdentity(
   id: IdentityId,
   override val userId: UserId,
-  secureSocialCoreUser: securesocial.core.SocialUser) extends Identity {
+  openAuthDetails: OpenAuthDetails) extends Identity {
 
   override def reference = IdentityRef.Role(id)
-
-  def displayName = SecureSocialIdentity.displayNameFor(secureSocialCoreUser)
-
+  def displayName = openAuthDetails.displayName
 }
 
 
-object SecureSocialIdentity {
-  def displayNameFor(secureSocialCoreIdentity: securesocial.core.Identity): String =
-    if (secureSocialCoreIdentity.firstName.nonEmpty) secureSocialCoreIdentity.firstName
-    else secureSocialCoreIdentity.fullName
-} */
+case class OpenAuthDetails(
+  providerId: String,
+  providerKey: String,
+  firstName: Option[String] = None,
+  lastName: Option[String] = None,
+  fullName: Option[String] = None,
+  email: Option[String] = None,
+  avatarUrl: Option[String] = None) {
+
+  def providerIdAndKey = OpenAuthProviderIdKey(providerId, providerKey)
+  def displayName = firstName.orElse(fullName).getOrElse("(unknown name)")
+}
+
+
+case class OpenAuthProviderIdKey(providerId: String, providerKey: String)
 
 
 case class LoginGrant(
