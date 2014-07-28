@@ -171,17 +171,15 @@ class Globals {
       }
 
     val baseDomain: String =
-      Play.configuration.getString("debiki.baseDomain") getOrElse {
-        val listenPort =
-          if (!Play.isTest) {
-            System.getProperty("http.port", "9000")
-          }
-          else {
-            // Not on classpath: play.api.test.Helpers.testServerPort
-            // Instead, duplicate its implementation here:
-            System.getProperty("testserver.port", "19001")
-          }
-        s"localhost:$listenPort"
+      if (Play.isTest) {
+        // Not on classpath: play.api.test.Helpers.testServerPort
+        // Instead, duplicate its implementation here:
+        val testListenPort = System.getProperty("testserver.port", "19001")
+        s"localhost:$testListenPort"
+      }
+      else {
+        val listenPort = System.getProperty("http.port", "9000")
+        Play.configuration.getString("debiki.baseDomain") getOrElse s"localhost:$listenPort"
       }
 
     // The hostname must be directly below the base domain, otherwise

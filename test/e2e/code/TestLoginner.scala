@@ -102,7 +102,7 @@ trait TestLoginner extends DebikiSelectors {
       openIdDetails = OpenIdDetails(
       oidEndpoint = "http://test-endpoint.com", oidVersion = "",
       oidRealm = "", oidClaimedId = "TestAdminClaimedId", oidOpLocalId = "TestAdminLocalId",
-      firstName = "TestAdmin", email = "test-admin@example.com", country = ""))
+      firstName = "TestAdmin", email = Some("test-admin@example.com"), country = ""))
 
     val dao = debiki.Globals.siteDao(firstSiteId, ip = "1.1.1.1")
     val loginGrant = dao.saveLogin(loginAttempt)
@@ -182,28 +182,30 @@ trait TestLoginner extends DebikiSelectors {
     // this instead, and everything works fine.
     // Update: This approve-permissions dialog is apparently shown only
     // sometimes, fairly infrequently.
-    /*
+    // Update2: Catching the Throwable (see below) seems to fix the above-mentioned problem.
     eventually {
       try {
-        if (!currentUrl.contains("google.com")) {
-          // For whatever reasons, Google didn't show Approve/Reject buttons this
-          // time, so there's nothing to click. Simply continue: all tests should
-          // work fine, except for any test that requires that we deny permissions.
-        }
-        else if (approvePermissions) {
-          click on "submit_approve_access"
-        }
-        else {
-          click on "submit_deny_access"
+        // Sometimes Google shows approve/deny access buttons. The very first click
+        // seem to have no effect, so keep clicking until they go away.
+        while (currentUrl.contains("google.com")) {
+          if (approvePermissions) {
+            click on "submit_approve_access"
+          }
+          else {
+            click on "submit_deny_access"
+          }
         }
       }
       catch {
         case ex: selenium.NoSuchWindowException =>
           // For whatever reason, Google closed the login popup window.
           // Fine, simply continue with the test.
+        case t: Throwable =>
+          // Sometimes we catch a null pointer exception here, somehow seems to happen
+          // when the Google approve/deny window closes. Weird.
+          System.out.println(s"*** Caught and ignoring a Throwable: $t ***")
       }
     }
-    */
   }
 
 

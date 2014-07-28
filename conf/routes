@@ -22,18 +22,17 @@
 
 GET   /-/login-popup            controllers.LoginPopupController.showLoginPopup(mode)
 GET   /-/login/:provider        controllers.LoginController.loginWith(provider, returnToUrl)
-POST  /-/login                  controllers.LoginController.loginWithPostData(returnToUrl = "")
 POST  /-/logout                 controllers.LoginController.logout
 
 POST  /-/login-guest            controllers.LoginAsGuestController.loginGuest
 POST  /-/login-password         controllers.LoginWithPasswordController.login
-GET   /-/api/login-openid       controllers.LoginWithOpenIdController.loginGet
-POST  /-/api/login-openid       controllers.LoginWithOpenIdController.loginPost
-GET   /-/api/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)
-GET   /-/login-securesocial/:provider       controllers.LoginWithSecureSocialController.startAuthentication(provider, returnToUrl)
-GET   /-/login-securesocial-popup/:provider controllers.LoginWithSecureSocialController.startAuthenticationInPopupWindow(provider)
-GET   /-/login-securesocial-clbk/:provider  controllers.LoginWithSecureSocialController.authenticate(provider)
-POST  /-/login-securesocial-clbk/:provider  controllers.LoginWithSecureSocialController.authenticateByPost(provider)
+#GET   /-/api/login-openid       controllers.LoginWithOpenIdController.loginGet
+#POST  /-/api/login-openid       controllers.LoginWithOpenIdController.loginPost
+#GET   /-/api/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)
+GET   /-/login-openauth-popup/:provider controllers.LoginWithOpenAuthController.startAuthenticationInPopupWindow(provider)
+GET   /-/login-auth-callback/:provider  controllers.LoginWithOpenAuthController.finishAuthentication(provider)
+GET   /-/login-oauth-then-return/:provider controllers.LoginWithOpenAuthController.loginThenReturnToOriginalSite(provider, returnToOrigin, xsrfToken)
+GET   /-/login-oauth-continue           controllers.LoginWithOpenAuthController.continueAtOriginalSite(sessionId, xsrfToken)
 
 GET   /-/api/logout             controllers.LoginController.logout
 POST  /-/api/logout             controllers.LoginController.logout
@@ -146,4 +145,4 @@ GET   /robots.txt               controllers.Assets.at(path = "/public", file = "
 GET   /-/debiki-embedded-comments.js   controllers.Assets.at(path = "/public/res", file = "embedded-comments.js")
 GET   /-/debiki-embedded-comments.css  controllers.Assets.at(path = "/public/res", file = "debiki-embedded-comments.css")
 GET   /-/*file                  controllers.Assets.at(path = "/public", file)
-GET   /favicon.ico              controllers.Assets.at(path = "/public/site/img", file = "favicon-test-2.ico")
+GET   /favicon.ico              controllers.Assets.at(path = "/public/img", file = "debiki-favicon.ico")

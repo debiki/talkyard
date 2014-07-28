@@ -356,7 +356,7 @@ class QuotaChargerSpec
       oidRealm = "example.com", oidClaimedId = s"claimed-id-$nextOpenIdUserNo.example.com",
       oidOpLocalId = s"provider.example.com/local/id/$nextOpenIdUserNo",
       firstName = s"$namePrefix-OpenIdUser$nextOpenIdUserNo",
-      email = s"openid-user-$nextOpenIdUserNo@example.com", country = "Sweden"))
+      email = Some(s"openid-user-$nextOpenIdUserNo@example.com"), country = "Sweden"))
     tenantDao(siteAndIp).saveLogin(loginAttempt)
   }
 

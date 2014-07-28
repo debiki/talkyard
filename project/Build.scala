@@ -17,7 +17,6 @@
 
 import sbt._
 import Keys._
-import play.Project._
 import com.typesafe.sbteclipse.plugin.EclipsePlugin.EclipseKeys
 import java.{net => jn}
 
@@ -28,7 +27,7 @@ object ApplicationBuild extends Build {
 
   lazy val debikiCore =
     Project("debiki-core", file("modules/debiki-core"))
-    .dependsOn(secureSocial) // only class securesocial.core.Identity
+    //.dependsOn(secureSocial) // only class securesocial.core.Identity
 
   lazy val debikiTckDao =
     (Project("debiki-tck-dao", file("modules/debiki-tck-dao"))
@@ -39,6 +38,7 @@ object ApplicationBuild extends Build {
     dependsOn(debikiCore, debikiTckDao % "test"))
 
 
+  /*
   lazy val secureSocialDeps = Seq(
     // Append if there's any error like the one mentioned in the `routes` file, search
     // for [593bKWR] in that file, then change to  "... 2.1.0 notTransitive()" below:
@@ -49,21 +49,23 @@ object ApplicationBuild extends Build {
     "com.typesafe" %% "play-plugins-mailer" % "2.1.0",// notTransitive(),
     "org.mindrot" % "jbcrypt" % "0.3m")
 
-  lazy val secureSocial =
-    play.Project("securesocial", appVersion, secureSocialDeps,
-        path = file("modules/securesocial")
-    ).settings(
+  lazy val secureSocial = Project("securesocial", file("modules/securesocial"))
+    .settings(
+      version := appVersion,
+      libraryDependencies ++= secureSocialDeps,
       resolvers ++= Seq(
         "jBCrypt Repository" at "http://repo1.maven.org/maven2/org/",
-        "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/")
-    )
+        "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"))
+  */
 
 
   val appDependencies = Seq(
     // This (JDBC and PostgerSQL) makes the database evolutions script in
     // debiki-dao-rdb work. Otherwise not needed.
-    jdbc,
-    cache,
+    play.Play.autoImport.jdbc,
+    play.Play.autoImport.cache,
+    // Authentication.
+    "com.mohiva" %% "play-silhouette" % "1.0",
     // There's a PostgreSQL 903 build number too but it's not in the Maven repos.
     // PostgreSQL 9.2 drivers are also not in the Maven repos (as of May 2013).
     "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
@@ -103,24 +105,22 @@ object ApplicationBuild extends Build {
     Seq(EclipseKeys.skipParents := false, resolvers := Seq())
 
 
-  val main = play.Project(appName, appVersion, appDependencies
-    ).settings(
-      mainSettings: _*
-    ).dependsOn(
-      debikiCore, debikiDaoRdb, secureSocial
-    ).aggregate(
-      secureSocial
-    )
+  val main = Project(appName, file(".")).enablePlugins(play.PlayScala)
+    .settings(mainSettings: _*)
+    .dependsOn(debikiCore, debikiDaoRdb) //, secureSocial)
+    //.aggregate(secureSocial)
 
 
   def mainSettings = List(
-    scalaVersion := "2.10.3",
+    version := appVersion,
+    libraryDependencies ++= appDependencies,
+    scalaVersion := "2.11.1",
     compileRhinoTask := { "make compile_javascript"! },
     compileJsAndCss := { "gulp release"! },
 
     // Make Gulp bundle JS files and CSS automatically.
-    playOnStarted += startGulpTask,
-    playOnStopped += stopGulpTask,
+    ///playOnStarted += startGulpTask,
+    ///playOnStopped += stopGulpTask,
 
     Keys.fork in Test := false, // or cannot place breakpoints in test suites
     Keys.compile in Compile <<=

@@ -73,6 +73,7 @@ class AutoApproverSpec extends Specification with Mockito {
     isAdmin = false,
     isOwner = false)
 
+  /*
   val openidIdty = IdentityOpenId(
     id = "oididtyid",
     userId = openidUser.id,
@@ -83,8 +84,9 @@ class AutoApproverSpec extends Specification with Mockito {
       oidClaimedId = "",
       oidOpLocalId = "",
       firstName = openidUser.displayName,
-      email = openidUser.email,
+      email = Some(openidUser.email),
       country = openidUser.country))
+   */
 
 
   val PlayReq = new Request[Unit] {
@@ -99,6 +101,7 @@ class AutoApproverSpec extends Specification with Mockito {
     lazy val remoteAddress = Ip
     def username = None
     val body = ()
+    def secure = false
   }
 
 
@@ -133,7 +136,7 @@ class AutoApproverSpec extends Specification with Mockito {
       dao = dao,
       request = PlayReq)()
 
-  def pageReqOpenId = pageReq(openidUser, openidIdty) _
+  //def pageReqOpenId = pageReq(openidUser, openidIdty) _
   def pageReqGuest = pageReq(guestUser, guestIdty) _
 
 
@@ -141,7 +144,7 @@ class AutoApproverSpec extends Specification with Mockito {
     tenantId = TenantId, ip = Some(Ip), roleId = None)
 
   val peopleNoLogins =
-    People() + guestIdty + openidIdty + guestUser + openidUser + SystemUser.User
+    People() + guestIdty + guestUser + SystemUser.User // + openidIdty + openidUser
 
   val testUserLoginId = "101"
 
@@ -201,11 +204,11 @@ class AutoApproverSpec extends Specification with Mockito {
   def replyAPrelApprovedAndBManApproved(implicit testUserId: String): List[RawPostAction[_]] =
     List(testUserReplyA, testUserReplyB, approvalOfReplyB)
 
-  val (guestLogin, openidLogin) = {
+  val guestLogin = {  // (guestLogin, openidLogin) =
     val login = Login(id = testUserLoginId, ip = Ip, prevLoginId = None,
        date = startDati, identityRef = null)
-    (login.copy(identityRef = guestIdty.reference),
-      login.copy(identityRef = openidIdty.reference))
+    login.copy(identityRef = guestIdty.reference)
+      // login.copy(identityRef = openidIdty.reference))
   }
 
 

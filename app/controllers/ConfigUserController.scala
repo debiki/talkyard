@@ -82,7 +82,7 @@ object ConfigUserController extends mvc.Controller {
 
   private def configRoleUpdCookies(pageReq: DebikiRequest[_],
         emailNotfPrefs: EmailNotfPrefs, newEmailAddr: Option[String])
-        : mvc.SimpleResult = {
+        : mvc.Result = {
 
     val (user, loginId) = (pageReq.user_!, pageReq.loginId_!)
     require(user.isAuthenticated)
@@ -113,7 +113,7 @@ object ConfigUserController extends mvc.Controller {
 
   private def configGuestUpdCookies(pageReq: DebikiRequest[_],
         emailNotfPrefs: EmailNotfPrefs, newEmailAddr: Option[String])
-        : mvc.SimpleResult = {
+        : mvc.Result = {
     require(!pageReq.user_!.isAuthenticated)
 
     // Login again, if new email specified, because the email is part of the

@@ -150,8 +150,7 @@ object MovePageController extends mvc.Controller {
   }
 
 
-  private def _moveRenameGetImpl(pageReq: PageGetRequest, movePage: Boolean)
-        : mvc.SimpleResult = {
+  private def _moveRenameGetImpl(pageReq: PageGetRequest, movePage: Boolean): mvc.Result = {
 
     if (!pageReq.permsOnPage.moveRenamePage)
       throwForbidden("DwE35Rk15", "You may not move or rename this page.")
@@ -216,7 +215,7 @@ object MovePageController extends mvc.Controller {
 
   def _moveRenamePostImpl(pageReq: PagePostRequest,
         newFolder: Option[String] = None, showId: Option[Boolean] = None,
-        newSlug: Option[String] = None): mvc.SimpleResult = {
+        newSlug: Option[String] = None): mvc.Result = {
 
     if (!pageReq.permsOnPage.moveRenamePage)
       throwForbidden("DwE0kI35", "You may not move or rename this page.")

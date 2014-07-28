@@ -29,7 +29,7 @@ client/forum/html/*.ts
 
 # Ignore softlinks to the Play installation directory, e.g. scripts/play-2.1.sh,
 # and scripts that shouldn't be checked in.
-scripts/play-2.*
+scripts/activator-1.*
 
 # NPM and Bower package folders.
 node_modules/

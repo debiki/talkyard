@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
+/*
 package controllers
 
 import actions.PageActions._
@@ -63,7 +63,7 @@ object LoginWithOpenIdController extends mvc.Controller {
 
 
   def asyncLoginWithPostData(returnToUrl: String)(
-        implicit request: Request[Map[String, Seq[String]]]): Future[SimpleResult] = {
+        implicit request: Request[Map[String, Seq[String]]]): Future[Result] = {
     // (From the spec: The form field's "name" attribute should have the value
     // "openid_identifier", so that User-Agents can automatically
     // determine that this is an OpenID form.
@@ -74,7 +74,7 @@ object LoginWithOpenIdController extends mvc.Controller {
 
 
   def asyncLogin(returnToUrl: String, openIdIdentifier: String)
-       (implicit request: Request[_]): Future[SimpleResult] = {
+       (implicit request: Request[_]): Future[Result] = {
 
     val realm = _wildcardRealmFor(request.host)
 
@@ -160,7 +160,7 @@ object LoginWithOpenIdController extends mvc.Controller {
 
 
   private def _handleLoginOk(
-        request: Request[AnyContent], info: oid.UserInfo, returnToUrl: String): SimpleResult = {
+        request: Request[AnyContent], info: oid.UserInfo, returnToUrl: String): Result = {
 
     Logger.trace("OpenID verified okay: " + info.id +
        ", attributes: " + info.attributes)
@@ -270,4 +270,4 @@ object LoginWithOpenIdController extends mvc.Controller {
     //  "OpenID login failure" -> t.toString)
   }
 
-}
+} */

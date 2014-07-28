@@ -141,7 +141,9 @@ abstract class CreateSiteSpecConstructor extends DebikiBrowserSpec with TestSite
     }
 
     s"submit site name: $siteName" in {
-      click on "website-name"
+      eventually {
+        click on "website-name"
+      }
       enter(siteName)
       click on "accepts-terms"
       click on cssSelector("input[type=submit]")

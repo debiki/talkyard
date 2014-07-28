@@ -3,5 +3,5 @@
 # Starts the server quickly, without starting ElasticSearch (which takes
 # some time).
 
-./play debug -DcrazyFastStartSkipSearch=true
+./activator  -jvm-debug 9999  -DcrazyFastStartSkipSearch=true
 

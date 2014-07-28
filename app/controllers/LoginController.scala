@@ -22,6 +22,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
+import com.mohiva.play.silhouette
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
@@ -31,8 +32,8 @@ import Utils.{OkHtml}
 
 
 /**
- * Handles login; delegates to: AppLoginGuest, AppLoginOpenId (they should be renamed)
- * and LoginWithPasswordController and LoginWithSecureSocialController.
+ * Handles login; delegates to: LoginAsGuestController, LoginWithOpenIdController
+ * and LoginWithPasswordController and LoginWithSilhouetteController.
  *
  * Usage:
  * You could use views.html.login.loginPage to how a login page in place of the
@@ -49,36 +50,22 @@ object LoginController extends mvc.Controller {
   }
 
 
-  def loginWithPostData(returnToUrl: String) = ExceptionAction.async(
-        parse.urlFormEncoded(maxLength = 200)) { implicit request =>
-    // For now. Should handle guest login forms too.
-    LoginWithOpenIdController.asyncLoginWithPostData(returnToUrl = "")
-  }
-
-
   def asyncLogin(provider: String, returnToUrl: String)
-        (implicit request: Request[Option[Any]]): Future[SimpleResult] = {
+        (implicit request: Request[Unit]): Future[Result] = {
 
-    def loginWithOpenId(identifier: String): Future[SimpleResult] = {
+    /*
+    def loginWithOpenId(identifier: String): Future[Result] = {
       LoginWithOpenIdController.asyncLogin(openIdIdentifier = identifier,
         returnToUrl = returnToUrl)(request)
-    }
-
-    def loginWithSecureSocial(provider: String): Future[SimpleResult] = {
-      LoginWithSecureSocialController.startAuthentication(
-        provider, returnToUrl = returnToUrl)(request)
-    }
+    } */
 
     provider match {
-      case "google" =>
-        loginWithOpenId(IdentityOpenId.ProviderIdentifier.Google)
       case "yahoo" =>
+        ??? /*
         loginWithOpenId(IdentityOpenId.ProviderIdentifier.Yahoo)
-      case "facebook" =>
-        loginWithSecureSocial(securesocial.core.providers.FacebookProvider.Facebook)
-      case x =>
-        unimplemented("Logging in with SecureSocial from here")
-        // Or forward to LoginWithSecureSocialController.handleAuth in some manner?
+        */
+      case provider =>
+        LoginWithOpenAuthController.startAuthentication(provider, returnToUrl, request)
     }
   }
 

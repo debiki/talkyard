@@ -18,13 +18,14 @@
 package requests
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import play.api.libs.json._
-import Prelude._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
 /**

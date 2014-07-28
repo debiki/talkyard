@@ -337,7 +337,11 @@ object Sid {
         loginId: Option[String], userId: Option[String],
         displayName: Option[String]): Cookie = {
     val sidOk = create(loginId, userId, displayName)
-    urlEncodeCookie("dwCoSid", sidOk.value)
+    createSessionIdCookie(sidOk.value)
   }
+
+  def createSessionIdCookie(value: String) =
+    urlEncodeCookie("dwCoSid", value)
+
 }
 

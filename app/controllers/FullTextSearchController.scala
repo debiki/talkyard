@@ -22,7 +22,7 @@ import com.debiki.core._
 import debiki.TemplateRenderer
 import java.{util => ju}
 import play.api._
-import play.api.mvc.SimpleResult
+import play.api.mvc.Result
 import requests._
 import scala.concurrent.Future
 import Prelude._
@@ -63,7 +63,7 @@ object FullTextSearchController extends mvc.Controller {
 
 
   private def searchImpl(phrase: String, anyRootPageId: Option[String],
-        apiReq:  DebikiRequest[_]): Future[SimpleResult] = {
+        apiReq:  DebikiRequest[_]): Future[Result] = {
 
     import scala.concurrent.ExecutionContext.Implicits.global
 

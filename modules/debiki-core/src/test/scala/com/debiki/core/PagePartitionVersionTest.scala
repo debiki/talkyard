@@ -50,6 +50,7 @@ class PagePartitionVersionTest extends Specification with PageTestValues {
     }
 
     "Add flag & rating to EmptyPage, rename to ExamplePage" >> {
+      pending
     }
   }
 
