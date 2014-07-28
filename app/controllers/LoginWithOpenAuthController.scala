@@ -54,7 +54,15 @@ object LoginWithOpenAuthController extends Controller {
   private val ReturnToSiteCookieName = "dwCoReturnToSite"
   private val ReturnToSiteXsrfTokenCookieName = "dwCoReturnToSiteXsrfToken"
 
-  val anyLoginOrigin = Play.configuration.getString("debiki.loginOrigin")
+  val anyLoginOrigin =
+    if (Play.isTest) {
+      // The base domain should have been automatically configured with the test server's
+      // listen port.
+      Some(s"http://${debiki.Globals.baseDomain}")
+    }
+    else {
+      Play.configuration.getString("debiki.loginOrigin")
+    }
 
 
   /** The authentication flow starts here, if it happens in the main window and you
