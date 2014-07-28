@@ -118,6 +118,12 @@ object ApplicationBuild extends Build {
     compileRhinoTask := { "make compile_javascript"! },
     compileJsAndCss := { "gulp release"! },
 
+    // Disable ScalaDoc generation, it breaks seemingly because I'm compiling some Javascript
+    // files to Java, and ScalaDoc complains the generated classes don't exist and breaks
+    // the `dist` task.
+    sources in (Compile, doc) := Seq.empty, // don't generate any docs
+    publishArtifact in (Compile, packageDoc) := false,  // don't generate doc JAR
+
     // Make Gulp bundle JS files and CSS automatically.
     ///playOnStarted += startGulpTask,
     ///playOnStopped += stopGulpTask,
