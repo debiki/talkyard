@@ -124,9 +124,9 @@ object LoginWithOpenAuthController extends Controller {
         loginAndRedirect(request, profile)
     }.recoverWith({
       case e: siex.AccessDeniedException =>
-        Future.successful(Results.Forbidden)
+        Future.successful(Results.Forbidden(s"${e.getMessage} [DwE39DG42]"))
       case e: siex.AuthenticationException =>
-        Future.successful(Results.Forbidden)
+        Future.successful(Results.Forbidden(s"${e.getMessage} [DwE56FZ21]"))
     })
   }
 
