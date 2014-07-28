@@ -170,9 +170,9 @@ function loginDialogHtml
 
       <p id="dw-lgi-tos">
         By logging in, you agree to the
-        <a tabindex="101" href="http://www.debiki.com/hosting/terms-of-service">Terms of Service</a>
+        <a tabindex="101" href="/-/terms-of-use">Terms of Use</a>
         and the
-        <a tabindex="102" href="http://www.debiki.com/hosting/privacy-policy">Privacy Policy</a>.
+        <a tabindex="102" href="/-/privacy-policy">Privacy Policy</a>.
       </p>
 
       <p id="dw-lgi-or-login-using">
