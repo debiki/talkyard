@@ -25,9 +25,9 @@
  * or to the homepage ('/') if that's not possible.
  */
 export function goBackToSite() {
-  // The return-to-URL-path must start with '/' so we know it refers to something
-  // in the same site. Allowing links to other sites would be a security issue.
-  var anyReturnToPathHits = location.toString().match(/\?returnTo=(\/[^#]+)/);
+  // The return-to-URL-path must start with '/' but not '//' so we know it refers
+  // to something on the same site. Allowing links to other sites would be a security issue.
+  var anyReturnToPathHits = location.toString().match(/\?returnTo=(\/[^/#][^#]*)/);
   if (anyReturnToPathHits) {
     var returnToPath = anyReturnToPathHits[1];
     window.location.replace(returnToPath);
