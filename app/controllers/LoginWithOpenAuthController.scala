@@ -143,28 +143,6 @@ object LoginWithOpenAuthController extends Controller {
           (Some(originalSiteOrigin), Some(separatorAndXsrfToken.drop(1)))
       }
 
-    val originToLoginAt = anyReturnToSiteOrigin.getOrElse(originOf(request))
-    val siteId = debiki.DebikiHttp.lookupTenantIdOrThrow(originToLoginAt, debiki.Globals.systemDao)
-    val dao = debiki.Globals.siteDao(siteId, ip = request.remoteAddress)
-
-    val loginAttempt = OpenAuthLoginAttempt(
-      ip = request.remoteAddress,
-      date = new ju.Date,
-      prevLoginId = None, // for now
-      OpenAuthDetails(
-        providerId = profile.loginInfo.providerID,
-        providerKey = profile.loginInfo.providerKey,
-        firstName = profile.firstName,
-        fullName = profile.fullName,
-        email = profile.email,
-        avatarUrl = profile.avatarURL))
-
-    val loginGrant: LoginGrant = dao.saveLogin(loginAttempt)
-
-    val (sidOk, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(Some(loginGrant))
-    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant)
-    val newSessionCookies = userConfigCookie :: sidAndXsrfCookies
-
     if (anyReturnToSiteOrigin.isDefined && request.cookies.get(ReturnToUrlCookieName).isDefined) {
       // Someone has two browser tabs open? And in one tab s/he attempts to login at one site,
       // and in another tab at the site at anyLoginDomain? Weird.
@@ -176,23 +154,54 @@ object LoginWithOpenAuthController extends Controller {
             DiscardingCookie(ReturnToUrlCookieName)))
     }
 
+    val oauthDetails = OpenAuthDetails(
+      providerId = profile.loginInfo.providerID,
+      providerKey = profile.loginInfo.providerKey,
+      firstName = profile.firstName,
+      fullName = profile.fullName,
+      email = profile.email,
+      avatarUrl = profile.avatarURL)
+
     val result = anyReturnToSiteOrigin match {
       case Some(originalSiteOrigin) =>
         val xsrfToken = anyReturnToSiteXsrfToken getOrDie "DwE0F4C2"
+        val oauthDetailsCacheKey = nextRandomString()
+        play.api.cache.Cache.set(oauthDetailsCacheKey, oauthDetails) //, SECURITY: expiration = 10)
         val continueAtOriginalSiteUrl =
           originalSiteOrigin + routes.LoginWithOpenAuthController.continueAtOriginalSite(
-            sessionId = sidOk.value, xsrfToken)
+            oauthDetailsCacheKey, xsrfToken)
         Redirect(continueAtOriginalSiteUrl)
           .discardingCookies(DiscardingCookie(ReturnToSiteCookieName))
       case None =>
-        redirectToLocalUrl(request, newSessionCookies)
+        redirectToLocalUrl(request, anyOauthDetails = Some(oauthDetails))
     }
 
     Future.successful(result)
   }
 
 
-  private def redirectToLocalUrl(request: Request[_], newSessionCookies: Seq[Cookie]): Result = {
+  private def redirectToLocalUrl(request: Request[_], oauthDetailsCacheKey: Option[String] = None,
+        anyOauthDetails: Option[OpenAuthDetails] = None): Result = {
+
+    def cacheKey = oauthDetailsCacheKey.getOrDie("DwE90RW215")
+    val oauthDetails: OpenAuthDetails =
+      anyOauthDetails.getOrElse(play.api.cache.Cache.get(cacheKey) match {
+        case None => throwForbidden("DwE76fE50", "OAuth cache value not found")
+        case Some(value) => value.asInstanceOf[OpenAuthDetails]
+      })
+
+    val loginAttempt = OpenAuthLoginAttempt(
+      ip = request.remoteAddress, date = new ju.Date, prevLoginId = None, oauthDetails)
+
+    val siteId = debiki.DebikiHttp.lookupTenantIdOrThrow(originOf(request), debiki.Globals.systemDao)
+    val dao = debiki.Globals.siteDao(siteId, ip = request.remoteAddress)
+
+    val loginGrant: LoginGrant = dao.saveLogin(loginAttempt)
+
+    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(Some(loginGrant))
+    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant)
+    val newSessionCookies = userConfigCookie :: sidAndXsrfCookies
+
     val response = request.cookies.get(ReturnToUrlCookieName) match {
       case Some(returnToUrlCookie) =>
         Redirect(returnToUrlCookie.value).discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
@@ -242,9 +251,7 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  /** SECURITY Should avoid risking the session id ending up in some web server request log.
-    */
-  def continueAtOriginalSite(sessionId: String, xsrfToken: String) = ExceptionAction(empty) {
+  def continueAtOriginalSite(oauthDetailsCacheKey: String, xsrfToken: String) = ExceptionAction(empty) {
         request =>
     val anyXsrfTokenInSession = request.cookies.get(ReturnToSiteXsrfTokenCookieName)
     anyXsrfTokenInSession match {
@@ -254,8 +261,7 @@ object LoginWithOpenAuthController extends Controller {
       case None =>
         throwForbidden("DwE7GCV0", "No XSRF cookie")
     }
-    val sessionIdCookie = debiki.Sid.createSessionIdCookie(sessionId)
-    redirectToLocalUrl(request, Seq(sessionIdCookie))
+    redirectToLocalUrl(request, oauthDetailsCacheKey = Some(oauthDetailsCacheKey))
       .discardingCookies(DiscardingCookie(ReturnToSiteXsrfTokenCookieName))
   }
 
