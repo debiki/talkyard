@@ -272,7 +272,7 @@ abstract class SiteDbDao {
    */
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,
-        byIdentity: Option[String] = None,
+        byRole: Option[RoleId] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
         limit: Int): (Seq[PostAction[_]], People)
 
@@ -702,11 +702,11 @@ class ChargingSiteDbDao(
 
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,
-        byIdentity: Option[IdentityId] = None,
+        byRole: Option[RoleId] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
         limit: Int): (Seq[PostAction[_]], People) = {
     _chargeForOneReadReq()
-    _spi.loadRecentActionExcerpts(fromIp = fromIp, byIdentity = byIdentity,
+    _spi.loadRecentActionExcerpts(fromIp = fromIp, byRole = byRole,
         pathRanges = pathRanges, limit = limit)
   }
 

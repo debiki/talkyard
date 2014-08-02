@@ -124,12 +124,20 @@ object AutoApprover {
 
   private def loadUserHistory(dao: SiteDao, ip: IpAddress, userId: UserId)
         : List[PostAction[_]] = {
-    ??? /* TODO [nologin] load by userId, not identityId
+
     val (actionsFromIp, peopleFromIp) =
       dao.loadRecentActionExcerpts(fromIp = Some(ip), limit = RecentActionsLimit)
 
     val (actionsByIdentity, peopleForIdty) =
-      dao.loadRecentActionExcerpts(byIdentity = Some(identityId), limit = RecentActionsLimit)
+      if (User.isRoleId(userId)) {
+        // I think there a minor bug in loadRecentActionExcerpts(byRole = ...) in debiki-dao-rdb,
+        // inside buildByPersonQuery, search for "BUG".
+        dao.loadRecentActionExcerpts(byRole = Some(userId), limit = RecentActionsLimit)
+      }
+      else {
+        // COULD load actions based on browser cookie or fingerprint.
+        (Nil, People())
+      }
 
     // lazy val actionsByGuestsWithSameEmail =
     // -- or??: lazy val actionsByAnyoneWithSameEmail =
@@ -141,7 +149,6 @@ object AutoApprover {
          .sortBy(- _.creationDati.getTime).distinct
 
     recentActions
-    */
   }
 
 

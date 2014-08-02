@@ -139,11 +139,11 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,
-        byIdentity: Option[IdentityId] = None,
+        byRole: Option[RoleId] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
         limit: Int): (Seq[PostAction[_]], People) =
     siteDbDao.loadRecentActionExcerpts(fromIp = fromIp,
-      byIdentity = byIdentity, pathRanges = pathRanges, limit = limit)
+      byRole = byRole, pathRanges = pathRanges, limit = limit)
 
 
   // ----- Full text search
