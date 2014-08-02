@@ -495,7 +495,7 @@ case class LoginGrant(
 
   /** For test suites. */
   def testUserIdData =
-    UserIdData.newTest(userId = user.id, ip = ???) // login.ip)
+    UserIdData.newTest(userId = user.id)
 }
 
 

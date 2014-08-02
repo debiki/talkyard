@@ -65,7 +65,6 @@ object DebikiSpecs {
         id: ActionId = PageParts.NoId,
         parent: Option[PostId] = null,
         ctime: ju.Date = null,
-        loginId: String = null,
         ip: String = null,
         text: String = null,
         where: Option[String] = null) = new Matcher[PageParts] {
@@ -77,7 +76,7 @@ object DebikiSpecs {
       left.getPost(id2) match {
         case Some(leftPost: Post) =>
           result(_matchPostImpl(
-              leftPost.rawAction, post, id, parent, ctime, loginId, ip, text, where),
+              leftPost.rawAction, post, id, parent, ctime, ip, text, where),
             expectable)
         case None =>
           result(false, "", "Post missing, id: "+ id2, expectable)
@@ -90,7 +89,6 @@ object DebikiSpecs {
         id: ActionId = PageParts.NoId,
         parent: Option[PostId] = null,
         ctime: ju.Date = null,
-        loginId: String = null,
         ip: String = null,
         text: String = null,
         where: Option[String] = null) =
@@ -99,7 +97,7 @@ object DebikiSpecs {
           expectable: Expectable[S]) = {
       val left = expectable.value
       result(_matchPostImpl(
-          left, post, id, parent, ctime, loginId, ip, text, where),
+          left, post, id, parent, ctime, ip, text, where),
         expectable)
     }
   }
@@ -110,7 +108,6 @@ object DebikiSpecs {
         id: ActionId,
         parent: Option[ActionId],
         ctime: ju.Date,
-        loginId: String,
         ip: String,
         text: String,
         where: Option[String]): (Boolean, String, String) = {
@@ -120,7 +117,6 @@ object DebikiSpecs {
       testId("id", id, _.id) :::
         test("parent", parent, _.payload.parentPostId) :::
         test("ctime", ctime, _.creationDati) :::
-        test("loginId", loginId, _.loginId) :::
         test("ip", ip, _.ip) :::
         test("text", text, _.payload.text) :::
         test("where", where, _.payload.where) ::: Nil
