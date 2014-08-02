@@ -90,7 +90,7 @@ object UnsubscriptionController extends mvc.Controller {
           throwForbidden("DwE530KI37", "Email not found")
       }
 
-    import loginGrant.{login, identity, user}
+    import loginGrant.{identity, user}
     val idtyEmailId = identity.asInstanceOf[IdentityEmailId]
 
     // Find out what to do.
@@ -103,12 +103,12 @@ object UnsubscriptionController extends mvc.Controller {
     // Do it.
     if (user.isAuthenticated) {
       dao.configRole(
-        ctime = login.date, roleId = user.id, emailNotfPrefs = Some(emailNotfPrefs))
+        ctime = new ju.Date(), roleId = user.id, emailNotfPrefs = Some(emailNotfPrefs))
     }
     else {
       val emailAddr = idtyEmailId.emailSent.get.sentTo
       dao.configIdtySimple(
-         ctime = login.date, emailAddr = emailAddr,
+         ctime = new ju.Date(), emailAddr = emailAddr,
          emailNotfPrefs = emailNotfPrefs)
     }
 

@@ -486,8 +486,7 @@ object QuotaManager {
     // Emails:
     val mqPerEmailSent = 1000*1000 / 1000  // = 1000
 
-    resUse.numLogins * mqPerKb +
-       resUse.numIdsUnau * mqPerKb +
+    resUse.numIdsUnau * mqPerKb +
        resUse.numIdsAu * mqPerKb * 10 +  // see "10kb" comment above
        resUse.numRoles * mqPerKb +
        resUse.numPages * mqPerKb +

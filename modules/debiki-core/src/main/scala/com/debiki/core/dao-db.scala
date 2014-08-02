@@ -98,7 +98,7 @@ abstract class SiteDbDao {
   def lookupOtherTenant(scheme: String, host: String): TenantLookup
 
 
-  // ----- Login, logout
+  // ----- Login
 
   /**
    * Assigns ids to the login request, saves it, finds or creates a user
@@ -108,12 +108,6 @@ abstract class SiteDbDao {
    */
   def saveLogin(loginAttempt: LoginAttempt): LoginGrant
 
-  /**
-   * Updates the specified login with logout IP and timestamp.
-   */
-  def saveLogout(loginId: LoginId, logoutIp: String)
-
-  def loadLogin(loginId: LoginId): Option[Login]
 
   // ----- New pages, page meta
 
@@ -532,23 +526,13 @@ class ChargingSiteDbDao(
 
     val loginGrant = _spi.saveLogin(loginAttempt)
 
-    val resUsg = ResUsg.forStoring(login = loginGrant.login,
+    val resUsg = ResUsg.forStoring(
        identity = loginGrant.isNewIdentity ? loginGrant.identity | null,
        user = loginGrant.isNewRole ? loginGrant.user | null)
 
     _chargeFor(resUsg, mayPilfer = mayPilfer)
 
     loginGrant
-  }
-
-  def saveLogout(loginId: LoginId, logoutIp: String) = {
-    _chargeForOneWriteReq()
-    _spi.saveLogout(loginId, logoutIp)
-  }
-
-  def loadLogin(loginId: LoginId): Option[Login] = {
-    _chargeForOneReadReq()
-    _spi.loadLogin(loginId)
   }
 
 

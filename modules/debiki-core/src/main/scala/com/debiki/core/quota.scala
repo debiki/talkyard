@@ -101,7 +101,6 @@ object QuotaUse {
 
 
 case class ResourceUse(
-   numLogins: Int = 0,
    numIdsUnau: Int = 0,
    numIdsAu: Int = 0,
    numRoles: Int = 0,
@@ -114,7 +113,6 @@ case class ResourceUse(
    numDbReqsWrite: Long = 0) {
 
   def +(that: ResourceUse) = ResourceUse(
-     numLogins = numLogins + that.numLogins,
      numIdsUnau = numIdsUnau + that.numIdsUnau,
      numIdsAu = numIdsAu + that.numIdsAu,
      numRoles = numRoles + that.numRoles,
@@ -127,8 +125,7 @@ case class ResourceUse(
      numDbReqsWrite = numDbReqsWrite + that.numDbReqsWrite)
 
   override def toString = o"""
-    ResourceUse(numLogins: $numLogins,
-     numIdsUnau: $numIdsUnau,
+    ResourceUse(numIdsUnau: $numIdsUnau,
      numIdsAu: $numIdsAu,
      numRoles: $numRoles,
      numPages: $numPages,
@@ -146,7 +143,6 @@ object ResourceUse {
   def forStoring(loginAttempt: LoginAttempt): ResourceUse = {
     // Could check login type, but for now simply overestimate:
     ResourceUse(
-      numLogins = 1,
       numIdsUnau = 1,
       numIdsAu = 1,
       numRoles = 1)
@@ -154,7 +150,6 @@ object ResourceUse {
 
 
   def forStoring(
-     login: Login = null,
      identity: Identity = null,
      user: User = null,
      actions: Seq[RawPostAction[_]] = Nil,
@@ -169,7 +164,6 @@ object ResourceUse {
     val allActions = (page eq null) ? actions | actions ++ page.allActions
 
     ResourceUse(
-       numLogins = (login ne null) ? 1 | 0,
        numIdsUnau = isUnauIdty ? 1 | 0,
        // Don't count email id identities; they occupy no storage space.
        numIdsAu = ((idty ne null) && !isUnauIdty && !isEmailIdty) ? 1 | 0,

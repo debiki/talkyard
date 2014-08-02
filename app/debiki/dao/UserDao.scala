@@ -42,12 +42,10 @@ trait UserDao {
     siteDbDao.saveLogin(loginAttempt)
 
 
+  /* TODO [nologin] Would be good if could remove from cache?
   def saveLogout(loginId: LoginId, logoutIp: String) =
     siteDbDao.saveLogout(loginId, logoutIp)
-
-
-  def loadLogin(loginId: LoginId): Option[Login] =
-    siteDbDao.loadLogin(loginId)
+  */
 
 
   def loadUser(userId: UserId): Option[User] =
@@ -124,12 +122,13 @@ trait CachingUserDao extends UserDao {
   }
 
 
+  /*
   override def saveLogout(loginId: LoginId, logoutIp: String) {
     super.saveLogout(loginId, logoutIp)
     // There'll be no more requests with this login id.
     ??? // TODO [nologin] remove user from cache?
     // removeFromCache(key(loginId)) -- won't work. Needs the user id.
-  }
+  }*/
 
 
   override def loadUser(userId: UserId): Option[User] = {

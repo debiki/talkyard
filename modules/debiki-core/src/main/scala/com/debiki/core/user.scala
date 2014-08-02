@@ -480,16 +480,13 @@ case class OpenAuthProviderIdKey(providerId: String, providerKey: String)
 
 
 case class LoginGrant(
-   login: Login,
    identity: Identity,
    user: User,
    isNewIdentity: Boolean,
    isNewRole: Boolean) {
 
-  require(!login.id.contains('?'))
   require(!identity.id.contains('?'))
   require(!user.id.contains('?'))
-  require(login.identityRef.identityId == identity.id)
   require(identity.userId == user.id)
   require(!isNewRole || isNewIdentity)
 
@@ -498,7 +495,7 @@ case class LoginGrant(
 
   /** For test suites. */
   def testUserIdData =
-    UserIdData.newTest(userId = user.id, ip = login.ip)
+    UserIdData.newTest(userId = user.id, ip = ???) // login.ip)
 }
 
 
