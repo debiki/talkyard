@@ -90,7 +90,7 @@ abstract class SiteDbDao {
    */
   def createWebsite(name: Option[String], address: Option[String],
         embeddingSiteUrl: Option[String], ownerIp: String,
-        ownerLoginId: LoginId, ownerIdentity: Identity, ownerRole: User)
+        ownerIdentity: Identity, ownerRole: User)
         : Option[(Tenant, User)]
 
   def addTenantHost(host: TenantHost)
@@ -286,12 +286,12 @@ abstract class SiteDbDao {
     */
   def changePassword(identity: PasswordIdentity, newPasswordSaltHash: String): Boolean
 
-  def loadIdtyAndUser(forLoginId: LoginId): Option[(Identity, User)]
+  def loadUser(userId: UserId): Option[User]
 
   /**
    * Also loads details like OpenID local identifier, endpoint and version info.
    */
-  def loadIdtyDetailsAndUser(forLoginId: LoginId = null,
+  def loadIdtyDetailsAndUser(forUserId: UserId = null,
         forOpenIdDetails: OpenIdDetails = null,
         forEmailAddr: String = null): Option[(Identity, User)]
 
@@ -331,12 +331,11 @@ abstract class SiteDbDao {
 
   // ----- User configuration
 
-  def configRole(loginId: LoginId, ctime: ju.Date, roleId: RoleId,
+  def configRole(ctime: ju.Date, roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
         isOwner: Option[Boolean] = None)
 
-  def configIdtySimple(loginId: LoginId, ctime: ju.Date,
-                       emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
+  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
 
   // ----- Full text search
@@ -491,7 +490,7 @@ class ChargingSiteDbDao(
    */
   def createWebsite(name: Option[String], address: Option[String],
         embeddingSiteUrl: Option[String], ownerIp: String,
-        ownerLoginId: LoginId, ownerIdentity: Identity, ownerRole: User)
+        ownerIdentity: Identity, ownerRole: User)
         : Option[(Tenant, User)] = {
 
     // SHOULD consume IP quota — but not tenant quota!? — when generating
@@ -504,8 +503,7 @@ class ChargingSiteDbDao(
 
     _spi.createWebsite(name = name, address = address,
        embeddingSiteUrl, ownerIp = ownerIp,
-       ownerLoginId = ownerLoginId, ownerIdentity = ownerIdentity,
-       ownerRole = ownerRole)
+       ownerIdentity = ownerIdentity, ownerRole = ownerRole)
   }
 
   def addTenantHost(host: TenantHost) = {
@@ -727,16 +725,16 @@ class ChargingSiteDbDao(
     _spi.changePassword(identity, newPasswordSaltHash)
   }
 
-  def loadIdtyAndUser(forLoginId: LoginId): Option[(Identity, User)] = {
+  def loadUser(userId: UserId): Option[User] = {
     _chargeForOneReadReq()
-    _spi.loadIdtyAndUser(forLoginId)
+    _spi.loadUser(userId)
   }
 
-  def loadIdtyDetailsAndUser(forLoginId: LoginId = null,
+  def loadIdtyDetailsAndUser(forUserId: UserId = null,
         forOpenIdDetails: OpenIdDetails = null,
         forEmailAddr: String = null): Option[(Identity, User)] = {
     _chargeForOneReadReq()
-    _spi.loadIdtyDetailsAndUser(forLoginId = forLoginId,
+    _spi.loadIdtyDetailsAndUser(forUserId = forUserId,
       forOpenIdDetails = forOpenIdDetails, forEmailAddr = forEmailAddr)
   }
 
@@ -814,7 +812,7 @@ class ChargingSiteDbDao(
 
   // ----- User configuration
 
-  def configRole(loginId: LoginId, ctime: ju.Date, roleId: RoleId,
+  def configRole(ctime: ju.Date, roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean],
         isOwner: Option[Boolean]) =  {
     // When auditing of changes to roles has been implemented,
@@ -823,16 +821,14 @@ class ChargingSiteDbDao(
     // And don't care about whether or not quotaConsumers.role.id == roleId. ?
     // But for now:
     _chargeForOneWriteReq()
-    _spi.configRole(loginId = loginId, ctime = ctime, roleId = roleId,
+    _spi.configRole(ctime = ctime, roleId = roleId,
       emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
   }
 
-  def configIdtySimple(loginId: LoginId, ctime: ju.Date,
-        emailAddr: String, emailNotfPrefs: EmailNotfPrefs) = {
+  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) = {
     _chargeForOneWriteReq()
-    _spi.configIdtySimple(loginId = loginId, ctime = ctime,
-                          emailAddr = emailAddr,
-                          emailNotfPrefs = emailNotfPrefs)
+    _spi.configIdtySimple(
+      ctime = ctime, emailAddr = emailAddr, emailNotfPrefs = emailNotfPrefs)
   }
 
 

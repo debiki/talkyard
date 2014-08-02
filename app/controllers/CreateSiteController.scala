@@ -135,12 +135,11 @@ object CreateSiteController extends mvc.Controller {
 
     // Check permissions — and load authentication details, so OpenID/OAuth
     // info can be replicated to a new identity + user in the new website.
-    val loginId = request.loginId_!
     val (identity, user) = {
-      request.dao.loadIdtyDetailsAndUser(forLoginId = loginId) match {
+      request.dao.loadIdtyDetailsAndUser(forUserId = request.theUser.id) match {
         case Some((identity, user)) => (identity, user)
         case None =>
-          runErr("DwE01j920", "Cannot create website: Bad login ID: "+ loginId)
+          runErr("DwE01j920", "Cannot create website: Bad user id: "+ request.theUser.id)
       }
     }
 
@@ -184,7 +183,6 @@ object CreateSiteController extends mvc.Controller {
         host = Some(websiteAddr),
         embeddingSiteUrl = None,
         ownerIp = request.ip,
-        ownerLoginId = loginId,
         ownerIdentity = identity,
         ownerRole = user) match {
       case Some(site) =>

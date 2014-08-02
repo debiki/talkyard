@@ -69,11 +69,10 @@ object DummyPage {
     name = "(dummy author)", email = "", location = "", website = "")
 
 
-  val DummyAuthorLogin = Login(id = "2", prevLoginId = None, ip = "?.?.?.?",
+  val DummyAuthorLogin = Login(id = "2", ip = "?.?.?.?",
     date = new ju.Date, DummyAuthorIdty.reference)
 
   val DummyAuthorIdData = UserIdData(
-    loginId = Some(DummyAuthorLogin.id),
     userId = DummyAuthorUser.id,
     ip = DummyAuthorLogin.ip,
     browserIdCookie = None,

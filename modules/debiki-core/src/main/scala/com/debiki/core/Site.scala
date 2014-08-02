@@ -26,7 +26,6 @@ case class Tenant(
   name: Option[String],
   creatorIp: String,
   creatorTenantId: String,
-  creatorLoginId: String,
   creatorRoleId: String,
   embeddingSiteUrl: Option[String],
   hosts: List[TenantHost]

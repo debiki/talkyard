@@ -36,7 +36,7 @@ object DebikiSecurity {
    * Finds the session id and any xsrf token in the specified request;
    * throws an error if this is not a GET request and the xsrf token is bad.
    * @return The current SID and xsrf token. Or new ones if needed (with no
-   * login id, no user, no display name), and a new SID and xsrf cookie.
+   * no user, no display name), and a new SID and xsrf cookie.
    * @throws DebikiHttp.ResultException, for non-GET requests,
    * if the SID or the XSRF token is bad.
    *
@@ -210,22 +210,19 @@ object Xsrf {
       (new ju.Date).getTime +"."+ nextRandomString().take(10))
 
 
-  def newSidAndXsrf(loginGrant: Option[LoginGrant])
-        : (SidOk, XsrfOk, List[Cookie]) =
+  def newSidAndXsrf(loginGrant: Option[LoginGrant]): (SidOk, XsrfOk, List[Cookie]) =
     newSidAndXsrf(
-      loginId = loginGrant.map(_.login.id),
       userId = loginGrant.map(_.user.id),
       displayName = loginGrant.map(_.displayName))
 
 
   def newSidAndXsrf(
-        loginId: Option[String],
         userId: Option[String],
         displayName: Option[String])
         : (SidOk, XsrfOk, List[Cookie]) = {
     // Note that the xsrf token is created using the non-base64 encoded
     // cookie value.
-    val sidOk = Sid.create(loginId, userId, displayName)
+    val sidOk = Sid.create(userId, displayName)
     val xsrfOk = create()
     val sidCookie = urlEncodeCookie("dwCoSid", sidOk.value)
     val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value)
@@ -236,7 +233,6 @@ object Xsrf {
 
 sealed abstract class SidStatus {
   def isOk = false
-  def loginId: Option[String] = None
   def userId: Option[String] = None
   def roleId: Option[String] = None
   def displayName: Option[String] = None
@@ -251,7 +247,6 @@ case object SidBadHash extends SidStatus
 case class SidOk(
   value: String,
   ageInMillis: Long,
-  override val loginId: Option[String],
   override val userId: Option[String],
 
   /**
@@ -289,12 +284,12 @@ object Sid {
   def check(value: String): SidStatus = {
     // Example value: 88-F7sAzB0yaaX.1312629782081.1c3n0fgykm  - no, obsolete
     if (value.length <= sidHashLength) return SidBadFormat
-    val (hash, dotLoginUidNameDateRandom) = value splitAt sidHashLength
+    val (hash, dotUseridNameDateRandom) = value splitAt sidHashLength
     val realHash = hashSha1Base64UrlSafe(
-      _secretSidSalt + dotLoginUidNameDateRandom) take sidHashLength
+      _secretSidSalt + dotUseridNameDateRandom) take sidHashLength
     if (hash != realHash) return SidBadHash
-    dotLoginUidNameDateRandom.drop(1).split('.') match {
-      case Array(loginId, userId, nameNoDots, dateStr, randVal) =>
+    dotUseridNameDateRandom.drop(1).split('.') match {
+      case Array(userId, nameNoDots, dateStr, randVal) =>
         val ageMillis = (new ju.Date).getTime - dateStr.toLong
         val displayName = nameNoDots.replaceAll("_", ".")
         //if (ageMillis > _sidMaxMillis)
@@ -302,7 +297,6 @@ object Sid {
         SidOk(
           value = value,
           ageInMillis = ageMillis,
-          loginId = if (loginId isEmpty) None else Some(loginId),
           userId = if (userId isEmpty) None else Some(userId),
           displayName = if (displayName isEmpty) None else Some(displayName))
       case _ => SidBadFormat
@@ -312,31 +306,26 @@ object Sid {
   /**
    * Creates and returns a new SID.
    */
-  def create(
-        loginId: Option[String], userId: Option[String],
-        displayName: Option[String]): SidOk = {
+  def create(userId: Option[String], displayName: Option[String]): SidOk = {
     // For now, create a SID value and *parse* it to get a SidOk.
     // This is stupid and inefficient.
     val nameNoDots = displayName.map(
       _.replaceAll("\\.", "_")) // Could use replaceAllLiterally, Scala 2.9.1?
     val uid = "" // for now
-    val loginUidNameDateRandom =
-      loginId.getOrElse("") +"."+
+    val useridNameDateRandom =
          userId.getOrElse("") +"."+
          nameNoDots.getOrElse("") +"."+
          (new ju.Date).getTime +"."+
          (nextRandomString() take 10)
     val saltedHash = hashSha1Base64UrlSafe(
-      _secretSidSalt +"."+ loginUidNameDateRandom) take sidHashLength
-    val value = saltedHash +"."+ loginUidNameDateRandom
+      _secretSidSalt +"."+ useridNameDateRandom) take sidHashLength
+    val value = saltedHash +"."+ useridNameDateRandom
 
     check(value).asInstanceOf[SidOk]
   }
 
-  def newCookie(
-        loginId: Option[String], userId: Option[String],
-        displayName: Option[String]): Cookie = {
-    val sidOk = create(loginId, userId, displayName)
+  def newCookie(userId: Option[String], displayName: Option[String]): Cookie = {
+    val sidOk = create(userId, displayName)
     createSessionIdCookie(sidOk.value)
   }
 

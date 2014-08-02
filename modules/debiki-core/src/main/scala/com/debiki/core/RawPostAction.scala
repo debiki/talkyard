@@ -55,7 +55,6 @@ case class RawPostAction[P](   // caused weird compilation errors:  [P <: PostAc
 
   def ctime = creationDati
 
-  def loginId = userIdData.loginId
   def userId = userIdData.userId
   def ip = userIdData.ip
 
@@ -122,7 +121,6 @@ object RawPostAction {
         old: RawPostAction[PAP.CreatePost],
         id: ActionId = PageParts.NoId,
         creationDati: ju.Date = null,
-        loginId: String = null,
         userId: String = null,
         ip: String = null,
         parentPostId: Option[PostId] = null,
@@ -134,7 +132,6 @@ object RawPostAction {
       postId = if (id != PageParts.NoId) id else old.id, // same as id
       creationDati =  if (creationDati ne null) creationDati else old.creationDati,
       userIdData = UserIdData(
-        loginId = if (loginId ne null) Some(loginId) else old.userIdData.loginId,
         userId = if (userId ne null) userId else old.userIdData.userId,
         ip = if (ip ne null) ip else old.userIdData.ip,
         browserIdCookie = old.userIdData.browserIdCookie,
@@ -168,7 +165,6 @@ object RawPostAction {
         id: ActionId = PageParts.NoId,
         postId: ActionId = PageParts.NoId,
         createdAt: ju.Date = null,
-        loginId: String = null,
         userId: String = null,
         ip: String = null,
         text: String = null,
@@ -180,7 +176,6 @@ object RawPostAction {
       postId = if (postId != PageParts.NoId) postId else old.postId,
       creationDati =  if (createdAt ne null) createdAt else old.creationDati,
       userIdData = UserIdData(
-        loginId = if (loginId ne null) Some(loginId) else old.userIdData.loginId,
         userId = if (userId ne null) userId else old.userIdData.userId,
         ip = if (ip ne null) ip else old.userIdData.ip,
         browserIdCookie = old.userIdData.browserIdCookie,
@@ -197,7 +192,6 @@ object RawPostAction {
         id: ActionId = PageParts.NoId,
         postId: ActionId = PageParts.NoId,
         createdAt: ju.Date = null,
-        loginId: String = null,
         userId: String = null,
         ip: String = null,
         editId: ActionId = PageParts.NoId,
@@ -207,7 +201,6 @@ object RawPostAction {
       postId = if (postId != PageParts.NoId) postId else old.postId,
       creationDati =  if (createdAt ne null) createdAt else old.creationDati,
       userIdData = UserIdData(
-        loginId = if (loginId ne null) Some(loginId) else old.userIdData.loginId,
         userId = if (userId ne null) userId else old.userIdData.userId,
         ip = if (ip ne null) ip else old.userIdData.ip,
         browserIdCookie = old.userIdData.browserIdCookie,
@@ -232,7 +225,6 @@ object RawPostAction {
         old: RawPostAction[PAP.ApprovePost],
         id: ActionId = PageParts.NoId,
         postId: ActionId = PageParts.NoId,
-        loginId: String = null,
         userId: String = null,
         createdAt: ju.Date = null,
         ip: String = null,
@@ -242,7 +234,6 @@ object RawPostAction {
       creationDati = if (createdAt ne null) createdAt else old.creationDati,
       postId = if (postId != PageParts.NoId) postId else old.postId,
       userIdData = UserIdData(
-        loginId = if (loginId ne null) Some(loginId) else old.userIdData.loginId,
         userId = if (userId ne null) userId else old.userIdData.userId,
         ip = if (ip ne null) ip else old.userIdData.ip,
         browserIdCookie = old.userIdData.browserIdCookie,

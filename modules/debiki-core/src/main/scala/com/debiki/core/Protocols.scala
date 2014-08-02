@@ -58,7 +58,6 @@ object Protocols {
       "currentMarkup" -> post.markup,
       "anyDirectApproval" -> getTextOrNull(post.directApproval.map(_.toString)),
       "where" -> getTextOrNull(post.where),
-      "loginId" -> post.loginId,
       "userId" -> post.userId,
       "ip" -> post.rawAction.ip,
 
@@ -135,7 +134,6 @@ object Protocols {
       payload = payload,
       postId = id,
       userIdData = UserIdData(
-        loginId = (json \ "loginId").asOpt[String],
         userId = (json \ "userId").as[String],
         ip = (json \ "ip").as[String],  // <- might fail? I just changed the field from newIp to ip
         browserIdCookie = None, // for now

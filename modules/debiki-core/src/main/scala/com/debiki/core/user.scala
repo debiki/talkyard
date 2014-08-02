@@ -29,8 +29,8 @@ object People {
 
 
 case class People(
-  logins: List[Login] = Nil,
-  identities: List[Identity] = Nil,
+  logins: List[Login] = Nil,  // TODO [nologin] remove
+  identities: List[Identity] = Nil,  // TODO [nologin] remove
   users: List[User] = Nil) {
 
   def + (login: Login) = copy(logins = login :: logins)
@@ -98,14 +98,13 @@ class NiLo(people: People, val login: Login) {
 case object UserIdData {
 
   /** For test suites. */
-  def newTest(loginId: LoginId, userId: UserId, ip: String = "111.112.113.114") =
-    UserIdData(Some(loginId), userId, ip, browserIdCookie = None, browserFingerprint = 0)
+  def newTest(userId: UserId, ip: String = "111.112.113.114") =
+    UserIdData(userId, ip, browserIdCookie = None, browserFingerprint = 0)
 
 }
 
 
 case class UserIdData(
-  loginId: Option[LoginId],
   userId: UserId,
   ip: String,
   browserIdCookie: Option[String],
@@ -252,14 +251,12 @@ object EmailNotfPrefs extends Enumeration {
 sealed abstract class LoginAttempt {
   def ip: String
   def date: ju.Date
-  def prevLoginId: Option[LoginId]
 }
 
 
 case class GuestLoginAttempt(
   ip: String,
   date: ju.Date,
-  prevLoginId: Option[LoginId],
   name: String,
   email: String = "",
   location: String = "",
@@ -269,7 +266,6 @@ case class GuestLoginAttempt(
 case class PasswordLoginAttempt(
   ip: String,
   date: ju.Date,
-  prevLoginId: Option[LoginId],
   email: String,
   password: String) extends LoginAttempt {
 }
@@ -279,14 +275,12 @@ case class EmailLoginAttempt(
   ip: String,
   date: ju.Date,
   emailId: String) extends LoginAttempt {
-  def prevLoginId = None
 }
 
 
 case class OpenIdLoginAttempt(
   ip: String,
   date: ju.Date,
-  prevLoginId: Option[LoginId],
   openIdDetails: OpenIdDetails) extends LoginAttempt {
 }
 
@@ -294,7 +288,6 @@ case class OpenIdLoginAttempt(
 case class OpenAuthLoginAttempt(
   ip: String,
   date: ju.Date,
-  prevLoginId: Option[LoginId],
   openAuthDetails: OpenAuthDetails) extends LoginAttempt {
 
   def profileProviderAndKey = openAuthDetails.providerIdAndKey
@@ -303,7 +296,6 @@ case class OpenAuthLoginAttempt(
 
 case class Login(
   id: String,
-  prevLoginId: Option[String],
   ip: String,
   date: ju.Date,
   identityRef: IdentityRef) {
@@ -316,7 +308,6 @@ object Login {
   def fromLoginAttempt(loginAttempt: LoginAttempt, loginId: LoginId, identityRef: IdentityRef) =
     Login(
       loginId,
-      loginAttempt.prevLoginId,
       ip = loginAttempt.ip,
       date = loginAttempt.date,
       identityRef = identityRef)
@@ -507,7 +498,7 @@ case class LoginGrant(
 
   /** For test suites. */
   def testUserIdData =
-    UserIdData.newTest(login.id, userId = user.id, ip = login.ip)
+    UserIdData.newTest(userId = user.id, ip = login.ip)
 }
 
 
@@ -541,7 +532,6 @@ object SystemUser {
   val Person = People(Nil, Nil, List(User))
 
   val UserIdData = core.UserIdData(
-    loginId = None,
     userId = SystemUser.User.id,
     ip = Ip,
     browserIdCookie = None,

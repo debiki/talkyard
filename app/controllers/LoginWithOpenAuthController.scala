@@ -191,7 +191,7 @@ object LoginWithOpenAuthController extends Controller {
       })
 
     val loginAttempt = OpenAuthLoginAttempt(
-      ip = request.remoteAddress, date = new ju.Date, prevLoginId = None, oauthDetails)
+      ip = request.remoteAddress, date = new ju.Date, oauthDetails)
 
     val siteId = debiki.DebikiHttp.lookupTenantIdOrThrow(originOf(request), debiki.Globals.systemDao)
     val dao = debiki.Globals.siteDao(siteId, ip = request.remoteAddress)

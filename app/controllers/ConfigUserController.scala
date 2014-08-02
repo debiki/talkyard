@@ -84,7 +84,7 @@ object ConfigUserController extends mvc.Controller {
         emailNotfPrefs: EmailNotfPrefs, newEmailAddr: Option[String])
         : mvc.Result = {
 
-    val (user, loginId) = (pageReq.user_!, pageReq.loginId_!)
+    val user = pageReq.user_!
     require(user.isAuthenticated)
 
     // Update email preferences and email address.
@@ -96,7 +96,7 @@ object ConfigUserController extends mvc.Controller {
             "Please specify an email address.")
 
         if (emailNotfPrefs != user.emailNotfPrefs) {
-          pageReq.dao.configRole(loginId, pageReq.ctime,
+          pageReq.dao.configRole(pageReq.ctime,
              roleId = user.id, emailNotfPrefs = Some(emailNotfPrefs))
         }
       case Some(addr) =>
@@ -107,13 +107,16 @@ object ConfigUserController extends mvc.Controller {
     }
 
     val userNewPrefs = user.copy(emailNotfPrefs = emailNotfPrefs)
-    Ok.withCookies(userConfigCookie(pageReq.identity_!, userNewPrefs))
+    ??? // TODO [nologin]
+    // Ok.withCookies(userConfigCookie(pageReq.identity_!, userNewPrefs))
   }
 
 
   private def configGuestUpdCookies(pageReq: DebikiRequest[_],
         emailNotfPrefs: EmailNotfPrefs, newEmailAddr: Option[String])
         : mvc.Result = {
+    ??? // TODO [nologin]
+    /*
     require(!pageReq.user_!.isAuthenticated)
 
     // Login again, if new email specified, because the email is part of the
@@ -147,6 +150,7 @@ object ConfigUserController extends mvc.Controller {
     val userNewPrefs = user.copy(emailNotfPrefs = emailNotfPrefs)
     val configCookie = userConfigCookie(pageReq.identity_!, userNewPrefs)
     Ok.withCookies(configCookie::newSessCookies.toList: _*)
+    */
   }
 
 

@@ -63,7 +63,6 @@ object LoginAsGuestController extends mvc.Controller {
     val loginAttempt = GuestLoginAttempt(
       ip = addr,
       date = new ju.Date,
-      prevLoginId = request.sid.loginId,
       name = name,
       email = email,
       location = "",
@@ -81,6 +80,7 @@ object LoginAsGuestController extends mvc.Controller {
   }
 
 
+  /*
   def loginGuestAgainWithNewEmail(pageReq: DebikiRequest[_],
         newEmailAddr: String): (LoginGrant, Seq[Cookie]) = {
     import pageReq._
@@ -97,7 +97,6 @@ object LoginAsGuestController extends mvc.Controller {
     val loginAttempt = GuestLoginAttempt(
       ip = pageReq.ip,
       date = pageReq.ctime,
-      prevLoginId = loginId,
       name = guestIdentity.name,
       email = newEmailAddr,
       location = guestIdentity.location,
@@ -107,6 +106,6 @@ object LoginAsGuestController extends mvc.Controller {
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
 
     (loginGrant, sidAndXsrfCookies)
-  }
+  } */
 
 }
