@@ -101,7 +101,7 @@ object PageActions {
 
     val tenantId = pathIn.tenantId
     val pagePath = pathOkOpt.getOrElse(pathIn)
-    val (identity, user) = Utils.loadIdentityAndUserOrThrow(sidStatus, dao)
+    val user = Utils.loadUserOrThrow(sidStatus, dao)
     val pageExists = pathOkOpt.isDefined
 
     val anyPageMeta = pagePath.pageId.flatMap(dao.loadPageMeta(_))
@@ -112,8 +112,6 @@ object PageActions {
     val permsReq = PermsOnPageQuery(
       tenantId = tenantId,
       ip = realOrFakeIpOf(request),
-      loginId = sidStatus.loginId,
-      identity = identity,
       user = user,
       pagePath = pagePath,
       pageMeta = anyPageMeta)
@@ -127,7 +125,6 @@ object PageActions {
       sid = sidStatus,
       xsrfToken = xsrfOk,
       browserId = browserId,
-      identity = identity,
       user = user,
       pageExists = pageExists,
       pagePath = pagePath,
@@ -154,14 +151,12 @@ object PageActions {
     val dao = Globals.siteDao(siteId = pathIn.tenantId,
       ip = realOrFakeIpOf(request.underlying), request.sidStatus.roleId)
 
-    val (identity, user) = Utils.loadIdentityAndUserOrThrow(request.sidStatus, dao)
+    val user = Utils.loadUserOrThrow(request.sidStatus, dao)
 
     // Load permissions.
     val permsReq = PermsOnPageQuery(
       tenantId = pathIn.tenantId,
       ip = realOrFakeIpOf(request.underlying),
-      loginId = request.sidStatus.loginId,
-      identity = identity,
       user = user,
       pagePath = pathIn,
       pageMeta = None)
@@ -175,7 +170,6 @@ object PageActions {
       sid = request.sidStatus,
       xsrfToken = request.xsrfOk,
       browserId = request.browserId,
-      identity = identity,
       user = user,
       pageExists = false,
       pagePath = pathIn,

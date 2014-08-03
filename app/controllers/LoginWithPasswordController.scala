@@ -60,7 +60,6 @@ object LoginWithPasswordController extends mvc.Controller {
     val loginAttempt = PasswordLoginAttempt(
       ip = request.ip,
       date = request.ctime,
-      prevLoginId = request.loginId,
       email = email,
       password = password)
 

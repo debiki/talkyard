@@ -139,23 +139,21 @@ object Utils extends Results with http.ContentTypes {
 
 
   /**
-   * Loads a person from the database, given a login id.
-   * Verifies that the loaded ids match the ids encoded in the session identifier,
+   * Loads a user from the database.
+   * Verifies that the loaded id match the id encoded in the session identifier,
    * and throws a LoginNotFoundException on mismatch (happens e.g. if
    * I've connected the server to another backend, or access many backends
    * via the same hostname but different ports).
    */
-  def loadIdentityAndUserOrThrow(sid: SidStatus, dao: SiteDao)
-        : (Option[Identity], Option[User]) = {
-    val identityAndUser = sid.loginId match {
-      case None => (None, None)
-      case Some(loginId) =>
-        dao.loadIdtyAndUser(forLoginId = loginId)
-        match {
-          case Some((identity, user)) =>
+  def loadUserOrThrow(sid: SidStatus, dao: SiteDao): Option[User] = {
+    val user = sid.userId match {
+      case None => None
+      case Some(userId) =>
+        dao.loadUser(userId) match {
+          case Some(user) =>
             if (Some(user.id) == sid.userId) {
               // Fine.
-              (Some(identity), Some(user))
+              Some(user)
             }
             else {
               // Sometimes I access different databases via different ports,
@@ -164,7 +162,7 @@ object Utils extends Results with http.ContentTypes {
               // the wrong login-id and user-id to the server.
               Logger.warn(
                 s"DAO loaded wrong user, session: $sid, role: $user [error DwE9kD4]")
-              throw LoginNotFoundException(dao.siteId, loginId)
+              throw LoginNotFoundException(dao.siteId, userId)
             }
           case None =>
             // This might happen 1) if the server connected to a new database
@@ -172,15 +170,15 @@ object Utils extends Results with http.ContentTypes {
             // created), or 2) during testing, when I sometimes manually
             // delete stuff from the database (including login entries).
             Logger.warn("DAO did not load user [error DwE01521ku35]")
-            throw LoginNotFoundException(dao.siteId, loginId)
+            throw LoginNotFoundException(dao.siteId, userId)
         }
     }
-    identityAndUser
+    user
   }
 
 
-  case class LoginNotFoundException(tenantId: String, loginId: String)
-     extends Exception("No login with id: "+ loginId +", tenantId: "+ tenantId)
+  case class LoginNotFoundException(tenantId: String, userId: String)
+     extends Exception("No user with id: "+ userId +", site id: "+ tenantId)
 
 
   def parseIntOrThrowBadReq(text: String, errorCode: String = "DwE50BK7"): Int = {

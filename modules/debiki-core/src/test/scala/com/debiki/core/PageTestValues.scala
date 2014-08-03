@@ -40,7 +40,7 @@ trait PageTestValues {
 
   val bodySkeleton =
     RawPostAction(id = PageParts.BodyId, postId = PageParts.BodyId,
-      userIdData = UserIdData.newTest("101", userId = "?"), creationDati = new ju.Date(1000),
+      userIdData = UserIdData.newTest(userId = "?"), creationDati = new ju.Date(1000),
       payload = PostActionPayload.CreatePost(
         parentPostId = None,
         text = textInitially,
@@ -54,7 +54,7 @@ trait PageTestValues {
     copyCreatePost(bodySkeleton, approval = Some(Approval.Preliminary))
 
   val bodyApprovalSkeleton = RawPostAction.toApprovePost(
-    11, postId = bodySkeleton.id, UserIdData.newTest("111", userId = "?"),
+    11, postId = bodySkeleton.id, UserIdData.newTest(userId = "?"),
         ctime = new ju.Date(11000), approval = Approval.AuthoritativeUser)
 
   val bodyDeletionSkeleton = bodyApprovalSkeleton.copy(
@@ -63,41 +63,41 @@ trait PageTestValues {
   val editSkeleton =
     RawPostAction.toEditPost(
         id = 12, postId = bodySkeleton.id, ctime = new ju.Date(12000),
-        UserIdData.newTest("112", userId = "?"),
+        UserIdData.newTest(userId = "?"),
         text = makePatch(from = textInitially, to = textAfterFirstEdit),
         newMarkup = None, approval = None, autoApplied = false)
 
   def deletionOfEdit =
     RawPostAction(id = 13, postId = editSkeleton.postId,
-      userIdData = UserIdData.newTest("113", userId = "?"), creationDati = new ju.Date(13000),
+      userIdData = UserIdData.newTest(userId = "?"), creationDati = new ju.Date(13000),
       payload = PAP.Delete(editSkeleton.id))
 
   val editAppSkeleton =
     RawPostAction[PAP.EditApp](id = 14, creationDati = new ju.Date(14000),
       payload = PAP.EditApp(editSkeleton.id, approval = None),
-      postId = editSkeleton.postId, userIdData = UserIdData.newTest("114", userId = "?"))
+      postId = editSkeleton.postId, userIdData = UserIdData.newTest(userId = "?"))
 
   val deletionOfEditApp =
     RawPostAction(id = 15, postId = editAppSkeleton.postId,
-        userIdData = UserIdData.newTest("115", userId = "?"), creationDati = new ju.Date(15000),
+        userIdData = UserIdData.newTest(userId = "?"), creationDati = new ju.Date(15000),
         payload = PAP.Delete(editSkeleton.id))
 
   val approvalOfEditApp = RawPostAction.toApprovePost(id = 16, postId = editAppSkeleton.postId,
-        userIdData = UserIdData.newTest("116", userId = "?"), ctime = new ju.Date(16000),
+        userIdData = UserIdData.newTest(userId = "?"), ctime = new ju.Date(16000),
         approval = Approval.AuthoritativeUser)
 
   val rejectionOfEditApp = RawPostAction.toRejectEdits(id = 16, postId = editAppSkeleton.postId,
-        UserIdData.newTest("116", userId = "?"), createdAt = new ju.Date(16000),
+        UserIdData.newTest(userId = "?"), createdAt = new ju.Date(16000),
         deleteEdits = false)
 
   /* val ratingOfBody = Rating(17, postId = bodySkeleton.id,
-    userIdData = UserIdData.newTest("117", userId = "?"), ctime = new ju.Date(17000), tags = Nil)
+    userIdData = UserIdData.newTest(userId = "?"), ctime = new ju.Date(17000), tags = Nil)
     */
 
   /*
   val flagOfBody = RawPostAction(18, new ju.Date(18000),
     PAP.Flag(tyype = FlagType.Spam, reason = ""), postId = bodySkeleton.id,
-    UserIdData.newTest("118", userId = "?"))
+    UserIdData.newTest(userId = "?"))
     */
 
 

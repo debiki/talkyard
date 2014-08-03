@@ -26,7 +26,6 @@ class QuotaTest extends Specification {
   val now = new ju.Date
 
   val res100And200And300Etc = ResourceUse(
-    numLogins = 100,
     numIdsUnau = 200,
     numIdsAu = 300,
     numRoles = 400,
@@ -39,7 +38,6 @@ class QuotaTest extends Specification {
     numDbReqsWrite = 1100)
 
   val res123Etc = ResourceUse(
-    numLogins = 1,
     numIdsUnau = 2,
     numIdsAu = 3,
     numRoles = 4,
@@ -52,7 +50,6 @@ class QuotaTest extends Specification {
     numDbReqsWrite = 11)
 
   val res101And202And303Etc = ResourceUse(
-    numLogins = 101,
     numIdsUnau = 202,
     numIdsAu = 303,
     numRoles = 404,

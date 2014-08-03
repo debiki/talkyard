@@ -165,10 +165,6 @@ object ModerationController extends mvc.Controller {
       "userDisplayName" -> JsString(action.user.map(_.displayName) getOrElse "(Unknown user)"),
       "cdati" -> JsString(toIso8601T(action.creationDati)))
 
-    action.loginId foreach { id =>
-      data += "loginId" -> JsString(id)
-    }
-
     action match {
       case post: Post =>
         post.approvedText foreach { text =>

@@ -42,24 +42,22 @@ trait UserDao {
     siteDbDao.saveLogin(loginAttempt)
 
 
+  /* TODO [nologin] Would be good if could remove from cache?
   def saveLogout(loginId: LoginId, logoutIp: String) =
     siteDbDao.saveLogout(loginId, logoutIp)
+  */
 
 
-  def loadLogin(loginId: LoginId): Option[Login] =
-    siteDbDao.loadLogin(loginId)
+  def loadUser(userId: UserId): Option[User] =
+    siteDbDao.loadUser(userId)
 
 
-  def loadIdtyAndUser(forLoginId: LoginId): Option[(Identity, User)] =
-    siteDbDao.loadIdtyAndUser(forLoginId)
-
-
-  def loadIdtyDetailsAndUser(forLoginId: LoginId = null,
+  def loadIdtyDetailsAndUser(forUserId: UserId = null,
         forOpenIdDetails: OpenIdDetails = null,
         forEmailAddr: String = null): Option[(Identity, User)] =
     // Don't cache this, because this function is rarely called
     // — currently only when creating new website.
-    siteDbDao.loadIdtyDetailsAndUser(forLoginId = forLoginId,
+    siteDbDao.loadIdtyDetailsAndUser(forUserId = forUserId,
       forOpenIdDetails = forOpenIdDetails, forEmailAddr = forEmailAddr)
 
 
@@ -84,26 +82,22 @@ trait UserDao {
     siteDbDao.loadPermsOnPage(PermsOnPageQuery(
       tenantId = request.tenantId,
       ip = request.ip,
-      loginId = request.loginId,
-      identity = request.identity,
       user = request.user,
       pagePath = pagePath,
       pageMeta = pageMeta))
   }
 
 
-  def configRole(loginId: LoginId, ctime: ju.Date, roleId: RoleId,
+  def configRole(ctime: ju.Date, roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
         isOwner: Option[Boolean] = None) =
-    siteDbDao.configRole(loginId = loginId, ctime = ctime,
+    siteDbDao.configRole(ctime = ctime,
       roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
 
 
-  def configIdtySimple(loginId: LoginId, ctime: ju.Date,
-        emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
-    siteDbDao.configIdtySimple(loginId = loginId, ctime = ctime,
-      emailAddr = emailAddr,
-      emailNotfPrefs = emailNotfPrefs)
+  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
+    siteDbDao.configIdtySimple(ctime = ctime,
+      emailAddr = emailAddr, emailNotfPrefs = emailNotfPrefs)
 
 
   def listUsers(userQuery: UserQuery): Seq[(User, Seq[String])] =
@@ -122,48 +116,47 @@ trait CachingUserDao extends UserDao {
     // when site specific data changes.
     val loginGrant = super.saveLogin(loginAttempt)
     putInCache(
-      key(loginGrant.login.id),
-      CacheValueIgnoreVersion((loginGrant.identity, loginGrant.user)))
+      key(loginGrant.user.id),
+      CacheValueIgnoreVersion(loginGrant.user))
     loginGrant
   }
 
 
+  /*
   override def saveLogout(loginId: LoginId, logoutIp: String) {
     super.saveLogout(loginId, logoutIp)
     // There'll be no more requests with this login id.
-    removeFromCache(key(loginId))
-  }
+    ??? // TODO [nologin] remove user from cache?
+    // removeFromCache(key(loginId)) -- won't work. Needs the user id.
+  }*/
 
 
-  override def loadIdtyAndUser(forLoginId: LoginId): Option[(Identity, User)] = {
-    lookupInCache[(Identity, User)](
-      key(forLoginId),
-      orCacheAndReturn = super.loadIdtyAndUser(forLoginId),
+  override def loadUser(userId: UserId): Option[User] = {
+    lookupInCache[User](
+      key(userId),
+      orCacheAndReturn = super.loadUser(userId),
       ignoreSiteCacheVersion = true)
   }
 
 
-  override def configRole(loginId: LoginId, ctime: ju.Date, roleId: RoleId,
+  override def configRole(ctime: ju.Date, roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean],
         isOwner: Option[Boolean]) {
-    super.configRole(loginId = loginId, ctime = ctime,
+    super.configRole(ctime = ctime,
       roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
-    removeFromCache(key(loginId))
+    removeFromCache(key(roleId))
   }
 
 
-  override def configIdtySimple(loginId: LoginId, ctime: ju.Date,
-                       emailAddr: String, emailNotfPrefs: EmailNotfPrefs) {
+  override def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) {
     super.configIdtySimple(
-      loginId = loginId,
-      ctime = ctime,
-      emailAddr = emailAddr,
-      emailNotfPrefs = emailNotfPrefs)
-    removeFromCache(key(loginId))
+      ctime = ctime, emailAddr = emailAddr, emailNotfPrefs = emailNotfPrefs)
+    ??? // TODO [nologin] remove user from cache?
+    ??? // removeFromCache(key(loginId)) -- won't work. Needs the user id.
   }
 
 
-  private def key(loginId: LoginId) = CacheKey(siteId, s"$loginId|UserByLoginId")
+  private def key(userId: UserId) = CacheKey(siteId, s"$userId|UserById")
 
 }
 

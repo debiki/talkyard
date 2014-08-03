@@ -34,7 +34,6 @@ abstract class DebikiRequest[A] {
   def sid: SidStatus
   def xsrfToken: XsrfOk
   def browserId: Option[BrowserId]
-  def identity: Option[Identity]
   def user: Option[User]
   def dao: SiteDao
   def request: Request[A]
@@ -57,7 +56,6 @@ abstract class DebikiRequest[A] {
   def siteSettings = dao.loadWholeSiteSettings()
 
   def userIdData = UserIdData(
-    loginId = loginId,
     userId = user.map(_.id) getOrElse UnknownUser.Id,
     ip = ip,
     browserIdCookie = browserId.map(_.cookieValue),
@@ -65,31 +63,13 @@ abstract class DebikiRequest[A] {
 
   def browserIdIsNew = browserId.map(_.isNew) == Some(true)
 
-  def loginId: Option[String] = sid.loginId
-
-  def login: Option[Login] = loginId map { id: LoginId =>
-    dao.loadLogin(id).getOrDie("DwE55FU09", s"Login id `$id' missing")
-  }
-
-  def theLogin = login getOrElse throwForbidden("DwE53fhk90", "Not logged in")
-
-  /**
-   * The login id of the user making the request. Throws 403 Forbidden
-   * if not logged in (shouldn't happen normally).
-   */
-  def loginId_! : String =
-    loginId getOrElse throwForbidden("DwE03kRG4", "Not logged in")
-
   def theUser = user_!
 
   def user_! : User =
     user getOrElse throwForbidden("DwE86Wb7", "Not logged in")
 
-  def identity_! : Identity =
-    identity getOrElse throwForbidden("DwE7PGJ2", "Not logged in")
-
   def anyMeAsPeople: People =
-    if (loginId isEmpty) People()
+    if (user isEmpty) People()
     else People() + user_!
 
   def meAsPeople_! : People = People() + user_!
@@ -104,11 +84,6 @@ abstract class DebikiRequest[A] {
   def session: mvc.Session = request.session
 
   def ip = realOrFakeIpOf(request)
-
-  /**
-   * The end user's IP address, *iff* it differs from the login address.
-   */
-  def newIp: Option[String] = None  // None always, for now
 
   /**
    * Approximately when the server started serving this request.

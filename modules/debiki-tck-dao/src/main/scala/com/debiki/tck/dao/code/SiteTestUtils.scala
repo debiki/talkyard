@@ -62,7 +62,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
 
 
   val defaultGuestLoginAttempt = GuestLoginAttempt(
-    ip = "1.1.1.1", date = new ju.Date, prevLoginId = None,
+    ip = "1.1.1.1", date = new ju.Date,
     name = "GuestName", email = "guest-email@ex.com", location = "", website = "")
 
 
@@ -75,7 +75,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
     identity match {
       case passwordIdentity: PasswordIdentity =>
         dao.saveLogin(PasswordLoginAttempt(
-          ip = ip, date = new ju.Date(), prevLoginId = None,
+          ip = ip, date = new ju.Date(),
           email = passwordIdentity.email, password = defaultPassword))
       case _ =>
         ???

@@ -32,7 +32,6 @@ case class ApiRequest[A](
   sid: SidStatus,
   xsrfToken: XsrfOk,
   browserId: Option[BrowserId],
-  identity: Option[Identity],
   user: Option[User],
   dao: SiteDao,
   request: Request[A]) extends DebikiRequest[A] {

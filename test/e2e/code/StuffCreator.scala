@@ -89,7 +89,7 @@ trait StuffCreator {
    */
   private lazy val (loginGrant: LoginGrant, postTemplate: RawPostAction[PAP.CreatePost]) = {
 
-    val loginAttempt = OpenIdLoginAttempt(prevLoginId = None, ip = "1.1.1.1",
+    val loginAttempt = OpenIdLoginAttempt(ip = "1.1.1.1",
       date = new ju.Date, openIdDetails = OpenIdDetails(
       oidEndpoint = "http://test-endpoint.com", oidVersion = "", oidRealm = "",
       oidClaimedId = "StuffCreatorClaimedId", oidOpLocalId = "StuffCreatorLocalId",
@@ -99,7 +99,7 @@ trait StuffCreator {
 
     val postTemplate = RawPostAction.forNewPost(
       id = UnassignedId, parentPostId = None, creationDati = new ju.Date,
-      userIdData = UserIdData.newTest(loginId = loginGrant.login.id, userId = loginGrant.user.id),
+      userIdData = UserIdData.newTest(userId = loginGrant.user.id),
       text = "", markup = "para",
       approval = Some(Approval.AuthoritativeUser))
 

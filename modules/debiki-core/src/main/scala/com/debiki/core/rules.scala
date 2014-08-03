@@ -26,8 +26,6 @@ import Prelude._
 case class PermsOnPageQuery(
   tenantId: String,
   ip: String,
-  loginId: Option[String],
-  identity: Option[Identity],
   user: Option[User],
   /** Ids of groups to which the requester belongs. */
   // userMemships: List[String],

@@ -189,7 +189,7 @@ object HtmlPostRenderer {
     *  "By (author) (date), improved by (editor)."
     */
   def renderPostHeader(post: Post): RenderedPostHeader = {
-    if (post.loginId == DummyPage.DummyAuthorLogin.id)
+    if (post.userId == DummyPage.DummyAuthorUser.id)  // UNTESTED
       return RenderedPostHeader(Nil)
 
     def page = post.debate

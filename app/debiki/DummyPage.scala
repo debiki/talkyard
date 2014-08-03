@@ -69,19 +69,16 @@ object DummyPage {
     name = "(dummy author)", email = "", location = "", website = "")
 
 
-  val DummyAuthorLogin = Login(id = "2", prevLoginId = None, ip = "?.?.?.?",
-    date = new ju.Date, DummyAuthorIdty.reference)
+  val DummyAuthorIp = "0.0.0.0"
 
   val DummyAuthorIdData = UserIdData(
-    loginId = Some(DummyAuthorLogin.id),
     userId = DummyAuthorUser.id,
-    ip = DummyAuthorLogin.ip,
+    ip = DummyAuthorIp,
     browserIdCookie = None,
     browserFingerprint = 0)
 
 
-  val DummyAuthor = People(
-    List(DummyAuthorLogin), List(DummyAuthorIdty), List(DummyAuthorUser))
+  val DummyAuthor = People(List(DummyAuthorUser))
 
 
   private def dummyTitle(texts: Texts) = RawPostAction(

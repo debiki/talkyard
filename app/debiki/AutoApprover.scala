@@ -108,29 +108,36 @@ object AutoApprover {
     if (pageReq.user_!.isAdmin)
       Some(Approval.AuthoritativeUser)
     else {
-      perhapsApproveImpl(pageReq.dao, ip = pageReq.ip, identityId = pageReq.identity_!.id)
+      perhapsApproveImpl(pageReq.dao, ip = pageReq.ip, pageReq.theUser.id)
     }
   }
 
 
   /** Exposed to simplify debugging via controllers.Debug.
     */
-  def perhapsApproveImpl(dao: SiteDao, ip: IpAddress, identityId: IdentityId)
+  def perhapsApproveImpl(dao: SiteDao, ip: IpAddress, userId: UserId)
         : Option[Approval] = {
-    val history = loadUserHistory(dao, ip, identityId = identityId)
+    val history = loadUserHistory(dao, ip, userId = userId)
     checkUserHistoryPerhapsApprove(history)
   }
 
 
-  /** Ought to load a user's history, not an identity's history?
-    */
-  private def loadUserHistory(dao: SiteDao, ip: IpAddress, identityId: IdentityId)
+  private def loadUserHistory(dao: SiteDao, ip: IpAddress, userId: UserId)
         : List[PostAction[_]] = {
+
     val (actionsFromIp, peopleFromIp) =
       dao.loadRecentActionExcerpts(fromIp = Some(ip), limit = RecentActionsLimit)
 
     val (actionsByIdentity, peopleForIdty) =
-      dao.loadRecentActionExcerpts(byIdentity = Some(identityId), limit = RecentActionsLimit)
+      if (User.isRoleId(userId)) {
+        // I think there a minor bug in loadRecentActionExcerpts(byRole = ...) in debiki-dao-rdb,
+        // inside buildByPersonQuery, search for "BUG".
+        dao.loadRecentActionExcerpts(byRole = Some(userId), limit = RecentActionsLimit)
+      }
+      else {
+        // COULD load actions based on browser cookie or fingerprint.
+        (Nil, People())
+      }
 
     // lazy val actionsByGuestsWithSameEmail =
     // -- or??: lazy val actionsByAnyoneWithSameEmail =

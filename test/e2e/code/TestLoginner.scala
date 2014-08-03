@@ -98,7 +98,7 @@ trait TestLoginner extends DebikiSelectors {
   def cheatLoginAsAdmin() {
     import com.debiki.{core => d}
 
-    val loginAttempt = OpenIdLoginAttempt(prevLoginId = None, ip = "1.1.1.1", date = new ju.Date,
+    val loginAttempt = OpenIdLoginAttempt(ip = "1.1.1.1", date = new ju.Date,
       openIdDetails = OpenIdDetails(
       oidEndpoint = "http://test-endpoint.com", oidVersion = "",
       oidRealm = "", oidClaimedId = "TestAdminClaimedId", oidOpLocalId = "TestAdminLocalId",
@@ -109,8 +109,7 @@ trait TestLoginner extends DebikiSelectors {
 
     if (!adminMadeAdmin) {
       adminMadeAdmin = true
-      dao.configRole(loginGrant.login.id, ctime = loginGrant.login.date,
-        roleId = loginGrant.user.id, isAdmin = Some(true))
+      dao.configRole(ctime = new ju.Date, roleId = loginGrant.user.id, isAdmin = Some(true))
     }
 
     // Update the browser: set cookies.

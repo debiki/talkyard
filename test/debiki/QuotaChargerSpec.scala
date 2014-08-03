@@ -113,7 +113,7 @@ class QuotaChargerSpec
         loopUntilDeclined[QuotaConsumer.PerTenantIp](min = 5, max = 30) {
           // We're charging the same site-id and IP all the time, so the IP
           // will run out of quota, for `site.id`.
-          createPage(loginGrant.login.id, loginGrant.user, dao)
+          createPage(loginGrant.user, dao)
         }
       }
 
@@ -126,7 +126,7 @@ class QuotaChargerSpec
           // The role should run out of quota, for `site.id`, before the IP?
           // because when you login and get a role, the IP quota is larger than
           // if you're not logged in? (Or how did I implement this?)
-          createPage(loginGrant.login.id, loginGrant.user, dao)
+          createPage(loginGrant.user, dao)
         }
       }
 
@@ -136,7 +136,7 @@ class QuotaChargerSpec
           // We're charging the same site-id and role all the time, but a different IP.
           // The role should run out of quota.
           val dao = tenantDao(site.id, ip = nextIp(), roleId = Some(loginGrant.user.id))
-          createPage(loginGrant.login.id, loginGrant.user, dao)
+          createPage(loginGrant.user, dao)
         }
       }
 
@@ -162,7 +162,7 @@ class QuotaChargerSpec
           val siteAndIp = SiteAndIp(site.id, nextIp())
           val loginGrant = loginNewGuestUser("GuestTest", siteAndIp)
           for (i <- 1 to pagesPerLap)
-            createPage(loginGrant.login.id, loginGrant.user, tenantDao(siteAndIp))
+            createPage(loginGrant.user, tenantDao(siteAndIp))
         }
       }
 
@@ -197,7 +197,7 @@ class QuotaChargerSpec
             siteIds += guestDao.siteId
 
             // Test quota charger.
-            createPage(guestLoginGrant.login.id, guestLoginGrant.user, guestDao)
+            createPage(guestLoginGrant.user, guestDao)
           }
         }
       }
@@ -328,12 +328,11 @@ class QuotaChargerSpec
     val anyNewSiteAndOwner: Option[(Tenant, User)] = SiteCreator.createWebsite(
       SiteCreator.NewSiteType.SimpleSite,
       dao = stuffCreator.firstSiteDao,
-      creationDati = loginGrant.login.date,
+      creationDati = new ju.Date(),
       name = Some(siteName),
       host = Some(s"$siteName.${stuffCreator.firstSiteHost}"),
       embeddingSiteUrl = None,
-      ownerIp = loginGrant.login.ip,
-      ownerLoginId = loginGrant.login.id,
+      ownerIp = "0.0.0.1",
       ownerIdentity = loginGrant.identity.asInstanceOf[IdentityOpenId],
       ownerRole = loginGrant.user)
 
@@ -350,7 +349,7 @@ class QuotaChargerSpec
 
   def loginNewOpenIdUser(namePrefix: String, siteAndIp: SiteAndIp): LoginGrant = {
     nextOpenIdUserNo += 1
-    val loginAttempt = OpenIdLoginAttempt(prevLoginId = None, ip = siteAndIp.ip, date = new ju.Date,
+    val loginAttempt = OpenIdLoginAttempt(ip = siteAndIp.ip, date = new ju.Date,
       openIdDetails = OpenIdDetails(
       oidEndpoint = "provider.example.com/endpoint", oidVersion = "2",
       oidRealm = "example.com", oidClaimedId = s"claimed-id-$nextOpenIdUserNo.example.com",
@@ -363,19 +362,19 @@ class QuotaChargerSpec
 
   def loginNewGuestUser(namePrefix: String, siteAndIp: SiteAndIp): LoginGrant = {
     nextGuestUserNo += 1
-    val loginAttempt = GuestLoginAttempt(prevLoginId = None, ip = siteAndIp.ip, date = new ju.Date,
+    val loginAttempt = GuestLoginAttempt(ip = siteAndIp.ip, date = new ju.Date,
         name = s"$namePrefix-GuestUser$nextGuestUserNo",
         email = s"guest-email-$nextGuestUserNo@example.com", location = "", website = "")
     tenantDao(siteAndIp).saveLogin(loginAttempt)
   }
 
 
-  def createPage(loginId: String, author: User, dao: SiteDao) = {
+  def createPage(author: User, dao: SiteDao) = {
     val creationDati = new ju.Date
     val pageId = dao.nextPageId()
     val pageRole = PageRole.Generic
     val pageBody = RawPostAction.forNewPageBody("Page body.", creationDati, pageRole,
-      UserIdData.newTest(loginId = loginId, userId = author.id),
+      UserIdData.newTest(userId = author.id),
       approval = Some(Approval.Preliminary))
     val actions = PageParts(pageId, rawActions = List(pageBody))
 

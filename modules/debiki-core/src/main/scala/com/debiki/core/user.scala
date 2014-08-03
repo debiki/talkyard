@@ -24,50 +24,17 @@ import User.{isRoleId, isGuestId, checkId}
 
 
 object People {
-  val None = People(Nil, Nil, Nil)
+  val None = People(Nil)
 }
 
 
-case class People(
-  logins: List[Login] = Nil,
-  identities: List[Identity] = Nil,
-  users: List[User] = Nil) {
+// COULD remove, use a Map[UserId, User] instead?
+//
+case class People(users: List[User] = Nil) {
 
-  def + (login: Login) = copy(logins = login :: logins)
-  def + (identity: Identity) = copy(identities = identity :: identities)
   def + (user: User) = copy(users = user :: users)
 
-  def ++ (people: People) = People(
-    logins = people.logins ::: logins,
-    identities = people.identities ::: identities,
-    users = people.users ::: users)
-
-
-  def nilo(loginId: String): Option[NiLo] =
-    login(loginId).map(new NiLo(this, _))
-
-  def nilo_!(loginId: String): NiLo = new NiLo(this, login_!(loginId))
-
-
-  // -------- Logins
-
-  def login(id: String): Option[Login] =
-    logins.find(_.id == id)  // COULD optimize
-
-  def login_!(id: String): Login =
-    login(id) getOrElse runErr("DwE8K3520z23", s"Login not found: $id")
-
-
-  // -------- Identities
-
-  def identity(id: String): Option[Identity] =
-    identities.find(_.id == id)  // COULD optimize
-
-  def identity_!(id: String): Identity = identity(id) getOrElse runErr(
-    "DwE021kr3k09", "Identity not found: "+ safed(id))
-
-
-  // -------- Users
+  def ++ (people: People) = People(users = people.users ::: users)
 
   def user(id: String): Option[User] =
     if (id == SystemUser.User.id) Some(SystemUser.User)
@@ -79,33 +46,16 @@ case class People(
 }
 
 
-/**
- * A Nice Login: a Login, Identity an User tuple, and utility methods.
- */
-class NiLo(people: People, val login: Login) {
-
-  def user: Option[User] = people.user(identity_!.userId)
-  def user_! : User = people.user_!(identity_!.userId)
-  def identity_! : Identity = people.identity_!(login.identityRef.identityId)
-
-  def displayName = user_!.displayName
-  def email = user_!.email
-
-}
-
-
-
 case object UserIdData {
 
   /** For test suites. */
-  def newTest(loginId: LoginId, userId: UserId, ip: String = "111.112.113.114") =
-    UserIdData(Some(loginId), userId, ip, browserIdCookie = None, browserFingerprint = 0)
+  def newTest(userId: UserId, ip: String = "111.112.113.114") =
+    UserIdData(userId, ip, browserIdCookie = None, browserFingerprint = 0)
 
 }
 
 
 case class UserIdData(
-  loginId: Option[LoginId],
   userId: UserId,
   ip: String,
   browserIdCookie: Option[String],
@@ -252,14 +202,12 @@ object EmailNotfPrefs extends Enumeration {
 sealed abstract class LoginAttempt {
   def ip: String
   def date: ju.Date
-  def prevLoginId: Option[LoginId]
 }
 
 
 case class GuestLoginAttempt(
   ip: String,
   date: ju.Date,
-  prevLoginId: Option[LoginId],
   name: String,
   email: String = "",
   location: String = "",
@@ -269,7 +217,6 @@ case class GuestLoginAttempt(
 case class PasswordLoginAttempt(
   ip: String,
   date: ju.Date,
-  prevLoginId: Option[LoginId],
   email: String,
   password: String) extends LoginAttempt {
 }
@@ -279,14 +226,12 @@ case class EmailLoginAttempt(
   ip: String,
   date: ju.Date,
   emailId: String) extends LoginAttempt {
-  def prevLoginId = None
 }
 
 
 case class OpenIdLoginAttempt(
   ip: String,
   date: ju.Date,
-  prevLoginId: Option[LoginId],
   openIdDetails: OpenIdDetails) extends LoginAttempt {
 }
 
@@ -294,44 +239,9 @@ case class OpenIdLoginAttempt(
 case class OpenAuthLoginAttempt(
   ip: String,
   date: ju.Date,
-  prevLoginId: Option[LoginId],
   openAuthDetails: OpenAuthDetails) extends LoginAttempt {
 
   def profileProviderAndKey = openAuthDetails.providerIdAndKey
-}
-
-
-case class Login(
-  id: String,
-  prevLoginId: Option[String],
-  ip: String,
-  date: ju.Date,
-  identityRef: IdentityRef) {
-  checkId(id, "DwE093jxh12")
-}
-
-
-object Login {
-
-  def fromLoginAttempt(loginAttempt: LoginAttempt, loginId: LoginId, identityRef: IdentityRef) =
-    Login(
-      loginId,
-      loginAttempt.prevLoginId,
-      ip = loginAttempt.ip,
-      date = loginAttempt.date,
-      identityRef = identityRef)
-}
-
-
-sealed abstract class IdentityRef {
-  def identityId: IdentityId
-  checkId(identityId, "DwE56CWf8")
-}
-
-object IdentityRef {
-  case class Email(identityId: IdentityId) extends IdentityRef
-  case class Guest(identityId: IdentityId) extends IdentityRef
-  case class Role(identityId: IdentityId) extends IdentityRef
 }
 
 
@@ -361,7 +271,6 @@ sealed abstract class Identity {
    */
   def id: String
   def userId: String
-  def reference: IdentityRef = IdentityRef.Role(id)
 
   checkId(id, "DwE02krc3g")
   checkId(userId, "DwE864rsk215")
@@ -385,8 +294,6 @@ case class IdentityEmailId(
 ) extends Identity {
   // Either only email id known, or all info known.
   require((userId startsWith "?") == emailSent.isEmpty)
-
-  override def reference: IdentityRef = IdentityRef.Email(id)
 }
 
 
@@ -404,8 +311,6 @@ case class IdentitySimple(
   // Cannot check for e.g. weird name or email. That could prevent
   // loading of data from database, after changing the weirdness rules.
   // Don't:  require(! (User nameIsWeird name))
-
-  override def reference: IdentityRef = IdentityRef.Guest(id)
 }
 
 
@@ -414,8 +319,6 @@ case class PasswordIdentity(
   override val userId: UserId,
   email: String = "",
   passwordSaltHash: String) extends Identity {
-
-  override def reference = IdentityRef.Role(id)
 }
 
 
@@ -466,7 +369,6 @@ case class OpenAuthIdentity(
   override val userId: UserId,
   openAuthDetails: OpenAuthDetails) extends Identity {
 
-  override def reference = IdentityRef.Role(id)
   def displayName = openAuthDetails.displayName
 }
 
@@ -489,16 +391,13 @@ case class OpenAuthProviderIdKey(providerId: String, providerKey: String)
 
 
 case class LoginGrant(
-   login: Login,
    identity: Identity,
    user: User,
    isNewIdentity: Boolean,
    isNewRole: Boolean) {
 
-  require(!login.id.contains('?'))
   require(!identity.id.contains('?'))
   require(!user.id.contains('?'))
-  require(login.identityRef.identityId == identity.id)
   require(identity.userId == user.id)
   require(!isNewRole || isNewIdentity)
 
@@ -507,7 +406,7 @@ case class LoginGrant(
 
   /** For test suites. */
   def testUserIdData =
-    UserIdData.newTest(login.id, userId = user.id, ip = login.ip)
+    UserIdData.newTest(userId = user.id)
 }
 
 
@@ -538,10 +437,9 @@ object SystemUser {
   val User = core.User(id = "1", displayName = "System", email = "",
     emailNotfPrefs = EmailNotfPrefs.DontReceive, isAdmin = true)
 
-  val Person = People(Nil, Nil, List(User))
+  val Person = People(List(User))
 
   val UserIdData = core.UserIdData(
-    loginId = None,
     userId = SystemUser.User.id,
     ip = Ip,
     browserIdCookie = None,
