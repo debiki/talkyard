@@ -1949,7 +1949,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           email = theUser.email, password = theNewPassword))
         newLoginGrant.user must_== theUser
         newLoginGrant.identity.userId must_== theIdentity.userId
-        newLoginGrant.identity.reference must_== theIdentity.reference
+        newLoginGrant.identity.id must_== theIdentity.id
         newLoginGrant.identity.asInstanceOf[PasswordIdentity].passwordSaltHash must_== theNewHash
         ok
       }

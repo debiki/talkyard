@@ -24,44 +24,17 @@ import User.{isRoleId, isGuestId, checkId}
 
 
 object People {
-  val None = People(Nil, Nil, Nil)
+  val None = People(Nil)
 }
 
 
-case class People(
-  logins: List[Login] = Nil,  // TODO [nologin] remove
-  identities: List[Identity] = Nil,  // TODO [nologin] remove
-  users: List[User] = Nil) {
+// COULD remove, use a Map[UserId, User] instead?
+//
+case class People(users: List[User] = Nil) {
 
-  def + (login: Login) = copy(logins = login :: logins)
-  def + (identity: Identity) = copy(identities = identity :: identities)
   def + (user: User) = copy(users = user :: users)
 
-  def ++ (people: People) = People(
-    logins = people.logins ::: logins,
-    identities = people.identities ::: identities,
-    users = people.users ::: users)
-
-
-  // -------- Logins
-
-  def login(id: String): Option[Login] =
-    logins.find(_.id == id)  // COULD optimize
-
-  def login_!(id: String): Login =
-    login(id) getOrElse runErr("DwE8K3520z23", s"Login not found: $id")
-
-
-  // -------- Identities
-
-  def identity(id: String): Option[Identity] =
-    identities.find(_.id == id)  // COULD optimize
-
-  def identity_!(id: String): Identity = identity(id) getOrElse runErr(
-    "DwE021kr3k09", "Identity not found: "+ safed(id))
-
-
-  // -------- Users
+  def ++ (people: People) = People(users = people.users ::: users)
 
   def user(id: String): Option[User] =
     if (id == SystemUser.User.id) Some(SystemUser.User)
@@ -272,38 +245,6 @@ case class OpenAuthLoginAttempt(
 }
 
 
-case class Login(
-  id: String,
-  ip: String,
-  date: ju.Date,
-  identityRef: IdentityRef) {
-  checkId(id, "DwE093jxh12")
-}
-
-
-object Login {
-
-  def fromLoginAttempt(loginAttempt: LoginAttempt, loginId: LoginId, identityRef: IdentityRef) =
-    Login(
-      loginId,
-      ip = loginAttempt.ip,
-      date = loginAttempt.date,
-      identityRef = identityRef)
-}
-
-
-sealed abstract class IdentityRef {
-  def identityId: IdentityId
-  checkId(identityId, "DwE56CWf8")
-}
-
-object IdentityRef {
-  case class Email(identityId: IdentityId) extends IdentityRef
-  case class Guest(identityId: IdentityId) extends IdentityRef
-  case class Role(identityId: IdentityId) extends IdentityRef
-}
-
-
 /**
  * A user might have many identities, e.g. an OpenID Gmail identity and
  * a Twitter identity.
@@ -330,7 +271,6 @@ sealed abstract class Identity {
    */
   def id: String
   def userId: String
-  def reference: IdentityRef = IdentityRef.Role(id)
 
   checkId(id, "DwE02krc3g")
   checkId(userId, "DwE864rsk215")
@@ -354,8 +294,6 @@ case class IdentityEmailId(
 ) extends Identity {
   // Either only email id known, or all info known.
   require((userId startsWith "?") == emailSent.isEmpty)
-
-  override def reference: IdentityRef = IdentityRef.Email(id)
 }
 
 
@@ -373,8 +311,6 @@ case class IdentitySimple(
   // Cannot check for e.g. weird name or email. That could prevent
   // loading of data from database, after changing the weirdness rules.
   // Don't:  require(! (User nameIsWeird name))
-
-  override def reference: IdentityRef = IdentityRef.Guest(id)
 }
 
 
@@ -383,8 +319,6 @@ case class PasswordIdentity(
   override val userId: UserId,
   email: String = "",
   passwordSaltHash: String) extends Identity {
-
-  override def reference = IdentityRef.Role(id)
 }
 
 
@@ -435,7 +369,6 @@ case class OpenAuthIdentity(
   override val userId: UserId,
   openAuthDetails: OpenAuthDetails) extends Identity {
 
-  override def reference = IdentityRef.Role(id)
   def displayName = openAuthDetails.displayName
 }
 
@@ -504,7 +437,7 @@ object SystemUser {
   val User = core.User(id = "1", displayName = "System", email = "",
     emailNotfPrefs = EmailNotfPrefs.DontReceive, isAdmin = true)
 
-  val Person = People(Nil, Nil, List(User))
+  val Person = People(List(User))
 
   val UserIdData = core.UserIdData(
     userId = SystemUser.User.id,

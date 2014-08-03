@@ -65,9 +65,7 @@ trait NotfGeneratorTestValues {
     UserIdData.newTest(userId = reviewer.id),
     createdAt = new ju.Date(11000))
 
-  val EmptyPage = PageParts("pageId") ++ (People() +
-    bodyAuthor + replyAuthor + reviewer +
-    bodyAuthorIdty + replyAuthorIdty + reviewerIdty)
+  val EmptyPage = PageParts("pageId") ++ (People() + bodyAuthor + replyAuthor + reviewer)
 
   val PageWithApprovedBody = EmptyPage + rawBody + approvalOfBody
 }
