@@ -49,7 +49,7 @@ object DebikiSecurity {
         maySetCookies: Boolean)
         : (SidStatus, XsrfOk, List[Cookie]) = {
 
-    val sidCookieValOpt = urlDecodeCookie("dwCoSid", request)
+    val sidCookieValOpt = urlDecodeCookie(Sid.CookieName, request)
     val sidStatus: SidStatus =
       sidCookieValOpt.map(Sid.check(_)) getOrElse SidAbsent
 
@@ -61,7 +61,7 @@ object DebikiSecurity {
       if (request.method == "GET") {
         // Accept this request, and create new XSRF token if needed.
 
-        if (!sidStatus.isOk && sidStatus != SidAbsent)
+        if (!sidStatus.isOk)
           Logger.warn(s"Bad SID: $sidStatus, from IP: ${realOrFakeIpOf(request)}")
 
         val (xsrfOk: XsrfOk, anyNewXsrfCookie: List[Cookie]) =
@@ -184,9 +184,6 @@ case class XsrfOk(value: String) extends XsrfStatus {
 
 
 object Xsrf {
-  private val _secretSalt = "w4k2i2ErK84o938"  // hardcoded, for now
-  private val _hashLength = 14
-
 
   def check(xsrfToken: String, xsrfCookieValue: Option[String]): XsrfStatus = {
     // COULD check date, and hash, to find out if the token is too old.
@@ -224,7 +221,7 @@ object Xsrf {
     // cookie value.
     val sidOk = Sid.create(userId, displayName)
     val xsrfOk = create()
-    val sidCookie = urlEncodeCookie("dwCoSid", sidOk.value)
+    val sidCookie = urlEncodeCookie(Sid.CookieName, sidOk.value)
     val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value)
     (sidOk, xsrfOk, sidCookie::xsrfCookie::Nil)
   }
@@ -238,7 +235,7 @@ sealed abstract class SidStatus {
   def displayName: Option[String] = None
 }
 
-case object SidAbsent extends SidStatus
+case object SidAbsent extends SidStatus { override def isOk = true }
 case object SidBadFormat extends SidStatus
 case object SidBadHash extends SidStatus
 //case class SidExpired(millisAgo: Long) extends SidStatus
@@ -276,6 +273,9 @@ case class SidOk(
  * any time so I don't use Lift's stateful session stuff so very much.
  */
 object Sid {
+
+  val CookieName = "dwCoSid"
+
   val sidHashLength = 14
   private val _secretSidSalt = "w4k2i2rK8409kk3xk"  // hardcoded, for now
   private val _sidMaxMillis = 2 * 31 * 24 * 3600 * 1000  // two months
@@ -330,7 +330,7 @@ object Sid {
   }
 
   def createSessionIdCookie(value: String) =
-    urlEncodeCookie("dwCoSid", value)
+    urlEncodeCookie(Sid.CookieName, value)
 
 }
 
