@@ -63,30 +63,20 @@ class AutoApproverSpec extends Specification with Mockito {
     website = guestUser.website)
 
 
-  val openidUser = User(
-    id = "openid",
-    displayName = "Oid User Name",
-    email = "oid.email@.com",
+  val passwordUser = User(
+    id = "pwdusr",
+    displayName = "Password User Name",
+    email = "pwdusr@ex.com",
     emailNotfPrefs = null,
     country = "",
     website = "",
     isAdmin = false,
     isOwner = false)
 
-  /*
-  val openidIdty = IdentityOpenId(
-    id = "oididtyid",
-    userId = openidUser.id,
-    OpenIdDetails(
-      oidEndpoint = "",
-      oidVersion = "",
-      oidRealm = "",
-      oidClaimedId = "",
-      oidOpLocalId = "",
-      firstName = openidUser.displayName,
-      email = Some(openidUser.email),
-      country = openidUser.country))
-   */
+  val passwordIdentity = PasswordIdentity(
+    id = "pwdidty",
+    userId = passwordUser.id,
+    passwordSaltHash = "pwdsalthash")
 
 
   val PlayReq = new Request[Unit] {
@@ -135,7 +125,7 @@ class AutoApproverSpec extends Specification with Mockito {
       dao = dao,
       request = PlayReq)()
 
-  //def pageReqOpenId = pageReq(openidUser, openidIdty) _
+  //def pageReqOpenId = pageReq(passwordUser, passwordIdentity) _
   def pageReqGuest = pageReq(guestUser, guestIdty) _
 
 
@@ -143,7 +133,7 @@ class AutoApproverSpec extends Specification with Mockito {
     tenantId = TenantId, ip = Some(Ip), roleId = None)
 
   val peopleNoLogins =
-    People() + guestUser + SystemUser.User // + openidUser
+    People() + guestUser + SystemUser.User // + passwordUser
 
   val testUserLoginId = "101"
 
@@ -224,10 +214,12 @@ class AutoApproverSpec extends Specification with Mockito {
       limit = AutoApprover.RecentActionsLimit)
        .returns(actions -> people)
 
+    /*  Currently not called for guest users, only for roles.
     daoMock.loadRecentActionExcerpts(
-      byRole = ???, // TODO [nologin] fix test case, won't work:  Some(guestIdty.id),
+      byRole = Some(passwordUser.id),
       limit = AutoApprover.RecentActionsLimit)
        .returns(actions -> people)
+       */
 
     daoMock
   }
@@ -245,7 +237,6 @@ class AutoApproverSpec extends Specification with Mockito {
       implicit val testUserId = guestUser.id
 
       "the first one" >> {
-        implicit val testUserId = guestUser.id
         val dao = newDaoMock(Nil, testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.Preliminary)
       }
