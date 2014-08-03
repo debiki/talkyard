@@ -154,11 +154,7 @@ object ConfigUserController extends mvc.Controller {
   }
 
 
-  def userConfigCookie(loginGrant: LoginGrant): mvc.Cookie =
-    userConfigCookie(loginGrant.identity, loginGrant.user)
-
-
-  def userConfigCookie(identity: Identity, user: User): mvc.Cookie = {
+  def userConfigCookie(user: User): mvc.Cookie = {
     val email = user.email
     val emailPrefs =
       if (user.emailNotfPrefs == EmailNotfPrefs.Unspecified) ""

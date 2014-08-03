@@ -73,8 +73,8 @@ object LoginWithPasswordController extends mvc.Controller {
       }
 
 
-    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
-    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant)
+    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(loginGrant.user)
+    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant.user)
 
     userConfigCookie::sidAndXsrfCookies
   }

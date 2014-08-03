@@ -70,8 +70,8 @@ object LoginAsGuestController extends mvc.Controller {
 
     val loginGrant = Globals.siteDao(tenantId, ip = addr).saveLogin(loginAttempt)
 
-    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
-    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant)
+    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(loginGrant.user)
+    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant.user)
 
     // Could include a <a href=last-page>Okay</a> link, see the
     // Logout dialog below. Only needed if javascript disabled though,

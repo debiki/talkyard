@@ -207,19 +207,10 @@ object Xsrf {
       (new ju.Date).getTime +"."+ nextRandomString().take(10))
 
 
-  def newSidAndXsrf(loginGrant: Option[LoginGrant]): (SidOk, XsrfOk, List[Cookie]) =
-    newSidAndXsrf(
-      userId = loginGrant.map(_.user.id),
-      displayName = loginGrant.map(_.displayName))
-
-
-  def newSidAndXsrf(
-        userId: Option[String],
-        displayName: Option[String])
-        : (SidOk, XsrfOk, List[Cookie]) = {
+  def newSidAndXsrf(user: User): (SidOk, XsrfOk, List[Cookie]) = {
     // Note that the xsrf token is created using the non-base64 encoded
     // cookie value.
-    val sidOk = Sid.create(userId, displayName)
+    val sidOk = Sid.create(user)
     val xsrfOk = create()
     val sidCookie = urlEncodeCookie(Sid.CookieName, sidOk.value)
     val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value)
@@ -276,7 +267,7 @@ object Sid {
 
   val CookieName = "dwCoSid"
 
-  val sidHashLength = 14
+  private val sidHashLength = 14
   private val _secretSidSalt = "w4k2i2rK8409kk3xk"  // hardcoded, for now
   private val _sidMaxMillis = 2 * 31 * 24 * 3600 * 1000  // two months
   //private val _sidExpireAgeSecs = 5 * 365 * 24 * 3600  // five years
@@ -306,15 +297,14 @@ object Sid {
   /**
    * Creates and returns a new SID.
    */
-  def create(userId: Option[String], displayName: Option[String]): SidOk = {
+  def create(user: User): SidOk = {
     // For now, create a SID value and *parse* it to get a SidOk.
     // This is stupid and inefficient.
-    val nameNoDots = displayName.map(
-      _.replaceAll("\\.", "_")) // Could use replaceAllLiterally, Scala 2.9.1?
+    val nameNoDots = user.displayName.replaceAllLiterally(".", "_")
     val uid = "" // for now
     val useridNameDateRandom =
-         userId.getOrElse("") +"."+
-         nameNoDots.getOrElse("") +"."+
+         user.id +"."+
+         nameNoDots +"."+
          (new ju.Date).getTime +"."+
          (nextRandomString() take 10)
     val saltedHash = hashSha1Base64UrlSafe(
@@ -323,14 +313,6 @@ object Sid {
 
     check(value).asInstanceOf[SidOk]
   }
-
-  def newCookie(userId: Option[String], displayName: Option[String]): Cookie = {
-    val sidOk = create(userId, displayName)
-    createSessionIdCookie(sidOk.value)
-  }
-
-  def createSessionIdCookie(value: String) =
-    urlEncodeCookie(Sid.CookieName, value)
 
 }
 

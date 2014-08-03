@@ -198,8 +198,8 @@ object LoginWithOpenAuthController extends Controller {
 
     val loginGrant: LoginGrant = dao.saveLogin(loginAttempt)
 
-    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(Some(loginGrant))
-    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant)
+    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(loginGrant.user)
+    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant.user)
     val newSessionCookies = userConfigCookie :: sidAndXsrfCookies
 
     val response = request.cookies.get(ReturnToUrlCookieName) match {
