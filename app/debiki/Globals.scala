@@ -56,6 +56,11 @@ class Globals {
   }
 
 
+  val applicationSecret =
+    Play.configuration.getString("application.secret").getOrDie(
+      "application.secret config value missing [DwE75FX0]")
+
+
   def systemDao = state.systemDao
 
 

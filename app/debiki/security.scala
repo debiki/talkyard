@@ -268,7 +268,7 @@ object Sid {
   val CookieName = "dwCoSid"
 
   private val sidHashLength = 14
-  private val _secretSidSalt = "w4k2i2rK8409kk3xk"  // hardcoded, for now
+  private val secretSalt = debiki.Globals.applicationSecret
   private val _sidMaxMillis = 2 * 31 * 24 * 3600 * 1000  // two months
   //private val _sidExpireAgeSecs = 5 * 365 * 24 * 3600  // five years
 
@@ -277,7 +277,7 @@ object Sid {
     if (value.length <= sidHashLength) return SidBadFormat
     val (hash, dotUseridNameDateRandom) = value splitAt sidHashLength
     val realHash = hashSha1Base64UrlSafe(
-      _secretSidSalt + dotUseridNameDateRandom) take sidHashLength
+      s"$secretSalt$dotUseridNameDateRandom") take sidHashLength
     if (hash != realHash) return SidBadHash
     dotUseridNameDateRandom.drop(1).split('.') match {
       case Array(userId, nameNoDots, dateStr, randVal) =>
@@ -308,7 +308,7 @@ object Sid {
          (new ju.Date).getTime +"."+
          (nextRandomString() take 10)
     val saltedHash = hashSha1Base64UrlSafe(
-      _secretSidSalt +"."+ useridNameDateRandom) take sidHashLength
+      s"$secretSalt.$useridNameDateRandom") take sidHashLength
     val value = saltedHash +"."+ useridNameDateRandom
 
     check(value).asInstanceOf[SidOk]
