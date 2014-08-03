@@ -43,12 +43,6 @@ case class People(
     users = people.users ::: users)
 
 
-  def nilo(loginId: String): Option[NiLo] =
-    login(loginId).map(new NiLo(this, _))
-
-  def nilo_!(loginId: String): NiLo = new NiLo(this, login_!(loginId))
-
-
   // -------- Logins
 
   def login(id: String): Option[Login] =
@@ -77,22 +71,6 @@ case class People(
     "DwE730krq849", "User not found: "+ safed(id))
 
 }
-
-
-/**
- * A Nice Login: a Login, Identity an User tuple, and utility methods.
- */
-class NiLo(people: People, val login: Login) {
-
-  def user: Option[User] = people.user(identity_!.userId)
-  def user_! : User = people.user_!(identity_!.userId)
-  def identity_! : Identity = people.identity_!(login.identityRef.identityId)
-
-  def displayName = user_!.displayName
-  def email = user_!.email
-
-}
-
 
 
 case object UserIdData {

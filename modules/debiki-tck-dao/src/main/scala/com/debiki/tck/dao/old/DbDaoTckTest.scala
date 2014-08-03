@@ -467,20 +467,14 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "find the debate and the login and user again" in {
       dao.loadPageParts(testPage.id) must beLike {
-        case Some(d: PageParts) => {
-          ??? /* lookup by user id instead
-          d.people.nilo(ex1_rootPost.loginId getOrDie "DwE986fJF3") must beLike {
-            case Some(n: NiLo) =>  // COULD make separate NiLo test?
-              Some(n.login.id) must_== ex1_rootPost.loginId
-              n.login.identityRef.identityId must_== n.identity_!.id
-              n.identity_!.userId must_== n.user_!.id
-              n.user_! must matchUser(displayName = "Målligan",
-                                      email = "no@email.no")
+        case Some(page: PageParts) => {
+          page.people.user(ex1_rootPost.userId) must beLike {
+            case Some(user: User) =>
+              user.id must_== ex1_rootPost.userId
+              user must matchUser(displayName = "Målligan", email = "no@email.no")
           }
-          */
         }
       }
-      pending
     }
 
 
@@ -1499,10 +1493,6 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       lazy val badIp = Some("99.99.99.99")
       lazy val ip = Some("1.1.1.1")
 
-      def hasLoginsIdtysAndUsers(people: People) =
-        people.logins.nonEmpty && people.identities.nonEmpty &&
-        people.users.nonEmpty
-
       "from IP, find nothing" in {
         val (actions, people) =
             dao.loadRecentActionExcerpts(fromIp = badIp, limit = 5)
@@ -1566,7 +1556,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val (actions, people) = dao.loadRecentActionExcerpts(
           pathRanges = PathRanges(trees = Seq("/")), limit = 99)
         actions.length must be_>(0)
-        hasLoginsIdtysAndUsers(people) must beTrue
+        people.users.nonEmpty must beTrue
       }
 
       "by path, find something, in /folder/" in {
@@ -1574,7 +1564,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           pathRanges = PathRanges(folders = Seq(defaultPagePath.folder)),
           limit = 99)
         actions.length must be_>(0)
-        hasLoginsIdtysAndUsers(people) must beTrue
+        people.users.nonEmpty must beTrue
       }
 
       "by page id, find nothing, non existing page" in {
@@ -1590,7 +1580,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           pathRanges = PathRanges(pageIds = Seq(testPage.id)),
           limit = 99)
         actions.length must be_>(0)
-        hasLoginsIdtysAndUsers(people) must beTrue
+        people.users.nonEmpty must beTrue
       }
 
       "by page id, folder and tree, find something" in {
@@ -1601,7 +1591,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             trees = Seq("/")),  // everything
           limit = 99)
         actions.length must be_>(0)
-        hasLoginsIdtysAndUsers(people) must beTrue
+        people.users.nonEmpty must beTrue
       }
     }
 
@@ -1707,14 +1697,11 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "lookup OpenID identity, by login id" in {
-      ??? ; pending /* Load by user id instead
-      dao.loadIdtyDetailsAndUser(
-          forLoginId = exGmailLoginGrant.login.id) must beLike {
-        case Some((identity, user)) =>
-          identity must_== exGmailLoginGrant.identity
+      dao.loadUser(exGmailLoginGrant.user.id) must beLike {
+        case Some(user) =>
           user must_== exGmailLoginGrant.user
       }
-      */
+      ok
     }
 
     "lookup OpenID identity, by claimed id" in {
@@ -1761,9 +1748,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     } */
 
-    "load relevant OpenID logins, when loading a Page" in {
-      // Save a post, using the OpenID login. Load the page and verify
-      // the OpenID identity and user were loaded with the page.
+    "save a post as an OpenID user" in {
+      // Save a post, using the OpenID login.
       val newPost = RawPostAction.copyCreatePost(T.post,
         parentPostId = Some(PageParts.BodyId), text = "",
         userId = exOpenId_loginGrant.user.id)
@@ -1774,32 +1760,16 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           postId = savedPost.id
           savedPost must matchPost(newPost, id = postId)
       }
-
       dao.loadPageParts(testPage.id) must beLike {
         case Some(d: PageParts) =>
           d must havePostLike(newPost, id = postId)
-          ??? /* Lookup by user id instead
-          d.people.nilo(exOpenId_loginReq.login.id) must beLike {
-            case Some(n: NiLo) =>  // COULD make separate NiLo test?
-              n.login.id must_== exOpenId_loginReq.login.id
-              n.login.identityRef.identityId must_== n.identity_!.id
-              // The OpenID country attr was changed from Sweden to Norway.
-              val openIdIdentity = exOpenId_loginReq.identity.asInstanceOf[IdentityOpenId]
-              val loadedDetails = openIdIdentity.openIdDetails.copy(country = "Norway",
-                      // When a page is loaded, uninteresting OpenID details
-                      // are not loaded, to save bandwidth. Instead they
-                      // are set to "?".
-                      oidEndpoint = "?", oidVersion = "?", oidRealm = "?",
-                      oidClaimedId = "?", oidOpLocalId = "?")
-              n.identity_! must_== openIdIdentity.copy(openIdDetails = loadedDetails)
-              n.identity_!.asInstanceOf[IdentityOpenId].openIdDetails.firstName must_== "Laban"
-              n.identity_!.userId must_== n.user_!.id
-              // Identity data no longer copied to User.
-              //n.user_! must matchUser(displayName = "Laban",
-              //                        email = "oid@email.hmm")
-          } */
+          d.people.user(exOpenId_loginReq.user.id) must beLike {
+            case Some(user: User) =>
+              user must_== exOpenId_loginReq.user
+              ok
+          }
       }
-      pending
+      ok
     }
 
 
@@ -1911,13 +1881,11 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       // Lookup by provider + user id already tested implicitly, when logging in with
       // existing identity, above.
       "lookup a SecureSocialIdentity, by login id" in {
-        ??? ; pending /* Use user id instead
-        dao.loadIdtyDetailsAndUser(forLoginId = theChangedLoginGrant.login.id) must beLike {
-          case Some((identity, user)) =>
-            identity must_== theChangedLoginGrant.identity
+        dao.loadUser(theChangedLoginGrant.user.id) must beLike {
+          case Some(user) =>
             user must_== theChangedLoginGrant.user
         }
-        ok */
+        ok
       }
     }
 
@@ -2001,48 +1969,37 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val loginReq = T.guestLoginAttempt.copy(
         date = new ju.Date, email = emailEx_email, name = "Imail")
       val grant = dao.saveLogin(loginReq)
-      ??? ; pending /* load by user id instead
-      val Some((idty, user)) = dao.loadIdtyAndUser(forLoginId = grant.login.id)
+      val Some(user) = dao.loadUser(grant.user.id)
       user.emailNotfPrefs must_== EmailNotfPrefs.Unspecified
       emailEx_loginGrant = grant
-      ok */
+      ok
     }
 
     "configure email to IdentitySimple" in {
-      ??? ; pending /* Load by user id instead
-      def login = emailEx_loginGrant.login
       dao.configIdtySimple(
             ctime = new ju.Date, emailAddr = emailEx_email,
             emailNotfPrefs = EmailNotfPrefs.Receive)
-      val Some((idty, user)) = dao.loadIdtyAndUser(
-         forLoginId = emailEx_loginGrant.login.id)
+      val Some(user) = dao.loadUser(emailEx_loginGrant.user.id)
       user.emailNotfPrefs must_== EmailNotfPrefs.Receive
       emailEx_UnauUser = user  // save, to other test cases
       ok
-      */
     }
 
     "by default send no email to a new Role" in {
-      ??? ; pending /* Load by user id
-      val login = exOpenId_loginGrant.login
-      val Some((idty, user)) = dao.loadIdtyAndUser(forLoginId = login.id)
+      val Some(user) = dao.loadUser(exOpenId_loginGrant.user.id)
       user.emailNotfPrefs must_== EmailNotfPrefs.Unspecified
-      */
     }
 
     "configure email to a Role" in {
-      ??? ; pending /* Use user id not login
       // Somewhat dupl code, see `def testAdmin` test helper.
       val userToConfig = exOpenId_loginGrant.user
-      val login = exOpenId_loginGrant.login
-      dao.configRole(loginId = login.id,
+      dao.configRole(
          ctime = new ju.Date, roleId = userToConfig.id,
          emailNotfPrefs = Some(EmailNotfPrefs.Receive))
-      val Some((idty, userConfigured)) =
-         dao.loadIdtyAndUser(forLoginId = login.id)
+      val Some(userConfigured) = dao.loadUser(userToConfig.id)
       userConfigured.emailNotfPrefs must_== EmailNotfPrefs.Receive
       emailEx_OpenIdUser = userConfigured  // remember, to other test cases
-      ok */
+      ok
     }
 
 
@@ -2395,12 +2352,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val userToConfig = exOpenId_loginGrant.user
         dao.configRole(ctime = new ju.Date, roleId = userToConfig.id,
           isAdmin = Some(makeAdmin), isOwner = makeOwner)
-        ??? ; pending /* Use user id instead
-        val Some((idty, userConfigured)) = dao.loadIdtyAndUser(forLoginId = login.id)
+        val Some(userConfigured) = dao.loadUser(userToConfig.id)
         userConfigured.isAdmin must_== makeAdmin
         emailEx_OpenIdUser = userConfigured  // remember, to other test cases
         ok
-        */
       }
 
       "make a Role an administrator" in {
