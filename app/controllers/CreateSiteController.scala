@@ -171,9 +171,6 @@ object CreateSiteController extends mvc.Controller {
 
     // SECURITY should whitelist allowed OpenID and OAuth providers.
 
-    if (identity.isInstanceOf[IdentitySimple])
-      throwForbidden("DwE4GEI2", "Guests may not create websites.")
-
     val result =
       SiteCreator.createWebsite(
         newSiteType,

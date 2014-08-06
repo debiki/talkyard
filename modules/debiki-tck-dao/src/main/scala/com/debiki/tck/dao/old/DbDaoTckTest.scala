@@ -253,7 +253,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     lazy val ex1_postText = "postText0-3kcvxts34wr"
     var testPage: PageNoPath = null
-    var loginGrant: LoginGrant = null
+    var guestUser: User = null
 
 
     // -------- Create tenant
@@ -339,37 +339,32 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "save an IdentitySimple login" in {
-      loginGrant = dao.saveLogin(T.guestLoginAttempt)
-      loginGrant.user must matchUser(
+      guestUser = dao.loginAsGuest(T.guestLoginAttempt).user
+      guestUser must matchUser(
           displayName = "Målligan", email = "no@email.no")
-      loginGrant.user.id must startWith("-") // dummy user ids start with -
+      guestUser.id must startWith("-") // dummy user ids start with -
     }
 
     "list simple user" in {
-      dao.listUsers(UserQuery()) must_== List((loginGrant.user, List("Guest")))
+      dao.listUsers(UserQuery()) must_== List((guestUser, List("Guest")))
     }
 
-    lazy val globalUserId = loginGrant.user.id
+    lazy val globalUserId = guestUser.id
 
     "reuse the IdentitySimple and User" in {
       val loginReq = T.guestLoginAttempt.copy(date = new ju.Date) // same guest
-      var grant = dao.saveLogin(loginReq)
-      grant.identity must_== loginGrant.identity  // same identity, since same guest data
-      grant.user must matchUser(loginGrant.user)  // same user
+      val guest2 = dao.loginAsGuest(loginReq).user
+      guest2 must_== guestUser
     }
 
     "create a new dummy User for an IdentitySimple with different website" in {
       val loginReq = T.guestLoginAttempt.copy(date = new ju.Date, website = "weirdplace")
-      var grant = dao.saveLogin(loginReq)
-      // New identity because website changed.  COULD: create matchIdentity()
-      val si = grant.identity.asInstanceOf[IdentitySimple]
-      si.id must_!= loginGrant.identity.id
-      si.name must_== "Målligan"
-      si.website must_== "weirdplace"
-      // New user too. A new dummy user is created for each IdentitySimple.
-      grant.user.id must_!= loginGrant.user.id
-      grant.user must matchUser(loginGrant.user, id = grant.user.id,
-                                website = "weirdplace")
+      val guest2 = dao.loginAsGuest(loginReq).user
+      // New user because website changed.  COULD: create matchIdentity()
+      guest2.id must_!= guestUser.id
+      guest2.displayName must_== "Målligan"
+      guest2.website must_== "weirdplace"
+      guest2 must matchUser(guestUser, id = guest2.id, website = "weirdplace")
     }
 
     //"have exactly one user" in {  // no, 2??
@@ -377,35 +372,24 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "create a new User for an IdentitySimple with different email" in {
       val loginAttempt = T.guestLoginAttempt.copy(date = new ju.Date, email = "other@email.yes")
-      var grant = dao.saveLogin(loginAttempt)
-      // New identity because email changed.
-      val si = grant.identity.asInstanceOf[IdentitySimple]
-      si.id must_!= loginGrant.identity.id
-      si.name must_== "Målligan"
-      si.email must_== "other@email.yes"
+      val guest2 = dao.loginAsGuest(loginAttempt).user
+      // New user because email changed.
+      guest2.id must_!= guestUser.id
+      guest2.displayName must_== "Målligan"
+      guest2.email must_== "other@email.yes"
       // New user because email has changed.
       // (For an IdentitySimple, email+name identifies the user.)
-      grant.user.id must_!= loginGrant.user.id
-      grant.user must matchUser(loginGrant.user, id = grant.user.id,
-                                email = "other@email.yes")
+      guest2 must matchUser(guestUser, id = guest2.id, email = "other@email.yes")
      }
 
     "create a new User for an IdentitySimple with different name" in {
       val loginAttempt = T.guestLoginAttempt.copy(date = new ju.Date, name = "Spöket Laban")
-      var grant = dao.saveLogin(loginAttempt)
-      // New identity because name changed.
-      val si = grant.identity.asInstanceOf[IdentitySimple]
-      si.id must_!= loginGrant.identity.id
-      si.name must_== "Spöket Laban"
-      si.email must_== "no@email.no"
-      // New user because email has changed.
-      // (For an IdentitySimple, email+name identifies the user.)
-      grant.user.id must_!= loginGrant.user.id
-      //grant.user must matchUser(loginGrant.user, id = grant.user.id,
-      // why this ok?
-      grant.user must matchUser(loginGrant.user, id = grant.user.id,
-        //email = "other@email.yes")
-        displayName = "Spöket Laban")
+      val guest2 = dao.loginAsGuest(loginAttempt).user
+      // New user because name changed.
+      guest2.id must_!= guestUser.id
+      guest2.displayName must_== "Spöket Laban"
+      guest2.email must_== "no@email.no"
+      guest2 must matchUser(guestUser, id = guest2.id, displayName = "Spöket Laban")
     }
 
     // "create a new User for an IdentitySimple, for another tenant" in {
@@ -439,15 +423,15 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val debateNoId = PageParts(guid = "?", rawActions = ex1_rootPost::Nil)
       val page = dao.createPage(Page.newPage(
         PageRole.Generic, defaultPagePath, debateNoId, publishDirectly = true,
-        author = loginGrant.user))
+        author = guestUser))
       val actions = page.parts
       testPage = page.withoutPath
       actions.postCount must_== 1
       actions.pageId must not(beEmpty)
       actions.pageId must not(be("?"))
       actions must havePostLike(ex1_rootPost)
-      page.meta.cachedAuthorDispName must_== loginGrant.user.displayName
-      page.meta.cachedAuthorUserId must_== loginGrant.user.id
+      page.meta.cachedAuthorDispName must_== guestUser.displayName
+      page.meta.cachedAuthorUserId must_== guestUser.id
       page.meta.cachedNumPosters must_== 0
       page.meta.cachedNumActions must_== 1
       page.meta.cachedNumPostsDeleted must_== 0
@@ -556,7 +540,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "create a Blog" in {
         val pageNoId = Page(
           PageMeta.forNewPage(
-            PageRole.Blog, loginGrant.user, PageParts("?"), now, url = Some(blogUrl)),
+            PageRole.Blog, guestUser, PageParts("?"), now, url = Some(blogUrl)),
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-main"),
           ancestorIdsParentFirst = Nil,
@@ -594,7 +578,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "create a child BlogPost" in {
         val pageNoId = Page(
-          PageMeta.forNewPage(PageRole.BlogPost, loginGrant.user, PageParts("?"), now,
+          PageMeta.forNewPage(PageRole.BlogPost, guestUser, PageParts("?"), now,
             parentPageId = Some(blogMainPageId)),
           defaultPagePath.copy(
             showId = true, pageSlug = "role-test-blog-article"),
@@ -898,7 +882,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       def forumPage(pageRole: PageRole, parentPageId: Option[String] = None): Page =
         Page(
-          PageMeta.forNewPage(pageRole, loginGrant.user, PageParts("?"), now, parentPageId),
+          PageMeta.forNewPage(pageRole, guestUser, PageParts("?"), now, parentPageId),
           defaultPagePath.copy(folder = "/settings-forum/", showId = true,
             pageSlug = pageRole.toString),
           ancestorIdsParentFirst = parentPageId.toList,
@@ -1030,7 +1014,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       def newPage(pageRole: PageRole, ancestorPageIds: List[PageId], pageSlug: String,
             posts: RawPostAction[PAP.CreatePost]*) =
         Page(
-          PageMeta.forNewPage(pageRole, loginGrant.user, PageParts("?"), now,
+          PageMeta.forNewPage(pageRole, guestUser, PageParts("?"), now,
             parentPageId = ancestorPageIds.headOption),
           defaultPagePath.copy(folder = "/search-forum/", showId = true, pageSlug = pageSlug),
           ancestorIdsParentFirst = ancestorPageIds,
@@ -1265,7 +1249,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       parentPostId = Some(PageParts.BodyId), text = "", userId = globalUserId)
     var ex2_id = PageParts.NoId
     "save an empty root post child post" in {
-      testPage += loginGrant.user
+      testPage += guestUser
       dao.savePageActions(testPage, List(ex2_emptyPost)) must beLike {
         case (_, List(p: RawPostAction[PAP.CreatePost])) =>
           ex2_id = p.id
@@ -1958,7 +1942,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Email
 
-    var emailEx_loginGrant: LoginGrant = null
+    var emailGuestUser: User = null
     var emailEx_email = "Imail@ex.com"
 
     // Test users, *after* they've been configured to receive email.
@@ -1968,10 +1952,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "by default send no email to a new IdentitySimple" in {
       val loginReq = T.guestLoginAttempt.copy(
         date = new ju.Date, email = emailEx_email, name = "Imail")
-      val grant = dao.saveLogin(loginReq)
-      val Some(user) = dao.loadUser(grant.user.id)
-      user.emailNotfPrefs must_== EmailNotfPrefs.Unspecified
-      emailEx_loginGrant = grant
+      emailGuestUser = dao.loginAsGuest(loginReq).user
+      val Some(loadedGuest) = dao.loadUser(emailGuestUser.id)
+      loadedGuest.emailNotfPrefs must_== EmailNotfPrefs.Unspecified
       ok
     }
 
@@ -1979,7 +1962,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       dao.configIdtySimple(
             ctime = new ju.Date, emailAddr = emailEx_email,
             emailNotfPrefs = EmailNotfPrefs.Receive)
-      val Some(user) = dao.loadUser(emailEx_loginGrant.user.id)
+      val Some(user) = dao.loadUser(emailGuestUser.id)
       user.emailNotfPrefs must_== EmailNotfPrefs.Receive
       emailEx_UnauUser = user  // save, to other test cases
       ok
@@ -2295,7 +2278,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "login by email id" >> {
 
-      lazy val theGuestId = loginGrant.user.id
+      lazy val theGuestId = guestUser.id
       lazy val theRoleId = exOpenId_loginGrant.user.id
 
       lazy val emailToSendToGuest = Email(
@@ -2605,8 +2588,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case PagePath.Parsed.Good(path) => path.copy(showId = showId)
           case x => throwFailure(s"Test broken, bad path: $x")
         }
-      dao.createPage(Page.newEmptyPage(PageRole.Generic, pagePath,
-        author = loginGrant.user))
+      dao.createPage(Page.newEmptyPage(PageRole.Generic, pagePath, author = guestUser))
     }
 
 

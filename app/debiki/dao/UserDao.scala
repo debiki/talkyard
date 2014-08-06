@@ -38,6 +38,10 @@ trait UserDao {
     siteDbDao.changePassword(identity, newPasswordSaltHash)
 
 
+  def loginAsGuest(loginAttempt: GuestLoginAttempt): User =
+    siteDbDao.loginAsGuest(loginAttempt).user
+
+
   def saveLogin(loginAttempt: LoginAttempt): LoginGrant =
     siteDbDao.saveLogin(loginAttempt)
 
@@ -109,6 +113,15 @@ trait UserDao {
 
 trait CachingUserDao extends UserDao {
   self: CachingSiteDao =>
+
+
+  override def loginAsGuest(loginAttempt: GuestLoginAttempt): User = {
+    val user = super.loginAsGuest(loginAttempt)
+    putInCache(
+      key(user.id),
+      CacheValueIgnoreVersion(user))
+    user
+  }
 
 
   override def saveLogin(loginAttempt: LoginAttempt): LoginGrant = {

@@ -129,9 +129,6 @@ object CreateEmbeddedSiteController extends mvc.Controller {
 
     // SECURITY should whitelist allowed OpenID and OAuth providers.
 
-    if (identity.isInstanceOf[IdentitySimple])
-      throwForbidden("DwE4GEI2", "Guests may not create websites.")
-
     val (site, owner) =
       SiteCreator.createWebsite(
         siteType = SiteCreator.NewSiteType.EmbeddedComments,

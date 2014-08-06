@@ -177,6 +177,8 @@ case class User (
   checkId(id, "DwE02k125r")
   def isAuthenticated = isRoleId(id) && !id.startsWith("?")
 
+  def isGuest = User.isGuestId(id)
+
   /* COULD add:
     def roleId: Option[String] =
     if (isRoleId(userId)) Some(userId) else None
@@ -211,7 +213,9 @@ case class GuestLoginAttempt(
   name: String,
   email: String = "",
   location: String = "",
-  website: String = "") extends LoginAttempt
+  website: String = "")
+
+case class GuestLoginResult(user: User, isNewUser: Boolean)
 
 
 case class PasswordLoginAttempt(
@@ -294,23 +298,6 @@ case class IdentityEmailId(
 ) extends Identity {
   // Either only email id known, or all info known.
   require((userId startsWith "?") == emailSent.isEmpty)
-}
-
-
-case class IdentitySimple(
-  id: String,
-  override val userId: String,
-  name: String,  // COULD reject weird chars, e.g. '?' or '|'
-                 // Or fix later (and replace any weird chars already in db)
-  email: String = "",
-  location: String = "",
-  website: String = ""
-  // COULD include signed cookie random value, so we knows if is same browser.
-) extends Identity {
-  def displayName = name
-  // Cannot check for e.g. weird name or email. That could prevent
-  // loading of data from database, after changing the weirdness rules.
-  // Don't:  require(! (User nameIsWeird name))
 }
 
 

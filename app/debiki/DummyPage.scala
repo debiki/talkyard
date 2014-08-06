@@ -64,11 +64,6 @@ object DummyPage {
     email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive, country = "",
     website = "", isAdmin = false, isOwner = false)
 
-
-  val DummyAuthorIdty = IdentitySimple(id = "2", userId = DummyAuthorUser.id,
-    name = "(dummy author)", email = "", location = "", website = "")
-
-
   val DummyAuthorIp = "0.0.0.0"
 
   val DummyAuthorIdData = UserIdData(

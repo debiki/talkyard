@@ -42,7 +42,6 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
     var passwordIdentity: PasswordIdentity = null
     var passwordRole: User = null
     var passwordLoginGrant: LoginGrant = null
-    var guestLoginGrant: LoginGrant = null
     var guestUser: User = null
 
     "create a password role, find info but no actions" in {
@@ -74,15 +73,14 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
     }
 
     "login as guest, find info but no actions" in {
-      guestLoginGrant = siteUtils.loginAsGuest(name = "Test Guest")
-      guestUser = guestLoginGrant.user
+      guestUser = siteUtils.loginAsGuest(name = "Test Guest")
       siteUtils.dao.listUserActions(guestUser.id).length mustBe 0
       siteUtils.dao.loadUserInfoAndStats(guestUser.id) mustBe Some(
         UserInfoAndStats(info = guestUser, stats = UserStats.Zero))
     }
 
     "add a comment, find one action" in {
-      val (page2, comment2) = siteUtils.addComment(guestLoginGrant, page, CommentText)
+      val (page2, comment2) = siteUtils.addComment(guestUser, page, CommentText)
       page = siteUtils.review(passwordLoginGrant, page2, comment2.id, Approval.AuthoritativeUser)
       comment = page.parts.getPost(comment2.id) getOrElse fail("Comment not found")
       siteUtils.dao.loadUserInfoAndStats(guestUser.id) mustBe Some(

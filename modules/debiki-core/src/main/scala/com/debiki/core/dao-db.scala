@@ -100,6 +100,10 @@ abstract class SiteDbDao {
 
   // ----- Login
 
+  /** Logs in as guest, currently always succeeds (unless out of quota).
+    */
+  def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
+
   /**
    * Assigns ids to the login request, saves it, finds or creates a user
    * for the specified Identity, and returns everything with ids filled in.
@@ -513,6 +517,16 @@ class ChargingSiteDbDao(
 
 
   // ----- Login, logout
+
+  def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult = {
+    _ensureHasQuotaFor(ResUsg.forStoring(loginAttempt), mayPilfer = false)
+    val result = _spi.loginAsGuest(loginAttempt)
+    if (result.isNewUser) {
+      _chargeFor(ResUsg.forStoring(user = result.user))
+    }
+    result
+  }
+
 
   def saveLogin(loginAttempt: LoginAttempt): LoginGrant = {
     // Allow people to login via email and unsubscribe, even if over quota.
