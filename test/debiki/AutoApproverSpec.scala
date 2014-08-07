@@ -54,15 +54,6 @@ class AutoApproverSpec extends Specification with Mockito {
     isAdmin = false,
     isOwner = false)
 
-  val guestIdty = IdentitySimple(
-    id = guestUser.id drop 1, // drop "-"
-    userId = guestUser.id,
-    name = guestUser.displayName,
-    email = guestUser.email,
-    location = guestUser.country,
-    website = guestUser.website)
-
-
   val passwordUser = User(
     id = "pwdusr",
     displayName = "Password User Name",
@@ -112,7 +103,7 @@ class AutoApproverSpec extends Specification with Mockito {
     publishDirectly = true).copy(pageExists = true)
 
 
-  def pageReq(user: User, identity: Identity)(dao: SiteDao) =
+  def pageReq(user: User)(dao: SiteDao) =
     PageRequest[Unit](
       sid = null,
       xsrfToken = null,
@@ -126,7 +117,7 @@ class AutoApproverSpec extends Specification with Mockito {
       request = PlayReq)()
 
   //def pageReqOpenId = pageReq(passwordUser, passwordIdentity) _
-  def pageReqGuest = pageReq(guestUser, guestIdty) _
+  def pageReqGuest = pageReq(guestUser) _
 
 
   val quotaConsumers = QuotaConsumers(

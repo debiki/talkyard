@@ -108,12 +108,12 @@ class QuotaChargerSpec
 
       "charge an IP (a guest user with fix IP)" in {
         val siteAndIp = SiteAndIp(site.id, nextIp())
-        val loginGrant = loginNewGuestUser("GuestTest", siteAndIp)
+        val guestUser = loginNewGuestUser("GuestTest", siteAndIp)
         val dao = tenantDao(site.id, nextIp())
         loopUntilDeclined[QuotaConsumer.PerTenantIp](min = 5, max = 30) {
           // We're charging the same site-id and IP all the time, so the IP
           // will run out of quota, for `site.id`.
-          createPage(loginGrant.user, dao)
+          createPage(guestUser, dao)
         }
       }
 
@@ -160,9 +160,9 @@ class QuotaChargerSpec
           // are somewhat comparable. — Quota for one login grant per 10 pages
           // should be negligible?
           val siteAndIp = SiteAndIp(site.id, nextIp())
-          val loginGrant = loginNewGuestUser("GuestTest", siteAndIp)
+          val guestUser = loginNewGuestUser("GuestTest", siteAndIp)
           for (i <- 1 to pagesPerLap)
-            createPage(loginGrant.user, tenantDao(siteAndIp))
+            createPage(guestUser, tenantDao(siteAndIp))
         }
       }
 
@@ -183,13 +183,13 @@ class QuotaChargerSpec
           yield {
             val site = createSite(fromIp = nextIp())
             val guestDao = siteDao(site.id, fixIp)
-            val guestLoginGrant = loginNewGuestUser("GuestTest", SiteAndIp(site.id, fixIp))
-            (site, guestLoginGrant, guestDao)
+            val guestUser = loginNewGuestUser("GuestTest", SiteAndIp(site.id, fixIp))
+            (site, guestUser, guestDao)
           }
 
         loopUntilDeclined[QuotaConsumer.GlobalIp](min = 3, max = 30, perLap = numSites) {
           var siteIds = Set[String]()
-          for ((site, guestLoginGrant, guestDao) <- siteGuestDaos) {
+          for ((site, guestUser, guestDao) <- siteGuestDaos) {
 
             // Test test suite.
             if (siteIds.contains(guestDao.siteId))
@@ -197,7 +197,7 @@ class QuotaChargerSpec
             siteIds += guestDao.siteId
 
             // Test quota charger.
-            createPage(guestLoginGrant.user, guestDao)
+            createPage(guestUser, guestDao)
           }
         }
       }
@@ -360,12 +360,12 @@ class QuotaChargerSpec
   }
 
 
-  def loginNewGuestUser(namePrefix: String, siteAndIp: SiteAndIp): LoginGrant = {
+  def loginNewGuestUser(namePrefix: String, siteAndIp: SiteAndIp): User = {
     nextGuestUserNo += 1
     val loginAttempt = GuestLoginAttempt(ip = siteAndIp.ip, date = new ju.Date,
         name = s"$namePrefix-GuestUser$nextGuestUserNo",
         email = s"guest-email-$nextGuestUserNo@example.com", location = "", website = "")
-    tenantDao(siteAndIp).tryLogin(loginAttempt)
+    tenantDao(siteAndIp).loginAsGuest(loginAttempt)
   }
 
 
