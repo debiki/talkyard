@@ -196,7 +196,18 @@ object LoginWithOpenAuthController extends Controller {
     val siteId = debiki.DebikiHttp.lookupTenantIdOrThrow(originOf(request), debiki.Globals.systemDao)
     val dao = debiki.Globals.siteDao(siteId, ip = request.remoteAddress)
 
-    val loginGrant: LoginGrant = dao.tryLogin(loginAttempt)
+    // COULD let tryLogin() return a LoginResult and use pattern matching, not exceptions.
+    val loginGrant: LoginGrant =
+      try {
+        dao.tryLogin(loginAttempt)
+      }
+      catch {
+        case ex: DbDao.IdentityNotFoundException =>
+          dao.createUserAndLogin(NewUserData(
+            displayName = oauthDetails.displayName,
+            email = oauthDetails.email getOrDie "DwE4PGV03",
+            identityData = oauthDetails))
+      }
 
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(loginGrant.user)
     val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant.user)

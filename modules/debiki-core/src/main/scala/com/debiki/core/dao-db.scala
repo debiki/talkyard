@@ -277,6 +277,8 @@ abstract class SiteDbDao {
 
   // ----- Users and permissions
 
+  def createUserAndLogin(newUserData: NewUserData): LoginGrant
+
   def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User)
         : (PasswordIdentity, User)
 
@@ -710,6 +712,13 @@ class ChargingSiteDbDao(
 
 
   // ----- Users and permissions
+
+  def createUserAndLogin(newUserData: NewUserData): LoginGrant = {
+    val resUsg = ResourceUse(numIdsAu = 1, numRoles = 1)
+    _chargeFor(resUsg, mayPilfer = false)
+    _spi.createUserAndLogin(newUserData)
+  }
+
 
   def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User)
         : (PasswordIdentity, User) = {

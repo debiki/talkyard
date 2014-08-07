@@ -46,6 +46,24 @@ case class People(users: List[User] = Nil) {
 }
 
 
+case class NewUserData(
+  displayName: String,
+  email: String,
+  identityData: OpenAuthDetails) {
+
+  def userNoId = User(
+    id = "?",
+    displayName = displayName,
+    email = email,
+    emailNotfPrefs = EmailNotfPrefs.Unspecified,
+    country = "",
+    website = "",
+    isAdmin = false,
+    isOwner = false)
+
+}
+
+
 case object UserIdData {
 
   /** For test suites. */

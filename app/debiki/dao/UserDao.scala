@@ -30,6 +30,10 @@ trait UserDao {
   self: SiteDao =>
 
 
+  def createUserAndLogin(newUserData: NewUserData): LoginGrant =
+    siteDbDao.createUserAndLogin(newUserData)
+
+
   def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User): (Identity, User) =
     siteDbDao.createPasswordIdentityAndRole(identity, user)
 
