@@ -213,7 +213,7 @@ object LoginWithOpenIdController extends mvc.Controller {
         email = emailOpt getOrElse "",
         country = countryOpt getOrElse ""))
 
-    val loginGrant = Globals.siteDao(tenantId, ip = addr).saveLogin(loginAttempt)
+    val loginGrant = Globals.siteDao(tenantId, ip = addr).tryLogin(loginAttempt)
 
     // ----- Reply, with session cookies
 

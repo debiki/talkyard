@@ -356,7 +356,7 @@ class QuotaChargerSpec
       oidOpLocalId = s"provider.example.com/local/id/$nextOpenIdUserNo",
       firstName = s"$namePrefix-OpenIdUser$nextOpenIdUserNo",
       email = Some(s"openid-user-$nextOpenIdUserNo@example.com"), country = "Sweden"))
-    tenantDao(siteAndIp).saveLogin(loginAttempt)
+    tenantDao(siteAndIp).tryLogin(loginAttempt)
   }
 
 
@@ -365,7 +365,7 @@ class QuotaChargerSpec
     val loginAttempt = GuestLoginAttempt(ip = siteAndIp.ip, date = new ju.Date,
         name = s"$namePrefix-GuestUser$nextGuestUserNo",
         email = s"guest-email-$nextGuestUserNo@example.com", location = "", website = "")
-    tenantDao(siteAndIp).saveLogin(loginAttempt)
+    tenantDao(siteAndIp).tryLogin(loginAttempt)
   }
 
 

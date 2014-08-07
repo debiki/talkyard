@@ -42,8 +42,8 @@ trait UserDao {
     siteDbDao.loginAsGuest(loginAttempt).user
 
 
-  def saveLogin(loginAttempt: LoginAttempt): LoginGrant =
-    siteDbDao.saveLogin(loginAttempt)
+  def tryLogin(loginAttempt: LoginAttempt): LoginGrant =
+    siteDbDao.tryLogin(loginAttempt)
 
 
   /* TODO [nologin] Would be good if could remove from cache?
@@ -124,10 +124,10 @@ trait CachingUserDao extends UserDao {
   }
 
 
-  override def saveLogin(loginAttempt: LoginAttempt): LoginGrant = {
+  override def tryLogin(loginAttempt: LoginAttempt): LoginGrant = {
     // Don't save any site cache version, because user specific data doesn't change
     // when site specific data changes.
-    val loginGrant = super.saveLogin(loginAttempt)
+    val loginGrant = super.tryLogin(loginAttempt)
     putInCache(
       key(loginGrant.user.id),
       CacheValueIgnoreVersion(loginGrant.user))

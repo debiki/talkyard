@@ -84,7 +84,7 @@ object UnsubscriptionController extends mvc.Controller {
     val dao = Globals.siteDao(tenantId, ip = realOrFakeIpOf(request))
 
     val loginGrant =
-      try dao.saveLogin(loginAttempt)
+      try dao.tryLogin(loginAttempt)
       catch {
         case ex: DbDao.EmailNotFoundException =>
           throwForbidden("DwE530KI37", "Email not found")

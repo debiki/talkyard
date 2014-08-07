@@ -74,7 +74,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
   def login(identity: Identity, ip: String = "0.0.1.0"): LoginGrant = {
     identity match {
       case passwordIdentity: PasswordIdentity =>
-        dao.saveLogin(PasswordLoginAttempt(
+        dao.tryLogin(PasswordLoginAttempt(
           ip = ip, date = new ju.Date(),
           email = passwordIdentity.email, password = defaultPassword))
       case _ =>

@@ -95,7 +95,7 @@ trait StuffCreator {
       oidClaimedId = "StuffCreatorClaimedId", oidOpLocalId = "StuffCreatorLocalId",
       firstName = "Stuff-Creator", email = Some("stuff-creator@example.com"), country = ""))
 
-    val loginGrant = firstSiteDao.saveLogin(loginAttempt)
+    val loginGrant = firstSiteDao.tryLogin(loginAttempt)
 
     val postTemplate = RawPostAction.forNewPost(
       id = UnassignedId, parentPostId = None, creationDati = new ju.Date,

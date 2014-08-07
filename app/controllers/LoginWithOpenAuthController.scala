@@ -196,7 +196,7 @@ object LoginWithOpenAuthController extends Controller {
     val siteId = debiki.DebikiHttp.lookupTenantIdOrThrow(originOf(request), debiki.Globals.systemDao)
     val dao = debiki.Globals.siteDao(siteId, ip = request.remoteAddress)
 
-    val loginGrant: LoginGrant = dao.saveLogin(loginAttempt)
+    val loginGrant: LoginGrant = dao.tryLogin(loginAttempt)
 
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(loginGrant.user)
     val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant.user)

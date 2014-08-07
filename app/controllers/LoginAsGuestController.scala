@@ -102,7 +102,7 @@ object LoginAsGuestController extends mvc.Controller {
       location = guestIdentity.location,
       website = guestIdentity.website)
 
-    val loginGrant = pageReq.dao.saveLogin(loginAttempt)
+    val loginGrant = pageReq.dao.tryLogin(loginAttempt)
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
 
     (loginGrant, sidAndXsrfCookies)

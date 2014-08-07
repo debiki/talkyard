@@ -110,7 +110,7 @@ abstract class SiteDbDao {
    * Also, if the Identity does not already exist in the db, assigns it an ID
    * and saves it.
    */
-  def saveLogin(loginAttempt: LoginAttempt): LoginGrant
+  def tryLogin(loginAttempt: LoginAttempt): LoginGrant
 
 
   // ----- New pages, page meta
@@ -528,17 +528,17 @@ class ChargingSiteDbDao(
   }
 
 
-  def saveLogin(loginAttempt: LoginAttempt): LoginGrant = {
+  def tryLogin(loginAttempt: LoginAttempt): LoginGrant = {
     // Allow people to login via email and unsubscribe, even if over quota.
     val mayPilfer = loginAttempt.isInstanceOf[EmailLoginAttempt]
 
     // If we don't ensure there's enough quota for the db transaction,
-    // Mallory could call saveLogin, when almost out of quota, and
-    // saveLogin would write to the db and then rollback, when over quota
+    // Mallory could call tryLogin, when almost out of quota, and
+    // tryLogin would write to the db and then rollback, when over quota
     // -- a DoS attack would be possible.
     _ensureHasQuotaFor(ResUsg.forStoring(loginAttempt), mayPilfer = mayPilfer)
 
-    val loginGrant = _spi.saveLogin(loginAttempt)
+    val loginGrant = _spi.tryLogin(loginAttempt)
 
     val resUsg = ResUsg.forStoring(
        identity = loginGrant.isNewIdentity ? loginGrant.identity | null,

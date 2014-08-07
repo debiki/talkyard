@@ -66,7 +66,7 @@ object LoginWithPasswordController extends mvc.Controller {
     def deny() = throwForbidden("DwE403GJk9", "Bad username or password")
 
     val loginGrant: LoginGrant =
-      try dao.saveLogin(loginAttempt)
+      try dao.tryLogin(loginAttempt)
       catch {
         case DbDao.BadPasswordException => deny()
         case ex: DbDao.IdentityNotFoundException => deny()

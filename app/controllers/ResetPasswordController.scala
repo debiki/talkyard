@@ -163,7 +163,7 @@ object ResetPasswordController extends mvc.Controller {
       ip = request.ip, date = new ju.Date, emailId = resetPasswordEmailId)
     // TODO: Check email type !
     val loginGrant =
-      try request.dao.saveLogin(loginAttempt)
+      try request.dao.tryLogin(loginAttempt)
       catch {
         case ex: DbDao.EmailNotFoundException =>
           throwForbidden("DwE7PWE7", "Email not found")
