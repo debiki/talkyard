@@ -70,6 +70,11 @@ d.i.createLoginPopup = function(anyUrl) {
     } else if (result.status === 'LoginFailed') {
       console.debug('User closed popup window?');
       return;
+    } else if (result.status === 'CreateUser') {
+      $('#dw-fs-openid-login').dialog('close');
+      $('#dw-lgi').dialog('close');
+      d.i.showCreateUserDialog(result);
+      return;
     } else if (result.status !== 'LoginOk') {
       errorMsg = 'Unknown login problem [error DwE3kirsrts12d]';
     } else {

@@ -126,6 +126,7 @@ var debikiDesktopFiles = [
       'target/client/shared/login-dialog/login-password.js',
       'target/client/shared/login-dialog/login-openid.js',
       'target/client/shared/login-dialog/login-openid-dialog-html.js',
+      'target/client/shared/login-dialog/create-user-dialog.js',
       'target/client/app/actions/edit/markup.js',
       'target/client/page/scripts/debiki-merge-changes.js',
       //'target/client/app/posts/monitor-reading-progress-unused.js',
@@ -201,6 +202,7 @@ var debikiTouchFiles = [
       'target/client/shared/login-dialog/login-password.js',
       'target/client/shared/login-dialog/login-openid.js',
       'target/client/shared/login-dialog/login-openid-dialog-html.js',
+      'target/client/shared/login-dialog/create-user-dialog.js',
       'target/client/app/actions/edit/markup.js',
       'target/client/page/scripts/debiki-merge-changes.js',
       //'target/client/app/posts/monitor-reading-progress-unused.js',
@@ -236,7 +238,8 @@ var loginDialogFiles = [
       'target/client/shared/login-dialog/login-guest.js',
       'target/client/shared/login-dialog/login-password.js',
       'target/client/shared/login-dialog/login-openid.js',
-      'target/client/shared/login-dialog/login-openid-dialog-html.js'];
+      'target/client/shared/login-dialog/login-openid-dialog-html.js',
+      'target/client/shared/login-dialog/create-user-dialog.js'];
 
 
 // For both touch devices and desktops.

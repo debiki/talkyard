@@ -17,6 +17,7 @@
 
 package controllers
 
+import actions.ApiActions.PostJsonAction
 import actions.SafeActions.ExceptionAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -27,6 +28,7 @@ import com.mohiva.play.silhouette.core.providers.oauth2._
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.core.{exceptions => siex}
 import debiki.DebikiHttp.throwForbidden
+import debiki.DebikiHttp.isAjax
 import java.{util => ju}
 import play.{api => p}
 import play.api.mvc._
@@ -34,6 +36,7 @@ import play.api.mvc.BodyParsers.parse.empty
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
+import requests.JsonPostRequest
 import scala.concurrent.Future
 
 
@@ -121,7 +124,7 @@ object LoginWithOpenAuthController extends Controller {
       case Left(result) =>
         Future.successful(result)
       case Right(profile: provider.Profile) =>
-        loginAndRedirect(request, profile)
+        handleAuthenticationData(request, profile)
     }.recoverWith({
       case e: siex.AccessDeniedException =>
         Future.successful(Results.Forbidden(s"${e.getMessage} [DwE39DG42]"))
@@ -131,7 +134,7 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  private def loginAndRedirect(request: Request[Unit], profile: CommonSocialProfile[_])
+  private def handleAuthenticationData(request: Request[Unit], profile: CommonSocialProfile[_])
         : Future[Result] = {
     p.Logger.debug(s"OAuth data received at ${originOf(request)}: $profile")
 
@@ -173,14 +176,14 @@ object LoginWithOpenAuthController extends Controller {
         Redirect(continueAtOriginalSiteUrl)
           .discardingCookies(DiscardingCookie(ReturnToSiteCookieName))
       case None =>
-        redirectToLocalUrl(request, anyOauthDetails = Some(oauthDetails))
+        login(request, anyOauthDetails = Some(oauthDetails))
     }
 
     Future.successful(result)
   }
 
 
-  private def redirectToLocalUrl(request: Request[_], oauthDetailsCacheKey: Option[String] = None,
+  private def login(request: Request[_], oauthDetailsCacheKey: Option[String] = None,
         anyOauthDetails: Option[OpenAuthDetails] = None): Result = {
 
     def cacheKey = oauthDetailsCacheKey.getOrDie("DwE90RW215")
@@ -193,36 +196,83 @@ object LoginWithOpenAuthController extends Controller {
     val loginAttempt = OpenAuthLoginAttempt(
       ip = request.remoteAddress, date = new ju.Date, oauthDetails)
 
-    val siteId = debiki.DebikiHttp.lookupTenantIdOrThrow(originOf(request), debiki.Globals.systemDao)
-    val dao = debiki.Globals.siteDao(siteId, ip = request.remoteAddress)
+    val dao = daoFor(request)
 
     // COULD let tryLogin() return a LoginResult and use pattern matching, not exceptions.
-    val loginGrant: LoginGrant =
-      try {
-        dao.tryLogin(loginAttempt)
-      }
-      catch {
-        case ex: DbDao.IdentityNotFoundException =>
-          dao.createUserAndLogin(NewUserData(
-            displayName = oauthDetails.displayName,
-            email = oauthDetails.email getOrDie "DwE4PGV03",
-            identityData = oauthDetails))
-      }
+    try {
+      val loginGrant = dao.tryLogin(loginAttempt)
+      createCookiesAndFinishLogin(request, loginGrant.user)
+    }
+    catch {
+      case ex: DbDao.IdentityNotFoundException =>
+        showCreateUserDialog(request, oauthDetails)
+    }
+  }
 
-    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(loginGrant.user)
-    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant.user)
+
+  private def createCookiesAndFinishLogin(request: Request[_], user: User): Result = {
+    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(user)
+    val userConfigCookie = ConfigUserController.userConfigCookie(user)
     val newSessionCookies = userConfigCookie :: sidAndXsrfCookies
 
     val response = request.cookies.get(ReturnToUrlCookieName) match {
       case Some(returnToUrlCookie) =>
         Redirect(returnToUrlCookie.value).discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
       case None =>
-        // We're logging in in a popup.
-        Ok(views.html.login.loginPopupCallback("LoginOk",
-          s"You have been logged in, welcome!",
-          anyReturnToUrl = None))
+        if (isAjax(request)) {
+          // We've shown but closed an OAuth provider login popup, and now we're
+          // handling a create-user Ajax request from a certain create-new-user dialog.
+          Ok
+        }
+        else {
+          // We're logging in an existing user in a popup.
+          Ok(views.html.login.loginPopupCallback(user.displayName).body) as HTML
+        }
     }
     response.withCookies(newSessionCookies: _*)
+  }
+
+
+  private def showCreateUserDialog(request: Request[_], oauthDetails: OpenAuthDetails): Result = {
+    if (request.cookies.get(ReturnToUrlCookieName).isDefined) {
+      unimplemented("Showing create-user dialog when there's a return-to URL")
+    }
+    val cacheKey = nextRandomString()
+    play.api.cache.Cache.set(cacheKey, oauthDetails)
+    Ok(views.html.login.loginPopupCreateUserCallback(
+      newUserName = oauthDetails.displayName,
+      newUserEmail = oauthDetails.email getOrElse "",
+      authDataCacheKey = cacheKey))
+  }
+
+
+  def handleCreateUserDialog = PostJsonAction(maxLength = 1000) { request: JsonPostRequest =>
+    val body = request.body
+
+    val name = (body \ "name").as[String]
+    val email = (body \ "email").as[String]
+    val username = (body \ "username").as[String]
+
+    val oauthDetailsCacheKey = (body \ "authDataCacheKey").as[String]
+    val oauthDetails = play.api.cache.Cache.get(oauthDetailsCacheKey) match {
+      case Some(details: OpenAuthDetails) =>
+        details
+      case None =>
+        throwForbidden("DwE50VC4", "Bad auth data cache key")
+      case _ =>
+        assErr("DwE2GVM0")
+    }
+    if (oauthDetails.email.map(_ == email) == Some(false)) {
+      throwForbidden("DwE523FU2", "Cannot change email from ones' OAuth provider email")
+    }
+
+    val dao = daoFor(request.request)
+    val loginGrant = dao.createUserAndLogin(NewUserData(
+      displayName = name,
+      email = email,
+      identityData = oauthDetails))
+
+    createCookiesAndFinishLogin(request.request, loginGrant.user)
   }
 
 
@@ -248,8 +298,8 @@ object LoginWithOpenAuthController extends Controller {
     */
   def loginThenReturnToOriginalSite(provider: String, returnToOrigin: String, xsrfToken: String)
         = ExceptionAction.async(empty) { request =>
-    // The actual redirection back to the returnToOrigin happens in loginAndRedirect() — it
-    // checks the value of the return-to-origin cookie.
+    // The actual redirection back to the returnToOrigin happens in handleAuthenticationData()
+    // — it checks the value of the return-to-origin cookie.
     if (anyLoginOrigin.map(_ == originOf(request)) != Some(true))
       throwForbidden(
         "DwE50U2", s"You need to login via the login origin, which is: `$anyLoginOrigin'")
@@ -272,7 +322,7 @@ object LoginWithOpenAuthController extends Controller {
       case None =>
         throwForbidden("DwE7GCV0", "No XSRF cookie")
     }
-    redirectToLocalUrl(request, oauthDetailsCacheKey = Some(oauthDetailsCacheKey))
+    login(request, oauthDetailsCacheKey = Some(oauthDetailsCacheKey))
       .discardingCookies(DiscardingCookie(ReturnToSiteXsrfTokenCookieName))
   }
 
@@ -341,6 +391,12 @@ object LoginWithOpenAuthController extends Controller {
   private def originOf(request: Request[_]) = {
     val scheme = if (request.secure) "https" else "http"
     s"$scheme://${request.host}"
+  }
+
+
+  def daoFor(request: Request[_]) = {
+    val siteId = debiki.DebikiHttp.lookupTenantIdOrThrow(originOf(request), debiki.Globals.systemDao)
+    debiki.Globals.siteDao(siteId, ip = request.remoteAddress)
   }
 
 }
