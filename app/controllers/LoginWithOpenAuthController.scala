@@ -237,12 +237,30 @@ object LoginWithOpenAuthController extends Controller {
     if (request.cookies.get(ReturnToUrlCookieName).isDefined) {
       unimplemented("Showing create-user dialog when there's a return-to URL")
     }
+
     val cacheKey = nextRandomString()
     play.api.cache.Cache.set(cacheKey, oauthDetails)
-    Ok(views.html.login.loginPopupCreateUserCallback(
-      newUserName = oauthDetails.displayName,
-      newUserEmail = oauthDetails.email getOrElse "",
-      authDataCacheKey = cacheKey))
+    val anyIsInLoginPopupCookieValue = request.cookies.get("dwCoIsInLoginPopup").map(_.value)
+
+    if (anyIsInLoginPopupCookieValue.isDefined) {
+      // This is an embedded comments site, so the login dialog opened in a popup window,
+      // not in the embedded iframe. Continue running in the popup window, by returning
+      // a complete HTML page that shows a create-user dialog.
+      Ok(views.html.login.createUserPopup(
+        serverAddress = s"//${request.host}",
+        newUserName = oauthDetails.displayName,
+        newUserEmail = oauthDetails.email getOrElse "",
+        authDataCacheKey = cacheKey)).discardingCookies(DiscardingCookie("dwCoIsInLoginPopup"))
+    }
+    else {
+      // The request is from an OAuth provider login popup. Run some Javascript in the
+      // popup that closes the popup and continues execution in the main window (the popup's
+      // window.opener).
+      Ok(views.html.login.closePopupShowCreateUserDialog(
+        newUserName = oauthDetails.displayName,
+        newUserEmail = oauthDetails.email getOrElse "",
+        authDataCacheKey = cacheKey))
+    }
   }
 
 

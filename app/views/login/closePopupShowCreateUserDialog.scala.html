@@ -19,9 +19,9 @@
 
 <!DOCTYPE html>
 <html>
-<head>
+<body>
+  <p>Showing create new user dialog...</p>
   <script type='text/javascript'>
-  function returnToOpener() {
     window.opener.debiki.internal.handleLoginResponse({
       status: 'CreateUser',
       name: '@newUserName',
@@ -29,11 +29,7 @@
       authDataCacheKey: '@authDataCacheKey'
     });
     window.close();
-  }
   </script>
-</head>
-<body onload='returnToOpener();'>
-  <p>Showing create new user dialog...</p>
 </body>
 </html>
 

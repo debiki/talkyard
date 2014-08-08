@@ -1,0 +1,65 @@
+@**
+ * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *@
+
+@(serverAddress: String, popupScriptUrl: String)(content: Html)
+
+@asset(file: String) = @{
+  routes.Assets.at(path = "/public/res", file)
+}
+
+@minMaxCss = @{ "min.css" }
+@minMaxJs = @{ "js" }
+
+<!DOCTYPE html>
+<html class="DW dw-pri">
+<head>
+  <meta name="viewport" content="width=device-width">
+  <meta charset="utf-8"/>
+  @*
+  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+  *@
+  <link rel="stylesheet" href="@asset(s"debiki-bootstrap.$minMaxCss")"/>
+  <link rel="stylesheet" href="@asset("fontello/css/fontello-embedded.css")"/>
+  <link rel="stylesheet" href="@asset(s"combined-debiki.$minMaxCss")"/>
+
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.@minMaxJs"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.@minMaxJs"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.@minMaxJs"></script>
+
+  <script>
+    var debiki = {
+      internal: {
+        isInLoginPopup: true,
+        serverOrigin: '@serverAddress',
+        assetsUrlPathStart: '@serverAddress@asset("")',
+        $: jQuery
+      },
+      v0: {
+       util: {}
+      }
+    };
+  </script>
+  <script src="@asset(popupScriptUrl)"></script>
+</head>
+<body>
+  <!-- views/login/popupMain.scala.html -->
+  @content
+
+  @views.html.anyWeinreScript()
+</body>
+</html>
+

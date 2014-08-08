@@ -51,14 +51,29 @@ d.i.showCreateUserDialog = function(userData) {
       .fail(d.i.showServerResponseDialog)
       .done(function() {
         // Session cookies should now have been set.
+        // If this is an embedded comments site, we're currently executing in
+        // a create user login popup window, not in the <iframe> on the embedding
+        // page. If so, only window.opener has loaded the code that we're
+        // about to execute.
+        var di;
+        if (d.i.isInLoginPopup) {
+          // We're in a login popup window for an embedded comments site.
+          di = window.opener.debiki.internal;
+        }
+        else {
+          // This is not an embedded comments site, we're not in a popup; we can
+          // execute the subsequent code directly here in the main window.
+          di = debiki.internal;
+        }
+        di.Me.fireLogin();
+        di.continueAnySubmission();
         dialog.dialog('close');
-        d.i.Me.fireLogin();
-        d.i.continueAnySubmission();;
       });
   });
 
   dialog.find('.cancel').click(function() {
     dialog.dialog('close');
+    d.i.showLoginDialog();
   });
 
   dialog.dialog('open');

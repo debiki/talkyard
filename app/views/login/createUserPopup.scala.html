@@ -15,13 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(mode: String, serverAddress: String)
+@(serverAddress: String, newUserName: String, newUserEmail: String, authDataCacheKey: String)
+
 
 @popupMain(serverAddress, "login-popup.js") {
 
-  <!-- views/login/loginPopup.scala.html -->
+  <!-- views/login/createUserPopup.scala.html -->
   <script>
-    debiki.internal.showLoginSubmitDialog('@mode');
+    debiki.internal.showCreateUserDialog({
+      name: '@newUserName',
+      email: '@newUserEmail',
+      authDataCacheKey: '@authDataCacheKey'
+    });
   </script>
 
 }
+
