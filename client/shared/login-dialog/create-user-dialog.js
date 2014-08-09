@@ -19,6 +19,7 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
+var AjaxFriendlyRedirectStatusCode = 278;
 
 
 d.i.showCreateUserDialog = function(userData) {
@@ -49,8 +50,18 @@ d.i.showCreateUserDialog = function(userData) {
     };
     d.u.postJson({ url: d.i.serverOrigin + '/-/login-create-user', data: data })
       .fail(d.i.showServerResponseDialog)
-      .done(function() {
+      .done(function(data, textStatus, result) {
         // Session cookies should now have been set.
+        if (result.status === AjaxFriendlyRedirectStatusCode) {
+          // This is our custom Redirect status code that doesn't result in the
+          // ajax request itself being redirected (like status 302 and 303 do).
+          // (We want to redirect here, if we've signed up in order to create a
+          // new site — then the next page should be the next step in the site
+          // creation wizard.)
+          var continueToUrl = result.getResponseHeader('Location');
+          window.location = continueToUrl;
+          return;
+        }
         // If this is an embedded comments site, we're currently executing in
         // a create user login popup window, not in the <iframe> on the embedding
         // page. If so, only window.opener has loaded the code that we're

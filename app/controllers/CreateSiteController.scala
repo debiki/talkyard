@@ -67,11 +67,10 @@ object CreateSiteController extends mvc.Controller {
 
   def showWebsiteOwnerForm(siteType: String) = SessionAction(empty) {
         request: SessionRequestNoBody =>
-    Ok(views.html.login.loginPage(xsrfToken = request.xsrfOk.value,
-      returnToUrl = routes.CreateSiteController.showSiteTypeForm(siteType).url,
-      title = "Choose Website Owner Account",
-      providerLoginMessage = "It will become the owner of the new website.",
-      showCreateAccountOption = true))
+    Ok(views.html.login.loginPopup(
+      mode = "LoginToCreateSite",
+      serverAddress = s"//${request.host}",
+      returnToUrl = routes.CreateSiteController.showSiteTypeForm(siteType).url)) as HTML
   }
 
 

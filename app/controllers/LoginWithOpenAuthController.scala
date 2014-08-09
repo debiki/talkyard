@@ -52,6 +52,7 @@ import scala.concurrent.Future
   */
 object LoginWithOpenAuthController extends Controller {
 
+  private val AjaxFriendlyRedirectStatusCode = 278
   private val Separator = '|'
   private val ReturnToUrlCookieName = "dwCoReturnToUrl"
   private val ReturnToSiteCookieName = "dwCoReturnToSite"
@@ -85,8 +86,16 @@ object LoginWithOpenAuthController extends Controller {
     * the popup window will be sent some Javascript that tells the popup opener
     * what has happened (i.e. that the user logged in).
     */
-  def startAuthenticationInPopupWindow(provider: String) = ExceptionAction.async(empty) { request =>
-    authenticate(provider, request)
+  def startAuthenticationInPopupWindow(provider: String, returnToUrl: String) =
+        ExceptionAction.async(empty) { request =>
+    var futureResult = authenticate(provider, request)
+    if (returnToUrl.nonEmpty) {
+      futureResult = futureResult map { result =>
+        result.withCookies(
+          Cookie(name = ReturnToUrlCookieName, value = returnToUrl, httpOnly = false))
+      }
+    }
+    futureResult
   }
 
 
@@ -218,7 +227,18 @@ object LoginWithOpenAuthController extends Controller {
 
     val response = request.cookies.get(ReturnToUrlCookieName) match {
       case Some(returnToUrlCookie) =>
-        Redirect(returnToUrlCookie.value).discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
+        val status =
+          if (isAjax(request)) {
+            // We don't want the Ajax request to follow the redirect, so we have to
+            // use a custom HTTP status code. (All browsers must follow status 302 and 303
+            // redirects, even Ajax requests.)
+            AjaxFriendlyRedirectStatusCode
+          }
+          else {
+            play.api.http.Status.SEE_OTHER
+          }
+        Redirect(returnToUrlCookie.value, status)
+          .discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
       case None =>
         if (isAjax(request)) {
           // We've shown but closed an OAuth provider login popup, and now we're
@@ -235,15 +255,12 @@ object LoginWithOpenAuthController extends Controller {
 
 
   private def showCreateUserDialog(request: Request[_], oauthDetails: OpenAuthDetails): Result = {
-    if (request.cookies.get(ReturnToUrlCookieName).isDefined) {
-      unimplemented("Showing create-user dialog when there's a return-to URL")
-    }
-
     val cacheKey = nextRandomString()
     play.api.cache.Cache.set(cacheKey, oauthDetails)
     val anyIsInLoginPopupCookieValue = request.cookies.get(IsInLoginPopupCookieName).map(_.value)
+    val anyReturnToUrlCookieValue = request.cookies.get(ReturnToUrlCookieName).map(_.value)
 
-    if (anyIsInLoginPopupCookieValue.isDefined) {
+    if (anyIsInLoginPopupCookieValue.isDefined || anyReturnToUrlCookieValue.isDefined) {
       // This is an embedded comments site, so the login dialog opened in a popup window,
       // not in the embedded iframe. Continue running in the popup window, by returning
       // a complete HTML page that shows a create-user dialog.

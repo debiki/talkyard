@@ -26,7 +26,7 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
 
 
 
-d.i.showLoginDialog = function(mode)
+d.i.showLoginDialog = function(mode, anyReturnToUrl)
   clearLoginRelatedCookies()
 
   if d.i.isInIframe
@@ -95,7 +95,7 @@ d.i.showLoginDialog = function(mode)
     false
 
   function openOpenAuthLoginWindow(provider)
-    url = "#{d.i.serverOrigin}/-/login-openauth-popup/#provider"
+    url = "#{d.i.serverOrigin}/-/login-openauth-popup/#provider?returnToUrl=#anyReturnToUrl"
     if d.i.isInLoginPopup
       # Let the server know we're in a popup window, so it can choose to reply with
       # complete HTML pages to show in the popup window.

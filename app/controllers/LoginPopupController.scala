@@ -37,10 +37,11 @@ object LoginPopupController extends mvc.Controller {
     * iframes — only the iframe would be disabled by the modal dialog, but not
     * the rest of the page.
     */
-  def showLoginPopup(mode: String) = ExceptionAction(empty) { request =>
+  def showLoginPopup(mode: String, returnToUrl: String = "") = ExceptionAction(empty) { request =>
     Ok(views.html.login.loginPopup(
       mode = mode,
-      serverAddress = s"//${request.host}")) as HTML
+      serverAddress = s"//${request.host}",
+      returnToUrl = returnToUrl)) as HTML
   }
 
 

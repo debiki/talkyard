@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(mode: String, serverAddress: String)
+@(mode: String, serverAddress: String, returnToUrl: String)
 
 @popupMain(serverAddress, "login-popup.js") {
 
   <!-- views/login/loginPopup.scala.html -->
   <script>
-    debiki.internal.showLoginSubmitDialog('@mode');
+    debiki.internal.showLoginDialog('@mode', '@returnToUrl');
   </script>
 
 }
