@@ -57,11 +57,12 @@ object CreateEmbeddedSiteController extends mvc.Controller {
 
 
   def showSiteOwnerForm() = SessionAction(empty) { request: SessionRequestNoBody =>
-    Ok(views.html.login.loginPage(xsrfToken = request.xsrfOk.value,
-      returnToUrl = routes.CreateEmbeddedSiteController.showEmbeddingSiteUrlForm.url,
-      title = "Choose Website Owner Account",
-      providerLoginMessage = "It will become the owner of the embedded discussions.",
-      showCreateAccountOption = true))
+    Ok(views.html.login.loginPopup(
+      mode = "LoginToCreateSite",
+      serverAddress = s"//${request.host}",
+      returnToUrl = routes.CreateEmbeddedSiteController.showEmbeddingSiteUrlForm.url)) as HTML
+    // """Choose Website Owner Account
+    //  providerLoginMessage = "It will become the owner of the embedded discussions"""
   }
 
 

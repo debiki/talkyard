@@ -71,6 +71,8 @@ object CreateSiteController extends mvc.Controller {
       mode = "LoginToCreateSite",
       serverAddress = s"//${request.host}",
       returnToUrl = routes.CreateSiteController.showSiteTypeForm(siteType).url)) as HTML
+    // """Choose Website Owner Account
+    //  It will become the owner of the new website."""
   }
 
 
