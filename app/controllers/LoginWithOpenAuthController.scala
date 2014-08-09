@@ -70,24 +70,13 @@ object LoginWithOpenAuthController extends Controller {
     }
 
 
-  /** The authentication flow starts here, if it happens in the main window and you
-    * thus have a page you want to return to afterwards.
-    */
-  def startAuthentication(provider: String, returnToUrl: String, request: Request[Unit]) = {
-    val futureResponse = authenticate(provider, request)
-    futureResponse map { response =>
-      response.withCookies(
-        Cookie(name = ReturnToUrlCookieName, value = returnToUrl, httpOnly = false))
-    }
+  def startAuthentication(provider: String, returnToUrl: String) =
+        ExceptionAction.async(empty) { request =>
+    startAuthenticationImpl(provider, returnToUrl, request)
   }
 
 
-  /** The authentication starts here if it happens in a popup. Then, afterwards,
-    * the popup window will be sent some Javascript that tells the popup opener
-    * what has happened (i.e. that the user logged in).
-    */
-  def startAuthenticationInPopupWindow(provider: String, returnToUrl: String) =
-        ExceptionAction.async(empty) { request =>
+  def startAuthenticationImpl(provider: String, returnToUrl: String, request: Request[Unit]) = {
     var futureResult = authenticate(provider, request)
     if (returnToUrl.nonEmpty) {
       futureResult = futureResult map { result =>
