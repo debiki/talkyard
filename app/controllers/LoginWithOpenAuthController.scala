@@ -27,8 +27,8 @@ import com.mohiva.play.silhouette.core.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.core.providers.oauth2._
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.core.{exceptions => siex}
-import debiki.DebikiHttp.throwForbidden
-import debiki.DebikiHttp.isAjax
+import debiki.DebikiHttp.{throwForbidden, throwBadReq}
+import debiki.DebikiHttp.{isAjax, originOf, daoFor, AjaxFriendlyRedirectStatusCode}
 import java.{util => ju}
 import play.{api => p}
 import play.api.mvc._
@@ -52,7 +52,6 @@ import scala.concurrent.Future
   */
 object LoginWithOpenAuthController extends Controller {
 
-  private val AjaxFriendlyRedirectStatusCode = 278
   private val Separator = '|'
   private val ReturnToUrlCookieName = "dwCoReturnToUrl"
   private val ReturnToSiteCookieName = "dwCoReturnToSite"
@@ -278,7 +277,8 @@ object LoginWithOpenAuthController extends Controller {
     val email = (body \ "email").as[String]
     val username = (body \ "username").as[String]
 
-    val oauthDetailsCacheKey = (body \ "authDataCacheKey").as[String]
+    val oauthDetailsCacheKey = (body \ "authDataCacheKey").asOpt[String] getOrElse
+      throwBadReq("DwE08GM6", "Auth data cache key missing")
     val oauthDetails = play.api.cache.Cache.get(oauthDetailsCacheKey) match {
       case Some(details: OpenAuthDetails) =>
         details
@@ -292,8 +292,8 @@ object LoginWithOpenAuthController extends Controller {
     }
 
     val dao = daoFor(request.request)
-    val loginGrant = dao.createUserAndLogin(NewUserData(
-      displayName = name,
+    val loginGrant = dao.createUserAndLogin(NewOauthUserData(
+      name = name,
       email = email,
       identityData = oauthDetails))
 
@@ -411,18 +411,6 @@ object LoginWithOpenAuthController extends Controller {
 
   private def buildRedirectUrl(request: Request[_], provider: String) = {
     originOf(request) + routes.LoginWithOpenAuthController.finishAuthentication(provider).url
-  }
-
-
-  private def originOf(request: Request[_]) = {
-    val scheme = if (request.secure) "https" else "http"
-    s"$scheme://${request.host}"
-  }
-
-
-  def daoFor(request: Request[_]) = {
-    val siteId = debiki.DebikiHttp.lookupTenantIdOrThrow(originOf(request), debiki.Globals.systemDao)
-    debiki.Globals.siteDao(siteId, ip = request.remoteAddress)
   }
 
 }

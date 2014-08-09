@@ -43,6 +43,7 @@
 
 #dw-lgi-guest,
 #dw-lgi-pswd,
+#dw-lgi-create-password-user,
 #dw-lgi-more
   display: block
 
@@ -109,6 +110,10 @@ body.dw-login-to-create-topic .dw-login-to-create-topic,
 body.dw-login-to-login .dw-login-to-login
   display: inline
 // ---
+
+// Hide password field when creating user in via OAuth or OpenID.
+.dw-fs .form-group.password
+  display: none
 
 
 // Hide Google and Yahoo login buttons in OpenID dialog; they're available via direct links

@@ -46,14 +46,13 @@ case class People(users: List[User] = Nil) {
 }
 
 
-case class NewUserData(
-  displayName: String,
-  email: String,
-  identityData: OpenAuthDetails) {
+sealed abstract class NewUserData {
+  def name: String
+  def email: String
 
   def userNoId = User(
     id = "?",
-    displayName = displayName,
+    displayName = name,
     email = email,
     emailNotfPrefs = EmailNotfPrefs.Unspecified,
     country = "",
@@ -61,6 +60,29 @@ case class NewUserData(
     isAdmin = false,
     isOwner = false)
 
+  def identityNoId: Identity
+
+}
+
+
+case class NewPasswordUserData(
+  name: String,
+  email: String,
+  password: String) extends NewUserData {
+
+  def identityNoId =
+    PasswordIdentity(id = "?", userId = "?", email = email,
+      passwordSaltHash = DbDao.saltAndHashPassword(password))
+}
+
+
+case class NewOauthUserData(
+  name: String,
+  email: String,
+  identityData: OpenAuthDetails) extends NewUserData {
+
+  def identityNoId =
+    OpenAuthIdentity(id = "?", userId = "?", openAuthDetails = identityData)
 }
 
 

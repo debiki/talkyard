@@ -54,6 +54,10 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
     d.i.showPasswordLoginDialog(loginAndContinue)
     false
 
+  dialog.find('#dw-lgi-create-password-user').click ->
+    d.i.showCreateUserDialog({ createPasswordUser: true }, anyReturnToUrl)
+    false
+
   dialog.find('#dw-lgi-more').click ->
     d.i.showLoginOpenId()
     false
@@ -220,8 +224,9 @@ function loginDialogHtml
       <p id="dw-lgi-or-login-using">Or, alternatively:</p>
 
       <a id="dw-lgi-guest" class="btn btn-default" tabindex="121">Login as Guest</a>
-      <a id="dw-lgi-pswd" class="btn btn-default" tabindex="122">Login with Email and Password</a>
-      <a id="dw-lgi-more" class="btn btn-default" tabindex="123">More login options...</a>
+      <a id="dw-lgi-pswd" class="btn btn-default" tabindex="122">Login with Username and Password</a>
+      <a id="dw-lgi-create-password-user" class="btn btn-default" tabindex="123">Create New Account</a>
+      <!-- <a id="dw-lgi-more" class="btn btn-default" tabindex="124">More login options...</a> -->
 
       <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="130">
     </div>

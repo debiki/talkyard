@@ -17,6 +17,7 @@
 
 package controllers
 
+import actions.ApiActions.PostJsonAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -28,6 +29,7 @@ import play.api.mvc.{Action => _, _}
 import requests.ApiRequest
 import actions.ApiActions.JsonOrFormDataPostAction
 import play.api.libs.json.JsObject
+import requests.JsonPostRequest
 
 
 
@@ -72,12 +74,40 @@ object LoginWithPasswordController extends mvc.Controller {
         case ex: DbDao.IdentityNotFoundException => deny()
       }
 
-
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(loginGrant.user)
     val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant.user)
 
     userConfigCookie::sidAndXsrfCookies
   }
 
+
+  def handleCreateUserDialog(returnToUrl: String) = PostJsonAction(maxLength = 1000) {
+        request: JsonPostRequest =>
+    val body = request.body
+    val name = (body \ "name").as[String]
+    val email = (body \ "email").as[String]
+    val username = (body \ "username").as[String]
+    val password = (body \ "username").asOpt[String] getOrElse
+      throwBadReq("DwE85FX1", "Password missing")
+
+    val dao = daoFor(request.request)
+    val loginGrant = dao.createUserAndLogin(
+      NewPasswordUserData(
+        name = name, email = email, password = password))
+
+    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(loginGrant.user)
+    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant.user)
+    val newSessionCookies = userConfigCookie :: sidAndXsrfCookies
+
+    // This dialog is always submitted via Ajax.
+    assErrIf(!isAjax(request.request), "DwEDK3903")
+    val result =
+      if (returnToUrl.nonEmpty)
+        Redirect(returnToUrl, AjaxFriendlyRedirectStatusCode)
+      else
+        Ok
+
+    result.withCookies(newSessionCookies: _*)
+  }
 
 }
