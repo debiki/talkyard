@@ -27,6 +27,8 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
 
 
 d.i.showLoginDialog = function(mode)
+  clearLoginRelatedCookies()
+
   if d.i.isInIframe
     d.i.createLoginPopup("#{d.i.serverOrigin}/-/login-popup?mode=#mode")
     return
@@ -139,6 +141,17 @@ d.i.showLoginDialog = function(mode)
 
   # Don't focus the ToS link, instead:
   dialog.find('#dw-lgi-google').focus()
+
+
+
+/**
+ * Clears login related cookies so e.g. any lingering return-to-url won't cause troubles.
+ */
+!function clearLoginRelatedCookies
+  $.cookie('dwCoReturnToUrl', null)
+  $.cookie('dwCoReturnToSite', null)
+  $.cookie('dwCoReturnToSiteXsrfToken', null)
+  $.cookie('dwCoIsInLoginPopup', null)
 
 
 

@@ -56,6 +56,7 @@ object LoginWithOpenAuthController extends Controller {
   private val ReturnToUrlCookieName = "dwCoReturnToUrl"
   private val ReturnToSiteCookieName = "dwCoReturnToSite"
   private val ReturnToSiteXsrfTokenCookieName = "dwCoReturnToSiteXsrfToken"
+  private val IsInLoginPopupCookieName = "dwCoIsInLoginPopup"
 
   val anyLoginOrigin =
     if (Play.isTest) {
@@ -75,7 +76,7 @@ object LoginWithOpenAuthController extends Controller {
     val futureResponse = authenticate(provider, request)
     futureResponse map { response =>
       response.withCookies(
-        Cookie(name = ReturnToUrlCookieName, value = returnToUrl))
+        Cookie(name = ReturnToUrlCookieName, value = returnToUrl, httpOnly = false))
     }
   }
 
@@ -240,7 +241,7 @@ object LoginWithOpenAuthController extends Controller {
 
     val cacheKey = nextRandomString()
     play.api.cache.Cache.set(cacheKey, oauthDetails)
-    val anyIsInLoginPopupCookieValue = request.cookies.get("dwCoIsInLoginPopup").map(_.value)
+    val anyIsInLoginPopupCookieValue = request.cookies.get(IsInLoginPopupCookieName).map(_.value)
 
     if (anyIsInLoginPopupCookieValue.isDefined) {
       // This is an embedded comments site, so the login dialog opened in a popup window,
@@ -250,7 +251,7 @@ object LoginWithOpenAuthController extends Controller {
         serverAddress = s"//${request.host}",
         newUserName = oauthDetails.displayName,
         newUserEmail = oauthDetails.email getOrElse "",
-        authDataCacheKey = cacheKey)).discardingCookies(DiscardingCookie("dwCoIsInLoginPopup"))
+        authDataCacheKey = cacheKey)).discardingCookies(DiscardingCookie(IsInLoginPopupCookieName))
     }
     else {
       // The request is from an OAuth provider login popup. Run some Javascript in the
@@ -304,7 +305,7 @@ object LoginWithOpenAuthController extends Controller {
         routes.LoginWithOpenAuthController.loginThenReturnToOriginalSite(
           providerName, returnToOrigin = originOf(request), xsrfToken)
     Future.successful(Redirect(loginEndpoint).withCookies(
-      Cookie(name = ReturnToSiteXsrfTokenCookieName, value = xsrfToken)))
+      Cookie(name = ReturnToSiteXsrfTokenCookieName, value = xsrfToken, httpOnly = false)))
   }
 
 
@@ -325,7 +326,8 @@ object LoginWithOpenAuthController extends Controller {
     val futureResponse = authenticate(provider, request)
     futureResponse map { response =>
       response.withCookies(
-        Cookie(name = ReturnToSiteCookieName, value = s"$returnToOrigin$Separator$xsrfToken"))
+        Cookie(name = ReturnToSiteCookieName, value = s"$returnToOrigin$Separator$xsrfToken",
+          httpOnly = false))
     }
   }
 
