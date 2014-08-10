@@ -71,15 +71,17 @@ object InstallationController extends mvc.Controller {
       case InstallationStatus.CreateFirstSiteAdmin =>
         val xsrfToken = nextRandomString() take 20
         val xsrfCookie = urlEncodeCookie(DebikiSecurity.XsrfCookieName, xsrfToken)
+        val returnToUrl =
+          routes.InstallationController.createFirstSiteOwner(firstSiteOwnerPassword).url
 
-        Ok(views.html.login.loginPage(xsrfToken = xsrfToken,
-          returnToUrl =
-            routes.InstallationController.createFirstSiteOwner(firstSiteOwnerPassword).url,
-          showCreateAccountOption = true,
-          title = "Installation",
-          message = Some("The website needs an administrator."),
-          providerLoginMessage = "That account will become the website owner account."))
-          .withCookies(xsrfCookie)
+        Ok(views.html.login.loginPopup(
+          mode = "LoginToInstall",
+          serverAddress = s"//${request.host}",
+          returnToUrl = returnToUrl)) as HTML
+        // SHOULD show explanation about what is happening:
+        // title = "Installation",
+        // message = "The website needs an administrator."
+        // providerLoginMessage = "That account will become the website owner account."
 
       case InstallationStatus.AllDone =>
         OkAllDone(request.host)
