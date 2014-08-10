@@ -46,6 +46,15 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
     width: 413
     closeOnEscape: !d.i.isInLoginPopup)
 
+  doingWhatClass = switch mode
+  | 'LoginToAdministrate' =>
+      dialog.find('#dw-lgi-guest').hide()
+      dialog.find('#dw-lgi-create-password-user').hide()
+      dialog.find('.dw-fi-cancel').hide()
+  | 'LoginToCreateSite' =>
+      dialog.find('#dw-lgi-guest').hide()
+      dialog.find('.dw-fi-cancel').hide()
+
   dialog.find('#dw-lgi-guest').click ->
     d.i.showGuestLoginDialog(loginAndContinue)
     false
@@ -99,7 +108,13 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
     false
 
   function openOpenAuthLoginWindow(provider)
-    url = "#{d.i.serverOrigin}/-/login-openauth/#provider?returnToUrl=#anyReturnToUrl"
+    # Any new user wouldn't be granted access to the admin page, so don't allow
+    # creation of  new users from here.
+    # (This parameter tells the server to set a certain cookie. Setting it here
+    # instead has no effect, don't know why.)
+    mayNotCreateUser = if mode == 'LoginToAdministrate' then '&mayNotCreateUser' else ''
+
+    url = "#{d.i.serverOrigin}/-/login-openauth/#provider?returnToUrl=#anyReturnToUrl#mayNotCreateUser"
     if d.i.isInLoginPopup
       # Let the server know we're in a popup window, so it can choose to reply with
       # complete HTML pages to show in the popup window.
@@ -156,6 +171,7 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
   $.cookie('dwCoReturnToSite', null)
   $.cookie('dwCoReturnToSiteXsrfToken', null)
   $.cookie('dwCoIsInLoginPopup', null)
+  $.cookie('dwCoMayCreateUser', null)
 
 
 

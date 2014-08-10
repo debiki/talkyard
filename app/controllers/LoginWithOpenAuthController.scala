@@ -57,6 +57,7 @@ object LoginWithOpenAuthController extends Controller {
   private val ReturnToSiteCookieName = "dwCoReturnToSite"
   private val ReturnToSiteXsrfTokenCookieName = "dwCoReturnToSiteXsrfToken"
   private val IsInLoginPopupCookieName = "dwCoIsInLoginPopup"
+  private val MayCreateUserCookieName = "dwCoMayCreateUser"
 
   val anyLoginOrigin =
     if (Play.isTest) {
@@ -81,6 +82,12 @@ object LoginWithOpenAuthController extends Controller {
       futureResult = futureResult map { result =>
         result.withCookies(
           Cookie(name = ReturnToUrlCookieName, value = returnToUrl, httpOnly = false))
+      }
+    }
+    if (request.rawQueryString.contains("mayNotCreateUser")) {
+      futureResult = futureResult map { result =>
+        result.withCookies(
+          Cookie(name = MayCreateUserCookieName, value = "false", httpOnly = false))
       }
     }
     futureResult
@@ -194,17 +201,29 @@ object LoginWithOpenAuthController extends Controller {
     val loginAttempt = OpenAuthLoginAttempt(
       ip = request.remoteAddress, date = new ju.Date, oauthDetails)
 
+    val mayCreateNewUserCookie = request.cookies.get(MayCreateUserCookieName)
+    val mayCreateNewUser = mayCreateNewUserCookie.map(_.value) != Some("false")
+
     val dao = daoFor(request)
 
     // COULD let tryLogin() return a LoginResult and use pattern matching, not exceptions.
-    try {
-      val loginGrant = dao.tryLogin(loginAttempt)
-      createCookiesAndFinishLogin(request, loginGrant.user)
-    }
-    catch {
-      case ex: DbDao.IdentityNotFoundException =>
-        showCreateUserDialog(request, oauthDetails)
-    }
+    val result =
+      try {
+        val loginGrant = dao.tryLogin(loginAttempt)
+        createCookiesAndFinishLogin(request, loginGrant.user)
+      }
+      catch {
+        case ex: DbDao.IdentityNotFoundException =>
+          if (mayCreateNewUser) {
+            showCreateUserDialog(request, oauthDetails)
+          }
+          else {
+            // COULD show a nice error dialog instead.
+            throwForbidden("DwE5FK9R2", "Access denied")
+          }
+      }
+
+    result.discardingCookies(DiscardingCookie(MayCreateUserCookieName))
   }
 
 
