@@ -56,7 +56,8 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
       url += '/-/login-oauth-create-user';
     }
     else if (userData.createPasswordUser) {
-      url += '/-/login-password-create-user?returnToUrl=' + anyReturnToUrl;
+      url += '/-/login-password-create-user?returnToUrl=';
+      url += anyReturnToUrl ? anyReturnToUrl : '';
     }
     else {
       throw 'Bad new user data: ' + JSON.stringify(userData) + ' [DwE5DF06]';
@@ -93,12 +94,16 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
         di.Me.fireLogin();
         di.continueAnySubmission();
         dialog.dialog('close');
+        $('#dw-lgi').dialog('close');
       });
   });
 
   dialog.find('.cancel').click(function() {
     dialog.dialog('close');
-    d.i.showLoginDialog();
+
+    // Return to the main login dialog, by opening it.
+    $('#dw-lgi').dialog('close'); // in case not yet closed
+    d.i.showLoginDialog();  // in case had already been closed
   });
 
   dialog.dialog('open');

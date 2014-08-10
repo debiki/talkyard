@@ -90,6 +90,7 @@ object LoginWithPasswordController extends mvc.Controller {
     val password = (body \ "username").asOpt[String] getOrElse
       throwBadReq("DwE85FX1", "Password missing")
 
+    // COULD avoid replying 500 Internal Error if user already exists!
     val dao = daoFor(request.request)
     val loginGrant = dao.createUserAndLogin(
       NewPasswordUserData(
