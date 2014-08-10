@@ -20,8 +20,7 @@
 # dependency ? see:
 #   https://groups.google.com/forum/?fromgroups=#!topic/play-framework/cVqBvywCs4k
 
-GET   /-/login-popup            controllers.LoginPopupController.showLoginPopup(mode)
-GET   /-/login/:provider        controllers.LoginController.loginWith(provider, returnToUrl)
+GET   /-/login-popup            controllers.LoginController.showLoginPopup(mode)
 POST  /-/logout                 controllers.LoginController.logout
 
 POST  /-/login-guest            controllers.LoginAsGuestController.loginGuest
@@ -49,12 +48,6 @@ GET   /-/search/section/:pageId/for/:phrase controllers.FullTextSearchController
 GET   /-/install/                   controllers.InstallationController.viewInstallationPage
 POST  /-/install/create-first-site  controllers.InstallationController.createFirstSite
 GET   /-/install/create-first-owner controllers.InstallationController.createFirstSiteOwner(password)
-
-GET   /-/create-account/specify-email-address/:returnToUrl  controllers.CreateAccountController.showCreateAccountPage(returnToUrl)
-POST  /-/create-account/specify-email-address/:returnToUrl  controllers.CreateAccountController.handleEmailAddress(returnToUrl)
-GET   /-/create-account/user-details/:emailId/:returnToUrl  controllers.CreateAccountController.showUserDetailsPage(emailId, returnToUrl)
-POST  /-/create-account/user-details/:emailId/:returnToUrl  controllers.CreateAccountController.handleUserDetails(emailId, returnToUrl)
-GET   /-/create-account/welcome/:returnToUrl                controllers.CreateAccountController.showWelcomePage(returnToUrl)
 
 GET   /-/reset-password                  controllers.ResetPasswordController.start
 GET   /-/reset-password/specify-email    controllers.ResetPasswordController.showResetPasswordPage
