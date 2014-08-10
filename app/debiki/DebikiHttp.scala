@@ -34,6 +34,13 @@ import xml.{NodeSeq}
  */
 object DebikiHttp {
 
+
+  /** Used instead of status 302 and 303, when replying to an Ajax request,
+    * so the Ajax request itself won't attempt to follow the redirect.
+    */
+  val AjaxFriendlyRedirectStatusCode = 278
+
+
   // ----- Limits
 
   // (The www.debiki.se homepage is 20 kb, and homepage.css 80 kb,
@@ -161,6 +168,19 @@ object DebikiHttp {
 
 
   // ----- Tenant ID lookup
+
+
+  def originOf(request: Request[_]) = {
+    val scheme = if (request.secure) "https" else "http"
+    s"$scheme://${request.host}"
+  }
+
+
+  def daoFor(request: Request[_]) = {
+    val siteId = lookupTenantIdOrThrow(originOf(request), debiki.Globals.systemDao)
+    debiki.Globals.siteDao(siteId, ip = request.remoteAddress)
+  }
+
 
   /** Looks up a site by hostname, or directly by id.
     *

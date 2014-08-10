@@ -15,6 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Parts of this class might become useful again in the future if I start verifying
+// email addresses.
+
+/* The related routes:
+GET   /-/create-account/specify-email-address/:returnToUrl  controllers.CreateAccountController.showCreateAccountPage(returnToUrl)
+POST  /-/create-account/specify-email-address/:returnToUrl  controllers.CreateAccountController.handleEmailAddress(returnToUrl)
+GET   /-/create-account/user-details/:emailId/:returnToUrl  controllers.CreateAccountController.showUserDetailsPage(emailId, returnToUrl)
+POST  /-/create-account/user-details/:emailId/:returnToUrl  controllers.CreateAccountController.handleUserDetails(emailId, returnToUrl)
+GET   /-/create-account/welcome/:returnToUrl                controllers.CreateAccountController.showWelcomePage(returnToUrl)
+*/
+
+/*
 package controllers
 
 import actions.ApiActions._
@@ -152,3 +164,4 @@ object CreateAccountController extends mvc.Controller {
   }
 
 }
+*/

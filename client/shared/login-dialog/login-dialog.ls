@@ -26,7 +26,7 @@ d.i.showLoginSubmitDialog = !(anyMode) ->
 
 
 
-d.i.showLoginDialog = function(mode)
+d.i.showLoginDialog = function(mode, anyReturnToUrl)
   clearLoginRelatedCookies()
 
   if d.i.isInIframe
@@ -46,12 +46,25 @@ d.i.showLoginDialog = function(mode)
     width: 413
     closeOnEscape: !d.i.isInLoginPopup)
 
+  doingWhatClass = switch mode
+  | 'LoginToAdministrate' =>
+      dialog.find('#dw-lgi-guest').hide()
+      dialog.find('#dw-lgi-create-password-user').hide()
+      dialog.find('.dw-fi-cancel').hide()
+  | 'LoginToCreateSite' =>
+      dialog.find('#dw-lgi-guest').hide()
+      dialog.find('.dw-fi-cancel').hide()
+
   dialog.find('#dw-lgi-guest').click ->
     d.i.showGuestLoginDialog(loginAndContinue)
     false
 
   dialog.find('#dw-lgi-pswd').click ->
     d.i.showPasswordLoginDialog(loginAndContinue)
+    false
+
+  dialog.find('#dw-lgi-create-password-user').click ->
+    d.i.showCreateUserDialog({ createPasswordUser: true }, anyReturnToUrl)
     false
 
   dialog.find('#dw-lgi-more').click ->
@@ -95,7 +108,13 @@ d.i.showLoginDialog = function(mode)
     false
 
   function openOpenAuthLoginWindow(provider)
-    url = "#{d.i.serverOrigin}/-/login-openauth-popup/#provider"
+    # Any new user wouldn't be granted access to the admin page, so don't allow
+    # creation of  new users from here.
+    # (This parameter tells the server to set a certain cookie. Setting it here
+    # instead has no effect, don't know why.)
+    mayNotCreateUser = if mode == 'LoginToAdministrate' then '&mayNotCreateUser' else ''
+
+    url = "#{d.i.serverOrigin}/-/login-openauth/#provider?returnToUrl=#anyReturnToUrl#mayNotCreateUser"
     if d.i.isInLoginPopup
       # Let the server know we're in a popup window, so it can choose to reply with
       # complete HTML pages to show in the popup window.
@@ -152,6 +171,7 @@ d.i.showLoginDialog = function(mode)
   $.cookie('dwCoReturnToSite', null)
   $.cookie('dwCoReturnToSiteXsrfToken', null)
   $.cookie('dwCoIsInLoginPopup', null)
+  $.cookie('dwCoMayCreateUser', null)
 
 
 
@@ -220,8 +240,9 @@ function loginDialogHtml
       <p id="dw-lgi-or-login-using">Or, alternatively:</p>
 
       <a id="dw-lgi-guest" class="btn btn-default" tabindex="121">Login as Guest</a>
-      <a id="dw-lgi-pswd" class="btn btn-default" tabindex="122">Login with Email and Password</a>
-      <a id="dw-lgi-more" class="btn btn-default" tabindex="123">More login options...</a>
+      <a id="dw-lgi-pswd" class="btn btn-default" tabindex="122">Login with Username and Password</a>
+      <a id="dw-lgi-create-password-user" class="btn btn-default" tabindex="123">Create New Account</a>
+      <!-- <a id="dw-lgi-more" class="btn btn-default" tabindex="124">More login options...</a> -->
 
       <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="130">
     </div>

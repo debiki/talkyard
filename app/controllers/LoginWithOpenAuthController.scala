@@ -27,8 +27,8 @@ import com.mohiva.play.silhouette.core.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.core.providers.oauth2._
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.core.{exceptions => siex}
-import debiki.DebikiHttp.throwForbidden
-import debiki.DebikiHttp.isAjax
+import debiki.DebikiHttp.{throwForbidden, throwBadReq}
+import debiki.DebikiHttp.{isAjax, originOf, daoFor, AjaxFriendlyRedirectStatusCode}
 import java.{util => ju}
 import play.{api => p}
 import play.api.mvc._
@@ -57,6 +57,7 @@ object LoginWithOpenAuthController extends Controller {
   private val ReturnToSiteCookieName = "dwCoReturnToSite"
   private val ReturnToSiteXsrfTokenCookieName = "dwCoReturnToSiteXsrfToken"
   private val IsInLoginPopupCookieName = "dwCoIsInLoginPopup"
+  private val MayCreateUserCookieName = "dwCoMayCreateUser"
 
   val anyLoginOrigin =
     if (Play.isTest) {
@@ -69,24 +70,27 @@ object LoginWithOpenAuthController extends Controller {
     }
 
 
-  /** The authentication flow starts here, if it happens in the main window and you
-    * thus have a page you want to return to afterwards.
-    */
-  def startAuthentication(provider: String, returnToUrl: String, request: Request[Unit]) = {
-    val futureResponse = authenticate(provider, request)
-    futureResponse map { response =>
-      response.withCookies(
-        Cookie(name = ReturnToUrlCookieName, value = returnToUrl, httpOnly = false))
-    }
+  def startAuthentication(provider: String, returnToUrl: String) =
+        ExceptionAction.async(empty) { request =>
+    startAuthenticationImpl(provider, returnToUrl, request)
   }
 
 
-  /** The authentication starts here if it happens in a popup. Then, afterwards,
-    * the popup window will be sent some Javascript that tells the popup opener
-    * what has happened (i.e. that the user logged in).
-    */
-  def startAuthenticationInPopupWindow(provider: String) = ExceptionAction.async(empty) { request =>
-    authenticate(provider, request)
+  def startAuthenticationImpl(provider: String, returnToUrl: String, request: Request[Unit]) = {
+    var futureResult = authenticate(provider, request)
+    if (returnToUrl.nonEmpty) {
+      futureResult = futureResult map { result =>
+        result.withCookies(
+          Cookie(name = ReturnToUrlCookieName, value = returnToUrl, httpOnly = false))
+      }
+    }
+    if (request.rawQueryString.contains("mayNotCreateUser")) {
+      futureResult = futureResult map { result =>
+        result.withCookies(
+          Cookie(name = MayCreateUserCookieName, value = "false", httpOnly = false))
+      }
+    }
+    futureResult
   }
 
 
@@ -197,17 +201,29 @@ object LoginWithOpenAuthController extends Controller {
     val loginAttempt = OpenAuthLoginAttempt(
       ip = request.remoteAddress, date = new ju.Date, oauthDetails)
 
+    val mayCreateNewUserCookie = request.cookies.get(MayCreateUserCookieName)
+    val mayCreateNewUser = mayCreateNewUserCookie.map(_.value) != Some("false")
+
     val dao = daoFor(request)
 
     // COULD let tryLogin() return a LoginResult and use pattern matching, not exceptions.
-    try {
-      val loginGrant = dao.tryLogin(loginAttempt)
-      createCookiesAndFinishLogin(request, loginGrant.user)
-    }
-    catch {
-      case ex: DbDao.IdentityNotFoundException =>
-        showCreateUserDialog(request, oauthDetails)
-    }
+    val result =
+      try {
+        val loginGrant = dao.tryLogin(loginAttempt)
+        createCookiesAndFinishLogin(request, loginGrant.user)
+      }
+      catch {
+        case ex: DbDao.IdentityNotFoundException =>
+          if (mayCreateNewUser) {
+            showCreateUserDialog(request, oauthDetails)
+          }
+          else {
+            // COULD show a nice error dialog instead.
+            throwForbidden("DwE5FK9R2", "Access denied")
+          }
+      }
+
+    result.discardingCookies(DiscardingCookie(MayCreateUserCookieName))
   }
 
 
@@ -218,7 +234,18 @@ object LoginWithOpenAuthController extends Controller {
 
     val response = request.cookies.get(ReturnToUrlCookieName) match {
       case Some(returnToUrlCookie) =>
-        Redirect(returnToUrlCookie.value).discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
+        val status =
+          if (isAjax(request)) {
+            // We don't want the Ajax request to follow the redirect, so we have to
+            // use a custom HTTP status code. (All browsers must follow status 302 and 303
+            // redirects, even Ajax requests.)
+            AjaxFriendlyRedirectStatusCode
+          }
+          else {
+            play.api.http.Status.SEE_OTHER
+          }
+        Redirect(returnToUrlCookie.value, status)
+          .discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
       case None =>
         if (isAjax(request)) {
           // We've shown but closed an OAuth provider login popup, and now we're
@@ -235,15 +262,12 @@ object LoginWithOpenAuthController extends Controller {
 
 
   private def showCreateUserDialog(request: Request[_], oauthDetails: OpenAuthDetails): Result = {
-    if (request.cookies.get(ReturnToUrlCookieName).isDefined) {
-      unimplemented("Showing create-user dialog when there's a return-to URL")
-    }
-
     val cacheKey = nextRandomString()
     play.api.cache.Cache.set(cacheKey, oauthDetails)
     val anyIsInLoginPopupCookieValue = request.cookies.get(IsInLoginPopupCookieName).map(_.value)
+    val anyReturnToUrlCookieValue = request.cookies.get(ReturnToUrlCookieName).map(_.value)
 
-    if (anyIsInLoginPopupCookieValue.isDefined) {
+    if (anyIsInLoginPopupCookieValue.isDefined || anyReturnToUrlCookieValue.isDefined) {
       // This is an embedded comments site, so the login dialog opened in a popup window,
       // not in the embedded iframe. Continue running in the popup window, by returning
       // a complete HTML page that shows a create-user dialog.
@@ -272,7 +296,8 @@ object LoginWithOpenAuthController extends Controller {
     val email = (body \ "email").as[String]
     val username = (body \ "username").as[String]
 
-    val oauthDetailsCacheKey = (body \ "authDataCacheKey").as[String]
+    val oauthDetailsCacheKey = (body \ "authDataCacheKey").asOpt[String] getOrElse
+      throwBadReq("DwE08GM6", "Auth data cache key missing")
     val oauthDetails = play.api.cache.Cache.get(oauthDetailsCacheKey) match {
       case Some(details: OpenAuthDetails) =>
         details
@@ -286,8 +311,8 @@ object LoginWithOpenAuthController extends Controller {
     }
 
     val dao = daoFor(request.request)
-    val loginGrant = dao.createUserAndLogin(NewUserData(
-      displayName = name,
+    val loginGrant = dao.createUserAndLogin(NewOauthUserData(
+      name = name,
       email = email,
       identityData = oauthDetails))
 
@@ -405,18 +430,6 @@ object LoginWithOpenAuthController extends Controller {
 
   private def buildRedirectUrl(request: Request[_], provider: String) = {
     originOf(request) + routes.LoginWithOpenAuthController.finishAuthentication(provider).url
-  }
-
-
-  private def originOf(request: Request[_]) = {
-    val scheme = if (request.secure) "https" else "http"
-    s"$scheme://${request.host}"
-  }
-
-
-  def daoFor(request: Request[_]) = {
-    val siteId = debiki.DebikiHttp.lookupTenantIdOrThrow(originOf(request), debiki.Globals.systemDao)
-    debiki.Globals.siteDao(siteId, ip = request.remoteAddress)
   }
 
 }

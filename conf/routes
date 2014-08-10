@@ -20,20 +20,20 @@
 # dependency ? see:
 #   https://groups.google.com/forum/?fromgroups=#!topic/play-framework/cVqBvywCs4k
 
-GET   /-/login-popup            controllers.LoginPopupController.showLoginPopup(mode)
-GET   /-/login/:provider        controllers.LoginController.loginWith(provider, returnToUrl)
+GET   /-/login-popup            controllers.LoginController.showLoginPopup(mode)
 POST  /-/logout                 controllers.LoginController.logout
 
 POST  /-/login-guest            controllers.LoginAsGuestController.loginGuest
 POST  /-/login-password         controllers.LoginWithPasswordController.login
+POST  /-/login-password-create-user controllers.LoginWithPasswordController.handleCreateUserDialog(returnToUrl)
 #GET   /-/api/login-openid       controllers.LoginWithOpenIdController.loginGet
 #POST  /-/api/login-openid       controllers.LoginWithOpenIdController.loginPost
 #GET   /-/api/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)
-GET   /-/login-openauth-popup/:provider controllers.LoginWithOpenAuthController.startAuthenticationInPopupWindow(provider)
+GET   /-/login-openauth/:provider controllers.LoginWithOpenAuthController.startAuthentication(provider, returnToUrl)
 GET   /-/login-auth-callback/:provider  controllers.LoginWithOpenAuthController.finishAuthentication(provider)
 GET   /-/login-oauth-then-return/:provider controllers.LoginWithOpenAuthController.loginThenReturnToOriginalSite(provider, returnToOrigin, xsrfToken)
 GET   /-/login-oauth-continue           controllers.LoginWithOpenAuthController.continueAtOriginalSite(oauthDetailsCacheKey, xsrfToken)
-POST  /-/login-create-user              controllers.LoginWithOpenAuthController.handleCreateUserDialog
+POST  /-/login-oauth-create-user  controllers.LoginWithOpenAuthController.handleCreateUserDialog
 
 GET   /-/api/logout             controllers.LoginController.logout
 POST  /-/api/logout             controllers.LoginController.logout
@@ -48,12 +48,6 @@ GET   /-/search/section/:pageId/for/:phrase controllers.FullTextSearchController
 GET   /-/install/                   controllers.InstallationController.viewInstallationPage
 POST  /-/install/create-first-site  controllers.InstallationController.createFirstSite
 GET   /-/install/create-first-owner controllers.InstallationController.createFirstSiteOwner(password)
-
-GET   /-/create-account/specify-email-address/:returnToUrl  controllers.CreateAccountController.showCreateAccountPage(returnToUrl)
-POST  /-/create-account/specify-email-address/:returnToUrl  controllers.CreateAccountController.handleEmailAddress(returnToUrl)
-GET   /-/create-account/user-details/:emailId/:returnToUrl  controllers.CreateAccountController.showUserDetailsPage(emailId, returnToUrl)
-POST  /-/create-account/user-details/:emailId/:returnToUrl  controllers.CreateAccountController.handleUserDetails(emailId, returnToUrl)
-GET   /-/create-account/welcome/:returnToUrl                controllers.CreateAccountController.showWelcomePage(returnToUrl)
 
 GET   /-/reset-password                  controllers.ResetPasswordController.start
 GET   /-/reset-password/specify-email    controllers.ResetPasswordController.showResetPasswordPage

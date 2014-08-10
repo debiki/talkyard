@@ -20,59 +20,32 @@ package controllers
 import actions.SafeActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki._
-import debiki.DebikiHttp._
-import com.mohiva.play.silhouette
 import java.{util => ju}
 import play.api._
-import play.api.mvc.{Action => _, _}
+import play.api.mvc._
 import play.api.mvc.BodyParsers.parse.empty
-import scala.concurrent.Future
-import Utils.{OkHtml}
 
 
-/**
- * Handles login; delegates to: LoginAsGuestController, LoginWithOpenIdController
- * and LoginWithPasswordController and LoginWithSilhouetteController.
- *
- * Usage:
- * You could use views.html.login.loginPage to how a login page in place of the
- * page that requires login. Then, views.html.login.loginPage will post to
- * this class, AppLogin, which will eventually redirect back to the
- * returnToUrl.
- */
+/** Logs in and out.
+  */
 object LoginController extends mvc.Controller {
 
 
-  def loginWith(provider: String, returnToUrl: String) = ExceptionAction.async(empty) {
-        implicit reqest =>
-    asyncLogin(provider = provider, returnToUrl = returnToUrl)
+  /** Opens a popup and a login dialog inside that popup. Useful when logging in
+    * in an iframe, because it's not feasible to open modal dialogs from inside
+    * iframes — only the iframe would be disabled by the modal dialog, but not
+    * the rest of the page.
+    */
+  def showLoginPopup(mode: String, returnToUrl: String = "") = ExceptionAction(empty) { request =>
+    Ok(views.html.login.loginPopup(
+      mode = mode,
+      serverAddress = s"//${request.host}",
+      returnToUrl = returnToUrl)) as HTML
   }
 
 
-  def asyncLogin(provider: String, returnToUrl: String)
-        (implicit request: Request[Unit]): Future[Result] = {
-
-    /*
-    def loginWithOpenId(identifier: String): Future[Result] = {
-      LoginWithOpenIdController.asyncLogin(openIdIdentifier = identifier,
-        returnToUrl = returnToUrl)(request)
-    } */
-
-    provider match {
-      case "yahoo" =>
-        ??? /*
-        loginWithOpenId(IdentityOpenId.ProviderIdentifier.Yahoo)
-        */
-      case provider =>
-        LoginWithOpenAuthController.startAuthentication(provider, returnToUrl, request)
-    }
-  }
-
-
-  /**
-   * Clears login related cookies and OpenID and OpenAuth stuff.
-   */
+  /** Clears login related cookies and OpenID and OpenAuth stuff.
+    */
   def logout = mvc.Action(parse.empty) { request =>
     // COULD save logout timestamp to database.
     // Keep the xsrf cookie, so login dialog works:
