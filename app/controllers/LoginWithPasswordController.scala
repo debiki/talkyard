@@ -17,6 +17,7 @@
 
 package controllers
 
+import actions.ApiActions.JsonOrFormDataPostAction
 import actions.ApiActions.PostJsonAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -24,11 +25,11 @@ import debiki._
 import debiki.dao.SiteDao
 import debiki.DebikiHttp._
 import java.{util => ju}
+import org.scalactic.{Good, Bad}
 import play.api._
 import play.api.mvc.{Action => _, _}
-import requests.ApiRequest
-import actions.ApiActions.JsonOrFormDataPostAction
 import play.api.libs.json.JsObject
+import requests.ApiRequest
 import requests.JsonPostRequest
 
 
@@ -87,14 +88,20 @@ object LoginWithPasswordController extends mvc.Controller {
     val name = (body \ "name").as[String]
     val email = (body \ "email").as[String]
     val username = (body \ "username").as[String]
-    val password = (body \ "username").asOpt[String] getOrElse
+    val password = (body \ "password").asOpt[String] getOrElse
       throwBadReq("DwE85FX1", "Password missing")
 
     // COULD avoid replying 500 Internal Error if user already exists!
     val dao = daoFor(request.request)
-    val loginGrant = dao.createUserAndLogin(
-      NewPasswordUserData(
-        name = name, email = email, password = password))
+    val userData =
+      NewPasswordUserData.create(name = name, email = email, username = username,
+          password = password) match {
+        case Good(data) => data
+        case Bad(errorMessage) =>
+          throwUnprocessableEntity("DwE805T4", s"$errorMessage, please try again.")
+      }
+
+    val loginGrant = dao.createUserAndLogin(userData)
 
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(loginGrant.user)
     val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant.user)

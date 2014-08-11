@@ -18,6 +18,7 @@
 package com.debiki.core
 
 import java.{util => ju}
+import org.scalactic.{Or, Every, ErrorMessage}
 import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
 import User.{isRoleId, isGuestId, checkId}
@@ -48,6 +49,7 @@ case class People(users: List[User] = Nil) {
 
 sealed abstract class NewUserData {
   def name: String
+  def username: String
   def email: String
 
   def userNoId = User(
@@ -62,28 +64,72 @@ sealed abstract class NewUserData {
 
   def identityNoId: Identity
 
+  Validation.checkName(name)
+  Validation.checkUsername(username)
+  Validation.checkEmail(email)
+
 }
+
 
 
 case class NewPasswordUserData(
   name: String,
+  username: String,
   email: String,
   password: String) extends NewUserData {
 
   def identityNoId =
     PasswordIdentity(id = "?", userId = "?", email = email,
       passwordSaltHash = DbDao.saltAndHashPassword(password))
+
+  Validation.checkPassword(password)
 }
+
+
+object NewPasswordUserData {
+  def create(name: String, username: String, email: String, password: String)
+        : NewPasswordUserData Or ErrorMessage = {
+    for {
+      okName <- Validation.checkName(name)
+      okUsername <- Validation.checkUsername(username)
+      okEmail <- Validation.checkEmail(email)
+      okPassword <- Validation.checkPassword(password)
+    }
+    yield {
+      NewPasswordUserData(name = okName, username = okUsername, email = okEmail,
+        password = okPassword)
+    }
+  }
+}
+
 
 
 case class NewOauthUserData(
   name: String,
+  username: String,
   email: String,
   identityData: OpenAuthDetails) extends NewUserData {
 
   def identityNoId =
     OpenAuthIdentity(id = "?", userId = "?", openAuthDetails = identityData)
 }
+
+
+object NewOauthUserData {
+  def create(name: String, email: String, username: String, identityData: OpenAuthDetails)
+        : NewOauthUserData Or ErrorMessage = {
+    for {
+      okName <- Validation.checkName(name)
+      okUsername <- Validation.checkUsername(username)
+      okEmail <- Validation.checkEmail(email)
+    }
+    yield {
+      NewOauthUserData(name = okName, username = okUsername, email = okEmail,
+        identityData = identityData)
+    }
+  }
+}
+
 
 
 case object UserIdData {

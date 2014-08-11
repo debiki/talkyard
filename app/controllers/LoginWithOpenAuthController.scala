@@ -27,9 +27,10 @@ import com.mohiva.play.silhouette.core.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.core.providers.oauth2._
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.core.{exceptions => siex}
-import debiki.DebikiHttp.{throwForbidden, throwBadReq}
+import debiki.DebikiHttp.{throwForbidden, throwBadReq, throwUnprocessableEntity}
 import debiki.DebikiHttp.{isAjax, originOf, daoFor, AjaxFriendlyRedirectStatusCode}
 import java.{util => ju}
+import org.scalactic.{Good, Bad}
 import play.{api => p}
 import play.api.mvc._
 import play.api.mvc.BodyParsers.parse.empty
@@ -311,10 +312,14 @@ object LoginWithOpenAuthController extends Controller {
     }
 
     val dao = daoFor(request.request)
-    val loginGrant = dao.createUserAndLogin(NewOauthUserData(
-      name = name,
-      email = email,
-      identityData = oauthDetails))
+    val userData =
+      NewOauthUserData.create(name = name, email = email, username = username,
+          identityData = oauthDetails) match {
+        case Good(data) => data
+        case Bad(errorMessage) =>
+          throwUnprocessableEntity("DwE7BD08", s"$errorMessage, please try again.")
+      }
+    val loginGrant = dao.createUserAndLogin(userData)
 
     createCookiesAndFinishLogin(request.request, loginGrant.user)
   }

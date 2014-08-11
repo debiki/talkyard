@@ -85,6 +85,9 @@ object DebikiHttp {
     R.EntityTooLarge("413 Request Entity Too Large\n"+
        message +" [error "+ errCode +"]")
 
+  def UnprocessableEntityResult(errCode: String, message: String): Result =
+    R.UnprocessableEntity("422 Unprocessable Entity\n"+ message +" [error "+ errCode +"]")
+
   def InternalErrorResult(errCode: String, message: String): Result =
     R.InternalServerError(
       "500 Internal Server Error\n"+ message +" [error "+ errCode +"]")
@@ -100,6 +103,9 @@ object DebikiHttp {
 
   def throwBadReq(errCode: String, message: String = "") =
     throw ResultException(BadReqResult(errCode, message))
+
+  def throwUnprocessableEntity(errCode: String, message: String = "") =
+    throw ResultException(UnprocessableEntityResult(errCode, message))
 
   def throwBadParamValue(errCode: String, paramName: String) =
     throwBadReq(errCode, "Bad `"+ paramName +"` value")
