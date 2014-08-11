@@ -23,7 +23,8 @@ import java.{util => ju}
 trait PeopleTestUtils {
 
   def makePerson(idBase: String): (User, Identity) = {
-    val user = User(idBase + "id", idBase + " name", s"$idBase@ex.com", EmailNotfPrefs.Receive)
+    val user = User(idBase + "id", idBase + " name", username = Some(s"${idBase}_username"),
+      email = s"$idBase@ex.com", emailNotfPrefs = EmailNotfPrefs.Receive)
     val identity = PasswordIdentity(
       s"${idBase}Idty", userId = user.id, email = user.email, passwordSaltHash = "salthash")
     (user, identity)

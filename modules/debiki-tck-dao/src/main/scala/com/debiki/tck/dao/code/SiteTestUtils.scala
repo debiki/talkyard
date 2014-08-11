@@ -47,7 +47,8 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
       text = text, markup = "para", approval = None)
 
 
-  val DefaultPasswordUserName = "PasswordUser"
+  val DefaultPasswordFullName = "PasswordUserFullName"
+  val DefaultPasswordUsername = "PasswordUserUsername"
 
   def createPasswordRole(): (PasswordIdentity, User) = {
     val email = "pswd-test@ex.com"
@@ -55,8 +56,8 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
     val identityNoId = PasswordIdentity(
       id = "?", userId = "?", email = email, passwordSaltHash = hash)
     val userNoId = User(
-      id = "?", displayName = DefaultPasswordUserName, email = email,
-      emailNotfPrefs = EmailNotfPrefs.Receive)
+      id = "?", displayName = DefaultPasswordFullName, username = Some(DefaultPasswordUsername),
+      email = email, emailNotfPrefs = EmailNotfPrefs.Receive)
     dao.createPasswordIdentityAndRole(identityNoId, userNoId)
   }
 

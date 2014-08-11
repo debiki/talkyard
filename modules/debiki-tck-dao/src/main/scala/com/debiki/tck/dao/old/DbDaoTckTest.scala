@@ -1888,7 +1888,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val identityNoId = PasswordIdentity(
         id = "?", userId = "?", email = theEmail, passwordSaltHash = theHash)
       val userNoId = User(
-        id = "?", displayName = "PasswordUser", email = theEmail,
+        id = "?", displayName = "PasswordUser", username = Some("PwdUsrUsername"), email = theEmail,
         emailNotfPrefs = EmailNotfPrefs.Receive)
 
       var theIdentity: PasswordIdentity = null

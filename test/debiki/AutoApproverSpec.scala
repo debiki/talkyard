@@ -41,12 +41,14 @@ class AutoApproverSpec extends Specification with Mockito {
   val PageCreator = User(
     id = "-pageCreator",
     displayName = "Page Creator",
+    username = Some("Page_Creator"),
     email = "page-creator.email@.com",
     emailNotfPrefs = null)
 
   val guestUser = User(
     id = "-guestid",
     displayName = "Guest Name",
+    username = None,
     email = "guest.email@.com",
     emailNotfPrefs = null,
     country = "",
@@ -57,6 +59,7 @@ class AutoApproverSpec extends Specification with Mockito {
   val passwordUser = User(
     id = "pwdusr",
     displayName = "Password User Name",
+    username = Some("Password_User_Name"),
     email = "pwdusr@ex.com",
     emailNotfPrefs = null,
     country = "",

@@ -55,6 +55,7 @@ sealed abstract class NewUserData {
   def userNoId = User(
     id = "?",
     displayName = name,
+    username = Some(username),
     email = email,
     emailNotfPrefs = EmailNotfPrefs.Unspecified,
     country = "",
@@ -243,16 +244,23 @@ case class RoleId(String) extends UserId
 */
 
 
+/**
+ *
+ * @param id Starts with "-" for guest users. COULD replace with UserId (see above).
+ * @param displayName
+ * @param username Is None for guests, and some old users created before usernames had
+ *    been implemented.
+ * @param email
+ * @param emailNotfPrefs
+ * @param country
+ * @param website COULD rename to url, that's more generic.
+ * @param isAdmin
+ * @param isOwner
+ */
 case class User (
-  /** The user's id. Starts with "-" if not authenticated
-   *  (i.e. for IdentitySimple).
-   *  COULD replace with UserId (see above) */
   id: String,
   displayName: String,
-  // COULD be an Option -- Twitter identities have no email?
-  // Or introduce a Address class, with subclasses AddrEmail, AddrTwitter, etc?
-  // Or let it be an Option[String], and the format determine the address type?
-  // And rename emailNotfPrefs to notfPrefs?
+  username: Option[String],
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
   country: String = "",
@@ -507,7 +515,7 @@ object SystemUser {
 
   val Ip = "SystemUserIp"
 
-  val User = core.User(id = "1", displayName = "System", email = "",
+  val User = core.User(id = "1", displayName = "System", username = None, email = "",
     emailNotfPrefs = EmailNotfPrefs.DontReceive, isAdmin = true)
 
   val Person = People(List(User))

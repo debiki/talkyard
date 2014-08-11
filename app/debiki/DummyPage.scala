@@ -60,7 +60,7 @@ object DummyPage {
   // COULD have Dao require that user/idty/login id never be "2".
   // (Id "1" is the SystemUser, in debiki-core user.scala.)
 
-  val DummyAuthorUser = User(id = "2", displayName = "(dummy author)",
+  val DummyAuthorUser = User(id = "2", displayName = "(dummy author)", username = None,
     email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive, country = "",
     website = "", isAdmin = false, isOwner = false)
 

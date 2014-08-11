@@ -125,7 +125,7 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
       "find user action infos" in {
         def testActionInfo(info: UserActionInfo) {
           info.actingUserId mustBe passwordRole.id
-          info.actingUserDisplayName mustBe siteUtils.DefaultPasswordUserName
+          info.actingUserDisplayName mustBe siteUtils.DefaultPasswordFullName
           if (info.postId == 1) {
             info.postExcerpt mustBe PageText
           }
