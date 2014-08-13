@@ -56,8 +56,10 @@ sealed abstract class NewUserData {
     id = "?",
     displayName = name,
     username = Some(username),
+    createdAt = None,
     email = email,
     emailNotfPrefs = EmailNotfPrefs.Unspecified,
+    emailVerifiedAt = None,
     country = "",
     website = "",
     isAdmin = false,
@@ -250,8 +252,10 @@ case class RoleId(String) extends UserId
  * @param displayName
  * @param username Is None for guests, and some old users created before usernames had
  *    been implemented.
+ * @param createdAt None for guests.
  * @param email
  * @param emailNotfPrefs
+ * @param emailVerifiedAt
  * @param country
  * @param website COULD rename to url, that's more generic.
  * @param isAdmin
@@ -261,8 +265,10 @@ case class User (
   id: String,
   displayName: String,
   username: Option[String],
+  createdAt: Option[ju.Date],
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
+  emailVerifiedAt: Option[ju.Date] = None,
   country: String = "",
   website: String = "",
   isAdmin: Boolean = false,
@@ -515,8 +521,9 @@ object SystemUser {
 
   val Ip = "SystemUserIp"
 
-  val User = core.User(id = "1", displayName = "System", username = None, email = "",
-    emailNotfPrefs = EmailNotfPrefs.DontReceive, isAdmin = true)
+  val User = core.User(id = "1", displayName = "System", username = None,
+    createdAt = None, email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive,
+    emailVerifiedAt = None, isAdmin = true)
 
   val Person = People(List(User))
 

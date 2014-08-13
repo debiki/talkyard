@@ -57,7 +57,8 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
       id = "?", userId = "?", email = email, passwordSaltHash = hash)
     val userNoId = User(
       id = "?", displayName = DefaultPasswordFullName, username = Some(DefaultPasswordUsername),
-      email = email, emailNotfPrefs = EmailNotfPrefs.Receive)
+      createdAt = None, email = email, emailNotfPrefs = EmailNotfPrefs.Receive,
+      emailVerifiedAt = None)
     dao.createPasswordIdentityAndRole(identityNoId, userNoId)
   }
 

@@ -1829,7 +1829,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         ssIdentity.openAuthDetails must_== the2ndOpenAuthDetails
 
         loginGrant.user must_== theChangedLoginGrant.user.copy(
-          id = loginGrant.user.id, email = the2ndEmail)
+          id = loginGrant.user.id, email = the2ndEmail, createdAt = loginGrant.user.createdAt)
         ok
       }
 
@@ -1845,7 +1845,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         loginGrant.user.id must_!= theFirstLoginGrant.user.id
         loginGrant.user.id must_!= the2ndUsersLoginGrant.user.id
         loginGrant.user must_== theChangedLoginGrant.user.copy(
-          id = loginGrant.user.id, email = the3rdEmail)
+          id = loginGrant.user.id, email = the3rdEmail, createdAt = loginGrant.user.createdAt)
         ok
       }
 
@@ -1877,8 +1877,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val identityNoId = PasswordIdentity(
         id = "?", userId = "?", email = theEmail, passwordSaltHash = theHash)
       val userNoId = User(
-        id = "?", displayName = "PasswordUser", username = Some("PwdUsrUsername"), email = theEmail,
-        emailNotfPrefs = EmailNotfPrefs.Unspecified)
+        id = "?", displayName = "PasswordUser", username = Some("PwdUsrUsername"),
+        createdAt = None, email = theEmail, emailNotfPrefs = EmailNotfPrefs.Unspecified,
+        emailVerifiedAt = None)
 
       var theIdentity: PasswordIdentity = null
       var theUser: User = null
