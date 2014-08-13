@@ -28,10 +28,9 @@ import java.{util => ju}
 import org.scalatest._
 
 
-/** Tests votes. There're some tests in DbDaoTckTests that could be moved to here,
-  * search for "vote on a post" in DbDaoTckTests.
+/** Tests votes: save, load, vote on others' comments, on ones own comment (not allowed).
   */
-class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
+class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) with Inside {
 
   lazy val utils = new TestUtils(daoFactory)
   lazy val site = utils.createFirstSite()
@@ -107,10 +106,22 @@ class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
       countCommentVotes() mustBe Vector((0, 0, 0), (0, 0, 0), (0, 0, 0))
     }
 
-    "one can Like, Wrong and Off-Topic vote others posts" - {
+    "one can Like, Wrong and Off-Topic vote others posts — and find the Like vote again" - {
       "guest 2 votes on post #3" in {
-        val (tmpPage, _) = siteUtils.vote(guestUser2, page, post3.id, PAP.VoteLike)
+        val (tmpPage, vote: RawPostAction[_]) =
+          siteUtils.vote(guestUser2, page, post3.id, PAP.VoteLike)
         page = tmpPage
+
+        // Just once, verify that we get back exactly the same vote as we saved.
+        inside(dao.loadPageParts(page.id)) {
+          case Some(parts: PageParts) => {
+            inside(parts.getActionById(vote.id)) {
+              case Some(vote: PostAction[_]) =>
+                vote.rawAction mustBe vote
+            }
+          }
+        }
+
         countCommentVotes() mustBe Seq((0, 0, 0), (1, 0, 0), (0, 0, 0))
         val (tmpPageB, _) = siteUtils.vote(guestUser2, page, post3.id, PAP.VoteWrong)
         page = tmpPageB

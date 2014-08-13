@@ -139,6 +139,8 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
       userIdData = UserIdData.newTest(userId = user.id),
       payload = voteType)
     val (pageWithVote, List(vote)) = dao.savePageActions(pageNoVote, voteNoId::Nil)
+    val voteWithId = voteNoId.copy(id = vote.id)
+    assert(voteWithId == vote)
     (pageWithVote, vote.asInstanceOf[RawPostAction[PAP.Vote]])
   }
 }

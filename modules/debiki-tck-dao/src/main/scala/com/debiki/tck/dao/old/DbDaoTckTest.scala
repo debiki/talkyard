@@ -1265,50 +1265,6 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
     }
 
-    "vote on a post" >> {
-
-      lazy val LikeVote = RawPostAction(UnassignedId, new ju.Date, postId = PageParts.BodyId,
-        userIdData = UserIdData.newTest(userId = globalUserId), payload = PAP.VoteLike)
-      lazy val WrongVote = LikeVote.copy(payload = PAP.VoteWrong)
-      lazy val OffTopicVote = LikeVote.copy(payload = PAP.VoteOffTopic)
-
-      def saveAndLoadVote[A](vote: RawPostAction[A]) {
-        var savedVote: RawPostAction[A] = null
-
-        dao.savePageActions(testPage, List(vote)) must beLike {
-          case (_, List(vote: RawPostAction[A])) =>
-            savedVote = vote
-            vote must_== vote.copy(id = savedVote.id)
-        }
-
-        dao.loadPageParts(testPage.id) must beLike {
-          case Some(p: PageParts) => {
-            p.getActionById(savedVote.id) match {
-              case Some(vote: PostAction[A]) =>
-                vote.rawAction must_== savedVote
-              case _ =>
-                fail(s"Vote not found: $vote")
-            }
-          }
-        }
-      }
-
-      "save and load a Like vote" in {
-        saveAndLoadVote(LikeVote)
-        ok
-      }
-
-      "save and load a Wrong vote" in {
-        saveAndLoadVote(WrongVote)
-        ok
-      }
-
-      "save and load a OffTopic vote" in {
-        saveAndLoadVote(OffTopicVote)
-        ok
-      }
-    }
-
 
     // -------- Save approvals and rejections
 
