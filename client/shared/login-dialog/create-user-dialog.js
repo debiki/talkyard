@@ -19,6 +19,8 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
+// This is our custom Redirect status code that doesn't result in the
+// ajax request itself being redirected (like status 302 and 303 do).
 var AjaxFriendlyRedirectStatusCode = 278;
 
 
@@ -35,7 +37,10 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
     dialog.find('.form-group.password').show();
   }
 
+  var emailVerified = false;
+
   if (userData.email && userData.email.length) {
+    emailVerified = true;
     dialog.find('#new-user-email').val(userData.email);
     // Email already provided by OpenAuth or OpenID provider, don't let the user change it.
     dialog.find('#new-user-email').attr('disabled', 'disabled');
@@ -66,49 +71,91 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
     d.u.postJson({ url: url, data: data })
       .fail(d.i.showServerResponseDialog)
       .done(function(data, textStatus, result) {
-        // Session cookies should now have been set.
+
+        // We want to redirect here, if we've signed up in order to create a
+        // new site — then the next page should be the next step in the site
+        // creation wizard.
+        var anyRedirectUrl = null;
         if (result.status === AjaxFriendlyRedirectStatusCode) {
-          // This is our custom Redirect status code that doesn't result in the
-          // ajax request itself being redirected (like status 302 and 303 do).
-          // (We want to redirect here, if we've signed up in order to create a
-          // new site — then the next page should be the next step in the site
-          // creation wizard.)
-          var continueToUrl = result.getResponseHeader('Location');
-          window.location = continueToUrl;
-          return;
+          anyRedirectUrl = result.getResponseHeader('Location');
         }
-        // If this is an embedded comments site, we're currently executing in
-        // a create user login popup window, not in the <iframe> on the embedding
-        // page. If so, only window.opener has loaded the code that we're
-        // about to execute.
-        var di;
-        if (d.i.isInLoginPopup) {
-          // We're in a login popup window for an embedded comments site.
-          di = window.opener.debiki.internal;
+
+        if (emailVerified) {
+          redirectOrContinueOnSamePage(anyRedirectUrl);
         }
         else {
-          // This is not an embedded comments site, we're not in a popup; we can
-          // execute the subsequent code directly here in the main window.
-          di = debiki.internal;
+          // Wait until the user has confirmed his/her email address.
+          showWaitForEmailConfirmedDialog(function(loggedIn) {
+            if (loggedIn) {
+              dialog.dialog('close');
+              redirectOrContinueOnSamePage(anyRedirectUrl);
+            }
+            else {
+              cancel();
+            }
+          });
         }
-        di.Me.fireLogin();
-        di.continueAnySubmission();
-        dialog.dialog('close');
-        $('#dw-lgi').dialog('close');
       });
   });
 
-  dialog.find('.cancel').click(function() {
-    dialog.dialog('close');
+  dialog.find('.cancel').click(cancel);
 
+  function cancel() {
+    dialog.dialog('close');
     // Return to the main login dialog, by opening it.
     $('#dw-lgi').dialog('close'); // in case not yet closed
     d.i.showLoginDialog();  // in case had already been closed
-  });
+  }
 
   dialog.dialog('open');
 };
 
+
+function redirectOrContinueOnSamePage(anyRedirectUrl) {
+  // Session cookies should already have been set by the server.
+
+  if (anyRedirectUrl) {
+    window.location = anyRedirectUrl;
+    return;
+  }
+
+  // If this is an embedded comments site, we're currently executing in
+  // a create user login popup window, not in the <iframe> on the embedding
+  // page. If so, only window.opener has loaded the code that we're
+  // about to execute.
+  var di;
+  if (d.i.isInLoginPopup) {
+    // We're in a login popup window for an embedded comments site.
+    di = window.opener.debiki.internal;
+  }
+  else {
+    // This is not an embedded comments site, we're not in a popup; we can
+    // execute the subsequent code directly here in the main window.
+    di = debiki.internal;
+  }
+  di.Me.fireLogin();
+  di.continueAnySubmission();
+  $('#dw-lgi').dialog('close');
+}
+
+
+function showWaitForEmailConfirmedDialog(continueOrCancel) {
+  var dialog = createWaitForEmailConfirmedDialogHtml();
+  dialog.dialog(d.i.newModalDialogSettings({
+    width: 350,
+    closeOnEscape: !d.i.isInLoginPopup
+  }));
+  dialog.find('.continue').click(function() {
+    console.log('Time to continue...');
+    dialog.dialog('close');
+    continueOrCancel(true);
+  });
+  dialog.find('.cancel').click(function() {
+    dialog.dialog('close');
+    continueOrCancel(false);
+  });
+  dialog.dialog('open');
+}
 
 
 function createUserDialogHtml() {
@@ -133,6 +180,19 @@ function createUserDialogHtml() {
     '</div>' +
     '<div>' +
     '  <a class="submit btn btn-default">Create user</a>' +
+    '  <a class="cancel btn btn-default">Cancel</a>' +
+    '</div>' +
+    '</div>');
+}
+
+
+function createWaitForEmailConfirmedDialogHtml(mode) {
+  return $(
+    '<div class="dw-fs" title="Confirm Your Email Address">' +
+    '  <p>Almost done! We have sent an activation email to you. Please click the' +
+    '  link in the email to activate your account. Then click <b>Continue</b> below.</p>' +
+    '<div>' +
+    '  <a class="continue btn btn-default">Continue</a>' +
     '  <a class="cancel btn btn-default">Cancel</a>' +
     '</div>' +
     '</div>');
