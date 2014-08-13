@@ -1582,6 +1582,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
 
     // -------- OpenID login
+    /* Disable for now, OpenID broken with Play Framework 2.3.
 
     var exOpenId_loginReq: LoginGrant = null
     var exOpenId_loginReq_openIdIdentity: IdentityOpenId = null
@@ -1755,13 +1756,16 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
       ok
     }
+     */
 
 
-    // -------- SecureSocial identities
+    // -------- OAuth identities
 
-    "Login with a SecureSocialIdentity, create associated User" >> {
+    "Login with a OAuth, create associated User" >> {
 
       val theFirstName = "SecureSocialFirstName1"
+      val theLastName = "SecureSocialLastName"
+      val theUsername = "oauth_username"
       val theEmail = "securesocial-user@ex.com"
 
       val theChangedFirstName = "NewSecureSocialFirstName1"
@@ -1774,7 +1778,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         providerId = "providerId",
         providerKey = "userId",
         firstName = Some(theFirstName),
-        lastName = Some("SecureSocialLastName"),
+        lastName = Some(theLastName),
         fullName = Some("SecureSocialFirstName SecureSocialLastName"),
         email = Some(theEmail),
         avatarUrl = Some("http://avatar.url"))
@@ -1788,6 +1792,24 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val the3rdOpenAuthDetails = theOpenAuthDetails.copy(
         providerId = "newPrvdrId", email = Some(the3rdEmail))
 
+      val newOauthUserData = NewOauthUserData(
+        name = theFirstName,
+        username = theUsername,
+        email = theEmail,
+        identityData = theOpenAuthDetails)
+
+      val newOauthUserData2 = NewOauthUserData(
+        name = theFirstName,
+        username = theUsername,
+        email = the2ndEmail,
+        identityData = the2ndOpenAuthDetails)
+
+      val newOauthUserData3 = NewOauthUserData(
+        name = theFirstName,
+        username = theUsername,
+        email = the3rdEmail,
+        identityData = the3rdOpenAuthDetails)
+
       val theFirstLoginAttempt = OpenAuthLoginAttempt(
         ip = "1.2.3.4", date = now, theOpenAuthDetails)
 
@@ -1798,7 +1820,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       var the3rdUsersLoginGrant: LoginGrant = null
 
       "create" in {
-        theFirstLoginGrant = dao.tryLogin(theFirstLoginAttempt)
+        theFirstLoginGrant = dao.createUserAndLogin(newOauthUserData)
         val theIdentity = theFirstLoginGrant.identity.asInstanceOf[OpenAuthIdentity]
         theIdentity.openAuthDetails must_== theOpenAuthDetails
         theUser = theFirstLoginGrant.user
@@ -1812,7 +1834,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "reuse the SecureSocialIdentity and User just created" in {
-        val loginGrant = dao.tryLogin(theFirstLoginAttempt.copy(date = new ju.Date))
+        val loginGrant = dao.tryLogin(theFirstLoginAttempt)
         loginGrant.identity must_== theFirstLoginGrant.identity
         loginGrant.user must_== theFirstLoginGrant.user
         ok
@@ -1831,9 +1853,19 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         ok
       }
 
+      "throw an IdentityNotFoundException for an unknown identity" in {
+        try {
+          dao.tryLogin(theFirstLoginAttempt.copy(openAuthDetails = the2ndOpenAuthDetails))
+          fail(s"Was able to login with unseen credentials")
+        }
+        catch {
+          case ex: IdentityNotFoundException => ()
+        }
+        ok
+      }
+
       "create new SecureSocialIdentity and User for a new provider user id" in {
-        the2ndUsersLoginGrant = dao.tryLogin(
-          theFirstLoginAttempt.copy(openAuthDetails = the2ndOpenAuthDetails))
+        the2ndUsersLoginGrant = dao.createUserAndLogin(newOauthUserData2)
 
         val loginGrant = the2ndUsersLoginGrant
         val ssIdentity = loginGrant.identity.asInstanceOf[OpenAuthIdentity]
@@ -1846,8 +1878,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "create new SecureSocialIdentity and User for a new provider id, same user id" in {
-        the3rdUsersLoginGrant = dao.tryLogin(
-          theFirstLoginAttempt.copy(openAuthDetails = the3rdOpenAuthDetails))
+        the3rdUsersLoginGrant = dao.createUserAndLogin(newOauthUserData3)
 
         val loginGrant = the3rdUsersLoginGrant
         val ssIdentity = loginGrant.identity.asInstanceOf[OpenAuthIdentity]
@@ -1876,6 +1907,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Password identities
 
+    var globalPasswordUser: User = null
+    var globalPasswordIdentity: PasswordIdentity = null
 
     "create PasswordIdentity and User" >> {
 
@@ -1889,7 +1922,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         id = "?", userId = "?", email = theEmail, passwordSaltHash = theHash)
       val userNoId = User(
         id = "?", displayName = "PasswordUser", username = Some("PwdUsrUsername"), email = theEmail,
-        emailNotfPrefs = EmailNotfPrefs.Receive)
+        emailNotfPrefs = EmailNotfPrefs.Unspecified)
 
       var theIdentity: PasswordIdentity = null
       var theUser: User = null
@@ -1937,6 +1970,12 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         newLoginGrant.identity.asInstanceOf[PasswordIdentity].passwordSaltHash must_== theNewHash
         ok
       }
+
+      "remember global variables" in {
+        globalPasswordUser = theUser
+        globalPasswordIdentity = theIdentity
+        ok
+      }
     }
 
 
@@ -1969,17 +2008,16 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "by default send no email to a new Role" in {
-      val Some(user) = dao.loadUser(exOpenId_loginGrant.user.id)
+      val Some(user) = dao.loadUser(globalPasswordUser.id)
       user.emailNotfPrefs must_== EmailNotfPrefs.Unspecified
     }
 
     "configure email to a Role" in {
       // Somewhat dupl code, see `def testAdmin` test helper.
-      val userToConfig = exOpenId_loginGrant.user
       dao.configRole(
-         ctime = new ju.Date, roleId = userToConfig.id,
+         ctime = new ju.Date, roleId = globalPasswordUser.id,
          emailNotfPrefs = Some(EmailNotfPrefs.Receive))
-      val Some(userConfigured) = dao.loadUser(userToConfig.id)
+      val Some(userConfigured) = dao.loadUser(globalPasswordUser.id)
       userConfigured.emailNotfPrefs must_== EmailNotfPrefs.Receive
       emailEx_OpenIdUser = userConfigured  // remember, to other test cases
       ok
@@ -2279,7 +2317,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "login by email id" >> {
 
       lazy val theGuestId = guestUser.id
-      lazy val theRoleId = exOpenId_loginGrant.user.id
+      lazy val theRoleId = globalPasswordUser.id
 
       lazy val emailToSendToGuest = Email(
         id = "3kU001",
@@ -2332,7 +2370,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       def testAdmin(makeAdmin: Boolean, makeOwner: Option[Boolean]) = {
         // Somewhat dupl code, see "configure email to a Role" test.
-        val userToConfig = exOpenId_loginGrant.user
+        val userToConfig = globalPasswordUser
         dao.configRole(ctime = new ju.Date, roleId = userToConfig.id,
           isAdmin = Some(makeAdmin), isOwner = makeOwner)
         val Some(userConfigured) = dao.loadUser(userToConfig.id)
@@ -2788,8 +2826,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val creatorIp = "123.123.123.123"
 
       lazy val creatorIdentity =
-         exOpenId_loginGrant.identity.asInstanceOf[IdentityOpenId]
-      lazy val creatorRole = exOpenId_loginGrant.user
+        globalPasswordIdentity.asInstanceOf[PasswordIdentity]
+      lazy val creatorRole = globalPasswordUser
 
       var newWebsiteOpt: Tenant = null
       var newHost = TenantHost("website-2.ex.com", TenantHost.RoleCanonical,
@@ -2891,7 +2929,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "manage quota" >> {
 
-      lazy val role = exOpenId_loginGrant.user
+      lazy val role = globalPasswordUser
       lazy val ip = "1.2.3.4"
 
       lazy val tenantConsumer = QuotaConsumer.Tenant(defaultTenantId)
