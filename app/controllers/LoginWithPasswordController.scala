@@ -101,10 +101,10 @@ object LoginWithPasswordController extends mvc.Controller {
           throwUnprocessableEntity("DwE805T4", s"$errorMessage, please try again.")
       }
 
-    val loginGrant = dao.createUserAndLogin(userData)
+    val user = dao.createPasswordUser(userData)
 
-    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(loginGrant.user)
-    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant.user)
+    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(user)
+    val userConfigCookie = ConfigUserController.userConfigCookie(user)
     val newSessionCookies = userConfigCookie :: sidAndXsrfCookies
 
     // This dialog is always submitted via Ajax.

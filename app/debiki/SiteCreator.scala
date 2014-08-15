@@ -65,7 +65,7 @@ object SiteCreator {
         host: Option[String],
         embeddingSiteUrl: Option[String],
         ownerIp: String,
-        ownerIdentity: Identity,
+        ownerIdentity: Option[Identity],
         ownerRole: User): Option[(Tenant, User)] = {
 
     name foreach { n => require(isOkayWebsiteName(n), "DwE18SHN6") }

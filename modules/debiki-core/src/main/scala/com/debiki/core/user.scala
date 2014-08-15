@@ -79,12 +79,28 @@ case class NewPasswordUserData(
   name: String,
   username: String,
   email: String,
-  password: String) extends NewUserData {
+  password: String) {
 
-  def identityNoId =
-    PasswordIdentity(id = "?", userId = "?", email = email,
-      passwordSaltHash = DbDao.saltAndHashPassword(password))
+  val passwordHash: String =
+    DbDao.saltAndHashPassword(password)
 
+  def userNoId = User(
+    id = "?",
+    displayName = name,
+    username = Some(username),
+    createdAt = None,
+    email = email,
+    emailNotfPrefs = EmailNotfPrefs.Unspecified,
+    emailVerifiedAt = None,
+    passwordHash = Some(passwordHash),
+    country = "",
+    website = "",
+    isAdmin = false,
+    isOwner = false)
+
+  Validation.checkName(name)
+  Validation.checkUsername(username)
+  Validation.checkEmail(email)
   Validation.checkPassword(password)
 }
 
@@ -269,6 +285,7 @@ case class User (
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
+  passwordHash: Option[String] = None,
   country: String = "",
   website: String = "",
   isAdmin: Boolean = false,
@@ -401,14 +418,6 @@ case class IdentityEmailId(
 }
 
 
-case class PasswordIdentity(
-  id: IdentityId,
-  override val userId: UserId,
-  email: String = "",
-  passwordSaltHash: String) extends Identity {
-}
-
-
 case class IdentityOpenId(
   id: String,
   override val userId: String,
@@ -478,14 +487,14 @@ case class OpenAuthProviderIdKey(providerId: String, providerKey: String)
 
 
 case class LoginGrant(
-   identity: Identity,
+   identity: Option[Identity],
    user: User,
    isNewIdentity: Boolean,
    isNewRole: Boolean) {
 
-  require(!identity.id.contains('?'))
+  require(identity.map(_.id.contains('?')) != Some(true))
   require(!user.id.contains('?'))
-  require(identity.userId == user.id)
+  require(identity.map(_.userId == user.id) != Some(false))
   require(!isNewRole || isNewIdentity)
 
   def displayName: String = user.displayName

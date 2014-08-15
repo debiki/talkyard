@@ -34,12 +34,12 @@ trait UserDao {
     siteDbDao.createUserAndLogin(newUserData)
 
 
-  def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User): (Identity, User) =
-    siteDbDao.createPasswordIdentityAndRole(identity, user)
+  def createPasswordUser(userData: NewPasswordUserData): User =
+    siteDbDao.createPasswordUser(userData)
 
 
-  def changePassword(identity: PasswordIdentity, newPasswordSaltHash: String): Boolean =
-    siteDbDao.changePassword(identity, newPasswordSaltHash)
+  def changePassword(user: User, newPasswordSaltHash: String): Boolean =
+    siteDbDao.changePassword(user, newPasswordSaltHash)
 
 
   def loginAsGuest(loginAttempt: GuestLoginAttempt): User =
@@ -60,13 +60,33 @@ trait UserDao {
     siteDbDao.loadUser(userId)
 
 
-  def loadIdtyDetailsAndUser(forUserId: UserId = null,
-        forOpenIdDetails: OpenIdDetails = null,
-        forEmailAddr: String = null): Option[(Identity, User)] =
+  def loadUserByEmailOrUsername(emailOrUsername: String): Option[User] =
+    // Don't need to cache this? Only called when logging in.
+    siteDbDao.loadUserByEmailOrUsername(emailOrUsername)
+
+
+  def loadUserAndAnyIdentity(userId: UserId = null): Option[(Option[Identity], User)] = {
+    loadIdtyDetailsAndUser(forUserId = userId) match {
+      case Some((identity, user)) => Some((Some(identity), user))
+      case None =>
+        // No OAuth or OpenID identity, try load password user:
+        loadUser(userId) match {
+          case Some(user) =>
+            Some((None, user))
+          case None =>
+            None
+        }
+    }
+  }
+
+
+  private def loadIdtyDetailsAndUser(
+        forUserId: UserId = null,
+        forOpenIdDetails: OpenIdDetails = null): Option[(Identity, User)] =
     // Don't cache this, because this function is rarely called
     // — currently only when creating new website.
-    siteDbDao.loadIdtyDetailsAndUser(forUserId = forUserId,
-      forOpenIdDetails = forOpenIdDetails, forEmailAddr = forEmailAddr)
+    siteDbDao.loadIdtyDetailsAndUser(
+      forUserId = forUserId, forOpenIdDetails = forOpenIdDetails)
 
 
   def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats] =

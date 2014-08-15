@@ -90,7 +90,7 @@ abstract class SiteDbDao {
    */
   def createWebsite(name: Option[String], address: Option[String],
         embeddingSiteUrl: Option[String], ownerIp: String,
-        ownerIdentity: Identity, ownerRole: User)
+        ownerIdentity: Option[Identity], ownerRole: User)
         : Option[(Tenant, User)]
 
   def addTenantHost(host: TenantHost)
@@ -279,21 +279,22 @@ abstract class SiteDbDao {
 
   def createUserAndLogin(newUserData: NewUserData): LoginGrant
 
-  def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User)
-        : (PasswordIdentity, User)
+  def createPasswordUser(userData: NewPasswordUserData): User
 
   /** Returns true if the identity was found (and the password thus changed).
     */
-  def changePassword(identity: PasswordIdentity, newPasswordSaltHash: String): Boolean
+  def changePassword(user: User, newPasswordSaltHash: String): Boolean
 
   def loadUser(userId: UserId): Option[User]
+
+  def loadUserByEmailOrUsername(emailOrUsername: String): Option[User]
 
   /**
    * Also loads details like OpenID local identifier, endpoint and version info.
    */
-  def loadIdtyDetailsAndUser(forUserId: UserId = null,
-        forOpenIdDetails: OpenIdDetails = null,
-        forEmailAddr: String = null): Option[(Identity, User)]
+  def loadIdtyDetailsAndUser(
+        forUserId: UserId = null,
+        forOpenIdDetails: OpenIdDetails = null): Option[(Identity, User)]
 
   def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats]
 
@@ -490,7 +491,7 @@ class ChargingSiteDbDao(
    */
   def createWebsite(name: Option[String], address: Option[String],
         embeddingSiteUrl: Option[String], ownerIp: String,
-        ownerIdentity: Identity, ownerRole: User)
+        ownerIdentity: Option[Identity], ownerRole: User)
         : Option[(Tenant, User)] = {
 
     // SHOULD consume IP quota — but not tenant quota!? — when generating
@@ -543,7 +544,7 @@ class ChargingSiteDbDao(
     val loginGrant = _spi.tryLogin(loginAttempt)
 
     val resUsg = ResUsg.forStoring(
-       identity = loginGrant.isNewIdentity ? loginGrant.identity | null,
+       identity = loginGrant.isNewIdentity ? loginGrant.identity.getOrDie("DwE0KSE3") | null,
        user = loginGrant.isNewRole ? loginGrant.user | null)
 
     _chargeFor(resUsg, mayPilfer = mayPilfer)
@@ -720,16 +721,15 @@ class ChargingSiteDbDao(
   }
 
 
-  def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User)
-        : (PasswordIdentity, User) = {
-    val resUsg = ResourceUse(numIdsAu = 1, numRoles = 1)
+  def createPasswordUser(userData: NewPasswordUserData): User = {
+    val resUsg = ResourceUse(numRoles = 1)
     _chargeFor(resUsg, mayPilfer = false)
-    _spi.createPasswordIdentityAndRole(identity, user)
+    _spi.createPasswordUser(userData)
   }
 
-  def changePassword(identity: PasswordIdentity, newPasswordSaltHash: String): Boolean = {
+  def changePassword(user: User, newPasswordSaltHash: String): Boolean = {
     _chargeForOneWriteReq(mayPilfer = true)
-    _spi.changePassword(identity, newPasswordSaltHash)
+    _spi.changePassword(user, newPasswordSaltHash)
   }
 
   def loadUser(userId: UserId): Option[User] = {
@@ -737,12 +737,18 @@ class ChargingSiteDbDao(
     _spi.loadUser(userId)
   }
 
-  def loadIdtyDetailsAndUser(forUserId: UserId = null,
-        forOpenIdDetails: OpenIdDetails = null,
-        forEmailAddr: String = null): Option[(Identity, User)] = {
+  def loadUserByEmailOrUsername(emailOrUsername: String): Option[User] = {
     _chargeForOneReadReq()
-    _spi.loadIdtyDetailsAndUser(forUserId = forUserId,
-      forOpenIdDetails = forOpenIdDetails, forEmailAddr = forEmailAddr)
+    _spi.loadUserByEmailOrUsername(emailOrUsername)
+  }
+
+  def loadIdtyDetailsAndUser(
+        forUserId: UserId = null,
+        forOpenIdDetails: OpenIdDetails = null): Option[(Identity, User)] = {
+    _chargeForOneReadReq()
+    _spi.loadIdtyDetailsAndUser(
+      forUserId = forUserId,
+      forOpenIdDetails = forOpenIdDetails)
   }
 
   def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats] = {

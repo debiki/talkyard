@@ -81,30 +81,32 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
         }
 
         if (emailVerified) {
+          closeLoginDialogs();
           redirectOrContinueOnSamePage(anyRedirectUrl);
         }
         else {
           // Wait until the user has confirmed his/her email address.
           showWaitForEmailConfirmedDialog(function(loggedIn) {
+            closeLoginDialogs();
             if (loggedIn) {
-              dialog.dialog('close');
               redirectOrContinueOnSamePage(anyRedirectUrl);
             }
             else {
-              cancel();
+              d.i.showLoginDialog(); // show main login dialog again
             }
           });
         }
       });
   });
 
-  dialog.find('.cancel').click(cancel);
+  dialog.find('.cancel').click(function() {
+    closeLoginDialogs();
+    d.i.showLoginDialog(); // show main login dialog again
+  });
 
-  function cancel() {
+  function closeLoginDialogs() {
     dialog.dialog('close');
-    // Return to the main login dialog, by opening it.
-    $('#dw-lgi').dialog('close'); // in case not yet closed
-    d.i.showLoginDialog();  // in case had already been closed
+    $('#dw-lgi').dialog('close');
   }
 
   dialog.dialog('open');
@@ -135,7 +137,6 @@ function redirectOrContinueOnSamePage(anyRedirectUrl) {
   }
   di.Me.fireLogin();
   di.continueAnySubmission();
-  $('#dw-lgi').dialog('close');
 }
 
 
