@@ -32,14 +32,14 @@ d.i.showPasswordLoginDialog = !(loginAndContinue) ->
       password: dialog.find('input[name=password]').val!
     d.u.postJson { url: "#{d.i.serverOrigin}/-/login-password", data }
       .fail !->
-        alert 'Login failed. Bad username or password?'
+        alert('Login failed. Bad username or password?')
       .done !->
-        loginAndContinue
-        dialog.dialog 'close'
+        loginAndContinue()
+        dialog.dialog('close')
     false
 
   dialog.find('.dw-fi-cancel').click ->
-    dialog.dialog 'close'
+    dialog.dialog('close')
     false
 
   dialog.dialog('open')

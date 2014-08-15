@@ -113,8 +113,8 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
     # (This parameter tells the server to set a certain cookie. Setting it here
     # instead has no effect, don't know why.)
     mayNotCreateUser = if mode == 'LoginToAdministrate' then '&mayNotCreateUser' else ''
-
-    url = "#{d.i.serverOrigin}/-/login-openauth/#provider?returnToUrl=#anyReturnToUrl#mayNotCreateUser"
+    returnToUrlOrEmpty = if anyReturnToUrl then anyReturnToUrl else ''
+    url = "#{d.i.serverOrigin}/-/login-openauth/#provider?returnToUrl=#returnToUrlOrEmpty#mayNotCreateUser"
     if d.i.isInLoginPopup
       # Let the server know we're in a popup window, so it can choose to reply with
       # complete HTML pages to show in the popup window.
