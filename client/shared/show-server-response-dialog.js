@@ -68,10 +68,20 @@ d.i.showServerResponseDialog = function(jqXhrOrHtml, opt_errorType,
     // text message inside the dialog.
     title = jqXhrOrHtml.status ?
               (jqXhrOrHtml.status +' '+ opt_httpStatusText) : 'Error'
-    $html = $('<pre class="dw-dlg-rsp"></pre>');
-    width = 'auto'; // avoids scrollbars in case of any long <pre> line
+    $html = $(
+        '<div>' +
+        //'<pre class="dw-dlg-rsp-status"></pre>' + — already in the title
+        '<pre class="dw-dlg-rsp-message"></pre>' +
+        '</div>');
+    width = Math.min($(window).width() - 60, 800);
     // Use text(), not plus (don't: `... + text + ...'), to prevent xss issues.
-    $html.text(plainText || opt_errorType || 'Unknown error');
+    // The first line is the status code and status text,
+    // the second line is any message.
+    var statusAndMessage = plainText.split('\n');
+    var status = statusAndMessage[0];
+    var message = statusAndMessage[1];
+    //$html.find('.dw-dlg-rsp-status').text(status || opt_errorType || 'Unknown error');
+    $html.find('.dw-dlg-rsp-message').text(message  || '');
   }
   else if (!html) {
     die2('DwE05GR5');
