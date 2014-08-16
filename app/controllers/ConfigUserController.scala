@@ -96,7 +96,7 @@ object ConfigUserController extends mvc.Controller {
             "Please specify an email address.")
 
         if (emailNotfPrefs != user.emailNotfPrefs) {
-          pageReq.dao.configRole(pageReq.ctime,
+          pageReq.dao.configRole(
              roleId = user.id, emailNotfPrefs = Some(emailNotfPrefs))
         }
       case Some(addr) =>

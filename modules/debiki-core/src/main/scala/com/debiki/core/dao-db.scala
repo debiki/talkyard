@@ -332,9 +332,9 @@ abstract class SiteDbDao {
 
   // ----- User configuration
 
-  def configRole(ctime: ju.Date, roleId: RoleId,
+  def configRole(roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
-        isOwner: Option[Boolean] = None)
+        isOwner: Option[Boolean] = None, emailVerifiedAt: Option[Option[ju.Date]])
 
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
@@ -825,17 +825,18 @@ class ChargingSiteDbDao(
 
   // ----- User configuration
 
-  def configRole(ctime: ju.Date, roleId: RoleId,
+  def configRole(roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean],
-        isOwner: Option[Boolean]) =  {
+        isOwner: Option[Boolean], emailVerifiedAt: Option[Option[ju.Date]]) =  {
     // When auditing of changes to roles has been implemented,
     // `configRole` will create new rows, and we should:
     // _chargeFor(ResUsg.forStoring(quotaConsumers.role.get))
     // And don't care about whether or not quotaConsumers.role.id == roleId. ?
     // But for now:
     _chargeForOneWriteReq()
-    _spi.configRole(ctime = ctime, roleId = roleId,
-      emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
+    _spi.configRole(roleId = roleId,
+      emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner,
+      emailVerifiedAt = emailVerifiedAt)
   }
 
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) = {
@@ -873,10 +874,15 @@ object DbDao {
   case class BadEmailTypeException(emailId: String)
     extends RuntimeException(s"Email with id $emailId has no recipient user id")
 
+  case object DuplicateUsername extends RuntimeException("Duplicate username")
+  case object DuplicateUserEmail extends RuntimeException("Duplicate user email")
+
   case class IdentityNotFoundException(message: String)
     extends RuntimeException(message)
 
   case object BadPasswordException extends RuntimeException("Bad password")
+
+  case object EmailNotVerifiedException extends RuntimeException("Email not verified")
 
   case object DuplicateVoteException extends RuntimeException("Duplicate vote")
 

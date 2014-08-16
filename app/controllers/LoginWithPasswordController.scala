@@ -68,11 +68,16 @@ object LoginWithPasswordController extends mvc.Controller {
 
     def deny() = throwForbidden("DwE403GJk9", "Bad username or password")
 
+    // WOULD have `tryLogin` return a LoginResult and stop using exceptions!
     val loginGrant: LoginGrant =
       try dao.tryLogin(loginAttempt)
       catch {
         case DbDao.BadPasswordException => deny()
         case ex: DbDao.IdentityNotFoundException => deny()
+        case DbDao.EmailNotVerifiedException =>
+          throwForbidden("DwE4UBM2", o"""You have not yet confirmed your email address.
+            Please check your email inbox — you should find an email from us with a
+            verification link; please click it.""")
       }
 
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(loginGrant.user)

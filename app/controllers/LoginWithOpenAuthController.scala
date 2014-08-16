@@ -319,7 +319,17 @@ object LoginWithOpenAuthController extends Controller {
         case Bad(errorMessage) =>
           throwUnprocessableEntity("DwE7BD08", s"$errorMessage, please try again.")
       }
-    val loginGrant = dao.createUserAndLogin(userData)
+    val loginGrant =
+      try dao.createUserAndLogin(userData)
+      catch {
+        case DbDao.DuplicateUsername =>
+          throwForbidden(
+            "DwE6D3G8", "Username already taken, please try again with another username")
+        case DbDao.DuplicateUserEmail =>
+          // The user has been authenticated, so it's okay to tell him/her about the email address.
+          throwForbidden(
+            "DwE4BME8", "You already have an account with that email address")
+      }
 
     createCookiesAndFinishLogin(request.request, loginGrant.user)
   }

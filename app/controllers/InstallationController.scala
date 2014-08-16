@@ -157,7 +157,7 @@ object InstallationController extends mvc.Controller {
     if (Globals.systemDao.checkInstallationStatus() != InstallationStatus.CreateFirstSiteAdmin)
       throwForbidden("DwE2HDS8", "The first site owner account has already been created")
 
-    apiReq.dao.configRole(apiReq.ctime, roleId = apiReq.user_!.id,
+    apiReq.dao.configRole(roleId = apiReq.user_!.id,
       isAdmin = Some(true), isOwner = Some(true), emailNotfPrefs = Some(EmailNotfPrefs.Receive))
 
     OkAllDone(apiReq.host)

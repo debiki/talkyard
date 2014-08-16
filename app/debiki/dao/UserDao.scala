@@ -116,11 +116,12 @@ trait UserDao {
   }
 
 
-  def configRole(ctime: ju.Date, roleId: RoleId,
+  def configRole(roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
-        isOwner: Option[Boolean] = None) =
-    siteDbDao.configRole(ctime = ctime,
-      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
+        isOwner: Option[Boolean] = None, emailVerifiedAt: Option[Option[ju.Date]] = None) =
+    siteDbDao.configRole(
+      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner,
+      emailVerifiedAt = emailVerifiedAt)
 
 
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
@@ -176,11 +177,12 @@ trait CachingUserDao extends UserDao {
   }
 
 
-  override def configRole(ctime: ju.Date, roleId: RoleId,
+  override def configRole(roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean],
-        isOwner: Option[Boolean]) {
-    super.configRole(ctime = ctime,
-      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
+        isOwner: Option[Boolean], emailVerifiedAt: Option[Option[ju.Date]]) {
+    super.configRole(
+      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner,
+      emailVerifiedAt = emailVerifiedAt)
     removeFromCache(key(roleId))
   }
 
