@@ -115,9 +115,9 @@ object Email {
 
   /**
    * The email id should be a random value, so it cannot be guessed,
-   * because it's a key in unsubscribe URLs.
+   * because it's a key in reset password, unsubscription and create account urls.
    */
-  private def _generateId(): String = nextRandomString() take 8
+  private def _generateId(): String = nextRandomString() take 14
 }
 
 
