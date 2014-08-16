@@ -26,6 +26,7 @@ POST  /-/logout                 controllers.LoginController.logout
 POST  /-/login-guest            controllers.LoginAsGuestController.loginGuest
 POST  /-/login-password         controllers.LoginWithPasswordController.login
 POST  /-/login-password-create-user controllers.LoginWithPasswordController.handleCreateUserDialog(returnToUrl)
+GET   /-/login-password-confirm-email controllers.LoginWithPasswordController.confirmEmailAddressAndLogin(confirmationEmailId, returnToUrl)
 #GET   /-/api/login-openid       controllers.LoginWithOpenIdController.loginGet
 #POST  /-/api/login-openid       controllers.LoginWithOpenIdController.loginPost
 #GET   /-/api/login-openid-clbk  controllers.LoginWithOpenIdController.loginCallback(returnToUrl)

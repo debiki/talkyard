@@ -19,6 +19,7 @@ package controllers
 
 import actions.ApiActions.JsonOrFormDataPostAction
 import actions.ApiActions.PostJsonAction
+import actions.ApiActions.GetAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
@@ -37,6 +38,8 @@ import requests.JsonPostRequest
 /** Logs in users via username and password.
   */
 object LoginWithPasswordController extends mvc.Controller {
+
+  private val MaxAddressVerificationEmailAgeInHours = 25
 
 
   def login = JsonOrFormDataPostAction(maxBytes = 1000) { request =>
@@ -91,36 +94,125 @@ object LoginWithPasswordController extends mvc.Controller {
         request: JsonPostRequest =>
     val body = request.body
     val name = (body \ "name").as[String]
-    val email = (body \ "email").as[String]
+    val emailAddress = (body \ "email").as[String]
     val username = (body \ "username").as[String]
     val password = (body \ "password").asOpt[String] getOrElse
       throwBadReq("DwE85FX1", "Password missing")
 
-    // COULD avoid replying 500 Internal Error if user already exists!
-    val dao = daoFor(request.request)
     val userData =
-      NewPasswordUserData.create(name = name, email = email, username = username,
+      NewPasswordUserData.create(name = name, email = emailAddress, username = username,
           password = password) match {
         case Good(data) => data
         case Bad(errorMessage) =>
           throwUnprocessableEntity("DwE805T4", s"$errorMessage, please try again.")
       }
 
-    val user = dao.createPasswordUser(userData)
+    val dao = daoFor(request.request)
+    try {
+      val user = dao.createPasswordUser(userData)
+      sendEmailAddressVerificationEmail(dao, emailAddress, user, siteHostname = request.host,
+        siteId = request.siteId)
+    }
+    catch {
+      case DbDao.DuplicateUsername =>
+        throwForbidden(
+          "DwE65EF0", "Username already taken, please try again with another username")
+      case DbDao.DuplicateUserEmail =>
+        // Send account reminder email. But don't otherwise indicate that the account exists,
+        // so no email addresses are leaked.
+        sendYouAlreadyHaveAnAccountWithThatAddressEmail(
+          dao, emailAddress, siteHostname = request.host, siteId = request.siteId)
+    }
 
+    // This dialog is always submitted via Ajax, need not include any HTML in the reply.
+    assErrIf(!isAjax(request.request), "DwEDK3903")
+    Ok
+  }
+
+
+  def sendEmailAddressVerificationEmail(dao: SiteDao, emailAddress: String, user: User,
+        siteHostname: String, siteId: SiteId) {
+    val email = Email(
+      EmailType.CreateAccount,
+      sendTo = emailAddress,
+      toUserId = Some(user.id),
+      subject = "Confirm your email address",
+      bodyHtmlText = (emailId: String) => {
+        views.html.createaccount.createAccountLinkEmail(
+          siteAddress = siteHostname,
+          username = user.username.getOrElse(user.displayName),
+          emailId = emailId,
+          returnToUrl = "",
+          expirationTimeInHours = MaxAddressVerificationEmailAgeInHours).body
+      })
+    dao.saveUnsentEmail(email)
+    Globals.sendEmail(email, siteId)
+  }
+
+
+  def sendYouAlreadyHaveAnAccountWithThatAddressEmail(
+        dao: SiteDao, emailAddress: String, siteHostname: String, siteId: SiteId) {
+    val email = Email(
+      EmailType.Notification,
+      sendTo = emailAddress,
+      toUserId = None,
+      subject = "You already have an account at " + siteHostname,
+      bodyHtmlText = (emailId: String) => {
+        views.html.createaccount.accountAlreadyExistsEmail(
+          emailAddress = emailAddress,
+          siteAddress = siteHostname).body
+      })
+    dao.saveUnsentEmail(email)
+    Globals.sendEmail(email, siteId)
+  }
+
+
+  def confirmEmailAddressAndLogin(confirmationEmailId: String, returnToUrl: String) =
+        GetAction { request =>
+
+    val userId = finishEmailAddressVerification(confirmationEmailId, request)
+    val user = request.dao.loadUser(userId) getOrElse {
+      throwInternalError("DwE7GJ0", "I've deleted the account")
+    }
+
+    // Log the user in.
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(user)
     val userConfigCookie = ConfigUserController.userConfigCookie(user)
     val newSessionCookies = userConfigCookie :: sidAndXsrfCookies
 
-    // This dialog is always submitted via Ajax.
-    assErrIf(!isAjax(request.request), "DwEDK3903")
-    val result =
-      if (returnToUrl.nonEmpty)
-        Redirect(returnToUrl, AjaxFriendlyRedirectStatusCode)
-      else
-        Ok
+    Ok(views.html.createaccount.welcomePage(returnToUrl = None))
+      .withCookies(userConfigCookie::newSessionCookies: _*)
+  }
 
-    result.withCookies(newSessionCookies: _*)
+
+  def finishEmailAddressVerification(emailId: String, request: ApiRequest[_]): UserId = {
+    val email = request.dao.loadEmailById(emailId) getOrElse {
+      throwForbidden("DwE7GJP03", "Link expired? Bad email id; email not found.")
+    }
+
+    if (email.tyype != EmailType.CreateAccount)
+      throwForbidden("DwE2DKP9", s"Bad email type: ${email.tyype}")
+
+    email.sentOn match {
+      case None =>
+        Logger.warn(o"""Got an address verification email ID, although email not yet sent,
+            site: ${request.siteId}, email id: $emailId""")
+        throwForbidden("DwE8Gfh32", "Address verification email not yet sent")
+      case Some(date) =>
+        /* COULD restrict email age:
+        val emailAgeInMillis = new ju.Date().getTime - date.getTime
+        val emailAgeInHours = emailAgeInMillis / 1000 / 3600
+        if (MaxAddressVerificationEmailAgeInHours < emailAgeInHours)
+          return a response like "Registration link expired, please signup again"
+        */
+    }
+
+    val roleId = email.toRoleId getOrElse {
+      assErr("DwE8XK5", "Email was not sent to a role")
+    }
+
+    request.dao.configRole(roleId = roleId, emailVerifiedAt = Some(Some(request.ctime)))
+    roleId
   }
 
 }

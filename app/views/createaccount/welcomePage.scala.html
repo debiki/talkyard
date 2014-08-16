@@ -15,8 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@*
-@(returnToUrl: String)
+@(returnToUrl: Option[String])
 
 
 @css = @{("""
@@ -27,12 +26,11 @@
 @createsite.main(title = "Account Created", css = css) {
   <h1>Welcome!</h1>
 
-  <p>Your account has been created.</p>
+  <p>Your account has been created and you have been logged in.</p>
 
   <p>
-    <a href="@returnToUrl">Click to continue...</a>
+  <a href="@{ returnToUrl.getOrElse("/") }">Continue to homepage...</a>
   </p>
 
 }
 
-*@

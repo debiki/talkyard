@@ -147,9 +147,17 @@ function showWaitForEmailConfirmedDialog(continueOrCancel) {
     closeOnEscape: !d.i.isInLoginPopup
   }));
   dialog.find('.continue').click(function() {
-    console.log('Time to continue...');
-    dialog.dialog('close');
-    continueOrCancel(true);
+    // If the user clicks the email confirmation link, s/he will be logged in
+    // and the session id cookie will be set. Assuming s/he opens the email in the
+    // same browser. Otherwise the alert message below will be shown instead.
+    if ($.cookie('dwCoSid')) {
+      dialog.dialog('close');
+      continueOrCancel(true);
+    }
+    else {
+      alert('Please click the email confirmation link, in the same web browser, ' +
+          'or click cancel and login again');
+    }
   });
   dialog.find('.cancel').click(function() {
     dialog.dialog('close');
