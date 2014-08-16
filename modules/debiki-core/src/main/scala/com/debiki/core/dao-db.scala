@@ -292,9 +292,7 @@ abstract class SiteDbDao {
   /**
    * Also loads details like OpenID local identifier, endpoint and version info.
    */
-  def loadIdtyDetailsAndUser(
-        forUserId: UserId = null,
-        forOpenIdDetails: OpenIdDetails = null): Option[(Identity, User)]
+  def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)]
 
   def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats]
 
@@ -742,13 +740,9 @@ class ChargingSiteDbDao(
     _spi.loadUserByEmailOrUsername(emailOrUsername)
   }
 
-  def loadIdtyDetailsAndUser(
-        forUserId: UserId = null,
-        forOpenIdDetails: OpenIdDetails = null): Option[(Identity, User)] = {
+  def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)] = {
     _chargeForOneReadReq()
-    _spi.loadIdtyDetailsAndUser(
-      forUserId = forUserId,
-      forOpenIdDetails = forOpenIdDetails)
+    _spi.loadIdtyDetailsAndUser(userId)
   }
 
   def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats] = {

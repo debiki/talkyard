@@ -443,20 +443,6 @@ case class OpenIdDetails(
   email: Option[String],
   country: String) {
 
-  def isGoogleLogin = oidEndpoint == IdentityOpenId.GoogleEndpoint
-
-}
-
-
-object IdentityOpenId {
-
-  val GoogleEndpoint = "https://www.google.com/accounts/o8/ud"
-
-  object ProviderIdentifier {
-    val Google = "https://www.google.com/accounts/o8/id"
-    val Yahoo = "http://me.yahoo.com/"
-  }
-
 }
 
 

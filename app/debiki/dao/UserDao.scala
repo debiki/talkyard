@@ -66,7 +66,7 @@ trait UserDao {
 
 
   def loadUserAndAnyIdentity(userId: UserId = null): Option[(Option[Identity], User)] = {
-    loadIdtyDetailsAndUser(forUserId = userId) match {
+    loadIdtyDetailsAndUser(userId) match {
       case Some((identity, user)) => Some((Some(identity), user))
       case None =>
         // No OAuth or OpenID identity, try load password user:
@@ -80,13 +80,10 @@ trait UserDao {
   }
 
 
-  private def loadIdtyDetailsAndUser(
-        forUserId: UserId = null,
-        forOpenIdDetails: OpenIdDetails = null): Option[(Identity, User)] =
+  private def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)] =
     // Don't cache this, because this function is rarely called
     // — currently only when creating new website.
-    siteDbDao.loadIdtyDetailsAndUser(
-      forUserId = forUserId, forOpenIdDetails = forOpenIdDetails)
+    siteDbDao.loadIdtyDetailsAndUser(userId)
 
 
   def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats] =
