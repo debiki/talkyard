@@ -108,11 +108,8 @@ object LoginWithPasswordController extends mvc.Controller {
       }
 
     val dao = daoFor(request.request)
-    try {
-      val user = dao.createPasswordUser(userData)
-      sendEmailAddressVerificationEmail(dao, emailAddress, user, siteHostname = request.host,
-        siteId = request.siteId)
-    }
+    var anyUser: Option[User] = None
+    try anyUser = Some(dao.createPasswordUser(userData))
     catch {
       case DbDao.DuplicateUsername =>
         throwForbidden(
