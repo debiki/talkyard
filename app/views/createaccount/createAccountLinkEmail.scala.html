@@ -1,11 +1,11 @@
-@(siteAddress: String, username: String, emailId: String, returnToUrl: String, expirationTimeInHours: Int)
+@(siteAddress: String, username: String, emailId: String, returnToUrl: String, viewPostId: String, expirationTimeInHours: Int)
 
 <div>
 <p>Hello,</p>
 
 <p>
 To finish creation of your account with username <tt>@username</tt> at <tt>@siteAddress</tt>, please click
-<a href="http://@siteAddress@routes.LoginWithPasswordController.confirmEmailAddressAndLogin(emailId, returnToUrl)">
+<a href="http://@siteAddress@routes.LoginWithPasswordController.confirmEmailAddressAndLogin(emailId, returnToUrl, viewPostId)">
   this link</a>.  It expires in @{expirationTimeInHours - 1} hours.
 </p>
 

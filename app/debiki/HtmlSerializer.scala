@@ -553,10 +553,17 @@ case class HtmlPageSerializer(
     // COULD change this to a bredth first search for the 100 most interesting
     // comments, and rename this function to `findSomeInterestingComments'.
 
+    def needNotOrHasConfirmedEmailAddress(post: Post) = {
+      val user = post.user_!
+      showUnapproved.shallShow(post) ||   // TODO remove
+        user.isGuest || user.emailVerifiedAt.isDefined
+    }
+
     def renderImpl(posts: Seq[Post], parentHorizontal: Boolean): NodeSeq = {
       var threadNodes: NodeSeq = Nil
       for {
         post <- sortPostsDescFitness(posts)
+        if needNotOrHasConfirmedEmailAddress(post)
         if !post.isTreeDeleted || showStubsForDeleted
         if !(post.isPostDeleted && post.replies.isEmpty) || showStubsForDeleted
         if post.someVersionApproved || showUnapproved.shallShow(post)

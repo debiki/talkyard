@@ -91,11 +91,11 @@ d.i.$showReplyForm = function(event, opt_where) {
   var setSubmitBtnTitle = function(event, userName) {
     var text = userName ?  'Post as '+ userName : 'Post as ...';  // i18n
     $submitBtn.val(text);
-  }
+  };
   setSubmitBtnTitle(null, d.i.Me.getName());
-  $submitBtn.each(d.i.$loginSubmitOnClick(setSubmitBtnTitle, 'LoginToComment'));
+  $submitBtn.each(d.i.$loginSubmitOnClick(setSubmitBtnTitle, 'LoginToComment', submit));
 
-  $replyForm.submit(function() {
+  function submit(anyContinueDoneCallback) {
     d.u.postJson({
         url: d.i.serverOrigin + '/-/reply',
         data: {
@@ -107,13 +107,15 @@ d.i.$showReplyForm = function(event, opt_where) {
           // where: ...
         },
         error: d.i.showErrorEnableInputs($replyForm),
-        success: onCommentSaved
+        success: onCommentSaved(anyContinueDoneCallback)
       });
     d.i.disableSubmittedForm($replyForm);
     return false;
-  });
+  };
 
-  function onCommentSaved(newDebateHtml) {
+  function onCommentSaved(anyContinueDoneCallback) {
+      return function(newDebateHtml) {
+
     // The server has replied. Merge in the data from the server
     // (i.e. the new post) in the debate.
     // Remove the reply form first — if you do it afterwards,
@@ -141,7 +143,11 @@ d.i.$showReplyForm = function(event, opt_where) {
     d.i.showAndHighlightPost($myNewPost,
         { marginRight: 300, marginBottom: 300 });
     d.i.$showActions.apply($myNewPost);
-  };
+
+    if (anyContinueDoneCallback) {
+      anyContinueDoneCallback(newDebateHtml);
+    }
+  };};
 
   // Fancy fancy
   $replyForm.find('.dw-submit-set input').button();

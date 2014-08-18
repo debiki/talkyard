@@ -332,7 +332,7 @@ abstract class SiteDbDao {
 
   def configRole(roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
-        isOwner: Option[Boolean] = None, emailVerifiedAt: Option[Option[ju.Date]])
+        isOwner: Option[Boolean] = None, emailVerifiedAt: Option[Option[ju.Date]] = None)
 
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 

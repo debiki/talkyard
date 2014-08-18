@@ -87,10 +87,37 @@ trait PageDao {
     // really an edit, an action undone is not itself an Undo action,
     // and lots of other similar tests.
 
+    actions.map(_.userId).distinct foreach { userId =>
+      val user = page.parts.people.user_!(userId)
+      stopUserWithUnverifiedEmail(user)
+    }
+
     val (pageWithNewActions, actionsWithId) =
       siteDbDao.savePageActions(page, actions.toList)
 
     (pageWithNewActions, actionsWithId)
+  }
+
+
+  private def stopUserWithUnverifiedEmail(user: User) {
+    // Guests' email isn't verified.
+    if (user.isGuest || user.emailVerifiedAt.isDefined)
+      return
+
+    loadUserInfoAndStats(user.id) match {
+      case Some(infoAndStats) =>
+        // When a user signs up, s/he may finish posting any post she had already
+        // written, before confirming his/her email address. But not more than that
+        // single post. (And that post won't be shown until the email has been confirmed.)
+        if (infoAndStats.stats.numPages + infoAndStats.stats.numPosts >= 1)
+          throwForbidden("DwE4GFH09", "Please confirm your email address; check your email inbox")
+      case None =>
+        // The user existed moments ago, but is gone now — it was probably just deleted by
+        // some background thread that deletes old users whose email address hasn't
+        // been verified? (This hasn't been implemented though, as of August 2014.)
+        throwForbidden(
+          "DwE09SK2", "User deleted because email not confirmed. You can create a new one")
+    }
   }
 
 

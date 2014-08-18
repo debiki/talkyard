@@ -80,22 +80,16 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
           anyRedirectUrl = result.getResponseHeader('Location');
         }
 
-        if (emailVerified) {
-          closeLoginDialogs();
-          redirectOrContinueOnSamePage(anyRedirectUrl);
+        closeLoginDialogs();
+        var anyContinueDoneCallback = null;
+        if (!emailVerified) {
+          // We'll send the email after any post the user was writing has
+          // been posted (it won't appear until after email confirmed)
+          // so that the post id is available and can be included in the
+          // email address confirmation email.
+          anyContinueDoneCallback = sendEmailAddressConfirmationEmail;
         }
-        else {
-          // Wait until the user has confirmed his/her email address.
-          showWaitForEmailConfirmedDialog(function(loggedIn) {
-            closeLoginDialogs();
-            if (loggedIn) {
-              redirectOrContinueOnSamePage(anyRedirectUrl);
-            }
-            else {
-              d.i.showLoginDialog(); // show main login dialog again
-            }
-          });
-        }
+        redirectOrContinueOnSamePage(anyRedirectUrl, anyContinueDoneCallback);
       });
   });
 
@@ -113,7 +107,7 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
 };
 
 
-function redirectOrContinueOnSamePage(anyRedirectUrl) {
+function redirectOrContinueOnSamePage(anyRedirectUrl, anyContinueDoneCallback) {
   // Session cookies should already have been set by the server.
 
   if (anyRedirectUrl) {
@@ -136,34 +130,39 @@ function redirectOrContinueOnSamePage(anyRedirectUrl) {
     di = debiki.internal;
   }
   di.Me.fireLogin();
-  di.continueAnySubmission();
+  di.continueAnySubmission(anyContinueDoneCallback);
 }
 
 
-function showWaitForEmailConfirmedDialog(continueOrCancel) {
-  var dialog = createWaitForEmailConfirmedDialogHtml();
-  dialog.dialog(d.i.newModalDialogSettings({
-    width: 350,
-    closeOnEscape: !d.i.isInLoginPopup
-  }));
-  dialog.find('.continue').click(function() {
-    // If the user clicks the email confirmation link, s/he will be logged in
-    // and the session id cookie will be set. Assuming s/he opens the email in the
-    // same browser. Otherwise the alert message below will be shown instead.
-    if ($.cookie('dwCoSid')) {
-      dialog.dialog('close');
-      continueOrCancel(true);
+function sendEmailAddressConfirmationEmail(continueDoneData) {
+  var postData = {};
+  if (continueDoneData.threadsByPageId) {
+    try {
+      postData.viewPostId = continueDoneData.threadsByPageId[d.i.pageId][0].id;
+      // SHOULD make returnToUrl work also for embedded commments, somehow.
+      postData.returnToUrl = '/-' + d.i.pageId;
     }
-    else {
-      alert('Please click the email confirmation link, in the same web browser, ' +
-          'or click cancel and login again');
+    catch (error) {
+      console.warn('Unsupported continueDoneData: ' + JSON.stringify(continueDoneData) +
+          '\n\nError: ' + JSON.stringify(error));
     }
-  });
-  dialog.find('.cancel').click(function() {
-    dialog.dialog('close');
-    continueOrCancel(false);
-  });
-  dialog.dialog('open');
+  }
+
+  d.u.postJson({ url: '/-/login-password-send-address-confirmation-email', data: postData })
+    .fail(d.i.showServerResponseDialog)
+    .done(function(data, textStatus, result) {
+      // Now any new comment has been saved and an email address confirmation email
+      // has been sent. (The comment won't be shown until email confirmed though.)
+      var dialog = createConfirmYourEmailAddressDialogHtml(postData.viewPostId);
+      dialog.dialog(d.i.newModalDialogSettings({
+        width: 350,
+        closeOnEscape: false
+      }));
+      dialog.find('button.continue').click(function() {
+        dialog.dialog('close');
+      });
+      dialog.dialog('open');
+    });
 }
 
 
@@ -195,14 +194,15 @@ function createUserDialogHtml() {
 }
 
 
-function createWaitForEmailConfirmedDialogHtml(mode) {
+function createConfirmYourEmailAddressDialogHtml(anyNewPostId) {
+  var newPostMessage = anyNewPostId ? ', and have your new post appear' : '';
   return $(
     '<div class="dw-fs" title="Confirm Your Email Address">' +
     '  <p>Almost done! We have sent an activation email to you. Please click the' +
-    '  link in the email to activate your account. Then click <b>Continue</b> below.</p>' +
+    '  link in the email to activate your account' + newPostMessage + '.' +
+    '  You can close this page.</p>' +
     '<div>' +
-    '  <a class="continue btn btn-default">Continue</a>' +
-    '  <a class="cancel btn btn-default">Cancel</a>' +
+    '  <button class="continue btn btn-default">Okay</button>' +
     '</div>' +
     '</div>');
 }

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(returnToUrl: Option[String])
+@(returnToUrl: Option[String], viewPostId: Option[String])
 
 
 @css = @{("""
@@ -29,7 +29,7 @@
   <p>Your account has been created and you have been logged in.</p>
 
   <p>
-  <a href="@{ returnToUrl.getOrElse("/") }">Continue to homepage...</a>
+  <a href="@{ returnToUrl.map(_ + viewPostId.map("#post-" + _).getOrElse("")) getOrElse "/" }">Continue...</a>
   </p>
 
 }

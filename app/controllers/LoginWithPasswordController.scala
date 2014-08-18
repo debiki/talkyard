@@ -123,27 +123,43 @@ object LoginWithPasswordController extends mvc.Controller {
 
     // This dialog is always submitted via Ajax, need not include any HTML in the reply.
     assErrIf(!isAjax(request.request), "DwEDK3903")
-    Ok
+
+    // Log any newly created user in. This will allow him/her to post just one comment,
+    // but any such comment won't appear until s/he has verified his/her email address.
+    anyUser match {
+      case Some(user) =>
+        val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(user)
+        val userConfigCookie = ConfigUserController.userConfigCookie(user)
+        val newSessionCookies = userConfigCookie :: sidAndXsrfCookies
+        Ok.withCookies(userConfigCookie::newSessionCookies: _*)
+      case None =>
+        Ok
+    }
   }
 
 
-  def sendEmailAddressVerificationEmail(dao: SiteDao, emailAddress: String, user: User,
-        siteHostname: String, siteId: SiteId) {
+
+  def sendEmailAddressVerificationEmail = PostJsonAction(maxLength = 200) { request =>
+    val anyReturnToUrl = (request.body \ "returnToUrl").asOpt[String]
+    val anyViewPostId = (request.body \ "viewPostId").asOpt[String]
+    val user = request.theUser
     val email = Email(
       EmailType.CreateAccount,
-      sendTo = emailAddress,
+      sendTo = user.email,
       toUserId = Some(user.id),
       subject = "Confirm your email address",
       bodyHtmlText = (emailId: String) => {
         views.html.createaccount.createAccountLinkEmail(
-          siteAddress = siteHostname,
+          siteAddress = request.host,
           username = user.username.getOrElse(user.displayName),
           emailId = emailId,
-          returnToUrl = "",
+          returnToUrl = anyReturnToUrl getOrElse "/",
+          viewPostId = anyViewPostId getOrElse "",
           expirationTimeInHours = MaxAddressVerificationEmailAgeInHours).body
       })
-    dao.saveUnsentEmail(email)
-    Globals.sendEmail(email, siteId)
+    request.dao.saveUnsentEmail(email)
+    Globals.sendEmail(email, request.dao.siteId)
+    Ok
   }
 
 
@@ -164,8 +180,8 @@ object LoginWithPasswordController extends mvc.Controller {
   }
 
 
-  def confirmEmailAddressAndLogin(confirmationEmailId: String, returnToUrl: String) =
-        GetAction { request =>
+  def confirmEmailAddressAndLogin(confirmationEmailId: String, returnToUrl: String,
+        viewPostId: String) = GetAction { request =>
 
     val userId = finishEmailAddressVerification(confirmationEmailId, request)
     val user = request.dao.loadUser(userId) getOrElse {
@@ -177,7 +193,10 @@ object LoginWithPasswordController extends mvc.Controller {
     val userConfigCookie = ConfigUserController.userConfigCookie(user)
     val newSessionCookies = userConfigCookie :: sidAndXsrfCookies
 
-    Ok(views.html.createaccount.welcomePage(returnToUrl = None))
+    val anyReturnToUrl: Option[String] = if (returnToUrl.nonEmpty) Some(returnToUrl) else None
+    val anyViewPostId: Option[String] = if (viewPostId.nonEmpty) Some(viewPostId) else None
+
+    Ok(views.html.createaccount.welcomePage(anyReturnToUrl, viewPostId = anyViewPostId))
       .withCookies(userConfigCookie::newSessionCookies: _*)
   }
 
@@ -208,7 +227,7 @@ object LoginWithPasswordController extends mvc.Controller {
       assErr("DwE8XK5", "Email was not sent to a role")
     }
 
-    request.dao.configRole(roleId = roleId, emailVerifiedAt = Some(Some(request.ctime)))
+    request.dao.verifyEmail(roleId, request.ctime)
     roleId
   }
 

@@ -113,12 +113,18 @@ trait UserDao {
   }
 
 
+  def verifyEmail(roleId: RoleId, verifiedAt: ju.Date) =
+    siteDbDao.configRole(roleId, emailVerifiedAt = Some(Some(verifiedAt)))
+
+
   def configRole(roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
-        isOwner: Option[Boolean] = None, emailVerifiedAt: Option[Option[ju.Date]] = None) =
+        isOwner: Option[Boolean] = None) = {
+    // Don't specify emailVerifiedAt here — use verifyEmail() instead; it refreshes the cache.
     siteDbDao.configRole(
       roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner,
-      emailVerifiedAt = emailVerifiedAt)
+      emailVerifiedAt = None)
+  }
 
 
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
@@ -174,12 +180,24 @@ trait CachingUserDao extends UserDao {
   }
 
 
+  override def verifyEmail(roleId: RoleId, verifiedAt: ju.Date) = {
+    super.verifyEmail(roleId, verifiedAt)
+    removeFromCache(key(roleId))
+    // Re-render any page with a post that should hereafter be shown because the
+    // email has been verified.
+    val actionInfos = listUserActions(roleId)
+    val idsOfPagesToRefresh = actionInfos.map(_.pageId).distinct
+    idsOfPagesToRefresh foreach { pageId =>
+      firePageSaved(SitePageId(siteId, pageId))
+    }
+  }
+
+
   override def configRole(roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean],
-        isOwner: Option[Boolean], emailVerifiedAt: Option[Option[ju.Date]]) {
+        isOwner: Option[Boolean]) {
     super.configRole(
-      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner,
-      emailVerifiedAt = emailVerifiedAt)
+      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
     removeFromCache(key(roleId))
   }
 
