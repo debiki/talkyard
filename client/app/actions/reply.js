@@ -124,25 +124,34 @@ d.i.$showReplyForm = function(event, opt_where) {
     // dw-svg-fake-harrow.
     d.i.removeInstantly($replyFormParent);
     $replyAction.dwActionLinkEnable();
+
     var result = d.i.patchPage(newDebateHtml);
-    var $myNewPost = result.patchedThreads[0].dwGetPost();
-    d.u.bugIf($myNewPost.length !== 1, 'DwE3TW39');
-    d.i.markMyPost($myNewPost.dwPostIdStr());
+    var anyPatchedThread = result.patchedThreads[0];
+    if (anyPatchedThread) {
+      var $myNewPost = anyPatchedThread.dwGetPost();
+      d.u.bugIf($myNewPost.length !== 1, 'DwE3TW39');
+      d.i.markMyPost($myNewPost.dwPostIdStr());
+
+      // Don't show sort order tips instantly, because if
+      // the new comment and the tips appear at the same time,
+      // the user will be confused? S/he won't know where to look?
+      // So wait a few seconds.
+      // Don't show sort order tips if there are few replies,
+      // then nothing is really being sorted anyway.
+      var showSortTips = horizLayout && replyCountBefore >= 2;
+      if (showSortTips) showSortOrderTipsLater($myNewPost, 2050);
+
+      d.i.showAndHighlightPost($myNewPost,
+          { marginRight: 300, marginBottom: 300 });
+      d.i.$showActions.apply($myNewPost);
+    }
+    else {
+      // This means a new user with unverified email posted the reply;
+      // it won't appear until email verified. Nothing to show here.
+    }
+
     // Any horizontal reply button has been hidden.
     $anyHorizReplyBtn.show();
-
-    // Don't show sort order tips instantly, because if
-    // the new comment and the tips appear at the same time,
-    // the user will be confused? S/he won't know where to look?
-    // So wait a few seconds.
-    // Don't show sort order tips if there are few replies,
-    // then nothing is really being sorted anyway.
-    var showSortTips = horizLayout && replyCountBefore >= 2;
-    if (showSortTips) showSortOrderTipsLater($myNewPost, 2050);
-
-    d.i.showAndHighlightPost($myNewPost,
-        { marginRight: 300, marginBottom: 300 });
-    d.i.$showActions.apply($myNewPost);
 
     if (anyContinueDoneCallback) {
       anyContinueDoneCallback(newDebateHtml);

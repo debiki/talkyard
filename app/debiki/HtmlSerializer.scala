@@ -555,8 +555,7 @@ case class HtmlPageSerializer(
 
     def needNotOrHasConfirmedEmailAddress(post: Post) = {
       val user = post.user_!
-      showUnapproved.shallShow(post) ||   // TODO remove
-        user.isGuest || user.emailVerifiedAt.isDefined
+      user.isGuest || user.emailVerifiedAt.isDefined
     }
 
     def renderImpl(posts: Seq[Post], parentHorizontal: Boolean): NodeSeq = {

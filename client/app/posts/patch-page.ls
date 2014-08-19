@@ -41,11 +41,17 @@ d.i.patchPage = (patches, { overwriteTrees, replacePostHeadsOnly } = {} ) ->
   for pageId, threadPatches of patches.threadsByPageId || {}
     if pageId is d.i.pageId
       for patch in threadPatches
+        # For password users, posts aren't shown until email verified,
+        # so patch.html might be absent.
+        continue if !patch.html
         patchThreadWith patch, { onPage: pageId, result, overwriteTrees }
 
   for pageId, postPatches of patches.postsByPageId || {}
     if pageId is d.i.pageId
       for patch in postPatches
+        # For password users, posts aren't shown until email verified,
+        # so patch.html might be absent.
+        continue if !patch.html
         if replacePostHeadsOnly
           patchPostHeadWith patch, { onPage: pageId, result }
         else
