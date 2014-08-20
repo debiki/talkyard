@@ -110,6 +110,12 @@ d.i.continueAnySubmission = function(anyContinueDoneCallback) {
     // process that button is supposed to start.
     $(loginOnClickBtnClicked).closest('form').submit();
     loginOnClickBtnClicked = null;
+    if (anyContinueDoneCallback) {
+      console.warning('anyContinueDoneCallback ignored [DwE5FDE07]');
+    }
+  }
+  else if (anyContinueDoneCallback) {
+    anyContinueDoneCallback();
   }
 };
 

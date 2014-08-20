@@ -28,7 +28,6 @@ import com.mohiva.play.silhouette.core.providers.oauth2._
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.core.{exceptions => siex}
 import debiki.DebikiHttp.{throwForbidden, throwBadReq, throwUnprocessableEntity}
-import debiki.DebikiHttp.{isAjax, originOf, daoFor, AjaxFriendlyRedirectStatusCode}
 import java.{util => ju}
 import org.scalactic.{Good, Bad}
 import play.{api => p}
@@ -235,17 +234,8 @@ object LoginWithOpenAuthController extends Controller {
 
     val response = request.cookies.get(ReturnToUrlCookieName) match {
       case Some(returnToUrlCookie) =>
-        val status =
-          if (isAjax(request)) {
-            // We don't want the Ajax request to follow the redirect, so we have to
-            // use a custom HTTP status code. (All browsers must follow status 302 and 303
-            // redirects, even Ajax requests.)
-            AjaxFriendlyRedirectStatusCode
-          }
-          else {
-            play.api.http.Status.SEE_OTHER
-          }
-        Redirect(returnToUrlCookie.value, status)
+        assErrIf(isAjax(request), "DwE38EN67")
+        Redirect(returnToUrlCookie.value)
           .discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
       case None =>
         if (isAjax(request)) {

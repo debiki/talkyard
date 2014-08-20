@@ -90,8 +90,7 @@ object LoginWithPasswordController extends mvc.Controller {
   }
 
 
-  def handleCreateUserDialog(returnToUrl: String) = PostJsonAction(maxLength = 1000) {
-        request: JsonPostRequest =>
+  def handleCreateUserDialog = PostJsonAction(maxLength = 1000) { request: JsonPostRequest =>
     val body = request.body
     val name = (body \ "name").as[String]
     val emailAddress = (body \ "email").as[String]

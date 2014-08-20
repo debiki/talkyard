@@ -25,7 +25,7 @@ POST  /-/logout                 controllers.LoginController.logout
 
 POST  /-/login-guest            controllers.LoginAsGuestController.loginGuest
 POST  /-/login-password         controllers.LoginWithPasswordController.login
-POST  /-/login-password-create-user controllers.LoginWithPasswordController.handleCreateUserDialog(returnToUrl)
+POST  /-/login-password-create-user controllers.LoginWithPasswordController.handleCreateUserDialog
 POST  /-/login-password-send-address-confirmation-email controllers.LoginWithPasswordController.sendEmailAddressVerificationEmail
 GET   /-/login-password-confirm-email controllers.LoginWithPasswordController.confirmEmailAddressAndLogin(confirmationEmailId, returnToUrl, viewPostId)
 #GET   /-/api/login-openid       controllers.LoginWithOpenIdController.loginGet

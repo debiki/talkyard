@@ -19,10 +19,6 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
-// This is our custom Redirect status code that doesn't result in the
-// ajax request itself being redirected (like status 302 and 303 do).
-var AjaxFriendlyRedirectStatusCode = 278;
-
 
 d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
   var dialog = createUserDialogHtml();
@@ -61,8 +57,7 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
       url += '/-/login-oauth-create-user';
     }
     else if (userData.createPasswordUser) {
-      url += '/-/login-password-create-user?returnToUrl=';
-      url += anyReturnToUrl ? anyReturnToUrl : '';
+      url += '/-/login-password-create-user';
     }
     else {
       throw 'Bad new user data: ' + JSON.stringify(userData) + ' [DwE5DF06]';
@@ -71,25 +66,9 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
     d.u.postJson({ url: url, data: data })
       .fail(d.i.showServerResponseDialog)
       .done(function(data, textStatus, result) {
-
-        // We want to redirect here, if we've signed up in order to create a
-        // new site — then the next page should be the next step in the site
-        // creation wizard.
-        var anyRedirectUrl = null;
-        if (result.status === AjaxFriendlyRedirectStatusCode) {
-          anyRedirectUrl = result.getResponseHeader('Location');
-        }
-
         closeLoginDialogs();
         var anyContinueDoneCallback = null;
-        if (!emailVerified) {
-          // We'll send the email after any post the user was writing has
-          // been posted (it won't appear until after email confirmed)
-          // so that the post id is available and can be included in the
-          // email address confirmation email.
-          anyContinueDoneCallback = sendEmailAddressConfirmationEmail;
-        }
-        redirectOrContinueOnSamePage(anyRedirectUrl, anyContinueDoneCallback);
+        redirectOrContinueOnSamePage(anyReturnToUrl, emailVerified);
       });
   });
 
@@ -107,62 +86,97 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
 };
 
 
-function redirectOrContinueOnSamePage(anyRedirectUrl, anyContinueDoneCallback) {
+function redirectOrContinueOnSamePage(anyRedirectUrl, emailVerified) {
   // Session cookies should already have been set by the server.
 
-  if (anyRedirectUrl) {
+  if (anyRedirectUrl && emailVerified) {
     window.location = anyRedirectUrl;
     return;
   }
+
+  // Send an email address confirmation email, or continue logging in
+  // on the same page.
 
   // If this is an embedded comments site, we're currently executing in
   // a create user login popup window, not in the <iframe> on the embedding
   // page. If so, only window.opener has loaded the code that we're
   // about to execute.
   var di;
-  if (d.i.isInLoginPopup) {
+  if (window.opener && window.opener.debiki) {
     // We're in a login popup window for an embedded comments site.
     di = window.opener.debiki.internal;
   }
   else {
-    // This is not an embedded comments site, we're not in a popup; we can
-    // execute the subsequent code directly here in the main window.
+    // This is not an embedded comments site, we're not in a popup window;
+    // we can execute the subsequent code directly here in the main window.
     di = debiki.internal;
   }
-  di.Me.fireLogin();
-  di.continueAnySubmission(anyContinueDoneCallback);
-}
 
-
-function sendEmailAddressConfirmationEmail(continueDoneData) {
-  var postData = {};
-  if (continueDoneData.threadsByPageId) {
-    try {
-      postData.viewPostId = continueDoneData.threadsByPageId[d.i.pageId][0].id;
-      // SHOULD make returnToUrl work also for embedded commments, somehow.
-      postData.returnToUrl = '/-' + d.i.pageId;
+  if (di.Me) {
+    // We're on some kind of a discussion page.
+    di.Me.fireLogin();
+    // This continues e.g. submitting any reply the user intended to post before
+    // s/he was asked to login and create a user.
+    di.continueAnySubmission(sendEmailAddressConfirmationEmail);
+  }
+  else {
+    // We're in a create-new-site wizard.
+    if (!emailVerified) {
+      // A continue-to-anyRedirectUrl link will be included in the email.
+      sendEmailAddressConfirmationEmail(null);
     }
-    catch (error) {
-      console.warn('Unsupported continueDoneData: ' + JSON.stringify(continueDoneData) +
-          '\n\nError: ' + JSON.stringify(error));
+    else if (anyRedirectUrl) {
+      // We can redirect directly, need not send any email.
+      window.location = anyRedirectUrl;
+    }
+    else {
+      console.error('Nothing to do [DwE9FK2215]');
     }
   }
 
-  d.u.postJson({ url: '/-/login-password-send-address-confirmation-email', data: postData })
-    .fail(d.i.showServerResponseDialog)
-    .done(function(data, textStatus, result) {
-      // Now any new comment has been saved and an email address confirmation email
-      // has been sent. (The comment won't be shown until email confirmed though.)
-      var dialog = createConfirmYourEmailAddressDialogHtml(postData.viewPostId);
-      dialog.dialog(d.i.newModalDialogSettings({
-        width: 350,
-        closeOnEscape: false
-      }));
-      dialog.find('button.continue').click(function() {
-        dialog.dialog('close');
+  function sendEmailAddressConfirmationEmail(continueDoneData) {
+    var postData = {};
+    if (anyRedirectUrl) {
+      postData.returnToUrl = anyRedirectUrl;
+    }
+    else if (continueDoneData.threadsByPageId) {
+      // It seems we've submitted a new post. Tell the server to link to it from the page
+      // the user ends up on after having confirmed his/her email address.
+      try {
+        if (window.opener && window.opener.debiki) {
+          // This is an embedded comments site, and we're in a login popup window.
+          // Link to the *embedding* page.
+          postData.returnToUrl = window.opener.debiki.internal.iframeBaseUrl;
+          postData.viewPostId =
+            continueDoneData.threadsByPageId[window.opener.debiki.internal.pageId][0].id;
+        }
+        else {
+          postData.returnToUrl = '/-' + d.i.pageId;
+          postData.viewPostId = continueDoneData.threadsByPageId[d.i.pageId][0].id;
+        }
+      }
+      catch (error) {
+        console.warn('Unsupported continueDoneData: ' + JSON.stringify(continueDoneData) +
+            '\n\nError: ' + JSON.stringify(error));
+      }
+    }
+
+    d.u.postJson({ url: '/-/login-password-send-address-confirmation-email', data: postData })
+      .fail(d.i.showServerResponseDialog)
+      .done(function(data, textStatus, result) {
+        // Now any new comment has been saved and an email address confirmation email
+        // has been sent. (The comment won't be shown until email confirmed though.)
+        var dialog = createConfirmYourEmailAddressDialogHtml(postData.viewPostId);
+        dialog.dialog(d.i.newModalDialogSettings({
+          width: 350,
+          closeOnEscape: false
+        }));
+        dialog.find('button.continue').click(function() {
+          dialog.dialog('close');
+        });
+        dialog.dialog('open');
       });
-      dialog.dialog('open');
-    });
+  }
 }
 
 
