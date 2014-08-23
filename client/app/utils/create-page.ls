@@ -20,18 +20,9 @@ $ = d.i.$;
 
 
 /**
- * Opens a new unsaved page in a new browser tab.
- *
- * You need to open the `preOpenedNewTab` directly in response to
- * a user action (mouse click), or browser popup blockers tend to
- * block the new tab. Alternatively, you could specify the current
- * `window` (which is already open, obviously).
+ * Opens a new unsaved page in the current browser tab.
  */
-d.i.createChildPage = !({ pageRole, parentPageId, status }, preOpenedNewTab) ->
-
-  # Open new tab directly in response to user click, or browser popup
-  # blockers tend to block the new tab.
-  newTab = preOpenedNewTab || window.open '', '_blank'
+d.i.createChildPage = !({ pageRole, parentPageId, status }) ->
 
   # We'll create the new page in the same folder as the current page.
   # (?get-view-new-page-url works with folders only.)
@@ -62,7 +53,7 @@ d.i.createChildPage = !({ pageRole, parentPageId, status }, preOpenedNewTab) ->
   getViewNewPageUrl += "&parentPageId=#parentPageId" if parentPageId
 
   $.getJSON(getViewNewPageUrl).done !({ viewNewPageUrl }) ->
-    newTab.location = viewNewPageUrl
+    window.location = viewNewPageUrl
 
 
 
