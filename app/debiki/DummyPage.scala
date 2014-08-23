@@ -62,7 +62,7 @@ object DummyPage {
 
   val DummyAuthorUser = User(id = "2", displayName = "(dummy author)", username = None,
     createdAt = None, email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive,
-    emailVerifiedAt = None, country = "", website = "", isAdmin = false,
+    emailVerifiedAt = Some(new ju.Date(0)), country = "", website = "", isAdmin = false,
     isOwner = false)
 
   val DummyAuthorIp = "0.0.0.0"
