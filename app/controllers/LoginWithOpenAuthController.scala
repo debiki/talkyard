@@ -264,7 +264,7 @@ object LoginWithOpenAuthController extends Controller {
       // This is an embedded comments site, so the login dialog opened in a popup window,
       // not in the embedded iframe. Continue running in the popup window, by returning
       // a complete HTML page that shows a create-user dialog.
-      Ok(views.html.login.createUserPopup(
+      Ok(views.html.login.showCreateUserDialog(
         serverAddress = s"//${request.host}",
         newUserName = oauthDetails.displayName,
         newUserEmail = oauthDetails.email getOrElse "",
