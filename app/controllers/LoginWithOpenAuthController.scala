@@ -27,7 +27,7 @@ import com.mohiva.play.silhouette.core.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.core.providers.oauth2._
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.core.{exceptions => siex}
-import debiki.DebikiHttp.{throwForbidden, throwBadReq, throwUnprocessableEntity}
+import debiki.DebikiHttp._
 import java.{util => ju}
 import org.scalactic.{Good, Bad}
 import play.{api => p}
@@ -297,14 +297,24 @@ object LoginWithOpenAuthController extends Controller {
       case _ =>
         assErr("DwE2GVM0")
     }
-    if (oauthDetails.email.map(_ == email) == Some(false)) {
-      throwForbidden("DwE523FU2", "Cannot change email from ones' OAuth provider email")
+
+    val emailVerifiedAt = oauthDetails.email match {
+      case Some(e) if (e != email) =>
+        throwForbidden("DwE523FU2", "Cannot change email from ones' OAuth provider email")
+      case Some(e) =>
+        assErrIf(
+          oauthDetails.providerId != GoogleProvider.Google &&
+          oauthDetails.providerId != FacebookProvider.Facebook,
+          "DwE7WHK65", "Don't know if this provider verifies email addresses")
+        Some(request.ctime)
+      case None =>
+        None
     }
 
     val dao = daoFor(request.request)
     val userData =
-      NewOauthUserData.create(name = name, email = email, username = username,
-          identityData = oauthDetails) match {
+      NewOauthUserData.create(name = name, username = username, email = email,
+          emailVerifiedAt = emailVerifiedAt, identityData = oauthDetails) match {
         case Good(data) => data
         case Bad(errorMessage) =>
           throwUnprocessableEntity("DwE7BD08", s"$errorMessage, please try again.")

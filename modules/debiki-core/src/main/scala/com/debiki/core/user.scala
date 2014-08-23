@@ -51,6 +51,7 @@ sealed abstract class NewUserData {
   def name: String
   def username: String
   def email: String
+  def emailVerifiedAt: Option[ju.Date]
 
   def userNoId = User(
     id = "?",
@@ -59,7 +60,7 @@ sealed abstract class NewUserData {
     createdAt = None,
     email = email,
     emailNotfPrefs = EmailNotfPrefs.Unspecified,
-    emailVerifiedAt = None,
+    emailVerifiedAt = emailVerifiedAt,
     country = "",
     website = "",
     isAdmin = false,
@@ -127,6 +128,7 @@ case class NewOauthUserData(
   name: String,
   username: String,
   email: String,
+  emailVerifiedAt: Option[ju.Date],
   identityData: OpenAuthDetails) extends NewUserData {
 
   def identityNoId =
@@ -135,8 +137,8 @@ case class NewOauthUserData(
 
 
 object NewOauthUserData {
-  def create(name: String, email: String, username: String, identityData: OpenAuthDetails)
-        : NewOauthUserData Or ErrorMessage = {
+  def create(name: String, email: String, emailVerifiedAt: Option[ju.Date], username: String,
+        identityData: OpenAuthDetails): NewOauthUserData Or ErrorMessage = {
     for {
       okName <- Validation.checkName(name)
       okUsername <- Validation.checkUsername(username)
@@ -144,7 +146,7 @@ object NewOauthUserData {
     }
     yield {
       NewOauthUserData(name = okName, username = okUsername, email = okEmail,
-        identityData = identityData)
+        emailVerifiedAt = emailVerifiedAt, identityData = identityData)
     }
   }
 }

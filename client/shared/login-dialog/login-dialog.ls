@@ -222,15 +222,17 @@ function loginDialogHtml
           <span class="icon-facebook"></span>
           Facebook
         </a>
+        <!-- Email addresses not provided
         <a id="dw-lgi-twitter" class="btn btn-default" tabindex="113">
           <span class="icon-twitter"></span>
           Twitter
         </a>
+        // I think the email has not been verified? Discourse acts as if it hasn't.
         <a id="dw-lgi-github" class="btn btn-default" tabindex="113">
           <span class="icon-github"></span>
           GitHub
         </a>
-        <!--
+        // OpenID doesn't work right now.
         <a id="dw-lgi-yahoo" class="btn btn-default" tabindex="114">
           <span class="icon-yahoo"></span>
           Yahoo!
