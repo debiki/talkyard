@@ -15,8 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(serverAddress: String, newUserName: String, newUserEmail: String, authDataCacheKey: String)
+@(serverAddress: String, newUserName: String, newUserEmail: String, authDataCacheKey: String, anyContinueToUrl: Option[String])
 
+@continueToUrlOrEmpty = @{
+  anyContinueToUrl getOrElse ""
+}
 
 @popupMain(serverAddress, "login-popup.js") {
 
@@ -26,7 +29,7 @@
       name: '@newUserName',
       email: '@newUserEmail',
       authDataCacheKey: '@authDataCacheKey'
-    });
+    }, '@continueToUrlOrEmpty');
   </script>
 
 }

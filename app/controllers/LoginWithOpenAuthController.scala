@@ -232,23 +232,25 @@ object LoginWithOpenAuthController extends Controller {
     val userConfigCookie = ConfigUserController.userConfigCookie(user)
     val newSessionCookies = userConfigCookie :: sidAndXsrfCookies
 
-    val response = request.cookies.get(ReturnToUrlCookieName) match {
-      case Some(returnToUrlCookie) =>
-        assErrIf(isAjax(request), "DwE38EN67")
-        Redirect(returnToUrlCookie.value)
-          .discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
-      case None =>
-        if (isAjax(request)) {
-          // We've shown but closed an OAuth provider login popup, and now we're
-          // handling a create-user Ajax request from a certain create-new-user dialog.
-          Ok
+    val response =
+      if (isAjax(request)) {
+        // We've shown but closed an OAuth provider login popup, and now we're
+        // handling a create-user Ajax request from a certain showCreateUserDialog()
+        // Javascript dialog. It already knows about any pending redirects.
+        Ok
+      }
+      else {
+        request.cookies.get(ReturnToUrlCookieName) match {
+          case Some(returnToUrlCookie) =>
+            // We're in a create site wizard; redirect to the next step in the wizard.
+            Redirect(returnToUrlCookie.value)
+          case None =>
+            // We're logging in an existing user in a popup window.
+            Ok(views.html.login.loginPopupCallback(user.displayName).body) as HTML
         }
-        else {
-          // We're logging in an existing user in a popup.
-          Ok(views.html.login.loginPopupCallback(user.displayName).body) as HTML
-        }
-    }
+      }
     response.withCookies(newSessionCookies: _*)
+      .discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
   }
 
 
@@ -266,7 +268,9 @@ object LoginWithOpenAuthController extends Controller {
         serverAddress = s"//${request.host}",
         newUserName = oauthDetails.displayName,
         newUserEmail = oauthDetails.email getOrElse "",
-        authDataCacheKey = cacheKey)).discardingCookies(DiscardingCookie(IsInLoginPopupCookieName))
+        authDataCacheKey = cacheKey,
+        anyContinueToUrl = anyReturnToUrlCookieValue))
+        .discardingCookies(DiscardingCookie(IsInLoginPopupCookieName))
     }
     else {
       // The request is from an OAuth provider login popup. Run some Javascript in the
