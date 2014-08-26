@@ -125,10 +125,14 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
 
   !function loginAndContinue(data)
     if d.i.isInLoginPopup
+      if anyReturnToUrl && anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1
+        window.location = anyReturnToUrl
+        return
       # (Also see AppLoginOpenId, search for [509KEF31].)
       window.opener.debiki.internal.handleLoginResponse(status: 'LoginOk')
       # This is a login popup, so we're now closing the whole popup window.
       close()
+      return # actually not needed after close()?
 
     # This happens only if we're not in a login popup, but a jQuery UI dialog:
 
