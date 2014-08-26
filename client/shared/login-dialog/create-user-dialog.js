@@ -20,6 +20,14 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
+d.i.RedirFromVerifEmailOnly = '_RedirFromVerifEmailOnly_';
+
+
+/**
+ * Prefix `RedirFromVerifEmailOnly` to the return-to-url, to indicate that
+ * the redirect should happen only if an email address verification email is sent,
+ * and via a link in that email.
+ */
 d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
   var dialog = createUserDialogHtml();
   dialog.dialog(d.i.newModalDialogSettings({

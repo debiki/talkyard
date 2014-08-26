@@ -128,8 +128,14 @@ object LoginWithPasswordController extends mvc.Controller {
 
 
 
+  val RedirectFromVerificationEmailOnly = "_RedirFromVerifEmailOnly_"
+
   def sendEmailAddressVerificationEmail(user: User, anyReturnToUrl: Option[String],
         host: String, dao: SiteDao) {
+    val returnToUrl = anyReturnToUrl match {
+      case Some(url) => url.replaceAllLiterally(RedirectFromVerificationEmailOnly, "")
+      case None => "/"
+    }
     val email = Email(
       EmailType.CreateAccount,
       sendTo = user.email,
@@ -140,7 +146,7 @@ object LoginWithPasswordController extends mvc.Controller {
           siteAddress = host,
           username = user.username.getOrElse(user.displayName),
           emailId = emailId,
-          returnToUrl = anyReturnToUrl getOrElse "/",
+          returnToUrl = returnToUrl,
           expirationTimeInHours = MaxAddressVerificationEmailAgeInHours).body
       })
     dao.saveUnsentEmail(email)

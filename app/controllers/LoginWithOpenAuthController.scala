@@ -240,13 +240,24 @@ object LoginWithOpenAuthController extends Controller {
         Ok
       }
       else {
+        def loginPopupCallback =
+          Ok(views.html.login.loginPopupCallback(user.displayName).body) as HTML
+
         request.cookies.get(ReturnToUrlCookieName) match {
           case Some(returnToUrlCookie) =>
-            // We're in a create site wizard; redirect to the next step in the wizard.
-            Redirect(returnToUrlCookie.value)
+            if (returnToUrlCookie.value.startsWith(
+                LoginWithPasswordController.RedirectFromVerificationEmailOnly)) {
+              // We are to redirect only from new account email address verification
+              // emails, not from here.
+              loginPopupCallback
+            }
+            else {
+              // We're in a create site wizard; redirect to the next step in the wizard.
+              Redirect(returnToUrlCookie.value)
+            }
           case None =>
             // We're logging in an existing user in a popup window.
-            Ok(views.html.login.loginPopupCallback(user.displayName).body) as HTML
+            loginPopupCallback
         }
       }
     response.withCookies(newSessionCookies: _*)
