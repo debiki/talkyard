@@ -60,7 +60,8 @@ d.i.$loadEditorDependencies = (function() {
 d.i.$showEditForm = function(event) {
   event.preventDefault();
   var _this = this;
-  var anyReturnToUrl = ''; // TODO
+  var postId = $(this).dwPostId();
+  var anyReturnToUrl = d.i.makeReturnToPostUrlForVerifEmail(postId);
   d.i.loginIfNeeded('LoginToEdit', anyReturnToUrl, function() {
     d.i.$loadEditorDependencies.call(_this).done(function() {
       _$showEditFormImpl.call(_this);

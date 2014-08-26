@@ -26,10 +26,7 @@ d.i.$showReplyForm = function(event, opt_where) {
   var postId = thread.dwPostId();
   var _this = this;
   event.preventDefault();
-  var anyReturnToUrl =
-      d.i.RedirFromVerifEmailOnly +
-      window.location.toString().replace(/#.*/, '') +
-      '#post-' + postId;
+  var anyReturnToUrl = d.i.makeReturnToPostUrlForVerifEmail(postId);
   d.i.loginIfNeeded('LoginToLogin', anyReturnToUrl, function() {
     showReplyFormImpl.call(_this, opt_where);
   });

@@ -20,7 +20,14 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-d.i.RedirFromVerifEmailOnly = '_RedirFromVerifEmailOnly_';
+d.i.makeReturnToPostUrlForVerifEmail = function(postId) {
+  // The magic string tells the server to use the return-to-URL only if it
+  // needs to send an email address verification email (it'd include the return
+  // to URL on a welcome page show via a link in the email).
+  return '_RedirFromVerifEmailOnly_' +
+    window.location.toString().replace(/#.*/, '') +
+    '#post-' + postId;
+};
 
 
 /**
@@ -41,10 +48,7 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
     dialog.find('.form-group.password').show();
   }
 
-  var emailVerified = false;
-
   if (userData.email && userData.email.length) {
-    emailVerified = true;
     dialog.find('#new-user-email').val(userData.email);
     // Email already provided by OpenAuth or OpenID provider, don't let the user change it.
     dialog.find('#new-user-email').attr('disabled', 'disabled');
