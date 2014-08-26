@@ -97,6 +97,7 @@ object LoginWithPasswordController extends mvc.Controller {
     val username = (body \ "username").as[String]
     val password = (body \ "password").asOpt[String] getOrElse
       throwBadReq("DwE85FX1", "Password missing")
+    val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
 
     val userData =
       NewPasswordUserData.create(name = name, email = emailAddress, username = username,
@@ -107,8 +108,10 @@ object LoginWithPasswordController extends mvc.Controller {
       }
 
     val dao = daoFor(request.request)
-    var anyUser: Option[User] = None
-    try anyUser = Some(dao.createPasswordUser(userData))
+    try {
+      val newUser = dao.createPasswordUser(userData)
+      sendEmailAddressVerificationEmail(newUser, anyReturnToUrl, request.host, request.dao)
+    }
     catch {
       case DbDao.DuplicateUsername =>
         throwForbidden(
@@ -120,28 +123,13 @@ object LoginWithPasswordController extends mvc.Controller {
           dao, emailAddress, siteHostname = request.host, siteId = request.siteId)
     }
 
-    // This dialog is always submitted via Ajax, need not include any HTML in the reply.
-    assErrIf(!isAjax(request.request), "DwEDK3903")
-
-    // Log any newly created user in. This will allow him/her to post just one comment,
-    // but any such comment won't appear until s/he has verified his/her email address.
-    anyUser match {
-      case Some(user) =>
-        val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(user)
-        val userConfigCookie = ConfigUserController.userConfigCookie(user)
-        val newSessionCookies = userConfigCookie :: sidAndXsrfCookies
-        Ok.withCookies(userConfigCookie::newSessionCookies: _*)
-      case None =>
-        Ok
-    }
+    Ok("""{ "emailVerifiedAndLoggedIn": false }""")
   }
 
 
 
-  def sendEmailAddressVerificationEmail = PostJsonAction(maxLength = 200) { request =>
-    val anyReturnToUrl = (request.body \ "returnToUrl").asOpt[String]
-    val anyViewPostId = (request.body \ "viewPostId").asOpt[String]
-    val user = request.theUser
+  def sendEmailAddressVerificationEmail(user: User, anyReturnToUrl: Option[String],
+        host: String, dao: SiteDao) {
     val email = Email(
       EmailType.CreateAccount,
       sendTo = user.email,
@@ -149,16 +137,14 @@ object LoginWithPasswordController extends mvc.Controller {
       subject = "Confirm your email address",
       bodyHtmlText = (emailId: String) => {
         views.html.createaccount.createAccountLinkEmail(
-          siteAddress = request.host,
+          siteAddress = host,
           username = user.username.getOrElse(user.displayName),
           emailId = emailId,
           returnToUrl = anyReturnToUrl getOrElse "/",
-          viewPostId = anyViewPostId getOrElse "",
           expirationTimeInHours = MaxAddressVerificationEmailAgeInHours).body
       })
-    request.dao.saveUnsentEmail(email)
-    Globals.sendEmail(email, request.dao.siteId)
-    Ok
+    dao.saveUnsentEmail(email)
+    Globals.sendEmail(email, dao.siteId)
   }
 
 
@@ -179,8 +165,8 @@ object LoginWithPasswordController extends mvc.Controller {
   }
 
 
-  def confirmEmailAddressAndLogin(confirmationEmailId: String, returnToUrl: String,
-        viewPostId: String) = GetAction { request =>
+  def confirmEmailAddressAndLogin(confirmationEmailId: String, returnToUrl: String) =
+        GetAction { request =>
 
     val userId = finishEmailAddressVerification(confirmationEmailId, request)
     val user = request.dao.loadUser(userId) getOrElse {
@@ -193,9 +179,8 @@ object LoginWithPasswordController extends mvc.Controller {
     val newSessionCookies = userConfigCookie :: sidAndXsrfCookies
 
     val anyReturnToUrl: Option[String] = if (returnToUrl.nonEmpty) Some(returnToUrl) else None
-    val anyViewPostId: Option[String] = if (viewPostId.nonEmpty) Some(viewPostId) else None
 
-    Ok(views.html.createaccount.welcomePage(anyReturnToUrl, viewPostId = anyViewPostId))
+    Ok(views.html.createaccount.welcomePage(anyReturnToUrl))
       .withCookies(userConfigCookie::newSessionCookies: _*)
   }
 

@@ -21,8 +21,8 @@ $ = d.i.$;
 
 
 
-d.i.showLoginSubmitDialog = !(anyMode) ->
-  d.i.showLoginDialog (anyMode || 'LoginToSubmit')
+d.i.showLoginSubmitDialog = !(anyMode, anyReturnToUrl) ->
+  d.i.showLoginDialog(anyMode || 'LoginToSubmit', anyReturnToUrl)
 
 
 

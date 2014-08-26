@@ -15,13 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(returnToUrl: Option[String], viewPostId: Option[String])
+@(returnToUrl: Option[String])
 
 
 @css = @{("""
 
 """)}
 
+@returnToUrlUnescapedHash = @{
+  returnToUrl.map(_.replaceAllLiterally("__dwHash__", "#"))
+}
 
 @createsite.main(title = "Account Created", css = css) {
   <h1>Welcome!</h1>
@@ -29,7 +32,7 @@
   <p>Your account has been created and you have been logged in.</p>
 
   <p>
-  <a href="@{ returnToUrl.map(_ + viewPostId.map("#post-" + _).getOrElse("")) getOrElse "/" }">Continue...</a>
+  <a href="@{ returnToUrlUnescapedHash getOrElse "/" }">Continue...</a>
   </p>
 
 }

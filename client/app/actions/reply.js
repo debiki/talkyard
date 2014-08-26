@@ -15,19 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-(function() {
-
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 var NO_ID = -1;
 
 
+d.i.$showReplyForm = function(event, opt_where) {
+  var thread = $(this).closest('.dw-t');
+  var postId = thread.dwPostId();
+  var _this = this;
+  event.preventDefault();
+  var anyReturnToUrl = window.location.toString() + '#post-' + postId;
+  d.i.loginIfNeeded('LoginToLogin', anyReturnToUrl, function() {
+    showReplyFormImpl.call(_this, opt_where);
+  });
+};
+
+
 // Shows a reply form, either below the relevant post, or inside it,
 // if the reply is an inline comment -- whichever is the case is determined
 // by event.target [what? `event.target` isn't used anywhere! Old comment?]
-d.i.$showReplyForm = function(event, opt_where) {
-  event.preventDefault();
+function showReplyFormImpl(opt_where) {
   // Warning: Some duplicated code, see .dw-r-tag click() above.
   var $thread = $(this).closest('.dw-t');
   var $replyAction = $thread.find('> .dw-p-as > .dw-a-reply');
@@ -93,9 +102,9 @@ d.i.$showReplyForm = function(event, opt_where) {
     $submitBtn.val(text);
   };
   setSubmitBtnTitle(null, d.i.Me.getName());
-  $submitBtn.each(d.i.$loginSubmitOnClick(setSubmitBtnTitle, 'LoginToComment', submit));
+  $submitBtn.each(d.i.$loginSubmitOnClick(setSubmitBtnTitle, 'LoginToComment'));
 
-  function submit(anyContinueDoneCallback) {
+  $replyForm.submit(function() {
     d.u.postJson({
         url: d.i.serverOrigin + '/-/reply',
         data: {
@@ -107,15 +116,13 @@ d.i.$showReplyForm = function(event, opt_where) {
           // where: ...
         },
         error: d.i.showErrorEnableInputs($replyForm),
-        success: onCommentSaved(anyContinueDoneCallback)
+        success: onCommentSaved
       });
     d.i.disableSubmittedForm($replyForm);
     return false;
-  };
+  });
 
-  function onCommentSaved(anyContinueDoneCallback) {
-      return function(newDebateHtml) {
-
+  function onCommentSaved(newDebateHtml) {
     // The server has replied. Merge in the data from the server
     // (i.e. the new post) in the debate.
     // Remove the reply form first — if you do it afterwards,
@@ -152,11 +159,7 @@ d.i.$showReplyForm = function(event, opt_where) {
 
     // Any horizontal reply button has been hidden.
     $anyHorizReplyBtn.show();
-
-    if (anyContinueDoneCallback) {
-      anyContinueDoneCallback(newDebateHtml);
-    }
-  };};
+  };
 
   // Fancy fancy
   $replyForm.find('.dw-submit-set input').button();
@@ -213,6 +216,5 @@ d.i.$showReplyForm = function(event, opt_where) {
 };
 
 
-})();
 
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+// vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

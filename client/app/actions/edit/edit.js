@@ -59,9 +59,12 @@ d.i.$loadEditorDependencies = (function() {
  */
 d.i.$showEditForm = function(event) {
   event.preventDefault();
-  var i = this;
-  d.i.$loadEditorDependencies.call(i).done(function() {
-    _$showEditFormImpl.call(i);
+  var _this = this;
+  var anyReturnToUrl = ''; // TODO
+  d.i.loginIfNeeded('LoginToEdit', anyReturnToUrl, function() {
+    d.i.$loadEditorDependencies.call(_this).done(function() {
+      _$showEditFormImpl.call(_this);
+    });
   });
 };
 

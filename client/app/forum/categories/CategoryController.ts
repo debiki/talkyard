@@ -79,7 +79,8 @@ class CategoryController {
 
 
   private createChildPage(role: String) {
-    debiki.internal.loginIfNeeded('LoginToCreateTopic', () => {
+    var anyReturnToUrl = window.location.toString(); // TODO
+    debiki.internal.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       // (Now we might be outside Angular.apply() but that's fine.)
       debiki.internal.createChildPage({
         pageRole: role,

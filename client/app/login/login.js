@@ -37,13 +37,13 @@ var onLoginCallback = null;
 /**
  * Logs in and then calls the callback.
  */
-d.i.loginIfNeeded = function(reason, callback) {
+d.i.loginIfNeeded = function(reason, anyReturnToUrl, callback) {
   if (d.i.Me.isLoggedIn()) {
     callback();
   }
   else {
     onLoginCallback = callback;
-    d.i.showLoginSubmitDialog(reason);
+    d.i.showLoginSubmitDialog(reason, anyReturnToUrl);
   }
 };
 
@@ -52,13 +52,12 @@ d.i.loginIfNeeded = function(reason, callback) {
  * `anyLoginReason` is optional and influences button titles in login dialogs.
  * It can one of 'LoginToComment', 'LoginToLogin' and 'LoginToSubmit'.
  */
-d.i.$loginSubmitOnClick = function(loginEventHandler, anyLoginReason, afterLoginCallback) {
+d.i.$loginSubmitOnClick = function(loginEventHandler, anyLoginReason) {
   return function() {
     var $i = $(this);
     $i.addClass('dw-loginsubmit-on-click');
     !loginEventHandler || $i.bind('dwEvLoggedInOut', loginEventHandler);
     $i.on('click', null, { mode: anyLoginReason }, d.i.$loginThenSubmit);
-    onLoginCallback = afterLoginCallback;
   };
 };
 
@@ -87,21 +86,10 @@ d.i.$loginThenSubmit = function(event) {
 /**
  * Continues any form submission that was interrupted by the
  * user having to log in.
- *
- * continueDoneCallback can be called after the form submission has
- * been completed, and it should then be passed the result of the submission.
- * (Use case example: When you sign up, you're allowed to post any comment you
- * were writing, but it won't appear until you've confirmed your email
- * address. However, in the email address confirmation email, we need the
- * URL of the new comment. Therefore we cannot send the email address
- * confirmation email before the comment has been posted and has gotten
- * its id. So, after having continued after login with submitting the
- * comment, we need to continue again with sending the email address
- * confirmation email.)
  */
-d.i.continueAnySubmission = function(anyContinueDoneCallback) {
+d.i.continueAnySubmission = function() {
   if (onLoginCallback) {
-    onLoginCallback(anyContinueDoneCallback);
+    onLoginCallback();
     onLoginCallback = null;
   }
   else if (loginOnClickBtnClicked) {
@@ -110,12 +98,6 @@ d.i.continueAnySubmission = function(anyContinueDoneCallback) {
     // process that button is supposed to start.
     $(loginOnClickBtnClicked).closest('form').submit();
     loginOnClickBtnClicked = null;
-    if (anyContinueDoneCallback) {
-      console.warning('anyContinueDoneCallback ignored [DwE5FDE07]');
-    }
-  }
-  else if (anyContinueDoneCallback) {
-    anyContinueDoneCallback();
   }
 };
 

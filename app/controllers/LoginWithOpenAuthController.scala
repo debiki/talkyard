@@ -290,6 +290,7 @@ object LoginWithOpenAuthController extends Controller {
     val name = (body \ "name").as[String]
     val email = (body \ "email").as[String]
     val username = (body \ "username").as[String]
+    val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
 
     val oauthDetailsCacheKey = (body \ "authDataCacheKey").asOpt[String] getOrElse
       throwBadReq("DwE08GM6", "Auth data cache key missing")
@@ -306,11 +307,13 @@ object LoginWithOpenAuthController extends Controller {
       case Some(e) if (e != email) =>
         throwForbidden("DwE523FU2", "Cannot change email from ones' OAuth provider email")
       case Some(e) =>
-        assErrIf(
-          oauthDetails.providerId != GoogleProvider.Google &&
-          oauthDetails.providerId != FacebookProvider.Facebook,
-          "DwE7WHK65", "Don't know if this provider verifies email addresses")
-        Some(request.ctime)
+        if (oauthDetails.providerId == GoogleProvider.Google ||
+            oauthDetails.providerId == FacebookProvider.Facebook) {
+          Some(request.ctime)
+        }
+        else {
+          None
+        }
       case None =>
         None
     }
@@ -323,19 +326,34 @@ object LoginWithOpenAuthController extends Controller {
         case Bad(errorMessage) =>
           throwUnprocessableEntity("DwE7BD08", s"$errorMessage, please try again.")
       }
-    val loginGrant =
-      try dao.createUserAndLogin(userData)
-      catch {
-        case DbDao.DuplicateUsername =>
-          throwForbidden(
+
+    try {
+      val loginGrant = dao.createUserAndLogin(userData)
+      if (emailVerifiedAt.isDefined) {
+        createCookiesAndFinishLogin(request.request, loginGrant.user)
+        Ok("""{ "emailVerifiedAndLoggedIn": true }""")
+      }
+      else {
+        LoginWithPasswordController.sendEmailAddressVerificationEmail(
+          loginGrant.user, anyReturnToUrl, request.host, request.dao)
+        Ok("""{ "emailVerifiedAndLoggedIn": false }""")
+      }
+    }
+    catch {
+      case DbDao.DuplicateUsername =>
+        throwForbidden(
             "DwE6D3G8", "Username already taken, please try again with another username")
-        case DbDao.DuplicateUserEmail =>
+      case DbDao.DuplicateUserEmail =>
+        if (emailVerifiedAt.isDefined) {
           // The user has been authenticated, so it's okay to tell him/her about the email address.
           throwForbidden(
             "DwE4BME8", "You already have an account with that email address")
-      }
-
-    createCookiesAndFinishLogin(request.request, loginGrant.user)
+        }
+        // Don't indicate that there is already an account with this email.
+        LoginWithPasswordController.sendYouAlreadyHaveAnAccountWithThatAddressEmail(
+          request.dao, email, siteHostname = request.host, siteId = request.siteId)
+        Ok("""{ "emailVerifiedAndLoggedIn": false }""")
+    }
   }
 
 
