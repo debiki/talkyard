@@ -38,8 +38,12 @@ case class People(users: List[User] = Nil) {
   def ++ (people: People) = People(users = people.users ::: users)
 
   def user(id: String): Option[User] =
-    if (id == SystemUser.User.id) Some(SystemUser.User)
-    else users.find(_.id == id)  // COULD optimize
+    if (id == SystemUser.User.id)
+      Some(SystemUser.User)
+    else if (id == UnknownUser.Id)
+      Some(UnknownUser.User)
+    else
+      users.find(_.id == id)  // COULD optimize
 
   def user_!(id: String): User = user(id) getOrElse runErr(
     "DwE730krq849", "User not found: "+ safed(id))
@@ -503,6 +507,10 @@ object UnknownUser {
     * author user (see DummyPage.scala).
     */
   val Id = "-3"
+
+  val User = com.debiki.core.User(id = Id, displayName = "(unknown user)", username = None,
+    createdAt = None, email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive,
+    emailVerifiedAt = None, isAdmin = false)
 
 }
 
