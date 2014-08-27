@@ -15,10 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
 
+
+d.i.closeAnyLoginDialogs = !->
+  try
+    $('#dw-fs-openid-login').dialog('close')
+  catch
+    void # Ignore, the dialog was probably not open.
+
+  try
+    $('#dw-lgi').dialog('close')
+  catch
+    void # Ignore, the dialog was probably not open
 
 
 d.i.showLoginSubmitDialog = !(anyMode, anyReturnToUrl) ->
@@ -44,7 +54,7 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
   dialog = loginDialogHtml()
   dialog.dialog d.i.newModalDialogSettings(
     width: 413
-    closeOnEscape: !d.i.isInLoginPopup)
+    closeOnEscape: !d.i.isInLoginWindow)
 
   doingWhatClass = switch mode
   | 'LoginToAdministrate' =>
@@ -99,8 +109,8 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
         <input type="text" name="openid_identifier" value="#openidIdentifier">
       </form>
       """)
-    # Submit form in a new popup window, unless we alreaady are in a popup window.
-    if d.i.isInLoginPopup
+    # Submit form in a new login popup window, unless we already are in a login window.
+    if d.i.isInLoginWindow
       $('body').append(form)
     else
       d.i.createOpenIdLoginPopup(form)
@@ -115,8 +125,8 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
     mayNotCreateUser = if mode == 'LoginToAdministrate' then '&mayNotCreateUser' else ''
     returnToUrlOrEmpty = if anyReturnToUrl then anyReturnToUrl else ''
     url = "#{d.i.serverOrigin}/-/login-openauth/#provider?returnToUrl=#returnToUrlOrEmpty#mayNotCreateUser"
-    if d.i.isInLoginPopup
-      # Let the server know we're in a popup window, so it can choose to reply with
+    if d.i.isInLoginWindow
+      # Let the server know we're in a login window, so it can choose to reply with
       # complete HTML pages to show in the popup window.
       $.cookie('dwCoIsInLoginPopup', 'true')
       window.location = url
@@ -124,7 +134,7 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
       d.i.createLoginPopup(url)
 
   !function loginAndContinue(data)
-    if d.i.isInLoginPopup
+    if d.i.isInLoginWindow
       if anyReturnToUrl && anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1
         window.location = anyReturnToUrl
         return
@@ -151,7 +161,7 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
     showLoggedInDialog(d.i.continueAnySubmission)
 
   !function close
-    if d.i.isInLoginPopup
+    if d.i.isInLoginWindow
       window.close()
     else
       dialog.dialog('close')

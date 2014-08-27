@@ -82,8 +82,7 @@ d.i.createLoginPopup = function(anyUrl) {
       // (Find queryString example at the end of this file.)
 
       // Warning: Somewhat dupl code, compare w initLoginSimple.
-      $('#dw-fs-openid-login').dialog('close');
-      $('#dw-lgi').dialog('close');
+      d.i.closeAnyLoginDialogs();
       d.i.Me.fireLogin();
       d.i.continueAnySubmission();
       return;

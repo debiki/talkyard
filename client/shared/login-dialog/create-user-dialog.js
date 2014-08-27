@@ -39,7 +39,7 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
   var dialog = createUserDialogHtml();
   dialog.dialog(d.i.newModalDialogSettings({
     width: 380,
-    closeOnEscape: !d.i.isInLoginPopup
+    closeOnEscape: !d.i.isInLoginWindow
   }));
 
   dialog.find('#new-user-name').val(userData.name);
@@ -83,7 +83,7 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
         if (!data.emailVerifiedAndLoggedIn) {
           showAddressVerificationEmailSentDialog();
         }
-        else if (anyReturnToUrl) {
+        else if (anyReturnToUrl && !d.i.isInLoginPopup) {
           window.location = anyReturnToUrl;
         }
         else {
@@ -126,6 +126,11 @@ function continueOnSamePage() {
   // This continues e.g. submitting any reply the user intended to post before
   // s/he was asked to login and create a user.
   debikiInternal.continueAnySubmission();
+
+  if (d.i.isInLoginPopup) {
+    debikiInternal.closeAnyLoginDialogs();
+    close();
+  }
 }
 
 
