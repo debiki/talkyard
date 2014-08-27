@@ -584,7 +584,7 @@ gulp.task('build-themes', function () {
 
 
 
-gulp.task('watch', function() {
+gulp.task('watch', ['default'], function() {
 
   watchAndLiveForever = true;
 
