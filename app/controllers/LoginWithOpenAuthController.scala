@@ -237,7 +237,7 @@ object LoginWithOpenAuthController extends Controller {
         // We've shown but closed an OAuth provider login popup, and now we're
         // handling a create-user Ajax request from a certain showCreateUserDialog()
         // Javascript dialog. It already knows about any pending redirects.
-        Ok
+        Ok("""{ "emailVerifiedAndLoggedIn": true }""")
       }
       else {
         def loginPopupCallback =
@@ -342,7 +342,6 @@ object LoginWithOpenAuthController extends Controller {
       val loginGrant = dao.createUserAndLogin(userData)
       if (emailVerifiedAt.isDefined) {
         createCookiesAndFinishLogin(request.request, loginGrant.user)
-        Ok("""{ "emailVerifiedAndLoggedIn": true }""")
       }
       else {
         LoginWithPasswordController.sendEmailAddressVerificationEmail(

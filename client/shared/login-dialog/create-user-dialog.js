@@ -84,7 +84,7 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
           showAddressVerificationEmailSentDialog();
         }
         else if (anyReturnToUrl) {
-          window.location = anyRedirectUrl;
+          window.location = anyReturnToUrl;
         }
         else {
           continueOnSamePage();
