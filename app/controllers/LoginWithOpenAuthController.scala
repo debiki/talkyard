@@ -56,7 +56,7 @@ object LoginWithOpenAuthController extends Controller {
   private val ReturnToUrlCookieName = "dwCoReturnToUrl"
   private val ReturnToSiteCookieName = "dwCoReturnToSite"
   private val ReturnToSiteXsrfTokenCookieName = "dwCoReturnToSiteXsrfToken"
-  private val IsInLoginPopupCookieName = "dwCoIsInLoginPopup"
+  private val IsInLoginWindowCookieName = "dwCoIsInLoginWindow"
   private val MayCreateUserCookieName = "dwCoMayCreateUser"
 
   val anyLoginOrigin =
@@ -268,20 +268,22 @@ object LoginWithOpenAuthController extends Controller {
   private def showCreateUserDialog(request: Request[_], oauthDetails: OpenAuthDetails): Result = {
     val cacheKey = nextRandomString()
     play.api.cache.Cache.set(cacheKey, oauthDetails)
-    val anyIsInLoginPopupCookieValue = request.cookies.get(IsInLoginPopupCookieName).map(_.value)
+    val anyIsInLoginWindowCookieValue = request.cookies.get(IsInLoginWindowCookieName).map(_.value)
     val anyReturnToUrlCookieValue = request.cookies.get(ReturnToUrlCookieName).map(_.value)
 
-    if (anyIsInLoginPopupCookieValue.isDefined || anyReturnToUrlCookieValue.isDefined) {
-      // This is an embedded comments site, so the login dialog opened in a popup window,
-      // not in the embedded iframe. Continue running in the popup window, by returning
-      // a complete HTML page that shows a create-user dialog.
+    val result = if (anyIsInLoginWindowCookieValue.isDefined) {
+      // Continue running in the login window, by returning a complete HTML page that
+      // shows a create-user dialog. (( This happens for example if 1) we're in a create
+      // site wizard, then there's a dedicated login step in a login window, or 2)
+      // we're logging in to the admin pages, or 3) we're visiting an embedded comments
+      // site and attempted to login, then a login popup window opens (better than
+      // showing a login dialog somewhere inside the iframe). ))
       Ok(views.html.login.showCreateUserDialog(
         serverAddress = s"//${request.host}",
         newUserName = oauthDetails.displayName,
         newUserEmail = oauthDetails.email getOrElse "",
         authDataCacheKey = cacheKey,
         anyContinueToUrl = anyReturnToUrlCookieValue))
-        .discardingCookies(DiscardingCookie(IsInLoginPopupCookieName))
     }
     else {
       // The request is from an OAuth provider login popup. Run some Javascript in the
@@ -292,6 +294,10 @@ object LoginWithOpenAuthController extends Controller {
         newUserEmail = oauthDetails.email getOrElse "",
         authDataCacheKey = cacheKey))
     }
+
+    result.discardingCookies(
+      DiscardingCookie(IsInLoginWindowCookieName),
+      DiscardingCookie(ReturnToUrlCookieName))
   }
 
 
@@ -318,6 +324,8 @@ object LoginWithOpenAuthController extends Controller {
       case Some(e) if (e != email) =>
         throwForbidden("DwE523FU2", "Cannot change email from ones' OAuth provider email")
       case Some(e) =>
+        // Twitter and GitHub provide no email, or I don't know if any email has been verified.
+        // Google and Facebook emails have been verified though.
         if (oauthDetails.providerId == GoogleProvider.Google ||
             oauthDetails.providerId == FacebookProvider.Facebook) {
           Some(request.ctime)

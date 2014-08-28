@@ -128,7 +128,7 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
     if d.i.isInLoginWindow
       # Let the server know we're in a login window, so it can choose to reply with
       # complete HTML pages to show in the popup window.
-      $.cookie('dwCoIsInLoginPopup', 'true')
+      $.cookie('dwCoIsInLoginWindow', 'true')
       window.location = url
     else
       d.i.createLoginPopup(url)
@@ -184,7 +184,7 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
   $.cookie('dwCoReturnToUrl', null)
   $.cookie('dwCoReturnToSite', null)
   $.cookie('dwCoReturnToSiteXsrfToken', null)
-  $.cookie('dwCoIsInLoginPopup', null)
+  $.cookie('dwCoIsInLoginWindow', null)
   $.cookie('dwCoMayCreateUser', null)
 
 
@@ -236,17 +236,15 @@ function loginDialogHtml
           <span class="icon-facebook"></span>
           Facebook
         </a>
-        <!-- Email addresses not provided
         <a id="dw-lgi-twitter" class="btn btn-default" tabindex="113">
           <span class="icon-twitter"></span>
           Twitter
         </a>
-        // I think the email has not been verified? Discourse acts as if it hasn't.
         <a id="dw-lgi-github" class="btn btn-default" tabindex="113">
           <span class="icon-github"></span>
           GitHub
         </a>
-        // OpenID doesn't work right now.
+        <!-- OpenID doesn't work right now.
         <a id="dw-lgi-yahoo" class="btn btn-default" tabindex="114">
           <span class="icon-yahoo"></span>
           Yahoo!
