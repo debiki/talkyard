@@ -21,12 +21,15 @@ var $ = d.i.$;
 
 
 d.i.makeReturnToPostUrlForVerifEmail = function(postId) {
-  // The magic string tells the server to use the return-to-URL only if it
+  // The magic '__Redir...' string tells the server to use the return-to-URL only if it
   // needs to send an email address verification email (it'd include the return
   // to URL on a welcome page show via a link in the email).
+  // '__dwHash__' is an encoded hash that won't be lost when included in a GET URL.
+  // The server replaces it with '#' later on.
   return '_RedirFromVerifEmailOnly_' +
     window.location.toString().replace(/#.*/, '') +
-    '#post-' + postId;
+    '__dwHash__' +
+    'post-' + postId;
 };
 
 

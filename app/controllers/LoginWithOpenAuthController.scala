@@ -292,7 +292,8 @@ object LoginWithOpenAuthController extends Controller {
       Ok(views.html.login.closePopupShowCreateUserDialog(
         newUserName = oauthDetails.displayName,
         newUserEmail = oauthDetails.email getOrElse "",
-        authDataCacheKey = cacheKey))
+        authDataCacheKey = cacheKey,
+        anyContinueToUrl = anyReturnToUrlCookieValue))
     }
 
     result.discardingCookies(

@@ -15,19 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(newUserName: String, newUserEmail: String, authDataCacheKey: String)
+@(newUserName: String, newUserEmail: String, authDataCacheKey: String, anyContinueToUrl: Option[String])
+
+@continueToUrlOrEmpty = @{
+  anyContinueToUrl getOrElse ""
+}
 
 <!DOCTYPE html>
 <html>
 <body>
-  <p>Showing create new user dialog...</p>
+  <!-- views/login/closePopupShowCreateUserDialog.scala.html -->
   <script type='text/javascript'>
-    window.opener.debiki.internal.handleLoginResponse({
-      status: 'CreateUser',
+    window.opener.debiki.internal.closeAnyLoginDialogs();
+    window.opener.debiki.internal.showCreateUserDialog({
       name: '@newUserName',
       email: '@newUserEmail',
       authDataCacheKey: '@authDataCacheKey'
-    });
+    }, '@continueToUrlOrEmpty');
     window.close();
   </script>
 </body>
