@@ -89,7 +89,8 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
         if (!data.emailVerifiedAndLoggedIn) {
           showAddressVerificationEmailSentDialog();
         }
-        else if (anyReturnToUrl && !d.i.isInLoginPopup) {
+        else if (anyReturnToUrl && !d.i.isInLoginPopup &&
+            anyReturnToUrl.search('_RedirFromVerifEmailOnly_') == -1) {
           window.location = anyReturnToUrl;
         }
         else {
