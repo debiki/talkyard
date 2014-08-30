@@ -213,7 +213,7 @@ object LoginWithOpenIdController extends mvc.Controller {
         email = emailOpt getOrElse "",
         country = countryOpt getOrElse ""))
 
-    val loginGrant = Globals.siteDao(tenantId, ip = addr).saveLogin(loginAttempt)
+    val loginGrant = Globals.siteDao(tenantId, ip = addr).tryLogin(loginAttempt)
 
     // ----- Reply, with session cookies
 
@@ -224,8 +224,7 @@ object LoginWithOpenIdController extends mvc.Controller {
       case "" =>
         // Also see debiki-login-dialog.ls, search for [509KEF31].
         Ok(views.html.login.loginPopupCallback("LoginOk",
-          s"You have been logged in, welcome ${loginGrant.displayName}!",
-          anyReturnToUrl = None))
+          s"You have been logged in, welcome ${loginGrant.displayName}!"))
       case url =>
         Redirect(url)
     }

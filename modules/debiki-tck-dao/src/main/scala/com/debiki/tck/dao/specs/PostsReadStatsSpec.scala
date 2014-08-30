@@ -41,21 +41,17 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
     var post2: Post = null
     var post3: Post = null
     var post4: Post = null
-    var passwordIdentity: PasswordIdentity = null
     var passwordRole: User = null
     var passwordLoginGrant: LoginGrant = null
-    var guestLoginGrant: LoginGrant = null
-    var guestLoginGrantOtherIp: LoginGrant = null
+    var guestUserOtherIp: User = null
     var guestUser: User = null
     val GuestIp = "0.0.0.1"
     val GuestIp2 = "0.0.0.2"
     val PasswordIp = "0.0.1.0"
 
     "create a password role and a page and comment #2" in {
-      val (identity, user) = siteUtils.createPasswordRole()
-      passwordIdentity = identity
-      passwordRole = user
-      passwordLoginGrant = siteUtils.login(passwordIdentity, ip = PasswordIp)
+      passwordRole = siteUtils.createPasswordRole()
+      passwordLoginGrant = siteUtils.login(passwordRole, ip = PasswordIp)
 
       page = siteUtils.createPageAndBody(
         passwordLoginGrant, PageRole.ForumTopic, PageText).withoutPath
@@ -66,14 +62,13 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
     }
 
     "login as guest, add comment #3 and #4" in {
-      guestLoginGrant = siteUtils.loginAsGuest(name = "Test Guest", ip = GuestIp)
-      guestUser = guestLoginGrant.user
+      guestUser  = siteUtils.loginAsGuest(name = "Test Guest", ip = GuestIp)
 
-      val (tmpPage, tmpPost3) = siteUtils.addComment(guestLoginGrant, page, "Guest comment")
+      val (tmpPage, tmpPost3) = siteUtils.addComment(guestUser, page, "Guest comment")
       page = siteUtils.review(passwordLoginGrant, tmpPage, tmpPost3.id, Approval.AuthoritativeUser)
       post3 = page.parts.getPost(tmpPost3.id) getOrElse fail("Comment not found")
 
-      val (tmpPage2, tmpPost4) = siteUtils.addComment(guestLoginGrant, page, "Guest comment #4")
+      val (tmpPage2, tmpPost4) = siteUtils.addComment(guestUser, page, "Guest comment #4")
       page = siteUtils.review(passwordLoginGrant, tmpPage2, tmpPost4.id, Approval.AuthoritativeUser)
       post4 = page.parts.getPost(tmpPost4.id) getOrElse fail("Comment not found")
     }
@@ -90,7 +85,7 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
 
     "vote-read posts #1 and #2 as a guest" - {
       "like post #2" in {
-        val (tmpPage, vote) = siteUtils.vote(guestLoginGrant, page, post2.id, PAP.VoteLike)
+        val (tmpPage, vote) = siteUtils.vote(guestUser, page, post2.id, PAP.VoteLike)
         page = tmpPage
         siteUtils.dao.updatePostsReadStats(page.id, Set(PageParts.BodyId, post2.id), vote)
       }
@@ -108,7 +103,7 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
 
     "vote-read post #1, #2, #3 as guest, not fail on duplicate ip inserts" - {
       "like post #3" in {
-        val (tmpPage, vote) = siteUtils.vote(guestLoginGrant, page, post3.id, PAP.VoteLike)
+        val (tmpPage, vote) = siteUtils.vote(guestUser, page, post3.id, PAP.VoteLike)
         page = tmpPage
         siteUtils.dao.updatePostsReadStats(
           page.id, Set(PageParts.BodyId, post2.id, post3.id), vote)
@@ -128,12 +123,12 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
 
     "vote-read post #1, #2, #3, #4 as same guest another ip, not fail on duplicate guest ids" - {
       "login as guest from other ip" in {
-        guestLoginGrantOtherIp =
-          siteUtils.loginAsGuest(name = guestLoginGrant.displayName, ip = GuestIp2)
+        guestUserOtherIp =
+          siteUtils.loginAsGuest(name = guestUser.displayName, ip = GuestIp2)
       }
 
       "like post #4" in {
-        val (tmpPage, vote) = siteUtils.vote(guestLoginGrantOtherIp, page, post4.id, PAP.VoteLike)
+        val (tmpPage, vote) = siteUtils.vote(guestUserOtherIp, page, post4.id, PAP.VoteLike)
         page = tmpPage
         siteUtils.dao.updatePostsReadStats(
           page.id, Set(PageParts.BodyId, post2.id, post3.id, post4.id), vote)

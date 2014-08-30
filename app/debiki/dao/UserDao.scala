@@ -30,37 +30,60 @@ trait UserDao {
   self: SiteDao =>
 
 
-  def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User): (Identity, User) =
-    siteDbDao.createPasswordIdentityAndRole(identity, user)
+  def createUserAndLogin(newUserData: NewUserData): LoginGrant =
+    siteDbDao.createUserAndLogin(newUserData)
 
 
-  def changePassword(identity: PasswordIdentity, newPasswordSaltHash: String): Boolean =
-    siteDbDao.changePassword(identity, newPasswordSaltHash)
+  def createPasswordUser(userData: NewPasswordUserData): User =
+    siteDbDao.createPasswordUser(userData)
 
 
-  def saveLogin(loginAttempt: LoginAttempt): LoginGrant =
-    siteDbDao.saveLogin(loginAttempt)
+  def changePassword(user: User, newPasswordSaltHash: String): Boolean =
+    siteDbDao.changePassword(user, newPasswordSaltHash)
 
 
+  def loginAsGuest(loginAttempt: GuestLoginAttempt): User =
+    siteDbDao.loginAsGuest(loginAttempt).user
+
+
+  def tryLogin(loginAttempt: LoginAttempt): LoginGrant =
+    siteDbDao.tryLogin(loginAttempt)
+
+
+  /* TODO [nologin] Would be good if could remove from cache?
   def saveLogout(loginId: LoginId, logoutIp: String) =
     siteDbDao.saveLogout(loginId, logoutIp)
+  */
 
 
-  def loadLogin(loginId: LoginId): Option[Login] =
-    siteDbDao.loadLogin(loginId)
+  def loadUser(userId: UserId): Option[User] =
+    siteDbDao.loadUser(userId)
 
 
-  def loadIdtyAndUser(forLoginId: LoginId): Option[(Identity, User)] =
-    siteDbDao.loadIdtyAndUser(forLoginId)
+  def loadUserByEmailOrUsername(emailOrUsername: String): Option[User] =
+    // Don't need to cache this? Only called when logging in.
+    siteDbDao.loadUserByEmailOrUsername(emailOrUsername)
 
 
-  def loadIdtyDetailsAndUser(forLoginId: LoginId = null,
-        forOpenIdDetails: OpenIdDetails = null,
-        forEmailAddr: String = null): Option[(Identity, User)] =
+  def loadUserAndAnyIdentity(userId: UserId = null): Option[(Option[Identity], User)] = {
+    loadIdtyDetailsAndUser(userId) match {
+      case Some((identity, user)) => Some((Some(identity), user))
+      case None =>
+        // No OAuth or OpenID identity, try load password user:
+        loadUser(userId) match {
+          case Some(user) =>
+            Some((None, user))
+          case None =>
+            None
+        }
+    }
+  }
+
+
+  private def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)] =
     // Don't cache this, because this function is rarely called
     // — currently only when creating new website.
-    siteDbDao.loadIdtyDetailsAndUser(forLoginId = forLoginId,
-      forOpenIdDetails = forOpenIdDetails, forEmailAddr = forEmailAddr)
+    siteDbDao.loadIdtyDetailsAndUser(userId)
 
 
   def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats] =
@@ -84,26 +107,29 @@ trait UserDao {
     siteDbDao.loadPermsOnPage(PermsOnPageQuery(
       tenantId = request.tenantId,
       ip = request.ip,
-      loginId = request.loginId,
-      identity = request.identity,
       user = request.user,
       pagePath = pagePath,
       pageMeta = pageMeta))
   }
 
 
-  def configRole(loginId: LoginId, ctime: ju.Date, roleId: RoleId,
+  def verifyEmail(roleId: RoleId, verifiedAt: ju.Date) =
+    siteDbDao.configRole(roleId, emailVerifiedAt = Some(Some(verifiedAt)))
+
+
+  def configRole(roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
-        isOwner: Option[Boolean] = None) =
-    siteDbDao.configRole(loginId = loginId, ctime = ctime,
-      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
+        isOwner: Option[Boolean] = None) = {
+    // Don't specify emailVerifiedAt here — use verifyEmail() instead; it refreshes the cache.
+    siteDbDao.configRole(
+      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner,
+      emailVerifiedAt = None)
+  }
 
 
-  def configIdtySimple(loginId: LoginId, ctime: ju.Date,
-        emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
-    siteDbDao.configIdtySimple(loginId = loginId, ctime = ctime,
-      emailAddr = emailAddr,
-      emailNotfPrefs = emailNotfPrefs)
+  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
+    siteDbDao.configIdtySimple(ctime = ctime,
+      emailAddr = emailAddr, emailNotfPrefs = emailNotfPrefs)
 
 
   def listUsers(userQuery: UserQuery): Seq[(User, Seq[String])] =
@@ -117,53 +143,74 @@ trait CachingUserDao extends UserDao {
   self: CachingSiteDao =>
 
 
-  override def saveLogin(loginAttempt: LoginAttempt): LoginGrant = {
+  override def loginAsGuest(loginAttempt: GuestLoginAttempt): User = {
+    val user = super.loginAsGuest(loginAttempt)
+    putInCache(
+      key(user.id),
+      CacheValueIgnoreVersion(user))
+    user
+  }
+
+
+  override def tryLogin(loginAttempt: LoginAttempt): LoginGrant = {
     // Don't save any site cache version, because user specific data doesn't change
     // when site specific data changes.
-    val loginGrant = super.saveLogin(loginAttempt)
+    val loginGrant = super.tryLogin(loginAttempt)
     putInCache(
-      key(loginGrant.login.id),
-      CacheValueIgnoreVersion((loginGrant.identity, loginGrant.user)))
+      key(loginGrant.user.id),
+      CacheValueIgnoreVersion(loginGrant.user))
     loginGrant
   }
 
 
+  /*
   override def saveLogout(loginId: LoginId, logoutIp: String) {
     super.saveLogout(loginId, logoutIp)
     // There'll be no more requests with this login id.
-    removeFromCache(key(loginId))
-  }
+    ??? // TODO [nologin] remove user from cache?
+    // removeFromCache(key(loginId)) -- won't work. Needs the user id.
+  }*/
 
 
-  override def loadIdtyAndUser(forLoginId: LoginId): Option[(Identity, User)] = {
-    lookupInCache[(Identity, User)](
-      key(forLoginId),
-      orCacheAndReturn = super.loadIdtyAndUser(forLoginId),
+  override def loadUser(userId: UserId): Option[User] = {
+    lookupInCache[User](
+      key(userId),
+      orCacheAndReturn = super.loadUser(userId),
       ignoreSiteCacheVersion = true)
   }
 
 
-  override def configRole(loginId: LoginId, ctime: ju.Date, roleId: RoleId,
+  override def verifyEmail(roleId: RoleId, verifiedAt: ju.Date) = {
+    super.verifyEmail(roleId, verifiedAt)
+    removeFromCache(key(roleId))
+    // Re-render any page with a post that should hereafter be shown because the
+    // email has been verified.
+    val actionInfos = listUserActions(roleId)
+    val idsOfPagesToRefresh = actionInfos.map(_.pageId).distinct
+    idsOfPagesToRefresh foreach { pageId =>
+      firePageSaved(SitePageId(siteId, pageId))
+    }
+  }
+
+
+  override def configRole(roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean],
         isOwner: Option[Boolean]) {
-    super.configRole(loginId = loginId, ctime = ctime,
+    super.configRole(
       roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
-    removeFromCache(key(loginId))
+    removeFromCache(key(roleId))
   }
 
 
-  override def configIdtySimple(loginId: LoginId, ctime: ju.Date,
-                       emailAddr: String, emailNotfPrefs: EmailNotfPrefs) {
+  override def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) {
     super.configIdtySimple(
-      loginId = loginId,
-      ctime = ctime,
-      emailAddr = emailAddr,
-      emailNotfPrefs = emailNotfPrefs)
-    removeFromCache(key(loginId))
+      ctime = ctime, emailAddr = emailAddr, emailNotfPrefs = emailNotfPrefs)
+    ??? // TODO [nologin] remove user from cache?
+    ??? // removeFromCache(key(loginId)) -- won't work. Needs the user id.
   }
 
 
-  private def key(loginId: LoginId) = CacheKey(siteId, s"$loginId|UserByLoginId")
+  private def key(userId: UserId) = CacheKey(siteId, s"$userId|UserById")
 
 }
 

@@ -86,8 +86,6 @@ object PageRequest {
     val permsReq = PermsOnPageQuery(
       tenantId = apiRequest.tenantId,
       ip = apiRequest.ip,
-      loginId = apiRequest.sid.loginId,
-      identity = apiRequest.identity,
       user = apiRequest.user,
       pagePath = okPath,
       pageMeta = anyPageMeta)
@@ -100,7 +98,6 @@ object PageRequest {
       sid = apiRequest.sid,
       xsrfToken = apiRequest.xsrfToken,
       browserId = apiRequest.browserId,
-      identity = apiRequest.identity,
       user = apiRequest.user,
       pageExists = pageExists,
       pagePath = okPath,
@@ -170,11 +167,7 @@ object PageRequest {
 
 
 
-/**
- * A page related request.
- *
- * Sometimes only the browser ip is known (then there'd be no
- * Login/Identity/User).
+/** A page related request.
   *
   * Naming convention: Functions that assume that the page exists, and throws
   * a 404 Not Found error otherwise, are named like "thePage" or "thePageParts",
@@ -185,7 +178,6 @@ case class PageRequest[A](
   sid: SidStatus,
   xsrfToken: XsrfOk,
   browserId: Option[BrowserId],
-  identity: Option[Identity],
   user: Option[User],
   pageExists: Boolean,
   /** Ids of groups to which the requester belongs. */
@@ -244,8 +236,6 @@ case class PageRequest[A](
     val newPerms = dao.loadPermsOnPage(PermsOnPageQuery(
       tenantId = tenantId,
       ip = request.remoteAddress,
-      loginId = sid.loginId,
-      identity = identity,
       user = user,
       pagePath = pagePath,
       pageMeta = pageMeta))
@@ -266,8 +256,7 @@ case class PageRequest[A](
 
 
   /**
-   * A copy with the current user (login, identity and user instances)
-   * included on the page that the request concerns.
+   * A copy with the current user included on the page that the request concerns.
    *
    * This is useful, if the current user does his/her very first
    * interaction with the page. Then this.page.people has no info
@@ -277,7 +266,7 @@ case class PageRequest[A](
    * and then rendering the page.)
    */
   def copyWithAnyMeOnPage: PageRequest[A] =
-    if (loginId.isEmpty || !pageExists) this
+    if (user.isEmpty || !pageExists) this
     else {
       if (_preloadedActions isDefined)
         copy()(_preloadedActions.map(_ ++ anyMeAsPeople),
@@ -288,7 +277,7 @@ case class PageRequest[A](
 
 
   def copyWithMeOnPage_! : PageRequest[A] =
-    if (loginId.isEmpty) throwForbidden("DwE403BZ39", "Not logged in")
+    if (user.isEmpty) throwForbidden("DwE403BZ39", "Not logged in")
     else copyWithAnyMeOnPage
 
 

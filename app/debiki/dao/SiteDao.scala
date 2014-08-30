@@ -85,12 +85,11 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
   def createWebsite(name: Option[String], address: Option[String],
         embeddingSiteUrl: Option[String], ownerIp: String,
-        ownerLoginId: LoginId, ownerIdentity: Identity, ownerRole: User)
+        ownerIdentity: Option[Identity], ownerRole: User)
         : Option[(Tenant, User)] =
     siteDbDao.createWebsite(name = name, address = address,
       embeddingSiteUrl, ownerIp = ownerIp,
-      ownerLoginId = ownerLoginId, ownerIdentity = ownerIdentity,
-      ownerRole = ownerRole)
+      ownerIdentity = ownerIdentity, ownerRole = ownerRole)
 
   def addTenantHost(host: TenantHost) = siteDbDao.addTenantHost(host)
 
@@ -140,11 +139,11 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,
-        byIdentity: Option[IdentityId] = None,
+        byRole: Option[RoleId] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
         limit: Int): (Seq[PostAction[_]], People) =
     siteDbDao.loadRecentActionExcerpts(fromIp = fromIp,
-      byIdentity = byIdentity, pathRanges = pathRanges, limit = limit)
+      byRole = byRole, pathRanges = pathRanges, limit = limit)
 
 
   // ----- Full text search

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(status: String, message: String, anyReturnToUrl: Option[String])
+@(name: String)
 
 <!DOCTYPE html>
 <html>
@@ -24,25 +24,16 @@
   function returnToOpener() {
     window.opener.debiki.internal.handleLoginResponse({
       queryString: (window.location+'').split('?')[1],
-      status: '@status'
+      status: 'LoginOk',
     });
     window.close();
   }
   </script>
 </head>
 <body onload='returnToOpener();'>
-  @* If javascript disabled, show a message, and (todo) an OK link that
-  redirects to the last page? *@
-
   <p>
-    @message
+    You have been logged in, welcome @name!
   </p>
-
-  @for(returnToUrl <- anyReturnToUrl) {
-    <p>
-      <a href="@returnToUrl">Go back and try again</a>
-    </p>
-  }
 </body>
 </html>
 

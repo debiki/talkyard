@@ -77,8 +77,16 @@ object SafeActions {
     override def invokeBlock[A](
         request: Request[A], block: SessionRequest[A] => Future[Result]) = {
 
-      val (sidStatus, xsrfOk, newCookies) =
+      val (sidStatusReal, xsrfOk, newCookies) =
         DebikiSecurity.checkSidAndXsrfToken(request, maySetCookies = maySetCookies)
+
+      // Ignore and delete any broken session id cookie.
+      var sidStatusFixed = sidStatusReal
+      var deleteSidCookie = false
+      if (!sidStatusReal.isOk) {
+        sidStatusFixed = SidAbsent
+        deleteSidCookie = maySetCookies
+      }
 
       val (anyBrowserId, moreNewCookies) =
         BrowserId.checkBrowserId(request, maySetCookies = maySetCookies)
@@ -89,7 +97,7 @@ object SafeActions {
       // any AsyncResult(future-result-that-might-be-a-failure) here.
       val resultOldCookies: Future[Result] =
         try {
-          block(SessionRequest(sidStatus, xsrfOk, anyBrowserId, request))
+          block(SessionRequest(sidStatusFixed, xsrfOk, anyBrowserId, request))
         }
         catch {
           case e: Utils.LoginNotFoundException =>
@@ -100,17 +108,24 @@ object SafeActions {
               "DwE034ZQ3", "Internal error, please try again, sorry. "+
                 "(A certain login id has become invalid. You now have "+
                 "a new id, but you will probably need to login again.)")
-              .discardingCookies(DiscardingCookie("dwCoSid")))
+              .discardingCookies(DiscardingCookie(Sid.CookieName)))
         }
 
       val resultOkSid =
-        if (newCookies.isEmpty && moreNewCookies.isEmpty) resultOldCookies
+        if (newCookies.isEmpty && moreNewCookies.isEmpty && !deleteSidCookie) {
+          resultOldCookies
+        }
         else {
           assert(maySetCookies)
           resultOldCookies map { result =>
-            result
+            var resultWithCookies = result
               .withCookies((newCookies ::: moreNewCookies): _*)
               .withHeaders(MakeInternetExplorerSaveIframeCookiesHeader)
+            if (deleteSidCookie) {
+              resultWithCookies =
+                resultWithCookies.discardingCookies(DiscardingCookie(Sid.CookieName))
+            }
+            resultWithCookies
           }
         }
 

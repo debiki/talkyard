@@ -34,6 +34,7 @@ import xml.{NodeSeq}
  */
 object DebikiHttp {
 
+
   // ----- Limits
 
   // (The www.debiki.se homepage is 20 kb, and homepage.css 80 kb,
@@ -78,6 +79,9 @@ object DebikiHttp {
     R.EntityTooLarge("413 Request Entity Too Large\n"+
        message +" [error "+ errCode +"]")
 
+  def UnprocessableEntityResult(errCode: String, message: String): Result =
+    R.UnprocessableEntity("422 Unprocessable Entity\n"+ message +" [error "+ errCode +"]")
+
   def InternalErrorResult(errCode: String, message: String): Result =
     R.InternalServerError(
       "500 Internal Server Error\n"+ message +" [error "+ errCode +"]")
@@ -93,6 +97,9 @@ object DebikiHttp {
 
   def throwBadReq(errCode: String, message: String = "") =
     throw ResultException(BadReqResult(errCode, message))
+
+  def throwUnprocessableEntity(errCode: String, message: String = "") =
+    throw ResultException(UnprocessableEntityResult(errCode, message))
 
   def throwBadParamValue(errCode: String, paramName: String) =
     throwBadReq(errCode, "Bad `"+ paramName +"` value")
@@ -161,6 +168,19 @@ object DebikiHttp {
 
 
   // ----- Tenant ID lookup
+
+
+  def originOf(request: Request[_]) = {
+    val scheme = if (request.secure) "https" else "http"
+    s"$scheme://${request.host}"
+  }
+
+
+  def daoFor(request: Request[_]) = {
+    val siteId = lookupTenantIdOrThrow(originOf(request), debiki.Globals.systemDao)
+    debiki.Globals.siteDao(siteId, ip = request.remoteAddress)
+  }
+
 
   /** Looks up a site by hostname, or directly by id.
     *

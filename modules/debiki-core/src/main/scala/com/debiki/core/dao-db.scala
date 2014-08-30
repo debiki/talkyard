@@ -90,7 +90,7 @@ abstract class SiteDbDao {
    */
   def createWebsite(name: Option[String], address: Option[String],
         embeddingSiteUrl: Option[String], ownerIp: String,
-        ownerLoginId: LoginId, ownerIdentity: Identity, ownerRole: User)
+        ownerIdentity: Option[Identity], ownerRole: User)
         : Option[(Tenant, User)]
 
   def addTenantHost(host: TenantHost)
@@ -98,7 +98,11 @@ abstract class SiteDbDao {
   def lookupOtherTenant(scheme: String, host: String): TenantLookup
 
 
-  // ----- Login, logout
+  // ----- Login
+
+  /** Logs in as guest, currently always succeeds (unless out of quota).
+    */
+  def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
 
   /**
    * Assigns ids to the login request, saves it, finds or creates a user
@@ -106,14 +110,8 @@ abstract class SiteDbDao {
    * Also, if the Identity does not already exist in the db, assigns it an ID
    * and saves it.
    */
-  def saveLogin(loginAttempt: LoginAttempt): LoginGrant
+  def tryLogin(loginAttempt: LoginAttempt): LoginGrant
 
-  /**
-   * Updates the specified login with logout IP and timestamp.
-   */
-  def saveLogout(loginId: LoginId, logoutIp: String)
-
-  def loadLogin(loginId: LoginId): Option[Login]
 
   // ----- New pages, page meta
 
@@ -272,28 +270,29 @@ abstract class SiteDbDao {
    */
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,
-        byIdentity: Option[String] = None,
+        byRole: Option[RoleId] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
         limit: Int): (Seq[PostAction[_]], People)
 
 
   // ----- Users and permissions
 
-  def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User)
-        : (PasswordIdentity, User)
+  def createUserAndLogin(newUserData: NewUserData): LoginGrant
+
+  def createPasswordUser(userData: NewPasswordUserData): User
 
   /** Returns true if the identity was found (and the password thus changed).
     */
-  def changePassword(identity: PasswordIdentity, newPasswordSaltHash: String): Boolean
+  def changePassword(user: User, newPasswordSaltHash: String): Boolean
 
-  def loadIdtyAndUser(forLoginId: LoginId): Option[(Identity, User)]
+  def loadUser(userId: UserId): Option[User]
+
+  def loadUserByEmailOrUsername(emailOrUsername: String): Option[User]
 
   /**
    * Also loads details like OpenID local identifier, endpoint and version info.
    */
-  def loadIdtyDetailsAndUser(forLoginId: LoginId = null,
-        forOpenIdDetails: OpenIdDetails = null,
-        forEmailAddr: String = null): Option[(Identity, User)]
+  def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)]
 
   def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats]
 
@@ -331,12 +330,11 @@ abstract class SiteDbDao {
 
   // ----- User configuration
 
-  def configRole(loginId: LoginId, ctime: ju.Date, roleId: RoleId,
+  def configRole(roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
-        isOwner: Option[Boolean] = None)
+        isOwner: Option[Boolean] = None, emailVerifiedAt: Option[Option[ju.Date]] = None)
 
-  def configIdtySimple(loginId: LoginId, ctime: ju.Date,
-                       emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
+  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
 
   // ----- Full text search
@@ -491,7 +489,7 @@ class ChargingSiteDbDao(
    */
   def createWebsite(name: Option[String], address: Option[String],
         embeddingSiteUrl: Option[String], ownerIp: String,
-        ownerLoginId: LoginId, ownerIdentity: Identity, ownerRole: User)
+        ownerIdentity: Option[Identity], ownerRole: User)
         : Option[(Tenant, User)] = {
 
     // SHOULD consume IP quota — but not tenant quota!? — when generating
@@ -504,8 +502,7 @@ class ChargingSiteDbDao(
 
     _spi.createWebsite(name = name, address = address,
        embeddingSiteUrl, ownerIp = ownerIp,
-       ownerLoginId = ownerLoginId, ownerIdentity = ownerIdentity,
-       ownerRole = ownerRole)
+       ownerIdentity = ownerIdentity, ownerRole = ownerRole)
   }
 
   def addTenantHost(host: TenantHost) = {
@@ -522,35 +519,35 @@ class ChargingSiteDbDao(
 
   // ----- Login, logout
 
-  def saveLogin(loginAttempt: LoginAttempt): LoginGrant = {
+  def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult = {
+    _ensureHasQuotaFor(ResUsg.forStoring(loginAttempt), mayPilfer = false)
+    val result = _spi.loginAsGuest(loginAttempt)
+    if (result.isNewUser) {
+      _chargeFor(ResUsg.forStoring(user = result.user))
+    }
+    result
+  }
+
+
+  def tryLogin(loginAttempt: LoginAttempt): LoginGrant = {
     // Allow people to login via email and unsubscribe, even if over quota.
     val mayPilfer = loginAttempt.isInstanceOf[EmailLoginAttempt]
 
     // If we don't ensure there's enough quota for the db transaction,
-    // Mallory could call saveLogin, when almost out of quota, and
-    // saveLogin would write to the db and then rollback, when over quota
+    // Mallory could call tryLogin, when almost out of quota, and
+    // tryLogin would write to the db and then rollback, when over quota
     // -- a DoS attack would be possible.
     _ensureHasQuotaFor(ResUsg.forStoring(loginAttempt), mayPilfer = mayPilfer)
 
-    val loginGrant = _spi.saveLogin(loginAttempt)
+    val loginGrant = _spi.tryLogin(loginAttempt)
 
-    val resUsg = ResUsg.forStoring(login = loginGrant.login,
-       identity = loginGrant.isNewIdentity ? loginGrant.identity | null,
+    val resUsg = ResUsg.forStoring(
+       identity = loginGrant.isNewIdentity ? loginGrant.identity.getOrDie("DwE0KSE3") | null,
        user = loginGrant.isNewRole ? loginGrant.user | null)
 
     _chargeFor(resUsg, mayPilfer = mayPilfer)
 
     loginGrant
-  }
-
-  def saveLogout(loginId: LoginId, logoutIp: String) = {
-    _chargeForOneWriteReq()
-    _spi.saveLogout(loginId, logoutIp)
-  }
-
-  def loadLogin(loginId: LoginId): Option[Login] = {
-    _chargeForOneReadReq()
-    _spi.loadLogin(loginId)
   }
 
 
@@ -704,40 +701,48 @@ class ChargingSiteDbDao(
 
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,
-        byIdentity: Option[IdentityId] = None,
+        byRole: Option[RoleId] = None,
         pathRanges: PathRanges = PathRanges.Anywhere,
         limit: Int): (Seq[PostAction[_]], People) = {
     _chargeForOneReadReq()
-    _spi.loadRecentActionExcerpts(fromIp = fromIp, byIdentity = byIdentity,
+    _spi.loadRecentActionExcerpts(fromIp = fromIp, byRole = byRole,
         pathRanges = pathRanges, limit = limit)
   }
 
 
   // ----- Users and permissions
 
-  def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User)
-        : (PasswordIdentity, User) = {
+  def createUserAndLogin(newUserData: NewUserData): LoginGrant = {
     val resUsg = ResourceUse(numIdsAu = 1, numRoles = 1)
     _chargeFor(resUsg, mayPilfer = false)
-    _spi.createPasswordIdentityAndRole(identity, user)
+    _spi.createUserAndLogin(newUserData)
   }
 
-  def changePassword(identity: PasswordIdentity, newPasswordSaltHash: String): Boolean = {
+
+  def createPasswordUser(userData: NewPasswordUserData): User = {
+    val resUsg = ResourceUse(numRoles = 1)
+    _chargeFor(resUsg, mayPilfer = false)
+    _spi.createPasswordUser(userData)
+  }
+
+  def changePassword(user: User, newPasswordSaltHash: String): Boolean = {
     _chargeForOneWriteReq(mayPilfer = true)
-    _spi.changePassword(identity, newPasswordSaltHash)
+    _spi.changePassword(user, newPasswordSaltHash)
   }
 
-  def loadIdtyAndUser(forLoginId: LoginId): Option[(Identity, User)] = {
+  def loadUser(userId: UserId): Option[User] = {
     _chargeForOneReadReq()
-    _spi.loadIdtyAndUser(forLoginId)
+    _spi.loadUser(userId)
   }
 
-  def loadIdtyDetailsAndUser(forLoginId: LoginId = null,
-        forOpenIdDetails: OpenIdDetails = null,
-        forEmailAddr: String = null): Option[(Identity, User)] = {
+  def loadUserByEmailOrUsername(emailOrUsername: String): Option[User] = {
     _chargeForOneReadReq()
-    _spi.loadIdtyDetailsAndUser(forLoginId = forLoginId,
-      forOpenIdDetails = forOpenIdDetails, forEmailAddr = forEmailAddr)
+    _spi.loadUserByEmailOrUsername(emailOrUsername)
+  }
+
+  def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)] = {
+    _chargeForOneReadReq()
+    _spi.loadIdtyDetailsAndUser(userId)
   }
 
   def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats] = {
@@ -814,25 +819,24 @@ class ChargingSiteDbDao(
 
   // ----- User configuration
 
-  def configRole(loginId: LoginId, ctime: ju.Date, roleId: RoleId,
+  def configRole(roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean],
-        isOwner: Option[Boolean]) =  {
+        isOwner: Option[Boolean], emailVerifiedAt: Option[Option[ju.Date]]) =  {
     // When auditing of changes to roles has been implemented,
     // `configRole` will create new rows, and we should:
     // _chargeFor(ResUsg.forStoring(quotaConsumers.role.get))
     // And don't care about whether or not quotaConsumers.role.id == roleId. ?
     // But for now:
     _chargeForOneWriteReq()
-    _spi.configRole(loginId = loginId, ctime = ctime, roleId = roleId,
-      emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
+    _spi.configRole(roleId = roleId,
+      emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner,
+      emailVerifiedAt = emailVerifiedAt)
   }
 
-  def configIdtySimple(loginId: LoginId, ctime: ju.Date,
-        emailAddr: String, emailNotfPrefs: EmailNotfPrefs) = {
+  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) = {
     _chargeForOneWriteReq()
-    _spi.configIdtySimple(loginId = loginId, ctime = ctime,
-                          emailAddr = emailAddr,
-                          emailNotfPrefs = emailNotfPrefs)
+    _spi.configIdtySimple(
+      ctime = ctime, emailAddr = emailAddr, emailNotfPrefs = emailNotfPrefs)
   }
 
 
@@ -864,10 +868,15 @@ object DbDao {
   case class BadEmailTypeException(emailId: String)
     extends RuntimeException(s"Email with id $emailId has no recipient user id")
 
+  case object DuplicateUsername extends RuntimeException("Duplicate username")
+  case object DuplicateUserEmail extends RuntimeException("Duplicate user email")
+
   case class IdentityNotFoundException(message: String)
     extends RuntimeException(message)
 
   case object BadPasswordException extends RuntimeException("Bad password")
+
+  case object EmailNotVerifiedException extends RuntimeException("Email not verified")
 
   case object DuplicateVoteException extends RuntimeException("Duplicate vote")
 

@@ -84,13 +84,13 @@ object UnsubscriptionController extends mvc.Controller {
     val dao = Globals.siteDao(tenantId, ip = realOrFakeIpOf(request))
 
     val loginGrant =
-      try dao.saveLogin(loginAttempt)
+      try dao.tryLogin(loginAttempt)
       catch {
         case ex: DbDao.EmailNotFoundException =>
           throwForbidden("DwE530KI37", "Email not found")
       }
 
-    import loginGrant.{login, identity, user}
+    import loginGrant.{identity, user}
     val idtyEmailId = identity.asInstanceOf[IdentityEmailId]
 
     // Find out what to do.
@@ -102,13 +102,13 @@ object UnsubscriptionController extends mvc.Controller {
 
     // Do it.
     if (user.isAuthenticated) {
-      dao.configRole(loginId = login.id, ctime = login.date,
-         roleId = user.id, emailNotfPrefs = Some(emailNotfPrefs))
+      dao.configRole(
+        roleId = user.id, emailNotfPrefs = Some(emailNotfPrefs))
     }
     else {
       val emailAddr = idtyEmailId.emailSent.get.sentTo
-      dao.configIdtySimple(loginId = login.id,
-         ctime = login.date, emailAddr = emailAddr,
+      dao.configIdtySimple(
+         ctime = new ju.Date(), emailAddr = emailAddr,
          emailNotfPrefs = emailNotfPrefs)
     }
 

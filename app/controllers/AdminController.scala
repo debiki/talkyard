@@ -41,9 +41,11 @@ object AdminController extends mvc.Controller {
 
   def viewAdminPage() = GetAction { apiReq =>
     if (apiReq.user.map(_.isAdmin) != Some(true)) {
-      Ok(views.html.login.loginPage(xsrfToken = apiReq.xsrfToken.value,
-        returnToUrl = apiReq.uri, title = "Login", message = Some(
-          "Login as administrator to access this page.")))
+      Ok(views.html.login.loginPopup(
+        mode = "LoginToAdministrate",
+        serverAddress = s"//${apiReq.host}",
+        returnToUrl = apiReq.uri)) as HTML
+      // "Login as administrator to access this page."
     }
     else {
       val adminPageBody = views.html.adminPage(
@@ -60,15 +62,19 @@ object AdminController extends mvc.Controller {
 
   // Remove later. (Dupl code, but I'm going to remove it anyway)
   def viewAdminPageOld() = GetAction { apiReq =>
-    if (apiReq.user.map(_.isAdmin) != Some(true))
-      Ok(views.html.login.loginPage(xsrfToken = apiReq.xsrfToken.value,
-        returnToUrl = apiReq.uri, title = "Login", message = Some(
-          "Login as administrator to access this page.")))
-    else
+    if (apiReq.user.map(_.isAdmin) != Some(true)) {
+      Ok(views.html.login.loginPopup(
+        mode = "LoginToAdministrate",
+        serverAddress = s"//${apiReq.host}",
+        returnToUrl = apiReq.uri)) as HTML
+      // "Login as administrator to access this page."
+    }
+    else {
       Ok(views.html.adminPageOld(apiReq.host).body) as HTML withCookies (
         mvc.Cookie(
           DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value,
           httpOnly = false))
+    }
   }
 
 }

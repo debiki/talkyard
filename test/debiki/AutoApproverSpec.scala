@@ -41,12 +41,16 @@ class AutoApproverSpec extends Specification with Mockito {
   val PageCreator = User(
     id = "-pageCreator",
     displayName = "Page Creator",
+    username = Some("Page_Creator"),
+    createdAt = Some(new ju.Date()),
     email = "page-creator.email@.com",
     emailNotfPrefs = null)
 
   val guestUser = User(
     id = "-guestid",
     displayName = "Guest Name",
+    username = None,
+    createdAt = Some(new ju.Date()),
     email = "guest.email@.com",
     emailNotfPrefs = null,
     country = "",
@@ -54,39 +58,17 @@ class AutoApproverSpec extends Specification with Mockito {
     isAdmin = false,
     isOwner = false)
 
-  val guestIdty = IdentitySimple(
-    id = guestUser.id drop 1, // drop "-"
-    userId = guestUser.id,
-    name = guestUser.displayName,
-    email = guestUser.email,
-    location = guestUser.country,
-    website = guestUser.website)
-
-
-  val openidUser = User(
-    id = "openid",
-    displayName = "Oid User Name",
-    email = "oid.email@.com",
+  val passwordUser = User(
+    id = "pwdusr",
+    displayName = "Password User Name",
+    username = Some("Password_User_Name"),
+    createdAt = Some(new ju.Date()),
+    email = "pwdusr@ex.com",
     emailNotfPrefs = null,
     country = "",
     website = "",
     isAdmin = false,
     isOwner = false)
-
-  /*
-  val openidIdty = IdentityOpenId(
-    id = "oididtyid",
-    userId = openidUser.id,
-    OpenIdDetails(
-      oidEndpoint = "",
-      oidVersion = "",
-      oidRealm = "",
-      oidClaimedId = "",
-      oidOpLocalId = "",
-      firstName = openidUser.displayName,
-      email = Some(openidUser.email),
-      country = openidUser.country))
-   */
 
 
   val PlayReq = new Request[Unit] {
@@ -122,12 +104,11 @@ class AutoApproverSpec extends Specification with Mockito {
     publishDirectly = true).copy(pageExists = true)
 
 
-  def pageReq(user: User, identity: Identity)(dao: SiteDao) =
+  def pageReq(user: User)(dao: SiteDao) =
     PageRequest[Unit](
       sid = null,
       xsrfToken = null,
       browserId = None,
-      identity = Some(identity),
       user = Some(user),
       pageExists = true,
       pagePath = pagePath,
@@ -136,22 +117,21 @@ class AutoApproverSpec extends Specification with Mockito {
       dao = dao,
       request = PlayReq)()
 
-  //def pageReqOpenId = pageReq(openidUser, openidIdty) _
-  def pageReqGuest = pageReq(guestUser, guestIdty) _
+  def pageReqGuest = pageReq(guestUser) _
 
 
   val quotaConsumers = QuotaConsumers(
     tenantId = TenantId, ip = Some(Ip), roleId = None)
 
   val peopleNoLogins =
-    People() + guestIdty + guestUser + SystemUser.User // + openidIdty + openidUser
+    People() + guestUser + SystemUser.User // + passwordUser
 
   val testUserLoginId = "101"
 
 
   def testUserPageBody(implicit testUserId: String) =
     RawPostAction.forNewPageBody(creationDati = startDati,
-      userIdData = UserIdData.newTest(loginId = testUserLoginId, userId = testUserId),
+      userIdData = UserIdData.newTest(userId = testUserId),
       text = "täxt-tåxt",
       pageRole = PageRole.Generic, approval = None)
 
@@ -204,15 +184,8 @@ class AutoApproverSpec extends Specification with Mockito {
   def replyAPrelApprovedAndBManApproved(implicit testUserId: String): List[RawPostAction[_]] =
     List(testUserReplyA, testUserReplyB, approvalOfReplyB)
 
-  val guestLogin = {  // (guestLogin, openidLogin) =
-    val login = Login(id = testUserLoginId, ip = Ip, prevLoginId = None,
-       date = startDati, identityRef = null)
-    login.copy(identityRef = guestIdty.reference)
-      // login.copy(identityRef = openidIdty.reference))
-  }
 
-
-  def newDaoMock(actionDtos: List[RawPostAction[_]], login: Login, testUserId: String) = {
+  def newDaoMock(actionDtos: List[RawPostAction[_]], testUserId: String) = {
 
     val actions: Seq[PostAction[_]] = {
       val page = PageParts("pageid") ++ actionDtos
@@ -220,7 +193,7 @@ class AutoApproverSpec extends Specification with Mockito {
     }
 
     val people =
-      if (actionDtos nonEmpty) peopleNoLogins + login
+      if (actionDtos nonEmpty) peopleNoLogins
       else People.None
 
     val daoMock = mock[SiteDao]
@@ -232,10 +205,12 @@ class AutoApproverSpec extends Specification with Mockito {
       limit = AutoApprover.RecentActionsLimit)
        .returns(actions -> people)
 
+    /*  Currently not called for guest users, only for roles.
     daoMock.loadRecentActionExcerpts(
-      byIdentity = Some(guestIdty.id),
+      byRole = Some(passwordUser.id),
       limit = AutoApprover.RecentActionsLimit)
        .returns(actions -> people)
+       */
 
     daoMock
   }
@@ -253,26 +228,25 @@ class AutoApproverSpec extends Specification with Mockito {
       implicit val testUserId = guestUser.id
 
       "the first one" >> {
-        implicit val testUserId = guestUser.id
-        val dao = newDaoMock(Nil, null, testUserId)
+        val dao = newDaoMock(Nil, testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.Preliminary)
       }
 
       "the second" >> {
         // This prel approves replyA.
-        val dao = newDaoMock(List(testUserReplyA, prelApprovalOfReplyA), guestLogin, testUserId)
+        val dao = newDaoMock(List(testUserReplyA, prelApprovalOfReplyA), testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.Preliminary)
       }
 
       "but not the third one" >> {
         // This prel approves replyA and B.
-        val dao = newDaoMock(replyAAndBBothPrelApproved, guestLogin, testUserId)
+        val dao = newDaoMock(replyAAndBBothPrelApproved, testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== None
       }
 
       "well-behaved approve third comment, when other recent comment manually approved" >> {
         val dao = newDaoMock(
-          approvalOfReplyA::replyAUnapprovedAndBPrelApproved, guestLogin, testUserId)
+          approvalOfReplyA::replyAUnapprovedAndBPrelApproved, testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.WellBehavedUser)
       }
 
@@ -281,34 +255,31 @@ class AutoApproverSpec extends Specification with Mockito {
         // posts are approved in the same manner (when there are no flags or rejections).
         val dao = newDaoMock(
           wellBehavedApprovalOfReplyA::replyAUnapprovedAndBPrelApproved:::manyTestUserReplies(10),
-          guestLogin, testUserId)
+          testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.WellBehavedUser)
       }
 
       "not approve any further comments, when one comment deleted" >> {
         val dao = newDaoMock(
-          deletionOfReplyA::replyAPrelApprovedAndBManApproved, guestLogin, testUserId)
+          deletionOfReplyA::replyAPrelApprovedAndBManApproved, testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== None
       }
 
       "not approve any further comments, when there's one unreviewed flag" >> {
-        val dao = newDaoMock(flagOfReplyA::replyAPrelApprovedAndBManApproved,
-          guestLogin, testUserId)
+        val dao = newDaoMock(flagOfReplyA::replyAPrelApprovedAndBManApproved, testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== None
       }
 
       "do approve any further comments, when there's one reviewed and ignored flag" >> {
         // The very recent approval of A ignores the flag.
         val dao = newDaoMock(
-          flagOfReplyA::veryRecentApprovalOfReplyA::replyAPrelApprovedAndBManApproved,
-          guestLogin,  testUserId)
+          flagOfReplyA::veryRecentApprovalOfReplyA::replyAPrelApprovedAndBManApproved, testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== Some(Approval.WellBehavedUser)
       }
 
       "not approve any further comments, when one comment flagged and deleted" >> {
         val dao = newDaoMock(
-          flagOfReplyA::deletionOfReplyA::replyAPrelApprovedAndBManApproved,
-          guestLogin, testUserId)
+          flagOfReplyA::deletionOfReplyA::replyAPrelApprovedAndBManApproved, testUserId)
         AutoApprover.perhapsApprove(pageReqGuest(dao)) must_== None
       }
     }

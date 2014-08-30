@@ -46,21 +46,7 @@ class PostAction[P](  // [P <: PostActionPayload] causes compilation errors
   def creationDati = rawAction.ctime
 
   def userIdData = rawAction.userIdData
-
-  def loginId = userIdData.loginId
-  def login: Option[Login] = rawAction.userIdData.loginId.flatMap(id => debate.people.login(id))
-  def login_! : Login = login.getOrElse(runErr(
-    "DwE6gG32", s"No login with id `${userIdData.loginId}' for action $id"))
-
-  def identity: Option[Identity] = login.flatMap(l =>
-    page.people.identity(l.identityRef.identityId))
-  def identity_! : Identity = debate.people.identity_!(login_!.identityRef.identityId)
-
-  def userId = {
-    // Temporary (?) debug test: (I just introduced `userId`)
-    identity foreach { i => assErrIf(i.userId != userIdData.userId, "DwE43KbX6") }
-    userIdData.userId
-  }
+  def userId = userIdData.userId
   def user : Option[User] = page.people.user(userIdData.userId)
   def user_! : User = user.getOrDie("DwE3905FU0", s"No user for action `$id', page `${page.id}'")
 

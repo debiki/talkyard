@@ -60,28 +60,21 @@ object DummyPage {
   // COULD have Dao require that user/idty/login id never be "2".
   // (Id "1" is the SystemUser, in debiki-core user.scala.)
 
-  val DummyAuthorUser = User(id = "2", displayName = "(dummy author)",
-    email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive, country = "",
-    website = "", isAdmin = false, isOwner = false)
+  val DummyAuthorUser = User(id = "2", displayName = "(dummy author)", username = None,
+    createdAt = None, email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive,
+    emailVerifiedAt = Some(new ju.Date(0)), country = "", website = "", isAdmin = false,
+    isOwner = false)
 
-
-  val DummyAuthorIdty = IdentitySimple(id = "2", userId = DummyAuthorUser.id,
-    name = "(dummy author)", email = "", location = "", website = "")
-
-
-  val DummyAuthorLogin = Login(id = "2", prevLoginId = None, ip = "?.?.?.?",
-    date = new ju.Date, DummyAuthorIdty.reference)
+  val DummyAuthorIp = "0.0.0.0"
 
   val DummyAuthorIdData = UserIdData(
-    loginId = Some(DummyAuthorLogin.id),
     userId = DummyAuthorUser.id,
-    ip = DummyAuthorLogin.ip,
+    ip = DummyAuthorIp,
     browserIdCookie = None,
     browserFingerprint = 0)
 
 
-  val DummyAuthor = People(
-    List(DummyAuthorLogin), List(DummyAuthorIdty), List(DummyAuthorUser))
+  val DummyAuthor = People(List(DummyAuthorUser))
 
 
   private def dummyTitle(texts: Texts) = RawPostAction(

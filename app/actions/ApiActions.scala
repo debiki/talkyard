@@ -114,13 +114,13 @@ object ApiActions {
       val dao = Globals.siteDao(siteId = tenantId,
          ip = realOrFakeIpOf(request), request.sidStatus.roleId)
 
-      val (identity, user) = Utils.loadIdentityAndUserOrThrow(request.sidStatus, dao)
+      val user = Utils.loadUserOrThrow(request.sidStatus, dao)
 
       if (adminOnly && user.map(_.isAdmin) != Some(true))
         throwForbidden("DwE1GfK7", "Please login as admin")
 
       val apiRequest = ApiRequest[A](
-        request.sidStatus, request.xsrfOk, request.browserId, identity, user, dao, request)
+        request.sidStatus, request.xsrfOk, request.browserId, user, dao, request)
 
       val result = block(apiRequest)
       result

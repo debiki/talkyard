@@ -37,13 +37,13 @@ var onLoginCallback = null;
 /**
  * Logs in and then calls the callback.
  */
-d.i.loginIfNeeded = function(reason, callback) {
+d.i.loginIfNeeded = function(reason, anyReturnToUrl, callback) {
   if (d.i.Me.isLoggedIn()) {
     callback();
   }
   else {
     onLoginCallback = callback;
-    d.i.showLoginSubmitDialog(reason);
+    d.i.showLoginSubmitDialog(reason, anyReturnToUrl);
   }
 };
 
@@ -57,7 +57,7 @@ d.i.$loginSubmitOnClick = function(loginEventHandler, anyLoginReason) {
     var $i = $(this);
     $i.addClass('dw-loginsubmit-on-click');
     !loginEventHandler || $i.bind('dwEvLoggedInOut', loginEventHandler);
-    $i.on('click', null, { mode: anyLoginReason }, d.i.$loginThenSubmit)
+    $i.on('click', null, { mode: anyLoginReason }, d.i.$loginThenSubmit);
   };
 };
 
@@ -88,10 +88,7 @@ d.i.$loginThenSubmit = function(event) {
  * user having to log in.
  */
 d.i.continueAnySubmission = function() {
-  if (onLoginCallback && loginOnClickBtnClicked) {
-    d.u.bug('DwE51GX7');
-  }
-  else if (onLoginCallback) {
+  if (onLoginCallback) {
     onLoginCallback();
     onLoginCallback = null;
   }

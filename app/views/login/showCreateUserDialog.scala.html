@@ -1,5 +1,5 @@
 @**
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,19 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
+@(serverAddress: String, newUserName: String, newUserEmail: String, authDataCacheKey: String, anyContinueToUrl: Option[String])
 
-@css = @{("""
+@continueToUrlOrEmpty = @{
+  anyContinueToUrl getOrElse ""
+}
 
-""")}
+@popupMain(serverAddress, "login-popup.js") {
 
-
-@createsite.main(title = "Create Account", css = css) {
-
-  <h1>Create Account</h1>
-
-  <p>We just sent you a registration email. Please check your inbox.</p>
-
-  <p>(You can close this page.)</p>
+  <!-- views/login/showCreateUserDialog.scala.html -->
+  <script>
+    debiki.internal.showCreateUserDialog({
+      name: '@newUserName',
+      email: '@newUserEmail',
+      authDataCacheKey: '@authDataCacheKey'
+    }, '@continueToUrlOrEmpty');
+  </script>
 
 }
 

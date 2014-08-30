@@ -169,30 +169,35 @@ case class BrowserPagePatcher(
       // might return nothing.
       // SHOULD consider `wholeTread` and render only `postId` + collapsed children, if false,
       // and rename `wholeThread` to... what? also.
-      serializer.renderSingleThread(postId, pageRoot) foreach { serializedThread =>
-        threadPatches :+= _jsonForThread(post, serializedThread)
-      }
+      val anySerializedThread = serializer.renderSingleThread(postId, pageRoot)
+      threadPatches :+= _jsonForThread(post, anySerializedThread)
     }
 
     threadPatches
   }
 
 
-  private def _jsonForThread(post: Post, serializedThread: SerializedSingleThread): JsPatch = {
+  private def _jsonForThread(post: Post, anySerializedThread: Option[SerializedSingleThread])
+        : JsPatch = {
     var data = Map[String, JsValue](
       "id" -> JsString(post.id.toString),
       "cdati" -> JsString(toIso8601T(post.creationDati)),
-      "ancestorThreadIds" -> toJson(post.ancestorPosts.map(_.id)),
-      "html" -> JsString(serializedThread.htmlNodes.foldLeft("") {
-        (html, htmlNode) => html + lw.Html5.toString(htmlNode)
-      }))
+      "ancestorThreadIds" -> toJson(post.ancestorPosts.map(_.id)))
 
     post.lastApprovalType.foreach { approval =>
       data += "approval" -> JsString(approval.toString)
     }
 
-    serializedThread.prevSiblingId.foreach { siblingId =>
-      data += "prevThreadId" -> JsString(siblingId.toString)
+    // The serialized thread is absent if the post author hasn't yet confirmed his/her
+    // email address.
+    anySerializedThread foreach { serializedThread =>
+      data += "html" -> JsString(serializedThread.htmlNodes.foldLeft("") {
+        (html, htmlNode) => html + lw.Html5.toString(htmlNode)
+      })
+
+      serializedThread.prevSiblingId.foreach { siblingId =>
+        data += "prevThreadId" -> JsString(siblingId.toString)
+      }
     }
 
     data

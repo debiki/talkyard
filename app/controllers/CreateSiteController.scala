@@ -67,11 +67,12 @@ object CreateSiteController extends mvc.Controller {
 
   def showWebsiteOwnerForm(siteType: String) = SessionAction(empty) {
         request: SessionRequestNoBody =>
-    Ok(views.html.login.loginPage(xsrfToken = request.xsrfOk.value,
-      returnToUrl = routes.CreateSiteController.showSiteTypeForm(siteType).url,
-      title = "Choose Website Owner Account",
-      providerLoginMessage = "It will become the owner of the new website.",
-      showCreateAccountOption = true))
+    Ok(views.html.login.loginPopup(
+      mode = "LoginToCreateSite",
+      serverAddress = s"//${request.host}",
+      returnToUrl = routes.CreateSiteController.showSiteTypeForm(siteType).url)) as HTML
+    // """Choose Website Owner Account
+    //  It will become the owner of the new website."""
   }
 
 
@@ -135,12 +136,11 @@ object CreateSiteController extends mvc.Controller {
 
     // Check permissions — and load authentication details, so OpenID/OAuth
     // info can be replicated to a new identity + user in the new website.
-    val loginId = request.loginId_!
-    val (identity, user) = {
-      request.dao.loadIdtyDetailsAndUser(forLoginId = loginId) match {
-        case Some((identity, user)) => (identity, user)
+    val (anyIdentity, user): (Option[Identity], User) = {
+      request.dao.loadUserAndAnyIdentity(request.theUser.id) match {
+        case Some((anyIdentity, user)) => (anyIdentity, user)
         case None =>
-          runErr("DwE01j920", "Cannot create website: Bad login ID: "+ loginId)
+          runErr("DwE01j920", "Cannot create website: Bad user id: "+ request.theUser.id)
       }
     }
 
@@ -172,9 +172,6 @@ object CreateSiteController extends mvc.Controller {
 
     // SECURITY should whitelist allowed OpenID and OAuth providers.
 
-    if (identity.isInstanceOf[IdentitySimple])
-      throwForbidden("DwE4GEI2", "Guests may not create websites.")
-
     val result =
       SiteCreator.createWebsite(
         newSiteType,
@@ -184,8 +181,7 @@ object CreateSiteController extends mvc.Controller {
         host = Some(websiteAddr),
         embeddingSiteUrl = None,
         ownerIp = request.ip,
-        ownerLoginId = loginId,
-        ownerIdentity = identity,
+        ownerIdentity = anyIdentity,
         ownerRole = user) match {
       case Some(site) =>
         Redirect(s"http://$websiteAddr${routes.CreateSiteController.welcomeOwner.url}")

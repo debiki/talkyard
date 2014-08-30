@@ -39,23 +39,19 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
     val PageText = "The page text"
     var comment: Post = null
     val CommentText = "The comment text"
-    var passwordIdentity: PasswordIdentity = null
     var passwordRole: User = null
     var passwordLoginGrant: LoginGrant = null
-    var guestLoginGrant: LoginGrant = null
     var guestUser: User = null
 
     "create a password role, find info but no actions" in {
-      val (identity, user) = siteUtils.createPasswordRole()
-      passwordIdentity = identity.asInstanceOf[PasswordIdentity]
-      passwordRole = user
-      siteUtils.dao.listUserActions(user.id).length mustBe 0
-      siteUtils.dao.loadUserInfoAndStats(user.id) mustBe Some(
-        UserInfoAndStats(info = user, stats = UserStats.Zero))
+      passwordRole = siteUtils.createPasswordRole()
+      siteUtils.dao.listUserActions(passwordRole.id).length mustBe 0
+      siteUtils.dao.loadUserInfoAndStats(passwordRole.id) mustBe Some(
+        UserInfoAndStats(info = passwordRole, stats = UserStats.Zero))
     }
 
     "create a page, find one action" in {
-      passwordLoginGrant = siteUtils.login(passwordIdentity)
+      passwordLoginGrant = siteUtils.login(passwordRole)
       page = siteUtils.createPageAndBody(
         passwordLoginGrant, PageRole.ForumTopic, PageText).withoutPath
       siteUtils.dao.loadUserInfoAndStats(passwordRole.id) mustBe Some(
@@ -74,15 +70,14 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
     }
 
     "login as guest, find info but no actions" in {
-      guestLoginGrant = siteUtils.loginAsGuest(name = "Test Guest")
-      guestUser = guestLoginGrant.user
+      guestUser = siteUtils.loginAsGuest(name = "Test Guest")
       siteUtils.dao.listUserActions(guestUser.id).length mustBe 0
       siteUtils.dao.loadUserInfoAndStats(guestUser.id) mustBe Some(
         UserInfoAndStats(info = guestUser, stats = UserStats.Zero))
     }
 
     "add a comment, find one action" in {
-      val (page2, comment2) = siteUtils.addComment(guestLoginGrant, page, CommentText)
+      val (page2, comment2) = siteUtils.addComment(guestUser, page, CommentText)
       page = siteUtils.review(passwordLoginGrant, page2, comment2.id, Approval.AuthoritativeUser)
       comment = page.parts.getPost(comment2.id) getOrElse fail("Comment not found")
       siteUtils.dao.loadUserInfoAndStats(guestUser.id) mustBe Some(
@@ -127,7 +122,7 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
       "find user action infos" in {
         def testActionInfo(info: UserActionInfo) {
           info.actingUserId mustBe passwordRole.id
-          info.actingUserDisplayName mustBe siteUtils.DefaultPasswordUserName
+          info.actingUserDisplayName mustBe siteUtils.DefaultPasswordFullName
           if (info.postId == 1) {
             info.postExcerpt mustBe PageText
           }

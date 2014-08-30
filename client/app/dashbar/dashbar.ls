@@ -73,7 +73,7 @@ function dwDashbar ($http)
       createThisPageUnlessExists !->
         # Open new page in this window, so there won't be any
         # old stale blog main page that the user can return to.
-        d.i.createChildPage { pageRole: 'BlogPost', status: 'Draft' }, window
+        d.i.createChildPage({ pageRole: 'BlogPost', status: 'Draft' })
 
     pageSettingsBtn = element.find('a.page-settings')
     pageSettingsBtn.click !-> viewPageSettings!

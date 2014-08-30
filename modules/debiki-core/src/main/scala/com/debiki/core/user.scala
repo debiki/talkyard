@@ -18,60 +18,32 @@
 package com.debiki.core
 
 import java.{util => ju}
+import org.scalactic.{Or, Every, ErrorMessage}
 import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
 import User.{isRoleId, isGuestId, checkId}
 
 
 object People {
-  val None = People(Nil, Nil, Nil)
+  val None = People(Nil)
 }
 
 
-case class People(
-  logins: List[Login] = Nil,
-  identities: List[Identity] = Nil,
-  users: List[User] = Nil) {
+// COULD remove, use a Map[UserId, User] instead?
+//
+case class People(users: List[User] = Nil) {
 
-  def + (login: Login) = copy(logins = login :: logins)
-  def + (identity: Identity) = copy(identities = identity :: identities)
   def + (user: User) = copy(users = user :: users)
 
-  def ++ (people: People) = People(
-    logins = people.logins ::: logins,
-    identities = people.identities ::: identities,
-    users = people.users ::: users)
-
-
-  def nilo(loginId: String): Option[NiLo] =
-    login(loginId).map(new NiLo(this, _))
-
-  def nilo_!(loginId: String): NiLo = new NiLo(this, login_!(loginId))
-
-
-  // -------- Logins
-
-  def login(id: String): Option[Login] =
-    logins.find(_.id == id)  // COULD optimize
-
-  def login_!(id: String): Login =
-    login(id) getOrElse runErr("DwE8K3520z23", s"Login not found: $id")
-
-
-  // -------- Identities
-
-  def identity(id: String): Option[Identity] =
-    identities.find(_.id == id)  // COULD optimize
-
-  def identity_!(id: String): Identity = identity(id) getOrElse runErr(
-    "DwE021kr3k09", "Identity not found: "+ safed(id))
-
-
-  // -------- Users
+  def ++ (people: People) = People(users = people.users ::: users)
 
   def user(id: String): Option[User] =
-    if (id == SystemUser.User.id) Some(SystemUser.User)
-    else users.find(_.id == id)  // COULD optimize
+    if (id == SystemUser.User.id)
+      Some(SystemUser.User)
+    else if (id == UnknownUser.Id)
+      Some(UnknownUser.User)
+    else
+      users.find(_.id == id)  // COULD optimize
 
   def user_!(id: String): User = user(id) getOrElse runErr(
     "DwE730krq849", "User not found: "+ safed(id))
@@ -79,18 +51,108 @@ case class People(
 }
 
 
-/**
- * A Nice Login: a Login, Identity an User tuple, and utility methods.
- */
-class NiLo(people: People, val login: Login) {
+sealed abstract class NewUserData {
+  def name: String
+  def username: String
+  def email: String
+  def emailVerifiedAt: Option[ju.Date]
 
-  def user: Option[User] = people.user(identity_!.userId)
-  def user_! : User = people.user_!(identity_!.userId)
-  def identity_! : Identity = people.identity_!(login.identityRef.identityId)
+  def userNoId = User(
+    id = "?",
+    displayName = name,
+    username = Some(username),
+    createdAt = None,
+    email = email,
+    emailNotfPrefs = EmailNotfPrefs.Unspecified,
+    emailVerifiedAt = emailVerifiedAt,
+    country = "",
+    website = "",
+    isAdmin = false,
+    isOwner = false)
 
-  def displayName = user_!.displayName
-  def email = user_!.email
+  def identityNoId: Identity
 
+  Validation.checkName(name)
+  Validation.checkUsername(username)
+  Validation.checkEmail(email)
+
+}
+
+
+
+case class NewPasswordUserData(
+  name: String,
+  username: String,
+  email: String,
+  password: String) {
+
+  val passwordHash: String =
+    DbDao.saltAndHashPassword(password)
+
+  def userNoId = User(
+    id = "?",
+    displayName = name,
+    username = Some(username),
+    createdAt = None,
+    email = email,
+    emailNotfPrefs = EmailNotfPrefs.Unspecified,
+    emailVerifiedAt = None,
+    passwordHash = Some(passwordHash),
+    country = "",
+    website = "",
+    isAdmin = false,
+    isOwner = false)
+
+  Validation.checkName(name)
+  Validation.checkUsername(username)
+  Validation.checkEmail(email)
+  Validation.checkPassword(password)
+}
+
+
+object NewPasswordUserData {
+  def create(name: String, username: String, email: String, password: String)
+        : NewPasswordUserData Or ErrorMessage = {
+    for {
+      okName <- Validation.checkName(name)
+      okUsername <- Validation.checkUsername(username)
+      okEmail <- Validation.checkEmail(email)
+      okPassword <- Validation.checkPassword(password)
+    }
+    yield {
+      NewPasswordUserData(name = okName, username = okUsername, email = okEmail,
+        password = okPassword)
+    }
+  }
+}
+
+
+
+case class NewOauthUserData(
+  name: String,
+  username: String,
+  email: String,
+  emailVerifiedAt: Option[ju.Date],
+  identityData: OpenAuthDetails) extends NewUserData {
+
+  def identityNoId =
+    OpenAuthIdentity(id = "?", userId = "?", openAuthDetails = identityData)
+}
+
+
+object NewOauthUserData {
+  def create(name: String, email: String, emailVerifiedAt: Option[ju.Date], username: String,
+        identityData: OpenAuthDetails): NewOauthUserData Or ErrorMessage = {
+    for {
+      okName <- Validation.checkName(name)
+      okUsername <- Validation.checkUsername(username)
+      okEmail <- Validation.checkEmail(email)
+    }
+    yield {
+      NewOauthUserData(name = okName, username = okUsername, email = okEmail,
+        emailVerifiedAt = emailVerifiedAt, identityData = identityData)
+    }
+  }
 }
 
 
@@ -98,14 +160,13 @@ class NiLo(people: People, val login: Login) {
 case object UserIdData {
 
   /** For test suites. */
-  def newTest(loginId: LoginId, userId: UserId, ip: String = "111.112.113.114") =
-    UserIdData(Some(loginId), userId, ip, browserIdCookie = None, browserFingerprint = 0)
+  def newTest(userId: UserId, ip: String = "111.112.113.114") =
+    UserIdData(userId, ip, browserIdCookie = None, browserFingerprint = 0)
 
 }
 
 
 case class UserIdData(
-  loginId: Option[LoginId],
   userId: UserId,
   ip: String,
   browserIdCookie: Option[String],
@@ -207,18 +268,30 @@ case class RoleId(String) extends UserId
 */
 
 
+/**
+ *
+ * @param id Starts with "-" for guest users. COULD replace with UserId (see above).
+ * @param displayName
+ * @param username Is None for guests, and some old users created before usernames had
+ *    been implemented.
+ * @param createdAt None for guests.
+ * @param email
+ * @param emailNotfPrefs
+ * @param emailVerifiedAt
+ * @param country
+ * @param website COULD rename to url, that's more generic.
+ * @param isAdmin
+ * @param isOwner
+ */
 case class User (
-  /** The user's id. Starts with "-" if not authenticated
-   *  (i.e. for IdentitySimple).
-   *  COULD replace with UserId (see above) */
   id: String,
   displayName: String,
-  // COULD be an Option -- Twitter identities have no email?
-  // Or introduce a Address class, with subclasses AddrEmail, AddrTwitter, etc?
-  // Or let it be an Option[String], and the format determine the address type?
-  // And rename emailNotfPrefs to notfPrefs?
+  username: Option[String],
+  createdAt: Option[ju.Date],
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
+  emailVerifiedAt: Option[ju.Date] = None,
+  passwordHash: Option[String] = None,
   country: String = "",
   website: String = "",
   isAdmin: Boolean = false,
@@ -226,6 +299,8 @@ case class User (
 ){
   checkId(id, "DwE02k125r")
   def isAuthenticated = isRoleId(id) && !id.startsWith("?")
+
+  def isGuest = User.isGuestId(id)
 
   /* COULD add:
     def roleId: Option[String] =
@@ -252,24 +327,23 @@ object EmailNotfPrefs extends Enumeration {
 sealed abstract class LoginAttempt {
   def ip: String
   def date: ju.Date
-  def prevLoginId: Option[LoginId]
 }
 
 
 case class GuestLoginAttempt(
   ip: String,
   date: ju.Date,
-  prevLoginId: Option[LoginId],
   name: String,
   email: String = "",
   location: String = "",
-  website: String = "") extends LoginAttempt
+  website: String = "")
+
+case class GuestLoginResult(user: User, isNewUser: Boolean)
 
 
 case class PasswordLoginAttempt(
   ip: String,
   date: ju.Date,
-  prevLoginId: Option[LoginId],
   email: String,
   password: String) extends LoginAttempt {
 }
@@ -279,14 +353,12 @@ case class EmailLoginAttempt(
   ip: String,
   date: ju.Date,
   emailId: String) extends LoginAttempt {
-  def prevLoginId = None
 }
 
 
 case class OpenIdLoginAttempt(
   ip: String,
   date: ju.Date,
-  prevLoginId: Option[LoginId],
   openIdDetails: OpenIdDetails) extends LoginAttempt {
 }
 
@@ -294,44 +366,9 @@ case class OpenIdLoginAttempt(
 case class OpenAuthLoginAttempt(
   ip: String,
   date: ju.Date,
-  prevLoginId: Option[LoginId],
   openAuthDetails: OpenAuthDetails) extends LoginAttempt {
 
   def profileProviderAndKey = openAuthDetails.providerIdAndKey
-}
-
-
-case class Login(
-  id: String,
-  prevLoginId: Option[String],
-  ip: String,
-  date: ju.Date,
-  identityRef: IdentityRef) {
-  checkId(id, "DwE093jxh12")
-}
-
-
-object Login {
-
-  def fromLoginAttempt(loginAttempt: LoginAttempt, loginId: LoginId, identityRef: IdentityRef) =
-    Login(
-      loginId,
-      loginAttempt.prevLoginId,
-      ip = loginAttempt.ip,
-      date = loginAttempt.date,
-      identityRef = identityRef)
-}
-
-
-sealed abstract class IdentityRef {
-  def identityId: IdentityId
-  checkId(identityId, "DwE56CWf8")
-}
-
-object IdentityRef {
-  case class Email(identityId: IdentityId) extends IdentityRef
-  case class Guest(identityId: IdentityId) extends IdentityRef
-  case class Role(identityId: IdentityId) extends IdentityRef
 }
 
 
@@ -361,7 +398,6 @@ sealed abstract class Identity {
    */
   def id: String
   def userId: String
-  def reference: IdentityRef = IdentityRef.Role(id)
 
   checkId(id, "DwE02krc3g")
   checkId(userId, "DwE864rsk215")
@@ -385,37 +421,6 @@ case class IdentityEmailId(
 ) extends Identity {
   // Either only email id known, or all info known.
   require((userId startsWith "?") == emailSent.isEmpty)
-
-  override def reference: IdentityRef = IdentityRef.Email(id)
-}
-
-
-case class IdentitySimple(
-  id: String,
-  override val userId: String,
-  name: String,  // COULD reject weird chars, e.g. '?' or '|'
-                 // Or fix later (and replace any weird chars already in db)
-  email: String = "",
-  location: String = "",
-  website: String = ""
-  // COULD include signed cookie random value, so we knows if is same browser.
-) extends Identity {
-  def displayName = name
-  // Cannot check for e.g. weird name or email. That could prevent
-  // loading of data from database, after changing the weirdness rules.
-  // Don't:  require(! (User nameIsWeird name))
-
-  override def reference: IdentityRef = IdentityRef.Guest(id)
-}
-
-
-case class PasswordIdentity(
-  id: IdentityId,
-  override val userId: UserId,
-  email: String = "",
-  passwordSaltHash: String) extends Identity {
-
-  override def reference = IdentityRef.Role(id)
 }
 
 
@@ -444,20 +449,6 @@ case class OpenIdDetails(
   email: Option[String],
   country: String) {
 
-  def isGoogleLogin = oidEndpoint == IdentityOpenId.GoogleEndpoint
-
-}
-
-
-object IdentityOpenId {
-
-  val GoogleEndpoint = "https://www.google.com/accounts/o8/ud"
-
-  object ProviderIdentifier {
-    val Google = "https://www.google.com/accounts/o8/id"
-    val Yahoo = "http://me.yahoo.com/"
-  }
-
 }
 
 
@@ -466,7 +457,6 @@ case class OpenAuthIdentity(
   override val userId: UserId,
   openAuthDetails: OpenAuthDetails) extends Identity {
 
-  override def reference = IdentityRef.Role(id)
   def displayName = openAuthDetails.displayName
 }
 
@@ -489,17 +479,14 @@ case class OpenAuthProviderIdKey(providerId: String, providerKey: String)
 
 
 case class LoginGrant(
-   login: Login,
-   identity: Identity,
+   identity: Option[Identity],
    user: User,
    isNewIdentity: Boolean,
    isNewRole: Boolean) {
 
-  require(!login.id.contains('?'))
-  require(!identity.id.contains('?'))
+  require(identity.map(_.id.contains('?')) != Some(true))
   require(!user.id.contains('?'))
-  require(login.identityRef.identityId == identity.id)
-  require(identity.userId == user.id)
+  require(identity.map(_.userId == user.id) != Some(false))
   require(!isNewRole || isNewIdentity)
 
   def displayName: String = user.displayName
@@ -507,7 +494,7 @@ case class LoginGrant(
 
   /** For test suites. */
   def testUserIdData =
-    UserIdData.newTest(login.id, userId = user.id, ip = login.ip)
+    UserIdData.newTest(userId = user.id)
 }
 
 
@@ -520,6 +507,10 @@ object UnknownUser {
     * author user (see DummyPage.scala).
     */
   val Id = "-3"
+
+  val User = com.debiki.core.User(id = Id, displayName = "(unknown user)", username = None,
+    createdAt = None, email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive,
+    emailVerifiedAt = None, isAdmin = false)
 
 }
 
@@ -535,13 +526,13 @@ object SystemUser {
 
   val Ip = "SystemUserIp"
 
-  val User = core.User(id = "1", displayName = "System", email = "",
-    emailNotfPrefs = EmailNotfPrefs.DontReceive, isAdmin = true)
+  val User = core.User(id = "1", displayName = "System", username = None,
+    createdAt = None, email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive,
+    emailVerifiedAt = None, isAdmin = true)
 
-  val Person = People(Nil, Nil, List(User))
+  val Person = People(List(User))
 
   val UserIdData = core.UserIdData(
-    loginId = None,
     userId = SystemUser.User.id,
     ip = Ip,
     browserIdCookie = None,

@@ -29,13 +29,12 @@ import Prelude._
 trait NotfGeneratorTestValues {
 
   import PeopleTestUtils.makePerson
-  val (bodyAuthor, bodyAuthorIdty, bodyAuthorLogin) = makePerson("BodyAuthor")
-  val (replyAuthor, replyAuthorIdty, replyAuthorLogin) = makePerson("Replier")
-  val (reviewer, reviewerIdty, reviewerLogin) = makePerson("ReviewerAuthor")
+  val bodyAuthor = makePerson("BodyAuthor")
+  val replyAuthor = makePerson("Replier")
+  val reviewer = makePerson("ReviewerAuthor")
 
   val rawBody = copyCreatePost(PostTestValues.postSkeleton,
-    id = PageParts.BodyId, loginId = bodyAuthorLogin.id, userId = bodyAuthor.id,
-    parentPostId = None)
+    id = PageParts.BodyId, userId = bodyAuthor.id, parentPostId = None)
 
   val rawBodyPrelApproved = copyCreatePost(rawBody, approval = Some(Approval.Preliminary))
   val rawBodyWellBehavedAprvd = copyCreatePost(rawBody, approval = Some(Approval.WellBehavedUser))
@@ -43,16 +42,15 @@ trait NotfGeneratorTestValues {
 
   val approvalOfBody =
     RawPostAction.toApprovePost(2, postId = rawBody.id,
-      UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
+      UserIdData.newTest(userId = reviewer.id),
       ctime = new ju.Date(11000), approval = Approval.AuthoritativeUser)
   val rejectionOfBody =
     RawPostAction.toDeletePost(andReplies = false, id = 3, postIdToDelete = rawBody.id,
-      UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
+      UserIdData.newTest(userId = reviewer.id),
       createdAt = new ju.Date(11000))
 
   val rawReply = copyCreatePost(PostTestValues.postSkeleton,
-    id = 11, loginId = replyAuthorLogin.id, userId = replyAuthor.id,
-    parentPostId = Some(rawBody.id))
+    id = 11, userId = replyAuthor.id, parentPostId = Some(rawBody.id))
 
   val rawReplyPrelApproved = copyCreatePost(rawReply, approval = Some(Approval.Preliminary))
   val rawReplyWellBehvdAprvd = copyCreatePost(rawReply, approval = Some(Approval.WellBehavedUser))
@@ -60,17 +58,14 @@ trait NotfGeneratorTestValues {
 
   val approvalOfReply =
     RawPostAction.toApprovePost(12, postId = rawReply.id,
-      UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
+      UserIdData.newTest(userId = reviewer.id),
       ctime = new ju.Date(11000), approval = Approval.AuthoritativeUser)
   val rejectionOfReply =  RawPostAction.toDeletePost(
     andReplies = false, 13, postIdToDelete = rawReply.id,
-    UserIdData.newTest(reviewerLogin.id, userId = reviewer.id),
+    UserIdData.newTest(userId = reviewer.id),
     createdAt = new ju.Date(11000))
 
-  val EmptyPage = PageParts("pageId") ++ (People() +
-    bodyAuthor + replyAuthor + reviewer +
-    bodyAuthorIdty + replyAuthorIdty + reviewerIdty +
-    bodyAuthorLogin + replyAuthorLogin + reviewerLogin)
+  val EmptyPage = PageParts("pageId") ++ (People() + bodyAuthor + replyAuthor + reviewer)
 
   val PageWithApprovedBody = EmptyPage + rawBody + approvalOfBody
 }
@@ -104,7 +99,7 @@ class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
   "NotfGenerator" should {
 
     "generate no notf for a reply to one's own comment" in {
-      val ownReply = copyCreatePost(rawReply, loginId = bodyAuthorLogin.id,
+      val ownReply = copyCreatePost(rawReply,
         userId = bodyAuthor.id, approval = Some(Approval.WellBehavedUser))
       val notfs = genNotfs(bodyAuthor, PageWithApprovedBody, ownReply)
       notfs.length must_== 0
@@ -155,7 +150,7 @@ class NotfGeneratorTest extends Specification with NotfGeneratorTestValues {
 
     "generate no notf when a reply is approved by the one replied to" in {
       val approval = approvalOfReply.copy(
-        userIdData = UserIdData.newTest(bodyAuthorLogin.id, userId = bodyAuthor.id))
+        userIdData = UserIdData.newTest(userId = bodyAuthor.id))
       val page = PageWithApprovedBody + rawReply
       val notfs = genNotfs(bodyAuthor, page, approval)
       notfs.length must_== 0

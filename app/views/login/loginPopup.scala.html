@@ -15,55 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(mode: String, serverAddress: String)
+@(mode: String, serverAddress: String, returnToUrl: String)
 
-@asset(file: String) = @{
-  routes.Assets.at(path = "/public/res", file)
+@popupMain(serverAddress, "login-popup.js") {
+
+  <!-- views/login/loginPopup.scala.html -->
+  <script>
+    debiki.internal.showLoginDialog('@mode', '@returnToUrl');
+  </script>
+
 }
-
-@minMaxCss = @{ "min.css" }
-@minMaxJs = @{ "js" }
-
-<!DOCTYPE html>
-<html class="DW dw-pri">
-<head>
-  <meta name="viewport" content="width=device-width">
-  <meta charset="utf-8"/>
-  @*
-  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
-  *@
-  <link rel="stylesheet" href="@asset(s"debiki-bootstrap.$minMaxCss")"/>
-  <link rel="stylesheet" href="@asset("fontello/css/fontello-embedded.css")"/>
-  <link rel="stylesheet" href="@asset(s"combined-debiki.$minMaxCss")"/>
-
-  <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.@minMaxJs"></script>
-  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.@minMaxJs"></script>
-  <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.@minMaxJs"></script>
-
-  <script>
-    var debiki = {
-      internal: {
-        isInLoginPopup: true,
-        serverOrigin: '@serverAddress',
-        assetsUrlPathStart: '@serverAddress@asset("")',
-        $: jQuery
-      },
-      v0: {
-       util: {}
-      }
-    };
-  </script>
-
-  <script src="@asset("login-popup.js")"></script>
-</head>
-<body>
-  <!-- views/login/loginPopupDialog.html -->
-
-  <script>
-    debiki.internal.showLoginSubmitDialog('@mode');
-  </script>
-
-  @views.html.anyWeinreScript()
-</body>
-</html>
-

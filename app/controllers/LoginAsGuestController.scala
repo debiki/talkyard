@@ -63,16 +63,15 @@ object LoginAsGuestController extends mvc.Controller {
     val loginAttempt = GuestLoginAttempt(
       ip = addr,
       date = new ju.Date,
-      prevLoginId = request.sid.loginId,
       name = name,
       email = email,
       location = "",
       website = url)
 
-    val loginGrant = Globals.siteDao(tenantId, ip = addr).saveLogin(loginAttempt)
+    val guestUser = Globals.siteDao(tenantId, ip = addr).loginAsGuest(loginAttempt)
 
-    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
-    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant)
+    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(guestUser)
+    val userConfigCookie = ConfigUserController.userConfigCookie(guestUser)
 
     // Could include a <a href=last-page>Okay</a> link, see the
     // Logout dialog below. Only needed if javascript disabled though,
@@ -81,6 +80,7 @@ object LoginAsGuestController extends mvc.Controller {
   }
 
 
+  /*
   def loginGuestAgainWithNewEmail(pageReq: DebikiRequest[_],
         newEmailAddr: String): (LoginGrant, Seq[Cookie]) = {
     import pageReq._
@@ -97,16 +97,15 @@ object LoginAsGuestController extends mvc.Controller {
     val loginAttempt = GuestLoginAttempt(
       ip = pageReq.ip,
       date = pageReq.ctime,
-      prevLoginId = loginId,
       name = guestIdentity.name,
       email = newEmailAddr,
       location = guestIdentity.location,
       website = guestIdentity.website)
 
-    val loginGrant = pageReq.dao.saveLogin(loginAttempt)
+    val loginGrant = pageReq.dao.tryLogin(loginAttempt)
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
 
     (loginGrant, sidAndXsrfCookies)
-  }
+  } */
 
 }

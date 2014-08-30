@@ -28,10 +28,9 @@ import java.{util => ju}
 import org.scalatest._
 
 
-/** Tests votes. There're some tests in DbDaoTckTests that could be moved to here,
-  * search for "vote on a post" in DbDaoTckTests.
+/** Tests votes: save, load, vote on others' comments, on ones own comment (not allowed).
   */
-class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
+class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) with Inside {
 
   lazy val utils = new TestUtils(daoFactory)
   lazy val site = utils.createFirstSite()
@@ -44,15 +43,15 @@ class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
     var page: PageNoPath = null
 
     val GuestIp2 = "0.0.0.2"
-    var guestLoginGrant2: LoginGrant = null
+    var guestUser2: User = null
+    var guestIdData2: UserIdData = null
     var post2: Post = null
 
     val GuestIp3 = "0.0.0.3"
-    var guestLoginGrant3: LoginGrant = null
+    var guestUser3: User = null
     var post3: Post = null
 
     val PasswordIp4 = "0.0.0.4"
-    var passwordIdentity4: PasswordIdentity = null
     var passwordLoginGrant4: LoginGrant = null
     var post4: Post = null
 
@@ -75,27 +74,28 @@ class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
 
     "create users and comments" - {
       "create guest 2, comment #2" in {
-        guestLoginGrant2 = siteUtils.loginAsGuest(name = "Test Guest 2", ip = GuestIp2)
+        guestUser2 = siteUtils.loginAsGuest(name = "Test Guest 2", ip = GuestIp2)
+        guestIdData2 = UserIdData.newTest(guestUser2.id)
         page = siteUtils.createPageAndBody(
-          guestLoginGrant2, PageRole.ForumTopic, "The page text").withoutPath
-        val (tmpPage, tmpPost) = siteUtils.addComment(guestLoginGrant2, page, "By guest 2")
-        page = siteUtils.review(guestLoginGrant2, tmpPage, tmpPost.id, Approval.AuthoritativeUser)
+          guestUser2, PageRole.ForumTopic, "The page text").withoutPath
+        val (tmpPage, tmpPost) = siteUtils.addComment(guestUser2, page, "By guest 2")
+        page = siteUtils.review(guestUser2, tmpPage, tmpPost.id, Approval.AuthoritativeUser)
         post2 = page.parts.getPost(tmpPost.id) getOrElse fail("Post not found")
       }
 
       "create guest 3, comment #3" in {
-        guestLoginGrant3 = siteUtils.loginAsGuest(name = "Test Guest 3", ip = GuestIp3)
-        val (tmpPage, tmpPost) = siteUtils.addComment(guestLoginGrant3, page, "By guest 3")
-        page = siteUtils.review(guestLoginGrant3, tmpPage, tmpPost.id, Approval.AuthoritativeUser)
+        guestUser3 = siteUtils.loginAsGuest(name = "Test Guest 3", ip = GuestIp3)
+        val (tmpPage, tmpPost) = siteUtils.addComment(guestUser3, page, "By guest 3")
+        page = siteUtils.review(guestUser3, tmpPage, tmpPost.id, Approval.AuthoritativeUser)
         post3 = page.parts.getPost(tmpPost.id) getOrElse fail("Post not found")
       }
 
       "create password user 4, comment #4" in {
-        val (identity, user) = siteUtils.createPasswordRole()
-        passwordIdentity4 = identity
-        passwordLoginGrant4 = siteUtils.login(passwordIdentity4, ip = PasswordIp4)
-        val (tmpPage, tmpPost) = siteUtils.addComment(passwordLoginGrant4, page, "By password 4")
-        page = siteUtils.review(passwordLoginGrant4, tmpPage, tmpPost.id, Approval.AuthoritativeUser)
+        val user = siteUtils.createPasswordRole()
+        passwordLoginGrant4 = siteUtils.login(user, ip = PasswordIp4)
+        val (tmpPage, tmpPost) =
+          siteUtils.addComment(passwordLoginGrant4.user, page, "By password 4")
+        page = siteUtils.review(passwordLoginGrant4.user, tmpPage, tmpPost.id, Approval.AuthoritativeUser)
         post4 = page.parts.getPost(tmpPost.id) getOrElse fail("Post not found")
       }
     }
@@ -104,35 +104,47 @@ class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
       countCommentVotes() mustBe Vector((0, 0, 0), (0, 0, 0), (0, 0, 0))
     }
 
-    "one can Like, Wrong and Off-Topic vote others posts" - {
+    "one can Like, Wrong and Off-Topic vote others posts — and find the Like vote again" - {
       "guest 2 votes on post #3" in {
-        val (tmpPage, _) = siteUtils.vote(guestLoginGrant2, page, post3.id, PAP.VoteLike)
+        val (tmpPage, vote: RawPostAction[_]) =
+          siteUtils.vote(guestUser2, page, post3.id, PAP.VoteLike)
         page = tmpPage
+
+        // Just once, verify that we get back exactly the same vote as we saved.
+        inside(dao.loadPageParts(page.id)) {
+          case Some(parts: PageParts) => {
+            inside(parts.getActionById(vote.id)) {
+              case Some(vote: PostAction[_]) =>
+                vote.rawAction mustBe vote
+            }
+          }
+        }
+
         countCommentVotes() mustBe Seq((0, 0, 0), (1, 0, 0), (0, 0, 0))
-        val (tmpPageB, _) = siteUtils.vote(guestLoginGrant2, page, post3.id, PAP.VoteWrong)
+        val (tmpPageB, _) = siteUtils.vote(guestUser2, page, post3.id, PAP.VoteWrong)
         page = tmpPageB
         countCommentVotes() mustBe Seq((0, 0, 0), (1, 1, 0), (0, 0, 0))
-        val (tmpPageC, _) = siteUtils.vote(guestLoginGrant2, page, post3.id, PAP.VoteOffTopic)
+        val (tmpPageC, _) = siteUtils.vote(guestUser2, page, post3.id, PAP.VoteOffTopic)
         page = tmpPageC
         countCommentVotes() mustBe Seq((0, 0, 0), (1, 1, 1), (0, 0, 0))
       }
 
       "guest 3 votes on post #4" in {
-        val (tmpPage, _) = siteUtils.vote(guestLoginGrant3, page, post4.id, PAP.VoteLike)
+        val (tmpPage, _) = siteUtils.vote(guestUser3, page, post4.id, PAP.VoteLike)
         page = tmpPage
-        val (tmpPageB, _) = siteUtils.vote(guestLoginGrant3, page, post4.id, PAP.VoteWrong)
+        val (tmpPageB, _) = siteUtils.vote(guestUser3, page, post4.id, PAP.VoteWrong)
         page = tmpPageB
-        val (tmpPageC, _) = siteUtils.vote(guestLoginGrant3, page, post4.id, PAP.VoteOffTopic)
+        val (tmpPageC, _) = siteUtils.vote(guestUser3, page, post4.id, PAP.VoteOffTopic)
         page = tmpPageC
         countCommentVotes() mustBe Seq((0, 0, 0), (1, 1, 1), (1, 1, 1))
       }
 
       "password user 4 votes on post #2" in {
-        val (tmpPage, _) = siteUtils.vote(passwordLoginGrant4, page, post2.id, PAP.VoteLike)
+        val (tmpPage, _) = siteUtils.vote(passwordLoginGrant4.user, page, post2.id, PAP.VoteLike)
         page = tmpPage
-        val (tmpPageB, _) = siteUtils.vote(passwordLoginGrant4, page, post2.id, PAP.VoteWrong)
+        val (tmpPageB, _) = siteUtils.vote(passwordLoginGrant4.user, page, post2.id, PAP.VoteWrong)
         page = tmpPageB
-        val (tmpPageC, _) = siteUtils.vote(passwordLoginGrant4, page, post2.id, PAP.VoteOffTopic)
+        val (tmpPageC, _) = siteUtils.vote(passwordLoginGrant4.user, page, post2.id, PAP.VoteOffTopic)
         page = tmpPageC
         countCommentVotes() mustBe Seq((1, 1, 1), (1, 1, 1), (1, 1, 1))
       }
@@ -141,25 +153,25 @@ class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
     "one cannot vote more than once on the same post" - {
       "guest 2 votes on post #3 again" in {
         an [DuplicateVoteException.type] must be thrownBy {
-          siteUtils.vote(guestLoginGrant2, page, post3.id, PAP.VoteLike)
+          siteUtils.vote(guestUser2, page, post3.id, PAP.VoteLike)
         }
         an [DuplicateVoteException.type] must be thrownBy {
-          siteUtils.vote(guestLoginGrant2, page, post3.id, PAP.VoteWrong)
+          siteUtils.vote(guestUser2, page, post3.id, PAP.VoteWrong)
         }
         an [DuplicateVoteException.type] must be thrownBy {
-          val (tmpPageC, _) = siteUtils.vote(guestLoginGrant2, page, post3.id, PAP.VoteOffTopic)
+          val (tmpPageC, _) = siteUtils.vote(guestUser2, page, post3.id, PAP.VoteOffTopic)
         }
       }
 
       "password user 4 votes on post #2 again" in {
         an [DuplicateVoteException.type] must be thrownBy {
-          siteUtils.vote(passwordLoginGrant4, page, post2.id, PAP.VoteLike)
+          siteUtils.vote(passwordLoginGrant4.user, page, post2.id, PAP.VoteLike)
         }
         an [DuplicateVoteException.type] must be thrownBy {
-          siteUtils.vote(passwordLoginGrant4, page, post2.id, PAP.VoteWrong)
+          siteUtils.vote(passwordLoginGrant4.user, page, post2.id, PAP.VoteWrong)
         }
         an [DuplicateVoteException.type] must be thrownBy {
-          siteUtils.vote(passwordLoginGrant4, page, post2.id, PAP.VoteOffTopic)
+          siteUtils.vote(passwordLoginGrant4.user, page, post2.id, PAP.VoteOffTopic)
         }
       }
 
@@ -171,13 +183,13 @@ class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
     "one cannot Like ones own post" - {
       "guest 2 attempts to like his own comment #2" in {
         an [LikesOwnPostException.type] must be thrownBy {
-          siteUtils.vote(guestLoginGrant2, page, post2.id, PAP.VoteLike)
+          siteUtils.vote(guestUser2, page, post2.id, PAP.VoteLike)
         }
       }
 
       "password user 4 attempts to like his own comment #4" in {
         an [LikesOwnPostException.type] must be thrownBy {
-          siteUtils.vote(passwordLoginGrant4, page, post4.id, PAP.VoteLike)
+          siteUtils.vote(passwordLoginGrant4.user, page, post4.id, PAP.VoteLike)
         }
       }
 
@@ -188,13 +200,13 @@ class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
 
     "one *can* OffTopic-vote ones own post" - {
       "guest 2 off-topic votes his own comment #2" in {
-        val (tmpPage, _) = siteUtils.vote(guestLoginGrant2, page, post2.id, PAP.VoteOffTopic)
+        val (tmpPage, _) = siteUtils.vote(guestUser2, page, post2.id, PAP.VoteOffTopic)
         page = tmpPage
         countCommentVotes() mustBe Seq((1, 1, 2), (1, 1, 1), (1, 1, 1))
       }
 
       "password user 4 off-topic votes his own comment #4" in {
-        val (tmpPage, _) = siteUtils.vote(passwordLoginGrant4, page, post4.id, PAP.VoteOffTopic)
+        val (tmpPage, _) = siteUtils.vote(passwordLoginGrant4.user, page, post4.id, PAP.VoteOffTopic)
         page = tmpPage
         countCommentVotes() mustBe Seq((1, 1, 2), (1, 1, 1), (1, 1, 2))
       }
@@ -202,11 +214,11 @@ class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
 
     "one can undo ones votes" - {
       "guest user 2 deletes her votes" in {
-        dao.deleteVote(guestLoginGrant2.testUserIdData, page.id, post3.id, PAP.VoteLike)
+        dao.deleteVote(guestIdData2, page.id, post3.id, PAP.VoteLike)
         countCommentVotes() mustBe Seq((1, 1, 2), (0, 1, 1), (1, 1, 2))
-        dao.deleteVote(guestLoginGrant2.testUserIdData, page.id, post3.id, PAP.VoteWrong)
+        dao.deleteVote(guestIdData2, page.id, post3.id, PAP.VoteWrong)
         countCommentVotes() mustBe Seq((1, 1, 2), (0, 0, 1), (1, 1, 2))
-        dao.deleteVote(guestLoginGrant2.testUserIdData, page.id, post3.id, PAP.VoteOffTopic)
+        dao.deleteVote(guestIdData2, page.id, post3.id, PAP.VoteOffTopic)
         countCommentVotes() mustBe Seq((1, 1, 2), (0, 0, 0), (1, 1, 2))
       }
 

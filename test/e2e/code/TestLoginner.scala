@@ -96,26 +96,24 @@ trait TestLoginner extends DebikiSelectors {
     * However, does this via direct database calls; does not use Selenium / ScalaTest.
     */
   def cheatLoginAsAdmin() {
-    import com.debiki.{core => d}
 
-    val loginAttempt = OpenIdLoginAttempt(prevLoginId = None, ip = "1.1.1.1", date = new ju.Date,
+    val loginAttempt = OpenIdLoginAttempt(ip = "1.1.1.1", date = new ju.Date,
       openIdDetails = OpenIdDetails(
       oidEndpoint = "http://test-endpoint.com", oidVersion = "",
       oidRealm = "", oidClaimedId = "TestAdminClaimedId", oidOpLocalId = "TestAdminLocalId",
       firstName = "TestAdmin", email = Some("test-admin@example.com"), country = ""))
 
     val dao = debiki.Globals.siteDao(firstSiteId, ip = "1.1.1.1")
-    val loginGrant = dao.saveLogin(loginAttempt)
+    val loginGrant = dao.tryLogin(loginAttempt)
 
     if (!adminMadeAdmin) {
       adminMadeAdmin = true
-      dao.configRole(loginGrant.login.id, ctime = loginGrant.login.date,
-        roleId = loginGrant.user.id, isAdmin = Some(true))
+      dao.configRole(roleId = loginGrant.user.id, isAdmin = Some(true))
     }
 
     // Update the browser: set cookies.
-    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(Some(loginGrant))
-    val userConfigCookie = controllers.ConfigUserController.userConfigCookie(loginGrant)
+    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(loginGrant.user)
+    val userConfigCookie = controllers.ConfigUserController.userConfigCookie(loginGrant.user)
     for (cookie <- userConfigCookie :: sidAndXsrfCookies) {
       // Set cookie via Javascript: ...
       executeScript(

@@ -57,11 +57,12 @@ object CreateEmbeddedSiteController extends mvc.Controller {
 
 
   def showSiteOwnerForm() = SessionAction(empty) { request: SessionRequestNoBody =>
-    Ok(views.html.login.loginPage(xsrfToken = request.xsrfOk.value,
-      returnToUrl = routes.CreateEmbeddedSiteController.showEmbeddingSiteUrlForm.url,
-      title = "Choose Website Owner Account",
-      providerLoginMessage = "It will become the owner of the embedded discussions.",
-      showCreateAccountOption = true))
+    Ok(views.html.login.loginPopup(
+      mode = "LoginToCreateSite",
+      serverAddress = s"//${request.host}",
+      returnToUrl = routes.CreateEmbeddedSiteController.showEmbeddingSiteUrlForm.url)) as HTML
+    // """Choose Website Owner Account
+    //  providerLoginMessage = "It will become the owner of the embedded discussions"""
   }
 
 
@@ -93,12 +94,11 @@ object CreateEmbeddedSiteController extends mvc.Controller {
 
     // Check permissions — and load authentication details, so OpenID/OAuth
     // info can be replicated to a new identity + user in the new website.
-    val loginId = request.loginId_!
-    val (identity, user) = {
-      request.dao.loadIdtyDetailsAndUser(forLoginId = loginId) match {
-        case Some((identity, user)) => (identity, user)
+    val (anyIdentity, user): (Option[Identity], User) = {
+      request.dao.loadUserAndAnyIdentity(request.theUser.id) match {
+        case Some((anyIdentity, user)) => (anyIdentity, user)
         case None =>
-          runErr("DwE01j920", "Cannot create website: Bad login ID: "+ loginId)
+          runErr("DwE01j920", "Cannot create website: Bad user id: "+ request.theUser.id)
       }
     }
 
@@ -130,9 +130,6 @@ object CreateEmbeddedSiteController extends mvc.Controller {
 
     // SECURITY should whitelist allowed OpenID and OAuth providers.
 
-    if (identity.isInstanceOf[IdentitySimple])
-      throwForbidden("DwE4GEI2", "Guests may not create websites.")
-
     val (site, owner) =
       SiteCreator.createWebsite(
         siteType = SiteCreator.NewSiteType.EmbeddedComments,
@@ -142,8 +139,7 @@ object CreateEmbeddedSiteController extends mvc.Controller {
         host = None,
         embeddingSiteUrl = Some(embeddingSiteUrl),
         ownerIp = request.ip,
-        ownerLoginId = loginId,
-        ownerIdentity = identity,
+        ownerIdentity = anyIdentity,
         ownerRole = user) getOrElse assErr(
           "DwE33IR0", o"""Embedded site names shouldn't cause primary/unique key conflicts;
            they have no names""")

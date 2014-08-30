@@ -65,8 +65,7 @@ object SiteCreator {
         host: Option[String],
         embeddingSiteUrl: Option[String],
         ownerIp: String,
-        ownerLoginId: String,
-        ownerIdentity: Identity,
+        ownerIdentity: Option[Identity],
         ownerRole: User): Option[(Tenant, User)] = {
 
     name foreach { n => require(isOkayWebsiteName(n), "DwE18SHN6") }
@@ -76,7 +75,7 @@ object SiteCreator {
     val (website, ownerAtNewSite) =
       dao.createWebsite(
         name = name, address = host, embeddingSiteUrl = embeddingSiteUrl,
-        ownerIp = ownerIp, ownerLoginId = ownerLoginId,
+        ownerIp = ownerIp,
         ownerIdentity = ownerIdentity, ownerRole = ownerRole) getOrElse {
       return None
     }

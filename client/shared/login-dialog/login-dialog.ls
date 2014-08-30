@@ -15,20 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
 
 
+d.i.closeAnyLoginDialogs = !->
+  try
+    $('#dw-fs-openid-login').dialog('close')
+  catch
+    void # Ignore, the dialog was probably not open.
 
-d.i.showLoginSubmitDialog = !(anyMode) ->
-  d.i.showLoginDialog (anyMode || 'LoginToSubmit')
+  try
+    $('#dw-lgi').dialog('close')
+  catch
+    void # Ignore, the dialog was probably not open
+
+
+d.i.showLoginSubmitDialog = !(anyMode, anyReturnToUrl) ->
+  d.i.showLoginDialog(anyMode || 'LoginToSubmit', anyReturnToUrl)
 
 
 
-d.i.showLoginDialog = function(mode)
+d.i.showLoginDialog = function(mode, anyReturnToUrl)
+  clearLoginRelatedCookies()
+
   if d.i.isInIframe
-    d.i.createLoginPopup("#{d.i.serverOrigin}/-/login-popup?mode=#mode")
+    url = "#{d.i.serverOrigin}/-/login-popup?mode=#mode&returnToUrl=#anyReturnToUrl"
+    d.i.createLoginPopup(url)
     return
 
   doingWhatClass = switch mode
@@ -42,7 +55,16 @@ d.i.showLoginDialog = function(mode)
   dialog = loginDialogHtml()
   dialog.dialog d.i.newModalDialogSettings(
     width: 413
-    closeOnEscape: !d.i.isInLoginPopup)
+    closeOnEscape: !d.i.isInLoginWindow)
+
+  doingWhatClass = switch mode
+  | 'LoginToAdministrate' =>
+      dialog.find('#dw-lgi-guest').hide()
+      dialog.find('#dw-lgi-create-password-user').hide()
+      dialog.find('.dw-fi-cancel').hide()
+  | 'LoginToCreateSite' =>
+      dialog.find('#dw-lgi-guest').hide()
+      dialog.find('.dw-fi-cancel').hide()
 
   dialog.find('#dw-lgi-guest').click ->
     d.i.showGuestLoginDialog(loginAndContinue)
@@ -50,6 +72,10 @@ d.i.showLoginDialog = function(mode)
 
   dialog.find('#dw-lgi-pswd').click ->
     d.i.showPasswordLoginDialog(loginAndContinue)
+    false
+
+  dialog.find('#dw-lgi-create-password-user').click ->
+    d.i.showCreateUserDialog({ createPasswordUser: true }, anyReturnToUrl)
     false
 
   dialog.find('#dw-lgi-more').click ->
@@ -84,8 +110,8 @@ d.i.showLoginDialog = function(mode)
         <input type="text" name="openid_identifier" value="#openidIdentifier">
       </form>
       """)
-    # Submit form in a new popup window, unless we alreaady are in a popup window.
-    if d.i.isInLoginPopup
+    # Submit form in a new login popup window, unless we already are in a login window.
+    if d.i.isInLoginWindow
       $('body').append(form)
     else
       d.i.createOpenIdLoginPopup(form)
@@ -93,18 +119,31 @@ d.i.showLoginDialog = function(mode)
     false
 
   function openOpenAuthLoginWindow(provider)
-    url = "#{d.i.serverOrigin}/-/login-openauth-popup/#provider"
-    if d.i.isInLoginPopup
+    # Any new user wouldn't be granted access to the admin page, so don't allow
+    # creation of  new users from here.
+    # (This parameter tells the server to set a certain cookie. Setting it here
+    # instead has no effect, don't know why.)
+    mayNotCreateUser = if mode == 'LoginToAdministrate' then '&mayNotCreateUser' else ''
+    returnToUrlOrEmpty = if anyReturnToUrl then anyReturnToUrl else ''
+    url = "#{d.i.serverOrigin}/-/login-openauth/#provider?returnToUrl=#returnToUrlOrEmpty#mayNotCreateUser"
+    if d.i.isInLoginWindow
+      # Let the server know we're in a login window, so it can choose to reply with
+      # complete HTML pages to show in the popup window.
+      $.cookie('dwCoIsInLoginWindow', 'true')
       window.location = url
     else
       d.i.createLoginPopup(url)
 
   !function loginAndContinue(data)
-    if d.i.isInLoginPopup
+    if d.i.isInLoginWindow
+      if anyReturnToUrl && anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1
+        window.location = anyReturnToUrl
+        return
       # (Also see AppLoginOpenId, search for [509KEF31].)
       window.opener.debiki.internal.handleLoginResponse(status: 'LoginOk')
       # This is a login popup, so we're now closing the whole popup window.
       close()
+      return # actually not needed after close()?
 
     # This happens only if we're not in a login popup, but a jQuery UI dialog:
 
@@ -123,7 +162,7 @@ d.i.showLoginDialog = function(mode)
     showLoggedInDialog(d.i.continueAnySubmission)
 
   !function close
-    if d.i.isInLoginPopup
+    if d.i.isInLoginWindow
       window.close()
     else
       dialog.dialog('close')
@@ -136,6 +175,18 @@ d.i.showLoginDialog = function(mode)
 
   # Don't focus the ToS link, instead:
   dialog.find('#dw-lgi-google').focus()
+
+
+
+/**
+ * Clears login related cookies so e.g. any lingering return-to-url won't cause troubles.
+ */
+!function clearLoginRelatedCookies
+  $.cookie('dwCoReturnToUrl', null)
+  $.cookie('dwCoReturnToSite', null)
+  $.cookie('dwCoReturnToSiteXsrfToken', null)
+  $.cookie('dwCoIsInLoginWindow', null)
+  $.cookie('dwCoMayCreateUser', null)
 
 
 
@@ -194,7 +245,7 @@ function loginDialogHtml
           <span class="icon-github"></span>
           GitHub
         </a>
-        <!--
+        <!-- OpenID doesn't work right now.
         <a id="dw-lgi-yahoo" class="btn btn-default" tabindex="114">
           <span class="icon-yahoo"></span>
           Yahoo!
@@ -204,8 +255,9 @@ function loginDialogHtml
       <p id="dw-lgi-or-login-using">Or, alternatively:</p>
 
       <a id="dw-lgi-guest" class="btn btn-default" tabindex="121">Login as Guest</a>
-      <a id="dw-lgi-pswd" class="btn btn-default" tabindex="122">Login with Email and Password</a>
-      <a id="dw-lgi-more" class="btn btn-default" tabindex="123">More login options...</a>
+      <a id="dw-lgi-pswd" class="btn btn-default" tabindex="122">Login with Username and Password</a>
+      <a id="dw-lgi-create-password-user" class="btn btn-default" tabindex="123">Create New Account</a>
+      <!-- <a id="dw-lgi-more" class="btn btn-default" tabindex="124">More login options...</a> -->
 
       <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="130">
     </div>
