@@ -22,8 +22,15 @@ var NO_ID = -1;
 
 
 d.i.$showReplyForm = function(event, opt_where) {
-  var thread = $(this).closest('.dw-t');
-  var postId = thread.dwPostId();
+  var postId;
+  if ($(this).closest('.dw-cmts-tlbr').length) {
+    // Embedded comments page, Reply button in comments toolbar was clicked.
+    postId = d.i.BodyId;
+  }
+  else {
+    // Non-embedded page; there is no Reply button in the comments toolbar.
+    postId = $(this).closest('.dw-t').dwPostId();
+  }
   var _this = this;
   event.preventDefault();
   var anyReturnToUrl = d.i.makeReturnToPostUrlForVerifEmail(postId);

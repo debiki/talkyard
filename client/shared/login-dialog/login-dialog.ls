@@ -40,7 +40,8 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
   clearLoginRelatedCookies()
 
   if d.i.isInIframe
-    d.i.createLoginPopup("#{d.i.serverOrigin}/-/login-popup?mode=#mode")
+    url = "#{d.i.serverOrigin}/-/login-popup?mode=#mode&returnToUrl=#anyReturnToUrl"
+    d.i.createLoginPopup(url)
     return
 
   doingWhatClass = switch mode

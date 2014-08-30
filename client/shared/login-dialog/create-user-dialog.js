@@ -26,8 +26,11 @@ d.i.makeReturnToPostUrlForVerifEmail = function(postId) {
   // to URL on a welcome page show via a link in the email).
   // '__dwHash__' is an encoded hash that won't be lost when included in a GET URL.
   // The server replaces it with '#' later on.
+  // `d.i.iframeBaseUrl` is for embedded comments in an <iframe>: it's the URL of
+  // the embedding parent page.
+  var pageUrl = d.i.iframeBaseUrl ? d.i.iframeBaseUrl : window.location.toString();
   return '_RedirFromVerifEmailOnly_' +
-    window.location.toString().replace(/#.*/, '') +
+    pageUrl.replace(/#.*/, '') +
     '__dwHash__' +
     'post-' + postId;
 };
