@@ -19,14 +19,33 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
-var AjaxFriendlyRedirectStatusCode = 278;
+
+d.i.makeReturnToPostUrlForVerifEmail = function(postId) {
+  // The magic '__Redir...' string tells the server to use the return-to-URL only if it
+  // needs to send an email address verification email (it'd include the return
+  // to URL on a welcome page show via a link in the email).
+  // '__dwHash__' is an encoded hash that won't be lost when included in a GET URL.
+  // The server replaces it with '#' later on.
+  // `d.i.iframeBaseUrl` is for embedded comments in an <iframe>: it's the URL of
+  // the embedding parent page.
+  var pageUrl = d.i.iframeBaseUrl ? d.i.iframeBaseUrl : window.location.toString();
+  return '_RedirFromVerifEmailOnly_' +
+    pageUrl.replace(/#.*/, '') +
+    '__dwHash__' +
+    'post-' + postId;
+};
 
 
+/**
+ * Prefix `RedirFromVerifEmailOnly` to the return-to-url, to indicate that
+ * the redirect should happen only if an email address verification email is sent,
+ * and via a link in that email.
+ */
 d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
   var dialog = createUserDialogHtml();
   dialog.dialog(d.i.newModalDialogSettings({
     width: 380,
-    closeOnEscape: !d.i.isInLoginPopup
+    closeOnEscape: !d.i.isInLoginWindow
   }));
 
   dialog.find('#new-user-name').val(userData.name);
@@ -47,6 +66,7 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
       email: dialog.find('#new-user-email').val(),
       username: dialog.find('#new-user-username').val(),
       password: dialog.find('#new-user-password').val(),
+      returnToUrl: anyReturnToUrl,
       authDataCacheKey: userData.authDataCacheKey
     };
 
@@ -56,8 +76,7 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
       url += '/-/login-oauth-create-user';
     }
     else if (userData.createPasswordUser) {
-      url += '/-/login-password-create-user?returnToUrl=';
-      url += anyReturnToUrl ? anyReturnToUrl : '';
+      url += '/-/login-password-create-user';
     }
     else {
       throw 'Bad new user data: ' + JSON.stringify(userData) + ' [DwE5DF06]';
@@ -66,49 +85,73 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
     d.u.postJson({ url: url, data: data })
       .fail(d.i.showServerResponseDialog)
       .done(function(data, textStatus, result) {
-        // Session cookies should now have been set.
-        if (result.status === AjaxFriendlyRedirectStatusCode) {
-          // This is our custom Redirect status code that doesn't result in the
-          // ajax request itself being redirected (like status 302 and 303 do).
-          // (We want to redirect here, if we've signed up in order to create a
-          // new site — then the next page should be the next step in the site
-          // creation wizard.)
-          var continueToUrl = result.getResponseHeader('Location');
-          window.location = continueToUrl;
-          return;
+        closeLoginDialogs();
+        if (!data.emailVerifiedAndLoggedIn) {
+          showAddressVerificationEmailSentDialog();
         }
-        // If this is an embedded comments site, we're currently executing in
-        // a create user login popup window, not in the <iframe> on the embedding
-        // page. If so, only window.opener has loaded the code that we're
-        // about to execute.
-        var di;
-        if (d.i.isInLoginPopup) {
-          // We're in a login popup window for an embedded comments site.
-          di = window.opener.debiki.internal;
+        else if (anyReturnToUrl && !d.i.isInLoginPopup &&
+            anyReturnToUrl.search('_RedirFromVerifEmailOnly_') == -1) {
+          window.location = anyReturnToUrl;
         }
         else {
-          // This is not an embedded comments site, we're not in a popup; we can
-          // execute the subsequent code directly here in the main window.
-          di = debiki.internal;
+          continueOnSamePage();
         }
-        di.Me.fireLogin();
-        di.continueAnySubmission();
-        dialog.dialog('close');
-        $('#dw-lgi').dialog('close');
       });
   });
 
   dialog.find('.cancel').click(function() {
-    dialog.dialog('close');
-
-    // Return to the main login dialog, by opening it.
-    $('#dw-lgi').dialog('close'); // in case not yet closed
-    d.i.showLoginDialog();  // in case had already been closed
+    closeLoginDialogs();
+    d.i.showLoginDialog(); // show main login dialog again
   });
+
+  function closeLoginDialogs() {
+    dialog.dialog('close');
+    $('#dw-lgi').dialog('close');
+  }
 
   dialog.dialog('open');
 };
 
+
+function continueOnSamePage() {
+  // If this is an embedded comments site, we're currently executing in
+  // a create user login popup window, not in the <iframe> on the embedding
+  // page. If so, only window.opener has loaded the code that we're
+  // about to execute.
+  var debikiInternal;
+  if (window.opener && window.opener.debiki) {
+    // We're in a login popup window for an embedded comments site.
+    debikiInternal = window.opener.debiki.internal;
+  }
+  else {
+    // This is not an embedded comments site, we're not in a popup window;
+    // we can execute the subsequent code directly here in the main window.
+    debikiInternal = debiki.internal;
+  }
+  // We should be on some kind of a discussion page.
+  debikiInternal.Me.fireLogin();
+  // This continues e.g. submitting any reply the user intended to post before
+  // s/he was asked to login and create a user.
+  debikiInternal.continueAnySubmission();
+
+  if (d.i.isInLoginPopup) {
+    debikiInternal.closeAnyLoginDialogs();
+    close();
+  }
+}
+
+
+function showAddressVerificationEmailSentDialog() {
+  var dialog = createConfirmYourEmailAddressDialogHtml();
+  dialog.dialog(d.i.newModalDialogSettings({
+    width: 350,
+    closeOnEscape: false
+  }));
+  dialog.find('button.continue').click(function() {
+    dialog.dialog('close');
+  });
+  dialog.dialog('open');
+}
 
 
 function createUserDialogHtml() {
@@ -134,6 +177,18 @@ function createUserDialogHtml() {
     '<div>' +
     '  <a class="submit btn btn-default">Create user</a>' +
     '  <a class="cancel btn btn-default">Cancel</a>' +
+    '</div>' +
+    '</div>');
+}
+
+
+function createConfirmYourEmailAddressDialogHtml(anyNewPostId) {
+  return $(
+    '<div class="dw-fs" title="Confirm Your Email Address">' +
+    '  <p>Almost done! We have sent an activation email to you. Please click the' +
+    '  link in the email to activate your account. You can close this page.</p>' +
+    '<div>' +
+    '  <button class="continue btn btn-default">Okay</button>' +
     '</div>' +
     '</div>');
 }

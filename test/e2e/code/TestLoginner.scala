@@ -96,7 +96,6 @@ trait TestLoginner extends DebikiSelectors {
     * However, does this via direct database calls; does not use Selenium / ScalaTest.
     */
   def cheatLoginAsAdmin() {
-    import com.debiki.{core => d}
 
     val loginAttempt = OpenIdLoginAttempt(ip = "1.1.1.1", date = new ju.Date,
       openIdDetails = OpenIdDetails(
@@ -109,7 +108,7 @@ trait TestLoginner extends DebikiSelectors {
 
     if (!adminMadeAdmin) {
       adminMadeAdmin = true
-      dao.configRole(ctime = new ju.Date, roleId = loginGrant.user.id, isAdmin = Some(true))
+      dao.configRole(roleId = loginGrant.user.id, isAdmin = Some(true))
     }
 
     // Update the browser: set cookies.

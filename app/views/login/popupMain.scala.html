@@ -43,7 +43,8 @@
   <script>
     var debiki = {
       internal: {
-        isInLoginPopup: true,
+        isInLoginWindow: true,
+        isInLoginPopup: window.opener && window.opener.debiki,
         serverOrigin: '@serverAddress',
         assetsUrlPathStart: '@serverAddress@asset("")',
         $: jQuery

@@ -115,6 +115,7 @@ var debikiDesktopFiles = [
       //'target/client/app/inline-threads-unused.js',
       'target/client/app/iframe.js',
       'target/client/shared/debiki-jquery-dialogs.js',
+      'target/client/shared/show-server-response-dialog.js',
       'target/client/app/utils/jquery-find.js',
       'target/client/app/keyboard-shortcuts.js', //
       'target/client/app/posts/layout.js',
@@ -192,6 +193,7 @@ var debikiTouchFiles = [
       //'target/client/app/inline-threads-unused.js',
       'target/client/app/iframe.js',
       'target/client/shared/debiki-jquery-dialogs.js',
+      'target/client/shared/show-server-response-dialog.js',
       'target/client/app/utils/jquery-find.js',
       'target/client/app/posts/layout.js',
       'target/client/app/posts/load-page-parts.js',
@@ -233,6 +235,7 @@ var debikiTouchFiles = [
 var loginDialogFiles = [
       'client/third-party/jquery-cookie.js',
       'target/client/shared/debiki-jquery-dialogs.js',
+      'target/client/shared/show-server-response-dialog.js',
       'target/client/shared/post-json.js',
       'target/client/shared/login-dialog/login-dialog.js',
       'target/client/shared/login-dialog/login-guest.js',
@@ -581,7 +584,7 @@ gulp.task('build-themes', function () {
 
 
 
-gulp.task('watch', function() {
+gulp.task('watch', ['default'], function() {
 
   watchAndLiveForever = true;
 

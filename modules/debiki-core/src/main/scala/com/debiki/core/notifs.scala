@@ -115,9 +115,9 @@ object Email {
 
   /**
    * The email id should be a random value, so it cannot be guessed,
-   * because it's a key in unsubscribe URLs.
+   * because it's a key in reset password, unsubscription and create account urls.
    */
-  private def _generateId(): String = nextRandomString() take 8
+  private def _generateId(): String = nextRandomString() take 14
 }
 
 
@@ -133,8 +133,9 @@ case class Email(
   providerEmailId: Option[String],
   failureText: Option[String] = None) {
 
-  require(toUserId.isEmpty == (tyype == EmailType.CreateAccount),
-    s"Email with id `$id' has/hasn't any toUserId [DwE4GEF0]")
+  if (tyype == EmailType.CreateAccount || tyype == EmailType.ResetPassword) {
+    assErrIf(toUserId.isEmpty, "DwE44BPK6", s"Email `$id' lacks toUserId")
+  }
 
   def toGuestId: Option[String] =
     if (toUserId.nonEmpty && toUserId.get.startsWith("-")) Some(toUserId.get drop 1)
@@ -149,6 +150,6 @@ case class Email(
 sealed abstract class EmailType
 object EmailType {
   case object Notification extends EmailType
-  case object CreateAccount extends EmailType
+  case object CreateAccount extends EmailType  // COULD rename to VerifyEmailAddress
   case object ResetPassword extends EmailType
 }

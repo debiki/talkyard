@@ -333,7 +333,7 @@ class QuotaChargerSpec
       host = Some(s"$siteName.${stuffCreator.firstSiteHost}"),
       embeddingSiteUrl = None,
       ownerIp = "0.0.0.1",
-      ownerIdentity = loginGrant.identity.asInstanceOf[IdentityOpenId],
+      ownerIdentity = loginGrant.identity.map(_.asInstanceOf[IdentityOpenId]),
       ownerRole = loginGrant.user)
 
     anyNewSiteAndOwner match {

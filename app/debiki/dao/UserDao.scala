@@ -34,12 +34,12 @@ trait UserDao {
     siteDbDao.createUserAndLogin(newUserData)
 
 
-  def createPasswordIdentityAndRole(identity: PasswordIdentity, user: User): (Identity, User) =
-    siteDbDao.createPasswordIdentityAndRole(identity, user)
+  def createPasswordUser(userData: NewPasswordUserData): User =
+    siteDbDao.createPasswordUser(userData)
 
 
-  def changePassword(identity: PasswordIdentity, newPasswordSaltHash: String): Boolean =
-    siteDbDao.changePassword(identity, newPasswordSaltHash)
+  def changePassword(user: User, newPasswordSaltHash: String): Boolean =
+    siteDbDao.changePassword(user, newPasswordSaltHash)
 
 
   def loginAsGuest(loginAttempt: GuestLoginAttempt): User =
@@ -60,13 +60,30 @@ trait UserDao {
     siteDbDao.loadUser(userId)
 
 
-  def loadIdtyDetailsAndUser(forUserId: UserId = null,
-        forOpenIdDetails: OpenIdDetails = null,
-        forEmailAddr: String = null): Option[(Identity, User)] =
+  def loadUserByEmailOrUsername(emailOrUsername: String): Option[User] =
+    // Don't need to cache this? Only called when logging in.
+    siteDbDao.loadUserByEmailOrUsername(emailOrUsername)
+
+
+  def loadUserAndAnyIdentity(userId: UserId = null): Option[(Option[Identity], User)] = {
+    loadIdtyDetailsAndUser(userId) match {
+      case Some((identity, user)) => Some((Some(identity), user))
+      case None =>
+        // No OAuth or OpenID identity, try load password user:
+        loadUser(userId) match {
+          case Some(user) =>
+            Some((None, user))
+          case None =>
+            None
+        }
+    }
+  }
+
+
+  private def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)] =
     // Don't cache this, because this function is rarely called
     // — currently only when creating new website.
-    siteDbDao.loadIdtyDetailsAndUser(forUserId = forUserId,
-      forOpenIdDetails = forOpenIdDetails, forEmailAddr = forEmailAddr)
+    siteDbDao.loadIdtyDetailsAndUser(userId)
 
 
   def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats] =
@@ -96,11 +113,18 @@ trait UserDao {
   }
 
 
-  def configRole(ctime: ju.Date, roleId: RoleId,
+  def verifyEmail(roleId: RoleId, verifiedAt: ju.Date) =
+    siteDbDao.configRole(roleId, emailVerifiedAt = Some(Some(verifiedAt)))
+
+
+  def configRole(roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
-        isOwner: Option[Boolean] = None) =
-    siteDbDao.configRole(ctime = ctime,
-      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
+        isOwner: Option[Boolean] = None) = {
+    // Don't specify emailVerifiedAt here — use verifyEmail() instead; it refreshes the cache.
+    siteDbDao.configRole(
+      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner,
+      emailVerifiedAt = None)
+  }
 
 
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
@@ -156,10 +180,23 @@ trait CachingUserDao extends UserDao {
   }
 
 
-  override def configRole(ctime: ju.Date, roleId: RoleId,
+  override def verifyEmail(roleId: RoleId, verifiedAt: ju.Date) = {
+    super.verifyEmail(roleId, verifiedAt)
+    removeFromCache(key(roleId))
+    // Re-render any page with a post that should hereafter be shown because the
+    // email has been verified.
+    val actionInfos = listUserActions(roleId)
+    val idsOfPagesToRefresh = actionInfos.map(_.pageId).distinct
+    idsOfPagesToRefresh foreach { pageId =>
+      firePageSaved(SitePageId(siteId, pageId))
+    }
+  }
+
+
+  override def configRole(roleId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean],
         isOwner: Option[Boolean]) {
-    super.configRole(ctime = ctime,
+    super.configRole(
       roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
     removeFromCache(key(roleId))
   }

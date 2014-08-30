@@ -48,15 +48,16 @@ object ResetPasswordController extends mvc.Controller {
 
   def handleResetPasswordForm = JsonOrFormDataPostAction(maxBytes = 200) { request =>
     val emailAddress = request.body.getOrThrowBadReq("email")
-    val anyIdentityAndUser = request.dao.loadIdtyDetailsAndUser(forEmailAddr = emailAddress)
+    val anyUser = request.dao.loadUserByEmailOrUsername(emailAddress)
 
-    anyIdentityAndUser match {
-      case Some((identity, user)) =>
-        identity match {
-          case _: PasswordIdentity =>
+    anyUser match {
+      case Some(user) =>
+        assErrIf(user.email != emailAddress, "DwE03UF21")
+        user.passwordHash match {
+          case Some(_) =>
             Logger.info(s"Sending password reset email to: $emailAddress")
             sendResetPasswordEmailTo(user, emailAddress, request)
-          case _ =>
+          case None =>
             Logger.info(s"Sending no-password-to-reset email to: $emailAddress")
             sendNoPasswordToResetEmail(user, emailAddress, request)
         }
@@ -129,24 +130,20 @@ object ResetPasswordController extends mvc.Controller {
     val loginGrant = loginByEmailOrThrow(anyResetPasswordEmailId, request)
     val emailIdentity = loginGrant.identity.asInstanceOf[IdentityEmailId]
     val emailAddress = emailIdentity.emailSent.map(_.sentTo) getOrElse assErr("DwE72DM0")
-    val identity2 = request.dao.loadIdtyDetailsAndUser(forEmailAddr = emailAddress) match {
-      case Some((id, user)) => id
-      case None =>
-        // The password identity was present when we started this reset-password wizard.
-        throwForbidden( //logAndThrowForbidden(
-          "DwE22RV6", s"Password identity gone, email address: `$emailAddress', user deleted?")
+    val user = request.dao.loadUserByEmailOrUsername(emailAddress) getOrElse {
+      // The password user was present when we started this reset-password wizard.
+      throwForbidden( //logAndThrowForbidden(
+          "DwE22RV6", s"Password user not found, email address: `$emailAddress', user deleted?")
     }
 
-    if (!identity2.isInstanceOf[PasswordIdentity]) {
+    if (user.passwordHash.isEmpty) {
       // This cannot happen because `handleResetPasswordForm` checks the identity type.
-      assErr("DwE77903", "Attempting to reset password for a non-PasswordIdentity: " + identity2)
+      assErr("DwE77903", "Attempting to reset password for a non-password user: " + user)
     }
-
-    val passwordIdentity = identity2.asInstanceOf[PasswordIdentity]
 
     // Perhaps change to `dao.changePasswordIdentitysPassword(emailAddress, newSaltHash)`?
     request.dao.changePassword(
-      passwordIdentity, newPasswordSaltHash = DbDao.saltAndHashPassword(newPassword))
+      user, newPasswordSaltHash = DbDao.saltAndHashPassword(newPassword))
 
     Ok(views.html.resetpassword.passwordHasBeenChanged())
   }

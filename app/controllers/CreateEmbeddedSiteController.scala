@@ -94,9 +94,9 @@ object CreateEmbeddedSiteController extends mvc.Controller {
 
     // Check permissions — and load authentication details, so OpenID/OAuth
     // info can be replicated to a new identity + user in the new website.
-    val (identity, user) = {
-      request.dao.loadIdtyDetailsAndUser(forUserId = request.theUser.id) match {
-        case Some((identity, user)) => (identity, user)
+    val (anyIdentity, user): (Option[Identity], User) = {
+      request.dao.loadUserAndAnyIdentity(request.theUser.id) match {
+        case Some((anyIdentity, user)) => (anyIdentity, user)
         case None =>
           runErr("DwE01j920", "Cannot create website: Bad user id: "+ request.theUser.id)
       }
@@ -139,7 +139,7 @@ object CreateEmbeddedSiteController extends mvc.Controller {
         host = None,
         embeddingSiteUrl = Some(embeddingSiteUrl),
         ownerIp = request.ip,
-        ownerIdentity = identity,
+        ownerIdentity = anyIdentity,
         ownerRole = user) getOrElse assErr(
           "DwE33IR0", o"""Embedded site names shouldn't cause primary/unique key conflicts;
            they have no names""")

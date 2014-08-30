@@ -16,9 +16,6 @@
  */
 
 
-
-(function() {
-
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
@@ -103,85 +100,5 @@ d.i.showErrorEnableInputs = function($form) {
   };
 };
 
-
-// Constructs and shows a dialog, from either 1) a servers html response,
-// which should contain certain html elems and classes, or 2)
-// a jQuery jqXhr object.
-d.i.showServerResponseDialog = function(jqXhrOrHtml, opt_errorType,
-                                  opt_httpStatusText, opt_continue) {
-  var $html, title, width;
-  var html, plainText;
-
-  // Find html or plain text.
-  if (!jqXhrOrHtml.getResponseHeader) {
-    html = jqXhrOrHtml;
-  }
-  else {
-    var contentType = jqXhrOrHtml.getResponseHeader('Content-Type');
-    if (!contentType) {
-      plainText = '(no Content-Type header)';
-      if (jqXhrOrHtml.state && jqXhrOrHtml.state() == 'rejected') {
-        plainText = plainText + '\n($.Deferred was rejected)';
-      }
-    }
-    else if (contentType.indexOf('text/html') !== -1) {
-      html = jqXhrOrHtml.responseText;
-    }
-    else if (contentType.indexOf('text/plain') !== -1) {
-      plainText = jqXhrOrHtml.responseText;
-    }
-    else {
-      die2('DwE94ki3');
-    }
-  }
-
-  // Format dialog contents.
-  if (html) {
-    var $allHtml = $(html);
-    $html = $allHtml.filter('.dw-dlg-rsp');
-    if (!$html.length) $html = $allHtml.find('.dw-dlg-rsp');
-    if ($html.length) {
-      title = $html.children('.dw-dlg-rsp-ttl').text();
-      width = d.i.jQueryDialogDefault.width;
-    } else {
-      plainText = 'Internal server error.';
-    }
-  }
-
-  if (plainText) {
-    // Set title to something like "403 Forbidden", and show the
-    // text message inside the dialog.
-    title = jqXhrOrHtml.status ?
-              (jqXhrOrHtml.status +' '+ opt_httpStatusText) : 'Error'
-    $html = $('<pre class="dw-dlg-rsp"></pre>');
-    width = 'auto'; // avoids scrollbars in case of any long <pre> line
-    // Use text(), not plus (don't: `... + text + ...'), to prevent xss issues.
-    $html.text(plainText || opt_errorType || 'Unknown error');
-  }
-  else if (!html) {
-    die2('DwE05GR5');
-  }
-
-  // Show dialog.
-  $html.children('.dw-dlg-rsp-ttl').remove();
-  $html.dialog($.extend({}, d.i.jQueryDialogNoClose, {
-    title: title,
-    autoOpen: true,
-    width: width,
-    buttons: [{
-      text: 'OK',
-      id: 'dw-dlg-rsp-ok',
-      click: function() {
-        // Remove the dialog, so the OK button id can be reused
-        // — then it's easier to write automatic tests.
-        $(this).dialog('destroy').remove()
-        if (opt_continue) opt_continue();
-      }
-    }]
-  }));
-};
-
-
-})();
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

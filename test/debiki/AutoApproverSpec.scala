@@ -42,6 +42,7 @@ class AutoApproverSpec extends Specification with Mockito {
     id = "-pageCreator",
     displayName = "Page Creator",
     username = Some("Page_Creator"),
+    createdAt = Some(new ju.Date()),
     email = "page-creator.email@.com",
     emailNotfPrefs = null)
 
@@ -49,6 +50,7 @@ class AutoApproverSpec extends Specification with Mockito {
     id = "-guestid",
     displayName = "Guest Name",
     username = None,
+    createdAt = Some(new ju.Date()),
     email = "guest.email@.com",
     emailNotfPrefs = null,
     country = "",
@@ -60,17 +62,13 @@ class AutoApproverSpec extends Specification with Mockito {
     id = "pwdusr",
     displayName = "Password User Name",
     username = Some("Password_User_Name"),
+    createdAt = Some(new ju.Date()),
     email = "pwdusr@ex.com",
     emailNotfPrefs = null,
     country = "",
     website = "",
     isAdmin = false,
     isOwner = false)
-
-  val passwordIdentity = PasswordIdentity(
-    id = "pwdidty",
-    userId = passwordUser.id,
-    passwordSaltHash = "pwdsalthash")
 
 
   val PlayReq = new Request[Unit] {
@@ -119,7 +117,6 @@ class AutoApproverSpec extends Specification with Mockito {
       dao = dao,
       request = PlayReq)()
 
-  //def pageReqOpenId = pageReq(passwordUser, passwordIdentity) _
   def pageReqGuest = pageReq(guestUser) _
 
 

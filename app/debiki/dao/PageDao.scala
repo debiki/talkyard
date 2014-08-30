@@ -129,6 +129,11 @@ trait CachingPageDao extends PageDao {
   self: CachingSiteDao =>
 
 
+  onPageSaved { sitePageId =>
+    uncachePageParts(sitePageId)
+  }
+
+
   override def createPage(page: Page): Page = {
     val pageWithIds = super.createPage(page)
     firePageCreated(pageWithIds)
@@ -195,7 +200,6 @@ trait CachingPageDao extends PageDao {
         // the page from the database.
         replaced = _cache.cache.replace(key, oldPage, newPage)
     */
-    removeFromCache(_pageActionsKey(pageId))
     // ------ /Page action cache
   }
 
@@ -208,13 +212,18 @@ trait CachingPageDao extends PageDao {
 
 
   override def loadPageParts(pageId: PageId): Option[PageParts] =
-    lookupInCache[PageParts](_pageActionsKey(pageId),
+    lookupInCache[PageParts](pagePartsKey(siteId, pageId),
       orCacheAndReturn = {
         super.loadPageParts(pageId)
       })
 
 
-  def _pageActionsKey(pageId: PageId) = CacheKey(siteId, s"$pageId|PageActions")
+  private def uncachePageParts(sitePageId: SitePageId) {
+    removeFromCache(pagePartsKey(sitePageId.siteId, sitePageId.pageId))
+  }
+
+
+  def pagePartsKey(siteId: SiteId, pageId: PageId) = CacheKey(siteId, s"$pageId|PageParts")
 
 }
 

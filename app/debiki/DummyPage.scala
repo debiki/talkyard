@@ -61,8 +61,9 @@ object DummyPage {
   // (Id "1" is the SystemUser, in debiki-core user.scala.)
 
   val DummyAuthorUser = User(id = "2", displayName = "(dummy author)", username = None,
-    email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive, country = "",
-    website = "", isAdmin = false, isOwner = false)
+    createdAt = None, email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive,
+    emailVerifiedAt = Some(new ju.Date(0)), country = "", website = "", isAdmin = false,
+    isOwner = false)
 
   val DummyAuthorIp = "0.0.0.0"
 

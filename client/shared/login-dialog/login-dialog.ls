@@ -15,14 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
 
 
+d.i.closeAnyLoginDialogs = !->
+  try
+    $('#dw-fs-openid-login').dialog('close')
+  catch
+    void # Ignore, the dialog was probably not open.
 
-d.i.showLoginSubmitDialog = !(anyMode) ->
-  d.i.showLoginDialog (anyMode || 'LoginToSubmit')
+  try
+    $('#dw-lgi').dialog('close')
+  catch
+    void # Ignore, the dialog was probably not open
+
+
+d.i.showLoginSubmitDialog = !(anyMode, anyReturnToUrl) ->
+  d.i.showLoginDialog(anyMode || 'LoginToSubmit', anyReturnToUrl)
 
 
 
@@ -30,7 +40,8 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
   clearLoginRelatedCookies()
 
   if d.i.isInIframe
-    d.i.createLoginPopup("#{d.i.serverOrigin}/-/login-popup?mode=#mode")
+    url = "#{d.i.serverOrigin}/-/login-popup?mode=#mode&returnToUrl=#anyReturnToUrl"
+    d.i.createLoginPopup(url)
     return
 
   doingWhatClass = switch mode
@@ -44,7 +55,7 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
   dialog = loginDialogHtml()
   dialog.dialog d.i.newModalDialogSettings(
     width: 413
-    closeOnEscape: !d.i.isInLoginPopup)
+    closeOnEscape: !d.i.isInLoginWindow)
 
   doingWhatClass = switch mode
   | 'LoginToAdministrate' =>
@@ -99,8 +110,8 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
         <input type="text" name="openid_identifier" value="#openidIdentifier">
       </form>
       """)
-    # Submit form in a new popup window, unless we alreaady are in a popup window.
-    if d.i.isInLoginPopup
+    # Submit form in a new login popup window, unless we already are in a login window.
+    if d.i.isInLoginWindow
       $('body').append(form)
     else
       d.i.createOpenIdLoginPopup(form)
@@ -113,22 +124,26 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
     # (This parameter tells the server to set a certain cookie. Setting it here
     # instead has no effect, don't know why.)
     mayNotCreateUser = if mode == 'LoginToAdministrate' then '&mayNotCreateUser' else ''
-
-    url = "#{d.i.serverOrigin}/-/login-openauth/#provider?returnToUrl=#anyReturnToUrl#mayNotCreateUser"
-    if d.i.isInLoginPopup
-      # Let the server know we're in a popup window, so it can choose to reply with
+    returnToUrlOrEmpty = if anyReturnToUrl then anyReturnToUrl else ''
+    url = "#{d.i.serverOrigin}/-/login-openauth/#provider?returnToUrl=#returnToUrlOrEmpty#mayNotCreateUser"
+    if d.i.isInLoginWindow
+      # Let the server know we're in a login window, so it can choose to reply with
       # complete HTML pages to show in the popup window.
-      $.cookie('dwCoIsInLoginPopup', 'true')
+      $.cookie('dwCoIsInLoginWindow', 'true')
       window.location = url
     else
       d.i.createLoginPopup(url)
 
   !function loginAndContinue(data)
-    if d.i.isInLoginPopup
+    if d.i.isInLoginWindow
+      if anyReturnToUrl && anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1
+        window.location = anyReturnToUrl
+        return
       # (Also see AppLoginOpenId, search for [509KEF31].)
       window.opener.debiki.internal.handleLoginResponse(status: 'LoginOk')
       # This is a login popup, so we're now closing the whole popup window.
       close()
+      return # actually not needed after close()?
 
     # This happens only if we're not in a login popup, but a jQuery UI dialog:
 
@@ -147,7 +162,7 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
     showLoggedInDialog(d.i.continueAnySubmission)
 
   !function close
-    if d.i.isInLoginPopup
+    if d.i.isInLoginWindow
       window.close()
     else
       dialog.dialog('close')
@@ -170,7 +185,7 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
   $.cookie('dwCoReturnToUrl', null)
   $.cookie('dwCoReturnToSite', null)
   $.cookie('dwCoReturnToSiteXsrfToken', null)
-  $.cookie('dwCoIsInLoginPopup', null)
+  $.cookie('dwCoIsInLoginWindow', null)
   $.cookie('dwCoMayCreateUser', null)
 
 
@@ -230,7 +245,7 @@ function loginDialogHtml
           <span class="icon-github"></span>
           GitHub
         </a>
-        <!--
+        <!-- OpenID doesn't work right now.
         <a id="dw-lgi-yahoo" class="btn btn-default" tabindex="114">
           <span class="icon-yahoo"></span>
           Yahoo!

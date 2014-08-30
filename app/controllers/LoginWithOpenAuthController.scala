@@ -27,8 +27,7 @@ import com.mohiva.play.silhouette.core.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.core.providers.oauth2._
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.core.{exceptions => siex}
-import debiki.DebikiHttp.{throwForbidden, throwBadReq, throwUnprocessableEntity}
-import debiki.DebikiHttp.{isAjax, originOf, daoFor, AjaxFriendlyRedirectStatusCode}
+import debiki.DebikiHttp._
 import java.{util => ju}
 import org.scalactic.{Good, Bad}
 import play.{api => p}
@@ -57,7 +56,7 @@ object LoginWithOpenAuthController extends Controller {
   private val ReturnToUrlCookieName = "dwCoReturnToUrl"
   private val ReturnToSiteCookieName = "dwCoReturnToSite"
   private val ReturnToSiteXsrfTokenCookieName = "dwCoReturnToSiteXsrfToken"
-  private val IsInLoginPopupCookieName = "dwCoIsInLoginPopup"
+  private val IsInLoginWindowCookieName = "dwCoIsInLoginWindow"
   private val MayCreateUserCookieName = "dwCoMayCreateUser"
 
   val anyLoginOrigin =
@@ -233,50 +232,58 @@ object LoginWithOpenAuthController extends Controller {
     val userConfigCookie = ConfigUserController.userConfigCookie(user)
     val newSessionCookies = userConfigCookie :: sidAndXsrfCookies
 
-    val response = request.cookies.get(ReturnToUrlCookieName) match {
-      case Some(returnToUrlCookie) =>
-        val status =
-          if (isAjax(request)) {
-            // We don't want the Ajax request to follow the redirect, so we have to
-            // use a custom HTTP status code. (All browsers must follow status 302 and 303
-            // redirects, even Ajax requests.)
-            AjaxFriendlyRedirectStatusCode
-          }
-          else {
-            play.api.http.Status.SEE_OTHER
-          }
-        Redirect(returnToUrlCookie.value, status)
-          .discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
-      case None =>
-        if (isAjax(request)) {
-          // We've shown but closed an OAuth provider login popup, and now we're
-          // handling a create-user Ajax request from a certain create-new-user dialog.
-          Ok
-        }
-        else {
-          // We're logging in an existing user in a popup.
+    val response =
+      if (isAjax(request)) {
+        // We've shown but closed an OAuth provider login popup, and now we're
+        // handling a create-user Ajax request from a certain showCreateUserDialog()
+        // Javascript dialog. It already knows about any pending redirects.
+        Ok("""{ "emailVerifiedAndLoggedIn": true }""")
+      }
+      else {
+        def loginPopupCallback =
           Ok(views.html.login.loginPopupCallback(user.displayName).body) as HTML
+
+        request.cookies.get(ReturnToUrlCookieName) match {
+          case Some(returnToUrlCookie) =>
+            if (returnToUrlCookie.value.startsWith(
+                LoginWithPasswordController.RedirectFromVerificationEmailOnly)) {
+              // We are to redirect only from new account email address verification
+              // emails, not from here.
+              loginPopupCallback
+            }
+            else {
+              // We're in a create site wizard; redirect to the next step in the wizard.
+              Redirect(returnToUrlCookie.value)
+            }
+          case None =>
+            // We're logging in an existing user in a popup window.
+            loginPopupCallback
         }
-    }
+      }
     response.withCookies(newSessionCookies: _*)
+      .discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
   }
 
 
   private def showCreateUserDialog(request: Request[_], oauthDetails: OpenAuthDetails): Result = {
     val cacheKey = nextRandomString()
     play.api.cache.Cache.set(cacheKey, oauthDetails)
-    val anyIsInLoginPopupCookieValue = request.cookies.get(IsInLoginPopupCookieName).map(_.value)
+    val anyIsInLoginWindowCookieValue = request.cookies.get(IsInLoginWindowCookieName).map(_.value)
     val anyReturnToUrlCookieValue = request.cookies.get(ReturnToUrlCookieName).map(_.value)
 
-    if (anyIsInLoginPopupCookieValue.isDefined || anyReturnToUrlCookieValue.isDefined) {
-      // This is an embedded comments site, so the login dialog opened in a popup window,
-      // not in the embedded iframe. Continue running in the popup window, by returning
-      // a complete HTML page that shows a create-user dialog.
-      Ok(views.html.login.createUserPopup(
+    val result = if (anyIsInLoginWindowCookieValue.isDefined) {
+      // Continue running in the login window, by returning a complete HTML page that
+      // shows a create-user dialog. (( This happens for example if 1) we're in a create
+      // site wizard, then there's a dedicated login step in a login window, or 2)
+      // we're logging in to the admin pages, or 3) we're visiting an embedded comments
+      // site and attempted to login, then a login popup window opens (better than
+      // showing a login dialog somewhere inside the iframe). ))
+      Ok(views.html.login.showCreateUserDialog(
         serverAddress = s"//${request.host}",
         newUserName = oauthDetails.displayName,
         newUserEmail = oauthDetails.email getOrElse "",
-        authDataCacheKey = cacheKey)).discardingCookies(DiscardingCookie(IsInLoginPopupCookieName))
+        authDataCacheKey = cacheKey,
+        anyContinueToUrl = anyReturnToUrlCookieValue))
     }
     else {
       // The request is from an OAuth provider login popup. Run some Javascript in the
@@ -285,8 +292,13 @@ object LoginWithOpenAuthController extends Controller {
       Ok(views.html.login.closePopupShowCreateUserDialog(
         newUserName = oauthDetails.displayName,
         newUserEmail = oauthDetails.email getOrElse "",
-        authDataCacheKey = cacheKey))
+        authDataCacheKey = cacheKey,
+        anyContinueToUrl = anyReturnToUrlCookieValue))
     }
+
+    result.discardingCookies(
+      DiscardingCookie(IsInLoginWindowCookieName),
+      DiscardingCookie(ReturnToUrlCookieName))
   }
 
 
@@ -296,6 +308,7 @@ object LoginWithOpenAuthController extends Controller {
     val name = (body \ "name").as[String]
     val email = (body \ "email").as[String]
     val username = (body \ "username").as[String]
+    val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
 
     val oauthDetailsCacheKey = (body \ "authDataCacheKey").asOpt[String] getOrElse
       throwBadReq("DwE08GM6", "Auth data cache key missing")
@@ -307,21 +320,59 @@ object LoginWithOpenAuthController extends Controller {
       case _ =>
         assErr("DwE2GVM0")
     }
-    if (oauthDetails.email.map(_ == email) == Some(false)) {
-      throwForbidden("DwE523FU2", "Cannot change email from ones' OAuth provider email")
+
+    val emailVerifiedAt = oauthDetails.email match {
+      case Some(e) if (e != email) =>
+        throwForbidden("DwE523FU2", "Cannot change email from ones' OAuth provider email")
+      case Some(e) =>
+        // Twitter and GitHub provide no email, or I don't know if any email has been verified.
+        // Google and Facebook emails have been verified though.
+        if (oauthDetails.providerId == GoogleProvider.Google ||
+            oauthDetails.providerId == FacebookProvider.Facebook) {
+          Some(request.ctime)
+        }
+        else {
+          None
+        }
+      case None =>
+        None
     }
 
     val dao = daoFor(request.request)
     val userData =
-      NewOauthUserData.create(name = name, email = email, username = username,
-          identityData = oauthDetails) match {
+      NewOauthUserData.create(name = name, username = username, email = email,
+          emailVerifiedAt = emailVerifiedAt, identityData = oauthDetails) match {
         case Good(data) => data
         case Bad(errorMessage) =>
           throwUnprocessableEntity("DwE7BD08", s"$errorMessage, please try again.")
       }
-    val loginGrant = dao.createUserAndLogin(userData)
 
-    createCookiesAndFinishLogin(request.request, loginGrant.user)
+    try {
+      val loginGrant = dao.createUserAndLogin(userData)
+      if (emailVerifiedAt.isDefined) {
+        createCookiesAndFinishLogin(request.request, loginGrant.user)
+      }
+      else {
+        LoginWithPasswordController.sendEmailAddressVerificationEmail(
+          loginGrant.user, anyReturnToUrl, request.host, request.dao)
+        Ok("""{ "emailVerifiedAndLoggedIn": false }""")
+      }
+    }
+    catch {
+      case DbDao.DuplicateUsername =>
+        throwForbidden(
+            "DwE6D3G8", "Username already taken, please try again with another username")
+      case DbDao.DuplicateUserEmail =>
+        if (emailVerifiedAt.isDefined) {
+          // The user has been authenticated, so it's okay to tell him/her about the email address.
+          throwForbidden(
+            "DwE4BME8", "You already have an account with that email address")
+        }
+        // Don't indicate that there is already an account with this email.
+        LoginWithPasswordController.sendYouAlreadyHaveAnAccountWithThatAddressEmail(
+          request.dao, email, siteHostname = request.host, siteId = request.siteId)
+        Ok("""{ "emailVerifiedAndLoggedIn": false }""")
+    }
   }
 
 

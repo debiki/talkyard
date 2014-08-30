@@ -15,21 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@*
+@(returnToUrl: Option[String])
+
 
 @css = @{("""
 
 """)}
 
+@returnToUrlUnescapedHash = @{
+  returnToUrl.map(_.replaceAllLiterally("__dwHash__", "#"))
+}
 
-@createsite.main(title = "Create Account", css = css) {
+@createsite.main(title = "Account Created", css = css) {
+  <h1>Welcome!</h1>
 
-  <h1>Create Account</h1>
+  <p>Your account has been created and you have been logged in.</p>
 
-  <p>We just sent you a registration email. Please check your inbox.</p>
-
-  <p>(You can close this page.)</p>
+  <p>
+  <a href="@{ returnToUrlUnescapedHash getOrElse "/" }">Continue...</a>
+  </p>
 
 }
 
-*@

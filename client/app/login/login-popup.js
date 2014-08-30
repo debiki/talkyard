@@ -70,11 +70,6 @@ d.i.createLoginPopup = function(anyUrl) {
     } else if (result.status === 'LoginFailed') {
       console.debug('User closed popup window?');
       return;
-    } else if (result.status === 'CreateUser') {
-      $('#dw-fs-openid-login').dialog('close');
-      $('#dw-lgi').dialog('close');
-      d.i.showCreateUserDialog(result);
-      return;
     } else if (result.status !== 'LoginOk') {
       errorMsg = 'Unknown login problem [error DwE3kirsrts12d]';
     } else {
@@ -82,8 +77,7 @@ d.i.createLoginPopup = function(anyUrl) {
       // (Find queryString example at the end of this file.)
 
       // Warning: Somewhat dupl code, compare w initLoginSimple.
-      $('#dw-fs-openid-login').dialog('close');
-      $('#dw-lgi').dialog('close');
+      d.i.closeAnyLoginDialogs();
       d.i.Me.fireLogin();
       d.i.continueAnySubmission();
       return;

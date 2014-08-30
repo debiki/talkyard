@@ -38,8 +38,12 @@ case class People(users: List[User] = Nil) {
   def ++ (people: People) = People(users = people.users ::: users)
 
   def user(id: String): Option[User] =
-    if (id == SystemUser.User.id) Some(SystemUser.User)
-    else users.find(_.id == id)  // COULD optimize
+    if (id == SystemUser.User.id)
+      Some(SystemUser.User)
+    else if (id == UnknownUser.Id)
+      Some(UnknownUser.User)
+    else
+      users.find(_.id == id)  // COULD optimize
 
   def user_!(id: String): User = user(id) getOrElse runErr(
     "DwE730krq849", "User not found: "+ safed(id))
@@ -51,13 +55,16 @@ sealed abstract class NewUserData {
   def name: String
   def username: String
   def email: String
+  def emailVerifiedAt: Option[ju.Date]
 
   def userNoId = User(
     id = "?",
     displayName = name,
     username = Some(username),
+    createdAt = None,
     email = email,
     emailNotfPrefs = EmailNotfPrefs.Unspecified,
+    emailVerifiedAt = emailVerifiedAt,
     country = "",
     website = "",
     isAdmin = false,
@@ -77,12 +84,28 @@ case class NewPasswordUserData(
   name: String,
   username: String,
   email: String,
-  password: String) extends NewUserData {
+  password: String) {
 
-  def identityNoId =
-    PasswordIdentity(id = "?", userId = "?", email = email,
-      passwordSaltHash = DbDao.saltAndHashPassword(password))
+  val passwordHash: String =
+    DbDao.saltAndHashPassword(password)
 
+  def userNoId = User(
+    id = "?",
+    displayName = name,
+    username = Some(username),
+    createdAt = None,
+    email = email,
+    emailNotfPrefs = EmailNotfPrefs.Unspecified,
+    emailVerifiedAt = None,
+    passwordHash = Some(passwordHash),
+    country = "",
+    website = "",
+    isAdmin = false,
+    isOwner = false)
+
+  Validation.checkName(name)
+  Validation.checkUsername(username)
+  Validation.checkEmail(email)
   Validation.checkPassword(password)
 }
 
@@ -109,6 +132,7 @@ case class NewOauthUserData(
   name: String,
   username: String,
   email: String,
+  emailVerifiedAt: Option[ju.Date],
   identityData: OpenAuthDetails) extends NewUserData {
 
   def identityNoId =
@@ -117,8 +141,8 @@ case class NewOauthUserData(
 
 
 object NewOauthUserData {
-  def create(name: String, email: String, username: String, identityData: OpenAuthDetails)
-        : NewOauthUserData Or ErrorMessage = {
+  def create(name: String, email: String, emailVerifiedAt: Option[ju.Date], username: String,
+        identityData: OpenAuthDetails): NewOauthUserData Or ErrorMessage = {
     for {
       okName <- Validation.checkName(name)
       okUsername <- Validation.checkUsername(username)
@@ -126,7 +150,7 @@ object NewOauthUserData {
     }
     yield {
       NewOauthUserData(name = okName, username = okUsername, email = okEmail,
-        identityData = identityData)
+        emailVerifiedAt = emailVerifiedAt, identityData = identityData)
     }
   }
 }
@@ -250,8 +274,10 @@ case class RoleId(String) extends UserId
  * @param displayName
  * @param username Is None for guests, and some old users created before usernames had
  *    been implemented.
+ * @param createdAt None for guests.
  * @param email
  * @param emailNotfPrefs
+ * @param emailVerifiedAt
  * @param country
  * @param website COULD rename to url, that's more generic.
  * @param isAdmin
@@ -261,8 +287,11 @@ case class User (
   id: String,
   displayName: String,
   username: Option[String],
+  createdAt: Option[ju.Date],
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
+  emailVerifiedAt: Option[ju.Date] = None,
+  passwordHash: Option[String] = None,
   country: String = "",
   website: String = "",
   isAdmin: Boolean = false,
@@ -395,14 +424,6 @@ case class IdentityEmailId(
 }
 
 
-case class PasswordIdentity(
-  id: IdentityId,
-  override val userId: UserId,
-  email: String = "",
-  passwordSaltHash: String) extends Identity {
-}
-
-
 case class IdentityOpenId(
   id: String,
   override val userId: String,
@@ -427,20 +448,6 @@ case class OpenIdDetails(
   firstName: String,
   email: Option[String],
   country: String) {
-
-  def isGoogleLogin = oidEndpoint == IdentityOpenId.GoogleEndpoint
-
-}
-
-
-object IdentityOpenId {
-
-  val GoogleEndpoint = "https://www.google.com/accounts/o8/ud"
-
-  object ProviderIdentifier {
-    val Google = "https://www.google.com/accounts/o8/id"
-    val Yahoo = "http://me.yahoo.com/"
-  }
 
 }
 
@@ -472,14 +479,14 @@ case class OpenAuthProviderIdKey(providerId: String, providerKey: String)
 
 
 case class LoginGrant(
-   identity: Identity,
+   identity: Option[Identity],
    user: User,
    isNewIdentity: Boolean,
    isNewRole: Boolean) {
 
-  require(!identity.id.contains('?'))
+  require(identity.map(_.id.contains('?')) != Some(true))
   require(!user.id.contains('?'))
-  require(identity.userId == user.id)
+  require(identity.map(_.userId == user.id) != Some(false))
   require(!isNewRole || isNewIdentity)
 
   def displayName: String = user.displayName
@@ -501,6 +508,10 @@ object UnknownUser {
     */
   val Id = "-3"
 
+  val User = com.debiki.core.User(id = Id, displayName = "(unknown user)", username = None,
+    createdAt = None, email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive,
+    emailVerifiedAt = None, isAdmin = false)
+
 }
 
 
@@ -515,8 +526,9 @@ object SystemUser {
 
   val Ip = "SystemUserIp"
 
-  val User = core.User(id = "1", displayName = "System", username = None, email = "",
-    emailNotfPrefs = EmailNotfPrefs.DontReceive, isAdmin = true)
+  val User = core.User(id = "1", displayName = "System", username = None,
+    createdAt = None, email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive,
+    emailVerifiedAt = None, isAdmin = true)
 
   val Person = People(List(User))
 

@@ -29,9 +29,9 @@ import Prelude._
 trait NotfGeneratorTestValues {
 
   import PeopleTestUtils.makePerson
-  val (bodyAuthor, bodyAuthorIdty) = makePerson("BodyAuthor")
-  val (replyAuthor, replyAuthorIdty) = makePerson("Replier")
-  val (reviewer, reviewerIdty) = makePerson("ReviewerAuthor")
+  val bodyAuthor = makePerson("BodyAuthor")
+  val replyAuthor = makePerson("Replier")
+  val reviewer = makePerson("ReviewerAuthor")
 
   val rawBody = copyCreatePost(PostTestValues.postSkeleton,
     id = PageParts.BodyId, userId = bodyAuthor.id, parentPostId = None)
