@@ -52,7 +52,6 @@ class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) with Insi
     var post3: Post = null
 
     val PasswordIp4 = "0.0.0.4"
-    var passwordIdentity4: PasswordIdentity = null
     var passwordLoginGrant4: LoginGrant = null
     var post4: Post = null
 
@@ -92,9 +91,8 @@ class VoteSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) with Insi
       }
 
       "create password user 4, comment #4" in {
-        val (identity, user) = siteUtils.createPasswordRole()
-        passwordIdentity4 = identity
-        passwordLoginGrant4 = siteUtils.login(passwordIdentity4, ip = PasswordIp4)
+        val user = siteUtils.createPasswordRole()
+        passwordLoginGrant4 = siteUtils.login(user, ip = PasswordIp4)
         val (tmpPage, tmpPost) =
           siteUtils.addComment(passwordLoginGrant4.user, page, "By password 4")
         page = siteUtils.review(passwordLoginGrant4.user, tmpPage, tmpPost.id, Approval.AuthoritativeUser)

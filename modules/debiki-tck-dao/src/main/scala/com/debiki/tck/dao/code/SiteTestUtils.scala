@@ -49,17 +49,15 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
 
   val DefaultPasswordFullName = "PasswordUserFullName"
   val DefaultPasswordUsername = "PasswordUserUsername"
+  val DefaultPasswordEmail = "pswd-test@ex.com"
 
-  def createPasswordRole(): (PasswordIdentity, User) = {
-    val email = "pswd-test@ex.com"
-    val hash = DbDao.saltAndHashPassword(defaultPassword)
-    val identityNoId = PasswordIdentity(
-      id = "?", userId = "?", email = email, passwordSaltHash = hash)
-    val userNoId = User(
-      id = "?", displayName = DefaultPasswordFullName, username = Some(DefaultPasswordUsername),
-      createdAt = None, email = email, emailNotfPrefs = EmailNotfPrefs.Receive,
-      emailVerifiedAt = None)
-    dao.createPasswordIdentityAndRole(identityNoId, userNoId)
+  def createPasswordRole(): User = {
+    val user = dao.createPasswordUser(NewPasswordUserData.create(name = DefaultPasswordFullName,
+      username = DefaultPasswordUsername, email = DefaultPasswordEmail,
+      password = defaultPassword).get)
+    val verifiedAt = Some(new ju.Date)
+    dao.configRole(user.id, emailVerifiedAt = Some(verifiedAt))
+    user.copy(emailVerifiedAt = verifiedAt)
   }
 
 
@@ -73,15 +71,10 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
   }
 
 
-  def login(identity: Identity, ip: String = "0.0.1.0"): LoginGrant = {
-    identity match {
-      case passwordIdentity: PasswordIdentity =>
-        dao.tryLogin(PasswordLoginAttempt(
-          ip = ip, date = new ju.Date(),
-          email = passwordIdentity.email, password = defaultPassword))
-      case _ =>
-        ???
-    }
+  def login(user: User, ip: String = "0.0.1.0"): LoginGrant = {
+    dao.tryLogin(PasswordLoginAttempt(
+      ip = ip, date = new ju.Date(),
+      email = user.email, password = defaultPassword))
   }
 
 

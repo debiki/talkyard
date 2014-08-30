@@ -1722,6 +1722,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val theFirstName = "SecureSocialFirstName1"
       val theLastName = "SecureSocialLastName"
       val theUsername = "oauth_username"
+      val theUsername2 = "oauth_username2"
+      val theUsername3 = "oauth_username3"
       val theEmail = "securesocial-user@ex.com"
 
       val theChangedFirstName = "NewSecureSocialFirstName1"
@@ -1748,23 +1750,26 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val the3rdOpenAuthDetails = theOpenAuthDetails.copy(
         providerId = "newPrvdrId", email = Some(the3rdEmail))
 
-      val newOauthUserData = NewOauthUserData(
+      val newOauthUserData = NewOauthUserData.create(
         name = theFirstName,
         username = theUsername,
         email = theEmail,
-        identityData = theOpenAuthDetails)
+        emailVerifiedAt = None,
+        identityData = theOpenAuthDetails).get
 
-      val newOauthUserData2 = NewOauthUserData(
+      val newOauthUserData2 = NewOauthUserData.create(
         name = theFirstName,
-        username = theUsername,
+        username = theUsername2,
         email = the2ndEmail,
-        identityData = the2ndOpenAuthDetails)
+        emailVerifiedAt = None,
+        identityData = the2ndOpenAuthDetails).get
 
-      val newOauthUserData3 = NewOauthUserData(
+      val newOauthUserData3 = NewOauthUserData.create(
         name = theFirstName,
-        username = theUsername,
+        username = theUsername3,
         email = the3rdEmail,
-        identityData = the3rdOpenAuthDetails)
+        emailVerifiedAt = None,
+        identityData = the3rdOpenAuthDetails).get
 
       val theFirstLoginAttempt = OpenAuthLoginAttempt(
         ip = "1.2.3.4", date = now, theOpenAuthDetails)
@@ -1777,7 +1782,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "create" in {
         theFirstLoginGrant = dao.createUserAndLogin(newOauthUserData)
-        val theIdentity = theFirstLoginGrant.identity.asInstanceOf[OpenAuthIdentity]
+        val theIdentity = theFirstLoginGrant.identity.get.asInstanceOf[OpenAuthIdentity]
         theIdentity.openAuthDetails must_== theOpenAuthDetails
         theUser = theFirstLoginGrant.user
         Some(theUser.displayName) must_== theOpenAuthDetails.firstName
@@ -1800,8 +1805,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val loginAttempt = theFirstLoginAttempt.copy(openAuthDetails = theChangedOpenAuthDetails)
         theChangedLoginGrant = dao.tryLogin(loginAttempt)
         theChangedLoginGrant.user must_== theFirstLoginGrant.user
-        val ssIdentity = theChangedLoginGrant.identity.asInstanceOf[OpenAuthIdentity]
-        ssIdentity.id must_== theFirstLoginGrant.identity.id
+        val ssIdentity = theChangedLoginGrant.identity.get.asInstanceOf[OpenAuthIdentity]
+        ssIdentity.id must_== theFirstLoginGrant.identity.get.id
         ssIdentity.userId must_== theUser.id
         ssIdentity.openAuthDetails.copy(
             firstName = Some(theChangedFirstName), email = Some(theChangedEmail)) must_==
@@ -1824,12 +1829,13 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         the2ndUsersLoginGrant = dao.createUserAndLogin(newOauthUserData2)
 
         val loginGrant = the2ndUsersLoginGrant
-        val ssIdentity = loginGrant.identity.asInstanceOf[OpenAuthIdentity]
-        ssIdentity.id must_!= theFirstLoginGrant.identity.id
+        val ssIdentity = loginGrant.identity.get.asInstanceOf[OpenAuthIdentity]
+        ssIdentity.id must_!= theFirstLoginGrant.identity.get.id
         ssIdentity.openAuthDetails must_== the2ndOpenAuthDetails
 
         loginGrant.user must_== theChangedLoginGrant.user.copy(
-          id = loginGrant.user.id, email = the2ndEmail, createdAt = loginGrant.user.createdAt)
+          id = loginGrant.user.id, username = Some(theUsername2), email = the2ndEmail,
+          createdAt = loginGrant.user.createdAt)
         ok
       }
 
@@ -1837,15 +1843,16 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         the3rdUsersLoginGrant = dao.createUserAndLogin(newOauthUserData3)
 
         val loginGrant = the3rdUsersLoginGrant
-        val ssIdentity = loginGrant.identity.asInstanceOf[OpenAuthIdentity]
-        ssIdentity.id must_!= theFirstLoginGrant.identity.id
-        ssIdentity.id must_!= the2ndUsersLoginGrant.identity.id
+        val ssIdentity = loginGrant.identity.get.asInstanceOf[OpenAuthIdentity]
+        ssIdentity.id must_!= theFirstLoginGrant.identity.get.id
+        ssIdentity.id must_!= the2ndUsersLoginGrant.identity.get.id
         ssIdentity.openAuthDetails must_== the3rdOpenAuthDetails
 
         loginGrant.user.id must_!= theFirstLoginGrant.user.id
         loginGrant.user.id must_!= the2ndUsersLoginGrant.user.id
         loginGrant.user must_== theChangedLoginGrant.user.copy(
-          id = loginGrant.user.id, email = the3rdEmail, createdAt = loginGrant.user.createdAt)
+          id = loginGrant.user.id, username = Some(theUsername3), email = the3rdEmail,
+          createdAt = loginGrant.user.createdAt)
         ok
       }
 
@@ -1864,7 +1871,6 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     // -------- Password identities
 
     var globalPasswordUser: User = null
-    var globalPasswordIdentity: PasswordIdentity = null
 
     "create PasswordIdentity and User" >> {
 
@@ -1874,21 +1880,18 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val theHash = DbDao.saltAndHashPassword(thePassword)
       val theNewHash = DbDao.saltAndHashPassword(theNewPassword)
 
-      val identityNoId = PasswordIdentity(
-        id = "?", userId = "?", email = theEmail, passwordSaltHash = theHash)
-      val userNoId = User(
-        id = "?", displayName = "PasswordUser", username = Some("PwdUsrUsername"),
-        createdAt = None, email = theEmail, emailNotfPrefs = EmailNotfPrefs.Unspecified,
-        emailVerifiedAt = None)
+      val newPasswordUserData = NewPasswordUserData.create(
+        name = "PasswordUser", username = "PwdUsrUsername", email = theEmail,
+        password = thePassword).get
 
-      var theIdentity: PasswordIdentity = null
       var theUser: User = null
       var loginGrant: LoginGrant = null
 
       "create" in {
-        val (identity, user) = dao.createPasswordIdentityAndRole(identityNoId, userNoId)
-        theIdentity = identity
-        theUser = user
+        val user = dao.createPasswordUser(newPasswordUserData)
+        val verifiedAt = Some(new ju.Date)
+        dao.configRole(user.id, emailVerifiedAt = Some(verifiedAt))
+        theUser = user.copy(emailVerifiedAt = verifiedAt)
         ok
       }
 
@@ -1897,23 +1900,39 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           ip = "1.2.3.4", date = new ju.Date(),
           email = theUser.email, password = thePassword))
         loginGrant.user must_== theUser
-        loginGrant.identity must_== theIdentity
+        loginGrant.identity must_== None
         ok
       }
 
-      "load" in {
-        dao.loadIdtyDetailsAndUser(forEmailAddr = theEmail) match {
-          case Some((identityLoaded, userLoaded)) =>
-            identityLoaded must_== theIdentity
+      "load user by username and email" in {
+        dao.loadUserByEmailOrUsername(theUser.username.get) match {
+          case Some(userLoaded) =>
             userLoaded must_== theUser
-          case _ => fail(s"Email identity not found")
+          case _ => fail("User by username lookup faied")
+        }
+        dao.loadUserByEmailOrUsername(theEmail) match {
+          case Some(userLoaded) =>
+            userLoaded must_== theUser
+          case _ => fail(s"User by email lookup failed")
         }
         ok
       }
 
       "change password" in {
-        val passwordWasChanged = dao.changePassword(theIdentity, newPasswordSaltHash = theNewHash)
+        val passwordWasChanged = dao.changePassword(theUser, newPasswordSaltHash = theNewHash)
         passwordWasChanged must_== true
+        ok
+      }
+
+      "reject the old password" in {
+        try {
+          dao.tryLogin(PasswordLoginAttempt(
+            ip = "1.2.3.4", date = new ju.Date(),
+            email = theUser.email, password = thePassword))
+        }
+        catch {
+          case DbDao.BadPasswordException =>
+        }
         ok
       }
 
@@ -1921,16 +1940,13 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val newLoginGrant = dao.tryLogin(PasswordLoginAttempt(
           ip = "1.2.3.4", date = new ju.Date(),
           email = theUser.email, password = theNewPassword))
-        newLoginGrant.user must_== theUser
-        newLoginGrant.identity.userId must_== theIdentity.userId
-        newLoginGrant.identity.id must_== theIdentity.id
-        newLoginGrant.identity.asInstanceOf[PasswordIdentity].passwordSaltHash must_== theNewHash
+        newLoginGrant.user must_== theUser.copy(passwordHash = Some(theNewHash))
+        newLoginGrant.identity must_== None
         ok
       }
 
       "remember global variables" in {
         globalPasswordUser = theUser
-        globalPasswordIdentity = theIdentity
         ok
       }
     }
@@ -1971,9 +1987,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "configure email to a Role" in {
       // Somewhat dupl code, see `def testAdmin` test helper.
-      dao.configRole(
-         ctime = new ju.Date, roleId = globalPasswordUser.id,
-         emailNotfPrefs = Some(EmailNotfPrefs.Receive))
+      dao.configRole(roleId = globalPasswordUser.id, emailNotfPrefs = Some(EmailNotfPrefs.Receive))
       val Some(userConfigured) = dao.loadUser(globalPasswordUser.id)
       userConfigured.emailNotfPrefs must_== EmailNotfPrefs.Receive
       emailEx_OpenIdUser = userConfigured  // remember, to other test cases
@@ -2093,7 +2107,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           : LoginGrant  = {
       val loginAttempt = EmailLoginAttempt(ip = "?.?.?.?", date = now, emailId = emailId)
       val loginGrant = dao.tryLogin(loginAttempt)
-      lazy val emailIdty = loginGrant.identity.asInstanceOf[IdentityEmailId]
+      lazy val emailIdty = loginGrant.identity.get.asInstanceOf[IdentityEmailId]
       Some(loginGrant.user.id) must_== emailSentOk.toUserId
       emailIdty.emailSent.map(_.sentTo) must_== Some(emailSentOk.sentTo)
       emailIdty.emailSent.map(_.toUserId) must_== Some(emailSentOk.toUserId)
@@ -2260,8 +2274,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       "login and unsubscribe, via email" in {
         val loginGrant = testLoginViaEmail(emailId, emailSentOk)
         loginGrant.user.isAuthenticated must_== true
-        dao.configRole(
-          ctime = now, roleId = loginGrant.user.id,
+        dao.configRole(roleId = loginGrant.user.id,
           emailNotfPrefs = Some(EmailNotfPrefs.DontReceive))
         // must throwNothing (how to test that?)
         ok
@@ -2328,7 +2341,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       def testAdmin(makeAdmin: Boolean, makeOwner: Option[Boolean]) = {
         // Somewhat dupl code, see "configure email to a Role" test.
         val userToConfig = globalPasswordUser
-        dao.configRole(ctime = new ju.Date, roleId = userToConfig.id,
+        dao.configRole(roleId = userToConfig.id,
           isAdmin = Some(makeAdmin), isOwner = makeOwner)
         val Some(userConfigured) = dao.loadUser(userToConfig.id)
         userConfigured.isAdmin must_== makeAdmin
@@ -2782,8 +2795,6 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       val creatorIp = "123.123.123.123"
 
-      lazy val creatorIdentity =
-        globalPasswordIdentity.asInstanceOf[PasswordIdentity]
       lazy val creatorRole = globalPasswordUser
 
       var newWebsiteOpt: Tenant = null
@@ -2803,7 +2814,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           name = Some("website-"+ suffix), address = Some("website-"+ suffix +".ex.com"),
           embeddingSiteUrl = None,
           ownerIp = creatorIp,
-          ownerIdentity = creatorIdentity, ownerRole = creatorRole)
+          ownerIdentity = None, ownerRole = creatorRole)
       }
 
       def createEmbeddedSite(embeddingSiteUrl: String): Option[(Tenant, User)] = {
@@ -2811,7 +2822,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           name = None, address = None,
           embeddingSiteUrl = Some(embeddingSiteUrl),
           ownerIp = creatorIp,
-          ownerIdentity = creatorIdentity, ownerRole = creatorRole)
+          ownerIdentity = None, ownerRole = creatorRole)
       }
 
       "create a new website, from existing tenant" in {

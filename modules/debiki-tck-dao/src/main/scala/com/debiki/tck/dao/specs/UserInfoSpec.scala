@@ -39,22 +39,19 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
     val PageText = "The page text"
     var comment: Post = null
     val CommentText = "The comment text"
-    var passwordIdentity: PasswordIdentity = null
     var passwordRole: User = null
     var passwordLoginGrant: LoginGrant = null
     var guestUser: User = null
 
     "create a password role, find info but no actions" in {
-      val (identity, user) = siteUtils.createPasswordRole()
-      passwordIdentity = identity.asInstanceOf[PasswordIdentity]
-      passwordRole = user
-      siteUtils.dao.listUserActions(user.id).length mustBe 0
-      siteUtils.dao.loadUserInfoAndStats(user.id) mustBe Some(
-        UserInfoAndStats(info = user, stats = UserStats.Zero))
+      passwordRole = siteUtils.createPasswordRole()
+      siteUtils.dao.listUserActions(passwordRole.id).length mustBe 0
+      siteUtils.dao.loadUserInfoAndStats(passwordRole.id) mustBe Some(
+        UserInfoAndStats(info = passwordRole, stats = UserStats.Zero))
     }
 
     "create a page, find one action" in {
-      passwordLoginGrant = siteUtils.login(passwordIdentity)
+      passwordLoginGrant = siteUtils.login(passwordRole)
       page = siteUtils.createPageAndBody(
         passwordLoginGrant, PageRole.ForumTopic, PageText).withoutPath
       siteUtils.dao.loadUserInfoAndStats(passwordRole.id) mustBe Some(

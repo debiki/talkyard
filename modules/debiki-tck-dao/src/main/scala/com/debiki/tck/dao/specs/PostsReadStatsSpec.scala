@@ -41,7 +41,6 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
     var post2: Post = null
     var post3: Post = null
     var post4: Post = null
-    var passwordIdentity: PasswordIdentity = null
     var passwordRole: User = null
     var passwordLoginGrant: LoginGrant = null
     var guestUserOtherIp: User = null
@@ -51,10 +50,8 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
     val PasswordIp = "0.0.1.0"
 
     "create a password role and a page and comment #2" in {
-      val (identity, user) = siteUtils.createPasswordRole()
-      passwordIdentity = identity
-      passwordRole = user
-      passwordLoginGrant = siteUtils.login(passwordIdentity, ip = PasswordIp)
+      passwordRole = siteUtils.createPasswordRole()
+      passwordLoginGrant = siteUtils.login(passwordRole, ip = PasswordIp)
 
       page = siteUtils.createPageAndBody(
         passwordLoginGrant, PageRole.ForumTopic, PageText).withoutPath
