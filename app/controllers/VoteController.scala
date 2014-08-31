@@ -108,8 +108,17 @@ object VoteController extends mvc.Controller {
             throwBadReq("DwE84QM0", "Cannot like own post")
         }
 
-        pageReq.dao.updatePostsReadStats(pageId, postIdsRead, voteWithId)
+        // Downvotes (wrong, off-topic) should result in only the downvoted post
+        // being marked as read, because a post *not* being downvoted shouldn't
+        // give that post worse rating. (Remember that the rating of a post is
+        // roughly the number of Like votes / num-times-it's-been-read.)
+        val postsToMarkAsRead =
+          if (voteType == PostActionPayload.VoteLike)
+            postIdsRead
+          else
+            Set(postId)
 
+        pageReq.dao.updatePostsReadStats(pageId, postsToMarkAsRead, voteWithId)
         (pageReq, updatedPage.parts)
       }
 
