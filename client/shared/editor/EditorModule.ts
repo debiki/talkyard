@@ -1,5 +1,5 @@
-/* An AngularJS module for the whole page.
- * Copyright (C) 2012 - 2013 Kaj Magnus Lindberg (born 1979)
+/**
+ * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,33 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../typedefs/angularjs/angular.d.ts" />
+/// <reference path="../../typedefs/angularjs/angular.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2 {
+   module debiki2.editor {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 
-var page: any = $('.dw-page');
-var pageRole = page.dwPageMeta().pageRole;
-
-
-var dependencies = [
-    'DebikiDashbarModule',
-    'DebikiEditorModule',
-    'ui.scrollfix'];
-
-if (pageRole === 'Forum') {
-  dependencies.push('DebikiForumModule');
-}
-
-if (window.location.pathname === '/-/users/') {
-  dependencies.push('DebikiUsersModule');
-}
-
-
-export var DebikiApp: ng.IModule = angular.module('DebikiApp', dependencies);
+export var editorModule = angular.module('DebikiEditorModule', []);
 
 
 //------------------------------------------------------------------------------
