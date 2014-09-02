@@ -30,14 +30,41 @@ class EditorService {
   }
 
 
-  public cancel() {
-    this.$scope.editor = {};
+  public loadCurrentText(postId): ng.IPromise<string> {
+    var deferred = this.$q.defer<string>();
+    var url = d.i.serverOrigin + '/-/edit' +
+        '?pageId='+ d.i.pageId +
+        '&pagePath='+ d.i.pagePath +
+        '&postId='+ postId +
+        '&pageRole=' + d.i.pageRole;
+    this.$http.get(url)
+      .success((data, status, headers, config) => {
+        // TODO also load info about whether the user may apply and approve the edits.
+        deferred.resolve(data.currentText);
+      })
+      .error((data, status, headers, config) => {
+        console.error('Error:\n' + data);
+      });
+    return deferred.promise;
   }
 
 
-  public save(data): ng.IPromise<void> {
+  public saveEdits(data): ng.IPromise<void> {
     var deferred = this.$q.defer<any>();
+    this.$http.post(d.i.serverOrigin + '/-/edit', data)
+      .success((data, status, headers, config) => {
+        deferred.resolve(null);
+        d.i.handleEditResult(data);
+      })
+      .error((data, status, headers, config) => {
+        console.error('Error:\n' + data);
+      });
+    return deferred.promise;
+  }
 
+
+  public saveReply(data): ng.IPromise<void> {
+    var deferred = this.$q.defer<any>();
     this.$http.post(d.i.serverOrigin + '/-/reply', data)
       .success((data, status, headers, config) => {
         deferred.resolve(null);
@@ -46,7 +73,6 @@ class EditorService {
       .error((data, status, headers, config) => {
         console.error('Error:\n' + data);
       });
-
     return deferred.promise;
   }
 

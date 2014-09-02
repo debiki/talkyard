@@ -109,8 +109,6 @@ object Global extends GlobalSettings {
     val GET = "GET"
     val POST = "POST"
     val action = (mainFun, request.method) match {
-      case ("edit", GET) =>
-        EditController.showEditForm(pagePath, postId = mainFunValAsInt_!)
       case ("view", GET) =>
         ViewPageController.viewPost(pagePath)
       case ("delete", POST) =>

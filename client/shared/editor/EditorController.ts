@@ -21,18 +21,23 @@
 /// <reference path="EditorModule.ts" />
 
 var d = { i: debiki.internal, u: debiki.v0.util };
+var d$: any = $;
 
 
 class EditorController {
 
   public static $inject = ['$scope', 'EditorService'];
-  constructor(private $scope: any, private editorService: any) {
+  constructor(private $scope: any, private editorService: EditorService) {
     this.closeEditor();
     $scope.vm = this;
   }
 
 
   public toggleReplyToPost(postId) {
+    if (this.$scope.editingPostId) {
+      alert('Please finish editing before writing a reply');
+      return;
+    }
     var index = this.$scope.replyToPostIds.indexOf(postId);
     if (index === -1) {
       this.$scope.replyToPostIds.push(postId);
@@ -45,13 +50,71 @@ class EditorController {
   }
 
 
+  public startEditing(postId) {
+    if (this.$scope.replyToPostIds.length > 0) {
+      alert('Please finish writing your post before starting editing another one');
+      return;
+    }
+    this.$scope.editingPostId = postId;
+    this.editorService.loadCurrentText(postId).then((currentText) => {
+      this.$scope.text = currentText;
+      this.$scope.visible = true;
+    });
+  }
+
+
   public cancel() {
     this.closeEditor();
   }
 
 
   public save() {
-    if (this.$scope.editor.replyToPostIds.length > 1) {
+    if (typeof this.$scope.editingPostId === 'number') {
+      this.saveEdits();
+    }
+    else {
+      this.saveNewPost();
+    }
+  }
+
+
+  private saveEdits() {
+    var editingPostId = this.$scope.editingPostId;
+
+    // Here follows some old non-Angular code moved to here from actions/edit/edit.js.
+    var pageMeta = d$('#post-' + editingPostId).dwPageMeta();
+    var pagesToCreate = [];
+    if (!pageMeta.pageExists) {
+      // When the server generated this page, which doesn't exist,
+      // it included a passhash in the URL, which we need to send back
+      // to the server, so it knows that the server itself actually
+      // generated the page creation data (and that the client cannot e.g.
+      // forge a mallicious id).
+      // (It's okay to mutate pageMeta a little bit.)
+      pageMeta.passhash = d.i.parsePasshashInPageUrl();
+      pageMeta.newPageApproval = d.i.parseApprovalInPageUrl();
+      // Push don't unshift; http://server/-/edit expects them in that order.
+      pagesToCreate.push(pageMeta);
+    }
+
+    var data = {
+      createPagesUnlessExist: pagesToCreate,
+      editPosts: [{
+        pageId: pageMeta.pageId,
+        postId: '' + editingPostId, // COULD stop requiring a number
+        text: this.$scope.text
+        // markup — skip, don't allow changing markup no more?
+      }]
+    };
+
+    this.editorService.saveEdits(data).then(() => {
+      this.closeEditor();
+    });
+  }
+
+
+  private saveNewPost() {
+    if (this.$scope.replyToPostIds.length > 1) {
       alert('Replying to more than one person not yet implemented – please ' +
         'de-select some comments, so only one reply button remains selected.');
       return;
@@ -60,19 +123,27 @@ class EditorController {
       pageId: d.i.pageId,
       parentPageId: undefined, // ??? anyParentPageId,
       pageUrl: d.i.iframeBaseUrl || undefined,
-      postId: this.$scope.editor.replyToPostIds[0],
+      postId: this.$scope.replyToPostIds[0],
       text: this.$scope.text
       // where: ...
     };
-    this.editorService.save(data).then(() => {
+    this.editorService.saveReply(data).then(() => {
       this.closeEditor();
     });
   }
 
 
   public closeEditor() {
+    if (this.$scope.editingPostId) {
+      this.$scope.text = '';
+    }
+    else {
+      // The user was authoring a reply. Don't reset $scope.text in case
+      // s/he clicked Cancel by mistake.
+    }
     this.$scope.visible = false;
     this.$scope.replyToPostIds = [];
+    this.$scope.editingPostId = null;
   }
 
 }

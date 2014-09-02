@@ -16,6 +16,7 @@
  *@
 
 @(anyPageId: Option[String], serverAddress: String, pageUriPath: String,
+  anyPageRole: Option[com.debiki.core.PageRole], anyPagePath: Option[com.debiki.core.PagePath],
   minMaxJs: String, minMaxCss: String)
 
 @asset(file: String) = @{
@@ -66,6 +67,8 @@ See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-j
       serverOrigin: 'http://@serverAddress',
       pageUri: 'http://@serverAddress@pageUriPath',
       pageId: @Html(pageIdQuotedOrUndefined),
+      pageRole: '@{ anyPageRole.map(_.toString) getOrElse "" }',
+      pagePath: '@{ anyPagePath.map(_.value) getOrElse "" }',
       assetsUrlPathStart: 'http://@serverAddress@asset("")',
       singleColumnLayout: Math.max(jQuery(window).width(), jQuery(window).height()) < 1000
     }

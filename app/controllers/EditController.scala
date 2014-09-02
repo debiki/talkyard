@@ -25,9 +25,9 @@ import com.debiki.core.{PostActionPayload => PAP}
 import debiki._
 import debiki.DebikiHttp._
 import play.api._
-import libs.json.{JsString, JsValue}
 import play.api.data._
 import play.api.data.Forms._
+import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
 import requests._
 import scala.collection.{mutable => mut}
@@ -46,15 +46,7 @@ import Utils.{OkSafeJson, OkHtml, Passhasher, parseIntOrThrowBadReq}
 object EditController extends mvc.Controller {
 
 
-  def showEditForm(pathIn: PagePath, postId: ActionId)
-        = PageGetAction(pathIn) {
-      pageReq: PageGetRequest =>
-    _showEditFormImpl(pageReq, postId)
-  }
-
-
-  def showEditFormAnyPage(
-        pageId: String, pagePath: String, pageRole: String, postId: String)
+  def loadCurrentText(pageId: String, pagePath: String, pageRole: String, postId: String)
         = GetAction { request =>
 
     val postIdAsInt = parseIntOrThrowBadReq(postId, "DwE1Hu80")
@@ -85,27 +77,11 @@ object EditController extends mvc.Controller {
         pageReqWithMeta.copyWithPreloadedActions(PageParts(pageId) + postToEdit)
       }
 
-    _showEditFormImpl(completePageReq, postIdAsInt)
-  }
-
-
-  def _showEditFormImpl(pageReqWithoutMe: PageRequest[_], postId: ActionId) = {
-    // I think, but I don't remember why, we need to add the current user
-    // to page.people, iff `postId` needs to be created (e.g. it's the
-    // page title that hasn't yet been created so the server will create
-    // a dummy post, and as author specify the current user).
-    // Don't require that there be any current user though — s/he might
-    // not yet have logged in. (And then I think it's not possible
-    // to lazily create a completely new post, because there's no one to
-    // specify as owner for the dummy post that the server lazy-creates
-    // — but you can edit existing post though, if you're not logged in.)
-    val request = pageReqWithoutMe.copyWithAnyMeOnPage // needed?
-
-    val (vipo, lazyCreateOpt) = _getOrCreatePostToEdit(request, postId, DummyPage.DummyAuthorIdData)
-    val draftText = vipo.currentText  // in the future, load user's draft from db.
-    val editForm = Utils.formHtml(request).editForm(
-       vipo, newText = draftText, userName = request.sid.displayName)
-    OkHtml(editForm)
+    val (vipo, _) = _getOrCreatePostToEdit(
+      completePageReq, postIdAsInt, completePageReq.userIdData)
+    val currentText = vipo.currentText
+    val json = Json.obj("currentText" -> currentText)
+    OkSafeJson(json)
   }
 
 

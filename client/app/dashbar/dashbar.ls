@@ -105,7 +105,6 @@ function dwDashbar ($http)
       $http.post "#{d.i.serverOrigin}/-/edit", newPageData
           .success !->
             scope.pageExists = true  # edits root scope? Or local scope?
-            d.i.forEachOpenerCall 'onOpenedPageSavedCallbacks', [pageMeta]
             onSuccess!
 
     !function changePageMeta ({ newStatus })

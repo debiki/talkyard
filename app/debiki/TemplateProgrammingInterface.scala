@@ -172,6 +172,8 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   def debikiMeta = xml.Unparsed(views.html.debikiMeta().body)
 
   def anyCurrentPageId: Option[PageId] = None
+  def anyCurrentPageRole: Option[PageRole] = None
+  def anyCurrentPagePath: Option[PagePath] = None
 
   /** Classes for the <html> tag. */
   def debikiHtmlTagClasses =
@@ -196,6 +198,8 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
       anyPageId = anyCurrentPageId,
       serverAddress = debikiRequest.request.host,
       pageUriPath = debikiRequest.request.path,
+      anyPageRole = anyCurrentPageRole,
+      anyPagePath = anyCurrentPagePath,
       minMaxJs = minMaxJs,
       minMaxCss = minMaxCss).body)
 
@@ -321,6 +325,9 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
   import debiki.{InternalPageTpi => tpi}
 
   override def anyCurrentPageId = Some(pageId)
+  override def anyCurrentPageRole = Some(pageRole)
+  override def anyCurrentPagePath = Some(_pageReq.pagePath)
+
   def pageId = _pageReq.pageId_!
   def pageRole = _pageReq.pageRole_!
 

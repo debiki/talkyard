@@ -2,6 +2,9 @@
 <div id="debiki-editor-controller" ng-hide="!visible" ng-controller="EditorController">
 
   <div class="editor-area">
+    <div ng-if="editingPostId">
+      Editing <a href="#post-{{ editingPostId }}">post {{ editingPostId }}</a>:
+    </div>
     <div ng-if="replyToPostIds.length == 0">
       Please select one or more posts to reply to.
     </div>
@@ -9,7 +12,7 @@
       Replying to
         <span ng-repeat="postId in replyToPostIds">
           <span ng-if="!$first">and</span>
-          post <a href="#post-{{ postId }}">{{ postId }}</a></span>:
+          <a href="#post-{{ postId }}">post {{ postId }}</a></span>:
     </div>
     <div class="editor-wrapper">
       <textarea ng-model="text" class="editor"></textarea>
