@@ -1,5 +1,6 @@
+<div ng-controller="EditorController">
 <div id="debiki-editor-placeholder" ng-hide="!visible"></div>
-<div id="debiki-editor-controller" ng-hide="!visible" ng-controller="EditorController">
+<div id="debiki-editor-controller" ng-hide="!visible">
 
   <div class="editor-area">
     <div ng-if="editingPostId">
@@ -28,4 +29,5 @@
     <button ng-click="vm.save()" class="btn btn-default">Save</button>
     <button ng-click="vm.cancel()" class="btn btn-default">Cancel</button>
   </div>
+</div>
 </div>

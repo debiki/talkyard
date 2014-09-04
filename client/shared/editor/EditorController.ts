@@ -45,6 +45,9 @@ class EditorController {
     }
     else {
       this.$scope.replyToPostIds.splice(index, 1);
+      if (this.$scope.replyToPostIds.length == 0) {
+        this.closeEditor();
+      }
       return false;
     }
   }
@@ -144,6 +147,8 @@ class EditorController {
     this.$scope.visible = false;
     this.$scope.replyToPostIds = [];
     this.$scope.editingPostId = null;
+    // Not Angular style, well I'll port to React instead anyway:
+    $('.dw-replying').removeClass('dw-replying');
   }
 
 }
