@@ -24,7 +24,6 @@ import debiki._
 import debiki.DebikiHttp._
 import play.api._
 import play.api.libs.json.Json
-import requests._
 import Utils._
 
 
@@ -39,17 +38,27 @@ object CreatePageController extends mvc.Controller {
     val anyParentPageId = (body \ "parentPageId").asOpt[PageId]
     val pageRoleStr = (body \ "pageRole").as[String]
     val pageRole = PageRole.parse(pageRoleStr)
-    val pageStatusStr = (body \ "status").as[String]
+    val pageStatusStr = (body \ "pageStatus").as[String]
     val pageStatus = PageStatus.parse(pageStatusStr)
-    val folder = (body \ "folder").as[String]
-    val pageSlug = (body \ "pageSlug").as[String]
-    val showId = (body \ "showId").as[Boolean]
+    val anyFolder = (body \ "folder").asOpt[String]
+    val titleText = (body \ "pageTitle").as[String]
+    val bodyText = (body \ "pageBody").as[String]
 
     val approval: Approval = AutoApprover.perhapsApproveNewPage(
       request, pageRole, anyParentPageId) getOrElse
         throwForbidden("DwE53KVE0", "Page creation request rejected")
 
     val pageId = request.dao.nextPageId()
+
+    val folder = anyFolder getOrElse {
+      val anyParentPath = anyParentPageId flatMap { id =>
+        request.dao.lookupPagePath(id)
+      }
+      anyParentPath.map(_.folder) getOrElse "/"
+    }
+
+    val showId = true // for now. Should depend on page role: hide for forums, show for topics?
+    val pageSlug = "new-forum-topic" // for now. Ought to slugify the title.
 
     val newPath = PagePath(dao.siteId, folder = folder, pageId = Some(pageId),
       showId = showId, pageSlug = pageSlug)
@@ -65,32 +74,15 @@ object CreatePageController extends mvc.Controller {
       parentPageId = ancestorIdsParentFirst.headOption,
       publishDirectly = pageStatus == PageStatus.Published)
 
-    val newPage = dao.createPage(
-      Page(pageMeta, newPath, ancestorIdsParentFirst, PageParts(pageMeta.pageId)))
+    val titlePost = RawPostAction.forNewTitle(
+      titleText, request.ctime, request.userIdData, Some(approval))
+    val bodyPost = RawPostAction.forNewPageBody(
+      bodyText, request.ctime, pageRole, request.userIdData, Some(approval))
+    val pageParts = PageParts(pageMeta.pageId, rawActions = titlePost::bodyPost::Nil)
 
-    // TODO create title & body
+    val newPage = dao.createPage(Page(pageMeta, newPath, ancestorIdsParentFirst, pageParts))
 
     OkSafeJson(Json.obj("newPageId" -> newPage.id))
   }
 
-
-  /*
-    private def _createPostToEdit(
-        pageReq: PageRequest[_], postId: ActionId, authorIdData: UserIdData)
-        : RawPostAction[PAP.CreatePost] = {
-
-    val markup =
-      if (postId == PageParts.ConfigPostId) Markup.Code
-      else if (postId == PageParts.TitleId) Markup.DefaultForPageTitle
-      else if (postId == PageParts.BodyId) Markup.defaultForPageBody(pageReq.pageRole_!)
-      else Markup.DefaultForComments
-
-    // The post will be auto approved implicitly, if the Edit is auto approved.
-    RawPostAction(
-      id = postId, postId = postId, creationDati = pageReq.ctime,
-      userIdData = authorIdData,
-      payload = PAP.CreatePost(
-        parentPostId = None, text = "", markup = markup.id, where = None, approval = None))
-  }
-   */
 }

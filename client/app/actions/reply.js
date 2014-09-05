@@ -45,20 +45,7 @@ d.i.$showReplyForm = function(event, opt_where) {
 
   var anyReturnToUrl = d.i.makeReturnToPostUrlForVerifEmail(postId);
   d.i.loginIfNeeded('LoginToLogin', anyReturnToUrl, function() {
-    var editorScope = angular.element($('#debiki-editor-controller')[0]).scope();
-
-    editorScope.$apply(function() {
-      editorScope.visible = true;
-      var isSelected = editorScope.vm.toggleReplyToPost(postId);
-      var actions = replyAction.closest('.dw-p-as');
-      if (isSelected) {
-        actions.addClass('dw-replying');
-      }
-      else {
-        actions.removeClass('dw-replying');
-      }
-    });
-
+    d.i.editorToggleReply(postId, replyAction);
   });
 };
 

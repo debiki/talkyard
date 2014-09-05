@@ -45,6 +45,19 @@ class EditorService {
   }
 
 
+  public createNewPage(data): ng.IPromise<void> {
+    var deferred = this.$q.defer<any>();
+    this.$http.post(d.i.serverOrigin + '/-/create-page', data)
+      .success((data, status, headers, config) => {
+        deferred.resolve(data);
+      })
+      .error((data, status, headers, config) => {
+        console.error('Error:\n' + data);
+      });
+    return deferred.promise;
+  }
+
+
   public saveEdits(data): ng.IPromise<void> {
     var deferred = this.$q.defer<any>();
     this.$http.post(d.i.serverOrigin + '/-/edit', data)

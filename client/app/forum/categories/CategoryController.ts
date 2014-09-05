@@ -17,11 +17,13 @@
 
 /// <reference path="../../../typedefs/angularjs/angular.d.ts" />
 /// <reference path="../../../typedefs/lodash/lodash.d.ts" />
+/// <reference path="../../../shared/plain-old-javascript.d.ts" />
 /// <reference path="../ForumModule.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.forum {
 //------------------------------------------------------------------------------
+var d = { i: debiki.internal, u: debiki.v0.util };
 
 
 class CategoryController {
@@ -79,18 +81,10 @@ class CategoryController {
 
 
   private createChildPage(role: String) {
-    var anyReturnToUrl = window.location.toString(); // TODO
-    debiki.internal.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
+    var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
+    d.i.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       // (Now we might be outside Angular.apply() but that's fine.)
-      console.error('unimplemented [DwE5032F1]'); // TODO
-      /*
-      debiki.internal.createChildPage({
-        pageRole: role,
-        parentPageId: this.selectedCategoryOrForumId,
-        status: 'Published',
-        window: window
-      });
-      */
+      d.i.editorEditNewForumTopic(this.selectedCategoryOrForumId);
     });
   }
 

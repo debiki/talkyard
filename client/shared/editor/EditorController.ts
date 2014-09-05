@@ -33,11 +33,19 @@ class EditorController {
   }
 
 
-  public toggleReplyToPost(postId) {
-    if (this.$scope.editingPostId) {
-      alert('Please finish editing before writing a reply');
+  public editNewForumTopic(parentPageId) {
+    if (this.alertBadState())
       return;
-    }
+    this.$scope.visible = true;
+    this.$scope.newTopicParentPageId = parentPageId;
+    this.$scope.text = 'New topic ....';
+  }
+
+
+  public toggleReplyToPost(postId) {
+    if (this.alertBadState('WriteReply'))
+      return;
+    this.$scope.visible = true;
     var index = this.$scope.replyToPostIds.indexOf(postId);
     if (index === -1) {
       this.$scope.replyToPostIds.push(postId);
@@ -54,15 +62,30 @@ class EditorController {
 
 
   public startEditing(postId) {
-    if (this.$scope.replyToPostIds.length > 0) {
-      alert('Please finish writing your post before starting editing another one');
+    if (this.alertBadState())
       return;
-    }
     this.$scope.editingPostId = postId;
     this.editorService.loadCurrentText(postId).then((currentText) => {
       this.$scope.text = currentText;
       this.$scope.visible = true;
     });
+  }
+
+
+  private alertBadState(wantsToDoWhat = null) {
+    if (wantsToDoWhat !== 'WriteReply' && this.$scope.replyToPostIds.length > 0) {
+      alert('Please first finish writing your post');
+      return true;
+    }
+    if (this.$scope.editingPostId) {
+      alert('Please first save your current edits');
+      return true;
+    }
+    if (this.$scope.newTopicParentPageId) {
+      alert('Please first either save or cancel your new forum topic');
+      return true;
+    }
+    return false;
   }
 
 
@@ -72,6 +95,9 @@ class EditorController {
 
 
   public save() {
+    if (this.$scope.newTopicParentPageId) {
+      this.saveNewForumTopic();
+    }
     if (typeof this.$scope.editingPostId === 'number') {
       this.saveEdits();
     }
@@ -81,13 +107,25 @@ class EditorController {
   }
 
 
+  private saveNewForumTopic() {
+    var data = {
+      parentPageId: this.$scope.newTopicParentPageId,
+      pageRole: 'ForumTopic',
+      pageStatus: 'Published',
+      pageTitle: 'New Forum Topic (click to edit)', // for now. TODO add title field
+      pageBody: this.$scope.text
+    };
+    this.editorService.createNewPage(data).then((data: any) => {
+      window.location.assign('/-' + data.newPageId);
+    });
+  }
+
+
   private saveEdits() {
-    var editingPostId = this.$scope.editingPostId;
-    var pageMeta = d$('#post-' + editingPostId).dwPageMeta();
     var data = {
       editPosts: [{
-        pageId: pageMeta.pageId,
-        postId: '' + editingPostId, // COULD stop requiring a number
+        pageId: d.i.pageId,
+        postId: '' + this.$scope.editingPostId, // COULD stop requiring a number
         text: this.$scope.text
         // markup — skip, don't allow changing markup no more?
       }]
@@ -118,6 +156,16 @@ class EditorController {
   }
 
 
+  public saveButtonTitle() {
+    if (this.$scope.editingPostId)
+      return 'Save edits';
+    if (this.$scope.replyToPostIds.length)
+      return 'Post reply';
+    if (this.$scope.newTopicParentPageId)
+      return 'Create new topic';
+  }
+
+
   public closeEditor() {
     if (this.$scope.editingPostId) {
       this.$scope.text = '';
@@ -127,6 +175,7 @@ class EditorController {
       // s/he clicked Cancel by mistake.
     }
     this.$scope.visible = false;
+    this.$scope.newTopicParentPageId = null;
     this.$scope.replyToPostIds = [];
     this.$scope.editingPostId = null;
     // Not Angular style, well I'll port to React instead anyway:
