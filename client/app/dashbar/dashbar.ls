@@ -73,7 +73,8 @@ function dwDashbar ($http)
       createThisPageUnlessExists !->
         # Open new page in this window, so there won't be any
         # old stale blog main page that the user can return to.
-        d.i.createChildPage({ pageRole: 'BlogPost', status: 'Draft' })
+        # d.i.createChildPage({ pageRole: 'BlogPost', status: 'Draft' })
+        console.error('Unimplemented [DwE8GI913')
 
     pageSettingsBtn = element.find('a.page-settings')
     pageSettingsBtn.click !-> viewPageSettings!
@@ -134,8 +135,6 @@ function dwDashbar ($http)
 
 function thisPageMeta (scope)
   return
-    passhash: d.i.parsePasshashInPageUrl!
-    newPageApproval: d.i.parseApprovalInPageUrl!
     pageId: scope.pageId
     pagePath: scope.pagePath
     pageRole: scope.pageRole

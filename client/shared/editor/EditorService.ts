@@ -32,11 +32,7 @@ class EditorService {
 
   public loadCurrentText(postId): ng.IPromise<string> {
     var deferred = this.$q.defer<string>();
-    var url = d.i.serverOrigin + '/-/edit' +
-        '?pageId='+ d.i.pageId +
-        '&pagePath='+ d.i.pagePath +
-        '&postId='+ postId +
-        '&pageRole=' + d.i.pageRole;
+    var url = d.i.serverOrigin + '/-/edit?pageId='+ d.i.pageId + '&postId='+ postId;
     this.$http.get(url)
       .success((data, status, headers, config) => {
         // TODO also load info about whether the user may apply and approve the edits.

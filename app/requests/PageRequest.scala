@@ -45,7 +45,6 @@ object PageRequest {
   def basedOnApiRequest[A](
     apiRequest: DebikiRequest[A],
     pagePath: PagePath,
-    pageMightExist: Boolean = true,
     pageMustExist: Boolean = false,
     fixBadPath: Boolean = false): PageRequest[A] = {
 
@@ -60,10 +59,6 @@ object PageRequest {
          if (correctPath.pageId.get != pagePath.pageId.get)
            throw PathClashException(
              existingPagePath = correctPath, newPagePath = pagePath)
-
-        if (!pageMightExist)
-          throw PageExistsException("DwE21VH8", o"""Page already exists,
-            id: ${pagePath.pageId.get} path: ${pagePath.value}""")
 
         // Check for bad paths.
         if (correctPath.value != pagePath.value && !fixBadPath)
@@ -109,22 +104,7 @@ object PageRequest {
 
 
   def forPageThatMightExist[A](apiRequest: DebikiRequest[A], pagePathStr: String,
-        pageId: String): PageRequest[A] =
-    forPageToCreateOrThatExists(
-      apiRequest, pagePathStr, pageId = pageId, pageMightExist = true)
-
-
-  /**
-   * Throws a PageExistsException if the page already exists.
-   */
-  def forPageToCreate[A](apiRequest: DebikiRequest[A], pagePathStr: String,
-        pageId: String): PageRequest[A] =
-    forPageToCreateOrThatExists(
-      apiRequest, pagePathStr, pageId = pageId, pageMightExist = false)
-
-
-  private def forPageToCreateOrThatExists[A](apiRequest: DebikiRequest[A],
-        pagePathStr: String, pageId: String, pageMightExist: Boolean): PageRequest[A] = {
+        pageId: String): PageRequest[A] = {
     val pagePathPerhapsId =
       PagePath.fromUrlPath(apiRequest.tenantId, pagePathStr) match {
         case PagePath.Parsed.Good(path) =>
@@ -136,7 +116,7 @@ object PageRequest {
           throwBadReq("DwE390SD3", "Bad path for page id "+ pageId +": "+ x)
       }
     val pagePathWithId = pagePathPerhapsId.copy(pageId = Some(pageId))
-    PageRequest.basedOnApiRequest(apiRequest, pagePathWithId, pageMightExist = pageMightExist)
+    PageRequest.basedOnApiRequest(apiRequest, pagePathWithId)
   }
 
 
@@ -152,15 +132,6 @@ object PageRequest {
       case None =>
         None
     }
-  }
-
-
-  class PageExistsException(errorCode: String, details: String)
-    extends DebikiException(errorCode, details)
-
-  object PageExistsException {
-    def apply(errorCode: String, details: String) =
-      new PageExistsException(errorCode, details)
   }
 
 }
@@ -216,22 +187,6 @@ case class PageRequest[A](
   }
 
 
-  /**
-   * Adds meta info for a request for a non-existing page, that is, a page
-   * that is to be created, presumably.
-   */
-  def copyWithPreloadedMeta(newMeta: PageMeta): PageRequest[A] = {
-    require(pageExists == false)
-    require(newMeta.pageExists == false)
-    require(Some(newMeta.pageId) == pagePath.pageId)
-    require(_preloadedAncestorIds.map(_.headOption == newMeta.parentPageId) != Some(false))
-    assert(addMeToPage == false) // see copyWithPreloadedPage() below
-    val copyWithOldPerms = copy(pageMeta = Some(newMeta))(
-      _preloadedActions, _preloadedAncestorIds, addMeToPage = false, pageRootOverride)
-    copyWithOldPerms.copyWithUpdatedPermissions()
-  }
-
-
   private def copyWithUpdatedPermissions(): PageRequest[A] = {
     val newPerms = dao.loadPermsOnPage(PermsOnPageQuery(
       tenantId = tenantId,
@@ -241,17 +196,6 @@ case class PageRequest[A](
       pageMeta = pageMeta))
     copy(permsOnPage = newPerms)(
       _preloadedActions, _preloadedAncestorIds, addMeToPage, pageRootOverride)
-  }
-
-
-  def copyWithPreloadedActions(pageActions: PageParts): PageRequest[A] = {
-    require(pageExists == false)
-    pageMeta foreach { meta =>
-      require(meta.pageId == pageActions.pageId)
-    }
-    require(Some(pageActions.pageId) == pagePath.pageId)
-    assert(addMeToPage == false) // or user should be added to `pageActions`
-    copy()(Some(pageActions), _preloadedAncestorIds, addMeToPage = false, pageRootOverride)
   }
 
 

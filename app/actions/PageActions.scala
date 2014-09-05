@@ -53,12 +53,6 @@ object PageActions {
       pathIn, pageMustExist, fixPath = fixPath, maySetCookies = maySetCookies)(f)
 
 
-  def FolderGetAction
-        (pathIn: PagePath)
-        (f: PageGetRequest => Result) =
-    FolderReqAction(BodyParsers.parse.empty)(pathIn)(f)
-
-
   /**
    * Supports form data only.
    * @deprecated
@@ -132,51 +126,6 @@ object PageActions {
       permsOnPage = permsOnPage,
       dao = dao,
       request = request)()
-
-    val result = f(pageReq)
-    result
-  }
-
-
-  // For now. (COULD create a FolderRequest, later.)
-  def FolderReqAction[A]
-        (parser: BodyParser[A])
-        (pathIn: PagePath)
-        (f: PageRequest[A] => Result)
-    = SessionAction[A](parser) { request: SessionRequest[A] =>
-
-    if (!pathIn.isFolderOrIndexPage)
-      throwBadReq("DwE903XH3", s"Call on folders only, not pages: ${request.underlying.uri}")
-
-    val dao = Globals.siteDao(siteId = pathIn.tenantId,
-      ip = realOrFakeIpOf(request.underlying), request.sidStatus.roleId)
-
-    val user = Utils.loadUserOrThrow(request.sidStatus, dao)
-
-    // Load permissions.
-    val permsReq = PermsOnPageQuery(
-      tenantId = pathIn.tenantId,
-      ip = realOrFakeIpOf(request.underlying),
-      user = user,
-      pagePath = pathIn,
-      pageMeta = None)
-
-    val permsOnPage = dao.loadPermsOnPage(permsReq)
-    if (!permsOnPage.accessPage)
-      throwForbidden("DwE67BY2", "You are not allowed to access that page.")
-
-    // Construct the actual request. COULD create and use a FolderRequest instead.
-    val pageReq = PageRequest[A](
-      sid = request.sidStatus,
-      xsrfToken = request.xsrfOk,
-      browserId = request.browserId,
-      user = user,
-      pageExists = false,
-      pagePath = pathIn,
-      pageMeta = None,
-      permsOnPage = permsOnPage,
-      dao = dao,
-      request = request.underlying)()
 
     val result = f(pageReq)
     result

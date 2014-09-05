@@ -83,25 +83,8 @@ class EditorController {
 
   private saveEdits() {
     var editingPostId = this.$scope.editingPostId;
-
-    // Here follows some old non-Angular code moved to here from actions/edit/edit.js.
     var pageMeta = d$('#post-' + editingPostId).dwPageMeta();
-    var pagesToCreate = [];
-    if (!pageMeta.pageExists) {
-      // When the server generated this page, which doesn't exist,
-      // it included a passhash in the URL, which we need to send back
-      // to the server, so it knows that the server itself actually
-      // generated the page creation data (and that the client cannot e.g.
-      // forge a mallicious id).
-      // (It's okay to mutate pageMeta a little bit.)
-      pageMeta.passhash = d.i.parsePasshashInPageUrl();
-      pageMeta.newPageApproval = d.i.parseApprovalInPageUrl();
-      // Push don't unshift; http://server/-/edit expects them in that order.
-      pagesToCreate.push(pageMeta);
-    }
-
     var data = {
-      createPagesUnlessExist: pagesToCreate,
       editPosts: [{
         pageId: pageMeta.pageId,
         postId: '' + editingPostId, // COULD stop requiring a number
@@ -109,7 +92,6 @@ class EditorController {
         // markup — skip, don't allow changing markup no more?
       }]
     };
-
     this.editorService.saveEdits(data).then(() => {
       this.closeEditor();
     });

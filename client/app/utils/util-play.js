@@ -55,20 +55,6 @@ $.fn.dwPageTitleText = function() {
 };
 
 
-d.i.parsePasshashInPageUrl = function() {
-  var matches = location.toString().match(
-      /http.*\?view-new-page=.*&passhash=([a-zA-Z0-9_-]+)/);
-  return matches && matches.length == 2 ? matches[1] : undefined;
-};
-
-
-d.i.parseApprovalInPageUrl = function() {
-  var matches = location.toString().match(
-      /http.*\?view-new-page=.*&newPageApproval=([a-zA-Z]+)/);
-  return matches && matches.length == 2 ? matches[1] : undefined;
-};
-
-
 /**
  * For now only. Would be better to hide stuff via CSS? Perhaps add a
  * clarifying message at the top of the page, server side?

@@ -113,10 +113,6 @@ object Global extends GlobalSettings {
         ViewPageController.viewPost(pagePath)
       case ("delete", POST) =>
         Application.handleDeleteForm(pagePath, postId = mainFunValAsInt_!)
-      case ("get-view-new-page-url", GET) =>
-        CreatePageController.getViewNewPageUrl(pagePath)
-      case ("view-new-page", GET) =>
-        CreatePageController.viewNewPage(pagePath, pageId = mainFunVal_!)
       case ("move-page", GET) =>
         MovePageController.showMovePageForm(pagePath)
       case ("move-page", POST) =>

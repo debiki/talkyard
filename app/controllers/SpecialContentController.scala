@@ -32,7 +32,7 @@ import play.api.data.Forms._
 import play.api.mvc.{Action => _, _}
 import requests._
 import scala.collection.{mutable => mut}
-import Utils.{OkSafeJson, OkHtml, Passhasher, parseIntOrThrowBadReq}
+import Utils.{OkSafeJson, OkHtml, parseIntOrThrowBadReq}
 import Utils.ValidationImplicits._
 
 

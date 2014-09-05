@@ -82,12 +82,15 @@ class CategoryController {
     var anyReturnToUrl = window.location.toString(); // TODO
     debiki.internal.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       // (Now we might be outside Angular.apply() but that's fine.)
+      console.error('unimplemented [DwE5032F1]'); // TODO
+      /*
       debiki.internal.createChildPage({
         pageRole: role,
         parentPageId: this.selectedCategoryOrForumId,
         status: 'Published',
         window: window
       });
+      */
     });
   }
 
