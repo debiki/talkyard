@@ -98,7 +98,7 @@ class EditorController {
     if (this.$scope.newTopicParentPageId) {
       this.saveNewForumTopic();
     }
-    if (typeof this.$scope.editingPostId === 'number') {
+    else if (typeof this.$scope.editingPostId === 'number') {
       this.saveEdits();
     }
     else {
@@ -163,6 +163,7 @@ class EditorController {
       return 'Post reply';
     if (this.$scope.newTopicParentPageId)
       return 'Create new topic';
+    return 'Save';
   }
 
 
