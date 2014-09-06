@@ -85,4 +85,18 @@ object CreatePageController extends mvc.Controller {
     OkSafeJson(Json.obj("newPageId" -> newPage.id))
   }
 
+  /* Later: When creating a new category, also create a category definition page:
+    i"""
+      |[Replace this first paragraph with a short description of this category.
+      |Please keep it short — the text will appear on the category list page.]
+      |
+      |Here, after the first paragraph, you can add a longer description, with
+      |for example category guidelines or rules.
+      |
+      |Below in the comments section, you can discuss this category. For example,
+      |should it be merged with another category? Or should it be split
+      |into many categories?
+      |"""
+   */
+
 }

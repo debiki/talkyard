@@ -380,12 +380,9 @@ case class HtmlPageSerializer(
     val rootPost: Post = page.getPost(rootPostId) getOrElse
        throwNotFound("DwE0PJ404", "Post not found: "+ rootPostId)
 
-    val cssDummy =
-      if (rootPost.user_!.id == DummyPage.DummyAuthorUser.id) " dw-dummy" else ""
-
     val bodyAndComments =
       <div id={"dw-t-"+ rootPost.id}
-           class={s"dw-t $cssArtclThread $cssDummy $horizontalCommentsCss"}>
+           class={s"dw-t $cssArtclThread $horizontalCommentsCss"}>
       {
         val renderedRoot = postRenderer.renderPost(rootPost.id)
         val anyBodyHtml =

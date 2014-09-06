@@ -189,9 +189,6 @@ object HtmlPostRenderer {
     *  "By (author) (date), improved by (editor)."
     */
   def renderPostHeader(post: Post): RenderedPostHeader = {
-    if (post.userId == DummyPage.DummyAuthorUser.id)  // UNTESTED
-      return RenderedPostHeader(Nil)
-
     def page = post.debate
     val author = post.user_!
 

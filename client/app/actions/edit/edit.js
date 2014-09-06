@@ -68,11 +68,7 @@ d.i.$showEditForm = function(event) {
 
 d.i.handleEditResult = function(data) {
   d.i.patchPage(data);
-
   var postId = data.postsByPageId[d.i.pageId][0].postId;
-  var $editedPost = d.i.findPost$(postId);
-  $editedPost.closest('.dw-t').removeClass('dw-dummy');
-
   // In case the page was just created lazily when the edits were saved,
   // tell AngularJS to update the page as appropriately,
   // e.g. show certain buttons in the admin dashbar.
