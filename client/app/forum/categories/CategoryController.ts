@@ -84,11 +84,18 @@ class CategoryController {
     var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
     d.i.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       // (Now we might be outside Angular.apply() but that's fine.)
-      d.i.editorEditNewForumTopic(this.selectedCategoryOrForumId);
+      openEditorToWriteNewForumTopic(this.selectedCategoryOrForumId);
     });
   }
 
 }
+
+
+function openEditorToWriteNewForumTopic(parentPageId) {
+  d.i.withEditorScope(function(editorScope) {
+    editorScope.vm.editNewForumTopic(parentPageId);
+  });
+};
 
 
 forum.forumModule.controller("CategoryController", CategoryController);

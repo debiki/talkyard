@@ -47,7 +47,33 @@ d.i.$showReplyForm = function(event, opt_where) {
 
   var anyReturnToUrl = d.i.makeReturnToPostUrlForVerifEmail(postId);
   d.i.loginIfNeeded('LoginToLogin', anyReturnToUrl, function() {
-    d.i.editorToggleReply(postId, replyAction);
+    if (d.i.isInEmbeddedCommentsIframe) {
+      sendWriteReplyMessageToEmbeddedEditor(postId);
+    }
+    else {
+      d.i.openEditorToWriteReply(postId, replyAction);
+    }
+  });
+};
+
+
+
+function sendWriteReplyMessageToEmbeddedEditor(postId) {
+  window.parent.postMessage(
+      JSON.stringify(['editorToggleReply', postId]), '*');
+};
+
+
+d.i.openEditorToWriteReply = function(postId, replyAction) {
+  d.i.withEditorScope(function(editorScope) {
+    var isSelected = editorScope.vm.toggleReplyToPost(postId);
+    var actions = replyAction.closest('.dw-p-as');
+    if (isSelected) {
+      actions.addClass('dw-replying');
+    }
+    else {
+      actions.removeClass('dw-replying');
+    }
   });
 };
 

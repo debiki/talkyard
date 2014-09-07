@@ -68,6 +68,9 @@ See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-j
       pageUri: 'http://@serverAddress@pageUriPath',
       pageId: @Html(pageIdQuotedOrUndefined),
       pageRole: '@{ anyPageRole.map(_.toString) getOrElse "" }',
+      isInEmbeddedCommentsIframe: @{
+        if (anyPageRole == Some(com.debiki.core.PageRole.EmbeddedComments)) "true" else "false"
+      },
       pagePath: '@{ anyPagePath.map(_.value) getOrElse "" }',
       assetsUrlPathStart: 'http://@serverAddress@asset("")',
       singleColumnLayout: Math.max(jQuery(window).width(), jQuery(window).height()) < 1000

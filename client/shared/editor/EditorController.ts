@@ -24,6 +24,26 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var d$: any = $;
 
 
+
+ /**
+  * Helps non-Angular code interact with the editor.
+  */
+d.i.withEditorScope = function(fn) {
+  var rootScope = angular.element($('html')).scope();
+  var editorScope = angular.element($('#debiki-editor-controller')[0]).scope();
+  if (rootScope.$$phase) {
+    // Already inside Angular's digest cycle.
+    fn(editorScope);
+  }
+  else {
+    editorScope.$apply(function() {
+      fn(editorScope);
+    });
+  }
+}
+
+
+
 class EditorController {
 
   public static $inject = ['$scope', 'EditorService'];

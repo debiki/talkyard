@@ -19,7 +19,7 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-if (!d.i.isInIframe)
+if (!d.i.isInEmbeddedCommentsIframe && !d.i.isInEmbeddedEditor)
   return;
 
 
@@ -27,7 +27,7 @@ addEventListener('message', onMessage, false);
 
 window.parent.postMessage('["iframeInited", {}]', '*');
 
-if (!d.i.isInEmbeddedEditor)
+if (d.i.isInEmbeddedCommentsIframe)
   syncDocSizeWithIframeSize();
 
 
@@ -56,7 +56,7 @@ function onMessage(event) {
       // This message is sent to the embedded editor. It opens the editor
       // to write a reply to `postId`.
       var postId = eventData;
-      d.i.editorToggleReply(postId);
+      d.i.openEditorToWriteReply(postId);
       break;
     case 'handleReplyResult':
       // This message is sent from the embedded editor <iframe> to the comments
