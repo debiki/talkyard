@@ -25,7 +25,7 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
-import requests.{PageGetRequest, PageRequest}
+import requests.{PageGetRequest, PageRequest, GetRequest}
 
 
 /** Resets the password of a PasswordIdentity, in case the user forgot it.
@@ -84,6 +84,19 @@ object EmbeddedTopicsController extends mvc.Controller {
 
 
   def showTopic = GetAction { request =>
+    val pageRequest = makePageRequest(request)
+    ViewPageController.viewPostImpl(pageRequest)
+  }
+
+
+  def showEmbeddedEditor = GetAction { request =>
+    val pageRequest = makePageRequest(request)
+    val tpi = new TemplateProgrammingInterface(pageRequest, tagsToAppendToBody = Nil)
+    Ok(views.html.embeddedEditor(tpi).body) as HTML
+  }
+
+
+  private def makePageRequest(request: GetRequest): PageGetRequest = {
     import controllers.Utils.ValidationImplicits._
     val topicId = request.queryString.getNoneAsEmpty("topicId")
     val topicUrl = request.queryString.getNoneAsEmpty("topicUrl")
@@ -120,45 +133,32 @@ object EmbeddedTopicsController extends mvc.Controller {
     // Include all top level comments, by specifying no particular root comment.
     val pageReqNoRoot = pageReqDefaultRoot.copyWithNewPageRoot(None)
 
+    // Before the first reply has been saved, the embedded discussion page won't
+    // yet have been created. Then construct and use an empty page.
     if (pageReqNoRoot.pageExists) {
-      ViewPageController.viewPostImpl(pageReqNoRoot)
+      pageReqNoRoot
     }
     else {
-      showNonExistingPage(pageReqNoRoot, topicPagePath)
+      makeEmptyPage(pageReqNoRoot, pageReqNoRoot.pagePath)
     }
   }
 
 
-  private def showNonExistingPage(pageReqNoPage: PageGetRequest, topicPagePath: PagePath) = {
-    val author = SystemUser.User
+  private def makeEmptyPage(pageReqNoPage: PageGetRequest, topicPagePath: PagePath)
+        : PageGetRequest = {
     val topicId = topicPagePath.pageId.get
 
     val newTopicMeta = PageMeta.forNewPage(
       PageRole.EmbeddedComments,
-      author = author,
+      author = SystemUser.User,
       parts = PageParts(topicId),
       creationDati = new ju.Date,
       parentPageId = None,
       publishDirectly = true)
 
-    val pageReq = pageReqNoPage.copyWithPreloadedPage(
+    pageReqNoPage.copyWithPreloadedPage(
       Page(newTopicMeta, topicPagePath, ancestorIdsParentFirst = Nil, PageParts(topicId)),
       pageExists = false)
-
-    ViewPageController.viewPostImpl(pageReq)
   }
-
-
-  /*
-  def showTopic(forumId: PageId, topicId: PageId) = GetAction { request =>
-    val forumPathAndMeta: PagePathAndMeta = request.dao.loadEmbeddedForumMeta(forumId)
-    val topicMeta: PageMeta = request.dao.loadEmbeddedTopicMeta(topicId)
-
-    if (topicMeta.parentForumId != forumMeta.pageId)
-      throwForbidden("DwE7GEf0", s"Topic `$topicId' is not part of forum `$forumId'")
-
-    // and then:
-    ???
-  } */
 
 }

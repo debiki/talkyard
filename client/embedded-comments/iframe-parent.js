@@ -22,9 +22,12 @@ var d = { i: debiki.internal };
 addEventListener('message', onMessage, false);
 
 
-// Create <iframes> for Debiki embedded comments.
-// Show a "Loading comments..." message until they've been loaded.
-$('.debiki-embedded-comments').each(function() {
+// Create <iframe>s for embedded comments and an embedded editor.
+// Show a "Loading comments..." message until comments loaded.
+// For now, choose the first .debiki-emdbedded-comments only, because
+// the embedded editor will be bound to one topic only, and two editors
+// seems complicated.
+$('.debiki-embedded-comments').first().each(function() {
   var wrapper = $(this);
   var topicId = wrapper.attr('data-topic-id');
   var topicUrl = wrapper.attr('data-topic-url');
@@ -32,23 +35,39 @@ $('.debiki-embedded-comments').each(function() {
     // Don't include the hash fragment.
     topicUrl = window.location.origin + window.location.pathname + window.location.search;
   }
-  var iframe = $('<iframe></iframe>');
-  var iframePath = topicId ?
-      '/-/embedded-comments?topicId=' + topicId :
-      '/-/embedded-comments?topicUrl=' + topicUrl;
-  var iframeUrl = d.i.debikiServerOrigin + iframePath;
+  var topicIdUrlParam = topicId ? 'topicId=' + topicId : 'topicUrl=' + topicUrl;
+
+  var commentsIframe = $('<iframe id="dw-embedded-comments"></iframe>');
+  var commentsIframeUrl = d.i.debikiServerOrigin + '/-/embedded-comments?' + topicIdUrlParam;
 
   // Don't `hide()` the iframe, then FireFox acts as if it doesn't exist: FireFox receives
   // no messages at all from it.
-  iframe
+  commentsIframe
     .height(0) // don't `hide()`
     .width($(window).width())
     .css('border', 'none')
     .attr('seamless', 'seamless')
-    .attr('src', iframeUrl);
+    .attr('src', commentsIframeUrl);
 
-  wrapper.append(iframe);
+  wrapper.append(commentsIframe);
   wrapper.append($('<p>Loading comments...</p>'));
+
+  var editorIframe = $('<iframe id="dw-embedded-editor"></iframe>');
+  var editorIframeUrl = d.i.debikiServerOrigin + '/-/embedded-editor?' + topicIdUrlParam;
+  editorIframe
+      .height(0) // don't `hide()`, or FF sends no messages
+      .css('width', '100%')
+      .css('left', 0)
+      .css('position', 'fixed')
+      .css('bottom', 0)
+      .css('border', 'none')
+      .attr('seamless', 'seamless')
+      .attr('src', editorIframeUrl);
+  $(document.body).append(editorIframe);
+
+  var editorPlaceholder = $('<div id="dw-editor-placeholder"></div>');
+  $(document.body).append(editorPlaceholder);
+  editorPlaceholder.hide();
 });
 
 
@@ -98,6 +117,16 @@ function onMessage(event) {
     case 'stopUtterscrolling':
       debiki.Utterscroll.stopScrolling(eventData);
       break;
+    case 'showEditor':
+      showEditor(true);
+      break;
+    case 'hideEditor':
+      showEditor(false);
+    case 'editorToggleReply':
+      sendToEditor(event.data);
+      break;
+    case 'handleReplyResult':
+      sendToComments(event.data);
   }
 };
 
@@ -116,13 +145,41 @@ function setIframeSize(iframe, dimensions) {
 
 function findIframeThatSent(event) {
   // See http://stackoverflow.com/a/18267415/694469
-  var iframes = $('.debiki-embedded-comments iframe');
+  var iframes = $('.debiki-embedded-comments iframe, #dw-embedded-editor');
   for (var i = 0; i < iframes.length; ++i) {
     var iframe = iframes[i];
     if (iframe.contentWindow === event.source)
       return iframe;
   }
 };
+
+
+function sendToComments(message) {
+  var commentsWindow = document.getElementById("dw-embedded-comments").contentWindow;
+  commentsWindow.postMessage(message, '*');
+};
+
+
+function sendToEditor(message) {
+  var editorWindow = document.getElementById("dw-embedded-editor").contentWindow;
+  editorWindow.postMessage(message, '*');
+};
+
+
+function showEditor(show) {
+  var placeholder = $('#dw-editor-placeholder');
+  var editor = $('#dw-embedded-editor');
+  if (show) {
+    placeholder.show();
+    placeholder.height(300);
+    editor.height(300);
+  }
+  else {
+    placeholder.hide();
+    // Don't hide() the editor, then it would receive no messages in FireFox.
+    editor.height(0);
+  }
+}
 
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

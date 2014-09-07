@@ -36,7 +36,7 @@ class EditorController {
   public editNewForumTopic(parentPageId) {
     if (this.alertBadState())
       return;
-    this.$scope.visible = true;
+    this.showEditor();
     this.$scope.newTopicParentPageId = parentPageId;
     this.$scope.text = 'New topic ....';
   }
@@ -45,7 +45,7 @@ class EditorController {
   public toggleReplyToPost(postId) {
     if (this.alertBadState('WriteReply'))
       return;
-    this.$scope.visible = true;
+    this.showEditor();
     var index = this.$scope.replyToPostIds.indexOf(postId);
     if (index === -1) {
       this.$scope.replyToPostIds.push(postId);
@@ -67,7 +67,7 @@ class EditorController {
     this.$scope.editingPostId = postId;
     this.editorService.loadCurrentText(postId).then((currentText) => {
       this.$scope.text = currentText;
-      this.$scope.visible = true;
+      this.showEditor();
     });
   }
 
@@ -144,7 +144,6 @@ class EditorController {
     }
     var data = {
       pageId: d.i.pageId,
-      parentPageId: undefined, // ??? anyParentPageId,
       pageUrl: d.i.iframeBaseUrl || undefined,
       postId: this.$scope.replyToPostIds[0],
       text: this.$scope.text
@@ -167,6 +166,15 @@ class EditorController {
   }
 
 
+  public showEditor() {
+    this.$scope.visible = true;
+    if (d.i.isInEmbeddedEditor) {
+      window.parent.postMessage(
+          JSON.stringify(['showEditor', {}]), '*');
+    }
+  }
+
+
   public closeEditor() {
     if (this.$scope.editingPostId) {
       this.$scope.text = '';
@@ -179,8 +187,16 @@ class EditorController {
     this.$scope.newTopicParentPageId = null;
     this.$scope.replyToPostIds = [];
     this.$scope.editingPostId = null;
-    // Not Angular style, well I'll port to React instead anyway:
-    $('.dw-replying').removeClass('dw-replying');
+
+    // Not Angular style code to interact with the embedded comments iframe
+    // and old plain Javascript code.
+    if (d.i.isInEmbeddedEditor) {
+      window.parent.postMessage(
+          JSON.stringify(['hideEditor', {}]), '*');
+    }
+    else {
+      $('.dw-replying').removeClass('dw-replying');
+    }
   }
 
 }

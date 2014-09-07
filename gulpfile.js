@@ -259,8 +259,6 @@ var debikiEmbeddedCommentsFiles = [
       'target/client/embedded-comments/iframe-parent.js',
       'client/embedded-comments/parent-footer.js'];  // not ^target/client/...
 
-var embeddedEditorFiles = [
-      ];
 
 var adminOldFiles = [
       'target/client/third-party/livescript/prelude-browser-min.js',

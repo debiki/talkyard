@@ -193,8 +193,12 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   def debikiStyles = xml.Unparsed(
     views.html.debikiStyles(minMaxJs, minMaxCss).body)
 
-  def debikiScripts = xml.Unparsed(
+  def debikiScripts =
+    debikiScriptsCustomStartupCode("debiki.internal.startDiscussionPage();")
+
+  def debikiScriptsCustomStartupCode(startupCode: String) = xml.Unparsed(
     views.html.debikiScripts(
+      startupCode = startupCode,
       anyPageId = anyCurrentPageId,
       serverAddress = debikiRequest.request.host,
       pageUriPath = debikiRequest.request.path,

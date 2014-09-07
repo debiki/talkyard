@@ -31,7 +31,7 @@ d.i.editorEditNewForumTopic = function(parentPageId) {
  * if it was already open in order to reply to `postId`.
  */
 d.i.editorToggleReply = function(postId, replyAction) {
-  if (d.i.isInIframe) {
+  if (d.i.isInIframe && !d.i.isInEmbeddedEditor) {
     sendEditorToggleReplyMessageToEmbeddingPage(postId);
   }
   else {

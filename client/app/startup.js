@@ -374,7 +374,7 @@ function renderEmptyPage() {
 };
 
 
-d.i.startup = function() {
+d.i.startDiscussionPage = function() {
   $(function() {
     // Import LiveScript's prelude, http://gkz.github.com/prelude-ls/.
     prelude.installPrelude(window);
@@ -398,5 +398,12 @@ d.i.startup = function() {
     }
   });
 };
+
+
+d.i.startEmbeddedEditor = function() {
+  // The editor is an Angular module so all we need to do is to start Angular:
+  d.i.angularApply(function() {});
+};
+
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

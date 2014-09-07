@@ -36,7 +36,9 @@ d.i.$showReplyForm = function(event, opt_where) {
   var postId;
   if ($(this).closest('.dw-cmts-tlbr').length) {
     // Embedded comments page, Reply button in comments toolbar was clicked.
-    postId = d.i.BodyId;
+    // Set postId to NO_ID to indicate that we're replying to the article on
+    // the embedding page.
+    postId = NO_ID;
   }
   else {
     // Non-embedded page; there is no Reply button in the comments toolbar.
@@ -51,6 +53,19 @@ d.i.$showReplyForm = function(event, opt_where) {
 
 
 d.i.handleReplyResult = function(data) {
+  if (d.i.isInEmbeddedEditor) {
+    // Send a message to the embedding page, which will forward it to
+    // the comments iframe, which will show the new comment.
+    window.parent.postMessage(
+        JSON.stringify(['handleReplyResult', data]), '*');
+  }
+  else {
+    doHandleReplyResult(data);
+  }
+};
+
+
+function doHandleReplyResult(data) {
   var result = d.i.patchPage(data);
   var patchedThread = result.patchedThreads[0];
   var myNewPost = patchedThread.dwGetPost();

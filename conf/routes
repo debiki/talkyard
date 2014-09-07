@@ -40,6 +40,7 @@ GET   /-/api/logout             controllers.LoginController.logout
 POST  /-/api/logout             controllers.LoginController.logout
 
 GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic
+GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor
 
 POST  /-/search/site                        controllers.FullTextSearchController.searchWholeSite()
 GET   /-/search/site/for/:phrase            controllers.FullTextSearchController.searchWholeSiteFor(phrase)

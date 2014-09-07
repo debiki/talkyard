@@ -39,7 +39,6 @@ object ReplyController extends mvc.Controller {
   def handleReply = PostJsonAction(maxLength = MaxPostSize) { request: JsonPostRequest =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
-    //val anyParentPageId = (body \ "parentPageId").asOpt[PageId]
     val anyPageUrl = (body \ "pageUrl").asOpt[String]
     val postId = (body \ "postId").as[PostId]
     val text = (body \ "text").as[String]

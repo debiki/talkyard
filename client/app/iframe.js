@@ -27,7 +27,8 @@ addEventListener('message', onMessage, false);
 
 window.parent.postMessage('["iframeInited", {}]', '*');
 
-syncDocSizeWithIframeSize();
+if (!d.i.isInEmbeddedEditor)
+  syncDocSizeWithIframeSize();
 
 
 function onMessage(event) {
@@ -50,6 +51,19 @@ function onMessage(event) {
     case 'setBaseAddress':
       d.i.iframeBaseUrl = eventData;
       addBaseElem(eventData);
+      break;
+    case 'editorToggleReply':
+      // This message is sent to the embedded editor. It opens the editor
+      // to write a reply to `postId`.
+      var postId = eventData;
+      d.i.editorToggleReply(postId);
+      break;
+    case 'handleReplyResult':
+      // This message is sent from the embedded editor <iframe> to the comments
+      // <iframe> when the editor has posted a new reply and the server has replied
+      // with the HTML for the reply. `eventData` is JSON that includes this HTML;
+      // it'll be inserted into the comments <iframe>.
+      d.i.handleReplyResult(eventData);
       break;
   }
 };
