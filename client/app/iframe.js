@@ -53,8 +53,8 @@ function onMessage(event) {
       addBaseElem(eventData);
       break;
     case 'editorToggleReply':
-      // This message is sent to the embedded editor. It opens the editor
-      // to write a reply to `postId`.
+      // This message is sent from an embedded comments page to the embedded editor.
+      // It opens the editor to write a reply to `postId`.
       var postId = eventData;
       d.i.openEditorToWriteReply(postId);
       break;
@@ -64,6 +64,19 @@ function onMessage(event) {
       // with the HTML for the reply. `eventData` is JSON that includes this HTML;
       // it'll be inserted into the comments <iframe>.
       d.i.handleReplyResult(eventData);
+      break;
+    case 'clearIsReplyingMarks':
+      // This is sent from the embedded editor to an embedded comments page.
+      d.i.clearIsReplyingMarks();
+      break;
+    case 'editorEditPost':
+      // Sent from an embedded comments page to the embedded editor.
+      var postId = eventData;
+      d.i.openEditorToEditPost(postId);
+      break;
+    case 'handleEditResult':
+      // This is sent from the embedded editor back to an embedded comments page.
+      d.i.handleEditResult(eventData);
       break;
   }
 };

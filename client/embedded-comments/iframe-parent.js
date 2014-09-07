@@ -122,11 +122,22 @@ function onMessage(event) {
       break;
     case 'hideEditor':
       showEditor(false);
+      break;
     case 'editorToggleReply':
       sendToEditor(event.data);
       break;
     case 'handleReplyResult':
       sendToComments(event.data);
+      break;
+    case 'clearIsReplyingMarks':
+      sendToComments(event.data);
+      break;
+    case 'editorEditPost':
+      sendToEditor(event.data);
+      break;
+    case 'handleEditResult':
+      sendToComments(event.data);
+      break;
   }
 };
 

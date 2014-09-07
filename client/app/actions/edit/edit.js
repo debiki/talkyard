@@ -55,18 +55,46 @@ d.i.$showEditForm = function(event) {
   var postId = $(this).dwPostId();
   var anyReturnToUrl = d.i.makeReturnToPostUrlForVerifEmail(postId);
   d.i.loginIfNeeded('LoginToEdit', anyReturnToUrl, function() {
-    d.i.$loadEditorDependencies.call(_this).done(function() {
-      var editorScope = angular.element($('#debiki-editor-controller')[0]).scope();
-      editorScope.$apply(function() {
-        editorScope.vm.startEditing(postId);
-      });
+    if (d.i.isInEmbeddedCommentsIframe) {
+      sendEditPostMessageToEmbeddedEditor(postId);
+    }
+    else {
+      d.i.openEditorToEditPost(postId);
+    }
+  });
+};
 
-    });
+
+function sendEditPostMessageToEmbeddedEditor(postId) {
+  window.parent.postMessage(
+      JSON.stringify(['editorEditPost', postId]), '*');
+};
+
+
+d.i.openEditorToEditPost = function(postId) {
+  // Comment out for now. Will I use commonMark and WMD instead of CodeMirror?
+  // d.i.$loadEditorDependencies.call(_this).done(
+
+  d.i.withEditorScope(function(editorScope) {
+    editorScope.vm.startEditing(postId);
   });
 };
 
 
 d.i.handleEditResult = function(data) {
+  if (d.i.isInEmbeddedEditor) {
+    // Send a message to the embedding page, which will forward it to
+    // the comments iframe, which will show the new edits.
+    window.parent.postMessage(
+        JSON.stringify(['handleEditResult', data]), '*');
+  }
+  else {
+    doHandleEditResult(data);
+  }
+};
+
+
+function doHandleEditResult(data) {
   d.i.patchPage(data);
   var postId = data.postsByPageId[d.i.pageId][0].postId;
   // In case the page was just created lazily when the edits were saved,

@@ -99,6 +99,13 @@ class EditorController {
     }
     if (this.$scope.editingPostId) {
       alert('Please first save your current edits');
+      // If this is an embedded editor, for an embedded comments page, that page
+      // will now have highlighted some reply button to indicate a reply is
+      // being written. But that's wrong, clear those marks.
+      if (d.i.isInEmbeddedEditor) {
+        window.parent.postMessage(
+          JSON.stringify(['clearIsReplyingMarks', {}]), '*');
+      }
       return true;
     }
     if (this.$scope.newTopicParentPageId) {

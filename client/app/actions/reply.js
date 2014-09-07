@@ -47,11 +47,14 @@ d.i.$showReplyForm = function(event, opt_where) {
 
   var anyReturnToUrl = d.i.makeReturnToPostUrlForVerifEmail(postId);
   d.i.loginIfNeeded('LoginToLogin', anyReturnToUrl, function() {
+    // Toggle highlighting first, because it'll be cleared later if the
+    // editor is closed, and then we don't want to toggle it afterwards.
+    toggleReplyButtonHighlighting(replyAction);
     if (d.i.isInEmbeddedCommentsIframe) {
       sendWriteReplyMessageToEmbeddedEditor(postId);
     }
     else {
-      d.i.openEditorToWriteReply(postId, replyAction);
+      d.i.openEditorToWriteReply(postId);
     }
   });
 };
@@ -64,17 +67,21 @@ function sendWriteReplyMessageToEmbeddedEditor(postId) {
 };
 
 
-d.i.openEditorToWriteReply = function(postId, replyAction) {
+d.i.openEditorToWriteReply = function(postId) {
   d.i.withEditorScope(function(editorScope) {
     var isSelected = editorScope.vm.toggleReplyToPost(postId);
-    var actions = replyAction.closest('.dw-p-as');
-    if (isSelected) {
-      actions.addClass('dw-replying');
-    }
-    else {
-      actions.removeClass('dw-replying');
-    }
   });
+};
+
+
+function toggleReplyButtonHighlighting(replyAction) {
+  var actions = replyAction.closest('.dw-p-as');
+  actions.toggleClass('dw-replying');
+}
+
+
+d.i.clearIsReplyingMarks = function() {
+  $('.dw-replying').removeClass('dw-replying');
 };
 
 
