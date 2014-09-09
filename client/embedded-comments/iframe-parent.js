@@ -52,22 +52,35 @@ $('.debiki-embedded-comments').first().each(function() {
   wrapper.append(commentsIframe);
   wrapper.append($('<p>Loading comments...</p>'));
 
-  var editorIframe = $('<iframe id="dw-embedded-editor"></iframe>');
-  var editorIframeUrl = d.i.debikiServerOrigin + '/-/embedded-editor?' + topicIdUrlParam;
-  editorIframe
-      .height(0) // don't `hide()`, or FF sends no messages
+  var editorWrapper = $('<div id="dw-editor-wrapper"></div>');
+  editorWrapper
+      .height(350)
       .css('width', '100%')
       .css('left', 0)
       .css('position', 'fixed')
       .css('bottom', 0)
+      .css('border-top', '8px solid #888')
+      .css('cursor', 'ns-resize')
+      .css('background', 'white');
+  editorWrapper.hide();
+  $(document.body).append(editorWrapper);
+
+  var editorIframe = $('<iframe id="dw-embedded-editor"></iframe>');
+  var editorIframeUrl = d.i.debikiServerOrigin + '/-/embedded-editor?' + topicIdUrlParam;
+  editorIframe
+      .css('width', '100%')
+      .css('height', '100%')
       .css('border', 'none')
       .attr('seamless', 'seamless')
       .attr('src', editorIframeUrl);
-  $(document.body).append(editorIframe);
+  editorWrapper.append(editorIframe);
 
+  // Editor placeholder, so the <iframe> won't occlude the lower parts of the page.
   var editorPlaceholder = $('<div id="dw-editor-placeholder"></div>');
   $(document.body).append(editorPlaceholder);
   editorPlaceholder.hide();
+
+  makeEditorResizable();
 });
 
 
@@ -179,16 +192,56 @@ function sendToEditor(message) {
 
 function showEditor(show) {
   var placeholder = $('#dw-editor-placeholder');
-  var editor = $('#dw-embedded-editor');
+  var editorWrapper = $('#dw-editor-wrapper');
   if (show) {
+    editorWrapper.show();
     placeholder.show();
-    placeholder.height(300);
-    editor.height(300);
+    placeholder.height(editorWrapper.height());
   }
   else {
+    editorWrapper.hide();
     placeholder.hide();
-    // Don't hide() the editor, then it would receive no messages in FireFox.
-    editor.height(0);
+  }
+}
+
+
+function makeEditorResizable() {
+  var editorWrapper = $('#dw-editor-wrapper');
+  editorWrapper.on('mousedown', startDrag);
+
+  var startY = 0;
+  var startHeight = 0;
+
+  function startDrag(event) {
+    coverIframesSoWontStealMouseEvents(true);
+    startY = event.clientY;
+    startHeight = editorWrapper.height();
+    document.documentElement.addEventListener('mousemove', doDrag, false);
+    document.documentElement.addEventListener('mouseup', stopDrag, false);
+  }
+
+  function doDrag(event) {
+    var newHeight = startHeight - event.clientY + startY;
+    $('#dw-editor-placeholder').height(newHeight);
+    editorWrapper.height(newHeight);
+  }
+
+  function stopDrag(event) {
+    coverIframesSoWontStealMouseEvents(false);
+    document.documentElement.removeEventListener('mousemove', doDrag, false);
+    document.documentElement.removeEventListener('mouseup', stopDrag, false);
+  }
+}
+
+
+function coverIframesSoWontStealMouseEvents(cover) {
+  if (cover) {
+    $('#dw-embedded-comments').css('visibility', 'hidden');
+    $('#dw-embedded-editor').css('visibility', 'hidden');
+  }
+  else {
+    $('#dw-embedded-comments').css('visibility', 'visible');
+    $('#dw-embedded-editor').css('visibility', 'visible');
   }
 }
 

@@ -335,8 +335,7 @@ function renderPageEtc() {
   });
 
   steps.push(function() {
-    // Start AngularJS
-    d.i.angularApply(function() {});
+    startAngular();
   });
 
   function runNextStep() {
@@ -366,10 +365,7 @@ function renderEmptyPage() {
     d.i.initKeybdShortcuts($);
     d.i.initUtterscrollAndTips();
   }
-
-  // Start AngularJS
-  d.i.angularApply(function() {});
-
+  startAngular();
   fireLoginOrLogout();
 };
 
@@ -402,8 +398,14 @@ d.i.startDiscussionPage = function() {
 
 d.i.startEmbeddedEditor = function() {
   // The editor is an Angular module so all we need to do is to start Angular:
-  d.i.angularApply(function() {});
+  startAngular();
 };
+
+
+function startAngular() {
+  d.i.angularApply(function() {});
+  $(document).trigger('dwEvAngularStarted');
+}
 
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
