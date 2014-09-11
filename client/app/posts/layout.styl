@@ -93,15 +93,18 @@
     &:last-child
       padding-left: 0
 
+  .dw-res.dw-multireplies > li
+    padding-left: 0 !important;
+
   // Add an extra border above not-the-first sibling thread,
   // so it's easier to see where they start and end (since I don't
   // always indent).
   // But don't do this for the depth-1 threads since they're placed
   // in obvious columns anyway.
   .dw-t:not(.dw-depth-0) > .dw-res > li:not(:first-child):not(:last-child)
-    > .dw-t > .dw-p,
-    > .dw-p
-      border-top: 1px solid hsl(0, 0%, 70%)
+    > .dw-t > .dw-p > .dw-p-hd,
+    > .dw-p > .dw-p-hd
+      border-top: 3px solid hsl(0, 0%, 70%)
 
 
 // Draw dashed line between horizontal threads, on hower.
@@ -142,6 +145,11 @@
     padding-left: 50px
     margin: 0
 
+  // Don't indent multireplies, unless they're directly below a root post reply,
+  // so they're not confused with other root post replies.
+  .dw-t:not(.dw-depth-1) > .dw-res.dw-multireplies > li
+    padding-left: 0;
+
   // Avoid unnecessary indentation: Don't indent the last reply.
   // (We use arrowse instead to draw relationships.)
   // But do indent all replies to article replies, because article
@@ -157,9 +165,9 @@
   // so it's easier to see where they start and end (since I don't
   // always indent).
   .dw-t > .dw-res > li:not(:first-child):not(:last-child)
-    > .dw-t > .dw-p,
-    > .dw-p
-      border-top: 1px solid hsl(0, 0%, 70%)
+    > .dw-t > .dw-p > .dw-p-hd,
+    > .dw-p > .dw-p-hd
+      border-top: 2px solid hsl(0, 0%, 70%)
 
 .dw-t:not(.dw-hz) > .dw-t-vspace
   display: none

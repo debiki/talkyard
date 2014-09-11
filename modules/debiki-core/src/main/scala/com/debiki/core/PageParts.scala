@@ -482,6 +482,34 @@ case class PageParts (
     }) getOrElse Nil
 
 
+  def findCommonAncestorPost(postIds: Seq[PostId]): PostId = {
+    TESTS_MISSING
+    if (postIds.isEmpty || postIds.contains(PageParts.NoId))
+      return PageParts.NoId
+
+    val firstPost = getPost_!(postIds.head)
+    var commonAncestorIds: Seq[PostId] = firstPost.id :: firstPost.ancestorPosts.map(_.id)
+    for (nextPostId <- postIds.tail) {
+      val nextPost = getPost_!(nextPostId)
+      var ancestorIds = nextPost.id :: nextPost.ancestorPosts.map(_.id)
+      var commonAncestorFound = false
+      while (ancestorIds.nonEmpty && !commonAncestorFound) {
+        val nextAncestorId = ancestorIds.head
+        if (commonAncestorIds.contains(nextAncestorId)) {
+          commonAncestorIds = commonAncestorIds.dropWhile(_ != nextAncestorId)
+          commonAncestorFound = true
+        }
+        else {
+          ancestorIds = ancestorIds.tail
+        }
+      }
+      if (ancestorIds.isEmpty)
+        return NoId
+    }
+    commonAncestorIds.head
+  }
+
+
   // -------- Replies
 
   def repliesTo(id: PostId): List[Post] =

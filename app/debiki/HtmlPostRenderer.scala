@@ -101,6 +101,8 @@ case class HtmlPostRenderer(
 
 
   private def renderPostImpl(post: Post, nofollowArticle: Boolean): RenderedPost = {
+    val multireplyPosts = post.multireplyPostIds.map(page.getPost_! _).toSeq
+    val anyMultireplyReceivers = renderMultireplyReceivers(multireplyPosts)
     val postHeader =
       if (post.id == PageParts.BodyId) {
         // Body author and date info rendered separately, for the page body.
@@ -123,6 +125,7 @@ case class HtmlPostRenderer(
 
     val commentHtml =
       <div id={htmlIdOf(post)} class={"dw-p" + cssArtclPost + cutS}>{
+        anyMultireplyReceivers ++
         anyPendingApprovalText ++
         postHeader.html ++
         postBody.html
@@ -182,6 +185,21 @@ object HtmlPostRenderer {
         <a class="dw-z">Click to show this comment</a>
       </div>
     RenderedPost(html, actionsHtml = renderActionsForCollapsed(post))
+  }
+
+
+  def renderMultireplyReceivers(multireplyPosts: Seq[Post]) = {
+    if (multireplyPosts.isEmpty) Nil
+    else {
+      <div>{
+        multireplyPosts.map({ post =>
+          <a href={s"#post-${post.id}"} class="dw-multireply-to">
+            <span class="icon-reply dw-mirror"></span>
+            <span>{post.theUser.displayName} (post {post.id})</span>
+          </a>
+        })
+      }</div>
+    }
   }
 
 

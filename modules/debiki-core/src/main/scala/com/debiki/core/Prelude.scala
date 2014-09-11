@@ -100,6 +100,7 @@ object Prelude {
   def MUST = ()  // Fix before next release.
   def SHOULD = ()  // Fix before release, unless short of time, or too boring.
   def COULD = ()  // Could do this, but it's not that important.
+  def TESTS_MISSING = ()  // Could add test cases for this code
 
   def throwNoSuchElem(errorCode: String, message: => String) =
     throw new NoSuchElementException(s"$message [error $errorCode]")
@@ -125,6 +126,9 @@ object Prelude {
 
   def assErrIf(condition: Boolean, errorCode: String,
        problem: => String = null) =
+    dieIf(condition, errorCode, problem)
+
+  def dieIf(condition: Boolean, errorCode: String, problem: => String = null) =
     if (condition) assErr(errorCode, problem)
 
   def alwaysAssert(condition: Boolean, errorCode: String, problem: => String = null) =

@@ -60,6 +60,7 @@ case class Post(
 
 
   def parentId: Option[PostId] = payload.parentPostId
+  def multireplyPostIds = payload.multireplyPostIds
 
   // Useul when grouping by parent id: all posts with no parent can be mapped to NoId (= 0).
   def parentIdOrNoId: PostId = parentId.getOrElse(PageParts.NoId)

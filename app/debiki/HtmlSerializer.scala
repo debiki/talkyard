@@ -333,7 +333,8 @@ case class HtmlPageSerializer(
         (post.parentId.isEmpty && !PageParts.isArticleOrConfigPostId(postId))
 
       val html = renderThreads(posts = post::Nil,
-        parentHorizontal = parentHorizontal, uncollapseFirst = true)
+        parentHorizontal = parentHorizontal, uncollapseFirst = true,
+        multireplies = post.multireplyPostIds.nonEmpty)
       // The post might have been deleted.
       if (html.isEmpty)
         return None
@@ -408,7 +409,10 @@ case class HtmlPageSerializer(
           <div class='dw-t-vspace'/>
           <ol class='dw-res'>
             { rootPostReplyListItem }
-            { renderThreads(rootPostsReplies, parentHorizontal = true) }
+            { renderThreads(rootPostsReplies, parentHorizontal = true, multireplies = false) }
+          </ol>
+          <ol class="dw-res dw-multireplies">
+            { renderThreads(rootPostsReplies, parentHorizontal = true, multireplies = true) }
           </ol>
         })
       }
@@ -447,7 +451,10 @@ case class HtmlPageSerializer(
         <div class='dw-t-vspace'/>
         <ol class='dw-res'>
           { rootPostReplyListItem }
-          { renderThreads(topLevelComments, parentHorizontal = true) }
+          { renderThreads(topLevelComments, parentHorizontal = true, multireplies = false) }
+        </ol>
+        <ol class="dw-res dw-multireplies">
+          { renderThreads(topLevelComments, parentHorizontal = true, multireplies = true) }
         </ol>
       </div>
     html
@@ -507,6 +514,17 @@ case class HtmlPageSerializer(
       if (a.isDeletedSomehow && !b.isDeletedSomehow)
         return false
 
+      // Sort multireplies by time, for now, so it never happens that a multireply
+      // ends up placed before another multireply that it replies to.
+      // COULD place interesting multireplies first, if they're not constrained by
+      // one being a reply to another.
+      if (a.multireplyPostIds.nonEmpty && b.multireplyPostIds.nonEmpty) {
+        if (a.creationDati.getTime < b.creationDati.getTime)
+          return true
+        if (a.creationDati.getTime > b.creationDati.getTime)
+          return false
+      }
+
       // Place interesting posts first.
       val fitnessA = isLikedConfidenceIntervalLowerBound(a)
       val fitnessB = isLikedConfidenceIntervalLowerBound(b)
@@ -541,6 +559,7 @@ case class HtmlPageSerializer(
   private def renderThreads(
     posts: Seq[Post],
     parentHorizontal: Boolean,
+    multireplies: Boolean,
     uncollapseFirst: Boolean = false): NodeSeq = {
 
     // COULD let this function return Nil if posts.isEmpty, and otherwise
@@ -554,6 +573,7 @@ case class HtmlPageSerializer(
       var threadNodes: NodeSeq = Nil
       for {
         post <- sortPostsDescFitness(posts)
+        if multireplies == post.multireplyPostIds.nonEmpty
         if !post.isTreeDeleted || showStubsForDeleted
         if !(post.isPostDeleted && post.replies.isEmpty) || showStubsForDeleted
         if post.someVersionApproved || showUnapproved.shallShow(post)
@@ -639,21 +659,29 @@ case class HtmlPageSerializer(
       if (isTitle || isRoot || post.isTreeDeleted) Nil
       else <a class='dw-z'>{foldLinkText}</a>
 
-    val repliesHtml = {
+    val (repliesHtml, multirepliesHtml) = {
       def shallHideReplies = post.isTreeDeleted ||
         (!uncollapseFirst && post.isTreeCollapsed)
-      if (replies.isEmpty && myActionsIfHorizontalLayout.isEmpty) Nil
-      else if (shallHideReplies) Nil
+      if (replies.isEmpty && myActionsIfHorizontalLayout.isEmpty) (Nil, Nil)
+      else if (shallHideReplies) (Nil, Nil)
       // else if the-computer-thinks-the-comment-is-off-topic-and-that-
       // -replies-therefore-should-be-hidden,
       // then: renderCollapsedReplies(replies)
       else if (post.isTreeClosed) {
-        renderCollapsedReplies(replies)
+        (renderCollapsedReplies(replies), Nil)
       }
-      else <ol class='dw-res'>
-        { myActionsIfHorizontalLayout }
-        { renderThreads(replies, parentHorizontal = horizontal) }
-      </ol>
+      else {
+        val singleReplies =
+          <ol class='dw-res'>
+            { myActionsIfHorizontalLayout }
+            { renderThreads(replies, parentHorizontal = horizontal, multireplies = false) }
+          </ol>
+        val multireplies =
+          <ol class='dw-res dw-multireplies'>
+            { renderThreads(replies, parentHorizontal = horizontal, multireplies = true) }
+          </ol>
+        (singleReplies, multireplies)
+      }
     }
 
     var thread = {
@@ -664,7 +692,8 @@ case class HtmlPageSerializer(
         foldLink ++
         renderedComment.headAndBodyHtml ++
         myActionsIfVerticalLayout ++
-        repliesHtml
+        repliesHtml ++
+        multirepliesHtml
       }</li>
     }
 

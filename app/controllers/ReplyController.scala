@@ -40,7 +40,7 @@ object ReplyController extends mvc.Controller {
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
     val anyPageUrl = (body \ "pageUrl").asOpt[String]
-    val postId = (body \ "postId").as[PostId]
+    val postIds = (body \ "postIds").as[Set[PostId]]
     val text = (body \ "text").as[String]
     val wherePerhapsEmpty = (body \ "where").asOpt[String]
     val whereOpt = if (wherePerhapsEmpty == Some("")) None else wherePerhapsEmpty
@@ -55,22 +55,21 @@ object ReplyController extends mvc.Controller {
         PageRequest.forPageThatExists(request, pageId = page.id) getOrDie "DwE77PJE0"
     }
 
-    val json = saveReply(pageReq, replyTo = postId, text, whereOpt)
+    val json = saveReply(pageReq, replyToPostIds = postIds, text, whereOpt)
     OkSafeJson(json)
   }
 
 
-  def saveReply(pageReqNoMeOnPage: PageRequest[_], replyTo: PostId, text: String,
+  def saveReply(pageReqNoMeOnPage: PageRequest[_], replyToPostIds: Set[PostId], text: String,
         whereOpt: Option[String] = None) = {
-
-    val postIdToReplyTo = replyTo
 
     val pageReq = pageReqNoMeOnPage.copyWithMeOnPage_!
     if (pageReq.oldPageVersion.isDefined)
       throwBadReq("DwE72XS8", "Can only reply to latest page version")
 
-    val anyPostIdToReplyTo =
-      if (postIdToReplyTo == PageParts.NoId) {
+    val commonAncestorPostId = pageReq.thePage.findCommonAncestorPost(replyToPostIds.toSeq)
+    val anyParentPostId =
+      if (commonAncestorPostId == PageParts.NoId) {
         if (pageReq.pageRole_! == PageRole.EmbeddedComments) {
           // There is no page body. Allow new comment threads with no parent post.
           None
@@ -80,20 +79,22 @@ object ReplyController extends mvc.Controller {
             "DwE260G8", "This is not an embedded discussion; must reply to an existing post")
         }
       }
-      else if (pageReq.page_!.getPost(postIdToReplyTo).isDefined) {
-        Some(postIdToReplyTo)
+      else if (pageReq.page_!.getPost(commonAncestorPostId).isDefined) {
+        Some(commonAncestorPostId)
       }
       else {
-        throwBadReq("DwEe8HD36", s"Cannot reply to post `$postIdToReplyTo'; it does not exist")
+        throwBadReq("DwEe8HD36", o"""Cannot reply to common ancestor post `$commonAncestorPostId';
+          it does not exist""")
       }
 
     val approval = AutoApprover.perhapsApprove(pageReq)
+    val multireplyPostIds = if (replyToPostIds.size == 1) Set[PostId]() else replyToPostIds
 
     val postNoId = RawPostAction(id = PageParts.UnassignedId, postId = PageParts.UnassignedId,
       creationDati = pageReq.ctime, userIdData = pageReq.userIdData,
       payload = PAP.CreatePost(
-        parentPostId = anyPostIdToReplyTo, text = text, markup = Markup.DefaultForComments.id,
-        where = whereOpt, approval = approval))
+        parentPostId = anyParentPostId, text = text, markup = Markup.DefaultForComments.id,
+        multireplyPostIds = multireplyPostIds, where = whereOpt, approval = approval))
 
     val (pageWithNewPost, List(postWithId: RawPostAction[PAP.CreatePost])) =
       pageReq.dao.savePageActionsGenNotfs(pageReq, postNoId::Nil)

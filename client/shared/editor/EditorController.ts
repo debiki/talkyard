@@ -164,15 +164,10 @@ class EditorController {
 
 
   private saveNewPost() {
-    if (this.$scope.replyToPostIds.length > 1) {
-      alert('Replying to more than one person not yet implemented – please ' +
-        'de-select some comments, so only one reply button remains selected.');
-      return;
-    }
     var data = {
       pageId: d.i.pageId,
       pageUrl: d.i.iframeBaseUrl || undefined,
-      postId: this.$scope.replyToPostIds[0],
+      postIds: this.$scope.replyToPostIds,
       text: this.$scope.text
       // where: ...
     };

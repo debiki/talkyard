@@ -96,7 +96,8 @@ function clearAndRedrawArrowsVertically($thread) {
     $thread.is('.dw-t-closed') &&
     $thread.parent().closest('.dw-t').is('.dw-hz');
 
-  var $childThreads = $thread.find('> .dw-res > .dw-t');
+  // (Don't draw arrows to multireplies; there isn't any single post from which to draw arrows.)
+  var $childThreads = $thread.find('> .dw-res:not(.dw-multireplies) > .dw-t');
 
   $thread.removeClass('dw-t-exactly-one-reply');
   if ($childThreads.length === 1 && !thisIsHzClosedSection) {
