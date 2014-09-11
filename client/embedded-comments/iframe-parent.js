@@ -201,6 +201,7 @@ function showEditor(show) {
   else {
     editorWrapper.hide();
     placeholder.hide();
+    sendToComments('["clearIsReplyingMarks", {}]');
   }
 }
 

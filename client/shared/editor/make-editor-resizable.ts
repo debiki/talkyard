@@ -18,8 +18,9 @@
 
 /// <reference path="../plain-old-javascript.d.ts" />
 
-
 var d = { i: debiki.internal, u: debiki.v0.util };
+var ui$: any = $; // allows jQuery UI functions without Typescript complaining
+
 
 if (!d.i.isInIframe) {
   $(document).on('dwEvAngularStarted', makeEditorResizable);
@@ -32,8 +33,8 @@ if (!d.i.isInIframe) {
  * is placed in an iframe, we need to resize the iframe not just the editor inside).
  */
 function makeEditorResizable() {
-  var placeholder = $('#debiki-editor-placeholder');
-  var editor = $('#debiki-editor-controller');
+  var placeholder = ui$('#debiki-editor-placeholder');
+  var editor = ui$('#debiki-editor-controller');
   editor.css('border-top', '8px solid #888');
   editor.resizable({
     handles: 'n',
