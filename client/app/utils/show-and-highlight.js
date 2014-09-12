@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-(function() {
-
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
@@ -103,10 +101,10 @@ d.i.ensureAnyAnchorPostLoaded = function(callback) {
 
 
 d.i.scrollToUrlAnchorPost = function() {
-  if (!anyAnchorPostId())
+  var anchorPostId = anyAnchorPostId();
+  if (!anchorPostId)
     return;
-
-  var $anchorPost = $(location.hash).filter('.dw-p');
+  var $anchorPost = $('#post-' + anchorPostId).filter('.dw-p');
   if (!$anchorPost.length) return;
   d.i.showAndHighlightPost($anchorPost, { marginRight: 200, marginBottom: 300 });
   $anchorPost.parent().addClass('dw-m-t-new');  // outlines it
@@ -114,11 +112,40 @@ d.i.scrollToUrlAnchorPost = function() {
 
 
 function anyAnchorPostId() {
-  var hashIsPostId = /post-\d+/.test(location.hash);
-  return hashIsPostId ? location.hash.substr(6, 999) : undefined;
+  // AngularJS (I think it is) somehow inserts a '/' at the start of the hash. I'd
+  // guess it's Angular's router that messes with the hash. I don't want the '/' but
+  // don't know how to get rid of it, so simply ignore it.
+  var hashIsPostId = /#post-\d+/.test(location.hash);
+  var hashIsSlashPostId = /#\/post-\d+/.test(location.hash);
+  if (hashIsPostId) return location.hash.substr(6, 999)
+  if (hashIsSlashPostId) return location.hash.substr(7, 999)
+  return undefined;
 }
 
 
-})();
+// When hovering a multireply, outline the post that was replied to.
+$(document).on('hover', '.dw-multireply-to', function(event) {
+  var referencedPost = getPostMultirepliedTo(this);
+  if (event.type === 'mouseenter') {
+    referencedPost.css('outline', 'hsl(211, 100%, 77%) solid 5px');
+  }
+  else {
+    referencedPost.css('outline', 'none');
+  }
+});
+
+
+// When clicking a multireply link, scroll the post that was replied to into view.
+$(document).on('click', '.dw-multireply-to', function(event) {
+  var referencedPost = getPostMultirepliedTo(this);
+  d.i.showAndHighlightPost(referencedPost);
+});
+
+
+function getPostMultirepliedTo(elem) {
+  var multireplyPostLink = $(elem).attr('href');
+  return $(multireplyPostLink);
+}
+
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
