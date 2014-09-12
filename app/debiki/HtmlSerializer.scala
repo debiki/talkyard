@@ -341,7 +341,9 @@ case class HtmlPageSerializer(
       assert(html.length == 1)
       // Closed posts are placed below a "Closed threads" header, therefore,
       // if `post` is open, skip closed siblings.
-      val relevantSiblings = post.siblingsAndMe.filter(_.isTreeClosed == post.isTreeClosed)
+      val relevantSiblings = post.siblingsAndMe filter { sibling =>
+        sibling.isTreeClosed == post.isTreeClosed && sibling.isMultireply == post.isMultireply
+      }
       val siblingsSorted = sortPostsDescFitness(relevantSiblings)
       var prevSibling: Option[Post] = None
       siblingsSorted.takeWhile(_.id != postId).foreach { sibling =>

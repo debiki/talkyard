@@ -41,17 +41,11 @@ d.i.patchPage = (patches, { overwriteTrees, replacePostHeadsOnly } = {} ) ->
   for pageId, threadPatches of patches.threadsByPageId || {}
     if pageId is d.i.pageId
       for patch in threadPatches
-        # For password users, posts aren't shown until email verified,
-        # so patch.html might be absent.
-        continue if !patch.html
         patchThreadWith patch, { onPage: pageId, result, overwriteTrees }
 
   for pageId, postPatches of patches.postsByPageId || {}
     if pageId is d.i.pageId
       for patch in postPatches
-        # For password users, posts aren't shown until email verified,
-        # so patch.html might be absent.
-        continue if !patch.html
         if replacePostHeadsOnly
           patchPostHeadWith patch, { onPage: pageId, result }
         else
@@ -76,9 +70,9 @@ patchThreadWith = (threadPatch, { onPage, result, overwriteTrees }) ->
     if $prevThread.length
       insertThread $newThread, after: $prevThread
     else if $parentThread.length
-      appendThread $newThread, to: $parentThread
+      appendThread $newThread, to: $parentThread, isMultireply: threadPatch.isMultireply
     else if isTopLevelComment
-      appendThread $newThread, to: $('.dw-depth-0')
+      appendThread $newThread, to: $('.dw-depth-0'), isMultireply: threadPatch.isMultireply
     else
       console.debug("Don't know where to place thread #{threadPatch.id}.")
     $newThread.addClass 'dw-m-t-new'
@@ -183,12 +177,11 @@ insertThread = ($thread, { after }) ->
 
 
 
-appendThread = !($thread, { to }) ->
+appendThread = !($thread, { to, isMultireply }) ->
   $parent = to
-  $childList = $parent.children '.dw-res'
-  if !$childList.length
-    # This is the first child thread; create empty child thread list.
-    $childList = $("<ol class='dw-res'/>").appendTo $parent
+  $childList =
+    if isMultireply then $parent.children('.dw-res.dw-multireplies')
+    else $parent.children('.dw-res:not(.dw-multireplies)')
   $thread.appendTo $childList
   updateDepths($thread)
 

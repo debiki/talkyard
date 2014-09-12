@@ -182,6 +182,7 @@ case class BrowserPagePatcher(
     var data = Map[String, JsValue](
       "id" -> JsString(post.id.toString),
       "cdati" -> JsString(toIso8601T(post.creationDati)),
+      "isMultireply" -> JsBoolean(post.isMultireply),
       "ancestorThreadIds" -> toJson(post.ancestorPosts.map(_.id)))
 
     post.lastApprovalType.foreach { approval =>
@@ -250,6 +251,7 @@ case class BrowserPagePatcher(
     Map(
       "postId" -> JsString(post.id.toString),
       "isPostApproved" -> JsBoolean(post.currentVersionApproved),
+      "isMultireply" -> JsBoolean(post.isMultireply),
       "html" -> JsString(headAndBodyHtml),
       "actionsHtml" -> JsString(actionsHtml))
   }
@@ -278,6 +280,7 @@ case class BrowserPagePatcher(
       "editId" -> JsString(edit.id.toString),
       "isEditApplied" -> JsBoolean(edit.isApplied),
       "isPostApproved" -> JsBoolean(edit.post_!.currentVersionApproved),
+      "isMultireply" -> JsBoolean(edit.post_!.isMultireply),
       "html" -> jsHeadAndBodyHtml,
       "actionsHtml" -> jsActionsHtml)
   }
