@@ -46,8 +46,9 @@ d.i.withEditorScope = function(fn) {
 
 class EditorController {
 
-  public static $inject = ['$scope', 'EditorService'];
-  constructor(private $scope: any, private editorService: EditorService) {
+  public static $inject = ['$scope', '$sce', 'EditorService'];
+  constructor(private $scope: any, private $sce: any,
+      private editorService: EditorService) {
     this.closeEditor();
     $scope.vm = this;
   }
@@ -106,10 +107,14 @@ class EditorController {
         window.parent.postMessage(
           JSON.stringify(['clearIsReplyingMarks', {}]), '*');
       }
+      else {
+        d.i.clearIsReplyingMarks();
+      }
       return true;
     }
     if (this.$scope.newTopicParentPageId) {
       alert('Please first either save or cancel your new forum topic');
+      d.i.clearIsReplyingMarks();
       return true;
     }
     return false;
@@ -172,6 +177,7 @@ class EditorController {
       // where: ...
     };
     this.editorService.saveReply(data).then(() => {
+      this.$scope.text = '';
       this.closeEditor();
     });
   }
@@ -188,12 +194,54 @@ class EditorController {
   }
 
 
+  public onTextEdited() {
+    var editsBody = this.$scope.editingPostId === d.i.BodyId;
+    var sanitizerOpts = {
+      allowClassAndIdAttr: editsBody,
+      allowDataAttr: editsBody
+    };
+
+    var htmlText = d.i.markdownToSafeHtml(
+        this.$scope.text, window.location.host, sanitizerOpts);
+    this.$scope.safePreviewHtml = this.$sce.trustAsHtml(htmlText);
+
+    /* Old jQuery code if I want to support many markups again:
+    var isForTitle = $post.is('.dw-p-ttl');
+    var sanitizerOptions = d.i.sanitizerOptsForPost($post);
+    switch (markupType) {
+      case "para":
+        // Convert to paragraphs, but for now simply show a <pre> instead.
+        // The Scala implementation changes \n\n to <p>...</p> and \n to <br>.
+        htmlSafe = $(isForTitle ? '<h1></h1>' : '<pre></pre>').text(markupSrc);
+        break;
+      case "dmd0":
+        // Debiki flavored Markdown version 0.
+        if (isForTitle) markupSrc = '<h1>'+ markupSrc +'</h1>';
+        htmlSafe = d.i.markdownToSafeHtml(
+            markupSrc, window.location.host, sanitizerOptions);
+        break;
+      case "code":
+        // (No one should use this markup for titles, insert no <h1>.)
+        htmlSafe = $('<pre class="prettyprint"></pre>').text(markupSrc);
+        break;
+      case "html":
+        if (isForTitle) markupSrc = '<h1>'+ markupSrc +'</h1>';
+        htmlSafe = d.i.sanitizeHtml(markupSrc, sanitizerOptions);
+        break;
+      default:
+        d.u.die("Unknown markup [error DwE0k3w25]");
+    }
+    */
+  }
+
+
   public showEditor() {
     this.$scope.visible = true;
     if (d.i.isInEmbeddedEditor) {
       window.parent.postMessage(
           JSON.stringify(['showEditor', {}]), '*');
     }
+    this.onTextEdited();
   }
 
 

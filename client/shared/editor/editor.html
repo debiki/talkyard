@@ -16,13 +16,13 @@
           <a href="#post-{{ postId }}">post {{ postId }}</a></span>:
     </div>
     <div class="editor-wrapper">
-      <textarea ng-model="text" class="editor"></textarea>
+      <textarea ng-model="text" ng-change="vm.onTextEdited()" class="editor"></textarea>
     </div>
   </div>
 
   <div class="preview-area">
     <div>Preview:</div>
-    <pre ng-model="text" class="preview">Tex text</pre>
+    <div ng-bind-html="safePreviewHtml" class="preview"></div>
   </div>
 
   <div class="submit-cancel-btns">

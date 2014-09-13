@@ -23,11 +23,10 @@
   z-index: 1000
 
   .editor-area
-    height: 200px
-    width: 50%
-    padding: 0 10px 10px 0
-    float: left
-    position: relative
+    width: 49%
+    position: absolute
+    top: 17px
+    bottom: 70px
 
     .editor-wrapper
       position: absolute
@@ -45,10 +44,11 @@
       width: 100%
 
   .preview-area
-    height: 200px
-    float: left
-    width: 45%
-    position: relative
+    width: 49%
+    position: absolute
+    top: 18px
+    right: 12px
+    bottom: 30px
 
     .preview
       position: absolute;
@@ -56,6 +56,9 @@
       left: 0;
       right: 0;
       bottom: 0;
+      background: white
+      overflow: auto
 
   .submit-cancel-btns
-    clear: both
+    position: absolute;
+    bottom: 30px;
