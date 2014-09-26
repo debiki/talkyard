@@ -50,6 +50,7 @@ class EditorController {
   constructor(private $scope: any, private $sce: any,
       private editorService: EditorService) {
     this.closeEditor();
+    this.$scope.text = '';
     $scope.vm = this;
   }
 
