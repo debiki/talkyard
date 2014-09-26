@@ -139,6 +139,9 @@ $(document).on('hover', '.dw-multireply-to', function(event) {
 $(document).on('click', '.dw-multireply-to', function(event) {
   var referencedPost = getPostMultirepliedTo(this);
   d.i.showAndHighlightPost(referencedPost);
+  var currentPostId = $(this).closest('.dw-t').dwPostId();
+  var nextPostId = referencedPost.dwPostId();
+  debiki2.postnavigation.addVisitedPosts(currentPostId, nextPostId);
 });
 
 

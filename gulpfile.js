@@ -76,6 +76,7 @@ var nextFileLine =
 
 
 var debikiDesktopFiles = [
+      'bower_components/keymaster/keymaster.js',
       'bower_components/lodash/dist/lodash.js',
       'bower_components/moment/min/moment.min.js',
       'bower_components/angular-moment/angular-moment.min.js',
@@ -157,6 +158,7 @@ var debikiDesktopFiles = [
 
 
 var debikiTouchFiles = [
+      'bower_components/keymaster/keymaster.js',
       'bower_components/lodash/dist/lodash.js',
       'bower_components/moment/min/moment.min.js',
       'bower_components/angular-moment/angular-moment.min.js',
