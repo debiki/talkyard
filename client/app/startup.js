@@ -265,7 +265,6 @@ function renderPageEtc() {
   d.i.showCurLocationInSiteNav();
 
   if (!Modernizr.touch) {
-    d.i.initKeybdShortcuts($);
     d.i.initUtterscrollAndTips();
   }
 
