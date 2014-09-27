@@ -72,7 +72,7 @@ d.i.$toggleCollapsed = ->
 
 !function uncollapseReplies ($thread)
   # Fist remove the un-collapse button.
-  $replies = $thread.children('.dw-res.dw-zd').dwBugIfEmpty('DwE3BKw8')
+  $replies = $thread.find('> .dw-single-and-multireplies > .dw-res.dw-zd').dwBugIfEmpty('DwE3BKw8')
   $replies.removeClass('dw-zd')
   # Remove "Click to show threads" message, but don't remove any already
   # loaded threads.

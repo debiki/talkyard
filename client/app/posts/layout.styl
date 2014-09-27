@@ -47,12 +47,13 @@
 //===========================
 
 
-.dw-hz > .dw-res
+.dw-hz > .dw-single-and-multireplies
   display: table-row
 
-.dw-hz > .dw-res > li
+.dw-hz > .dw-single-and-multireplies > .dw-res,
+.dw-hz > .dw-single-and-multireplies > .dw-res > li
   display: table-cell
-  padding: 22px 0 10px 59px
+  padding: 11px 0 10px 0px
   // Don't let the Reply form push other <li>s down, would offset PNG arrows incorrectly.
   vertical-align: top
 
@@ -78,7 +79,7 @@
     height: 84px
     position: relative
 
-  .dw-t.dw-hz > .dw-res > li
+  .dw-t.dw-hz > .dw-single-and-multireplies > .dw-res > li
     padding-left: 60px
     margin: 0
 
@@ -86,14 +87,14 @@
       padding-left: 0
       padding-right: 57px
 
-  .dw-t:not(.dw-hz) > .dw-res > li
+  .dw-t:not(.dw-hz) > .dw-single-and-multireplies > .dw-res > li
     padding-left: 40px
     margin: 0
 
     &:last-child
       padding-left: 0
 
-  .dw-res.dw-multireplies > li
+  .dw-t:not(.dw-hz) > .dw-single-and-multireplies > .dw-res.dw-multireplies > li
     padding-left: 0 !important;
 
   // Add an extra border above not-the-first sibling thread,
@@ -101,17 +102,35 @@
   // always indent).
   // But don't do this for the depth-1 threads since they're placed
   // in obvious columns anyway.
-  .dw-t:not(.dw-depth-0) > .dw-res > li:not(:first-child):not(:last-child)
+  .dw-t:not(.dw-depth-0) > .dw-single-and-multireplies > .dw-res > li:not(:first-child):not(:last-child)
     > .dw-t > .dw-p > .dw-p-hd,
     > .dw-p > .dw-p-hd
       border-top: 3px solid hsl(0, 0%, 70%)
 
 
+// Align multireplis with single replies; position the "Multireplies follow:" header.
+
+.dw-hz > .dw-single-and-multireplies > .dw-multireplies
+  position: relative;
+  padding-top: 0;
+  top: -13px;
+
+  #dw-multireplies-header
+    display: block
+    position: absolute;
+    top: -45px;
+    left: -120px;
+    font-size: 17px;
+
+#dw-multireplies-header
+  display: none
+
+
 // Draw dashed line between horizontal threads, on hower.
-.DW.DW .dw-hz > .dw-res > li > .dw-t > .ui-resizable-e
+.DW.DW .dw-hz > .dw-single-and-multireplies > .dw-res > li > .dw-t > .ui-resizable-e
   border-right: 1px dashed transparent
 
-.DW.DW .dw-hz > .dw-res > li:hover > .dw-t > .ui-resizable-e
+.DW.DW .dw-hz > .dw-single-and-multireplies > .dw-res > li:hover > .dw-t > .ui-resizable-e
   border-right-color: lightgray
 
 
@@ -121,7 +140,7 @@
 
 // Add some whitespace above replies, when laid out horizontally,
 // so there's some space for the SVG arrows.
-.DW.DW .dw-hz:not(.dw-depth-0) > .dw-res
+.DW.DW .dw-hz:not(.dw-depth-0) > .dw-single-and-multireplies > .dw-res
   margin-top: 35px
 
 .dw-hz:not(.dw-depth-0) > .dw-p-as-hz-reply
@@ -147,7 +166,7 @@
 
   // Don't indent multireplies, unless they're directly below a root post reply,
   // so they're not confused with other root post replies.
-  .dw-t:not(.dw-depth-1) > .dw-res.dw-multireplies > li
+  .dw-t:not(.dw-depth-1) > .dw-single-and-multireplies > .dw-res.dw-multireplies > li
     padding-left: 0;
 
   // Avoid unnecessary indentation: Don't indent the last reply.
@@ -155,16 +174,16 @@
   // But do indent all replies to article replies, because article
   // replies are stacked on top of each other, so we need to
   // indent their replies.
-  .dw-t:not(.dw-depth-1) > .dw-res > li:last-child
+  .dw-t:not(.dw-depth-1) > .dw-single-and-multireplies > .dw-res > li:last-child
     padding-left: 0
 
-  .dw-t.dw-depth-0 > .dw-res > li
+  .dw-t.dw-depth-0 > .dw-single-and-multireplies > .dw-res > li
     padding-left 0
 
   // Add an extra border above not-the-first sibling thread,
   // so it's easier to see where they start and end (since I don't
   // always indent).
-  .dw-t > .dw-res > li:not(:first-child):not(:last-child)
+  .dw-t > .dw-single-and-multireplies > .dw-res > li:not(:first-child):not(:last-child)
     > .dw-t > .dw-p > .dw-p-hd,
     > .dw-p > .dw-p-hd
       border-top: 2px solid hsl(0, 0%, 70%)

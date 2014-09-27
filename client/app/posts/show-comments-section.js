@@ -46,7 +46,7 @@ debiki.v0.showInteractionsOnClick = function() {
       .text(text)  // xss safe
       .css('font-size', '80%')
       .end()
-      .insertBefore('.dw-ar-t > .dw-res')
+      .insertBefore('.dw-ar-t > .dw-single-and-multireplies > .dw-res')
       .click(function() {
     $showBtn.remove();
     $('html').removeClass('dw-hide-interactions');

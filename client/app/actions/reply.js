@@ -107,7 +107,7 @@ function doHandleReplyResult(data) {
 
   var parentThread = patchedThread.parent().closest('.dw-t');
   var horizLayout = parentThread.is('.dw-hz');
-  var replyCountBefore = parentThread.find('> .dw-res > li > .dw-t').length;
+  var replyCountBefore = parentThread.find('> .dw-single-and-multireplies > .dw-singlereplies > li > .dw-t').length;
 
   // Don't show sort order tips instantly, because if
   // the new comment and the tips appear at the same time,
