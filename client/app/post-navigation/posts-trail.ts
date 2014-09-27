@@ -25,7 +25,7 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 
-var visitedPostIds = [];
+var visitedPosts = [];
 var currentVisitedPostIndex = -1;
 
 
@@ -35,7 +35,7 @@ var PostNavigation = React.createClass({
   },
   canGoForward: function() {
     return this.props.currentVisitedPostIndex >= 0 &&
-        this.props.currentVisitedPostIndex < this.props.visitedPostIds.length - 1;
+        this.props.currentVisitedPostIndex < this.props.visitedPosts.length - 1;
   },
   componentDidMount: function() {
     key('b', this.goBack);
@@ -47,15 +47,30 @@ var PostNavigation = React.createClass({
   },
   goBack: function() {
     if (!this.canGoBack()) return;
-    var backPostId = this.props.visitedPostIds[this.props.currentVisitedPostIndex - 1];
+    var backPost = this.props.visitedPosts[this.props.currentVisitedPostIndex - 1];
     this.props.decreaseCurrentPostIndex();
-    d.i.showAndHighlightPost($('#post-' + backPostId));
+    if (typeof backPost.windowLeft !== 'undefined' && (
+        backPost.windowLeft !== $(window).scrollLeft() ||
+        backPost.windowTop !== $(window).scrollTop())) {
+      // Restore the original window top and left coordinates, so the Back button
+      // really moves back to the original position.
+      $('html, body').animate({
+        'scrollTop': backPost.windowTop,
+        'scrollLeft': backPost.windowLeft
+      }, 'slow', 'swing').queue(function(next) {
+        d.i.showAndHighlightPost($('#post-' + backPost.postId));
+        next();
+      });
+    }
+    else {
+      d.i.showAndHighlightPost($('#post-' + backPost.postId));
+    }
   },
   goForward: function() {
     if (!this.canGoForward()) return;
-    var forwPostId = this.props.visitedPostIds[this.props.currentVisitedPostIndex + 1];
+    var forwPost = this.props.visitedPosts[this.props.currentVisitedPostIndex + 1];
     this.props.increaseCurrentPostIndex();
-    d.i.showAndHighlightPost($('#post-' + forwPostId));
+    d.i.showAndHighlightPost($('#post-' + forwPost.postId));
   },
   render: function() {
     var buttons = [];
@@ -69,7 +84,7 @@ var PostNavigation = React.createClass({
             id: 'dw-post-nav-forw-btn', onClick: this.goForward, className: 'btn btn-default',
                 disabled: !this.canGoForward() },
             r.span({}, 'F'), 'orward'));
-    return this.props.visitedPostIds.length === 0 ? null : r.div({ id: 'dw-post-nav-panel'}, buttons);
+    return this.props.visitedPosts.length === 0 ? null : r.div({ id: 'dw-post-nav-panel'}, buttons);
   }
 });
 
@@ -85,7 +100,7 @@ export function renderPostNavigationPanel() {
           currentVisitedPostIndex += 1;
           renderPostNavigationPanel();
         },
-        visitedPostIds: visitedPostIds,
+        visitedPosts: visitedPosts,
         currentVisitedPostIndex: currentVisitedPostIndex
       }),
       document.getElementById('dw-posts-navigation'));
@@ -93,15 +108,18 @@ export function renderPostNavigationPanel() {
 
 
 export function addVisitedPosts(currentPostId: number, nextPostId: number) {
-  visitedPostIds.splice(currentVisitedPostIndex + 1, 999999);
-  if (visitedPostIds.length && visitedPostIds[visitedPostIds.length - 1] === currentPostId) {
-    // Don't duplicate postId
+  visitedPosts.splice(currentVisitedPostIndex + 1, 999999);
+  if (visitedPosts.length && visitedPosts[visitedPosts.length - 1].postId === currentPostId) {
+    // Don't duplicate postId.
+    visitedPosts.splice(visitedPosts.length - 1, 1);
   }
-  else {
-    visitedPostIds.push(currentPostId);
-  }
-  visitedPostIds.push(nextPostId);
-  currentVisitedPostIndex = visitedPostIds.length - 1;
+  visitedPosts.push({
+    windowLeft: $(window).scrollLeft(),
+    windowTop: $(window).scrollTop(),
+    postId: currentPostId
+  });
+  visitedPosts.push({ postId: nextPostId });
+  currentVisitedPostIndex = visitedPosts.length - 1;
   renderPostNavigationPanel();
 }
 
