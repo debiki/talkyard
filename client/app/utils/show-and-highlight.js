@@ -68,7 +68,7 @@ function highlightBriefly($tag, opt_backgroundSelector) {
   anyCurrentlyHighlightedBackground = $background;
       */
 
-  $tag.css('outline', 'hsl(211, 100%, 77%) solid 7px');
+  $tag.css('outline', 'hsl(211, 100%, 77%) solid 7px'); // duplicated style [FK209EIZ]
   anyCurrentlyHighlighted = $tag;
   // Remove the outline somewhat quickly (during 600 ms). Otherwise it looks
   // jerky: removing 1px at a time, slowly, is very noticeable!
@@ -150,13 +150,15 @@ function anyAnchorPostId() {
 
 
 // When hovering a multireply, outline the post that was replied to.
+// Use a dedicated CSS class so we won't accidentally remove any outline added
+// because of other reasons, when removing this outline.
 $(document).on('hover', '.dw-multireply-to', function(event) {
   var referencedPost = getPostMultirepliedTo(this);
   if (event.type === 'mouseenter') {
-    referencedPost.css('outline', 'hsl(211, 100%, 77%) solid 5px');
+    referencedPost.addClass('dw-highlighted-multireply-hover');
   }
   else {
-    referencedPost.css('outline', 'none');
+    referencedPost.removeClass('dw-highlighted-multireply-hover');
   }
 });
 
