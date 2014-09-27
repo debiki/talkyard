@@ -40,6 +40,7 @@ GET   /-/api/logout             controllers.LoginController.logout
 POST  /-/api/logout             controllers.LoginController.logout
 
 GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic
+GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor
 
 POST  /-/search/site                        controllers.FullTextSearchController.searchWholeSite()
 GET   /-/search/site/for/:phrase            controllers.FullTextSearchController.searchWholeSiteFor(phrase)
@@ -105,11 +106,12 @@ GET   /-/load-user-info         controllers.UserController.loadUserInfo(userId)
 GET   /-/list-topics            controllers.ForumController.listTopics(categoryId)
 GET   /-/list-categories        controllers.ForumController.listCategories(forumId)
 
+POST  /-/create-page            controllers.CreatePageController.createPage
 GET   /-/load-my-page-activity  controllers.ViewPageController.loadMyPageActivity(pageId)
 POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/vote                   controllers.VoteController.handleVotes
 POST  /-/flag                   controllers.Application.flag
-GET   /-/edit                   controllers.EditController.showEditFormAnyPage(pageId, pagePath, pageRole, postId)
+GET   /-/edit                   controllers.EditController.loadCurrentText(pageId, postId)
 POST  /-/edit                   controllers.EditController.edit
 GET   /-/improvements           controllers.EditHistoryController.showForm(pageId, postId)
 POST  /-/improve                controllers.EditHistoryController.handleForm(pageId)
@@ -136,7 +138,7 @@ GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
 
 # Don't change the URL on the next line. The /-/assets/<version-number>/ is
 # updated by the deployment script (asset fingerprinting).
-GET   /-/assets/55/*file        controllers.Assets.at(path = "/public/res", file)
+GET   /-/assets/56/*file        controllers.Assets.at(path = "/public/res", file)
 GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
 GET   /-/debiki-embedded-comments.js   controllers.Assets.at(path = "/public/res", file = "embedded-comments.js")
 GET   /-/debiki-embedded-comments.css  controllers.Assets.at(path = "/public/res", file = "debiki-embedded-comments.css")

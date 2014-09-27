@@ -1,0 +1,33 @@
+<div ng-controller="EditorController">
+<div id="debiki-editor-placeholder" ng-hide="!visible"></div>
+<div id="debiki-editor-controller" ng-hide="!visible">
+
+  <div class="editor-area">
+    <div ng-if="editingPostId">
+      Editing <a href="#post-{{ editingPostId }}">post {{ editingPostId }}</a>:
+    </div>
+    <div ng-if="replyToPostIds.length == 0">
+      Please select one or more posts to reply to.
+    </div>
+    <div ng-if="replyToPostIds.length > 0">
+      Replying to
+        <span ng-repeat="postId in replyToPostIds">
+          <span ng-if="!$first">and</span>
+          <a href="#post-{{ postId }}">post {{ postId }}</a></span>:
+    </div>
+    <div class="editor-wrapper">
+      <textarea ng-model="text" ng-change="vm.onTextEdited()" class="editor"></textarea>
+    </div>
+  </div>
+
+  <div class="preview-area">
+    <div>Preview:</div>
+    <div ng-bind-html="safePreviewHtml" class="preview"></div>
+  </div>
+
+  <div class="submit-cancel-btns">
+    <button ng-click="vm.save()" class="btn btn-default">{{ vm.saveButtonTitle() }}</button>
+    <button ng-click="vm.cancel()" class="btn btn-default">Cancel</button>
+  </div>
+</div>
+</div>

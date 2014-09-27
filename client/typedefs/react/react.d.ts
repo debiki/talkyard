@@ -1,0 +1,1 @@
+../../../node_modules/react-typescript-definitions/react.d.ts

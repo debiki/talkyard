@@ -102,6 +102,8 @@
   </div>
 </div>
 
+<div id="dw-posts-navigation"></div>
+
 <footer>
   <div class='footer'>
     @Html(tpi.configValue("html-footer"))
@@ -115,6 +117,7 @@
 @Html(tpi.configValue("html-append-to-body"))
 @tpi.debikiAppendToBodyTags
 
+<div ng-include="'editor.html'"></div>
 </body>
 </html>
 

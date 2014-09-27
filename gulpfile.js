@@ -76,9 +76,11 @@ var nextFileLine =
 
 
 var debikiDesktopFiles = [
+      'bower_components/keymaster/keymaster.js',
       'bower_components/lodash/dist/lodash.js',
       'bower_components/moment/min/moment.min.js',
       'bower_components/angular-moment/angular-moment.min.js',
+      'modules/pagedown/Markdown.Converter.js',
       'client/third-party/bootstrap/tooltip.js', //
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
@@ -102,7 +104,6 @@ var debikiDesktopFiles = [
       'target/client/app/actions/initialize.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
-      'target/client/app/actions/reply-form-html.js',
       'target/client/app/actions/popup-menu.js',
       'target/client/app/arrows/arrows-png.js',
       //'target/client/app/arrows/arrows-svg-unused.js',
@@ -157,9 +158,11 @@ var debikiDesktopFiles = [
 
 
 var debikiTouchFiles = [
+      'bower_components/keymaster/keymaster.js',
       'bower_components/lodash/dist/lodash.js',
       'bower_components/moment/min/moment.min.js',
       'bower_components/angular-moment/angular-moment.min.js',
+      'modules/pagedown/Markdown.Converter.js',
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',
@@ -180,7 +183,6 @@ var debikiTouchFiles = [
       'target/client/app/actions/initialize.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
-      'target/client/app/actions/reply-form-html.js',
       'target/client/app/actions/popup-menu.js',
       'target/client/app/arrows/arrows-png.js',
       //'target/client/app/arrows/arrows-svg-unused.js',
@@ -257,6 +259,7 @@ var debikiEmbeddedCommentsFiles = [
       'target/client/embedded-comments/iframe-parent.js',
       'client/embedded-comments/parent-footer.js'];  // not ^target/client/...
 
+
 var adminOldFiles = [
       'target/client/third-party/livescript/prelude-browser-min.js',
       'target/client/third-party/bootstrap/tooltip.js', // -popup.js dependee
@@ -315,6 +318,7 @@ gulp.task('compile-livescript', function () {
 
 gulp.task('compile-typescript', function () {
   var stream = gulp.src([
+        'client/shared/editor/**/*.ts',
         'client/app/**/*.ts',
         'client/admin-app/**/*.ts',
         'client/typedefs/**/*.ts'])
@@ -336,7 +340,9 @@ gulp.task('compile-typescript', function () {
 
 
 gulp.task('compile-templates', function () {
-  var pageAppTemplateStream = gulp.src('client/app/**/*.html')
+  var pageAppTemplateStream = gulp.src([
+        'client/shared/editor/**/*.html',
+        'client/app/**/*.html'])
       .pipe(templateCache({
         module: 'DebikiApp',
         filename: 'page-app-angular-templates.js'
@@ -499,6 +505,7 @@ gulp.task('compile-stylus', function () {
   return es.merge(
     makeStyleStream('public/res/', 'combined-debiki.css', [
         'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
+        'client/shared/editor/**/*.styl',
         'client/app/debiki.styl',
         'client/app/posts/layout.styl',
         'client/app/minimap/minimap.styl',

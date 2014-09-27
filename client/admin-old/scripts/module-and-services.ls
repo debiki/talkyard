@@ -108,20 +108,6 @@ function adminService ($http, $rootScope)
       callback viewNewPageUrl
 
 
-  # Newly created pages knows to call each function in
-  # onOpenedPageSavedCallbacks when saved, on window.opener.
-  d.i.onOpenedPageSavedCallbacks ?= []
-  d.i.onOpenedPageSavedCallbacks.push !(pageMeta, pageTitle) ->
-    $rootScope.$apply !->
-      for callback in onOpenedPageSavedCallbacks
-        callback pageMeta, pageTitle
-
-  onOpenedPageSavedCallbacks = []
-
-  api.onPageSaved = !(callback) ->
-    onOpenedPageSavedCallbacks.push callback
-
-
   api.wrapForumInGroup = (forumPageId, { onSuccess }) ->
     $http.post(
         '/-/wrap-forums-in-group'

@@ -129,13 +129,32 @@ object SiteCreator {
     */
   private def createBlogOrForum(newSiteDao: SiteDao, pageRole: PageRole, createdAt: ju.Date) {
     val pageId = newSiteDao.nextPageId()
-    val emptyPage = PageParts(pageId, SystemUser.Person)
+
+    var actions = List(RawPostAction.forNewTitle(
+      if (pageRole == PageRole.Blog) BlogTitle else ForumTitle,
+      createdAt, SystemUser.UserIdData, Some(Approval.AuthoritativeUser)))
+    if (pageRole == PageRole.Forum) {
+      actions ::= RawPostAction.forNewPageBody(ForumBody, createdAt, PageRole.Forum,
+        SystemUser.UserIdData, Some(Approval.AuthoritativeUser))
+    }
+
+    val pageParts = PageParts(pageId, rawActions = actions)
     val pageMeta = PageMeta.forNewPage(
-      pageRole, SystemUser.User, emptyPage, createdAt, publishDirectly = true)
+      pageRole, SystemUser.User, pageParts, createdAt, publishDirectly = true)
     val pagePath = PagePath(newSiteDao.siteId, folder = "/",
       pageId = Some(pageId), showId = false, pageSlug = "")
-    newSiteDao.createPage(Page(pageMeta, pagePath, ancestorIdsParentFirst = Nil, emptyPage))
+
+    newSiteDao.createPage(Page(pageMeta, pagePath, ancestorIdsParentFirst = Nil, pageParts))
   }
+
+
+  val BlogTitle = "Blog Title (click to edit)"
+
+  val ForumTitle = "Forum Title (click to edit)"
+  val ForumBody = i"""
+      |Forum description here. What is this forum about?
+      |
+      |Click to edit. Select Improve in the menu that appears."""
 
 
   /**

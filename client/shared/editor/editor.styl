@@ -1,0 +1,64 @@
+
+
+.dw-embedded-editor
+  #debiki-editor-controller
+    height: 100% !important
+  #debiki-editor-placeholder
+    display: none
+
+
+#debiki-editor-placeholder
+  height: 300px
+
+#debiki-editor-controller
+  // These four are !important because otherwise jQuery.resizable() overwrites
+  // them with position: absolute and top: 0 and a narrower and narrower width.
+  position: fixed !important
+  top: initial !important;
+  bottom: 0 !important
+  width: 100% !important
+  height: 300px
+  background: hsl(0, 0%, 70%)
+  padding: 20px 5px 5px 15px
+  z-index: 1000
+
+  .editor-area
+    width: 49%
+    position: absolute
+    top: 17px
+    bottom: 70px
+
+    .editor-wrapper
+      position: absolute
+      top: 20px
+      right: 10px
+      bottom: 10px
+      left: 0
+
+      .editor
+        width: 100%
+        height: 100%
+
+    .preview
+      height: 100%
+      width: 100%
+
+  .preview-area
+    width: 49%
+    position: absolute
+    top: 18px
+    right: 12px
+    bottom: 30px
+
+    .preview
+      position: absolute;
+      top: 20px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: white
+      overflow: auto
+
+  .submit-cancel-btns
+    position: absolute;
+    bottom: 30px;

@@ -35,7 +35,7 @@ export class UsersQueryService {
 
   public loadUserInfo(userId: string): ng.IPromise<UserInfo> {
     var deferred = this.$q.defer<UserInfo>();
-    this.$http.get('/-/load-user-info?userId=' + userId).success((response) => {
+    this.$http.get('/-/load-user-info?userId=' + userId).success((response: any) => {
       var userInfo = UserInfo.fromJson(response.userInfo);
       deferred.resolve(userInfo);
     });
@@ -45,7 +45,7 @@ export class UsersQueryService {
 
   public loadActions(userId: string): ng.IPromise<ActionListItem[]> {
     var deferred = this.$q.defer<ActionListItem[]>();
-    this.$http.get('/-/list-user-actions?userId=' + userId).success((response) => {
+    this.$http.get('/-/list-user-actions?userId=' + userId).success((response: any) => {
       var actionItems: ActionListItem[] = [];
       for (var i = 0; i < response.actions.length; ++i) {
         var json = response.actions[i];

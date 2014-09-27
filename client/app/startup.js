@@ -265,7 +265,6 @@ function renderPageEtc() {
   d.i.showCurLocationInSiteNav();
 
   if (!Modernizr.touch) {
-    d.i.initKeybdShortcuts($);
     d.i.initUtterscrollAndTips();
   }
 
@@ -318,6 +317,7 @@ function renderPageEtc() {
   steps.push(function() {
     d.i.ensureAnyAnchorPostLoaded(function() {
       d.i.scrollToUrlAnchorPost();
+      debiki2.postnavigation.renderPostNavigationPanel();
     });
   });
 
@@ -335,8 +335,7 @@ function renderPageEtc() {
   });
 
   steps.push(function() {
-    // Start AngularJS
-    d.i.angularApply(function() {});
+    startAngular();
   });
 
   function runNextStep() {
@@ -366,15 +365,12 @@ function renderEmptyPage() {
     d.i.initKeybdShortcuts($);
     d.i.initUtterscrollAndTips();
   }
-
-  // Start AngularJS
-  d.i.angularApply(function() {});
-
+  startAngular();
   fireLoginOrLogout();
 };
 
 
-d.i.startup = function() {
+d.i.startDiscussionPage = function() {
   $(function() {
     // Import LiveScript's prelude, http://gkz.github.com/prelude-ls/.
     prelude.installPrelude(window);
@@ -398,5 +394,18 @@ d.i.startup = function() {
     }
   });
 };
+
+
+d.i.startEmbeddedEditor = function() {
+  // The editor is an Angular module so all we need to do is to start Angular:
+  startAngular();
+};
+
+
+function startAngular() {
+  d.i.angularApply(function() {});
+  $(document).trigger('dwEvAngularStarted');
+}
+
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

@@ -364,14 +364,8 @@ class PageListItem extends ListItem
     # Open new tab directly in response to user click, or browser popup
     # blockers tend to block the new tab.
     newTab = window.open '', '_blank'
-
     adminService.getViewNewPageUrl pageData, !(viewNewPageUrl) ->
       newTab.location = viewNewPageUrl
-      # If the new page is saved, `newTab` will call the `onPageSaved`
-      # callback just below. Then we'll update $scope.listItems.
-
-
-  adminService.onPageSaved handleSavedPage
 
 
   !function handleSavedPage (pageMeta, pageTitle)

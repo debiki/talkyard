@@ -81,6 +81,7 @@ object RawPostAction {
       text: String,
       markup: String,
       approval: Option[Approval],
+      multireplyPostIds: Set[PostId] = Set[PostId](),
       where: Option[String] = None) = {
     if (Some(id) == parentPostId)
       assErr("DwE23GFf0")
@@ -88,8 +89,8 @@ object RawPostAction {
     RawPostAction(
       id, creationDati, postId = id, userIdData = userIdData,
       payload = PAP.CreatePost(
-        parentPostId = parentPostId, text = text,
-        markup = markup, approval = approval, where = where))
+        parentPostId = parentPostId, text = text, markup = markup,
+        approval = approval, multireplyPostIds = multireplyPostIds, where = where))
   }
 
 

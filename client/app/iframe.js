@@ -19,7 +19,7 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-if (!d.i.isInIframe)
+if (!d.i.isInEmbeddedCommentsIframe && !d.i.isInEmbeddedEditor)
   return;
 
 
@@ -27,7 +27,8 @@ addEventListener('message', onMessage, false);
 
 window.parent.postMessage('["iframeInited", {}]', '*');
 
-syncDocSizeWithIframeSize();
+if (d.i.isInEmbeddedCommentsIframe)
+  syncDocSizeWithIframeSize();
 
 
 function onMessage(event) {
@@ -50,6 +51,32 @@ function onMessage(event) {
     case 'setBaseAddress':
       d.i.iframeBaseUrl = eventData;
       addBaseElem(eventData);
+      break;
+    case 'editorToggleReply':
+      // This message is sent from an embedded comments page to the embedded editor.
+      // It opens the editor to write a reply to `postId`.
+      var postId = eventData;
+      d.i.openEditorToWriteReply(postId);
+      break;
+    case 'handleReplyResult':
+      // This message is sent from the embedded editor <iframe> to the comments
+      // <iframe> when the editor has posted a new reply and the server has replied
+      // with the HTML for the reply. `eventData` is JSON that includes this HTML;
+      // it'll be inserted into the comments <iframe>.
+      d.i.handleReplyResult(eventData);
+      break;
+    case 'clearIsReplyingMarks':
+      // This is sent from the embedded editor to an embedded comments page.
+      d.i.clearIsReplyingMarks();
+      break;
+    case 'editorEditPost':
+      // Sent from an embedded comments page to the embedded editor.
+      var postId = eventData;
+      d.i.openEditorToEditPost(postId);
+      break;
+    case 'handleEditResult':
+      // This is sent from the embedded editor back to an embedded comments page.
+      d.i.handleEditResult(eventData);
       break;
   }
 };

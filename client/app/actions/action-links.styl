@@ -172,6 +172,18 @@
 .dw-p-as-hz-reply > .dw-a:not(.dw-a-reply):hover
   color: hsl(211, 30%, 40%)
 
+.dw-replying
+  opacity: 1 !important
+
+  .dw-a-reply
+    color: white !important
+    background: hsl(210, 51%, 45%)
+    border-radius: 5px
+    padding: 2px 4px 3px 1px
+    position: relative
+    top: -2px
+    left: 3px
+
 .dw-p-as
   // Prevent collapsed posts from appearing too close to any post just below,
   // by making the actions <div> at least this tall. (It's empty, currently
@@ -207,7 +219,7 @@ body.dw-u-ui-simple .dw-a-edit
   font-size: 10px
 
 // Sync these selectors with showCommentsOnClick in debiki.js.
-.dw-hide-interactions .dw-ar-t > .dw-res,
+.dw-hide-interactions .dw-ar-t > .dw-single-and-multireplies > .dw-res,
 .dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bd > .dw-p-bd-blk .dw-i-m-start,
 .dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bd > .dw-i-ts,
 .dw-hide-interactions .dw-debate svg

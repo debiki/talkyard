@@ -60,7 +60,7 @@ trait RenderedPageHtmlDao {
   def renderPage(pageReq: PageRequest[_], renderSettings: RenderPageSettings)
         : RenderedPage = {
 
-    val page = pageReq.pageDesiredVersionWithDummies_!
+    val page = pageReq.thePage
     val postsReadStats = pageReq.dao.loadPostsReadStats(page.id)
     val renderer = HtmlPageSerializer(page,
       postsReadStats, pageReq.pageRoot, pageReq.host,

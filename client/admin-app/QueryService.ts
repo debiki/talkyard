@@ -93,7 +93,7 @@ export class QueryService {
 
   public loadRecentPosts(): ng.IPromise<moderation.Post[]> {
     var deferred = this.$q.defer<moderation.Post[]>();
-    this.$http.get(this.RecentPostsUrl).success((response) => {
+    this.$http.get(this.RecentPostsUrl).success((response: any) => {
       var posts: moderation.Post[] = [];
       for (var i = 0; i < response.actions.length; ++i) {
         var postJson = response.actions[i];

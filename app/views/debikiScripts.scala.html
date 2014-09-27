@@ -15,7 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(anyPageId: Option[String], serverAddress: String, pageUriPath: String,
+@(startupCode: String, anyPageId: Option[String], serverAddress: String, pageUriPath: String,
+  anyPageRole: Option[com.debiki.core.PageRole], anyPagePath: Option[com.debiki.core.PagePath],
   minMaxJs: String, minMaxCss: String)
 
 @asset(file: String) = @{
@@ -38,6 +39,8 @@ stylesheet references", http://modernizr.com/docs/#installing
 
 <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.@minMaxJs"></script>
 <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular-sanitize.@minMaxJs"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/react/0.11.2/react-with-addons.@minMaxJs"></script>
 
 @* For now only, should probably install via e.g. Bower? and include in JS bundle? *@
 <script src="//angular-ui.github.io/ui-router/release/angular-ui-router.js"></script>
@@ -66,6 +69,11 @@ See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-j
       serverOrigin: 'http://@serverAddress',
       pageUri: 'http://@serverAddress@pageUriPath',
       pageId: @Html(pageIdQuotedOrUndefined),
+      pageRole: '@{ anyPageRole.map(_.toString) getOrElse "" }',
+      isInEmbeddedCommentsIframe: @{
+        if (anyPageRole == Some(com.debiki.core.PageRole.EmbeddedComments)) "true" else "false"
+      },
+      pagePath: '@{ anyPagePath.map(_.value) getOrElse "" }',
       assetsUrlPathStart: 'http://@serverAddress@asset("")',
       singleColumnLayout: Math.max(jQuery(window).width(), jQuery(window).height()) < 1000
     }
@@ -77,11 +85,11 @@ See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-j
     yep: '@asset(s"combined-debiki-touch.$minMaxJs")',
     nope: '@asset(s"combined-debiki-desktop.$minMaxJs")',
     complete: function() {
-      @* Because of evil magic, this `complete()` callback is invoked before the above lazy-loaded
-         scripts have been evaluated, resulting in an 'undefined' error when calling `startup()` below.
-         so call `debiki.internal.startup()` over and over again until it's available. *@
+      @* Because of evil magic, this `complete()` callback is sometimes invoked before the above
+         lazy-loaded scripts have been evaluated, resulting in an 'undefined' error when calling
+         the startup code below. So call it over and over again until it's available. *@
       var handle = setInterval(function() {
-        debiki.internal.startup();
+        @startupCode
         clearInterval(handle);
       }, 50);
     }

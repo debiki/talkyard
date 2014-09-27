@@ -45,7 +45,7 @@ function $clearAndRedrawArrows() {
 
 function clearAndRedrawArrowsHorizontally($thread) {
   $thread.find('> .dw-t-vspace > .dw-arw').remove();
-  $thread.find('> .dw-res > li > .dw-t > .dw-arw').remove();
+  $thread.find('> .dw-single-and-multireplies > .dw-res > li > .dw-t > .dw-arw').remove();
   drawHzArrowToReplyButton($thread);
   drawHzArrowsToReplies($thread);
 };
@@ -53,7 +53,7 @@ function clearAndRedrawArrowsHorizontally($thread) {
 
 function drawHzArrowToReplyButton($thread) {
   var arrowHtml;
-  var numChildren = $thread.find('> .dw-res > li').length;
+  var numChildren = $thread.find('> .dw-single-and-multireplies > .dw-res > li').length;
   if (numChildren == 1) {
     // Use solo arrow.
     arrowHtml = '<div class="dw-arw dw-arw-hz-curve-to-reply-btn"></div>';
@@ -67,19 +67,20 @@ function drawHzArrowToReplyButton($thread) {
 
 
 function drawHzArrowsToReplies($thread) {
-  var $childThreads = $thread.find('> .dw-res > li > .dw-t');
+  var $childThreads = $thread.find(
+      '> .dw-single-and-multireplies > .dw-res.dw-singlereplies > li > .dw-t');
   $childThreads.each(function() {
     $childThread = $(this);
 
     // Draw arrow to child thread.
     $childThread.prepend(
-      '<div class="dw-arw dw-arw-hz-line-to-this"></div>' +
       '<div class="dw-arw dw-arw-hz-curve-to-this"></div>');
 
     // Draw line above child thread, to next thread.
     var $listItem = $childThread.parent();
     if (!$listItem.is(':last-child')) {
       $childThread.prepend(
+        '<div class="dw-arw dw-arw-hz-line-to-this"></div>' +
         '<div class="dw-arw dw-arw-hz-line-to-sibling"></div>');
     }
   });
@@ -96,7 +97,8 @@ function clearAndRedrawArrowsVertically($thread) {
     $thread.is('.dw-t-closed') &&
     $thread.parent().closest('.dw-t').is('.dw-hz');
 
-  var $childThreads = $thread.find('> .dw-res > .dw-t');
+  // (Don't draw arrows to multireplies; there isn't any single post from which to draw arrows.)
+  var $childThreads = $thread.find('> .dw-single-and-multireplies > .dw-res.dw-singlereplies > .dw-t');
 
   $thread.removeClass('dw-t-exactly-one-reply');
   if ($childThreads.length === 1 && !thisIsHzClosedSection) {

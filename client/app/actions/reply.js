@@ -1,5 +1,5 @@
 /* Shows a reply form, and some related tips.
- * Copyright (C) 2010 - 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2010 - 2014 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -22,206 +22,116 @@ var NO_ID = -1;
 
 
 d.i.$showReplyForm = function(event, opt_where) {
+  event.preventDefault();
+
+  var thread = $(this).closest('.dw-t');
+  var replyAction = thread.find('> .dw-p-as > .dw-a-reply');
+  if (!replyAction.length) {
+    // This is an embedded comments page and the reply button clicked is in the
+    // comments toolbar.
+    d.u.bugIf(!thread.is('.dw-depth-0'));
+    replyAction = $('.dw-cmts-tlbr .dw-a-reply');
+  }
+
   var postId;
   if ($(this).closest('.dw-cmts-tlbr').length) {
     // Embedded comments page, Reply button in comments toolbar was clicked.
-    postId = d.i.BodyId;
+    // Set postId to NO_ID to indicate that we're replying to the article on
+    // the embedding page.
+    postId = NO_ID;
   }
   else {
     // Non-embedded page; there is no Reply button in the comments toolbar.
     postId = $(this).closest('.dw-t').dwPostId();
   }
-  var _this = this;
-  event.preventDefault();
+
   var anyReturnToUrl = d.i.makeReturnToPostUrlForVerifEmail(postId);
   d.i.loginIfNeeded('LoginToLogin', anyReturnToUrl, function() {
-    showReplyFormImpl.call(_this, opt_where);
-  });
-};
-
-
-// Shows a reply form, either below the relevant post, or inside it,
-// if the reply is an inline comment -- whichever is the case is determined
-// by event.target [what? `event.target` isn't used anywhere! Old comment?]
-function showReplyFormImpl(opt_where) {
-  // Warning: Some duplicated code, see .dw-r-tag click() above.
-  var $thread = $(this).closest('.dw-t');
-  var $replyAction = $thread.find('> .dw-p-as > .dw-a-reply');
-  if (!$replyAction.length) {
-    // This is an embedded comments page and the reply button clicked is in the
-    // comments toolbar.
-    d.u.bugIf(!$thread.is('.dw-depth-0'));
-    $replyAction = $('.dw-cmts-tlbr .dw-a-reply');
-  }
-  var $post = $thread.children('.dw-p');
-  var anyParentPageId = $post.dwPageMeta().parentPageId;
-
-  // If this is an embedded page, there's a dummy .dw-p that represents the
-  // article in the embedding page an is needed for arrows and the article reply
-  // button to appear. It doesn't really exist though and has no id — use NO_ID
-  // in that case.
-  $post = $post.filter('[id]');
-  var postIdStr = $post.length ? $post.dwPostIdStr() : NO_ID;
-  var postId = parseInt(postIdStr);
-
-  var horizLayout = $thread.is('.dw-hz');
-  var replyCountBefore = $thread.find('> .dw-res > .dw-t').length;
-
-  $replyAction.dwActionLinkDisable();
-
-  function showSortOrderTipsLater($newPost, delay) {
-    setTimeout(function() {
-      var $tips = $('#dw-tps-sort-order');
-      $tips.appendTo($newPost)
-          .dwScrollIntoView()
-          .click(function() {
-        $tips.hide();
-        showRateOwnCommentTipsLater($newPost, 400);
-      });
-    }, delay);
-  }
-
-
-  var $replyFormParent = d.i.newReplyFormHtml();
-  var $replyForm = $replyFormParent.children('form');
-
-  d.u.makeIdsUniqueUpdateLabels($replyForm);
-
-  $replyForm.resizable({
-      alsoResize: $replyForm.find('textarea'),
-      resize: function() {
-        $post.each(d.i.SVG.$drawParents);
-      },
-      minHeight: 180,  // or lower parts of form might overflow
-      minWidth: 210  // or Cancel button might float drop
-    });
-
-  var $anyHorizReplyBtn = $();
-  var $submitBtn = $replyForm.find('.dw-fi-submit');
-  var $cancelBtn = $replyForm.find('.dw-fi-cancel');
-
-  $cancelBtn.click(function() {
-    $replyAction.dwActionLinkEnable();
-  });
-
-  var setSubmitBtnTitle = function(event, userName) {
-    var text = userName ?  'Post as '+ userName : 'Post as ...';  // i18n
-    $submitBtn.val(text);
-  };
-  setSubmitBtnTitle(null, d.i.Me.getName());
-  $submitBtn.each(d.i.$loginSubmitOnClick(setSubmitBtnTitle, 'LoginToComment'));
-
-  $replyForm.submit(function() {
-    d.u.postJson({
-        url: d.i.serverOrigin + '/-/reply',
-        data: {
-          pageId: d.i.pageId,
-          parentPageId: anyParentPageId,
-          pageUrl: d.i.iframeBaseUrl || undefined,
-          postId: postId,
-          text: $replyForm.find('[name="dw-fi-reply-text"]').val()
-          // where: ...
-        },
-        error: d.i.showErrorEnableInputs($replyForm),
-        success: onCommentSaved
-      });
-    d.i.disableSubmittedForm($replyForm);
-    return false;
-  });
-
-  function onCommentSaved(newDebateHtml) {
-    // The server has replied. Merge in the data from the server
-    // (i.e. the new post) in the debate.
-    // Remove the reply form first — if you do it afterwards,
-    // a .dw-t:last-child might fail (be false), because the form
-    // would be the last child, resulting in a superfluous
-    // dw-svg-fake-harrow.
-    d.i.removeInstantly($replyFormParent);
-    $replyAction.dwActionLinkEnable();
-
-    var result = d.i.patchPage(newDebateHtml);
-    var anyPatchedThread = result.patchedThreads[0];
-    if (anyPatchedThread) {
-      var $myNewPost = anyPatchedThread.dwGetPost();
-      d.u.bugIf($myNewPost.length !== 1, 'DwE3TW39');
-      d.i.markMyPost($myNewPost.dwPostIdStr());
-
-      // Don't show sort order tips instantly, because if
-      // the new comment and the tips appear at the same time,
-      // the user will be confused? S/he won't know where to look?
-      // So wait a few seconds.
-      // Don't show sort order tips if there are few replies,
-      // then nothing is really being sorted anyway.
-      var showSortTips = horizLayout && replyCountBefore >= 2;
-      if (showSortTips) showSortOrderTipsLater($myNewPost, 2050);
-
-      d.i.showAndHighlightPost($myNewPost,
-          { marginRight: 300, marginBottom: 300 });
-      d.i.$showActions.apply($myNewPost);
+    // Toggle highlighting first, because it'll be cleared later if the
+    // editor is closed, and then we don't want to toggle it afterwards.
+    toggleReplyButtonHighlighting(replyAction);
+    if (d.i.isInEmbeddedCommentsIframe) {
+      sendWriteReplyMessageToEmbeddedEditor(postId);
     }
     else {
-      // This means a new user with unverified email posted the reply;
-      // it won't appear until email verified. Nothing to show here.
+      d.i.openEditorToWriteReply(postId);
     }
-
-    // Any horizontal reply button has been hidden.
-    $anyHorizReplyBtn.show();
-  };
-
-  // Fancy fancy
-  $replyForm.find('.dw-submit-set input').button();
-  $replyForm.find('label').addClass(
-    // color and font matching <input> buttons
-    'dw-ui-state-default-color dw-ui-widget-font');
-
-  if (opt_where) {
-    // The user replies to a specific piece of text inside the post.
-    // Place the reply inline, and fill in the `where' form field with
-    // the text where the click/selection was made.
-    $replyFormParent.prependTo(opt_where.elem);
-    $replyForm.find('input[id^="dw-fi-reply-where"]')
-        .val(opt_where.textStart);
-  } else if ($thread.is('.dw-hz')) {
-    // Place the form in the child thread list, to the right
-    // of the Reply button.
-    var $actionsListItem = $thread.find('> ol.dw-res > li.dw-p-as');
-    $actionsListItem.after($replyFormParent);
-  }
-  else {
-    // Place the form below the post, in the .dw-res list
-    var $res = $thread.children('.dw-res');
-    if (!$res.length) {
-      // This is the first reply; create the reply list.
-      $res = $("<ol class='dw-res'/>").appendTo($thread);
-    }
-    $res.prepend($replyFormParent);
-  }
-
-  // For horizontal threads, hide the reply button, to give the impression
-  // that the reply form replaces the reply button. Adjust the reply
-  // form min-width so it starts with a width equal to the reply
-  // button width — then the stuff to the right won't jump leftwards when
-  // $anyHorizReplyBtn is hidden/shown and the $replyForm is shown/removed.
-  if (horizLayout) {
-    $anyHorizReplyBtn =
-        $replyFormParent.prev().filter('.dw-p-as-hz-reply').dwBugIfEmpty().hide();
-    $replyForm.find('.dw-submit-set .dw-fi-cancel').click(function() {
-      d.i.slideAwayRemove($replyFormParent, function() {
-        $anyHorizReplyBtn.show();
-      });
-      // Cancel delegate, which also calls slideAwayRemove().
-      return false;
-    });
-    $replyFormParent.css('min-width', $anyHorizReplyBtn.outerWidth(true));
-  }
-
-  // Slide in the reply form.
-  $replyFormParent.each(d.i.$foldInLeft).queue(function(next) {
-    $replyForm.dwScrollIntoView();
-    next();
   });
 };
 
+
+
+function sendWriteReplyMessageToEmbeddedEditor(postId) {
+  window.parent.postMessage(
+      JSON.stringify(['editorToggleReply', postId]), '*');
+};
+
+
+d.i.openEditorToWriteReply = function(postId) {
+  d.i.withEditorScope(function(editorScope) {
+    var isSelected = editorScope.vm.toggleReplyToPost(postId);
+  });
+};
+
+
+function toggleReplyButtonHighlighting(replyAction) {
+  var actions = replyAction.closest('.dw-p-as');
+  actions.toggleClass('dw-replying');
+}
+
+
+d.i.clearIsReplyingMarks = function() {
+  $('.dw-replying').removeClass('dw-replying');
+};
+
+
+d.i.handleReplyResult = function(data) {
+  if (d.i.isInEmbeddedEditor) {
+    // Send a message to the embedding page, which will forward it to
+    // the comments iframe, which will show the new comment.
+    window.parent.postMessage(
+        JSON.stringify(['handleReplyResult', data]), '*');
+  }
+  else {
+    doHandleReplyResult(data);
+  }
+};
+
+
+function doHandleReplyResult(data) {
+  var result = d.i.patchPage(data);
+  var patchedThread = result.patchedThreads[0];
+  var myNewPost = patchedThread.dwGetPost();
+  d.u.bugIf(myNewPost.length !== 1, 'DwE3TW379');
+  d.i.markMyPost(myNewPost.dwPostIdStr());
+
+  var parentThread = patchedThread.parent().closest('.dw-t');
+  var horizLayout = parentThread.is('.dw-hz');
+  var replyCountBefore = parentThread.find('> .dw-single-and-multireplies > .dw-singlereplies > li > .dw-t').length;
+
+  // Don't show sort order tips instantly, because if
+  // the new comment and the tips appear at the same time,
+  // the user will be confused? S/he won't know where to look?
+  // So wait a few seconds.
+  // Don't show sort order tips if there are few replies,
+  // then nothing is really being sorted anyway.
+  var showSortTips = horizLayout && replyCountBefore >= 2;
+  if (showSortTips)
+    showSortOrderTipsLater(myNewPost, 2050);
+
+  d.i.showAndHighlightPost(myNewPost, { marginRight: 300, marginBottom: 300 });
+  d.i.$showActions.apply(myNewPost);
+};
+
+
+function showSortOrderTipsLater($newPost, delay) {
+  setTimeout(function() {
+    var $tips = $('#dw-tps-sort-order');
+    $tips.appendTo($newPost).dwScrollIntoView().click(function() {
+      $tips.hide();
+    });
+  }, delay);
+}
 
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

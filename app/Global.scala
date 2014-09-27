@@ -109,16 +109,10 @@ object Global extends GlobalSettings {
     val GET = "GET"
     val POST = "POST"
     val action = (mainFun, request.method) match {
-      case ("edit", GET) =>
-        EditController.showEditForm(pagePath, postId = mainFunValAsInt_!)
       case ("view", GET) =>
         ViewPageController.viewPost(pagePath)
       case ("delete", POST) =>
         Application.handleDeleteForm(pagePath, postId = mainFunValAsInt_!)
-      case ("get-view-new-page-url", GET) =>
-        CreatePageController.getViewNewPageUrl(pagePath)
-      case ("view-new-page", GET) =>
-        CreatePageController.viewNewPage(pagePath, pageId = mainFunVal_!)
       case ("move-page", GET) =>
         MovePageController.showMovePageForm(pagePath)
       case ("move-page", POST) =>

@@ -65,25 +65,6 @@ del
 
 
 
-// Dummy title and body
-//===========================
-
-
-// Hide reply button until a page body has been written. Unless it's an embedded
-// comments page, then there'll never be any page body, only comments.
-.dw-t.dw-dummy
-  > .dw-res,
-  > .dw-t-vspace
-    display: none
-
-.dw-page[data-page_role="EmbeddedComments"]
-  .dw-t.dw-dummy
-    > .dw-res,
-    > .dw-t-vspace
-      display: block
-
-
-
 // Page rendering
 //===========================
 
@@ -207,6 +188,19 @@ html.js body.dw-render-actions-pending .dw-as
                       //  action links below deleted posts
   font-style: italic
   background-color: transparent
+
+.DW .dw-multireply-to
+  padding: 7px 10px 5px 0
+  display: inline-block;
+  color: hsl(211, 88%, 20%);
+  font-size: 11px;
+
+  .icon-reply
+    display: inline-block; // makes .dw-mirror work
+    opacity: 0.7;
+    margin-right: -2px;
+    font-size: 10px;
+
 
 // Users with links to more info, e.g. website or blog
 .dw-pri a.dw-p-by,
@@ -388,6 +382,12 @@ span.dw-p-e-by
 #dw-page-data
   display: none
 
+.dw-mirror
+  -webkit-transform: scale(-1, 1)
+  -moz-transform: scale(-1, 1)
+  -ms-transform: scale(-1, 1)
+  -o-transform: scale(-1, 1)
+  transform: scale(-1, 1)
 
 
 // SVG

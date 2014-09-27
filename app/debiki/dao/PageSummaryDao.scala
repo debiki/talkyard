@@ -64,9 +64,9 @@ trait PageSummaryDao {
     for {
       pageId <- pageIds
       page <- loadPageParts(pageId)
-      author = (page.body orElse page.title).flatMap(_.user) getOrElse {
+      author <- (page.body orElse page.title).flatMap(_.user) orElse {
         logger.warn(s"No author loaded for page `$pageId' [error DwE903Ik2]")
-        DummyPage.DummyAuthorUser
+        None
       }
     } {
       var numPostsApproved = 0

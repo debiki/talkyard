@@ -20,6 +20,7 @@ package com.debiki.core
 import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
 import com.debiki.core.{PostActionPayload => PAP}
+import scala.collection.immutable
 import Prelude._
 import PageParts._
 import FlagType.FlagType
@@ -53,8 +54,9 @@ object PostActionPayload {
     text: String,
     markup: String,
     approval: Option[Approval],
+    multireplyPostIds: immutable.Set[PostId] = immutable.Set.empty,
     where: Option[String] = None) extends PostActionPayload {
-
+      dieIf(multireplyPostIds.size == 1, "DwE70FN1")
       override def textLengthUtf8: Int = text.getBytes("UTF-8").length
   }
 

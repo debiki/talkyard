@@ -86,8 +86,11 @@ d.i.angularApply = !(f) ->
 
   angularStartup.done ->
     rootScope = findRootScope!
-    rootScope.$apply !->
-      f rootScope
+    if rootScope.$$phase
+      f(rootScope)
+    else
+      rootScope.$apply !->
+        f rootScope
 
 
 
@@ -98,8 +101,10 @@ d.i.angularApply = !(f) ->
 d.i.anyAngularApply = !(f) ->
   rootScope = findRootScope!
   if rootScope
-    rootScope.$apply !-> f rootScope
-
+    if rootScope.$$phase
+      f(rootScope)
+    else
+      rootScope.$apply !-> f rootScope
 
 
 # Run Angular later, on dynamically loaded HTML??

@@ -86,7 +86,7 @@
   width: 100%
 
 .dw-arw-vt-curve-to-this,
-.dw-depth-0:not(.dw-hz) > .dw-res > li > .dw-t > .dw-res > .dw-t > .dw-arw-vt-curve-to-this
+.dw-depth-0:not(.dw-hz) > .dw-single-and-multireplies > .dw-res > li > .dw-t > .dw-single-and-multireplies > .dw-res > .dw-t > .dw-arw-vt-curve-to-this
   position: absolute
   background-color: transparent
   background: url(img/arrows-etcetera-gray.png) no-repeat -33px -228px
@@ -112,7 +112,7 @@
 // However do show it, if we use single column layout, because then replies
 // to article replies are always indented (and an arrow is needed if there's
 // indentation).
-.dw-depth-0:not(.dw-hz) > .dw-res > li > .dw-t > .dw-res > .dw-t:last-child > .dw-arw-vt-curve-to-this
+.dw-depth-0:not(.dw-hz) > .dw-single-and-multireplies > .dw-res > li > .dw-t > .dw-single-and-multireplies > .dw-res > .dw-t:last-child > .dw-arw-vt-curve-to-this
   display: block
   background: url("img/arrows-etcetera-gray.png") no-repeat -33px -228px
   left: 1px
@@ -131,7 +131,7 @@
 .dw-res.dw-zd
   position: relative
 
-.dw-hz > .dw-res > li:last-child > .dw-t > .dw-arw-hz-curve-to-this,
+.dw-hz > .dw-single-and-multireplies > .dw-res > li:last-child > .dw-t > .dw-arw-hz-curve-to-this,
 .dw-res > .dw-t:last-child > .dw-arw-vt-curve-to-this
   // Hide parts of the end of the horizontal or vertical line that spans
   // all child threads, by placing this arrow's background on top.
@@ -169,7 +169,7 @@ li.dw-fs-re:not(:last-child) .dw-arw-hz-line-to-sibling
   top: -39.5px
 
 // ... But only show that arrow if horizontal layout ...
-.dw-t:not(.dw-hz) > .dw-res > .dw-fs-re .dw-arw
+.dw-t:not(.dw-hz) > .dw-single-and-multireplies > .dw-res > .dw-fs-re .dw-arw
   display: none
 
 // ... and if there're replies to the right.
