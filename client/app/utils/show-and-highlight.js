@@ -35,7 +35,7 @@ var $ = d.i.$;
 
 var anyCurrentlyHighlighted = null;
 var anyCurrentlyHighlightedTimeout = null;
-var anyCurrentlyHighlightedBackground = null;
+//var anyCurrentlyHighlightedBackground = null;
 
 /**
  * Highlights and outlines $tag, for a little while. If there're opaque
@@ -49,29 +49,32 @@ function highlightBriefly($tag, opt_backgroundSelector) {
     anyCurrentlyHighlighted.stop(true, true);
     anyCurrentlyHighlighted = null;
   }
+  /*
   if (anyCurrentlyHighlightedBackground) {
     anyCurrentlyHighlightedBackground.stop(true, true);
     anyCurrentlyHighlightedBackground = null;
-  }
+  } */
   if (anyCurrentlyHighlightedTimeout) {
     clearTimeout(anyCurrentlyHighlightedTimeout);
     anyCurrentlyHighlightedTimeout = null;
   }
 
   var duration = 7500;
+  /*
   var $background = opt_backgroundSelector ?
       $tag.find(opt_backgroundSelector) : $tag;
   $background.effect('highlight',
       { easing: 'easeInExpo', color: 'yellow' }, duration);
   anyCurrentlyHighlightedBackground = $background;
+      */
 
-  $tag.css('outline', 'solid thick #f0a005');
+  $tag.css('outline', 'hsl(211, 100%, 77%) solid 7px');
   anyCurrentlyHighlighted = $tag;
   // Remove the outline somewhat quickly (during 600 ms). Otherwise it looks
   // jerky: removing 1px at a time, slowly, is very noticeable!
   anyCurrentlyHighlightedTimeout = setTimeout(function() {
     $tag.animate({ outlineWidth: '0px' }, 600);
-  }, Math.max(duration - 1500, 0));
+  }, Math.max(duration, 0));
 
   /// This won't work, jQuery plugin doesn't support rgba animation:
   //$post.animate(
