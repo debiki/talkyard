@@ -76,9 +76,11 @@ var nextFileLine =
 
 
 var debikiDesktopFiles = [
+      'bower_components/keymaster/keymaster.js',
       'bower_components/lodash/dist/lodash.js',
       'bower_components/moment/min/moment.min.js',
       'bower_components/angular-moment/angular-moment.min.js',
+      'modules/pagedown/Markdown.Converter.js',
       'client/third-party/bootstrap/tooltip.js', //
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
@@ -102,7 +104,6 @@ var debikiDesktopFiles = [
       'target/client/app/actions/initialize.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
-      'target/client/app/actions/reply-form-html.js',
       'target/client/app/actions/popup-menu.js',
       'target/client/app/arrows/arrows-png.js',
       //'target/client/app/arrows/arrows-svg-unused.js',
@@ -157,9 +158,11 @@ var debikiDesktopFiles = [
 
 
 var debikiTouchFiles = [
+      'bower_components/keymaster/keymaster.js',
       'bower_components/lodash/dist/lodash.js',
       'bower_components/moment/min/moment.min.js',
       'bower_components/angular-moment/angular-moment.min.js',
+      'modules/pagedown/Markdown.Converter.js',
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',
@@ -180,7 +183,6 @@ var debikiTouchFiles = [
       'target/client/app/actions/initialize.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
-      'target/client/app/actions/reply-form-html.js',
       'target/client/app/actions/popup-menu.js',
       'target/client/app/arrows/arrows-png.js',
       //'target/client/app/arrows/arrows-svg-unused.js',

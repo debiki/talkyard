@@ -265,7 +265,6 @@ function renderPageEtc() {
   d.i.showCurLocationInSiteNav();
 
   if (!Modernizr.touch) {
-    d.i.initKeybdShortcuts($);
     d.i.initUtterscrollAndTips();
   }
 
@@ -318,6 +317,7 @@ function renderPageEtc() {
   steps.push(function() {
     d.i.ensureAnyAnchorPostLoaded(function() {
       d.i.scrollToUrlAnchorPost();
+      debiki2.postnavigation.renderPostNavigationPanel();
     });
   });
 

@@ -180,8 +180,8 @@ insertThread = ($thread, { after }) ->
 appendThread = !($thread, { to, isMultireply }) ->
   $parent = to
   $childList =
-    if isMultireply then $parent.children('.dw-res.dw-multireplies')
-    else $parent.children('.dw-res:not(.dw-multireplies)')
+    if isMultireply then $parent.find('> .dw-single-and-multireplies > .dw-res.dw-multireplies')
+    else $parent.find('> .dw-single-and-multireplies > .dw-res.dw-singlereplies')
   $thread.appendTo $childList
   updateDepths($thread)
 

@@ -34,7 +34,7 @@ class EditorService {
     var deferred = this.$q.defer<string>();
     var url = d.i.serverOrigin + '/-/edit?pageId='+ d.i.pageId + '&postId='+ postId;
     this.$http.get(url)
-      .success((data, status, headers, config) => {
+      .success((data: any, status, headers, config) => {
         // TODO also load info about whether the user may apply and approve the edits.
         deferred.resolve(data.currentText);
       })

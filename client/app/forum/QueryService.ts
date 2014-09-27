@@ -84,7 +84,7 @@ export class QueryService {
       return;
     }
 
-    this.$http.get(url).success((response) => {
+    this.$http.get(url).success((response: any) => {
       var topics: Topic[] = [];
       for (var i = 0; i < response.topics.length; ++i) {
         var data = response.topics[i];
@@ -103,7 +103,7 @@ export class QueryService {
    */
   public loadCategoryDetails(): ng.IPromise<Category[]> {
     var deferred = this.$q.defer<Category[]>();
-    this.$http.get('/-/list-categories?forumId=' + this.forumId).success((response) => {
+    this.$http.get('/-/list-categories?forumId=' + this.forumId).success((response: any) => {
       var categories: Category[] = [];
       for (var i = 0; i < response.categories.length; ++i) {
         var data = response.categories[i];

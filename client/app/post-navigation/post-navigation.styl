@@ -1,0 +1,40 @@
+
+#dw-posts-navigation
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+
+#dw-post-nav-panel
+  width: 158px;
+  position: absolute;
+  right: 20px;
+  bottom: 0;
+  background: #aaa;
+  height: 45px;
+
+#dw-post-nav-back-btn
+  position: absolute;
+  left: 6px;
+  bottom: 5px;
+  width: 60px;
+
+#dw-post-nav-forw-btn
+  position: absolute;
+  right: 6px;
+  bottom: 5px;
+  width: 80px;
+
+#dw-post-nav-forw-btn,
+#dw-post-nav-back-btn
+  // Make buttons darker so it's obvious when they've been disabled
+  &[disabled]
+    opacity: 0.45;
+
+  // This is for the B and F in Back and Forward, they're shortcuts.
+  span:first-child
+    text-decoration: underline;
+    font-weight: bold;
+
+// vim: fdm=marker et ts=2 sw=2 tw=0 list

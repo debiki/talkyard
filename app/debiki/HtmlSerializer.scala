@@ -403,19 +403,24 @@ case class HtmlPageSerializer(
               >{rootPost.numLikeVotes} {peopleLike} this.</a></div>
           }
 
+        val multireplies = renderThreads(rootPostsReplies, parentHorizontal = true, multireplies = true)
         anyBodyHtml ++
         ifThen(showComments, {
           renderedRoot.actionsHtml ++
           anyRootPostLikeCount ++
           makeCommentsToolbar() ++
           <div class='dw-t-vspace'/>
-          <ol class='dw-res'>
-            { rootPostReplyListItem }
-            { renderThreads(rootPostsReplies, parentHorizontal = true, multireplies = false) }
-          </ol>
-          <ol class="dw-res dw-multireplies">
-            { renderThreads(rootPostsReplies, parentHorizontal = true, multireplies = true) }
-          </ol>
+          <div class="dw-single-and-multireplies">
+            <ol class='dw-res dw-singlereplies'>
+              { rootPostReplyListItem }
+              { renderThreads(rootPostsReplies, parentHorizontal = true, multireplies = false) }
+            </ol>
+            <ol class="dw-res dw-multireplies">
+              { if (multireplies.isEmpty) Nil
+                else <li id="dw-multireplies-header">Multireplies follow:</li> }
+              { multireplies }
+            </ol>
+          </div>
         })
       }
       </div>
@@ -451,13 +456,15 @@ case class HtmlPageSerializer(
         <div class="dw-p"></div>
         { makeCommentsToolbar() }
         <div class='dw-t-vspace'/>
-        <ol class='dw-res'>
-          { rootPostReplyListItem }
-          { renderThreads(topLevelComments, parentHorizontal = true, multireplies = false) }
-        </ol>
-        <ol class="dw-res dw-multireplies">
-          { renderThreads(topLevelComments, parentHorizontal = true, multireplies = true) }
-        </ol>
+        <div class="dw-single-and-multireplies">
+          <ol class='dw-res dw-singlereplies'>
+            { rootPostReplyListItem }
+            { renderThreads(topLevelComments, parentHorizontal = true, multireplies = false) }
+          </ol>
+          <ol class="dw-res dw-multireplies">
+            { renderThreads(topLevelComments, parentHorizontal = true, multireplies = true) }
+          </ol>
+        </div>
       </div>
     html
   }
@@ -664,8 +671,7 @@ case class HtmlPageSerializer(
     val (repliesHtml, multirepliesHtml) = {
       def shallHideReplies = post.isTreeDeleted ||
         (!uncollapseFirst && post.isTreeCollapsed)
-      if (replies.isEmpty && myActionsIfHorizontalLayout.isEmpty) (Nil, Nil)
-      else if (shallHideReplies) (Nil, Nil)
+      if (shallHideReplies) (Nil, Nil)
       // else if the-computer-thinks-the-comment-is-off-topic-and-that-
       // -replies-therefore-should-be-hidden,
       // then: renderCollapsedReplies(replies)
@@ -674,7 +680,7 @@ case class HtmlPageSerializer(
       }
       else {
         val singleReplies =
-          <ol class='dw-res'>
+          <ol class='dw-res dw-singlereplies'>
             { myActionsIfHorizontalLayout }
             { renderThreads(replies, parentHorizontal = horizontal, multireplies = false) }
           </ol>
@@ -694,8 +700,10 @@ case class HtmlPageSerializer(
         foldLink ++
         renderedComment.headAndBodyHtml ++
         myActionsIfVerticalLayout ++
-        repliesHtml ++
-        multirepliesHtml
+        <div class="dw-single-and-multireplies">{
+          repliesHtml ++
+          multirepliesHtml
+        }</div>
       }</li>
     }
 
@@ -721,7 +729,7 @@ case class HtmlPageSerializer(
 
 
   private def renderCollapsedReplies(posts: List[Post]): NodeSeq = {
-    <ol class="dw-res dw-zd">{/* COULD rename dw-res to dw-ts, "threads"/"tree" */}
+    <ol class="dw-res dw-singlereplies dw-zd">{/* COULD rename dw-res to dw-ts, "threads"/"tree" */}
       <li><a class="dw-z">Click to show {posts.length} threads</a></li>
     </ol>
   }

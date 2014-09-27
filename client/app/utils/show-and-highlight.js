@@ -33,23 +33,49 @@ var $ = d.i.$;
 */
 
 
+var anyCurrentlyHighlighted = null;
+var anyCurrentlyHighlightedTimeout = null;
+//var anyCurrentlyHighlightedBackground = null;
+
 /**
  * Highlights and outlines $tag, for a little while. If there're opaque
  * elems inside, you can list them in the `opt_backgroundSelector`
  * and then background highlighting is placed on them instead of on $tag.
  */
 function highlightBriefly($tag, opt_backgroundSelector) {
+  // Stop any old animation, doesn't look well with many highlightings.
+  if (anyCurrentlyHighlighted) {
+    anyCurrentlyHighlighted.css('outline', '');
+    anyCurrentlyHighlighted.stop(true, true);
+    anyCurrentlyHighlighted = null;
+  }
+  /*
+  if (anyCurrentlyHighlightedBackground) {
+    anyCurrentlyHighlightedBackground.stop(true, true);
+    anyCurrentlyHighlightedBackground = null;
+  } */
+  if (anyCurrentlyHighlightedTimeout) {
+    clearTimeout(anyCurrentlyHighlightedTimeout);
+    anyCurrentlyHighlightedTimeout = null;
+  }
+
   var duration = 7500;
+  /*
   var $background = opt_backgroundSelector ?
       $tag.find(opt_backgroundSelector) : $tag;
   $background.effect('highlight',
       { easing: 'easeInExpo', color: 'yellow' }, duration);
-  $tag.css('outline', 'solid thick #f0a005');
+  anyCurrentlyHighlightedBackground = $background;
+      */
+
+  $tag.css('outline', 'hsl(211, 100%, 77%) solid 7px'); // duplicated style [FK209EIZ]
+  anyCurrentlyHighlighted = $tag;
   // Remove the outline somewhat quickly (during 600 ms). Otherwise it looks
   // jerky: removing 1px at a time, slowly, is very noticeable!
-  setTimeout(function() {
+  anyCurrentlyHighlightedTimeout = setTimeout(function() {
     $tag.animate({ outlineWidth: '0px' }, 600);
-  }, Math.max(duration - 1500, 0));
+  }, Math.max(duration, 0));
+
   /// This won't work, jQuery plugin doesn't support rgba animation:
   //$post.animate(
   //    { outlineColor: 'rgba(255, 0, 0, .5)' }, duration, 'easeInExpo');
@@ -124,13 +150,15 @@ function anyAnchorPostId() {
 
 
 // When hovering a multireply, outline the post that was replied to.
+// Use a dedicated CSS class so we won't accidentally remove any outline added
+// because of other reasons, when removing this outline.
 $(document).on('hover', '.dw-multireply-to', function(event) {
   var referencedPost = getPostMultirepliedTo(this);
   if (event.type === 'mouseenter') {
-    referencedPost.css('outline', 'hsl(211, 100%, 77%) solid 5px');
+    referencedPost.addClass('dw-highlighted-multireply-hover');
   }
   else {
-    referencedPost.css('outline', 'none');
+    referencedPost.removeClass('dw-highlighted-multireply-hover');
   }
 });
 
@@ -139,6 +167,9 @@ $(document).on('hover', '.dw-multireply-to', function(event) {
 $(document).on('click', '.dw-multireply-to', function(event) {
   var referencedPost = getPostMultirepliedTo(this);
   d.i.showAndHighlightPost(referencedPost);
+  var currentPostId = $(this).closest('.dw-t').dwPostId();
+  var nextPostId = referencedPost.dwPostId();
+  debiki2.postnavigation.addVisitedPosts(currentPostId, nextPostId);
 });
 
 

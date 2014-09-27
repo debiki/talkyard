@@ -32,7 +32,7 @@ d.i.layoutThreads = !->
 
 
 function findMaxNesting (thread)
-  $children = $(thread).find '> .dw-res > .dw-t'
+  $children = $(thread).find '> .dw-single-and-multireplies > .dw-res > .dw-t'
   # If passing $children to `fold` when `$children.length == 1`,
   # it seems as if `fold` wraps jQuery in an array, resulting
   # in eternal recursion.
