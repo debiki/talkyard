@@ -30,7 +30,7 @@ d.i.$loadEditorDependencies = (function() {
     loadStatus = $.Deferred();
     var loadCodeMirror = !Modernizr.touch;
     var assetsPrefix = d.i.assetsUrlPathStart;
-    Modernizr.load({
+    yepnope({
       test: loadCodeMirror,
       yep: [
         assetsPrefix + 'codemirror-3-13-custom.css',

@@ -37,7 +37,7 @@ d.i.loadOpenIdResources = (function() {
     // (COULD load these files directly in the <head>, on desktops,
     // and load a single .min.js.gz on mobiles. And load one at a time
     // in Dev builds. But that'd be 3 different cases! Postpone...)
-    Modernizr.load({
+    yepnope({
       load: [
         d.i.assetsUrlPathStart + 'openid-selector/css/openid.css',
         d.i.assetsUrlPathStart + 'openid-selector/js/openid-jquery.js',

@@ -20,8 +20,10 @@
     "jquery-ui": "1.9.2",
     "keymaster": "~1.6.2",
     "lodash": "~2.4.1",
+    "modernizr": "v2.6.2",
     "momentjs": "~2.6.0",
-    "react": "~0.11.2"
+    "react": "~0.11.2",
+    "yepnope": "v1.5.4"
   },
   "resolutions": {
     "jquery": "1.7.2"

@@ -52,9 +52,11 @@ http://www.modernizr.com/news/modernizr-and-cdns
 And: "For best performance, you should have them follow after your
 stylesheet references", http://modernizr.com/docs/#installing
 *@
-<script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
 @script("http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js",
     "Modernizr", s"modernizr.js")
+
+@* YepNope is included in Modernizr above. *@
+<script>window.yepnope || document.write('<script src="@asset(s"yepnope.$minMaxJs")">\x3C/script>')</script>
 
 @script(s"http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.$minMaxJs",
     "jQuery", s"jquery.$minMaxJs")
@@ -104,7 +106,7 @@ stylesheet references", http://modernizr.com/docs/#installing
   }, debiki);
   @* COULD move to debiki.internal instead! Now relying on &lt;script type=js/x-debiki-config&gt;*@
   debiki.scriptLoad = $.Deferred();
-  Modernizr.load({
+  yepnope({
     test: Modernizr.touch,
     yep: '@asset(s"combined-debiki-touch.$minMaxJs")',
     nope: '@asset(s"combined-debiki-desktop.$minMaxJs")',
