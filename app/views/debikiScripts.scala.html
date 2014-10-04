@@ -27,30 +27,54 @@
   anyPageId.map(id => s"'$id'") getOrElse "undefined"
 }
 
+@* Loads a script from a CDN and fallbacks to local URL if CDN not reachable. If any Javascript
+fails to load, assumes we're offline and loads all CSS from local server too [93GK940]. *@
+@script(primaryUrl: String, global: String, fallbackUrl: String) = {
+  <script src="@primaryUrl"></script>
+  <script>window.@global || (loadAnyMissingStylesFromLocalServer(), document.write('<script src="@asset(fallbackUrl)">\x3C/script>'))</script>
+}
+
+@angularModuleScript(primaryUrl: String, module: String, fallbackUrl: String) = {
+  <script src="@primaryUrl"></script>
+  <script>
+  var loaded = false;
+  try {
+    if (window.angular.module('@module'))
+      loaded = true;
+  }
+  catch (x) {}
+  if (!loaded) document.write('<script src="@asset(fallbackUrl)">\x3C/script>');
+  </script>
+}
+
 @* Concerning when/how to use a CDN for Modernizr, see:
 http://www.modernizr.com/news/modernizr-and-cdns
 And: "For best performance, you should have them follow after your
 stylesheet references", http://modernizr.com/docs/#installing
 *@
 <script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+@script("http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js",
+    "Modernizr", s"modernizr.js")
 
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.@minMaxJs"></script>
-<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.@minMaxJs"></script>
+@script(s"http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.$minMaxJs",
+    "jQuery", s"jquery.$minMaxJs")
 
-<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.@minMaxJs"></script>
-<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular-sanitize.@minMaxJs"></script>
+@script(s"http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.$minMaxJs",
+    "jQuery.ui", s"jquery-ui.$minMaxJs")
 
-<script src="//cdnjs.cloudflare.com/ajax/libs/react/0.11.2/react-with-addons.@minMaxJs"></script>
+@script(s"//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.$minMaxJs",
+    "angular", s"angular.min.js")
+
+@angularModuleScript(s"//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular-sanitize.$minMaxJs",
+    "ngSanitize", s"angular-sanitize.$minMaxJs")
 
 @* For now only, should probably install via e.g. Bower? and include in JS bundle? *@
-<script src="//angular-ui.github.io/ui-router/release/angular-ui-router.js"></script>
+@angularModuleScript("//angular-ui.github.io/ui-router/release/angular-ui-router.js",
+    "ui.router", s"angular-ui-router.$minMaxJs")
 
-@* Could:
-<script>
-if (!window.jQuery) document.write(unescape("%3Cscript src='/path/to/your/jquery' %3E%3C/script%3E"));
-</script>
-See: http://stackoverflow.com/questions/1014203/best-way-to-use-googles-hosted-jquery-but-fall-back-to-my-hosted-library-on-goo
-*@
+@script(s"//cdnjs.cloudflare.com/ajax/libs/react/0.11.2/react-with-addons.$minMaxJs",
+    "React", s"react-with-addons.$minMaxJs")
+
 
 @* All Debiki's stuff is placed somewhere inside `debiki`.
  - The debiki.scriptLoad $.Deferred is resolved later by debiki.js.

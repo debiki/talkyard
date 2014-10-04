@@ -1,0 +1,1 @@
+../../bower_components/react/react-with-addons.min.js

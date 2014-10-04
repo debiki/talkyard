@@ -10,9 +10,20 @@
     "tests"
   ],
   "dependencies": {
+    "angular": "v1.2.16",
     "angular-moment": "~0.6.2",
-    "momentjs": "~2.6.0",
+    "angular-sanitize": "v1.2.16",
+    "angular-ui-router": "0.2.11",
+    "bootstrap": "v3.1.1",
+    "jquery": "1.7.2",
+    "jquery.ui": "1.9.2",
+    "jquery-ui": "1.9.2",
+    "keymaster": "~1.6.2",
     "lodash": "~2.4.1",
-    "keymaster": "~1.6.2"
+    "momentjs": "~2.6.0",
+    "react": "~0.11.2"
+  },
+  "resolutions": {
+    "jquery": "1.7.2"
   }
 }
