@@ -197,8 +197,26 @@ $(document).on('hover', '.dw-arw-vt-handle', function(event) {
 });
 
 
+var arrowHandleMousedownCoords = null;
+
+$(document).on('mousedown', '.dw-arw-vt-handle', function(event) {
+  arrowHandleMousedownCoords = {
+    clientX: event.clientX,
+    clientY: event.clientY
+  };
+});
+
 // Scroll to parent post when clicking arrow.
-$(document).on('click', '.dw-arw-vt-handle', function() {
+$(document).on('click', '.dw-arw-vt-handle', function(event) {
+  if (arrowHandleMousedownCoords) {
+    var dragDistanceX = event.clientX - arrowHandleMousedownCoords.clientX;
+    var dragDistanceY = event.clientY - arrowHandleMousedownCoords.clientY;
+    var dragDistance2 = dragDistanceX * dragDistanceX + dragDistanceY * dragDistanceY;
+    if (dragDistance2 > 15) {
+      // This is click-and-drag, probably Utterscrolling, not a pure click.
+      return;
+    }
+  }
   var parentPost = $(this).closest('.dw-t').parent().closest('.dw-t').children('.dw-p');
   var parentPostId = parentPost.dwPostId();
   if (!d.i.elemIsVisible(parentPost)) {
