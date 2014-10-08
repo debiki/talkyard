@@ -183,12 +183,16 @@ $(document).on('hover', '.dw-arw-vt-handle', function(event) {
   var allArrowHandles = $(this).closest('.dw-res').find('> .dw-t > .dw-arw-vt-handle');
   var parentPost = $(this).closest('.dw-res').closest('.dw-t').children('.dw-p');
   if (event.type === 'mouseenter' || event.type === 'mouseover') {
-    allArrowHandles.addClass('dw-highlight');
-    parentPost.addClass('dw-highlighted-multireply-hover'); // COULD rename this class
+    if (!d.i.elemIsVisible(parentPost)) {
+      allArrowHandles.addClass('dw-highlight');
+      allArrowHandles.css('cursor', 'pointer');
+    }
+    else {
+      allArrowHandles.css('cursor', 'default');
+    }
   }
   else {
     allArrowHandles.removeClass('dw-highlight');
-    parentPost.removeClass('dw-highlighted-multireply-hover');
   }
 });
 
@@ -197,8 +201,10 @@ $(document).on('hover', '.dw-arw-vt-handle', function(event) {
 $(document).on('click', '.dw-arw-vt-handle', function() {
   var parentPost = $(this).closest('.dw-t').parent().closest('.dw-t').children('.dw-p');
   var parentPostId = parentPost.dwPostId();
-  debiki2.postnavigation.addVisitedPositionAndPost(parentPostId);
-  d.i.showAndHighlightPost(parentPost);
+  if (!d.i.elemIsVisible(parentPost)) {
+    debiki2.postnavigation.addVisitedPositionAndPost(parentPostId);
+    d.i.showAndHighlightPost(parentPost);
+  }
 });
 
 

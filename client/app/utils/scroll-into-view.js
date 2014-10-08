@@ -16,22 +16,29 @@
  */
 
 
-jQuery.fn.dwScrollIntoView = function(options) {
-  if (!this.length)
-    return this;
+var d = { i: debiki.internal, u: debiki.v0.util };
+var $ = d.i.$;
 
-  var $ = jQuery;
+
+d.i.elemIsVisible = function(elem) {
+  var coords = d.i.calcScrollIntoViewCoords(
+      elem, { marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0 });
+  return !coords.needsToScroll;
+};
+
+
+d.i.calcScrollIntoViewCoords = function(elem, options) {
+
   if (!options) options = {};
-  var duration = options.duration || 'slow';
   var marginTop = options.marginTop || 15;
   var marginBottom = options.marginBottom || 15;
   var marginLeft = options.marginLeft || 15;
   var marginRight = options.marginRight || 15;
 
-  var myTop = this.offset().top - marginTop;
-  var myBottom = myTop + this.outerHeight() + marginTop + marginBottom;
-  var myLeft = this.offset().left - marginLeft;
-  var myRight = myLeft + this.outerWidth() + marginLeft + marginRight;
+  var myTop = elem.offset().top - marginTop;
+  var myBottom = myTop + elem.outerHeight() + marginTop + marginBottom;
+  var myLeft = elem.offset().left - marginLeft;
+  var myRight = myLeft + elem.outerWidth() + marginLeft + marginRight;
   var winTop = $(window).scrollTop();
   var winHeight = $(window).height();
   var winBottom = winTop + winHeight;
@@ -66,17 +73,35 @@ jQuery.fn.dwScrollIntoView = function(options) {
     if (myLeft < desiredWinLeft) desiredWinLeft = myLeft;
   }
 
-  // Scroll.
-  if (winTop !== desiredWinTop || winLeft !== desiredWinLeft) {
+  return {
+    actualWinTop: winTop,
+    actualWinLeft: winLeft,
+    desiredWinTop: desiredWinTop,
+    desiredWinLeft: desiredWinLeft,
+    needsToScroll: winTop !== desiredWinTop || winLeft !== desiredWinLeft
+  };
+}
+
+
+
+jQuery.fn.dwScrollIntoView = function(options) {
+  if (!this.length)
+    return this;
+
+  if (!options) options = {};
+  var duration = options.duration || 'slow';
+
+  var coords = d.i.calcScrollIntoViewCoords(this, options);
+  if (coords.needsToScroll) {
     // IE animates 'html' but not 'body', Chrome vice versa.
     $('html, body').animate({
-      'scrollTop': desiredWinTop,
-      'scrollLeft': desiredWinLeft
+      'scrollTop': coords.desiredWinTop,
+      'scrollLeft': coords.desiredWinLeft
     }, duration, 'swing').queue(function(next) {
       // On my Android phone, `animate` sometimes won't scroll
       // all the way to the desired offset, therefore:
       if (Modernizr.touch)
-        helpMobileScroll(desiredWinLeft, desiredWinTop);
+        helpMobileScroll(coords.desiredWinLeft, coords.desiredWinTop);
       next();
     });
   }
@@ -93,3 +118,5 @@ jQuery.fn.dwScrollIntoView = function(options) {
   return this;
 };
 
+
+// vim: fdm=marker et ts=2 sw=2 tw=100 list
