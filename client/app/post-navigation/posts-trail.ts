@@ -54,13 +54,16 @@ var PostNavigation = React.createClass({
         backPost.windowTop !== $(window).scrollTop())) {
       // Restore the original window top and left coordinates, so the Back button
       // really moves back to the original position.
-      $('html, body').animate({
+      var htmlBody = $('html, body').animate({
         'scrollTop': backPost.windowTop,
         'scrollLeft': backPost.windowLeft
-      }, 'slow', 'swing').queue(function(next) {
-        d.i.showAndHighlightPost($('#post-' + backPost.postId));
-        next();
-      });
+      }, 'slow', 'swing');
+      if (backPost.postId) {
+        htmlBody.queue(function(next) {
+          d.i.showAndHighlightPost($('#post-' + backPost.postId));
+          next();
+        });
+      }
     }
     else {
       d.i.showAndHighlightPost($('#post-' + backPost.postId));
@@ -70,7 +73,18 @@ var PostNavigation = React.createClass({
     if (!this.canGoForward()) return;
     var forwPost = this.props.visitedPosts[this.props.currentVisitedPostIndex + 1];
     this.props.increaseCurrentPostIndex();
-    d.i.showAndHighlightPost($('#post-' + forwPost.postId));
+    if (forwPost.postId) {
+      d.i.showAndHighlightPost($('#post-' + forwPost.postId));
+    }
+    else if (forwPost.windowTop) {
+      $('html, body').animate({
+        'scrollTop': forwPost.windowTop,
+        'scrollLeft': forwPost.windowLeft
+      }, 'slow', 'swing');
+    }
+    else {
+      throw new Error('DwE49dFK2');
+    }
   },
   render: function() {
     var buttons = [];
@@ -121,6 +135,11 @@ export function addVisitedPosts(currentPostId: number, nextPostId: number) {
   visitedPosts.push({ postId: nextPostId });
   currentVisitedPostIndex = visitedPosts.length - 1;
   renderPostNavigationPanel();
+}
+
+
+export function addVisitedPositionAndPost(nextPostId: number) {
+  addVisitedPosts(null, nextPostId);
 }
 
 

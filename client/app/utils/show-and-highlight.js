@@ -179,4 +179,27 @@ function getPostMultirepliedTo(elem) {
 }
 
 
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+$(document).on('hover', '.dw-arw-vt-handle', function(event) {
+  var allArrowHandles = $(this).closest('.dw-res').find('> .dw-t > .dw-arw-vt-handle');
+  var parentPost = $(this).closest('.dw-res').closest('.dw-t').children('.dw-p');
+  if (event.type === 'mouseenter' || event.type === 'mouseover') {
+    allArrowHandles.addClass('dw-highlight');
+    parentPost.addClass('dw-highlighted-multireply-hover'); // COULD rename this class
+  }
+  else {
+    allArrowHandles.removeClass('dw-highlight');
+    parentPost.removeClass('dw-highlighted-multireply-hover');
+  }
+});
+
+
+// Scroll to parent post when clicking arrow.
+$(document).on('click', '.dw-arw-vt-handle', function() {
+  var parentPost = $(this).closest('.dw-t').parent().closest('.dw-t').children('.dw-p');
+  var parentPostId = parentPost.dwPostId();
+  debiki2.postnavigation.addVisitedPositionAndPost(parentPostId);
+  d.i.showAndHighlightPost(parentPost);
+});
+
+
+// vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
