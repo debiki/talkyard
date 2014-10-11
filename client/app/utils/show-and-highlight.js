@@ -179,4 +179,51 @@ function getPostMultirepliedTo(elem) {
 }
 
 
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+$(document).on('hover', '.dw-arw-vt-handle', function(event) {
+  var allArrowHandles = $(this).closest('.dw-res').find('> .dw-t > .dw-arw-vt-handle');
+  var parentPost = $(this).closest('.dw-res').closest('.dw-t').children('.dw-p');
+  if (event.type === 'mouseenter' || event.type === 'mouseover') {
+    if (!d.i.elemIsVisible(parentPost)) {
+      allArrowHandles.addClass('dw-highlight');
+      allArrowHandles.css('cursor', 'pointer');
+    }
+    else {
+      allArrowHandles.css('cursor', 'default');
+    }
+  }
+  else {
+    allArrowHandles.removeClass('dw-highlight');
+  }
+});
+
+
+var arrowHandleMousedownCoords = null;
+
+$(document).on('mousedown', '.dw-arw-vt-handle', function(event) {
+  arrowHandleMousedownCoords = {
+    clientX: event.clientX,
+    clientY: event.clientY
+  };
+});
+
+// Scroll to parent post when clicking arrow.
+$(document).on('click', '.dw-arw-vt-handle', function(event) {
+  if (arrowHandleMousedownCoords) {
+    var dragDistanceX = event.clientX - arrowHandleMousedownCoords.clientX;
+    var dragDistanceY = event.clientY - arrowHandleMousedownCoords.clientY;
+    var dragDistance2 = dragDistanceX * dragDistanceX + dragDistanceY * dragDistanceY;
+    if (dragDistance2 > 15) {
+      // This is click-and-drag, probably Utterscrolling, not a pure click.
+      return;
+    }
+  }
+  var parentPost = $(this).closest('.dw-t').parent().closest('.dw-t').children('.dw-p');
+  var parentPostId = parentPost.dwPostId();
+  if (!d.i.elemIsVisible(parentPost)) {
+    debiki2.postnavigation.addVisitedPositionAndPost(parentPostId);
+    d.i.showAndHighlightPost(parentPost);
+  }
+});
+
+
+// vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

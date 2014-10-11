@@ -193,7 +193,8 @@ function clearAndRedrawArrowsVertically($thread) {
     if (!isLastChild) {
       $childThread.prepend(
         '<div class="dw-arw dw-arw-vt-line-to-sibling-1"></div>' +
-        '<div class="dw-arw dw-arw-vt-line-to-sibling-2"></div>');
+        '<div class="dw-arw dw-arw-vt-line-to-sibling-2"></div>' +
+        '<div class="dw-arw-vt-handle"></div>');
     }
   });
 };

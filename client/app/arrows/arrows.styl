@@ -176,6 +176,20 @@ li.dw-fs-re:not(:last-child) .dw-arw-hz-line-to-sibling
 li.dw-fs-re:last-child .dw-arw-hz-line-to-sibling
   display: none
 
+// One clicks this wide handle, instead of the narrow and hard to click arrow, to
+// scroll to the parent thread.
+.dw-arw-vt-handle
+  position: absolute
+  top: -9px; // fillls the gap between two handles, sometimes causing a tiny overlap unfortunately
+  bottom: 0;
+  left: -3px;
+  width: 35px;
+  cursor: pointer;
+  background: transparent;
+  z-index: 11;
 
+  &.dw-highlight
+    background: hsl(210, 100%, 70%);
+    opacity: 0.14;
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
