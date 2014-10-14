@@ -53,7 +53,7 @@ And: "For best performance, you should have them follow after your
 stylesheet references", http://modernizr.com/docs/#installing
 *@
 @script("http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js",
-    "Modernizr", s"modernizr.js")
+    "Modernizr", s"modernizr.$minMaxJs")
 
 @* YepNope is included in Modernizr above. *@
 <script>window.yepnope || document.write('<script src="@asset(s"yepnope.$minMaxJs")">\x3C/script>')</script>

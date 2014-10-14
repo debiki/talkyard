@@ -45,6 +45,7 @@ public/res/embedded-comments.min.js
 public/res/debiki-embedded-comments.*
 public/res/login-popup.js
 public/res/login-popup.min.js
+public/res/modernizr.min.js
 public/res/debiki-spa-*
 public/res/debiki-dashbar*
 public/res/debiki-pagedown*
