@@ -100,8 +100,7 @@ stylesheet references", http://modernizr.com/docs/#installing
         if (anyPageRole == Some(com.debiki.core.PageRole.EmbeddedComments)) "true" else "false"
       },
       pagePath: '@{ anyPagePath.map(_.value) getOrElse "" }',
-      assetsUrlPathStart: 'http://@serverAddress@asset("")',
-      singleColumnLayout: Math.max(jQuery(window).width(), jQuery(window).height()) < 1000
+      assetsUrlPathStart: 'http://@serverAddress@asset("")'
     }
   }, debiki);
   @* COULD move to debiki.internal instead! Now relying on &lt;script type=js/x-debiki-config&gt;*@

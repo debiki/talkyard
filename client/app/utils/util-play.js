@@ -64,26 +64,4 @@ d.i.isViewingOldPageVersion = function() {
 };
 
 
-/**
- * If the URL query string contains 2d=true/false, enables/disables
- * horizontal comments.
- */
-d.i.enableDisableHorizontalComments = function() {
-  var shallEnable = window.location.toString().search('2d=true') !== -1;
-  var shallDisable = window.location.toString().search('2d=false') !== -1;
-  var isEnabled = $('html').is('.dw-hz');
-  if (isEnabled && shallDisable) disableHzComments();
-  if (!isEnabled && shallEnable) enableHzComments();
-
-  function disableHzComments() {
-    $('html').removeClass('dw-hz').addClass('dw-vt');
-    $('.dw-depth-0').removeClass('dw-hz');
-  }
-
-  function enableHzComments() {
-    $('html').removeClass('dw-vt').addClass('dw-hz');
-    $('.dw-depth-0').addClass('dw-hz');
-  }
-}
-
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

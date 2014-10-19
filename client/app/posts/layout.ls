@@ -43,5 +43,32 @@ function findMaxNesting (thread)
     fold ((a, b) -> max(a, 1 + findMaxNesting b)), 0, children
 
 
+/**
+ * If the URL query string contains 2d=true/false, enables/disables
+ * horizontal comments. If the screen is narrow, forces one-column-layout.
+ * Returns the layout type in use: 'OneColumnLayout' or 'TreeLayout'.
+ */
+d.i.chooseLayout = ->
+  shallEnable2d = window.location.toString().search('2d=true') != -1
+  shallDisable2d = window.location.toString().search('2d=false') != -1 || Math.max($(window).width(), $(window).height()) < 1000
+  is2dEnabled = $('html').is('.dw-hz')
+  if is2dEnabled && shallDisable2d
+    disableHzComments()
+    return 'OneColumnLayout'
 
-# vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+  if !is2dEnabled && shallEnable2d
+    enableHzComments()
+    return 'TreeLayout'
+
+  function disableHzComments
+    $('html').removeClass('dw-hz').addClass('dw-vt')
+    $('.dw-depth-0').removeClass('dw-hz')
+
+  function enableHzComments
+    $('html').removeClass('dw-vt').addClass('dw-hz')
+    $('.dw-depth-0').addClass('dw-hz')
+
+  if is2dEnabled then 'TreeLayout' else 'OneColumnLayout'
+
+
+# vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

@@ -36,11 +36,6 @@ if $('.dw-p').length - 2 <= 5
   return
 
 
-# The minimap is somewhat pointless when using single column (1D) layout.
-if d.i.singleColumnLayout
-  return
-
-
 # If the minimap won't work anyway, never create it (leave the parent
 # <div dw-minimap> empty).
 if !Modernizr.canvas || !Modernizr.csspositionfixed
@@ -59,7 +54,7 @@ $window = $(window)
 # for now
 maxMinimapWidth = Math.min($window.width! / 3, 500)
 aspectRatio = $document.width! / (Math.max $document.height!, 1)
-minimapWidth = Math.min(maxMinimapWidth, $document.width! / 20)
+minimapWidth = Math.min(maxMinimapWidth, $document.width! / 12)
 minimapHeight = minimapWidth / aspectRatio
 
 
@@ -67,7 +62,7 @@ function dwMinimap
   template: """
     <canvas
       id="dw-minimap"
-      xx-ng-show="numComments > 0"
+      ng-show="treeLayout()"
       ui-scrollfix2d
       width="#minimapWidth"
       height="#minimapHeight"
@@ -78,7 +73,10 @@ function dwMinimap
   link: !(scope, elem, attrs) ->
     canvas = elem.children('canvas')
     context = canvas[0].getContext '2d'
-    context.fillStyle = '#666'
+    context.fillStyle = '#444'
+
+    scope.treeLayout = ->
+      d.i.layout == 'TreeLayout'
 
     # The article's .dw-p is very wide; use .dw-p-bd-blk instead.
     $('.dw-p-bd-blk').each !->

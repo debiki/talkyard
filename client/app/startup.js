@@ -264,10 +264,6 @@ function renderPageEtc() {
   d.i.Me.refreshProps();
   d.i.showCurLocationInSiteNav();
 
-  if (!Modernizr.touch) {
-    d.i.initUtterscrollAndTips();
-  }
-
   d.i.makePostHeaderPretty($('.dw-ar-p-hd'));
 
   var steps = [];
@@ -278,10 +274,16 @@ function renderPageEtc() {
       $(this).dwDepth();
     });
 
+    // Do this after depths calculated.
+    d.i.layout = d.i.chooseLayout();
+
     initStep1();
-    d.i.enableDisableHorizontalComments();
     d.i.layoutThreads();
     $('html').removeClass('dw-render-actions-pending');
+
+    if (d.i.layout === 'TreeLayout' && !Modernizr.touch) {
+      d.i.initUtterscrollAndTips();
+    }
   });
 
   steps.push(function() {
@@ -374,12 +376,6 @@ d.i.startDiscussionPage = function() {
   $(function() {
     // Import LiveScript's prelude, http://gkz.github.com/prelude-ls/.
     prelude.installPrelude(window);
-
-    // Use single column layout if max width/height < 1000 px.
-    // (If height > 1000 but width < 1000, the user can rotate the device.)
-    if (d.i.singleColumnLayout) {
-      $('.dw-hz').removeClass('dw-hz');
-    }
 
     d.i.windowOpeners = findWindowOpeners();
     d.i.rootPostId = findRootPostId();
