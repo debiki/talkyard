@@ -23,6 +23,7 @@
     "modernizr": "v2.6.2",
     "momentjs": "~2.6.0",
     "react": "~0.11.2",
+    "remarkable": "~1.1.2",
     "yepnope": "v1.5.4"
   },
   "resolutions": {

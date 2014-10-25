@@ -48,8 +48,9 @@ public/res/login-popup.min.js
 public/res/modernizr.min.js
 public/res/debiki-spa-*
 public/res/debiki-dashbar*
-public/res/debiki-pagedown*
 public/res/codemirror-*
+public/res/remarkable.js
+public/res/remarkable.min.js
 public/themes/*
 
 # Ignore generated test JS files.
