@@ -214,9 +214,6 @@ function $showInlineActionMenu(event) {
   // Old comment? (2012-09-30 today)
   // BUG: Next line: Uncaught TypeError: Cannot read property 'data' of null
 
-  // Preload dependencies, in case user opens editor:
-  $post.each(d.i.$loadEditorDependencies);
-
   // Bind actions.
   $menu.find('.dw-a-edit-i').click(function(event){
     d.i.showInteractionsIfHidden();

@@ -81,7 +81,6 @@ object ApplicationBuild extends Build {
     //              why-do-i-need-jsr305-to-use-guava-in-scala
     "com.google.code.findbugs" % "jsr305" % "1.3.9" % "provided",
     // "com.twitter" %% "ostrich" % "4.10.6",
-    "rhino" % "js" % "1.7R2",
     "org.yaml" % "snakeyaml" % "1.11",
     "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
     "org.scalatest" %% "scalatest" % "2.2.0" % "test", // but prefer ScalaTest
@@ -115,7 +114,6 @@ object ApplicationBuild extends Build {
     version := appVersion,
     libraryDependencies ++= appDependencies,
     scalaVersion := "2.11.1",
-    compileRhinoTask := { "make compile_javascript"! },
     compileJsAndCss := { "gulp release"! },
 
     // Disable ScalaDoc generation, it breaks seemingly because I'm compiling some Javascript
@@ -129,8 +127,6 @@ object ApplicationBuild extends Build {
     ///playOnStopped += stopGulpTask,
 
     Keys.fork in Test := false, // or cannot place breakpoints in test suites
-    Keys.compile in Compile <<=
-       (Keys.compile in Compile).dependsOn(compileRhinoTask),
     (packageBin in Compile) <<= (packageBin in Compile) dependsOn compileJsAndCss,
     unmanagedClasspath in Compile <+= (baseDirectory) map { bd =>
       Attributed.blank(bd / "target/scala-2.10/compiledjs-classes")
@@ -141,11 +137,6 @@ object ApplicationBuild extends Build {
   // see: http://stackoverflow.com/a/10378430/694469, but I haven't
   // activated this, because ScalaTest works fine anyway:
   // `testOptions in Test := Nil`
-
-  val rhinoClassDir = "target/scala-2.10/classes/"
-
-  def compileRhinoTask = TaskKey[Unit]("compile-js-to-java",
-    "Invokes Rhino to compile Javascript to Java bytecode")
 
   def compileJsAndCss = TaskKey[Unit]("bundle-js-and-css",
     "Invokes Gulp to compile TypeScript and Stylus etcetera")

@@ -19,14 +19,14 @@ package debiki
 
 import com.debiki.core._
 //import com.twitter.ostrich.stats.Stats
-import java.{util => ju, io => jio}
+import java.{lang => jl, util => ju, io => jio}
+import javax.{script => js}
 import scala.collection.JavaConversions._
 import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
 import FlagType.FlagType
 import Prelude._
 import DebikiHttp._
 import HtmlUtils._
-
 
 
 object HtmlPageSerializer {
@@ -127,14 +127,38 @@ object HtmlPageSerializer {
   }
 
 
-  /**
-   * Converts markdown to xml.
-   */
+  /** The Nashorn Javascript engine isn't thread safe. */
+  private val threadLocalJavascriptEngine = new jl.ThreadLocal[js.ScriptEngine]
+
+
+  private def javascriptEngine: js.ScriptEngine = {
+    val engineOrNull = threadLocalJavascriptEngine.get
+    if (engineOrNull != null)
+      return engineOrNull
+
+    val newEngine = new js.ScriptEngineManager(null).getEngineByName("nashorn")
+    // Remarkable seems to expect `global` to exist. (Remarkable is a CommonMark Markdown renderer.)
+    newEngine.eval("var global = this;")
+    newEngine.eval(new jio.FileReader("public/res/remarkable.min.js"))
+    newEngine.eval(new jio.FileReader("public/res/html-sanitizer-bundle.js"))
+    newEngine.eval("remarkable = new Remarkable({ html: true });")
+    newEngine.eval("function renderCommonMark(source) { return remarkable.render(source); }")
+    threadLocalJavascriptEngine.set(newEngine)
+    newEngine
+  }
+
+
+  /** Converts CommonMark markdown to HTML.
+    */
   def markdownToSafeHtml(source: String, hostAndPort: String,
-        allowClassIdDataAttrs: Boolean, makeLinksNofollow: Boolean = true): NodeSeq
-        = /*Stats.time("markdownToSafeHtml")*/ {
-    val htmlTextUnsafe =
-       (new compiledjs.PagedownJsImpl()).makeHtml(source, hostAndPort)
+        allowClassIdDataAttrs: Boolean, makeLinksNofollow: Boolean = true): NodeSeq = {
+    val htmlTextUnsafe = javascriptEngine.asInstanceOf[js.Invocable].invokeFunction(
+      "renderCommonMark", source).asInstanceOf[String]
+
+    // SHOULD fix host-and-port plugin that translates http:/// to http://serveraddress/.
+    // And client side too, [DK48vPe9].
+    //val htmlTextUnsafe =
+    //   (new compiledjs.PagedownJsImpl()).makeHtml(source, hostAndPort)
     sanitizeHtml(htmlTextUnsafe, allowClassIdDataAttrs, makeLinksNofollow)
   }
 
@@ -142,13 +166,10 @@ object HtmlPageSerializer {
   def sanitizeHtml(htmlTextUnsafe: String, allowClassIdDataAttrs: Boolean,
         makeLinksNofollow: Boolean = true): NodeSeq = {
 
-    var htmlTextSafe: String =
-      (new compiledjs.HtmlSanitizerJsImpl()).googleCajaSanitizeHtml(
-        htmlTextUnsafe,
-        // Cannot specify param names, regrettably, since we're calling
-        // Java / compiled Javascript code.
-        allowClassIdDataAttrs, // allowClassAndIdAttr
-        allowClassIdDataAttrs) // allowDataAttr
+    var htmlTextSafe = javascriptEngine.asInstanceOf[js.Invocable].invokeFunction(
+      "googleCajaSanitizeHtml", htmlTextUnsafe,
+      allowClassIdDataAttrs.asInstanceOf[jl.Object] /* allowClassAndIdAttr */,
+      allowClassIdDataAttrs.asInstanceOf[jl.Object] /* allowDataAttr */).toString
 
     // As of 2011-08-18 the Google Caja js html sanitizer strips
     // target='_blank', (Seems to be a bug:
@@ -157,7 +178,6 @@ object HtmlPageSerializer {
     // Add target _blank here - not needed any more, I ask "do you really
     // want to close the page?" if people have started writing.
     //   htmlTextSafe = htmlTextSafe.replace("<a ", "<a target='_blank' ")
-
     if (makeLinksNofollow)
       htmlTextSafe = htmlTextSafe.replace("<a ", "<a rel='nofollow' ")
 

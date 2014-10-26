@@ -30,16 +30,22 @@ d.i.markdownToSafeHtml = function(markdownSrc, hostAndPort, sanitizerOptions) {
 };
 
 
-function markdownToUnsafeHtml(markdownSrc, hostAndPort) {
+function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
+  // SHOULD convert from 'https?:///' to 'https?://servername/', but this
+  // no longer works since I'm using Remarkable + CommonMark now:
+  // Fix this server side too, [DK48vPe9]
+  /*
   var converter = new Markdown.Converter();
-
   // Duplicated hook. See client/compiledjs/PagedownJavaInterface.js.
   // (This hook is for the browser. The duplicate is for the JVM.)
   converter.hooks.chain('postConversion', function(text) {
     return text.replace(/(https?:\/\/)\//g, '$1'+ hostAndPort +'/');
   });
-
   var htmlTextUnsafe = converter.makeHtml(markdownSrc, hostAndPort);
+   */
+
+  var remarkable = new Remarkable({ html: true });
+  var htmlTextUnsafe = remarkable.render(commonmarkSource);
   return htmlTextUnsafe;
 };
 

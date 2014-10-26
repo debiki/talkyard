@@ -80,7 +80,6 @@ var debikiDesktopFiles = [
       'bower_components/lodash/dist/lodash.js',
       'bower_components/moment/min/moment.min.js',
       'bower_components/angular-moment/angular-moment.min.js',
-      'modules/pagedown/Markdown.Converter.js',
       'client/third-party/bootstrap/tooltip.js', //
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
@@ -162,7 +161,6 @@ var debikiTouchFiles = [
       'bower_components/lodash/dist/lodash.js',
       'bower_components/moment/min/moment.min.js',
       'bower_components/angular-moment/angular-moment.min.js',
-      'modules/pagedown/Markdown.Converter.js',
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',
@@ -376,8 +374,6 @@ gulp.task('concat-debiki-scripts', [
 function makeConcatDebikiScriptsStream() {
   function makeConcatStream(outputFileName, filesToConcat) {
     return gulp.src(filesToConcat)
-        // `newer` here avoids rebuilding debiki-pagedown.js which would cause the
-        // Makefile to compile JS to Java followed by compilation of some Scala code.
         .pipe(newer('public/res/' + outputFileName))
         .pipe(header(nextFileLine))
         .pipe(concat(outputFileName))
@@ -400,13 +396,7 @@ function makeConcatDebikiScriptsStream() {
           'target/client/new-site/scripts/new-website-choose-owner.js']),
 
       makeConcatStream('debiki-spa-new-website-choose-name.js', [
-          'target/client/new-site/scripts/new-website-choose-name.js']),
-
-      // Warning: Duplicated rule. A corresponding rule is also present
-      // in the Makefile. Keep in sync.
-      makeConcatStream('debiki-pagedown.js', [
-          'modules/pagedown/Markdown.Converter.js',
-          'client/compiledjs/PagedownJavaInterface.js']));
+          'target/client/new-site/scripts/new-website-choose-name.js']));
 };
 
 
