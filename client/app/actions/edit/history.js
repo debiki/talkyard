@@ -106,7 +106,6 @@ function showEditsDialogImpl($post) {
       $diff.children('.dw-x-diff').remove();
       $diff.append('<div class="dw-x-diff">'+ diffHtml +'</div>\n');
       // Update the preview.
-      // COULD make this work with other types of markdown than `dmd0'.
       // See $updateEditFormPreview(), which handles other markup types.
       var sanitizerOptions = d.i.sanitizerOptsForPost($post);
       var html = d.i.markdownToSafeHtml(newSrc, window.location.host,

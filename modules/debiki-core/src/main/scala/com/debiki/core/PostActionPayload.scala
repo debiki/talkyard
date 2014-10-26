@@ -41,7 +41,6 @@ object PostActionPayload {
 
   /** Creates a page title, a page body, a comment, or a page config post.
     *
-    * @param markup The markup language to use when rendering this post.
     * @param approval Defined iff the post was approved on creation, and clarifies why it was.
     * @param where If defined, this is an inline comment and the value specifies where
     *  in the parent post it is to be placed. COULD move to separate Meta post?
@@ -52,7 +51,6 @@ object PostActionPayload {
   case class CreatePost(
     parentPostId: Option[PostId],
     text: String,
-    markup: String,
     approval: Option[Approval],
     multireplyPostIds: immutable.Set[PostId] = immutable.Set.empty,
     where: Option[String] = None) extends PostActionPayload {
@@ -61,11 +59,9 @@ object PostActionPayload {
   }
 
 
-  /** Edits the text of a post, and/or changes the markup (from e.g. Markdown to HTML).
+  /** Edits the text of a post.
     *
     * @param text A diff from the current post text to the new. (Should rename to .diff?)
-    * @param newMarkup Changes the markup henceforth applied to postId's text.
-    * None means reuse the current markup.
     * @param autoApplied If this edit was applied automatically on creation, e.g. because
     * someone edited his/her own comment.
     * Currently not in use (yes it is!?? or?) And I'd have to
@@ -84,7 +80,6 @@ object PostActionPayload {
     */
   case class EditPost(
     text: String, // (Should rename to `diff`?)
-    newMarkup: Option[String],
     autoApplied: Boolean,
     approval: Option[Approval]) extends PostActionPayload {
 

@@ -39,7 +39,6 @@ case class RenderedPostHeader(
 
 case class RenderedPostBody(
   html: NodeSeq,
-  approxLineCount: Int,
   replyBtnText: NodeSeq)
 
 
@@ -119,7 +118,7 @@ case class HtmlPostRenderer(
       if (showUnapproved.shallShow(post)) makePendingApprovalText(post)
       else Nil
 
-    val long = postBody.approxLineCount > 9
+    val long = false // post.approvedText.length > 10 * 100 // ten lines
     val cutS = if (long) " dw-x-s" else ""
     val cssArtclPost = if (post.id != PageParts.BodyId) "" else " dw-ar-p"
 
@@ -313,7 +312,7 @@ object HtmlPostRenderer {
         showUnapproved: ShowUnapproved): RenderedPostBody = {
     val cssArtclBody = if (post.id != PageParts.BodyId) "" else " dw-ar-p-bd"
     val isBody = post.id == PageParts.BodyId
-    val (xmlTextInclTemplCmds, approxLineCount) =
+    val xmlTextInclTemplCmds =
       HtmlPageSerializer._markupTextOf(post, hostAndPort, nofollowArticle,
         showUnapproved = showUnapproved)
 
@@ -336,8 +335,7 @@ object HtmlPostRenderer {
         }</div>
       </div>
 
-    RenderedPostBody(html = postBodyHtml, approxLineCount = approxLineCount,
-      replyBtnText = replyBtnText)
+    RenderedPostBody(html = postBodyHtml, replyBtnText = replyBtnText)
   }
 
 

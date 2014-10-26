@@ -44,7 +44,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
       id = PageParts.UnassignedId, creationDati = new ju.Date,
       userIdData = userIdData,
       parentPostId = Some(PageParts.BodyId),
-      text = text, markup = "para", approval = None)
+      text = text, approval = None)
 
 
   val DefaultPasswordFullName = "PasswordUserFullName"

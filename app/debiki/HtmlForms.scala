@@ -55,13 +55,6 @@ object HtmlForms {
     })
   }
 
-  object Edit {
-    object InputNames {
-      val Markup = "dw-fi-e-mup"
-      val Text = "dw-fi-e-txt"
-    }
-  }
-
   object Delete {
     object InputNames {
       val Reason = "dw-fi-dl-reason"

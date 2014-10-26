@@ -55,7 +55,6 @@ object Protocols {
       "createdAt" -> toIso8601T(post.creationDati),
       "parentPostId" -> getNumberOrNull(post.parentId),
       "currentText" -> post.currentText,
-      "currentMarkup" -> post.markup,
       "anyDirectApproval" -> getTextOrNull(post.directApproval.map(_.toString)),
       "where" -> getTextOrNull(post.where),
       "userId" -> post.userId,
@@ -122,7 +121,6 @@ object Protocols {
     val payload = PAP.CreatePost(
       parentPostId = (json \ "parentPostId").asOpt[ActionId],
       text = (json \ "currentText").as[String],
-      markup = (json \ "currentMarkup").as[String],
       approval = (json \ "anyDirectApproval").asOpt[String].map(Approval.parse _),
       where = (json \ "where").asOpt[String])
 

@@ -38,12 +38,12 @@ object HtmlPageSerializer {
     *   usually we're replying to ajax requests. So defaults to true (and this feels safe).
     */
   def markupTextOf(post: Post, hostAndPort: String, nofollowArticle: Boolean = true): String =
-    _markupTextOf(post, hostAndPort, nofollowArticle)._1.toString
+    _markupTextOf(post, hostAndPort, nofollowArticle).toString
 
 
   // COULD move to HtmlPostSerializer.
   def _markupTextOf(post: Post, hostAndPort: String, nofollowArticle: Boolean = true,
-        showUnapproved: ShowUnapproved = ShowUnapproved.None): (NodeSeq, Int) = {
+        showUnapproved: ShowUnapproved = ShowUnapproved.None): NodeSeq = {
 
     val isArticle = post.id == PageParts.BodyId
 
@@ -54,54 +54,11 @@ object HtmlPageSerializer {
     val text: String =
       if (showUnapproved.shallShow(post)) post.currentText
       else post.approvedText getOrElse {
-        return (Nil, 0)
+        return Nil
       }
 
-    post.markup match {
-      case "dmd0" =>
-        // Debiki flavored markdown.
-        val html = markdownToSafeHtml(
-          text, hostAndPort, allowClassIdDataAttrs = isArticle, makeNofollowLinks)
-        (html, -1)
-      case "para" =>
-        textToHtml(text)
-      /*
-    case "link" =>
-      textToHtml(text) and linkify-url:s, w/ rel=nofollow)
-    case "img" =>
-      // Like "link", but also accept <img> tags and <pre>.
-      // But nothing that makes text stand out, e.g. skip <h1>, <section>.
-      */
-      case "html" =>
-        val cleanHtml = sanitizeHtml(
-          text, allowClassIdDataAttrs = isArticle, makeNofollowLinks)
-        (cleanHtml, -1)
-      case "code" =>
-        (<pre class='prettyprint'>{text}</pre>,
-           text.count(_ == '\n'))
-      /*
-    case c if c startsWith "code" =>
-      // Wrap the text in:
-      //     <pre class="prettyprint"><code class="language-javascript">
-      //  That's an HTML5 convention actually:
-      // <http://dev.w3.org/html5/spec-author-view/
-      //     the-code-element.html#the-code-element>
-      // Works with: http://code.google.com/p/google-code-prettify/
-      var lang = c.dropWhile(_ != '-')
-      if (lang nonEmpty) lang = " lang"+lang  ; UN TESTED // if nonEmpty
-      (<pre class={"prettyprint"+ lang}>{text}</pre>,
-        post.text.count(_ == '\n'))
-      // COULD include google-code-prettify js and css, and
-      // onload="prettyPrint()".
-      */
-      case _ =>
-        // Default to Debiki flavored markdown, for now.
-        // (Later: update database, change null/'' to "dmd0" for the page body,
-        // change to "para" for everything else.
-        // Then warnDbgDie-default to "para" here not "dmd0".)
-        (markdownToSafeHtml(text, hostAndPort,
-          allowClassIdDataAttrs = isArticle, makeNofollowLinks), -1)
-    }
+    markdownToSafeHtml(
+      text, hostAndPort, allowClassIdDataAttrs = isArticle, makeNofollowLinks)
   }
 
 

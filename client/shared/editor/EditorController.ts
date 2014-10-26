@@ -163,7 +163,6 @@ class EditorController {
         pageId: d.i.pageId,
         postId: '' + this.$scope.editingPostId, // COULD stop requiring a number
         text: this.$scope.text
-        // markup — skip, don't allow changing markup no more?
       }]
     };
     this.editorService.saveEdits(data).then(() => {

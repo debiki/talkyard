@@ -98,7 +98,7 @@ case class Post(
   }
 
 
-  lazy val (currentText: String, markup: String, approvedText: Option[String]) = _applyEdits
+  lazy val (currentText: String, approvedText: Option[String]) = _applyEdits
 
 
   /** The initial text of this post: either 1) when created, or 2) when loaded from cache
@@ -160,11 +160,9 @@ case class Post(
 
 
   /**
-   * Applies all edits and returns the resulting text and markup.
+   * Applies all edits and returns the resulting text.
    *
    * Keep in sync with textAsOf in debiki.js.
-   *    COULD make textAsOf understand changes in markup type,
-   *    or the preview won't always work correctly.
    *
    * (It's not feasible to apply only edits that have been approved,
    * or only edits up to a certain dati. Because
@@ -174,17 +172,15 @@ case class Post(
    * Instead, use Page.splitByVersion(), to get a version of the page
    * at a certain point in time.)
    */
-  private def _applyEdits: (String, String, Option[String]) = {
-    // (If loaded from cache, payload.text and .markup have both been inited
+  private def _applyEdits: (String, Option[String]) = {
+    // (If loaded from cache, payload.text has been inited
     // to the cached text, which includes all edits up to the cached version.)
     var curText = payload.text
     var approvedText =
       if (lastApprovalDati.isDefined) state.lastApprovedText orElse Some(curText)
       else None
-    var curMarkup = payload.markup
     // Loop through all edits and patch curText.
     for (edit <- editsAppliedAscTime) {
-      curMarkup = edit.newMarkup.getOrElse(curMarkup)
       val patchText = edit.patchText
       if (patchText nonEmpty) {
         val newText = applyPatch(patchText, to = curText)
@@ -193,7 +189,7 @@ case class Post(
           approvedText = Some(curText)
       }
     }
-    (curText, curMarkup, approvedText)
+    (curText, approvedText)
   }
 
 

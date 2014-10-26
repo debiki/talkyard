@@ -60,7 +60,6 @@ object EditController extends mvc.Controller {
     *    - pageId
     *      postId
     *      text
-    *      markup
     *    - ...more edits
     */
   def edit = PostJsonAction(maxLength = MaxPostSize) {
@@ -111,13 +110,11 @@ object EditController extends mvc.Controller {
 
       for (editMap <- editMaps) {
         val newText = getTextOrThrow(editMap, "text")
-        val newMarkupOpt = getTextOptOrThrow(editMap, "markup")
         val postId = getIntOrThrow(editMap, "postId")
 
         _throwIfTooMuchData(newText, pageRequest)
 
-        _saveEdits(pageRequest, postId = postId, newText = newText,
-            newMarkupOpt = newMarkupOpt) match {
+        _saveEdits(pageRequest, postId = postId, newText = newText) match {
           case None =>
             // No changes made. (newText is the current text.)
           case Some(edit) =>
@@ -160,21 +157,13 @@ object EditController extends mvc.Controller {
     * Returns None if no changes was made (if old text == new text).
     */
   private def _saveEdits(pageReq: PageRequest[_],
-        postId: ActionId, newText: String, newMarkupOpt: Option[String])
-        : Option[RawPostAction[_]] = {
+        postId: ActionId, newText: String): Option[RawPostAction[_]] = {
 
     val post = pageReq.page_!.getPost(postId) getOrElse
       throwNotFound("DwE3k2190", s"Post not found: $postId")
 
-    val markupChanged =
-      newMarkupOpt.isDefined && newMarkupOpt != Some(post.markup)
-    if (newText == post.currentText && !markupChanged)
-      return None  // need do nothing
-
-    // Don't allow any kind of html in replies.
-    //if (markupChanged && pid != Page.BodyId && !Markup.isPlain(newMarkup))
-    // reply forbidden
-    // (and also when *creating* a post)
+    if (newText == post.currentText)
+      return None
 
     val patchText = makePatch(from = post.currentText, to = newText)
 
@@ -198,8 +187,7 @@ object EditController extends mvc.Controller {
     val edit = RawPostAction.toEditPost(
       id = PageParts.UnassignedId, postId = post.id, ctime = pageReq.ctime,
       userIdData = pageReq.userIdData,
-      text = patchText, newMarkup = newMarkupOpt,
-      approval = approval, autoApplied = mayEdit)
+      text = patchText, approval = approval, autoApplied = mayEdit)
 
     val actions = edit :: Nil
     val (_, actionsWithIds) = pageReq.dao.savePageActionsGenNotfs(pageReq, actions)

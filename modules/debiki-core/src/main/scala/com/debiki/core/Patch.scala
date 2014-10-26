@@ -33,7 +33,6 @@ class Patch(debate: PageParts, val edit: RawPostAction[PAP.EditPost])
   def post_! = debate.getPost_!(edit.postId)
 
   def patchText = edit.payload.text
-  def newMarkup = edit.payload.newMarkup
 
   def isDeleted = false // for now. Later: Add PostActionPayload.DeleteEdit?
   def deletedAt: Option[ju.Date] = None // for now

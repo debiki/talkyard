@@ -31,8 +31,7 @@ export class SpecialContent {
       public rootPageId: string,
       public contentId: string,
       public defaultText: string,
-      public currentText: string,
-      public markup: string = '???') {
+      public currentText: string) {
     if (!this.currentText) {
       this.currentText = this.defaultText;
     }
@@ -45,8 +44,7 @@ export class SpecialContent {
         json['rootPageId'],
         json['contentId'],
         json['defaultText'],
-        json['anyCustomText'],
-        json['markup']);
+        json['anyCustomText']);
   }
 
 
@@ -55,8 +53,7 @@ export class SpecialContent {
       'rootPageId': this.rootPageId,
       'contentId': this.contentId,
       'defaultText': this.defaultText,
-      'useDefaultText': this.newText == this.defaultText,
-      'markup': this.markup
+      'useDefaultText': this.newText == this.defaultText
     };
 
     if (this.newText != this.defaultText)

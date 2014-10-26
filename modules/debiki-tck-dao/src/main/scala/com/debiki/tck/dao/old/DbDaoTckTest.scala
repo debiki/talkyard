@@ -217,7 +217,7 @@ object Templates {
   val post = RawPostAction.forNewPost(id = UnassignedId, creationDati = new ju.Date,
     userIdData = UserIdData.newTest(userId = "?"),
     parentPostId = Some(PageParts.BodyId),
-    text = "", markup = "para", approval = None)
+    text = "", approval = None)
 
 }
 
@@ -1352,7 +1352,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       // Make post creation action
       lazy val postNoId = RawPostAction.copyCreatePost(T.post,
         parentPostId = Some(PageParts.BodyId), text = "Initial text",
-        userId = globalUserId, markup = "dmd0")
+        userId = globalUserId)
 
       var post: RawPostAction[PAP.CreatePost] = null
 
@@ -1360,7 +1360,6 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         post = dao.savePageActions(testPage, List(postNoId))._2.head
           .asInstanceOf[RawPostAction[PAP.CreatePost]]
         post.payload.text must_== "Initial text"
-        post.payload.markup must_== "dmd0"
         exEdit_postId = post.id
         testPage += post
         ok
@@ -1374,7 +1373,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val editNoId = RawPostAction.toEditPost(
           id = UnassignedId, postId = post.id, ctime = now,
           UserIdData.newTest(userId = globalUserId),
-          text = patchText, newMarkup = None,
+          text = patchText,
           approval = None, autoApplied = false)
         val publNoId = RawPostAction[PAP.EditApp](
           id = UnassignedId2, creationDati = now,
@@ -1392,33 +1391,6 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case Some(d: PageParts) => {
             val editedPost = d.getPost_!(post.id)
             editedPost.currentText must_== newText
-            editedPost.markup must_== "dmd0"
-          }
-        }
-      }
-
-      "change the markup type" in {
-        // Make edit actions
-        val editNoId = RawPostAction.toEditPost(
-          id = UnassignedId, postId = post.id, ctime = now,
-          UserIdData.newTest(userId = globalUserId),
-          text = "", newMarkup = Some("html"),
-          approval = None, autoApplied = false)
-        val publNoId = RawPostAction[PAP.EditApp](
-          id = UnassignedId2, creationDati = now,
-          payload = PAP.EditApp(editId = UnassignedId, approval = None),
-          postId = post.id, userIdData = UserIdData.newTest(userId = globalUserId))
-
-        // Save
-        val List(edit: RawPostAction[PAP.EditPost], publ: RawPostAction[PAP.EditApp]) =
-          dao.savePageActions(testPage, List(editNoId, publNoId))._2
-
-        // Verify markup type changed
-        dao.loadPageParts(testPage.id) must beLike {
-          case Some(d: PageParts) => {
-            val editedPost = d.getPost_!(post.id)
-            editedPost.currentText must_== "Edited text 054F2x"
-            editedPost.markup must_== "html"
           }
         }
       }

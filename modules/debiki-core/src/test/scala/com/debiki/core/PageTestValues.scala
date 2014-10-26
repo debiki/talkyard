@@ -44,7 +44,6 @@ trait PageTestValues {
       payload = PostActionPayload.CreatePost(
         parentPostId = None,
         text = textInitially,
-        markup = "",
         approval = None))
 
   val bodySkeletonAutoApproved =

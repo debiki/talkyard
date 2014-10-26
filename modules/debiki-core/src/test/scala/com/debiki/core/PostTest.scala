@@ -37,7 +37,6 @@ trait PostTestValues {
       payload = PostActionPayload.CreatePost(
         parentPostId = None,
         text = "text-text-text",
-        markup = "",
         approval = None))
 
   val rawBody =

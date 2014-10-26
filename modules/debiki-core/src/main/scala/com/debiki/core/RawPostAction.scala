@@ -79,7 +79,6 @@ object RawPostAction {
       userIdData: UserIdData,
       parentPostId: Option[ActionId],
       text: String,
-      markup: String,
       approval: Option[Approval],
       multireplyPostIds: Set[PostId] = Set[PostId](),
       where: Option[String] = None) = {
@@ -89,7 +88,7 @@ object RawPostAction {
     RawPostAction(
       id, creationDati, postId = id, userIdData = userIdData,
       payload = PAP.CreatePost(
-        parentPostId = parentPostId, text = text, markup = markup,
+        parentPostId = parentPostId, text = text,
         approval = approval, multireplyPostIds = multireplyPostIds, where = where))
   }
 
@@ -107,15 +106,13 @@ object RawPostAction {
   def forNewTitle(text: String, creationDati: ju.Date,
                userIdData: UserIdData, approval: Option[Approval]) =
     forNewPost(PageParts.TitleId, creationDati, userIdData = SystemUser.UserIdData,
-      parentPostId = None, text = text,
-      markup = Markup.DefaultForPageTitle.id, approval = approval)
+      parentPostId = None, text = text, approval = approval)
 
 
   def forNewPageBody(text: String, creationDati: ju.Date, pageRole: PageRole,
                   userIdData: UserIdData, approval: Option[Approval]) =
     forNewPost(PageParts.BodyId, creationDati, userIdData = userIdData,
-      parentPostId = None, text = text,
-      markup = Markup.defaultForPageBody(pageRole).id, approval = approval)
+      parentPostId = None, text = text, approval = approval)
 
 
   def copyCreatePost(
@@ -126,7 +123,6 @@ object RawPostAction {
         ip: String = null,
         parentPostId: Option[PostId] = null,
         text: String = null,
-        markup: String = null,
         approval: Option[Approval] = null): RawPostAction[PAP.CreatePost] = {
     val theCopy = RawPostAction(
       id = if (id != PageParts.NoId) id else old.id,
@@ -140,7 +136,6 @@ object RawPostAction {
       payload = PAP.CreatePost(
         parentPostId = if (parentPostId ne null) parentPostId else old.payload.parentPostId,
         text = if (text ne null) text else old.payload.text,
-        markup = if (markup ne null) markup else old.payload.markup,
         approval = if (approval ne null) approval else old.payload.approval))
 
     if (Some(theCopy.id) == theCopy.payload.parentPostId)
@@ -153,12 +148,11 @@ object RawPostAction {
   def toEditPost(
         id: ActionId, postId: ActionId, ctime: ju.Date,
         userIdData: UserIdData,
-        text: String, autoApplied: Boolean, approval: Option[Approval],
-        newMarkup: Option[String] = None) =
+        text: String, autoApplied: Boolean, approval: Option[Approval]) =
     RawPostAction(
       id, ctime, postId = postId, userIdData = userIdData,
       payload = PAP.EditPost(
-        text = text, newMarkup = newMarkup, autoApplied = autoApplied, approval = approval))
+        text = text, autoApplied = autoApplied, approval = approval))
 
 
   def copyEditPost(
@@ -170,8 +164,7 @@ object RawPostAction {
         ip: String = null,
         text: String = null,
         autoApplied: Option[Boolean] = None,
-        approval: Option[Approval] = null,
-        newMarkup: Option[String] = null) =
+        approval: Option[Approval] = null) =
     RawPostAction(
       id = if (id != PageParts.NoId) id else old.id,
       postId = if (postId != PageParts.NoId) postId else old.postId,
@@ -183,7 +176,6 @@ object RawPostAction {
         browserFingerprint = old.userIdData.browserFingerprint),
       payload = PAP.EditPost(
         text = if (text ne null) text else old.payload.text,
-        newMarkup = if (newMarkup ne null) newMarkup else old.payload.newMarkup,
         autoApplied = if (autoApplied.isDefined) autoApplied.get else old.payload.autoApplied,
         approval = if (approval ne null) approval else old.payload.approval))
 

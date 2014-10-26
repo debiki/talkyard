@@ -57,7 +57,7 @@ trait SpecialContentDao {
           return None
 
         // Special content pages are always auto approved, it's ok to use `currentText`.
-        Content(text = body.currentText, markup = body.markup)
+        Content(text = body.currentText)
       }
     }
   }
@@ -66,15 +66,9 @@ trait SpecialContentDao {
   private def replaceNamesApplyMarkup(content: Content): String = {
     var text = content.text.replaceAllLiterally(
       "%{company_short_name}", self.loadWholeSiteSettings().companyShortName.value.toString)
-    text = content.markup match {
-      case Markup.Html.id =>
-        text
-      case Markup.Dmd0.id =>
-        val nodeSeq = HtmlPageSerializer.markdownToSafeHtml(text, hostAndPort = "???",
-          allowClassIdDataAttrs = false, makeLinksNofollow = true)
-        nodeSeq.toString
-    }
-    text
+    val nodeSeq = HtmlPageSerializer.markdownToSafeHtml(text, hostAndPort = "???",
+      allowClassIdDataAttrs = false, makeLinksNofollow = true)
+    nodeSeq.toString
   }
 
 }

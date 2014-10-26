@@ -93,7 +93,7 @@ object ReplyController extends mvc.Controller {
     val postNoId = RawPostAction(id = PageParts.UnassignedId, postId = PageParts.UnassignedId,
       creationDati = pageReq.ctime, userIdData = pageReq.userIdData,
       payload = PAP.CreatePost(
-        parentPostId = anyParentPostId, text = text, markup = Markup.DefaultForComments.id,
+        parentPostId = anyParentPostId, text = text,
         multireplyPostIds = multireplyPostIds, where = whereOpt, approval = approval))
 
     val (pageWithNewPost, List(postWithId: RawPostAction[PAP.CreatePost])) =

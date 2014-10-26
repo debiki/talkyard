@@ -60,8 +60,7 @@ object SpecialContentController extends mvc.Controller {
     var json = Json.obj(
       "rootPageId" -> rootPageId,
       "contentId" -> contentId,
-      "defaultText" -> defaultContent.text,
-      "markup" -> defaultContent.markup)
+      "defaultText" -> defaultContent.text)
 
     anyContent foreach { content =>
       if (content.text == SpecialContentPages.UseDefaultContentMark) {
@@ -136,7 +135,6 @@ object SpecialContentController extends mvc.Controller {
         payload = PostActionPayload.CreatePost(
           parentPostId = None,
           text = "",
-          markup = defaultContent.markup,
           approval = Some(Approval.AuthoritativeUser)))
 
     val pageId = s"$rootPageId$contentId"
@@ -171,7 +169,6 @@ object SpecialContentController extends mvc.Controller {
       ctime = request.ctime,
       userIdData = request.userIdData,
       text = patchText,
-      newMarkup = None,
       approval = Some(Approval.AuthoritativeUser),
       autoApplied = true)
 
@@ -186,7 +183,7 @@ object SpecialContentController extends mvc.Controller {
       pageParts.body map { body =>
         // (It's okay to use `currentText` here, rather than `approvedText`
         // — special content pages are edited by admins, and always auto approved.)
-        SpecialContentPages.Content(text = body.currentText, markup = body.markup)
+        SpecialContentPages.Content(text = body.currentText)
       }
     }
     anyContent

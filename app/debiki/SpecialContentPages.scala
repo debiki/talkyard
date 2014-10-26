@@ -30,7 +30,7 @@ import com.debiki.core.Prelude._
   */
 object SpecialContentPages {
 
-  case class Content(text: String, markup: String)
+  case class Content(text: String)
 
 
   /** A magic string that means the default contents is to be used. */
@@ -47,7 +47,6 @@ object SpecialContentPages {
   val TermsOfUseContentLicenseId = "_tou_content_license"
 
   val TermsOfUseContentLicense = Content(
-    markup = Markup.Dmd0.id,
     text = o"""
       User contributions are licensed under a
       <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons
@@ -63,7 +62,6 @@ object SpecialContentPages {
     * San Francisco.
     */
   val TermsOfUseJurisdiction = Content(
-    markup = Markup.Dmd0.id,
     text = o"""
       Except to the extent applicable law, if any, provides otherwise,
       this Agreement, any access to or use of the Website will be governed by
