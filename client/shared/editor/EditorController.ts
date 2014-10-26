@@ -52,6 +52,9 @@ class EditorController {
     this.closeEditor();
     this.$scope.text = '';
     $scope.vm = this;
+
+    // Pre-load the CommonMark to HTML converter.
+    d.i.loadEditorDependencies();
   }
 
 
@@ -201,38 +204,15 @@ class EditorController {
       allowClassAndIdAttr: editsBody,
       allowDataAttr: editsBody
     };
-
-    var htmlText = d.i.markdownToSafeHtml(
-        this.$scope.text, window.location.host, sanitizerOpts);
-    this.$scope.safePreviewHtml = this.$sce.trustAsHtml(htmlText);
-
-    /* Old jQuery code if I want to support many markups again:
-    var isForTitle = $post.is('.dw-p-ttl');
-    var sanitizerOptions = d.i.sanitizerOptsForPost($post);
-    switch (markupType) {
-      case "para":
-        // Convert to paragraphs, but for now simply show a <pre> instead.
-        // The Scala implementation changes \n\n to <p>...</p> and \n to <br>.
-        htmlSafe = $(isForTitle ? '<h1></h1>' : '<pre></pre>').text(markupSrc);
-        break;
-      case "dmd0":
-        // Debiki flavored Markdown version 0.
-        if (isForTitle) markupSrc = '<h1>'+ markupSrc +'</h1>';
-        htmlSafe = d.i.markdownToSafeHtml(
-            markupSrc, window.location.host, sanitizerOptions);
-        break;
-      case "code":
-        // (No one should use this markup for titles, insert no <h1>.)
-        htmlSafe = $('<pre class="prettyprint"></pre>').text(markupSrc);
-        break;
-      case "html":
-        if (isForTitle) markupSrc = '<h1>'+ markupSrc +'</h1>';
-        htmlSafe = d.i.sanitizeHtml(markupSrc, sanitizerOptions);
-        break;
-      default:
-        d.u.die("Unknown markup [error DwE0k3w25]");
+    var updatePreview = () => {
+      var htmlText = d.i.markdownToSafeHtml(
+          this.$scope.text, window.location.host, sanitizerOpts);
+      this.$scope.safePreviewHtml = this.$sce.trustAsHtml(htmlText);
     }
-    */
+    d.i.loadEditorDependencies().done(() => {
+      if (this.$scope.$$phase) updatePreview();
+      else this.$scope.$apply(updatePreview);
+    });
   }
 
 

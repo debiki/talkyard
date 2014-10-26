@@ -22,9 +22,7 @@ var $ = d.i.$;
 
 d.i.$showEditsDialog = function() {
   var $post = $(this).closest('.dw-t').children('.dw-p');
-  d.i.$loadEditorDependencies.call($post).done(function() {
-    showEditsDialogImpl($post);
-  });
+  showEditsDialogImpl($post);
 };
 
 

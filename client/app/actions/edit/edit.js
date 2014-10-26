@@ -20,9 +20,10 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-d.i.$loadEditorDependencies = (function() {
-  // COULD use 2 loadStatus, and load Code Mirror only iff `this`
-  // is the root post.
+/**
+ * Loads CodeMirror and Remarkable.
+ */
+d.i.loadEditorDependencies = (function() {
   var loadStatus;
   return function() {
     if (loadStatus)
@@ -36,7 +37,7 @@ d.i.$loadEditorDependencies = (function() {
         assetsPrefix + 'codemirror-3-13-custom.css',
         assetsPrefix + 'codemirror-3-13-custom.' + d.i.minMaxJs],
       both: [
-        assetsPrefix + 'debiki-pagedown.' + d.i.minMaxJs],
+        assetsPrefix + 'remarkable.' + d.i.minMaxJs],
       complete: function() {
         loadStatus.resolve();
       }
@@ -72,9 +73,6 @@ function sendEditPostMessageToEmbeddedEditor(postId) {
 
 
 d.i.openEditorToEditPost = function(postId) {
-  // Comment out for now. Will I use commonMark and WMD instead of CodeMirror?
-  // d.i.$loadEditorDependencies.call(_this).done(
-
   d.i.withEditorScope(function(editorScope) {
     editorScope.vm.startEditing(postId);
   });

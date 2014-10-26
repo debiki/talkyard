@@ -156,6 +156,7 @@ object HtmlPageSerializer {
       "renderCommonMark", source).asInstanceOf[String]
 
     // SHOULD fix host-and-port plugin that translates http:/// to http://serveraddress/.
+    // And client side too, [DK48vPe9].
     //val htmlTextUnsafe =
     //   (new compiledjs.PagedownJsImpl()).makeHtml(source, hostAndPort)
     sanitizeHtml(htmlTextUnsafe, allowClassIdDataAttrs, makeLinksNofollow)
