@@ -183,10 +183,16 @@
   // Add an extra border above not-the-first sibling thread,
   // so it's easier to see where they start and end (since I don't
   // always indent).
-  .dw-t > .dw-single-and-multireplies > .dw-res > li:not(:first-child):not(:last-child)
-    > .dw-t > .dw-p > .dw-p-hd,
-    > .dw-p > .dw-p-hd
-      border-top: 2px solid hsl(0, 0%, 70%)
+
+  .dw-p-as-hz-reply + li .dw-depth-1
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+
+  .dw-depth-1
+    padding-top: 18px;
+    margin-top: 11px;
+    border-top: 1px solid #bbb;
 
 .dw-t:not(.dw-hz) > .dw-t-vspace
   display: none

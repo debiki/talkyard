@@ -190,7 +190,7 @@ object HtmlPostRenderer {
   def renderMultireplyReceivers(multireplyPosts: Seq[Post]) = {
     if (multireplyPosts.isEmpty) Nil
     else {
-      <div>{
+      <div><span class="dw-multireply-prefix">In reply to:</span> {
         multireplyPosts.map({ post =>
           <a href={s"#post-${post.id}"} class="dw-multireply-to">
             <span class="icon-reply dw-mirror"></span>
