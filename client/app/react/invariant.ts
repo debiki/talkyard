@@ -1,5 +1,7 @@
 // From: https://bitbucket.org/atlassianlabs/flux-step-by-step/src/b4189dfd415b4613ae1a6e2d248820dd8615c0b6/js/dispatcher/invariant.js?at=master
 
+module debiki2.reactflux {
+
 /**
  * Copyright (c) 2014, Facebook, Inc.
  * All rights reserved.
@@ -24,7 +26,7 @@
  * will remain to ensure logic does not differ in production.
  */
 
-var invariant = function(condition, format, a, b, c, d, e, f) {
+export function invariant(condition, format, a, b, c, d, e, f) {
   if (false) {
     if (format === undefined) {
       throw new Error('invariant requires an error message argument');
@@ -52,4 +54,4 @@ var invariant = function(condition, format, a, b, c, d, e, f) {
   }
 };
 
-module.exports = invariant;
+}

@@ -1,5 +1,11 @@
 // From: https://bitbucket.org/atlassianlabs/flux-step-by-step/src/b4189dfd415b4613ae1a6e2d248820dd8615c0b6/js/dispatcher/Dispatcher.js?at=master
 
+/// <reference path="invariant.ts" />
+
+module debiki2.reactflux {
+
+var invariant: any = debiki2.reactflux.invariant;
+
 /*
  * Copyright (c) 2014, Facebook, Inc.
  * All rights reserved.
@@ -11,8 +17,6 @@
  * @providesModule Dispatcher
  * @typechecks
  */
-
-var invariant = require('./invariant');
 
 var _lastID = 1;
 var _prefix = 'ID_';
@@ -109,7 +113,7 @@ var _prefix = 'ID_';
  * `FlightPriceStore`.
  */
 
-  function Dispatcher() {"use strict";
+export function Dispatcher() {"use strict";
     this.$Dispatcher_callbacks = {};
     this.$Dispatcher_isPending = {};
     this.$Dispatcher_isHandled = {};
@@ -246,5 +250,4 @@ var _prefix = 'ID_';
     this.$Dispatcher_isDispatching = false;
   };
 
-
-module.exports = Dispatcher;
+}
