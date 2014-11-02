@@ -15,6 +15,7 @@
     "angular-sanitize": "v1.2.16",
     "angular-ui-router": "0.2.11",
     "bootstrap": "v3.1.1",
+    "eventemitter2": "~0.4.14",
     "jquery": "1.7.2",
     "jquery.ui": "1.9.2",
     "jquery-ui": "1.9.2",
