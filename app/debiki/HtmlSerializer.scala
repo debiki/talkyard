@@ -211,28 +211,6 @@ object HtmlPageSerializer {
   }
 
 
-  /** XML for the user name and login/out links.
-    */
-  def loginInfo(userName: Option[String], buttonsNotLinks: Boolean): NodeSeq = {
-    val userInfo =
-      <span class='dw-u-info'>
-        <span class='dw-u-name'>{userName.getOrElse("")}</span>
-      </span>
-
-    val loginBtn =
-      if (buttonsNotLinks) <button class='dw-a-login btn btn-default'>Login</button>
-      else <span class='dw-a-login'>Login</span>
-
-    val logoutBtn =
-      if (buttonsNotLinks) <button class='dw-a-logout btn btn-default'>Logout</button>
-      else <span class='dw-a-logout'>Logout</span>
-
-    return <span class='dw-u-lgi-lgo'>{
-      userInfo ++ loginBtn ++ logoutBtn
-    }</span>
-  }
-
-
   /**
    * A script tag that hides comments and shows them on click.
    */
@@ -385,7 +363,7 @@ case class HtmlPageSerializer(
         ifThen(showComments, {
           renderedRoot.actionsHtml ++
           anyRootPostLikeCount ++
-          makeCommentsToolbar() ++
+          commentsToolbar() ++
           <div class='dw-t-vspace'/>
           <div class="dw-single-and-multireplies">
             <ol class='dw-res dw-singlereplies'>
@@ -406,22 +384,9 @@ case class HtmlPageSerializer(
   }
 
 
-  private def makeCommentsToolbar(): NodeSeq = {
-    val userName = None // name updated via Javascript
-    if (showEmbeddedCommentsToolbar) {
-      <div class="dw-cmts-tlbr dw-embedded">
-        <span class="dw-cmts-count">{ page.commentCount } comments</span>
-        <button class="dw-a dw-a-reply icon-reply btn btn-default"
-                style="float: none; margin: 0 15px 0 3px;">Reply</button>
-        { HtmlPageSerializer.loginInfo(userName, buttonsNotLinks = true) }
-      </div>
-    }
-    else {
-      <div class="dw-cmts-tlbr">
-        <span class="dw-cmts-count">{ page.commentCount } comments</span>
-        { HtmlPageSerializer.loginInfo(userName, buttonsNotLinks = false) }
-      </div>
-    }
+  private def commentsToolbar(): NodeSeq = {
+    // Rendered by React.
+    <div id="dw-comments-toolbar"></div>
   }
 
 
@@ -431,7 +396,7 @@ case class HtmlPageSerializer(
       <div class={s"dw-t $horizontalCommentsCss"}>
         {/* Include an empty div.dw-p, so arrows to top level posts are drawn. */}
         <div class="dw-p"></div>
-        { makeCommentsToolbar() }
+        { commentsToolbar() }
         <div class='dw-t-vspace'/>
         <div class="dw-single-and-multireplies">
           <ol class='dw-res dw-singlereplies'>

@@ -134,17 +134,4 @@ var initLoginResultForms = (function() {
 })();
 
 
-$(function() {
-  $('.dw-a-login').click(function() {
-    d.i.showLoginDialog('LoginToLogin');
-  });
-
-  $('.dw-a-logout').click(function() {
-    d.u.postJson({ url: d.i.serverOrigin + '/-/logout' })
-      .fail(d.i.showServerResponseDialog)
-      .done(d.i.Me.fireLogout)
-  });
-});
-
-
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

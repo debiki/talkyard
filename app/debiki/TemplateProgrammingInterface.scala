@@ -25,6 +25,7 @@ import debiki.dao._
 import java.{util => ju}
 import play.{api => p}
 import play.api.Play.current
+import play.api.libs.json._
 import requests.{DebikiRequest, PageRequest}
 import SiteAssetBundlesController.{AssetBundleNameRegex, assetBundleFileName}
 
@@ -182,7 +183,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   def debikiDashbar = xml.Unparsed(views.html.dashbar().body)
 
   def loginLinkAndUserName =
-    HtmlPageSerializer.loginInfo(debikiRequest.user.map(_.displayName), buttonsNotLinks = false)
+    <span id="dw-name-login-btns"></span> // rendered by React.js
 
 
   def xsrfToken: String = debikiRequest.xsrfToken.value
@@ -204,6 +205,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
       pageUriPath = debikiRequest.request.path,
       anyPageRole = anyCurrentPageRole,
       anyPagePath = anyCurrentPagePath,
+      reactStoreSafeJson = reactStoreSafeJson,
       minMaxJs = minMaxJs,
       minMaxCss = minMaxCss).body)
 
@@ -309,6 +311,9 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
     }
   }
 
+
+  /** The initial data in the React-Flux model, a.k.a. store. */
+  def reactStoreSafeJson: JsObject = JsObject(Nil)
 
   def debikiAppendToBodyTags: xml.NodeSeq = Nil
 
@@ -566,6 +571,41 @@ class TemplateProgrammingInterface(
         "DwE1W840", s"""Don't know how to convert config value `$confValName' = `$x',
         which is a ${classNameOf(x)}, to a Boolean""")
     }
+
+
+  override def reactStoreSafeJson: JsObject = {
+    def safeStringOrNull(value: Option[String]) = value.map(safeJsString(_)).getOrElse(JsNull)
+    val anyUser = pageReq.user
+    val userNameJson: JsValue = safeStringOrNull(anyUser.map(_.displayName))
+    val numPostsExclTitle = pageReq.page_!.postCount - (if (pageReq.page_!.titlePost.isDefined) 1 else 0)
+    Json.obj(
+      "numPostsExclTitle" -> numPostsExclTitle,
+      "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),
+      "user" -> Json.obj(
+        "isAdmin" -> JsBoolean(false),
+        "userId" -> safeStringOrNull(anyUser.map(_.id)),
+        "username" -> safeStringOrNull(anyUser.flatMap(_.username)),
+        "fullName" -> safeStringOrNull(anyUser.map(_.displayName)),
+        // "permsOnPage" -> d.i.Me.getPermsOnPage(),
+        //"emailNotfPrefs" -> anyUser.map _.emailNotfPr...
+        "isEmailKnown" -> JsBoolean(anyUser.map(_.email.nonEmpty).getOrElse(false)),
+        "isAuthenticated" -> JsBoolean(anyUser.map(_.isAuthenticated).getOrElse(false))))
+  }
+
+
+  /** Makes a string safe for embedding in a JSON doc in a HTML doc.
+    * From http://stackoverflow.com/a/4180424/694469: """escape  < with \u003c and --> with --\>
+    * you need to escape the HTML characters <, >, & and = to make your json string safe to embed"""
+    * (Note that the JSON serializer itself takes care of double quotes '"'.)
+    */
+  private def safeJsString(string: String): JsString = {
+    var safeString = string
+    safeString = safeString.replaceAllLiterally("<", "\u003c") // and? ">", "\u003e"
+    safeString = safeString.replaceAllLiterally("-->", "--\\>")
+    safeString = safeString.replaceAllLiterally("=", "\u003d")
+    safeString = safeString.replaceAllLiterally("&", "%26")
+    JsString(safeString)
+  }
 
 }
 

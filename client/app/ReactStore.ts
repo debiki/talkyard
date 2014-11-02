@@ -27,13 +27,42 @@ var ChangeEvent = 'ChangeEvent';
 
 export var ReactStore = new EventEmitter2();
 
+var store = debiki.store;
+
 
 ReactDispatcher.register(function(payload) {
-  // ... update data or cancel and return ...
+  var action = payload.action;
+  switch (action.actionType) {
+
+    case ReactActions.actionTypes.Login:
+      console.debug('login: ' + JSON.stringify(action));
+      store.user = action.user;
+      break;
+
+    case ReactActions.actionTypes.Logout:
+      store.user = null;
+      console.debug('logout: ' + JSON.stringify(action));
+      break;
+
+    default:
+      console.warn('Unknown action: ' + JSON.stringify(action));
+      return true;
+  }
+
   ReactStore.emitChange();
   // Tell the dispatcher that there were no errors:
   return true;
 });
+
+
+ReactStore.allData = function() {
+  return store;
+};
+
+
+ReactStore.getUser = function() {
+  return store.user;
+};
 
 
 ReactStore.emitChange = function() {

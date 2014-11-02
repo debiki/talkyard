@@ -224,10 +224,6 @@ function fireLoginImpl(Me) {
   d.i.refreshFormXsrfTokens();
 
   Me.refreshProps();
-  $('.dw-u-info').show()
-      .find('.dw-u-name').text(Me.getName());
-  $('.dw-a-logout').show();
-  $('.dw-a-login').hide();
 
   // Let Post as ... and Save as ... buttons update themselves:
   // they'll replace '...' with the user name.
@@ -251,6 +247,8 @@ function fireLoginImpl(Me) {
       isAuthenticated: Me.isAuthenticated()
     });
   });
+
+  debiki2.ReactActions.login();
 };
 
 
@@ -262,9 +260,6 @@ function fireLoginImpl(Me) {
 //  sanitize: unless `false', {name, email, website} will be sanitized.
 function fireLogoutImpl(Me) {
   Me.refreshProps();
-  $('.dw-u-info').hide();
-  $('.dw-a-logout').hide();
-  $('.dw-a-login').show();
 
   // Let `Post as <username>' etc buttons update themselves:
   // they'll replace <username> with `...'.
@@ -278,6 +273,8 @@ function fireLogoutImpl(Me) {
   d.i.anyAngularApply(function($rootScope) {
     $rootScope.clearCurrentUser();
   });
+
+  debiki2.ReactActions.logout();
 };
 
 

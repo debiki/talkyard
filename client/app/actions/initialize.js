@@ -94,11 +94,6 @@ function bindActionLinksImpl(anyPost, bindFoldLinks) {
 };
 
 
-d.i.bindActionLinkForEmbeddedCommentsToolbar = function() {
-  $('.dw-cmts-tlbr.dw-embedded .dw-a-reply').click(d.i.$showReplyForm);
-};
-
-
 function showNotImplMessage() {
   alert("Not implemented, sorry");
 }

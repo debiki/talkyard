@@ -17,7 +17,7 @@
 
 @(startupCode: String, anyPageId: Option[String], serverAddress: String, pageUriPath: String,
   anyPageRole: Option[com.debiki.core.PageRole], anyPagePath: Option[com.debiki.core.PagePath],
-  minMaxJs: String, minMaxCss: String)
+  reactStoreSafeJson: play.api.libs.json.JsObject, minMaxJs: String, minMaxCss: String)
 
 @asset(file: String) = @{
   routes.Assets.at(path = "/public/res", file)
@@ -77,6 +77,7 @@ stylesheet references", http://modernizr.com/docs/#installing
 @script(s"//cdnjs.cloudflare.com/ajax/libs/react/0.11.2/react-with-addons.$minMaxJs",
     "React", s"react-with-addons.$minMaxJs")
 
+<script id="dwReactStore" type="application/json">@Html(reactStoreSafeJson.toString)</script>
 
 @* All Debiki's stuff is placed somewhere inside `debiki`.
  - The debiki.scriptLoad $.Deferred is resolved later by debiki.js.
@@ -86,6 +87,7 @@ stylesheet references", http://modernizr.com/docs/#installing
 *@
 <script>
   var debiki = $.extend(true, {
+    store: JSON.parse($('#dwReactStore').text()),
     getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
     v0: { util: {} },
     internal: {

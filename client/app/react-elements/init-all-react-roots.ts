@@ -15,44 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="ReactDispatcher.ts" />
+/// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="comments-toolbar.ts" />
+/// <reference path="name-login-btns.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.ReactActions {
+   module debiki2.reactelements {
 //------------------------------------------------------------------------------
 
 
-export var actionTypes = {
-  Login: 'Login',
-  Logout: 'Logout'
-}
+export function initAllReactRoots() {
+  React.renderComponent(
+      CommentsToolbar({}),
+      document.getElementById('dw-comments-toolbar'));
 
-
-export function login() {
-  ReactDispatcher.handleViewAction({
-    actionType: actionTypes.Login,
-    user: {
-      isAdmin: d.i.Me.isAdmin(),
-      userId: d.i.Me.getUserId(),
-      username: '???',
-      fullName: d.i.Me.getName(),
-      permsOnPage: d.i.Me.getPermsOnPage(),
-      emailNotfPrefs: d.i.Me.getEmailNotfPrefs(),
-      isEmailKnown: d.i.Me.isEmailKnown(),
-      isAuthenticated: d.i.Me.isAuthenticated()
-    }
-  });
-}
-
-
-export function logout() {
-  ReactDispatcher.handleViewAction({
-    actionType: actionTypes.Logout
-  });
+  React.renderComponent(
+      NameLoginBtns({}),
+      document.getElementById('dw-name-login-btns'));
 }
 
 
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------
-// vim: fdm=marker et ts=2 sw=2 tw=0 list
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list

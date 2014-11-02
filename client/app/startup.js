@@ -78,7 +78,6 @@ d.i.$initPost = function() {
 
 function initStep1() {
   d.i.bindActionLinksForAllPosts();
-  d.i.bindActionLinkForEmbeddedCommentsToolbar();
 };
 
 
@@ -269,6 +268,8 @@ function renderPageEtc() {
   var steps = [];
 
   steps.push(function() {
+    debiki2.reactelements.initAllReactRoots();
+
     // Add '.dw-depth-NNN' class. (dwDepth() does that.)
     $posts.each(function() {
       $(this).dwDepth();
