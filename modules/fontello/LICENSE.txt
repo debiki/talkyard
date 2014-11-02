@@ -1,15 +1,6 @@
 Font license info
 
 
-## Font Awesome
-
-   Copyright (C) 2012 by Dave Gandy
-
-   Author:    Dave Gandy
-   License:   SIL ()
-   Homepage:  http://fortawesome.github.com/Font-Awesome/
-
-
 ## Zocial
 
    Copyright (C) 2012 by Sam Collins
@@ -19,13 +10,22 @@ Font license info
    Homepage:  http://zocial.smcllns.com/
 
 
-## Entypo
+## Font Awesome
+
+   Copyright (C) 2012 by Dave Gandy
+
+   Author:    Dave Gandy
+   License:   SIL ()
+   Homepage:  http://fortawesome.github.com/Font-Awesome/
+
+
+## MFG Labs
 
    Copyright (C) 2012 by Daniel Bruce
 
-   Author:    Daniel Bruce
-   License:   CC BY-SA (http://creativecommons.org/licenses/by-sa/2.0/)
-   Homepage:  http://www.entypo.com
+   Author:    MFG Labs
+   License:   SIL (http://scripts.sil.org/OFL)
+   Homepage:  http://www.mfglabs.com/
 
 
 ## Iconic
@@ -46,12 +46,12 @@ Font license info
    Homepage:  http://thedesignoffice.org/project/modern-pictograms/
 
 
-## MFG Labs
+## Entypo
 
    Copyright (C) 2012 by Daniel Bruce
 
-   Author:    MFG Labs
+   Author:    Daniel Bruce
    License:   SIL (http://scripts.sil.org/OFL)
-   Homepage:  http://www.mfglabs.com/
+   Homepage:  http://www.entypo.com
 
 

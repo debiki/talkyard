@@ -67,6 +67,18 @@
       "src": "fontawesome"
     },
     {
+      "uid": "ccddff8e8670dcd130e3cb55fdfc2fd0",
+      "css": "chevron-down",
+      "code": 59402,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "fe6697b391355dec12f3d86d6d490397",
+      "css": "chevron-up",
+      "code": 59409,
+      "src": "fontawesome"
+    },
+    {
       "uid": "f9c3205df26e7778abac86183aefdc99",
       "css": "ccw",
       "code": 10226,

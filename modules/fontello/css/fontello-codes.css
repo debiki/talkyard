@@ -1,26 +1,28 @@
 @charset "UTF-8";
 
  
-.icon-heart:before { content: '\e803'; } /* '' */
+.icon-yahoo:before { content: '\59'; } /* 'Y' */
 .icon-openid:before { content: '\6f'; } /* 'o' */
-.icon-bookmark-empty:before { content: '\e805'; } /* '' */
+.icon-ccw:before { content: '\27f2'; } /* '⟲' */
+.icon-settings:before { content: '\9881'; } /* '颁' */
 .icon-flag:before { content: '\e800'; } /* '' */
 .icon-upvote:before { content: '\e801'; } /* '' */
 .icon-downvote:before { content: '\e802'; } /* '' */
-.icon-reply:before { content: '\e809'; } /* '' */
-.icon-warning:before { content: '\e807'; } /* '' */
-.icon-trash:before { content: '\e806'; } /* '' */
-.icon-down-dir:before { content: '\e80f'; } /* '' */
-.icon-ccw:before { content: '\27f2'; } /* '⟲' */
+.icon-heart:before { content: '\e803'; } /* '' */
 .icon-bookmark:before { content: '\e804'; } /* '' */
+.icon-bookmark-empty:before { content: '\e805'; } /* '' */
+.icon-trash:before { content: '\e806'; } /* '' */
+.icon-warning:before { content: '\e807'; } /* '' */
+.icon-split:before { content: '\e808'; } /* '' */
+.icon-reply:before { content: '\e809'; } /* '' */
+.icon-chevron-down:before { content: '\e80a'; } /* '' */
+.icon-pin:before { content: '\e80b'; } /* '' */
+.icon-edit:before { content: '\e80d'; } /* '' */
+.icon-down-dir:before { content: '\e80f'; } /* '' */
+.icon-archive:before { content: '\e810'; } /* '' */
+.icon-chevron-up:before { content: '\e811'; } /* '' */
+.icon-facebook:before { content: '\f09a'; } /* '' */
 .icon-google-plus:before { content: '\f0d5'; } /* '' */
 .icon-linkedin:before { content: '\f0e1'; } /* '' */
-.icon-archive:before { content: '\e810'; } /* '' */
 .icon-twitter:before { content: '\f309'; } /* '' */
-.icon-pin:before { content: '\e80b'; } /* '' */
 .icon-collapse:before { content: '📤'; } /* '\1f4e4' */
-.icon-split:before { content: '\e808'; } /* '' */
-.icon-edit:before { content: '\e80d'; } /* '' */
-.icon-settings:before { content: '\9881'; } /* '颁' */
-.icon-yahoo:before { content: '\59'; } /* 'Y' */
-.icon-facebook:before { content: '\f09a'; } /* '' */
