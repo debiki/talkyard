@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="reactflux/dispatcher.ts" />
+/// <reference path="react-flux/dispatcher.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2 {
