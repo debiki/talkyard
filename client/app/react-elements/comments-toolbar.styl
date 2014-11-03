@@ -21,24 +21,50 @@
   margin: 25px 0 17px
   border: 1px solid hsl(0, 0%, 77%)
   background: hsl(0, 0%, 98%)
-  padding: 10px
+  padding: 0
   border-left: none
   border-right: none
 
-  .dw-cmts-count
-    font-size: 17px
-    margin-right: 1em
+  .dw-cmts-tlbr-head
 
-  .dw-u-lgi-lgo
-    display: inline // not block, which the topbar often sets
+    position: relative; // so dw-cmts-tlbr-open height: 100% works
 
-  .dw-u-name,
-  .dw-a-login,
-  .dw-a-logout
-    color: hsl(0, 0%, 43%)
+    .dw-cmts-tlbr-summary
+      padding: 10px 55px 10px 10px; // COULD extract variable, 50px [KP409f]
 
-  .dw-a-logout
-    margin-left: 1em
+      & > li
+        display: inline-block;
+        margin: 0 0 0 20px;
+        color: #555;
+
+      & > li:first-child
+        margin-left: 0;
+
+      .dw-cmts-count
+        font-size: 17px
+
+      .dw-u-lgi-lgo
+        display: inline // not block, which the topbar often sets
+
+      .dw-u-name,
+      .dw-a-login,
+      .dw-a-logout
+        color: hsl(0, 0%, 43%)
+
+    .dw-cmts-tlbr-open
+      position: absolute;
+      height: 100%;
+      width: 50px; // COULD extract variable, 50px [KP409f]
+      right: 0;
+      top: 0;
+      background: #ddd;
+      border: none;
+      font-size: 130%;
+
+  .dw-cmts-tlbr-details
+
+    padding: 10px
+
 
 .DW.dw-vt .dw-cmts-tlbr
   margin-bottom: 45px

@@ -24,7 +24,8 @@
 
 export var actionTypes = {
   Login: 'Login',
-  Logout: 'Logout'
+  Logout: 'Logout',
+  SetPageNotfLevel: 'SetPageNotfLevel'
 }
 
 
@@ -37,7 +38,7 @@ export function login() {
       username: '???',
       fullName: d.i.Me.getName(),
       permsOnPage: d.i.Me.getPermsOnPage(),
-      emailNotfPrefs: d.i.Me.getEmailNotfPrefs(),
+      pageNotfLevel: 'Regular', // for now
       isEmailKnown: d.i.Me.isEmailKnown(),
       isAuthenticated: d.i.Me.isAuthenticated()
     }
@@ -51,6 +52,14 @@ export function logout() {
   });
 }
 
+
+export function setPageNoftLevel(newNotfLevel) {
+  //Server.savePageNotfLevel(newNotfLevel);
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.SetPageNotfLevel,
+    newLevel: newNotfLevel
+  });
+}
 
 //------------------------------------------------------------------------------
    }

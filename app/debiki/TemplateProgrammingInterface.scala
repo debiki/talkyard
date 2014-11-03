@@ -589,6 +589,7 @@ class TemplateProgrammingInterface(
         // "permsOnPage" -> d.i.Me.getPermsOnPage(),
         //"emailNotfPrefs" -> anyUser.map _.emailNotfPr...
         "isEmailKnown" -> JsBoolean(anyUser.map(_.email.nonEmpty).getOrElse(false)),
+        "pageNotfLevel" -> JsString("Regular"),
         "isAuthenticated" -> JsBoolean(anyUser.map(_.isAuthenticated).getOrElse(false))))
   }
 

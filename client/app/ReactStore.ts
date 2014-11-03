@@ -35,13 +35,15 @@ ReactDispatcher.register(function(payload) {
   switch (action.actionType) {
 
     case ReactActions.actionTypes.Login:
-      console.debug('login: ' + JSON.stringify(action));
       store.user = action.user;
       break;
 
     case ReactActions.actionTypes.Logout:
       store.user = null;
-      console.debug('logout: ' + JSON.stringify(action));
+      break;
+
+    case ReactActions.actionTypes.SetPageNotfLevel:
+      store.user.pageNotfLevel = action.newLevel;
       break;
 
     default:
@@ -50,6 +52,7 @@ ReactDispatcher.register(function(payload) {
   }
 
   ReactStore.emitChange();
+
   // Tell the dispatcher that there were no errors:
   return true;
 });

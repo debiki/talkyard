@@ -25,10 +25,18 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 
+// There is a TypeScript defs file for react-bootstrap:
+// https://github.com/flyon/react-bootstrap-typescript-definitions.git
+// but apparently it's incompatible with the version of React in use right now, instead:
+var rb: any = window['ReactBootstrap'];
+
 
 export var CommentsToolbar = React.createClass({
   getInitialState: function() {
-    return debiki2.ReactStore.allData();
+    return {
+      store: debiki2.ReactStore.allData(),
+      ui: { showDetails: false }
+    };
   },
 
   componentDidMount: function() {
@@ -40,17 +48,29 @@ export var CommentsToolbar = React.createClass({
   },
 
   onChange: function() {
-    this.setState(debiki2.ReactStore.allData());
+    this.setState({
+      store: debiki2.ReactStore.allData(),
+      ui: this.state.ui
+    });
   },
 
   onReplyClick: function() {
     d.i.$showReplyForm(); // UNTESTED after porting to React
   },
 
+  onToggleDetailsClick: function() {
+    this.state.ui.showDetails = !this.state.ui.showDetails;
+    this.setState(this.state);
+  },
+
   render: function() {
+    var store = this.state.store;
+    var ui = this.state.ui;
+    var user = store.user;
+
     var embeddedClass = '';
     var anyReplyBtnElem = null;
-    if (this.state.isInEmbeddedCommentsIframe) {
+    if (store.isInEmbeddedCommentsIframe) {
       embeddedClass = ' dw-embedded';
       anyReplyBtnElem =
           r.button({ className: 'dw-a dw-a-reply icon-reply btn btn-default',
@@ -58,16 +78,67 @@ export var CommentsToolbar = React.createClass({
               'Reply');
     }
 
-    var numPostsOrCommentsText = this.state.isInEmbeddedCommentsIframe
-      ? this.state.numPostsExclTitle - 1 + ' comments' // don't count the article
-      : this.state.numPostsExclTitle + ' posts'; // not -1, the original post is a post
+    var notfLevelElem = null;
+    if (!ui.showDetails) {
+      notfLevelElem = r.span({ className: 'dw-page-notf-level' },
+          'Notifications: ' + user.pageNotfLevel);
+    }
 
-    var elems =
-        r.div({ className: 'dw-cmts-tlbr' + embeddedClass },
-            r.span({ className: 'dw-cmts-count' }, numPostsOrCommentsText),
-            NameLoginBtns());
+    var toggleDetailsBtn =
+      r.button({ className: 'dw-cmts-tlbr-open', onClick: this.onToggleDetailsClick },
+          r.span({ className: (ui.showDetails ? 'icon-chevron-up' : 'icon-chevron-down') }));
 
-    return elems;
+    var numPostsOrCommentsText = store.isInEmbeddedCommentsIframe
+        ? store.numPostsExclTitle - 1 + ' comments' // don't count the article
+        : store.numPostsExclTitle + ' posts'; // not -1, the original post is a post
+
+    var summaryElem =
+      r.div({ className: 'dw-cmts-tlbr-head' },
+          anyReplyBtnElem,
+          r.ul({ className: 'dw-cmts-tlbr-summary' },
+              r.li({ className: 'dw-cmts-count' }, numPostsOrCommentsText),
+              r.li({}, NameLoginBtns()),
+              r.li({}, notfLevelElem)),
+          toggleDetailsBtn);
+
+    var detailsElem = ui.showDetails
+      ? CommentsToolbarDetails(store)
+      : null;
+
+    var result =
+      r.div({ className: 'dw-cmts-tlbr' + embeddedClass },
+          summaryElem,
+          detailsElem);
+
+    return result;
+  }
+});
+
+
+var CommentsToolbarDetails = React.createClass({
+  onNewNotfLevel: function(newLevel) {
+    ReactActions.setPageNoftLevel(newLevel);
+  },
+
+  render: function() {
+    var user = this.props.user;
+
+    var notificationsElem = null;
+    if (user && user.isAuthenticated) {
+      notificationsElem =
+        rb.DropdownButton({ title: user.pageNotfLevel, className: 'dw-notf-level',
+                onSelect: this.onNewNotfLevel },
+            rb.MenuItem({ key: 'Watching' }, 'Watching'),
+            rb.MenuItem({ key: 'Tracking' }, 'Tracking'),
+            rb.MenuItem({ key: 'Regular' }, 'Regular'),
+            rb.MenuItem({ key: 'Muted' }, 'Muted'));
+    }
+
+    var result =
+      r.div({ className: 'dw-cmts-tlbr-details' },
+          notificationsElem);
+
+    return result;
   }
 });
 
