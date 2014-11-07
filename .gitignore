@@ -49,8 +49,6 @@ public/res/modernizr.min.js
 public/res/debiki-spa-*
 public/res/debiki-dashbar*
 public/res/codemirror-*
-public/res/remarkable.js
-public/res/remarkable.min.js
 public/themes/*
 
 # Ignore generated test JS files.
