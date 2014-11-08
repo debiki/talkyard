@@ -67,6 +67,7 @@ export var CommentsToolbar = React.createClass({
     var store = this.state.store;
     var ui = this.state.ui;
     var user = store.user;
+    var userAuthenticated = user && user.isAuthenticated;
 
     var embeddedClass = '';
     var anyReplyBtnElem = null;
@@ -78,15 +79,15 @@ export var CommentsToolbar = React.createClass({
               'Reply');
     }
 
-    var notfLevelElem = null;
-    if (!ui.showDetails) {
-      notfLevelElem = r.span({ className: 'dw-page-notf-level' },
-          'Notifications: ' + user.pageNotfLevel);
-    }
+    var notfLevelElem = userAuthenticated && !ui.showDetails
+      ? r.span({ className: 'dw-page-notf-level',
+          onClick: this.onToggleDetailsClick }, 'Notifications: ' + user.pageNotfLevel)
+      : null;
 
-    var toggleDetailsBtn =
-      r.button({ className: 'dw-cmts-tlbr-open', onClick: this.onToggleDetailsClick },
-          r.span({ className: (ui.showDetails ? 'icon-chevron-up' : 'icon-chevron-down') }));
+    var toggleDetailsBtn = userAuthenticated
+      ? r.button({ className: 'dw-cmts-tlbr-open', onClick: this.onToggleDetailsClick },
+          r.span({ className: (ui.showDetails ? 'icon-chevron-up' : 'icon-chevron-down') }))
+      : null;
 
     var numPostsOrCommentsText = store.isInEmbeddedCommentsIframe
         ? store.numPostsExclTitle - 1 + ' comments' // don't count the article
@@ -122,17 +123,16 @@ var CommentsToolbarDetails = React.createClass({
 
   render: function() {
     var user = this.props.user;
+    var userAuthenticated = user && user.isAuthenticated;
 
-    var notificationsElem = null;
-    if (user && user.isAuthenticated) {
-      notificationsElem =
-        rb.DropdownButton({ title: user.pageNotfLevel, className: 'dw-notf-level',
+    var notificationsElem = userAuthenticated
+        ? rb.DropdownButton({ title: user.pageNotfLevel, className: 'dw-notf-level',
                 onSelect: this.onNewNotfLevel },
             rb.MenuItem({ key: 'Watching' }, 'Watching'),
             rb.MenuItem({ key: 'Tracking' }, 'Tracking'),
             rb.MenuItem({ key: 'Regular' }, 'Regular'),
-            rb.MenuItem({ key: 'Muted' }, 'Muted'));
-    }
+            rb.MenuItem({ key: 'Muted' }, 'Muted'))
+        : null;
 
     var result =
       r.div({ className: 'dw-cmts-tlbr-details' },
