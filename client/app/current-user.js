@@ -113,7 +113,7 @@ d.i.makeCurUser = function() {
    * — So the first invokation happens synchronously, subsequent
    * invokations happens asynchronously.
    */
-  function loadAndHandleUserPageData() {
+  function loadAndHandleUserPageData(anyDoneCallback) {
     // Do nothing if this isn't a normal page. For example, perhaps
     // this is the search results listing page. There's no user
     // specific data related to that page.
@@ -158,6 +158,9 @@ d.i.makeCurUser = function() {
       // In `myPageData.threadsByPageId` are any not-yet-approved comments
       // by the current user. Insert them into the page:
       d.i.patchPage(myPageData, { overwriteTrees: true });
+      if (anyDoneCallback) {
+        anyDoneCallback();
+      }
     }
 
     function markMyActions(actions) {
@@ -234,7 +237,9 @@ function fireLoginImpl(Me) {
       .trigger('dwEvLoggedInOut', [Me.getName()]);
 
   Me.clearMyPageInfo();
-  Me.loadAndHandleUserPageData();
+  Me.loadAndHandleUserPageData(function() {
+    debiki2.ReactActions.login();
+  });
 
   // Tell the parts of this page that uses AngularJS about the current user.
   d.i.angularApply(function($rootScope) {
@@ -250,8 +255,6 @@ function fireLoginImpl(Me) {
       isAuthenticated: Me.isAuthenticated()
     });
   });
-
-  debiki2.ReactActions.login();
 };
 
 
