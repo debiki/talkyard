@@ -25,13 +25,13 @@
 
 
 export function initAllReactRoots() {
-  React.renderComponent(
-      CommentsToolbar({}),
-      document.getElementById('dw-comments-toolbar'));
+  var commentsToolbarElem = document.getElementById('dw-comments-toolbar');
+  if (commentsToolbarElem)
+    React.renderComponent(CommentsToolbar({}), commentsToolbarElem);
 
-  React.renderComponent(
-      NameLoginBtns({}),
-      document.getElementById('dw-name-login-btns'));
+  var nameLoginBtnsElem = document.getElementById('dw-name-login-btns');
+  if (nameLoginBtnsElem)
+    React.renderComponent(NameLoginBtns({}), nameLoginBtnsElem);
 }
 
 
