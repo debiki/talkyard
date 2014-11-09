@@ -304,6 +304,10 @@ abstract class SiteDbDao {
 
   def listUsers(userQuery: UserQuery): Seq[(User, Seq[String])]
 
+  def loadRolePageSettings(roleId: RoleId, pageId: PageId): Option[RolePageSettings]
+
+  def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings)
+
 
   // ----- Notifications
 
@@ -769,6 +773,18 @@ class ChargingSiteDbDao(
     _chargeForOneReadReq()
     _spi.listUsers(userQuery)
   }
+
+  def loadRolePageSettings(roleId: RoleId, pageId: PageId): Option[RolePageSettings] = {
+    _chargeForOneReadReq()
+    _spi.loadRolePageSettings(roleId = roleId, pageId = pageId)
+  }
+
+
+  def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings) = {
+    _chargeForOneWriteReq()
+    _spi.saveRolePageSettings(roleId = roleId, pageId = pageId, settings)
+  }
+
 
   // ----- Notifications
 

@@ -301,14 +301,9 @@ case class User (
   def isAuthenticated = isRoleId(id) && !id.startsWith("?")
 
   def isGuest = User.isGuestId(id)
+  def anyRoleId: Option[String] = if (isRoleId(id)) Some(id) else None
+  def anyGuestId: Option[String] = if (isGuestId(id)) Some(id drop 1) else None
 
-  /* COULD add:
-    def roleId: Option[String] =
-    if (isRoleId(userId)) Some(userId) else None
-
-  def idtySmplId: Option[String] =
-    if (isGuestId(userId)) Some(userId drop 1) else None
-   */
 }
 
 
@@ -321,6 +316,14 @@ case class UserQuery()
 object EmailNotfPrefs extends Enumeration {
   type EmailNotfPrefs = Value
   val Receive, DontReceive, ForbiddenForever, Unspecified = Value
+}
+
+
+case class RolePageSettings(
+  notfLevel: PageNotfLevel)
+
+object RolePageSettings {
+  val Default = RolePageSettings(PageNotfLevel.Regular)
 }
 
 

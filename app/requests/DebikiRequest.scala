@@ -68,6 +68,9 @@ abstract class DebikiRequest[A] {
   def user_! : User =
     user getOrElse throwForbidden("DwE86Wb7", "Not logged in")
 
+  def anyRoleId = user.flatMap(_.anyRoleId)
+  def theRoleId = anyRoleId getOrElse throwForbidden("DwE86Wb7", "Not authenticated")
+
   def anyMeAsPeople: People =
     if (user isEmpty) People()
     else People() + user_!

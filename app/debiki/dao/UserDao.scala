@@ -135,6 +135,15 @@ trait UserDao {
   def listUsers(userQuery: UserQuery): Seq[(User, Seq[String])] =
     siteDbDao.listUsers(userQuery)
 
+
+  def loadRolePageSettings(roleId: RoleId, pageId: PageId): RolePageSettings =
+    siteDbDao.loadRolePageSettings(roleId = roleId, pageId = pageId) getOrElse
+      RolePageSettings.Default
+
+
+  def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings) =
+    siteDbDao.saveRolePageSettings(roleId = roleId, pageId = pageId, settings)
+
 }
 
 

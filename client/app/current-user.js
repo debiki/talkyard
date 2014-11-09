@@ -30,6 +30,7 @@ d.i.makeCurUser = function() {
   // 100 posts. The user id is checked frequently, to find out which
   // posts have the current user written.)
   var userProps;
+  var rolePageSettings = null;
   var isAdmin = false;
   var emailPrefs = undefined;
   var emailSpecified = false;
@@ -133,7 +134,7 @@ d.i.makeCurUser = function() {
       // user credentials always even if it'll fail.
 
       // Query the server.
-      var url = d.i.serverOrigin + '/-/load-my-page-activity?pageId=' + d.i.pageId;
+      var url = d.i.serverOrigin + '/-/load-my-page-data?pageId=' + d.i.pageId;
       $.get(url, 'text')
           .fail(showErrorIfPageExists)
           .done(function(jsonData) {
@@ -150,6 +151,7 @@ d.i.makeCurUser = function() {
 
     function handleUserPageData(jsonData) {
       var myPageData = JSON.parse(jsonData);
+      rolePageSettings = myPageData.rolePageSettings;
       isAdmin = myPageData.isAdmin;
       setPermsOnPage(myPageData.permsOnPage || {});
       markMyActions(myPageData);
@@ -196,6 +198,7 @@ d.i.makeCurUser = function() {
       // if *ends* with '-'? Well works anyway.)
       return !!userProps.userId.match(/^[a-z0-9]+$/);
     },
+    getRolePageSettings: function() { return rolePageSettings; },
     getPermsOnPage: function() { return permsOnPage; },
     mayEdit: function($post) {
       return userProps.userId === $post.dwAuthorId() ||

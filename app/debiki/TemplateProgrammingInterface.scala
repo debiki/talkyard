@@ -122,7 +122,32 @@ object TemplateProgrammingInterface {
     if (isDevOrTest) ("", "js", "css") else ("min", "min.js", "min.css")
   }
 
+
+  def rolePageSettingsToJson(settings: RolePageSettings): JsObject = {
+    Json.obj(
+      "notfLevel" -> safeJsString(settings.notfLevel.toString))
+  }
+
+
+  def safeStringOrNull(value: Option[String]) = value.map(safeJsString(_)).getOrElse(JsNull)
+
+
+  /** Makes a string safe for embedding in a JSON doc in a HTML doc.
+    * From http://stackoverflow.com/a/4180424/694469: """escape  < with \u003c and --> with --\>
+    * you need to escape the HTML characters <, >, & and = to make your json string safe to embed"""
+    * (Note that the JSON serializer itself takes care of double quotes '"'.)
+    */
+  private def safeJsString(string: String): JsString = {
+    var safeString = string
+    safeString = safeString.replaceAllLiterally("<", "\u003c") // and? ">", "\u003e"
+    safeString = safeString.replaceAllLiterally("-->", "--\\>")
+    safeString = safeString.replaceAllLiterally("=", "\u003d")
+    safeString = safeString.replaceAllLiterally("&", "%26")
+    JsString(safeString)
+  }
+
 }
+
 
 
 /**
@@ -465,6 +490,7 @@ class TemplateProgrammingInterface(
 
   import debiki.{InternalPageTpi => tpi}
   import InternalPageTpi.{Page => _, _}
+  import TemplateProgrammingInterface._
 
   var renderPageSettings: Option[RenderPageSettings] = None
 
@@ -574,10 +600,14 @@ class TemplateProgrammingInterface(
 
 
   override def reactStoreSafeJson: JsObject = {
-    def safeStringOrNull(value: Option[String]) = value.map(safeJsString(_)).getOrElse(JsNull)
     val anyUser = pageReq.user
     val userNameJson: JsValue = safeStringOrNull(anyUser.map(_.displayName))
     val numPostsExclTitle = pageReq.page_!.postCount - (if (pageReq.page_!.titlePost.isDefined) 1 else 0)
+    val rolePageSettings = anyUser.flatMap(_.anyRoleId) map { roleId =>
+      val settings = dao.loadRolePageSettings(roleId = roleId, pageId = pageReq.thePageId)
+      rolePageSettingsToJson(settings)
+    } getOrElse JsNull
+
     Json.obj(
       "numPostsExclTitle" -> numPostsExclTitle,
       "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),
@@ -587,25 +617,9 @@ class TemplateProgrammingInterface(
         "username" -> safeStringOrNull(anyUser.flatMap(_.username)),
         "fullName" -> safeStringOrNull(anyUser.map(_.displayName)),
         // "permsOnPage" -> d.i.Me.getPermsOnPage(),
-        //"emailNotfPrefs" -> anyUser.map _.emailNotfPr...
         "isEmailKnown" -> JsBoolean(anyUser.map(_.email.nonEmpty).getOrElse(false)),
-        "pageNotfLevel" -> JsString("Regular"),
+        "rolePageSettings" -> rolePageSettings,
         "isAuthenticated" -> JsBoolean(anyUser.map(_.isAuthenticated).getOrElse(false))))
-  }
-
-
-  /** Makes a string safe for embedding in a JSON doc in a HTML doc.
-    * From http://stackoverflow.com/a/4180424/694469: """escape  < with \u003c and --> with --\>
-    * you need to escape the HTML characters <, >, & and = to make your json string safe to embed"""
-    * (Note that the JSON serializer itself takes care of double quotes '"'.)
-    */
-  private def safeJsString(string: String): JsString = {
-    var safeString = string
-    safeString = safeString.replaceAllLiterally("<", "\u003c") // and? ">", "\u003e"
-    safeString = safeString.replaceAllLiterally("-->", "--\\>")
-    safeString = safeString.replaceAllLiterally("=", "\u003d")
-    safeString = safeString.replaceAllLiterally("&", "%26")
-    JsString(safeString)
   }
 
 }

@@ -15,52 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="ReactDispatcher.ts" />
-/// <reference path="Server.ts" />
-
 //------------------------------------------------------------------------------
-   module debiki2.ReactActions {
+   module debiki2.Server {
 //------------------------------------------------------------------------------
 
-
-export var actionTypes = {
-  Login: 'Login',
-  Logout: 'Logout',
-  SetPageNotfLevel: 'SetPageNotfLevel'
-}
+var d: any = { i: debiki.internal, u: debiki.v0.util };
+var $ = d.i.$;
 
 
-export function login() {
-  ReactDispatcher.handleViewAction({
-    actionType: actionTypes.Login,
-    user: {
-      isAdmin: d.i.Me.isAdmin(),
-      userId: d.i.Me.getUserId(),
-      username: '???',
-      fullName: d.i.Me.getName(),
-      permsOnPage: d.i.Me.getPermsOnPage(),
-      rolePageSettings: d.i.Me.getRolePageSettings(),
-      isEmailKnown: d.i.Me.isEmailKnown(),
-      isAuthenticated: d.i.Me.isAuthenticated()
+export function savePageNoftLevel(newNotfLevel) {
+  d.u.postJson({
+    url: '/-/save-page-notf-level',
+    data: {
+      pageId: d.i.pageId,
+      pageNotfLevel: newNotfLevel
     }
   });
 }
 
-
-export function logout() {
-  ReactDispatcher.handleViewAction({
-    actionType: actionTypes.Logout
-  });
-}
-
-
-export function setPageNoftLevel(newNotfLevel) {
-  Server.savePageNoftLevel(newNotfLevel);
-  ReactDispatcher.handleViewAction({
-    actionType: actionTypes.SetPageNotfLevel,
-    newLevel: newNotfLevel
-  });
-}
 
 //------------------------------------------------------------------------------
    }

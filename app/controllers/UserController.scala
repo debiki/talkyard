@@ -63,6 +63,17 @@ object UserController extends mvc.Controller {
   }
 
 
+  def savePageNotfLevel = PostJsonAction(maxLength = 500) { request =>
+    val body = request.body
+    val pageId = (body \ "pageId").as[PageId]
+    val newNotfLevelStr = (body \ "pageNotfLevel").as[String]
+    val newNotfLevel = PageNotfLevel.fromString(newNotfLevelStr)
+    request.dao.saveRolePageSettings(roleId = request.theRoleId, pageId = pageId,
+      RolePageSettings(newNotfLevel))
+    Ok
+  }
+
+
   private def userInfoToJson(userInfo: UserInfoAndStats): JsObject = {
     Json.obj(
       "userId" -> userInfo.info.id,

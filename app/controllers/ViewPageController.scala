@@ -80,7 +80,7 @@ object ViewPageController extends mvc.Controller {
    * so we need a way for the browser to fetch authorship info
    * dynamically.
    */
-  def loadMyPageActivity(pageId: PageId) = GetAction { request =>
+  def loadMyPageData(pageId: PageId) = GetAction { request =>
     val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
       "DwE404FL9", s"Page `$pageId' not found")
     val json = buildUserPageDataJson(pageReq)
@@ -166,9 +166,11 @@ object ViewPageController extends mvc.Controller {
         BrowserPagePatcher(pageReq).jsonForPost(post)
       }
 
-    // (COULD include HTML for any notifications to the user.
-    // Not really related to the current page only though.)
-    // reply ++= "\nnotfs: ..."
+    val rolePageSettings =
+      pageReq.anyRoleId map { roleId =>
+        val settings = pageReq.dao.loadRolePageSettings(roleId = roleId, pageId = page.id)
+        TemplateProgrammingInterface.rolePageSettingsToJson(settings)
+      } getOrElse JsNull
 
     val json = toJson(Map(
       "isAdmin" -> toJson(pageReq.user.map(_.isAdmin).getOrElse(false)),
@@ -182,7 +184,8 @@ object ViewPageController extends mvc.Controller {
       "postsByPageId" -> toJson(Map(
           page.id -> toJson(pendingPostsJsPatches))),
       "threadsByPageId" -> toJson(Map(
-          page.id -> toJson(pendingThreadsJsPatches)))))
+          page.id -> toJson(pendingThreadsJsPatches))),
+      "rolePageSettings" -> rolePageSettings))
 
     if (Play.isDev) Json.prettyPrint(json)
     else Json.stringify(json)

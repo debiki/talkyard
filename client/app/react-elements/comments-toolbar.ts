@@ -80,8 +80,8 @@ export var CommentsToolbar = React.createClass({
     }
 
     var notfLevelElem = userAuthenticated && !ui.showDetails
-      ? r.span({ className: 'dw-page-notf-level',
-          onClick: this.onToggleDetailsClick }, 'Notifications: ' + user.pageNotfLevel)
+      ? r.span({ className: 'dw-page-notf-level', onClick: this.onToggleDetailsClick },
+          'Notifications: ' + user.rolePageSettings.notfLevel)
       : null;
 
     var toggleDetailsBtn = userAuthenticated
@@ -126,8 +126,8 @@ var CommentsToolbarDetails = React.createClass({
     var userAuthenticated = user && user.isAuthenticated;
 
     var notificationsElem = userAuthenticated
-        ? rb.DropdownButton({ title: user.pageNotfLevel, className: 'dw-notf-level',
-                onSelect: this.onNewNotfLevel },
+        ? rb.DropdownButton({ title: user.rolePageSettings.notfLevel,
+                className: 'dw-notf-level', onSelect: this.onNewNotfLevel },
             rb.MenuItem({ key: 'Watching' }, 'Watching'),
             rb.MenuItem({ key: 'Tracking' }, 'Tracking'),
             rb.MenuItem({ key: 'Regular' }, 'Regular'),

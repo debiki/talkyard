@@ -43,7 +43,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.SetPageNotfLevel:
-      store.user.pageNotfLevel = action.newLevel;
+      store.user.rolePageSettings.notfLevel = action.newLevel;
       break;
 
     default:
