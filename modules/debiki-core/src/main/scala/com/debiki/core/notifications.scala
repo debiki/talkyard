@@ -46,18 +46,7 @@ sealed abstract class Notification {
 
 object Notification {
 
-  case class Mention(
-    siteId: SiteId,
-    createdAt: ju.Date,
-    pageId: PageId,
-    postId: PostId,
-    byUserId: UserId,
-    toUserId: UserId,
-    emailId: Option[EmailId] = None,
-    emailCreatedAt: Option[ju.Date] = None,
-    seenAt: Option[ju.Date] = None) extends Notification
-
-  /** A reply, indirect reply, or new post in a topic you're watching.
+  /** A reply, @mention, or new post in a topic you're watching.
     */
   case class NewPost(
     notfType: NewPostNotfType,
@@ -73,8 +62,8 @@ object Notification {
 
   sealed abstract class NewPostNotfType
   object NewPostNotfType {
+    case object Mention extends NewPostNotfType
     case object DirectReply extends NewPostNotfType
-    case object IndirectReply extends NewPostNotfType
     case object NewPost extends NewPostNotfType
   }
 

@@ -92,28 +92,6 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
       }
     }
 
-    // Indirect reply notifications.
-    for {
-      ancestorPost <- newPost.ancestorPosts.drop(1)
-      if ancestorPost.userId != newPost.userId
-      ancestorUser <- dao.loadUser(ancestorPost.userId)
-    }{
-      if (ancestorUser.isGuest) {
-        if (ancestorUser.emailNotfPrefs == EmailNotfPrefs.Receive ||
-            ancestorUser.emailNotfPrefs == EmailNotfPrefs.Unspecified) {
-          makeNewPostNotf(Notification.NewPostNotfType.IndirectReply, newPost, ancestorUser)
-        }
-      }
-      else {
-        val settings: RolePageSettings = dao.loadRolePageSettings(ancestorUser.id, page.id)
-        settings.notfLevel match {
-          case PageNotfLevel.Muted | PageNotfLevel.Regular => // skip
-          case PageNotfLevel.Tracking | PageNotfLevel.Watching =>
-            makeNewPostNotf(Notification.NewPostNotfType.IndirectReply, newPost, ancestorUser)
-        }
-      }
-    }
-
     // People watching this topic
     // dao.loadRolesWatchingPage(page.id) foreach { role =>
     //   ...

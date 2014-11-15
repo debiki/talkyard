@@ -40,7 +40,8 @@ class NotificationsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) 
   val now = new ju.Date(1e12.toLong) // roughly year 2000
   val later = new ju.Date(now.getTime + 1000)
 
-  def roleMentionNotf = Notification.Mention(
+  def roleMentionNotf = Notification.NewPost(
+    notfType = Notification.NewPostNotfType.Mention,
     siteId = site.id,
     createdAt = now,
     pageId = page.id,
@@ -48,18 +49,14 @@ class NotificationsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) 
     byUserId = "author-user-id",
     toUserId = role.id)
 
-  def roleReplyNotf = Notification.NewPost(
+  def roleReplyNotf = roleMentionNotf.copy(
     notfType = Notification.NewPostNotfType.DirectReply,
-    siteId = site.id,
     createdAt = later,
-    pageId = page.id,
-    postId = comment.id,
-    byUserId = "author-user-id",
-    toUserId = role.id)
+    postId = comment.id)
 
   def guestMentionNotf = roleMentionNotf.copy(toUserId = guest.id)
   def guestReplyNotf = roleReplyNotf.copy(toUserId = guest.id,
-    notfType = Notification.NewPostNotfType.IndirectReply)
+    notfType = Notification.NewPostNotfType.DirectReply)
 
 
   "The server can save notifications" - {
