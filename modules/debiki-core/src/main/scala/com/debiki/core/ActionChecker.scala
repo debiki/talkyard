@@ -18,6 +18,7 @@
 package com.debiki.core
 
 import com.debiki.core.{PostActionPayload => PAP}
+import com.debiki.core.Prelude._
 
 
 object ActionChecker {

@@ -303,6 +303,8 @@ case class User (
   def isGuest = User.isGuestId(id)
   def anyRoleId: Option[String] = if (isRoleId(id)) Some(id) else None
   def anyGuestId: Option[String] = if (isGuestId(id)) Some(id drop 1) else None
+  def theRoleId: String = anyRoleId getOrDie "DwE035SKF7"
+  def theGuestId: String = anyGuestId getOrDie "DwE5GK904"
 
 }
 

@@ -164,17 +164,14 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
   // ----- Notifications
 
-  def saveNotfs(notfs: Seq[NotfOfPageAction]) =
-    siteDbDao.saveNotfs(notfs)
+  def saveDeleteNotifications(notifications: Notifications) =
+    siteDbDao.saveDeleteNotifications(notifications)
 
-  def loadNotfsForRole(roleId: RoleId): Seq[NotfOfPageAction] =
-    siteDbDao.loadNotfsForRole(roleId)
+  def loadNotificationsForRole(roleId: RoleId): Seq[Notification] =
+    siteDbDao.loadNotificationsForRole(roleId)
 
-  def loadNotfByEmailId(emailId: String): Option[NotfOfPageAction] =
-    siteDbDao.loadNotfByEmailId(emailId)
-
-  def skipEmailForNotfs(notfs: Seq[NotfOfPageAction], debug: String): Unit =
-    siteDbDao.skipEmailForNotfs(notfs, debug)
+  def updateNotificationSkipEmail(notifications: Seq[Notification]): Unit =
+    siteDbDao.updateNotificationSkipEmail(notifications)
 
 
   // ----- Emails
@@ -182,8 +179,7 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
   def saveUnsentEmail(email: Email): Unit =
     siteDbDao.saveUnsentEmail(email)
 
-  def saveUnsentEmailConnectToNotfs(email: Email,
-        notfs: Seq[NotfOfPageAction]): Unit =
+  def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]): Unit =
     siteDbDao.saveUnsentEmailConnectToNotfs(email, notfs)
 
   def updateSentEmail(email: Email): Unit =

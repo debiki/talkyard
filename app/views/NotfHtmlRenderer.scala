@@ -43,19 +43,17 @@ import scala.xml.{NodeSeq, Text}
  */
 case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
 
-  import NotfOfPageAction.Type._
-
-
+  /*
   private def pageUrl(notf: NotfOfPageAction): Option[String] =
     anyOrigin map { origin =>
       s"$origin/-${notf.pageId}"
-    }
+    }*/
 
 
   private def pageName(pageMeta: PageMeta): String =
     pageMeta.cachedTitle.orElse(pageMeta.embeddingPageUrl) getOrElse "(unnamed page)"
 
-
+  /*
   private def postUrl(pageMeta: PageMeta, notf: NotfOfPageAction): Option[String] =
     pageMeta.embeddingPageUrl match {
       case Some(url) =>
@@ -68,21 +66,22 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
           val pageUrl = s"$origin/-${notf.pageId}"
           s"$pageUrl#post-${notf.eventActionId}"
         }
-    }
+    } */
 
 
-  def render(notfs: Seq[NotfOfPageAction]): NodeSeq = {
+  def render(notfs: Seq[Notification]): NodeSeq = {
     var result = Nil: NodeSeq
+    ??? /*  [notifications]
     for (notf <- notfs)
       result ++= (notf.eventType match {
         case PersonalReply => personalReply(notf)
         case MyPostApproved => myPostApproved(notf)
       })
-
+    */
     result
   }
 
-
+  /*
   private def personalReply(notf: NotfOfPageAction): NodeSeq = {
     assert(notf.eventType == PersonalReply)
 
@@ -135,7 +134,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
       <a href={url}>Your post</a> has been approved,<br/>
       on page <i>{pageName(pageMeta)}</i>.
     </p>
-  }
+  }*/
 
 }
 

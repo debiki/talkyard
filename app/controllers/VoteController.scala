@@ -76,9 +76,13 @@ object VoteController extends mvc.Controller {
       case _ => throwBadReq("DwE35gKP8", s"Bad vote type: $voteStr")
     }
 
+    def deleteVoteAndNotf() {
+      request.dao.deleteVoteAndNotf(request.userIdData, pageId, postId, voteType)
+    }
+
     val (pageReq, pageParts) =
       if (delete) {
-        request.dao.deleteVote(request.userIdData, pageId, postId, voteType)
+        deleteVoteAndNotf()
 
         val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
           "DwE22PF1", s"Page `$pageId' not found")
@@ -90,7 +94,7 @@ object VoteController extends mvc.Controller {
         // so it's not possible to vote many times from many accounts on one single
         // computer?
         // COULD move this to RdbSiteDao? So it'll be easier to test, won't need Selenium?
-        request.dao.deleteVote(request.userIdData, pageId, postId, voteType)
+        deleteVoteAndNotf()
 
         // Now create the vote.
         val voteNoId = RawPostAction(id = PageParts.UnassignedId, postId = postId,

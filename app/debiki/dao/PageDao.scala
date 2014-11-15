@@ -35,7 +35,10 @@ trait PageDao {
   def nextPageId(): PageId = siteDbDao.nextPageId()
 
 
-  def createPage(page: Page): Page = siteDbDao.createPage(page)
+  def createPage(pageNoId: Page): Page = {
+    siteDbDao.createPage(pageNoId)
+    // COULD generate and save notfs [notifications]
+  }
 
 
   final def savePageActionGenNotfs[A](pageReq: PageRequest[_], action: RawPostAction[A]) = {
@@ -90,13 +93,17 @@ trait PageDao {
     val (pageWithNewActions, actionsWithId) =
       siteDbDao.savePageActions(page, actions.toList)
 
+    val notfs = NotificationGenerator(page, this).generateNotifications(actionsWithId)
+    siteDbDao.saveDeleteNotifications(notfs)
+
     (pageWithNewActions, actionsWithId)
   }
 
 
-  def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
+  def deleteVoteAndNotf(userIdData: UserIdData, pageId: PageId, postId: PostId,
         voteType: PostActionPayload.Vote) {
     siteDbDao.deleteVote(userIdData, pageId, postId, voteType)
+    // Delete vote notf too once they're being generated, see [953kGF21X].
   }
 
 
@@ -204,9 +211,9 @@ trait CachingPageDao extends PageDao {
   }
 
 
-  override def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
+  override def deleteVoteAndNotf(userIdData: UserIdData, pageId: PageId, postId: PostId,
         voteType: PostActionPayload.Vote) {
-    super.deleteVote(userIdData, pageId, postId, voteType)
+    super.deleteVoteAndNotf(userIdData, pageId, postId, voteType)
     refreshPageInCache(pageId)
   }
 

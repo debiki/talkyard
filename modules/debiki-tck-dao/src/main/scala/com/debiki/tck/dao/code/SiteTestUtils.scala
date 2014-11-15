@@ -78,6 +78,12 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
   }
 
 
+  def loginViaEmail(emailId: EmailId): LoginGrant  = {
+    dao.tryLogin(
+      EmailLoginAttempt(ip = "?.?.?.?", date = new ju.Date(), emailId = emailId))
+  }
+
+
   def createPageAndBody(loginGrant: LoginGrant, pageRole: PageRole, text: String): Page =
     createPageAndBody(loginGrant.user, pageRole, text)
 
