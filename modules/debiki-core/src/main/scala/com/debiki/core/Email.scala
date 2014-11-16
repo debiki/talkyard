@@ -85,28 +85,3 @@ object EmailType {
 }
 
 
-// Move to file notifications.scala?
-sealed abstract class PageNotfLevel
-object PageNotfLevel {
-
-  /** Notified about @mentions and all new posts. */
-  case object Watching extends PageNotfLevel
-
-  /** Notified about @mentions and new posts in threads started by the user him/herself.  */
-  case object Tracking extends PageNotfLevel
-
-  /** Notified of @mentions and direct replies. */
-  case object Regular extends PageNotfLevel
-
-  /** No notifications for this page.  */
-  case object Muted extends PageNotfLevel
-
-  def fromString(value: String) = value match {
-    case "Watching" => Watching
-    case "Tracking" => Tracking
-    case "Regular" => Regular
-    case "Muted" => Muted
-    case x => illArgErr("DwE73kFG2", s"Bad PageNotfLevel: `$x'")
-  }
-}
-
