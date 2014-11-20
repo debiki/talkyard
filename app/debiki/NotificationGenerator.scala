@@ -42,7 +42,7 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
       action.payload match {
         case payload: PAP.CreatePost =>
           if (payload.approval.isDefined) {
-            makeNotfsForNewPost(action.postId)
+            makeNotfsForNewPost(action.postId, anyApproverId = None)
           }
           // else: wait until approved
         case edit: PAP.EditPost =>
@@ -51,11 +51,14 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
           }
           // else: wait until approved
         case payload: PAP.ApprovePost =>
-          if (oldPageParts.getPost(action.postId).isDefined) {
+          val oldPost = oldPageParts.getPost(action.postId)
+          val oldAlreadyApproved = oldPost.map(_.someVersionApproved) == Some(true)
+          val isApprovingEdits = oldAlreadyApproved
+          if (isApprovingEdits) {
             makeNotfsForEdits(action.postId)
           }
           else {
-            makeNotfsForNewPost(action.postId)
+            makeNotfsForNewPost(action.postId, anyApproverId = Some(action.userId))
           }
         case PAP.VoteLike =>
           makeNotfForVote(action.asInstanceOf[RawPostAction[PAP.Vote]])
@@ -67,13 +70,17 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
   }
 
 
-  private def makeNotfsForNewPost(postId: PostId) {
+  private def makeNotfsForNewPost(postId: PostId, anyApproverId: Option[UserId]) {
     val newPost = newPageParts.getPost(postId) getOrDie "DwE7GF36"
+
+    if (!newPost.currentVersionApproved)
+      return
 
     // Direct reply notification.
     for {
       parentPost <- newPost.parentPost
       if parentPost.userId != newPost.userId
+      if anyApproverId.map(_ == parentPost.userId) != Some(true)
       parentUser <- dao.loadUser(parentPost.userId)
     }{
       if (parentUser.isGuest) {
@@ -99,15 +106,6 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
   }
 
 
-  private def makeNotfsForEdits(postId: PostId) {
-  }
-
-
-  private def makeNotfForVote(likeVote: RawPostAction[PAP.Vote]) {
-    // Delete this notf if deleting the vote, see [953kGF21X] in debiki-dao-rdb.
-  }
-
-
   private def makeNewPostNotf(notfType: Notification.NewPostNotfType, newPost: Post, user: User) {
     if (sentToUserIds.contains(user.id))
       return
@@ -121,6 +119,15 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
       postId = newPost.id,
       byUserId = newPost.userId,
       toUserId = user.id)
+  }
+
+
+  private def makeNotfsForEdits(postId: PostId) {
+  }
+
+
+  private def makeNotfForVote(likeVote: RawPostAction[PAP.Vote]) {
+    // Delete this notf if deleting the vote, see [953kGF21X] in debiki-dao-rdb.
   }
 
 }

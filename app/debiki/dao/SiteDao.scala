@@ -44,7 +44,7 @@ object SiteDaoFactory {
     def newSiteDao(quotaConsumers: QuotaConsumers): SiteDao = {
       val siteDbDao = _dbDaoFactory.newSiteDbDao(quotaConsumers)
       val chargingDbDao = new ChargingSiteDbDao(siteDbDao, _quotaCharger)
-      new SiteDao(chargingDbDao)
+      new NonCachingSiteDao(chargingDbDao)
     }
   }
 
@@ -59,7 +59,7 @@ object SiteDaoFactory {
   * SiteDbDao methods, because calling them directly would mess up
   * the cache in SiteDao's subclass CachingSiteDao.
   */
-class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
+abstract class SiteDao
   extends AnyRef
   with AssetBundleDao
   with ConfigValueDao
@@ -72,6 +72,8 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
   with UserDao {
 
   def quotaConsumers = siteDbDao.quotaConsumers
+
+  def siteDbDao: SiteDbDao
 
 
   // ----- Tenant
@@ -190,3 +192,6 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
 }
 
+
+
+class NonCachingSiteDao(val siteDbDao: SiteDbDao) extends SiteDao

@@ -1,0 +1,178 @@
+/**
+ * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package debiki
+
+import com.debiki.core._
+import com.debiki.core.Prelude._
+import com.debiki.core.RawPostAction.{copyCreatePost, copyApprovePost}
+import debiki.dao.SiteDao
+import org.scalatest._
+import org.scalatest.mock.MockitoSugar
+import org.mockito.Mockito._
+import java.{util => ju}
+
+
+
+class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with MockitoSugar {
+
+  import com.debiki.core.PeopleTestUtils.makePerson
+  val bodyAuthor = makePerson("BodyAuthor")
+  val replyAuthor = makePerson("Replier")
+  val reviewer = makePerson("ReviewerAuthor")
+
+  val rawBody = copyCreatePost(PostTestValues.postSkeleton,
+    id = PageParts.BodyId, userId = bodyAuthor.id, parentPostId = None)
+
+  val rawBodyPrelApproved = copyCreatePost(rawBody, approval = Some(Approval.Preliminary))
+  val rawBodyWellBehavedAprvd = copyCreatePost(rawBody, approval = Some(Approval.WellBehavedUser))
+  val rawBodyAuthzApproved = copyCreatePost(rawBody, approval = Some(Approval.AuthoritativeUser))
+
+  val approvalOfBody =
+    RawPostAction.toApprovePost(2, postId = rawBody.id,
+      UserIdData.newTest(userId = reviewer.id),
+      ctime = new ju.Date(11000), approval = Approval.AuthoritativeUser)
+  val rejectionOfBody =
+    RawPostAction.toDeletePost(andReplies = false, id = 3, postIdToDelete = rawBody.id,
+      UserIdData.newTest(userId = reviewer.id),
+      createdAt = new ju.Date(11000))
+
+  val rawReply = copyCreatePost(PostTestValues.postSkeleton,
+    id = 11, userId = replyAuthor.id, parentPostId = Some(rawBody.id))
+
+  val rawReplyPrelApproved = copyCreatePost(rawReply, approval = Some(Approval.Preliminary))
+  val rawReplyWellBehvdAprvd = copyCreatePost(rawReply, approval = Some(Approval.WellBehavedUser))
+  val rawReplyAuthzApproved = copyCreatePost(rawReply, approval = Some(Approval.AuthoritativeUser))
+
+  val approvalOfReply =
+    RawPostAction.toApprovePost(12, postId = rawReply.id,
+      UserIdData.newTest(userId = reviewer.id),
+      ctime = new ju.Date(11000), approval = Approval.AuthoritativeUser)
+  val rejectionOfReply =  RawPostAction.toDeletePost(
+    andReplies = false, 13, postIdToDelete = rawReply.id,
+    UserIdData.newTest(userId = reviewer.id),
+    createdAt = new ju.Date(11000))
+
+  val EmptyPage = PageParts("pageId") ++ (People() + bodyAuthor + replyAuthor + reviewer)
+
+  val PageWithApprovedBody = EmptyPage + rawBody + approvalOfBody
+
+  val pageNoPath = PageNoPath(PageWithApprovedBody, Nil, PageMeta.forNewPage(
+    PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
+
+  "NotificationGenerator should" - {
+
+    "generate a notf for a reply" in {
+      val siteDaoMock = mock[SiteDao]
+      when(siteDaoMock.siteId).thenReturn("siteId")
+      when(siteDaoMock.loadUser("BodyAuthorid")).thenReturn(Some(bodyAuthor))
+      when(siteDaoMock.loadRolePageSettings(bodyAuthor.id, "pageId"))
+        .thenReturn(RolePageSettings.Default)
+
+      val reply = copyCreatePost(rawReply,
+        userId = replyAuthor.id, approval = Some(Approval.WellBehavedUser))
+      val notfs =
+        NotificationGenerator(pageNoPath, siteDaoMock).generateNotifications(reply::Nil)
+
+      notfs.toDelete.length mustBe 0
+      notfs.toCreate mustBe Seq(Notification.NewPost(
+          notfType = Notification.NewPostNotfType.DirectReply,
+          siteId = "siteId",
+          createdAt = reply.creationDati,
+          pageId = pageNoPath.id,
+          postId = reply.id,
+          byUserId = replyAuthor.id,
+          toUserId = bodyAuthor.id))
+    }
+
+    "generate no notf for a reply to one's own comment" in {
+      val siteDaoMock = mock[SiteDao]
+      val reply = copyCreatePost(rawReply,
+        userId = bodyAuthor.id, approval = Some(Approval.WellBehavedUser))
+      val notfs = NotificationGenerator(pageNoPath, siteDaoMock).generateNotifications(reply::Nil)
+      notfs.toCreate.length mustBe 0
+      notfs.toCreate.length mustBe 0
+    }
+
+    "generate no notf for an unapproved reply" in {
+      val siteDaoMock = mock[SiteDao]
+      val reply = copyCreatePost(rawReply, userId = replyAuthor.id, approval = None)
+      val notfs = NotificationGenerator(pageNoPath, siteDaoMock).generateNotifications(reply::Nil)
+      notfs.toCreate.length mustBe 0
+      notfs.toCreate.length mustBe 0
+    }
+
+    "generate no notf for a rejected reply" in {
+      pending /* old code:
+      val page = PageWithApprovedBody + rawReply
+      val notfs = genNotfs(bodyAuthor, page, rejectionOfReply)
+      notfs.length must_== 0  */
+    }
+
+    "generate a notf when a reply is approved" in {
+      val siteDaoMock = mock[SiteDao]
+      when(siteDaoMock.siteId).thenReturn("siteId")
+      when(siteDaoMock.loadUser("BodyAuthorid")).thenReturn(Some(bodyAuthor))
+      when(siteDaoMock.loadRolePageSettings(bodyAuthor.id, "pageId"))
+        .thenReturn(RolePageSettings.Default)
+
+      val page =  PageNoPath(PageWithApprovedBody + rawReply, Nil, PageMeta.forNewPage(
+        PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
+      val notfs =
+        NotificationGenerator(page, siteDaoMock).generateNotifications(approvalOfReply::Nil)
+
+      notfs.toCreate mustBe Seq(Notification.NewPost(
+        notfType = Notification.NewPostNotfType.DirectReply,
+        siteId = "siteId",
+        createdAt = rawReply.creationDati,
+        pageId = pageNoPath.id,
+        postId = rawReply.id,
+        byUserId = replyAuthor.id,
+        toUserId = bodyAuthor.id))
+    }
+
+    "generate no notf when the reply is approved by the one replied to" in {
+      val siteDaoMock = mock[SiteDao]
+      when(siteDaoMock.loadUser("BodyAuthorid")).thenReturn(Some(bodyAuthor))
+
+      val page =  PageNoPath(PageWithApprovedBody + rawReply, Nil, PageMeta.forNewPage(
+        PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
+      val approval = approvalOfReply.copy(
+        userIdData = UserIdData.newTest(userId = bodyAuthor.id))
+      val notfs = NotificationGenerator(page, siteDaoMock).generateNotifications(approval::Nil)
+
+      notfs.toCreate.length mustBe 0
+    }
+
+    "generate no notfs if well-behaved-user approval upheld" in {
+      // This cannot really happen: moderators aren't asked to review comments by
+      // well-behaved users. But include this test anyway.
+
+      val siteDaoMock = mock[SiteDao]
+
+      val page =  PageNoPath(PageWithApprovedBody + rawReplyWellBehvdAprvd, Nil,
+        PageMeta.forNewPage(
+          PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
+      val approval = approvalOfReply.copy(
+        userIdData = UserIdData.newTest(userId = bodyAuthor.id))
+
+      val notfs = NotificationGenerator(page, siteDaoMock).generateNotifications(approval::Nil)
+      notfs.toCreate.length mustBe 0
+    }
+  }
+
+}

@@ -32,12 +32,12 @@ trait AssetBundleDao {
   self: SiteDao =>
 
 
-  final def loadAssetBundleVersion(
+  def loadAssetBundleVersion(
         bundleNameNoSuffix: String, bundleSuffix: String): String =
     loadBundleAndDependencies(bundleNameNoSuffix, bundleSuffix).version
 
 
-  final def loadAssetBundle(nameNoSuffix: String, suffix: String): AssetBundle = {
+  def loadAssetBundle(nameNoSuffix: String, suffix: String): AssetBundle = {
     val bundleAndDeps = loadBundleAndDependencies(nameNoSuffix, suffix)
     AssetBundle(bundleAndDeps.assetBundleText, version = bundleAndDeps.version)
   }

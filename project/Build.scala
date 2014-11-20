@@ -27,7 +27,6 @@ object ApplicationBuild extends Build {
 
   lazy val debikiCore =
     Project("debiki-core", file("modules/debiki-core"))
-    //.dependsOn(secureSocial) // only class securesocial.core.Identity
 
   lazy val debikiTckDao =
     (Project("debiki-tck-dao", file("modules/debiki-tck-dao"))
@@ -36,27 +35,6 @@ object ApplicationBuild extends Build {
   lazy val debikiDaoRdb =
     (Project("debiki-dao-rdb", file("modules/debiki-dao-rdb"))
     dependsOn(debikiCore, debikiTckDao % "test"))
-
-
-  /*
-  lazy val secureSocialDeps = Seq(
-    // Append if there's any error like the one mentioned in the `routes` file, search
-    // for [593bKWR] in that file, then change to  "... 2.1.0 notTransitive()" below:
-    // (Currently that error happens if I add a dependency on
-    //    "securesocial" %% "securesocial" % "master-SNAPSHOT",
-    // rather than including SecureSocial as a submodule.)
-    "com.typesafe" %% "play-plugins-util" % "2.1.0",// notTransitive(),
-    "com.typesafe" %% "play-plugins-mailer" % "2.1.0",// notTransitive(),
-    "org.mindrot" % "jbcrypt" % "0.3m")
-
-  lazy val secureSocial = Project("securesocial", file("modules/securesocial"))
-    .settings(
-      version := appVersion,
-      libraryDependencies ++= secureSocialDeps,
-      resolvers ++= Seq(
-        "jBCrypt Repository" at "http://repo1.maven.org/maven2/org/",
-        "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"))
-  */
 
 
   val appDependencies = Seq(
@@ -106,8 +84,7 @@ object ApplicationBuild extends Build {
 
   val main = Project(appName, file(".")).enablePlugins(play.PlayScala)
     .settings(mainSettings: _*)
-    .dependsOn(debikiCore, debikiDaoRdb) //, secureSocial)
-    //.aggregate(secureSocial)
+    .dependsOn(debikiCore % "test->test;compile->compile", debikiDaoRdb)
 
 
   def mainSettings = List(

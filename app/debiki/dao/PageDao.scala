@@ -41,7 +41,7 @@ trait PageDao {
   }
 
 
-  final def savePageActionGenNotfs[A](pageReq: PageRequest[_], action: RawPostAction[A]) = {
+  def savePageActionGenNotfs[A](pageReq: PageRequest[_], action: RawPostAction[A]) = {
     val (pageAfter, actionsWithId) = savePageActionsGenNotfs(pageReq, Seq(action))
     (pageAfter, actionsWithId.head.asInstanceOf[RawPostAction[A]])
   }
@@ -51,7 +51,7 @@ trait PageDao {
     * Returns a pair with 1) the page including new actions plus the current user,
     * and 2) the actions, but with ids assigned.
     */
-  final def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: Seq[RawPostAction[_]])
+  def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: Seq[RawPostAction[_]])
       : (PageNoPath, Seq[RawPostAction[_]]) = {
     val pagePartsNoAuthor = pageReq.pageNoPath_!.parts
     // We're probably going to render parts of the page later, and then we
@@ -63,7 +63,7 @@ trait PageDao {
   }
 
 
-  final def savePageActionsGenNotfs(pageId: PageId, actions: Seq[RawPostAction[_]], authors: People)
+  def savePageActionsGenNotfs(pageId: PageId, actions: Seq[RawPostAction[_]], authors: People)
       : (PageNoPath, Seq[RawPostAction[_]]) = {
 
     val pageMeta = siteDbDao.loadPageMeta(pageId) getOrElse

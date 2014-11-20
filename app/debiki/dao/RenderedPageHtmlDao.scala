@@ -46,12 +46,11 @@ trait RenderedPageHtmlDao {
   self: SiteDao =>
 
 
-  def renderTemplate(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil)
-        : String =
+  def renderTemplate(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil): String =
     TemplateRenderer.renderTemplate(pageReq, appendToBody)
 
 
-  final def renderPageMeta(pageReq: PageRequest[_]): NodeSeq = {
+  def renderPageMeta(pageReq: PageRequest[_]): NodeSeq = {
     HtmlPageSerializer.wrapInPageTag(pageReq.pathAndMeta_!)(Nil)
       .map(html => xml.Unparsed(liftweb.Html5.toString(html)))
   }
