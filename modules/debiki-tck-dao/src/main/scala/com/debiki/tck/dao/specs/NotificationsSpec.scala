@@ -58,6 +58,20 @@ class NotificationsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) 
   def guestReplyNotf = roleReplyNotf.copy(toUserId = guest.id,
     notfType = Notification.NewPostNotfType.DirectReply)
 
+  var guestMentionNotfWithEmail: Notification.NewPost = null
+
+  def roleMentionNotfDeletion = NotificationToDelete.MentionToDelete(
+    siteId = roleMentionNotf.siteId,
+    pageId = roleMentionNotf.pageId,
+    postId = roleMentionNotf.postId,
+    toUserId = roleMentionNotf.toUserId)
+
+  // Deletes the reply notfs to both the role and the guest.
+  def replyNotfDeletion = NotificationToDelete.NewPostToDelete(
+    siteId = roleReplyNotf.siteId,
+    pageId = roleReplyNotf.pageId,
+    postId = roleReplyNotf.postId)
+
 
   "The server can save notifications" - {
 
@@ -172,14 +186,16 @@ class NotificationsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) 
     "find notfs being connected to emails" in {
       var notfs = siteDao.loadNotificationsForRole(role.id)
       notfs.size mustBe 2
-      notfs(0) mustBe roleMentionNotf.copy(
+      val roleMentionNotfWithEmail = roleMentionNotf.copy(
         emailId = Some(emailToRoleId), emailCreatedAt = Some(notfs(0).emailCreatedAt.get))
+      notfs(0) mustBe roleMentionNotfWithEmail
       notfs(1) mustBe roleReplyNotf
 
       notfs = siteDao.loadNotificationsForRole(guest.id)
       notfs.size mustBe 2
-      notfs(0) mustBe guestMentionNotf.copy(
+      guestMentionNotfWithEmail = guestMentionNotf.copy(
         emailId = Some(emailToGuestId), emailCreatedAt = Some(notfs(0).emailCreatedAt.get))
+      notfs(0) mustBe guestMentionNotfWithEmail
       notfs(1) mustBe guestReplyNotf
     }
 
@@ -206,6 +222,32 @@ class NotificationsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) 
       emailLoaded mustBe Some(emailSentToGuest)
     }
 
+  }
+
+
+  "The server can delete notifications" - {
+
+    "delete a mention notf" in {
+      def findRoleMention(notfs: Seq[Notification]) =
+        notfs.find(_ match {
+          case mention: Notification.NewPost
+            if mention.notfType == Notification.NewPostNotfType.Mention => true
+          case _ => false
+        })
+      val notfsBefore = siteDao.loadNotificationsForRole(roleMentionNotfDeletion.toUserId)
+      findRoleMention(notfsBefore) mustBe 'defined
+      siteDao.saveDeleteNotifications(Notifications(toDelete = Seq(roleMentionNotfDeletion)))
+      val notfsAfter = siteDao.loadNotificationsForRole(roleMentionNotfDeletion.toUserId)
+      findRoleMention(notfsAfter) mustBe None
+    }
+
+    "delete reply notfs, but not accidentally all of them" in {
+      siteDao.loadNotificationsForRole(role.id).length mustBe 1
+      siteDao.loadNotificationsForRole(guest.id).length mustBe 2
+      siteDao.saveDeleteNotifications(Notifications(toDelete = Seq(replyNotfDeletion)))
+      siteDao.loadNotificationsForRole(role.id) mustBe Nil
+      siteDao.loadNotificationsForRole(guest.id) mustBe Seq(guestMentionNotfWithEmail)
+    }
   }
 
 }

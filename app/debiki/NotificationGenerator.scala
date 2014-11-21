@@ -26,6 +26,10 @@ import java.{util => ju}
 import NotificationGenerator._
 
 
+/** Finds out what notifications to send when e.g. a new post is created.
+  * Also finds out what not-yet-sent notifications to delete if a post is deleted, or if
+  * the post is edited and a @mention removed.
+  */
 case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
 
   private def oldPageParts = page.parts

@@ -325,4 +325,13 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
           toUserId = mentionedUserA.id))
     }
   }
+
+
+  "NotificationGenerator should handle deletions" - {
+
+    "delete new post notfs when the post is deleted" in {
+      pending
+    }
+  }
+
 }
