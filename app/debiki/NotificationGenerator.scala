@@ -17,12 +17,13 @@
 
 package debiki
 
-import collection.mutable
+import collection.{mutable, immutable}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.{ PostActionPayload => PAP }
 import debiki.dao.SiteDao
 import java.{util => ju}
+import NotificationGenerator._
 
 
 case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
@@ -99,6 +100,13 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
       }
     }
 
+    // Mentions
+    val mentionedUsernames: Seq[String] = findMentions(newPost.approvedText getOrDie "DwE82FK4")
+    val mentionedUsers = mentionedUsernames.flatMap(dao.loadUserByEmailOrUsername)
+    for (user <- mentionedUsers) {
+      makeNewPostNotf(Notification.NewPostNotfType.Mention, newPost, user)
+    }
+
     // People watching this topic
     // dao.loadRolesWatchingPage(page.id) foreach { role =>
     //   ...
@@ -122,7 +130,34 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
   }
 
 
+  /** Creates and deletes mentions, if the edits creates or deletes mentions.
+    */
   private def makeNotfsForEdits(postId: PostId) {
+    val oldPost = oldPageParts.getPost(postId) getOrDie "DwE0KBf5"
+    val newPost = newPageParts.getPost(postId) getOrDie "DwEG390X"
+
+    val oldMentions = findMentions(oldPost.approvedText getOrDie "DwE0YKW3").toSet
+    val newMentions = findMentions(newPost.approvedText getOrDie "DwE2BF81").toSet
+
+    val deletedMentions = oldMentions -- newMentions
+    val createdMentions = newMentions -- oldMentions
+
+    val mentionsDeletedForUsers = deletedMentions.flatMap(dao.loadUserByEmailOrUsername)
+    val mentionsCreatedForUsers = createdMentions.flatMap(dao.loadUserByEmailOrUsername)
+
+    // Delete mentions.
+    for (user <- mentionsDeletedForUsers) {
+      notfsToDelete += NotificationToDelete.MentionToDelete(
+        siteId = dao.siteId,
+        pageId = page.id,
+        postId = oldPost.id,
+        toUserId = user.id)
+    }
+
+    // Create mentions.
+    for (user <- mentionsCreatedForUsers) {
+      makeNewPostNotf(Notification.NewPostNotfType.Mention, newPost, user)
+    }
   }
 
 
@@ -132,3 +167,23 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
 
 }
 
+
+object NotificationGenerator {
+
+  def findMentions(text: String): Seq[String] = {
+    // For now, ignore CommonMark and HTML markup.
+    val mentions = mutable.ArrayBuffer[String]()
+    for (perhapsMention <- ".?@[a-zA-Z0-9_]+".r.findAllIn(text)) {
+      perhapsMention(0) match {
+        case '@' =>
+          mentions += perhapsMention.drop(1)
+        case ' ' =>
+          mentions += perhapsMention.drop(2)
+        case _ =>
+          // skip, could be e.g. an email address
+      }
+    }
+    mentions.to[immutable.Seq]
+  }
+
+}

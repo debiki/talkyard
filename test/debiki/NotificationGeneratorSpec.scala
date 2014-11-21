@@ -30,10 +30,16 @@ import java.{util => ju}
 
 class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with MockitoSugar {
 
+  val siteId = "siteId"
+  val pageId = "pageId"
+
   import com.debiki.core.PeopleTestUtils.makePerson
   val bodyAuthor = makePerson("BodyAuthor")
   val replyAuthor = makePerson("Replier")
   val reviewer = makePerson("ReviewerAuthor")
+  val mentionedUserA = makePerson("MentionedUserA")
+  val mentionedUserB = makePerson("MentionedUserB")
+
 
   val rawBody = copyCreatePost(PostTestValues.postSkeleton,
     id = PageParts.BodyId, userId = bodyAuthor.id, parentPostId = None)
@@ -74,14 +80,20 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
   val pageNoPath = PageNoPath(PageWithApprovedBody, Nil, PageMeta.forNewPage(
     PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
 
-  "NotificationGenerator should" - {
+  def mockUser(siteDaoMock: SiteDao, user: User) {
+    def username = user.username getOrDie "DwE509kEF3"
+    when(siteDaoMock.loadUser(user.id)).thenReturn(Some(user))
+    when(siteDaoMock.loadUserByEmailOrUsername(username)).thenReturn(Some(user))
+    when(siteDaoMock.loadRolePageSettings(user.id, pageId)).thenReturn(RolePageSettings.Default)
+  }
+
+
+  "NotificationGenerator should handle new posts" - {
 
     "generate a notf for a reply" in {
       val siteDaoMock = mock[SiteDao]
-      when(siteDaoMock.siteId).thenReturn("siteId")
-      when(siteDaoMock.loadUser("BodyAuthorid")).thenReturn(Some(bodyAuthor))
-      when(siteDaoMock.loadRolePageSettings(bodyAuthor.id, "pageId"))
-        .thenReturn(RolePageSettings.Default)
+      when(siteDaoMock.siteId).thenReturn(siteId)
+      mockUser(siteDaoMock, bodyAuthor)
 
       val reply = copyCreatePost(rawReply,
         userId = replyAuthor.id, approval = Some(Approval.WellBehavedUser))
@@ -125,10 +137,8 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
 
     "generate a notf when a reply is approved" in {
       val siteDaoMock = mock[SiteDao]
-      when(siteDaoMock.siteId).thenReturn("siteId")
-      when(siteDaoMock.loadUser("BodyAuthorid")).thenReturn(Some(bodyAuthor))
-      when(siteDaoMock.loadRolePageSettings(bodyAuthor.id, "pageId"))
-        .thenReturn(RolePageSettings.Default)
+      when(siteDaoMock.siteId).thenReturn(siteId)
+      mockUser(siteDaoMock, bodyAuthor)
 
       val page =  PageNoPath(PageWithApprovedBody + rawReply, Nil, PageMeta.forNewPage(
         PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
@@ -137,7 +147,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
 
       notfs.toCreate mustBe Seq(Notification.NewPost(
         notfType = Notification.NewPostNotfType.DirectReply,
-        siteId = "siteId",
+        siteId = siteId,
         createdAt = rawReply.creationDati,
         pageId = pageNoPath.id,
         postId = rawReply.id,
@@ -147,7 +157,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
 
     "generate no notf when the reply is approved by the one replied to" in {
       val siteDaoMock = mock[SiteDao]
-      when(siteDaoMock.loadUser("BodyAuthorid")).thenReturn(Some(bodyAuthor))
+      when(siteDaoMock.loadUser(bodyAuthor.id)).thenReturn(Some(bodyAuthor))
 
       val page =  PageNoPath(PageWithApprovedBody + rawReply, Nil, PageMeta.forNewPage(
         PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
@@ -173,6 +183,146 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
       val notfs = NotificationGenerator(page, siteDaoMock).generateNotifications(approval::Nil)
       notfs.toCreate.length mustBe 0
     }
+
+    "generate a reply and mentions, but no mention to the one replied to" in {
+      val siteDaoMock = mock[SiteDao]
+      when(siteDaoMock.siteId).thenReturn(siteId)
+      mockUser(siteDaoMock, bodyAuthor)
+      mockUser(siteDaoMock, mentionedUserA)
+      mockUser(siteDaoMock, mentionedUserB)
+
+      val name1 = bodyAuthor.username.get
+      val name2 = mentionedUserA.username.get
+      val name3 = mentionedUserB.username.get
+
+      val reply = copyCreatePost(rawReply,
+        text = s"@$name2: abcdef @$name1, @$name3 but ignore email-addresses@example.com.",
+        userId = replyAuthor.id,
+        approval = Some(Approval.WellBehavedUser))
+      val notfs =
+        NotificationGenerator(pageNoPath, siteDaoMock).generateNotifications(reply::Nil)
+
+      notfs.toCreate.length mustBe 3
+      notfs.toCreate mustBe Seq(
+        Notification.NewPost(
+          notfType = Notification.NewPostNotfType.DirectReply,
+          siteId = siteId,
+          createdAt = reply.creationDati,
+          pageId = pageNoPath.id,
+          postId = reply.id,
+          byUserId = replyAuthor.id,
+          toUserId = bodyAuthor.id),
+        Notification.NewPost(
+          notfType = Notification.NewPostNotfType.Mention,
+          siteId = siteId,
+          createdAt = reply.creationDati,
+          pageId = pageNoPath.id,
+          postId = reply.id,
+          byUserId = replyAuthor.id,
+          toUserId = mentionedUserA.id),
+        Notification.NewPost(
+          notfType = Notification.NewPostNotfType.Mention,
+          siteId = siteId,
+          createdAt = reply.creationDati,
+          pageId = pageNoPath.id,
+          postId = rawReply.id,
+          byUserId = replyAuthor.id,
+          toUserId = mentionedUserB.id))
+    }
   }
 
+
+  "NotificationGenerator should handle edits" - {
+
+    val textBefore = s"Mention of A: @${mentionedUserA.username.get}."
+    val textAfter = s"Mention of B: @${mentionedUserB.username.get}"
+    val patch = makePatch(from = textBefore, to = textAfter)
+
+    "generate no mentions when post is edited but edits not approved" in {
+      val siteDaoMock = mock[SiteDao]
+      val theReply = copyCreatePost(rawReplyWellBehvdAprvd, text = textBefore)
+      val theEdit = RawPostAction.toEditPost(
+        id = 12345, postId = theReply.id, ctime = new ju.Date,
+        userIdData = UserIdData.newTest(userId = theReply.userId), text = patch,
+        autoApplied = true, approval = None)
+      val page = PageNoPath(PageWithApprovedBody + theReply + theEdit, Nil, PageMeta.forNewPage(
+        PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
+
+      val notfs =
+        NotificationGenerator(page, siteDaoMock).generateNotifications(approvalOfReply::Nil)
+
+      notfs.toCreate.length mustBe 0
+      notfs.toDelete.length mustBe 0
+    }
+
+    "create and delete mentions when post is edited and directly approved" in {
+      val siteDaoMock = mock[SiteDao]
+      when(siteDaoMock.siteId).thenReturn(siteId)
+      mockUser(siteDaoMock, mentionedUserA)
+      mockUser(siteDaoMock, mentionedUserB)
+
+      val theReply = copyCreatePost(rawReplyWellBehvdAprvd, text = textBefore)
+      val page = PageNoPath(PageWithApprovedBody + theReply, Nil, PageMeta.forNewPage(
+        PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
+
+      val rawEdit = RawPostAction.toEditPost(
+        id = 12345, postId = theReply.id, ctime = new ju.Date,
+        userIdData = UserIdData.newTest(userId = theReply.userId), text = patch,
+        autoApplied = true, approval = Some(Approval.WellBehavedUser))
+      val notfs = NotificationGenerator(page, siteDaoMock).generateNotifications(rawEdit::Nil)
+
+      notfs.toCreate mustBe Seq(
+        Notification.NewPost(
+          notfType = Notification.NewPostNotfType.Mention,
+          siteId = siteId,
+          createdAt = theReply.creationDati,
+          pageId = pageNoPath.id,
+          postId = rawReply.id,
+          byUserId = replyAuthor.id,
+          toUserId = mentionedUserB.id))
+
+      notfs.toDelete mustBe Seq(
+        NotificationToDelete.MentionToDelete(
+          siteId = siteId,
+          pageId = pageId,
+          postId = theReply.postId,
+          toUserId = mentionedUserA.id))
+    }
+
+    "create and delete mentions when edits are approved later" in {
+      val siteDaoMock = mock[SiteDao]
+      when(siteDaoMock.siteId).thenReturn(siteId)
+      mockUser(siteDaoMock, mentionedUserA)
+      mockUser(siteDaoMock, mentionedUserB)
+
+      val theReply = copyCreatePost(rawReplyWellBehvdAprvd, text = textBefore)
+      val rawEdit = RawPostAction.toEditPost(
+        id = 12345, postId = theReply.id, ctime = new ju.Date(12000),
+        userIdData = UserIdData.newTest(userId = theReply.userId), text = patch,
+        autoApplied = true, approval = None)
+      val page = PageNoPath(PageWithApprovedBody + theReply + rawEdit, Nil, PageMeta.forNewPage(
+        PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
+
+      val notfs =
+        NotificationGenerator(page, siteDaoMock).generateNotifications(
+          approvalOfReply.copy(creationDati = new ju.Date(13000))::Nil)
+
+      notfs.toCreate mustBe Seq(
+        Notification.NewPost(
+          notfType = Notification.NewPostNotfType.Mention,
+          siteId = siteId,
+          createdAt = theReply.creationDati,
+          pageId = pageNoPath.id,
+          postId = rawReply.id,
+          byUserId = replyAuthor.id,
+          toUserId = mentionedUserB.id))
+
+      notfs.toDelete mustBe Seq(
+        NotificationToDelete.MentionToDelete(
+          siteId = siteId,
+          pageId = pageId,
+          postId = theReply.postId,
+          toUserId = mentionedUserA.id))
+    }
+  }
 }
