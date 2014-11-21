@@ -73,8 +73,9 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
 
   def receive = {
     case "SendNotfs" =>
+      val delay = sys.props.get("debiki.notifier.delayInMinutes").map(_.toInt) getOrElse 5
       val notfsBySiteId: Map[SiteId, Seq[Notification]] =
-        systemDao.loadNotificationsToMailOut(delayInMinutes = 0, numToLoad = 11)
+        systemDao.loadNotificationsToMailOut(delayInMinutes = delay, numToLoad = 11)
       logger.trace(s"Found notifications for ${notfsBySiteId.size} sites.")
       trySendEmailNotfs(notfsBySiteId)
   }
@@ -90,7 +91,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       notfsByUserId: Map[UserId, Seq[Notification]] = siteNotfs.groupBy(_.toUserId)
       (userId, userNotfs) <- notfsByUserId
     }{
-      logger.debug(s"Sending ${userNotfs.size} notifications to user $userId...")
+      logger.debug(s"Sending ${userNotfs.size} notifications to user $userId, site $siteId...")
 
       val siteDao = siteDaoFactory.newSiteDao(QuotaConsumers(tenantId = siteId))
 
@@ -119,7 +120,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     def logWarning(message: String) =
       logger.warn(s"Skipping email to user id `$userId', site `${siteDao.siteId}': $message")
 
-    if (anyUser.isEmpty) {
+    val user = anyUser getOrElse {
       logWarning("user not found")
       return Some("User not found")
     }
@@ -127,10 +128,13 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     // If email notification preferences haven't been specified, assume the user
     // wants to be notified of replies. I think most people want that? And if they
     // don't, there's an unsubscription link in the email.
-    val user = anyUser.get
     if (user.emailNotfPrefs != EmailNotfPrefs.Receive &&
         user.emailNotfPrefs != EmailNotfPrefs.Unspecified) {
       return Some("User declines emails")
+    }
+
+    if (user.email.isEmpty) {
+      return Some("User has no email address")
     }
 
     val site = siteDao.loadSite()

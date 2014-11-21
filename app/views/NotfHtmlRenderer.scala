@@ -53,50 +53,49 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
   private def pageName(pageMeta: PageMeta): String =
     pageMeta.cachedTitle.orElse(pageMeta.embeddingPageUrl) getOrElse "(unnamed page)"
 
-  /*
-  private def postUrl(pageMeta: PageMeta, notf: NotfOfPageAction): Option[String] =
+
+  private def postUrl(pageMeta: PageMeta, notf: Notification.NewPost): Option[String] =
     pageMeta.embeddingPageUrl match {
       case Some(url) =>
         // Include both topic and comment id, because it's possible to embed
         // many different discussions (topics) on the same page.
-        Some(s"$url#debiki-topic-${pageMeta.pageId}-comment-${notf.eventActionId}")
+        Some(s"$url#debiki-topic-${pageMeta.pageId}-comment-${notf.postId}")
       case None =>
         // The page is hosted by Debiki so its url uniquely identifies the topic.
         anyOrigin map { origin =>
           val pageUrl = s"$origin/-${notf.pageId}"
-          s"$pageUrl#post-${notf.eventActionId}"
+          s"$pageUrl#post-${notf.postId}"
         }
-    } */
+    }
 
 
   def render(notfs: Seq[Notification]): NodeSeq = {
     var result = Nil: NodeSeq
-    ??? /*  [notifications]
-    for (notf <- notfs)
-      result ++= (notf.eventType match {
-        case PersonalReply => personalReply(notf)
-        case MyPostApproved => myPostApproved(notf)
+    for (notf <- notfs) {
+      result ++= (notf match {
+        case newPostNotf: Notification.NewPost =>
+          renderNewPostNotf(newPostNotf)
       })
-    */
+    }
     result
   }
 
-  /*
-  private def personalReply(notf: NotfOfPageAction): NodeSeq = {
-    assert(notf.eventType == PersonalReply)
 
+  private def renderNewPostNotf(notf: Notification.NewPost): NodeSeq = {
     val page = siteDao.loadPageParts(notf.pageId) getOrElse {
       return Nil
     }
     val pageMeta = siteDao.loadPageMeta(notf.pageId) getOrElse {
       return Nil
     }
-    val post = page.getPost(notf.eventActionId) getOrElse {
+    val post = page.getPost(notf.postId) getOrElse {
       return Nil
     }
     val markupSource = post.approvedText getOrElse {
       return Nil
     }
+    val byUserName = siteDao.loadUser(notf.byUserId).map(_.displayName) getOrElse
+      "(unknown user name)"
 
     val date = toIso8601Day(post.creationDati)
 
@@ -112,14 +111,22 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     //val (html, _) = HtmlPageSerializer._markupTextOf(post, origin)
     val html = Text(markupSource)
 
+    val (whatHappened, inPostWrittenBy) = notf.notfType match {
+      case Notification.NewPostNotfType.Mention =>
+        ("You have been mentioned", "in a post written by")
+      case Notification.NewPostNotfType.DirectReply =>
+        ("You have a reply", "written by")
+    }
+
     <p>
-      You have a reply, <a href={url}>here</a>, on page <i>{pageName(pageMeta)}</i>,<br/>
-      written by <i>{notf.eventUserDispName}</i>. On {date}, he or she wrote:
+      { whatHappened }, <a href={url}>here</a>, on page <i>{pageName(pageMeta)}</i>,<br/>
+      { inPostWrittenBy } <i>{byUserName}</i>. On {date}, he or she wrote:
     </p>
     <blockquote>{html}</blockquote>
   }
 
 
+  /*
   private def myPostApproved(notf: NotfOfPageAction): NodeSeq = {
     assert(notf.eventType == MyPostApproved)
     val pageMeta = siteDao.loadPageMeta(notf.pageId) getOrElse {
