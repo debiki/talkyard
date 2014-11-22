@@ -39,7 +39,7 @@ sealed abstract class Notification {
   def createdAt: ju.Date
   def toUserId: UserId
   def emailId: Option[EmailId]
-  def emailCreatedAt: Option[ju.Date]
+  def emailStatus: Notification.EmailStatus
   def seenAt: Option[ju.Date]
 }
 
@@ -57,7 +57,7 @@ object Notification {
     byUserId: UserId,
     toUserId: UserId,
     emailId: Option[EmailId] = None,
-    emailCreatedAt: Option[ju.Date] = None,
+    emailStatus: EmailStatus = EmailStatus.Undecided,
     seenAt: Option[ju.Date] = None) extends Notification
 
   sealed abstract class NewPostNotfType
@@ -75,6 +75,18 @@ object Notification {
   case class WrongVote extends Notification
   case class OffTopicVote extends Notification */
 
+  sealed abstract class EmailStatus
+  object EmailStatus {
+
+    /** This notification has not yet been processed; we have yet to decide if to send an email. */
+    case object Undecided extends EmailStatus
+
+    /** Email created, will soon be sent, or has already been sent. */
+    case object Created extends EmailStatus
+
+    /** We've decided to not send any email for this notification. */
+    case object Skipped extends EmailStatus
+  }
 }
 
 

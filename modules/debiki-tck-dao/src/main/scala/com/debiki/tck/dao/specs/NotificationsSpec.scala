@@ -187,14 +187,14 @@ class NotificationsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) 
       var notfs = siteDao.loadNotificationsForRole(role.id)
       notfs.size mustBe 2
       val roleMentionNotfWithEmail = roleMentionNotf.copy(
-        emailId = Some(emailToRoleId), emailCreatedAt = Some(notfs(0).emailCreatedAt.get))
+        emailId = Some(emailToRoleId), emailStatus = Notification.EmailStatus.Created)
       notfs(0) mustBe roleMentionNotfWithEmail
       notfs(1) mustBe roleReplyNotf
 
       notfs = siteDao.loadNotificationsForRole(guest.id)
       notfs.size mustBe 2
       guestMentionNotfWithEmail = guestMentionNotf.copy(
-        emailId = Some(emailToGuestId), emailCreatedAt = Some(notfs(0).emailCreatedAt.get))
+        emailId = Some(emailToGuestId), emailStatus = Notification.EmailStatus.Created)
       notfs(0) mustBe guestMentionNotfWithEmail
       notfs(1) mustBe guestReplyNotf
     }
