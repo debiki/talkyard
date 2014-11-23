@@ -308,24 +308,23 @@ abstract class SiteDbDao {
 
   def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings)
 
+  def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId]
+
 
   // ----- Notifications
 
-  def saveNotfs(notfs: Seq[NotfOfPageAction])
+  def saveDeleteNotifications(notifications: Notifications)
 
-  def loadNotfsForRole(roleId: RoleId): Seq[NotfOfPageAction]
+  def loadNotificationsForRole(roleId: RoleId): Seq[Notification]
 
-  def loadNotfByEmailId(emailId: String): Option[NotfOfPageAction]
-
-  def skipEmailForNotfs(notfs: Seq[NotfOfPageAction], debug: String): Unit
+  def updateNotificationSkipEmail(notifications: Seq[Notification])
 
 
   // ----- Emails
 
   def saveUnsentEmail(email: Email): Unit
 
-  def saveUnsentEmailConnectToNotfs(email: Email,
-        notfs: Seq[NotfOfPageAction]): Unit
+  def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification])
 
   def updateSentEmail(email: Email): Unit
 
@@ -359,6 +358,8 @@ abstract class SystemDbDao {
 
   def close()  // remove? move to DbDaoFactory in some manner?
 
+  def loadUser(siteId: SiteId, userId: UserId): Option[User]
+
 
   // ----- Websites (a.k.a. tenants)
 
@@ -385,9 +386,10 @@ abstract class SystemDbDao {
   def lookupTenant(scheme: String, host: String): TenantLookup
 
 
-  // ----- Emails
+  // ----- Notifications
 
-  def loadNotfsToMailOut(delayInMinutes: Int, numToLoad: Int): NotfsToMail
+  def loadNotificationsToMailOut(delayInMinutes: Int, numToLoad: Int)
+        : Map[SiteId, Seq[Notification]]
 
 
   // ----- Quota
@@ -785,27 +787,27 @@ class ChargingSiteDbDao(
     _spi.saveRolePageSettings(roleId = roleId, pageId = pageId, settings)
   }
 
+  def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId] = {
+    _chargeForOneReadReq()
+    _spi.loadUserIdsWatchingPage(pageId)
+  }
+
 
   // ----- Notifications
 
-  def saveNotfs(notfs: Seq[NotfOfPageAction]) = {
-    _chargeFor(ResUsg.forStoring(notfs = notfs))
-    _spi.saveNotfs(notfs)
-  }
-
-  def loadNotfsForRole(roleId: RoleId): Seq[NotfOfPageAction] = {
-    _chargeForOneReadReq()
-    _spi.loadNotfsForRole(roleId)
-  }
-
-  def loadNotfByEmailId(emailId: String): Option[NotfOfPageAction] = {
-    _chargeForOneReadReq()
-    _spi.loadNotfByEmailId(emailId)
-  }
-
-  def skipEmailForNotfs(notfs: Seq[NotfOfPageAction], debug: String): Unit = {
+  def saveDeleteNotifications(notifications: Notifications) {
     _chargeForOneWriteReq()
-    _spi.skipEmailForNotfs(notfs, debug)
+    _spi.saveDeleteNotifications(notifications)
+  }
+
+  def loadNotificationsForRole(roleId: RoleId): Seq[Notification] = {
+    _chargeForOneReadReq()
+    _spi.loadNotificationsForRole(roleId)
+  }
+
+  def updateNotificationSkipEmail(notifications: Seq[Notification]) {
+    _chargeForOneWriteReq()
+    _spi.updateNotificationSkipEmail(notifications)
   }
 
 
@@ -816,8 +818,7 @@ class ChargingSiteDbDao(
     _spi.saveUnsentEmail(email)
   }
 
-  def saveUnsentEmailConnectToNotfs(email: Email,
-        notfs: Seq[NotfOfPageAction]): Unit = {
+  def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]) {
     _chargeFor(ResUsg.forStoring(email = email))
     _spi.saveUnsentEmailConnectToNotfs(email, notfs)
   }

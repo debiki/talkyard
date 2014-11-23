@@ -164,12 +164,16 @@ class Mailer(
 
     logger.debug(s"Sending email: $emailToSend")
 
-    val apacheCommonsEmail  = makeApacheCommonsEmail(emailToSend)
+    // Reload the user and his/her email address in case it's been changed recently.
+    val address = emailToSend.toUserId.flatMap(tenantDao.loadUser).map(_.email) getOrElse
+      emailToSend.sentTo
+
+    val email = emailToSend.copy(sentTo = address, sentOn = now, providerEmailId = None)
+    val apacheCommonsEmail  = makeApacheCommonsEmail(email)
     val emailSentOrFailed =
       try {
         apacheCommonsEmail.send()
         // Nowadays not using Amazon's SES api, so no provider email id is available.
-        val email = emailToSend.copy(sentOn = now, providerEmailId = None)
         logger.trace("Email sent: "+ email)
         email
       }

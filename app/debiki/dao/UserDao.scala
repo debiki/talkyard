@@ -136,6 +136,10 @@ trait UserDao {
     siteDbDao.listUsers(userQuery)
 
 
+  def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId] =
+    siteDbDao.loadUserIdsWatchingPage(pageId)
+
+
   def loadRolePageSettings(roleId: RoleId, pageId: PageId): RolePageSettings =
     siteDbDao.loadRolePageSettings(roleId = roleId, pageId = pageId) getOrElse
       RolePageSettings.Default

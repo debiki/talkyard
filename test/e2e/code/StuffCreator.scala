@@ -100,8 +100,7 @@ trait StuffCreator {
     val postTemplate = RawPostAction.forNewPost(
       id = UnassignedId, parentPostId = None, creationDati = new ju.Date,
       userIdData = UserIdData.newTest(userId = loginGrant.user.id),
-      text = "", markup = "para",
-      approval = Some(Approval.AuthoritativeUser))
+      text = "", approval = Some(Approval.AuthoritativeUser))
 
     (loginGrant, postTemplate)
   }
@@ -156,8 +155,7 @@ trait StuffCreator {
 
 
   private def createCodePage(siteId: String, folder: String, slug: String, text: String) {
-    val body = RawPostAction.copyCreatePost(postTemplate,
-      id = PageParts.BodyId, text = text, markup = Markup.Code.id)
+    val body = RawPostAction.copyCreatePost(postTemplate, id = PageParts.BodyId, text = text)
     val pagePath = PagePath(
       firstSiteId, folder, pageId = None, showId = false, pageSlug = slug)
     val page = PageParts(guid = "?", rawActions = body::Nil)

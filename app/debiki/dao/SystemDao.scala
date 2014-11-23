@@ -37,6 +37,9 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
     systemDbDao.applyEvolutions()
   }
 
+  def loadUser(siteId: SiteId, userId: UserId) =
+    systemDbDao.loadUser(siteId, userId)
+
 
   // ----- Websites (a.k.a. tenants)
 
@@ -58,10 +61,11 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
     systemDbDao.lookupTenant(scheme, host)
 
 
-  // ----- Emails
+  // ----- Notifications
 
-  def loadNotfsToMailOut(delayInMinutes: Int, numToLoad: Int): NotfsToMail =
-    systemDbDao.loadNotfsToMailOut(delayInMinutes, numToLoad)
+  def loadNotificationsToMailOut(delayInMinutes: Int, numToLoad: Int)
+        : Map[SiteId, Seq[Notification]] =
+    systemDbDao.loadNotificationsToMailOut(delayInMinutes, numToLoad)
 
 
   // ----- Quota

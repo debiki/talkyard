@@ -39,29 +39,44 @@ class UserPageSettingsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactor
     var page: PageNoPath = null
     var passwordRole: User = null
     var passwordLoginGrant: LoginGrant = null
+    var superfluousRole: User = null
 
     "find no page settings for non-existing user and page" in {
       dao.loadRolePageSettings(roleId = "dummy", pageId = "dummy") mustBe None
     }
 
-    "create a password role and a page, find no page settings" in {
+    "create two password roles and a page, find no page settings" in {
       passwordRole = siteUtils.createPasswordRole()
       passwordLoginGrant = siteUtils.login(passwordRole)
       page = siteUtils.createPageAndBody(
         passwordLoginGrant, PageRole.ForumTopic, "Page text.").withoutPath
       dao.loadRolePageSettings(roleId = passwordRole.id, pageId = page.id) mustBe None
+      // Create another role that no query should find.
+      superfluousRole = siteUtils.createPasswordRole("Name2")
     }
 
     "save and find settings" in {
       val settings = RolePageSettings(PageNotfLevel.Tracking)
       dao.saveRolePageSettings(roleId = passwordRole.id, pageId = page.id, settings)
+      dao.saveRolePageSettings(roleId = superfluousRole.id, pageId = page.id, settings)
       dao.loadRolePageSettings(roleId = passwordRole.id, pageId = page.id) mustBe Some(settings)
+      dao.loadRolePageSettings(roleId = superfluousRole.id, pageId = page.id) mustBe Some(settings)
     }
 
-    "update the settings" in {
+    "update the settings, set to Watching" in {
+      val oldSettings = RolePageSettings(PageNotfLevel.Tracking)
       val newSettings = RolePageSettings(PageNotfLevel.Watching)
       dao.saveRolePageSettings(roleId = passwordRole.id, pageId = page.id, newSettings)
       dao.loadRolePageSettings(roleId = passwordRole.id, pageId = page.id) mustBe Some(newSettings)
+      // Unchanged:
+      dao.loadRolePageSettings(roleId = superfluousRole.id, pageId = page.id) mustBe
+        Some(oldSettings)
+    }
+
+    "find everyone watching a page" in {
+      // superfluousRole.id shouldn't be found.
+      val ids = dao.loadUserIdsWatchingPage(page.id)
+      ids mustBe Seq(passwordRole.id)
     }
 
     "not find the page setting for another user or page" in {

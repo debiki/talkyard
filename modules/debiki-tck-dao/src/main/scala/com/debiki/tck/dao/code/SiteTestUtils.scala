@@ -51,10 +51,16 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
   val DefaultPasswordUsername = "PasswordUserUsername"
   val DefaultPasswordEmail = "pswd-test@ex.com"
 
-  def createPasswordRole(): User = {
-    val user = dao.createPasswordUser(NewPasswordUserData.create(name = DefaultPasswordFullName,
-      username = DefaultPasswordUsername, email = DefaultPasswordEmail,
-      password = defaultPassword).get)
+  def createPasswordRole(nameEmailBase: String = null): User = {
+    val (name, username, email) =
+      if (nameEmailBase ne null) {
+        (nameEmailBase + "-FullName", nameEmailBase + "Username", nameEmailBase + "@ex.com")
+      }
+      else {
+        (DefaultPasswordFullName, DefaultPasswordUsername, DefaultPasswordEmail)
+      }
+    val user = dao.createPasswordUser(NewPasswordUserData.create(name = name,
+      username = username, email = email, password = defaultPassword).get)
     val verifiedAt = Some(new ju.Date)
     dao.configRole(user.id, emailVerifiedAt = Some(verifiedAt))
     user.copy(emailVerifiedAt = verifiedAt)
@@ -75,6 +81,12 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
     dao.tryLogin(PasswordLoginAttempt(
       ip = ip, date = new ju.Date(),
       email = user.email, password = defaultPassword))
+  }
+
+
+  def loginViaEmail(emailId: EmailId): LoginGrant  = {
+    dao.tryLogin(
+      EmailLoginAttempt(ip = "?.?.?.?", date = new ju.Date(), emailId = emailId))
   }
 
 

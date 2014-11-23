@@ -73,37 +73,39 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
 
   def receive = {
     case "SendNotfs" =>
-      val notfsToMail =
-        systemDao.loadNotfsToMailOut(
-           delayInMinutes = 0, numToLoad = 11)
-      logger.trace("Loaded "+ notfsToMail.notfsByTenant.size +
-         " notfs, to "+ notfsToMail.usersByTenantAndId.size +" users.")
-      trySendEmailNotfs(notfsToMail)
+      val delay = sys.props.get("debiki.notifier.delayInMinutes").map(_.toInt) getOrElse 5
+      val notfsBySiteId: Map[SiteId, Seq[Notification]] =
+        systemDao.loadNotificationsToMailOut(delayInMinutes = delay, numToLoad = 11)
+      logger.trace(s"Found notifications for ${notfsBySiteId.size} sites.")
+      trySendEmailNotfs(notfsBySiteId)
   }
 
 
   /**
    * Sends notifications, for all tenants and notifications specified.
    */
-  private def trySendEmailNotfs(notfsToMail: NotfsToMail) {
+  private def trySendEmailNotfs(notfsBySiteId: Map[SiteId, Seq[Notification]]) {
 
     for {
-      (tenantId, tenantNotfs) <- notfsToMail.notfsByTenant
-      notfsByUserId: Map[String, Seq[NotfOfPageAction]] =
-         tenantNotfs.groupBy(_.recipientUserId)
+      (siteId, siteNotfs) <- notfsBySiteId
+      notfsByUserId: Map[UserId, Seq[Notification]] = siteNotfs.groupBy(_.toUserId)
       (userId, userNotfs) <- notfsByUserId
     }{
-      logger.debug("Considering "+ userNotfs.size +" notfs to user "+ userId)
+      logger.debug(s"Sending ${userNotfs.size} notifications to user $userId, site $siteId...")
 
-      val siteDao = siteDaoFactory.newSiteDao(QuotaConsumers(tenantId = tenantId))
-      val anyUser = notfsToMail.usersByTenantAndId.get(tenantId -> userId)
+      val siteDao = siteDaoFactory.newSiteDao(QuotaConsumers(tenantId = siteId))
+
+      /* COULD batch load all users at once via systemDao.loadUsers().
+      val userIdsBySiteId: Map[String, List[SiteId]] =
+        notfsBySiteId.mapValues(_.map(_.recipientUserId))
+      val usersBySiteAndId: Map[(SiteId, UserId), User] = loadUsers(userIdsBySiteId) */
+      val anyUser = systemDao.loadUser(siteId, userId = userId)
 
       // Send email, or remember why we didn't and don't try again.
       val anyProblem = trySendToSingleUser(userId, anyUser, userNotfs, siteDao)
 
       anyProblem foreach { problem =>
-        siteDao.skipEmailForNotfs(userNotfs,
-           debug = "Email skipped: "+ problem)
+        siteDao.updateNotificationSkipEmail(userNotfs)
       }
     }
   }
@@ -113,12 +115,12 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     * Returns any issue that prevented the email from being sent.
     */
   private def trySendToSingleUser(userId: UserId, anyUser: Option[User],
-        notfs: Seq[NotfOfPageAction], siteDao: SiteDao): Option[String] = {
+        notfs: Seq[Notification], siteDao: SiteDao): Option[String] = {
 
     def logWarning(message: String) =
       logger.warn(s"Skipping email to user id `$userId', site `${siteDao.siteId}': $message")
 
-    if (anyUser.isEmpty) {
+    val user = anyUser getOrElse {
       logWarning("user not found")
       return Some("User not found")
     }
@@ -126,10 +128,13 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     // If email notification preferences haven't been specified, assume the user
     // wants to be notified of replies. I think most people want that? And if they
     // don't, there's an unsubscription link in the email.
-    val user = anyUser.get
     if (user.emailNotfPrefs != EmailNotfPrefs.Receive &&
         user.emailNotfPrefs != EmailNotfPrefs.Unspecified) {
       return Some("User declines emails")
+    }
+
+    if (user.email.isEmpty) {
+      return Some("User has no email address")
     }
 
     val site = siteDao.loadSite()
@@ -145,7 +150,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
 
 
   private def constructAndSendEmail(siteDao: SiteDao, site: Tenant,
-        user: User, userNotfs: Seq[NotfOfPageAction]) {
+        user: User, userNotfs: Seq[Notification]) {
     // Save the email in the db, before sending it, so even if the server
     // crashes it'll always be found, should the receiver attempt to
     // unsubscribe. (But if you first send it, then save it, the server
@@ -168,7 +173,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
 
 
   private def constructEmail(dao: SiteDao, anyOrigin: Option[String], user: User,
-        notfs: Seq[NotfOfPageAction]): Option[Email] = {
+        notfs: Seq[Notification]): Option[Email] = {
 
     val subject: String =
       if (notfs.size == 1) "You have a reply, to one of your comments"

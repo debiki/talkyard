@@ -44,7 +44,7 @@ object SiteDaoFactory {
     def newSiteDao(quotaConsumers: QuotaConsumers): SiteDao = {
       val siteDbDao = _dbDaoFactory.newSiteDbDao(quotaConsumers)
       val chargingDbDao = new ChargingSiteDbDao(siteDbDao, _quotaCharger)
-      new SiteDao(chargingDbDao)
+      new NonCachingSiteDao(chargingDbDao)
     }
   }
 
@@ -59,7 +59,7 @@ object SiteDaoFactory {
   * SiteDbDao methods, because calling them directly would mess up
   * the cache in SiteDao's subclass CachingSiteDao.
   */
-class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
+abstract class SiteDao
   extends AnyRef
   with AssetBundleDao
   with ConfigValueDao
@@ -72,6 +72,8 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
   with UserDao {
 
   def quotaConsumers = siteDbDao.quotaConsumers
+
+  def siteDbDao: SiteDbDao
 
 
   // ----- Tenant
@@ -164,17 +166,14 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
   // ----- Notifications
 
-  def saveNotfs(notfs: Seq[NotfOfPageAction]) =
-    siteDbDao.saveNotfs(notfs)
+  def saveDeleteNotifications(notifications: Notifications) =
+    siteDbDao.saveDeleteNotifications(notifications)
 
-  def loadNotfsForRole(roleId: RoleId): Seq[NotfOfPageAction] =
-    siteDbDao.loadNotfsForRole(roleId)
+  def loadNotificationsForRole(roleId: RoleId): Seq[Notification] =
+    siteDbDao.loadNotificationsForRole(roleId)
 
-  def loadNotfByEmailId(emailId: String): Option[NotfOfPageAction] =
-    siteDbDao.loadNotfByEmailId(emailId)
-
-  def skipEmailForNotfs(notfs: Seq[NotfOfPageAction], debug: String): Unit =
-    siteDbDao.skipEmailForNotfs(notfs, debug)
+  def updateNotificationSkipEmail(notifications: Seq[Notification]): Unit =
+    siteDbDao.updateNotificationSkipEmail(notifications)
 
 
   // ----- Emails
@@ -182,8 +181,7 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
   def saveUnsentEmail(email: Email): Unit =
     siteDbDao.saveUnsentEmail(email)
 
-  def saveUnsentEmailConnectToNotfs(email: Email,
-        notfs: Seq[NotfOfPageAction]): Unit =
+  def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]): Unit =
     siteDbDao.saveUnsentEmailConnectToNotfs(email, notfs)
 
   def updateSentEmail(email: Email): Unit =
@@ -194,3 +192,6 @@ class SiteDao(protected val siteDbDao: ChargingSiteDbDao)
 
 }
 
+
+
+class NonCachingSiteDao(val siteDbDao: SiteDbDao) extends SiteDao

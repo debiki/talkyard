@@ -45,7 +45,7 @@ class PagePartsDeletionTest extends FreeSpec with MustMatchers {
 
   val gp = RawPostAction.forNewPost(1001, creationDati = time(100),
     userIdData = SystemUser.UserIdData,
-    parentPostId = None, text = "gp-text", markup = Markup.DefaultForComments.id,
+    parentPostId = None, text = "gp-text",
     approval = Some(Approval.AuthoritativeUser))
 
   val p = copyCreatePost(gp, id = nextId(), parentPostId = Some(gp.id), text = "p-text")

@@ -64,7 +64,7 @@ trait PageTestValues {
         id = 12, postId = bodySkeleton.id, ctime = new ju.Date(12000),
         UserIdData.newTest(userId = "?"),
         text = makePatch(from = textInitially, to = textAfterFirstEdit),
-        newMarkup = None, approval = None, autoApplied = false)
+        approval = None, autoApplied = false)
 
   def deletionOfEdit =
     RawPostAction(id = 13, postId = editSkeleton.postId,

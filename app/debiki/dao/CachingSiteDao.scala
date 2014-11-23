@@ -40,8 +40,8 @@ class CachingSiteDaoFactory(
 }
 
 
-class CachingSiteDao(siteDbDao: ChargingSiteDbDao)
-  extends SiteDao(siteDbDao)
+class CachingSiteDao(val siteDbDao: ChargingSiteDbDao)
+  extends SiteDao
   with CachingDao
   with CachingAssetBundleDao
   with CachingConfigValueDao

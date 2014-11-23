@@ -157,7 +157,7 @@ object ResourceUse {
      user: User = null,
      actions: Seq[RawPostAction[_]] = Nil,
      page: PageParts = null,
-     notfs: Seq[NotfOfPageAction] = Nil,
+     notfs: Seq[Notification] = Nil,
      email: Email = null)
       : ResourceUse = {
 
