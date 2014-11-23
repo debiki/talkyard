@@ -55,7 +55,7 @@ export var CommentsToolbar = React.createClass({
   },
 
   onReplyClick: function() {
-    d.i.$showReplyForm(); // UNTESTED after porting to React
+    d.i.showReplyFormEmbeddedComments();
   },
 
   onToggleDetailsClick: function() {
