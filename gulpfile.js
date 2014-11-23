@@ -82,6 +82,8 @@ var debikiDesktopFiles = [
       'bower_components/angular-moment/angular-moment.min.js',
       'bower_components/eventemitter2/lib/eventemitter2.js',
       'bower_components/react-bootstrap/react-bootstrap.js',
+      'bower_components/Caret.js/dist/jquery.caret.js',
+      'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
       'client/third-party/bootstrap/tooltip.js', //
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
@@ -165,6 +167,8 @@ var debikiTouchFiles = [
       'bower_components/angular-moment/angular-moment.min.js',
       'bower_components/eventemitter2/lib/eventemitter2.js',
       'bower_components/react-bootstrap/react-bootstrap.js',
+      'bower_components/Caret.js/dist/jquery.caret.js',
+      'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',
@@ -498,6 +502,7 @@ gulp.task('compile-stylus', function () {
 
   return es.merge(
     makeStyleStream('public/res/', 'combined-debiki.css', [
+        'bower_components/jquery.atwho/dist/css/jquery.atwho.css',
         'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
         'client/shared/editor/**/*.styl',
         'client/app/debiki.styl',

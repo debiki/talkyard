@@ -17,6 +17,7 @@
     "bootstrap": "v3.1.1",
     "eventemitter2": "~0.4.14",
     "jquery": "1.7.2",
+    "jquery.atwho": "~0.5.1",
     "jquery.ui": "1.9.2",
     "jquery-ui": "1.9.2",
     "keymaster": "~1.6.2",
