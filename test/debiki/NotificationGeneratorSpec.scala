@@ -39,6 +39,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
   val reviewer = makePerson("ReviewerAuthor")
   val mentionedUserA = makePerson("MentionedUserA")
   val mentionedUserB = makePerson("MentionedUserB")
+  val watchingUser = makePerson("Watcher")
 
 
   val rawBody = copyCreatePost(PostTestValues.postSkeleton,
@@ -73,7 +74,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
     UserIdData.newTest(userId = reviewer.id),
     createdAt = new ju.Date(11000))
 
-  val EmptyPage = PageParts("pageId") ++ (People() + bodyAuthor + replyAuthor + reviewer)
+  val EmptyPage = PageParts(pageId) ++ (People() + bodyAuthor + replyAuthor + reviewer)
 
   val PageWithApprovedBody = EmptyPage + rawBody + approvalOfBody
 
@@ -87,12 +88,18 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
     when(siteDaoMock.loadRolePageSettings(user.id, pageId)).thenReturn(RolePageSettings.Default)
   }
 
+  def makeSiteDaoMock(userIdsWatchingPage: Seq[UserId] = Nil): SiteDao = {
+    val siteDaoMock = mock[SiteDao]
+    when(siteDaoMock.siteId).thenReturn(siteId)
+    when(siteDaoMock.loadUserIdsWatchingPage(pageId)).thenReturn(userIdsWatchingPage)
+    siteDaoMock
+  }
+
 
   "NotificationGenerator should handle new posts" - {
 
     "generate a notf for a reply" in {
-      val siteDaoMock = mock[SiteDao]
-      when(siteDaoMock.siteId).thenReturn(siteId)
+      val siteDaoMock = makeSiteDaoMock()
       mockUser(siteDaoMock, bodyAuthor)
 
       val reply = copyCreatePost(rawReply,
@@ -100,7 +107,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
       val notfs =
         NotificationGenerator(pageNoPath, siteDaoMock).generateNotifications(reply::Nil)
 
-      notfs.toDelete.length mustBe 0
+      notfs.toDelete mustBe Nil
       notfs.toCreate mustBe Seq(Notification.NewPost(
           notfType = Notification.NewPostNotfType.DirectReply,
           siteId = "siteId",
@@ -112,32 +119,32 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
     }
 
     "generate no notf for a reply to one's own comment" in {
-      val siteDaoMock = mock[SiteDao]
+      val siteDaoMock = makeSiteDaoMock()
       val reply = copyCreatePost(rawReply,
         userId = bodyAuthor.id, approval = Some(Approval.WellBehavedUser))
       val notfs = NotificationGenerator(pageNoPath, siteDaoMock).generateNotifications(reply::Nil)
-      notfs.toCreate.length mustBe 0
-      notfs.toCreate.length mustBe 0
+      notfs.toDelete mustBe Nil
+      notfs.toCreate mustBe Nil
     }
 
     "generate no notf for an unapproved reply" in {
-      val siteDaoMock = mock[SiteDao]
+      val siteDaoMock = makeSiteDaoMock()
       val reply = copyCreatePost(rawReply, userId = replyAuthor.id, approval = None)
       val notfs = NotificationGenerator(pageNoPath, siteDaoMock).generateNotifications(reply::Nil)
-      notfs.toCreate.length mustBe 0
-      notfs.toCreate.length mustBe 0
+      notfs.toDelete mustBe Nil
+      notfs.toCreate mustBe Nil
     }
 
     "generate no notf for a rejected reply" in {
       pending /* old code:
       val page = PageWithApprovedBody + rawReply
       val notfs = genNotfs(bodyAuthor, page, rejectionOfReply)
-      notfs.length must_== 0  */
+      notfs.toDelete mustBe Nil
+      notfs.toCreate mustBe Nil */
     }
 
     "generate a notf when a reply is approved" in {
-      val siteDaoMock = mock[SiteDao]
-      when(siteDaoMock.siteId).thenReturn(siteId)
+      val siteDaoMock = makeSiteDaoMock()
       mockUser(siteDaoMock, bodyAuthor)
 
       val page =  PageNoPath(PageWithApprovedBody + rawReply, Nil, PageMeta.forNewPage(
@@ -145,6 +152,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
       val notfs =
         NotificationGenerator(page, siteDaoMock).generateNotifications(approvalOfReply::Nil)
 
+      notfs.toDelete mustBe Nil
       notfs.toCreate mustBe Seq(Notification.NewPost(
         notfType = Notification.NewPostNotfType.DirectReply,
         siteId = siteId,
@@ -156,7 +164,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
     }
 
     "generate no notf when the reply is approved by the one replied to" in {
-      val siteDaoMock = mock[SiteDao]
+      val siteDaoMock = makeSiteDaoMock()
       when(siteDaoMock.loadUser(bodyAuthor.id)).thenReturn(Some(bodyAuthor))
 
       val page =  PageNoPath(PageWithApprovedBody + rawReply, Nil, PageMeta.forNewPage(
@@ -165,14 +173,15 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
         userIdData = UserIdData.newTest(userId = bodyAuthor.id))
       val notfs = NotificationGenerator(page, siteDaoMock).generateNotifications(approval::Nil)
 
-      notfs.toCreate.length mustBe 0
+      notfs.toDelete mustBe Nil
+      notfs.toCreate mustBe Nil
     }
 
     "generate no notfs if well-behaved-user approval upheld" in {
       // This cannot really happen: moderators aren't asked to review comments by
       // well-behaved users. But include this test anyway.
 
-      val siteDaoMock = mock[SiteDao]
+      val siteDaoMock = makeSiteDaoMock()
 
       val page =  PageNoPath(PageWithApprovedBody + rawReplyWellBehvdAprvd, Nil,
         PageMeta.forNewPage(
@@ -181,12 +190,12 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
         userIdData = UserIdData.newTest(userId = bodyAuthor.id))
 
       val notfs = NotificationGenerator(page, siteDaoMock).generateNotifications(approval::Nil)
-      notfs.toCreate.length mustBe 0
+      notfs.toDelete mustBe Nil
+      notfs.toCreate mustBe Nil
     }
 
     "generate a reply and mentions, but no mention to the one replied to" in {
-      val siteDaoMock = mock[SiteDao]
-      when(siteDaoMock.siteId).thenReturn(siteId)
+      val siteDaoMock = makeSiteDaoMock()
       mockUser(siteDaoMock, bodyAuthor)
       mockUser(siteDaoMock, mentionedUserA)
       mockUser(siteDaoMock, mentionedUserB)
@@ -202,7 +211,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
       val notfs =
         NotificationGenerator(pageNoPath, siteDaoMock).generateNotifications(reply::Nil)
 
-      notfs.toCreate.length mustBe 3
+      notfs.toDelete mustBe Nil
       notfs.toCreate mustBe Seq(
         Notification.NewPost(
           notfType = Notification.NewPostNotfType.DirectReply,
@@ -229,6 +238,37 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
           byUserId = replyAuthor.id,
           toUserId = mentionedUserB.id))
     }
+
+    "generate notfs to people watching page" in {
+      val siteDaoMock = makeSiteDaoMock(
+        userIdsWatchingPage = Seq(bodyAuthor.id, watchingUser.id, replyAuthor.id))
+      mockUser(siteDaoMock, bodyAuthor)
+      mockUser(siteDaoMock, watchingUser)
+      mockUser(siteDaoMock, replyAuthor)
+
+      val reply = copyCreatePost(rawReply,
+        userId = replyAuthor.id, approval = Some(Approval.WellBehavedUser))
+      val notfs =
+        NotificationGenerator(pageNoPath, siteDaoMock).generateNotifications(reply::Nil)
+
+      val directReplyNotfToBodyAuthor = Notification.NewPost(
+        notfType = Notification.NewPostNotfType.DirectReply,
+        siteId = siteId,
+        createdAt = reply.creationDati,
+        pageId = pageNoPath.id,
+        postId = reply.id,
+        byUserId = replyAuthor.id,
+        toUserId = bodyAuthor.id)
+
+      val newPostNotfToWatcher = directReplyNotfToBodyAuthor.copy(
+        notfType = Notification.NewPostNotfType.NewPost,
+        toUserId = watchingUser.id)
+
+      notfs.toDelete mustBe Nil
+      notfs.toCreate mustBe Seq(directReplyNotfToBodyAuthor, newPostNotfToWatcher)
+
+      // But not to the replyAuthor, although s/he is watching.
+    }
   }
 
 
@@ -251,13 +291,12 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
       val notfs =
         NotificationGenerator(page, siteDaoMock).generateNotifications(approvalOfReply::Nil)
 
-      notfs.toCreate.length mustBe 0
-      notfs.toDelete.length mustBe 0
+      notfs.toCreate mustBe Nil
+      notfs.toDelete mustBe Nil
     }
 
     "create and delete mentions when post is edited and directly approved" in {
-      val siteDaoMock = mock[SiteDao]
-      when(siteDaoMock.siteId).thenReturn(siteId)
+      val siteDaoMock = makeSiteDaoMock()
       mockUser(siteDaoMock, mentionedUserA)
       mockUser(siteDaoMock, mentionedUserB)
 
@@ -290,8 +329,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
     }
 
     "create and delete mentions when edits are approved later" in {
-      val siteDaoMock = mock[SiteDao]
-      when(siteDaoMock.siteId).thenReturn(siteId)
+      val siteDaoMock = makeSiteDaoMock()
       mockUser(siteDaoMock, mentionedUserA)
       mockUser(siteDaoMock, mentionedUserB)
 

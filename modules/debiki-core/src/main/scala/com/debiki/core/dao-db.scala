@@ -308,6 +308,8 @@ abstract class SiteDbDao {
 
   def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings)
 
+  def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId]
+
 
   // ----- Notifications
 
@@ -783,6 +785,11 @@ class ChargingSiteDbDao(
   def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings) = {
     _chargeForOneWriteReq()
     _spi.saveRolePageSettings(roleId = roleId, pageId = pageId, settings)
+  }
+
+  def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId] = {
+    _chargeForOneReadReq()
+    _spi.loadUserIdsWatchingPage(pageId)
   }
 
 

@@ -88,20 +88,7 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
       if anyApproverId.map(_ == parentPost.userId) != Some(true)
       parentUser <- dao.loadUser(parentPost.userId)
     }{
-      if (parentUser.isGuest) {
-        if (parentUser.emailNotfPrefs == EmailNotfPrefs.Receive ||
-          parentUser.emailNotfPrefs == EmailNotfPrefs.Unspecified) {
-          makeNewPostNotf(Notification.NewPostNotfType.DirectReply, newPost, parentUser)
-        }
-      }
-      else {
-        val settings: RolePageSettings = dao.loadRolePageSettings(parentUser.theRoleId, page.id)
-        settings.notfLevel match {
-          case PageNotfLevel.Muted => // skip
-          case _ =>
-            makeNewPostNotf(Notification.NewPostNotfType.DirectReply, newPost, parentUser)
-        }
-      }
+      makeNewPostNotf(Notification.NewPostNotfType.DirectReply, newPost, parentUser)
     }
 
     // Mentions
@@ -111,16 +98,37 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
       makeNewPostNotf(Notification.NewPostNotfType.Mention, newPost, user)
     }
 
-    // People watching this topic
-    // dao.loadRolesWatchingPage(page.id) foreach { role =>
-    //   ...
-    // }
+    // People watching this topic or category
+    for {
+      userId <- dao.loadUserIdsWatchingPage(page.id)
+      if userId != newPost.userId
+      user <- dao.loadUser(userId)
+    }{
+      makeNewPostNotf(Notification.NewPostNotfType.NewPost, newPost, user)
+    }
   }
 
 
   private def makeNewPostNotf(notfType: Notification.NewPostNotfType, newPost: Post, user: User) {
     if (sentToUserIds.contains(user.id))
       return
+
+    if (user.isGuest) {
+      if (user.emailNotfPrefs == EmailNotfPrefs.DontReceive ||
+          user.emailNotfPrefs == EmailNotfPrefs.ForbiddenForever ||
+          user.email.isEmpty) {
+        return
+      }
+    }
+    else {
+      // Always generate notifications, so they can be shown in the user's inbox.
+      // (But later on we might or might not send any email about the notifications,
+      // depending on the user's preferences.)
+      val settings: RolePageSettings = dao.loadRolePageSettings(user.id, page.id)
+      if (settings.notfLevel == PageNotfLevel.Muted) {
+        return
+      }
+    }
 
     sentToUserIds += user.id
     notfsToCreate += Notification.NewPost(

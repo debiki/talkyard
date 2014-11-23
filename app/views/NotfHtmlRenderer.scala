@@ -116,6 +116,11 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
         ("You have been mentioned", "in a post written by")
       case Notification.NewPostNotfType.DirectReply =>
         ("You have a reply", "written by")
+      case Notification.NewPostNotfType.NewPost =>
+        if (notf.postId == PageParts.BodyId)
+          ("A new topic has been started", "by")
+        else
+          ("A new comment has been posted", "by")
     }
 
     <p>
