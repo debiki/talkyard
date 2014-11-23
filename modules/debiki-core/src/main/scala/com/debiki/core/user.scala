@@ -157,6 +157,10 @@ object NewOauthUserData {
 
 
 
+case class NameAndUsername(fullName: String, username: String)
+
+
+
 case object UserIdData {
 
   /** For test suites. */

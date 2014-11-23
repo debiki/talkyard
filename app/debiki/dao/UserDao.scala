@@ -136,6 +136,10 @@ trait UserDao {
     siteDbDao.listUsers(userQuery)
 
 
+  def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername] =
+    siteDbDao.listUsernames(pageId = pageId, prefix = prefix)
+
+
   def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId] =
     siteDbDao.loadUserIdsWatchingPage(pageId)
 

@@ -259,7 +259,13 @@ class EditorController {
       at: "@",
       search_key: 'username',
       tpl: "<li data-value='${atwho-at}${username}'>${username} (${fullName})</li>",
-      data: [{ username: 'peter', fullName: 'Peter' }, { username: 'tom', fullName: 'Tom' }, { username: 'anne', fullName: 'Anne' }, { username: 'agneta', fullName: 'Agneta' }, { username: 'monster', fullName: 'Ann' }, { username: 'cutecat', fullName: 'Anton' }, { username: 'mrmorr', fullName: 'Antony' }, { username: 'bravedog', fullName: 'Antina' }]
+      callbacks: {
+        remote_filter: (prefix, callback) => {
+          this.editorService.listUsernames(prefix).then((namesArray) => {
+            callback(namesArray);
+          });
+        }
+      }
     });
   }
 }

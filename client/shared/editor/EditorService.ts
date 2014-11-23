@@ -85,6 +85,20 @@ class EditorService {
     return deferred.promise;
   }
 
+
+  public listUsernames(prefix: string): ng.IPromise<any> {
+    var deferred = this.$q.defer<any>();
+    var url = d.i.serverOrigin + '/-/list-usernames?pageId='+ d.i.pageId + '&prefix='+ prefix;
+    this.$http.get(url)
+      .success((data: any, status, headers, config) => {
+        // TODO also load info about whether the user may apply and approve the edits.
+        deferred.resolve(data);
+      })
+      .error((data, status, headers, config) => {
+        console.error('Error:\n' + data);
+      });
+    return deferred.promise;
+  }
 }
 
 

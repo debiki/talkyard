@@ -304,6 +304,8 @@ abstract class SiteDbDao {
 
   def listUsers(userQuery: UserQuery): Seq[(User, Seq[String])]
 
+  def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername]
+
   def loadRolePageSettings(roleId: RoleId, pageId: PageId): Option[RolePageSettings]
 
   def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings)
@@ -774,6 +776,11 @@ class ChargingSiteDbDao(
   def listUsers(userQuery: UserQuery): Seq[(User, Seq[String])] = {
     _chargeForOneReadReq()
     _spi.listUsers(userQuery)
+  }
+
+  def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername] = {
+    _chargeForOneReadReq()
+    _spi.listUsernames(pageId = pageId, prefix = prefix)
   }
 
   def loadRolePageSettings(roleId: RoleId, pageId: PageId): Option[RolePageSettings] = {

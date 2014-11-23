@@ -74,6 +74,18 @@ object UserController extends mvc.Controller {
   }
 
 
+  def listUsernames(pageId: PageId, prefix: String) = GetAction { request =>
+    val names = request.dao.listUsernames(pageId = pageId, prefix = prefix)
+    val json = JsArray(
+      names map { nameAndUsername =>
+        Json.obj(
+          "username" -> nameAndUsername.username,
+          "fullName" -> nameAndUsername.fullName)
+      })
+    OkSafeJson(json)
+  }
+
+
   private def userInfoToJson(userInfo: UserInfoAndStats): JsObject = {
     Json.obj(
       "userId" -> userInfo.info.id,
