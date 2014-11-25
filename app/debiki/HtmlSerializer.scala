@@ -98,8 +98,15 @@ object HtmlPageSerializer {
     newEngine.eval("var global = this;")
     newEngine.eval(new jio.FileReader("public/res/remarkable.min.js"))
     newEngine.eval(new jio.FileReader("public/res/html-sanitizer-bundle.js"))
-    newEngine.eval("remarkable = new Remarkable({ html: true });")
-    newEngine.eval("function renderCommonMark(source) { return remarkable.render(source); }")
+    newEngine.eval(new jio.FileReader("public/res/mentions-remarkable-plugin.js"))
+    newEngine.eval(i"""
+      |remarkable = new Remarkable({ html: true });
+      |remarkable.use(MentionsRemarkablePlugin());
+      |
+      |function renderCommonMark(source) {
+      |  return remarkable.render(source);
+      |}
+      |""")
     threadLocalJavascriptEngine.set(newEngine)
     newEngine
   }

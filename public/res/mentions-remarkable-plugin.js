@@ -1,0 +1,1 @@
+../../client/shared/editor/mentions-remarkable-plugin.js
