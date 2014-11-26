@@ -96,9 +96,15 @@ object HtmlPageSerializer {
     val newEngine = new js.ScriptEngineManager(null).getEngineByName("nashorn")
     // Remarkable seems to expect `global` to exist. (Remarkable is a CommonMark Markdown renderer.)
     newEngine.eval("var global = this;")
-    newEngine.eval(new jio.FileReader("public/res/remarkable.min.js"))
-    newEngine.eval(new jio.FileReader("public/res/html-sanitizer-bundle.js"))
-    newEngine.eval(new jio.FileReader("public/res/mentions-remarkable-plugin.js"))
+
+    def evalFile(path: String) {
+      val stream = getClass().getResourceAsStream(path)
+      newEngine.eval(new java.io.InputStreamReader(stream))
+    }
+    evalFile("/public/res/remarkable.min.js")
+    evalFile("/public/res/html-sanitizer-bundle.js")
+    evalFile("/public/res/mentions-remarkable-plugin.js")
+
     newEngine.eval(i"""
       |remarkable = new Remarkable({ html: true });
       |remarkable.use(MentionsRemarkablePlugin());
