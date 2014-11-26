@@ -23,18 +23,29 @@ var NO_ID = -1;
 
 d.i.$showReplyForm = function(event, opt_where) {
   event.preventDefault();
+  showReplyFormImpl($(this));
+};
 
-  var thread = $(this).closest('.dw-t');
-  var replyAction = thread.find('> .dw-p-as > .dw-a-reply');
-  if (!replyAction.length) {
+
+d.i.showReplyFormEmbeddedComments = function() {
+  showReplyFormImpl();
+};
+
+
+function showReplyFormImpl($this) {
+  var replyAction;
+  if ($this) {
+    var thread = $this.closest('.dw-t');
+    replyAction = thread.find('> .dw-p-as > .dw-a-reply');
+  }
+  else {
     // This is an embedded comments page and the reply button clicked is in the
     // comments toolbar.
-    d.u.bugIf(!thread.is('.dw-depth-0'));
     replyAction = $('.dw-cmts-tlbr .dw-a-reply');
   }
 
   var postId;
-  if ($(this).closest('.dw-cmts-tlbr').length) {
+  if (!$this) {
     // Embedded comments page, Reply button in comments toolbar was clicked.
     // Set postId to NO_ID to indicate that we're replying to the article on
     // the embedding page.
@@ -42,7 +53,7 @@ d.i.$showReplyForm = function(event, opt_where) {
   }
   else {
     // Non-embedded page; there is no Reply button in the comments toolbar.
-    postId = $(this).closest('.dw-t').dwPostId();
+    postId = $this.closest('.dw-t').dwPostId();
   }
 
   var anyReturnToUrl = d.i.makeReturnToPostUrlForVerifEmail(postId);

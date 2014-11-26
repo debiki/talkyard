@@ -45,6 +45,7 @@ function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
    */
 
   var remarkable = new Remarkable({ html: true });
+  remarkable.use(d.i.MentionsRemarkablePlugin());
   var htmlTextUnsafe = remarkable.render(commonmarkSource);
   return htmlTextUnsafe;
 };

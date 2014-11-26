@@ -55,6 +55,8 @@ class EditorController {
 
     // Pre-load the CommonMark to HTML converter.
     d.i.loadEditorDependencies();
+
+    this.startMentionsParser();
   }
 
 
@@ -249,6 +251,23 @@ class EditorController {
     }
   }
 
+
+  private startMentionsParser() {
+    // This breaks AngularJS best practices? (don't do DOM stuff in controller) But I'm going
+    // to port to React.js anyway.
+    d$('#debiki-editor-controller textarea').atwho({
+      at: "@",
+      search_key: 'username',
+      tpl: "<li data-value='${atwho-at}${username}'>${username} (${fullName})</li>",
+      callbacks: {
+        remote_filter: (prefix, callback) => {
+          this.editorService.listUsernames(prefix).then((namesArray) => {
+            callback(namesArray);
+          });
+        }
+      }
+    });
+  }
 }
 
 
