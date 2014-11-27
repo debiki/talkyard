@@ -43,8 +43,10 @@ public/res/combined-debiki*
 public/res/embedded-comments.js
 public/res/embedded-comments.min.js
 public/res/debiki-embedded-comments.*
+public/res/html-sanitizer-bundle.min.js
 public/res/login-popup.js
 public/res/login-popup.min.js
+public/res/mentions-remarkable-plugin.min.js
 public/res/modernizr.min.js
 public/res/debiki-spa-*
 public/res/debiki-dashbar*
