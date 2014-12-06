@@ -15,9 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="../../../typedefs/jquery/jquery.d.ts" />
+
+
 //------------------------------------------------------------------------------
    module debiki2.users {
 //------------------------------------------------------------------------------
+
+var $: JQueryStatic = d.i.$;
 
 
 /**
@@ -43,6 +48,11 @@ export class ActionListItem {
   // This indicates what kind of action this represents.
   repliedToPostId: number;
   editedPostId: number;
+  approved: boolean;
+  deleted: boolean;
+  pinned: boolean;
+  collapsed: boolean;
+  closed: boolean;
   votedLike: number;
   votedWrong: number;
   votedOffTopic: number;
@@ -57,21 +67,8 @@ export class ActionListItem {
 
   public static fromJson(json): ActionListItem {
     var a = new ActionListItem();
-    a.pageUrl = json.pageUrl;
-    a.pageTitle = json.pageTitle;
-    a.postId = json.postId;
-    a.actionId = json.actionId;
-    a.actingUserId = json.actingUserId;
-    a.actingUserDisplayName = json.actingUserDisplayName;
-    a.targetUserId = json.targetUserId;
-    a.targetUserDisplayName = json.targetUserDisplayName;
+    $.extend(a, json);
     a.createdAt = new Date(json.createdAtEpoch);
-    a.excerpt = json.excerpt;
-    a.repliedToPostId = json.repliedToPostId;
-    a.editedPostId = json.editedPostId;
-    a.votedLike = json.votedLike;
-    a.votedWrong = json.votedWrong;
-    a.votedOffTopic = json.votedOffTopic;
     return a;
   }
 

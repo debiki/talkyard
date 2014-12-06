@@ -26,6 +26,7 @@
     "momentjs": "~2.6.0",
     "react": "~0.11.2",
     "react-bootstrap": "~0.12.0",
+    "react-router": "~0.11.3",
     "remarkable": "~1.4.1",
     "yepnope": "v1.5.4"
   },

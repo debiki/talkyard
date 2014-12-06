@@ -42,6 +42,11 @@ case class UserActionInfo(
   createdNewPage: Boolean,
   repliedToPostId: Option[PostId],
   editedPostId: Option[PostId],
+  approved: Boolean,
+  deleted: Boolean,
+  pinned: Boolean,
+  collapsed: Boolean,
+  closed: Boolean,
   votedLike: Boolean,
   votedWrong: Boolean,
   votedOffTopic: Boolean)

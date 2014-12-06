@@ -90,6 +90,7 @@ object UserController extends mvc.Controller {
     Json.obj(
       "userId" -> userInfo.info.id,
       "displayName" -> userInfo.info.displayName,
+      "username" -> userInfo.info.username.getOrElse(null),
       "isAdmin" -> userInfo.info.isAdmin,
       "isModerator" -> false, // userInfo.info.isModerator,
       "numPages" -> userInfo.stats.numPages,
@@ -154,6 +155,11 @@ object UserController extends mvc.Controller {
       "excerpt" -> JsString(actionInfo.postExcerpt),
       "repliedToPostId" -> actionInfo.repliedToPostId.map(JsNumber(_)),
       "editedPostId" -> actionInfo.editedPostId.map(JsNumber(_)),
+      "approved" -> JsBoolean(actionInfo.approved),
+      "deleted" -> JsBoolean(actionInfo.deleted),
+      "pinned" -> JsBoolean(actionInfo.pinned),
+      "collapsed" -> JsBoolean(actionInfo.collapsed),
+      "closed" -> JsBoolean(actionInfo.closed),
       "votedLike" -> JsBoolean(actionInfo.votedLike),
       "votedWrong" -> JsBoolean(actionInfo.votedWrong),
       "votedOffTopic" -> JsBoolean(actionInfo.votedOffTopic))

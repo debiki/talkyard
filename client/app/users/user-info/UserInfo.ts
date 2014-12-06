@@ -22,7 +22,9 @@
 
 export class UserInfo {
 
-  displayName: String;
+  id: string;
+  displayName: string;
+  username: string;
   numPages: number;
   numPosts: number;
   numReplies: number;
@@ -39,7 +41,9 @@ export class UserInfo {
 
   public static fromJson(json): UserInfo {
     var i = new UserInfo();
+    i.id = json.userId;
     i.displayName = json.displayName;
+    i.username = json.username;
     i.numPages = json.numPages;
     i.numPosts = json.numPosts;
     i.numReplies = json.numReplies;

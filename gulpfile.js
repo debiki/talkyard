@@ -82,6 +82,7 @@ var debikiDesktopFiles = [
       'bower_components/angular-moment/angular-moment.min.js',
       'bower_components/eventemitter2/lib/eventemitter2.js',
       'bower_components/react-bootstrap/react-bootstrap.js',
+      'bower_components/react-router/dist/react-router.js',
       'bower_components/Caret.js/dist/jquery.caret.js',
       'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
       'client/third-party/bootstrap/tooltip.js', //
@@ -168,6 +169,7 @@ var debikiTouchFiles = [
       'bower_components/angular-moment/angular-moment.min.js',
       'bower_components/eventemitter2/lib/eventemitter2.js',
       'bower_components/react-bootstrap/react-bootstrap.js',
+      'bower_components/react-router/dist/react-router.js',
       'bower_components/Caret.js/dist/jquery.caret.js',
       'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
       'client/third-party/bootstrap/dropdown.js',

@@ -36,10 +36,6 @@ if (pageRole === 'Forum') {
   dependencies.push('DebikiForumModule');
 }
 
-if (window.location.pathname === '/-/users/') {
-  dependencies.push('DebikiUsersModule');
-}
-
 
 export var DebikiApp: ng.IModule = angular.module('DebikiApp', dependencies);
 
