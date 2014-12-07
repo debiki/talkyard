@@ -25,7 +25,9 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $: JQueryStatic = d.i.$;
 var r = React.DOM;
-var rb: any = window['ReactBootstrap'];
+var reactCreateFactory = React['createFactory'];
+var ReactBootstrap: any = window['ReactBootstrap'];
+var Button = reactCreateFactory(ReactBootstrap.Button);
 var RouterState = window['ReactRouter'].State;
 var RouterNavigation = window['ReactRouter'].Navigation;
 import UserPreferences = debiki2.users.UserPreferences;
@@ -80,7 +82,7 @@ export var UserPreferencesComponent = React.createClass({
 
     return (
       r.div({ className: 'users-page' },
-        rb.Button({ onClick: this.onBackBtnClick, className: 'pull-right' }, 'Back'),
+        Button({ onClick: this.onBackBtnClick, className: 'pull-right' }, 'Back'),
         r.h1({}, 'Preferences'),
         anyNotYourPrefsInfo,
         ShowAndEditPreferences({ userPreferences: this.state.userPreferences })));
@@ -162,7 +164,7 @@ var ShowAndEditPreferences = React.createClass({
                 defaultChecked: prefs.emailForEveryNewPost },
                 'Receive an email for every new post (unless you mute the topic or category)')))),
 
-        rb.Button({ type: 'submit' }, 'Save'),
+        Button({ type: 'submit' }, 'Save'),
         savingInfo));
 
     /* Discoruse's email options:

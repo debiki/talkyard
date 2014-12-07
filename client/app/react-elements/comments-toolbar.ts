@@ -24,11 +24,10 @@
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-
-// There is a TypeScript defs file for react-bootstrap:
-// https://github.com/flyon/react-bootstrap-typescript-definitions.git
-// but apparently it's incompatible with the version of React in use right now, instead:
-var rb: any = window['ReactBootstrap'];
+var reactCreateFactory = React['createFactory'];
+var ReactBootstrap: any = window['ReactBootstrap'];
+var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
+var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 
 export var CommentsToolbar = React.createClass({
@@ -126,12 +125,12 @@ var CommentsToolbarDetails = React.createClass({
     var userAuthenticated = user && user.isAuthenticated;
 
     var notificationsElem = userAuthenticated
-        ? rb.DropdownButton({ title: user.rolePageSettings.notfLevel,
-                className: 'dw-notf-level', onSelect: this.onNewNotfLevel },
-            rb.MenuItem({ key: 'Watching' }, 'Watching'),
-            rb.MenuItem({ key: 'Tracking' }, 'Tracking'),
-            rb.MenuItem({ key: 'Regular' }, 'Regular'),
-            rb.MenuItem({ key: 'Muted' }, 'Muted'))
+        ? DropdownButton({ title: user.rolePageSettings.notfLevel,
+              className: 'dw-notf-level', onSelect: this.onNewNotfLevel },
+            MenuItem({ eventKey: 'Watching' }, 'Watching'),
+            MenuItem({ eventKey: 'Tracking' }, 'Tracking'),
+            MenuItem({ eventKey: 'Regular' }, 'Regular'),
+            MenuItem({ eventKey: 'Muted' }, 'Muted'))
         : null;
 
     var result =
