@@ -36,8 +36,8 @@ export function routes() {
     DefaultRoute({ handler: Default }),
     NotFoundRoute({ handler: NotFound }),
     Route({ path: '/id/:userId', handler: UserPage },
-      DefaultRoute({ handler: debiki2.users.UserDetailsAndActions }),
-      Route({ path: 'preferences', handler: UserPreferences })));
+      DefaultRoute({ handler: debiki2.users.UserDetailsAndActionsComponent }),
+      Route({ path: 'preferences', handler: debiki2.users.UserPreferencesComponent })));
 }
 
 
@@ -66,13 +66,6 @@ var NotFound = React.createClass({
 var UserPage = React.createClass({
   render: function() {
     return RouteHandler({});
-  }
-});
-
-
-var UserPreferences = React.createClass({
-  render: function() {
-    return r.div({}, 'UserPreferences');
   }
 });
 

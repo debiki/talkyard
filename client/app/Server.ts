@@ -69,6 +69,28 @@ export function loadUserActions(userId,
 }
 
 
+export function loadUserPreferences(userId,
+      callback: (info: debiki2.users.UserPreferences) => void) {
+  $.get('/-/load-user-preferences?userId=' + userId)
+    .done((response: any) => {
+      var userPrefs = debiki2.users.UserPreferences.fromJson(response.userPreferences);
+      callback(userPrefs);
+    })
+    .fail((x, y, z) => {
+      console.error('Error loading user preferences: ' + JSON.stringify([x, y, z]));
+      callback(null);
+    });
+}
+
+
+export function saveUserPreferences(prefs) {
+  d.u.postJson({
+    url: '/-/save-user-preferences',
+    data: prefs
+  });
+}
+
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

@@ -83,6 +83,17 @@ ReactStore.removeChangeListener = function(callback) {
 };
 
 
+export var StoreListenerMixin = {
+  componentWillMount: function() {
+    ReactStore.addChangeListener(this.onChange);
+  },
+
+  componentWillUnmount: function() {
+    ReactStore.removeChangeListener(this.onChange);
+  }
+};
+
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

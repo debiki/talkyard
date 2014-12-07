@@ -312,6 +312,10 @@ abstract class SiteDbDao {
 
   def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId]
 
+  def loadRolePreferences(roleId: RoleId): Option[UserPreferences]
+
+  def saveRolePreferences(preferences: UserPreferences)
+
 
   // ----- Notifications
 
@@ -797,6 +801,16 @@ class ChargingSiteDbDao(
   def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId] = {
     _chargeForOneReadReq()
     _spi.loadUserIdsWatchingPage(pageId)
+  }
+
+  def loadRolePreferences(roleId: RoleId): Option[UserPreferences] = {
+    _chargeForOneReadReq()
+    _spi.loadRolePreferences(roleId)
+  }
+
+  def saveRolePreferences(preferences: UserPreferences) {
+    _chargeForOneWriteReq()
+    _spi.saveRolePreferences(preferences)
   }
 
 

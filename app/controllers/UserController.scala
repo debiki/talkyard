@@ -26,10 +26,10 @@ import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
-import requests.GetRequest
+import requests.{GetRequest, DebikiRequest}
 import Utils.OkSafeJson
 import Utils.ValidationImplicits._
-import DebikiHttp.{throwBadReq, throwNotFound}
+import DebikiHttp.{throwForbidden, throwNotFound}
 
 
 
@@ -83,6 +83,42 @@ object UserController extends mvc.Controller {
           "fullName" -> nameAndUsername.fullName)
       })
     OkSafeJson(json)
+  }
+
+
+  def loadUserPreferences(userId: String) = GetAction { request =>
+    checkUserPrefsAccess(request, userId)
+    val prefs = request.dao.loadRolePreferences(userId) getOrElse throwNotFound(
+      "DwE3EJ5O2", s"User not found, id: $userId")
+    val json = Json.obj("userPreferences" -> userPrefsToJson(prefs))
+    OkSafeJson(json)
+  }
+
+
+  def saveUserPreferences = PostJsonAction(maxLength = 1000) { request =>
+    val prefs = userPrefsFromJson(request.body)
+    checkUserPrefsAccess(request, prefs.userId)
+
+    // For now, don't allow people to change their username. In the future, changing
+    // it should be alloowed, but only very infrequently? Or only the very first few days.
+    if (request.theUser.username != prefs.username)
+      throwForbidden("DwE44ELK9", "Must not modify one's username")
+
+    // For now, don't allow the user to change his/her email. I haven't
+    // implemented any related security checks, e.g. verifying with the old address
+    // that this is okay, or sending an address confirmation email to the new address.
+    if (request.theUser.email != prefs.emailAddress)
+      throwForbidden("DwE44ELK9", "Must not modify one's email")
+
+    request.dao.saveRolePreferences(prefs)
+    Ok
+  }
+
+
+  private def checkUserPrefsAccess(request: DebikiRequest[_], prefsUserId: UserId) {
+    val adminOrOwn = request.theUser.isAdmin || request.theUser.id == prefsUserId
+    if (!adminOrOwn)
+      throwForbidden("DwE15KFE5", "Not your preferences and you're no admin")
   }
 
 
@@ -173,6 +209,32 @@ object UserController extends mvc.Controller {
       - hidden : false,
       - moderator_action : false,
      */
+  }
+
+
+  private def userPrefsToJson(prefs: UserPreferences): JsObject = {
+    Json.obj(
+      "userId" -> prefs.userId,
+      "fullName" -> prefs.fullName,
+      "username" -> prefs.username,
+      "emailAddress" -> prefs.emailAddress,
+      "url" -> prefs.url,
+      "emailForEveryNewPost" -> prefs.emailForEveryNewPost)
+  }
+
+
+  private def userPrefsFromJson(json: JsValue): UserPreferences = {
+    var anyUsername = (json \ "username").asOpt[String]
+    if (anyUsername == Some("")) {
+      anyUsername = None
+    }
+    UserPreferences(
+      userId = (json \ "userId").as[UserId],
+      fullName = (json \ "fullName").as[String],
+      username = anyUsername,
+      emailAddress = (json \ "emailAddress").as[String],
+      url = (json \ "url").as[String],
+      emailForEveryNewPost = (json \ "emailForEveryNewPost").as[Boolean])
   }
 
 }

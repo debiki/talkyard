@@ -152,6 +152,14 @@ trait UserDao {
   def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings) =
     siteDbDao.saveRolePageSettings(roleId = roleId, pageId = pageId, settings)
 
+
+  def loadRolePreferences(roleId: RoleId): Option[UserPreferences] =
+    siteDbDao.loadRolePreferences(roleId)
+
+
+  def saveRolePreferences(preferences: UserPreferences) =
+    siteDbDao.saveRolePreferences(preferences)
+
 }
 
 

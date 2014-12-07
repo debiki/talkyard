@@ -24,15 +24,28 @@
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
+var rb: any = window['ReactBootstrap'];
 var RouterState = window['ReactRouter'].State;
+var RouterNavigation = window['ReactRouter'].Navigation;
 import UserInfo = debiki2.users.UserInfo;
 
 
-export var UserDetailsAndActions = React.createClass({
-  mixins: [ RouterState ],
+export var UserDetailsAndActionsComponent = React.createClass({
+  mixins: [RouterState, RouterNavigation, debiki2.StoreListenerMixin],
 
   getInitialState: function() {
-    return {};
+    return {
+      loggedInUser: debiki2.ReactStore.getUser()
+    };
+  },
+
+  onChange: function() {
+    this.state.loggedInUser = debiki2.ReactStore.getUser();
+    this.setState(this.state);
+  },
+
+  onPreferencesClick: function() {
+    this.transitionTo('/id/' + this.getParams().userId + '/preferences');
   },
 
   render: function() {
@@ -40,17 +53,15 @@ export var UserDetailsAndActions = React.createClass({
     var isNewUrl = this.state.userId !== params.userId;
     if (isNewUrl) {
       Server.loadUserInfo(params.userId, (anyUserInfo: UserInfo) => {
-        this.setState({
-          userId: params.userId,
-          userInfo: anyUserInfo,
-          userActions: []
-        });
-        // Race condition, in case the browser quickly quickly navigates to
-        // another user url. Unlikely to happen though, ignore it.
+        this.state.userId = params.userId;
+        this.state.userInfo = anyUserInfo;
+        this.state.userActions = [];
+        this.setState(this.state);
+        // Race condition, in case the browser quickly quickly navigates to  another user
+        // url, but the below reply arrives later. Unlikely to happen though, ignore it.
         Server.loadUserActions(params.userId, (actions: ActionListItem[]) => {
-          var newState = this.state;
-          newState.userActions = actions;
-          this.setState(newState);
+          this.state.userActions = actions;
+          this.setState(this.state);
         });
       });
       return r.p({}, 'Loading...');
@@ -59,7 +70,19 @@ export var UserDetailsAndActions = React.createClass({
     if (!this.state.userInfo)
       return r.p({}, 'User not found');
 
+    var mayEditPrefs = false;
+    if (this.state.loggedInUser && this.state.loggedInUser.isAuthenticated) {
+      mayEditPrefs = mayEditPrefs || this.state.loggedInUser.userId === params.userId;
+      mayEditPrefs = mayEditPrefs || this.state.loggedInUser.isAdmin;
+    }
+
+    var preferencesLink = mayEditPrefs
+        ? rb.Button({ className: 'pull-right', onClick: this.onPreferencesClick },
+            'Preferences')
+        : null;
+
     return r.div({ className: 'users-page' },
+      preferencesLink,
       UserDetails({ userInfo: this.state.userInfo }),
       r.h2({}, 'History:'),
       UserActions({ userActions: this.state.userActions }));

@@ -46,3 +46,16 @@ object UserStats {
   val Zero = UserStats(0, 0, 0, 0, 0, 0, 0, 0, 0)
 
 }
+
+
+case class UserPreferences(
+  userId: UserId,
+  fullName: String,
+  username: Option[String],
+  emailAddress: String,
+  url: String = "",
+  emailForEveryNewPost: Boolean = false) {
+
+  require(username != Some(""), "Empty username [DwE56KX2]")
+}
+
