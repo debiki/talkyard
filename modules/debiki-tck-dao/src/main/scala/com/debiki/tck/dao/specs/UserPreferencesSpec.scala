@@ -89,7 +89,7 @@ class UserPreferencesSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory
         username = Some("modified_username"),
         emailAddress = "modified-email@example.com",
         url = "http://example.com",
-        emailForEveryNewPost = false)
+        emailForEveryNewPost = true)
       dao.saveRolePreferences(modifiedPrefs)
       dao.loadRolePreferences(roleId = passwordRole.id) mustBe Some(modifiedPrefs)
     }

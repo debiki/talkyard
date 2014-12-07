@@ -142,7 +142,7 @@ var ShowAndEditPreferences = React.createClass({
           r.div({ className: 'checkbox' },
             r.label({},
               r.input({ type: 'checkbox', id: 'emailForEveryNewPost',
-                defaultValue: prefs.emailForEveryNewPost },
+                defaultChecked: prefs.emailForEveryNewPost },
                 'Receive an email for every new post (unless you mute the topic or category)')))),
 
         rb.Button({ type: 'submit' }, 'Save')));
