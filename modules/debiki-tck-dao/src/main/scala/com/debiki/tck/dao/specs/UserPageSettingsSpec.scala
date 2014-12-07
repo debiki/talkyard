@@ -40,6 +40,7 @@ class UserPageSettingsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactor
     var passwordRole: User = null
     var passwordLoginGrant: LoginGrant = null
     var superfluousRole: User = null
+    var roleWatchingEverything: User = null
 
     "find no page settings for non-existing user and page" in {
       dao.loadRolePageSettings(roleId = "dummy", pageId = "dummy") mustBe None
@@ -81,6 +82,20 @@ class UserPageSettingsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactor
 
     "not find the page setting for another user or page" in {
       dao.loadRolePageSettings(roleId = "dummy", pageId = "dummy") mustBe None
+    }
+
+    "handle users watching everything" - {
+      "create a user watching everything" in {
+        roleWatchingEverything = siteUtils.createPasswordRole("TotalWatcher")
+        val prefs = dao.loadRolePreferences(roleWatchingEverything.id) getOrDie "DwE2BT31"
+        val newPrefs = prefs.copy(emailForEveryNewPost = true)
+        dao.saveRolePreferences(newPrefs)
+      }
+
+      "find it, when loading people watching any page" in {
+        val ids = dao.loadUserIdsWatchingPage("anyPageId")
+        ids mustBe Seq(roleWatchingEverything.id)
+      }
     }
 
   }

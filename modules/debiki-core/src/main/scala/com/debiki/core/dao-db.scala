@@ -310,6 +310,9 @@ abstract class SiteDbDao {
 
   def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings)
 
+  /** Loads users watching the specified page, any parent categories or forums,
+    * and people watching everything on the whole site.
+    */
   def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId]
 
   def loadRolePreferences(roleId: RoleId): Option[UserPreferences]

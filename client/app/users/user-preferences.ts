@@ -136,7 +136,8 @@ var ShowAndEditPreferences = React.createClass({
         r.div({ className: 'form-group' },
           r.label({ htmlFor: 'url' }, 'URL'),
           r.input({ className: 'form-control', id: 'url',
-              defaultValue: prefs.url })),
+              defaultValue: prefs.url }),
+          r.p({ className: 'help-block' }, 'Any website or page of yours.')),
 
         r.div({ className: 'form-group' },
           r.div({ className: 'checkbox' },
