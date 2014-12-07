@@ -15,17 +15,35 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/angularjs/angular.d.ts" />
-/// <reference path="../RootScope.ts" />
+/// <reference path="../../typedefs/jquery/jquery.d.ts" />
+
 
 //------------------------------------------------------------------------------
    module debiki2.users {
 //------------------------------------------------------------------------------
 
+var $: JQueryStatic = d.i.$;
 
-export interface UsersScope extends RootScope {
 
-  userInfo: UserInfo;
+
+export class UserPreferences {
+
+  fullName: string;
+  username: string;
+  emailAddress: string;
+  emailForEveryNewPost: boolean;
+  url: string;
+
+
+  constructor() {
+  }
+
+
+  public static fromJson(json): UserPreferences {
+    var prefs = new UserPreferences();
+    $.extend(prefs, json);
+    return prefs;
+  }
 
 }
 
@@ -33,4 +51,4 @@ export interface UsersScope extends RootScope {
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------
-// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list
+// vim: et ts=2 sw=2 tw=0 fo=tcqwn list

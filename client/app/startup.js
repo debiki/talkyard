@@ -365,10 +365,10 @@ function renderEmptyPage() {
   configureAjaxRequests();
   d.i.Me.refreshProps();
   if (!Modernizr.touch) {
-    d.i.initKeybdShortcuts($);
     d.i.initUtterscrollAndTips();
   }
   startAngular();
+  debiki2.reactelements.initAllReactRoots();
   fireLoginOrLogout();
 };
 

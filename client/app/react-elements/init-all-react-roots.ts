@@ -18,10 +18,13 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="comments-toolbar.ts" />
 /// <reference path="name-login-btns.ts" />
+/// <reference path="../users/users-page.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.reactelements {
 //------------------------------------------------------------------------------
+
+var ReactRouter = window['ReactRouter'];
 
 
 export function initAllReactRoots() {
@@ -32,6 +35,13 @@ export function initAllReactRoots() {
   var nameLoginBtnsElem = document.getElementById('dw-name-login-btns');
   if (nameLoginBtnsElem)
     React.renderComponent(NameLoginBtns({}), nameLoginBtnsElem);
+
+  var userPageElem = document.getElementById('dw-user-page');
+  if (userPageElem) {
+    ReactRouter.run(debiki2.users.routes(), (Handler) => {
+      React.renderComponent(Handler({}), userPageElem);
+    });
+  }
 }
 
 

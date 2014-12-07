@@ -26,16 +26,10 @@ var r = React.DOM;
 
 
 export var NameLoginBtns = React.createClass({
+  mixins: [debiki2.StoreListenerMixin],
+
   getInitialState: function() {
     return debiki2.ReactStore.allData();
-  },
-
-  componentDidMount: function() {
-    debiki2.ReactStore.addChangeListener(this.onChange);
-  },
-
-  componentWillUnmount: function() {
-    debiki2.ReactStore.removeChangeListener(this.onChange);
   },
 
   onChange: function() {
@@ -52,12 +46,22 @@ export var NameLoginBtns = React.createClass({
       .done(d.i.Me.fireLogout);
   },
 
+  goToUserPage: function() {
+    // If using an <a> link, then, if already in the /-/users/ SPA, no rerendering
+    // of React elements will be triggered (not sure why) so the contents of the
+    // page won't change: it'll show details for one user, but the URL will be
+    // for another (namely the currently logged in user). Workaround: update
+    // window.location — this rerenders the React components.
+    window.location.assign('/-/users/#/id/' + this.state.user.userId);
+  },
+
   render: function() {
     var userNameElem = null;
     if (this.state.user) {
       userNameElem =
           r.span({ className: 'dw-u-info' },
-              r.span({ className: 'dw-u-name' }, this.state.user.fullName));
+              r.a({ className: 'dw-u-name', onClick: this.goToUserPage },
+                  this.state.user.fullName));
     }
 
     var buttonsNotLinks = this.state.isInEmbeddedCommentsIframe;

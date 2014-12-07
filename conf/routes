@@ -104,6 +104,8 @@ GET   /-/list-user-actions      controllers.UserController.listUserActions(userI
 GET   /-/load-user-info         controllers.UserController.loadUserInfo(userId)
 POST  /-/save-page-notf-level   controllers.UserController.savePageNotfLevel
 GET   /-/list-usernames         controllers.UserController.listUsernames(pageId, prefix)
+GET   /-/load-user-preferences  controllers.UserController.loadUserPreferences(userId)
+POST  /-/save-user-preferences  controllers.UserController.saveUserPreferences
 
 GET   /-/list-topics            controllers.ForumController.listTopics(categoryId)
 GET   /-/list-categories        controllers.ForumController.listCategories(forumId)
