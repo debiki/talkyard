@@ -91,6 +91,10 @@ export var UserPreferencesComponent = React.createClass({
 var ShowAndEditPreferences = React.createClass({
   mixins: [RouterState],
 
+  getInitialState: function() {
+    return {};
+  },
+
   savePrefs: function(event) {
     event.preventDefault();
     var form = $(event.target);
@@ -105,12 +109,24 @@ var ShowAndEditPreferences = React.createClass({
     // This won't update the name in the name-login-button component. But will
     // be automatically fixed when I've ported everything to React and use
     // some global React state instead of cookies to remember the user name.
-    Server.saveUserPreferences(prefs);
+    Server.saveUserPreferences(prefs, () => {
+      this.setState({ savingStatus: 'Saved' });
+    });
+    this.setState({ savingStatus: 'Saving' });
   },
 
   render: function() {
     var prefs: UserPreferences = this.props.userPreferences;
     var username = prefs.username || '(not specified)';
+
+    var savingInfo = null;
+    if (this.state.savingStatus === 'Saving') {
+      savingInfo = r.i({}, ' Saving...');
+    }
+    else if (this.state.savingStatus === 'Saved') {
+      savingInfo = r.i({}, ' Saved.');
+    }
+
     return (
       r.form({ role: 'form', onSubmit: this.savePrefs },
 
@@ -146,7 +162,8 @@ var ShowAndEditPreferences = React.createClass({
                 defaultChecked: prefs.emailForEveryNewPost },
                 'Receive an email for every new post (unless you mute the topic or category)')))),
 
-        rb.Button({ type: 'submit' }, 'Save')));
+        rb.Button({ type: 'submit' }, 'Save'),
+        savingInfo));
 
     /* Discoruse's email options:
     'When you do not visit the site, send an email digest of what is new:'

@@ -83,10 +83,11 @@ export function loadUserPreferences(userId,
 }
 
 
-export function saveUserPreferences(prefs) {
+export function saveUserPreferences(prefs, doneCallback: () => void) {
   d.u.postJson({
     url: '/-/save-user-preferences',
-    data: prefs
+    data: prefs,
+    success: doneCallback
   });
 }
 
