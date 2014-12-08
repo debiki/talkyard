@@ -34,13 +34,13 @@ object ReactRenderer {
     // See: https://github.com/playframework/playframework/issues/2532
     val engine = new js.ScriptEngineManager(null).getEngineByName("nashorn")
 
-    // React expects `window` or `global` to exist. Create a `global` pointing
-    // to Nashorn's context to give React a place to define its global namespace.
-    engine.eval("var global = this;")
+    // React expects `window` or `global` to exist, and my React code sometimes
+    // load React components from `window['component-name']`.
+    engine.eval("var global = window = this;")
 
     // PERFORMANCE SHOULD cache and reuse the engine once it has compiled React and renderer.js?
     engine.eval(new jio.FileReader("public/res/react-with-addons.js"))
-    engine.eval("""
+    engine.eval(i"""
         |var exports = {};
         |var console = {
         |  trace: function() {},
@@ -49,11 +49,40 @@ object ReactRenderer {
         |  warn: function() {},
         |  error: function() {}
         |};
-        |""".stripMargin)
+        |$serverSideDebikiModule
+        |$serverSideReactStore
+        |""")
     engine.eval(new jio.FileReader("public/res/renderer.js"))
-    //val titleBodyComments = engine.eval("renderTitleBodyCommentsToString();")
-    //titleBodyComments.toString
-    "dummy"
+    val titleBodyComments = engine.eval("renderTitleBodyCommentsToString();")
+    titleBodyComments.toString
   }
+
+
+  private val serverSideDebikiModule = i"""
+    |var debiki = {
+    |  store: {},
+    |  v0: { util: {} },
+    |  internal: {}
+    |};
+    |"""
+
+
+  /** A React store from which the React components can get their initial state,
+    * when they're being rendered server side.
+    *
+    * Doesn't provide any event related functions because non events happen when
+    * rendering server side.
+    */
+  private val serverSideReactStore = i"""
+    |var debiki2 = debiki2 || {};
+    |debiki2.ReactStore = {
+    |  allData: function() {
+    |    return {};
+    |  },
+    |  getUser: function() {
+    |    return {};
+    |  }
+    |};
+    |"""
 
 }

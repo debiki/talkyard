@@ -328,7 +328,9 @@ gulp.task('compile-livescript', function () {
 
 function compileServerSideTypescript() {
   var typescriptStream = gulp.src([
+        'client/server-side-type-stubs.ts',
         'client/app/renderer/**/*.ts',
+        'client/app/react-elements/comments-toolbar.ts',
         'client/typedefs/**/*.ts'])
     .pipe(typeScript({
       target: 'ES5',
@@ -344,6 +346,7 @@ function compileServerSideTypescript() {
   }
 
   var javascriptStream = gulp.src([
+        'bower_components/react-bootstrap/react-bootstrap.js',
         'bower_components/moment/moment.js']);
 
   return es.merge(typescriptStream, javascriptStream)

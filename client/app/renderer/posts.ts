@@ -157,6 +157,7 @@ var RootPost = React.createClass({
           r.div({ className: postBodyClass },
             r.div({ className: 'dw-p-bd-blk' }, rootPost.text))),
         PostActions({ post: rootPost }),
+        debiki2.reactelements.CommentsToolbar(),
         spaceForHorizontalArrows,
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
