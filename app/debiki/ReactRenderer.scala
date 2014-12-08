@@ -20,45 +20,69 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import java.{util => ju, io => jio}
+import java.{lang => jl, io => jio}
 import javax.{script => js}
 
 
 
 object ReactRenderer {
 
+
+  /** The Nashorn Javascript engine isn't thread safe. */
+  private val threadLocalJavascriptEngine = new jl.ThreadLocal[js.ScriptEngine]
+
+
   def testRender(): String = {
-
-    // Pass 'null' to force the correct class loader. Without passing any param,
-    // the "nashorn" JavaScript engine is not found by the `ScriptEngineManager`.
-    // See: https://github.com/playframework/playframework/issues/2532
-    val engine = new js.ScriptEngineManager(null).getEngineByName("nashorn")
-
-    // React expects `window` or `global` to exist, and my React code sometimes
-    // load React components from `window['component-name']`.
-    engine.eval("var global = window = this;")
-
-    // PERFORMANCE SHOULD cache and reuse the engine once it has compiled React and renderer.js?
-    engine.eval(new jio.FileReader("public/res/react-with-addons.js"))
-    engine.eval(i"""
-        |var exports = {};
-        |var console = {
-        |  trace: function() {},
-        |  debug: function() {},
-        |  log: function() {},
-        |  warn: function() {},
-        |  error: function() {}
-        |};
-        |$serverSideDebikiModule
-        |$serverSideReactStore
-        |""")
-    engine.eval(new jio.FileReader("public/res/renderer.js"))
-    val titleBodyComments = engine.eval("renderTitleBodyCommentsToString();")
+    val titleBodyComments = javascriptEngine.asInstanceOf[js.Invocable].invokeFunction(
+      "renderTitleBodyCommentsToString").asInstanceOf[String]
     titleBodyComments.toString
   }
 
 
-  private val serverSideDebikiModule = i"""
+  private def javascriptEngine: js.ScriptEngine = {
+    val engineOrNull = threadLocalJavascriptEngine.get
+    if (engineOrNull != null)
+      return engineOrNull
+
+    // Pass 'null' to force the correct class loader. Without passing any param,
+    // the "nashorn" JavaScript engine is not found by the `ScriptEngineManager`.
+    // See: https://github.com/playframework/playframework/issues/2532
+    val newEngine = new js.ScriptEngineManager(null).getEngineByName("nashorn")
+
+    // React expects `window` or `global` to exist, and my React code sometimes
+    // load React components from `window['component-name']`.
+    newEngine.eval("var global = window = this;")
+
+    def evalFile(path: String) {
+      val stream = getClass().getResourceAsStream(path)
+      newEngine.eval(new java.io.InputStreamReader(stream))
+    }
+    evalFile("/public/res/react-with-addons.js")
+    newEngine.eval(i"""
+        |var exports = {};
+        |$DummyConsoleLogFunctions
+        |$ServerSideDebikiModule
+        |$ServerSideReactStore
+        |""")
+    evalFile("/public/res/renderer.js")
+
+    threadLocalJavascriptEngine.set(newEngine)
+    newEngine
+  }
+
+
+  private val DummyConsoleLogFunctions = i"""
+    |var console = {
+    |  trace: function() {},
+    |  debug: function() {},
+    |  log: function() {},
+    |  warn: function() {},
+    |  error: function() {}
+    |};
+    |"""
+
+
+  private val ServerSideDebikiModule = i"""
     |var debiki = {
     |  store: {},
     |  v0: { util: {} },
@@ -73,7 +97,7 @@ object ReactRenderer {
     * Doesn't provide any event related functions because non events happen when
     * rendering server side.
     */
-  private val serverSideReactStore = i"""
+  private val ServerSideReactStore = i"""
     |var debiki2 = debiki2 || {};
     |debiki2.ReactStore = {
     |  allData: function() {
