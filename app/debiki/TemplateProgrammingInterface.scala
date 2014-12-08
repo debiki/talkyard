@@ -521,6 +521,10 @@ class TemplateProgrammingInterface(
   }
 
 
+  def reactTest =
+    xml.Unparsed(ReactRenderer.testRender())
+
+
   def page(contents: => play.api.templates.Html): xml.NodeSeq = page()(contents)
 
 

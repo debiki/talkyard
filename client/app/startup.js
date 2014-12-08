@@ -265,6 +265,9 @@ function renderPageEtc() {
 
   d.i.makePostHeaderPretty($('.dw-ar-p-hd'));
 
+  //debiki2.renderer.renderTitleBodyComments();
+  renderTitleBodyComments();
+
   var steps = [];
 
   steps.push(function() {

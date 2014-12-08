@@ -326,7 +326,36 @@ gulp.task('compile-livescript', function () {
 });
 
 
-gulp.task('compile-typescript', function () {
+function compileServerSideTypescript() {
+  var typescriptStream = gulp.src([
+        'client/app/renderer/**/*.ts',
+        'client/typedefs/**/*.ts'])
+    .pipe(typeScript({
+      target: 'ES5',
+      allowBool: true,
+      tmpDir: 'target/client/',
+      out: 'renderer.js'
+    }));
+
+  if (watchAndLiveForever) {
+    typescriptStream.on('error', function() {
+      console.log('\n!!! Error compiling server side TypeScript !!!\n');
+    });
+  }
+
+  var javascriptStream = gulp.src([
+        'bower_components/moment/moment.js']);
+
+  return es.merge(typescriptStream, javascriptStream)
+      .pipe(concat('renderer.js'))
+      .pipe(gulp.dest('public/res/'))
+      .pipe(uglify())
+      .pipe(rename('renderer.min.js'))
+      .pipe(gulp.dest('public/res/'));
+}
+
+
+function compileClientSideTypescript() {
   var stream = gulp.src([
         'client/shared/editor/**/*.ts',
         'client/app/**/*.ts',
@@ -346,6 +375,13 @@ gulp.task('compile-typescript', function () {
   }
 
   return stream.pipe(gulp.dest('target/client/'));
+}
+
+
+gulp.task('compile-typescript', function () {
+  return es.merge(
+      compileServerSideTypescript(),
+      compileClientSideTypescript());
 });
 
 
