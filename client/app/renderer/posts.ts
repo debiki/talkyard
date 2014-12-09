@@ -29,91 +29,57 @@ module boo {
 };
 //------------------------------------------------------------------------------
 
+var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
+var $: JQueryStatic = debiki.internal.$;
 
 var TitleId = 0;
 var BodyPostId = 1;
 
-var allPosts = {
-  0: {
-    postId: 0,
-    parentId: null,
-    authorId: 1,
-    authorFullName: 'Full Name',
-    authorUsername: 'AuthorUsername',
-    createdAt: 1234567890,
-    childIds: [],
-    text: 'Title',
-  },
-  1: {
-    postId: 1,
-    parentId: null,
-    authorId: 1,
-    authorFullName: 'Full Name',
-    authorUsername: 'AuthorUsername',
-    createdAt: 1234567890,
-    childIds: [2, 3],
-    text: 'Body',
-  },
-  2: {
-    postId: 2,
-    parentId: 1,
-    authorId: 1,
-    authorUsername: 'AuthorUsername',
-    createdAt: 1234567890,
-    lastEditAppliedAt: 1234567890,
-    numEditors: 1,
-    numLikeVotes: 1,
-    numWrongVotes: 1,
-    numOffTopicVotes: 1,
-    childIds: [21],
-    text: 'First Comment, post id 2',
-  },
-  3: {
-    postId: 3,
-    parentId: 1,
-    authorId: 1,
-    authorFullName: 'Full Name',
-    authorUsername: 'AuthorUsername',
-    createdAt: 1234567890,
-    lastEditAppliedAt: 1234567890,
-    numEditors: 2,
-    numLikeVotes: 2,
-    numWrongVotes: 2,
-    numOffTopicVotes: 2,
-    childIds: [],
-    text: '2nd Comment, post id 3',
-  },
-  21: {
-    postId: 21,
-    parentId: 2,
-    authorId: 1,
-    authorFullName: 'Full Name',
-    createdAt: 1234567890,
-    childIds: [],
-    text: 'Post 21',
-  },
-};
 
-
-var store = {
-  horizontalLayout: true,
-  allPosts: allPosts,
-  rootPostId: BodyPostId
+function createComponent(componentDefinition) {
+  return React.createFactory(React.createClass(componentDefinition));
 }
 
 
-var TitleBodyComments = React.createClass({
+var Page = createComponent({
+  render: function() {
+    return (
+      r.div({ className: 'debiki dw-debate dw-page' },
+        TitleBodyComments(this.props)));
+  }
+});
+
+
+var TitleBodyComments = createComponent({
+  //getInitialState: function() {
+    //return null; //debiki2.ReactStore.allData();
+  //},
+  /* any `getInitialState` causes a Nashorn error in react-with-addons.js, here:
+  _renderValidatedComponent: ReactPerf.measure(
+    'ReactCompositeComponent',
+    '_renderValidatedComponent',
+    function() {
+      var renderedComponent;
+      var previousContext = ReactContext.current;
+      ReactContext.current = this._processChildContext(
+        this._currentElement._context
+      );
+      ReactCurrentOwner.current = this;
+      try {
+        renderedComponent = this.render();   <-- render is null, in Nashorn only, not in browser
+  */
+
   render: function() {
     return (
       r.div({},
-        Title({ allPosts: this.props.allPosts }),
+        Title(this.props),
         RootPost(this.props)));
   },
 });
 
 
-var Title = React.createClass({
+var Title = createComponent({
   render: function() {
     var titlePost = this.props.allPosts[TitleId];
     return (
@@ -126,7 +92,7 @@ var Title = React.createClass({
 });
 
 
-var RootPost = React.createClass({
+var RootPost = createComponent({
   render: function() {
     var rootPost = this.props.allPosts[this.props.rootPostId];
     var isBody = this.props.rootPostId === BodyPostId;
@@ -166,7 +132,7 @@ var RootPost = React.createClass({
 });
 
 
-var Thread = React.createClass({
+var Thread = createComponent({
   render: function() {
     var post = this.props.allPosts[this.props.postId];
     var deeper = this.props.depth + 1;
@@ -189,7 +155,7 @@ var Thread = React.createClass({
 });
 
 
-var Post = React.createClass({
+var Post = createComponent({
   render: function() {
     var post = this.props.post;
     var authorUrl = '/-/users/#/id/' + post.authorId;
@@ -201,7 +167,7 @@ var Post = React.createClass({
 });
 
 
-var PostHeader = React.createClass({
+var PostHeader = createComponent({
   render: function() {
     var post = this.props.post;
 
@@ -222,11 +188,11 @@ var PostHeader = React.createClass({
       authorNameElems = r.span({}, '(Unknown author)');
     }
 
-    var createdAt = moment.unix(post.createdAt).fromNow();
+    var createdAt = moment(post.createdAt).from(this.props.now);
 
     var editInfo = null;
     if (post.lastEditAppliedAt) {
-      var editedAt = moment.unix(post.lastEditAppliedAt).fromNow();
+      var editedAt = moment(post.lastEditAppliedAt).from(this.props.now);
       var byVariousPeople = post.numEditors > 1 ? ' by various people' : null;
       editInfo =
         r.span({}, ', edited ', editedAt, byVariousPeople);
@@ -271,7 +237,7 @@ var PostHeader = React.createClass({
 });
 
 
-var PostBody = React.createClass({
+var PostBody = createComponent({
   render: function() {
     var post = this.props.post;
     return (
@@ -281,7 +247,7 @@ var PostBody = React.createClass({
 });
 
 
-var PostActions = React.createClass({
+var PostActions = createComponent({
   render: function() {
     var post = this.props.post;
 
@@ -295,8 +261,15 @@ var PostActions = React.createClass({
         r.a({ className: 'dw-a dw-a-reply icon-reply' }, 'Reply')];
     }
 
+    var moreDropdown =
+      r.span({ className: 'dropdown navbar-right dw-a' },
+        r.a({ className: 'dw-a-more', 'data-toggle': 'dropdown' }, 'More'),
+        r.a({ className: 'dropdown-menu dw-p-as-more' },
+          r.p({}, 'moreActionLinks...')));
+
     return (
       r.div({ className: 'dw-p-as dw-as' },
+        moreDropdown,
         replyLikeWrongLinks));
   }
 });
@@ -309,13 +282,15 @@ function horizontalCss(horizontal) {
 
 function renderTitleBodyComments() {
   var root = document.getElementById('dwPosts');
-  if (!root) return;
-  React.renderComponent(TitleBodyComments(store), root);
+  if (!root)
+    return;
+
+  React.render(Page(debiki2.ReactStore.allData()), root);
 }
 
 
 function renderTitleBodyCommentsToString() {
-  return React.renderComponentToString(TitleBodyComments(store));
+  return React.renderToString(Page(debiki2.ReactStore.allData()));
 }
 
 //------------------------------------------------------------------------------

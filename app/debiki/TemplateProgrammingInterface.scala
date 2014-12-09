@@ -522,7 +522,7 @@ class TemplateProgrammingInterface(
 
 
   def reactTest =
-    xml.Unparsed(ReactRenderer.testRender())
+    xml.Unparsed(ReactRenderer.renderPage(reactStoreSafeJsonString))
 
 
   def page(contents: => play.api.templates.Html): xml.NodeSeq = page()(contents)
@@ -603,6 +603,9 @@ class TemplateProgrammingInterface(
     }
 
 
+  lazy val reactStoreSafeJsonString = reactStoreSafeJson.toString
+
+
   override def reactStoreSafeJson: JsObject = {
     val anyUser = pageReq.user
     val userNameJson: JsValue = safeStringOrNull(anyUser.map(_.displayName))
@@ -612,7 +615,15 @@ class TemplateProgrammingInterface(
       rolePageSettingsToJson(settings)
     } getOrElse JsNull
 
+    // SHOULD sort by score
+    val allPostsJson = pageReq.thePage.getAllPosts.map { post =>
+      post.id.toString -> postToJson(post)
+    }
+
     Json.obj(
+      "now" -> JsNumber((new ju.Date).getTime),
+      "pageId" -> pageReq.thePageId,
+      "pageRole" -> JsString(pageReq.thePageRole.toString),
       "numPostsExclTitle" -> numPostsExclTitle,
       "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),
       "user" -> Json.obj(
@@ -623,7 +634,32 @@ class TemplateProgrammingInterface(
         // "permsOnPage" -> d.i.Me.getPermsOnPage(),
         "isEmailKnown" -> JsBoolean(anyUser.map(_.email.nonEmpty).getOrElse(false)),
         "rolePageSettings" -> rolePageSettings,
-        "isAuthenticated" -> JsBoolean(anyUser.map(_.isAuthenticated).getOrElse(false))))
+        "isAuthenticated" -> JsBoolean(anyUser.map(_.isAuthenticated).getOrElse(false))),
+      "horizontalLayout" -> JsBoolean(true),
+      "rootPostId" -> JsNumber(1),
+      "allPosts" -> JsObject(allPostsJson))
+  }
+
+
+  private def postToJson(post: Post): JsObject = {
+    val lastEditAppliedAt = post.lastEditAppliedAt map { date =>
+      JsNumber(date.getTime)
+    } getOrElse JsNull
+
+    JsObject(Vector(
+      "postId" -> JsNumber(post.id),
+      "parentId" -> post.parentId.map(JsNumber(_)).getOrElse(JsNull),
+      "authorId" -> JsString(post.userId),
+      "authorFullName" -> safeStringOrNull(Some(post.theUser.displayName)),
+      "authorUsername" -> safeStringOrNull(post.theUser.username),
+      "createdAt" -> JsNumber(post.creationDati.getTime),
+      "lastEditAppliedAt" -> lastEditAppliedAt,
+      "numEditors" -> JsNumber(post.numDistinctEditors),
+      "numLikeVotes" -> JsNumber(post.numLikeVotes),
+      "numWrongVotes" -> JsNumber(post.numWrongVotes),
+      "numOffTopicVotes" -> JsNumber(post.numOffTopicVotes),
+      "childIds" -> JsArray(post.replies.map(reply => JsNumber(reply.id))),
+      "text" -> safeStringOrNull(post.approvedText)))
   }
 
 }

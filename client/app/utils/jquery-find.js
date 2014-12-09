@@ -111,7 +111,7 @@ $.fn.dwDepth = function() {
  * (There might be more than one Debiki page included on a single browser page.)
  */
 $.fn.dwPageMeta = function() {
-  var $page = this.closest('.dw-page');
+  var $page = this.closest('.dw-page[id^=page]');
 
   // If this is e.g. the search results page, then there's no page meta,
   // so leave all fields undefined.

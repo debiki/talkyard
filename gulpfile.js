@@ -346,6 +346,7 @@ function compileServerSideTypescript() {
   }
 
   var javascriptStream = gulp.src([
+        'bower_components/react/react-with-addons.js',
         'bower_components/react-bootstrap/react-bootstrap.js',
         'bower_components/moment/moment.js']);
 

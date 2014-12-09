@@ -26,9 +26,9 @@
   <div class='container'>
     <div id="xcontent">
       <article>
-        <div id="dwPosts">
-          @tpi.reactTest
-        </div>
+        @* Don't add any whitespace around `@tpi.reactTest` because then React thinks
+          the HTML hasn't been rendered by React, and rerenders it client side. *@
+        <div id="dwPosts">@tpi.reactTest</div>
       </article>
     </div>
   </div>

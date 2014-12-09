@@ -32,9 +32,11 @@ object ReactRenderer {
   private val threadLocalJavascriptEngine = new jl.ThreadLocal[js.ScriptEngine]
 
 
-  def testRender(): String = {
-    val titleBodyComments = javascriptEngine.asInstanceOf[js.Invocable].invokeFunction(
-      "renderTitleBodyCommentsToString").asInstanceOf[String]
+  def renderPage(initialStateJson: String): String = {
+    val invocableEngine = javascriptEngine.asInstanceOf[js.Invocable]
+    invocableEngine.invokeFunction("setInitialStateJson", initialStateJson)
+    val titleBodyComments = invocableEngine.invokeFunction(
+      "renderReactServerSide").asInstanceOf[String]
     titleBodyComments.toString
   }
 
@@ -53,17 +55,30 @@ object ReactRenderer {
     // load React components from `window['component-name']`.
     newEngine.eval("var global = window = this;")
 
-    def evalFile(path: String) {
-      val stream = getClass().getResourceAsStream(path)
-      newEngine.eval(new java.io.InputStreamReader(stream))
-    }
-    evalFile("/public/res/react-with-addons.js")
     newEngine.eval(i"""
         |var exports = {};
         |$DummyConsoleLogFunctions
         |$ServerSideDebikiModule
         |$ServerSideReactStore
+        |
+        |function renderReactServerSide() {
+        |  try {
+        |    return renderTitleBodyCommentsToString();
+        |  }
+        |  catch (e) {
+        |    print(e.stack)
+        |    print(e.lineNumber)
+        |    print(e.columnNumber)
+        |    print(e.fileName)
+        |  }
+        |  return "Error rendering React components on server [DwE2GKD92]";
+        |}
         |""")
+
+    def evalFile(path: String) {
+      val stream = getClass().getResourceAsStream(path)
+      newEngine.eval(new java.io.InputStreamReader(stream))
+    }
     evalFile("/public/res/renderer.js")
 
     threadLocalJavascriptEngine.set(newEngine)
@@ -73,11 +88,21 @@ object ReactRenderer {
 
   private val DummyConsoleLogFunctions = i"""
     |var console = {
-    |  trace: function() {},
-    |  debug: function() {},
-    |  log: function() {},
-    |  warn: function() {},
-    |  error: function() {}
+    |  trace: function(message) {
+    |    java.lang.System.out.println('Nashorn TRC: ' + message);
+    |  },
+    |  debug: function(message) {
+    |    java.lang.System.out.println('Nashorn DBG: ' + message);
+    |  },
+    |  log: function(message) {
+    |    java.lang.System.out.println('Nashorn LOG: ' + message);
+    |  },
+    |  warn: function(message) {
+    |    java.lang.System.out.println('Nashorn WNR: ' + message);
+    |  },
+    |  error: function(message) {
+    |    java.lang.System.out.println('Nashorn ERR: ' + message);
+    |  }
     |};
     |"""
 
@@ -99,14 +124,22 @@ object ReactRenderer {
     */
   private val ServerSideReactStore = i"""
     |var debiki2 = debiki2 || {};
+    |
     |debiki2.ReactStore = {
     |  allData: function() {
-    |    return {};
+    |    return initialStateJson;
     |  },
     |  getUser: function() {
-    |    return {};
+    |    return initialStateJson.user;
     |  }
     |};
+    |
+    |var initialStateJson = {};
+    |
+    |function setInitialStateJson(jsonString) {
+    |  var json = JSON.parse(jsonString);
+    |  initialStateJson = json;
+    |}
     |"""
 
 }

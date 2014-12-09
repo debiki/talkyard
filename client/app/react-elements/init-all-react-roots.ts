@@ -30,16 +30,16 @@ var ReactRouter = window['ReactRouter'];
 export function initAllReactRoots() {
   var commentsToolbarElem = document.getElementById('dw-comments-toolbar');
   if (commentsToolbarElem)
-    React.renderComponent(CommentsToolbar({}), commentsToolbarElem);
+    React.render(CommentsToolbar({}), commentsToolbarElem);
 
   var nameLoginBtnsElem = document.getElementById('dw-name-login-btns');
   if (nameLoginBtnsElem)
-    React.renderComponent(NameLoginBtns({}), nameLoginBtnsElem);
+    React.render(NameLoginBtns({}), nameLoginBtnsElem);
 
   var userPageElem = document.getElementById('dw-user-page');
   if (userPageElem) {
     ReactRouter.run(debiki2.users.routes(), (Handler) => {
-      React.renderComponent(Handler({}), userPageElem);
+      React.render(Handler({}), userPageElem);
     });
   }
 }

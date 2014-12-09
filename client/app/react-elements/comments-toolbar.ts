@@ -30,7 +30,7 @@ var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 
-export var CommentsToolbar = React.createClass({
+export var CommentsToolbar = createComponent({
   getInitialState: function() {
     return {
       store: debiki2.ReactStore.allData(),
@@ -115,7 +115,7 @@ export var CommentsToolbar = React.createClass({
 });
 
 
-var CommentsToolbarDetails = React.createClass({
+var CommentsToolbarDetails = createComponent({
   onNewNotfLevel: function(newLevel) {
     ReactActions.setPageNoftLevel(newLevel);
   },
