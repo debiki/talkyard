@@ -1,1 +1,1 @@
-../../../node_modules/react-typescript-definitions/react.d.ts
+../../../modules/definitely-typed/react/react.d.ts
