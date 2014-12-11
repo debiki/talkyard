@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import java.{lang => jl, util => ju, io => jio}
 import javax.{script => js}
+import play.api.Play.current
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
