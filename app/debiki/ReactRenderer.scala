@@ -20,31 +20,79 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import java.{lang => jl, io => jio}
+import java.{lang => jl, util => ju, io => jio}
 import javax.{script => js}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
-
+/**
+  * Implementation details:
+  *
+  * Initializing a Nashorn engine takes long, perhaps 3 - 30 seconds now when
+  * I'm testing on localhost. So, on startup, I'm initializing many engines
+  * and inserting them into a thread safe blocking collection. One engine
+  * per core. Later on, when rendering a page, the render thread fetches
+  * an engine from the collection. And blocks until one is available.
+  * Once done initializing one engine per core, render threads should block
+  * no more, since there will be one engine per core.
+  *
+  * Using a thread local doesn't work well, because Play/Akka apparently
+  * creates new threads, or has 50 - 100 'play-akka.actor.default-dispatcher-NN'
+  * threads, and it doesn't make sense to create engines for that many threads.
+  */
 object ReactRenderer {
 
+  private val logger = play.api.Logger
 
-  /** The Nashorn Javascript engine isn't thread safe. */
-  private val threadLocalJavascriptEngine = new jl.ThreadLocal[js.ScriptEngine]
+  /** The Nashorn Javascript engine isn't thread safe.  */
+  private val javascriptEngines =
+    new java.util.concurrent.LinkedBlockingDeque[js.ScriptEngine](999)
 
 
   def renderPage(initialStateJson: String): String = {
-    val invocableEngine = javascriptEngine.asInstanceOf[js.Invocable]
-    invocableEngine.invokeFunction("setInitialStateJson", initialStateJson)
-    val titleBodyComments = invocableEngine.invokeFunction(
-      "renderReactServerSide").asInstanceOf[String]
-    titleBodyComments.toString
+    withJavascriptEngine(engine => {
+      val timeBefore = (new ju.Date).getTime
+
+      val invocable = engine.asInstanceOf[js.Invocable]
+      invocable.invokeFunction("setInitialStateJson", initialStateJson)
+      val pageHtml = invocable.invokeFunction("renderReactServerSide").asInstanceOf[String]
+
+      def timeElapsed = (new ju.Date).getTime - timeBefore
+      def threadId = java.lang.Thread.currentThread.getId
+      def threadName = java.lang.Thread.currentThread.getName
+      logger.trace(s"Done rendering: $timeElapsed ms, thread $threadName  (id $threadId)")
+
+      pageHtml
+    })
   }
 
 
-  private def javascriptEngine: js.ScriptEngine = {
-    val engineOrNull = threadLocalJavascriptEngine.get
-    if (engineOrNull != null)
-      return engineOrNull
+  private def withJavascriptEngine(fn: (js.ScriptEngine) => String): String = {
+    def threadId = Thread.currentThread.getId
+    def threadName = Thread.currentThread.getName
+
+    val mightBlock = javascriptEngines.isEmpty
+    if (mightBlock) {
+      logger.debug(s"Thread $threadName (id $threadId), waits for JS engine...")
+    }
+
+    val engine = javascriptEngines.takeFirst()
+
+    if (mightBlock) {
+      logger.debug(s"...Thread $threadName (id $threadId) got a JS engine.")
+    }
+
+    val result = fn(engine)
+    javascriptEngines.addFirst(engine)
+    result
+  }
+
+
+  private def makeJavascriptEngine(): js.ScriptEngine = {
+    val timeBefore = (new ju.Date).getTime
+    def threadId = java.lang.Thread.currentThread.getId
+    def threadName = java.lang.Thread.currentThread.getName
+    logger.debug(s"Initializing Nashorn engine, thread id: $threadId, name: $threadName...")
 
     // Pass 'null' to force the correct class loader. Without passing any param,
     // the "nashorn" JavaScript engine is not found by the `ScriptEngineManager`.
@@ -66,22 +114,23 @@ object ReactRenderer {
         |    return renderTitleBodyCommentsToString();
         |  }
         |  catch (e) {
-        |    print(e.stack)
-        |    print(e.lineNumber)
-        |    print(e.columnNumber)
-        |    print(e.fileName)
+        |    print('File: ' + e.fileName);
+        |    print('Line: ' + e.lineNumber);
+        |    print('Column: ' + e.columnNumber);
+        |    print('Stack trace: ' + e.stack);
         |  }
         |  return "Error rendering React components on server [DwE2GKD92]";
         |}
         |""")
 
-    def evalFile(path: String) {
-      val stream = getClass().getResourceAsStream(path)
-      newEngine.eval(new java.io.InputStreamReader(stream))
-    }
-    evalFile("/public/res/renderer.js")
+    val min = if (play.api.Play.isDev) "" else ".min"
+    val javascriptStream = getClass.getResourceAsStream(s"/public/res/renderer$min.js")
+    newEngine.eval(new java.io.InputStreamReader(javascriptStream))
 
-    threadLocalJavascriptEngine.set(newEngine)
+    def timeElapsed = (new ju.Date).getTime - timeBefore
+    logger.debug(o"""... Done initializing Nashorn engine, took: $timeElapsed ms,
+         thread id: $threadId, name: $threadName""")
+
     newEngine
   }
 
@@ -141,5 +190,13 @@ object ReactRenderer {
     |  initialStateJson = json;
     |}
     |"""
+
+
+  scala.concurrent.Future {
+    val numCores = Runtime.getRuntime.availableProcessors
+    for (i <- 1 to numCores) {
+      javascriptEngines.putLast(makeJavascriptEngine())
+    }
+  }
 
 }
