@@ -42,6 +42,23 @@ function createComponent(componentDefinition) {
 }
 
 
+var PageWithState = createComponent({
+  mixins: [debiki2.StoreListenerMixin],
+
+  getInitialState: function() {
+    return debiki2.ReactStore.allData();
+  },
+
+  onChange: function() {
+    this.setState(debiki2.ReactStore.allData());
+  },
+
+  render: function() {
+    return Page(this.state);
+  }
+});
+
+
 var Page = createComponent({
   render: function() {
     return (
@@ -285,7 +302,10 @@ function renderTitleBodyComments() {
   if (!root)
     return;
 
-  React.render(Page(debiki2.ReactStore.allData()), root);
+  var millisBefore = new Date().getTime();
+  React.render(PageWithState(), root);
+  var millisAfter = new Date().getTime();
+  console.debug('Renering React took: ' + (millisAfter - millisBefore) + ' ms');
 }
 
 
