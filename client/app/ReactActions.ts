@@ -26,7 +26,8 @@
 export var actionTypes = {
   Login: 'Login',
   Logout: 'Logout',
-  SetPageNotfLevel: 'SetPageNotfLevel'
+  SetPageNotfLevel: 'SetPageNotfLevel',
+  UpdatePost: 'UpdatePost',
 }
 
 
@@ -61,6 +62,15 @@ export function setPageNoftLevel(newNotfLevel) {
     newLevel: newNotfLevel
   });
 }
+
+
+export function updatePost(post) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.UpdatePost,
+    post: post
+  });
+}
+
 
 //------------------------------------------------------------------------------
    }

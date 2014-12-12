@@ -90,17 +90,17 @@ object ReplyController extends mvc.Controller {
     val approval = AutoApprover.perhapsApprove(pageReq)
     val multireplyPostIds = if (replyToPostIds.size == 1) Set[PostId]() else replyToPostIds
 
-    val postNoId = RawPostAction(id = PageParts.UnassignedId, postId = PageParts.UnassignedId,
+    val rawPostNoId = RawPostAction(id = PageParts.UnassignedId, postId = PageParts.UnassignedId,
       creationDati = pageReq.ctime, userIdData = pageReq.userIdData,
       payload = PAP.CreatePost(
         parentPostId = anyParentPostId, text = text,
         multireplyPostIds = multireplyPostIds, where = whereOpt, approval = approval))
 
-    val (pageWithNewPost, List(postWithId: RawPostAction[PAP.CreatePost])) =
-      pageReq.dao.savePageActionsGenNotfs(pageReq, postNoId::Nil)
+    val (pageWithNewPost, List(rawPostWithId: RawPostAction[PAP.CreatePost])) =
+      pageReq.dao.savePageActionsGenNotfs(pageReq, rawPostNoId::Nil)
 
-    val patchSpec = TreePatchSpec(postWithId.id, wholeTree = true)
-    BrowserPagePatcher(pageReq).jsonForTrees(pageWithNewPost.parts, patchSpec)
+    val post = pageWithNewPost.parts.getPost_!(rawPostWithId.id)
+    ReactJson.postToJson(post)
   }
 
 

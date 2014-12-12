@@ -169,7 +169,7 @@ object ViewPageController extends mvc.Controller {
     val rolePageSettings =
       pageReq.anyRoleId map { roleId =>
         val settings = pageReq.dao.loadRolePageSettings(roleId = roleId, pageId = page.id)
-        TemplateProgrammingInterface.rolePageSettingsToJson(settings)
+        ReactJson.rolePageSettingsToJson(settings)
       } getOrElse JsNull
 
     val json = toJson(Map(

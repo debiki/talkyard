@@ -46,6 +46,24 @@ ReactDispatcher.register(function(payload) {
       store.user.rolePageSettings.notfLevel = action.newLevel;
       break;
 
+    case ReactActions.actionTypes.UpdatePost:
+      var post = action.post;
+
+      // (Could here remove any old version of the post, if it's being moved to
+      // elsewhere in the tree.)
+
+      // Add or update the post itself.
+      store.allPosts[post.postId] = post;
+
+      // In case this is a new post, update its parent's child id list.
+      var parentPost = store.allPosts[post.parentId];
+      if (parentPost) {
+        // TODO sort by like-wrong votes.
+        parentPost.childIds.push(post.postId);
+      }
+
+      break;
+
     default:
       console.warn('Unknown action: ' + JSON.stringify(action));
       return true;
