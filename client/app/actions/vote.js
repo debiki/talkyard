@@ -69,14 +69,16 @@ function toggleVoteImpl(voteBtn, voteType) {
       success: onVoteToggled
     });
 
-  function onVoteToggled(pagePatchJson) {
-    d.i.patchPage(pagePatchJson, { replacePostHeadsOnly: true });
+  function onVoteToggled(updatedPost) {
+    debiki2.ReactActions.updatePost(updatedPost);
+
+    /* TODO highlight one's post [react]
     if (action == 'CreateVote') {
       voteBtn.addClass('dw-my-vote');
     }
     else {
       voteBtn.removeClass('dw-my-vote');
-    }
+    }*/
     //post.each(d.i.SVG.$drawParentsAndTree); -- why would this be needed?
        // -- Because elem might grow if "1 people likes this" appears, would need to redraw.
   };

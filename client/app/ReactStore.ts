@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="../typedefs/lodash/lodash.d.ts" />
+
 //------------------------------------------------------------------------------
    module debiki2 {
 //------------------------------------------------------------------------------
@@ -59,7 +61,11 @@ ReactDispatcher.register(function(payload) {
       var parentPost = store.allPosts[post.parentId];
       if (parentPost) {
         // TODO sort by like-wrong votes.
-        parentPost.childIds.push(post.postId);
+        var alreadyAChild =
+            _.find(parentPost.childIds, childId => childId === post.postId);
+        if (!alreadyAChild) {
+          parentPost.childIds.unshift(post.postId);
+        }
       }
 
       break;

@@ -126,7 +126,8 @@ object VoteController extends mvc.Controller {
         (pageReq, updatedPage.parts)
       }
 
-    val json = BrowserPagePatcher(pageReq).jsonForPost(postId, pageParts)
+    val post = pageParts.getPost_!(postId)
+    val json = ReactJson.postToJson(post)
     OkSafeJson(json)
   }
 
