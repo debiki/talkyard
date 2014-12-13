@@ -27,13 +27,7 @@ import requests.PageRequest
 object ReactJson {
 
   def pageToJson(pageReq: PageRequest[_]): JsObject = {
-    val anyUser = pageReq.user
-    val userNameJson: JsValue = safeStringOrNull(anyUser.map(_.displayName))
     val numPostsExclTitle = pageReq.page_!.postCount - (if (pageReq.page_!.titlePost.isDefined) 1 else 0)
-    val rolePageSettings = anyUser.flatMap(_.anyRoleId) map { roleId =>
-      val settings = pageReq.dao.loadRolePageSettings(roleId = roleId, pageId = pageReq.thePageId)
-      rolePageSettingsToJson(settings)
-    } getOrElse JsNull
 
     // SHOULD sort by score
     val allPostsJson = pageReq.thePage.getAllPosts.map { post =>
@@ -46,18 +40,14 @@ object ReactJson {
       "pageRole" -> JsString(pageReq.thePageRole.toString),
       "numPostsExclTitle" -> numPostsExclTitle,
       "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),
-      "user" -> Json.obj(
-        "isAdmin" -> JsBoolean(false),
-        "userId" -> safeStringOrNull(anyUser.map(_.id)),
-        "username" -> safeStringOrNull(anyUser.flatMap(_.username)),
-        "fullName" -> safeStringOrNull(anyUser.map(_.displayName)),
-        // "permsOnPage" -> d.i.Me.getPermsOnPage(),
-        "isEmailKnown" -> JsBoolean(anyUser.map(_.email.nonEmpty).getOrElse(false)),
-        "rolePageSettings" -> rolePageSettings,
-        "isAuthenticated" -> JsBoolean(anyUser.map(_.isAuthenticated).getOrElse(false))),
+      "user" -> NoUserSpecificData,
       "horizontalLayout" -> JsBoolean(true),
       "rootPostId" -> JsNumber(1),
-      "allPosts" -> JsObject(allPostsJson))
+      "allPosts" -> JsObject(allPostsJson),
+      // This stuff isn't rendered server side because then we couldn't cache
+      // the rendered html, because it would be user specific.
+      "renderLaterInBrowserOnly" -> Json.obj(
+        "user" -> userDataJson(pageReq)))
   }
 
 
@@ -89,9 +79,68 @@ object ReactJson {
   }
 
 
+  val NoUserSpecificData = Json.obj(
+    "permsOnPage" -> JsObject(Nil),
+    "rolePageSettings" -> JsObject(Nil))
+
+
+  def userDataJson(pageRequest: PageRequest[_]): JsObject = {
+    val user = pageRequest.user getOrElse {
+      return NoUserSpecificData
+    }
+
+    val rolePageSettings = user.anyRoleId map { roleId =>
+      val settings = pageRequest.dao.loadRolePageSettings(
+        roleId = roleId, pageId = pageRequest.thePageId)
+      rolePageSettingsToJson(settings)
+    } getOrElse JsNull
+
+    Json.obj(
+      "isLoggedIn" -> JsBoolean(true),
+      "isAdmin" -> JsBoolean(false),
+      "userId" -> safeJsString(user.id),
+      "username" -> safeStringOrNull(user.username),
+      "fullName" -> safeJsString(user.displayName),
+      "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
+      "isAuthenticated" -> JsBoolean(user.isAuthenticated),
+      "permsOnPage" -> permsOnPageJson(pageRequest.permsOnPage),
+      "rolePageSettings" -> rolePageSettings,
+      "votes" -> votesJson(pageRequest))
+  }
+
+
+  def permsOnPageJson(perms: PermsOnPage): JsObject = {
+    Json.obj(
+      "accessPage" -> JsBoolean(perms.accessPage),
+      "createPage" -> JsBoolean(perms.createPage),
+      "moveRenamePage" -> JsBoolean(perms.moveRenamePage),
+      "hidePageIdInUrl" -> JsBoolean(perms.hidePageIdInUrl),
+      "editPageTemplate" -> JsBoolean(perms.editPageTemplate),
+      "editPage" -> JsBoolean(perms.editPage),
+      "editAnyReply" -> JsBoolean(perms.editAnyReply),
+      "editGuestReply" -> JsBoolean(perms.editUnauReply),
+      "collapseThings" -> JsBoolean(perms.collapseThings),
+      "deleteAnyReply" -> JsBoolean(perms.deleteAnyReply),
+      "pinReplies" -> JsBoolean(perms.pinReplies))
+  }
+
+
   def rolePageSettingsToJson(settings: RolePageSettings): JsObject = {
     Json.obj(
       "notfLevel" -> safeJsString(settings.notfLevel.toString))
+  }
+
+
+  def votesJson(pageRequest: PageRequest[_]): JsObject = {
+    val userVotesMap = pageRequest.thePage.userVotesMap(pageRequest.userIdData)
+    val votesByPostId = userVotesMap map { case (postId, votes) =>
+      var voteStrs = Vector[String]()
+      if (votes.votedLike) voteStrs = voteStrs :+ "VoteLike"
+      if (votes.votedWrong) voteStrs = voteStrs :+ "VoteWrong"
+      if (votes.votedOffTopic) voteStrs = voteStrs :+ "VoteOffTopic"
+      postId.toString -> Json.toJson(voteStrs)
+    }
+    JsObject(votesByPostId.toSeq)
   }
 
 

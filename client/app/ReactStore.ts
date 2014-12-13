@@ -41,7 +41,10 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.Logout:
-      store.user = null;
+      store.user = {
+        permsOnPage: {},
+        rolePageSettings: {}
+      };
       break;
 
     case ReactActions.actionTypes.SetPageNotfLevel:
@@ -80,6 +83,12 @@ ReactDispatcher.register(function(payload) {
   // Tell the dispatcher that there were no errors:
   return true;
 });
+
+
+ReactStore.activateUserSpecificData = function() {
+  store.user = store.renderLaterInBrowserOnly.user;
+  this.emitChange();
+};
 
 
 ReactStore.allData = function() {

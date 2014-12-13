@@ -66,7 +66,6 @@ export var CommentsToolbar = createComponent({
     var store = this.state.store;
     var ui = this.state.ui;
     var user = store.user;
-    var userAuthenticated = user && user.isAuthenticated;
 
     var embeddedClass = '';
     var anyReplyBtnElem = null;
@@ -78,12 +77,12 @@ export var CommentsToolbar = createComponent({
               'Reply');
     }
 
-    var notfLevelElem = userAuthenticated && !ui.showDetails
+    var notfLevelElem = user.isAuthenticated && !ui.showDetails
       ? r.span({ className: 'dw-page-notf-level', onClick: this.onToggleDetailsClick },
           'Notifications: ' + user.rolePageSettings.notfLevel)
       : null;
 
-    var toggleDetailsBtn = userAuthenticated
+    var toggleDetailsBtn = user.isAuthenticated
       ? r.button({ className: 'dw-cmts-tlbr-open', onClick: this.onToggleDetailsClick },
           r.span({ className: (ui.showDetails ? 'icon-chevron-up' : 'icon-chevron-down') }))
       : null;

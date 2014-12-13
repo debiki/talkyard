@@ -332,6 +332,7 @@ function renderPageEtc() {
 
   steps.push(function() {
     d.i.makePinsDragsortable();
+    debiki2.ReactStore.activateUserSpecificData();
   });
 
   steps.push(function() {

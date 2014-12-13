@@ -114,23 +114,10 @@ object ViewPageController extends mvc.Controller {
 
 
   def buildUserPageDataJson(pageReq: PageRequest[_]): String = {
-    import pageReq.{permsOnPage => perms}
     val page = pageReq.page_!
     val my = pageReq.user_!
 
-    // List permissions.
-    val permsMap = Map(
-      "accessPage" -> JsBoolean(perms.accessPage),
-      "createPage" -> JsBoolean(perms.createPage),
-      "moveRenamePage" -> JsBoolean(perms.moveRenamePage),
-      "hidePageIdInUrl" -> JsBoolean(perms.hidePageIdInUrl),
-      "editPageTemplate" -> JsBoolean(perms.editPageTemplate),
-      "editPage" -> JsBoolean(perms.editPage),
-      "editAnyReply" -> JsBoolean(perms.editAnyReply),
-      "editGuestReply" -> JsBoolean(perms.editUnauReply),
-      "collapseThings" -> JsBoolean(perms.collapseThings),
-      "deleteAnyReply" -> JsBoolean(perms.deleteAnyReply),
-      "pinReplies" -> JsBoolean(perms.pinReplies))
+    val permsMap = ReactJson.permsOnPageJson(pageReq.permsOnPage)
 
     // List posts by this user, so they can be highlighted.
     val ownPostsIdsList = page.postsByUser(withId = my.id).map(_.id)
