@@ -92,9 +92,9 @@ function initFlagDialog(flagDialog, postId) {
         success: onFlagSaved
       });
 
-    function onFlagSaved(flagsPatchJson) {
+    function onFlagSaved(updatedPost) {
       flagDialog.dialog('close');
-      d.i.patchPage(flagsPatchJson);
+      debiki2.ReactActions.updatePost(updatedPost);
       alert("Thanks. You have reported it. Someone will review it and "+
         "perhaps delete it or remove parts of it.");
     }

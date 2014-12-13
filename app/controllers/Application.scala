@@ -71,7 +71,8 @@ object Application extends mvc.Controller {
     val (updatedPage, _) =
       request.dao.savePageActionsGenNotfs(pageReq, flag::Nil) // anyPrelApprovalCancellation)
 
-    val json = BrowserPagePatcher(pageReq).jsonForPost(postId, updatedPage.parts)
+    val post = updatedPage.parts.getPost_!(postId)
+    val json = ReactJson.postToJson(post)
     OkSafeJson(json)
   }
 

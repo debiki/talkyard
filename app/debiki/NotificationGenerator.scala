@@ -69,6 +69,8 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
           makeNotfForVote(action.asInstanceOf[RawPostAction[PAP.Vote]])
         case PAP.VoteOffTopic =>
           // Don't notify.
+        case flag: PAP.Flag =>
+          // SHOULD generate notfs to all/some moderators?
       }
     }
     Notifications(
