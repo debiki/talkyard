@@ -128,10 +128,10 @@ POST  /-/collapse-post          controllers.CloseCollapseController.collapsePost
 POST  /-/collapse-tree          controllers.CloseCollapseController.collapseTree
 POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 #POST  /-/reopen-tree            controllers.CloseCollapseController.reopenTree
-POST  /-/load-trees             controllers.LoadPagePartsController.loadTrees
-POST  /-/load-posts             controllers.LoadPagePartsController.loadPosts
-POST  /-/load-replies           controllers.LoadPagePartsController.loadReplies
-POST  /-/load-threads-and-trees controllers.LoadPagePartsController.loadThreadsAndTrees
+#POST  /-/load-trees             controllers.LoadPagePartsController.loadTrees
+#POST  /-/load-posts             controllers.LoadPagePartsController.loadPosts
+#POST  /-/load-replies           controllers.LoadPagePartsController.loadReplies
+#POST  /-/load-threads-and-trees controllers.LoadPagePartsController.loadThreadsAndTrees
 GET   /-/list-pages             controllers.ListController.listPages
 GET   /-/list-users             controllers.ListController.listUsers
 POST  /-/change-page-meta       controllers.PageMetaController.changeMeta

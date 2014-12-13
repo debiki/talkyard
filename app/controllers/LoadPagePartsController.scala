@@ -28,8 +28,10 @@ import Prelude._
 import BrowserPagePatcher.TreePatchSpec
 
 
-
+/*
 /** Loads parts of a page, e.g. a single comment, a tree or a thread.
+  *  *** Not currently in use, not after I ported page rendering to React,
+  *    and load JOSN for all comments at once. ***
   *
   * Use PageViewer to view a complete page however — it loads more stuff,
   * e.g. permissions and user specific data for the page.
@@ -126,4 +128,5 @@ object LoadPagePartsController extends mvc.Controller {
   }
 
 }
+*/
 
