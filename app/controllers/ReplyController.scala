@@ -27,7 +27,6 @@ import debiki.DebikiHttp._
 import play.api._
 import play.api.mvc.{Action => _, _}
 import requests._
-import BrowserPagePatcher.TreePatchSpec
 
 
 /** Handles reply form submissions. Lazily creates pages for embedded discussions

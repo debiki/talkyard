@@ -41,6 +41,8 @@ import Utils.{OkSafeJson, parseIntOrThrowBadReq}
 object EditController extends mvc.Controller {
 
 
+  /** Sends back a post's current CommonMark source to the browser.
+    */
   def loadCurrentText(pageId: String, postId: String) = GetAction { request =>
     val postIdAsInt = parseIntOrThrowBadReq(postId, "DwE1Hu80")
     val page = request.dao.loadPageParts(pageId) getOrElse
@@ -54,84 +56,29 @@ object EditController extends mvc.Controller {
 
 
   /** Edits posts.
-    *
-    * JSON format, as Yaml:
-    *  editPosts:
-    *    - pageId
-    *      postId
-    *      text
-    *    - ...more edits
     */
-  def edit = PostJsonAction(maxLength = MaxPostSize) {
-        request: JsonPostRequest =>
+  def edit = PostJsonAction(maxLength = MaxPostSize) { request: JsonPostRequest =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    val postId = (request.body \ "postId").as[PostId]
+    val newText = (request.body \ "text").as[String]
 
-    val ErrPrefix = "/-/edit: Bad JSON:"
+    val pageReqPerhapsNoMe =
+        PageRequest.forPageThatExists(request, pageId) getOrElse throwBadReq(
+          "DwE47ZI2", s"Page `$pageId' does not exist")
 
-    def getIntOrThrow(map: Map[String, JsValue], key: String): Int =
-      parseIntOrThrowBadReq(getTextOrThrow(map, key), "DwE38XU7")
+    // Include current user on the page to be edited, or it won't be
+    // possible to render the page to html, later, because the current
+    // user's name might be included in the generated html: "Edited by: ..."
+    // (but if this is the user's first contribution to the page, s/he
+    // is currently not included in the associated People).
+    val pageRequest = pageReqPerhapsNoMe.copyWithMeOnPage_!
 
-    def getTextOrThrow(map: Map[String, JsValue], key: String): String =
-      getTextOptOrThrow(map, key).getOrElse(throwBadReq(
-        "DwE390IR7", s"$ErrPrefix Entry missing: $key"))
+    _throwIfTooMuchData(newText, pageRequest)
 
-    def getTextOptOrThrow(map: Map[String, JsValue], key: String): Option[String] =
-      map.get(key).map(_ match {
-        case s: JsString => s.value
-        case x => throwBadReq("DwE77dY0", o"""$ErrPrefix Entry `$key' is no string: `$x',
-            it is a ${classNameOf(x)}""")
-      })
+    val postAfter = saveEdit(pageRequest, postId = postId, newText = newText)
 
-    val jsonBody = request.body.as[Map[String, List[Map[String, JsValue]]]]
-
-    // ----- Edit posts
-
-    val editMapsUnsorted: List[Map[String, JsValue]] =
-      jsonBody.getOrElse("editPosts", Nil)
-
-    val editMapsByPageId: Map[String, List[Map[String, JsValue]]] =
-      editMapsUnsorted.groupBy(map => getTextOrThrow(map, "pageId"))
-    var editIdsAndPages = List[(List[ActionId], PageParts)]()
-
-    for ((pageId, editMaps) <- editMapsByPageId) {
-
-      val pageReqPerhapsNoMe =
-          PageRequest.forPageThatExists(request, pageId) getOrElse throwBadReq(
-            "DwE47ZI2", s"Page `$pageId' does not exist")
-
-      // Include current user on the page to be edited, or it won't be
-      // possible to render the page to html, later, because the current
-      // user's name might be included in the generated html: "Edited by: ..."
-      // (but if this is the user's first contribution to the page, s/he
-      // is currently not included in the associated People).
-      val pageRequest = pageReqPerhapsNoMe.copyWithMeOnPage_!
-
-      var actions = List[RawPostAction[_]]()
-      var idsOfEditedPosts = List[ActionId]()
-
-      for (editMap <- editMaps) {
-        val newText = getTextOrThrow(editMap, "text")
-        val postId = getIntOrThrow(editMap, "postId")
-
-        _throwIfTooMuchData(newText, pageRequest)
-
-        _saveEdits(pageRequest, postId = postId, newText = newText) match {
-          case None =>
-            // No changes made. (newText is the current text.)
-          case Some(edit) =>
-            actions :::= edit :: Nil
-            idsOfEditedPosts ::= edit.id
-        }
-      }
-
-      val page = pageRequest.page_! ++ actions
-      editIdsAndPages ::= (idsOfEditedPosts, page)
-    }
-
-    // Show the unapproved version of this post, so any applied edits are included.
-    // (An edit suggestion, however, won't be included, until it's been applied.)
-    OkSafeJson(
-      BrowserPagePatcher(request, showAllUnapproved = true)
-        .jsonForMyEditedPosts(editIdsAndPages))
+    // TODO [react] Let JS code show unapproved posts written by current user.
+    OkSafeJson(ReactJson.postToJson(postAfter))
   }
 
 
@@ -152,18 +99,15 @@ object EditController extends mvc.Controller {
   }
 
 
-  /** Saves an edit in the database.
-    * Returns 1) any lazily created post, and 2) the edit that was saved.
-    * Returns None if no changes was made (if old text == new text).
+  /** Saves an edit in the database. Returns the edited post.
     */
-  private def _saveEdits(pageReq: PageRequest[_],
-        postId: ActionId, newText: String): Option[RawPostAction[_]] = {
+  private def saveEdit(pageReq: PageRequest[_],
+        postId: PostId, newText: String): Post = {
 
-    val post = pageReq.page_!.getPost(postId) getOrElse
-      throwNotFound("DwE3k2190", s"Post not found: $postId")
+    val post = pageReq.thePage.thePost(postId)
 
     if (newText == post.currentText)
-      return None
+      return post
 
     val patchText = makePatch(from = post.currentText, to = newText)
 
@@ -190,9 +134,9 @@ object EditController extends mvc.Controller {
       text = patchText, approval = approval, autoApplied = mayEdit)
 
     val actions = edit :: Nil
-    val (_, actionsWithIds) = pageReq.dao.savePageActionsGenNotfs(pageReq, actions)
-
-    Some(actionsWithIds.last)
+    val (pageAfter, _) = pageReq.dao.savePageActionsGenNotfs(pageReq, actions)
+    val postAfter = pageAfter.parts.thePost(postId)
+    postAfter
   }
 
 

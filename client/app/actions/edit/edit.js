@@ -92,9 +92,10 @@ d.i.handleEditResult = function(data) {
 };
 
 
-function doHandleEditResult(data) {
-  d.i.patchPage(data);
-  var postId = data.postsByPageId[d.i.pageId][0].postId;
+function doHandleEditResult(editedPost) {
+  debiki2.ReactActions.updatePost(editedPost);
+
+  // OLD DELETE this can be deleted rigth? I create pages directly nowadays, not lazily:
   // In case the page was just created lazily when the edits were saved,
   // tell AngularJS to update the page as appropriately,
   // e.g. show certain buttons in the admin dashbar.

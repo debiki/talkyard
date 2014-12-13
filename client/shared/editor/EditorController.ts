@@ -161,11 +161,9 @@ class EditorController {
 
   private saveEdits() {
     var data = {
-      editPosts: [{
-        pageId: d.i.pageId,
-        postId: '' + this.$scope.editingPostId, // COULD stop requiring a number
-        text: this.$scope.text
-      }]
+      pageId: d.i.pageId,
+      postId: this.$scope.editingPostId,
+      text: this.$scope.text
     };
     this.editorService.saveEdits(data).then(() => {
       this.closeEditor();
