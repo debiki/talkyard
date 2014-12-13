@@ -84,15 +84,13 @@ object EditHistoryController extends mvc.Controller {
     actions = actions.reverse
 
     val (updatedPage, editApps) = _applyAndUndoEdits(actions, pageReq)
+
     val postIds = editApps.map(_.postId).distinct
+    dieIf(postIds.length != 1, "DwE5KEFF3", s"Applied edits for ${postIds.length} posts??")
+    val postId = postIds.head
 
-    // Currently improvements are submitted for one post at a time.
-    assert(postIds.length <= 1, "DwE44BKZ3")
-    val postId = postIds.headOption getOrDie "DwE55EGf0"
-
-    OkSafeJson(
-      BrowserPagePatcher(request, showAllUnapproved = true)
-        .jsonForPost(postId, updatedPage.parts))
+    val editedPost = updatedPage.parts.thePost(postId)
+    OkSafeJson(ReactJson.postToJson(editedPost))
   }
 
 

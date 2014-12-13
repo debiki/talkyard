@@ -55,6 +55,8 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
             makeNotfsForEdits(action.postId)
           }
           // else: wait until approved
+        case editApp: PAP.EditApp =>
+          // If also approved, COULD notify edit author that the edits have now been applied.
         case payload: PAP.ApprovePost =>
           val oldPost = oldPageParts.getPost(action.postId)
           val oldAlreadyApproved = oldPost.map(_.someVersionApproved) == Some(true)

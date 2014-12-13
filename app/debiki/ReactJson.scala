@@ -78,6 +78,7 @@ object ReactJson {
       "numLikeVotes" -> JsNumber(post.numLikeVotes),
       "numWrongVotes" -> JsNumber(post.numWrongVotes),
       "numOffTopicVotes" -> JsNumber(post.numOffTopicVotes),
+      "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions),
       "isTreeDeleted" -> JsBoolean(post.isTreeDeleted),
       "isPostDeleted" -> JsBoolean(post.isPostDeleted),
       "isTreeCollapsed" -> JsBoolean(post.isTreeCollapsed),
