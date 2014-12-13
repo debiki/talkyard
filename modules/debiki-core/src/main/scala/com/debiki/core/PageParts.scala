@@ -427,6 +427,8 @@ case class PageParts (
     PageParts.isArticleOrConfigPostId(post.id)
   }).length
 
+  def thePost(postId: PostId): Post = getPost_!(postId)
+
   def getPost_!(postId: PostId): Post =
     getPost(postId).getOrElse(runErr(
       "DwE3kR49", s"Post `$postId' not found on page `$id'"))

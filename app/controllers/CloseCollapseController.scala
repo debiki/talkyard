@@ -28,7 +28,6 @@ import play.api._
 import play.api.libs.json._
 import requests.JsonPostRequest
 import Utils.ValidationImplicits._
-import BrowserPagePatcher.TreePatchSpec
 
 
 /** Closes and collapses trees and posts.
@@ -52,33 +51,20 @@ object CloseCollapseController extends mvc.Controller {
 
 
   private def closeOrReopenTree(apiReq: JsonPostRequest, payload: PostActionPayload): mvc.Result = {
-
     if (!apiReq.user_!.isAdmin)
       throwForbidden("DwE95Xf2", "Insufficient permissions to close and reopen threads")
 
-    // Play throws java.util.NoSuchElementException: key not found: pageId
-    // and e.g. new RuntimeException("String expected")
-    // on invalid JSON structure. COULD in some way convert to 400 Bad Request
-    // instead of failing with 500 Internal Server Error in Prod mode.
-    val pageActionIds = apiReq.body.as[List[Map[String, String]]]
+    val pageId = (apiReq.body \ "pageId").as[PageId]
+    val postId = (apiReq.body \ "postId").as[PostId]
 
-    val actionsByPageId = Utils.parsePageActionIds(pageActionIds) { actionId =>
-      RawPostAction(PageParts.UnassignedId, apiReq.ctime, payload, postId = actionId,
-        userIdData = apiReq.userIdData)
-    }
+    val newRawAction = RawPostAction(PageParts.UnassignedId, apiReq.ctime, payload,
+      postId = postId, userIdData = apiReq.userIdData)
 
-    var pagesAndPatchSpecs = List[(PageParts, List[TreePatchSpec])]()
+    val (pageWithNewActions, _) =
+        apiReq.dao.savePageActionsGenNotfs(pageId, newRawAction::Nil, apiReq.meAsPeople_!)
 
-    actionsByPageId foreach { case (pageId, actions) =>
-      val (pageWithNewActions, _) =
-        apiReq.dao.savePageActionsGenNotfs(pageId, actions, apiReq.meAsPeople_!)
-
-      val patchSpecs = actions.map(a => TreePatchSpec(a.postId, wholeTree = true))
-      pagesAndPatchSpecs ::= (pageWithNewActions.parts, patchSpecs)
-    }
-
-    OkSafeJson(
-      BrowserPagePatcher(apiReq).jsonForTrees(pagesAndPatchSpecs))
+    val post = pageWithNewActions.parts.thePost(postId)
+    OkSafeJson(ReactJson.postToJson(post))
   }
 
 }

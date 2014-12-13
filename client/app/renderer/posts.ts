@@ -155,16 +155,23 @@ var Thread = createComponent({
     var deeper = this.props.depth + 1;
     var depthClass = 'dw-depth-' + this.props.depth;
 
-    var children = post.childIds.map((childId) => {
-      return (
-        r.li({},
-          Thread({ allPosts: this.props.allPosts, postId: childId, depth: deeper })));
-    });
+    var children = [];
+    if (!post.isTreeCollapsed && !post.isTreeDeleted) {
+      children = post.childIds.map((childId) => {
+        return (
+          r.li({},
+            Thread({ allPosts: this.props.allPosts, postId: childId, depth: deeper })));
+      });
+    }
+
+    var actions = isCollapsed(post)
+      ? null
+      : actions = PostActions({ post: post });
 
     return (
       r.div({ className: 'dw-t ' + depthClass },
         Post({ post: post }),
-        PostActions({ post: post }),
+        actions,
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
             children))));
@@ -175,11 +182,30 @@ var Thread = createComponent({
 var Post = createComponent({
   render: function() {
     var post = this.props.post;
-    var authorUrl = '/-/users/#/id/' + post.authorId;
+
+    var headerElem;
+    var bodyElem;
+    var extraClasses = '';
+
+    if (post.isTreeDeleted || post.isPostDeleted) {
+      var what = post.isTreeDeleted ? 'Thread' : 'Comment';
+      headerElem = r.div({ className: 'dw-p-hd' }, what, ' deleted');
+      extraClasses += ' dw-p-dl';
+    }
+    else if (post.isTreeCollapsed || post.isPostCollapsed) {
+      var what = post.isTreeCollapsed ? 'more comments' : 'this comment';
+      bodyElem = r.a({ className: 'dw-z' }, 'Click to show ', what);
+      extraClasses += ' dw-zd';
+    }
+    else {
+      headerElem = PostHeader({ post: post });
+      bodyElem = PostBody({ post: post });
+    }
+
     return (
-      r.div({ className: 'dw-p', id: 'post-' + post.postId },
-        PostHeader({ post: post }),
-        PostBody({ post: post })));
+      r.div({ className: 'dw-p' + extraClasses, id: 'post-' + post.postId },
+        headerElem,
+        bodyElem));
   }
 });
 
@@ -268,8 +294,11 @@ var PostActions = createComponent({
   render: function() {
     var post = this.props.post;
 
+    var deletedOrCollapsed =
+      post.isPostDeleted || post.isTreeDeleted || post.isPostCollapsed || post.isTreeCollapsed;
+
     var replyLikeWrongLinks = null;
-    if (!post.isDeletedSomehow) {
+    if (!deletedOrCollapsed) {
       // They float right, so they're placed in reverse order.
       replyLikeWrongLinks = [
         r.a({ className: 'dw-a dw-a-wrong icon-warning',
@@ -318,19 +347,19 @@ var PostActions = createComponent({
     // if there is one already. Instead, show a link you can click to upvote
     // the existing suggestion:
 
-    if (!post.isTreeCollapsed && post.numCollapseTreeVotesPro == 0)
+    if (!post.isTreeCollapsed && !post.numCollapseTreeVotesPro)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-collapse-tree icon-collapse' }, 'Collapse tree'));
 
-    if (!post.isPostCollapsed && post.numCollapsePostVotesPro == 0)
+    if (!post.isPostCollapsed && !post.numCollapsePostVotesPro)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-collapse-post icon-collapse' }, 'Collapse post'));
 
-    if (post.isTreeCollapsed && post.numUncollapseTreeVotesPro == 0)
+    if (post.isTreeCollapsed && !post.numUncollapseTreeVotesPro)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-uncollapse-tree' }, 'Uncollapse tree'));
 
-    if (post.isPostCollapsed && post.numUncollapsePostVotesPro == 0)
+    if (post.isPostCollapsed && !post.numUncollapsePostVotesPro)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-uncollapse-post' }, 'Uncollapse post'));
 
@@ -365,7 +394,7 @@ var PostActions = createComponent({
             post.numDeleteTreeVotesPro, '–', post.numDeleteTreeVotesCon));
     }
 
-    if (post.numDeleteTreeVotesPro == 0 || post.numDeletePostVotesPro == 0) {
+    if (post.numDeleteTreeVotesPro == 0 || !post.numDeletePostVotesPro) {
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-delete icon-trash' }, 'Delete'));
     }
@@ -388,6 +417,11 @@ var PostActions = createComponent({
 
 function horizontalCss(horizontal) {
     return horizontal ? ' dw-hz' : '';
+}
+
+
+function isCollapsed(post) {
+  return post.isTreeCollapsed || post.isPostCollapsed;
 }
 
 

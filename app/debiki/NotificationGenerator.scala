@@ -71,6 +71,12 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
           // Don't notify.
         case flag: PAP.Flag =>
           // SHOULD generate notfs to all/some moderators?
+        case pin: PAP.PinPostAtPosition =>
+          // Don't notify.
+        case PAP.CollapsePost | PAP.CollapseTree | PAP.CloseTree =>
+          // Don't notify.
+        case _: PAP.DeletePost | PAP.DeleteTree =>
+          // Don't notify.
       }
     }
     Notifications(

@@ -78,6 +78,11 @@ object ReactJson {
       "numLikeVotes" -> JsNumber(post.numLikeVotes),
       "numWrongVotes" -> JsNumber(post.numWrongVotes),
       "numOffTopicVotes" -> JsNumber(post.numOffTopicVotes),
+      "isTreeDeleted" -> JsBoolean(post.isTreeDeleted),
+      "isPostDeleted" -> JsBoolean(post.isPostDeleted),
+      "isTreeCollapsed" -> JsBoolean(post.isTreeCollapsed),
+      "isPostCollapsed" -> JsBoolean(post.isPostCollapsed),
+      "isTreeClosed" -> JsBoolean(post.isTreeClosed),
       "childIds" -> JsArray(post.replies.map(reply => JsNumber(reply.id))),
       "text" -> safeStringOrNull(post.approvedText)))
   }
