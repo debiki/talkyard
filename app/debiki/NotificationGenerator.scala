@@ -65,8 +65,10 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
           else {
             makeNotfsForNewPost(action.postId, anyApproverId = Some(action.userId))
           }
-        case PAP.VoteLike =>
+        case PAP.VoteLike | PAP.VoteWrong =>
           makeNotfForVote(action.asInstanceOf[RawPostAction[PAP.Vote]])
+        case PAP.VoteOffTopic =>
+          // Don't notify.
       }
     }
     Notifications(

@@ -238,8 +238,8 @@ var PostHeader = createComponent({
     }
     if (post.numOffTopicVotes) {
       if (voteInfo.length > 0) voteInfo += ', ';
-      voteInfo += numPeople(post.numWrongVotes) +
-          (post.numWrongVotes == 1 ? 'thinks' : 'think') + thisComment() + 'is off-topic';
+      voteInfo += numPeople(post.numOffTopicVotes) +
+          (post.numOffTopicVotes == 1 ? 'thinks' : 'think') + thisComment() + 'is off-topic';
     }
     if (voteInfo) voteInfo += '.';
 
@@ -272,7 +272,7 @@ var PostActions = createComponent({
     if (!post.isDeletedSomehow) {
       // They float right, so they're placed in reverse order.
       replyLikeWrongLinks = [
-        r.a({ className: 'dw-a dw-a-warning icon-warning',
+        r.a({ className: 'dw-a dw-a-wrong icon-warning',
           title: 'Click if you think this post is wrong' }, 'Wrong'),
         r.a({ className: 'dw-a dw-a-like icon-heart', title: 'Like this' }, 'Like'),
         r.a({ className: 'dw-a dw-a-reply icon-reply' }, 'Reply')];
