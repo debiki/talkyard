@@ -50,6 +50,17 @@ object ReactRenderer {
     new java.util.concurrent.LinkedBlockingDeque[js.ScriptEngine](999)
 
 
+  def startCreatingRenderEngines() {
+    dieIf(!javascriptEngines.isEmpty, "DwE50KFE2")
+    scala.concurrent.Future {
+      val numCores = 1 //Runtime.getRuntime.availableProcessors
+      for (i <- 1 to numCores) {
+        javascriptEngines.putLast(makeJavascriptEngine())
+      }
+    }
+  }
+
+
   def renderPage(initialStateJson: String): String = {
     withJavascriptEngine(engine => {
       val timeBefore = (new ju.Date).getTime
@@ -191,13 +202,5 @@ object ReactRenderer {
     |  initialStateJson = json;
     |}
     |"""
-
-
-  scala.concurrent.Future {
-    val numCores = Runtime.getRuntime.availableProcessors
-    for (i <- 1 to numCores) {
-      javascriptEngines.putLast(makeJavascriptEngine())
-    }
-  }
 
 }

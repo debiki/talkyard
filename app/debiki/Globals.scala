@@ -102,6 +102,8 @@ class Globals {
     state.systemDao.applyEvolutions()
     state.quotaManager.scheduleCleanups()
 
+    debiki.ReactRenderer.startCreatingRenderEngines()
+
     // For now, disable in dev mode — because of the port conflict that
     // causes an error on reload and restart, see below (search for "conflict").
     /*
