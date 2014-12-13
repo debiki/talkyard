@@ -278,14 +278,108 @@ var PostActions = createComponent({
         r.a({ className: 'dw-a dw-a-reply icon-reply' }, 'Reply')];
     }
 
+    var moreLinks = [];
+
+    moreLinks.push(
+        r.a({ className: 'dw-a dw-a-offtopic icon-split',
+            title: 'Click if you think this post is off-topic' }, 'Off-Topic'));
+
+    moreLinks.push(
+        r.a({ className: 'dw-a dw-a-flag icon-flag' }, 'Report'));
+
+    moreLinks.push(
+        r.a({ className: 'dw-a dw-a-pin icon-pin' }, 'Pin'));
+
+    var suggestionsOld = [];
+    var suggestionsNew = [];
+
+    if (post.numPendingEditSuggestions > 0)
+      suggestionsNew.push(
+          r.a({ className: 'dw-a dw-a-edit icon-edit dw-a-pending-review',
+           title: 'View edit suggestions' }, '×', post.numPendingEditSuggestions));
+
+    // TODO [react]
+    // suggestionsNew.push(renderUncollapseSuggestions(post))
+
+    if (!post.isPostCollapsed && post.numCollapsePostVotesPro > 0)
+      suggestionsNew.push(
+        r.a({ className:'dw-a dw-a-collapse-suggs icon-collapse-post dw-a-pending-review',
+          title: 'Vote for or against collapsing this comment' }, '×',
+            post.numCollapsePostVotesPro, '–', post.numCollapsePostVotesCon));
+
+    if (!post.isTreeCollapsed && post.numCollapseTreeVotesPro > 0)
+      suggestionsNew.push(
+        r.a({ className: 'dw-a dw-a-collapse-suggs icon-collapse-tree dw-a-pending-review',
+          title: 'Vote for or against collapsing this whole thread' }, '×',
+            post.numCollapseTreeVotesPro, '–', post.numCollapseTreeVotesCon));
+
+    // People should upvote any already existing suggestion, not create
+    // new ones, so don't include any action link for creating a new suggestion,
+    // if there is one already. Instead, show a link you can click to upvote
+    // the existing suggestion:
+
+    if (!post.isTreeCollapsed && post.numCollapseTreeVotesPro == 0)
+      moreLinks.push(
+        r.a({ className: 'dw-a dw-a-collapse-tree icon-collapse' }, 'Collapse tree'));
+
+    if (!post.isPostCollapsed && post.numCollapsePostVotesPro == 0)
+      moreLinks.push(
+        r.a({ className: 'dw-a dw-a-collapse-post icon-collapse' }, 'Collapse post'));
+
+    if (post.isTreeCollapsed && post.numUncollapseTreeVotesPro == 0)
+      moreLinks.push(
+        r.a({ className: 'dw-a dw-a-uncollapse-tree' }, 'Uncollapse tree'));
+
+    if (post.isPostCollapsed && post.numUncollapsePostVotesPro == 0)
+      moreLinks.push(
+        r.a({ className: 'dw-a dw-a-uncollapse-post' }, 'Uncollapse post'));
+
+    // ----- Close links
+
+    if (post.isTreeClosed) {
+      moreLinks.push(
+        r.a({ className: 'dw-a dw-a-reopen-tree' }, 'Reopen'));
+    }
+    else {
+      moreLinks.push(
+        r.a({ className: 'dw-a dw-a-close-tree icon-archive' }, 'Close'));
+    }
+
+    // ----- Move links
+
+    // ? <a class="dw-a dw-a-move">Move</a>
+
+    // ----- Delete links
+
+    if (!post.isPostDeleted && post.numDeletePostVotesPro > 0) {
+      suggestionsNew.push(
+        r.a({ className: 'dw-a dw-a-delete-suggs icon-delete-post dw-a-pending-review',
+          title: 'Vote for or against deleting this comment' }, '×',
+            post.numDeletePostVotesPro, '–', post.numDeletePostVotesCon));
+    }
+
+    if (!post.isTreeDeleted && post.numDeleteTreeVotesPro > 0) {
+      suggestionsNew.push(
+        r.a({ className: 'dw-a dw-a-delete-suggs icon-delete-tree dw-a-pending-review',
+          title: 'Vote for or against deleting this whole thread' }, '×',
+            post.numDeleteTreeVotesPro, '–', post.numDeleteTreeVotesCon));
+    }
+
+    if (post.numDeleteTreeVotesPro == 0 || post.numDeletePostVotesPro == 0) {
+      moreLinks.push(
+        r.a({ className: 'dw-a dw-a-delete icon-trash' }, 'Delete'));
+    }
+
     var moreDropdown =
       r.span({ className: 'dropdown navbar-right dw-a' },
         r.a({ className: 'dw-a-more', 'data-toggle': 'dropdown' }, 'More'),
-        r.a({ className: 'dropdown-menu dw-p-as-more' },
-          r.p({}, 'moreActionLinks...')));
+        r.div({ className: 'dropdown-menu dw-p-as-more' },
+          moreLinks));
 
     return (
       r.div({ className: 'dw-p-as dw-as' },
+        suggestionsNew,
+        suggestionsOld,
         moreDropdown,
         replyLikeWrongLinks));
   }
