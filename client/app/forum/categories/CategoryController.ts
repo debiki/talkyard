@@ -33,6 +33,9 @@ class CategoryController {
     $scope.selectedCategories = categoryService.selectedCategories;
     $scope.allMainCategories = categoryService.allMainCategories;
     $scope.mv = this;
+
+    // I'll port all AngularJS stuff to React later on. For now:
+    $scope.currentUser = debiki2.ReactStore.getUser();
   }
 
 

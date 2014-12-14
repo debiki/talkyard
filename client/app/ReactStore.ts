@@ -103,6 +103,11 @@ ReactStore.getUser = function() {
 };
 
 
+ReactStore.getCategories = function() {
+  return store.categories;
+};
+
+
 ReactStore.emitChange = function() {
   this.emit(ChangeEvent);
 };

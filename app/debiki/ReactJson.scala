@@ -40,6 +40,7 @@ object ReactJson {
       "pageRole" -> JsString(pageReq.thePageRole.toString),
       "numPostsExclTitle" -> numPostsExclTitle,
       "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),
+      "categories" -> categoriesJson(pageReq),
       "user" -> NoUserSpecificData,
       "horizontalLayout" -> JsBoolean(true),
       "rootPostId" -> JsNumber(1),
@@ -168,6 +169,22 @@ object ReactJson {
     })
 
     json
+  }
+
+
+  def categoriesJson(request: PageRequest[_]): JsArray = {
+    if (request.pageRole != Some(PageRole.Forum))
+      return JsArray(Nil)
+
+    val categories: Seq[Category] = request.dao.loadCategoryTree(request.thePageId)
+    val categoriesJson = JsArray(categories map { category =>
+      JsObject(Seq(
+        "name" -> JsString(category.categoryName),
+        "pageId" -> JsString(category.pageId),
+        "slug" -> JsString(controllers.ForumController.categoryNameToSlug(category.categoryName)),
+        "subCategories" -> JsArray()))
+    })
+    categoriesJson
   }
 
 

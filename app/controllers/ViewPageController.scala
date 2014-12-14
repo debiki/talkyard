@@ -58,39 +58,8 @@ object ViewPageController extends mvc.Controller {
 
 
   def viewPostImpl(pageReq: PageGetRequest) = {
-    val pageDataJson = buildPageDataJosn(pageReq)
-    // If not logged in, then include an empty user data tag, so the browser
-    // notices that it got something, and won't call GET ?page-info.
-    val dataNodes = <span>
-      <pre id="dw-page-data">{ pageDataJson }</pre>
-      </span>
-    val pageHtml = pageReq.dao.renderTemplate(pageReq, appendToBody = dataNodes)
+    val pageHtml = pageReq.dao.renderTemplate(pageReq)
     Ok(pageHtml) as HTML
-  }
-
-
-  /** Generates JSON like this: (illustrated in Yaml)
-    *   categories:
-    *    - name: "Category Name",
-    *      pageId: "123abc",
-    *      subCategories: []
-    *    - ...
-    *    - ...
-    * Currently no sub categories are included.
-    */
-  def buildPageDataJosn(pageReq: PageRequest[_]): String = {
-    if (pageReq.pageRole != Some(PageRole.Forum))
-      return ""
-
-    val categories: Seq[Category] = pageReq.dao.loadCategoryTree(pageReq.thePageId)
-    val categoriesJson = categories map { category =>
-      JsObject(Seq(
-        "name" -> JsString(category.categoryName),
-        "pageId" -> JsString(category.pageId),
-        "slug" -> JsString(ForumController.categoryNameToSlug(category.categoryName)),
-        "subCategories" -> JsArray()))
-    }
-    Json.obj("categories" -> categoriesJson).toString
   }
 
 }
