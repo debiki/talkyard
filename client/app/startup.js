@@ -58,7 +58,7 @@ function findRootPostId() {
 // at once on page load.)
 // Call on posts.
 d.i.$initPostAndParentThread = function() {
-  d.i.bindActionAndFoldLinksForSinglePost(this);
+  //d.i.bindActionAndFoldLinksForSinglePost(this);
   d.i.$initPost.apply(this);
   $initStep4.apply(this);
 };
@@ -77,12 +77,12 @@ d.i.$initPost = function() {
 
 
 function initStep1() {
-  d.i.bindActionLinksForAllPosts();
+  //d.i.bindActionLinksForAllPosts();
 };
 
 
 function $initStep2() {
-  d.i.shohwActionLinksOnHoverPost(this);
+  //d.i.shohwActionLinksOnHoverPost(this);
   // d.i.placeInlineThreadsForPost(this);
 };
 
@@ -290,9 +290,9 @@ function renderPageEtc() {
   steps.push(function() {
     $posts.each($initStep2)
     // Show root post actions initially.
-    $('.dw-depth-0 > .dw-p-as').removeClass('dw-p-as-dimmed').attr('id', 'dw-p-as-shown');
+    $('.dw-depth-0 > .dw-p-as').addClass('dw-p-as-shown').attr('id', 'dw-p-as-shown');
     // Don't dim any horizontal root post reply button.
-    $('.dw-p-as-hz-reply').removeClass('dw-p-as-dimmed');
+    $('.dw-p-as-hz-reply').addClass('dw-p-as-shown');
   });
 
   steps.push(function() {

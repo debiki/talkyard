@@ -163,6 +163,11 @@ var RootPost = createComponent({
 
 
 var Thread = createComponent({
+  onPostMouseEnter: function() {
+    if (this.refs.actions) {
+      this.refs.actions.showActions();
+    }
+  },
   render: function() {
     var post = this.props.allPosts[this.props.postId];
     var deeper = this.props.depth + 1;
@@ -184,11 +189,11 @@ var Thread = createComponent({
 
     var actions = isCollapsed(post)
       ? null
-      : actions = PostActions({ post: post, user: this.props.user });
+      : actions = PostActions({ post: post, user: this.props.user, ref: 'actions' });
 
     return (
       r.div({ className: 'dw-t ' + depthClass },
-        Post({ post: post, user: this.props.user }),
+        Post({ post: post, user: this.props.user, onMouseEnter: this.onPostMouseEnter }),
         actions,
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
@@ -237,7 +242,8 @@ var Post = createComponent({
     }
 
     return (
-      r.div({ className: 'dw-p' + extraClasses, id: 'post-' + post.postId },
+      r.div({ className: 'dw-p' + extraClasses, id: 'post-' + post.postId,
+            onMouseEnter: this.props.onMouseEnter },
         pendingApprovalElem,
         headerElem,
         bodyElem));
@@ -326,6 +332,9 @@ var PostBody = createComponent({
 
 
 var PostActions = createComponent({
+  showActions: function() {
+    debiki.internal.showPostActions(this.getDOMNode());
+  },
   onReplyClick: function(event) {
     debiki.internal.$showReplyForm.call(event.target, event);
   },
@@ -499,7 +508,7 @@ var PostActions = createComponent({
           moreLinks));
 
     return (
-      r.div({ className: 'dw-p-as dw-as' },
+      r.div({ className: 'dw-p-as dw-as', onMouseEnter: this.showActions },
         suggestionsNew,
         suggestionsOld,
         moreDropdown,
