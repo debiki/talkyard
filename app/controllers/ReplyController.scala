@@ -99,7 +99,7 @@ object ReplyController extends mvc.Controller {
       pageReq.dao.savePageActionsGenNotfs(pageReq, rawPostNoId::Nil)
 
     val post = pageWithNewPost.parts.getPost_!(rawPostWithId.id)
-    ReactJson.postToJson(post)
+    ReactJson.postToJson(post, includeUnapproved = true)
   }
 
 

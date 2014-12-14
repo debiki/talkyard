@@ -44,7 +44,8 @@ ReactDispatcher.register(function(payload) {
       store.user = {
         permsOnPage: {},
         rolePageSettings: {},
-        votes: {}
+        votes: {},
+        unapprovedPosts: {},
       };
       break;
 
@@ -53,25 +54,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.UpdatePost:
-      var post = action.post;
-
-      // (Could here remove any old version of the post, if it's being moved to
-      // elsewhere in the tree.)
-
-      // Add or update the post itself.
-      store.allPosts[post.postId] = post;
-
-      // In case this is a new post, update its parent's child id list.
-      var parentPost = store.allPosts[post.parentId];
-      if (parentPost) {
-        // TODO sort by like-wrong votes.
-        var alreadyAChild =
-            _.find(parentPost.childIds, childId => childId === post.postId);
-        if (!alreadyAChild) {
-          parentPost.childIds.unshift(post.postId);
-        }
-      }
-
+      updatePost(action.post);
       break;
 
     default:
@@ -88,6 +71,10 @@ ReactDispatcher.register(function(payload) {
 
 ReactStore.activateUserSpecificData = function() {
   store.user = store.renderLaterInBrowserOnly.user;
+  // Show the user's own unapproved posts, or all, for admins.
+  _.each(store.renderLaterInBrowserOnly.user.unapprovedPosts, (post) => {
+    updatePost(post);
+  });
   this.emitChange();
 };
 
@@ -126,6 +113,26 @@ export var StoreListenerMixin = {
     ReactStore.removeChangeListener(this.onChange);
   }
 };
+
+
+function updatePost(post) {
+  // (Could here remove any old version of the post, if it's being moved to
+  // elsewhere in the tree.)
+
+  // Add or update the post itself.
+  store.allPosts[post.postId] = post;
+
+  // In case this is a new post, update its parent's child id list.
+  var parentPost = store.allPosts[post.parentId];
+  if (parentPost) {
+    // TODO sort by like-wrong votes.
+    var alreadyAChild =
+        _.find(parentPost.childIds, childId => childId === post.postId);
+    if (!alreadyAChild) {
+      parentPost.childIds.unshift(post.postId);
+    }
+  }
+}
 
 
 //------------------------------------------------------------------------------

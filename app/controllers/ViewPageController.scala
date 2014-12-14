@@ -119,26 +119,6 @@ object ViewPageController extends mvc.Controller {
 
     val permsMap = ReactJson.permsOnPageJson(pageReq.permsOnPage)
 
-    // Generate html for any posts-by-this-user that are pending approval. Plus info
-    // on ancestor post ids, so the browser knows where to insert the html.
-    val postsOfInterest = if (my.isAdmin) page.getAllPosts else page.postsByUser(my.id)
-    // If the post hasn't been approved at all, it's not present on the page, and
-    // we need to patch the page with the whole thread.
-    val pendingThreads = postsOfInterest filter { post =>
-      !post.someVersionApproved
-    }
-    // If the post has been approved, it's already included on the page and we don't
-    // want to overwrite the whole thread including replies, only update the post itself.
-    val pendingPosts = postsOfInterest filter { post =>
-      post.someVersionApproved && !post.currentVersionApproved
-    }
-    val pendingThreadsJsPatches: Seq[BrowserPagePatcher.JsPatch] =
-      BrowserPagePatcher(pageReq).jsonForTreePatches(page, pendingThreads.map(_.id))
-    val pendingPostsJsPatches: Seq[BrowserPagePatcher.JsPatch] =
-      pendingPosts map { post =>
-        BrowserPagePatcher(pageReq).jsonForPost(post)
-      }
-
     val rolePageSettings =
       pageReq.anyRoleId map { roleId =>
         val settings = pageReq.dao.loadRolePageSettings(roleId = roleId, pageId = page.id)
@@ -148,14 +128,6 @@ object ViewPageController extends mvc.Controller {
     val json = toJson(Map(
       "isAdmin" -> toJson(pageReq.user.map(_.isAdmin).getOrElse(false)),
       "permsOnPage" -> toJson(permsMap),
-      // Suddenly using a by-page-id map is a bit weird, but what debiki-patch-page.ls
-      // currently expects. Could map *everything* in the page id instead?
-      // (Background: This is supposed to work on e.g. pages that lists many blog posts,
-      // i.e. many pages.)
-      "postsByPageId" -> toJson(Map(
-          page.id -> toJson(pendingPostsJsPatches))),
-      "threadsByPageId" -> toJson(Map(
-          page.id -> toJson(pendingThreadsJsPatches))),
       "rolePageSettings" -> rolePageSettings))
 
     if (Play.isDev) Json.prettyPrint(json)

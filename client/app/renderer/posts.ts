@@ -99,12 +99,15 @@ var TitleBodyComments = createComponent({
 var Title = createComponent({
   render: function() {
     var titlePost = this.props.allPosts[TitleId];
+    var titleText = titlePost.isApproved
+        ? titlePost.text
+        : r.i({}, '(Title pending approval)');
     return (
       r.div({ className: 'dw-t', id: 'dw-t-0' },
         r.div({ className: 'dw-p dw-p-ttl', id: 'post-0' },
           r.div({ className: 'dw-p-bd' },
             r.div({ className: 'dw-p-bd-blk' },
-              r.h1({ className: 'dw-p-ttl' }, titlePost.text))))));
+              r.h1({ className: 'dw-p-ttl' }, titleText))))));
   },
 });
 
@@ -139,11 +142,15 @@ var RootPost = createComponent({
           })));
     });
 
+    var rootPostText = rootPost.isApproved
+        ? rootPost.text
+        : r.i({}, '(Text pending approval.)');
+
     return (
       r.div({ className: threadClass },
         r.div({ className: postClass, id: postIdAttr },
           r.div({ className: postBodyClass },
-            r.div({ className: 'dw-p-bd-blk' }, rootPost.text))),
+            r.div({ className: 'dw-p-bd-blk' }, rootPostText))),
         PostActions({ post: rootPost, user: this.props.user }),
         debiki2.reactelements.CommentsToolbar(),
         spaceForHorizontalArrows,
@@ -192,7 +199,9 @@ var Thread = createComponent({
 var Post = createComponent({
   render: function() {
     var post = this.props.post;
+    var user = this.props.user;
 
+    var pendingApprovalElem;
     var headerElem;
     var bodyElem;
     var extraClasses = '';
@@ -207,13 +216,23 @@ var Post = createComponent({
       bodyElem = r.a({ className: 'dw-z' }, 'Click to show ', what);
       extraClasses += ' dw-zd';
     }
+    else if (!post.isApproved && !post.text) {
+      headerElem = r.div({ className: 'dw-p-hd' }, 'Hidden comment pending approval, posted ',
+            moment(post.createdAt).from(this.props.now), '.');
+      extraClasses += ' dw-p-unapproved';
+    }
     else {
+      if (!post.isApproved) {
+        var someones = post.authorId === user.userId ? 'Your' : 'The';
+        pendingApprovalElem = r.i({}, someones, ' comment below is pending approval.');
+      }
       headerElem = PostHeader(this.props);
       bodyElem = PostBody(this.props);
     }
 
     return (
       r.div({ className: 'dw-p' + extraClasses, id: 'post-' + post.postId },
+        pendingApprovalElem,
         headerElem,
         bodyElem));
   }
@@ -303,6 +322,10 @@ var PostBody = createComponent({
 var PostActions = createComponent({
   render: function() {
     var post = this.props.post;
+
+    if (!post.isApproved && !post.text)
+      return null;
+
     var user = this.props.user;
     var isOwnPost = post.authorId === user.userId;
     var votes = user.votes[post.postId] || [];

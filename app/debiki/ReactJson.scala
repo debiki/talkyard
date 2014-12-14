@@ -51,10 +51,16 @@ object ReactJson {
   }
 
 
-  def postToJson(post: Post): JsObject = {
+  def postToJson(post: Post, includeUnapproved: Boolean = false): JsObject = {
     val lastEditAppliedAt = post.lastEditAppliedAt map { date =>
       JsNumber(date.getTime)
     } getOrElse JsNull
+
+    val (text, isApproved) =
+      if (includeUnapproved)
+        (Some(post.currentText), post.currentVersionApproved)
+      else
+        (post.approvedText, post.approvedText.nonEmpty)
 
     JsObject(Vector(
       "postId" -> JsNumber(post.id),
@@ -74,15 +80,17 @@ object ReactJson {
       "isTreeCollapsed" -> JsBoolean(post.isTreeCollapsed),
       "isPostCollapsed" -> JsBoolean(post.isPostCollapsed),
       "isTreeClosed" -> JsBoolean(post.isTreeClosed),
+      "isApproved" -> JsBoolean(isApproved),
       "childIds" -> JsArray(post.replies.map(reply => JsNumber(reply.id))),
-      "text" -> safeStringOrNull(post.approvedText)))
+      "text" -> safeStringOrNull(text)))
   }
 
 
   val NoUserSpecificData = Json.obj(
     "permsOnPage" -> JsObject(Nil),
     "rolePageSettings" -> JsObject(Nil),
-    "votes" -> JsObject(Nil))
+    "votes" -> JsObject(Nil),
+    "unapprovedPosts" -> JsObject(Nil))
 
 
   def userDataJson(pageRequest: PageRequest[_]): JsObject = {
@@ -106,7 +114,8 @@ object ReactJson {
       "isAuthenticated" -> JsBoolean(user.isAuthenticated),
       "permsOnPage" -> permsOnPageJson(pageRequest.permsOnPage),
       "rolePageSettings" -> rolePageSettings,
-      "votes" -> votesJson(pageRequest))
+      "votes" -> votesJson(pageRequest),
+      "unapprovedPosts" -> unapprovedPostsJson(pageRequest))
   }
 
 
@@ -142,6 +151,23 @@ object ReactJson {
       postId.toString -> Json.toJson(voteStrs)
     }
     JsObject(votesByPostId.toSeq)
+  }
+
+
+  def unapprovedPostsJson(request: PageRequest[_]): JsObject = {
+    val relevantPosts =
+      if (request.theUser.isAdmin) request.thePage.getAllPosts
+      else request.thePage.postsByUser(request.theUser.id)
+
+    val unapprovedPosts = relevantPosts filter { post =>
+      !post.currentVersionApproved
+    }
+
+    val json = JsObject(unapprovedPosts.map { post =>
+      post.id.toString -> postToJson(post, includeUnapproved = true)
+    })
+
+    json
   }
 
 

@@ -153,9 +153,6 @@ d.i.makeCurUser = function() {
       rolePageSettings = myPageData.rolePageSettings;
       isAdmin = myPageData.isAdmin;
       setPermsOnPage(myPageData.permsOnPage || {});
-      // In `myPageData.threadsByPageId` are any not-yet-approved comments
-      // by the current user. Insert them into the page:
-      d.i.patchPage(myPageData, { overwriteTrees: true });
       if (anyDoneCallback) {
         anyDoneCallback();
       }
