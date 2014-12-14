@@ -114,7 +114,6 @@ function doHandleReplyResult(newPost) {
 
   var myNewPost = $('#post-' + newPost.postId);
   d.u.bugIf(myNewPost.length !== 1, 'DwE3TW379');
-  d.i.markMyPost(myNewPost.dwPostIdStr());
 
   var patchedThread = myNewPost.parent('.dw-t');
   var parentThread = patchedThread.parent().closest('.dw-t');

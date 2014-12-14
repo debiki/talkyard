@@ -119,20 +119,6 @@ object ViewPageController extends mvc.Controller {
 
     val permsMap = ReactJson.permsOnPageJson(pageReq.permsOnPage)
 
-    // List posts by this user, so they can be highlighted.
-    val ownPostsIdsList = page.postsByUser(withId = my.id).map(_.id)
-
-    // List the user's ratings so they can be highlighted so the user
-    // won't rate the same post over and over again.
-    val userVotesMap = page.userVotesMap(pageReq.userIdData)
-    val ownRatingsJsonMap = userVotesMap map { case (postId, votes) =>
-      var voteStrs = Vector[String]()
-      if (votes.votedLike) voteStrs = voteStrs :+ "VoteLike"
-      if (votes.votedWrong) voteStrs = voteStrs :+ "VoteWrong"
-      if (votes.votedOffTopic) voteStrs = voteStrs :+ "VoteOffTopic"
-      postId.toString -> toJson(voteStrs)
-    }
-
     // Generate html for any posts-by-this-user that are pending approval. Plus info
     // on ancestor post ids, so the browser knows where to insert the html.
     val postsOfInterest = if (my.isAdmin) page.getAllPosts else page.postsByUser(my.id)
@@ -162,8 +148,6 @@ object ViewPageController extends mvc.Controller {
     val json = toJson(Map(
       "isAdmin" -> toJson(pageReq.user.map(_.isAdmin).getOrElse(false)),
       "permsOnPage" -> toJson(permsMap),
-      "authorOf" -> toJson(ownPostsIdsList),
-      "ratings" -> toJson(ownRatingsJsonMap),
       // Suddenly using a by-page-id map is a bit weird, but what debiki-patch-page.ls
       // currently expects. Could map *everything* in the page id instead?
       // (Background: This is supposed to work on e.g. pages that lists many blog posts,

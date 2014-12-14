@@ -43,7 +43,8 @@ ReactDispatcher.register(function(payload) {
     case ReactActions.actionTypes.Logout:
       store.user = {
         permsOnPage: {},
-        rolePageSettings: {}
+        rolePageSettings: {},
+        votes: {}
       };
       break;
 

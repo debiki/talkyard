@@ -131,7 +131,12 @@ var RootPost = createComponent({
     var children = rootPost.childIds.map((childId) => {
       return (
         r.li({},
-          Thread({ allPosts: this.props.allPosts, postId: childId, depth: 1 })));
+          Thread({
+            allPosts: this.props.allPosts,
+            user: this.props.user,
+            postId: childId,
+            depth: 1,
+          })));
     });
 
     return (
@@ -139,7 +144,7 @@ var RootPost = createComponent({
         r.div({ className: postClass, id: postIdAttr },
           r.div({ className: postBodyClass },
             r.div({ className: 'dw-p-bd-blk' }, rootPost.text))),
-        PostActions({ post: rootPost }),
+        PostActions({ post: rootPost, user: this.props.user }),
         debiki2.reactelements.CommentsToolbar(),
         spaceForHorizontalArrows,
         r.div({ className: 'dw-single-and-multireplies' },
@@ -160,17 +165,22 @@ var Thread = createComponent({
       children = post.childIds.map((childId) => {
         return (
           r.li({},
-            Thread({ allPosts: this.props.allPosts, postId: childId, depth: deeper })));
+            Thread({
+              allPosts: this.props.allPosts,
+              user: this.props.user,
+              postId: childId,
+              depth: deeper
+            })));
       });
     }
 
     var actions = isCollapsed(post)
       ? null
-      : actions = PostActions({ post: post });
+      : actions = PostActions({ post: post, user: this.props.user });
 
     return (
       r.div({ className: 'dw-t ' + depthClass },
-        Post({ post: post }),
+        Post({ post: post, user: this.props.user }),
         actions,
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
@@ -198,8 +208,8 @@ var Post = createComponent({
       extraClasses += ' dw-zd';
     }
     else {
-      headerElem = PostHeader({ post: post });
-      bodyElem = PostBody({ post: post });
+      headerElem = PostHeader(this.props);
+      bodyElem = PostBody(this.props);
     }
 
     return (
@@ -293,6 +303,9 @@ var PostBody = createComponent({
 var PostActions = createComponent({
   render: function() {
     var post = this.props.post;
+    var user = this.props.user;
+    var isOwnPost = post.authorId === user.userId;
+    var votes = user.votes[post.postId] || [];
 
     var deletedOrCollapsed =
       post.isPostDeleted || post.isTreeDeleted || post.isPostCollapsed || post.isTreeCollapsed;
@@ -300,17 +313,28 @@ var PostActions = createComponent({
     var replyLikeWrongLinks = null;
     if (!deletedOrCollapsed) {
       // They float right, so they're placed in reverse order.
+      var myLikeVote = votes.indexOf('VoteLike') !== -1 ? ' dw-my-vote' : ''
+      var myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : ''
+
       replyLikeWrongLinks = [
-        r.a({ className: 'dw-a dw-a-wrong icon-warning',
-          title: 'Click if you think this post is wrong' }, 'Wrong'),
-        r.a({ className: 'dw-a dw-a-like icon-heart', title: 'Like this' }, 'Like'),
-        r.a({ className: 'dw-a dw-a-reply icon-reply' }, 'Reply')];
+          r.a({ className: 'dw-a dw-a-wrong icon-warning' + myWrongVote,
+            title: 'Click if you think this post is wrong' }, 'Wrong')];
+
+      if (!isOwnPost) {
+        replyLikeWrongLinks.push(
+          r.a({ className: 'dw-a dw-a-like icon-heart' + myLikeVote,
+            title: 'Like this' }, 'Like'));
+      }
+
+      replyLikeWrongLinks.push(
+        r.a({ className: 'dw-a dw-a-reply icon-reply' }, 'Reply'));
     }
 
     var moreLinks = [];
 
+    var myOffTopicVote = votes.indexOf('VoteOffTopic') !== -1 ? ' dw-my-vote' : ''
     moreLinks.push(
-        r.a({ className: 'dw-a dw-a-offtopic icon-split',
+        r.a({ className: 'dw-a dw-a-offtopic icon-split' + myOffTopicVote,
             title: 'Click if you think this post is off-topic' }, 'Off-Topic'));
 
     moreLinks.push(

@@ -89,9 +89,6 @@ d.i.makeCurUser = function() {
    * Clears e.g. highlightings of the user's own posts and ratings.
    */
   function clearMyPageInfo() {
-    $('.dw-p-by-me').removeClass('dw-p-by-me');
-    $('.dw-my-vote').removeClass('dw-my-vote');
-    $('.dw-my-post').removeClass('dw-my-post');
     setPermsOnPage({});
   }
 
@@ -156,21 +153,12 @@ d.i.makeCurUser = function() {
       rolePageSettings = myPageData.rolePageSettings;
       isAdmin = myPageData.isAdmin;
       setPermsOnPage(myPageData.permsOnPage || {});
-      markMyActions(myPageData);
       // In `myPageData.threadsByPageId` are any not-yet-approved comments
       // by the current user. Insert them into the page:
       d.i.patchPage(myPageData, { overwriteTrees: true });
       if (anyDoneCallback) {
         anyDoneCallback();
       }
-    }
-
-    function markMyActions(actions) {
-      $('.dw-my-vote').removeClass('dw-my-vote');
-      if (actions.ratings) $.each(actions.ratings, showMyRatings);
-      if (actions.authorOf) $.each(actions.authorOf, function(ix, postId) {
-        d.i.markMyPost(postId);
-      });
     }
   }
 
@@ -240,7 +228,7 @@ function fireLoginImpl(Me) {
 
   Me.clearMyPageInfo();
   Me.loadAndHandleUserPageData(function() {
-    debiki2.ReactActions.login();
+    // debiki2.ReactActions.login();
   });
 
   // Tell the parts of this page that uses AngularJS about the current user.
@@ -286,26 +274,6 @@ function fireLogoutImpl(Me) {
 };
 
 
-function showMyRatings(postId, ratings) {
-  var thread = d.i.findThread$(postId);
-  if (ratings.indexOf('VoteLike') !== -1) {
-    thread.find('> .dw-p-as .dw-a-like').addClass('dw-my-vote');
-  }
-  if (ratings.indexOf('VoteWrong') !== -1) {
-    thread.find('> .dw-p-as .dw-a-wrong').addClass('dw-my-vote');
-  }
-  if (ratings.indexOf('VoteOffTopic') !== -1) {
-    thread.find('> .dw-p-as .dw-a-offtopic').addClass('dw-my-vote');
-  }
-};
-
-
-d.i.markMyPost = function(postId) {
-  var $header = d.i.findPostHeader$(postId);
-  $header.children('.dw-p-by').addClass('dw-p-by-me');
-};
-
-
 /**
  * Enables and disables action links, based on the user's `permsOnPage`
  * and based on whom the user is (not Like ones own posts).
@@ -329,17 +297,6 @@ d.i.showAllowedActionsOnly = function(anyRootPost) {
       'deleteAnyReply', '.dw-a-delete, .dw-a-undelete');
   showHideActionLinks(
       'pinReplies', '.dw-a-pin');
-
-  // Hide Like button for ones own posts.
-  var posts = anyRootPost ? $(anyRootPost).find('.dw-p').add(anyRootPost) : $('.dw-p');
-  posts.each(function() {
-    var post = $(this);
-    if (post.dwAuthorId() === d.i.Me.getUserId()) {
-      var thread = post.closest('.dw-t');
-      var likeBtn = thread.find('> .dw-p-as .dw-a-like');
-      likeBtn.addClass('dw-my-post');
-    }
-  });
 }
 
 

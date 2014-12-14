@@ -84,7 +84,6 @@ function initStep1() {
 function $initStep2() {
   d.i.shohwActionLinksOnHoverPost(this);
   // d.i.placeInlineThreadsForPost(this);
-  d.i.makePostHeaderPretty($(this).children('.dw-p-hd'));
 };
 
 
@@ -262,8 +261,6 @@ function renderPageEtc() {
 
   d.i.Me.refreshProps();
   d.i.showCurLocationInSiteNav();
-
-  d.i.makePostHeaderPretty($('.dw-ar-p-hd'));
 
   //debiki2.renderer.renderTitleBodyComments();
   renderTitleBodyComments();

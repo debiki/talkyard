@@ -81,7 +81,8 @@ object ReactJson {
 
   val NoUserSpecificData = Json.obj(
     "permsOnPage" -> JsObject(Nil),
-    "rolePageSettings" -> JsObject(Nil))
+    "rolePageSettings" -> JsObject(Nil),
+    "votes" -> JsObject(Nil))
 
 
   def userDataJson(pageRequest: PageRequest[_]): JsObject = {
