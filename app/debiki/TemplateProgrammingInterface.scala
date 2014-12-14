@@ -181,8 +181,6 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   def debikiHtmlTagClasses =
     "DW dw-pri dw-ui-simple dw-render-actions-pending "
 
-  def debikiDashbar = xml.Unparsed(views.html.dashbar().body)
-
   def loginLinkAndUserName =
     <span id="dw-name-login-btns"></span> // rendered by React.js
 

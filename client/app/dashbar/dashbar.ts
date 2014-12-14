@@ -16,41 +16,50 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../dashbar/dashbar.ts" />
-/// <reference path="comments-toolbar.ts" />
-/// <reference path="name-login-btns.ts" />
-/// <reference path="../users/users-page.ts" />
+/// <reference path="../../shared/plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.reactelements {
+   module debiki2.dashbar {
 //------------------------------------------------------------------------------
 
-var ReactRouter = window['ReactRouter'];
+var r = React.DOM;
+var d = { i: debiki.internal };
 
 
-export function initAllReactRoots() {
-  var dashbarElem = document.getElementById('dw-dashbar');
-  if (dashbarElem)
-    React.render(debiki2.dashbar.Dashbar({}), dashbarElem);
+export var Dashbar = createComponent({
+  mixins: [debiki2.StoreListenerMixin],
 
-  var commentsToolbarElem = document.getElementById('dw-comments-toolbar');
-  if (commentsToolbarElem)
-    React.render(CommentsToolbar({}), commentsToolbarElem);
+  getInitialState: function() {
+    return debiki2.ReactStore.allData();
+  },
 
-  var nameLoginBtnsElem = document.getElementById('dw-name-login-btns');
-  if (nameLoginBtnsElem)
-    React.render(NameLoginBtns({}), nameLoginBtnsElem);
+  onChange: function() {
+    this.setState(debiki2.ReactStore.allData());
+  },
 
-  var userPageElem = document.getElementById('dw-user-page');
-  if (userPageElem) {
-    ReactRouter.run(debiki2.users.routes(), (Handler) => {
-      React.render(Handler({}), userPageElem);
-    });
+  render: function() {
+    var user = this.state.user;
+
+    if (!user.isAuthenticated)
+      return null;
+
+    return (
+      r.div({ id: 'debiki-dashbar' },
+        DebikiDashbarLogo()));
   }
-}
+});
 
+
+export var DebikiDashbarLogo = createComponent({
+  render: function() {
+    return (
+      r.a({ className: 'debiki-dashbar-logo',
+          href: d.i.serverOrigin + '/-/admin/?returnTo=' + location.pathname },
+        r.img({ src: d.i.serverOrigin + '/-/img/logo-128x120.png' })));
+  }
+});
 
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------
-// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list
