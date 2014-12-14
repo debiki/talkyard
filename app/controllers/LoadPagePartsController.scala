@@ -25,7 +25,6 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import Prelude._
-import BrowserPagePatcher.TreePatchSpec
 
 
 /*
