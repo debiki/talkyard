@@ -211,19 +211,6 @@ function fireLoginImpl(Me) {
   Me.loadAndHandleUserPageData(function() {
     // debiki2.ReactActions.login();
   });
-
-  // Tell the parts of this page that uses AngularJS about the current user.
-  d.i.angularApply(function($rootScope) {
-    // Why don't I expose a nice user = { name:, userId:, ... } object?
-    // Instead:
-    $rootScope.setCurrentUser({
-      isAdmin: Me.isAdmin(),
-      displayName: Me.getName(),
-      userId: Me.getUserId(),
-      permsOnPage: Me.getPermsOnPage(),
-      isAuthenticated: Me.isAuthenticated()
-    });
-  });
 };
 
 
@@ -242,12 +229,6 @@ function fireLogoutImpl(Me) {
 
   Me.clearMyPageInfo();
   Me.deletePageInfoInServerReply(); // so not reused if logging in later
-
-  // If AngularJS has been started, tell the parts of this page that
-  // uses AngularJS about the logout.
-  d.i.anyAngularApply(function($rootScope) {
-    $rootScope.clearCurrentUser();
-  });
 
   debiki2.ReactActions.logout();
 };
