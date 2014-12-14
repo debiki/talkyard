@@ -80,7 +80,6 @@ d.i.makeCurUser = function() {
 
   function setPermsOnPage(newPerms) {
     permsOnPage = newPerms;
-    d.i.showAllowedActionsOnly();
   }
 
   /**
@@ -175,13 +174,7 @@ d.i.makeCurUser = function() {
       return !!userProps.userId.match(/^[a-z0-9]+$/);
     },
     getRolePageSettings: function() { return rolePageSettings; },
-    getPermsOnPage: function() { return permsOnPage; },
-    mayEdit: function($post) {
-      return userProps.userId === $post.dwAuthorId() ||
-          permsOnPage.editPage ||
-          (permsOnPage.editAnyReply && $post.dwIsReply()) ||
-          (permsOnPage.editGuestReply && $post.dwIsGuestReply());
-    }
+    getPermsOnPage: function() { return permsOnPage; }
   };
 
   return api;
@@ -232,32 +225,6 @@ function fireLogoutImpl(Me) {
 
   debiki2.ReactActions.logout();
 };
-
-
-/**
- * Enables and disables action links, based on the user's `permsOnPage`
- * and based on whom the user is (not Like ones own posts).
- */
-d.i.showAllowedActionsOnly = function(anyRootPost) {
-  var permsOnPage = d.i.Me.getPermsOnPage();
-  function showHideActionLinks(permission, selector) {
-    var $actionLinks = anyRootPost
-        ? $(anyRootPost).parent().children('.dw-p-as').find(selector)
-        : $(selector);
-    if (permsOnPage[permission]) $actionLinks.show();
-    else $actionLinks.hide();
-  }
-
-  showHideActionLinks(
-      'collapseThings',
-        '.dw-a-collapse-tree, .dw-a-collapse-post, ' +
-        '.dw-a-uncollapse-tree, .dw-a-uncollapse-post,' +
-        '.dw-a-close-tree');
-  showHideActionLinks(
-      'deleteAnyReply', '.dw-a-delete, .dw-a-undelete');
-  showHideActionLinks(
-      'pinReplies', '.dw-a-pin');
-}
 
 
 })();
