@@ -32,13 +32,10 @@ d.i.makeCurUser = function() {
   var userProps;
   var rolePageSettings = null;
   var isAdmin = false;
-  var emailPrefs = undefined;
-  var emailSpecified = false;
   var permsOnPage = {};
 
   function refreshProps() {
     parseSidCookie();
-    parseConfigCookie();
   }
 
   // Warning: Never use the user's name as html, that'd allow xss attacks.
@@ -59,17 +56,6 @@ d.i.makeCurUser = function() {
       // [3] is login time
       // [4] is a random value
     };
-  }
-
-  function parseConfigCookie() {
-    var val = $.cookie('dwCoConf');
-    emailPrefs = undefined;
-    emailSpecified = false;
-    if (!val) return;
-    if (val.indexOf('EmNtR') !== -1) emailPrefs = 'Receive';
-    if (val.indexOf('EmNtN') !== -1) emailPrefs = 'DontReceive';
-    if (val.indexOf('EmNtF') !== -1) emailPrefs = 'ForbiddenForever';
-    if (val.indexOf('EmSp') !== -1) emailSpecified = true;
   }
 
   function fireLoginIfNewSession() {
@@ -195,9 +181,7 @@ d.i.makeCurUser = function() {
           permsOnPage.editPage ||
           (permsOnPage.editAnyReply && $post.dwIsReply()) ||
           (permsOnPage.editGuestReply && $post.dwIsGuestReply());
-    },
-    getEmailNotfPrefs: function() { return emailPrefs; },
-    isEmailKnown: function() { return emailSpecified; },
+    }
   };
 
   return api;
@@ -237,8 +221,6 @@ function fireLoginImpl(Me) {
       displayName: Me.getName(),
       userId: Me.getUserId(),
       permsOnPage: Me.getPermsOnPage(),
-      emailNotfPrefs: Me.getEmailNotfPrefs(),
-      isEmailKnown: Me.isEmailKnown(),
       isAuthenticated: Me.isAuthenticated()
     });
   });

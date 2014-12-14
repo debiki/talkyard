@@ -84,9 +84,7 @@ object LoginWithPasswordController extends mvc.Controller {
       }
 
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(loginGrant.user)
-    val userConfigCookie = ConfigUserController.userConfigCookie(loginGrant.user)
-
-    userConfigCookie::sidAndXsrfCookies
+    sidAndXsrfCookies
   }
 
 
@@ -181,13 +179,12 @@ object LoginWithPasswordController extends mvc.Controller {
 
     // Log the user in.
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(user)
-    val userConfigCookie = ConfigUserController.userConfigCookie(user)
-    val newSessionCookies = userConfigCookie :: sidAndXsrfCookies
+    val newSessionCookies = sidAndXsrfCookies
 
     val anyReturnToUrl: Option[String] = if (returnToUrl.nonEmpty) Some(returnToUrl) else None
 
     Ok(views.html.createaccount.welcomePage(anyReturnToUrl))
-      .withCookies(userConfigCookie::newSessionCookies: _*)
+      .withCookies(newSessionCookies: _*)
   }
 
 

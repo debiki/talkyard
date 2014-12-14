@@ -34,11 +34,6 @@ import EmailNotfPrefs.EmailNotfPrefs
   */
 object ConfigUserController extends mvc.Controller {
 
-  val ConfigCookie = "dwCoConf"
-  val ConfigCookieEmailNotfs = "EmNt"
-  val ConfigCookieEmailSpecd = "EmSp"
-
-
   /**
     * (It's not possible to choose the ForbiddenForever email preference via
     * this endpoint. ForbiddenForever is only available via email login, that is,
@@ -107,15 +102,15 @@ object ConfigUserController extends mvc.Controller {
     }
 
     val userNewPrefs = user.copy(emailNotfPrefs = emailNotfPrefs)
-    ??? // TODO [nologin]
-    // Ok.withCookies(userConfigCookie(pageReq.identity_!, userNewPrefs))
+    ??? // COULD fix... what? I've forgotten [nologin]
+    // Ok
   }
 
 
   private def configGuestUpdCookies(pageReq: DebikiRequest[_],
         emailNotfPrefs: EmailNotfPrefs, newEmailAddr: Option[String])
         : mvc.Result = {
-    ??? // TODO [nologin]
+    ??? // COULD fix... what? I've forgotten [nologin]
     /*
     require(!pageReq.user_!.isAuthenticated)
 
@@ -148,39 +143,8 @@ object ConfigUserController extends mvc.Controller {
     }
 
     val userNewPrefs = user.copy(emailNotfPrefs = emailNotfPrefs)
-    val configCookie = userConfigCookie(pageReq.identity_!, userNewPrefs)
-    Ok.withCookies(configCookie::newSessCookies.toList: _*)
+    Ok.withCookies(newSessCookies.toList: _*)
     */
   }
-
-
-  def userConfigCookie(user: User): mvc.Cookie = {
-    val email = user.email
-    val emailPrefs =
-      if (user.emailNotfPrefs == EmailNotfPrefs.Unspecified) ""
-      else ConfigCookieEmailNotfs + emailPrefsToChar(user.emailNotfPrefs)
-    val emailSpecd = email.nonEmpty ? ConfigCookieEmailSpecd | ""
-    val value = emailPrefs +"."+ emailSpecd
-    mvc.Cookie(name = ConfigCookie, value = value, httpOnly = false)
-  }
-
-
-  def emailPrefsToChar(prefs: EmailNotfPrefs): String = prefs match {
-    case EmailNotfPrefs.Receive => "R"
-    case EmailNotfPrefs.DontReceive => "N"
-    case EmailNotfPrefs.ForbiddenForever => "F"
-    case EmailNotfPrefs.Unspecified => "U"
-  }
-
-
-  /*
-  def emailPrefsFromChar(char: String): EmailNotfPrefs = char match {
-    case "r" => EmailNotfPrefs.Receive
-    case "n" => EmailNotfPrefs.DontReceive
-    case "f" => EmailNotfPrefs.ForbiddenForever
-    case "u" => EmailNotfPrefs.Unspecified
-    case "" => EmailNotfPrefs.Unspecified
-    case x => throwBadReq("DwE97RBQ5", "Bad email prefs char: "+ x)
-  } */
 
 }

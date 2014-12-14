@@ -47,11 +47,8 @@ object LoginController extends mvc.Controller {
   /** Clears login related cookies and OpenID and OpenAuth stuff.
     */
   def logout = mvc.Action(parse.empty) { request =>
-    // COULD save logout timestamp to database.
     // Keep the xsrf cookie, so login dialog works:
-    Ok.discardingCookies(
-      DiscardingCookie("dwCoSid"),
-      DiscardingCookie(ConfigUserController.ConfigCookie))
+    Ok.discardingCookies(DiscardingCookie("dwCoSid"))
   }
 
 }
