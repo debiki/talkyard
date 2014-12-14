@@ -17,6 +17,7 @@
 
 /// <reference path="ReactDispatcher.ts" />
 /// <reference path="Server.ts" />
+/// <reference path="../shared/plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.ReactActions {
@@ -34,9 +35,21 @@ export var actionTypes = {
 
 
 export function login() {
-  ReactDispatcher.handleViewAction({
-    actionType: actionTypes.Login,
-    user: {
+  // The server has set new XSRF (and SID) cookie, and we need to
+  // ensure old legacy <form> XSRF <input>:s are synced with the new cookie. But 1) the
+  // $.ajaxSetup complete() handler that does tnis (in debiki.js) won't
+  // have been triggered, if we're loggin in with OpenID — since such
+  // a login happens in another browser tab. And 2) some e2e tests
+  // cheat-login via direct calls to the database
+  // and to `fireLogin` (e.g. so the tests don't take long to run).
+  // And those tests assume we refresh XSRF tokens here.
+  // So sync hidden form XSRF <input>s:
+  debiki.internal.refreshFormXsrfTokens();
+
+  Server.loadMyPageData((user) => {
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.Login,
+      user: user /*{
       isAdmin: d.i.Me.isAdmin(),
       userId: d.i.Me.getUserId(),
       username: '???',
@@ -45,7 +58,8 @@ export function login() {
       rolePageSettings: d.i.Me.getRolePageSettings(),
       isEmailKnown: d.i.Me.isEmailKnown(),
       isAuthenticated: d.i.Me.isAuthenticated()
-    }
+      */
+    });
   });
 }
 

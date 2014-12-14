@@ -177,7 +177,7 @@ function $showInlineActionMenu(event) {
   // Entitle the edit button `Suggest Edit' or `Edit', depending on
   // whether or not it's the user's post.
   var authorId = $post.dwAuthorId();
-  var curUserId = d.i.Me.getUserId();
+  var curUserId = debiki2.ReactStore.getUser().userId;
 
   // Open a menu, with Edit, Reply and Cancel buttons. CSS: '-i' means inline.
   $menu = $(  // COULD add i18n

@@ -31,7 +31,7 @@ function initDeleteForm() {
     return; // already inited
 
   $form.find('.dw-fi-submit').button().click(function() {
-    if (!d.i.Me.isLoggedIn()) $form.each(d.i.$loginThenSubmit);
+    if (!debiki2.ReactStore.getUser().isLoggedIn) $form.each(d.i.$loginThenSubmit);
     else $form.submit();
     return false;
   });

@@ -100,6 +100,7 @@ POST  /-/reject-edits           controllers.ModerationController.rejectEdits
 GET   /-/list-recent-posts      controllers.ModerationController.listRecentPosts
 
 GET   /-/users/                 controllers.UserController.viewUserPage
+GET   /-/load-my-page-data      controllers.UserController.loadMyPageData(pageId)
 GET   /-/list-user-actions      controllers.UserController.listUserActions(userId)
 GET   /-/load-user-info         controllers.UserController.loadUserInfo(userId)
 POST  /-/save-page-notf-level   controllers.UserController.savePageNotfLevel
@@ -111,7 +112,6 @@ GET   /-/list-topics            controllers.ForumController.listTopics(categoryI
 GET   /-/list-categories        controllers.ForumController.listCategories(forumId)
 
 POST  /-/create-page            controllers.CreatePageController.createPage
-GET   /-/load-my-page-data      controllers.ViewPageController.loadMyPageData(pageId)
 POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/vote                   controllers.VoteController.handleVotes
 POST  /-/flag                   controllers.Application.flag

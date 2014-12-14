@@ -37,6 +37,18 @@ export function savePageNoftLevel(newNotfLevel) {
 }
 
 
+export function loadMyPageData(callback: (user: any) => void) {
+  $.get('/-/load-my-page-data?pageId=' + debiki2.ReactStore.getPageId())
+    .done((user: any) => {
+      callback(user);
+    })
+    .fail((x, y, z) => {
+      console.error('Error loading my page data: ' + JSON.stringify([x, y, z]));
+      callback(null);
+    });
+}
+
+
 export function loadUserInfo(userId, callback: (info: debiki2.users.UserInfo) => void) {
   $.get('/-/load-user-info?userId=' + userId)
     .done((response: any) => {

@@ -106,7 +106,7 @@ object ReactJson {
 
     Json.obj(
       "isLoggedIn" -> JsBoolean(true),
-      "isAdmin" -> JsBoolean(false),
+      "isAdmin" -> JsBoolean(user.isAdmin),
       "userId" -> safeJsString(user.id),
       "username" -> safeStringOrNull(user.username),
       "fullName" -> safeJsString(user.displayName),

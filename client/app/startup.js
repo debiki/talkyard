@@ -104,10 +104,9 @@ function $initStep4() {
 
 
 function fireLoginOrLogout() {
-  if (d.i.Me.isLoggedIn())
-    d.i.Me.fireLogin();
-  else
-    d.i.Me.fireLogout();
+  if (debiki2.ReactStore.getUser().isLoggedIn) {
+    d.i.refreshFormXsrfTokens();
+  }
 };
 
 
@@ -115,23 +114,6 @@ function registerEventHandlersFireLoginOut() {
 
   // Hide all action forms, since they will be slided in.
   $('#dw-hidden-templates .dw-fs').hide();
-
-  // Fire the dwEvLoggedInOut event, so all buttons etc will update
-  // their text with the correct user name.
-  // {{{ Details:
-  // Firing the dwEvLoggedInOut event causes the user name to be updated
-  // to the name of the logged in user, everywhere. This needs to be done
-  // in JavaScript, cannot be done only server side — because when the user
-  // logs in/out using JavaScript, and uses the browser's *back* button to
-  // return to an earlier page, that page might not be fetched again
-  // from the server, but this javascript code updates the page to take
-  // into account that the user name (and related cookies) has changed
-  // (since the user logged in/out).
-  // Do this when everything has been inited, so all dwEvLoggedInOut event
-  // listeners have been registered. }}}
-
-  // COULD move this to debiki-login.js
-  $('.dw-loginsubmit-on-click').click(d.i.$loginThenSubmit);
 
   fireLoginOrLogout();
 

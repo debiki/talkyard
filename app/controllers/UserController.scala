@@ -26,7 +26,7 @@ import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
-import requests.{GetRequest, DebikiRequest}
+import requests.{PageRequest, DebikiRequest}
 import Utils.OkSafeJson
 import Utils.ValidationImplicits._
 import DebikiHttp.{throwForbidden, throwNotFound}
@@ -53,6 +53,14 @@ object UserController extends mvc.Controller {
       "DwE512WR8", s"User not found, id: $userId")
     val json = Json.obj("userInfo" -> userInfoToJson(userInfo))
     OkSafeJson(json)
+  }
+
+
+  def loadMyPageData(pageId: PageId) = GetAction { request =>
+    val pageRequest = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
+      "DwE404FL9", s"Page `$pageId' not found")
+    val myPageData = ReactJson.userDataJson(pageRequest)
+    OkSafeJson(myPageData)
   }
 
 

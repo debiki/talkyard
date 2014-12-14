@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-(function() {
-
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
@@ -30,9 +28,6 @@ d.i.makeCurUser = function() {
   // 100 posts. The user id is checked frequently, to find out which
   // posts have the current user written.)
   var userProps;
-  var rolePageSettings = null;
-  var isAdmin = false;
-  var permsOnPage = {};
 
   function refreshProps() {
     parseSidCookie();
@@ -71,110 +66,15 @@ d.i.makeCurUser = function() {
     }
   }
 
-  /**
-   * Clears e.g. highlightings of the user's own posts and ratings.
-   */
-  function clearMyPageInfo() {
-    setPermsOnPage({});
-  }
-
-  function setPermsOnPage(newPerms) {
-    permsOnPage = newPerms;
-  }
-
-  /**
-   * Highlights e.g. the user's own posts and ratings.
-   *
-   * Loads user specific info from the server, e.g. info on
-   * which posts the current user has authored or rated,
-   * and the user's permissions on this page.
-   *
-   * If, however, the server has already included the relevant data
-   * in a certain hidden .dw-user-page-data node on the page, then use
-   * that data, but only once (thereafter always query the server).
-   * — So the first invokation happens synchronously, subsequent
-   * invokations happens asynchronously.
-   */
-  function loadAndHandleUserPageData(anyDoneCallback) {
-    // Do nothing if this isn't a normal page. For example, perhaps
-    // this is the search results listing page. There's no user
-    // specific data related to that page.
-    if (!d.i.pageId) {
-      anyDoneCallback();
-      return;
-    }
-
-    // Avoid a roundtrip by using any json data already inlined on the page.
-    // Then delete it because it's only valid on page load.
-    var hiddenUserDataTag = $('.dw-user-page-data');
-    if (hiddenUserDataTag.text().length) {
-      handleUserPageData(hiddenUserDataTag.text());
-      hiddenUserDataTag.hide().removeClass('dw-user-page-data');
-    }
-    else { // if (pageExists) {
-      // ... We currently don't know if the page exists. There's a data-page_exists
-      // attribute on the .dw-page <div> but it's not updated if an embedded
-      // comments page is lazily created. Therefore, for now, attempt to load
-      // user credentials always even if it'll fail.
-
-      // Query the server.
-      var url = d.i.serverOrigin + '/-/load-my-page-data?pageId=' + d.i.pageId;
-      $.get(url, 'text')
-          .fail(showErrorIfPageExists)
-          .done(function(jsonData) {
-        handleUserPageData(jsonData);
-      });
-    }
-
-    function showErrorIfPageExists() {
-      // This is a bit hacky but it'll go away when I've rewritten the client in AngularJS.
-      var pageExistsForSure = $('.dw-page[data-page_exists="true"]').length > 0;
-      if (pageExistsForSure)
-        d.i.showServerResponseDialog(arguments);
-    }
-
-    function handleUserPageData(jsonData) {
-      var myPageData = JSON.parse(jsonData);
-      rolePageSettings = myPageData.rolePageSettings;
-      isAdmin = myPageData.isAdmin;
-      setPermsOnPage(myPageData.permsOnPage || {});
-      if (anyDoneCallback) {
-        anyDoneCallback();
-      }
-    }
-  }
-
-  function deletePageInfoInServerReply() {
-    var hiddenUserDataTag = $('.dw-user-page-data');
-    hiddenUserDataTag.hide().removeClass('dw-user-page-data');
-  };
-
   var api = {
     // Call whenever the SID changes: on page load, on login and logout.
     refreshProps: refreshProps,
-    clearMyPageInfo: clearMyPageInfo,
-    loadAndHandleUserPageData: loadAndHandleUserPageData,
-    deletePageInfoInServerReply: deletePageInfoInServerReply,
     fireLogin: function() { fireLoginImpl(api); },
     fireLogout: function() { fireLogoutImpl(api); },
     // Call when a re-login might have happened, e.g. if focusing
     // another browser tab and then returning to this tab.
     fireLoginIfNewSession: fireLoginIfNewSession,
-
-    // Warning: Never ever use this name as html, that'd open for
-    // xss attacks. E.g. never do: $(...).html(Me.getName()), but the
-    // following should be okay though: $(...).text(Me.getName()).
-    getName: function() { return userProps.name; },
-    isAdmin: function() { return isAdmin; },
     isLoggedIn: function() { return userProps.userId ? true : false; },
-    getUserId: function() { return userProps.userId; },
-    isAuthenticated: function() {
-      // If starts with '-', then not authenticated. (In the future:
-      // if *ends* with '-'? Well works anyway.)
-      return !!userProps.userId.match(/^[a-z0-9]+$/);
-    },
-    getRolePageSettings: function() { return rolePageSettings; },
-    getPermsOnPage: function() { return permsOnPage; }
   };
 
   return api;
@@ -182,51 +82,20 @@ d.i.makeCurUser = function() {
 
 
 function fireLoginImpl(Me) {
-  // The server has set new XSRF (and SID) cookie, and we need to
-  // ensure <form> XSRF <input>:s are synced with the new cookie. But 1) the
-  // $.ajaxSetup complete() handler that does tnis (in debiki.js) won't
-  // have been triggered, if we're loggin in with OpenID — since such
-  // a login happens in another browser tab. And 2) some e2e tests
-  // cheat-login via direct calls to the database
-  // and to `fireLogin` (e.g. so the tests don't take long to run).
-  // And those tests assume we refresh XSRF tokens here.
-  // So sync hidden form XSRF <input>s:
-  d.i.refreshFormXsrfTokens();
-
   Me.refreshProps();
-
-  // Let Post as ... and Save as ... buttons update themselves:
-  // they'll replace '...' with the user name.
-  $('.dw-loginsubmit-on-click')
-      .trigger('dwEvLoggedInOut', [Me.getName()]);
-
-  Me.clearMyPageInfo();
-  Me.loadAndHandleUserPageData(function() {
-    // debiki2.ReactActions.login();
-  });
+  debiki2.ReactActions.login();
 };
 
 
 // Updates cookies and elements to show the user name, email etc.
 // as appropriate. Unless !propsUnsafe, throws if name or email missing.
-// Fires the dwEvLoggedInOut event on all .dw-loginsubmit-on-click elems.
 // Parameters:
 //  props: {name, email, website}, will be sanitized unless
 //  sanitize: unless `false', {name, email, website} will be sanitized.
 function fireLogoutImpl(Me) {
   Me.refreshProps();
-
-  // Let `Post as <username>' etc buttons update themselves:
-  // they'll replace <username> with `...'.
-  $('.dw-loginsubmit-on-click').trigger('dwEvLoggedInOut', [undefined]);
-
-  Me.clearMyPageInfo();
-  Me.deletePageInfoInServerReply(); // so not reused if logging in later
-
   debiki2.ReactActions.logout();
 };
 
-
-})();
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

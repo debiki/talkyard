@@ -59,32 +59,13 @@ object ViewPageController extends mvc.Controller {
 
   def viewPostImpl(pageReq: PageGetRequest) = {
     val pageDataJson = buildPageDataJosn(pageReq)
-    val userPageDataJson = pageReq.user.isEmpty ? "" | buildUserPageDataJson(pageReq)
     // If not logged in, then include an empty user data tag, so the browser
     // notices that it got something, and won't call GET ?page-info.
     val dataNodes = <span>
       <pre id="dw-page-data">{ pageDataJson }</pre>
-      <pre class="dw-user-page-data">{ userPageDataJson }</pre>
       </span>
     val pageHtml = pageReq.dao.renderTemplate(pageReq, appendToBody = dataNodes)
     Ok(pageHtml) as HTML
-  }
-
-
-  /**
-   * Lists e.g. all posts and ratings by the current user, on a page.
-   *
-   * Initially, on page load, all (?) this info is already implicitly included
-   * in the html sent by the server, e.g. the user's own posts are highlighted.
-   * However, the user might logout and login, without refreshing the page,
-   * so we need a way for the browser to fetch authorship info
-   * dynamically.
-   */
-  def loadMyPageData(pageId: PageId) = GetAction { request =>
-    val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
-      "DwE404FL9", s"Page `$pageId' not found")
-    val json = buildUserPageDataJson(pageReq)
-    Ok(json)
   }
 
 
@@ -110,28 +91,6 @@ object ViewPageController extends mvc.Controller {
         "subCategories" -> JsArray()))
     }
     Json.obj("categories" -> categoriesJson).toString
-  }
-
-
-  def buildUserPageDataJson(pageReq: PageRequest[_]): String = {
-    val page = pageReq.page_!
-    val my = pageReq.user_!
-
-    val permsMap = ReactJson.permsOnPageJson(pageReq.permsOnPage)
-
-    val rolePageSettings =
-      pageReq.anyRoleId map { roleId =>
-        val settings = pageReq.dao.loadRolePageSettings(roleId = roleId, pageId = page.id)
-        ReactJson.rolePageSettingsToJson(settings)
-      } getOrElse JsNull
-
-    val json = toJson(Map(
-      "isAdmin" -> toJson(pageReq.user.map(_.isAdmin).getOrElse(false)),
-      "permsOnPage" -> toJson(permsMap),
-      "rolePageSettings" -> rolePageSettings))
-
-    if (Play.isDev) Json.prettyPrint(json)
-    else Json.stringify(json)
   }
 
 }

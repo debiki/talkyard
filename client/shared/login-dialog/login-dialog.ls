@@ -192,9 +192,8 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
 
 !function showLoggedInDialog(opt_continue)
   html = $('''
-      <p>You have been logged in, welcome <span id="dw-lgi-name"></span></p>
+      <p>You have been logged in, welcome!</p>
     ''')
-  html.find('#dw-lgi-name').text(d.i.Me.getName!)
   html.dialog $.extend({}, d.i.jQueryDialogNoClose,
       title: 'Welcome'
       autoOpen: true

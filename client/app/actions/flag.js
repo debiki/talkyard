@@ -53,7 +53,7 @@ function initFlagDialog(flagDialog, postId) {
   $form.find('.dw-fi-submit').click(function() {
     // COULD ensure details specified if "Others" reason selected.
     // COULD show a "Submitting..." message.
-    if (!d.i.Me.isLoggedIn()) {
+    if (!debiki2.ReactStore.getUser().isLoggedIn) {
       $form.each(d.i.$loginThenSubmit);
     }
     else {

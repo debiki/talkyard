@@ -414,7 +414,8 @@ var PostActions = createComponent({
     moreLinks.push(
         r.a({ className: 'dw-a dw-a-flag icon-flag', onClick: this.onFlagClick }, 'Report'));
 
-    moreLinks.push(
+    if (user.isAdmin)
+      moreLinks.push(
         r.a({ className: 'dw-a dw-a-pin icon-pin', onClick: this.onPinClick }, 'Pin'));
 
     var suggestionsOld = [];
@@ -429,13 +430,13 @@ var PostActions = createComponent({
     // TODO [react]
     // suggestionsNew.push(renderUncollapseSuggestions(post))
 
-    if (!post.isPostCollapsed && post.numCollapsePostVotesPro > 0)
+    if (!post.isPostCollapsed && post.numCollapsePostVotesPro > 0 && false)
       suggestionsNew.push(
         r.a({ className:'dw-a dw-a-collapse-suggs icon-collapse-post dw-a-pending-review',
           title: 'Vote for or against collapsing this comment' }, '×',
             post.numCollapsePostVotesPro, '–', post.numCollapsePostVotesCon));
 
-    if (!post.isTreeCollapsed && post.numCollapseTreeVotesPro > 0)
+    if (!post.isTreeCollapsed && post.numCollapseTreeVotesPro > 0 && false)
       suggestionsNew.push(
         r.a({ className: 'dw-a dw-a-collapse-suggs icon-collapse-tree dw-a-pending-review',
           title: 'Vote for or against collapsing this whole thread' }, '×',
@@ -446,31 +447,31 @@ var PostActions = createComponent({
     // if there is one already. Instead, show a link you can click to upvote
     // the existing suggestion:
 
-    if (!post.isTreeCollapsed && !post.numCollapseTreeVotesPro)
+    if (!post.isTreeCollapsed && !post.numCollapseTreeVotesPro && user.isAdmin)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-collapse-tree icon-collapse',
             onClick: this.onCollapseTreeClick }, 'Collapse tree'));
 
-    if (!post.isPostCollapsed && !post.numCollapsePostVotesPro)
+    if (!post.isPostCollapsed && !post.numCollapsePostVotesPro && user.isAdmin)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-collapse-post icon-collapse',
             onClick: this.onCollapsePostClick }, 'Collapse post'));
 
-    if (post.isTreeCollapsed && !post.numUncollapseTreeVotesPro)
+    if (post.isTreeCollapsed && !post.numUncollapseTreeVotesPro && user.isAdmin)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-uncollapse-tree' }, 'Uncollapse tree'));
 
-    if (post.isPostCollapsed && !post.numUncollapsePostVotesPro)
+    if (post.isPostCollapsed && !post.numUncollapsePostVotesPro && user.isAdmin)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-uncollapse-post' }, 'Uncollapse post'));
 
     // ----- Close links
 
-    if (post.isTreeClosed) {
+    if (post.isTreeClosed && user.isAdmin) {
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-reopen-tree' }, 'Reopen'));
     }
-    else {
+    else if (user.isAdmin) {
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-close-tree icon-archive',
             onClick: this.onCloseTreeClick }, 'Close'));
@@ -482,21 +483,21 @@ var PostActions = createComponent({
 
     // ----- Delete links
 
-    if (!post.isPostDeleted && post.numDeletePostVotesPro > 0) {
+    if (!post.isPostDeleted && post.numDeletePostVotesPro > 0 && false) {
       suggestionsNew.push(
         r.a({ className: 'dw-a dw-a-delete-suggs icon-delete-post dw-a-pending-review',
           title: 'Vote for or against deleting this comment' }, '×',
             post.numDeletePostVotesPro, '–', post.numDeletePostVotesCon));
     }
 
-    if (!post.isTreeDeleted && post.numDeleteTreeVotesPro > 0) {
+    if (!post.isTreeDeleted && post.numDeleteTreeVotesPro > 0 && false) {
       suggestionsNew.push(
         r.a({ className: 'dw-a dw-a-delete-suggs icon-delete-tree dw-a-pending-review',
           title: 'Vote for or against deleting this whole thread' }, '×',
             post.numDeleteTreeVotesPro, '–', post.numDeleteTreeVotesCon));
     }
 
-    if (!post.numDeleteTreeVotesPro || !post.numDeletePostVotesPro) {
+    if ((!post.numDeleteTreeVotesPro || !post.numDeletePostVotesPro)  && user.isAdmin) {
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-delete icon-trash', onClick: this.onDeleteClick }, 'Delete'));
     }

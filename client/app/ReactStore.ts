@@ -37,7 +37,7 @@ ReactDispatcher.register(function(payload) {
   switch (action.actionType) {
 
     case ReactActions.actionTypes.Login:
-      store.user = action.user;
+      ReactStore.activateUserSpecificData(action.user);
       break;
 
     case ReactActions.actionTypes.Logout:
@@ -77,10 +77,11 @@ ReactDispatcher.register(function(payload) {
 });
 
 
-ReactStore.activateUserSpecificData = function() {
-  store.user = store.renderLaterInBrowserOnly.user;
+// COULD change this to an action instead
+ReactStore.activateUserSpecificData = function(anyUser) {
+  store.user = anyUser || store.renderLaterInBrowserOnly.user;
   // Show the user's own unapproved posts, or all, for admins.
-  _.each(store.renderLaterInBrowserOnly.user.unapprovedPosts, (post) => {
+  _.each(store.user.unapprovedPosts, (post) => {
     updatePost(post);
   });
   this.emitChange();
@@ -90,6 +91,11 @@ ReactStore.activateUserSpecificData = function() {
 ReactStore.allData = function() {
   return store;
 };
+
+
+ReactStore.getPageId = function() {
+  return store.pageId;
+}
 
 
 ReactStore.getUser = function() {
