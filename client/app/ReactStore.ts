@@ -57,6 +57,14 @@ ReactDispatcher.register(function(payload) {
       updatePost(action.post);
       break;
 
+    case ReactActions.actionTypes.VoteOnPost:
+      voteOnPost(action);
+      break;
+
+    case ReactActions.actionTypes.UncollapsePost:
+      uncollapsePost(action.post);
+      break;
+
     default:
       console.warn('Unknown action: ' + JSON.stringify(action));
       return true;
@@ -119,6 +127,14 @@ function updatePost(post) {
   // (Could here remove any old version of the post, if it's being moved to
   // elsewhere in the tree.)
 
+  var oldVersion = store.allPosts[post.postId];
+
+  // Don't collapse the post if the user has opened it.
+  if (oldVersion) {
+    post.isTreeCollapsed = oldVersion.isTreeCollapsed;
+    post.isPostCollapsed = oldVersion.isPostCollapsed;
+  }
+
   // Add or update the post itself.
   store.allPosts[post.postId] = post;
 
@@ -132,6 +148,33 @@ function updatePost(post) {
       parentPost.childIds.unshift(post.postId);
     }
   }
+}
+
+
+function voteOnPost(action) {
+  var post = action.post;
+
+  var votes = store.user.votes[post.postId];
+  if (!votes) {
+    votes = [];
+    store.user.votes[post.postId] = votes;
+  }
+
+  if (action.doWhat === 'CreateVote') {
+    votes.push(action.voteType);
+  }
+  else {
+    _.remove(votes, (voteType) => voteType === action.voteType);
+  }
+
+  updatePost(post);
+}
+
+
+function uncollapsePost(post) {
+  post.isTreeCollapsed = false;
+  post.isPostCollapsed = false;
+  updatePost(post);
 }
 
 

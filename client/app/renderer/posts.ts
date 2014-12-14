@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="../../shared/plain-old-javascript.d.ts" />
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
 
@@ -197,6 +198,9 @@ var Thread = createComponent({
 
 
 var Post = createComponent({
+  onUncollapseClick: function(event) {
+    debiki2.ReactActions.uncollapsePost(this.props.post);
+  },
   render: function() {
     var post = this.props.post;
     var user = this.props.user;
@@ -213,7 +217,8 @@ var Post = createComponent({
     }
     else if (post.isTreeCollapsed || post.isPostCollapsed) {
       var what = post.isTreeCollapsed ? 'more comments' : 'this comment';
-      bodyElem = r.a({ className: 'dw-z' }, 'Click to show ', what);
+      bodyElem = r.a({ className: 'dw-z', onClick: this.onUncollapseClick },
+          'Click to show ', what);
       extraClasses += ' dw-zd';
     }
     else if (!post.isApproved && !post.text) {
@@ -223,8 +228,9 @@ var Post = createComponent({
     }
     else {
       if (!post.isApproved) {
-        var someones = post.authorId === user.userId ? 'Your' : 'The';
-        pendingApprovalElem = r.i({}, someones, ' comment below is pending approval.');
+        var the = post.authorId === user.userId ? 'Your' : 'The';
+        pendingApprovalElem = r.div({ className: 'dw-p-pending-mod',
+            onClick: this.onUncollapseClick }, the, ' comment below is pending approval.');
       }
       headerElem = PostHeader(this.props);
       bodyElem = PostBody(this.props);
@@ -320,6 +326,40 @@ var PostBody = createComponent({
 
 
 var PostActions = createComponent({
+  onReplyClick: function(event) {
+    debiki.internal.$showReplyForm.call(event.target, event);
+  },
+  onLikeClick: function(event) {
+    debiki.internal.$toggleVote('VoteLike').call(event.target, event);
+  },
+  onWrongClick: function(event) {
+    debiki.internal.$toggleVote('VoteWrong').call(event.target, event);
+  },
+  onOffTopicClick: function(event) {
+    debiki.internal.$toggleVote('VoteOffTopic').call(event.target, event);
+  },
+  onEditClick: function(event) {
+    debiki.internal.$showEditsDialog.call(event.target, event);
+  },
+  onFlagClick: function(event) {
+    debiki.internal.$showFlagForm.call(event.target, event);
+  },
+  onDeleteClick: function(event) {
+    debiki.internal.$showDeleteForm.call(event.target, event);
+  },
+  onCollapsePostClick: function(event) {
+    debiki.internal.$showActionDialog('CollapsePost').call(event.target, event);
+  },
+  onCollapseTreeClick: function(event) {
+    debiki.internal.$showActionDialog('CollapseTree').call(event.target, event);
+  },
+  onCloseTreeClick: function(event) {
+    debiki.internal.$showActionDialog('CloseTree').call(event.target, event);
+  },
+  onPinClick: function(event) {
+    debiki.internal.$showActionDialog('PinTree').call(event.target, event);
+  },
+
   render: function() {
     var post = this.props.post;
 
@@ -341,16 +381,17 @@ var PostActions = createComponent({
 
       replyLikeWrongLinks = [
           r.a({ className: 'dw-a dw-a-wrong icon-warning' + myWrongVote,
-            title: 'Click if you think this post is wrong' }, 'Wrong')];
+            title: 'Click if you think this post is wrong', onClick: this.onWrongClick },
+            'Wrong')];
 
       if (!isOwnPost) {
         replyLikeWrongLinks.push(
           r.a({ className: 'dw-a dw-a-like icon-heart' + myLikeVote,
-            title: 'Like this' }, 'Like'));
+            title: 'Like this', onClick: this.onLikeClick }, 'Like'));
       }
 
       replyLikeWrongLinks.push(
-        r.a({ className: 'dw-a dw-a-reply icon-reply' }, 'Reply'));
+        r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick }, 'Reply'));
     }
 
     var moreLinks = [];
@@ -358,13 +399,14 @@ var PostActions = createComponent({
     var myOffTopicVote = votes.indexOf('VoteOffTopic') !== -1 ? ' dw-my-vote' : ''
     moreLinks.push(
         r.a({ className: 'dw-a dw-a-offtopic icon-split' + myOffTopicVote,
-            title: 'Click if you think this post is off-topic' }, 'Off-Topic'));
+            title: 'Click if you think this post is off-topic', onClick: this.onOffTopicClick },
+          'Off-Topic'));
 
     moreLinks.push(
-        r.a({ className: 'dw-a dw-a-flag icon-flag' }, 'Report'));
+        r.a({ className: 'dw-a dw-a-flag icon-flag', onClick: this.onFlagClick }, 'Report'));
 
     moreLinks.push(
-        r.a({ className: 'dw-a dw-a-pin icon-pin' }, 'Pin'));
+        r.a({ className: 'dw-a dw-a-pin icon-pin', onClick: this.onPinClick }, 'Pin'));
 
     var suggestionsOld = [];
     var suggestionsNew = [];
@@ -372,7 +414,8 @@ var PostActions = createComponent({
     if (post.numPendingEditSuggestions > 0)
       suggestionsNew.push(
           r.a({ className: 'dw-a dw-a-edit icon-edit dw-a-pending-review',
-           title: 'View edit suggestions' }, '×', post.numPendingEditSuggestions));
+           title: 'View edit suggestions', onClick: this.onEditClick },
+            '×', post.numPendingEditSuggestions));
 
     // TODO [react]
     // suggestionsNew.push(renderUncollapseSuggestions(post))
@@ -396,11 +439,13 @@ var PostActions = createComponent({
 
     if (!post.isTreeCollapsed && !post.numCollapseTreeVotesPro)
       moreLinks.push(
-        r.a({ className: 'dw-a dw-a-collapse-tree icon-collapse' }, 'Collapse tree'));
+        r.a({ className: 'dw-a dw-a-collapse-tree icon-collapse',
+            onClick: this.onCollapseTreeClick }, 'Collapse tree'));
 
     if (!post.isPostCollapsed && !post.numCollapsePostVotesPro)
       moreLinks.push(
-        r.a({ className: 'dw-a dw-a-collapse-post icon-collapse' }, 'Collapse post'));
+        r.a({ className: 'dw-a dw-a-collapse-post icon-collapse',
+            onClick: this.onCollapsePostClick }, 'Collapse post'));
 
     if (post.isTreeCollapsed && !post.numUncollapseTreeVotesPro)
       moreLinks.push(
@@ -418,7 +463,8 @@ var PostActions = createComponent({
     }
     else {
       moreLinks.push(
-        r.a({ className: 'dw-a dw-a-close-tree icon-archive' }, 'Close'));
+        r.a({ className: 'dw-a dw-a-close-tree icon-archive',
+            onClick: this.onCloseTreeClick }, 'Close'));
     }
 
     // ----- Move links
@@ -441,9 +487,9 @@ var PostActions = createComponent({
             post.numDeleteTreeVotesPro, '–', post.numDeleteTreeVotesCon));
     }
 
-    if (post.numDeleteTreeVotesPro == 0 || !post.numDeletePostVotesPro) {
+    if (!post.numDeleteTreeVotesPro || !post.numDeletePostVotesPro) {
       moreLinks.push(
-        r.a({ className: 'dw-a dw-a-delete icon-trash' }, 'Delete'));
+        r.a({ className: 'dw-a dw-a-delete icon-trash', onClick: this.onDeleteClick }, 'Delete'));
     }
 
     var moreDropdown =

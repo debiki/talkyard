@@ -63,6 +63,7 @@ function bindActionLinksImpl(anyPost, bindFoldLinks) {
     $collapses = $(collapseSelectors);
   }
 
+  /*
   // On delegating events for reply/rate/edit.
   // Placing a jQuery delegate on e.g. .debiki instead, entails that
   // these links are given excessively low precedence on Android:
@@ -87,10 +88,11 @@ function bindActionLinksImpl(anyPost, bindFoldLinks) {
   $actions.find('.dw-a-pin').click(d.i.$showActionDialog('PinTree'));
 
   $actions.find('.dw-a-flag-suggs').click(showNotImplMessage);
+  */
 
   $actions.addClass('dw-p-as-dimmed');
 
-  $collapses.click(d.i.$toggleCollapsed);
+  // $collapses.click(d.i.$toggleCollapsed);
 };
 
 

@@ -28,6 +28,8 @@ export var actionTypes = {
   Logout: 'Logout',
   SetPageNotfLevel: 'SetPageNotfLevel',
   UpdatePost: 'UpdatePost',
+  VoteOnPost: 'VoteOnPost',
+  UncollapsePost: 'UncollapsePost',
 }
 
 
@@ -71,6 +73,23 @@ export function updatePost(post) {
   });
 }
 
+
+export function vote(post, doWhat: string, voteType: string) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.VoteOnPost,
+    post: post,
+    doWhat: doWhat,
+    voteType: voteType
+  });
+}
+
+
+export function uncollapsePost(post) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.UncollapsePost,
+    post: post
+  });
+}
 
 //------------------------------------------------------------------------------
    }

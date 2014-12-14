@@ -70,7 +70,7 @@ function toggleVoteImpl(voteBtn, voteType) {
     });
 
   function onVoteToggled(updatedPost) {
-    debiki2.ReactActions.updatePost(updatedPost);
+    debiki2.ReactActions.vote(updatedPost, action, voteType);
 
     /* TODO highlight one's post [react]
     if (action == 'CreateVote') {
