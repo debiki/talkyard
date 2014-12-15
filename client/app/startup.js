@@ -23,68 +23,9 @@ d.i.TitleId = 0;
 d.i.BodyId = 1;
 
 
-// Remembers grandparent openers even if the parent opener is closed.
-function findWindowOpeners() {
-  var curOpener = window.opener;
-  var openers = [];
-  while (curOpener) {
-    openers.push(curOpener);
-    curOpener = curOpener.opener;
-  }
-  return openers;
-};
-
-
 // Debiki convention: Dialog elem tabindexes should vary from 101 to 109.
 // HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
 d.i.DEBIKI_TABINDEX_DIALOG_MAX = 109;
-
-function findRootPostId() {
-  // The root post has depth 0. However both the title and the article have
-  // depth 0, if they're present. Prefer to use the article as root post if present,
-  // so replies will be laid out horizontally. Otherwise simply choose nodes[0].
-  var nodes = $('.dw-depth-0');
-  var anyArticle = nodes.filter('.dw-ar-t');
-  var rootPostNode = anyArticle.length == 1 ? anyArticle : $(nodes[0]);
-  var id = rootPostNode.length && rootPostNode.attr('id') ?
-      rootPostNode.attr('id').substr(5) : undefined; // drops initial `dw-t-'
-  return id;
-};
-
-
-// Activates mouseenter/leave functionality, draws arrows to child threads, etc.
-// Initing a thread is done in 4 steps. This function calls all those 4 steps.
-// (The initialization is split into steps, so everything need not be done
-// at once on page load.)
-// Call on posts.
-d.i.$initPostAndParentThread = function() {
-  //d.i.bindActionAndFoldLinksForSinglePost(this);
-  d.i.$initPost.apply(this);
-  $initStep4.apply(this);
-};
-
-
-/**
- * Inits a post, not its parent thread. Call when a post has been replaced
- * e.g. after having been edited, but when the parent thread hasn't been
- * replaced.
- */
-d.i.$initPost = function() {
-  $initStep2.apply(this);
-  $initStep3.apply(this);
-  d.i.destroyAndRecreateSortablePins.apply(this);
-};
-
-
-function initStep1() {
-  //d.i.bindActionLinksForAllPosts();
-};
-
-
-function $initStep2() {
-  //d.i.shohwActionLinksOnHoverPost(this);
-  // d.i.placeInlineThreadsForPost(this);
-};
 
 
 function $initStep3() {
@@ -235,7 +176,7 @@ function runSiteConfigScripts() {
  * Renders the page, step by step, to reduce page loading time. (When the
  * first step is done, the user should conceive the page as mostly loaded.)
  */
-function renderPageEtc() {
+function renderDiscussionPage() {
 
   configureAjaxRequests();
 
@@ -278,25 +219,16 @@ function renderPageEtc() {
   steps.push(function() {
     debiki2.reactelements.initAllReactRoots();
 
-    // Add '.dw-depth-NNN' class. (dwDepth() does that.)
-    $posts.each(function() {
-      $(this).dwDepth();
-    });
-
     // Do this after depths calculated.
     d.i.layout = d.i.chooseLayout();
 
-    initStep1();
     d.i.layoutThreads();
     $('html').removeClass('dw-render-actions-pending');
 
     if (d.i.layout === 'TreeLayout' && !Modernizr.touch) {
       d.i.initUtterscrollAndTips();
     }
-  });
 
-  steps.push(function() {
-    $posts.each($initStep2)
     // Show root post actions initially.
     $('.dw-depth-0 > .dw-p-as').addClass('dw-p-as-shown').attr('id', 'dw-p-as-shown');
     // Don't dim any horizontal root post reply button.
@@ -363,7 +295,7 @@ function renderPageEtc() {
 
 /**
  * Use this function if there is no root post on the page, but only meta info.
- * (Otherwise, if you use `renderPageEtc()`, some error happens, which kills
+ * (Otherwise, if you use `renderDiscussionPage()`, some error happens, which kills
  * other Javascript that runs on page load.)
  */
 function renderEmptyPage() {
@@ -386,11 +318,8 @@ d.i.startDiscussionPage = function() {
     // Import LiveScript's prelude, http://gkz.github.com/prelude-ls/.
     prelude.installPrelude(window);
 
-    d.i.windowOpeners = findWindowOpeners();
-    d.i.rootPostId = findRootPostId();
-
     if ($('.dw-page').length) {
-      renderPageEtc();
+      renderDiscussionPage();
     }
     else {
       // Skip most of the rendering step, since there is no Debiki page present.

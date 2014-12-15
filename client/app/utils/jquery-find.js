@@ -24,30 +24,9 @@ var $ = d.i.$;
 
 
 
-d.i.findThread$ = function(threadId) {
-  return $('#dw-t-'+ threadId);
-}
-
-
 d.i.findPost$ = function(postId) {
   return $('#post-'+ postId);
 }
-
-
-d.i.findPostHeader$ = function(postId) {
-  return $('#post-'+ postId +' > .dw-p-hd');
-};
-
-
-/**
- * Returns the post associated with the current node, if the current
- * node is either a thread list item (li.dw-t) or a <li> that wraps a thread.
- * (For replies laid out horizontally, the .dw-t is a child of the <li>,
- * because of CSS  styling issues.)
- */
-$.fn.dwGetPost = function() {
-  return this.find('> .dw-p, > .dw-t > .dw-p');
-};
 
 
 // Depreacted, use dwPostId() instead.
@@ -65,44 +44,6 @@ $.fn.dwPostId = function() {
 
 $.fn.dwAuthorId = function() {
   return this.find('.dw-p-by').data('dw-u-id');
-};
-
-
-/**
- * Calculataes how deeply nested a thread is, in comparison to the start
- * of the disuccion on the current page (which might not be the article,
- * in case a link to some reply has been followed so that reply is the first
- * post of the rendered page).
- *
- * Caches the depth in CSS class 'dw-depth-NNN' where NNN is the depth.
- * This class is used when styling with other CSS.
- *
- * These calculations cannot currently be done server side, because the server
- * don't always know which comment the browser uses as root post, and can
- * therefore not derive the relative distance from the root to each other
- * post.
- */
-$.fn.dwDepth = function() {
-  var depth;
-  var thread = $(this).closest('.dw-t');
-  var cssAttr = thread.attr('class') || '';
-  var matchResult = cssAttr.match(/dw-depth-([0-9]+)/);
-  if (!matchResult) {
-    var parentThread = thread.parent().closest('.dw-t');
-    if (!parentThread.length) {
-      depth = 0;
-    }
-    else {
-      depth = parentThread.dwDepth() + 1;
-    }
-    thread.addClass('dw-depth-' + depth);
-  }
-  else {
-    var depthStr = matchResult[1];
-    depth = parseInt(depthStr);
-  }
-
-  return depth;
 };
 
 
@@ -134,37 +75,6 @@ $.fn.dwPageMeta = function() {
 };
 
 
-$.fn.dwClosestThread = function() {
-  return this.closest('.dw-t');
-}
-
-
-$.fn.dwChildPost = function() {
-  return this.children('.dw-p');
-}
-
-
-$.fn.dwFindPosts = function() {
-  return this.find('.dw-p');
-}
-
-
-$.fn.dwPostFindHeader = function() {
-  return this.dwCheckIs('.dw-p').children('.dw-p-hd');
-};
-
-
-$.fn.dwPostHeaderFindStats = function() {
-  return this.dwCheckIs('.dw-p-hd').children('.dw-p-flgs-all, .dw-p-r-all');
-};
-
-
-$.fn.dwPostHeaderFindExactTimes = function() {
-  return this.dwCheckIs('.dw-p-hd')
-      .find('> .dw-p-at, > .dw-p-hd-e > .dw-p-at');
-};
-
-
 $.fn.dwLastChange = function() {
   var maxDate = '0';
   this.dwCheckIs('.dw-p')
@@ -192,34 +102,8 @@ $.fn.dwAuthorId = function() {
 };
 
 
-// The root post need not be the article (if ?view=something-else specified).
-$.fn.dwIsRootPost = function() {
-  return this.dwCheckIs('.dw-p').parent().is('.dw-depth-0');
-};
-
-
 $.fn.dwIsArticlePost = function() {
   return this.dwCheckIs('.dw-p').is('.dw-ar-p');
-};
-
-
-$.fn.dwIsReply = function() {
-  // 1 char IDs are reserved (1 is page body, 2 title, 3 template).
-  var id = this.dwPostIdStr();
-  return id.length > 1;
-};
-
-
-$.fn.dwIsGuestReply = function() {
-  var isReply = this.dwIsReply();
-  // Unauthenticated users have '-' in their user ids.
-  var guestAuthor = this.dwAuthorId().indexOf('-') !== -1;
-  return isReply && guestAuthor;
-};
-
-
-$.fn.dwIsCollapsed = function() {
-  return this.is('.dw-zd');
 };
 
 
