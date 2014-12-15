@@ -43,7 +43,7 @@ export var NameLoginBtns = React.createClass({
   onLogoutClick: function() {
     d.u.postJson({ url: d.i.serverOrigin + '/-/logout' })
       .fail(d.i.showServerResponseDialog)
-      .done(d.i.Me.fireLogout);
+      .done(debiki2.ReactActions.logout);
   },
 
   goToUserPage: function() {

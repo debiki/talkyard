@@ -147,7 +147,7 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
 
     # This happens only if we're not in a login popup, but a jQuery UI dialog:
 
-    d.i.Me.fireLogin()
+    debiki2.ReactActions.login()
     # Show response dialog, and continue with whatever caused
     # the login to happen.
     # {{{ If the login happens because the user submits a reply,

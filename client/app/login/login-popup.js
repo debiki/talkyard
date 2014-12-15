@@ -78,7 +78,7 @@ d.i.createLoginPopup = function(anyUrl) {
 
       // Warning: Somewhat dupl code, compare w initLoginSimple.
       d.i.closeAnyLoginDialogs();
-      d.i.Me.fireLogin();
+      debiki2.ReactActions.login();
       d.i.continueAnySubmission();
       return;
     }

@@ -110,6 +110,32 @@ function fireLoginOrLogout() {
 };
 
 
+function handleLoginInOtherBrowserTab() {
+  var currentUser = debiki2.ReactStore.getUser();
+  var sessionId = $.cookie('dwCoSid');
+  if (currentUser.isLoggedIn) {
+    if (sessionId) {
+      // Session id example: (parts: hash, user id, name, login time, random value)
+      // 'Y1pBlH7vY4JW9A.11.Magnus.1316266102779.15gl0p4xf7'
+      var parts = sessionId.split('.');
+      var newUserId = parts[1];
+      if (currentUser.userId !== newUserId) {
+        // We've logged in as another user in another browser tab.
+        debiki2.ReactActions.login();
+      }
+    }
+    else {
+      // We've logged out in another browser tab.
+      debiki2.ReactActions.logout();
+    }
+  }
+  else if (sessionId) {
+    // We've logged in in another browser tab.
+    debiki2.ReactActions.login();
+  }
+}
+
+
 function registerEventHandlersFireLoginOut() {
 
   // Hide all action forms, since they will be slided in.
@@ -122,7 +148,8 @@ function registerEventHandlersFireLoginOut() {
   // and user specific permissions and ratings info (for this tab).
   // Therefore, when the user switches back to this tab, check
   // if a new session has been started.
-  $(window).on('focus', d.i.Me.fireLoginIfNewSession);
+  $(window).on('focus', handleLoginInOtherBrowserTab);
+
   //{{{ What will work w/ IE?
   // See http://stackoverflow.com/a/5556858/694469
   // But: "This script breaks down in IE(8) when you have a textarea on the
@@ -241,7 +268,6 @@ function renderPageEtc() {
     if ($.browser.version < '9') $body.addClass('dw-ua-lte-ie8');
   }
 
-  d.i.Me.refreshProps();
   d.i.showCurLocationInSiteNav();
 
   //debiki2.renderer.renderTitleBodyComments();
@@ -346,7 +372,6 @@ function renderEmptyPage() {
   // root post — e.g. on blog list pages, which list child pages only but no
   // main title or article.)
   configureAjaxRequests();
-  d.i.Me.refreshProps();
   if (!Modernizr.touch) {
     d.i.initUtterscrollAndTips();
   }
@@ -363,7 +388,6 @@ d.i.startDiscussionPage = function() {
 
     d.i.windowOpeners = findWindowOpeners();
     d.i.rootPostId = findRootPostId();
-    d.i.Me = d.i.makeCurUser();
 
     if ($('.dw-page').length) {
       renderPageEtc();

@@ -49,16 +49,7 @@ export function login() {
   Server.loadMyPageData((user) => {
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.Login,
-      user: user /*{
-      isAdmin: d.i.Me.isAdmin(),
-      userId: d.i.Me.getUserId(),
-      username: '???',
-      fullName: d.i.Me.getName(),
-      permsOnPage: d.i.Me.getPermsOnPage(),
-      rolePageSettings: d.i.Me.getRolePageSettings(),
-      isEmailKnown: d.i.Me.isEmailKnown(),
-      isAuthenticated: d.i.Me.isAuthenticated()
-      */
+      user: user
     });
   });
 }
