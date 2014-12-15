@@ -127,18 +127,23 @@ var RootPost = createComponent({
       postBodyClass += ' dw-ar-p-bd';
     }
 
-    var spaceForHorizontalArrows = null;
+    var anyHorizontalArrowToChildren = null;
     if (this.props.horizontalLayout) {
-      spaceForHorizontalArrows = r.div({ className: 'dw-t-vspace' });
+      anyHorizontalArrowToChildren =
+          debiki2.renderer.drawHorizontalArrowFromRootPost(rootPost);
     }
 
-    var children = rootPost.childIds.map((childId) => {
+    var children = rootPost.childIds.map((childId, childIndex) => {
       return (
         r.li({},
           Thread({
+            elemType: 'div',
             allPosts: this.props.allPosts,
             user: this.props.user,
+            rootPostId: this.props.rootPostId,
+            horizontalLayout: this.props.horizontalLayout,
             postId: childId,
+            order: childIndex,
             depth: 1,
           })));
     });
@@ -154,7 +159,7 @@ var RootPost = createComponent({
             r.div({ className: 'dw-p-bd-blk' }, rootPostText))),
         PostActions({ post: rootPost, user: this.props.user }),
         debiki2.reactelements.CommentsToolbar(),
-        spaceForHorizontalArrows,
+        anyHorizontalArrowToChildren,
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
             children))));
@@ -170,20 +175,27 @@ var Thread = createComponent({
   },
   render: function() {
     var post = this.props.allPosts[this.props.postId];
+    var parentPost = this.props.allPosts[post.parentId];
     var deeper = this.props.depth + 1;
     var depthClass = 'dw-depth-' + this.props.depth;
 
+    var arrows = debiki2.renderer.drawArrowsFromParent(
+        parentPost, this.props.order, this.props.horizontalLayout, this.props.rootPostId);
+
     var children = [];
     if (!post.isTreeCollapsed && !post.isTreeDeleted) {
-      children = post.childIds.map((childId) => {
+      children = post.childIds.map((childId, childIndex) => {
         return (
-          r.li({},
             Thread({
+              elemType: 'li',
               allPosts: this.props.allPosts,
               user: this.props.user,
+              rootPostId: this.props.rootPostId,
+              horizontalLayout: this.props.horizontalLayout,
               postId: childId,
+              order: childIndex,
               depth: deeper
-            })));
+            }));
       });
     }
 
@@ -191,8 +203,11 @@ var Thread = createComponent({
       ? null
       : actions = PostActions({ post: post, user: this.props.user, ref: 'actions' });
 
+    var baseElem = r[this.props.elemType];
+
     return (
-      r.div({ className: 'dw-t ' + depthClass },
+      baseElem({ className: 'dw-t ' + depthClass },
+        arrows,
         Post({ post: post, user: this.props.user, onMouseEnter: this.onPostMouseEnter }),
         actions,
         r.div({ className: 'dw-single-and-multireplies' },

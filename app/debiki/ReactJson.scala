@@ -45,6 +45,7 @@ object ReactJson {
       "horizontalLayout" -> JsBoolean(true),
       "rootPostId" -> JsNumber(1),
       "allPosts" -> JsObject(allPostsJson),
+      "horizontalLayout" -> JsBoolean(pageReq.thePageSettings.horizontalComments.valueIsTrue),
       // This stuff isn't rendered server side because then we couldn't cache
       // the rendered html, because it would be user specific.
       "renderLaterInBrowserOnly" -> Json.obj(

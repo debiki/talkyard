@@ -28,17 +28,6 @@ d.i.BodyId = 1;
 d.i.DEBIKI_TABINDEX_DIALOG_MAX = 109;
 
 
-function $initStep3() {
-  // $initPostSvg takes rather long (190 ms on my 6 core 2.8 GHz AMD, for
-  // 100 posts), and  need not be done until just before SVG is drawn.
-
-  //d.i.SVG.$initPostSvg.apply(this);
-
-  // not neeed! when patching
-  d.i.SVG.$clearAndRedrawArrows.apply(this);
-};
-
-
 function $initStep4() {
   d.i.makeThreadResizableForPost(this);
 };
@@ -182,21 +171,6 @@ function renderDiscussionPage() {
 
   var $posts = $('.debiki .dw-p:not(.dw-p-ttl)');
 
-  // If there's no SVG support, use PNG arrow images instead.
-  // Also use PNG arrows on mobiles; rendering SVG arrows takes rather long.
-  // And use PNG arrows if there are many comments, because then rendering
-  // takes too long also on desktops.
-  // FOR NOW, disable SVG, always, because I've not yet made SVG
-  // avoid indenting deeply nested replies "too much".
-  d.i.SVG = d.i.makeFakeDrawer($);
-  /*
-  d.i.SVG = !Modernizr.touch && Modernizr.inlinesvg &&
-        document.URL.indexOf('svg=false') === -1 &&
-        $posts.length < 15 ?
-      d.i.makeSvgDrawer($) : d.i.makeFakeDrawer($);
-  */
-
-
   (d.u.workAroundAndroidZoomBug || function() {})($);
 
   // IE 6, 7 and 8 specific elems (e.g. upgrade-to-newer-browser info)
@@ -236,7 +210,6 @@ function renderDiscussionPage() {
   });
 
   steps.push(function() {
-    $posts.each($initStep3);
     registerEventHandlersFireLoginOut();
   });
 
@@ -245,15 +218,6 @@ function renderDiscussionPage() {
   steps.push(function() {
     $posts.each($initStep4)
   });
-
-  // Don't draw SVG until all html tags has been placed, or the SVG
-  // arrows might be offset incorrectly.
-  // Actually, drawing SVG takes long, so wait for a while,
-  // don't do it on page load.
-  //steps.push(d.i.SVG.initRootDrawArrows);
-  /*steps.push(function() {
-    $posts.each(d.i.SVG.$clearAndRedrawArrows);
-  }); */
 
   // If #post-X is specified in the URL, ensure all posts leading up to
   // and including X have been loaded. Then scroll to X.
