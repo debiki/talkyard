@@ -336,8 +336,8 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
   override def anyCurrentPageRole = Some(pageRole)
   override def anyCurrentPagePath = Some(_pageReq.pagePath)
 
-  def pageId = _pageReq.pageId_!
-  def pageRole = _pageReq.pageRole_!
+  def pageId = _pageReq.thePageId
+  def pageRole = _pageReq.thePageRole
 
   def currentFolder = PathRanges(folders = Seq(_pageReq.pagePath.folder))
   def currentTree = PathRanges(trees = Seq(_pageReq.pagePath.folder))
@@ -369,7 +369,7 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
    * Returns any parent forums, e.g.: grandparent-forum :: parent-forum :: Nil.
    */
   def listParentForums(): Seq[tpi.ForumOrCategory] = {
-    val parentPageId = _pageReq.pageMeta_!.parentPageId match {
+    val parentPageId = _pageReq.thePageMeta.parentPageId match {
       case None => return Nil
       case Some(pageId) => pageId
     }
@@ -527,7 +527,7 @@ class TemplateProgrammingInterface(
           horizontalComments = horizontalComments))
       }
 
-    HtmlPageSerializer.wrapInPageTag(pageReq.pathAndMeta_!) {
+    HtmlPageSerializer.wrapInPageTag(pageReq.thePathAndMeta) {
       xml.Unparsed(contents.body)
     }
   }

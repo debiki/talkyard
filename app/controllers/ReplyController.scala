@@ -62,14 +62,14 @@ object ReplyController extends mvc.Controller {
   def saveReply(pageReqNoMeOnPage: PageRequest[_], replyToPostIds: Set[PostId], text: String,
         whereOpt: Option[String] = None) = {
 
-    val pageReq = pageReqNoMeOnPage.copyWithMeOnPage_!
+    val pageReq = pageReqNoMeOnPage.copyWithMeOnPage
     if (pageReq.oldPageVersion.isDefined)
       throwBadReq("DwE72XS8", "Can only reply to latest page version")
 
-    val commonAncestorPostId = pageReq.thePage.findCommonAncestorPost(replyToPostIds.toSeq)
+    val commonAncestorPostId = pageReq.thePageParts.findCommonAncestorPost(replyToPostIds.toSeq)
     val anyParentPostId =
       if (commonAncestorPostId == PageParts.NoId) {
-        if (pageReq.pageRole_! == PageRole.EmbeddedComments) {
+        if (pageReq.thePageRole == PageRole.EmbeddedComments) {
           // There is no page body. Allow new comment threads with no parent post.
           None
         }
@@ -78,7 +78,7 @@ object ReplyController extends mvc.Controller {
             "DwE260G8", "This is not an embedded discussion; must reply to an existing post")
         }
       }
-      else if (pageReq.page_!.getPost(commonAncestorPostId).isDefined) {
+      else if (pageReq.thePageParts.getPost(commonAncestorPostId).isDefined) {
         Some(commonAncestorPostId)
       }
       else {

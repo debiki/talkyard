@@ -40,7 +40,7 @@ object EditHistoryController extends mvc.Controller {
     val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
       "DwE12GU08", s"Page `$pageId' not found")
 
-    val page = pageReq.page_!
+    val page = pageReq.thePageParts
     val postIdInt = postId.toInt
     val post = page.getPost(postIdInt) getOrElse
       throwForbidden("DwE9kIJ4", s"Post `$postIdInt' not found")
@@ -106,7 +106,7 @@ object EditHistoryController extends mvc.Controller {
 
     val approval = AutoApprover.perhapsApprove(pageReq)
 
-    val page = pageReq.page_!
+    val page = pageReq.thePageParts
     var sno = 0
     var actions = for ((histEdit, actionId) <- changes) yield {
       sno += 1

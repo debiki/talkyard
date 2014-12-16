@@ -27,10 +27,11 @@ import requests.PageRequest
 object ReactJson {
 
   def pageToJson(pageReq: PageRequest[_]): JsObject = {
-    val numPostsExclTitle = pageReq.page_!.postCount - (if (pageReq.page_!.titlePost.isDefined) 1 else 0)
+    val numPostsExclTitle =
+      pageReq.thePageParts.postCount - (if (pageReq.thePageParts.titlePost.isDefined) 1 else 0)
 
     // SHOULD sort by score
-    val allPostsJson = pageReq.thePage.getAllPosts.map { post =>
+    val allPostsJson = pageReq.thePageParts.getAllPosts.map { post =>
       post.id.toString -> postToJson(post)
     }
 
@@ -144,7 +145,7 @@ object ReactJson {
 
 
   private def votesJson(pageRequest: PageRequest[_]): JsObject = {
-    val userVotesMap = pageRequest.thePage.userVotesMap(pageRequest.userIdData)
+    val userVotesMap = pageRequest.thePageParts.userVotesMap(pageRequest.userIdData)
     val votesByPostId = userVotesMap map { case (postId, votes) =>
       var voteStrs = Vector[String]()
       if (votes.votedLike) voteStrs = voteStrs :+ "VoteLike"
@@ -158,8 +159,8 @@ object ReactJson {
 
   private def unapprovedPostsJson(request: PageRequest[_]): JsObject = {
     val relevantPosts =
-      if (request.theUser.isAdmin) request.thePage.getAllPosts
-      else request.thePage.postsByUser(request.theUser.id)
+      if (request.theUser.isAdmin) request.thePageParts.getAllPosts
+      else request.thePageParts.postsByUser(request.theUser.id)
 
     val unapprovedPosts = relevantPosts filter { post =>
       !post.currentVersionApproved

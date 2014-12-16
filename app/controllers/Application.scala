@@ -84,7 +84,7 @@ object Application extends mvc.Controller {
        ifNotOneOf("tf", throwBadReq("DwE93kK3", "Bad whole tree value"))
     val reason = pageReq.getNoneAsEmpty(Inp.Reason)
 
-    val post = pageReq.page_!.getPost_!(postId)
+    val post = pageReq.thePageParts.getPost_!(postId)
     val isAuthor = post.userId == pageReq.user_!.id
 
     if (!isAuthor && !pageReq.permsOnPage.deleteAnyReply)

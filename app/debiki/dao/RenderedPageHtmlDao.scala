@@ -51,7 +51,7 @@ trait RenderedPageHtmlDao {
 
 
   def renderPageMeta(pageReq: PageRequest[_]): NodeSeq = {
-    HtmlPageSerializer.wrapInPageTag(pageReq.pathAndMeta_!)(Nil)
+    HtmlPageSerializer.wrapInPageTag(pageReq.thePathAndMeta)(Nil)
       .map(html => xml.Unparsed(liftweb.Html5.toString(html)))
   }
 
@@ -59,15 +59,15 @@ trait RenderedPageHtmlDao {
   def renderPage(pageReq: PageRequest[_], renderSettings: RenderPageSettings)
         : RenderedPage = {
 
-    val page = pageReq.thePage
+    val page = pageReq.thePageParts
     val postsReadStats = pageReq.dao.loadPostsReadStats(page.id)
     val renderer = HtmlPageSerializer(page,
       postsReadStats, pageReq.pageRoot, pageReq.host,
       horizontalComments = renderSettings.horizontalComments,
       // Use follow links for the article, unless it's a forum topic — anyone
       // may start a new forum topic.
-      nofollowArticle = pageReq.pageRole_! == PageRole.ForumTopic,
-      showEmbeddedCommentsToolbar = pageReq.pageRole_! == PageRole.EmbeddedComments,
+      nofollowArticle = pageReq.thePageRole == PageRole.ForumTopic,
+      showEmbeddedCommentsToolbar = pageReq.thePageRole == PageRole.EmbeddedComments,
       debugStats = pageReq.debugStats)
 
     val pageTitle =
@@ -128,7 +128,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     useCache &= !pageReq.debugStats
 
     if (useCache) {
-      val key = _pageHtmlKey(SitePageId(siteId, pageReq.pageId_!), origin = pageReq.host)
+      val key = _pageHtmlKey(SitePageId(siteId, pageReq.thePageId), origin = pageReq.host)
       lookupInCache(key, orCacheAndReturn = {
         rememberOrigin(pageReq.host)
         Some(super.renderPage(pageReq, renderSettings))

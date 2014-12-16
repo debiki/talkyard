@@ -228,7 +228,7 @@ object MovePageController extends mvc.Controller {
     // that'd implicitly validate all inputs. But then first make
     // PagePath validate all inputs (it should, but not yet implemented).
     val newPagePath = pageReq.dao.moveRenamePage(
-      pageReq.pageId_!, newFolder = newFolder,
+      pageReq.thePageId, newFolder = newFolder,
       showId = showId, newSlug = newSlug)
 
     SeeOther(newPagePath.value)

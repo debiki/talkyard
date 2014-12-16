@@ -81,7 +81,7 @@ object TemplateRenderer {
     val theme = getThemeName(tpi)
 
     val template = tpi.pageConfigValue("template") orIfEmpty {
-      pageReq.pageRole_! match {
+      pageReq.thePageRole match {
         case PageRole.BlogPost => "blogPost"
         case PageRole.Blog => "blog"
         case PageRole.Forum => "forum"

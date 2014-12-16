@@ -53,12 +53,12 @@ trait PageDao {
     */
   def savePageActionsGenNotfs(pageReq: PageRequest[_], actions: Seq[RawPostAction[_]])
       : (PageNoPath, Seq[RawPostAction[_]]) = {
-    val pagePartsNoAuthor = pageReq.pageNoPath_!.parts
+    val pagePartsNoAuthor = pageReq.thePageNoPath.parts
     // We're probably going to render parts of the page later, and then we
     // need the user, so add it to the page — it's otherwise absent if this is
     // the user's first contribution to the page.
     val pageParts = pagePartsNoAuthor ++ pageReq.anyMeAsPeople
-    val page = PageNoPath(pageParts, pageReq.ancestorIdsParentFirst_!, pageReq.pageMeta_!)
+    val page = PageNoPath(pageParts, pageReq.ancestorIdsParentFirst_!, pageReq.thePageMeta)
     savePageActionsGenNotfsImpl(page, actions)
   }
 

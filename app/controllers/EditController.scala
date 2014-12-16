@@ -71,7 +71,7 @@ object EditController extends mvc.Controller {
     // user's name might be included in the generated html: "Edited by: ..."
     // (but if this is the user's first contribution to the page, s/he
     // is currently not included in the associated People).
-    val pageRequest = pageReqPerhapsNoMe.copyWithMeOnPage_!
+    val pageRequest = pageReqPerhapsNoMe.copyWithMeOnPage
 
     _throwIfTooMuchData(newText, pageRequest)
 
@@ -103,7 +103,7 @@ object EditController extends mvc.Controller {
   private def saveEdit(pageReq: PageRequest[_],
         postId: PostId, newText: String): Post = {
 
-    val post = pageReq.thePage.thePost(postId)
+    val post = pageReq.thePageParts.thePost(postId)
 
     if (newText == post.currentText)
       return post
