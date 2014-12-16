@@ -77,7 +77,6 @@ object EditController extends mvc.Controller {
 
     val postAfter = saveEdit(pageRequest, postId = postId, newText = newText)
 
-    // TODO [react] Let JS code show unapproved posts written by current user.
     OkSafeJson(ReactJson.postToJson(postAfter, includeUnapproved = true))
   }
 

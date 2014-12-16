@@ -88,7 +88,7 @@ object ReactJson {
   }
 
 
-  val NoUserSpecificData = Json.obj(
+  private val NoUserSpecificData = Json.obj(
     "permsOnPage" -> JsObject(Nil),
     "rolePageSettings" -> JsObject(Nil),
     "votes" -> JsObject(Nil),
@@ -121,7 +121,7 @@ object ReactJson {
   }
 
 
-  def permsOnPageJson(perms: PermsOnPage): JsObject = {
+  private def permsOnPageJson(perms: PermsOnPage): JsObject = {
     Json.obj(
       "accessPage" -> JsBoolean(perms.accessPage),
       "createPage" -> JsBoolean(perms.createPage),
@@ -137,13 +137,13 @@ object ReactJson {
   }
 
 
-  def rolePageSettingsToJson(settings: RolePageSettings): JsObject = {
+  private def rolePageSettingsToJson(settings: RolePageSettings): JsObject = {
     Json.obj(
       "notfLevel" -> safeJsString(settings.notfLevel.toString))
   }
 
 
-  def votesJson(pageRequest: PageRequest[_]): JsObject = {
+  private def votesJson(pageRequest: PageRequest[_]): JsObject = {
     val userVotesMap = pageRequest.thePage.userVotesMap(pageRequest.userIdData)
     val votesByPostId = userVotesMap map { case (postId, votes) =>
       var voteStrs = Vector[String]()
@@ -156,7 +156,7 @@ object ReactJson {
   }
 
 
-  def unapprovedPostsJson(request: PageRequest[_]): JsObject = {
+  private def unapprovedPostsJson(request: PageRequest[_]): JsObject = {
     val relevantPosts =
       if (request.theUser.isAdmin) request.thePage.getAllPosts
       else request.thePage.postsByUser(request.theUser.id)
@@ -173,7 +173,7 @@ object ReactJson {
   }
 
 
-  def categoriesJson(request: PageRequest[_]): JsArray = {
+  private def categoriesJson(request: PageRequest[_]): JsArray = {
     if (request.pageRole != Some(PageRole.Forum))
       return JsArray(Nil)
 
