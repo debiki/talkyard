@@ -21,7 +21,6 @@ package com.debiki.core
 /** Data on by which [guest ips] and roles each post on a certain page has been read.
   */
 case class PostsReadStats(
-  pageId: PageId,
   guestIpsByPostId: Map[PostId, Set[String]],
   roleIdsByPostId: Map[PostId, Set[RoleId]]) {
 
@@ -31,4 +30,9 @@ case class PostsReadStats(
     numGuestIps + numRoleIds
   }
 
+}
+
+
+object PostsReadStats {
+  val None = PostsReadStats(Map.empty, Map.empty)
 }

@@ -84,6 +84,7 @@ object ReactJson {
       "isPostCollapsed" -> JsBoolean(post.isPostCollapsed),
       "isTreeClosed" -> JsBoolean(post.isTreeClosed),
       "isApproved" -> JsBoolean(isApproved),
+      "likeScore" -> JsNumber(isLikedConfidenceIntervalLowerBound(post)),
       "childIds" -> JsArray(post.replies.map(reply => JsNumber(reply.id))),
       "text" -> safeStringOrNull(text)))
   }
@@ -187,6 +188,18 @@ object ReactJson {
         "subCategories" -> JsArray()))
     })
     categoriesJson
+  }
+
+
+  private def isLikedConfidenceIntervalLowerBound(post: Post): Float = {
+    val numLikes = post.numLikeVotes
+    // In case there for some weird reason are liked posts with no read count,
+    // set readCount to at least numLikes.
+    val readCount = math.max(post.readCount, numLikes)
+    val avgLikes = numLikes.toFloat / math.max(1, readCount)
+    val lowerBound = Distributions.binPropConfIntACLowerBound(
+      sampleSize = readCount, proportionOfSuccesses = avgLikes, percent = 80.0f)
+    lowerBound
   }
 
 

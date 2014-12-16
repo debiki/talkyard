@@ -133,7 +133,8 @@ var RootPost = createComponent({
           debiki2.renderer.drawHorizontalArrowFromRootPost(rootPost);
     }
 
-    var children = rootPost.childIds.map((childId, childIndex) => {
+    var childIdsSorted = sortByLikeScore(rootPost.childIds, this.props.allPosts);
+    var children = childIdsSorted.map((childId, childIndex) => {
       return (
         r.li({},
           Thread({
@@ -182,9 +183,10 @@ var Thread = createComponent({
     var arrows = debiki2.renderer.drawArrowsFromParent(
         parentPost, this.props.order, this.props.horizontalLayout, this.props.rootPostId);
 
+    var childIdsSorted = sortByLikeScore(post.childIds, this.props.allPosts);
     var children = [];
     if (!post.isTreeCollapsed && !post.isTreeDeleted) {
-      children = post.childIds.map((childId, childIndex) => {
+      children = childIdsSorted.map((childId, childIndex) => {
         return (
             Thread({
               elemType: 'li',
@@ -540,6 +542,68 @@ function horizontalCss(horizontal) {
 
 function isCollapsed(post) {
   return post.isTreeCollapsed || post.isPostCollapsed;
+}
+
+
+function isDeleted(post) {
+  return post.isTreeDeleted || post.isPostDeleted;
+}
+
+
+function sortByLikeScore(childIds: number[], allPosts) {
+  var idsSorted = childIds.slice(); // copies array
+
+  idsSorted.sort((idA: number, idB: number) => {
+    var postA = allPosts[idA];
+    var postB = allPosts[idB];
+
+    /* From app/debiki/HtmlSerializer.scala:
+    if (a.pinnedPosition.isDefined || b.pinnedPosition.isDefined) {
+      // 1 means place first, 2 means place first but one, and so on.
+      // -1 means place last, -2 means last but one, and so on.
+      val aPos = a.pinnedPosition.getOrElse(0)
+      val bPos = b.pinnedPosition.getOrElse(0)
+      assert(aPos != 0 || bPos != 0)
+      if (aPos == 0) return bPos < 0
+      if (bPos == 0) return aPos > 0
+      if (aPos * bPos < 0) return aPos > 0
+      return aPos < bPos
+    } */
+
+    // Place deleted posts last; they're rather uninteresting?
+    if (!isDeleted(postA) && isDeleted(postB))
+      return -1;
+
+    if (isDeleted(postA) && !isDeleted(postB))
+      return +1;
+
+    /* From app/debiki/HtmlSerializer.scala:
+    // Sort multireplies by time, for now, so it never happens that a multireply
+    // ends up placed before another multireply that it replies to.
+    // COULD place interesting multireplies first, if they're not constrained by
+    // one being a reply to another.
+    if (a.multireplyPostIds.nonEmpty && b.multireplyPostIds.nonEmpty) {
+      if (a.creationDati.getTime < b.creationDati.getTime)
+        return true
+      if (a.creationDati.getTime > b.creationDati.getTime)
+        return false
+    } */
+
+    // Place interesting posts first.
+    if (postA.likeScore > postB.likeScore)
+      return -1;
+
+    if (postA.likeScore < postB.likeScore)
+      return +1
+
+    // Newest posts first. No, last
+    if (postA.postId < postB.postId)
+      return -1;
+    else
+      return +1;
+  });
+
+  return idsSorted;
 }
 
 

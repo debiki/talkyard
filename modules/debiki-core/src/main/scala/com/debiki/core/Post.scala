@@ -154,6 +154,7 @@ case class Post(
   def numWrongVotes = actions.filter(_.payload == PAP.VoteWrong).length
   def numOffTopicVotes = actions.filter(_.payload == PAP.VoteOffTopic).length
 
+  def readCount = pageParts.postReadStats.getOrDie("DwE2KDG45").readCountFor(id)
 
   def pinnedPosition: Option[Int] =
     page.getPinnedPositionOf(this)

@@ -64,8 +64,9 @@ object PageParts {
   }
 
 
-  def fromActions(guid: PageId, people: People, actions: List[AnyRef]): PageParts =
-    PageParts(guid, people) ++ actions
+  def fromActions(pageId: PageId, postReadStats: PostsReadStats, people: People,
+        actions: List[AnyRef]): PageParts =
+    PageParts(pageId, Some(postReadStats), people) ++ actions
 
 
   /** Assigns ids to actions and updates references from e.g. Edits to Posts.
@@ -260,6 +261,7 @@ abstract class PostActionsWrapper { self: PageParts =>
   */
 case class PageParts (
   guid: PageId,  // COULD rename to pageId?
+  postReadStats: Option[PostsReadStats] = None,
   people: People = People.None,
   postStates: List[PostState] = Nil,
   rawActions: List[RawPostAction[_]] = Nil) extends PostActionsWrapper {
@@ -600,7 +602,7 @@ case class PageParts (
       case x => runErr(
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
-    PageParts(id, people, postStates, actions2)
+    PageParts(id, postReadStats, people, postStates, actions2)
   }
 
 
