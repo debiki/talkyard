@@ -101,7 +101,7 @@ var Title = createComponent({
   render: function() {
     var titlePost = this.props.allPosts[TitleId];
     var titleText = titlePost.isApproved
-        ? titlePost.text
+        ? titlePost.sanitizedHtml
         : r.i({}, '(Title pending approval)');
     return (
       r.div({ className: 'dw-t', id: 'dw-t-0' },
@@ -149,15 +149,16 @@ var RootPost = createComponent({
           })));
     });
 
-    var rootPostText = rootPost.isApproved
-        ? rootPost.text
-        : r.i({}, '(Text pending approval.)');
+    var sanitizedHtml = rootPost.isApproved
+        ? rootPost.sanitizedHtml
+        : '<p>(Text pending approval.)</p>';
 
     return (
       r.div({ className: threadClass },
         r.div({ className: postClass, id: postIdAttr },
           r.div({ className: postBodyClass },
-            r.div({ className: 'dw-p-bd-blk' }, rootPostText))),
+            r.div({ className: 'dw-p-bd-blk',
+              dangerouslySetInnerHTML: { __html: sanitizedHtml }}))),
         PostActions({ post: rootPost, user: this.props.user }),
         debiki2.reactelements.CommentsToolbar(),
         anyHorizontalArrowToChildren,
@@ -343,7 +344,8 @@ var PostBody = createComponent({
     var post = this.props.post;
     return (
       r.div({ className: 'dw-p-bd' },
-        r.div({ className: 'dw-p-bd-blk' }, post.text)));
+        r.div({ className: 'dw-p-bd-blk',
+            dangerouslySetInnerHTML: { __html: post.sanitizedHtml }})));
   }
 });
 

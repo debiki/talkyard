@@ -59,11 +59,11 @@ object ReactJson {
       JsNumber(date.getTime)
     } getOrElse JsNull
 
-    val (text, isApproved) =
+    val (sanitizedHtml, isApproved) =
       if (includeUnapproved)
-        (Some(post.currentText), post.currentVersionApproved)
+        (Some(post.currentHtmlSanitized), post.currentVersionApproved)
       else
-        (post.approvedText, post.approvedText.nonEmpty)
+        (post.approvedHtmlSanitized, post.approvedHtmlSanitized.nonEmpty)
 
     JsObject(Vector(
       "postId" -> JsNumber(post.id),
@@ -86,7 +86,7 @@ object ReactJson {
       "isApproved" -> JsBoolean(isApproved),
       "likeScore" -> JsNumber(isLikedConfidenceIntervalLowerBound(post)),
       "childIds" -> JsArray(post.replies.map(reply => JsNumber(reply.id))),
-      "text" -> safeStringOrNull(text)))
+      "sanitizedHtml" -> safeStringOrNull(sanitizedHtml)))
   }
 
 
@@ -217,7 +217,7 @@ object ReactJson {
     safeString = safeString.replaceAllLiterally("<", "\u003c") // and? ">", "\u003e"
     safeString = safeString.replaceAllLiterally("-->", "--\\>")
     safeString = safeString.replaceAllLiterally("=", "\u003d")
-    safeString = safeString.replaceAllLiterally("&", "%26")
+    //safeString = safeString.replaceAllLiterally("&", "%26")
     JsString(safeString)
   }
 

@@ -112,6 +112,34 @@ case class Post(
     else None
 
 
+  lazy val currentHtmlSanitized: String =
+    if (currentText == "") ""
+    else render(currentText)
+
+  lazy val approvedHtmlSanitized: Option[String] =
+    approvedText map { text =>
+      if (text == currentText) currentHtmlSanitized
+      else render(text)
+    }
+
+  lazy val unapprovedHtmlSanitized: Option[String] =
+    unapprovedText map { text =>
+      if (text == currentText) currentHtmlSanitized
+      else render(text)
+    }
+
+  private def render(source: String) = {
+    val renderer = page.dao.getOrDie("DwE8Ef9W1").commonMarkRenderer
+    if (id == PageParts.TitleId) {
+      renderer.sanitizeHtml(currentText)
+    }
+    else {
+      renderer.renderAndSanitizeCommonMark(currentText,
+          allowClassIdDataAttrs = id == PageParts.BodyId, followLinks = theUser.isAdmin)
+    }
+  }
+
+
    // This currently happens directly, hence + 0:
   def numDeletePostVotesPro = state.numDeletePostVotes.pro + 0
   def numDeletePostVotesCon = state.numDeletePostVotes.con + 0
@@ -154,7 +182,7 @@ case class Post(
   def numWrongVotes = actions.filter(_.payload == PAP.VoteWrong).length
   def numOffTopicVotes = actions.filter(_.payload == PAP.VoteOffTopic).length
 
-  def readCount = pageParts.postReadStats.getOrDie("DwE2KDG45").readCountFor(id)
+  def readCount = pageParts.postReadStats.readCountFor(id)
 
   def pinnedPosition: Option[Int] =
     page.getPinnedPositionOf(this)

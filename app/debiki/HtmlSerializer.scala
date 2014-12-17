@@ -101,6 +101,14 @@ object HtmlPageSerializer {
       val stream = getClass().getResourceAsStream(path)
       newEngine.eval(new java.io.InputStreamReader(stream))
     }
+    newEngine.eval(i"""
+      |var debiki = {
+      |  store: {},
+      |  v0: { util: {} },
+      |  internal: {}
+      |};
+      |""")
+
     evalFile("/public/res/remarkable.min.js")
     evalFile("/public/res/html-sanitizer-bundle.js")
     evalFile("/public/res/mentions-remarkable-plugin.js")

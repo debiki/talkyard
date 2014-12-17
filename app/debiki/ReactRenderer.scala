@@ -29,7 +29,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 /**
   * Implementation details:
   *
-  * Initializing a Nashorn engine takes long, perhaps 3 - 30 seconds now when
+  * Initializing a Nashorn engine takes long, perhaps 3 - 10 seconds now when
   * I'm testing on localhost. So, on startup, I'm initializing many engines
   * and inserting them into a thread safe blocking collection. One engine
   * per core. Later on, when rendering a page, the render thread fetches
@@ -41,7 +41,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
   * creates new threads, or has 50 - 100 'play-akka.actor.default-dispatcher-NN'
   * threads, and it doesn't make sense to create engines for that many threads.
   */
-object ReactRenderer {
+object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
   private val logger = play.api.Logger
 
@@ -65,9 +65,8 @@ object ReactRenderer {
     withJavascriptEngine(engine => {
       val timeBefore = (new ju.Date).getTime
 
-      val invocable = engine.asInstanceOf[js.Invocable]
-      invocable.invokeFunction("setInitialStateJson", initialStateJson)
-      val pageHtml = invocable.invokeFunction("renderReactServerSide").asInstanceOf[String]
+      engine.invokeFunction("setInitialStateJson", initialStateJson)
+      val pageHtml = engine.invokeFunction("renderReactServerSide").asInstanceOf[String]
 
       def timeElapsed = (new ju.Date).getTime - timeBefore
       def threadId = java.lang.Thread.currentThread.getId
@@ -79,7 +78,25 @@ object ReactRenderer {
   }
 
 
-  private def withJavascriptEngine(fn: (js.ScriptEngine) => String): String = {
+  override def renderAndSanitizeCommonMark(commonMarkSource: String,
+        allowClassIdDataAttrs: Boolean, followLinks: Boolean): String = {
+    withJavascriptEngine(engine => {
+      val safeHtml = engine.invokeFunction("renderAndSanitizeCommonMark", commonMarkSource,
+          allowClassIdDataAttrs.asInstanceOf[Object], followLinks.asInstanceOf[Object])
+      safeHtml.asInstanceOf[String]
+    })
+  }
+
+
+  override def sanitizeHtml(text: String): String = {
+    withJavascriptEngine(engine => {
+      val safeHtml = engine.invokeFunction("sanitizeHtml", text)
+      safeHtml.asInstanceOf[String]
+    })
+  }
+
+
+  private def withJavascriptEngine(fn: (js.Invocable) => String): String = {
     def threadId = Thread.currentThread.getId
     def threadName = Thread.currentThread.getName
 
@@ -94,7 +111,7 @@ object ReactRenderer {
       logger.debug(s"...Thread $threadName (id $threadId) got a JS engine.")
     }
 
-    val result = fn(engine)
+    val result = fn(engine.asInstanceOf[js.Invocable])
     javascriptEngines.addFirst(engine)
     result
   }
@@ -126,10 +143,7 @@ object ReactRenderer {
         |    return renderTitleBodyCommentsToString();
         |  }
         |  catch (e) {
-        |    print('File: ' + e.fileName);
-        |    print('Line: ' + e.lineNumber);
-        |    print('Column: ' + e.columnNumber);
-        |    print('Stack trace: ' + e.stack);
+        |    printStackTrace(e);
         |  }
         |  return "Error rendering React components on server [DwE2GKD92]";
         |}
@@ -139,6 +153,10 @@ object ReactRenderer {
     val javascriptStream = getClass.getResourceAsStream(s"/public/res/renderer$min.js")
     newEngine.eval(new java.io.InputStreamReader(javascriptStream))
 
+    newEngine.eval(i"""
+        |$RenderAndSanitizeCommonMark
+        |""")
+
     def timeElapsed = (new ju.Date).getTime - timeBefore
     logger.debug(o"""... Done initializing Nashorn engine, took: $timeElapsed ms,
          thread id: $threadId, name: $threadName""")
@@ -147,24 +165,71 @@ object ReactRenderer {
   }
 
 
+  private val RenderAndSanitizeCommonMark = i"""
+    |var remarkable;
+    |try {
+    |  remarkable = new Remarkable({ html: true });
+    |  remarkable.use(debiki.internal.MentionsRemarkablePlugin());
+    |}
+    |catch (e) {
+    |  printStackTrace(e);
+    |  console.error("Error creating CommonMark renderer [DwE5kFEM9]");
+    |}
+    |
+    |function renderAndSanitizeCommonMark(source, allowClassIdDataAttrs, followLinks) {
+    |  try {
+    |    var unsafeHtml = remarkable.render(source);
+    |    var allowClassAndIdAttr = allowClassIdDataAttrs;
+    |    var allowDataAttr = allowClassIdDataAttrs;
+    |    if (!followLinks) {
+    |      unsafeHtml = unsafeHtml.replace(/<a /, "<a rel='nofollow' ")
+    |    }
+    |    return googleCajaSanitizeHtml(unsafeHtml, allowClassAndIdAttr, allowDataAttr);
+    |  }
+    |  catch (e) {
+    |    printStackTrace(e);
+    |  }
+    |  return "Error rendering CommonMark on server [DwE4XMYD8]";
+    |}
+    |
+    |function sanitizeHtml(source) {
+    |  try {
+    |    source = source.replace(/<a /, "<a rel='nofollow' ")
+    |    return googleCajaSanitizeHtml(source, false, false);
+    |  }
+    |  catch (e) {
+    |    printStackTrace(e);
+    |  }
+    |  return "Error sanitizing HTML on server [DwE5GBCU6]";
+    |}
+    |"""
+
+
   private val DummyConsoleLogFunctions = i"""
     |var console = {
     |  trace: function(message) {
-    |    java.lang.System.out.println('Nashorn TRC: ' + message);
+    |    java.lang.System.out.println('Nashorn TRACE: ' + message);
     |  },
     |  debug: function(message) {
-    |    java.lang.System.out.println('Nashorn DBG: ' + message);
+    |    java.lang.System.out.println('Nashorn DEBUG: ' + message);
     |  },
     |  log: function(message) {
     |    java.lang.System.out.println('Nashorn LOG: ' + message);
     |  },
     |  warn: function(message) {
-    |    java.lang.System.out.println('Nashorn WNR: ' + message);
+    |    java.lang.System.err.println('Nashorn WARN: ' + message);
     |  },
     |  error: function(message) {
-    |    java.lang.System.out.println('Nashorn ERR: ' + message);
+    |    java.lang.System.err.println('Nashorn ERROR: ' + message);
     |  }
     |};
+    |
+    |function printStackTrace(exception) {
+    |  console.error('File: ' + exception.fileName);
+    |  console.error('Line: ' + exception.lineNumber);
+    |  console.error('Column: ' + exception.columnNumber);
+    |  console.error('Stack trace: ' + exception.stack);
+    |}
     |"""
 
 

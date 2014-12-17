@@ -348,6 +348,9 @@ function compileServerSideTypescript() {
   var javascriptStream = gulp.src([
         'bower_components/react/react-with-addons.js',
         'bower_components/react-bootstrap/react-bootstrap.js',
+        'bower_components/remarkable/dist/remarkable.js',
+        'client/third-party/html-sanitizer-bundle.js',
+        'client/shared/editor/mentions-remarkable-plugin.js',
         'bower_components/moment/moment.js']);
 
   return es.merge(typescriptStream, javascriptStream)

@@ -152,7 +152,7 @@ class Globals {
     val ShutdownTimeout = 30 seconds
 
     val dbDaoFactory = new RdbDaoFactory(
-      makeDataSource(), Akka.system, anyFullTextSearchDbPath, Play.isTest,
+      makeDataSource(), Akka.system, debiki.ReactRenderer, anyFullTextSearchDbPath, Play.isTest,
       fastStartSkipSearch = fastStartSkipSearch)
 
     val quotaManager = new QuotaManager(Akka.system, systemDao, freeDollarsToEachNewSite)

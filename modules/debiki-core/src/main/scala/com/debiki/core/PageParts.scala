@@ -64,9 +64,9 @@ object PageParts {
   }
 
 
-  def fromActions(pageId: PageId, postReadStats: PostsReadStats, people: People,
+  def fromActions(pageId: PageId, dao: SiteDbDao, people: People,
         actions: List[AnyRef]): PageParts =
-    PageParts(pageId, Some(postReadStats), people) ++ actions
+    PageParts(pageId, Some(dao), people) ++ actions
 
 
   /** Assigns ids to actions and updates references from e.g. Edits to Posts.
@@ -253,6 +253,9 @@ abstract class PostActionsWrapper { self: PageParts =>
   * The actions create "posts", e.g. title, body, comments. The actions also
   * edit them, and review, close, flag, delete, etcetera.
   *
+  * Update: I'll rewrite PageParts so it becomes mutable. I've started a bit, by
+  * giving it an optional DAO.
+  *
   * @param guid The page's id, unique per website.
   * @param people People who has contributed to the page. If some people are missing,
   * certain functions might fail (e.g. a function that fetches the name of the author
@@ -261,7 +264,7 @@ abstract class PostActionsWrapper { self: PageParts =>
   */
 case class PageParts (
   guid: PageId,  // COULD rename to pageId?
-  postReadStats: Option[PostsReadStats] = None,
+  dao: Option[SiteDbDao] = None,
   people: People = People.None,
   postStates: List[PostState] = Nil,
   rawActions: List[RawPostAction[_]] = Nil) extends PostActionsWrapper {
@@ -276,6 +279,10 @@ case class PageParts (
 
   lazy val actionsByTimeAsc =
     rawActions.toVector.sortBy(_.creationDati.getTime)
+
+
+  lazy val postReadStats: PostsReadStats =
+    dao.getOrDie("DwE0FK32").loadPostsReadStats(this.id)
 
 
   // Try to remove/rewrite? Doesn't return e.g Post or Patch.
@@ -602,7 +609,7 @@ case class PageParts (
       case x => runErr(
         "DwE8k3EC", "Unknown action type: "+ classNameOf(x))
     }
-    PageParts(id, postReadStats, people, postStates, actions2)
+    PageParts(id, dao, people, postStates, actions2)
   }
 
 
