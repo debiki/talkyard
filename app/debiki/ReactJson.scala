@@ -45,7 +45,7 @@ object ReactJson {
   }
 
 
-  def pageToJson(pageReq: PageRequest[_]): JsObject = {
+  def pageToJson(pageReq: PageRequest[_], socialLinksHtml: String): JsObject = {
     val numPostsExclTitle =
       pageReq.thePageParts.postCount - (if (pageReq.thePageParts.titlePost.isDefined) 1 else 0)
 
@@ -66,6 +66,7 @@ object ReactJson {
       "rootPostId" -> JsNumber(1),
       "allPosts" -> JsObject(allPostsJson),
       "horizontalLayout" -> JsBoolean(pageReq.thePageSettings.horizontalComments.valueIsTrue),
+      "socialLinksHtml" -> JsString(socialLinksHtml),
       // This stuff isn't rendered server side because then we couldn't cache
       // the rendered html, because it would be user specific.
       "renderLaterInBrowserOnly" -> Json.obj(

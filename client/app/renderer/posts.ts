@@ -89,9 +89,14 @@ var TitleBodyComments = createComponent({
   */
 
   render: function() {
+    // If we're showing a reply as the very first post, show no title, since
+    // the title is for the article itself only, not for any replies.
+    var anyTitle = this.props.rootPostId === BodyPostId ? Title(this.props) : null;
     return (
       r.div({},
-        Title(this.props),
+        anyTitle,
+        PostHeader({ post: this.props.allPosts[this.props.rootPostId] }),
+        SocialLinks({ socialLinksHtml: this.props.socialLinksHtml }),
         RootPost(this.props)));
   },
 });
@@ -110,6 +115,18 @@ var Title = createComponent({
             r.div({ className: 'dw-p-bd-blk' },
               r.h1({ className: 'dw-p-ttl' }, titleText))))));
   },
+});
+
+
+var SocialLinks = createComponent({
+  render: function() {
+    if (!this.props.socialLinksHtml)
+      return null;
+
+    // The social links config value can be edited by admins only so we can trust it.
+    return (
+      r.div({ dangerouslySetInnerHTML: { __html: this.props.socialLinksHtml }}));
+  }
 });
 
 
@@ -312,7 +329,7 @@ var PostHeader = createComponent({
       return voteInfo ? ' it ' : ' this comment ';
     }
     var voteInfo = '';
-    if (post.numLikeVotes) {
+    if (post.numLikeVotes && post.postId !== BodyPostId) {
       voteInfo += numPeople(post.numLikeVotes) +
         (post.numWrongVotes == 1 ? 'likes' : 'like') + ' this comment';
     }
@@ -328,9 +345,16 @@ var PostHeader = createComponent({
     }
     if (voteInfo) voteInfo += '.';
 
+    var postId = post.postId === BodyPostId ?
+        null : r.a({ className: 'dw-p-link' }, '#', post.postId);
+
+    var by = post.postId === BodyPostId ? 'By ' : '';
+    var isBodyPostClass = post.postId === BodyPostId ? ' dw-ar-p-hd' : '';
+
     return (
-        r.div({ className: 'dw-p-hd' },
-          r.a({ className: 'dw-p-link' }, '#', post.postId),
+        r.div({ className: 'dw-p-hd' + isBodyPostClass },
+          postId,
+          by,
           r.a({ className: 'dw-p-by', href: authorUrl }, authorNameElems),
           createdAt,
           editInfo, '. ',

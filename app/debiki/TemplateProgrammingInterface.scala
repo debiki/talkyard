@@ -582,7 +582,7 @@ class TemplateProgrammingInterface(
 
 
   override def reactStoreSafeJson: JsObject = {
-    ReactJson.pageToJson(pageReq)
+    ReactJson.pageToJson(pageReq, socialLinksHtml = configValue("social-links"))
   }
 
 }
