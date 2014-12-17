@@ -54,13 +54,15 @@ object ReplyController extends mvc.Controller {
         PageRequest.forPageThatExists(request, pageId = page.id) getOrDie "DwE77PJE0"
     }
 
-    val json = saveReply(pageReq, replyToPostIds = postIds, text, whereOpt)
+    val post = saveReply(pageReq, replyToPostIds = postIds, text, whereOpt)
+
+    val json = ReactJson.postToJson(post, includeUnapproved = true)
     OkSafeJson(json)
   }
 
 
-  def saveReply(pageReqNoMeOnPage: PageRequest[_], replyToPostIds: Set[PostId], text: String,
-        whereOpt: Option[String] = None) = {
+  private def saveReply(pageReqNoMeOnPage: PageRequest[_], replyToPostIds: Set[PostId],
+        text: String, whereOpt: Option[String] = None) = {
 
     val pageReq = pageReqNoMeOnPage.copyWithMeOnPage
     if (pageReq.oldPageVersion.isDefined)
@@ -98,8 +100,7 @@ object ReplyController extends mvc.Controller {
     val (pageWithNewPost, List(rawPostWithId: RawPostAction[PAP.CreatePost])) =
       pageReq.dao.savePageActionsGenNotfs(pageReq, rawPostNoId::Nil)
 
-    val post = pageWithNewPost.parts.getPost_!(rawPostWithId.id)
-    ReactJson.postToJson(post, includeUnapproved = true)
+    pageWithNewPost.parts.getPost_!(rawPostWithId.id)
   }
 
 

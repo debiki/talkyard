@@ -77,7 +77,10 @@ stylesheet references", http://modernizr.com/docs/#installing
 @script(s"//cdnjs.cloudflare.com/ajax/libs/react/0.12.1/react-with-addons.$minMaxJs",
     "React", s"react-with-addons.$minMaxJs")
 
-<script id="dwReactStore" type="application/json">@Html(reactStoreSafeJson.toString)</script>
+<script id="dwReactStore" type="application/json">
+@* Play Framework escapes too much (it escapes '"'), so use @Html and OWASP instead. *@
+@Html(org.owasp.encoder.Encode.forHtmlContent(reactStoreSafeJson.toString))
+</script>
 
 @* All Debiki's stuff is placed somewhere inside `debiki`.
  - The debiki.scriptLoad $.Deferred is resolved later by debiki.js.
@@ -86,8 +89,16 @@ stylesheet references", http://modernizr.com/docs/#installing
    on-save callback, to be notified when a newly created page is saved.)
 *@
 <script>
+  @* See http://stackoverflow.com/a/1912522/694469. The <div> isn't added to the document
+   so no <script> would be executed. *@
+  function unencodeHtmlContent(escapedHtml) {
+    var elem = document.createElement('div');
+    elem.innerHTML = escapedHtml;
+    return elem.childNodes.length === 0 ? '' : elem.childNodes[0].nodeValue;
+  }
+
   var debiki = $.extend(true, {
-    store: JSON.parse($('#dwReactStore').text()),
+    store: JSON.parse(unencodeHtmlContent($('#dwReactStore').text())),
     getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
     v0: { util: {} },
     internal: {

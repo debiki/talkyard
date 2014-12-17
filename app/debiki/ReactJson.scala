@@ -26,6 +26,25 @@ import requests.PageRequest
 
 object ReactJson {
 
+
+  def userNoPageToJson(anyUser: Option[User]): JsObject = {
+    // Warning: some dupl code, see `userDataJson()` below.
+    val userData = anyUser match {
+      case None => JsObject(Nil)
+      case Some(user) =>
+        Json.obj(
+          "isLoggedIn" -> JsBoolean(true),
+          "isAdmin" -> JsBoolean(user.isAdmin),
+          "userId" -> JsString(user.id),
+          "username" -> JsStringOrNull(user.username),
+          "fullName" -> JsString(user.displayName),
+          "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
+          "isAuthenticated" -> JsBoolean(user.isAuthenticated))
+    }
+    Json.obj("user" -> userData)
+  }
+
+
   def pageToJson(pageReq: PageRequest[_]): JsObject = {
     val numPostsExclTitle =
       pageReq.thePageParts.postCount - (if (pageReq.thePageParts.titlePost.isDefined) 1 else 0)
@@ -69,8 +88,8 @@ object ReactJson {
       "postId" -> JsNumber(post.id),
       "parentId" -> post.parentId.map(JsNumber(_)).getOrElse(JsNull),
       "authorId" -> JsString(post.userId),
-      "authorFullName" -> safeStringOrNull(Some(post.theUser.displayName)),
-      "authorUsername" -> safeStringOrNull(post.theUser.username),
+      "authorFullName" -> JsStringOrNull(Some(post.theUser.displayName)),
+      "authorUsername" -> JsStringOrNull(post.theUser.username),
       "createdAt" -> JsNumber(post.creationDati.getTime),
       "lastEditAppliedAt" -> lastEditAppliedAt,
       "numEditors" -> JsNumber(post.numDistinctEditors),
@@ -86,7 +105,7 @@ object ReactJson {
       "isApproved" -> JsBoolean(isApproved),
       "likeScore" -> JsNumber(isLikedConfidenceIntervalLowerBound(post)),
       "childIds" -> JsArray(post.replies.map(reply => JsNumber(reply.id))),
-      "sanitizedHtml" -> safeStringOrNull(sanitizedHtml)))
+      "sanitizedHtml" -> JsStringOrNull(sanitizedHtml)))
   }
 
 
@@ -108,12 +127,13 @@ object ReactJson {
       rolePageSettingsToJson(settings)
     } getOrElse JsNull
 
+    // Warning: some dupl code, see `userNoPageToJson()` above.
     Json.obj(
       "isLoggedIn" -> JsBoolean(true),
       "isAdmin" -> JsBoolean(user.isAdmin),
-      "userId" -> safeJsString(user.id),
-      "username" -> safeStringOrNull(user.username),
-      "fullName" -> safeJsString(user.displayName),
+      "userId" -> JsString(user.id),
+      "username" -> JsStringOrNull(user.username),
+      "fullName" -> JsString(user.displayName),
       "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
       "isAuthenticated" -> JsBoolean(user.isAuthenticated),
       "permsOnPage" -> permsOnPageJson(pageRequest.permsOnPage),
@@ -141,7 +161,7 @@ object ReactJson {
 
   private def rolePageSettingsToJson(settings: RolePageSettings): JsObject = {
     Json.obj(
-      "notfLevel" -> safeJsString(settings.notfLevel.toString))
+      "notfLevel" -> JsString(settings.notfLevel.toString))
   }
 
 
@@ -203,23 +223,8 @@ object ReactJson {
   }
 
 
-  private def safeStringOrNull(value: Option[String]) =
-    value.map(safeJsString(_)).getOrElse(JsNull)
-
-
-  /** Makes a string safe for embedding in a JSON doc in a HTML doc.
-    * From http://stackoverflow.com/a/4180424/694469: """escape  < with \u003c and --> with --\>
-    * you need to escape the HTML characters <, >, & and = to make your json string safe to embed"""
-    * (Note that the JSON serializer itself takes care of double quotes '"'.)
-    */
-  private def safeJsString(string: String): JsString = {
-    var safeString = string
-    safeString = safeString.replaceAllLiterally("<", "\u003c") // and? ">", "\u003e"
-    safeString = safeString.replaceAllLiterally("-->", "--\\>")
-    safeString = safeString.replaceAllLiterally("=", "\u003d")
-    //safeString = safeString.replaceAllLiterally("&", "%26")
-    JsString(safeString)
-  }
+  private def JsStringOrNull(value: Option[String]) =
+    value.map(JsString(_)).getOrElse(JsNull)
 
 }
 

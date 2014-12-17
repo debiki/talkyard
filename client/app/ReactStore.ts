@@ -79,7 +79,11 @@ ReactDispatcher.register(function(payload) {
 
 // COULD change this to an action instead
 ReactStore.activateUserSpecificData = function(anyUser) {
-  store.user = anyUser || store.renderLaterInBrowserOnly.user;
+  var newUser = anyUser || store.renderLaterInBrowserOnly.user;
+  if (!newUser)
+    return;
+
+  store.user = newUser;
   // Show the user's own unapproved posts, or all, for admins.
   _.each(store.user.unapprovedPosts, (post) => {
     updatePost(post);
