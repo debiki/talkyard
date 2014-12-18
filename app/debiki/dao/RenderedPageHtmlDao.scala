@@ -116,9 +116,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   }
 
 
-  override def renderPage(pageReq: PageRequest[_], renderSettings: RenderPageSettings)
-        : RenderedPage = {
-
+  override def renderTemplate(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil): String = {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
@@ -127,16 +125,14 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     useCache &= pageReq.oldPageVersion.isEmpty
     useCache &= !pageReq.debugStats
 
-    if (useCache) {
-      val key = _pageHtmlKey(SitePageId(siteId, pageReq.thePageId), origin = pageReq.host)
-      lookupInCache(key, orCacheAndReturn = {
-        rememberOrigin(pageReq.host)
-        Some(super.renderPage(pageReq, renderSettings))
-      }) getOrDie "DwE93IB7"
-    }
-    else {
-      super.renderPage(pageReq, renderSettings)
-    }
+    if (!useCache)
+      return super.renderTemplate(pageReq)
+
+    val key = _pageHtmlKey(SitePageId(siteId, pageReq.thePageId), origin = pageReq.host)
+    lookupInCache(key, orCacheAndReturn = {
+      rememberOrigin(pageReq.host)
+      Some(super.renderTemplate(pageReq))
+    }) getOrDie "DwE93IB7"
   }
 
 
