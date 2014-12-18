@@ -83,6 +83,7 @@ object ReactJson {
     JsObject(Vector(
       "postId" -> JsNumber(post.id),
       "parentId" -> post.parentId.map(JsNumber(_)).getOrElse(JsNull),
+      "multireplyPostIds" -> JsArray(post.multireplyPostIds.toSeq.map(JsNumber(_))),
       "authorId" -> JsString(post.userId),
       "authorFullName" -> JsStringOrNull(Some(post.theUser.displayName)),
       "authorUsername" -> JsStringOrNull(post.theUser.username),

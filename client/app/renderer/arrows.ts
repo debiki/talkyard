@@ -56,16 +56,23 @@ export function drawHorizontalArrowFromRootPost(rootPost) {
 }
 
 
-export function drawArrowsFromParent(parentPost, depth: number, index: number,
-      horizontalLayout: boolean, rootPostId: number) {
+export function drawArrowsFromParent(allPosts, parentPost, depth: number,
+      index: number, horizontalLayout: boolean, rootPostId: number) {
 
-  var numRemainingSiblings = 0;
+  var numRemainingNonMultireplies = 0;
   if (parentPost) {
-    numRemainingSiblings = parentPost.childIds.length - 1 - index;
+    for (var i = index + 1; i < parentPost.childIds.length; ++i) {
+      var siblingId = parentPost.childIds[i];
+      var sibling = allPosts[siblingId];
+      if (sibling.multireplyPostIds.length) {
+        break;
+      }
+      numRemainingNonMultireplies += 1;
+    }
   }
 
   if (parentPost && horizontalLayout && parentPost.postId === rootPostId) {
-    return drawHorizontalArrows(index === 0, numRemainingSiblings);
+    return drawHorizontalArrows(index === 0, numRemainingNonMultireplies);
   }
 
   if (parentPost) {
@@ -73,14 +80,14 @@ export function drawArrowsFromParent(parentPost, depth: number, index: number,
     if (!horizontalLayout && depth === 1)
       return [];
 
-    return drawVerticalArrows(index === 0, numRemainingSiblings);
+    return drawVerticalArrows(index === 0, numRemainingNonMultireplies);
   }
 
   return [];
 }
 
 
-function drawHorizontalArrows(isFirstChild, numRemainingSiblings) {
+function drawHorizontalArrows(isFirstChild, numRemainingNonMultireplies) {
   // We're rendering a top level reply in its own column. Draw horizontal arrows from
   // the root post. First, and arrow to this thread. Then, if there are any sibling
   // therad columns to the right, arrows to them too. But if this thread is the very
@@ -93,7 +100,7 @@ function drawHorizontalArrows(isFirstChild, numRemainingSiblings) {
         r.div({ className: 'dw-arw dw-arw-hz-curve-to-this' }));
   }
 
-  if (numRemainingSiblings > 0) {
+  if (numRemainingNonMultireplies > 0) {
     if (!isFirstChild) {
       arrows.push(
          r.div({ className: 'dw-arw dw-arw-hz-line-to-this' }));
@@ -106,7 +113,7 @@ function drawHorizontalArrows(isFirstChild, numRemainingSiblings) {
 }
 
 
-function drawVerticalArrows(isFirstChild: boolean, numRemainingSiblings: number) {
+function drawVerticalArrows(isFirstChild: boolean, numRemainingNonMultireplies: number) {
 
   // Single replies (without any siblings) are placed directly below their parent,
   // as if using a flat layout (rather than a threaded layout). Then, need draw
@@ -135,7 +142,7 @@ function drawVerticalArrows(isFirstChild: boolean, numRemainingSiblings: number)
   // namely if we're using a single column layout
   // for the whole page. Then we need this arrow: (it's hidden by
   // CSS if not needed). Also see [90kfHW2] in debiki.styl.
-  var isOnlyChild = isFirstChild && numRemainingSiblings === 0;
+  var isOnlyChild = isFirstChild && numRemainingNonMultireplies === 0;
   if (isOnlyChild) {
     return (
       r.div({ className: 'dw-arw dw-arw-vt-curve-to-this' }));
@@ -178,7 +185,10 @@ function drawVerticalArrows(isFirstChild: boolean, numRemainingSiblings: number)
   arrows.push(
       r.div({ className: 'dw-arw dw-arw-vt-curve-to-this' }));
 
-  if (numRemainingSiblings >= 1) {
+  // Start or continue an arrow to the siblings below, but not to
+  // multireplies, since we don't know if they reply to the current post,
+  // or to posts elsewhere in the tree.
+  if (numRemainingNonMultireplies >= 1) {
     arrows.push(
         r.div({ className: 'dw-arw dw-arw-vt-line-to-sibling-1' }));
     arrows.push(

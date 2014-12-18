@@ -198,9 +198,14 @@ var Thread = createComponent({
     var deeper = this.props.depth + 1;
     var depthClass = 'dw-depth-' + this.props.depth;
 
-    var arrows = debiki2.renderer.drawArrowsFromParent(
-        parentPost, this.props.depth, this.props.index, this.props.horizontalLayout,
-        this.props.rootPostId);
+    // Draw arrows, but not to multireplies, because we don't know if they reply to `post`
+    // or to other posts deeper in the thread.
+    var arrows = [];
+    if (!post.multireplyPostIds.length) {
+      arrows = debiki2.renderer.drawArrowsFromParent(
+        this.props.allPosts, parentPost, this.props.depth, this.props.index,
+        this.props.horizontalLayout, this.props.rootPostId);
+    }
 
     var childIdsSorted = sortByLikeScore(post.childIds, this.props.allPosts);
     var children = [];
@@ -229,7 +234,8 @@ var Thread = createComponent({
     return (
       baseElem({ className: 'dw-t ' + depthClass },
         arrows,
-        Post({ post: post, user: this.props.user, onMouseEnter: this.onPostMouseEnter }),
+        Post({ post: post, user: this.props.user, allPosts: this.props.allPosts,
+            onMouseEnter: this.onPostMouseEnter }),
         actions,
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
@@ -277,12 +283,40 @@ var Post = createComponent({
       bodyElem = PostBody(this.props);
     }
 
+    var multireplReceivers = null;
+    if (post.multireplyPostIds.length) {
+      multireplReceivers = MultireplyReceivers({ post: post, allPosts: this.props.allPosts });
+    }
+
     return (
       r.div({ className: 'dw-p' + extraClasses, id: 'post-' + post.postId,
             onMouseEnter: this.props.onMouseEnter },
         pendingApprovalElem,
+        multireplReceivers,
         headerElem,
         bodyElem));
+  }
+});
+
+
+
+var MultireplyReceivers = createComponent({
+  render: function() {
+    var receivers = this.props.post.multireplyPostIds.map((repliedToPostId) => {
+      var post = this.props.allPosts[repliedToPostId];
+      if (!post)
+        return r.i({}, '(Unknown author and post?)');
+
+      return (
+        r.a({ href: '#post-' + post.postId, className: 'dw-multireply-to' },
+          r.span({ className: 'icon-reply dw-mirror' }),
+          r.span({}, post.authorUsername || post.authorFullName, ' (post ', post.postId, ')')));
+    });
+
+    return (
+      r.div({},
+        r.span({ className: 'dw-multireply-prefix' }, 'In reply to:'),
+        receivers));
   }
 });
 
@@ -604,17 +638,23 @@ function sortByLikeScore(childIds: number[], allPosts) {
     if (isDeleted(postA) && !isDeleted(postB))
       return +1;
 
-    /* From app/debiki/HtmlSerializer.scala:
-    // Sort multireplies by time, for now, so it never happens that a multireply
-    // ends up placed before another multireply that it replies to.
+    // Place multireplies after normal replies. And sort multireplies by time,
+    // for now, so it never happens that a multireply ends up placed before another
+    // multireply that it replies to.
     // COULD place interesting multireplies first, if they're not constrained by
     // one being a reply to another.
-    if (a.multireplyPostIds.nonEmpty && b.multireplyPostIds.nonEmpty) {
-      if (a.creationDati.getTime < b.creationDati.getTime)
-        return true
-      if (a.creationDati.getTime > b.creationDati.getTime)
-        return false
-    } */
+    if (postA.multireplyPostIds.length && postB.multireplyPostIds.length) {
+      if (postA.createdAt < postB.createdAt)
+        return -1;
+      if (postA.createdAt > postB.createdAt)
+        return +1;
+    }
+    else if (postA.multireplyPostIds.length) {
+      return +1;
+    }
+    else if (postB.multireplyPostIds.length) {
+      return -1;
+    }
 
     // Place interesting posts first.
     if (postA.likeScore > postB.likeScore)
@@ -624,7 +664,7 @@ function sortByLikeScore(childIds: number[], allPosts) {
       return +1
 
     // Newest posts first. No, last
-    if (postA.postId < postB.postId)
+    if (postA.createdAt < postB.createdAt)
       return -1;
     else
       return +1;
