@@ -102,7 +102,13 @@ occurrence of the magic string with user specific data. *@
   function unencodeHtmlContent(escapedHtml) {
     var elem = document.createElement('div');
     elem.innerHTML = escapedHtml;
-    return elem.childNodes.length === 0 ? '' : elem.childNodes[0].nodeValue;
+    var result = '';
+    @* Chrome splits innerHTML into many child nodes, each one at most 65536. Whereas
+    FF creates just one single huge child node. *@
+    for (var i = 0; i < elem.childNodes.length; ++i) {
+      result = result + elem.childNodes[i].nodeValue;
+    }
+    return result;
   }
 
   function parseAnyDebikiUserSpecificData() {
