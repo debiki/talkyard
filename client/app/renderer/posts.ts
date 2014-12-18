@@ -97,7 +97,7 @@ var TitleBodyComments = createComponent({
         anyTitle,
         PostHeader({ post: this.props.allPosts[this.props.rootPostId] }),
         SocialLinks({ socialLinksHtml: this.props.socialLinksHtml }),
-        RootPost(this.props)));
+        RootPostAndComments(this.props)));
   },
 });
 
@@ -130,7 +130,10 @@ var SocialLinks = createComponent({
 });
 
 
-var RootPost = createComponent({
+var RootPostAndComments = createComponent({
+  showActions: function() {
+    this.refs.actions.showActions();
+  },
   render: function() {
     var rootPost = this.props.allPosts[this.props.rootPostId];
     var isBody = this.props.rootPostId === BodyPostId;
@@ -172,11 +175,11 @@ var RootPost = createComponent({
 
     return (
       r.div({ className: threadClass },
-        r.div({ className: postClass, id: postIdAttr },
+        r.div({ className: postClass, id: postIdAttr, onMouseEnter: this.showActions },
           r.div({ className: postBodyClass },
             r.div({ className: 'dw-p-bd-blk',
               dangerouslySetInnerHTML: { __html: sanitizedHtml }}))),
-        PostActions({ post: rootPost, user: this.props.user }),
+        PostActions({ post: rootPost, user: this.props.user, ref: 'actions' }),
         debiki2.reactelements.CommentsToolbar(),
         anyHorizontalArrowToChildren,
         r.div({ className: 'dw-single-and-multireplies' },
