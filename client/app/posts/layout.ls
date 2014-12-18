@@ -63,10 +63,12 @@ d.i.chooseLayout = ->
   function disableHzComments
     $('html').removeClass('dw-hz').addClass('dw-vt')
     $('.dw-depth-0').removeClass('dw-hz')
+    debiki2.ReactActions.setHorizontalLayout(false)
 
   function enableHzComments
     $('html').removeClass('dw-vt').addClass('dw-hz')
     $('.dw-depth-0').addClass('dw-hz')
+    debiki2.ReactActions.setHorizontalLayout(true)
 
   if is2dEnabled then 'TreeLayout' else 'OneColumnLayout'
 

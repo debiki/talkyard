@@ -31,6 +31,7 @@ export var actionTypes = {
   UpdatePost: 'UpdatePost',
   VoteOnPost: 'VoteOnPost',
   UncollapsePost: 'UncollapsePost',
+  SetHorizontalLayout: 'SetHorizontalLayout',
 }
 
 
@@ -95,6 +96,15 @@ export function uncollapsePost(post) {
     post: post
   });
 }
+
+
+export function setHorizontalLayout(enabled: boolean) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.SetHorizontalLayout,
+    enabled: enabled
+  });
+}
+
 
 //------------------------------------------------------------------------------
    }

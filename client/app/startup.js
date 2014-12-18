@@ -185,6 +185,10 @@ function renderDiscussionPage() {
 
   d.i.showCurLocationInSiteNav();
 
+  // Do this before rendering the page.
+  d.i.layout = d.i.chooseLayout();
+  d.i.layoutThreads();
+
   //debiki2.renderer.renderTitleBodyComments();
   renderTitleBodyComments();
 
@@ -193,10 +197,6 @@ function renderDiscussionPage() {
   steps.push(function() {
     debiki2.reactelements.initAllReactRoots();
 
-    // Do this after depths calculated.
-    d.i.layout = d.i.chooseLayout();
-
-    d.i.layoutThreads();
     $('html').removeClass('dw-render-actions-pending');
 
     if (d.i.layout === 'TreeLayout' && !Modernizr.touch) {

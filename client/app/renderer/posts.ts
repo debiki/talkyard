@@ -161,7 +161,7 @@ var RootPost = createComponent({
             rootPostId: this.props.rootPostId,
             horizontalLayout: this.props.horizontalLayout,
             postId: childId,
-            order: childIndex,
+            index: childIndex,
             depth: 1,
           })));
     });
@@ -199,7 +199,8 @@ var Thread = createComponent({
     var depthClass = 'dw-depth-' + this.props.depth;
 
     var arrows = debiki2.renderer.drawArrowsFromParent(
-        parentPost, this.props.order, this.props.horizontalLayout, this.props.rootPostId);
+        parentPost, this.props.depth, this.props.index, this.props.horizontalLayout,
+        this.props.rootPostId);
 
     var childIdsSorted = sortByLikeScore(post.childIds, this.props.allPosts);
     var children = [];
@@ -213,7 +214,7 @@ var Thread = createComponent({
               rootPostId: this.props.rootPostId,
               horizontalLayout: this.props.horizontalLayout,
               postId: childId,
-              order: childIndex,
+              index: childIndex,
               depth: deeper
             }));
       });

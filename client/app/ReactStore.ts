@@ -69,6 +69,10 @@ ReactDispatcher.register(function(payload) {
       uncollapsePost(action.post);
       break;
 
+    case ReactActions.actionTypes.SetHorizontalLayout:
+      store.horizontalLayout = action.enabled;
+      break;
+
     default:
       console.warn('Unknown action: ' + JSON.stringify(action));
       return true;

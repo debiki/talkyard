@@ -56,7 +56,7 @@ export function drawHorizontalArrowFromRootPost(rootPost) {
 }
 
 
-export function drawArrowsFromParent(parentPost, index: number,
+export function drawArrowsFromParent(parentPost, depth: number, index: number,
       horizontalLayout: boolean, rootPostId: number) {
 
   var numRemainingSiblings = 0;
@@ -69,6 +69,10 @@ export function drawArrowsFromParent(parentPost, index: number,
   }
 
   if (parentPost) {
+    // In vertical layout, don't draw arrows to top level replies.
+    if (!horizontalLayout && depth === 1)
+      return [];
+
     return drawVerticalArrows(index === 0, numRemainingSiblings);
   }
 
@@ -102,7 +106,7 @@ function drawHorizontalArrows(isFirstChild, numRemainingSiblings) {
 }
 
 
-function drawVerticalArrows(isFirstChild, numRemainingSiblings) {
+function drawVerticalArrows(isFirstChild: boolean, numRemainingSiblings: number) {
 
   // Single replies (without any siblings) are placed directly below their parent,
   // as if using a flat layout (rather than a threaded layout). Then, need draw
