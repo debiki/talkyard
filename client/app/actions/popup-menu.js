@@ -269,11 +269,13 @@ function $showInlineActionMenu(event) {
 // click is completed. Otherwise the inline menu gets in the
 // way when you double click to select whole words. (Or triple click to
 // select paragraphs.)
-$(function() {
-  $('.debiki')
-      .delegate('.dw-p-bd-blk', 'mouseup', $showInlineActionMenu)
-      .delegate('.dw-p-bd-blk', 'mousedown', $hideInlineActionMenu);
-});
+d.i.startInlineActionsMenu = function() {
+  $(function() {
+    $('.debiki')
+        .delegate('.dw-p-bd-blk', 'mouseup', $showInlineActionMenu)
+        .delegate('.dw-p-bd-blk', 'mousedown', $hideInlineActionMenu);
+  });
+};
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

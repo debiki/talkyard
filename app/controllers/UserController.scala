@@ -59,7 +59,7 @@ object UserController extends mvc.Controller {
   def loadMyPageData(pageId: PageId) = GetAction { request =>
     val pageRequest = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
       "DwE404FL9", s"Page `$pageId' not found")
-    val myPageData = ReactJson.userDataJson(pageRequest)
+    val myPageData = ReactJson.userDataJson(pageRequest) getOrElse ReactJson.NoUserSpecificData
     OkSafeJson(myPageData)
   }
 

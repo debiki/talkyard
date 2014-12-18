@@ -234,6 +234,7 @@ function renderDiscussionPage() {
   steps.push(function() {
     d.i.makePinsDragsortable();
     debiki2.ReactStore.activateUserSpecificData();
+    d.i.startInlineActionsMenu();
   });
 
   steps.push(function() {

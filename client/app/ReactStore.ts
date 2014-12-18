@@ -29,7 +29,11 @@ var ChangeEvent = 'ChangeEvent';
 
 export var ReactStore = new EventEmitter2();
 
-var store = debiki.store;
+// First, initialize the store with page specific data only, nothing user specific,
+// because the server serves cached HTML with no user specific data. Later on,
+// we'll insert user specific data into the store, and re-render. See
+// ReactStore.activateUserSpecificData().
+var store = debiki.reactPageStore;
 
 
 ReactDispatcher.register(function(payload) {
@@ -79,7 +83,7 @@ ReactDispatcher.register(function(payload) {
 
 // COULD change this to an action instead
 ReactStore.activateUserSpecificData = function(anyUser) {
-  var newUser = anyUser || store.renderLaterInBrowserOnly.user;
+  var newUser = anyUser || debiki.reactUserStore;
   if (!newUser)
     return;
 

@@ -62,15 +62,10 @@ object ReactJson {
       "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),
       "categories" -> categoriesJson(pageReq),
       "user" -> NoUserSpecificData,
-      "horizontalLayout" -> JsBoolean(true),
       "rootPostId" -> JsNumber(1),
       "allPosts" -> JsObject(allPostsJson),
       "horizontalLayout" -> JsBoolean(pageReq.thePageSettings.horizontalComments.valueIsTrue),
-      "socialLinksHtml" -> JsString(socialLinksHtml),
-      // This stuff isn't rendered server side because then we couldn't cache
-      // the rendered html, because it would be user specific.
-      "renderLaterInBrowserOnly" -> Json.obj(
-        "user" -> userDataJson(pageReq)))
+      "socialLinksHtml" -> JsString(socialLinksHtml))
   }
 
 
@@ -110,16 +105,16 @@ object ReactJson {
   }
 
 
-  private val NoUserSpecificData = Json.obj(
+  val NoUserSpecificData = Json.obj(
     "permsOnPage" -> JsObject(Nil),
     "rolePageSettings" -> JsObject(Nil),
     "votes" -> JsObject(Nil),
     "unapprovedPosts" -> JsObject(Nil))
 
 
-  def userDataJson(pageRequest: PageRequest[_]): JsObject = {
+  def userDataJson(pageRequest: PageRequest[_]): Option[JsObject] = {
     val user = pageRequest.user getOrElse {
-      return NoUserSpecificData
+      return None
     }
 
     val rolePageSettings = user.anyRoleId map { roleId =>
@@ -129,7 +124,7 @@ object ReactJson {
     } getOrElse JsNull
 
     // Warning: some dupl code, see `userNoPageToJson()` above.
-    Json.obj(
+    Some(Json.obj(
       "isLoggedIn" -> JsBoolean(true),
       "isAdmin" -> JsBoolean(user.isAdmin),
       "userId" -> JsString(user.id),
@@ -140,7 +135,7 @@ object ReactJson {
       "permsOnPage" -> permsOnPageJson(pageRequest.permsOnPage),
       "rolePageSettings" -> rolePageSettings,
       "votes" -> votesJson(pageRequest),
-      "unapprovedPosts" -> unapprovedPostsJson(pageRequest))
+      "unapprovedPosts" -> unapprovedPostsJson(pageRequest)))
   }
 
 

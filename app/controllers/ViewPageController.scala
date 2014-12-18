@@ -45,6 +45,10 @@ import Utils.{OkHtml, OkXml}
 object ViewPageController extends mvc.Controller {
 
 
+  val HtmlEncodedUserSpecificDataJsonMagicString =
+    "__html_encoded_user_specific_data_json__"
+
+
   def showActionLinks(pathIn: PagePath, postId: ActionId) =
     PageGetAction(pathIn) { pageReq =>
       val links = Utils.formHtml(pageReq).actLinks(postId)
@@ -58,7 +62,19 @@ object ViewPageController extends mvc.Controller {
 
 
   def viewPostImpl(pageReq: PageGetRequest) = {
-    val pageHtml = pageReq.dao.renderTemplate(pageReq)
+    var pageHtml = pageReq.dao.renderTemplate(pageReq)
+    val anyUserSpecificDataJson = ReactJson.userDataJson(pageReq)
+
+    // Insert user specific data into the HTML.
+    // The Scala templates take care to place the <script type="application/json">
+    // tag with the magic-string-that-we'll-replace-with-user-specific-data before
+    // unsafe data like JSON and HTML for comments and the page title and body.
+    anyUserSpecificDataJson foreach { json =>
+      val htmlEncodedJson = org.owasp.encoder.Encode.forHtmlContent(json.toString)
+      pageHtml = org.apache.commons.lang3.StringUtils.replaceOnce(
+        pageHtml, HtmlEncodedUserSpecificDataJsonMagicString, htmlEncodedJson)
+    }
+
     Ok(pageHtml) as HTML
   }
 

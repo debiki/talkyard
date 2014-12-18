@@ -77,7 +77,15 @@ stylesheet references", http://modernizr.com/docs/#installing
 @script(s"//cdnjs.cloudflare.com/ajax/libs/react/0.12.1/react-with-addons.$minMaxJs",
     "React", s"react-with-addons.$minMaxJs")
 
-<script id="dwReactStore" type="application/json">
+<script id="dwReactUserStore" type="application/json">
+@* The contents of this tag is filled in with any user specific data. Note that
+this tag is placed before 'dwReactPageStore' below, so if e.g. a comment contains
+the below magic string then that won't matter because we replace only the very first
+occurrence of the magic string with user specific data. *@
+@controllers.ViewPageController.HtmlEncodedUserSpecificDataJsonMagicString
+</script>
+
+<script id="dwReactPageStore" type="application/json">
 @* Play Framework escapes too much (it escapes '"'), so use @Html and OWASP instead. *@
 @Html(org.owasp.encoder.Encode.forHtmlContent(reactStoreSafeJson.toString))
 </script>
@@ -97,8 +105,19 @@ stylesheet references", http://modernizr.com/docs/#installing
     return elem.childNodes.length === 0 ? '' : elem.childNodes[0].nodeValue;
   }
 
+  function parseAnyDebikiUserSpecificData() {
+    try {
+      return JSON.parse(unencodeHtmlContent($('#dwReactUserStore').text()));
+    }
+    catch (ignored) {
+      @* ignore, means not logged in so magic string wasn't replaced *@
+    }
+    return null;
+  }
+
   var debiki = $.extend(true, {
-    store: JSON.parse(unencodeHtmlContent($('#dwReactStore').text())),
+    reactPageStore: JSON.parse(unencodeHtmlContent($('#dwReactPageStore').text())),
+    reactUserStore: parseAnyDebikiUserSpecificData(),
     getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
     v0: { util: {} },
     internal: {
