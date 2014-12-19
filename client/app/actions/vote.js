@@ -71,16 +71,6 @@ function toggleVoteImpl(voteBtn, voteType) {
 
   function onVoteToggled(updatedPost) {
     debiki2.ReactActions.vote(updatedPost, action, voteType);
-
-    /* TODO highlight one's post [react]
-    if (action == 'CreateVote') {
-      voteBtn.addClass('dw-my-vote');
-    }
-    else {
-      voteBtn.removeClass('dw-my-vote');
-    }*/
-    //post.each(d.i.SVG.$drawParentsAndTree); -- why would this be needed?
-       // -- Because elem might grow if "1 people likes this" appears, would need to redraw.
   };
 };
 

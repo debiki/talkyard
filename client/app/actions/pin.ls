@@ -131,8 +131,6 @@ sharedSettings =
     newPosition = findPositionOf ui.item
     if newPosition != initialPosition
       tellServerChangePinnedPos ui.item, newPosition
-      parentThread = ui.item.parent!closest '.dw-t'
-      d.i.SVG.$clearAndRedrawArrows.apply parentThread
 
 
 

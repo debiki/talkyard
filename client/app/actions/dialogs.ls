@@ -159,7 +159,6 @@ function newPinTreeDialog
 
       thread = post.closest '.dw-t'
       parentThread = thread.parent!closest '.dw-t'
-      d.i.SVG.$clearAndRedrawArrows.apply parentThread
 
       post.dwScrollToThenHighlight(post)
 

@@ -50,7 +50,6 @@ debiki.v0.showInteractionsOnClick = function() {
       .click(function() {
     $showBtn.remove();
     $('html').removeClass('dw-hide-interactions');
-    d.i.SVG.drawEverything(); // *sometimes* needed
   });
 };
 
