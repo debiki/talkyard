@@ -164,11 +164,11 @@ function updatePost(post) {
   // In case this is a new post, update its parent's child id list.
   var parentPost = store.allPosts[post.parentId];
   if (parentPost) {
-    // TODO sort by like-wrong votes.
     var alreadyAChild =
-        _.find(parentPost.childIds, childId => childId === post.postId);
+        _.find(parentPost.childIdsSorted, childId => childId === post.postId);
     if (!alreadyAChild) {
-      parentPost.childIds.unshift(post.postId);
+      parentPost.childIdsSorted.unshift(post.postId);
+      sortPostIdsInPlace(parentPost.childIdsSorted, store.allPosts);
     }
   }
 }
@@ -198,6 +198,69 @@ function uncollapsePost(post) {
   post.isTreeCollapsed = false;
   post.isPostCollapsed = false;
   updatePost(post);
+}
+
+
+/**
+ * NOTE: Keep in sync with sortPostsFn() in
+ *   modules/debiki-core/src/main/scala/com/debiki/core/Post.scala
+ */
+function sortPostIdsInPlace(postIds: number[], allPosts) {
+  postIds.sort((idA: number, idB: number) => {
+    var postA = allPosts[idA];
+    var postB = allPosts[idB];
+
+    /* From app/debiki/HtmlSerializer.scala:
+    if (a.pinnedPosition.isDefined || b.pinnedPosition.isDefined) {
+      // 1 means place first, 2 means place first but one, and so on.
+      // -1 means place last, -2 means last but one, and so on.
+      val aPos = a.pinnedPosition.getOrElse(0)
+      val bPos = b.pinnedPosition.getOrElse(0)
+      assert(aPos != 0 || bPos != 0)
+      if (aPos == 0) return bPos < 0
+      if (bPos == 0) return aPos > 0
+      if (aPos * bPos < 0) return aPos > 0
+      return aPos < bPos
+    } */
+
+    // Place deleted posts last; they're rather uninteresting?
+    if (!isDeleted(postA) && isDeleted(postB))
+      return -1;
+
+    if (isDeleted(postA) && !isDeleted(postB))
+      return +1;
+
+    // Place multireplies after normal replies. And sort multireplies by time,
+    // for now, so it never happens that a multireply ends up placed before another
+    // multireply that it replies to.
+    // COULD place interesting multireplies first, if they're not constrained by
+    // one being a reply to another.
+    if (postA.multireplyPostIds.length && postB.multireplyPostIds.length) {
+      if (postA.createdAt < postB.createdAt)
+        return -1;
+      if (postA.createdAt > postB.createdAt)
+        return +1;
+    }
+    else if (postA.multireplyPostIds.length) {
+      return +1;
+    }
+    else if (postB.multireplyPostIds.length) {
+      return -1;
+    }
+
+    // Place interesting posts first.
+    if (postA.likeScore > postB.likeScore)
+      return -1;
+
+    if (postA.likeScore < postB.likeScore)
+      return +1
+
+    // Newest posts first. No, last
+    if (postA.createdAt < postB.createdAt)
+      return -1;
+    else
+      return +1;
+  });
 }
 
 
