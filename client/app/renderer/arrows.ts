@@ -46,10 +46,10 @@ var BodyPostId = 1;
 
 export function drawHorizontalArrowFromRootPost(rootPost) {
   var arrowToChildren;
-  if (rootPost.childIds.length === 1) {
+  if (rootPost.childIdsSorted.length === 1) {
     arrowToChildren = r.div({ className: 'dw-arw dw-arw-hz-curve-to-reply-btn' });
   }
-  else if (rootPost.childIds.length >= 2) {
+  else if (rootPost.childIdsSorted.length >= 2) {
     arrowToChildren = r.div({ className: 'dw-arw dw-arw-hz-branch-to-reply-btn' });
   }
   return r.div({ className: 'dw-t-vspace' }, arrowToChildren);
@@ -61,8 +61,8 @@ export function drawArrowsFromParent(allPosts, parentPost, depth: number,
 
   var numRemainingNonMultireplies = 0;
   if (parentPost) {
-    for (var i = index + 1; i < parentPost.childIds.length; ++i) {
-      var siblingId = parentPost.childIds[i];
+    for (var i = index + 1; i < parentPost.childIdsSorted.length; ++i) {
+      var siblingId = parentPost.childIdsSorted[i];
       var sibling = allPosts[siblingId];
       if (sibling.multireplyPostIds.length) {
         break;
