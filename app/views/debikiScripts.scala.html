@@ -17,7 +17,7 @@
 
 @(startupCode: String, anyPageId: Option[String], serverAddress: String, pageUriPath: String,
   anyPageRole: Option[com.debiki.core.PageRole], anyPagePath: Option[com.debiki.core.PagePath],
-  reactStoreSafeJson: play.api.libs.json.JsObject, minMaxJs: String, minMaxCss: String)
+  reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
 
 @asset(file: String) = @{
   routes.Assets.at(path = "/public/res", file)
@@ -87,7 +87,7 @@ occurrence of the magic string with user specific data. *@
 
 <script id="dwReactPageStore" type="application/json">
 @* Play Framework escapes too much (it escapes '"'), so use @Html and OWASP instead. *@
-@Html(org.owasp.encoder.Encode.forHtmlContent(reactStoreSafeJson.toString))
+@Html(org.owasp.encoder.Encode.forHtmlContent(reactStoreSafeJsonString))
 </script>
 
 @* All Debiki's stuff is placed somewhere inside `debiki`.

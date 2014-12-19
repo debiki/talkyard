@@ -204,7 +204,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
       pageUriPath = debikiRequest.request.path,
       anyPageRole = anyCurrentPageRole,
       anyPagePath = anyCurrentPagePath,
-      reactStoreSafeJson = reactStoreSafeJson,
+      reactStoreSafeJsonString = reactStoreSafeJsonString,
       minMaxJs = minMaxJs,
       minMaxCss = minMaxCss).body)
 
@@ -312,8 +312,8 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
 
 
   /** The initial data in the React-Flux model, a.k.a. store. */
-  def reactStoreSafeJson: JsObject =
-    ReactJson.userNoPageToJson(debikiRequest.user)
+  def reactStoreSafeJsonString: String =
+    ReactJson.userNoPageToJson(debikiRequest.user).toString
 
   def debikiAppendToBodyTags: xml.NodeSeq = Nil
 
@@ -544,9 +544,6 @@ class TemplateProgrammingInterface(
     }
 
 
-  def pageMeta = dao.renderPageMeta(pageReq)
-
-
   def pageUrlPath = pageReq.pagePath.value
 
 
@@ -578,11 +575,8 @@ class TemplateProgrammingInterface(
     }
 
 
-  lazy val reactStoreSafeJsonString = reactStoreSafeJson.toString
-
-
-  override def reactStoreSafeJson: JsObject = {
-    ReactJson.pageToJson(pageReq, socialLinksHtml = configValue("social-links"))
+  override lazy val reactStoreSafeJsonString: String = {
+    ReactJson.pageToJson(pageReq, socialLinksHtml = configValue("social-links")).toString
   }
 
 }

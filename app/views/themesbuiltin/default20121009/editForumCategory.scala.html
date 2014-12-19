@@ -33,11 +33,10 @@
     @views.html.searchForm(tpi, id = "forum-search", placeholderText = "Search whole forum",
       sectionId = tpi.anyRootSectionPageId)
 
-    @tpi.page(showAuthorAndDate = false) {
-      <h2 class="category-name-title-prefix">Category definition:</h2>
-      @tpi.title
-      @tpi.bodyAndComments
-    }
+    <h2 class="category-name-title-prefix">Category definition:</h2>
+
+    <div id="dwPosts">@tpi.reactTest</div>
+
   </div>
 }
 

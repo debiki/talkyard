@@ -19,20 +19,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-// Outline new posts
-/*
-(function(){
-  var myLastVersion = $.cookie('myLastPageVersion'); // cookie no longer exists
-  if (!myLastVersion) return;
-  var newPosts = posts.filter(function(index){   B UG?…
-    //… relied on posts = $('.debiki .dw-p-bd') but use '*.dw-p' instead?
-    return $(this).dwLastChange() > myLastVersion;
-  })
-  newPosts.closest('.dw-t').addClass('dw-m-t-new');
-})()
-*/
-
-
 var anyCurrentlyHighlighted = null;
 var anyCurrentlyHighlightedTimeout = null;
 //var anyCurrentlyHighlightedBackground = null;

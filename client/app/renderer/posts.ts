@@ -89,14 +89,35 @@ var TitleBodyComments = createComponent({
   */
 
   render: function() {
-    // If we're showing a reply as the very first post, show no title, since
-    // the title is for the article itself only, not for any replies.
-    var anyTitle = this.props.rootPostId === BodyPostId ? Title(this.props) : null;
+    var anyTitle = null;
+    if (this.props.pageRole === 'Generic' || this.props.rootPostId !== BodyPostId) {
+      // Show no title for the homepage (role 'Generic'? what?) — it should have its
+      // own custom HTML with a title and other things.
+      // And show no title if we're showing a comment not the article as the root post.
+    }
+    else {
+      anyTitle = Title(this.props);
+    }
+
+    var anyPostHeader = null;
+    var anySocialLinks = null;
+    if (this.props.pageRole === 'Generic' || this.props.pageRole === 'Forum' ||
+        this.props.pageRole === 'ForumCategory' || this.props.pageRole === 'WikiMainPage' ||
+        this.props.pageRole === 'SpecialContent' || this.props.pageRole === 'Blog' ||
+        this.props.rootPostId !== BodyPostId) {
+      // Show no author name or social links for these generic pages.
+      // And show nothing if we're showing a comment not the article as the root post.
+    }
+    else {
+      anyPostHeader = PostHeader({ post: this.props.allPosts[this.props.rootPostId] });
+      anySocialLinks = SocialLinks({ socialLinksHtml: this.props.socialLinksHtml });
+    }
+
     return (
       r.div({},
         anyTitle,
-        PostHeader({ post: this.props.allPosts[this.props.rootPostId] }),
-        SocialLinks({ socialLinksHtml: this.props.socialLinksHtml }),
+        anyPostHeader,
+        anySocialLinks,
         RootPostAndComments(this.props)));
   },
 });
@@ -132,11 +153,14 @@ var SocialLinks = createComponent({
 
 var RootPostAndComments = createComponent({
   showActions: function() {
-    this.refs.actions.showActions();
+    if (this.refs.actions) {
+      this.refs.actions.showActions();
+    }
   },
   render: function() {
     var rootPost = this.props.allPosts[this.props.rootPostId];
     var isBody = this.props.rootPostId === BodyPostId;
+    var pageRole = this.props.pageRole;
     var threadClass = 'dw-t dw-depth-0' + horizontalCss(this.props.horizontalLayout);
     var postIdAttr = 'post-' + rootPost.postId;
     var postClass = 'dw-p';
@@ -146,6 +170,23 @@ var RootPostAndComments = createComponent({
       postClass += ' dw-ar-p';
       postBodyClass += ' dw-ar-p-bd';
     }
+
+    var showComments = pageRole !== 'Generic' && pageRole !== 'Forum' &&
+        pageRole !== 'ForumCategory' && pageRole !== 'Blog' && pageRole !== 'WikiMainPage' &&
+        pageRole !== 'SpecialContent';
+
+    var sanitizedHtml = rootPost.isApproved
+        ? rootPost.sanitizedHtml
+        : '<p>(Text pending approval.)</p>';
+
+    var body =
+        r.div({ className: postClass, id: postIdAttr, onMouseEnter: this.showActions },
+          r.div({ className: postBodyClass },
+            r.div({ className: 'dw-p-bd-blk',
+              dangerouslySetInnerHTML: { __html: sanitizedHtml }})));
+
+    if (!showComments)
+      return r.div({ className: threadClass }, body);
 
     var anyHorizontalArrowToChildren = null;
     if (this.props.horizontalLayout) {
@@ -168,16 +209,9 @@ var RootPostAndComments = createComponent({
           })));
     });
 
-    var sanitizedHtml = rootPost.isApproved
-        ? rootPost.sanitizedHtml
-        : '<p>(Text pending approval.)</p>';
-
     return (
       r.div({ className: threadClass },
-        r.div({ className: postClass, id: postIdAttr, onMouseEnter: this.showActions },
-          r.div({ className: postBodyClass },
-            r.div({ className: 'dw-p-bd-blk',
-              dangerouslySetInnerHTML: { __html: sanitizedHtml }}))),
+        body,
         PostActions({ post: rootPost, user: this.props.user, ref: 'actions' }),
         debiki2.reactelements.CommentsToolbar(),
         anyHorizontalArrowToChildren,

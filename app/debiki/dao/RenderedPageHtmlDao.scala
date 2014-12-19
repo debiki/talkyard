@@ -50,12 +50,6 @@ trait RenderedPageHtmlDao {
     TemplateRenderer.renderTemplate(pageReq, appendToBody)
 
 
-  def renderPageMeta(pageReq: PageRequest[_]): NodeSeq = {
-    HtmlPageSerializer.wrapInPageTag(pageReq.thePathAndMeta)(Nil)
-      .map(html => xml.Unparsed(liftweb.Html5.toString(html)))
-  }
-
-
   def renderPage(pageReq: PageRequest[_], renderSettings: RenderPageSettings)
         : RenderedPage = {
 

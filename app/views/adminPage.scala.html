@@ -47,8 +47,11 @@
   @* Could perhaps provide a touch version too? Then could use yepnope, but would
   then have to start the app manually. See client/app/bootstrap-angularjs.ls.  *@
   <script>
-    @* Old stuff needed by the page app bundled in the same JS file *@
-    var debiki = { internal: { $: jQuery }, v0: { util: {} } }
+    @* Stuff needed by the page app bundled in the same JS file *@
+    var debiki = {
+      reactPageStore: {},
+      internal: { $: jQuery }, v0: { util: {} }
+    }
   </script>
   <script src="@asset(s"combined-debiki-desktop.$minMaxJs")"></script>
 </head>

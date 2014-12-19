@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="ReactDispatcher.ts" />
 /// <reference path="../typedefs/lodash/lodash.d.ts" />
 
 //------------------------------------------------------------------------------
@@ -107,6 +108,11 @@ ReactStore.allData = function() {
 
 ReactStore.getPageId = function() {
   return store.pageId;
+}
+
+
+ReactStore.getPageRole = function() {
+  return store.pageRole;
 }
 
 
