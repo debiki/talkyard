@@ -21,11 +21,8 @@
 
 @wrapper(tpi) {
   <!-- default20121009/blogPost.scala.html -->
-  @page {
-    @title
-    @authorAndDate
-    @Html(tpi.configValue("social-links"))
-    @bodyAndComments
-  }
+
+  <div id="dwPosts">@tpi.reactTest</div>
+
 }
 

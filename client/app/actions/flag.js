@@ -53,7 +53,7 @@ function initFlagDialog(flagDialog, postId) {
   $form.find('.dw-fi-submit').click(function() {
     // COULD ensure details specified if "Others" reason selected.
     // COULD show a "Submitting..." message.
-    if (!d.i.Me.isLoggedIn()) {
+    if (!debiki2.ReactStore.getUser().isLoggedIn) {
       $form.each(d.i.$loginThenSubmit);
     }
     else {
@@ -92,9 +92,9 @@ function initFlagDialog(flagDialog, postId) {
         success: onFlagSaved
       });
 
-    function onFlagSaved(flagsPatchJson) {
+    function onFlagSaved(updatedPost) {
       flagDialog.dialog('close');
-      d.i.patchPage(flagsPatchJson);
+      debiki2.ReactActions.updatePost(updatedPost);
       alert("Thanks. You have reported it. Someone will review it and "+
         "perhaps delete it or remove parts of it.");
     }

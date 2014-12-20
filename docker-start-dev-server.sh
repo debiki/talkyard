@@ -10,6 +10,7 @@ function create_new_dev_server_container {
   docker run \
     -it \
     --name debiki-dev-server \
+    -p 3333:3333 \
     -p 5005:5005 \
     -p 9000:9000 \
     -p 9999:9999 \

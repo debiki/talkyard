@@ -163,8 +163,8 @@ function showEditsDialogImpl($post) {
           .fail(d.i.showServerResponseDialog)
           .done(onImprovementsSaved);
 
-      function onImprovementsSaved(editedPostJson) {
-        d.i.patchPage(editedPostJson);
+      function onImprovementsSaved(editedPost) {
+        debiki2.ReactActions.updatePost(editedPost);
         // Dialog already closed, search for "dialog('close')" in this file.
       };
 
@@ -172,19 +172,6 @@ function showEditsDialogImpl($post) {
     });
   }
 };
-
-
-// Show a change diff instead of the post text, when hovering an edit
-// suggestion.
-$(function() {
-  $('.debiki')
-      .delegate('.dw-e-sg', 'mouseenter', function() {
-        // COULD move find(...) to inside $showEditDiff?
-        // (Don't want such logic placed down here.)
-        $(this).find('.dw-e-text').each(d.i.$showEditDiff);
-      })
-      .delegate('.dw-e-sgs', 'mouseleave', d.i.$removeEditDiff);
-});
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

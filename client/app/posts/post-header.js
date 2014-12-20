@@ -20,26 +20,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-d.i.makePostHeaderPretty = function($hdr) {
-  var $postedAt = $hdr.children('.dw-p-at'),
-      postedAtTitle = $postedAt.attr('title'),
-      postedAt = d.u.isoDateToMillis(postedAtTitle),
-      $editedAt = $hdr.find('> .dw-p-hd-e > .dw-p-at'),
-      editedAtTitle = $editedAt.attr('title'),
-      editedAt = d.u.isoDateToMillis(editedAtTitle),
-      now = new Date();  // COULD cache? e.g. when initing all posts
-
-  // Show pretty how-long-ago info. (The $posted/editedAt are already hidden.)
-  $postedAt.before(timeAgoAbbr(postedAtTitle, postedAt, now));
-  $editedAt.before(timeAgoAbbr(editedAtTitle, editedAt, now));
-
-  function timeAgoAbbr(title, then, now) {
-    return $('<abbr title="'+ title +'">'+ d.u.prettyTimeBetween(then, now) +
-        '</abbr>');
-  };
-};
-
-
 function $makePostHeadTooltips() {  // i18n
   if (!$.fn.tooltip) return; // tooltips not loaded
   var $postHead = $(this);

@@ -17,7 +17,7 @@
 
 @(startupCode: String, anyPageId: Option[String], serverAddress: String, pageUriPath: String,
   anyPageRole: Option[com.debiki.core.PageRole], anyPagePath: Option[com.debiki.core.PagePath],
-  reactStoreSafeJson: play.api.libs.json.JsObject, minMaxJs: String, minMaxCss: String)
+  reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
 
 @asset(file: String) = @{
   routes.Assets.at(path = "/public/res", file)
@@ -77,7 +77,18 @@ stylesheet references", http://modernizr.com/docs/#installing
 @script(s"//cdnjs.cloudflare.com/ajax/libs/react/0.12.1/react-with-addons.$minMaxJs",
     "React", s"react-with-addons.$minMaxJs")
 
-<script id="dwReactStore" type="application/json">@Html(reactStoreSafeJson.toString)</script>
+<script id="dwReactUserStore" type="application/json">
+@* The contents of this tag is filled in with any user specific data. Note that
+this tag is placed before 'dwReactPageStore' below, so if e.g. a comment contains
+the below magic string then that won't matter because we replace only the very first
+occurrence of the magic string with user specific data. *@
+@controllers.ViewPageController.HtmlEncodedUserSpecificDataJsonMagicString
+</script>
+
+<script id="dwReactPageStore" type="application/json">
+@* Play Framework escapes too much (it escapes '"'), so use @Html and OWASP instead. *@
+@Html(org.owasp.encoder.Encode.forHtmlContent(reactStoreSafeJsonString))
+</script>
 
 @* All Debiki's stuff is placed somewhere inside `debiki`.
  - The debiki.scriptLoad $.Deferred is resolved later by debiki.js.
@@ -86,8 +97,33 @@ stylesheet references", http://modernizr.com/docs/#installing
    on-save callback, to be notified when a newly created page is saved.)
 *@
 <script>
+  @* See http://stackoverflow.com/a/1912522/694469. The <div> isn't added to the document
+   so no <script> would be executed. *@
+  function unencodeHtmlContent(escapedHtml) {
+    var elem = document.createElement('div');
+    elem.innerHTML = escapedHtml;
+    var result = '';
+    @* Chrome splits innerHTML into many child nodes, each one at most 65536. Whereas
+    FF creates just one single huge child node. *@
+    for (var i = 0; i < elem.childNodes.length; ++i) {
+      result = result + elem.childNodes[i].nodeValue;
+    }
+    return result;
+  }
+
+  function parseAnyDebikiUserSpecificData() {
+    try {
+      return JSON.parse(unencodeHtmlContent($('#dwReactUserStore').text()));
+    }
+    catch (ignored) {
+      @* ignore, means not logged in so magic string wasn't replaced *@
+    }
+    return null;
+  }
+
   var debiki = $.extend(true, {
-    store: JSON.parse($('#dwReactStore').text()),
+    reactPageStore: JSON.parse(unencodeHtmlContent($('#dwReactPageStore').text())),
+    reactUserStore: parseAnyDebikiUserSpecificData(),
     getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
     v0: { util: {} },
     internal: {

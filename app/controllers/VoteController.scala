@@ -86,7 +86,7 @@ object VoteController extends mvc.Controller {
 
         val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
           "DwE22PF1", s"Page `$pageId' not found")
-        (pageReq, pageReq.page_!)
+        (pageReq, pageReq.thePageParts)
       }
       else {
         // Prevent the user from voting many times by deleting any existing vote.
@@ -126,8 +126,8 @@ object VoteController extends mvc.Controller {
         (pageReq, updatedPage.parts)
       }
 
-    val json = BrowserPagePatcher(pageReq).jsonForPost(postId, pageParts)
-    OkSafeJson(json)
+    val post = pageParts.getPost_!(postId)
+    OkSafeJson(ReactJson.postToJson(post))
   }
 
 }

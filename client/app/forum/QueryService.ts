@@ -125,15 +125,8 @@ export class QueryService {
   }
 
 
-  /**
-   * The server includes info on any blog or forum categories in the HTML so we won't need
-   * to ask for that separately. This function parses that data and remembers the categories.
-   */
   private initializeCategories() {
-    var pageDataText = $('#dw-page-data').text() || '{}';
-    var pageDataJson = JSON.parse(pageDataText);
-    var categoriesData = pageDataJson.categories || [];
-
+    var categoriesData = debiki2.ReactStore.getCategories();
     for (var i = 0; i < categoriesData.length; ++i) {
       var category: Category = Category.fromJson(this.forumData, categoriesData[i]);
       this.forumData.categoriesById[category.pageId] = category;

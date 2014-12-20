@@ -43,7 +43,7 @@ export var NameLoginBtns = React.createClass({
   onLogoutClick: function() {
     d.u.postJson({ url: d.i.serverOrigin + '/-/logout' })
       .fail(d.i.showServerResponseDialog)
-      .done(d.i.Me.fireLogout);
+      .done(debiki2.ReactActions.logout);
   },
 
   goToUserPage: function() {
@@ -56,18 +56,18 @@ export var NameLoginBtns = React.createClass({
   },
 
   render: function() {
+    var user = this.state.user;
     var userNameElem = null;
-    if (this.state.user) {
+    if (user.isLoggedIn) {
       userNameElem =
           r.span({ className: 'dw-u-info' },
-              r.a({ className: 'dw-u-name', onClick: this.goToUserPage },
-                  this.state.user.fullName));
+              r.a({ className: 'dw-u-name', onClick: this.goToUserPage }, user.fullName));
     }
 
     var buttonsNotLinks = this.state.isInEmbeddedCommentsIframe;
 
     var loginBtnElem = null;
-    if (!this.state.user) {
+    if (!user.isLoggedIn) {
       loginBtnElem = buttonsNotLinks
           ? r.button({ className: 'dw-a-login btn btn-default', onClick: this.onLoginClick },
               'Login')
@@ -75,7 +75,7 @@ export var NameLoginBtns = React.createClass({
     }
 
     var logoutBtnElem = null;
-    if (this.state.user) {
+    if (user.isLoggedIn) {
       logoutBtnElem = buttonsNotLinks
           ? r.button({ className: 'dw-a-logout btn btn-default',
               onClick: this.onLogoutClick }, 'Logout')

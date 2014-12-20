@@ -147,7 +147,7 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
 
     # This happens only if we're not in a login popup, but a jQuery UI dialog:
 
-    d.i.Me.fireLogin()
+    debiki2.ReactActions.login()
     # Show response dialog, and continue with whatever caused
     # the login to happen.
     # {{{ If the login happens because the user submits a reply,
@@ -192,9 +192,8 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
 
 !function showLoggedInDialog(opt_continue)
   html = $('''
-      <p>You have been logged in, welcome <span id="dw-lgi-name"></span></p>
+      <p>You have been logged in, welcome!</p>
     ''')
-  html.find('#dw-lgi-name').text(d.i.Me.getName!)
   html.dialog $.extend({}, d.i.jQueryDialogNoClose,
       title: 'Welcome'
       autoOpen: true

@@ -329,7 +329,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             userId = "99999")::Nil) // bad ids
       //SLog.info("Expecting ORA-02291: integrity constraint log message ------")
       dao.createPage(Page.newPage(
-        PageRole.Generic, defaultPagePath, debateBadLogin, author = SystemUser.User)
+        PageRole.WebPage, defaultPagePath, debateBadLogin, author = SystemUser.User)
                     ) must throwAn[Exception]
       //SLog.info("------------------------------------------------------------")
     }
@@ -422,7 +422,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     "create a debate with a root post" in {
       val debateNoId = PageParts(guid = "?", rawActions = ex1_rootPost::Nil)
       val page = dao.createPage(Page.newPage(
-        PageRole.Generic, defaultPagePath, debateNoId, publishDirectly = true,
+        PageRole.WebPage, defaultPagePath, debateNoId, publishDirectly = true,
         author = guestUser))
       val actions = page.parts
       testPage = page.withoutPath
@@ -1073,7 +1073,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           PageRole.ForumTopic, List(categoryTwo.id, forumGroup.id), "topic-two", topicTwoBody))
 
         genericPage = dao.createPage(newPage(
-          PageRole.Generic, Nil, "generic-page", genericPageBody))
+          PageRole.WebPage, Nil, "web-page", genericPageBody))
 
         forumWithHtml = dao.createPage(newPage(
           PageRole.ForumCategory, Nil, "category-with-html", htmlForumBody))
@@ -2282,7 +2282,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case PagePath.Parsed.Good(path) => path.copy(showId = showId)
           case x => throwFailure(s"Test broken, bad path: $x")
         }
-      dao.createPage(Page.newEmptyPage(PageRole.Generic, pagePath, author = guestUser))
+      dao.createPage(Page.newEmptyPage(PageRole.WebPage, pagePath, author = guestUser))
     }
 
 
@@ -2557,7 +2557,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val pagePath = PagePath(newWebsiteOpt.id, "/", None, false, "")
         val dao = newWebsiteDao()
         val page = dao.createPage(Page.newPage(
-          PageRole.Generic, pagePath, emptyPage, author = SystemUser.User))
+          PageRole.WebPage, pagePath, emptyPage, author = SystemUser.User))
         homepageId = page.id
         dao.savePageActions(page.withoutPath, List(homepageTitle))
         ok

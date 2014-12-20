@@ -38,7 +38,7 @@ var onLoginCallback = null;
  * Logs in and then calls the callback.
  */
 d.i.loginIfNeeded = function(reason, anyReturnToUrl, callback) {
-  if (d.i.Me.isLoggedIn()) {
+  if (debiki2.ReactStore.getUser().isLoggedIn) {
     callback();
   }
   else {
@@ -48,26 +48,12 @@ d.i.loginIfNeeded = function(reason, anyReturnToUrl, callback) {
 };
 
 
-/**
- * `anyLoginReason` is optional and influences button titles in login dialogs.
- * It can one of 'LoginToComment', 'LoginToLogin' and 'LoginToSubmit'.
- */
-d.i.$loginSubmitOnClick = function(loginEventHandler, anyLoginReason) {
-  return function() {
-    var $i = $(this);
-    $i.addClass('dw-loginsubmit-on-click');
-    !loginEventHandler || $i.bind('dwEvLoggedInOut', loginEventHandler);
-    $i.on('click', null, { mode: anyLoginReason }, d.i.$loginThenSubmit);
-  };
-};
-
-
 // Invoke on a .login-on-click submit <input>. After the login
 // has been completed, the button will be submitted, see
 // continueAnySubmission(). If already logged in, submits immediately.
 d.i.$loginThenSubmit = function(event) {
   loginOnClickBtnClicked = this;
-  if (!d.i.Me.isLoggedIn()) {
+  if (!debiki2.ReactStore.getUser().isLoggedIn) {
     // Will call continueAnySubmission(), after login.
     // {{{ Hmm, could add a `continue' callback to showLogin() instead!?
     // But initLoginSimple/OpenId runs once only, so the very first

@@ -30,17 +30,12 @@
   position: relative // for position: absolute 'Click this...' tips, inside
 
   top: -8px
-  &.dw-p-as-hz-reply
-    top: 0
 
-.dw-p-as-dimmed
+.dw-p-as:not(.dw-p-as-shown)
   opacity: 0.15
   .dw-a:before
     // Dim icons even more, since they are otherwise eye catching blubs of colors.
     opacity: 0.6
-
-.dw-p-as.dw-p-as-shown
-  opacity: 1
 
 .dw-depth-0 > .dw-p-as
   // Always show actions for the article / root post.
@@ -67,23 +62,13 @@
   // Don't make it possible to vote "Wrong" for the forum question or blog post.
   display: none !important
 
-.DW.dw-hz .dw-ar-t > .dw-p-as > .dw-a-reply
-  // The reply button is placed as an <li> in the reply section instead.
-  display: none !important
-
-.dw-p-as-hz-reply
-  position: relative // curve image placed relative
-  padding-right: 20px
-  margin: 10px 16px 0 12px
-  max-width: 45px; // or "Reply" text pushes thread columns rightwards
-
-// The reply button text can be customized, so it might be rather wide,
-// so set max-width and line height.
-.dw-p-as-hz-reply > .dw-a-reply
-  max-width: 8em
-  display: inline-block // or max-width has no effect
-  line-height: 120%
-  white-space: nowrap // or word wrap after reply icon, before "Reply" text
+.dw-ar-t > .dw-p-as > .dw-a-reply
+  background: hsl(210, 51%, 50%);
+  color: white !important;
+  font-weight: bold;
+  padding: 5px 8px 5px 5px;
+  position: relative;
+  top: -5px;
 
 .dw-a
   text-decoration: none
@@ -109,10 +94,6 @@
 
 .DW .dw-t > .dw-p-as .dw-a-like
   margin-right: 5px
-
-  // One may not like ones own post.
-  &.dw-my-post
-    display: none
 
 // Highlight the heart or warning symbol if the user has voted Like or Wrong.
 .dw-a.dw-my-vote:before
@@ -143,7 +124,6 @@
 
 .DW .dw-t > .dw-as > .dw-a-edit,
 .DW .dw-t > .dw-as > .dw-a-collapse-suggs,
-.DW .dw-t > .dw-as > .dw-a-flag-suggs,
 .DW .dw-t > .dw-as > .dw-a-delete-suggs
   margin: 0 0 0 12px
   color: #888
@@ -157,21 +137,6 @@
   color: #c77405 // jQuery UI's ui-state-hover color
   text-decoration: underline
 
-.dw-p-as-hz-reply > .dw-a.dw-a-reply
-  font-size: 17px
-  margin: 0
-  float: none
-
-.dw-p-as-hz-reply > .dw-a
-  display: block
-
-.dw-p-as-hz-reply > .dw-a:not(.dw-a-reply)
-  margin-top: 1.3em
-  color: #777
-
-.dw-p-as-hz-reply > .dw-a:not(.dw-a-reply):hover
-  color: hsl(211, 30%, 40%)
-
 .dw-replying
   opacity: 1 !important
 
@@ -183,6 +148,12 @@
     position: relative
     top: -2px
     left: 3px
+
+// The article's reply button already has a background and square borders.
+// Make it even darker, when replying to the article.
+.dw-ar-t > .dw-p-as.dw-replying > .dw-a-reply
+  background: hsl(210, 51%, 35%);
+  border-radius: 0;
 
 .dw-p-as
   // Prevent collapsed posts from appearing too close to any post just below,
@@ -208,22 +179,6 @@ body.dw-u-ui-simple .dw-a-edit
 
 .dw-as-inline .ui-button
   margin-right: 0 // or space between inline action menu buttons
-
-
-// Hide interactions
-//---------------------------
-
-.dw-a-show-interactions
-  color: #3872AB !important
-  visibility: visible !important
-  font-size: 10px
-
-// Sync these selectors with showCommentsOnClick in debiki.js.
-.dw-hide-interactions .dw-ar-t > .dw-single-and-multireplies > .dw-res,
-.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bd > .dw-p-bd-blk .dw-i-m-start,
-.dw-hide-interactions .dw-ar-t > .dw-p > .dw-p-bd > .dw-i-ts,
-.dw-hide-interactions .dw-debate svg
-  display: none
 
 
 

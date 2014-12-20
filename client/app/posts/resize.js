@@ -48,9 +48,6 @@ d.i.makeThreadResizableForPost = function(post) {
 // Makes [threads layed out vertically] horizontally resizable.
 function $makeThreadEastResizable() {
   $(this).resizable({
-    resize: function() {
-      d.i.SVG.$drawParentsAndTree.apply(this);
-    },
     handles: 'e',
     stop: function(event, ui) {
       // jQuery has added `height: ...' to the thread's style attribute.

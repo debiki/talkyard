@@ -167,9 +167,9 @@ object SiteCreator {
    */
   private def createHomepage(newWebsiteDao: SiteDao, creationDati: ju.Date) {
     val pageId = newWebsiteDao.nextPageId()
-    val emptyPage = PageParts(pageId, SystemUser.Person)
+    val emptyPage = PageParts(pageId, people = SystemUser.Person)
     val pageMeta = PageMeta.forNewPage(
-      PageRole.Generic, SystemUser.User, emptyPage, creationDati, publishDirectly = true)
+      PageRole.HomePage, SystemUser.User, emptyPage, creationDati, publishDirectly = true)
     val oldPath = PagePath(newWebsiteDao.siteId, folder = "/_old/",
       pageId = Some(pageId), showId = false, pageSlug = "default-homepage")
 

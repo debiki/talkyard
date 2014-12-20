@@ -31,7 +31,7 @@ function initDeleteForm() {
     return; // already inited
 
   $form.find('.dw-fi-submit').button().click(function() {
-    if (!d.i.Me.isLoggedIn()) $form.each(d.i.$loginThenSubmit);
+    if (!debiki2.ReactStore.getUser().isLoggedIn) $form.each(d.i.$loginThenSubmit);
     else $form.submit();
     return false;
   });
@@ -47,14 +47,14 @@ function initDeleteForm() {
 
   $form.submit(function() {
     $.post($form.attr("action"), $form.serialize(), 'html')
-        .done(function(json) {
+        .done(function(deletedPost) {
           // Don't show already submitted deletion reason,
           // if reopening form, and clear the delete-all-replies
           // checkbox.
           $parent.dialog('close');
           $form.find('input:checked').prop('checked', false);
 
-          var result = d.i.patchPage(json, { overwriteTrees: true });
+          debiki2.ReactActions.updatePost(deletedPost);
         })
         .fail(d.i.showServerResponseDialog);
     return false;

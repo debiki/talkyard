@@ -71,8 +71,11 @@ object InternalPageTpi {
       page.parts.approvedTitleTextOrNoTitle
 
     private def bodyOf(page: core.Page, host: String): String =
-      page.parts.body.map(
-        HtmlPageSerializer.markupTextOf(_, host)).getOrElse("")
+      page.parts.body.map(body => {
+        ReactRenderer.renderAndSanitizeCommonMark(
+          body.approvedText.getOrElse("(Not yet approved"),
+          allowClassIdDataAttrs = true, followLinks = true)
+      }).getOrElse("")
   }
 
 
@@ -120,30 +123,6 @@ object TemplateProgrammingInterface {
     // debiki.DeprecatedTemplateEngine$ error, when running unit tests. Instead:
     val isDevOrTest = p.Play.maybeApplication.map(_.mode) != Some(p.Mode.Prod)
     if (isDevOrTest) ("", "js", "css") else ("min", "min.js", "min.css")
-  }
-
-
-  def rolePageSettingsToJson(settings: RolePageSettings): JsObject = {
-    Json.obj(
-      "notfLevel" -> safeJsString(settings.notfLevel.toString))
-  }
-
-
-  def safeStringOrNull(value: Option[String]) = value.map(safeJsString(_)).getOrElse(JsNull)
-
-
-  /** Makes a string safe for embedding in a JSON doc in a HTML doc.
-    * From http://stackoverflow.com/a/4180424/694469: """escape  < with \u003c and --> with --\>
-    * you need to escape the HTML characters <, >, & and = to make your json string safe to embed"""
-    * (Note that the JSON serializer itself takes care of double quotes '"'.)
-    */
-  private def safeJsString(string: String): JsString = {
-    var safeString = string
-    safeString = safeString.replaceAllLiterally("<", "\u003c") // and? ">", "\u003e"
-    safeString = safeString.replaceAllLiterally("-->", "--\\>")
-    safeString = safeString.replaceAllLiterally("=", "\u003d")
-    safeString = safeString.replaceAllLiterally("&", "%26")
-    JsString(safeString)
   }
 
 }
@@ -205,8 +184,6 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   def debikiHtmlTagClasses =
     "DW dw-pri dw-ui-simple dw-render-actions-pending "
 
-  def debikiDashbar = xml.Unparsed(views.html.dashbar().body)
-
   def loginLinkAndUserName =
     <span id="dw-name-login-btns"></span> // rendered by React.js
 
@@ -230,7 +207,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
       pageUriPath = debikiRequest.request.path,
       anyPageRole = anyCurrentPageRole,
       anyPagePath = anyCurrentPagePath,
-      reactStoreSafeJson = reactStoreSafeJson,
+      reactStoreSafeJsonString = reactStoreSafeJsonString,
       minMaxJs = minMaxJs,
       minMaxCss = minMaxCss).body)
 
@@ -338,7 +315,8 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
 
 
   /** The initial data in the React-Flux model, a.k.a. store. */
-  def reactStoreSafeJson: JsObject = JsObject(Nil)
+  def reactStoreSafeJsonString: String =
+    ReactJson.userNoPageToJson(debikiRequest.user).toString
 
   def debikiAppendToBodyTags: xml.NodeSeq = Nil
 
@@ -362,8 +340,8 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
   override def anyCurrentPageRole = Some(pageRole)
   override def anyCurrentPagePath = Some(_pageReq.pagePath)
 
-  def pageId = _pageReq.pageId_!
-  def pageRole = _pageReq.pageRole_!
+  def pageId = _pageReq.thePageId
+  def pageRole = _pageReq.thePageRole
 
   def currentFolder = PathRanges(folders = Seq(_pageReq.pagePath.folder))
   def currentTree = PathRanges(trees = Seq(_pageReq.pagePath.folder))
@@ -395,7 +373,7 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
    * Returns any parent forums, e.g.: grandparent-forum :: parent-forum :: Nil.
    */
   def listParentForums(): Seq[tpi.ForumOrCategory] = {
-    val parentPageId = _pageReq.pageMeta_!.parentPageId match {
+    val parentPageId = _pageReq.thePageMeta.parentPageId match {
       case None => return Nil
       case Some(pageId) => pageId
     }
@@ -492,18 +470,7 @@ class TemplateProgrammingInterface(
   import InternalPageTpi.{Page => _, _}
   import TemplateProgrammingInterface._
 
-  var renderPageSettings: Option[RenderPageSettings] = None
-
   val horizontalComments = pageReq.thePageSettings.horizontalComments.valueIsTrue
-
-
-  lazy val renderedPage: RenderedPage =
-    dao.renderPage(
-      pageReq,
-      renderPageSettings getOrElse {
-        throw TemplateRenderer.BadTemplateException(
-          "DwE3KR58", "Please wrap @tpi.title, @tpi.body etcerera inside a @tpi.page tag")
-      })
 
 
   override def debikiHtmlTagClasses =
@@ -521,38 +488,8 @@ class TemplateProgrammingInterface(
   }
 
 
-  def page(contents: => play.api.templates.Html): xml.NodeSeq = page()(contents)
-
-
-  def page(
-    showTitle: Boolean = true,
-    showAuthorAndDate: Boolean = !isHomepage,
-    showBody: Boolean = true,
-    showComments: Boolean = !isHomepage)(
-    contents: => play.api.templates.Html): xml.NodeSeq = {
-
-    val viewsPageConfigPost = pageReq.pageRoot == Some(PageParts.ConfigPostId)
-    renderPageSettings =
-      if (viewsPageConfigPost || pageReq.pagePath.isConfigPage) {
-        // Don't load any config values in case the config post/page is corrupt — otherwise
-        // it wouldn't be possible to edit the config file and fix the errors.
-        Some(RenderPageSettings(
-          showTitle = true, showAuthorAndDate = false, showBody = true, showComments = true,
-          horizontalComments = horizontalComments))
-      }
-      else {
-        Some(RenderPageSettings(
-          showTitle = shall("show-title", showTitle),
-          showAuthorAndDate = shall("show-author-and-date", showAuthorAndDate),
-          showBody = shall("show-body", showBody),
-          showComments = shall("show-comments", showComments),
-          horizontalComments = horizontalComments))
-      }
-
-    HtmlPageSerializer.wrapInPageTag(pageReq.pathAndMeta_!) {
-      xml.Unparsed(contents.body)
-    }
-  }
+  def reactTest =
+    xml.Unparsed(ReactRenderer.renderPage(reactStoreSafeJsonString))
 
 
   /** Example: if this is a forum topic  in a forum  in a forum group,
@@ -565,61 +502,15 @@ class TemplateProgrammingInterface(
     }
 
 
-  def pageMeta = dao.renderPageMeta(pageReq)
-
-
   def pageUrlPath = pageReq.pagePath.value
 
 
-  def isHomepage = pageUrlPath == "/"
+  def titleText =
+    pageReq.thePageParts.titlePost.map(_.currentText) getOrElse pageReq.pagePath.value
 
 
-  def title = renderedPage.title
-
-
-  def titleText = renderedPage.titleText
-
-
-  def authorAndDate = renderedPage.authorAndDate
-
-
-  def bodyAndComments = renderedPage.bodyAndComments
-
-
-  /**
-   * Use in templates, e.g. like so: `@if(shall("show-title")) { @title }`
-   */
-  def shall(confValName: String, default: Boolean = false): Boolean =
-    anyConfigValue(confValName).getOrElse(default) match {
-      case b: Boolean => b
-      case s: String => s.toLowerCase == "true"
-      case x => throw TemplateRenderer.PageConfigException(
-        "DwE1W840", s"""Don't know how to convert config value `$confValName' = `$x',
-        which is a ${classNameOf(x)}, to a Boolean""")
-    }
-
-
-  override def reactStoreSafeJson: JsObject = {
-    val anyUser = pageReq.user
-    val userNameJson: JsValue = safeStringOrNull(anyUser.map(_.displayName))
-    val numPostsExclTitle = pageReq.page_!.postCount - (if (pageReq.page_!.titlePost.isDefined) 1 else 0)
-    val rolePageSettings = anyUser.flatMap(_.anyRoleId) map { roleId =>
-      val settings = dao.loadRolePageSettings(roleId = roleId, pageId = pageReq.thePageId)
-      rolePageSettingsToJson(settings)
-    } getOrElse JsNull
-
-    Json.obj(
-      "numPostsExclTitle" -> numPostsExclTitle,
-      "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),
-      "user" -> Json.obj(
-        "isAdmin" -> JsBoolean(false),
-        "userId" -> safeStringOrNull(anyUser.map(_.id)),
-        "username" -> safeStringOrNull(anyUser.flatMap(_.username)),
-        "fullName" -> safeStringOrNull(anyUser.map(_.displayName)),
-        // "permsOnPage" -> d.i.Me.getPermsOnPage(),
-        "isEmailKnown" -> JsBoolean(anyUser.map(_.email.nonEmpty).getOrElse(false)),
-        "rolePageSettings" -> rolePageSettings,
-        "isAuthenticated" -> JsBoolean(anyUser.map(_.isAuthenticated).getOrElse(false))))
+  override lazy val reactStoreSafeJsonString: String = {
+    ReactJson.pageToJson(pageReq, socialLinksHtml = configValue("social-links")).toString
   }
 
 }

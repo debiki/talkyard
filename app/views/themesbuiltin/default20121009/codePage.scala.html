@@ -21,9 +21,9 @@
 
 @wrapper(tpi) {
   <!-- default20121009/codePage.scala.html -->
-  @tpi.page {
-    <div class="code-page-title"><h1>@{tpi.pageUrlPath}</h1></div>
-    @tpi.bodyAndComments
-  }
+  <div class="code-page-title"><h1>@{tpi.pageUrlPath}</h1></div>
+
+  <div id="dwPosts">@tpi.reactTest</div>
+
 }
 

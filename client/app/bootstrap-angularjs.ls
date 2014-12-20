@@ -44,7 +44,6 @@ bootstrapAngularJs = !->
   # See http://docs.angularjs.org/guide/bootstrap, "Manual Initialization".
   angular.element(document).ready !->
     angular.bootstrap document, ['DebikiApp']
-    initRootScope!
     angularStartup.resolve!
 
 
@@ -56,23 +55,6 @@ findRootScope = ->
   return void unless angular?
   angular.element($('html')).scope!
 
-
-
-!function initRootScope
-  $rootScope = findRootScope!
-
-  $pageDataTag = $ '.dw-page'  # or are there > 1 on blog main page?
-  $rootScope <<< $pageDataTag.dwPageMeta!
-
-  $rootScope.viewsPageConfigPost =
-    $pageDataTag.children('.dw-t').attr('id') == 'dw-t-' + d.i.pageConfigPostId
-
-  $rootScope.setCurrentUser = !(userProps) ->
-    $rootScope.currentUser ?= {}
-    $rootScope.currentUser <<< userProps
-
-  $rootScope.clearCurrentUser = !->
-    $rootScope.currentUser = void
 
 
 /**

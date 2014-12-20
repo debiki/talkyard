@@ -229,8 +229,6 @@ object LoginWithOpenAuthController extends Controller {
 
   private def createCookiesAndFinishLogin(request: Request[_], user: User): Result = {
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(user)
-    val userConfigCookie = ConfigUserController.userConfigCookie(user)
-    val newSessionCookies = userConfigCookie :: sidAndXsrfCookies
 
     val response =
       if (isAjax(request)) {
@@ -260,7 +258,7 @@ object LoginWithOpenAuthController extends Controller {
             loginPopupCallback
         }
       }
-    response.withCookies(newSessionCookies: _*)
+    response.withCookies(sidAndXsrfCookies: _*)
       .discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
   }
 

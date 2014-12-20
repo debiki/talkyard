@@ -66,8 +66,8 @@ trait SpecialContentDao {
   private def replaceNamesApplyMarkup(content: Content): String = {
     var text = content.text.replaceAllLiterally(
       "%{company_short_name}", self.loadWholeSiteSettings().companyShortName.value.toString)
-    val nodeSeq = HtmlPageSerializer.markdownToSafeHtml(text, hostAndPort = "???",
-      allowClassIdDataAttrs = false, makeLinksNofollow = true)
+    val nodeSeq = ReactRenderer.renderAndSanitizeCommonMark(
+      text, allowClassIdDataAttrs = false, followLinks = false)
     nodeSeq.toString
   }
 

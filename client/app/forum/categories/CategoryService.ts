@@ -103,15 +103,9 @@ export class CategoryService {
   }
 
 
-  /**
-   * The server includes info on any blog or forum categories so we won't need
-   * to ask for that separately. This function parses that data and adds  it to the
-   * $rootScope. (Ooops services shouldn't update scopes!)
-   */
+
   private setupCategories() {
-    var pageDataText = $('#dw-page-data').text() || '{}'
-    var pageDataJson = JSON.parse(pageDataText)
-    this._allCategories = pageDataJson.categories || []
+    this._allCategories = debiki2.ReactStore.getCategories();
   }
 
 

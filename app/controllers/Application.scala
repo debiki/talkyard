@@ -71,8 +71,8 @@ object Application extends mvc.Controller {
     val (updatedPage, _) =
       request.dao.savePageActionsGenNotfs(pageReq, flag::Nil) // anyPrelApprovalCancellation)
 
-    val json = BrowserPagePatcher(pageReq).jsonForPost(postId, updatedPage.parts)
-    OkSafeJson(json)
+    val post = updatedPage.parts.thePost(postId)
+    OkSafeJson(ReactJson.postToJson(post))
   }
 
 
@@ -84,7 +84,7 @@ object Application extends mvc.Controller {
        ifNotOneOf("tf", throwBadReq("DwE93kK3", "Bad whole tree value"))
     val reason = pageReq.getNoneAsEmpty(Inp.Reason)
 
-    val post = pageReq.page_!.getPost_!(postId)
+    val post = pageReq.thePageParts.getPost_!(postId)
     val isAuthor = post.userId == pageReq.user_!.id
 
     if (!isAuthor && !pageReq.permsOnPage.deleteAnyReply)
@@ -104,15 +104,11 @@ object Application extends mvc.Controller {
       userIdData = pageReq.userIdData,
       createdAt = pageReq.ctime)
 
-    val (page, _) =
+    val (updatedPage, _) =
       pageReq.dao.savePageActionsGenNotfs(pageReq, deletion::Nil)
 
-    // Even if deleting the whole tree, show a brief stub in place of the deleted stuff:
-    // "Thread deleted by ...". It'll be gone if you reload the page.
-    val json = BrowserPagePatcher(pageReq, showStubsForDeleted = true).jsonForTrees(
-      page.parts, BrowserPagePatcher.TreePatchSpec(postId, wholeTree = wholeTree))
-
-    Utils.OkSafeJson(json)
+    val postAfter = updatedPage.parts.thePost(postId)
+    OkSafeJson(ReactJson.postToJson(postAfter))
   }
 
 

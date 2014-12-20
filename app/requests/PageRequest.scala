@@ -220,7 +220,7 @@ case class PageRequest[A](
     }
 
 
-  def copyWithMeOnPage_! : PageRequest[A] =
+  def copyWithMeOnPage : PageRequest[A] =
     if (user.isEmpty) throwForbidden("DwE403BZ39", "Not logged in")
     else copyWithAnyMeOnPage
 
@@ -235,16 +235,15 @@ case class PageRequest[A](
    * Throws 404 Not Found if id unknown. The page id is known if it
    * was specified in the request, *or* if the page exists.
    */
-  def pageId_! : String = pagePath.pageId getOrElse
+  def thePageId : String = pagePath.pageId getOrElse
     throwNotFound("DwE93kD4", "Page does not exist: "+ pagePath.value)
 
-  def thePageId = pageId_!
 
   /**
    * The page this PageRequest concerns, or None if not found
    * (e.g. if !pageExists, or if it was deleted just moments ago).
    */
-  lazy val page_? : Option[PageParts] =
+  lazy val pageParts : Option[PageParts] =
     _preloadedActions orElse {
       if (pageExists) {
         val anyPage = pageId.flatMap(id => dao.loadPageParts(id))
@@ -262,13 +261,10 @@ case class PageRequest[A](
    *
    * (The page might have been deleted, just after the access control step.)
    */
-  // COULD rename to actions_!.
-  lazy val page_! : PageParts =
-    page_? getOrElse throwNotFound("DwE43XWY", "Page not found, id: "+ pageId)
+  lazy val thePageParts : PageParts =
+    pageParts getOrElse throwNotFound("DwE43XWY", "Page not found, id: "+ pageId)
 
-  def thePage = page_!
-
-  def pageNoPath_! = PageNoPath(page_!, ancestorIdsParentFirst_!, pageMeta_!)
+  def thePageNoPath = PageNoPath(thePageParts, ancestorIdsParentFirst_!, thePageMeta)
 
   /** Any page version specified in the query string, e.g.:
     * ?view&version=2012-08-20T23:59:59Z
@@ -302,26 +298,26 @@ case class PageRequest[A](
 
   def pageRole: Option[PageRole] = pageMeta.map(_.pageRole)
 
-  def pageRole_! : PageRole = pageMeta_!.pageRole
+  def thePageRole : PageRole = thePageMeta.pageRole
 
-  def parentPageId_! : Option[String] = pageMeta_!.parentPageId
+  def theParentPageId : Option[String] = thePageMeta.parentPageId
 
-  def pageMeta_! = pageMeta getOrElse throwNotFound(
+  def thePageMeta = pageMeta getOrElse throwNotFound(
     "DwE3ES58", s"No page meta found, page id: $pageId")
 
   lazy val ancestorIdsParentFirst_! : List[PageId] =
-    _preloadedAncestorIds getOrElse dao.loadAncestorIdsParentFirst(pageId_!)
+    _preloadedAncestorIds getOrElse dao.loadAncestorIdsParentFirst(thePageId)
 
 
-  def pathAndMeta_! = PagePathAndMeta(pagePath, ancestorIdsParentFirst_!, pageMeta_!)
+  def thePathAndMeta = PagePathAndMeta(pagePath, ancestorIdsParentFirst_!, thePageMeta)
 
 
   lazy val thePageSettings: Settings = {
     if (pageExists) {
       dao.loadSinglePageSettings(thePageId)
     }
-    else if (parentPageId_!.isDefined) {
-      dao.loadPageTreeSettings(parentPageId_!.get)
+    else if (theParentPageId.isDefined) {
+      dao.loadPageTreeSettings(theParentPageId.get)
     }
     else {
       dao.loadWholeSiteSettings()

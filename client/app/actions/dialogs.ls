@@ -68,7 +68,7 @@ function newCollapseDialog (whichDialog)
     $dialog.dialog 'close'
 
   $dialog.find('.dw-f-collapse-yes').button!click ->
-    submit $dialog, conf.url, [{ pageId, actionId: '' + postId }]
+    submit $dialog, conf.url, { pageId, postId }
 
   $dialog
 
@@ -104,7 +104,7 @@ function newCloseTreeDialog
     $dialog.dialog 'close'
 
   $dialog.find('.dw-f-close-yes').button!click ->
-    submit $dialog, "#{d.i.serverOrigin}/-/close-tree", [{ pageId, actionId: '' + postId }]
+    submit $dialog, "#{d.i.serverOrigin}/-/close-tree", { pageId, postId }
 
   $dialog
 
@@ -159,7 +159,6 @@ function newPinTreeDialog
 
       thread = post.closest '.dw-t'
       parentThread = thread.parent!closest '.dw-t'
-      d.i.SVG.$clearAndRedrawArrows.apply parentThread
 
       post.dwScrollToThenHighlight(post)
 
@@ -202,9 +201,10 @@ function pinTreeDialogHtml
 function submit($dialog, apiFunction, data)
   d.u.postJson { url: apiFunction, data }
       .fail d.i.showServerResponseDialog
-      .done !(newDebateHtml) ->
-        result = d.i.patchPage newDebateHtml, overwriteTrees: true
-        result.patchedThreads[0].dwScrollIntoView!
+      .done !(updatedPost) ->
+        debiki2.ReactActions.updatePost(updatedPost)
+        post = $('#post-' + updatedPost.postId)
+        post.dwScrollIntoView()
       .always !->
         $dialog.dialog 'close'
 

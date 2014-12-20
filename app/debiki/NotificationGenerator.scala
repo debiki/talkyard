@@ -55,6 +55,8 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
             makeNotfsForEdits(action.postId)
           }
           // else: wait until approved
+        case editApp: PAP.EditApp =>
+          // If also approved, COULD notify edit author that the edits have now been applied.
         case payload: PAP.ApprovePost =>
           val oldPost = oldPageParts.getPost(action.postId)
           val oldAlreadyApproved = oldPost.map(_.someVersionApproved) == Some(true)
@@ -65,8 +67,18 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
           else {
             makeNotfsForNewPost(action.postId, anyApproverId = Some(action.userId))
           }
-        case PAP.VoteLike =>
+        case PAP.VoteLike | PAP.VoteWrong =>
           makeNotfForVote(action.asInstanceOf[RawPostAction[PAP.Vote]])
+        case PAP.VoteOffTopic =>
+          // Don't notify.
+        case flag: PAP.Flag =>
+          // SHOULD generate notfs to all/some moderators?
+        case pin: PAP.PinPostAtPosition =>
+          // Don't notify.
+        case PAP.CollapsePost | PAP.CollapseTree | PAP.CloseTree =>
+          // Don't notify.
+        case _: PAP.DeletePost | PAP.DeleteTree =>
+          // Don't notify.
       }
     }
     Notifications(

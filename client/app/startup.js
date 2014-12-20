@@ -23,80 +23,9 @@ d.i.TitleId = 0;
 d.i.BodyId = 1;
 
 
-// Remembers grandparent openers even if the parent opener is closed.
-function findWindowOpeners() {
-  var curOpener = window.opener;
-  var openers = [];
-  while (curOpener) {
-    openers.push(curOpener);
-    curOpener = curOpener.opener;
-  }
-  return openers;
-};
-
-
 // Debiki convention: Dialog elem tabindexes should vary from 101 to 109.
 // HTML generation code assumes this, too. See Debiki for Developers, #7bZG31.
 d.i.DEBIKI_TABINDEX_DIALOG_MAX = 109;
-
-function findRootPostId() {
-  // The root post has depth 0. However both the title and the article have
-  // depth 0, if they're present. Prefer to use the article as root post if present,
-  // so replies will be laid out horizontally. Otherwise simply choose nodes[0].
-  var nodes = $('.dw-depth-0');
-  var anyArticle = nodes.filter('.dw-ar-t');
-  var rootPostNode = anyArticle.length == 1 ? anyArticle : $(nodes[0]);
-  var id = rootPostNode.length && rootPostNode.attr('id') ?
-      rootPostNode.attr('id').substr(5) : undefined; // drops initial `dw-t-'
-  return id;
-};
-
-
-// Activates mouseenter/leave functionality, draws arrows to child threads, etc.
-// Initing a thread is done in 4 steps. This function calls all those 4 steps.
-// (The initialization is split into steps, so everything need not be done
-// at once on page load.)
-// Call on posts.
-d.i.$initPostAndParentThread = function() {
-  d.i.bindActionAndFoldLinksForSinglePost(this);
-  d.i.$initPost.apply(this);
-  $initStep4.apply(this);
-};
-
-
-/**
- * Inits a post, not its parent thread. Call when a post has been replaced
- * e.g. after having been edited, but when the parent thread hasn't been
- * replaced.
- */
-d.i.$initPost = function() {
-  $initStep2.apply(this);
-  $initStep3.apply(this);
-  d.i.destroyAndRecreateSortablePins.apply(this);
-};
-
-
-function initStep1() {
-  d.i.bindActionLinksForAllPosts();
-};
-
-
-function $initStep2() {
-  d.i.shohwActionLinksOnHoverPost(this);
-  // d.i.placeInlineThreadsForPost(this);
-  d.i.makePostHeaderPretty($(this).children('.dw-p-hd'));
-};
-
-
-function $initStep3() {
-  // $initPostSvg takes rather long (190 ms on my 6 core 2.8 GHz AMD, for
-  // 100 posts), and  need not be done until just before SVG is drawn.
-
-  //d.i.SVG.$initPostSvg.apply(this);
-
-  // not neeed! when patching
-  d.i.SVG.$clearAndRedrawArrows.apply(this);
-};
 
 
 function $initStep4() {
@@ -105,34 +34,42 @@ function $initStep4() {
 
 
 function fireLoginOrLogout() {
-  if (d.i.Me.isLoggedIn())
-    d.i.Me.fireLogin();
-  else
-    d.i.Me.fireLogout();
+  if (debiki2.ReactStore.getUser().isLoggedIn) {
+    d.i.refreshFormXsrfTokens();
+  }
 };
+
+
+function handleLoginInOtherBrowserTab() {
+  var currentUser = debiki2.ReactStore.getUser();
+  var sessionId = $.cookie('dwCoSid');
+  if (currentUser.isLoggedIn) {
+    if (sessionId) {
+      // Session id example: (parts: hash, user id, name, login time, random value)
+      // 'Y1pBlH7vY4JW9A.11.Magnus.1316266102779.15gl0p4xf7'
+      var parts = sessionId.split('.');
+      var newUserId = parts[1];
+      if (currentUser.userId !== newUserId) {
+        // We've logged in as another user in another browser tab.
+        debiki2.ReactActions.login();
+      }
+    }
+    else {
+      // We've logged out in another browser tab.
+      debiki2.ReactActions.logout();
+    }
+  }
+  else if (sessionId) {
+    // We've logged in in another browser tab.
+    debiki2.ReactActions.login();
+  }
+}
 
 
 function registerEventHandlersFireLoginOut() {
 
   // Hide all action forms, since they will be slided in.
   $('#dw-hidden-templates .dw-fs').hide();
-
-  // Fire the dwEvLoggedInOut event, so all buttons etc will update
-  // their text with the correct user name.
-  // {{{ Details:
-  // Firing the dwEvLoggedInOut event causes the user name to be updated
-  // to the name of the logged in user, everywhere. This needs to be done
-  // in JavaScript, cannot be done only server side — because when the user
-  // logs in/out using JavaScript, and uses the browser's *back* button to
-  // return to an earlier page, that page might not be fetched again
-  // from the server, but this javascript code updates the page to take
-  // into account that the user name (and related cookies) has changed
-  // (since the user logged in/out).
-  // Do this when everything has been inited, so all dwEvLoggedInOut event
-  // listeners have been registered. }}}
-
-  // COULD move this to debiki-login.js
-  $('.dw-loginsubmit-on-click').click(d.i.$loginThenSubmit);
 
   fireLoginOrLogout();
 
@@ -141,7 +78,8 @@ function registerEventHandlersFireLoginOut() {
   // and user specific permissions and ratings info (for this tab).
   // Therefore, when the user switches back to this tab, check
   // if a new session has been started.
-  $(window).on('focus', d.i.Me.fireLoginIfNewSession);
+  $(window).on('focus', handleLoginInOtherBrowserTab);
+
   //{{{ What will work w/ IE?
   // See http://stackoverflow.com/a/5556858/694469
   // But: "This script breaks down in IE(8) when you have a textarea on the
@@ -227,26 +165,11 @@ function runSiteConfigScripts() {
  * Renders the page, step by step, to reduce page loading time. (When the
  * first step is done, the user should conceive the page as mostly loaded.)
  */
-function renderPageEtc() {
+function renderDiscussionPage() {
 
   configureAjaxRequests();
 
   var $posts = $('.debiki .dw-p:not(.dw-p-ttl)');
-
-  // If there's no SVG support, use PNG arrow images instead.
-  // Also use PNG arrows on mobiles; rendering SVG arrows takes rather long.
-  // And use PNG arrows if there are many comments, because then rendering
-  // takes too long also on desktops.
-  // FOR NOW, disable SVG, always, because I've not yet made SVG
-  // avoid indenting deeply nested replies "too much".
-  d.i.SVG = d.i.makeFakeDrawer($);
-  /*
-  d.i.SVG = !Modernizr.touch && Modernizr.inlinesvg &&
-        document.URL.indexOf('svg=false') === -1 &&
-        $posts.length < 15 ?
-      d.i.makeSvgDrawer($) : d.i.makeFakeDrawer($);
-  */
-
 
   (d.u.workAroundAndroidZoomBug || function() {})($);
 
@@ -260,43 +183,33 @@ function renderPageEtc() {
     if ($.browser.version < '9') $body.addClass('dw-ua-lte-ie8');
   }
 
-  d.i.Me.refreshProps();
   d.i.showCurLocationInSiteNav();
 
-  d.i.makePostHeaderPretty($('.dw-ar-p-hd'));
+  // Do this before rendering the page.
+  d.i.layout = d.i.chooseLayout();
+  d.i.layoutThreads();
+
+  //debiki2.renderer.renderTitleBodyComments();
+  renderTitleBodyComments();
 
   var steps = [];
 
   steps.push(function() {
     debiki2.reactelements.initAllReactRoots();
 
-    // Add '.dw-depth-NNN' class. (dwDepth() does that.)
-    $posts.each(function() {
-      $(this).dwDepth();
-    });
-
-    // Do this after depths calculated.
-    d.i.layout = d.i.chooseLayout();
-
-    initStep1();
-    d.i.layoutThreads();
     $('html').removeClass('dw-render-actions-pending');
 
     if (d.i.layout === 'TreeLayout' && !Modernizr.touch) {
       d.i.initUtterscrollAndTips();
     }
-  });
 
-  steps.push(function() {
-    $posts.each($initStep2)
     // Show root post actions initially.
-    $('.dw-depth-0 > .dw-p-as').removeClass('dw-p-as-dimmed').attr('id', 'dw-p-as-shown');
+    $('.dw-depth-0 > .dw-p-as').addClass('dw-p-as-shown').attr('id', 'dw-p-as-shown');
     // Don't dim any horizontal root post reply button.
-    $('.dw-p-as-hz-reply').removeClass('dw-p-as-dimmed');
+    $('.dw-p-as-hz-reply').addClass('dw-p-as-shown');
   });
 
   steps.push(function() {
-    $posts.each($initStep3);
     registerEventHandlersFireLoginOut();
   });
 
@@ -305,15 +218,6 @@ function renderPageEtc() {
   steps.push(function() {
     $posts.each($initStep4)
   });
-
-  // Don't draw SVG until all html tags has been placed, or the SVG
-  // arrows might be offset incorrectly.
-  // Actually, drawing SVG takes long, so wait for a while,
-  // don't do it on page load.
-  //steps.push(d.i.SVG.initRootDrawArrows);
-  /*steps.push(function() {
-    $posts.each(d.i.SVG.$clearAndRedrawArrows);
-  }); */
 
   // If #post-X is specified in the URL, ensure all posts leading up to
   // and including X have been loaded. Then scroll to X.
@@ -329,6 +233,8 @@ function renderPageEtc() {
 
   steps.push(function() {
     d.i.makePinsDragsortable();
+    debiki2.ReactStore.activateUserSpecificData();
+    d.i.startInlineActionsMenu();
   });
 
   steps.push(function() {
@@ -354,7 +260,7 @@ function renderPageEtc() {
 
 /**
  * Use this function if there is no root post on the page, but only meta info.
- * (Otherwise, if you use `renderPageEtc()`, some error happens, which kills
+ * (Otherwise, if you use `renderDiscussionPage()`, some error happens, which kills
  * other Javascript that runs on page load.)
  */
 function renderEmptyPage() {
@@ -363,7 +269,6 @@ function renderEmptyPage() {
   // root post — e.g. on blog list pages, which list child pages only but no
   // main title or article.)
   configureAjaxRequests();
-  d.i.Me.refreshProps();
   if (!Modernizr.touch) {
     d.i.initUtterscrollAndTips();
   }
@@ -378,12 +283,8 @@ d.i.startDiscussionPage = function() {
     // Import LiveScript's prelude, http://gkz.github.com/prelude-ls/.
     prelude.installPrelude(window);
 
-    d.i.windowOpeners = findWindowOpeners();
-    d.i.rootPostId = findRootPostId();
-    d.i.Me = d.i.makeCurUser();
-
     if ($('.dw-page').length) {
-      renderPageEtc();
+      renderDiscussionPage();
     }
     else {
       // Skip most of the rendering step, since there is no Debiki page present.

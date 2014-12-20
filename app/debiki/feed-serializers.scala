@@ -68,14 +68,10 @@ object AtomFeedXml {
       val hostAndPort = hostUrl.stripPrefix("https://").stripPrefix("http://")
       val urlToPage =  urlTo(pagePath)
 
-      // This takes rather long and should be cached.
-      // Use the same cache for both plain HTML pages and Atom and RSS feeds?
+      // (Should we strip any class names or ids? They make no sense in atom feeds?
+      // No CSS or JS that cares about them anyway?)
       val rootPostHtml =
-        HtmlPageSerializer.markdownToSafeHtml(pageBody.approvedText getOrElse "", hostAndPort,
-           makeLinksNofollow = true, // for now
-           // No point in including id and class attrs in an atom html feed?
-           // No stylesheet or Javascript included that cares about them anyway?
-           allowClassIdDataAttrs = false)
+        xml.Unparsed(pageBody.approvedHtmlSanitized getOrElse "<i>Page not yet approved</i>")
 
       <entry>{
         /* Identifies the entry using a universally unique and

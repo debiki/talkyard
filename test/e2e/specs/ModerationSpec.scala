@@ -44,7 +44,7 @@ with StartServerAndChromeDriverFactory
 class ModerationSpec extends DebikiBrowserSpec
   with TestReplyer with TestLoginner with TestFlagger with TestModeration {
 
-  lazy val testPage = createTestPage(PageRole.Generic,
+  lazy val testPage = createTestPage(PageRole.WebPage,
     title = "ModerationSpec Page Title", body = Some("ModerationSpec page body."))
 
   val guestUserName = s"Mod-Test-Anon-${nextRandomString() take 5}"

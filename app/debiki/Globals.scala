@@ -102,6 +102,8 @@ class Globals {
     state.systemDao.applyEvolutions()
     state.quotaManager.scheduleCleanups()
 
+    debiki.ReactRenderer.startCreatingRenderEngines()
+
     // For now, disable in dev mode — because of the port conflict that
     // causes an error on reload and restart, see below (search for "conflict").
     /*
@@ -150,7 +152,7 @@ class Globals {
     val ShutdownTimeout = 30 seconds
 
     val dbDaoFactory = new RdbDaoFactory(
-      makeDataSource(), Akka.system, anyFullTextSearchDbPath, Play.isTest,
+      makeDataSource(), Akka.system, debiki.ReactRenderer, anyFullTextSearchDbPath, Play.isTest,
       fastStartSkipSearch = fastStartSkipSearch)
 
     val quotaManager = new QuotaManager(Akka.system, systemDao, freeDollarsToEachNewSite)

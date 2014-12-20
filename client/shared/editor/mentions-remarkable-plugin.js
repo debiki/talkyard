@@ -32,11 +32,6 @@ nodejsUtilInherits = function(constructor, superConstructor) {
 nodejsUtilInherits(MentionsRemarkablePlugin, Function);
 
 
-if (typeof debiki !== 'undefined') {
-  // We're in the browser and this file is wrapped in an auto exec function.
-  debiki.internal.MentionsRemarkablePlugin = MentionsRemarkablePlugin;
-}
-
 
 function MentionsRemarkablePlugin() {
   var plugin = function(remarkable, options) {
@@ -100,3 +95,6 @@ MentionsRemarkablePlugin.prototype.render = function(tokens, id, options, env) {
   var url = '/-/users/#!/username/' + username;
   return '<a class="dw-mention" href="' + url + '">@' + username + '</a>';
 };
+
+
+debiki.internal.MentionsRemarkablePlugin = MentionsRemarkablePlugin;

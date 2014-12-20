@@ -315,7 +315,9 @@ sealed abstract class PageRole {
 
 object PageRole {
 
-  case object Generic extends PageRole
+  case object HomePage extends PageRole
+
+  case object WebPage extends PageRole
 
   case object Code extends PageRole
 
@@ -349,7 +351,7 @@ object PageRole {
   // Hmm, regrettably this breaks should I rename any case object.
   // Perhaps use a match ... case list instead?
   private val _PageRoleLookup = Vector(
-    Generic, EmbeddedComments, Blog, BlogPost,
+    HomePage, WebPage, EmbeddedComments, Blog, BlogPost,
     Forum, ForumCategory, ForumTopic,
     WikiMainPage, WikiPage,
     Code).map(x => (x, x.toString))

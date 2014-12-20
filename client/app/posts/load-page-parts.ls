@@ -46,7 +46,8 @@ d.i.loadAndInsertReplies = !(postId) ->
   d.u.postJson { url, data }
       .fail d.i.showServerResponseDialog
       .done !(patches) ->
-        result = d.i.patchPage patches
+        console.error('Unimplemented [DwE509KFE2]');
+        # old: d.i.patchPage patches
         if anyCallback
           anyCallback result
         else

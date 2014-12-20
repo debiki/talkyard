@@ -109,13 +109,13 @@ d.i.handleReplyResult = function(data) {
 };
 
 
-function doHandleReplyResult(data) {
-  var result = d.i.patchPage(data);
-  var patchedThread = result.patchedThreads[0];
-  var myNewPost = patchedThread.dwGetPost();
-  d.u.bugIf(myNewPost.length !== 1, 'DwE3TW379');
-  d.i.markMyPost(myNewPost.dwPostIdStr());
+function doHandleReplyResult(newPost) {
+  debiki2.ReactActions.updatePost(newPost);
 
+  var myNewPost = $('#post-' + newPost.postId);
+  d.u.bugIf(myNewPost.length !== 1, 'DwE3TW379');
+
+  var patchedThread = myNewPost.parent('.dw-t');
   var parentThread = patchedThread.parent().closest('.dw-t');
   var horizLayout = parentThread.is('.dw-hz');
   var replyCountBefore = parentThread.find('> .dw-single-and-multireplies > .dw-singlereplies > li > .dw-t').length;

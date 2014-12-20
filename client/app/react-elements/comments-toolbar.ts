@@ -30,7 +30,7 @@ var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 
-export var CommentsToolbar = React.createClass({
+export var CommentsToolbar = createComponent({
   getInitialState: function() {
     return {
       store: debiki2.ReactStore.allData(),
@@ -66,7 +66,6 @@ export var CommentsToolbar = React.createClass({
     var store = this.state.store;
     var ui = this.state.ui;
     var user = store.user;
-    var userAuthenticated = user && user.isAuthenticated;
 
     var embeddedClass = '';
     var anyReplyBtnElem = null;
@@ -78,19 +77,18 @@ export var CommentsToolbar = React.createClass({
               'Reply');
     }
 
-    var notfLevelElem = userAuthenticated && !ui.showDetails
+    var notfLevelElem = user.isAuthenticated && !ui.showDetails
       ? r.span({ className: 'dw-page-notf-level', onClick: this.onToggleDetailsClick },
           'Notifications: ' + user.rolePageSettings.notfLevel)
       : null;
 
-    var toggleDetailsBtn = userAuthenticated
+    var toggleDetailsBtn = user.isAuthenticated
       ? r.button({ className: 'dw-cmts-tlbr-open', onClick: this.onToggleDetailsClick },
           r.span({ className: (ui.showDetails ? 'icon-chevron-up' : 'icon-chevron-down') }))
       : null;
 
-    var numPostsOrCommentsText = store.isInEmbeddedCommentsIframe
-        ? store.numPostsExclTitle - 1 + ' comments' // don't count the article
-        : store.numPostsExclTitle + ' posts'; // not -1, the original post is a post
+    var numPostsOrCommentsText = store.numPostsExclTitle +
+        (store.isInEmbeddedCommentsIframe ? ' comments' : ' posts');
 
     var summaryElem =
       r.div({ className: 'dw-cmts-tlbr-head' },
@@ -115,7 +113,7 @@ export var CommentsToolbar = React.createClass({
 });
 
 
-var CommentsToolbarDetails = React.createClass({
+var CommentsToolbarDetails = createComponent({
   onNewNotfLevel: function(newLevel) {
     ReactActions.setPageNoftLevel(newLevel);
   },

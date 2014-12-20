@@ -30,7 +30,7 @@ RUN unzip /tmp/$ACTIVATOR.zip -d /tmp/ && \
 
 VOLUME ["/root/.ivy2", "/root/.sbt"]
 
-# Play's HTTP listen port, Java debugger ports (sometimes I've been using 5005, sometimes 9999).
-EXPOSE 9000 5005 9999
+# Play's HTTP listen port, Java debugger ports (sometimes I've been using 5005, sometimes 9999), JMX port 3333.
+EXPOSE 9000 5005 9999 3333
 
 WORKDIR /opt/debiki/server/

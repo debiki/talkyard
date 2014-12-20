@@ -39,7 +39,7 @@
   <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.@minMaxJs"></script>
   <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular-sanitize.@minMaxJs"></script>
 
-  <script src="//cdnjs.cloudflare.com/ajax/libs/react/0.11.2/react-with-addons.@minMaxJs"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/react/0.12.1/react-with-addons.@minMaxJs"></script>
 
   @* For now only, should probably install via e.g. Bower? and include in JS bundle? *@
   <script src="//angular-ui.github.io/ui-router/release/angular-ui-router.js"></script>
@@ -47,8 +47,11 @@
   @* Could perhaps provide a touch version too? Then could use yepnope, but would
   then have to start the app manually. See client/app/bootstrap-angularjs.ls.  *@
   <script>
-    @* Old stuff needed by the page app bundled in the same JS file *@
-    var debiki = { internal: { $: jQuery }, v0: { util: {} } }
+    @* Stuff needed by the page app bundled in the same JS file *@
+    var debiki = {
+      reactPageStore: {},
+      internal: { $: jQuery }, v0: { util: {} }
+    }
   </script>
   <script src="@asset(s"combined-debiki-desktop.$minMaxJs")"></script>
 </head>

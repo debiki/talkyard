@@ -26,82 +26,12 @@ import scala.xml.NodeSeq
 import CachingDao._
 
 
-case class RenderPageSettings(
-  showTitle: Boolean,
-  showAuthorAndDate: Boolean,
-  showBody: Boolean,
-  showComments: Boolean,
-  horizontalComments: Boolean)
-
-
-case class RenderedPage(
-  title: NodeSeq,
-  titleText: String,
-  authorAndDate: NodeSeq,
-  bodyAndComments: NodeSeq)
-
-
 
 trait RenderedPageHtmlDao {
   self: SiteDao =>
 
-
   def renderTemplate(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil): String =
     TemplateRenderer.renderTemplate(pageReq, appendToBody)
-
-
-  def renderPageMeta(pageReq: PageRequest[_]): NodeSeq = {
-    HtmlPageSerializer.wrapInPageTag(pageReq.pathAndMeta_!)(Nil)
-      .map(html => xml.Unparsed(liftweb.Html5.toString(html)))
-  }
-
-
-  def renderPage(pageReq: PageRequest[_], renderSettings: RenderPageSettings)
-        : RenderedPage = {
-
-    val page = pageReq.thePage
-    val postsReadStats = pageReq.dao.loadPostsReadStats(page.id)
-    val renderer = HtmlPageSerializer(page,
-      postsReadStats, pageReq.pageRoot, pageReq.host,
-      horizontalComments = renderSettings.horizontalComments,
-      // Use follow links for the article, unless it's a forum topic — anyone
-      // may start a new forum topic.
-      nofollowArticle = pageReq.pageRole_! == PageRole.ForumTopic,
-      showEmbeddedCommentsToolbar = pageReq.pageRole_! == PageRole.EmbeddedComments,
-      debugStats = pageReq.debugStats)
-
-    val pageTitle =
-      if (!renderSettings.showTitle) Nil
-      else {
-        renderer.renderSingleThread(PageParts.TitleId) map { renderedThread =>
-          xml.Unparsed(liftweb.Html5.toString(renderedThread.htmlNodes))
-        } getOrElse Nil
-      }
-
-    val pageAuthorAndDate =
-      if (!renderSettings.showAuthorAndDate) Nil
-      else {
-        page.body map { bodyPost =>
-          HtmlPostRenderer.renderPostHeader(bodyPost)
-        } map (_.html) getOrElse Nil
-      }
-
-    val pageBodyAndComments =
-      if (!renderSettings.showBody && !renderSettings.showComments) Nil
-      else {
-        renderer.renderBodyAndComments(
-            showBody = renderSettings.showBody, showComments = renderSettings.showComments) map {
-          html =>
-            xml.Unparsed(liftweb.Html5.toString(html))
-          }
-      }
-
-    RenderedPage(
-      title = pageTitle,
-      titleText = page.approvedTitleText getOrElse "",
-      authorAndDate = pageAuthorAndDate,
-      bodyAndComments = pageBodyAndComments)
-  }
 
 }
 
@@ -116,9 +46,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   }
 
 
-  override def renderPage(pageReq: PageRequest[_], renderSettings: RenderPageSettings)
-        : RenderedPage = {
-
+  override def renderTemplate(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil): String = {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
@@ -127,16 +55,14 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     useCache &= pageReq.oldPageVersion.isEmpty
     useCache &= !pageReq.debugStats
 
-    if (useCache) {
-      val key = _pageHtmlKey(SitePageId(siteId, pageReq.pageId_!), origin = pageReq.host)
-      lookupInCache(key, orCacheAndReturn = {
-        rememberOrigin(pageReq.host)
-        Some(super.renderPage(pageReq, renderSettings))
-      }) getOrDie "DwE93IB7"
-    }
-    else {
-      super.renderPage(pageReq, renderSettings)
-    }
+    if (!useCache)
+      return super.renderTemplate(pageReq)
+
+    val key = _pageHtmlKey(SitePageId(siteId, pageReq.thePageId), origin = pageReq.host)
+    lookupInCache(key, orCacheAndReturn = {
+      rememberOrigin(pageReq.host)
+      Some(super.renderTemplate(pageReq))
+    }) getOrDie "DwE93IB7"
   }
 
 

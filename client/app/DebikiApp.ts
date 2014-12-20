@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="ReactStore.ts" />
 /// <reference path="../typedefs/angularjs/angular.d.ts" />
 
 //------------------------------------------------------------------------------
@@ -23,15 +24,13 @@
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 
-var page: any = $('.dw-page');
-var pageRole = page.dwPageMeta().pageRole;
-
 
 var dependencies = [
     'DebikiDashbarModule',
     'DebikiEditorModule',
     'ui.scrollfix'];
 
+var pageRole = debiki2.ReactStore.getPageRole();
 if (pageRole === 'Forum') {
   dependencies.push('DebikiForumModule');
 }

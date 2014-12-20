@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="ReactDispatcher.ts" />
+/// <reference path="../typedefs/lodash/lodash.d.ts" />
+
 //------------------------------------------------------------------------------
    module debiki2 {
 //------------------------------------------------------------------------------
@@ -27,7 +30,11 @@ var ChangeEvent = 'ChangeEvent';
 
 export var ReactStore = new EventEmitter2();
 
-var store = debiki.store;
+// First, initialize the store with page specific data only, nothing user specific,
+// because the server serves cached HTML with no user specific data. Later on,
+// we'll insert user specific data into the store, and re-render. See
+// ReactStore.activateUserSpecificData().
+var store = debiki.reactPageStore;
 
 
 ReactDispatcher.register(function(payload) {
@@ -35,15 +42,36 @@ ReactDispatcher.register(function(payload) {
   switch (action.actionType) {
 
     case ReactActions.actionTypes.Login:
-      store.user = action.user;
+      ReactStore.activateUserSpecificData(action.user);
       break;
 
     case ReactActions.actionTypes.Logout:
-      store.user = null;
+      store.user = {
+        permsOnPage: {},
+        rolePageSettings: {},
+        votes: {},
+        unapprovedPosts: {},
+      };
       break;
 
     case ReactActions.actionTypes.SetPageNotfLevel:
       store.user.rolePageSettings.notfLevel = action.newLevel;
+      break;
+
+    case ReactActions.actionTypes.UpdatePost:
+      updatePost(action.post);
+      break;
+
+    case ReactActions.actionTypes.VoteOnPost:
+      voteOnPost(action);
+      break;
+
+    case ReactActions.actionTypes.UncollapsePost:
+      uncollapsePost(action.post);
+      break;
+
+    case ReactActions.actionTypes.SetHorizontalLayout:
+      store.horizontalLayout = action.enabled;
       break;
 
     default:
@@ -58,13 +86,43 @@ ReactDispatcher.register(function(payload) {
 });
 
 
+// COULD change this to an action instead
+ReactStore.activateUserSpecificData = function(anyUser) {
+  var newUser = anyUser || debiki.reactUserStore;
+  if (!newUser)
+    return;
+
+  store.user = newUser;
+  // Show the user's own unapproved posts, or all, for admins.
+  _.each(store.user.unapprovedPosts, (post) => {
+    updatePost(post);
+  });
+  this.emitChange();
+};
+
+
 ReactStore.allData = function() {
   return store;
 };
 
 
+ReactStore.getPageId = function() {
+  return store.pageId;
+}
+
+
+ReactStore.getPageRole = function() {
+  return store.pageRole;
+}
+
+
 ReactStore.getUser = function() {
   return store.user;
+};
+
+
+ReactStore.getCategories = function() {
+  return store.categories;
 };
 
 
@@ -92,6 +150,124 @@ export var StoreListenerMixin = {
     ReactStore.removeChangeListener(this.onChange);
   }
 };
+
+
+function updatePost(post) {
+  // (Could here remove any old version of the post, if it's being moved to
+  // elsewhere in the tree.)
+
+  var oldVersion = store.allPosts[post.postId];
+
+  // Don't collapse the post if the user has opened it.
+  if (oldVersion) {
+    post.isTreeCollapsed = oldVersion.isTreeCollapsed;
+    post.isPostCollapsed = oldVersion.isPostCollapsed;
+  }
+
+  // Add or update the post itself.
+  store.allPosts[post.postId] = post;
+
+  // In case this is a new post, update its parent's child id list.
+  var parentPost = store.allPosts[post.parentId];
+  if (parentPost) {
+    var alreadyAChild =
+        _.find(parentPost.childIdsSorted, childId => childId === post.postId);
+    if (!alreadyAChild) {
+      parentPost.childIdsSorted.unshift(post.postId);
+      sortPostIdsInPlace(parentPost.childIdsSorted, store.allPosts);
+    }
+  }
+}
+
+
+function voteOnPost(action) {
+  var post = action.post;
+
+  var votes = store.user.votes[post.postId];
+  if (!votes) {
+    votes = [];
+    store.user.votes[post.postId] = votes;
+  }
+
+  if (action.doWhat === 'CreateVote') {
+    votes.push(action.voteType);
+  }
+  else {
+    _.remove(votes, (voteType) => voteType === action.voteType);
+  }
+
+  updatePost(post);
+}
+
+
+function uncollapsePost(post) {
+  post.isTreeCollapsed = false;
+  post.isPostCollapsed = false;
+  updatePost(post);
+}
+
+
+/**
+ * NOTE: Keep in sync with sortPostsFn() in
+ *   modules/debiki-core/src/main/scala/com/debiki/core/Post.scala
+ */
+function sortPostIdsInPlace(postIds: number[], allPosts) {
+  postIds.sort((idA: number, idB: number) => {
+    var postA = allPosts[idA];
+    var postB = allPosts[idB];
+
+    /* From app/debiki/HtmlSerializer.scala:
+    if (a.pinnedPosition.isDefined || b.pinnedPosition.isDefined) {
+      // 1 means place first, 2 means place first but one, and so on.
+      // -1 means place last, -2 means last but one, and so on.
+      val aPos = a.pinnedPosition.getOrElse(0)
+      val bPos = b.pinnedPosition.getOrElse(0)
+      assert(aPos != 0 || bPos != 0)
+      if (aPos == 0) return bPos < 0
+      if (bPos == 0) return aPos > 0
+      if (aPos * bPos < 0) return aPos > 0
+      return aPos < bPos
+    } */
+
+    // Place deleted posts last; they're rather uninteresting?
+    if (!isDeleted(postA) && isDeleted(postB))
+      return -1;
+
+    if (isDeleted(postA) && !isDeleted(postB))
+      return +1;
+
+    // Place multireplies after normal replies. And sort multireplies by time,
+    // for now, so it never happens that a multireply ends up placed before another
+    // multireply that it replies to.
+    // COULD place interesting multireplies first, if they're not constrained by
+    // one being a reply to another.
+    if (postA.multireplyPostIds.length && postB.multireplyPostIds.length) {
+      if (postA.createdAt < postB.createdAt)
+        return -1;
+      if (postA.createdAt > postB.createdAt)
+        return +1;
+    }
+    else if (postA.multireplyPostIds.length) {
+      return +1;
+    }
+    else if (postB.multireplyPostIds.length) {
+      return -1;
+    }
+
+    // Place interesting posts first.
+    if (postA.likeScore > postB.likeScore)
+      return -1;
+
+    if (postA.likeScore < postB.likeScore)
+      return +1
+
+    // Newest posts first. No, last
+    if (postA.createdAt < postB.createdAt)
+      return -1;
+    else
+      return +1;
+  });
+}
 
 
 //------------------------------------------------------------------------------

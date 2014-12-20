@@ -17,6 +17,7 @@
 
 /// <reference path="ReactDispatcher.ts" />
 /// <reference path="Server.ts" />
+/// <reference path="../shared/plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.ReactActions {
@@ -26,23 +27,31 @@
 export var actionTypes = {
   Login: 'Login',
   Logout: 'Logout',
-  SetPageNotfLevel: 'SetPageNotfLevel'
+  SetPageNotfLevel: 'SetPageNotfLevel',
+  UpdatePost: 'UpdatePost',
+  VoteOnPost: 'VoteOnPost',
+  UncollapsePost: 'UncollapsePost',
+  SetHorizontalLayout: 'SetHorizontalLayout',
 }
 
 
 export function login() {
-  ReactDispatcher.handleViewAction({
-    actionType: actionTypes.Login,
-    user: {
-      isAdmin: d.i.Me.isAdmin(),
-      userId: d.i.Me.getUserId(),
-      username: '???',
-      fullName: d.i.Me.getName(),
-      permsOnPage: d.i.Me.getPermsOnPage(),
-      rolePageSettings: d.i.Me.getRolePageSettings(),
-      isEmailKnown: d.i.Me.isEmailKnown(),
-      isAuthenticated: d.i.Me.isAuthenticated()
-    }
+  // The server has set new XSRF (and SID) cookie, and we need to
+  // ensure old legacy <form> XSRF <input>:s are synced with the new cookie. But 1) the
+  // $.ajaxSetup complete() handler that does tnis (in debiki.js) won't
+  // have been triggered, if we're loggin in with OpenID — since such
+  // a login happens in another browser tab. And 2) some e2e tests
+  // cheat-login via direct calls to the database
+  // and to `fireLogin` (e.g. so the tests don't take long to run).
+  // And those tests assume we refresh XSRF tokens here.
+  // So sync hidden form XSRF <input>s:
+  debiki.internal.refreshFormXsrfTokens();
+
+  Server.loadMyPageData((user) => {
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.Login,
+      user: user
+    });
   });
 }
 
@@ -61,6 +70,41 @@ export function setPageNoftLevel(newNotfLevel) {
     newLevel: newNotfLevel
   });
 }
+
+
+export function updatePost(post) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.UpdatePost,
+    post: post
+  });
+}
+
+
+export function vote(post, doWhat: string, voteType: string) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.VoteOnPost,
+    post: post,
+    doWhat: doWhat,
+    voteType: voteType
+  });
+}
+
+
+export function uncollapsePost(post) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.UncollapsePost,
+    post: post
+  });
+}
+
+
+export function setHorizontalLayout(enabled: boolean) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.SetHorizontalLayout,
+    enabled: enabled
+  });
+}
+
 
 //------------------------------------------------------------------------------
    }

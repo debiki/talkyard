@@ -48,7 +48,7 @@ class InterestingFirstSpecEmbeddedRunner
 @DoNotDiscover
 class InterestingFirstSpec
   extends InterestingFirstSpecConstructor(iframe = false) {
-  lazy val testPageUrl = createTestPage(PageRole.Generic,
+  lazy val testPageUrl = createTestPage(PageRole.WebPage,
     title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31.")).url
 }
 

@@ -105,17 +105,14 @@ var debikiDesktopFiles = [
       'target/client/app/actions/dialogs.js',
       'target/client/app/actions/edit/edit.js',
       'target/client/app/actions/flag.js',
-      'target/client/app/actions/initialize.js',
+      'target/client/app/old/actions/show-actions.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
       'target/client/app/actions/popup-menu.js',
-      'target/client/app/arrows/arrows-png.js',
-      //'target/client/app/arrows/arrows-svg-unused.js',
       'target/client/app/dashbar/dashbar.js',
       'target/client/app/current-user.js',
       'target/client/app/actions/edit/diff-match-patch.js',
       'target/client/app/actions/edit/history.js',
-      'target/client/app/utils/form-animations.js',
       'target/client/app/utils/http-dialogs.js',
       //'target/client/app/inline-threads-unused.js',
       'target/client/app/iframe.js',
@@ -145,7 +142,6 @@ var debikiDesktopFiles = [
       'target/client/app/utils/show-and-highlight.js',
       'target/client/app/posts/show-comments-section.js',
       'target/client/app/utils/show-location-in-nav.js',
-      'target/client/app/posts/toggle-collapsed.js',
       //'target/client/app/posts/unread-unused.js',
       'target/client/app/utils/util.js',
       'target/client/app/utils/util-browser.js',
@@ -189,17 +185,14 @@ var debikiTouchFiles = [
       'target/client/app/actions/dialogs.js',
       'target/client/app/actions/edit/edit.js',
       'target/client/app/actions/flag.js',
-      'target/client/app/actions/initialize.js',
+      'target/client/app/old/actions/show-actions.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
       'target/client/app/actions/popup-menu.js',
-      'target/client/app/arrows/arrows-png.js',
-      //'target/client/app/arrows/arrows-svg-unused.js',
       'target/client/app/dashbar/dashbar.js',
       'target/client/app/current-user.js',
       'target/client/app/actions/edit/diff-match-patch.js',
       'target/client/app/actions/edit/history.js',
-      'target/client/app/utils/form-animations.js',
       'target/client/app/utils/http-dialogs.js',
       //'target/client/app/inline-threads-unused.js',
       'target/client/app/iframe.js',
@@ -228,7 +221,6 @@ var debikiTouchFiles = [
       'target/client/app/utils/show-and-highlight.js',
       'target/client/app/posts/show-comments-section.js',
       'target/client/app/utils/show-location-in-nav.js',
-      'target/client/app/posts/toggle-collapsed.js',
       //'target/client/app/posts/unread-unused.js',
       'target/client/app/utils/util.js',
       'target/client/app/utils/util-browser.js',
@@ -326,7 +318,43 @@ gulp.task('compile-livescript', function () {
 });
 
 
-gulp.task('compile-typescript', function () {
+function compileServerSideTypescript() {
+  var typescriptStream = gulp.src([
+        'client/server-side-type-stubs.ts',
+        'client/app/renderer/**/*.ts',
+        'client/app/react-elements/comments-toolbar.ts',
+        'client/typedefs/**/*.ts'])
+    .pipe(typeScript({
+      target: 'ES5',
+      allowBool: true,
+      tmpDir: 'target/client/',
+      out: 'renderer.js'
+    }));
+
+  if (watchAndLiveForever) {
+    typescriptStream.on('error', function() {
+      console.log('\n!!! Error compiling server side TypeScript !!!\n');
+    });
+  }
+
+  var javascriptStream = gulp.src([
+        'bower_components/react/react-with-addons.js',
+        'bower_components/react-bootstrap/react-bootstrap.js',
+        'bower_components/remarkable/dist/remarkable.js',
+        'client/third-party/html-sanitizer-bundle.js',
+        'client/shared/editor/mentions-remarkable-plugin.js',
+        'bower_components/moment/moment.js']);
+
+  return es.merge(typescriptStream, javascriptStream)
+      .pipe(concat('renderer.js'))
+      .pipe(gulp.dest('public/res/'))
+      .pipe(uglify())
+      .pipe(rename('renderer.min.js'))
+      .pipe(gulp.dest('public/res/'));
+}
+
+
+function compileClientSideTypescript() {
   var stream = gulp.src([
         'client/shared/editor/**/*.ts',
         'client/app/**/*.ts',
@@ -346,6 +374,13 @@ gulp.task('compile-typescript', function () {
   }
 
   return stream.pipe(gulp.dest('target/client/'));
+}
+
+
+gulp.task('compile-typescript', function () {
+  return es.merge(
+      compileServerSideTypescript(),
+      compileClientSideTypescript());
 });
 
 
@@ -512,7 +547,7 @@ gulp.task('compile-stylus', function () {
         'client/app/debiki.styl',
         'client/app/posts/layout.styl',
         'client/app/minimap/minimap.styl',
-        'client/app/arrows/arrows.styl',
+        'client/app/renderer/arrows.styl',
         'client/app/tips.styl',
         'client/app/dashbar/dashbar.styl',
         'client/app/debiki-play.styl',

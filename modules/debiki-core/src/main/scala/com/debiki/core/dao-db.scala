@@ -72,6 +72,8 @@ abstract class SiteDbDao {
 
   def quotaConsumers: QuotaConsumers
 
+  def commonMarkRenderer: CommonMarkRenderer
+
 
   // ----- Websites (formerly "tenants")
 
@@ -464,6 +466,8 @@ class ChargingSiteDbDao(
   extends SiteDbDao {
 
   import com.debiki.core.{ResourceUse => ResUsg}
+
+  def commonMarkRenderer = _spi.commonMarkRenderer
 
 
   // ----- Quota

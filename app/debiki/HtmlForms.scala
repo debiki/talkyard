@@ -90,7 +90,6 @@ object HtmlForms {
 class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: PermsOnPage) {
 
   import HtmlForms._
-  import HtmlPageSerializer._
 
   val config = new {
     // It'd be better to use Play's revere routing, rather than these old weird constants.
@@ -423,6 +422,48 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
       Comments rated <i>boring, stupid</i>
       <div class='dw-tps-close'>(Click this box to dismiss)</div>
     </div>
+  }
+
+
+  def linkTo(user: User): NodeSeq = {
+    var url = s"/-/users/#/id/${user.id}"
+
+    val nameElem =
+      if (user.isGuest) {
+        val fullName = <span class="dw-fullname">{ user.displayName }</span>
+        // Indicate that the user was not logged in, that we're not sure
+        // about his/her identity, by appending "??". If however s/he
+        // provided an email address then only append one "?", because
+        // other people probaably don't know what is it, so it's harder
+        // for them people to impersonate her.
+        // (Well, at least if I some day in some way indicate that two
+        // persons with the same name actually have different emails.)
+        val guestMark = <span class='dw-lg-t-spl'>{if (user.email isEmpty) "??" else "?"}</span>
+        fullName ++ guestMark
+      }
+      else {
+        val usernameOrFullName = user.username match {
+          case Some(username) => <span class="dw-username">{ username }</span>
+          case None => <span class="dw-fullname">{ user.displayName }</span>
+        }
+
+        val fullNameOrNil = user.username match {
+          case None => Nil
+          case Some(_) =>
+            // `usernameOrFullName` contains the username not the full name.
+            <span class="dw-fullname"> ({user.displayName})</span>
+        }
+
+        usernameOrFullName ++ fullNameOrNil
+      }
+
+    val userLink = if (url nonEmpty) {
+      <a class='dw-p-by' href={url} data-dw-u-id={user.id} rel='nofollow'>{nameElem}</a>
+    } else {
+      <span class='dw-p-by' data-dw-u-id={user.id}>{nameElem}</span>
+    }
+
+    userLink
   }
 
 

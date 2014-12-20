@@ -33,6 +33,9 @@ class CategoryController {
     $scope.selectedCategories = categoryService.selectedCategories;
     $scope.allMainCategories = categoryService.allMainCategories;
     $scope.mv = this;
+
+    // I'll port all AngularJS stuff to React later on. For now:
+    $scope.currentUser = debiki2.ReactStore.getUser();
   }
 
 
@@ -54,7 +57,8 @@ class CategoryController {
     var anyCategoryId = this.selectedCategoryId;
     if (!anyCategoryId) {
       // Return the forum id.
-      return this.$scope.pageId;
+      // For now, call out to React. I'll rewrite from Angular to React later anyway.
+      return debiki2.ReactStore.getPageId();
     }
     return anyCategoryId;
   }
@@ -80,20 +84,20 @@ class CategoryController {
   }
 
 
-  private createChildPage(role: String) {
+  private createChildPage(role: string) {
     var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
     d.i.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       // (Now we might be outside Angular.apply() but that's fine.)
-      openEditorToWriteNewForumTopic(this.selectedCategoryOrForumId);
+      openEditorToCreatePage(this.selectedCategoryOrForumId, role);
     });
   }
 
 }
 
 
-function openEditorToWriteNewForumTopic(parentPageId) {
+function openEditorToCreatePage(parentPageId: string, role: string) {
   d.i.withEditorScope(function(editorScope) {
-    editorScope.vm.editNewForumTopic(parentPageId);
+    editorScope.vm.editNewForumPage(parentPageId, role);
   });
 };
 

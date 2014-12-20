@@ -35,7 +35,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
     text = text,
     creationDati = new ju.Date,
     userIdData = userIdData,
-    pageRole = PageRole.Generic,
+    pageRole = PageRole.WebPage,
     approval = Some(Approval.WellBehavedUser))
 
 

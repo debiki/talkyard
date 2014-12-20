@@ -92,7 +92,6 @@ d.i.showErrorEnableInputs = function($form) {
     var err = jqXHR.status ? (jqXHR.status +' '+ httpStatusText) : 'Error'
     var msg = (jqXHR.responseText || errorType || 'Unknown error');
     notifErrorBox$(err, msg).insertAfter($submitBtns).dwScrollToHighlighted();
-    $thread.each(d.i.SVG.$drawParentsAndTree); // because of the notification
     // For now, simply enable all inputs always.
     $form.children().css('opacity', '');
     $form.find('input, button').dwEnable();

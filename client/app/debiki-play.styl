@@ -183,11 +183,18 @@ html.js body.dw-render-actions-pending .dw-as
     margin-left: 0
     padding-left: 0
 
+
+.dw-p-unapproved > .dw-p-hd,
 .dw-p-dl > .dw-p-hd
-  margin-bottom: 24px // for now — there're currently no spacy hidden
-                      //  action links below deleted posts
   font-style: italic
   background-color: transparent
+
+.dw-p-unapproved > .dw-p-hd
+  margin-bottom: 24px
+
+.dw-p-dl > .dw-p-hd
+  margin-bottom: 8px
+
 
 .DW .dw-multireply-prefix
   font-style: italic;
@@ -250,15 +257,16 @@ span.dw-p-e-by
 .DW .dw-ar-p-hd
   border: none
   background-color: transparent
-  opacity: 0.6
-  font-size: 10px
-  margin-top: 12px
+  opacity: 0.75
+  font-size: 12px;
+  margin: 6px 0 15px;
 
 .dw-ar-p-hd:hover
   opacity: 1
 
-.dw-ar-p-hd > .dw-p-by
-  color: #396D99
+.DW .dw-ar-p-hd > .dw-p-by
+  color: hsl(207,60%, 30%);
+  font-size: 12px;
 
 // Un-indent any root post, by hiding the collapse button.
 // (Why would one want to hide the root post?)
@@ -382,10 +390,6 @@ span.dw-p-e-by
 // Miscellaneous
 //===========================
 
-
-.dw-user-page-data,
-#dw-page-data
-  display: none
 
 .dw-mirror
   -webkit-transform: scale(-1, 1)

@@ -16,7 +16,7 @@
   </appender>
 
   <logger name="play" level="DEBUG" />
-  <logger name="application" level="DEBUG" />
+  <logger name="application" level="TRACE" />
   <logger name="app" level="DEBUG" />
   <logger name="app.installation.password" level="INFO" />
   <logger name="org.elasticsearch" level="INFO" />

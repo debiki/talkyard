@@ -26,6 +26,7 @@
 export interface CategoryScope extends debiki2.RootScope {
   selectedCategories: Category[];
   allMainCategories: Category[];
+  currentUser: any;
 }
 
 

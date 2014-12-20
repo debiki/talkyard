@@ -348,7 +348,7 @@ class PageListItem extends ListItem
         pageSlug: 'new-page'
         showId: true
         status: 'Draft'
-        pageRole: 'Generic' }
+        pageRole: 'WebPage' }
 
 
   /**

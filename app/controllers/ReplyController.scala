@@ -27,7 +27,6 @@ import debiki.DebikiHttp._
 import play.api._
 import play.api.mvc.{Action => _, _}
 import requests._
-import BrowserPagePatcher.TreePatchSpec
 
 
 /** Handles reply form submissions. Lazily creates pages for embedded discussions
@@ -55,22 +54,24 @@ object ReplyController extends mvc.Controller {
         PageRequest.forPageThatExists(request, pageId = page.id) getOrDie "DwE77PJE0"
     }
 
-    val json = saveReply(pageReq, replyToPostIds = postIds, text, whereOpt)
+    val post = saveReply(pageReq, replyToPostIds = postIds, text, whereOpt)
+
+    val json = ReactJson.postToJson(post, includeUnapproved = true)
     OkSafeJson(json)
   }
 
 
-  def saveReply(pageReqNoMeOnPage: PageRequest[_], replyToPostIds: Set[PostId], text: String,
-        whereOpt: Option[String] = None) = {
+  private def saveReply(pageReqNoMeOnPage: PageRequest[_], replyToPostIds: Set[PostId],
+        text: String, whereOpt: Option[String] = None) = {
 
-    val pageReq = pageReqNoMeOnPage.copyWithMeOnPage_!
+    val pageReq = pageReqNoMeOnPage.copyWithMeOnPage
     if (pageReq.oldPageVersion.isDefined)
       throwBadReq("DwE72XS8", "Can only reply to latest page version")
 
-    val commonAncestorPostId = pageReq.thePage.findCommonAncestorPost(replyToPostIds.toSeq)
+    val commonAncestorPostId = pageReq.thePageParts.findCommonAncestorPost(replyToPostIds.toSeq)
     val anyParentPostId =
       if (commonAncestorPostId == PageParts.NoId) {
-        if (pageReq.pageRole_! == PageRole.EmbeddedComments) {
+        if (pageReq.thePageRole == PageRole.EmbeddedComments) {
           // There is no page body. Allow new comment threads with no parent post.
           None
         }
@@ -79,7 +80,7 @@ object ReplyController extends mvc.Controller {
             "DwE260G8", "This is not an embedded discussion; must reply to an existing post")
         }
       }
-      else if (pageReq.page_!.getPost(commonAncestorPostId).isDefined) {
+      else if (pageReq.thePageParts.getPost(commonAncestorPostId).isDefined) {
         Some(commonAncestorPostId)
       }
       else {
@@ -90,17 +91,16 @@ object ReplyController extends mvc.Controller {
     val approval = AutoApprover.perhapsApprove(pageReq)
     val multireplyPostIds = if (replyToPostIds.size == 1) Set[PostId]() else replyToPostIds
 
-    val postNoId = RawPostAction(id = PageParts.UnassignedId, postId = PageParts.UnassignedId,
+    val rawPostNoId = RawPostAction(id = PageParts.UnassignedId, postId = PageParts.UnassignedId,
       creationDati = pageReq.ctime, userIdData = pageReq.userIdData,
       payload = PAP.CreatePost(
         parentPostId = anyParentPostId, text = text,
         multireplyPostIds = multireplyPostIds, where = whereOpt, approval = approval))
 
-    val (pageWithNewPost, List(postWithId: RawPostAction[PAP.CreatePost])) =
-      pageReq.dao.savePageActionsGenNotfs(pageReq, postNoId::Nil)
+    val (pageWithNewPost, List(rawPostWithId: RawPostAction[PAP.CreatePost])) =
+      pageReq.dao.savePageActionsGenNotfs(pageReq, rawPostNoId::Nil)
 
-    val patchSpec = TreePatchSpec(postWithId.id, wholeTree = true)
-    BrowserPagePatcher(pageReq).jsonForTrees(pageWithNewPost.parts, patchSpec)
+    pageWithNewPost.parts.getPost_!(rawPostWithId.id)
   }
 
 

@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../dashbar/dashbar.ts" />
 /// <reference path="comments-toolbar.ts" />
 /// <reference path="name-login-btns.ts" />
 /// <reference path="../users/users-page.ts" />
@@ -28,18 +29,22 @@ var ReactRouter = window['ReactRouter'];
 
 
 export function initAllReactRoots() {
+  var dashbarElem = document.getElementById('dw-dashbar');
+  if (dashbarElem)
+    React.render(debiki2.dashbar.Dashbar({}), dashbarElem);
+
   var commentsToolbarElem = document.getElementById('dw-comments-toolbar');
   if (commentsToolbarElem)
-    React.renderComponent(CommentsToolbar({}), commentsToolbarElem);
+    React.render(CommentsToolbar({}), commentsToolbarElem);
 
   var nameLoginBtnsElem = document.getElementById('dw-name-login-btns');
   if (nameLoginBtnsElem)
-    React.renderComponent(NameLoginBtns({}), nameLoginBtnsElem);
+    React.render(NameLoginBtns({}), nameLoginBtnsElem);
 
   var userPageElem = document.getElementById('dw-user-page');
   if (userPageElem) {
     ReactRouter.run(debiki2.users.routes(), (Handler) => {
-      React.renderComponent(Handler({}), userPageElem);
+      React.render(Handler({}), userPageElem);
     });
   }
 }

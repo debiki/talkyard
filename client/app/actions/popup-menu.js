@@ -174,11 +174,6 @@ function $showInlineActionMenu(event) {
     }
   };
 
-  // Entitle the edit button `Suggest Edit' or `Edit', depending on
-  // whether or not it's the user's post.
-  var authorId = $post.dwAuthorId();
-  var curUserId = d.i.Me.getUserId();
-
   // Open a menu, with Edit, Reply and Cancel buttons. CSS: '-i' means inline.
   $menu = $(  // COULD add i18n
       '<ul class="dw-as-inline">' +
@@ -216,7 +211,6 @@ function $showInlineActionMenu(event) {
 
   // Bind actions.
   $menu.find('.dw-a-edit-i').click(function(event){
-    d.i.showInteractionsIfHidden();
     d.i.$showEditForm.call($post, event);
     $menu.remove();
   });
@@ -235,11 +229,6 @@ function $showInlineActionMenu(event) {
     // created. (Because your selection wound be destroyed when you made it.)
     var placeWhere = placeWhereFunc();
 
-    // Showing interactions, if hidden, might result in [the paragraph
-    // that was clicked] being moved downwards, because inline threads
-    // are inserted. This'll be fixed later, when inline threads are
-    // shrinked, so the root post won't be affected by them being shown.
-    d.i.showInteractionsIfHidden(); // might move `placeWhere' to elsewhere
     d.i.$showReplyForm.call(this, event, placeWhere);
     $menu.remove();
   });
@@ -269,11 +258,13 @@ function $showInlineActionMenu(event) {
 // click is completed. Otherwise the inline menu gets in the
 // way when you double click to select whole words. (Or triple click to
 // select paragraphs.)
-$(function() {
-  $('.debiki')
-      .delegate('.dw-p-bd-blk', 'mouseup', $showInlineActionMenu)
-      .delegate('.dw-p-bd-blk', 'mousedown', $hideInlineActionMenu);
-});
+d.i.startInlineActionsMenu = function() {
+  $(function() {
+    $('.debiki')
+        .delegate('.dw-p-bd-blk', 'mouseup', $showInlineActionMenu)
+        .delegate('.dw-p-bd-blk', 'mousedown', $hideInlineActionMenu);
+  });
+};
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
