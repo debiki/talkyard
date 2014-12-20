@@ -49,9 +49,14 @@ object ReactJson {
     val numPostsExclTitle =
       pageReq.thePageParts.postCount - (if (pageReq.thePageParts.titlePost.isDefined) 1 else 0)
 
-    // SHOULD sort by score
-    val allPostsJson = pageReq.thePageParts.getAllPosts.map { post =>
+    var allPostsJson = pageReq.thePageParts.getAllPosts.map { post =>
       post.id.toString -> postToJson(post)
+    }
+
+    if (pageReq.thePageRole == PageRole.EmbeddedComments) {
+      allPostsJson +:=
+        PageParts.BodyId.toString ->
+          embeddedCommentsDummyRootPost(pageReq.thePageParts.topLevelComments)
     }
 
     Json.obj(
@@ -104,6 +109,12 @@ object ReactJson {
       "childIdsSorted" -> JsArray(Post.sortPosts(post.replies).map(reply => JsNumber(reply.id))),
       "sanitizedHtml" -> JsStringOrNull(sanitizedHtml)))
   }
+
+
+  /** Creates a dummy root post, needed when rendering React elements. */
+  def embeddedCommentsDummyRootPost(topLevelComments: Seq[Post]) = Json.obj(
+    "postId" -> JsNumber(PageParts.BodyId),
+    "childIdsSorted" -> JsArray(Post.sortPosts(topLevelComments).map(reply => JsNumber(reply.id))))
 
 
   val NoUserSpecificData = Json.obj(

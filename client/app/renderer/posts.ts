@@ -90,9 +90,11 @@ var TitleBodyComments = createComponent({
 
   render: function() {
     var anyTitle = null;
-    if (this.props.pageRole === 'Generic' || this.props.rootPostId !== BodyPostId) {
+    if (this.props.pageRole === 'Generic' || this.props.pageRole === 'EmbeddedComments' ||
+        this.props.rootPostId !== BodyPostId) {
       // Show no title for the homepage (role 'Generic'? what?) — it should have its
       // own custom HTML with a title and other things.
+      // Embedded comment pages have no title, only comments.
       // And show no title if we're showing a comment not the article as the root post.
     }
     else {
@@ -104,6 +106,7 @@ var TitleBodyComments = createComponent({
     if (this.props.pageRole === 'Generic' || this.props.pageRole === 'Forum' ||
         this.props.pageRole === 'ForumCategory' || this.props.pageRole === 'WikiMainPage' ||
         this.props.pageRole === 'SpecialContent' || this.props.pageRole === 'Blog' ||
+        this.props.pageRole === 'EmbeddedComments' ||
         this.props.rootPostId !== BodyPostId) {
       // Show no author name or social links for these generic pages.
       // And show nothing if we're showing a comment not the article as the root post.
@@ -179,11 +182,14 @@ var RootPostAndComments = createComponent({
         ? rootPost.sanitizedHtml
         : '<p>(Text pending approval.)</p>';
 
-    var body =
+    var body = null;
+    if (pageRole !== 'EmbeddedComments') {
+      body =
         r.div({ className: postClass, id: postIdAttr, onMouseEnter: this.showActions },
           r.div({ className: postBodyClass },
             r.div({ className: 'dw-p-bd-blk',
               dangerouslySetInnerHTML: { __html: sanitizedHtml }})));
+    }
 
     if (!showComments)
       return r.div({ className: threadClass }, body);

@@ -87,9 +87,8 @@ export var CommentsToolbar = createComponent({
           r.span({ className: (ui.showDetails ? 'icon-chevron-up' : 'icon-chevron-down') }))
       : null;
 
-    var numPostsOrCommentsText = store.isInEmbeddedCommentsIframe
-        ? store.numPostsExclTitle - 1 + ' comments' // don't count the article
-        : store.numPostsExclTitle + ' posts'; // not -1, the original post is a post
+    var numPostsOrCommentsText = store.numPostsExclTitle +
+        (store.isInEmbeddedCommentsIframe ? ' comments' : ' posts');
 
     var summaryElem =
       r.div({ className: 'dw-cmts-tlbr-head' },
