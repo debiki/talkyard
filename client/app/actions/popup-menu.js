@@ -211,7 +211,6 @@ function $showInlineActionMenu(event) {
 
   // Bind actions.
   $menu.find('.dw-a-edit-i').click(function(event){
-    d.i.showInteractionsIfHidden();
     d.i.$showEditForm.call($post, event);
     $menu.remove();
   });
@@ -230,11 +229,6 @@ function $showInlineActionMenu(event) {
     // created. (Because your selection wound be destroyed when you made it.)
     var placeWhere = placeWhereFunc();
 
-    // Showing interactions, if hidden, might result in [the paragraph
-    // that was clicked] being moved downwards, because inline threads
-    // are inserted. This'll be fixed later, when inline threads are
-    // shrinked, so the root post won't be affected by them being shown.
-    d.i.showInteractionsIfHidden(); // might move `placeWhere' to elsewhere
     d.i.$showReplyForm.call(this, event, placeWhere);
     $menu.remove();
   });
