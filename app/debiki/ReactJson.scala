@@ -105,6 +105,7 @@ object ReactJson {
       "isPostCollapsed" -> JsBoolean(post.isPostCollapsed),
       "isTreeClosed" -> JsBoolean(post.isTreeClosed),
       "isApproved" -> JsBoolean(isApproved),
+      "pinnedPosition" -> post.pinnedPosition.map(JsNumber(_)).getOrElse(JsNull),
       "likeScore" -> JsNumber(post.likeScore),
       "childIdsSorted" -> JsArray(Post.sortPosts(post.replies).map(reply => JsNumber(reply.id))),
       "sanitizedHtml" -> JsStringOrNull(sanitizedHtml)))

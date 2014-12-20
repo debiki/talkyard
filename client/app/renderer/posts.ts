@@ -194,6 +194,14 @@ var RootPostAndComments = createComponent({
     if (!showComments)
       return r.div({ className: threadClass }, body);
 
+    var anyLikeCount;
+    if (rootPost.numLikeVotes >= 1) {
+      var peopleLike = rootPost.numLikeVotes === 1 ? ' person likes' : ' people like';
+      anyLikeCount =
+        r.div({ className: 'dw-num-likes clearfix' },
+          r.a({}, rootPost.numLikeVotes, peopleLike, ' this.'));
+    }
+
     var anyHorizontalArrowToChildren = null;
     if (this.props.horizontalLayout) {
       anyHorizontalArrowToChildren =
@@ -219,6 +227,7 @@ var RootPostAndComments = createComponent({
       r.div({ className: threadClass },
         body,
         PostActions({ post: rootPost, user: this.props.user, ref: 'actions' }),
+        anyLikeCount,
         debiki2.reactelements.CommentsToolbar(),
         anyHorizontalArrowToChildren,
         r.div({ className: 'dw-single-and-multireplies' },
@@ -374,7 +383,11 @@ var PostHeader = createComponent({
         r.span({ className: 'dw-fullname' }, ' (', post.authorFullName, ')')];
     }
     else if (post.authorFullName) {
-      authorNameElems = r.span({ className: 'dw-fullname' }, post.authorFullName);
+      authorNameElems = [r.span({ className: 'dw-fullname' }, post.authorFullName)];
+      if (authorIsGuest(post)) {
+        authorNameElems.push(
+          r.span({ className: 'dw-lg-t-spl' }, '?')); // {if (user.email isEmpty) "??" else "?"
+      }
     }
     else if (post.authorUsername) {
       authorNameElems = r.span({ className: 'dw-username' }, post.authorUsername);
@@ -421,6 +434,12 @@ var PostHeader = createComponent({
     }
     if (voteInfo) voteInfo += '.';
 
+    var anyPin;
+    if (post.pinnedPosition) {
+      anyPin =
+        r.a({ className: 'dw-p-pin icon-pin' });
+    }
+
     var postId = post.postId === BodyPostId ?
         null : r.a({ className: 'dw-p-link' }, '#', post.postId);
 
@@ -429,6 +448,7 @@ var PostHeader = createComponent({
 
     return (
         r.div({ className: 'dw-p-hd' + isBodyPostClass },
+          anyPin,
           postId,
           by,
           r.a({ className: 'dw-p-by', href: authorUrl }, authorNameElems),
@@ -649,6 +669,13 @@ function isCollapsed(post) {
 
 function isDeleted(post) {
   return post.isTreeDeleted || post.isPostDeleted;
+}
+
+
+
+function authorIsGuest(post) {
+  // Guest ids currently start with '-'.
+  return post.authorId && post.authorId.length >= 1 && post.authorId[0] === '-';
 }
 
 
