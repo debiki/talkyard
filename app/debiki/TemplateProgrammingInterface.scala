@@ -550,16 +550,17 @@ class TemplateProgrammingInterface(
   def isHomepage = pageUrlPath == "/"
 
 
-  def title = renderedPage.title
+  //def title = renderedPage.title
 
 
-  def titleText = renderedPage.titleText
+  def titleText =
+    pageReq.thePageParts.titlePost.map(_.currentText) getOrElse pageReq.pagePath.value
 
 
-  def authorAndDate = renderedPage.authorAndDate
+  //def authorAndDate = renderedPage.authorAndDate
 
 
-  def bodyAndComments = renderedPage.bodyAndComments
+  //def bodyAndComments = renderedPage.bodyAndComments
 
 
   /**

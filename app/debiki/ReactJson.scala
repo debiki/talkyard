@@ -67,7 +67,7 @@ object ReactJson {
       "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),
       "categories" -> categoriesJson(pageReq),
       "user" -> NoUserSpecificData,
-      "rootPostId" -> JsNumber(1),
+      "rootPostId" -> JsNumber(BigDecimal(pageReq.pageRoot getOrElse PageParts.BodyId)),
       "allPosts" -> JsObject(allPostsJson),
       "horizontalLayout" -> JsBoolean(pageReq.thePageSettings.horizontalComments.valueIsTrue),
       "socialLinksHtml" -> JsString(socialLinksHtml))
