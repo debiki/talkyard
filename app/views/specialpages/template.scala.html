@@ -28,23 +28,21 @@
     <p>You can click <b>Return to page</b> in the upper left corner.</p>
   }
 
-  @page {
-    <h1>
-      @if(isPageSettings) {
-        <small>Settings for:</small><br>
-        <span style="
+  <h1>
+    @if(isPageSettings) {
+      <small>Settings for:</small><br>
+      <span style="
             font-style: italic;
             padding-top: 13px;
             display: inline-block;">
-          @titleText</span>
-      } else {
-        <span style="font: bold 23px monospace;">
-          @{tpi.pageUrlPath}</span>
-      }
-    </h1>
+        @titleText</span>
+    } else {
+      <span style="font: bold 23px monospace;">
+        @{tpi.pageUrlPath}</span>
+    }
+  </h1>
 
-    <div id="dwPosts">@tpi.reactTest</div>
-  }
+  <div id="dwPosts">@tpi.reactTest</div>
 
 }
 

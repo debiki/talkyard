@@ -26,76 +26,12 @@ import scala.xml.NodeSeq
 import CachingDao._
 
 
-case class RenderPageSettings(
-  showTitle: Boolean,
-  showAuthorAndDate: Boolean,
-  showBody: Boolean,
-  showComments: Boolean,
-  horizontalComments: Boolean)
-
-
-case class RenderedPage(
-  title: NodeSeq,
-  titleText: String,
-  authorAndDate: NodeSeq,
-  bodyAndComments: NodeSeq)
-
-
 
 trait RenderedPageHtmlDao {
   self: SiteDao =>
 
-
   def renderTemplate(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil): String =
     TemplateRenderer.renderTemplate(pageReq, appendToBody)
-
-
-  def renderPage(pageReq: PageRequest[_], renderSettings: RenderPageSettings)
-        : RenderedPage = {
-
-    val page = pageReq.thePageParts
-    val postsReadStats = pageReq.dao.loadPostsReadStats(page.id)
-    val renderer = HtmlPageSerializer(page,
-      postsReadStats, pageReq.pageRoot, pageReq.host,
-      horizontalComments = renderSettings.horizontalComments,
-      // Use follow links for the article, unless it's a forum topic — anyone
-      // may start a new forum topic.
-      nofollowArticle = pageReq.thePageRole == PageRole.ForumTopic,
-      showEmbeddedCommentsToolbar = pageReq.thePageRole == PageRole.EmbeddedComments,
-      debugStats = pageReq.debugStats)
-
-    val pageTitle =
-      if (!renderSettings.showTitle) Nil
-      else {
-        renderer.renderSingleThread(PageParts.TitleId) map { renderedThread =>
-          xml.Unparsed(liftweb.Html5.toString(renderedThread.htmlNodes))
-        } getOrElse Nil
-      }
-
-    val pageAuthorAndDate =
-      if (!renderSettings.showAuthorAndDate) Nil
-      else {
-        page.body map { bodyPost =>
-          HtmlPostRenderer.renderPostHeader(bodyPost)
-        } map (_.html) getOrElse Nil
-      }
-
-    val pageBodyAndComments =
-      if (!renderSettings.showBody && !renderSettings.showComments) Nil
-      else {
-        renderer.renderBodyAndComments(
-            showBody = renderSettings.showBody, showComments = renderSettings.showComments) map {
-          html =>
-            xml.Unparsed(liftweb.Html5.toString(html))
-          }
-      }
-
-    RenderedPage(
-      title = pageTitle,
-      titleText = page.approvedTitleText getOrElse "",
-      authorAndDate = pageAuthorAndDate,
-      bodyAndComments = pageBodyAndComments)
-  }
 
 }
 

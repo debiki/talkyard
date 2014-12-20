@@ -71,8 +71,11 @@ object InternalPageTpi {
       page.parts.approvedTitleTextOrNoTitle
 
     private def bodyOf(page: core.Page, host: String): String =
-      page.parts.body.map(
-        HtmlPageSerializer.markupTextOf(_, host)).getOrElse("")
+      page.parts.body.map(body => {
+        ReactRenderer.renderAndSanitizeCommonMark(
+          body.approvedText.getOrElse("(Not yet approved"),
+          allowClassIdDataAttrs = true, followLinks = true)
+      }).getOrElse("")
   }
 
 
@@ -467,18 +470,7 @@ class TemplateProgrammingInterface(
   import InternalPageTpi.{Page => _, _}
   import TemplateProgrammingInterface._
 
-  var renderPageSettings: Option[RenderPageSettings] = None
-
   val horizontalComments = pageReq.thePageSettings.horizontalComments.valueIsTrue
-
-
-  lazy val renderedPage: RenderedPage =
-    dao.renderPage(
-      pageReq,
-      renderPageSettings getOrElse {
-        throw TemplateRenderer.BadTemplateException(
-          "DwE3KR58", "Please wrap @tpi.title, @tpi.body etcerera inside a @tpi.page tag")
-      })
 
 
   override def debikiHtmlTagClasses =
@@ -500,40 +492,6 @@ class TemplateProgrammingInterface(
     xml.Unparsed(ReactRenderer.renderPage(reactStoreSafeJsonString))
 
 
-  def page(contents: => play.api.templates.Html): xml.NodeSeq = page()(contents)
-
-
-  def page(
-    showTitle: Boolean = true,
-    showAuthorAndDate: Boolean = !isHomepage,
-    showBody: Boolean = true,
-    showComments: Boolean = !isHomepage)(
-    contents: => play.api.templates.Html): xml.NodeSeq = {
-
-    val viewsPageConfigPost = pageReq.pageRoot == Some(PageParts.ConfigPostId)
-    renderPageSettings =
-      if (viewsPageConfigPost || pageReq.pagePath.isConfigPage) {
-        // Don't load any config values in case the config post/page is corrupt — otherwise
-        // it wouldn't be possible to edit the config file and fix the errors.
-        Some(RenderPageSettings(
-          showTitle = true, showAuthorAndDate = false, showBody = true, showComments = true,
-          horizontalComments = horizontalComments))
-      }
-      else {
-        Some(RenderPageSettings(
-          showTitle = shall("show-title", showTitle),
-          showAuthorAndDate = shall("show-author-and-date", showAuthorAndDate),
-          showBody = shall("show-body", showBody),
-          showComments = shall("show-comments", showComments),
-          horizontalComments = horizontalComments))
-      }
-
-    HtmlPageSerializer.wrapInPageTag(pageReq.thePathAndMeta) {
-      xml.Unparsed(contents.body)
-    }
-  }
-
-
   /** Example: if this is a forum topic  in a forum  in a forum group,
     * this function would return the id of the forum group (that'd be the "root" section).
     */
@@ -547,33 +505,8 @@ class TemplateProgrammingInterface(
   def pageUrlPath = pageReq.pagePath.value
 
 
-  def isHomepage = pageUrlPath == "/"
-
-
-  //def title = renderedPage.title
-
-
   def titleText =
     pageReq.thePageParts.titlePost.map(_.currentText) getOrElse pageReq.pagePath.value
-
-
-  //def authorAndDate = renderedPage.authorAndDate
-
-
-  //def bodyAndComments = renderedPage.bodyAndComments
-
-
-  /**
-   * Use in templates, e.g. like so: `@if(shall("show-title")) { @title }`
-   */
-  def shall(confValName: String, default: Boolean = false): Boolean =
-    anyConfigValue(confValName).getOrElse(default) match {
-      case b: Boolean => b
-      case s: String => s.toLowerCase == "true"
-      case x => throw TemplateRenderer.PageConfigException(
-        "DwE1W840", s"""Don't know how to convert config value `$confValName' = `$x',
-        which is a ${classNameOf(x)}, to a Boolean""")
-    }
 
 
   override lazy val reactStoreSafeJsonString: String = {
