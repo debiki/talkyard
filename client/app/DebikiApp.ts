@@ -25,10 +25,7 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 
 
-var dependencies = [
-    'DebikiDashbarModule',
-    'DebikiEditorModule',
-    'ui.scrollfix'];
+var dependencies = ['DebikiEditorModule'];
 
 var pageRole = debiki2.ReactStore.getPageRole();
 if (pageRole === 'Forum') {
