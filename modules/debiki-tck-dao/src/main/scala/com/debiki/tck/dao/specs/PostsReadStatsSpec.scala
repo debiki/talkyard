@@ -75,12 +75,12 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
 
     "find no posts read stats, for non-existing page" in {
       siteUtils.dao.loadPostsReadStats("non_existing_page") mustBe
-        PostsReadStats("non_existing_page", Map.empty, Map.empty)
+        PostsReadStats(Map.empty, Map.empty)
     }
 
     "find no posts read stats, for page with no votes" in {
       siteUtils.dao.loadPostsReadStats(page.id) mustBe
-        PostsReadStats(page.id, Map.empty, Map.empty)
+        PostsReadStats(Map.empty, Map.empty)
     }
 
     "vote-read posts #1 and #2 as a guest" - {
@@ -93,7 +93,6 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
       "find posts read stats" in {
         val stats = siteUtils.dao.loadPostsReadStats(page.id)
         stats mustBe PostsReadStats(
-          page.id,
           Map(
             PageParts.BodyId -> Set(GuestIp),
             post2.id -> Set(GuestIp)),
@@ -112,7 +111,6 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
       "find posts read stats" in {
         val stats = siteUtils.dao.loadPostsReadStats(page.id)
         stats mustBe PostsReadStats(
-          page.id,
           Map(
             PageParts.BodyId -> Set(GuestIp),
             post2.id -> Set(GuestIp),
@@ -137,7 +135,6 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
       "find posts read stats" in {
         val stats = siteUtils.dao.loadPostsReadStats(page.id)
         stats mustBe PostsReadStats(
-          page.id,
           Map(
             PageParts.BodyId -> Set(GuestIp), // these posts weren't read again, same guest id
             post2.id -> Set(GuestIp),         //
@@ -158,7 +155,6 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
       "find posts read stats" in {
         val stats = siteUtils.dao.loadPostsReadStats(page.id)
         stats mustBe PostsReadStats(
-          page.id,
           Map(
             PageParts.BodyId -> Set(GuestIp),
             post2.id -> Set(GuestIp),
@@ -183,7 +179,6 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
       "find posts read stats" in {
         val stats = siteUtils.dao.loadPostsReadStats(page.id)
         stats mustBe PostsReadStats(
-          page.id,
           Map(
             PageParts.BodyId -> Set(GuestIp),
             post2.id -> Set(GuestIp),
