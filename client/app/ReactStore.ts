@@ -30,6 +30,7 @@ var ChangeEvent = 'ChangeEvent';
 
 export var ReactStore = new EventEmitter2();
 
+
 // First, initialize the store with page specific data only, nothing user specific,
 // because the server serves cached HTML with no user specific data. Later on,
 // we'll insert user specific data into the store, and re-render. See
@@ -158,10 +159,16 @@ function updatePost(post) {
 
   var oldVersion = store.allPosts[post.postId];
 
-  // Don't collapse the post if the user has opened it.
   if (oldVersion) {
+    // Don't collapse the post if the user has opened it.
     post.isTreeCollapsed = oldVersion.isTreeCollapsed;
     post.isPostCollapsed = oldVersion.isPostCollapsed;
+  }
+  else {
+    store.numPosts += 1;
+    if (post.id !== TitleId) {
+      store.numPostsExclTitle += 1;
+    }
   }
 
   // Add or update the post itself.

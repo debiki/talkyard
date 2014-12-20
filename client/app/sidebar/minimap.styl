@@ -17,20 +17,13 @@
 
 
 #dw-minimap
-  position: absolute
-  top: 150px
-  right: 20px
+  position: fixed;
+  top: 0;
+  right: 0;
+  display: none; // until has scrolled a bit
   z-index: 1001 // not above dialogs, but above resize-columns handle (1000)
   b = 2px solid hsl(0, 0%, 90%)
   border-left: b
   border-bottom b
   background: hsl(0, 0%, 93%)
   opacity: 0.8
-  visibility: hidden
-
-  &.ui-scrollfix
-    visibility: visible
-    position: fixed
-    top: 0
-    right: 0
-

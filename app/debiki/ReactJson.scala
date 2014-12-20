@@ -46,8 +46,9 @@ object ReactJson {
 
 
   def pageToJson(pageReq: PageRequest[_], socialLinksHtml: String): JsObject = {
+    val numPosts = pageReq.thePageParts.postCount
     val numPostsExclTitle =
-      pageReq.thePageParts.postCount - (if (pageReq.thePageParts.titlePost.isDefined) 1 else 0)
+      numPosts - (if (pageReq.thePageParts.titlePost.isDefined) 1 else 0)
 
     var allPostsJson = pageReq.thePageParts.getAllPosts.map { post =>
       post.id.toString -> postToJson(post)
@@ -63,6 +64,7 @@ object ReactJson {
       "now" -> JsNumber((new ju.Date).getTime),
       "pageId" -> pageReq.thePageId,
       "pageRole" -> JsString(pageReq.thePageRole.toString),
+      "numPosts" -> numPosts,
       "numPostsExclTitle" -> numPostsExclTitle,
       "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),
       "categories" -> categoriesJson(pageReq),

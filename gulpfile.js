@@ -97,7 +97,6 @@ var debikiDesktopFiles = [
       'client/third-party/popuplib.js',
       'client/third-party/waypoints.js',
       'client/third-party/modernizr-positionfixed.js',
-      'target/client/app/minimap/scrollfix2d.js',
       'client/app/actions/edit/tagdog.js',
       'target/client/app/page-module.js',
       'target/client/app/bootstrap-angularjs.js',
@@ -154,7 +153,6 @@ var debikiDesktopFiles = [
       'target/client/all-typescript.js',
       'target/client/admin-app-angular-templates.js',
       'target/client/page-app-angular-templates.js',
-      'target/client/app/minimap/minimap.js',
       'target/client/app/startup.js'];
 
 
@@ -177,7 +175,6 @@ var debikiTouchFiles = [
       'client/third-party/popuplib.js',
       'client/third-party/waypoints.js',
       'client/third-party/modernizr-positionfixed.js',
-      'target/client/app/minimap/scrollfix2d.js',
       'client/app/actions/edit/tagdog.js',
       'target/client/app/page-module.js',
       'target/client/app/bootstrap-angularjs.js',
@@ -231,7 +228,6 @@ var debikiTouchFiles = [
       'target/client/all-typescript.js',
       'target/client/admin-app-angular-templates.js',
       'target/client/page-app-angular-templates.js',
-      'target/client/app/minimap/minimap.js',
       'target/client/app/startup.js'];
 
 
@@ -546,7 +542,7 @@ gulp.task('compile-stylus', function () {
         'client/shared/editor/**/*.styl',
         'client/app/debiki.styl',
         'client/app/posts/layout.styl',
-        'client/app/minimap/minimap.styl',
+        'client/app/sidebar/minimap.styl',
         'client/app/renderer/arrows.styl',
         'client/app/tips.styl',
         'client/app/dashbar/dashbar.styl',
