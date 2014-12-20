@@ -60,12 +60,14 @@ class EditorController {
   }
 
 
-  public editNewForumTopic(parentPageId) {
+  public editNewForumPage(parentPageId: string, role: string) {
     if (this.alertBadState())
       return;
     this.showEditor();
-    this.$scope.newTopicParentPageId = parentPageId;
-    this.$scope.text = 'New topic ....';
+    this.$scope.newForumPageParentId = parentPageId;
+    this.$scope.newForumPageRole = role;
+    this.$scope.text = this.$scope.newForumPageRole === 'ForumTopic' ?
+        'New topic ....' : 'New category description ....';
   }
 
 
@@ -118,8 +120,9 @@ class EditorController {
       }
       return true;
     }
-    if (this.$scope.newTopicParentPageId) {
-      alert('Please first either save or cancel your new forum topic');
+    if (this.$scope.newForumPageRole) {
+      var what = this.$scope.newForumPageRole === 'ForumTopic' ? 'topic' : 'category';
+      alert('Please first either save or cancel your new forum ' + what);
       d.i.clearIsReplyingMarks();
       return true;
     }
@@ -133,8 +136,8 @@ class EditorController {
 
 
   public save() {
-    if (this.$scope.newTopicParentPageId) {
-      this.saveNewForumTopic();
+    if (this.$scope.newForumPageRole) {
+      this.saveNewForumPage();
     }
     else if (typeof this.$scope.editingPostId === 'number') {
       this.saveEdits();
@@ -145,12 +148,15 @@ class EditorController {
   }
 
 
-  private saveNewForumTopic() {
+  private saveNewForumPage() {
+    var title = this.$scope.newForumPageRole === 'ForumTopic' ?
+        'Forum Topic Title (click to edit)' : 'Category Title (click to edit)';
+
     var data = {
-      parentPageId: this.$scope.newTopicParentPageId,
-      pageRole: 'ForumTopic',
+      parentPageId: this.$scope.newForumPageParentId,
+      pageRole: this.$scope.newForumPageRole,
       pageStatus: 'Published',
-      pageTitle: 'New Forum Topic (click to edit)', // for now. TODO add title field
+      pageTitle: title,
       pageBody: this.$scope.text
     };
     this.editorService.createNewPage(data).then((data: any) => {
@@ -191,8 +197,10 @@ class EditorController {
       return 'Save edits';
     if (this.$scope.replyToPostIds.length)
       return 'Post reply';
-    if (this.$scope.newTopicParentPageId)
+    if (this.$scope.newForumPageRole === 'ForumTopic')
       return 'Create new topic';
+    if (this.$scope.newForumPageRole === 'ForumCategory')
+      return 'Create new category';
     return 'Save';
   }
 
@@ -234,7 +242,8 @@ class EditorController {
       // s/he clicked Cancel by mistake.
     }
     this.$scope.visible = false;
-    this.$scope.newTopicParentPageId = null;
+    this.$scope.newForumPageParentId = null;
+    this.$scope.newForumPageRole = null;
     this.$scope.replyToPostIds = [];
     this.$scope.editingPostId = null;
 
