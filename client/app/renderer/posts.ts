@@ -90,10 +90,10 @@ var TitleBodyComments = createComponent({
 
   render: function() {
     var anyTitle = null;
-    if (this.props.pageRole === 'Generic' || this.props.pageRole === 'EmbeddedComments' ||
+    if (this.props.pageRole === 'HomePage' || this.props.pageRole === 'EmbeddedComments' ||
         this.props.rootPostId !== BodyPostId) {
-      // Show no title for the homepage (role 'Generic'? what?) — it should have its
-      // own custom HTML with a title and other things.
+      // Show no title for the homepage — it should have its own custom HTML with
+      // a title and other things.
       // Embedded comment pages have no title, only comments.
       // And show no title if we're showing a comment not the article as the root post.
     }
@@ -103,7 +103,7 @@ var TitleBodyComments = createComponent({
 
     var anyPostHeader = null;
     var anySocialLinks = null;
-    if (this.props.pageRole === 'Generic' || this.props.pageRole === 'Forum' ||
+    if (this.props.pageRole === 'HomePage' || this.props.pageRole === 'Forum' ||
         this.props.pageRole === 'ForumCategory' || this.props.pageRole === 'WikiMainPage' ||
         this.props.pageRole === 'SpecialContent' || this.props.pageRole === 'Blog' ||
         this.props.pageRole === 'EmbeddedComments' ||
@@ -174,7 +174,7 @@ var RootPostAndComments = createComponent({
       postBodyClass += ' dw-ar-p-bd';
     }
 
-    var showComments = pageRole !== 'Generic' && pageRole !== 'Forum' &&
+    var showComments = pageRole !== 'HomePage' && pageRole !== 'Forum' &&
         pageRole !== 'ForumCategory' && pageRole !== 'Blog' && pageRole !== 'WikiMainPage' &&
         pageRole !== 'SpecialContent';
 

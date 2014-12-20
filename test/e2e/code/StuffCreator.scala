@@ -160,7 +160,7 @@ trait StuffCreator {
       firstSiteId, folder, pageId = None, showId = false, pageSlug = slug)
     val page = PageParts(guid = "?", rawActions = body::Nil)
     firstSiteDao.createPage(Page.newPage(
-      PageRole.Generic, pagePath, page, publishDirectly = true, author = loginGrant.user))
+      PageRole.WebPage, pagePath, page, publishDirectly = true, author = loginGrant.user))
   }
 
 

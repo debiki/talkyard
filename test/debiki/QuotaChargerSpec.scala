@@ -372,7 +372,7 @@ class QuotaChargerSpec
   def createPage(author: User, dao: SiteDao) = {
     val creationDati = new ju.Date
     val pageId = dao.nextPageId()
-    val pageRole = PageRole.Generic
+    val pageRole = PageRole.WebPage
     val pageBody = RawPostAction.forNewPageBody("Page body.", creationDati, pageRole,
       UserIdData.newTest(userId = author.id),
       approval = Some(Approval.Preliminary))

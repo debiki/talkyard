@@ -64,7 +64,7 @@ with StartServerAndChromeDriverFactory
 class EditActivitySpec extends DebikiBrowserSpec
   with TestReplyer with TestLoginner with TestEditor with TestModeration {
 
-  lazy val testPage = createTestPage(PageRole.Generic,
+  lazy val testPage = createTestPage(PageRole.WebPage,
     title = "Edit Suggestions Test 5902RK", body = Some("Edit suggestions test 10EIJ55."))
 
   val guestUserName = s"Activity-Anon-${nextRandomString() take 5}"

@@ -44,7 +44,7 @@ with StartServerAndChromeDriverFactory
 class PinPostSpec extends DebikiBrowserSpec
   with TestReplyer with TestLoginner with TestVoter with TestPinner {
 
-  lazy val testPage = createTestPage(PageRole.Generic,
+  lazy val testPage = createTestPage(PageRole.WebPage,
     title = "Pin Posts Test 73kdEf0", body = Some("Pin posts test 6P8GK03."))
 
   val guestUserName = s"Activity-Anon-${nextRandomString() take 5}"

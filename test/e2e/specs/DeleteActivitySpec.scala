@@ -43,7 +43,7 @@ class DeleteActivitySpecForEmbeddedCommentsRunner
 @test.tags.EndToEndTest
 @DoNotDiscover
 class DeleteActivitySpec extends DeleteActivitySpecConstructor(iframe = false) {
-  lazy val testPageUrl = createTestPage(PageRole.Generic,
+  lazy val testPageUrl = createTestPage(PageRole.WebPage,
     title = "Delete Comments Test 053KRI", body = Some("Delete comments test 71QE05.")).url
 }
 

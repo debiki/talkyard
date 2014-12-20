@@ -64,7 +64,7 @@ class AnonLoginSpecForEmbeddedCommentsRunner_jQueryModernizrPreLoaded
 @test.tags.EndToEndTest
 @DoNotDiscover
 class AnonLoginSpec extends AnonLoginSpecConstructor(quick = false) {
-  lazy val testPageUrl = createTestPage(PageRole.Generic,
+  lazy val testPageUrl = createTestPage(PageRole.WebPage,
     title = "Test Page Title 27KV09", body = Some("Test page text 953Ih31.")).url
 }
 

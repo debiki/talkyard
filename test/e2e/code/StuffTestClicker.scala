@@ -42,7 +42,7 @@ trait StuffTestClicker extends DebikiSelectors {
    */
   def clickCreateNewPage(pageRole: PageRole, suffix: String = null): String = {
     val (newPageLink, newPageTitlePart) = (pageRole, suffix) match {
-      case (PageRole.Generic, _) => ("create-info-page", "New Page")
+      case (PageRole.WebPage, _) => ("create-info-page", "New Page")
       case (PageRole.Blog, _) => ("create-blog", "Example Blog Post")
       case (PageRole.Forum, _) =>
         fail("Subsequent tests will fail, after I changed ForumGroup+Forum to Forum+ForumCategory")

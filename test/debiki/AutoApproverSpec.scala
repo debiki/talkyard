@@ -96,7 +96,7 @@ class AutoApproverSpec extends Specification with Mockito {
 
 
   def pageMeta = PageMeta.forNewPage(
-    pageRole = PageRole.Generic,
+    pageRole = PageRole.WebPage,
     author = PageCreator,
     parts = PageParts(PageId),
     creationDati = new ju.Date,
@@ -133,7 +133,7 @@ class AutoApproverSpec extends Specification with Mockito {
     RawPostAction.forNewPageBody(creationDati = startDati,
       userIdData = UserIdData.newTest(userId = testUserId),
       text = "täxt-tåxt",
-      pageRole = PageRole.Generic, approval = None)
+      pageRole = PageRole.WebPage, approval = None)
 
   val testUserReplyAId = 2
   def testUserReplyA(implicit testUserId: String) =
