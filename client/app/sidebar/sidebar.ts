@@ -19,6 +19,7 @@
 /// <reference path="../../shared/plain-old-javascript.d.ts" />
 /// <reference path="minimap.ts" />
 /// <reference path="toggle-sidebar-button.ts" />
+/// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.sidebar {
@@ -51,6 +52,7 @@ export var Sidebar = createComponent({
     window.addEventListener('scroll', this.updateSizeAndPosition, false);
     debiki.v0.util.zoomListeners.push(this.updateSizeAndPosition);
     this.updateSizeAndPosition();
+    key('s', this.toggleSidebarOpen);
   },
 
   componentDidUpdate: function() {
@@ -59,6 +61,7 @@ export var Sidebar = createComponent({
 
   componentWillUnmount: function() {
     // TODO unregister update function.
+    key.unbind('s', this.toggleSidebarOpen);
   },
 
   updateSizeAndPosition: function() {
@@ -90,6 +93,12 @@ export var Sidebar = createComponent({
       sidebar.css('top', commentSectionOffset.top);
       sidebar.css('position', 'absolute');
     }
+  },
+
+  toggleSidebarOpen: function() {
+    this.setState({
+      showSidebar: !this.state.showSidebar
+    });
   },
 
   openSidebar: function() {
