@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../../shared/plain-old-javascript.d.ts" />
 /// <reference path="minimap.ts" />
 /// <reference path="toggle-sidebar-button.ts" />
 
@@ -46,6 +47,51 @@ export var Sidebar = createComponent({
     });
   },
 
+  componentDidMount: function() {
+    window.addEventListener('scroll', this.updateSizeAndPosition, false);
+    debiki.v0.util.zoomListeners.push(this.updateSizeAndPosition);
+    this.updateSizeAndPosition();
+  },
+
+  componentDidUpdate: function() {
+    this.updateSizeAndPosition();
+  },
+
+  componentWillUnmount: function() {
+    // TODO unregister update function.
+  },
+
+  updateSizeAndPosition: function() {
+    if (!this.state.store.horizontalLayout) {
+      this.updateSizeAndPosition1d();
+    }
+  },
+
+  updateSizeAndPosition1d: function() {
+    // COULD find a safer way to do this? Breaks if CSS class renamed / HTML
+    // structure changed.
+    var commentSectionOffset = $('.dw-cmts-tlbr + .dw-single-and-multireplies').offset();
+    var commentSectionTop = commentSectionOffset.top;
+    var windowTop = $(window).scrollTop();
+    var sidebar = $(this.getDOMNode());
+
+    if (commentSectionTop <= windowTop) {
+      // We've scrolled down and the comments fill the whole browser window.
+      sidebar.addClass('dw-sidebar-fixed');
+      sidebar.css('top', '');
+      sidebar.css('position', 'fixed');
+    }
+    else {
+      // We're reading the article. Let the sidebar stay down together with
+      // the comments, so it won't occlude the article. COULD skip this if
+      // the browser window is very wide and we can safely show the whole sidebar
+      // at the right edge, without occluding the article.
+      sidebar.removeClass('dw-sidebar-fixed');
+      sidebar.css('top', commentSectionOffset.top);
+      sidebar.css('position', 'absolute');
+    }
+  },
+
   openSidebar: function() {
     this.state.showSidebar = true;
     this.setState(this.state);
@@ -70,9 +116,14 @@ export var Sidebar = createComponent({
       isSidebarOpen: true,
     }, this.state.store);
 
+
+    var sidebarClasses = '';
+    if (this.state.store.horizontalLayout) {
+      sidebarClasses += ' dw-sidebar-fixed';
+    }
+
     return (
-      r.div({ id: 'dw-sidebar' },
-        r.div({ id: 'dw-sidebar-border' }),
+      r.div({ id: 'dw-sidebar', className: sidebarClasses },
         MiniMap(minimapProps),
         ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar }),
         RecentComments(this.state.store)));

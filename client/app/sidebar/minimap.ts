@@ -105,7 +105,7 @@ export var MiniMap = createComponent({
   },
 
   shallShowMinimap: function() {
-    return this.props.isSidebarOpen ||
+    return !this.props.horizontalLayout || this.props.isSidebarOpen ||
         $window.scrollLeft() >= ShowMinimapMinLeft ||
         $window.scrollTop() >= ShowMinimapMinTop;
   },

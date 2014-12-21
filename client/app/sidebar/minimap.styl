@@ -38,17 +38,33 @@
   padding: 8px 7px;
 
 
+.dw-hz #dw-sidebar
+  border-left: 4px solid #555;
+  background: white;
+  padding: 0 0 0 11px;
+
+  #dw-recent-comments
+    background: white;
+
+
 #dw-sidebar
-  position: fixed;
+  position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
-  width: 270px;
+  width: 300px;
   z-index: 1001; // not above dialogs, but above resize-columns handle (1000)
-  padding: 0 1px 0 15px;
-  background: #eee;
+  padding: 0 0 0 11px;
+  bgcolor = #eee;
+  background: bgcolor;
 
-  #dw-sidebar-border
+  &.dw-sidebar-fixed
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+
+  /* #dw-sidebar-border
     position: absolute;
     top: 0px;
     left: 0;
@@ -56,7 +72,7 @@
     width: 9px;
     border-left: 3px solid #fff;
     background: hsl(0, 0%, 82%);
-    z-index: 1;
+    z-index: 1; */
 
   #dw-minimap
     background: hsl(0, 0%, 93%);
@@ -65,6 +81,8 @@
 
   #dw-recent-comments
     clear: both;
+    background: bgcolor;
+    padding-right: 8px;
 
     h3
       font-weight: bold;
