@@ -16,8 +16,6 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="minimap.ts" />
-/// <reference path="toggle-sidebar-button.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.sidebar {
@@ -26,56 +24,15 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 
-var MinimapHeight = 160;
 
-
-export var Sidebar = createComponent({
-  mixins: [debiki2.StoreListenerMixin],
-
-  getInitialState: function() {
-    return {
-      store: debiki2.ReactStore.allData(),
-      showSidebar: false,
-    };
-  },
-
-  onChange: function() {
-    this.setState({
-      store: debiki2.ReactStore.allData(),
-      showSidebar: this.state.showSidebar,
-    });
-  },
-
-  openSidebar: function() {
-    this.state.showSidebar = true;
-    this.setState(this.state);
-  },
-
-  closeSidebar: function() {
-    this.state.showSidebar = false;
-    this.setState(this.state);
-  },
-
+export var ToggleSidebarButton = createComponent({
   render: function() {
-    // In 2D layout, show a small minimap, even if sidebar hidden.
-    if (!this.state.showSidebar) {
-      var props = $.extend({
-        isSidebarOpen: false,
-        onOpenSidebarClick: this.openSidebar,
-      }, this.state.store);
-      return MiniMap(props);
-    }
-
-    var minimapProps = $.extend({
-      isSidebarOpen: true,
-    }, this.state.store);
-
+    var styles = {
+      top: this.props.minimapHeight,
+    };
     return (
-      r.div({ id: 'dw-sidebar' },
-        r.div({ id: 'dw-sidebar-border' }),
-        MiniMap(minimapProps),
-        ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar }),
-        RecentComments(this.state.store)));
+      r.button({ id: 'dw-toggle-sidebar', style: styles, onClick: this.props.onClick },
+        r.span({ className: this.props.isSidebarOpen ? 'icon-right-open' : 'icon-left-open' })));
   }
 });
 

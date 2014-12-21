@@ -34,7 +34,7 @@ export function initAllReactRoots() {
   if (dashbarElem)
     React.render(debiki2.dashbar.Dashbar({}), dashbarElem);
 
-  var sidebarElem = document.getElementById('dw-sidebar');
+  var sidebarElem = document.getElementById('dw-any-sidebar');
   if (sidebarElem)
     React.render(debiki2.sidebar.Sidebar({}), sidebarElem);
 

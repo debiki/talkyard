@@ -16,14 +16,75 @@
  */
 
 
-#dw-minimap
+#dw-minimap-and-open-sidebar-btn
   position: fixed;
   top: 0;
   right: 0;
   display: none; // until has scrolled a bit
   z-index: 1001 // not above dialogs, but above resize-columns handle (1000)
-  b = 2px solid hsl(0, 0%, 90%)
-  border-left: b
-  border-bottom b
-  background: hsl(0, 0%, 93%)
   opacity: 0.8
+
+  #dw-minimap
+    float: right;
+    background: hsl(0, 0%, 93%)
+
+
+#dw-toggle-sidebar
+  float: right;
+  clear: both;
+  background: #ddd;
+  border: none;
+  font-size: 130%;
+  padding: 8px 7px;
+
+
+#dw-sidebar
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 270px;
+  z-index: 1001; // not above dialogs, but above resize-columns handle (1000)
+  padding: 0 1px 0 15px;
+  background: #eee;
+
+  #dw-sidebar-border
+    position: absolute;
+    top: 0px;
+    left: 0;
+    bottom: 0px;
+    width: 9px;
+    border-left: 3px solid #fff;
+    background: hsl(0, 0%, 82%);
+    z-index: 1;
+
+  #dw-minimap
+    background: hsl(0, 0%, 93%);
+    float: right;
+
+
+  #dw-recent-comments
+    clear: both;
+
+    h3
+      font-weight: bold;
+      font-family: verdana;
+      font-size: 13px;
+      margin: 0 0 7px 4px;
+
+    .dw-p
+      cursor: pointer;
+      margin: 2px;
+
+    .dw-p-bd
+      max-height: 130px;
+      overflow: hidden;
+
+    .dw-p:hover
+      outline: 2px solid hsl(210, 39%, 84%);
+
+      .dw-p-hd
+        background-color: hsl(210, 39%, 84%);
+
+      .dw-p-bd
+        background-color: hsl(210, 100%, 96%);

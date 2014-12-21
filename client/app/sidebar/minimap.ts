@@ -22,6 +22,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
+/// <reference path="toggle-sidebar-button.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.sidebar {
@@ -76,7 +77,16 @@ var TooFewPosts = 5 + 2; // + title and body
 export var MiniMap = createComponent({
   mixins: [PageScrollMixin],
 
+  componentDidMount: function() {
+    this.redrawMinimap();
+  },
+
   componentDidUpdate: function() {
+    this.redrawMinimap();
+  },
+
+  redrawMinimap: function() {
+    this.showOrHide();
     if (!this.refs.canvas)
       return;
 
@@ -95,27 +105,31 @@ export var MiniMap = createComponent({
   },
 
   shallShowMinimap: function() {
-    return $window.scrollLeft() >= ShowMinimapMinLeft ||
+    return this.props.isSidebarOpen ||
+        $window.scrollLeft() >= ShowMinimapMinLeft ||
         $window.scrollTop() >= ShowMinimapMinTop;
   },
 
-  onScroll: function(event) {
-    if (!this.canvasContext)
-      return;
-
-    this.canvasContext.clearRect(0, 0, this.width, this.height);
-    this.canvasContext.putImageData(this.cachedMinimap, 0, 0);
-    drawViewport(this.canvasContext, this.width, this.height);
-
-    // Don't show minimap directly when loading page, only after scrolling a bit.
+  showOrHide: function() {
+    // Don't show minimap and open-sidebar-button directly when loading page, only
+    // after scrolling a bit.
     if (this.shallShowMinimap()) {
-      $(this.refs.canvas.getDOMNode()).show();
+      $(this.getDOMNode()).show();
     }
     // Don't show the minimap when one has scrolled back to the upper left corner,
     // because it would occlude stuff in the top nav bar.
     else if (!this.isScrollingInViewport) {
-      $(this.refs.canvas.getDOMNode()).hide();
+      $(this.getDOMNode()).hide();
     }
+  },
+
+  onScroll: function(event) {
+    if (this.canvasContext) {
+      this.canvasContext.clearRect(0, 0, this.width, this.height);
+      this.canvasContext.putImageData(this.cachedMinimap, 0, 0);
+      drawViewport(this.canvasContext, this.width, this.height);
+    }
+    this.showOrHide();
   },
 
   startScrollingInViewport: function(event) {
@@ -134,7 +148,7 @@ export var MiniMap = createComponent({
     $(window).off('mouseup', this.stopScrollingInViewport);
     $(window).off('mouseleave', this.stopScrollingInViewport);
     if (!this.shallShowMinimap()) {
-      $(this.refs.canvas.getDOMNode()).hide();
+      $(this.getDOMNode()).hide();
     }
   },
 
@@ -152,18 +166,24 @@ export var MiniMap = createComponent({
   },
 
   render: function() {
-    if (!this.props.horizontalLayout || !isPageWithMinimap(this.props.pageRole) ||
-        this.props.numPosts <= TooFewPosts)
-      return null;
+    var anyMinimap = null;
+    if (this.props.horizontalLayout && isPageWithMinimap(this.props.pageRole) &&
+        this.props.numPosts > TooFewPosts) {
+      var size = calculateMinimapSize(this.props.width);
+      this.width = size.width;
+      this.height = size.height;
+      anyMinimap =
+        r.canvas({ id: 'dw-minimap', width: this.width, height: this.height,
+            ref: 'canvas', onMouseDown: this.startScrollingInViewport });
+    }
 
-    var maxMinimapWidth = Math.min($window.width() / 3, 500);
-    var aspectRatio = $document.width() / Math.max($document.height(), 1);
-    this.width = Math.min(maxMinimapWidth, $document.width() / 12);
-    this.height = this.width / aspectRatio;
+    if (this.props.isSidebarOpen)
+      return anyMinimap;
 
     return (
-      r.canvas({ id: 'dw-minimap', width: this.width, height: this.height,
-        ref: 'canvas', onMouseDown: this.startScrollingInViewport }));
+      r.div({ id: 'dw-minimap-and-open-sidebar-btn' },
+        anyMinimap,
+        ToggleSidebarButton({ isSidebarOpen: false, onClick: this.props.onOpenSidebarClick })));
   }
 });
 
@@ -173,8 +193,23 @@ function isPageWithMinimap(pageRole) {
 }
 
 
+function calculateMinimapSize(width?: number): any {
+  if (!width) {
+    var maxMinimapWidth = Math.min($window.width() / 3, 500);
+    width = Math.min(maxMinimapWidth, $document.width() / 12);
+  }
+  var aspectRatio = $document.width() / Math.max($document.height(), 1);
+  var height = width / aspectRatio;
+  return {
+    width: width,
+    height: height
+  };
+}
+
+
 function drawAllPostsInMinimap(minimap, canvasContext) {
-  $('.dw-p-bd-blk').each(function () {
+  // Only draw comments inside .dw-page, or the ones inside any open sidebar would be drawn too.
+  $('.dw-page .dw-p-bd-blk').each(function () {
     drawSinglePost($(this), canvasContext, minimap.width, minimap.height);
   });
 }

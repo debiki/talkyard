@@ -245,6 +245,7 @@ function renderDiscussionPage() {
 
   steps.push(function() {
     startAngular();
+    debiki2.sidebar.SidebarResizer.start();
   });
 
   function runNextStep() {
