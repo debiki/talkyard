@@ -65,17 +65,28 @@ export var Sidebar = createComponent({
   },
 
   updateSizeAndPosition: function() {
-    if (!this.state.store.horizontalLayout) {
+    if (this.state.store.horizontalLayout) {
+      this.updateSizeAndPosition2d();
+    } else {
       this.updateSizeAndPosition1d();
     }
+  },
+
+  updateSizeAndPosition2d: function() {
+    var windowTop = $(window).scrollTop();
+    var windowBottom = windowTop + $(window).height();
+    var sidebar = $(this.getDOMNode());
+    sidebar.height(windowBottom - windowTop);
   },
 
   updateSizeAndPosition1d: function() {
     // COULD find a safer way to do this? Breaks if CSS class renamed / HTML
     // structure changed.
-    var commentSectionOffset = $('.dw-cmts-tlbr + .dw-single-and-multireplies').offset();
+    var commentSection = $('.dw-cmts-tlbr + .dw-single-and-multireplies');
+    var commentSectionOffset = commentSection.offset();
     var commentSectionTop = commentSectionOffset.top;
     var windowTop = $(window).scrollTop();
+    var windowBottom = windowTop + $(window).height();
     var sidebar = $(this.getDOMNode());
 
     if (commentSectionTop <= windowTop) {
@@ -83,6 +94,7 @@ export var Sidebar = createComponent({
       sidebar.addClass('dw-sidebar-fixed');
       sidebar.css('top', '');
       sidebar.css('position', 'fixed');
+      sidebar.height(windowBottom - windowTop);
     }
     else {
       // We're reading the article. Let the sidebar stay down together with
@@ -92,7 +104,12 @@ export var Sidebar = createComponent({
       sidebar.removeClass('dw-sidebar-fixed');
       sidebar.css('top', commentSectionOffset.top);
       sidebar.css('position', 'absolute');
+      sidebar.height(windowBottom - commentSectionOffset.top);
     }
+
+    var sidebarLeft = sidebar.offset().left;
+    var commentsMaxWidth = sidebarLeft - 30 - commentSectionOffset.left;
+    commentSection.css('max-width', commentsMaxWidth);
   },
 
   toggleSidebarOpen: function() {
