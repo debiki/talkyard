@@ -190,6 +190,9 @@ export var Sidebar = createComponent({
   },
 
   render: function() {
+    if (!isPageWithSidebar(this.state.store.pageRole))
+      return null;
+
     // In 2D layout, show a small minimap, even if sidebar hidden.
     if (!this.state.showSidebar) {
       var props = $.extend({
@@ -220,6 +223,11 @@ export var Sidebar = createComponent({
               RecentComments(this.state.store))))));
   }
 });
+
+
+function isPageWithSidebar(pageRole) {
+  return pageRole === 'BlogPost' || pageRole === 'ForumTopic' || pageRole === 'WebPage';
+}
 
 
 //------------------------------------------------------------------------------
