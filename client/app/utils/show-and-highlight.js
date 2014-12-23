@@ -74,12 +74,34 @@ function highlightBriefly($tag, opt_backgroundSelector) {
  * Scrolls to `this`, then highlights `$tag`.
  */
 $.fn.dwScrollToThenHighlight = function($tag, options) {
+  options = addAnySidebarWidth(options);
   this.dwScrollIntoView(options).queue(function(next) {
     highlightBriefly($tag);
     next();
   });
   return this;
 };
+
+
+/**
+ * There might be a position: fixed sidebar to the right. This hacky
+ * function ensures the sidebar won't hide the elem we scroll to,
+ * by adding some options.marginRight.
+ * Find the sidebar in client/app/sidebar/sidebar.ts.
+ */
+function addAnySidebarWidth(options) {
+  var sidebar = $('#dw-sidebar');
+  if (!sidebar.find('.dw-comments').length) {
+    // Sidebar is closed.
+    return options;
+  }
+
+  options = options || {};
+  var marginRight = options.marginRight || 15;
+  marginRight += sidebar.outerWidth(true);
+  options.marginRight = marginRight;
+  return options;
+}
 
 
 /**
@@ -91,6 +113,7 @@ $.fn.dwScrollToHighlighted = function(options) {
 
 
 d.i.showAndHighlightPost = function($post, options) {
+  options = addAnySidebarWidth(options);
   $post.dwScrollIntoView(options).queue(function(next) {
     highlightBriefly($post, '.dw-p-bd, .dw-p-hd');
     next();

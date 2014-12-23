@@ -109,6 +109,23 @@ export var Sidebar = createComponent({
     var sidebar = $(this.getDOMNode());
     sidebar.height(windowBottom - windowTop);
     this.updateCommentsScrollbar(windowBottom);
+
+    // When the window viewport is at the right edge, we don't want the sidebar to
+    // overlap the rightmost comments. So add some horizontal padding after the
+    // rightmost comment column, as wide as the sidebar.
+    var padding = $('#dw-sidebar-padding');
+    if (this.state.showSidebar) {
+      if (!padding.length) {
+        padding =  $('<li id="dw-sidebar-padding"><div ' +
+            'style="height: 100px; background-color: greenyellow;"></div></li>');
+        padding.appendTo($('.dw-t.dw-depth-0 > .dw-single-and-multireplies > .dw-res'));
+      }
+      // The <li> has display: table-cell, so need to (?) set width on something inside.
+      padding.children('div').width(sidebar.width());
+    }
+    else {
+      padding.remove();
+    }
   },
 
   updateSizeAndPosition1d: function() {
