@@ -50,10 +50,16 @@ export var Sidebar = createComponent({
 
   componentDidMount: function() {
     window.addEventListener('scroll', this.updateSizeAndPosition, false);
-    debiki.v0.util.zoomListeners.push(this.updateSizeAndPosition);
+    debiki.v0.util.addZoomOrResizeListener(this.updateSizeAndPosition);
     this.updateSizeAndPosition();
     key('s', this.toggleSidebarOpen);
     this.createAnyScrollbars();
+  },
+
+  componentWillUnmount: function() {
+    window.removeEventListener('scroll', this.updateSizeAndPosition, false);
+    debiki.v0.util.removeZoomOrResizeListener(this.updateSizeAndPosition);
+    key.unbind('s', this.toggleSidebarOpen);
   },
 
   componentWillUpdate: function(nextProps, nextState) {
@@ -65,11 +71,6 @@ export var Sidebar = createComponent({
   componentDidUpdate: function() {
     this.updateSizeAndPosition();
     this.createAnyScrollbars();
-  },
-
-  componentWillUnmount: function() {
-    // TODO unregister update function.
-    key.unbind('s', this.toggleSidebarOpen);
   },
 
   getCommentsViewport: function() {
