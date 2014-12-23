@@ -85,6 +85,7 @@ var debikiDesktopFiles = [
       'bower_components/react-router/dist/react-router.js',
       'bower_components/Caret.js/dist/jquery.caret.js',
       'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
+      'bower_components/nicescroll/jquery.nicescroll.js',
       'client/third-party/bootstrap/tooltip.js', //
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
@@ -166,6 +167,7 @@ var debikiTouchFiles = [
       'bower_components/react-router/dist/react-router.js',
       'bower_components/Caret.js/dist/jquery.caret.js',
       'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
+      'bower_components/nicescroll/jquery.nicescroll.js',
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',

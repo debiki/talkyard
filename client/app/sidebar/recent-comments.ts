@@ -60,14 +60,8 @@ export var RecentComments = createComponent({
           onClick: scrollToPost, skipIdAttr: true }));
     });
 
-    var styles = {
-      top: this.props.minimapHeight,
-      width: this.props.sidebarWidth
-    }
-
     return (
-      r.div({ id: 'dw-recent-comments', xxstyle: styles },
-        r.h3({}, 'Recent Comments:'),
+      r.div({ className: 'dw-recent-comments' },
         commentsElems));
   }
 });

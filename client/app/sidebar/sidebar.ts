@@ -53,15 +53,46 @@ export var Sidebar = createComponent({
     debiki.v0.util.zoomListeners.push(this.updateSizeAndPosition);
     this.updateSizeAndPosition();
     key('s', this.toggleSidebarOpen);
+    this.createAnyScrollbars();
+  },
+
+  componentWillUpdate: function(nextProps, nextState) {
+    if (this.state.showSidebar && !nextState.showSidebar) {
+      this.getCommentsViewport()['getNiceScroll']().remove();
+    }
   },
 
   componentDidUpdate: function() {
     this.updateSizeAndPosition();
+    this.createAnyScrollbars();
   },
 
   componentWillUnmount: function() {
     // TODO unregister update function.
     key.unbind('s', this.toggleSidebarOpen);
+  },
+
+  getCommentsViewport: function() {
+    return $(this.refs.commentsViewport.getDOMNode());
+  },
+
+  createAnyScrollbars: function() {
+    if (!this.state.showSidebar)
+      return;
+
+    this.getCommentsViewport()['niceScroll']('#dw-sidebar-comments-scrollable', {
+      cursorwidth: '12px',
+      cursorcolor: '#aaa',
+      cursorborderradius: 0,
+      bouncescroll: false,
+      mousescrollstep: 140, // default is only 40
+      // Make the mouse scrollwheel *not* scroll the the main window instead of
+      // the comments viewport.
+      preservenativescrolling: false,
+      // After having scrolled to the top or to the bottom, don't start scrolling
+      // the main window instead.
+      nativeparentscrolling: false
+    });
   },
 
   updateSizeAndPosition: function() {
@@ -77,6 +108,7 @@ export var Sidebar = createComponent({
     var windowBottom = windowTop + $(window).height();
     var sidebar = $(this.getDOMNode());
     sidebar.height(windowBottom - windowTop);
+    this.updateCommentsScrollbar(windowBottom);
   },
 
   updateSizeAndPosition1d: function() {
@@ -107,9 +139,20 @@ export var Sidebar = createComponent({
       sidebar.height(windowBottom - commentSectionOffset.top);
     }
 
+    this.updateCommentsScrollbar(windowBottom);
+
     var sidebarLeft = sidebar.offset().left;
     var commentsMaxWidth = sidebarLeft - 30 - commentSectionOffset.left;
     commentSection.css('max-width', commentsMaxWidth);
+  },
+
+  updateCommentsScrollbar: function(windowBottom) {
+    if (this.state.showSidebar) {
+      var commentsViewport = this.getCommentsViewport();
+      var commentsViewportTop = commentsViewport.offset().top;
+      commentsViewport.height(windowBottom - commentsViewportTop);
+      commentsViewport['getNiceScroll']().resize();
+    }
   },
 
   toggleSidebarOpen: function() {
@@ -152,7 +195,11 @@ export var Sidebar = createComponent({
       r.div({ id: 'dw-sidebar', className: sidebarClasses },
         MiniMap(minimapProps),
         ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar }),
-        RecentComments(this.state.store)));
+        r.div({ className: 'dw-comments' },
+          r.h3({}, 'Recent Comments:'),
+          r.div({ id: 'dw-sidebar-comments-viewport', ref: 'commentsViewport' },
+            r.div({ id: 'dw-sidebar-comments-scrollable' },
+              RecentComments(this.state.store))))));
   }
 });
 
