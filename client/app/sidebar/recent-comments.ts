@@ -49,7 +49,7 @@ export var RecentComments = createComponent({
       return a.postId < b.postId ? +1 : -1;
     });
 
-    commentsByTimeDesc = _.take(commentsByTimeDesc, 15);
+    commentsByTimeDesc = _.take(commentsByTimeDesc, 50);
 
     var commentsElems = commentsByTimeDesc.map((post) => {
       var scrollToPost = (event) => {

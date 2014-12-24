@@ -35,9 +35,19 @@ export var Sidebar = createComponent({
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
+    var store = debiki2.ReactStore.allData();
+    // Show sidebar by default, in 1D layout, otherwise people will never notice
+    // that it exists.
+    var showSidebar = false;
+    if (!store.horizontalLayout && localStorage) {
+      var setting = localStorage.getItem('debikiShowSidebar');
+      if (!setting || setting === 'true') {
+        showSidebar = true;
+      }
+    }
     return {
-      store: debiki2.ReactStore.allData(),
-      showSidebar: false,
+      store: store,
+      showSidebar: showSidebar,
     };
   },
 
@@ -71,6 +81,10 @@ export var Sidebar = createComponent({
   componentDidUpdate: function() {
     this.updateSizeAndPosition();
     this.createAnyScrollbars();
+
+    if (!this.state.store.horizontalLayout && localStorage) {
+      localStorage.setItem('debikiShowSidebar', this.state.showSidebar ? 'true' : 'false');
+    }
   },
 
   getCommentsViewport: function() {
@@ -86,7 +100,7 @@ export var Sidebar = createComponent({
       cursorcolor: '#aaa',
       cursorborderradius: 0,
       bouncescroll: false,
-      mousescrollstep: 140, // default is only 40
+      mousescrollstep: 100, // default is only 40. 140 is too fast, skips posts in FF.
       // Make the mouse scrollwheel *not* scroll the the main window instead of
       // the comments viewport.
       preservenativescrolling: false,
