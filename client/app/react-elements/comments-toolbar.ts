@@ -84,7 +84,7 @@ export var CommentsToolbar = createComponent({
 
     var toggleDetailsBtn = user.isAuthenticated
       ? r.button({ className: 'dw-cmts-tlbr-open', onClick: this.onToggleDetailsClick },
-          r.span({ className: (ui.showDetails ? 'icon-chevron-up' : 'icon-chevron-down') }))
+          r.span({ className: (ui.showDetails ? 'icon-up-open' : 'icon-down-open') }))
       : null;
 
     var numPostsOrCommentsText = store.numPostsExclTitle +

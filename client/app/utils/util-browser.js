@@ -62,22 +62,39 @@ if (typeof console === 'undefined' || !console.log) {
 }
 
 
-// ------- Zoom event
+// ------- Zoom and resize events
 
 
+d.u.addZoomOrResizeListener = function(listener) {
+  d.u.zoomListeners.push(listener);
+};
+
+
+d.u.removeZoomOrResizeListener = function(listenerToRemove) {
+  _.remove(zoomListeners, function(listener) {
+    return listener === listenerToRemove;
+  });
+};
+
+// COULD stop exposing directly, use `addZoomListener()` instead.
 d.u.zoomListeners = [];
 
 (function(){
   // Poll the pixel width of the window; invoke zoom listeners
-  // if the width has been changed.
+  // if the width or height has been changed.
   var lastWidth = 0;
+  var lastHeight = 0;
   function pollZoomFireEvent() {
-    var i;
-    var widthNow = $(window).width();
-    if (lastWidth === widthNow) return;
+    var $window = $(window);
+    var widthNow = $window.width();
+    var heightNow = $window.height();
+    if (lastWidth === widthNow && lastHeight === heightNow)
+      return;
+
     lastWidth = widthNow;
+    lastHeight = heightNow;
     // Length changed, user must have zoomed, invoke listeners.
-    for (i = d.u.zoomListeners.length - 1; i >= 0; --i) {
+    for (var i = d.u.zoomListeners.length - 1; i >= 0; --i) {
       d.u.zoomListeners[i]();
     }
   };

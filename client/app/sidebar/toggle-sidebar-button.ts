@@ -1,5 +1,5 @@
-/* An AngularJS module for the whole page.
- * Copyright (C) 2012 - 2013 Kaj Magnus Lindberg (born 1979)
+/*
+ * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,28 +15,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="ReactStore.ts" />
-/// <reference path="../typedefs/angularjs/angular.d.ts" />
+/// <reference path="../../typedefs/react/react.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2 {
+   module debiki2.sidebar {
 //------------------------------------------------------------------------------
 
 var d = { i: debiki.internal, u: debiki.v0.util };
+var r = React.DOM;
 
 
-var dependencies = ['DebikiEditorModule'];
-
-var pageRole = debiki2.ReactStore.getPageRole();
-if (pageRole === 'Forum') {
-  dependencies.push('DebikiForumModule');
-}
-
-
-export var DebikiApp: ng.IModule = angular.module('DebikiApp', dependencies);
+export var ToggleSidebarButton = createComponent({
+  render: function() {
+    var styles = {
+      top: this.props.minimapHeight,
+    };
+    return (
+      r.button({ id: 'dw-toggle-sidebar', style: styles, onClick: this.props.onClick },
+        r.span({ className: this.props.isSidebarOpen ? 'icon-right-open' : 'icon-left-open' })));
+  }
+});
 
 
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------
-// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

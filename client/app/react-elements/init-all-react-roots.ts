@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../dashbar/dashbar.ts" />
+/// <reference path="../sidebar/sidebar.ts" />
 /// <reference path="comments-toolbar.ts" />
 /// <reference path="name-login-btns.ts" />
 /// <reference path="../users/users-page.ts" />
@@ -32,6 +33,10 @@ export function initAllReactRoots() {
   var dashbarElem = document.getElementById('dw-dashbar');
   if (dashbarElem)
     React.render(debiki2.dashbar.Dashbar({}), dashbarElem);
+
+  var sidebarElem = document.getElementById('dw-any-sidebar');
+  if (sidebarElem)
+    React.render(debiki2.sidebar.Sidebar({}), sidebarElem);
 
   var commentsToolbarElem = document.getElementById('dw-comments-toolbar');
   if (commentsToolbarElem)

@@ -85,6 +85,7 @@ var debikiDesktopFiles = [
       'bower_components/react-router/dist/react-router.js',
       'bower_components/Caret.js/dist/jquery.caret.js',
       'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
+      'bower_components/nicescroll/jquery.nicescroll.js',
       'client/third-party/bootstrap/tooltip.js', //
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
@@ -97,7 +98,6 @@ var debikiDesktopFiles = [
       'client/third-party/popuplib.js',
       'client/third-party/waypoints.js',
       'client/third-party/modernizr-positionfixed.js',
-      'target/client/app/minimap/scrollfix2d.js',
       'client/app/actions/edit/tagdog.js',
       'target/client/app/page-module.js',
       'target/client/app/bootstrap-angularjs.js',
@@ -154,7 +154,6 @@ var debikiDesktopFiles = [
       'target/client/all-typescript.js',
       'target/client/admin-app-angular-templates.js',
       'target/client/page-app-angular-templates.js',
-      'target/client/app/minimap/minimap.js',
       'target/client/app/startup.js'];
 
 
@@ -168,6 +167,7 @@ var debikiTouchFiles = [
       'bower_components/react-router/dist/react-router.js',
       'bower_components/Caret.js/dist/jquery.caret.js',
       'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
+      'bower_components/nicescroll/jquery.nicescroll.js',
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',
@@ -177,7 +177,6 @@ var debikiTouchFiles = [
       'client/third-party/popuplib.js',
       'client/third-party/waypoints.js',
       'client/third-party/modernizr-positionfixed.js',
-      'target/client/app/minimap/scrollfix2d.js',
       'client/app/actions/edit/tagdog.js',
       'target/client/app/page-module.js',
       'target/client/app/bootstrap-angularjs.js',
@@ -231,7 +230,6 @@ var debikiTouchFiles = [
       'target/client/all-typescript.js',
       'target/client/admin-app-angular-templates.js',
       'target/client/page-app-angular-templates.js',
-      'target/client/app/minimap/minimap.js',
       'target/client/app/startup.js'];
 
 
@@ -546,7 +544,7 @@ gulp.task('compile-stylus', function () {
         'client/shared/editor/**/*.styl',
         'client/app/debiki.styl',
         'client/app/posts/layout.styl',
-        'client/app/minimap/minimap.styl',
+        'client/app/sidebar/minimap.styl',
         'client/app/renderer/arrows.styl',
         'client/app/tips.styl',
         'client/app/dashbar/dashbar.styl',

@@ -18,6 +18,7 @@
 /// <reference path="../../shared/plain-old-javascript.d.ts" />
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
+/// <reference path="model.ts" />
 
 // Wrapping in a module causes an ArrayIndexOutOfBoundsException: null error, see:
 //  http://stackoverflow.com/questions/26189940/java-8-nashorn-arrayindexoutofboundsexception
@@ -33,9 +34,6 @@ module boo {
 var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
-
-var TitleId = 0;
-var BodyPostId = 1;
 
 
 function createComponent(componentDefinition) {
@@ -338,9 +336,11 @@ var Post = createComponent({
       multireplReceivers = MultireplyReceivers({ post: post, allPosts: this.props.allPosts });
     }
 
+    var id = this.props.skipIdAttr ? undefined : 'post-' + post.postId;
+
     return (
-      r.div({ className: 'dw-p' + extraClasses, id: 'post-' + post.postId,
-            onMouseEnter: this.props.onMouseEnter },
+      r.div({ className: 'dw-p' + extraClasses, id: id,
+            onMouseEnter: this.props.onMouseEnter, onClick: this.props.onClick },
         pendingApprovalElem,
         multireplReceivers,
         headerElem,
