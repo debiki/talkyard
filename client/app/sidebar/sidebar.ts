@@ -48,6 +48,7 @@ export var Sidebar = createComponent({
     return {
       store: store,
       showSidebar: showSidebar,
+      commentsType: 'Recent'
     };
   },
 
@@ -55,6 +56,18 @@ export var Sidebar = createComponent({
     this.setState({
       store: debiki2.ReactStore.allData(),
       showSidebar: this.state.showSidebar,
+    });
+  },
+
+  showRecent: function() {
+    this.setState({
+      commentsType: 'Recent'
+    });
+  },
+
+  showUnread: function() {
+    this.setState({
+      commentsType: 'Unread'
     });
   },
 
@@ -226,15 +239,36 @@ export var Sidebar = createComponent({
       sidebarClasses += ' dw-sidebar-fixed';
     }
 
+    var title;
+    var comments;
+    var unreadClass = '';
+    var recentClass = '';
+    if (this.state.commentsType === 'Recent') {
+      title = 'Recent Comments:';
+      comments = RecentComments(this.state.store);
+      recentClass = ' active';
+    }
+    else if (this.state.commentsType === 'Unread') {
+      title = 'Unread Comments:';
+      comments = UnreadComments(this.state.store);
+      unreadClass = ' active';
+    }
+    else {
+      console.error('[DwE4PM091]');
+    }
+
     return (
       r.div({ id: 'dw-sidebar', className: sidebarClasses },
         MiniMap(minimapProps),
+        r.div({ className: 'dw-sidebar-btns' },
+          r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread }, 'Unread'),
+          r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent }, 'Recent')),
         ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar }),
         r.div({ className: 'dw-comments' },
-          r.h3({}, 'Recent Comments:'),
+          r.h3({}, title),
           r.div({ id: 'dw-sidebar-comments-viewport', ref: 'commentsViewport' },
             r.div({ id: 'dw-sidebar-comments-scrollable' },
-              RecentComments(this.state.store))))));
+              comments)))));
   }
 });
 

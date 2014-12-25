@@ -31,7 +31,7 @@
 
 #dw-toggle-sidebar
   float: right;
-  clear: both;
+  clear: right;
   background: #ddd;
   border: none;
   font-size: 130%;
@@ -65,15 +65,18 @@
     right: 0;
     bottom: 0;
 
-  /* #dw-sidebar-border
-    position: absolute;
-    top: 0px;
-    left: 0;
-    bottom: 0px;
-    width: 9px;
-    border-left: 3px solid #fff;
-    background: hsl(0, 0%, 82%);
-    z-index: 1; */
+  .dw-sidebar-btns
+    float: left
+    .btn
+      margin: 10px 5px 15px 0;
+      border: none;
+      border-radius: 0;
+      background: hsl(0, 0%, 85%);
+      color: #222;
+
+      &.active
+        background: hsl(0, 0%, 74%);
+        color: #000;
 
   #dw-minimap
     background: hsl(0, 0%, 93%);

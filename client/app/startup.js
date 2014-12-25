@@ -245,6 +245,7 @@ function renderDiscussionPage() {
 
   steps.push(function() {
     startAngular();
+    debiki2.sidebar.UnreadCommentsTracker.start();
   });
 
   function runNextStep() {
