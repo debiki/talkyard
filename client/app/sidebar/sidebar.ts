@@ -16,10 +16,13 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 /// <reference path="../../shared/plain-old-javascript.d.ts" />
 /// <reference path="minimap.ts" />
 /// <reference path="toggle-sidebar-button.ts" />
-/// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
+/// <reference path="unread-comments-tracker.ts" />
+
+// Staying at the bottom: http://blog.vjeux.com/2013/javascript/scroll-position-with-react.html
 
 //------------------------------------------------------------------------------
    module debiki2.sidebar {
@@ -29,6 +32,11 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 
 var MinimapHeight = 160;
+
+// For now only. Should get this data from the ReactStore, but currently it's kept
+// in the HTML5 local storage only, not saved in the database. So, for now, when prototyping:
+var postIdsReadLongAgo: number[] = UnreadCommentsTracker.getPostIdsReadLongAgo();
+
 
 
 export var Sidebar = createComponent({
@@ -216,8 +224,55 @@ export var Sidebar = createComponent({
     this.setState(this.state);
   },
 
+  findRecentComments: function() {
+    var commentsByTimeDesc: Post[] = [];
+    _.each(this.state.store.allPosts, (post: Post) => {
+      if (post.postId !== TitleId || post.postId !== BodyPostId) {
+        commentsByTimeDesc.push(post);
+      }
+    });
+
+    commentsByTimeDesc.sort((a, b) => {
+      if (a.createdAt < b.createdAt)
+        return +1;
+
+      if (a.createdAt < b.createdAt)
+        return -1;
+
+      return a.postId < b.postId ? +1 : -1;
+    });
+
+    commentsByTimeDesc = _.take(commentsByTimeDesc, 50);
+    return commentsByTimeDesc;
+  },
+
+  findUnreadComments: function() {
+    var unreadComments = [];
+
+    // Find all unread comments, sorted in the way they appear on the page
+    // (which tends to be most interesting ones first).
+    var addUnreadComments = (postIds: number[]) => {
+      _.each(postIds, (postId) => {
+        var post: Post = this.state.store.allPosts[postId];
+        var alreadyRead =
+            postIdsReadLongAgo.indexOf(postId) !== -1 ||
+            post.authorId === this.state.store.user.userId;
+        if (!alreadyRead) {
+          unreadComments.push(post);
+        }
+        addUnreadComments(post.childIdsSorted);
+      });
+    };
+
+    var rootPost = this.state.store.allPosts[this.state.store.rootPostId];
+    addUnreadComments(rootPost.childIdsSorted);
+    return unreadComments;
+  },
+
   render: function() {
-    if (!isPageWithSidebar(this.state.store.pageRole))
+    var store = this.state.store;
+
+    if (!isPageWithSidebar(store.pageRole))
       return null;
 
     // In 2D layout, show a small minimap, even if sidebar hidden.
@@ -225,50 +280,64 @@ export var Sidebar = createComponent({
       var props = $.extend({
         isSidebarOpen: false,
         onOpenSidebarClick: this.openSidebar,
-      }, this.state.store);
+      }, store);
       return MiniMap(props);
     }
 
     var minimapProps = $.extend({
       isSidebarOpen: true,
-    }, this.state.store);
+    }, store);
 
 
     var sidebarClasses = '';
-    if (this.state.store.horizontalLayout) {
+    if (store.horizontalLayout) {
       sidebarClasses += ' dw-sidebar-fixed';
     }
 
+    var unreadComments = this.findUnreadComments();
+    var unreadBtnTitle = 'Unread (' + unreadComments.length + ')';
+
     var title;
-    var comments;
     var unreadClass = '';
     var recentClass = '';
-    if (this.state.commentsType === 'Recent') {
-      title = 'Recent Comments:';
-      comments = RecentComments(this.state.store);
-      recentClass = ' active';
+    var comments;
+    switch (this.state.commentsType) {
+      case 'Recent':
+        title = 'Recent Comments:';
+        recentClass = ' active';
+        comments = this.findRecentComments();
+        break;
+      case 'Unread':
+        title = 'Unread Comments:';
+        unreadClass = ' active';
+        comments = unreadComments;
+        break;
+      default:
+        console.error('[DwE4PM091]');
     }
-    else if (this.state.commentsType === 'Unread') {
-      title = 'Unread Comments:';
-      comments = UnreadComments(this.state.store);
-      unreadClass = ' active';
-    }
-    else {
-      console.error('[DwE4PM091]');
-    }
+
+    var commentsElems = comments.map((post) => {
+      var scrollToPost = (event) => {
+        d.i.showAndHighlightPost($('#post-' + post.postId));
+      }
+      return (
+        Post({ post: post, user: store.user, allPosts: store.allPosts,
+          onClick: scrollToPost, skipIdAttr: true }));
+    });
 
     return (
       r.div({ id: 'dw-sidebar', className: sidebarClasses },
         MiniMap(minimapProps),
         r.div({ className: 'dw-sidebar-btns' },
-          r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread }, 'Unread'),
+          r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread }, unreadBtnTitle),
           r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent }, 'Recent')),
         ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar }),
         r.div({ className: 'dw-comments' },
           r.h3({}, title),
           r.div({ id: 'dw-sidebar-comments-viewport', ref: 'commentsViewport' },
             r.div({ id: 'dw-sidebar-comments-scrollable' },
-              comments)))));
+              r.div({ className: 'dw-recent-comments' },
+                commentsElems))))));
   }
 });
 
