@@ -31,7 +31,7 @@ var shallDebugDraw = location.toString().search('debug-reading-progress=true') !
 
 interface Progress {
   postId: number;
-  charsRead: number;
+  charsRead?: number;
   hasBeenRead?: boolean;
   textLength?: number;
 }
@@ -39,16 +39,30 @@ interface Progress {
 var progressByPostId: { [postId: number]: Progress } = {};
 var postsVisibleLastTick: { [postId: number]: boolean } = {};
 
+var pageId = debiki2.ReactStore.getPageId();
 var charsReadPerSecond = 35;
 var maxCharsReadPerPost = charsReadPerSecond * 4.5;
 var secondsBetweenTicks = shallDebugDraw ? 0.25 : 1;
 var secondsSpentReading = 0;
 var secondsLostPerNewPostInViewport = 0.5;
 var maxConfusionSeconds = -1;
+var localStorageKey = 'debikiPostIdsReadByPageId';
 
+var postIdsReadLongAgo: number[] = getPostIdsReadLongAgo();
 
 export function start() {
   debugIntervalHandler = setInterval(trackUnreadComments, secondsBetweenTicks * 1000);
+}
+
+
+export function getPostIdsReadLongAgo() {
+  if (!localStorage)
+    return [];
+
+  var postIdsReadByPageIdString = localStorage.getItem(localStorageKey) || '{}';
+  var postIdsReadByPageId = JSON.parse(postIdsReadByPageIdString);
+  var postIdsRead = postIdsReadByPageId[pageId] || [];
+  return postIdsRead;
 }
 
 
@@ -68,10 +82,19 @@ function trackUnreadComments() {
     if (!postBody.length || !isInViewport(postBody))
       return;
 
-    var postId = post.dwPostIdStr();
+    var postId: number = post.dwPostId();
     postsVisibleThisTick[postId] = true;
 
     var progress = progressByPostId[postId];
+
+    if (!progress && postIdsReadLongAgo.indexOf(postId) !== -1) {
+      progress = {
+        postId: postId,
+        hasBeenRead: true,
+      };
+      progressByPostId[postId] = progress;
+    }
+
     if (!progress) {
       progress = {
         postId: postId,
@@ -79,6 +102,7 @@ function trackUnreadComments() {
       };
       progressByPostId[postId] = progress;
     }
+
     if (progress.hasBeenRead)
       return;
 
@@ -120,11 +144,25 @@ function trackUnreadComments() {
     stats.charsRead += charsReadNow;
     if (stats.charsRead >= charsToRead) {
       stats.hasBeenRead = true;
+      rememberHasBeenRead(stats.postId);
     }
     if (shallDebugDraw) {
       debugDrawReadingProgress(stats, charsToRead);
     }
   }
+}
+
+
+function rememberHasBeenRead(postId: number) {
+  if (!localStorage)
+    return;
+
+  var postIdsReadByPageIdString = localStorage.getItem(localStorageKey) || '{}';;
+  var postIdsReadByPageId = JSON.parse(postIdsReadByPageIdString);
+  var postIdsRead = postIdsReadByPageId[pageId] || [];
+  postIdsReadByPageId[pageId] = postIdsRead;
+  postIdsRead.push(postId);
+  localStorage.setItem(localStorageKey, JSON.stringify(postIdsReadByPageId));
 }
 
 

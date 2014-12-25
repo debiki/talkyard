@@ -19,6 +19,7 @@
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../renderer/model.ts" />
 /// <reference path="../renderer/posts.ts" />
+/// <reference path="unread-comments-tracker.ts" />
 
 // Staying at the bottom: http://blog.vjeux.com/2013/javascript/scroll-position-with-react.html
 
@@ -29,6 +30,9 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 
+// For now only. Should get this data from the ReactStore, but currently it's kept
+// in the HTML5 local storage only, not saved in the database. So, for now, when prototyping:
+var postIdsReadLongAgo: number[] = UnreadCommentsTracker.getPostIdsReadLongAgo();
 
 export var UnreadComments = createComponent({
   render: function() {
@@ -38,11 +42,14 @@ export var UnreadComments = createComponent({
     // (which tends to be most interesting ones first).
     var addUnreadComments = (postIds: number[]) => {
       _.each(postIds, (postId) => {
-        if (true) { //!this.props.user.commentsRead[postId]) {
-          var post: Post = this.props.allPosts[postId];
+        var post: Post = this.props.allPosts[postId];
+        var alreadyRead =
+            postIdsReadLongAgo.indexOf(postId) !== -1 ||
+            post.authorId === ReactStore.getUser().userId;
+        if (!alreadyRead) {
           unreadComments.push(post);
-          addUnreadComments(post.childIdsSorted);
         }
+        addUnreadComments(post.childIdsSorted);
       });
     };
 
