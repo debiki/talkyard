@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import java.{lang => jl, util => ju, io => jio}
 import javax.{script => js}
+import play.api.Play
 import play.api.Play.current
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -53,7 +54,12 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   def startCreatingRenderEngines() {
     dieIf(!javascriptEngines.isEmpty, "DwE50KFE2")
     scala.concurrent.Future {
-      val numCores = 1 //Runtime.getRuntime.availableProcessors
+      val numCores =
+        if (Play.isProd) Runtime.getRuntime.availableProcessors
+        else {
+          // Initializing cores takes rather long, so only init one core in dev mode.
+          1
+        }
       for (i <- 1 to numCores) {
         javascriptEngines.putLast(makeJavascriptEngine())
       }
@@ -149,7 +155,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
         |}
         |""")
 
-    val min = if (play.api.Play.isDev) "" else ".min"
+    val min = if (Play.isDev) "" else ".min"
     val javascriptStream = getClass.getResourceAsStream(s"/public/res/renderer$min.js")
     newEngine.eval(new java.io.InputStreamReader(javascriptStream))
 
