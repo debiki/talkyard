@@ -105,10 +105,6 @@ export var MiniMap = createComponent({
     }
 
     var canvasContext = this.refs.canvas.getDOMNode().getContext('2d');
-    if (this.canvasContext === canvasContext &&
-        this.numPostsDrawn === this.props.numPosts) // COULD exclude deleted/hidden
-      return;
-
     this.canvasContext = canvasContext;
     this.numPostsDrawn = this.props.numPosts;
 
@@ -125,20 +121,18 @@ export var MiniMap = createComponent({
   },
 
   showOrHide: function() {
-    if (!this.refs.canvas)
+    if (!this.getDOMNode())
       return;
 
     // Don't show minimap and open-sidebar-button directly when loading page, only
     // after scrolling a bit.
     if (this.shallShowMinimap()) {
-      $(this.refs.canvas.getDOMNode()).css('visibility', 'visible');
+      $(this.getDOMNode()).show();
     }
     // Don't show the minimap when one has scrolled back to the upper left corner,
     // because it would occlude stuff in the top nav bar.
-    // Use visibility: hidden, not display: none, so the open-sidebar button will stay
-    // in place.
     else if (!this.isScrollingInViewport) {
-      $(this.refs.canvas.getDOMNode()).css('visibility', 'hidden');
+      $(this.getDOMNode()).hide();
     }
   },
 
@@ -185,24 +179,16 @@ export var MiniMap = createComponent({
   },
 
   render: function() {
-    var anyMinimap = null;
-    if (this.props.horizontalLayout && isPageWithMinimap(this.props.pageRole) &&
-        this.props.numPosts > TooFewPosts) {
-      var size = calculateMinimapSize(this.props.width);
-      this.width = size.width;
-      this.height = size.height;
-      anyMinimap =
-        r.canvas({ id: 'dw-minimap', width: this.width, height: this.height,
-            ref: 'canvas', onMouseDown: this.startScrollingInViewport });
-    }
+    if (!this.props.horizontalLayout || !isPageWithMinimap(this.props.pageRole) ||
+        this.props.numPosts <= TooFewPosts)
+      return null;
 
-    if (this.props.isSidebarOpen)
-      return anyMinimap;
-
+    var size = calculateMinimapSize(this.props.width);
+    this.width = size.width;
+    this.height = size.height;
     return (
-      r.div({ id: 'dw-minimap-and-open-sidebar-btn' },
-        anyMinimap,
-        ToggleSidebarButton({ isSidebarOpen: false, onClick: this.props.onOpenSidebarClick })));
+      r.canvas({ id: 'dw-minimap', width: this.width, height: this.height,
+          ref: 'canvas', onMouseDown: this.startScrollingInViewport }));
   }
 });
 

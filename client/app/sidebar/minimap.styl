@@ -15,25 +15,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Without this, sometimes durin React.render(), the sidebar contents is visible
+// at a weird location, resulting in weird page dimensions when calculating minimap size.
+#dw-any-sidebar
+  position: absolute;
+  width: 100%;
+  height: 100%;
 
-#dw-minimap-and-open-sidebar-btn
+
+#dw-minimap
   position: fixed;
   top: 0;
   right: 0;
   z-index: 1001 // not above dialogs, but above resize-columns handle (1000)
-
-  #dw-minimap
-    float: right;
-    background: hsl(0, 0%, 93%)
+  background: hsl(0, 0%, 93%)
 
 
 #dw-toggle-sidebar
-  float: right;
-  clear: right;
+  position: fixed;
+  top: 100px;
+  right: 0;
   background: #ddd;
   border: none;
   font-size: 130%;
   padding: 8px 7px;
+  z-index: 10;
 
 
 .dw-hz #dw-sidebar
@@ -77,9 +83,18 @@
         color: #000;
 
   #dw-minimap
-    background: hsl(0, 0%, 93%);
+    position: relative;
     float: right;
 
+  #dw-toggle-sidebar
+    position: relative;
+    top: 0;
+    float: right;
+    clear: right;
+    background: #ddd;
+    border: none;
+    font-size: 130%;
+    padding: 8px 7px;
 
   .dw-comments
     clear: both;

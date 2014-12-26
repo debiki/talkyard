@@ -148,11 +148,20 @@ export var Sidebar = createComponent({
   },
 
   updateSizeAndPosition2d: function() {
-    var windowTop = $(window).scrollTop();
-    var windowBottom = windowTop + $(window).height();
     var sidebar = $(this.getDOMNode());
-    sidebar.height(windowBottom - windowTop);
-    this.updateCommentsScrollbar(windowBottom);
+
+    if (this.state.showSidebar) {
+      var windowTop = $(window).scrollTop();
+      var windowBottom = windowTop + $(window).height();
+      sidebar.height(windowBottom - windowTop);
+      this.updateCommentsScrollbar(windowBottom);
+    }
+    else {
+      sidebar.height(0);
+      var openButton = $(this.refs.openButton.getDOMNode());
+      var minimap = $(this.refs.minimap.getDOMNode());
+      openButton.css('top', minimap.height());
+    }
 
     // When the window viewport is at the right edge, we don't want the sidebar to
     // overlap the rightmost comments. So add some horizontal padding after the
@@ -181,30 +190,52 @@ export var Sidebar = createComponent({
     var windowTop = $(window).scrollTop();
     var windowBottom = windowTop + $(window).height();
     var sidebar = $(this.getDOMNode());
+    var openButton = this.refs.openButton ? $(this.refs.openButton.getDOMNode()) : null;
 
     if (commentSectionTop <= windowTop) {
-      // We've scrolled down and the comments fill the whole browser window.
-      sidebar.addClass('dw-sidebar-fixed');
-      sidebar.css('top', '');
-      sidebar.css('position', 'fixed');
-      sidebar.height(windowBottom - windowTop);
+      // We've scrolled down; let the sidebar span from top to bottom.
+      if (this.state.showSidebar) {
+        sidebar.addClass('dw-sidebar-fixed');
+        sidebar.css('top', '');
+        sidebar.css('position', 'fixed');
+        sidebar.height(windowBottom - windowTop);
+      }
+      else {
+        openButton.css('top', 0);
+        openButton.css('position', 'fixed');
+      }
     }
     else {
       // We're reading the article. Let the sidebar stay down together with
       // the comments, so it won't occlude the article. COULD skip this if
       // the browser window is very wide and we can safely show the whole sidebar
       // at the right edge, without occluding the article.
-      sidebar.removeClass('dw-sidebar-fixed');
-      sidebar.css('top', commentSectionOffset.top);
-      sidebar.css('position', 'absolute');
-      sidebar.height(windowBottom - commentSectionOffset.top);
+      if (this.state.showSidebar) {
+        sidebar.removeClass('dw-sidebar-fixed');
+        sidebar.css('top', commentSectionOffset.top);
+        sidebar.css('position', 'absolute');
+        sidebar.height(windowBottom - commentSectionOffset.top);
+      }
+      else {
+        // Apparently React reuses the <div> for the sidebar, so need to reset it.
+        sidebar.css('top', 0);
+        sidebar.css('position', '');
+        sidebar.height(0);
+        openButton.css('top', commentSectionOffset.top);
+        openButton.css('position', 'absolute');
+      }
     }
 
     this.updateCommentsScrollbar(windowBottom);
 
-    var sidebarLeft = sidebar.offset().left;
-    var commentsMaxWidth = sidebarLeft - 30 - commentSectionOffset.left;
-    commentSection.css('max-width', commentsMaxWidth);
+    if (this.state.showSidebar) {
+      var sidebarLeft = sidebar.offset().left;
+      var commentsMaxWidth = sidebarLeft - 30 - commentSectionOffset.left;
+      commentSection.css('max-width', commentsMaxWidth);
+    }
+    else {
+      commentSection.css('max-width', '');
+    }
   },
 
   updateCommentsScrollbar: function(windowBottom) {
@@ -283,18 +314,18 @@ export var Sidebar = createComponent({
 
     // In 2D layout, show a small minimap, even if sidebar hidden.
     if (!this.state.showSidebar) {
-      var props = $.extend({
-        isSidebarOpen: false,
-        onOpenSidebarClick: this.openSidebar,
-      }, store);
-      return MiniMap(props);
+      var minimapProps = $.extend({ isSidebarOpen: false, ref: 'minimap' }, store);
+      return (
+        r.div({},
+          MiniMap(minimapProps),
+          ToggleSidebarButton({ isSidebarOpen: false, onClick: this.openSidebar,
+              ref: 'openButton' })));
     }
 
     var minimapProps = $.extend({
       isSidebarOpen: true,
       ref: 'minimap',
     }, store);
-
 
     var sidebarClasses = '';
     if (store.horizontalLayout) {
