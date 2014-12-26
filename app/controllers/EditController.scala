@@ -62,16 +62,9 @@ object EditController extends mvc.Controller {
     val postId = (request.body \ "postId").as[PostId]
     val newText = (request.body \ "text").as[String]
 
-    val pageReqPerhapsNoMe =
+    val pageRequest =
         PageRequest.forPageThatExists(request, pageId) getOrElse throwBadReq(
           "DwE47ZI2", s"Page `$pageId' does not exist")
-
-    // Include current user on the page to be edited, or it won't be
-    // possible to render the page to html, later, because the current
-    // user's name might be included in the generated html: "Edited by: ..."
-    // (but if this is the user's first contribution to the page, s/he
-    // is currently not included in the associated People).
-    val pageRequest = pageReqPerhapsNoMe.copyWithMeOnPage
 
     _throwIfTooMuchData(newText, pageRequest)
 
@@ -134,7 +127,8 @@ object EditController extends mvc.Controller {
 
     val actions = edit :: Nil
     val (pageAfter, _) = pageReq.dao.savePageActionsGenNotfs(pageReq, actions)
-    val postAfter = pageAfter.parts.thePost(postId)
+    val partsInclEditor = pageAfter.parts ++ pageReq.anyMeAsPeople
+    val postAfter = partsInclEditor.thePost(postId)
     postAfter
   }
 

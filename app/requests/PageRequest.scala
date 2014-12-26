@@ -160,9 +160,7 @@ case class PageRequest[A](
   dao: SiteDao,
   request: Request[A])
   (private val _preloadedActions: Option[PageParts] = None,
-  private val _preloadedAncestorIds: Option[List[PageId]] = None,
-  private val addMeToPage: Boolean = false,
-  private val pageRootOverride: Option[AnyPageRoot] = None)
+  private val _preloadedAncestorIds: Option[List[PageId]] = None)
   extends DebikiRequest[A] {
 
   require(pagePath.tenantId == tenantId) //COULD remove tenantId from pagePath
@@ -182,7 +180,7 @@ case class PageRequest[A](
         : PageRequest[A] = {
     val copyWithOldPerms = copy(
       pageExists = pageExists, pagePath = page.path, pageMeta = Some(page.meta))(
-      Some(page.parts), Some(page.ancestorIdsParentFirst), addMeToPage = false, pageRootOverride)
+      Some(page.parts), Some(page.ancestorIdsParentFirst))
     copyWithOldPerms.copyWithUpdatedPermissions()
   }
 
@@ -195,38 +193,8 @@ case class PageRequest[A](
       pagePath = pagePath,
       pageMeta = pageMeta))
     copy(permsOnPage = newPerms)(
-      _preloadedActions, _preloadedAncestorIds, addMeToPage, pageRootOverride)
+      _preloadedActions, _preloadedAncestorIds)
   }
-
-
-  /**
-   * A copy with the current user included on the page that the request concerns.
-   *
-   * This is useful, if the current user does his/her very first
-   * interaction with the page. Then this.page.people has no info
-   * on that user, and an error would happen if you did something
-   * with the page that required info on the current user.
-   * (For example, adding [a reply written by the user] to the page,
-   * and then rendering the page.)
-   */
-  def copyWithAnyMeOnPage: PageRequest[A] =
-    if (user.isEmpty || !pageExists) this
-    else {
-      if (_preloadedActions isDefined)
-        copy()(_preloadedActions.map(_ ++ anyMeAsPeople),
-          _preloadedAncestorIds, addMeToPage = false, pageRootOverride)
-      else
-        copy()(None, _preloadedAncestorIds, addMeToPage = true, pageRootOverride)
-    }
-
-
-  def copyWithMeOnPage : PageRequest[A] =
-    if (user.isEmpty) throwForbidden("DwE403BZ39", "Not logged in")
-    else copyWithAnyMeOnPage
-
-
-  def copyWithNewPageRoot(newRoot: AnyPageRoot): PageRequest[A] =
-    copy()(_preloadedActions, _preloadedAncestorIds, addMeToPage, pageRootOverride = Some(newRoot))
 
 
   def pageId: Option[String] = pagePath.pageId
@@ -246,9 +214,7 @@ case class PageRequest[A](
   lazy val pageParts : Option[PageParts] =
     _preloadedActions orElse {
       if (pageExists) {
-        val anyPage = pageId.flatMap(id => dao.loadPageParts(id))
-        if (!addMeToPage) anyPage
-        else anyPage.map(_ ++ anyMeAsPeople)
+        pageId.flatMap(id => dao.loadPageParts(id))
       } else {
         // Don't load the page even if it was *created* moments ago.
         // having !pageExists and page_? = Some(..) feels risky.
@@ -287,13 +253,21 @@ case class PageRequest[A](
    * query string, like so: ?view=rootPostId  or ?edit=....&view=rootPostId
    */
   lazy val pageRoot: AnyPageRoot =
-    pageRootOverride.getOrElse(
     request.queryString.get("view").map(rootPosts => rootPosts.size match {
       case 1 => Some(parseIntOrThrowBadReq(rootPosts.head))
       // It seems this cannot hapen with Play Framework:
       case 0 => assErr("DwE03kI8", "Query string param with no value")
       case _ => throwBadReq("DwE0k35", "Too many `view' query params")
-    }) getOrElse DefaultPageRoot)
+    }) getOrElse {
+      pageRole match {
+        case Some(PageRole.EmbeddedComments) =>
+          // There's no page body that can be used as page root, because embedded
+          // pages contain comments only.
+          None
+        case _ =>
+          DefaultPageRoot
+      }
+    }
 
 
   def pageRole: Option[PageRole] = pageMeta.map(_.pageRole)

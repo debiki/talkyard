@@ -127,19 +127,16 @@ object EmbeddedTopicsController extends mvc.Controller {
       showId = true,
       pageSlug = "")
 
-    val pageReqDefaultRoot: PageGetRequest = PageRequest.forPageThatMightExist(
+    val pageReq: PageGetRequest = PageRequest.forPageThatMightExist(
       request, pagePathStr = topicPagePath.value, pageId = theId)
-
-    // Include all top level comments, by specifying no particular root comment.
-    val pageReqNoRoot = pageReqDefaultRoot.copyWithNewPageRoot(None)
 
     // Before the first reply has been saved, the embedded discussion page won't
     // yet have been created. Then construct and use an empty page.
-    if (pageReqNoRoot.pageExists) {
-      pageReqNoRoot
+    if (pageReq.pageExists) {
+      pageReq
     }
     else {
-      makeEmptyPage(pageReqNoRoot, pageReqNoRoot.pagePath)
+      makeEmptyPage(pageReq, pageReq.pagePath)
     }
   }
 

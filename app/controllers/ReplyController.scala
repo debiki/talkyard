@@ -61,10 +61,9 @@ object ReplyController extends mvc.Controller {
   }
 
 
-  private def saveReply(pageReqNoMeOnPage: PageRequest[_], replyToPostIds: Set[PostId],
+  private def saveReply(pageReq: PageRequest[_], replyToPostIds: Set[PostId],
         text: String, whereOpt: Option[String] = None) = {
 
-    val pageReq = pageReqNoMeOnPage.copyWithMeOnPage
     if (pageReq.oldPageVersion.isDefined)
       throwBadReq("DwE72XS8", "Can only reply to latest page version")
 
@@ -100,7 +99,8 @@ object ReplyController extends mvc.Controller {
     val (pageWithNewPost, List(rawPostWithId: RawPostAction[PAP.CreatePost])) =
       pageReq.dao.savePageActionsGenNotfs(pageReq, rawPostNoId::Nil)
 
-    pageWithNewPost.parts.getPost_!(rawPostWithId.id)
+    val partsInclAuthor = pageWithNewPost.parts ++ pageReq.anyMeAsPeople
+    partsInclAuthor.thePost(rawPostWithId.id)
   }
 
 
