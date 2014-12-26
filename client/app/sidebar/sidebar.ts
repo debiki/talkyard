@@ -84,6 +84,7 @@ export var Sidebar = createComponent({
     debiki.v0.util.addZoomOrResizeListener(this.updateSizeAndPosition);
     this.updateSizeAndPosition();
     key('s', this.toggleSidebarOpen);
+    this.resizeMinimap();
     this.createAnyScrollbars();
   },
 
@@ -101,6 +102,7 @@ export var Sidebar = createComponent({
 
   componentDidUpdate: function() {
     this.updateSizeAndPosition();
+    this.resizeMinimap();
     this.createAnyScrollbars();
 
     if (!this.state.store.horizontalLayout && localStorage) {
@@ -110,6 +112,12 @@ export var Sidebar = createComponent({
 
   getCommentsViewport: function() {
     return $(this.refs.commentsViewport.getDOMNode());
+  },
+
+  resizeMinimap: function() {
+    if (this.refs.minimap && this.state.showSidebar) {
+      this.refs.minimap.redrawMinimap($(this.getDOMNode()).width());
+    }
   },
 
   createAnyScrollbars: function() {
@@ -284,6 +292,7 @@ export var Sidebar = createComponent({
 
     var minimapProps = $.extend({
       isSidebarOpen: true,
+      ref: 'minimap',
     }, store);
 
 

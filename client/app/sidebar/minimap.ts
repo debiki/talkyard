@@ -85,10 +85,23 @@ export var MiniMap = createComponent({
     this.redrawMinimap();
   },
 
-  redrawMinimap: function() {
+  redrawMinimap: function(anyWidth) {
     this.showOrHide();
     if (!this.refs.canvas)
       return;
+
+    if (this.props.isSidebarOpen) {
+      if (!anyWidth)
+        return; // hack: wait until invoked from sidebar.ts
+
+      // Adjust minimap size so it fits in the sidebar.
+      this.width = anyWidth;
+      this.height = calculateMinimapSize(this.width).height;
+      this.height = Math.min($(window).height() / 9, this.height);
+      var canvas = $(this.refs.canvas.getDOMNode());
+      canvas.attr('width', this.width);
+      canvas.attr('height', this.height);
+    }
 
     var canvasContext = this.refs.canvas.getDOMNode().getContext('2d');
     if (this.canvasContext === canvasContext &&
@@ -226,6 +239,7 @@ function drawSinglePost(bodyBlock, context, minimapWidth, minimapHeight) {
   // Make very short comments visiible by setting min size.
   var w = Math.max(3, w);
   var h = Math.max(1, h);
+  context.fillStyle = 'hsl(0, 0%, 15%)';
   context.fillRect(x, y, w, h);
 }
 
