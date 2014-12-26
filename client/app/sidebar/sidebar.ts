@@ -224,15 +224,36 @@ export var Sidebar = createComponent({
     this.setState(this.state);
   },
 
-  findRecentComments: function() {
-    var commentsByTimeDesc: Post[] = [];
-    _.each(this.state.store.allPosts, (post: Post) => {
-      if (post.postId !== TitleId || post.postId !== BodyPostId) {
-        commentsByTimeDesc.push(post);
-      }
-    });
+  findComments: function() {
+    var store = this.state.store;
+    var unreadComments = [];
+    var recentComments = [];
 
-    commentsByTimeDesc.sort((a, b) => {
+    // Find 1) all unread comments, sorted in the way they appear on the page
+    // And 2) all visible comments.
+    var addComments = (postIds: number[]) => {
+      _.each(postIds, (postId) => {
+        var post: Post = store.allPosts[postId];
+        if (isDeleted(post))
+          return;
+
+        var alreadyRead = postIdsReadLongAgo.indexOf(postId) !== -1 ||
+            post.authorId === store.user.userId;
+        if (!alreadyRead) {
+          unreadComments.push(post);
+        }
+        recentComments.push(post);
+
+        if (!isCollapsed(post)) {
+          addComments(post.childIdsSorted);
+        }
+      });
+    };
+
+    var rootPost = store.allPosts[store.rootPostId];
+    addComments(rootPost.childIdsSorted);
+
+    recentComments.sort((a, b) => {
       if (a.createdAt < b.createdAt)
         return +1;
 
@@ -241,32 +262,9 @@ export var Sidebar = createComponent({
 
       return a.postId < b.postId ? +1 : -1;
     });
+    recentComments = _.take(recentComments, 50);
 
-    commentsByTimeDesc = _.take(commentsByTimeDesc, 50);
-    return commentsByTimeDesc;
-  },
-
-  findUnreadComments: function() {
-    var unreadComments = [];
-
-    // Find all unread comments, sorted in the way they appear on the page
-    // (which tends to be most interesting ones first).
-    var addUnreadComments = (postIds: number[]) => {
-      _.each(postIds, (postId) => {
-        var post: Post = this.state.store.allPosts[postId];
-        var alreadyRead =
-            postIdsReadLongAgo.indexOf(postId) !== -1 ||
-            post.authorId === this.state.store.user.userId;
-        if (!alreadyRead) {
-          unreadComments.push(post);
-        }
-        addUnreadComments(post.childIdsSorted);
-      });
-    };
-
-    var rootPost = this.state.store.allPosts[this.state.store.rootPostId];
-    addUnreadComments(rootPost.childIdsSorted);
-    return unreadComments;
+    return { unread: unreadComments, recent: recentComments };
   },
 
   render: function() {
@@ -294,7 +292,9 @@ export var Sidebar = createComponent({
       sidebarClasses += ' dw-sidebar-fixed';
     }
 
-    var unreadComments = this.findUnreadComments();
+    var unreadAndRecentComments = this.findComments();
+    var unreadComments = unreadAndRecentComments.unread;
+    var recentComments = unreadAndRecentComments.recent;
     var unreadBtnTitle = 'Unread (' + unreadComments.length + ')';
 
     var title;
@@ -305,7 +305,7 @@ export var Sidebar = createComponent({
       case 'Recent':
         title = 'Recent Comments:';
         recentClass = ' active';
-        comments = this.findRecentComments();
+        comments = recentComments;
         break;
       case 'Unread':
         title = 'Unread Comments:';
