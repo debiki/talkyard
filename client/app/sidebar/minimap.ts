@@ -79,6 +79,7 @@ export var MiniMap = createComponent({
 
   componentDidMount: function() {
     this.redrawMinimap();
+    this.showOrHide();
   },
 
   componentDidUpdate: function() {
@@ -124,15 +125,20 @@ export var MiniMap = createComponent({
   },
 
   showOrHide: function() {
+    if (!this.refs.canvas)
+      return;
+
     // Don't show minimap and open-sidebar-button directly when loading page, only
     // after scrolling a bit.
     if (this.shallShowMinimap()) {
-      $(this.getDOMNode()).show();
+      $(this.refs.canvas.getDOMNode()).css('visibility', 'visible');
     }
     // Don't show the minimap when one has scrolled back to the upper left corner,
     // because it would occlude stuff in the top nav bar.
+    // Use visibility: hidden, not display: none, so the open-sidebar button will stay
+    // in place.
     else if (!this.isScrollingInViewport) {
-      $(this.getDOMNode()).hide();
+      $(this.refs.canvas.getDOMNode()).css('visibility', 'hidden');
     }
   },
 
