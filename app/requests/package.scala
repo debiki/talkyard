@@ -46,9 +46,8 @@ package object requests {
   /**
    * A PageRequest with post data.
    */
+  @deprecated
   type PagePostRequest = PageRequest[Map[String, Seq[String]]]
-
-  type PagePostRequest2 = PageRequest[JsonOrFormDataBody]
 
 
   /** In prod mode: Always the real ip address of the client.

@@ -66,21 +66,6 @@ object PageActions {
       pathIn, pageMustExist, fixPath = fixPath)(f)
 
 
-  /**
-   * Works with both form data, and JSON (if the JSON is a map,
-   * optionally with array values).
-   * COULD replace all PagePostAction with PagePostAction2 and then rename
-   * PagePostAction2 to PagePostAction.
-   */
-  def PagePostAction2
-        (maxBytes: Int)
-        (pathIn: PagePath, pageMustExist: Boolean = true, fixPath: Boolean = true)
-        (f: PagePostRequest2 => Result) =
-    PageReqAction(
-      JsonOrFormDataBody.parser(maxBytes = maxBytes))(
-      pathIn, pageMustExist, fixPath = fixPath)(f)
-
-
   def PageReqAction[A]
         (parser: BodyParser[A])
         (pathIn: PagePath, pageMustExist: Boolean, fixPath: Boolean,
