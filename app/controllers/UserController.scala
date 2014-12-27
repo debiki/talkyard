@@ -57,9 +57,13 @@ object UserController extends mvc.Controller {
 
 
   def loadMyPageData(pageId: PageId) = GetAction { request =>
-    val pageRequest = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
-      "DwE404FL9", s"Page `$pageId' not found")
-    val myPageData = ReactJson.userDataJson(pageRequest) getOrElse ReactJson.NoUserSpecificData
+    val myPageData = PageRequest.forPageThatExists(request, pageId) match {
+      case None =>
+        // Might be an embedded comment page, not yet created because no comments posted.
+        ReactJson.NoUserSpecificData
+      case Some(request) =>
+        ReactJson.userDataJson(request) getOrElse ReactJson.NoUserSpecificData
+    }
     OkSafeJson(myPageData)
   }
 

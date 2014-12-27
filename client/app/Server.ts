@@ -25,10 +25,13 @@
 var d: any = { i: debiki.internal, u: debiki.v0.util };
 var $: JQueryStatic = d.i.$;
 
+// In embedded comments <iframes>, we cannot use relative paths.
+var origin = d.i.serverOrigin;
+
 
 export function savePageNoftLevel(newNotfLevel) {
   d.u.postJson({
-    url: '/-/save-page-notf-level',
+    url: origin + '/-/save-page-notf-level',
     data: {
       pageId: d.i.pageId,
       pageNotfLevel: newNotfLevel
@@ -38,7 +41,7 @@ export function savePageNoftLevel(newNotfLevel) {
 
 
 export function loadMyPageData(callback: (user: any) => void) {
-  $.get('/-/load-my-page-data?pageId=' + debiki2.ReactStore.getPageId())
+  $.get(origin + '/-/load-my-page-data?pageId=' + debiki2.ReactStore.getPageId())
     .done((user: any) => {
       callback(user);
     })
@@ -50,7 +53,7 @@ export function loadMyPageData(callback: (user: any) => void) {
 
 
 export function loadUserInfo(userId, callback: (info: debiki2.users.UserInfo) => void) {
-  $.get('/-/load-user-info?userId=' + userId)
+  $.get(origin + '/-/load-user-info?userId=' + userId)
     .done((response: any) => {
       var userInfo = debiki2.users.UserInfo.fromJson(response.userInfo);
       callback(userInfo);
@@ -64,7 +67,7 @@ export function loadUserInfo(userId, callback: (info: debiki2.users.UserInfo) =>
 
 export function loadUserActions(userId,
       callback: (actions: debiki2.users.ActionListItem[]) => void) {
-  $.get('/-/list-user-actions?userId=' + userId)
+  $.get(origin + '/-/list-user-actions?userId=' + userId)
     .done((response: any) => {
       var actionItems: debiki2.users.ActionListItem[] = [];
       for (var i = 0; i < response.actions.length; ++i) {
@@ -83,7 +86,7 @@ export function loadUserActions(userId,
 
 export function loadUserPreferences(userId,
       callback: (info: debiki2.users.UserPreferences) => void) {
-  $.get('/-/load-user-preferences?userId=' + userId)
+  $.get(origin + '/-/load-user-preferences?userId=' + userId)
     .done((response: any) => {
       var userPrefs = debiki2.users.UserPreferences.fromJson(response.userPreferences);
       callback(userPrefs);
@@ -97,7 +100,7 @@ export function loadUserPreferences(userId,
 
 export function saveUserPreferences(prefs, doneCallback: () => void) {
   d.u.postJson({
-    url: '/-/save-user-preferences',
+    url: origin + '/-/save-user-preferences',
     data: prefs,
     success: doneCallback
   });

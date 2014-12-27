@@ -42,7 +42,7 @@ object PageRequest {
    * path, if you specify an almost correct path (e.g. superfluous
    * trailing '/').
    */
-  def basedOnApiRequest[A](
+  private def basedOnApiRequest[A](
     apiRequest: DebikiRequest[A],
     pagePath: PagePath,
     pageMustExist: Boolean = false,
@@ -89,7 +89,7 @@ object PageRequest {
     if (!permsOnPage.accessPage)
       throwForbidden("DwE72XIKW2", "You are not allowed to access that page.")
 
-    PageRequest[A](
+    new PageRequest[A](
       sid = apiRequest.sid,
       xsrfToken = apiRequest.xsrfToken,
       browserId = apiRequest.browserId,
@@ -99,24 +99,7 @@ object PageRequest {
       pageMeta = anyPageMeta,
       permsOnPage = permsOnPage,
       dao = apiRequest.dao,
-      request = apiRequest.request)()
-  }
-
-
-  def forPageThatMightExist[A](apiRequest: DebikiRequest[A], pagePathStr: String,
-        pageId: String): PageRequest[A] = {
-    val pagePathPerhapsId =
-      PagePath.fromUrlPath(apiRequest.tenantId, pagePathStr) match {
-        case PagePath.Parsed.Good(path) =>
-          assErrIf(path.pageId.isDefined && path.pageId != Some(pageId),
-            "DwE309RK9", o"""pagePathStr page id `${path.pageId}'
-                 differs from pageId `$pageId'""")
-          path
-        case x =>
-          throwBadReq("DwE390SD3", "Bad path for page id "+ pageId +": "+ x)
-      }
-    val pagePathWithId = pagePathPerhapsId.copy(pageId = Some(pageId))
-    PageRequest.basedOnApiRequest(apiRequest, pagePathWithId)
+      request = apiRequest.request)
   }
 
 
@@ -145,23 +128,20 @@ object PageRequest {
   * whilst functions that instead require an Option are named simply "page" or
   * "pageParts".
   */
-case class PageRequest[A](
-  sid: SidStatus,
-  xsrfToken: XsrfOk,
-  browserId: Option[BrowserId],
-  user: Option[User],
-  pageExists: Boolean,
+class PageRequest[A](
+  val sid: SidStatus,
+  val xsrfToken: XsrfOk,
+  val browserId: Option[BrowserId],
+  val user: Option[User],
+  val pageExists: Boolean,
   /** Ids of groups to which the requester belongs. */
   // userMemships: List[String],
   /** If the requested page does not exist, pagePath.pageId is empty. */
-  pagePath: PagePath,
-  pageMeta: Option[PageMeta],
-  permsOnPage: PermsOnPage,
-  dao: SiteDao,
-  request: Request[A])
-  (private val _preloadedActions: Option[PageParts] = None,
-  private val _preloadedAncestorIds: Option[List[PageId]] = None)
-  extends DebikiRequest[A] {
+  val pagePath: PagePath,
+  val pageMeta: Option[PageMeta],
+  val permsOnPage: PermsOnPage,
+  val dao: SiteDao,
+  val request: Request[A]) extends DebikiRequest[A] {
 
   require(pagePath.tenantId == tenantId) //COULD remove tenantId from pagePath
   require(!pageExists || pagePath.pageId.isDefined)
@@ -170,30 +150,6 @@ case class PageRequest[A](
   pageMeta foreach { meta =>
     require(meta.pageExists == pageExists)
     require(Some(meta.pageId) == pagePath.pageId)
-    _preloadedAncestorIds foreach { ids =>
-      illArgIf(ids.headOption != meta.parentPageId, "DwE7GWh1")
-    }
-  }
-
-
-  def copyWithPreloadedPage(page: Page, pageExists: Boolean)
-        : PageRequest[A] = {
-    val copyWithOldPerms = copy(
-      pageExists = pageExists, pagePath = page.path, pageMeta = Some(page.meta))(
-      Some(page.parts), Some(page.ancestorIdsParentFirst))
-    copyWithOldPerms.copyWithUpdatedPermissions()
-  }
-
-
-  private def copyWithUpdatedPermissions(): PageRequest[A] = {
-    val newPerms = dao.loadPermsOnPage(PermsOnPageQuery(
-      tenantId = tenantId,
-      ip = request.remoteAddress,
-      user = user,
-      pagePath = pagePath,
-      pageMeta = pageMeta))
-    copy(permsOnPage = newPerms)(
-      _preloadedActions, _preloadedAncestorIds)
   }
 
 
@@ -212,7 +168,6 @@ case class PageRequest[A](
    * (e.g. if !pageExists, or if it was deleted just moments ago).
    */
   lazy val pageParts : Option[PageParts] =
-    _preloadedActions orElse {
       if (pageExists) {
         pageId.flatMap(id => dao.loadPageParts(id))
       } else {
@@ -220,7 +175,6 @@ case class PageRequest[A](
         // having !pageExists and page_? = Some(..) feels risky.
         None
       }
-    }
 
   /**
    * The page this PageRequest concerns. Throws 404 Not Found if not found.
@@ -280,7 +234,7 @@ case class PageRequest[A](
     "DwE3ES58", s"No page meta found, page id: $pageId")
 
   lazy val ancestorIdsParentFirst_! : List[PageId] =
-    _preloadedAncestorIds getOrElse dao.loadAncestorIdsParentFirst(thePageId)
+    dao.loadAncestorIdsParentFirst(thePageId)
 
 
   def thePathAndMeta = PagePathAndMeta(pagePath, ancestorIdsParentFirst_!, thePageMeta)
@@ -307,3 +261,27 @@ case class PageRequest[A](
 }
 
 
+/** A request from a page that you provide manually (the page won't be loaded
+  * from the database). EmbeddedTopicsController constructs an empty dummy page
+  * when showing comments for an URL for which no page has yet been created.
+  */
+class DummyPageRequest[A](
+  sid: SidStatus,
+  xsrfToken: XsrfOk,
+  browserId: Option[BrowserId],
+  user: Option[User],
+  pageExists: Boolean,
+  pagePath: PagePath,
+  pageMeta: PageMeta,
+  permsOnPage: PermsOnPage,
+  dao: SiteDao,
+  dummyPageParts: PageParts,
+  request: Request[A]) extends PageRequest[A](
+    sid, xsrfToken, browserId, user, pageExists,  pagePath, Some(pageMeta),
+    permsOnPage, dao, request) {
+
+  override lazy val pageParts: Option[PageParts] = Some(dummyPageParts)
+
+  override lazy val ancestorIdsParentFirst_! : List[PageId] = Nil
+
+}

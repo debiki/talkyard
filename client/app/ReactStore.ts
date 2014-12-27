@@ -184,6 +184,11 @@ function updatePost(post) {
       sortPostIdsInPlace(parentPost.childIdsSorted, store.allPosts);
     }
   }
+
+  // Update list of top level comments, for embedded comment pages.
+  if (!post.parentId && post.postId != BodyPostId && post.postId !== TitleId) {
+    store.topLevelCommentIdsSorted = topLevelCommentIdsSorted(store.allPosts);
+  }
 }
 
 
@@ -211,6 +216,18 @@ function uncollapsePost(post) {
   post.isTreeCollapsed = false;
   post.isPostCollapsed = false;
   updatePost(post);
+}
+
+
+function topLevelCommentIdsSorted(allPosts): number[] {
+  var idsSorted: number[] = [];
+  _.each(allPosts, (post: Post) => {
+    if (!post.parentId && post.postId !== BodyPostId && post.postId !== TitleId) {
+      idsSorted.push(post.postId);
+    }
+  });
+  sortPostIdsInPlace(idsSorted, allPosts);
+  return idsSorted;
 }
 
 
