@@ -100,7 +100,7 @@ object PageActions {
       throwForbidden("DwE403DNI0", "You are not allowed to access that page.")
 
     // Construct the actual request.
-    val pageReq = PageRequest[A](
+    val pageReq = new PageRequest[A](
       sid = sidStatus,
       xsrfToken = xsrfOk,
       browserId = browserId,
@@ -110,7 +110,7 @@ object PageActions {
       pageMeta = anyPageMeta,
       permsOnPage = permsOnPage,
       dao = dao,
-      request = request)()
+      request = request)
 
     val result = f(pageReq)
     result

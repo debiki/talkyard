@@ -206,7 +206,10 @@ var RootPostAndComments = createComponent({
           debiki2.renderer.drawHorizontalArrowFromRootPost(rootPost);
     }
 
-    var children = rootPost.childIdsSorted.map((childId, childIndex) => {
+    var childIds = pageRole === 'EmbeddedComments' ?
+        this.props.topLevelCommentIdsSorted : rootPost.childIdsSorted;
+
+    var children = childIds.map((childId, childIndex) => {
       return (
         r.li({},
           Thread({

@@ -101,7 +101,7 @@ object EmbeddedTopicsController extends mvc.Controller {
     val topicId = request.queryString.getNoneAsEmpty("topicId")
     val topicUrl = request.queryString.getNoneAsEmpty("topicUrl")
 
-    val theId =
+    val theId: PageId =
       if (topicId.length > 16) {
         // Why would anyone manually specify such a long id? The id is a primary
         // key and I don't want to waste too much storage space storing ids.
@@ -120,45 +120,44 @@ object EmbeddedTopicsController extends mvc.Controller {
     if (!Page.isOkayId(theId))
       throwBadReq("DwE77GJ12", s"Bad topic id: `$theId'")
 
-    val topicPagePath = PagePath(
-      tenantId = request.siteId,
-      folder = "/",
-      pageId = Some(theId),
-      showId = true,
-      pageSlug = "")
-
-    val pageReqDefaultRoot: PageGetRequest = PageRequest.forPageThatMightExist(
-      request, pagePathStr = topicPagePath.value, pageId = theId)
-
-    // Include all top level comments, by specifying no particular root comment.
-    val pageReqNoRoot = pageReqDefaultRoot.copyWithNewPageRoot(None)
-
     // Before the first reply has been saved, the embedded discussion page won't
     // yet have been created. Then construct and use an empty page.
-    if (pageReqNoRoot.pageExists) {
-      pageReqNoRoot
-    }
-    else {
-      makeEmptyPage(pageReqNoRoot, pageReqNoRoot.pagePath)
+    PageRequest.forPageThatExists(request, pageId = theId) getOrElse {
+      makeEmptyPageRequest(request, pageId = theId)
     }
   }
 
 
-  private def makeEmptyPage(pageReqNoPage: PageGetRequest, topicPagePath: PagePath)
-        : PageGetRequest = {
-    val topicId = topicPagePath.pageId.get
+  private def makeEmptyPageRequest(request: GetRequest, pageId: PageId): PageGetRequest = {
+    val pagePath = PagePath(
+      tenantId = request.siteId,
+      folder = "/",
+      pageId = Some(pageId),
+      showId = true,
+      pageSlug = "")
+
+    val pageParts = PageParts(pageId)
 
     val newTopicMeta = PageMeta.forNewPage(
       PageRole.EmbeddedComments,
       author = SystemUser.User,
-      parts = PageParts(topicId),
+      parts = pageParts,
       creationDati = new ju.Date,
       parentPageId = None,
       publishDirectly = true)
 
-    pageReqNoPage.copyWithPreloadedPage(
-      Page(newTopicMeta, topicPagePath, ancestorIdsParentFirst = Nil, PageParts(topicId)),
-      pageExists = false)
+    new requests.DummyPageRequest(
+      sid = request.sid,
+      xsrfToken = request.xsrfToken,
+      browserId = request.browserId,
+      user = request.user,
+      pageExists = false,
+      pagePath = pagePath,
+      pageMeta = newTopicMeta,
+      permsOnPage = PermsOnPage.Wiki, // for now
+      dao = request.dao,
+      dummyPageParts = pageParts,
+      request = request.request)
   }
 
 }

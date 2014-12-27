@@ -60,6 +60,12 @@ object ReactJson {
           embeddedCommentsDummyRootPost(pageReq.thePageParts.topLevelComments)
     }
 
+    val topLevelComments = pageReq.thePageParts.getAllPosts filter { post =>
+      post.parentId.isEmpty && post.id != PageParts.TitleId && post.id != PageParts.BodyId
+    }
+    val topLevelCommentIdsSorted =
+      Post.sortPosts(topLevelComments).map(reply => JsNumber(reply.id))
+
     Json.obj(
       "now" -> JsNumber((new ju.Date).getTime),
       "pageId" -> pageReq.thePageId,
@@ -71,6 +77,7 @@ object ReactJson {
       "user" -> NoUserSpecificData,
       "rootPostId" -> JsNumber(BigDecimal(pageReq.pageRoot getOrElse PageParts.BodyId)),
       "allPosts" -> JsObject(allPostsJson),
+      "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
       "horizontalLayout" -> JsBoolean(pageReq.thePageSettings.horizontalComments.valueIsTrue),
       "socialLinksHtml" -> JsString(socialLinksHtml))
   }
