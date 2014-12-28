@@ -54,6 +54,9 @@ object ReplyController extends mvc.Controller {
         PageRequest.forPageThatExists(request, pageId = page.id) getOrDie "DwE77PJE0"
     }
 
+    if (text.isEmpty)
+      throwBadReq("DwE85FK03", "Empty post")
+
     val post = saveReply(pageReq, replyToPostIds = postIds, text, whereOpt)
 
     val json = ReactJson.postToJson(post, includeUnapproved = true)

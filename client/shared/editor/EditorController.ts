@@ -148,6 +148,11 @@ class EditorController {
   }
 
 
+  public saveBtnDisabled(): boolean {
+    return !this.$scope.text || !this.$scope.text.length;
+  }
+
+
   private saveNewForumPage() {
     var title = this.$scope.newForumPageRole === 'ForumTopic' ?
         'Forum Topic Title (click to edit)' : 'Category Title (click to edit)';
