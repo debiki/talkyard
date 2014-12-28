@@ -60,9 +60,7 @@ object ReactJson {
           embeddedCommentsDummyRootPost(pageReq.thePageParts.topLevelComments)
     }
 
-    val topLevelComments = pageReq.thePageParts.getAllPosts filter { post =>
-      post.parentId.isEmpty && post.id != PageParts.TitleId && post.id != PageParts.BodyId
-    }
+    val topLevelComments = pageReq.thePageParts.topLevelComments
     val topLevelCommentIdsSorted =
       Post.sortPosts(topLevelComments).map(reply => JsNumber(reply.id))
 
