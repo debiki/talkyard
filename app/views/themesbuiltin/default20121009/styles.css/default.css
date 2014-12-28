@@ -347,8 +347,8 @@ input, textarea {
 body { padding: 0 !important; } /* cancel Bootstrap's 20px padding */
 #topbar > .container,
 body > .container {
-  padding-left: 20px;
-  padding-right: 20px;
+  padding-left: 15px;
+  padding-right: 15px;
 }
 
 #topbar > .container { display: table; }
