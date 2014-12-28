@@ -208,7 +208,7 @@ export var Sidebar = createComponent({
       // We've scrolled down; let the sidebar span from top to bottom.
       if (this.state.showSidebar) {
         sidebar.addClass('dw-sidebar-fixed');
-        sidebar.css('top', '');
+        sidebar.css('top', 0);
         sidebar.css('position', 'fixed');
         sidebar.height(windowBottom - windowTop);
       }
@@ -218,23 +218,24 @@ export var Sidebar = createComponent({
       }
     }
     else {
+      // (Use `offset({ top: ... })` not `css('top', ...)` because `css` for some
+      // weird reason places the elem 30 extra pixels down.)
+
       // We're reading the article. Let the sidebar stay down together with
       // the comments, so it won't occlude the article. COULD skip this if
       // the browser window is very wide and we can safely show the whole sidebar
       // at the right edge, without occluding the article.
+      sidebar.removeClass('dw-sidebar-fixed');
+      sidebar.offset({ top: commentSectionTop, left: undefined });
+      sidebar.css('position', 'absolute');
+      sidebar.css('right', 0);
       if (this.state.showSidebar) {
-        sidebar.removeClass('dw-sidebar-fixed');
-        sidebar.css('top', commentSectionOffset.top);
-        sidebar.css('position', 'absolute');
-        sidebar.height(windowBottom - commentSectionOffset.top);
-      }
-      else {
-        // Apparently React reuses the <div> for the sidebar, so need to reset it.
-        sidebar.css('top', 0);
-        sidebar.css('position', '');
+        sidebar.height(windowBottom - commentSectionTop);
+      } else {
         sidebar.height(0);
-        openButton.css('top', commentSectionOffset.top);
         openButton.css('position', 'absolute');
+        openButton.css('top', 0);
+        openButton.css('right', 0);
       }
     }
 
