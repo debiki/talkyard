@@ -339,7 +339,7 @@ var Post = createComponent({
       multireplReceivers = MultireplyReceivers({ post: post, allPosts: this.props.allPosts });
     }
 
-    var id = this.props.skipIdAttr ? undefined : 'post-' + post.postId;
+    var id = this.props.abbreviate ? undefined : 'post-' + post.postId;
 
     return (
       r.div({ className: 'dw-p' + extraClasses, id: id,
@@ -377,6 +377,7 @@ var MultireplyReceivers = createComponent({
 var PostHeader = createComponent({
   render: function() {
     var post = this.props.post;
+    var linkFn = this.props.abbreviate ? 'span' : 'a';
 
     var authorUrl = '/-/users/#/id/' + this.props.authorId;
     var authorNameElems;
@@ -440,11 +441,11 @@ var PostHeader = createComponent({
     var anyPin;
     if (post.pinnedPosition) {
       anyPin =
-        r.a({ className: 'dw-p-pin icon-pin' });
+        r[linkFn]({ className: 'dw-p-pin icon-pin' });
     }
 
     var postId = post.postId === BodyPostId ?
-        null : r.a({ className: 'dw-p-link' }, '#', post.postId);
+        null : r[linkFn]({ className: 'dw-p-link' }, '#', post.postId);
 
     var by = post.postId === BodyPostId ? 'By ' : '';
     var isBodyPostClass = post.postId === BodyPostId ? ' dw-ar-p-hd' : '';
@@ -454,7 +455,7 @@ var PostHeader = createComponent({
           anyPin,
           postId,
           by,
-          r.a({ className: 'dw-p-by', href: authorUrl }, authorNameElems),
+          r[linkFn]({ className: 'dw-p-by', href: authorUrl }, authorNameElems),
           createdAt,
           editInfo, '. ',
           voteInfo));
@@ -465,10 +466,22 @@ var PostHeader = createComponent({
 var PostBody = createComponent({
   render: function() {
     var post = this.props.post;
+    var body;
+    if (this.props.abbreviate) {
+      this.textDiv = this.textDiv || $('<div></div>');
+      this.textDiv.html(post.sanitizedHtml);
+      var startOfText = this.textDiv.text().substr(0, 150);
+      if (startOfText.length === 150) {
+        startOfText += '....';
+      }
+      body = r.div({ className: 'dw-p-bd-blk' }, startOfText);
+    }
+    else {
+      body = r.div({ className: 'dw-p-bd-blk',
+          dangerouslySetInnerHTML: { __html: post.sanitizedHtml }});
+    }
     return (
-      r.div({ className: 'dw-p-bd' },
-        r.div({ className: 'dw-p-bd-blk',
-            dangerouslySetInnerHTML: { __html: post.sanitizedHtml }})));
+      r.div({ className: 'dw-p-bd' }, body));
   }
 });
 

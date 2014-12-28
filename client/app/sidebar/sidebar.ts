@@ -356,12 +356,12 @@ export var Sidebar = createComponent({
     var comments;
     switch (this.state.commentsType) {
       case 'Recent':
-        title = 'Recent Comments:';
+        title = 'Recent Comments: (click to show)';
         recentClass = ' active';
         comments = recentComments;
         break;
       case 'Unread':
-        title = 'Unread Comments:';
+        title = 'Unread Comments: (click to show)';
         unreadClass = ' active';
         comments = unreadComments;
         break;
@@ -375,7 +375,7 @@ export var Sidebar = createComponent({
       }
       return (
         Post({ post: post, user: store.user, allPosts: store.allPosts,
-          onClick: scrollToPost, skipIdAttr: true }));
+          onClick: scrollToPost, abbreviate: true }));
     });
 
     return (
