@@ -49,7 +49,8 @@ export var Sidebar = createComponent({
     return {
       store: store,
       showSidebar: showSidebar,
-      commentsType: 'Recent'
+      commentsType: 'Recent',
+      showPerhapsUnread: false,
     };
   },
 
@@ -75,6 +76,12 @@ export var Sidebar = createComponent({
   showStarred: function() {
     this.setState({
       commentsType: 'Starred'
+    });
+  },
+
+  togglePerhapsUnread: function() {
+    this.setState({
+      showPerhapsUnread: !this.state.showPerhapsUnread
     });
   },
 
@@ -292,17 +299,22 @@ export var Sidebar = createComponent({
           return;
 
         if (!ancestorCollapsed) {
-          // Do include comments that where read right now — it'd be annoying
-          // if they suddenly vanished from the sidebar I think.
-          var readLongAgo = store.user.postIdsAutoReadLongAgo.indexOf(postId) !== -1 ||
-              post.authorId === store.user.userId;
-          if (!readLongAgo) {
-            unreadComments.push(post);
+          // Do include comments that where auto-read right now — it'd be annoying
+          // if they suddenly vanished from the sidebar just because the computer
+          // suddenly automatically thought you've read them.
+          var autoReadLongAgo = store.user.postIdsAutoReadLongAgo.indexOf(postId) !== -1;
+          var hasReadItForSure = this.manuallyMarkedAsRead(postId);
+          var ownPost = post.authorId === store.user.userId;
+          if (!ownPost && !hasReadItForSure) {
+            if (!autoReadLongAgo || this.state.showPerhapsUnread) {
+              unreadComments.push(post);
+            }
           }
+
           recentComments.push(post);
         }
 
-        if (this.isStarred(post)) {
+        if (this.isStarred(postId)) {
           starredComments.push(post);
         }
 
@@ -327,8 +339,13 @@ export var Sidebar = createComponent({
     return { unread: unreadComments, recent: recentComments, starred: starredComments };
   },
 
-  isStarred: function(post: Post) {
-    var mark = this.state.store.user.marksByPostId[post.postId];
+  manuallyMarkedAsRead: function(postId: number): boolean {
+    var mark = this.state.store.user.marksByPostId[postId];
+    return !!mark; // any mark means it's been read already.
+  },
+
+  isStarred: function(postId: number) {
+    var mark = this.state.store.user.marksByPostId[postId];
     return mark === BlueStarMark || mark === YellowStarMark;
   },
 
@@ -390,6 +407,15 @@ export var Sidebar = createComponent({
         console.error('[DwE4PM091]');
     }
 
+    var anyPerhapsUnreadCheckbox;
+    if (this.state.commentsType === 'Unread') {
+      anyPerhapsUnreadCheckbox =
+          r.label({ className: 'checkbox-inline' },
+            r.input({ type: 'checkbox', checked: this.state.showPerhapsUnread,
+                onChange: this.togglePerhapsUnread }),
+            'Show perhaps unread comments');
+    }
+
     var commentsElems = comments.map((post) => {
       var scrollToPost = (event) => {
         d.i.showAndHighlightPost($('#post-' + post.postId));
@@ -414,6 +440,7 @@ export var Sidebar = createComponent({
           r.h3({}, title),
           r.div({ id: 'dw-sidebar-comments-viewport', ref: 'commentsViewport' },
             r.div({ id: 'dw-sidebar-comments-scrollable' },
+              anyPerhapsUnreadCheckbox,
               r.div({ className: 'dw-recent-comments' },
                 commentsElems))))));
   }
