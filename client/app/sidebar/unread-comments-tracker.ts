@@ -36,11 +36,6 @@ interface ReadState {
   textLength?: number;
 }
 
-var ManualReadMark = 1;
-var GrayStarMark = 2;
-var SuperStarMark = 3;
-var FirstMark = ManualReadMark;
-var LastMark = SuperStarMark;
 
 var readStatesByPostId: { [postId: number]: ReadState } = {};
 var postsVisibleLastTick: { [postId: number]: boolean } = {};
@@ -55,15 +50,15 @@ var maxConfusionSeconds = -1;
 var localStorageKey = 'debikiPostIdsReadByPageId';
 var brightnessWhenRead = 175; // 0-255
 
-var postIdsReadLongAgo: number[] = getPostIdsReadLongAgo();
+var postIdsReadLongAgo: number[] = getPostIdsAutoReadLongAgo();
 
 export function start() {
   debugIntervalHandler = setInterval(trackUnreadComments, secondsBetweenTicks * 1000);
-  setInitialReadMarkColors();
+  //setInitialReadMarkColors();
 }
 
 
-export function getPostIdsReadLongAgo() {
+export function getPostIdsAutoReadLongAgo(): number[] {
   if (!localStorage)
     return [];
 
@@ -74,41 +69,11 @@ export function getPostIdsReadLongAgo() {
 }
 
 
-export function markAsRead(postId: number) {
-  var state = readStatesByPostId[postId];
-  if (state.mark) {
-    // All marks already mean that the post has been read.
-    return;
-  }
-  state.mark = ManualReadMark;
-  saveMarksInLocalStorage();
-  updateMarkGraphics(postId);
-}
-
-
-export function cycleToNextMark(postId: number) {
-  var state = readStatesByPostId[postId];
-  if (!state.mark) {
-    state.mark = FirstMark;
-  }
-  else if (state.mark < LastMark) {
-    state.mark += 1;
-  }
-  else {
-    delete state.mark;
-  }
-  saveMarksInLocalStorage();
-  updateMarkGraphics(postId);
-}
-
-
 function setInitialReadMarkColors() {
-  $('.dw-p[id] .dw-p-mark').each(function() {
+  var allMarkClasses =
+      '.dw-p-auto-read, .dw-p-mark-read, .dw-p-mark-gray-star, .dw-p-mark-yellow-star';
+  $('.dw-p:not(' + allMarkClasses + ') .dw-p-mark').each(function() {
     setColorOfMark($(this), 0); // 0 means 0% read
-  });
-  var ids = getPostIdsReadLongAgo();
-  _.each(ids, (postId) => {
-    setColorOfPost(postId, 1.0); // 1.0 means 100% read
   });
 }
 
@@ -195,7 +160,12 @@ function trackUnreadComments() {
     }
 
     var fractionRead = !charsToRead ? 1.0 : stats.charsRead / charsToRead;
-    setColorOfPost(stats.postId, fractionRead);
+    if (fractionRead >= 1) {
+      debiki2.ReactActions.markPostAsRead(stats.postId, false);
+    }
+    else {
+      setColorOfPost(stats.postId, fractionRead);
+    }
   }
 }
 
@@ -210,32 +180,6 @@ function rememberHasBeenRead(postId: number) {
   postIdsReadByPageId[pageId] = postIdsRead;
   postIdsRead.push(postId);
   localStorage.setItem(localStorageKey, JSON.stringify(postIdsReadByPageId));
-}
-
-
-function saveMarksInLocalStorage() {
-}
-
-
-function updateMarkGraphics(postId) {
-  var state = readStatesByPostId[postId];
-  var mark = state ? state.mark : null;
-  var post = $('#post-' + postId);
-  switch (mark) {
-    case ManualReadMark:
-      post.addClass('dw-p-read');
-      break;
-    case GrayStarMark:
-      post.addClass('dw-p-gray-star').find('.dw-p-mark').addClass('icon-star-empty');
-      break;
-    case SuperStarMark:
-      post.removeClass('dw-p-gray-star').addClass('dw-p-super-star');
-      post.find('.dw-p-mark').removeClass('icon-star-empty').addClass('icon-star');
-      break;
-    default:
-      post.removeClass('dw-p-read')
-          .removeClass('dw-p-super-star').find('.dw-p-mark').removeClass('icon-star');
-  }
 }
 
 

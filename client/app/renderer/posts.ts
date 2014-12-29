@@ -35,6 +35,12 @@ var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
 
+var ManualReadMark = 1;
+var GrayStarMark = 2;
+var YellowStarMark = 3;
+var FirstMark = ManualReadMark;
+var LastMark = YellowStarMark;
+
 
 function createComponent(componentDefinition) {
   return React.createFactory(React.createClass(componentDefinition));
@@ -210,18 +216,14 @@ var RootPostAndComments = createComponent({
         this.props.topLevelCommentIdsSorted : rootPost.childIdsSorted;
 
     var children = childIds.map((childId, childIndex) => {
+      var threadProps = _.clone(this.props);
+      threadProps.elemType = 'div';
+      threadProps.postId = childId;
+      threadProps.index = childIndex;
+      threadProps.depth = 1;
       return (
         r.li({},
-          Thread({
-            elemType: 'div',
-            allPosts: this.props.allPosts,
-            user: this.props.user,
-            rootPostId: this.props.rootPostId,
-            horizontalLayout: this.props.horizontalLayout,
-            postId: childId,
-            index: childIndex,
-            depth: 1,
-          })));
+          Thread(threadProps)));
     });
 
     return (
@@ -265,17 +267,13 @@ var Thread = createComponent({
     var children = [];
     if (!post.isTreeCollapsed && !post.isTreeDeleted) {
       children = post.childIdsSorted.map((childId, childIndex) => {
+        var threadProps = _.clone(this.props);
+        threadProps.elemType = 'li';
+        threadProps.postId = childId;
+        threadProps.index = childIndex;
+        threadProps.depth = deeper;
         return (
-            Thread({
-              elemType: 'li',
-              allPosts: this.props.allPosts,
-              user: this.props.user,
-              rootPostId: this.props.rootPostId,
-              horizontalLayout: this.props.horizontalLayout,
-              postId: childId,
-              index: childIndex,
-              depth: deeper
-            }));
+            Thread(threadProps));
       });
     }
 
@@ -286,11 +284,15 @@ var Thread = createComponent({
 
     var baseElem = r[this.props.elemType];
 
+    var postProps = _.clone(this.props);
+    postProps.post = post;
+    postProps.onMouseEnter = this.onPostMouseEnter;
+    postProps.ref = 'post';
+
     return (
       baseElem({ className: 'dw-t ' + depthClass },
         arrows,
-        Post({ post: post, user: this.props.user, allPosts: this.props.allPosts,
-            onMouseEnter: this.onPostMouseEnter, ref: 'post' }),
+        Post(postProps),
         actions,
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
@@ -306,7 +308,7 @@ var Post = createComponent({
 
   onClick: function() {
     if (!this.props.abbreviate) {
-      debiki2['sidebar'].UnreadCommentsTracker.markAsRead(this.props.post.postId);
+      debiki2.ReactActions.markPostAsRead(this.props.post.postId, true);
     }
     if (this.props.onClick) {
       this.props.onClick();
@@ -314,21 +316,19 @@ var Post = createComponent({
   },
 
   onAnyActionClick: function() {
-    if (!this.props.abbreviate) {
-      debiki2['sidebar'].UnreadCommentsTracker.markAsRead(this.props.post.postId);
-    }
+    debiki2.ReactActions.markPostAsRead(this.props.post.postId, true);
   },
 
   onMarkClick: function(event) {
     // Try to avoid selecting text:
     event.stopPropagation();
     event.preventDefault();
-    debiki2['sidebar'].UnreadCommentsTracker.cycleToNextMark(this.props.post.postId);
+    debiki2.ReactActions.cycleToNextMark(this.props.post.postId);
   },
 
   render: function() {
     var post = this.props.post;
-    var user = this.props.user;
+    var user: User = this.props.user;
 
     var pendingApprovalElem;
     var headerElem;
@@ -366,6 +366,23 @@ var Post = createComponent({
     var multireplReceivers = null;
     if (post.multireplyPostIds.length) {
       multireplReceivers = MultireplyReceivers({ post: post, allPosts: this.props.allPosts });
+    }
+
+    var mark = user.marksByPostId[post.postId];
+    switch (mark) {
+      case ManualReadMark: extraClasses += ' dw-p-mark-read'; break;
+      case GrayStarMark: extraClasses += ' dw-p-mark-gray-star'; break;
+      case YellowStarMark: extraClasses += ' dw-p-mark-yellow-star'; break;
+      default:
+        // Don't add the below class before user specific data has been activated, otherwise
+        // all posts would show a big black unread mark on page load, which looks weird.
+        if (this.props.userSpecificDataAdded) {
+          var autoRead = user.postIdsAutoReadLongAgo.indexOf(post.postId) !== -1;
+          autoRead = autoRead || user.postIdsAutoReadNow.indexOf(post.postId) !== -1;
+          if (!autoRead) {
+            extraClasses += ' dw-p-unread';
+          }
+        }
     }
 
     var id = this.props.abbreviate ? undefined : 'post-' + post.postId;
@@ -406,6 +423,7 @@ var MultireplyReceivers = createComponent({
 var PostHeader = createComponent({
   render: function() {
     var post = this.props.post;
+    var user: User = this.props.user;
     var linkFn = this.props.abbreviate ? 'span' : 'a';
 
     var authorUrl = '/-/users/#/id/' + this.props.authorId;
@@ -477,12 +495,16 @@ var PostHeader = createComponent({
     var anyMark;
     if (post.postId !== TitleId && post.postId !== BodyPostId) {
       postId = r[linkFn]({ className: 'dw-p-link' }, '#', post.postId);
-      if (!this.props.abbreviate) {
-        // The outer -click makes the click area larger, because the marks are small.
-        anyMark =
-            r.span({ className: 'dw-p-mark-click', onClick: this.props.onMarkClick },
-              r.span({ className: 'dw-p-mark' }));
+      var mark = user.marksByPostId[post.postId];
+      var extraMarkClass = '';
+      switch (mark) {
+        case GrayStarMark: extraMarkClass = ' icon-star-empty'; break;
+        case YellowStarMark: extraMarkClass = ' icon-star'; break;
       }
+      // The outer -click makes the click area larger, because the marks are small.
+      anyMark =
+          r.span({ className: 'dw-p-mark-click', onClick: this.props.onMarkClick },
+            r.span({ className: 'dw-p-mark' + extraMarkClass }));
     }
 
     var by = post.postId === BodyPostId ? 'By ' : '';

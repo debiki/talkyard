@@ -35,7 +35,7 @@ export var ReactStore = new EventEmitter2();
 // because the server serves cached HTML with no user specific data. Later on,
 // we'll insert user specific data into the store, and re-render. See
 // ReactStore.activateUserSpecificData().
-var store = debiki.reactPageStore;
+var store: Store = debiki.reactPageStore;
 
 
 ReactDispatcher.register(function(payload) {
@@ -48,10 +48,14 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.Logout:
       store.user = {
+        userId: undefined,
         permsOnPage: {},
         rolePageSettings: {},
         votes: {},
         unapprovedPosts: {},
+        postIdsAutoReadLongAgo: [],
+        postIdsAutoReadNow: [],
+        marksByPostId: {},
       };
       break;
 
@@ -65,6 +69,14 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.VoteOnPost:
       voteOnPost(action);
+      break;
+
+    case ReactActions.actionTypes.MarkPostAsRead:
+      markPostAsRead(action.postId, action.manually);
+      break;
+
+    case ReactActions.actionTypes.CycleToNextMark:
+      cycleToNextMark(action.postId);
       break;
 
     case ReactActions.actionTypes.UncollapsePost:
@@ -89,15 +101,22 @@ ReactDispatcher.register(function(payload) {
 
 // COULD change this to an action instead
 ReactStore.activateUserSpecificData = function(anyUser) {
+  store.userSpecificDataAdded = true;
+
   var newUser = anyUser || debiki.reactUserStore;
-  if (!newUser)
+  if (!newUser) {
+    addLocalStorageData(store.user);
     return;
+  }
 
   store.user = newUser;
+  addLocalStorageData(store.user);
+
   // Show the user's own unapproved posts, or all, for admins.
   _.each(store.user.unapprovedPosts, (post) => {
     updatePost(post);
   });
+
   this.emitChange();
 };
 
@@ -212,6 +231,36 @@ function voteOnPost(action) {
 }
 
 
+function markPostAsRead(postId: number, manually: boolean) {
+  var currentMark = store.user.marksByPostId[postId];
+  if (currentMark) {
+    // All marks already mean that the post has been read. Do nothing.
+  }
+  else if (manually) {
+    store.user.marksByPostId[postId] = ManualReadMark;
+  }
+  else {
+    store.user.postIdsAutoReadNow.push(postId);
+  }
+}
+
+
+function cycleToNextMark(postId: number) {
+  var currentMark = store.user.marksByPostId[postId];
+  var nextMark;
+  if (!currentMark) {
+    nextMark = FirstMark;
+  }
+  else if (currentMark === LastMark) {
+    nextMark = null;
+  }
+  else {
+    nextMark = currentMark + 1;
+  }
+  store.user.marksByPostId[postId] = nextMark;
+}
+
+
 function uncollapsePost(post) {
   post.isTreeCollapsed = false;
   post.isPostCollapsed = false;
@@ -293,6 +342,25 @@ function sortPostIdsInPlace(postIds: number[], allPosts) {
   });
 }
 
+
+/**
+ * This data should be stored server side, but right now I'm prototyping only and
+ * storing it client side only.
+ */
+function addLocalStorageData(user: User) {
+  user.postIdsAutoReadLongAgo = sidebar.UnreadCommentsTracker.getPostIdsAutoReadLongAgo();
+  user.marksByPostId = loadMarksFromLocalStorage();
+}
+
+
+function loadMarksFromLocalStorage(): { [postId: number]: any } {
+  return {};
+}
+
+
+function saveMarksInLocalStorage(marks: { [postId: number]: any }) {
+  //...
+}
 
 //------------------------------------------------------------------------------
    }

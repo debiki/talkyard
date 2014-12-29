@@ -188,12 +188,13 @@
 //---------------------------
 
 .dw-p-mark-click
-  padding: 6px 0px 7px 5px;
+  padding: 7px 0px 7px 5px;
   cursor: pointer;
   -webkit-user-select: none;
   -moz-user-select: none;
   -khtml-user-select: none;
   -ms-user-select: none;
+  user-select: none;
 
   &:hover
     outline: 2px solid hsl(210, 100%, 77%);
@@ -208,23 +209,28 @@
   position: relative;
   top: 1px;
   margin: 0 8px 0 2px;
-  border-color: transparent;
+  border-color: hsl(0, 0%, 69%);
+  background: hsl(0, 0%, 69%);
   -webkit-user-select: none;
   -moz-user-select: none;
   -khtml-user-select: none;
   -ms-user-select: none;
+  user-select: none;
 
-.dw-p-read .dw-p-mark
+.dw-p-unread .dw-p-mark
+  border-color: black;
+
+.dw-p-mark-read .dw-p-mark
   border-color: hsl(0, 0%, 80%) !important;
   background: white !important;
   border-width: 1px !important;
 
-.dw-p-gray-star .dw-p-mark.icon-star-empty
+.dw-p-mark-gray-star .dw-p-mark.icon-star-empty
   font-size: 13px;
   border: none;
   background: transparent !important;
 
-.dw-p-super-star .dw-p-mark.icon-star
+.dw-p-mark-yellow-star .dw-p-mark.icon-star
   border: none;
   padding: 0 2px 0 1px;
   background: transparent !important;

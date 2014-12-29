@@ -31,13 +31,6 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 
-var MinimapHeight = 160;
-
-// For now only. Should get this data from the ReactStore, but currently it's kept
-// in the HTML5 local storage only, not saved in the database. So, for now, when prototyping:
-var postIdsReadLongAgo: number[] = UnreadCommentsTracker.getPostIdsReadLongAgo();
-
-
 
 export var Sidebar = createComponent({
   mixins: [debiki2.StoreListenerMixin],
@@ -277,7 +270,7 @@ export var Sidebar = createComponent({
   },
 
   findComments: function() {
-    var store = this.state.store;
+    var store: Store = this.state.store;
     var unreadComments = [];
     var recentComments = [];
 
@@ -289,9 +282,11 @@ export var Sidebar = createComponent({
         if (isDeleted(post))
           return;
 
-        var alreadyRead = postIdsReadLongAgo.indexOf(postId) !== -1 ||
+        // Do include comments that where read right now — it'd be annoying if they
+        // suddenly vanished from the sidebar I think.
+        var readLongAgo = store.user.postIdsAutoReadLongAgo.indexOf(postId) !== -1 ||
             post.authorId === store.user.userId;
-        if (!alreadyRead) {
+        if (!readLongAgo) {
           unreadComments.push(post);
         }
         recentComments.push(post);
@@ -373,9 +368,13 @@ export var Sidebar = createComponent({
       var scrollToPost = (event) => {
         d.i.showAndHighlightPost($('#post-' + post.postId));
       }
+      var postProps = _.clone(store);
+      postProps.post = post;
+      postProps.onClick = scrollToPost;
+      postProps.abbreviate = true;
+
       return (
-        Post({ post: post, user: store.user, allPosts: store.allPosts,
-          onClick: scrollToPost, abbreviate: true }));
+        Post(postProps));
     });
 
     return (
