@@ -244,6 +244,9 @@ var Thread = createComponent({
       this.refs.actions.showActions();
     }
   },
+  onAnyActionClick: function() {
+    this.refs.post.onAnyActionClick();
+  },
   render: function() {
     var post = this.props.allPosts[this.props.postId];
     var parentPost = this.props.allPosts[post.parentId];
@@ -278,7 +281,8 @@ var Thread = createComponent({
 
     var actions = isCollapsed(post)
       ? null
-      : actions = PostActions({ post: post, user: this.props.user, ref: 'actions' });
+      : actions = PostActions({ post: post, user: this.props.user, ref: 'actions',
+          onClick: this.onAnyActionClick });
 
     var baseElem = r[this.props.elemType];
 
@@ -286,7 +290,7 @@ var Thread = createComponent({
       baseElem({ className: 'dw-t ' + depthClass },
         arrows,
         Post({ post: post, user: this.props.user, allPosts: this.props.allPosts,
-            onMouseEnter: this.onPostMouseEnter }),
+            onMouseEnter: this.onPostMouseEnter, ref: 'post' }),
         actions,
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
@@ -299,6 +303,26 @@ var Post = createComponent({
   onUncollapseClick: function(event) {
     debiki2.ReactActions.uncollapsePost(this.props.post);
   },
+
+  onClick: function() {
+    if (!this.props.abbreviate) {
+      debiki2['sidebar'].UnreadCommentsTracker.markAsRead(this.props.post.postId);
+    }
+    if (this.props.onClick) {
+      this.props.onClick();
+    }
+  },
+
+  onAnyActionClick: function() {
+    if (!this.props.abbreviate) {
+      debiki2['sidebar'].UnreadCommentsTracker.markAsRead(this.props.post.postId);
+    }
+  },
+
+  onMarkClick: function() {
+    debiki2['sidebar'].UnreadCommentsTracker.toggleIsReadStatus(this.props.post.postId);
+  },
+
   render: function() {
     var post = this.props.post;
     var user = this.props.user;
@@ -330,7 +354,9 @@ var Post = createComponent({
         pendingApprovalElem = r.div({ className: 'dw-p-pending-mod',
             onClick: this.onUncollapseClick }, the, ' comment below is pending approval.');
       }
-      headerElem = PostHeader(this.props);
+      var headerProps = _.clone(this.props); // ($.extend not available server side)
+      headerProps.onMarkClick = this.onMarkClick;
+      headerElem = PostHeader(headerProps);
       bodyElem = PostBody(this.props);
     }
 
@@ -343,7 +369,7 @@ var Post = createComponent({
 
     return (
       r.div({ className: 'dw-p' + extraClasses, id: id,
-            onMouseEnter: this.props.onMouseEnter, onClick: this.props.onClick },
+            onMouseEnter: this.props.onMouseEnter, onClick: this.onClick },
         pendingApprovalElem,
         multireplReceivers,
         headerElem,
@@ -444,8 +470,14 @@ var PostHeader = createComponent({
         r[linkFn]({ className: 'dw-p-pin icon-pin' });
     }
 
-    var postId = post.postId === BodyPostId ?
-        null : r[linkFn]({ className: 'dw-p-link' }, '#', post.postId);
+    var postId;
+    var anyMark;
+    if (post.postId !== TitleId && post.postId !== BodyPostId) {
+      postId = r[linkFn]({ className: 'dw-p-link' }, '#', post.postId);
+      if (!this.props.abbreviate) {
+        anyMark = r.span({ className: 'dw-p-mark', onClick: this.props.onMarkClick });
+      }
+    }
 
     var by = post.postId === BodyPostId ? 'By ' : '';
     var isBodyPostClass = post.postId === BodyPostId ? ' dw-ar-p-hd' : '';
@@ -454,6 +486,7 @@ var PostHeader = createComponent({
         r.div({ className: 'dw-p-hd' + isBodyPostClass },
           anyPin,
           postId,
+          anyMark,
           by,
           r[linkFn]({ className: 'dw-p-by', href: authorUrl }, authorNameElems),
           createdAt,
@@ -664,7 +697,8 @@ var PostActions = createComponent({
           moreLinks));
 
     return (
-      r.div({ className: 'dw-p-as dw-as', onMouseEnter: this.showActions },
+      r.div({ className: 'dw-p-as dw-as', onMouseEnter: this.showActions,
+          onClick: this.props.onClick },
         suggestionsNew,
         suggestionsOld,
         moreDropdown,

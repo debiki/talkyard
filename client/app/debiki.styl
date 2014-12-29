@@ -183,39 +183,33 @@
   z-index: 1;
   position: relative;
 
+.dw-p-mark
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  border: 5px solid black;
+  display: inline-block;
+  position: relative;
+  top: 1px;
+  margin: 0 8px 0 2px;
+  border-color: transparent;
+  -webkit-user-select: none; // webkit (safari, chrome) browsers
+  -moz-user-select: none; // mozilla browsers
+  -khtml-user-select: none; // webkit (konqueror) browsers
+  -ms-user-select: none; // IE10+
+
+.dw-p-read .dw-p-mark
+  border-color: hsl(0, 0%, 80%) !important;
+  background: white !important;
+  border-width: 1px !important;
+
+
 // Highlighted posts
 //---------------------------
 
 .dw-p.dw-highlighted-multireply-hover
     outline: hsl(211, 100%, 77%) solid 5px; // duplicated style [FK209EIZ]
 
-
-// Read / unread marks
-//---------------------------
-
-/*
-.dw-cycle-mark {
-  position: absolute;
-  left: 8px;
-  color: hsl(0, 0%, 70%);
-  font-size: 21px;
-  top: -7px;
-  z-index: 2;
-  padding: 5px;
-}
-
-.dw-cycle-mark-○ {
-  color: hsl(0, 0%, 67%);
-  font-size: 20px;
-  padding: 6px; // Make it easier to click
-  top: -9px;
-  left: 7px;
-}
-
-.dw-z {
-  left: -5px;
-}
-*/
 
 
 
