@@ -203,14 +203,13 @@
 .dw-p-mark
   width: 10px;
   height: 10px;
-  border-radius: 5px;
-  border: 5px solid black;
   display: inline-block;
   position: relative;
   top: 1px;
-  margin: 0 8px 0 2px;
-  border-color: hsl(0, 0%, 69%);
-  background: hsl(0, 0%, 69%);
+  margin: 0 8px 0 0;
+  background: transparent;
+  color: hsl(0, 0%, 69%);
+  font-size: 13px;
   -webkit-user-select: none;
   -moz-user-select: none;
   -khtml-user-select: none;
@@ -218,24 +217,18 @@
   user-select: none;
 
 .dw-p-unread .dw-p-mark
-  border-color: black;
+  color: hsl(0, 0%, 25%);
 
 .dw-p-mark-read .dw-p-mark
-  border-color: hsl(0, 0%, 80%) !important;
-  background: white !important;
-  border-width: 1px !important;
+  color: hsl(0, 0%, 50%);
 
-.dw-p-mark-gray-star .dw-p-mark.icon-star-empty
-  font-size: 13px;
-  border: none;
-  background: transparent !important;
+.dw-p-mark-blue-star .dw-p-mark
+  color: hsl(210, 100%, 50%);
 
-.dw-p-mark-yellow-star .dw-p-mark.icon-star
-  border: none;
+.dw-p-mark-yellow-star .dw-p-mark
   padding: 0 2px 0 1px;
-  background: transparent !important;
   font-size: 11px;
-  text-shadow: -1px -1px 0 red, 1px -1px 0 red, -1px 1px 0 red, 1px 1px 0 red;
+  text-shadow: -1px -1px 1px red, 1px -1px 1px red, -1px 1px 1px red, 1px 1px 1px red;
   color: yellow;
 
 

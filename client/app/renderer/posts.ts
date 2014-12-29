@@ -35,11 +35,12 @@ var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
 
-var ManualReadMark = 1;
-var GrayStarMark = 2;
-var YellowStarMark = 3;
-var FirstMark = ManualReadMark;
-var LastMark = YellowStarMark;
+
+var FirstMark = 1;
+var BlueStarMark = 1;
+var YellowStarMark = 2;
+var ManualReadMark = 3;
+var LastMark = ManualReadMark;
 
 
 function createComponent(componentDefinition) {
@@ -370,9 +371,9 @@ var Post = createComponent({
 
     var mark = user.marksByPostId[post.postId];
     switch (mark) {
-      case ManualReadMark: extraClasses += ' dw-p-mark-read'; break;
-      case GrayStarMark: extraClasses += ' dw-p-mark-gray-star'; break;
       case YellowStarMark: extraClasses += ' dw-p-mark-yellow-star'; break;
+      case BlueStarMark: extraClasses += ' dw-p-mark-blue-star'; break;
+      case ManualReadMark: extraClasses += ' dw-p-mark-read'; break;
       default:
         // Don't add the below class before user specific data has been activated, otherwise
         // all posts would show a big black unread mark on page load, which looks weird.
@@ -496,15 +497,14 @@ var PostHeader = createComponent({
     if (post.postId !== TitleId && post.postId !== BodyPostId) {
       postId = r[linkFn]({ className: 'dw-p-link' }, '#', post.postId);
       var mark = user.marksByPostId[post.postId];
-      var extraMarkClass = '';
-      switch (mark) {
-        case GrayStarMark: extraMarkClass = ' icon-star-empty'; break;
-        case YellowStarMark: extraMarkClass = ' icon-star'; break;
+      var starClass = ' icon-star';
+      if (mark === ManualReadMark) {
+        starClass = ' icon-star-empty';
       }
       // The outer -click makes the click area larger, because the marks are small.
       anyMark =
           r.span({ className: 'dw-p-mark-click', onClick: this.props.onMarkClick },
-            r.span({ className: 'dw-p-mark' + extraMarkClass }));
+            r.span({ className: 'dw-p-mark icon-star' + starClass }));
     }
 
     var by = post.postId === BodyPostId ? 'By ' : '';
