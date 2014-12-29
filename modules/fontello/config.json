@@ -13,6 +13,18 @@
       "src": "fontawesome"
     },
     {
+      "uid": "474656633f79ea2f1dad59ff63f6bf07",
+      "css": "star",
+      "code": 59410,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "d17030afaecc1e1c22349b99f3c4992a",
+      "css": "star-empty",
+      "code": 59411,
+      "src": "fontawesome"
+    },
+    {
       "uid": "f04a5d24e9e659145b966739c4fde82a",
       "css": "bookmark",
       "code": 59396,
