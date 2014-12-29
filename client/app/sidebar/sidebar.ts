@@ -72,6 +72,12 @@ export var Sidebar = createComponent({
     });
   },
 
+  showStarred: function() {
+    this.setState({
+      commentsType: 'Starred'
+    });
+  },
+
   componentDidMount: function() {
     if (!isPageWithSidebar(this.state.store.pageRole))
       return;
@@ -154,16 +160,17 @@ export var Sidebar = createComponent({
 
   updateSizeAndPosition2d: function() {
     var sidebar = $(this.getDOMNode());
+    var openButton = $(this.refs.openButton.getDOMNode());
 
     if (this.state.showSidebar) {
       var windowTop = $(window).scrollTop();
       var windowBottom = windowTop + $(window).height();
       sidebar.height(windowBottom - windowTop);
+      openButton.css('top', '');
       this.updateCommentsScrollbar(windowBottom);
     }
     else {
       sidebar.height(0);
-      var openButton = $(this.refs.openButton.getDOMNode());
       var minimap = $(this.refs.minimap.getDOMNode());
       openButton.css('top', minimap.height());
     }
@@ -195,7 +202,7 @@ export var Sidebar = createComponent({
     var windowTop = $(window).scrollTop();
     var windowBottom = windowTop + $(window).height();
     var sidebar = $(this.getDOMNode());
-    var openButton = this.refs.openButton ? $(this.refs.openButton.getDOMNode()) : null;
+    var openButton = $(this.refs.openButton.getDOMNode());
 
     if (commentSectionTop <= windowTop) {
       // We've scrolled down; let the sidebar span from top to bottom.
@@ -224,6 +231,7 @@ export var Sidebar = createComponent({
       sidebar.css('right', 0);
       if (this.state.showSidebar) {
         sidebar.height(windowBottom - commentSectionTop);
+        openButton.css('position', 'relative');
       } else {
         sidebar.height(0);
         openButton.css('position', 'absolute');
@@ -273,32 +281,37 @@ export var Sidebar = createComponent({
     var store: Store = this.state.store;
     var unreadComments = [];
     var recentComments = [];
+    var starredComments = [];
 
     // Find 1) all unread comments, sorted in the way they appear on the page
     // And 2) all visible comments.
-    var addComments = (postIds: number[]) => {
+    var addComments = (postIds: number[], ancestorCollapsed: boolean) => {
       _.each(postIds, (postId) => {
         var post: Post = store.allPosts[postId];
         if (isDeleted(post))
           return;
 
-        // Do include comments that where read right now — it'd be annoying if they
-        // suddenly vanished from the sidebar I think.
-        var readLongAgo = store.user.postIdsAutoReadLongAgo.indexOf(postId) !== -1 ||
-            post.authorId === store.user.userId;
-        if (!readLongAgo) {
-          unreadComments.push(post);
+        if (!ancestorCollapsed) {
+          // Do include comments that where read right now — it'd be annoying
+          // if they suddenly vanished from the sidebar I think.
+          var readLongAgo = store.user.postIdsAutoReadLongAgo.indexOf(postId) !== -1 ||
+              post.authorId === store.user.userId;
+          if (!readLongAgo) {
+            unreadComments.push(post);
+          }
+          recentComments.push(post);
         }
-        recentComments.push(post);
 
-        if (!isCollapsed(post)) {
-          addComments(post.childIdsSorted);
+        if (this.isStarred(post)) {
+          starredComments.push(post);
         }
+
+        addComments(post.childIdsSorted, ancestorCollapsed || isCollapsed(post));
       });
     };
 
     var rootPost = store.allPosts[store.rootPostId];
-    addComments(rootPost.childIdsSorted);
+    addComments(rootPost.childIdsSorted, false);
 
     recentComments.sort((a, b) => {
       if (a.createdAt < b.createdAt)
@@ -311,7 +324,12 @@ export var Sidebar = createComponent({
     });
     recentComments = _.take(recentComments, 50);
 
-    return { unread: unreadComments, recent: recentComments };
+    return { unread: unreadComments, recent: recentComments, starred: starredComments };
+  },
+
+  isStarred: function(post: Post) {
+    var mark = this.state.store.user.marksByPostId[post.postId];
+    return mark === BlueStarMark || mark === YellowStarMark;
   },
 
   render: function() {
@@ -340,25 +358,33 @@ export var Sidebar = createComponent({
       sidebarClasses += ' dw-sidebar-fixed';
     }
 
-    var unreadAndRecentComments = this.findComments();
-    var unreadComments = unreadAndRecentComments.unread;
-    var recentComments = unreadAndRecentComments.recent;
-    var unreadBtnTitle = 'Unread (' + unreadComments.length + ')';
+    var commentsFound = this.findComments();
+    var unreadBtnTitle = 'Unread (' + commentsFound.unread.length + ')';
+    var starredBtnTitle = 'Starred (' + commentsFound.starred.length + ')';
 
     var title;
     var unreadClass = '';
     var recentClass = '';
+    var starredClass = '';
     var comments;
     switch (this.state.commentsType) {
       case 'Recent':
-        title = 'Recent Comments: (click to show)';
+        title = commentsFound.recent.length ?
+            'Recent Comments: (click to show)' : 'No comments.';
         recentClass = ' active';
-        comments = recentComments;
+        comments = commentsFound.recent;
         break;
       case 'Unread':
-        title = 'Unread Comments: (click to show)';
+        title = commentsFound.unread.length ?
+            'Unread Comments: (click to show)' : 'No unread comments found.';
         unreadClass = ' active';
-        comments = unreadComments;
+        comments = commentsFound.unread;
+        break;
+      case 'Starred':
+        title = commentsFound.starred.length ?
+            'Starred Comments: (click to show)' : 'No starred comments.';
+        starredClass = ' active';
+        comments = commentsFound.starred;
         break;
       default:
         console.error('[DwE4PM091]');
@@ -380,10 +406,10 @@ export var Sidebar = createComponent({
     return (
       r.div({ id: 'dw-sidebar', className: sidebarClasses },
         MiniMap(minimapProps),
-        r.div({ className: 'dw-sidebar-btns' },
-          r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread }, unreadBtnTitle),
-          r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent }, 'Recent')),
-        ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar }),
+        ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar, ref: 'openButton' }),
+        r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread }, unreadBtnTitle),
+        r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent }, 'Recent'),
+        r.button({ className: 'btn btn-default' + starredClass, onClick: this.showStarred }, starredBtnTitle),
         r.div({ className: 'dw-comments' },
           r.h3({}, title),
           r.div({ id: 'dw-sidebar-comments-viewport', ref: 'commentsViewport' },

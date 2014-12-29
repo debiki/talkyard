@@ -40,6 +40,7 @@
   font-size: 130%;
   padding: 8px 7px;
   z-index: 10;
+  margin-bottom: 15px; // prevents the Unread/Recent/Starred buttons from floating-left below
 
 
 .dw-hz #dw-sidebar
@@ -69,18 +70,17 @@
     right: 0;
     bottom: 0;
 
-  .dw-sidebar-btns
+  .btn
     float: left
-    .btn
-      margin: 10px 5px 15px 0;
-      border: none;
-      border-radius: 0;
-      background: hsl(0, 0%, 85%);
-      color: #222;
+    margin: 10px 5px 0 0;
+    border: none;
+    border-radius: 0;
+    background: hsl(0, 0%, 85%);
+    color: #222;
 
-      &.active
-        background: hsl(0, 0%, 74%);
-        color: #000;
+    &.active
+      background: hsl(0, 0%, 74%);
+      color: #000;
 
   #dw-minimap
     position: relative;
@@ -99,7 +99,7 @@
   .dw-comments
     clear: both;
     background: bgcolor;
-    padding-right: 8px;
+    padding: 15px 8px 0 0;
 
     h3
       font-weight: bold;
