@@ -183,6 +183,22 @@
   z-index: 1;
   position: relative;
 
+
+// Marks
+//---------------------------
+
+.dw-p-mark-click
+  padding: 6px 0px 7px 5px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -ms-user-select: none;
+
+  &:hover
+    outline: 2px solid hsl(210, 100%, 77%);
+    background: hsl(210, 100%, 97%);
+
 .dw-p-mark
   width: 10px;
   height: 10px;
@@ -193,15 +209,28 @@
   top: 1px;
   margin: 0 8px 0 2px;
   border-color: transparent;
-  -webkit-user-select: none; // webkit (safari, chrome) browsers
-  -moz-user-select: none; // mozilla browsers
-  -khtml-user-select: none; // webkit (konqueror) browsers
-  -ms-user-select: none; // IE10+
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -ms-user-select: none;
 
 .dw-p-read .dw-p-mark
   border-color: hsl(0, 0%, 80%) !important;
   background: white !important;
   border-width: 1px !important;
+
+.dw-p-gray-star .dw-p-mark.icon-star-empty
+  font-size: 13px;
+  border: none;
+  background: transparent !important;
+
+.dw-p-super-star .dw-p-mark.icon-star
+  border: none;
+  padding: 0 2px 0 1px;
+  background: transparent !important;
+  font-size: 11px;
+  text-shadow: -1px -1px 0 red, 1px -1px 0 red, -1px 1px 0 red, 1px 1px 0 red;
+  color: yellow;
 
 
 // Highlighted posts

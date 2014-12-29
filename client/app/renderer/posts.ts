@@ -319,8 +319,11 @@ var Post = createComponent({
     }
   },
 
-  onMarkClick: function() {
-    debiki2['sidebar'].UnreadCommentsTracker.toggleIsReadStatus(this.props.post.postId);
+  onMarkClick: function(event) {
+    // Try to avoid selecting text:
+    event.stopPropagation();
+    event.preventDefault();
+    debiki2['sidebar'].UnreadCommentsTracker.cycleToNextMark(this.props.post.postId);
   },
 
   render: function() {
@@ -475,7 +478,10 @@ var PostHeader = createComponent({
     if (post.postId !== TitleId && post.postId !== BodyPostId) {
       postId = r[linkFn]({ className: 'dw-p-link' }, '#', post.postId);
       if (!this.props.abbreviate) {
-        anyMark = r.span({ className: 'dw-p-mark', onClick: this.props.onMarkClick });
+        // The outer -click makes the click area larger, because the marks are small.
+        anyMark =
+            r.span({ className: 'dw-p-mark-click', onClick: this.props.onMarkClick },
+              r.span({ className: 'dw-p-mark' }));
       }
     }
 

@@ -28,14 +28,21 @@ var $: any = d.i.$;
 
 export var debugIntervalHandler = null;
 
-interface Progress {
+interface ReadState {
   postId: number;
+  mark?: number;
   charsRead?: number;
   hasBeenRead?: boolean;
   textLength?: number;
 }
 
-var progressByPostId: { [postId: number]: Progress } = {};
+var ManualReadMark = 1;
+var GrayStarMark = 2;
+var SuperStarMark = 3;
+var FirstMark = ManualReadMark;
+var LastMark = SuperStarMark;
+
+var readStatesByPostId: { [postId: number]: ReadState } = {};
 var postsVisibleLastTick: { [postId: number]: boolean } = {};
 
 var pageId = debiki2.ReactStore.getPageId();
@@ -68,12 +75,30 @@ export function getPostIdsReadLongAgo() {
 
 
 export function markAsRead(postId: number) {
-  $('#post-' + postId).addClass('dw-p-read');
+  var state = readStatesByPostId[postId];
+  if (state.mark) {
+    // All marks already mean that the post has been read.
+    return;
+  }
+  state.mark = ManualReadMark;
+  saveMarksInLocalStorage();
+  updateMarkGraphics(postId);
 }
 
 
-export function toggleIsReadStatus(postId: number) {
-  $('#post-' + postId).toggleClass('dw-p-read');
+export function cycleToNextMark(postId: number) {
+  var state = readStatesByPostId[postId];
+  if (!state.mark) {
+    state.mark = FirstMark;
+  }
+  else if (state.mark < LastMark) {
+    state.mark += 1;
+  }
+  else {
+    delete state.mark;
+  }
+  saveMarksInLocalStorage();
+  updateMarkGraphics(postId);
 }
 
 
@@ -107,14 +132,14 @@ function trackUnreadComments() {
     var postId: number = post.dwPostId();
     postsVisibleThisTick[postId] = true;
 
-    var progress = progressByPostId[postId];
+    var progress = readStatesByPostId[postId];
 
     if (!progress && postIdsReadLongAgo.indexOf(postId) !== -1) {
       progress = {
         postId: postId,
         hasBeenRead: true,
       };
-      progressByPostId[postId] = progress;
+      readStatesByPostId[postId] = progress;
     }
 
     if (!progress) {
@@ -122,7 +147,7 @@ function trackUnreadComments() {
         postId: postId,
         charsRead: 0
       };
-      progressByPostId[postId] = progress;
+      readStatesByPostId[postId] = progress;
     }
 
     if (progress.hasBeenRead)
@@ -188,6 +213,32 @@ function rememberHasBeenRead(postId: number) {
 }
 
 
+function saveMarksInLocalStorage() {
+}
+
+
+function updateMarkGraphics(postId) {
+  var state = readStatesByPostId[postId];
+  var mark = state ? state.mark : null;
+  var post = $('#post-' + postId);
+  switch (mark) {
+    case ManualReadMark:
+      post.addClass('dw-p-read');
+      break;
+    case GrayStarMark:
+      post.addClass('dw-p-gray-star').find('.dw-p-mark').addClass('icon-star-empty');
+      break;
+    case SuperStarMark:
+      post.removeClass('dw-p-gray-star').addClass('dw-p-super-star');
+      post.find('.dw-p-mark').removeClass('icon-star-empty').addClass('icon-star');
+      break;
+    default:
+      post.removeClass('dw-p-read')
+          .removeClass('dw-p-super-star').find('.dw-p-mark').removeClass('icon-star');
+  }
+}
+
+
 /**
  * Customized is-in-viewport test to find out if a post, or at least
  * the start of it, is visible. Takes mobile phones into account: If the
@@ -215,7 +266,7 @@ function isInViewport($postBody){
 
 
 function setColorOfPost(postId, fractionRead) {
-  var mark = $('#post-' + postId).find('> .dw-p-hd > .dw-p-mark');
+  var mark = $('#post-' + postId).find('.dw-p-mark');
   setColorOfMark(mark, fractionRead);
 }
 
