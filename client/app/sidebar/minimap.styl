@@ -113,13 +113,20 @@
     .dw-p
       cursor: pointer;
       margin: 2px;
+      2px solid #eee;
+      &.dw-current-post
+        border: 4px solid hsl(210, 100%, 67%);
+        margin: 0;
+
+    .dw-p .dw-mark-click
+      margin-left: -3px;
 
     .dw-p-bd
       max-height: 130px;
       overflow: hidden;
 
     .dw-p:hover
-      outline: 2px solid hsl(210, 39%, 84%);
+      outline: 2px solid hsl(210, 45%, 74%);
 
       .dw-p-hd
         background-color: hsl(210, 39%, 84%);

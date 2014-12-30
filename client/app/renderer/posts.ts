@@ -334,7 +334,7 @@ var Post = createComponent({
     var pendingApprovalElem;
     var headerElem;
     var bodyElem;
-    var extraClasses = '';
+    var extraClasses = this.props.className || '';
 
     if (post.isTreeDeleted || post.isPostDeleted) {
       var what = post.isTreeDeleted ? 'Thread' : 'Comment';
@@ -389,7 +389,7 @@ var Post = createComponent({
     var id = this.props.abbreviate ? undefined : 'post-' + post.postId;
 
     return (
-      r.div({ className: 'dw-p' + extraClasses, id: id,
+      r.div({ className: 'dw-p ' + extraClasses, id: id,
             onMouseEnter: this.props.onMouseEnter, onClick: this.onClick },
         pendingApprovalElem,
         multireplReceivers,

@@ -354,6 +354,13 @@ export var Sidebar = createComponent({
     return mark === BlueStarMark || mark === YellowStarMark;
   },
 
+  focusPost: function(post: Post, index: number) {
+    this.setState({
+      currentPostId: post.postId
+    });
+    d.i.showAndHighlightPost($('#post-' + post.postId));
+  },
+
   render: function() {
     var store = this.state.store;
 
@@ -388,7 +395,7 @@ export var Sidebar = createComponent({
     var unreadClass = '';
     var recentClass = '';
     var starredClass = '';
-    var comments;
+    var comments: Post[];
     switch (this.state.commentsType) {
       case 'Recent':
         title = commentsFound.recent.length ?
@@ -423,7 +430,7 @@ export var Sidebar = createComponent({
     if (this.state.commentsType === 'Starred') {
       tipsOrExtraConfig =
           r.p({}, 'To star a comment, click the star in its upper left ' +
-            "corner, so the star turns blue or yellow. (You can use the colors in " +
+            "corner, so the star turns blue or yellow. (You can use these two colors in " +
             'any way you want.)');
     }
     else if (this.state.commentsType === 'Unread') {
@@ -442,15 +449,14 @@ export var Sidebar = createComponent({
           tips);
     }
 
-    var commentsElems = comments.map((post) => {
-      var scrollToPost = (event) => {
-        d.i.showAndHighlightPost($('#post-' + post.postId));
-      }
+    var commentsElems = comments.map((post, index) => {
       var postProps = _.clone(store);
       postProps.post = post;
-      postProps.onClick = scrollToPost;
+      postProps.onClick = (event) => this.focusPost(post, index),
       postProps.abbreviate = true;
-
+      if (post.postId === this.state.currentPostId) {
+        postProps.className = 'dw-current-post';
+      }
       return (
         Post(postProps));
     });
