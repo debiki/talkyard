@@ -424,7 +424,7 @@ export var Sidebar = createComponent({
       tipsOrExtraConfig =
           r.p({}, 'Find listed below excerpts from all comments, the newest ones first. ' +
               'Click a comment to view it in full in the threaded view to the left. ' +
-              'A black star mean that you have not yet read that comment. Gray means ' +
+              'A black star means that you have not yet read that comment. Gray means ' +
               'the computer thinks you have read it.');
     }
     if (this.state.commentsType === 'Starred') {
@@ -435,10 +435,10 @@ export var Sidebar = createComponent({
     }
     else if (this.state.commentsType === 'Unread') {
       var tips = this.state.showPerhapsUnread
-          ? r.p({}, 'Please find listed below all comments that you yourself have not marked as ' +
+          ? r.p({}, 'Find listed below all comments that you have not marked as ' +
               'read. To mark a comment as read, click anywhere inside it, in the ' +
-              "threaded view to the left. Then the star in the comment's upper left corner" +
-              'will turn white, to indicate that you have marked it as read.')
+              "threaded view to the left. (Then the star in the comment's upper left corner" +
+              'will turn white.)')
           : r.p({}, 'The computer thinks you have read all comments but those listed below.');
       tipsOrExtraConfig =
         r.div({},
