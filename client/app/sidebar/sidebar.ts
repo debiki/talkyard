@@ -423,7 +423,7 @@ export var Sidebar = createComponent({
     var tipsOrExtraConfig;
     if (this.state.commentsType === 'Recent') {
       tipsOrExtraConfig =
-          r.p({}, 'Find listed below excerpts from all comments, the newest ones first. ' +
+          r.p({}, 'Find listed below the beginning of every comment, newest comments first. ' +
               'Click a comment to view it in full in the threaded view to the left. ' +
               'A black star means that you have not yet read that comment. Gray means ' +
               'the computer thinks you have read it.');
@@ -438,7 +438,7 @@ export var Sidebar = createComponent({
       var tips = this.state.showPerhapsUnread
           ? r.p({}, 'Find listed below all comments that you have not marked as ' +
               'read. To mark a comment as read, click anywhere inside it, in the ' +
-              "threaded view to the left. (Then the star in the comment's upper left corner" +
+              "threaded view to the left. (Then the star in the comment's upper left corner " +
               'will turn white.)')
           : r.p({}, 'The computer thinks you have read all comments but those listed below.');
       tipsOrExtraConfig =
