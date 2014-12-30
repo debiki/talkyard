@@ -303,6 +303,11 @@ export var Sidebar = createComponent({
           // if they suddenly vanished from the sidebar just because the computer
           // suddenly automatically thought you've read them.
           var autoReadLongAgo = store.user.postIdsAutoReadLongAgo.indexOf(postId) !== -1;
+          // No do include comments auto-read just now. Otherwise it's impossible to
+          // figure out how the Unread tab works and the 'Let computer determine' checkbox.
+          autoReadLongAgo =
+              autoReadLongAgo || store.user.postIdsAutoReadNow.indexOf(postId) !== -1;
+
           var hasReadItForSure = this.manuallyMarkedAsRead(postId);
           var ownPost = post.authorId === store.user.userId;
           if (!ownPost && !hasReadItForSure) {
@@ -407,13 +412,34 @@ export var Sidebar = createComponent({
         console.error('[DwE4PM091]');
     }
 
-    var anyPerhapsUnreadCheckbox;
-    if (this.state.commentsType === 'Unread') {
-      anyPerhapsUnreadCheckbox =
+    var tipsOrExtraConfig;
+    if (this.state.commentsType === 'Recent') {
+      tipsOrExtraConfig =
+          r.p({}, 'Find listed below excerpts from all comments, the newest ones first. ' +
+              'Click a comment to view it in full in the threaded view to the left. ' +
+              'A black star mean that you have not yet read that comment. Gray means ' +
+              'the computer thinks you have read it.');
+    }
+    if (this.state.commentsType === 'Starred') {
+      tipsOrExtraConfig =
+          r.p({}, 'To star a comment, click the star in its upper left ' +
+            "corner, so the star turns blue or yellow. (You can use the colors in " +
+            'any way you want.)');
+    }
+    else if (this.state.commentsType === 'Unread') {
+      var tips = this.state.showPerhapsUnread
+          ? r.p({}, 'Please find listed below all comments that you yourself have not marked as ' +
+              'read. To mark a comment as read, click anywhere inside it, in the ' +
+              "threaded view to the left. Then the star in the comment's upper left corner" +
+              'will turn white, to indicate that you have marked it as read.')
+          : r.p({}, 'The computer thinks you have read all comments but those listed below.');
+      tipsOrExtraConfig =
+        r.div({},
           r.label({ className: 'checkbox-inline' },
-            r.input({ type: 'checkbox', checked: this.state.showPerhapsUnread,
+            r.input({ type: 'checkbox', checked: !this.state.showPerhapsUnread,
                 onChange: this.togglePerhapsUnread }),
-            'Show perhaps unread comments');
+            'Let the computer try to determine when you have read a comment.'),
+          tips);
     }
 
     var commentsElems = comments.map((post) => {
@@ -440,7 +466,7 @@ export var Sidebar = createComponent({
           r.h3({}, title),
           r.div({ id: 'dw-sidebar-comments-viewport', ref: 'commentsViewport' },
             r.div({ id: 'dw-sidebar-comments-scrollable' },
-              anyPerhapsUnreadCheckbox,
+              tipsOrExtraConfig,
               r.div({ className: 'dw-recent-comments' },
                 commentsElems))))));
   }
