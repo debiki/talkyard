@@ -554,6 +554,9 @@ var PostActions = createComponent({
   onReplyClick: function(event) {
     debiki.internal.$showReplyForm.call(event.target, event);
   },
+  onEditClick: function(event) {
+    debiki.internal.$showEditForm.call(event.target, event);
+  },
   onLikeClick: function(event) {
     debiki.internal.$toggleVote('VoteLike').call(event.target, event);
   },
@@ -563,7 +566,7 @@ var PostActions = createComponent({
   onOffTopicClick: function(event) {
     debiki.internal.$toggleVote('VoteOffTopic').call(event.target, event);
   },
-  onEditClick: function(event) {
+  onEditSuggestionsClick: function(event) {
     debiki.internal.$showEditsDialog.call(event.target, event);
   },
   onFlagClick: function(event) {
@@ -609,7 +612,11 @@ var PostActions = createComponent({
             title: 'Click if you think this post is wrong', onClick: this.onWrongClick },
             'Wrong')];
 
-      if (!isOwnPost) {
+      if (isOwnPost) {
+        replyLikeWrongLinks.push(
+          r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit'));
+      }
+      else {
         replyLikeWrongLinks.push(
           r.a({ className: 'dw-a dw-a-like icon-heart' + myLikeVote,
             title: 'Like this', onClick: this.onLikeClick }, 'Like'));
@@ -627,6 +634,11 @@ var PostActions = createComponent({
             title: 'Click if you think this post is off-topic', onClick: this.onOffTopicClick },
           'Off-Topic'));
 
+    if (!isOwnPost) {
+      moreLinks.push(
+        r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit'));
+    }
+
     moreLinks.push(
         r.a({ className: 'dw-a dw-a-flag icon-flag', onClick: this.onFlagClick }, 'Report'));
 
@@ -639,8 +651,8 @@ var PostActions = createComponent({
 
     if (post.numPendingEditSuggestions > 0)
       suggestionsNew.push(
-          r.a({ className: 'dw-a dw-a-edit icon-edit dw-a-pending-review',
-           title: 'View edit suggestions', onClick: this.onEditClick },
+          r.a({ className: 'dw-a dw-a-edit-suggs icon-edit dw-a-pending-review',
+           title: 'View edit suggestions', onClick: this.onEditSuggestionsClick },
             '×', post.numPendingEditSuggestions));
 
     // TODO [react]
