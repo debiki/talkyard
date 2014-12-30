@@ -245,18 +245,44 @@ function markPostAsRead(postId: number, manually: boolean) {
 }
 
 
+var lastPostIdMarkCycled = null;
+
 function cycleToNextMark(postId: number) {
   var currentMark = store.user.marksByPostId[postId];
   var nextMark;
-  if (!currentMark) {
-    nextMark = FirstMark;
-  }
-  else if (currentMark === LastMark) {
-    nextMark = null;
+  // The first time when clicking the star icon, try to star the post,
+  // rather than marking it as read or unread. However, when the user
+  // continues clicking the same star icon, do cycle through the
+  // read and unread states too. Logic: People probably expect the comment
+  // to be starred on the very first click. The other states that happen
+  // if you click the star even more, are for advanced users — don't need
+  // to show them directly.
+  if (lastPostIdMarkCycled !== postId) {
+    if (!currentMark || currentMark === ManualReadMark) {
+      nextMark = FirstStarMark;
+    }
+    else if (currentMark < LastStarMark) {
+      nextMark = currentMark + 1;
+    }
+    else {
+      nextMark = ManualReadMark;
+    }
   }
   else {
-    nextMark = currentMark + 1;
+    if (currentMark === ManualReadMark) {
+      nextMark = null;
+    }
+    else if (!currentMark) {
+      nextMark = FirstStarMark;
+    }
+    else if (currentMark < LastStarMark) {
+      nextMark = currentMark + 1;
+    }
+    else {
+      nextMark = ManualReadMark;
+    }
   }
+  lastPostIdMarkCycled = postId;
   store.user.marksByPostId[postId] = nextMark;
 }
 

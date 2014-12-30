@@ -36,11 +36,11 @@ var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
 
 
-var FirstMark = 1;
-var BlueStarMark = 1;
+var ManualReadMark = 1;
 var YellowStarMark = 2;
-var ManualReadMark = 3;
-var LastMark = ManualReadMark;
+var FirstStarMark = 2;
+var BlueStarMark = 3;
+var LastStarMark = 3;
 
 
 function createComponent(componentDefinition) {
