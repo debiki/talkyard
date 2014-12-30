@@ -133,3 +133,26 @@
 
       .dw-p-bd
         background-color: hsl(210, 100%, 96%);
+
+
+    .comment-enter,
+    .comment-leave
+      transition-duration: .7s;
+      transition-timing-function: ease;
+      transition-property: opacity, max-height;
+
+    .comment-enter
+      opacity: 0;
+      max-height: 0px;
+
+    .comment-enter.comment-enter-active
+      opacity: 1;
+      max-height: 100px;
+
+    .comment-leave
+      opacity: 1;
+      max-height: 100px;
+
+    .comment-leave.comment-leave-active
+      opacity: 0.1;
+      max-height: 0px;

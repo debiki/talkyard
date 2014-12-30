@@ -30,6 +30,7 @@
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
+var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 
 
 export var Sidebar = createComponent({
@@ -458,7 +459,8 @@ export var Sidebar = createComponent({
         postProps.className = 'dw-current-post';
       }
       return (
-        Post(postProps));
+        r.div({ key: post.postId },
+          Post(postProps)));
     });
 
     return (
@@ -474,7 +476,8 @@ export var Sidebar = createComponent({
             r.div({ id: 'dw-sidebar-comments-scrollable' },
               tipsOrExtraConfig,
               r.div({ className: 'dw-recent-comments' },
-                commentsElems))))));
+                ReactCSSTransitionGroup({ transitionName: 'comment', key: this.state.commentsType },
+                  commentsElems)))))));
   }
 });
 
