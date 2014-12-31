@@ -90,7 +90,7 @@ var debikiDesktopFiles = [
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',
-      'client/third-party/html-sanitizer-bundle.js',
+      'client/third-party/html-css-sanitizer-bundle.js',
       'client/third-party/jquery-cookie.js',
       'client/third-party/jquery-scrollable.js', //
       'client/third-party/jquery.browser.js', //
@@ -170,7 +170,7 @@ var debikiTouchFiles = [
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',
-      'client/third-party/html-sanitizer-bundle.js',
+      'client/third-party/html-css-sanitizer-bundle.js',
       'client/third-party/jquery-cookie.js',
       'client/third-party/livescript/prelude-browser.js',
       'client/third-party/popuplib.js',
@@ -338,7 +338,7 @@ function compileServerSideTypescript() {
         'bower_components/react-bootstrap/react-bootstrap.js',
         'bower_components/remarkable/dist/remarkable.js',
         'bower_components/lodash/dist/lodash.js',
-        'client/third-party/html-sanitizer-bundle.js',
+        'client/third-party/html-css-sanitizer-bundle.js',
         'client/shared/editor/mentions-remarkable-plugin.js',
         'bower_components/moment/moment.js']);
 
