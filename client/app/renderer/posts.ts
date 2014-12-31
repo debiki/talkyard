@@ -132,17 +132,26 @@ var TitleBodyComments = createComponent({
 
 
 var Title = createComponent({
+  editTitle: function(event) {
+    debiki.internal.$showEditForm.call(event.target, event);
+  },
   render: function() {
     var titlePost = this.props.allPosts[TitleId];
     var titleText = titlePost.isApproved
         ? titlePost.sanitizedHtml
         : r.i({}, '(Title pending approval)');
+    var anyEditTitleBtn;
+    if (this.props.user.isAdmin || this.props.user.userId === titlePost.authorId) {
+      anyEditTitleBtn =
+        r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.editTitle });
+    }
     return (
       r.div({ className: 'dw-t', id: 'dw-t-0' },
         r.div({ className: 'dw-p dw-p-ttl', id: 'post-0' },
           r.div({ className: 'dw-p-bd' },
             r.div({ className: 'dw-p-bd-blk' },
-              r.h1({ className: 'dw-p-ttl' }, titleText))))));
+              r.h1({ className: 'dw-p-ttl' }, titleText),
+              anyEditTitleBtn)))));
   },
 });
 
