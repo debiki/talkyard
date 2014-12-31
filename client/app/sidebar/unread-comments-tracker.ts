@@ -27,35 +27,38 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $: any = d.i.$;
 
 export var debugIntervalHandler = null;
-var shallDebugDraw = location.toString().search('debug-reading-progress=true') !== -1;
 
-interface Progress {
+interface ReadState {
   postId: number;
+  mark?: number;
   charsRead?: number;
   hasBeenRead?: boolean;
   textLength?: number;
 }
 
-var progressByPostId: { [postId: number]: Progress } = {};
+
+var readStatesByPostId: { [postId: number]: ReadState } = {};
 var postsVisibleLastTick: { [postId: number]: boolean } = {};
 
 var pageId = debiki2.ReactStore.getPageId();
 var charsReadPerSecond = 35;
 var maxCharsReadPerPost = charsReadPerSecond * 4.5;
-var secondsBetweenTicks = shallDebugDraw ? 0.25 : 1;
+var secondsBetweenTicks = 0.33;
 var secondsSpentReading = 0;
 var secondsLostPerNewPostInViewport = 0.5;
 var maxConfusionSeconds = -1;
 var localStorageKey = 'debikiPostIdsReadByPageId';
+var brightnessWhenRead = 175; // 0-255
 
-var postIdsReadLongAgo: number[] = getPostIdsReadLongAgo();
+var postIdsReadLongAgo: number[] = getPostIdsAutoReadLongAgo();
 
 export function start() {
   debugIntervalHandler = setInterval(trackUnreadComments, secondsBetweenTicks * 1000);
+  //setInitialReadMarkColors();
 }
 
 
-export function getPostIdsReadLongAgo() {
+export function getPostIdsAutoReadLongAgo(): number[] {
   if (!localStorage)
     return [];
 
@@ -63,6 +66,15 @@ export function getPostIdsReadLongAgo() {
   var postIdsReadByPageId = JSON.parse(postIdsReadByPageIdString);
   var postIdsRead = postIdsReadByPageId[pageId] || [];
   return postIdsRead;
+}
+
+
+function setInitialReadMarkColors() {
+  var allMarkClasses =
+      '.dw-p-auto-read, .dw-p-mark-read, .dw-p-mark-gray-star, .dw-p-mark-yellow-star';
+  $('.dw-p:not(' + allMarkClasses + ') .dw-p-mark').each(function() {
+    setColorOfMark($(this), 0); // 0 means 0% read
+  });
 }
 
 
@@ -85,14 +97,14 @@ function trackUnreadComments() {
     var postId: number = post.dwPostId();
     postsVisibleThisTick[postId] = true;
 
-    var progress = progressByPostId[postId];
+    var progress = readStatesByPostId[postId];
 
     if (!progress && postIdsReadLongAgo.indexOf(postId) !== -1) {
       progress = {
         postId: postId,
         hasBeenRead: true,
       };
-      progressByPostId[postId] = progress;
+      readStatesByPostId[postId] = progress;
     }
 
     if (!progress) {
@@ -100,7 +112,7 @@ function trackUnreadComments() {
         postId: postId,
         charsRead: 0
       };
-      progressByPostId[postId] = progress;
+      readStatesByPostId[postId] = progress;
     }
 
     if (progress.hasBeenRead)
@@ -146,8 +158,13 @@ function trackUnreadComments() {
       stats.hasBeenRead = true;
       rememberHasBeenRead(stats.postId);
     }
-    if (shallDebugDraw) {
-      debugDrawReadingProgress(stats, charsToRead);
+
+    var fractionRead = !charsToRead ? 1.0 : stats.charsRead / charsToRead;
+    if (fractionRead >= 1) {
+      debiki2.ReactActions.markPostAsRead(stats.postId, false);
+    }
+    else {
+      setColorOfPost(stats.postId, fractionRead);
     }
   }
 }
@@ -192,9 +209,22 @@ function isInViewport($postBody){
 }
 
 
-function debugDrawReadingProgress(stats, charsToRead) {
-  var fractionRead = !charsToRead ? 1.0 : stats.charsRead / charsToRead;
+function setColorOfPost(postId, fractionRead) {
+  var mark = $('#post-' + postId).find('.dw-p-mark');
+  setColorOfMark(mark, fractionRead);
+}
+
+
+function setColorOfMark(mark, fractionRead) {
   var fractionLeft = 1.0 - fractionRead;
+  // First black, then gray:
+  var whiteness = brightnessWhenRead - Math.ceil(brightnessWhenRead * fractionLeft);
+  var colorHex = whiteness.toString(16);
+  colorHex = ('0' + colorHex).slice(-2); // pad left with 0
+  var colorString = '#' + colorHex + colorHex + colorHex;
+  mark.css('border-color', colorString);
+
+  /* This outlines unread post ids in red, and the ones you've read in blue:
   var outlineThickness = Math.max(0, Math.ceil(7 * fractionLeft));
   var colorChange = Math.ceil(100 * fractionLeft);
   var redColor = (155 + colorChange).toString(16);
@@ -206,6 +236,7 @@ function debugDrawReadingProgress(stats, charsToRead) {
   if (stats.hasBeenRead) {
     link.css('outline', '2px blue solid');
   }
+  */
 }
 
 //------------------------------------------------------------------------------

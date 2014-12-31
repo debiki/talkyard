@@ -30,3 +30,31 @@ interface Post {
 }
 
 
+interface User {
+  userId: string;
+  permsOnPage: any;
+  rolePageSettings: any;
+  votes: any;
+  unapprovedPosts: any;
+  postIdsAutoReadLongAgo: number[];
+  postIdsAutoReadNow: number[];
+  marksByPostId: { [postId: number]: any };
+}
+
+
+interface Store {
+  now: number;
+  pageId: string;
+  pageRole: string;
+  numPosts: number;
+  numPostsExclTitle: number;
+  isInEmbeddedCommentsIframe: boolean;
+  categories: any; // number[]?
+  user: User;
+  userSpecificDataAdded?: boolean;
+  rootPostId: number;
+  allPosts: { [postId: number]: any };
+  topLevelCommentIdsSorted: number[];
+  horizontalLayout: boolean;
+  socialLinksHtml: string;
+}

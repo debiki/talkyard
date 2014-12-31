@@ -108,7 +108,6 @@ var debikiDesktopFiles = [
       'target/client/app/old/actions/show-actions.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
-      'target/client/app/actions/popup-menu.js',
       'target/client/app/dashbar/dashbar.js',
       'target/client/app/current-user.js',
       'target/client/app/actions/edit/diff-match-patch.js',
@@ -187,7 +186,6 @@ var debikiTouchFiles = [
       'target/client/app/old/actions/show-actions.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
-      'target/client/app/actions/popup-menu.js',
       'target/client/app/dashbar/dashbar.js',
       'target/client/app/current-user.js',
       'target/client/app/actions/edit/diff-match-patch.js',
@@ -339,6 +337,7 @@ function compileServerSideTypescript() {
         'bower_components/react/react-with-addons.js',
         'bower_components/react-bootstrap/react-bootstrap.js',
         'bower_components/remarkable/dist/remarkable.js',
+        'bower_components/lodash/dist/lodash.js',
         'client/third-party/html-sanitizer-bundle.js',
         'client/shared/editor/mentions-remarkable-plugin.js',
         'bower_components/moment/moment.js']);

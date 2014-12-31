@@ -234,13 +234,11 @@ function renderDiscussionPage() {
   steps.push(function() {
     d.i.makePinsDragsortable();
     debiki2.ReactStore.activateUserSpecificData();
-    d.i.startInlineActionsMenu();
   });
 
   steps.push(function() {
     debiki.scriptLoad.resolve();
     runSiteConfigScripts();
-    //d.i.startReadingProgresMonitor();
   });
 
   steps.push(function() {

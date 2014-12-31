@@ -52,8 +52,11 @@ d.i.loadEditorDependencies = (function() {
  */
 d.i.$showEditForm = function(event) {
   event.preventDefault();
-  var _this = this;
-  var postId = $(this).dwPostId();
+  var $post = $(this);
+  if ($post.is('.dw-a-edit')) {
+    $post = $post.closest('.dw-t').children('.dw-p');
+  }
+  var postId = $post.dwPostId();
   var anyReturnToUrl = d.i.makeReturnToPostUrlForVerifEmail(postId);
   d.i.loginIfNeeded('LoginToEdit', anyReturnToUrl, function() {
     if (d.i.isInEmbeddedCommentsIframe) {

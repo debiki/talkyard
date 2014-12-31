@@ -183,39 +183,61 @@
   z-index: 1;
   position: relative;
 
+
+// Marks
+//---------------------------
+
+.dw-p-mark-click
+  padding: 7px 0px 7px 5px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
+  &:hover
+    outline: 2px solid hsl(210, 100%, 77%);
+    background: hsl(210, 100%, 97%);
+
+.dw-p-mark
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+  position: relative;
+  top: 1px;
+  margin: 0 8px 0 0;
+  background: transparent;
+  color: hsl(0, 0%, 72%);
+  font-size: 13px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
+.dw-p-unread .dw-p-mark
+  color: hsl(0, 0%, 33%);
+
+.dw-p-mark-read .dw-p-mark
+  color: hsl(0, 0%, 50%);
+
+.dw-p-mark-blue-star .dw-p-mark
+  color: hsl(210, 100%, 50%);
+
+.dw-p-mark-yellow-star .dw-p-mark
+  padding: 0 2px 0 1px;
+  font-size: 11px;
+  text-shadow: -1px -1px 1px red, 1px -1px 1px red, -1px 1px 1px red, 1px 1px 1px red;
+  color: yellow;
+
+
 // Highlighted posts
 //---------------------------
 
 .dw-p.dw-highlighted-multireply-hover
     outline: hsl(211, 100%, 77%) solid 5px; // duplicated style [FK209EIZ]
 
-
-// Read / unread marks
-//---------------------------
-
-/*
-.dw-cycle-mark {
-  position: absolute;
-  left: 8px;
-  color: hsl(0, 0%, 70%);
-  font-size: 21px;
-  top: -7px;
-  z-index: 2;
-  padding: 5px;
-}
-
-.dw-cycle-mark-○ {
-  color: hsl(0, 0%, 67%);
-  font-size: 20px;
-  padding: 6px; // Make it easier to click
-  top: -9px;
-  left: 7px;
-}
-
-.dw-z {
-  left: -5px;
-}
-*/
 
 
 

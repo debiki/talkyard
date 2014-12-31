@@ -30,6 +30,8 @@ export var actionTypes = {
   SetPageNotfLevel: 'SetPageNotfLevel',
   UpdatePost: 'UpdatePost',
   VoteOnPost: 'VoteOnPost',
+  MarkPostAsRead: 'MarkPostAsRead',
+  CycleToNextMark: 'CycleToNextMark',
   UncollapsePost: 'UncollapsePost',
   SetHorizontalLayout: 'SetHorizontalLayout',
 }
@@ -86,6 +88,23 @@ export function vote(post, doWhat: string, voteType: string) {
     post: post,
     doWhat: doWhat,
     voteType: voteType
+  });
+}
+
+
+export function markPostAsRead(postId: number, manually: boolean) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.MarkPostAsRead,
+    postId: postId,
+    manually: manually
+  });
+}
+
+
+export function cycleToNextMark(postId: number) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.CycleToNextMark,
+    postId: postId
   });
 }
 

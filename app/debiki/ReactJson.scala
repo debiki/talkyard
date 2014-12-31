@@ -129,7 +129,10 @@ object ReactJson {
     "permsOnPage" -> JsObject(Nil),
     "rolePageSettings" -> JsObject(Nil),
     "votes" -> JsObject(Nil),
-    "unapprovedPosts" -> JsObject(Nil))
+    "unapprovedPosts" -> JsObject(Nil),
+    "postIdsAutoReadLongAgo" -> JsArray(Nil),
+    "postIdsAutoReadNow" -> JsArray(Nil),
+    "marksByPostId" -> JsObject(Nil))
 
 
   def userDataJson(pageRequest: PageRequest[_]): Option[JsObject] = {
@@ -155,7 +158,10 @@ object ReactJson {
       "permsOnPage" -> permsOnPageJson(pageRequest.permsOnPage),
       "rolePageSettings" -> rolePageSettings,
       "votes" -> votesJson(pageRequest),
-      "unapprovedPosts" -> unapprovedPostsJson(pageRequest)))
+      "unapprovedPosts" -> unapprovedPostsJson(pageRequest),
+      "postIdsAutoReadLongAgo" -> JsArray(Nil),
+      "postIdsAutoReadNow" -> JsArray(Nil),
+      "marksByPostId" -> JsObject(Nil)))
   }
 
 

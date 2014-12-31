@@ -45,7 +45,7 @@ function highlightBriefly($tag, opt_backgroundSelector) {
     anyCurrentlyHighlightedTimeout = null;
   }
 
-  var duration = 7500;
+  var duration = 2147483647; // 7500;  -- highlight forever instead
   /*
   var $background = opt_backgroundSelector ?
       $tag.find(opt_backgroundSelector) : $tag;

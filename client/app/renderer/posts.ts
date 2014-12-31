@@ -36,6 +36,13 @@ var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
 
 
+var ManualReadMark = 1;
+var YellowStarMark = 2;
+var FirstStarMark = 2;
+var BlueStarMark = 3;
+var LastStarMark = 3;
+
+
 function createComponent(componentDefinition) {
   return React.createFactory(React.createClass(componentDefinition));
 }
@@ -210,18 +217,14 @@ var RootPostAndComments = createComponent({
         this.props.topLevelCommentIdsSorted : rootPost.childIdsSorted;
 
     var children = childIds.map((childId, childIndex) => {
+      var threadProps = _.clone(this.props);
+      threadProps.elemType = 'div';
+      threadProps.postId = childId;
+      threadProps.index = childIndex;
+      threadProps.depth = 1;
       return (
         r.li({},
-          Thread({
-            elemType: 'div',
-            allPosts: this.props.allPosts,
-            user: this.props.user,
-            rootPostId: this.props.rootPostId,
-            horizontalLayout: this.props.horizontalLayout,
-            postId: childId,
-            index: childIndex,
-            depth: 1,
-          })));
+          Thread(threadProps)));
     });
 
     return (
@@ -244,6 +247,9 @@ var Thread = createComponent({
       this.refs.actions.showActions();
     }
   },
+  onAnyActionClick: function() {
+    this.refs.post.onAnyActionClick();
+  },
   render: function() {
     var post = this.props.allPosts[this.props.postId];
     var parentPost = this.props.allPosts[post.parentId];
@@ -262,31 +268,32 @@ var Thread = createComponent({
     var children = [];
     if (!post.isTreeCollapsed && !post.isTreeDeleted) {
       children = post.childIdsSorted.map((childId, childIndex) => {
+        var threadProps = _.clone(this.props);
+        threadProps.elemType = 'li';
+        threadProps.postId = childId;
+        threadProps.index = childIndex;
+        threadProps.depth = deeper;
         return (
-            Thread({
-              elemType: 'li',
-              allPosts: this.props.allPosts,
-              user: this.props.user,
-              rootPostId: this.props.rootPostId,
-              horizontalLayout: this.props.horizontalLayout,
-              postId: childId,
-              index: childIndex,
-              depth: deeper
-            }));
+            Thread(threadProps));
       });
     }
 
     var actions = isCollapsed(post)
       ? null
-      : actions = PostActions({ post: post, user: this.props.user, ref: 'actions' });
+      : actions = PostActions({ post: post, user: this.props.user, ref: 'actions',
+          onClick: this.onAnyActionClick });
 
     var baseElem = r[this.props.elemType];
+
+    var postProps = _.clone(this.props);
+    postProps.post = post;
+    postProps.onMouseEnter = this.onPostMouseEnter;
+    postProps.ref = 'post';
 
     return (
       baseElem({ className: 'dw-t ' + depthClass },
         arrows,
-        Post({ post: post, user: this.props.user, allPosts: this.props.allPosts,
-            onMouseEnter: this.onPostMouseEnter }),
+        Post(postProps),
         actions,
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
@@ -299,14 +306,35 @@ var Post = createComponent({
   onUncollapseClick: function(event) {
     debiki2.ReactActions.uncollapsePost(this.props.post);
   },
+
+  onClick: function() {
+    if (!this.props.abbreviate) {
+      debiki2.ReactActions.markPostAsRead(this.props.post.postId, true);
+    }
+    if (this.props.onClick) {
+      this.props.onClick();
+    }
+  },
+
+  onAnyActionClick: function() {
+    debiki2.ReactActions.markPostAsRead(this.props.post.postId, true);
+  },
+
+  onMarkClick: function(event) {
+    // Try to avoid selecting text:
+    event.stopPropagation();
+    event.preventDefault();
+    debiki2.ReactActions.cycleToNextMark(this.props.post.postId);
+  },
+
   render: function() {
     var post = this.props.post;
-    var user = this.props.user;
+    var user: User = this.props.user;
 
     var pendingApprovalElem;
     var headerElem;
     var bodyElem;
-    var extraClasses = '';
+    var extraClasses = this.props.className || '';
 
     if (post.isTreeDeleted || post.isPostDeleted) {
       var what = post.isTreeDeleted ? 'Thread' : 'Comment';
@@ -330,7 +358,9 @@ var Post = createComponent({
         pendingApprovalElem = r.div({ className: 'dw-p-pending-mod',
             onClick: this.onUncollapseClick }, the, ' comment below is pending approval.');
       }
-      headerElem = PostHeader(this.props);
+      var headerProps = _.clone(this.props); // ($.extend not available server side)
+      headerProps.onMarkClick = this.onMarkClick;
+      headerElem = PostHeader(headerProps);
       bodyElem = PostBody(this.props);
     }
 
@@ -339,11 +369,28 @@ var Post = createComponent({
       multireplReceivers = MultireplyReceivers({ post: post, allPosts: this.props.allPosts });
     }
 
-    var id = this.props.skipIdAttr ? undefined : 'post-' + post.postId;
+    var mark = user.marksByPostId[post.postId];
+    switch (mark) {
+      case YellowStarMark: extraClasses += ' dw-p-mark-yellow-star'; break;
+      case BlueStarMark: extraClasses += ' dw-p-mark-blue-star'; break;
+      case ManualReadMark: extraClasses += ' dw-p-mark-read'; break;
+      default:
+        // Don't add the below class before user specific data has been activated, otherwise
+        // all posts would show a big black unread mark on page load, which looks weird.
+        if (this.props.userSpecificDataAdded) {
+          var autoRead = user.postIdsAutoReadLongAgo.indexOf(post.postId) !== -1;
+          autoRead = autoRead || user.postIdsAutoReadNow.indexOf(post.postId) !== -1;
+          if (!autoRead) {
+            extraClasses += ' dw-p-unread';
+          }
+        }
+    }
+
+    var id = this.props.abbreviate ? undefined : 'post-' + post.postId;
 
     return (
-      r.div({ className: 'dw-p' + extraClasses, id: id,
-            onMouseEnter: this.props.onMouseEnter, onClick: this.props.onClick },
+      r.div({ className: 'dw-p ' + extraClasses, id: id,
+            onMouseEnter: this.props.onMouseEnter, onClick: this.onClick },
         pendingApprovalElem,
         multireplReceivers,
         headerElem,
@@ -377,6 +424,8 @@ var MultireplyReceivers = createComponent({
 var PostHeader = createComponent({
   render: function() {
     var post = this.props.post;
+    var user: User = this.props.user;
+    var linkFn = this.props.abbreviate ? 'span' : 'a';
 
     var authorUrl = '/-/users/#/id/' + this.props.authorId;
     var authorNameElems;
@@ -440,11 +489,23 @@ var PostHeader = createComponent({
     var anyPin;
     if (post.pinnedPosition) {
       anyPin =
-        r.a({ className: 'dw-p-pin icon-pin' });
+        r[linkFn]({ className: 'dw-p-pin icon-pin' });
     }
 
-    var postId = post.postId === BodyPostId ?
-        null : r.a({ className: 'dw-p-link' }, '#', post.postId);
+    var postId;
+    var anyMark;
+    if (post.postId !== TitleId && post.postId !== BodyPostId) {
+      postId = r[linkFn]({ className: 'dw-p-link' }, '#', post.postId);
+      var mark = user.marksByPostId[post.postId];
+      var starClass = ' icon-star';
+      if (mark === ManualReadMark) {
+        starClass = ' icon-star-empty';
+      }
+      // The outer -click makes the click area larger, because the marks are small.
+      anyMark =
+          r.span({ className: 'dw-p-mark-click', onClick: this.props.onMarkClick },
+            r.span({ className: 'dw-p-mark icon-star' + starClass }));
+    }
 
     var by = post.postId === BodyPostId ? 'By ' : '';
     var isBodyPostClass = post.postId === BodyPostId ? ' dw-ar-p-hd' : '';
@@ -453,8 +514,9 @@ var PostHeader = createComponent({
         r.div({ className: 'dw-p-hd' + isBodyPostClass },
           anyPin,
           postId,
+          anyMark,
           by,
-          r.a({ className: 'dw-p-by', href: authorUrl }, authorNameElems),
+          r[linkFn]({ className: 'dw-p-by', href: authorUrl }, authorNameElems),
           createdAt,
           editInfo, '. ',
           voteInfo));
@@ -465,10 +527,22 @@ var PostHeader = createComponent({
 var PostBody = createComponent({
   render: function() {
     var post = this.props.post;
+    var body;
+    if (this.props.abbreviate) {
+      this.textDiv = this.textDiv || $('<div></div>');
+      this.textDiv.html(post.sanitizedHtml);
+      var startOfText = this.textDiv.text().substr(0, 150);
+      if (startOfText.length === 150) {
+        startOfText += '....';
+      }
+      body = r.div({ className: 'dw-p-bd-blk' }, startOfText);
+    }
+    else {
+      body = r.div({ className: 'dw-p-bd-blk',
+          dangerouslySetInnerHTML: { __html: post.sanitizedHtml }});
+    }
     return (
-      r.div({ className: 'dw-p-bd' },
-        r.div({ className: 'dw-p-bd-blk',
-            dangerouslySetInnerHTML: { __html: post.sanitizedHtml }})));
+      r.div({ className: 'dw-p-bd' }, body));
   }
 });
 
@@ -480,6 +554,9 @@ var PostActions = createComponent({
   onReplyClick: function(event) {
     debiki.internal.$showReplyForm.call(event.target, event);
   },
+  onEditClick: function(event) {
+    debiki.internal.$showEditForm.call(event.target, event);
+  },
   onLikeClick: function(event) {
     debiki.internal.$toggleVote('VoteLike').call(event.target, event);
   },
@@ -489,7 +566,7 @@ var PostActions = createComponent({
   onOffTopicClick: function(event) {
     debiki.internal.$toggleVote('VoteOffTopic').call(event.target, event);
   },
-  onEditClick: function(event) {
+  onEditSuggestionsClick: function(event) {
     debiki.internal.$showEditsDialog.call(event.target, event);
   },
   onFlagClick: function(event) {
@@ -535,7 +612,11 @@ var PostActions = createComponent({
             title: 'Click if you think this post is wrong', onClick: this.onWrongClick },
             'Wrong')];
 
-      if (!isOwnPost) {
+      if (isOwnPost) {
+        replyLikeWrongLinks.push(
+          r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit'));
+      }
+      else {
         replyLikeWrongLinks.push(
           r.a({ className: 'dw-a dw-a-like icon-heart' + myLikeVote,
             title: 'Like this', onClick: this.onLikeClick }, 'Like'));
@@ -553,6 +634,11 @@ var PostActions = createComponent({
             title: 'Click if you think this post is off-topic', onClick: this.onOffTopicClick },
           'Off-Topic'));
 
+    if (!isOwnPost) {
+      moreLinks.push(
+        r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit'));
+    }
+
     moreLinks.push(
         r.a({ className: 'dw-a dw-a-flag icon-flag', onClick: this.onFlagClick }, 'Report'));
 
@@ -565,8 +651,8 @@ var PostActions = createComponent({
 
     if (post.numPendingEditSuggestions > 0)
       suggestionsNew.push(
-          r.a({ className: 'dw-a dw-a-edit icon-edit dw-a-pending-review',
-           title: 'View edit suggestions', onClick: this.onEditClick },
+          r.a({ className: 'dw-a dw-a-edit-suggs icon-edit dw-a-pending-review',
+           title: 'View edit suggestions', onClick: this.onEditSuggestionsClick },
             '×', post.numPendingEditSuggestions));
 
     // TODO [react]
@@ -651,7 +737,8 @@ var PostActions = createComponent({
           moreLinks));
 
     return (
-      r.div({ className: 'dw-p-as dw-as', onMouseEnter: this.showActions },
+      r.div({ className: 'dw-p-as dw-as', onMouseEnter: this.showActions,
+          onClick: this.props.onClick },
         suggestionsNew,
         suggestionsOld,
         moreDropdown,

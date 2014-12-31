@@ -23,6 +23,8 @@
 .icon-down-dir:before { content: '\e80f'; } /* '' */
 .icon-archive:before { content: '\e810'; } /* '' */
 .icon-up-open:before { content: '\e811'; } /* '' */
+.icon-star:before { content: '\e812'; } /* '' */
+.icon-star-empty:before { content: '\e813'; } /* '' */
 .icon-facebook:before { content: '\f09a'; } /* '' */
 .icon-google-plus:before { content: '\f0d5'; } /* '' */
 .icon-linkedin:before { content: '\f0e1'; } /* '' */

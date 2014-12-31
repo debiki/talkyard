@@ -30,13 +30,7 @@
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-
-var MinimapHeight = 160;
-
-// For now only. Should get this data from the ReactStore, but currently it's kept
-// in the HTML5 local storage only, not saved in the database. So, for now, when prototyping:
-var postIdsReadLongAgo: number[] = UnreadCommentsTracker.getPostIdsReadLongAgo();
-
+var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 
 
 export var Sidebar = createComponent({
@@ -56,7 +50,8 @@ export var Sidebar = createComponent({
     return {
       store: store,
       showSidebar: showSidebar,
-      commentsType: 'Recent'
+      commentsType: 'Recent',
+      showPerhapsUnread: false,
     };
   },
 
@@ -76,6 +71,18 @@ export var Sidebar = createComponent({
   showUnread: function() {
     this.setState({
       commentsType: 'Unread'
+    });
+  },
+
+  showStarred: function() {
+    this.setState({
+      commentsType: 'Starred'
+    });
+  },
+
+  togglePerhapsUnread: function() {
+    this.setState({
+      showPerhapsUnread: !this.state.showPerhapsUnread
     });
   },
 
@@ -161,16 +168,17 @@ export var Sidebar = createComponent({
 
   updateSizeAndPosition2d: function() {
     var sidebar = $(this.getDOMNode());
+    var openButton = $(this.refs.openButton.getDOMNode());
 
     if (this.state.showSidebar) {
       var windowTop = $(window).scrollTop();
       var windowBottom = windowTop + $(window).height();
       sidebar.height(windowBottom - windowTop);
+      openButton.css('top', '');
       this.updateCommentsScrollbar(windowBottom);
     }
     else {
       sidebar.height(0);
-      var openButton = $(this.refs.openButton.getDOMNode());
       var minimap = $(this.refs.minimap.getDOMNode());
       openButton.css('top', minimap.height());
     }
@@ -202,7 +210,7 @@ export var Sidebar = createComponent({
     var windowTop = $(window).scrollTop();
     var windowBottom = windowTop + $(window).height();
     var sidebar = $(this.getDOMNode());
-    var openButton = this.refs.openButton ? $(this.refs.openButton.getDOMNode()) : null;
+    var openButton = $(this.refs.openButton.getDOMNode());
 
     if (commentSectionTop <= windowTop) {
       // We've scrolled down; let the sidebar span from top to bottom.
@@ -231,6 +239,7 @@ export var Sidebar = createComponent({
       sidebar.css('right', 0);
       if (this.state.showSidebar) {
         sidebar.height(windowBottom - commentSectionTop);
+        openButton.css('position', 'relative');
       } else {
         sidebar.height(0);
         openButton.css('position', 'absolute');
@@ -277,33 +286,50 @@ export var Sidebar = createComponent({
   },
 
   findComments: function() {
-    var store = this.state.store;
+    var store: Store = this.state.store;
     var unreadComments = [];
     var recentComments = [];
+    var starredComments = [];
 
     // Find 1) all unread comments, sorted in the way they appear on the page
     // And 2) all visible comments.
-    var addComments = (postIds: number[]) => {
+    var addComments = (postIds: number[], ancestorCollapsed: boolean) => {
       _.each(postIds, (postId) => {
         var post: Post = store.allPosts[postId];
         if (isDeleted(post))
           return;
 
-        var alreadyRead = postIdsReadLongAgo.indexOf(postId) !== -1 ||
-            post.authorId === store.user.userId;
-        if (!alreadyRead) {
-          unreadComments.push(post);
-        }
-        recentComments.push(post);
+        if (!ancestorCollapsed) {
+          // Do include comments that where auto-read right now — it'd be annoying
+          // if they suddenly vanished from the sidebar just because the computer
+          // suddenly automatically thought you've read them.
+          var autoReadLongAgo = store.user.postIdsAutoReadLongAgo.indexOf(postId) !== -1;
+          // No do include comments auto-read just now. Otherwise it's impossible to
+          // figure out how the Unread tab works and the 'Let computer determine' checkbox.
+          autoReadLongAgo =
+              autoReadLongAgo || store.user.postIdsAutoReadNow.indexOf(postId) !== -1;
 
-        if (!isCollapsed(post)) {
-          addComments(post.childIdsSorted);
+          var hasReadItForSure = this.manuallyMarkedAsRead(postId);
+          var ownPost = post.authorId === store.user.userId;
+          if (!ownPost && !hasReadItForSure) {
+            if (!autoReadLongAgo || this.state.showPerhapsUnread) {
+              unreadComments.push(post);
+            }
+          }
+
+          recentComments.push(post);
         }
+
+        if (this.isStarred(postId)) {
+          starredComments.push(post);
+        }
+
+        addComments(post.childIdsSorted, ancestorCollapsed || isCollapsed(post));
       });
     };
 
     var rootPost = store.allPosts[store.rootPostId];
-    addComments(rootPost.childIdsSorted);
+    addComments(rootPost.childIdsSorted, false);
 
     recentComments.sort((a, b) => {
       if (a.createdAt < b.createdAt)
@@ -316,7 +342,24 @@ export var Sidebar = createComponent({
     });
     recentComments = _.take(recentComments, 50);
 
-    return { unread: unreadComments, recent: recentComments };
+    return { unread: unreadComments, recent: recentComments, starred: starredComments };
+  },
+
+  manuallyMarkedAsRead: function(postId: number): boolean {
+    var mark = this.state.store.user.marksByPostId[postId];
+    return !!mark; // any mark means it's been read already.
+  },
+
+  isStarred: function(postId: number) {
+    var mark = this.state.store.user.marksByPostId[postId];
+    return mark === BlueStarMark || mark === YellowStarMark;
+  },
+
+  focusPost: function(post: Post, index: number) {
+    this.setState({
+      currentPostId: post.postId
+    });
+    d.i.showAndHighlightPost($('#post-' + post.postId));
   },
 
   render: function() {
@@ -345,52 +388,96 @@ export var Sidebar = createComponent({
       sidebarClasses += ' dw-sidebar-fixed';
     }
 
-    var unreadAndRecentComments = this.findComments();
-    var unreadComments = unreadAndRecentComments.unread;
-    var recentComments = unreadAndRecentComments.recent;
-    var unreadBtnTitle = 'Unread (' + unreadComments.length + ')';
+    var commentsFound = this.findComments();
+    var unreadBtnTitle = 'Unread (' + commentsFound.unread.length + ')';
+    var starredBtnTitle = 'Starred (' + commentsFound.starred.length + ')';
 
     var title;
     var unreadClass = '';
     var recentClass = '';
-    var comments;
+    var starredClass = '';
+    var comments: Post[];
     switch (this.state.commentsType) {
       case 'Recent':
-        title = 'Recent Comments:';
+        title = commentsFound.recent.length ?
+            'Recent Comments: (click to show)' : 'No comments.';
         recentClass = ' active';
-        comments = recentComments;
+        comments = commentsFound.recent;
         break;
       case 'Unread':
-        title = 'Unread Comments:';
+        title = commentsFound.unread.length ?
+            'Unread Comments: (click to show)' : 'No unread comments found.';
         unreadClass = ' active';
-        comments = unreadComments;
+        comments = commentsFound.unread;
+        break;
+      case 'Starred':
+        title = commentsFound.starred.length ?
+            'Starred Comments: (click to show)' : 'No starred comments.';
+        starredClass = ' active';
+        comments = commentsFound.starred;
         break;
       default:
         console.error('[DwE4PM091]');
     }
 
-    var commentsElems = comments.map((post) => {
-      var scrollToPost = (event) => {
-        d.i.showAndHighlightPost($('#post-' + post.postId));
+    var tipsOrExtraConfig;
+    if (this.state.commentsType === 'Recent') {
+      tipsOrExtraConfig =
+          r.p({}, 'Find listed below the beginning of every comment, newest comments first. ' +
+              'Click a comment to view it in full in the threaded view to the left. ' +
+              'A black star means that you have not yet read that comment. Gray means ' +
+              'the computer thinks you have read it.');
+    }
+    if (this.state.commentsType === 'Starred') {
+      tipsOrExtraConfig =
+          r.p({}, 'To star a comment, click the star in its upper left ' +
+            "corner, so the star turns blue or yellow. (You can use these two colors in " +
+            'any way you want.)');
+    }
+    else if (this.state.commentsType === 'Unread') {
+      var tips = this.state.showPerhapsUnread
+          ? r.p({}, 'Find listed below all comments that you have not marked as ' +
+              'read. To mark a comment as read, click anywhere inside it, in the ' +
+              "threaded view to the left. (Then the star in the comment's upper left corner " +
+              'will turn white.)')
+          : r.p({}, 'The computer thinks you have read all comments but those listed below.');
+      tipsOrExtraConfig =
+        r.div({},
+          r.label({ className: 'checkbox-inline' },
+            r.input({ type: 'checkbox', checked: !this.state.showPerhapsUnread,
+                onChange: this.togglePerhapsUnread }),
+            'Let the computer try to determine when you have read a comment.'),
+          tips);
+    }
+
+    var commentsElems = comments.map((post, index) => {
+      var postProps = _.clone(store);
+      postProps.post = post;
+      postProps.onClick = (event) => this.focusPost(post, index),
+      postProps.abbreviate = true;
+      if (post.postId === this.state.currentPostId) {
+        postProps.className = 'dw-current-post';
       }
       return (
-        Post({ post: post, user: store.user, allPosts: store.allPosts,
-          onClick: scrollToPost, skipIdAttr: true }));
+        r.div({ key: post.postId },
+          Post(postProps)));
     });
 
     return (
       r.div({ id: 'dw-sidebar', className: sidebarClasses },
         MiniMap(minimapProps),
-        r.div({ className: 'dw-sidebar-btns' },
-          r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread }, unreadBtnTitle),
-          r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent }, 'Recent')),
-        ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar }),
+        ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar, ref: 'openButton' }),
+        r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread }, unreadBtnTitle),
+        r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent }, 'Recent'),
+        r.button({ className: 'btn btn-default' + starredClass, onClick: this.showStarred }, starredBtnTitle),
         r.div({ className: 'dw-comments' },
           r.h3({}, title),
           r.div({ id: 'dw-sidebar-comments-viewport', ref: 'commentsViewport' },
             r.div({ id: 'dw-sidebar-comments-scrollable' },
+              tipsOrExtraConfig,
               r.div({ className: 'dw-recent-comments' },
-                commentsElems))))));
+                ReactCSSTransitionGroup({ transitionName: 'comment', key: this.state.commentsType },
+                  commentsElems)))))));
   }
 });
 
