@@ -1,8 +1,11 @@
 #!/bin/bash
 
-echo ',-------------------------------------------------.'
-echo '| Run:  gulp watch                                |'
-echo '`-------------------------------------------------'"'"
+echo ',---------------------------------------------------------.'
+echo '| Run:  gulp watch                                        |'
+echo '| But first, if not already done, run:                    |'
+echo '|   npm install                                           |'
+echo '|   GIT_WORK_TREE=/opt/debiki bower --allow-root install  |'
+echo '`--------------------------------------------------------'"'"
 
 docker run \
   --rm \
