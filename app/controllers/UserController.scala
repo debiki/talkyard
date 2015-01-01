@@ -39,11 +39,8 @@ object UserController extends mvc.Controller {
 
 
   def viewUserPage() = GetAction { request =>
-    // For now, always use the default theme.
     val htmlStr = debiki.TemplateRenderer.renderThemeTemplate(
-      theme = TemplateRenderer.DefaultThemeFullName,
-      template = "users",
-      arguments = Seq(SiteTpi(request)))
+      template = "users", arguments = Seq(SiteTpi(request)))
     Ok(htmlStr) as HTML
   }
 
