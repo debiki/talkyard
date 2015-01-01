@@ -17,26 +17,11 @@
 
 @(tpi: debiki.TemplateProgrammingInterface)
 
-@import com.debiki.core.Prelude.{toIso8601T, toIso8601Day}
+@wrapper(tpi, isHomepage = true) {
+  <!-- homepage.scala.html -->
+  @* Skip title and author info on homepage. The @tpi.body probably includes
+   a carousel or a hero unit or something similar, instead? *@
 
+  <div id="dwPosts">@tpi.reactTest</div>
 
-@datiTag(dati: java.util.Date) = {
-  <abbr title="@{toIso8601T(dati)}">@{toIso8601Day(dati)}</abbr>}
-
-
-@wrapper(tpi) {
-  <!-- default20121009/editForumCategory.scala.html -->
-
-  <div class="category-definition">
-    @parentForumsList(tpi)
-
-    @views.html.searchForm(tpi, id = "forum-search", placeholderText = "Search whole forum",
-      sectionId = tpi.anyRootSectionPageId)
-
-    <h2 class="category-name-title-prefix">Category definition:</h2>
-
-    <div id="dwPosts">@tpi.reactTest</div>
-
-  </div>
 }
-

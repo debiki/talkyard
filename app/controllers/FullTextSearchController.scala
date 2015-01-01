@@ -70,9 +70,8 @@ object FullTextSearchController extends mvc.Controller {
     val futureSearchResult = apiReq.dao.fullTextSearch(phrase, anyRootPageId)
     val futureResponse = futureSearchResult map { searchResult =>
       val siteTpi = debiki.SiteTpi(apiReq)
-      val theme = TemplateRenderer.getThemeName(siteTpi)
       val htmlStr = TemplateRenderer.renderThemeTemplate(
-        theme, SearchResultsTemplate, Vector(siteTpi, anyRootPageId, phrase, searchResult))
+        SearchResultsTemplate, Vector(siteTpi, anyRootPageId, phrase, searchResult))
       Ok(htmlStr) as HTML
     }
 

@@ -51,6 +51,11 @@ adminApp.config(['$stateProvider', '$urlRouterProvider',
       url: '/moderation',
       templateUrl: 'moderation/moderation.html',
       controller: 'ModerationController'
+    })
+    .state('appearance', {
+      url: '/appearance',
+      templateUrl: 'appearance/appearance-view.html',
+      controller: 'AppearanceController'
     });
 }]);
 

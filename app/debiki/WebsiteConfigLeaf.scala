@@ -62,57 +62,5 @@ class WebsiteConfigLeaf private (
     }
   }
 
-
-  /**
-   * See WebsiteConfig.listAssetBundleUrls docs.
-   */
-  def listAssetBundleUrls(bundleNameSuffix: String): Option[Seq[AssetBundleItem]] = {
-
-    val confMap: ju.LinkedHashMap[String, Any] =
-      websiteConfMap.get("asset-bundles") match {
-        case None =>
-          return None
-        case Some(confVal) =>
-          try { confVal.asInstanceOf[ju.LinkedHashMap[String, Any]] }
-          catch {
-            case ex: ClassCastException =>
-              die("DwE2B1x8", o"""The config value `asset-bundles` is not a map,
-                it is a ${classNameOf(confVal)}""")
-          }
-      }
-
-    def itsEntryPrefix = s"The 'asset-bundles' entry for '$bundleNameSuffix'"
-
-    val assetUrlsAndMeta: List[String] = confMap.get(bundleNameSuffix) match {
-      case null =>
-        return None
-      case javaUrls: ju.ArrayList[_] =>
-        import scala.collection.JavaConversions._
-        val listOfAny = javaUrls.toList
-        listOfAny find (!_.isInstanceOf[String]) foreach { x =>
-          die("DwE583B3", o"""$itsEntryPrefix lists a non-text value,
-             of type: ${classNameOf(x)}, value: $x""")
-        }
-        listOfAny.asInstanceOf[List[String]]
-      case x =>
-        die("DwE2B1x8", s"$itsEntryPrefix is not a list, it is a ${classNameOf(x)}")
-    }
-
-    val assetItems = assetUrlsAndMeta map { url =>
-      url match {
-        case AssetUrlRegex(url, optional_?, versionDatiStr_?) =>
-          // Ignore versionDatiStr_? for now; see docs of this function.
-          AssetBundleItem(url, isOptional = optional_? ne null)
-        case x =>
-          die("DwE7TDW7", s"Malformed asset bundle list item: `$x'")
-      }
-    }
-
-    Some(assetItems)
-  }
-
-
-  private val AssetUrlRegex = """^([^,]+)(, *optional)?(, version .+)?$""".r
-
 }
 

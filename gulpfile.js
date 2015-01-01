@@ -552,7 +552,8 @@ gulp.task('compile-stylus', function () {
         'client/app/forms-and-dialogs.styl',
         'client/app/login/login.styl',
         'client/app/third-party.styl',
-        'client/app/**/*.styl']),
+        'client/app/**/*.styl',
+        'client/app/**/theme.css']),
 
     makeStyleStream('public/res/', 'debiki-embedded-comments.css', [
         'client/app/tips.styl']),
@@ -572,60 +573,6 @@ gulp.task('compile-stylus', function () {
 
 
 
-/**
- * Copies app/views/themes/<themeName>/styles.css/*.css to
- * public/themes/<themeName>/styles.css.
- */
-gulp.task('build-themes', function () {
-
-  var themeDir = 'app/views/themes/';
-  var themeNames = listDirectories(themeDir);
-
-  function listDirectories(baseDirectory) {
-    var dirs = [];
-    try {
-      var dirs = fs.readdirSync(baseDirectory).filter(function(file) {
-        return fs.statSync(path.join(baseDirectory, file)).isDirectory();
-      });
-    }
-    catch (error) {
-      // Ignore this, there seems to be no themes. (This happens if `themeDir`
-      // is a broken softlink, which happens if this project debiki-server isn't
-      // placed in a parent project folder with a ../themes/ folder.)
-    }
-    return dirs;
-  }
-
-  var themeStreams = themeNames.map(function(name) {
-    return makeThemeStream(name);
-  });
-
-  function makeThemeStream(themeName) {
-    var srcDir = themeDir + themeName + '/styles.css/**/*.css';
-    var destDir = 'public/themes/' + themeName;
-    return gulp.src(srcDir)
-      // COULD pipe through Stylus or LESS here, but which one? Or both somehow?
-      .pipe(concat('styles.css'))
-      .pipe(gulp.dest(destDir))
-      .pipe(minifyCSS())
-      .pipe(concat('styles.min.css'))
-      .pipe(gulp.dest(destDir));
-  };
-
-  // Also compile the default theme, which is placed in another folder.
-  var defaultThemeStream = gulp.src('app/views/themesbuiltin/default20121009/styles.css/**/*.css')
-      .pipe(concat('styles.css'))
-      .pipe(gulp.dest('public/themes/default20121009/'))
-      .pipe(minifyCSS())
-      .pipe(concat('styles.min.css'))
-      .pipe(gulp.dest('public/themes/default20121009/'));
-  themeStreams.push(defaultThemeStream);
-
-  return es.merge.apply(null, themeStreams);
-});
-
-
-
 gulp.task('watch', ['default'], function() {
 
   watchAndLiveForever = true;
@@ -641,20 +588,15 @@ gulp.task('watch', ['default'], function() {
   gulp.watch('client/**/*.ls', ['compile-livescript-concat-scripts']).on('change', logChangeFn('LiveScript'));
   gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
-  gulp.watch(['app/views/themes/**/*.css', 'app/views/themesbuiltin/default20121009/styles.css/**/*.css'],
-      ['build-themes']).on('change', logChangeFn('CSS'));
-
-  // what about theme files,?
-  //   app/views/themes/** /*.js
-  //   app/views/themes/** /*.css
+  gulp.watch(['app/views/themes/**/*.css', 'app/views/themesbuiltin/default20121009/styles.css/**/*.css']).on('change', logChangeFn('CSS'));
 });
 
 
-gulp.task('default', ['compile-concat-scripts', 'compile-stylus', 'build-themes'], function () {
+gulp.task('default', ['compile-concat-scripts', 'compile-stylus'], function () {
 });
 
 
-gulp.task('release', ['minify-scripts', 'compile-stylus', 'build-themes'], function() {
+gulp.task('release', ['minify-scripts', 'compile-stylus'], function() {
 });
 
 

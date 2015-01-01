@@ -27,11 +27,6 @@ import requests.PageRequest
 object TemplateRenderer {
 
 
-  val DefaultThemeName = "default20121009"
-  private val BuiltinThemesPrefix = "builtin."  // after '/' has been replaced with '.'
-  val DefaultThemeFullName = s"$BuiltinThemesPrefix$DefaultThemeName"
-
-
   def renderTemplate(pageReq: PageRequest[_], appendToBody: xml.NodeSeq = Nil)
         : String =
     try {
@@ -60,26 +55,6 @@ object TemplateRenderer {
       return views.html.specialpages.template(tpi, isPageSettings).body
     }
 
-    // Handle page config values.
-    //if (commentVisibility == CommentVisibility.ShowOnClick) {
-    //  curHeadTags = curHeadTags ++ HtmlPageSerializer.tagsThatHideShowInteractions
-    //}
-
-    // Might have to add ng-app to <html>, for AngularJS to work?
-
-    //  <html class={classes}>
-    //    <head>{curHeadTags}</head>
-    //    {<body>{curBodyTags ++ appendToBody}</body> % curBodyAttrs}
-    //  </html> % curHtmlAttrs
-
-    // For now, use the same template for all websites.
-    // In the future: Create more templates, and check which one to use in _site.conf.
-    // In the distant future, implement my ideas in play-thoughts.txt.
-
-
-
-    val theme = getThemeName(tpi)
-
     val template = tpi.pageConfigValue("template") orIfEmpty {
       pageReq.thePageRole match {
         case PageRole.BlogPost => "blogPost"
@@ -95,37 +70,12 @@ object TemplateRenderer {
       }
     }
 
-    renderThemeTemplate(theme, template, tpi::Nil)
+    renderThemeTemplate(template, tpi::Nil)
   }
 
 
-  def getThemeName(tpi: SiteTpi): String = {
-    val themeUnsafe = tpi.websiteConfigValue("theme") orIfEmpty DefaultThemeFullName
-    // People place themes in file system dirs, so allow them to use "/" when
-    // specifying in which directory the theme is located? This is more user friendly
-    // than forcing them to use Javas package delimiter, '.'? But we need to convert to '.'
-    // now so we can look up the Scala package + class.
-    val themeNoDelims = themeUnsafe.replace('/', '.')
-    // Don't allow anyone to use the www.debiki.com template:
-    if (themeNoDelims == "wwwdebikicom" && !tpi.debikiRequest.host.endsWith("debiki.com")
-        && !tpi.debikiRequest.host.startsWith("localhost:"))
-      DefaultThemeFullName
-    else
-      themeNoDelims
-  }
-
-
-  def renderThemeTemplate(theme: String, template: String, arguments: Seq[AnyRef]): String = {
-
-    // Search one of two folders for the theme file, either themes/ or themesbuiltin/:
-    // a few built-in default themes are located in app/views/themesbuiltin/,
-    // other site specific themes are placed in app/views/themes/, which is a
-    // softlink to a ../themes/ folder in a supposed parent Git repository with
-    // site specific stuff.
-    val viewClassName =
-      if (theme startsWith BuiltinThemesPrefix) s"views.html.themes$theme.$template"
-      else s"views.html.themes.$theme.$template"
-
+  def renderThemeTemplate(template: String, arguments: Seq[AnyRef]): String = {
+    val viewClassName = s"views.html.templates.$template"
     try {
       val viewClass : Class[_] = Play.current.classloader.loadClass(viewClassName)
       val renderMethod: jl.reflect.Method =
@@ -137,10 +87,10 @@ object TemplateRenderer {
     catch {
       case ex: jl.ClassNotFoundException =>
         throw PageConfigException(
-          "DwE7F3X9", s"Template not found: `$template', theme: `$theme'")
+          "DwE7F3X9", s"Template not found: `$template'")
       case ex: jl.NoSuchMethodException =>
         throw new PageConfigException(
-          "DwE68St8", o"""Template '$template.scala.html' in theme '$theme' is broken.
+          "DwE68St8", o"""Template '$template.scala.html' is broken.
           The method declaration at the top of the file (that is,
           the "@(....) line) is probably incorrect? I got these parameter types:
            ${arguments.map(_.getClass.getSimpleName)}; please compare them to the
