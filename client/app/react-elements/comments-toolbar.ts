@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../ReactStore.ts" />
 /// <reference path="name-login-btns.ts" />
 
 //------------------------------------------------------------------------------
