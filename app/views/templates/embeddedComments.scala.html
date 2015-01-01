@@ -17,32 +17,27 @@
 
 @(tpi: debiki.TemplateProgrammingInterface)
 
-@import com.debiki.core.Prelude.{toIso8601T, toIso8601Day}
 
+<html class="@tpi.debikiHtmlTagClasses@homepage @tpi.configValue("html-tag-classes")" @tpi.configValue("html-tag-attributes-excl-class")>
+<head>
+  @tpi.debikiMeta
 
-@datiTag(dati: java.util.Date) = {
-  <abbr title="@{toIso8601T(dati)}">@{toIso8601Day(dati)}</abbr>}
+  <title>@tpi.configValue("title")</title>
+  <meta name="description" content="@tpi.configValue("description")">
+  <meta name="keywords" content="@tpi.configValue("keywords")">
 
+  @tpi.debikiStyles
+  @Html(tpi.configValue("html-styles"))
+  @tpi.stylesheetBundle("styles.css")
 
-@wrapper(tpi) {
-  <!-- default20121009/forum.scala.html -->
+  @tpi.debikiScripts
+</head>
+<body>
 
-  @views.html.searchForm(tpi, id = "forum-search", placeholderText = "Search whole forum",
-    sectionId = tpi.anyRootSectionPageId)
+<!-- embeddedComments.scala.html -->
+<div id="dwPosts">@tpi.reactTest</div>
 
-  <div class="forum-title">
-    <div id="dwPosts">@tpi.reactTest</div>
-  </div>
+@tpi.debikiAppendToBodyTags
 
-  <noscript>
-    <h2>Recent Topics</h2>
-    <ol>
-      @for(topic <- tpi.listLatestForumTopics(limit = 30, offset = 0)) {
-      <li><a class="topic-title" href="@{topic.path}">@{ topic.title }</a></li>
-      }
-    </ol>
-  </noscript>
-
-  <div ng-include="'forum/forum-module.html'"></div>
-}
-
+</body>
+</html>

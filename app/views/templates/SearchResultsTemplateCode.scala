@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package views.html.themesbuiltin.default20121009
+package views.html.templates
 
 import com.debiki.core._
 

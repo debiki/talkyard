@@ -17,27 +17,26 @@
 
 @(tpi: debiki.TemplateProgrammingInterface)
 
+@import com.debiki.core.Prelude.{toIso8601T, toIso8601Day}
 
-<html class="@tpi.debikiHtmlTagClasses@homepage @tpi.configValue("html-tag-classes")" @tpi.configValue("html-tag-attributes-excl-class")>
-<head>
-  @tpi.debikiMeta
 
-  <title>@tpi.configValue("title")</title>
-  <meta name="description" content="@tpi.configValue("description")">
-  <meta name="keywords" content="@tpi.configValue("keywords")">
+@datiTag(dati: java.util.Date) = {
+  <abbr title="@{toIso8601T(dati)}">@{toIso8601Day(dati)}</abbr>}
 
-  @tpi.debikiStyles
-  @Html(tpi.configValue("html-styles"))
-  @tpi.stylesheetBundle("styles.css")
 
-  @tpi.debikiScripts
-</head>
-<body>
+@wrapper(tpi) {
+  <!-- editForumCategory.scala.html -->
 
-<!-- default20121009/embeddedComments.scala.html -->
-<div id="dwPosts">@tpi.reactTest</div>
+  <div class="category-definition">
+    @parentForumsList(tpi)
 
-@tpi.debikiAppendToBodyTags
+    @views.html.searchForm(tpi, id = "forum-search", placeholderText = "Search whole forum",
+      sectionId = tpi.anyRootSectionPageId)
 
-</body>
-</html>
+    <h2 class="category-name-title-prefix">Category definition:</h2>
+
+    <div id="dwPosts">@tpi.reactTest</div>
+
+  </div>
+}
+

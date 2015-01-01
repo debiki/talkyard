@@ -17,15 +17,32 @@
 
 @(tpi: debiki.TemplateProgrammingInterface)
 
+@import com.debiki.core.Prelude.{toIso8601T, toIso8601Day}
+
+
+@datiTag(dati: java.util.Date) = {
+  <abbr title="@{toIso8601T(dati)}">@{toIso8601Day(dati)}</abbr>}
+
 
 @wrapper(tpi) {
-  <!-- default20121009/forumTopic.scala.html -->
+  <!-- forum.scala.html -->
 
-  @parentForumsList(tpi)
+  @views.html.searchForm(tpi, id = "forum-search", placeholderText = "Search whole forum",
+    sectionId = tpi.anyRootSectionPageId)
 
-  @* Don't add any whitespace around `@tpi.reactTest` because then React thinks
-    the HTML hasn't been rendered by React, and rerenders it client side. *@
-  <div id="dwPosts">@tpi.reactTest</div>
+  <div class="forum-title">
+    <div id="dwPosts">@tpi.reactTest</div>
+  </div>
 
+  <noscript>
+    <h2>Recent Topics</h2>
+    <ol>
+      @for(topic <- tpi.listLatestForumTopics(limit = 30, offset = 0)) {
+      <li><a class="topic-title" href="@{topic.path}">@{ topic.title }</a></li>
+      }
+    </ol>
+  </noscript>
+
+  <div ng-include="'forum/forum-module.html'"></div>
 }
 

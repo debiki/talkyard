@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2012-2015 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -49,24 +49,10 @@ object AssetBundleAndDependencies {
 
 
 
-/** Loads bundles of styles and scripts.
+/** Loads CSS config values. Currently broken, too complicated, try
+  * to remove/simplify somehow.
   *
-  * The bundles are loaded both from the file system (well, from JAR files)
-  * and from the database. The reason is that e.g. CSS can be placed
-  * both in the file system and in the database:
-  * 1) In the file system, under version control. This might be is suitable for
-  *   single site installations, where the server admin also controls the
-  *   file system, and is able to check in theme files (e.g. styles and scripts)
-  *   into Git.
-  * 2) In the database. This is the only option for multi-site installations
-  *   where the admins don't have access to the file system. (Instead, they
-  *   create style files via a Web browser, and the files are stored in the
-  *   database.)
-  *
-  * If there's a file system bundle and a database bundle with the same name, their
-  * contents is concatenated — and the database bundle is appended, so it takes
-  * precedence over the file system stuff.
-  *
+  * ?? what ??:
   * If you cache the result, you might want to consider race conditions
   * — have a look at CachingAssetBundleDao.loadBundleAndDependencies().
   */
@@ -75,15 +61,12 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
   val bundleName = s"$bundleNameNoSuffix.$bundleSuffix"
 
   /** Loads and concatenates the contents of the files in an asset bundle.
-    * Throws a DebikiException if no bundle data at all is found (neither
-    * in the file system, nor in the database).
     */
   def loadAssetBundle(): AssetBundleAndDependencies = {
 
-    val fileBundleText = loadBundleFromJarFiles()
-    val databaseBundleData = loadBundleFromDatabase(dieUnlessFound = fileBundleText.isEmpty)
+    val databaseBundleData = loadBundleFromDatabase()
 
-    val bundleText = fileBundleText + "\n" + databaseBundleData.text
+    val bundleText = databaseBundleData.text
     val sha1sum = hashSha1Base64UrlSafe(bundleText)
 
     AssetBundleAndDependencies(
@@ -95,36 +78,7 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
   }
 
 
-  private def loadBundleFromJarFiles(): String = {
-    // Currently I've configured Gulp to bundle only:
-    //   app/views/themes/<themeName>/styles.css/*.css
-    // to:
-    //   public/themes/<themeName>/styles.css
-    // So return "" if the bundle is named something else.
-    if (bundleName != "styles.css")
-      return ""
-
-    def loadBundleOrEmpty(path: String): String = Play.resource(path) match {
-      case None => ""
-      case Some(url) =>
-        val inputStream = url.openStream()
-        val bundleText = scala.io.Source.fromInputStream(inputStream).mkString("")
-        inputStream.close()
-        bundleText
-    }
-
-    val defaultStyles =
-      loadBundleOrEmpty(s"public/themes/${TemplateRenderer.DefaultThemeName}/$bundleName")
-
-    val anyThemeStyles = dao.loadWebsiteConfig().getText("theme") map { themeName =>
-      loadBundleOrEmpty(s"public/themes/$themeName/$bundleName")
-    }
-
-    defaultStyles + "\n" + anyThemeStyles.getOrElse("")
-  }
-
-
-  private def loadBundleFromDatabase(dieUnlessFound: Boolean): DatabaseBundleData = {
+  private def loadBundleFromDatabase(): DatabaseBundleData = {
     def die(exception: DebikiException) =
       throw DebikiException(
         "DwE9b3HK1", o"""Cannot serve '$bundleNameNoSuffix.<version>.$bundleSuffix':
@@ -137,12 +91,8 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
         case ex: DebikiException => die(ex)
       }
 
-    if (assetPaths.isEmpty && missingOptAssetPaths.isEmpty) {
-      if (dieUnlessFound)
-        throw new WebsiteConfigException(
-          "DwE37BKf4", s"No asset bundle defined with name: `$bundleName'")
+    if (assetPaths.isEmpty && missingOptAssetPaths.isEmpty)
       return DatabaseBundleData("", Nil, Nil, Nil)
-    }
 
     // Load the JS/CSS pages that are to be bundled.
     val assetPathsAndPages: Seq[(PagePath, Option[PageParts])] = assetPaths map { path =>

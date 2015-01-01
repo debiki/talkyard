@@ -26,10 +26,6 @@ import requests.PageRequest
 
 object TemplateRenderer {
 
-  val DefaultThemeName = "default20121009"
-  private val BuiltinThemesPrefix = "builtin."  // after '/' has been replaced with '.'
-  val DefaultThemeFullName = s"$BuiltinThemesPrefix$DefaultThemeName"
-
 
   def renderTemplate(pageReq: PageRequest[_], appendToBody: xml.NodeSeq = Nil)
         : String =
@@ -79,7 +75,7 @@ object TemplateRenderer {
 
 
   def renderThemeTemplate(template: String, arguments: Seq[AnyRef]): String = {
-    val viewClassName = s"views.html.themes$DefaultThemeFullName.$template"
+    val viewClassName = s"views.html.templates.$template"
     try {
       val viewClass : Class[_] = Play.current.classloader.loadClass(viewClassName)
       val renderMethod: jl.reflect.Method =

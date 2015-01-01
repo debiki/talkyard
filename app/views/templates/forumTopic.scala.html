@@ -17,13 +17,15 @@
 
 @(tpi: debiki.TemplateProgrammingInterface)
 
-<!-- default20121009/parentForumsList.scala.htm -->
 
-<ol class="parent-forums-list">
-  @for(parentForum <- tpi.listParentForums()) {
-  <li>
-      <a href="@{parentForum.path}">@{parentForum.title}</a>
-  </li>
-  }
-</ol>
+@wrapper(tpi) {
+  <!-- forumTopic.scala.html -->
+
+  @parentForumsList(tpi)
+
+  @* Don't add any whitespace around `@tpi.reactTest` because then React thinks
+    the HTML hasn't been rendered by React, and rerenders it client side. *@
+  <div id="dwPosts">@tpi.reactTest</div>
+
+}
 
