@@ -18,13 +18,9 @@
 package debiki
 
 import com.debiki.core._
-import debiki.DebikiHttp._
 import debiki.dao.SiteDao
 import java.{util => ju}
-import play.api.Play
-import play.api.Play.current
 import Prelude._
-import WebsiteConfig.AssetBundleItem
 import AssetBundleLoader._
 
 
@@ -34,18 +30,6 @@ case class AssetBundleAndDependencies(
   assetPageIds: Seq[SitePageId],
   configPageIds: Seq[SitePageId],
   missingOptAssetPaths: Seq[SitePath])
-  // COULD: missingAssets: Seq[MissingAsset])
-
-
-/* COULD rebuild a broken bundle, if a missing asset is created.
- * siteOrHostId: Either the tenant ID was resolved, or only the address to
- * a not-yet-created website is known.
- * assetPath: Remember page path, not id, since there is not yet any id.
-object AssetBundleAndDependencies {
-  case class MissingAsset(
-    siteHostOrId: Either[String, String],
-    assetPath: String)
-} */
 
 
 
@@ -57,6 +41,8 @@ object AssetBundleAndDependencies {
   * — have a look at CachingAssetBundleDao.loadBundleAndDependencies().
   */
 case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, dao: SiteDao) {
+
+  val SiteCssPageId = "_stylesheet"
 
   val bundleName = s"$bundleNameNoSuffix.$bundleSuffix"
 
@@ -79,99 +65,20 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
 
 
   private def loadBundleFromDatabase(): DatabaseBundleData = {
-    def die(exception: DebikiException) =
-      throw DebikiException(
-        "DwE9b3HK1", o"""Cannot serve '$bundleNameNoSuffix.<version>.$bundleSuffix':
-            ${exception.getMessage}""")
 
-    // Find PagePath:s to each JS/CSS page in the bundle.
-    val (assetPaths, missingOptAssetPaths) =
-      try { findAssetPagePaths() }
-      catch {
-        case ex: DebikiException => die(ex)
-      }
-
-    if (assetPaths.isEmpty && missingOptAssetPaths.isEmpty)
+    val assetPageParts: PageParts = dao.loadPageParts(SiteCssPageId) getOrElse {
       return DatabaseBundleData("", Nil, Nil, Nil)
-
-    // Load the JS/CSS pages that are to be bundled.
-    val assetPathsAndPages: Seq[(PagePath, Option[PageParts])] = assetPaths map { path =>
-      val page = dao.loadPageAnyTenant(
-        tenantId = path.tenantId, pageId = path.pageId.get)
-      (path, page)
     }
 
-    // Die if we didn't find all assets to bundle.
-    assetPathsAndPages find (_._2 isEmpty) match {
-      case Some((pagePath, None)) =>
-        die(DebikiException("DwE53X03", o"""Asset '${pagePath.value}'
-          in bundle '$bundleName' not found"""))
-      case _ => ()
-    }
+    val bundleText: String = assetPageParts.approvedBodyText getOrElse ""
 
-    // Construct the currently approved text of the JS/CSS pages.
-    val assetBodies: Seq[String] =
-      assetPathsAndPages map (_._2.get.approvedBodyText getOrElse "")
-    val bundleText = {
-      val sb = new StringBuilder
-      assetBodies.foreach { sb append _ }
-      sb.toString
-    }
+    // Old comment:
+    //   Find ids of config pagses, and assets included in the bundle.
+    //   (If any of these pages is modified, we'll rebuild the bundle.)
+    // Nowadays only one single CSS page is supported: SiteCssPageId. Much simpler.
 
-    // Find ids of config pases, and assets included in the bundle.
-    // (If any of these pages is modified, we'll rebuild the bundle.)
-    val assetPageIds = assetPaths map (_.sitePageId getOrDie "DwE90If5")
-    val siteConfig = dao.loadWebsiteConfig()
-    val configPageIds = siteConfig.configLeaves.map(_.sitePageId)
-
-    DatabaseBundleData(bundleText, assetPageIds, configPageIds = configPageIds,
-      missingOptAssetPaths = missingOptAssetPaths)
-  }
-
-
-  /** Returns PagePath:s to JS and CSS pages that are to be included in the
-    * asset bundle. Includes PagePath:s to *optional* assets that are not found,
-    * but dies if non-optional assets are not found.
-    */
-  private def findAssetPagePaths(): (Seq[PagePath], Seq[SitePath]) = {
-
-    def die(errCode: String, details: String) =
-      throw DebikiException(
-        errCode, s"There's an error in _site.conf: $details")
-
-    val assetUrls =
-      try { dao.loadWebsiteConfig().listAssetBundleUrls(bundleName) }
-      catch {
-        case ex: WebsiteConfigException =>
-          die("DwE2B1x8", ex.getMessage)
-      }
-
-    def itsEntryPrefix = s"The 'asset-bundles' entry for '$bundleName'"
-
-    var missingOptPaths = List[SitePath]()
-
-    val assetPaths: Seq[PagePath] =
-          assetUrls flatMap { case AssetBundleItem(assetUrl, isOptional) =>
-      import UrlToPagePathResolver.Result
-      UrlToPagePathResolver.resolveUrl(assetUrl, dao,
-          baseSiteId = dao.siteId, baseFolder = "/themes/local/") match {
-        case Result.BadUrl(errorMessage) =>
-          die("DwE3bK31", o"""$itsEntryPrefix lists an invalid URL: $assetUrl,
-             error: $errorMessage""")
-        case Result.HostNotFound(host) =>
-          die("DwE58BK3", s"$itsEntryPrefix refers to an unknown host: $host")
-        case Result.PageNotFound =>
-          if (!isOptional) die(
-            "DwE4YBz3", s"$itsEntryPrefix refers to non-existing page: $assetUrl")
-          val path = stripOrigin(assetUrl) getOrElse  assetUrl
-          missingOptPaths ::= SitePath(dao.siteId, path = path)
-          Nil
-        case Result.Ok(path) =>
-          path::Nil
-      }
-    }
-
-    (assetPaths, missingOptPaths)
+    DatabaseBundleData(bundleText, List(SitePageId(dao.siteId, SiteCssPageId)),
+      configPageIds = Nil, missingOptAssetPaths = Nil)
   }
 
 }

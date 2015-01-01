@@ -38,10 +38,14 @@ object SpecialContentPages {
 
 
   def lookup(pageId: PageId): Option[Content] = Some(pageId match {
+    case StylesheetId => Content("")
     case TermsOfUseContentLicenseId => TermsOfUseContentLicense
     case TermsOfUseJurisdictionId => TermsOfUseJurisdiction
     case x => return None
   })
+
+
+  val StylesheetId = "_stylesheet"
 
 
   val TermsOfUseContentLicenseId = "_tou_content_license"
