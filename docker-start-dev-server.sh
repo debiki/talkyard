@@ -2,12 +2,14 @@
 # ./run debug (the default)
 # ./run recreate-database
 
+
 function build_dev_server_image {
   docker build -t debiki-dev-server:v0 scripts/docker/debiki-dev-server/
 }
 
-function create_new_dev_server_container {
+function run_and_remove_dev_server_container {
   docker run \
+    --rm \
     -it \
     --name debiki-dev-server \
     -p 3333:3333 \
@@ -23,30 +25,14 @@ function create_new_dev_server_container {
 }
 
 function tips {
-  echo ',-------------------------------------------------.'
-  echo '| Run:  s/activator-crazyFastStartSkipSearch.sh   |'
-  echo '| Or simply:  s/activator                         |'
-  echo '| And then, to start the HTTP server:  run        |'
-  echo '| Then visit: http://localhost:9000               |'
-  echo '`-------------------------------------------------'"'"
+  echo ',-------------------------------------------------------.'
+  echo '| Run:  scripts/activator-crazyFastStartSkipSearch.sh   |'
+  echo '| Or simply:  scripts/activator                         |'
+  echo '| And then, to start the HTTP server:  run              |'
+  echo '| Then visit: http://localhost:9000                     |'
+  echo '`-------------------------------------------------------'"'"
 }
 
-# Attach if container already running.
-if [ -n "`docker ps | grep debiki-dev-server:v0`" ]; then
-  echo 'Attaching to debiki-dev-server container...'
-  tips
-  docker attach debiki-dev-server
-  exit
-fi
-
-# If container exists, start and attach.
-if [ -n "`docker ps -a | grep debiki-dev-server:v0`" ]; then
-  echo 'Restarting and attaching to debiki-dev-server container...'
-  docker start debiki-dev-server
-  tips
-  docker attach debiki-dev-server
-  exit
-fi
 
 # Build image if needed.
 if [ -z "`docker images | egrep 'debiki-dev-server\s+v0\s+'`" ]; then
@@ -54,10 +40,10 @@ if [ -z "`docker images | egrep 'debiki-dev-server\s+v0\s+'`" ]; then
   build_dev_server_image
 fi
 
-# Create container.
-echo 'Creating debiki-dev-server container...'
+# Run container.
+echo 'Running and removing debiki-dev-server container...'
 tips
-create_new_dev_server_container
+run_and_remove_dev_server_container
 
 
 # vim: fdm=marker et ts=2 sw=2 tw=0 list
