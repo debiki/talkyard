@@ -552,7 +552,8 @@ gulp.task('compile-stylus', function () {
         'client/app/forms-and-dialogs.styl',
         'client/app/login/login.styl',
         'client/app/third-party.styl',
-        'client/app/**/*.styl']),
+        'client/app/**/*.styl',
+        'client/app/**/theme.css']),
 
     makeStyleStream('public/res/', 'debiki-embedded-comments.css', [
         'client/app/tips.styl']),
