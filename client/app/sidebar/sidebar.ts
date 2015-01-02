@@ -422,11 +422,14 @@ export var Sidebar = createComponent({
 
     var tipsOrExtraConfig;
     if (this.state.commentsType === 'Recent') {
+      /* Skip this, I think people won't read it anyway and it makes the page look very
+          cluttered and complicated.
       tipsOrExtraConfig =
           r.p({}, 'Find listed below the beginning of every comment, newest comments first. ' +
               'Click a comment to view it in full in the threaded view to the left. ' +
               'A black star means that you have not yet read that comment. Gray means ' +
               'the computer thinks you have read it.');
+      */
     }
     if (this.state.commentsType === 'Starred') {
       tipsOrExtraConfig =
@@ -438,9 +441,9 @@ export var Sidebar = createComponent({
       var tips = this.state.showPerhapsUnread
           ? r.p({}, 'Find listed below all comments that you have not marked as ' +
               'read. To mark a comment as read, click anywhere inside it, in the ' +
-              "threaded view to the left. (Then the star in the comment's upper left corner " +
-              'will turn white.)')
-          : r.p({}, 'The computer thinks you have read all comments but those listed below.');
+              "threaded view **to the left**. (Then the star in the comment's " +
+              'upper left corner will turn white.)')
+          : r.p({}, 'The computer thinks you have not read these comments:');
       tipsOrExtraConfig =
         r.div({},
           r.label({ className: 'checkbox-inline' },
