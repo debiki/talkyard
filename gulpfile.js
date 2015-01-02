@@ -86,7 +86,6 @@ var debikiDesktopFiles = [
       'client/third-party/jquery.browser.js', //
       'client/third-party/livescript/prelude-browser.js',
       'client/third-party/popuplib.js',
-      'client/third-party/waypoints.js',
       'client/third-party/modernizr-positionfixed.js',
       'client/app/actions/edit/tagdog.js',
       'target/client/app/page-module.js',
@@ -164,7 +163,6 @@ var debikiTouchFiles = [
       'client/third-party/jquery-cookie.js',
       'client/third-party/livescript/prelude-browser.js',
       'client/third-party/popuplib.js',
-      'client/third-party/waypoints.js',
       'client/third-party/modernizr-positionfixed.js',
       'client/app/actions/edit/tagdog.js',
       'target/client/app/page-module.js',

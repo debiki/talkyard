@@ -4,9 +4,6 @@
 [submodule "modules/angular-ui"]
 	path = modules/angular-ui
 	url = https://github.com/angular-ui/ui-utils.git
-[submodule "modules/jquery-waypoints"]
-	path = modules/jquery-waypoints
-	url = https://github.com/imakewebthings/jquery-waypoints.git
 [submodule "modules/debiki-dao-rdb"]
 	path = modules/debiki-dao-rdb
 	url = ../debiki-dao-rdb.git

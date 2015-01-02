@@ -1,1 +1,0 @@
-../../modules/jquery-waypoints/waypoints.js
