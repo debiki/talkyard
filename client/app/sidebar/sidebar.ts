@@ -190,7 +190,7 @@ export var Sidebar = createComponent({
     if (this.state.showSidebar) {
       if (!padding.length) {
         padding =  $('<li id="dw-sidebar-padding"><div ' +
-            'style="height: 100px; background-color: greenyellow;"></div></li>');
+            'style="height: 1px; background-color: transparent;"></div></li>');
         padding.appendTo($('.dw-t.dw-depth-0 > .dw-single-and-multireplies > .dw-res'));
       }
       // The <li> has display: table-cell, so need to (?) set width on something inside.
