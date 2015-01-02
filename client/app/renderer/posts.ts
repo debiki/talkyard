@@ -210,7 +210,7 @@ var RootPostAndComments = createComponent({
       return (
         r.div({ className: threadClass },
           body,
-          NoCommentsPageActions({ post: rootPost, user: user, ref: 'actions' })));
+          NoCommentsPageActions({ post: rootPost, user: user })));
     }
 
     var anyLikeCount;
