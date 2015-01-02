@@ -32,7 +32,10 @@ interface Post {
 
 interface User {
   userId: string;
-  permsOnPage: any;
+  isLoggedIn?: boolean;
+  isAdmin?: boolean;
+  username?: string;
+  fullName?: string;
   rolePageSettings: any;
   votes: any;
   unapprovedPosts: any;

@@ -175,6 +175,7 @@ var RootPostAndComments = createComponent({
     }
   },
   render: function() {
+    var user = this.props.user;
     var rootPost = this.props.allPosts[this.props.rootPostId];
     var isBody = this.props.rootPostId === BodyPostId;
     var pageRole = this.props.pageRole;
@@ -205,8 +206,12 @@ var RootPostAndComments = createComponent({
               dangerouslySetInnerHTML: { __html: sanitizedHtml }})));
     }
 
-    if (!showComments)
-      return r.div({ className: threadClass }, body);
+    if (!showComments) {
+      return (
+        r.div({ className: threadClass },
+          body,
+          NoCommentsPageActions({ post: rootPost, user: user, ref: 'actions' })));
+    }
 
     var anyLikeCount;
     if (rootPost.numLikeVotes >= 1) {
@@ -239,7 +244,7 @@ var RootPostAndComments = createComponent({
     return (
       r.div({ className: threadClass },
         body,
-        PostActions({ post: rootPost, user: this.props.user, ref: 'actions' }),
+        PostActions({ post: rootPost, user: user, ref: 'actions' }),
         anyLikeCount,
         debiki2.reactelements.CommentsToolbar(),
         anyHorizontalArrowToChildren,
@@ -552,6 +557,30 @@ var PostBody = createComponent({
     }
     return (
       r.div({ className: 'dw-p-bd' }, body));
+  }
+});
+
+
+var NoCommentsPageActions = createComponent({
+  onEditClick: function(event) {
+    debiki.internal.$showEditForm.call(event.target, event);
+  },
+  render: function() {
+    var user: User = this.props.user;
+    var post: Post = this.props.post;
+
+    if (!post.isApproved && !post.sanitizedHtml)
+      return null;
+
+    var actions = [];
+    if (user.isAdmin) {
+      actions.push(
+        r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit'));
+    }
+
+    return (
+      r.div({ className: 'dw-p-as dw-as', onMouseEnter: this.showActions },
+        actions));
   }
 });
 
