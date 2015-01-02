@@ -21,7 +21,7 @@ var $ = d.i.$;
 
 
 /**
- * Loads CodeMirror and Remarkable.
+ * Loads Remarkable CommonMark renderer.
  */
 d.i.loadEditorDependencies = (function() {
   var loadStatus;
@@ -29,13 +29,15 @@ d.i.loadEditorDependencies = (function() {
     if (loadStatus)
       return loadStatus;
     loadStatus = $.Deferred();
-    var loadCodeMirror = !Modernizr.touch;
+    var loadCodeMirror = false; // !Modernizr.touch;
     var assetsPrefix = d.i.assetsUrlPathStart;
     yepnope({
+      /* CodeMirror currently not in use, and files removed.
       test: loadCodeMirror,
       yep: [
         assetsPrefix + 'codemirror-3-13-custom.css',
         assetsPrefix + 'codemirror-3-13-custom.' + d.i.minMaxJs],
+        */
       both: [
         assetsPrefix + 'remarkable.' + d.i.minMaxJs],
       complete: function() {

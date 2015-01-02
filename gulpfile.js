@@ -61,16 +61,6 @@ var thisIsAConcatenationMessage =
   ' * than the AGPL. Files are separated by a "======" line.\n' +
   ' */\n';
 
-var codeMirrorBanner =
-  '/*!\n' +
-  ' * Copyright (C) 2013 Marijn Haverbeke <marijnh@gmail.com>\\n' +
-  ' * Source code available under the MIT license, see:\n' +
-  ' *   http://github.com/marijnh/CodeMirror\n' +
-  ' *\n' +
-  ' * Parts Copyright (C) 2013 Kaj Magnus Lindberg\n' +
-  ' * (a certain codemirror-show-markdown-line-breaks addon only)\n' +
-  ' */\n';
-
 var nextFileLine =
   '\n\n//=== Next file: ===============================================================\n\n';
 
@@ -274,30 +264,6 @@ var adminOldFiles = [
       'target/client/admin-old/scripts/*.js'];
 
 
-var codeMirrorScripts = [
-      'client/third-party/codemirror/lib/codemirror.js',
-      'client/third-party/codemirror/mode/css/css.js',
-      'client/third-party/codemirror/mode/xml/xml.js',
-      'client/third-party/codemirror/mode/javascript/javascript.js',
-      'client/third-party/codemirror/mode/markdown/markdown.js',
-      'client/third-party/codemirror/mode/yaml/yaml.js',
-      'client/third-party/codemirror/mode/htmlmixed/htmlmixed.js',
-      'client/third-party/codemirror/addon/dialog/dialog.js',
-      'client/third-party/codemirror/addon/search/search.js',
-      'client/third-party/codemirror/addon/search/searchcursor.js',
-      'client/third-party/codemirror/addon/edit/matchbrackets.js',
-      // No:
-      //'client/third-party/codemirror/addon/edit/trailingspace.js',
-      // Instead:
-      'client/third-party/codemirror-show-markdown-line-breaks.js'];
-
-
-var codeMirrorStyles = [
-      'client/third-party/codemirror/lib/codemirror.css',
-      'client/third-party/codemirror/addon/dialog/dialog.css', // for the search dialog
-      'client/third-party/codemirror-show-markdown-line-breaks.css'];
-
-
 
 gulp.task('wrap-javascript', function () {
   // Prevent Javascript variables from polluting the global scope.
@@ -443,28 +409,8 @@ function makeConcatDebikiScriptsStream() {
 
 
 
-gulp.task('concat-codemirror-scripts', function() {
-  return makeCodeMirrorScriptsStream();
-});
-
-function makeCodeMirrorScriptsStream() {
-  function makeConcatStream(outputFileName, filesToConcat) {
-    return gulp.src(filesToConcat)
-        .pipe(concat(outputFileName))
-        .pipe(header(codeMirrorBanner))
-        .pipe(gulp.dest('public/res/'));
-  }
-  return es.merge(
-      makeConcatStream('codemirror-3-13-custom.js', codeMirrorScripts),
-      makeConcatStream('codemirror-3-13-custom.css', codeMirrorStyles));
-};
-
-
-
 gulp.task('wrap-javascript-concat-scripts', ['wrap-javascript'], function () {
-  // Perhaps some CodeMirror Javascript file has been upgraded, so
-  // concatenate CodeMirror scripts too, not only Debiki's scripts.
-  return makeConcatDebikiAndCodeMirrorScriptsStream();
+  return makeConcatAllScriptsStream();
 });
 
 gulp.task('compile-livescript-concat-scripts', ['compile-livescript'], function () {
@@ -482,18 +428,18 @@ gulp.task('compile-templates-concat-scripts', ['compile-templates'], function ()
 gulp.task('compile-concat-scripts',
     ['wrap-javascript', 'compile-livescript', 'compile-typescript', 'compile-templates'],
     function () {
-  return makeConcatDebikiAndCodeMirrorScriptsStream();
+  return makeConcatAllScriptsStream();
 });
 
-function makeConcatDebikiAndCodeMirrorScriptsStream() {
+function makeConcatAllScriptsStream() {
+  // I've removed some other scripts (CodeMirror) so now suddenly there's nothing to merge.
   return es.merge(
-      makeConcatDebikiScriptsStream(),
-      makeCodeMirrorScriptsStream());
+      makeConcatDebikiScriptsStream());
 };
 
 
 
-gulp.task('minify-scripts', ['concat-debiki-scripts', 'concat-codemirror-scripts'], function() {
+gulp.task('minify-scripts', ['concat-debiki-scripts'], function() {
   return gulp.src(['public/res/*.js', '!public/res/*.min.js'])
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
