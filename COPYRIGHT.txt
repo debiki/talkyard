@@ -1,5 +1,5 @@
 Debiki is a discussion system for fruitful discussions.
-Copyright (C) 2010-2013 Kaj Magnus Lindberg (born 1979)
+Copyright (C) 2010-2015 Kaj Magnus Lindberg (born 1979)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -26,13 +26,31 @@ components, including:
 
 Javascript and CSS:
 
+  (This list might be incomplete. See bower.json for a complete list of
+  client side modules, and run `bower install` to download licenses and
+  copyrights to `bower_components/`.)
+
+  - Angular
+    2010-2014 Google, Inc. http://angularjs.org
+    MIT license
+
   - AngularUI
     ./modules/angular-ui/
     MIT License
     http://angular-ui.github.io/
 
+  - Caret.js
+    ./bower_components/Caret.js/LICENSE-MIT
+    Copyright (c) 2013 chord.luo@gmail.com
+    MIT license
+
+  - EventEmitter2
+    ./bower_components/eventemitter2/
+    Copyright (c) 2013 hij1nx
+    MIT license
+
   - LiveScript's prelude.ls
-    ./client/vendor/livescript/
+    ./client/third-party/livescript/
     Copyright (c) 2013 George Zahariev
     http://gkz.github.io/prelude-ls/
 
@@ -43,15 +61,15 @@ Javascript and CSS:
     http://twitter.github.io/bootstrap/
 
   - JsHtmlSanitizer from Google Caja
-    ./client/vendor/html-sanitizer-bundle.js
+    ./client/third-party/html-css-sanitizer-bundle.js
+    Copyright Google Inc.
     Apache License 2.0
     https://code.google.com/p/google-caja/wiki/JsHtmlSanitizer
 
-  - YAML parser for Javascript
-    ./client/vendor/javascript-yaml-parser.js
-    Copyright (c) 2011 Diogo Costa
+  - jQuery
+    ./bower_components/jquery/
+    Copyright (c) 2011 John Resig, http://jquery.com/
     MIT license
-    http://javascript-yaml-parser.googlecode.com/svn/trunk
 
   - jQuery Cookie plugin
     ./client/vendor/jquery-cookie.js
@@ -64,22 +82,45 @@ Javascript and CSS:
     MIT license
     https://github.com/litera/jquery-scrollintoview/blob/master/
 
+  - jQuery AtWho
+    ./bower_components/jquery.atwho/
+    Copyright (c) 2013 chord.luo@gmail.com
+    MIT license
+
   - popuplib.js
     ./client/vendor/popuplib.js
     Copyright 2009 Google Inc.
     Apache License 2.0
     http://step2.googlecode.com/svn/code/java/trunk/example-consumer/src/main/webapp/popuplib.js
 
-  - underscore-1.3.3
-    ./client/vendor/underscore-1.3.3.min.js
-    (I think it's the MIT license?)
-    http://underscorejs.org/
-
-  - jquery-waypoints
-    ./modules/jquery-waypoints
-    Copyright (c) 2011-2012 Caleb Troughton
+  - keymaster
+    ./bower_components/keymaster/
+    Copyright (c) 2011-2013 Thomas Fuchs
     MIT license
-    https://github.com/imakewebthings/jquery-waypoints
+
+  - LazyLoad
+    ./client/embedded-comments/parent-footer.js
+    Copyright (c) 2011 Ryan Grove <ryan@wonko.com>
+    The MIT license
+    https://github.com/rgrove/lazyload/
+
+  - lodash
+    ./bower_components/lodash
+    Copyright 2012-2013 The Dojo Foundation <http://dojofoundation.org/>
+
+  - modernizr
+    ./bower_components/modernizr/
+    Copyright (c) Faruk Ates, Paul Irish, Alex Sexton
+    BSD and MIT licenses
+
+  - moment
+    bower_components/moment/
+    Copyright (c) 2011-2013 Tim Wood, Iskren Chernev, Moment.js contributors
+
+  - NiceScroll
+    ./bower_components/nicescroll/
+    Copyright (c) 2011 InuYaksa
+    MIT license
 
   - Fontello
     ./modules/fontello/
@@ -87,14 +128,15 @@ Javascript and CSS:
     Various licenses.
     http://fontello.com/
 
-  - Pagedown
-    ./modules/pagedown/
-    Copyrighted by various people
-    Seems to be the MIT license
-    https://github.com/ujifgc/pagedown.git
+  - React.js
+    Copyright 2013-2014, Facebook, Inc.
+
+  - Remarkable
+    ./bower_components/remarkable/
+    Copyright (c) 2014 Jon Schlinkert, Vitaly Puzrin.
 
   - jQuery UI
-    ./public/res/jquery-ui-1.8.16
+    ./public/res/jquery-ui
     MIT license
     http://jquery.org
 
@@ -102,13 +144,6 @@ Javascript and CSS:
     ./public/res/openid-selector/
     New BSD License
     http://code.google.com/p/openid-selector/
-
-  - CodeMirror
-    ./public/res/codemirror/
-    ./public/res/codemirror-2.25-custom.min.js
-    Copyright (C) 2013 by Marijn Haverbeke
-    MIT style license
-    http://codemirror.net/
 
   - Yoxview
     ./public/tmp/yoxview/
@@ -122,25 +157,15 @@ Javascript and CSS:
     The MIT license
     https://github.com/gabceb/jquery-browser-plugin
 
-  - LazyLoad
-    A minified version is inlined in Gruntfile.coffee.
-    Copyright (c) 2011 Ryan Grove <ryan@wonko.com>
-    The MIT license
-    https://github.com/rgrove/lazyload/
+  - YepNope
+    ./bower_components/yepnope/
+    Tri-licensed: WTFPL | MIT | BSD
 
 Javascript and Java:
 
   - google-diff-match-patch
-    ./client/vendor/diff_match_patch.js
+    ./client/third-party/diff_match_patch.js
     Apache License 2.0
     https://code.google.com/p/google-diff-match-patch/
 
-Scala:
 
-  - SecureSocial by Jorge Aliss
-    ./modules/securesocial-git/
-    Apache Licence 2.0
-    https://github.com/jaliss/securesocial
-
-
-vim: tw=72

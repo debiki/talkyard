@@ -1,67 +1,77 @@
 Debiki Server
 =============================
 
-<!--
-<a href="http://www.debiki.com/">![Logo](http://www.debiki.com/-/img/logo-128x120.png) Debiki</a>
--->
-
-Debiki is an open source (AGPL) discussion platform for forums, blogs
-and simple websites.
-
-It intends to:
-
-- Save time, by showing the interesting comments first,
-  and solving the off-topic problem, and other things
-
-- Promote fruitful discussions
-
-- Help people better understand others with different points of view
-
-Read more at **http://www.debiki.com/** and have a look at
-[**this demo**](http://www.debiki.com/demo/-71cs1-demo-page-1).
+Debiki is an open source discussion platform for forums, blogs, embedded comments
+and simple websites. Read more, and see it live, at http://www.debiki.com/.
 
 Debiki is under development and there is currently no stable version or simple
 installation instructions.
 
 
-
 Getting Started
 -----------------------------
 
-This Git repo holds all source code. However, don't clone it directly.
-Instead, use this skeleton project for a Debiki site:
+You'll need to install Docker (see below), clone a Git repo, and run some scripts.
 
->  [debiki-site-seed](https://github.com/debiki/debiki-site-seed)
+1. Clone another project, [debiki-site-seed](https://github.com/debiki/debiki-site-seed). In that project, this project is a submodule.
 
-That project includes a Vagrantfile so you can get started quickly.
-— When you checkout that project, you'll also checkout this project, as a
-submodule.
+    `git clone https://github.com/debiki/debiki-site-seed.git`
 
-**Note:** Unfortunately I haven't upgraded *debiki-site-seed* the last few months,
-so, right now, if you check it out, you'll find a really old version of *debiki-server*.
-Hopefully I'll update it soon. /2014-09-11
+2. In the cloned repo: `git submodule update --init --recursive`  
+    (This clones this project (`debiki-server`) to a subdirectory `server/` in `debiki-site-seed`.)
 
+3. Create a branch and fetch the latest changes in the `debiki-server` module:
+
+        cd server
+        git checkout master
+        git pull origin master
+
+4. Install [Docker](https://www.docker.com/).
+
+5. Create a Docker database container and import some contents. In `server/`: (oops! I have to create a dump file for you first...)
+
+        ./docker-import-dev-database postgresql-dump-file-with-sample-data.sql
+
+6. Start the database, Gulp and the server. In three separate shells, in `server/`:
+
+        ./docker-start-dev-database.sh
+        ./docker-start-dev-gulp.sh
+        ./docker-start-dev-server.sh
+
+7. The -dev-gulp and -dev-server Docker containers print messages about what you are to do next.
+(Namely running npm and Gulp `install` and `gulp watch`, and start Play Framework and the server.)
+
+8. Once a green message "Server started ..." appears in the -dev-server container, open your browser, go to http://localhost:9000/. It'll take a while before the page loads; some Scala files are being compiled.
+
+A little problem: If you save two TypeScript/JavaScript files at the same time,
+sometimes Gulp picks up the changes in only one of the files. What I do then,
+once I've understood what has happened, is that I stop and restart `gulp
+watch`.
+
+
+Technology
+-----------------------------
+
+Client: React.js, TypeScript, Bower, Gulp. Some old code uses LiveScript and
+AngularJS and jQuery.
+
+Server: Scala and Play Framework. We render HTML server side by running
+React.js in Java 8's Nashorn Javascript engine.
+
+Databases: PostgreSQL and ElasticSearch.
 
 
 Contributing
 -----------------------------
 
-Debiki is written in Scala, Javascript, LiveScript, HTML, CSS and SQL.
-It uses Play Framework 2.1, PostgreSQL, jQuery, AngularJS and Node.js Grunt.
+If you'd like to contribute, please email me, see http://www.debiki.com/about/.
 
-If you'd like to contribute any source code, then perhaps you could to send me
-an email, or a GitHub pull request. And please sign this Contributor License
-Agreement (CLA) (oops! it does not yet exist. But it'll be similar to [Google's
-CLA](https://developers.google.com/open-source/cla/individual) — you'd open
-source your code and grant me a copyrigt license).
-
-(Please wrap lines if longer than 100 characters.
-And, for Scala code, please use [the official style guide](http://docs.scala-lang.org/style/).
-For Javascript, use [Google's style guide](http://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml).)
+In the future, I suppose there will be a Contributor License Agreement (CLA), similar to
+[Google's CLA](https://developers.google.com/open-source/cla/individual) — you'd open
+source your code and grant me a copyrigt license.
 
 
-
-Directory Layout
+Directories
 -----------------------------
 
 This project looks like so:
@@ -69,42 +79,44 @@ This project looks like so:
 
     server/
      |
-     +-client/         <-- Javascript, CSS, Livescript
+     +-client/         <-- Javascript, CSS, React.js components
+     | +-app/          <-- Client side code
+     | +-server/       <-- React.js components rendered server side
+     | +-admin-app/    <-- The admin pages
+     | +...
      |
-     +-app/            <-- Scala code -- a Play Framework 2.1 app
+     +-app/            <-- Scala code — a Play Framework 2 app
      | +-controllers/
      | +-debiki/
      | +-views/        <-- HTML (well, Play's Scala templates)
-     |   +-themes/     <-- A softlink to a supposed parent Git repo with
-     |                     website specifec HTML and CSS
+     |
      +-modules/
-     | +-debiki-dao-pgsql/  <-- A database access object (DAO), for PostgreSQL
+     | +-debiki-dao-rdb/    <-- A database access object (DAO), for PostgreSQL
      | +-debiki-tck-dao/    <-- Test suite for Database Access Object:s
      | +-debiki-core/       <-- Code shared by the DAO and by the ./app/ code
      | |
      | ...Third party modules
      |
-     +-public/     <-- Some images and libs, plus JS and CSS that Grunt
-     |                 has bundled and minified.
+     +-public/     <-- Some images and libs, plus JS and CSS that Gulp
+     |                 has bundled and minified from the client/ dir above.
      |
-     +-scripts/         <-- Utiity scripts
-     +-scripts-client/  <-- Broken scripts, not in use
+     +-scripts/    <-- Utiity scripts
      |
      +-conf/       <-- Default config files that assume everything
-     | |               is installed on localohost
-     | |
-     | +-local/    <-- A softlink to a supposed parent Git repo with
-     |                 website specific config files, which override the
-     |                 default config files.
-     |
-     +-conf-cient/ <-- Broken config files, not in use
-
+       |               is installed on localohost
+       |
+       +-local/    <-- A softlink to a supposed parent Git repo (namely debiki-site-seed) with
+                       website specific config files, which override the
+                       default config files.
 
 
 License (AGPL)
 -----------------------------
 
-    Copyright (C) 2010-2013  Kaj Magnus Lindberg (born 1979)
+Please let me know if you want me to change from AGPL to GPL, contact info here: http://www.debiki.com/about/
+
+
+    Copyright (C) 2010-2015  Kaj Magnus Lindberg
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
