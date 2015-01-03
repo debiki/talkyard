@@ -64,7 +64,8 @@ Databases: PostgreSQL and ElasticSearch.
 Contributing
 -----------------------------
 
-If you'd like to contribute, please email me, see http://www.debiki.com/about/.
+If you'd like to contribute, read more
+[at the end of this page](http://www.debiki.com/-81n25/source-code) about contributing.
 
 In the future, I suppose there will be a Contributor License Agreement (CLA), similar to
 [Google's CLA](https://developers.google.com/open-source/cla/individual) — you'd open
