@@ -28,9 +28,10 @@ You'll need to install Docker (see below), clone a Git repo, and run some script
 
 4. Install [Docker](https://www.docker.com/).
 
-5. Create a Docker database container and import some contents. In `server/`: (oops! I have to create a dump file for you first...)
+5. Create a Docker database container and import some contents. In `server/`:
 
-        ./docker-import-dev-database postgresql-dump-file-with-sample-data.sql
+        ./docker-create-dev-database.sh `pwd`/../db-dumps/tiny-forum/
+
 
 6. Start the database, Gulp and the server. In three separate shells, in `server/`:
 
@@ -41,7 +42,13 @@ You'll need to install Docker (see below), clone a Git repo, and run some script
 7. The -dev-gulp and -dev-server Docker containers print messages about what you are to do next.
 (Namely running npm and Gulp `install` and `gulp watch`, and start Play Framework and the server.)
 
-8. Once a green message "Server started ..." appears in the -dev-server container, open your browser, go to http://localhost:9000/. It'll take a while before the page loads; some Scala files are being compiled.
+8. Once a green message "Server started ..." appears in the -dev-server
+   container's shell, open your browser, go to http://localhost:9000/ and
+   http://localhost:9000/-/admin/. It'll take a while before the pages load;
+   some Scala files are being compiled.
+
+9. Login as `admin@example.com`, password `password`.
+
 
 A little problem: If you save two TypeScript/JavaScript files at the same time,
 sometimes Gulp picks up the changes in only one of the files. What I do then,
@@ -133,3 +140,4 @@ Please let me know if you want me to change from AGPL to GPL, contact info here:
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+vim: list
