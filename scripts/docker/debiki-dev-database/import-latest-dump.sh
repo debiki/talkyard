@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Don't konw why this is needed, but otherwise PostgreSQL logs 99999 messages like:
+#   """could not open temporary statistics file "/var/run/postgresql/9.3-main.pg_stat_tmp/global.tmp": No such file or directory"""
+# and then dies.
+mkdir /var/run/postgresql/9.3-main.pg_stat_tmp/
+touch /var/run/postgresql/9.3-main.pg_stat_tmp/global.tmp
+
 /usr/lib/postgresql/9.3/bin/postgres -D /var/lib/postgresql/9.3/main -c config_file=/etc/postgresql/9.3/main/postgresql.conf &
 
 cd /opt/debiki/database/
@@ -9,6 +15,7 @@ while [ -z "`netstat -tlpn | grep 5432`" ]; do
   sleep 1
 done
 echo 'PostgreSQL started.'
+sleep 2
 
 echo 'The most recent dumps, we will import the latest one:'
 echo "`ls -hlt dumps/ | head -n5`"

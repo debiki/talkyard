@@ -3,8 +3,7 @@
 # example Dockerfile for http://docs.docker.com/examples/postgresql_service/
 #
 
-FROM ubuntu
-MAINTAINER SvenDowideit@docker.com
+FROM ubuntu:14.04
 
 # Add the PostgreSQL PGP key to verify their Debian packages.
 # It should be the same key as https://www.postgresql.org/media/keys/ACCC4CF8.asc
@@ -35,6 +34,7 @@ RUN echo "listen_addresses='*'" >> /etc/postgresql/9.3/main/postgresql.conf
 EXPOSE 5432
 
 COPY import-latest-dump.sh /opt/debiki/database/import-latest-dump.sh
+COPY create-empty-database.sh /opt/debiki/database/create-empty-database.sh
 
 # Set the default command to run when starting the container
 CMD ["/usr/lib/postgresql/9.3/bin/postgres", "-D", "/var/lib/postgresql/9.3/main", "-c", "config_file=/etc/postgresql/9.3/main/postgresql.conf"]
