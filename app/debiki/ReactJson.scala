@@ -64,14 +64,28 @@ object ReactJson {
     val topLevelCommentIdsSorted =
       Post.sortPosts(topLevelComments).map(reply => JsNumber(reply.id))
 
+    val anyLatestTopics: Seq[JsObject] =
+      if (pageReq.thePageRole == PageRole.Forum) {
+        val orderOffset = PageOrderOffset.ByBumpTime(None)
+        var topics =
+          pageReq.dao.listTopicsInTree(rootPageId = pageReq.thePageId,
+            orderOffset, limit = controllers.ForumController.NumTopicsToList)
+        topics.map(controllers.ForumController.topicToJson(_))
+      }
+      else {
+        Nil
+      }
+
     Json.obj(
       "now" -> JsNumber((new ju.Date).getTime),
       "pageId" -> pageReq.thePageId,
       "pageRole" -> JsString(pageReq.thePageRole.toString),
+      "pagePath" -> JsString(pageReq.pagePath.value),
       "numPosts" -> numPosts,
       "numPostsExclTitle" -> numPostsExclTitle,
       "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),
       "categories" -> categoriesJson(pageReq),
+      "topics" -> JsArray(anyLatestTopics),
       "user" -> NoUserSpecificData,
       "rootPostId" -> JsNumber(BigDecimal(pageReq.pageRoot getOrElse PageParts.BodyId)),
       "allPosts" -> JsObject(allPostsJson),

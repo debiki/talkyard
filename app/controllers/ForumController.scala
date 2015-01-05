@@ -126,7 +126,7 @@ object ForumController extends mvc.Controller {
   }
 
 
-  private def topicToJson(topic: PagePathAndMeta): JsObject = {
+  def topicToJson(topic: PagePathAndMeta): JsObject = {
     val createdEpoch = topic.meta.creationDati.getTime
     val lastPostEpoch = topic.meta.cachedLastVisiblePostDati.map(_.getTime).get
     Json.obj(
