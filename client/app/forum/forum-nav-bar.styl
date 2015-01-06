@@ -38,16 +38,27 @@
     float: left
     margin-left: 10px
 
-    li
-      a
-        padding: 5px 15px
+    button
+      float: left;
+      border: none;
+      box-shadow: none;
 
-      &.active a
+      padding-left: 15px;
+      padding-right: 15px;
+      min-width: 70px;
+
+      &.active
         background-color: hsl(211, 50%, 53%)
+        color: white
 
   button
     float: right
     margin-left: 5px
+    color: hsl(211, 100%, 40%);
 
 
-// vim: fdm=indent et ts=2 sw=2 tw=100 fo=tcqwn list
+.forum-table .forum-title
+  cursor: pointer;  // why needed? It's already an <a>
+
+
+// vim: fdm=indent et ts=2 sw=2 fo=r list
