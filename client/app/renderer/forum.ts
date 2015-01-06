@@ -40,6 +40,8 @@ var RouteHandler = ReactRouter.RouteHandler;
 var Route = ReactRouter.Route;
 var DefaultRoute = ReactRouter.DefaultRoute;
 
+/** Keep in sync with app/controllers/ForumController.NumTopicsToList. */
+var NumNewTopicsPerRequest = 40;
 
 export function buildForumRoutes() {
   return (
@@ -203,12 +205,19 @@ export var ForumTopicList = createComponent({
     this.loadTopics(nextProps.activeCategory.pageId, keepCurrentTopics);
   },
 
+  onLoadMoreTopicsClick: function() {
+    this.loadTopics(this.props.activeCategory.pageId, true);
+  },
+
   loadTopics: function(categoryId, keepCurrentTopics) {
     var anyLastTopic;
     var anyTimeOffset: number;
     var anyLikesOffset: number;
     if (!keepCurrentTopics) {
-      this.setState({ topics: null });
+      this.setState({
+        topics: null,
+        showLoadMoreButton: false
+      });
     }
     else {
       anyLastTopic = _.last(this.state.topics);
@@ -233,7 +242,10 @@ export var ForumTopicList = createComponent({
       newTopics = newTopics.concat(topics);
       // `newTopics` includes at least the last old topic twice.
       newTopics = _.uniq(newTopics, 'pageId');
-      this.setState({ topics: newTopics });
+      this.setState({
+        topics: newTopics,
+        showLoadMoreButton: topics.length >= NumNewTopicsPerRequest
+      });
     });
   },
 
@@ -249,19 +261,29 @@ export var ForumTopicList = createComponent({
     var topics = this.state.topics.map((topic) => {
       return TopicRow({ topic: topic, categories: this.props.categories, now: this.props.now });
     });
+
+    var loadMoreTopicsBtn;
+    if (this.state.showLoadMoreButton) {
+      loadMoreTopicsBtn =
+        r.div({},
+          r.a({ className: 'load-more', onClick: this.onLoadMoreTopicsClick }, 'Load more ...'));
+    }
+
     return (
-      r.table({ id: 'dw-topic-list' },
-        r.thead({},
-          r.tr({},
-            r.th({}, 'Topic'),
-            r.th({}, 'Category'),
-            r.th({ className: 'num num-posts' }, 'Posts'),
-            r.th({ className: 'num' }, 'Likes'),
-            r.th({ className: 'num' }, 'Wrongs'),
-            r.th({ className: 'num' }, 'Created'),
-            r.th({ className: 'num' }, 'Last Post'))),
-        r.tbody({},
-          topics)));
+      r.div({},
+        r.table({ id: 'dw-topic-list' },
+          r.thead({},
+            r.tr({},
+              r.th({}, 'Topic'),
+              r.th({}, 'Category'),
+              r.th({ className: 'num num-posts' }, 'Posts'),
+              r.th({ className: 'num' }, 'Likes'),
+              r.th({ className: 'num' }, 'Wrongs'),
+              r.th({ className: 'num' }, 'Created'),
+              r.th({ className: 'num' }, 'Last Post'))),
+          r.tbody({},
+            topics)),
+        loadMoreTopicsBtn));
   }
 });
 
