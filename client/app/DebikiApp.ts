@@ -25,15 +25,7 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 
 
-var dependencies = ['DebikiEditorModule'];
-
-var pageRole = debiki2.ReactStore.getPageRole();
-if (pageRole === 'Forum') {
-  dependencies.push('DebikiForumModule');
-}
-
-
-export var DebikiApp: ng.IModule = angular.module('DebikiApp', dependencies);
+export var DebikiApp: ng.IModule = angular.module('DebikiApp', ['DebikiEditorModule']);
 
 
 //------------------------------------------------------------------------------
