@@ -151,6 +151,86 @@ export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
     });
 }
 
+
+export function listUsernames(prefix: string, doneCallback: (usernames: string[]) => void) {
+  var url = origin + '/-/list-usernames?pageId='+ d.i.pageId + '&prefix='+ prefix;
+  $.get(url)
+    .done((response: any) => {
+      doneCallback(response);
+    })
+    .fail((x, y, z) => {
+      console.error('Error listing usernames: ' + JSON.stringify([x, y, z]));
+      doneCallback(null);
+    });
+}
+
+
+export function loadCurrentPostText(postId: number, doneCallback: (text: string) => void) {
+  $.get(origin + '/-/edit?pageId='+ d.i.pageId + '&postId='+ postId)
+    .done((response: any) => {
+      // COULD also load info about whether the user may apply and approve the edits.
+      doneCallback(response.currentText);
+    })
+    .fail((x, y, z) => {
+      console.error('Error loading current post text: ' + JSON.stringify([x, y, z]));
+      doneCallback(null);
+    });
+}
+
+
+export function saveEdits(postId: number, text: string, doneCallback: () => void) {
+  d.u.postJson({
+    url: origin + '/-/edit',
+    data: {
+      pageId: d.i.pageId,
+      postId: postId,
+      text: text
+    },
+    success: (response) => {
+      doneCallback();
+      d.i.handleEditResult(response);
+    },
+    error: (x, y, z) => {
+      console.error('Error saving text: ' + JSON.stringify([x, y, z]));
+    },
+  });
+}
+
+
+export function saveReply(postIds: number[], text: string, doneCallback: () => void) {
+  d.u.postJson({
+    url: origin + '/-/reply',
+    data: {
+      pageId: d.i.pageId,
+      pageUrl: d.i.iframeBaseUrl || undefined,
+      postIds: postIds,
+      text: text
+    },
+    success: (response) => {
+      doneCallback();
+      d.i.handleReplyResult(response);
+    },
+    error: (x, y, z) => {
+      console.error('Error saving new reply: ' + JSON.stringify([x, y, z]));
+    },
+  });
+}
+
+
+export function createNewPage(data, doneCallback: (newPageId: string) => void) {
+  d.u.postJson({
+    url: origin + '/-/create-page',
+    data: data,
+    success: (response) => {
+      doneCallback(response.newPageId);
+    },
+    error: (x, y, z) => {
+      console.error('Error saving new reply: ' + JSON.stringify([x, y, z]));
+    },
+  });
+}
+
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

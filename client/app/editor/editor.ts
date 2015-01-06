@@ -1,0 +1,303 @@
+/*
+ * Copyright (C) 2015 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/// <reference path="../../shared/plain-old-javascript.d.ts" />
+/// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../renderer/model.ts" />
+/// <reference path="../Server.ts" />
+
+//------------------------------------------------------------------------------
+   module debiki2.editor {
+//------------------------------------------------------------------------------
+
+var d = { i: debiki.internal, u: debiki.v0.util };
+var r = React.DOM;
+var reactCreateFactory = React['createFactory'];
+var ReactBootstrap: any = window['ReactBootstrap'];
+var Button = reactCreateFactory(ReactBootstrap.Button);
+var theEditor: any;
+var $: any = window['jQuery'];
+
+
+export function createEditor() {
+  var editorElem = document.getElementById('dw-editor');
+  if (editorElem) {
+    theEditor = React.render(Editor({}), editorElem);
+  }
+}
+
+
+export function toggleWriteReplyToPost(postId: number) {
+  theEditor.toggleWriteReplyToPost(postId);
+  d.i.loadEditorDependencies(); // TODO everywhere
+}
+
+
+export function openEditorToEditPost(postId: number) {
+  theEditor.editPost(postId);
+}
+
+
+export function editNewForumPage(parentPageId: string, role: string) {
+  theEditor.editNewForumPage(parentPageId, role);
+}
+
+
+export var Editor = createComponent({
+  getInitialState: function() {
+    return {
+      visible: false,
+      text: '',
+      draft: '',
+      replyToPostIds: [],
+      newForumPageParentId: null,
+      newForumPageRole: null,
+    };
+  },
+
+  componentDidMount: function() {
+    this.startMentionsParser();
+  },
+
+  startMentionsParser: function() {
+    $(this.refs.textarea.getDOMNode()).atwho({
+      at: "@",
+      search_key: 'username',
+      tpl: "<li data-value='${atwho-at}${username}'>${username} (${fullName})</li>",
+      callbacks: {
+        remote_filter: (prefix, callback) => {
+          Server.listUsernames(prefix, callback);
+        }
+      }
+    });
+  },
+
+  toggleWriteReplyToPost: function(postId: number) {
+    if (this.alertBadState('WriteReply'))
+      return;
+    var postIds = this.state.replyToPostIds;
+    var index = postIds.indexOf(postId);
+    if (index === -1) {
+      postIds.push(postId);
+    }
+    else {
+      postIds.splice(index, 1);
+    }
+    this.setState({
+      visible: postIds.length > 0,
+      replyToPostIds: postIds,
+      text: this.state.text ? this.state.text : this.state.draft
+    });
+  },
+
+  editPost: function(postId: number) {
+    if (this.alertBadState())
+      return;
+    Server.loadCurrentPostText(postId, (text: string) => {
+      this.setState({
+        visible: true,
+        editingPostId: postId,
+        text: text
+      });
+    });
+  },
+
+  editNewForumPage: function(parentPageId: string, role: string) {
+    if (this.alertBadState())
+      return;
+    this.setState({
+      visible: true,
+      newForumPageParentId: parentPageId,
+      newForumPageRole: role,
+      text: this.state.text ? this.state.text : this.state.draft
+    });
+  },
+
+  alertBadState: function(wantsToDoWhat = null) {
+    if (wantsToDoWhat !== 'WriteReply' && this.state.replyToPostIds.length > 0) {
+      alert('Please first finish writing your post');
+      return true;
+    }
+    if (_.isNumber(this.state.editingPostId)) {
+      alert('Please first save your current edits');
+      // If this is an embedded editor, for an embedded comments page, that page
+      // will now have highlighted some reply button to indicate a reply is
+      // being written. But that's wrong, clear those marks.
+      if (d.i.isInEmbeddedEditor) {
+        window.parent.postMessage(
+          JSON.stringify(['clearIsReplyingMarks', {}]), '*');
+      }
+      else {
+        d.i.clearIsReplyingMarks();
+      }
+      return true;
+    }
+    if (this.state.newForumPageRole) {
+      var what = this.state.newForumPageRole === 'ForumTopic' ? 'topic' : 'category';
+      alert('Please first either save or cancel your new forum ' + what);
+      d.i.clearIsReplyingMarks();
+      return true;
+    }
+    return false;
+  },
+
+  onTextEdited: function(event) {
+    this.setState({
+      text: event.target.value
+    });
+  },
+
+  onCancelClick: function() {
+    this.closeEditor();
+  },
+
+  onSaveClick: function() {
+    if (this.state.newForumPageRole) {
+      this.saveNewForumPage();
+    }
+    else if (_.isNumber(this.state.editingPostId)) {
+      this.saveEdits();
+    }
+    else {
+      this.saveNewPost();
+    }
+  },
+
+  saveEdits: function() {
+    Server.saveEdits(this.state.editingPostId, this.state.text, () => {
+      this.closeEditor();
+    });
+  },
+
+  saveNewPost: function() {
+    Server.saveReply(this.state.replyToPostIds, this.state.text, () => {
+      this.closeEditor();
+    });
+  },
+
+  saveNewForumPage: function() {
+    var title = this.state.newForumPageRole === 'ForumTopic' ?
+        'Forum Topic Title (click to edit)' : 'Category Title (click to edit)';
+    var data = {
+      parentPageId: this.state.newForumPageParentId,
+      pageRole: this.state.newForumPageRole,
+      pageStatus: 'Published',
+      pageTitle: title,
+      pageBody: this.state.text
+    };
+    Server.createNewPage(data, (newPageId: string) => {
+      window.location.assign('/-' + newPageId);
+    });
+  },
+
+  closeEditor: function() {
+    this.setState({
+      visible: false,
+      replyToPostIds: [],
+      editingPostId: null,
+      newForumPageParentId: null,
+      newForumPageRole: null,
+      text: '',
+      draft: _.isNumber(this.state.editingPostId) ? '' : this.state.text,
+    });
+    // Remove any is-replying highlights.
+    if (d.i.isInEmbeddedEditor) {
+      window.parent.postMessage(JSON.stringify(['hideEditor', {}]), '*');
+    }
+    else {
+      // (Old jQuery code.)
+      $('.dw-replying').removeClass('dw-replying');
+    }
+  },
+
+  render: function() {
+    var anyEditorPlaceholder = r.div({ id: 'debiki-editor-placeholder' });
+
+    var doingWhatInfo;
+    var editingPostId = this.state.editingPostId;
+    if (_.isNumber(editingPostId)) {
+      doingWhatInfo =
+        r.div({},
+          'Editing ', r.a({ href: '#post-' + editingPostId }, 'post ' + editingPostId + ':'));
+    }
+    else if (this.state.newForumPageRole === 'ForumTopic') {
+      doingWhatInfo = r.div({}, 'Your new topic:');
+    }
+    else if (this.state.newForumPageRole === 'ForumCategory') {
+      doingWhatInfo = r.div({}, 'Your new category:');
+    }
+    else if (this.state.replyToPostIds.length === 0) {
+      doingWhatInfo =
+        r.div({}, 'Please select one or more posts to reply to.');
+    }
+    else if (this.state.replyToPostIds.length > 0) {
+      doingWhatInfo =
+        r.div({},
+          'Replying to ',
+          this.state.replyToPostIds.map((postId, index) => {
+            var anyAnd = index > 0 ? ' and ' : '';
+            return (
+              r.span({},
+                anyAnd,
+                r.a({ href: '#post-' + postId }, 'post ' + postId)));
+          }),
+          ':');
+    }
+
+    var saveButtonTitle = 'Save';
+    if (_.isNumber(this.state.editingPostId)) {
+      saveButtonTitle = 'Save edits';
+    }
+    else if (this.state.replyToPostIds.length) {
+      saveButtonTitle = 'Post reply';
+    }
+    else if (this.state.newForumPageRole === 'ForumTopic') {
+      saveButtonTitle = 'Create new topic';
+    }
+    else if (this.state.newForumPageRole === 'ForumCategory') {
+      saveButtonTitle = 'Create new category';
+    }
+
+    // If not visible, don't remove the editor, just hide it, so we won't have
+    // to unrigister the mentions parser (that would be boring).
+    var styles = {
+      visibility: this.state.visible ? 'visible' : 'hidden'
+    };
+
+    return (
+      r.div({ style: styles },
+        anyEditorPlaceholder,
+        r.div({ id: 'debiki-editor-controller' },
+          r.div({ className: 'editor-area' },
+            doingWhatInfo,
+            r.div({ className: 'editor-wrapper' },
+              r.textarea({ className: 'editor', ref: 'textarea', value: this.state.text,
+                  onChange: this.onTextEdited }))),
+          r.div({ className: 'preview-area' },
+            r.div({}, 'Preview:'),
+            r.div({ className: 'preview' })),
+          r.div({ className: 'submit-cancel-btns' },
+            Button({ onClick: this.onSaveClick }, saveButtonTitle),
+            Button({ onClick: this.onCancelClick }, 'Cancel')))));
+  }
+});
+
+
+//------------------------------------------------------------------------------
+   }
+//------------------------------------------------------------------------------
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

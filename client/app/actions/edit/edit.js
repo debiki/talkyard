@@ -78,9 +78,7 @@ function sendEditPostMessageToEmbeddedEditor(postId) {
 
 
 d.i.openEditorToEditPost = function(postId) {
-  d.i.withEditorScope(function(editorScope) {
-    editorScope.vm.startEditing(postId);
-  });
+  debiki2.editor.openEditorToEditPost(postId);
 };
 
 
