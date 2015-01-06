@@ -43,7 +43,6 @@ export function createEditor() {
 
 export function toggleWriteReplyToPost(postId: number) {
   theEditor.toggleWriteReplyToPost(postId);
-  d.i.loadEditorDependencies(); // TODO everywhere
 }
 
 
@@ -63,6 +62,7 @@ export var Editor = createComponent({
       visible: false,
       text: '',
       draft: '',
+      safePreviewHtml: '',
       replyToPostIds: [],
       newForumPageParentId: null,
       newForumPageRole: null,
@@ -113,6 +113,7 @@ export var Editor = createComponent({
         editingPostId: postId,
         text: text
       });
+      this.updatePreview(text);
     });
   },
 
@@ -158,6 +159,22 @@ export var Editor = createComponent({
   onTextEdited: function(event) {
     this.setState({
       text: event.target.value
+    });
+    this.updatePreview(event.target.value);
+  },
+
+  updatePreview: function(text) {
+    d.i.loadEditorDependencies().done(() => {
+      // (COULD verify is mounted and still edits same post/thing, or not needed?)
+      var isEditingBody = this.state.editingPostId === d.i.BodyId;
+      var sanitizerOpts = {
+        allowClassAndIdAttr: isEditingBody,
+        allowDataAttr: isEditingBody
+      };
+      var htmlText = d.i.markdownToSafeHtml(text, window.location.host, sanitizerOpts);
+      this.setState({
+        safePreviewHtml: htmlText
+      });
     });
   },
 
@@ -213,6 +230,7 @@ export var Editor = createComponent({
       newForumPageRole: null,
       text: '',
       draft: _.isNumber(this.state.editingPostId) ? '' : this.state.text,
+      safePreviewHtml: '',
     });
     // Remove any is-replying highlights.
     if (d.i.isInEmbeddedEditor) {
@@ -289,7 +307,8 @@ export var Editor = createComponent({
                   onChange: this.onTextEdited }))),
           r.div({ className: 'preview-area' },
             r.div({}, 'Preview:'),
-            r.div({ className: 'preview' })),
+            r.div({ className: 'preview',
+                dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
           r.div({ className: 'submit-cancel-btns' },
             Button({ onClick: this.onSaveClick }, saveButtonTitle),
             Button({ onClick: this.onCancelClick }, 'Cancel')))));
