@@ -298,6 +298,7 @@ function compileServerSideTypescript() {
   var javascriptStream = gulp.src([
         'bower_components/react/react-with-addons.js',
         'bower_components/react-bootstrap/react-bootstrap.js',
+        'bower_components/react-router/dist/react-router.js',
         'bower_components/remarkable/dist/remarkable.js',
         'bower_components/lodash/dist/lodash.js',
         'client/third-party/html-css-sanitizer-bundle.js',

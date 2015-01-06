@@ -144,6 +144,11 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
         |$ServerSideDebikiModule
         |$ServerSideReactStore
         |
+        |// React-Router calls setTimeout(), but it's not available in Nashorn.
+        |function setTimeout(callback) {
+        |  callback();
+        |}
+        |
         |function renderReactServerSide() {
         |  try {
         |    return renderTitleBodyCommentsToString();

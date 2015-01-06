@@ -15,8 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="users/user-info/UserInfo.ts" />
 /// <reference path="../typedefs/jquery/jquery.d.ts" />
+/// <reference path="users/user-info/UserInfo.ts" />
+/// <reference path="renderer/model.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.Server {
@@ -106,6 +107,49 @@ export function saveUserPreferences(prefs, doneCallback: () => void) {
   });
 }
 
+
+export function loadForumCategories(forumPageId: string,
+      doneCallback: (categories: Category[]) => void) {
+  $.get(origin + '/-/list-categories?forumId=' + forumPageId)
+    .done((response: any) => {
+      doneCallback(response.categories);
+    })
+    .fail((x, y, z) => {
+      console.error('Error loading categories: ' + JSON.stringify([x, y, z]));
+      doneCallback(null);
+    });
+}
+
+
+export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
+      doneCallback: (topics: Topic[]) => void) {
+  var url = origin + '/-/list-topics?categoryId=' + categoryId;
+  if (orderOffset.sortOrder === TopicSortOrder.BumpTime) {
+    url += '&sortOrder=ByBumpTime';
+    if (orderOffset.time) {
+      url += '&epoch=' + orderOffset.time;
+    }
+  }
+  else if (orderOffset.sortOrder === TopicSortOrder.LikesAndBumpTime) {
+    url += '&sortOrder=ByLikesAndBumpTime';
+    if (_.isNumber(orderOffset.numLikes) && orderOffset.time) {
+      url += '&num=' + orderOffset.numLikes;
+      url += '&epoch=' + orderOffset.time;
+    }
+  }
+  else {
+    console.log('Bad orderOffset [DwE5FS0]');
+    return;
+  }
+  $.get(url)
+    .done((response: any) => {
+      doneCallback(response.topics);
+    })
+    .fail((x, y, z) => {
+      console.error('Error loading topics: ' + JSON.stringify([x, y, z]));
+      doneCallback(null);
+    });
+}
 
 //------------------------------------------------------------------------------
    }
