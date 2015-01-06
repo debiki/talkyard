@@ -108,18 +108,16 @@ export var CategoriesAndTopics = createComponent({
 
     var viewProps = _.clone(this.props);
     viewProps.activeCategory = activeCategory;
+    viewProps.activeRoute = this.getRoutes()[this.getRoutes().length - 1];
 
     return (
       r.div({},
         r.div({ className: 'dw-forum-actionbar clearfix' },
           categoriesDropdown,
           r.ul({ className: 'nav nav-pills' },
-            NavButton({ routeName: 'ForumRouteLatest',
-                onClick: this.showRecentlyActiveTopics }, 'Latest'),
-            NavButton({ routeName: 'ForumRouteTop',
-                onClick: this.showTopTopics }, 'Top'),
-            NavButton({ routeName: 'ForumRouteCategories',
-                onClick: this.showCategories }, 'Categories')),
+            NavButton({ routeName: 'ForumRouteLatest' }, 'Latest'),
+            NavButton({ routeName: 'ForumRouteTop' }, 'Top'),
+            NavButton({ routeName: 'ForumRouteCategories' }, 'Categories')),
           Button({ onClick: this.createTopic }, 'Create Topic'),
           Button({ onClick: this.createCategory }, 'Create Category')),
         RouteHandler(viewProps)));
@@ -150,17 +148,47 @@ export var ForumTopicList = createComponent({
   },
 
   componentDidMount: function() {
-    this.loadTopics(this.props.activeCategory.pageId);
+    this.loadTopics(this.props.activeCategory.pageId, false);
   },
 
   componentWillReceiveProps: function(nextProps) {
-    this.loadTopics(nextProps.activeCategory.pageId);
+    var keepCurrentTopics =
+        this.props.activeCategory.pageId === nextProps.activeCategory.pageId &&
+        this.props.activeRoute.name === nextProps.activeRoute.name;
+    this.loadTopics(nextProps.activeCategory.pageId, keepCurrentTopics);
   },
 
-  loadTopics: function(categoryId) {
-    this.setState({ topics: null });
-    debiki2.Server.loadForumTopics(categoryId, (topics: Topic[]) => {
-      this.setState({ topics: topics });
+  loadTopics: function(categoryId, keepCurrentTopics) {
+    var anyLastTopic;
+    var anyTimeOffset: number;
+    var anyLikesOffset: number;
+    if (!keepCurrentTopics) {
+      this.setState({ topics: null });
+    }
+    else {
+      anyLastTopic = _.last(this.state.topics);
+      if (anyLastTopic) {
+        anyTimeOffset = anyLastTopic.lastPostEpoch;
+        anyLikesOffset = anyLastTopic.numLikes;
+      }
+    }
+
+    var orderOffset: OrderOffset = { sortOrder: null };
+    if (this.isActive('ForumRouteLatest')) {
+      orderOffset.sortOrder = TopicSortOrder.BumpTime;
+      orderOffset.time = anyTimeOffset;
+    }
+    else {
+      orderOffset.sortOrder = TopicSortOrder.LikesAndBumpTime;
+      orderOffset.time = anyTimeOffset;
+      orderOffset.numLikes = anyLikesOffset;
+    }
+    debiki2.Server.loadForumTopics(categoryId, orderOffset, (topics: Topic[]) => {
+      var newTopics = keepCurrentTopics ? (this.state.topics || []) : [];
+      newTopics = newTopics.concat(topics);
+      // `newTopics` includes at least the last old topic twice.
+      newTopics = _.uniq(newTopics, 'pageId');
+      this.setState({ topics: newTopics });
     });
   },
 

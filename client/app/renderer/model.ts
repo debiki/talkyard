@@ -66,6 +66,16 @@ interface Topic {
 }
 
 
+enum TopicSortOrder { BumpTime = 1, LikesAndBumpTime };
+
+
+interface OrderOffset {
+  sortOrder: TopicSortOrder;
+  time?: number;
+  numLikes?: number;
+}
+
+
 interface Store {
   now: number;
   pageId: string;
