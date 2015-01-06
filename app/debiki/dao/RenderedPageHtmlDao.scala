@@ -41,8 +41,13 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   self: CachingSiteDao =>
 
 
+  onPageCreated { page =>
+    uncacheForums(this.siteId)
+  }
+
   onPageSaved { sitePageId =>
     uncacheRenderedPage(sitePageId)
+    uncacheForums(sitePageId.siteId)
   }
 
 
@@ -61,6 +66,9 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     val key = _pageHtmlKey(SitePageId(siteId, pageReq.thePageId), origin = pageReq.host)
     lookupInCache(key, orCacheAndReturn = {
       rememberOrigin(pageReq.host)
+      if (pageReq.thePageRole == PageRole.Forum) {
+        rememberForum(pageReq.thePageId)
+      }
       Some(super.renderTemplate(pageReq))
     }) getOrDie "DwE93IB7"
   }
@@ -81,12 +89,31 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
       lookupInCache[List[String]](originsKey) match {
         case None =>
           done = putInCacheIfAbsent(originsKey, CacheValueIgnoreVersion(List(origin)))
-        case Some(knownOrigins) =>
-          if (knownOrigins contains origin)
+        case Some(cachedKnownOrigins) =>
+          if (cachedKnownOrigins contains origin)
             return
-          val newOrigins = origin :: knownOrigins
-          done = replaceInCache(originsKey, CacheValueIgnoreVersion(knownOrigins),
+          val newOrigins = origin :: cachedKnownOrigins
+          done = replaceInCache(originsKey, CacheValueIgnoreVersion(cachedKnownOrigins),
             newValue = CacheValueIgnoreVersion(newOrigins))
+      }
+    }
+    while (!done)
+  }
+
+
+  private def rememberForum(forumPageId: PageId) {
+    var done = false
+    do {
+      val key = this.forumsKey(siteId)
+      lookupInCache[List[PageId]](key) match {
+        case None =>
+          done = putInCacheIfAbsent(key, CacheValueIgnoreVersion(List(forumPageId)))
+        case Some(cachedForumIds) =>
+          if (cachedForumIds contains forumPageId)
+            return
+          val newForumIds = forumPageId :: cachedForumIds
+          done = replaceInCache(key, CacheValueIgnoreVersion(cachedForumIds),
+            newValue = CacheValueIgnoreVersion(newForumIds))
       }
     }
     while (!done)
@@ -116,12 +143,30 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   }
 
 
+  /** Forums list other pages sorted by modification time, so whenever any
+    * page is modified, it's likely that a forum page should be rerendered.
+    * Also, if a new category is added, the parent forum should be rerendered.
+    * For simplicity, we here uncache all forums.
+    */
+  private def uncacheForums(siteId: SiteId) {
+    val origins = knownOrigins(siteId)
+    var forumIds = lookupInCache[List[String]](forumsKey(siteId)) getOrElse Nil
+    for (origin <- origins; forumId <- forumIds) {
+      removeFromCache(_pageHtmlKey(SitePageId(siteId, forumId), origin))
+    }
+  }
+
+
   private def _pageHtmlKey(sitePageId: SitePageId, origin: String) =
     CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|$origin|PageHtml")
 
 
   private def originsKey(siteId: SiteId) =
     CacheKey(siteId, "|PossibleOrigins") // "|" required by a debug check function
+
+
+  private def forumsKey(siteId: SiteId) =
+    CacheKey(siteId, "|ForumIds") // "|" is required by a debug check function
 
 }
 
