@@ -1,0 +1,294 @@
+/*
+ * Copyright (C) 2015 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/// <reference path="../../shared/plain-old-javascript.d.ts" />
+/// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../../typedefs/moment/moment.d.ts" />
+/// <reference path="../Server.ts" />
+/// <reference path="model.ts" />
+
+//------------------------------------------------------------------------------
+   module debiki2.renderer {
+//------------------------------------------------------------------------------
+
+var d = { i: debiki.internal, u: debiki.v0.util };
+var r = React.DOM;
+var reactCreateFactory = React['createFactory'];
+var ReactBootstrap: any = window['ReactBootstrap'];
+var Button = reactCreateFactory(ReactBootstrap.Button);
+var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
+var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
+
+var ReactRouter = window['ReactRouter'];
+var Navigation = ReactRouter.Navigation;
+var State = ReactRouter.State;
+var RouteHandler = ReactRouter.RouteHandler;
+var Route = ReactRouter.Route;
+var DefaultRoute = ReactRouter.DefaultRoute;
+
+
+export function buildForumRoutes() {
+  return (
+    Route({ name: 'ForumRoute', path: '/', handler: Forum },
+      DefaultRoute({ name: 'ForumRouteDefault', handler: ForumTopicList }),
+      Route({ name: 'ForumRouteLatest', path: 'latest/:categorySlug?', handler: ForumTopicList }),
+      Route({ name: 'ForumRouteTop', path: 'top/:categorySlug?', handler: ForumTopicList }),
+      Route({ name: 'ForumRouteCategories', path: 'categories', handler: ForumCategories })));
+}
+
+
+
+export var Forum = createComponent({
+  render: function() {
+    return (
+      r.div({},
+        r.div({ className: 'forum-title' },
+          TitleBodyComments(this.props)),
+        CategoriesAndTopics(this.props)));
+  }
+});
+
+
+
+export var CategoriesAndTopics = createComponent({
+  mixins: [Navigation, State],
+
+  getInitialState: function() {
+    return {};
+  },
+
+  switchCategory: function(newCategorySlug) {
+    var routes = this.getRoutes();
+    var nextRouteName = routes[routes.length - 1].name;
+    if (nextRouteName === 'ForumRouteCategories' || nextRouteName === 'ForumRouteDefault') {
+      nextRouteName = 'ForumRouteLatest';
+    }
+    this.transitionTo(nextRouteName, { categorySlug: newCategorySlug });
+  },
+
+  render: function() {
+    var props: Store = this.props;
+    var activeCategorySlug = this.getParams().categorySlug;
+
+    var activeCategory = {
+      name: 'All Categories',
+      pageId: this.props.pageId // this is the forum id
+    };
+    if (activeCategorySlug) {
+      activeCategory = _.find(props.categories, (category) => {
+        return category.slug === activeCategorySlug;
+      });
+    }
+
+    var categoryMenuItems =
+        props.categories.map((category) => {
+          return MenuItem({ eventKey: category.slug }, category.name);
+        });
+    categoryMenuItems.unshift(
+      MenuItem({ eventKey: null }, 'All Categories'));
+
+    var categoriesDropdown =
+        r.div({ className: 'dw-main-category-dropdown' },
+        DropdownButton({ title: activeCategory.name, onSelect: this.switchCategory },
+          categoryMenuItems));
+
+    var viewProps = _.clone(this.props);
+    viewProps.activeCategory = activeCategory;
+
+    return (
+      r.div({},
+        r.div({ className: 'dw-forum-actionbar clearfix' },
+          categoriesDropdown,
+          r.ul({ className: 'nav nav-pills' },
+            NavButton({ routeName: 'ForumRouteLatest',
+                onClick: this.showRecentlyActiveTopics }, 'Latest'),
+            NavButton({ routeName: 'ForumRouteTop',
+                onClick: this.showTopTopics }, 'Top'),
+            NavButton({ routeName: 'ForumRouteCategories',
+                onClick: this.showCategories }, 'Categories')),
+          Button({ onClick: this.createTopic }, 'Create Topic'),
+          Button({ onClick: this.createCategory }, 'Create Category')),
+        RouteHandler(viewProps)));
+  }
+});
+
+
+
+var NavButton = createComponent({
+  mixins: [Navigation, State],
+  onClick: function() {
+    this.transitionTo(this.props.routeName, this.getParams());
+  },
+  render: function() {
+    var isActive = this.isActive(this.props.routeName);
+    var classes = isActive ? 'active' : '';
+    return Button({ className: classes, onClick: this.onClick }, this.props.children);
+  }
+});
+
+
+
+export var ForumTopicList = createComponent({
+  mixins: [State],
+
+  getInitialState: function() {
+    return {};
+  },
+
+  componentDidMount: function() {
+    this.loadTopics(this.props.activeCategory.pageId);
+  },
+
+  componentWillReceiveProps: function(nextProps) {
+    this.loadTopics(nextProps.activeCategory.pageId);
+  },
+
+  loadTopics: function(categoryId) {
+    this.setState({ topics: null });
+    debiki2.Server.loadForumTopics(categoryId, (topics: Topic[]) => {
+      this.setState({ topics: topics });
+    });
+  },
+
+  render: function() {
+    if (!this.state.topics) {
+      // COULD use this.props.topics, used when rendering server side, but for now:
+      return r.p({}, 'Loading...');
+    }
+
+    if (!this.state.topics.length)
+      return r.p({}, 'No topics.');
+
+    var topics = this.state.topics.map((topic) => {
+      return TopicRow({ topic: topic, categories: this.props.categories, now: this.props.now });
+    });
+    return (
+      r.table({ id: 'dw-topic-list' },
+        r.thead({},
+          r.tr({},
+            r.th({}, 'Topic'),
+            r.th({}, 'Category'),
+            r.th({ className: 'num num-posts' }, 'Posts'),
+            r.th({ className: 'num' }, 'Likes'),
+            r.th({ className: 'num' }, 'Wrongs'),
+            r.th({ className: 'num' }, 'Created'),
+            r.th({ className: 'num' }, 'Last Post'))),
+        r.tbody({},
+          topics)));
+  }
+});
+
+
+
+var TopicRow = createComponent({
+  render: function() {
+    var topic: Topic = this.props.topic;
+    var category = _.find(this.props.categories, (category: Category) => {
+      return category.pageId === topic.categoryId;
+    });
+    var categoryName = category ? category.name : '';
+    return (
+      r.tr({},
+        r.td({}, r.a({ href: topic.url }, topic.title)),
+        r.td({}, categoryName),
+        r.td({ className: 'num num-posts' }, topic.numPosts),
+        r.td({ className: 'num' }, topic.numLikes),
+        r.td({ className: 'num' }, topic.numWrongs),
+        r.td({ className: 'num' }, moment(topic.createdEpoch).from(this.props.now)),
+        r.td({ className: 'num' }, moment(topic.lastPostEpoch).from(this.props.now))));
+  }
+});
+
+
+
+export var ForumCategories = createComponent({
+  getInitialState: function() {
+    return {};
+  },
+
+  componentDidMount: function() {
+    this.loadCategories();
+  },
+
+  componentWillReceiveProps: function() {
+    this.loadCategories();
+  },
+
+  loadCategories: function() {
+    debiki2.Server.loadForumCategories(this.props.pageId, (categories: Category[]) => {
+      this.setState({ categories: categories });
+    });
+  },
+
+  render: function() {
+    if (!this.state.categories)
+      return r.p({}, 'Loading...');
+
+    var categoryRows = this.state.categories.map((category) => {
+      return CategoryRow({ category: category });
+    });
+
+    return (
+      r.table({ className: 'forum-table table' },
+        r.thead({},
+          r.tr({},
+            r.th({}, 'Category'),
+            r.th({}, 'Recent Topics'))),
+        r.tbody({},
+          categoryRows)));
+    }
+});
+
+
+
+var CategoryRow = createComponent({
+  mixins: [Navigation, State],
+
+  onCategoryClick: function() {
+    this.transitionTo('ForumRouteLatest', { categorySlug: this.props.category.slug });
+  },
+
+  render: function() {
+    var category = this.props.category;
+    var recentTopicRows = category.recentTopics.map((topic) => {
+      return (
+        r.tr({},
+          r.td({},
+            r.a({ className: 'topic-title', href: topic.url }, topic.title),
+            r.span({ className: 'topic-details' },
+              '– ' + topic.numPosts + ' posts, ',
+              moment(topic.lastPostEpoch).from(this.props.now)))));
+    });
+    return (
+      r.tr({},
+        r.td({ className: 'forum-info' },
+          r.div({ className: 'forum-title-wrap' },
+            r.a({ className: 'forum-title', onClick: this.onCategoryClick }, category.name)),
+          r.p({ className: 'forum-description' }, category.description),
+          r.p({ className: 'topic-count' }, category.numTopics + ' topics')),
+        r.td({},
+          r.table({ class: 'topic-table-excerpt table table-condensed' },
+            r.tbody({},
+              recentTopicRows)))));
+    }
+});
+
+
+//------------------------------------------------------------------------------
+   }
+//------------------------------------------------------------------------------
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

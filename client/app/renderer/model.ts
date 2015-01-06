@@ -45,6 +45,27 @@ interface User {
 }
 
 
+interface Category {
+  name: string;
+  pageId: string;
+  slug: string;
+  subCategories: number[];
+}
+
+
+interface Topic {
+  pageId: string;
+  title: string;
+  url: string;
+  categoryId: string;
+  numPosts: number;
+  numLikes: number;
+  numWrongs: number;
+  createdEpoch: number;
+  lastPostEpoch: number;
+}
+
+
 interface Store {
   now: number;
   pageId: string;
@@ -52,7 +73,7 @@ interface Store {
   numPosts: number;
   numPostsExclTitle: number;
   isInEmbeddedCommentsIframe: boolean;
-  categories: any; // number[]?
+  categories: Category[];
   user: User;
   userSpecificDataAdded?: boolean;
   rootPostId: number;

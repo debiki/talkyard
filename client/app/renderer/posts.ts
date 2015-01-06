@@ -34,7 +34,7 @@ module boo {
 var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
-
+var ReactRouter = window['ReactRouter'];
 
 var ManualReadMark = 1;
 var YellowStarMark = 2;
@@ -42,8 +42,21 @@ var FirstStarMark = 2;
 var BlueStarMark = 3;
 var LastStarMark = 3;
 
+function isServerSide() {
+  // Don't change this to a static variable, because it'd be initialized rather late,
+  // so some code would believe we were running client side.
+  return !!window['java'];
+}
+
 
 function createComponent(componentDefinition) {
+  if (isServerSide()) {
+    // The mere presence of these functions cause an unknown error when rendering
+    // React-Router server side. So remove them; they're never called server side anyway.
+    // The error logs the message '{}' to console.error(); no idea what that means.
+    delete componentDefinition.componentWillUpdate;
+    delete componentDefinition.componentWillReceiveProps;
+  }
   return React.createFactory(React.createClass(componentDefinition));
 }
 
@@ -67,9 +80,7 @@ var PageWithState = createComponent({
 
 var Page = createComponent({
   render: function() {
-    return (
-      r.div({ className: 'debiki dw-debate dw-page' },
-        TitleBodyComments(this.props)));
+    return TitleBodyComments(this.props);
   }
 });
 
@@ -122,7 +133,7 @@ var TitleBodyComments = createComponent({
     }
 
     return (
-      r.div({},
+      r.div({ className: 'debiki dw-debate dw-page' },
         anyTitle,
         anyPostHeader,
         anySocialLinks,
@@ -372,7 +383,7 @@ var Post = createComponent({
         pendingApprovalElem = r.div({ className: 'dw-p-pending-mod',
             onClick: this.onUncollapseClick }, the, ' comment below is pending approval.');
       }
-      var headerProps = _.clone(this.props); // ($.extend not available server side)
+      var headerProps = _.clone(this.props);
       headerProps.onMarkClick = this.onMarkClick;
       headerElem = PostHeader(headerProps);
       bodyElem = PostBody(this.props);
@@ -812,15 +823,32 @@ function renderTitleBodyComments() {
   if (!root)
     return;
 
-  var millisBefore = new Date().getTime();
-  React.render(PageWithState(), root);
-  var millisAfter = new Date().getTime();
-  console.debug('Renering React took: ' + (millisAfter - millisBefore) + ' ms');
+  var store = debiki2.ReactStore.allData();
+  if (store.pageRole === 'Forum') {
+    var routes = debiki2.renderer.buildForumRoutes();
+    ReactRouter.run(routes, function(handler) {
+      React.render(handler(store), root);
+    });
+  }
+  else {
+    React.render(PageWithState(), root);
+  }
 }
 
 
 function renderTitleBodyCommentsToString() {
-  return React.renderToString(Page(debiki2.ReactStore.allData()));
+  var store = debiki2.ReactStore.allData();
+  if (store.pageRole === 'Forum') {
+    var routes = debiki2.renderer.buildForumRoutes();
+    var result;
+    ReactRouter.run(routes, store.pagePath, function(handler) {
+      result = React.renderToString(handler(store));
+    });
+    return result;
+  }
+  else {
+    return React.renderToString(Page(store));
+  }
 }
 
 //------------------------------------------------------------------------------

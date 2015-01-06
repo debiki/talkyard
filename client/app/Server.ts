@@ -107,6 +107,33 @@ export function saveUserPreferences(prefs, doneCallback: () => void) {
 }
 
 
+export function loadForumCategories(forumPageId: string,
+      doneCallback: (categories: Category[]) => void) {
+  $.get(origin + '/-/list-categories?forumId=' + forumPageId)
+    .done((response: any) => {
+      doneCallback(response.categories);
+    })
+    .fail((x, y, z) => {
+      console.error('Error loading categories: ' + JSON.stringify([x, y, z]));
+      doneCallback(null);
+    });
+}
+
+
+export function loadForumTopics(categoryId: string,
+      doneCallback: (topics: Topic[]) => void) {
+  var url = origin + '/-/list-topics?categoryId=' + categoryId;
+  url += '&sortOrder=ByBumpTime';
+  $.get(url)
+    .done((response: any) => {
+      doneCallback(response.topics);
+    })
+    .fail((x, y, z) => {
+      console.error('Error loading topics: ' + JSON.stringify([x, y, z]));
+      doneCallback(null);
+    });
+}
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

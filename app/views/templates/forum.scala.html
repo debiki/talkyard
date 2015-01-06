@@ -1,5 +1,5 @@
 @**
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2013-2015 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -30,18 +30,9 @@
   @views.html.searchForm(tpi, id = "forum-search", placeholderText = "Search whole forum",
     sectionId = tpi.anyRootSectionPageId)
 
-  <div class="forum-title">
-    <div id="dwPosts">@tpi.reactTest</div>
-  </div>
+  <div id="dwPosts">@tpi.reactTest</div>
 
-  <noscript>
-    <h2>Recent Topics</h2>
-    <ol>
-      @for(topic <- tpi.listLatestForumTopics(limit = 30, offset = 0)) {
-      <li><a class="topic-title" href="@{topic.path}">@{ topic.title }</a></li>
-      }
-    </ol>
-  </noscript>
+  <hr>
 
   <div ng-include="'forum/forum-module.html'"></div>
 }

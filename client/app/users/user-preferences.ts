@@ -17,6 +17,8 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
+/// <reference path="../Server.ts" />
+
 
 //------------------------------------------------------------------------------
    module debiki2.users {
@@ -55,6 +57,7 @@ export var UserPreferencesComponent = React.createClass({
     var params = this.getParams();
     var isNewUrl = this.state.userId !== params.userId;
     if (isNewUrl) {
+      // Should do this from componentWillReceiveProps() or componentDidMount() instead?
       Server.loadUserPreferences(params.userId, (prefs: UserPreferences) => {
         this.state.userId = params.userId;
         this.state.userPreferences = prefs;
