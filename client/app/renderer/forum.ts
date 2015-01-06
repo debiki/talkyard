@@ -80,19 +80,46 @@ export var CategoriesAndTopics = createComponent({
     this.transitionTo(nextRouteName, { categorySlug: newCategorySlug });
   },
 
-  render: function() {
-    var props: Store = this.props;
+  getActiveCategory: function() {
     var activeCategorySlug = this.getParams().categorySlug;
-
-    var activeCategory = {
+    var activeCategory: any = {
       name: 'All Categories',
-      pageId: this.props.pageId // this is the forum id
+      pageId: this.props.pageId, // this is the forum id
+      isForumItself: true,
     };
     if (activeCategorySlug) {
-      activeCategory = _.find(props.categories, (category) => {
+      activeCategory = _.find(this.props.categories, (category: Category) => {
         return category.slug === activeCategorySlug;
       });
     }
+    return activeCategory;
+  },
+
+  editCategory: function() {
+    location.href = '/-' + this.getActiveCategory().pageId;
+  },
+
+  createCategory: function() {
+    this.createChildPage('ForumCategory');
+  },
+
+  createTopic: function() {
+    this.createChildPage('ForumTopic');
+  },
+
+  createChildPage: function(role: string) {
+    var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
+    d.i.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
+      d.i.withEditorScope((editorScope) => {
+        var parentPageId = this.getActiveCategory().pageId;
+        editorScope.vm.editNewForumPage(parentPageId, role);
+      });
+    });
+  },
+
+  render: function() {
+    var props: Store = this.props;
+    var activeCategory = this.getActiveCategory();
 
     var categoryMenuItems =
         props.categories.map((category) => {
@@ -106,9 +133,26 @@ export var CategoriesAndTopics = createComponent({
         DropdownButton({ title: activeCategory.name, onSelect: this.switchCategory },
           categoryMenuItems));
 
+    var activeRoute = this.getRoutes()[this.getRoutes().length - 1];
+
+    var createTopicBtn;
+    if (activeRoute.name !== 'ForumRouteCategories') {
+      createTopicBtn  = Button({ onClick: this.createTopic }, 'Create Topic');
+    }
+
+    var createCategoryBtn;
+    if (activeRoute.name === 'ForumRouteCategories') {
+      createCategoryBtn = Button({ onClick: this.createCategory }, 'Create Category');
+    }
+
+    var editCategoryBtn;
+    if (!activeCategory.isForumItself) {
+      editCategoryBtn = Button({ onClick: this.editCategory }, 'Edit Category');
+    }
+
     var viewProps = _.clone(this.props);
     viewProps.activeCategory = activeCategory;
-    viewProps.activeRoute = this.getRoutes()[this.getRoutes().length - 1];
+    viewProps.activeRoute = activeRoute;
 
     return (
       r.div({},
@@ -118,8 +162,9 @@ export var CategoriesAndTopics = createComponent({
             NavButton({ routeName: 'ForumRouteLatest' }, 'Latest'),
             NavButton({ routeName: 'ForumRouteTop' }, 'Top'),
             NavButton({ routeName: 'ForumRouteCategories' }, 'Categories')),
-          Button({ onClick: this.createTopic }, 'Create Topic'),
-          Button({ onClick: this.createCategory }, 'Create Category')),
+          createTopicBtn,
+          createCategoryBtn,
+          editCategoryBtn),
         RouteHandler(viewProps)));
   }
 });
@@ -309,7 +354,7 @@ var CategoryRow = createComponent({
           r.p({ className: 'forum-description' }, category.description),
           r.p({ className: 'topic-count' }, category.numTopics + ' topics')),
         r.td({},
-          r.table({ class: 'topic-table-excerpt table table-condensed' },
+          r.table({ className: 'topic-table-excerpt table table-condensed' },
             r.tbody({},
               recentTopicRows)))));
     }
