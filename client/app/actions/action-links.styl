@@ -66,7 +66,7 @@
   background: hsl(210, 51%, 50%) !important;
   color: white !important;
   font-weight: bold;
-  padding: 5px 8px 5px 5px;
+  padding: 5px 8px 5px 5px !important;
   position: relative;
   top: -5px;
 
@@ -87,6 +87,7 @@
   display: inline-block
   margin-right: 12px;
   padding-right: 4px;
+  background: #fff;
 
   &:first-child
     margin-right: 0;
@@ -117,7 +118,7 @@
 
 #dw-p-as-shown a
   color: hsl(210, 51%, 45%)
-  background: white; // in case post is outlined in blue
+
 
 .dw-a-color-primary
   color: hsl(210, 51%, 45%) !important // the color for most common actions
@@ -144,8 +145,9 @@
 
   .dw-a-reply
     color: white !important
-    background: hsl(210, 51%, 45%)
+    background: hsl(210, 51%, 45%) !important
     border-radius: 5px
+    outline: 3px solid white; // whitespace between background and any post outline
     padding: 2px 4px 3px 1px
     position: relative
     top: -2px
@@ -154,7 +156,7 @@
 // The article's reply button already has a background and square borders.
 // Make it even darker, when replying to the article.
 .dw-ar-t > .dw-p-as.dw-replying > .dw-a-reply
-  background: hsl(210, 51%, 35%);
+  background: hsl(210, 51%, 35%) !important;
   border-radius: 0;
 
 .dw-p-as
