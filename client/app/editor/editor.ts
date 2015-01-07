@@ -326,7 +326,7 @@ export var Editor = createComponent({
     // If not visible, don't remove the editor, just hide it, so we won't have
     // to unrigister the mentions parser (that would be boring).
     var styles = {
-      visibility: this.state.visible ? 'visible' : 'hidden'
+      display: this.state.visible ? 'block' : 'none'
     };
 
     return (
