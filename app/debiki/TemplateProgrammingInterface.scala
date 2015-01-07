@@ -88,8 +88,8 @@ object InternalPageTpi {
         }
         else {
           // This is a category.
-          // Currently the forum AngularJS app uses hash fragment URLs for navigation
-          // inside the forum, unfortunately, see: client/forum/ForumApp-impl.ts.
+          // Currently the forum React app uses hash fragment URLs for navigation
+          // inside the forum, unfortunately.
           // Let's show the latest topics for this category:
           val categoryName =
             controllers.ForumController.categoryNameToSlug(pageMeta.cachedTitle getOrElse "")

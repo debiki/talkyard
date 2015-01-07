@@ -243,7 +243,6 @@ function renderDiscussionPage() {
   });
 
   steps.push(function() {
-    startAngular();
     debiki2.sidebar.UnreadCommentsTracker.start();
   });
 
@@ -272,7 +271,6 @@ function renderEmptyPage() {
   if (!Modernizr.touch) {
     d.i.initUtterscrollAndTips();
   }
-  startAngular();
   debiki2.reactelements.initAllReactRoots();
   fireLoginOrLogout();
 };
@@ -298,12 +296,6 @@ d.i.startEmbeddedEditor = function() {
   configureAjaxRequests();
   debiki2.editor.createEditor();
 };
-
-
-function startAngular() {
-  d.i.angularApply(function() {});
-  $(document).trigger('dwEvAngularStarted');
-}
 
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
