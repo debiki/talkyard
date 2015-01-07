@@ -93,23 +93,26 @@ export var Editor = createComponent({
     var index = postIds.indexOf(postId);
     if (index === -1) {
       postIds.push(postId);
+      this.showEditor();
     }
     else {
       postIds.splice(index, 1);
     }
     this.setState({
-      visible: postIds.length > 0,
       replyToPostIds: postIds,
       text: this.state.text ? this.state.text : this.state.draft
     });
+    if (!postIds.length) {
+      this.closeEditor();
+    }
   },
 
   editPost: function(postId: number) {
     if (this.alertBadState())
       return;
     Server.loadCurrentPostText(postId, (text: string) => {
+      this.showEditor();
       this.setState({
-        visible: true,
         editingPostId: postId,
         text: text
       });
@@ -120,8 +123,8 @@ export var Editor = createComponent({
   editNewForumPage: function(parentPageId: string, role: string) {
     if (this.alertBadState())
       return;
+    this.showEditor();
     this.setState({
-      visible: true,
       newForumPageParentId: parentPageId,
       newForumPageRole: role,
       text: this.state.text ? this.state.text : this.state.draft
@@ -219,6 +222,13 @@ export var Editor = createComponent({
     Server.createNewPage(data, (newPageId: string) => {
       window.location.assign('/-' + newPageId);
     });
+  },
+
+  showEditor: function() {
+    this.setState({ visible: true });
+    if (d.i.isInEmbeddedEditor) {
+      window.parent.postMessage(JSON.stringify(['showEditor', {}]), '*');
+    }
   },
 
   closeEditor: function() {
