@@ -227,8 +227,7 @@ export var Editor = createComponent({
   },
 
   saveNewForumPage: function() {
-    var title = this.state.newForumPageRole === 'ForumTopic' ?
-        'Forum Topic Title (click to edit)' : 'Category Title (click to edit)';
+    var title = $(this.refs.titleInput.getDOMNode()).val();
     var data = {
       parentPageId: this.state.newForumPageParentId,
       pageRole: this.state.newForumPageRole,
@@ -270,6 +269,15 @@ export var Editor = createComponent({
   },
 
   render: function() {
+    var titleInput;
+    if (this.state.newForumPageRole) {
+      var defaultTitle = this.state.newForumPageRole === 'ForumTopic' ?
+          'Topic title' : 'Category title';
+      titleInput =
+          r.input({ className: 'title-input', type: 'text', ref: 'titleInput',
+              key: this.state.newForumPageRole, defaultValue: defaultTitle });
+    }
+
     var doingWhatInfo;
     var editingPostId = this.state.editingPostId;
     if (_.isNumber(editingPostId)) {
@@ -278,10 +286,10 @@ export var Editor = createComponent({
           'Editing ', r.a({ href: '#post-' + editingPostId }, 'post ' + editingPostId + ':'));
     }
     else if (this.state.newForumPageRole === 'ForumTopic') {
-      doingWhatInfo = r.div({}, 'Your new topic:');
+      doingWhatInfo = r.div({}, 'New topic title and text:');
     }
     else if (this.state.newForumPageRole === 'ForumCategory') {
-      doingWhatInfo = r.div({}, 'Your new category:');
+      doingWhatInfo = r.div({}, 'New category title and text:');
     }
     else if (this.state.replyToPostIds.length === 0) {
       doingWhatInfo =
@@ -325,18 +333,21 @@ export var Editor = createComponent({
       r.div({ style: styles },
         r.div({ id: 'debiki-editor-placeholder', ref: 'placeholder' }),
         r.div({ id: 'debiki-editor-controller', ref: 'editor' },
-          r.div({ className: 'editor-area' },
-            doingWhatInfo,
-            r.div({ className: 'editor-wrapper' },
-              r.textarea({ className: 'editor', ref: 'textarea', value: this.state.text,
-                  onChange: this.onTextEdited }))),
-          r.div({ className: 'preview-area' },
-            r.div({}, 'Preview:'),
-            r.div({ className: 'preview',
-                dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
-          r.div({ className: 'submit-cancel-btns' },
-            Button({ onClick: this.onSaveClick }, saveButtonTitle),
-            Button({ onClick: this.onCancelClick }, 'Cancel')))));
+          r.div({ id: 'editor-after-borders' },
+            r.div({ className: 'editor-area' },
+              r.div({ className: 'editor-area-after-borders' },
+                doingWhatInfo,
+                titleInput,
+                r.div({ className: 'editor-wrapper' },
+                  r.textarea({ className: 'editor', ref: 'textarea', value: this.state.text,
+                      onChange: this.onTextEdited })))),
+            r.div({ className: 'preview-area' },
+              r.div({}, titleInput ? 'Preview: (title excluded)' : 'Preview:'),
+              r.div({ className: 'preview',
+                  dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
+            r.div({ className: 'submit-cancel-btns' },
+              Button({ onClick: this.onSaveClick }, saveButtonTitle),
+              Button({ onClick: this.onCancelClick }, 'Cancel'))))));
   }
 });
 

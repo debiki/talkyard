@@ -19,19 +19,37 @@
   width: 100% !important
   height: 300px
   background: hsl(0, 0%, 70%)
-  padding: 20px 5px 5px 15px
   z-index: 1100
 
+  #editor-after-borders
+    position: absolute;
+    top: 0;
+    right: 15px;
+    bottom: 0;
+    left: 15px;
+
   .editor-area
-    width: 49%
+    width: 50%
     position: absolute
     top: 17px
     bottom: 70px
 
+    .editor-area-after-borders
+      position: absolute;
+      top: 0;
+      right: 10px;
+      bottom: 0;
+      left: 0;
+
+    .title-input
+      position: absolute
+      top: 20px;
+      width: 100%;
+
     .editor-wrapper
       position: absolute
       top: 20px
-      right: 10px
+      right: 0;
       bottom: 10px
       left: 0
 
@@ -39,16 +57,19 @@
         width: 100%
         height: 100%
 
+    .title-input + .editor-wrapper
+        top: 50px // make space for title input
+
     .preview
       height: 100%
       width: 100%
 
   .preview-area
-    width: 49%
+    width: 50%
     position: absolute
     top: 18px
-    right: 12px
-    bottom: 30px
+    right: 0
+    bottom: 25px
 
     .preview
       position: absolute;
@@ -61,6 +82,6 @@
 
   .submit-cancel-btns
     position: absolute;
-    bottom: 30px;
+    bottom: 25px;
     button
       margin-right: 5px;
