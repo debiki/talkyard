@@ -103,6 +103,7 @@ ReactDispatcher.register(function(payload) {
 // COULD change this to an action instead
 ReactStore.activateUserSpecificData = function(anyUser) {
   store.userSpecificDataAdded = true;
+  store.now = new Date().getTime();
 
   var newUser = anyUser || debiki.reactUserStore;
   if (!newUser) {
@@ -177,8 +178,9 @@ function updatePost(post) {
   // (Could here remove any old version of the post, if it's being moved to
   // elsewhere in the tree.)
 
-  var oldVersion = store.allPosts[post.postId];
+  store.now = new Date().getTime();
 
+  var oldVersion = store.allPosts[post.postId];
   if (oldVersion) {
     // Don't collapse the post if the user has opened it.
     post.isTreeCollapsed = oldVersion.isTreeCollapsed;
