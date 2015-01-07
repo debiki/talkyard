@@ -18,6 +18,7 @@
 /// <reference path="../../shared/plain-old-javascript.d.ts" />
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
+/// <reference path="../../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../editor/editor.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="model.ts" />
@@ -286,10 +287,8 @@ export var ForumTopicList = createComponent({
               r.th({}, 'Topic'),
               r.th({}, 'Category'),
               r.th({ className: 'num num-posts' }, 'Posts'),
-              r.th({ className: 'num' }, 'Likes'),
-              r.th({ className: 'num' }, 'Wrongs'),
-              r.th({ className: 'num' }, 'Created'),
-              r.th({ className: 'num' }, 'Last Post'))),
+              r.th({ className: 'num' }, 'Activity'),
+              r.th({ className: 'num' }, 'Feelings'))),
           r.tbody({},
             topics)),
         loadMoreTopicsBtn));
@@ -299,21 +298,97 @@ export var ForumTopicList = createComponent({
 
 
 var TopicRow = createComponent({
+  styleFeeeling: function(num, total): any {
+    if (!total)
+      return null;
+
+    // What we're interested in is the probability that people feel something for this
+    // topic? The probability that they like it, or think it's wrong. One weird way to somewhat
+    // estimate this, which takes into account uncertainty for topics with very few posts,
+    // might be to consider num and total the outome of a binomial proportion test,
+    // and use the lower bound of a confidence interval:
+    // COULD give greater weight to posts that are shown on page load (when loading the topic).
+
+    // Usually there are not more than `total * 2` like votes, as far as I've seen
+    // at some popular topics @ meta.discourse.org. However, Discourse requires login;
+    // currently Debiki doesn't.
+    var fraction = 1.0 * num / total / 2;
+    if (fraction > 1) {
+      fraction = 1;
+    }
+    if (!this.minProb) {
+      this.minProb = this.binProbLowerBound(0, 0) + 0.01;
+    }
+    var probabilityLowerBound = this.binProbLowerBound(total, fraction);
+    if (probabilityLowerBound <= this.minProb)
+      return null;
+
+    var size = 8 + 6 * probabilityLowerBound;
+    var saturation = Math.min(100, 100 * probabilityLowerBound);
+    var brightness = Math.max(50, 70 - 20 * probabilityLowerBound);
+    var color = 'hsl(0, ' + saturation + '%, ' + brightness + '%)' ; // from gray to red
+    return {
+      fontSize: size,
+      color: color,
+    };
+  },
+
+  binProbLowerBound: function(sampleSize: number, proportionOfSuccesses: number): number {
+    // This is a modified version of the Agresti-Coull method to calculate upper and
+    // lower bounds of a binomial proportion. Unknown confidence interval size, I just
+    // choose 1.04 below because it feels okay.
+    // For details, see: modules/debiki-core/src/main/scala/com/debiki/core/statistics.scala
+    var defaultProbability = Math.min(0.5, proportionOfSuccesses);
+    var adjustment = 4;
+    var n_ = sampleSize + adjustment;
+    var p_ = (proportionOfSuccesses * sampleSize + adjustment * defaultProbability) / n_;
+    var z_unknownProb = 1.04;
+    var square = z_unknownProb * Math.sqrt(p_ * (1 - p_) / n_);
+    var lowerBound = p_ - square;
+    var upperBound = p_ + square;
+    return lowerBound;
+  },
+
   render: function() {
     var topic: Topic = this.props.topic;
     var category = _.find(this.props.categories, (category: Category) => {
       return category.pageId === topic.categoryId;
     });
+
+    var feelingsIcons = [];
+    var heartStyle = this.styleFeeeling(topic.numLikes, topic.numPosts);
+    if (heartStyle) {
+      feelingsIcons.push(
+          r.span({ className: 'icon-heart', style: heartStyle }));
+    }
+    var wrongStyle = this.styleFeeeling(topic.numWrongs, topic.numPosts);
+    if (wrongStyle) {
+      feelingsIcons.push(
+          r.span({ className: 'icon-warning', style: wrongStyle }));
+    }
+
+    var feelings;
+    if (feelingsIcons.length) {
+      var title =
+          topic.numLikes + ' like votes\n' +
+          topic.numWrongs + ' this-is-wrong votes';
+      feelings =
+        r.span({ title: title }, feelingsIcons);
+    }
+
+    var activityTitle =
+      'Created on ' + new Date(topic.createdEpoch).toUTCString() + '\n ' +
+      'Last post on ' + new Date(topic.lastPostEpoch).toUTCString();
+
     var categoryName = category ? category.name : '';
     return (
       r.tr({},
         r.td({}, r.a({ href: topic.url }, topic.title)),
         r.td({}, categoryName),
         r.td({ className: 'num num-posts' }, topic.numPosts),
-        r.td({ className: 'num' }, topic.numLikes),
-        r.td({ className: 'num' }, topic.numWrongs),
-        r.td({ className: 'num' }, moment(topic.createdEpoch).from(this.props.now)),
-        r.td({ className: 'num' }, moment(topic.lastPostEpoch).from(this.props.now))));
+        r.td({ className: 'num', title: activityTitle },
+            moment(topic.lastPostEpoch).from(this.props.now)),
+        r.td({ className: 'num' }, feelings)));
   }
 });
 
