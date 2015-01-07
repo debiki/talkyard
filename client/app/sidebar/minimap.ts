@@ -97,7 +97,7 @@ export var MiniMap = createComponent({
 
       // Adjust minimap size so it fits in the sidebar.
       this.width = anyWidth;
-      this.height = calculateMinimapSize(this.width).height;
+      this.height = this.calculateMinimapSize(this.width).height;
       this.height = Math.min($(window).height() / 9, this.height);
       var canvas = $(this.refs.canvas.getDOMNode());
       canvas.attr('width', this.width);
@@ -112,6 +112,23 @@ export var MiniMap = createComponent({
     this.cachedMinimap = canvasContext.getImageData(0, 0, this.width, this.height);
 
     drawViewport(canvasContext, this.width, this.height);
+  },
+
+  calculateMinimapSize: function(width?: number): any {
+    if (!width) {
+      var maxMinimapWidth = Math.min($window.width() / 3, 500);
+      width = Math.min(maxMinimapWidth, $document.width() / 12);
+      // Make the minimap smaller if there aren't very many comments.
+      var veryManyComments = 300;
+      width = 50 + Math.max(0, width - 50) * (Math.log(this.props.numPostsExclTitle) /
+          Math.log(veryManyComments));
+    }
+    var aspectRatio = $document.width() / Math.max($document.height(), 1);
+    var height = width / aspectRatio;
+    return {
+      width: width,
+      height: height
+    };
   },
 
   shallShowMinimap: function() {
@@ -183,7 +200,7 @@ export var MiniMap = createComponent({
         this.props.numPosts <= TooFewPosts)
       return null;
 
-    var size = calculateMinimapSize(this.props.width);
+    var size = this.calculateMinimapSize(this.props.width);
     this.width = size.width;
     this.height = size.height;
     return (
@@ -195,20 +212,6 @@ export var MiniMap = createComponent({
 
 function isPageWithMinimap(pageRole) {
   return pageRole === 'BlogPost' || pageRole === 'ForumTopic' || pageRole === 'WebPage';
-}
-
-
-function calculateMinimapSize(width?: number): any {
-  if (!width) {
-    var maxMinimapWidth = Math.min($window.width() / 3, 500);
-    width = Math.min(maxMinimapWidth, $document.width() / 12);
-  }
-  var aspectRatio = $document.width() / Math.max($document.height(), 1);
-  var height = width / aspectRatio;
-  return {
-    width: width,
-    height: height
-  };
 }
 
 
