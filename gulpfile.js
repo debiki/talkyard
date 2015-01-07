@@ -483,7 +483,6 @@ gulp.task('compile-stylus', function () {
     makeStyleStream('public/res/', 'combined-debiki.css', [
         'bower_components/jquery.atwho/dist/css/jquery.atwho.css',
         'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
-        'client/shared/editor/**/*.styl',
         'client/app/debiki.styl',
         'client/app/posts/layout.styl',
         'client/app/sidebar/minimap.styl',

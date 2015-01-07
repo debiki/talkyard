@@ -71,6 +71,7 @@ export var Editor = createComponent({
 
   componentDidMount: function() {
     this.startMentionsParser();
+    this.makeEditorResizable();
   },
 
   startMentionsParser: function() {
@@ -82,6 +83,22 @@ export var Editor = createComponent({
         remote_filter: (prefix, callback) => {
           Server.listUsernames(prefix, callback);
         }
+      }
+    });
+  },
+
+  makeEditorResizable: function() {
+    if (d.i.isInEmbeddedEditor) {
+      // The iframe is resizable instead.
+      return;
+    }
+    var placeholder = $(this.refs.placeholder.getDOMNode());
+    var editor = $(this.refs.editor.getDOMNode());
+    editor.css('border-top', '8px solid #888');
+    editor.resizable({
+      handles: 'n',
+      resize: function() {
+        placeholder.height(editor.height());
       }
     });
   },
@@ -253,8 +270,6 @@ export var Editor = createComponent({
   },
 
   render: function() {
-    var anyEditorPlaceholder = r.div({ id: 'debiki-editor-placeholder' });
-
     var doingWhatInfo;
     var editingPostId = this.state.editingPostId;
     if (_.isNumber(editingPostId)) {
@@ -308,8 +323,8 @@ export var Editor = createComponent({
 
     return (
       r.div({ style: styles },
-        anyEditorPlaceholder,
-        r.div({ id: 'debiki-editor-controller' },
+        r.div({ id: 'debiki-editor-placeholder', ref: 'placeholder' }),
+        r.div({ id: 'debiki-editor-controller', ref: 'editor' },
           r.div({ className: 'editor-area' },
             doingWhatInfo,
             r.div({ className: 'editor-wrapper' },
