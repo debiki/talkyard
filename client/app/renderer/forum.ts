@@ -237,6 +237,9 @@ export var ForumTopicList = createComponent({
       orderOffset.numLikes = anyLikesOffset;
     }
     debiki2.Server.loadForumTopics(categoryId, orderOffset, (topics: Topic[]) => {
+      if (!this.isMounted())
+        return;
+
       var newTopics = keepCurrentTopics ? (this.state.topics || []) : [];
       newTopics = newTopics.concat(topics);
       // `newTopics` includes at least the last old topic twice.
@@ -324,6 +327,8 @@ export var ForumCategories = createComponent({
 
   loadCategories: function() {
     debiki2.Server.loadForumCategories(this.props.pageId, (categories: Category[]) => {
+      if (!this.isMounted())
+        return;
       this.setState({ categories: categories });
     });
   },
