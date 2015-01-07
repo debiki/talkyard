@@ -83,7 +83,11 @@ export var MiniMap = createComponent({
   },
 
   componentDidUpdate: function() {
-    this.redrawMinimap();
+    // Don't redraw until any sidebar padding has been removed (or added) and
+    // the document resized. Otherwise, when closing the sidebar, the posts will be
+    // offset a little bit to the left, because they'd be drawn with the sidebar
+    // padding still present.
+    setTimeout(this.redrawMinimap);
   },
 
   redrawMinimap: function(anyWidth) {
@@ -216,6 +220,7 @@ function isPageWithMinimap(pageRole) {
 
 
 function drawAllPostsInMinimap(minimap, canvasContext) {
+  canvasContext.clearRect(0, 0, minimap.width, minimap.height);
   // Only draw comments inside .dw-page, or the ones inside any open sidebar would be drawn too.
   $('.dw-page .dw-p-bd-blk').each(function () {
     drawSinglePost($(this), canvasContext, minimap.width, minimap.height);
