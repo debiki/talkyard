@@ -78,9 +78,7 @@ function sendEditPostMessageToEmbeddedEditor(postId) {
 
 
 d.i.openEditorToEditPost = function(postId) {
-  d.i.withEditorScope(function(editorScope) {
-    editorScope.vm.startEditing(postId);
-  });
+  debiki2.editor.openEditorToEditPost(postId);
 };
 
 
@@ -99,17 +97,6 @@ d.i.handleEditResult = function(data) {
 
 function doHandleEditResult(editedPost) {
   debiki2.ReactActions.updatePost(editedPost);
-
-  // OLD DELETE this can be deleted rigth? I create pages directly nowadays, not lazily:
-  // In case the page was just created lazily when the edits were saved,
-  // tell AngularJS to update the page as appropriately,
-  // e.g. show certain buttons in the admin dashbar.
-  // ((This won't update the data-page_exists attribute though,
-  // so we'll trigger Angular's $digest whenever we edit the page,
-  // if it is newly created (didn't exist when it was rendered).))
-  d.i.angularApply(function(rootScope) {
-    rootScope.pageExists = true;
-  });
 };
 
 

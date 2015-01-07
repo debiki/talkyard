@@ -69,7 +69,6 @@ var debikiDesktopFiles = [
       'bower_components/keymaster/keymaster.js',
       'bower_components/lodash/dist/lodash.js',
       'bower_components/moment/min/moment.min.js',
-      'bower_components/angular-moment/angular-moment.min.js',
       'bower_components/eventemitter2/lib/eventemitter2.js',
       'bower_components/react-bootstrap/react-bootstrap.js',
       'bower_components/react-router/dist/react-router.js',
@@ -89,7 +88,6 @@ var debikiDesktopFiles = [
       'client/third-party/modernizr-positionfixed.js',
       'client/app/actions/edit/tagdog.js',
       'target/client/app/page-module.js',
-      'target/client/app/bootstrap-angularjs.js',
       'target/client/app/actions/delete.js',
       'target/client/app/actions/dialogs.js',
       'target/client/app/actions/edit/edit.js',
@@ -97,7 +95,6 @@ var debikiDesktopFiles = [
       'target/client/app/old/actions/show-actions.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
-      'target/client/app/dashbar/dashbar.js',
       'target/client/app/current-user.js',
       'target/client/app/actions/edit/diff-match-patch.js',
       'target/client/app/actions/edit/history.js',
@@ -112,7 +109,7 @@ var debikiDesktopFiles = [
       'target/client/app/posts/load-page-parts.js',
       'target/client/app/login/login.js',
       'target/client/app/login/login-popup.js',
-      'target/client/shared/editor/mentions-remarkable-plugin.js',
+      'target/client/app/editor/mentions-remarkable-plugin.js',
       'target/client/shared/login-dialog/login-dialog.js',
       'target/client/shared/login-dialog/login-guest.js',
       'target/client/shared/login-dialog/login-password.js',
@@ -141,7 +138,6 @@ var debikiDesktopFiles = [
       'target/client/shared/post-json.js',
       'target/client/all-typescript.js',
       'target/client/admin-app-angular-templates.js',
-      'target/client/page-app-angular-templates.js',
       'target/client/app/startup.js'];
 
 
@@ -149,7 +145,6 @@ var debikiTouchFiles = [
       'bower_components/keymaster/keymaster.js',
       'bower_components/lodash/dist/lodash.js',
       'bower_components/moment/min/moment.min.js',
-      'bower_components/angular-moment/angular-moment.min.js',
       'bower_components/eventemitter2/lib/eventemitter2.js',
       'bower_components/react-bootstrap/react-bootstrap.js',
       'bower_components/react-router/dist/react-router.js',
@@ -166,7 +161,6 @@ var debikiTouchFiles = [
       'client/third-party/modernizr-positionfixed.js',
       'client/app/actions/edit/tagdog.js',
       'target/client/app/page-module.js',
-      'target/client/app/bootstrap-angularjs.js',
       'target/client/app/actions/delete.js',
       'target/client/app/actions/dialogs.js',
       'target/client/app/actions/edit/edit.js',
@@ -174,7 +168,6 @@ var debikiTouchFiles = [
       'target/client/app/old/actions/show-actions.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
-      'target/client/app/dashbar/dashbar.js',
       'target/client/app/current-user.js',
       'target/client/app/actions/edit/diff-match-patch.js',
       'target/client/app/actions/edit/history.js',
@@ -188,7 +181,7 @@ var debikiTouchFiles = [
       'target/client/app/posts/load-page-parts.js',
       'target/client/app/login/login.js',
       'target/client/app/login/login-popup.js',
-      'target/client/shared/editor/mentions-remarkable-plugin.js',
+      'target/client/app/editor/mentions-remarkable-plugin.js',
       'target/client/shared/login-dialog/login-dialog.js',
       'target/client/shared/login-dialog/login-guest.js',
       'target/client/shared/login-dialog/login-password.js',
@@ -215,7 +208,6 @@ var debikiTouchFiles = [
       'target/client/shared/post-json.js',
       'target/client/all-typescript.js',
       'target/client/admin-app-angular-templates.js',
-      'target/client/page-app-angular-templates.js',
       'target/client/app/startup.js'];
 
 
@@ -302,7 +294,7 @@ function compileServerSideTypescript() {
         'bower_components/remarkable/dist/remarkable.js',
         'bower_components/lodash/dist/lodash.js',
         'client/third-party/html-css-sanitizer-bundle.js',
-        'client/shared/editor/mentions-remarkable-plugin.js',
+        'client/app/editor/mentions-remarkable-plugin.js',
         'bower_components/moment/moment.js']);
 
   return es.merge(typescriptStream, javascriptStream)
@@ -316,7 +308,6 @@ function compileServerSideTypescript() {
 
 function compileClientSideTypescript() {
   var stream = gulp.src([
-        'client/shared/editor/**/*.ts',
         'client/app/**/*.ts',
         'client/admin-app/**/*.ts',
         'client/typedefs/**/*.ts'])
@@ -345,15 +336,6 @@ gulp.task('compile-typescript', function () {
 
 
 gulp.task('compile-templates', function () {
-  var pageAppTemplateStream = gulp.src([
-        'client/shared/editor/**/*.html',
-        'client/app/**/*.html'])
-      .pipe(templateCache({
-        module: 'DebikiApp',
-        filename: 'page-app-angular-templates.js'
-      }))
-      .pipe(gulp.dest('target/client/'));
-
   var adminAppTemplateStream = gulp.src('client/admin-app/**/*.html')
       .pipe(templateCache({
         module: 'DebikiAdminApp',
@@ -362,7 +344,6 @@ gulp.task('compile-templates', function () {
       .pipe(gulp.dest('target/client/'));
 
   return es.merge(
-      pageAppTemplateStream,
       adminAppTemplateStream);
 });
 
@@ -483,7 +464,6 @@ gulp.task('compile-stylus', function () {
     makeStyleStream('public/res/', 'combined-debiki.css', [
         'bower_components/jquery.atwho/dist/css/jquery.atwho.css',
         'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
-        'client/shared/editor/**/*.styl',
         'client/app/debiki.styl',
         'client/app/posts/layout.styl',
         'client/app/sidebar/minimap.styl',

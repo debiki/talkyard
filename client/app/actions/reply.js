@@ -79,9 +79,7 @@ function sendWriteReplyMessageToEmbeddedEditor(postId) {
 
 
 d.i.openEditorToWriteReply = function(postId) {
-  d.i.withEditorScope(function(editorScope) {
-    var isSelected = editorScope.vm.toggleReplyToPost(postId);
-  });
+  debiki2.editor.toggleWriteReplyToPost(postId);
 };
 
 

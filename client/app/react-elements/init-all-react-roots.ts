@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../dashbar/dashbar.ts" />
 /// <reference path="../sidebar/sidebar.ts" />
+/// <reference path="../editor/editor.ts" />
 /// <reference path="comments-toolbar.ts" />
 /// <reference path="name-login-btns.ts" />
 /// <reference path="../users/users-page.ts" />
@@ -45,6 +46,8 @@ export function initAllReactRoots() {
   var nameLoginBtnsElem = document.getElementById('dw-name-login-btns');
   if (nameLoginBtnsElem)
     React.render(NameLoginBtns({}), nameLoginBtnsElem);
+
+  debiki2.editor.createEditor();
 
   var userPageElem = document.getElementById('dw-user-page');
   if (userPageElem) {

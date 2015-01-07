@@ -115,7 +115,8 @@ function registerEventHandlersFireLoginOut() {
  * allow third party websites to turn your JSON resource URL into JSONP
  * request under some conditions, see:
  *   http://docs.angularjs.org/api/ng.$http, the "JSON Vulnerability
- * Protection" section.))
+ * Protection" section, and:
+ *   http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/ ))
  */
 function configureAjaxRequests() {
   $.ajaxSetup({
@@ -242,7 +243,6 @@ function renderDiscussionPage() {
   });
 
   steps.push(function() {
-    startAngular();
     debiki2.sidebar.UnreadCommentsTracker.start();
   });
 
@@ -271,7 +271,6 @@ function renderEmptyPage() {
   if (!Modernizr.touch) {
     d.i.initUtterscrollAndTips();
   }
-  startAngular();
   debiki2.reactelements.initAllReactRoots();
   fireLoginOrLogout();
 };
@@ -294,15 +293,9 @@ d.i.startDiscussionPage = function() {
 
 
 d.i.startEmbeddedEditor = function() {
-  // The editor is an Angular module so all we need to do is to start Angular:
-  startAngular();
+  configureAjaxRequests();
+  debiki2.editor.createEditor();
 };
-
-
-function startAngular() {
-  d.i.angularApply(function() {});
-  $(document).trigger('dwEvAngularStarted');
-}
 
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

@@ -24,10 +24,29 @@
 
 /**
  * Is initialized in AdminApp-impl.ts, to avoid cyclic file references.
+ * If Angular not loaded (it's only in use on the admin pages) then provide
+ * a dummy implementation.
  */
-export var adminApp = angular.module('DebikiAdminApp', [
-    'ui.router', 'angularMoment']);
 
+export var adminApp: any = window['angular']
+    ? angular.module('DebikiAdminApp', ['ui.router'])
+    : {
+      config: function() {},
+      run: function() {},
+      service: function() {},
+      controller: function() {},
+      directive: function() {},
+    };
+
+if (!window['angular']) {
+  window['angular'] = {
+    'module': function() {
+      return {
+        run: function() {}
+      };
+    }
+  };
+}
 
 //------------------------------------------------------------------------------
    }
