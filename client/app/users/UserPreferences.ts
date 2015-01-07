@@ -16,13 +16,14 @@
  */
 
 /// <reference path="../../typedefs/jquery/jquery.d.ts" />
+/// <reference path="../../shared/plain-old-javascript.d.ts" />
 
 
 //------------------------------------------------------------------------------
    module debiki2.users {
 //------------------------------------------------------------------------------
 
-var $: JQueryStatic = d.i.$;
+var $: JQueryStatic = debiki.internal.$;
 
 
 

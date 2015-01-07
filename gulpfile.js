@@ -316,7 +316,6 @@ function compileServerSideTypescript() {
 
 function compileClientSideTypescript() {
   var stream = gulp.src([
-        'client/shared/editor/**/*.ts',
         'client/app/**/*.ts',
         'client/admin-app/**/*.ts',
         'client/typedefs/**/*.ts'])
@@ -346,7 +345,6 @@ gulp.task('compile-typescript', function () {
 
 gulp.task('compile-templates', function () {
   var pageAppTemplateStream = gulp.src([
-        'client/shared/editor/**/*.html',
         'client/app/**/*.html'])
       .pipe(templateCache({
         module: 'DebikiApp',

@@ -25,7 +25,7 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 
 
-export var DebikiApp: ng.IModule = angular.module('DebikiApp', ['DebikiEditorModule']);
+export var DebikiApp: ng.IModule = angular.module('DebikiApp', []);
 
 
 //------------------------------------------------------------------------------
