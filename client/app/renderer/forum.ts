@@ -120,6 +120,7 @@ export var CategoriesAndTopics = createComponent({
 
   render: function() {
     var props: Store = this.props;
+    var user = props.user;
     var activeCategory = this.getActiveCategory();
 
     var categoryMenuItems =
@@ -142,12 +143,12 @@ export var CategoriesAndTopics = createComponent({
     }
 
     var createCategoryBtn;
-    if (activeRoute.name === 'ForumRouteCategories') {
+    if (activeRoute.name === 'ForumRouteCategories' && user.isAdmin) {
       createCategoryBtn = Button({ onClick: this.createCategory }, 'Create Category');
     }
 
     var editCategoryBtn;
-    if (!activeCategory.isForumItself) {
+    if (!activeCategory.isForumItself && user.isAdmin) {
       editCategoryBtn = Button({ onClick: this.editCategory }, 'Edit Category');
     }
 
@@ -227,14 +228,14 @@ export var ForumTopicList = createComponent({
     }
 
     var orderOffset: OrderOffset = { sortOrder: null };
-    if (this.isActive('ForumRouteLatest')) {
-      orderOffset.sortOrder = TopicSortOrder.BumpTime;
-      orderOffset.time = anyTimeOffset;
-    }
-    else {
+    if (this.isActive('ForumRouteTop')) {
       orderOffset.sortOrder = TopicSortOrder.LikesAndBumpTime;
       orderOffset.time = anyTimeOffset;
       orderOffset.numLikes = anyLikesOffset;
+    }
+    else {
+      orderOffset.sortOrder = TopicSortOrder.BumpTime;
+      orderOffset.time = anyTimeOffset;
     }
     debiki2.Server.loadForumTopics(categoryId, orderOffset, (topics: Topic[]) => {
       if (!this.isMounted())
