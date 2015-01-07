@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../dashbar/dashbar.ts" />
-/// <reference path="../sidebar/sidebar.ts" />
-/// <reference path="../editor/editor.ts" />
-/// <reference path="comments-toolbar.ts" />
-/// <reference path="name-login-btns.ts" />
-/// <reference path="../users/users-page.ts" />
+/// <reference path="../typedefs/react/react.d.ts" />
+/// <reference path="dashbar/dashbar.ts" />
+/// <reference path="sidebar/sidebar.ts" />
+/// <reference path="editor/editor.ts" />
+/// <reference path="react-elements/comments-toolbar.ts" />
+/// <reference path="react-elements/name-login-btns.ts" />
+/// <reference path="users/users-page.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.reactelements {
+   module debiki2 {
 //------------------------------------------------------------------------------
 
 var ReactRouter = window['ReactRouter'];
@@ -41,11 +41,11 @@ export function initAllReactRoots() {
 
   var commentsToolbarElem = document.getElementById('dw-comments-toolbar');
   if (commentsToolbarElem)
-    React.render(CommentsToolbar({}), commentsToolbarElem);
+    React.render(debiki2.reactelements.CommentsToolbar({}), commentsToolbarElem);
 
   var nameLoginBtnsElem = document.getElementById('dw-name-login-btns');
   if (nameLoginBtnsElem)
-    React.render(NameLoginBtns({}), nameLoginBtnsElem);
+    React.render(debiki2.reactelements.NameLoginBtns({}), nameLoginBtnsElem);
 
   debiki2.editor.createEditor();
 

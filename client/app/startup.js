@@ -196,7 +196,7 @@ function renderDiscussionPage() {
   var steps = [];
 
   steps.push(function() {
-    debiki2.reactelements.initAllReactRoots();
+    debiki2.initAllReactRoots();
 
     $('html').removeClass('dw-render-actions-pending');
 
@@ -271,7 +271,7 @@ function renderEmptyPage() {
   if (!Modernizr.touch) {
     d.i.initUtterscrollAndTips();
   }
-  debiki2.reactelements.initAllReactRoots();
+  debiki2.initAllReactRoots();
   fireLoginOrLogout();
 };
 
