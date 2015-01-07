@@ -276,7 +276,7 @@ var Thread = createComponent({
     this.refs.post.onAnyActionClick();
   },
   render: function() {
-    var post = this.props.allPosts[this.props.postId];
+    var post: Post = this.props.allPosts[this.props.postId];
     var parentPost = this.props.allPosts[post.parentId];
     var deeper = this.props.depth + 1;
     var depthClass = 'dw-depth-' + this.props.depth;
@@ -353,7 +353,7 @@ var Post = createComponent({
   },
 
   render: function() {
-    var post = this.props.post;
+    var post: Post = this.props.post;
     var user: User = this.props.user;
 
     var pendingApprovalElem;
@@ -372,7 +372,7 @@ var Post = createComponent({
           'Click to show ', what);
       extraClasses += ' dw-zd';
     }
-    else if (!post.isApproved && !post.text) {
+    else if (!post.isApproved && !post.sanitizedHtml) {
       headerElem = r.div({ className: 'dw-p-hd' }, 'Hidden comment pending approval, posted ',
             moment(post.createdAt).from(this.props.now), '.');
       extraClasses += ' dw-p-unapproved';
@@ -387,6 +387,22 @@ var Post = createComponent({
       headerProps.onMarkClick = this.onMarkClick;
       headerElem = PostHeader(headerProps);
       bodyElem = PostBody(this.props);
+    }
+
+    var wrongWarning;
+    if (post.numWrongVotes >= 2 && !this.props.abbreviate) {
+      var wrongness = post.numWrongVotes / (post.numLikeVotes || 1);
+      // One, two, three, many.
+      if (post.numWrongVotes >= 4 && wrongness > 1) {
+        wrongWarning =
+          r.div({ className: 'dw-wrong dw-very-wrong icon-warning' },
+            'Many think this comment is wrong:');
+      }
+      else if (wrongness > 0.33) {
+        wrongWarning =
+          r.div({ className: 'dw-wrong icon-warning' },
+            'Some think this comment is wrong:');
+      }
     }
 
     var multireplReceivers = null;
@@ -417,6 +433,7 @@ var Post = createComponent({
       r.div({ className: 'dw-p ' + extraClasses, id: id,
             onMouseEnter: this.props.onMouseEnter, onClick: this.onClick },
         pendingApprovalElem,
+        wrongWarning,
         multireplReceivers,
         headerElem,
         bodyElem));

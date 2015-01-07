@@ -223,6 +223,16 @@ h1.dw-p-ttl + .dw-a-edit
     font-size: 10px;
 
 
+.dw-wrong
+  font-style: italic;
+  font-size: 90%;
+  margin-bottom: 5px;
+  &:before
+    color: #999 // gray warning icon instead of black
+  &.dw-very-wrong
+    font-size: 100%;
+
+
 // Users with links to more info, e.g. website or blog
 .dw-pri a.dw-p-by,
 .dw-pri a.dw-p-e-by
