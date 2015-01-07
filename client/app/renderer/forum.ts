@@ -56,12 +56,18 @@ export function buildForumRoutes() {
 
 
 export var Forum = createComponent({
+  mixins: [debiki2.StoreListenerMixin],
+
+  onChange: function() {
+    this.setState(debiki2.ReactStore.allData());
+  },
+
   render: function() {
     return (
       r.div({},
         r.div({ className: 'forum-title' },
-          TitleBodyComments(this.props)),
-        CategoriesAndTopics(this.props)));
+          TitleBodyComments(this.state || this.props)),
+        CategoriesAndTopics(this.state || this.props)));
   }
 });
 
