@@ -105,7 +105,7 @@ object RawPostAction {
 
   def forNewTitle(text: String, creationDati: ju.Date,
                userIdData: UserIdData, approval: Option[Approval]) =
-    forNewPost(PageParts.TitleId, creationDati, userIdData = SystemUser.UserIdData,
+    forNewPost(PageParts.TitleId, creationDati, userIdData = userIdData,
       parentPostId = None, text = text, approval = approval)
 
 
