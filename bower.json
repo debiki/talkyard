@@ -11,7 +11,6 @@
   ],
   "dependencies": {
     "angular": "v1.2.16",
-    "angular-moment": "~0.6.2",
     "angular-sanitize": "v1.2.16",
     "angular-ui-router": "0.2.11",
     "bootstrap": "v3.1.1",
@@ -23,7 +22,7 @@
     "keymaster": "~1.6.2",
     "lodash": "~2.4.1",
     "modernizr": "v2.6.2",
-    "momentjs": "~2.6.0",
+    "moment": "~2.8.4",
     "nicescroll": "~3.5.6",
     "react": "~0.12.2",
     "react-bootstrap": "~0.13.0",
