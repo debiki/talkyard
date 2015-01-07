@@ -841,7 +841,11 @@ function renderTitleBodyCommentsToString() {
   if (store.pageRole === 'Forum') {
     var routes = debiki2.renderer.buildForumRoutes();
     var result;
-    ReactRouter.run(routes, store.pagePath, function(handler) {
+    // In the future, when using the HTML5 history API to update the URL when navigating
+    // inside the forum, we can use `store.pagePath` below. But for now, when using
+    // the hash fragment, start at #/ always:
+    var pagePath = '/';
+    ReactRouter.run(routes, pagePath, function(handler) {
       result = React.renderToString(handler(store));
     });
     return result;
