@@ -471,7 +471,7 @@ var PostHeader = createComponent({
     var user: User = this.props.user;
     var linkFn = this.props.abbreviate ? 'span' : 'a';
 
-    var authorUrl = '/-/users/#/id/' + this.props.authorId;
+    var authorUrl = '/-/users/#/id/' + post.authorId;
     var authorNameElems;
     if (post.authorFullName && post.authorUsername) {
       authorNameElems = [
