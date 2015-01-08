@@ -1,0 +1,12 @@
+[submodule "modules/twitter-bootstrap"]
+	path = modules/twitter-bootstrap
+	url = https://github.com/twbs/bootstrap.git
+[submodule "modules/angular-ui"]
+	path = modules/angular-ui
+	url = https://github.com/angular-ui/ui-utils.git
+[submodule "modules/debiki-dao-rdb"]
+	path = modules/debiki-dao-rdb
+	url = ../debiki-dao-rdb.git
+[submodule "modules/definitely-typed"]
+	path = modules/definitely-typed
+	url = https://github.com/borisyankov/DefinitelyTyped.git
