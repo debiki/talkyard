@@ -1,0 +1,1 @@
+../../../modules/definitely-typed/eventemitter2/eventemitter2.d.ts

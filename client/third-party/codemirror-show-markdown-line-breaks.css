@@ -1,0 +1,27 @@
+/**
+ * Makes the CodeMirror editor show newlines, in Markdown mode.
+ *
+ * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ *
+ * Dual licensed under MIT and CC0. (Javascript is MIT only though.)
+ */
+
+
+.cm-markdown-single-trailing-space-odd:before,
+.cm-markdown-single-trailing-space-even:before,
+.cm-markdown-line-break:before {
+  font-weight: bold;
+  color: hsl(30, 100%, 50%); /* a dark orange */
+  position: absolute;
+}
+
+
+.cm-markdown-single-trailing-space-odd:before,
+.cm-markdown-single-trailing-space-even:before {
+  content: '·';
+}
+
+.cm-markdown-line-break:before {
+  content: '↵';
+}
+

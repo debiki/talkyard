@@ -1,0 +1,313 @@
+/*!
+ * Copyright (C) 2010-2013 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+// Styles that could be reused if building something for Node.js or WordPress.
+
+
+
+// Page and threads
+//===========================
+
+
+.dw-debate
+  position: relative
+
+.dw-page a
+  cursor: pointer
+
+
+
+// Folded things
+//===========================
+
+
+.DW .dw-z
+  // Could use blue (#369) to indicate they're clickable, but don't — I guess
+  // it's more important that they don't grab any attention, than that
+  // people notice that they can close threads.
+  color: #777
+  font-size: 13px
+  font-family: Verdana
+  text-decoration: none
+  z-index: 3 // place above PNG arrow hiders
+  left: 2px
+  top: -1px
+
+.DW .dw-z:hover
+  color: #c77405
+
+.dw-z:hover:before
+  background: hsl(34, 95%, 89%)
+
+// Show a collapse-thread symbol in (before) the .dw-z <div>.
+
+// For now, only show collapse "button" for whole columns,
+// because they're so ugly, and don't work on mobile anyway. I'll
+// have to figure something else out later.
+//  — No, skip them completely for now, since I've not implemented folding
+// of columns anyway.
+/*
+.dw-t.dw-depth-1 > .dw-z:before {
+  // ↕ is "Up down arrow", 8597,
+  //There's also: ↥ "Upwards arrow from bar",
+  //http://shapecatcher.com/unicode/info/8613, but that's the wrong
+  //direction (sometimes)
+  content: "↕";
+  background: white;
+  // Align with uncollapsed replies: 16 + 8 = 24, looks ok
+  display: inline-block;
+  width: 16px;
+  margin-right: 8px;
+}
+*/
+
+.dw-p .dw-z:before
+  // Show no collapse-thread symbol inside *posts* however.
+  content: none
+
+
+
+// Folded threads, .dw-t
+//---------------------------
+
+// Don't underline the fold link, [-]. (Ignore old borken browsers.)
+.dw-t:not(.dw-zd) > .dw-z
+  text-decoration: none
+
+.dw-t > .dw-z
+  position: absolute !important // or set to relative by :not(svg) [31Ik53]
+
+.dw-zd.dw-t
+  // instead of .dw-t's 8px, otherwise harder to understand
+  // that it replies to the comment jus above.
+  margin-top: 0px
+
+// When a thread is folded, there's nothing in it that occupies any space,
+// and two folded threads would overlap, unless:
+.dw-zd.dw-t > .dw-z,
+.dw-zd.dw-res > li > .dw-z
+  position: relative !important // cancel position: absolute
+  margin-bottom: 42px
+  display: block // don't hide the .dw-z, only hide everything else
+
+// For a folded thread, only the open link (.dw-z) is visible.
+// This verbose code works also in IE 7:
+.dw-zd.dw-t > *
+  display: none
+
+// Still show arrows to folded thread and siblings.
+.dw-zd.dw-t > .dw-arw,
+.dw-zd.dw-t > .dw-arw-vt-handle
+  display: block
+
+
+// Folded replies
+//---------------------------
+
+.dw-res.dw-zd > li
+  margin: 0 0 0 14px
+
+.dw-zd.dw-res
+  padding-top: 0 !important // place closer to the comment they reply to
+
+
+// Folded comments
+//---------------------------
+
+// Search for '.dw-p.dw-zd' in this file.
+
+
+
+
+// Posts
+//===========================
+
+
+.dw-p
+  // overflow: hidden; No, or sort order and reply btn tips won't appear
+  background-color: white
+
+.dw-p-hd,
+.dw-p.dw-zd  // folded comment
+  padding-left: 3px
+  font-size: 10px
+  color: #000
+  background-color: #f4f4f4
+  border: 1px solid hsl(0, 0%, 90%)
+  border-left: none
+  border-right: none
+  line-height: 15px // or test w 120%
+
+.dw-p.dw-zd  // folded comment
+  margin-bottom: 25px;
+
+.dw-vt .dw-p-hd,
+  // Make the border darker
+  border: 1px solid hsl(0, 0%, 80%)
+  border-left: none
+  border-right: none
+
+// Threads are wider in vertical layout, so the headers are much larger.
+// Therefore make their backgrounds brighter.
+.DW.dw-vt
+  .dw-p-hd,
+  .dw-p.dw-zd
+    background-color: hsl(0, 0%, 95%)
+
+  .dw-ar-p-hd
+    background-color: transparent
+
+.dw-p-bd,
+.dw-p-diff // COULD place -bd on -diff too, remove this -diff row?
+  padding: 6px 1px 9px 3px // 3px aligns w .dw-p-hd (also padded left 3px)
+  position: relative
+  background-color: white
+  min-width: 5em
+
+// Place debug-reading-progress outline above the .dw-p.
+.dw-p-hd
+  z-index: 1;
+  position: relative;
+
+
+// Marks
+//---------------------------
+
+.dw-p-mark-click
+  padding: 7px 0px 7px 5px;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
+  &:hover
+    outline: 2px solid hsl(210, 100%, 77%);
+    background: hsl(210, 100%, 97%);
+
+.dw-p-mark
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+  position: relative;
+  top: 1px;
+  margin: 0 8px 0 0;
+  background: transparent;
+  color: hsl(0, 0%, 72%);
+  font-size: 13px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
+.dw-p-unread .dw-p-mark
+  color: hsl(0, 0%, 33%);
+
+.dw-p-mark-read .dw-p-mark
+  color: hsl(0, 0%, 50%);
+
+.dw-p-mark-blue-star .dw-p-mark
+  color: hsl(210, 100%, 50%);
+
+.dw-p-mark-yellow-star .dw-p-mark
+  padding: 0 2px 0 1px;
+  font-size: 11px;
+  text-shadow: -1px -1px 1px red, 1px -1px 1px red, -1px 1px 1px red, 1px 1px 1px red;
+  color: yellow;
+
+
+// Highlighted posts
+//---------------------------
+
+.dw-p.dw-highlighted-multireply-hover
+    outline: hsl(211, 100%, 77%) solid 5px; // duplicated style [FK209EIZ]
+
+
+
+
+// Miscellaneous
+//===========================
+
+
+/* --- Clearfix --- */
+
+// A child, the root thread .dw-depth-0, floats left.
+.debiki.dw-debate:after,
+// Makes the root post wrap its (floating) children, don't know if
+// needed for other horizontal threads.
+.dw-t.dw-hz > .dw-p:after,
+// Wraps any floating reply or rate form (Debiki's or some other framework's,
+// e.g. WordPress' reply form). Unless the .dw-t wraps it, PNG arrow hiders
+// won't hide PNG arrows correctly (because the .dw-t and thus the arrow
+// hiders wouldn't be tall enough, if it didn't wrap floating children).
+.dw-t:after,
+// Its children, .dw-p-bd-blk:s, float left.
+.dw-p-bd:after,
+// Comment actions
+.dw-p-as:after
+  // Copied from jquery-ui-1.8.16.custom.css.
+  content: "."
+  display: block
+  height: 0
+  clear: both
+  visibility: hidden
+
+
+
+// jQuery UI integration
+//===========================
+
+
+.dw-pri .ui-resizable-se
+  // The small grip has been replaced with the normal grip
+  // (search for "ui-icon-grip" in debiki.js), so we make the
+  // tag a few pixels wider.
+  height: 17px
+  width: 17px
+  background-position: -80px -222px
+  background-color: white // hides text beneath, else grip hard to notice
+
+// Make the s,n,e,w handles larger (else hard to drag) and place them
+// 1 layer below the .ui-resizable-se handle (see above),
+// so as not to hide that handle (which is assigned z-index 1001 by
+// some jQuery code somewhere; I cannot find 1001 in any CSS class)
+.dw-pri .ui-resizable-n,
+.dw-pri .ui-resizable-s
+  height: 10px
+  z-index: 1000
+
+.dw-pri .ui-resizable-s
+  bottom: 0 // jquery-ui says -5 which overflows
+
+.dw-pri .ui-resizable-e,
+.dw-pri .ui-resizable-w
+  width: 13px
+  z-index: 1000
+
+.dw-pri .ui-resizable-e
+  right: 0 // jquery-ui says -5 which overflows
+
+// But don't raise the vertical lines between depth-1 threads
+// above ?? .dw-p:hover, with z-index: 10 ?? (rewrote old comment)
+.dw-depth-1 > .ui-resizable-handle
+  z-index: 1 // [0QKxg2]
+
+
+
+// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

@@ -1,0 +1,20 @@
+<div class="form-group row">
+
+  <label for="{{rootPageId}}{{contentId}}" class="col-sm-3 control-label">{{ title }}</label>
+
+  <div ng-if="content == null">Loading ...</div>
+  <div ng-if="content != null" class="col-sm-9">
+    <p><span ng-transclude></span></p>
+    <textarea ng-model="content.newText" type="text"
+      class="form-control special-content-{{contentId}}"
+      id="{{rootPageId}}{{contentId}}"></textarea>
+
+    <div ng-hide="!valueChanged()">
+      <button ng-click="save()" class="btn btn-default">Save</button>
+      <button ng-click="cancel()" class="btn btn-default">Cancel</button>
+    </div>
+    <div ng-hide="valueChanged() || hasDefaultValue()">
+      <button ng-click="setToDefault()" class="btn btn-default">Reset to default</button>
+    </div>
+  </div>
+</div>

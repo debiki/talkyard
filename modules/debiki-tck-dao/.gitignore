@@ -1,0 +1,22 @@
+scratch.txt
+scratch/
+
+# Maven
+target/
+
+# SBT
+lib_managed/
+src_managed/
+project/boot/
+project/target/
+
+# Idea
+.idea/
+debiki-tck-dao.iml
+project/project.iml
+
+# Eclipse
+.cache
+.classpath
+.project
+.settings/

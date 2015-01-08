@@ -1,0 +1,466 @@
+/* client/app/theme.styl */
+
+body,
+.container { position: relative; }
+
+.container { margin: 0 auto; }
+
+
+p, /* override Twitter Bootstrap */
+body,
+.dw-depth-1 blockquote p { /* override Bootstrap */
+  font: 13px Verdana, sans-serif;
+}
+
+article {
+  line-height: 165%;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  /* For now, always use Bree serif, so people that setup a forum get one that looks
+     like the demo forum. Later on, make the styles more configurabe. */
+  font-family: Bree serif, Georgia, serif;
+  font-weight: normal;
+
+  letter-spacing: 1px;
+  line-height: 1em;
+  margin-top: 30px;
+  margin-bottom: 15px;
+  color: #393939;
+}
+
+/*
+h1, h2, h3, h4, h5, h6,
+.jumbotron .lead p,
+.jumbotron .or-a-blog,
+.jumbotron .subtitle,
+.homepage .btn-large {
+  font-family: Bree serif, Georgia, serif;
+  font-weight: normal;
+} */
+
+h1 {
+  font-size: 35px;
+  color: #454545;
+  padding-top: 15px;
+  margin-bottom: 4px;
+}
+
+h2 {
+  color: #444;
+  font-size: 24px;
+  margin: 35px 0 15px 0 !important;
+}
+
+.container > h2 {
+  color: hsl(39, 99%, 49%);
+  border-bottom: 1px solid hsl(39, 100%, 80%);
+  padding-bottom: 5px;
+}
+
+h3 { font-size: 20px; color: #333; margin-top: 29px; }
+h4 { font-size: 15px; color: #555; }
+h5, h6 { font-size: 13px; color: #707070; font-family: Arial, sans-serif; }
+
+p, li { color: #111; }
+
+
+p {
+  margin-bottom: 1em;
+  line-height: 20px;
+}
+
+.dw-res p,
+.dw-res ul,
+.dw-res ol {
+  margin-bottom: 0.7em;
+  line-height: normal;
+}
+
+li { margin-left: 2.9em;  margin-bottom: 0.6em; }
+ul, ol {
+  margin: 0;
+  -webkit-padding-start: 0;
+  -webkit-margin-after: 0;
+  -webkit-margin-before: 0;
+}
+ul { list-style-type: disc; }
+ol { list-style-type: decimal; }
+
+img {
+  width: 100%;
+  display: block; /* TODO inline those with no \n\n inbetween preceeding text */
+  margin: 1.5em auto; /* TODO margin-bottom 0 if post ends there */
+}
+
+i, em { font-style: italic; }
+
+small { font-size: 80%;  color: #444; }
+
+/* Bootstrap's <pre> whiteSmoke too dark, and <code> bg colored. */
+pre, code {
+  background-color: #f7f7f7;
+  color: #222;
+  font-size: 12px; /* or unreadably small */
+  line-height: 16px;
+}
+
+small code {
+  background-color: inherit;
+  color: inherit;
+  padding: 0;
+  border: none;
+  font-size: inherit;
+}
+
+a { text-decoration: none; }
+a:hover, a:active { text-decoration:underline; }
+
+.dw-pri .ui-widget-content a, /* undo jQuery UI settings */
+a, a:link { color: hsl(211, 88%, 35%);  }
+
+.dw-pri .ui-widget-content a:visited,
+a:visited { color: hsl(211, 30%, 40%); }
+
+
+#topbar, .footer { font-family: "Bitstream Vera Sans", sans-serif; }
+
+#topbar {
+  background: #3e5a75;
+}
+
+#topbar > .container {
+  padding: 13px 0 12px;
+  letter-spacing: 1px;
+  line-height: 100%;
+  font-size: 12px;
+  color: #fff;
+}
+
+#topbar > .container a {
+  color: #fff;
+}
+
+.logo {
+  font-family: purisa;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+#topbar .logo-slogan img {
+  width: 26px;
+  display: inline;
+  margin: 0 6px 0 0;
+  padding: 0;
+  vertical-align: middle;
+  top: -2px;
+  position: relative;
+}
+
+#topbar > .container nav > a.debiki-0-current-site-section {
+  font-weight: bold;
+  font-size: 105%;
+}
+
+#alfa-info {
+  font-style: italic;
+  font-size: 90%;
+  text-align: center;
+  left: 0;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+  padding: 7px 0;
+}
+
+
+
+
+/* Social links
+============================== */
+
+
+.social-links {
+  margin-top: 13px;
+}
+
+.social-links-title {
+  float: left;
+  position: relative;
+  top: -2px;
+  margin: 0 8px 0 0;
+  font-size: 85%;
+}
+
+.social-links a {
+  opacity: 0.8;
+}
+
+.social-links a[class*=tweet] {
+  opacity: 0.73;
+}
+
+
+
+#social-btns {
+  margin-left: auto;
+}
+
+#twitter-btn iframe {
+  width: 100px !important;
+}
+
+#google-btn div, #google-btn iframe {
+  width: 150px !important;
+  margin-right: 10px !important;
+}
+
+
+
+/* Login
+============================== */
+
+
+#dw-loginout {
+  padding: 0 10px 0 15px;
+}
+
+.dw-a-logout {
+  margin-left: 1em; /* push login info away */
+}
+
+.dw-a-login,
+.dw-u-name {
+  color: #eee; /* #fff is too bright */
+  font-weight: bold;
+}
+
+.dw-u-name {
+  font-size: 13px;
+}
+
+#content {
+  min-height: 70ex;
+  margin: 16px 0;
+}
+
+footer, .footer {
+  background-color: #3e5a75;
+  text-align: center;
+  margin-top: 4em;
+  font-size: 12px;
+  color: #ddd;
+  bottom:0;
+  position: relative;
+  clear: both;
+}
+
+.footer {
+  padding: 3.7em 0 3em;
+}
+
+footer p {
+  color: #ddd;
+  line-height: 8px;
+}
+
+.footer a, .footer a:visited {
+  color: #ddd;
+  text-decoration: underline;
+}
+
+.footer p small {
+  font-size: 10px;
+  color: #ddd;
+}
+
+
+/* Tweak Twitter Bootstrap and jQuery UI colors
+============================== */
+
+/* I should probably build my own Bootstrap version and update the
+jQuery UI theme, but ... not right now. */
+
+input:focus, textarea:focus {
+  /* Change border from inset to solid, and hue from 206 to 208,
+  and remove Chrome's built outline in orange */
+  border: 1px solid hsl(208, 100%, 78%);
+  outline: 1px solid hsl(208, 100%, 78%);
+}
+
+input, textarea {
+  /* Disable annoyingly slow Twitter Bootstrap transitions.
+  Alternatively, change from 0.2s to 0.05s. */
+  -webkit-transition: none;
+  -moz-transition: none;
+  -ms-transition: none;
+  -o-transition: none;
+  transition: none;
+}
+
+/* Tweak jQuery UI colors. */
+.dw-pri .ui-state-default, .dw-pri .ui-widget-content .ui-state-default, .dw-pri .ui-widget-header .ui-state-default {
+  color: hsl(210, 75%, 56%);  /* instead of hsl(204, 75%, 44%); */
+}
+
+
+
+/* Code pages
+============================== */
+
+
+.code-page-title h1,
+.code-page p {
+  font-family: monospace;
+}
+
+.code-page-title h1 {
+  font-size: 20px;
+}
+
+
+
+/* Responsive
+============================== */
+
+
+/* TODO for IE7 */
+.logo-slogan { float: left; }
+#topbar > .container nav { float: right; }
+/* End IE7 */
+
+#topbar > .container nav > a {
+  margin-left: 1.1em;
+}
+
+/* Default, 940px wide */
+
+/*
+.dw-p-ttl .dw-p-bd-blk {
+  max-width: 748px;
+} */
+
+.container {
+  width: 940px;
+}
+
+body { padding: 0 !important; } /* cancel Bootstrap's 20px padding */
+#topbar > .container,
+body > .container {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+#topbar > .container { display: table; }
+
+#topbar > .container > * {
+  display: table-cell !important;
+  float: none !important;
+}
+
+#topbar > .container nav { text-align: right; }
+
+
+@media (min-width: 1200px) {
+}
+
+@media (max-width: 980px) {
+  .container {
+    width: 748px;
+  }
+  #topbar > .container {
+    line-height: 120%; /* make higher since lines wrap */
+  }
+  .logo-slogan {
+    display: block; /* make slogan line wrap */
+    max-width: 150px;
+  }
+  .slogan {
+    font-size: 90%
+  }
+  #dw-loginout {
+    display: block;
+    text-align: left;
+  }
+  .dw-u-lgi-lgo {
+    display: block;
+  }
+  .dw-a-logout {
+    font-size: 90%;
+    margin-left: 0;
+  }
+}
+
+/* Extra step */
+@media (max-width: 880px) {
+  #topbar > .container nav > a {
+    padding-bottom: 10px;
+    display: inline-block;
+  }
+  .container {
+    width: 648px;
+  }
+}
+
+/* 500px wide layout, mainly for mobile phones in landscape orientation. */
+@media (max-width: 767px) {
+  #topbar > .container nav > a {
+    padding-bottom: 10px;
+    display: inline-block;
+  }
+  .container {
+    width: 500px;
+  }
+}
+
+/* The article is placed in a very wide elem
+(because of all horizontal replies and inline replies),
+so `width: auto` won't make it shrink if the user makes the
+browser window smaller, or uses a mobile phone.
+Add some manual shrinking here:
+(@media width less than 20px padding + max-width + 5px = new @media section)
+*/
+@media (max-width: 525px) {
+  /* Android (but not desktop browsers) makes the .container very wide,
+  unless:  (max-width ignored, because it's a table) */
+  .container { width: 450px; }
+  /* But don't set `width` for the actual text contents; I think
+  that then Android won't add line wraps to make paras fit on screen. */
+  /* This is wrong -- doesn't take into account .container's 20 x 2 px padding:
+  .dw-ar-p-bd,
+  .dw-p-ttl .dw-p-bd-blk,
+  .dw-p-bd-blk { max-width: 450px; }
+  */
+}
+
+@media (max-width: 475px) {
+  .container { width: 400px; }
+  /* This is wrong -- doesn't take into account .container's 20 x 2 px padding:
+  .dw-ar-p-bd,
+  .dw-p-ttl .dw-p-bd-blk,
+  .dw-p-bd-blk { max-width: 400px; }
+  */
+  /* Change from 20px to 10px padding. */
+  #topbar, body > .container { padding: 0 10px; }
+}
+
+@media (max-width: 425px) {
+  .container { width: 360px; }
+  /* This is wrong -- doesn't take into account .container's 20 x 2 px padding:
+  .dw-ar-p-bd,
+  .dw-p-ttl .dw-p-bd-blk,
+  .dw-p-bd-blk { max-width: 360px; } / * + 10px padding + 5 whitespace = 375px (next @media below) * /
+  */
+}
+
+@media (max-width: 375px) {
+  /* The smallest modern mobile phones are 320px wide. (?) */
+  .container { width: 300px; }
+  /* This is wrong -- doesn't take into account .container's 20 x 2 px padding:
+  .dw-ar-p-bd,
+  .dw-p-ttl .dw-p-bd-blk,
+  .dw-p-bd-blk { max-width: 300px; } /* + 2 x 10px padding = 320 */
+  */
+}
+
+

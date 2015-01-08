@@ -1,0 +1,413 @@
+@**
+ * Copyright (C) 2012-2013 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *@
+
+@(hostname: String)
+
+<!DOCTYPE html>
+<html ng-app="AdminModule">
+<head>
+
+<title>Admin Page for @hostname</title>
+<meta name="viewport" content="initial-scale=1.0, minimum-scale=0.01">
+<meta charset="utf-8">
+
+<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Bree+Serif">
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="/-/res/admin-old.css">
+
+<script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/angular.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/angular-sanitize.min.js"></script>
+<script>
+  var debiki = { v0: { util: {} }, internal: { $: jQuery } };
+  /*
+  debiki.scriptLoad = $.Deferred();
+  yepnope({
+    test: Modernizr.touch,
+    yep: '/-/res/combined-debiki-touch.js',
+    nope: '/-/res/combined-debiki-desktop.js'
+  }); */
+</script>
+<script src="/-/res/admin-old.js"></script>
+
+</head>
+<body>
+<div>
+  <div dw-modal-dialog></div>
+
+  <h1>Admin Page for @hostname</h1>
+  <div id='admin-container'>
+    <div>
+      <div id='details'>
+        <ul class="nav nav-tabs">
+          <li class='active'><a href="#pages-tab" data-toggle="tab">Contents</a></li>
+          <li><a href="#events-tab" data-toggle="tab">Activity</a></li>
+          <li><a href="#users-tab" data-toggle="tab">Users</a></li>
+        </ul>
+
+        <div class="tab-content">
+          <div ng-controller='ActionListCtrl' class='tab-pane' id='events-tab'>
+            @*
+            <div class='selection-related-btns'>
+              <!--<a id='btn-view-post' class='btn btn-default' ng-show='oneRowChecked'>View</a>-->
+              <a id='btn-approve-post' class='btn btn-default' ng-show='manyRowsChecked'>Approve</a>
+              <a id='btn-reject-post' class='btn btn-default' ng-show='manyRowsChecked'>Reject</a>
+              <!-- <a class='btn btn-default'>Edit</a>
+              <a class='btn btn-default'>Subscribe</a>
+              <a class='btn btn-default'>!Spam</a>
+              <a class='btn btn-default'>#Delete</a>
+              <a class='btn btn-default'>Sort</a> -->
+            </div>
+            *@
+            <p ng-show="!actionList.length">No activity thus far.</p>
+            <table class='table -table-bordered -table-striped'
+                 ng-show="actionList.length">
+              <thead>
+                <tr>
+                  @*
+                  <th class='row-selector'><!-- dupl code! -->
+                    <label>
+                      <input type='checkbox' ng-change='toggleAllChecked()'
+                      ng-model='allSelected'>
+                    </label>
+                  </th> *@
+                  <th>Activity</th>
+                  <th>Author</th>
+                  <th>Date</th>
+                  <th>Text</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ng-repeat='action in actionList'>
+                  @*
+                  <td class='row-selector'><!-- dupl code! -->
+                    <label>
+                      <input type='checkbox' ng-model='action.selected'
+                          ng-click='onRowCheckedChange()'>
+                    </label>
+                  </td> *@
+                  <td class='action-what'>
+                    <div>
+                      <a class='action-description' href='{{action.url}}'>{{action.description}}</a>
+
+                      <a class='inline-action new-flags-link' ng-show='action.showNewFlagsLink'>
+                        {{action.numPendingFlags}} flags
+                      </a>
+                      <a class='inline-action old-flags-link' ng-show='action.showOldFlagsLink'>
+                        {{action.numHandledFlags}} old flags
+                      </a>
+                      @* Info to construct this HTML is currently not saved in DW1_POSTS:
+                      <div class='inline-flags' ng-show='action.showFlagsLink'>
+                        <a class='inline-action flags-link'>
+                          Flagged: {{action.prettyFlags}}
+                        </a>
+                        <span class='first-flagger'>
+                          First flagged by <a href="{{action.firstFlaggerUrl}}">{{action.firstFlaggerName}}</a><br>
+                          from IP <a href="{{action.firstFlaggerIpUrl}}">{{action.firstFlaggerIp}}</a>
+                        </span>
+                      </div> *@
+
+                      <a class='inline-action approve-action' ng-click='approve(action)' ng-show='action.approveBtnText'>{{action.approveBtnText}}</a>
+                      <a class='inline-action reject-action' ng-click='reject(action)' ng-show='action.showRejectBtn'>Reject</a>
+
+                      <a class='inline-action delete-action' ng-click='delete(action)' ng-show='action.showDeleteBtn'>Delete</a>
+
+                      <a class='inline-action suggestions-link' ng-show='action.showViewSuggsLink'>{{action.numPendingEditSuggestions}} improvement suggestions</a>
+
+                      <span class='inline-message'>{{action.inlineMessage}}</span>
+                    </div>
+                    <span class='action-path'>{{action.pagePath}}</span>
+                  </td>
+                  <td><a href='#!/user/{{action.authorId}}'>{{action.authorDisplayName}}</a></td>
+                  <td>{{action.cdati.replace('T', ' ')}}</td>
+                  <td class='post-text'
+                      @* ng-if="!smallScreen" TODO when AngularJS 1.2 released *@
+                      ng-bind-html="postTextOrDiff(action)"></td>
+                </tr>
+                @* Place the text on a separate row, if narrow screen.
+                  TODO when AngularJS 1.2 released, use ng-repeat-start/end
+                <tr class='post-text'
+                    ng-if="smallScreen"
+                    ng-bind-html="postTextOrDiff(action)">
+                 </tr>
+                 *@
+              </tbody>
+            </table>
+          </div>
+
+          <div ng-controller='PathsCtrl' class='tab-pane active' id='pages-tab'>
+
+            @* This help text isn't needed any more, after I added /-/create-site/choose-type
+            which creates e.g. a forum automatically.
+            <div id="help-welcome-create-blog" class="help-tips"
+                ng-show="!pageStats.blogOrForumExists">
+              <p>Welcome to your new website!</p>
+              <p>Click <b>Create...</b> and then <b>New Blog</b> or <b>New Forum</b><br>
+                to create a new blog or forum.</p>
+            </div>
+
+            <div id="help-create-blog-article" class="help-tips"
+              ng-show="pageStats.blogExists && !pageStats.blogPostExists">
+              <p>To create a blog post:</p>
+              <ol>
+                <li>Go to the blog main page — click on it, below.
+                </li>
+                <li>On the blog main page, click <b>Write new blog post</b>,
+                  at the very top of the page.
+                </li>
+              </ol>
+            </div>
+            *@
+
+            <div class='selection-related-btns hide-for-embedded-comments'>
+
+              <div id='create-page-dropdown' class='dropdown' ng-show='nothingSelected'>
+                <a class='btn btn-default dropdown-toggle' data-toggle='dropdown' href='#'>Create ...</a>
+                <ul class='dropdown-menu' role='menu' data-todo-aria-labelledby='drop5'>
+                  <li><a ng-click='createDraftPage("InfoPage")' id='create-info-page' tabindex='-1' href='#'>New Info Page</a></li>
+                  <li class='divider'></li>
+                  <li><a ng-click='createBlog()' id='create-blog' tabindex='-1' href='#'>New Blog</a></li>
+                  <li><a ng-click='createForum()' id='create-forum' tabindex='-1' href='#'>New Forum</a></li>
+                  <li><a tabindex='-1' disabled>New Wiki</a></li>
+                  <li class='divider'></li>
+                  <li><span>Advanced users:</span></li>
+                  <li><a tabindex='-1' disabled>Script <kbd>/themes/local/site.js</kbd></a></li>
+                  <li><a id='create-local-theme-style' tabindex='-1' href='#'
+                         ng-click='createLocalThemeStyle()'
+                         ng-disabled='localThemeStyleExists'>Style Sheet <kbd>/themes/local/theme.css</kbd></a></li>
+                     <li><a tabindex='-1' disabled>Template: <kbd>/themes/local/template.tpl</kbd></a></li>
+                </ul>
+              </div>
+
+              <!--
+              Not needed? Because the default homepage title says "click to edit".
+              <a id='view-page-btn' class='btn btn-default' ng-click='viewSelectedPage()' ng-show='onlySelectedOnePage'>View / Edit</a>
+              -->
+
+              @* Currently broken somehow. Should probably me merged into the Change URL
+              button anyway, partly because my mother didn't understand what "Move" meant.
+              She thought it meant "Move on to the next page". (And perhaps "Change URL"
+              should only be shown to "advanced" users?)
+              <div id='move-page-btn' class='dropdown'
+                  ng-show='onlySelectedOnePage'>
+                <a class='btn btn-default dropdown-toggle' id='move-page-dropdown-btn' data-toggle='dropdown' href='#' role='button'
+                      ng-click='movePageForm.newFolder = selectedPage().folderPath()'>Move</a>
+                  <form name='movePageForm' class='dropdown-menu' role='menu' aria-labelledby='move-page-dropdown-btn'
+                      ng-submit='moveSelectedPageTo(movePageForm.newFolder)'>
+                  <label>Move page to folder:
+                    <input name='newFolderInput' type='text' required
+                        ng-model='movePageForm.newFolder'
+                        ng-pattern='patterns.folderPath'>
+                  </label>
+                  <p ng-show='movePageForm.newFolderInput.$error.pattern'>
+                    Enter a value like: <i>/some/folder/</i>
+                  </p>
+                  <input type='submit' class='btn btn-default' value='Move page'
+                      ng-disabled='movePageForm.$invalid'>
+                </form>
+              </div>
+              *@
+
+              <div id='rename-page-btn' class='dropdown'
+                  ng-show='onlySelectedOnePage'>
+                <a class='btn btn-default dropdown-toggle' id='rename-page-dropdown-btn' data-toggle='dropdown' href='#' role='button'
+                      ng-click='renamePageForm.newSlug = selectedPage().slug()'>Change URL</a>
+                  <form name='renamePageForm' class='dropdown-menu' role='menu' aria-labelledby='rename-page-dropdown-btn'
+                    ng-submit='renameSelectedPageTo({ newSlug: renamePageForm.newSlug, newTitle: renamePageForm.newTitle })'>
+
+                  <!--
+                  <label>Change page title to:
+                    <input name='newTitleInput' type='text' xrequired
+                        ng-model='renamePageForm.newTitle'
+                        ng-pattern='patterns.pageTitle'>
+                  </label>
+                  <p ng-show='renamePageForm.newTitleInput.$error.pattern'>
+                    Enter something like: <i>Some Page Title</i>
+                  </p>
+                  -->
+
+                  <label>Change page slug to:
+                    <input name='newSlugInput' type='text' xrequired
+                        ng-model='renamePageForm.newSlug'
+                        ng-pattern='patterns.pageSlug'>
+                  </label>
+                  <p ng-show='renamePageForm.newSlugInput.$error.pattern'>
+                    Enter something like: <i>some-page-slug</i>
+                  </p>
+
+                  <input type='submit' class='btn btn-default' value='Rename'
+                      ng-disabled='renamePageForm.$invalid'>
+                </form>
+              </div>
+
+              <a id='publish-page-btn' class='btn btn-default'
+                  ng-click="changePageStatus('Published')"
+                  ng-show='onlySelectedDrafts'>
+                  Publish
+              </a>
+
+              <a id='unpublish-page-btn' class='btn btn-default'
+                  ng-click="changePageStatus('Draft')"
+                  ng-show='onlySelectedPubldPages'>
+                Unpublish
+              </a>
+
+              <!-- Currently forum groups cannot be wrapped, see class PageRole in PageMeta.scala -->
+              <a id='create-wrapping-forum-group-btn' class='btn btn-default'
+                  ng-click='createWrappingForumGroup()'
+                  ng-show='onlySelectedOneForum'>
+                  Create forum group that wraps selected forum
+              </a>
+
+              <a id='create-subforum-btn' class='btn btn-default'
+                  ng-click='createSubforum()'
+                  ng-show='onlySelectedOneForumGroup'>
+                  Create subforum
+              </a>
+
+              <div id='use-as-homepage-btn' class='dropdown'
+                  ng-show='onlySelectedOnePage && !homepageSelected'>
+                <a class='btn btn-default dropdown-toggle' id='use-as-homepage-dropdown-btn' data-toggle='dropdown' href='#' role='button'>Use as Homepage</a>
+                  <form name='useAsHomepageForm' class='dropdown-menu' role='menu' aria-labelledby='use-as-homepage-dropdown-btn'
+                      ng-submit='changeHomepageToSelectedPage()'>
+                    <p>Change homepage to <em>{{ anySelectedPageTitle() }}</em>?</p>
+                    <!-- COULD clarify:
+                    <p>The current homepage will be available here: (URL to previous page path to current homepage)</p>
+                    -->
+                    <input type='submit' class='btn btn-default' value='Yes, do it'>
+                    <!--
+                    Currently this actually *submits* the form, why??
+                    <button class='btn'
+                      ng-click='closeDropdown()'>Cancel</button>
+                    -->
+                </form>
+              </div>
+
+            </div>
+
+            <div id='page-tree-container'>
+              <!-- This might be rather confusing, since currnetly
+                  full page paths are shown nowhere.
+              <label>Filter paths: <input ng-model="pathFilterText"/></label>
+                -->
+
+              <table id="page-table" class="table">
+                <thead>
+                  <tr>
+                    <th class='row-selector hide-for-embedded-comments'><!-- dupl code! -->
+                      <!-- Why would one need to select all pages?
+                      <label>
+                        <input type='checkbox'
+                            xxng-change='toggleAllChecked()'
+                            xxng-model='allSelected'>
+                      </label> -->
+                    </th>
+                    <th class="hide-for-embedded-comments">Page Title</th>
+                    @* <th><div ui-jq="tooltip" title="A menu lists links to pages on the website.">Menu</div></th>  *@
+                    <th>URL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="{{page.cssForRole()}} page-depth-{{ countParentsOf(page) }}"
+                      ng-repeat="page in listItems">
+                    <td class='row-selector hide-for-embedded-comments'><!-- dupl code! -->
+                      <label>
+                        <input type='checkbox'
+                            ng-model='page.included'
+                            xxng-click='onRowCheckedChange()'
+                            ng-click='updateSelections()'>
+                      </label>
+                    </td>
+                    <td class='page-title'>
+                      <a href="{{ page.url() }}" ng-bind-html="page.prettyTitle()"></a>
+                      <span class="page-status-role"
+                        ng-show="page.prettyStatusRole()">{{ page.prettyStatusRole() }}</span>
+                      <span class="page-notfs">{{ page.stringifyOtherMarks() }}</span>
+                    </td>
+                    @* <td><div data-original-title="{{ page.prettyMenuTooltip() }}" ui-jq="tooltip">{{ page.prettyMenu() }}</div></td> *@
+                    <td class="hide-for-embedded-comments">{{ page.prettyUrl() }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div ng-controller='UserListCtrl' class='tab-pane' id='users-tab'>
+            <!--
+            <div>
+              <a class='btn btn-default'>Contact</a>
+              <a class='btn btn-default'>Subscribe</a>
+              <a class='btn btn-default'>Rename</a>
+              <a class='btn btn-default'>Block</a>
+              <a class='btn btn-default'>Sort</a>
+            </div>
+            -->
+
+            <table class='table'>
+              <thead>
+                <tr>
+                  <th class='row-selector'>
+                    <label>
+                      <input type='checkbox' ng-change='toggleAllChecked()'
+                      ng-model='allSelected'>
+                    </label>
+                  </th>
+
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Location</th>
+                  <!-- Takes too long to lookup. Move to separate user tab.
+                  <th>IPs</th>
+                  <th>First Login</th>
+                  <th>Last Login</th>
+                  -->
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr ng-repeat='user in userList'>
+                  <td class='row-selector'>
+                    <label>
+                      <input type='checkbox' ng-model='user.selected'
+                          ng-click='onRowCheckedChange()'>
+                    </label>
+                  </td>
+
+                  <td><a href='#'>{{user.displayName}}</a></td>
+                  <td><a>{{user.email || ''}}</a></td>
+                  <td><a>{{user.country || user.location}}</a></td>
+                  <!--
+                  <td><a>?.?.?.?</a></td>
+                  <td><a>{{user.ctime.replace('T', ' ')}}</a></td>
+                  <td><a>{{user.lastLoginTime.replace('T', ' ')}}</a></td>
+                  -->
+                </tr>
+              </tbody>
+            </table>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
+<!-- vim: fdm=marker et ts=2 sw=2 fo=tcqwn list tw=0
+-->

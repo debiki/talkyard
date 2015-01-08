@@ -1,0 +1,238 @@
+/* vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+*/
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Bitstream Vera Sans", sans-serif;
+    line-height: 125%;
+}
+
+header {
+  margin: 0;
+  margin-bottom: 48px;
+  padding: 0;
+}
+
+h1, h2, h3, h4, h5 {
+    -font-family: "Bitstream Vera Serif", "New York", Palatino, serif;
+    -font-weight: normal;
+    font: normal normal normal 1.8em/normal Georgia, Times, serif;
+    line-height: 1em;
+    margin-top: 30px;
+    margin-bottom: 10px
+}
+
+h1 > a, /* FF 3.6 workaround, it changes <a><h1></a> to <h1><a></h1> */
+h1 {
+  /* !important on the next line is a FF3.6 workaround. */
+  font: normal normal normal 36px/normal Georgia, Times, serif !important;
+  -font: normal normal normal 36px Verdana, Arial, Helvetica, sans-serif;
+  color: #555;
+  padding-top: 15px;
+}
+
+section > :not(.dw-debate) p {
+  font-size: 105%;
+  line-height: 170%;
+}
+
+ul {
+  -margin: 8px 0;
+  list-style-type:disc;
+}
+
+ol {
+  list-style-type: decimal;
+}
+
+li {
+  margin-left: 40px;
+  margin-top: 7px;
+}
+
+a {
+    text-decoration: none;
+    /*letter-spacing: 1px*/
+}
+
+a:hover, a:active {
+    text-decoration:underline;
+}
+
+.dw-pri .ui-widget-content a, /* undo jQuery UI settings */
+a:link {
+    color: #00B;
+}
+
+a:visited {
+    color: #551A8B;
+}
+
+.question {
+    color: #7A5;
+    cursor: help;
+}
+
+.answer {
+    padding: 1em;
+    margin: 0;
+    width: 600px;
+    background: #E7FFCC; /*#D2FBFF; or #FFFFCC*/
+}
+
+/* Fint CSS:
+ http://rc.quest.com/man.php?id=sudo%281%29  */
+
+#site-nav {
+  text-align: center; /* doesn't work in FF3.6, kind of floats-left instead */
+  padding: 7px 0;
+  letter-spacing: 1px;
+  font-size: 12px;
+  color: #696969; /* for the |s */
+}
+
+#site-nav a {
+  color: #696969;
+}
+
+#alfa-info {
+  font-style: italic;
+  font-size: 90%;
+  text-align: center;
+  left: 0;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+  margin-top: 1ex;
+  padding: 7px 0;
+}
+
+#header {
+  clear: left;
+  -font-size: 20px;
+}
+
+#header h1 {
+  -font: normal normal normal 1.8em/normal Georgia, Times, serif;
+  color: #bbc;
+}
+
+#header #slogan {
+    font-style: italic;
+    color: gray;
+}
+
+#sidebar {
+  position: absolute;
+  width: 18ex;
+  margin: 1em 0; /* same as #content */
+  padding-left: 1.5ex;
+  font-family: Arial, sans-serif;
+}
+
+#sidebar h1 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  padding-top: 0;
+}
+
+#sidebar a {
+  color: #4C5B6B !important;
+}
+
+.container {
+  width: 940px;
+  margin: 0 auto;
+}
+
+/* === Login === */
+
+#dw-u-lgi-lgo {
+  margin-right: 4.5em;
+}
+
+#dw-a-logout {
+  margin-left: 1em; /* push login info away */
+}
+
+.dw-u-name {
+  color: #396D99;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+#dw-a-login {
+  color: #396D99 !important;
+  /*color: #d44 !important;*/
+  font-weight: bold;
+}
+
+ul,
+ol,
+li {
+  list-style-type: none;
+}
+
+.dw-ui-list-item-marks ul li,
+ul.dw-ui-list-item-marks li {
+  list-style-type: disc;
+}
+
+.dw-ui-list-item-marks ol li,
+ol.dw-ui-list-item-marks li {
+  list-style-type: decimal;
+}
+
+#sidebar li {
+  margin: 0.7em 0;
+  letter-spacing:2px;
+}
+
+#sidebar ul  ul {
+  padding-left: 20px;
+}
+
+#sidebar ul  ul li {
+  font-size: 80%;
+}
+
+#sidebar a {
+  color: #555 !important;
+  line-height: 133%; /* for menu items with <br>s */
+}
+
+#sidebar span {
+  font-weight: bold;
+  color: #55a;
+}
+
+#content {
+  min-height: 70ex;
+  padding-left: 2em;
+}
+
+/* Draw a line to the left of the template source code. */
+#post-3 > .dw-p-bd > .dw-p-bd-blk > pre {
+  border-left: 2px solid #DDD;
+  padding-left: 2px;
+}
+
+footer, .footer {
+  text-align: center;
+  margin-top: 4em;
+  font-size: 12px;
+  color: #777;
+  bottom:0;
+  position: relative;
+  clear: both;
+}
+
+.footer a, .footer a:visited {
+  color: #999;
+  text-decoration: underline;
+}
+
+p small {
+  font-size: 10px;
+  color: #999;
+}

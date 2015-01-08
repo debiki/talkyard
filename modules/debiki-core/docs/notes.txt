@@ -1,0 +1,690 @@
+vim: fdm=marker et sw=2 ts=2
+
+Truly anonymous:
+Hosting:  Pay anonymously via Bitcoin.
+Surfing:  Use e.g. the Tor Network or mullvad.net, or combine them both.
+
+{{{1 Test html - IE 6, 7, 8, and dw- classes/ids, and XSS --- What? Now only >= IE8 supported!
+
+(this page in my pgsql vm:  http://localhost:8080/test/-1g3u6nd5j3  )
+
+
+IE 6 7 8 test
+===========
+
+div
+------
+
+<div class='debiki-show-if-lte-ie7'>div .debiki-show-if-lte-ie7</div>
+<div class='debiki-show-if-lte-ie8'>div .debiki-show-if-lte-ie8</div>
+<div class='debiki-show-unless-lte-ie7'>div .debiki-show-unless-lte-ie7</div>
+<div class='debiki-show-unless-lte-ie8'>div .debiki-show-unless-lte-ie8</div>
+
+span
+------
+
+<span class='debiki-show-if-lte-ie7'>span .debiki-show-if-lte-ie7</span>
+<span class='debiki-show-if-lte-ie8'>span .debiki-show-if-lte-ie8</span>
+<span class='debiki-show-unless-lte-ie7'>span .debiki-show-unless-lte-ie7</span>
+<span class='debiki-show-unless-lte-ie8'>span .debiki-show-unless-lte-ie8</span>
+
+
+dw- classes and ids test
+===========
+<div class='dw-ar-t'>div class='dw-ar-t'</div>
+<div id='dw-t-1'>div id='dw-t-1'</div>
+<div moo='dw-muu'>div moo='dw-muu'</div>
+<div class='-dw-ar-t'>div class='-dw-ar-t'</div>
+<div id='-dw-t-1'>div id='-dw-t-1'</div>
+<div moo='-dw-muu'>div moo='-dw-muu'</div>
+
+
+XSS test
+===========
+
+<a href="javascript:alert('XSS');">a href="javascript:alert('XSS');"</a>
+<a href="weirdscheme:/huu/buu">a href="weirdscheme:/huu/buu"</a>
+<a href="https://is-okay">a href="https://is-okay"</a>
+<a href="http://is-okay">a href="http://is-okay"</a>
+<a href="http://server/path/page?query#hash">a href="http://server/path/page?query#hash"</a>
+<a href="https://server/path/page?query#hash">a href="https://server/path/page?query#hash"</a>
+<a href="rel-links-are-okay">a href="rel-links-are-okay"</a>
+<a href="/server-not-needed">a href="/server-not-needed"</a>
+<a href="server/scheme-not-needed">a href="server/scheme-not-needed"</a>
+<a href="?-cryptic-questions-fine">a href="?-cryptic-questions-fine"</a>
+<a href="#-hash-is-fancy">a href="#-hash-is-fancy"</a>
+
+See `http://ha.ckers.org/xss.html`.
+<SCRIPT SRC=http://ha.ckers.org/xss.js></SCRIPT>
+<IMG SRC="javascript:alert('XSS');">
+<img src=&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;&#97;&#108;&#101;&#114;&#116;&#40;&#39;&#88;&#83;&#83;&#39;&#41;>
+<img src="jav	ascript:alert('XSS');">
+
+';alert(String.fromCharCode(88,83,83))//\';alert(String.fromCharCode(88,83,83))//";alert(String.fromCharCode(88,83,83))//\";alert(String.fromCharCode(88,83,83))//--></SCRIPT>">'><SCRIPT>alert(String.fromCharCode(88,83,83))</SCRIPT>
+
+}}}1
+{{{ debiki.js performance improvements (done, 2011-10-01)
+
+(Profiling was done on my 6 core AMD, 2.8 GHz.)
+
+---- $initPost:
+
+223ms jquery-ui-1.8.16.custom.min.js:593 f.fn.extend.hide - move to CSS - DONE
+78ms debiki.js:2615 $initPostSvg — IMPROVED: Done later in $initPostStep2.
+72ms debiki.js:869 $splitBodyPlaceInlines - FIXED now only done if needed
+14ms debiki.js:821 $placeInlineMarks - FIXED now only done if needed
+64ms debiki.js:1500 getUserId - FIXED: cached
+(the next 4 are fairly fast)
+19ms jquery-1.6.4.js:5207 jQuery.fn.extend.find
+16ms debiki.js:749 timeAgoAbbr
+11ms debiki.js:88 jQuery.fn.dwAuthorId
+10ms jquery-1.6.4.js:5657 jQuery.fn.extend.before
+
+
+214ms debiki.js:2659 $initPostSvg
+ --> 204ms debiki.js:2635 $createSvgRoot
+          — svgweb som parsar svg, det tar tid
+
+16ms debiki.js:363 resizeRootThread
+
+
+Could do later:
+================
+
+---- $initPostsThread:
+
+489ms debiki.js:399 $makePostResizable  - FIXED: skipped completely
+119ms debiki.js:379 $makeEastResizable  - FIXED: done later
+
+
+---- At the end of debiki.js:
+
+18ms debiki.js:1454 fireLogin ?
+
+117ms debiki.js:2863 drawEverything  ?
+
+53ms debiki.js:1571 initLoginResultForms - FIXED: now done lazily
+35ms debiki.js:1883 initFlagForm - FIXED: now done lazily
+18ms debiki.js:1671 initLoginOpenId - FIXED
+8ms debiki.js:1592 initLoginSimple - FIXED
+7ms debiki.js:1526 initLogout - FIXED
+6ms debiki.js:2514 initDeleteForm - FIXED
+
+117ms debiki-dragscrollable.js:51 $.fn.debiki_dragscrollable
+                                              (Sizzle takes long)
+  — create a config function, Debiki.makeScrollable(selectors),
+    and call debiki_dragscrollable later.  DONE.
+
+Other
+===============
+
+Cache user id?  - DONE.  80 ms --> 2 ms on ~= page load.
+64ms debiki.js:1500 getUserId
+64ms debiki.js:1471 parseSidCookie
+60ms jquery.cookie.js:56 jQuery.cookie
+
+{{{ Fixed: SVG is drawn twice, when opening page
+The second time was:
+373ms debiki.js:283 pollZoomFireEvent
+373ms debiki.js:2908 drawEverything
+old: — Actually, I could remove my manual invokation of SVG drawing,
+    and instead rely on pollZoomFireEvent ?
+ - no, I think the fix was to register the zoom listener later,
+ when the elems had their proper sizes.
+}}}
+
+}}}
+{{{ Login
+
+COULD "Use the max_auth_age parameter in the PAPE extension to ensure that the 
+login session of the user at Google is recent"
+See: http://code.google.com/intl/es-ES/apis/accounts/docs/OpenID.html
+
+}}}
+{{{ API
+
+Probably good example:
+  http://code.google.com/apis/picasaweb/overview.html
+
+}}}
+{{{ Time ago & i18n
+http://timeago.yarp.com/
+A jQuery plugin that makes it easy to support automatically updating fuzzy timestamps (e.g. "4 minutes ago" or "about 1 day ago").
+
+txt plugin:
+http://plugins.jquery.com/node/6629/release
+Args are named, so you can flip them: "I can {0} if i {1}" --> "If I {1}, I can {0}" works ok. Good, for right to left languages.
+
+I think i18n might not work very well: placeholder is %s,
+but right to left languages require that the order in which 2 placeholders occur be flipped, which cannot be done ulness they're named (%s is unnamed).
+Example of a named placeholder: {a}. In text: "Hello {name} you should eat {food}".
+http://recursive-design.com/svn/misc/jquery/i18n/jquery.i18n.js
+
+}}}
+{{{ IDs
+
+See Wave:
+http://www.waveprotocol.org/protocol/design-proposals/authentication
+http://wave-protocol.googlecode.com/hg/spec/waveid/waveidspec.html
+
+Imgur's API is excellent, says Jeff Atwood @ Stackoverflow.
+http://imgur.com/blog/2010/08/17/the-most-requested-feature-of-all-time-has-arrived/
+
+}}}
+{{{ Searching comments
+
+Unicode code points for underline, kbd, em, etc:
+Miscellaneous Technical
+http://www.unicode.org/charts/PDF/U2300.pdf
+
+http://www.unicode.org/charts/PDF/U2000.pdf
+(line sep, par sep)
+(black left/rightwards bullet -- bold?)
+
+http://www.unicode.org/charts/PDF/U25A0.pdf
+(geometrical shapes)
+
+}}}
+{{{ Inline comments, planning
+
+Post entries, add:
+ where:
+   before: "Text to match in previous paragraph"
+   after: "Text to match in the subsequent paragraph"
+   start: "The first 32 chars of the marked text"
+   end: "The first 32 chars just after the text"
+ but initially, only this:
+ where: "The first 32 chars of the marked text"
+
+Before converting from markdown to html:
+ Find match indexes,
+ insert: <a class='dw-ic' href='#guid-of-comment'>...</a>
+ where the mark starts and ends. Or simply <a .../>.
+ (dw-ic means "inline comment start/end")
+ 
+ Details:
+   For each reply, match its `where' against the post text.
+   Remember before/after/start/end indexes,
+     store in a map: index --> type of match & the child post id
+   Sort the map by index, descending sort order.
+   For each map entry, insert
+    <a class='dw-ic dw-ic-start/end/before/after' href='#post-id' />
+
+Add the inline comments to the .dw-res list as usual.
+
+jQuery-loop through all <a class='dw-ic'>, look up the matching dw-p by id
+and prepend it to the <a> or the a's paren <p>, and change from <li> to <div>.
+
+Then lots of CSS tweaks to make everything work OK?
+ - the inline post should be:
+      float:right, clear:right
+
+}}}
+{{{ Diff-implementation !?
+
+Skriv X. framför varje markdown-stycke.
+Skriv class=X i genererad HTML, och spara markup i HTML5-data-attr eller js-variabel.
+Vid ändring, ladda markup, och ersätt från X till X+1 i markdown-källkoden.
+
+Hovra över ändrings-författaren --> en HTML-diff (eller plain-text-diff) visas,
+samt "Gillar/inte"-knappar.
+
+Fråga kollegor! Användar-tester!
+-- borde jag ha en bärbar för att göra dessa tester?
+
+Ladda ner DaisyDiff, testa, kolla API, kolla CSS-"api".
+
+}}}
+{{{ Misc refactorings, CSS renames
+
+CSS: Prefix IDs with '_' not '-'   ... noo...
+  instead, unauthenticated user ids:  .dw-u-38525-  (end with '-')
+dw-post-<id> --> dw-p_<id>
+dw-whatever_sno-X --> dw-whatever-sno_X
+or simply... leave as is but only change _sno-X to -sno-X.
+
+dw-svg-fake-hcurve-start --> dw-png-arw-hz-start-branch/-solo/-end
+dw-svg-fake-varrow       --> dw-png-arw-vt
+
+
+dw-ed -–> dw-e
+dw-a-edit-new --> dw-a-e-new
+("e" then means "edit", everywhere)
+
+v0 folders for CSS and JavaScript
+
+dw-fi-reply-author --> ...-by
+
+DebikiViewDebate_v0 --> DebikiViewTalk/Page/""_v0  ??
+ or: TalkView/Edit/Reply, and UserView/Edit/History, and ...
+ or: DebateView/Edit/Reply, and UserView/Edit/History, and ...
+
+Rename LayoutManager to DebikiHtml.
+
+Change from:   die('[debiki_error_4krERS]');
+to:            die('DwE_4krERS');
+everywhere
+  (because it's shorter)
+
+
+}}}
+
+{{{ Rename CSS classes:
+
+Done (= d)
+|
+| From              To                          Means
+| debiki            dw-debiki
+|
+v dw-depth-0        dw-d_0
+
+d dw-thread         ''
+d dw-thread-<id>    dw-t-<id>
+d dw-cmt            dw-t                        thread
+d dw-cmt-x          dw-z                        fold
+d dw-collapsed      dw-zd                       folded
+d dw-collapsed-fx   dw-zd-fx                    folded
+ 
+x dw-cropped-e      dw-x-e                      cut east
+x dw-cropped-s      dw-x-s                      cut south
+  
+d dw-cmts           dw-res                      replies
+ 
+d dw-cmt-wrap       dw-p                        post
+d dw-cmt-hdr        dw-p-hdr                    post header
+d dw-cmt-bdy        dw-p-bdy                    post body
+d dw-cmt-x          dw-p-x
+
+  dw-cmt-by         dw-p-hdr > dw-by            author
+  dw-cmt-at         dw-p-hdr > dw-date          creation date
+
+  dw-rats           dw-p-rats                   ratings
+  dw-rat            dw-p-rats > dw-rat
+  dw-you-rated      dw-p-rats > dw-rat.dw-mine  
+  dw-more-rat-tags  dw-rat-more
+ 
+  dw-cmt-hdr-ed     dw-res-ed                     edit
+  dw-cmt-ed-by      dw-res-ed > dw-by
+  dw-cmt-at         dw-res-ed > dw-date           
+ 
+d dw-react          dw-as                       actions
+d dw-act            dw-a                        action
+d dw-act-reply      dw-a-reply                  new reply
+d dw-act-rate       dw-a-rate                   rate reply
+d dw-act-edit       dw-a-edit                   list edit suggestions
+d dw-a-nes          dw-a-edit-new               new edit suggestion
+  -                 dw-a-edit-vote              vote on edit suggestion
+
+  {{{ -n-  and  -v-  (didn't do it this way)
+  dw-act-reply      dw-a-n-re                   new reply
+  dw-a-nes          dw-a-n-es                   new edit suggestion
+  dw-act-rate       dw-a-v-re                   vote on reply
+  -                 dw-a-v-es                   vote on edit suggestion
+  dw-act-edit       dw-a-l-es                   list edit suggestions
+ }}}
+ 
+d dw-cancel         dw-fi-cancel
+d dw-submit         dw-fi-submit
+ 
+  dw-cmt-re-cnt     ''
+  dw-dragscrollable dw-scroll
+
+  dw-edit-??        ??  (xml will probably be rewritten, so ignore)
+
+d dw-font-from-ui-widget -> dw-ui-widget-font
+d dw-linkify-ui-state-default -> dw-ui-state-default-linkified
+
+d dw-post-*         post-* (e.g. post ids)  -- shown in URL,
+                          therefore "post-" not "dw-p-", "post" is human friendly
+d dw-post-new       dw-m-t-new  (mark-thread-new)
+d dw-post-edited    dw-m-p-edited
+
+  dw-show-*         dw-fs-ed/rat-show-*
+
+Skip:
+  dw-cmt-by         dw-res-by                     author
+  dw-cmt-at         dw-res-date
+  dw-date           dw-res-date
+ 
+  dw-cmt-ed-by      dw-res-ed-by
+  dw-cmt-at         dw-res-ed-date
+  dw-date           dw-res-ed-date
+
+--------
+     {{{ Initially
+     17 dw-act
+      6 dw-action-menu
+      2 dw-cmt-at
+      3 dw-cmt-by
+      2 dw-cmt-ed-by
+      1 dw-cmt-re-cnt
+      1 dw-collapsed
+      2 dw-collapsed-fx
+      1 dw-color-brighter-from-ui-state-default
+      1 dw-color-brightest-from-ui-state-default
+      1 dw-color-bright-from-ui-state-default
+      3 dw-color-from-ui-state-default
+      1 dw-cropped-e
+      1 dw-cropped-s
+      6 dw-date
+      9 dw-debate
+      2 dw-debate-info
+      1 dw-depth-
+      2 dw-dragscrollable
+      3 dw-edit-dates
+      3 dw-edit-liking-stats
+      5 dw-edits
+      1 dw-edits-applied
+      2 dw-edits-applied-form
+      2 dw-edits-lbl
+      2 dw-edits-others-form
+      2 dw-edit-vote-btns
+      1 dw-fi-
+      9 dw-fi-action
+      7 dw-fi-by
+      1 dw-fi-diss-edit-
+      2 dw-fi-edit-
+      4 dw-fi-edit-post
+      2 dw-fi-edit-text
+      1 dw-fi-like-edit-
+      6 dw-fi-post
+      2 dw-fi-rat-tag
+      2 dw-fi-reply-author
+      4 dw-fi-reply-text
+      2 dw-fi-vote-edit-
+      3 dw-font-from-ui-widget
+     13 dw-fs
+     14 dw-fs-ed
+      3 dw-fs-rat
+      3 dw-fs-re
+      6 dw-hidden-templates
+      3 dw-highlight
+      3 dw-hor
+      1 dw-js-variables
+      4 dw-last-changed
+      2 dw-linkify-ui-state-default
+      3 dw-mine
+      6 dw-more-rat-tags
+      3 dw-name-or-alias
+      2 dw-new-edit-btn
+      2 dw-new-edit-form
+      2 dw-owner
+      1 dw-owner-info
+      2 dw-parent-ref
+      3 dw-post
+      6 dw-post-
+      3 dw-post-edited
+      7 dw-post-info
+      2 dw-post-liking
+      3 dw-post-new
+      6 dw-rat
+      2 dw-rat-count
+      8 dw-rat-form
+      9 dw-rats
+      2 dw-rats-non-weighted
+      5 dw-rat-tag
+      3 dw-rat-tag-frac
+      2 dw-rat-tag-frac-min
+      6 dw-rat-tag-set
+      3 dw-rat-tag-sum
+      2 dw-rat-valsum-max
+      2 dw-react
+      4 dw-reply-form
+      1 dw-resize-accordion
+      1 dw-show-edit-liking-stats
+      2 dw-show-edits-applied-btn
+      2 dw-show-edits-pending-btn
+      5 dw-show-more-rat-tags
+      8 dw-submit-set
+      2 dw-text
+      3 dw-user-contrib-license
+      6 dw-x-e
+      5 dw-x-mark
+     12 dw-x-s
+      2 dw-you-rated
+      1 dw-your-edit
+}}}
+
+{{{ After 1st checkin
+     19 dw-act
+      4 dw-act-edit
+      6 dw-action-menu
+      2 dw-act-rate
+      5 dw-act-reply
+      6 dw-date
+      9 dw-debate
+      2 dw-debate-info
+      1 dw-depth-
+     14 dw-depth-0
+     10 dw-depth-1
+      1 dw-depth-2
+      3 dw-dragscrollable
+      5 dw-dragscroll-wiewport
+      3 dw-edit-dates
+      3 dw-edit-liking-stats
+      5 dw-edits
+      1 dw-edits-applied
+      2 dw-edits-lbl
+      1 dw-fi-
+      9 dw-fi-action
+      7 dw-fi-by
+      8 dw-fi-cancel
+      1 dw-fi-diss-edit-
+      2 dw-fi-edit-
+      4 dw-fi-edit-post
+      2 dw-fi-edit-text
+      1 dw-fi-like-edit-
+      6 dw-fi-post
+      2 dw-fi-rat-tag
+      2 dw-fi-reply-author
+      4 dw-fi-reply-text
+      6 dw-fi-submit
+      2 dw-fi-vote-edit-
+     15 dw-fs
+     14 dw-fs-ed
+      3 dw-fs-rat
+      3 dw-fs-re
+      6 dw-hidden-templates
+      3 dw-highlight
+      3 dw-hor
+      1 dw-js-variables
+      4 dw-last-changed
+      3 dw-mine
+      6 dw-more-rat-tags
+      3 dw-name-or-alias
+      2 dw-owner
+      1 dw-owner-info
+     34 dw-p
+      2 dw-parent-ref
+      2 dw-p-at
+     12 dw-p-bdy
+      3 dw-p-by
+      2 dw-p-ed-by
+     11 dw-p-hdr
+      3 dw-p-hdr-ed
+      3 dw-post
+      7 dw-post-
+      3 dw-post-edited
+      7 dw-post-info
+      2 dw-post-liking
+      3 dw-post-new
+      1 dw-p-re-cnt
+      6 dw-rat
+      2 dw-rat-count
+      9 dw-rats
+      2 dw-rats-non-weighted
+      5 dw-rat-tag
+      3 dw-rat-tag-frac
+      2 dw-rat-tag-frac-min
+      6 dw-rat-tag-set
+      3 dw-rat-tag-sum
+      2 dw-rat-valsum-max
+      2 dw-react
+     12 dw-res
+      1 dw-resize-accordion
+      1 dw-show-edit-liking-stats
+      5 dw-show-more-rat-tags
+      8 dw-submit-set
+      2 dw-text
+      3 dw-user-contrib-license
+      2 dw-you-rated
+      1 dw-your-edit
+
+}}}
+
+todo: Check fold function, broken?
+Wip:
+Done:
+      1 dw-collapsed      --> dw-zd
+      2 dw-collapsed-fx   --> dw-zd-fx
+
+      2 dw-edit-vote-btns
+                          --> dw-f-ed-btns-vote
+      2 dw-new-edit-btn
+                          --> dw-f-ed-btn-new-edit
+      2 dw-show-edits-applied-btn
+                          --> dw-f-ed-btn-show-applied
+      2 dw-show-edits-pending-btn
+                          --> dw-f-ed-btn-show-pending
+      1 dw-show-edit-liking-stats
+                          --> dw-f-ed-btn-show-liking-stats
+
+
+      4 dw-reply-form     --> '' / dw-fs-re
+      8 dw-rat-form       --> '' / dw-fs-rat
+      2 dw-new-edit-form  --> dw-f-ed-new
+      2 dw-edits-applied-form
+                          --> dw-f-ed-applied
+      2 dw-edits-others-form
+                          --> dw-f-ed-others
+
+      6 dw-p-x            --> dw-z (fold, folded paper
+                                looks like z, from side)
+      3 dw-font-from-ui-widget
+                          --> dw-ui-widget-font
+      2 dw-linkify-ui-state-default
+                          --> dw-ui-state-default-linkified
+
+      1 dw-color-brighter-from-ui-state-default
+      1 dw-color-brightest-from-ui-state-default
+      1 dw-color-bright-from-ui-state-default
+      3 dw-color-from-ui-state-default
+                          --> dw-ui-state-default-color(-bright...)
+      ---
+
+      2 dw-thread         --> gone
+      2 dw-thread-<id>    --> dw-t-<id>
+     34 dw-cmt            -- -t
+
+      2 dw-rate           --> dw-act-rate
+      5 dw-reply
+      4 dw-edit
+
+      8 dw-cancel
+      6 dw-submit
+
+     10 dw-cmts           --> res
+     32 dw-cmt-wrap       --> -p-
+      6 dw-cmt-x
+     11 dw-cmt-bdy
+     11 dw-cmt-hdr
+      3 dw-cmt-hdr-ed
+
+
+Wip:
+
+
+-------
+
+
+TODO: Rename class dw-owner, split into:? dw-user dw-author dw-editor
+
+}}}
+
+
+{{{ Mini-comments:
+<div style="border-top-width: 1px; border-top-style: dotted; border-top-color: rgb(170, 170, 170); font-size: 13px; color: rgb(68, 68, 68); margin-left: 20px; ">
+<div style="border-bottom: 1px dotted #DDD"><i>Tony Hanks says:</i> Spelling error: not "irsn" bust "itsnris", should we perhaps fix that?</div>
+<div style="border-bottom: 1px dotted #DDD"><i>Misse Muuu Gris says:</i> Link to http://muumäq.org/ristn broken, should be: http://muu.com/mää/rad/rstir/basri.html</div>
+</div>
+
+}}}
+
+
+{{{ Coding style, commit messages
+
+From jQuery UI: http://wiki.jqueryui.com/w/page/12137724/Bug-Fixing-Guide
+"How to properly commit:
+Commits should be atomic. If three separate issues are being fixed (unless they are all fixed by one change) they need to be done as three separate commits.
+All whitespace changes should be done on their own commit. the commit message can say simply 'whitespace' Whitespace commits should not include code changes. Code change commits should not include whitespace changes."
+
+}}}
+http://valdebatt.debiki.com/test/
+  ab35fe1215c/högre-akassa.html
+
+
+A HTTP GET request from the Android 2.1 emulator: |
+ GET /debiki-gen-html/test.xhtml HTTP/1.1
+ Host: 10.0.2.2
+ Accept-Encoding: gzip
+ Accept-Language: en-US
+ Accept: application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5
+ User-Agent: Mozilla/5.0 (Linux; U; Android 2.1; en-us; sdk Build/ERD79) AppleWebKit/530.17 (KHTML, like Gecko) Version/4.0 Mobile Safari/530.17
+ Accept-Charset: utf-8, iso-8859-1, utf-16, *;q=0.7
+
+Time!
+Scala: http://github.com/jorgeortiz85/scala-time/tree/master/src/main/scala/org/scala_tools/time/
+JavaScript: http://code.google.com/p/datejs/
+microformats: http://microformats.org/wiki/datetime-design-pattern
+Det blir så här: <abbr class="foo" title="YYYY-MM-DDTHH:MM:SSZ">Date Time</abbr>
+
+
+Reddit URL for single thread:
+  http://www.reddit.com/r/politics/comments/cxofg/massive_censorship_of_digg_uncovered_is_reddit/c0w16s5
+
+
+*** Reputation systems ***
+
+http://en.wikipedia.org/wiki/Reputation_system
+
+
+*** API ***
+
+Jardiff is a tool to help visualise API differences between two different versions of a project.
+
+
+*** Security ***
+
+Web sites have various CSRF countermeasures available:
+Requiring authentication in GET and POST parameters, not only cookies;
+Checking the HTTP Referer header;
+Ensuring there's no crossdomain.xml file granting unintended access to Flash movies[14]
+Limiting the lifetime of authentication cookies
+When processing a POST, disregard URL parameters if you know they should come from a form
+Requiring a secret, user-specific token in all form submissions and side-effect URLs prevents CSRF; the attacker's site can't put the right token in its submissions.[1]
+
+Clickjacking: Use a new HTTP header, X-FRAME-OPTIONS. This header can have two values, DENY  and SAMEORIGIN, which will block any framing or framing by external sites, respectively.
+http://en.wikipedia.org/wiki/Clickjacking
+
+
+<span class="ui-icon ui-icon-pencil" style="border-style: initial; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: rgb(28, 148, 196); border-right-color: rgb(28, 148, 196); border-bottom-color: rgb(28, 148, 196); border-left-color: rgb(28, 148, 196); float: right; margin-left: 9px; clear: right; cursor: crosshair; z-index: 9999; position: relative; background-color: rgb(231, 231, 231); padding-top: 2px; padding-right: 2px; padding-bottom: 2px; padding-left: 2px; ">
+      </span>
+1. ratings, date
+2. Owner:  By orig-author, ..., and last-editor
+
+
+
+!! Polls? Som:
+  "Poll
+  Can you name all the uses of “_”? :"
+Men för genomskådning-av-demagogi?
+
+-- Long and good debat example:
+http://yro.slashdot.org/comments.pl?sid=10/07/06/1659255
+
+
+*** Misc ***
+
+Backtype: länka Reddit/HackerNews etc om de diskuterar mina artiklar
+http://www.backtype.com/plugins/connect
+

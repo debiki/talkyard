@@ -1,0 +1,17 @@
+@(emailAddress: String, siteAddress: String)
+
+<div>
+<p>Hello,</p>
+
+<p>
+You attempted to create a new account at <a href="http://@siteAddress">@siteAddress</a>,
+with email address <tt>@emailAddress</tt>, but you already have such an account.
+If you don't remember your password, you can
+<a href="http://@siteAddress@routes.ResetPasswordController.showResetPasswordPage">
+  reset it here.</a>
+</p>
+
+<p>Kind regards,<br>
+Debiki
+</p>
+</div>

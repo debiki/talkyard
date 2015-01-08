@@ -1,0 +1,43 @@
+@**
+ * Copyright (C) 2013-2014 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *@
+
+@(minMaxJs: String, minMaxCss: String)
+
+@asset(file: String) = @{
+  routes.Assets.at(path = "/public/res", file)
+}
+
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="@asset("fontello/css/fontello-embedded.css")"/>
+<link rel="stylesheet" href="@asset(s"combined-debiki.$minMaxCss")"/>
+
+@* A function that loads CDN CSS from the local server in case we're offline.
+(Looping through document.styleSheets and checking styleSheet.rules or .cssRules for the
+relevant stylesheet didn't work, rules and cssRules were always null, could be
+cross domain issue according to comments here: http://stackoverflow.com/a/7452378/694469
+So instead, if any Javascript fails to load, assume we're offline and
+extra-load all styles, from debikiScripts.scala.html [93GK940])
+*@
+<script>
+var anyMissingStylesLoadedFromLocalServer = false;
+function loadAnyMissingStylesFromLocalServer() {
+  if (anyMissingStylesLoadedFromLocalServer)
+    return;
+  anyMissingStylesLoadedFromLocalServer = true;
+  document.write('<link rel="stylesheet" type="text/css" href="@asset(s"bootstrap.$minMaxCss")">');
+}
+</script>

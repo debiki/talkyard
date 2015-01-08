@@ -1,0 +1,69 @@
+@**
+ * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *@
+
+<a class="dw-f-e-help-show">Editor help</a>
+<div class="dw-f-e-help-text">
+<p>The editor uses Markdown: you describe the formatting (e.g. headers and lists)<br>
+  by typing <em>characters</em> rather than clicking buttons. Here's some sample<br>
+  Markdown text:
+</p>
+
+<pre><code>A section header
+--------
+
+This is a paragraph, with *italic text* and **bold text.**
+
+### A subsection header
+
+#### A sub sub section header
+
+Links and images:
+A link: [link text](http://some-address)
+And an image: ![image description, can be empty](http://some-address.jpg)
+
+A list:
+
+  - First, a newline (right above)
+  - Then indent, one or two spaces
+  - Then a '-' and then the list item text
+    on many lines, if you want.
+
+A numbered list:
+
+ 1. The first list item
+ 1. The second
+ 1. The third. The "1." to the left is changed to "3." automatically.
+
+Quoting someone:
+
+&gt; This is a block quote
+&gt; that spans two lines.
+
+Computer source code: indent 4 spaces:
+
+    void main() {
+      print("Hello, I am the computer");
+    }
+
+You can insert HTML too:
+
+&lt;div class="my-class"&gt;Text text text&lt;/div&gt;
+
+But HTML5 tags, e.g. &lt;figure&gt;, are currently removed by a sanitizer.
+</code></pre>
+</div>
+

@@ -1,0 +1,228 @@
+/**
+ * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+
+// Action bar
+//===========================
+
+.dw-forum-actionbar
+  clear: both
+  padding 20px 0 25px
+
+  li
+    margin-left: 0
+
+  .dw-main-category-dropdown
+    float: left
+    margin-right: 10px
+
+    .dropdown-toggle
+      padding: 5px 12px 5px 15px
+
+    a
+      cursor: pointer
+
+  .nav
+    float: left
+    margin-left: 10px
+
+    button
+      float: left;
+      border: none;
+      box-shadow: none;
+
+      padding-left: 15px;
+      padding-right: 15px;
+      min-width: 70px;
+
+      &.active
+        background-color: hsl(211, 50%, 53%)
+        color: white
+
+  button
+    float: right
+    margin-left: 5px
+    color: hsl(211, 100%, 40%);
+
+
+.forum-table .forum-title
+  cursor: pointer;  // why needed? It's already an <a>
+
+
+
+// Topics
+//===========================
+
+#dw-topic-list
+  width: 100%
+
+  th
+    color: hsl(0, 0%, 55%)
+    &:first-child
+      padding-left: $firstCellPadding
+
+  .num
+    text-align: center
+    min-width: 55px
+
+  .num-posts
+    padding-left: 10px
+
+  tbody
+    tr
+      &:nth-child(odd)
+        background-color: hsl(0, 0%, 97%)
+
+      td
+        padding: 10px 5px
+
+        &:first-child
+          padding-left: $firstCellPadding
+
+.load-more
+  text-align: center
+  width: 100%
+  display: block
+  margin: 20px 0 0
+  cursor: pointer
+
+
+
+// Categories
+//===========================
+
+.parent-forums-list {
+  margin: 40px 0 0;
+}
+
+.parent-forums-list li {
+  margin: 0;
+  list-style-type: none;
+  display: inline-block;
+}
+
+.parent-forums-list li::after {
+  content: " → ";
+}
+
+
+/* --- Forum list --- */
+
+.forum-table
+  th
+    color: hsl(0, 0%, 55%)
+
+  & > tbody > tr > td:first-child
+    width: 45%; // or sometimes 80-90% wide
+
+.forum-table > tbody > tr > td {
+  padding: 15px 5px 10px 8px; /* 8x paddin-left aligns w/ row header */
+}
+
+.forum-table .forum-title-wrap {
+  font-size: 17px;
+  margin: 5px 10px 11px 0;
+}
+
+.DW.DW .forum-table td {
+  background: none; /* cancel Twitter Bootstrap */
+}
+
+.forum-table .topic-table-excerpt tbody,
+.forum-table .topic-table-excerpt td {
+  border: none;
+  padding-left: 0; /* or wouldn't align with parent table header */
+}
+
+.forum-table .topic-table-excerpt {
+  margin-bottom: 10px;
+}
+
+.forum-table .topic-count,
+.forum-table .topic-table-excerpt .topic-details {
+  font-size: 12px;
+}
+
+
+/* --- Forum topic list --- */
+
+.forum-title h1.dw-p-ttl {
+  /* margin-bottom: 30px; */
+}
+
+.DW .dw-a-new-forum-topic {
+  margin: 30px 0 13px;
+  background: white;
+}
+
+.topic-table .topic-title {
+  white-space: nowrap;
+  font-weight: bold;
+  color: hsl(0, 0%, 8%);
+}
+
+.topic-table tbody {
+  /* Copied from Twitter Bootstrap */
+  border-bottom: 1px solid hsl(0, 0%, 87%);
+}
+
+.forum-table .topic-count,
+.topic-details {
+  color: gray;
+}
+
+.topic-excerpt {
+  color: #555;
+  height: 68px;
+  display: none;
+}
+
+.topic-list {
+  margin-left: 0;
+  border-top: 1px solid hsl(0, 0%, 87%);
+}
+
+.topic-list > li {
+  list-style-type: none;
+  margin: 0;
+  padding: 10px 0 5px;
+  border-bottom: 1px solid hsl(0, 0%, 87%);
+}
+
+.topic-list > li:hover {
+  background-color: #f9f9f9;
+  cursor: pointer;
+}
+
+.topic-list > li:hover .topic-details,
+.topic-list > li:hover .topic-excerpt {
+  color: #333; /* darker, since background now gray */
+}
+
+.topic-list .topic-title {
+  font-family: verdana;
+  margin: 20px 0 5px;
+  letter-spacing: 0;
+}
+
+.topic-list .topic-details {
+  margin-bottom: 5px;
+}
+
+
+// vim: fdm=indent et ts=2 sw=2 fo=r list

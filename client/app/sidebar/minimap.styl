@@ -1,0 +1,160 @@
+/**
+ * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+// Without this, sometimes durin React.render(), the sidebar contents is visible
+// at a weird location, resulting in weird page dimensions when calculating minimap size.
+#dw-any-sidebar
+  position: absolute;
+  top: 0;
+  right 0;
+  bottom 0;
+  left 0;
+
+
+#dw-minimap
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 1001 // not above dialogs, but above resize-columns handle (1000)
+  background: hsl(0, 0%, 93%)
+
+
+#dw-toggle-sidebar
+  position: fixed;
+  top: 100px;
+  right: 0;
+  background: #ddd;
+  border: none;
+  font-size: 130%;
+  padding: 8px 7px;
+  z-index: 10;
+  margin-bottom: 15px; // prevents the Unread/Recent/Starred buttons from floating-left below
+
+
+.dw-hz #dw-sidebar
+  border-left: 4px solid #555;
+  background: white;
+  padding: 0 0 0 11px;
+
+  .dw-comments
+    background: white;
+
+
+#dw-sidebar
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 30%;
+  overflow: hidden;
+  z-index: 1001; // not above dialogs, but above resize-columns handle (1000)
+  padding: 0 0 0 11px;
+  bgcolor = #eee;
+  background: bgcolor;
+
+  &.dw-sidebar-fixed
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+
+  .btn
+    float: left
+    margin: 10px 5px 0 0;
+    border: none;
+    border-radius: 0;
+    background: hsl(0, 0%, 85%);
+    color: #222;
+
+    &.active
+      background: hsl(0, 0%, 74%);
+      color: #000;
+
+  #dw-minimap
+    position: relative;
+    float: right;
+
+  #dw-toggle-sidebar
+    position: relative;
+    top: 0;
+    float: right;
+    clear: right;
+    background: #ddd;
+    border: none;
+    font-size: 130%;
+    padding: 8px 7px;
+
+  .dw-comments
+    clear: both;
+    background: bgcolor;
+    padding: 15px 8px 0 0;
+
+    h3
+      font-weight: bold;
+      font-family: verdana;
+      font-size: 13px;
+      margin: 0 0 7px 4px;
+
+    p
+      margin-top: 8px;
+
+    .dw-p
+      cursor: pointer;
+      margin: 2px;
+      2px solid #eee;
+      &.dw-current-post
+        border: 4px solid hsl(210, 100%, 67%);
+        margin: 0;
+
+    .dw-p .dw-mark-click
+      margin-left: -3px;
+
+    .dw-p-bd
+      max-height: 130px;
+      overflow: hidden;
+
+    .dw-p:hover
+      outline: 2px solid hsl(210, 45%, 74%);
+
+      .dw-p-hd
+        background-color: hsl(210, 39%, 84%);
+
+      .dw-p-bd
+        background-color: hsl(210, 100%, 96%);
+
+
+    .comment-enter,
+    .comment-leave
+      transition-duration: .7s;
+      transition-timing-function: ease;
+      transition-property: opacity, max-height;
+
+    .comment-enter
+      opacity: 0;
+      max-height: 0px;
+
+    .comment-enter.comment-enter-active
+      opacity: 1;
+      max-height: 100px;
+
+    .comment-leave
+      opacity: 1;
+      max-height: 100px;
+
+    .comment-leave.comment-leave-active
+      opacity: 0.1;
+      max-height: 0px;

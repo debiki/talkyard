@@ -1,0 +1,140 @@
+@**
+ * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *@
+
+@(startupCode: String, anyPageId: Option[String], serverAddress: String, pageUriPath: String,
+  anyPageRole: Option[com.debiki.core.PageRole], anyPagePath: Option[com.debiki.core.PagePath],
+  reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
+
+@asset(file: String) = @{
+  routes.Assets.at(path = "/public/res", file)
+}
+
+@pageIdQuotedOrUndefined = @{
+  anyPageId.map(id => s"'$id'") getOrElse "undefined"
+}
+
+@* Loads a script from a CDN and fallbacks to local URL if CDN not reachable. If any Javascript
+fails to load, assumes we're offline and loads all CSS from local server too [93GK940]. *@
+@script(primaryUrl: String, global: String, fallbackUrl: String) = {
+  <script src="@primaryUrl"></script>
+  <script>window.@global || (loadAnyMissingStylesFromLocalServer(), document.write('<script src="@asset(fallbackUrl)">\x3C/script>'))</script>
+}
+
+@* Concerning when/how to use a CDN for Modernizr, see:
+http://www.modernizr.com/news/modernizr-and-cdns
+And: "For best performance, you should have them follow after your
+stylesheet references", http://modernizr.com/docs/#installing
+*@
+@script("http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js",
+    "Modernizr", s"modernizr.$minMaxJs")
+
+@* YepNope is included in Modernizr above. *@
+<script>window.yepnope || document.write('<script src="@asset(s"yepnope.$minMaxJs")">\x3C/script>')</script>
+
+@script(s"http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.$minMaxJs",
+    "jQuery", s"jquery.$minMaxJs")
+
+@script(s"http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.$minMaxJs",
+    "jQuery.ui", s"jquery-ui.$minMaxJs")
+
+@script(s"//cdnjs.cloudflare.com/ajax/libs/react/0.12.2/react-with-addons.$minMaxJs",
+    "React", s"react-with-addons.$minMaxJs")
+
+<script id="dwReactUserStore" type="application/json">
+@* The contents of this tag is filled in with any user specific data. Note that
+this tag is placed before 'dwReactPageStore' below, so if e.g. a comment contains
+the below magic string then that won't matter because we replace only the very first
+occurrence of the magic string with user specific data. *@
+@controllers.ViewPageController.HtmlEncodedUserSpecificDataJsonMagicString
+</script>
+
+<script id="dwReactPageStore" type="application/json">
+@* Play Framework escapes too much (it escapes '"'), so use @Html and OWASP instead. *@
+@Html(org.owasp.encoder.Encode.forHtmlContent(reactStoreSafeJsonString))
+</script>
+
+@* All Debiki's stuff is placed somewhere inside `debiki`.
+ - The debiki.scriptLoad $.Deferred is resolved later by debiki.js.
+ - Use $.extend in case any window.opener has already specified some
+   debiki.v0 callbacks. (Example: an admin page specifies an
+   on-save callback, to be notified when a newly created page is saved.)
+*@
+<script>
+  @* See http://stackoverflow.com/a/1912522/694469. The <div> isn't added to the document
+   so no <script> would be executed. *@
+  function unencodeHtmlContent(escapedHtml) {
+    var elem = document.createElement('div');
+    elem.innerHTML = escapedHtml;
+    var result = '';
+    @* Chrome splits innerHTML into many child nodes, each one at most 65536. Whereas
+    FF creates just one single huge child node. *@
+    for (var i = 0; i < elem.childNodes.length; ++i) {
+      result = result + elem.childNodes[i].nodeValue;
+    }
+    return result;
+  }
+
+  function parseAnyDebikiUserSpecificData() {
+    try {
+      return JSON.parse(unencodeHtmlContent($('#dwReactUserStore').text()));
+    }
+    catch (ignored) {
+      @* ignore, means not logged in so magic string wasn't replaced *@
+    }
+    return null;
+  }
+
+  var debiki = $.extend(true, {
+    reactPageStore: JSON.parse(unencodeHtmlContent($('#dwReactPageStore').text())),
+    reactUserStore: parseAnyDebikiUserSpecificData(),
+    getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
+    v0: { util: {} },
+    internal: {
+      $: jQuery,
+      minMaxJs: '@minMaxJs',
+      isInIframe: self !== top,
+      serverOrigin: 'http://@serverAddress',
+      pageUri: 'http://@serverAddress@pageUriPath',
+      pageId: @Html(pageIdQuotedOrUndefined),
+      pageRole: '@{ anyPageRole.map(_.toString) getOrElse "" }',
+      isInEmbeddedCommentsIframe: @{
+        if (anyPageRole == Some(com.debiki.core.PageRole.EmbeddedComments)) "true" else "false"
+      },
+      pagePath: '@{ anyPagePath.map(_.value) getOrElse "" }',
+      assetsUrlPathStart: 'http://@serverAddress@asset("")'
+    }
+  }, debiki);
+  @* COULD move to debiki.internal instead! Now relying on &lt;script type=js/x-debiki-config&gt;*@
+  debiki.scriptLoad = $.Deferred();
+  yepnope({
+    test: Modernizr.touch,
+    yep: '@asset(s"combined-debiki-touch.$minMaxJs")',
+    nope: '@asset(s"combined-debiki-desktop.$minMaxJs")',
+    complete: function() {
+      @* Because of evil magic, this `complete()` callback is sometimes invoked before the above
+         lazy-loaded scripts have been evaluated, resulting in an 'undefined' error when calling
+         the startup code below. So call it over and over again until it's available. *@
+      var handle = setInterval(function() {
+        @startupCode
+        clearInterval(handle);
+      }, 50);
+    }
+  });
+</script>
+
+@views.html.anyWeinreScript()
+

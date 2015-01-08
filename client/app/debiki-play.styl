@@ -1,0 +1,481 @@
+/*!
+ * Copyright (C) 2010-2013 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+// Styles specific to Debiki's Play Framework application.
+
+
+
+// Standard tags
+//===========================
+
+
+// ------ IE 6, 7 and 8 non-comopatibility
+
+.debiki-show-if-lte-ie7,
+.debiki-show-if-lte-ie8
+  display: none
+
+body.dw-ua-lte-ie7 .debiki-show-if-lte-ie7
+  display: inline
+
+body.dw-ua-lte-ie7 div.debiki-show-if-lte-ie7
+  display: block
+
+body.dw-ua-lte-ie8 .debiki-show-if-lte-ie8
+  display: inline
+
+body.dw-ua-lte-ie8 div.debiki-show-if-lte-ie8
+  display: block
+
+body.dw-ua-lte-ie7 .debiki-show-unless-lte-ie7,
+body.dw-ua-lte-ie8 .debiki-show-unless-lte-ie8
+  display: none
+
+
+// ------ Standard elems
+
+ins
+  text-decoration: none
+  background: #9f9
+
+del
+  text-decoration: line-through
+  background: #ffd0d0
+
+// Use larger font when editing page title.
+.dw-pri .dw-p-ttl > .dw-f-e textarea
+  font-size: 26px
+
+.dw-ar-p
+  padding-bottom: 0.8em
+
+
+
+// Page rendering
+//===========================
+
+
+// Hide ugly React action links until they've been converted to
+// beautiful Reply, Rate etcetera links.
+html.js.dw-render-actions-pending .dw-as,
+html.js body.dw-render-actions-pending .dw-as
+  visibility: hidden
+
+// hide non-root posts until depth derived
+.dw-t:not([class*="dw-depth-"])
+  display: none
+
+// But always show the article and title
+.dw-t.dw-ar-t
+.dw-t#dw-t-0
+  display: block
+
+
+// Page title
+//---------------------------
+
+
+#dw-t-0    // the page title post has id 0
+  // Don't float title, or body will appear to the right of the title,
+  // rather than below it.
+  // There're no SVG arrows that can be cropped, see above, [8DbF3].
+  float: none
+  // Left align the title.
+  margin-left: 0
+
+
+
+// Cropped and resized posts
+//---------------------------
+
+
+.dw-p.dw-x-s > .dw-p-bd,
+.dw-p.dw-x-s > .dw-p-hd
+  max-height: 4em
+  // The max-height of a truncated .dw-p-bd is 4em, but if floating
+  //elements are present inside the -p-bd (e.g. inline reply threads)
+  //its height might grow to e.g. 2000 px. Then at least Chrome places the
+  //truncation mark far away, so the parent .dw-p grows to e.g. 2000 px.
+  //By hiding overflow, the truncation mark won't be pushed down by other
+  //tags inside the .dw-p-bd, and the parent .dw-p won't be larger than
+  //what it's supposed to be (i.e. roughly 4em + 4em).
+  //overflow: hidden;  -- no, doesn't work well: in some unfathomable
+  //weird way, the inline thread disappear upwards, but space is reserved for
+  //them below, as if I had added `relative: -2000px' (which I have not).
+
+.dw-p.dw-x-s
+  // Since `overflow: hidden' on .dw-p-bd doesn't work well (see the
+  // long comment above), restrict max-height of the .dw-p instead (again
+  // see the long comment above, for info on why this is done).
+  max-height: 8em
+
+// Don't truncate the root post. (`:not()` isn't supported in <= IE8.)
+.dw-depth-0 > .dw-p.dw-x-s,
+.dw-depth-0 > .dw-p.dw-x-s > .dw-p-bd,
+.dw-depth-0 > .dw-p.dw-x-s > .dw-p-hd
+  max-height: none
+
+.dw-p > .dw-x-mark
+  display: block
+  position: absolute
+  bottom: 0px
+  right: -3px
+  padding: 4px 25px 0 10px // there's a resizable-se grip to the right
+  height: 17px
+  background: white
+  font-style: italic
+  letter-spacing: 0.3ex
+
+.dw-p.dw-x-s:hover > .ui-resizable-se,
+.dw-p.dw-x-s:hover > .dw-x-mark
+  background-color: #fdc
+  color: #363636
+
+// Indicate which borders the user has resized.
+.dw-p-rez-e
+  border-right: 1px solid #888
+  padding-right: 3px // or text to close to the border
+  // This post might extend over [a thread to the right], since
+  // it has been resized eastwards. So as not to draw this post and
+  // [the post to the right] over each other, let this post hide
+  // [the post to the right] by specifying a higher z-index.
+  z-index: 11
+
+.dw-p-rez-e:hover
+  z-index: 12 // or resized thread might be merged with each other
+
+.dw-p-rez-s
+  border-bottom: 1px solid #888
+  // padding-bottom: 3px; -- pointless: because of overflow, text might
+  //                      end up immediately next to the border anyway
+
+
+
+// Comments
+//---------------------------
+
+// Show the whole article (or <pre>s with very long lines
+// might be cropped).
+.dw-ar-p
+  overflow: visible
+
+// Don't pad the root post and titles (titles are already indented since
+// they're placed inside another post already).
+.DW.DW
+  .dw-ar-p-hd,
+  .dw-depth-0 > .dw-p > .dw-p-bd,
+  .dw-p-ttl,
+  .dw-p-ttl > .dw-p-bd
+    margin-left: 0
+    padding-left: 0
+
+h1.dw-p-ttl
+  display: inline-block; // so edit-title icon won't drop to the next line
+
+h1.dw-p-ttl + .dw-a-edit
+  float: none;
+  font-size: 25px;
+  margin-left: 8px;
+  position: relative;
+  bottom: 1px;
+
+.dw-p-unapproved > .dw-p-hd,
+.dw-p-dl > .dw-p-hd
+  font-style: italic
+  background-color: transparent
+
+.dw-p-unapproved > .dw-p-hd
+  margin-bottom: 24px
+
+.dw-p-dl > .dw-p-hd
+  margin-bottom: 8px
+
+
+.DW .dw-multireply-prefix
+  font-style: italic;
+  font-size: 90%;
+  margin-right: 4px;
+
+.DW .dw-multireply-to
+  padding: 7px 10px 5px 0
+  display: inline-block;
+  color: hsl(211, 88%, 20%);
+  font-size: 11px;
+
+  .icon-reply
+    display: inline-block; // makes .dw-mirror work
+    opacity: 0.7;
+    margin-right: -2px;
+    font-size: 10px;
+
+
+.dw-wrong
+  font-style: italic;
+  font-size: 90%;
+  margin-bottom: 5px;
+  &:before
+    color: #999 // gray warning icon instead of black
+  &.dw-very-wrong
+    font-size: 100%;
+
+
+// Users with links to more info, e.g. website or blog
+.dw-pri a.dw-p-by,
+.dw-pri a.dw-p-e-by
+  color: #369 // same as reddit
+  font-weight: bold
+
+// Users with no links to more info
+span.dw-p-by,
+span.dw-p-e-by
+  color: #555
+  font-weight: bold
+
+.DW .dw-p-by .dw-fullname
+  font-weight: normal;
+
+
+// Make authorship info easy to read
+:not(.dw-p-hd-e) > .dw-p-by
+  font-size: 11px
+  margin-right: 0.9ex
+
+.dw-lg-t-spl
+  font-weight: normal;
+  font-size: 90%
+  padding-left: 2px
+  padding-right: 2px
+
+// Permalinks
+.dw-p-link
+  float: right
+  font-family: monospace
+  // Don't add top/bottom padding, that causes text below to wrap too early.
+  // Instead, set `top: 1px`.
+  padding: 0 3px 0 5px
+  position: relative
+  top: 1px
+
+// For the *article* itself, make author and post date info less conspicuous,
+// or it steals attention from the page title. (But don't do this for any root
+// post, only for the article.)
+.DW .dw-ar-p-hd
+  border: none
+  background-color: transparent
+  opacity: 0.75
+  font-size: 12px;
+  margin: 6px 0 15px;
+
+.dw-ar-p-hd:hover
+  opacity: 1
+
+.DW .dw-ar-p-hd > .dw-p-by
+  color: hsl(207,60%, 30%);
+  font-size: 12px;
+
+// Un-indent any root post, by hiding the collapse button.
+// (Why would one want to hide the root post?)
+.dw-depth-0 > .dw-z
+  display: none
+
+.DW.DW .dw-depth-0 > .dw-p
+  margin-left: 0
+  //float: left; // or the header will be as wide as the root thread
+  //                fix the header instead? I need to fix it anayway
+
+:not(.dw-hz) > .dw-p > .dw-p-bd > .dw-p-bd-blk
+  // Cancel .dw-p-bd 3px padding-left:, because the .dw-p-bd-blk is
+  // 100% wide though, and without padding-right, text might be cropped.
+  padding-right: 3px
+
+// Cancel .dw-p-bd-blk max width for code pages, and for the page config post.
+[data-page_role='Code'] .dw-hz > .dw-p > .dw-p-bd > .dw-p-bd-blk,
+[data-page_role='Code'] .dw-hz > .dw-p > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk,
+#post-65503 > .dw-p-bd > .dw-p-bd-blk,
+#post-65503 > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk
+  max-width: none
+
+// Cancel Twitter Bootsrap wrapping of <pre>
+.dw-hz > .dw-p > .dw-p-bd > .dw-p-bd-blk > pre
+  white-space: pre
+  word-wrap: normal
+
+// Don't place the body too close to the title. But cannot add margin to the
+// title — that'd push away the .dw-p-hd away. So add to the -bd instead.
+// <h2> should have a fairly large margin-top (because it's a h2), so skip it.
+// — The reason all this is needed is that the elems
+// float:left, which makes margins add to each other, instead of overlapping
+// each other. I should rewrite, and try to avoid float:left? [8DbF3]
+// (skip old IE)
+// [8K3U5]
+.dw-ar-t > .dw-p > .dw-p-bd > .dw-p-bd-blk > :first-child:not(h2)
+  margin-top: 26px
+
+
+.dw-p-bd-blk
+  margin: 0
+  float: left
+  clear: left
+
+
+
+// Post info
+//---------------------------
+
+
+.dw-p-pending-mod
+  margin-bottom: 5px
+  font-style: italic
+  font-weight: bold
+
+.dw-p-hd .dw-p-at
+  // javascript shows e.g. '7 days ago' instead of the .dw-p-at ISO dates.
+  // Hiding the dates with jQuery.hide() at page loat time takes long,
+  // so better hide here. COULD use another stylesheet if javascript disabled.
+  display: none
+
+//.dw-p-flgs-top,
+//.dw-p-rs-top
+
+.dw-p-hd .dw-p-by-me,
+  font-weight: bold
+  color: #151515
+
+.dw-p-flgs-all,
+.dw-p-r-all
+  display: none // shown on .dw-p-hd click
+
+.dw-flgs,
+.dw-flgs li,
+.dw-rs,
+.dw-rs li
+  display: inline
+
+.dw-flgs li,
+.dw-rs li
+  margin-left: 0.5ex
+
+
+.dw-p-hd
+  abbr
+    border-color: #999
+
+.dw-p-hd
+  .dw-p-pin
+    float: right
+    font-size: 15px
+    cursor: move
+    opacity: 0.76
+
+
+
+// Dragsorting
+//===========================
+
+// A <div> with this class is appended to an element that's being dragsorted,
+// so it's totally obvious what is being dragsorted.
+.dw-dragsort-shadow
+  position: absolute
+  width: 100%
+  height: 100%
+  z-index: 10
+  background: hsl(0, 0%, 50%)
+  top: 0
+  opacity: 0.3
+
+  // When dragsorting pinned posts:
+  &.dw-dragsort-pin-vt
+    // There's some whitespace below where the actions are shown. Looks better if
+    // the shadow doesn't cover all that whitespace, but instead extends a bit above
+    // the tree.
+    top: -20px
+
+
+
+// Miscellaneous
+//===========================
+
+
+.dw-mirror
+  -webkit-transform: scale(-1, 1)
+  -moz-transform: scale(-1, 1)
+  -ms-transform: scale(-1, 1)
+  -o-transform: scale(-1, 1)
+  transform: scale(-1, 1)
+
+
+// SVG
+//===========================
+
+
+#dw-t-root
+  overflow: hidden // hides the excessively wide <svg> elems, see above
+
+.dw-flip-hz
+  -moz-transform: scaleX(-1)
+  -o-transform: scaleX(-1)
+  -webkit-transform: scaleX(-1)
+  transform: scaleX(-1)
+  filter: FlipH
+  -ms-filter: "FlipH"
+
+
+
+// Public API
+//===========================
+
+.debiki-0-reply-button-text
+  display: none
+
+img.debiki-0-inline
+  display: inline
+  margin: 0
+  width: auto
+
+
+
+// Things to move to app/views/themesbuiltin/default20121009/-somewhere-
+//===========================
+
+.category-definition
+
+  .category-name-title-prefix
+    margin-top: 50px !important  // why did I add 'important' to h2?
+    font-style: italic
+
+  .dw-p-ttl
+    margin-top: 0
+
+#forum-search
+  float: right
+  z-index: 1
+  position: relative
+
+#forum-search input[type='text']
+  width: 180px
+
+#forum-search input[type='text']:focus
+  width: 320px
+
+//.search-result-page-title
+
+.search-result-post-text a
+  color: black !important
+
+
+
+// vim: fdm=marker et ts=2 sw=2 tw=100 fo=tcqwn list

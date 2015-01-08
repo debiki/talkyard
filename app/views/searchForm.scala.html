@@ -1,0 +1,53 @@
+@**
+ * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *@
+
+
+@(tpi: debiki.SiteTpi, id: String,
+  oldSearchPhrase: Option[String] = None, placeholderText: String ="",
+  sectionId: Option[String] = None, autofocus: Boolean = false)
+
+@actionUrlPath = @{
+  sectionId match {
+    case None => routes.FullTextSearchController.searchWholeSite
+    case Some(id) => routes.FullTextSearchController.searchSiteSection(id)
+  }
+}
+
+<form id="@id"
+      class="debiki-search-form form-search"
+      action="@actionUrlPath"
+      accept-charset="UTF-8"
+      method="post">
+
+  @hiddenXsrfTokenInput(tpi)
+
+  Search:
+  <input type="text"
+         name="searchPhrase"
+         class="input-medium search-query"
+         placeholder="@placeholderText"
+         value="@{ oldSearchPhrase getOrElse ""}"
+         tabindex="1"
+         @Html(if (autofocus) "autofocus" else "")>
+
+  @* Looks better without any "Search" button. People understand they're to click Enter?
+  I wonder, however, will the the placeholder text be read aloud for blind people?
+  <button type="submit" class="btn">Search</button>
+  *@
+
+</form>
+

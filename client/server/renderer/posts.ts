@@ -1,0 +1,1 @@
+../../app/renderer/posts.ts

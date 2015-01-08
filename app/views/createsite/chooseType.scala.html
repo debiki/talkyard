@@ -1,0 +1,70 @@
+@**
+ * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *@
+
+@(tpi: debiki.InternalTemplateProgrammingInterface, xsrfToken: String)
+
+
+@Tpi = @{ debiki.TemplateProgrammingInterface }
+@jsFile = @{ "/-/res/debiki-spa-new-website-choose-name." + Tpi.minMaxJs }
+
+
+@css = @{("""
+
+  h1 { margin-bottom: 1em; }
+
+  label { margin-bottom: 1em; }
+
+  input[type='submit'] {
+    margin: 2.3em 0 0 -1px;
+    min-width: 5em;
+    background: white;
+  }
+
+""")}
+
+
+@newWebsiteDomain = @{ tpi.websiteConfigValue("new-site-domain") }
+
+
+
+@main(Messages("securesocial.login.title"), css = css,
+    jsFile = jsFile, ngAppName = "NewWebsiteChooseName") {
+  <div class='new-website-choose-type'>
+
+    <h1>Choose Site Type</h1>
+
+    <form accept-charset='UTF-8' method='post' name="chooseTypeForm"
+          action="@routes.CreateSiteController.handleSiteTypeForm">
+      <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>
+
+      <label for="site-type">What do you want to create?</label>
+      <select id="site-type" name="siteType">
+        <option id="new-forum" value="NewForum" default>A forum</option>
+        <option id="new-blog" value="NewBlog">A blog</option>
+        <option id="new-simple-site" value="NewSimpleSite">A simple website</option>
+      </select>
+
+      <p>You can change your mind later.</p>
+
+      <div>
+        <input class="btn" type="submit" value="Next">
+      </div>
+    </form>
+
+  </div>
+}
+
