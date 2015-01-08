@@ -132,8 +132,10 @@ var TitleBodyComments = createComponent({
       anySocialLinks = SocialLinks({ socialLinksHtml: this.props.socialLinksHtml });
     }
 
+    var embeddedClass = this.props.isInEmbeddedCommentsIframe ? ' dw-embedded' : '';
+
     return (
-      r.div({ className: 'debiki dw-debate dw-page' },
+      r.div({ className: 'debiki dw-debate dw-page' + embeddedClass },
         anyTitle,
         anyPostHeader,
         anySocialLinks,

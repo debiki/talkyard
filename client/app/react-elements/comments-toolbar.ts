@@ -68,16 +68,6 @@ export var CommentsToolbar = createComponent({
     var ui = this.state.ui;
     var user = store.user;
 
-    var embeddedClass = '';
-    var anyReplyBtnElem = null;
-    if (store.isInEmbeddedCommentsIframe) {
-      embeddedClass = ' dw-embedded';
-      anyReplyBtnElem =
-          r.button({ className: 'dw-a dw-a-reply icon-reply btn btn-default',
-              styleName: 'float: none; margin: 0 15px 0 3px;', onClick: this.onReplyClick },
-              'Reply');
-    }
-
     var notfLevelElem = user.isAuthenticated && !ui.showDetails
       ? r.span({ className: 'dw-page-notf-level', onClick: this.onToggleDetailsClick },
           'Notifications: ' + user.rolePageSettings.notfLevel)
@@ -93,7 +83,6 @@ export var CommentsToolbar = createComponent({
 
     var summaryElem =
       r.div({ className: 'dw-cmts-tlbr-head' },
-          anyReplyBtnElem,
           r.ul({ className: 'dw-cmts-tlbr-summary' },
               r.li({ className: 'dw-cmts-count' }, numPostsOrCommentsText),
               r.li({}, NameLoginBtns()),
@@ -104,10 +93,25 @@ export var CommentsToolbar = createComponent({
       ? CommentsToolbarDetails(store)
       : null;
 
-    var result =
-      r.div({ className: 'dw-cmts-tlbr' + embeddedClass },
+    var result;
+    if (store.isInEmbeddedCommentsIframe) {
+      // There's not root post with a reply button, so add a reply button.
+      result =
+        r.div({},
+          r.div({ className: 'dw-t dw-depth-0 dw-ar-t' },
+            r.div({ className: 'dw-p-as dw-as dw-p-as-shown' },
+              r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick },
+                'Reply'))),
+          r.div({ className: 'dw-cmts-tlbr' },
+            summaryElem,
+            detailsElem));
+    }
+    else {
+      result =
+        r.div({ className: 'dw-cmts-tlbr' },
           summaryElem,
           detailsElem);
+    }
 
     return result;
   }

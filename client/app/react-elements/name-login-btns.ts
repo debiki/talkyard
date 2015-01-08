@@ -65,22 +65,16 @@ export var NameLoginBtns = React.createClass({
               r.a({ className: 'dw-u-name', onClick: this.goToUserPage }, user.fullName));
     }
 
-    var buttonsNotLinks = this.state.isInEmbeddedCommentsIframe;
-
     var loginBtnElem = null;
     if (!user.isLoggedIn) {
-      loginBtnElem = buttonsNotLinks
-          ? r.button({ className: 'dw-a-login btn btn-default', onClick: this.onLoginClick },
-              'Login')
-          : r.span({ className: 'dw-a-login', onClick: this.onLoginClick }, 'Login');
+      loginBtnElem =
+          r.span({ className: 'dw-a-login', onClick: this.onLoginClick }, 'Login');
     }
 
     var logoutBtnElem = null;
     if (user.isLoggedIn) {
-      logoutBtnElem = buttonsNotLinks
-          ? r.button({ className: 'dw-a-logout btn btn-default',
-              onClick: this.onLogoutClick }, 'Logout')
-          : r.span({ className: 'dw-a-logout', onClick: this.onLogoutClick }, 'Logout');
+      logoutBtnElem =
+          r.span({ className: 'dw-a-logout', onClick: this.onLogoutClick }, 'Logout');
     }
 
     var elems =
