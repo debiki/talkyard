@@ -1,3 +1,14 @@
+Note: This is an old repo with old commit history. I have since squashed all commits to 1 single commit and started all over again from commit no. 1. Why? Well, in the past, I did rather many mistakes, and now it feels better to move all old history to another repo (namely this repo), and forget about it, and start from 1 again.
+
+No one should eve commit to this repo. Instead, use:
+
+https://github.com/debiki/debiki-server
+
+That's the repo in which I start again from commit no. 1.
+
+<br>
+<br>
+
 Debiki Server
 =============================
 
