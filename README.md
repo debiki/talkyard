@@ -1,14 +1,3 @@
-Note: This is an old repo with old commit history. I have since squashed all commits to 1 single commit and started all over again from commit no. 1. Why? Well, in the past, I did rather many mistakes, and now it feels better to move all old history to another repo (namely this repo), and forget about it, and start from 1 again.
-
-No one should eve commit to this repo. Instead, use:
-
-https://github.com/debiki/debiki-server
-
-That's the repo in which I start again from commit no. 1.
-
-<br>
-<br>
-
 Debiki Server
 =============================
 
@@ -128,11 +117,19 @@ This project looks like so:
                        website specific config files, which override the
                        default config files.
 
-
-License (AGPL)
+Old Code
 -----------------------------
 
-Please let me know if you want me to change from AGPL to GPL, contact info here: http://www.debiki.com/about/
+In January 2015 I squashed all old 4300+ commits into one single commit,
+because in the past I did some mistakes, so it feels better to start over again
+from commit number 1. The old commit history is available here:
+https://github.com/debiki/debiki-server-old
+
+
+License
+-----------------------------
+
+Currently AGPL — please let me know if you want me to change to GPL, contact info here: http://www.debiki.com/about/
 
 
     Copyright (C) 2010-2015  Kaj Magnus Lindberg
