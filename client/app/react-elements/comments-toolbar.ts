@@ -64,9 +64,9 @@ export var CommentsToolbar = createComponent({
   },
 
   render: function() {
-    var store = this.state.store;
+    var store: Store = this.state.store;
     var ui = this.state.ui;
-    var user = store.user;
+    var user: User = store.user;
 
     var notfLevelElem = user.isAuthenticated && !ui.showDetails
       ? r.span({ className: 'dw-page-notf-level', onClick: this.onToggleDetailsClick },
@@ -96,12 +96,20 @@ export var CommentsToolbar = createComponent({
     var result;
     if (store.isInEmbeddedCommentsIframe) {
       // There's not root post with a reply button, so add a reply button.
+      // And an admin button, if is admin.
+      var adminLink;
+      if (user.isAdmin) {
+        adminLink =
+          r.a({ className: 'dw-a dw-a-reply', href: d.i.serverOrigin + '/-/admin/#/moderation',
+              target: '_blank' }, 'Administrate');
+      }
       result =
         r.div({},
           r.div({ className: 'dw-t dw-depth-0 dw-ar-t' },
             r.div({ className: 'dw-p-as dw-as dw-p-as-shown' },
               r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick },
-                'Reply'))),
+                'Reply'),
+              adminLink)),
           r.div({ className: 'dw-cmts-tlbr' },
             summaryElem,
             detailsElem));

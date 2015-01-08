@@ -34,6 +34,7 @@ interface User {
   userId: string;
   isLoggedIn?: boolean;
   isAdmin?: boolean;
+  isAuthenticated?: boolean;
   username?: string;
   fullName?: string;
   rolePageSettings: any;
