@@ -92,7 +92,6 @@ object ApplicationBuild extends Build {
     version := appVersion,
     libraryDependencies ++= appDependencies,
     scalaVersion := "2.11.1",
-    compileJsAndCss := { "gulp release"! },
 
     // Disable ScalaDoc generation, it breaks seemingly because I'm compiling some Javascript
     // files to Java, and ScalaDoc complains the generated classes don't exist and breaks
@@ -100,12 +99,7 @@ object ApplicationBuild extends Build {
     sources in (Compile, doc) := Seq.empty, // don't generate any docs
     publishArtifact in (Compile, packageDoc) := false,  // don't generate doc JAR
 
-    // Make Gulp bundle JS files and CSS automatically.
-    ///playOnStarted += startGulpTask,
-    ///playOnStopped += stopGulpTask,
-
     Keys.fork in Test := false, // or cannot place breakpoints in test suites
-    (packageBin in Compile) <<= (packageBin in Compile) dependsOn compileJsAndCss,
     unmanagedClasspath in Compile <+= (baseDirectory) map { bd =>
       Attributed.blank(bd / "target/scala-2.10/compiledjs-classes")
     },
@@ -115,34 +109,6 @@ object ApplicationBuild extends Build {
   // see: http://stackoverflow.com/a/10378430/694469, but I haven't
   // activated this, because ScalaTest works fine anyway:
   // `testOptions in Test := Nil`
-
-  def compileJsAndCss = TaskKey[Unit]("bundle-js-and-css",
-    "Invokes Gulp to compile TypeScript and Stylus etcetera")
-
-
-  // Starts Gulp on play run. (Gulp compiles TypeScript to Javascript and bundles
-  // minified Javascript and CSS files.)
-  def startGulpTask = (_: jn.InetSocketAddress) => {
-    println("Starting `gulp watch` to build Javascript and CSS...")
-    gulpProcess = Some(Process("gulp watch").run)
-  }
-
-  // Stop Gulp when `play run` stops.
-  // However! On my computer, there's a weird JNotifyException_linux error
-  // that prevents the `stopGulpTask` from running and stopping Gulp.
-  // Read more here: https://groups.google.com/forum/#!topic/play-framework/6Z34QLdl4e8
-  // But when I installed everything on a clean Ubuntu 12.04 LTS server,
-  // there were no JNotifyException_linux errors so perhaps it's just my machine
-  // that's stupid.
-  def stopGulpTask = () => {
-    println("echo 'Stopping `gulp watch`...")
-    gulpProcess.map(p => p.destroy())
-    gulpProcess = None
-  }
-
-  private var gulpProcess: Option[Process] = None
-
-
 
   // Lists dependencies.
   // See: http://stackoverflow.com/a/6509428/694469
