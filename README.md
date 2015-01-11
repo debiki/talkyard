@@ -39,15 +39,19 @@ You'll need to install Docker (see below), clone a Git repo, and run some script
         ./docker-start-dev-gulp.sh
         ./docker-start-dev-server.sh
 
-7. The -dev-gulp and -dev-server Docker containers print messages about what you are to do next.
-(Namely running npm and Gulp `install` and `gulp watch`, and start Play Framework and the server.)
+7. The -dev-gulp Docker container prints a message about what to do
+   next, namely running both npm and Gulp `install`, and then `gulp watch`.
 
-8. Once a green message "Server started ..." appears in the -dev-server
+8. The -dev-server container tells you what to do next, namely starting Play
+   Framework and the server. Note that you need to run `gulp watch` first (the
+   previous step).
+
+9. Once a green message "Server started ..." appears in the -dev-server
    container's shell, open your browser, go to http://localhost:9000/ and
    http://localhost:9000/-/admin/. It'll take a while before the pages load;
    some Scala files are being compiled.
 
-9. Login as `admin@example.com`, password `password`.
+10. Login as `admin@example.com`, password `password`.
 
 
 A little problem: If you save two TypeScript/JavaScript files at the same time,
