@@ -495,7 +495,8 @@ function isPageWithSidebar(pageRole) {
 var ToggleSidebarButton = createComponent({
   render: function() {
     return (
-      r.button({ id: 'dw-toggle-sidebar', onClick: this.props.onClick },
+      r.button({ id: 'dw-toggle-sidebar', onClick: this.props.onClick,
+            title: 'Keyboard shortcut: S' },
         r.span({ className: this.props.isSidebarOpen ? 'icon-right-open' : 'icon-left-open' })));
   }
 });
