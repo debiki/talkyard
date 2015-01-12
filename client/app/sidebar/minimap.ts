@@ -22,7 +22,6 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
-/// <reference path="toggle-sidebar-button.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.sidebar {

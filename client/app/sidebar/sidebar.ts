@@ -19,7 +19,6 @@
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 /// <reference path="../../shared/plain-old-javascript.d.ts" />
 /// <reference path="minimap.ts" />
-/// <reference path="toggle-sidebar-button.ts" />
 /// <reference path="unread-comments-tracker.ts" />
 
 // Staying at the bottom: http://blog.vjeux.com/2013/javascript/scroll-position-with-react.html
@@ -353,24 +352,33 @@ export var Sidebar = createComponent({
       return null;
 
     var minimapProps = $.extend({ ref: 'minimap' }, store);
+    var commentsFound = this.findComments();
 
     // If sidebar hidden, show only minimap (if 2d layout) and toggle sidebar button.
     if (!this.state.showSidebar) {
+      var unreadAndNewCounts = commentsFound.unread.length === 0 ? null :
+        r.div({ id: 'dw-comment-counts' },
+          commentsFound.unread.length + ' unread');
+          // later:
+          // r.br({}),
+          // commentsFound.new.length + ' new');
       if (store.horizontalLayout) {
         return (
           r.div({},
             r.div({ id: 'dw-minimap-holder', style: { width: '100%' }},
               r.div({ className: 'dw-upper-right-corner' },
                 MiniMap(minimapProps),
-                ToggleSidebarButton({ isSidebarOpen: false, onClick: this.openSidebar,
-                    ref: 'openButton' })))));
+                r.div({ id: 'dw-toggle-sidebar-and-comment-counts', ref: 'openButton' },
+                  ToggleSidebarButton({ isSidebarOpen: false, onClick: this.openSidebar }),
+                  unreadAndNewCounts)))));
       }
       else {
         return (
           r.div({},
             r.div({ id: 'dw-sidebar', className: sidebarClasses, ref: 'sidebar' },
-              ToggleSidebarButton({ isSidebarOpen: false, onClick: this.openSidebar,
-                    ref: 'openButton' }))));
+              r.div({ ref: 'openButton' },
+                ToggleSidebarButton({ isSidebarOpen: false, onClick: this.openSidebar }),
+                unreadAndNewCounts))));
       }
     }
 
@@ -379,7 +387,6 @@ export var Sidebar = createComponent({
       sidebarClasses += ' dw-sidebar-fixed';
     }
 
-    var commentsFound = this.findComments();
     var unreadBtnTitle = 'Unread (' + commentsFound.unread.length + ')';
     var starredBtnTitle = 'Starred (' + commentsFound.starred.length + ')';
 
@@ -457,23 +464,13 @@ export var Sidebar = createComponent({
           Post(postProps)));
     });
 
-    var toggleOpenButton2d;
-    var toggleOpenButton1d =
-        ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar,
-            ref: 'openButton' });
-    if (store.horizontalLayout) {
-      toggleOpenButton2d = toggleOpenButton1d;
-      toggleOpenButton1d = null;
-    }
-
     return (
       r.div({},
       r.div({ id: 'dw-minimap-holder', className: 'dw-sidebar-is-open' },
         r.div({ className: 'dw-upper-right-corner' },
-          MiniMap(minimapProps),
-          toggleOpenButton2d)),
+          MiniMap(minimapProps))),
       r.div({ id: 'dw-sidebar', className: sidebarClasses, ref: 'sidebar' },
-        toggleOpenButton1d,
+        ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar, ref: 'openButton' }),
         r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread }, unreadBtnTitle),
         r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent }, 'Recent'),
         r.button({ className: 'btn btn-default' + starredClass, onClick: this.showStarred }, starredBtnTitle),
@@ -492,6 +489,15 @@ export var Sidebar = createComponent({
 function isPageWithSidebar(pageRole) {
   return pageRole === 'BlogPost' || pageRole === 'ForumTopic' || pageRole === 'WebPage';
 }
+
+
+var ToggleSidebarButton = createComponent({
+  render: function() {
+    return (
+      r.button({ id: 'dw-toggle-sidebar', onClick: this.props.onClick },
+        r.span({ className: this.props.isSidebarOpen ? 'icon-right-open' : 'icon-left-open' })));
+  }
+});
 
 
 //------------------------------------------------------------------------------
