@@ -55,7 +55,6 @@ var postIdsReadLongAgo: number[] = getPostIdsAutoReadLongAgo();
 
 export function start() {
   debugIntervalHandler = setInterval(trackUnreadComments, secondsBetweenTicks * 1000);
-  //setInitialReadMarkColors();
 }
 
 
@@ -67,15 +66,6 @@ export function getPostIdsAutoReadLongAgo(): number[] {
   var postIdsReadByPageId = JSON.parse(postIdsReadByPageIdString);
   var postIdsRead = postIdsReadByPageId[pageId] || [];
   return postIdsRead;
-}
-
-
-function setInitialReadMarkColors() {
-  var allMarkClasses =
-      '.dw-p-auto-read, .dw-p-mark-read, .dw-p-mark-gray-star, .dw-p-mark-yellow-star';
-  $('.dw-p:not(' + allMarkClasses + ') .dw-p-mark').each(function() {
-    setColorOfMark($(this), 0); // 0 means 0% read
-  });
 }
 
 
@@ -217,13 +207,16 @@ function setColorOfPost(postId, fractionRead) {
 
 
 function setColorOfMark(mark, fractionRead) {
+  // I'm using React and CSS instead now.
+  /*
   var fractionLeft = 1.0 - fractionRead;
   // First black, then gray:
   var whiteness = brightnessWhenRead - Math.ceil(brightnessWhenRead * fractionLeft);
   var colorHex = whiteness.toString(16);
   colorHex = ('0' + colorHex).slice(-2); // pad left with 0
   var colorString = '#' + colorHex + colorHex + colorHex;
-  mark.css('border-color', colorString);
+  mark.css('color', colorString);
+  */
 
   /* This outlines unread post ids in red, and the ones you've read in blue:
   var outlineThickness = Math.max(0, Math.ceil(7 * fractionLeft));

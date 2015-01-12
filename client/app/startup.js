@@ -196,9 +196,7 @@ function renderDiscussionPage() {
   var steps = [];
 
   steps.push(function() {
-    debiki2.initAllReactRoots();
-
-    $('html').removeClass('dw-render-actions-pending');
+    debiki2.ReactStore.activateUserSpecificData();
 
     if (d.i.layout === 'TreeLayout' && !Modernizr.touch) {
       d.i.initUtterscrollAndTips();
@@ -211,6 +209,7 @@ function renderDiscussionPage() {
   });
 
   steps.push(function() {
+    debiki2.initAllReactRoots();
     registerEventHandlersFireLoginOut();
   });
 
@@ -234,7 +233,6 @@ function renderDiscussionPage() {
 
   steps.push(function() {
     d.i.makePinsDragsortable();
-    debiki2.ReactStore.activateUserSpecificData();
   });
 
   steps.push(function() {

@@ -107,7 +107,9 @@ ReactStore.activateUserSpecificData = function(anyUser) {
 
   var newUser = anyUser || debiki.reactUserStore;
   if (!newUser) {
+    // For now only. Later on, this data should be kept server side instead?
     addLocalStorageData(store.user);
+    this.emitChange();
     return;
   }
 
@@ -378,7 +380,7 @@ function sortPostIdsInPlace(postIds: number[], allPosts) {
  */
 function addLocalStorageData(user: User) {
   user.postIdsAutoReadLongAgo = sidebar.UnreadCommentsTracker.getPostIdsAutoReadLongAgo();
-  user.marksByPostId = loadMarksFromLocalStorage();
+  user.marksByPostId = {}; // not implemented: loadMarksFromLocalStorage();
 }
 
 
