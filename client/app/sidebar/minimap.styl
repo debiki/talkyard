@@ -45,6 +45,20 @@
       float: right;
       background: hsl(0, 0%, 93%)
 
+.dw-sidebar-is-open
+  #dw-minimap,
+  #dw-toggle-sidebar
+    // The minimap and toggle sidebar button are almost in the middle of the page
+    // and are likely to overlap with other gray stuff, so draw a border or they'll
+    // be hard to notice.
+    border-left: 1px solid black;
+    border-bottom: 1px solid black;
+
+  // Show a border-top when minimap hidden.
+  #dw-toggle-sidebar
+    border-top: 1px solid black;
+    top: -1px;
+    position: relative;
 
 #dw-toggle-sidebar
   float: right;

@@ -468,7 +468,7 @@ export var Sidebar = createComponent({
 
     return (
       r.div({},
-      r.div({ id: 'dw-minimap-holder' },
+      r.div({ id: 'dw-minimap-holder', className: 'dw-sidebar-is-open' },
         r.div({ className: 'dw-upper-right-corner' },
           MiniMap(minimapProps),
           toggleOpenButton2d)),

@@ -227,7 +227,7 @@ function drawSinglePost(bodyBlock, context, minimapWidth, minimapHeight) {
   // Make very short comments visiible by setting min size.
   var w = Math.max(3, w);
   var h = Math.max(1, h);
-  context.fillStyle = 'hsl(0, 0%, 15%)';
+  context.fillStyle = 'hsl(0, 0%, 25%)';
   context.fillRect(x, y, w, h);
 }
 
