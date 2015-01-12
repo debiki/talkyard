@@ -27,11 +27,8 @@ var r = React.DOM;
 
 export var ToggleSidebarButton = createComponent({
   render: function() {
-    var styles = {
-      top: this.props.minimapHeight,
-    };
     return (
-      r.button({ id: 'dw-toggle-sidebar', style: styles, onClick: this.props.onClick },
+      r.button({ id: 'dw-toggle-sidebar', onClick: this.props.onClick },
         r.span({ className: this.props.isSidebarOpen ? 'icon-right-open' : 'icon-left-open' })));
   }
 });

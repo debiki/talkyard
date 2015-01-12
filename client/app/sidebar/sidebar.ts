@@ -94,7 +94,6 @@ export var Sidebar = createComponent({
     debiki.v0.util.addZoomOrResizeListener(this.updateSizeAndPosition);
     this.updateSizeAndPosition();
     key('s', this.toggleSidebarOpen);
-    this.resizeMinimap();
     this.createAnyScrollbars();
   },
 
@@ -121,7 +120,6 @@ export var Sidebar = createComponent({
       return;
 
     this.updateSizeAndPosition();
-    this.resizeMinimap();
     this.createAnyScrollbars();
 
     if (!this.state.store.horizontalLayout && localStorage) {
@@ -131,12 +129,6 @@ export var Sidebar = createComponent({
 
   getCommentsViewport: function() {
     return $(this.refs.commentsViewport.getDOMNode());
-  },
-
-  resizeMinimap: function() {
-    if (this.refs.minimap && this.state.showSidebar) {
-      this.refs.minimap.redrawMinimap($(this.getDOMNode()).width());
-    }
   },
 
   createAnyScrollbars: function() {
@@ -167,27 +159,17 @@ export var Sidebar = createComponent({
   },
 
   updateSizeAndPosition2d: function() {
-    var sidebar = $(this.getDOMNode());
-    var openButton = $(this.refs.openButton.getDOMNode());
-
+    var padding = $('#dw-sidebar-padding');
     if (this.state.showSidebar) {
+      var sidebar = $(this.refs.sidebar.getDOMNode());
       var windowTop = $(window).scrollTop();
       var windowBottom = windowTop + $(window).height();
       sidebar.height(windowBottom - windowTop);
-      openButton.css('top', '');
       this.updateCommentsScrollbar(windowBottom);
-    }
-    else {
-      sidebar.height(0);
-      var minimap = $(this.refs.minimap.getDOMNode());
-      openButton.css('top', minimap.height());
-    }
 
-    // When the window viewport is at the right edge, we don't want the sidebar to
-    // overlap the rightmost comments. So add some horizontal padding after the
-    // rightmost comment column, as wide as the sidebar.
-    var padding = $('#dw-sidebar-padding');
-    if (this.state.showSidebar) {
+      // When the window viewport is at the right doc edge, we don't want the sidebar
+      // to overlap the rightmost comments. So add some horizontal padding after the
+      // rightmost comment column, as wide as the sidebar.
       if (!padding.length) {
         padding =  $('<li id="dw-sidebar-padding"><div ' +
             'style="height: 1px; background-color: transparent;"></div></li>');
@@ -209,7 +191,7 @@ export var Sidebar = createComponent({
     var commentSectionTop = commentSectionOffset.top;
     var windowTop = $(window).scrollTop();
     var windowBottom = windowTop + $(window).height();
-    var sidebar = $(this.getDOMNode());
+    var sidebar = $(this.refs.sidebar.getDOMNode());
     var openButton = $(this.refs.openButton.getDOMNode());
 
     if (commentSectionTop <= windowTop) {
@@ -239,9 +221,11 @@ export var Sidebar = createComponent({
       sidebar.css('right', 0);
       if (this.state.showSidebar) {
         sidebar.height(windowBottom - commentSectionTop);
+        sidebar.css('overflow', 'hidden');
         openButton.css('position', 'relative');
       } else {
         sidebar.height(0);
+        sidebar.css('overflow', 'visible'); // else open button not shown
         openButton.css('position', 'absolute');
         openButton.css('top', 0);
         openButton.css('right', 0);
@@ -368,20 +352,27 @@ export var Sidebar = createComponent({
     if (!isPageWithSidebar(store.pageRole))
       return null;
 
-    // In 2D layout, show a small minimap, even if sidebar hidden.
-    if (!this.state.showSidebar) {
-      var minimapProps = $.extend({ isSidebarOpen: false, ref: 'minimap' }, store);
-      return (
-        r.div({},
-          MiniMap(minimapProps),
-          ToggleSidebarButton({ isSidebarOpen: false, onClick: this.openSidebar,
-              ref: 'openButton' })));
-    }
+    var minimapProps = $.extend({ ref: 'minimap' }, store);
 
-    var minimapProps = $.extend({
-      isSidebarOpen: true,
-      ref: 'minimap',
-    }, store);
+    // If sidebar hidden, show only minimap (if 2d layout) and toggle sidebar button.
+    if (!this.state.showSidebar) {
+      if (store.horizontalLayout) {
+        return (
+          r.div({},
+            r.div({ id: 'dw-minimap-holder', style: { width: '100%' }},
+              r.div({ className: 'dw-upper-right-corner' },
+                MiniMap(minimapProps),
+                ToggleSidebarButton({ isSidebarOpen: false, onClick: this.openSidebar,
+                    ref: 'openButton' })))));
+      }
+      else {
+        return (
+          r.div({},
+            r.div({ id: 'dw-sidebar', className: sidebarClasses, ref: 'sidebar' },
+              ToggleSidebarButton({ isSidebarOpen: false, onClick: this.openSidebar,
+                    ref: 'openButton' }))));
+      }
+    }
 
     var sidebarClasses = '';
     if (store.horizontalLayout) {
@@ -466,10 +457,23 @@ export var Sidebar = createComponent({
           Post(postProps)));
     });
 
+    var toggleOpenButton2d;
+    var toggleOpenButton1d =
+        ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar,
+            ref: 'openButton' });
+    if (store.horizontalLayout) {
+      toggleOpenButton2d = toggleOpenButton1d;
+      toggleOpenButton1d = null;
+    }
+
     return (
-      r.div({ id: 'dw-sidebar', className: sidebarClasses },
-        MiniMap(minimapProps),
-        ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar, ref: 'openButton' }),
+      r.div({},
+      r.div({ id: 'dw-minimap-holder' },
+        r.div({ className: 'dw-upper-right-corner' },
+          MiniMap(minimapProps),
+          toggleOpenButton2d)),
+      r.div({ id: 'dw-sidebar', className: sidebarClasses, ref: 'sidebar' },
+        toggleOpenButton1d,
         r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread }, unreadBtnTitle),
         r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent }, 'Recent'),
         r.button({ className: 'btn btn-default' + starredClass, onClick: this.showStarred }, starredBtnTitle),
@@ -480,7 +484,7 @@ export var Sidebar = createComponent({
               tipsOrExtraConfig,
               r.div({ className: 'dw-recent-comments' },
                 ReactCSSTransitionGroup({ transitionName: 'comment', key: this.state.commentsType },
-                  commentsElems)))))));
+                  commentsElems))))))));
   }
 });
 

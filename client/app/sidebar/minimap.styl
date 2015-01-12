@@ -24,25 +24,36 @@
   bottom 0;
   left 0;
 
-
-#dw-minimap
+#dw-minimap-holder
   position: fixed;
+  width: 70%;
   top: 0;
-  right: 0;
+  left: 0;
+  height: 0;
   z-index: 1001 // not above dialogs, but above resize-columns handle (1000)
-  background: hsl(0, 0%, 93%)
+
+  .dw-upper-right-corner
+    position: absolute;
+    top: 0;
+    right: 0;
+
+    #dw-minimap-placeholder
+      float: right;
+      width: 0px;
+
+    #dw-minimap
+      float: right;
+      background: hsl(0, 0%, 93%)
 
 
 #dw-toggle-sidebar
-  position: fixed;
-  top: 100px;
-  right: 0;
+  float: right;
+  clear: right;
   background: #ddd;
   border: none;
   font-size: 130%;
   padding: 8px 7px;
   z-index: 10;
-  margin-bottom: 15px; // prevents the Unread/Recent/Starred buttons from floating-left below
 
 
 .dw-hz #dw-sidebar
@@ -84,19 +95,8 @@
       background: hsl(0, 0%, 74%);
       color: #000;
 
-  #dw-minimap
-    position: relative;
-    float: right;
-
   #dw-toggle-sidebar
-    position: relative;
-    top: 0;
-    float: right;
-    clear: right;
-    background: #ddd;
-    border: none;
-    font-size: 130%;
-    padding: 8px 7px;
+    margin-bottom: 15px; // prevents the Unread/Recent/Starred buttons from floating-left below
 
   .dw-comments
     clear: both;

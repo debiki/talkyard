@@ -71,7 +71,7 @@ var PageScrollMixin = {
 
 var ShowMinimapMinLeft = 80;
 var ShowMinimapMinTop = 200;
-var TooFewPosts = 5 + 2; // + title and body
+var TooFewPosts = 5 + 2; // + 2 becaus of title and body
 
 
 export var MiniMap = createComponent({
@@ -83,30 +83,17 @@ export var MiniMap = createComponent({
   },
 
   componentDidUpdate: function() {
-    // Don't redraw until any sidebar padding has been removed (or added) and
+    // Don't redraw until any #dw-sidebar-padding has been removed (or added) and
     // the document resized. Otherwise, when closing the sidebar, the posts will be
     // offset a little bit to the left, because they'd be drawn with the sidebar
     // padding still present.
     setTimeout(this.redrawMinimap);
   },
 
-  redrawMinimap: function(anyWidth) {
+  redrawMinimap: function() {
     this.showOrHide();
     if (!this.refs.canvas)
       return;
-
-    if (this.props.isSidebarOpen) {
-      if (!anyWidth)
-        return; // hack: wait until invoked from sidebar.ts
-
-      // Adjust minimap size so it fits in the sidebar.
-      this.width = anyWidth;
-      this.height = this.calculateMinimapSize(this.width).height;
-      this.height = Math.min($(window).height() / 9, this.height);
-      var canvas = $(this.refs.canvas.getDOMNode());
-      canvas.attr('width', this.width);
-      canvas.attr('height', this.height);
-    }
 
     var canvasContext = this.refs.canvas.getDOMNode().getContext('2d');
     this.canvasContext = canvasContext;
@@ -136,7 +123,7 @@ export var MiniMap = createComponent({
   },
 
   shallShowMinimap: function() {
-    return !this.props.horizontalLayout || this.props.isSidebarOpen ||
+    return !this.props.horizontalLayout ||
         $window.scrollLeft() >= ShowMinimapMinLeft ||
         $window.scrollTop() >= ShowMinimapMinTop;
   },
@@ -148,12 +135,12 @@ export var MiniMap = createComponent({
     // Don't show minimap and open-sidebar-button directly when loading page, only
     // after scrolling a bit.
     if (this.shallShowMinimap()) {
-      $(this.getDOMNode()).show();
+      $(this.refs.canvas.getDOMNode()).show();
     }
     // Don't show the minimap when one has scrolled back to the upper left corner,
     // because it would occlude stuff in the top nav bar.
     else if (!this.isScrollingInViewport) {
-      $(this.getDOMNode()).hide();
+      $(this.refs.canvas.getDOMNode()).hide();
     }
   },
 
@@ -181,9 +168,7 @@ export var MiniMap = createComponent({
     $(window).off('mousemove', this.scrollInViewport);
     $(window).off('mouseup', this.stopScrollingInViewport);
     $(window).off('mouseleave', this.stopScrollingInViewport);
-    if (!this.shallShowMinimap()) {
-      $(this.getDOMNode()).hide();
-    }
+    this.showOrHide();
   },
 
   scrollInViewport: function(event) {
@@ -208,8 +193,10 @@ export var MiniMap = createComponent({
     this.width = size.width;
     this.height = size.height;
     return (
-      r.canvas({ id: 'dw-minimap', width: this.width, height: this.height,
-          ref: 'canvas', onMouseDown: this.startScrollingInViewport }));
+      r.div({},
+        r.div({ id: 'dw-minimap-placeholder', ref: 'placeholder', style: { height: this.height }}),
+        r.canvas({ id: 'dw-minimap', width: this.width, height: this.height,
+            ref: 'canvas', onMouseDown: this.startScrollingInViewport })));
   }
 });
 
@@ -232,8 +219,9 @@ function drawSinglePost(bodyBlock, context, minimapWidth, minimapHeight) {
   var offset = bodyBlock.offset();
   var height = bodyBlock.height();
   var width = bodyBlock.width();
-  var x = minimapWidth * offset.left / $document.width();
-  var w = minimapWidth * width / $document.width();
+  var documentWidth = Math.max(1, $document.width() - anySidebarPaddingWidth());
+  var x = minimapWidth * offset.left / documentWidth;
+  var w = minimapWidth * width / documentWidth;
   var y = minimapHeight * offset.top / $document.height();
   var h = minimapHeight * height / $document.height();
   // Make very short comments visiible by setting min size.
@@ -245,15 +233,24 @@ function drawSinglePost(bodyBlock, context, minimapWidth, minimapHeight) {
 
 
 function drawViewport(context, minimapWidth, minimapHeight) {
-  var x = minimapWidth * $window.scrollLeft() / $document.width();
-  var w = minimapWidth * $window.width() / $document.width();
+  var paddingWidth = anySidebarPaddingWidth();
+  var windowWidth = Math.max(1, $window.width() - paddingWidth);
+  var documentWidth = Math.max(1, $document.width() - paddingWidth);
+  var x = minimapWidth * $window.scrollLeft() / documentWidth;
+  var w = minimapWidth * windowWidth / documentWidth - 1;
   var y = minimapHeight * $window.scrollTop() / $document.height();
-  var h = minimapHeight * $window.height() / $document.height()
+  var h = minimapHeight * $window.height() / $document.height() - 1;
   context.beginPath();
   context.strokeStyle = 'hsl(210, 100%, 35%)';
   context.lineWidth = 2;
   context.rect(x, y, w, h);
   context.stroke();
+}
+
+
+function anySidebarPaddingWidth() {
+  var sidebarPadding = $('#dw-sidebar-padding');
+  return sidebarPadding.length ? sidebarPadding.width() : 0;
 }
 
 //------------------------------------------------------------------------------
