@@ -128,7 +128,7 @@ export var MiniMap = createComponent({
   },
 
   showOrHide: function() {
-    if (!this.getDOMNode())
+    if (!this.refs.canvas)
       return;
 
     // Don't show minimap and open-sidebar-button directly when loading page, only
@@ -185,8 +185,14 @@ export var MiniMap = createComponent({
 
   render: function() {
     if (!this.props.horizontalLayout || !isPageWithMinimap(this.props.pageRole) ||
-        this.props.numPosts <= TooFewPosts)
-      return null;
+        this.props.numPosts <= TooFewPosts) {
+      // Stil show placeholder, so toggle-sidebar button wil be pushed down from
+      // the top so it wont overlap the top bar.
+      return (
+        r.div({},
+          r.div({ id: 'dw-minimap-placeholder', ref: 'placeholder',
+              style: { height: 100 }})));
+    }
 
     var size = this.calculateMinimapSize(this.props.width);
     this.width = size.width;
