@@ -23,9 +23,7 @@ import play.api.Play
 import play.api.Play.current
 
 
-// COULD remove, see comments just below:
-
-@deprecated("Remove once the BoneCP bug has been fixed", since = "a while ago")
+// COULD rename / move, to what, where?
 object Debiki {
 
   // COULD start using HikariCP, http://brettwooldridge.github.io/HikariCP/,
@@ -55,7 +53,8 @@ object Debiki {
 
     def password =
       if (Play.isTest) "auto-deleted"
-      else configStr("debiki.postgresql.password")
+      else sys.env.get("DEBIKI_POSTGRESQL_PASSWORD") getOrElse
+        configStr("debiki.postgresql.password")
 
     def database =
       if (Play.isTest) "debiki_test"
