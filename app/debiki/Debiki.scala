@@ -51,21 +51,21 @@ object Debiki {
     // with "auto-deleted" as password?)
     def user =
       if (Play.isTest) "debiki_test"
-      else configStr("debiki.pgsql.user")
+      else configStr("debiki.postgresql.user")
 
     def password =
       if (Play.isTest) "auto-deleted"
-      else configStr("debiki.pgsql.password")
+      else configStr("debiki.postgresql.password")
 
     def database =
       if (Play.isTest) "debiki_test"
-      else configStr("debiki.pgsql.database")
+      else configStr("debiki.postgresql.database")
 
     // COULD start using HikariCP instead, see comment above this function.
     val ds = new org.postgresql.ds.PGPoolingDataSource()
     ds.setDataSourceName("DebikiPostgreConnCache"+ math.random)
-    val server = configStr("debiki.pgsql.server")
-    val port = configStr("debiki.pgsql.port").toInt
+    val server = configStr("debiki.postgresql.server")
+    val port = configStr("debiki.postgresql.port").toInt
     val dbName = database
     ds.setServerName(server)
     ds.setPortNumber(port)
