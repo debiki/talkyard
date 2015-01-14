@@ -105,7 +105,7 @@ class AutoApproverSpec extends Specification with Mockito {
 
 
   def pageReq(user: User)(dao: SiteDao) =
-    PageRequest[Unit](
+    new PageRequest[Unit](
       sid = null,
       xsrfToken = null,
       browserId = None,
@@ -115,7 +115,7 @@ class AutoApproverSpec extends Specification with Mockito {
       pageMeta = Some(pageMeta),
       permsOnPage = PermsOnPage.All,
       dao = dao,
-      request = PlayReq)()
+      request = PlayReq)
 
   def pageReqGuest = pageReq(guestUser) _
 
