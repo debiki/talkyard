@@ -28,6 +28,9 @@ import play.api.Play.current
 @deprecated("Remove once the BoneCP bug has been fixed", since = "a while ago")
 object Debiki {
 
+  // COULD start using HikariCP, http://brettwooldridge.github.io/HikariCP/,
+  // instead. BoneCP mentioned below is dead.
+  //
   // Play's BoneCP v.0.7.1 is broken and unusable, and SBT refuses to use version 0.8 RC1
   // which supposedly has fixed the problem. Use Postgres connection pool instead.
   // The problem is:
@@ -38,32 +41,32 @@ object Debiki {
   //                        heroku-play-bonecp-connection-issues/15500442#15500442
   def getPostgreSqlDataSource(): javax.sql.DataSource = {
 
-    if (Play.isTest)
-      return p.db.DB.getDataSource("test")
-
-    def configPrefix = ""
-
     def configStr(path: String) =
-      Play.configuration.getString(configPrefix + path) getOrElse
+      Play.configuration.getString(path) getOrElse
         runErr("DwE93KI2", "Config value missing: "+ path)
 
     // I've hardcoded credentials to the test database here, so that it
     // cannot possibly happen, that you accidentally connect to the prod
-    // database. (You'll never name the prod schema "debiki_test_0_0_2_empty",
-    // with "auto-dropped" as password?)
+    // database. (You'll never name the prod schema "debiki_test",
+    // with "auto-deleted" as password?)
     def user =
-      if (Play.isTest) "debiki_test_0_0_2_empty"
+      if (Play.isTest) "debiki_test"
       else configStr("debiki.pgsql.user")
 
     def password =
-      if (Play.isTest) "auto-dropped"
+      if (Play.isTest) "auto-deleted"
       else configStr("debiki.pgsql.password")
 
+    def database =
+      if (Play.isTest) "debiki_test"
+      else configStr("debiki.pgsql.database")
+
+    // COULD start using HikariCP instead, see comment above this function.
     val ds = new org.postgresql.ds.PGPoolingDataSource()
     ds.setDataSourceName("DebikiPostgreConnCache"+ math.random)
     val server = configStr("debiki.pgsql.server")
     val port = configStr("debiki.pgsql.port").toInt
-    val dbName = configStr("debiki.pgsql.database")
+    val dbName = database
     ds.setServerName(server)
     ds.setPortNumber(port)
     ds.setDatabaseName(dbName)
