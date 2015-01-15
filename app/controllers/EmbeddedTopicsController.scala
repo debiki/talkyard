@@ -123,41 +123,9 @@ object EmbeddedTopicsController extends mvc.Controller {
     // Before the first reply has been saved, the embedded discussion page won't
     // yet have been created. Then construct and use an empty page.
     PageRequest.forPageThatExists(request, pageId = theId) getOrElse {
-      makeEmptyPageRequest(request, pageId = theId)
+      ViewPageController.makeEmptyPageRequest(request, pageId = theId, showId = true,
+        pageRole = PageRole.EmbeddedComments)
     }
-  }
-
-
-  private def makeEmptyPageRequest(request: GetRequest, pageId: PageId): PageGetRequest = {
-    val pagePath = PagePath(
-      tenantId = request.siteId,
-      folder = "/",
-      pageId = Some(pageId),
-      showId = true,
-      pageSlug = "")
-
-    val pageParts = PageParts(pageId)
-
-    val newTopicMeta = PageMeta.forNewPage(
-      PageRole.EmbeddedComments,
-      author = SystemUser.User,
-      parts = pageParts,
-      creationDati = new ju.Date,
-      parentPageId = None,
-      publishDirectly = true)
-
-    new requests.DummyPageRequest(
-      sid = request.sid,
-      xsrfToken = request.xsrfToken,
-      browserId = request.browserId,
-      user = request.user,
-      pageExists = false,
-      pagePath = pagePath,
-      pageMeta = newTopicMeta,
-      permsOnPage = PermsOnPage.Wiki, // for now
-      dao = request.dao,
-      dummyPageParts = pageParts,
-      request = request.request)
   }
 
 }

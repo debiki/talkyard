@@ -19,6 +19,7 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.DebikiHttp.throwNotFound
 import java.{util => ju, lang => jl}
 import play.api._
 import requests.PageRequest
@@ -53,6 +54,15 @@ object TemplateRenderer {
       // since a config file might be corrupted (exception thrown).
       val isPageSettings = pageReq.pageRoot == Some(PageParts.ConfigPostId)
       return views.html.specialpages.template(tpi, isPageSettings).body
+    }
+
+    if (!pageReq.pageExists) {
+      if (pageReq.pagePath.value == "/") {
+        return views.html.specialpages.createSomethingHerePage(tpi).body
+      }
+      else {
+        throwNotFound("DwE00404", "Page not found")
+      }
     }
 
     val template = tpi.pageConfigValue("template") orIfEmpty {

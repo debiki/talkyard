@@ -234,7 +234,7 @@ function renderDiscussionPage() {
 
   steps.push(function() {
     d.i.makePinsDragsortable();
-    debiki2.ReactStore.activateUserSpecificData();
+    debiki2.ReactStore.activateUserSpecificData(); // do before registerEventHandlersFireLoginOut?
   });
 
   steps.push(function() {
@@ -262,7 +262,7 @@ function renderDiscussionPage() {
  * (Otherwise, if you use `renderDiscussionPage()`, some error happens, which kills
  * other Javascript that runs on page load.)
  */
-function renderEmptyPage() {
+d.i.renderEmptyPage = function() {
   // (Don't skip all steps, although the page is empty. For example, the admin
   // dashbar depends on login/logout events, and it's shown even if there's no
   // root post — e.g. on blog list pages, which list child pages only but no
@@ -272,6 +272,7 @@ function renderEmptyPage() {
     d.i.initUtterscrollAndTips();
   }
   debiki2.initAllReactRoots();
+  debiki2.ReactStore.activateUserSpecificData();
   fireLoginOrLogout();
 };
 
@@ -286,7 +287,7 @@ d.i.startDiscussionPage = function() {
     }
     else {
       // Skip most of the rendering step, since there is no Debiki page present.
-      renderEmptyPage();
+      d.i.renderEmptyPage();
     }
   });
 };

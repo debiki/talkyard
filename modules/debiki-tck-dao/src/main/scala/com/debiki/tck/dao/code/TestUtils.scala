@@ -26,12 +26,15 @@ import java.{util => ju}
 class TestUtils(val daoFactory: DbDaoFactory) {
 
   def createFirstSite(): Tenant = {
-    daoFactory.systemDbDao.createFirstSite(new FirstSiteData {
-      val name = "Test"
-      val address = "test.ex.com"
-      val https = TenantHost.HttpsNone
-      val pagesToCreate = Nil
-    })
+    // Nowadays it exists already, so:
+    Tenant(
+      Site.FirstSiteId,
+      name = None,
+      creatorIp = "0.0.0.0",
+      creatorTenantId = "",
+      creatorRoleId = "",
+      embeddingSiteUrl = None,
+      hosts = Nil)
   }
 
 }

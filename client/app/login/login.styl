@@ -105,6 +105,13 @@ body.dw-login-to-login .dw-login-to-login
   display: inline
 // ---
 
+// When logging in for the very first time to become admin:
+body.dw-login-become-main-site-admin
+  #dw-lgi-twitter,  // twitter has no email
+  #dw-lgi-guest,    // guests have no password
+  #dw-lgi-pswd      // account cannot yet have been created
+    display: none
+
 // Hide password field when creating user in via OAuth or OpenID.
 .dw-fs .form-group.password
   display: none

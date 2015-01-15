@@ -60,7 +60,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
         (DefaultPasswordFullName, DefaultPasswordUsername, DefaultPasswordEmail)
       }
     val user = dao.createPasswordUser(NewPasswordUserData.create(name = name,
-      username = username, email = email, password = defaultPassword).get)
+      username = username, email = email, password = defaultPassword, isAdmin = false).get)
     val verifiedAt = Some(new ju.Date)
     dao.configRole(user.id, emailVerifiedAt = Some(verifiedAt))
     user.copy(emailVerifiedAt = verifiedAt)

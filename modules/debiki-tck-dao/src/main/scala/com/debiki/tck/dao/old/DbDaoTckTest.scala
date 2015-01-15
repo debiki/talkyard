@@ -258,7 +258,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     // -------- Create tenant
 
-    var defaultTenantId = ""
+    val defaultTenantId = "1"
 
     "find no tenant for non-existing host test.ex.com" in {
       val lookup = systemDbDao.lookupTenant("http", "test.ex.com")
@@ -267,21 +267,6 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
     "find no tenant for non-existing tenant id" in {
       systemDbDao.loadTenants("non_existing_id"::Nil) must_== Nil
-    }
-
-    "create a test site (that we'll use hereafter)" in {
-      val tenant = systemDbDao.createFirstSite(new FirstSiteData {
-        val name = "Test"
-        val address = "test.ex.com"
-        val https = TenantHost.HttpsNone
-        val pagesToCreate = Nil
-      })
-      defaultTenantId = tenant.id
-      tenant.name must_== Some("Test")
-      tenant.embeddingSiteUrl must_== None
-      tenant.hosts.headOption.map(_.address) must_== Some("test.ex.com")
-      tenant.hosts.length must_== 1
-      tenant.id must_!= ""
     }
 
     lazy val dao = newTenantDbDao(QuotaConsumers(tenantId = defaultTenantId))
@@ -1854,7 +1839,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       val newPasswordUserData = NewPasswordUserData.create(
         name = "PasswordUser", username = "PwdUsrUsername", email = theEmail,
-        password = thePassword).get
+        password = thePassword, isAdmin = false).get
 
       var theUser: User = null
       var loginGrant: LoginGrant = null

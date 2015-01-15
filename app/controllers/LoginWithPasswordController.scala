@@ -30,6 +30,7 @@ import org.scalactic.{Good, Bad}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import play.api.libs.json.JsObject
+import play.api.Play.current
 import requests.ApiRequest
 import requests.JsonPostRequest
 
@@ -97,9 +98,13 @@ object LoginWithPasswordController extends mvc.Controller {
       throwBadReq("DwE85FX1", "Password missing")
     val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
 
+    val anyBecomeAdminEmailAddresses =
+      Play.configuration.getString("debiki.becomeAdminEmailAddress")
+    val becomeAdmin = anyBecomeAdminEmailAddresses == Some(emailAddress)
+
     val userData =
       NewPasswordUserData.create(name = name, email = emailAddress, username = username,
-          password = password) match {
+          password = password, isAdmin = becomeAdmin) match {
         case Good(data) => data
         case Bad(errorMessage) =>
           throwUnprocessableEntity("DwE805T4", s"$errorMessage, please try again.")

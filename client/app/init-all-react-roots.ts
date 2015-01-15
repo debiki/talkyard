@@ -31,6 +31,10 @@ var ReactRouter = window['ReactRouter'];
 
 
 export function initAllReactRoots() {
+  var nonExistingPageElem = document.getElementById('dw-non-existing-page');
+  if (nonExistingPageElem)
+    React.render(debiki2.nopage.NonExistingPage({}), nonExistingPageElem);
+
   var dashbarElem = document.getElementById('dw-dashbar');
   if (dashbarElem)
     React.render(debiki2.dashbar.Dashbar({}), dashbarElem);

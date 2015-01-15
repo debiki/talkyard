@@ -85,7 +85,7 @@ export var CommentsToolbar = createComponent({
       r.div({ className: 'dw-cmts-tlbr-head' },
           r.ul({ className: 'dw-cmts-tlbr-summary' },
               r.li({ className: 'dw-cmts-count' }, numPostsOrCommentsText),
-              r.li({}, NameLoginBtns()),
+              r.li({}, NameLoginBtns({})),
               r.li({}, notfLevelElem)),
           toggleDetailsBtn);
 

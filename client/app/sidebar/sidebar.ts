@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 /// <reference path="../../shared/plain-old-javascript.d.ts" />
+/// <reference path="../ReactStore.ts" />
 /// <reference path="minimap.ts" />
 /// <reference path="toggle-sidebar-button.ts" />
 /// <reference path="unread-comments-tracker.ts" />

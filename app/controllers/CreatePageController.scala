@@ -43,6 +43,9 @@ object CreatePageController extends mvc.Controller {
     val anyFolder = (body \ "folder").asOpt[String]
     val titleText = (body \ "pageTitle").as[String]
     val bodyText = (body \ "pageBody").as[String]
+    val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
+    val pageSlug = (body \ "pageSlug").asOpt[String].getOrElse(
+      "new-forum-topic") // for now, ought to slugify title
 
     val approval: Approval = AutoApprover.perhapsApproveNewPage(
       request, pageRole, anyParentPageId) getOrElse
@@ -56,9 +59,6 @@ object CreatePageController extends mvc.Controller {
       }
       anyParentPath.map(_.folder) getOrElse "/"
     }
-
-    val showId = true // for now. Should depend on page role: hide for forums, show for topics?
-    val pageSlug = "new-forum-topic" // for now. Ought to slugify the title.
 
     val newPath = PagePath(dao.siteId, folder = folder, pageId = Some(pageId),
       showId = showId, pageSlug = pageSlug)

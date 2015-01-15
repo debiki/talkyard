@@ -377,9 +377,6 @@ function makeConcatDebikiScriptsStream() {
       makeConcatStream('embedded-comments.js', debikiEmbeddedCommentsFiles),
       makeConcatStream('admin-old.js', adminOldFiles),
 
-      makeConcatStream('debiki-spa-install-first-site.js', [
-          'target/client/install/scripts/install-ng-app.js']),
-
       makeConcatStream('debiki-spa-new-website-choose-owner.js', [
           'target/client/new-site/scripts/new-website-choose-owner.js']),
 

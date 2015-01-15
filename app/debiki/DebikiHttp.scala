@@ -237,6 +237,8 @@ object DebikiHttp {
                 throwRedirect(found.canonicalHostUrl + pathAndQuery)
               case TenantHost.RoleLink =>
                 unimplemented("<link rel='canonical'>")
+              case TenantHost.RoleDuplicate =>
+                found.tenantId
               case _ =>
                 // lookupTenant should have returned FoundChost instead
                 // of FoundAlias with RoleCanonical/Duplicate.

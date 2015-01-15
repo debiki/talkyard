@@ -43,12 +43,6 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
 
   // ----- Websites (a.k.a. tenants)
 
-  def checkInstallationStatus(): InstallationStatus =
-    systemDbDao.checkInstallationStatus()
-
-  def createFirstSite(firstSiteData: FirstSiteData): Tenant =
-    systemDbDao.createFirstSite(firstSiteData)
-
   // COULD rename to loadWebsitesByIds
   def loadTenants(tenantIds: Seq[SiteId]): Seq[Tenant] =
     systemDbDao.loadTenants(tenantIds)
