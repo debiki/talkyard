@@ -42,19 +42,6 @@
   @tpi.debikiScripts
   @Html(tpi.anyGoogleUniversalAnalyticsScript)
 
-  <script>
-    if (!Modernizr.touch) jQuery(document).ready(function($) {
-      yepnope({
-        load: [
-          '/-/tmp/yoxview/jquery.yoxview-2.21.min.js',
-          '/-/tmp/yoxview/yoxview.css'],
-        complete: function() {
-          $('.yoxview').yoxview();
-        }
-      });
-    });
-  </script>
-
   @if(tpi.configValue("social-links").nonEmpty && tpi.configValue("social-links") != "none") {
     @Html(tpi.configValue("social-scripts"))
   }
