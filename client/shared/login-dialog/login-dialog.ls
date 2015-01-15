@@ -45,7 +45,6 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
     return
 
   doingWhatClass = switch mode
-  | 'LoginBecomeMainSiteAdmin' => 'dw-login-become-main-site-admin'
   | 'LoginAsAdmin' => 'dw-login-as-admin'
   | 'LoginToSubmit' => 'dw-login-to-submit'
   | 'LoginToComment' => 'dw-login-to-post-comment'

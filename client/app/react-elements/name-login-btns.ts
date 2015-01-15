@@ -72,7 +72,8 @@ export var NameLoginBtns = React.createClass({
     var loginBtnElem = null;
     if (!user.isLoggedIn) {
       loginBtnElem =
-          r.span({ className: 'dw-a-login', onClick: this.onLoginClick }, 'Login');
+          r.span({ className: 'dw-a-login', onClick: this.onLoginClick },
+              this.props.title || 'Login');
     }
 
     var logoutBtnElem = null;

@@ -65,12 +65,13 @@ export var LoginAndBecomeAdmin = createComponent({
   render: function() {
     return (
       r.div({},
-        r.h1({}, 'Welcome'),
-        r.p({}, 'Congratulations, you have installed Debiki.'),
-        r.p({}, 'Now, register a new admin account with the email you specified ' +
-              'in the configuration file:'),
+        r.h1({}, 'Nothing here, yet'),
+        r.p({}, 'To configure your site and create something, register a new ' +
+            'admin account with the email you specified in the configuration file: ' +
+            'click the button below, then click ', r.b({}, 'Create New Account'), '.'),
+        r.p({}, 'Or simply login, if you have already registered.'),
         r.br(),
-        reactelements.NameLoginBtns({ purpose: 'LoginBecomeMainSiteAdmin' })));
+        reactelements.NameLoginBtns({ title: 'Login or Register', purpose: 'LoginAsAdmin' })));
   }
 });
 
@@ -92,7 +93,7 @@ export var CreateSomethingHere = createComponent({
 
     return (
       r.div({},
-        r.h1({}, 'Nothing here yet'),
+        r.h1({}, 'Nothing here, yet'),
         r.p({}, 'Do you want to create something here?'),
         r.div({ className: 'create-what-options' },
           Button({ active: createWhat === 'Forum',

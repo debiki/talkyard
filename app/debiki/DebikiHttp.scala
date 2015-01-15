@@ -25,6 +25,7 @@ import java.{net => jn}
 import play.api._
 import play.api.http.ContentTypes._
 import play.api.mvc.{Action => _, _}
+import play.api.Play.current
 import requests.DebikiRequest
 import xml.{NodeSeq}
 
@@ -206,10 +207,14 @@ object DebikiHttp {
     lookupTenantIdOrThrow(secure, host = host, pathAndQuery, systemDao)
   }
 
+  val anyFirstSiteHostname: Option[String] =
+    Play.configuration.getString("debiki.hostname")
+
   def lookupTenantIdOrThrow(secure: Boolean, host: String, pathAndQuery: String,
         systemDao: SystemDao): String = {
 
     // Do this:
+    // - Test if the hostname matches any main site hostname in the config files.
     // - If the hostname is like: site-<id>.<baseDomain>, e.g. site-123.debiki.com if
     //   then we have the site id already. Then 1) verify that it's correct, and
     //   2) if theres' any canonical address for the site, and if so include a
@@ -217,6 +222,8 @@ object DebikiHttp {
     // - If the hostname is <whatever> then lookup site id by hostname.
 
     val siteId = host match {
+      case x if Some(x) == anyFirstSiteHostname =>
+        Site.FirstSiteId
       case debiki.Globals.siteByIdHostnameRegex(siteId) =>
         systemDao.loadSite(siteId) match {
           case None =>
