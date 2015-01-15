@@ -33,8 +33,15 @@ import requests.{PageGetRequest, PageRequest, GetRequest}
 object EmbeddedTopicsController extends mvc.Controller {
 
 
-  def isUrlFromEmbeddingUrl(anyPageUrl: String, embeddingUrl: Option[String]): Boolean =
-    embeddingUrl.nonEmpty // for now. COULD implement if people post comments to the wrong site
+  def isUrlFromEmbeddingUrl(pageUrl: String, anyEmbeddingUrl: Option[String]): Boolean = {
+    SECURITY ; COULD /* compare pageURL with embedding site URL...
+    val embeddingUrl: String = anyEmbeddingUrl getOrElse {
+      return false
+    }
+    pageUrl.startsWith(embeddingUrl)
+    */
+    return true
+  }
 
 
   /** Derives the discussion id based on the url of the embedding site.

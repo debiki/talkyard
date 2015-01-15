@@ -56,7 +56,7 @@ object TemplateRenderer {
       return views.html.specialpages.template(tpi, isPageSettings).body
     }
 
-    if (!pageReq.pageExists) {
+    if (!pageReq.pageExists && pageReq.pageRole != Some(PageRole.EmbeddedComments)) {
       if (pageReq.pagePath.value == "/") {
         return views.html.specialpages.createSomethingHerePage(tpi).body
       }
