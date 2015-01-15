@@ -72,8 +72,8 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 #====================
 
 RUN mkdir -p /opt/debiki/database/scripts
-COPY debiki-server /opt/debiki/server
 COPY scripts /opt/debiki/scripts
+COPY debiki-server /opt/debiki/server
 
 
 # Open ports

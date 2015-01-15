@@ -112,6 +112,9 @@ object LoginWithPasswordController extends mvc.Controller {
 
     val dao = daoFor(request.request)
     try {
+      // USABILITY SHOULD verify that if !becomeAdmin then some admin user has already been
+      // created, because the very first user created should be an admin, else
+      // the user probably specified the wrong email address.
       val newUser = dao.createPasswordUser(userData)
       sendEmailAddressVerificationEmail(newUser, anyReturnToUrl, request.host, request.dao)
     }
