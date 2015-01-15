@@ -133,8 +133,6 @@ object Global extends GlobalSettings {
         */
       case ("feed", GET) =>
         Application.feed(pagePath)
-      case ("act", GET) =>
-        ViewPageController.showActionLinks(pagePath, postId = mainFunValAsInt_!)
       case ("unsubscribe", GET) =>
         UnsubscriptionController.showForm(tenantId)
       case ("unsubscribe", POST) =>

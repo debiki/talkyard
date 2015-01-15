@@ -49,13 +49,6 @@ object ViewPageController extends mvc.Controller {
     "__html_encoded_user_specific_data_json__"
 
 
-  def showActionLinks(pathIn: PagePath, postId: ActionId) =
-    PageGetAction(pathIn) { pageReq =>
-      val links = Utils.formHtml(pageReq).actLinks(postId)
-      OkHtml(links)
-    }
-
-
   def viewPost(pathIn: PagePath) = PageGetAction(pathIn) { pageReq =>
     viewPostImpl(pageReq)
   }

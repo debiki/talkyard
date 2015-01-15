@@ -211,17 +211,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
     </form>
 
 
-  def actLinks(pid: ActionId) = {
-    // COULD check permsOnPage.replyHidden/Visible etc.
-    <ul>
-     <li><a href={"?reply=" + pid + _viewRoot}>Reply to post</a></li>
-     <li><a href={"?edit="  + pid + _viewRoot}>Suggest edit</a></li>
-     <li><a href={"?flag="  + pid + _viewRoot}>Report spam or abuse</a></li>
-     <li><a href={"?delete="+ pid + _viewRoot}>Delete</a></li>
-    </ul>
-  }
-
-
   def flagForm = {
     import FlagForm.{InputNames => Inp}
     <div class='dw-fs' title='Report Comment'>
