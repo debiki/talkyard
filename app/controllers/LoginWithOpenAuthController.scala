@@ -66,7 +66,8 @@ object LoginWithOpenAuthController extends Controller {
       Some(s"http://${debiki.Globals.baseDomain}")
     }
     else {
-      Play.configuration.getString("debiki.loginOrigin")
+      Play.configuration.getString("debiki.loginOrigin") orElse
+        Play.configuration.getString("debiki.hostname").map("http://" + _)
     }
 
 
