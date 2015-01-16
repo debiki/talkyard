@@ -1,0 +1,47 @@
+@**
+ * Copyright (C) 2015 Kaj Magnus Lindberg (born 1979)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *@
+
+@(tpi: debiki.TemplateProgrammingInterface)
+
+
+<!DOCTYPE html>
+
+<html class="dw-pri DW">
+<head>
+    @tpi.debikiMeta
+
+    @* For now, use this font always, so if people create a new forum they'll get what they
+    saw at www.debiki.com. Later on, make this configurable somehow.  *@
+    <link rel='stylesheet' href='http://fonts.googleapis.com/css?family=Bree+Serif'>
+
+    @tpi.debikiStyles
+
+    @tpi.debikiScriptsCustomStartupCode("debiki.internal.renderEmptyPage();")
+</head>
+<body>
+<!-- loginAndCreateSomethingHerePage.scala.html -->
+
+<div id='dw-dashbar'></div>
+
+<div class="container">
+    <div id="dw-non-existing-page"></div>
+</div>
+
+@tpi.debikiAppendToBodyTags
+
+</body>
+</html>

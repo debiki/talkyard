@@ -38,9 +38,6 @@ object ApplicationBuild extends Build {
 
 
   val appDependencies = Seq(
-    // This (JDBC and PostgerSQL) makes the database evolutions script in
-    // debiki-dao-rdb work. Otherwise not needed.
-    play.Play.autoImport.jdbc,
     play.Play.autoImport.cache,
     // Authentication.
     "com.mohiva" %% "play-silhouette" % "1.0",
@@ -69,8 +66,7 @@ object ApplicationBuild extends Build {
     // And see: https://groups.google.com/d/msg/play-framework/EmP9v10fH9Q/dz4k_qXlpFQJ
     // (I also got the """org.openqa.selenium.firefox.NotConnectedException: Unable
     // to connect to host 127.0.0.1 on port 7055 """ error.)
-    "org.seleniumhq.selenium" % "selenium-java" % "2.35.0"
-  )
+    "org.seleniumhq.selenium" % "selenium-java" % "2.35.0" % "test")
 
 
   // Make `idea with-sources` work in subprojects.

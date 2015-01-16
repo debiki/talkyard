@@ -114,14 +114,14 @@ trait StuffCreator {
    */
   private def createFirstSite(): (String, String) = {
 
-    val firstSite = Globals.systemDao.createFirstSite(new FirstSiteData {
+    val firstSite = ??? /* Globals.systemDao.createFirstSite(new FirstSiteData {
       val name = "FirstSite"
       val address = firstSiteHost
       val https = TenantHost.HttpsNone
       val pagesToCreate = Nil
       // Some E2E tests create embedded discussions, but that requires an embedding site URL.
       override val embeddingSiteUrl = Some("http://mycomputer:8080")
-    })
+    }) */
 
     // Make the site accessible via "localhost": (in addition to 127.0.0.1)
     firstSiteDao.addTenantHost(
@@ -150,7 +150,7 @@ trait StuffCreator {
           |  extend: http://$newSiteDomain/themes/example/theme.conf
           |""")
 
-    (firstSite.id, "http://" + firstSiteHost)
+    ??? // (firstSite.id, "http://" + firstSiteHost)
   }
 
 

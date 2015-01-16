@@ -105,6 +105,11 @@ body.dw-login-to-login .dw-login-to-login
   display: inline
 // ---
 
+body.dw-login-as-admin
+  #dw-lgi-twitter,  // twitter has no email
+  #dw-lgi-guest     // guests have no password
+    display: none
+
 // Hide password field when creating user in via OAuth or OpenID.
 .dw-fs .form-group.password
   display: none

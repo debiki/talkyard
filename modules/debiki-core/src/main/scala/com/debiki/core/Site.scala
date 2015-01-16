@@ -19,6 +19,19 @@
 package com.debiki.core
 
 
+object Site {
+
+  /** This site id is returned for any IPv4 address that doesn't match anything,
+    * so it'll be possible to access the first site before a domain name has been
+    * connected.
+    */
+  val FirstSiteId = "1"
+
+  val Ipv4AnyPortRegex = """(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(:\d+)?""".r
+
+}
+
+
 /** A website. (Should be renamed to Site.)
   */
 case class Tenant(
@@ -98,22 +111,7 @@ case class FoundAlias(
 case object FoundNothing extends TenantLookup
 
 
-/** The installation status of this website, that is, if we have yet to create
-  * the very first site hosted by this server, or an admin for that site.
-  */
-sealed abstract class InstallationStatus
-
-object InstallationStatus {
-  case object CreateFirstSite extends InstallationStatus
-  case object CreateFirstSiteAdmin extends InstallationStatus
-  case object AllDone extends InstallationStatus
-}
-
-
-/** Data that the database DAO needs when creating the very first site.
-  * There's no owner data, because the database should be empty.
-  */
-abstract class FirstSiteData {
+abstract class NewSiteData {
   def name: String
   def address: String
   def https: TenantHost.HttpsInfo
@@ -122,13 +120,7 @@ abstract class FirstSiteData {
     * discussions, so we need to be able to specify an embedding site URL.
     */
   def embeddingSiteUrl: Option[String] = None
-}
 
-
-/** Data that the database DAO needs when creating a new site (but not
-  * the very first one).
-  */
-abstract class NewSiteData extends FirstSiteData {
   def newSiteOwnerData: NewSiteOwnerData
 }
 

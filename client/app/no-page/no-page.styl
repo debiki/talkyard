@@ -1,5 +1,5 @@
-@**
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+/*!
+ * Copyright (C) 2015 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -13,23 +13,24 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *@
+ */
 
-@(hostname: String)
 
-@views.html.createsite.main(title = "Installation of Debiki at @hostname completed") {
+#dw-non-existing-page
+  h1
+    margin-bottom: 35px;
 
-  <div ng-controller="InstallationCtrl">
+  .dw-a-login
+    background-color: hsl(209, 100%, 50%);
+    padding: 8px 15px;
+    color: hsl(0, 100%, 100%);
+    margin: 0;
 
-    <h1>Installation</h1>
+  .create-what-options
+    margin: 20px 0 35px;
 
-    <p>Installation completed.</p>
+    .btn
+      margin-right: 10px;
 
-    <p>
-      Now, go to the admin dashboard:
-        <a href="/-/admin/"><tt>http(s)://@hostname/-/admin</tt></a>
-    </p>
-}
 
-@* vim: set fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list: *@
-
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

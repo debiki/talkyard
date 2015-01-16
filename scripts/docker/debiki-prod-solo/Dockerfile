@@ -72,8 +72,8 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 #====================
 
 RUN mkdir -p /opt/debiki/database/scripts
-COPY debiki-server /opt/debiki/server
 COPY scripts /opt/debiki/scripts
+COPY debiki-server /opt/debiki/server
 
 
 # Open ports
@@ -83,8 +83,7 @@ COPY scripts /opt/debiki/scripts
 # and Java debugger ports.)
 EXPOSE 80 443 22
 
-# Don't expose PostgreSQL port 5432, haven't specified any password. Also, need not
-# expose it, because PostgreSQL and the app server runs in the same container.
+# Need not expose PostgreSQL port 5432.
 
 
 # Start

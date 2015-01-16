@@ -49,15 +49,20 @@ object ViewPageController extends mvc.Controller {
     "__html_encoded_user_specific_data_json__"
 
 
-  def showActionLinks(pathIn: PagePath, postId: ActionId) =
-    PageGetAction(pathIn) { pageReq =>
-      val links = Utils.formHtml(pageReq).actLinks(postId)
-      OkHtml(links)
+  def viewPost(pathIn: PagePath) = PageGetAction(pathIn, pageMustExist = false) { pageReq =>
+    if (!pageReq.pageExists) {
+      if (pageReq.pagePath.value == "/") {
+        // TemplateRenderer will show a getting-started or create-something-here page.
+        viewPostImpl(makeEmptyPageRequest(pageReq, pageId = "0", showId = false,
+          pageRole = PageRole.WebPage))
+      }
+      else {
+        throwNotFound("DwE404", "Page not found")
+      }
     }
-
-
-  def viewPost(pathIn: PagePath) = PageGetAction(pathIn) { pageReq =>
-    viewPostImpl(pageReq)
+    else {
+      viewPostImpl(pageReq)
+    }
   }
 
 
@@ -76,6 +81,40 @@ object ViewPageController extends mvc.Controller {
     }
 
     Ok(pageHtml) as HTML
+  }
+
+
+  def makeEmptyPageRequest(request: DebikiRequest[Unit], pageId: PageId, showId: Boolean,
+        pageRole: PageRole): PageGetRequest = {
+    val pagePath = PagePath(
+      tenantId = request.siteId,
+      folder = "/",
+      pageId = Some(pageId),
+      showId = showId,
+      pageSlug = "")
+
+    val pageParts = PageParts(pageId)
+
+    val newTopicMeta = PageMeta.forNewPage(
+      pageRole,
+      author = SystemUser.User,
+      parts = pageParts,
+      creationDati = new ju.Date,
+      parentPageId = None,
+      publishDirectly = true)
+
+    new requests.DummyPageRequest(
+      sid = request.sid,
+      xsrfToken = request.xsrfToken,
+      browserId = request.browserId,
+      user = request.user,
+      pageExists = false,
+      pagePath = pagePath,
+      pageMeta = newTopicMeta,
+      permsOnPage = PermsOnPage.Wiki, // for now
+      dao = request.dao,
+      dummyPageParts = pageParts,
+      request = request.request)
   }
 
 }

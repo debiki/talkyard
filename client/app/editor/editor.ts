@@ -235,7 +235,7 @@ export var Editor = createComponent({
       pageTitle: title,
       pageBody: this.state.text
     };
-    Server.createNewPage(data, (newPageId: string) => {
+    Server.createPage(data, (newPageId: string) => {
       window.location.assign('/-' + newPageId);
     });
   },

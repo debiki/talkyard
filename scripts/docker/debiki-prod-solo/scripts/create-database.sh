@@ -11,17 +11,17 @@ echo 'PostgreSQL has started.'
 sleep 1
 
 if [ -n "`psql postgres postgres -c '\l' | grep debiki_prod`" ]; then
-  echo 'Database has already been created, doing nothing.'
-  exit
+  echo 'Database has already been created.'
+else
+  echo 'Creating database...'
+
+  psql postgres postgres -c 'create user debiki_prod'
+  psql postgres postgres -c 'create database debiki_prod owner debiki_prod;'
+
+  echo '...Database created.'
 fi
 
-echo 'Creating database...'
-
-psql postgres postgres -c 'create user debiki_test;'
-psql postgres postgres -c 'create database debiki_test owner debiki_test;'
-
-psql postgres postgres -c 'create user debiki_prod;'
-psql postgres postgres -c 'create database debiki_prod owner debiki_prod;'
-
-echo '...Database created.'
+# In case the PostgreSQL password has been changed:
+psql postgres postgres -c "alter user postgres encrypted password '$DEBIKI_POSTGRESQL_PASSWORD';"
+psql postgres postgres -c "alter user debiki_prod encrypted password '$DEBIKI_POSTGRESQL_PASSWORD';"
 

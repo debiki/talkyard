@@ -34,11 +34,15 @@ export var NameLoginBtns = React.createClass({
   },
 
   onChange: function() {
+    if (!this.isMounted()) {
+      // Don't know how this can happen, but it does inside the NonExistingPage component.
+      return;
+    }
     this.setState(debiki2.ReactStore.allData());
   },
 
   onLoginClick: function() {
-    d.i.showLoginDialog('LoginToLogin');
+    d.i.showLoginDialog(this.props.purpose || 'LoginToLogin');
   },
 
   onLogoutClick: function() {
@@ -68,7 +72,8 @@ export var NameLoginBtns = React.createClass({
     var loginBtnElem = null;
     if (!user.isLoggedIn) {
       loginBtnElem =
-          r.span({ className: 'dw-a-login', onClick: this.onLoginClick }, 'Login');
+          r.span({ className: 'dw-a-login', onClick: this.onLoginClick },
+              this.props.title || 'Login');
     }
 
     var logoutBtnElem = null;

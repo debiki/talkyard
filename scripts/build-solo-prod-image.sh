@@ -34,6 +34,6 @@ unzip $zip_file -d $dockerfile_dir/debiki-server-unzipped
 mv $dockerfile_dir/debiki-server-unzipped/* $dockerfile_dir/debiki-server
 rmdir $dockerfile_dir/debiki-server-unzipped
 
-docker build -t debiki-solo-image $dockerfile_dir
-docker tag debiki-solo-image:latest debiki-solo-image:$version
+docker build -t debiki/debiki-solo-test $dockerfile_dir
+docker tag debiki/debiki-solo-test:latest debiki/debiki-solo-test:$version
 

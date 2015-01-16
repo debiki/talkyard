@@ -217,7 +217,7 @@ export function saveReply(postIds: number[], text: string, doneCallback: () => v
 }
 
 
-export function createNewPage(data, doneCallback: (newPageId: string) => void) {
+export function createPage(data, doneCallback: (newPageId: string) => void) {
   d.u.postJson({
     url: origin + '/-/create-page',
     data: data,
