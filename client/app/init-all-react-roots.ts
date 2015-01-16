@@ -39,6 +39,10 @@ export function initAllReactRoots() {
   if (dashbarElem)
     React.render(debiki2.dashbar.Dashbar({}), dashbarElem);
 
+  var topbarElem = document.getElementById('dw-react-topbar');
+  if (topbarElem)
+    React.render(debiki2.reactelements.TopBar({}), topbarElem);
+
   var sidebarElem = document.getElementById('dw-any-sidebar');
   if (sidebarElem)
     React.render(debiki2.sidebar.Sidebar({}), sidebarElem);
@@ -46,10 +50,6 @@ export function initAllReactRoots() {
   var commentsToolbarElem = document.getElementById('dw-comments-toolbar');
   if (commentsToolbarElem)
     React.render(debiki2.reactelements.CommentsToolbar({}), commentsToolbarElem);
-
-  var nameLoginBtnsElem = document.getElementById('dw-name-login-btns');
-  if (nameLoginBtnsElem)
-    React.render(debiki2.reactelements.NameLoginBtns({}), nameLoginBtnsElem);
 
   debiki2.editor.createEditor();
 

@@ -184,9 +184,6 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   def debikiHtmlTagClasses =
     "DW dw-pri dw-ui-simple dw-render-actions-pending "
 
-  def loginLinkAndUserName =
-    <span id="dw-name-login-btns"></span> // rendered by React.js
-
 
   def xsrfToken: String = debikiRequest.xsrfToken.value
 
