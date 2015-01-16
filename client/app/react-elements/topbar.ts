@@ -101,7 +101,8 @@ export var TopBar = createComponent({
     var menuButton =
         DropdownButton({ title: r.span({ className: 'icon-menu' }), pullRight: true,
               className: 'dw-menu', onSelect: this.onNewNotfLevel },
-            MenuItem({ eventKey: 'Watching' }, 'FAQ'));
+            MenuItem({ eventKey: 'Watching' },
+              r.a({ href: '/-/terms-of-use' }, 'Terms and Privacy')));
 
     var searchForm = !this.state.showSearchForm ? null :
         SearchForm({ onClose: this.closeSearchForm });

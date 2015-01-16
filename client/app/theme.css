@@ -281,6 +281,15 @@ footer p {
 /* I should probably build my own Bootstrap version and update the
 jQuery UI theme, but ... not right now. */
 
+.nav > .active {
+  background-color: hsl(210, 50%, 53%);
+  color: white;
+}
+
+.nav > :first-child {
+  margin-left: 0;
+}
+
 input:focus, textarea:focus {
   /* Change border from inset to solid, and hue from 206 to 208,
   and remove Chrome's built outline in orange */
