@@ -7,6 +7,24 @@
   "ascent": 850,
   "glyphs": [
     {
+      "uid": "9dd9e835aebe1060ba7190ad2b2ed951",
+      "css": "search",
+      "code": 59413,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "bf882b30900da12fca090d9796bc3030",
+      "css": "mail-empty",
+      "code": 59417,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "ccc2329632396dc096bb638d4b46fb98",
+      "css": "mail",
+      "code": 59418,
+      "src": "fontawesome"
+    },
+    {
       "uid": "d73eceadda1f594cec0536087539afbf",
       "css": "heart",
       "code": 59395,
@@ -22,6 +40,54 @@
       "uid": "d17030afaecc1e1c22349b99f3c4992a",
       "css": "star-empty",
       "code": 59411,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "8b80d36d4ef43889db10bc1f0dc9a862",
+      "css": "user",
+      "code": 59414,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "31972e4e9d080eaa796290349ae6c1fd",
+      "css": "users",
+      "code": 59415,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "12f4ece88e46abd864e40b35e05b11cd",
+      "css": "ok",
+      "code": 59424,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "44e04715aecbca7f266a17d5a7863c68",
+      "css": "plus",
+      "code": 59422,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "c1f1975c885aa9f3dad7810c53b82074",
+      "css": "lock",
+      "code": 59429,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "657ab647f6248a6b57a5b893beaf35a9",
+      "css": "lock-open",
+      "code": 59430,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "c5fd349cbd3d23e4ade333789c29c729",
+      "css": "eye",
+      "code": 59427,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "7fd683b2c518ceb9e5fa6757f2276faa",
+      "css": "eye-off",
+      "code": 59428,
       "src": "fontawesome"
     },
     {
@@ -55,9 +121,33 @@
       "src": "fontawesome"
     },
     {
+      "uid": "9a76bc135eac17d2c8b8ad4a5774fc87",
+      "css": "download",
+      "code": 59423,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "eeec3208c90b7b48e804919d0d2d4a41",
+      "css": "upload",
+      "code": 59426,
+      "src": "fontawesome"
+    },
+    {
       "uid": "c6be5a58ee4e63a5ec399c2b0d15cf2c",
       "css": "reply",
       "code": 59401,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "85528017f1e6053b2253785c31047f44",
+      "css": "comment",
+      "code": 59435,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "9c1376672bb4f1ed616fdd78a23667e9",
+      "css": "comment-empty",
+      "code": 59436,
       "src": "fontawesome"
     },
     {
@@ -70,6 +160,30 @@
       "uid": "f48ae54adfb27d8ada53d0fd9e34ee10",
       "css": "trash",
       "code": 59398,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "559647a6f430b3aeadbecd67194451dd",
+      "css": "menu",
+      "code": 59412,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "5bb103cd29de77e0e06a52638527b575",
+      "css": "wrench",
+      "code": 59416,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "598a5f2bcf3521d1615de8e1881ccd17",
+      "css": "clock",
+      "code": 59431,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "98d9c83c1ee7c2c25af784b518c522c5",
+      "css": "block",
+      "code": 59419,
       "src": "fontawesome"
     },
     {
@@ -109,6 +223,36 @@
       "src": "fontawesome"
     },
     {
+      "uid": "a73c5deb486c8d66249811642e5d719a",
+      "css": "arrows-cw",
+      "code": 59421,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "3e674995cacc2b09692c096ea7eb6165",
+      "css": "megaphone",
+      "code": 59432,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "f2aa28a2548ed3d2be718d087b65ee21",
+      "css": "key",
+      "code": 59425,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "9396b2d8849e0213a0f11c5fd7fcc522",
+      "css": "tasks",
+      "code": 59433,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "44a0e2660ac966cdfaa04deb6aac51df",
+      "css": "shield",
+      "code": 59420,
+      "src": "fontawesome"
+    },
+    {
       "uid": "8e04c98c8f5ca0a035776e3001ad2638",
       "css": "facebook",
       "code": 61594,
@@ -125,6 +269,12 @@
       "css": "linkedin",
       "code": 61665,
       "src": "fontawesome"
+    },
+    {
+      "uid": "815503841e980c848f55e0271deacead",
+      "css": "link",
+      "code": 59434,
+      "src": "entypo"
     },
     {
       "uid": "96ea1be71f597a5bdfc8f791ada4f651",
