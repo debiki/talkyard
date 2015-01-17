@@ -20,14 +20,9 @@
 @homepage = @{ if (isHomepage) " homepage" else "" }
 
 <!DOCTYPE html>
-
-<html class="@tpi.debikiHtmlTagClasses@homepage @tpi.configValue("html-tag-classes")" @tpi.configValue("html-tag-attributes-excl-class")>
+<html class="@tpi.debikiHtmlTagClasses@homepage">
 <head>
   @tpi.debikiMeta
-
-  <title>@tpi.configValue("title")</title>
-  <meta name="description" content="@tpi.configValue("description")">
-  <meta name="keywords" content="@tpi.configValue("keywords")">
 
   @tpi.debikiStyles
 
@@ -35,20 +30,12 @@
   saw at www.debiki.com. Later on, make this configurable somehow.  *@
   <link rel='stylesheet' href='http://fonts.googleapis.com/css?family=Bree+Serif'>
 
-  @Html(tpi.configValue("html-styles"))
-  @Html(tpi.pageConfigValue("html-styles-this-page"))
   @tpi.stylesheetBundle("styles.css")
   @Html(tpi.siteSettings.headStylesHtml.valueAsString)
 
   @tpi.debikiScripts
   @Html(tpi.anyGoogleUniversalAnalyticsScript)
 
-  @if(tpi.configValue("social-links").nonEmpty && tpi.configValue("social-links") != "none") {
-    @Html(tpi.configValue("social-scripts"))
-  }
-
-  @Html(tpi.configValue("html-scripts"))
-  @Html(tpi.pageConfigValue("html-scripts-this-page"))
   @Html(tpi.siteSettings.headScriptsHtml.valueAsString)
 </head>
 <body>
@@ -79,7 +66,6 @@
 
 <div id="dw-posts-navigation"></div>
 
-@Html(tpi.configValue("html-append-to-body"))
 @tpi.debikiAppendToBodyTags
 @Html(tpi.siteSettings.footerHtml.valueAsString)
 
@@ -87,4 +73,3 @@
 @Html(tpi.siteSettings.endOfBodyHtml.valueAsString)
 </body>
 </html>
-

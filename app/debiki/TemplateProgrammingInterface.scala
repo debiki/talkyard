@@ -183,8 +183,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   def anyCurrentPagePath: Option[PagePath] = None
 
   /** Classes for the <html> tag. */
-  def debikiHtmlTagClasses =
-    "DW dw-pri dw-ui-simple dw-render-actions-pending "
+  def debikiHtmlTagClasses = "DW dw-pri "
 
 
   def xsrfToken: String = debikiRequest.xsrfToken.value

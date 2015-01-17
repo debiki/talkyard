@@ -18,16 +18,11 @@
 @(tpi: debiki.TemplateProgrammingInterface)
 
 
-<html class="@tpi.debikiHtmlTagClasses@homepage @tpi.configValue("html-tag-classes")" @tpi.configValue("html-tag-attributes-excl-class")>
+<html class="@tpi.debikiHtmlTagClasses@homepage">
 <head>
   @tpi.debikiMeta
 
-  <title>@tpi.configValue("title")</title>
-  <meta name="description" content="@tpi.configValue("description")">
-  <meta name="keywords" content="@tpi.configValue("keywords")">
-
   @tpi.debikiStyles
-  @Html(tpi.configValue("html-styles"))
   @tpi.stylesheetBundle("styles.css")
 
   @tpi.debikiScripts
