@@ -150,6 +150,9 @@ var Title = createComponent({
   },
   render: function() {
     var titlePost = this.props.allPosts[TitleId];
+    if (!titlePost)
+      return null;
+
     var titleText = titlePost.isApproved
         ? titlePost.sanitizedHtml
         : r.i({}, '(Title pending approval)');
