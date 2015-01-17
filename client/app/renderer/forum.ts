@@ -55,6 +55,18 @@ export function buildForumRoutes() {
 }
 
 
+export var ForumScrollBehavior = {
+  updateScrollPosition: function(position, actionType) {
+    // Never change scroll position when switching between last/top/categories
+    // in the forum. Later on I might find this behavior useful:
+    //   https://github.com/rackt/react-router/blob/master/behaviors/ImitateBrowserBehavior.js
+    //   https://github.com/rackt/react-router/blob/master/docs/api/components/Route.md#ignorescrollbehavior
+    //   https://github.com/rackt/react-router/blob/master/docs/api/create.md#scrollbehavior
+    //   https://github.com/rackt/react-router/pull/388
+    return;
+  }
+};
+
 
 export var Forum = createComponent({
   mixins: [debiki2.StoreListenerMixin],

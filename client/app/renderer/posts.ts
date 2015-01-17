@@ -847,8 +847,11 @@ function renderTitleBodyComments() {
 
   var store = debiki2.ReactStore.allData();
   if (store.pageRole === 'Forum') {
-    var routes = debiki2.renderer.buildForumRoutes();
-    ReactRouter.run(routes, function(handler) {
+    var router = ReactRouter.create({
+      routes: debiki2.renderer.buildForumRoutes(),
+      scrollBehavior: debiki2.renderer.ForumScrollBehavior,
+    });
+    router.run(function(handler) {
       React.render(handler(store), root);
     });
   }
