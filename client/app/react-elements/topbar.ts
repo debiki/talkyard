@@ -81,6 +81,10 @@ export var TopBar = createComponent({
     var store: Store = this.state.store;
     var user: User = store.user;
 
+    // Don't show all these buttons on a homepage / landing page.
+    if (store.pageRole === 'HomePage')
+      return null;
+
     var loggedInAs = !user.isLoggedIn ? null :
         r.a({ className: 'dw-name', onClick: this.goToUserPage }, user.username || user.fullName);
 
