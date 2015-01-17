@@ -196,15 +196,16 @@ export var Sidebar = createComponent({
 
     if (commentSectionTop <= windowTop) {
       // We've scrolled down; let the sidebar span from top to bottom.
+      sidebar.css('top', 0);
+      sidebar.css('position', 'fixed');
       if (this.state.showSidebar) {
         sidebar.addClass('dw-sidebar-fixed');
-        sidebar.css('top', 0);
-        sidebar.css('position', 'fixed');
         sidebar.height(windowBottom - windowTop);
+        openButton.css('position', 'relative');
       }
       else {
-        openButton.css('top', 0);
-        openButton.css('position', 'fixed');
+        sidebar.height(0);
+        openButton.css('position', 'absolute');
       }
     }
     else {
@@ -218,7 +219,6 @@ export var Sidebar = createComponent({
       sidebar.removeClass('dw-sidebar-fixed');
       sidebar.offset({ top: commentSectionTop, left: undefined });
       sidebar.css('position', 'absolute');
-      sidebar.css('right', 0);
       if (this.state.showSidebar) {
         sidebar.height(windowBottom - commentSectionTop);
         sidebar.css('overflow', 'hidden');
@@ -227,8 +227,6 @@ export var Sidebar = createComponent({
         sidebar.height(0);
         sidebar.css('overflow', 'visible'); // else open button not shown
         openButton.css('position', 'absolute');
-        openButton.css('top', 0);
-        openButton.css('right', 0);
       }
     }
 
@@ -377,7 +375,7 @@ export var Sidebar = createComponent({
         return (
           r.div({},
             r.div({ id: 'dw-sidebar', className: sidebarClasses, ref: 'sidebar' },
-              r.div({ ref: 'openButton' },
+              r.div({ id: 'dw-toggle-sidebar-and-comment-counts', ref: 'openButton' },
                 ToggleSidebarButton({ isSidebarOpen: false, onClick: this.openSidebar }),
                 unreadAndNewCounts))));
       }
