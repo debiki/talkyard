@@ -57,7 +57,6 @@ object ApplicationBuild extends Build {
     //              why-do-i-need-jsr305-to-use-guava-in-scala
     "com.google.code.findbugs" % "jsr305" % "1.3.9" % "provided",
     // "com.twitter" %% "ostrich" % "4.10.6",
-    "org.yaml" % "snakeyaml" % "1.11",
     "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
     "org.scalatest" %% "scalatest" % "2.2.0" % "test", // but prefer ScalaTest
     // Use a recent Selenium driver, otherwise it won't work with the version of Firefox,

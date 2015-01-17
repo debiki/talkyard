@@ -20,7 +20,7 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.CreatePageController
-import debiki.dao.{SiteDao, ConfigValueDao}
+import debiki.dao.SiteDao
 import java.{util => ju}
 
 

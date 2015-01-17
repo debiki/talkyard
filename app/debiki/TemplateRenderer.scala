@@ -38,8 +38,6 @@ object TemplateRenderer {
         views.html.specialpages.brokenPage(ex).body
       case ex: BadTemplateException =>
         views.html.specialpages.brokenPage(ex).body
-      case ex: WebsiteConfigException =>
-        views.html.specialpages.brokenPage(ex).body
     }
 
 
@@ -65,8 +63,9 @@ object TemplateRenderer {
       }
     }
 
-    val template = tpi.pageConfigValue("template") orIfEmpty {
+    val template =
       pageReq.thePageRole match {
+        case PageRole.HomePage => "homepage"
         case PageRole.BlogPost => "blogPost"
         case PageRole.Blog => "blog"
         case PageRole.Forum => "forum"
@@ -78,7 +77,6 @@ object TemplateRenderer {
         // A blog post template works well for most pages?
         "blogPost"
       }
-    }
 
     renderThemeTemplate(template, tpi::Nil)
   }

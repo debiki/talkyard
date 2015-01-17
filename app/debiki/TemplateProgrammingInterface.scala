@@ -135,14 +135,6 @@ object TemplateProgrammingInterface {
 class InternalTemplateProgrammingInterface protected (
   protected val dao: SiteDao) {
 
-
-  def websiteConfigValue(confValName: String, or: => String = ""): String =
-    anyWebsiteConfigValue(confValName) getOrElse or
-
-
-  protected def anyWebsiteConfigValue(confValName: String): Option[String] =
-    dao.loadWebsiteConfig().getText(confValName)
-
 }
 
 
@@ -210,49 +202,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
       minMaxCss = minMaxCss).body)
 
 
-  /** A website or page config value, and page specific values take precedence.
-   */
-  def anyConfigValue(confValName: String, pageId: Option[String] = None): Option[String] =
-    anyPageConfigValue(confValName, pageId) orElse
-      anyWebsiteConfigValue(confValName)
-
-
-  def configValue(confValName: String, pageId: Option[String] = None, or: String = ""): String =
-    anyConfigValue(confValName, pageId) getOrElse or
-
-
-  /** Loads page specific data, e.g. which template to use (if we're not
-    * supposed to use the default template for the folder in which the page
-    * is placed) and perhaps page html keywords/title/description.
-    *
-    * SHOULD cache the result, otherwise we'll have to parse YAML
-    * each time a page is viewed.
-    */
-  def pageConfigValue(confValName: String, pageId: Option[String] = None, or: String = "")
-        : String = {
-    anyPageConfigValue(confValName, pageId) getOrElse or
-  }
-
-
-  private def anyPageConfigValue(confValName: String, pageId: Option[String]): Option[String] = {
-    val thePageId = pageId orElse anyCurrentPageId getOrElse {
-      return None
-    }
-    try {
-      dao.loadPageConfigMap(thePageId).get(confValName) match {
-        case None => None
-        case Some(null) => Some("") // SnakeYaml is Java and uses `null`.
-        case Some(x) => Some(x.toString)
-      }
-    }
-    catch {
-      case ex: DebikiException =>
-        throw TemplateRenderer.PageConfigException(
-          "DwE63D8", s"Error loading page config value '$confValName': ${ex.getMessage}")
-    }
-  }
-
-
+  /* Perhaps I'll add this back later, or use it in the topbar.
   def logoHtml = {
     val logoUrlOrHtml = debikiRequest.siteSettings.logoUrlOrHtml.value.toString.trim
     if (logoUrlOrHtml.headOption == Some('<')) {
@@ -263,7 +213,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
       // `logoUrlOrHtml` should be an image URL, wrap in a tag.
       <img src={logoUrlOrHtml}></img>.toString
     }
-  }
+  } */
 
 
   def companyDomain = debikiRequest.siteSettings.companyDomain
@@ -403,26 +353,6 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
   }
 
 
-  /* I can make these work again, later, if I implement non-Javascript version of
-    the forum category list page:
-
-  def listPublishedSubForums(): Seq[tpi.ForumOrCategory] =
-    listPubSubForumsImpl(pageId)
-
-
-  def listPublishedSubForumsOf(forum: tpi.ForumOrCategory): Seq[tpi.ForumOrCategory] =
-    listPubSubForumsImpl(forum.id)
-
-
-  private def listPubSubForumsImpl(parentPageId: String): Seq[tpi.ForumOrCategory] =
-    listPublishedChildren(
-      parentPageId = Some(parentPageId),
-      filterPageRole = Some(PageRole.ForumCategory)) map { pathAndMeta =>
-        tpi.ForumOrCategory(pathAndMeta.meta, pathAndMeta.path)
-      }
-  */
-
-
   def hasChildPages: Boolean = {
     // COULD make this more efficient. We already do a database roundtrip
     // via e.g. `listPublishedSubForums` — Might as well ask for all successor
@@ -510,7 +440,7 @@ class TemplateProgrammingInterface(
 
 
   override lazy val reactStoreSafeJsonString: String = {
-    ReactJson.pageToJson(pageReq, socialLinksHtml = configValue("social-links")).toString
+    ReactJson.pageToJson(pageReq, socialLinksHtml = "" /*configValue("social-links")*/).toString
   }
 
 }
