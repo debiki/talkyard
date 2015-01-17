@@ -131,12 +131,18 @@ var SearchForm = createComponent({
     key.unbind('escape', this.props.onClose);
   },
 
+  search: function() {
+    $(this.refs.xsrfToken.getDOMNode()).val($['cookie']('XSRF-TOKEN'));
+    $(this.refs.form.getDOMNode()).submit();
+  },
+
   render: function() {
     return (
         r.div({ className: 'dw-lower-right-corner' },
-          r.form({ id: 'dw-search-form', className: 'debiki-search-form form-search',
-              method: 'post', acceptCharset: 'UTF-8', action: '/-/search/whole-site/' },
-            'Search:',
+          r.form({ id: 'dw-search-form', ref: 'form', className: 'debiki-search-form form-search',
+              method: 'post', acceptCharset: 'UTF-8', action: '/-/search/site',
+              onSubmit: this.search },
+            r.input({ type: 'hidden', ref: 'xsrfToken', name: 'dw-fi-xsrf' }),
             r.input({ type: 'text', tabindex: '1', placeholder: 'Text to search for',
                 ref: 'input', className: 'input-medium search-query', name: 'searchPhrase' }))));
   }
