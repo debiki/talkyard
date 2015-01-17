@@ -90,7 +90,7 @@ object ReactJson {
       "rootPostId" -> JsNumber(BigDecimal(pageReq.pageRoot getOrElse PageParts.BodyId)),
       "allPosts" -> JsObject(allPostsJson),
       "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
-      "horizontalLayout" -> JsBoolean(pageReq.thePageSettings.horizontalComments.valueIsTrue),
+      "horizontalLayout" -> JsBoolean(pageReq.thePageSettings.horizontalComments.valueAsBoolean),
       "socialLinksHtml" -> JsString(socialLinksHtml))
   }
 

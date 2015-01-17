@@ -168,6 +168,8 @@ object SiteTpi {
 class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   extends InternalTemplateProgrammingInterface(debikiRequest.dao) {
 
+  def siteSettings = debikiRequest.siteSettings
+
   def isLoggedIn = debikiRequest.user isDefined
   def isOwner = debikiRequest.user.map(_.isOwner) == Some(true)
   def isAdmin = debikiRequest.user.map(_.isAdmin) == Some(true)
@@ -467,7 +469,9 @@ class TemplateProgrammingInterface(
   import InternalPageTpi.{Page => _, _}
   import TemplateProgrammingInterface._
 
-  val horizontalComments = pageReq.thePageSettings.horizontalComments.valueIsTrue
+  def pageSettings = pageReq.thePageSettings
+
+  val horizontalComments = pageReq.thePageSettings.horizontalComments.valueAsBoolean
 
 
   override def debikiHtmlTagClasses =

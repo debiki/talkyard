@@ -38,6 +38,7 @@
   @Html(tpi.configValue("html-styles"))
   @Html(tpi.pageConfigValue("html-styles-this-page"))
   @tpi.stylesheetBundle("styles.css")
+  @Html(tpi.siteSettings.headStylesHtml.valueAsString)
 
   @tpi.debikiScripts
   @Html(tpi.anyGoogleUniversalAnalyticsScript)
@@ -48,21 +49,13 @@
 
   @Html(tpi.configValue("html-scripts"))
   @Html(tpi.pageConfigValue("html-scripts-this-page"))
+  @Html(tpi.siteSettings.headScriptsHtml.valueAsString)
 </head>
 <body>
 
 <div id="dw-any-sidebar"></div>
 
-<div id='topbar'>
-  <div class='container ui-helper-clearfix'>
-    <a class='logo-slogan' href='/'>
-      @Html(tpi.logoHtml)
-    </a>
-    <nav id='site-nav' class='debiki-0-mark-current-site-section'>
-      @Html(tpi.websiteConfigValue("html-navigation-links"))
-    </nav>
-  </div>
-</div>
+@Html(tpi.siteSettings.headerHtml.valueAsString)
 
 <div id="dw-react-topbar" class="container"></div>
 
@@ -86,20 +79,12 @@
 
 <div id="dw-posts-navigation"></div>
 
-<footer>
-  <div class='footer'>
-    @Html(tpi.configValue("html-footer"))
-    <p>
-      <a href="@routes.LegalController.viewTermsOfUsePage()">Terms of Use</a>
-      <a href="@routes.LegalController.viewPrivacyPolicyPage()">Privacy Policy</a>
-    </p>
-  </div>
-</footer>
-
 @Html(tpi.configValue("html-append-to-body"))
 @tpi.debikiAppendToBodyTags
+@Html(tpi.siteSettings.footerHtml.valueAsString)
 
 <div id="dw-editor"></div>
+@Html(tpi.siteSettings.endOfBodyHtml.valueAsString)
 </body>
 </html>
 

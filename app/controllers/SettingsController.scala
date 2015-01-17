@@ -46,7 +46,7 @@ object SettingsController extends mvc.Controller {
   }
 
 
-  def saveSetting = AdminPostJsonAction(maxLength = 500) { request: JsonPostRequest =>
+  def saveSetting = AdminPostJsonAction(maxLength = 5000) { request: JsonPostRequest =>
     val body = request.body
     val pageId = (body \ "pageId").asOpt[PageId]
     val tyype = (body \ "type").as[String]

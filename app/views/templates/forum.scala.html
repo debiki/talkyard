@@ -17,12 +17,6 @@
 
 @(tpi: debiki.TemplateProgrammingInterface)
 
-@import com.debiki.core.Prelude.{toIso8601T, toIso8601Day}
-
-
-@datiTag(dati: java.util.Date) = {
-  <abbr title="@{toIso8601T(dati)}">@{toIso8601Day(dati)}</abbr>}
-
 
 @wrapper(tpi) {
   <!-- forum.scala.html -->
