@@ -16,7 +16,6 @@
  */
 
 /// <reference path="../typedefs/react/react.d.ts" />
-/// <reference path="dashbar/dashbar.ts" />
 /// <reference path="sidebar/sidebar.ts" />
 /// <reference path="editor/editor.ts" />
 /// <reference path="react-elements/comments-toolbar.ts" />
@@ -34,10 +33,6 @@ export function initAllReactRoots() {
   var nonExistingPageElem = document.getElementById('dw-non-existing-page');
   if (nonExistingPageElem)
     React.render(debiki2.nopage.NonExistingPage({}), nonExistingPageElem);
-
-  var dashbarElem = document.getElementById('dw-dashbar');
-  if (dashbarElem)
-    React.render(debiki2.dashbar.Dashbar({}), dashbarElem);
 
   var topbarElem = document.getElementById('dw-react-topbar');
   if (topbarElem)

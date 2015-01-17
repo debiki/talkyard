@@ -96,7 +96,9 @@ export var TopBar = createComponent({
         Button({ className: 'dw-logout', onClick: this.onLogoutClick }, 'Log Out');
 
     var adminButton = !user.isAdmin ? null :
-        Button({ className: 'dw-admin' }, r.span({ className: 'icon-wrench' }, 'Admin'));
+        Button({ className: 'dw-admin', onClick: () => {
+          window.location.assign(d.i.serverOrigin + '/-/admin/?returnTo=' + location.pathname)
+        }}, r.a({ className: 'icon-wrench' }, 'Admin'));
 
     var searchButton =
         Button({ className: 'dw-search', onClick: this.onSearchClick },
