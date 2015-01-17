@@ -20,14 +20,9 @@
 @homepage = @{ if (isHomepage) " homepage" else "" }
 
 <!DOCTYPE html>
-
-<html class="@tpi.debikiHtmlTagClasses@homepage @tpi.configValue("html-tag-classes")" @tpi.configValue("html-tag-attributes-excl-class")>
+<html class="@tpi.debikiHtmlTagClasses@homepage">
 <head>
   @tpi.debikiMeta
-
-  <title>@tpi.configValue("title")</title>
-  <meta name="description" content="@tpi.configValue("description")">
-  <meta name="keywords" content="@tpi.configValue("keywords")">
 
   @tpi.debikiStyles
 
@@ -35,40 +30,21 @@
   saw at www.debiki.com. Later on, make this configurable somehow.  *@
   <link rel='stylesheet' href='http://fonts.googleapis.com/css?family=Bree+Serif'>
 
-  @Html(tpi.configValue("html-styles"))
-  @Html(tpi.pageConfigValue("html-styles-this-page"))
   @tpi.stylesheetBundle("styles.css")
+  @Html(tpi.siteSettings.headStylesHtml.valueAsString)
 
   @tpi.debikiScripts
   @Html(tpi.anyGoogleUniversalAnalyticsScript)
 
-  @if(tpi.configValue("social-links").nonEmpty && tpi.configValue("social-links") != "none") {
-    @Html(tpi.configValue("social-scripts"))
-  }
-
-  @Html(tpi.configValue("html-scripts"))
-  @Html(tpi.pageConfigValue("html-scripts-this-page"))
+  @Html(tpi.siteSettings.headScriptsHtml.valueAsString)
 </head>
 <body>
 
-<div id='dw-dashbar'></div>
 <div id="dw-any-sidebar"></div>
 
-<div id='topbar'>
-  <div class='container ui-helper-clearfix'>
-    <a class='logo-slogan' href='/'>
-      @Html(tpi.logoHtml)
-    </a>
-    <span id='dw-loginout'>@tpi.loginLinkAndUserName</span>
-    <nav id='site-nav' class='debiki-0-mark-current-site-section'>
-      @Html(tpi.websiteConfigValue("html-navigation-links"))
-    </nav>
-    @* This search form messes up the navigation bar :-(  So don't include right now.
-    Instead, for now, have a search form only on forum pages.
-    @views.html.searchForm(tpi, id = "site-search", placeholderText = "Search")
-    *@
-  </div>
-</div>
+@Html(tpi.siteSettings.headerHtml.valueAsString)
+
+<div id="dw-react-topbar" class="container"></div>
 
 <div id='alfa-info' class='debiki-show-if-lte-ie8'>
   <div class='alfa-small'>
@@ -90,20 +66,10 @@
 
 <div id="dw-posts-navigation"></div>
 
-<footer>
-  <div class='footer'>
-    @Html(tpi.configValue("html-footer"))
-    <p>
-      <a href="@routes.LegalController.viewTermsOfUsePage()">Terms of Use</a>
-      <a href="@routes.LegalController.viewPrivacyPolicyPage()">Privacy Policy</a>
-    </p>
-  </div>
-</footer>
-
-@Html(tpi.configValue("html-append-to-body"))
 @tpi.debikiAppendToBodyTags
+@Html(tpi.siteSettings.footerHtml.valueAsString)
 
 <div id="dw-editor"></div>
+@Html(tpi.siteSettings.endOfBodyHtml.valueAsString)
 </body>
 </html>
-

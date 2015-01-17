@@ -30,7 +30,8 @@ case class AnySetting(
   val section: Option[SettingsTarget]) {
 
   def value: Any = assignedValue getOrElse default
-  def valueIsTrue = value == "T" || value == true
+  def valueAsBoolean = value == "T" || value == true
+  def valueAsString: String = "" + value
 }
 
 
@@ -86,6 +87,14 @@ case class Settings(settingsChain: SettingsChain) {
 
   val horizontalComments = derive("horizontalComments", false)
 
+  val headStylesHtml = derive("headStylesHtml", "")
+  val headScriptsHtml = derive("headScriptsHtml", "")
+  val endOfBodyHtml = derive("endOfBodyHtml", "")
+
+  val headerHtml = derive("headerHtml", "")
+  val footerHtml = derive("footerHtml", "")
+
+  val socialLinksHtml = derive("socialLinksHtml", "")
   val logoUrlOrHtml = derive("logoUrlOrHtml", """<span>Home</span>""")
 
   val companyDomain = derive("companyDomain", "www.example.com")
@@ -103,7 +112,13 @@ case class Settings(settingsChain: SettingsChain) {
     Json.obj(
       "title" -> jsonFor(title),
       "description" -> jsonFor(description),
+      "headStylesHtml" -> jsonFor(headStylesHtml),
+      "headScriptsHtml" -> jsonFor(headScriptsHtml),
+      "endOfBodyHtml" -> jsonFor(endOfBodyHtml),
+      "headerHtml" -> jsonFor(headerHtml),
+      "footerHtml" -> jsonFor(footerHtml),
       "horizontalComments" -> jsonFor(horizontalComments),
+      "socialLinksHtml" -> jsonFor(socialLinksHtml),
       "logoUrlOrHtml" -> jsonFor(logoUrlOrHtml),
       "companyDomain" -> jsonFor(companyDomain),
       "companyFullName" -> jsonFor(companyFullName),

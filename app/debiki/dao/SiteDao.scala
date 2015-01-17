@@ -62,7 +62,6 @@ object SiteDaoFactory {
 abstract class SiteDao
   extends AnyRef
   with AssetBundleDao
-  with ConfigValueDao
   with SettingsDao
   with SpecialContentDao
   with PageDao

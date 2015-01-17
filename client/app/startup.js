@@ -28,6 +28,15 @@ d.i.BodyId = 1;
 d.i.DEBIKI_TABINDEX_DIALOG_MAX = 109;
 
 
+// Tell KeyMaster to handle Escape clicks also inside <input>s.
+key.filter = function(event) {
+  if (event.keyCode === 27) // escape is 27
+    return true;
+  var tagName = (event.target || event.srcElement).tagName;
+  return !(tagName == 'INPUT' || tagName == 'SELECT' || tagName == 'TEXTAREA');
+};
+
+
 function $initStep4() {
   d.i.makeThreadResizableForPost(this);
 };

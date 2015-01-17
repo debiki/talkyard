@@ -44,7 +44,6 @@ class CachingSiteDao(val siteDbDao: ChargingSiteDbDao)
   extends SiteDao
   with CachingDao
   with CachingAssetBundleDao
-  with CachingConfigValueDao
   with CachingSettingsDao
   with CachingSpecialContentDao
   with CachingPageDao

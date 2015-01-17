@@ -51,6 +51,7 @@ object CreateSiteController extends mvc.Controller {
 
 
   def newWebsiteAddr(websiteName: String, dao: SiteDao): String = {
+    ??? /* Use debiki.baseDomain instead
     def die = throwForbidden(
       "DwE30SC3", "You may not create a new website from this website")
     val siteConfig = dao.loadWebsiteConfig()
@@ -62,6 +63,7 @@ object CreateSiteController extends mvc.Controller {
     siteConfig.getText("new-site-config-page-text") getOrElse die
 
     s"$websiteName.$domain"
+    */
   }
 
 

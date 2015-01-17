@@ -16,7 +16,6 @@
  */
 
 /// <reference path="../typedefs/react/react.d.ts" />
-/// <reference path="dashbar/dashbar.ts" />
 /// <reference path="sidebar/sidebar.ts" />
 /// <reference path="editor/editor.ts" />
 /// <reference path="react-elements/comments-toolbar.ts" />
@@ -35,9 +34,9 @@ export function initAllReactRoots() {
   if (nonExistingPageElem)
     React.render(debiki2.nopage.NonExistingPage({}), nonExistingPageElem);
 
-  var dashbarElem = document.getElementById('dw-dashbar');
-  if (dashbarElem)
-    React.render(debiki2.dashbar.Dashbar({}), dashbarElem);
+  var topbarElem = document.getElementById('dw-react-topbar');
+  if (topbarElem)
+    React.render(debiki2.reactelements.TopBar({}), topbarElem);
 
   var sidebarElem = document.getElementById('dw-any-sidebar');
   if (sidebarElem)
@@ -46,10 +45,6 @@ export function initAllReactRoots() {
   var commentsToolbarElem = document.getElementById('dw-comments-toolbar');
   if (commentsToolbarElem)
     React.render(debiki2.reactelements.CommentsToolbar({}), commentsToolbarElem);
-
-  var nameLoginBtnsElem = document.getElementById('dw-name-login-btns');
-  if (nameLoginBtnsElem)
-    React.render(debiki2.reactelements.NameLoginBtns({}), nameLoginBtnsElem);
 
   debiki2.editor.createEditor();
 

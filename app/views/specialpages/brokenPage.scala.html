@@ -19,13 +19,11 @@
 
 @import com.debiki.core.PageParts
 @import debiki.TemplateRenderer._
-@import debiki.WebsiteConfigException
 
 @withSomething = @{
   errorException match {
     case _: BadTemplateException => " with the page template"
     case _: PageConfigException => " with the page settings"
-    case _: WebsiteConfigException => " with the website configuration"
     case _ => ""
   }
 }

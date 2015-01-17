@@ -52,12 +52,7 @@ export var NameLoginBtns = React.createClass({
   },
 
   goToUserPage: function() {
-    // If using an <a> link, then, if already in the /-/users/ SPA, no rerendering
-    // of React elements will be triggered (not sure why) so the contents of the
-    // page won't change: it'll show details for one user, but the URL will be
-    // for another (namely the currently logged in user). Workaround: update
-    // window.location — this rerenders the React components.
-    window.location.assign('/-/users/#/id/' + this.state.user.userId);
+    goToUserPage(this.state.user.userId);
   },
 
   render: function() {
@@ -91,6 +86,16 @@ export var NameLoginBtns = React.createClass({
     return elems;
   }
 });
+
+
+export function goToUserPage(userId) {
+  // If using an <a> link, then, if already in the /-/users/ SPA, no rerendering
+  // of React elements will be triggered (not sure why) so the contents of the
+  // page won't change: it'll show details for one user, but the URL will be
+  // for another (namely the currently logged in user). Workaround: update
+  // window.location — this rerenders the React components.
+  window.location.assign('/-/users/#/id/' + userId);
+}
 
 
 //------------------------------------------------------------------------------

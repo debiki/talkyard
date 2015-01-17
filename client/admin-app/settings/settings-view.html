@@ -17,10 +17,39 @@
     and blog software work.
   </setting>
 
+  <setting title="Header HTML" setting="settings.headerHtml" multiline="true">
+    Any header, it's shown at the top of the page.
+  </setting>
+
+  <setting title="Footer HTML" setting="settings.footerHtml" multiline="true">
+    Any footer, it's shown at the bottom of the page.
+  </setting>
+
+  <setting title="Styles HTML" setting="settings.headStylesHtml" multiline="true">
+    Stylesheet link tags that will be inserted after other stylesheet tags
+    in the &lt;head&gt; tag.
+  </setting>
+
+  <setting title="Scripts HTML" setting="settings.headScriptsHtml" multiline="true">
+    Script tags that will be inserted after other scripts in the &lt;head&gt; tag.
+  </setting>
+
+  <setting title="&lt;/body&gt; HTML" setting="settings.endOfBodyHtml" multiline="true">
+    Tags that will be inserted just before the end of the &lt;body&gt; tag.
+  </setting>
+
+  <setting title="Social links HTML" setting="settings.socialLinksHtml" multiline="true">
+    Google+, Facebook, Twitter like and share buttons. Don't forget to include a
+    script too, e.g. in the <i>Scripts HTML</i> config value. — Perhaps I'll remove
+    this config value in the future, so you might be better off not using it.
+  </setting>
+
+  <!--
   <setting title="Logo URL or HTML" setting="settings.logoUrlOrHtml" multiline="true">
     The logo for your site, e.g. "<samp>http://example.com/logotype.jpg</samp>",<br>
     or use HTML, e.g.: "<samp>&lt;img src="http://example.com/logotype.jpg"&gt;&lt;span&gt;Slogan&lt;/span&gt;</samp>".
   </setting>
+  -->
 
   <setting title="company_full_name" setting="settings.companyFullName">
     The full name of the company or organization that runs this site.
