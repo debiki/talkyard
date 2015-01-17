@@ -37,6 +37,7 @@ export class Settings {
       public logoUrlOrHtml: Setting<string>,
       public headStylesHtml: Setting<string>,
       public headScriptsHtml: Setting<string>,
+      public socialLinksHtml: Setting<string>,
       public endOfBodyHtml: Setting<string>,
       public horizontalComments: Setting<boolean>,
       public googleUniversalAnalyticsTrackingId: Setting<string>) {
@@ -55,6 +56,7 @@ export class Settings {
         this.makeSetting<string>(target, 'logoUrlOrHtml', json),
         this.makeSetting<string>(target, 'headStylesHtml', json),
         this.makeSetting<string>(target, 'headScriptsHtml', json),
+        this.makeSetting<string>(target, 'socialLinksHtml', json),
         this.makeSetting<string>(target, 'endOfBodyHtml', json),
         this.makeSetting<boolean>(target, 'horizontalComments', json),
         this.makeSetting<string>(target, 'googleUniversalAnalyticsTrackingId', json));

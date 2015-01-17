@@ -440,7 +440,9 @@ class TemplateProgrammingInterface(
 
 
   override lazy val reactStoreSafeJsonString: String = {
-    ReactJson.pageToJson(pageReq, socialLinksHtml = "" /*configValue("social-links")*/).toString
+    ReactJson.pageToJson(pageReq, socialLinksHtml =
+        siteSettings.socialLinksHtml.valueAsString).toString
+
   }
 
 }

@@ -94,6 +94,7 @@ case class Settings(settingsChain: SettingsChain) {
   val headerHtml = derive("headerHtml", "")
   val footerHtml = derive("footerHtml", "")
 
+  val socialLinksHtml = derive("socialLinksHtml", "")
   val logoUrlOrHtml = derive("logoUrlOrHtml", """<span>Home</span>""")
 
   val companyDomain = derive("companyDomain", "www.example.com")
@@ -117,6 +118,7 @@ case class Settings(settingsChain: SettingsChain) {
       "headerHtml" -> jsonFor(headerHtml),
       "footerHtml" -> jsonFor(footerHtml),
       "horizontalComments" -> jsonFor(horizontalComments),
+      "socialLinksHtml" -> jsonFor(socialLinksHtml),
       "logoUrlOrHtml" -> jsonFor(logoUrlOrHtml),
       "companyDomain" -> jsonFor(companyDomain),
       "companyFullName" -> jsonFor(companyFullName),
