@@ -19,7 +19,7 @@
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 
-debiki.$window = $(window);
+debiki.window = $(window);
 d.i.TitleId = 0;
 d.i.BodyId = 1;
 

@@ -91,6 +91,12 @@ export var Sidebar = createComponent({
   },
 
   componentDidMount: function() {
+    // COULD find a safer way to do this? Breaks if CSS class renamed / HTML
+    // structure changed.
+    this.commentSection = $('.dw-cmts-tlbr + .dw-single-and-multireplies');
+    this.sidebar = $(this.refs.sidebar ? this.refs.sidebar.getDOMNode() : null);
+    this.openButton = $(this.refs.openButton ? this.refs.openButton.getDOMNode() : null);
+
     if (!isPageWithSidebar(this.state.store.pageRole))
       return;
 
@@ -120,6 +126,9 @@ export var Sidebar = createComponent({
   },
 
   componentDidUpdate: function() {
+    this.sidebar = $(this.refs.sidebar ? this.refs.sidebar.getDOMNode() : null);
+    this.openButton = $(this.refs.openButton ? this.refs.openButton.getDOMNode() : null);
+
     if (!isPageWithSidebar(this.state.store.pageRole))
       return;
 
@@ -154,22 +163,27 @@ export var Sidebar = createComponent({
     });
   },
 
-  updateSizeAndPosition: function() {
+  updateSizeAndPosition: function(event) {
     if (this.state.store.horizontalLayout) {
-      this.updateSizeAndPosition2d();
+      this.updateSizeAndPosition2d(event);
     } else {
-      this.updateSizeAndPosition1d();
+      this.updateSizeAndPosition1d(event);
     }
   },
 
-  updateSizeAndPosition2d: function() {
+  updateSizeAndPosition2d: function(event) {
+    var win = debiki.window;
+    var nextState = '' + win.width() + ',' + win.height() + ':' + (event ? event.type : null);
+    if (this.lastState === nextState && event && event.type === 'scroll') {
+      // Need do nothing.
+      return;
+    }
+    this.lastState = nextState;
+
     var padding = $('#dw-sidebar-padding');
     if (this.state.showSidebar) {
-      var sidebar = $(this.refs.sidebar.getDOMNode());
-      var windowTop = $(window).scrollTop();
-      var windowBottom = windowTop + $(window).height();
-      sidebar.height(windowBottom - windowTop);
-      this.updateCommentsScrollbar(windowBottom);
+      this.sidebar.height(win.height());
+      this.updateCommentsScrollbar();
 
       // When the window viewport is at the right doc edge, we don't want the sidebar
       // to overlap the rightmost comments. So add some horizontal padding after the
@@ -180,31 +194,38 @@ export var Sidebar = createComponent({
         padding.appendTo($('.dw-t.dw-depth-0 > .dw-single-and-multireplies > .dw-res'));
       }
       // The <li> has display: table-cell, so need to (?) set width on something inside.
-      padding.children('div').width(sidebar.width());
+      padding.children('div').width(this.sidebar.width());
     }
     else {
       padding.remove();
     }
   },
 
-  updateSizeAndPosition1d: function() {
-    // COULD find a safer way to do this? Breaks if CSS class renamed / HTML
-    // structure changed.
-    var commentSection = $('.dw-cmts-tlbr + .dw-single-and-multireplies');
-    var commentSectionOffset = commentSection.offset();
-    var commentSectionTop = commentSectionOffset.top;
-    var windowTop = $(window).scrollTop();
-    var windowBottom = windowTop + $(window).height();
-    var sidebar = $(this.refs.sidebar.getDOMNode());
-    var openButton = $(this.refs.openButton.getDOMNode());
+  updateSizeAndPosition1d: function(event) {
+    // This function is run frequently, each frame when scrolling. Profiling has
+    // shown it's been worth optimizing it a bit, see `nextState` below, and
+    // the $(elems) that I've cached in `this`.
 
-    if (commentSectionTop <= windowTop) {
+    var sidebar = this.sidebar;
+    var openButton = this.openButton;
+    var win = debiki.window;
+    var commentSection = this.commentSection;
+    var commentSectionBounds = this.commentSection[0].getBoundingClientRect();
+    var commentSectionHeight = win.height() - commentSectionBounds.top;
+
+    var nextState = '' + win.width() + ',' + win.height() + ':';
+    if (commentSectionBounds.top <= 0) {
+      nextState += 'below:' + this.state.showSidebar;
+      if (nextState === this.lastState) {
+        return;
+      }
+
       // We've scrolled down; let the sidebar span from top to bottom.
       sidebar.css('top', 0);
       sidebar.css('position', 'fixed');
       if (this.state.showSidebar) {
         sidebar.addClass('dw-sidebar-fixed');
-        sidebar.height(windowBottom - windowTop);
+        sidebar.height(win.height());
         openButton.css('position', 'relative');
       }
       else {
@@ -213,6 +234,11 @@ export var Sidebar = createComponent({
       }
     }
     else {
+      nextState += 'above:' + (this.state.showSidebar ? commentSectionHeight : -1);
+      if (nextState === this.lastState) {
+        return;
+      }
+
       // (Use `offset({ top: ... })` not `css('top', ...)` because `css` for some
       // weird reason places the elem 30 extra pixels down.)
 
@@ -221,10 +247,10 @@ export var Sidebar = createComponent({
       // the browser window is very wide and we can safely show the whole sidebar
       // at the right edge, without occluding the article.
       sidebar.removeClass('dw-sidebar-fixed');
-      sidebar.offset({ top: commentSectionTop, left: undefined });
+      sidebar.offset({ top: win.scrollTop() + commentSectionBounds.top, left: undefined });
       sidebar.css('position', 'absolute');
       if (this.state.showSidebar) {
-        sidebar.height(windowBottom - commentSectionTop);
+        sidebar.height(commentSectionHeight);
         openButton.css('position', 'relative');
       } else {
         sidebar.height(0);
@@ -232,11 +258,12 @@ export var Sidebar = createComponent({
       }
     }
 
-    this.updateCommentsScrollbar(windowBottom);
+    this.lastState = nextState;
+    this.updateCommentsScrollbar();
 
     if (this.state.showSidebar) {
-      var sidebarLeft = sidebar.offset().left;
-      var commentsMaxWidth = sidebarLeft - 30 - commentSectionOffset.left;
+      var sidebarLeft = sidebar[0].getBoundingClientRect().left;
+      var commentsMaxWidth = sidebarLeft - 30 - commentSectionBounds.left;
       commentSection.css('max-width', commentsMaxWidth);
     }
     else {
@@ -244,11 +271,12 @@ export var Sidebar = createComponent({
     }
   },
 
-  updateCommentsScrollbar: function(windowBottom) {
+  updateCommentsScrollbar: function() {
     if (this.state.showSidebar) {
       var commentsViewport = this.getCommentsViewport();
-      var commentsViewportTop = commentsViewport.offset().top;
-      commentsViewport.height(windowBottom - commentsViewportTop);
+      var bounds = commentsViewport[0].getBoundingClientRect();
+      var height = debiki.window.height() - bounds.top;
+      commentsViewport.height(height);
       commentsViewport['getNiceScroll']().resize();
     }
   },

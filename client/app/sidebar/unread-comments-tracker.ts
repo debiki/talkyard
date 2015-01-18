@@ -186,8 +186,8 @@ function rememberHasBeenRead(postId: number) {
 function isInViewport($postBody){
   var bounds = $postBody[0].getBoundingClientRect();
   var aBitDown = Math.min(bounds.bottom, bounds.top + 500);
-  var windowHeight = debiki.$window.height();
-  var windowWidth = debiki.$window.width();
+  var windowHeight = debiki.window.height();
+  var windowWidth = debiki.window.width();
   var inViewportY = bounds.top >= 0 && aBitDown <= windowHeight;
   var inViewportX = bounds.left >= 0 && bounds.right <= windowWidth;
   var spansViewportY = bounds.top <= 0 && bounds.bottom >= windowHeight;
