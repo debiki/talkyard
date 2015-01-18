@@ -31,6 +31,10 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
+var reactCreateFactory = React['createFactory'];
+var ReactBootstrap: any = window['ReactBootstrap'];
+var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
+var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 
 export var Sidebar = createComponent({
@@ -221,11 +225,9 @@ export var Sidebar = createComponent({
       sidebar.css('position', 'absolute');
       if (this.state.showSidebar) {
         sidebar.height(windowBottom - commentSectionTop);
-        sidebar.css('overflow', 'hidden');
         openButton.css('position', 'relative');
       } else {
         sidebar.height(0);
-        sidebar.css('overflow', 'visible'); // else open button not shown
         openButton.css('position', 'absolute');
       }
     }
@@ -463,6 +465,26 @@ export var Sidebar = createComponent({
           Post(postProps)));
     });
 
+    var tabButtons;
+    if ($(window).width() > 800 && $(window).height() > 600) {
+      tabButtons =
+        r.div({},
+          r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread },
+              unreadBtnTitle),
+          r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent },
+              'Recent'),
+          r.button({ className: 'btn btn-default' + starredClass, onClick: this.showStarred },
+              starredBtnTitle));
+    }
+    else {
+      tabButtons =
+        DropdownButton({ title: this.state.commentsType, key: 'showRecent', pullRight: true,
+            onSelect: (key) => { this[key](); } },
+          MenuItem({ eventKey: 'showUnread' }, 'Unread'),
+          MenuItem({ eventKey: 'showRecent' }, 'Recent'),
+          MenuItem({ eventKey: 'showStarred' }, 'Starred'));
+    }
+
     return (
       r.div({},
       r.div({ id: 'dw-minimap-holder', className: 'dw-sidebar-is-open' },
@@ -470,9 +492,7 @@ export var Sidebar = createComponent({
           MiniMap(minimapProps))),
       r.div({ id: 'dw-sidebar', className: sidebarClasses, ref: 'sidebar' },
         ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar, ref: 'openButton' }),
-        r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread }, unreadBtnTitle),
-        r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent }, 'Recent'),
-        r.button({ className: 'btn btn-default' + starredClass, onClick: this.showStarred }, starredBtnTitle),
+        tabButtons,
         r.div({ className: 'dw-comments' },
           r.h3({}, title),
           r.div({ id: 'dw-sidebar-comments-viewport', ref: 'commentsViewport' },
