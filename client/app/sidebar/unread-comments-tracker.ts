@@ -44,7 +44,7 @@ var postsVisibleLastTick: { [postId: number]: boolean } = {};
 var pageId = debiki2.ReactStore.getPageId();
 var charsReadPerSecond = 35;
 var maxCharsReadPerPost = charsReadPerSecond * 4.5;
-var secondsBetweenTicks = 0.33;
+var secondsBetweenTicks = 0.5;
 var secondsSpentReading = 0;
 var secondsLostPerNewPostInViewport = 0.5;
 var maxConfusionSeconds = -1;
@@ -79,6 +79,9 @@ function trackUnreadComments() {
   var numVisibleUnreadChars = 0;
   var postsVisibleThisTick: { [postId: number]: boolean } = {};
 
+  // PERFORMANCE COULD optimize: check top level threads first, only check posts in
+  // thread if parts of the thread is inside the viewport? isInViewport() takes
+  // really long if there are > 200 comments (not good for mobile phones' battery?).
   $('.dw-p[id]').each(function() {
     var post = $(this);
     var postBody = post.children('.dw-p-bd');
@@ -181,21 +184,13 @@ function rememberHasBeenRead(postId: number) {
  * visible.
  */
 function isInViewport($postBody){
-  var myOffs = $postBody.offset();
-  var myTop = myOffs.top;
-  var myBottomAlmost = myTop + Math.min($postBody.height(), 600);
-  var myLeft = myOffs.left;
-  var myRight = myLeft + $postBody.width();
-  var $win = $(window);
-  var winTop = $win.scrollTop();
-  var winHeight = $win.height();
-  var winBottom = winTop + winHeight;
-  var winLeft = $win.scrollLeft();
-  var winWidth = $win.width();
-  var winRight = winLeft + winWidth;
-  var inViewportY = winTop <= myTop && myBottomAlmost <= winBottom;
-  var inViewportX = winLeft <= myLeft && myRight <= winRight;
-  var spansViewportY = myTop <= winTop && winBottom <= myBottomAlmost;
+  var bounds = $postBody[0].getBoundingClientRect();
+  var aBitDown = Math.min(bounds.bottom, bounds.top + 500);
+  var windowHeight = debiki.$window.height();
+  var windowWidth = debiki.$window.width();
+  var inViewportY = bounds.top >= 0 && aBitDown <= windowHeight;
+  var inViewportX = bounds.left >= 0 && bounds.right <= windowWidth;
+  var spansViewportY = bounds.top <= 0 && bounds.bottom >= windowHeight;
   return (inViewportY || spansViewportY) && inViewportX;
 }
 
