@@ -578,8 +578,9 @@ var PostBody = createComponent({
     if (this.props.abbreviate) {
       this.textDiv = this.textDiv || $('<div></div>');
       this.textDiv.html(post.sanitizedHtml);
-      var startOfText = this.textDiv.text().substr(0, 150);
-      if (startOfText.length === 150) {
+      var length = Math.min(screen.width, screen.height) < 500 ? 100 : 150;
+      var startOfText = this.textDiv.text().substr(0, length);
+      if (startOfText.length === length) {
         startOfText += '....';
       }
       body = r.div({ className: 'dw-p-bd-blk' }, startOfText);
