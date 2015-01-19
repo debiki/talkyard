@@ -35,6 +35,11 @@ var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
 var ReactRouter = window['ReactRouter'];
+var reactCreateFactory = React['createFactory'];
+var ReactBootstrap: any = window['ReactBootstrap'];
+var OverlayTrigger = reactCreateFactory(ReactBootstrap.OverlayTrigger);
+var Tooltip = reactCreateFactory(ReactBootstrap.Tooltip);
+
 
 var ManualReadMark = 1;
 var YellowStarMark = 2;
@@ -469,6 +474,12 @@ var MultireplyReceivers = createComponent({
 
 
 var PostHeader = createComponent({
+  copyPermalink: function() {
+    var hash = '#post-' + this.props.post.postId;
+    var url = window.location.host + '/-' + debiki.getPageId() + hash;
+    window.prompt('To copy permalink, press Ctrl+C then Enter', url);
+  },
+
   render: function() {
     var post = this.props.post;
     var user: User = this.props.user;
@@ -486,6 +497,15 @@ var PostHeader = createComponent({
       if (authorIsGuest(post)) {
         authorNameElems.push(
           r.span({ className: 'dw-lg-t-spl' }, '?')); // {if (user.email isEmpty) "??" else "?"
+        /* Could add back tooltip:
+          '<b>??</b> means that the user has not logged in,'+
+          ' so <i>anyone</i> can pretend to be this user&nbsp;(!),'+
+          ' and not specified any email address.'
+
+          '<b>?</b> means that the user has not logged in,'+
+          ' so <i>anyone</i> can pretend to be this user&nbsp;(!),'+
+          ' but has specified an email address.'
+        */
       }
     }
     else if (post.authorUsername) {
@@ -542,7 +562,16 @@ var PostHeader = createComponent({
     var postId;
     var anyMark;
     if (post.postId !== TitleId && post.postId !== BodyPostId) {
-      postId = r[linkFn]({ className: 'dw-p-link' }, '#', post.postId);
+      postId = r[linkFn]({ className: 'dw-p-link', onClick: this.copyPermalink },
+          '#' + post.postId);
+      /* Doesn't work, the tooltip gets placed far away to the left. You'll find it
+         in Dev Tools like so: $('.tooltip-inner').
+      if (!this.props.abbreviate) {
+        postId = OverlayTrigger({ placement: 'left',
+        overlay: Tooltip({}, 'Click to copy permalink') }, postId);
+      }
+      */
+
       var mark = user.marksByPostId[post.postId];
       var starClass = ' icon-star';
       if (mark === ManualReadMark) {
