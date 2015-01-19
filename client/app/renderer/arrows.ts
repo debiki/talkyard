@@ -80,7 +80,7 @@ export function drawArrowsFromParent(allPosts, parentPost, depth: number,
     if (!horizontalLayout && depth === 1)
       return [];
 
-    return drawVerticalArrows(index === 0, numRemainingNonMultireplies);
+    return drawVerticalArrows(depth, index === 0, horizontalLayout, numRemainingNonMultireplies);
   }
 
   return [];
@@ -113,7 +113,8 @@ function drawHorizontalArrows(isFirstChild, numRemainingNonMultireplies) {
 }
 
 
-function drawVerticalArrows(isFirstChild: boolean, numRemainingNonMultireplies: number) {
+function drawVerticalArrows(depth: number, isFirstChild: boolean,
+    horizontalLayout: boolean, numRemainingNonMultireplies: number) {
 
   // Single replies (without any siblings) are placed directly below their parent,
   // as if using a flat layout (rather than a threaded layout). Then, need draw
@@ -173,17 +174,18 @@ function drawVerticalArrows(isFirstChild: boolean, numRemainingNonMultireplies: 
   //                                             |    +-------------+
   //                                             \
   // This very last line to the :last-child -->   v
-  // is "dw-arw-vt-curve-to-this", again.        +-----—------------+
-  //                                             |:last-child       |
+  // is "dw-arw-vt-curve-to-unindented".         +-----—------------+
+  // Here, numRemainingNonMultireplies is 0.     |:last-child       |
   //                                             |comment text…     |
   //                                             +------------------+
 
   var arrows = [];
 
-  //                             \
-  // Draw the `-> part:  (or the  v  part, it's the same image)
-  arrows.push(
-      r.div({ className: 'dw-arw dw-arw-vt-curve-to-this' }));
+  // Draw the `-> part:
+  if (numRemainingNonMultireplies >= 1) {
+    arrows.push(
+        r.div({ className: 'dw-arw dw-arw-vt-curve-to-this' }));
+  }
 
   // Start or continue an arrow to the siblings below, but not to
   // multireplies, since we don't know if they reply to the current post,
@@ -193,6 +195,21 @@ function drawVerticalArrows(isFirstChild: boolean, numRemainingNonMultireplies: 
         r.div({ className: 'dw-arw dw-arw-vt-line-to-sibling-1' }));
     arrows.push(
         r.div({ className: 'dw-arw dw-arw-vt-line-to-sibling-2' }));
+
+    //          \
+    // Draw the  v  arrow to the very last non-multireply:
+    if (numRemainingNonMultireplies === 1) {
+      if (!horizontalLayout && depth === 2) {
+        arrows.push(
+          r.div({ className: 'dw-arw dw-arw-vt-curve-to-last-sibling-indented' }));
+      }
+      else {
+        arrows.push(
+          r.div({ className: 'dw-arw dw-arw-vt-curve-to-last-sibling-unindented' }));
+      }
+    }
+
+    // Add a clickable handle that scrolls to the parent post and highlights it.
     arrows.push(
         r.div({ className: 'dw-arw-vt-handle' }));
   }

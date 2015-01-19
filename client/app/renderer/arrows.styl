@@ -57,7 +57,9 @@
 .dw-arw-hz-line-to-this,
 .dw-arw-hz-line-to-sibling,
 .dw-arw-vt-line-to-sibling-1,
-.dw-arw-vt-line-to-sibling-2
+.dw-arw-vt-line-to-sibling-2,
+.dw-arw-vt-curve-to-last-sibling-unindented,
+.dw-arw-vt-curve-to-last-sibling-indented
   background-color: #ddd
   position: absolute
   z-index: 1
@@ -86,7 +88,7 @@
   width: 100%
 
 .dw-arw-vt-curve-to-this,
-.dw-depth-0:not(.dw-hz) > .dw-single-and-multireplies > .dw-res > li > .dw-t > .dw-single-and-multireplies > .dw-res > .dw-t > .dw-arw-vt-curve-to-this
+.dw-arw-vt-curve-to-last-sibling-indented
   position: absolute
   background-color: transparent
   background: url(img/arrows-etcetera-gray.png) no-repeat -33px -228px
@@ -95,13 +97,20 @@
   top: -24px
   height: 34px
 
-// The last reply isn't indented.
-.dw-res > li:last-child > .dw-arw-vt-curve-to-this
+// Curve from the last-but-one reply to the last reply (non-multireply)
+.dw-arw-vt-curve-to-last-sibling-unindented
   left: 4px
-  top: -50px
+  bottom: 0
   width: 18px
-  height: 50px
+  height: 48px
   background: url(img/arrows-etcetera-gray.png) no-repeat -57px -79px
+
+// Same as above, but when the last sibling is indented.
+.dw-arw-vt-curve-to-last-sibling-indented
+  top: auto
+  bottom: -12px
+  background-color: white
+
 
 // Hide arrow to single reply, not needed, since it should be obvious
 // that the comment replies to its immediate parent.
