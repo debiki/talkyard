@@ -803,8 +803,8 @@ var PostActions = createComponent({
     }
 
     var moreDropdown =
-      r.span({ className: 'dropdown navbar-right dw-a' },
-        r.a({ className: 'dw-a-more', 'data-toggle': 'dropdown' }, 'More'),
+      r.span({ className: 'dropdown navbar-right' },
+        r.a({ className: 'dw-a dw-a-more', 'data-toggle': 'dropdown' }, 'More'),
         r.div({ className: 'dropdown-menu dropdown-menu-right dw-p-as-more' },
           moreLinks));
 
