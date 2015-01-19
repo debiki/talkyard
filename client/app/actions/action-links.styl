@@ -115,6 +115,14 @@ html.touch .dw-t > .dw-p-as .dw-a
   &.dw-a-more
     padding-left: 8px;
 
+// Prevent float drop when vote highlighted and font larger and button therefore wider.
+.DW.DW .dw-p-as .dw-a.dw-my-vote
+  padding-left: 0px;
+
+// Avoid float drop (the reply button is to the very left)
+.DW.DW.DW .dw-p-as .dw-a-reply
+  padding-left: 0;
+
 
 // Highlight the heart or warning symbol if the user has voted Like or Wrong.
 .dw-a.dw-my-vote:before
