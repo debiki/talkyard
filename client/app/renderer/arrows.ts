@@ -130,19 +130,13 @@ function drawVerticalArrows(depth: number, isFirstChild: boolean,
   // "child comment".                            |parent comment    |
   //                                             |text…             |
   //                                             +------------------+
-  // This arrow is shown only sometimes, namely
-  // if whole page uses single column layout,     \
-  // in the `isOnlyChild` block below.             v
-  //
-  // The child comment. I hope no arrow          +-----—------------+
-  // is needed above, because it should be       |the only child    |
-  // obvious that the child replies to the       |comment text…     |
-  // parent comment.                             +------------------+
+  //                                              \
+  //                                               v
+  // The child comment.                          +-----—------------+
+  //                                             |the only child    |
+  //                                             |comment text…     |
+  //                                             +------------------+
 
-  // Sometimes we do indent and draw an arrow to a single child comment,
-  // namely if we're using a single column layout
-  // for the whole page. Then we need this arrow: (it's hidden by
-  // CSS if not needed). Also see [90kfHW2] in debiki.styl.
   var isOnlyChild = isFirstChild && numRemainingNonMultireplies === 0;
   if (isOnlyChild) {
     return (

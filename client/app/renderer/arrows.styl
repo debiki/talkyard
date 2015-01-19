@@ -112,20 +112,20 @@
   background-color: white
 
 
-// Hide arrow to single reply, not needed, since it should be obvious
-// that the comment replies to its immediate parent.
-// Also see [90kfHW2] in debiki-arrows-peng.js.
-.dw-res > .dw-t:only-child > .dw-arw-vt-curve-to-this
-  display: none
+li:only-child > .dw-arw-vt-curve-to-this
+  top: -28px;
+  width: 18px;
+  height: 23px;
+  background: url("img/arrows-etcetera-gray.png") no-repeat -57px -93px;
 
-// However do show it, if we use single column layout, because then replies
-// to article replies are always indented (and an arrow is needed if there's
-// indentation).
+// Sometimes the last/only child is indented: in single column layout, replies
+// to article replies are always indented. Then we need an arrow for indented
+// comments:
 .dw-depth-0:not(.dw-hz) > .dw-single-and-multireplies > .dw-res > li > .dw-t > .dw-single-and-multireplies > .dw-res > .dw-t:last-child > .dw-arw-vt-curve-to-this
-  display: block
   background: url("img/arrows-etcetera-gray.png") no-repeat -33px -228px
   left: 1px
   top: -25px
+  width: 25px;
   height: 34px
 
 // Tweak offset for arrows to collapsed replies (there's no .dw-t
