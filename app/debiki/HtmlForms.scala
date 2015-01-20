@@ -111,8 +111,7 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
     <div id="dw-hidden-templates">
     { loginForms ++
       flagForm ++
-      deleteForm(None) ++
-      submittingFormInfoDiv }
+      deleteForm(None) }
     </div>
   }
 
@@ -387,12 +386,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
         </div>
       }
       </form>
-    </div>
-  }
-
-  val submittingFormInfoDiv: NodeSeq = {
-    <div class='dw-tps dw-inf-submitting-form'>
-      <p>Submitting ...</p>
     </div>
   }
 
