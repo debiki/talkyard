@@ -49,6 +49,7 @@ export var Sidebar = createComponent({
       var setting = localStorage.getItem('debikiShowSidebar');
       if (!setting || setting === 'true') {
         showSidebar = true;
+        $('html').addClass('dw-sidebar-open');
       }
     }
     return {
@@ -282,19 +283,25 @@ export var Sidebar = createComponent({
   },
 
   toggleSidebarOpen: function() {
-    this.setState({
-      showSidebar: !this.state.showSidebar
-    });
+    this.setSidebarOpen(!this.state.showSidebar);
   },
 
   openSidebar: function() {
-    this.state.showSidebar = true;
-    this.setState(this.state);
+    this.setSidebarOpen(true);
   },
 
   closeSidebar: function() {
-    this.state.showSidebar = false;
-    this.setState(this.state);
+    this.setSidebarOpen(false);
+  },
+
+  setSidebarOpen: function(showSidebar) {
+    this.setState({ showSidebar: showSidebar });
+    if (showSidebar) {
+      $('html').addClass('dw-sidebar-open')
+    }
+    else {
+      $('html').removeClass('dw-sidebar-open');
+    }
   },
 
   findComments: function() {
