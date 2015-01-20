@@ -112,8 +112,7 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
     { loginForms ++
       flagForm ++
       deleteForm(None) ++
-      submittingFormInfoDiv ++
-      sortOrterTipsDiv }
+      submittingFormInfoDiv }
     </div>
   }
 
@@ -394,22 +393,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
   val submittingFormInfoDiv: NodeSeq = {
     <div class='dw-tps dw-inf-submitting-form'>
       <p>Submitting ...</p>
-    </div>
-  }
-
-  /**
-   *  A tips on how replies are sorted, in the horizontal layout.
-   */
-  val sortOrterTipsDiv: NodeSeq = {
-    <div class='dw-tps' id='dw-tps-sort-order'>
-      Comments rated <i>interesting, funny</i>
-      <span class="dw-tps-sort-order-arw dw-flip-hz"></span>
-      <div class='dw-tps-sort-order-your-post'>
-        Your post has not yet been voted on, and was therefore placed below.
-      </div>
-      <span class="dw-tps-sort-order-arw"></span>
-      Comments rated <i>boring, stupid</i>
-      <div class='dw-tps-close'>(Click this box to dismiss)</div>
     </div>
   }
 
