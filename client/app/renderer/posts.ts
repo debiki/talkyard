@@ -471,9 +471,11 @@ var Post = createComponent({
 
 var ReplyReceivers = createComponent({
   render: function() {
+    var multireplyClass = ' dw-mrrs'; // mrrs = multi reply receivers
     var thisPost: Post = this.props.post;
     var repliedToPostIds = thisPost.multireplyPostIds;
     if (!repliedToPostIds || !repliedToPostIds.length) {
+      multireplyClass = '';
       repliedToPostIds = [thisPost.parentId];
     }
     var receivers = repliedToPostIds.map((repliedToPostId) => {
@@ -482,13 +484,12 @@ var ReplyReceivers = createComponent({
         return r.i({}, '(Unknown author and post?)');
 
       return (
-        r.a({ href: '#post-' + post.postId, className: 'dw-multireply-to' },
-          r.span({ className: 'icon-reply dw-mirror' }),
+        r.a({ href: '#post-' + post.postId, className: 'dw-rr' }, // rr = reply receiver
           post.authorUsername || post.authorFullName));
     });
     return (
-      r.div({ className: 'dw-rrs' },  // TODO add is-multireply class, always show
-        r.span({ className: 'dw-multireply-prefix' }, 'In reply to:'),  // TODO rename class
+      r.div({ className: 'dw-rrs' + multireplyClass }, // rrs = reply receivers
+        r.span({ className: 'dw-irt' }, 'In reply to:'),
         receivers));
   }
 });
