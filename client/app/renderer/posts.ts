@@ -339,9 +339,10 @@ var Thread = createComponent({
 
     var depthClass = ' dw-depth-' + this.props.depth;
     var indentationDepthClass = ' dw-id' + this.props.indentationDepth;
+    var multireplyClass = post.multireplyPostIds.length ? ' dw-mr' : '';
 
     return (
-      baseElem({ className: 'dw-t' + depthClass + indentationDepthClass},
+      baseElem({ className: 'dw-t' + depthClass + indentationDepthClass + multireplyClass},
         arrows,
         Post(postProps),
         actions,

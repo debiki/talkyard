@@ -138,6 +138,9 @@
     .dw-arw-vt-curve-to-this-first-unindented
       display: block
 
+  // Don't indent multireplies
+  .dw-depth-1 .dw-mr
+    padding-left: 0
 
 // Draw dashed line between horizontal threads, on hower.
 .DW.DW .dw-hz > .dw-single-and-multireplies > .dw-res > li > .dw-t > .ui-resizable-e
@@ -177,6 +180,10 @@
 
 .dw-t:not(.dw-hz) > .dw-t-vspace
   display: none
+
+// Don't indent multireplies
+.dw-depth-2 .dw-mr
+  padding-left: 0 !important
 
 
 // Max indentation depth

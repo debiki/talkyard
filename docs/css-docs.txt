@@ -55,7 +55,8 @@ dw-           prefix for internal classes and ids, avoids name clashes
 -login-       COULD change to -lgi
 -logout-                      -lgo
 -m-           mark
--mrrs-        multi reply receivers
+-mr           multireply
+-mrrs-        multireply receivers — could change to -mr-rs, and (below) -rrs- to -r-rs.
 -mup-         markup
 -ntf-         notification
 -ntf-sts      notification status code
