@@ -333,6 +333,7 @@ var Thread = createComponent({
 
     var postProps = _.clone(this.props);
     postProps.post = post;
+    postProps.index = this.props.index;
     postProps.onMouseEnter = this.onPostMouseEnter;
     postProps.ref = 'post';
 
@@ -417,7 +418,7 @@ var Post = createComponent({
     if (post.numWrongVotes >= 2 && !this.props.abbreviate) {
       var wrongness = post.numWrongVotes / (post.numLikeVotes || 1);
       // One, two, three, many.
-      if (post.numWrongVotes >= 4 && wrongness > 1) {
+      if (post.numWrongVotes > 3 && wrongness > 1) {
         wrongWarning =
           r.div({ className: 'dw-wrong dw-very-wrong icon-warning' },
             'Many think this comment is wrong:');
@@ -429,7 +430,12 @@ var Post = createComponent({
       }
     }
 
-    var replyReceivers = ReplyReceivers({ post: post, allPosts: this.props.allPosts });
+    // For non-multireplies, we never show "In response to" for the very first reply (index 0),
+    // instead we draw an arrow.
+    var replyReceivers;
+    if (!this.props.abbreviate && (this.props.index > 0 || post.multireplyPostIds.length)) {
+      replyReceivers = ReplyReceivers({ post: post, allPosts: this.props.allPosts });
+    }
 
     var mark = user.marksByPostId[post.postId];
     switch (mark) {
