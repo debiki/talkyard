@@ -41,6 +41,10 @@
   // Without this, SVG arrows are cropped a bit to the right. Why? [8DbF3]
   float: left
 
+// Always show multi reply receivers (when replying to > 1 comment).
+.dw-mrrs
+  display: block !important
+
 
 
 // Horizontal layout
@@ -69,7 +73,7 @@
   .dw-t.dw-depth-1
     // Avoids > 1 column with replies for this depth. However, width
     // adjusted by JS function d.i.layoutThreads() anyway.
-    width: 25em
+    width: 450px
     // Space for the resize-column handle
     padding-right: 15px
 
@@ -86,14 +90,10 @@
       padding-left: 25px;
 
   .dw-t:not(.dw-hz) > .dw-single-and-multireplies > .dw-res > li
-    padding-left: 40px
     margin: 0
 
     &:last-child
       padding-left: 0
-
-  .dw-t:not(.dw-hz) > .dw-single-and-multireplies > .dw-res.dw-multireplies > li
-    padding-left: 0 !important;
 
   // Add an extra border above not-the-first sibling thread,
   // so it's easier to see where they start and end (since I don't
@@ -105,24 +105,42 @@
     > .dw-p > .dw-p-hd
       border-top: 3px solid hsl(0, 0%, 70%)
 
+  // Max indentation depth
+  //----------------------
 
-// Align multireplis with single replies; position the "Multireplies follow:" header.
+  // Hide all vertical arrows (but show horizontal), show them later unless
+  // too deeply indented.
+  .dw-arw
+    display: none
+  .dw-arw-hz-line-to-this,
+  .dw-arw-hz-line-to-sibling,
+  .dw-arw-hz-curve-to-this,
+  .dw-arw-hz-branch-to-reply-btn, // TODO remove
+  .dw-arw-hz-curve-to-reply-btn // TODO remove
+    display: block;
 
-.dw-hz > .dw-single-and-multireplies > .dw-multireplies
-  position: relative;
-  padding-top: 0;
-  top: -13px;
+  .dw-id0
+    padding-left: 0 !important
 
-  #dw-multireplies-header
-    display: block
-    position: absolute;
-    top: -45px;
-    left: -120px;
-    font-size: 17px;
+  .dw-id0, .dw-id1, .dw-id2, .dw-id3, .dw-id4, .dw-id5
+    padding-left: 35px
 
-#dw-multireplies-header
-  display: none
+    > .dw-arw:not(.dw-arw-vt-curve-to-this-first-unindented)
+      display: block;
 
+    > .dw-p .dw-rrs
+      display: none;
+
+  .dw-id6 + .dw-id5 > .dw-p .dw-rrs
+    display: block;
+
+  .dw-id6
+    .dw-arw-vt-curve-to-this-first-unindented
+      display: block
+
+  // Don't indent multireplies
+  .dw-depth-1 .dw-mr
+    padding-left: 0
 
 // Draw dashed line between horizontal threads, on hower.
 .DW.DW .dw-hz > .dw-single-and-multireplies > .dw-res > li > .dw-t > .ui-resizable-e
@@ -132,34 +150,11 @@
   border-right-color: lightgray
 
 
-// Nested horizontal threads
-//---------------------------
-/* Currenty I've removed all such threads, but keep for a while, perhaps I'll enable again?
-
-// Add some whitespace above replies, when laid out horizontally,
-// so there's some space for the SVG arrows.
-.DW.DW .dw-hz:not(.dw-depth-0) > .dw-single-and-multireplies > .dw-res
-  margin-top: 35px
-*/
-
 
 // Vertical layout
 //===========================
 
-
 .DW.dw-vt
-
-  .dw-res > li
-    padding-left: 44px
-    margin: 0
-
-    @media (max-width: 980px)
-      padding-left: 35px
-
-  // Don't indent multireplies, unless they're directly below a root post reply,
-  // so they're not confused with other root post replies.
-  .dw-t:not(.dw-depth-1) > .dw-single-and-multireplies > .dw-res.dw-multireplies > li
-    padding-left: 0;
 
   // Avoid unnecessary indentation: Don't indent the last reply.
   // (We use arrowse instead to draw relationships.)
@@ -172,22 +167,104 @@
   .dw-t.dw-depth-0 > .dw-single-and-multireplies > .dw-res > li
     padding-left 0
 
-  // Add an extra border above not-the-first sibling thread,
-  // so it's easier to see where they start and end (since I don't
-  // always indent).
-
-  li:first-child .dw-depth-1
-    border-top: none;
-    padding-top: 0;
-    margin-top: 0;
-
+  // Add an extra border above top level replies,  so it's easier
+  // to see where top level threads start and end.
   .dw-depth-1
     padding-top: 18px;
     margin-top: 11px;
     border-top: 1px solid #bbb;
+  li:first-child .dw-depth-1  // but no border before the topmost reply
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
 
 .dw-t:not(.dw-hz) > .dw-t-vspace
   display: none
+
+// Don't indent multireplies
+.dw-depth-2 .dw-mr
+  padding-left: 0 !important
+
+
+// Max indentation depth
+//---------------------------
+
+.dw-depth-1,
+.dw-id0
+  padding-left: 0 !important;
+
+.dw-res > li
+  margin: 0
+
+.dw-arw
+  display: none
+
+/* No max indentation depth would be:
+@media (min-width: 1000px)
+  .DW.dw-vt
+    .dw-res > li
+      padding-left: 44px
+    .dw-rrs,
+    .dw-arw-vt-curve-to-this-first-unindented
+      display: none
+*/
+
+@media (min-width: 950px)
+
+  .DW.dw-vt
+
+    .dw-id0, .dw-id1, .dw-id2, .dw-id3, .dw-id4, .dw-id5, .dw-id6, .dw-id7, .dw-id8
+      padding-left: 35px
+      > .dw-arw:not(.dw-arw-vt-curve-to-this-first-unindented)
+        display: block;
+      > .dw-p .dw-rrs
+        display: none;
+
+    .dw-id9 + .dw-id8 > .dw-p .dw-rrs
+      display: block;
+
+    .dw-id9
+      .dw-arw-vt-curve-to-this-first-unindented
+        display: block
+
+
+@media (min-width: 500px) and (max-width: 945px)
+
+  .DW.dw-vt
+
+    .dw-id0, .dw-id1, .dw-id2, .dw-id3
+      padding-left: 35px
+      > .dw-arw:not(.dw-arw-vt-curve-to-this-first-unindented)
+        display: block;
+      > .dw-p .dw-rrs
+        display: none;
+
+    .dw-id4 + .dw-id3 > .dw-p .dw-rrs
+      display: block;
+
+    .dw-id4
+      .dw-arw-vt-curve-to-this-first-unindented
+        display: block
+
+
+@media (max-width: 499px)
+
+  .DW.dw-vt
+
+    .dw-id0, .dw-id1
+      padding-left: 35px
+      > .dw-arw:not(.dw-arw-vt-curve-to-this-first-unindented)
+        display: block;
+      > .dw-p .dw-rrs
+        display: none;
+
+    .dw-id2 + .dw-id1 > .dw-p .dw-rrs
+      display: block;
+
+    .dw-id2
+      .dw-arw-vt-curve-to-this-first-unindented
+        display: block
+
 
 
 

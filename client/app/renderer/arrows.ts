@@ -80,7 +80,7 @@ export function drawArrowsFromParent(allPosts, parentPost, depth: number,
     if (!horizontalLayout && depth === 1)
       return [];
 
-    return drawVerticalArrows(index === 0, numRemainingNonMultireplies);
+    return drawVerticalArrows(depth, index === 0, horizontalLayout, numRemainingNonMultireplies);
   }
 
   return [];
@@ -113,41 +113,53 @@ function drawHorizontalArrows(isFirstChild, numRemainingNonMultireplies) {
 }
 
 
-function drawVerticalArrows(isFirstChild: boolean, numRemainingNonMultireplies: number) {
+function drawVerticalArrows(depth: number, isFirstChild: boolean,
+    horizontalLayout: boolean, numRemainingNonMultireplies: number) {
 
+  var arrows = [];
+
+  if (isFirstChild) {
+    // This arrrow is shown if the max indentation depth is reached. Then
+    // we'll still draw an arrow from the parent to this post, if this post is
+    // the very first child (and this post won't be indented, so we'll hide
+    // all arrows to any siblings).
+    arrows.push(
+      r.div({ className: 'dw-arw dw-arw-vt-curve-to-this-first-unindented' }));
+  }
+
+  // Only one reply
+  // ------------------
+  //
   // Single replies (without any siblings) are placed directly below their parent,
   // as if using a flat layout (rather than a threaded layout). Then, need draw
   // no arrows; people are used to flat layouts.
   //
   // This is how it looks:
   //
-  //
   // Explanation                                 Illustration
   // -----------                                 ------------
   //
-  // A parent comment with only one reply,       +-----—-———————----+
-  // "child comment".                            |parent comment    |
+  // A parent comment with only one reply.       +-----—-———————----+
+  //                                             |parent comment    |
   //                                             |text…             |
   //                                             +------------------+
-  // This arrow is shown only sometimes, namely
-  // if whole page uses single column layout,     \
-  // in the `isOnlyChild` block below.             v
-  //
-  // The child comment. I hope no arrow          +-----—------------+
-  // is needed above, because it should be       |the only child    |
-  // obvious that the child replies to the       |comment text…     |
-  // parent comment.                             +------------------+
+  //                                              \
+  //                                               v
+  // The child comment (would be this post,      +-----—------------+
+  // if `isOnlyChild` below is true).            |the only child    |
+  //                                             |comment text…     |
+  //                                             +------------------+
 
-  // Sometimes we do indent and draw an arrow to a single child comment,
-  // namely if we're using a single column layout
-  // for the whole page. Then we need this arrow: (it's hidden by
-  // CSS if not needed). Also see [90kfHW2] in debiki.styl.
   var isOnlyChild = isFirstChild && numRemainingNonMultireplies === 0;
   if (isOnlyChild) {
-    return (
+    arrows.push(
       r.div({ className: 'dw-arw dw-arw-vt-curve-to-this' }));
+    return arrows;
   }
 
+  // Many replies
+  // ------------------
+  //
   // Let me explain how I draw arrows to this thread from the parent:
   //
   //
@@ -173,17 +185,16 @@ function drawVerticalArrows(isFirstChild: boolean, numRemainingNonMultireplies: 
   //                                             |    +-------------+
   //                                             \
   // This very last line to the :last-child -->   v
-  // is "dw-arw-vt-curve-to-this", again.        +-----—------------+
-  //                                             |:last-child       |
+  // is "dw-arw-vt-curve-to-unindented".         +-----—------------+
+  // Here, numRemainingNonMultireplies is 0.     |:last-child       |
   //                                             |comment text…     |
   //                                             +------------------+
 
-  var arrows = [];
-
-  //                             \
-  // Draw the `-> part:  (or the  v  part, it's the same image)
-  arrows.push(
-      r.div({ className: 'dw-arw dw-arw-vt-curve-to-this' }));
+  // Draw the `-> part:
+  if (numRemainingNonMultireplies >= 1) {
+    arrows.push(
+        r.div({ className: 'dw-arw dw-arw-vt-curve-to-this' }));
+  }
 
   // Start or continue an arrow to the siblings below, but not to
   // multireplies, since we don't know if they reply to the current post,
@@ -193,6 +204,21 @@ function drawVerticalArrows(isFirstChild: boolean, numRemainingNonMultireplies: 
         r.div({ className: 'dw-arw dw-arw-vt-line-to-sibling-1' }));
     arrows.push(
         r.div({ className: 'dw-arw dw-arw-vt-line-to-sibling-2' }));
+
+    //          \
+    // Draw the  v  arrow to the very last non-multireply:
+    if (numRemainingNonMultireplies === 1) {
+      if (!horizontalLayout && depth === 2) {
+        arrows.push(
+          r.div({ className: 'dw-arw dw-arw-vt-curve-to-last-sibling-indented' }));
+      }
+      else {
+        arrows.push(
+          r.div({ className: 'dw-arw dw-arw-vt-curve-to-last-sibling-unindented' }));
+      }
+    }
+
+    // Add a clickable handle that scrolls to the parent post and highlights it.
     arrows.push(
         r.div({ className: 'dw-arw-vt-handle' }));
   }

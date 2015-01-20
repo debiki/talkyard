@@ -257,6 +257,7 @@ var RootPostAndComments = createComponent({
       threadProps.postId = childId;
       threadProps.index = childIndex;
       threadProps.depth = 1;
+      threadProps.indentationDepth = 0;
       return (
         r.li({},
           Thread(threadProps)));
@@ -289,7 +290,6 @@ var Thread = createComponent({
     var post: Post = this.props.allPosts[this.props.postId];
     var parentPost = this.props.allPosts[post.parentId];
     var deeper = this.props.depth + 1;
-    var depthClass = 'dw-depth-' + this.props.depth;
 
     // Draw arrows, but not to multireplies, because we don't know if they reply to `post`
     // or to other posts deeper in the thread.
@@ -303,11 +303,22 @@ var Thread = createComponent({
     var children = [];
     if (!post.isTreeCollapsed && !post.isTreeDeleted) {
       children = post.childIdsSorted.map((childId, childIndex) => {
+        var childIndentationDepth = this.props.indentationDepth;
+        // All children except for the last one are indented.
+        var isIndented = childIndex < post.childIdsSorted.length - 1;
+        if (!this.props.horizontalLayout && this.props.depth === 1) {
+          // Replies to article replies are always indented, even the last child.
+          isIndented = true;
+        }
+        if (isIndented) {
+          childIndentationDepth += 1;
+        }
         var threadProps = _.clone(this.props);
         threadProps.elemType = 'li';
         threadProps.postId = childId;
         threadProps.index = childIndex;
         threadProps.depth = deeper;
+        threadProps.indentationDepth = childIndentationDepth;
         return (
             Thread(threadProps));
       });
@@ -322,11 +333,16 @@ var Thread = createComponent({
 
     var postProps = _.clone(this.props);
     postProps.post = post;
+    postProps.index = this.props.index;
     postProps.onMouseEnter = this.onPostMouseEnter;
     postProps.ref = 'post';
 
+    var depthClass = ' dw-depth-' + this.props.depth;
+    var indentationDepthClass = ' dw-id' + this.props.indentationDepth;
+    var multireplyClass = post.multireplyPostIds.length ? ' dw-mr' : '';
+
     return (
-      baseElem({ className: 'dw-t ' + depthClass },
+      baseElem({ className: 'dw-t' + depthClass + indentationDepthClass + multireplyClass},
         arrows,
         Post(postProps),
         actions,
@@ -403,7 +419,7 @@ var Post = createComponent({
     if (post.numWrongVotes >= 2 && !this.props.abbreviate) {
       var wrongness = post.numWrongVotes / (post.numLikeVotes || 1);
       // One, two, three, many.
-      if (post.numWrongVotes >= 4 && wrongness > 1) {
+      if (post.numWrongVotes > 3 && wrongness > 1) {
         wrongWarning =
           r.div({ className: 'dw-wrong dw-very-wrong icon-warning' },
             'Many think this comment is wrong:');
@@ -415,9 +431,11 @@ var Post = createComponent({
       }
     }
 
-    var multireplReceivers = null;
-    if (post.multireplyPostIds.length) {
-      multireplReceivers = MultireplyReceivers({ post: post, allPosts: this.props.allPosts });
+    // For non-multireplies, we never show "In response to" for the very first reply (index 0),
+    // instead we draw an arrow.
+    var replyReceivers;
+    if (!this.props.abbreviate && (this.props.index > 0 || post.multireplyPostIds.length)) {
+      replyReceivers = ReplyReceivers({ post: post, allPosts: this.props.allPosts });
     }
 
     var mark = user.marksByPostId[post.postId];
@@ -444,7 +462,7 @@ var Post = createComponent({
             onMouseEnter: this.props.onMouseEnter, onClick: this.onClick },
         pendingApprovalElem,
         wrongWarning,
-        multireplReceivers,
+        replyReceivers,
         headerElem,
         bodyElem));
   }
@@ -452,25 +470,31 @@ var Post = createComponent({
 
 
 
-var MultireplyReceivers = createComponent({
+var ReplyReceivers = createComponent({
   render: function() {
-    var receivers = this.props.post.multireplyPostIds.map((repliedToPostId) => {
+    var multireplyClass = ' dw-mrrs'; // mrrs = multi reply receivers
+    var thisPost: Post = this.props.post;
+    var repliedToPostIds = thisPost.multireplyPostIds;
+    if (!repliedToPostIds || !repliedToPostIds.length) {
+      multireplyClass = '';
+      repliedToPostIds = [thisPost.parentId];
+    }
+    var receivers = repliedToPostIds.map((repliedToPostId) => {
       var post = this.props.allPosts[repliedToPostId];
       if (!post)
         return r.i({}, '(Unknown author and post?)');
 
       return (
-        r.a({ href: '#post-' + post.postId, className: 'dw-multireply-to' },
-          r.span({ className: 'icon-reply dw-mirror' }),
-          r.span({}, post.authorUsername || post.authorFullName, ' (post ', post.postId, ')')));
+        r.a({ href: '#post-' + post.postId, className: 'dw-rr' }, // rr = reply receiver
+          post.authorUsername || post.authorFullName));
     });
-
     return (
-      r.div({},
-        r.span({ className: 'dw-multireply-prefix' }, 'In reply to:'),
+      r.div({ className: 'dw-rrs' + multireplyClass }, // rrs = reply receivers
+        r.span({ className: 'dw-irt' }, 'In reply to:'),
         receivers));
   }
 });
+
 
 
 var PostHeader = createComponent({
