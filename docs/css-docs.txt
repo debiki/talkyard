@@ -45,6 +45,7 @@ dw-           prefix for internal classes and ids, avoids name clashes
 -hor-         horizontal layout COULD rename to -hz- ? -vt- = vertical?
 -i-           inline
 -ibx-         inbox
+-id0, id1 etc indentation depth 0, 1, 2 etc.
 -img-         image
 -inf-         information
 -lbl-         label
@@ -64,10 +65,11 @@ dw-           prefix for internal classes and ids, avoids name clashes
 -prf-         preference(s)
 -prvw-        preview
 -q-           ?? post-before (looks like p, but flipped — before, not after)
--r-           rating
+-r-           rating REMOVE, is gone.
 -re-          reply   (COULD rename to "p", for "post")
 -res-         replies (COULD rename to "ts", "threads")
 -rez-         resized (COULD rename to "rzd" and let "rz" mean resize)
+-rrs-         reply receivers
 -s            south (COULD change to "sw", southwards)
                       COULD then use 's' for `summary'?
 -sg-          suggestion

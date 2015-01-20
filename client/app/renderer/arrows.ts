@@ -116,33 +116,50 @@ function drawHorizontalArrows(isFirstChild, numRemainingNonMultireplies) {
 function drawVerticalArrows(depth: number, isFirstChild: boolean,
     horizontalLayout: boolean, numRemainingNonMultireplies: number) {
 
+  var arrows = [];
+
+  if (isFirstChild) {
+    // This arrrow is shown if the max indentation depth is reached. Then
+    // we'll still draw an arrow from the parent to this post, if this post is
+    // the very first child (and this post won't be indented, so we'll hide
+    // all arrows to any siblings).
+    arrows.push(
+      r.div({ className: 'dw-arw dw-arw-vt-curve-to-this-first-unindented' }));
+  }
+
+  // Only one reply
+  // ------------------
+  //
   // Single replies (without any siblings) are placed directly below their parent,
   // as if using a flat layout (rather than a threaded layout). Then, need draw
   // no arrows; people are used to flat layouts.
   //
   // This is how it looks:
   //
-  //
   // Explanation                                 Illustration
   // -----------                                 ------------
   //
-  // A parent comment with only one reply,       +-----—-———————----+
-  // "child comment".                            |parent comment    |
+  // A parent comment with only one reply.       +-----—-———————----+
+  //                                             |parent comment    |
   //                                             |text…             |
   //                                             +------------------+
   //                                              \
   //                                               v
-  // The child comment.                          +-----—------------+
-  //                                             |the only child    |
+  // The child comment (would be this post,      +-----—------------+
+  // if `isOnlyChild` below is true).            |the only child    |
   //                                             |comment text…     |
   //                                             +------------------+
 
   var isOnlyChild = isFirstChild && numRemainingNonMultireplies === 0;
   if (isOnlyChild) {
-    return (
+    arrows.push(
       r.div({ className: 'dw-arw dw-arw-vt-curve-to-this' }));
+    return arrows;
   }
 
+  // Many replies
+  // ------------------
+  //
   // Let me explain how I draw arrows to this thread from the parent:
   //
   //
@@ -172,8 +189,6 @@ function drawVerticalArrows(depth: number, isFirstChild: boolean,
   // Here, numRemainingNonMultireplies is 0.     |:last-child       |
   //                                             |comment text…     |
   //                                             +------------------+
-
-  var arrows = [];
 
   // Draw the `-> part:
   if (numRemainingNonMultireplies >= 1) {

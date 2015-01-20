@@ -112,11 +112,23 @@
   background-color: white
 
 
+.dw-arw-vt-curve-to-this-first-unindented,
 li:only-child > .dw-arw-vt-curve-to-this
+  position: absolute
   top: -28px;
-  width: 18px;
+  width: 15px;
   height: 23px;
-  background: url("img/arrows-etcetera-gray.png") no-repeat -57px -93px;
+  left: -1px !important;
+  background: url("img/arrows-etcetera-gray.png") no-repeat -59px -146px;
+
+html.touch
+  .dw-arw-vt-curve-to-this-first-unindented,
+  li:only-child > .dw-arw-vt-curve-to-this
+    top: -38px;
+    width: 15px;
+    height: 30px;
+    left: -2px !important;
+    background: url("img/arrows-etcetera-gray.png") no-repeat -59px -141px;
 
 // Sometimes the last/only child is indented: in single column layout, replies
 // to article replies are always indented. Then we need an arrow for indented
