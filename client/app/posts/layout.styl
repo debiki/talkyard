@@ -110,7 +110,8 @@
 
   // Hide all vertical arrows (but show horizontal), show them later unless
   // too deeply indented.
-  .dw-arw
+  .dw-arw,
+  .dw-arw-vt-handle
     display: none
   .dw-arw-hz-line-to-this,
   .dw-arw-hz-line-to-sibling,
@@ -125,6 +126,7 @@
   .dw-id0, .dw-id1, .dw-id2, .dw-id3, .dw-id4, .dw-id5
     padding-left: 35px
 
+    > .dw-arw-vt-handle
     > .dw-arw:not(.dw-arw-vt-curve-to-this-first-unindented)
       display: block;
 
@@ -196,7 +198,8 @@
 .dw-res > li
   margin: 0
 
-.dw-arw
+.dw-arw,
+.dw-arw-vt-handle
   display: none
 
 /* No max indentation depth would be:
@@ -215,6 +218,7 @@
 
     .dw-id0, .dw-id1, .dw-id2, .dw-id3, .dw-id4, .dw-id5, .dw-id6, .dw-id7, .dw-id8
       padding-left: 35px
+      > .dw-arw-vt-handle
       > .dw-arw:not(.dw-arw-vt-curve-to-this-first-unindented)
         display: block;
       > .dw-p .dw-rrs
@@ -234,6 +238,7 @@
 
     .dw-id0, .dw-id1, .dw-id2, .dw-id3
       padding-left: 35px
+      > .dw-arw-vt-handle
       > .dw-arw:not(.dw-arw-vt-curve-to-this-first-unindented)
         display: block;
       > .dw-p .dw-rrs
@@ -253,6 +258,7 @@
 
     .dw-id0, .dw-id1
       padding-left: 35px
+      > .dw-arw-vt-handle
       > .dw-arw:not(.dw-arw-vt-curve-to-this-first-unindented)
         display: block;
       > .dw-p .dw-rrs
