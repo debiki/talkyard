@@ -17,6 +17,7 @@
 
 /// <reference path="../../shared/plain-old-javascript.d.ts" />
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../../typedefs/modernizr/modernizr.d.ts" />
 /// <reference path="../renderer/model.ts" />
 /// <reference path="../Server.ts" />
 
@@ -329,10 +330,15 @@ export var Editor = createComponent({
       display: this.state.visible ? 'block' : 'none'
     };
 
+    // Make space for the soft keyboard on touch devices.
+    var maxHeightCss = !Modernizr.touch ? undefined : {
+      maxHeight: screen.height / 2.5
+    };
+
     return (
       r.div({ style: styles },
         r.div({ id: 'debiki-editor-placeholder', ref: 'placeholder' }),
-        r.div({ id: 'debiki-editor-controller', ref: 'editor' },
+        r.div({ id: 'debiki-editor-controller', ref: 'editor', style: maxHeightCss },
           r.div({ id: 'editor-after-borders' },
             r.div({ className: 'editor-area' },
               r.div({ className: 'editor-area-after-borders' },

@@ -20,6 +20,9 @@ var $ = d.i.$;
 
 
 d.i.showPostActions = function(node) {
+    if (Modernizr.touch)
+      return;
+
     var $i = $(node);
 
     // If a more-actions dropdown has been opened, let it stay in focus, don't
@@ -38,7 +41,7 @@ d.i.showPostActions = function(node) {
     var isBeingEdited = $i.children('.dw-f-e:visible').length;
 
     if (isBeingEdited)
-      d.i.hideActions();
+      hideActions();
     else if (!inlineChildActionsShown)
       $i.each(d.i.$showActions);
     // else leave actions visible, below the inline child post.
@@ -47,9 +50,12 @@ d.i.showPostActions = function(node) {
 
 // Shows actions for the current post, or the last post hovered.
 d.i.$showActions = function() {
+  if (Modernizr.touch)
+    return;
+
   var actions = $(this).closest('.dw-t').children('.dw-as');
   // Hide any action links already shown; show actions for one post only.
-  d.i.hideActions(actions);
+  hideActions(actions);
   // Show links for the the current post.
   actions
     .stop()
@@ -59,7 +65,10 @@ d.i.$showActions = function() {
 };
 
 
-d.i.hideActions = function(anyActionsToShowInstead) {
+function hideActions(anyActionsToShowInstead) {
+  if (Modernizr.touch)
+    return;
+
   var actionsToHide = $('#dw-p-as-shown');
   if (actionsToHide.length && anyActionsToShowInstead && anyActionsToShowInstead.length &&
       actionsToHide[0] === anyActionsToShowInstead[0])

@@ -75,7 +75,6 @@ var debikiDesktopFiles = [
       'bower_components/Caret.js/dist/jquery.caret.js',
       'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
       'bower_components/nicescroll/jquery.nicescroll.js',
-      'client/third-party/bootstrap/tooltip.js', //
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',
@@ -121,7 +120,6 @@ var debikiDesktopFiles = [
       //'target/client/app/posts/monitor-reading-progress-unused.js',
       'target/client/app/posts/patch-page.js',
       'target/client/app/actions/pin.js',
-      'target/client/app/posts/post-header.js',
       'target/client/app/posts/resize.js',
       'target/client/app/utils/scroll-into-view.js',
       'target/client/app/utils/show-and-highlight.js',
@@ -193,7 +191,6 @@ var debikiTouchFiles = [
       //'target/client/app/posts/monitor-reading-progress-unused.js',
       'target/client/app/posts/patch-page.js',
       'target/client/app/actions/pin.js',
-      'target/client/app/posts/post-header.js',
       'target/client/app/posts/resize.js',
       'target/client/app/utils/scroll-into-view.js',
       'target/client/app/utils/show-and-highlight.js',

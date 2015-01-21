@@ -6,25 +6,33 @@
   width: 100%;
   z-index: 100;
 
+.touch #dw-posts-navigation
+  bottom: auto
+  top: 0
+
+
 #dw-post-nav-panel
-  width: 158px;
   position: absolute;
-  right: 20px;
+  left: 20px; // the sidebar is at the right edge
   bottom: 0;
-  background: #aaa;
-  height: 45px;
+  background: #bbb;
+
+.touch #dw-post-nav-panel
+  bottom: auto;
+  top: 0;
+
+
+html.touch #dw-post-nav-panel
+  left: 0;
 
 #dw-post-nav-back-btn
-  position: absolute;
-  left: 6px;
-  bottom: 5px;
-  width: 60px;
+  float: left;
+  margin: 4px 2px 4px 4px;
 
 #dw-post-nav-forw-btn
-  position: absolute;
-  right: 6px;
-  bottom: 5px;
-  width: 80px;
+  float: left;
+  margin: 4px 4px 4px 2px;
+
 
 #dw-post-nav-forw-btn,
 #dw-post-nav-back-btn
@@ -32,9 +40,26 @@
   &[disabled]
     opacity: 0.45;
 
-  // This is for the B and F in Back and Forward, they're shortcuts.
-  span:first-child
-    text-decoration: underline;
-    font-weight: bold;
+// This is for the B and F in Back and Forward, they're shortcuts.
+html:not(.touch)
+  #dw-post-nav-forw-btn,
+  #dw-post-nav-back-btn
+    .dw-shortcut
+      text-decoration: underline;
+      font-weight: bold;
+
+// Set button title to 'Forward' if wide screen, else 'Fwd'.
+#dw-post-nav-panel
+  .dw-narrow
+    display: none
+  .dw-wide
+    display: inline
+
+  @media (max-width: 700px)
+    .dw-narrow
+      display: inline
+    .dw-wide
+      display: none
+
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 list

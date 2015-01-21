@@ -104,17 +104,25 @@ export var MiniMap = createComponent({
     drawViewport(canvasContext, this.width, this.height);
   },
 
-  calculateMinimapSize: function(width?: number): any {
-    if (!width) {
-      var maxMinimapWidth = Math.min($window.width() / 3, 500);
-      width = Math.min(maxMinimapWidth, $document.width() / 12);
-      // Make the minimap smaller if there aren't very many comments.
-      var veryManyComments = 300;
-      width = 50 + Math.max(0, width - 50) * (Math.log(this.props.numPostsExclTitle) /
-          Math.log(veryManyComments));
-    }
+  calculateMinimapSize: function(): any {
+    var maxMinimapWidth = Math.min($window.width() / 3, 500);
+    var width = Math.min(maxMinimapWidth, $document.width() / 12);
+    var minWidth = 40;
+
+    // Make the minimap smaller if there aren't very many comments.
+    var veryManyComments = 300;
+    width = minWidth + Math.max(0, width - 50) * (Math.log(this.props.numPostsExclTitle) /
+        Math.log(veryManyComments));
+
     var aspectRatio = $document.width() / Math.max($document.height(), 1);
     var height = width / aspectRatio;
+
+    var maxHeight = $(window).height() / 6;
+    if (height > maxHeight) {
+      width = Math.max(minWidth, maxHeight * aspectRatio);
+      height = maxHeight;
+    }
+
     return {
       width: width,
       height: height
@@ -194,7 +202,7 @@ export var MiniMap = createComponent({
               style: { height: 100 }})));
     }
 
-    var size = this.calculateMinimapSize(this.props.width);
+    var size = this.calculateMinimapSize();
     this.width = size.width;
     this.height = size.height;
     return (

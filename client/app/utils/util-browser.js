@@ -95,7 +95,7 @@ d.u.zoomListeners = [];
     lastHeight = heightNow;
     // Length changed, user must have zoomed, invoke listeners.
     for (var i = d.u.zoomListeners.length - 1; i >= 0; --i) {
-      d.u.zoomListeners[i]();
+      d.u.zoomListeners[i]({ type: 'zoomOrResize' });
     }
   };
   d.u.zoomListenerHandle_dbg = setInterval(pollZoomFireEvent, 100);

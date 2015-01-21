@@ -170,7 +170,7 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
       $('body').removeClass(doingWhatClass)
 
   # Preload OpenID resources, in case user clicks OpenID login button.
-  d.i.loadOpenIdResources()
+  # d.i.loadOpenIdResources() — no, OpenID disabled right now.
 
   dialog.dialog 'open'
 

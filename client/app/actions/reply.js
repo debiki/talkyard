@@ -108,39 +108,21 @@ d.i.handleReplyResult = function(data) {
 
 
 function doHandleReplyResult(newPost) {
-  debiki2.ReactActions.updatePost(newPost);
-
-  var myNewPost = $('#post-' + newPost.postId);
-  d.u.bugIf(myNewPost.length !== 1, 'DwE3TW379');
-
-  var patchedThread = myNewPost.parent('.dw-t');
-  var parentThread = patchedThread.parent().closest('.dw-t');
-  var horizLayout = parentThread.is('.dw-hz');
-  var replyCountBefore = parentThread.find('> .dw-single-and-multireplies > .dw-singlereplies > li > .dw-t').length;
-
-  // Don't show sort order tips instantly, because if
-  // the new comment and the tips appear at the same time,
-  // the user will be confused? S/he won't know where to look?
-  // So wait a few seconds.
-  // Don't show sort order tips if there are few replies,
-  // then nothing is really being sorted anyway.
-  var showSortTips = horizLayout && replyCountBefore >= 2;
-  if (showSortTips)
-    showSortOrderTipsLater(myNewPost, 2050);
-
-  d.i.showAndHighlightPost(myNewPost, { marginRight: 300, marginBottom: 300 });
-  d.i.$showActions.apply(myNewPost);
-};
-
-
-function showSortOrderTipsLater($newPost, delay) {
+  // On iPhone 5, some unknown error happens inside ReactStore.emitChange, invoked
+  // via `updatePost(newPost)` below. Therefore, schedule show-and-highlight directly here.
+  // (No idea what happens — everything seems to work fine, except that no code below
+  // `updatePost(newPost)` gets invoked here. iPhone logs no info about the error at all;
+  // I know it happens in emitChange only because I added lots of console.error messages,
+  // and the one after emitChange after `switch (action.actionType)` in ReactStore was
+  // the first one that was never displayed.)
   setTimeout(function() {
-    var $tips = $('#dw-tps-sort-order');
-    $tips.appendTo($newPost).dwScrollIntoView().click(function() {
-      $tips.hide();
-    });
-  }, delay);
-}
+    var myNewPost = $('#post-' + newPost.postId);
+    d.i.showAndHighlightPost(myNewPost, { marginRight: 300, marginBottom: 300 });
+    d.i.$showActions.apply(myNewPost);
+  }, 1);
+
+  debiki2.ReactActions.updatePost(newPost);
+};
 
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

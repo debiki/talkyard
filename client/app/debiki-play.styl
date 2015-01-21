@@ -189,22 +189,21 @@ h1.dw-p-ttl + .dw-a-edit
   margin-bottom: 8px
 
 
-.DW .dw-multireply-prefix
+.dw-rrs // reply receivers
   font-style: italic;
   font-size: 90%;
-  margin-right: 4px;
 
-.DW .dw-multireply-to
-  padding: 7px 10px 5px 0
+
+.dw-rr // reply receiver
+  padding: 7px 0 6px 5px
   display: inline-block;
   color: hsl(211, 88%, 20%);
-  font-size: 11px;
+  text-decoration: underline;
 
-  .icon-reply
-    display: inline-block; // makes .dw-mirror work
-    opacity: 0.7;
-    margin-right: -2px;
-    font-size: 10px;
+// Make it easier to touch.
+.touch .dw-rr
+  padding: 15px 0 16px 6px;
+  margin-top: -6px;
 
 
 .dw-wrong

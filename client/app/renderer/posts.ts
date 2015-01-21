@@ -35,6 +35,11 @@ var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
 var ReactRouter = window['ReactRouter'];
+var reactCreateFactory = React['createFactory'];
+var ReactBootstrap: any = window['ReactBootstrap'];
+var OverlayTrigger = reactCreateFactory(ReactBootstrap.OverlayTrigger);
+var Tooltip = reactCreateFactory(ReactBootstrap.Tooltip);
+
 
 var ManualReadMark = 1;
 var YellowStarMark = 2;
@@ -252,6 +257,7 @@ var RootPostAndComments = createComponent({
       threadProps.postId = childId;
       threadProps.index = childIndex;
       threadProps.depth = 1;
+      threadProps.indentationDepth = 0;
       return (
         r.li({},
           Thread(threadProps)));
@@ -284,7 +290,6 @@ var Thread = createComponent({
     var post: Post = this.props.allPosts[this.props.postId];
     var parentPost = this.props.allPosts[post.parentId];
     var deeper = this.props.depth + 1;
-    var depthClass = 'dw-depth-' + this.props.depth;
 
     // Draw arrows, but not to multireplies, because we don't know if they reply to `post`
     // or to other posts deeper in the thread.
@@ -298,11 +303,22 @@ var Thread = createComponent({
     var children = [];
     if (!post.isTreeCollapsed && !post.isTreeDeleted) {
       children = post.childIdsSorted.map((childId, childIndex) => {
+        var childIndentationDepth = this.props.indentationDepth;
+        // All children except for the last one are indented.
+        var isIndented = childIndex < post.childIdsSorted.length - 1;
+        if (!this.props.horizontalLayout && this.props.depth === 1) {
+          // Replies to article replies are always indented, even the last child.
+          isIndented = true;
+        }
+        if (isIndented) {
+          childIndentationDepth += 1;
+        }
         var threadProps = _.clone(this.props);
         threadProps.elemType = 'li';
         threadProps.postId = childId;
         threadProps.index = childIndex;
         threadProps.depth = deeper;
+        threadProps.indentationDepth = childIndentationDepth;
         return (
             Thread(threadProps));
       });
@@ -317,11 +333,16 @@ var Thread = createComponent({
 
     var postProps = _.clone(this.props);
     postProps.post = post;
+    postProps.index = this.props.index;
     postProps.onMouseEnter = this.onPostMouseEnter;
     postProps.ref = 'post';
 
+    var depthClass = ' dw-depth-' + this.props.depth;
+    var indentationDepthClass = ' dw-id' + this.props.indentationDepth;
+    var multireplyClass = post.multireplyPostIds.length ? ' dw-mr' : '';
+
     return (
-      baseElem({ className: 'dw-t ' + depthClass },
+      baseElem({ className: 'dw-t' + depthClass + indentationDepthClass + multireplyClass},
         arrows,
         Post(postProps),
         actions,
@@ -398,7 +419,7 @@ var Post = createComponent({
     if (post.numWrongVotes >= 2 && !this.props.abbreviate) {
       var wrongness = post.numWrongVotes / (post.numLikeVotes || 1);
       // One, two, three, many.
-      if (post.numWrongVotes >= 4 && wrongness > 1) {
+      if (post.numWrongVotes > 3 && wrongness > 1) {
         wrongWarning =
           r.div({ className: 'dw-wrong dw-very-wrong icon-warning' },
             'Many think this comment is wrong:');
@@ -410,9 +431,11 @@ var Post = createComponent({
       }
     }
 
-    var multireplReceivers = null;
-    if (post.multireplyPostIds.length) {
-      multireplReceivers = MultireplyReceivers({ post: post, allPosts: this.props.allPosts });
+    // For non-multireplies, we never show "In response to" for the very first reply (index 0),
+    // instead we draw an arrow.
+    var replyReceivers;
+    if (!this.props.abbreviate && (this.props.index > 0 || post.multireplyPostIds.length)) {
+      replyReceivers = ReplyReceivers({ post: post, allPosts: this.props.allPosts });
     }
 
     var mark = user.marksByPostId[post.postId];
@@ -439,7 +462,7 @@ var Post = createComponent({
             onMouseEnter: this.props.onMouseEnter, onClick: this.onClick },
         pendingApprovalElem,
         wrongWarning,
-        multireplReceivers,
+        replyReceivers,
         headerElem,
         bodyElem));
   }
@@ -447,28 +470,41 @@ var Post = createComponent({
 
 
 
-var MultireplyReceivers = createComponent({
+var ReplyReceivers = createComponent({
   render: function() {
-    var receivers = this.props.post.multireplyPostIds.map((repliedToPostId) => {
+    var multireplyClass = ' dw-mrrs'; // mrrs = multi reply receivers
+    var thisPost: Post = this.props.post;
+    var repliedToPostIds = thisPost.multireplyPostIds;
+    if (!repliedToPostIds || !repliedToPostIds.length) {
+      multireplyClass = '';
+      repliedToPostIds = [thisPost.parentId];
+    }
+    var receivers = repliedToPostIds.map((repliedToPostId, index) => {
       var post = this.props.allPosts[repliedToPostId];
       if (!post)
-        return r.i({}, '(Unknown author and post?)');
+        return r.i({}, '?someone unknown?');
 
-      return (
-        r.a({ href: '#post-' + post.postId, className: 'dw-multireply-to' },
-          r.span({ className: 'icon-reply dw-mirror' }),
-          r.span({}, post.authorUsername || post.authorFullName, ' (post ', post.postId, ')')));
+      var link =
+        r.a({ href: '#post-' + post.postId, className: 'dw-rr' }, // rr = reply receiver
+          post.authorUsername || post.authorFullName);
+
+      return index === 0 ? link : r.span({}, ' and', link);
     });
-
     return (
-      r.div({},
-        r.span({ className: 'dw-multireply-prefix' }, 'In reply to:'),
-        receivers));
+      r.div({ className: 'dw-rrs' + multireplyClass }, // rrs = reply receivers
+        'In reply to', receivers, ':'));
   }
 });
 
 
+
 var PostHeader = createComponent({
+  copyPermalink: function() {
+    var hash = '#post-' + this.props.post.postId;
+    var url = window.location.host + '/-' + debiki.getPageId() + hash;
+    window.prompt('To copy permalink, press Ctrl+C then Enter', url);
+  },
+
   render: function() {
     var post = this.props.post;
     var user: User = this.props.user;
@@ -486,6 +522,15 @@ var PostHeader = createComponent({
       if (authorIsGuest(post)) {
         authorNameElems.push(
           r.span({ className: 'dw-lg-t-spl' }, '?')); // {if (user.email isEmpty) "??" else "?"
+        /* Could add back tooltip:
+          '<b>??</b> means that the user has not logged in,'+
+          ' so <i>anyone</i> can pretend to be this user&nbsp;(!),'+
+          ' and not specified any email address.'
+
+          '<b>?</b> means that the user has not logged in,'+
+          ' so <i>anyone</i> can pretend to be this user&nbsp;(!),'+
+          ' but has specified an email address.'
+        */
       }
     }
     else if (post.authorUsername) {
@@ -542,7 +587,16 @@ var PostHeader = createComponent({
     var postId;
     var anyMark;
     if (post.postId !== TitleId && post.postId !== BodyPostId) {
-      postId = r[linkFn]({ className: 'dw-p-link' }, '#', post.postId);
+      postId = r[linkFn]({ className: 'dw-p-link', onClick: this.copyPermalink },
+          '#' + post.postId);
+      /* Doesn't work, the tooltip gets placed far away to the left. You'll find it
+         in Dev Tools like so: $('.tooltip-inner').
+      if (!this.props.abbreviate) {
+        postId = OverlayTrigger({ placement: 'left',
+        overlay: Tooltip({}, 'Click to copy permalink') }, postId);
+      }
+      */
+
       var mark = user.marksByPostId[post.postId];
       var starClass = ' icon-star';
       if (mark === ManualReadMark) {
@@ -578,8 +632,9 @@ var PostBody = createComponent({
     if (this.props.abbreviate) {
       this.textDiv = this.textDiv || $('<div></div>');
       this.textDiv.html(post.sanitizedHtml);
-      var startOfText = this.textDiv.text().substr(0, 150);
-      if (startOfText.length === 150) {
+      var length = Math.min(screen.width, screen.height) < 500 ? 100 : 150;
+      var startOfText = this.textDiv.text().substr(0, length);
+      if (startOfText.length === length) {
         startOfText += '....';
       }
       body = r.div({ className: 'dw-p-bd-blk' }, startOfText);
@@ -802,9 +857,9 @@ var PostActions = createComponent({
     }
 
     var moreDropdown =
-      r.span({ className: 'dropdown navbar-right dw-a' },
-        r.a({ className: 'dw-a-more', 'data-toggle': 'dropdown' }, 'More'),
-        r.div({ className: 'dropdown-menu dw-p-as-more' },
+      r.span({ className: 'dropdown navbar-right' },
+        r.a({ className: 'dw-a dw-a-more', 'data-toggle': 'dropdown' }, 'More'),
+        r.div({ className: 'dropdown-menu dropdown-menu-right dw-p-as-more' },
           moreLinks));
 
     return (
@@ -847,8 +902,11 @@ function renderTitleBodyComments() {
 
   var store = debiki2.ReactStore.allData();
   if (store.pageRole === 'Forum') {
-    var routes = debiki2.renderer.buildForumRoutes();
-    ReactRouter.run(routes, function(handler) {
+    var router = ReactRouter.create({
+      routes: debiki2.renderer.buildForumRoutes(),
+      scrollBehavior: debiki2.renderer.ForumScrollBehavior,
+    });
+    router.run(function(handler) {
       React.render(handler(store), root);
     });
   }
@@ -865,8 +923,8 @@ function renderTitleBodyCommentsToString() {
     var result;
     // In the future, when using the HTML5 history API to update the URL when navigating
     // inside the forum, we can use `store.pagePath` below. But for now, when using
-    // the hash fragment, start at #/ always:
-    var pagePath = '/';
+    // the hash fragment, start at #/latest/ (the default route) always:
+    var pagePath = '/latest/';
     ReactRouter.run(routes, pagePath, function(handler) {
       result = React.renderToString(handler(store));
     });

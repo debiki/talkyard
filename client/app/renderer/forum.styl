@@ -22,16 +22,19 @@
 
 .dw-forum-actionbar
   clear: both
-  padding 20px 0 25px
+  padding 0 0 25px
+
+  marginTop = 20px
 
   li
     margin-left: 0
 
   .dw-main-category-dropdown
     float: left
-    margin-right: 10px
+    margin: marginTop 15px 0 0
 
     .dropdown-toggle
+      margin 0
       padding: 5px 12px 5px 15px
 
     a
@@ -39,20 +42,20 @@
 
   .nav
     float: left
-    margin-left: 10px
 
     button
       float: left;
       border: none;
       box-shadow: none;
 
+      margin-top: marginTop
       padding-left: 15px;
       padding-right: 15px;
       min-width: 70px;
 
   button
     float: right
-    margin-left: 5px
+    margin: marginTop 0 0 0
     color: hsl(211, 100%, 40%);
 
 
@@ -105,6 +108,9 @@
 .parent-forums-list {
   margin: -20px 0 0;
 }
+
+.touch .parent-forums-list
+  margin-top: 30px;
 
 .parent-forums-list li {
   margin: 0;

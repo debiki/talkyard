@@ -33,18 +33,34 @@ var PostNavigation = React.createClass({
   canGoBack: function() {
     return this.props.currentVisitedPostIndex >= 1;
   },
+
   canGoForward: function() {
     return this.props.currentVisitedPostIndex >= 0 &&
         this.props.currentVisitedPostIndex < this.props.visitedPosts.length - 1;
   },
+
   componentDidMount: function() {
     key('b', this.goBack);
     key('f', this.goForward);
+    window.addEventListener('scroll', this.hideIfCloseToTop, false);
   },
+
   componentWillUnmount: function() {
     key.unbind('b', this.goBack);
     key.unbind('f', this.goForward);
+    window.removeEventListener('scroll', this.hideIfCloseToTop, false);
   },
+
+  hideIfCloseToTop: function() {
+    var node = this.getDOMNode();
+    if (node.getBoundingClientRect().top < 30 && $(window).scrollTop() < 100) {
+      $(node).hide();
+    }
+    else {
+      $(node).show();
+    }
+  },
+
   goBack: function() {
     if (!this.canGoBack()) return;
     var backPost = this.props.visitedPosts[this.props.currentVisitedPostIndex - 1];
@@ -69,6 +85,7 @@ var PostNavigation = React.createClass({
       d.i.showAndHighlightPost($('#post-' + backPost.postId));
     }
   },
+
   goForward: function() {
     if (!this.canGoForward()) return;
     var forwPost = this.props.visitedPosts[this.props.currentVisitedPostIndex + 1];
@@ -86,18 +103,21 @@ var PostNavigation = React.createClass({
       throw new Error('DwE49dFK2');
     }
   },
+
   render: function() {
     var buttons = [];
     buttons.push(
         r.button({
             id: 'dw-post-nav-back-btn', onClick: this.goBack, className: 'btn btn-default',
                 disabled: !this.canGoBack() },
-            r.span({}, 'B'), 'ack'));
+            r.span({ className: 'dw-shortcut' }, 'B'), 'ack'));
     buttons.push(
         r.button({
             id: 'dw-post-nav-forw-btn', onClick: this.goForward, className: 'btn btn-default',
                 disabled: !this.canGoForward() },
-            r.span({}, 'F'), 'orward'));
+            r.span({ className: 'dw-shortcut' }, 'F'),
+              r.span({ className: 'dw-narrow' }, 'wd'),
+              r.span({ className: 'dw-wide' }, 'orward')));
     return this.props.visitedPosts.length === 0 ? null : r.div({ id: 'dw-post-nav-panel'}, buttons);
   }
 });

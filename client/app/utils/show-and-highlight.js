@@ -93,7 +93,7 @@ function addAnySidebarWidth(options) {
   var sidebar = $('#dw-sidebar');
   if (!sidebar.find('.dw-comments').length) {
     // Sidebar is closed.
-    return options;
+    return options || {};
   }
 
   options = options || {};
@@ -114,6 +114,8 @@ $.fn.dwScrollToHighlighted = function(options) {
 
 d.i.showAndHighlightPost = function($post, options) {
   options = addAnySidebarWidth(options);
+  // Add space for position-fixed stuff at the top: Forw/Back btns and open-sidebar btn.
+  options.marginTop = options.marginTop || 60;
   $post.dwScrollIntoView(options).queue(function(next) {
     highlightBriefly($post, '.dw-p-bd, .dw-p-hd');
     next();
@@ -158,10 +160,10 @@ function anyAnchorPostId() {
 }
 
 
-// When hovering a multireply, outline the post that was replied to.
+// When hovering a in-reply-to link, outline the post that was replied to.
 // Use a dedicated CSS class so we won't accidentally remove any outline added
 // because of other reasons, when removing this outline.
-$(document).on('hover', '.dw-multireply-to', function(event) {
+$(document).on('hover', '.dw-rr', function(event) {  // dw-rr = reply receiver
   var referencedPost = getPostMultirepliedTo(this);
   if (event.type === 'mouseenter') {
     referencedPost.addClass('dw-highlighted-multireply-hover');
@@ -172,13 +174,14 @@ $(document).on('hover', '.dw-multireply-to', function(event) {
 });
 
 
-// When clicking a multireply link, scroll the post that was replied to into view.
-$(document).on('click', '.dw-multireply-to', function(event) {
+// When clicking a in-reply-to link, scroll the post that was replied to into view.
+$(document).on('click', '.dw-rr', function(event) {  // dw-rr = reply receiver
   var referencedPost = getPostMultirepliedTo(this);
   d.i.showAndHighlightPost(referencedPost);
   var currentPostId = $(this).closest('.dw-t').dwPostId();
   var nextPostId = referencedPost.dwPostId();
   debiki2.postnavigation.addVisitedPosts(currentPostId, nextPostId);
+  return false; // prevent browser's default action (jump-place post in upper left corner)
 });
 
 

@@ -40,6 +40,7 @@ var Navigation = ReactRouter.Navigation;
 var State = ReactRouter.State;
 var RouteHandler = ReactRouter.RouteHandler;
 var Route = ReactRouter.Route;
+var Redirect = ReactRouter.Redirect;
 var DefaultRoute = ReactRouter.DefaultRoute;
 
 /** Keep in sync with app/controllers/ForumController.NumTopicsToList. */
@@ -48,12 +49,24 @@ var NumNewTopicsPerRequest = 40;
 export function buildForumRoutes() {
   return (
     Route({ name: 'ForumRoute', path: '/', handler: Forum },
-      DefaultRoute({ name: 'ForumRouteDefault', handler: ForumTopicList }),
+      Redirect({ from: '/', to: '/latest/' }),
       Route({ name: 'ForumRouteLatest', path: 'latest/:categorySlug?', handler: ForumTopicList }),
       Route({ name: 'ForumRouteTop', path: 'top/:categorySlug?', handler: ForumTopicList }),
       Route({ name: 'ForumRouteCategories', path: 'categories', handler: ForumCategories })));
 }
 
+
+export var ForumScrollBehavior = {
+  updateScrollPosition: function(position, actionType) {
+    // Never change scroll position when switching between last/top/categories
+    // in the forum. Later on I might find this behavior useful:
+    //   https://github.com/rackt/react-router/blob/master/behaviors/ImitateBrowserBehavior.js
+    //   https://github.com/rackt/react-router/blob/master/docs/api/components/Route.md#ignorescrollbehavior
+    //   https://github.com/rackt/react-router/blob/master/docs/api/create.md#scrollbehavior
+    //   https://github.com/rackt/react-router/pull/388
+    return;
+  }
+};
 
 
 export var Forum = createComponent({
@@ -167,13 +180,13 @@ export var CategoriesAndTopics = createComponent({
       r.div({},
         r.div({ className: 'dw-forum-actionbar clearfix' },
           categoriesDropdown,
+          createTopicBtn,
+          createCategoryBtn,
+          editCategoryBtn,
           r.ul({ className: 'nav nav-pills' },
             NavButton({ routeName: 'ForumRouteLatest' }, 'Latest'),
             NavButton({ routeName: 'ForumRouteTop' }, 'Top'),
-            NavButton({ routeName: 'ForumRouteCategories' }, 'Categories')),
-          createTopicBtn,
-          createCategoryBtn,
-          editCategoryBtn),
+            NavButton({ routeName: 'ForumRouteCategories' }, 'Categories'))),
         RouteHandler(viewProps)));
   }
 });
