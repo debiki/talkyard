@@ -93,7 +93,7 @@ function addAnySidebarWidth(options) {
   var sidebar = $('#dw-sidebar');
   if (!sidebar.find('.dw-comments').length) {
     // Sidebar is closed.
-    return options;
+    return options || {};
   }
 
   options = options || {};
@@ -114,6 +114,8 @@ $.fn.dwScrollToHighlighted = function(options) {
 
 d.i.showAndHighlightPost = function($post, options) {
   options = addAnySidebarWidth(options);
+  // Add space for position-fixed stuff at the top: Forw/Back btns and open-sidebar btn.
+  options.marginTop = options.marginTop || 60;
   $post.dwScrollIntoView(options).queue(function(next) {
     highlightBriefly($post, '.dw-p-bd, .dw-p-hd');
     next();
