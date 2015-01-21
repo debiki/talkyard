@@ -53,6 +53,9 @@ var PostNavigation = React.createClass({
 
   hideIfCloseToTop: function() {
     var node = this.getDOMNode();
+    if (!node)
+      return;
+
     if (node.getBoundingClientRect().top < 30 && $(window).scrollTop() < 100) {
       $(node).hide();
     }
