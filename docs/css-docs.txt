@@ -48,7 +48,6 @@ dw-           prefix for internal classes and ids, avoids name clashes
 -id0, id1 etc indentation depth 0, 1, 2 etc.
 -img-         image
 -inf-         information
--irt          in reply to
 -lbl-         label
 -lgi-         login
 -lgo-         logout

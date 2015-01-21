@@ -479,19 +479,20 @@ var ReplyReceivers = createComponent({
       multireplyClass = '';
       repliedToPostIds = [thisPost.parentId];
     }
-    var receivers = repliedToPostIds.map((repliedToPostId) => {
+    var receivers = repliedToPostIds.map((repliedToPostId, index) => {
       var post = this.props.allPosts[repliedToPostId];
       if (!post)
-        return r.i({}, '(Unknown author and post?)');
+        return r.i({}, '?someone unknown?');
 
-      return (
+      var link =
         r.a({ href: '#post-' + post.postId, className: 'dw-rr' }, // rr = reply receiver
-          post.authorUsername || post.authorFullName));
+          post.authorUsername || post.authorFullName);
+
+      return index === 0 ? link : r.span({}, ' and', link);
     });
     return (
       r.div({ className: 'dw-rrs' + multireplyClass }, // rrs = reply receivers
-        r.span({ className: 'dw-irt' }, 'In reply to:'),
-        receivers));
+        'In reply to', receivers, ':'));
   }
 });
 
