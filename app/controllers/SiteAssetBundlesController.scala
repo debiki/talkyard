@@ -74,7 +74,7 @@ object SiteAssetBundlesController extends mvc.Controller {
             else if (request.uri endsWith "js") JAVASCRIPT
             else TEXT
           Ok(bundle.body).withHeaders(
-            CACHE_CONTROL -> "public, max-age=31536000",
+            CACHE_CONTROL -> "max-age=31536000",
             ETAG -> etag,
             // Really don't set any new cookies (don't know from where they
             // could come, but remove any anyway).
