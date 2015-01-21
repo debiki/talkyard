@@ -94,6 +94,7 @@ ReactDispatcher.register(function(payload) {
   }
 
   ReactStore.emitChange();
+  store.quickUpdate = false;
 
   // Tell the dispatcher that there were no errors:
   return true;
@@ -121,6 +122,7 @@ ReactStore.activateUserSpecificData = function(anyUser) {
     updatePost(post);
   });
 
+  store.quickUpdate = false;
   this.emitChange();
 };
 
@@ -213,6 +215,8 @@ function updatePost(post) {
   if (!post.parentId && post.postId != BodyPostId && post.postId !== TitleId) {
     store.topLevelCommentIdsSorted = topLevelCommentIdsSorted(store.allPosts);
   }
+
+  rememberPostsToQuickUpdate(post.postId);
 }
 
 
@@ -247,6 +251,7 @@ function markPostAsRead(postId: number, manually: boolean) {
   else {
     store.user.postIdsAutoReadNow.push(postId);
   }
+  rememberPostsToQuickUpdate(postId);
 }
 
 
@@ -289,6 +294,8 @@ function cycleToNextMark(postId: number) {
   }
   lastPostIdMarkCycled = postId;
   store.user.marksByPostId[postId] = nextMark;
+
+  rememberPostsToQuickUpdate(postId);
 }
 
 
@@ -391,6 +398,17 @@ function loadMarksFromLocalStorage(): { [postId: number]: any } {
 
 function saveMarksInLocalStorage(marks: { [postId: number]: any }) {
   //...
+}
+
+
+function rememberPostsToQuickUpdate(startPostId: number) {
+  store.quickUpdate = true;
+  store.postsToUpdate = {};
+  var post = store.allPosts[startPostId];
+  while (post) {
+    store.postsToUpdate[post.postId] = true;
+    post = store.allPosts[post.parentId];
+  }
 }
 
 //------------------------------------------------------------------------------

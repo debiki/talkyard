@@ -88,8 +88,12 @@ interface Store {
   user: User;
   userSpecificDataAdded?: boolean;
   rootPostId: number;
-  allPosts: { [postId: number]: any };
+  allPosts: { [postId: number]: Post };
   topLevelCommentIdsSorted: number[];
   horizontalLayout: boolean;
   socialLinksHtml: string;
+
+  // If quickUpdate is true only posts in postsToUpdate will be updated.
+  quickUpdate: boolean;
+  postsToUpdate: { [postId: number]: boolean };
 }

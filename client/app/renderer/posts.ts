@@ -278,14 +278,20 @@ var RootPostAndComments = createComponent({
 
 
 var Thread = createComponent({
+  shouldComponentUpdate: function(nextProps, nextState) {
+    return nextProps.quickUpdate ? !!nextProps.postsToUpdate[this.props.postId] : true;
+  },
+
   onPostMouseEnter: function() {
     if (this.refs.actions) {
       this.refs.actions.showActions();
     }
   },
+
   onAnyActionClick: function() {
     this.refs.post.onAnyActionClick();
   },
+
   render: function() {
     var post: Post = this.props.allPosts[this.props.postId];
     var parentPost = this.props.allPosts[post.parentId];
