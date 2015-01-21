@@ -23,13 +23,23 @@ import controllers.Utils.parseIntOrThrowBadReq
 import debiki._
 import play.api._
 import play.api.mvc._
+import play.filters.gzip.GzipFilter
 import DebikiHttp._
+
+
+
+class HtmlJsCssGzipFilter extends GzipFilter(
+  shouldGzip = (request: RequestHeader, response: ResponseHeader) => {
+    // Compressing images tend to make them larger (they're compressed already).
+    !request.uri.endsWith(".png") && !request.uri.endsWith(".jpg")
+  })
+
 
 
 /** Delegates to debiki.Globals. Also provides some query string based routing,
   * which I'd rather remove actually.
   */
-object Global extends GlobalSettings {
+object Global extends WithFilters(new HtmlJsCssGzipFilter()) with GlobalSettings {
 
 
   /** Query string based routing and tenant ID lookup.
