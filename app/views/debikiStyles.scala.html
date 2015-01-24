@@ -32,6 +32,7 @@ cross domain issue according to comments here: http://stackoverflow.com/a/745237
 So instead, if any Javascript fails to load, assume we're offline and
 extra-load all styles, from debikiScripts.scala.html [93GK940])
 *@
+@if(play.api.Play.isDev(play.api.Play.current)) {
 <script>
 var anyMissingStylesLoadedFromLocalServer = false;
 function loadAnyMissingStylesFromLocalServer() {
@@ -41,3 +42,4 @@ function loadAnyMissingStylesFromLocalServer() {
   document.write('<link rel="stylesheet" type="text/css" href="@asset(s"bootstrap.$minMaxCss")">');
 }
 </script>
+}

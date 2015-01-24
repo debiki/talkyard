@@ -39,6 +39,7 @@ object ApplicationBuild extends Build {
 
   val appDependencies = Seq(
     play.Play.autoImport.cache,
+    play.Play.autoImport.filters,
     // Authentication.
     "com.mohiva" %% "play-silhouette" % "1.0",
     // There's a PostgreSQL 903 build number too but it's not in the Maven repos.
