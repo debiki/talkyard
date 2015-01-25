@@ -85,8 +85,20 @@ var ChooseSiteType = React.createClass({
 
 
 var CreateSimpleSite = React.createClass({
+  getInitialState: function() {
+    return { showErrors: false };
+  },
+
   handleSubmit: function(event) {
     event.preventDefault();
+    var anyError =
+        !this.refs.terms.areTermsAccepted() ||
+        this.refs.localHostname.findAnyError();
+        // COULD test email addr too
+    if (anyError) {
+      this.setState({ showErrors: true });
+      return;
+    }
     Server.createSite(
         this.refs.emailAddress.getValue(),
         this.refs.localHostname.getValue(),
@@ -106,7 +118,13 @@ var CreateSimpleSite = React.createClass({
                 'administrate the site.', ref: 'emailAddress' }),
 
           LocalHostnameInput({ label: 'Site Address', placeholder: 'your-site-name',
-              help: 'The address of your new site.', ref: 'localHostname' }),
+              help: 'The address of your new site. (You can map a custom domain name ' +
+                'to your site later, on the site settings pages, so your site would be ' +
+                'reachable via e.g. www.your-domain.com. I have not yet implemented ' +
+                'this though.)',
+              ref: 'localHostname', showErrors: this.state.showErrors }),
+
+          AcceptTerms({ ref: 'terms' }),
 
           Input({ type: 'submit', value: 'Create Site', bsStyle: 'primary' }))));
   }
@@ -115,8 +133,20 @@ var CreateSimpleSite = React.createClass({
 
 
 var CreateEmbeddedSite = React.createClass({
+  getInitialState: function() {
+    return { showErrors: false };
+  },
+
   handleSubmit: function(event) {
     event.preventDefault();
+    var anyError =
+        !this.refs.terms.areTermsAccepted() ||
+        this.refs.localHostname.findAnyError();
+        // COULD test embedding addr too, and email || !/https?:\/\/.+/.test(...)
+    if (anyError) {
+      this.setState({ showErrors: true });
+      return;
+    }
     Server.createSite(
         this.refs.emailAddress.getValue(),
         this.refs.localHostname.getValue(),
@@ -146,12 +176,34 @@ var CreateEmbeddedSite = React.createClass({
               help: 'The address of the website where the embedded comments should appear.' }),
 
           LocalHostnameInput({ label: 'Debiki Address', ref: 'localHostname',
-              help: 'This is where you login to moderate embedded comments.' }),
+              help: 'This is where you login to moderate embedded comments.',
+              showErrors: this.state.showErrors }),
+
+          AcceptTerms({ ref: 'terms' }),
 
           Input({ type: 'submit', value: 'Create Site', bsStyle: 'primary' }))));
   }
 });
 
+
+
+var AcceptTerms = React.createClass({
+  areTermsAccepted: function() {
+    return this.refs.checkbox.getChecked();
+  },
+
+  render: function() {
+    var label =
+      r.span({},
+          'I accept the ',
+          r.a({ href: '/-/terms-of-use', target: '_blank'}, 'Terms of Use'),
+          ' and the ',
+          r.a({ href: '/-/privacy-policy', target: '_blank' }, 'Privacy Policy'));
+
+    return (
+      Input({ type: 'checkbox', label: label, ref: 'checkbox' }));
+  }
+});
 
 
 var LocalHostnameInput = React.createClass({
@@ -171,15 +223,11 @@ var LocalHostnameInput = React.createClass({
     this.setState({ value: event.target.value });
   },
 
-  isError: function() {
-    return this.findAnyError(this.state.value);
-  },
-
-  findAnyError: function(value) {
-    if (value.length < 6)
+  findAnyError: function() {
+    if (this.state.value.length < 6)
       return 'The name should be at least six characters long.';
 
-    if (!/^[a-z][a-z0-9-]*[a-z0-9]$/.test(value))
+    if (!/^[a-z][a-z0-9-]*[a-z0-9]$/.test(this.state.value))
       return 'Please use only lowercase letters a-z and 0-9, e.g. "my-new-website"';
 
     return null;
@@ -188,13 +236,16 @@ var LocalHostnameInput = React.createClass({
   render: function() {
     var value = this.state.value;
 
-    var anyError = this.findAnyError(value);
-    if (anyError) {
-      anyError = Panel({ header: 'Bad name', bsStyle: 'danger' }, anyError );
+    var anyError;
+    if (this.props.showErrors) {
+      var anyError = this.findAnyError();
+      if (anyError) {
+        anyError = Panel({ header: 'Bad address', bsStyle: 'danger' }, anyError );
+      }
     }
 
     return (
-      r.div({ className: 'form-group' },
+      r.div({ className: 'form-group' + (anyError ? ' has-error' : '') },
         r.label({ for: 'dw-local-hostname' }, this.props.label),
         r.br(),
         r.kbd({}, 'http://'),

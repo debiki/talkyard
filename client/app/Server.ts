@@ -35,6 +35,7 @@ export function createSite(emailAddress: string, localHostname: string,
   d.u.postJson({
     url: origin + '/-/create-site2',
     data: {
+      acceptTermsAndPrivacy: true,
       emailAddress: emailAddress,
       localHostname: localHostname,
       embeddingSiteAddress: anyEmbeddingSiteAddress
@@ -44,6 +45,7 @@ export function createSite(emailAddress: string, localHostname: string,
     },
     error: (x, y, z) => {
       console.error('Error creating site: ' + JSON.stringify([x, y, z]));
+      alert(x.responseText);
     },
   });
 }

@@ -21,7 +21,7 @@ import actions.ApiActions._
 import actions.SafeActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.Utils.OkSafeJson
+import controllers.Utils.{ OkSafeJson, isOkayEmailAddress }
 import debiki._
 import debiki.DebikiHttp._
 import debiki.dao.SiteDao
@@ -44,14 +44,27 @@ object CreateSiteController2 extends mvc.Controller {
 
 
   def start = GetAction { request =>
+    throwIfMayNotCreateWebsite(request)
     Ok(views.html.createsite.addressAndEmail(SiteTpi(request)).body) as HTML
   }
 
 
   def createSite = PostJsonAction(maxLength = 200) { request =>
+    throwIfMayNotCreateWebsite(request)
+
+    val acceptTermsAndPrivacy = (request.body \ "acceptTermsAndPrivacy").as[Boolean]
     val emailAddress = (request.body \ "emailAddress").as[String]
     val localHostname = (request.body \ "localHostname").as[String]
     val anyEmbeddingSiteAddress = (request.body \ "embeddingSiteAddress").asOpt[String]
+
+    if (!acceptTermsAndPrivacy)
+      throwForbidden("DwE877FW2", "You need to accept the terms of use and privacy policy")
+
+    if (!isOkaySiteName(localHostname))
+      throwForbidden("DwE5YU70", "Bad site name")
+
+    if (!isOkayEmailAddress(emailAddress))
+      throwForbidden("DwE8FKJ4", "Bad email address")
 
     val hostname = s"$localHostname.${Globals.baseDomain}"
 
@@ -70,6 +83,25 @@ object CreateSiteController2 extends mvc.Controller {
 
     OkSafeJson(
       Json.obj("newSiteOrigin" -> newSite.chost_!.origin))
+  }
+
+
+  /** Must be a valid host name, not too long or too short (less than 6 chars),
+    * no '.' and no leading or trailing '-'. See test suite in SiteCreatorSpec.
+    */
+  def isOkaySiteName(name: String): Boolean = {
+    OkWebsiteNameRegex matches name
+  }
+
+  private val OkWebsiteNameRegex = """[a-z][a-z0-9\-]{4,38}[a-z0-9]""".r
+
+
+  private def throwIfMayNotCreateWebsite(request: DebikiRequest[_]) {
+    // For now, allow only www.debiki.com. Later on, check some config value?
+    if (request.host != "www.debiki.com" &&
+      !request.host.contains("localhost:") &&
+      !request.host.contains("127.0.0.1:"))
+      throwForbidden("DwE093AQ2", "You cannot create a new website from here.")
   }
 
 }

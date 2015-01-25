@@ -22,6 +22,7 @@ import actions.ApiActions.PostJsonAction
 import actions.ApiActions.GetAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import controllers.Utils.isOkayEmailAddress
 import debiki._
 import debiki.dao.SiteDao
 import debiki.DebikiHttp._
@@ -97,6 +98,9 @@ object LoginWithPasswordController extends mvc.Controller {
     val password = (body \ "password").asOpt[String] getOrElse
       throwBadReq("DwE85FX1", "Password missing")
     val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
+
+    if (!isOkayEmailAddress(emailAddress))
+      throwUnprocessableEntity("DwE80KFP2", "Bad email address")
 
     val anyBecomeAdminEmailAddresses: Option[String] =
       if (request.siteId == Site.FirstSiteId) {
