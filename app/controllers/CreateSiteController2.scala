@@ -45,7 +45,7 @@ object CreateSiteController2 extends mvc.Controller {
 
   def start = GetAction { request =>
     throwIfMayNotCreateWebsite(request)
-    Ok(views.html.createsite.addressAndEmail(SiteTpi(request)).body) as HTML
+    Ok(views.html.createsite.createSitePage(SiteTpi(request)).body) as HTML
   }
 
 
