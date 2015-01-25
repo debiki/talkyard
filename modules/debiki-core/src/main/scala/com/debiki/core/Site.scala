@@ -38,8 +38,7 @@ case class Tenant(
   id: String,
   name: Option[String],
   creatorIp: String,
-  creatorTenantId: String,
-  creatorRoleId: String,
+  creatorEmailAddress: String,
   embeddingSiteUrl: Option[String],
   hosts: List[TenantHost]
 ){
@@ -79,8 +78,15 @@ object TenantHost {
 case class TenantHost(
   address: String,
   role: TenantHost.Role,
-  https: TenantHost.HttpsInfo
-)
+  https: TenantHost.HttpsInfo) {
+
+  def origin = {
+    val protocol =
+      if (https == TenantHost.HttpsNone) "http://"
+      else "https://"
+    protocol + address
+  }
+}
 
 
 /** The result of looking up a tenant by host name.

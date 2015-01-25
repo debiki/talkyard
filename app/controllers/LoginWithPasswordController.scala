@@ -98,8 +98,13 @@ object LoginWithPasswordController extends mvc.Controller {
       throwBadReq("DwE85FX1", "Password missing")
     val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
 
-    val anyBecomeAdminEmailAddresses =
-      Play.configuration.getString("debiki.becomeAdminEmailAddress")
+    val anyBecomeAdminEmailAddresses: Option[String] =
+      if (request.siteId == Site.FirstSiteId) {
+        Play.configuration.getString("debiki.becomeAdminEmailAddress")
+      }
+      else {
+        Some(request.dao.loadSite().creatorEmailAddress)
+      }
     val becomeAdmin = anyBecomeAdminEmailAddresses == Some(emailAddress)
 
     val userData =

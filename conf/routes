@@ -55,6 +55,9 @@ GET   /-/reset-password/choose-password/:resetPasswordEmailId  controllers.Reset
 POST  /-/reset-password/choose-password/:resetPasswordEmailId  controllers.ResetPasswordController.handleNewPasswordForm(resetPasswordEmailId)
 GET   /-/reset-password/password-changed controllers.ResetPasswordController.showPasswordChangedPage
 
+GET   /-/create-site2               controllers.CreateSiteController2.start
+POST  /-/create-site2               controllers.CreateSiteController2.createSite
+
 GET   /-/create-site                controllers.CreateSiteController.start
 GET   /-/create-site/choose-owner   controllers.CreateSiteController.showWebsiteOwnerForm(siteType)
 GET   /-/create-site/choose-type    controllers.CreateSiteController.showSiteTypeForm(siteType)

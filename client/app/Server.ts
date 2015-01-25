@@ -30,6 +30,25 @@ var $: JQueryStatic = d.i.$;
 var origin = d.i.serverOrigin;
 
 
+export function createSite(emailAddress: string, localHostname: string,
+    anyEmbeddingSiteAddress: string, doneCallback: (string) => void) {
+  d.u.postJson({
+    url: origin + '/-/create-site2',
+    data: {
+      emailAddress: emailAddress,
+      localHostname: localHostname,
+      embeddingSiteAddress: anyEmbeddingSiteAddress
+    },
+    success: (response) => {
+      doneCallback(response.newSiteOrigin);
+    },
+    error: (x, y, z) => {
+      console.error('Error creating site: ' + JSON.stringify([x, y, z]));
+    },
+  });
+}
+
+
 export function savePageNoftLevel(newNotfLevel) {
   d.u.postJson({
     url: origin + '/-/save-page-notf-level',

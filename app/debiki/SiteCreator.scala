@@ -70,6 +70,7 @@ object SiteCreator {
 
     name foreach { n => require(isOkayWebsiteName(n), "DwE18SHN6") }
 
+    ??? /*
     // CreateWebsite throws error if one creates too many websites
     // from the same IP.
     val (website, ownerAtNewSite) =
@@ -103,6 +104,7 @@ object SiteCreator {
     }
 
     Some((website, ownerAtNewSite))
+    */
   }
 
 
