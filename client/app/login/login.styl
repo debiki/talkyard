@@ -105,9 +105,14 @@ body.dw-login-to-login .dw-login-to-login
   display: inline
 // ---
 
+body.dw-login-become-admin,
 body.dw-login-as-admin
   #dw-lgi-twitter,  // twitter has no email
   #dw-lgi-guest     // guests have no password
+    display: none
+
+body.dw-login-become-admin
+  #dw-lgi-pswd      // no user has been created so far
     display: none
 
 // Hide password field when creating user in via OAuth or OpenID.

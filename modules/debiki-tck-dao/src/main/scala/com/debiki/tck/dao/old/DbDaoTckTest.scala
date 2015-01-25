@@ -258,6 +258,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     val defaultTenantId = Site.FirstSiteId
     lazy val dao = newTenantDbDao(QuotaConsumers(tenantId = defaultTenantId))
 
+    lazy val defaultPagePath = PagePath(defaultTenantId, "/folder/",
+      None, false, "page-title")
+
 
     // -------- Find the default site
 
@@ -275,8 +278,10 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       ok
     }
 
-    lazy val defaultPagePath = PagePath(defaultTenantId, "/folder/",
-                                    None, false, "page-title")
+    "find correct status of site" in {
+      dao.loadSiteStatus() must_== SiteStatus.AdminCreationPending("unknown@example.com")
+      ok
+    }
 
 
     // -------- Generate page ids

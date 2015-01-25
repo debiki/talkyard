@@ -111,6 +111,14 @@ object LoginWithPasswordController extends mvc.Controller {
       }
     val becomeAdmin = anyBecomeAdminEmailAddresses == Some(emailAddress)
 
+    request.dao.loadSiteStatus() match {
+      case SiteStatus.AdminCreationPending(adminEmail) =>
+       // BUG this won't work with site-1, which instead uses the config value above.
+       if (emailAddress != adminEmail)
+         throwForbidden("DwE403H5", "Wrong email address, not the admin email address")
+      case _ => ()
+    }
+
     val userData =
       NewPasswordUserData.create(name = name, email = emailAddress, username = username,
           password = password, isAdmin = becomeAdmin) match {

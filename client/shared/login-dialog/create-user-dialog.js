@@ -88,6 +88,7 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
         closeLoginDialogs();
         if (!data.emailVerifiedAndLoggedIn) {
           showAddressVerificationEmailSentDialog();
+          debiki2.ReactActions.newUserAccountCreated()
         }
         else if (anyReturnToUrl && !d.i.isInLoginPopup &&
             anyReturnToUrl.search('_RedirFromVerifEmailOnly_') == -1) {

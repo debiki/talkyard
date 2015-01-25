@@ -49,29 +49,54 @@ export var NonExistingPage = createComponent({
   },
 
   render: function() {
-    var user: User = this.state.store.user;
-    if (user.isAdmin) {
+    var store: Store = this.state.store;
+    var user: User = store.user;
+    var siteStatus = store.siteStatus;
+    var adminPendingMatch = siteStatus.match(/AdminCreationPending:(.*)/);
+    if (adminPendingMatch && !store.newUserAccountCreated) {
+      return SignUpAsAdmin({ obfuscatedAminEmail: adminPendingMatch[1] });
+    }
+    else if (user.isAdmin) {
       return CreateSomethingHere(this.state.store);
     }
     else {
-      return LoginAndBecomeAdmin(this.state.store);
+      return LoginToCreateSomething(this.state.store);
     }
   }
 });
 
 
 
-export var LoginAndBecomeAdmin = createComponent({
+export var SignUpAsAdmin = createComponent({
+  render: function() {
+    var startOfTheEmailAddress;
+    if (this.props.obfuscatedAminEmail) {
+      startOfTheEmailAddress =
+        r.span({}, 'That is, ', r.samp({}, this.props.obfuscatedAminEmail + '...@...'));
+    }
+    return (
+      r.div({},
+        r.h1({}, 'Site Created'),
+        r.p({}, 'Your site has been created.'),
+        r.p({}, 'Now, please sign up using the email address you specified previously. ',
+            startOfTheEmailAddress,
+            ' Click the button below, then click ', r.b({}, 'Create New Account'),
+            ', or login with e.g. Google, if you specified a Gmail email address.'),
+        r.br(),
+        reactelements.NameLoginBtns({ title: 'Sign Up as Admin', purpose: 'LoginBecomeAdmin' })));
+  }
+});
+
+
+
+export var LoginToCreateSomething = createComponent({
   render: function() {
     return (
       r.div({},
-        r.h1({}, 'Nothing here, yet'),
-        r.p({}, 'To configure your site and create something, register a new ' +
-            'admin account with the email you specified in the configuration file: ' +
-            'click the button below, then click ', r.b({}, 'Create New Account'), '.'),
-        r.p({}, 'Or simply login, if you have already registered.'),
+        r.h1({}, 'Welcome'),
+        r.p({}, 'Please login as admin.'),
         r.br(),
-        reactelements.NameLoginBtns({ title: 'Login or Register', purpose: 'LoginAsAdmin' })));
+        reactelements.NameLoginBtns({ title: 'Login', purpose: 'LoginAsAdmin' })));
   }
 });
 

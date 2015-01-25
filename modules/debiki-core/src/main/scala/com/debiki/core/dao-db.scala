@@ -84,6 +84,8 @@ abstract class SiteDbDao {
    */
   def loadTenant(): Tenant
 
+  def loadSiteStatus(): SiteStatus
+
   /** Throws SiteAlreadyExistsException if the site already exists.
     * Throws TooManySitesCreatedException if you've created too many websites already
     * (from the same IP or email address).
@@ -481,6 +483,11 @@ class ChargingSiteDbDao(
   def loadTenant(): Tenant = {
     _chargeForOneReadReq()
     _spi.loadTenant()
+  }
+
+  def loadSiteStatus(): SiteStatus = {
+    _chargeForOneReadReq()
+    _spi.loadSiteStatus()
   }
 
   def createSite(name: String, hostname: String, embeddingSiteUrl: Option[String],

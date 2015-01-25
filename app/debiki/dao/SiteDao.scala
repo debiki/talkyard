@@ -84,6 +84,9 @@ abstract class SiteDao
   @deprecated("use loadSite() instead", "now")
   def loadTenant(): Tenant = siteDbDao.loadTenant()
 
+  def loadSiteStatus(): SiteStatus =
+    siteDbDao.loadSiteStatus()
+
   def createSite(name: String, hostname: String,
         embeddingSiteUrl: Option[String], creatorIp: String,
         creatorEmailAddress: String) : Tenant =

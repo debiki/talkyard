@@ -32,6 +32,16 @@ object Site {
 }
 
 
+
+sealed abstract class SiteStatus
+object SiteStatus {
+  case class AdminCreationPending(adminEmail: String) extends SiteStatus
+  case object ContentCreationPending extends SiteStatus
+  case object SiteCreated extends SiteStatus
+}
+
+
+
 /** A website. (Should be renamed to Site.)
   */
 case class Tenant(

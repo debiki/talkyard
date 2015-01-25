@@ -76,8 +76,17 @@ object ReactJson {
         Nil
       }
 
+    val siteStatusString = pageReq.dao.loadSiteStatus() match {
+      case SiteStatus.AdminCreationPending(adminEmail) =>
+        var obfuscatedEmail = adminEmail.takeWhile(_ != '@')
+        obfuscatedEmail = obfuscatedEmail.dropRight(3).take(4)
+        s"AdminCreationPending:$obfuscatedEmail"
+      case x => x.toString
+    }
+
     Json.obj(
       "now" -> JsNumber((new ju.Date).getTime),
+      "siteStatus" -> JsString(siteStatusString),
       "pageId" -> pageReq.thePageId,
       "pageRole" -> JsString(pageReq.thePageRole.toString),
       "pagePath" -> JsString(pageReq.pagePath.value),

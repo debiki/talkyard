@@ -60,6 +60,10 @@ ReactDispatcher.register(function(payload) {
       };
       break;
 
+    case ReactActions.actionTypes.NewUserAccountCreated:
+      store.newUserAccountCreated = true;
+      break;
+
     case ReactActions.actionTypes.SetPageNotfLevel:
       store.user.rolePageSettings.notfLevel = action.newLevel;
       break;
