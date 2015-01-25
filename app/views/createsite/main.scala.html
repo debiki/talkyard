@@ -15,34 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(title: String, css: String = "", jsFile: String = null, jsCode: String = null,
-    ngAppName: String = null)(content: Html)
+@(title: String, css: String = "")(content: Html)
 
 @import play.api.Play.current
 
 @minMaxJs = @{ if (play.api.Play.isProd) "min.js" else "js" }
-
-@ngAppAttr = @{ if (ngAppName ne null) s"""ng-app="$ngAppName"""" else ""}
-
-@ngScriptTags = @{
-  if (ngAppName ne null) {
-    <script src={"https://ajax.googleapis.com/ajax/libs/angularjs/1.0.1/angular."+minMaxJs}></script>
-    <script src={"/-/res/debiki-spa-common."+minMaxJs}></script>
-  }
-  else Nil
-}
-
-@optScriptTag = @{
-  if (jsFile ne null) {
-    <script src={jsFile}></script>
-  } else Nil
-}
-
-@anyCodeTag = @{
-  if (jsCode ne null) {
-    <script>{ jsCode }</script>
-  } else Nil
-}
 
 @asset(file: String) = @{
   routes.Assets.at(path = "/public/res", file)
@@ -50,23 +27,14 @@
 
 
 <!doctype html>
-<html @Html(ngAppAttr)>
+<html>
 <head>
 <title>Create Website</title>
 <link href="http://fonts.googleapis.com/css?family=Bree+Serif" rel="stylesheet">
 <link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.1/css/bootstrap.no-icons.min.css" rel="stylesheet">
 <link rel="stylesheet" href="@asset("fontello/css/fontello-embedded.css")"/>
 <link rel="stylesheet" href="@asset("admin-app.css")"/>
-<link rel="stylesheet" href="@asset("special-pages.css")"/>
 <style>@Html(css)</style>
-<script src="http://cdnjs.cloudflare.com/ajax/libs/modernizr/2.5.3/modernizr.min.js"></script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.@minMaxJs"></script>
-<script>
-  var debiki = { v0: { util: {} }, internal: { $: jQuery } };
-</script>
-@ngScriptTags
-@optScriptTag
-@anyCodeTag
 </head>
 <body>
 <div class="container" style="padding-top:30px">
@@ -75,12 +43,3 @@
 </body>
 </html>
 
-@* From SecureSocial:
-<div class="navbar navbar-fixed-top">
-  <div class="navbar-inner">
-    <div class="container">
-      <span class="brand" >@Messages("securesocial.appName")</span>
-    </div>
-  </div>
-</div>
-*@

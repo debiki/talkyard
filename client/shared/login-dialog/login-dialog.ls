@@ -63,9 +63,6 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
       dialog.find('#dw-lgi-guest').hide()
       dialog.find('#dw-lgi-create-password-user').hide()
       dialog.find('.dw-fi-cancel').hide()
-  | 'LoginToCreateSite' =>
-      dialog.find('#dw-lgi-guest').hide()
-      dialog.find('.dw-fi-cancel').hide()
 
   dialog.find('#dw-lgi-guest').click ->
     d.i.showGuestLoginDialog(loginAndContinue)
