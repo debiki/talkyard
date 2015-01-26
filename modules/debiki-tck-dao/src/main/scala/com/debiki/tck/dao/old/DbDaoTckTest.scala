@@ -279,7 +279,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     }
 
     "find correct status of site" in {
-      dao.loadSiteStatus() must_== SiteStatus.AdminCreationPending("unknown@example.com")
+      dao.loadSiteStatus() must_== SiteStatus.OwnerCreationPending("unknown@example.com")
       ok
     }
 

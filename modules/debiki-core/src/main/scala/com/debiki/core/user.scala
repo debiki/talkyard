@@ -56,6 +56,8 @@ sealed abstract class NewUserData {
   def username: String
   def email: String
   def emailVerifiedAt: Option[ju.Date]
+  def isAdmin: Boolean
+  def isOwner: Boolean
 
   def userNoId = User(
     id = "?",
@@ -67,8 +69,8 @@ sealed abstract class NewUserData {
     emailVerifiedAt = emailVerifiedAt,
     country = "",
     website = "",
-    isAdmin = false,
-    isOwner = false)
+    isAdmin = isAdmin,
+    isOwner = isOwner)
 
   def identityNoId: Identity
 
@@ -85,7 +87,8 @@ case class NewPasswordUserData(
   username: String,
   email: String,
   password: String,
-  isAdmin: Boolean) {
+  isAdmin: Boolean,
+  isOwner: Boolean) {
 
   val passwordHash: String =
     DbDao.saltAndHashPassword(password)
@@ -102,7 +105,7 @@ case class NewPasswordUserData(
     country = "",
     website = "",
     isAdmin = isAdmin,
-    isOwner = false)
+    isOwner = isOwner)
 
   Validation.checkName(name)
   Validation.checkUsername(username)
@@ -112,7 +115,8 @@ case class NewPasswordUserData(
 
 
 object NewPasswordUserData {
-  def create(name: String, username: String, email: String, password: String, isAdmin: Boolean)
+  def create(name: String, username: String, email: String, password: String,
+        isAdmin: Boolean, isOwner: Boolean)
         : NewPasswordUserData Or ErrorMessage = {
     for {
       okName <- Validation.checkName(name)
@@ -122,7 +126,7 @@ object NewPasswordUserData {
     }
     yield {
       NewPasswordUserData(name = okName, username = okUsername, email = okEmail,
-        password = okPassword, isAdmin = isAdmin)
+        password = okPassword, isAdmin = isAdmin, isOwner = isOwner)
     }
   }
 }
@@ -134,7 +138,9 @@ case class NewOauthUserData(
   username: String,
   email: String,
   emailVerifiedAt: Option[ju.Date],
-  identityData: OpenAuthDetails) extends NewUserData {
+  identityData: OpenAuthDetails,
+  isAdmin: Boolean,
+  isOwner: Boolean) extends NewUserData {
 
   def identityNoId =
     OpenAuthIdentity(id = "?", userId = "?", openAuthDetails = identityData)
@@ -143,7 +149,8 @@ case class NewOauthUserData(
 
 object NewOauthUserData {
   def create(name: String, email: String, emailVerifiedAt: Option[ju.Date], username: String,
-        identityData: OpenAuthDetails): NewOauthUserData Or ErrorMessage = {
+        identityData: OpenAuthDetails, isAdmin: Boolean, isOwner: Boolean)
+        : NewOauthUserData Or ErrorMessage = {
     for {
       okName <- Validation.checkName(name)
       okUsername <- Validation.checkUsername(username)
@@ -151,7 +158,8 @@ object NewOauthUserData {
     }
     yield {
       NewOauthUserData(name = okName, username = okUsername, email = okEmail,
-        emailVerifiedAt = emailVerifiedAt, identityData = identityData)
+        emailVerifiedAt = emailVerifiedAt, identityData = identityData,
+        isAdmin = isAdmin, isOwner = isOwner)
     }
   }
 }

@@ -120,17 +120,22 @@ function continueOnSamePage() {
   // page. If so, only window.opener has loaded the code that we're
   // about to execute.
   var debikiInternal;
+  var d2;
   if (window.opener && window.opener.debiki) {
     // We're in a login popup window for an embedded comments site.
     debikiInternal = window.opener.debiki.internal;
+    d2 = window.opener.debiki2;
   }
   else {
     // This is not an embedded comments site, we're not in a popup window;
     // we can execute the subsequent code directly here in the main window.
     debikiInternal = debiki.internal;
+    d2 = debiki2;
   }
+
   // We should be on some kind of a discussion page.
-  debikiInternal.Me.fireLogin();
+  d2.ReactActions.login()
+
   // This continues e.g. submitting any reply the user intended to post before
   // s/he was asked to login and create a user.
   debikiInternal.continueAnySubmission();

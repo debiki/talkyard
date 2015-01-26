@@ -60,7 +60,7 @@ export var NonExistingPage = createComponent({
     var user: User = store.user;
     var siteStatus = store.siteStatus;
     var adminPendingMatch = siteStatus.match(/AdminCreationPending:(.*)/);
-    if (adminPendingMatch && !store.newUserAccountCreated) {
+    if (adminPendingMatch && !user.isLoggedIn && !store.newUserAccountCreated) {
       return SignUpAsAdmin({ obfuscatedAminEmail: adminPendingMatch[1] });
     }
     else if (user.isAdmin) {

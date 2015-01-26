@@ -31,7 +31,6 @@ import org.scalactic.{Good, Bad}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import play.api.libs.json.JsObject
-import play.api.Play.current
 import requests.ApiRequest
 import requests.JsonPostRequest
 
@@ -102,26 +101,11 @@ object LoginWithPasswordController extends mvc.Controller {
     if (!isOkayEmailAddress(emailAddress))
       throwUnprocessableEntity("DwE80KFP2", "Bad email address")
 
-    val anyBecomeAdminEmailAddresses: Option[String] =
-      if (request.siteId == Site.FirstSiteId) {
-        Play.configuration.getString("debiki.becomeAdminEmailAddress")
-      }
-      else {
-        Some(request.dao.loadSite().creatorEmailAddress)
-      }
-    val becomeAdmin = anyBecomeAdminEmailAddresses == Some(emailAddress)
-
-    request.dao.loadSiteStatus() match {
-      case SiteStatus.AdminCreationPending(adminEmail) =>
-       // BUG this won't work with site-1, which instead uses the config value above.
-       if (emailAddress != adminEmail)
-         throwForbidden("DwE403H5", "Wrong email address, not the admin email address")
-      case _ => ()
-    }
+    val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress)
 
     val userData =
       NewPasswordUserData.create(name = name, email = emailAddress, username = username,
-          password = password, isAdmin = becomeAdmin) match {
+          password = password, isAdmin = becomeOwner, isOwner = becomeOwner) match {
         case Good(data) => data
         case Bad(errorMessage) =>
           throwUnprocessableEntity("DwE805T4", s"$errorMessage, please try again.")
@@ -129,9 +113,6 @@ object LoginWithPasswordController extends mvc.Controller {
 
     val dao = daoFor(request.request)
     try {
-      // USABILITY SHOULD verify that if !becomeAdmin then some admin user has already been
-      // created, because the very first user created should be an admin, else
-      // the user probably specified the wrong email address.
       val newUser = dao.createPasswordUser(userData)
       sendEmailAddressVerificationEmail(newUser, anyReturnToUrl, request.host, request.dao)
     }
@@ -148,7 +129,6 @@ object LoginWithPasswordController extends mvc.Controller {
 
     Ok("""{ "emailVerifiedAndLoggedIn": false }""")
   }
-
 
 
   val RedirectFromVerificationEmailOnly = "_RedirFromVerifEmailOnly_"

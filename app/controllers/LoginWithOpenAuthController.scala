@@ -337,10 +337,13 @@ object LoginWithOpenAuthController extends Controller {
         None
     }
 
+    val becomeOwner = LoginController.shallBecomeOwner(request, email)
+
     val dao = daoFor(request.request)
     val userData =
       NewOauthUserData.create(name = name, username = username, email = email,
-          emailVerifiedAt = emailVerifiedAt, identityData = oauthDetails) match {
+          emailVerifiedAt = emailVerifiedAt, identityData = oauthDetails,
+          isAdmin = becomeOwner, isOwner = becomeOwner) match {
         case Good(data) => data
         case Bad(errorMessage) =>
           throwUnprocessableEntity("DwE7BD08", s"$errorMessage, please try again.")

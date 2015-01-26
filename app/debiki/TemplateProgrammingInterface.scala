@@ -264,7 +264,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
 
   /** The initial data in the React-Flux model, a.k.a. store. */
   def reactStoreSafeJsonString: String =
-    ReactJson.userNoPageToJson(debikiRequest.user).toString
+    Json.obj("user" -> ReactJson.userNoPageToJson(debikiRequest.user)).toString
 
   def debikiAppendToBodyTags: xml.NodeSeq = Nil
 

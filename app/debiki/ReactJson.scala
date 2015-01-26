@@ -41,7 +41,7 @@ object ReactJson {
           "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
           "isAuthenticated" -> JsBoolean(user.isAuthenticated))
     }
-    Json.obj("user" -> userData)
+    userData
   }
 
 
@@ -77,7 +77,7 @@ object ReactJson {
       }
 
     val siteStatusString = pageReq.dao.loadSiteStatus() match {
-      case SiteStatus.AdminCreationPending(adminEmail) =>
+      case SiteStatus.OwnerCreationPending(adminEmail) =>
         var obfuscatedEmail = adminEmail.takeWhile(_ != '@')
         obfuscatedEmail = obfuscatedEmail.dropRight(3).take(4)
         s"AdminCreationPending:$obfuscatedEmail"

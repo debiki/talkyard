@@ -57,7 +57,8 @@ object UserController extends mvc.Controller {
     val myPageData = PageRequest.forPageThatExists(request, pageId) match {
       case None =>
         // Might be an embedded comment page, not yet created because no comments posted.
-        ReactJson.NoUserSpecificData
+        // Or we might be in the signup-to-become-owner step, when creating a new site.
+        ReactJson.userNoPageToJson(request.user)
       case Some(request) =>
         ReactJson.userDataJson(request) getOrElse ReactJson.NoUserSpecificData
     }
