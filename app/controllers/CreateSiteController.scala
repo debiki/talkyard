@@ -38,7 +38,7 @@ import requests._
   * Each new empty site remembers an admin email address. When the site creator later
   * logs in with that email address, s/he becomes admin for the site.
   */
-object CreateSiteController2 extends mvc.Controller {
+object CreateSiteController extends mvc.Controller {
 
   private val log = play.api.Logger
 

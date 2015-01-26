@@ -33,7 +33,7 @@ var origin = d.i.serverOrigin;
 export function createSite(emailAddress: string, localHostname: string,
     anyEmbeddingSiteAddress: string, doneCallback: (string) => void) {
   d.u.postJson({
-    url: origin + '/-/create-site2',
+    url: origin + '/-/create-site',
     data: {
       acceptTermsAndPrivacy: true,
       emailAddress: emailAddress,
