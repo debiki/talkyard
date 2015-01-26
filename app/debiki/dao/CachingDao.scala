@@ -29,6 +29,7 @@ trait CacheEvents {  // COULD move to separate file
   private var pageCreatedListeners = List[(Page => Unit)]()
   private var pageSavedListeners = List[(SitePageId => Unit)]()
   private var pageMovedListeners = List[(PagePath => Unit)]()
+  private var userCreatedListeners = List[(User => Unit)]()
 
 
   def onPageCreated(callback: (Page => Unit)) {
@@ -60,6 +61,15 @@ trait CacheEvents {  // COULD move to separate file
     pageMovedListeners foreach (_(newPath))
   }
 
+
+  def onUserCreated(callback: (User => Unit)) {
+    userCreatedListeners ::= callback
+  }
+
+
+  def fireUserCreated(user: User) {
+    userCreatedListeners foreach (_(user))
+  }
 
 }
 

@@ -168,6 +168,20 @@ trait CachingUserDao extends UserDao {
   self: CachingSiteDao =>
 
 
+  override def createUserAndLogin(newUserData: NewUserData): LoginGrant = {
+    val loginGrant = super.createUserAndLogin(newUserData)
+    fireUserCreated(loginGrant.user)
+    loginGrant
+  }
+
+
+  override def createPasswordUser(userData: NewPasswordUserData): User = {
+    val user = super.createPasswordUser(userData)
+    fireUserCreated(user)
+    user
+  }
+
+
   override def loginAsGuest(loginAttempt: GuestLoginAttempt): User = {
     val user = super.loginAsGuest(loginAttempt)
     putInCache(
