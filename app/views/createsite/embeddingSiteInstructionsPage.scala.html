@@ -15,25 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@*
 
 @(site: com.debiki.core.Tenant)
 
 @css = @{("""
-
   h1 {
     margin-bottom: 1em;
   }
-
 """)}
 
-@import controllers.CreateEmbeddedSiteController
-@import debiki.HtmlUtils.link
 @import play.api.Play.current
 
 
 @embeddingUrl = @{ site.embeddingSiteUrl.get }
-@adminUrl = @{ CreateEmbeddedSiteController.adminUrlForEmbeddedSite(site.id) }
 
 @embeddedCommentsScriptUrl = @{
   val embeddedSiteOrigin = debiki.Globals.siteByIdOrigin(site.id)
@@ -41,8 +35,8 @@
 }
 
 
-@views.html.createsite.main(Messages("securesocial.login.title"), css = css) {
-  <div class='new-website-welcome-owner'>
+@main("Embedded Comments Help", css = css) {
+  <div>
 
     <h1>Installation instructions for <tt>@embeddingUrl</tt></h1>
 
@@ -59,7 +53,11 @@
 
     <hr>
 
-    <p>Optionally, advanced configuration:</p>
+    <p>You can <a href="/-/admin/#moderation">moderate embedded comments here</a>.
+
+    <hr>
+
+    <p>Optionally, advanced configuration: </p>
     <ul>
       <li>
         Specify a unique per page id in the <tt>data-topic-id</tt> attribute
@@ -79,13 +77,5 @@
       </li>
     </ul>
 
-    <hr>
-
-    <p>You can log in to moderate the embedded comments here: (click the <em>Activity</em> tab)</p>
-
-    <p>@link(adminUrl)</p>
-
   </div>
 }
-
-*@

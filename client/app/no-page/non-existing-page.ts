@@ -33,6 +33,13 @@ var Button = reactCreateFactory(ReactBootstrap.Button);
 var Input = reactCreateFactory(ReactBootstrap.Input);
 
 
+/**
+ * When loading the homepage (url path '/') for a website, and if there's nothing
+ * to show, we'll instead mount and render this NonExistingPage component.
+ * Depending on the status and purpose of the site, the component might render
+ * a signup-and-become-admin button, a login button, a link to moderate
+ * embedded comments, or a button to create a forum, for example.
+ */
 export var NonExistingPage = createComponent({
   mixins: [debiki2.StoreListenerMixin],
 
@@ -57,7 +64,12 @@ export var NonExistingPage = createComponent({
       return SignUpAsAdmin({ obfuscatedAminEmail: adminPendingMatch[1] });
     }
     else if (user.isAdmin) {
-      return CreateSomethingHere(this.state.store);
+      if (siteStatus === 'IsEmbeddedSite') {
+        return EmbeddedCommentsLinks(this.state.store);
+      }
+      else {
+        return CreateSomethingHere(this.state.store);
+      }
     }
     else {
       return LoginToCreateSomething(this.state.store);
@@ -102,6 +114,23 @@ export var LoginToCreateSomething = createComponent({
 
 
 
+export var EmbeddedCommentsLinks = createComponent({
+  render: function() {
+    return (
+      r.div({},
+        r.h1({}, 'Welcome'),
+        r.p({}, 'If you have not yet configured your website to show embedded comments, ' +
+            'click ', r.b({}, 'Setup Embedded Comments'), '.'),
+        r.div({ className: 'do-what-options' },
+          Button({ onClick: () => window.location.assign('/-/embedded-comments-help') },
+              'Setup Embedded Comments'),
+          Button({ onClick: () => window.location.assign('/-/admin/#/moderation') },
+              'Moderate Comments'))));
+  }
+});
+
+
+
 export var CreateSomethingHere = createComponent({
   getInitialState: function() {
     return {
@@ -120,7 +149,7 @@ export var CreateSomethingHere = createComponent({
       r.div({},
         r.h1({}, 'Nothing here, yet'),
         r.p({}, 'Do you want to create something here?'),
-        r.div({ className: 'create-what-options' },
+        r.div({ className: 'do-what-options' },
           Button({ active: createWhat === 'Forum',
               onClick: () => this.setState({ createWhat: 'Forum' })},
               'Create a Forum'),

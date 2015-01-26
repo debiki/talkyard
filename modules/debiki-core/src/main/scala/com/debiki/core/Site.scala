@@ -37,7 +37,8 @@ sealed abstract class SiteStatus
 object SiteStatus {
   case class AdminCreationPending(adminEmail: String) extends SiteStatus
   case object ContentCreationPending extends SiteStatus
-  case object SiteCreated extends SiteStatus
+  case object IsEmbeddedSite extends SiteStatus
+  case object IsSimpleSite extends SiteStatus
 }
 
 

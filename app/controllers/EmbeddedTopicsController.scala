@@ -135,4 +135,10 @@ object EmbeddedTopicsController extends mvc.Controller {
     }
   }
 
+
+  def showSetupInstructions = AdminGetAction { request =>
+    Ok(views.html.createsite.embeddingSiteInstructionsPage(
+      request.dao.loadSite()).body) as HTML
+  }
+
 }
