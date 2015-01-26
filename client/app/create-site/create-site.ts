@@ -267,7 +267,7 @@ function deriveLocalHostname(embeddingSiteAddress) {
   // Remove protocol.
   debikiAddress = debikiAddress.replace(/^[a-z]+:\/\//, '');
   // Remove port.
-  debikiAddress = debikiAddress.replace(/:[0-9]$/, '');
+  debikiAddress = debikiAddress.replace(/:[0-9]+$/, '');
   // Remove top level domain.
   debikiAddress = debikiAddress.replace(/\.[a-z]*$/, '');
   // Remove any rather uninteresting leading 'www'.
