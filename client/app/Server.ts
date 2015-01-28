@@ -51,6 +51,20 @@ export function createSite(emailAddress: string, localHostname: string,
 }
 
 
+export function saveSetting(setting: Setting, doneCallback: () => void) {
+  d.u.postJson({
+    url: origin + '/-/save-setting',
+    data: setting,
+    success: (response) => {
+      doneCallback();
+    },
+    error: (x, y, z) => {
+      console.error('Error saving new reply: ' + JSON.stringify([x, y, z]));
+    },
+  });
+}
+
+
 export function savePageNoftLevel(newNotfLevel) {
   d.u.postJson({
     url: origin + '/-/save-page-notf-level',

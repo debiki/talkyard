@@ -269,7 +269,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       tenants must be like {
         case List(tenant) =>
           tenant.id must_== defaultTenantId
-          tenant.name must_== Some("Main Site")
+          tenant.name must_== "Main Site"
           tenant.embeddingSiteUrl must_== None
           tenant.hosts must_== Nil
         case x =>
@@ -2500,7 +2500,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       "create a new website, from existing tenant" in {
         newWebsiteOpt = createWebsite(2)
-        newWebsiteOpt.name must_== Some("website-2")
+        newWebsiteOpt.name must_== "website-2"
         newWebsiteOpt.hosts.length must_== 1
         newWebsiteOpt.chost_!.address must_== "website-2.ex.com"
         newWebsiteOpt.creatorIp must_== creatorIp
@@ -2527,7 +2527,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         val newSite = createEmbeddedSite(embeddingSiteUrl, "embd-site-name")
         systemDbDao.loadSite(newSite.id) must be like {
           case Some(site) =>
-            site.name must_== Some("embd-site-name")
+            site.name must_== "embd-site-name"
             site.hosts.length must_== 1
             site.chost_!.address must_== "embd-site-name.ex.com"
             site.embeddingSiteUrl must_== Some(embeddingSiteUrl)
@@ -2583,6 +2583,15 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
                 title.user_! must_== SystemUser.User
             }
         }
+      }
+
+      "rename a site" in {
+        val siteBefore = newWebsiteDao().loadTenant()
+        val changedSite = siteBefore.copy(name = "site-renamed",
+          embeddingSiteUrl = Some("http://12345.embedding.site.com"))
+        newWebsiteDao().updateSite(changedSite)
+        val siteAfter = newWebsiteDao().loadTenant()
+        siteAfter must_== changedSite
       }
     }
 

@@ -67,6 +67,12 @@ class CachingSiteDao(val siteDbDao: ChargingSiteDbDao)
   }
 
 
+  override def updateSite(changedSite: Tenant) = {
+    super.updateSite(changedSite)
+    uncacheSiteStatus()
+  }
+
+
   override def loadSiteStatus(): SiteStatus = {
     lookupInCache(
       siteStatusKey,

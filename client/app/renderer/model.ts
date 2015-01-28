@@ -99,3 +99,11 @@ interface Store {
   quickUpdate: boolean;
   postsToUpdate: { [postId: number]: boolean };
 }
+
+
+interface Setting {
+  type: string;
+  pageId?: string;
+  name: string;
+  newValue: any;
+}

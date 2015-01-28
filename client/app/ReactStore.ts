@@ -92,6 +92,10 @@ ReactDispatcher.register(function(payload) {
       store.horizontalLayout = action.enabled;
       break;
 
+    case ReactActions.actionTypes.ChangeSiteStatus:
+      store.siteStatus = action.newStatus;
+      break;
+
     default:
       console.warn('Unknown action: ' + JSON.stringify(action));
       return true;

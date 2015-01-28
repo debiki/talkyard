@@ -47,7 +47,7 @@ object SiteStatus {
   */
 case class Tenant(
   id: String,
-  name: Option[String],
+  name: String,
   creatorIp: String,
   creatorEmailAddress: String,
   embeddingSiteUrl: Option[String],

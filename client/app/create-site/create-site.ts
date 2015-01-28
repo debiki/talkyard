@@ -53,7 +53,7 @@ export function routes() {
 
 
 
-var CreateSiteMain = React.createClass({
+var CreateSiteMain = createComponent({
   render: function() {
     return RouteHandler({});
   }
@@ -61,7 +61,7 @@ var CreateSiteMain = React.createClass({
 
 
 
-var ChooseSiteType = React.createClass({
+var ChooseSiteType = createComponent({
   mixins: [Navigation],
 
   goToCreateSimpleSite: function() {
@@ -84,7 +84,7 @@ var ChooseSiteType = React.createClass({
 
 
 
-var CreateSimpleSite = React.createClass({
+var CreateSimpleSite = createComponent({
   getInitialState: function() {
     return { showErrors: false };
   },
@@ -132,7 +132,7 @@ var CreateSimpleSite = React.createClass({
 
 
 
-var CreateEmbeddedSite = React.createClass({
+var CreateEmbeddedSite = createComponent({
   getInitialState: function() {
     return { showErrors: false };
   },
@@ -141,8 +141,9 @@ var CreateEmbeddedSite = React.createClass({
     event.preventDefault();
     var anyError =
         !this.refs.terms.areTermsAccepted() ||
-        this.refs.localHostname.findAnyError();
-        // COULD test embedding addr too, and email || !/https?:\/\/.+/.test(...)
+        this.refs.localHostname.findAnyError() ||
+        !this.refs.embeddingSiteAddress.isValid();
+        // COULD test email too
     if (anyError) {
       this.setState({ showErrors: true });
       return;
@@ -171,9 +172,8 @@ var CreateEmbeddedSite = React.createClass({
               help: 'Your email address, which you will use to login and moderate comments.',
               ref: 'emailAddress' }),
 
-          Input({ type: 'text', label: 'Embedding Site Address', ref: 'embeddingSiteAddress',
-              placeholder: 'http://www.example.com', onChange: this.updateDebikiAddress,
-              help: 'The address of the website where the embedded comments should appear.' }),
+          EmbeddingAddressInput({ ref: 'embeddingSiteAddress',
+              onChange: this.updateDebikiAddress }),
 
           LocalHostnameInput({ label: 'Debiki Address', ref: 'localHostname',
               help: 'This is where you login to moderate embedded comments.',
@@ -187,7 +187,36 @@ var CreateEmbeddedSite = React.createClass({
 
 
 
-var AcceptTerms = React.createClass({
+export var EmbeddingAddressInput = createComponent({
+  getInitialState: function() {
+    return { bsStyle: 'error' };
+  },
+  isValid: function() {
+    var value = this.refs.input.getValue();
+    var valid = /https?:\/\/.+/.test(value);
+    return valid;
+  },
+  getValue: function() {
+    return this.refs.input.getValue();
+  },
+  onChange: function(event) {
+    this.setState({ bsStyle: this.isValid() ? 'success' : 'error' });
+    if (this.props.onChange) {
+      this.props.onChange(event);
+    }
+  },
+  render: function() {
+    return (
+      Input({ type: 'text', label: this.props.label || 'Embedding Site Address',
+        placeholder: 'http://www.example.com', onChange: this.onChange,
+        ref: 'input', bsStyle: this.state.bsStyle, help: this.props.help ||
+          'The address of the website where the embedded comments should appear.' }));
+  }
+});
+
+
+
+var AcceptTerms = createComponent({
   areTermsAccepted: function() {
     return this.refs.checkbox.getChecked();
   },
@@ -204,6 +233,7 @@ var AcceptTerms = React.createClass({
       Input({ type: 'checkbox', label: label, ref: 'checkbox' }));
   }
 });
+
 
 
 var LocalHostnameInput = React.createClass({

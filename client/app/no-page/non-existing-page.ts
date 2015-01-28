@@ -227,8 +227,37 @@ export var CreateForumPanel = createComponent({
 
 
 export var CreateEmbeddedCommentsPanel = createComponent({
+  getInitialState: function() {
+    return {
+      validAddress: false
+    };
+  },
+
+  onChange: function() {
+    this.setState({
+      validAddress: this.refs.embeddingAddress.isValid()
+    });
+  },
+
+  saveEmbeddedCommentsAddress: function() {
+    var setting: Setting = {
+      type: 'WholeSite',
+      name: 'EmbeddingSiteUrl',
+      newValue: this.refs.embeddingAddress.getValue(),
+    };
+    Server.saveSetting(setting, () => {
+      ReactActions.changeSiteStatus('IsEmbeddedSite');
+    });
+  },
+
   render: function() {
-    return r.p({}, 'Embedded comments options...');
+    return (
+      r.div({},
+        debiki2.createsite.EmbeddingAddressInput({ ref: 'embeddingAddress',
+            label: 'Embedding Site Address:', onChange: this.onChange,
+            help: 'Enter the address of the website where the embedded comments should appear.' }),
+        Button({ onClick: this.saveEmbeddedCommentsAddress, disabled: !this.state.validAddress },
+          'Create')));
   }
 });
 

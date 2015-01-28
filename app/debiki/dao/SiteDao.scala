@@ -93,6 +93,9 @@ abstract class SiteDao
     siteDbDao.createSite(name = name, hostname = hostname,
       embeddingSiteUrl, creatorIp = creatorIp, creatorEmailAddress = creatorEmailAddress)
 
+  def updateSite(changedSite: Tenant) =
+    siteDbDao.updateSite(changedSite)
+
   def addTenantHost(host: TenantHost) = siteDbDao.addTenantHost(host)
 
   def lookupOtherTenant(scheme: String, host: String): TenantLookup =

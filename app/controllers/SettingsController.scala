@@ -76,7 +76,16 @@ object SettingsController extends mvc.Controller {
         throwBadReq("DwE48UFk9", s"Bad section type: `$x'")
     }
 
-    request.dao.saveSetting(section, name, newValue)
+    if (section == SettingsTarget.WholeSite && name == "EmbeddingSiteUrl") {
+      // Temporary special case, until I've moved the embedding site url from
+      // DW1.TENANT.EMBEDDING_SITE_URL to a normal setting in DW1_SETTINGS.
+      val newValueAsString = newValue.asInstanceOf[String]
+      val changedSite = request.dao.loadSite().copy(embeddingSiteUrl = Some(newValueAsString))
+      request.dao.updateSite(changedSite)
+    }
+    else {
+      request.dao.saveSetting(section, name, newValue)
+    }
     Ok
   }
 

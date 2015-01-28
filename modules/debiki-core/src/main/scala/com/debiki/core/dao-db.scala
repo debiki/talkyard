@@ -93,6 +93,8 @@ abstract class SiteDbDao {
   def createSite(name: String, hostname: String, embeddingSiteUrl: Option[String],
         creatorIp: String, creatorEmailAddress: String): Tenant
 
+  def updateSite(changedSite: Tenant)
+
   def addTenantHost(host: TenantHost)
 
   def lookupOtherTenant(scheme: String, host: String): TenantLookup
@@ -503,6 +505,11 @@ class ChargingSiteDbDao(
     _spi.createSite(name = name, hostname = hostname,
       embeddingSiteUrl = embeddingSiteUrl, creatorIp = creatorIp,
       creatorEmailAddress = creatorEmailAddress)
+  }
+
+  def updateSite(changedSite: Tenant) = {
+    _chargeForOneWriteReq()
+    _spi.updateSite(changedSite)
   }
 
   def addTenantHost(host: TenantHost) = {

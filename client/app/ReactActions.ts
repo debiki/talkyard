@@ -35,6 +35,7 @@ export var actionTypes = {
   CycleToNextMark: 'CycleToNextMark',
   UncollapsePost: 'UncollapsePost',
   SetHorizontalLayout: 'SetHorizontalLayout',
+  ChangeSiteStatus: 'ChangeSiteStatus',
 }
 
 
@@ -132,6 +133,13 @@ export function setHorizontalLayout(enabled: boolean) {
   });
 }
 
+
+export function changeSiteStatus(newStatus: string) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.ChangeSiteStatus,
+    newStatus: newStatus
+  });
+}
 
 //------------------------------------------------------------------------------
    }
