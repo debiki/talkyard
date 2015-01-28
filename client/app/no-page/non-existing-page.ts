@@ -86,16 +86,32 @@ export var SignUpAsAdmin = createComponent({
       startOfTheEmailAddress =
         r.span({}, 'That is, ', r.samp({}, this.props.obfuscatedAminEmail + '...@...'));
     }
-    return (
-      r.div({},
-        r.h1({}, 'Site Created'),
-        r.p({}, 'Your site has been created.'),
-        r.p({}, 'Now, please sign up using the email address you specified previously. ',
-            startOfTheEmailAddress,
-            ' Click the button below, then click ', r.b({}, 'Create New Account'),
-            ', or login with e.g. Google, if you specified a Gmail email address.'),
-        r.br(),
-        reactelements.NameLoginBtns({ title: 'Sign Up as Admin', purpose: 'LoginBecomeAdmin' })));
+
+    var instructions = [
+        'Click the button below, then click ',
+        r.b({}, 'Create New Account'),
+        ', or login with e.g. Google, if you specified a Gmail email address.'];
+
+    var loginBtn =
+        reactelements.NameLoginBtns({ title: 'Sign Up as Admin', purpose: 'LoginBecomeAdmin' });
+
+    var contents = debiki.siteId === debiki.FirstSiteId
+      ? r.div({},
+          r.h1({}, 'Welcome'),
+          r.p({}, 'You have successfully started the server.'),
+          r.p({}, 'Now, please sign up using the email address you specified in the ' +
+            'configuration file. ', instructions),
+          r.br(),
+          loginBtn)
+      : r.div({},
+          r.h1({}, 'Site Created'),
+          r.p({}, 'Your site has been created.'),
+          r.p({}, 'Now, please sign up using the email address you specified previously. ',
+            startOfTheEmailAddress, instructions),
+          r.br(),
+          loginBtn)
+
+    return contents;
   }
 });
 
@@ -145,6 +161,16 @@ export var CreateSomethingHere = createComponent({
     var anyCreateEmbeddedCommentsPanel = createWhat === 'EmbeddedComments' ?
         CreateEmbeddedCommentsPanel(this.props) : null;
 
+    // For all sites except for the first one, we have already asked the user
+    // if s/he wanted to create an embedded comments site, and s/he didn't.
+    var anyCreateEmbeddedCommentsButton;
+    if (debiki.siteId === debiki.FirstSiteId) {
+      anyCreateEmbeddedCommentsButton =
+          Button({ active: createWhat === 'EmbeddedComments',
+              onClick: () => this.setState({ createWhat: 'EmbeddedComments' })},
+              'Embedded Comments');
+    }
+
     return (
       r.div({},
         r.h1({}, 'Nothing here, yet'),
@@ -153,9 +179,7 @@ export var CreateSomethingHere = createComponent({
           Button({ active: createWhat === 'Forum',
               onClick: () => this.setState({ createWhat: 'Forum' })},
               'Create a Forum'),
-          Button({ active: createWhat === 'EmbeddedComments',
-              onClick: () => this.setState({ createWhat: 'EmbeddedComments' })},
-              'Embedded Comments')),
+          anyCreateEmbeddedCommentsButton),
         anyCreateForumPanel,
         anyCreateEmbeddedCommentsPanel));
   }

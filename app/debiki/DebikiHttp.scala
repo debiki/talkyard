@@ -252,7 +252,7 @@ object DebikiHttp {
                 assErr("DwE01k5Bk08")
           }
           case FoundNothing =>
-            throwNotFound("DwEI5F2", "The specified host name maps to no tenant.")
+            throwNotFound("DwEI5F2", "There is no site with that hostname")
         }
     }
 

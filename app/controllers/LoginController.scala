@@ -33,6 +33,8 @@ import requests._
   */
 object LoginController extends mvc.Controller {
 
+  val BecomeOwnerEmailConfigValue = "debiki.becomeOwnerEmailAddress"
+
 
   /** Opens a popup and a login dialog inside that popup. Useful when logging in
     * in an iframe, because it's not feasible to open modal dialogs from inside
@@ -69,12 +71,17 @@ object LoginController extends mvc.Controller {
 
     val ownerEmail =
       if (request.siteId == Site.FirstSiteId)
-        Play.configuration.getString("debiki.becomeOwnerEmailAddress")
+        Play.configuration.getString(BecomeOwnerEmailConfigValue) getOrElse {
+          val errorCode = "DwE8PY25"
+          val errorMessage = s"Config value '$BecomeOwnerEmailConfigValue' missing"
+          Logger.error(s"$errorMessage [$errorCode]")
+          throwInternalError(errorCode, errorMessage)
+        }
       else
         ownerEmailInDatabase
 
     if (emailAddress != ownerEmail)
-      throwForbidden("DwE403H5", "Wrong email address, not the owner email address")
+      throwForbidden("DwE403H5", "Wrong email address")
 
     true
   }

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(startupCode: String, anyPageId: Option[String], serverAddress: String, pageUriPath: String,
+@(siteId: String, startupCode: String, anyPageId: Option[String], serverAddress: String, pageUriPath: String,
   anyPageRole: Option[com.debiki.core.PageRole], anyPagePath: Option[com.debiki.core.PagePath],
   reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
 
@@ -99,6 +99,7 @@ occurrence of the magic string with user specific data. *@
   }
 
   var debiki = $.extend(true, {
+    siteId: '@siteId',
     reactPageStore: JSON.parse(unencodeHtmlContent($('#dwReactPageStore').text())),
     reactUserStore: parseAnyDebikiUserSpecificData(),
     getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
