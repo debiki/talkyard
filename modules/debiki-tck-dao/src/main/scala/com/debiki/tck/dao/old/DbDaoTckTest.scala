@@ -1700,21 +1700,27 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         username = theUsername,
         email = theEmail,
         emailVerifiedAt = None,
-        identityData = theOpenAuthDetails).get
+        identityData = theOpenAuthDetails,
+        isAdmin = false,
+        isOwner = false).get
 
       val newOauthUserData2 = NewOauthUserData.create(
         name = theFirstName,
         username = theUsername2,
         email = the2ndEmail,
         emailVerifiedAt = None,
-        identityData = the2ndOpenAuthDetails).get
+        identityData = the2ndOpenAuthDetails,
+        isAdmin = false,
+        isOwner = false).get
 
       val newOauthUserData3 = NewOauthUserData.create(
         name = theFirstName,
         username = theUsername3,
         email = the3rdEmail,
         emailVerifiedAt = None,
-        identityData = the3rdOpenAuthDetails).get
+        identityData = the3rdOpenAuthDetails,
+        isAdmin = false,
+        isOwner = false).get
 
       val theFirstLoginAttempt = OpenAuthLoginAttempt(
         ip = "1.2.3.4", date = now, theOpenAuthDetails)
@@ -1827,7 +1833,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       val newPasswordUserData = NewPasswordUserData.create(
         name = "PasswordUser", username = "PwdUsrUsername", email = theEmail,
-        password = thePassword, isAdmin = false).get
+        password = thePassword, isAdmin = false, isOwner = false).get
 
       var theUser: User = null
       var loginGrant: LoginGrant = null
