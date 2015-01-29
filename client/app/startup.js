@@ -252,7 +252,8 @@ function renderDiscussionPage() {
   });
 
   steps.push(function() {
-    debiki2.sidebar.UnreadCommentsTracker.start();
+    // Disable for now, because it's a bit slow, and I don't save this server side anyway now.
+    //debiki2.sidebar.UnreadCommentsTracker.start();
   });
 
   function runNextStep() {
