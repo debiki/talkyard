@@ -41,6 +41,7 @@ POST  /-/api/logout             controllers.LoginController.logout
 
 GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic
 GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor
+GET   /-/embedded-comments-help controllers.EmbeddedTopicsController.showSetupInstructions
 
 POST  /-/search/site                        controllers.FullTextSearchController.searchWholeSite()
 GET   /-/search/site/for/:phrase            controllers.FullTextSearchController.searchWholeSiteFor(phrase)
@@ -55,23 +56,8 @@ GET   /-/reset-password/choose-password/:resetPasswordEmailId  controllers.Reset
 POST  /-/reset-password/choose-password/:resetPasswordEmailId  controllers.ResetPasswordController.handleNewPasswordForm(resetPasswordEmailId)
 GET   /-/reset-password/password-changed controllers.ResetPasswordController.showPasswordChangedPage
 
-GET   /-/create-site                controllers.CreateSiteController.start
-GET   /-/create-site/choose-owner   controllers.CreateSiteController.showWebsiteOwnerForm(siteType)
-GET   /-/create-site/choose-type    controllers.CreateSiteController.showSiteTypeForm(siteType)
-POST  /-/create-site/choose-type    controllers.CreateSiteController.handleSiteTypeForm
-GET   /-/create-site/choose-name    controllers.CreateSiteController.showWebsiteNameForm(siteType)
-POST  /-/create-site/choose-name    controllers.CreateSiteController.handleWebsiteNameForm(siteType)
-GET   /-/create-site/welcome-owner  controllers.CreateSiteController.welcomeOwner
-
-GET   /-/create-forum               controllers.CreateSiteController.startCreateForum
-
-GET   /-/create-embedded-site                                 controllers.CreateEmbeddedSiteController.start
-GET   /-/create-embedded-site/choose-owner                    controllers.CreateEmbeddedSiteController.showSiteOwnerForm
-GET   /-/create-embedded-site/specify-embedding-site-address  controllers.CreateEmbeddedSiteController.showEmbeddingSiteUrlForm
-POST  /-/create-embedded-site/specify-embedding-site-address  controllers.CreateEmbeddedSiteController.handleEmbeddingSiteUrlForm
-GET   /-/create-embedded-site/create                          controllers.CreateEmbeddedSiteController.tryCreateEmbeddedSite
-GET   /-/create-embedded-site/welcome-owner                   controllers.CreateEmbeddedSiteController.welcomeOwner
-GET   /-/create-embedded-site/instructions                    controllers.CreateEmbeddedSiteController.embeddingSiteInstructionsPage
+GET   /-/create-site            controllers.CreateSiteController.start
+POST  /-/create-site            controllers.CreateSiteController.createSite
 
 GET   /-/admin/                 controllers.AdminController.viewAdminPage
 # Old admin pages:

@@ -45,6 +45,7 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
     return
 
   doingWhatClass = switch mode
+  | 'LoginBecomeAdmin' => 'dw-login-become-admin'
   | 'LoginAsAdmin' => 'dw-login-as-admin'
   | 'LoginToSubmit' => 'dw-login-to-submit'
   | 'LoginToComment' => 'dw-login-to-post-comment'
@@ -62,9 +63,6 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
   | 'LoginToAdministrate' =>
       dialog.find('#dw-lgi-guest').hide()
       dialog.find('#dw-lgi-create-password-user').hide()
-      dialog.find('.dw-fi-cancel').hide()
-  | 'LoginToCreateSite' =>
-      dialog.find('#dw-lgi-guest').hide()
       dialog.find('.dw-fi-cancel').hide()
 
   dialog.find('#dw-lgi-guest').click ->

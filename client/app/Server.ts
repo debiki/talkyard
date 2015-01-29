@@ -30,6 +30,41 @@ var $: JQueryStatic = d.i.$;
 var origin = d.i.serverOrigin;
 
 
+export function createSite(emailAddress: string, localHostname: string,
+    anyEmbeddingSiteAddress: string, doneCallback: (string) => void) {
+  d.u.postJson({
+    url: origin + '/-/create-site',
+    data: {
+      acceptTermsAndPrivacy: true,
+      emailAddress: emailAddress,
+      localHostname: localHostname,
+      embeddingSiteAddress: anyEmbeddingSiteAddress
+    },
+    success: (response) => {
+      doneCallback(response.newSiteOrigin);
+    },
+    error: (x, y, z) => {
+      console.error('Error creating site: ' + JSON.stringify([x, y, z]));
+      alert(x.responseText);
+    },
+  });
+}
+
+
+export function saveSetting(setting: Setting, doneCallback: () => void) {
+  d.u.postJson({
+    url: origin + '/-/save-setting',
+    data: setting,
+    success: (response) => {
+      doneCallback();
+    },
+    error: (x, y, z) => {
+      console.error('Error saving new reply: ' + JSON.stringify([x, y, z]));
+    },
+  });
+}
+
+
 export function savePageNoftLevel(newNotfLevel) {
   d.u.postJson({
     url: origin + '/-/save-page-notf-level',

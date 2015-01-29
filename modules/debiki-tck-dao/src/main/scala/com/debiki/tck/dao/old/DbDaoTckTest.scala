@@ -255,45 +255,33 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     var testPage: PageNoPath = null
     var guestUser: User = null
 
-
-    // -------- Create tenant
-
-    val defaultTenantId = "1"
-
-    "find no tenant for non-existing host test.ex.com" in {
-      val lookup = systemDbDao.lookupTenant("http", "test.ex.com")
-      lookup must_== FoundNothing
-    }
-
-    "find no tenant for non-existing tenant id" in {
-      systemDbDao.loadTenants("non_existing_id"::Nil) must_== Nil
-    }
-
+    val defaultTenantId = Site.FirstSiteId
     lazy val dao = newTenantDbDao(QuotaConsumers(tenantId = defaultTenantId))
 
-    "lookup test tenant host test.ex.com" in {
-      val lookup = systemDbDao.lookupTenant("http", "test.ex.com")
-      lookup must_== FoundChost(defaultTenantId)
-      val lookup2 = dao.lookupOtherTenant("http", "test.ex.com")
-      lookup2 must_== FoundChost(defaultTenantId)
-    }
+    lazy val defaultPagePath = PagePath(defaultTenantId, "/folder/",
+      None, false, "page-title")
 
-    "lookup tenant by id, and find all hosts" in {
+
+    // -------- Find the default site
+
+    "lookup the default site by id, find no hosts" in {
       val tenants = systemDbDao.loadTenants(defaultTenantId::Nil)
       tenants must be like {
         case List(tenant) =>
           tenant.id must_== defaultTenantId
-          tenant.name must_== Some("Test")
+          tenant.name must_== "Main Site"
           tenant.embeddingSiteUrl must_== None
-          tenant.hosts must_== List(TenantHost(
-             "test.ex.com", TenantHost.RoleCanonical, TenantHost.HttpsNone))
+          tenant.hosts must_== Nil
         case x =>
           ko(s"Found wrong tenants: $x")
       }
+      ok
     }
 
-    lazy val defaultPagePath = PagePath(defaultTenantId, "/folder/",
-                                    None, false, "page-title")
+    "find correct status of site" in {
+      dao.loadSiteStatus() must_== SiteStatus.OwnerCreationPending("unknown@example.com")
+      ok
+    }
 
 
     // -------- Generate page ids
@@ -1712,21 +1700,27 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         username = theUsername,
         email = theEmail,
         emailVerifiedAt = None,
-        identityData = theOpenAuthDetails).get
+        identityData = theOpenAuthDetails,
+        isAdmin = false,
+        isOwner = false).get
 
       val newOauthUserData2 = NewOauthUserData.create(
         name = theFirstName,
         username = theUsername2,
         email = the2ndEmail,
         emailVerifiedAt = None,
-        identityData = the2ndOpenAuthDetails).get
+        identityData = the2ndOpenAuthDetails,
+        isAdmin = false,
+        isOwner = false).get
 
       val newOauthUserData3 = NewOauthUserData.create(
         name = theFirstName,
         username = theUsername3,
         email = the3rdEmail,
         emailVerifiedAt = None,
-        identityData = the3rdOpenAuthDetails).get
+        identityData = the3rdOpenAuthDetails,
+        isAdmin = false,
+        isOwner = false).get
 
       val theFirstLoginAttempt = OpenAuthLoginAttempt(
         ip = "1.2.3.4", date = now, theOpenAuthDetails)
@@ -1839,7 +1833,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       val newPasswordUserData = NewPasswordUserData.create(
         name = "PasswordUser", username = "PwdUsrUsername", email = theEmail,
-        password = thePassword, isAdmin = false).get
+        password = thePassword, isAdmin = false, isOwner = false).get
 
       var theUser: User = null
       var loginGrant: LoginGrant = null
@@ -2466,7 +2460,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       val creatorIp = "123.123.123.123"
 
-      lazy val creatorRole = globalPasswordUser
+      lazy val creatorEmailAddress = globalPasswordUser.email
 
       var newWebsiteOpt: Tenant = null
       var newHost = TenantHost("website-2.ex.com", TenantHost.RoleCanonical,
@@ -2480,32 +2474,44 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val homepageTitle = RawPostAction.forNewTitleBySystem(
         "Default Homepage", creationDati = now)
 
-      def createWebsite(suffix: String): Option[(Tenant, User)] = {
-        dao.createWebsite(
-          name = Some("website-"+ suffix), address = Some("website-"+ suffix +".ex.com"),
+      def createWebsite(suffix: Int, sameIpDifferentEmail: Boolean = true): Tenant = {
+        val (ip, email) =
+          if (sameIpDifferentEmail)
+            (creatorIp, s"email-$suffix@ex.com")
+          else
+            (s"1.2.3.$suffix", creatorEmailAddress)
+
+        dao.createSite(
+          name = "website-"+ suffix,
+          hostname = "website-"+ suffix +".ex.com",
           embeddingSiteUrl = None,
-          ownerIp = creatorIp,
-          ownerIdentity = None, ownerRole = creatorRole)
+          creatorIp = creatorIp,
+          creatorEmailAddress = email)
       }
 
-      def createEmbeddedSite(embeddingSiteUrl: String): Option[(Tenant, User)] = {
-        dao.createWebsite(
-          name = None, address = None,
+      def createEmbeddedSite(embeddingSiteUrl: String, name: String): Tenant = {
+        dao.createSite(
+          name = name,
+          hostname = s"$name.ex.com",
           embeddingSiteUrl = Some(embeddingSiteUrl),
-          ownerIp = creatorIp,
-          ownerIdentity = None, ownerRole = creatorRole)
+          creatorIp = creatorIp,
+          creatorEmailAddress = creatorEmailAddress)
       }
 
       "create a new website, from existing tenant" in {
-        createWebsite("2") must beLike {
-          case Some((site, user)) =>
-            newWebsiteOpt = site
-            ok
-        }
+        newWebsiteOpt = createWebsite(2)
+        newWebsiteOpt.name must_== "website-2"
+        newWebsiteOpt.hosts.length must_== 1
+        newWebsiteOpt.chost_!.address must_== "website-2.ex.com"
+        newWebsiteOpt.creatorIp must_== creatorIp
+        newWebsiteOpt.creatorEmailAddress must_== "email-2@ex.com"
+        newWebsiteOpt.embeddingSiteUrl must_== None
+        ok
       }
 
       "not create the same website again" in {
-        createWebsite("2") must_== None
+        createWebsite(2) must throwA[SiteAlreadyExistsException]
+        ok
       }
 
       "lookup the new website, from existing tenant" in {
@@ -2513,28 +2519,46 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case List(websiteInDb) =>
             websiteInDb must_== newWebsiteOpt.copy(hosts = List(newHost))
         }
+        ok
       }
 
       "create embedded sites, find it by id" in {
         val embeddingSiteUrl = "embedding.exmple.com"
-        createEmbeddedSite(embeddingSiteUrl) must beLike {
-          case Some((site, user)) =>
-            systemDbDao.loadSite(site.id) must be like {
-              case Some(site) =>
-                site.name must_== None
-                site.hosts.length must_== 0
-                site.embeddingSiteUrl must_== Some(embeddingSiteUrl)
-          }
+        val newSite = createEmbeddedSite(embeddingSiteUrl, "embd-site-name")
+        systemDbDao.loadSite(newSite.id) must be like {
+          case Some(site) =>
+            site.name must_== "embd-site-name"
+            site.hosts.length must_== 1
+            site.chost_!.address must_== "embd-site-name.ex.com"
+            site.embeddingSiteUrl must_== Some(embeddingSiteUrl)
         }
         ok
       }
 
       "not create too many websites from the same IP" in {
-        def create100Websites() {
+        def create100Websites(sameIpDifferentEmail: Boolean) {
           for (i <- 3 to 100)
-            createWebsite(i.toString)
+            createWebsite(i, sameIpDifferentEmail)
         }
-        create100Websites() must throwA[TooManySitesCreatedException]
+        create100Websites(true) must throwA[TooManySitesCreatedException]
+        create100Websites(false) must throwA[TooManySitesCreatedException]
+        ok
+      }
+
+      "find no tenant for non-existing tenant id" in {
+        systemDbDao.loadTenants("non_existing_id"::Nil) must_== Nil
+      }
+
+      "find no host for non-existing host test.ex.com" in {
+        val lookup = systemDbDao.lookupTenant("http", "test.ex.com")
+        lookup must_== FoundNothing
+      }
+
+      "lookup site by host" in {
+        val lookup = systemDbDao.lookupTenant("http", newWebsiteOpt.chost_!.address)
+        lookup must_== FoundChost(newWebsiteOpt.id)
+        val lookup2 = dao.lookupOtherTenant("http", newWebsiteOpt.chost_!.address)
+        lookup2 must_== FoundChost(newWebsiteOpt.id)
       }
 
       "create a default homepage, with a title authored by SystemUser" in {
@@ -2559,6 +2583,15 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
                 title.user_! must_== SystemUser.User
             }
         }
+      }
+
+      "rename a site" in {
+        val siteBefore = newWebsiteDao().loadTenant()
+        val changedSite = siteBefore.copy(name = "site-renamed",
+          embeddingSiteUrl = Some("http://12345.embedding.site.com"))
+        newWebsiteDao().updateSite(changedSite)
+        val siteAfter = newWebsiteDao().loadTenant()
+        siteAfter must_== changedSite
       }
     }
 

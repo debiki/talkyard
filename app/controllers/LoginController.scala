@@ -21,14 +21,19 @@ import actions.SafeActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
+import debiki.DebikiHttp._
 import play.api._
 import play.api.mvc._
 import play.api.mvc.BodyParsers.parse.empty
+import play.api.Play.current
+import requests._
 
 
 /** Logs in and out.
   */
 object LoginController extends mvc.Controller {
+
+  val BecomeOwnerEmailConfigValue = "debiki.becomeOwnerEmailAddress"
 
 
   /** Opens a popup and a login dialog inside that popup. Useful when logging in
@@ -49,6 +54,36 @@ object LoginController extends mvc.Controller {
   def logout = mvc.Action(parse.empty) { request =>
     // Keep the xsrf cookie, so login dialog works:
     Ok.discardingCookies(DiscardingCookie("dwCoSid"))
+  }
+
+
+  /** Tests if we're currently logging in as the very first user — s/he will
+    * be made admin if s/he has the correct email address.
+    */
+  def shallBecomeOwner(request: JsonPostRequest, emailAddress: String): Boolean = {
+    val ownerEmailInDatabase = request.dao.loadSiteStatus() match {
+      case SiteStatus.OwnerCreationPending(email) =>
+        email
+      case _ =>
+        // The very first signup has happened already, owner already created.
+        return false
+    }
+
+    val ownerEmail =
+      if (request.siteId == Site.FirstSiteId)
+        Play.configuration.getString(BecomeOwnerEmailConfigValue) getOrElse {
+          val errorCode = "DwE8PY25"
+          val errorMessage = s"Config value '$BecomeOwnerEmailConfigValue' missing"
+          Logger.error(s"$errorMessage [$errorCode]")
+          throwInternalError(errorCode, errorMessage)
+        }
+      else
+        ownerEmailInDatabase
+
+    if (emailAddress != ownerEmail)
+      throwForbidden("DwE403H5", "Wrong email address")
+
+    true
   }
 
 }

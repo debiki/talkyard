@@ -54,6 +54,13 @@ export function initAllReactRoots() {
       React.render(Handler({}), userPageElem);
     });
   }
+
+  var createSiteElem = document.getElementById('dw-react-create-site');
+  if (createSiteElem) {
+    ReactRouter.run(debiki2.createsite.routes(), (Handler) => {
+      React.render(Handler({}), createSiteElem);
+    });
+  }
 }
 
 

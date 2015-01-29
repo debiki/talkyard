@@ -60,6 +60,10 @@ ReactDispatcher.register(function(payload) {
       };
       break;
 
+    case ReactActions.actionTypes.NewUserAccountCreated:
+      store.newUserAccountCreated = true;
+      break;
+
     case ReactActions.actionTypes.SetPageNotfLevel:
       store.user.rolePageSettings.notfLevel = action.newLevel;
       break;
@@ -86,6 +90,10 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.SetHorizontalLayout:
       store.horizontalLayout = action.enabled;
+      break;
+
+    case ReactActions.actionTypes.ChangeSiteStatus:
+      store.siteStatus = action.newStatus;
       break;
 
     default:

@@ -29,10 +29,9 @@ class TestUtils(val daoFactory: DbDaoFactory) {
     // Nowadays it exists already, so:
     Tenant(
       Site.FirstSiteId,
-      name = None,
+      name = "First Site",
       creatorIp = "0.0.0.0",
-      creatorTenantId = "",
-      creatorRoleId = "",
+      creatorEmailAddress = "unknown@example.com",
       embeddingSiteUrl = None,
       hosts = Nil)
   }

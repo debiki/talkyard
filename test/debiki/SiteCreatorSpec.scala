@@ -26,7 +26,7 @@ class SiteCreatorSpec extends Specification {
 
   "SiteCreator.isOkayWebsiteName" can {
 
-    import SiteCreator.isOkayWebsiteName
+    import controllers.CreateSiteController.isOkayWebsiteName
 
     "allow: 'nicename', 'nice-name' and 'very-nice-name'" >> {
       isOkayWebsiteName("nicename") must beTrue

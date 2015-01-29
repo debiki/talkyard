@@ -84,16 +84,16 @@ abstract class SiteDbDao {
    */
   def loadTenant(): Tenant
 
-  /**
-   * Returns Some(new-website) on success — that is, unless someone else
-   * created the very same website, just before you.
-   * Throws OverQuotaException if you've created too many websites already
-   * (e.g. from the same IP).
-   */
-  def createWebsite(name: Option[String], address: Option[String],
-        embeddingSiteUrl: Option[String], ownerIp: String,
-        ownerIdentity: Option[Identity], ownerRole: User)
-        : Option[(Tenant, User)]
+  def loadSiteStatus(): SiteStatus
+
+  /** Throws SiteAlreadyExistsException if the site already exists.
+    * Throws TooManySitesCreatedException if you've created too many websites already
+    * (from the same IP or email address).
+    */
+  def createSite(name: String, hostname: String, embeddingSiteUrl: Option[String],
+        creatorIp: String, creatorEmailAddress: String): Tenant
+
+  def updateSite(changedSite: Tenant)
 
   def addTenantHost(host: TenantHost)
 
@@ -487,17 +487,13 @@ class ChargingSiteDbDao(
     _spi.loadTenant()
   }
 
-  /**
-   * Creates a website and returns it and its owner.
-   *
-   * The new site owner is based on the owner's role at the site via which
-   * the new website is being created.
-   */
-  def createWebsite(name: Option[String], address: Option[String],
-        embeddingSiteUrl: Option[String], ownerIp: String,
-        ownerIdentity: Option[Identity], ownerRole: User)
-        : Option[(Tenant, User)] = {
+  def loadSiteStatus(): SiteStatus = {
+    _chargeForOneReadReq()
+    _spi.loadSiteStatus()
+  }
 
+  def createSite(name: String, hostname: String, embeddingSiteUrl: Option[String],
+        creatorIp: String, creatorEmailAddress: String): Tenant = {
     // SHOULD consume IP quota — but not tenant quota!? — when generating
     // new tenant ID. Don't consume tenant quota because the tenant
     // would be www.debiki.com?
@@ -506,9 +502,14 @@ class ChargingSiteDbDao(
     // consumer. Then call the latter function, charge the IP only.
     _chargeForOneWriteReq()
 
-    _spi.createWebsite(name = name, address = address,
-       embeddingSiteUrl, ownerIp = ownerIp,
-       ownerIdentity = ownerIdentity, ownerRole = ownerRole)
+    _spi.createSite(name = name, hostname = hostname,
+      embeddingSiteUrl = embeddingSiteUrl, creatorIp = creatorIp,
+      creatorEmailAddress = creatorEmailAddress)
+  }
+
+  def updateSite(changedSite: Tenant) = {
+    _chargeForOneWriteReq()
+    _spi.updateSite(changedSite)
   }
 
   def addTenantHost(host: TenantHost) = {
@@ -889,6 +890,8 @@ class ChargingSiteDbDao(
 
 
 object DbDao {
+
+  case class SiteAlreadyExistsException(name: String) extends QuickException
 
   case class TooManySitesCreatedException(ip: String) extends QuickException {
     override def getMessage = "Website creation limit exceeded"

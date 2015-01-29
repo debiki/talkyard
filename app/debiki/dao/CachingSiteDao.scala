@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
 import play.{api => p}
+import CachingDao.{CacheKey, CacheValue}
 
 
 /** Builds site specific data access objects that cache stuff in-memory.
@@ -50,4 +51,40 @@ class CachingSiteDao(val siteDbDao: ChargingSiteDbDao)
   with CachingPagePathMetaDao
   with CachingPageSummaryDao
   with CachingRenderedPageHtmlDao
-  with CachingUserDao
+  with CachingUserDao {
+
+
+  onUserCreated { user =>
+    if (loadSiteStatus().isInstanceOf[SiteStatus.OwnerCreationPending] && user.isOwner) {
+      uncacheSiteStatus()
+    }
+  }
+
+  onPageCreated { page =>
+    if (loadSiteStatus() == SiteStatus.ContentCreationPending) {
+      uncacheSiteStatus()
+    }
+  }
+
+
+  override def updateSite(changedSite: Tenant) = {
+    super.updateSite(changedSite)
+    uncacheSiteStatus()
+  }
+
+
+  override def loadSiteStatus(): SiteStatus = {
+    lookupInCache(
+      siteStatusKey,
+      orCacheAndReturn = Some(super.loadSiteStatus())) getOrDie "DwE5CB50"
+  }
+
+
+  private def uncacheSiteStatus() {
+    removeFromCache(siteStatusKey)
+  }
+
+
+  private def siteStatusKey = CacheKey(this.siteId, "|SiteId")
+
+}

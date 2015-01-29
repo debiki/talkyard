@@ -192,6 +192,13 @@ object Utils extends Results with http.ContentTypes {
   }
 
 
+  def isOkayEmailAddress(emailAddress: String): Boolean = {
+    OkEmailRegex matches emailAddress
+  }
+
+  private val OkEmailRegex = """[^@]+@[^@]+\.[^@]+""".r
+
+
   object ValidationImplicits {
 
     implicit def queryStringToValueGetter(

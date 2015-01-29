@@ -22,6 +22,7 @@ import actions.ApiActions.PostJsonAction
 import actions.ApiActions.GetAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import controllers.Utils.isOkayEmailAddress
 import debiki._
 import debiki.dao.SiteDao
 import debiki.DebikiHttp._
@@ -30,7 +31,6 @@ import org.scalactic.{Good, Bad}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import play.api.libs.json.JsObject
-import play.api.Play.current
 import requests.ApiRequest
 import requests.JsonPostRequest
 
@@ -98,13 +98,14 @@ object LoginWithPasswordController extends mvc.Controller {
       throwBadReq("DwE85FX1", "Password missing")
     val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
 
-    val anyBecomeAdminEmailAddresses =
-      Play.configuration.getString("debiki.becomeAdminEmailAddress")
-    val becomeAdmin = anyBecomeAdminEmailAddresses == Some(emailAddress)
+    if (!isOkayEmailAddress(emailAddress))
+      throwUnprocessableEntity("DwE80KFP2", "Bad email address")
+
+    val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress)
 
     val userData =
       NewPasswordUserData.create(name = name, email = emailAddress, username = username,
-          password = password, isAdmin = becomeAdmin) match {
+          password = password, isAdmin = becomeOwner, isOwner = becomeOwner) match {
         case Good(data) => data
         case Bad(errorMessage) =>
           throwUnprocessableEntity("DwE805T4", s"$errorMessage, please try again.")
@@ -112,9 +113,6 @@ object LoginWithPasswordController extends mvc.Controller {
 
     val dao = daoFor(request.request)
     try {
-      // USABILITY SHOULD verify that if !becomeAdmin then some admin user has already been
-      // created, because the very first user created should be an admin, else
-      // the user probably specified the wrong email address.
       val newUser = dao.createPasswordUser(userData)
       sendEmailAddressVerificationEmail(newUser, anyReturnToUrl, request.host, request.dao)
     }
@@ -131,7 +129,6 @@ object LoginWithPasswordController extends mvc.Controller {
 
     Ok("""{ "emailVerifiedAndLoggedIn": false }""")
   }
-
 
 
   val RedirectFromVerificationEmailOnly = "_RedirFromVerifEmailOnly_"

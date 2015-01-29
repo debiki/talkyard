@@ -1,5 +1,5 @@
 @**
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2015 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,31 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(title: String, css: String = "")(content: Html)
-
-@import play.api.Play.current
-
-@minMaxJs = @{ if (play.api.Play.isProd) "min.js" else "js" }
-
-@asset(file: String) = @{
-  routes.Assets.at(path = "/public/res", file)
-}
+@(tpi: debiki.SiteTpi)
 
 
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html class="dw-pri DW">
 <head>
-<title>Create Website</title>
-<link href="http://fonts.googleapis.com/css?family=Bree+Serif" rel="stylesheet">
-<link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="@asset("fontello/css/fontello-embedded.css")"/>
-<link rel="stylesheet" href="@asset("admin-app.css")"/>
-<style>@Html(css)</style>
+  @tpi.debikiMeta
+
+  @* For now, use this font always, so if people create a new forum they'll get what they
+  saw at www.debiki.com. Later on, make this configurable somehow.  *@
+  <link rel='stylesheet' href='http://fonts.googleapis.com/css?family=Bree+Serif'>
+
+  @tpi.debikiStyles
+
+  @tpi.debikiScriptsCustomStartupCode("debiki.internal.renderEmptyPage();")
+  <script>
+    debiki.baseDomain = '@{ debiki.Globals.baseDomain }';
+  </script>
 </head>
 <body>
-<div class="container">
-@content
+<!-- addressAndEmail.scala.html -->
+
+<div class="container" style="padding-top:30px">
+  <div id="dw-react-create-site"></div>
 </div>
+
+@tpi.debikiAppendToBodyTags
+
 </body>
 </html>
-

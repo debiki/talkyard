@@ -160,6 +160,7 @@ object SiteTpi {
 class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   extends InternalTemplateProgrammingInterface(debikiRequest.dao) {
 
+  def siteId  = debikiRequest.siteId
   def siteSettings = debikiRequest.siteSettings
 
   def isLoggedIn = debikiRequest.user isDefined
@@ -190,7 +191,8 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
     debikiScriptsCustomStartupCode("debiki.internal.startDiscussionPage();")
 
   def debikiScriptsCustomStartupCode(startupCode: String) = xml.Unparsed(
-    views.html.debikiScripts(
+    views.html.debikiScripts( // Could pass `this` to the template instead of all these params?
+      siteId = siteId,
       startupCode = startupCode,
       anyPageId = anyCurrentPageId,
       serverAddress = debikiRequest.request.host,
@@ -264,7 +266,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
 
   /** The initial data in the React-Flux model, a.k.a. store. */
   def reactStoreSafeJsonString: String =
-    ReactJson.userNoPageToJson(debikiRequest.user).toString
+    Json.obj("user" -> ReactJson.userNoPageToJson(debikiRequest.user)).toString
 
   def debikiAppendToBodyTags: xml.NodeSeq = Nil
 

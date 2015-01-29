@@ -79,6 +79,7 @@ interface OrderOffset {
 
 interface Store {
   now: number;
+  siteStatus: string;
   pageId: string;
   pageRole: string;
   numPosts: number;
@@ -87,6 +88,7 @@ interface Store {
   categories: Category[];
   user: User;
   userSpecificDataAdded?: boolean;
+  newUserAccountCreated?: boolean;
   rootPostId: number;
   allPosts: { [postId: number]: Post };
   topLevelCommentIdsSorted: number[];
@@ -96,4 +98,12 @@ interface Store {
   // If quickUpdate is true only posts in postsToUpdate will be updated.
   quickUpdate: boolean;
   postsToUpdate: { [postId: number]: boolean };
+}
+
+
+interface Setting {
+  type: string;
+  pageId?: string;
+  name: string;
+  newValue: any;
 }

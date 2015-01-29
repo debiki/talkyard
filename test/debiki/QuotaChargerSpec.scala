@@ -325,6 +325,7 @@ class QuotaChargerSpec
     val loginGrant = loginNewOpenIdUser(
       s"Site${nextSiteNo}Owner", SiteAndIp(stuffCreator.firstSiteId, fromIp))
     val siteName = s"quota-charger-site-$nextSiteNo"
+    ??? /*
     val anyNewSiteAndOwner: Option[(Tenant, User)] = SiteCreator.createWebsite(
       SiteCreator.NewSiteType.SimpleSite,
       dao = stuffCreator.firstSiteDao,
@@ -335,6 +336,11 @@ class QuotaChargerSpec
       ownerIp = "0.0.0.1",
       ownerIdentity = loginGrant.identity.map(_.asInstanceOf[IdentityOpenId]),
       ownerRole = loginGrant.user)
+    Instead:
+      request.dao.createSite(
+        name = localHostname, hostname = hostname, embeddingSiteUrl = None,
+          creatorIp = request.ip, creatorEmailAddress = emailAddress)
+      */
 
     anyNewSiteAndOwner match {
       case Some(newSiteAndOwner) => newSiteAndOwner

@@ -27,6 +27,7 @@
 export var actionTypes = {
   Login: 'Login',
   Logout: 'Logout',
+  NewUserAccountCreated: 'NewUserAccountCreated',
   SetPageNotfLevel: 'SetPageNotfLevel',
   UpdatePost: 'UpdatePost',
   VoteOnPost: 'VoteOnPost',
@@ -34,6 +35,7 @@ export var actionTypes = {
   CycleToNextMark: 'CycleToNextMark',
   UncollapsePost: 'UncollapsePost',
   SetHorizontalLayout: 'SetHorizontalLayout',
+  ChangeSiteStatus: 'ChangeSiteStatus',
 }
 
 
@@ -54,6 +56,13 @@ export function login() {
       actionType: actionTypes.Login,
       user: user
     });
+  });
+}
+
+
+export function newUserAccountCreated() {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.NewUserAccountCreated
   });
 }
 
@@ -124,6 +133,13 @@ export function setHorizontalLayout(enabled: boolean) {
   });
 }
 
+
+export function changeSiteStatus(newStatus: string) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.ChangeSiteStatus,
+    newStatus: newStatus
+  });
+}
 
 //------------------------------------------------------------------------------
    }
