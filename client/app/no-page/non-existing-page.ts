@@ -163,18 +163,23 @@ export var CreateSomethingHere = createComponent({
 
     // For all sites except for the first one, we have already asked the user
     // if s/he wanted to create an embedded comments site, and s/he didn't.
+    var message;
     var anyCreateEmbeddedCommentsButton;
     if (debiki.siteId === debiki.FirstSiteId) {
       anyCreateEmbeddedCommentsButton =
           Button({ active: createWhat === 'EmbeddedComments',
               onClick: () => this.setState({ createWhat: 'EmbeddedComments' })},
-              'Embedded Comments');
+              'Setup Embedded Comments');
+      message = 'This site is empty right now. What do you want to do?';
+    }
+    else {
+      message = 'This site is empty right now. Do you want to create a forum?';
     }
 
     return (
       r.div({},
-        r.h1({}, 'Nothing here, yet'),
-        r.p({}, 'Do you want to create something here?'),
+        r.h1({}, 'Welcome to Your Site'),
+        r.p({}, message),
         r.div({ className: 'do-what-options' },
           Button({ active: createWhat === 'Forum',
               onClick: () => this.setState({ createWhat: 'Forum' })},
