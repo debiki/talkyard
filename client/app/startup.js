@@ -163,16 +163,6 @@ d.i.refreshFormXsrfTokens = function() {
 
 
 
-function runSiteConfigScripts() {
-  var configScripts = $('head script[type="text/x-debiki-config"]');
-  configScripts.each(function() {
-    var javascriptCode = $(this).text();
-    eval(javascriptCode);
-  });
-};
-
-
-
 /**
  * Renders the page, step by step, to reduce page loading time. (When the
  * first step is done, the user should conceive the page as mostly loaded.)
@@ -248,10 +238,6 @@ function renderDiscussionPage() {
 
   steps.push(function() {
     debiki.scriptLoad.resolve();
-    runSiteConfigScripts();
-  });
-
-  steps.push(function() {
     // Disable for now, because it's a bit slow, and I don't save this server side anyway now.
     //debiki2.sidebar.UnreadCommentsTracker.start();
   });

@@ -118,8 +118,7 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
 
   def loginForms =
     loginOkForm() ++
-    loginFailedForm() ++
-    emailNotfPrefsForm
+    loginFailedForm()
 
 
   /** A query string param that remembers which part of a page we are
@@ -135,16 +134,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
   private def _xsrfToken = {
     <input type='hidden' class={XsrfInpName}
            name={XsrfInpName} value={xsrfToken}/>
-  }
-
-
-  def confirmationForm(question: String, answer: String) = {
-    // They can click the browser's Back button to cancel.
-    <form action='' method='POST'>
-      { _xsrfToken }
-      <div>{question}</div>
-      <input type='submit' value={answer}/>
-    </form>
   }
 
 
@@ -173,40 +162,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
           </div>
         </form>
       </div>
-
-
-  /**
-   * Shown when the user has posted a reply, if she has not
-   * specified whether or not to receive email notifications on replies
-   * to her.
-   *
-   * If the user says Yes, but her email address is unknown,
-   * then she is asked for it.
-   */
-  def emailNotfPrefsForm =
-    <form id='dw-f-eml-prf' class='dw-f'
-          action='?config-user=me'
-          accept-charset='UTF-8'
-          method='post'
-          title='Email Notifications'>
-      { _xsrfToken }
-      <p>Be notified via email of replies to your comments?</p>
-      <div class='dw-submit-set'>
-        <input type='radio' id='dw-fi-eml-prf-rcv-no' name='dw-fi-eml-prf-rcv'
-               value='no'/>
-        <label for='dw-fi-eml-prf-rcv-no'>No</label>
-        <input type='radio' id='dw-fi-eml-prf-rcv-yes' name='dw-fi-eml-prf-rcv'
-               value='yes'/>
-        <label for='dw-fi-eml-prf-rcv-yes'>Yes</label>
-      </div>
-      <div class='dw-submit-set dw-f-eml-prf-adr'>
-        <label for='dw-fi-eml-prf-adr'>Your email address:</label>
-        <input id='dw-fi-eml-prf-adr' name='dw-fi-eml-prf-adr'
-               type='text' value=''/>
-        <input type='submit' name='dw-fi-eml-prf-done'
-               class='dw-fi-submit' value='Done'/>
-      </div>
-    </form>
 
 
   def flagForm = {
@@ -431,37 +386,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
     userLink
   }
 
-
-  /*
-  def timeWaistWarning(action: String, is: String): NodeSeq = {
-    import IntrsAllowed._
-    intrsAllowed match {
-      case VisibleTalk => Nil
-      case HiddenTalk =>  // COULD fix nice CSS and show details on hover only
-        <div>
-        <em>Time waist warning: On this page, your {action} {is} shown
-         only to people who explicitly choose to view user comments.
-        </em>
-        </div>
-    }
-  }*/
-
-  /** Does a terms agreement in each Reply and Edit form give a litigious
-   *  impression? That the website cares only about legal stuff and so on?
-   *  Anyway, any terms agreement must be customizable,
-   *  since it would be unique for each tenant. No time to fix that now,
-   *  so disable this, for now.
-  */
-  def termsAgreement(submitBtnText: String) = Nil  /*
-    <div class='dw-user-contrib-license'>By clicking <em>{submitBtnText}</em>,
-      you agree to release your contributions under the {ccWikiLicense}
-      license, and you agree to the
-      <a href={config.termsOfUseUrl} target="_blank">Terms of Use</a>.
-    </div> */
-    /* This short version might be better?
-    <div id='tos' style='padding-top: 1ex; font-size: 80%; color: #555;'>
-    Please read the <span style='text-decoration: underline;'>
-      Terms of Use</span>.</div> */
 }
 
 
