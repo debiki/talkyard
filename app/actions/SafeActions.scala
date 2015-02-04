@@ -154,6 +154,15 @@ object SafeActions {
     "P3P" -> """CP="This_is_not_a_privacy_policy""""
 
 
+  val allowFakeIp = {
+    val allow = !Play.isProd || Play.configuration.getBoolean("debiki.allowFakeIp").getOrElse(false)
+    if (allow) {
+      Logger.info("Enabling fake IPs [DwM0Fk258]")
+    }
+    allow
+  }
+
+
   /**
    * Converts DebikiHttp.ResultException to nice replies,
    * e.g. 403 Forbidden and a user friendly message,
@@ -176,7 +185,7 @@ object SafeActions {
         case ex: play.api.libs.json.JsResultException =>
           Results.BadRequest(s"Bad JSON: $ex [error DwE70KX3]")
       }
-      if (!Play.isProd) {
+      if (allowFakeIp) {
         val anyNewFakeIp = request.queryString.get("fakeIp").flatMap(_.headOption)
         anyNewFakeIp foreach { fakeIp =>
           futureResult = futureResult map { simpleResult =>

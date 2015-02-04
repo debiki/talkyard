@@ -119,6 +119,8 @@ GET   /-/list-users             controllers.ListController.listUsers
 POST  /-/change-page-meta       controllers.PageMetaController.changeMeta
 
 GET   /-/debug/testAutoApprove  controllers.DebugController.testAutoApprove(ipAddress, identityId)
+GET  /-/ping-exception-action   controllers.DebugController.pingExceptionAction
+GET  /-/ping-session-action     controllers.DebugController.pingSessionAction
 
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
 

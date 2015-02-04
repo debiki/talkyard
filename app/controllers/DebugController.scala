@@ -18,6 +18,7 @@
 package controllers
 
 import actions.ApiActions._
+import actions.SafeActions.{ExceptionAction, SessionAction}
 import com.debiki.core._
 import com.debiki.core.{PostActionPayload => PAP}
 import controllers.Utils.ActionsByPageIdGrouper
@@ -25,11 +26,25 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.libs.json.JsObject
+import play.api.mvc.BodyParsers.parse.empty
 
 
 /** Intended for troubleshooting, via the browser.
   */
 object DebugController extends mvc.Controller {
+
+
+  /** For performance tests. */
+  def pingExceptionAction = ExceptionAction(empty) { request =>
+      Ok("exception-action-pong")
+    }
+
+
+  /** For performance tests. */
+  def pingSessionAction = SessionAction(empty) {
+    request: actions.SafeActions.SessionRequestNoBody =>
+      Ok("session-action-pong")
+  }
 
 
   /** Via this function you can test whether or not comments by a certain identity
