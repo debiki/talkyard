@@ -340,12 +340,12 @@ class QuotaChargerSpec
       request.dao.createSite(
         name = localHostname, hostname = hostname, embeddingSiteUrl = None,
           creatorIp = request.ip, creatorEmailAddress = emailAddress)
-      */
 
     anyNewSiteAndOwner match {
       case Some(newSiteAndOwner) => newSiteAndOwner
       case None => fail("Test broken? Site already exists?")
     }
+      */
   }
 
 

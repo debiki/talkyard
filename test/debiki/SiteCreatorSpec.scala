@@ -26,36 +26,36 @@ class SiteCreatorSpec extends Specification {
 
   "SiteCreator.isOkayWebsiteName" can {
 
-    import controllers.CreateSiteController.isOkayWebsiteName
+    import controllers.CreateSiteController.isOkaySiteName
 
     "allow: 'nicename', 'nice-name' and 'very-nice-name'" >> {
-      isOkayWebsiteName("nicename") must beTrue
-      isOkayWebsiteName("nice-name") must beTrue
-      isOkayWebsiteName("very-nice-name") must beTrue
+      isOkaySiteName("nicename") must beTrue
+      isOkaySiteName("nice-name") must beTrue
+      isOkaySiteName("very-nice-name") must beTrue
     }
 
     "reject uppercase names" >> {
-      isOkayWebsiteName("Names-In-Uppercase") must beFalse
+      isOkaySiteName("Names-In-Uppercase") must beFalse
     }
 
     "reject too short and too long names" >> {
-      isOkayWebsiteName("bad") must beFalse
-      isOkayWebsiteName("a2345") must beFalse
-      isOkayWebsiteName("a23456") must beTrue
-      isOkayWebsiteName(
+      isOkaySiteName("bad") must beFalse
+      isOkaySiteName("a2345") must beFalse
+      isOkaySiteName("a23456") must beTrue
+      isOkaySiteName(
         "a123456789-123456789-123456789-123456789-123456789") must beFalse
-      isOkayWebsiteName(
+      isOkaySiteName(
         "a123456789-123456789") must beTrue
     }
 
     "reject dots, leading & trailing dash, leading diget" >> {
-      isOkayWebsiteName("a2345678") must beTrue
-      isOkayWebsiteName("12345678") must beFalse
-      isOkayWebsiteName("bad.name") must beFalse
-      isOkayWebsiteName("-bad-name") must beFalse
-      isOkayWebsiteName("bad-name-") must beFalse
+      isOkaySiteName("a2345678") must beTrue
+      isOkaySiteName("12345678") must beFalse
+      isOkaySiteName("bad.name") must beFalse
+      isOkaySiteName("-bad-name") must beFalse
+      isOkaySiteName("bad-name-") must beFalse
       // Currently allowed, hmm:
-      //isOkayWebsiteName("bad--name") must beFalse
+      //isOkaySiteName("bad--name") must beFalse
     }
   }
 

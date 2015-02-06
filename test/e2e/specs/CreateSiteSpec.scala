@@ -22,7 +22,7 @@ import org.scalatest.time.{Span, Seconds}
 import org.scalatest.DoNotDiscover
 import org.scalatest.Suites
 import test.e2e.code._
-
+/*
 
 /** Runs all create-site specs.
   * In Play:  test-only test.e2e.specs.AllCreateSiteSpecsRunner
@@ -167,4 +167,4 @@ abstract class CreateSiteSpecConstructor extends DebikiBrowserSpec with TestSite
   }
 
 }
-
+*/

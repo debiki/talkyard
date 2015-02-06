@@ -32,9 +32,9 @@ import test.e2e.specs._
  */
 @test.tags.EndToEndTest
 class EndToEndSuite extends Suites(
-  new CreateSiteSpec_Forum_GmailLogin,
-  new CreateSiteSpec_Forum_PasswordLogin,
-  new CreateSiteSpec_Forum_ReuseOldPasswordLogin,
+  //new CreateSiteSpec_Forum_GmailLogin,
+  //new CreateSiteSpec_Forum_PasswordLogin,
+  //new CreateSiteSpec_Forum_ReuseOldPasswordLogin,
   new PasswordSpec,
   new DeleteActivitySpec,
   //new AdminDashboardSpec, -- broken, I've totally rewritten the admin section

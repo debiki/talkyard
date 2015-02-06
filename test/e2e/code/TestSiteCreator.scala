@@ -84,6 +84,10 @@ trait TestSiteCreator extends TestLoginner {
   }
 
 
+  def clickChooseSiteType(siteType: Any) {
+    ???
+  }
+  /*
   def clickChooseSiteType(siteType: debiki.SiteCreator.NewSiteType) {
     click on "site-type"
     val siteTypeOptionId = siteType match {
@@ -99,7 +103,7 @@ trait TestSiteCreator extends TestLoginner {
     eventually {
       find("website-name") must be ('defined)
     }
-  }
+  } */
 
 
   def clickWelcomeLoginToDashboard(login: () => Unit, newSiteName: String) {
