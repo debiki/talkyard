@@ -20,6 +20,7 @@ package controllers
 import actions.ApiActions._
 import com.debiki.core._
 import debiki.TemplateRenderer
+import debiki.RateLimits
 import java.{util => ju}
 import play.api._
 import play.api.mvc.Result
@@ -43,20 +44,21 @@ object FullTextSearchController extends mvc.Controller {
   }
 
 
-  def searchWholeSite() = AsyncJsonOrFormDataPostAction(maxBytes = 200) {
-        apiReq: ApiRequest[JsonOrFormDataBody] =>
+  def searchWholeSite() = AsyncJsonOrFormDataPostAction(RateLimits.FullTextSearch,
+        maxBytes = 200) { apiReq: ApiRequest[JsonOrFormDataBody] =>
     val searchPhrase = apiReq.body.getOrThrowBadReq(SearchPhraseFieldName)
     searchImpl(searchPhrase, anyRootPageId = None, apiReq)
   }
 
 
   def searchSiteSectionFor(phrase: String, pageId: String) = AsyncGetAction { apiReq =>
+    debiki.RateLimiter.rateLimit(RateLimits.FullTextSearch, apiReq)
     searchImpl(phrase, anyRootPageId = Some(pageId), apiReq)
   }
 
 
-  def searchSiteSection(pageId: String) = AsyncJsonOrFormDataPostAction(maxBytes = 200) {
-        apiReq: ApiRequest[JsonOrFormDataBody] =>
+  def searchSiteSection(pageId: String) = AsyncJsonOrFormDataPostAction(
+        RateLimits.FullTextSearch, maxBytes = 200) { apiReq =>
     val searchPhrase = apiReq.body.getOrThrowBadReq(SearchPhraseFieldName)
     searchImpl(searchPhrase, anyRootPageId = Some(pageId), apiReq)
   }

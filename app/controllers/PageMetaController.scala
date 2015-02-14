@@ -40,9 +40,7 @@ object PageMetaController extends mvc.Controller {
   private case class NewPageMeta(pageId: String, newStatus: String)
 
 
-  def changeMeta = PostJsonAction(maxLength = 5000) { apiReq =>
-
-    SECURITY; BUG // I've forgotten user permisson control?
+  def changeMeta = AdminPostJsonAction(maxLength = 5000) { apiReq =>
 
     val changes: List[Map[String, String]] =
       apiReq.body.as[List[Map[String, String]]]

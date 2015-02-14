@@ -64,7 +64,7 @@ object MovePageController extends mvc.Controller {
   } */
 
 
-  def moveRenamePage = JsonOrFormDataPostAction(maxBytes = 500) {
+  def moveRenamePage = JsonOrFormDataPostAction(RateLimits.MoveRenamePage, maxBytes = 500) {
         implicit pageReq =>
 
     if (!pageReq.user_!.isAdmin) {
@@ -196,7 +196,7 @@ object MovePageController extends mvc.Controller {
    * @deprecated
    */
   def handleMovePageForm(pathIn: PagePath) =
-        PagePostAction(maxUrlEncFormBytes = 200)(pathIn) {
+        PagePostAction(RateLimits.MoveRenamePage, maxUrlEncFormBytes = 200)(pathIn) {
         pageReq: PagePostRequest =>
     val destFolder = pageReq.getOrThrowBadReq("to-folder")
     _moveRenamePostImpl(pageReq, newFolder = Some(destFolder))
@@ -204,7 +204,7 @@ object MovePageController extends mvc.Controller {
 
 
   def handleRenamePageSlugForm(pathIn: PagePath) =
-        PagePostAction(maxUrlEncFormBytes = 200)(pathIn) {
+        PagePostAction(RateLimits.MoveRenamePage, maxUrlEncFormBytes = 200)(pathIn) {
     pageReq: PagePostRequest =>
       val newSlug = pageReq.getOrThrowBadReq("new-slug")
       val showId = pageReq.getFirst("show-id") == Some("t")

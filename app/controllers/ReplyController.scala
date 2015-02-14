@@ -35,7 +35,8 @@ import requests._
 object ReplyController extends mvc.Controller {
 
 
-  def handleReply = PostJsonAction(maxLength = MaxPostSize) { request: JsonPostRequest =>
+  def handleReply = PostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
+        request: JsonPostRequest =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
     val anyPageUrl = (body \ "pageUrl").asOpt[String]

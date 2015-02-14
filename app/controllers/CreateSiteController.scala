@@ -49,7 +49,7 @@ object CreateSiteController extends mvc.Controller {
   }
 
 
-  def createSite = PostJsonAction(maxLength = 200) { request =>
+  def createSite = PostJsonAction(RateLimits.CreateSite, maxLength = 200) { request =>
     throwIfMayNotCreateWebsite(request)
 
     val acceptTermsAndPrivacy = (request.body \ "acceptTermsAndPrivacy").as[Boolean]

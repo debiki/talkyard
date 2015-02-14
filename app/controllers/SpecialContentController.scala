@@ -82,10 +82,7 @@ object SpecialContentController extends mvc.Controller {
     *   useDefaultText: Boolean
     *   anyCustomText
     */
-  def saveContent = PostJsonAction(maxLength = MaxPostSize) { request: JsonPostRequest =>
-    if (!request.theUser.isAdmin)
-      throwForbidden("DwE22ZF4", "Please login as admin")
-
+  def saveContent = AdminPostJsonAction(maxLength = MaxPostSize) { request: JsonPostRequest =>
     val rootPageId = (request.body \ "rootPageId").as[PageId]
     val contentId = (request.body \ "contentId").as[PageId]
     val pageId = s"$rootPageId$contentId"

@@ -125,6 +125,9 @@ object DebikiHttp {
   def throwEntityTooLarge(errCode: String, message: String) =
     throw ResultException(EntityTooLargeResult(errCode, message))
 
+  def throwTooManyRequests(message: String) =
+    throw ResultException(R.TooManyRequest(message))
+
   /** Happens e.g. if the user attempts to upvote his/her own comment or
     * vote twice on another comment.
     */

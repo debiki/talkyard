@@ -34,7 +34,7 @@ import play.api.libs.json.JsObject
 object PinController extends mvc.Controller {
 
 
-  def pinAtPosition = PostJsonAction(maxLength = 1000) { apiReq =>
+  def pinAtPosition = PostJsonAction(RateLimits.PinPost, maxLength = 1000) { apiReq =>
 
     val pageIdsAndActions: Seq[(PageId, RawPostAction[PAP.PinPostAtPosition])] =
       for (pinPostJson <- apiReq.body.as[Vector[JsObject]]) yield {
