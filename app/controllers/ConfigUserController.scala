@@ -39,7 +39,8 @@ object ConfigUserController extends mvc.Controller {
     * this endpoint. ForbiddenForever is only available via email login, that is,
     * for the actual owner of the email address.)
     */
-  def handleConfiguration = PostJsonAction(maxLength = 500) { request: JsonPostRequest =>
+  def handleConfiguration = PostJsonAction(RateLimits.ConfigUser, maxLength = 500) {
+        request: JsonPostRequest =>
 
     val body = request.body
     val userId = (body \ "userId").as[UserId]

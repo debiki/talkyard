@@ -23,6 +23,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import debiki.dao.SiteDao
+import debiki.RateLimits.NoRateLimits
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
@@ -45,11 +46,12 @@ object PageActions {
    * proxy servers, e.g. static JS and CSS. (Otherwise silly serveres
    * might serve the same cached XSRF cookie to everyone.)
    */
+  @deprecated("Stop using /path/to/page?action paths", "now")
   def PageGetAction
         (pathIn: PagePath, pageMustExist: Boolean = true, fixPath: Boolean = true,
          maySetCookies: Boolean = true)
         (f: PageGetRequest => Result) =
-    PageReqAction(BodyParsers.parse.empty)(
+    PageReqAction(NoRateLimits, BodyParsers.parse.empty)(
       pathIn, pageMustExist, fixPath = fixPath, maySetCookies = maySetCookies)(f)
 
 
@@ -57,17 +59,18 @@ object PageActions {
    * Supports form data only.
    * @deprecated
    */
+  @deprecated("Stop using /path/to/page?action paths", "now")
   def PagePostAction
-        (maxUrlEncFormBytes: Int)
+        (rateLimitsType: RateLimits, maxUrlEncFormBytes: Int)
         (pathIn: PagePath, pageMustExist: Boolean = true, fixPath: Boolean = true)
         (f: PagePostRequest => Result) =
     PageReqAction(
-      BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(
+      rateLimitsType, BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(
       pathIn, pageMustExist, fixPath = fixPath)(f)
 
 
   def PageReqAction[A]
-        (parser: BodyParser[A])
+        (rateLimitsType: RateLimits, parser: BodyParser[A])
         (pathIn: PagePath, pageMustExist: Boolean, fixPath: Boolean,
          maySetCookies: Boolean = true)
         (f: PageRequest[A] => Result)
@@ -112,6 +115,8 @@ object PageActions {
       dao = dao,
       request = request)
 
+    RateLimiter.rateLimit(rateLimitsType, pageReq)
+
     val result = f(pageReq)
     result
   }
@@ -123,6 +128,7 @@ object PageActions {
    * or looks up a page id and finds out that the page
    * has been moved.
    */
+  @deprecated("Stop using /path/to/page?action paths", "now")
   def CheckPathActionNoBody
         (pathIn: PagePath)
         (f: (SidStatus, XsrfOk, Option[BrowserId], Option[PagePath], SiteDao,
@@ -130,6 +136,7 @@ object PageActions {
     CheckPathAction(BodyParsers.parse.empty)(pathIn)(f)
 
 
+  @deprecated("Stop using /path/to/page?action paths", "now")
   def CheckPathAction[A]
         (parser: BodyParser[A])
         (pathIn: PagePath, maySetCookies: Boolean = true, fixPath: Boolean = true)

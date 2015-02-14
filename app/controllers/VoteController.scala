@@ -41,7 +41,7 @@ object VoteController extends mvc.Controller {
     *   action: "CreateVote"  # or "DeleteVote"
     *   postIdsRead: [1, 9, 53, 82]
     */
-  def handleVotes = PostJsonAction(maxLength = 500) { request: JsonPostRequest =>
+  def handleVotes = PostJsonAction(RateLimits.RatePost, maxLength = 500) { request: JsonPostRequest =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
     val postId = (body \ "postId").as[PostId]

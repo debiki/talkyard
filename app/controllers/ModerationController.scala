@@ -41,44 +41,42 @@ object ModerationController extends mvc.Controller {
   val PostTextLengthLimit = 500
 
 
-  def approve = PostJsonAction(maxLength = 5000) { apiReq =>
-    review2(apiReq, PAP.ApprovePost(Approval.AuthoritativeUser),
-      (perms) => apiReq.theUser.isAdmin)
+  def approve = AdminPostJsonAction(maxLength = 5000) { apiReq =>
+    review2(apiReq, PAP.ApprovePost(Approval.AuthoritativeUser))
   }
 
 
-  def hideNewPostSendPm = PostJsonAction(maxLength = 5000) { apiReq =>
+  def hideNewPostSendPm = AdminPostJsonAction(maxLength = 5000) { apiReq =>
     ???
   }
 
 
-  def hideFlaggedPostSendPm = PostJsonAction(maxLength = 5000) { apiReq =>
-    review2(apiReq, PAP.HidePostClearFlags, (perms) => apiReq.theUser.isAdmin)
+  def hideFlaggedPostSendPm = AdminPostJsonAction(maxLength = 5000) { apiReq =>
+    review2(apiReq, PAP.HidePostClearFlags)
   }
 
 
-  def deletePost = PostJsonAction(maxLength = 5000) { apiReq =>
-    review2(apiReq, PAP.DeletePost(clearFlags = false), (perms) => apiReq.theUser.isAdmin)
+  def deletePost = AdminPostJsonAction(maxLength = 5000) { apiReq =>
+    review2(apiReq, PAP.DeletePost(clearFlags = false))
   }
 
 
-  def deleteFlaggedPost = PostJsonAction(maxLength = 5000) { apiReq =>
-    review2(apiReq, PAP.DeletePost(clearFlags = true), (perms) => apiReq.theUser.isAdmin)
+  def deleteFlaggedPost = AdminPostJsonAction(maxLength = 5000) { apiReq =>
+    review2(apiReq, PAP.DeletePost(clearFlags = true))
   }
 
 
-  def clearFlags = PostJsonAction(maxLength = 5000) { apiReq =>
-    review2(apiReq, PAP.ClearFlags, (perms) => apiReq.theUser.isAdmin)
+  def clearFlags = AdminPostJsonAction(maxLength = 5000) { apiReq =>
+    review2(apiReq, PAP.ClearFlags)
   }
 
 
-  def rejectEdits = PostJsonAction(maxLength = 5000) { apiReq =>
-    review2(apiReq, PAP.RejectEdits(deleteEdits = false), (perms) => apiReq.theUser.isAdmin)
+  def rejectEdits = AdminPostJsonAction(maxLength = 5000) { apiReq =>
+    review2(apiReq, PAP.RejectEdits(deleteEdits = false))
   }
 
 
-  private def review2[A](apiReq: JsonPostRequest, payload: A, permsTest: (PermsOnPage) => Boolean)
-        : mvc.Result = {
+  private def review2[A](apiReq: JsonPostRequest, payload: A): mvc.Result = {
     val pageIdsAndActions: Seq[(PageId, RawPostAction[A])] =
       for (postIdJson <- apiReq.body.as[Vector[JsObject]]) yield {
         val pageId = (postIdJson \ "pageId").as[PageId]
@@ -90,10 +88,6 @@ object ModerationController extends mvc.Controller {
       }
 
     pageIdsAndActions.groupedByPageId foreach { case (pageId, actions) =>
-      val permsOnPage = apiReq.dao.loadPermsOnPage(apiReq, pageId)
-      if (!permsTest(permsOnPage))
-        throwForbidden("DwE95Xf2", s"Insufficient permissions, payload: ${classNameOf(payload)}")
-
       require(actions.length == 1, "Id assignment assumes only one action per page [DwE70UF8]")
       apiReq.dao.savePageActionsGenNotfs(pageId, actions, apiReq.meAsPeople_!)
     }

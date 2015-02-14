@@ -35,17 +35,17 @@ import Utils.ValidationImplicits._
 object CloseCollapseController extends mvc.Controller {
 
 
-  def collapsePost = PostJsonAction(maxLength = 5000) { apiReq =>
+  def collapsePost = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 5000) { apiReq =>
     closeOrReopenTree(apiReq, PostActionPayload.CollapsePost)
   }
 
 
-  def collapseTree = PostJsonAction(maxLength = 5000) { apiReq =>
+  def collapseTree = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 5000) { apiReq =>
     closeOrReopenTree(apiReq, PostActionPayload.CollapseTree)
   }
 
 
-  def closeTree = PostJsonAction(maxLength = 5000) { apiReq =>
+  def closeTree = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 5000) { apiReq =>
     closeOrReopenTree(apiReq, PostActionPayload.CloseTree)
   }
 

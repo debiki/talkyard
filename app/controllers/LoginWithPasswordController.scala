@@ -43,7 +43,7 @@ object LoginWithPasswordController extends mvc.Controller {
   private val MaxAddressVerificationEmailAgeInHours = 25
 
 
-  def login = JsonOrFormDataPostAction(maxBytes = 1000) { request =>
+  def login = JsonOrFormDataPostAction(RateLimits.Login, maxBytes = 1000) { request =>
     val email = request.body.getOrThrowBadReq("email")
     val password = request.body.getOrThrowBadReq("password")
     val anyReturnToUrl = request.body.getFirst("returnToUrl")
@@ -89,7 +89,8 @@ object LoginWithPasswordController extends mvc.Controller {
   }
 
 
-  def handleCreateUserDialog = PostJsonAction(maxLength = 1000) { request: JsonPostRequest =>
+  def handleCreateUserDialog = PostJsonAction(RateLimits.CreateUser, maxLength = 1000) {
+        request: JsonPostRequest =>
     val body = request.body
     val name = (body \ "name").as[String]
     val emailAddress = (body \ "email").as[String]

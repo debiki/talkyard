@@ -27,6 +27,7 @@ import com.mohiva.play.silhouette.core.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.core.providers.oauth2._
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.core.{exceptions => siex}
+import debiki.RateLimits
 import debiki.DebikiHttp._
 import java.{util => ju}
 import org.scalactic.{Good, Bad}
@@ -301,7 +302,8 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  def handleCreateUserDialog = PostJsonAction(maxLength = 1000) { request: JsonPostRequest =>
+  def handleCreateUserDialog = PostJsonAction(RateLimits.CreateUser, maxLength = 1000) {
+        request: JsonPostRequest =>
     val body = request.body
 
     val name = (body \ "name").as[String]

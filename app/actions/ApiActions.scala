@@ -22,6 +22,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
+import debiki.RateLimits.NoRateLimits
 import java.{util => ju}
 import play.api._
 import play.api.libs.json.JsValue
@@ -39,10 +40,10 @@ object ApiActions {
 
 
   def AsyncGetAction(f: GetRequest => Future[Result]): mvc.Action[Unit] =
-    PlainApiAction.async(BodyParsers.parse.empty)(f)
+    PlainApiAction(NoRateLimits).async(BodyParsers.parse.empty)(f)
 
   def GetAction(f: GetRequest => Result) =
-    PlainApiAction(BodyParsers.parse.empty)(f)
+    PlainApiAction(NoRateLimits)(BodyParsers.parse.empty)(f)
 
 
   def AdminGetAction(f: GetRequest => Result) =
@@ -50,25 +51,25 @@ object ApiActions {
 
 
   def JsonOrFormDataPostAction
-        (maxBytes: Int)
+        (rateLimits: RateLimits, maxBytes: Int)
         (f: ApiRequest[JsonOrFormDataBody] => Result) =
-    PlainApiAction(
+    PlainApiAction(rateLimits)(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
 
   def AsyncJsonOrFormDataPostAction
-        (maxBytes: Int)
+        (rateLimits: RateLimits, maxBytes: Int)
         (f: ApiRequest[JsonOrFormDataBody] => Future[Result]): mvc.Action[JsonOrFormDataBody] =
-    PlainApiAction.async(
+    PlainApiAction(rateLimits).async(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
   /**
    * @deprecated Use ApiRequest[JsonOrFormDataBody] instead
    */
   def PostFormDataAction
-        (maxUrlEncFormBytes: Int)
+        (rateLimits: RateLimits, maxUrlEncFormBytes: Int)
         (f: FormDataPostRequest => Result) =
-    PlainApiAction(
+    PlainApiAction(rateLimits)(
       BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(f)
 
 
@@ -78,9 +79,9 @@ object ApiActions {
    * use this function.
    */
   def PostJsonAction
-        (maxLength: Int)
+        (rateLimits: RateLimits, maxLength: Int)
         (f: JsonPostRequest => Result) =
-    PlainApiAction(
+    PlainApiAction(rateLimits)(
       BodyParsers.parse.json(maxLength = maxLength))(f)
 
 
@@ -91,11 +92,14 @@ object ApiActions {
       BodyParsers.parse.json(maxLength = maxLength))(f)
 
 
-  private val PlainApiAction = PlainApiActionImpl(adminOnly = false)
-  private val PlainApiActionAdminOnly = PlainApiActionImpl(adminOnly = true)
+  private def PlainApiAction(rateLimits: RateLimits) =
+    PlainApiActionImpl(rateLimits, adminOnly = false)
+
+  private val PlainApiActionAdminOnly = PlainApiActionImpl(NoRateLimits, adminOnly = true)
 
 
-  private def PlainApiActionImpl(adminOnly: Boolean) = new ActionBuilder[ApiRequest] {
+  private def PlainApiActionImpl(rateLimits: RateLimits, adminOnly: Boolean) =
+      new ActionBuilder[ApiRequest] {
 
     override def composeAction[A](action: Action[A]) = {
       SessionAction.async(action.parser) { request: Request[A] =>
@@ -121,6 +125,8 @@ object ApiActions {
 
       val apiRequest = ApiRequest[A](
         request.sidStatus, request.xsrfOk, request.browserId, user, dao, request)
+
+      RateLimiter.rateLimit(rateLimits, apiRequest)
 
       val result = block(apiRequest)
       result

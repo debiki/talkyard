@@ -55,7 +55,7 @@ object EditHistoryController extends mvc.Controller {
   }
 
 
-  def handleForm(pageId: PageId) = PostFormDataAction(MaxPostSize) {
+  def handleForm(pageId: PageId) = PostFormDataAction(RateLimits.EditPost, MaxPostSize) {
         request: FormDataPostRequest =>
 
     val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(

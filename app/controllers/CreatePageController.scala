@@ -32,7 +32,7 @@ import Utils._
 object CreatePageController extends mvc.Controller {
 
 
-  def createPage = PostJsonAction(maxLength = 20 * 1000) { request =>
+  def createPage = PostJsonAction(RateLimits.CreateTopic, maxLength = 20 * 1000) { request =>
     import request.{dao, body}
 
     val anyParentPageId = (body \ "parentPageId").asOpt[PageId]

@@ -39,7 +39,7 @@ import Utils.{OkHtml, OkXml}
 object Application extends mvc.Controller {
 
 
-  def flag = PostJsonAction(maxLength = 2000) { request =>
+  def flag = PostJsonAction(RateLimits.FlagPost, maxLength = 2000) { request =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
     val postId = (body \ "postId").as[PostId]
@@ -77,7 +77,7 @@ object Application extends mvc.Controller {
 
 
   def handleDeleteForm(pathIn: PagePath, postId: ActionId)
-        = PagePostAction(MaxDetailsSize)(pathIn) { pageReq =>
+        = PagePostAction(RateLimits.DeletePost, MaxDetailsSize)(pathIn) { pageReq =>
 
     import HtmlForms.Delete.{InputNames => Inp}
     val wholeTree = "t" == pageReq.getNoneAsEmpty(Inp.DeleteTree).

@@ -60,6 +60,7 @@ object ApplicationBuild extends Build {
     // "com.twitter" %% "ostrich" % "4.10.6",
     "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
     "org.scalatest" %% "scalatest" % "2.2.0" % "test", // but prefer ScalaTest
+    "org.scalatestplus" %% "play" % "1.2.0" % "test",
     // Use a recent Selenium driver, otherwise it won't work with the version of Firefox,
     // that your OS has probably upgraded to some days/months ago.
     // See: http://stackoverflow.com/a/13049150/694469

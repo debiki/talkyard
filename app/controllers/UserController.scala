@@ -73,7 +73,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def savePageNotfLevel = PostJsonAction(maxLength = 500) { request =>
+  def savePageNotfLevel = PostJsonAction(RateLimits.ConfigUser, maxLength = 500) { request =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
     val newNotfLevelStr = (body \ "pageNotfLevel").as[String]
@@ -105,7 +105,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def saveUserPreferences = PostJsonAction(maxLength = 1000) { request =>
+  def saveUserPreferences = PostJsonAction(RateLimits.ConfigUser, maxLength = 1000) { request =>
     val prefs = userPrefsFromJson(request.body)
     checkUserPrefsAccess(request, prefs.userId)
 

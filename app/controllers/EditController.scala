@@ -57,7 +57,8 @@ object EditController extends mvc.Controller {
 
   /** Edits posts.
     */
-  def edit = PostJsonAction(maxLength = MaxPostSize) { request: JsonPostRequest =>
+  def edit = PostJsonAction(RateLimits.EditPost, maxLength = MaxPostSize) {
+        request: JsonPostRequest =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postId = (request.body \ "postId").as[PostId]
     val newText = (request.body \ "text").as[String]

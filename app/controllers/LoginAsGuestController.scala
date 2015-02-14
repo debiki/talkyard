@@ -34,7 +34,7 @@ import play.api.libs.json.JsObject
 object LoginAsGuestController extends mvc.Controller {
 
 
-  def loginGuest = PostJsonAction(maxLength = 1000) { request =>
+  def loginGuest = PostJsonAction(RateLimits.Login, maxLength = 1000) { request =>
     val json = request.body.as[JsObject]
     val name = (json \ "name").as[String]
     val email = (json \ "email").as[String]
