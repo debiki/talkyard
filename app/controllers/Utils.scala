@@ -30,6 +30,7 @@ import play.api.data._
 import play.api.data.Forms._
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action => _, _}
+import play.api.Play.current
 import requests._
 
 
@@ -65,6 +66,12 @@ object Utils extends Results with http.ContentTypes {
   }
 
 
+  /** Gatling doesn't understand this prefix */
+  private val safeJsonPrefix =
+    if (Play.configuration.getBoolean("debiki.addSafeJsonPrefix") == Some(false)) ""
+    else ")]}',\n"
+
+
   /**
    * Prefixes the JSON string with characters that prevents the JSON
    * from being parsed as Javascript from a <script> tag.
@@ -80,7 +87,7 @@ object Utils extends Results with http.ContentTypes {
    * parsing the JSON.
    */
   def OkSafeJson(json: JsValue) =
-    Ok(")]}',\n" + json.toString) as JSON
+    Ok(safeJsonPrefix + json.toString) as JSON
 
 
   /**
