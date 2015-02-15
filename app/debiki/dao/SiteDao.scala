@@ -43,7 +43,7 @@ object SiteDaoFactory {
 
     def newSiteDao(quotaConsumers: QuotaConsumers): SiteDao = {
       val siteDbDao = _dbDaoFactory.newSiteDbDao(quotaConsumers)
-      val chargingDbDao = new ChargingSiteDbDao(siteDbDao, _quotaCharger)
+      val chargingDbDao = new ChargingBlockingSiteDbDao(siteDbDao, _quotaCharger)
       new NonCachingSiteDao(chargingDbDao)
     }
   }

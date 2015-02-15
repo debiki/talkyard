@@ -34,14 +34,14 @@ class CachingSiteDaoFactory(
 
   def newSiteDao(quotaConsumers: QuotaConsumers): SiteDao = {
     val dbDao = _dbDaoFactory.newSiteDbDao(quotaConsumers)
-    val chargingDbDao = new ChargingSiteDbDao(dbDao, _quotaCharger)
+    val chargingDbDao = new ChargingBlockingSiteDbDao(dbDao, _quotaCharger)
     new CachingSiteDao(chargingDbDao)
   }
 
 }
 
 
-class CachingSiteDao(val siteDbDao: ChargingSiteDbDao)
+class CachingSiteDao(val siteDbDao: ChargingBlockingSiteDbDao)
   extends SiteDao
   with CachingDao
   with CachingAssetBundleDao

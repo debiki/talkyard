@@ -431,6 +431,9 @@ abstract class SystemDbDao {
 
 /**
  * Charges the tenants with some quota for each db request.
+ * Serializes write requests, per site: when one write request to site X is being served,
+ * any other write requests block, for site X. I'll change this later to use actors and
+ * asynchronous requests, so whole HTTP request handling threads won't be blocked.
  *
  * Note: Verify quota is OK *before* writing anything to db. Otherwise
  * it'd be possible to start and rollback (when over quota) transactions,
@@ -447,7 +450,7 @@ abstract class SystemDbDao {
  * then it could be moved to debiki-server, and the config classes
  * would be placed here in debiki-core?))
  */
-class ChargingSiteDbDao(
+class ChargingBlockingSiteDbDao(
   private val _spi: SiteDbDao,
   protected val _quotaCharger: QuotaCharger)
   extends SiteDbDao {
@@ -509,13 +512,17 @@ class ChargingSiteDbDao(
 
   def updateSite(changedSite: Tenant) = {
     _chargeForOneWriteReq()
-    _spi.updateSite(changedSite)
+    serialize {
+      _spi.updateSite(changedSite)
+    }
   }
 
   def addTenantHost(host: TenantHost) = {
     // SHOULD hard code max num hosts, e.g. 10.
     _chargeForOneWriteReq()
-    _spi.addTenantHost(host)
+    serialize {
+      _spi.addTenantHost(host)
+    }
   }
 
   def lookupOtherTenant(scheme: String, host: String): TenantLookup = {
@@ -528,7 +535,10 @@ class ChargingSiteDbDao(
 
   def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult = {
     _ensureHasQuotaFor(ResUsg.forStoring(loginAttempt), mayPilfer = false)
-    val result = _spi.loginAsGuest(loginAttempt)
+    val result =
+      serialize {
+        _spi.loginAsGuest(loginAttempt)
+      }
     if (result.isNewUser) {
       _chargeFor(ResUsg.forStoring(user = result.user))
     }
@@ -562,12 +572,16 @@ class ChargingSiteDbDao(
 
   def nextPageId(): PageId = {
     _chargeForOneWriteReq()
-    _spi.nextPageId()
+    serialize {
+      _spi.nextPageId()
+    }
   }
 
   def createPage(page: Page): Page = {
     _chargeFor(ResUsg.forStoring(page = page.parts))
-    _spi.createPage(page)
+    serialize {
+      _spi.createPage(page)
+    }
   }
 
   def loadPageMeta(pageId: PageId): Option[PageMeta] = {
@@ -581,8 +595,10 @@ class ChargingSiteDbDao(
   }
 
   def updatePageMeta(meta: PageMeta, old: PageMeta) {
-    _chargeForOneReadReq()
-    _spi.updatePageMeta(meta, old = old)
+    _chargeForOneWriteReq()
+    serialize {
+      _spi.updatePageMeta(meta, old = old)
+    }
   }
 
   def loadAncestorIdsParentFirst(pageId: PageId): List[PageId] = {
@@ -597,7 +613,9 @@ class ChargingSiteDbDao(
 
   def saveSetting(target: SettingsTarget, setting: SettingNameValue[_]) {
     _chargeForOneWriteReq()
-    _spi.saveSetting(target, setting)
+    serialize {
+      _spi.saveSetting(target, setting)
+    }
   }
 
   def loadSettings(targets: Seq[SettingsTarget]): Seq[RawSettings] = {
@@ -665,19 +683,25 @@ class ChargingSiteDbDao(
   def doSavePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
         : (PageNoPath, List[RawPostAction[_]]) = {
     _chargeFor(ResUsg.forStoring(actions = actions))
-    _spi.doSavePageActions(page, actions)
+    serialize {
+      _spi.doSavePageActions(page, actions)
+    }
   }
 
   def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
         voteType: PostActionPayload.Vote) {
     _chargeForOneWriteReq()
-    _spi.deleteVote(userIdData, pageId, postId, voteType)
+    serialize {
+      _spi.deleteVote(userIdData, pageId, postId, voteType)
+    }
   }
 
   def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId],
         actionMakingThemRead: RawPostAction[_]) {
     _chargeForOneWriteReq()
-    _spi.updatePostsReadStats(pageId, postIdsRead, actionMakingThemRead)
+    serialize {
+      _spi.updatePostsReadStats(pageId, postIdsRead, actionMakingThemRead)
+    }
   }
 
   def loadPostsReadStats(pageId: PageId): PostsReadStats = {
@@ -722,19 +746,25 @@ class ChargingSiteDbDao(
   def createUserAndLogin(newUserData: NewUserData): LoginGrant = {
     val resUsg = ResourceUse(numIdsAu = 1, numRoles = 1)
     _chargeFor(resUsg, mayPilfer = false)
-    _spi.createUserAndLogin(newUserData)
+    serialize {
+      _spi.createUserAndLogin(newUserData)
+    }
   }
 
 
   def createPasswordUser(userData: NewPasswordUserData): User = {
     val resUsg = ResourceUse(numRoles = 1)
     _chargeFor(resUsg, mayPilfer = false)
-    _spi.createPasswordUser(userData)
+    serialize {
+      _spi.createPasswordUser(userData)
+    }
   }
 
   def changePassword(user: User, newPasswordSaltHash: String): Boolean = {
     _chargeForOneWriteReq(mayPilfer = true)
-    _spi.changePassword(user, newPasswordSaltHash)
+    serialize {
+      _spi.changePassword(user, newPasswordSaltHash)
+    }
   }
 
   def loadUser(userId: UserId): Option[User] = {
@@ -790,7 +820,9 @@ class ChargingSiteDbDao(
 
   def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings) = {
     _chargeForOneWriteReq()
-    _spi.saveRolePageSettings(roleId = roleId, pageId = pageId, settings)
+    serialize {
+      _spi.saveRolePageSettings(roleId = roleId, pageId = pageId, settings)
+    }
   }
 
   def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId] = {
@@ -805,7 +837,9 @@ class ChargingSiteDbDao(
 
   def saveRolePreferences(preferences: UserPreferences) {
     _chargeForOneWriteReq()
-    _spi.saveRolePreferences(preferences)
+    serialize {
+      _spi.saveRolePreferences(preferences)
+    }
   }
 
 
@@ -813,7 +847,9 @@ class ChargingSiteDbDao(
 
   def saveDeleteNotifications(notifications: Notifications) {
     _chargeForOneWriteReq()
-    _spi.saveDeleteNotifications(notifications)
+    serialize {
+      _spi.saveDeleteNotifications(notifications)
+    }
   }
 
   def loadNotificationsForRole(roleId: RoleId): Seq[Notification] = {
@@ -823,7 +859,9 @@ class ChargingSiteDbDao(
 
   def updateNotificationSkipEmail(notifications: Seq[Notification]) {
     _chargeForOneWriteReq()
-    _spi.updateNotificationSkipEmail(notifications)
+    serialize {
+      _spi.updateNotificationSkipEmail(notifications)
+    }
   }
 
 
@@ -831,17 +869,23 @@ class ChargingSiteDbDao(
 
   def saveUnsentEmail(email: Email): Unit = {
     _chargeFor(ResUsg.forStoring(email = email))
-    _spi.saveUnsentEmail(email)
+    serialize {
+      _spi.saveUnsentEmail(email)
+    }
   }
 
   def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]) {
     _chargeFor(ResUsg.forStoring(email = email))
-    _spi.saveUnsentEmailConnectToNotfs(email, notfs)
+    serialize {
+      _spi.saveUnsentEmailConnectToNotfs(email, notfs)
+    }
   }
 
   def updateSentEmail(email: Email): Unit = {
     _chargeForOneWriteReq()
-    _spi.updateSentEmail(email)
+    serialize {
+      _spi.updateSentEmail(email)
+    }
   }
 
   def loadEmailById(emailId: String): Option[Email] = {
@@ -861,15 +905,19 @@ class ChargingSiteDbDao(
     // And don't care about whether or not quotaConsumers.role.id == roleId. ?
     // But for now:
     _chargeForOneWriteReq()
-    _spi.configRole(roleId = roleId,
-      emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner,
-      emailVerifiedAt = emailVerifiedAt)
+    serialize {
+      _spi.configRole(roleId = roleId,
+        emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner,
+        emailVerifiedAt = emailVerifiedAt)
+    }
   }
 
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) = {
     _chargeForOneWriteReq()
-    _spi.configIdtySimple(
-      ctime = ctime, emailAddr = emailAddr, emailNotfPrefs = emailNotfPrefs)
+    serialize {
+      _spi.configIdtySimple(
+        ctime = ctime, emailAddr = emailAddr, emailNotfPrefs = emailNotfPrefs)
+    }
   }
 
 
@@ -883,8 +931,31 @@ class ChargingSiteDbDao(
 
   def debugUnindexPosts(pageAndPostIds: PagePostId*) {
     // Charge nothing; this is for test suites only.
-    _spi.debugUnindexPosts(pageAndPostIds: _*)
+    serialize {
+      _spi.debugUnindexPosts(pageAndPostIds: _*)
+    }
   }
+
+
+  private def serialize[R](block: =>R): R = {
+    import ChargingBlockingSiteDbDao._
+    var anyMutex = perSiteMutexes.get(siteId)
+    if (anyMutex eq null) {
+      perSiteMutexes.putIfAbsent(siteId, new java.lang.Object)
+      anyMutex = perSiteMutexes.get(siteId)
+    }
+    anyMutex.synchronized {
+      block
+    }
+  }
+
+}
+
+
+object ChargingBlockingSiteDbDao {
+
+  private val perSiteMutexes = new ju.concurrent.ConcurrentHashMap[SiteId, AnyRef]()
+
 }
 
 
