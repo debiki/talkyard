@@ -68,7 +68,7 @@ object LoginAsGuestController extends mvc.Controller {
       location = "",
       website = url)
 
-    val guestUser = Globals.siteDao(tenantId, ip = addr).loginAsGuest(loginAttempt)
+    val guestUser = Globals.siteDao(tenantId).loginAsGuest(loginAttempt)
 
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(guestUser)
 

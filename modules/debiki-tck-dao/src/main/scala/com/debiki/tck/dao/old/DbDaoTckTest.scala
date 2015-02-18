@@ -135,8 +135,8 @@ abstract class DbDaoChildSpec(
     _ctx = newTestContext
   }
 
-  def newTenantDbDao(quotaConsumers: QuotaConsumers) =
-    ctx.dbDaoFactory.newSiteDbDao(quotaConsumers)
+  def newTenantDbDao(siteId: SiteId) =
+    ctx.dbDaoFactory.newSiteDbDao(siteId)
 
   def systemDbDao = ctx.dbDaoFactory.systemDbDao
 
@@ -256,7 +256,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     var guestUser: User = null
 
     val defaultTenantId = Site.FirstSiteId
-    lazy val dao = newTenantDbDao(QuotaConsumers(tenantId = defaultTenantId))
+    lazy val dao = newTenantDbDao(defaultTenantId)
 
     lazy val defaultPagePath = PagePath(defaultTenantId, "/folder/",
       None, false, "page-title")
@@ -2467,7 +2467,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
          TenantHost.HttpsNone)
 
       def newWebsiteDao() =
-        newTenantDbDao(QuotaConsumers(tenantId = newWebsiteOpt.id))
+        newTenantDbDao(newWebsiteOpt.id)
 
       var homepageId = "?"
 
@@ -2597,7 +2597,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
 
 
-    // -------- Qutoa
+    /* -------- Qutoa
 
     "manage quota" >> {
 
@@ -2826,7 +2826,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
            Some(resultingStateFirstLast)
       }
 
-    }
+    } */
 
 
     // -------------

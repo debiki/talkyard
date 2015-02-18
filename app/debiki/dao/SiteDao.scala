@@ -27,7 +27,7 @@ import scala.concurrent.Future
 
 
 abstract class SiteDaoFactory {
-  def newSiteDao(quotaConsumers: QuotaConsumers): SiteDao
+  def newSiteDao(siteId: SiteId): SiteDao
 }
 
 
@@ -36,15 +36,13 @@ object SiteDaoFactory {
 
   /** Creates a non-caching SiteDaoFactory.
     */
-  def apply(dbDaoFactory: DbDaoFactory, quotaCharger: QuotaCharger)
-        = new SiteDaoFactory {
+  def apply(dbDaoFactory: DbDaoFactory) = new SiteDaoFactory {
     private val _dbDaoFactory = dbDaoFactory
-    private val _quotaCharger = quotaCharger
 
-    def newSiteDao(quotaConsumers: QuotaConsumers): SiteDao = {
-      val siteDbDao = _dbDaoFactory.newSiteDbDao(quotaConsumers)
-      val chargingDbDao = new ChargingBlockingSiteDbDao(siteDbDao, _quotaCharger)
-      new NonCachingSiteDao(chargingDbDao)
+    def newSiteDao(siteId: SiteId): SiteDao = {
+      val siteDbDao = _dbDaoFactory.newSiteDbDao(siteId)
+      val serializingDbDao = new SerializingSiteDbDao(siteDbDao)
+      new NonCachingSiteDao(serializingDbDao)
     }
   }
 
@@ -69,8 +67,6 @@ abstract class SiteDao
   with PageSummaryDao
   with RenderedPageHtmlDao
   with UserDao {
-
-  def quotaConsumers = siteDbDao.quotaConsumers
 
   def siteDbDao: SiteDbDao
 

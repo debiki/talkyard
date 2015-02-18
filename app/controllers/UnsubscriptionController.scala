@@ -81,7 +81,7 @@ object UnsubscriptionController extends mvc.Controller {
     val loginAttempt = EmailLoginAttempt(
        ip = realOrFakeIpOf(request), date = new ju.Date, emailId = emailId)
 
-    val dao = Globals.siteDao(tenantId, ip = realOrFakeIpOf(request))
+    val dao = Globals.siteDao(tenantId)
 
     val loginGrant =
       try dao.tryLogin(loginAttempt)

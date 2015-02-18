@@ -21,7 +21,6 @@ import akka.actor._
 import akka.pattern.gracefulStop
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.core.QuotaConsumers
 import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
 import debiki.dao.{SystemDao, SiteDao, CachingSiteDaoFactory, CachingSystemDao}
 //import com.twitter.ostrich.stats.Stats
@@ -64,9 +63,8 @@ class Globals {
   def systemDao = state.systemDao
 
 
-  def siteDao(siteId: SiteId, ip: String, roleId: Option[RoleId] = None): SiteDao =
-    state.siteDaoFactory.newSiteDao(
-      QuotaConsumers(ip = Some(ip), tenantId = siteId, roleId = roleId))
+  def siteDao(siteId: SiteId): SiteDao =
+    state.siteDaoFactory.newSiteDao(siteId)
 
 
   def sendEmail(email: Email, websiteId: String) {
@@ -100,7 +98,6 @@ class Globals {
 
     _state = new State
     state.systemDao.applyEvolutions()
-    state.quotaManager.scheduleCleanups()
 
     debiki.ReactRenderer.startCreatingRenderEngines()
 
@@ -155,9 +152,7 @@ class Globals {
       makeDataSource(), Akka.system, debiki.ReactRenderer, anyFullTextSearchDbPath, Play.isTest,
       fastStartSkipSearch = fastStartSkipSearch)
 
-    val quotaManager = new QuotaManager(Akka.system, systemDao, freeDollarsToEachNewSite)
-
-    val siteDaoFactory = new CachingSiteDaoFactory(dbDaoFactory, quotaManager.QuotaChargerImpl)
+    val siteDaoFactory = new CachingSiteDaoFactory(dbDaoFactory)
 
     val mailerActorRef = Mailer.startNewActor(Akka.system, siteDaoFactory)
 
@@ -170,12 +165,6 @@ class Globals {
 
     private def anyFullTextSearchDbPath =
       Play.configuration.getString("fullTextSearchDb.dataPath")
-
-    private def freeDollarsToEachNewSite: Float =
-      Play.configuration.getDouble("new.site.freeDollars")map(_.toFloat) getOrElse {
-        // Don't run out of quota when running e2e tests.
-        if (Play.isTest) 1000.0f else 1.0f
-      }
 
     val baseDomain: String =
       if (Play.isTest) {

@@ -49,7 +49,7 @@ object LoginWithPasswordController extends mvc.Controller {
     val anyReturnToUrl = request.body.getFirst("returnToUrl")
 
     val siteId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
-    val dao = Globals.siteDao(siteId, ip = request.ip)
+    val dao = Globals.siteDao(siteId)
 
     val cookies = doLogin(request, dao, email, password)
 

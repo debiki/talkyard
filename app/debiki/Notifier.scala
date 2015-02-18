@@ -93,7 +93,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     }{
       logger.debug(s"Sending ${userNotfs.size} notifications to user $userId, site $siteId...")
 
-      val siteDao = siteDaoFactory.newSiteDao(QuotaConsumers(tenantId = siteId))
+      val siteDao = siteDaoFactory.newSiteDao(siteId)
 
       /* COULD batch load all users at once via systemDao.loadUsers().
       val userIdsBySiteId: Map[String, List[SiteId]] =

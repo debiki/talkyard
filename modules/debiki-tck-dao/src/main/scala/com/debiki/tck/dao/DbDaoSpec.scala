@@ -31,11 +31,8 @@ class DbDaoSpec(
   extends FreeSpec with MustMatchers with BeforeAndAfterAll {
 
 
-  def newSiteDao(quotaConsumers: QuotaConsumers) =
-    daoFactory.newSiteDbDao(quotaConsumers)
-
   def newSiteDao(siteId: SiteId) =
-    daoFactory.newSiteDbDao(QuotaConsumers(tenantId = siteId))
+    daoFactory.newSiteDbDao(siteId)
 
 
   def systemDao = daoFactory.systemDbDao

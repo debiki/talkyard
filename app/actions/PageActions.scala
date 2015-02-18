@@ -143,8 +143,7 @@ object PageActions {
         (f: (SidStatus, XsrfOk, Option[BrowserId], Option[PagePath], SiteDao, Request[A]) =>
            Result) =
     SessionActionMaybeCookies(maySetCookies)(parser) { request: SessionRequest[A] =>
-      val dao = Globals.siteDao(siteId = pathIn.tenantId,
-         ip = realOrFakeIpOf(request.underlying), request.sidStatus.roleId)
+      val dao = Globals.siteDao(siteId = pathIn.tenantId)
       dao.checkPagePath(pathIn) match {
         case Some(correct: PagePath) =>
           if (correct.value == pathIn.value) {

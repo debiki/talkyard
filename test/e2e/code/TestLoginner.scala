@@ -103,7 +103,7 @@ trait TestLoginner extends DebikiSelectors {
       oidRealm = "", oidClaimedId = "TestAdminClaimedId", oidOpLocalId = "TestAdminLocalId",
       firstName = "TestAdmin", email = Some("test-admin@example.com"), country = ""))
 
-    val dao = debiki.Globals.siteDao(firstSiteId, ip = "1.1.1.1")
+    val dao = debiki.Globals.siteDao(firstSiteId)
     val loginGrant = dao.tryLogin(loginAttempt)
 
     if (!adminMadeAdmin) {
