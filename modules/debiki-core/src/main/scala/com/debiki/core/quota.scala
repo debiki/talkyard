@@ -23,15 +23,13 @@ import java.{util => ju}
 
 case class OverQuotaException(
   siteId: SiteId,
-  resourceUseNow: ResourceUse,
-  resourceUseAfter: ResourceUse,
-  outstandingBytes: Long) extends QuickException {
-
-  override def getMessage = s"Over quota: $outstandingBytes bytes missing"
-}
+  resourceUsageBefore: ResourceUse,
+  resourceUsageAfter: ResourceUse)
+  extends DebikiException("DwE9Z53K7", "Disk quota exceeded")
 
 
 case class ResourceUse(
+   quotaLimitMegabytes: Option[Int] = None,
    numGuests: Int = 0,
    numIdentities: Int = 0,
    numRoles: Int = 0,
@@ -45,22 +43,10 @@ case class ResourceUse(
    numNotfs: Int = 0,
    numEmailsSent: Int = 0) {
 
-  def +(that: ResourceUse) = ResourceUse(
-     numGuests = numGuests + that.numGuests,
-     numIdentities = numIdentities + that.numIdentities,
-     numRoles = numRoles + that.numRoles,
-     numRoleSettings = numRoleSettings + that.numRoleSettings,
-     numPages = numPages + that.numPages,
-     numPosts = numPosts + that.numPosts,
-     numPostTextBytes = numPostTextBytes + that.numPostTextBytes,
-     numPostsRead = numPostsRead + that.numPostsRead,
-     numActions = numActions + that.numActions,
-     numActionTextBytes = numActionTextBytes + that.numActionTextBytes,
-     numNotfs = numNotfs + that.numNotfs,
-     numEmailsSent = numEmailsSent + that.numEmailsSent)
-
   override def toString = o"""
-    ResourceUse(numGuests: $numGuests,
+    ResourceUse(
+     quotaLimitMegabytes: $quotaLimitMegabytes,
+     numGuests: $numGuests,
      numIdentities: $numIdentities,
      numRoles: $numRoles,
      numRoleSettings: $numRoleSettings,
@@ -72,53 +58,23 @@ case class ResourceUse(
      numActionTextBytes: $numActionTextBytes,
      numNotfs: $numNotfs,
      numEmailsSent: $numEmailsSent)"""
+
+  // Let's guess 2kB if I don't know better, and multiply by 3 to stay on the
+  // safe side (i.e. overestimate disk usage, so a site's estimated disk usage will
+  // shrink in the future, when these estimates are adjusted).
+  def estimatedBytesUsed =
+    numGuests         * 2000 * 3 +  // ??
+    numIdentities     * 2000 * 3 +  // ??
+    numRoles          * 2000 * 3 +  // ??
+    numRoleSettings   * 2000 * 3 +  // ??
+    numPages          * 2000 * 3 +  // ??
+    numPosts          * 2000 * 3 * 2 +  // ??, plus *2 for the full text search index
+    numPostTextBytes  * 3 + // *3 because of the full text search index. I'm just guessing
+    numPostsRead      *  500 * 3 +  // ??
+    numActions        *  500 * 3 +
+    numActionTextBytes +
+    numNotfs          * 2000 * 3 +  // ??
+    numEmailsSent     * 2000 * 3
+
 }
-
-
-object ResourceUse {
-
-  def forStoring(loginAttempt: LoginAttempt): ResourceUse = {
-    // Could check login type, but for now simply overestimate:
-    ResourceUse(
-      numGuests = 1,
-      numIdentities = 1,
-      numRoles = 1)
-  }
-
-  def forStoring(guestLoginAttempt: GuestLoginAttempt): ResourceUse = {
-    ResourceUse(numGuests = 1)
-  }
-
-  def forStoring(
-     identity: Identity = null,
-     user: User = null,
-     actions: Seq[RawPostAction[_]] = Nil,
-     page: PageParts = null,
-     notfs: Seq[Notification] = Nil,
-     email: Email = null)
-      : ResourceUse = {
-
-    val idty = identity
-    val isGuest = (user ne null) && user.isGuest
-    val isEmailIdty = (idty ne null) && idty.isInstanceOf[IdentityEmailId]
-    val allActions = (page eq null) ? actions | actions ++ page.rawActions
-    val numPosts = ???
-    val numPostsTextBytes = ??? // could be < 0 if a long post was shortened
-
-    ResourceUse(
-       numGuests = isGuest ? 1 | 0,
-       // Don't count email id identities; they occupy no storage space.
-       numIdentities = ((idty ne null) && !isGuest && !isEmailIdty) ? 1 | 0,
-       numRoles = ((user ne null) && user.isAuthenticated) ? 1 | 0,
-       numPages = (page ne null) ? 1 | 0,
-       numPosts = numPosts,
-       numPostTextBytes = numPostsTextBytes,
-       numActions = allActions.length,
-       numActionTextBytes = allActions.foldLeft(0)(_ + _.textLengthUtf8),
-       numNotfs = notfs.size,
-       numEmailsSent = (email ne null) ? 1 | 0)
-  }
-}
-
-
 

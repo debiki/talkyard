@@ -22,6 +22,7 @@ import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}
+import play.api.Play.current
 import scala.concurrent.Future
 
 
@@ -85,9 +86,12 @@ abstract class SiteDao
 
   def createSite(name: String, hostname: String,
         embeddingSiteUrl: Option[String], creatorIp: String,
-        creatorEmailAddress: String) : Tenant =
+        creatorEmailAddress: String) : Tenant = {
+    val quotaLimitMegabytes = play.api.Play.configuration.getInt("debiki.newSite.quotaLimitMegabytes")
     siteDbDao.createSite(name = name, hostname = hostname,
-      embeddingSiteUrl, creatorIp = creatorIp, creatorEmailAddress = creatorEmailAddress)
+      embeddingSiteUrl, creatorIp = creatorIp, creatorEmailAddress = creatorEmailAddress,
+      quotaLimitMegabytes = quotaLimitMegabytes)
+  }
 
   def updateSite(changedSite: Tenant) =
     siteDbDao.updateSite(changedSite)

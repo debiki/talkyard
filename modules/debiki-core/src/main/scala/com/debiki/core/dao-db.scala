@@ -89,7 +89,7 @@ abstract class SiteDbDao {
     * (from the same IP or email address).
     */
   def createSite(name: String, hostname: String, embeddingSiteUrl: Option[String],
-        creatorIp: String, creatorEmailAddress: String): Tenant
+        creatorIp: String, creatorEmailAddress: String, quotaLimitMegabytes: Option[Int]): Tenant
 
   def updateSite(changedSite: Tenant)
 
@@ -436,10 +436,10 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
   }
 
   def createSite(name: String, hostname: String, embeddingSiteUrl: Option[String],
-        creatorIp: String, creatorEmailAddress: String): Tenant = {
+        creatorIp: String, creatorEmailAddress: String, quotaLimitBytes: Option[Int]): Tenant = {
     _spi.createSite(name = name, hostname = hostname,
       embeddingSiteUrl = embeddingSiteUrl, creatorIp = creatorIp,
-      creatorEmailAddress = creatorEmailAddress)
+      creatorEmailAddress = creatorEmailAddress, quotaLimitMegabytes = quotaLimitBytes)
   }
 
   def updateSite(changedSite: Tenant) = {

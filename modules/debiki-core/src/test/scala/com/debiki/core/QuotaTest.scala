@@ -20,7 +20,7 @@ package com.debiki.core
 import java.{util => ju}
 import org.specs2.mutable._
 
-
+/* I've removed the ResourceUsage.+ function. Perhaps I'll add it back later so keep this for a while.
 class QuotaTest extends Specification {
 
   val now = new ju.Date
@@ -67,6 +67,6 @@ class QuotaTest extends Specification {
     }
   }
 
-}
+} */
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

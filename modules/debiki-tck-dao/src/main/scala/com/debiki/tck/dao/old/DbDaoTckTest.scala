@@ -2486,7 +2486,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           hostname = "website-"+ suffix +".ex.com",
           embeddingSiteUrl = None,
           creatorIp = creatorIp,
-          creatorEmailAddress = email)
+          creatorEmailAddress = email,
+          quotaLimitMegabytes = Some(10))
       }
 
       def createEmbeddedSite(embeddingSiteUrl: String, name: String): Tenant = {
@@ -2495,7 +2496,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           hostname = s"$name.ex.com",
           embeddingSiteUrl = Some(embeddingSiteUrl),
           creatorIp = creatorIp,
-          creatorEmailAddress = creatorEmailAddress)
+          creatorEmailAddress = creatorEmailAddress,
+          quotaLimitMegabytes = None)
       }
 
       "create a new website, from existing tenant" in {
