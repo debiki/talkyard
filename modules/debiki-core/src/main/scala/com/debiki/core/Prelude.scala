@@ -134,6 +134,9 @@ object Prelude {
   def dieIf(condition: Boolean, errorCode: String, problem: => String = null) =
     if (condition) assErr(errorCode, problem)
 
+  def dieUnless(condition: Boolean, errorCode: String, problem: => String = null) =
+    if (!condition) assErr(errorCode, problem)
+
   def alwaysAssert(condition: Boolean, errorCode: String, problem: => String = null) =
     if (!condition) assErr(errorCode, problem)
 

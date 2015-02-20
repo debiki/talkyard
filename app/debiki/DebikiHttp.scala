@@ -182,7 +182,7 @@ object DebikiHttp {
 
   def daoFor(request: Request[_]) = {
     val siteId = lookupTenantIdOrThrow(originOf(request), debiki.Globals.systemDao)
-    debiki.Globals.siteDao(siteId, ip = request.remoteAddress)
+    debiki.Globals.siteDao(siteId)
   }
 
 

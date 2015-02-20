@@ -175,6 +175,9 @@ object SafeActions {
         block(request)
       }
       catch {
+        case ex: OverQuotaException =>
+          Future.successful(Results.Forbidden(o"""You cannot do that, because this site's
+            disk quota has been exceeded, sorry. [DwE7GH4R2]"""))
         case DebikiHttp.ResultException(result) =>
           Future.successful(result)
         case ex: play.api.libs.json.JsResultException =>

@@ -22,12 +22,13 @@ import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}
+import play.api.Play.current
 import scala.concurrent.Future
 
 
 
 abstract class SiteDaoFactory {
-  def newSiteDao(quotaConsumers: QuotaConsumers): SiteDao
+  def newSiteDao(siteId: SiteId): SiteDao
 }
 
 
@@ -36,15 +37,13 @@ object SiteDaoFactory {
 
   /** Creates a non-caching SiteDaoFactory.
     */
-  def apply(dbDaoFactory: DbDaoFactory, quotaCharger: QuotaCharger)
-        = new SiteDaoFactory {
+  def apply(dbDaoFactory: DbDaoFactory) = new SiteDaoFactory {
     private val _dbDaoFactory = dbDaoFactory
-    private val _quotaCharger = quotaCharger
 
-    def newSiteDao(quotaConsumers: QuotaConsumers): SiteDao = {
-      val siteDbDao = _dbDaoFactory.newSiteDbDao(quotaConsumers)
-      val chargingDbDao = new ChargingBlockingSiteDbDao(siteDbDao, _quotaCharger)
-      new NonCachingSiteDao(chargingDbDao)
+    def newSiteDao(siteId: SiteId): SiteDao = {
+      val siteDbDao = _dbDaoFactory.newSiteDbDao(siteId)
+      val serializingDbDao = new SerializingSiteDbDao(siteDbDao)
+      new NonCachingSiteDao(serializingDbDao)
     }
   }
 
@@ -70,8 +69,6 @@ abstract class SiteDao
   with RenderedPageHtmlDao
   with UserDao {
 
-  def quotaConsumers = siteDbDao.quotaConsumers
-
   def siteDbDao: SiteDbDao
 
 
@@ -89,9 +86,12 @@ abstract class SiteDao
 
   def createSite(name: String, hostname: String,
         embeddingSiteUrl: Option[String], creatorIp: String,
-        creatorEmailAddress: String) : Tenant =
+        creatorEmailAddress: String) : Tenant = {
+    val quotaLimitMegabytes = play.api.Play.configuration.getInt("debiki.newSite.quotaLimitMegabytes")
     siteDbDao.createSite(name = name, hostname = hostname,
-      embeddingSiteUrl, creatorIp = creatorIp, creatorEmailAddress = creatorEmailAddress)
+      embeddingSiteUrl, creatorIp = creatorIp, creatorEmailAddress = creatorEmailAddress,
+      quotaLimitMegabytes = quotaLimitMegabytes)
+  }
 
   def updateSite(changedSite: Tenant) =
     siteDbDao.updateSite(changedSite)

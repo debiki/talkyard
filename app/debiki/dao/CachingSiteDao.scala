@@ -26,22 +26,19 @@ import CachingDao.{CacheKey, CacheValue}
 
 /** Builds site specific data access objects that cache stuff in-memory.
   */
-class CachingSiteDaoFactory(
-  private val _dbDaoFactory: DbDaoFactory,
-  private val _quotaCharger: QuotaCharger
-  /* _cacheConfig: CacheConfig */)
+class CachingSiteDaoFactory(private val _dbDaoFactory: DbDaoFactory)
   extends SiteDaoFactory {
 
-  def newSiteDao(quotaConsumers: QuotaConsumers): SiteDao = {
-    val dbDao = _dbDaoFactory.newSiteDbDao(quotaConsumers)
-    val chargingDbDao = new ChargingBlockingSiteDbDao(dbDao, _quotaCharger)
-    new CachingSiteDao(chargingDbDao)
+  def newSiteDao(siteId: SiteId): SiteDao = {
+    val dbDao = _dbDaoFactory.newSiteDbDao(siteId)
+    val serializingDbDao = new SerializingSiteDbDao(dbDao)
+    new CachingSiteDao(serializingDbDao)
   }
 
 }
 
 
-class CachingSiteDao(val siteDbDao: ChargingBlockingSiteDbDao)
+class CachingSiteDao(val siteDbDao: SerializingSiteDbDao)
   extends SiteDao
   with CachingDao
   with CachingAssetBundleDao

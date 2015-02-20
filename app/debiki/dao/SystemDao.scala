@@ -62,16 +62,6 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
     systemDbDao.loadNotificationsToMailOut(delayInMinutes, numToLoad)
 
 
-  // ----- Quota
-
-  def loadQuotaState(consumers: Seq[QuotaConsumer])
-  : Map[QuotaConsumer, QuotaState] =
-    systemDbDao.loadQuotaState(consumers)
-
-  def useMoreQuotaUpdateLimits(deltas: Map[QuotaConsumer, QuotaDelta]): Unit =
-    systemDbDao.useMoreQuotaUpdateLimits(deltas)
-
-
   // ----- Testing
 
   def emptyDatabase() {

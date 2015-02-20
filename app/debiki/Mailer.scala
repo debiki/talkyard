@@ -151,7 +151,7 @@ class Mailer(
 
   private def sendEmail(emailToSend: Email, tenantId: String) {
 
-    val tenantDao = daoFactory.newSiteDao(QuotaConsumers(tenantId = tenantId))
+    val tenantDao = daoFactory.newSiteDao(tenantId)
     val now = Some(new ju.Date)
 
     // I often use @example.com, or simply @ex.com, when posting test comments
@@ -218,7 +218,7 @@ class ConsoleMailer(val daoFactory: SiteDaoFactory) extends Actor {
 
   def receive = {
     case (email: Email, siteId: String) =>
-      val siteDao = daoFactory.newSiteDao(QuotaConsumers(tenantId = siteId))
+      val siteDao = daoFactory.newSiteDao(siteId)
       ConsoleMailer.fakeSendAndWriteToConsole(email, siteDao)
   }
 

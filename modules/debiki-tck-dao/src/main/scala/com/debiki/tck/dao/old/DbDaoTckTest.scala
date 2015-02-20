@@ -135,8 +135,8 @@ abstract class DbDaoChildSpec(
     _ctx = newTestContext
   }
 
-  def newTenantDbDao(quotaConsumers: QuotaConsumers) =
-    ctx.dbDaoFactory.newSiteDbDao(quotaConsumers)
+  def newTenantDbDao(siteId: SiteId) =
+    ctx.dbDaoFactory.newSiteDbDao(siteId)
 
   def systemDbDao = ctx.dbDaoFactory.systemDbDao
 
@@ -256,7 +256,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
     var guestUser: User = null
 
     val defaultTenantId = Site.FirstSiteId
-    lazy val dao = newTenantDbDao(QuotaConsumers(tenantId = defaultTenantId))
+    lazy val dao = newTenantDbDao(defaultTenantId)
 
     lazy val defaultPagePath = PagePath(defaultTenantId, "/folder/",
       None, false, "page-title")
@@ -2467,7 +2467,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
          TenantHost.HttpsNone)
 
       def newWebsiteDao() =
-        newTenantDbDao(QuotaConsumers(tenantId = newWebsiteOpt.id))
+        newTenantDbDao(newWebsiteOpt.id)
 
       var homepageId = "?"
 
@@ -2486,7 +2486,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           hostname = "website-"+ suffix +".ex.com",
           embeddingSiteUrl = None,
           creatorIp = creatorIp,
-          creatorEmailAddress = email)
+          creatorEmailAddress = email,
+          quotaLimitMegabytes = Some(10))
       }
 
       def createEmbeddedSite(embeddingSiteUrl: String, name: String): Tenant = {
@@ -2495,7 +2496,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           hostname = s"$name.ex.com",
           embeddingSiteUrl = Some(embeddingSiteUrl),
           creatorIp = creatorIp,
-          creatorEmailAddress = creatorEmailAddress)
+          creatorEmailAddress = creatorEmailAddress,
+          quotaLimitMegabytes = None)
       }
 
       "create a new website, from existing tenant" in {
@@ -2597,7 +2599,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
 
 
-    // -------- Qutoa
+    /* -------- Qutoa
 
     "manage quota" >> {
 
@@ -2826,7 +2828,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
            Some(resultingStateFirstLast)
       }
 
-    }
+    } */
 
 
     // -------------

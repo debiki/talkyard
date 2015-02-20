@@ -26,7 +26,7 @@ import java.{util => ju}
 
 class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
 
-  val dao = daoFactory.newSiteDbDao(QuotaConsumers(tenantId = site.id))
+  val dao = daoFactory.newSiteDbDao(site.id)
 
   val defaultPagePath = PagePath(site.id, "/", None, showId = true, pageSlug = "slug")
   val defaultPassword = "ThePassword"

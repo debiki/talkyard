@@ -120,9 +120,6 @@ class AutoApproverSpec extends Specification with Mockito {
   def pageReqGuest = pageReq(guestUser) _
 
 
-  val quotaConsumers = QuotaConsumers(
-    tenantId = TenantId, ip = Some(Ip), roleId = None)
-
   val peopleNoLogins =
     People() + guestUser + SystemUser.User // + passwordUser
 
@@ -198,7 +195,6 @@ class AutoApproverSpec extends Specification with Mockito {
 
     val daoMock = mock[SiteDao]
     daoMock.siteId returns TenantId
-    daoMock.quotaConsumers returns quotaConsumers
 
     daoMock.loadRecentActionExcerpts(
       fromIp = Some(Ip),
