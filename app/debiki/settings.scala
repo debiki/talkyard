@@ -127,7 +127,9 @@ case class Settings(settingsChain: SettingsChain) {
 
 
   private def jsonFor(setting: AnySetting): JsObject = {
-    var jsObject = Json.obj("defaultValue" -> anyToJsValue(setting.default))
+    var jsObject = Json.obj(
+      "name" -> JsString(setting.name),
+      "defaultValue" -> anyToJsValue(setting.default))
     setting.assignedValue foreach { value =>
       jsObject += "anyAssignedValue" -> anyToJsValue(value)
     }

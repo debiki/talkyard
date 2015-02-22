@@ -101,9 +101,24 @@ interface Store {
 }
 
 
-interface Setting {
-  type: string;
+interface SettingFromServer<T> {
+  name: string;
+  defaultValue: T;
+  anyAssignedValue?: T;
+}
+
+
+interface Setting {  // rename to SettingToSave
+  type: string;  // 'WholeSite' or 'PageTree' or 'SinglePage'
   pageId?: string;
   name: string;
   newValue: any;
+}
+
+
+interface SpecialContent {
+  rootPageId: string;
+  contentId: string;
+  defaultText: string;
+  anyCustomText?: string;
 }

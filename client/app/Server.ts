@@ -51,6 +51,29 @@ export function createSite(emailAddress: string, localHostname: string,
 }
 
 
+export function loadSettings(type: string, pageId: string, doneCallback: (any) => void) {
+  var url;
+  if (type === 'WholeSite') {
+    url = '/-/load-site-settings';
+  }
+  else if (type === 'PageTree') {
+    url = '/-/load-section-settings?rootPageId=' + pageId;
+  }
+  else {
+    console.error('Unsupported settings target type: ' + type + ' [DwE5H245]');
+    doneCallback(null);
+  }
+  $.get(origin + url)
+    .done((settings: any) => {
+      doneCallback(settings);
+    })
+    .fail((x, y, z) => {
+      console.error('Error loading settings: ' + JSON.stringify([x, y, z]));
+      doneCallback(null);
+    });
+}
+
+
 export function saveSetting(setting: Setting, doneCallback: () => void) {
   d.u.postJson({
     url: origin + '/-/save-setting',
@@ -60,6 +83,43 @@ export function saveSetting(setting: Setting, doneCallback: () => void) {
     },
     error: (x, y, z) => {
       console.error('Error saving new reply: ' + JSON.stringify([x, y, z]));
+    },
+  });
+}
+
+
+export function loadSpecialContent(rootPageId: string, contentId: string,
+      doneCallback: (any) => void) {
+  var url = '/-/load-special-content?rootPageId=' + (rootPageId ? rootPageId : '') +
+      '&contentId=' + contentId;
+  $.get(origin + url)
+    .done((content: any) => {
+      doneCallback(content);
+    })
+    .fail((x, y, z) => {
+      console.error('Error loading special content: ' + JSON.stringify([x, y, z]));
+      doneCallback(null);
+    });
+}
+
+
+export function saveSpecialContent(specialContent: SpecialContent, doneCallback: () => void) {
+  var data: any = {
+    rootPageId: specialContent.rootPageId,
+    contentId: specialContent.contentId,
+    useDefaultText: specialContent.anyCustomText === specialContent.defaultText
+  };
+  if (!data.useDefaultText) {
+    data.anyCustomText = specialContent.anyCustomText;
+  }
+  d.u.postJson({
+    url: origin + '/-/save-special-content',
+    data: data,
+    success: (response) => {
+      doneCallback();
+    },
+    error: (x, y, z) => {
+      console.error('Error saving special content: ' + JSON.stringify([x, y, z]));
     },
   });
 }

@@ -122,7 +122,7 @@ object TemplateProgrammingInterface {
     // Using Play.isDev causes Could not initialize class
     // debiki.DeprecatedTemplateEngine$ error, when running unit tests. Instead:
     val isDevOrTest = p.Play.maybeApplication.map(_.mode) != Some(p.Mode.Prod)
-    if (isDevOrTest) ("", "js", "css") else ("min", "min.js", "min.css")
+    if (isDevOrTest) ("", "js", "css") else ("min.", "min.js", "min.css")
   }
 
 }
@@ -217,6 +217,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
     }
   } */
 
+  def hostname = debikiRequest.host
 
   def companyDomain = debikiRequest.siteSettings.companyDomain
   def companyFullName = debikiRequest.siteSettings.companyFullName
