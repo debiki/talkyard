@@ -60,7 +60,6 @@ GET   /-/create-site            controllers.CreateSiteController.start
 POST  /-/create-site            controllers.CreateSiteController.createSite
 
 GET   /-/admin-react/           controllers.AdminController.viewAdminPageReact
-GET   /-/admin/                 controllers.AdminController.viewAdminPage
 # Old admin pages:
 GET   /-/admin-old/             controllers.AdminController.viewAdminPageOld
 

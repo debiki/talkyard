@@ -34,7 +34,7 @@ import Utils.{OkHtml, OkXml}
 
 
 
-/** Shows the administrator, the moderator and the designer pages.
+/** Loads the admin app page.
   */
 object AdminController extends mvc.Controller {
 
@@ -50,27 +50,6 @@ object AdminController extends mvc.Controller {
     else {
       val siteTpi = SiteTpi(apiReq)
       val adminPageBody = views.html.adminPageReact(siteTpi).body
-      Ok(adminPageBody) as HTML withCookies (
-        mvc.Cookie(
-          DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value,
-          httpOnly = false))
-    }
-  }
-
-
-  def viewAdminPage() = GetAction { apiReq =>
-    if (apiReq.user.map(_.isAdmin) != Some(true)) {
-      Ok(views.html.login.loginPopup(
-        mode = "LoginToAdministrate",
-        serverAddress = s"//${apiReq.host}",
-        returnToUrl = apiReq.uri)) as HTML
-      // "Login as administrator to access this page."
-    }
-    else {
-      val adminPageBody = views.html.adminPage(
-        hostname = apiReq.host,
-        minMaxJs = TemplateProgrammingInterface.minMaxJs,
-        minMaxCss = TemplateProgrammingInterface.minMaxCss).body
       Ok(adminPageBody) as HTML withCookies (
         mvc.Cookie(
           DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value,
