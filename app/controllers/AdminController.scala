@@ -39,7 +39,7 @@ import Utils.{OkHtml, OkXml}
 object AdminController extends mvc.Controller {
 
 
-  def viewAdminPageReact() = GetAction { apiReq =>
+  def viewAdminPage() = GetAction { apiReq =>
     if (apiReq.user.map(_.isAdmin) != Some(true)) {
       Ok(views.html.login.loginPopup(
         mode = "LoginToAdministrate",
@@ -49,7 +49,7 @@ object AdminController extends mvc.Controller {
     }
     else {
       val siteTpi = SiteTpi(apiReq)
-      val adminPageBody = views.html.adminPageReact(siteTpi).body
+      val adminPageBody = views.html.adminPage(siteTpi).body
       Ok(adminPageBody) as HTML withCookies (
         mvc.Cookie(
           DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value,
