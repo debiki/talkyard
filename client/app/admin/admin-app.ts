@@ -36,9 +36,6 @@ var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
 var TabbedArea = reactCreateFactory(ReactBootstrap.TabbedArea);
 var TabPane = reactCreateFactory(ReactBootstrap.TabPane);
 var Button = reactCreateFactory(ReactBootstrap.Button);
-var ButtonGroup = reactCreateFactory(ReactBootstrap.ButtonGroup);
-var Panel = reactCreateFactory(ReactBootstrap.Panel);
-var Input = reactCreateFactory(ReactBootstrap.Input);
 
 var ReactRouter = window['ReactRouter'];
 var Route = ReactRouter.Route;
@@ -54,8 +51,8 @@ export var AdminApp = createComponent({
       r.p({ classNamae: 'admin-app' },
         TabbedArea({ bsStyle: 'pills', defaultActiveKey: 1 },
           TabPane({ eventKey: 1, tab: 'Settings' }, SettingsPanel({})),
-          TabPane({ eventKey: 3, tab: 'Moderation' }, 'Moderation'),
-          TabPane({ eventKey: 4, tab: 'Customize' }, CustomizePanel({})))));
+          TabPane({ eventKey: 2, tab: 'Customize' }, CustomizePanel({})),
+          TabPane({ eventKey: 3, tab: 'Moderation' }, ModerationPanel({})))));
   }
 });
 

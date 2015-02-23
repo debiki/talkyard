@@ -151,7 +151,7 @@ object ModerationController extends mvc.Controller {
       .getOrElse("(Page not found)")
 
     var data = Map[String, JsValue](
-      "id" -> JsString(action.id.toString),
+      "id" -> JsNumber(action.id),
       "pageId" -> JsString(action.page.id),
       "pageName" -> JsString(pageName),
       "type" -> JsString(classNameOf(action)),
