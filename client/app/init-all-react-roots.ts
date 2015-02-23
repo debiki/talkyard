@@ -31,8 +31,11 @@ var ReactRouter = window['ReactRouter'];
 
 export function initAllReactRoots() {
   var adminAppElem = document.getElementById('dw-react-admin-app');
-  if (adminAppElem)
-    React.render(debiki2.admin.AdminApp({}), adminAppElem);
+  if (adminAppElem) {
+    ReactRouter.run(debiki2.admin.routes(), (Handler) => {
+      React.render(Handler({}), adminAppElem);
+    });
+  }
 
   var nonExistingPageElem = document.getElementById('dw-non-existing-page');
   if (nonExistingPageElem)

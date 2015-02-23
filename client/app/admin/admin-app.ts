@@ -39,20 +39,46 @@ var Button = reactCreateFactory(ReactBootstrap.Button);
 
 var ReactRouter = window['ReactRouter'];
 var Route = ReactRouter.Route;
+var Redirect = ReactRouter.Redirect;
 var DefaultRoute = ReactRouter.DefaultRoute;
 var NotFoundRoute = ReactRouter.NotFoundRoute;
 var RouteHandler = ReactRouter.RouteHandler;
 var Navigation = ReactRouter.Navigation;
+var State = ReactRouter.State;
 
 
-export var AdminApp = createComponent({
+export function routes() {
+  return Route({ path: '/', handler: AdminApp },
+    Redirect({ from: '/', to: 'settings' }),
+    Route({ name: 'settings', path: 'settings', handler: SettingsPanel }),
+    Route({ name: 'customize', path: 'customize', handler: CustomizePanel }),
+    Route({ name: 'moderate', path: 'moderate', handler: ModerationPanel }));
+}
+
+
+
+var AdminApp = createComponent({
+  mixins: [Navigation, State],
+
+  getInitialState: function() {
+    return {
+      activeRoute: this.getRoutes()[1].name
+    };
+  },
+
+  handleSelect: function(newRoute) {
+    this.setState({ activeRoute: newRoute });
+    this.transitionTo(newRoute);
+  },
+
   render: function() {
     return (
-      r.p({ classNamae: 'admin-app' },
-        TabbedArea({ bsStyle: 'pills', defaultActiveKey: 1 },
-          TabPane({ eventKey: 1, tab: 'Settings' }, SettingsPanel({})),
-          TabPane({ eventKey: 2, tab: 'Customize' }, CustomizePanel({})),
-          TabPane({ eventKey: 3, tab: 'Moderation' }, ModerationPanel({})))));
+      r.div({ className: 'admin-app' },
+        Nav({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect },
+          NavItem({ eventKey: 'settings' }, 'Settings'),
+          NavItem({ eventKey: 'customize' }, 'Customize'),
+          NavItem({ eventKey: 'moderate' }, 'Moderate')),
+        RouteHandler({})));
   }
 });
 
