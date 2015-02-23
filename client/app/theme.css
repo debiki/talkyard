@@ -340,7 +340,7 @@ input, textarea {
   margin-left: 1.1em;
 }
 
-.container {
+html:not(.dw-admin-page) .container {
   width: 940px;
 }
 

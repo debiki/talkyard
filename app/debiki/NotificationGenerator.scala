@@ -67,12 +67,18 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
           else {
             makeNotfsForNewPost(action.postId, anyApproverId = Some(action.userId))
           }
+        case payload: PAP.RejectEdits =>
+          // Don't notify.
         case PAP.VoteLike | PAP.VoteWrong =>
           makeNotfForVote(action.asInstanceOf[RawPostAction[PAP.Vote]])
         case PAP.VoteOffTopic =>
           // Don't notify.
         case flag: PAP.Flag =>
           // SHOULD generate notfs to all/some moderators?
+        case PAP.ClearFlags =>
+          // Don't notify.
+        case PAP.HidePostClearFlags =>
+          // Don't notify.
         case pin: PAP.PinPostAtPosition =>
           // Don't notify.
         case PAP.CollapsePost | PAP.CollapseTree | PAP.CloseTree =>

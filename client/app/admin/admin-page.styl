@@ -32,11 +32,15 @@ body
   padding: 0 30px !important
 
 
-.admin-app > .nav
-  margin: 40px auto 30px
+.admin-app > nav
+  margin: 50px auto 30px;
 
-  li:first-child
+
+.nav-pills > li
+  border-radius: 4px;
+  :first-child
     margin-left: 0
+
 
 h1
   margin-top: 50px !important
@@ -54,7 +58,7 @@ a
 .tab-content > .tab-pane
   padding-top: 20px
 
-.btn
+.btn.btn
   // Cancel Twitter Bootstrap's 14px .btn font size.
   // (I use Verdana, which is a fairly large font.)
   font-size: 13px
@@ -236,7 +240,10 @@ a
 // Settins and Special Content tabs
 //--------------------------------------------
 
-
+.special-content
+  margin-top: 33px;
+  label
+    text-align: right
 
 .setting-label
   text-align: right

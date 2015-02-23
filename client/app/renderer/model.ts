@@ -3,6 +3,29 @@
 var TitleId = 0;
 var BodyPostId = 1;
 
+
+interface PostToModerate {
+  pageId: string;
+  pageName: string;
+  id: number;
+  status: string;
+  type: string;
+  cdati: string;
+  approvedText?: string;
+  unapprovedText?: string;
+  userId: string;
+  userDisplayName: string;
+  numEditsToReview?: string;
+  numHandledFlags?: number;
+  numPendingFlags?: number;
+  numPendingEditSuggestions?: number;
+  pendingFlags?: any[];
+  postHiddenAt?: string;
+  postDeletedAt?: string;
+  treeDeletedAt?: string;
+}
+
+
 interface Post {
   postId: number;
   parentId: number;
@@ -101,9 +124,24 @@ interface Store {
 }
 
 
-interface Setting {
-  type: string;
+interface SettingFromServer<T> {
+  name: string;
+  defaultValue: T;
+  anyAssignedValue?: T;
+}
+
+
+interface Setting {  // rename to SettingToSave
+  type: string;  // 'WholeSite' or 'PageTree' or 'SinglePage'
   pageId?: string;
   name: string;
   newValue: any;
+}
+
+
+interface SpecialContent {
+  rootPageId: string;
+  contentId: string;
+  defaultText: string;
+  anyCustomText?: string;
 }
