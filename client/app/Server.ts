@@ -370,6 +370,26 @@ export function saveReply(postIds: number[], text: string, doneCallback: () => v
 }
 
 
+export function flagPost(postId: string, flagType: string, reason: string,
+      doneCallback: () => void) {
+  d.u.postJson({
+    url: origin + '/-/flag',
+    data: {
+      pageId: d.i.pageId,
+      postId: postId,
+      type: flagType,
+      reason: reason
+    },
+    success: (response) => {
+      doneCallback();
+    },
+    error: (x, y, z) => {
+      console.error('Error flagging post: ' + JSON.stringify([x, y, z]));
+    },
+  });
+}
+
+
 export function createPage(data, doneCallback: (newPageId: string) => void) {
   d.u.postJson({
     url: origin + '/-/create-page',

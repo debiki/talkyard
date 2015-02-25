@@ -21,6 +21,7 @@
 /// <reference path="react-elements/comments-toolbar.ts" />
 /// <reference path="react-elements/name-login-btns.ts" />
 /// <reference path="users/users-page.ts" />
+/// <reference path="dialogs.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2 {
@@ -68,6 +69,8 @@ export function initAllReactRoots() {
       React.render(Handler({}), createSiteElem);
     });
   }
+
+  createAnyFlagDialog();
 }
 
 

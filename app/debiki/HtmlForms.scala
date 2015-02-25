@@ -43,18 +43,6 @@ object HtmlForms {
 
   val XsrfInpName = "dw-fi-xsrf"
 
-  object FlagForm {
-    object InputNames {
-      val Type = "dw-fi-flg-type"
-      val Reason = "dw-fi-flg-reason"
-    }
-    import FlagType._
-    def prettify(tyype: FlagType): String = (tyype match {  // i18n
-      case Inapt => "Inappropriate"
-      case x => x.toString
-    })
-  }
-
   object Delete {
     object InputNames {
       val Reason = "dw-fi-dl-reason"
@@ -110,7 +98,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
   def dialogTemplates = {
     <div id="dw-hidden-templates">
     { loginForms ++
-      flagForm ++
       deleteForm(None) }
     </div>
   }
@@ -162,36 +149,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
           </div>
         </form>
       </div>
-
-
-  def flagForm = {
-    import FlagForm.{InputNames => Inp}
-    <div class='dw-fs' title='Report Comment'>
-      <form class='dw-f-flg'>
-        { _xsrfToken }
-        <div class='dw-f-flg-rsns'>{
-          def input(idSuffix: String, r: FlagType) = {
-            val id = "dw-fi-flgs-"+ idSuffix
-            <input type='radio' id={id} name={Inp.Type} value={r.toString}/>
-            <label for={id}>{FlagForm.prettify(r)}</label>
-          }
-          import FlagType._
-          input("spam", Spam) ++
-          input("inapt", Inapt) ++
-          input("othr", Other)
-        }</div>
-        <div>
-          <label for={Inp.Reason}>Details (optional)</label><br/>
-          <textarea id={Inp.Reason} rows='2' cols='30'
-                 name={Inp.Reason} value=''></textarea>
-        </div>
-        <div class='dw-submit-set'>
-          <input class='dw-fi-submit' type='submit' value='Submit'/>
-          <input class='dw-fi-cancel' type='button' value='Cancel'/>
-        </div>
-      </form>
-    </div>
-  }
 
 
   /**
