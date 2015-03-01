@@ -71,8 +71,13 @@ html:not(.touch) .dw-p-as:not(.dw-p-as-shown)
   font-weight: bold;
   margin-left: 0
 
-html:not(.touch) .dw-ar-t > .dw-p-as > .dw-a-reply
+.dw-ar-t > .dw-p-as > .dw-a-reply
   padding: 5px 8px 5px 5px !important;
+
+html.touch .dw-ar-t > .dw-p-as > .dw-a-reply
+  padding: 10px 10px 9px 6px !important;  // 10 + 2 = 12 [9kDF35Q]
+  top: 2px;
+  position: relative;
 
 
 .dw-a
@@ -110,7 +115,7 @@ html:not(.touch) .dw-ar-t > .dw-p-as > .dw-a-reply
     text-decoration: none;
 
 html.touch .dw-t > .dw-p-as .dw-a
-  padding: 12px 8px 10px 6px;
+  padding: 12px 8px 10px 6px;  //  12px high [9kDF35Q]
   outline: none; // no is-focused outline
   &.dw-a-more
     padding-left: 8px;
