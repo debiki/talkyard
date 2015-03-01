@@ -264,7 +264,8 @@ export var Sidebar = createComponent({
 
     if (this.state.showSidebar) {
       var sidebarLeft = sidebar[0].getBoundingClientRect().left;
-      var commentsMaxWidth = sidebarLeft - 30 - commentSectionBounds.left;
+      var space = win.width() < 830 ? 13 : 30;
+      var commentsMaxWidth = sidebarLeft - space - commentSectionBounds.left;
       commentSection.css('max-width', commentsMaxWidth);
     }
     else {
@@ -487,11 +488,13 @@ export var Sidebar = createComponent({
           tips);
     }
 
+    var smallScreen = Math.min(debiki.window.width(), debiki.window.height()) < 500;
+    var abbreviateHowMuch = smallScreen ? 'Much' : 'ABit';
     var commentsElems = comments.map((post, index) => {
       var postProps = _.clone(store);
       postProps.post = post;
       postProps.onClick = (event) => this.focusPost(post, index),
-      postProps.abbreviate = true;
+      postProps.abbreviate = abbreviateHowMuch;
       if (post.postId === this.state.currentPostId) {
         postProps.className = 'dw-current-post';
       }
@@ -529,9 +532,9 @@ export var Sidebar = createComponent({
         ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar, ref: 'openButton' }),
         tabButtons,
         r.div({ className: 'dw-comments' },
-          r.h3({}, title),
           r.div({ id: 'dw-sidebar-comments-viewport', ref: 'commentsViewport' },
             r.div({ id: 'dw-sidebar-comments-scrollable' },
+              r.h3({}, title),
               tipsOrExtraConfig,
               r.div({ className: 'dw-recent-comments' },
                 ReactCSSTransitionGroup({ transitionName: 'comment', key: this.state.commentsType },

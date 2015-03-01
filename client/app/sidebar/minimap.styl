@@ -92,8 +92,14 @@ html:not(.dw-hz).touch #dw-comment-counts
   right: 0;
   bottom: 0;
   width: 30%;
+  @media (max-width: 710px)
+    width: 33%;
+  @media (max-width: 510px)
+    width: 35%;
   z-index: 1001; // not above dialogs, but above resize-columns handle (1000)
   padding: 0 0 0 11px;
+  @media (max-width: 510px)
+    padding-left 7px;
   bgcolor = #eee;
   background: bgcolor;
 
@@ -106,6 +112,8 @@ html:not(.dw-hz).touch #dw-comment-counts
   .btn
     float: left
     margin: 10px 5px 0 0;
+    @media (max-width: 510px)
+      margin-top: 5px;
     border: none;
     border-radius: 0;
     background: hsl(0, 0%, 85%);
@@ -117,13 +125,17 @@ html:not(.dw-hz).touch #dw-comment-counts
 
   #dw-toggle-sidebar
     margin-bottom: 15px; // prevents the Unread/Recent/Starred buttons from floating-left below
+    @media (max-width: 510px)
+      margin-bottom: 0;
     top: 0;
     right: 0;
 
   .dw-comments
     clear: both;
     background: bgcolor;
-    padding: 15px 8px 0 0;
+    padding: 13px 8px 0 0;
+    @media (max-height: 500px)
+      padding-top: 7px;
 
     h3
       font-weight: bold;

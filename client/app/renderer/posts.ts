@@ -557,33 +557,7 @@ var PostHeader = createComponent({
         r.span({}, ', edited ', editedAt, byVariousPeople);
     }
 
-    function numPeople(num) {
-      if (voteInfo) {
-        return num + ' ';
-      }
-      else {
-        return num > 1 ? num + ' people ' : num + ' person ';
-      }
-    }
-    function thisComment() {
-      return voteInfo ? ' it ' : ' this comment ';
-    }
-    var voteInfo = '';
-    if (post.numLikeVotes && post.postId !== BodyPostId) {
-      voteInfo += numPeople(post.numLikeVotes) +
-        (post.numWrongVotes == 1 ? 'likes' : 'like') + ' this comment';
-    }
-    if (post.numWrongVotes) {
-      if (voteInfo.length > 0) voteInfo += ', ';
-      voteInfo += numPeople(post.numWrongVotes) +
-        (post.numWrongVotes == 1 ? 'thinks' : 'think') + thisComment() + 'is wrong';
-    }
-    if (post.numOffTopicVotes) {
-      if (voteInfo.length > 0) voteInfo += ', ';
-      voteInfo += numPeople(post.numOffTopicVotes) +
-          (post.numOffTopicVotes == 1 ? 'thinks' : 'think') + thisComment() + 'is off-topic';
-    }
-    if (voteInfo) voteInfo += '.';
+    var voteCounts = this.props.abbreviate === 'Much' ? null : voteCountsToText(post);
 
     var anyPin;
     if (post.pinnedPosition) {
@@ -627,9 +601,41 @@ var PostHeader = createComponent({
           r[linkFn]({ className: 'dw-p-by', href: authorUrl }, authorNameElems),
           createdAt,
           editInfo, '. ',
-          voteInfo));
+          voteCounts));
   }
 });
+
+
+function voteCountsToText(post) {
+  var text = '';
+  function numPeople(num) {
+    if (text) {
+      return num + ' ';
+    }
+    else {
+      return num > 1 ? num + ' people ' : num + ' person ';
+    }
+  }
+  function thisComment() {
+    return text ? ' it ' : ' this comment ';
+  }
+  if (post.numLikeVotes && post.postId !== BodyPostId) {
+    text += numPeople(post.numLikeVotes) +
+      (post.numWrongVotes == 1 ? 'likes' : 'like') + ' this comment';
+  }
+  if (post.numWrongVotes) {
+    if (text) text += ', ';
+    text += numPeople(post.numWrongVotes) +
+      (post.numWrongVotes == 1 ? 'thinks' : 'think') + thisComment() + 'is wrong';
+  }
+  if (post.numOffTopicVotes) {
+    if (text) text += ', ';
+    text += numPeople(post.numOffTopicVotes) +
+        (post.numOffTopicVotes == 1 ? 'thinks' : 'think') + thisComment() + 'is off-topic';
+  }
+  if (text) text += '.';
+  return text;
+}
 
 
 var PostBody = createComponent({
@@ -640,6 +646,9 @@ var PostBody = createComponent({
       this.textDiv = this.textDiv || $('<div></div>');
       this.textDiv.html(post.sanitizedHtml);
       var length = Math.min(screen.width, screen.height) < 500 ? 100 : 150;
+      if (screen.height < 300) {
+        length = 60;
+      }
       var startOfText = this.textDiv.text().substr(0, length);
       if (startOfText.length === length) {
         startOfText += '....';
