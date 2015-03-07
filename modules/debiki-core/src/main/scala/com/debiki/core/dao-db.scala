@@ -580,6 +580,9 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
   def doSavePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
         : (PageNoPath, List[RawPostAction[_]]) = {
+    // COULD fix this race condition BUG: `page` was loaded before locking the mutex,
+    // but is used doSavePageActions when saving the page. E.g. total flag count
+    // will be wrong if two flags are saved at the same time.
     serialize {
       _spi.doSavePageActions(page, actions)
     }
