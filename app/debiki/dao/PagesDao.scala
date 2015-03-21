@@ -27,8 +27,11 @@ import CachingDao.CacheKey
 
 
 /** Loads and saves pages and page parts (e.g. posts and patches).
- */
-trait PageDao {
+  *
+  * (There's also a class PageDao (with no 's' in the name) that focuses on
+  * one specific single page.)
+  */
+trait PagesDao {
   self: SiteDao =>
 
 
@@ -132,7 +135,7 @@ trait PageDao {
 
 
 
-trait CachingPageDao extends PageDao {
+trait CachingPagesDao extends PagesDao {
   self: CachingSiteDao =>
 
 
