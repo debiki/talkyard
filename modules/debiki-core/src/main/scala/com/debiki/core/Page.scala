@@ -22,6 +22,20 @@ import Prelude._
 
 
 
+trait Page2 {
+
+  def id: PageId
+  def siteId: SiteId
+  def parentPageId: Option[PageId] = meta.parentPageId
+  def role: PageRole = meta.pageRole
+  def meta: PageMeta
+  def path: PagePath
+  def ancestorIdsParentFirst: List[PageId]
+  def parts: PageParts2
+
+}
+
+
 trait HasPageMeta {
   self: {
     def meta: PageMeta
@@ -310,14 +324,21 @@ sealed abstract class PageRole {
     * (namely blog posts, forum topics).
     */
   def isSection: Boolean = false
+
+  /** Should use nofollow links if many people can edit a page. */
+  def isWidelyEditable: Boolean = true
 }
 
 
 object PageRole {
 
-  case object HomePage extends PageRole
+  case object HomePage extends PageRole {
+    override def isWidelyEditable = false
+  }
 
-  case object WebPage extends PageRole
+  case object WebPage extends PageRole {
+    override def isWidelyEditable = false
+  }
 
   case object Code extends PageRole
 
@@ -329,7 +350,9 @@ object PageRole {
     override def isSection = true
   }
 
-  case object BlogPost extends PageRole
+  case object BlogPost extends PageRole {
+    override def isWidelyEditable = false
+  }
 
   case object Forum extends PageRole {
     override def isSection = true

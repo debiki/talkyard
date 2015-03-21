@@ -23,7 +23,7 @@ import controllers.Utils.parseIntOrThrowBadReq
 import controllers.Utils.ValidationImplicits._
 import debiki._
 import debiki.DebikiHttp._
-import debiki.dao.SiteDao
+import debiki.dao.{PageDao, SiteDao}
 import java.{util => ju}
 import play.api.mvc.{Action => _, _}
 import DbDao.PathClashException
@@ -161,6 +161,13 @@ class PageRequest[A](
    */
   def thePageId : String = pagePath.pageId getOrElse
     throwNotFound("DwE93kD4", "Page does not exist: "+ pagePath.value)
+
+
+  def page2: Option[Page2] = pageId.map(new PageDao(_, dao))
+
+
+  def thePage2: Page2 = page2 getOrElse
+    throwNotFound("DwE920F5", s"Page does not exist: ${pagePath.value}")
 
 
   /**

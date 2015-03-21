@@ -772,6 +772,10 @@ object Post {
 
   def fromJson(json: JsValue) = Protocols.jsonToPost(json)
 
+  def sortPosts2(posts: Seq[Post2]): Seq[Post2] = {
+    posts // for now TODO implement
+  }
+
   /** Sorts posts so e.g. interesting ones appear first, and deleted ones last.
     */
   def sortPosts(posts: Seq[Post]): Seq[Post] = {
