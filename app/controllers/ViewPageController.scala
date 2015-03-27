@@ -67,6 +67,7 @@ object ViewPageController extends mvc.Controller {
 
 
   def viewPostImpl(pageReq: PageGetRequest) = {
+    // COULD try to run the render stuff in a single read only transaction
     var pageHtml = pageReq.dao.renderTemplate(pageReq)
     val anyUserSpecificDataJson = ReactJson.userDataJson(pageReq)
 

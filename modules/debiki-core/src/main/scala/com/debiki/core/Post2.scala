@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import com.debiki.core._
 import java.{util => ju}
 import play.api.libs.json._
 import scala.collection.immutable
@@ -46,8 +47,14 @@ object DeletedStatus {
 }
 
 
+case class PostStatuses(isCollapsed: Boolean, isClosed: Boolean, isDeleted: Boolean)
+object PostStatuses {
+  val Default = PostStatuses(isCollapsed = false, isClosed = false, isDeleted = false)
+}
+
+
 /** A post is a page title, a page body or a comment.
-  * For example, a forum topic title, topic text, and replies.
+  * For example, a forum topic title, topic text, or a reply.
   */
 case class Post2(
   siteId: SiteId,
@@ -56,41 +63,50 @@ case class Post2(
   parentId: Option[PostId],
   multireplyPostIds: immutable.Set[PostId],
   createdAt: ju.Date,
-  createdById: UserId,
-  lastEditedAt: ju.Date,
-  lastEditedById: UserId,
+  createdById: UserId2,
+  lastEditedAt: Option[ju.Date],
+  lastEditedById: Option[UserId2],
   lastApprovedEditAt: Option[ju.Date],
-  lastApprovedEditById: Option[UserId],
-  lastApprovedEditApprovedAt: Option[UserId],
-  lastApprovedEditApprovedById: Option[UserId],
+  lastApprovedEditById: Option[UserId2],
   numDistinctEditors: Int,
   approvedSource: Option[String],
   approvedHtmlSanitized: Option[String],
   approvedAt: Option[ju.Date],
-  approvedById: Option[UserId],
+  approvedById: Option[UserId2],
   approvedVersion: Option[Int],
   currentSourcePatch: Option[String],
   currentVersion: Int,
   collapsedStatus: Option[CollapsedStatus],
   collapsedAt: Option[ju.Date],
-  collapsedById: Option[UserId],
+  collapsedById: Option[UserId2],
   closedStatus: Option[ClosedStatus],
   closedAt: Option[ju.Date],
-  closedById: Option[UserId],
+  closedById: Option[UserId2],
+  hiddenAt: Option[ju.Date],
+  hiddenById: Option[UserId2],
+  //hiddenReason: ?
   deletedStatus: Option[DeletedStatus],
   deletedAt: Option[ju.Date],
-  deletedById: Option[UserId],
+  deletedById: Option[UserId2],
   pinnedPosition: Option[Int],
   numPendingFlags: Int,
   numHandledFlags: Int,
   numPendingEditSuggestions: Int,
   numLikeVotes: Int,
   numWrongVotes: Int,
-  numTimesRead: Int){
+  numCollapseVotes: Int,
+  numTimesRead: Int) {
 
+  require(parentId != Some(id), "DwE5BK4")
+  require(!multireplyPostIds.contains(id), "DwE4kWW2")
+  require(approvedVersion.map(_ <= currentVersion) != Some(false), "DwE6KJ0")
+  // ...
 
   def isMultireply = multireplyPostIds.nonEmpty
 
+  def hasAnId = id >= PageParts.LowestPostId
+
+  def isDeleted = deletedStatus.isDefined
 
   lazy val currentSource: String =
     currentSourcePatch match {
@@ -121,7 +137,7 @@ case class Post2(
 
   /** The lower bound of an 80% confidence interval for the number of people that like this post.
     */
-  lazy val likeScore = {
+  lazy val likeScore: Float = {
     val numLikes = this.numLikeVotes
     // In case there for some weird reason are liked posts with no read count,
     // set numTimesRead to at least numLikes.
@@ -133,8 +149,91 @@ case class Post2(
   }
 
 
-  def repliesSorted(pageParts: PageParts2): Seq[Post2] =
-    Nil // for now
+  def children(pageParts: PageParts2): Seq[Post2] =
+    pageParts.childrenOf(id)
+
+  def copyWithParentStatuses(parentStatuses: PostStatuses): Post2 = this.copy(
+    collapsedStatus = collapsedStatus orElse (
+      if (parentStatuses.isCollapsed) Some(CollapsedStatus.AncestorCollapsed) else None),
+    closedStatus = closedStatus orElse (
+      if (parentStatuses.isClosed) Some(ClosedStatus.AncestorClosed) else None),
+    deletedStatus = deletedStatus orElse (
+      if (parentStatuses.isDeleted) Some(DeletedStatus.AncestorDeleted) else None))
 
 }
 
+
+
+object Post2 {
+  
+  val FirstVersion = 1
+
+  def create(
+        siteId: SiteId,
+        pageId: PageId,
+        postId: PostId,
+        parentId: Option[PostId],
+        multireplyPostIds: Set[PostId],
+        createdAt: ju.Date,
+        createdById: UserId2,
+        source: String,
+        htmlSanitized: String,
+        approvedById: Option[UserId2]): Post2 = {
+
+    val currentSourcePatch: Option[String] =
+      if (approvedById.isDefined) None
+      else Some(makePatch(from = "", to = source))
+
+    Post2(
+      siteId = siteId,
+      pageId = pageId,
+      id = postId,
+      parentId = parentId,
+      multireplyPostIds = multireplyPostIds,
+      createdAt = createdAt,
+      createdById = createdById,
+      lastEditedAt = None,
+      lastEditedById = None,
+      lastApprovedEditAt = None,
+      lastApprovedEditById = None,
+      numDistinctEditors = 1,
+      approvedSource = if (approvedById.isDefined) Some(source) else None,
+      approvedHtmlSanitized = if (approvedById.isDefined) Some(htmlSanitized) else None,
+      approvedAt = if (approvedById.isDefined) Some(createdAt) else None,
+      approvedById = approvedById,
+      approvedVersion = if (approvedById.isDefined) Some(1) else None,
+      currentSourcePatch = currentSourcePatch,
+      currentVersion = FirstVersion,
+      collapsedStatus = None,
+      collapsedAt = None,
+      collapsedById = None,
+      closedStatus = None,
+      closedAt = None,
+      closedById = None,
+      hiddenAt = None,
+      hiddenById = None,
+      deletedStatus = None,
+      deletedAt = None,
+      deletedById = None,
+      pinnedPosition = None,
+      numPendingFlags = 0,
+      numHandledFlags = 0,
+      numPendingEditSuggestions = 0,
+      numLikeVotes = 0,
+      numWrongVotes = 0,
+      numCollapseVotes = 0,
+      numTimesRead = 0)
+  }
+
+}
+
+
+
+case class BrowserIdData(
+  ip: String,
+  idCookie: Option[String],
+  fingerprint: Int) {
+
+  require(ip.nonEmpty, "DwE6G9F0")
+  require(idCookie.map(_.isEmpty) != Some(true), "DwE3GJ79")
+}

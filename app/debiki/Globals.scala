@@ -96,10 +96,11 @@ class Globals {
       throw new jl.IllegalStateException(o"""Server already running, was it not properly
         shut down last time? Please hit CTRL+C to kill it. [DwE83KJ9]""")
 
+    // The render engines might be needed by some Java evolutions applied below.
+    debiki.ReactRenderer.startCreatingRenderEngines()
+
     _state = new State
     state.systemDao.applyEvolutions()
-
-    debiki.ReactRenderer.startCreatingRenderEngines()
 
     // For now, disable in dev mode — because of the port conflict that
     // causes an error on reload and restart, see below (search for "conflict").

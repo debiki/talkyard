@@ -21,6 +21,7 @@ import com.debiki.core.{PostActionPayload => PAP}
 import com.google.{common => guava}
 import java.{util => ju}
 import org.mindrot.jbcrypt.BCrypt
+import scala.collection.immutable
 import scala.concurrent.Future
 import DbDao._
 import EmailNotfPrefs.EmailNotfPrefs
@@ -211,13 +212,14 @@ abstract class SiteDbDao {
     */
   final def savePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
         : (PageNoPath, List[RawPostAction[_]]) = {
-    ActionChecker.checkActions(page, actions)
     doSavePageActions(page, actions)
   }
 
   /** Don't call, implementation detail. */
   def doSavePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
         : (PageNoPath, List[RawPostAction[_]])
+
+  def saveNewPost(post: Post2): Unit
 
   /** Deletes a vote. If there's a user id, deletes the vote by user id (guest or role),
     * Otherwise by browser id cookie.
@@ -237,6 +239,8 @@ abstract class SiteDbDao {
     * Loads another site's page, if siteId is specified.
     */
   def loadPageParts(debateId: PageId, tenantId: Option[SiteId] = None): Option[PageParts]
+
+  def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post2]
 
   /**
    * For each PagePath, loads a Page (well, Debate) with actions loaded
@@ -594,6 +598,12 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
     }
   }
 
+  def saveNewPost(post: Post2): Unit = {
+    serialize {
+      _spi.saveNewPost(post)
+    }
+  }
+
   def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
         voteType: PostActionPayload.Vote) {
     serialize {
@@ -614,6 +624,10 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
   def loadPageParts(debateId: PageId, tenantId: Option[SiteId]): Option[PageParts] = {
     _spi.loadPageParts(debateId, tenantId)
+  }
+
+  def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId]): immutable.Seq[Post2] = {
+    _spi.loadPostsOnPage(pageId, siteId)
   }
 
   def loadPageBodiesTitles(pagePaths: Seq[String]): Map[String, PageParts] = {
@@ -850,8 +864,6 @@ object DbDao {
   case object EmailNotVerifiedException extends RuntimeException("Email not verified")
 
   case object DuplicateVoteException extends RuntimeException("Duplicate vote")
-
-  case object LikesOwnPostException extends RuntimeException("One may not upvote ones own post")
 
   class PageNotFoundException(message: String) extends RuntimeException(message)
 

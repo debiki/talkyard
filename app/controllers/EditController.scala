@@ -71,6 +71,10 @@ object EditController extends mvc.Controller {
 
     val postAfter = saveEdit(pageRequest, postId = postId, newText = newText)
 
+    // Post2:
+    //val editedPost = request.dao.saveEdit(
+    // editorId = request.theUser.id, pageId = pageId, postId = postId, newText = newText)
+
     OkSafeJson(ReactJson.postToJson(postAfter, includeUnapproved = true))
   }
 

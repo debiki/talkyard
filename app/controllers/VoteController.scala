@@ -102,6 +102,13 @@ object VoteController extends mvc.Controller {
         val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
           "DwE48FK9", s"Page `$pageId' not found")
 
+        // Move to PagesDao
+        if (voteNoId.payload == PostActionPayload.VoteLike) {
+          val post = pageReq.pageParts.get.getPost_!(postId)
+          if (post.userId == voteNoId.userId)
+            throwBadReq("DwE84QM0", "Cannot like own post")
+        }
+
         // BUG race condition: pageReq.dao.savePageActionGenNotfs and
         // pageReq.dao.updatePostsReadStats should happen in the same transaction.
 
@@ -111,8 +118,6 @@ object VoteController extends mvc.Controller {
         catch {
           case DbDao.DuplicateVoteException =>
             throwConflict("DwE26FX0", "Duplicate votes")
-          case DbDao.LikesOwnPostException =>
-            throwBadReq("DwE84QM0", "Cannot like own post")
         }
 
         // Downvotes (wrong, off-topic) should result in only the downvoted post

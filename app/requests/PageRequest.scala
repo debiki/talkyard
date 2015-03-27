@@ -163,13 +163,6 @@ class PageRequest[A](
     throwNotFound("DwE93kD4", "Page does not exist: "+ pagePath.value)
 
 
-  def page2: Option[Page2] = pageId.map(new PageDao(_, dao))
-
-
-  def thePage2: Page2 = page2 getOrElse
-    throwNotFound("DwE920F5", s"Page does not exist: ${pagePath.value}")
-
-
   /**
    * The page this PageRequest concerns, or None if not found
    * (e.g. if !pageExists, or if it was deleted just moments ago).

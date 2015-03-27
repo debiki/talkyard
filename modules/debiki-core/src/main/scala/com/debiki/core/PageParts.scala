@@ -29,18 +29,19 @@ import PageParts._
 object PageParts {
 
 
-  // IDs for some magic posts: page title, page body and page config post.
-  // - The firt post is the page title and body, with numbers 0 and 1, and the second post
-  // (which is the first reply) has id 2, and so on, for compatibility with Discourse.
-  // - Also seee `nextRandomActionId` later in this file.
+  // Letting the page body / original post be number 1 is compatible with Discourse.
   val TitleId = 0
   val BodyId = 1
+  val FirstReplyId = 2
 
   // This assume that usually one won't need more than 2 bytes to index
   // all comments on a page (2^16 = 65536). (So I won't have to write any code
   // that avoids these IDs in the nearest future.)
   @deprecated("Use DW1_SETTINGS instead", "Mars 2014")
   val ConfigPostId = 65503
+
+  val LowestPostId = TitleId
+  assert(LowestPostId == 0)
 
   val NoId = -1
 

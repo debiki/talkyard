@@ -20,6 +20,7 @@ package com.debiki.core
 import java.{util => ju}
 import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.PostActionPayload.EditPost
+import scala.collection.mutable.ArrayBuffer
 import scala.{collection => col}
 import scala.collection.{immutable, mutable}
 import Prelude._
@@ -29,64 +30,60 @@ import PageParts._
 
 /** The parts of a page are 1) posts: any title post, any body post, and any comments,
   * and 2) people, namely those who have authored or edited the posts.
+  *
+  * Should be immutable? If backed by the database, a serializable isolation level
+  * transaction should be used.
   */
-trait PageParts2 extends People2 {
+abstract class PageParts2 extends People2 {
 
+  private lazy val postsById: collection.Map[PostId, Post2] = {
+    val postsMap = mutable.HashMap[PostId, Post2]()
+    for (post <- allPosts) {
+      postsMap.put(post.id, post)
+    }
+    postsMap
+  }
+
+  private lazy val childrenByParentId: collection.Map[PostId, immutable.Seq[Post2]] = {
+    // COULD find out how to specify the capacity?
+    val childMap = mutable.HashMap[PostId, Vector[Post2]]()
+    for (post <- allPosts) {
+      val parentIdOrNoId = post.parentId getOrElse PageParts.NoId
+      var siblings = childMap.getOrElse(parentIdOrNoId, Vector[Post2]())
+      siblings = siblings :+ post
+      childMap.put(parentIdOrNoId, siblings)
+    }
+    childMap
+  }
+
+  def highestReplyId: PostId = allPosts.map(_.id).max
   private def dummyDate = new ju.Date
   def pageId = "dummy"
-  def theUser(userId: UserId) = User(
-    id = userId,
-    displayName = s"$userId-disp-name",
-    username = Some(s"$userId-username"),
-    createdAt = Some(new ju.Date),
-    email = "ab@ex.com",
-    emailNotfPrefs = EmailNotfPrefs.DontReceive)
   def titlePost: Option[Post2] = None
   def loadAllPosts() {}
   def topLevelComments: Seq[Post2] = Nil
-  def allPosts: Seq[Post2] = Vector(
-    Post2(
-      siteId = "dummy",
-      pageId = "dummy",
-      id = PageParts.BodyId,
-      parentId = None,
-      multireplyPostIds = Set.empty,
-      createdAt = dummyDate,
-      createdById = "1",
-      lastEditedAt = dummyDate,
-      lastEditedById = "1",
-      lastApprovedEditAt = None,
-      lastApprovedEditById = None,
-      lastApprovedEditApprovedAt = None,
-      lastApprovedEditApprovedById = None,
-      numDistinctEditors = 1,
-      approvedSource = Some("**hello**"),
-      approvedHtmlSanitized = Some("<b>hello</b>"),
-      approvedAt = Some(dummyDate),
-      approvedById = Some("1"),
-      approvedVersion = Some(1),
-      currentSourcePatch = None,
-      currentVersion = 1,
-      collapsedStatus = None,
-      collapsedAt = None,
-      collapsedById = None,
-      closedStatus = None,
-      closedAt = None,
-      closedById = None,
-      deletedStatus = None,
-      deletedAt = None,
-      deletedById = None,
-      pinnedPosition = None,
-      numPendingFlags = 0,
-      numHandledFlags = 0,
-      numPendingEditSuggestions = 0,
-      numLikeVotes = 0,
-      numWrongVotes = 0,
-      numTimesRead = 0))
+  def allPosts: Seq[Post2]
+
+  def post(postId: PostId): Option[Post2] = postsById.get(postId)
+  def thePost(postId: PostId): Post2 = post(postId) getOrDie "DwE9PKG3"
+
+  /** Returns the post with id postId, its parent, grandparent, and so on. */
+  def ancestorsStartingAt(postId: PostId): Seq[Post2] = Nil // TODO
+
+  def derivePostStatuses(postId: PostId): PostStatuses = PostStatuses.Default // TODO
+
+  def numRepliesInclDeleted: Int = 1 // TODO
+
+  def theUser(userId: UserId2): User
+
+  def childrenOf(postId: PostId): immutable.Seq[Post2] =
+    childrenByParentId.getOrElse(postId, Nil)
+
 }
 
-trait People2 {
 
-  def theUser(id: UserId): User
+abstract class People2 {
+
+  def theUser(id: UserId2): User
 
 }

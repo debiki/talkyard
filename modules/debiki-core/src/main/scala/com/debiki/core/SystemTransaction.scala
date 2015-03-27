@@ -17,9 +17,15 @@
 
 package com.debiki.core
 
+import scala.collection.immutable
+
 
 trait SystemTransaction {
   def commit()
   def rollback()
+
+  def loadSites(): immutable.Seq[Tenant]
+  def siteTransaction(siteId: SiteId): SiteTransaction
+
 }
 

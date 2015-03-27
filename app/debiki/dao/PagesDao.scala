@@ -23,7 +23,9 @@ import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import requests.PageRequest
+import scala.collection.immutable
 import CachingDao.CacheKey
+import com.debiki.core.{PostActionPayload => PAP}
 
 
 /** Loads and saves pages and page parts (e.g. posts and patches).
@@ -103,6 +105,122 @@ trait PagesDao {
   }
 
 
+  def createPost(newPostPerhapsNoId: Post2): Post2 = {
+    readWriteTransaction { transaction =>
+      val page = PageDao(newPostPerhapsNoId.pageId, transaction)
+      var newPost =
+        if (newPostPerhapsNoId.hasAnId) {
+          newPostPerhapsNoId
+        }
+        else {
+          // (We get to here for replies only. The title and body have fix ids.)
+          val newId = page.parts.highestReplyId + 1
+          newPostPerhapsNoId.copy(id = newId)
+        }
+
+      val parentStatuses = newPost.parentId match {
+        case Some(parentId) => page.parts.derivePostStatuses(parentId)
+        case None => PostStatuses.Default
+      }
+      newPost = newPost.copyWithParentStatuses(parentStatuses)
+      //val oldMeta = page.meta
+      //val newMeta = oldMeta.copy(numRepliesInclDeleted = page.parts.numRepliesInclDeleted + 1)
+      transaction.saveNewPost(newPost)
+      //transaction.savePageMeta(newMeta)
+
+      // TODO generate notifications
+      // transaction.saveNotifications(...)
+
+      newPost
+    }
+  }
+
+
+  /*
+  def saveEdit(editorId: UserId, pageId: PageId, postId: PostId, newText: String): Post2 = {
+    readWriteTransaction { transaction =>
+      val page = transaction.pageDao(pageId)
+      var oldPost = page.parts.post(postId).getOrElse(
+        throwNotFound("DwE404GKF2", s"Post not found, id: '$postId'"))
+
+      val editsOwnPost = editorId == oldPost.createdById
+      val appliedDirectly = editsOwnPost
+  
+      val editor = transaction.loadUser(editorId).getOrElse(
+        throwNotFound("DwE30HY21", s"User not found, id: '$editorId'"))
+
+      val approvedDirectly = appliedDirectly && editor.isWellBehavedUser
+
+      val editedPost = oldPost.copy(
+        lastEditedAt = Some(transaction.currentTime()),
+        lastEditedById = Some(editorId))
+
+      transaction.saveEditedPost(editedPost)
+
+      if (postId == PageParts.TitleId) {
+        val oldMeta = page.meta
+        val newMeta = oldMeta.copy(cachedTitle = Some(newText))
+        transaction.savePageMeta(newMeta)
+      }
+  
+      // TODO generate notifications
+      // transaction.saveNotifications(...)
+
+      editedPost
+    }
+  }
+
+
+  def closeCollapseDelete(pageId: PageId, action: RawPostAction[_]) {
+    readWriteTransaction { transaction =>
+      val page = transaction.pageDao(pageId)
+      // if collapsing/closing/deleted
+      //   mark all successors as collapsed/closed/deleted.
+      // else (i.e. opening)
+      //   find statuses of post.
+      //   apply this status to all successors.
+      // update page meta post counts.
+      // return post with new close/collapse/delete status.
+    }
+  }
+
+
+  def saveVote(pageId: PageId, voteNoId: RawPostAction[PAP.Vote],
+        postIdsRead: Set[PostId]) {
+    readWriteTransaction { transaction =>
+      if (voteNoId.payload == PostActionPayload.VoteLike) {
+        val post = transaction.loadPost(voteNoId.postId).getOrElse(
+          throwNotFound("DwE5GH7", "Post not found"))
+        if (post.userId == voteNoId.userId)
+          throwBadReq("DwE84QM0", "Cannot like own post")
+      }
+
+      val voteWithId = try {
+        transaction.savePostAction(pageId, voteNoId)
+      }
+      catch {
+        case DbDao.DuplicateVoteException =>
+          throwConflict("DwE26FX0", "Duplicate votes")
+      }
+
+      // Downvotes (wrong, off-topic) should result in only the downvoted post
+      // being marked as read. Its ancestors shouldn't be marked as read,
+      // because a post *not* being downvoted shouldn't
+      // give that post worse rating. (Remember that the rating of a post is
+      // roughly the number of Like votes / num-times-it's-been-read.)
+      val postsToMarkAsRead =
+        if (voteNoId.payload == PostActionPayload.VoteLike)
+          postIdsRead
+        else
+          Set(voteNoId.postId)
+
+      transaction.updatePostsReadStats(pageId, postsToMarkAsRead, voteWithId)
+
+      and, in overriding function: refreshPageInCache(page.id)
+    }
+  } */
+
+
   def deleteVoteAndNotf(userIdData: UserIdData, pageId: PageId, postId: PostId,
         voteType: PostActionPayload.Vote) {
     siteDbDao.deleteVote(userIdData, pageId, postId, voteType)
@@ -118,6 +236,10 @@ trait PagesDao {
 
   def loadPostsReadStats(pageId: PageId): PostsReadStats =
     siteDbDao.loadPostsReadStats(pageId)
+
+
+  def loadPostsOnPage(pageId: PageId): immutable.Seq[Post2] =
+    readOnlyTransaction(_.loadPostsOnPage(pageId))
 
 
   def loadPageParts(debateId: PageId): Option[PageParts] =

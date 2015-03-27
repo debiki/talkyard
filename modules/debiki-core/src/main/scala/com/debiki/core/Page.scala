@@ -17,8 +17,9 @@
 
 package com.debiki.core
 
+import com.debiki.core.Prelude._
 import java.{util => ju}
-import Prelude._
+import scala.collection.immutable
 
 
 
@@ -30,7 +31,7 @@ trait Page2 {
   def role: PageRole = meta.pageRole
   def meta: PageMeta
   def path: PagePath
-  def ancestorIdsParentFirst: List[PageId]
+  def ancestorIdsParentFirst: immutable.Seq[PageId]
   def parts: PageParts2
 
 }
@@ -274,6 +275,7 @@ object PageMeta {
   *            Currently only needed and used for embedded comments, and then it
   *            is the URL of the embedding page.
   * @param pageExists
+  * @param numRepliesInclDeleted
   * @param cachedTitle
   * @param cachedAuthorDispName
   * @param cachedAuthorUserId
@@ -297,6 +299,7 @@ case class PageMeta(
   parentPageId: Option[String] = None,
   embeddingPageUrl: Option[String],
   pageExists: Boolean = true,
+  //numRepliesInclDeleted: Int,
   cachedTitle: Option[String] = None,
   cachedAuthorDispName: String,
   cachedAuthorUserId: String,

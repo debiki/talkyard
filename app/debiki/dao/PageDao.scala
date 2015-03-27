@@ -20,48 +20,42 @@ package debiki.dao
 import com.debiki.core._
 import debiki.DebikiHttp._
 import java.{util => ju}
+import scala.collection.immutable
 import Prelude._
 
 
-class PageDao(override val id: PageId, val siteDao: SiteDao) extends Page2 {
+case class PageDao(override val id: PageId, transaction: SiteTransaction) extends Page2 {
 
-  var cachedMeta: Option[PageMeta] = None
-  var cachedPath: Option[PagePath] = None
-  var cachedAncestorIdsParentFirst: Option[List[PageId]] = None
-  var cachedParts: Option[PageParts2] = None
+  var _meta: Option[PageMeta] = null
+  var _path: Option[PagePath] = null
+  var _ancestorIdsParentFirst: immutable.Seq[PageId] = null
 
-  override def siteId = siteDao.siteId
+  val parts = new PageParts2Dao(id, transaction)
+
+  override def siteId = transaction.siteId
 
 
   override def meta: PageMeta = {
-    if (cachedMeta.isEmpty) {
-      cachedMeta = siteDao.loadPageMeta(id)
+    if (_meta eq null) {
+      _meta = transaction.loadPageMeta(id)
     }
-    cachedMeta getOrElse throwPageNotFound()
+    _meta getOrElse throwPageNotFound()
   }
 
 
-  override def parts: PageParts2 = {
-    if (cachedParts.isEmpty) {
-      cachedParts = Some(new PageParts2 {}) // siteDao.loadPageParts2(id)
+  override def ancestorIdsParentFirst: immutable.Seq[PageId] = {
+    if (_ancestorIdsParentFirst eq null) {
+      _ancestorIdsParentFirst = transaction.loadAncestorPostIdsParentFirst(id)
     }
-    cachedParts getOrElse throwPageNotFound()
-  }
-
-
-  override def ancestorIdsParentFirst: List[PageId] = {
-    if (cachedAncestorIdsParentFirst.isEmpty) {
-      cachedAncestorIdsParentFirst = Some(siteDao.loadAncestorIdsParentFirst(id))
-    }
-    cachedAncestorIdsParentFirst.get
+    _ancestorIdsParentFirst
   }
 
 
   override def path: PagePath = {
-    if (cachedPath.isEmpty) {
-      cachedPath = siteDao.lookupPagePath(id)
+    if (_path eq null) {
+      _path = transaction.lookupPagePath(id)
     }
-    cachedPath getOrElse throwPageNotFound()
+    _path getOrElse throwPageNotFound()
   }
 
 
@@ -70,3 +64,39 @@ class PageDao(override val id: PageId, val siteDao: SiteDao) extends Page2 {
 
 }
 
+
+case class PageParts2Dao(override val pageId: PageId, transaction: SiteTransaction)
+  extends PageParts2 {
+
+  private var _usersById: Map[UserId, User] = null
+  private var _allPosts: immutable.Seq[Post2] = null
+
+  override def theUser(userId: UserId2): User = {
+    loadUsersOnPage()
+    _usersById.get(userId.toString) getOrDie
+      s"User not found, id: '$userId', page: '$pageId' [DwE4BYW2]"
+  }
+
+  override def titlePost: Option[Post2] = None
+
+  override def loadAllPosts() {
+    if (_allPosts eq null) {
+      _allPosts = transaction.loadPostsOnPage(pageId)
+    }
+  }
+
+  override def topLevelComments: Seq[Post2] = Nil
+
+  override def allPosts: Seq[Post2] = {
+    if (_allPosts eq null) {
+      loadAllPosts()
+    }
+    _allPosts
+  }
+
+  def loadUsersOnPage() {
+    if (_usersById eq null) {
+      _usersById = transaction.loadUsersOnPageAsMap2(pageId)
+    }
+  }
+}

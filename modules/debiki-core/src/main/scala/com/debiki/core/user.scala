@@ -205,8 +205,22 @@ case class UserIdData(
 
 case object User {
 
-  def isGuestId(userId: UserId) = userId.startsWith("-") && userId.length > 1
-  def isRoleId(userId: UserId) = !isGuestId(userId) && userId.nonEmpty
+  // Perhaps in the future:
+  // /** A user that has logged in and can post comments, but is anonymous. */
+  // val AnonymousUserId = -2
+
+  val MaxGuestId = -2
+  //assert(MaxGuestId == AnonymousUserId)
+  assert(UnknownUser.Id.toInt <= MaxGuestId)
+
+  val LowestNonGuestId = -1
+  assert(LowestNonGuestId == SystemUser.User.id2)
+
+  def isGuestId(userId: UserId) =
+    userId != SystemUser.User.id && userId.startsWith("-") && userId.length > 1
+
+  def isRoleId(userId: UserId) =
+    !isGuestId(userId) && userId.nonEmpty
 
   /**
    * Checks for weird ASCII chars in an user name.
@@ -311,6 +325,7 @@ case class User (
   isOwner: Boolean = false
 ){
   checkId(id, "DwE02k125r")
+  def id2 = id.toInt
   def isAuthenticated = isRoleId(id) && !id.startsWith("?")
 
   def isGuest = User.isGuestId(id)
@@ -520,10 +535,6 @@ case class LoginGrant(
   */
 object UnknownUser {
 
-  /** "-" means it's not a role, it's a guest. "3" is the next number after the
-    * first two magic id, which are "1" for the system user and "2" for the dummy
-    * author user (see DummyPage.scala).
-    */
   val Id = "-3"
 
   val User = com.debiki.core.User(id = Id, displayName = "(unknown user)", username = None,
@@ -544,7 +555,8 @@ object SystemUser {
 
   val Ip = "SystemUserIp"
 
-  val User = core.User(id = "1", displayName = "System", username = None,
+  // Let id = -1 because Discourse does that.
+  val User = core.User(id = "-1", displayName = "System", username = None,
     createdAt = None, email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive,
     emailVerifiedAt = None, isAdmin = true)
 

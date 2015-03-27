@@ -31,6 +31,7 @@ package object core {
   type LoginId = String
 
   type UserId = String
+  type UserId2 = Int // when removing/renaming-to-UserId, search for UserId2 everywhere
 
   type RoleId = String
 

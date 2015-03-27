@@ -17,12 +17,32 @@
 
 package com.debiki.core
 
+import java.{util => ju}
+import scala.collection.immutable
+
 
 trait SiteTransaction {
   def commit()
   def rollback()
+  def siteId: SiteId
 
   def loadResourceUsage(): ResourceUse
+  def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post2]
+  def loadAncestorPostIdsParentFirst(pageId: PageId): immutable.Seq[PageId]
+
+  def saveNewPost(newPost: Post2)
+
+  def lookupPagePath(pageId: PageId): Option[PagePath]
+  def loadAllPageMetas(): immutable.Seq[PageMeta]
+  def loadPageMeta(pageId: PageId): Option[PageMeta]
+  def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta)
+
+  def loadPagePartsOld(pageId: PageId): Option[PageParts]
+
+  def currentTime(): ju.Date
+
+  def loadUser(userId: UserId): Option[User]
+  def loadUsersOnPageAsMap2(pageId: PageId, siteId: Option[SiteId] = None): Map[UserId, User]
 
 }
 

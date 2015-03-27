@@ -20,6 +20,7 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
+import debiki.dao.{SiteDao, PageDao}
 import play.api.libs.json._
 import requests.PageRequest
 
@@ -46,11 +47,17 @@ object ReactJson {
 
 
   def pageToJson(pageReq: PageRequest[_], socialLinksHtml: String): JsObject = {
-    val page = pageReq.thePage2
+    pageReq.dao.readOnlyTransaction(pageToJsonImpl(pageReq, socialLinksHtml, _))
+  }
+
+
+  def pageToJsonImpl(pageReq: PageRequest[_], socialLinksHtml: String, transaction: SiteTransaction)
+        : JsObject = {
+    val page = PageDao(pageReq.thePageId, transaction)
     val pageParts = page.parts
     pageParts.loadAllPosts()
     var allPostsJson = pageParts.allPosts.filter(_.deletedStatus.isEmpty).map { post: Post2 =>
-      post.id.toString -> postToJson2(post, page)
+      post.id.toString -> postToJsonImpl(post, page)
     }
     val numPosts = allPostsJson.length
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
@@ -164,7 +171,20 @@ object ReactJson {
   }
 
 
-  def postToJson2(post: Post2, page: Page2, includeUnapproved: Boolean = false): JsObject = {
+  def postToJson2(postId: PostId, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false)
+        : JsObject = {
+    dao.readOnlyTransaction { transaction =>
+      // COULD optimize: don't load the whole page, load only postId and the author and last editor.
+      val page = PageDao(pageId, transaction)
+      postToJsonImpl(page.parts.thePost(postId), page, includeUnapproved = includeUnapproved)
+    }
+  }
+
+
+  /** Private, so it cannot be called outside a transaction.
+    */
+  private def postToJsonImpl(post: Post2, page: Page2, includeUnapproved: Boolean = false)
+        : JsObject = {
     val people = page.parts
     val lastApprovedEditAt = post.lastApprovedEditAt map { date =>
       JsNumber(date.getTime)
@@ -181,7 +201,7 @@ object ReactJson {
       "postId" -> JsNumber(post.id),
       "parentId" -> post.parentId.map(JsNumber(_)).getOrElse(JsNull),
       "multireplyPostIds" -> JsArray(post.multireplyPostIds.toSeq.map(JsNumber(_))),
-      "authorId" -> JsString(post.createdById),
+      "authorId" -> JsString(post.createdById.toString),
       "authorFullName" -> JsString(post.createdByUser(people).displayName),
       "authorUsername" -> JsStringOrNull(post.createdByUser(people).username),
       "createdAt" -> JsNumber(post.createdAt.getTime),
@@ -199,7 +219,7 @@ object ReactJson {
       "isApproved" -> JsBoolean(isApproved),
       "pinnedPosition" -> post.pinnedPosition.map(JsNumber(_)).getOrElse(JsNull),
       "likeScore" -> JsNumber(post.likeScore),
-      "childIdsSorted" -> JsArray(post.repliesSorted(page.parts).map(reply => JsNumber(reply.id))),
+      "childIdsSorted" -> JsArray(post.children(page.parts).map(reply => JsNumber(reply.id))), // TODO sort by like score desc
       "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml)))
   }
 

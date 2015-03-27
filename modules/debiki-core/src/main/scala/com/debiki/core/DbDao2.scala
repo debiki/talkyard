@@ -18,12 +18,14 @@
 package com.debiki.core
 
 
-/** A database data access object (DAO).
+/** A database data access object (DAO). It gives you serializable transactions,
+  * either read only, or read-write, and either for a single site, or for the whole
+  * system (no particular site).
   */
 class DbDao2(val dbDaoFactory: DbDaoFactory) {
 
 
-  def readOnlySiteTransaction(siteId: SiteId)(fn: (SiteTransaction) => Unit): Unit = {
+  def readOnlySiteTransaction[R](siteId: SiteId)(fn: (SiteTransaction) => R): R = {
     val transaction = dbDaoFactory.newSiteTransaction(siteId, readOnly = true)
     try {
       fn(transaction)
@@ -34,12 +36,12 @@ class DbDao2(val dbDaoFactory: DbDaoFactory) {
   }
 
 
-  def readWriteSiteTransaction(siteId: SiteId, allowOverQuota: Boolean)(
-        fn: (SiteTransaction) => Unit) {
+  def readWriteSiteTransaction[R](siteId: SiteId, allowOverQuota: Boolean = false)(
+        fn: (SiteTransaction) => R): R = {
     val transaction = dbDaoFactory.newSiteTransaction(siteId, readOnly = false)
     var committed = false
     try {
-      fn(transaction)
+      val result = fn(transaction)
       if (!allowOverQuota) {
         val resourceUsage = transaction.loadResourceUsage()
         resourceUsage.quotaLimitMegabytes foreach { limit =>
@@ -50,6 +52,7 @@ class DbDao2(val dbDaoFactory: DbDaoFactory) {
       }
       transaction.commit()
       committed = true
+      result
     }
     finally {
       if (!committed) {
