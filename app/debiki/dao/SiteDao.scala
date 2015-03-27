@@ -43,7 +43,7 @@ object SiteDaoFactory {
     def newSiteDao(siteId: SiteId): SiteDao = {
       val siteDbDao = _dbDaoFactory.newSiteDbDao(siteId)
       val serializingDbDao = new SerializingSiteDbDao(siteDbDao)
-      new NonCachingSiteDao(serializingDbDao)
+      new NonCachingSiteDao(serializingDbDao, _dbDaoFactory)
     }
   }
 
@@ -70,6 +70,7 @@ abstract class SiteDao
   with UserDao {
 
   def siteDbDao: SiteDbDao
+  def dbDao2: DbDao2
 
 
   // ----- Tenant
@@ -197,4 +198,6 @@ abstract class SiteDao
 
 
 
-class NonCachingSiteDao(val siteDbDao: SiteDbDao) extends SiteDao
+class NonCachingSiteDao(val siteDbDao: SiteDbDao, val dbDaoFactory: DbDaoFactory) extends SiteDao {
+  def dbDao2 = dbDaoFactory.newDbDao2()
+}

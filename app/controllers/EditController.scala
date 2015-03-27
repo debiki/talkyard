@@ -102,6 +102,8 @@ object EditController extends mvc.Controller {
     if (newText == post.currentText)
       return post
 
+    // BUG race condition: a perhaps old version of the post is used when constructing the patch.
+    // BUG lost update problem: we might overwrite any edits made by others after page loaded.
     val patchText = makePatch(from = post.currentText, to = newText)
 
     val (mayEdit, mayEditReason) =

@@ -102,6 +102,9 @@ object VoteController extends mvc.Controller {
         val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
           "DwE48FK9", s"Page `$pageId' not found")
 
+        // BUG race condition: pageReq.dao.savePageActionGenNotfs and
+        // pageReq.dao.updatePostsReadStats should happen in the same transaction.
+
         val (updatedPage, voteWithId) = try {
           pageReq.dao.savePageActionGenNotfs(pageReq, voteNoId)
         }

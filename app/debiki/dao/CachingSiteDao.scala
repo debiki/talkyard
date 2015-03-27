@@ -32,13 +32,13 @@ class CachingSiteDaoFactory(private val _dbDaoFactory: DbDaoFactory)
   def newSiteDao(siteId: SiteId): SiteDao = {
     val dbDao = _dbDaoFactory.newSiteDbDao(siteId)
     val serializingDbDao = new SerializingSiteDbDao(dbDao)
-    new CachingSiteDao(serializingDbDao)
+    new CachingSiteDao(serializingDbDao, _dbDaoFactory)
   }
 
 }
 
 
-class CachingSiteDao(val siteDbDao: SerializingSiteDbDao)
+class CachingSiteDao(val siteDbDao: SerializingSiteDbDao, val dbDaoFactory: DbDaoFactory)
   extends SiteDao
   with CachingDao
   with CachingAssetBundleDao
@@ -50,6 +50,7 @@ class CachingSiteDao(val siteDbDao: SerializingSiteDbDao)
   with CachingRenderedPageHtmlDao
   with CachingUserDao {
 
+  def dbDao2 = dbDaoFactory.newDbDao2()
 
   onUserCreated { user =>
     if (loadSiteStatus().isInstanceOf[SiteStatus.OwnerCreationPending] && user.isOwner) {

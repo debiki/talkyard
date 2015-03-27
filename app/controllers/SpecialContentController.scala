@@ -112,6 +112,7 @@ object SpecialContentController extends mvc.Controller {
 
     // BUG: Race conditon, but it's mostly harmless, admins will be active only one at a time?
 
+    // BUG should create and update the page in the same transaction?
     val anyOldContent = loadContentPage(request.dao, pageId)
     if (anyOldContent.isEmpty) {
       createEmptyPage(request, rootPageId, contentId = contentId)

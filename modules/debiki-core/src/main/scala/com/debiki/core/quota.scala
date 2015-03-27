@@ -23,8 +23,7 @@ import java.{util => ju}
 
 case class OverQuotaException(
   siteId: SiteId,
-  resourceUsageBefore: ResourceUse,
-  resourceUsageAfter: ResourceUse)
+  resourceUsage: ResourceUse)
   extends DebikiException("DwE9Z53K7", "Disk quota exceeded")
 
 
