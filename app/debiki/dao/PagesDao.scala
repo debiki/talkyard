@@ -19,6 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import com.debiki.core.User.SystemUserId
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
@@ -136,41 +137,79 @@ trait PagesDao {
   }
 
 
-  /*
-  def saveEdit(editorId: UserId, pageId: PageId, postId: PostId, newText: String): Post2 = {
+  def editPost(pageId: PageId, postId: PostId, editorId: UserId2, newText: String) {
     readWriteTransaction { transaction =>
-      val page = transaction.pageDao(pageId)
-      var oldPost = page.parts.post(postId).getOrElse(
+      val page = PageDao(pageId, transaction)
+      var postToEdit = page.parts.post(postId).getOrElse(
         throwNotFound("DwE404GKF2", s"Post not found, id: '$postId'"))
 
-      val editsOwnPost = editorId == oldPost.createdById
-      val appliedDirectly = editsOwnPost
-  
-      val editor = transaction.loadUser(editorId).getOrElse(
+      if (postToEdit.currentSource == newText)
+        return
+
+      val editor = transaction.loadUser(editorId.toString).getOrElse(
         throwNotFound("DwE30HY21", s"User not found, id: '$editorId'"))
 
-      val approvedDirectly = appliedDirectly && editor.isWellBehavedUser
+      // For now: (add back edit suggestions later. And should perhaps use PermsOnPage.)
+      val editsOwnPost = editorId == postToEdit.createdById
+      val mayEdit = editsOwnPost || editor.isAdmin
+      if (!mayEdit)
+        throwForbidden("DwE8KF32", "Currently you may edit your own posts only.")
 
-      val editedPost = oldPost.copy(
-        lastEditedAt = Some(transaction.currentTime()),
+      //val appliedDirectly = true // for now, add back edit suggestions later
+      //val approvedDirectly = true // later: && editor.isWellBehavedUser
+
+      var editedPost = postToEdit.copy(
+        lastEditedAt = Some(transaction.currentTime),
         lastEditedById = Some(editorId))
+
+      val approvedHtmlSanitized =
+        if (postId == PageParts.TitleId) {
+          siteDbDao.commonMarkRenderer.sanitizeHtml(newText)
+        }
+        else {
+          siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(newText,
+            allowClassIdDataAttrs = postId == PageParts.BodyId,
+            followLinks = postToEdit.createdByUser(page.parts).isAdmin && editor.isAdmin)
+        }
+
+      val approverId = if (editor.isAdmin) editor.id2 else SystemUserId
+      val nextVersion = postToEdit.currentVersion + 1
+
+      // TODO send current version from browser to server, reject edits if != oldPost.currentVersion
+      // to stop the lost update problem.
+
+      // Later, if post not approved directly: currentSourcePatch = makePatch(from, to)
+
+      editedPost = editedPost.copy(
+        lastApprovedEditAt = Some(transaction.currentTime),
+        lastApprovedEditById = Some(editorId),
+        approvedSource = Some(newText),
+        approvedHtmlSanitized = Some(approvedHtmlSanitized),
+        approvedAt = Some(transaction.currentTime),
+        approvedById = Some(approverId),
+        approvedVersion = Some(nextVersion),
+        currentSourcePatch = None,
+        currentVersion = nextVersion)
+
+      if (editorId != editedPost.createdById) {
+        editedPost = editedPost.copy(numDistinctEditors = 2)  // for now
+      }
 
       transaction.saveEditedPost(editedPost)
 
       if (postId == PageParts.TitleId) {
         val oldMeta = page.meta
         val newMeta = oldMeta.copy(cachedTitle = Some(newText))
-        transaction.savePageMeta(newMeta)
+        transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
       }
   
       // TODO generate notifications
       // transaction.saveNotifications(...)
-
-      editedPost
     }
   }
 
 
+  /*
   def closeCollapseDelete(pageId: PageId, action: RawPostAction[_]) {
     readWriteTransaction { transaction =>
       val page = transaction.pageDao(pageId)
@@ -284,6 +323,18 @@ trait CachingPagesDao extends PagesDao {
 
     refreshPageInCache(page.id)
     newPageAndActionsWithId
+  }
+
+  override def createPost(newPostPerhapsNoId: Post2): Post2 = {
+    val newPostWithId = super.createPost(newPostPerhapsNoId)
+    refreshPageInCache(newPostWithId.pageId)
+    newPostWithId
+  }
+
+
+  override def editPost(pageId: PageId, postId: PostId, editorId: UserId2, newText: String) {
+    super.editPost(pageId = pageId, postId = postId, editorId = editorId, newText = newText)
+    refreshPageInCache(pageId)
   }
 
 

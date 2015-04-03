@@ -45,6 +45,7 @@ object EditHistoryController extends mvc.Controller {
     val post = page.getPost(postIdInt) getOrElse
       throwForbidden("DwE9kIJ4", s"Post `$postIdInt' not found")
 
+    ??? /*
     val (mayEdit, mayEditReason) =
       EditController.mayEdit(pageReq.user, post, pageReq.permsOnPage)
 
@@ -52,6 +53,7 @@ object EditHistoryController extends mvc.Controller {
       post, page, pageReq.sid.displayName, mayEdit = mayEdit)
 
     OkHtml(form)
+    */
   }
 
 
@@ -133,6 +135,7 @@ object EditHistoryController extends mvc.Controller {
       val postAffected = page.getPost(editAffected.postId) getOrElse
         throwForbidden("DwE82U13k7", s"Post not found: `${editAffected.postId}'")
 
+      ??? /*
       val (mayEdit, mayEditReason) =
         EditController.mayEdit(pageReq.user, postAffected, pageReq.permsOnPage)
       if (!mayEdit)
@@ -159,7 +162,7 @@ object EditHistoryController extends mvc.Controller {
             loginId = pageReq.loginId_!, userId = pageReq.user_!.id,
             newIp = pageReq.newIp, ctime = pageReq.ctime, wholeTree = false, reason = "")
           */
-      }
+      } */
     }
 
     // ----- Save all changes

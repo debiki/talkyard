@@ -205,6 +205,8 @@ case class UserIdData(
 
 case object User {
 
+  val SystemUserId = SystemUser.User.id2
+
   // Perhaps in the future:
   // /** A user that has logged in and can post comments, but is anonymous. */
   // val AnonymousUserId = -2
