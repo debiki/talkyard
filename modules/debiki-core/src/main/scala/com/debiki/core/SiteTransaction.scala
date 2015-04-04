@@ -31,7 +31,7 @@ trait SiteTransaction {
   def loadAncestorPostIdsParentFirst(pageId: PageId): immutable.Seq[PageId]
 
   def saveNewPost(newPost: Post2)
-  def saveEditedPost(newPost: Post2)
+  def saveUpdatedPost(newPost: Post2)
 
   def lookupPagePath(pageId: PageId): Option[PagePath]
   def loadAllPageMetas(): immutable.Seq[PageMeta]
@@ -42,6 +42,7 @@ trait SiteTransaction {
 
   def currentTime: ju.Date
 
+  def loadUser(userId: UserId2): Option[User] = loadUser(userId.toString)
   def loadUser(userId: UserId): Option[User]
   def loadUsersOnPageAsMap2(pageId: PageId, siteId: Option[SiteId] = None): Map[UserId, User]
 

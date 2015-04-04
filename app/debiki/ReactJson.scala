@@ -56,7 +56,11 @@ object ReactJson {
     val page = PageDao(pageReq.thePageId, transaction)
     val pageParts = page.parts
     pageParts.loadAllPosts()
-    var allPostsJson = pageParts.allPosts.filter(_.deletedStatus.isEmpty).map { post: Post2 =>
+    var allPostsJson = pageParts.allPosts.filter { post =>
+      post.deletedStatus.isEmpty || (
+        post.deletedStatus == Some(DeletedStatus.PostDeleted) &&
+        pageParts.hasNonDeletedSuccessor(post.id))
+    } map { post: Post2 =>
       post.id.toString -> postToJsonImpl(post, page)
     }
     val numPosts = allPostsJson.length
@@ -197,6 +201,11 @@ object ReactJson {
       else
         (post.approvedHtmlSanitized, post.approvedAt.isDefined)
 
+    val childrenSorted = {
+      val children = page.parts.childrenOf(post.id)
+      Post.sortPosts2(children)
+    }
+
     JsObject(Vector(
       "postId" -> JsNumber(post.id),
       "parentId" -> post.parentId.map(JsNumber(_)).getOrElse(JsNull),
@@ -211,15 +220,15 @@ object ReactJson {
       "numWrongVotes" -> JsNumber(post.numWrongVotes),
       "numOffTopicVotes" -> JsNumber(0), // remove off-topic votes? post.numOffTopicVotes
       "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions),
-      "isTreeDeleted" -> JsBoolean(post.deletedStatus == DeletedStatus.TreeDeleted),
-      "isPostDeleted" -> JsBoolean(post.deletedStatus == DeletedStatus.PostDeleted),
-      "isTreeCollapsed" -> JsBoolean(post.collapsedStatus == CollapsedStatus.TreeCollapsed),
-      "isPostCollapsed" -> JsBoolean(post.collapsedStatus == CollapsedStatus.PostCollapsed),
-      "isTreeClosed" -> JsBoolean(post.closedStatus == ClosedStatus.TreeClosed),
+      "isTreeDeleted" -> JsBoolean(post.deletedStatus == Some(DeletedStatus.TreeDeleted)),
+      "isPostDeleted" -> JsBoolean(post.deletedStatus == Some(DeletedStatus.PostDeleted)),
+      "isTreeCollapsed" -> JsBoolean(post.collapsedStatus == Some(CollapsedStatus.TreeCollapsed)),
+      "isPostCollapsed" -> JsBoolean(post.collapsedStatus == Some(CollapsedStatus.PostCollapsed)),
+      "isTreeClosed" -> JsBoolean(post.closedStatus == Some(ClosedStatus.TreeClosed)),
       "isApproved" -> JsBoolean(isApproved),
       "pinnedPosition" -> post.pinnedPosition.map(JsNumber(_)).getOrElse(JsNull),
       "likeScore" -> JsNumber(post.likeScore),
-      "childIdsSorted" -> JsArray(post.children(page.parts).map(reply => JsNumber(reply.id))), // TODO sort by like score desc
+      "childIdsSorted" -> JsArray(childrenSorted.map(reply => JsNumber(reply.id))),
       "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml)))
   }
 

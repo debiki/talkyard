@@ -64,6 +64,10 @@ export function drawArrowsFromParent(allPosts, parentPost, depth: number,
     for (var i = index + 1; i < parentPost.childIdsSorted.length; ++i) {
       var siblingId = parentPost.childIdsSorted[i];
       var sibling = allPosts[siblingId];
+      if (!sibling) {
+        // This post has been deleted?
+        continue;
+      }
       if (sibling.multireplyPostIds.length) {
         break;
       }

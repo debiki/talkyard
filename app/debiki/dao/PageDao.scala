@@ -77,15 +77,11 @@ case class PageParts2Dao(override val pageId: PageId, transaction: SiteTransacti
       s"User not found, id: '$userId', page: '$pageId' [DwE4BYW2]"
   }
 
-  override def titlePost: Option[Post2] = None
-
   override def loadAllPosts() {
     if (_allPosts eq null) {
       _allPosts = transaction.loadPostsOnPage(pageId)
     }
   }
-
-  override def topLevelComments: Seq[Post2] = Nil
 
   override def allPosts: Seq[Post2] = {
     if (_allPosts eq null) {

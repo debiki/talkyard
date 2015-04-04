@@ -89,31 +89,16 @@ object Application extends mvc.Controller {
        ifNotOneOf("tf", throwBadReq("DwE93kK3", "Bad whole tree value"))
     val reason = pageReq.getNoneAsEmpty(Inp.Reason)
 
-    val post = pageReq.thePageParts.getPost_!(postId)
-    val isAuthor = post.userId == pageReq.user_!.id
+    val pageId = pageReq.thePageId
 
-    if (!isAuthor && !pageReq.permsOnPage.deleteAnyReply)
-      throwForbidden("DwE0523k1250", "You may not delete that comment")
+    val action =
+      if (wholeTree) PostActionPayload.DeleteTree
+      else PostActionPayload.DeletePost(clearFlags = false)
 
-    if (post.isDeletedSomehow)
-      throwForbidden("DwE7Hf038", "Comment already deleted")
+    pageReq.dao.changePostStatus(postId, pageId = pageId, action, userId = pageReq.theUser.id2)
 
-    if (wholeTree && !pageReq.permsOnPage.deleteAnyReply) {
-      // Deny operation, even if there are 0 replies, because another JVM thread
-      // might create a reply at any time.
-      throwForbidden("DwE74GKt5", "You may not delete that whole comment tree")
-    }
-
-    val deletion = RawPostAction.toDeletePost(andReplies = wholeTree,
-      id = PageParts.UnassignedId, postIdToDelete = postId,
-      userIdData = pageReq.userIdData,
-      createdAt = pageReq.ctime)
-
-    val (updatedPage, _) =
-      pageReq.dao.savePageActionsGenNotfs(pageReq, deletion::Nil)
-
-    val postAfter = updatedPage.parts.thePost(postId)
-    OkSafeJson(ReactJson.postToJson(postAfter))
+    OkSafeJson(ReactJson.postToJson2(postId = postId, pageId = pageId, // TODO: don't include post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
+      pageReq.dao, includeUnapproved = true))
   }
 
 

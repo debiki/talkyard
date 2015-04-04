@@ -295,6 +295,10 @@ var Thread = createComponent({
 
   render: function() {
     var post: Post = this.props.allPosts[this.props.postId];
+    if (!post) {
+      // This tree has been deleted it seems
+      return null;
+    }
     var parentPost = this.props.allPosts[post.parentId];
     var deeper = this.props.depth + 1;
 
@@ -900,7 +904,7 @@ function isCollapsed(post) {
 
 
 function isDeleted(post) {
-  return post.isTreeDeleted || post.isPostDeleted;
+  return !post || post.isTreeDeleted || post.isPostDeleted;
 }
 
 

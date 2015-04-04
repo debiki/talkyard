@@ -31,7 +31,7 @@ import PageParts._
 /** The parts of a page are 1) posts: any title post, any body post, and any comments,
   * and 2) people, namely those who have authored or edited the posts.
   *
-  * Should be immutable? If backed by the database, a serializable isolation level
+  * Should be immutable. If backed by the database, a serializable isolation level
   * transaction should be used.
   */
 abstract class PageParts2 extends People2 {
@@ -58,10 +58,10 @@ abstract class PageParts2 extends People2 {
 
   def highestReplyId: PostId = allPosts.map(_.id).max
   private def dummyDate = new ju.Date
-  def pageId = "dummy"
-  def titlePost: Option[Post2] = None
-  def loadAllPosts() {}
-  def topLevelComments: Seq[Post2] = Nil
+  def pageId: PageId
+  def titlePost: Option[Post2] = post(PageParts.TitleId)
+  def loadAllPosts()
+  def topLevelComments: immutable.Seq[Post2] = childrenByParentId.getOrElse(PageParts.NoId, Nil)
   def allPosts: Seq[Post2]
 
   def post(postId: PostId): Option[Post2] = postsById.get(postId)
@@ -79,6 +79,27 @@ abstract class PageParts2 extends People2 {
   def childrenOf(postId: PostId): immutable.Seq[Post2] =
     childrenByParentId.getOrElse(postId, Nil)
 
+  def successorsOf(postId: PostId): immutable.Seq[Post2] = {
+    val pending = ArrayBuffer[Post2](childrenByParentId.getOrElse(postId, Nil): _*)
+    val successors = ArrayBuffer[Post2]()
+    while (pending.nonEmpty) {
+      val next = pending.remove(0)
+      if (successors.find(_.id == next.id).nonEmpty) {
+        die("DwE9FKW3", s"Cycle detected on page '$pageId'; it includes post '${next.id}'")
+      }
+      successors.append(next)
+      pending.append(childrenOf(next.id): _*)
+    }
+    successors.toVector
+  }
+
+  def hasNonDeletedSuccessor(postId: PostId): Boolean = {
+    // For now:
+    childrenOf(postId) find { child =>
+      child.deletedStatus.isEmpty ||
+        child.deletedStatus == DeletedStatus.PostDeleted // then children perhaps not deleted
+    } nonEmpty
+  }
 }
 
 

@@ -195,7 +195,7 @@ trait PagesDao {
         editedPost = editedPost.copy(numDistinctEditors = 2)  // for now
       }
 
-      transaction.saveEditedPost(editedPost)
+      transaction.saveUpdatedPost(editedPost)
 
       if (postId == PageParts.TitleId) {
         val oldMeta = page.meta
@@ -209,21 +209,105 @@ trait PagesDao {
   }
 
 
-  /*
-  def closeCollapseDelete(pageId: PageId, action: RawPostAction[_]) {
+  def changePostStatus(postId: PostId, pageId: PageId, action: PostActionPayload, userId: UserId2) {
     readWriteTransaction { transaction =>
-      val page = transaction.pageDao(pageId)
-      // if collapsing/closing/deleted
-      //   mark all successors as collapsed/closed/deleted.
-      // else (i.e. opening)
-      //   find statuses of post.
-      //   apply this status to all successors.
-      // update page meta post counts.
-      // return post with new close/collapse/delete status.
+      val page = PageDao(pageId, transaction)
+
+      val postBefore = page.parts.thePost(postId)
+      val user = transaction.loadUser(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
+
+      // Authorization.
+      if (!user.isAdmin) {
+        if (postBefore.createdById != userId)
+          throwForbidden("DwE0PK24", "You may not modify that post, it's not yours")
+
+        if (!action.isInstanceOf[PAP.DeletePost] && action != PAP.CollapsePost)
+          throwForbidden("DwE5JKF7", "You may not modify the whole tree")
+      }
+
+      // Update the directly affected post.
+      val postAfter = action match {
+        case PAP.CloseTree =>
+          if (postBefore.closedStatus.isDefined)
+            return
+          postBefore.copy(
+            closedAt = Some(transaction.currentTime),
+            closedById = Some(userId),
+            closedStatus = Some(ClosedStatus.TreeClosed))
+        case PAP.CollapsePost =>
+          if (postBefore.collapsedStatus.isDefined)
+            return
+          postBefore.copy(
+            collapsedAt = Some(transaction.currentTime),
+            collapsedById = Some(userId),
+            collapsedStatus = Some(CollapsedStatus.PostCollapsed))
+        case PAP.CollapseTree =>
+          if (postBefore.collapsedStatus.isDefined)
+            return
+          postBefore.copy(
+            collapsedAt = Some(transaction.currentTime),
+            collapsedById = Some(userId),
+            collapsedStatus = Some(CollapsedStatus.TreeCollapsed))
+        case PAP.DeletePost(clearFlags) =>
+          if (postBefore.deletedStatus.isDefined)
+            return
+          postBefore.copy(
+            deletedAt = Some(transaction.currentTime),
+            deletedById = Some(userId),
+            deletedStatus = Some(DeletedStatus.PostDeleted))
+        case PAP.DeleteTree =>
+          if (postBefore.deletedStatus.isDefined)
+            return
+          postBefore.copy(
+            deletedAt = Some(transaction.currentTime),
+            deletedById = Some(userId),
+            deletedStatus = Some(DeletedStatus.TreeDeleted))
+      }
+
+      transaction.saveUpdatedPost(postAfter)
+
+      // Update any indirectly affected posts, e.g. subsequent comments in the same
+      // thread that are being deleted recursively.
+      for (successor <- page.parts.successorsOf(postId)) {
+        val anyUpdatedSuccessor: Option[Post2] = action match {
+          case PAP.CloseTree =>
+            if (successor.closedStatus.isDefined) None
+            else Some(successor.copy(
+              closedStatus = Some(ClosedStatus.AncestorClosed),
+              closedById = Some(userId),
+              closedAt = Some(transaction.currentTime)))
+          case PAP.CollapsePost =>
+            None
+          case PAP.CollapseTree =>
+            if (successor.collapsedStatus.isDefined) None
+            else Some(successor.copy(
+              collapsedStatus = Some(CollapsedStatus.AncestorCollapsed),
+              collapsedById = Some(userId),
+              collapsedAt = Some(transaction.currentTime)))
+          case PAP.DeletePost(clearFlags) =>
+            None
+          case PAP.DeleteTree =>
+            if (successor.deletedStatus.isDefined) None
+            else Some(successor.copy(
+              deletedStatus = Some(DeletedStatus.AncestorDeleted),
+              deletedById = Some(userId),
+              deletedAt = Some(transaction.currentTime)))
+        }
+
+        anyUpdatedSuccessor foreach { updatedSuccessor =>
+          transaction.saveUpdatedPost(updatedSuccessor)
+        }
+      }
+
+      // TODO: update page meta post counts.
+      //val oldMeta = page.meta
+      //val newMeta = oldMeta.copy(...)
+      //transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
     }
   }
 
 
+  /*
   def saveVote(pageId: PageId, voteNoId: RawPostAction[PAP.Vote],
         postIdsRead: Set[PostId]) {
     readWriteTransaction { transaction =>
@@ -334,6 +418,13 @@ trait CachingPagesDao extends PagesDao {
 
   override def editPost(pageId: PageId, postId: PostId, editorId: UserId2, newText: String) {
     super.editPost(pageId = pageId, postId = postId, editorId = editorId, newText = newText)
+    refreshPageInCache(pageId)
+  }
+
+
+  override def changePostStatus(postId: PostId, pageId: PageId, action: PostActionPayload,
+        userId: UserId2) {
+    super.changePostStatus(postId = postId, pageId = pageId, action, userId = userId)
     refreshPageInCache(pageId)
   }
 
