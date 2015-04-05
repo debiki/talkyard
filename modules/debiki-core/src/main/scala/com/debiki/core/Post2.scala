@@ -225,6 +225,30 @@ object Post2 {
       numTimesRead = 0)
   }
 
+  def createTitle(
+        siteId: SiteId,
+        pageId: PageId,
+        createdAt: ju.Date,
+        createdById: UserId2,
+        source: String,
+        htmlSanitized: String,
+        approvedById: Option[UserId2]): Post2 =
+    create(siteId, pageId = pageId, postId = PageParts.TitleId, parentId = None,
+      multireplyPostIds = Set.empty, createdAt = createdAt, createdById = createdById,
+      source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
+
+  def createBody(
+        siteId: SiteId,
+        pageId: PageId,
+        createdAt: ju.Date,
+        createdById: UserId2,
+        source: String,
+        htmlSanitized: String,
+        approvedById: Option[UserId2]): Post2 =
+    create(siteId, pageId = pageId, postId = PageParts.BodyId, parentId = None,
+      multireplyPostIds = Set.empty, createdAt = createdAt, createdById = createdById,
+      source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
+
 }
 
 

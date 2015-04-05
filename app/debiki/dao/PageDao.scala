@@ -53,7 +53,7 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction) extend
 
   override def path: PagePath = {
     if (_path eq null) {
-      _path = transaction.lookupPagePath(id)
+      _path = transaction.loadPagePath(id)
     }
     _path getOrElse throwPageNotFound()
   }
@@ -77,7 +77,7 @@ case class PageParts2Dao(override val pageId: PageId, transaction: SiteTransacti
       s"User not found, id: '$userId', page: '$pageId' [DwE4BYW2]"
   }
 
-  override def loadAllPosts() {
+  def loadAllPosts() {
     if (_allPosts eq null) {
       _allPosts = transaction.loadPostsOnPage(pageId)
     }

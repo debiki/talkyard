@@ -56,28 +56,33 @@ abstract class PageParts2 extends People2 {
     childMap
   }
 
-  def highestReplyId: PostId = allPosts.map(_.id).max
-  private def dummyDate = new ju.Date
+  def highestReplyId: Option[PostId] = {
+    if (allPosts.isEmpty)
+      return None
+    val maxPostId = allPosts.map(_.id).max
+    if (PageParts.isArticleOrConfigPostId(maxPostId)) None
+    else Some(maxPostId)
+  }
+
   def pageId: PageId
   def titlePost: Option[Post2] = post(PageParts.TitleId)
-  def loadAllPosts()
+
   def topLevelComments: immutable.Seq[Post2] = childrenByParentId.getOrElse(PageParts.NoId, Nil)
   def allPosts: Seq[Post2]
 
   def post(postId: PostId): Option[Post2] = postsById.get(postId)
   def thePost(postId: PostId): Post2 = post(postId) getOrDie "DwE9PKG3"
 
-  /** Returns the post with id postId, its parent, grandparent, and so on. */
-  def ancestorsStartingAt(postId: PostId): Seq[Post2] = Nil // TODO
-
-  def derivePostStatuses(postId: PostId): PostStatuses = PostStatuses.Default // TODO
 
   def numRepliesInclDeleted: Int = 1 // TODO
 
+
   def theUser(userId: UserId2): User
+
 
   def childrenOf(postId: PostId): immutable.Seq[Post2] =
     childrenByParentId.getOrElse(postId, Nil)
+
 
   def successorsOf(postId: PostId): immutable.Seq[Post2] = {
     val pending = ArrayBuffer[Post2](childrenByParentId.getOrElse(postId, Nil): _*)
@@ -93,6 +98,7 @@ abstract class PageParts2 extends People2 {
     successors.toVector
   }
 
+
   def hasNonDeletedSuccessor(postId: PostId): Boolean = {
     // For now:
     childrenOf(postId) find { child =>
@@ -100,6 +106,56 @@ abstract class PageParts2 extends People2 {
         child.deletedStatus == DeletedStatus.PostDeleted // then children perhaps not deleted
     } nonEmpty
   }
+
+
+  def derivePostStatuses(postId: PostId): PostStatuses = PostStatuses.Default // TODO
+
+
+  def parentOf(postId: PostId): Option[Post2] =
+    thePost(postId).parentId.map(id => thePost(id))
+
+
+  /** Ancestors, starting with postId's parent. */
+  def ancestorsOf(postId: PostId): List[Post2] = {
+    var ancestors: List[Post2] = Nil
+    var curPost: Option[Post2] = Some(thePost(postId))
+    while ({
+      curPost = parentOf(curPost.get.id)
+      curPost.nonEmpty
+    }) {
+      ancestors ::= curPost.get
+    }
+    ancestors.reverse
+  }
+
+
+  def findCommonAncestorId(postIds: Seq[PostId]): PostId = {
+    TESTS_MISSING // COULD check for cycles?
+    if (postIds.isEmpty || postIds.contains(PageParts.NoId))
+      return PageParts.NoId
+
+    val firstPost = thePost(postIds.head)
+    var commonAncestorIds: Seq[PostId] = firstPost.id :: ancestorsOf(firstPost.id).map(_.id)
+    for (nextPostId <- postIds.tail) {
+      val nextPost = thePost(nextPostId)
+      var ancestorIds = nextPost.id :: ancestorsOf(nextPost.id).map(_.id)
+      var commonAncestorFound = false
+      while (ancestorIds.nonEmpty && !commonAncestorFound) {
+        val nextAncestorId = ancestorIds.head
+        if (commonAncestorIds.contains(nextAncestorId)) {
+          commonAncestorIds = commonAncestorIds.dropWhile(_ != nextAncestorId)
+          commonAncestorFound = true
+        }
+        else {
+          ancestorIds = ancestorIds.tail
+        }
+      }
+      if (ancestorIds.isEmpty)
+        return NoId
+    }
+    commonAncestorIds.head
+  }
+
 }
 
 

@@ -45,12 +45,9 @@ object EditController extends mvc.Controller {
     */
   def loadCurrentText(pageId: String, postId: String) = GetAction { request =>
     val postIdAsInt = parseIntOrThrowBadReq(postId, "DwE1Hu80")
-    val page = request.dao.loadPageParts(pageId) getOrElse
-      throwNotFound("DwE7SKE3", "Page not found")
-    val post = page.getPost(postIdAsInt) getOrElse
-      throwNotFound("DwE4FKW2", "Post not found")
-    val currentText = post.currentText
-    val json = Json.obj("currentText" -> currentText)
+    val post = request.dao.loadPost(pageId, postId.toInt) getOrElse
+      throwNotFound("DwE7SKE3", "Post not found")
+    val json = Json.obj("currentText" -> post.currentSource)
     OkSafeJson(json)
   }
 

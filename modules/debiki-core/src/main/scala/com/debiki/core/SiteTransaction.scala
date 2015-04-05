@@ -27,16 +27,22 @@ trait SiteTransaction {
   def siteId: SiteId
 
   def loadResourceUsage(): ResourceUse
-  def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post2]
   def loadAncestorPostIdsParentFirst(pageId: PageId): immutable.Seq[PageId]
 
-  def saveNewPost(newPost: Post2)
-  def saveUpdatedPost(newPost: Post2)
+  def loadPost(pageId: PageId, postId: PostId): Option[Post2]
+  def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post2]
+  def insertPost(newPost: Post2)
+  def updatePost(newPost: Post2)
 
-  def lookupPagePath(pageId: PageId): Option[PagePath]
+  def nextPageId(): PageId
+
   def loadAllPageMetas(): immutable.Seq[PageMeta]
   def loadPageMeta(pageId: PageId): Option[PageMeta]
+  def insertPageMeta(newMeta: PageMeta)
   def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta)
+
+  def loadPagePath(pageId: PageId): Option[PagePath]
+  def insertPagePath(pagePath: PagePath)
 
   def loadPagePartsOld(pageId: PageId): Option[PageParts]
 

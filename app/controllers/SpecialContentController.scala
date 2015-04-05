@@ -135,6 +135,7 @@ object SpecialContentController extends mvc.Controller {
           text = "",
           approval = Some(Approval.AuthoritativeUser)))
 
+    ??? /* TODO use createPage2 instead
     val pageId = s"$rootPageId$contentId"
     val pageParts = PageParts(pageId, people = SystemUser.Person, rawActions = emptyBody::Nil)
 
@@ -149,6 +150,7 @@ object SpecialContentController extends mvc.Controller {
       pageParts)
 
     request.dao.createPage(newPage)
+    */
   }
 
 

@@ -38,12 +38,86 @@ trait PagesDao {
   self: SiteDao =>
 
 
-  def nextPageId(): PageId = siteDbDao.nextPageId()
+  def createPage2(pageRole: PageRole, pageStatus: PageStatus, anyParentPageId: Option[PageId],
+        anyFolder: Option[String], titleSource: String, bodySource: String,
+        showId: Boolean, pageSlug: String, authorId: UserId2): PagePath = {
 
+    val bodyHtmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(bodySource,
+      allowClassIdDataAttrs = true, followLinks = !pageRole.isWidelyEditable)
 
-  def createPage(pageNoId: Page): Page = {
-    siteDbDao.createPage(pageNoId)
-    // COULD generate and save notfs [notifications]
+    val titleHtmlSanitized = siteDbDao.commonMarkRenderer.sanitizeHtml(titleSource)
+
+    readWriteTransaction { transaction =>
+
+      val pageId = transaction.nextPageId()
+
+      // Authorize and determine approver user id. For now:
+      val author = transaction.loadUser(authorId) getOrElse throwForbidden("DwE9GK32", "User gone")
+      val approvedById =
+        if (author.isAdmin) {
+          author.id2
+        }
+        else {
+          if (pageRole != PageRole.ForumTopic)
+            throwForbidden("DwE0GK3w2", "You may create forum topics only")
+
+          anyParentPageId match {
+            case None =>
+              throwForbidden("DwE8GKE4", "No parent forum or category specified")
+            case Some(parentId) =>
+              val parentMeta = loadPageMeta(parentId) getOrElse throwNotFound(
+                "DwE78BI21", s"Parent forum or category does not exist, id: '$parentId'")
+
+              if (parentMeta.pageRole != PageRole.ForumCategory &&
+                  parentMeta.pageRole != PageRole.Forum)
+                throwForbidden("DwE830BIR5", "Parent page is not a Forum or ForumCategory")
+
+              // The System user currently approves all new forum topics.
+              // TODO SECURITY COULD analyze the author's trust level and past actions, and
+              // based on that, approve, reject or review later.
+              SystemUserId
+          }
+        }
+
+      val folder = anyFolder getOrElse {
+        val anyParentPath = anyParentPageId flatMap { id =>
+          transaction.loadPagePath(id)
+        }
+        anyParentPath.map(_.folder) getOrElse "/"
+      }
+
+      val pagePath = PagePath(siteId, folder = folder, pageId = Some(pageId),
+        showId = showId, pageSlug = pageSlug)
+
+      val titlePost = Post2.createTitle(
+        siteId = siteId,
+        pageId = pageId,
+        createdAt = transaction.currentTime,
+        createdById = authorId,
+        source = titleSource,
+        htmlSanitized = titleHtmlSanitized,
+        approvedById = Some(approvedById))
+
+      val bodyPost = Post2.createBody(
+        siteId = siteId,
+        pageId = pageId,
+        createdAt = transaction.currentTime,
+        createdById = authorId,
+        source = bodySource,
+        htmlSanitized = bodyHtmlSanitized,
+        approvedById = Some(approvedById))
+
+      val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.currentTime,
+        parentPageId = anyParentPageId, url = None, publishDirectly = true)
+
+      transaction.insertPageMeta(pageMeta)
+      transaction.insertPagePath(pagePath)
+      transaction.insertPost(titlePost)
+      transaction.insertPost(bodyPost)
+
+      // TODO gen notfs
+      pagePath
+    }
   }
 
 
@@ -106,33 +180,84 @@ trait PagesDao {
   }
 
 
-  def createPost(newPostPerhapsNoId: Post2): Post2 = {
+  def insertPostWithKnownId(newPost: Post2) {
     readWriteTransaction { transaction =>
-      val page = PageDao(newPostPerhapsNoId.pageId, transaction)
-      var newPost =
-        if (newPostPerhapsNoId.hasAnId) {
-          newPostPerhapsNoId
+      //val oldMeta = page.meta
+      //val newMeta = oldMeta.copy(numRepliesInclDeleted = page.parts.numRepliesInclDeleted + 1)
+      transaction.insertPost(newPost)
+      //transaction.savePageMeta(newMeta)  // TODO
+
+      // TODO generate notifications
+      // transaction.saveNotifications(...)
+    }
+  }
+
+
+  def insertReply(text: String, pageId: PageId, replyToPostIds: Set[PostId],
+        authorId: UserId2): PostId = {
+    val htmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(
+      text, allowClassIdDataAttrs = false, followLinks = false)
+
+    readWriteTransaction { transaction =>
+      val page = PageDao(pageId, transaction)
+      var postId = page.parts.highestReplyId.map(_ + 1) getOrElse PageParts.FirstReplyId
+      val commonAncestorId = page.parts.findCommonAncestorId(replyToPostIds.toSeq)
+      val parentId =
+        if (commonAncestorId == PageParts.NoId) {
+          if (page.role == PageRole.EmbeddedComments) {
+            // There is no page body. Allow new comment threads with no parent post.
+            None
+          }
+          else {
+            throwBadReq("DwE260G8", "Not an embedded discussion. You must reply to something")
+          }
+        }
+        else if (page.parts.post(commonAncestorId).isDefined) {
+          Some(commonAncestorId)
         }
         else {
-          // (We get to here for replies only. The title and body have fix ids.)
-          val newId = page.parts.highestReplyId + 1
-          newPostPerhapsNoId.copy(id = newId)
+          throwBadReq("DwEe8HD36", o"""Cannot reply to common ancestor post '$commonAncestorId';
+            it does not exist""")
         }
 
-      val parentStatuses = newPost.parentId match {
+      // Authorize. For now, no restrictions. Fix later TODO
+      val author = transaction.loadUser(authorId) getOrElse throwNotFound("DwE404UF3", "Bad user")
+      val approverId =
+        if (author.isAdmin) {
+          author.id2
+        }
+        else {
+          SystemUserId
+        }
+
+      val parentStatuses = parentId match {
         case Some(parentId) => page.parts.derivePostStatuses(parentId)
         case None => PostStatuses.Default
       }
+
+      var newPost = Post2.create(
+        siteId = siteId,
+        pageId = pageId,
+        postId = postId,
+        parentId = parentId,
+        multireplyPostIds = replyToPostIds,
+        createdAt = transaction.currentTime,
+        createdById = authorId,
+        source = text,
+        htmlSanitized = htmlSanitized,
+        approvedById = Some(approverId))
+
       newPost = newPost.copyWithParentStatuses(parentStatuses)
+
       //val oldMeta = page.meta
       //val newMeta = oldMeta.copy(numRepliesInclDeleted = page.parts.numRepliesInclDeleted + 1)
-      transaction.saveNewPost(newPost)
-      //transaction.savePageMeta(newMeta)
+      transaction.insertPost(newPost)
+      //transaction.savePageMeta(newMeta) // TODO
 
       // TODO generate notifications
       // transaction.saveNotifications(...)
 
-      newPost
+      postId
     }
   }
 
@@ -195,7 +320,7 @@ trait PagesDao {
         editedPost = editedPost.copy(numDistinctEditors = 2)  // for now
       }
 
-      transaction.saveUpdatedPost(editedPost)
+      transaction.updatePost(editedPost)
 
       if (postId == PageParts.TitleId) {
         val oldMeta = page.meta
@@ -264,7 +389,7 @@ trait PagesDao {
             deletedStatus = Some(DeletedStatus.TreeDeleted))
       }
 
-      transaction.saveUpdatedPost(postAfter)
+      transaction.updatePost(postAfter)
 
       // Update any indirectly affected posts, e.g. subsequent comments in the same
       // thread that are being deleted recursively.
@@ -295,7 +420,7 @@ trait PagesDao {
         }
 
         anyUpdatedSuccessor foreach { updatedSuccessor =>
-          transaction.saveUpdatedPost(updatedSuccessor)
+          transaction.updatePost(updatedSuccessor)
         }
       }
 
@@ -361,8 +486,8 @@ trait PagesDao {
     siteDbDao.loadPostsReadStats(pageId)
 
 
-  def loadPostsOnPage(pageId: PageId): immutable.Seq[Post2] =
-    readOnlyTransaction(_.loadPostsOnPage(pageId))
+  def loadPost(pageId: PageId, postId: PostId): Option[Post2] =
+    readOnlyTransaction(_.loadPost(pageId, postId))
 
 
   def loadPageParts(debateId: PageId): Option[PageParts] =
@@ -389,10 +514,14 @@ trait CachingPagesDao extends PagesDao {
   }
 
 
-  override def createPage(page: Page): Page = {
-    val pageWithIds = super.createPage(page)
-    firePageCreated(pageWithIds)
-    pageWithIds
+  override def createPage2(pageRole: PageRole, pageStatus: PageStatus,
+        anyParentPageId: Option[PageId], anyFolder: Option[String],
+        titleSource: String, bodySource: String,
+        showId: Boolean, pageSlug: String, authorId: UserId2): PagePath = {
+    val pagePath = super.createPage2(pageRole, pageStatus, anyParentPageId,
+      anyFolder, titleSource, bodySource, showId, pageSlug, authorId)
+    firePageCreated(pagePath)
+    pagePath
   }
 
 
@@ -409,10 +538,18 @@ trait CachingPagesDao extends PagesDao {
     newPageAndActionsWithId
   }
 
-  override def createPost(newPostPerhapsNoId: Post2): Post2 = {
-    val newPostWithId = super.createPost(newPostPerhapsNoId)
-    refreshPageInCache(newPostWithId.pageId)
-    newPostWithId
+
+  override def insertPostWithKnownId(newPost: Post2) {
+    super.insertPostWithKnownId(newPost)
+    refreshPageInCache(newPost.pageId)
+  }
+
+
+  override def insertReply(text: String, pageId: PageId, replyToPostIds: Set[PostId],
+        authorId: UserId2): PostId = {
+    val postId = super.insertReply(text, pageId = pageId, replyToPostIds, authorId = authorId)
+    refreshPageInCache(pageId)
+    postId
   }
 
 

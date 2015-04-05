@@ -219,8 +219,6 @@ abstract class SiteDbDao {
   def doSavePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
         : (PageNoPath, List[RawPostAction[_]])
 
-  def saveNewPost(post: Post2): Unit
-
   /** Deletes a vote. If there's a user id, deletes the vote by user id (guest or role),
     * Otherwise by browser id cookie.
     */
@@ -595,12 +593,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
     // will be wrong if two flags are saved at the same time.
     serialize {
       _spi.doSavePageActions(page, actions)
-    }
-  }
-
-  def saveNewPost(post: Post2): Unit = {
-    serialize {
-      _spi.saveNewPost(post)
     }
   }
 

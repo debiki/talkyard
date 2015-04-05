@@ -54,9 +54,9 @@ trait AssetBundleDao {
 trait CachingAssetBundleDao extends AssetBundleDao {
   self: SiteDao with CachingDao =>
 
-  onPageCreated { page =>
+  onPageCreated { pagePath =>
     tryUncacheAll(
-      makeSitePathDependencyKey(page.siteId, path = page.path.value))
+      makeSitePathDependencyKey(pagePath.siteId, path = pagePath.value))
   }
 
   onPageSaved { sitePageId =>

@@ -86,6 +86,7 @@ object Page {
         publishDirectly: Boolean = false,
         author: User,
         url: Option[String] = None): Page = {
+    ??? /* TODO remove newPage(...)
     val partsInclAuthor = parts + author
     val meta = PageMeta.forNewPage(
       pageRole,
@@ -95,6 +96,7 @@ object Page {
       publishDirectly = publishDirectly,
       url = url)
     Page(meta, path, ancestorIdsParentFirst = Nil, partsInclAuthor)
+    */
   }
 
   def newEmptyPage(pageRole: PageRole, path: PagePath, author: User) =
@@ -195,15 +197,15 @@ case class PageNoPath(parts: PageParts, ancestorIdsParentFirst: List[PageId], me
 object PageMeta {
 
   def forNewPage(
+        pageId: PageId,
         pageRole: PageRole,
-        author: User,
-        parts: PageParts,
+        authorId: UserId2,
         creationDati: ju.Date = new ju.Date,
         parentPageId: Option[String] = None,
         url: Option[String] = None,
         publishDirectly: Boolean = false) =
     PageMeta(
-      pageId = parts.pageId,
+      pageId = pageId,
       pageRole = pageRole,
       creationDati = creationDati,
       modDati = creationDati,
@@ -211,17 +213,17 @@ object PageMeta {
       parentPageId = parentPageId,
       embeddingPageUrl = url,
       pageExists = false,
-      cachedTitle = parts.maybeUnapprovedTitleText,
-      cachedAuthorDispName = author.displayName,
-      cachedAuthorUserId = author.id,
-      cachedNumPosters = parts.numPosters,
-      cachedNumActions = parts.actionCount,
-      cachedNumLikes = parts.numLikes,
-      cachedNumWrongs = parts.numWrongs,
-      cachedNumPostsToReview = parts.numPostsToReview,
-      cachedNumPostsDeleted = parts.numPostsDeleted,
-      cachedNumRepliesVisible = parts.numRepliesVisible,
-      cachedLastVisiblePostDati = parts.lastVisiblePostDati,
+      cachedTitle = Some("cachedTitle"),
+      cachedAuthorDispName = "cachedAuthorDispName",
+      cachedAuthorUserId = authorId.toString, // UserId2
+      cachedNumPosters = 1,
+      cachedNumActions = -1,
+      cachedNumLikes = 0,
+      cachedNumWrongs = 0,
+      cachedNumPostsToReview = -1,
+      cachedNumPostsDeleted = 0,
+      cachedNumRepliesVisible = 0,
+      cachedLastVisiblePostDati = Some(creationDati),
       cachedNumChildPages = 0)
 
   def forChangedPage(originalMeta: PageMeta, changedPage: PageParts): PageMeta = {

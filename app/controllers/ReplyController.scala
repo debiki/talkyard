@@ -40,7 +40,7 @@ object ReplyController extends mvc.Controller {
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
     val anyPageUrl = (body \ "pageUrl").asOpt[String]
-    val postIds = (body \ "postIds").as[Set[PostId]]
+    val replyToPostIds = (body \ "postIds").as[Set[PostId]]
     val textUntrimmed = (body \ "text").as[String]
     val wherePerhapsEmpty = (body \ "where").asOpt[String]
     val whereOpt = if (wherePerhapsEmpty == Some("")) None else wherePerhapsEmpty
@@ -59,74 +59,19 @@ object ReplyController extends mvc.Controller {
     if (text.isEmpty)
       throwBadReq("DwE85FK03", "Empty post")
 
-    val post = saveReply(pageReq, replyToPostIds = postIds, text, whereOpt)
+    val postId = pageReq.dao.insertReply(text, pageId = pageId, replyToPostIds,
+      authorId = pageReq.theUser.id2)
 
-    val json = ReactJson.postToJson2(postId = post.id, pageId = pageId, pageReq.dao,
+    val json = ReactJson.postToJson2(postId = postId, pageId = pageId, pageReq.dao,
       includeUnapproved = true)
     OkSafeJson(json)
-  }
-
-
-  private def saveReply(pageReq: PageRequest[_], replyToPostIds: Set[PostId],
-        text: String, whereOpt: Option[String] = None): Post2 = {
-
-    if (pageReq.oldPageVersion.isDefined)
-      throwBadReq("DwE72XS8", "Can only reply to latest page version")
-
-    val commonAncestorPostId = pageReq.thePageParts.findCommonAncestorPost(replyToPostIds.toSeq)
-    val anyParentPostId =
-      if (commonAncestorPostId == PageParts.NoId) {
-        if (pageReq.thePageRole == PageRole.EmbeddedComments) {
-          // There is no page body. Allow new comment threads with no parent post.
-          None
-        }
-        else {
-          throwBadReq(
-            "DwE260G8", "This is not an embedded discussion; must reply to an existing post")
-        }
-      }
-      else if (pageReq.thePageParts.getPost(commonAncestorPostId).isDefined) {
-        Some(commonAncestorPostId)
-      }
-      else {
-        throwBadReq("DwEe8HD36", o"""Cannot reply to common ancestor post `$commonAncestorPostId';
-          it does not exist""")
-      }
-
-    val approval = AutoApprover.perhapsApprove(pageReq)
-    val multireplyPostIds = if (replyToPostIds.size == 1) Set[PostId]() else replyToPostIds
-
-    val approvedById: Option[UserId2] = approval map { approvalType =>
-      approvalType match {
-        case Approval.Preliminary => SystemUser.User.id2
-        case Approval.WellBehavedUser => SystemUser.User.id2
-        case Approval.AuthoritativeUser => pageReq.theUser.id2
-      }
-    }
-
-    val htmlSanitized = pageReq.dao.siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(
-      text, allowClassIdDataAttrs = false, followLinks = false)
-
-    val postNoId = Post2.create(
-        siteId = pageReq.siteId,
-        pageId = pageReq.thePageId,
-        postId = PageParts.UnassignedId,
-        parentId = anyParentPostId,
-        multireplyPostIds = multireplyPostIds,
-        createdAt = pageReq.ctime,
-        createdById = pageReq.theUser.id2,
-        source = text,
-        htmlSanitized = htmlSanitized,
-        approvedById = approvedById)
-
-    val postWithId = pageReq.dao.createPost(postNoId)
-    postWithId
   }
 
 
   private def tryCreateEmbeddedCommentsPage(
         request: DebikiRequest[_], pageId: PageId, anyPageUrl: Option[String]): Option[Page] = {
 
+    ??? /* TODO use createPage2 instead
     if (anyPageUrl.isEmpty)
       throwBadReq("Cannot create embedded page: embedding page URL unknown")
 
@@ -154,6 +99,7 @@ object ReplyController extends mvc.Controller {
 
     val newPage = request.dao.createPage(pageToCreate)
     Some(newPage)
+    */
   }
 
 }
