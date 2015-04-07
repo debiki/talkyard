@@ -693,3 +693,35 @@ case class UserPostVotes(
   votedWrong: Boolean,
   votedOffTopic: Boolean)
 
+
+object UserPostVotes {
+
+  def makeMap(votes: imm.Seq[PostVote]): Map[PostId, UserPostVotes] = {
+    if (votes.isEmpty)
+      return Map.empty
+    val theFirstVote = votes.head
+    val voteBitsByPostId = mut.HashMap[PostId, Int]()
+    for (vote <- votes) {
+      require(vote.voterId == theFirstVote.voterId, "DwE0PKF3")
+      require(vote.pageId == theFirstVote.pageId, "DwE6PUB4")
+      val bits = vote.voteType match {
+        case PostVoteType.Like => 1
+        case PostVoteType.Wrong => 2
+        //case PAP.Rude? Boring? => 4
+      }
+      var voteBits = voteBitsByPostId.getOrElseUpdate(vote.postId, 0)
+      voteBits |= bits
+      assert(voteBits <= 7)
+      voteBitsByPostId.put(vote.postId, voteBits)
+    }
+    val postIdsAndVotes = voteBitsByPostId.toVector map { case (key: PostId, voteBits: Int) =>
+      val votes = UserPostVotes(
+        votedLike = (voteBits & 1) == 1,
+        votedWrong = (voteBits & 2) == 2,
+        votedOffTopic = (voteBits & 4) == 4)
+      (key, votes)
+    }
+    Map(postIdsAndVotes: _*)
+  }
+
+}

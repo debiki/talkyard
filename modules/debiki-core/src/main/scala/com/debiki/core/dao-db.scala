@@ -225,11 +225,6 @@ abstract class SiteDbDao {
   def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
         voteType: PostActionPayload.Vote)
 
-  /** Remembers that the specified posts have been read by the user that did the action.
-    */
-  def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId],
-        actionMakingThemRead: RawPostAction[_])
-
   def loadPostsReadStats(pageId: PageId): PostsReadStats
 
   /** Returns None if the page doesn't exist, and a
@@ -600,13 +595,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
         voteType: PostActionPayload.Vote) {
     serialize {
       _spi.deleteVote(userIdData, pageId, postId, voteType)
-    }
-  }
-
-  def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId],
-        actionMakingThemRead: RawPostAction[_]) {
-    serialize {
-      _spi.updatePostsReadStats(pageId, postIdsRead, actionMakingThemRead)
     }
   }
 

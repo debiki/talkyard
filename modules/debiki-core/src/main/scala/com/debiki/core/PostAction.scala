@@ -26,6 +26,22 @@ import PageParts._
 import FlagType.FlagType
 
 
+sealed abstract class PostVoteType
+object PostVoteType {
+  case object Like extends PostVoteType
+  case object Wrong extends PostVoteType
+  //case object Rude extends PostVoteType
+  //case object Boring extends PostVoteType
+}
+
+
+case class PostVote(
+  pageId: PageId,
+  postId: PostId,
+  voterId: UserId2,
+  voteType: PostVoteType)
+
+
 /** Represents a part of a page (e.g. the title, the body, or a comment — a "Post")
   * or a change to a part of the page (e.g. an edit of a comment — a "Patch").
   * PostAction wraps the RawPostAction instance that created / changed the page part,

@@ -291,11 +291,17 @@ object ReactJson {
     val user = pageRequest.user getOrElse {
       return None
     }
+    pageRequest.dao.readOnlyTransaction { transaction =>
+      userDataJsonImpl(user, pageRequest.thePageId, pageRequest.permsOnPage, transaction)
+    }
+  }
 
+
+  private def userDataJsonImpl(user: User, pageId: PageId, permsOnPage: PermsOnPage,
+        transaction: SiteTransaction): Option[JsObject] = {
     val rolePageSettings = user.anyRoleId map { roleId =>
-      val settings = pageRequest.dao.loadRolePageSettings(
-        roleId = roleId, pageId = pageRequest.thePageId)
-      rolePageSettingsToJson(settings)
+      val anySettings = transaction.loadRolePageSettings(roleId = roleId, pageId = pageId)
+      rolePageSettingsToJson(anySettings getOrElse RolePageSettings.Default)
     } getOrElse JsNull
 
     // Warning: some dupl code, see `userNoPageToJson()` above.
@@ -307,10 +313,10 @@ object ReactJson {
       "fullName" -> JsString(user.displayName),
       "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
       "isAuthenticated" -> JsBoolean(user.isAuthenticated),
-      "permsOnPage" -> permsOnPageJson(pageRequest.permsOnPage),
+      "permsOnPage" -> permsOnPageJson(permsOnPage),
       "rolePageSettings" -> rolePageSettings,
-      "votes" -> votesJson(pageRequest),
-      "unapprovedPosts" -> unapprovedPostsJson(pageRequest),
+      "votes" -> votesJson(user.id2, pageId, transaction),
+      "unapprovedPosts" -> unapprovedPostsJson(user.id, pageId, transaction),
       "postIdsAutoReadLongAgo" -> JsArray(Nil),
       "postIdsAutoReadNow" -> JsArray(Nil),
       "marksByPostId" -> JsObject(Nil)))
@@ -339,8 +345,9 @@ object ReactJson {
   }
 
 
-  private def votesJson(pageRequest: PageRequest[_]): JsObject = {
-    val userVotesMap = pageRequest.thePageParts.userVotesMap(pageRequest.userIdData)
+  private def votesJson(userId: UserId2, pageId: PageId, transaction: SiteTransaction): JsObject = {
+    val votes = transaction.loadVotesByUserOnPage(userId, pageId)
+    val userVotesMap = UserPostVotes.makeMap(votes)
     val votesByPostId = userVotesMap map { case (postId, votes) =>
       var voteStrs = Vector[String]()
       if (votes.votedLike) voteStrs = voteStrs :+ "VoteLike"
@@ -352,7 +359,11 @@ object ReactJson {
   }
 
 
-  private def unapprovedPostsJson(request: PageRequest[_]): JsObject = {
+  private def unapprovedPostsJson(userId: UserId, pageId: PageId, transaction: SiteTransaction)
+        : JsObject = {
+    // I'm rewriting/refactoring and right now all posts are approved directly, so for now:
+    JsObject(Nil)
+    /* Previously:
     val relevantPosts =
       if (request.theUser.isAdmin) request.thePageParts.getAllPosts
       else request.thePageParts.postsByUser(request.theUser.id)
@@ -366,6 +377,7 @@ object ReactJson {
     })
 
     json
+    */
   }
 
 

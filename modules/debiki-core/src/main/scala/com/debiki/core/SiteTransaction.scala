@@ -34,6 +34,16 @@ trait SiteTransaction {
   def insertPost(newPost: Post2)
   def updatePost(newPost: Post2)
 
+  def deleteVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2)
+  def insertVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2,
+        voterIp: IpAddress)
+  def loadVotesByUserOnPage(userId: UserId2, pageId: PageId): immutable.Seq[PostVote]
+
+  /** Remembers that the specified posts have been read by a certain user.
+    */
+  def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId], readById: UserId2,
+        readFromIp: String)
+
   def nextPageId(): PageId
 
   def loadAllPageMetas(): immutable.Seq[PageMeta]
@@ -51,6 +61,8 @@ trait SiteTransaction {
   def loadUser(userId: UserId2): Option[User] = loadUser(userId.toString)
   def loadUser(userId: UserId): Option[User]
   def loadUsersOnPageAsMap2(pageId: PageId, siteId: Option[SiteId] = None): Map[UserId, User]
+
+  def loadRolePageSettings(roleId: RoleId, pageId: PageId): Option[RolePageSettings]
 
 }
 

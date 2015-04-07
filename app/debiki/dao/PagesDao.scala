@@ -432,53 +432,51 @@ trait PagesDao {
   }
 
 
-  /*
-  def saveVote(pageId: PageId, voteNoId: RawPostAction[PAP.Vote],
-        postIdsRead: Set[PostId]) {
+  def deleteVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2) {
     readWriteTransaction { transaction =>
-      if (voteNoId.payload == PostActionPayload.VoteLike) {
-        val post = transaction.loadPost(voteNoId.postId).getOrElse(
-          throwNotFound("DwE5GH7", "Post not found"))
-        if (post.userId == voteNoId.userId)
-          throwBadReq("DwE84QM0", "Cannot like own post")
+      transaction.deleteVote(pageId, postId, voteType, voterId = voterId)
+    }
+  }
+
+
+  def insertVoteUpdateReadStats(pageId: PageId, postId: PostId, voteType: PostVoteType,
+        voterId: UserId2, voterIp: String, postIdsRead: Set[PostId]) {
+    readWriteTransaction { transaction =>
+      val post = transaction.loadPost(pageId, postId) getOrElse
+        throwNotFound("DwE404YG6", "Post not found")
+
+      if (voteType == PostVoteType.Like) {
+        if (post.createdById == voterId)
+          throwForbidden("DwE84QM0", "Cannot like own post")
       }
 
-      val voteWithId = try {
-        transaction.savePostAction(pageId, voteNoId)
-      }
+      try { transaction.insertVote(pageId, postId, voteType, voterId = voterId, voterIp = voterIp) }
       catch {
         case DbDao.DuplicateVoteException =>
-          throwConflict("DwE26FX0", "Duplicate votes")
+          throwForbidden("Dw403BKW2", "You have already voted")
       }
 
-      // Downvotes (wrong, off-topic) should result in only the downvoted post
-      // being marked as read. Its ancestors shouldn't be marked as read,
-      // because a post *not* being downvoted shouldn't
+      // Update post read stats.
+      // Downvotes (wrong, boring) should result in only the downvoted post
+      // being marked as read, because a post *not* being downvoted shouldn't
       // give that post worse rating. (Remember that the rating of a post is
       // roughly the number of Like votes / num-times-it's-been-read.)
       val postsToMarkAsRead =
-        if (voteNoId.payload == PostActionPayload.VoteLike)
-          postIdsRead
+        if (voteType == PostVoteType.Like)
+          postIdsRead  // those posts were not upvoted
         else
-          Set(voteNoId.postId)
+          Set(postId)  // that post was downvoted
 
-      transaction.updatePostsReadStats(pageId, postsToMarkAsRead, voteWithId)
-
-      and, in overriding function: refreshPageInCache(page.id)
+      transaction.updatePostsReadStats(pageId, postsToMarkAsRead, readById = voterId,
+        readFromIp = voterIp)
     }
-  } */
+  }
 
 
   def deleteVoteAndNotf(userIdData: UserIdData, pageId: PageId, postId: PostId,
         voteType: PostActionPayload.Vote) {
     siteDbDao.deleteVote(userIdData, pageId, postId, voteType)
     // Delete vote notf too once they're being generated, see [953kGF21X].
-  }
-
-
-  def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId],
-        actionMakingThemRead: RawPostAction[_]) {
-    siteDbDao.updatePostsReadStats(pageId, postIdsRead, actionMakingThemRead)
   }
 
 
