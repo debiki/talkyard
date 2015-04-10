@@ -26,7 +26,10 @@ import PageParts._
 import FlagType.FlagType
 
 
-sealed abstract class PostVoteType
+abstract class PostActionType
+
+
+sealed abstract class PostVoteType extends PostActionType
 object PostVoteType {
   case object Like extends PostVoteType
   case object Wrong extends PostVoteType
@@ -35,12 +38,55 @@ object PostVoteType {
 }
 
 
+sealed abstract class PostFlagType extends PostActionType
+object PostFlagType {
+  case object Spam extends PostFlagType
+  case object Inapt extends PostFlagType
+  case object Other extends PostFlagType
+}
+
+
+abstract class PostAction2 {
+  def pageId: PageId
+  def postId: PostId
+  def doerId: UserId2
+  def actionType: PostActionType
+}
+
+
+object PostAction2 {
+  def apply(pageId: PageId, postId: PostId, doerId: UserId2, actionType: PostActionType)
+        : PostAction2 = actionType match {
+    case voteType: PostVoteType =>
+      PostVote(pageId, postId, voterId = doerId, voteType = voteType)
+    case flagType: PostFlagType =>
+      PostFlag(pageId, postId, flaggerId = doerId, flagType = flagType)
+    case x =>
+      die("DwE7GPK2", s"Bad action type: '$actionType'")
+  }
+}
+
+
 case class PostVote(
   pageId: PageId,
   postId: PostId,
   voterId: UserId2,
-  voteType: PostVoteType)
+  voteType: PostVoteType) extends PostAction2 {
+  def actionType = voteType
+  def doerId = voterId
+}
 
+
+case class PostFlag(
+  pageId: PageId,
+  postId: PostId,
+  flaggerId: UserId2,
+  flagType: PostFlagType) extends PostAction2 {
+  def actionType = flagType
+  def doerId = flaggerId
+}
+
+// --- OLD stuff below, TODO delete everything :-)  ----
 
 /** Represents a part of a page (e.g. the title, the body, or a comment — a "Post")
   * or a change to a part of the page (e.g. an edit of a comment — a "Patch").

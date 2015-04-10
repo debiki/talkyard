@@ -51,33 +51,21 @@ object Application extends mvc.Controller {
     val typeStr = (body \ "type").as[String]
     val reason = (body \ "reason").as[String]
 
-    val tyype = try { FlagType withName typeStr }
-      catch {
-        case _: NoSuchElementException =>
-          throwBadReq("DwE93Kf3", "Invalid flag type")
-      }
+    val flagType = typeStr match {
+      case "Spam" => PostFlagType.Spam
+      case "Inapt" => PostFlagType.Inapt
+      case "Other" => PostFlagType.Other
+      case x => throwBadReq("DwE7PKTS3", s"Bad flag type: '$x'")
+    }
 
-    val flag = RawPostAction(id = PageParts.UnassignedId, creationDati = request.ctime,
-      payload = PostActionPayload.Flag(tyype = tyype, reason = reason),
-      postId = postId, userIdData = request.userIdData)
+    // SHOULD hide post, since flagged (at least if >= 2 flags?)
+    // COULD save `reason` somewhere, but where? Where does Discourse save it?
 
-    // Cancel any preliminary approval, sice post has been flagged.
-    /*
-    val flaggedPost = pageReq.page_!.getPost_!(postId)
-    val anyPrelApprovalCancellation =
-      if (!flaggedPost.currentVersionPrelApproved) Nil
-      else {
-        RawPostAction.forCancellationOfPrelApproval
-      } */
+    request.dao.flagPost(pageId = pageId, postId = postId, flagType,
+      flaggerId = request.theUser.id2)
 
-    val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
-      "DwE739W2", s"Page `$pageId' not found")
-
-    val (updatedPage, _) =
-      request.dao.savePageActionsGenNotfs(pageReq, flag::Nil) // anyPrelApprovalCancellation)
-
-    val post = updatedPage.parts.thePost(postId)
-    OkSafeJson(ReactJson.postToJson(post))
+    val json = ReactJson.postToJson2(postId = postId, pageId = pageId, dao = request.dao)
+    OkSafeJson(json)
   }
 
 

@@ -79,7 +79,7 @@ object VoteController extends mvc.Controller {
       request.dao.deleteVote(pageId, postId, voteType, voterId = request.theUser.id2)
     }
     else {
-      request.dao.insertVoteUpdateReadStats(pageId, postId, voteType,
+      request.dao.voteOnPost(pageId, postId, voteType,
         voterId = request.theUser.id2, voterIp = request.ip, postIdsRead)
     }
 

@@ -439,7 +439,7 @@ trait PagesDao {
   }
 
 
-  def insertVoteUpdateReadStats(pageId: PageId, postId: PostId, voteType: PostVoteType,
+  def voteOnPost(pageId: PageId, postId: PostId, voteType: PostVoteType,
         voterId: UserId2, voterIp: String, postIdsRead: Set[PostId]) {
     readWriteTransaction { transaction =>
       val post = transaction.loadPost(pageId, postId) getOrElse
@@ -469,6 +469,19 @@ trait PagesDao {
 
       transaction.updatePostsReadStats(pageId, postsToMarkAsRead, readById = voterId,
         readFromIp = voterIp)
+      // TODO update Post.numTimesRead?
+    }
+  }
+
+
+  def flagPost(pageId: PageId, postId: PostId, flagType: PostFlagType, flaggerId: UserId2) {
+    readWriteTransaction { transaction =>
+      val postBefore = transaction.loadPost(pageId, postId) getOrElse throwNotFound(
+        "DwE404KPF3", "Post not found")
+      // TODO if >= 2 pending flags, then hide post until reviewed?
+      val postAfter = postBefore.copy(numPendingFlags = postBefore.numPendingFlags + 1)
+      transaction.insertFlag(pageId, postId, flagType, flaggerId)
+      transaction.updatePost(postAfter)
     }
   }
 

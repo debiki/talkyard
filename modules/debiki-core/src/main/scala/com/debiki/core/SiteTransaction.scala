@@ -34,15 +34,18 @@ trait SiteTransaction {
   def insertPost(newPost: Post2)
   def updatePost(newPost: Post2)
 
+  def loadActionsByUserOnPage(userId: UserId2, pageId: PageId): immutable.Seq[PostAction2]
+
   def deleteVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2)
   def insertVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2,
         voterIp: IpAddress)
-  def loadVotesByUserOnPage(userId: UserId2, pageId: PageId): immutable.Seq[PostVote]
 
   /** Remembers that the specified posts have been read by a certain user.
     */
   def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId], readById: UserId2,
         readFromIp: String)
+
+  def insertFlag(pageId: PageId, postId: PostId, flagType: PostFlagType, flaggerId: UserId2)
 
   def nextPageId(): PageId
 

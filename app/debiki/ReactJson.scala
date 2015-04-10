@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import java.{util => ju}
 import debiki.dao.{SiteDao, PageDao}
 import play.api.libs.json._
+import scala.collection.immutable
 import requests.PageRequest
 
 
@@ -346,7 +347,8 @@ object ReactJson {
 
 
   private def votesJson(userId: UserId2, pageId: PageId, transaction: SiteTransaction): JsObject = {
-    val votes = transaction.loadVotesByUserOnPage(userId, pageId)
+    val actions = transaction.loadActionsByUserOnPage(userId, pageId)
+    val votes = actions.filter(_.isInstanceOf[PostVote]).asInstanceOf[immutable.Seq[PostVote]]
     val userVotesMap = UserPostVotes.makeMap(votes)
     val votesByPostId = userVotesMap map { case (postId, votes) =>
       var voteStrs = Vector[String]()
