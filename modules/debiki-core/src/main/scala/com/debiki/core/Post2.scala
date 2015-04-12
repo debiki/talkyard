@@ -18,6 +18,7 @@
 package com.debiki.core
 
 import com.debiki.core._
+import com.debiki.core.User.SystemUserId
 import java.{util => ju}
 import play.api.libs.json._
 import scala.collection.immutable
@@ -69,6 +70,7 @@ case class Post2(
   lastApprovedEditAt: Option[ju.Date],
   lastApprovedEditById: Option[UserId2],
   numDistinctEditors: Int,
+  safeVersion: Option[Int],
   approvedSource: Option[String],
   approvedHtmlSanitized: Option[String],
   approvedAt: Option[ju.Date],
@@ -100,13 +102,15 @@ case class Post2(
   require(parentId != Some(id), "DwE5BK4")
   require(!multireplyPostIds.contains(id), "DwE4kWW2")
   require(approvedVersion.map(_ <= currentVersion) != Some(false), "DwE6KJ0")
-  // ...
+  // ... TODO e.g. deleted*.isDefined must all be None or Some
+  // ... safe <= approved <= current
 
   def isMultireply = multireplyPostIds.nonEmpty
 
   def hasAnId = id >= PageParts.LowestPostId
 
   def isDeleted = deletedStatus.isDefined
+  def isHidden = hiddenAt.isDefined
 
   lazy val currentSource: String =
     currentSourcePatch match {
@@ -114,6 +118,10 @@ case class Post2(
       case Some(patch) => applyPatch(patch, to = approvedSource.getOrElse(""))
     }
 
+  def unapprovedSource: Option[String] = {
+    if (currentVersionIsApproved) None
+    else Some(currentSource)
+  }
 
   def currentHtmlSanitized(commonMarkRenderer: CommonMarkRenderer, pageRole: PageRole): String = {
     if (id == PageParts.TitleId) {
@@ -128,8 +136,11 @@ case class Post2(
   }
 
 
-  def currentVersionIsApproved: Boolean = currentVersion == approvedVersion
+  def currentVersionIsApproved = approvedVersion == Some(currentVersion)
 
+  def numEditsToReview = currentVersion - approvedVersion.getOrElse(0)
+
+  def numFlags = numPendingFlags + numHandledFlags
 
   def createdByUser(people: People2): User =
     people.theUser(createdById)
@@ -184,6 +195,10 @@ object Post2 {
       if (approvedById.isDefined) None
       else Some(makePatch(from = "", to = source))
 
+    // If approved by a human, this initial version is safe.
+    val safeVersion =
+      approvedById.flatMap(id => if (id != SystemUserId) Some(FirstVersion) else None)
+
     Post2(
       siteId = siteId,
       pageId = pageId,
@@ -197,11 +212,12 @@ object Post2 {
       lastApprovedEditAt = None,
       lastApprovedEditById = None,
       numDistinctEditors = 1,
+      safeVersion = safeVersion,
       approvedSource = if (approvedById.isDefined) Some(source) else None,
       approvedHtmlSanitized = if (approvedById.isDefined) Some(htmlSanitized) else None,
       approvedAt = if (approvedById.isDefined) Some(createdAt) else None,
       approvedById = approvedById,
-      approvedVersion = if (approvedById.isDefined) Some(1) else None,
+      approvedVersion = if (approvedById.isDefined) Some(FirstVersion) else None,
       currentSourcePatch = currentSourcePatch,
       currentVersion = FirstVersion,
       collapsedStatus = None,

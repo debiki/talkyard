@@ -178,6 +178,12 @@ object SafeActions {
         case ex: OverQuotaException =>
           Future.successful(Results.Forbidden(o"""You cannot do that, because this site's
             disk quota has been exceeded, sorry. [DwE7GH4R2]"""))
+        case ex: PageNotFoundException =>
+          Future.successful(Results.NotFound(
+            s"Page '${ex.pageId}' not found [DwE404WU5]"))
+        case ex: PostNotFoundException =>
+          Future.successful(Results.NotFound(
+            s"Post ${ex.postId} on page '${ex.pageId}' not found [DwE404GP3]"))
         case DebikiHttp.ResultException(result) =>
           Future.successful(result)
         case ex: play.api.libs.json.JsResultException =>

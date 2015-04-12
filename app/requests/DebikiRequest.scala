@@ -55,6 +55,7 @@ abstract class DebikiRequest[A] {
   def browserIdIsNew = browserId.map(_.isNew) == Some(true)
 
   def theUser = user_!
+  def theUserId = theUser.id2
 
   def user_! : User =
     user getOrElse throwForbidden("DwE86Wb7", "Not logged in")

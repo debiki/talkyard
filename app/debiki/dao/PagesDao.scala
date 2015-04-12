@@ -24,7 +24,7 @@ import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import requests.PageRequest
-import scala.collection.immutable
+import scala.collection.{mutable, immutable}
 import CachingDao.CacheKey
 import com.debiki.core.{PostActionPayload => PAP}
 
@@ -432,6 +432,46 @@ trait PagesDao {
   }
 
 
+  def approvePost(pageId: PageId, postId: PostId, approverId: UserId2): Unit = {
+    readWriteTransaction { transaction =>
+      val pageMeta = transaction.loadThePageMeta(pageId)
+      val postBefore = transaction.loadThePost(pageId, postId)
+      if (postBefore.currentVersionIsApproved)
+        throwForbidden("DwE4GYUR2", "Post already approved")
+
+      // If this version is being approved by a human, then it's safe.
+      val safeVersion =
+        if (approverId != SystemUserId) Some(postBefore.currentVersion)
+        else postBefore.safeVersion
+
+      val postAfter = postBefore.copy(
+        safeVersion = safeVersion,
+        approvedVersion = Some(postBefore.currentVersion),
+        approvedAt = Some(transaction.currentTime),
+        approvedById = Some(approverId),
+        approvedSource = Some(postBefore.currentSource),
+        approvedHtmlSanitized = Some(postBefore.currentHtmlSanitized(
+          siteDbDao.commonMarkRenderer, pageMeta.pageRole)))
+      transaction.updatePost(postAfter)
+    }
+  }
+
+
+  def deletePost(pageId: PageId, postId: PostId, deletedById: UserId2): Unit = {
+    readWriteTransaction { transaction =>
+      val postBefore = transaction.loadThePost(pageId, postId)
+      if (postBefore.isDeleted && postBefore.deletedStatus != Some(DeletedStatus.AncestorDeleted))
+        throwForbidden("DwE8FKW2", "Post already deleted")
+
+      val postAfter = postBefore.copy(
+        deletedStatus = Some(DeletedStatus.PostDeleted),
+        deletedAt = Some(transaction.currentTime),
+        deletedById = Some(deletedById))
+      transaction.updatePost(postAfter)
+    }
+  }
+
+
   def deleteVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2) {
     readWriteTransaction { transaction =>
       transaction.deleteVote(pageId, postId, voteType, voterId = voterId)
@@ -442,9 +482,7 @@ trait PagesDao {
   def voteOnPost(pageId: PageId, postId: PostId, voteType: PostVoteType,
         voterId: UserId2, voterIp: String, postIdsRead: Set[PostId]) {
     readWriteTransaction { transaction =>
-      val post = transaction.loadPost(pageId, postId) getOrElse
-        throwNotFound("DwE404YG6", "Post not found")
-
+      val post = transaction.loadThePost(pageId, postId)
       if (voteType == PostVoteType.Like) {
         if (post.createdById == voterId)
           throwForbidden("DwE84QM0", "Cannot like own post")
@@ -474,14 +512,40 @@ trait PagesDao {
   }
 
 
+  def loadThingsToReview(): ThingsToReview = {
+    readOnlyTransaction { transaction =>
+      val posts = transaction.loadPostsToReview()
+      val pageMetas = transaction.loadPageMetas(posts.map(_.pageId))
+      val flags = transaction.loadFlagsFor(posts.map(_.id))
+      val userIds = mutable.HashSet[UserId2]()
+      userIds ++= posts.map(_.createdById)
+      userIds ++= posts.flatMap(_.lastEditedById)
+      userIds ++= flags.map(_.flaggerId)
+      val users = transaction.loadUsers(userIds.toSeq)
+      ThingsToReview(posts, pageMetas, users, flags)
+    }
+  }
+
+
   def flagPost(pageId: PageId, postId: PostId, flagType: PostFlagType, flaggerId: UserId2) {
     readWriteTransaction { transaction =>
-      val postBefore = transaction.loadPost(pageId, postId) getOrElse throwNotFound(
-        "DwE404KPF3", "Post not found")
+      val postBefore = transaction.loadThePost(pageId, postId)
       // TODO if >= 2 pending flags, then hide post until reviewed?
       val postAfter = postBefore.copy(numPendingFlags = postBefore.numPendingFlags + 1)
       transaction.insertFlag(pageId, postId, flagType, flaggerId)
       transaction.updatePost(postAfter)
+    }
+  }
+
+
+  def clearFlags(pageId: PageId, postId: PostId, clearedById: UserId2): Unit = {
+    readWriteTransaction { transaction =>
+      val postBefore = transaction.loadThePost(pageId, postId)
+      val postAfter = postBefore.copy(
+        numPendingFlags = 0,
+        numHandledFlags = postBefore.numHandledFlags + postBefore.numPendingFlags)
+      transaction.updatePost(postAfter)
+      transaction.clearFlags(pageId, postId, clearedById = clearedById)
     }
   }
 

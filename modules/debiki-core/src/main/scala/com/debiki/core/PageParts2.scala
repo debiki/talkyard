@@ -33,6 +33,8 @@ import PageParts._
   *
   * Should be immutable. If backed by the database, a serializable isolation level
   * transaction should be used.
+  *
+  * TODO move to debiki-server instead?
   */
 abstract class PageParts2 extends People2 {
 

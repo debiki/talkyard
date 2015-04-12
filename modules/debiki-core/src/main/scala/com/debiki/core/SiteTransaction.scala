@@ -30,7 +30,11 @@ trait SiteTransaction {
   def loadAncestorPostIdsParentFirst(pageId: PageId): immutable.Seq[PageId]
 
   def loadPost(pageId: PageId, postId: PostId): Option[Post2]
+  def loadThePost(pageId: PageId, postId: PostId): Post2 =
+    loadPost(pageId, postId).getOrElse(throw PostNotFoundException(pageId, postId))
+
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post2]
+  def loadPostsToReview(): immutable.Seq[Post2]
   def insertPost(newPost: Post2)
   def updatePost(newPost: Post2)
 
@@ -45,12 +49,19 @@ trait SiteTransaction {
   def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId], readById: UserId2,
         readFromIp: String)
 
+  def loadFlagsFor(postIds: immutable.Seq[PostId]): immutable.Seq[PostFlag]
   def insertFlag(pageId: PageId, postId: PostId, flagType: PostFlagType, flaggerId: UserId2)
+  def clearFlags(pageId: PageId, postId: PostId, clearedById: UserId2)
+
 
   def nextPageId(): PageId
 
   def loadAllPageMetas(): immutable.Seq[PageMeta]
   def loadPageMeta(pageId: PageId): Option[PageMeta]
+  def loadThePageMeta(pageId: PageId): PageMeta =
+    loadPageMeta(pageId).getOrElse(throw PageNotFoundException(pageId))
+
+  def loadPageMetas(pageIds: Seq[PageId]): immutable.Seq[PageMeta]
   def insertPageMeta(newMeta: PageMeta)
   def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta)
 
@@ -63,9 +74,14 @@ trait SiteTransaction {
 
   def loadUser(userId: UserId2): Option[User] = loadUser(userId.toString)
   def loadUser(userId: UserId): Option[User]
+  def loadUsers(userIds: Seq[UserId2]): immutable.Seq[User]
   def loadUsersOnPageAsMap2(pageId: PageId, siteId: Option[SiteId] = None): Map[UserId, User]
 
   def loadRolePageSettings(roleId: RoleId, pageId: PageId): Option[RolePageSettings]
 
 }
+
+
+case class PageNotFoundException(pageId: PageId) extends QuickException
+case class PostNotFoundException(pageId: PageId, postId: PostId) extends QuickException
 

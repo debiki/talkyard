@@ -169,10 +169,10 @@ export function rejectEdits(post: PostToModerate, doneCallback: () => void) {
 function doSomethingWithPost(post: PostToModerate, actionUrl: string, doneCallback: () => void) {
   d.u.postJson({
     url: origin + actionUrl,
-    data: [{
+    data: {
       pageId: post.pageId,
       postId: post.id,
-    }],
+    },
     success: (response) => {
       doneCallback();
     },
