@@ -52,8 +52,8 @@ object ReactJson {
   }
 
 
-  def pageToJsonImpl(pageReq: PageRequest[_], socialLinksHtml: String, transaction: SiteTransaction)
-        : JsObject = {
+  private def pageToJsonImpl(pageReq: PageRequest[_], socialLinksHtml: String,
+        transaction: SiteTransaction): JsObject = {
     val page = PageDao(pageReq.thePageId, transaction)
     val pageParts = page.parts
     pageParts.loadAllPosts()
@@ -76,65 +76,6 @@ object ReactJson {
     val topLevelComments = pageParts.topLevelComments
     val topLevelCommentIdsSorted =
       Post.sortPosts2(topLevelComments).map(reply => JsNumber(reply.id))
-
-    val anyLatestTopics: Seq[JsObject] =
-      if (pageReq.thePageRole == PageRole.Forum) {
-        val orderOffset = PageOrderOffset.ByBumpTime(None)
-        var topics =
-          pageReq.dao.listTopicsInTree(rootPageId = pageReq.thePageId,
-            orderOffset, limit = controllers.ForumController.NumTopicsToList)
-        topics.map(controllers.ForumController.topicToJson(_))
-      }
-      else {
-        Nil
-      }
-
-    val siteStatusString = pageReq.dao.loadSiteStatus() match {
-      case SiteStatus.OwnerCreationPending(adminEmail) =>
-        var obfuscatedEmail = adminEmail.takeWhile(_ != '@')
-        obfuscatedEmail = obfuscatedEmail.dropRight(3).take(4)
-        s"AdminCreationPending:$obfuscatedEmail"
-      case x => x.toString
-    }
-
-    Json.obj(
-      "now" -> JsNumber((new ju.Date).getTime),
-      "siteStatus" -> JsString(siteStatusString),
-      "pageId" -> pageReq.thePageId,
-      "pageRole" -> JsString(pageReq.thePageRole.toString),
-      "pagePath" -> JsString(pageReq.pagePath.value),
-      "numPosts" -> numPosts,
-      "numPostsExclTitle" -> numPostsExclTitle,
-      "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),
-      "categories" -> categoriesJson(pageReq),
-      "topics" -> JsArray(anyLatestTopics),
-      "user" -> NoUserSpecificData,
-      "rootPostId" -> JsNumber(BigDecimal(pageReq.pageRoot getOrElse PageParts.BodyId)),
-      "allPosts" -> JsObject(allPostsJson),
-      "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
-      "horizontalLayout" -> JsBoolean(pageReq.thePageSettings.horizontalComments.valueAsBoolean),
-      "socialLinksHtml" -> JsString(socialLinksHtml))
-  }
-
-
-  def pageToJsonOld(pageReq: PageRequest[_], socialLinksHtml: String): JsObject = {
-    val numPosts = pageReq.thePageParts.postCount
-    val numPostsExclTitle =
-      numPosts - (if (pageReq.thePageParts.titlePost.isDefined) 1 else 0)
-
-    var allPostsJson = pageReq.thePageParts.getAllPosts.map { post =>
-      post.id.toString -> postToJson(post)
-    }
-
-    if (pageReq.thePageRole == PageRole.EmbeddedComments) {
-      allPostsJson +:=
-        PageParts.BodyId.toString ->
-          embeddedCommentsDummyRootPost(pageReq.thePageParts.topLevelComments)
-    }
-
-    val topLevelComments = pageReq.thePageParts.topLevelComments
-    val topLevelCommentIdsSorted =
-      Post.sortPosts(topLevelComments).map(reply => JsNumber(reply.id))
 
     val anyLatestTopics: Seq[JsObject] =
       if (pageReq.thePageRole == PageRole.Forum) {
@@ -231,44 +172,6 @@ object ReactJson {
       "likeScore" -> JsNumber(post.likeScore),
       "childIdsSorted" -> JsArray(childrenSorted.map(reply => JsNumber(reply.id))),
       "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml)))
-  }
-
-
-  def postToJson(post: Post, includeUnapproved: Boolean = false): JsObject = {
-    val lastEditAppliedAt = post.lastEditAppliedAt map { date =>
-      JsNumber(date.getTime)
-    } getOrElse JsNull
-
-    val (sanitizedHtml, isApproved) =
-      if (includeUnapproved)
-        (Some(post.currentHtmlSanitized), post.currentVersionApproved)
-      else
-        (post.approvedHtmlSanitized, post.approvedHtmlSanitized.nonEmpty)
-
-    JsObject(Vector(
-      "postId" -> JsNumber(post.id),
-      "parentId" -> post.parentId.map(JsNumber(_)).getOrElse(JsNull),
-      "multireplyPostIds" -> JsArray(post.multireplyPostIds.toSeq.map(JsNumber(_))),
-      "authorId" -> JsString(post.userId),
-      "authorFullName" -> JsStringOrNull(Some(post.theUser.displayName)),
-      "authorUsername" -> JsStringOrNull(post.theUser.username),
-      "createdAt" -> JsNumber(post.creationDati.getTime),
-      "lastEditAppliedAt" -> lastEditAppliedAt,
-      "numEditors" -> JsNumber(post.numDistinctEditors),
-      "numLikeVotes" -> JsNumber(post.numLikeVotes),
-      "numWrongVotes" -> JsNumber(post.numWrongVotes),
-      "numOffTopicVotes" -> JsNumber(post.numOffTopicVotes),
-      "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions),
-      "isTreeDeleted" -> JsBoolean(post.isTreeDeleted),
-      "isPostDeleted" -> JsBoolean(post.isPostDeleted),
-      "isTreeCollapsed" -> JsBoolean(post.isTreeCollapsed),
-      "isPostCollapsed" -> JsBoolean(post.isPostCollapsed),
-      "isTreeClosed" -> JsBoolean(post.isTreeClosed),
-      "isApproved" -> JsBoolean(isApproved),
-      "pinnedPosition" -> post.pinnedPosition.map(JsNumber(_)).getOrElse(JsNull),
-      "likeScore" -> JsNumber(post.likeScore),
-      "childIdsSorted" -> JsArray(Post.sortPosts(post.replies).map(reply => JsNumber(reply.id))),
-      "sanitizedHtml" -> JsStringOrNull(sanitizedHtml)))
   }
 
 

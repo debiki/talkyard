@@ -173,7 +173,8 @@ object SpecialContentController extends mvc.Controller {
       autoApplied = true)
 
     var actions = edit::Nil
-    request.dao.savePageActionsGenNotfs(pageId, actions, request.meAsPeople_!)
+    // request.dao.savePageActionsGenNotfs(pageId, actions, request.meAsPeople_!)
+    unimplemented("SpecialContentController", "DwE7GK543") // TODO make SpecialContentController work again
   }
 
 

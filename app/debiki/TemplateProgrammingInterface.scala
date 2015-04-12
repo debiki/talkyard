@@ -299,6 +299,7 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
 
 
   def listNewestChildPages(): Seq[tpi.Page] = {
+    unimplemented("Listing newest child pages", "DwE6FkF2") /* loadPageBodiesTitles was deleted.
     val pathsAndMeta: Seq[PagePathAndMeta] =
       _pageReq.dao.listChildPages(Seq(pageId), PageOrderOffset.ByPublTime, limit = 10)
 
@@ -317,6 +318,7 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
       tpi.Page(
         Page(pathAndMeta, pageActions), host = _pageReq.host)
     }
+    */
   }
 
 

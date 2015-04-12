@@ -41,59 +41,6 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       toCreate = notfsToCreate.toSeq,
       toDelete = notfsToDelete.toSeq)
 
-  /* TODO remove
-  def generateNotifications(actions: Seq[RawPostAction[_]]): Notifications = {
-    newPageParts = oldPageParts ++ actions
-
-    for (action <- actions) {
-      action.payload match {
-        case payload: PAP.CreatePost =>
-          if (payload.approval.isDefined) {
-            makeNotfsForNewPost(action.postId, anyApproverId = None)
-          }
-          // else: wait until approved
-        case edit: PAP.EditPost =>
-          if (edit.approval.isDefined) {
-            makeNotfsForEdits(action.postId)
-          }
-          // else: wait until approved
-        case editApp: PAP.EditApp =>
-          // If also approved, COULD notify edit author that the edits have now been applied.
-        case payload: PAP.ApprovePost =>
-          val oldPost = oldPageParts.getPost(action.postId)
-          val oldAlreadyApproved = oldPost.map(_.someVersionApproved) == Some(true)
-          val isApprovingEdits = oldAlreadyApproved
-          if (isApprovingEdits) {
-            makeNotfsForEdits(action.postId)
-          }
-          else {
-            makeNotfsForNewPost(action.postId, anyApproverId = Some(action.userId))
-          }
-        case payload: PAP.RejectEdits =>
-          // Don't notify.
-        case PAP.VoteLike | PAP.VoteWrong =>
-          makeNotfForVote(action.asInstanceOf[RawPostAction[PAP.Vote]])
-        case PAP.VoteOffTopic =>
-          // Don't notify.
-        case flag: PAP.Flag =>
-          // SHOULD generate notfs to all/some moderators?
-        case PAP.ClearFlags =>
-          // Don't notify.
-        case PAP.HidePostClearFlags =>
-          // Don't notify.
-        case pin: PAP.PinPostAtPosition =>
-          // Don't notify.
-        case PAP.CollapsePost | PAP.CollapseTree | PAP.CloseTree =>
-          // Don't notify.
-        case _: PAP.DeletePost | PAP.DeleteTree =>
-          // Don't notify.
-      }
-    }
-    Notifications(
-      toCreate = notfsToCreate.toSeq,
-      toDelete = notfsToDelete.toSeq)
-  }*/
-
 
   def generateForNewPost(page: Page2, newPost: Post2): Notifications = {
     require(page.id == newPost.pageId)

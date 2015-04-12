@@ -124,14 +124,6 @@ abstract class SiteDbDao {
 
   def nextPageId(): PageId
 
-  /**
-   * Creates a page; returns it, but with an id assigned to the page,
-   * if it didn't already have an id, and to actions, if they didn't
-   * already have ids specified. (For example, the page body always
-   * has id 1 so it'd be pre-assigned. But comments have random ids.)
-   */
-  def createPage(page: Page): Page
-
   def loadPageMeta(pageId: PageId): Option[PageMeta]
 
   def loadPageMetasAsMap(pageIds: Seq[PageId], anySiteId: Option[SiteId] = None)
@@ -205,26 +197,6 @@ abstract class SiteDbDao {
 
   // ----- Loading and saving pages
 
-  /** Saves actions, updates related page meta data (e.g. if you save edits
-    * to the page title post, the page title metadata field is updated),
-    * and generates notifications (for example, if you save a reply to Alice,
-    * a notification to Alice is generated).
-    */
-  final def savePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
-        : (PageNoPath, List[RawPostAction[_]]) = {
-    doSavePageActions(page, actions)
-  }
-
-  /** Don't call, implementation detail. */
-  def doSavePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
-        : (PageNoPath, List[RawPostAction[_]])
-
-  /** Deletes a vote. If there's a user id, deletes the vote by user id (guest or role),
-    * Otherwise by browser id cookie.
-    */
-  def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
-        voteType: PostActionPayload.Vote)
-
   def loadPostsReadStats(pageId: PageId): PostsReadStats
 
   /** Returns None if the page doesn't exist, and a
@@ -240,19 +212,6 @@ abstract class SiteDbDao {
    * only for Page.BodyId and Page.TitleId. Also loads the authors.
    */
   def loadPageBodiesTitles(pageIds: Seq[PageId]): Map[PageId, PageParts]
-
-  /** Loads posts that have e.g. been created, edited, flagged recently.
-    *
-    * The most interesting ones are loaded first — that is, flagged posts,
-    * because moderators might need to delete such posts. Then new posts
-    * that needs to be reviewed, then posts that have been edited, and so on.
-    */
-  def loadPostsRecentlyActive(limit: Int, offset: Int): (Seq[Post], People)
-
-  /** Loads flags for the specified posts.
-    */
-  def loadFlags(pagePostIds: Seq[PagePostId])
-        : (Map[PagePostId, Seq[RawPostAction[PAP.Flag]]], People)
 
   /**
    * Loads at most `limit` recent posts, conducted e.g. at `fromIp`.
@@ -487,12 +446,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
     }
   }
 
-  def createPage(page: Page): Page = {
-    serialize {
-      _spi.createPage(page)
-    }
-  }
-
   def loadPageMeta(pageId: PageId): Option[PageMeta] = {
     _spi.loadPageMeta(pageId)
   }
@@ -581,23 +534,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
   // ----- Actions
 
-  def doSavePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
-        : (PageNoPath, List[RawPostAction[_]]) = {
-    // COULD fix this race condition BUG: `page` was loaded before locking the mutex,
-    // but is used doSavePageActions when saving the page. E.g. total flag count
-    // will be wrong if two flags are saved at the same time.
-    serialize {
-      _spi.doSavePageActions(page, actions)
-    }
-  }
-
-  def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
-        voteType: PostActionPayload.Vote) {
-    serialize {
-      _spi.deleteVote(userIdData, pageId, postId, voteType)
-    }
-  }
-
   def loadPostsReadStats(pageId: PageId): PostsReadStats = {
     _spi.loadPostsReadStats(pageId)
   }
@@ -612,15 +548,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
   def loadPageBodiesTitles(pagePaths: Seq[String]): Map[String, PageParts] = {
     _spi.loadPageBodiesTitles(pagePaths)
-  }
-
-  def loadPostsRecentlyActive(limit: Int, offset: Int): (Seq[Post], People) = {
-    _spi.loadPostsRecentlyActive(limit, offset = offset)
-  }
-
-  def loadFlags(pagePostIds: Seq[PagePostId])
-        : (Map[PagePostId, Seq[RawPostAction[PAP.Flag]]], People) = {
-    _spi.loadFlags(pagePostIds)
   }
 
   def loadRecentActionExcerpts(

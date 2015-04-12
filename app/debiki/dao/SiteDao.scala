@@ -142,13 +142,6 @@ abstract class SiteDao
   def loadPageBodiesTitles(pageIds: Seq[PageId]): Map[PageId, PageParts] =
     siteDbDao.loadPageBodiesTitles(pageIds)
 
-  def loadPostsRecentlyActive(limit: Int): (Seq[Post], People) =
-    siteDbDao.loadPostsRecentlyActive(limit, offset = 0)
-
-  def loadFlags(pagePostIds: Seq[PagePostId])
-        : (Map[PagePostId, Seq[RawPostAction[PAP.Flag]]], People) =
-    siteDbDao.loadFlags(pagePostIds)
-
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,
         byRole: Option[RoleId] = None,

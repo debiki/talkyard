@@ -20,7 +20,6 @@ package controllers
 import actions.ApiActions._
 import com.debiki.core._
 import com.debiki.core.{PostActionPayload => PAP}
-import controllers.Utils.{OkSafeJson, ActionsByPageIdGrouper}
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
@@ -48,13 +47,16 @@ object PinController extends mvc.Controller {
         (pageId, action)
       }
 
+    Prelude.unimplemented("Pinning posts", "DwE5JKEG3")
+    /* Stop using crazy groupedByPageId. Now I deleted it :-)
     pageIdsAndActions.groupedByPageId foreach { case (pageId, actions) =>
       val permsOnPage = apiReq.dao.loadPermsOnPage(apiReq, pageId)
       if (!permsOnPage.pinReplies)
         throwForbidden("DwE95Xf2", "Insufficient permissions to pin post")
 
-      apiReq.dao.savePageActionsGenNotfs(pageId, actions, apiReq.meAsPeople_!)
+      // apiReq.dao.savePageActionsGenNotfs(pageId, actions, apiReq.meAsPeople_!)
     }
+    */
 
     // The client already knows where to place the pinned post, so simply:
     Ok

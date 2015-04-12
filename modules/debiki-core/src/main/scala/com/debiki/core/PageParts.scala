@@ -263,6 +263,7 @@ abstract class PostActionsWrapper { self: PageParts =>
   * of the page body). — This class never fetches anything lazily from database.
   * @param rawActions The actions that build up the page.
   */
+@deprecated("Crazily complicated", since = "April 2015")
 case class PageParts (
   guid: PageId,  // COULD rename to pageId?
   dao: Option[SiteDbDao] = None,

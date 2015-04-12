@@ -60,6 +60,7 @@ object Application extends mvc.Controller {
 
     // SHOULD hide post, since flagged (at least if >= 2 flags?)
     // COULD save `reason` somewhere, but where? Where does Discourse save it?
+    // SHOULD generate notification
 
     request.dao.flagPost(pageId = pageId, postId = postId, flagType,
       flaggerId = request.theUser.id2)

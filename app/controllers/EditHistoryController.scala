@@ -92,7 +92,7 @@ object EditHistoryController extends mvc.Controller {
     val postId = postIds.head
 
     val editedPost = updatedPage.parts.thePost(postId)
-    OkSafeJson(ReactJson.postToJson(editedPost))
+    ??? // old and gone: OkSafeJson(ReactJson.postToJson(editedPost))
   }
 
 
@@ -167,7 +167,8 @@ object EditHistoryController extends mvc.Controller {
 
     // ----- Save all changes
 
-    pageReq.dao.savePageActionsGenNotfs(pageReq, actions)
+    unimplemented("Applying edits", "DwE4KJL83") // Fix later
+    // pageReq.dao.savePageActionsGenNotfs(pageReq, actions)
   }
 
 }
