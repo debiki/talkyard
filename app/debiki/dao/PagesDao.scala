@@ -115,7 +115,10 @@ trait PagesDao {
       transaction.insertPost(titlePost)
       transaction.insertPost(bodyPost)
 
-      // TODO gen notfs
+      val notifications = NotificationGenerator(transaction)
+        .generateForNewPost(PageDao(pageId, transaction), bodyPost)
+      transaction.saveDeleteNotifications(notifications)
+
       pagePath
     }
   }
@@ -173,23 +176,12 @@ trait PagesDao {
     val (pageWithNewActions, actionsWithId) =
       siteDbDao.savePageActions(page, actions.toList)
 
+    ??? /* TODO delete
     val notfs = NotificationGenerator(page, this).generateNotifications(actionsWithId)
     siteDbDao.saveDeleteNotifications(notfs)
+    */
 
     (pageWithNewActions, actionsWithId)
-  }
-
-
-  def insertPostWithKnownId(newPost: Post2) {
-    readWriteTransaction { transaction =>
-      //val oldMeta = page.meta
-      //val newMeta = oldMeta.copy(numRepliesInclDeleted = page.parts.numRepliesInclDeleted + 1)
-      transaction.insertPost(newPost)
-      //transaction.savePageMeta(newMeta)  // TODO
-
-      // TODO generate notifications
-      // transaction.saveNotifications(...)
-    }
   }
 
 
@@ -198,9 +190,9 @@ trait PagesDao {
     val htmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(
       text, allowClassIdDataAttrs = false, followLinks = false)
 
-    readWriteTransaction { transaction =>
+    val postId = readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
-      var postId = page.parts.highestReplyId.map(_ + 1) getOrElse PageParts.FirstReplyId
+      val postId = page.parts.highestReplyId.map(_ + 1) getOrElse PageParts.FirstReplyId
       val commonAncestorId = page.parts.findCommonAncestorId(replyToPostIds.toSeq)
       val parentId =
         if (commonAncestorId == PageParts.NoId) {
@@ -254,11 +246,13 @@ trait PagesDao {
       transaction.insertPost(newPost)
       //transaction.savePageMeta(newMeta) // TODO
 
-      // TODO generate notifications
-      // transaction.saveNotifications(...)
-
+      val notifications = NotificationGenerator(transaction).generateForNewPost(page, newPost)
+      transaction.saveDeleteNotifications(notifications)
       postId
     }
+
+    refreshPageInAnyCache(pageId)
+    postId
   }
 
 
@@ -328,9 +322,13 @@ trait PagesDao {
         transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
       }
   
-      // TODO generate notifications
-      // transaction.saveNotifications(...)
+      if (editedPost.currentVersionIsApproved) {
+        val notfs = NotificationGenerator(transaction).generateForEdits(postToEdit, editedPost)
+        transaction.saveDeleteNotifications(notfs)
+      }
     }
+
+    refreshPageInAnyCache(pageId)
   }
 
 
@@ -429,13 +427,16 @@ trait PagesDao {
       //val newMeta = oldMeta.copy(...)
       //transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
     }
+
+    refreshPageInAnyCache(pageId)
   }
 
 
-  def approvePost(pageId: PageId, postId: PostId, approverId: UserId2): Unit = {
+  def approvePost(pageId: PageId, postId: PostId, approverId: UserId2) {
     readWriteTransaction { transaction =>
-      val pageMeta = transaction.loadThePageMeta(pageId)
-      val postBefore = transaction.loadThePost(pageId, postId)
+      val page = PageDao(pageId, transaction)
+      val pageMeta = page.meta
+      val postBefore = page.parts.thePost(postId)
       if (postBefore.currentVersionIsApproved)
         throwForbidden("DwE4GYUR2", "Post already approved")
 
@@ -453,7 +454,19 @@ trait PagesDao {
         approvedHtmlSanitized = Some(postBefore.currentHtmlSanitized(
           siteDbDao.commonMarkRenderer, pageMeta.pageRole)))
       transaction.updatePost(postAfter)
+
+      val isApprovingNewPost = postBefore.approvedVersion.isEmpty
+      val notifications =
+        if (isApprovingNewPost) {
+          NotificationGenerator(transaction).generateForNewPost(page, postAfter)
+        }
+        else {
+          NotificationGenerator(transaction).generateForEdits(postBefore, postAfter)
+        }
+      transaction.saveDeleteNotifications(notifications)
     }
+
+    refreshPageInAnyCache(pageId)
   }
 
 
@@ -469,6 +482,7 @@ trait PagesDao {
         deletedById = Some(deletedById))
       transaction.updatePost(postAfter)
     }
+    refreshPageInAnyCache(pageId)
   }
 
 
@@ -476,6 +490,7 @@ trait PagesDao {
     readWriteTransaction { transaction =>
       transaction.deleteVote(pageId, postId, voteType, voterId = voterId)
     }
+    refreshPageInAnyCache(pageId)
   }
 
 
@@ -509,6 +524,7 @@ trait PagesDao {
         readFromIp = voterIp)
       // TODO update Post.numTimesRead?
     }
+    refreshPageInAnyCache(pageId)
   }
 
 
@@ -530,11 +546,12 @@ trait PagesDao {
   def flagPost(pageId: PageId, postId: PostId, flagType: PostFlagType, flaggerId: UserId2) {
     readWriteTransaction { transaction =>
       val postBefore = transaction.loadThePost(pageId, postId)
-      // TODO if >= 2 pending flags, then hide post until reviewed?
+      // TODO if >= 2 pending flags, then hide post until reviewed? And unhide, if flags cleared.
       val postAfter = postBefore.copy(numPendingFlags = postBefore.numPendingFlags + 1)
       transaction.insertFlag(pageId, postId, flagType, flaggerId)
       transaction.updatePost(postAfter)
     }
+    refreshPageInAnyCache(pageId)
   }
 
 
@@ -547,6 +564,8 @@ trait PagesDao {
       transaction.updatePost(postAfter)
       transaction.clearFlags(pageId, postId, clearedById = clearedById)
     }
+    // In case the post gets unhidden now when flags gone:
+    refreshPageInAnyCache(pageId)
   }
 
 
@@ -554,6 +573,7 @@ trait PagesDao {
         voteType: PostActionPayload.Vote) {
     siteDbDao.deleteVote(userIdData, pageId, postId, voteType)
     // Delete vote notf too once they're being generated, see [953kGF21X].
+    refreshPageInAnyCache(pageId)
   }
 
 
@@ -575,6 +595,9 @@ trait PagesDao {
 
   def loadPageAnyTenant(tenantId: SiteId, pageId: PageId): Option[PageParts] =
     siteDbDao.loadPageParts(pageId, tenantId = Some(tenantId))
+
+
+  protected def refreshPageInAnyCache(pageId: PageId) {}
 
 }
 
@@ -600,6 +623,12 @@ trait CachingPagesDao extends PagesDao {
   }
 
 
+  protected override def refreshPageInAnyCache(pageId: PageId) {
+    refreshPageInCache(pageId)
+  }
+
+
+  // TODO remove:
   override def savePageActionsGenNotfsImpl(page: PageNoPath, actions: Seq[RawPostAction[_]])
       : (PageNoPath, Seq[RawPostAction[_]]) = {
 
@@ -611,33 +640,6 @@ trait CachingPagesDao extends PagesDao {
 
     refreshPageInCache(page.id)
     newPageAndActionsWithId
-  }
-
-
-  override def insertPostWithKnownId(newPost: Post2) {
-    super.insertPostWithKnownId(newPost)
-    refreshPageInCache(newPost.pageId)
-  }
-
-
-  override def insertReply(text: String, pageId: PageId, replyToPostIds: Set[PostId],
-        authorId: UserId2): PostId = {
-    val postId = super.insertReply(text, pageId = pageId, replyToPostIds, authorId = authorId)
-    refreshPageInCache(pageId)
-    postId
-  }
-
-
-  override def editPost(pageId: PageId, postId: PostId, editorId: UserId2, newText: String) {
-    super.editPost(pageId = pageId, postId = postId, editorId = editorId, newText = newText)
-    refreshPageInCache(pageId)
-  }
-
-
-  override def changePostStatus(postId: PostId, pageId: PageId, action: PostActionPayload,
-        userId: UserId2) {
-    super.changePostStatus(postId = postId, pageId = pageId, action, userId = userId)
-    refreshPageInCache(pageId)
   }
 
 
@@ -687,13 +689,6 @@ trait CachingPagesDao extends PagesDao {
         replaced = _cache.cache.replace(key, oldPage, newPage)
     */
     // ------ /Page action cache
-  }
-
-
-  override def deleteVoteAndNotf(userIdData: UserIdData, pageId: PageId, postId: PostId,
-        voteType: PostActionPayload.Vote) {
-    super.deleteVoteAndNotf(userIdData, pageId, postId, voteType)
-    refreshPageInCache(pageId)
   }
 
 

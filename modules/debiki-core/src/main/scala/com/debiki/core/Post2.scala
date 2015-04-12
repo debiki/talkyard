@@ -107,6 +107,7 @@ case class Post2(
 
   def isMultireply = multireplyPostIds.nonEmpty
 
+  def pagePostId = PagePostId(pageId, id)
   def hasAnId = id >= PageParts.LowestPostId
 
   def isDeleted = deletedStatus.isDefined
@@ -159,6 +160,9 @@ case class Post2(
     lowerBound
   }
 
+
+  def parent(pageParts: PageParts2): Option[Post2] =
+    parentId.flatMap(pageParts.post)
 
   def children(pageParts: PageParts2): Seq[Post2] =
     pageParts.childrenOf(id)

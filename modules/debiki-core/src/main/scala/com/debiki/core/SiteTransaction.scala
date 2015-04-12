@@ -76,8 +76,15 @@ trait SiteTransaction {
   def loadUser(userId: UserId): Option[User]
   def loadUsers(userIds: Seq[UserId2]): immutable.Seq[User]
   def loadUsersOnPageAsMap2(pageId: PageId, siteId: Option[SiteId] = None): Map[UserId, User]
+  def loadUserByEmailOrUsername(emailOrUsername: String): Option[User]
+
+  def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId]
 
   def loadRolePageSettings(roleId: RoleId, pageId: PageId): Option[RolePageSettings]
+  def loadRolePageSettingsOrDefault(roleId: RoleId, pageId: PageId) =
+        loadRolePageSettings(roleId, pageId) getOrElse RolePageSettings.Default
+
+  def saveDeleteNotifications(notifications: Notifications)
 
 }
 
