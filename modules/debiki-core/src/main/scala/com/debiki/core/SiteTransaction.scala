@@ -21,10 +21,13 @@ import java.{util => ju}
 import scala.collection.immutable
 
 
+// SHOULD/COULD convert old method implementations to start using transactions.
 trait SiteTransaction {
   def commit()
   def rollback()
   def siteId: SiteId
+
+  def loadSettings(targets: Seq[SettingsTarget]): Seq[RawSettings]
 
   def loadResourceUsage(): ResourceUse
   def loadAncestorPostIdsParentFirst(pageId: PageId): immutable.Seq[PageId]
