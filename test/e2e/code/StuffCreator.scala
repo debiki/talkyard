@@ -175,6 +175,7 @@ trait StuffCreator {
         title: String,
         body: Option[String]): TestPage = {
 
+    ??? /*  createPage gone, loadPageParts gone.
     val titlePost = RawPostAction.copyCreatePost(postTemplate,
       id = PageParts.TitleId, text = title)
 
@@ -195,6 +196,7 @@ trait StuffCreator {
     new TestPage(
       url = "http://" + firstSiteHost + pageStuffNoPeople.path.value,
       id = pageStuffNoPeople.path.pageId.get)
+    */
   }
 
 }

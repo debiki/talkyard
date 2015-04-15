@@ -70,34 +70,34 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
 
 
   def render(notfs: Seq[Notification]): NodeSeq = {
-    var result = Nil: NodeSeq
-    for (notf <- notfs) {
-      result ++= (notf match {
-        case newPostNotf: Notification.NewPost =>
-          renderNewPostNotf(newPostNotf)
-      })
+    siteDao.readOnlyTransaction { transaction =>
+      var result = Nil: NodeSeq
+      for (notf <- notfs) {
+        result ++= (notf match {
+          case newPostNotf: Notification.NewPost =>
+            renderNewPostNotf(newPostNotf, transaction)
+        })
+      }
+      result
     }
-    result
   }
 
 
-  private def renderNewPostNotf(notf: Notification.NewPost): NodeSeq = {
-    val page = siteDao.loadPageParts(notf.pageId) getOrElse {
+  private def renderNewPostNotf(notf: Notification.NewPost, transaction: SiteTransaction)
+        : NodeSeq = {
+    val pageMeta = transaction.loadPageMeta(notf.pageId) getOrElse {
       return Nil
     }
-    val pageMeta = siteDao.loadPageMeta(notf.pageId) getOrElse {
+    val post = transaction.loadPost(pageId = notf.pageId, postId = notf.postId) getOrElse {
       return Nil
     }
-    val post = page.getPost(notf.postId) getOrElse {
+    val markupSource = post.approvedSource getOrElse {
       return Nil
     }
-    val markupSource = post.approvedText getOrElse {
-      return Nil
-    }
-    val byUserName = siteDao.loadUser(notf.byUserId).map(_.displayName) getOrElse
+    val byUserName = transaction.loadUser(notf.byUserId).map(_.displayName) getOrElse
       "(unknown user name)"
 
-    val date = toIso8601Day(post.creationDati)
+    val date = toIso8601Day(post.createdAt)
 
     val url = postUrl(pageMeta, notf) getOrElse {
       // Not an embedded discussion, and the site has no canonical host, so we
