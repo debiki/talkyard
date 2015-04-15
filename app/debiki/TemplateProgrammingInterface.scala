@@ -440,10 +440,6 @@ class TemplateProgrammingInterface(
   def pageUrlPath = pageReq.pagePath.value
 
 
-  def titleText =
-    pageReq.thePageParts.titlePost.map(_.currentText) getOrElse pageReq.pagePath.value
-
-
   override lazy val reactStoreSafeJsonString: String = {
     ReactJson.pageToJson(pageReq, socialLinksHtml =
         siteSettings.socialLinksHtml.valueAsString).toString

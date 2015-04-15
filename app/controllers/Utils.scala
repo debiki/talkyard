@@ -103,7 +103,7 @@ object Utils extends Results with http.ContentTypes {
 
 
   def isPrivatePage(pagePath: PagePath): Boolean =
-    pagePath.isConfigPage || pagePath.isHiddenPage
+    pagePath.isHiddenPage
 
 
   /**

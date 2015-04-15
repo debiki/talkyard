@@ -46,14 +46,6 @@ object TemplateRenderer {
 
     val tpi = new TemplateProgrammingInterface(pageReq, appendToBody)
 
-    if (pageReq.pageRoot == Some(PageParts.ConfigPostId) || pageReq.pagePath.isConfigPage) {
-      // Use a page that we know for sure is not broken, so it's possible
-      // to fix errors. And do this before loading any config values,
-      // since a config file might be corrupted (exception thrown).
-      val isPageSettings = pageReq.pageRoot == Some(PageParts.ConfigPostId)
-      return views.html.specialpages.template(tpi, isPageSettings).body
-    }
-
     if (!pageReq.pageExists && pageReq.pageRole != Some(PageRole.EmbeddedComments)) {
       if (pageReq.pagePath.value == "/") {
         return views.html.specialpages.createSomethingHerePage(tpi).body

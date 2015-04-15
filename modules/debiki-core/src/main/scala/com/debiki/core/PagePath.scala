@@ -112,8 +112,6 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
 
   def isScriptOrStyle = pageSlug.endsWith(".js") || pageSlug.endsWith(".css")
 
-  def isConfigPage = pageSlug.endsWith(".yaml") || pageSlug.endsWith(".conf")
-
 
   /**
    * Pages and folders that start with '_' are visible to admins only.

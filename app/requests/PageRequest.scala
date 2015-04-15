@@ -184,8 +184,6 @@ class PageRequest[A](
   lazy val thePageParts : PageParts =
     pageParts getOrElse throwNotFound("DwE43XWY", "Page not found, id: "+ pageId)
 
-  def thePageNoPath = PageNoPath(thePageParts, ancestorIdsParentFirst_!, thePageMeta)
-
   /** Any page version specified in the query string, e.g.:
     * ?view&version=2012-08-20T23:59:59Z
     */
