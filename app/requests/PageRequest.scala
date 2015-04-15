@@ -164,42 +164,6 @@ class PageRequest[A](
 
 
   /**
-   * The page this PageRequest concerns, or None if not found
-   * (e.g. if !pageExists, or if it was deleted just moments ago).
-   */
-  lazy val pageParts : Option[PageParts] =
-      if (pageExists) {
-        pageId.flatMap(id => dao.loadPageParts(id))
-      } else {
-        // Don't load the page even if it was *created* moments ago.
-        // having !pageExists and page_? = Some(..) feels risky.
-        None
-      }
-
-  /**
-   * The page this PageRequest concerns. Throws 404 Not Found if not found.
-   *
-   * (The page might have been deleted, just after the access control step.)
-   */
-  lazy val thePageParts : PageParts =
-    pageParts getOrElse throwNotFound("DwE43XWY", "Page not found, id: "+ pageId)
-
-  /** Any page version specified in the query string, e.g.:
-    * ?view&version=2012-08-20T23:59:59Z
-    */
-  lazy val oldPageVersion: Option[ju.Date] = {
-    request.queryString.getEmptyAsNone("version") map { datiString =>
-      try {
-        parseIso8601DateTime(datiString)
-      } catch {
-        case ex: IllegalArgumentException =>
-          throwBadReq("DwE3DW27", "Bad version query param")
-      }
-    }
-  }
-
-
-  /**
    * The page root tells which post to start with when rendering a page.
    * By default, the page body is used. The root is specified in the
    * query string, like so: ?view=rootPostId  or ?edit=....&view=rootPostId
@@ -277,8 +241,6 @@ class DummyPageRequest[A](
   request: Request[A]) extends PageRequest[A](
     sid, xsrfToken, browserId, user, pageExists,  pagePath, Some(pageMeta),
     permsOnPage, dao, request) {
-
-  override lazy val pageParts: Option[PageParts] = Some(dummyPageParts)
 
   override lazy val ancestorIdsParentFirst_! : List[PageId] = Nil
 

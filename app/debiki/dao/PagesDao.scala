@@ -530,19 +530,6 @@ trait PagesDao {
     readOnlyTransaction(_.loadPost(pageId, postId))
 
 
-  @deprecated("Crazily complicated", since = "April 2015")
-  def loadPageParts(debateId: PageId): Option[PageParts] =
-    siteDbDao.loadPageParts(debateId)
-
-
-  def loadPageAnyTenant(sitePageId: SitePageId): Option[PageParts] =
-    loadPageAnyTenant(tenantId = sitePageId.siteId, pageId = sitePageId.pageId)
-
-
-  def loadPageAnyTenant(tenantId: SiteId, pageId: PageId): Option[PageParts] =
-    siteDbDao.loadPageParts(pageId, tenantId = Some(tenantId))
-
-
   protected def refreshPageInAnyCache(pageId: PageId) {}
 
 }

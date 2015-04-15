@@ -69,7 +69,11 @@ abstract class PageParts2 extends People2 {
   def pageId: PageId
   def titlePost: Option[Post2] = post(PageParts.TitleId)
 
-  def topLevelComments: immutable.Seq[Post2] = childrenByParentId.getOrElse(PageParts.NoId, Nil)
+  def topLevelComments: immutable.Seq[Post2] =
+    childrenByParentId.getOrElse(PageParts.NoId, Nil) filterNot { post =>
+      PageParts.isArticleOrConfigPostId(post.id)
+    }
+
   def allPosts: Seq[Post2]
 
   def post(postId: PostId): Option[Post2] = postsById.get(postId)

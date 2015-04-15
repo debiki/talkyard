@@ -57,7 +57,6 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     // had no ids (so feels safer to bypass).
     var useCache = pageReq.pageExists
     useCache &= pageReq.pageRoot == Some(PageParts.BodyId)
-    useCache &= pageReq.oldPageVersion.isEmpty
     useCache &= !pageReq.debugStats
 
     if (!useCache)
