@@ -37,6 +37,7 @@ trait SiteTransaction {
     loadPost(pageId, postId).getOrElse(throw PostNotFoundException(pageId, postId))
 
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post2]
+  def loadPosts(pagePostIds: Iterable[PagePostId]): immutable.Seq[Post2]
   def loadPostsToReview(): immutable.Seq[Post2]
   def insertPost(newPost: Post2)
   def updatePost(newPost: Post2)
@@ -65,6 +66,7 @@ trait SiteTransaction {
     loadPageMeta(pageId).getOrElse(throw PageNotFoundException(pageId))
 
   def loadPageMetas(pageIds: Seq[PageId]): immutable.Seq[PageMeta]
+  def loadPageMetasAsMap(pageIds: Iterable[PageId]): Map[PageId, PageMeta]
   def insertPageMeta(newMeta: PageMeta)
   def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta)
 
@@ -79,6 +81,7 @@ trait SiteTransaction {
   def loadUser(userId: UserId): Option[User]
   def loadUsers(userIds: Seq[UserId2]): immutable.Seq[User]
   def loadUsersOnPageAsMap2(pageId: PageId, siteId: Option[SiteId] = None): Map[UserId, User]
+  def loadUsersAsMap2(userIds: Iterable[UserId2]): Map[UserId2, User]
   def loadUserByEmailOrUsername(emailOrUsername: String): Option[User]
 
   def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId]

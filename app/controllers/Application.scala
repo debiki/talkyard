@@ -129,8 +129,10 @@ object Application extends mvc.Controller {
           errDbgDie("[error DwE012210u9]")
           "GotNoGuid"
         }
+        unimplemented("Loading pages in order to render Atom feeds", "DwE0GY23") /* loadPageParts is gone
         val page = pageReq.dao.loadPageParts(pageId)
         page.map(p => List(feedPagePath -> p)).getOrElse(Nil)
+        */
     }
 
     val mostRecentPageCtime: ju.Date =

@@ -205,14 +205,6 @@ abstract class SiteDbDao {
     */
   def loadPageParts(debateId: PageId, tenantId: Option[SiteId] = None): Option[PageParts]
 
-  def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post2]
-
-  /**
-   * For each PagePath, loads a Page (well, Debate) with actions loaded
-   * only for Page.BodyId and Page.TitleId. Also loads the authors.
-   */
-  def loadPageBodiesTitles(pageIds: Seq[PageId]): Map[PageId, PageParts]
-
   /**
    * Loads at most `limit` recent posts, conducted e.g. at `fromIp`.
    * Also loads actions that affected those posts (e.g. flags, edits,
@@ -540,14 +532,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
   def loadPageParts(debateId: PageId, tenantId: Option[SiteId]): Option[PageParts] = {
     _spi.loadPageParts(debateId, tenantId)
-  }
-
-  def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId]): immutable.Seq[Post2] = {
-    _spi.loadPostsOnPage(pageId, siteId)
-  }
-
-  def loadPageBodiesTitles(pagePaths: Seq[String]): Map[String, PageParts] = {
-    _spi.loadPageBodiesTitles(pagePaths)
   }
 
   def loadRecentActionExcerpts(

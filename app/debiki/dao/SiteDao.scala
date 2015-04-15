@@ -136,12 +136,6 @@ abstract class SiteDao
 
   // ----- Load pages
 
-  /**
-   * Loads articles (title + body) e.g. for inclusion on a blog post list page.
-   */
-  def loadPageBodiesTitles(pageIds: Seq[PageId]): Map[PageId, PageParts] =
-    siteDbDao.loadPageBodiesTitles(pageIds)
-
   def loadRecentActionExcerpts(
         fromIp: Option[String] = None,
         byRole: Option[RoleId] = None,

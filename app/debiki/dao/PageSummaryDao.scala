@@ -26,8 +26,8 @@ import CachingDao.{CacheKey, CacheValue}
 
 /**
  * A mostly up-to-date summary of a page, e.g. title, body excerpt, comment counts.
- * Because of race conditions, it might not be completely accurate.
  */
+@deprecated("Use PageMeta + body post + page author instead?", "Now")
 case class PageSummary(
   title: String,
   textExcerpt: String,
@@ -49,26 +49,40 @@ trait PageSummaryDao {
 
   val ExcerptLength = 250
 
-  val logger = play.api.Logger("app.page-summary-dao")
+  val logger = play.api.Logger
 
 
-  /**
-   * Ignores race conditions, for example another thread that updates
-   * a page when this function is generating a summary for that page.
-   * They're ignored because I don't think it matters terribly much if e.g.
-   * the reply count for one topic is +-1 incorrect... once a year or so?
-   */
-  def loadPageSummaries(pageIds: Seq[PageId]): Map[PageId, PageSummary] = {
+  @deprecated("Use PageMeta + body post + page author instead?", "Now")
+  def loadPageSummaries(pageIds: Iterable[PageId]): Map[PageId, PageSummary] = {
+    readOnlyTransaction { transaction =>
+      loadSummariesImpl(pageIds, transaction)
+    }
+  }
+
+
+  private def loadSummariesImpl(pageIds: Iterable[PageId], transaction: SiteTransaction)
+        : Map[PageId, PageSummary] = {
     var summariesById = Map[PageId, PageSummary]()
+    val bodies = transaction.loadPosts(pageIds.map(PagePostId(_, PageParts.BodyId)))
+    val pageMetasById = transaction.loadPageMetasAsMap(pageIds)
+    val usersById = transaction.loadUsersAsMap2(pageMetasById.values.map(_.cachedAuthorUserId.toInt)) // UserId2
 
     for {
-      pageId <- pageIds
-      page <- loadPageParts(pageId)
-      author <- (page.body orElse page.title).flatMap(_.user) orElse {
-        logger.warn(s"No author loaded for page `$pageId' [error DwE903Ik2]")
+      body <- bodies
+      pageMeta <- pageMetasById.get(body.pageId) orElse {
+        logger.warn(s"No page meta page '${body.pageId}' [error DwE47GK40]")
+        None
+      }
+      author <- usersById.get(pageMeta.cachedAuthorUserId.toInt) orElse {   // UserId2
+        logger.warn(s"No author loaded for page '${body.pageId}' [error DwE903Ik2]")
         None
       }
     } {
+
+      /*
+      // COULD save this stuff in dw2_pages/dw1_page_meta instead and update
+      // whenever a page is modified.
+
       var numPostsApproved = 0
       var numPostsRejected = 0
       var numPostsPendingReview = 0
@@ -98,9 +112,10 @@ trait PageSummaryDao {
 
       if (lastDefiniteApprovalDati.get.getTime == 0)
         lastDefiniteApprovalDati = None
+      */
 
       // The text in the first paragraph, but at most ExcerptLength chars.
-      val excerpt: String = page.approvedBodyText match {
+      val excerpt: String = body.approvedSource match {
         case None => ""
         case Some(text) =>
           var exc =
@@ -116,20 +131,20 @@ trait PageSummaryDao {
       }
 
       val summary = PageSummary(
-        title = page.approvedTitleTextOrNoTitle,
+        title = pageMeta.cachedTitle getOrElse "(Unknown title)",
         textExcerpt = excerpt,
         authorDisplayName = author.displayName,
         authorUserId = author.id,
-        numContributors = page.people.users.length,
-        numActions = page.allActions.length,
-        numPostsApproved = numPostsApproved,
-        numPostsRejected = numPostsRejected,
-        numPostsPendingReview = numPostsPendingReview,
-        numPostsFlagged = numPostsFlagged,
-        numPostsDeleted = numPostsDeleted,
-        lastApprovedPostDati = lastDefiniteApprovalDati)
+        numContributors = -1,
+        numActions = -1,
+        numPostsApproved = -1,
+        numPostsRejected = -1,
+        numPostsPendingReview = -1,
+        numPostsFlagged = -1,
+        numPostsDeleted = -1,
+        lastApprovedPostDati = None)
 
-      summariesById += pageId -> summary
+      summariesById += pageMeta.pageId -> summary
     }
 
     summariesById
@@ -147,7 +162,7 @@ trait CachingPageSummaryDao extends PageSummaryDao {
   }
 
 
-  override def loadPageSummaries(pageIds: Seq[PageId]): Map[PageId, PageSummary] = {
+  override def loadPageSummaries(pageIds: Iterable[PageId]): Map[PageId, PageSummary] = {
     var summariesById = Map[PageId, PageSummary]()
     var idsNotCached = List[PageId]()
 
