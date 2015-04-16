@@ -67,7 +67,7 @@ object ReactJson {
     val numPosts = allPostsJson.length
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
-    if (pageReq.thePageRole == PageRole.EmbeddedComments) {
+    if (page.role == PageRole.EmbeddedComments) {
       allPostsJson +:=
         PageParts.BodyId.toString ->
           embeddedCommentsDummyRootPost(pageParts.topLevelComments)
@@ -78,7 +78,7 @@ object ReactJson {
       Post.sortPosts2(topLevelComments).map(reply => JsNumber(reply.id))
 
     val anyLatestTopics: Seq[JsObject] =
-      if (pageReq.thePageRole == PageRole.Forum) {
+      if (page.role == PageRole.Forum) {
         val orderOffset = PageOrderOffset.ByBumpTime(None)
         var topics =
           pageReq.dao.listTopicsInTree(rootPageId = pageReq.thePageId,
@@ -101,7 +101,7 @@ object ReactJson {
       "now" -> JsNumber((new ju.Date).getTime),
       "siteStatus" -> JsString(siteStatusString),
       "pageId" -> pageReq.thePageId,
-      "pageRole" -> JsString(pageReq.thePageRole.toString),
+      "pageRole" -> JsString(page.role.toString),
       "pagePath" -> JsString(pageReq.pagePath.value),
       "numPosts" -> numPosts,
       "numPostsExclTitle" -> numPostsExclTitle,

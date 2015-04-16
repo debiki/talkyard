@@ -300,6 +300,7 @@ object PagePath {
 }
 
 
+@deprecated("I think isn't needed or used?", "2014")
 case class PathRanges(
   folders: Seq[String] = Nil,
   trees: Seq[String] = Nil,

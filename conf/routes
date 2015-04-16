@@ -118,7 +118,6 @@ GET   /-/list-pages             controllers.ListController.listPages
 GET   /-/list-users             controllers.ListController.listUsers
 POST  /-/change-page-meta       controllers.PageMetaController.changeMeta
 
-GET   /-/debug/testAutoApprove  controllers.DebugController.testAutoApprove(ipAddress, identityId)
 GET  /-/ping-exception-action   controllers.DebugController.pingExceptionAction
 GET  /-/ping-session-action     controllers.DebugController.pingSessionAction
 

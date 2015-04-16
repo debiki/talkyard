@@ -45,17 +45,5 @@ object DebugController extends mvc.Controller {
       Ok("session-action-pong")
   }
 
-
-  /** Via this function you can test whether or not comments by a certain identity
-    * would be auto approved. (Should change from identity to user?)
-    */
-  def testAutoApprove(ipAddress: IpAddress, identityId: IdentityId) = GetAction { request =>
-    if (!request.user_!.isAdmin)
-      throwForbidden("DwE7dBF03", "Only for admins")
-
-    val result = debiki.AutoApprover.perhapsApproveImpl(request.dao, ipAddress, identityId)
-    Ok(result.toString)
-  }
-
 }
 

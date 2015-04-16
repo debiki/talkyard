@@ -134,17 +134,6 @@ abstract class SiteDao
   }
 
 
-  // ----- Load pages
-
-  def loadRecentActionExcerpts(
-        fromIp: Option[String] = None,
-        byRole: Option[RoleId] = None,
-        pathRanges: PathRanges = PathRanges.Anywhere,
-        limit: Int): (Seq[PostAction[_]], People) =
-    siteDbDao.loadRecentActionExcerpts(fromIp = fromIp,
-      byRole = byRole, pathRanges = pathRanges, limit = limit)
-
-
   // ----- Full text search
 
   def fullTextSearch(phrase: String, anyRootPageId: Option[PageId]): Future[FullTextSearchResult] =

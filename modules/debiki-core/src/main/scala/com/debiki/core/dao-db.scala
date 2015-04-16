@@ -205,29 +205,6 @@ abstract class SiteDbDao {
     */
   def loadPageParts(debateId: PageId, tenantId: Option[SiteId] = None): Option[PageParts]
 
-  /**
-   * Loads at most `limit` recent posts, conducted e.g. at `fromIp`.
-   * Also loads actions that affected those posts (e.g. flags, edits,
-   * approvals). Also loads the people who did the actions.
-   *
-   * When listing actions by IP, loads the most recent actions of any type.
-   * When listing by /path/, however, loads `limit` *posts*, and then loads
-   * actions that affected them. Rationale: When selecting by /path/, we
-   * probably want to list e.g. all comments on a page. But when listing
-   * by IP / user-id, we're also interested in e.g. which ratings the
-   * user has cast, to find out if s/he is astroturfing.
-   *
-   * Loads "excerpts" only:
-   * - For Rating:s, loads no rating tags.
-   * - For Post:s and Edit:s with very much text, loads only the first
-   *   200 chars or something like that (not implemented though).
-   */
-  def loadRecentActionExcerpts(
-        fromIp: Option[String] = None,
-        byRole: Option[RoleId] = None,
-        pathRanges: PathRanges = PathRanges.Anywhere,
-        limit: Int): (Seq[PostAction[_]], People)
-
 
   // ----- Users and permissions
 
@@ -530,17 +507,9 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
     _spi.loadPostsReadStats(pageId)
   }
 
+  @deprecated("Use PageParts2 and Post2 instead", "Now")
   def loadPageParts(debateId: PageId, tenantId: Option[SiteId]): Option[PageParts] = {
     _spi.loadPageParts(debateId, tenantId)
-  }
-
-  def loadRecentActionExcerpts(
-        fromIp: Option[String] = None,
-        byRole: Option[RoleId] = None,
-        pathRanges: PathRanges = PathRanges.Anywhere,
-        limit: Int): (Seq[PostAction[_]], People) = {
-    _spi.loadRecentActionExcerpts(fromIp = fromIp, byRole = byRole,
-        pathRanges = pathRanges, limit = limit)
   }
 
 
