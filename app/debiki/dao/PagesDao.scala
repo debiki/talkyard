@@ -487,7 +487,7 @@ trait PagesDao {
     readOnlyTransaction { transaction =>
       val posts = transaction.loadPostsToReview()
       val pageMetas = transaction.loadPageMetas(posts.map(_.pageId))
-      val flags = transaction.loadFlagsFor(posts.map(_.id))
+      val flags = transaction.loadFlagsFor(posts.map(_.pagePostId))
       val userIds = mutable.HashSet[UserId2]()
       userIds ++= posts.map(_.createdById)
       userIds ++= posts.flatMap(_.lastEditedById)

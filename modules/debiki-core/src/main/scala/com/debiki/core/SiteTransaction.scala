@@ -56,7 +56,7 @@ trait SiteTransaction {
   def loadPostsReadStats(pageId: PageId, postId: Option[PostId]): PostsReadStats
 
 
-  def loadFlagsFor(postIds: immutable.Seq[PostId]): immutable.Seq[PostFlag]
+  def loadFlagsFor(pagePostIds: immutable.Seq[PagePostId]): immutable.Seq[PostFlag]
   def insertFlag(pageId: PageId, postId: PostId, flagType: PostFlagType, flaggerId: UserId2)
   def clearFlags(pageId: PageId, postId: PostId, clearedById: UserId2)
 
