@@ -456,7 +456,7 @@ trait PagesDao {
           throwForbidden("DwE84QM0", "Cannot like own post")
       }
 
-      try { transaction.insertVote(pageId, postId, voteType, voterId = voterId, voterIp = voterIp) }
+      try { transaction.insertVote(pageId, postId, voteType, voterId = voterId) }
       catch {
         case DbDao.DuplicateVoteException =>
           throwForbidden("Dw403BKW2", "You have already voted")

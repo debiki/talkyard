@@ -46,6 +46,8 @@ import Prelude._
 abstract class DbDaoFactory {
   def systemDbDao: SystemDbDao
   def newSiteDbDao(siteId: SiteId): SiteDbDao
+
+  def migrations: ScalaBasedDatabaseMigrations
   def shutdown()
 
   final def newDbDao2(): DbDao2 =
@@ -75,6 +77,7 @@ abstract class DbDaoFactory {
  * constructs objects and caches them in-memory / on disk. Perhaps there
  * could be a web service DAO as well.
  */
+@deprecated("Use SiteTransaction instead", "Now")
 abstract class SiteDbDao {
 
   def commonMarkRenderer: CommonMarkRenderer
@@ -292,6 +295,7 @@ abstract class SiteDbDao {
 }
 
 
+@deprecated("Use SystemTransaction instead", "Now")
 abstract class SystemDbDao {
 
   def applyEvolutions()

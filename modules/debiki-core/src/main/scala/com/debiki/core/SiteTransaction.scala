@@ -44,9 +44,8 @@ trait SiteTransaction {
 
   def loadActionsByUserOnPage(userId: UserId2, pageId: PageId): immutable.Seq[PostAction2]
 
-  def deleteVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2)
-  def insertVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2,
-        voterIp: IpAddress)
+  def deleteVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2): Boolean
+  def insertVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2)
 
   /** Remembers that the specified posts have been read by a certain user.
     */

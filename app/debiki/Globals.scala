@@ -23,6 +23,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
 import debiki.dao.{SystemDao, SiteDao, CachingSiteDaoFactory, CachingSystemDao}
+import debiki.dao.migrations.ScalaBasedMigrations
 //import com.twitter.ostrich.stats.Stats
 //import com.twitter.ostrich.{admin => toa}
 import java.{lang => jl}
@@ -150,8 +151,8 @@ class Globals {
     val ShutdownTimeout = 30 seconds
 
     val dbDaoFactory = new RdbDaoFactory(
-      makeDataSource(), Akka.system, debiki.ReactRenderer, anyFullTextSearchDbPath, Play.isTest,
-      fastStartSkipSearch = fastStartSkipSearch)
+      makeDataSource(), ScalaBasedMigrations, Akka.system, debiki.ReactRenderer,
+      anyFullTextSearchDbPath, Play.isTest, fastStartSkipSearch = fastStartSkipSearch)
 
     val siteDaoFactory = new CachingSiteDaoFactory(dbDaoFactory)
 
