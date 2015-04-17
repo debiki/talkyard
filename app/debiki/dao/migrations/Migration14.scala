@@ -20,6 +20,8 @@ package debiki.dao.migrations
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
+import debiki.dao.PagesDao
+
 import scala.collection.mutable
 
 
@@ -72,7 +74,11 @@ object Migration14 {
 
       // Update vote counts
       for (postId <- postIdsWithVotes) {
-        // TODO: updateVoteCounts(postId)
+        val postNoCounts = siteTransaction.loadThePost(pageMeta.pageId, postId)
+        val actions = siteTransaction.loadActionsDoneToPost(pageMeta.pageId, postId)
+        val readStats = siteTransaction.loadPostsReadStats(pageMeta.pageId, Some(postId))
+        val postWithCounts = postNoCounts.copyWithUpdatedVoteAndReadCounts(actions, readStats)
+        siteTransaction.updatePost(postWithCounts)
       }
     }
 

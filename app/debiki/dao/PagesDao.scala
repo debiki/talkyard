@@ -428,6 +428,7 @@ trait PagesDao {
   def deleteVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2) {
     readWriteTransaction { transaction =>
       transaction.deleteVote(pageId, postId, voteType, voterId = voterId)
+      updateVoteCounts(pageId, postId = postId, transaction)
       /* FRAUD SHOULD delete by cookie too, like I did before:
       var numRowsDeleted = 0
       if ((userIdData.anyGuestId.isDefined && userIdData.userId != UnknownUser.Id) ||
@@ -475,7 +476,8 @@ trait PagesDao {
 
       transaction.updatePostsReadStats(pageId, postsToMarkAsRead, readById = voterId,
         readFromIp = voterIp)
-      // TODO update Post.numTimesRead?
+
+      updateVoteCounts(post, transaction)
     }
     refreshPageInAnyCache(pageId)
   }
@@ -528,6 +530,21 @@ trait PagesDao {
 
   def loadPost(pageId: PageId, postId: PostId): Option[Post2] =
     readOnlyTransaction(_.loadPost(pageId, postId))
+
+
+  private def updateVoteCounts(pageId: PageId, postId: PostId, transaction: SiteTransaction): Unit = {
+    val post = transaction.loadThePost(pageId, postId = postId)
+    updateVoteCounts(post, transaction)
+  }
+
+
+  private def updateVoteCounts(post: Post2, transaction: SiteTransaction) {
+    val actions = transaction.loadActionsDoneToPost(post.pageId, postId = post.id)
+    val readStats = transaction.loadPostsReadStats(post.pageId, Some(post.id))
+    val postAfter = post.copyWithUpdatedVoteAndReadCounts(actions, readStats)
+    transaction.updatePost(postAfter)
+    // TODO split e.g. num_like_votes into ..._total and ..._unique? And update here.
+  }
 
 
   protected def refreshPageInAnyCache(pageId: PageId) {}

@@ -43,6 +43,7 @@ trait SiteTransaction {
   def updatePost(newPost: Post2)
 
   def loadActionsByUserOnPage(userId: UserId2, pageId: PageId): immutable.Seq[PostAction2]
+  def loadActionsDoneToPost(pageId: PageId, postId: PostId): immutable.Seq[PostAction2]
 
   def deleteVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2): Boolean
   def insertVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2)
@@ -51,6 +52,9 @@ trait SiteTransaction {
     */
   def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId], readById: UserId2,
         readFromIp: String)
+
+  def loadPostsReadStats(pageId: PageId, postId: Option[PostId]): PostsReadStats
+
 
   def loadFlagsFor(postIds: immutable.Seq[PostId]): immutable.Seq[PostFlag]
   def insertFlag(pageId: PageId, postId: PostId, flagType: PostFlagType, flaggerId: UserId2)

@@ -175,6 +175,28 @@ case class Post2(
     deletedStatus = deletedStatus orElse (
       if (parentStatuses.isDeleted) Some(DeletedStatus.AncestorDeleted) else None))
 
+
+  def copyWithUpdatedVoteAndReadCounts(actions: Iterable[PostAction2], readStats: PostsReadStats)
+        : Post2 = {
+    var numLikeVotes = 0
+    var numWrongVotes = 0
+    for (action <- actions) {
+      action match {
+        case vote: PostVote =>
+          vote.voteType match {
+            case PostVoteType.Like =>
+              numLikeVotes += 1
+            case PostVoteType.Wrong =>
+              numWrongVotes += 1
+          }
+      }
+    }
+    val numTimesRead = readStats.readCountFor(id)
+    copy(
+      numLikeVotes = numLikeVotes,
+      numWrongVotes = numWrongVotes,
+      numTimesRead = numTimesRead)
+  }
 }
 
 
