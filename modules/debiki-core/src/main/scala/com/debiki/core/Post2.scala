@@ -96,14 +96,64 @@ case class Post2(
   numPendingEditSuggestions: Int,
   numLikeVotes: Int,
   numWrongVotes: Int,
-  numCollapseVotes: Int,
   numTimesRead: Int) {
 
   require(parentId != Some(id), "DwE5BK4")
   require(!multireplyPostIds.contains(id), "DwE4kWW2")
+
+  require(lastEditedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE7KEF3")
+  require(lastEditedAt.isEmpty == lastEditedById.isEmpty, "DwE0GKW2")
+
+  require(lastApprovedEditAt.isEmpty || lastEditedAt.isDefined, "DwE5Df4")
+  require(lastApprovedEditAt.map(_.getTime <= lastEditedAt.get.getTime) != Some(false), "DwE2LYG6")
+  require(lastApprovedEditAt.isEmpty == lastApprovedEditById.isEmpty, "DwE9JK3")
+
+  // require(numPendingEditSuggestions == 0 || lastEditSuggestionAt.isDefined, "DwE2GK45)
+  // require(lastEditSuggestionAt.map(_.getTime < createdAt.getTime) != Some(false), "DwE77fW2)
+
+  //require(updatedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE6KPw2)
+  require(approvedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE8KGEI2")
+
+  require(approvedVersion.isEmpty == approvedAt.isEmpty, "DwE4KHI7")
+  require(approvedVersion.isEmpty == approvedById.isEmpty, "DwE2KI65")
+  require(approvedVersion.isEmpty == approvedSource.isEmpty, "DwE7YFv2")
+  require(approvedHtmlSanitized.isEmpty || approvedSource.isDefined, "DwE0IEW1")
+
+  require(approvedSource.map(_.trim.length) != Some(0), "DwE1JY83")
+  require(approvedHtmlSanitized.map(_.trim.length) != Some(0), "DwE6BH5")
+  require(approvedSource.isDefined || currentSourcePatch.isDefined, "DwE3KI59")
+  require(currentSourcePatch.map(_.trim.length) != Some(0), "DwE2bNW5")
+
+  require(approvedVersion.isEmpty || (
+    (currentVersion == approvedVersion.get) == currentSourcePatch.isEmpty), "DwE7IEP0")
+
   require(approvedVersion.map(_ <= currentVersion) != Some(false), "DwE6KJ0")
-  // ... TODO e.g. deleted*.isDefined must all be None or Some
-  // ... safe <= approved <= current
+  require(safeVersion.isEmpty || (
+    approvedVersion.isDefined && safeVersion.get <= approvedVersion.get), "DwE2EF4")
+
+  require(collapsedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE0JIk3")
+  require(collapsedAt.isDefined == collapsedStatus.isDefined, "DwE5KEI3")
+  require(collapsedAt.isDefined == collapsedById.isDefined, "DwE60KF3")
+
+  require(closedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE6IKF3")
+  require(closedAt.isDefined == closedStatus.isDefined, "DwE0Kf4")
+  require(closedAt.isDefined == closedById.isDefined, "DwE4KI61")
+
+  require(deletedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE6IK84")
+  require(deletedAt.isDefined == deletedStatus.isDefined, "DwE0IGK2")
+  require(deletedAt.isDefined == deletedById.isDefined, "DwE14KI7")
+
+  require(hiddenAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE6K2I7")
+  require(hiddenAt.isDefined == hiddenById.isDefined, "DwE0B7I3")
+  //require(hiddenReason.isEmpty || hiddenAt.isDefined, "DwE3K5I9")
+
+  require(numDistinctEditors >= 0, "DwE2IkG7")
+  require(numPendingEditSuggestions >= 0, "DwE0IK0P3")
+  require(numPendingFlags >= 0, "DwE4KIw2")
+  require(numHandledFlags >= 0, "DwE6IKF3")
+  require(numLikeVotes >= 0, "DwEIK7K")
+  require(numWrongVotes >= 0, "DwE7YQ08")
+  require(numTimesRead >= 0, "DwE2ZfMI3")
 
   def isMultireply = multireplyPostIds.nonEmpty
 
@@ -263,7 +313,6 @@ object Post2 {
       numPendingEditSuggestions = 0,
       numLikeVotes = 0,
       numWrongVotes = 0,
-      numCollapseVotes = 0,
       numTimesRead = 0)
   }
 

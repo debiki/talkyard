@@ -20,7 +20,6 @@ package debiki.dao.migrations
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
-import debiki.dao.PagesDao
 
 import scala.collection.mutable
 
@@ -72,6 +71,8 @@ object Migration14 {
           // skip
       }
 
+      // Don't migrate flags and pinned positions.
+
       // Update vote counts
       for (postId <- postIdsWithVotes) {
         val postNoCounts = siteTransaction.loadThePost(pageMeta.pageId, postId)
@@ -98,10 +99,25 @@ object Migration14 {
         else if (oldPost.isPostDeleted) Some(DeletedStatus.PostDeleted)
         else None
 
-      val safeVersion =
+      var safeVersion =
         if (oldPost.lastApprovalDati.isDefined) Some(Post2.FirstVersion) else None
 
-      val longAgo = new ju.Date(0)
+      // Add some dummy text to empty posts. Empty posts are no longer allowed.
+      var approvedSource = oldPost.approvedText
+      var approvedHtmlSanitized = oldPost.approvedHtmlSanitized
+      var approvedById = oldPost.lastManuallyApprovedById.map(_.toInt) orElse
+        oldPost.lastApprovalDati.map(_ => SystemUser.User.id2)
+      var approvedAt = oldPost.lastApprovalDati
+      val isEmpty =
+        approvedSource.map(_.trim.length > 0) != Some(true) ||
+          approvedHtmlSanitized.map(_.trim.length > 0) != Some(true)
+      if (isEmpty) {
+        safeVersion = Some(Post2.FirstVersion)
+        approvedSource = Some("(empty post)")
+        approvedHtmlSanitized = Some("<p>(empty post)</p>")
+        approvedById = Some(SystemUser.User.id2)
+        approvedAt = Some(oldPost.creationDati)
+      }
 
       Post2(
         siteId = siteTransaction.siteId,
@@ -111,40 +127,37 @@ object Migration14 {
         multireplyPostIds = oldPost.multireplyPostIds,
         createdAt = oldPost.creationDati,
         createdById = oldPost.userId.toInt,
-        lastEditedAt = oldPost.lastEditAppliedAt,
-        lastEditedById = oldPost.lastEditorId.map(_.toInt),
-        lastApprovedEditAt = oldPost.lastEditAppliedAt,   // for simplicity
-        lastApprovedEditById = Some(SystemUser.User.id2), //
-        numDistinctEditors = oldPost.numDistinctEditors,
+        // Let's delete all edit history.
+        lastEditedAt = None,
+        lastEditedById = None,
+        lastApprovedEditAt = None,
+        lastApprovedEditById = None,
+        numDistinctEditors = 0,
         safeVersion = safeVersion,
-        approvedSource = oldPost.approvedText,
-        approvedHtmlSanitized = oldPost.approvedHtmlSanitized,
-        approvedAt = oldPost.lastApprovalDati,
-        approvedById = oldPost.lastManuallyApprovedById.map(_.toInt) orElse
-          oldPost.lastApprovalDati.map(_ => SystemUser.User.id2),
+        approvedSource = approvedSource,
+        approvedHtmlSanitized = approvedHtmlSanitized,
+        approvedAt = approvedAt,
+        approvedById = approvedById,
         approvedVersion = safeVersion,
         currentSourcePatch = None, // ignore unapproved edits
         currentVersion = Post2.FirstVersion,
         collapsedStatus = collapsedStatus,
-        collapsedAt = collapsedStatus.map(_ => longAgo),
+        collapsedAt = collapsedStatus.map(_ => oldPost.creationDati),
         collapsedById = collapsedStatus.map(_ => SystemUser.User.id2),
         closedStatus = closedStatus,
-        closedAt = closedStatus.map(_ => longAgo),
+        closedAt = closedStatus.map(_ => oldPost.creationDati),
         closedById = closedStatus.map(_ => SystemUser.User.id2),
         hiddenAt = None,
         hiddenById = None,
         deletedStatus = deletedStatus,
-        deletedAt = deletedStatus.map(_ => longAgo),
+        deletedAt = deletedStatus.map(_ => oldPost.creationDati),
         deletedById = deletedStatus.map(_ => SystemUser.User.id2),
-        // Throw away all this info; it's not of much interest, because
-        // no one but I has really been using Debiki thus far.
         pinnedPosition = None,
         numPendingFlags = 0,
         numHandledFlags = 0,
         numPendingEditSuggestions = 0,
         numLikeVotes = 0,
         numWrongVotes = 0,
-        numCollapseVotes = 0,
         numTimesRead = 0)
     }
   }
