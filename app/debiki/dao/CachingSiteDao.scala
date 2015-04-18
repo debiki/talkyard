@@ -47,6 +47,7 @@ class CachingSiteDao(val siteDbDao: SerializingSiteDbDao, val dbDaoFactory: DbDa
   with CachingPagesDao
   with CachingPagePathMetaDao
   with CachingPageSummaryDao
+  with CachingPostsDao
   with CachingRenderedPageHtmlDao
   with CachingUserDao {
 
