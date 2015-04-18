@@ -34,7 +34,7 @@ interface Post {
   authorFullName: string;
   authorUsername: string
   createdAt: number;
-  lastEditAppliedAt: number;
+  lastApprovedEditAt: number;
   numEditors: number;
   numLikeVotes: number;
   numWrongVotes: number;

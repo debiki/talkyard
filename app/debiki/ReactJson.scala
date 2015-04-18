@@ -156,7 +156,7 @@ object ReactJson {
       "authorFullName" -> JsString(post.createdByUser(people).displayName),
       "authorUsername" -> JsStringOrNull(post.createdByUser(people).username),
       "createdAt" -> JsNumber(post.createdAt.getTime),
-      "lastEditAppliedAt" -> lastApprovedEditAt, // TODO rename JSON field
+      "lastApprovedEditAt" -> lastApprovedEditAt,
       "numEditors" -> JsNumber(post.numDistinctEditors),
       "numLikeVotes" -> JsNumber(post.numLikeVotes),
       "numWrongVotes" -> JsNumber(post.numWrongVotes),

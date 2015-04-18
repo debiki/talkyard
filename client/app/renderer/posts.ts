@@ -554,8 +554,8 @@ var PostHeader = createComponent({
     var createdAt = moment(post.createdAt).from(this.props.now);
 
     var editInfo = null;
-    if (post.lastEditAppliedAt) {
-      var editedAt = moment(post.lastEditAppliedAt).from(this.props.now);
+    if (post.lastApprovedEditAt) {
+      var editedAt = moment(post.lastApprovedEditAt).from(this.props.now);
       var byVariousPeople = post.numEditors > 1 ? ' by various people' : null;
       editInfo =
         r.span({}, ', edited ', editedAt, byVariousPeople);
