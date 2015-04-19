@@ -18,44 +18,72 @@
 package com.debiki.core
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import com.debiki.core.User.SystemUserId
 import java.{util => ju}
-import play.api.libs.json._
 import scala.collection.immutable
-import Prelude._
+import PostStatusBits._
 
 
-sealed abstract class CollapsedStatus
 object CollapsedStatus {
-  case object PostCollapsed extends CollapsedStatus
-  case object TreeCollapsed extends CollapsedStatus
-  case object AncestorCollapsed extends CollapsedStatus
+  val Open = new CollapsedStatus(0)
+}
+class CollapsedStatus(val underlying: Int) extends AnyVal {
+  def isCollapsed = underlying != 0
+  def isExplicitlyCollapsed = (underlying & TreeBits) != 0
+  def isPostCollapsed = (underlying & SelfBit) != 0
+  //def areRepliesCollapsed = underlying & ChildrenBit
+  def isTreeCollapsed = (underlying & TreeBits) == TreeBits
+  def areAncestorsCollapsed = (underlying & AncestorsBit) != 0
 }
 
 
-sealed abstract class ClosedStatus
 object ClosedStatus {
-  case object TreeClosed extends ClosedStatus
-  case object AncestorClosed extends ClosedStatus
+  val Open = new ClosedStatus(0)
+}
+class ClosedStatus(val underlying: Int) extends AnyVal {
+  def isClosed = underlying != 0
+  def isTreeClosed = (underlying & TreeBits) == TreeBits
+  def areAncestorsClosed = (underlying & AncestorsBit) != 0
 }
 
 
-sealed abstract class DeletedStatus
 object DeletedStatus {
-  case object PostDeleted extends DeletedStatus
-  case object TreeDeleted extends DeletedStatus
-  case object AncestorDeleted extends DeletedStatus
+  val NotDeleted = new DeletedStatus(0)
+}
+class DeletedStatus(val underlying: Int) extends AnyVal {
+  def isDeleted = underlying != 0
+  def onlyThisDeleted = underlying == SelfBit
+  def isPostDeleted = (underlying & SelfBit) != 0
+  def isTreeDeleted = (underlying & TreeBits) == TreeBits
+  def areAncestorsDeleted = (underlying & AncestorsBit) != AncestorsBit
 }
 
 
-case class PostStatuses(isCollapsed: Boolean, isClosed: Boolean, isDeleted: Boolean)
-object PostStatuses {
-  val Default = PostStatuses(isCollapsed = false, isClosed = false, isDeleted = false)
+object PostStatusBits {
+
+  /** Means that only the current post (but not its children) has been collapsed or deleted. */
+  val SelfBit = 1
+
+  /** Means that all successor posts are collapsed or closed or deleted. */
+  val SuccessorsBit = 2
+
+  /** Means this post and all successors. */
+  val TreeBits = SelfBit | SuccessorsBit
+
+  /** Means that some ancestor post has been collapsed or closed or deleted and that therefore
+    * the current post is also collapsed or closed or deleted. */
+  val AncestorsBit = 4
+
+  val AllBits = SelfBit | SuccessorsBit | AncestorsBit
 }
 
 
 /** A post is a page title, a page body or a comment.
   * For example, a forum topic title, topic text, or a reply.
+  *
+  * SHOULD: If a post has been flagged, it gets hidden. People can click to view it anyway, so that
+  * they can notify moderators if posts are being flagged and hidden inappropriately.
   */
 case class Post2(
   siteId: SiteId,
@@ -78,16 +106,16 @@ case class Post2(
   approvedVersion: Option[Int],
   currentSourcePatch: Option[String],
   currentVersion: Int,
-  collapsedStatus: Option[CollapsedStatus],
+  collapsedStatus: CollapsedStatus,
   collapsedAt: Option[ju.Date],
   collapsedById: Option[UserId2],
-  closedStatus: Option[ClosedStatus],
+  closedStatus: ClosedStatus,
   closedAt: Option[ju.Date],
   closedById: Option[UserId2],
   hiddenAt: Option[ju.Date],
   hiddenById: Option[UserId2],
   //hiddenReason: ?
-  deletedStatus: Option[DeletedStatus],
+  deletedStatus: DeletedStatus,
   deletedAt: Option[ju.Date],
   deletedById: Option[UserId2],
   pinnedPosition: Option[Int],
@@ -131,16 +159,24 @@ case class Post2(
   require(safeVersion.isEmpty || (
     approvedVersion.isDefined && safeVersion.get <= approvedVersion.get), "DwE2EF4")
 
+  require(0 <= collapsedStatus.underlying && collapsedStatus.underlying <= AllBits &&
+    collapsedStatus.underlying != SuccessorsBit)
   require(collapsedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE0JIk3")
-  require(collapsedAt.isDefined == collapsedStatus.isDefined, "DwE5KEI3")
+  require(collapsedAt.isDefined == collapsedStatus.isCollapsed, "DwE5KEI3")
   require(collapsedAt.isDefined == collapsedById.isDefined, "DwE60KF3")
 
+  require(closedStatus.underlying >= 0 && closedStatus.underlying <= AllBits &&
+    closedStatus.underlying != SuccessorsBit &&
+    // Cannot close a single post only, needs to close the whole tree.
+    closedStatus.underlying != SelfBit)
   require(closedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE6IKF3")
-  require(closedAt.isDefined == closedStatus.isDefined, "DwE0Kf4")
+  require(closedAt.isDefined == closedStatus.isClosed, "DwE0Kf4")
   require(closedAt.isDefined == closedById.isDefined, "DwE4KI61")
 
+  require(0 <= deletedStatus.underlying && deletedStatus.underlying <= AllBits &&
+    deletedStatus.underlying != SuccessorsBit)
   require(deletedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE6IK84")
-  require(deletedAt.isDefined == deletedStatus.isDefined, "DwE0IGK2")
+  require(deletedAt.isDefined == deletedStatus.isDeleted, "DwE0IGK2")
   require(deletedAt.isDefined == deletedById.isDefined, "DwE14KI7")
 
   require(hiddenAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE6K2I7")
@@ -156,12 +192,16 @@ case class Post2(
   require(numTimesRead >= 0, "DwE2ZfMI3")
 
   def isMultireply = multireplyPostIds.nonEmpty
+  def isHidden = hiddenAt.isDefined
 
   def pagePostId = PagePostId(pageId, id)
   def hasAnId = id >= PageParts.LowestPostId
 
-  def isDeleted = deletedStatus.isDefined
-  def isHidden = hiddenAt.isDefined
+  def newChildCollapsedStatus = new CollapsedStatus(
+    if ((collapsedStatus.underlying & (SuccessorsBit | AncestorsBit)) != 0) AncestorsBit else 0)
+
+  def newChildClosedStatus = new ClosedStatus(
+    if ((closedStatus.underlying & (SuccessorsBit | AncestorsBit)) != 0) AncestorsBit else 0)
 
   lazy val currentSource: String =
     currentSourcePatch match {
@@ -217,13 +257,97 @@ case class Post2(
   def children(pageParts: PageParts2): Seq[Post2] =
     pageParts.childrenOf(id)
 
-  def copyWithParentStatuses(parentStatuses: PostStatuses): Post2 = this.copy(
-    collapsedStatus = collapsedStatus orElse (
-      if (parentStatuses.isCollapsed) Some(CollapsedStatus.AncestorCollapsed) else None),
-    closedStatus = closedStatus orElse (
-      if (parentStatuses.isClosed) Some(ClosedStatus.AncestorClosed) else None),
-    deletedStatus = deletedStatus orElse (
-      if (parentStatuses.isDeleted) Some(DeletedStatus.AncestorDeleted) else None))
+
+  /** Setting any flag to true means that status will change to true. Leaving it
+    * false means the status will remain unchanged (not that it'll be cleared).
+    */
+  def copyWithNewStatus(
+    currentTime: ju.Date,
+    userId: UserId2,
+    postCollapsed: Boolean = false,
+    treeCollapsed: Boolean = false,
+    ancestorsCollapsed: Boolean = false,
+    treeClosed: Boolean = false,
+    ancestorsClosed: Boolean = false,
+    postDeleted: Boolean = false,
+    treeDeleted: Boolean = false,
+    ancestorsDeleted: Boolean = false): Post2 = {
+
+    // You can collapse a post, although an ancestor is already collapsed. Collapsing it,
+    // simply means that it'll remain collapsed, even if the ancestor gets expanded.
+    var newCollapsedUnderlying = collapsedStatus.underlying
+    var newCollapsedAt = collapsedAt
+    var newCollapsedById = collapsedById
+    var collapsesNowBecauseOfAncestor = false
+    if (ancestorsCollapsed) {
+      newCollapsedUnderlying &= AncestorsBit
+      collapsesNowBecauseOfAncestor = !collapsedStatus.isCollapsed
+    }
+    if (postCollapsed) {
+      newCollapsedUnderlying &= SelfBit
+    }
+    if (treeCollapsed) {
+      newCollapsedUnderlying &= TreeBits
+    }
+    if (collapsesNowBecauseOfAncestor || postCollapsed || treeCollapsed) {
+      newCollapsedAt = Some(currentTime)
+      newCollapsedById = Some(userId)
+    }
+
+    // You cannot close a post if an ancestor is already closed, because then the post
+    // is closed already.
+    var newClosedUnderlying = closedStatus.underlying
+    var newClosedAt = closedAt
+    var newClosedById = closedById
+    if (ancestorsClosed) {
+      newClosedUnderlying &= AncestorsBit
+      if (!closedStatus.isClosed) {
+        newClosedAt = Some(currentTime)
+        newClosedById = Some(userId)
+      }
+    }
+    if (!closedStatus.isClosed && treeClosed) {
+      newClosedUnderlying &= TreeBits
+      newClosedAt = Some(currentTime)
+      newClosedById = Some(userId)
+    }
+
+    // You cannot delete a post if an ancestor is already deleted, because then the post
+    // is deleted already.
+    var newDeletedUnderlying = deletedStatus.underlying
+    var newDeletedAt = deletedAt
+    var newDeletedById = deletedById
+    if (ancestorsDeleted) {
+      newDeletedUnderlying &= AncestorsBit
+      if (!deletedStatus.isDeleted) {
+        newDeletedAt = Some(currentTime)
+        newDeletedById = Some(userId)
+      }
+    }
+    if (!deletedStatus.isDeleted) {
+      if (postDeleted) {
+        newDeletedUnderlying &= SelfBit
+      }
+      if (treeDeleted) {
+        newDeletedUnderlying &= TreeBits
+      }
+      if (postDeleted || treeDeleted) {
+        newDeletedAt = Some(currentTime)
+        newDeletedById = Some(userId)
+      }
+    }
+
+    copy(
+      collapsedStatus = new CollapsedStatus(newCollapsedUnderlying),
+      collapsedById = newCollapsedById,
+      collapsedAt = newCollapsedAt,
+      closedStatus = new ClosedStatus(newClosedUnderlying),
+      closedById = newClosedById,
+      closedAt = newClosedAt,
+      deletedStatus = new DeletedStatus(newDeletedUnderlying),
+      deletedById = newDeletedById,
+      deletedAt = newDeletedAt)
+  }
 
 
   def copyWithUpdatedVoteAndReadCounts(actions: Iterable[PostAction2], readStats: PostsReadStats)
@@ -259,13 +383,15 @@ object Post2 {
         siteId: SiteId,
         pageId: PageId,
         postId: PostId,
-        parentId: Option[PostId],
+        parent: Option[Post2],
         multireplyPostIds: Set[PostId],
         createdAt: ju.Date,
         createdById: UserId2,
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId2]): Post2 = {
+
+    require(multireplyPostIds.nonEmpty == parent.isDefined)
 
     val currentSourcePatch: Option[String] =
       if (approvedById.isDefined) None
@@ -275,11 +401,31 @@ object Post2 {
     val safeVersion =
       approvedById.flatMap(id => if (id != SystemUserId) Some(FirstVersion) else None)
 
+    val (parentsChildrenCollapsedAt, parentsChildrenColllapsedById) = parent match {
+      case None =>
+        (None, None)
+      case Some(parent) =>
+        if (parent.newChildCollapsedStatus.areAncestorsCollapsed)
+          (Some(createdAt), parent.collapsedById)
+        else
+          (None, None)
+    }
+
+    val (parentsChildrenClosedAt, parentsChildrenClosedById) = parent match {
+      case None =>
+        (None, None)
+      case Some(parent) =>
+        if (parent.newChildClosedStatus.areAncestorsClosed)
+          (Some(createdAt), parent.closedById)
+        else
+          (None, None)
+    }
+
     Post2(
       siteId = siteId,
       pageId = pageId,
       id = postId,
-      parentId = parentId,
+      parentId = parent.map(_.id),
       multireplyPostIds = multireplyPostIds,
       createdAt = createdAt,
       createdById = createdById,
@@ -296,15 +442,15 @@ object Post2 {
       approvedVersion = if (approvedById.isDefined) Some(FirstVersion) else None,
       currentSourcePatch = currentSourcePatch,
       currentVersion = FirstVersion,
-      collapsedStatus = None,
-      collapsedAt = None,
-      collapsedById = None,
-      closedStatus = None,
-      closedAt = None,
-      closedById = None,
+      collapsedStatus = parent.map(_.newChildCollapsedStatus) getOrElse CollapsedStatus.Open,
+      collapsedAt = parentsChildrenCollapsedAt,
+      collapsedById = parentsChildrenColllapsedById,
+      closedStatus = parent.map(_.newChildClosedStatus) getOrElse ClosedStatus.Open,
+      closedAt = parentsChildrenClosedAt,
+      closedById = parentsChildrenClosedById,
       hiddenAt = None,
       hiddenById = None,
-      deletedStatus = None,
+      deletedStatus = DeletedStatus.NotDeleted,
       deletedAt = None,
       deletedById = None,
       pinnedPosition = None,
@@ -324,7 +470,7 @@ object Post2 {
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId2]): Post2 =
-    create(siteId, pageId = pageId, postId = PageParts.TitleId, parentId = None,
+    create(siteId, pageId = pageId, postId = PageParts.TitleId, parent = None,
       multireplyPostIds = Set.empty, createdAt = createdAt, createdById = createdById,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 
@@ -336,7 +482,7 @@ object Post2 {
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId2]): Post2 =
-    create(siteId, pageId = pageId, postId = PageParts.BodyId, parentId = None,
+    create(siteId, pageId = pageId, postId = PageParts.BodyId, parent = None,
       multireplyPostIds = Set.empty, createdAt = createdAt, createdById = createdById,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 

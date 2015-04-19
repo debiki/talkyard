@@ -80,7 +80,7 @@ abstract class PageParts2 extends People2 {
   def thePost(postId: PostId): Post2 = post(postId) getOrDie "DwE9PKG3"
 
 
-  def numRepliesInclDeleted: Int = 1 // TODO
+  def numRepliesInclDeleted: Int = unimplemented("numRepliesInclDeleted", "DwE7IEP3")
 
 
   def theUser(userId: UserId2): User
@@ -108,13 +108,11 @@ abstract class PageParts2 extends People2 {
   def hasNonDeletedSuccessor(postId: PostId): Boolean = {
     // For now:
     childrenOf(postId) find { child =>
-      child.deletedStatus.isEmpty ||
-        child.deletedStatus == DeletedStatus.PostDeleted // then children perhaps not deleted
+      !child.deletedStatus.isDeleted ||
+        // Perhaps grandchildren not deleted?
+        child.deletedStatus.onlyThisDeleted
     } nonEmpty
   }
-
-
-  def derivePostStatuses(postId: PostId): PostStatuses = PostStatuses.Default // TODO
 
 
   def parentOf(postId: PostId): Option[Post2] =

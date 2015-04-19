@@ -64,6 +64,7 @@ trait PostsDao {
           throwBadReq("DwEe8HD36", o"""Cannot reply to common ancestor post '$commonAncestorId';
             it does not exist""")
         }
+      val anyParent = parentId.map(page.parts.thePost)
 
       // SHOULD authorize. For now, no restrictions.
       val author = transaction.loadUser(authorId) getOrElse throwNotFound("DwE404UF3", "Bad user")
@@ -75,24 +76,17 @@ trait PostsDao {
           SystemUserId
         }
 
-      val parentStatuses = parentId match {
-        case Some(parentId) => page.parts.derivePostStatuses(parentId)
-        case None => PostStatuses.Default
-      }
-
-      var newPost = Post2.create(
+      val newPost = Post2.create(
         siteId = siteId,
         pageId = pageId,
         postId = postId,
-        parentId = parentId,
+        parent = anyParent,
         multireplyPostIds = replyToPostIds,
         createdAt = transaction.currentTime,
         createdById = authorId,
         source = text,
         htmlSanitized = htmlSanitized,
         approvedById = Some(approverId))
-
-      newPost = newPost.copyWithParentStatuses(parentStatuses)
 
       //val oldMeta = page.meta
       //val newMeta = oldMeta.copy(numRepliesInclDeleted = page.parts.numRepliesInclDeleted + 1)
@@ -204,40 +198,15 @@ trait PostsDao {
       // Update the directly affected post.
       val postAfter = action match {
         case PAP.CloseTree =>
-          if (postBefore.closedStatus.isDefined)
-            return
-          postBefore.copy(
-            closedAt = Some(transaction.currentTime),
-            closedById = Some(userId),
-            closedStatus = Some(ClosedStatus.TreeClosed))
+          postBefore.copyWithNewStatus(transaction.currentTime, userId, treeClosed = true)
         case PAP.CollapsePost =>
-          if (postBefore.collapsedStatus.isDefined)
-            return
-          postBefore.copy(
-            collapsedAt = Some(transaction.currentTime),
-            collapsedById = Some(userId),
-            collapsedStatus = Some(CollapsedStatus.PostCollapsed))
+          postBefore.copyWithNewStatus(transaction.currentTime, userId, postCollapsed = true)
         case PAP.CollapseTree =>
-          if (postBefore.collapsedStatus.isDefined)
-            return
-          postBefore.copy(
-            collapsedAt = Some(transaction.currentTime),
-            collapsedById = Some(userId),
-            collapsedStatus = Some(CollapsedStatus.TreeCollapsed))
+          postBefore.copyWithNewStatus(transaction.currentTime, userId, treeCollapsed = true)
         case PAP.DeletePost(clearFlags) =>
-          if (postBefore.deletedStatus.isDefined)
-            return
-          postBefore.copy(
-            deletedAt = Some(transaction.currentTime),
-            deletedById = Some(userId),
-            deletedStatus = Some(DeletedStatus.PostDeleted))
+          postBefore.copyWithNewStatus(transaction.currentTime, userId, postDeleted = true)
         case PAP.DeleteTree =>
-          if (postBefore.deletedStatus.isDefined)
-            return
-          postBefore.copy(
-            deletedAt = Some(transaction.currentTime),
-            deletedById = Some(userId),
-            deletedStatus = Some(DeletedStatus.TreeDeleted))
+          postBefore.copyWithNewStatus(transaction.currentTime, userId, treeDeleted = true)
       }
 
       transaction.updatePost(postAfter)
@@ -247,27 +216,21 @@ trait PostsDao {
       for (successor <- page.parts.successorsOf(postId)) {
         val anyUpdatedSuccessor: Option[Post2] = action match {
           case PAP.CloseTree =>
-            if (successor.closedStatus.isDefined) None
-            else Some(successor.copy(
-              closedStatus = Some(ClosedStatus.AncestorClosed),
-              closedById = Some(userId),
-              closedAt = Some(transaction.currentTime)))
+            if (successor.closedStatus.areAncestorsClosed) None
+            else Some(successor.copyWithNewStatus(
+              transaction.currentTime, userId, ancestorsClosed = true))
           case PAP.CollapsePost =>
             None
           case PAP.CollapseTree =>
-            if (successor.collapsedStatus.isDefined) None
-            else Some(successor.copy(
-              collapsedStatus = Some(CollapsedStatus.AncestorCollapsed),
-              collapsedById = Some(userId),
-              collapsedAt = Some(transaction.currentTime)))
+            if (successor.collapsedStatus.areAncestorsCollapsed) None
+            else Some(successor.copyWithNewStatus(
+              transaction.currentTime, userId, ancestorsCollapsed = true))
           case PAP.DeletePost(clearFlags) =>
             None
           case PAP.DeleteTree =>
-            if (successor.deletedStatus.isDefined) None
-            else Some(successor.copy(
-              deletedStatus = Some(DeletedStatus.AncestorDeleted),
-              deletedById = Some(userId),
-              deletedAt = Some(transaction.currentTime)))
+            if (successor.deletedStatus.areAncestorsDeleted) None
+            else Some(successor.copyWithNewStatus(
+              transaction.currentTime, userId, ancestorsDeleted = true))
         }
 
         anyUpdatedSuccessor foreach { updatedSuccessor =>
@@ -323,14 +286,14 @@ trait PostsDao {
   }
 
 
-  def deletePost(pageId: PageId, postId: PostId, deletedById: UserId2): Unit = {
+  def deletePost(pageId: PageId, postId: PostId, deletedById: UserId2) {
     readWriteTransaction { transaction =>
       val postBefore = transaction.loadThePost(pageId, postId)
-      if (postBefore.isDeleted && postBefore.deletedStatus != Some(DeletedStatus.AncestorDeleted))
+      if (postBefore.deletedStatus.isDeleted)
         throwForbidden("DwE8FKW2", "Post already deleted")
 
       val postAfter = postBefore.copy(
-        deletedStatus = Some(DeletedStatus.PostDeleted),
+        deletedStatus = new DeletedStatus(PostStatusBits.SelfBit),
         deletedAt = Some(transaction.currentTime),
         deletedById = Some(deletedById))
       transaction.updatePost(postAfter)

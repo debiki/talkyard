@@ -804,10 +804,10 @@ object Post {
     } */
 
     // Place deleted posts last; they're rather uninteresting?
-  if (!postA.isDeleted && postB.isDeleted)
+    if (!postA.deletedStatus.isDeleted && postB.deletedStatus.isDeleted)
       return true
 
-    if (postA.isDeleted && !postB.isDeleted)
+    if (postA.deletedStatus.isDeleted && !postB.deletedStatus.isDeleted)
       return false
 
     // Place multireplies after normal replies. And sort multireplies by time,

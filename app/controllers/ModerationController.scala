@@ -149,7 +149,7 @@ object ModerationController extends mvc.Controller {
     }
 
     val status =
-      if (post.isDeleted) "Deleted"
+      if (post.deletedStatus.isDeleted) "Deleted"
       else if (post.isHidden) "Hidden"
       // else if (post.currentVersionPrelApproved) {
       //  if (post.someVersionPermanentlyApproved) "EditsPrelApproved"  // TODO remove JS

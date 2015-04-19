@@ -71,7 +71,7 @@ object ReplyController extends mvc.Controller {
   private def tryCreateEmbeddedCommentsPage(
         request: DebikiRequest[_], pageId: PageId, anyPageUrl: Option[String]): Option[Page] = {
 
-    ??? /* TODO use createPage2 instead
+    unimplemented("Creating embedded comments page", "DwE6KFI4") /* use createPage2 instead
     if (anyPageUrl.isEmpty)
       throwBadReq("Cannot create embedded page: embedding page URL unknown")
 

@@ -58,9 +58,8 @@ object ReactJson {
     val pageParts = page.parts
     pageParts.loadAllPosts()
     var allPostsJson = pageParts.allPosts.filter { post =>
-      post.deletedStatus.isEmpty || (
-        post.deletedStatus == Some(DeletedStatus.PostDeleted) &&
-        pageParts.hasNonDeletedSuccessor(post.id))
+      !post.deletedStatus.isDeleted || (
+        post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.id))
     } map { post: Post2 =>
       post.id.toString -> postToJsonImpl(post, page)
     }
@@ -162,11 +161,11 @@ object ReactJson {
       "numWrongVotes" -> JsNumber(post.numWrongVotes),
       "numOffTopicVotes" -> JsNumber(0), // remove off-topic votes? post.numOffTopicVotes
       "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions),
-      "isTreeDeleted" -> JsBoolean(post.deletedStatus == Some(DeletedStatus.TreeDeleted)),
-      "isPostDeleted" -> JsBoolean(post.deletedStatus == Some(DeletedStatus.PostDeleted)),
-      "isTreeCollapsed" -> JsBoolean(post.collapsedStatus == Some(CollapsedStatus.TreeCollapsed)),
-      "isPostCollapsed" -> JsBoolean(post.collapsedStatus == Some(CollapsedStatus.PostCollapsed)),
-      "isTreeClosed" -> JsBoolean(post.closedStatus == Some(ClosedStatus.TreeClosed)),
+      "isTreeDeleted" -> JsBoolean(post.deletedStatus.isTreeDeleted),
+      "isPostDeleted" -> JsBoolean(post.deletedStatus.isPostDeleted),
+      "isTreeCollapsed" -> JsBoolean(post.collapsedStatus.isTreeCollapsed),
+      "isPostCollapsed" -> JsBoolean(post.collapsedStatus.isPostCollapsed),
+      "isTreeClosed" -> JsBoolean(post.closedStatus.isTreeClosed),
       "isApproved" -> JsBoolean(isApproved),
       "pinnedPosition" -> post.pinnedPosition.map(JsNumber(_)).getOrElse(JsNull),
       "likeScore" -> JsNumber(post.likeScore),

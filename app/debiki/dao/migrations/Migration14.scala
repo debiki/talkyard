@@ -19,8 +19,8 @@ package debiki.dao.migrations
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import com.debiki.core.PostStatusBits._
 import java.{util => ju}
-
 import scala.collection.mutable
 
 
@@ -85,19 +85,42 @@ object Migration14 {
 
 
     def upgradePost(pageId: PageId, oldPost: Post): Post2 = {
-      val collapsedStatus =
-        if (oldPost.isTreeCollapsed) Some(CollapsedStatus.TreeCollapsed)
-        else if (oldPost.isPostCollapsed) Some(CollapsedStatus.PostCollapsed)
-        else None
+      val ancestors = oldPost.ancestorPosts
+      val ancestorsCollapsedBit = if (ancestors.exists(_.isTreeCollapsed)) AncestorsBit else 0
+      val ancestorsClosedBit = if (ancestors.exists(_.isTreeClosed)) AncestorsBit else 0
+      val ancestorsDeletedBit = if (ancestors.exists(_.isTreeDeleted)) AncestorsBit else 0
 
-      val closedStatus =
-        if (oldPost.isTreeClosed) Some(ClosedStatus.TreeClosed)
-        else None
+      val collapsedStatus = new CollapsedStatus(
+        if (oldPost.isTreeCollapsed) TreeBits | ancestorsCollapsedBit
+        else if (oldPost.isPostCollapsed) SelfBit | ancestorsCollapsedBit
+        else ancestorsCollapsedBit)
 
-      val deletedStatus =
-        if (oldPost.isTreeDeleted) Some(DeletedStatus.TreeDeleted)
-        else if (oldPost.isPostDeleted) Some(DeletedStatus.PostDeleted)
-        else None
+      val (collapsedAt, collapsedById) =
+        if (collapsedStatus.isCollapsed)
+          (Some(oldPost.creationDati), Some(SystemUser.User.id2))
+        else
+          (None, None)
+
+      val closedStatus = new ClosedStatus(
+        if (oldPost.isTreeClosed) TreeBits | ancestorsClosedBit
+        else ancestorsClosedBit)
+
+      val (closedAt, closedById) =
+        if (closedStatus.isClosed)
+          (Some(oldPost.creationDati), Some(SystemUser.User.id2))
+        else
+          (None, None)
+
+      val deletedStatus = new DeletedStatus(
+        if (oldPost.isTreeDeleted) TreeBits | ancestorsDeletedBit
+        else if (oldPost.isPostDeleted) SelfBit | ancestorsDeletedBit
+        else ancestorsDeletedBit)
+
+      val (deletedAt, deletedById) =
+        if (deletedStatus.isDeleted)
+          (Some(oldPost.creationDati), Some(SystemUser.User.id2))
+        else
+          (None, None)
 
       var safeVersion =
         if (oldPost.lastApprovalDati.isDefined) Some(Post2.FirstVersion) else None
@@ -142,16 +165,16 @@ object Migration14 {
         currentSourcePatch = None, // ignore unapproved edits
         currentVersion = Post2.FirstVersion,
         collapsedStatus = collapsedStatus,
-        collapsedAt = collapsedStatus.map(_ => oldPost.creationDati),
-        collapsedById = collapsedStatus.map(_ => SystemUser.User.id2),
+        collapsedAt = collapsedAt,
+        collapsedById = collapsedById,
         closedStatus = closedStatus,
-        closedAt = closedStatus.map(_ => oldPost.creationDati),
-        closedById = closedStatus.map(_ => SystemUser.User.id2),
+        closedAt = closedAt,
+        closedById = closedById,
         hiddenAt = None,
         hiddenById = None,
         deletedStatus = deletedStatus,
-        deletedAt = deletedStatus.map(_ => oldPost.creationDati),
-        deletedById = deletedStatus.map(_ => SystemUser.User.id2),
+        deletedAt = deletedAt,
+        deletedById = deletedById,
         pinnedPosition = None,
         numPendingFlags = 0,
         numHandledFlags = 0,
