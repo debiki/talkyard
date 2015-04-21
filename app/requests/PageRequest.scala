@@ -148,7 +148,6 @@ class PageRequest[A](
   require(!pageExists || pageMeta.isDefined)
 
   pageMeta foreach { meta =>
-    require(meta.pageExists == pageExists)
     require(Some(meta.pageId) == pagePath.pageId)
   }
 

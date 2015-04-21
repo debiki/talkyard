@@ -163,12 +163,6 @@ trait PostsDao {
 
       transaction.updatePost(editedPost)
 
-      if (postId == PageParts.TitleId) {
-        val oldMeta = page.meta
-        val newMeta = oldMeta.copy(cachedTitle = Some(newText))
-        transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
-      }
-  
       if (editedPost.currentVersionIsApproved) {
         val notfs = NotificationGenerator(transaction).generateForEdits(postToEdit, editedPost)
         transaction.saveDeleteNotifications(notfs)

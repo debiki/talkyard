@@ -82,7 +82,8 @@ object ReactJson {
         var topics =
           pageReq.dao.listTopicsInTree(rootPageId = pageReq.thePageId,
             orderOffset, limit = controllers.ForumController.NumTopicsToList)
-        topics.map(controllers.ForumController.topicToJson(_))
+        val pageStuffById = pageReq.dao.loadPageStuff(topics.map(_.pageId))
+        topics.map(controllers.ForumController.topicToJson(_, pageStuffById))
       }
       else {
         Nil
@@ -290,11 +291,14 @@ object ReactJson {
       return JsArray(Nil)
 
     val categories: Seq[Category] = request.dao.loadCategoryTree(request.thePageId)
+    val pageStuffById = request.dao.loadPageStuff(categories.map(_.pageId))
     val categoriesJson = JsArray(categories map { category =>
+      val pageStuff = pageStuffById.get(category.pageId) getOrDie "DwE3KE78"
+      val categoryName = pageStuff.title
       JsObject(Seq(
-        "name" -> JsString(category.categoryName),
+        "name" -> JsString(categoryName),
         "pageId" -> JsString(category.pageId),
-        "slug" -> JsString(controllers.ForumController.categoryNameToSlug(category.categoryName)),
+        "slug" -> JsString(controllers.ForumController.categoryNameToSlug(categoryName)),
         "subCategories" -> JsArray()))
     })
     categoriesJson

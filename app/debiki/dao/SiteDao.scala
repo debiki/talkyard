@@ -65,7 +65,7 @@ abstract class SiteDao
   with SpecialContentDao
   with PagesDao
   with PagePathMetaDao
-  with PageSummaryDao
+  with PageStuffDao
   with RenderedPageHtmlDao
   with PostsDao
   with UserDao {

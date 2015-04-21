@@ -117,12 +117,12 @@ object ModerationController extends mvc.Controller {
 
 
   private def makeJsonSinglePost(post: Post2, thingsToReview: ThingsToReview): JsValue = {
-    val pageMeta = thingsToReview.thePage(post.pageId)
+    //val pageMeta = thingsToReview.thePage(post.pageId)
     val author = thingsToReview.theUser(post.createdById)
     val anyLastEditor = post.lastEditedById.map(thingsToReview.theUser)
     val flags = thingsToReview.theFlagsFor(post.id)
 
-    val pageName = pageMeta.cachedTitle.getOrElse("(Unnamed page)")
+    val pageName = "SHOULD load page name"
     var data = immutable.HashMap[String, JsValue](
       "id" -> JsNumber(post.id),
       "pageId" -> JsString(post.pageId),

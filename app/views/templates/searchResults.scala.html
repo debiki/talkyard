@@ -50,7 +50,7 @@
     }
     yield {
       val pageId = pageMeta.pageId
-      val pageTitle = pageMeta.cachedTitle getOrElse "(Unnamed or deleted page?)"
+      val pageTitle = "(SHOULD load title from database or cache)"
       tabindex += 1
       <h3 class="search-result-page-title">
         <a href={s"/-$pageId"} tabindex={tabindex.toString}>{pageTitle}</a>

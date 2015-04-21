@@ -50,10 +50,6 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     }*/
 
 
-  private def pageName(pageMeta: PageMeta): String =
-    pageMeta.cachedTitle.orElse(pageMeta.embeddingPageUrl) getOrElse "(unnamed page)"
-
-
   private def postUrl(pageMeta: PageMeta, notf: Notification.NewPost): Option[String] =
     pageMeta.embeddingPageUrl match {
       case Some(url) =>
@@ -70,12 +66,16 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
 
 
   def render(notfs: Seq[Notification]): NodeSeq = {
+    // WOULD load page stuff inside the transaction, if I had an infinite amount of time.
+    val pageStuffById = siteDao.loadPageStuff(pageIdsFor(notfs))
     siteDao.readOnlyTransaction { transaction =>
       var result = Nil: NodeSeq
       for (notf <- notfs) {
         result ++= (notf match {
           case newPostNotf: Notification.NewPost =>
-            renderNewPostNotf(newPostNotf, transaction)
+            val pageTitle =
+              pageStuffById.get(newPostNotf.pageId).map(_.title) getOrElse "(Page with no title)"
+            renderNewPostNotf(newPostNotf, pageTitle, transaction)
         })
       }
       result
@@ -83,8 +83,8 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
   }
 
 
-  private def renderNewPostNotf(notf: Notification.NewPost, transaction: SiteTransaction)
-        : NodeSeq = {
+  private def renderNewPostNotf(notf: Notification.NewPost, pageTitle: String,
+        transaction: SiteTransaction): NodeSeq = {
     val pageMeta = transaction.loadPageMeta(notf.pageId) getOrElse {
       return Nil
     }
@@ -124,7 +124,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     }
 
     <p>
-      { whatHappened }, <a href={url}>here</a>, on page <i>{pageName(pageMeta)}</i>,<br/>
+      { whatHappened }, <a href={url}>here</a>, on page <i>{pageTitle}</i>,<br/>
       { inPostWrittenBy } <i>{byUserName}</i>. On {date}, he or she wrote:
     </p>
     <blockquote>{html}</blockquote>
@@ -148,6 +148,11 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     </p>
   }*/
 
+
+  def pageIdsFor(notfs: Seq[Notification]): Seq[PageId] = notfs.flatMap {
+    case newPost: Notification.NewPost =>
+      Some(newPost.pageId)
+  }
 }
 
 

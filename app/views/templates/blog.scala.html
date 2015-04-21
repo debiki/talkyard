@@ -17,6 +17,8 @@
 
 @(tpi: debiki.TemplateProgrammingInterface)
 
+Broken, reimplement in React.js instead. [DwE6LUY35]
+
 @*
 <html>
 <head>
@@ -25,8 +27,6 @@
   </script>
 </head>
 <body>
-*@
-
 
 @recentBlogPosts = @{
   // Show help text on how to write blog articles,
@@ -75,7 +75,7 @@
   with writing a blog article. Instead, show nothing but the list of blog articles.
   — I could add a page config values: show-title, show-body, which default
   to false, for a blog main page?
-  Page meta data is needed though, for the admin dashbar to work: *@
+  Page meta data is needed though, for the admin dashbar to work: * @
 
   <ol class='page-list'>
   @for(page <- recentBlogPosts) {
@@ -93,3 +93,4 @@
 
 }
 
+*@
