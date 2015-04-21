@@ -199,6 +199,8 @@ var RootPostAndComments = createComponent({
   render: function() {
     var user = this.props.user;
     var rootPost = this.props.allPosts[this.props.rootPostId];
+    if (!rootPost)
+      return r.p({}, '(Root post missing [DwE8WVP4])');
     var isBody = this.props.rootPostId === BodyPostId;
     var pageRole = this.props.pageRole;
     var threadClass = 'dw-t dw-depth-0' + horizontalCss(this.props.horizontalLayout);
@@ -392,6 +394,8 @@ var Post = createComponent({
   render: function() {
     var post: Post = this.props.post;
     var user: User = this.props.user;
+    if (!post)
+      return r.p({}, '(Post missing [DwE4UPK7])');
 
     var pendingApprovalElem;
     var headerElem;
@@ -518,6 +522,9 @@ var PostHeader = createComponent({
 
   render: function() {
     var post = this.props.post;
+    if (!post)
+      return r.p({}, '(Post header missing [DwE7IKW2])');
+
     var user: User = this.props.user;
     var linkFn = this.props.abbreviate ? 'span' : 'a';
 

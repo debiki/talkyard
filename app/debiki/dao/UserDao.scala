@@ -222,13 +222,6 @@ trait CachingUserDao extends UserDao {
   override def verifyEmail(roleId: RoleId, verifiedAt: ju.Date) = {
     super.verifyEmail(roleId, verifiedAt)
     removeFromCache(key(roleId))
-    // Re-render any page with a post that should hereafter be shown because the
-    // email has been verified.
-    val actionInfos = listUserActions(roleId)
-    val idsOfPagesToRefresh = actionInfos.map(_.pageId).distinct
-    idsOfPagesToRefresh foreach { pageId =>
-      firePageSaved(SitePageId(siteId, pageId))
-    }
   }
 
 
