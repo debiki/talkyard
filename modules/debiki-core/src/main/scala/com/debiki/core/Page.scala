@@ -215,8 +215,8 @@ object PageMeta {
       authorId = authorId,
       numLikes = 0,
       numWrongs = 0,
-      numRepliesInclDeleted = 0,
-      numRepliesExclDeleted = 0,
+      numRepliesVisible = 0,
+      numRepliesTotal = 0,
       numChildPages = 0)
 
 }
@@ -235,8 +235,9 @@ object PageMeta {
   * @param authorId
   * @param numLikes
   * @param numWrongs
-  * @param numRepliesInclDeleted
-  * @param numRepliesExclDeleted
+  * @param numRepliesVisible Replies that haven't been deleted or hidden, and have been approved.
+  *                          Includes collapsed and closed replies.
+  * @param numRepliesTotal Counts all replies, also deleted, hidden and not-yet-approved replies.
   * @param numChildPages
   */
 case class PageMeta(
@@ -251,8 +252,8 @@ case class PageMeta(
   authorId: UserId2,
   numLikes: Int = 0,
   numWrongs: Int = 0,
-  numRepliesInclDeleted: Int = 0,
-  numRepliesExclDeleted: Int = 0,
+  numRepliesVisible: Int = 0,
+  numRepliesTotal: Int = 0,
   numChildPages: Int = 0) {
 
   def status: PageStatus =

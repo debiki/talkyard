@@ -191,8 +191,12 @@ case class Post2(
   require(numWrongVotes >= 0, "DwE7YQ08")
   require(numTimesRead >= 0, "DwE2ZfMI3")
 
+  def isReply = PageParts.isReply(id)
   def isMultireply = multireplyPostIds.nonEmpty
   def isHidden = hiddenAt.isDefined
+  def isDeleted = deletedStatus.isDeleted
+  def isSomeVersionApproved = approvedVersion.isDefined
+  def isCurrentVersionApproved = approvedVersion == Some(currentVersion)
 
   def pagePostId = PagePostId(pageId, id)
   def hasAnId = id >= PageParts.LowestPostId
@@ -210,7 +214,7 @@ case class Post2(
     }
 
   def unapprovedSource: Option[String] = {
-    if (currentVersionIsApproved) None
+    if (isCurrentVersionApproved) None
     else Some(currentSource)
   }
 
@@ -226,8 +230,6 @@ case class Post2(
     }
   }
 
-
-  def currentVersionIsApproved = approvedVersion == Some(currentVersion)
 
   def numEditsToReview = currentVersion - approvedVersion.getOrElse(0)
 
@@ -280,14 +282,14 @@ case class Post2(
     var newCollapsedById = collapsedById
     var collapsesNowBecauseOfAncestor = false
     if (ancestorsCollapsed) {
-      newCollapsedUnderlying &= AncestorsBit
+      newCollapsedUnderlying |= AncestorsBit
       collapsesNowBecauseOfAncestor = !collapsedStatus.isCollapsed
     }
     if (postCollapsed) {
-      newCollapsedUnderlying &= SelfBit
+      newCollapsedUnderlying |= SelfBit
     }
     if (treeCollapsed) {
-      newCollapsedUnderlying &= TreeBits
+      newCollapsedUnderlying |= TreeBits
     }
     if (collapsesNowBecauseOfAncestor || postCollapsed || treeCollapsed) {
       newCollapsedAt = Some(currentTime)
@@ -300,14 +302,14 @@ case class Post2(
     var newClosedAt = closedAt
     var newClosedById = closedById
     if (ancestorsClosed) {
-      newClosedUnderlying &= AncestorsBit
+      newClosedUnderlying |= AncestorsBit
       if (!closedStatus.isClosed) {
         newClosedAt = Some(currentTime)
         newClosedById = Some(userId)
       }
     }
     if (!closedStatus.isClosed && treeClosed) {
-      newClosedUnderlying &= TreeBits
+      newClosedUnderlying |= TreeBits
       newClosedAt = Some(currentTime)
       newClosedById = Some(userId)
     }
@@ -318,23 +320,17 @@ case class Post2(
     var newDeletedAt = deletedAt
     var newDeletedById = deletedById
     if (ancestorsDeleted) {
-      newDeletedUnderlying &= AncestorsBit
-      if (!deletedStatus.isDeleted) {
-        newDeletedAt = Some(currentTime)
-        newDeletedById = Some(userId)
-      }
+      newDeletedUnderlying |= AncestorsBit
     }
-    if (!deletedStatus.isDeleted) {
-      if (postDeleted) {
-        newDeletedUnderlying &= SelfBit
-      }
-      if (treeDeleted) {
-        newDeletedUnderlying &= TreeBits
-      }
-      if (postDeleted || treeDeleted) {
-        newDeletedAt = Some(currentTime)
-        newDeletedById = Some(userId)
-      }
+    if (postDeleted) {
+      newDeletedUnderlying |= SelfBit
+    }
+    if (treeDeleted) {
+      newDeletedUnderlying |= TreeBits
+    }
+    if ((ancestorsDeleted || postDeleted || treeDeleted) && !isDeleted) {
+      newDeletedAt = Some(currentTime)
+      newDeletedById = Some(userId)
     }
 
     copy(

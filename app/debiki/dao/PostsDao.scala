@@ -65,8 +65,12 @@ trait PostsDao {
             it does not exist""")
         }
       val anyParent = parentId.map(page.parts.thePost)
+      if (anyParent.map(_.deletedStatus.isDeleted) == Some(true))
+        throwForbidden(
+          "The parent post has been deleted; cannot reply to a deleted post", "DwE5KDE7")
 
       // SHOULD authorize. For now, no restrictions.
+      val isApproved = true // for now
       val author = transaction.loadUser(authorId) getOrElse throwNotFound("DwE404UF3", "Bad user")
       val approverId =
         if (author.isAdmin) {
@@ -88,10 +92,14 @@ trait PostsDao {
         htmlSanitized = htmlSanitized,
         approvedById = Some(approverId))
 
-      //val oldMeta = page.meta
-      //val newMeta = oldMeta.copy(numRepliesInclDeleted = page.parts.numRepliesInclDeleted + 1)
+      val oldMeta = page.meta
+      val newMeta = oldMeta.copy(
+        bumpedAt = Some(transaction.currentTime),
+        numRepliesVisible = page.parts.numRepliesVisible + (isApproved ? 1 | 0),
+        numRepliesTotal = page.parts.numRepliesTotal + 1)
+
       transaction.insertPost(newPost)
-      //transaction.savePageMeta(newMeta) // TODO
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
 
       val notifications = NotificationGenerator(transaction).generateForNewPost(page, newPost)
       transaction.saveDeleteNotifications(notifications)
@@ -163,9 +171,18 @@ trait PostsDao {
 
       transaction.updatePost(editedPost)
 
-      if (editedPost.currentVersionIsApproved) {
+      if (editedPost.isCurrentVersionApproved) {
         val notfs = NotificationGenerator(transaction).generateForEdits(postToEdit, editedPost)
         transaction.saveDeleteNotifications(notfs)
+      }
+
+      // Bump the page, if the article / original post was edited.
+      // (This is how Discourse works and people seems to like it. However,
+      // COULD add a don't-bump option for minor edits.)
+      if (postId == PageParts.BodyId && editedPost.isCurrentVersionApproved) {
+        val oldMeta = page.meta
+        val newMeta = oldMeta.copy(bumpedAt = Some(transaction.currentTime))
+        transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
       }
     }
 
@@ -189,6 +206,13 @@ trait PostsDao {
           throwForbidden("DwE5JKF7", "You may not modify the whole tree")
       }
 
+      val isChangingDeletePostToDeleteTree =
+        postBefore.deletedStatus.onlyThisDeleted && action == PAP.DeleteTree
+      if (postBefore.isDeleted && !isChangingDeletePostToDeleteTree)
+        throwForbidden("DwE5GUK5", "This post has been deleted")
+
+      var numRepliesGone = 0
+
       // Update the directly affected post.
       val postAfter = action match {
         case PAP.CloseTree =>
@@ -198,8 +222,14 @@ trait PostsDao {
         case PAP.CollapseTree =>
           postBefore.copyWithNewStatus(transaction.currentTime, userId, treeCollapsed = true)
         case PAP.DeletePost(clearFlags) =>
+          if (postBefore.isReply) {
+            numRepliesGone += 1
+          }
           postBefore.copyWithNewStatus(transaction.currentTime, userId, postDeleted = true)
         case PAP.DeleteTree =>
+          if (postBefore.isReply) {
+            numRepliesGone += 1
+          }
           postBefore.copyWithNewStatus(transaction.currentTime, userId, treeDeleted = true)
       }
 
@@ -222,6 +252,9 @@ trait PostsDao {
           case PAP.DeletePost(clearFlags) =>
             None
           case PAP.DeleteTree =>
+            if (!successor.deletedStatus.isDeleted && successor.isReply) {
+              numRepliesGone += 1
+            }
             if (successor.deletedStatus.areAncestorsDeleted) None
             else Some(successor.copyWithNewStatus(
               transaction.currentTime, userId, ancestorsDeleted = true))
@@ -232,10 +265,14 @@ trait PostsDao {
         }
       }
 
-      // TODO: update page meta post counts.
-      //val oldMeta = page.meta
-      //val newMeta = oldMeta.copy(...)
-      //transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      if (numRepliesGone > 0) {
+        val oldMeta = page.meta
+        val newMeta = oldMeta.copy(
+          numRepliesVisible = oldMeta.numRepliesVisible - numRepliesGone)
+        transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      }
+
+      // In the future: if is a forum topic, and we're restoring the OP, then bump the topic.
     }
 
     refreshPageInAnyCache(pageId)
@@ -247,7 +284,7 @@ trait PostsDao {
       val page = PageDao(pageId, transaction)
       val pageMeta = page.meta
       val postBefore = page.parts.thePost(postId)
-      if (postBefore.currentVersionIsApproved)
+      if (postBefore.isCurrentVersionApproved)
         throwForbidden("DwE4GYUR2", "Post already approved")
 
       // If this version is being approved by a human, then it's safe.
@@ -265,7 +302,18 @@ trait PostsDao {
           siteDbDao.commonMarkRenderer, pageMeta.pageRole)))
       transaction.updatePost(postAfter)
 
+      val isApprovingPageBody = postId == PageParts.BodyId
       val isApprovingNewPost = postBefore.approvedVersion.isEmpty
+
+      // Bump page if new post added, or page body edited.
+      if (isApprovingNewPost || isApprovingPageBody) {
+        val numNewReplies = (isApprovingNewPost && postAfter.isReply) ? 1 | 0
+        val newMeta = pageMeta.copy(
+          numRepliesVisible = pageMeta.numRepliesVisible + numNewReplies,
+          bumpedAt = Some(transaction.currentTime))
+        transaction.updatePageMeta(newMeta, oldMeta = pageMeta)
+      }
+
       val notifications =
         if (isApprovingNewPost) {
           NotificationGenerator(transaction).generateForNewPost(page, postAfter)
@@ -281,18 +329,8 @@ trait PostsDao {
 
 
   def deletePost(pageId: PageId, postId: PostId, deletedById: UserId2) {
-    readWriteTransaction { transaction =>
-      val postBefore = transaction.loadThePost(pageId, postId)
-      if (postBefore.deletedStatus.isDeleted)
-        throwForbidden("DwE8FKW2", "Post already deleted")
-
-      val postAfter = postBefore.copy(
-        deletedStatus = new DeletedStatus(PostStatusBits.SelfBit),
-        deletedAt = Some(transaction.currentTime),
-        deletedById = Some(deletedById))
-      transaction.updatePost(postAfter)
-    }
-    refreshPageInAnyCache(pageId)
+    changePostStatus(pageId = pageId, postId = postId, action = PAP.DeletePost(clearFlags = false),
+      userId = deletedById)
   }
 
 
@@ -413,8 +451,18 @@ trait PostsDao {
     val actions = transaction.loadActionsDoneToPost(post.pageId, postId = post.id)
     val readStats = transaction.loadPostsReadStats(post.pageId, Some(post.id))
     val postAfter = post.copyWithUpdatedVoteAndReadCounts(actions, readStats)
+
+    val numNewLikes = postAfter.numLikeVotes - post.numLikeVotes
+    val numNewWrongs = postAfter.numWrongVotes - post.numWrongVotes
+    val pageMetaBefore = transaction.loadThePageMeta(post.pageId)
+    val pageMetaAfter = pageMetaBefore.copy(
+      numLikes = pageMetaBefore.numLikes + numNewLikes,
+      numWrongs = pageMetaBefore.numWrongs + numNewWrongs)
+
     transaction.updatePost(postAfter)
-    // TODO split e.g. num_like_votes into ..._total and ..._unique? And update here.
+    transaction.updatePageMeta(pageMetaAfter, oldMeta = pageMetaBefore)
+
+    // COULD split e.g. num_like_votes into ..._total and ..._unique? And update here.
   }
 
 

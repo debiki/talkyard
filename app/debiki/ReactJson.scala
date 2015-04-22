@@ -139,7 +139,7 @@ object ReactJson {
     val (anySanitizedHtml: Option[String], isApproved: Boolean) =
       if (includeUnapproved)
         (Some(post.currentHtmlSanitized(ReactRenderer, page.role)),
-          post.currentVersionIsApproved)
+          post.isCurrentVersionApproved)
       else
         (post.approvedHtmlSanitized, post.approvedAt.isDefined)
 

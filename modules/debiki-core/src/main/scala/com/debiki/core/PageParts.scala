@@ -59,6 +59,8 @@ object PageParts {
     id == PageParts.BodyId || id == PageParts.TitleId || id == PageParts.ConfigPostId
 
 
+  def isReply(postId: PostId) = postId >= FirstReplyId
+
   def isReply(rawAction: RawPostAction[_]): Boolean = rawAction.payload match {
     case _: PAP.CreatePost if !isArticleOrConfigPostId(rawAction.id) => true
     case _ => false

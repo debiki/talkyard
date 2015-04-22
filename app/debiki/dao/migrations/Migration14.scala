@@ -43,9 +43,15 @@ object Migration14 {
       val partsOld: PageParts =
         siteTransaction.loadPagePartsOld(pageMeta.pageId) getOrDie "DwE0Pk3W2"
 
+      var numRepliesVisible = 0
+      var numRepliesTotal = partsOld.getAllPosts.length
+
       // Migrate posts.
       for (oldPost <- partsOld.getAllPosts) {
         val newPost = upgradePost(pageMeta.pageId, oldPost)
+        if (!newPost.isDeleted && newPost.approvedVersion.isDefined) {
+          numRepliesVisible += 1
+        }
         siteTransaction.insertPost(newPost)
       }
 
@@ -74,13 +80,25 @@ object Migration14 {
       // Don't migrate flags and pinned positions.
 
       // Update vote counts
+      var numLikeVotesOnPage = 0
+      var numWrongVotesOnPage = 0
       for (postId <- postIdsWithVotes) {
         val postNoCounts = siteTransaction.loadThePost(pageMeta.pageId, postId)
         val actions = siteTransaction.loadActionsDoneToPost(pageMeta.pageId, postId)
         val readStats = siteTransaction.loadPostsReadStats(pageMeta.pageId, Some(postId))
         val postWithCounts = postNoCounts.copyWithUpdatedVoteAndReadCounts(actions, readStats)
+        numLikeVotesOnPage += postWithCounts.numLikeVotes
+        numWrongVotesOnPage += postWithCounts.numWrongVotes
         siteTransaction.updatePost(postWithCounts)
       }
+
+      // Update page meta.
+      val newPageMeta = pageMeta.copy(
+        numLikes = numLikeVotesOnPage,
+        numWrongs = numWrongVotesOnPage,
+        numRepliesVisible = numRepliesVisible,
+        numRepliesTotal = numRepliesTotal)
+      siteTransaction.updatePageMeta(newPageMeta, oldMeta = pageMeta)
     }
 
 

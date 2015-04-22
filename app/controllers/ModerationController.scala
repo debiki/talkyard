@@ -155,7 +155,7 @@ object ModerationController extends mvc.Controller {
       //  if (post.someVersionPermanentlyApproved) "EditsPrelApproved"  // TODO remove JS
       //  else "NewPrelApproved"
       // }
-      else if (post.currentVersionIsApproved) "Approved"
+      else if (post.isCurrentVersionApproved) "Approved"
       //else if (post.currentVersionRejected) {
       //  if (post.someVersionPermanentlyApproved) "EditsRejected"   // TODO when use this?
       //  else "Rejected"

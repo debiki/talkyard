@@ -141,7 +141,7 @@ object ForumController extends mvc.Controller {
       "url" -> topic.path.value,
       "categoryId" -> topic.parentPageId.getOrDie(
         "DwE49Fk3", s"Topic `${topic.id}', site `${topic.path.siteId}', has no parent page"),
-      "numPosts" -> JsNumber(topic.meta.numRepliesExclDeleted + 1),
+      "numPosts" -> JsNumber(topic.meta.numRepliesVisible + 1),
       "numLikes" -> topic.meta.numLikes,
       "numWrongs" -> topic.meta.numWrongs,
       "createdEpoch" -> createdEpoch,

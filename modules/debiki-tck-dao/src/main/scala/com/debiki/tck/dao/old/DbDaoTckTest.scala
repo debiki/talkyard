@@ -658,8 +658,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           cachedNumPosters = 11,
           cachedNumActions = 12,
           cachedNumPostsToReview = 13,
-          numRepliesInclDeleted = 14,
-          numRepliesExclDeleted = 15,
+          numRepliesVisible = 14,
+          numRepliesTotal = 15,
           cachedLastVisiblePostDati = Some(new ju.Date(12345)),
           numChildPages = 17)
 

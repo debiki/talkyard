@@ -80,7 +80,10 @@ abstract class PageParts2 extends People2 {
   def thePost(postId: PostId): Post2 = post(postId) getOrDie "DwE9PKG3"
 
 
-  def numRepliesInclDeleted: Int = unimplemented("numRepliesInclDeleted", "DwE7IEP3")
+  def numRepliesTotal = allPosts.length
+  def numRepliesVisible = allPosts count { post =>
+    post.isSomeVersionApproved && !post.isDeleted && !post.isHidden
+  }
 
 
   def theUser(userId: UserId2): User
