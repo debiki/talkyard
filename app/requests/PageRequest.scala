@@ -236,7 +236,6 @@ class DummyPageRequest[A](
   pageMeta: PageMeta,
   permsOnPage: PermsOnPage,
   dao: SiteDao,
-  dummyPageParts: PageParts,
   request: Request[A]) extends PageRequest[A](
     sid, xsrfToken, browserId, user, pageExists,  pagePath, Some(pageMeta),
     permsOnPage, dao, request) {

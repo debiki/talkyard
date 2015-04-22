@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
 import debiki.dao.{SiteDao, PageDao}
+import debiki.DebikiHttp.throwNotFound
 import play.api.libs.json._
 import scala.collection.immutable
 import requests.PageRequest
@@ -48,8 +49,50 @@ object ReactJson {
 
 
   def pageToJson(pageReq: PageRequest[_], socialLinksHtml: String): JsObject = {
-    pageReq.dao.readOnlyTransaction(pageToJsonImpl(pageReq, socialLinksHtml, _))
+    if (pageReq.pageExists) {
+      pageReq.dao.readOnlyTransaction(pageToJsonImpl(pageReq, socialLinksHtml, _))
+    }
+    else {
+      if (pageReq.pagePath.value == HomepageUrlPath) {
+        newEmptySitePageJson(pageReq)
+      }
+      else {
+        throwNotFound("DwE404KGF2", "Page not found")
+      }
+    }
   }
+
+
+  private def newEmptySitePageJson(pageReq: PageRequest[_]): JsObject = {
+    val siteStatusString = loadSiteStatusString(pageReq)
+    Json.obj(
+      "now" -> JsNumber((new ju.Date).getTime),
+      "siteStatus" -> JsString(siteStatusString),
+      "pageId" -> pageReq.thePageId,
+      "pageRole" -> JsString(pageReq.thePageRole.toString),
+      "pagePath" -> JsString(pageReq.pagePath.value),
+      "numPosts" -> JsNumber(0),
+      "numPostsExclTitle" -> JsNumber(0),
+      "isInEmbeddedCommentsIframe" -> JsBoolean(false),
+      "categories" -> JsArray(),
+      "topics" -> JsArray(),
+      "user" -> NoUserSpecificData,
+      "rootPostId" -> JsNumber(PageParts.BodyId),
+      "allPosts" -> JsObject(Nil),
+      "topLevelCommentIdsSorted" -> JsArray(),
+      "horizontalLayout" -> JsBoolean(false),
+      "socialLinksHtml" -> JsNull)
+  }
+
+
+  def loadSiteStatusString(pageReq: PageRequest[_]): String =
+    pageReq.dao.loadSiteStatus() match {
+      case SiteStatus.OwnerCreationPending(adminEmail) =>
+        var obfuscatedEmail = adminEmail.takeWhile(_ != '@')
+        obfuscatedEmail = obfuscatedEmail.dropRight(3).take(4)
+        s"AdminCreationPending:$obfuscatedEmail"
+      case x => x.toString
+    }
 
 
   private def pageToJsonImpl(pageReq: PageRequest[_], socialLinksHtml: String,
@@ -89,13 +132,7 @@ object ReactJson {
         Nil
       }
 
-    val siteStatusString = pageReq.dao.loadSiteStatus() match {
-      case SiteStatus.OwnerCreationPending(adminEmail) =>
-        var obfuscatedEmail = adminEmail.takeWhile(_ != '@')
-        obfuscatedEmail = obfuscatedEmail.dropRight(3).take(4)
-        s"AdminCreationPending:$obfuscatedEmail"
-      case x => x.toString
-    }
+    val siteStatusString = loadSiteStatusString(pageReq)
 
     Json.obj(
       "now" -> JsNumber((new ju.Date).getTime),

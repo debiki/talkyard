@@ -55,5 +55,7 @@ package object core {
   /** Change this to a Long before year 2038. /KajMagnus, Jan 2015 */
   type UnixTime = Int
 
+  val HomepageUrlPath = "/"
+
 }
 

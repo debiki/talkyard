@@ -47,7 +47,7 @@ object TemplateRenderer {
     val tpi = new TemplateProgrammingInterface(pageReq, appendToBody)
 
     if (!pageReq.pageExists && pageReq.pageRole != Some(PageRole.EmbeddedComments)) {
-      if (pageReq.pagePath.value == "/") {
+      if (pageReq.pagePath.value == HomepageUrlPath) {
         return views.html.specialpages.createSomethingHerePage(tpi).body
       }
       else {
