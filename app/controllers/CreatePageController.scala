@@ -47,42 +47,10 @@ object CreatePageController extends mvc.Controller {
     val pageSlug = (body \ "pageSlug").asOpt[String].getOrElse(
       "new-forum-topic") // for now, ought to slugify title
 
-    val approval: Approval = AutoApprover.perhapsApproveNewPage(
-      request, pageRole, anyParentPageId) getOrElse
-        throwForbidden("DwE53KVE0", "Page creation request rejected")
+    val pagePath = request.dao.createPage2(pageRole, pageStatus, anyParentPageId, anyFolder,
+      titleText, bodyText, showId, pageSlug = pageSlug, authorId = request.theUser.id2)
 
-    val pageId = request.dao.nextPageId()
-
-    val folder = anyFolder getOrElse {
-      val anyParentPath = anyParentPageId flatMap { id =>
-        request.dao.lookupPagePath(id)
-      }
-      anyParentPath.map(_.folder) getOrElse "/"
-    }
-
-    val newPath = PagePath(dao.siteId, folder = folder, pageId = Some(pageId),
-      showId = showId, pageSlug = pageSlug)
-
-    val ancestorIdsParentFirst: List[PageId] =
-      anyParentPageId map { parentId =>
-        val parentsAncestorIds = dao.loadAncestorIdsParentFirst(parentId)
-        parentId :: parentsAncestorIds
-      } getOrElse Nil
-
-    val pageMeta = PageMeta.forNewPage(
-      pageRole, request.user_!, PageParts(pageId), request.ctime,
-      parentPageId = ancestorIdsParentFirst.headOption,
-      publishDirectly = pageStatus == PageStatus.Published)
-
-    val titlePost = RawPostAction.forNewTitle(
-      titleText, request.ctime, request.userIdData, Some(approval))
-    val bodyPost = RawPostAction.forNewPageBody(
-      bodyText, request.ctime, pageRole, request.userIdData, Some(approval))
-    val pageParts = PageParts(pageMeta.pageId, rawActions = titlePost::bodyPost::Nil)
-
-    val newPage = dao.createPage(Page(pageMeta, newPath, ancestorIdsParentFirst, pageParts))
-
-    OkSafeJson(Json.obj("newPageId" -> newPage.id))
+    OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))
   }
 
   /* Later: When creating a new category, also create a category definition page:

@@ -51,33 +51,22 @@ object Application extends mvc.Controller {
     val typeStr = (body \ "type").as[String]
     val reason = (body \ "reason").as[String]
 
-    val tyype = try { FlagType withName typeStr }
-      catch {
-        case _: NoSuchElementException =>
-          throwBadReq("DwE93Kf3", "Invalid flag type")
-      }
+    val flagType = typeStr match {
+      case "Spam" => PostFlagType.Spam
+      case "Inapt" => PostFlagType.Inapt
+      case "Other" => PostFlagType.Other
+      case x => throwBadReq("DwE7PKTS3", s"Bad flag type: '$x'")
+    }
 
-    val flag = RawPostAction(id = PageParts.UnassignedId, creationDati = request.ctime,
-      payload = PostActionPayload.Flag(tyype = tyype, reason = reason),
-      postId = postId, userIdData = request.userIdData)
+    // SHOULD hide post, since flagged (at least if >= 2 flags?)
+    // COULD save `reason` somewhere, but where? Where does Discourse save it?
+    // SHOULD generate notification
 
-    // Cancel any preliminary approval, sice post has been flagged.
-    /*
-    val flaggedPost = pageReq.page_!.getPost_!(postId)
-    val anyPrelApprovalCancellation =
-      if (!flaggedPost.currentVersionPrelApproved) Nil
-      else {
-        RawPostAction.forCancellationOfPrelApproval
-      } */
+    request.dao.flagPost(pageId = pageId, postId = postId, flagType,
+      flaggerId = request.theUser.id2)
 
-    val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
-      "DwE739W2", s"Page `$pageId' not found")
-
-    val (updatedPage, _) =
-      request.dao.savePageActionsGenNotfs(pageReq, flag::Nil) // anyPrelApprovalCancellation)
-
-    val post = updatedPage.parts.thePost(postId)
-    OkSafeJson(ReactJson.postToJson(post))
+    val json = ReactJson.postToJson2(postId = postId, pageId = pageId, dao = request.dao)
+    OkSafeJson(json)
   }
 
 
@@ -89,31 +78,16 @@ object Application extends mvc.Controller {
        ifNotOneOf("tf", throwBadReq("DwE93kK3", "Bad whole tree value"))
     val reason = pageReq.getNoneAsEmpty(Inp.Reason)
 
-    val post = pageReq.thePageParts.getPost_!(postId)
-    val isAuthor = post.userId == pageReq.user_!.id
+    val pageId = pageReq.thePageId
 
-    if (!isAuthor && !pageReq.permsOnPage.deleteAnyReply)
-      throwForbidden("DwE0523k1250", "You may not delete that comment")
+    val action =
+      if (wholeTree) PostActionPayload.DeleteTree
+      else PostActionPayload.DeletePost(clearFlags = false)
 
-    if (post.isDeletedSomehow)
-      throwForbidden("DwE7Hf038", "Comment already deleted")
+    pageReq.dao.changePostStatus(postId, pageId = pageId, action, userId = pageReq.theUser.id2)
 
-    if (wholeTree && !pageReq.permsOnPage.deleteAnyReply) {
-      // Deny operation, even if there are 0 replies, because another JVM thread
-      // might create a reply at any time.
-      throwForbidden("DwE74GKt5", "You may not delete that whole comment tree")
-    }
-
-    val deletion = RawPostAction.toDeletePost(andReplies = wholeTree,
-      id = PageParts.UnassignedId, postIdToDelete = postId,
-      userIdData = pageReq.userIdData,
-      createdAt = pageReq.ctime)
-
-    val (updatedPage, _) =
-      pageReq.dao.savePageActionsGenNotfs(pageReq, deletion::Nil)
-
-    val postAfter = updatedPage.parts.thePost(postId)
-    OkSafeJson(ReactJson.postToJson(postAfter))
+    OkSafeJson(ReactJson.postToJson2(postId = postId, pageId = pageId, // TODO: don't include post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
+      pageReq.dao, includeUnapproved = true))
   }
 
 
@@ -155,8 +129,10 @@ object Application extends mvc.Controller {
           errDbgDie("[error DwE012210u9]")
           "GotNoGuid"
         }
+        unimplemented("Loading pages in order to render Atom feeds", "DwE0GY23") /* loadPageParts is gone
         val page = pageReq.dao.loadPageParts(pageId)
         page.map(p => List(feedPagePath -> p)).getOrElse(Nil)
+        */
     }
 
     val mostRecentPageCtime: ju.Date =

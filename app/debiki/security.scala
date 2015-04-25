@@ -249,8 +249,7 @@ case class SidOk(
 
   override def isOk = true
 
-  // Unauthenticated users' ids start with '-'.
-  override def roleId: Option[String] = userId.filter(!_.startsWith("-"))
+  override def roleId: Option[String] = userId.filter(User.isRoleId)
 }
 
 

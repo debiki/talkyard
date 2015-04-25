@@ -57,14 +57,10 @@ object CloseCollapseController extends mvc.Controller {
     val pageId = (apiReq.body \ "pageId").as[PageId]
     val postId = (apiReq.body \ "postId").as[PostId]
 
-    val newRawAction = RawPostAction(PageParts.UnassignedId, apiReq.ctime, payload,
-      postId = postId, userIdData = apiReq.userIdData)
+    apiReq.dao.changePostStatus(postId, pageId = pageId, payload, userId = apiReq.theUser.id2)
 
-    val (pageWithNewActions, _) =
-        apiReq.dao.savePageActionsGenNotfs(pageId, newRawAction::Nil, apiReq.meAsPeople_!)
-
-    val post = pageWithNewActions.parts.thePost(postId)
-    OkSafeJson(ReactJson.postToJson(post))
+    OkSafeJson(ReactJson.postToJson2(postId = postId, pageId = pageId, // COULD stop including post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
+      apiReq.dao, includeUnapproved = true))
   }
 
 }

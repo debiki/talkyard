@@ -772,15 +772,24 @@ object Post {
 
   def fromJson(json: JsValue) = Protocols.jsonToPost(json)
 
+  def sortPosts2(posts: Seq[Post2]): Seq[Post2] = {
+    posts // for now TODO implement
+  }
+
   /** Sorts posts so e.g. interesting ones appear first, and deleted ones last.
     */
-  def sortPosts(posts: Seq[Post]): Seq[Post] = {
+  def sortPosts2(posts: imm.Seq[Post2]): imm.Seq[Post2] = {
     posts.sortWith(sortPostsFn)
+  }
+
+  @deprecated("now", "use Post2")
+  def sortPosts(posts: Seq[Post]): Seq[Post] = {  // TODO remove
+    die("DwE5KF32", "Deprecated")
   }
 
   /** NOTE: Keep in sync with `sortPostIdsInPlace()` in client/app/ReactStore.ts
     */
-  private def sortPostsFn(postA: Post, postB: Post): Boolean = {
+  private def sortPostsFn(postA: Post2, postB: Post2): Boolean = {
     /* From app/debiki/HtmlSerializer.scala:
     if (a.pinnedPosition.isDefined || b.pinnedPosition.isDefined) {
       // 1 means place first, 2 means place first but one, and so on.
@@ -795,10 +804,10 @@ object Post {
     } */
 
     // Place deleted posts last; they're rather uninteresting?
-    if (!postA.isDeletedSomehow && postB.isDeletedSomehow)
+    if (!postA.deletedStatus.isDeleted && postB.deletedStatus.isDeleted)
       return true
 
-    if (postA.isDeletedSomehow && !postB.isDeletedSomehow)
+    if (postA.deletedStatus.isDeleted && !postB.deletedStatus.isDeleted)
       return false
 
     // Place multireplies after normal replies. And sort multireplies by time,
@@ -807,9 +816,9 @@ object Post {
     // COULD place interesting multireplies first, if they're not constrained by
     // one being a reply to another.
     if (postA.multireplyPostIds.nonEmpty && postB.multireplyPostIds.nonEmpty) {
-      if (postA.creationDati.getTime < postB.creationDati.getTime)
+      if (postA.createdAt.getTime < postB.createdAt.getTime)
         return true
-      if (postA.creationDati.getTime > postB.creationDati.getTime)
+      if (postA.createdAt.getTime > postB.createdAt.getTime)
         return false
     }
     else if (postA.multireplyPostIds.nonEmpty) {
@@ -827,7 +836,7 @@ object Post {
       return false
 
     // Newest posts first. No, last
-    if (postA.creationDati.getTime < postB.creationDati.getTime)
+    if (postA.createdAt.getTime < postB.createdAt.getTime)
       return true
     else
       return false

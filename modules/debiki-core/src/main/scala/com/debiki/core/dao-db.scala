@@ -21,6 +21,7 @@ import com.debiki.core.{PostActionPayload => PAP}
 import com.google.{common => guava}
 import java.{util => ju}
 import org.mindrot.jbcrypt.BCrypt
+import scala.collection.immutable
 import scala.concurrent.Future
 import DbDao._
 import EmailNotfPrefs.EmailNotfPrefs
@@ -45,7 +46,15 @@ import Prelude._
 abstract class DbDaoFactory {
   def systemDbDao: SystemDbDao
   def newSiteDbDao(siteId: SiteId): SiteDbDao
+
+  def migrations: ScalaBasedDatabaseMigrations
   def shutdown()
+
+  final def newDbDao2(): DbDao2 =
+    new DbDao2(this)
+
+  protected[core] def newSiteTransaction(siteId: SiteId, readOnly: Boolean): SiteTransaction
+  protected[core] def newSystemTransaction(readOnly: Boolean): SystemTransaction
 
   /** Helpful for search engine database tests. */
   def debugDeleteRecreateSearchEngineIndexes() {}
@@ -68,6 +77,7 @@ abstract class DbDaoFactory {
  * constructs objects and caches them in-memory / on disk. Perhaps there
  * could be a web service DAO as well.
  */
+@deprecated("Use SiteTransaction instead", "Now")
 abstract class SiteDbDao {
 
   def commonMarkRenderer: CommonMarkRenderer
@@ -116,14 +126,6 @@ abstract class SiteDbDao {
   // ----- New pages, page meta
 
   def nextPageId(): PageId
-
-  /**
-   * Creates a page; returns it, but with an id assigned to the page,
-   * if it didn't already have an id, and to actions, if they didn't
-   * already have ids specified. (For example, the page body always
-   * has id 1 so it'd be pre-assigned. But comments have random ids.)
-   */
-  def createPage(page: Page): Page
 
   def loadPageMeta(pageId: PageId): Option[PageMeta]
 
@@ -198,32 +200,6 @@ abstract class SiteDbDao {
 
   // ----- Loading and saving pages
 
-  /** Saves actions, updates related page meta data (e.g. if you save edits
-    * to the page title post, the page title metadata field is updated),
-    * and generates notifications (for example, if you save a reply to Alice,
-    * a notification to Alice is generated).
-    */
-  final def savePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
-        : (PageNoPath, List[RawPostAction[_]]) = {
-    ActionChecker.checkActions(page, actions)
-    doSavePageActions(page, actions)
-  }
-
-  /** Don't call, implementation detail. */
-  def doSavePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
-        : (PageNoPath, List[RawPostAction[_]])
-
-  /** Deletes a vote. If there's a user id, deletes the vote by user id (guest or role),
-    * Otherwise by browser id cookie.
-    */
-  def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
-        voteType: PostActionPayload.Vote)
-
-  /** Remembers that the specified posts have been read by the user that did the action.
-    */
-  def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId],
-        actionMakingThemRead: RawPostAction[_])
-
   def loadPostsReadStats(pageId: PageId): PostsReadStats
 
   /** Returns None if the page doesn't exist, and a
@@ -231,48 +207,6 @@ abstract class SiteDbDao {
     * Loads another site's page, if siteId is specified.
     */
   def loadPageParts(debateId: PageId, tenantId: Option[SiteId] = None): Option[PageParts]
-
-  /**
-   * For each PagePath, loads a Page (well, Debate) with actions loaded
-   * only for Page.BodyId and Page.TitleId. Also loads the authors.
-   */
-  def loadPageBodiesTitles(pageIds: Seq[PageId]): Map[PageId, PageParts]
-
-  /** Loads posts that have e.g. been created, edited, flagged recently.
-    *
-    * The most interesting ones are loaded first — that is, flagged posts,
-    * because moderators might need to delete such posts. Then new posts
-    * that needs to be reviewed, then posts that have been edited, and so on.
-    */
-  def loadPostsRecentlyActive(limit: Int, offset: Int): (Seq[Post], People)
-
-  /** Loads flags for the specified posts.
-    */
-  def loadFlags(pagePostIds: Seq[PagePostId])
-        : (Map[PagePostId, Seq[RawPostAction[PAP.Flag]]], People)
-
-  /**
-   * Loads at most `limit` recent posts, conducted e.g. at `fromIp`.
-   * Also loads actions that affected those posts (e.g. flags, edits,
-   * approvals). Also loads the people who did the actions.
-   *
-   * When listing actions by IP, loads the most recent actions of any type.
-   * When listing by /path/, however, loads `limit` *posts*, and then loads
-   * actions that affected them. Rationale: When selecting by /path/, we
-   * probably want to list e.g. all comments on a page. But when listing
-   * by IP / user-id, we're also interested in e.g. which ratings the
-   * user has cast, to find out if s/he is astroturfing.
-   *
-   * Loads "excerpts" only:
-   * - For Rating:s, loads no rating tags.
-   * - For Post:s and Edit:s with very much text, loads only the first
-   *   200 chars or something like that (not implemented though).
-   */
-  def loadRecentActionExcerpts(
-        fromIp: Option[String] = None,
-        byRole: Option[RoleId] = None,
-        pathRanges: PathRanges = PathRanges.Anywhere,
-        limit: Int): (Seq[PostAction[_]], People)
 
 
   // ----- Users and permissions
@@ -361,6 +295,7 @@ abstract class SiteDbDao {
 }
 
 
+@deprecated("Use SystemTransaction instead", "Now")
 abstract class SystemDbDao {
 
   def applyEvolutions()
@@ -484,12 +419,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
     }
   }
 
-  def createPage(page: Page): Page = {
-    serialize {
-      _spi.createPage(page)
-    }
-  }
-
   def loadPageMeta(pageId: PageId): Option[PageMeta] = {
     _spi.loadPageMeta(pageId)
   }
@@ -578,58 +507,13 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
   // ----- Actions
 
-  def doSavePageActions(page: PageNoPath, actions: List[RawPostAction[_]])
-        : (PageNoPath, List[RawPostAction[_]]) = {
-    // COULD fix this race condition BUG: `page` was loaded before locking the mutex,
-    // but is used doSavePageActions when saving the page. E.g. total flag count
-    // will be wrong if two flags are saved at the same time.
-    serialize {
-      _spi.doSavePageActions(page, actions)
-    }
-  }
-
-  def deleteVote(userIdData: UserIdData, pageId: PageId, postId: PostId,
-        voteType: PostActionPayload.Vote) {
-    serialize {
-      _spi.deleteVote(userIdData, pageId, postId, voteType)
-    }
-  }
-
-  def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId],
-        actionMakingThemRead: RawPostAction[_]) {
-    serialize {
-      _spi.updatePostsReadStats(pageId, postIdsRead, actionMakingThemRead)
-    }
-  }
-
   def loadPostsReadStats(pageId: PageId): PostsReadStats = {
     _spi.loadPostsReadStats(pageId)
   }
 
+  @deprecated("Use PageParts2 and Post2 instead", "Now")
   def loadPageParts(debateId: PageId, tenantId: Option[SiteId]): Option[PageParts] = {
     _spi.loadPageParts(debateId, tenantId)
-  }
-
-  def loadPageBodiesTitles(pagePaths: Seq[String]): Map[String, PageParts] = {
-    _spi.loadPageBodiesTitles(pagePaths)
-  }
-
-  def loadPostsRecentlyActive(limit: Int, offset: Int): (Seq[Post], People) = {
-    _spi.loadPostsRecentlyActive(limit, offset = offset)
-  }
-
-  def loadFlags(pagePostIds: Seq[PagePostId])
-        : (Map[PagePostId, Seq[RawPostAction[PAP.Flag]]], People) = {
-    _spi.loadFlags(pagePostIds)
-  }
-
-  def loadRecentActionExcerpts(
-        fromIp: Option[String] = None,
-        byRole: Option[RoleId] = None,
-        pathRanges: PathRanges = PathRanges.Anywhere,
-        limit: Int): (Seq[PostAction[_]], People) = {
-    _spi.loadRecentActionExcerpts(fromIp = fromIp, byRole = byRole,
-        pathRanges = pathRanges, limit = limit)
   }
 
 
@@ -844,8 +728,6 @@ object DbDao {
   case object EmailNotVerifiedException extends RuntimeException("Email not verified")
 
   case object DuplicateVoteException extends RuntimeException("Duplicate vote")
-
-  case object LikesOwnPostException extends RuntimeException("One may not upvote ones own post")
 
   class PageNotFoundException(message: String) extends RuntimeException(message)
 

@@ -50,10 +50,6 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     }*/
 
 
-  private def pageName(pageMeta: PageMeta): String =
-    pageMeta.cachedTitle.orElse(pageMeta.embeddingPageUrl) getOrElse "(unnamed page)"
-
-
   private def postUrl(pageMeta: PageMeta, notf: Notification.NewPost): Option[String] =
     pageMeta.embeddingPageUrl match {
       case Some(url) =>
@@ -70,34 +66,38 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
 
 
   def render(notfs: Seq[Notification]): NodeSeq = {
-    var result = Nil: NodeSeq
-    for (notf <- notfs) {
-      result ++= (notf match {
-        case newPostNotf: Notification.NewPost =>
-          renderNewPostNotf(newPostNotf)
-      })
+    // WOULD load page stuff inside the transaction, if I had an infinite amount of time.
+    val pageStuffById = siteDao.loadPageStuff(pageIdsFor(notfs))
+    siteDao.readOnlyTransaction { transaction =>
+      var result = Nil: NodeSeq
+      for (notf <- notfs) {
+        result ++= (notf match {
+          case newPostNotf: Notification.NewPost =>
+            val pageTitle =
+              pageStuffById.get(newPostNotf.pageId).map(_.title) getOrElse "(Page with no title)"
+            renderNewPostNotf(newPostNotf, pageTitle, transaction)
+        })
+      }
+      result
     }
-    result
   }
 
 
-  private def renderNewPostNotf(notf: Notification.NewPost): NodeSeq = {
-    val page = siteDao.loadPageParts(notf.pageId) getOrElse {
+  private def renderNewPostNotf(notf: Notification.NewPost, pageTitle: String,
+        transaction: SiteTransaction): NodeSeq = {
+    val pageMeta = transaction.loadPageMeta(notf.pageId) getOrElse {
       return Nil
     }
-    val pageMeta = siteDao.loadPageMeta(notf.pageId) getOrElse {
+    val post = transaction.loadPost(pageId = notf.pageId, postId = notf.postId) getOrElse {
       return Nil
     }
-    val post = page.getPost(notf.postId) getOrElse {
+    val markupSource = post.approvedSource getOrElse {
       return Nil
     }
-    val markupSource = post.approvedText getOrElse {
-      return Nil
-    }
-    val byUserName = siteDao.loadUser(notf.byUserId).map(_.displayName) getOrElse
+    val byUserName = transaction.loadUser(notf.byUserId).map(_.displayName) getOrElse
       "(unknown user name)"
 
-    val date = toIso8601Day(post.creationDati)
+    val date = toIso8601Day(post.createdAt)
 
     val url = postUrl(pageMeta, notf) getOrElse {
       // Not an embedded discussion, and the site has no canonical host, so we
@@ -124,7 +124,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     }
 
     <p>
-      { whatHappened }, <a href={url}>here</a>, on page <i>{pageName(pageMeta)}</i>,<br/>
+      { whatHappened }, <a href={url}>here</a>, on page <i>{pageTitle}</i>,<br/>
       { inPostWrittenBy } <i>{byUserName}</i>. On {date}, he or she wrote:
     </p>
     <blockquote>{html}</blockquote>
@@ -148,6 +148,11 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     </p>
   }*/
 
+
+  def pageIdsFor(notfs: Seq[Notification]): Seq[PageId] = notfs.flatMap {
+    case newPost: Notification.NewPost =>
+      Some(newPost.pageId)
+  }
 }
 
 

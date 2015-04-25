@@ -199,6 +199,8 @@ var RootPostAndComments = createComponent({
   render: function() {
     var user = this.props.user;
     var rootPost = this.props.allPosts[this.props.rootPostId];
+    if (!rootPost)
+      return r.p({}, '(Root post missing [DwE8WVP4])');
     var isBody = this.props.rootPostId === BodyPostId;
     var pageRole = this.props.pageRole;
     var threadClass = 'dw-t dw-depth-0' + horizontalCss(this.props.horizontalLayout);
@@ -295,6 +297,10 @@ var Thread = createComponent({
 
   render: function() {
     var post: Post = this.props.allPosts[this.props.postId];
+    if (!post) {
+      // This tree has been deleted it seems
+      return null;
+    }
     var parentPost = this.props.allPosts[post.parentId];
     var deeper = this.props.depth + 1;
 
@@ -388,6 +394,8 @@ var Post = createComponent({
   render: function() {
     var post: Post = this.props.post;
     var user: User = this.props.user;
+    if (!post)
+      return r.p({}, '(Post missing [DwE4UPK7])');
 
     var pendingApprovalElem;
     var headerElem;
@@ -514,6 +522,9 @@ var PostHeader = createComponent({
 
   render: function() {
     var post = this.props.post;
+    if (!post)
+      return r.p({}, '(Post header missing [DwE7IKW2])');
+
     var user: User = this.props.user;
     var linkFn = this.props.abbreviate ? 'span' : 'a';
 
@@ -550,8 +561,8 @@ var PostHeader = createComponent({
     var createdAt = moment(post.createdAt).from(this.props.now);
 
     var editInfo = null;
-    if (post.lastEditAppliedAt) {
-      var editedAt = moment(post.lastEditAppliedAt).from(this.props.now);
+    if (post.lastApprovedEditAt) {
+      var editedAt = moment(post.lastApprovedEditAt).from(this.props.now);
       var byVariousPeople = post.numEditors > 1 ? ' by various people' : null;
       editInfo =
         r.span({}, ', edited ', editedAt, byVariousPeople);
@@ -900,7 +911,7 @@ function isCollapsed(post) {
 
 
 function isDeleted(post) {
-  return post.isTreeDeleted || post.isPostDeleted;
+  return !post || post.isTreeDeleted || post.isPostDeleted;
 }
 
 

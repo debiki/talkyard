@@ -66,11 +66,11 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
 
   private def loadBundleFromDatabase(): DatabaseBundleData = {
 
-    val assetPageParts: PageParts = dao.loadPageParts(SiteCssPageId) getOrElse {
+    val assetsPost = dao.loadPost(SiteCssPageId, PageParts.BodyId) getOrElse {
       return DatabaseBundleData("", Nil, Nil, Nil)
     }
 
-    val bundleText: String = assetPageParts.approvedBodyText getOrElse ""
+    val bundleText = assetsPost.currentSource
 
     // Old comment:
     //   Find ids of config pagses, and assets included in the bundle.

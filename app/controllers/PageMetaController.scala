@@ -60,9 +60,9 @@ object PageMetaController extends mvc.Controller {
         case (x, y) if (x == y) =>
           curMeta
         case (PageStatus.Draft, PageStatus.Published) =>
-          curMeta.copy(pubDati = Some(apiReq.ctime))
+          curMeta.copy(publishedAt = Some(apiReq.ctime))
         case (PageStatus.Published, PageStatus.Draft) =>
-          curMeta.copy(pubDati = None)
+          curMeta.copy(publishedAt = None)
       }
 
       if (newMeta != curMeta)

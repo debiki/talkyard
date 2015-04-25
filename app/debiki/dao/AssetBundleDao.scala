@@ -50,13 +50,16 @@ trait AssetBundleDao {
 }
 
 
-
+/** BUG if server running and you edit the _stylesheet page, and update it, this has no
+  * effect, until you restart the server. But if the page exists when the server is stated,
+  * updates do refresh the cache. Fix this by listening for changes of page SiteCssPageId only?
+  */
 trait CachingAssetBundleDao extends AssetBundleDao {
   self: SiteDao with CachingDao =>
 
-  onPageCreated { page =>
+  onPageCreated { pagePath =>
     tryUncacheAll(
-      makeSitePathDependencyKey(page.siteId, path = page.path.value))
+      makeSitePathDependencyKey(pagePath.siteId, path = pagePath.value))
   }
 
   onPageSaved { sitePageId =>

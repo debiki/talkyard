@@ -37,6 +37,7 @@ object EditHistoryController extends mvc.Controller {
 
   def showForm(pageId: PageId, postId: String) = GetAction { request: GetRequest =>
 
+    ??? /*
     val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
       "DwE12GU08", s"Page `$pageId' not found")
 
@@ -52,6 +53,7 @@ object EditHistoryController extends mvc.Controller {
       post, page, pageReq.sid.displayName, mayEdit = mayEdit)
 
     OkHtml(form)
+    */
   }
 
 
@@ -90,7 +92,7 @@ object EditHistoryController extends mvc.Controller {
     val postId = postIds.head
 
     val editedPost = updatedPage.parts.thePost(postId)
-    OkSafeJson(ReactJson.postToJson(editedPost))
+    ??? // old and gone: OkSafeJson(ReactJson.postToJson(editedPost))
   }
 
 
@@ -104,6 +106,7 @@ object EditHistoryController extends mvc.Controller {
   private def _applyAndUndoEdits(changes: List[(HistoryEdit, ActionId)],
         pageReq: PageRequest[_]): (PageNoPath, Seq[RawPostAction[_]]) = {
 
+    ??? /*
     val approval = AutoApprover.perhapsApprove(pageReq)
 
     val page = pageReq.thePageParts
@@ -164,7 +167,9 @@ object EditHistoryController extends mvc.Controller {
 
     // ----- Save all changes
 
-    pageReq.dao.savePageActionsGenNotfs(pageReq, actions)
+    unimplemented("Applying edits", "DwE4KJL83") // Fix later
+    // pageReq.dao.savePageActionsGenNotfs(pageReq, actions)
+     */
   }
 
 }

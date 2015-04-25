@@ -23,6 +23,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
 import debiki.dao.{SystemDao, SiteDao, CachingSiteDaoFactory, CachingSystemDao}
+import debiki.dao.migrations.ScalaBasedMigrations
 //import com.twitter.ostrich.stats.Stats
 //import com.twitter.ostrich.{admin => toa}
 import java.{lang => jl}
@@ -96,10 +97,11 @@ class Globals {
       throw new jl.IllegalStateException(o"""Server already running, was it not properly
         shut down last time? Please hit CTRL+C to kill it. [DwE83KJ9]""")
 
+    // The render engines might be needed by some Java evolutions applied below.
+    debiki.ReactRenderer.startCreatingRenderEngines()
+
     _state = new State
     state.systemDao.applyEvolutions()
-
-    debiki.ReactRenderer.startCreatingRenderEngines()
 
     // For now, disable in dev mode — because of the port conflict that
     // causes an error on reload and restart, see below (search for "conflict").
@@ -149,8 +151,8 @@ class Globals {
     val ShutdownTimeout = 30 seconds
 
     val dbDaoFactory = new RdbDaoFactory(
-      makeDataSource(), Akka.system, debiki.ReactRenderer, anyFullTextSearchDbPath, Play.isTest,
-      fastStartSkipSearch = fastStartSkipSearch)
+      makeDataSource(), ScalaBasedMigrations, Akka.system, debiki.ReactRenderer,
+      anyFullTextSearchDbPath, Play.isTest, fastStartSkipSearch = fastStartSkipSearch)
 
     val siteDaoFactory = new CachingSiteDaoFactory(dbDaoFactory)
 

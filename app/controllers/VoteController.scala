@@ -69,65 +69,23 @@ object VoteController extends mvc.Controller {
         throwBadReq("DwE46F82", "postId not part of postIdsRead")
     }
 
-    val voteType: PostActionPayload.Vote = voteStr match {
-      case "VoteLike" => PostActionPayload.VoteLike
-      case "VoteWrong" => PostActionPayload.VoteWrong
-      case "VoteOffTopic" => PostActionPayload.VoteOffTopic
+    val voteType: PostVoteType = voteStr match {
+      case "VoteLike" => PostVoteType.Like
+      case "VoteWrong" => PostVoteType.Wrong
       case _ => throwBadReq("DwE35gKP8", s"Bad vote type: $voteStr")
     }
 
-    def deleteVoteAndNotf() {
-      request.dao.deleteVoteAndNotf(request.userIdData, pageId, postId, voteType)
+    if (delete) {
+      request.dao.deleteVote(pageId, postId, voteType, voterId = request.theUser.id2)
+    }
+    else {
+      request.dao.voteOnPost(pageId, postId, voteType,
+        voterId = request.theUser.id2, voterIp = request.ip, postIdsRead)
     }
 
-    val (pageReq, pageParts) =
-      if (delete) {
-        deleteVoteAndNotf()
-
-        val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
-          "DwE22PF1", s"Page `$pageId' not found")
-        (pageReq, pageReq.thePageParts)
-      }
-      else {
-        // Prevent the user from voting many times by deleting any existing vote.
-        // COULD consider doing this by browser cookie id and/or ip and/or fingerprint,
-        // so it's not possible to vote many times from many accounts on one single
-        // computer?
-        // COULD move this to RdbSiteDao? So it'll be easier to test, won't need Selenium?
-        deleteVoteAndNotf()
-
-        // Now create the vote.
-        val voteNoId = RawPostAction(id = PageParts.UnassignedId, postId = postId,
-          creationDati = request.ctime, userIdData = request.userIdData, payload = voteType)
-        val pageReq = PageRequest.forPageThatExists(request, pageId) getOrElse throwNotFound(
-          "DwE48FK9", s"Page `$pageId' not found")
-
-        val (updatedPage, voteWithId) = try {
-          pageReq.dao.savePageActionGenNotfs(pageReq, voteNoId)
-        }
-        catch {
-          case DbDao.DuplicateVoteException =>
-            throwConflict("DwE26FX0", "Duplicate votes")
-          case DbDao.LikesOwnPostException =>
-            throwBadReq("DwE84QM0", "Cannot like own post")
-        }
-
-        // Downvotes (wrong, off-topic) should result in only the downvoted post
-        // being marked as read, because a post *not* being downvoted shouldn't
-        // give that post worse rating. (Remember that the rating of a post is
-        // roughly the number of Like votes / num-times-it's-been-read.)
-        val postsToMarkAsRead =
-          if (voteType == PostActionPayload.VoteLike)
-            postIdsRead
-          else
-            Set(postId)
-
-        pageReq.dao.updatePostsReadStats(pageId, postsToMarkAsRead, voteWithId)
-        (pageReq, updatedPage.parts)
-      }
-
-    val post = pageParts.getPost_!(postId)
-    OkSafeJson(ReactJson.postToJson(post))
+    val json = ReactJson.postToJson2(postId = postId, pageId = pageId, request.dao,
+      includeUnapproved = false)
+    OkSafeJson(json)
   }
 
 }

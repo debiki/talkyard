@@ -138,9 +138,13 @@ var Post = createComponent({
 
     var post = this.props.post;
     var result;
+    var text = post.unapprovedText;
+    if (text === undefined || text === null) {  // but not for ''
+      text = post.approvedText;
+    }
     switch (this.state.status) {
       case 'New':
-        result = escapeHtml(post.unapprovedText);
+        result = escapeHtml(text);
         break;
       case 'NewPrelApproved':
       case 'EditsPrelApproved':
@@ -150,8 +154,7 @@ var Post = createComponent({
       case 'Rejected':
       case 'Deleted':
       case 'Hidden':
-        // Sometimes `unapprovedText` is undefined, nevertheless the post was rejected.
-        result = escapeHtml(post.unapprovedText || post.approvedText);
+        result = escapeHtml(text);
         break;
       case 'EditsRejected':
       //case 'EditsPrelApproved': -- no, then approvedText = after the edits

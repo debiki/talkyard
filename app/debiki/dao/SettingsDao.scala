@@ -31,7 +31,14 @@ trait SettingsDao {
   self: SiteDao =>
 
   def loadWholeSiteSettings(): Settings = {
-    val rawSettingsMaps = siteDbDao.loadSettings(Vector(SettingsTarget.WholeSite))
+    readOnlyTransaction { transaction =>
+      loadWholeSiteSettings(transaction)
+    }
+  }
+
+
+  def loadWholeSiteSettings(transaction: SiteTransaction): Settings = {
+    val rawSettingsMaps = transaction.loadSettings(Vector(SettingsTarget.WholeSite))
     Settings(SettingsChain(rawSettingsMaps))
   }
 

@@ -17,7 +17,6 @@
 
 package debiki
 
-import com.debiki.core
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.{SiteAssetBundlesController, routes}
@@ -40,47 +39,13 @@ object InternalTemplateProgrammingInterface {
 object InternalPageTpi {
 
 
-  case class Page(
-    id: String,
-    path: String,
-    title: String,
-    creationDati: ju.Date,
-    pubDati: Option[ju.Date],
-    safeBodyHtml: String)
-
-
   case class ForumOrCategory(
-    id: String, path: String, title: String, numTopics: Int)
-    // and, in the future: num topics, num contributors and num replies?
-
-
-  case class ForumTopic(id: String, path: String, title: String)
-
-
-  object Page {
-    def apply(page: core.Page, host: String): Page = Page(
-      id = page.id,
-      path = page.path.value,
-      title = titleOf(page),
-      creationDati = page.meta.creationDati,
-      pubDati = page.meta.pubDati,
-      safeBodyHtml = bodyOf(page, host))
-
-    private def titleOf(page: core.Page): String =
-      // Currently HtmlPageSerializer ignores the `.markup` for a title Post.
-      page.parts.approvedTitleTextOrNoTitle
-
-    private def bodyOf(page: core.Page, host: String): String =
-      page.parts.body.map(body => {
-        ReactRenderer.renderAndSanitizeCommonMark(
-          body.approvedText.getOrElse("(Not yet approved"),
-          allowClassIdDataAttrs = true, followLinks = true)
-      }).getOrElse("")
-  }
+    id: String, path: String, title: String)
 
 
   object ForumOrCategory {
-    def apply(forumPath: String, pageMeta: PageMeta, pagePath: PagePath): ForumOrCategory = {
+    def apply(forumPath: String, pageMeta: PageMeta, pagePath: PagePath, title: String)
+          : ForumOrCategory = {
       val path =
         if (pagePath.value == forumPath) {
           // This is the forum itself.
@@ -92,24 +57,14 @@ object InternalPageTpi {
           // inside the forum, unfortunately.
           // Let's show the latest topics for this category:
           val categoryName =
-            controllers.ForumController.categoryNameToSlug(pageMeta.cachedTitle getOrElse "")
+            controllers.ForumController.categoryNameToSlug(title)
           s"$forumPath#/latest/$categoryName"
         }
       ForumOrCategory(
         id = pageMeta.pageId,
         path = path,
-        title = pageMeta.cachedTitle getOrElse "(Unnamed forum)",
-        numTopics = pageMeta.cachedNumChildPages)
+        title = title)
     }
-  }
-
-
-  object ForumTopic {
-    def apply(pathAndMeta: PagePathAndMeta): ForumTopic =
-      ForumTopic(
-        id = pathAndMeta.id,
-        path = pathAndMeta.path.value,
-        title = pathAndMeta.meta.cachedTitle getOrElse "(Unnamed topic)")
   }
 
 }
@@ -298,28 +253,6 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
   def currentTree = PathRanges(trees = Seq(_pageReq.pagePath.folder))
 
 
-  def listNewestChildPages(): Seq[tpi.Page] = {
-    val pathsAndMeta: Seq[PagePathAndMeta] =
-      _pageReq.dao.listChildPages(Seq(pageId), PageOrderOffset.ByPublTime, limit = 10)
-
-    // "Access control". Filter out pages that has not yet been published.
-    val pubPathsAndMeta = pathsAndMeta filter { pathAndMeta =>
-      pathAndMeta.meta.pubDati.map(_.getTime < _pageReq.ctime.getTime) == Some(true)
-    }
-
-    val pagesById: Map[String, PageParts] =
-      _pageReq.dao.loadPageBodiesTitles(pubPathsAndMeta.map(_.pageId))
-
-    for {
-      pathAndMeta <- pubPathsAndMeta
-      pageActions <- pagesById.get(pathAndMeta.pageId)
-    } yield {
-      tpi.Page(
-        Page(pathAndMeta, pageActions), host = _pageReq.host)
-    }
-  }
-
-
   /**
    * Returns any parent forums, e.g.: grandparent-forum :: parent-forum :: Nil.
    */
@@ -337,22 +270,13 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
       case Some((path, meta)) => path
     }
 
+    val pageStuffById = _pageReq.dao.loadPageStuff(ancestorPatshAndMeta.map(_._2.pageId))
     val forumsAndCats = ancestorPatshAndMeta map { case (pagePath, pageMeta) =>
-      tpi.ForumOrCategory(forumPath.value, pageMeta, pagePath)
+      val pageStuff = pageStuffById.get(pageMeta.pageId) getOrDie "DwE5JJf3"
+      tpi.ForumOrCategory(forumPath.value, pageMeta, pagePath, pageStuff.title)
     }
 
     forumsAndCats
-  }
-
-
-  /** Assuming the current page is a forum, lists all topics in this forum, the one
-    * with the most recent posts first.
-    */
-  def listLatestForumTopics(limit: Int, offset: Int): Seq[tpi.ForumTopic] = {
-    val topicPathsAndMeta: Seq[PagePathAndMeta] = dao.listTopicsInTree(rootPageId = pageId,
-      orderOffset = PageOrderOffset.ByLikesAndBumpTime(None), limit = 50)
-    val topics = topicPathsAndMeta.map(tpi.ForumTopic(_))
-    topics
   }
 
 
@@ -381,7 +305,7 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
     // BUG This might result in fewer than `limit` pages being returned.
     // In the future, move filtering to `pageReq.dao` instead?
     val publishedPathsAndMeta = pathsAndMeta filter { pathAndMeta =>
-      pathAndMeta.meta.pubDati.map(_.getTime < _pageReq.ctime.getTime) == Some(true)
+      pathAndMeta.meta.publishedAt.map(_.getTime < _pageReq.ctime.getTime) == Some(true)
     }
     publishedPathsAndMeta
   }
@@ -396,10 +320,6 @@ class TemplateProgrammingInterface(
   private val pageReq: PageRequest[_],
   private val tagsToAppendToBody: xml.NodeSeq)
   extends InternalPageTpi(pageReq) {
-
-  import debiki.{InternalPageTpi => tpi}
-  import InternalPageTpi.{Page => _, _}
-  import TemplateProgrammingInterface._
 
   def pageSettings = pageReq.thePageSettings
 
@@ -436,10 +356,6 @@ class TemplateProgrammingInterface(
 
 
   def pageUrlPath = pageReq.pagePath.value
-
-
-  def titleText =
-    pageReq.thePageParts.titlePost.map(_.currentText) getOrElse pageReq.pagePath.value
 
 
   override lazy val reactStoreSafeJsonString: String = {

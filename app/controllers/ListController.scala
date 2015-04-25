@@ -167,8 +167,10 @@ object ListController extends mvc.Controller {
     if (pageMeta.parentPageId.isDefined)
       data += "parentPageId" -> JsString(pageMeta.parentPageId.get)
 
+    unimplemented("Loading pagle title, inserting as json. SHOULD.") /*
     if (pageMeta.cachedTitle.isDefined)
       data += "title" -> JsString(pageMeta.cachedTitle.get)
+      */
 
     if (pageMeta.embeddingPageUrl.isDefined)
       data += "embeddingPageUrl" -> JsString(pageMeta.embeddingPageUrl.get)

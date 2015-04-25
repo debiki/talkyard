@@ -97,52 +97,13 @@ object Utils extends Results with http.ContentTypes {
     Ok("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+ xmlNode) as contentType
 
 
-  def renderOrRedirect(pageReq: PageRequest[_]): Result = {
-    if (isAjax(pageReq.request)) {
-      val pageHtml = pageReq.dao.renderTemplate(pageReq)
-      Ok(pageHtml) as HTML
-    } else {
-      val queryString =
-         queryStringAndHashToView(pageReq.pageRoot, pageReq.oldPageVersion)
-      Redirect(pageReq.pagePath.value + queryString)
-    }
-  }
-
-
-  def formHtml(pageReq: PageRequest[_]) =
-    HtmlForms(pageReq.xsrfToken.value, pageReq.pageRoot, pageReq.permsOnPage)
-
-
-  def queryStringAndHashToView(pageRoot: AnyPageRoot, pageVersion: Option[ju.Date],
-        actionId: Option[ActionId] = None, forceQuery: Boolean = false)
-        : String = {
-    var params = List[String]()
-    if (pageVersion.isDefined) params ::= s"version=${toIso8601T(pageVersion.get)}"
-
-    pageRoot match {
-      case None =>
-        ???
-      case DefaultPageRoot =>
-         if (params.nonEmpty)
-           params ::= "?view"
-      case Some(commentId) =>
-        params ::= "?view=" + commentId
-    }
-
-    var queryString = params.mkString("&")
-    if (queryString.isEmpty && forceQuery) queryString = "?"
-    val hash = actionId.map("#post-"+ _) getOrElse ""
-    queryString + hash
-  }
-
-
   // COULD move to new object debiki.Utils?
   def isPublicArticlePage(pagePath: PagePath): Boolean =
     !isPrivatePage(pagePath) && !pagePath.isFolderOrIndexPage
 
 
   def isPrivatePage(pagePath: PagePath): Boolean =
-    pagePath.isConfigPage || pagePath.isHiddenPage
+    pagePath.isHiddenPage
 
 
   /**
@@ -300,38 +261,6 @@ object Utils extends Results with http.ContentTypes {
         text
       }
     }
-  }
-
-
-  /** Groups a list of (PageId, Action) by page id, so it becomes a Map[PageId, Seq[Action]].
-    */
-  implicit class ActionsByPageIdGrouper[A](pageIdsAndActions: Seq[(PageId, RawPostAction[A])]) {
-    def groupedByPageId: Map[PageId, Seq[RawPostAction[A]]] =
-      pageIdsAndActions groupBy (_._1) mapValues {
-        pageIdsAndActions: Seq[(PageId, RawPostAction[A])] =>
-          pageIdsAndActions.map(_._2)
-      }
-  }
-
-
-  @deprecated("Use `groupedByPageId` instead, see controllers.Pin", since = "now")
-  def parsePageActionIds[A](
-        pageActionIds: List[Map[String, String]])(fn: (ActionId) => A)
-        : Map[String, List[A]] = {
-
-    val pagesAndThings: List[(String, A)] = pageActionIds map { pageActionId =>
-      val pageId = pageActionId("pageId")
-      val actionIdStr = pageActionId("actionId")
-      val actionId = parseIntOrThrowBadReq(actionIdStr, "DwE77BH3")
-      pageId -> fn(actionId)
-    }
-
-    val thingsByPageId: Map[String, List[A]] =
-      pagesAndThings groupBy (_._1) mapValues { somePageIdsThings: List[(String, A)] =>
-        somePageIdsThings.map(_._2)
-    }
-
-    thingsByPageId
   }
 
 

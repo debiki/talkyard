@@ -20,7 +20,10 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
+import debiki.dao.{SiteDao, PageDao}
+import debiki.DebikiHttp.throwNotFound
 import play.api.libs.json._
+import scala.collection.immutable
 import requests.PageRequest
 
 
@@ -46,37 +49,44 @@ object ReactJson {
 
 
   def pageToJson(pageReq: PageRequest[_], socialLinksHtml: String): JsObject = {
-    val numPosts = pageReq.thePageParts.postCount
-    val numPostsExclTitle =
-      numPosts - (if (pageReq.thePageParts.titlePost.isDefined) 1 else 0)
-
-    var allPostsJson = pageReq.thePageParts.getAllPosts.map { post =>
-      post.id.toString -> postToJson(post)
+    if (pageReq.pageExists) {
+      pageReq.dao.readOnlyTransaction(pageToJsonImpl(pageReq, socialLinksHtml, _))
     }
-
-    if (pageReq.thePageRole == PageRole.EmbeddedComments) {
-      allPostsJson +:=
-        PageParts.BodyId.toString ->
-          embeddedCommentsDummyRootPost(pageReq.thePageParts.topLevelComments)
-    }
-
-    val topLevelComments = pageReq.thePageParts.topLevelComments
-    val topLevelCommentIdsSorted =
-      Post.sortPosts(topLevelComments).map(reply => JsNumber(reply.id))
-
-    val anyLatestTopics: Seq[JsObject] =
-      if (pageReq.thePageRole == PageRole.Forum) {
-        val orderOffset = PageOrderOffset.ByBumpTime(None)
-        var topics =
-          pageReq.dao.listTopicsInTree(rootPageId = pageReq.thePageId,
-            orderOffset, limit = controllers.ForumController.NumTopicsToList)
-        topics.map(controllers.ForumController.topicToJson(_))
+    else {
+      if (pageReq.pagePath.value == HomepageUrlPath) {
+        newEmptySitePageJson(pageReq)
       }
       else {
-        Nil
+        throwNotFound("DwE404KGF2", "Page not found")
       }
+    }
+  }
 
-    val siteStatusString = pageReq.dao.loadSiteStatus() match {
+
+  private def newEmptySitePageJson(pageReq: PageRequest[_]): JsObject = {
+    val siteStatusString = loadSiteStatusString(pageReq)
+    Json.obj(
+      "now" -> JsNumber((new ju.Date).getTime),
+      "siteStatus" -> JsString(siteStatusString),
+      "pageId" -> pageReq.thePageId,
+      "pageRole" -> JsString(pageReq.thePageRole.toString),
+      "pagePath" -> JsString(pageReq.pagePath.value),
+      "numPosts" -> JsNumber(0),
+      "numPostsExclTitle" -> JsNumber(0),
+      "isInEmbeddedCommentsIframe" -> JsBoolean(false),
+      "categories" -> JsArray(),
+      "topics" -> JsArray(),
+      "user" -> NoUserSpecificData,
+      "rootPostId" -> JsNumber(PageParts.BodyId),
+      "allPosts" -> JsObject(Nil),
+      "topLevelCommentIdsSorted" -> JsArray(),
+      "horizontalLayout" -> JsBoolean(false),
+      "socialLinksHtml" -> JsNull)
+  }
+
+
+  def loadSiteStatusString(pageReq: PageRequest[_]): String =
+    pageReq.dao.loadSiteStatus() match {
       case SiteStatus.OwnerCreationPending(adminEmail) =>
         var obfuscatedEmail = adminEmail.takeWhile(_ != '@')
         obfuscatedEmail = obfuscatedEmail.dropRight(3).take(4)
@@ -84,11 +94,51 @@ object ReactJson {
       case x => x.toString
     }
 
+
+  private def pageToJsonImpl(pageReq: PageRequest[_], socialLinksHtml: String,
+        transaction: SiteTransaction): JsObject = {
+    val page = PageDao(pageReq.thePageId, transaction)
+    val pageParts = page.parts
+    pageParts.loadAllPosts()
+    var allPostsJson = pageParts.allPosts.filter { post =>
+      !post.deletedStatus.isDeleted || (
+        post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.id))
+    } map { post: Post2 =>
+      post.id.toString -> postToJsonImpl(post, page)
+    }
+    val numPosts = allPostsJson.length
+    val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
+
+    if (page.role == PageRole.EmbeddedComments) {
+      allPostsJson +:=
+        PageParts.BodyId.toString ->
+          embeddedCommentsDummyRootPost(pageParts.topLevelComments)
+    }
+
+    val topLevelComments = pageParts.topLevelComments
+    val topLevelCommentIdsSorted =
+      Post.sortPosts2(topLevelComments).map(reply => JsNumber(reply.id))
+
+    val anyLatestTopics: Seq[JsObject] =
+      if (page.role == PageRole.Forum) {
+        val orderOffset = PageOrderOffset.ByBumpTime(None)
+        var topics =
+          pageReq.dao.listTopicsInTree(rootPageId = pageReq.thePageId,
+            orderOffset, limit = controllers.ForumController.NumTopicsToList)
+        val pageStuffById = pageReq.dao.loadPageStuff(topics.map(_.pageId))
+        topics.map(controllers.ForumController.topicToJson(_, pageStuffById))
+      }
+      else {
+        Nil
+      }
+
+    val siteStatusString = loadSiteStatusString(pageReq)
+
     Json.obj(
       "now" -> JsNumber((new ju.Date).getTime),
       "siteStatus" -> JsString(siteStatusString),
       "pageId" -> pageReq.thePageId,
-      "pageRole" -> JsString(pageReq.thePageRole.toString),
+      "pageRole" -> JsString(page.role.toString),
       "pagePath" -> JsString(pageReq.pagePath.value),
       "numPosts" -> numPosts,
       "numPostsExclTitle" -> numPostsExclTitle,
@@ -104,48 +154,68 @@ object ReactJson {
   }
 
 
-  def postToJson(post: Post, includeUnapproved: Boolean = false): JsObject = {
-    val lastEditAppliedAt = post.lastEditAppliedAt map { date =>
+  def postToJson2(postId: PostId, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false)
+        : JsObject = {
+    dao.readOnlyTransaction { transaction =>
+      // COULD optimize: don't load the whole page, load only postId and the author and last editor.
+      val page = PageDao(pageId, transaction)
+      postToJsonImpl(page.parts.thePost(postId), page, includeUnapproved = includeUnapproved)
+    }
+  }
+
+
+  /** Private, so it cannot be called outside a transaction.
+    */
+  private def postToJsonImpl(post: Post2, page: Page2, includeUnapproved: Boolean = false)
+        : JsObject = {
+    val people = page.parts
+    val lastApprovedEditAt = post.lastApprovedEditAt map { date =>
       JsNumber(date.getTime)
     } getOrElse JsNull
 
-    val (sanitizedHtml, isApproved) =
+    val (anySanitizedHtml: Option[String], isApproved: Boolean) =
       if (includeUnapproved)
-        (Some(post.currentHtmlSanitized), post.currentVersionApproved)
+        (Some(post.currentHtmlSanitized(ReactRenderer, page.role)),
+          post.isCurrentVersionApproved)
       else
-        (post.approvedHtmlSanitized, post.approvedHtmlSanitized.nonEmpty)
+        (post.approvedHtmlSanitized, post.approvedAt.isDefined)
+
+    val childrenSorted = {
+      val children = page.parts.childrenOf(post.id)
+      Post.sortPosts2(children)
+    }
 
     JsObject(Vector(
       "postId" -> JsNumber(post.id),
       "parentId" -> post.parentId.map(JsNumber(_)).getOrElse(JsNull),
       "multireplyPostIds" -> JsArray(post.multireplyPostIds.toSeq.map(JsNumber(_))),
-      "authorId" -> JsString(post.userId),
-      "authorFullName" -> JsStringOrNull(Some(post.theUser.displayName)),
-      "authorUsername" -> JsStringOrNull(post.theUser.username),
-      "createdAt" -> JsNumber(post.creationDati.getTime),
-      "lastEditAppliedAt" -> lastEditAppliedAt,
+      "authorId" -> JsString(post.createdById.toString),
+      "authorFullName" -> JsString(post.createdByUser(people).displayName),
+      "authorUsername" -> JsStringOrNull(post.createdByUser(people).username),
+      "createdAt" -> JsNumber(post.createdAt.getTime),
+      "lastApprovedEditAt" -> lastApprovedEditAt,
       "numEditors" -> JsNumber(post.numDistinctEditors),
       "numLikeVotes" -> JsNumber(post.numLikeVotes),
       "numWrongVotes" -> JsNumber(post.numWrongVotes),
-      "numOffTopicVotes" -> JsNumber(post.numOffTopicVotes),
+      "numOffTopicVotes" -> JsNumber(0), // remove off-topic votes? post.numOffTopicVotes
       "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions),
-      "isTreeDeleted" -> JsBoolean(post.isTreeDeleted),
-      "isPostDeleted" -> JsBoolean(post.isPostDeleted),
-      "isTreeCollapsed" -> JsBoolean(post.isTreeCollapsed),
-      "isPostCollapsed" -> JsBoolean(post.isPostCollapsed),
-      "isTreeClosed" -> JsBoolean(post.isTreeClosed),
+      "isTreeDeleted" -> JsBoolean(post.deletedStatus.isTreeDeleted),
+      "isPostDeleted" -> JsBoolean(post.deletedStatus.isPostDeleted),
+      "isTreeCollapsed" -> JsBoolean(post.collapsedStatus.isTreeCollapsed),
+      "isPostCollapsed" -> JsBoolean(post.collapsedStatus.isPostCollapsed),
+      "isTreeClosed" -> JsBoolean(post.closedStatus.isTreeClosed),
       "isApproved" -> JsBoolean(isApproved),
       "pinnedPosition" -> post.pinnedPosition.map(JsNumber(_)).getOrElse(JsNull),
       "likeScore" -> JsNumber(post.likeScore),
-      "childIdsSorted" -> JsArray(Post.sortPosts(post.replies).map(reply => JsNumber(reply.id))),
-      "sanitizedHtml" -> JsStringOrNull(sanitizedHtml)))
+      "childIdsSorted" -> JsArray(childrenSorted.map(reply => JsNumber(reply.id))),
+      "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml)))
   }
 
 
   /** Creates a dummy root post, needed when rendering React elements. */
-  def embeddedCommentsDummyRootPost(topLevelComments: Seq[Post]) = Json.obj(
+  def embeddedCommentsDummyRootPost(topLevelComments: Seq[Post2]) = Json.obj(
     "postId" -> JsNumber(PageParts.BodyId),
-    "childIdsSorted" -> JsArray(Post.sortPosts(topLevelComments).map(reply => JsNumber(reply.id))))
+    "childIdsSorted" -> JsArray(Post.sortPosts2(topLevelComments).map(reply => JsNumber(reply.id))))
 
 
   val NoUserSpecificData = Json.obj(
@@ -162,11 +232,17 @@ object ReactJson {
     val user = pageRequest.user getOrElse {
       return None
     }
+    pageRequest.dao.readOnlyTransaction { transaction =>
+      userDataJsonImpl(user, pageRequest.thePageId, pageRequest.permsOnPage, transaction)
+    }
+  }
 
+
+  private def userDataJsonImpl(user: User, pageId: PageId, permsOnPage: PermsOnPage,
+        transaction: SiteTransaction): Option[JsObject] = {
     val rolePageSettings = user.anyRoleId map { roleId =>
-      val settings = pageRequest.dao.loadRolePageSettings(
-        roleId = roleId, pageId = pageRequest.thePageId)
-      rolePageSettingsToJson(settings)
+      val anySettings = transaction.loadRolePageSettings(roleId = roleId, pageId = pageId)
+      rolePageSettingsToJson(anySettings getOrElse RolePageSettings.Default)
     } getOrElse JsNull
 
     // Warning: some dupl code, see `userNoPageToJson()` above.
@@ -178,10 +254,10 @@ object ReactJson {
       "fullName" -> JsString(user.displayName),
       "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
       "isAuthenticated" -> JsBoolean(user.isAuthenticated),
-      "permsOnPage" -> permsOnPageJson(pageRequest.permsOnPage),
+      "permsOnPage" -> permsOnPageJson(permsOnPage),
       "rolePageSettings" -> rolePageSettings,
-      "votes" -> votesJson(pageRequest),
-      "unapprovedPosts" -> unapprovedPostsJson(pageRequest),
+      "votes" -> votesJson(user.id2, pageId, transaction),
+      "unapprovedPosts" -> unapprovedPostsJson(user.id, pageId, transaction),
       "postIdsAutoReadLongAgo" -> JsArray(Nil),
       "postIdsAutoReadNow" -> JsArray(Nil),
       "marksByPostId" -> JsObject(Nil)))
@@ -210,8 +286,10 @@ object ReactJson {
   }
 
 
-  private def votesJson(pageRequest: PageRequest[_]): JsObject = {
-    val userVotesMap = pageRequest.thePageParts.userVotesMap(pageRequest.userIdData)
+  private def votesJson(userId: UserId2, pageId: PageId, transaction: SiteTransaction): JsObject = {
+    val actions = transaction.loadActionsByUserOnPage(userId, pageId)
+    val votes = actions.filter(_.isInstanceOf[PostVote]).asInstanceOf[immutable.Seq[PostVote]]
+    val userVotesMap = UserPostVotes.makeMap(votes)
     val votesByPostId = userVotesMap map { case (postId, votes) =>
       var voteStrs = Vector[String]()
       if (votes.votedLike) voteStrs = voteStrs :+ "VoteLike"
@@ -223,7 +301,11 @@ object ReactJson {
   }
 
 
-  private def unapprovedPostsJson(request: PageRequest[_]): JsObject = {
+  private def unapprovedPostsJson(userId: UserId, pageId: PageId, transaction: SiteTransaction)
+        : JsObject = {
+    // I'm rewriting/refactoring and right now all posts are approved directly, so for now:
+    JsObject(Nil)
+    /* Previously:
     val relevantPosts =
       if (request.theUser.isAdmin) request.thePageParts.getAllPosts
       else request.thePageParts.postsByUser(request.theUser.id)
@@ -237,6 +319,7 @@ object ReactJson {
     })
 
     json
+    */
   }
 
 
@@ -245,11 +328,14 @@ object ReactJson {
       return JsArray(Nil)
 
     val categories: Seq[Category] = request.dao.loadCategoryTree(request.thePageId)
+    val pageStuffById = request.dao.loadPageStuff(categories.map(_.pageId))
     val categoriesJson = JsArray(categories map { category =>
+      val pageStuff = pageStuffById.get(category.pageId) getOrDie "DwE3KE78"
+      val categoryName = pageStuff.title
       JsObject(Seq(
-        "name" -> JsString(category.categoryName),
+        "name" -> JsString(categoryName),
         "pageId" -> JsString(category.pageId),
-        "slug" -> JsString(controllers.ForumController.categoryNameToSlug(category.categoryName)),
+        "slug" -> JsString(controllers.ForumController.categoryNameToSlug(categoryName)),
         "subCategories" -> JsArray()))
     })
     categoriesJson

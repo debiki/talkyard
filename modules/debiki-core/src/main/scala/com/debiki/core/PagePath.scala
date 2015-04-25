@@ -112,8 +112,6 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
 
   def isScriptOrStyle = pageSlug.endsWith(".js") || pageSlug.endsWith(".css")
 
-  def isConfigPage = pageSlug.endsWith(".yaml") || pageSlug.endsWith(".conf")
-
 
   /**
    * Pages and folders that start with '_' are visible to admins only.
@@ -302,6 +300,7 @@ object PagePath {
 }
 
 
+@deprecated("I think isn't needed or used?", "2014")
 case class PathRanges(
   folders: Seq[String] = Nil,
   trees: Seq[String] = Nil,

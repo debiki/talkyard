@@ -45,12 +45,9 @@ object EditController extends mvc.Controller {
     */
   def loadCurrentText(pageId: String, postId: String) = GetAction { request =>
     val postIdAsInt = parseIntOrThrowBadReq(postId, "DwE1Hu80")
-    val page = request.dao.loadPageParts(pageId) getOrElse
-      throwNotFound("DwE7SKE3", "Page not found")
-    val post = page.getPost(postIdAsInt) getOrElse
-      throwNotFound("DwE4FKW2", "Post not found")
-    val currentText = post.currentText
-    val json = Json.obj("currentText" -> currentText)
+    val post = request.dao.loadPost(pageId, postId.toInt) getOrElse
+      throwNotFound("DwE7SKE3", "Post not found")
+    val json = Json.obj("currentText" -> post.currentSource)
     OkSafeJson(json)
   }
 
@@ -69,9 +66,11 @@ object EditController extends mvc.Controller {
 
     _throwIfTooMuchData(newText, pageRequest)
 
-    val postAfter = saveEdit(pageRequest, postId = postId, newText = newText)
+    request.dao.editPost(pageId = pageId, postId = postId, editorId = pageRequest.theUser.id2,
+      newText)
 
-    OkSafeJson(ReactJson.postToJson(postAfter, includeUnapproved = true))
+    OkSafeJson(ReactJson.postToJson2(postId = postId, pageId = pageId,
+      request.dao, includeUnapproved = true))
   }
 
 
@@ -89,70 +88,6 @@ object EditController extends mvc.Controller {
       if (postSize > MaxPostSizeForUnauUsers)
         throwEntityTooLarge("DwE413IJ1", "Please do not upload that much text")
     }
-  }
-
-
-  /** Saves an edit in the database. Returns the edited post.
-    */
-  private def saveEdit(pageReq: PageRequest[_],
-        postId: PostId, newText: String): Post = {
-
-    val post = pageReq.thePageParts.thePost(postId)
-
-    if (newText == post.currentText)
-      return post
-
-    val patchText = makePatch(from = post.currentText, to = newText)
-
-    val (mayEdit, mayEditReason) =
-      EditController.mayEdit(pageReq.user, post, pageReq.permsOnPage)
-
-    def editsOwnPost = pageReq.user_!.id == post.userId
-
-    val approval =
-        if (mayEdit) {
-          if (editsOwnPost && post.currentVersionPrelApproved) {
-            // Let the user continue editing his/her preliminarily approved comment.
-            Some(Approval.Preliminary)
-          }
-          else {
-            AutoApprover.perhapsApprove(pageReq)
-          }
-        }
-        else None
-
-    val edit = RawPostAction.toEditPost(
-      id = PageParts.UnassignedId, postId = post.id, ctime = pageReq.ctime,
-      userIdData = pageReq.userIdData,
-      text = patchText, approval = approval, autoApplied = mayEdit)
-
-    val actions = edit :: Nil
-    val (pageAfter, _) = pageReq.dao.savePageActionsGenNotfs(pageReq, actions)
-    val partsInclEditor = pageAfter.parts ++ pageReq.anyMeAsPeople
-    val postAfter = partsInclEditor.thePost(postId)
-    postAfter
-  }
-
-
-  /**
-   * Returns (true/false, reason) if the user may/not edit `vipo'.
-   */
-  def mayEdit(user: Option[User], post: Post, perms: PermsOnPage)
-        : (Boolean, String) = {
-
-    def isOwnPost = user.map(_.id) == Some(post.userId)
-    def isPage = post.id == PageParts.BodyId || post.id == PageParts.TitleId
-
-    if (post.id == PageParts.ConfigPostId && !perms.editPageTemplate)
-      (false, "May not edit page template")
-    else if (isOwnPost)
-      (true, "May edit own post")
-    else if (perms.editAnyReply && !isPage)
-      (true, "May edit any reply")
-    else if (perms.editPage && isPage)
-      (true, "May edit root post")
-    else
-      (false, "")
   }
 
 }

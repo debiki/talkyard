@@ -21,6 +21,7 @@ import actions.ApiActions._
 import actions.PageActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import com.debiki.core.User.SystemUserId
 import debiki._
 import java.{util => ju, io => jio}
 import play.api._
@@ -51,7 +52,7 @@ object ViewPageController extends mvc.Controller {
 
   def viewPost(pathIn: PagePath) = PageGetAction(pathIn, pageMustExist = false) { pageReq =>
     if (!pageReq.pageExists) {
-      if (pageReq.pagePath.value == "/") {
+      if (pageReq.pagePath.value == HomepageUrlPath) {
         // TemplateRenderer will show a getting-started or create-something-here page.
         viewPostImpl(makeEmptyPageRequest(pageReq, pageId = "0", showId = false,
           pageRole = PageRole.WebPage))
@@ -67,6 +68,7 @@ object ViewPageController extends mvc.Controller {
 
 
   def viewPostImpl(pageReq: PageGetRequest) = {
+    // COULD try to run the render stuff in a single read only transaction
     var pageHtml = pageReq.dao.renderTemplate(pageReq)
     val anyUserSpecificDataJson = ReactJson.userDataJson(pageReq)
 
@@ -93,12 +95,10 @@ object ViewPageController extends mvc.Controller {
       showId = showId,
       pageSlug = "")
 
-    val pageParts = PageParts(pageId)
-
     val newTopicMeta = PageMeta.forNewPage(
-      pageRole,
-      author = SystemUser.User,
-      parts = pageParts,
+      pageId = pageId,
+      pageRole = pageRole,
+      authorId = SystemUserId,
       creationDati = new ju.Date,
       parentPageId = None,
       publishDirectly = true)
@@ -113,7 +113,6 @@ object ViewPageController extends mvc.Controller {
       pageMeta = newTopicMeta,
       permsOnPage = PermsOnPage.Wiki, // for now
       dao = request.dao,
-      dummyPageParts = pageParts,
       request = request.request)
   }
 

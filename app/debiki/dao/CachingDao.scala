@@ -26,19 +26,19 @@ import CachingDao._
 
 trait CacheEvents {  // COULD move to separate file
 
-  private var pageCreatedListeners = List[(Page => Unit)]()
+  private var pageCreatedListeners = List[(PagePath => Unit)]()
   private var pageSavedListeners = List[(SitePageId => Unit)]()
   private var pageMovedListeners = List[(PagePath => Unit)]()
   private var userCreatedListeners = List[(User => Unit)]()
 
 
-  def onPageCreated(callback: (Page => Unit)) {
+  def onPageCreated(callback: (PagePath => Unit)) {
     pageCreatedListeners ::= callback
   }
 
 
-  def firePageCreated(page: Page) {
-    pageCreatedListeners foreach (_(page))
+  def firePageCreated(pagePath: PagePath) {
+    pageCreatedListeners foreach (_(pagePath))
   }
 
 

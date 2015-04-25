@@ -21,7 +21,6 @@ import actions.ApiActions._
 import actions.SafeActions.{ExceptionAction, SessionAction}
 import com.debiki.core._
 import com.debiki.core.{PostActionPayload => PAP}
-import controllers.Utils.ActionsByPageIdGrouper
 import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
@@ -44,18 +43,6 @@ object DebugController extends mvc.Controller {
   def pingSessionAction = SessionAction(empty) {
     request: actions.SafeActions.SessionRequestNoBody =>
       Ok("session-action-pong")
-  }
-
-
-  /** Via this function you can test whether or not comments by a certain identity
-    * would be auto approved. (Should change from identity to user?)
-    */
-  def testAutoApprove(ipAddress: IpAddress, identityId: IdentityId) = GetAction { request =>
-    if (!request.user_!.isAdmin)
-      throwForbidden("DwE7dBF03", "Only for admins")
-
-    val result = debiki.AutoApprover.perhapsApproveImpl(request.dao, ipAddress, identityId)
-    Ok(result.toString)
   }
 
 }

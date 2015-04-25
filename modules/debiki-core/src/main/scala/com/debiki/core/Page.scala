@@ -17,9 +17,24 @@
 
 package com.debiki.core
 
+import com.debiki.core.Prelude._
 import java.{util => ju}
-import Prelude._
+import scala.collection.immutable
 
+
+
+trait Page2 {
+
+  def id: PageId
+  def siteId: SiteId
+  def parentPageId: Option[PageId] = meta.parentPageId
+  def role: PageRole = meta.pageRole
+  def meta: PageMeta
+  def path: PagePath
+  def ancestorIdsParentFirst: immutable.Seq[PageId]
+  def parts: PageParts2
+
+}
 
 
 trait HasPageMeta {
@@ -71,6 +86,7 @@ object Page {
         publishDirectly: Boolean = false,
         author: User,
         url: Option[String] = None): Page = {
+    ??? /* TODO remove newPage(...)
     val partsInclAuthor = parts + author
     val meta = PageMeta.forNewPage(
       pageRole,
@@ -80,6 +96,7 @@ object Page {
       publishDirectly = publishDirectly,
       url = url)
     Page(meta, path, ancestorIdsParentFirst = Nil, partsInclAuthor)
+    */
   }
 
   def newEmptyPage(pageRole: PageRole, path: PagePath, author: User) =
@@ -180,124 +197,67 @@ case class PageNoPath(parts: PageParts, ancestorIdsParentFirst: List[PageId], me
 object PageMeta {
 
   def forNewPage(
+        pageId: PageId,
         pageRole: PageRole,
-        author: User,
-        parts: PageParts,
+        authorId: UserId2,
         creationDati: ju.Date = new ju.Date,
         parentPageId: Option[String] = None,
         url: Option[String] = None,
         publishDirectly: Boolean = false) =
     PageMeta(
-      pageId = parts.pageId,
+      pageId = pageId,
       pageRole = pageRole,
-      creationDati = creationDati,
-      modDati = creationDati,
-      pubDati = if (publishDirectly) Some(creationDati) else None,
+      createdAt = creationDati,
+      updatedAt = creationDati,
+      publishedAt = if (publishDirectly) Some(creationDati) else None,
       parentPageId = parentPageId,
       embeddingPageUrl = url,
-      pageExists = false,
-      cachedTitle = parts.maybeUnapprovedTitleText,
-      cachedAuthorDispName = author.displayName,
-      cachedAuthorUserId = author.id,
-      cachedNumPosters = parts.numPosters,
-      cachedNumActions = parts.actionCount,
-      cachedNumLikes = parts.numLikes,
-      cachedNumWrongs = parts.numWrongs,
-      cachedNumPostsToReview = parts.numPostsToReview,
-      cachedNumPostsDeleted = parts.numPostsDeleted,
-      cachedNumRepliesVisible = parts.numRepliesVisible,
-      cachedLastVisiblePostDati = parts.lastVisiblePostDati,
-      cachedNumChildPages = 0)
-
-  def forChangedPage(originalMeta: PageMeta, changedPage: PageParts): PageMeta = {
-    require(changedPage.id == originalMeta.pageId)
-
-    // Re the page modification dati: Sometimes an empty page is created,
-    // and then, later on, a title (for example) is added to the page. But this
-    // title might have an older creation time than the page itself, if the
-    // title was created in-memory before the page. Then use the page's
-    // modification time, not the title's, so we won't accidentally set the
-    // page modification time to *before* its creation time.
-    val modifiedAt = new ju.Date(math.max(
-      changedPage.modificationDati.map(_.getTime) getOrElse 0: Long,
-      originalMeta.modDati.getTime))
-
-    val authorUserId = originalMeta.cachedAuthorUserId orIfEmpty {
-      changedPage.body.map(_.userId) getOrElse ""
-    }
-
-    val authorDispName = originalMeta.cachedAuthorDispName orIfEmpty {
-      changedPage.body.flatMap(post => post.user.map(_.displayName)) getOrElse ""
-    }
-
-    originalMeta.copy(
-      cachedTitle = changedPage.approvedTitleText,
-      modDati = modifiedAt,
-      cachedAuthorDispName = authorDispName,
-      cachedAuthorUserId = authorUserId,
-      cachedNumPosters = changedPage.numPosters,
-      cachedNumActions = changedPage.actionCount,
-      cachedNumLikes = changedPage.numLikes,
-      cachedNumWrongs = changedPage.numWrongs,
-      cachedNumPostsDeleted = changedPage.numPostsDeleted,
-      cachedNumRepliesVisible = changedPage.numRepliesVisible,
-      cachedNumPostsToReview = changedPage.numPostsToReview,
-      cachedLastVisiblePostDati = changedPage.lastVisiblePostDati)
-    // (cachedNumChildPages is updated elsewhere — when a child page is created.)
-  }
+      authorId = authorId,
+      numLikes = 0,
+      numWrongs = 0,
+      numRepliesVisible = 0,
+      numRepliesTotal = 0,
+      numChildPages = 0)
 
 }
 
 
 /** @param pageId
   * @param pageRole
-  * @param creationDati
-  * @param modDati
-  * @param pubDati
-  * @param sgfntModDati
+  * @param createdAt
+  * @param updatedAt
+  * @param publishedAt
+  * @param bumpedAt
   * @param parentPageId
   * @param embeddingPageUrl The canonical URL to the page, useful when linking to the page.
   *            Currently only needed and used for embedded comments, and then it
   *            is the URL of the embedding page.
-  * @param pageExists
-  * @param cachedTitle
-  * @param cachedAuthorDispName
-  * @param cachedAuthorUserId
-  * @param cachedNumPosters
-  * @param cachedNumActions
-  * @param cachedNumLikes
-  * @param cachedNumWrongs
-  * @param cachedNumPostsDeleted
-  * @param cachedNumRepliesVisible
-  * @param cachedNumPostsToReview
-  * @param cachedNumChildPages
-  * @param cachedLastVisiblePostDati
+  * @param authorId
+  * @param numLikes
+  * @param numWrongs
+  * @param numRepliesVisible Replies that haven't been deleted or hidden, and have been approved.
+  *                          Includes collapsed and closed replies.
+  * @param numRepliesTotal Counts all replies, also deleted, hidden and not-yet-approved replies.
+  * @param numChildPages
   */
 case class PageMeta(
   pageId: String,
   pageRole: PageRole,
-  creationDati: ju.Date,
-  modDati: ju.Date,
-  pubDati: Option[ju.Date] = None,
-  sgfntModDati: Option[ju.Date] = None,
+  createdAt: ju.Date,
+  updatedAt: ju.Date,
+  publishedAt: Option[ju.Date] = None,
+  bumpedAt: Option[ju.Date] = None,
   parentPageId: Option[String] = None,
   embeddingPageUrl: Option[String],
-  pageExists: Boolean = true,
-  cachedTitle: Option[String] = None,
-  cachedAuthorDispName: String,
-  cachedAuthorUserId: String,
-  cachedNumPosters: Int = 0,
-  cachedNumActions: Int = 0,
-  cachedNumLikes: Int = 0,
-  cachedNumWrongs: Int = 0,
-  cachedNumPostsDeleted: Int = 0,
-  cachedNumRepliesVisible: Int = 0,
-  cachedNumPostsToReview: Int = 0,
-  cachedNumChildPages: Int = 0,
-  cachedLastVisiblePostDati: Option[ju.Date] = None) {
+  authorId: UserId2,
+  numLikes: Int = 0,
+  numWrongs: Int = 0,
+  numRepliesVisible: Int = 0,
+  numRepliesTotal: Int = 0,
+  numChildPages: Int = 0) {
 
   def status: PageStatus =
-    if (pubDati.isDefined) PageStatus.Published
+    if (publishedAt.isDefined) PageStatus.Published
     else PageStatus.Draft
 
 }
@@ -310,14 +270,21 @@ sealed abstract class PageRole {
     * (namely blog posts, forum topics).
     */
   def isSection: Boolean = false
+
+  /** Should use nofollow links if many people can edit a page. */
+  def isWidelyEditable: Boolean = true
 }
 
 
 object PageRole {
 
-  case object HomePage extends PageRole
+  case object HomePage extends PageRole {
+    override def isWidelyEditable = false
+  }
 
-  case object WebPage extends PageRole
+  case object WebPage extends PageRole {
+    override def isWidelyEditable = false
+  }
 
   case object Code extends PageRole
 
@@ -329,7 +296,9 @@ object PageRole {
     override def isSection = true
   }
 
-  case object BlogPost extends PageRole
+  case object BlogPost extends PageRole {
+    override def isWidelyEditable = false
+  }
 
   case object Forum extends PageRole {
     override def isSection = true
@@ -409,5 +378,5 @@ case class PagePostId(pageId: PageId, postId: PostId) {
 }
 
 
-case class Category(categoryName: String, pageId: String, subCategories: Seq[Category])
+case class Category(pageId: String, subCategories: Seq[Category])
 

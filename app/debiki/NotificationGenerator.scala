@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2014-2015 Kaj Magnus Lindberg (born 1979)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -30,104 +30,57 @@ import NotificationGenerator._
   * Also finds out what not-yet-sent notifications to delete if a post is deleted, or if
   * the post is edited and a @mention removed.
   */
-case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
-
-  private def oldPageParts = page.parts
-  private var newPageParts: PageParts = _
+case class NotificationGenerator(transaction: SiteTransaction) {
 
   private var notfsToCreate = mutable.ArrayBuffer[Notification]()
   private var notfsToDelete = mutable.ArrayBuffer[NotificationToDelete]()
   private var sentToUserIds = new mutable.HashSet[UserId]()
 
-
-  def generateNotifications(actions: Seq[RawPostAction[_]]): Notifications = {
-    newPageParts = oldPageParts ++ actions
-
-    for (action <- actions) {
-      action.payload match {
-        case payload: PAP.CreatePost =>
-          if (payload.approval.isDefined) {
-            makeNotfsForNewPost(action.postId, anyApproverId = None)
-          }
-          // else: wait until approved
-        case edit: PAP.EditPost =>
-          if (edit.approval.isDefined) {
-            makeNotfsForEdits(action.postId)
-          }
-          // else: wait until approved
-        case editApp: PAP.EditApp =>
-          // If also approved, COULD notify edit author that the edits have now been applied.
-        case payload: PAP.ApprovePost =>
-          val oldPost = oldPageParts.getPost(action.postId)
-          val oldAlreadyApproved = oldPost.map(_.someVersionApproved) == Some(true)
-          val isApprovingEdits = oldAlreadyApproved
-          if (isApprovingEdits) {
-            makeNotfsForEdits(action.postId)
-          }
-          else {
-            makeNotfsForNewPost(action.postId, anyApproverId = Some(action.userId))
-          }
-        case payload: PAP.RejectEdits =>
-          // Don't notify.
-        case PAP.VoteLike | PAP.VoteWrong =>
-          makeNotfForVote(action.asInstanceOf[RawPostAction[PAP.Vote]])
-        case PAP.VoteOffTopic =>
-          // Don't notify.
-        case flag: PAP.Flag =>
-          // SHOULD generate notfs to all/some moderators?
-        case PAP.ClearFlags =>
-          // Don't notify.
-        case PAP.HidePostClearFlags =>
-          // Don't notify.
-        case pin: PAP.PinPostAtPosition =>
-          // Don't notify.
-        case PAP.CollapsePost | PAP.CollapseTree | PAP.CloseTree =>
-          // Don't notify.
-        case _: PAP.DeletePost | PAP.DeleteTree =>
-          // Don't notify.
-      }
-    }
+  private def generatedNotifications =
     Notifications(
       toCreate = notfsToCreate.toSeq,
       toDelete = notfsToDelete.toSeq)
-  }
 
 
-  private def makeNotfsForNewPost(postId: PostId, anyApproverId: Option[UserId]) {
-    val newPost = newPageParts.getPost(postId) getOrDie "DwE7GF36"
+  def generateForNewPost(page: Page2, newPost: Post2): Notifications = {
+    require(page.id == newPost.pageId)
 
-    if (!newPost.currentVersionApproved)
-      return
+    val approverId = newPost.approvedById getOrElse {
+      // Don't generate notifications until later when the post gets approved and becomes visible.
+      return Notifications.None
+    }
 
     // Direct reply notification.
     for {
-      parentPost <- newPost.parentPost
-      if parentPost.userId != newPost.userId
-      if anyApproverId.map(_ == parentPost.userId) != Some(true)
-      parentUser <- dao.loadUser(parentPost.userId)
-    }{
+      parentPost <- newPost.parent(page.parts)
+      if parentPost.createdById != newPost.createdById // not replying to oneself
+      if approverId != parentPost.createdById // the approver has already read newPost
+      parentUser <- transaction.loadUser(parentPost.createdById)
+    } {
       makeNewPostNotf(Notification.NewPostNotfType.DirectReply, newPost, parentUser)
     }
 
     // Mentions
-    val mentionedUsernames: Seq[String] = findMentions(newPost.approvedText getOrDie "DwE82FK4")
-    val mentionedUsers = mentionedUsernames.flatMap(dao.loadUserByEmailOrUsername)
+    val mentionedUsernames: Seq[String] = findMentions(newPost.approvedSource getOrDie "DwE82FK4")
+    val mentionedUsers = mentionedUsernames.flatMap(transaction.loadUserByEmailOrUsername)
     for (user <- mentionedUsers) {
       makeNewPostNotf(Notification.NewPostNotfType.Mention, newPost, user)
     }
 
     // People watching this topic or category
     for {
-      userId <- dao.loadUserIdsWatchingPage(page.id)
-      if userId != newPost.userId
-      user <- dao.loadUser(userId)
-    }{
+      userId <- transaction.loadUserIdsWatchingPage(page.id)
+      if userId != newPost.createdById.toString // UserId2
+      user <- transaction.loadUser(userId)
+    } {
       makeNewPostNotf(Notification.NewPostNotfType.NewPost, newPost, user)
     }
+
+    generatedNotifications
   }
 
 
-  private def makeNewPostNotf(notfType: Notification.NewPostNotfType, newPost: Post, user: User) {
+  private def makeNewPostNotf(notfType: Notification.NewPostNotfType, newPost: Post2, user: User) {
     if (sentToUserIds.contains(user.id))
       return
 
@@ -142,7 +95,8 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
       // Always generate notifications, so they can be shown in the user's inbox.
       // (But later on we might or might not send any email about the notifications,
       // depending on the user's preferences.)
-      val settings: RolePageSettings = dao.loadRolePageSettings(user.id, page.id)
+      val settings: RolePageSettings = transaction.loadRolePageSettingsOrDefault(
+        user.id, newPost.pageId)
       if (settings.notfLevel == PageNotfLevel.Muted) {
         return
       }
@@ -151,35 +105,34 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
     sentToUserIds += user.id
     notfsToCreate += Notification.NewPost(
       notfType,
-      siteId = dao.siteId,
-      createdAt = newPost.creationDati,
-      pageId = page.id,
+      siteId = transaction.siteId,
+      createdAt = newPost.createdAt,
+      pageId = newPost.pageId,
       postId = newPost.id,
-      byUserId = newPost.userId,
+      byUserId = newPost.createdById.toString, // UserId2
       toUserId = user.id)
   }
 
 
   /** Creates and deletes mentions, if the edits creates or deletes mentions.
     */
-  private def makeNotfsForEdits(postId: PostId) {
-    val oldPost = oldPageParts.getPost(postId) getOrDie "DwE0KBf5"
-    val newPost = newPageParts.getPost(postId) getOrDie "DwEG390X"
+  def generateForEdits(oldPost: Post2, newPost: Post2): Notifications = {
+    require(oldPost.pagePostId == newPost.pagePostId)
 
-    val oldMentions = findMentions(oldPost.approvedText getOrDie "DwE0YKW3").toSet
-    val newMentions = findMentions(newPost.approvedText getOrDie "DwE2BF81").toSet
+    val oldMentions = findMentions(oldPost.approvedSource getOrDie "DwE0YKW3").toSet
+    val newMentions = findMentions(newPost.approvedSource getOrDie "DwE2BF81").toSet
 
     val deletedMentions = oldMentions -- newMentions
     val createdMentions = newMentions -- oldMentions
 
-    val mentionsDeletedForUsers = deletedMentions.flatMap(dao.loadUserByEmailOrUsername)
-    val mentionsCreatedForUsers = createdMentions.flatMap(dao.loadUserByEmailOrUsername)
+    val mentionsDeletedForUsers = deletedMentions.flatMap(transaction.loadUserByEmailOrUsername)
+    val mentionsCreatedForUsers = createdMentions.flatMap(transaction.loadUserByEmailOrUsername)
 
     // Delete mentions.
     for (user <- mentionsDeletedForUsers) {
       notfsToDelete += NotificationToDelete.MentionToDelete(
-        siteId = dao.siteId,
-        pageId = page.id,
+        siteId = transaction.siteId,
+        pageId = newPost.pageId,
         postId = oldPost.id,
         toUserId = user.id)
     }
@@ -188,11 +141,15 @@ case class NotificationGenerator(page: PageNoPath, dao: SiteDao) {
     for (user <- mentionsCreatedForUsers) {
       makeNewPostNotf(Notification.NewPostNotfType.Mention, newPost, user)
     }
+
+    generatedNotifications
   }
 
 
-  private def makeNotfForVote(likeVote: RawPostAction[PAP.Vote]) {
-    // Delete this notf if deleting the vote, see [953kGF21X] in debiki-dao-rdb.
+  private def generateForVote(likeVote: RawPostAction[PAP.Vote]) {
+    // Delete this notf if deleting the vote, see [953kGF21X].
+    // Note: Need to fix NotificationsSiteDaoMixin.connectNotificationToEmail so it
+    // includes action_type and _sub_id in the where clause.
   }
 
 }

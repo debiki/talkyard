@@ -23,7 +23,7 @@ import controllers.Utils.parseIntOrThrowBadReq
 import controllers.Utils.ValidationImplicits._
 import debiki._
 import debiki.DebikiHttp._
-import debiki.dao.SiteDao
+import debiki.dao.{PageDao, SiteDao}
 import java.{util => ju}
 import play.api.mvc.{Action => _, _}
 import DbDao.PathClashException
@@ -148,7 +148,6 @@ class PageRequest[A](
   require(!pageExists || pageMeta.isDefined)
 
   pageMeta foreach { meta =>
-    require(meta.pageExists == pageExists)
     require(Some(meta.pageId) == pagePath.pageId)
   }
 
@@ -161,44 +160,6 @@ class PageRequest[A](
    */
   def thePageId : String = pagePath.pageId getOrElse
     throwNotFound("DwE93kD4", "Page does not exist: "+ pagePath.value)
-
-
-  /**
-   * The page this PageRequest concerns, or None if not found
-   * (e.g. if !pageExists, or if it was deleted just moments ago).
-   */
-  lazy val pageParts : Option[PageParts] =
-      if (pageExists) {
-        pageId.flatMap(id => dao.loadPageParts(id))
-      } else {
-        // Don't load the page even if it was *created* moments ago.
-        // having !pageExists and page_? = Some(..) feels risky.
-        None
-      }
-
-  /**
-   * The page this PageRequest concerns. Throws 404 Not Found if not found.
-   *
-   * (The page might have been deleted, just after the access control step.)
-   */
-  lazy val thePageParts : PageParts =
-    pageParts getOrElse throwNotFound("DwE43XWY", "Page not found, id: "+ pageId)
-
-  def thePageNoPath = PageNoPath(thePageParts, ancestorIdsParentFirst_!, thePageMeta)
-
-  /** Any page version specified in the query string, e.g.:
-    * ?view&version=2012-08-20T23:59:59Z
-    */
-  lazy val oldPageVersion: Option[ju.Date] = {
-    request.queryString.getEmptyAsNone("version") map { datiString =>
-      try {
-        parseIso8601DateTime(datiString)
-      } catch {
-        case ex: IllegalArgumentException =>
-          throwBadReq("DwE3DW27", "Bad version query param")
-      }
-    }
-  }
 
 
   /**
@@ -275,12 +236,9 @@ class DummyPageRequest[A](
   pageMeta: PageMeta,
   permsOnPage: PermsOnPage,
   dao: SiteDao,
-  dummyPageParts: PageParts,
   request: Request[A]) extends PageRequest[A](
     sid, xsrfToken, browserId, user, pageExists,  pagePath, Some(pageMeta),
     permsOnPage, dao, request) {
-
-  override lazy val pageParts: Option[PageParts] = Some(dummyPageParts)
 
   override lazy val ancestorIdsParentFirst_! : List[PageId] = Nil
 

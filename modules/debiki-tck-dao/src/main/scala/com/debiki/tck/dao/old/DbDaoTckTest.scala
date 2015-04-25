@@ -452,7 +452,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           // There page currently has no title.
           // It's published by default though.
           pageDetails.cachedTitle must_== None
-          pageDetails.pubDati must_!= None
+          pageDetails.publishedAt must_!= None
           // Shouldn't the page body post affect the
           // significant-modification-time?
           // pageDetails.sgfntModDati must_== None  -- or Some(date)?
@@ -543,8 +543,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             pageMeta.parentPageId must_== None
             pageMeta.embeddingPageUrl must_== Some(blogUrl)
             pageMeta.pageId must_== blogMainPageId
-            pageMeta.pubDati must_== None
-            pageMeta.cachedNumChildPages must_== 0
+            pageMeta.publishedAt must_== None
+            pageMeta.numChildPages must_== 0
           }
         }
       }
@@ -569,7 +569,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         dao.loadPageMeta(blogMainPageId) must beLike {
           case Some(pageMeta: PageMeta) => {
             pageMeta.pageId must_== blogMainPageId
-            pageMeta.cachedNumChildPages must_== 1
+            pageMeta.numChildPages must_== 1
           }
         }
       }
@@ -581,7 +581,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
             pageMeta.parentPageId must_== Some(blogMainPageId)
             pageMeta.embeddingPageUrl must_== None
             pageMeta.pageId must_== blogArticleId
-            pageMeta.pubDati must_== None
+            pageMeta.publishedAt must_== None
           }
         }
       }
@@ -645,23 +645,23 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         }
         // Edit meta (but not page role, cannot be changed)
         val nextDay = new ju.Date(
-          blogArticleMeta.modDati.getTime + 1000 * 3600 * 24)
+          blogArticleMeta.updatedAt.getTime + 1000 * 3600 * 24)
         val newMeta = blogArticleMeta.copy(
           parentPageId = None,
           embeddingPageUrl = Some("http://new-blog-post-url.example.com"),
-          modDati = nextDay,
-          pubDati = Some(nextDay),
+          updatedAt = nextDay,
+          publishedAt = Some(nextDay),
           // Use stupid incorrect values here, just for testing.
           cachedTitle = Some("NewCachedPageTitle"),
           cachedAuthorDispName = "cachedAuthorDispName",
-          cachedAuthorUserId = "cachedAuthorUserId",
+          authorId = "cachedAuthorUserId",
           cachedNumPosters = 11,
           cachedNumActions = 12,
           cachedNumPostsToReview = 13,
-          cachedNumPostsDeleted = 14,
-          cachedNumRepliesVisible = 15,
+          numRepliesVisible = 14,
+          numRepliesTotal = 15,
           cachedLastVisiblePostDati = Some(new ju.Date(12345)),
-          cachedNumChildPages = 17)
+          numChildPages = 17)
 
         dao.updatePageMeta(newMeta, old = blogArticleMeta)
 
@@ -675,7 +675,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         dao.loadPageMeta(blogMainPageId) must beLike {
           case Some(pageMeta: PageMeta) => {
             pageMeta.pageId must_== blogMainPageId
-            pageMeta.cachedNumChildPages must_== 0
+            pageMeta.numChildPages must_== 0
           }
         }
 
@@ -687,7 +687,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         dao.loadPageMeta(blogMainPageId) must beLike {
           case Some(pageMeta: PageMeta) => {
             pageMeta.pageId must_== blogMainPageId
-            pageMeta.cachedNumChildPages must_== 1
+            pageMeta.numChildPages must_== 1
           }
         }
       }

@@ -43,6 +43,9 @@ abstract class DebikiRequest[A] {
 
   def siteSettings = dao.loadWholeSiteSettings()
 
+  def browserIdData = BrowserIdData(ip = ip, idCookie = browserId.map(_.cookieValue),
+    fingerprint = 0) // skip for now
+
   def userIdData = UserIdData(
     userId = user.map(_.id) getOrElse UnknownUser.Id,
     ip = ip,
@@ -52,6 +55,7 @@ abstract class DebikiRequest[A] {
   def browserIdIsNew = browserId.map(_.isNew) == Some(true)
 
   def theUser = user_!
+  def theUserId = theUser.id2
 
   def user_! : User =
     user getOrElse throwForbidden("DwE86Wb7", "Not logged in")

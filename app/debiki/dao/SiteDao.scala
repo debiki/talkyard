@@ -43,7 +43,7 @@ object SiteDaoFactory {
     def newSiteDao(siteId: SiteId): SiteDao = {
       val siteDbDao = _dbDaoFactory.newSiteDbDao(siteId)
       val serializingDbDao = new SerializingSiteDbDao(siteDbDao)
-      new NonCachingSiteDao(serializingDbDao)
+      new NonCachingSiteDao(serializingDbDao, _dbDaoFactory)
     }
   }
 
@@ -63,13 +63,21 @@ abstract class SiteDao
   with AssetBundleDao
   with SettingsDao
   with SpecialContentDao
-  with PageDao
+  with PagesDao
   with PagePathMetaDao
-  with PageSummaryDao
+  with PageStuffDao
   with RenderedPageHtmlDao
+  with PostsDao
   with UserDao {
 
   def siteDbDao: SiteDbDao
+  def dbDao2: DbDao2
+
+  def readWriteTransaction[R](fn: SiteTransaction => R, allowOverQuota: Boolean = false): R =
+    dbDao2.readWriteSiteTransaction(siteId, allowOverQuota) { fn(_) }
+
+  def readOnlyTransaction[R](fn: SiteTransaction => R): R =
+    dbDao2.readOnlySiteTransaction(siteId) { fn(_) }
 
 
   // ----- Tenant
@@ -127,30 +135,6 @@ abstract class SiteDao
   }
 
 
-  // ----- Load pages
-
-  /**
-   * Loads articles (title + body) e.g. for inclusion on a blog post list page.
-   */
-  def loadPageBodiesTitles(pageIds: Seq[PageId]): Map[PageId, PageParts] =
-    siteDbDao.loadPageBodiesTitles(pageIds)
-
-  def loadPostsRecentlyActive(limit: Int): (Seq[Post], People) =
-    siteDbDao.loadPostsRecentlyActive(limit, offset = 0)
-
-  def loadFlags(pagePostIds: Seq[PagePostId])
-        : (Map[PagePostId, Seq[RawPostAction[PAP.Flag]]], People) =
-    siteDbDao.loadFlags(pagePostIds)
-
-  def loadRecentActionExcerpts(
-        fromIp: Option[String] = None,
-        byRole: Option[RoleId] = None,
-        pathRanges: PathRanges = PathRanges.Anywhere,
-        limit: Int): (Seq[PostAction[_]], People) =
-    siteDbDao.loadRecentActionExcerpts(fromIp = fromIp,
-      byRole = byRole, pathRanges = pathRanges, limit = limit)
-
-
   // ----- Full text search
 
   def fullTextSearch(phrase: String, anyRootPageId: Option[PageId]): Future[FullTextSearchResult] =
@@ -197,4 +181,6 @@ abstract class SiteDao
 
 
 
-class NonCachingSiteDao(val siteDbDao: SiteDbDao) extends SiteDao
+class NonCachingSiteDao(val siteDbDao: SiteDbDao, val dbDaoFactory: DbDaoFactory) extends SiteDao {
+  def dbDao2 = dbDaoFactory.newDbDao2()
+}

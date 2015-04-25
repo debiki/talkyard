@@ -18,6 +18,7 @@
 package controllers
 
 import actions.ApiActions.GetAction
+import debiki.dao.PageStuff
 import collection.mutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -27,6 +28,7 @@ import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
 import requests.GetRequest
+import scala.collection.mutable.ArrayBuffer
 import Utils.OkSafeJson
 import Utils.ValidationImplicits._
 import DebikiHttp.throwBadReq
@@ -44,7 +46,8 @@ object ForumController extends mvc.Controller {
     val orderOffset = parseSortOrderAndOffset(request)
     val topics: Seq[PagePathAndMeta] =
       request.dao.listTopicsInTree(rootPageId = categoryId, orderOffset, limit = NumTopicsToList)
-    val topicsJson: Seq[JsObject] = topics.map(topicToJson(_))
+    val pageStuffById = request.dao.loadPageStuff(topics.map(_.pageId))
+    val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
     val json = Json.obj("topics" -> topicsJson)
     OkSafeJson(json)
   }
@@ -58,20 +61,21 @@ object ForumController extends mvc.Controller {
     val recentTopicsByCategoryId =
       mutable.Map[PageId, Seq[PagePathAndMeta]]()
 
+    val pageIds = ArrayBuffer[PageId]()
+
     for (category <- categories) {
       val recentTopics = request.dao.listChildPages(parentPageIds = Seq(category.id),
         PageOrderOffset.ByPublTime, limit = 5, filterPageRole = Some(PageRole.ForumTopic))
       recentTopicsByCategoryId(category.id) = recentTopics
+      pageIds.append(category.pageId)
+      pageIds.append(recentTopics.map(_.pageId): _*)
     }
 
-    val summariesByCategoryId: Map[PageId, debiki.dao.PageSummary] =
-      request.dao.loadPageSummaries(categories.map(_.id))
+    val pageStuffById: Map[PageId, debiki.dao.PageStuff] =
+      request.dao.loadPageStuff(pageIds)
 
     val json = Json.obj("categories" -> categories.map({ category =>
-      categoryToJson(
-        category,
-        recentTopicsByCategoryId(category.id),
-        summariesByCategoryId(category.id))
+      categoryToJson(category, recentTopicsByCategoryId(category.id), pageStuffById)
     }))
 
     OkSafeJson(json)
@@ -102,16 +106,17 @@ object ForumController extends mvc.Controller {
 
 
   private def categoryToJson(category: PagePathAndMeta, recentTopics: Seq[PagePathAndMeta],
-      pageSummary: debiki.dao.PageSummary): JsObject = {
-    val name = category.meta.cachedTitle getOrElse "(Unnamed category)"
+      pageStuffById: Map[PageId, debiki.dao.PageStuff]): JsObject = {
+    val categoryStuff = pageStuffById.get(category.pageId) getOrDie "DwE5IKJ3"
+    val name = categoryStuff.title
     val slug = categoryNameToSlug(name)
-    val recentTopicsJson = recentTopics.map(topicToJson(_))
+    val recentTopicsJson = recentTopics.map(topicToJson(_, pageStuffById))
     Json.obj(
       "pageId" -> category.id,
       "name" -> name,
       "slug" -> slug,
-      "description" -> pageSummary.textExcerpt,
-      "numTopics" -> category.meta.cachedNumChildPages, // COULD use ??cachedNumTopics?? instead?
+      "description" -> categoryStuff.bodyExcerpt.getOrDie("DwE4KIGW3"),
+      "numTopics" -> category.meta.numChildPages, // COULD use ??cachedNumTopics?? instead?
                                                 // because child pages includes categories too.
       "recentTopics" -> recentTopicsJson)
   }
@@ -126,18 +131,19 @@ object ForumController extends mvc.Controller {
   }
 
 
-  def topicToJson(topic: PagePathAndMeta): JsObject = {
-    val createdEpoch = topic.meta.creationDati.getTime
-    val lastPostEpoch = topic.meta.cachedLastVisiblePostDati.map(_.getTime).get
+  def topicToJson(topic: PagePathAndMeta, pageStuffById: Map[PageId, PageStuff]): JsObject = {
+    val topicStuff = pageStuffById.get(topic.pageId) getOrDie "DwE1F2I7"
+    val createdEpoch = topic.meta.createdAt.getTime
+    val lastPostEpoch = topic.meta.bumpedAt.map(_.getTime) getOrElse createdEpoch
     Json.obj(
       "pageId" -> topic.id,
-      "title" -> topic.meta.cachedTitle,
+      "title" -> topicStuff.title,
       "url" -> topic.path.value,
       "categoryId" -> topic.parentPageId.getOrDie(
         "DwE49Fk3", s"Topic `${topic.id}', site `${topic.path.siteId}', has no parent page"),
-      "numPosts" -> JsNumber(topic.meta.cachedNumRepliesVisible + 1),
-      "numLikes" -> topic.meta.cachedNumLikes,
-      "numWrongs" -> topic.meta.cachedNumWrongs,
+      "numPosts" -> JsNumber(topic.meta.numRepliesVisible + 1),
+      "numLikes" -> topic.meta.numLikes,
+      "numWrongs" -> topic.meta.numWrongs,
       "createdEpoch" -> createdEpoch,
       "lastPostEpoch" -> lastPostEpoch)
   }

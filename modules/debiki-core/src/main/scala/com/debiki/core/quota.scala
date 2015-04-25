@@ -23,8 +23,7 @@ import java.{util => ju}
 
 case class OverQuotaException(
   siteId: SiteId,
-  resourceUsageBefore: ResourceUse,
-  resourceUsageAfter: ResourceUse)
+  resourceUsage: ResourceUse)
   extends DebikiException("DwE9Z53K7", "Disk quota exceeded")
 
 
@@ -39,7 +38,6 @@ case class ResourceUse(
    numPostTextBytes: Long = 0,
    numPostsRead: Long = 0,
    numActions: Int = 0,
-   numActionTextBytes: Long = 0,
    numNotfs: Int = 0,
    numEmailsSent: Int = 0) {
 
@@ -55,7 +53,6 @@ case class ResourceUse(
      numPostTextBytes: $numPostTextBytes,
      numPostsRead: $numPostsRead,
      numActions: $numActions,
-     numActionTextBytes: $numActionTextBytes,
      numNotfs: $numNotfs,
      numEmailsSent: $numEmailsSent)"""
 
@@ -72,7 +69,6 @@ case class ResourceUse(
     numPostTextBytes  * 3 + // *3 because of the full text search index. I'm just guessing
     numPostsRead      *  500 * 3 +  // ??
     numActions        *  500 * 3 +
-    numActionTextBytes +
     numNotfs          * 2000 * 3 +  // ??
     numEmailsSent     * 2000 * 3
 
