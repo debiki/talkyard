@@ -197,6 +197,7 @@ case class Post2(
   def isDeleted = deletedStatus.isDeleted
   def isSomeVersionApproved = approvedVersion.isDefined
   def isCurrentVersionApproved = approvedVersion == Some(currentVersion)
+  def isVisible = isSomeVersionApproved && !isHidden && !isDeleted
 
   def pagePostId = PagePostId(pageId, id)
   def hasAnId = id >= PageParts.LowestPostId

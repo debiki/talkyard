@@ -44,13 +44,16 @@ object Migration14 {
         siteTransaction.loadPagePartsOld(pageMeta.pageId) getOrDie "DwE0Pk3W2"
 
       var numRepliesVisible = 0
-      var numRepliesTotal = partsOld.getAllPosts.length
+      var numRepliesTotal = 0
 
       // Migrate posts.
       for (oldPost <- partsOld.getAllPosts) {
         val newPost = upgradePost(pageMeta.pageId, oldPost)
-        if (!newPost.isDeleted && newPost.approvedVersion.isDefined) {
-          numRepliesVisible += 1
+        if (newPost.isReply) {
+          numRepliesTotal += 1
+          if (newPost.isVisible) {
+            numRepliesVisible += 1
+          }
         }
         siteTransaction.insertPost(newPost)
       }
