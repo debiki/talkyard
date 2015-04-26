@@ -42,8 +42,8 @@ trait SiteTransaction {
   def insertPost(newPost: Post2)
   def updatePost(newPost: Post2)
 
-  def loadActionsByUserOnPage(userId: UserId2, pageId: PageId): immutable.Seq[PostAction2]
-  def loadActionsDoneToPost(pageId: PageId, postId: PostId): immutable.Seq[PostAction2]
+  def loadActionsByUserOnPage(userId: UserId2, pageId: PageId): immutable.Seq[PostAction]
+  def loadActionsDoneToPost(pageId: PageId, postId: PostId): immutable.Seq[PostAction]
 
   def deleteVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2): Boolean
   def insertVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2)

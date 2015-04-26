@@ -17,11 +17,8 @@
 
 package com.debiki.core
 
-import com.debiki.core.{PostActionPayload => PAP}
-import com.google.{common => guava}
 import java.{util => ju}
 import org.mindrot.jbcrypt.BCrypt
-import scala.collection.immutable
 import scala.concurrent.Future
 import DbDao._
 import EmailNotfPrefs.EmailNotfPrefs

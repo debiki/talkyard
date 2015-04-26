@@ -18,7 +18,6 @@
 package debiki.dao
 
 import com.debiki.core._
-import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}

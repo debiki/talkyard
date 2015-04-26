@@ -19,7 +19,6 @@ package controllers
 
 import actions.ApiActions._
 import com.debiki.core._
-import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.Prelude._
 import controllers.Utils._
 import debiki.DebikiHttp._

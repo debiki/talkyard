@@ -20,7 +20,6 @@ package controllers
 import actions.ApiActions.PostJsonAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.core.{PostActionPayload => PAP}
 import controllers.Utils.OkSafeJson
 import debiki._
 import debiki.DebikiHttp._

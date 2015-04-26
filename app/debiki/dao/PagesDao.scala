@@ -23,8 +23,6 @@ import com.debiki.core.User.SystemUserId
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
-import scala.collection.{mutable, immutable}
-import com.debiki.core.{PostActionPayload => PAP}
 
 
 /** Loads and saves pages and page parts (e.g. posts and patches).

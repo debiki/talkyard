@@ -20,8 +20,6 @@ package debiki
 import collection.{mutable, immutable}
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.core.{ PostActionPayload => PAP }
-import debiki.dao.SiteDao
 import java.{util => ju}
 import NotificationGenerator._
 

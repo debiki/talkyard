@@ -19,12 +19,10 @@ package controllers
 
 import actions.ApiActions._
 import com.debiki.core._
-import com.debiki.core.{PostActionPayload => PAP}
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
-import play.api.libs.json.JsObject
 
 
 

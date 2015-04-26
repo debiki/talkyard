@@ -117,7 +117,7 @@ object ReactJson {
 
     val topLevelComments = pageParts.topLevelComments
     val topLevelCommentIdsSorted =
-      Post.sortPosts2(topLevelComments).map(reply => JsNumber(reply.id))
+      Post2.sortPosts2(topLevelComments).map(reply => JsNumber(reply.id))
 
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
@@ -182,7 +182,7 @@ object ReactJson {
 
     val childrenSorted = {
       val children = page.parts.childrenOf(post.id)
-      Post.sortPosts2(children)
+      Post2.sortPosts2(children)
     }
 
     JsObject(Vector(
@@ -215,7 +215,7 @@ object ReactJson {
   /** Creates a dummy root post, needed when rendering React elements. */
   def embeddedCommentsDummyRootPost(topLevelComments: Seq[Post2]) = Json.obj(
     "postId" -> JsNumber(PageParts.BodyId),
-    "childIdsSorted" -> JsArray(Post.sortPosts2(topLevelComments).map(reply => JsNumber(reply.id))))
+    "childIdsSorted" -> JsArray(Post2.sortPosts2(topLevelComments).map(reply => JsNumber(reply.id))))
 
 
   val NoUserSpecificData = Json.obj(
