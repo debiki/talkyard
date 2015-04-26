@@ -65,7 +65,7 @@ object PageParts {
   *
   * TODO move to debiki-server instead?
   */
-abstract class PageParts2 extends People {
+abstract class PageParts extends People {
 
   private lazy val postsById: collection.Map[PostId, Post] = {
     val postsMap = mutable.HashMap[PostId, Post]()

@@ -166,7 +166,7 @@ object ReactJson {
 
   /** Private, so it cannot be called outside a transaction.
     */
-  private def postToJsonImpl(post: Post, page: Page2, includeUnapproved: Boolean = false)
+  private def postToJsonImpl(post: Post, page: Page, includeUnapproved: Boolean = false)
         : JsObject = {
     val people = page.parts
     val lastApprovedEditAt = post.lastApprovedEditAt map { date =>

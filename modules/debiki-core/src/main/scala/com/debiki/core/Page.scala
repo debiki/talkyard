@@ -26,7 +26,7 @@ import scala.collection.immutable
 /** A Page can be a blog post, a forum topic, a forum topic list, a Wiki page,
   * a Wiki main page, or a site's homepage, for example.
   */
-trait Page2 {
+trait Page {
 
   def id: PageId
   def siteId: SiteId
@@ -35,7 +35,7 @@ trait Page2 {
   def meta: PageMeta
   def path: PagePath
   def ancestorIdsParentFirst: immutable.Seq[PageId]
-  def parts: PageParts2
+  def parts: PageParts
 
 }
 

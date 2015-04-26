@@ -24,13 +24,13 @@ import scala.collection.immutable
 import Prelude._
 
 
-case class PageDao(override val id: PageId, transaction: SiteTransaction) extends Page2 {
+case class PageDao(override val id: PageId, transaction: SiteTransaction) extends Page {
 
   var _meta: Option[PageMeta] = null
   var _path: Option[PagePath] = null
   var _ancestorIdsParentFirst: immutable.Seq[PageId] = null
 
-  val parts = new PageParts2Dao(id, transaction)
+  val parts = new PagePartsDao(id, transaction)
 
   override def siteId = transaction.siteId
 
@@ -65,8 +65,8 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction) extend
 }
 
 
-case class PageParts2Dao(override val pageId: PageId, transaction: SiteTransaction)
-  extends PageParts2 {
+case class PagePartsDao(override val pageId: PageId, transaction: SiteTransaction)
+  extends PageParts {
 
   private var _usersById: Map[UserId, User] = null
   private var _allPosts: immutable.Seq[Post] = null

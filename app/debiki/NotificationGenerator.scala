@@ -40,7 +40,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       toDelete = notfsToDelete.toSeq)
 
 
-  def generateForNewPost(page: Page2, newPost: Post): Notifications = {
+  def generateForNewPost(page: Page, newPost: Post): Notifications = {
     require(page.id == newPost.pageId)
 
     val approverId = newPost.approvedById getOrElse {

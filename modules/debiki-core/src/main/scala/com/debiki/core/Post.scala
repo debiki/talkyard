@@ -254,10 +254,10 @@ case class Post(
   }
 
 
-  def parent(pageParts: PageParts2): Option[Post] =
+  def parent(pageParts: PageParts): Option[Post] =
     parentId.flatMap(pageParts.post)
 
-  def children(pageParts: PageParts2): Seq[Post] =
+  def children(pageParts: PageParts): Seq[Post] =
     pageParts.childrenOf(id)
 
 
