@@ -76,8 +76,6 @@ trait SiteTransaction {
   def loadPagePath(pageId: PageId): Option[PagePath]
   def insertPagePath(pagePath: PagePath)
 
-  def loadPagePartsOld(pageId: PageId): Option[PageParts]
-
   def currentTime: ju.Date
 
   def loadUser(userId: UserId2): Option[User] = loadUser(userId.toString)

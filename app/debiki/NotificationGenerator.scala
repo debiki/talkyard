@@ -146,11 +146,12 @@ case class NotificationGenerator(transaction: SiteTransaction) {
   }
 
 
+  /*
   private def generateForVote(likeVote: RawPostAction[PAP.Vote]) {
     // Delete this notf if deleting the vote, see [953kGF21X].
     // Note: Need to fix NotificationsSiteDaoMixin.connectNotificationToEmail so it
     // includes action_type and _sub_id in the where clause.
-  }
+  } */
 
 }
 

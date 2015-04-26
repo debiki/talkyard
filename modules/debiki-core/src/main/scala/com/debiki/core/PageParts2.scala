@@ -18,10 +18,7 @@
 package com.debiki.core
 
 import java.{util => ju}
-import com.debiki.core.{PostActionPayload => PAP}
-import com.debiki.core.PostActionPayload.EditPost
 import scala.collection.mutable.ArrayBuffer
-import scala.{collection => col}
 import scala.collection.{immutable, mutable}
 import Prelude._
 import PageParts._

@@ -24,6 +24,9 @@ import Prelude._
 
 
 
+/* I'll move this to the search engine instead, and stop indexing everything, not needed.
+   (Right now the full text search functionality is disabled.)
+
 /** Serializes things from/to JSON.
   * Hmm COULD use Writes and Reads instead:  http://stackoverflow.com/a/13925926/694469
   *
@@ -209,3 +212,4 @@ object Protocols {
   }
 
 }
+*/

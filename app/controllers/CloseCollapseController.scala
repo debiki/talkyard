@@ -27,7 +27,6 @@ import java.{util => ju}
 import play.api._
 import play.api.libs.json._
 import requests.JsonPostRequest
-import Utils.ValidationImplicits._
 
 
 /** Closes and collapses trees and posts.
@@ -36,28 +35,28 @@ object CloseCollapseController extends mvc.Controller {
 
 
   def collapsePost = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 5000) { apiReq =>
-    closeOrReopenTree(apiReq, PostActionPayload.CollapsePost)
+    closeOrReopenTree(apiReq, PostStatusAction.CollapsePost)
   }
 
 
   def collapseTree = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 5000) { apiReq =>
-    closeOrReopenTree(apiReq, PostActionPayload.CollapseTree)
+    closeOrReopenTree(apiReq, PostStatusAction.CollapseTree)
   }
 
 
   def closeTree = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 5000) { apiReq =>
-    closeOrReopenTree(apiReq, PostActionPayload.CloseTree)
+    closeOrReopenTree(apiReq, PostStatusAction.CloseTree)
   }
 
 
-  private def closeOrReopenTree(apiReq: JsonPostRequest, payload: PostActionPayload): mvc.Result = {
+  private def closeOrReopenTree(apiReq: JsonPostRequest, action: PostStatusAction): mvc.Result = {
     if (!apiReq.user_!.isAdmin)
       throwForbidden("DwE95Xf2", "Insufficient permissions to close and reopen threads")
 
     val pageId = (apiReq.body \ "pageId").as[PageId]
     val postId = (apiReq.body \ "postId").as[PostId]
 
-    apiReq.dao.changePostStatus(postId, pageId = pageId, payload, userId = apiReq.theUser.id2)
+    apiReq.dao.changePostStatus(postId, pageId = pageId, action, userId = apiReq.theUser.id2)
 
     OkSafeJson(ReactJson.postToJson2(postId = postId, pageId = pageId, // COULD stop including post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
       apiReq.dao, includeUnapproved = true))

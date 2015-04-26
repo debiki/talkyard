@@ -202,12 +202,6 @@ abstract class SiteDbDao {
 
   def loadPostsReadStats(pageId: PageId): PostsReadStats
 
-  /** Returns None if the page doesn't exist, and a
-    * Some(PageParts(the-page-id)) if it exists but is empty.
-    * Loads another site's page, if siteId is specified.
-    */
-  def loadPageParts(debateId: PageId, tenantId: Option[SiteId] = None): Option[PageParts]
-
 
   // ----- Users and permissions
 
@@ -509,11 +503,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
   def loadPostsReadStats(pageId: PageId): PostsReadStats = {
     _spi.loadPostsReadStats(pageId)
-  }
-
-  @deprecated("Use PageParts2 and Post2 instead", "Now")
-  def loadPageParts(debateId: PageId, tenantId: Option[SiteId]): Option[PageParts] = {
-    _spi.loadPageParts(debateId, tenantId)
   }
 
 

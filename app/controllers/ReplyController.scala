@@ -50,9 +50,11 @@ object ReplyController extends mvc.Controller {
     val pageReq = PageRequest.forPageThatExists(request, pageId = pageId) match {
       case Some(req) => req
       case None =>
+        unimplemented("Creating embedded comments page [DwE5UYK4]") /*
         val page = tryCreateEmbeddedCommentsPage(request, pageId, anyPageUrl)
           .getOrElse(throwNotFound("Dw2XEG60", s"Page `$pageId' does not exist"))
         PageRequest.forPageThatExists(request, pageId = page.id) getOrDie "DwE77PJE0"
+        */
     }
 
     val text = textUntrimmed.trim
@@ -68,10 +70,10 @@ object ReplyController extends mvc.Controller {
   }
 
 
+  /*
   private def tryCreateEmbeddedCommentsPage(
         request: DebikiRequest[_], pageId: PageId, anyPageUrl: Option[String]): Option[Page] = {
 
-    unimplemented("Creating embedded comments page", "DwE6KFI4") /* use createPage2 instead
     if (anyPageUrl.isEmpty)
       throwBadReq("Cannot create embedded page: embedding page URL unknown")
 
@@ -99,7 +101,7 @@ object ReplyController extends mvc.Controller {
 
     val newPage = request.dao.createPage(pageToCreate)
     Some(newPage)
-    */
   }
+    */
 
 }

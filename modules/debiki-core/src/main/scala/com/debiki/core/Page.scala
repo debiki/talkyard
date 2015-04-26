@@ -23,6 +23,9 @@ import scala.collection.immutable
 
 
 
+/** A Page can be a blog post, a forum topic, a forum topic list, a Wiki page,
+  * a Wiki main page, or a site's homepage, for example.
+  */
 trait Page2 {
 
   def id: PageId
@@ -37,70 +40,7 @@ trait Page2 {
 }
 
 
-trait HasPageMeta {
-  self: {
-    def meta: PageMeta
-    def ancestorIdsParentFirst: List[PageId]
-  } =>
-
-  require(meta.parentPageId == ancestorIdsParentFirst.headOption,
-    o"""Parent page id and ancestor ids mismatch, parent: ${meta.parentPageId}, ancestors:
-      ${ancestorIdsParentFirst} [DwE0FBY8]""")
-
-  def id = meta.pageId
-  def role = meta.pageRole
-  def parentPageId = meta.parentPageId
-
-  // Useful if referring to instance as e.g. "pathAndMeta", without "page" in the name.
-  def pageId = meta.pageId
-}
-
-
-
-trait HasPagePath {
-  self: { def path: PagePath } =>
-
-  def anyId = path.pageId
-  @deprecated("now", "use `siteId` instead")
-  def tenantId = path.tenantId
-  def siteId = path.tenantId
-  def folder = path.folder
-  def slug = path.pageSlug
-  def idShownInUrl = path.showId
-}
-
-
-
 object Page {
-
-  def apply(pathAndMeta: PagePathAndMeta, parts: PageParts): Page = Page(
-    meta = pathAndMeta.meta,
-    path = pathAndMeta.path,
-    ancestorIdsParentFirst = pathAndMeta.ancestorIdsParentFirst,
-    parts = parts)
-
-  def newPage(
-        pageRole: PageRole,
-        path: PagePath,
-        parts: PageParts,
-        publishDirectly: Boolean = false,
-        author: User,
-        url: Option[String] = None): Page = {
-    ??? /* TODO remove newPage(...)
-    val partsInclAuthor = parts + author
-    val meta = PageMeta.forNewPage(
-      pageRole,
-      author,
-      parts = partsInclAuthor,
-      creationDati = parts.oldestDati getOrElse new ju.Date,
-      publishDirectly = publishDirectly,
-      url = url)
-    Page(meta, path, ancestorIdsParentFirst = Nil, partsInclAuthor)
-    */
-  }
-
-  def newEmptyPage(pageRole: PageRole, path: PagePath, author: User) =
-    newPage(pageRole, path, PageParts(guid = "?"), author = author)
 
   def isOkayId(id: String): Boolean =
     id forall { char =>
@@ -112,49 +52,18 @@ object Page {
 }
 
 
-/** A Page can be a blog post, a forum topic, a forum topic list, a Wiki page,
-  * a Wiki main page, or a site's homepage — for example.
-  *
-  * @param meta Meta info on the page, e.g. creation date and author user id.
-  * @param path Where the page is located: site id + URL path to the page.
-  * @param parts Page contents: title, body and comments.
-  */
-case class Page(
-  meta: PageMeta,
-  path: PagePath,
-  ancestorIdsParentFirst: List[PageId],
-  parts: PageParts) extends HasPageMeta with HasPagePath {
-
-  requireMetaMatchesPaths(this)
-  require(meta.pageId == parts.id)
-
-  def hasIdAssigned = id != "?"
-
-  def copyWithNewId(newId: String) =
-    copy(
-      meta = meta.copy(pageId = newId),
-      path = path.copy(pageId = Some(newId)),
-      parts = parts.copy(guid = newId))
-
-  def copyWithNewSiteId(newSiteId: String) =
-    copy(path = path.copy(tenantId = newSiteId))
-
-  def copyWithNewAncestors(newAncestorIdsParentFirst: List[PageId]): Page =
-    copy(
-      meta = meta.copy(parentPageId = newAncestorIdsParentFirst.headOption),
-      ancestorIdsParentFirst = newAncestorIdsParentFirst)
-
-  def withoutPath = PageNoPath(parts, ancestorIdsParentFirst, meta)
-}
-
 
 /** A page that does not know what it contains (the `parts` fields is absent).
   */
 case class PagePathAndMeta(
   path: PagePath,
   ancestorIdsParentFirst: List[PageId],
-  meta: PageMeta)
-  extends HasPagePath with HasPageMeta {
+  meta: PageMeta) {
+
+  def id = meta.pageId
+  def pageId = meta.pageId
+  def parentPageId = meta.parentPageId
+  def pageRole = meta.pageRole
 
   requireMetaMatchesPaths(this)
 }
@@ -175,21 +84,6 @@ object requireMetaMatchesPaths {
       o"""meta.parentPageId != ancestorIdsParentFirst.head:
     ${page.meta.parentPageId} and ${page.ancestorIdsParentFirst}, page id: ${page.meta.pageId}""")
   }
-}
-
-
-
-/** A page that does not know where it's located (it doesn't know its URL or ancestor ids).
-  */
-case class PageNoPath(parts: PageParts, ancestorIdsParentFirst: List[PageId], meta: PageMeta)
-  extends HasPageMeta {
-
-  def +(user: User): PageNoPath =
-    copy(parts = parts + user)
-
-  def +(actionDto: RawPostAction[_]): PageNoPath =
-    copy(parts = parts + actionDto)
-
 }
 
 

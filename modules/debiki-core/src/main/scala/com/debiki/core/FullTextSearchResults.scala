@@ -28,7 +28,7 @@ object FullTextSearchResult {
  *  possible.
  */
 case class FullTextSearchHit(
-  post: Post,
+  post: Post2,
   score: Float,
   safeHighlightsHtml: List[String])
 

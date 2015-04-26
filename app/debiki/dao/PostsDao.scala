@@ -24,7 +24,6 @@ import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import scala.collection.{mutable, immutable}
-import com.debiki.core.{PostActionPayload => PAP}
 
 
 /** Loads and saves pages and page parts (e.g. posts and patches).
@@ -190,7 +189,8 @@ trait PostsDao {
   }
 
 
-  def changePostStatus(postId: PostId, pageId: PageId, action: PostActionPayload, userId: UserId2) {
+  def changePostStatus(postId: PostId, pageId: PageId, action: PostStatusAction, userId: UserId2) {
+    import com.debiki.core.{PostStatusAction => PSA}
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
 
@@ -202,12 +202,12 @@ trait PostsDao {
         if (postBefore.createdById != userId)
           throwForbidden("DwE0PK24", "You may not modify that post, it's not yours")
 
-        if (!action.isInstanceOf[PAP.DeletePost] && action != PAP.CollapsePost)
+        if (!action.isInstanceOf[PSA.DeletePost] && action != PSA.CollapsePost)
           throwForbidden("DwE5JKF7", "You may not modify the whole tree")
       }
 
       val isChangingDeletePostToDeleteTree =
-        postBefore.deletedStatus.onlyThisDeleted && action == PAP.DeleteTree
+        postBefore.deletedStatus.onlyThisDeleted && action == PSA.DeleteTree
       if (postBefore.isDeleted && !isChangingDeletePostToDeleteTree)
         throwForbidden("DwE5GUK5", "This post has been deleted")
 
@@ -215,18 +215,18 @@ trait PostsDao {
 
       // Update the directly affected post.
       val postAfter = action match {
-        case PAP.CloseTree =>
+        case PSA.CloseTree =>
           postBefore.copyWithNewStatus(transaction.currentTime, userId, treeClosed = true)
-        case PAP.CollapsePost =>
+        case PSA.CollapsePost =>
           postBefore.copyWithNewStatus(transaction.currentTime, userId, postCollapsed = true)
-        case PAP.CollapseTree =>
+        case PSA.CollapseTree =>
           postBefore.copyWithNewStatus(transaction.currentTime, userId, treeCollapsed = true)
-        case PAP.DeletePost(clearFlags) =>
+        case PSA.DeletePost(clearFlags) =>
           if (postBefore.isReply) {
             numRepliesGone += 1
           }
           postBefore.copyWithNewStatus(transaction.currentTime, userId, postDeleted = true)
-        case PAP.DeleteTree =>
+        case PSA.DeleteTree =>
           if (postBefore.isReply) {
             numRepliesGone += 1
           }
@@ -239,19 +239,19 @@ trait PostsDao {
       // thread that are being deleted recursively.
       for (successor <- page.parts.successorsOf(postId)) {
         val anyUpdatedSuccessor: Option[Post2] = action match {
-          case PAP.CloseTree =>
+          case PSA.CloseTree =>
             if (successor.closedStatus.areAncestorsClosed) None
             else Some(successor.copyWithNewStatus(
               transaction.currentTime, userId, ancestorsClosed = true))
-          case PAP.CollapsePost =>
+          case PSA.CollapsePost =>
             None
-          case PAP.CollapseTree =>
+          case PSA.CollapseTree =>
             if (successor.collapsedStatus.areAncestorsCollapsed) None
             else Some(successor.copyWithNewStatus(
               transaction.currentTime, userId, ancestorsCollapsed = true))
-          case PAP.DeletePost(clearFlags) =>
+          case PSA.DeletePost(clearFlags) =>
             None
-          case PAP.DeleteTree =>
+          case PSA.DeleteTree =>
             if (!successor.deletedStatus.isDeleted && successor.isReply) {
               numRepliesGone += 1
             }
@@ -329,8 +329,8 @@ trait PostsDao {
 
 
   def deletePost(pageId: PageId, postId: PostId, deletedById: UserId2) {
-    changePostStatus(pageId = pageId, postId = postId, action = PAP.DeletePost(clearFlags = false),
-      userId = deletedById)
+    changePostStatus(pageId = pageId, postId = postId, action =
+        PostStatusAction.DeletePost(clearFlags = false), userId = deletedById)
   }
 
 

@@ -22,10 +22,7 @@ import com.debiki.core._
 import java.{util => ju, io => jio}
 import scala.collection.JavaConversions._
 import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
-import FlagType.FlagType
 import Prelude._
-import DebikiHttp._
-import HtmlUtils._
 
 
 /**
@@ -90,15 +87,10 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
   }
 
 
-  val ccWikiLicense =
-    <a rel="license" href="http://creativecommons.org/licenses/by/3.0/"
-       target="_blank">CC BY-SA 3.0</a>
-
-
   def dialogTemplates = {
     <div id="dw-hidden-templates">
     { loginForms ++
-      deleteForm(None) }
+      deleteForm }
     </div>
   }
 
@@ -151,131 +143,8 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
       </div>
 
 
-  /**
-   * Lists improvement suggestions and improvements already applied.
-   *
-   * When submitted, posts a list of values like:
-   * 0-delete-093k25, 1-apply-0932kx3, ...
-   * "delete" means that an EditApp is to be deleted, that is, that
-   * the-edit-that-was-applied should be reverted. The id is an edit app id.
-   * "apply" means that an edit should be applied. The id is an edit id.
-   * The initial sequence number ("0-", "1-", ...) is the order in
-   * which the changes should be made.
-   * (One year later: Why didn't I simply use Json??)
-   */
-  def editsDialog(nipo: Post, page: PageParts, userName: Option[String],
-                  mayEdit: Boolean): NodeSeq = {
-    def xmlFor(edit: Patch): NodeSeq = {
-      val applied = edit.isApplied
-      def applier_! = page.people.user_!(edit.applierUserId.get)
-      <li class='dw-e-sg'>
-        <div class='dw-e-sg-e'>{
-            <div>{
-              (if (applied) "Suggested by " else "By ") ++
-              linkTo(edit.user_!) ++
-              dateAbbr(edit.creationDati, "dw-e-sg-dt")
-              }</div> ++
-            (if (!applied) Nil
-            else <div>Applied by { linkTo(applier_!) ++
-              dateAbbr(edit.applicationDati.get, "dw-e-ap-dt") }</div>)
-          }
-          <div class='dw-as'>{
-            val name = "dw-fi-appdel"
-            // The checkbox value is e.g. "10-delete-r0m84610qy",
-            // i.e. <seq-no>-<action>-<edit-id>. The sequence no
-            // is added by javascript; it specifies in which order the
-            // changes are to be made.
-            // (Namely the order in which the user checks/unchecks the
-            // checkboxes.)
-            if (!mayEdit) {
-              // For now, show no Apply/Undo button. COULD show *vote*
-              // buttons instead.
-              Nil
-            }
-            else if (!applied) {
-              val aplVal = "0-apply-"+ edit.id
-              val delVal = "0-delete-"+ edit.id
-              val aplId = name +"-apply-"+ edit.id
-              val delId = name +"-delete-"+ edit.id
-              <label for={aplId}>Apply</label>
-              <input id={aplId} type='checkbox' name={name} value={aplVal}/>
-              //<label for={delId}>Delete</label>
-              //<input id={delId} type='checkbox' name={name} value={delVal}/>
-            }
-            else {
-              val delVal = "0-delete-"+ edit.applicationActionId
-              val undoId = name +"-delete-"+ edit.id
-              <label for={undoId}>Undo</label>
-              <input id={undoId} type='checkbox' name={name} value={delVal}/>
-            }
-          }</div>
-          <pre class='dw-e-text'>{edit.patchText}</pre>
-          { edit.actualResult.map(result =>
-              <pre class='dw-e-rslt'>{result}</pre>).toList }
-        </div>
-      </li>
-    }
-
-    val pending = nipo.editsPendingDescTime
-          // Better keep sorted by time? and if people don't like them,
-          // they'll be deleted (faster)?
-          //.sortBy(e => -pageStats.likingFor(e).lowerBound)
-    // Must be sorted by time, most recent first (debiki.js requires this).
-    val applied = nipo.editsAppliedDescTime
-    val cssMayEdit = if (mayEdit) "dw-e-sgs-may-edit" else ""
-    val cssArtclBody = if (nipo.id == PageParts.BodyId) " dw-ar-p-bd" else ""
-
-    <form id='dw-e-sgs'
-          class={cssMayEdit} title='Improvements'>
-      { _xsrfToken }
-      <div class="row">
-        <div id='dw-e-sgss' class="col-md-2">
-          <h3>Improvement suggestions:</h3>
-          <div id='dw-e-sgs-pending'>
-            <ol class='dw-e-sgs'>{
-              for (edit <- pending) yield xmlFor(edit)
-            }</ol>
-          </div>
-          <h3>Improvements already applied:</h3>
-          <div id='dw-e-sgs-applied'>
-            <ol class='dw-e-sgs'>{
-              for (editApplied <- applied) yield xmlFor(editApplied)
-            }</ol>
-          </div>
-          {/* cold show original text on hover.
-          <div id='dw-e-sgs-org-lbl'>Original text</div> */}
-          <pre id='dw-e-sgs-org-src'>{nipo.textInitially}</pre>
-        </div>
-        <div id='dw-e-sgs-diff' class="col-md-3">{/* COULD rename to -imp-diff */}
-          <h3>This improvement:</h3>
-          <div id='dw-e-sgs-diff-text'>
-          </div>
-        </div>
-        <div id='dw-e-sgs-save-diff'>
-          <h3>Changes to save:</h3>
-          <div id='dw-e-sgs-save-diff-text'>
-          </div>
-        </div>
-        <div id='dw-e-sgs-prvw' class="col-md-7">
-          <h3>Preview:</h3>
-          <div class={"dw-p-bd"+ cssArtclBody}>
-            <div id='dw-e-sgs-prvw-html' class='dw-p-bd-blk'/>
-          </div>
-        </div>
-      </div>
-      <div class='dw-submit-set'>
-        <input type='submit' class='dw-fi-submit' value='Save'/>
-        <input type='button' class='dw-fi-cancel' value='Cancel'/>
-      </div>
-    </form>
-  }
-
-
-  def deleteForm(postToDelete: Option[Post]): NodeSeq = {
-    val deleteAction =
-      if (postToDelete.isDefined) "?delete="+ postToDelete.get.id
-      else "" // Javascript will fill in post id, do nothing here
-
+  def deleteForm: NodeSeq = {
+    val deleteAction = ""
     <div class='dw-fs' title='Delete Comment'>
       <form id='dw-f-dl' action={deleteAction + _viewRoot}
             accept-charset='UTF-8' method='post'>{
@@ -299,48 +168,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
       }
       </form>
     </div>
-  }
-
-
-  def linkTo(user: User): NodeSeq = {
-    var url = s"/-/users/#/id/${user.id}"
-
-    val nameElem =
-      if (user.isGuest) {
-        val fullName = <span class="dw-fullname">{ user.displayName }</span>
-        // Indicate that the user was not logged in, that we're not sure
-        // about his/her identity, by appending "??". If however s/he
-        // provided an email address then only append one "?", because
-        // other people probaably don't know what is it, so it's harder
-        // for them people to impersonate her.
-        // (Well, at least if I some day in some way indicate that two
-        // persons with the same name actually have different emails.)
-        val guestMark = <span class='dw-lg-t-spl'>{if (user.email isEmpty) "??" else "?"}</span>
-        fullName ++ guestMark
-      }
-      else {
-        val usernameOrFullName = user.username match {
-          case Some(username) => <span class="dw-username">{ username }</span>
-          case None => <span class="dw-fullname">{ user.displayName }</span>
-        }
-
-        val fullNameOrNil = user.username match {
-          case None => Nil
-          case Some(_) =>
-            // `usernameOrFullName` contains the username not the full name.
-            <span class="dw-fullname"> ({user.displayName})</span>
-        }
-
-        usernameOrFullName ++ fullNameOrNil
-      }
-
-    val userLink = if (url nonEmpty) {
-      <a class='dw-p-by' href={url} data-dw-u-id={user.id} rel='nofollow'>{nameElem}</a>
-    } else {
-      <span class='dw-p-by' data-dw-u-id={user.id}>{nameElem}</span>
-    }
-
-    userLink
   }
 
 }

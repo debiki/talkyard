@@ -28,21 +28,7 @@ import requests.PageRequest
 object TemplateRenderer {
 
 
-  def renderTemplate(pageReq: PageRequest[_], appendToBody: xml.NodeSeq = Nil)
-        : String =
-    try {
-      renderTemplateImpl(pageReq, appendToBody)
-    }
-    catch {
-      case ex: PageConfigException =>
-        views.html.specialpages.brokenPage(ex).body
-      case ex: BadTemplateException =>
-        views.html.specialpages.brokenPage(ex).body
-    }
-
-
-  private def renderTemplateImpl(
-        pageReq: PageRequest[_], appendToBody: xml.NodeSeq): String = {
+  def renderTemplate(pageReq: PageRequest[_], appendToBody: xml.NodeSeq = Nil): String = {
 
     val tpi = new TemplateProgrammingInterface(pageReq, appendToBody)
 
@@ -75,6 +61,7 @@ object TemplateRenderer {
 
 
   def renderThemeTemplate(template: String, arguments: Seq[AnyRef]): String = {
+    // WOULD remove this dynamic stuff, no longer needed, templates can no longer be edited/added.
     val viewClassName = s"views.html.templates.$template"
     try {
       val viewClass : Class[_] = Play.current.classloader.loadClass(viewClassName)
@@ -86,10 +73,10 @@ object TemplateRenderer {
     }
     catch {
       case ex: jl.ClassNotFoundException =>
-        throw PageConfigException(
+        throw DebikiException(
           "DwE7F3X9", s"Template not found: `$template'")
       case ex: jl.NoSuchMethodException =>
-        throw new PageConfigException(
+        throw new DebikiException(
           "DwE68St8", o"""Template '$template.scala.html' is broken.
           The method declaration at the top of the file (that is,
           the "@(....) line) is probably incorrect? I got these parameter types:
@@ -99,24 +86,6 @@ object TemplateRenderer {
         val originalException = wrappingException.getCause
         throw originalException
     }
-  }
-
-
-  class PageConfigException(errorCode: String, details: String)
-    extends DebikiException(errorCode, details)
-
-  object PageConfigException {
-    def apply(errorCode: String, details: String) =
-      new PageConfigException(errorCode, details)
-  }
-
-
-  class BadTemplateException(errorCode: String, details: String)
-    extends DebikiException(errorCode, details)
-
-  object BadTemplateException {
-    def apply(errorCode: String, details: String) =
-      new BadTemplateException(errorCode, details)
   }
 
 }

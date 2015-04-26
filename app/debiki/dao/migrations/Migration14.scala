@@ -28,7 +28,11 @@ object Migration14 {
 
   var siteTransaction: SiteTransaction = null
 
+  /** Does nothing nowadays, because this migration has already been completed
+    * everywhere, it's needed no more.
+    */
   def run(systemTransaction: SystemTransaction) {
+    return /*
     val allSites = systemTransaction.loadSites()
     for (site <- allSites) {
       siteTransaction = systemTransaction.siteTransaction(site.id)
@@ -36,9 +40,10 @@ object Migration14 {
       for (pageMeta <- allPageMetas) {
         migratePage(pageMeta)
       }
+      */
     }
 
-
+    /*
     def migratePage(pageMeta: PageMeta) {
       val partsOld: PageParts =
         siteTransaction.loadPagePartsOld(pageMeta.pageId) getOrDie "DwE0Pk3W2"
@@ -205,4 +210,5 @@ object Migration14 {
         numTimesRead = 0)
     }
   }
+    */
 }

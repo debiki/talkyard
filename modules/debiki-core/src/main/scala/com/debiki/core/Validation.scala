@@ -76,7 +76,7 @@ object Validation {
     if (password.length > 50)
       return Bad("The password is too long")
 
-    // WOULD check that the password is strong
+    // SHOULD check that the password is strong, use https://github.com/dropbox/zxcvbn?
     Good(password)
   }
 

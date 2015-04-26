@@ -29,11 +29,22 @@ import play.api.libs.json.JsObject
 
 
 /** Pins a comment by position, or pins votes to it.
+  *
+  * Old comment from somewhere else:
+  *   Pins a post at e.g. position 3. This pushes any other posts already pinned
+  * at e.g. positions 3, 4, and 5 one step to the right, to positions 4, 5 and 6.
+  * So after a while, the effective position of a pinned post might have changed
+  * from X to X + Y where Y is the number of new posts pinned at or before X.
+  * The effective position of a post is computed lazily when the page is rendered.
+  *
+  * @param position 1 means place first, 2 means place first but one, and so on.
+  *   -1 means place last, -2 means last but one, and so on.
   */
 object PinController extends mvc.Controller {
 
 
   def pinAtPosition = PostJsonAction(RateLimits.PinPost, maxLength = 1000) { apiReq =>
+    Prelude.unimplemented("Pinning posts", "DwE5JKEG3") /*
 
     val pageIdsAndActions: Seq[(PageId, RawPostAction[PAP.PinPostAtPosition])] =
       for (pinPostJson <- apiReq.body.as[Vector[JsObject]]) yield {
@@ -47,7 +58,6 @@ object PinController extends mvc.Controller {
         (pageId, action)
       }
 
-    Prelude.unimplemented("Pinning posts", "DwE5JKEG3")
     /* Stop using crazy groupedByPageId. Now I deleted it :-)
     pageIdsAndActions.groupedByPageId foreach { case (pageId, actions) =>
       val permsOnPage = apiReq.dao.loadPermsOnPage(apiReq, pageId)
@@ -60,6 +70,7 @@ object PinController extends mvc.Controller {
 
     // The client already knows where to place the pinned post, so simply:
     Ok
+    */
   }
 
 }
