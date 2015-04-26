@@ -32,15 +32,15 @@ trait SiteTransaction {
   def loadResourceUsage(): ResourceUse
   def loadAncestorPostIdsParentFirst(pageId: PageId): immutable.Seq[PageId]
 
-  def loadPost(pageId: PageId, postId: PostId): Option[Post2]
-  def loadThePost(pageId: PageId, postId: PostId): Post2 =
+  def loadPost(pageId: PageId, postId: PostId): Option[Post]
+  def loadThePost(pageId: PageId, postId: PostId): Post =
     loadPost(pageId, postId).getOrElse(throw PostNotFoundException(pageId, postId))
 
-  def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post2]
-  def loadPosts(pagePostIds: Iterable[PagePostId]): immutable.Seq[Post2]
-  def loadPostsToReview(): immutable.Seq[Post2]
-  def insertPost(newPost: Post2)
-  def updatePost(newPost: Post2)
+  def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
+  def loadPosts(pagePostIds: Iterable[PagePostId]): immutable.Seq[Post]
+  def loadPostsToReview(): immutable.Seq[Post]
+  def insertPost(newPost: Post)
+  def updatePost(newPost: Post)
 
   def loadActionsByUserOnPage(userId: UserId2, pageId: PageId): immutable.Seq[PostAction]
   def loadActionsDoneToPost(pageId: PageId, postId: PostId): immutable.Seq[PostAction]

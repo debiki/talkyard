@@ -236,7 +236,7 @@ case class Post(
 
   def numFlags = numPendingFlags + numHandledFlags
 
-  def createdByUser(people: People2): User =
+  def createdByUser(people: People): User =
     people.theUser(createdById)
 
 

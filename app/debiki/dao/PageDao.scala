@@ -69,7 +69,7 @@ case class PageParts2Dao(override val pageId: PageId, transaction: SiteTransacti
   extends PageParts2 {
 
   private var _usersById: Map[UserId, User] = null
-  private var _allPosts: immutable.Seq[Post2] = null
+  private var _allPosts: immutable.Seq[Post] = null
 
   override def theUser(userId: UserId2): User = {
     loadUsersOnPage()
@@ -83,7 +83,7 @@ case class PageParts2Dao(override val pageId: PageId, transaction: SiteTransacti
     }
   }
 
-  override def allPosts: Seq[Post2] = {
+  override def allPosts: Seq[Post] = {
     if (_allPosts eq null) {
       loadAllPosts()
     }

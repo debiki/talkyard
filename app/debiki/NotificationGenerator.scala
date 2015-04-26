@@ -40,7 +40,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       toDelete = notfsToDelete.toSeq)
 
 
-  def generateForNewPost(page: Page2, newPost: Post2): Notifications = {
+  def generateForNewPost(page: Page2, newPost: Post): Notifications = {
     require(page.id == newPost.pageId)
 
     val approverId = newPost.approvedById getOrElse {
@@ -78,7 +78,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
   }
 
 
-  private def makeNewPostNotf(notfType: Notification.NewPostNotfType, newPost: Post2, user: User) {
+  private def makeNewPostNotf(notfType: Notification.NewPostNotfType, newPost: Post, user: User) {
     if (sentToUserIds.contains(user.id))
       return
 
@@ -114,7 +114,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
 
   /** Creates and deletes mentions, if the edits creates or deletes mentions.
     */
-  def generateForEdits(oldPost: Post2, newPost: Post2): Notifications = {
+  def generateForEdits(oldPost: Post, newPost: Post): Notifications = {
     require(oldPost.pagePostId == newPost.pagePostId)
 
     val oldMentions = findMentions(oldPost.approvedSource getOrDie "DwE0YKW3").toSet

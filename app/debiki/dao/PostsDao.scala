@@ -79,7 +79,7 @@ trait PostsDao {
           SystemUserId
         }
 
-      val newPost = Post2.create(
+      val newPost = Post.create(
         siteId = siteId,
         pageId = pageId,
         postId = postId,
@@ -238,7 +238,7 @@ trait PostsDao {
       // Update any indirectly affected posts, e.g. subsequent comments in the same
       // thread that are being deleted recursively.
       for (successor <- page.parts.successorsOf(postId)) {
-        val anyUpdatedSuccessor: Option[Post2] = action match {
+        val anyUpdatedSuccessor: Option[Post] = action match {
           case PSA.CloseTree =>
             if (successor.closedStatus.areAncestorsClosed) None
             else Some(successor.copyWithNewStatus(
@@ -437,7 +437,7 @@ trait PostsDao {
     siteDbDao.loadPostsReadStats(pageId)
 
 
-  def loadPost(pageId: PageId, postId: PostId): Option[Post2] =
+  def loadPost(pageId: PageId, postId: PostId): Option[Post] =
     readOnlyTransaction(_.loadPost(pageId, postId))
 
 
@@ -447,7 +447,7 @@ trait PostsDao {
   }
 
 
-  private def updateVoteCounts(post: Post2, transaction: SiteTransaction) {
+  private def updateVoteCounts(post: Post, transaction: SiteTransaction) {
     val actions = transaction.loadActionsDoneToPost(post.pageId, postId = post.id)
     val readStats = transaction.loadPostsReadStats(post.pageId, Some(post.id))
     val postAfter = post.copyWithUpdatedVoteAndReadCounts(actions, readStats)

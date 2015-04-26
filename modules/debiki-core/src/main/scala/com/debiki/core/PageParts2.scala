@@ -24,6 +24,38 @@ import Prelude._
 import PageParts._
 
 
+object PageParts {
+
+
+  // Letting the page body / original post be number 1 is compatible with Discourse.
+  val TitleId = 0
+  val BodyId = 1
+  val FirstReplyId = 2
+
+  val LowestPostId = TitleId
+  assert(LowestPostId == 0)
+
+  val NoId = -1
+
+  // These are used when new comments or actions are submitted to the server.
+  // When they're submitted, their ids are unknown (the server has not yet
+  // assigned them any id).
+  val UnassignedId = -1001
+  val UnassignedId2 = -1002
+  val UnassignedId3 = -1003
+  val UnassignedId4 = -1004
+  def isActionIdUnknown(id: ActionId) = id <= UnassignedId
+
+
+  def isArticleOrConfigPostId(id: ActionId) =
+    id == PageParts.BodyId || id == PageParts.TitleId
+
+
+  def isReply(postId: PostId) = postId >= FirstReplyId
+
+}
+
+
 
 /** The parts of a page are 1) posts: any title post, any body post, and any comments,
   * and 2) people, namely those who have authored or edited the posts.
@@ -33,22 +65,22 @@ import PageParts._
   *
   * TODO move to debiki-server instead?
   */
-abstract class PageParts2 extends People2 {
+abstract class PageParts2 extends People {
 
-  private lazy val postsById: collection.Map[PostId, Post2] = {
-    val postsMap = mutable.HashMap[PostId, Post2]()
+  private lazy val postsById: collection.Map[PostId, Post] = {
+    val postsMap = mutable.HashMap[PostId, Post]()
     for (post <- allPosts) {
       postsMap.put(post.id, post)
     }
     postsMap
   }
 
-  private lazy val childrenByParentId: collection.Map[PostId, immutable.Seq[Post2]] = {
+  private lazy val childrenByParentId: collection.Map[PostId, immutable.Seq[Post]] = {
     // COULD find out how to specify the capacity?
-    val childMap = mutable.HashMap[PostId, Vector[Post2]]()
+    val childMap = mutable.HashMap[PostId, Vector[Post]]()
     for (post <- allPosts) {
       val parentIdOrNoId = post.parentId getOrElse PageParts.NoId
-      var siblings = childMap.getOrElse(parentIdOrNoId, Vector[Post2]())
+      var siblings = childMap.getOrElse(parentIdOrNoId, Vector[Post]())
       siblings = siblings :+ post
       childMap.put(parentIdOrNoId, siblings)
     }
@@ -64,17 +96,17 @@ abstract class PageParts2 extends People2 {
   }
 
   def pageId: PageId
-  def titlePost: Option[Post2] = post(PageParts.TitleId)
+  def titlePost: Option[Post] = post(PageParts.TitleId)
 
-  def topLevelComments: immutable.Seq[Post2] =
+  def topLevelComments: immutable.Seq[Post] =
     childrenByParentId.getOrElse(PageParts.NoId, Nil) filterNot { post =>
       PageParts.isArticleOrConfigPostId(post.id)
     }
 
-  def allPosts: Seq[Post2]
+  def allPosts: Seq[Post]
 
-  def post(postId: PostId): Option[Post2] = postsById.get(postId)
-  def thePost(postId: PostId): Post2 = post(postId) getOrDie "DwE9PKG3"
+  def post(postId: PostId): Option[Post] = postsById.get(postId)
+  def thePost(postId: PostId): Post = post(postId) getOrDie "DwE9PKG3"
 
 
   def numRepliesTotal = allPosts.length
@@ -86,13 +118,13 @@ abstract class PageParts2 extends People2 {
   def theUser(userId: UserId2): User
 
 
-  def childrenOf(postId: PostId): immutable.Seq[Post2] =
+  def childrenOf(postId: PostId): immutable.Seq[Post] =
     childrenByParentId.getOrElse(postId, Nil)
 
 
-  def successorsOf(postId: PostId): immutable.Seq[Post2] = {
-    val pending = ArrayBuffer[Post2](childrenByParentId.getOrElse(postId, Nil): _*)
-    val successors = ArrayBuffer[Post2]()
+  def successorsOf(postId: PostId): immutable.Seq[Post] = {
+    val pending = ArrayBuffer[Post](childrenByParentId.getOrElse(postId, Nil): _*)
+    val successors = ArrayBuffer[Post]()
     while (pending.nonEmpty) {
       val next = pending.remove(0)
       if (successors.find(_.id == next.id).nonEmpty) {
@@ -115,14 +147,14 @@ abstract class PageParts2 extends People2 {
   }
 
 
-  def parentOf(postId: PostId): Option[Post2] =
+  def parentOf(postId: PostId): Option[Post] =
     thePost(postId).parentId.map(id => thePost(id))
 
 
   /** Ancestors, starting with postId's parent. */
-  def ancestorsOf(postId: PostId): List[Post2] = {
-    var ancestors: List[Post2] = Nil
-    var curPost: Option[Post2] = Some(thePost(postId))
+  def ancestorsOf(postId: PostId): List[Post] = {
+    var ancestors: List[Post] = Nil
+    var curPost: Option[Post] = Some(thePost(postId))
     while ({
       curPost = parentOf(curPost.get.id)
       curPost.nonEmpty
@@ -159,12 +191,5 @@ abstract class PageParts2 extends People2 {
     }
     commonAncestorIds.head
   }
-
-}
-
-
-abstract class People2 {
-
-  def theUser(id: UserId2): User
 
 }

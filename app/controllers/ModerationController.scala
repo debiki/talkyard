@@ -115,7 +115,7 @@ object ModerationController extends mvc.Controller {
   }
 
 
-  private def makeJsonSinglePost(post: Post2, thingsToReview: ThingsToReview): JsValue = {
+  private def makeJsonSinglePost(post: Post, thingsToReview: ThingsToReview): JsValue = {
     //val pageMeta = thingsToReview.thePage(post.pageId)
     val author = thingsToReview.theUser(post.createdById)
     val anyLastEditor = post.lastEditedById.map(thingsToReview.theUser)

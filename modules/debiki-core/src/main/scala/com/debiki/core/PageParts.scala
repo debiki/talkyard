@@ -22,38 +22,6 @@ import scala.collection.{immutable => imm, mutable => mut}
 import Prelude._
 
 
-object PageParts {
-
-
-  // Letting the page body / original post be number 1 is compatible with Discourse.
-  val TitleId = 0
-  val BodyId = 1
-  val FirstReplyId = 2
-
-  val LowestPostId = TitleId
-  assert(LowestPostId == 0)
-
-  val NoId = -1
-
-  // These are used when new comments or actions are submitted to the server.
-  // When they're submitted, their ids are unknown (the server has not yet
-  // assigned them any id).
-  val UnassignedId = -1001
-  val UnassignedId2 = -1002
-  val UnassignedId3 = -1003
-  val UnassignedId4 = -1004
-  def isActionIdUnknown(id: ActionId) = id <= UnassignedId
-
-
-  def isArticleOrConfigPostId(id: ActionId) =
-    id == PageParts.BodyId || id == PageParts.TitleId
-
-
-  def isReply(postId: PostId) = postId >= FirstReplyId
-
-}
-
-
 case class UserPostVotes(
   votedLike: Boolean,
   votedWrong: Boolean,
