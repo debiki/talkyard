@@ -24,29 +24,10 @@ import Prelude._
 import User.{isRoleId, isGuestId, checkId}
 
 
-object People {
-  val None = People(Nil)
-}
 
+abstract class People {
 
-// COULD remove, use a Map[UserId, User] instead?
-//
-case class People(users: List[User] = Nil) {
-
-  def + (user: User) = copy(users = user :: users)
-
-  def ++ (people: People) = People(users = people.users ::: users)
-
-  def user(id: String): Option[User] =
-    if (id == SystemUser.User.id)
-      Some(SystemUser.User)
-    else if (id == UnknownUser.Id)
-      Some(UnknownUser.User)
-    else
-      users.find(_.id == id)  // COULD optimize
-
-  def user_!(id: String): User = user(id) getOrElse runErr(
-    "DwE730krq849", "User not found: "+ safed(id))
+  def theUser(id: UserId2): User
 
 }
 
@@ -561,8 +542,6 @@ object SystemUser {
   val User = core.User(id = "-1", displayName = "System", username = None,
     createdAt = None, email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive,
     emailVerifiedAt = None, isAdmin = true)
-
-  val Person = People(List(User))
 
   val UserIdData = core.UserIdData(
     userId = SystemUser.User.id,

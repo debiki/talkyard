@@ -128,7 +128,7 @@ trait SpecialContentDao {
     val pageMeta = PageMeta.forNewPage(pageId, PageRole.SpecialContent, authorId,
       transaction.currentTime, parentPageId = None, url = None, publishDirectly = true)
 
-    val bodyPost = Post2.createBody(
+    val bodyPost = Post.createBody(
       siteId = siteId,
       pageId = pageId,
       createdAt = transaction.currentTime,
@@ -142,7 +142,7 @@ trait SpecialContentDao {
   }
 
 
-  protected def updateSpecialContentPage(oldPost: Post2, newSource: String, htmlSanitized: String,
+  protected def updateSpecialContentPage(oldPost: Post, newSource: String, htmlSanitized: String,
         editorId: UserId2, transaction: SiteTransaction) {
     if (oldPost.currentSource == newSource)
       return
@@ -195,7 +195,7 @@ trait CachingSpecialContentDao extends SpecialContentDao {
   }
 
 
-  override def updateSpecialContentPage(oldPost: Post2, newSource: String, htmlSanitized: String,
+  override def updateSpecialContentPage(oldPost: Post, newSource: String, htmlSanitized: String,
         editorId: UserId2, transaction: SiteTransaction) {
     super.updateSpecialContentPage(oldPost, newSource, htmlSanitized = htmlSanitized,
       editorId = editorId, transaction)

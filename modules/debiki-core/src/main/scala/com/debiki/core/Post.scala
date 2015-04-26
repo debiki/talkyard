@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012-2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,779 +17,485 @@
 
 package com.debiki.core
 
-import collection.{immutable => imm, mutable => mut}
-import com.debiki.core.{PostActionPayload => PAP}
+import com.debiki.core._
+import com.debiki.core.Prelude._
+import com.debiki.core.User.SystemUserId
 import java.{util => ju}
-import play.api.libs.json._
-import Prelude._
-import FlagType.FlagType
+import scala.collection.immutable
+import PostStatusBits._
 
 
+object CollapsedStatus {
+  val Open = new CollapsedStatus(0)
+}
+class CollapsedStatus(val underlying: Int) extends AnyVal {
+  def isCollapsed = underlying != 0
+  def isExplicitlyCollapsed = (underlying & TreeBits) != 0
+  def isPostCollapsed = (underlying & SelfBit) != 0
+  //def areRepliesCollapsed = underlying & ChildrenBit
+  def isTreeCollapsed = (underlying & TreeBits) == TreeBits
+  def areAncestorsCollapsed = (underlying & AncestorsBit) != 0
+}
 
-/** A "post" represents a part of a page, e.g. the title, the body, or a comment.
-  * A Post instance wraps the action that created that particular page part
-  * (namely a PostAction[PostActionPayload.CreatePost].) It also takes into
-  * account all actions in pageParts that affect this post. For example,
-  * `currentText` loops through all edits, and applies them, to construct the
-  * current text.
+
+object ClosedStatus {
+  val Open = new ClosedStatus(0)
+}
+class ClosedStatus(val underlying: Int) extends AnyVal {
+  def isClosed = underlying != 0
+  def isTreeClosed = (underlying & TreeBits) == TreeBits
+  def areAncestorsClosed = (underlying & AncestorsBit) != 0
+}
+
+
+object DeletedStatus {
+  val NotDeleted = new DeletedStatus(0)
+}
+class DeletedStatus(val underlying: Int) extends AnyVal {
+  def isDeleted = underlying != 0
+  def onlyThisDeleted = underlying == SelfBit
+  def isPostDeleted = (underlying & SelfBit) != 0
+  def isTreeDeleted = (underlying & TreeBits) == TreeBits
+  def areAncestorsDeleted = (underlying & AncestorsBit) != AncestorsBit
+}
+
+
+object PostStatusBits {
+
+  /** Means that only the current post (but not its children) has been collapsed or deleted. */
+  val SelfBit = 1
+
+  /** Means that all successor posts are collapsed or closed or deleted. */
+  val SuccessorsBit = 2
+
+  /** Means this post and all successors. */
+  val TreeBits = SelfBit | SuccessorsBit
+
+  /** Means that some ancestor post has been collapsed or closed or deleted and that therefore
+    * the current post is also collapsed or closed or deleted. */
+  val AncestorsBit = 4
+
+  val AllBits = SelfBit | SuccessorsBit | AncestorsBit
+}
+
+
+/** A post is a page title, a page body or a comment.
+  * For example, a forum topic title, topic text, or a reply.
   *
-  * Re reviews and approvals: A post can be:
-  * Unreviewed (then not yet approved).
-  * Preliminarily approved (by the computer, automatically — it guesses / uses heuristics).
-  * Permanently reviewed (by a moderator, or a well-behaved user).
-  * Authoritatively reviewed (by a moderator but not a well-behaved user).
-  *
-  * COULD rewrite, simplify. Currently there're lots of small functions that
-  * independently of each other examines all past actions and determines the current
-  * state of something. — It'd be easier to start with a state, either blank
-  * if the post is completely new, or a state loaded from DW1_POSTS. And then
-  * loop through all actions and update the state once and for all.
+  * SHOULD: If a post has been flagged, it gets hidden. People can click to view it anyway, so that
+  * they can notify moderators if posts are being flagged and hidden inappropriately.
   */
 case class Post(
-    pageParts: PageParts,
-    private val state: PostState,
-    private val isLoadedFromCache: Boolean = true)
-  extends PostAction[PAP.CreatePost](pageParts, state.creationAction)
-  with MaybeApproval with PostActionActedUpon {
+  siteId: SiteId,
+  pageId: PageId,
+  id: PostId,
+  parentId: Option[PostId],
+  multireplyPostIds: immutable.Set[PostId],
+  createdAt: ju.Date,
+  createdById: UserId2,
+  lastEditedAt: Option[ju.Date],
+  lastEditedById: Option[UserId2],
+  lastApprovedEditAt: Option[ju.Date],
+  lastApprovedEditById: Option[UserId2],
+  numDistinctEditors: Int,
+  safeVersion: Option[Int],
+  approvedSource: Option[String],
+  approvedHtmlSanitized: Option[String],
+  approvedAt: Option[ju.Date],
+  approvedById: Option[UserId2],
+  approvedVersion: Option[Int],
+  currentSourcePatch: Option[String],
+  currentVersion: Int,
+  collapsedStatus: CollapsedStatus,
+  collapsedAt: Option[ju.Date],
+  collapsedById: Option[UserId2],
+  closedStatus: ClosedStatus,
+  closedAt: Option[ju.Date],
+  closedById: Option[UserId2],
+  hiddenAt: Option[ju.Date],
+  hiddenById: Option[UserId2],
+  //hiddenReason: ?
+  deletedStatus: DeletedStatus,
+  deletedAt: Option[ju.Date],
+  deletedById: Option[UserId2],
+  pinnedPosition: Option[Int],
+  numPendingFlags: Int,
+  numHandledFlags: Int,
+  numPendingEditSuggestions: Int,
+  numLikeVotes: Int,
+  numWrongVotes: Int,
+  numTimesRead: Int) {
 
-  require(postId == id)
+  require(parentId != Some(id), "DwE5BK4")
+  require(!multireplyPostIds.contains(id), "DwE4kWW2")
 
-  def this(pageParts: PageParts, creationAction: RawPostAction[PAP.CreatePost]) {
-    this(pageParts, PostState.whenCreated(creationAction), isLoadedFromCache = false)
-  }
+  require(lastEditedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE7KEF3")
+  require(lastEditedAt.isEmpty == lastEditedById.isEmpty, "DwE0GKW2")
 
+  require(lastApprovedEditAt.isEmpty || lastEditedAt.isDefined, "DwE5Df4")
+  require(lastApprovedEditAt.map(_.getTime <= lastEditedAt.get.getTime) != Some(false), "DwE2LYG6")
+  require(lastApprovedEditAt.isEmpty == lastApprovedEditById.isEmpty, "DwE9JK3")
 
-  def parentId: Option[PostId] = payload.parentPostId
-  def multireplyPostIds = payload.multireplyPostIds
+  // require(numPendingEditSuggestions == 0 || lastEditSuggestionAt.isDefined, "DwE2GK45)
+  // require(lastEditSuggestionAt.map(_.getTime < createdAt.getTime) != Some(false), "DwE77fW2)
 
+  //require(updatedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE6KPw2)
+  require(approvedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE8KGEI2")
+
+  require(approvedVersion.isEmpty == approvedAt.isEmpty, "DwE4KHI7")
+  require(approvedVersion.isEmpty == approvedById.isEmpty, "DwE2KI65")
+  require(approvedVersion.isEmpty == approvedSource.isEmpty, "DwE7YFv2")
+  require(approvedHtmlSanitized.isEmpty || approvedSource.isDefined, "DwE0IEW1")
+
+  require(approvedSource.map(_.trim.length) != Some(0), "DwE1JY83")
+  require(approvedHtmlSanitized.map(_.trim.length) != Some(0), "DwE6BH5")
+  require(approvedSource.isDefined || currentSourcePatch.isDefined, "DwE3KI59")
+  require(currentSourcePatch.map(_.trim.length) != Some(0), "DwE2bNW5")
+
+  require(approvedVersion.isEmpty || (
+    (currentVersion == approvedVersion.get) == currentSourcePatch.isEmpty), "DwE7IEP0")
+
+  require(approvedVersion.map(_ <= currentVersion) != Some(false), "DwE6KJ0")
+  require(safeVersion.isEmpty || (
+    approvedVersion.isDefined && safeVersion.get <= approvedVersion.get), "DwE2EF4")
+
+  require(0 <= collapsedStatus.underlying && collapsedStatus.underlying <= AllBits &&
+    collapsedStatus.underlying != SuccessorsBit)
+  require(collapsedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE0JIk3")
+  require(collapsedAt.isDefined == collapsedStatus.isCollapsed, "DwE5KEI3")
+  require(collapsedAt.isDefined == collapsedById.isDefined, "DwE60KF3")
+
+  require(closedStatus.underlying >= 0 && closedStatus.underlying <= AllBits &&
+    closedStatus.underlying != SuccessorsBit &&
+    // Cannot close a single post only, needs to close the whole tree.
+    closedStatus.underlying != SelfBit)
+  require(closedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE6IKF3")
+  require(closedAt.isDefined == closedStatus.isClosed, "DwE0Kf4")
+  require(closedAt.isDefined == closedById.isDefined, "DwE4KI61")
+
+  require(0 <= deletedStatus.underlying && deletedStatus.underlying <= AllBits &&
+    deletedStatus.underlying != SuccessorsBit)
+  require(deletedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE6IK84")
+  require(deletedAt.isDefined == deletedStatus.isDeleted, "DwE0IGK2")
+  require(deletedAt.isDefined == deletedById.isDefined, "DwE14KI7")
+
+  require(hiddenAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE6K2I7")
+  require(hiddenAt.isDefined == hiddenById.isDefined, "DwE0B7I3")
+  //require(hiddenReason.isEmpty || hiddenAt.isDefined, "DwE3K5I9")
+
+  require(numDistinctEditors >= 0, "DwE2IkG7")
+  require(numPendingEditSuggestions >= 0, "DwE0IK0P3")
+  require(numPendingFlags >= 0, "DwE4KIw2")
+  require(numHandledFlags >= 0, "DwE6IKF3")
+  require(numLikeVotes >= 0, "DwEIK7K")
+  require(numWrongVotes >= 0, "DwE7YQ08")
+  require(numTimesRead >= 0, "DwE2ZfMI3")
+
+  def isReply = PageParts.isReply(id)
   def isMultireply = multireplyPostIds.nonEmpty
+  def isHidden = hiddenAt.isDefined
+  def isDeleted = deletedStatus.isDeleted
+  def isSomeVersionApproved = approvedVersion.isDefined
+  def isCurrentVersionApproved = approvedVersion == Some(currentVersion)
+  def isVisible = isSomeVersionApproved && !isHidden && !isDeleted
 
-  // Useul when grouping by parent id: all posts with no parent can be mapped to NoId (= 0).
-  def parentIdOrNoId: PostId = parentId.getOrElse(PageParts.NoId)
+  def pagePostId = PagePostId(pageId, id)
+  def hasAnId = id >= PageParts.LowestPostId
 
-  def parentPost: Option[Post] = parentId.flatMap(page.getPost(_))
+  def newChildCollapsedStatus = new CollapsedStatus(
+    if ((collapsedStatus.underlying & (SuccessorsBit | AncestorsBit)) != 0) AncestorsBit else 0)
 
+  def newChildClosedStatus = new ClosedStatus(
+    if ((closedStatus.underlying & (SuccessorsBit | AncestorsBit)) != 0) AncestorsBit else 0)
 
-  /** Ancestors, starting with the post closest to this post. */
-  def ancestorPosts: List[Post] = {
-    var ancestors: List[Post] = Nil
-    var curPost: Option[Post] = Some(this)
-    while ({
-      curPost = curPost.get.parentPost
-      curPost.nonEmpty
-    }) {
-      ancestors ::= curPost.get
+  lazy val currentSource: String =
+    currentSourcePatch match {
+      case None => approvedSource.getOrElse("")
+      case Some(patch) => applyPatch(patch, to = approvedSource.getOrElse(""))
     }
-    ancestors.reverse
+
+  def unapprovedSource: Option[String] = {
+    if (isCurrentVersionApproved) None
+    else Some(currentSource)
   }
 
-
-  def directApproval = payload.approval
-
-
-  def isArticleOrConfig =
-    id == PageParts.TitleId || id == PageParts.BodyId || id == PageParts.ConfigPostId
-
-
-  def initiallyApproved: Boolean = {
-    val initiallyApprovedPerhapsPreliminarily = directApproval.isDefined
-    val initialApprovalNotCancelled = lastApprovalDati.isDefined
-    initiallyApprovedPerhapsPreliminarily && initialApprovalNotCancelled
-  }
-
-
-  lazy val (currentText: String, approvedText: Option[String]) = _applyEdits
-
-
-  /** The initial text of this post: either 1) when created, or 2) when loaded from cache
-    * (if it was loaded from cache).
-    */
-  def textInitially: String = payload.text
-
-
-  def unapprovedText: Option[String] =
-    if (Some(currentText) != approvedText) Some(currentText)
-    else None
-
-
-  lazy val currentHtmlSanitized: String =
-    if (currentText == "") ""
-    else render(currentText)
-
-  lazy val approvedHtmlSanitized: Option[String] =
-    approvedText map { text =>
-      if (text == currentText) currentHtmlSanitized
-      else render(text)
-    }
-
-  lazy val unapprovedHtmlSanitized: Option[String] =
-    unapprovedText map { text =>
-      if (text == currentText) currentHtmlSanitized
-      else render(text)
-    }
-
-  private def render(source: String) = {
-    val renderer = page.dao.getOrDie("DwE8Ef9W1").commonMarkRenderer
+  def currentHtmlSanitized(commonMarkRenderer: CommonMarkRenderer, pageRole: PageRole): String = {
     if (id == PageParts.TitleId) {
-      renderer.sanitizeHtml(currentText)
+      commonMarkRenderer.sanitizeHtml(currentSource)
     }
     else {
-      renderer.renderAndSanitizeCommonMark(currentText,
-          allowClassIdDataAttrs = id == PageParts.BodyId, followLinks = theUser.isAdmin)
+      val isBody = id == PageParts.BodyId
+      val followLinks = isBody && !pageRole.isWidelyEditable
+      commonMarkRenderer.renderAndSanitizeCommonMark(currentSource,
+        allowClassIdDataAttrs = isBody, followLinks = followLinks)
     }
   }
 
 
-   // This currently happens directly, hence + 0:
-  def numDeletePostVotesPro = state.numDeletePostVotes.pro + 0
-  def numDeletePostVotesCon = state.numDeletePostVotes.con + 0
-  def numUndeletePostVotesPro = state.numDeletePostVotes.undoPro + 0
-  def numUndeletePostVotesCon = state.numDeletePostVotes.undoCon + 0
+  def numEditsToReview = currentVersion - approvedVersion.getOrElse(0)
 
-  def numDeleteTreeVotesPro = state.numDeleteTreeVotes.pro + 0
-  def numDeleteTreeVotesCon = state.numDeleteTreeVotes.con + 0
-  def numUndeleteTreeVotesPro = state.numDeleteTreeVotes.undoPro + 0
-  def numUndeleteTreeVotesCon = state.numDeleteTreeVotes.undoCon + 0
+  def numFlags = numPendingFlags + numHandledFlags
 
-  def numDeleteVotesPro = numDeletePostVotesPro + numDeleteTreeVotesPro
-  def numDeleteVotesCon = numDeletePostVotesCon + numDeleteTreeVotesCon
-  def numUndeleteVotesPro = numUndeletePostVotesPro + numUndeleteTreeVotesPro
-  def numUndeleteVotesCon = numUndeletePostVotesCon + numUndeleteTreeVotesCon
-
-  def numDeletesToReview = state.numDeletesToReview + 0
-  def numUndeletesToReview = state.numUndeletesToReview + 0
-
-  def numCollapsePostVotesPro = state.numCollapsePostVotes.pro + 0
-  def numCollapsePostVotesCon = state.numCollapsePostVotes.con + 0
-  def numUncollapsePostVotesPro = state.numCollapsePostVotes.undoPro + 0
-  def numUncollapsePostVotesCon = state.numCollapsePostVotes.undoCon + 0
-
-  def numCollapseTreeVotesPro = state.numCollapseTreeVotes.pro + 0
-  def numCollapseTreeVotesCon = state.numCollapseTreeVotes.con + 0
-  def numUncollapseTreeVotesPro = state.numCollapseTreeVotes.undoPro + 0
-  def numUncollapseTreeVotesCon = state.numCollapseTreeVotes.undoCon + 0
-
-  def numCollapseVotesPro = numCollapsePostVotesPro + numCollapseTreeVotesPro
-  def numCollapseVotesCon = numCollapsePostVotesCon + numCollapseTreeVotesCon
-  def numUncollapseVotesPro = numUncollapsePostVotesPro + numUncollapseTreeVotesPro
-  def numUncollapseVotesCon = numUncollapsePostVotesCon + numUncollapseTreeVotesCon
-
-  def numCollapsesToReview = state.numCollapsesToReview + 0
-  def numUncollapsesToReview = state.numUncollapsesToReview + 0
-
-
-  def numLikeVotes = actions.filter(_.payload == PAP.VoteLike).length
-  def numWrongVotes = actions.filter(_.payload == PAP.VoteWrong).length
-  def numOffTopicVotes = actions.filter(_.payload == PAP.VoteOffTopic).length
-
-  def readCount = pageParts.postReadStats.readCountFor(id)
+  def createdByUser(people: People): User =
+    people.theUser(createdById)
 
 
   /** The lower bound of an 80% confidence interval for the number of people that like this post.
     */
-  lazy val likeScore = {
+  lazy val likeScore: Float = {
     val numLikes = this.numLikeVotes
     // In case there for some weird reason are liked posts with no read count,
-    // set readCount to at least numLikes.
-    val readCount = math.max(this.readCount, numLikes)
-    val avgLikes = numLikes.toFloat / math.max(1, readCount)
+    // set numTimesRead to at least numLikes.
+    val numTimesRead = math.max(this.numTimesRead, numLikes)
+    val avgLikes = numLikes.toFloat / math.max(1, numTimesRead)
     val lowerBound = Distributions.binPropConfIntACLowerBound(
-      sampleSize = readCount, proportionOfSuccesses = avgLikes, percent = 80.0f)
+      sampleSize = numTimesRead, proportionOfSuccesses = avgLikes, percent = 80.0f)
     lowerBound
   }
 
 
-  def pinnedPosition: Option[Int] =
-    page.getPinnedPositionOf(this)
+  def parent(pageParts: PageParts): Option[Post] =
+    parentId.flatMap(pageParts.post)
+
+  def children(pageParts: PageParts): Seq[Post] =
+    pageParts.childrenOf(id)
 
 
-  /**
-   * Applies all edits and returns the resulting text.
-   *
-   * Keep in sync with textAsOf in debiki.js.
-   *
-   * (It's not feasible to apply only edits that have been approved,
-   * or only edits up to a certain dati. Because
-   * then the state of all edits at that dati would have to be computed.
-   * But at a given dati, an edit might or might not have been applied and
-   * approved, and taking that into account results in terribly messy code.
-   * Instead, use Page.splitByVersion(), to get a version of the page
-   * at a certain point in time.)
-   */
-  private def _applyEdits: (String, Option[String]) = {
-    // (If loaded from cache, payload.text has been inited
-    // to the cached text, which includes all edits up to the cached version.)
-    var curText = payload.text
-    var approvedText =
-      if (lastApprovalDati.isDefined) state.lastApprovedText orElse Some(curText)
-      else None
-    // Loop through all edits and patch curText.
-    for (edit <- editsAppliedAscTime) {
-      val patchText = edit.patchText
-      if (patchText nonEmpty) {
-        val newText = applyPatch(patchText, to = curText)
-        curText = newText
-        if (lastApprovalDati.map(edit.applicationDati.get.getTime <= _.getTime) == Some(true))
-          approvedText = Some(curText)
+  /** Setting any flag to true means that status will change to true. Leaving it
+    * false means the status will remain unchanged (not that it'll be cleared).
+    */
+  def copyWithNewStatus(
+    currentTime: ju.Date,
+    userId: UserId2,
+    postCollapsed: Boolean = false,
+    treeCollapsed: Boolean = false,
+    ancestorsCollapsed: Boolean = false,
+    treeClosed: Boolean = false,
+    ancestorsClosed: Boolean = false,
+    postDeleted: Boolean = false,
+    treeDeleted: Boolean = false,
+    ancestorsDeleted: Boolean = false): Post = {
+
+    // You can collapse a post, although an ancestor is already collapsed. Collapsing it,
+    // simply means that it'll remain collapsed, even if the ancestor gets expanded.
+    var newCollapsedUnderlying = collapsedStatus.underlying
+    var newCollapsedAt = collapsedAt
+    var newCollapsedById = collapsedById
+    var collapsesNowBecauseOfAncestor = false
+    if (ancestorsCollapsed) {
+      newCollapsedUnderlying |= AncestorsBit
+      collapsesNowBecauseOfAncestor = !collapsedStatus.isCollapsed
+    }
+    if (postCollapsed) {
+      newCollapsedUnderlying |= SelfBit
+    }
+    if (treeCollapsed) {
+      newCollapsedUnderlying |= TreeBits
+    }
+    if (collapsesNowBecauseOfAncestor || postCollapsed || treeCollapsed) {
+      newCollapsedAt = Some(currentTime)
+      newCollapsedById = Some(userId)
+    }
+
+    // You cannot close a post if an ancestor is already closed, because then the post
+    // is closed already.
+    var newClosedUnderlying = closedStatus.underlying
+    var newClosedAt = closedAt
+    var newClosedById = closedById
+    if (ancestorsClosed) {
+      newClosedUnderlying |= AncestorsBit
+      if (!closedStatus.isClosed) {
+        newClosedAt = Some(currentTime)
+        newClosedById = Some(userId)
       }
     }
-    (curText, approvedText)
-  }
-
-
-  def where: Option[String] = payload.where
-
-
-  def edits: List[Patch] =
-    actions.filter(a => a.isInstanceOf[Patch]).asInstanceOf[List[Patch]]
-
-
-  lazy val (
-      editsDeletedDescTime: List[Patch],
-      editsPendingDescTime: List[Patch],
-      editsAppliedDescTime: List[Patch],
-      editsRevertedDescTime: List[Patch]) = {
-
-    var deleted = List[Patch]()
-    var pending = List[Patch]()
-    var applied = List[Patch]()
-    var reverted = List[Patch]()
-
-    edits foreach { edit =>
-      // (Cannot easily move the below `assert`s to Edit, because
-      // the values they test are computed lazily.)
-
-      // An edit cannot be both applied and reverted at the same time.
-      assErrIf(edit.isApplied && edit.isReverted, "DwE4FW21")
-      if (edit.isReverted) reverted ::= edit
-      if (edit.isApplied) applied ::= edit
-
-      // An edit can have been reverted and then deleted,
-      // but an edit that is currently in effect cannot also be deleted.
-      assErrIf(edit.isApplied && edit.isDeleted, "DwE09IJ3")
-      if (edit.isDeleted) deleted ::= edit
-
-      // An edit that has been applied and then reverted, is pending again.
-      // But an edit that is in effect, or has been deleted, cannot be pending.
-      assErrIf(edit.isApplied && edit.isPending, "DwE337Z2")
-      assErrIf(edit.isDeleted && edit.isPending, "DwE8Z3B2")
-      if (edit.isPending) pending ::= edit
+    if (!closedStatus.isClosed && treeClosed) {
+      newClosedUnderlying |= TreeBits
+      newClosedAt = Some(currentTime)
+      newClosedById = Some(userId)
     }
 
-    (deleted.sortBy(- _.deletedAt.get.getTime),
-       pending.sortBy(- _.creationDati.getTime),
-       applied.sortBy(- _.applicationDati.get.getTime),
-       reverted.sortBy(- _.revertionDati.get.getTime))
-  }
-
-
-  def editsAppliedAscTime = editsAppliedDescTime.reverse
-
-
-  def lastEditApplied = editsAppliedDescTime.headOption
-
-  def lastEditAppliedAt: Option[ju.Date] =
-    lastEditApplied.flatMap(_.applicationDati) orElse state.lastEditAppliedAt
-
-  def lastEditorId: Option[String] =
-    lastEditApplied.map(_.userId) orElse state.lastEditorId
-
-
-  def lastEditReverted = editsRevertedDescTime.headOption
-
-  def lastEditRevertedAt: Option[ju.Date] =
-    lastEditReverted.flatMap(_.revertionDati) orElse state.lastEditRevertedAt
-
-
-  /** How many different people that have edited this post. If loaded from cache,
-    * ignores edits that happened after the cached version.
-    */
-  def numDistinctEditors: Int = {
-    // Since we don't store the ids of all editors over time in the database post state
-    // cache, it's not possible to know if any more recent `editsAppliedDescTime` editor
-    // id coincides with any of the `state.numDistinctEditors` earlier editors.
-    math.max(
-      state.numDistinctEditors,
-      editsAppliedDescTime.map(_.userId).distinct.length)
-  }
-
-
-  def numPendingEditSuggestions =
-    state.numEditSuggestions + editsPendingDescTime.length
-
-
-  /** Counts edits applied to this post but that have not yet been reviewed,
-    * not even auto-reviewed by the computer.
-    */
-  def numEditsAppliedUnreviewed = {
-    val numNew =
-      if (lastReviewDati.isEmpty) editsAppliedDescTime.length
-      else (editsAppliedDescTime takeWhile { patch =>
-        lastReviewDati.get.getTime < patch.applicationDati.get.getTime
-      }).length
-    state.numEditsAppliedUnreviewed + numNew
-  }
-
-
-  /** Counts the edits made to this post that 1) have been preliminarily
-    * approved by the computer, but 2) not permanently approved (by some moderator).
-    */
-  def numEditsAppldPrelApproved = {
-    val numNew =
-      if (lastApprovalType != Some(Approval.Preliminary)) 0
-      else {
-        (editsAppliedDescTime takeWhile { patch =>
-          val perhapsPrelApprvd =
-            patch.applicationDati.get.getTime <= lastApprovalDati.get.getTime
-          val isPermApprvd =
-            if (lastPermanentApprovalDati.isEmpty) false
-            else patch.applicationDati.get.getTime <= lastPermanentApprovalDati.get.getTime
-          perhapsPrelApprvd && !isPermApprvd
-        }).length
-      }
-    state.numEditsAppldPrelApproved + numNew
-  }
-
-
-  /** Edits done after the last review — ignoring preliminary auto approval reviews —
-    * need to be reviewed.
-    */
-  def numEditsToReview = {
-    val numNew = lastRejectedOrPermApprovedAt match {
-      case None => editsAppliedDescTime.length
-      case Some(date) =>
-        (editsAppliedDescTime takeWhile { patch =>
-          date.getTime < patch.applicationDati.get.getTime
-        }).length
+    // You cannot delete a post if an ancestor is already deleted, because then the post
+    // is deleted already.
+    var newDeletedUnderlying = deletedStatus.underlying
+    var newDeletedAt = deletedAt
+    var newDeletedById = deletedById
+    if (ancestorsDeleted) {
+      newDeletedUnderlying |= AncestorsBit
     }
-    state.numEditsToReview + numNew
-  }
-
-
-  /** When the text was last edited, or when this post was created.
-    */
-  def textLastEditedAt : ju.Date =
-    lastEditAppliedAt getOrElse creationDati
-
-
-  /** When the text of this Post was last edited or reverted to an earlier version.
-    */
-  def textLastEditedOrRevertedAt : ju.Date = {
-    val maxTime = math.max(
-       lastEditAppliedAt.map(_.getTime).getOrElse(0: Long),
-       lastEditRevertedAt.map(_.getTime).getOrElse(0: Long))
-    if (maxTime == 0) creationDati else new ju.Date(maxTime)
-  }
-
-
-  /** When this post was last edited, reverted, deleted, or hidden.
-    * Used when sorting posts in the activity list in the admin UI.
-    */
-  def lastActedUponAt = new ju.Date(Seq(
-      textLastEditedOrRevertedAt.getTime,
-      postDeletedAt.map(_.getTime).getOrElse(0: Long),
-      treeDeletedAt.map(_.getTime).getOrElse(0: Long),
-      postHiddenAt.map(_.getTime).getOrElse(0: Long)).max)
-
-
-  /** The most recent reviews, or Nil if all most recent reviews might not
-    * have been loaded.
-    */
-  private lazy val _reviewsDescTime: List[PostAction[_] with MaybeApproval] = {
-    // If loaded from cache, we will have loaded no reviews, or only one review,
-    // namely `this`, if this post was auto-approved (e.g. a preliminarily
-    // approved comment, or a comment posted by an admin).
-    // However, returning only `this` is incorrect, if there are in fact other
-    // reviews that happened later, but haven't been loaded; other functions
-    // assume that _reviewsDescTime includes any most recent review. So instead
-    // of returning List(this), return Nil; then other functions work as they
-    // should (if _reviewsDescTime is empty rather than incorrectly containing only
-    // the first one of many reviews).
-    if (isLoadedFromCache) Nil
-    else findReviews
-  }
-
-
-  private def findReviews = {
-    // (If a ReviewPostAction.approval.isEmpty, this Post was rejected.
-    // An Edit.approval or EditApp.approval being empty, however,
-    // means only that this Post has not yet been reviewed — so the Edit
-    // or EditApp is simply ignored.)
-
-    val explicitReviewsDescTime =
-      actions.filter(action =>
-        action.isInstanceOf[ApprovePostAction] || action.isInstanceOf[RejectEditsAction])
-        .sortBy(-_.creationDati.getTime).
-      asInstanceOf[List[PostAction[_] with MaybeApproval]]
-
-    var implicitApprovals = List[PostAction[_] with MaybeApproval]()
-    if (directApproval.isDefined)
-      implicitApprovals ::= this
-    for (edit <- edits) {
-      if (edit.directApproval.isDefined)
-        implicitApprovals ::= edit
-      for (editApp <- page.editAppsByEdit(edit.id)) {
-        // Ought to reuse PostActionsWrapper's wrapped rawAction:s rather than
-        // creating new objects here.
-        if (editApp.payload.approval.isDefined)
-          implicitApprovals ::= new ApplyPatchAction(page, editApp)
-
-        // In the future, deletions (and any other actions?) should also
-        // be considered:
-        //for (deletion <- page.deletionsFor(editApp)) {
-        //  if (deletion.approval.isDefined)
-        //    implicitApprovals ::= deletion
-        //}
-      }
-
-      // In the future, also consider deletions?
-      //for (deletion <- page.deletionsFor(edit)) {
-      //  if (deletion.approval.isDefined)
-      //    implicitApprovals ::= deletion
-      //}
+    if (postDeleted) {
+      newDeletedUnderlying |= SelfBit
+    }
+    if (treeDeleted) {
+      newDeletedUnderlying |= TreeBits
+    }
+    if ((ancestorsDeleted || postDeleted || treeDeleted) && !isDeleted) {
+      newDeletedAt = Some(currentTime)
+      newDeletedById = Some(userId)
     }
 
-    // In the future, consider deletions of `this.action`?
-    // for (deletion <- page.deletionsFor(action)) ...
-
-    val allReviews = explicitReviewsDescTime ::: implicitApprovals
-    allReviews.sortBy(- _.creationDati.getTime)
+    copy(
+      collapsedStatus = new CollapsedStatus(newCollapsedUnderlying),
+      collapsedById = newCollapsedById,
+      collapsedAt = newCollapsedAt,
+      closedStatus = new ClosedStatus(newClosedUnderlying),
+      closedById = newClosedById,
+      closedAt = newClosedAt,
+      deletedStatus = new DeletedStatus(newDeletedUnderlying),
+      deletedById = newDeletedById,
+      deletedAt = newDeletedAt)
   }
 
 
-  /**
-   * Moderators need only be informed about things that happened after
-   * this dati.
-   */
-  def lastAuthoritativeReviewDati: Option[ju.Date] =
-    anyMaxDate(lastAuthoritativeReview.map(_.creationDati), state.lastAuthoritativeReviewDati)
-
-
-  def lastReviewDati: Option[ju.Date] =
-    anyMaxDate(_reviewsDescTime.headOption.map(_.creationDati), state.lastReviewDati)
-
-
-  def lastApprovalType: Option[Approval] = {
-    if (lastApprovalDati == state.lastApprovalDati) state.lastApprovalType
-    else lastApproval.flatMap(_.directApproval)
-  }
-
-
-  private lazy val lastApproval: Option[PostAction[_] with MaybeApproval] = {
-    // A rejection cancels all earlier and contiguous preliminary auto
-    // approvals, so loop through the reviews:
-    var rejectionFound = false
-    var reviewsLeft = _reviewsDescTime
-    var lastApproval: Option[PostAction[_] with MaybeApproval] = None
-    while (reviewsLeft nonEmpty) {
-      val review = reviewsLeft.head
-      reviewsLeft = reviewsLeft.tail
-      if (review.directApproval.map(_.isPermanent) == Some(false) && rejectionFound) {
-        // Ignore this approval — the rejection cancels it.
-      } else if (review.directApproval.isEmpty) {
-        rejectionFound = true
-      } else {
-        lastApproval = Some(review)
-        reviewsLeft = Nil
+  def copyWithUpdatedVoteAndReadCounts(actions: Iterable[PostAction], readStats: PostsReadStats)
+        : Post = {
+    var numLikeVotes = 0
+    var numWrongVotes = 0
+    for (action <- actions) {
+      action match {
+        case vote: PostVote =>
+          vote.voteType match {
+            case PostVoteType.Like =>
+              numLikeVotes += 1
+            case PostVoteType.Wrong =>
+              numWrongVotes += 1
+          }
       }
     }
-    lastApproval
+    val numTimesRead = readStats.readCountFor(id)
+    copy(
+      numLikeVotes = numLikeVotes,
+      numWrongVotes = numWrongVotes,
+      numTimesRead = numTimesRead)
   }
-
-
-  /**
-   * The most recent review of this post by an admin or moderator.
-   * (But not by seemingly well behaved users.)
-   */
-  private def lastAuthoritativeReview: Option[PostAction[_] with MaybeApproval] =
-    _reviewsDescTime.find(review =>
-      review.directApproval.map(_.isAuthoritative) != Some(false))
-
-
-  private def lastPermanentApproval: Option[PostAction[_] with MaybeApproval] =
-    _reviewsDescTime.find(review =>
-        review.directApproval.map(_.isPermanent) == Some(true))
-
-
-  private lazy val anyLastManualApprovalAction: Option[ApprovePostAction] = {
-    val anyManualApproval =
-      _reviewsDescTime find { review =>
-        review.payload match {
-          case approvePostAction: PAP.ApprovePost =>
-            if (approvePostAction.approval.isAuthoritative)
-              true
-            else
-              false
-          case _ =>
-            false
-        }
-      }
-    anyManualApproval.asInstanceOf[Option[ApprovePostAction]]
-  }
-
-
-  def lastRejectedOrPermApprovedAt: Option[ju.Date] = {
-    val lastRejectionOrPermApproval = _reviewsDescTime find {
-      case _: RejectEditsAction => true
-      case x if x.directApproval.map(_.isPermanent) == Some(true) => true
-      case _ => false
-    }
-    lastRejectionOrPermApproval.map(_.creationDati)
-  }
-
-
-  def lastPermanentApprovalDati: Option[ju.Date] =
-    anyMaxDate(lastPermanentApproval.map(_.creationDati), state.lastPermanentApprovalDati)
-
-  /**
-   * All actions that affected this Post and didn't happen after
-   * this dati should be considered when rendering this Post.
-   */
-  def lastApprovalDati: Option[ju.Date] =
-    anyMaxDate(lastApproval.map(_.creationDati), state.lastApprovalDati)
-
-
-  def lastManualApprovalDati: Option[ju.Date] =
-    anyMaxDate(
-      anyLastManualApprovalAction.map(_.creationDati),
-      state.lastManualApprovalDati)
-
-
-  def lastManuallyApprovedById: Option[UserId] = {
-    if (state.lastManualApprovalDati == lastManualApprovalDati)
-      return state.lastManuallyApprovedById
-
-    anyLastManualApprovalAction.map(_.userId)
-  }
-
-  def lastReviewWasApproval: Option[Boolean] =
-    if (lastReviewDati.isEmpty) None
-    else Some(lastReviewDati == lastApprovalDati)
-
-
-  /** Has this post been reviewed by a moderator, well behaved user or by the computer?
-    */
-  def currentVersionReviewed: Boolean = {
-    // Use >= not > because a comment might be auto approved, and then
-    // the approval dati equals the comment creationDati.
-    val isReviewed = lastReviewDati.isDefined &&
-      textLastEditedAt.getTime <= lastReviewDati.get.getTime
-    if (isReviewed)
-      assErrIf(numEditsAppliedUnreviewed != 0,
-        "DwE408B0", o"""Bad state. Page ${page.pageId}, post $id,
-          numEditsAppliedUnreviewed = $numEditsAppliedUnreviewed""")
-    isReviewed
-  }
-
-
-  /** If this post has been reviewed by a moderator or in some cases a well
-    * behaved user, it is considered permanently reviewed.
-    * (Rejections are permanent, and all approvals except for Approval.Preliminary.)
-    */
-  def currentVersionPermReviewed: Boolean =
-    currentVersionReviewed && !currentVersionPrelApproved
-
-
-  def currentVersionPermApproved: Boolean =
-    currentVersionApproved && lastApprovalType.get.isPermanent
-
-
-  /** Has the computer preliminarily approved this post, or the last few edits?
-    */
-  def currentVersionPrelApproved: Boolean =
-    currentVersionApproved && lastApprovalType == Some(Approval.Preliminary)
-
-
-  def currentVersionApproved: Boolean =
-    currentVersionReviewed && lastReviewWasApproval.get
-
-
-  def currentVersionRejected: Boolean =
-    currentVersionReviewed && !lastReviewWasApproval.get
-
-
-  def someVersionApproved: Boolean = {
-    // A rejection cancels all edits since the previous approval,
-    // or effectively deletes the post, if it has never been approved.
-    // To completely "unapprove" a post that has previously been approved,
-    // delete it instead.
-    lastApprovalDati.nonEmpty
-  }
-
-
-  def someVersionPermanentlyApproved: Boolean =
-    lastPermanentApprovalDati.nonEmpty
-
-
-  def someVersionManuallyApproved: Boolean =
-    lastManualApprovalDati.isDefined
-
-
-  lazy val depth: Int = {
-    var depth = 0
-    var curId = id
-    var nextParent = parentId.flatMap(page.getPost(_))
-    while (nextParent.nonEmpty && nextParent.get.id != curId) {
-      depth += 1
-      curId = nextParent.get.id
-      nextParent = nextParent.get.parentId.flatMap(page.getPost(_))
-    }
-    depth
-  }
-
-
-  def replyCount: Int =
-    debate.repliesTo(id).length
-
-
-  def replies: List[Post] = debate.repliesTo(id)
-
-
-  // If there is no parent post, considers all other posts with no parents its siblings.
-  def siblingsAndMe: List[Post] =
-    if (PageParts.isArticleOrConfigPostId(id)) List(this)
-    else page.repliesTo(parentIdOrNoId)
-
-
-  def postCollapsedAt: Option[ju.Date] =
-    findLastAction(PAP.CollapsePost).map(_.creationDati) orElse state.postCollapsedAt
-
-  def treeCollapsedAt: Option[ju.Date] =
-    findLastAction(PAP.CollapseTree).map(_.creationDati) orElse state.treeCollapsedAt
-
-  def treeClosedAt: Option[ju.Date] =
-    findLastAction(PAP.CloseTree).map(_.creationDati) orElse state.treeClosedAt
-
-  def isPostCollapsed: Boolean = postCollapsedAt.nonEmpty
-  def isTreeCollapsed: Boolean = treeCollapsedAt.nonEmpty
-  def isCollapsedSomehow: Boolean = isPostCollapsed || isTreeCollapsed
-
-  def isTreeClosed: Boolean = treeClosedAt.nonEmpty
-
-
-  private def postDeletedAction: Option[PostAction[PAP.DeletePost]] =
-    findLastActionByType[PAP.DeletePost]
-
-  private def treeDeletedAction: Option[PostAction[PAP.DeleteTree.type]] =
-    findLastAction(PAP.DeleteTree)
-
-  private def postHiddenAction: Option[PostAction[PAP.HidePostClearFlags.type]] =
-    findLastAction(PAP.HidePostClearFlags)
-
-  def postDeletedAt: Option[ju.Date] =
-    postDeletedAction.map(_.creationDati) orElse state.postDeletedAt
-
-  def treeDeletedAt: Option[ju.Date] =
-    treeDeletedAction.map(_.creationDati) orElse state.treeDeletedAt
-
-  def postHiddenAt: Option[ju.Date] =
-    postHiddenAction.map(_.creationDati) orElse state.postHiddenAt
-
-  def postDeletedById: Option[String] =
-    postDeletedAction.map(_.userId) orElse state.postDeletedById
-
-  def treeDeletedById: Option[String] =
-    treeDeletedAction.map(_.userId) orElse state.treeDeletedById
-
-  def postHiddenById: Option[String] =
-    postHiddenAction.map(_.userId) orElse state.postHiddenById
-
-  def isPostDeleted: Boolean = postDeletedAt.nonEmpty
-  def isTreeDeleted: Boolean = treeDeletedAt.nonEmpty
-  def isDeletedSomehow: Boolean = isPostDeleted || isTreeDeleted
-
-  def isPostHidden: Boolean = postHiddenAt.nonEmpty
-
-
-  /** How many people have up/downvoted this post. Might be a tiny bit
-    * inaccurate, if a cached post state is relied on (because it doesn't
-    * store the ids of all raters, and if you add yet another rater, we don't
-    * know if you're adding a new rating, or changing any old one of yours).
-    */
-  def numDistinctRaters = 1234  // unimpleimented
-    // state.numDistinctRaters + num new ratings ratings
-
-
-  // COULD optimize this, do once for all flags.
-  lazy val flags = page.rawActions filter { action =>
-    action.payload.isInstanceOf[PAP.Flag] && action.postId == this.id
-  } map (_.asInstanceOf[RawPostAction[PAP.Flag]])
-
-
-  def flagsDescTime: List[RawPostAction[PAP.Flag]] = flags.sortBy(- _.ctime.getTime)
-
-
-  /**
-   * Flags that were raised before the last review by a moderator have
-   * already been reviewed.
-   */
-  lazy val (
-      flagsPendingReview: List[RawPostAction[PAP.Flag]],
-      flagsReviewed: List[RawPostAction[PAP.Flag]]) =
-    flagsDescTime span { flag =>
-      if (flag.isDeleted) false
-      // Old: (I'll use isDeleted instead?)
-      else if (lastAuthoritativeReviewDati isEmpty) true
-      else lastAuthoritativeReviewDati.get.getTime <= flag.ctime.getTime
-    }
-
-  def numPendingFlags = state.numPendingFlags + flagsPendingReview.length
-  def numHandledFlags = state.numHandledFlags + flagsReviewed.length
-  def numFlags = numPendingFlags + numHandledFlags
-
-  lazy val lastFlag = flagsDescTime.headOption
-
-  lazy val flagsByType: imm.Map[FlagType, List[RawPostAction[PAP.Flag]]] = {
-    // Add reasons and flags to a mutable map.
-    var mmap = mut.Map[FlagType, mut.Set[RawPostAction[PAP.Flag]]]()
-    for (f <- flags)
-      mmap.getOrElse(f.payload.tyype, {
-        val s = mut.Set[RawPostAction[PAP.Flag]]()
-        mmap.put(f.payload.tyype, s)
-        s
-      }) += f
-    // Copy to an immutable version.
-    imm.Map[FlagType, List[RawPostAction[PAP.Flag]]](
-      (for ((reason, flags) <- mmap)
-      yield (reason, flags.toList)).toList: _*)
-  }
-
-  /** Pairs of (FlagReason, flags-for-that-reason), sorted by
-   *  number of flags, descending.
-   */
-  lazy val flagsByTypeSorted: List[(FlagType, List[RawPostAction[PAP.Flag]])] = {
-    flagsByType.toList.sortWith((a, b) => a._2.length > b._2.length)
-  }
-
-
-  def toJson: JsObject = Protocols.postToJson(this)
-
 }
 
 
 
 object Post {
+  
+  val FirstVersion = 1
 
-  def fromJson(json: JsValue) = Protocols.jsonToPost(json)
+  def create(
+        siteId: SiteId,
+        pageId: PageId,
+        postId: PostId,
+        parent: Option[Post],
+        multireplyPostIds: Set[PostId],
+        createdAt: ju.Date,
+        createdById: UserId2,
+        source: String,
+        htmlSanitized: String,
+        approvedById: Option[UserId2]): Post = {
 
-  def sortPosts2(posts: Seq[Post2]): Seq[Post2] = {
-    posts // for now TODO implement
+    require(multireplyPostIds.nonEmpty == parent.isDefined)
+
+    val currentSourcePatch: Option[String] =
+      if (approvedById.isDefined) None
+      else Some(makePatch(from = "", to = source))
+
+    // If approved by a human, this initial version is safe.
+    val safeVersion =
+      approvedById.flatMap(id => if (id != SystemUserId) Some(FirstVersion) else None)
+
+    val (parentsChildrenCollapsedAt, parentsChildrenColllapsedById) = parent match {
+      case None =>
+        (None, None)
+      case Some(parent) =>
+        if (parent.newChildCollapsedStatus.areAncestorsCollapsed)
+          (Some(createdAt), parent.collapsedById)
+        else
+          (None, None)
+    }
+
+    val (parentsChildrenClosedAt, parentsChildrenClosedById) = parent match {
+      case None =>
+        (None, None)
+      case Some(parent) =>
+        if (parent.newChildClosedStatus.areAncestorsClosed)
+          (Some(createdAt), parent.closedById)
+        else
+          (None, None)
+    }
+
+    Post(
+      siteId = siteId,
+      pageId = pageId,
+      id = postId,
+      parentId = parent.map(_.id),
+      multireplyPostIds = multireplyPostIds,
+      createdAt = createdAt,
+      createdById = createdById,
+      lastEditedAt = None,
+      lastEditedById = None,
+      lastApprovedEditAt = None,
+      lastApprovedEditById = None,
+      numDistinctEditors = 1,
+      safeVersion = safeVersion,
+      approvedSource = if (approvedById.isDefined) Some(source) else None,
+      approvedHtmlSanitized = if (approvedById.isDefined) Some(htmlSanitized) else None,
+      approvedAt = if (approvedById.isDefined) Some(createdAt) else None,
+      approvedById = approvedById,
+      approvedVersion = if (approvedById.isDefined) Some(FirstVersion) else None,
+      currentSourcePatch = currentSourcePatch,
+      currentVersion = FirstVersion,
+      collapsedStatus = parent.map(_.newChildCollapsedStatus) getOrElse CollapsedStatus.Open,
+      collapsedAt = parentsChildrenCollapsedAt,
+      collapsedById = parentsChildrenColllapsedById,
+      closedStatus = parent.map(_.newChildClosedStatus) getOrElse ClosedStatus.Open,
+      closedAt = parentsChildrenClosedAt,
+      closedById = parentsChildrenClosedById,
+      hiddenAt = None,
+      hiddenById = None,
+      deletedStatus = DeletedStatus.NotDeleted,
+      deletedAt = None,
+      deletedById = None,
+      pinnedPosition = None,
+      numPendingFlags = 0,
+      numHandledFlags = 0,
+      numPendingEditSuggestions = 0,
+      numLikeVotes = 0,
+      numWrongVotes = 0,
+      numTimesRead = 0)
   }
+
+  def createTitle(
+        siteId: SiteId,
+        pageId: PageId,
+        createdAt: ju.Date,
+        createdById: UserId2,
+        source: String,
+        htmlSanitized: String,
+        approvedById: Option[UserId2]): Post =
+    create(siteId, pageId = pageId, postId = PageParts.TitleId, parent = None,
+      multireplyPostIds = Set.empty, createdAt = createdAt, createdById = createdById,
+      source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
+
+  def createBody(
+        siteId: SiteId,
+        pageId: PageId,
+        createdAt: ju.Date,
+        createdById: UserId2,
+        source: String,
+        htmlSanitized: String,
+        approvedById: Option[UserId2]): Post =
+    create(siteId, pageId = pageId, postId = PageParts.BodyId, parent = None,
+      multireplyPostIds = Set.empty, createdAt = createdAt, createdById = createdById,
+      source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
+
+
+  // def fromJson(json: JsValue) = Protocols.jsonToPost(json)
+
 
   /** Sorts posts so e.g. interesting ones appear first, and deleted ones last.
     */
-  def sortPosts2(posts: imm.Seq[Post2]): imm.Seq[Post2] = {
+  def sortPosts(posts: Seq[Post]): Seq[Post] = {
     posts.sortWith(sortPostsFn)
-  }
-
-  @deprecated("now", "use Post2")
-  def sortPosts(posts: Seq[Post]): Seq[Post] = {  // TODO remove
-    die("DwE5KF32", "Deprecated")
   }
 
   /** NOTE: Keep in sync with `sortPostIdsInPlace()` in client/app/ReactStore.ts
     */
-  private def sortPostsFn(postA: Post2, postB: Post2): Boolean = {
+  private def sortPostsFn(postA: Post, postB: Post): Boolean = {
     /* From app/debiki/HtmlSerializer.scala:
     if (a.pinnedPosition.isDefined || b.pinnedPosition.isDefined) {
       // 1 means place first, 2 means place first but one, and so on.
@@ -844,3 +550,13 @@ object Post {
 
 }
 
+
+
+case class BrowserIdData(
+  ip: String,
+  idCookie: Option[String],
+  fingerprint: Int) {
+
+  require(ip.nonEmpty, "DwE6G9F0")
+  require(idCookie.map(_.isEmpty) != Some(true), "DwE3GJ79")
+}

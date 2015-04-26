@@ -28,7 +28,7 @@ object SearchResultsTemplateCode {
         : Seq[(Option[PageMeta], Seq[FullTextSearchHit])] = {
 
     val hitsByPageId: Map[PageId, Seq[FullTextSearchHit]] =
-      searchResult.hits.groupBy(hit => hit.post.page.id)
+      searchResult.hits.groupBy(hit => hit.post.pageId)
 
     // Sort hits-and-pages by the best hit on each page. This means that
     // the page with the very best hit is shown first.

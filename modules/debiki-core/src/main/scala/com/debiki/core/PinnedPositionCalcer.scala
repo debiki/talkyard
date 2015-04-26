@@ -21,6 +21,7 @@ import scala.collection.{mutable => mut}
 import scala.collection.mutable.DoubleLinkedList
 
 
+/* Disabled. Uses Post, it's gone, now it's Post2.
 
 /** Given a sequence of pinnings of posts, calculates the resulting positions
   * of all pinned posts. Used by PageParts.
@@ -107,3 +108,5 @@ class PinnedPositionCalcer {
   }
 
 }
+
+*/

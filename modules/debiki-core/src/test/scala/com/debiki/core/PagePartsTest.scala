@@ -22,7 +22,7 @@ import org.scalatest.{FreeSpec, MustMatchers}
 import Prelude._
 import java.{util => ju}
 
-
+/*
 class PagePartsTest extends FreeSpec with MustMatchers with PageTestValues {
 
   "A page can" - {
@@ -491,6 +491,6 @@ class PagePartsTest extends FreeSpec with MustMatchers with PageTestValues {
   }
 
 }
-
+*/
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

@@ -103,7 +103,7 @@ object ReactJson {
     var allPostsJson = pageParts.allPosts.filter { post =>
       !post.deletedStatus.isDeleted || (
         post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.id))
-    } map { post: Post2 =>
+    } map { post: Post =>
       post.id.toString -> postToJsonImpl(post, page)
     }
     val numPosts = allPostsJson.length
@@ -117,7 +117,7 @@ object ReactJson {
 
     val topLevelComments = pageParts.topLevelComments
     val topLevelCommentIdsSorted =
-      Post.sortPosts2(topLevelComments).map(reply => JsNumber(reply.id))
+      Post.sortPosts(topLevelComments).map(reply => JsNumber(reply.id))
 
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
@@ -166,7 +166,7 @@ object ReactJson {
 
   /** Private, so it cannot be called outside a transaction.
     */
-  private def postToJsonImpl(post: Post2, page: Page2, includeUnapproved: Boolean = false)
+  private def postToJsonImpl(post: Post, page: Page, includeUnapproved: Boolean = false)
         : JsObject = {
     val people = page.parts
     val lastApprovedEditAt = post.lastApprovedEditAt map { date =>
@@ -182,7 +182,7 @@ object ReactJson {
 
     val childrenSorted = {
       val children = page.parts.childrenOf(post.id)
-      Post.sortPosts2(children)
+      Post.sortPosts(children)
     }
 
     JsObject(Vector(
@@ -213,9 +213,9 @@ object ReactJson {
 
 
   /** Creates a dummy root post, needed when rendering React elements. */
-  def embeddedCommentsDummyRootPost(topLevelComments: Seq[Post2]) = Json.obj(
+  def embeddedCommentsDummyRootPost(topLevelComments: Seq[Post]) = Json.obj(
     "postId" -> JsNumber(PageParts.BodyId),
-    "childIdsSorted" -> JsArray(Post.sortPosts2(topLevelComments).map(reply => JsNumber(reply.id))))
+    "childIdsSorted" -> JsArray(Post.sortPosts(topLevelComments).map(reply => JsNumber(reply.id))))
 
 
   val NoUserSpecificData = Json.obj(

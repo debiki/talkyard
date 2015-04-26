@@ -195,7 +195,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
       case AssetBundleNameRegex(nameNoSuffix, suffix) =>
         (nameNoSuffix, suffix)
       case _ =>
-        throw TemplateRenderer.BadTemplateException(
+        throw DebikiException(
           "DwE13BKf8", o"""Invalid asset bundle name: '$bundleName'. Only names
           like 'some-bundle-name.css' and 'some-scripts.js' are allowed.""")
     }

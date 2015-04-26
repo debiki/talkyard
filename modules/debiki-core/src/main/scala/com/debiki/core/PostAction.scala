@@ -19,11 +19,7 @@ package com.debiki.core
 
 import java.{util => ju}
 import collection.{immutable => imm, mutable => mut}
-import com.debiki.core.{PostActionPayload => PAP}
-import scala.reflect.ClassTag
 import Prelude._
-import PageParts._
-import FlagType.FlagType
 
 
 abstract class PostActionType
@@ -46,7 +42,17 @@ object PostFlagType {
 }
 
 
-abstract class PostAction2 {
+sealed abstract class PostStatusAction
+object PostStatusAction {
+  case object CloseTree extends PostStatusAction
+  case object CollapsePost extends PostStatusAction
+  case object CollapseTree extends PostStatusAction
+  case class DeletePost(clearFlags: Boolean) extends PostStatusAction
+  case object DeleteTree extends PostStatusAction
+}
+
+
+abstract class PostAction {
   def pageId: PageId
   def postId: PostId
   def doerId: UserId2
@@ -54,9 +60,9 @@ abstract class PostAction2 {
 }
 
 
-object PostAction2 {
+object PostAction {
   def apply(pageId: PageId, postId: PostId, doerId: UserId2, actionType: PostActionType)
-        : PostAction2 = actionType match {
+        : PostAction = actionType match {
     case voteType: PostVoteType =>
       PostVote(pageId, postId, voterId = doerId, voteType = voteType)
     case flagType: PostFlagType =>
@@ -71,7 +77,7 @@ case class PostVote(
   pageId: PageId,
   postId: PostId,
   voterId: UserId2,
-  voteType: PostVoteType) extends PostAction2 {
+  voteType: PostVoteType) extends PostAction {
   def actionType = voteType
   def doerId = voterId
 }
@@ -81,116 +87,8 @@ case class PostFlag(
   pageId: PageId,
   postId: PostId,
   flaggerId: UserId2,
-  flagType: PostFlagType) extends PostAction2 {
+  flagType: PostFlagType) extends PostAction {
   def actionType = flagType
   def doerId = flaggerId
 }
-
-// --- OLD stuff below, TODO delete everything :-)  ----
-
-/** Represents a part of a page (e.g. the title, the body, or a comment — a "Post")
-  * or a change to a part of the page (e.g. an edit of a comment — a "Patch").
-  * PostAction wraps the RawPostAction instance that created / changed the page part,
-  * and adds utility methods.
-  */
-class PostAction[P](  // [P <: PostActionPayload] causes compilation errors
-  val page: PageParts,
-  val rawAction: RawPostAction[P]) {
-
-  def postId = rawAction.postId
-  def payload: P = rawAction.payload
-
-  @deprecated("use page instead", "now")
-  def debate = page
-
-  def id: ActionId = rawAction.id
-
-  def creationDati = rawAction.ctime
-
-  def userIdData = rawAction.userIdData
-  def userId = userIdData.userId
-  def user : Option[User] = page.people.user(userIdData.userId)
-  def user_! : User = user.getOrDie("DwE3905FU0", s"No user for action `$id', page `${page.id}'")
-  def theUser = user_!
-
-
-  def ip: String = userIdData.ip
-  def ipSaltHash: String = saltAndHashIp(ip)
-
-  def pagePostId = PagePostId(page.id, postId)
-}
-
-
-/** A post action that is affected by other actions. For example,
-  * a Post is affected by DeletePost, and DeletePost is affected by Undo.
-  * However, Undo isn't affected by any other action (an Undo cannot be Undo:ne),
-  * and does therefore not implement this trait.
-  */
-trait PostActionActedUpon {
-  self: PostAction[_] =>
-
-  protected def actions: List[PostAction[_]] = self.page.getActionsByTargetId(id)
-
-
-  protected def findLastAction[P <: PostActionPayload](payload: P): Option[PostAction[P]] =
-    actions.find { action =>
-      action.payload == payload  // && !action.isDeleted
-    }.asInstanceOf[Option[PostAction[P]]]
-
-
-  protected def findLastActionByType[P <: PostActionPayload](implicit classTag: ClassTag[P])
-        : Option[PostAction[P]] =
-    actions.find { action =>
-      if (classTag.runtimeClass.isInstance(action.payload))
-        true
-      else
-        false
-    }.asInstanceOf[Option[PostAction[P]]]
-
-}
-
-
-
-trait MaybeApproval {
-
-  /** If defined, this action implicitly approves the related post.
-    *
-    * For example, if an admin edits a post, then `edit.approval`
-    * might be set to Approval.AuthoritativeUser, and `edit.isApplied`
-    * would be set to true, and then the new version of the edited post
-    * has automatically been approved, directly on creation.
-    * Sometimes a Post isn't approved until later, via a Review.
-    * Then Post.directApproval is None and Post.lastApproval is Some(...).
-    */
-  def directApproval: Option[Approval]
-
-}
-
-
-
-class ApplyPatchAction(page: PageParts, val editApp: PostAction[PAP.EditApp])
-  extends PostAction(page, editApp.rawAction) with MaybeApproval {
-  def directApproval = editApp.payload.approval
-}
-
-
-
-class ApprovePostAction(page: PageParts, val rawApproval: RawPostAction[PAP.ApprovePost])
-  extends PostAction(page, rawApproval) with MaybeApproval {
-
-  def directApproval = Some(rawApproval.payload.approval)
-  lazy val target: Post = page.getPost(rawApproval.postId) getOrDie "DwE93UX7"
-
-}
-
-
-class RejectEditsAction(page: PageParts, val rawRejection: RawPostAction[PAP.RejectEdits])
-  extends PostAction(page, rawRejection) with MaybeApproval {
-
-  def directApproval = None
-  lazy val target: Post = page.getPost(rawRejection.postId) getOrDie "DwE1dUI8"
-
-}
-
-// vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
 

@@ -81,8 +81,8 @@ object Application extends mvc.Controller {
     val pageId = pageReq.thePageId
 
     val action =
-      if (wholeTree) PostActionPayload.DeleteTree
-      else PostActionPayload.DeletePost(clearFlags = false)
+      if (wholeTree) PostStatusAction.DeleteTree
+      else PostStatusAction.DeletePost(clearFlags = false)
 
     pageReq.dao.changePostStatus(postId, pageId = pageId, action, userId = pageReq.theUser.id2)
 
@@ -105,6 +105,7 @@ object Application extends mvc.Controller {
   def feed(pathIn: PagePath) = PageGetAction(pathIn, pageMustExist = false) {
         pageReq =>
 
+    unimplemented("Rendering feed with new Post2 [DwE5JKP4]") /*
     import pageReq.{pagePath}
 
     // The tenant's name will be included in the feed.
@@ -150,6 +151,7 @@ object Application extends mvc.Controller {
       pathsAndPages)
 
     OkXml(feedXml, "application/atom+xml")
+    */
   }
 
 
