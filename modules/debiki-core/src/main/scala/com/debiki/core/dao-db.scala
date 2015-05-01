@@ -107,10 +107,6 @@ abstract class SiteDbDao {
 
   // ----- Login
 
-  /** Logs in as guest, currently always succeeds (unless out of quota).
-    */
-  def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
-
   /**
    * Assigns ids to the login request, saves it, finds or creates a user
    * for the specified Identity, and returns everything with ids filled in.
@@ -201,10 +197,6 @@ abstract class SiteDbDao {
 
 
   // ----- Users and permissions
-
-  def createUserAndLogin(newUserData: NewUserData): LoginGrant
-
-  def createPasswordUser(userData: NewPasswordUserData): User
 
   /** Returns true if the identity was found (and the password thus changed).
     */
@@ -388,15 +380,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
   // ----- Login, logout
 
-  def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult = {
-    val result =
-      serialize {
-        _spi.loginAsGuest(loginAttempt)
-      }
-    result
-  }
-
-
   def tryLogin(loginAttempt: LoginAttempt): LoginGrant = {
     _spi.tryLogin(loginAttempt)
   }
@@ -504,21 +487,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
 
   // ----- Users and permissions
-
-  def createUserAndLogin(newUserData: NewUserData): LoginGrant = {
-    val resUsg = ResourceUse(numIdentities = 1, numRoles = 1)
-    serialize {
-      _spi.createUserAndLogin(newUserData)
-    }
-  }
-
-
-  def createPasswordUser(userData: NewPasswordUserData): User = {
-    val resUsg = ResourceUse(numRoles = 1)
-    serialize {
-      _spi.createPasswordUser(userData)
-    }
-  }
 
   def changePassword(user: User, newPasswordSaltHash: String): Boolean = {
     serialize {

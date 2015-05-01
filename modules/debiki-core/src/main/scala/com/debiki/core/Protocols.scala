@@ -17,7 +17,6 @@
 
 package com.debiki.core
 
-import com.debiki.core.{PostActionPayload => PAP}
 import java.{util => ju}
 import play.api.libs.json._
 import Prelude._

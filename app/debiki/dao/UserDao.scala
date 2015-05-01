@@ -30,20 +30,38 @@ trait UserDao {
   self: SiteDao =>
 
 
-  def createUserAndLogin(newUserData: NewUserData): LoginGrant =
-    siteDbDao.createUserAndLogin(newUserData)
+  def createIdentityUserAndLogin(newUserData: NewUserData): LoginGrant = {
+    readWriteTransaction { transaction =>
+      val userId = transaction.nextAuthenticatedUserId
+      val user = newUserData.makeUser(userId, transaction.currentTime)
+      val identityId = transaction.nextIdentityId
+      val identity = newUserData.makeIdentity(userId = userId, identityId = identityId)
+      transaction.insertAuthenticatedUser(user)
+      transaction.insertIdentity(identity)
+      LoginGrant(Some(identity), user, isNewIdentity = true, isNewRole = true)
+    }
+  }
 
 
-  def createPasswordUser(userData: NewPasswordUserData): User =
-    siteDbDao.createPasswordUser(userData)
+  def createPasswordUser(userData: NewPasswordUserData): User = {
+    readWriteTransaction { transaction =>
+      val userId = transaction.nextAuthenticatedUserId
+      val user = userData.makeUser(userId, transaction.currentTime)
+      transaction.insertAuthenticatedUser(user)
+      user
+    }
+  }
 
 
   def changePassword(user: User, newPasswordSaltHash: String): Boolean =
     siteDbDao.changePassword(user, newPasswordSaltHash)
 
 
-  def loginAsGuest(loginAttempt: GuestLoginAttempt): User =
-    siteDbDao.loginAsGuest(loginAttempt).user
+  def loginAsGuest(loginAttempt: GuestLoginAttempt): User = {
+    readWriteTransaction { transaction =>
+      transaction.loginAsGuest(loginAttempt).user
+    }
+  }
 
 
   def tryLogin(loginAttempt: LoginAttempt): LoginGrant =
@@ -65,7 +83,7 @@ trait UserDao {
     siteDbDao.loadUserByEmailOrUsername(emailOrUsername)
 
 
-  def loadUserAndAnyIdentity(userId: UserId = null): Option[(Option[Identity], User)] = {
+  def loadUserAndAnyIdentity(userId: UserId): Option[(Option[Identity], User)] = {
     loadIdtyDetailsAndUser(userId) match {
       case Some((identity, user)) => Some((Some(identity), user))
       case None =>
@@ -168,8 +186,8 @@ trait CachingUserDao extends UserDao {
   self: CachingSiteDao =>
 
 
-  override def createUserAndLogin(newUserData: NewUserData): LoginGrant = {
-    val loginGrant = super.createUserAndLogin(newUserData)
+  override def createIdentityUserAndLogin(newUserData: NewUserData): LoginGrant = {
+    val loginGrant = super.createIdentityUserAndLogin(newUserData)
     fireUserCreated(loginGrant.user)
     loginGrant
   }

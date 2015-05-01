@@ -46,16 +46,10 @@ abstract class DebikiRequest[A] {
   def browserIdData = BrowserIdData(ip = ip, idCookie = browserId.map(_.cookieValue),
     fingerprint = 0) // skip for now
 
-  def userIdData = UserIdData(
-    userId = user.map(_.id) getOrElse UnknownUser.Id,
-    ip = ip,
-    browserIdCookie = browserId.map(_.cookieValue),
-    browserFingerprint = 0) // skip for now
-
   def browserIdIsNew = browserId.map(_.isNew) == Some(true)
 
   def theUser = user_!
-  def theUserId = theUser.id2
+  def theUserId = theUser.id
 
   def user_! : User =
     user getOrElse throwForbidden("DwE86Wb7", "Not logged in")

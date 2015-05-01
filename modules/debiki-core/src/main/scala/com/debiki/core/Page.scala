@@ -93,7 +93,7 @@ object PageMeta {
   def forNewPage(
         pageId: PageId,
         pageRole: PageRole,
-        authorId: UserId2,
+        authorId: UserId,
         creationDati: ju.Date = new ju.Date,
         parentPageId: Option[String] = None,
         url: Option[String] = None,
@@ -143,7 +143,7 @@ case class PageMeta(
   bumpedAt: Option[ju.Date] = None,
   parentPageId: Option[String] = None,
   embeddingPageUrl: Option[String],
-  authorId: UserId2,
+  authorId: UserId,
   numLikes: Int = 0,
   numWrongs: Int = 0,
   numRepliesVisible: Int = 0,

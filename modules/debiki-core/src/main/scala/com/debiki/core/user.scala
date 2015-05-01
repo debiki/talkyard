@@ -21,13 +21,13 @@ import java.{util => ju}
 import org.scalactic.{Or, Every, ErrorMessage}
 import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
-import User.{isRoleId, isGuestId, checkId}
+import User._
 
 
 
 abstract class People {
 
-  def theUser(id: UserId2): User
+  def theUser(id: UserId): User
 
 }
 
@@ -40,11 +40,11 @@ sealed abstract class NewUserData {
   def isAdmin: Boolean
   def isOwner: Boolean
 
-  def userNoId = User(
-    id = "?",
+  def makeUser(userId: UserId, createdAt: ju.Date) = User(
+    id = userId,
     displayName = name,
     username = Some(username),
-    createdAt = None,
+    createdAt = Some(createdAt),
     email = email,
     emailNotfPrefs = EmailNotfPrefs.Unspecified,
     emailVerifiedAt = emailVerifiedAt,
@@ -53,7 +53,7 @@ sealed abstract class NewUserData {
     isAdmin = isAdmin,
     isOwner = isOwner)
 
-  def identityNoId: Identity
+  def makeIdentity(userId: UserId, identityId: IdentityId): Identity
 
   Validation.checkName(name)
   Validation.checkUsername(username)
@@ -74,11 +74,11 @@ case class NewPasswordUserData(
   val passwordHash: String =
     DbDao.saltAndHashPassword(password)
 
-  def userNoId = User(
-    id = "?",
+  def makeUser(userId: UserId, createdAt: ju.Date) = User(
+    id = userId,
     displayName = name,
     username = Some(username),
-    createdAt = None,
+    createdAt = Some(createdAt),
     email = email,
     emailNotfPrefs = EmailNotfPrefs.Unspecified,
     emailVerifiedAt = None,
@@ -123,8 +123,8 @@ case class NewOauthUserData(
   isAdmin: Boolean,
   isOwner: Boolean) extends NewUserData {
 
-  def identityNoId =
-    OpenAuthIdentity(id = "?", userId = "?", openAuthDetails = identityData)
+  def makeIdentity(userId: UserId, identityId: IdentityId): Identity =
+    OpenAuthIdentity(id = identityId, userId = userId, openAuthDetails = identityData)
 }
 
 
@@ -151,59 +151,45 @@ case class NameAndUsername(fullName: String, username: String)
 
 
 
-case object UserIdData {
-
-  /** For test suites. */
-  def newTest(userId: UserId, ip: String = "111.112.113.114") =
-    UserIdData(userId, ip, browserIdCookie = None, browserFingerprint = 0)
-
-}
-
-
-case class UserIdData(
-  userId: UserId,
-  ip: String,
-  browserIdCookie: Option[String],
-  browserFingerprint: Int) {
-
-  require(userId.nonEmpty, "DwE182WH9")
-  require(ip.nonEmpty, "DwE6G9F0")
-  require(browserIdCookie.map(_.isEmpty) != Some(true), "DwE3GJ79")
-
-  def anyGuestId: Option[String] =
-    if (isGuestId(userId)) Some(userId drop 1) else None
-
-  def anyRoleId: Option[String] =
-    if (isRoleId(userId)) Some(userId) else None
-
-  def isAnonymousUser = ip == "0.0.0.0"
-  def isUnknownUser = userId == UnknownUser.Id
-  def isSystemUser = userId == SystemUser.User.id
-
-}
-
-
-
 case object User {
 
-  val SystemUserId = SystemUser.User.id2
+  /** Used when things are inserted or updated automatically in the database. */
+  val SystemUserId = -1
 
   // Perhaps in the future:
   // /** A user that has logged in and can post comments, but is anonymous. */
   // val AnonymousUserId = -2
 
+  /** A user that did something, e.g. voted on a comment, but was not logged in. */
+  val UnknownUserId = -3
+
+  /** Guests with custom name and email, but not guests with magic ids like the Unknown user. */
+  val MaxCustomGuestId = -10
+
   val MaxGuestId = -2
   //assert(MaxGuestId == AnonymousUserId)
-  assert(UnknownUser.Id.toInt <= MaxGuestId)
+  assert(UnknownUserId.toInt <= MaxGuestId)
+
+  /** Ids 1 .. 99 are reserved in case in the future I want to combine users and groups,
+    * and then there'll be a few groups with hardcoded ids in the range 1..99.
+    */
+  val LowestAuthenticatedUserId = 100
 
   val LowestNonGuestId = -1
-  assert(LowestNonGuestId == SystemUser.User.id2)
+  assert(LowestNonGuestId == SystemUserId)
+  assert(LowestNonGuestId == MaxGuestId + 1)
 
   def isGuestId(userId: UserId) =
-    userId != SystemUser.User.id && userId.startsWith("-") && userId.length > 1
+    userId <= MaxGuestId
 
   def isRoleId(userId: UserId) =
-    !isGuestId(userId) && userId.nonEmpty
+    !isGuestId(userId)
+
+  def isOkayUserId(id: UserId) =
+    id >= LowestAuthenticatedUserId ||
+      id == SystemUserId ||
+      id == UnknownUserId ||
+      id <= MaxCustomGuestId
 
   /**
    * Checks for weird ASCII chars in an user name.
@@ -259,23 +245,7 @@ case object User {
     false
   }
 
-
-  def checkId(id: String, errcode: String) {
-    if (id == "") assErr(errcode, "Empty ID ")
-    if (id == "0") assErr(errcode, "ID is `0' ")
-    // "?" is okay, means unknown.
-  }
-
 }
-
-
-/* Could use:
-sealed abstract class UserId
-case class GuestId(String) extends UserId
-case class RoleId(String) extends UserId
--- instead of setting User.id to "-<some-id>" for IdentitySimple,
-  and "<some-id>" for Role:s.
-*/
 
 
 /**
@@ -294,7 +264,7 @@ case class RoleId(String) extends UserId
  * @param isOwner
  */
 case class User (
-  id: String,
+  id: UserId,
   displayName: String,
   username: Option[String],
   createdAt: Option[ju.Date],
@@ -307,15 +277,12 @@ case class User (
   isAdmin: Boolean = false,
   isOwner: Boolean = false
 ){
-  checkId(id, "DwE02k125r")
-  def id2 = id.toInt
-  def isAuthenticated = isRoleId(id) && !id.startsWith("?")
+  require(User.isOkayUserId(id), "DwE02k125r")
+
+  def isAuthenticated = isRoleId(id)
 
   def isGuest = User.isGuestId(id)
-  def anyRoleId: Option[String] = if (isRoleId(id)) Some(id) else None
-  def anyGuestId: Option[String] = if (isGuestId(id)) Some(id drop 1) else None
-  def theRoleId: String = anyRoleId getOrDie "DwE035SKF7"
-  def theGuestId: String = anyGuestId getOrDie "DwE5GK904"
+  def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
 
 }
 
@@ -388,35 +355,16 @@ case class OpenAuthLoginAttempt(
 }
 
 
-/**
- * A user might have many identities, e.g. an OpenID Gmail identity and
- * a Twitter identity.
- * COULD tease apart inheritance:
- *  Split into three unrelated classes 1) EmailLinkLogin, 2) Guest and
- *  3) Identity, with:
- *      authn: AuthnOpenId(...), AuthnOAuth1(...) & 2, AuthnPassword(...)
- *      identityProvider: Gmail, Facebook, Twitter, Local, ...)
- */
+/** A user might have many identities, e.g. an OpenAuth Google identity and
+  * a Twitter identity.
+  */
 sealed abstract class Identity {
 
-  /** A local id, not a guid. -- hmm, no, it'll be a database *unique* id?!
-   *
-   *  For example, if a user is loaded for inclusion on page X,
-   *  its id might be another from when loaded for display on
-   *  another page Y.
-   *
-   *  At least for NoSQL databses (e.g. Cassandra) the id will probably
-   *  vary from page to page. Because the user data is probably denormalized:
-   *  it's included on each page where the user leaves a reply!
-   *  For relational databases, however, the id might be the same always,
-   *  on all pages. Instead of denormalizing data, indexes and table joins
-   *  are used.
-   */
-  def id: String
-  def userId: String
+  def id: IdentityId
+  def userId: UserId
 
-  checkId(id, "DwE02krc3g")
-  checkId(userId, "DwE864rsk215")
+  //checkId(id, "DwE02krc3g")  TODO check how?
+  require(isOkayUserId(userId), "DwE864rsk215")
 }
 
 
@@ -431,18 +379,18 @@ sealed abstract class Identity {
  * @param emailSent Not known before login (is `None`)
  */
 case class IdentityEmailId(
-  id: String,
-  userId: String = "?",
+  id: IdentityId,
+  userId: UserId,
   emailSent: Option[Email] = None
 ) extends Identity {
   // Either only email id known, or all info known.
-  require((userId startsWith "?") == emailSent.isEmpty)
+  // require((userId startsWith "?") == emailSent.isEmpty)    TODO what?
 }
 
 
 case class IdentityOpenId(
-  id: String,
-  override val userId: String,
+  id: IdentityId,
+  override val userId: UserId,
   openIdDetails: OpenIdDetails) extends Identity {
 
   def displayName = openIdDetails.firstName
@@ -473,7 +421,7 @@ case class OpenAuthIdentity(
   override val userId: UserId,
   openAuthDetails: OpenAuthDetails) extends Identity {
 
-  def displayName = openAuthDetails.displayName
+  require(userId >= LowestAuthenticatedUserId)
 }
 
 
@@ -501,56 +449,7 @@ case class LoginGrant(
    isNewRole: Boolean) {
 
   require(identity.map(_.id.contains('?')) != Some(true))
-  require(!user.id.contains('?'))
   require(identity.map(_.userId == user.id) != Some(false))
   require(!isNewRole || isNewIdentity)
-
-  def displayName: String = user.displayName
-  def email: String = user.email
-
-  /** For test suites. */
-  def testUserIdData =
-    UserIdData.newTest(userId = user.id)
 }
-
-
-/** A user that voted on a comment but was not logged in.
-  */
-object UnknownUser {
-
-  val Id = "-3"
-
-  val User = com.debiki.core.User(id = Id, displayName = "(unknown user)", username = None,
-    createdAt = None, email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive,
-    emailVerifiedAt = None, isAdmin = false)
-
-}
-
-
-
-/**
- * Used when things are inserted automatically into the database,
- * e.g. an automatically generated default homepage, for a new website.
- */
-object SystemUser {
-
-  import com.debiki.core
-
-  val Ip = "SystemUserIp"
-
-  // Let id = -1 because Discourse does that.
-  val User = core.User(id = "-1", displayName = "System", username = None,
-    createdAt = None, email = "", emailNotfPrefs = EmailNotfPrefs.DontReceive,
-    emailVerifiedAt = None, isAdmin = true)
-
-  val UserIdData = core.UserIdData(
-    userId = SystemUser.User.id,
-    ip = Ip,
-    browserIdCookie = None,
-    browserFingerprint = 0)
-
-}
-
-
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
 

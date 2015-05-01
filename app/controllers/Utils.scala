@@ -145,7 +145,7 @@ object Utils extends Results with http.ContentTypes {
   }
 
 
-  case class LoginNotFoundException(tenantId: String, userId: String)
+  case class LoginNotFoundException(tenantId: SiteId, userId: UserId)
      extends Exception("No user with id: "+ userId +", site id: "+ tenantId)
 
 

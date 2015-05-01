@@ -187,7 +187,7 @@ object ListController extends mvc.Controller {
 
   private def jsonForUser(user: User): JsValue = {
     var info = Map[String, JsValue](
-      "id" -> JsString(user.id),
+      "id" -> JsNumber(user.id),
       "displayName" -> JsString(user.displayName),
       "country" -> JsString(user.country))
 

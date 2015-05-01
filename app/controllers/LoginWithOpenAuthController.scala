@@ -352,7 +352,7 @@ object LoginWithOpenAuthController extends Controller {
       }
 
     try {
-      val loginGrant = dao.createUserAndLogin(userData)
+      val loginGrant = dao.createIdentityUserAndLogin(userData)
       if (emailVerifiedAt.isDefined) {
         createCookiesAndFinishLogin(request.request, loginGrant.user)
       }

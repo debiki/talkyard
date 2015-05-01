@@ -123,7 +123,7 @@ object Migration14 {
 
       val (collapsedAt, collapsedById) =
         if (collapsedStatus.isCollapsed)
-          (Some(oldPost.creationDati), Some(SystemUser.User.id2))
+          (Some(oldPost.creationDati), Some(SystemUser.User.id))
         else
           (None, None)
 
@@ -133,7 +133,7 @@ object Migration14 {
 
       val (closedAt, closedById) =
         if (closedStatus.isClosed)
-          (Some(oldPost.creationDati), Some(SystemUser.User.id2))
+          (Some(oldPost.creationDati), Some(SystemUser.User.id))
         else
           (None, None)
 
@@ -144,7 +144,7 @@ object Migration14 {
 
       val (deletedAt, deletedById) =
         if (deletedStatus.isDeleted)
-          (Some(oldPost.creationDati), Some(SystemUser.User.id2))
+          (Some(oldPost.creationDati), Some(SystemUser.User.id))
         else
           (None, None)
 
@@ -155,7 +155,7 @@ object Migration14 {
       var approvedSource = oldPost.approvedText
       var approvedHtmlSanitized = oldPost.approvedHtmlSanitized
       var approvedById = oldPost.lastManuallyApprovedById.map(_.toInt) orElse
-        oldPost.lastApprovalDati.map(_ => SystemUser.User.id2)
+        oldPost.lastApprovalDati.map(_ => SystemUser.User.id)
       var approvedAt = oldPost.lastApprovalDati
       val isEmpty =
         approvedSource.map(_.trim.length > 0) != Some(true) ||
@@ -164,7 +164,7 @@ object Migration14 {
         safeVersion = Some(Post2.FirstVersion)
         approvedSource = Some("(empty post)")
         approvedHtmlSanitized = Some("<p>(empty post)</p>")
-        approvedById = Some(SystemUser.User.id2)
+        approvedById = Some(SystemUser.User.id)
         approvedAt = Some(oldPost.creationDati)
       }
 
