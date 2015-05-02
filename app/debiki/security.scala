@@ -26,6 +26,7 @@ import play.api.{Play, Logger}
 import play.api.Play.current
 import requests.JsonOrFormDataBody
 import requests.realOrFakeIpOf
+import scala.util.Try
 import scala.xml.{Text, Node, NodeSeq}
 import DebikiSecurity._
 
@@ -221,8 +222,8 @@ object Xsrf {
 
 sealed abstract class SidStatus {
   def isOk = false
-  def userId: Option[String] = None
-  def roleId: Option[String] = None
+  def userId: Option[UserId] = None
+  def roleId: Option[UserId] = None
   def displayName: Option[String] = None
 }
 
@@ -235,7 +236,7 @@ case object SidBadHash extends SidStatus
 case class SidOk(
   value: String,
   ageInMillis: Long,
-  override val userId: Option[String],
+  override val userId: Option[UserId],
 
   /**
    * Remembering the display name saves 1 database rondtrip every time
@@ -249,7 +250,7 @@ case class SidOk(
 
   override def isOk = true
 
-  override def roleId: Option[String] = userId.filter(User.isRoleId)
+  override def roleId: Option[UserId] = userId.filter(User.isRoleId)
 }
 
 
@@ -279,7 +280,12 @@ object Sid {
       s"$secretSalt$dotUseridNameDateRandom") take sidHashLength
     if (hash != realHash) return SidBadHash
     dotUseridNameDateRandom.drop(1).split('.') match {
-      case Array(userId, nameNoDots, dateStr, randVal) =>
+      case Array(userIdString, nameNoDots, dateStr, randVal) =>
+        val userId: Option[UserId] =
+          if (userIdString.isEmpty) None
+          else Try(userIdString.toInt).toOption orElse {
+            return SidBadFormat
+          }
         val ageMillis = (new ju.Date).getTime - dateStr.toLong
         val displayName = nameNoDots.replaceAll("_", ".")
         //if (ageMillis > _sidMaxMillis)
@@ -287,7 +293,7 @@ object Sid {
         SidOk(
           value = value,
           ageInMillis = ageMillis,
-          userId = if (userId isEmpty) None else Some(userId),
+          userId = userId,
           displayName = if (displayName isEmpty) None else Some(displayName))
       case _ => SidBadFormat
     }

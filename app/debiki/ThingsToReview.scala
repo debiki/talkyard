@@ -31,11 +31,11 @@ case class ThingsToReview(
 
   private val postsById: Map[PostId, Post] = Map(posts.map(post => post.id -> post): _*)
   private val pagesById: Map[PageId, PageMeta] = Map(pageMetas.map(meta => meta.pageId -> meta): _*)
-  private val peopleById: Map[UserId2, User] = Map(people.map(user => user.id2 -> user): _*)
+  private val peopleById: Map[UserId, User] = Map(people.map(user => user.id -> user): _*)
   private val flagsByPostId: Map[PostId, immutable.Seq[PostFlag]] = flags.groupBy(_.postId)
 
   def thePost(id: PostId): Post = postsById.get(id) getOrDie "DwE8F0Be2"
   def thePage(id: PageId): PageMeta = pagesById.get(id) getOrDie "DwE6PKJ5"
-  def theUser(id: UserId2): User = peopleById.get(id) getOrDie "DwE2dKG8"
+  def theUser(id: UserId): User = peopleById.get(id) getOrDie "DwE2dKG8"
   def theFlagsFor(id: PostId): immutable.Seq[PostFlag] = flagsByPostId.getOrElse(id, Nil)
 }

@@ -71,9 +71,9 @@ case class PagePartsDao(override val pageId: PageId, transaction: SiteTransactio
   private var _usersById: Map[UserId, User] = null
   private var _allPosts: immutable.Seq[Post] = null
 
-  override def theUser(userId: UserId2): User = {
+  override def theUser(userId: UserId): User = {
     loadUsersOnPage()
-    _usersById.get(userId.toString) getOrDie
+    _usersById.get(userId) getOrDie
       s"User not found, id: '$userId', page: '$pageId' [DwE4BYW2]"
   }
 

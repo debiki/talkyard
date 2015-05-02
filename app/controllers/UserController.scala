@@ -27,10 +27,10 @@ import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
 import requests.{PageRequest, DebikiRequest}
+import scala.util.Try
 import Utils.OkSafeJson
 import Utils.ValidationImplicits._
-import DebikiHttp.{throwForbidden, throwNotFound}
-
+import DebikiHttp.{throwForbidden, throwNotFound, throwBadReq}
 
 
 /** Handles requests related to users (guests, roles, groups).
@@ -46,7 +46,8 @@ object UserController extends mvc.Controller {
 
 
   def loadUserInfo(userId: String) = GetAction { request =>
-    val userInfo = request.dao.loadUserInfoAndStats(userId) getOrElse throwNotFound(
+    val userIdInt = Try(userId.toInt) getOrElse throwBadReq("DwE4FKf2", "Bad user id")
+    val userInfo = request.dao.loadUserInfoAndStats(userIdInt) getOrElse throwNotFound(
       "DwE512WR8", s"User not found, id: $userId")
     val json = Json.obj("userInfo" -> userInfoToJson(userInfo))
     OkSafeJson(json)
@@ -67,7 +68,8 @@ object UserController extends mvc.Controller {
 
 
   def listUserActions(userId: String) = GetAction { request =>
-    val actionInfos: Seq[UserActionInfo] = request.dao.listUserActions(userId)
+    val userIdInt = Try(userId.toInt) getOrElse throwBadReq("DwE8UKG4", "Bad user id")
+    val actionInfos: Seq[UserActionInfo] = request.dao.listUserActions(userIdInt)
     val json = Json.obj("actions" -> actionInfos.map(actionToJson(_)))
     OkSafeJson(json)
   }
@@ -97,8 +99,9 @@ object UserController extends mvc.Controller {
 
 
   def loadUserPreferences(userId: String) = GetAction { request =>
-    checkUserPrefsAccess(request, userId)
-    val prefs = request.dao.loadRolePreferences(userId) getOrElse throwNotFound(
+    val userIdInt = Try(userId.toInt) getOrElse throwBadReq("DwE7KBA0", "Bad user id")
+    checkUserPrefsAccess(request, userIdInt)
+    val prefs = request.dao.loadRolePreferences(userIdInt) getOrElse throwNotFound(
       "DwE3EJ5O2", s"User not found, id: $userId")
     val json = Json.obj("userPreferences" -> userPrefsToJson(prefs))
     OkSafeJson(json)
@@ -193,9 +196,9 @@ object UserController extends mvc.Controller {
       "pageTitle" -> JsString(actionInfo.pageTitle),
       "postId" -> JsNumber(actionInfo.postId),
       "actionId" -> JsNumber(actionInfo.actionId),
-      "actingUserId" -> JsString(actionInfo.actingUserId),
+      "actingUserId" -> JsNumber(actionInfo.actingUserId),
       "actingUserDisplayName" -> JsString(actionInfo.actingUserDisplayName),
-      "targetUserId" -> JsString(actionInfo.targetUserId),
+      "targetUserId" -> JsNumber(actionInfo.targetUserId),
       "targetUserDisplayName" -> JsString(actionInfo.targetUserDisplayName),
       "createdAtEpoch" -> JsNumber(actionInfo.createdAt.getTime),
       "excerpt" -> JsString(actionInfo.postExcerpt),

@@ -30,11 +30,11 @@ package object core {
 
   type LoginId = String
 
-  type UserId = String
-  type UserId2 = Int // when removing/renaming-to-UserId, search for UserId2 everywhere
+  type UserId = Int // when removing/renaming-to-UserId, search for UserId2 everywhere
 
-  type RoleId = String
+  type RoleId = UserId
 
+  /** Email identities are strings, all others are numbers but converted to strings. */
   type IdentityId = String
 
   type IpAddress = String

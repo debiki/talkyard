@@ -67,13 +67,6 @@ case class Email(
     assErrIf(toUserId.isEmpty, "DwE44BPK6", s"Email `$id' lacks toUserId")
   }
 
-  def toGuestId: Option[String] =
-    if (toUserId.nonEmpty && toUserId.get.startsWith("-")) Some(toUserId.get drop 1)
-    else None
-
-  def toRoleId: Option[String] =
-    if (toUserId.nonEmpty && !toUserId.get.startsWith("-")) Some(toUserId.get)
-    else None
 }
 
 

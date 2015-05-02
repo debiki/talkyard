@@ -38,7 +38,7 @@ trait PostsDao {
 
 
   def insertReply(text: String, pageId: PageId, replyToPostIds: Set[PostId],
-        authorId: UserId2): PostId = {
+        authorId: UserId): PostId = {
     val htmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(
       text, allowClassIdDataAttrs = false, followLinks = false)
 
@@ -73,7 +73,7 @@ trait PostsDao {
       val author = transaction.loadUser(authorId) getOrElse throwNotFound("DwE404UF3", "Bad user")
       val approverId =
         if (author.isAdmin) {
-          author.id2
+          author.id
         }
         else {
           SystemUserId
@@ -110,7 +110,7 @@ trait PostsDao {
   }
 
 
-  def editPost(pageId: PageId, postId: PostId, editorId: UserId2, newText: String) {
+  def editPost(pageId: PageId, postId: PostId, editorId: UserId, newText: String) {
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       var postToEdit = page.parts.post(postId).getOrElse(
@@ -119,7 +119,7 @@ trait PostsDao {
       if (postToEdit.currentSource == newText)
         return
 
-      val editor = transaction.loadUser(editorId.toString).getOrElse(
+      val editor = transaction.loadUser(editorId).getOrElse(
         throwNotFound("DwE30HY21", s"User not found, id: '$editorId'"))
 
       // For now: (add back edit suggestions later. And should perhaps use PermsOnPage.)
@@ -145,7 +145,7 @@ trait PostsDao {
             followLinks = postToEdit.createdByUser(page.parts).isAdmin && editor.isAdmin)
         }
 
-      val approverId = if (editor.isAdmin) editor.id2 else SystemUserId
+      val approverId = if (editor.isAdmin) editor.id else SystemUserId
       val nextVersion = postToEdit.currentVersion + 1
 
       // COULD send current version from browser to server, reject edits if != oldPost.currentVersion
@@ -189,7 +189,7 @@ trait PostsDao {
   }
 
 
-  def changePostStatus(postId: PostId, pageId: PageId, action: PostStatusAction, userId: UserId2) {
+  def changePostStatus(postId: PostId, pageId: PageId, action: PostStatusAction, userId: UserId) {
     import com.debiki.core.{PostStatusAction => PSA}
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
@@ -279,7 +279,7 @@ trait PostsDao {
   }
 
 
-  def approvePost(pageId: PageId, postId: PostId, approverId: UserId2) {
+  def approvePost(pageId: PageId, postId: PostId, approverId: UserId) {
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val pageMeta = page.meta
@@ -328,13 +328,13 @@ trait PostsDao {
   }
 
 
-  def deletePost(pageId: PageId, postId: PostId, deletedById: UserId2) {
-    changePostStatus(pageId = pageId, postId = postId, action =
-        PostStatusAction.DeletePost(clearFlags = false), userId = deletedById)
+  def deletePost(pageId: PageId, postId: PostId, deletedById: UserId) {
+    changePostStatus(pageId = pageId, postId = postId,
+      action = PostStatusAction.DeletePost(clearFlags = false), userId = deletedById)
   }
 
 
-  def deleteVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId2) {
+  def deleteVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId) {
     readWriteTransaction { transaction =>
       transaction.deleteVote(pageId, postId, voteType, voterId = voterId)
       updateVoteCounts(pageId, postId = postId, transaction)
@@ -358,7 +358,7 @@ trait PostsDao {
 
 
   def voteOnPost(pageId: PageId, postId: PostId, voteType: PostVoteType,
-        voterId: UserId2, voterIp: String, postIdsRead: Set[PostId]) {
+        voterId: UserId, voterIp: String, postIdsRead: Set[PostId]) {
     readWriteTransaction { transaction =>
       val post = transaction.loadThePost(pageId, postId)
       if (voteType == PostVoteType.Like) {
@@ -397,7 +397,7 @@ trait PostsDao {
       val posts = transaction.loadPostsToReview()
       val pageMetas = transaction.loadPageMetas(posts.map(_.pageId))
       val flags = transaction.loadFlagsFor(posts.map(_.pagePostId))
-      val userIds = mutable.HashSet[UserId2]()
+      val userIds = mutable.HashSet[UserId]()
       userIds ++= posts.map(_.createdById)
       userIds ++= posts.flatMap(_.lastEditedById)
       userIds ++= flags.map(_.flaggerId)
@@ -407,7 +407,7 @@ trait PostsDao {
   }
 
 
-  def flagPost(pageId: PageId, postId: PostId, flagType: PostFlagType, flaggerId: UserId2) {
+  def flagPost(pageId: PageId, postId: PostId, flagType: PostFlagType, flaggerId: UserId) {
     readWriteTransaction { transaction =>
       val postBefore = transaction.loadThePost(pageId, postId)
       // SHOULD if >= 2 pending flags, then hide post until reviewed? And unhide, if flags cleared.
@@ -419,7 +419,7 @@ trait PostsDao {
   }
 
 
-  def clearFlags(pageId: PageId, postId: PostId, clearedById: UserId2): Unit = {
+  def clearFlags(pageId: PageId, postId: PostId, clearedById: UserId): Unit = {
     readWriteTransaction { transaction =>
       val postBefore = transaction.loadThePost(pageId, postId)
       val postAfter = postBefore.copy(
@@ -479,7 +479,7 @@ trait CachingPostsDao extends PagesDao {
   override def createPage2(pageRole: PageRole, pageStatus: PageStatus,
         anyParentPageId: Option[PageId], anyFolder: Option[String],
         titleSource: String, bodySource: String,
-        showId: Boolean, pageSlug: String, authorId: UserId2): PagePath = {
+        showId: Boolean, pageSlug: String, authorId: UserId): PagePath = {
     val pagePath = super.createPage2(pageRole, pageStatus, anyParentPageId,
       anyFolder, titleSource, bodySource, showId, pageSlug, authorId)
     firePageCreated(pagePath)

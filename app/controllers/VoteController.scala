@@ -76,11 +76,11 @@ object VoteController extends mvc.Controller {
     }
 
     if (delete) {
-      request.dao.deleteVote(pageId, postId, voteType, voterId = request.theUser.id2)
+      request.dao.deleteVote(pageId, postId, voteType, voterId = request.theUser.id)
     }
     else {
       request.dao.voteOnPost(pageId, postId, voteType,
-        voterId = request.theUser.id2, voterIp = request.ip, postIdsRead)
+        voterId = request.theUser.id, voterIp = request.ip, postIdsRead)
     }
 
     val json = ReactJson.postToJson2(postId = postId, pageId = pageId, request.dao,

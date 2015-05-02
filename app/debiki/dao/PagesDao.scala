@@ -36,7 +36,7 @@ trait PagesDao {
 
   def createPage2(pageRole: PageRole, pageStatus: PageStatus, anyParentPageId: Option[PageId],
         anyFolder: Option[String], titleSource: String, bodySource: String,
-        showId: Boolean, pageSlug: String, authorId: UserId2): PagePath = {
+        showId: Boolean, pageSlug: String, authorId: UserId): PagePath = {
 
     val bodyHtmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(bodySource,
       allowClassIdDataAttrs = true, followLinks = !pageRole.isWidelyEditable)
@@ -51,7 +51,7 @@ trait PagesDao {
       val author = transaction.loadUser(authorId) getOrElse throwForbidden("DwE9GK32", "User gone")
       val approvedById =
         if (author.isAdmin) {
-          author.id2
+          author.id
         }
         else {
           if (pageRole != PageRole.ForumTopic)
@@ -130,7 +130,7 @@ trait CachingPagesDao extends PagesDao {
   override def createPage2(pageRole: PageRole, pageStatus: PageStatus,
         anyParentPageId: Option[PageId], anyFolder: Option[String],
         titleSource: String, bodySource: String,
-        showId: Boolean, pageSlug: String, authorId: UserId2): PagePath = {
+        showId: Boolean, pageSlug: String, authorId: UserId): PagePath = {
     val pagePath = super.createPage2(pageRole, pageStatus, anyParentPageId,
       anyFolder, titleSource, bodySource, showId, pageSlug, authorId)
     firePageCreated(pagePath)

@@ -216,7 +216,7 @@ object LoginWithPasswordController extends mvc.Controller {
         */
     }
 
-    val roleId = email.toRoleId getOrElse {
+    val roleId = email.toUserId getOrElse {
       assErr("DwE8XK5", "Email was not sent to a role")
     }
 

@@ -33,7 +33,7 @@ case class PageStuff(
   title: String,
   bodyExcerpt: Option[String],
   authorDisplayName: String,
-  authorUserId: UserId2)
+  authorUserId: UserId)
 
 
 
@@ -66,7 +66,7 @@ trait PageStuffDao {
       }
       pagePostIds
     })
-    val usersById = transaction.loadUsersAsMap2(pageMetasById.values.map(_.authorId))
+    val usersById = transaction.loadUsersAsMap(pageMetasById.values.map(_.authorId))
 
     for (pageMeta <- pageMetasById.values) {
       val pageId = pageMeta.pageId

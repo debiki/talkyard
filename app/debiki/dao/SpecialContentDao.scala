@@ -77,7 +77,7 @@ trait SpecialContentDao {
 
 
   def saveSpecialContent(rootPageId: PageId, contentId: PageId, anyNewSource: Option[String],
-        resetToDefaultContent: Boolean, editorId: UserId2) {
+        resetToDefaultContent: Boolean, editorId: UserId) {
 
     // Check that the content id is valid.
     if (SpecialContentPages.lookup(contentId).isEmpty)
@@ -123,7 +123,7 @@ trait SpecialContentDao {
   }
 
 
-  protected def createSpecialContentPage(pageId: PageId, authorId: UserId2,
+  protected def createSpecialContentPage(pageId: PageId, authorId: UserId,
       source: String, htmlSanitized: String, transaction: SiteTransaction) {
     val pageMeta = PageMeta.forNewPage(pageId, PageRole.SpecialContent, authorId,
       transaction.currentTime, parentPageId = None, url = None, publishDirectly = true)
@@ -143,7 +143,7 @@ trait SpecialContentDao {
 
 
   protected def updateSpecialContentPage(oldPost: Post, newSource: String, htmlSanitized: String,
-        editorId: UserId2, transaction: SiteTransaction) {
+        editorId: UserId, transaction: SiteTransaction) {
     if (oldPost.currentSource == newSource)
       return
 
@@ -186,7 +186,7 @@ trait CachingSpecialContentDao extends SpecialContentDao {
   // override def loadSpecialContentPage(...) ...
 
 
-  override def createSpecialContentPage(pageId: PageId, authorId: UserId2,
+  override def createSpecialContentPage(pageId: PageId, authorId: UserId,
         source: String, htmlSanitized: String, transaction: SiteTransaction): Unit = {
     super.createSpecialContentPage(pageId, authorId, source = source,
       htmlSanitized = htmlSanitized, transaction)
@@ -196,7 +196,7 @@ trait CachingSpecialContentDao extends SpecialContentDao {
 
 
   override def updateSpecialContentPage(oldPost: Post, newSource: String, htmlSanitized: String,
-        editorId: UserId2, transaction: SiteTransaction) {
+        editorId: UserId, transaction: SiteTransaction) {
     super.updateSpecialContentPage(oldPost, newSource, htmlSanitized = htmlSanitized,
       editorId = editorId, transaction)
     firePageSaved(SitePageId(siteId = siteId, pageId = oldPost.pageId))

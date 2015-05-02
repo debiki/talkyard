@@ -115,7 +115,7 @@ abstract class PageParts extends People {
   }
 
 
-  def theUser(userId: UserId2): User
+  def theUser(userId: UserId): User
 
 
   def childrenOf(postId: PostId): immutable.Seq[Post] =

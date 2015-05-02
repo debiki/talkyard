@@ -63,7 +63,7 @@ object Application extends mvc.Controller {
     // SHOULD generate notification
 
     request.dao.flagPost(pageId = pageId, postId = postId, flagType,
-      flaggerId = request.theUser.id2)
+      flaggerId = request.theUser.id)
 
     val json = ReactJson.postToJson2(postId = postId, pageId = pageId, dao = request.dao)
     OkSafeJson(json)
@@ -84,7 +84,7 @@ object Application extends mvc.Controller {
       if (wholeTree) PostStatusAction.DeleteTree
       else PostStatusAction.DeletePost(clearFlags = false)
 
-    pageReq.dao.changePostStatus(postId, pageId = pageId, action, userId = pageReq.theUser.id2)
+    pageReq.dao.changePostStatus(postId, pageId = pageId, action, userId = pageReq.theUser.id)
 
     OkSafeJson(ReactJson.postToJson2(postId = postId, pageId = pageId, // TODO: don't include post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
       pageReq.dao, includeUnapproved = true))
