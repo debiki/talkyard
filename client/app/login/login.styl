@@ -92,12 +92,14 @@
 // ---
 // This hides/shows "Login to Post Comment" / "Login to Submit" messages
 // depending on what the user is doing.
+body .dw-login-to-auth,
 body .dw-login-to-submit,
 body .dw-login-to-post-comment,
 body .dw-login-to-create-topic,
 body .dw-login-to-login
   display: none
 
+body.dw-login-to-auth .dw-login-to-auth,
 body.dw-login-to-submit .dw-login-to-submit,
 body.dw-login-to-post-comment .dw-login-to-post-comment,
 body.dw-login-to-create-topic .dw-login-to-create-topic,
@@ -107,6 +109,7 @@ body.dw-login-become-admin .dw-login-to-login
   display: inline
 // ---
 
+body.dw-login-to-auth,
 body.dw-login-become-admin,
 body.dw-login-as-admin
   #dw-lgi-twitter,  // twitter has no email

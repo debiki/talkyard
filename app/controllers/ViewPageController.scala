@@ -51,15 +51,26 @@ object ViewPageController extends mvc.Controller {
 
 
   def viewPost(pathIn: PagePath) = PageGetAction(pathIn, pageMustExist = false) { pageReq =>
-    if (!pageReq.pageExists) {
-      if (pageReq.pagePath.value == HomepageUrlPath) {
-        // TemplateRenderer will show a getting-started or create-something-here page.
-        viewPostImpl(makeEmptyPageRequest(pageReq, pageId = "0", showId = false,
-          pageRole = PageRole.WebPage))
-      }
-      else {
-        throwNotFound("DwE404", "Page not found")
-      }
+    val siteSettings = pageReq.dao.loadWholeSiteSettings()
+    val authenticationRequired = siteSettings.userMustBeAuthenticated.asBoolean ||
+      siteSettings.userMustBeApproved.asBoolean
+    if (!pageReq.pageExists && pageReq.pagePath.value == HomepageUrlPath) {
+      // TemplateRenderer will show a getting-started or create-something-here page.
+      viewPostImpl(makeEmptyPageRequest(pageReq, pageId = "0", showId = false,
+        pageRole = PageRole.WebPage))
+    }
+    else if (authenticationRequired && !pageReq.isAuthenticated) {
+      Ok(views.html.login.loginPopup(
+        mode = "LoginToAuthenticate",
+        serverAddress = s"//${pageReq.host}",
+        returnToUrl = pageReq.uri)) as HTML
+    }
+    else if (siteSettings.userMustBeApproved.asBoolean && !pageReq.isApprovedOrStaff) {
+      throwForbidden("DwE403KGW0", o"""Your account has not yet been approved; please wait until
+        someone in our staff has approved it.""")
+    }
+    else if (!pageReq.pageExists) {
+      throwNotFound("DwE404", "Page not found")
     }
     else {
       viewPostImpl(pageReq)

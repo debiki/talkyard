@@ -45,6 +45,9 @@ sealed abstract class NewUserData {
     displayName = name,
     username = Some(username),
     createdAt = Some(createdAt),
+    isApproved = false,
+    approvedAt = None,
+    approvedById = None,
     email = email,
     emailNotfPrefs = EmailNotfPrefs.Unspecified,
     emailVerifiedAt = emailVerifiedAt,
@@ -79,6 +82,9 @@ case class NewPasswordUserData(
     displayName = name,
     username = Some(username),
     createdAt = Some(createdAt),
+    isApproved = false,
+    approvedAt = None,
+    approvedById = None,
     email = email,
     emailNotfPrefs = EmailNotfPrefs.Unspecified,
     emailVerifiedAt = None,
@@ -263,11 +269,14 @@ case object User {
  * @param isAdmin
  * @param isOwner
  */
-case class User (
+case class User(
   id: UserId,
   displayName: String,
   username: Option[String],
   createdAt: Option[ju.Date],
+  isApproved: Boolean,
+  approvedAt: Option[ju.Date],
+  approvedById: Option[UserId],
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
@@ -275,11 +284,26 @@ case class User (
   country: String = "",
   website: String = "",
   isAdmin: Boolean = false,
-  isOwner: Boolean = false
-){
+  isOwner: Boolean = false,
+  suspendedAt: Option[ju.Date] = None,
+  suspendedTill: Option[ju.Date] = None,
+  suspendedById: Option[ju.Date] = None) {
+
   require(User.isOkayUserId(id), "DwE02k125r")
+  require(approvedAt.isDefined == approvedById.isDefined, "DwE5KPEW3")
+  require(!isApproved || (approvedById.isDefined && approvedAt.isDefined), "DwE4LG8K0")
+  require(suspendedAt.isDefined == suspendedById.isDefined, "DwE6KEPw2")
+  require(suspendedTill.isEmpty || suspendedAt.isDefined, "DwE2JLU53")
+  require(!isGuest || (
+    username.isEmpty && createdAt.isEmpty && !isAdmin && !isOwner &&
+      !isApproved && approvedAt.isEmpty && approvedById.isEmpty &&
+      emailVerifiedAt.isEmpty && passwordHash.isEmpty &&
+      suspendedAt.isEmpty && suspendedTill.isEmpty && suspendedById.isEmpty), "DwE0GUEST426")
+  require(!isAuthenticated ||
+    createdAt.isDefined, "DwE0AUTH6U82")
 
   def isAuthenticated = isRoleId(id)
+  def isApprovedOrStaff = approvedAt.isDefined || isAdmin || isOwner
 
   def isGuest = User.isGuestId(id)
   def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None

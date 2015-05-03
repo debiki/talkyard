@@ -31,7 +31,9 @@ case class AnySetting(
 
   def value: Any = assignedValue getOrElse default
   def valueAsBoolean = value == "T" || value == true
+  def asBoolean = value == "T" || value == true
   def valueAsString: String = "" + value
+  def asString: String = "" + value
 }
 
 
@@ -85,6 +87,9 @@ case class Settings(settingsChain: SettingsChain) {
   val title = derive("title", "(no title)")
   val description = derive("description", "(no description)")
 
+  val userMustBeAuthenticated = derive("userMustBeAuthenticated", false)
+  val userMustBeApproved = derive("userMustBeApproved", false)
+
   val horizontalComments = derive("horizontalComments", false)
 
   val headStylesHtml = derive("headStylesHtml", "")
@@ -110,6 +115,8 @@ case class Settings(settingsChain: SettingsChain) {
 
   def toJson =
     Json.obj(
+      "userMustBeAuthenticated" -> jsonFor(userMustBeAuthenticated),
+      "userMustBeApproved" -> jsonFor(userMustBeApproved),
       "title" -> jsonFor(title),
       "description" -> jsonFor(description),
       "headStylesHtml" -> jsonFor(headStylesHtml),

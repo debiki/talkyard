@@ -104,6 +104,15 @@ var SettingsPanel = createComponent({
 
     return (
       r.div({},
+        Setting({ setting: settings.userMustBeAuthenticated, onSave: saveSetting, label: 'Login required',
+          help: 'Require authentication to read content. (Which means that users must login' +
+            'with password, or via Google or Facebook or something like that, but anonymous ' +
+            'access is disabled.)' }),
+
+        Setting({ setting: settings.userMustBeApproved, onSave: saveSetting, label: 'Approve users',
+          help: 'Staff must approve all new user accounts before they are allowed to access the site.' }),
+          // help text above copyright Discourse
+
         Setting({ setting: settings.title, onSave: saveSetting, label: 'Title',
           help: 'The site title, will be used in the title tag and elsewhere.' }),
 

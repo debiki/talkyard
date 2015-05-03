@@ -44,9 +44,14 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
     d.i.createLoginPopup(url)
     return
 
+  title = null
+
   doingWhatClass = switch mode
   | 'LoginBecomeAdmin' => 'dw-login-become-admin'
   | 'LoginAsAdmin' => 'dw-login-as-admin'
+  | 'LoginToAuthenticate' =>
+      title = 'Authentication required to access this site'
+      'dw-login-to-auth'
   | 'LoginToSubmit' => 'dw-login-to-submit'
   | 'LoginToComment' => 'dw-login-to-post-comment'
   | 'LoginToLogin' => 'dw-login-to-login'
@@ -54,7 +59,7 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
   | _ => 'dw-login-to-login'
   $('body').addClass(doingWhatClass)
 
-  dialog = loginDialogHtml()
+  dialog = loginDialogHtml({ title })
   dialog.dialog d.i.newModalDialogSettings(
     width: 413
     closeOnEscape: !d.i.isInLoginWindow)
@@ -213,9 +218,10 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
  * For now, hardcode terms-of-service and privacy-policy links.
  * Should they be customizable on a per site basis?
  */
-function loginDialogHtml
-  $('''
-    <div class="dw-fs" title="Who are you?" id="dw-lgi">
+function loginDialogHtml({ title })
+  title = title || 'Who are you?'
+  $("""
+    <div class="dw-fs" title="#title" id="dw-lgi">
 
       <p id="dw-lgi-tos">
         By logging in, you agree to the
@@ -259,7 +265,7 @@ function loginDialogHtml
 
       <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="130">
     </div>
-    ''')
+    """)
 
 
 

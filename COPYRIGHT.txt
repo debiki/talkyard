@@ -24,20 +24,20 @@ General Public License, e.g. Apache 2 and MIT. See the respective
 components, including:
 
 
+Misceallaneous:
+
+  - Discourse
+    Some text messages have been copied from Discourse, e.g. in the admin
+      section. You should find them by searching for "copyright Discourse".
+    Copyright 2014 - 2015 Civilized Discourse Construction Kit, Inc
+    GNU General Public License Version 2.0 (or later)
+    https://github.com/discourse/discourse
+
 Javascript and CSS:
 
   (This list might be incomplete. See bower.json for a complete list of
   client side modules, and run `bower install` to download licenses and
   copyrights to `bower_components/`.)
-
-  - Angular
-    2010-2014 Google, Inc. http://angularjs.org
-    MIT license
-
-  - AngularUI
-    ./modules/angular-ui/
-    MIT License
-    http://angular-ui.github.io/
 
   - Caret.js
     ./bower_components/Caret.js/LICENSE-MIT
