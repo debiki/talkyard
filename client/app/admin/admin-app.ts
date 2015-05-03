@@ -20,6 +20,9 @@
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="settings.ts" />
+/// <reference path="review.ts" />
+/// <reference path="review-posts.ts" />
+/// <reference path="review-users.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
@@ -50,9 +53,12 @@ var State = ReactRouter.State;
 export function routes() {
   return Route({ path: '/', handler: AdminApp },
     Redirect({ from: '/', to: 'settings' }),
+    Redirect({ from: '/review', to: 'review-posts' }),
     Route({ name: 'settings', path: 'settings', handler: SettingsPanel }),
     Route({ name: 'customize', path: 'customize', handler: CustomizePanel }),
-    Route({ name: 'moderate', path: 'moderate', handler: ModerationPanel }));
+    Route({ name: 'review', path: 'review', handler: ReviewPanel },
+        Route({ name: 'review-posts', path: 'posts', handler: ReviewPostsPanel }),
+        Route({ name: 'review-users', path: 'users', handler: ReviewUsersPanel })));
 }
 
 
@@ -74,10 +80,11 @@ var AdminApp = createComponent({
   render: function() {
     return (
       r.div({ className: 'admin-app' },
-        Nav({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect },
+        Nav({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect,
+            className: 'dw-main-nav' },
           NavItem({ eventKey: 'settings' }, 'Settings'),
           NavItem({ eventKey: 'customize' }, 'Customize'),
-          NavItem({ eventKey: 'moderate' }, 'Moderate')),
+          NavItem({ eventKey: 'review' }, 'Review')),
         RouteHandler({})));
   }
 });
