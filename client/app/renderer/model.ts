@@ -145,3 +145,19 @@ interface SpecialContent {
   defaultText: string;
   anyCustomText?: string;
 }
+
+
+interface UserPendingApproval {
+  id: number;
+  createdAtEpoch: number;
+  username: string;
+  fullName: string;
+  email: string;
+  country: string;
+  url: string;
+  isApproved: boolean;
+  approvedAtEpoch: number;
+  approvedById: number;
+  approvedByName: string;
+  approvedByUsername: string;
+}

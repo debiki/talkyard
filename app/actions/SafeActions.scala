@@ -178,6 +178,9 @@ object SafeActions {
         case ex: OverQuotaException =>
           Future.successful(Results.Forbidden(o"""You cannot do that, because this site's
             disk quota has been exceeded, sorry. [DwE7GH4R2]"""))
+        case ex: UserNotFoundException =>
+          Future.successful(Results.NotFound(
+            s"User '${ex.userId}' not found [DwE404US3R]"))
         case ex: PageNotFoundException =>
           Future.successful(Results.NotFound(
             s"Page '${ex.pageId}' not found [DwE404WU5]"))

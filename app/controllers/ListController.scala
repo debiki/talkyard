@@ -138,9 +138,9 @@ object ListController extends mvc.Controller {
       // Could list the current user itself only. But for now:
       throwForbidden("DwE71FKZ0", "Insufficient permissions to list users")
     }
-    val usersAndIdEndpoints = request.dao.listUsers(UserQuery())
+    val users = request.dao.listUsers()
     OkSafeJson(toJson(Map("users" -> (
-      usersAndIdEndpoints map { case (user, identityEndpoints) =>
+      users map { user =>
         jsonForUser(user)
       }))))
   }

@@ -183,6 +183,34 @@ function doSomethingWithPost(post: PostToModerate, actionUrl: string, doneCallba
 }
 
 
+export function loadUsersPendingApproval(doneCallback: (users: UserPendingApproval[]) => void) {
+  $.get(origin + '/-/list-users-pending-approval')
+    .done(response => {
+      doneCallback(response.users);
+    })
+    .fail((x, y, z) => {
+      console.error('Error loading users: ' + JSON.stringify([x, y, z]));
+    });
+}
+
+
+export function approveRejectUser(user: UserPendingApproval, doWhat: string, whenDone: () => void) {
+  d.u.postJson({
+    url: origin + '/-/approve-reject-user',
+    data: {
+      userId: user.id,
+      doWhat: doWhat
+    },
+    success: (response) => {
+      whenDone();
+    },
+    error: (x, y, z) => {
+      console.error('Error approving/rejecting user: ' + JSON.stringify([x, y, z]));
+    },
+  });
+}
+
+
 export function savePageNoftLevel(newNotfLevel) {
   d.u.postJson({
     url: origin + '/-/save-page-notf-level',

@@ -198,10 +198,6 @@ abstract class SiteDbDao {
 
   // ----- Users and permissions
 
-  /** Returns true if the identity was found (and the password thus changed).
-    */
-  def changePassword(user: User, newPasswordSaltHash: String): Boolean
-
   def loadUser(userId: UserId): Option[User]
 
   def loadUserByEmailOrUsername(emailOrUsername: String): Option[User]
@@ -219,8 +215,6 @@ abstract class SiteDbDao {
 
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage
 
-  def listUsers(userQuery: UserQuery): Seq[(User, Seq[String])]
-
   def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername]
 
   def loadRolePageSettings(roleId: RoleId, pageId: PageId): Option[RolePageSettings]
@@ -231,10 +225,6 @@ abstract class SiteDbDao {
     * and people watching everything on the whole site.
     */
   def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId]
-
-  def loadRolePreferences(roleId: RoleId): Option[UserPreferences]
-
-  def saveRolePreferences(preferences: UserPreferences)
 
 
   // ----- Notifications
@@ -258,10 +248,6 @@ abstract class SiteDbDao {
 
 
   // ----- User configuration
-
-  def configRole(roleId: RoleId,
-        emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
-        isOwner: Option[Boolean] = None, emailVerifiedAt: Option[Option[ju.Date]] = None)
 
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
@@ -488,12 +474,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
   // ----- Users and permissions
 
-  def changePassword(user: User, newPasswordSaltHash: String): Boolean = {
-    serialize {
-      _spi.changePassword(user, newPasswordSaltHash)
-    }
-  }
-
   def loadUser(userId: UserId): Option[User] = {
     _spi.loadUser(userId)
   }
@@ -522,10 +502,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
     _spi.loadPermsOnPage(reqInfo)
   }
 
-  def listUsers(userQuery: UserQuery): Seq[(User, Seq[String])] = {
-    _spi.listUsers(userQuery)
-  }
-
   def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername] = {
     _spi.listUsernames(pageId = pageId, prefix = prefix)
   }
@@ -543,16 +519,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
   def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId] = {
     _spi.loadUserIdsWatchingPage(pageId)
-  }
-
-  def loadRolePreferences(roleId: RoleId): Option[UserPreferences] = {
-    _spi.loadRolePreferences(roleId)
-  }
-
-  def saveRolePreferences(preferences: UserPreferences) {
-    serialize {
-      _spi.saveRolePreferences(preferences)
-    }
   }
 
 
@@ -601,16 +567,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
 
   // ----- User configuration
-
-  def configRole(roleId: RoleId,
-        emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean],
-        isOwner: Option[Boolean], emailVerifiedAt: Option[Option[ju.Date]]) =  {
-    serialize {
-      _spi.configRole(roleId = roleId,
-        emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner,
-        emailVerifiedAt = emailVerifiedAt)
-    }
-  }
 
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) = {
     serialize {

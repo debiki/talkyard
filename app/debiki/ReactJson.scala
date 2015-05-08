@@ -342,8 +342,20 @@ object ReactJson {
   }
 
 
-  private def JsStringOrNull(value: Option[String]) =
+  def JsStringOrNull(value: Option[String]) =
     value.map(JsString(_)).getOrElse(JsNull)
+
+  def JsBooleanOrNull(value: Option[Boolean]) =
+    value.map(JsBoolean(_)).getOrElse(JsNull)
+
+  def JsNumberOrNull(value: Option[Int]) =
+    value.map(JsNumber(_)).getOrElse(JsNull)
+
+  def JsLongNumberOrNull(value: Option[Long]) =
+    value.map(JsNumber(_)).getOrElse(JsNull)
+
+  def DateEpochOrNull(value: Option[ju.Date]) =
+    value.map(date => JsNumber(date.getTime)).getOrElse(JsNull)
 
 }
 

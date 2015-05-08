@@ -144,7 +144,7 @@ object ResetPasswordController extends mvc.Controller {
 
     // Perhaps change to `dao.changePasswordIdentitysPassword(emailAddress, newSaltHash)`?
     request.dao.changePassword(
-      user, newPasswordSaltHash = DbDao.saltAndHashPassword(newPassword))
+      user.id, newPasswordSaltHash = DbDao.saltAndHashPassword(newPassword))
 
     Ok(views.html.resetpassword.passwordHasBeenChanged())
   }

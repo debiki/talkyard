@@ -86,11 +86,21 @@ trait SiteTransaction {
 
   def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
 
+  def loadCompleteUser(userId: UserId): Option[CompleteUser]
+
+  def loadTheCompleteUser(userId: UserId): CompleteUser =
+    loadCompleteUser(userId).getOrElse(throw UserNotFoundException(userId))
+
+  def updateCompleteUser(user: CompleteUser): Boolean
+
   def loadUser(userId: UserId): Option[User]
   def loadUsers(userIds: Seq[UserId]): immutable.Seq[User]
   def loadUsersOnPageAsMap2(pageId: PageId, siteId: Option[SiteId] = None): Map[UserId, User]
   def loadUsersAsMap(userIds: Iterable[UserId]): Map[UserId, User]
   def loadUserByEmailOrUsername(emailOrUsername: String): Option[User]
+
+  def loadUsers(): immutable.Seq[User]
+  def loadCompleteUsers(onlyThosePendingApproval: Boolean = false): immutable.Seq[CompleteUser]
 
   def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId]
 
@@ -103,6 +113,7 @@ trait SiteTransaction {
 }
 
 
+case class UserNotFoundException(userId: UserId) extends QuickException
 case class PageNotFoundException(pageId: PageId) extends QuickException
 case class PostNotFoundException(pageId: PageId, postId: PostId) extends QuickException
 

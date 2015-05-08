@@ -21,6 +21,7 @@ import com.debiki.core._
 import debiki.DebikiHttp.throwNotFound
 import java.{util => ju}
 import requests.ApiRequest
+import scala.collection.immutable
 import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs
 import CachingDao.{CacheKey, CacheValueIgnoreVersion}
@@ -28,6 +29,35 @@ import CachingDao.{CacheKey, CacheValueIgnoreVersion}
 
 trait UserDao {
   self: SiteDao =>
+
+
+  def approveUser(userId: UserId, approverId: UserId) {
+    approveRejectUndoUser(userId, approverId = approverId, isapproved = Some(true))
+  }
+
+
+  def rejectUser(userId: UserId, approverId: UserId) {
+    approveRejectUndoUser(userId, approverId = approverId, isapproved = Some(false))
+  }
+
+
+  def undoApproveOrRejectUser(userId: UserId, approverId: UserId) {
+    approveRejectUndoUser(userId, approverId = approverId, isapproved = None)
+  }
+
+
+  private def approveRejectUndoUser(userId: UserId, approverId: UserId,
+        isapproved: Option[Boolean]) {
+    readWriteTransaction { transaction =>
+      var user = transaction.loadTheCompleteUser(userId)
+      user = user.copy(
+        isApproved = isapproved,
+        approvedAt = Some(transaction.currentTime),
+        approvedById = Some(approverId))
+      transaction.updateCompleteUser(user)
+    }
+    refreshUserInAnyCache(userId)
+  }
 
 
   def createIdentityUserAndLogin(newUserData: NewUserData): LoginGrant = {
@@ -53,8 +83,13 @@ trait UserDao {
   }
 
 
-  def changePassword(user: User, newPasswordSaltHash: String): Boolean =
-    siteDbDao.changePassword(user, newPasswordSaltHash)
+  def changePassword(userId: UserId, newPasswordSaltHash: String): Boolean = {
+    readWriteTransaction { transaction =>
+      var user = transaction.loadTheCompleteUser(userId)
+      user = user.copy(passwordHash = Some(newPasswordSaltHash))
+      transaction.updateCompleteUser(user)
+    }
+  }
 
 
   def loginAsGuest(loginAttempt: GuestLoginAttempt): User = {
@@ -68,10 +103,25 @@ trait UserDao {
     siteDbDao.tryLogin(loginAttempt)
 
 
-  /* TODO [nologin] Would be good if could remove from cache?
-  def saveLogout(loginId: LoginId, logoutIp: String) =
-    siteDbDao.saveLogout(loginId, logoutIp)
-  */
+  def loadUsers(): immutable.Seq[User] = {
+    readOnlyTransaction { transaction =>
+      transaction.loadUsers()
+    }
+  }
+
+
+  def loadCompleteUsers(onlyThosePendingApproval: Boolean): immutable.Seq[CompleteUser] = {
+    readOnlyTransaction { transaction =>
+      transaction.loadCompleteUsers(onlyThosePendingApproval = onlyThosePendingApproval)
+    }
+  }
+
+
+  def loadCompleteUser(userId: UserId): Option[CompleteUser] = {
+    readOnlyTransaction { transaction =>
+      transaction.loadCompleteUser(userId)
+    }
+  }
 
 
   def loadUser(userId: UserId): Option[User] =
@@ -131,27 +181,49 @@ trait UserDao {
   }
 
 
-  def verifyEmail(roleId: RoleId, verifiedAt: ju.Date) =
-    siteDbDao.configRole(roleId, emailVerifiedAt = Some(Some(verifiedAt)))
-
-
-  def configRole(roleId: RoleId,
-        emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
-        isOwner: Option[Boolean] = None) = {
-    // Don't specify emailVerifiedAt here — use verifyEmail() instead; it refreshes the cache.
-    siteDbDao.configRole(
-      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner,
-      emailVerifiedAt = None)
+  def verifyEmail(userId: UserId, verifiedAt: ju.Date) {
+    readWriteTransaction { transaction =>
+      var user = transaction.loadTheCompleteUser(userId)
+      user = user.copy(emailVerifiedAt = Some(verifiedAt))
+      transaction.updateCompleteUser(user)
+    }
+    refreshUserInAnyCache(userId)
   }
 
 
-  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) =
+  def configRole(userId: RoleId,
+        emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
+        isOwner: Option[Boolean] = None) {
+    // Don't specify emailVerifiedAt here — use verifyEmail() instead; it refreshes the cache.
+    readWriteTransaction { transaction =>
+      var user = transaction.loadTheCompleteUser(userId)
+      emailNotfPrefs foreach { prefs =>
+        user = user.copy(emailNotfPrefs = prefs)
+      }
+      isAdmin foreach { isAdmin =>
+        user = user.copy(isAdmin = isAdmin)
+      }
+      isOwner foreach { isOwner =>
+        user = user.copy(isOwner = isOwner)
+      }
+      transaction.updateCompleteUser(user)
+    }
+    refreshUserInAnyCache(userId)
+  }
+
+
+  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) = {
     siteDbDao.configIdtySimple(ctime = ctime,
       emailAddr = emailAddr, emailNotfPrefs = emailNotfPrefs)
+    // COULD refresh guest in cache: new email prefs --> perhaps show "??" not "?" after name.
+  }
 
 
-  def listUsers(userQuery: UserQuery): Seq[(User, Seq[String])] =
-    siteDbDao.listUsers(userQuery)
+  def listUsers(): Seq[User] = {
+    readOnlyTransaction { transaction =>
+      transaction.loadUsers()
+    }
+  }
 
 
   def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername] =
@@ -171,12 +243,19 @@ trait UserDao {
     siteDbDao.saveRolePageSettings(roleId = roleId, pageId = pageId, settings)
 
 
-  def loadRolePreferences(roleId: RoleId): Option[UserPreferences] =
-    siteDbDao.loadRolePreferences(roleId)
+  def saveRolePreferences(preferences: UserPreferences) = {
+    // BUG: the lost update bug.
+    readWriteTransaction { transaction =>
+      var user = transaction.loadTheCompleteUser(preferences.userId)
+      user = user.copyWithNewPreferences(preferences)
+      transaction.updateCompleteUser(user)
+    }
+    refreshUserInAnyCache(preferences.userId)
+  }
 
 
-  def saveRolePreferences(preferences: UserPreferences) =
-    siteDbDao.saveRolePreferences(preferences)
+  def refreshUserInAnyCache(userId: UserId) {
+  }
 
 }
 
@@ -220,15 +299,6 @@ trait CachingUserDao extends UserDao {
   }
 
 
-  /*
-  override def saveLogout(loginId: LoginId, logoutIp: String) {
-    super.saveLogout(loginId, logoutIp)
-    // There'll be no more requests with this login id.
-    ??? // TODO [nologin] remove user from cache?
-    // removeFromCache(key(loginId)) -- won't work. Needs the user id.
-  }*/
-
-
   override def loadUser(userId: UserId): Option[User] = {
     lookupInCache[User](
       key(userId),
@@ -237,26 +307,8 @@ trait CachingUserDao extends UserDao {
   }
 
 
-  override def verifyEmail(roleId: RoleId, verifiedAt: ju.Date) = {
-    super.verifyEmail(roleId, verifiedAt)
-    removeFromCache(key(roleId))
-  }
-
-
-  override def configRole(roleId: RoleId,
-        emailNotfPrefs: Option[EmailNotfPrefs], isAdmin: Option[Boolean],
-        isOwner: Option[Boolean]) {
-    super.configRole(
-      roleId = roleId, emailNotfPrefs = emailNotfPrefs, isAdmin = isAdmin, isOwner = isOwner)
-    removeFromCache(key(roleId))
-  }
-
-
-  override def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) {
-    super.configIdtySimple(
-      ctime = ctime, emailAddr = emailAddr, emailNotfPrefs = emailNotfPrefs)
-    ??? // TODO [nologin] remove user from cache?
-    ??? // removeFromCache(key(loginId)) -- won't work. Needs the user id.
+  override def refreshUserInAnyCache(userId: UserId) {
+    removeFromCache(key(userId))
   }
 
 

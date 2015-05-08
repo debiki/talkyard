@@ -108,7 +108,7 @@ trait TestLoginner extends DebikiSelectors {
 
     if (!adminMadeAdmin) {
       adminMadeAdmin = true
-      dao.configRole(roleId = loginGrant.user.id, isAdmin = Some(true))
+      dao.configRole(userId = loginGrant.user.id, isAdmin = Some(true))
     }
 
     // Update the browser: set cookies.

@@ -66,8 +66,16 @@ object ViewPageController extends mvc.Controller {
         returnToUrl = pageReq.uri)) as HTML
     }
     else if (siteSettings.userMustBeApproved.asBoolean && !pageReq.isApprovedOrStaff) {
-      throwForbidden("DwE403KGW0", o"""Your account has not yet been approved; please wait until
-        someone in our staff has approved it.""")
+      val message = pageReq.theUser.isApproved match {
+        case None =>
+          o"""Your account has not yet been approved; please wait until
+            someone in our staff has approved it."""
+        case Some(false) =>
+          "You may not access this site, sorry. There is no point in trying again."
+        case Some(true) =>
+          die("DwE7KEWK2")
+      }
+      throwForbidden("DwE403KGW0", message)
     }
     else if (!pageReq.pageExists) {
       throwNotFound("DwE404", "Page not found")

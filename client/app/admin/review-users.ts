@@ -36,8 +36,8 @@ export var ReviewUsersPanel = createComponent({
   mixins: [SaveSettingMixin],
 
   componentDidMount: function() {
-    Server.loadRecentPosts(posts => {
-      this.setState({ posts: posts });
+    Server.loadUsersPendingApproval(users => {
+      this.setState({ users: users });
     });
   },
 
@@ -45,13 +45,94 @@ export var ReviewUsersPanel = createComponent({
     if (!this.state)
       return r.p({}, 'Loading...');
 
-    var postsElems = this.state.posts.map(post => {
-      return Post({ post: post });
+    var now = new Date().getTime();
+    var userElems = this.state.users.map(user => {
+      return UserPendingApproval({ user: user, now: now });
     });
 
     return (
-      r.div({ id: 'details' },
-        'xxx'));
+      r.div({ className: 'dw-users-to-review' },
+        r.table({ className: 'table' },
+          r.thead({},
+            r.tr({},
+              r.th({}, 'Username (Full Name)'),
+              r.th({}, 'Email'),
+              r.th({}, 'Actions'),
+              r.th({}, 'Country'),
+              r.th({}, 'URL'),
+              r.th({}, 'Created At'))),
+          r.tbody({},
+            userElems))));
+  }
+});
+
+
+var UserPendingApproval = createComponent({
+  getInitialState: function() {
+    return {};
+  },
+
+  approveUser: function() {
+    Server.approveRejectUser(this.props.user, 'Approve', () => {
+      this.setState({ wasJustApproved: true });
+    });
+  },
+
+  rejectUser: function() {
+    Server.approveRejectUser(this.props.user, 'Reject', () => {
+      this.setState({ wasJustRejected: true });
+    });
+  },
+
+  undoApproveOrReject: function() {
+    Server.approveRejectUser(this.props.user, 'Undo', () => {
+      this.setState({ wasJustRejected: false, wasJustApproved: false });
+    });
+  },
+
+  render: function() {
+    var user = this.props.user;
+
+    var actions;
+    if (this.state.wasJustApproved) {
+      actions = [
+        'Approved.',
+         Button({ className: 'approve-user', onClick: this.undoApproveOrReject }, 'Undo')];
+    }
+    else if (this.state.wasJustRejected) {
+      actions = [
+        'Rejected.',
+         Button({ className: 'approve-user', onClick: this.undoApproveOrReject }, 'Undo')];
+    }
+    else {
+      actions = [
+          Button({ className: 'approve-user', onClick: this.approveUser }, 'Approve'),
+          Button({ className: 'reject-user', onClick: this.rejectUser }, 'Reject')];
+    }
+
+    var usernameAndFullName = [
+        r.span({ className: 'dw-username' }, user.username),
+        r.span({ className: 'dw-fullname' }, ' (' + user.fullName + ')')];
+
+    return (
+      r.tr({},
+        r.td({},
+          usernameAndFullName),
+
+        r.td({},
+          user.email),
+
+        r.td({},
+          actions),
+
+        r.td({},
+          user.country),
+
+        r.td({},
+          user.url),
+
+        r.td({},
+          moment(user.createdAtEpoch).from(this.props.now))));
   }
 });
 

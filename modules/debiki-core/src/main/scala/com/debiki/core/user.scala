@@ -45,14 +45,13 @@ sealed abstract class NewUserData {
     displayName = name,
     username = Some(username),
     createdAt = Some(createdAt),
-    isApproved = false,
-    approvedAt = None,
-    approvedById = None,
     email = email,
     emailNotfPrefs = EmailNotfPrefs.Unspecified,
     emailVerifiedAt = emailVerifiedAt,
     country = "",
     website = "",
+    isApproved = None,
+    isSuspended = false,
     isAdmin = isAdmin,
     isOwner = isOwner)
 
@@ -82,15 +81,14 @@ case class NewPasswordUserData(
     displayName = name,
     username = Some(username),
     createdAt = Some(createdAt),
-    isApproved = false,
-    approvedAt = None,
-    approvedById = None,
     email = email,
     emailNotfPrefs = EmailNotfPrefs.Unspecified,
     emailVerifiedAt = None,
     passwordHash = Some(passwordHash),
     country = "",
     website = "",
+    isApproved = None,
+    isSuspended = false,
     isAdmin = isAdmin,
     isOwner = isOwner)
 
@@ -274,12 +272,47 @@ case class User(
   displayName: String,
   username: Option[String],
   createdAt: Option[ju.Date],
-  isApproved: Boolean,
-  approvedAt: Option[ju.Date],
-  approvedById: Option[UserId],
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
+  passwordHash: Option[String] = None,
+  country: String = "",
+  website: String = "",
+  isApproved: Option[Boolean],
+  isSuspended: Boolean,
+  isAdmin: Boolean = false,
+  isOwner: Boolean = false) {
+
+  require(User.isOkayUserId(id), "DwE02k12R5")
+  require(username.isEmpty || username.get.length >= 2)
+  require(!isGuest || (
+    username.isEmpty && createdAt.isEmpty && !isAdmin && !isOwner &&
+      isApproved.isEmpty && !isSuspended &&
+      emailVerifiedAt.isEmpty && passwordHash.isEmpty), "DwE0GUEST426")
+  require(!isAuthenticated || (
+    username.isDefined &&
+    createdAt.isDefined), "DwE0AUTH6U82")
+
+  def isAuthenticated = isRoleId(id)
+  def isApprovedOrStaff = isApproved == Some(true) || isAdmin || isOwner
+
+  def isGuest = User.isGuestId(id)
+  def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
+}
+
+
+case class CompleteUser(
+  id: UserId,
+  fullName: String,
+  username: String,
+  createdAt: Option[ju.Date],
+  isApproved: Option[Boolean],
+  approvedAt: Option[ju.Date],
+  approvedById: Option[UserId],
+  emailAddress: String,
+  emailNotfPrefs: EmailNotfPrefs,
+  emailVerifiedAt: Option[ju.Date] = None,
+  emailForEveryNewPost: Boolean,
   passwordHash: Option[String] = None,
   country: String = "",
   website: String = "",
@@ -287,28 +320,43 @@ case class User(
   isOwner: Boolean = false,
   suspendedAt: Option[ju.Date] = None,
   suspendedTill: Option[ju.Date] = None,
-  suspendedById: Option[ju.Date] = None) {
+  suspendedById: Option[UserId] = None) {
 
-  require(User.isOkayUserId(id), "DwE02k125r")
-  require(approvedAt.isDefined == approvedById.isDefined, "DwE5KPEW3")
-  require(!isApproved || (approvedById.isDefined && approvedAt.isDefined), "DwE4LG8K0")
-  require(suspendedAt.isDefined == suspendedById.isDefined, "DwE6KEPw2")
-  require(suspendedTill.isEmpty || suspendedAt.isDefined, "DwE2JLU53")
-  require(!isGuest || (
-    username.isEmpty && createdAt.isEmpty && !isAdmin && !isOwner &&
-      !isApproved && approvedAt.isEmpty && approvedById.isEmpty &&
-      emailVerifiedAt.isEmpty && passwordHash.isEmpty &&
-      suspendedAt.isEmpty && suspendedTill.isEmpty && suspendedById.isEmpty), "DwE0GUEST426")
+  require(User.isOkayUserId(id), "DwE077KF2")
+  require(username.length >= 2, "DwE6KYU9")
+  require(approvedAt.isDefined == approvedById.isDefined, "DwE0KEI4")
+  require(approvedById.map(_ >= LowestNonGuestId) != Some(false), "DwE55UKH4")
+  require(isApproved.isEmpty || (approvedById.isDefined && approvedAt.isDefined), "DwE4DKQ1")
+  require(suspendedAt.isDefined == suspendedById.isDefined, "DwE64kfe2")
+  require(suspendedTill.isEmpty || suspendedAt.isDefined, "DwEJKP75")
+  require(suspendedById.map(_ >= LowestNonGuestId) != Some(false), "DwE7K2WF5")
+  require(!isGuest, "DwE0GUEST223")
   require(!isAuthenticated ||
-    createdAt.isDefined, "DwE0AUTH6U82")
+      createdAt.isDefined, "DwE0AUTH350")
 
   def isAuthenticated = isRoleId(id)
-  def isApprovedOrStaff = approvedAt.isDefined || isAdmin || isOwner
+  def isApprovedOrStaff = approvedAt == Some(true) || isAdmin || isOwner
 
   def isGuest = User.isGuestId(id)
   def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
 
+  def preferences = UserPreferences(
+    userId = id,
+    fullName = fullName,
+    username = username,
+    emailAddress = emailAddress,
+    url = website,
+    emailForEveryNewPost = emailForEveryNewPost)
+
+  def copyWithNewPreferences(preferences: UserPreferences) = copy(
+    fullName = preferences.fullName,
+    username = preferences.username,
+    emailAddress = preferences.emailAddress,
+    website = preferences.url,
+    emailForEveryNewPost = preferences.emailForEveryNewPost)
+
 }
+
 
 
 /**
