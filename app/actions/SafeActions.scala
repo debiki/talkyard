@@ -190,7 +190,15 @@ object SafeActions {
         case DebikiHttp.ResultException(result) =>
           Future.successful(result)
         case ex: play.api.libs.json.JsResultException =>
-          Future.successful(Results.BadRequest(s"Bad JSON: $ex [error DwE70KX3]"))
+          Future.successful(Results.BadRequest(s"Bad JSON: $ex [DwE70KX3]"))
+        case ex: IllegalArgumentException =>
+          Future.successful(Results.InternalServerError(s"Illegal argument: $ex [DwE500IA]"))
+        case ex: IllegalStateException =>
+          Future.successful(Results.InternalServerError(s"Illegal state: $ex [DwE500IS]"))
+        case ex: AssertionError =>
+          Future.successful(Results.InternalServerError(s"Assertion error: $ex [DwE500AE]"))
+        case ex: UnsupportedOperationException =>
+          Future.successful(Results.InternalServerError(s"Unsupported operation: $ex [DwE500UO]"))
       }
       futureResult = futureResult recover {
         case DebikiHttp.ResultException(result) => result
