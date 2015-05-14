@@ -39,33 +39,63 @@ import DebikiHttp.{throwForbidden, throwNotFound, throwBadReq}
 object UserController extends mvc.Controller {
 
 
-  def listUsersPendingApproval = AdminGetAction { request =>
+  def listCompleteUsers(whichUsers: String) = AdminGetAction { request =>
+    var onlyApproved = false
+    var onlyPendingApproval = false
+    whichUsers match {
+      case "ActiveUsers" =>
+        onlyApproved = request.dao.loadWholeSiteSettings().userMustBeApproved.asBoolean
+      case "NewUsers" =>
+        onlyPendingApproval = true
+    }
     request.dao.readOnlyTransaction { transaction =>
-      val usersPendingApproval = transaction.loadCompleteUsers(onlyThosePendingApproval = true)
+      val usersPendingApproval = transaction.loadCompleteUsers(
+        onlyApproved = onlyApproved,
+        onlyPendingApproval = onlyPendingApproval)
       val approverIds = usersPendingApproval.flatMap(_.approvedById)
       val approversById = transaction.loadUsersAsMap(approverIds)
-      val usersJson = JsArray(usersPendingApproval.map(makeJsonForUserToApprove(_, approversById)))
+      val usersJson = JsArray(usersPendingApproval.map(
+        jsonForCompleteUser(_, approversById, callerIsAdmin = true)))
       OkSafeJson(Json.toJson(Map("users" -> usersJson)))
     }
   }
 
 
-  private def makeJsonForUserToApprove(user: CompleteUser, approversById: Map[UserId, User])
+  def loadCompleteUser(userId: String) = GetAction { request =>
+    val userIdInt = Try(userId.toInt) getOrElse throwBadReq("DwE6FWV0", "Bad user id")
+    val callerIsAdmin = request.theUser.isAdmin
+    val callerIsUserHerself = request.theUserId == userIdInt
+    request.dao.readOnlyTransaction { transaction =>
+      val user = transaction.loadTheCompleteUser(userIdInt)
+      val usersJson = jsonForCompleteUser(user, Map.empty, callerIsAdmin = callerIsAdmin,
+        callerIsUserHerself = callerIsUserHerself)
+      OkSafeJson(Json.toJson(Map("user" -> usersJson)))
+    }
+  }
+
+
+  private def jsonForCompleteUser(user: CompleteUser, approversById: Map[UserId, User],
+        callerIsAdmin: Boolean = false, callerIsUserHerself: Boolean = false)
         : JsObject = {
-    val anyApprover = user.approvedById.flatMap(approversById.get)
-    Json.obj(
+    var userJson = Json.obj(
       "id" -> user.id,
-      "createdAtEpoch" -> DateEpochOrNull(user.createdAt),
+      "createdAtEpoch" -> JsNumber(user.createdAt.getTime),
       "username" -> user.username,
       "fullName" -> user.fullName,
-      "email" -> user.emailAddress,
       "country" -> user.country,
-      "url" -> user.website,
-      "isApproved" -> JsBooleanOrNull(user.isApproved),
-      "approvedAtEpoch" -> DateEpochOrNull(user.approvedAt),
-      "approvedById" -> JsNumberOrNull(user.approvedById),
-      "approvedByName" -> JsStringOrNull(anyApprover.map(_.displayName)),
-      "approvedByUsername" -> JsStringOrNull(anyApprover.flatMap(_.username)))
+      "url" -> user.website)
+
+    if (callerIsAdmin || callerIsUserHerself) {
+      val anyApprover = user.approvedById.flatMap(approversById.get)
+      userJson += "email" -> JsString(user.emailAddress)
+      userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
+      userJson += "approvedAtEpoch" -> DateEpochOrNull(user.approvedAt)
+      userJson += "approvedById" -> JsNumberOrNull(user.approvedById)
+      userJson += "approvedByName" -> JsStringOrNull(anyApprover.map(_.displayName))
+      userJson += "approvedByUsername" -> JsStringOrNull(anyApprover.flatMap(_.username))
+    }
+
+    userJson
   }
 
 

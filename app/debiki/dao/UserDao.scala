@@ -17,8 +17,10 @@
 
 package debiki.dao
 
+import java.util.Date
+
 import com.debiki.core._
-import debiki.DebikiHttp.throwNotFound
+import debiki.DebikiHttp.{throwNotFound, throwForbidden}
 import java.{util => ju}
 import requests.ApiRequest
 import scala.collection.immutable
@@ -29,6 +31,52 @@ import CachingDao.{CacheKey, CacheValueIgnoreVersion}
 
 trait UserDao {
   self: SiteDao =>
+
+
+  def insertInvite(invite: Invite) {
+    readWriteTransaction { transaction =>
+      transaction.insertInvite(invite)
+    }
+  }
+
+
+  def acceptInviteCreateUser(secretKey: String): CompleteUser = {
+    readWriteTransaction { transaction =>
+      var invite = transaction.loadInvite(secretKey) getOrElse throwForbidden(
+        "DwE6FKQ2", "Bad invite key")
+
+      invite.acceptedAt foreach { acceptedAt =>
+        val millisAgo = (new ju.Date).getTime - acceptedAt.getTime
+        // For now: If the invitation is < 1 day old, allow the user to log in
+        // again via the invitation link. In Discourse, this timeout is configurable.
+        if (millisAgo < 24 * 3600 * 1000)
+          return loadCompleteUser(invite.userId getOrDie "DwE6FKEW2") getOrDie "DwE8KES2"
+
+        throwForbidden("DwE0FKW2", "You have joined the site already, but this link has expired")
+      }
+
+      if (transaction.loadUserByEmailOrUsername(invite.emailAddress).isDefined)
+        throwForbidden("DwE8KFG4", o"""You have joined this site already, so this
+             join-site invitation link does nothing. Thanks for clicking it anyway""")
+
+      val userId = transaction.nextAuthenticatedUserId
+      var newUser = invite.makeUser(userId, transaction.currentTime)
+      val inviter = transaction.loadUser(invite.createdById) getOrDie "DwE5FKG4"
+      if (inviter.isAdmin) {
+        newUser = newUser.copy(
+          isApproved = Some(true),
+          approvedAt = Some(transaction.currentTime),
+          approvedById = Some(invite.createdById))
+      }
+
+      invite = invite.copy(acceptedAt = Some(transaction.currentTime), userId = Some(userId))
+
+      // COULD loop and append 1, 2, 3, ... until there's no username clash.
+      transaction.insertAuthenticatedUser(newUser)
+      transaction.updateInvite(invite)
+      newUser
+    }
+  }
 
 
   def approveUser(userId: UserId, approverId: UserId) {
@@ -68,7 +116,7 @@ trait UserDao {
       val identity = newUserData.makeIdentity(userId = userId, identityId = identityId)
       transaction.insertAuthenticatedUser(user)
       transaction.insertIdentity(identity)
-      LoginGrant(Some(identity), user, isNewIdentity = true, isNewRole = true)
+      LoginGrant(Some(identity), user.briefUser, isNewIdentity = true, isNewRole = true)
     }
   }
 
@@ -78,7 +126,7 @@ trait UserDao {
       val userId = transaction.nextAuthenticatedUserId
       val user = userData.makeUser(userId, transaction.currentTime)
       transaction.insertAuthenticatedUser(user)
-      user
+      user.briefUser
     }
   }
 
@@ -112,7 +160,7 @@ trait UserDao {
 
   def loadCompleteUsers(onlyThosePendingApproval: Boolean): immutable.Seq[CompleteUser] = {
     readOnlyTransaction { transaction =>
-      transaction.loadCompleteUsers(onlyThosePendingApproval = onlyThosePendingApproval)
+      transaction.loadCompleteUsers(onlyPendingApproval = onlyThosePendingApproval)
     }
   }
 

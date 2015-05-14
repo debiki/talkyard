@@ -133,19 +133,6 @@ object ListController extends mvc.Controller {
   }*/
 
 
-  def listUsers = GetAction { implicit request =>
-    if (!request.user_!.isAdmin) {
-      // Could list the current user itself only. But for now:
-      throwForbidden("DwE71FKZ0", "Insufficient permissions to list users")
-    }
-    val users = request.dao.listUsers()
-    OkSafeJson(toJson(Map("users" -> (
-      users map { user =>
-        jsonForUser(user)
-      }))))
-  }
-
-
   def listIps(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
         PageGetAction(pathIn, pageMustExist = false) { pageReq =>
     Ok
@@ -183,20 +170,6 @@ object ListController extends mvc.Controller {
     "id" -> JsString(pagePath.pageId.get),
     "folder" -> JsString(pagePath.folder),
     "path" -> JsString(pagePath.value))
-
-
-  private def jsonForUser(user: User): JsValue = {
-    var info = Map[String, JsValue](
-      "id" -> JsNumber(user.id),
-      "displayName" -> JsString(user.displayName),
-      "country" -> JsString(user.country))
-
-    if (user.isAdmin) info += "isAdmin" -> JsBoolean(true)
-    if (user.isOwner) info += "isOwner" -> JsBoolean(true)
-    // Skip email for now, currently no particular access control.
-
-    toJson(info)
-  }
 
 }
 

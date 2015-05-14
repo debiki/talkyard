@@ -147,8 +147,8 @@ interface SpecialContent {
 }
 
 
-interface UserPendingApproval {
-  id: number;
+interface CompleteUser {
+  id: any;  // TODO change to number, and User.userId too
   createdAtEpoch: number;
   username: string;
   fullName: string;
@@ -160,4 +160,28 @@ interface UserPendingApproval {
   approvedById: number;
   approvedByName: string;
   approvedByUsername: string;
+}
+
+
+interface Invite {
+  invitedEmailAddress: string;
+  invitedById: number;
+  createdAtEpoch: number;
+  redeemedAtEpoch?: number;
+  invalidatedAtEpoch?: number;
+  deletedAtEpoch?: number;
+  deletedById?: number;
+  userId?: number;
+  // Later:
+  /*
+  userFullName?: string;
+  userUsername?: string;
+  userLastSeenAtEpoch?: number;
+  userNumTopicsViewed?: number;
+  userNumPostsRead?: number;
+  userReadTime?: number;
+  userDayVisited?: number;
+  userTrustLevel?: number;
+  userThreatLevel?: number;
+  */
 }

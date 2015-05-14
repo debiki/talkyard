@@ -78,11 +78,16 @@ trait SiteTransaction {
 
   def currentTime: ju.Date
 
+  def insertInvite(invite: Invite)
+  def updateInvite(invite: Invite): Boolean
+  def loadInvite(secretKey: String): Option[Invite]
+  def loadInvites(createdById: UserId): immutable.Seq[Invite]
+
   def nextIdentityId: IdentityId
   def insertIdentity(Identity: Identity)
 
   def nextAuthenticatedUserId: UserId
-  def insertAuthenticatedUser(user: User)
+  def insertAuthenticatedUser(user: CompleteUser)
 
   def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
 
@@ -100,7 +105,9 @@ trait SiteTransaction {
   def loadUserByEmailOrUsername(emailOrUsername: String): Option[User]
 
   def loadUsers(): immutable.Seq[User]
-  def loadCompleteUsers(onlyThosePendingApproval: Boolean = false): immutable.Seq[CompleteUser]
+  def loadCompleteUsers(
+    onlyApproved: Boolean = false,
+    onlyPendingApproval: Boolean = false): immutable.Seq[CompleteUser]
 
   def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId]
 

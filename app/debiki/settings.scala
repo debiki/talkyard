@@ -30,8 +30,8 @@ case class AnySetting(
   val section: Option[SettingsTarget]) {
 
   def value: Any = assignedValue getOrElse default
-  def valueAsBoolean = value == "T" || value == true
-  def asBoolean = value == "T" || value == true
+  def valueAsBoolean: Boolean = value == "T" || value == true
+  def asBoolean: Boolean = value == "T" || value == true
   def valueAsString: String = "" + value
   def asString: String = "" + value
 }

@@ -32,6 +32,72 @@ abstract class People {
 }
 
 
+/** An invite to the user with the specified emailAddress to join the site.
+  * S/he gets an email and clicks a link to join.
+  */
+case class Invite(
+  emailAddress: String,
+  secretKey: String,
+  createdById: UserId,
+  createdAt: ju.Date,
+  acceptedAt: Option[ju.Date],
+  userId: Option[UserId],
+  deletedAt: Option[ju.Date],
+  deletedById: Option[UserId],
+  invalidatedAt: Option[ju.Date]) {
+
+  require(secretKey.length > 15, "Unsafe key? [DwE7KFPE2]")
+  require(emailAddress contains "@", "DwE64KSU8")
+  require(emailAddress.split("@").head.nonEmpty, "DwE09FKI2")
+  require(acceptedAt.isEmpty == userId.isEmpty, "DwE8KE94")
+  require(deletedAt.isEmpty == deletedById.isEmpty, "DwE4KSP3")
+  require(invalidatedAt.toInt + deletedAt.toInt + acceptedAt.toInt <= 1, "DwE5WKJ2")
+  require(deletedAt.isEmpty || deletedAt.get.getTime >= createdAt.getTime, "DwE6PK2")
+  require(invalidatedAt.isEmpty || invalidatedAt.get.getTime >= createdAt.getTime, "DwE8UY0")
+
+  def canBeOrHasBeenAccepted = invalidatedAt.isEmpty && deletedAt.isEmpty
+
+  /** Suggests a username based on the email address, namely the text before the '@'.
+    * Padded with "_" if too short.
+    */
+  private def deriveUsername: String = {
+    var username = emailAddress.split("@").headOption.getOrDie(
+      "DwE500IIEA5", "Invalid invite email address")
+    while (username.length < MinUsernameLength) {
+      username += "_"
+    }
+    username
+  }
+
+  def makeUser(userId: UserId, currentTime: ju.Date) = CompleteUser(
+    id = userId,
+    fullName = "",
+    username = deriveUsername,
+    createdAt = currentTime,
+    isApproved = None,
+    approvedAt = None,
+    approvedById = None,
+    emailAddress = emailAddress,
+    emailNotfPrefs = EmailNotfPrefs.Receive,
+    emailVerifiedAt = Some(currentTime))
+}
+
+
+object Invite {
+  def apply(emailAddress: String, secretKey: String,
+        createdById: UserId, createdAt: ju.Date): Invite = Invite(
+    emailAddress = emailAddress,
+    secretKey = secretKey,
+    createdById = createdById,
+    createdAt = createdAt,
+    userId = None,
+    acceptedAt = None,
+    deletedAt = None,
+    deletedById = None,
+    invalidatedAt = None)
+}
+
+
 sealed abstract class NewUserData {
   def name: String
   def username: String
@@ -40,18 +106,17 @@ sealed abstract class NewUserData {
   def isAdmin: Boolean
   def isOwner: Boolean
 
-  def makeUser(userId: UserId, createdAt: ju.Date) = User(
+  def makeUser(userId: UserId, createdAt: ju.Date) = CompleteUser(
     id = userId,
-    displayName = name,
-    username = Some(username),
-    createdAt = Some(createdAt),
-    email = email,
-    emailNotfPrefs = EmailNotfPrefs.Unspecified,
-    emailVerifiedAt = emailVerifiedAt,
-    country = "",
-    website = "",
+    fullName = name,
+    username = username,
+    createdAt = createdAt,
     isApproved = None,
-    isSuspended = false,
+    approvedAt = None,
+    approvedById = None,
+    emailAddress = email,
+    emailNotfPrefs = EmailNotfPrefs.Receive,
+    emailVerifiedAt = emailVerifiedAt,
     isAdmin = isAdmin,
     isOwner = isOwner)
 
@@ -76,19 +141,18 @@ case class NewPasswordUserData(
   val passwordHash: String =
     DbDao.saltAndHashPassword(password)
 
-  def makeUser(userId: UserId, createdAt: ju.Date) = User(
+  def makeUser(userId: UserId, createdAt: ju.Date) = CompleteUser(
     id = userId,
-    displayName = name,
-    username = Some(username),
-    createdAt = Some(createdAt),
-    email = email,
-    emailNotfPrefs = EmailNotfPrefs.Unspecified,
+    fullName = name,
+    username = username,
+    createdAt = createdAt,
+    isApproved = None,
+    approvedAt = None,
+    approvedById = None,
+    emailAddress = email,
+    emailNotfPrefs = EmailNotfPrefs.Receive,
     emailVerifiedAt = None,
     passwordHash = Some(passwordHash),
-    country = "",
-    website = "",
-    isApproved = None,
-    isSuspended = false,
     isAdmin = isAdmin,
     isOwner = isOwner)
 
@@ -195,6 +259,10 @@ case object User {
       id == UnknownUserId ||
       id <= MaxCustomGuestId
 
+
+  val MinUsernameLength = 3
+
+
   /**
    * Checks for weird ASCII chars in an user name.
    *
@@ -294,7 +362,8 @@ case class User(
     createdAt.isDefined), "DwE0AUTH6U82")
 
   def isAuthenticated = isRoleId(id)
-  def isApprovedOrStaff = isApproved == Some(true) || isAdmin || isOwner
+  def isApprovedOrStaff = isApproved == Some(true) || isStaff
+  def isStaff = isAdmin || isOwner
 
   def isGuest = User.isGuestId(id)
   def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
@@ -305,14 +374,14 @@ case class CompleteUser(
   id: UserId,
   fullName: String,
   username: String,
-  createdAt: Option[ju.Date],
+  createdAt: ju.Date,
   isApproved: Option[Boolean],
   approvedAt: Option[ju.Date],
   approvedById: Option[UserId],
   emailAddress: String,
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
-  emailForEveryNewPost: Boolean,
+  emailForEveryNewPost: Boolean = false,
   passwordHash: Option[String] = None,
   country: String = "",
   website: String = "",
@@ -331,10 +400,7 @@ case class CompleteUser(
   require(suspendedTill.isEmpty || suspendedAt.isDefined, "DwEJKP75")
   require(suspendedById.map(_ >= LowestNonGuestId) != Some(false), "DwE7K2WF5")
   require(!isGuest, "DwE0GUEST223")
-  require(!isAuthenticated ||
-      createdAt.isDefined, "DwE0AUTH350")
 
-  def isAuthenticated = isRoleId(id)
   def isApprovedOrStaff = approvedAt == Some(true) || isAdmin || isOwner
 
   def isGuest = User.isGuestId(id)
@@ -355,6 +421,21 @@ case class CompleteUser(
     website = preferences.url,
     emailForEveryNewPost = preferences.emailForEveryNewPost)
 
+  def briefUser = User(
+    id = id,
+    displayName = fullName,
+    username = Some(username),
+    createdAt = Some(createdAt),
+    email = emailAddress,
+    emailNotfPrefs = emailNotfPrefs,
+    emailVerifiedAt = emailVerifiedAt,
+    passwordHash = passwordHash,
+    country = country,
+    website = website,
+    isApproved = isApproved,
+    isSuspended = false,
+    isAdmin = isAdmin,
+    isOwner = isOwner)
 }
 
 

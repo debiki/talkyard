@@ -20,6 +20,7 @@
 /// <reference path="../../shared/plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="review-posts.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
@@ -30,13 +31,68 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
+var Nav = reactCreateFactory(ReactBootstrap.Nav);
+var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
+
+var ReactRouter = window['ReactRouter'];
+var RouteHandler = ReactRouter.RouteHandler;
+var Navigation = ReactRouter.Navigation;
+var State = ReactRouter.State;
 
 
-export var ReviewUsersPanel = createComponent({
+export var UsersTab = createComponent({
+  mixins: [Navigation, State],
+
+  getInitialState: function() {
+    return {
+      activeRoute: this.getRoutes()[2].name
+    };
+  },
+
+  handleSelect: function(newRoute) {
+    this.setState({ activeRoute: newRoute });
+    this.transitionTo(newRoute);
+  },
+
+  sendInvites: function() {
+    var user = debiki2.ReactStore.getUser();
+    window.location.assign('/-/users/#/id/' + user.userId + '/invites');
+  },
+
+  render: function() {
+    return (
+      r.div({},
+        r.div({ className: 'dw-sub-nav' },
+          r.div({ className: 'pull-right' },
+            Button({ onClick: this.sendInvites }, 'Send Invites')),
+          Nav({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect },
+            NavItem({ eventKey: 'users-active' }, 'Active'),
+            NavItem({ eventKey: 'users-new' }, 'New Waiting'))),
+        r.div({ className: 'dw-admin-panel' },
+          RouteHandler({}))));
+  }
+});
+
+
+export var ActiveUsersPanel = createComponent({
+  render: function() {
+    return UserList({ whichUsers: 'ActiveUsers' });
+  }
+});
+
+
+export var NewUsersPanel = createComponent({
+  render: function() {
+    return UserList({ whichUsers: 'NewUsers' });
+  }
+});
+
+
+var UserList = createComponent({
   mixins: [SaveSettingMixin],
 
   componentDidMount: function() {
-    Server.loadUsersPendingApproval(users => {
+    Server.listCompleteUsers(this.props.whichUsers, users => {
       this.setState({ users: users });
     });
   },
@@ -46,9 +102,13 @@ export var ReviewUsersPanel = createComponent({
       return r.p({}, 'Loading...');
 
     var now = new Date().getTime();
-    var userElems = this.state.users.map(user => {
-      return UserPendingApproval({ user: user, now: now });
+    var userRows = this.state.users.map(user => {
+      return UserRow({ user: user, now: now, whichUsers: this.props.whichUsers });
     });
+
+    var actionHeader = this.props.whichUsers === 'NewUsers'
+        ? r.th({}, 'Actions')
+        : null;
 
     return (
       r.div({ className: 'dw-users-to-review' },
@@ -57,17 +117,17 @@ export var ReviewUsersPanel = createComponent({
             r.tr({},
               r.th({}, 'Username (Full Name)'),
               r.th({}, 'Email'),
-              r.th({}, 'Actions'),
+              actionHeader,
               r.th({}, 'Country'),
               r.th({}, 'URL'),
               r.th({}, 'Created At'))),
           r.tbody({},
-            userElems))));
+            userRows))));
   }
 });
 
 
-var UserPendingApproval = createComponent({
+var UserRow = createComponent({
   getInitialState: function() {
     return {};
   },
@@ -91,24 +151,31 @@ var UserPendingApproval = createComponent({
   },
 
   render: function() {
-    var user = this.props.user;
+    var user: CompleteUser = this.props.user;
 
     var actions;
-    if (this.state.wasJustApproved) {
+    if (this.props.whichUsers !== 'NewUsers') {
+      // Don't show any actions.
+    }
+    else if (this.state.wasJustApproved) {
       actions = [
         'Approved.',
-         Button({ className: 'approve-user', onClick: this.undoApproveOrReject }, 'Undo')];
+         Button({ onClick: this.undoApproveOrReject }, 'Undo')];
     }
     else if (this.state.wasJustRejected) {
       actions = [
         'Rejected.',
-         Button({ className: 'approve-user', onClick: this.undoApproveOrReject }, 'Undo')];
+         Button({ onClick: this.undoApproveOrReject }, 'Undo')];
     }
     else {
       actions = [
-          Button({ className: 'approve-user', onClick: this.approveUser }, 'Approve'),
-          Button({ className: 'reject-user', onClick: this.rejectUser }, 'Reject')];
+          Button({ onClick: this.approveUser }, 'Approve'),
+          Button({ onClick: this.rejectUser }, 'Reject')];
     }
+
+    var actionsCell = actions
+        ? r.td({}, actions)
+        : null;
 
     var usernameAndFullName = [
         r.span({ className: 'dw-username' }, user.username),
@@ -117,13 +184,12 @@ var UserPendingApproval = createComponent({
     return (
       r.tr({},
         r.td({},
-          usernameAndFullName),
+          r.a({ href: '/-/users/#/id/' + user.id }, usernameAndFullName)),
 
         r.td({},
           user.email),
 
-        r.td({},
-          actions),
+        actionsCell,
 
         r.td({},
           user.country),

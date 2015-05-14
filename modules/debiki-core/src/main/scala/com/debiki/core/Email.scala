@@ -72,6 +72,9 @@ case class Email(
 
 sealed abstract class EmailType
 object EmailType {
+  case object Invite extends EmailType
+  case object InviteAccepted extends EmailType
+  case object InvitePassword extends EmailType
   case object Notification extends EmailType
   case object CreateAccount extends EmailType  // COULD rename to VerifyEmailAddress
   case object ResetPassword extends EmailType

@@ -45,8 +45,9 @@ export var ReviewPostsPanel = createComponent({
     if (!this.state)
       return r.p({}, 'Loading...');
 
+    var now = Date.now();
     var postsElems = this.state.posts.map(post => {
-      return Post({ post: post });
+      return Post({ post: post, now: now });
     });
 
     return (

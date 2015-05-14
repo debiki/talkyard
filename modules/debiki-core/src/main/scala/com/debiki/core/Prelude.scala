@@ -315,6 +315,11 @@ object Prelude {
   private val _random = new java.security.SecureRandom();
 
 
+  /** This 130 bits string will be almost 26 chars, since each char in a 32 chars
+    * alphabet has 5 bits (but we use 36 chars here).
+    * Wikipedia says: "128-bit keys are commonly used and considered very strong".
+    * Here: http://en.wikipedia.org/wiki/Key_(cryptography)
+    */
   def nextRandomString(): String =
     new java.math.BigInteger(130, _random).toString(36) // 0..9, a..z
 
@@ -422,6 +427,10 @@ object Prelude {
   class RichRegex(underlying: Regex) {
     def matches(s: String) = underlying.pattern.matcher(s).matches
     def misses(s: String) = !matches(s)
+  }
+
+  implicit class OptionToInt(option: Option[_]) {
+    def toInt: Int = if (option.isDefined) 1 else 0
   }
 
   /**

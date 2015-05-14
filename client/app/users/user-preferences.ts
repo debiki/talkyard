@@ -49,10 +49,6 @@ export var UserPreferencesComponent = React.createClass({
     this.setState(this.state);
   },
 
-  onBackBtnClick: function() {
-    this.goBack();
-  },
-
   render: function() {
     var params = this.getParams();
     var isNewUrl = this.state.userId !== params.userId;
@@ -79,14 +75,12 @@ export var UserPreferencesComponent = React.createClass({
     var anyNotYourPrefsInfo = null;
     if (loggedInUser.userId !== params.userId) {
       anyNotYourPrefsInfo =
-        r.p({}, "You are editing ", r.b({}, 'another'),
+        r.p({}, "You are editing ", r.b({}, 'another '),
           "user's preferences. You can do that, because you're an administrator.");
     }
 
     return (
       r.div({ className: 'users-page' },
-        Button({ onClick: this.onBackBtnClick, className: 'pull-right' }, 'Back'),
-        r.h1({}, 'Preferences'),
         anyNotYourPrefsInfo,
         ShowAndEditPreferences({ userPreferences: this.state.userPreferences })));
   }

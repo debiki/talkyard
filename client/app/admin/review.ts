@@ -58,8 +58,7 @@ export var ReviewPanel = createComponent({
         r.div({},
             Nav({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect,
                 className: 'dw-sub-nav' },
-              NavItem({ eventKey: 'review-posts' }, 'Posts'),
-              NavItem({ eventKey: 'review-users' }, 'Users')),
+              NavItem({ eventKey: 'review-posts' }, 'Posts')),
             r.div({ className: 'dw-admin-panel' },
               RouteHandler({}))));
   }
