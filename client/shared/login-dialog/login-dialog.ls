@@ -60,6 +60,10 @@ d.i.showLoginDialog = function(mode, anyReturnToUrl)
   $('body').addClass(doingWhatClass)
 
   dialog = loginDialogHtml({ title })
+
+  if window.debiki2 && !debiki2.ReactStore.isGuestLoginAllowed()
+    dialog.find('#dw-lgi-guest').remove();
+
   dialog.dialog d.i.newModalDialogSettings(
     width: 413
     closeOnEscape: !d.i.isInLoginWindow)

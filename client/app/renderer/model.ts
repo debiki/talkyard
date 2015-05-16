@@ -103,6 +103,9 @@ interface OrderOffset {
 interface Store {
   now: number;
   siteStatus: string;
+  guestLoginAllowed: boolean;
+  userMustBeAuthenticated: boolean;
+  userMustBeApproved: boolean;
   pageId: string;
   pageRole: string;
   numPosts: number;

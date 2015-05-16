@@ -48,6 +48,9 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.Logout:
+      if (store.userMustBeAuthenticated !== false || store.userMustBeApproved !== false)
+        location.reload();
+
       store.user = {
         userId: undefined,
         permsOnPage: {},
@@ -139,6 +142,10 @@ ReactStore.allData = function() {
   return store;
 };
 
+
+ReactStore.isGuestLoginAllowed = function() {
+  return store.guestLoginAllowed || false;
+}
 
 ReactStore.getPageId = function() {
   return store.pageId;

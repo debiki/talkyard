@@ -108,6 +108,10 @@ case class Settings(settingsChain: SettingsChain) {
 
   val googleUniversalAnalyticsTrackingId = derive("googleUniversalAnalyticsTrackingId", "")
 
+  def guestLoginAllowed =
+    !userMustBeAuthenticated.asBoolean &&
+    !userMustBeApproved.asBoolean
+
 
   private def derive(settingName: String, default: Any) =
     settingsChain.deriveSetting(settingName, default)

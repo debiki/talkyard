@@ -43,6 +43,9 @@ object LoginAsGuestController extends mvc.Controller {
     def failLogin(errCode: String, summary: String, details: String) =
       throwForbiddenDialog(errCode, "Login Failed", summary, details)
 
+    val settings = request.dao.loadWholeSiteSettings()
+    if (!settings.guestLoginAllowed)
+      failLogin("DwE4KFW2", "Guest login disabled", "You cannot login as guest at this site")
     if (User nameIsWeird name)
       failLogin("DwE82ckWE19", "Weird name.",
         "Please specify another name, with no weird characters.")
@@ -77,34 +80,5 @@ object LoginAsGuestController extends mvc.Controller {
     // otherwise a javascript welcome dialog is shown instead.
     Ok.withCookies(sidAndXsrfCookies: _*)
   }
-
-
-  /*
-  def loginGuestAgainWithNewEmail(pageReq: DebikiRequest[_],
-        newEmailAddr: String): (LoginGrant, Seq[Cookie]) = {
-    import pageReq._
-
-    if (User.emailIsWeird(newEmailAddr))
-      throwForbiddenDialog("DwE83ZJ1", "Weird Email", "",
-        "Please specify a real email address.")
-    if (newEmailAddr.isEmpty)
-      throwForbiddenDialog("DwE7PUX2", "No Email", "",
-        "No email address specified")
-
-    val guestIdentity = identity_!.asInstanceOf[IdentitySimple]
-
-    val loginAttempt = GuestLoginAttempt(
-      ip = pageReq.ip,
-      date = pageReq.ctime,
-      name = guestIdentity.name,
-      email = newEmailAddr,
-      location = guestIdentity.location,
-      website = guestIdentity.website)
-
-    val loginGrant = pageReq.dao.tryLogin(loginAttempt)
-    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(Some(loginGrant))
-
-    (loginGrant, sidAndXsrfCookies)
-  } */
 
 }

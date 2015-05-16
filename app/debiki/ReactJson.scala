@@ -65,9 +65,13 @@ object ReactJson {
 
   private def newEmptySitePageJson(pageReq: PageRequest[_]): JsObject = {
     val siteStatusString = loadSiteStatusString(pageReq)
+    val siteSettings = pageReq.dao.loadWholeSiteSettings()
     Json.obj(
       "now" -> JsNumber((new ju.Date).getTime),
       "siteStatus" -> JsString(siteStatusString),
+      "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed),
+      "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
+      "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
       "pageId" -> pageReq.thePageId,
       "pageRole" -> JsString(pageReq.thePageRole.toString),
       "pagePath" -> JsString(pageReq.pagePath.value),
@@ -133,10 +137,14 @@ object ReactJson {
       }
 
     val siteStatusString = loadSiteStatusString(pageReq)
+    val siteSettings = pageReq.dao.loadWholeSiteSettings()
 
     Json.obj(
       "now" -> JsNumber((new ju.Date).getTime),
       "siteStatus" -> JsString(siteStatusString),
+      "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed),
+      "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
+      "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
       "pageId" -> pageReq.thePageId,
       "pageRole" -> JsString(page.role.toString),
       "pagePath" -> JsString(pageReq.pagePath.value),
