@@ -57,6 +57,9 @@ abstract class DebikiRequest[A] {
   def anyRoleId = user.flatMap(_.anyRoleId)
   def theRoleId = anyRoleId getOrElse throwForbidden("DwE86Wb7", "Not authenticated")
 
+  def isAuthenticated = user.map(_.isAuthenticated) == Some(true)
+  def isApprovedOrStaff = user.map(_.isApprovedOrStaff) == Some(true)
+
   /**
    * The display name of the user making the request. Throws 403 Forbidden
    * if not available, i.e. if not logged in (shouldn't happen normally).

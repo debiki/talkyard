@@ -20,7 +20,6 @@
 /// <reference path="../../shared/plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
-/// <reference path="settings.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
@@ -33,7 +32,7 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 
 
-export var ModerationPanel = createComponent({
+export var ReviewPostsPanel = createComponent({
   mixins: [SaveSettingMixin],
 
   componentDidMount: function() {
@@ -46,8 +45,9 @@ export var ModerationPanel = createComponent({
     if (!this.state)
       return r.p({}, 'Loading...');
 
+    var now = Date.now();
     var postsElems = this.state.posts.map(post => {
-      return Post({ post: post });
+      return Post({ post: post, now: now });
     });
 
     return (

@@ -89,6 +89,13 @@ POST  /-/save-page-notf-level   controllers.UserController.savePageNotfLevel
 GET   /-/list-usernames         controllers.UserController.listUsernames(pageId, prefix)
 GET   /-/load-user-preferences  controllers.UserController.loadUserPreferences(userId)
 POST  /-/save-user-preferences  controllers.UserController.saveUserPreferences
+GET   /-/list-complete-users    controllers.UserController.listCompleteUsers(whichUsers)
+GET   /-/load-complete-user     controllers.UserController.loadCompleteUser(userId)
+POST  /-/approve-reject-user    controllers.UserController.approveRejectUser
+
+GET   /-/list-invites           controllers.InviteController.listInvites(sentById)
+POST  /-/send-invite            controllers.InviteController.sendInvite
+GET   /-/accept-invite/:key     controllers.InviteController.acceptInvite(key)
 
 GET   /-/list-topics            controllers.ForumController.listTopics(categoryId)
 GET   /-/list-categories        controllers.ForumController.listCategories(forumId)
@@ -113,7 +120,6 @@ POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 #POST  /-/load-replies           controllers.LoadPagePartsController.loadReplies
 #POST  /-/load-threads-and-trees controllers.LoadPagePartsController.loadThreadsAndTrees
 GET   /-/list-pages             controllers.ListController.listPages
-GET   /-/list-users             controllers.ListController.listUsers
 POST  /-/change-page-meta       controllers.PageMetaController.changeMeta
 
 GET  /-/ping-exception-action   controllers.DebugController.pingExceptionAction

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2014-2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -24,11 +24,20 @@
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
+var reactCreateFactory = React['createFactory'];
+
+var ReactBootstrap: any = window['ReactBootstrap'];
+var Button = reactCreateFactory(ReactBootstrap.Button);
+var Nav = reactCreateFactory(ReactBootstrap.Nav);
+var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
+
 var ReactRouter = window['ReactRouter'];
 var Route = ReactRouter.Route;
 var DefaultRoute = ReactRouter.DefaultRoute;
 var NotFoundRoute = ReactRouter.NotFoundRoute;
 var RouteHandler = ReactRouter.RouteHandler;
+var RouterNavigation = ReactRouter.Navigation;
+var RouterState = ReactRouter.State;
 
 
 export function routes() {
@@ -37,11 +46,17 @@ export function routes() {
     NotFoundRoute({ handler: NotFound }),
     Route({ path: '/id/:userId', handler: UserPage },
       DefaultRoute({ handler: debiki2.users.UserDetailsAndActionsComponent }),
-      Route({ path: 'preferences', handler: debiki2.users.UserPreferencesComponent })));
+      Route({ name: 'user-all', path: 'all', handler: UserAll }),
+      Route({ name: 'user-topics', path: 'topics', handler: UserTopics }),
+      Route({ name: 'user-posts', path: 'posts', handler: UserPosts }),
+      Route({ name: 'user-likes-given', path: 'likes-given', handler: UserLikesGiven }),
+      Route({ name: 'user-likes-received', path: 'likes-received', handler: UserLikesReceived }),
+      Route({ name: 'user-notifications', path: 'notifications', handler: UserNotifications }),
+      Route({ name: 'user-preferences', path: 'preferences', handler: debiki2.users.UserPreferencesComponent }),
+      Route({ name: 'user-invites', path: 'invites', handler: debiki2.users.UserInvites })));
 }
 
 
-// Hmm, can I remove this empty route?
 var UsersHome = React.createClass({
   render: function() {
     return RouteHandler({});
@@ -51,23 +66,192 @@ var UsersHome = React.createClass({
 
 var Default = React.createClass({
   render: function() {
-    return r.div({}, 'Unexpected URL');
+    return r.div({}, 'Unexpected URL [DwE7E1W31]');
   }
 });
 
 
 var NotFound = React.createClass({
   render: function() {
-    return r.h1({}, 'Not found');
+    return r.h1({}, 'Not found [DwE8YK4P5]');
   }
 });
 
 
 var UserPage = React.createClass({
+  mixins: [RouterState, RouterNavigation, debiki2.StoreListenerMixin],
+  
+  getInitialState: function() {
+    return {
+      loggedInUser: debiki2.ReactStore.getUser()
+    };
+  },
+
+  onChange: function() {
+    this.setState({
+      loggedInUser: debiki2.ReactStore.getUser()
+    });
+  },
+
+  componentWillMount: function(nextProps) {
+    this.loadCompleteUser();
+  },
+
+  componentWillReceiveProps: function(nextProps) {
+    this.setState({
+      user: null
+    });
+    this.loadCompleteUser();
+  },
+
+  transitionToRouteName: function(routeName) {
+    this.transitionTo(routeName, { userId: this.getParams().userId });
+  },
+
+  loadCompleteUser: function() {
+    var params = this.getParams();
+    Server.loadCompleteUser(params.userId, (user) => {
+      this.setState({
+        user: user
+      });
+    });
+  },
+
   render: function() {
-    return RouteHandler({});
+    if (!this.state.user || !this.state.loggedInUser)
+      return r.p({}, 'Loading...');
+
+    var childProps = {
+      loggedInUser: this.state.loggedInUser,
+      user: this.state.user,
+      activeRouteName: this.getRoutes()[2].name,
+      transitionTo: this.transitionToRouteName
+    };
+
+    return (
+      r.div({},
+        UserBar(childProps),
+        r.div({ style: { display: 'table', width: '100%' }},
+          r.div({ style: { display: 'table-row' }},
+            UserNav(childProps),
+            UserContent(childProps)))));
   }
 });
+
+
+var UserBar = React.createClass({
+  render: function() {
+    var loggedInUser = this.props.loggedInUser;
+    var user = this.props.user;
+
+    var showPrivateStuff = loggedInUser.isAdmin || (
+        loggedInUser.isAuthenticated && loggedInUser.userId === user.id);
+
+    var invitesNavItem = null;
+    var preferencesNavItem = null;
+    if (showPrivateStuff) {
+      preferencesNavItem = NavItem({ eventKey: 'user-preferences' }, 'Preferences');
+      if (loggedInUser.isAdmin) {
+        invitesNavItem = NavItem({ eventKey: 'user-invites' }, 'Invites');
+      }
+    }
+
+    return (
+      r.div({ className: 'dw-user-bar clearfix' },
+        UserInfo(this.props),
+        Nav({ bsStyle: 'pills', activeKey: this.props.activeRouteName,
+            onSelect: this.props.transitionTo, className: 'dw-sub-nav' },
+          invitesNavItem,
+          preferencesNavItem)));
+  }
+});
+
+
+var UserInfo = createComponent({
+  render: function() {
+    return (
+      r.div({ className: 'user-info' },
+        r.h1({}, this.props.user.username),
+        r.h2({}, this.props.user.fullName)));
+  }
+});
+
+
+var UserNav = React.createClass({
+  render: function() {
+    var messages = null;
+    // if (this.props.)
+    return (
+      r.div({ className: 'dw-user-nav' },
+        Nav({ bsStyle: 'pills', activeKey: this.props.activeRouteName,
+            onSelect: this.props.transitionTo, className: 'dw-sub-nav nav-stacked' },
+          NavItem({ eventKey: 'user-all' }, 'All'),
+          NavItem({ eventKey: 'user-topics' }, 'Topics'),
+          NavItem({ eventKey: 'user-posts' }, 'Posts'),
+          NavItem({ eventKey: 'user-likes-given' }, 'Likes Given'),
+          NavItem({ eventKey: 'user-likes-received' }, 'Likes Received'),
+          NavItem({ eventKey: 'user-notifications' }, 'Notifications'),
+          messages)));
+  }
+});
+
+
+var UserContent = React.createClass({
+  render: function() {
+    return (
+      r.div({ className: 'dw-user-content' },
+        RouteHandler(this.props)));
+  }
+});
+
+
+var UserAll = React.createClass({
+  render: function() {
+    return (
+      r.p({}, 'UserAll'));
+  }
+});
+
+
+var UserTopics = React.createClass({
+  render: function() {
+    return (
+      r.p({}, 'UserTopics'));
+  }
+});
+
+
+var UserPosts = React.createClass({
+  render: function() {
+    return (
+      r.p({}, 'UserPosts'));
+  }
+});
+
+
+var UserLikesGiven = React.createClass({
+  render: function() {
+    return (
+      r.p({}, 'UserLikesGiven'));
+  }
+});
+
+
+var UserLikesReceived = React.createClass({
+  render: function() {
+    return (
+      r.p({}, 'UserLikesReceived'));
+  }
+});
+
+
+var UserNotifications = React.createClass({
+  render: function() {
+    return (
+      r.p({}, 'UserNotifications'));
+  }
+});
+
 
 
 //------------------------------------------------------------------------------

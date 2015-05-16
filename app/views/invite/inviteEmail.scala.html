@@ -1,0 +1,16 @@
+@(inviterName: String, siteHostname: String, secretKey: String)
+
+@acceptInviteUrl = @{
+  s"http://$siteHostname${routes.InviteController.acceptInvite(secretKey)}"
+}
+
+@inviterName invites you to join @siteHostname
+
+Click the link below, if you are interested.
+
+<a href="@acceptInviteUrl">@acceptInviteUrl</a>
+
+An account will then be created for you and you will be logged in, automatically.
+
+Kind regards
+

@@ -21,7 +21,9 @@ import actions.ApiActions._
 import collection.mutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import com.debiki.core.User.MinUsernameLength
 import debiki._
+import debiki.ReactJson.{DateEpochOrNull, JsStringOrNull, JsBooleanOrNull, JsNumberOrNull}
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
@@ -33,9 +35,85 @@ import Utils.ValidationImplicits._
 import DebikiHttp.{throwForbidden, throwNotFound, throwBadReq}
 
 
-/** Handles requests related to users (guests, roles, groups).
+/** Handles requests related to users.
  */
 object UserController extends mvc.Controller {
+
+
+  def listCompleteUsers(whichUsers: String) = AdminGetAction { request =>
+    var onlyApproved = false
+    var onlyPendingApproval = false
+    whichUsers match {
+      case "ActiveUsers" =>
+        onlyApproved = request.dao.loadWholeSiteSettings().userMustBeApproved.asBoolean
+      case "NewUsers" =>
+        onlyPendingApproval = true
+    }
+    request.dao.readOnlyTransaction { transaction =>
+      val usersPendingApproval = transaction.loadCompleteUsers(
+        onlyApproved = onlyApproved,
+        onlyPendingApproval = onlyPendingApproval)
+      val approverIds = usersPendingApproval.flatMap(_.approvedById)
+      val approversById = transaction.loadUsersAsMap(approverIds)
+      val usersJson = JsArray(usersPendingApproval.map(
+        jsonForCompleteUser(_, approversById, callerIsAdmin = true)))
+      OkSafeJson(Json.toJson(Map("users" -> usersJson)))
+    }
+  }
+
+
+  def loadCompleteUser(userId: String) = GetAction { request =>
+    val userIdInt = Try(userId.toInt) getOrElse throwBadReq("DwE6FWV0", "Bad user id")
+    val callerIsAdmin = request.theUser.isAdmin
+    val callerIsUserHerself = request.theUserId == userIdInt
+    request.dao.readOnlyTransaction { transaction =>
+      val user = transaction.loadTheCompleteUser(userIdInt)
+      val usersJson = jsonForCompleteUser(user, Map.empty, callerIsAdmin = callerIsAdmin,
+        callerIsUserHerself = callerIsUserHerself)
+      OkSafeJson(Json.toJson(Map("user" -> usersJson)))
+    }
+  }
+
+
+  private def jsonForCompleteUser(user: CompleteUser, approversById: Map[UserId, User],
+        callerIsAdmin: Boolean = false, callerIsUserHerself: Boolean = false)
+        : JsObject = {
+    var userJson = Json.obj(
+      "id" -> user.id,
+      "createdAtEpoch" -> JsNumber(user.createdAt.getTime),
+      "username" -> user.username,
+      "fullName" -> user.fullName,
+      "country" -> user.country,
+      "url" -> user.website)
+
+    if (callerIsAdmin || callerIsUserHerself) {
+      val anyApprover = user.approvedById.flatMap(approversById.get)
+      userJson += "email" -> JsString(user.emailAddress)
+      userJson += "emailForEveryNewPost" -> JsBoolean(user.emailForEveryNewPost)
+      userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
+      userJson += "approvedAtEpoch" -> DateEpochOrNull(user.approvedAt)
+      userJson += "approvedById" -> JsNumberOrNull(user.approvedById)
+      userJson += "approvedByName" -> JsStringOrNull(anyApprover.map(_.displayName))
+      userJson += "approvedByUsername" -> JsStringOrNull(anyApprover.flatMap(_.username))
+    }
+
+    userJson
+  }
+
+
+  def approveRejectUser = AdminPostJsonAction(maxLength = 100) { request =>
+    val userId = (request.body \ "userId").as[UserId]
+    val doWhat = (request.body \ "doWhat").as[String]
+    doWhat match {
+      case "Approve" =>
+        request.dao.approveUser(userId, approverId = request.theUserId)
+      case "Reject" =>
+        request.dao.rejectUser(userId, approverId = request.theUserId)
+      case "Undo" =>
+        request.dao.undoApproveOrRejectUser(userId, approverId = request.theUserId)
+    }
+    Ok
+  }
 
 
   def viewUserPage() = GetAction { request =>
@@ -101,8 +179,9 @@ object UserController extends mvc.Controller {
   def loadUserPreferences(userId: String) = GetAction { request =>
     val userIdInt = Try(userId.toInt) getOrElse throwBadReq("DwE7KBA0", "Bad user id")
     checkUserPrefsAccess(request, userIdInt)
-    val prefs = request.dao.loadRolePreferences(userIdInt) getOrElse throwNotFound(
+    val user = request.dao.loadCompleteUser(userIdInt) getOrElse throwNotFound(
       "DwE3EJ5O2", s"User not found, id: $userId")
+    val prefs = user.preferences
     val json = Json.obj("userPreferences" -> userPrefsToJson(prefs))
     OkSafeJson(json)
   }
@@ -114,7 +193,7 @@ object UserController extends mvc.Controller {
 
     // For now, don't allow people to change their username. In the future, changing
     // it should be alloowed, but only very infrequently? Or only the very first few days.
-    if (request.theUser.username != prefs.username)
+    if (request.theUser.username != Some(prefs.username))
       throwForbidden("DwE44ELK9", "Must not modify one's username")
 
     // For now, don't allow the user to change his/her email. I haven't
@@ -237,14 +316,14 @@ object UserController extends mvc.Controller {
 
 
   private def userPrefsFromJson(json: JsValue): UserPreferences = {
-    var anyUsername = (json \ "username").asOpt[String]
-    if (anyUsername == Some("")) {
-      anyUsername = None
-    }
+    val username = (json \ "username").as[String]
+    if (username.length < MinUsernameLength)
+      throwBadReq("DwE44KUY0", "Username too short")
+
     UserPreferences(
       userId = (json \ "userId").as[UserId],
       fullName = (json \ "fullName").as[String],
-      username = anyUsername,
+      username = username,
       emailAddress = (json \ "emailAddress").as[String],
       url = (json \ "url").as[String],
       emailForEveryNewPost = (json \ "emailForEveryNewPost").as[Boolean])

@@ -20,6 +20,9 @@
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="settings.ts" />
+/// <reference path="review.ts" />
+/// <reference path="review-posts.ts" />
+/// <reference path="users.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
@@ -50,10 +53,28 @@ var State = ReactRouter.State;
 export function routes() {
   return Route({ path: '/', handler: AdminApp },
     Redirect({ from: '/', to: 'settings' }),
+    Redirect({ from: '/users', to: 'users-active' }),
+    Redirect({ from: '/review', to: 'review-posts' }),
     Route({ name: 'settings', path: 'settings', handler: SettingsPanel }),
+    Route({ name: 'users', path: 'users', handler: UsersTab },
+      Route({ name: 'users-active', path: 'active', handler: ActiveUsersPanel }),
+      Route({ name: 'users-new', path: 'new', handler: NewUsersPanel }),
+      Route({ name: 'users-staff', path: 'staff', handler: NotYetImplemented }),
+      Route({ name: 'users-suspended', path: 'suspended', handler: NotYetImplemented }),
+      Route({ name: 'users-threats', path: 'threads', handler: NotYetImplemented })),
     Route({ name: 'customize', path: 'customize', handler: CustomizePanel }),
-    Route({ name: 'moderate', path: 'moderate', handler: ModerationPanel }));
+    Route({ name: 'review', path: 'review', handler: ReviewPanel },
+      Route({ name: 'review-posts', path: 'posts', handler: ReviewPostsPanel })));
 }
+
+
+
+var NotYetImplemented = createComponent({
+  render: function() {
+    return (
+      r.p({}, 'Not yet implemented.'));
+  }
+});
 
 
 
@@ -74,10 +95,12 @@ var AdminApp = createComponent({
   render: function() {
     return (
       r.div({ className: 'admin-app' },
-        Nav({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect },
+        Nav({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect,
+            className: 'dw-main-nav' },
           NavItem({ eventKey: 'settings' }, 'Settings'),
+          NavItem({ eventKey: 'users' }, 'Users'),
           NavItem({ eventKey: 'customize' }, 'Customize'),
-          NavItem({ eventKey: 'moderate' }, 'Moderate')),
+          NavItem({ eventKey: 'review' }, 'Review')),
         RouteHandler({})));
   }
 });
@@ -104,6 +127,15 @@ var SettingsPanel = createComponent({
 
     return (
       r.div({},
+        Setting({ setting: settings.userMustBeAuthenticated, onSave: saveSetting, label: 'Login required',
+          help: 'Require authentication to read content. (Which means that users must login' +
+            'with password, or via Google or Facebook or something like that, but anonymous ' +
+            'access is disabled.)' }),
+
+        Setting({ setting: settings.userMustBeApproved, onSave: saveSetting, label: 'Approve users',
+          help: 'Staff must approve all new user accounts before they are allowed to access the site.' }),
+          // help text above copyright Discourse
+
         Setting({ setting: settings.title, onSave: saveSetting, label: 'Title',
           help: 'The site title, will be used in the title tag and elsewhere.' }),
 

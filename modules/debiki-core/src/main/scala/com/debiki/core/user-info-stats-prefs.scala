@@ -51,11 +51,11 @@ object UserStats {
 case class UserPreferences(
   userId: UserId,
   fullName: String,
-  username: Option[String],
+  username: String,
   emailAddress: String,
   url: String = "",
   emailForEveryNewPost: Boolean = false) {
 
-  require(username != Some(""), "Empty username [DwE56KX2]")
+  require(userId >= User.LowestNonGuestId, "DwE56KX2")
 }
 

@@ -56,7 +56,7 @@ export function initAllReactRoots() {
 
   debiki2.editor.createEditor();
 
-  var userPageElem = document.getElementById('dw-user-page');
+  var userPageElem = document.getElementById('dw-react-user-page');
   if (userPageElem) {
     ReactRouter.run(debiki2.users.routes(), (Handler) => {
       React.render(Handler({}), userPageElem);

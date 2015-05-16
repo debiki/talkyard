@@ -103,6 +103,9 @@ interface OrderOffset {
 interface Store {
   now: number;
   siteStatus: string;
+  guestLoginAllowed: boolean;
+  userMustBeAuthenticated: boolean;
+  userMustBeApproved: boolean;
   pageId: string;
   pageRole: string;
   numPosts: number;
@@ -144,4 +147,45 @@ interface SpecialContent {
   contentId: string;
   defaultText: string;
   anyCustomText?: string;
+}
+
+
+interface CompleteUser {
+  id: any;  // TODO change to number, and User.userId too
+  createdAtEpoch: number;
+  username: string;
+  fullName: string;
+  email: string;
+  emailForEveryNewPost: boolean;
+  country: string;
+  url: string;
+  isApproved: boolean;
+  approvedAtEpoch: number;
+  approvedById: number;
+  approvedByName: string;
+  approvedByUsername: string;
+}
+
+
+interface Invite {
+  invitedEmailAddress: string;
+  invitedById: number;
+  createdAtEpoch: number;
+  acceptedAtEpoch?: number;
+  invalidatedAtEpoch?: number;
+  deletedAtEpoch?: number;
+  deletedById?: number;
+  userId?: number;
+  // Later:
+  /*
+  userFullName?: string;
+  userUsername?: string;
+  userLastSeenAtEpoch?: number;
+  userNumTopicsViewed?: number;
+  userNumPostsRead?: number;
+  userReadTime?: number;
+  userDayVisited?: number;
+  userTrustLevel?: number;
+  userThreatLevel?: number;
+  */
 }

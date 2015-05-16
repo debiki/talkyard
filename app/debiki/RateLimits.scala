@@ -146,6 +146,17 @@ object RateLimits {
   }
 
 
+  /** Discourse defaults to max 10 invites per day, let's just copy that. */
+  object SendInvite extends RateLimits {
+    val key = "SeIn"
+    val what = "sent too many invites"
+    def maxPerFifteenSeconds = Unlimited
+    def maxPerFifteenMinutes = Unlimited
+    def maxPerDay = 10
+    def maxPerDayNewUser = Unlimited
+  }
+
+
   object ResetPassword extends RateLimits {
     val key = "RsPw"
     val what = "resetted your password"

@@ -114,6 +114,7 @@ object ResetPasswordController extends mvc.Controller {
 
 
   def showChooseNewPasswordPage(resetPasswordEmailId: String) = GetAction { request =>
+    SECURITY // COULD check email type: ResetPassword or InvitePassword. SHOULD rate limit.
     loginByEmailOrThrow(resetPasswordEmailId, request)
     Ok(views.html.resetpassword.chooseNewPassword(
       xsrfToken = request.xsrfToken.value,
@@ -129,24 +130,16 @@ object ResetPasswordController extends mvc.Controller {
       throwBadReq("DwE2MJ0", "You specified two different passwords; please go back and try again")
 
     val loginGrant = loginByEmailOrThrow(anyResetPasswordEmailId, request)
-    val emailIdentity = loginGrant.identity.asInstanceOf[IdentityEmailId]
-    val emailAddress = emailIdentity.emailSent.map(_.sentTo) getOrElse assErr("DwE72DM0")
-    val user = request.dao.loadUserByEmailOrUsername(emailAddress) getOrElse {
-      // The password user was present when we started this reset-password wizard.
-      throwForbidden( //logAndThrowForbidden(
-          "DwE22RV6", s"Password user not found, email address: `$emailAddress', user deleted?")
-    }
-
-    if (user.passwordHash.isEmpty) {
-      // This cannot happen because `handleResetPasswordForm` checks the identity type.
-      assErr("DwE77903", "Attempting to reset password for a non-password user: " + user)
-    }
-
-    // Perhaps change to `dao.changePasswordIdentitysPassword(emailAddress, newSaltHash)`?
     request.dao.changePassword(
-      user, newPasswordSaltHash = DbDao.saltAndHashPassword(newPassword))
+      loginGrant.user.id, newPasswordSaltHash = DbDao.saltAndHashPassword(newPassword))
 
-    Ok(views.html.resetpassword.passwordHasBeenChanged())
+    SECURITY // SHOULD test if reset password email too old, expired
+    SECURITY // SHOULD mark reset password email as used, so cannot be used again
+
+    // Log the user in and show password changed message.
+    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(loginGrant.user)
+    val newSessionCookies = sidAndXsrfCookies
+    Ok(views.html.resetpassword.passwordHasBeenChanged()).withCookies(newSessionCookies: _*)
   }
 
 

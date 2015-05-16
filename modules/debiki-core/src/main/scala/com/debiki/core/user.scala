@@ -32,6 +32,72 @@ abstract class People {
 }
 
 
+/** An invite to the user with the specified emailAddress to join the site.
+  * S/he gets an email and clicks a link to join.
+  */
+case class Invite(
+  emailAddress: String,
+  secretKey: String,
+  createdById: UserId,
+  createdAt: ju.Date,
+  acceptedAt: Option[ju.Date],
+  userId: Option[UserId],
+  deletedAt: Option[ju.Date],
+  deletedById: Option[UserId],
+  invalidatedAt: Option[ju.Date]) {
+
+  require(secretKey.length > 15, "Unsafe key? [DwE7KFPE2]")
+  require(emailAddress contains "@", "DwE64KSU8")
+  require(emailAddress.split("@").head.nonEmpty, "DwE09FKI2")
+  require(acceptedAt.isEmpty == userId.isEmpty, "DwE8KE94")
+  require(deletedAt.isEmpty == deletedById.isEmpty, "DwE4KSP3")
+  require(invalidatedAt.toInt + deletedAt.toInt + acceptedAt.toInt <= 1, "DwE5WKJ2")
+  require(deletedAt.isEmpty || deletedAt.get.getTime >= createdAt.getTime, "DwE6PK2")
+  require(invalidatedAt.isEmpty || invalidatedAt.get.getTime >= createdAt.getTime, "DwE8UY0")
+
+  def canBeOrHasBeenAccepted = invalidatedAt.isEmpty && deletedAt.isEmpty
+
+  /** Suggests a username based on the email address, namely the text before the '@'.
+    * Padded with "_" if too short.
+    */
+  private def deriveUsername: String = {
+    var username = emailAddress.split("@").headOption.getOrDie(
+      "DwE500IIEA5", "Invalid invite email address")
+    while (username.length < MinUsernameLength) {
+      username += "_"
+    }
+    username
+  }
+
+  def makeUser(userId: UserId, currentTime: ju.Date) = CompleteUser(
+    id = userId,
+    fullName = "",
+    username = deriveUsername,
+    createdAt = currentTime,
+    isApproved = None,
+    approvedAt = None,
+    approvedById = None,
+    emailAddress = emailAddress,
+    emailNotfPrefs = EmailNotfPrefs.Receive,
+    emailVerifiedAt = Some(currentTime))
+}
+
+
+object Invite {
+  def apply(emailAddress: String, secretKey: String,
+        createdById: UserId, createdAt: ju.Date): Invite = Invite(
+    emailAddress = emailAddress,
+    secretKey = secretKey,
+    createdById = createdById,
+    createdAt = createdAt,
+    userId = None,
+    acceptedAt = None,
+    deletedAt = None,
+    deletedById = None,
+    invalidatedAt = None)
+}
+
+
 sealed abstract class NewUserData {
   def name: String
   def username: String
@@ -40,16 +106,17 @@ sealed abstract class NewUserData {
   def isAdmin: Boolean
   def isOwner: Boolean
 
-  def makeUser(userId: UserId, createdAt: ju.Date) = User(
+  def makeUser(userId: UserId, createdAt: ju.Date) = CompleteUser(
     id = userId,
-    displayName = name,
-    username = Some(username),
-    createdAt = Some(createdAt),
-    email = email,
-    emailNotfPrefs = EmailNotfPrefs.Unspecified,
+    fullName = name,
+    username = username,
+    createdAt = createdAt,
+    isApproved = None,
+    approvedAt = None,
+    approvedById = None,
+    emailAddress = email,
+    emailNotfPrefs = EmailNotfPrefs.Receive,
     emailVerifiedAt = emailVerifiedAt,
-    country = "",
-    website = "",
     isAdmin = isAdmin,
     isOwner = isOwner)
 
@@ -74,17 +141,18 @@ case class NewPasswordUserData(
   val passwordHash: String =
     DbDao.saltAndHashPassword(password)
 
-  def makeUser(userId: UserId, createdAt: ju.Date) = User(
+  def makeUser(userId: UserId, createdAt: ju.Date) = CompleteUser(
     id = userId,
-    displayName = name,
-    username = Some(username),
-    createdAt = Some(createdAt),
-    email = email,
-    emailNotfPrefs = EmailNotfPrefs.Unspecified,
+    fullName = name,
+    username = username,
+    createdAt = createdAt,
+    isApproved = None,
+    approvedAt = None,
+    approvedById = None,
+    emailAddress = email,
+    emailNotfPrefs = EmailNotfPrefs.Receive,
     emailVerifiedAt = None,
     passwordHash = Some(passwordHash),
-    country = "",
-    website = "",
     isAdmin = isAdmin,
     isOwner = isOwner)
 
@@ -191,6 +259,10 @@ case object User {
       id == UnknownUserId ||
       id <= MaxCustomGuestId
 
+
+  val MinUsernameLength = 3
+
+
   /**
    * Checks for weird ASCII chars in an user name.
    *
@@ -263,7 +335,7 @@ case object User {
  * @param isAdmin
  * @param isOwner
  */
-case class User (
+case class User(
   id: UserId,
   displayName: String,
   username: Option[String],
@@ -274,17 +346,98 @@ case class User (
   passwordHash: Option[String] = None,
   country: String = "",
   website: String = "",
+  isApproved: Option[Boolean],
+  isSuspended: Boolean,
   isAdmin: Boolean = false,
-  isOwner: Boolean = false
-){
-  require(User.isOkayUserId(id), "DwE02k125r")
+  isOwner: Boolean = false) {
+
+  require(User.isOkayUserId(id), "DwE02k12R5")
+  require(username.isEmpty || username.get.length >= 2)
+  require(!isGuest || (
+    username.isEmpty && createdAt.isEmpty && !isAdmin && !isOwner &&
+      isApproved.isEmpty && !isSuspended &&
+      emailVerifiedAt.isEmpty && passwordHash.isEmpty), "DwE0GUEST426")
+  require(!isAuthenticated || (
+    username.isDefined &&
+    createdAt.isDefined), "DwE0AUTH6U82")
 
   def isAuthenticated = isRoleId(id)
+  def isApprovedOrStaff = isApproved == Some(true) || isStaff
+  def isStaff = isAdmin || isOwner
+
+  def isGuest = User.isGuestId(id)
+  def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
+}
+
+
+case class CompleteUser(
+  id: UserId,
+  fullName: String,
+  username: String,
+  createdAt: ju.Date,
+  isApproved: Option[Boolean],
+  approvedAt: Option[ju.Date],
+  approvedById: Option[UserId],
+  emailAddress: String,
+  emailNotfPrefs: EmailNotfPrefs,
+  emailVerifiedAt: Option[ju.Date] = None,
+  emailForEveryNewPost: Boolean = false,
+  passwordHash: Option[String] = None,
+  country: String = "",
+  website: String = "",
+  isAdmin: Boolean = false,
+  isOwner: Boolean = false,
+  suspendedAt: Option[ju.Date] = None,
+  suspendedTill: Option[ju.Date] = None,
+  suspendedById: Option[UserId] = None) {
+
+  require(User.isOkayUserId(id), "DwE077KF2")
+  require(username.length >= 2, "DwE6KYU9")
+  require(approvedAt.isDefined == approvedById.isDefined, "DwE0KEI4")
+  require(approvedById.map(_ >= LowestNonGuestId) != Some(false), "DwE55UKH4")
+  require(isApproved.isEmpty || (approvedById.isDefined && approvedAt.isDefined), "DwE4DKQ1")
+  require(suspendedAt.isDefined == suspendedById.isDefined, "DwE64kfe2")
+  require(suspendedTill.isEmpty || suspendedAt.isDefined, "DwEJKP75")
+  require(suspendedById.map(_ >= LowestNonGuestId) != Some(false), "DwE7K2WF5")
+  require(!isGuest, "DwE0GUEST223")
+
+  def isApprovedOrStaff = approvedAt == Some(true) || isAdmin || isOwner
 
   def isGuest = User.isGuestId(id)
   def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
 
+  def preferences = UserPreferences(
+    userId = id,
+    fullName = fullName,
+    username = username,
+    emailAddress = emailAddress,
+    url = website,
+    emailForEveryNewPost = emailForEveryNewPost)
+
+  def copyWithNewPreferences(preferences: UserPreferences) = copy(
+    fullName = preferences.fullName,
+    username = preferences.username,
+    emailAddress = preferences.emailAddress,
+    website = preferences.url,
+    emailForEveryNewPost = preferences.emailForEveryNewPost)
+
+  def briefUser = User(
+    id = id,
+    displayName = fullName,
+    username = Some(username),
+    createdAt = Some(createdAt),
+    email = emailAddress,
+    emailNotfPrefs = emailNotfPrefs,
+    emailVerifiedAt = emailVerifiedAt,
+    passwordHash = passwordHash,
+    country = country,
+    website = website,
+    isApproved = isApproved,
+    isSuspended = false,
+    isAdmin = isAdmin,
+    isOwner = isOwner)
 }
+
 
 
 /**

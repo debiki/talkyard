@@ -183,6 +183,75 @@ function doSomethingWithPost(post: PostToModerate, actionUrl: string, doneCallba
 }
 
 
+export function loadCompleteUser(userId: number,
+        doneCallback: (user: CompleteUser) => void) {
+  $.get(origin + '/-/load-complete-user?userId=' + userId)
+    .done(response => {
+      doneCallback(response.user);
+    })
+    .fail((x, y, z) => {
+      console.error('Error loading user: ' + JSON.stringify([x, y, z]));
+    });
+}
+
+
+export function listCompleteUsers(whichUsers,
+        doneCallback: (users: CompleteUser[]) => void) {
+  $.get(origin + '/-/list-complete-users?whichUsers=' + whichUsers)
+    .done(response => {
+      doneCallback(response.users);
+    })
+    .fail((x, y, z) => {
+      console.error('Error loading users: ' + JSON.stringify([x, y, z]));
+    });
+}
+
+
+export function sendInvite(toEmailAddress: string, whenDone: (invite: Invite) => void) {
+  d.u.postJson({
+    url: origin + '/-/send-invite',
+    data: {
+      toEmailAddress: toEmailAddress
+    },
+    success: (response) => {
+      whenDone(response);
+    },
+    error: (x, y, z) => {
+      console.error('Error inviting user: ' + JSON.stringify([x, y, z]));
+      alert(x.responseText);
+    },
+  });
+}
+
+
+export function loadInvitesSentBy(userId: number, doneCallback: (invites: Invite[]) => void) {
+  $.get(origin + '/-/list-invites?sentById=' + userId)
+    .done(response => {
+      doneCallback(response);
+    })
+    .fail((x, y, z) => {
+      console.error('Error loading invites: ' + JSON.stringify([x, y, z]));
+    });
+}
+
+
+export function approveRejectUser(user: CompleteUser, doWhat: string, whenDone: () => void) {
+  d.u.postJson({
+    url: origin + '/-/approve-reject-user',
+    data: {
+      userId: user.id,
+      doWhat: doWhat
+    },
+    success: (response) => {
+      whenDone();
+    },
+    error: (x, y, z) => {
+      console.error('Error approving/rejecting user: ' + JSON.stringify([x, y, z]));
+    },
+  });
+}
+
+
 export function savePageNoftLevel(newNotfLevel) {
   d.u.postJson({
     url: origin + '/-/save-page-notf-level',

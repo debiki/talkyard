@@ -18,6 +18,7 @@
 package actions
 
 import com.debiki.core._
+import com.debiki.core.DbDao.EmailAddressChangedException
 import com.debiki.core.Prelude._
 import controllers.Utils
 import debiki._
@@ -178,16 +179,30 @@ object SafeActions {
         case ex: OverQuotaException =>
           Future.successful(Results.Forbidden(o"""You cannot do that, because this site's
             disk quota has been exceeded, sorry. [DwE7GH4R2]"""))
+        case ex: UserNotFoundException =>
+          Future.successful(Results.NotFound(
+            s"User '${ex.userId}' not found [DwE404US3R]"))
         case ex: PageNotFoundException =>
           Future.successful(Results.NotFound(
             s"Page '${ex.pageId}' not found [DwE404WU5]"))
         case ex: PostNotFoundException =>
           Future.successful(Results.NotFound(
             s"Post ${ex.postId} on page '${ex.pageId}' not found [DwE404GP3]"))
+        case ex: EmailAddressChangedException =>
+          Future.successful(Results.Forbidden(
+            "The email address related to this request has been changed. Access denied"))
         case DebikiHttp.ResultException(result) =>
           Future.successful(result)
         case ex: play.api.libs.json.JsResultException =>
-          Future.successful(Results.BadRequest(s"Bad JSON: $ex [error DwE70KX3]"))
+          Future.successful(Results.BadRequest(s"Bad JSON: $ex [DwE70KX3]"))
+        case ex: IllegalArgumentException =>
+          Future.successful(Results.InternalServerError(s"Illegal argument: $ex [DwE500IA]"))
+        case ex: IllegalStateException =>
+          Future.successful(Results.InternalServerError(s"Illegal state: $ex [DwE500IS]"))
+        case ex: AssertionError =>
+          Future.successful(Results.InternalServerError(s"Assertion error: $ex [DwE500AE]"))
+        case ex: UnsupportedOperationException =>
+          Future.successful(Results.InternalServerError(s"Unsupported operation: $ex [DwE500UO]"))
       }
       futureResult = futureResult recover {
         case DebikiHttp.ResultException(result) => result
