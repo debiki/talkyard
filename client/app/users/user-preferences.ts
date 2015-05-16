@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2014-2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -36,44 +36,18 @@ import UserPreferences = debiki2.users.UserPreferences;
 
 
 export var UserPreferencesComponent = React.createClass({
-  mixins: [RouterState, RouterNavigation, debiki2.StoreListenerMixin],
-
-  getInitialState: function() {
-    return {
-      loggedInUser: debiki2.ReactStore.getUser()
-    };
-  },
-
-  onChange: function() {
-    this.state.loggedInUser = debiki2.ReactStore.getUser();
-    this.setState(this.state);
-  },
-
   render: function() {
-    var params = this.getParams();
-    var isNewUrl = this.state.userId !== params.userId;
-    if (isNewUrl) {
-      // Should do this from componentWillReceiveProps() or componentDidMount() instead?
-      Server.loadUserPreferences(params.userId, (prefs: UserPreferences) => {
-        this.state.userId = params.userId;
-        this.state.userPreferences = prefs;
-        this.setState(this.state);
-      });
-      return r.p({}, 'Loading...');
-    }
+    var loggedInUser = this.props.loggedInUser;
+    var user = this.props.user;
 
-    if (!this.state.userPreferences)
-      return r.p({}, 'User not found');
-
-    var loggedInUser = this.state.loggedInUser;
-    var mayViewPrefs = loggedInUser && loggedInUser.isAuthenticated && (
-        loggedInUser.isAdmin || loggedInUser.userId === params.userId);
+    var mayViewPrefs = loggedInUser.isAuthenticated && (
+        loggedInUser.isAdmin || loggedInUser.userId === user.id);
 
     if (!mayViewPrefs)
       return r.p({}, 'Forbidden');
 
     var anyNotYourPrefsInfo = null;
-    if (loggedInUser.userId !== params.userId) {
+    if (loggedInUser.userId !== user.id) {
       anyNotYourPrefsInfo =
         r.p({}, "You are editing ", r.b({}, 'another '),
           "user's preferences. You can do that, because you're an administrator.");
@@ -82,7 +56,7 @@ export var UserPreferencesComponent = React.createClass({
     return (
       r.div({ className: 'users-page' },
         anyNotYourPrefsInfo,
-        ShowAndEditPreferences({ userPreferences: this.state.userPreferences })));
+        ShowAndEditPreferences({ user: user })));
   }
 });
 
@@ -98,9 +72,9 @@ var ShowAndEditPreferences = React.createClass({
     event.preventDefault();
     var form = $(event.target);
     var prefs = {
-      userId: this.getParams().userId,
+      userId: this.props.user.id,
       fullName: form.find('#fullName').val(),
-      username: this.props.userPreferences.username,
+      username: this.props.user.username,
       emailAddress: form.find('#emailAddress').val(),
       url: form.find('#url').val(),
       emailForEveryNewPost: form.find('#emailForEveryNewPost').is(':checked')
@@ -115,8 +89,8 @@ var ShowAndEditPreferences = React.createClass({
   },
 
   render: function() {
-    var prefs: UserPreferences = this.props.userPreferences;
-    var username = prefs.username || '(not specified)';
+    var user: CompleteUser = this.props.user;
+    var username = user.username || '(not specified)';
 
     var savingInfo = null;
     if (this.state.savingStatus === 'Saving') {
@@ -132,7 +106,7 @@ var ShowAndEditPreferences = React.createClass({
         r.div({ className: 'form-group' },
           r.label({ htmlFor: 'fullName' }, 'Name (optional)'),
           r.input({ className: 'form-control', id: 'fullName',
-              defaultValue: prefs.fullName })),
+              defaultValue: user.fullName })),
 
         // Don't allow changing one's username right now. In the future, one should
         // be allowed to change it but infrequently only.
@@ -145,20 +119,20 @@ var ShowAndEditPreferences = React.createClass({
         r.div({ className: 'form-group' },
           r.label({ htmlFor: 'emailAddress' }, 'Email address'),
           r.input({ type: 'email', className: 'form-control', id: 'emailAddress',
-              defaultValue: prefs.emailAddress, disabled: true }),
+              defaultValue: user.email, disabled: true }),
           r.p({ className: 'help-block' }, 'Not shown publicly.')),
 
         r.div({ className: 'form-group' },
           r.label({ htmlFor: 'url' }, 'URL'),
           r.input({ className: 'form-control', id: 'url',
-              defaultValue: prefs.url }),
+              defaultValue: user.url }),
           r.p({ className: 'help-block' }, 'Any website or page of yours.')),
 
         r.div({ className: 'form-group' },
           r.div({ className: 'checkbox' },
             r.label({},
               r.input({ type: 'checkbox', id: 'emailForEveryNewPost',
-                defaultChecked: prefs.emailForEveryNewPost },
+                defaultChecked: user.emailForEveryNewPost },
                 'Receive an email for every new post (unless you mute the topic or category)')))),
 
         Button({ type: 'submit' }, 'Save'),

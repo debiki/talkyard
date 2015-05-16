@@ -18,6 +18,7 @@
 package actions
 
 import com.debiki.core._
+import com.debiki.core.DbDao.EmailAddressChangedException
 import com.debiki.core.Prelude._
 import controllers.Utils
 import debiki._
@@ -187,6 +188,9 @@ object SafeActions {
         case ex: PostNotFoundException =>
           Future.successful(Results.NotFound(
             s"Post ${ex.postId} on page '${ex.pageId}' not found [DwE404GP3]"))
+        case ex: EmailAddressChangedException =>
+          Future.successful(Results.Forbidden(
+            "The email address related to this request has been changed. Access denied"))
         case DebikiHttp.ResultException(result) =>
           Future.successful(result)
         case ex: play.api.libs.json.JsResultException =>

@@ -153,6 +153,7 @@ interface CompleteUser {
   username: string;
   fullName: string;
   email: string;
+  emailForEveryNewPost: boolean;
   country: string;
   url: string;
   isApproved: boolean;
@@ -167,7 +168,7 @@ interface Invite {
   invitedEmailAddress: string;
   invitedById: number;
   createdAtEpoch: number;
-  redeemedAtEpoch?: number;
+  acceptedAtEpoch?: number;
   invalidatedAtEpoch?: number;
   deletedAtEpoch?: number;
   deletedById?: number;

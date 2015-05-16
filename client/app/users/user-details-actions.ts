@@ -72,19 +72,7 @@ export var UserDetailsAndActionsComponent = React.createClass({
     if (!this.state.userInfo)
       return r.p({}, 'User not found');
 
-    var mayEditPrefs = false;
-    if (this.state.loggedInUser && this.state.loggedInUser.isAuthenticated) {
-      mayEditPrefs = mayEditPrefs || this.state.loggedInUser.userId === params.userId;
-      mayEditPrefs = mayEditPrefs || this.state.loggedInUser.isAdmin;
-    }
-
-    var preferencesLink = mayEditPrefs
-        ? Button({ className: 'pull-right', onClick: this.onPreferencesClick },
-            'Preferences')
-        : null;
-
     return r.div({ className: 'users-page' },
-      preferencesLink,
       UserDetails({ userInfo: this.state.userInfo }),
       r.h2({}, 'History:'),
       UserActions({ userActions: this.state.userActions }));

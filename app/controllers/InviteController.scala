@@ -89,11 +89,19 @@ object InviteController extends mvc.Controller {
 
 
   def acceptInvite(secretKey: String) = GetAction { request =>
-    val newUser = request.dao.acceptInviteCreateUser(secretKey)
+    val (newUser, invite) = request.dao.acceptInviteCreateUser(secretKey)
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(newUser.briefUser)
     val newSessionCookies = sidAndXsrfCookies
-    // TODO send set-password email
-    // TODO send your-invite-was-accepted notification + email
+
+    val welcomeEmail = makeWelcomeSetPasswordEmail(newUser, request.host)
+    request.dao.saveUnsentEmail(welcomeEmail) // COULD (should?) mark as sent, how?
+    debiki.Globals.sendEmail(welcomeEmail, request.siteId)
+
+    val inviter = request.dao.loadUser(invite.createdById) getOrDie "DwE4KDEP0"
+    val inviteAcceptedEmail = makeYourInviteWasAcceptedEmail(request.host, newUser, inviter)
+    debiki.Globals.sendEmail(inviteAcceptedEmail, request.siteId)
+    // COULD create a notification instead / too.
+
     Redirect("/").withCookies(newSessionCookies: _*)
   }
 
@@ -128,7 +136,6 @@ object InviteController extends mvc.Controller {
     if (inviter.displayName.nonEmpty) {
       inviterName += " (" + inviter.displayName + ")"
     }
-    val acceptInviteUrl = s"http://$siteHostname/-/accept-invite/${invite.secretKey}"
     val emailBody = views.html.invite.inviteEmail(
       inviterName = inviterName, siteHostname = siteHostname, secretKey = invite.secretKey).body
     Email(
@@ -139,5 +146,26 @@ object InviteController extends mvc.Controller {
       bodyHtmlText = (emailId) => emailBody)
   }
 
+
+  private def makeWelcomeSetPasswordEmail(newUser: CompleteUser, siteHostname: String) = {
+    Email(
+      EmailType.InvitePassword,
+      sendTo = newUser.emailAddress,
+      toUserId = Some(newUser.id),
+      subject = s"Welcome to $siteHostname, account created",
+      bodyHtmlText = (emailId) => views.html.invite.welcomeSetPasswordEmail(
+      siteHostname = siteHostname, emailId = emailId).body)
+  }
+
+
+  def makeYourInviteWasAcceptedEmail(siteHostname: String, newUser: CompleteUser, inviter: User) = {
+    Email(
+      EmailType.InviteAccepted,
+      sendTo = inviter.email,
+      toUserId = Some(inviter.id),
+      subject = s"Your invitation for ${newUser.emailAddress} to join $siteHostname was accepted",
+      bodyHtmlText = (emailId) => views.html.invite.inviteAcceptedEmail(
+        siteHostname = siteHostname, invitedEmailAddress = newUser.emailAddress).body)
+  }
 }
 

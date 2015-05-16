@@ -218,6 +218,7 @@ export function sendInvite(toEmailAddress: string, whenDone: (invite: Invite) =>
     },
     error: (x, y, z) => {
       console.error('Error inviting user: ' + JSON.stringify([x, y, z]));
+      alert(x.responseText);
     },
   });
 }

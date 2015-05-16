@@ -21,6 +21,7 @@ import actions.ApiActions._
 import collection.mutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import com.debiki.core.User.MinUsernameLength
 import debiki._
 import debiki.ReactJson.{DateEpochOrNull, JsStringOrNull, JsBooleanOrNull, JsNumberOrNull}
 import java.{util => ju}
@@ -88,6 +89,7 @@ object UserController extends mvc.Controller {
     if (callerIsAdmin || callerIsUserHerself) {
       val anyApprover = user.approvedById.flatMap(approversById.get)
       userJson += "email" -> JsString(user.emailAddress)
+      userJson += "emailForEveryNewPost" -> JsBoolean(user.emailForEveryNewPost)
       userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
       userJson += "approvedAtEpoch" -> DateEpochOrNull(user.approvedAt)
       userJson += "approvedById" -> JsNumberOrNull(user.approvedById)
@@ -191,7 +193,7 @@ object UserController extends mvc.Controller {
 
     // For now, don't allow people to change their username. In the future, changing
     // it should be alloowed, but only very infrequently? Or only the very first few days.
-    if (request.theUser.username != prefs.username)
+    if (request.theUser.username != Some(prefs.username))
       throwForbidden("DwE44ELK9", "Must not modify one's username")
 
     // For now, don't allow the user to change his/her email. I haven't
@@ -315,7 +317,7 @@ object UserController extends mvc.Controller {
 
   private def userPrefsFromJson(json: JsValue): UserPreferences = {
     val username = (json \ "username").as[String]
-    if (username.length < 2)
+    if (username.length < MinUsernameLength)
       throwBadReq("DwE44KUY0", "Username too short")
 
     UserPreferences(

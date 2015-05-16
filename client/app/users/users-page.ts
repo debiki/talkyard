@@ -118,7 +118,7 @@ var UserPage = React.createClass({
   },
 
   render: function() {
-    if (!this.state.user)
+    if (!this.state.user || !this.state.loggedInUser)
       return r.p({}, 'Loading...');
 
     var childProps = {
@@ -141,13 +141,28 @@ var UserPage = React.createClass({
 
 var UserBar = React.createClass({
   render: function() {
+    var loggedInUser = this.props.loggedInUser;
+    var user = this.props.user;
+
+    var showPrivateStuff = loggedInUser.isAdmin || (
+        loggedInUser.isAuthenticated && loggedInUser.userId === user.id);
+
+    var invitesNavItem = null;
+    var preferencesNavItem = null;
+    if (showPrivateStuff) {
+      preferencesNavItem = NavItem({ eventKey: 'user-preferences' }, 'Preferences');
+      if (loggedInUser.isAdmin) {
+        invitesNavItem = NavItem({ eventKey: 'user-invites' }, 'Invites');
+      }
+    }
+
     return (
       r.div({ className: 'dw-user-bar clearfix' },
         UserInfo(this.props),
         Nav({ bsStyle: 'pills', activeKey: this.props.activeRouteName,
             onSelect: this.props.transitionTo, className: 'dw-sub-nav' },
-          NavItem({ eventKey: 'user-invites' }, 'Invites'),
-          NavItem({ eventKey: 'user-preferences' }, 'Preferences'))));
+          invitesNavItem,
+          preferencesNavItem)));
   }
 });
 

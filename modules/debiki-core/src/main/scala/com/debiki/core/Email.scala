@@ -63,8 +63,9 @@ case class Email(
   providerEmailId: Option[String],
   failureText: Option[String] = None) {
 
-  if (tyype == EmailType.CreateAccount || tyype == EmailType.ResetPassword) {
-    assErrIf(toUserId.isEmpty, "DwE44BPK6", s"Email `$id' lacks toUserId")
+  if (tyype == EmailType.CreateAccount || tyype == EmailType.ResetPassword ||
+      tyype == EmailType.InvitePassword || tyype == EmailType.InviteAccepted) {
+    dieIf(toUserId.isEmpty, "DwE44BPK6", s"Email '$id' lacks toUserId")
   }
 
 }

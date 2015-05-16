@@ -19,7 +19,6 @@
 /// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../Server.ts" />
 
-
 //------------------------------------------------------------------------------
    module debiki2.users {
 //------------------------------------------------------------------------------
@@ -30,6 +29,9 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
+var Input = reactCreateFactory(ReactBootstrap.Input);
+var Modal = reactCreateFactory(ReactBootstrap.Modal);
+var ModalTrigger = reactCreateFactory(ReactBootstrap.ModalTrigger);
 var RouterState = window['ReactRouter'].State;
 var RouterNavigation = window['ReactRouter'].Navigation;
 import UserPreferences = debiki2.users.UserPreferences;
@@ -58,13 +60,11 @@ export var UserInvites = createComponent({
     });
   },
 
-  sendInvite: function() {
-    Server.sendInvite("abc@ex.com", (invite: Invite) => {
-      var invites = this.state.invites;
-      invites.unshift(invite);
-      this.setState({
-        invites: invites
-      })
+  addInvite: function(invite: Invite) {
+    var invites = this.state.invites;
+    invites.unshift(invite);
+    this.setState({
+      invites: invites
     });
   },
 
@@ -76,12 +76,15 @@ export var UserInvites = createComponent({
     var loggedInUser: User = this.props.loggedInUser;
 
     var inviteButton;
-    var otherUserText;
+    var introText = r.p({}, 'Here you can invite people to join this site. Invites that you ' +
+        'have already sent are listed below.');
     if (user.id === loggedInUser.userId) {
-      inviteButton = Button({ onClick: this.sendInvite }, 'Send an Invite');
+      inviteButton =
+        ModalTrigger({ modal: InviteDialog({ addInvite: this.addInvite }) },
+          Button({}, 'Send an Invite'));
     }
     else {
-      otherUserText = r.p({}, "Here you can see any invites sent by " + user.username + ".");
+      introText = r.p({}, "Here you can see any invites sent by " + user.username + ".");
     }
 
     if (!this.state.invites.length)
@@ -98,13 +101,14 @@ export var UserInvites = createComponent({
 
     return (
       r.div({},
-        otherUserText,
+        introText,
         inviteButton,
-        r.table({},
+        r.table({ className: 'dw-invites-table' },
           r.thead({},
-            r.tr({}, 'Invited User'),
-            r.tr({}, 'Redeemed'),
-            r.tr({}, 'Sent at')),
+            r.tr({},
+              r.th({}, 'Invited User'),
+              r.th({}, 'Invitation Accepted'),
+              r.th({}, 'Invitation Created At'))),
             // Later on: Seen, Topics Viewed, Posts Read, Read Time, Days Visited, Trust Level, Threat Level
           r.tbody({},
             inviteRows))));
@@ -114,17 +118,55 @@ export var UserInvites = createComponent({
 
 var InviteRow = createComponent({
   render: function() {
-    var invite = this.props.invite;
+    var invite: Invite = this.props.invite;
+    var userEmailOrLink;
+    var acceptedAt = '';
+    if (invite.userId) {
+      userEmailOrLink = r.a({ href: '/-/users/#/id/' + invite.userId }, invite.invitedEmailAddress);
+      acceptedAt = moment(invite.acceptedAtEpoch).from(this.props.now);
+    }
+    else {
+      userEmailOrLink = invite.invitedEmailAddress;
+    }
     return (
       r.tr({},
         r.td({},
-          invite.invitedEmailAddress),
+          userEmailOrLink),
 
         r.td({},
-          moment(invite.redeemedAtEpoch).from(this.props.now)),
+          acceptedAt),
 
         r.td({},
           moment(invite.createdAtEpoch).from(this.props.now))));
+  }
+});
+
+
+var InviteDialog = createComponent({
+  sendInvite: function() {
+    var emailAddress = this.refs.emailInput.getValue();
+    Server.sendInvite(emailAddress, (invite: Invite) => {
+      this.props.addInvite(invite);
+      this.props.onRequestHide();
+    });
+  },
+
+  render: function() {
+    var props = $.extend({}, this.props);
+    props.title = 'Send an Invite';
+    return (
+      Modal(props,
+        r.div({ className: 'modal-body' },
+          r.p({}, "We'll send your friend a brief email, and he or she then clicks a link " +
+                "to join immediately, no login required."),
+          Input({ type: 'email', label: 'Email Address', placeholder: 'Enter email',
+              ref: 'emailInput' })),
+
+        r.div({ className: 'modal-footer' },
+          Button({ onClick: this.sendInvite },
+              'Send Invite'),
+          Button({ onClick: this.props.onRequestHide },
+              'Cancel'))));
   }
 });
 
