@@ -54,9 +54,10 @@ object UserController extends mvc.Controller {
         onlyApproved = onlyApproved,
         onlyPendingApproval = onlyPendingApproval)
       val approverIds = usersPendingApproval.flatMap(_.approvedById)
-      val approversById = transaction.loadUsersAsMap(approverIds)
+      val suspenderIds = usersPendingApproval.flatMap(_.suspendedById)
+      val usersById = transaction.loadUsersAsMap(approverIds ++ suspenderIds)
       val usersJson = JsArray(usersPendingApproval.map(
-        jsonForCompleteUser(_, approversById, callerIsAdmin = true)))
+        jsonForCompleteUser(_, usersById, callerIsAdmin = true)))
       OkSafeJson(Json.toJson(Map("users" -> usersJson)))
     }
   }
@@ -75,7 +76,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  private def jsonForCompleteUser(user: CompleteUser, approversById: Map[UserId, User],
+  private def jsonForCompleteUser(user: CompleteUser, usersById: Map[UserId, User],
         callerIsAdmin: Boolean = false, callerIsUserHerself: Boolean = false)
         : JsObject = {
     var userJson = Json.obj(
@@ -83,11 +84,14 @@ object UserController extends mvc.Controller {
       "createdAtEpoch" -> JsNumber(user.createdAt.getTime),
       "username" -> user.username,
       "fullName" -> user.fullName,
+      "isAdmin" -> user.isAdmin,
       "country" -> user.country,
-      "url" -> user.website)
+      "url" -> user.website,
+      "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill))
 
     if (callerIsAdmin || callerIsUserHerself) {
-      val anyApprover = user.approvedById.flatMap(approversById.get)
+      val anyApprover = user.approvedById.flatMap(usersById.get)
+      val anySuspender = user.suspendedById.flatMap(usersById.get)
       userJson += "email" -> JsString(user.emailAddress)
       userJson += "emailForEveryNewPost" -> JsBoolean(user.emailForEveryNewPost)
       userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
@@ -95,6 +99,10 @@ object UserController extends mvc.Controller {
       userJson += "approvedById" -> JsNumberOrNull(user.approvedById)
       userJson += "approvedByName" -> JsStringOrNull(anyApprover.map(_.displayName))
       userJson += "approvedByUsername" -> JsStringOrNull(anyApprover.flatMap(_.username))
+      userJson += "suspendedAtEpoch" -> DateEpochOrNull(user.suspendedAt)
+      userJson += "suspendedById" -> JsNumberOrNull(user.suspendedById)
+      userJson += "suspendedByUsername" -> JsStringOrNull(anySuspender.flatMap(_.username))
+      userJson += "suspendedReason" -> JsStringOrNull(user.suspendedReason)
     }
 
     userJson
@@ -112,6 +120,27 @@ object UserController extends mvc.Controller {
       case "Undo" =>
         request.dao.undoApproveOrRejectUser(userId, approverId = request.theUserId)
     }
+    Ok
+  }
+
+
+  def suspendUser = AdminPostJsonAction(maxLength = 300) { request =>
+    val userId = (request.body \ "userId").as[UserId]
+    val numDays = (request.body \ "numDays").as[Int]
+    val reason = (request.body \ "reason").as[String]
+    if (numDays < 1)
+      throwBadReq("DwE4FKW0", "Please specify at least one day")
+    if (reason.length > 255)
+      throwBadReq("DwE4FKW0", "Too long suspend-user-reason")
+
+    request.dao.suspendUser(userId, numDays, reason, suspendedById = request.theUserId)
+    Ok
+  }
+
+
+  def unsuspendUser = AdminPostJsonAction(maxLength = 100) { request =>
+    val userId = (request.body \ "userId").as[UserId]
+    request.dao.unsuspendUser(userId)
     Ok
   }
 

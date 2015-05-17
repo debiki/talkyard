@@ -156,11 +156,16 @@ var UserBar = React.createClass({
       }
     }
 
+    var adminButton = loggedInUser.isAdmin
+        ? r.li({}, r.a({ href: '/-/admin/#/users/id/' + user.id }, 'Admin'))
+        : null;
+
     return (
       r.div({ className: 'dw-user-bar clearfix' },
         UserInfo(this.props),
         Nav({ bsStyle: 'pills', activeKey: this.props.activeRouteName,
             onSelect: this.props.transitionTo, className: 'dw-sub-nav' },
+          adminButton,
           invitesNavItem,
           preferencesNavItem)));
   }
@@ -169,10 +174,21 @@ var UserBar = React.createClass({
 
 var UserInfo = createComponent({
   render: function() {
+    var user = this.props.user;
+    var suspendedInfo;
+    if (user.suspendedAtEpoch) {
+      var whatAndUntilWhen = user.suspendedTillEpoch === 'Forever'
+          ? 'banned'
+          : 'suspended until ' + moment(user.suspendedTillEpoch).format('YYYY-MM-DD HH:mm') + ' UTC';
+      suspendedInfo = r.div({},
+          'This user is ' + whatAndUntilWhen, r.br(),
+          'Reason: ' + user.suspendedReason);
+    }
     return (
       r.div({ className: 'user-info' },
-        r.h1({}, this.props.user.username),
-        r.h2({}, this.props.user.fullName)));
+        r.h1({}, user.username),
+        r.h2({}, user.fullName),
+        suspendedInfo));
   }
 });
 

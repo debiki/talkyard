@@ -252,6 +252,40 @@ export function approveRejectUser(user: CompleteUser, doWhat: string, whenDone: 
 }
 
 
+export function suspendUser(userId: number, numDays: number, reason: string, whenDone: () => void) {
+  d.u.postJson({
+    url: origin + '/-/suspend-user',
+    data: {
+      userId: userId,
+      numDays: numDays,
+      reason: reason
+    },
+    success: (response) => {
+      whenDone();
+    },
+    error: (x, y, z) => {
+      console.error('Error suspending user: ' + JSON.stringify([x, y, z]));
+    },
+  });
+}
+
+
+export function unsuspendUser(userId: number, whenDone: () => void) {
+  d.u.postJson({
+    url: origin + '/-/unsuspend-user',
+    data: {
+      userId: userId
+    },
+    success: (response) => {
+      whenDone();
+    },
+    error: (x, y, z) => {
+      console.error('Error unsuspending user: ' + JSON.stringify([x, y, z]));
+    },
+  });
+}
+
+
 export function savePageNoftLevel(newNotfLevel) {
   d.u.postJson({
     url: origin + '/-/save-page-notf-level',

@@ -108,7 +108,7 @@ object ReactJson {
       !post.deletedStatus.isDeleted || (
         post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.id))
     } map { post: Post =>
-      post.id.toString -> postToJsonImpl(post, page)
+      post.id.toString -> postToJsonImpl(post, page, pageReq.ctime)
     }
     val numPosts = allPostsJson.length
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
@@ -167,15 +167,16 @@ object ReactJson {
     dao.readOnlyTransaction { transaction =>
       // COULD optimize: don't load the whole page, load only postId and the author and last editor.
       val page = PageDao(pageId, transaction)
-      postToJsonImpl(page.parts.thePost(postId), page, includeUnapproved = includeUnapproved)
+      postToJsonImpl(page.parts.thePost(postId), page, transaction.currentTime,
+        includeUnapproved = includeUnapproved)
     }
   }
 
 
   /** Private, so it cannot be called outside a transaction.
     */
-  private def postToJsonImpl(post: Post, page: Page, includeUnapproved: Boolean = false)
-        : JsObject = {
+  private def postToJsonImpl(post: Post, page: Page, currentTime: ju.Date,
+        includeUnapproved: Boolean = false): JsObject = {
     val people = page.parts
     val lastApprovedEditAt = post.lastApprovedEditAt map { date =>
       JsNumber(date.getTime)
@@ -193,13 +194,15 @@ object ReactJson {
       Post.sortPosts(children)
     }
 
-    JsObject(Vector(
+    val author = post.createdByUser(people)
+
+    var fields = Vector(
       "postId" -> JsNumber(post.id),
       "parentId" -> post.parentId.map(JsNumber(_)).getOrElse(JsNull),
       "multireplyPostIds" -> JsArray(post.multireplyPostIds.toSeq.map(JsNumber(_))),
       "authorId" -> JsString(post.createdById.toString),
-      "authorFullName" -> JsString(post.createdByUser(people).displayName),
-      "authorUsername" -> JsStringOrNull(post.createdByUser(people).username),
+      "authorFullName" -> JsString(author.displayName),
+      "authorUsername" -> JsStringOrNull(author.username),
       "createdAt" -> JsNumber(post.createdAt.getTime),
       "lastApprovedEditAt" -> lastApprovedEditAt,
       "numEditors" -> JsNumber(post.numDistinctEditors),
@@ -216,7 +219,16 @@ object ReactJson {
       "pinnedPosition" -> post.pinnedPosition.map(JsNumber(_)).getOrElse(JsNull),
       "likeScore" -> JsNumber(post.likeScore),
       "childIdsSorted" -> JsArray(childrenSorted.map(reply => JsNumber(reply.id))),
-      "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml)))
+      "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml))
+
+    if (author.isSuspendedAt(currentTime)) {
+      author.suspendedTill match {
+        case None => fields :+= "authorSuspendedTill" -> JsString("Forever")
+        case Some(date) => fields :+= "authorSuspendedTill" -> JsNumber(date.getTime)
+      }
+    }
+
+    JsObject(fields)
   }
 
 

@@ -32,7 +32,8 @@ interface Post {
   multireplyPostIds: number[];
   authorId: string;
   authorFullName: string;
-  authorUsername: string
+  authorUsername: string;
+  authorSuspendedTill?: any;
   createdAt: number;
   lastApprovedEditAt: number;
   numEditors: number;
@@ -159,11 +160,17 @@ interface CompleteUser {
   emailForEveryNewPost: boolean;
   country: string;
   url: string;
+  isAdmin: boolean;
   isApproved: boolean;
   approvedAtEpoch: number;
   approvedById: number;
   approvedByName: string;
   approvedByUsername: string;
+  suspendedAtEpoch?: number;
+  suspendedTillEpoch?: number;
+  suspendedById?: number;
+  suspendedByUsername?: string;
+  suspendedReason?: string;
 }
 
 

@@ -92,6 +92,8 @@ POST  /-/save-user-preferences  controllers.UserController.saveUserPreferences
 GET   /-/list-complete-users    controllers.UserController.listCompleteUsers(whichUsers)
 GET   /-/load-complete-user     controllers.UserController.loadCompleteUser(userId)
 POST  /-/approve-reject-user    controllers.UserController.approveRejectUser
+POST  /-/suspend-user           controllers.UserController.suspendUser
+POST  /-/unsuspend-user         controllers.UserController.unsuspendUser
 
 GET   /-/list-invites           controllers.InviteController.listInvites(sentById)
 POST  /-/send-invite            controllers.InviteController.sendInvite

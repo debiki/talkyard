@@ -600,6 +600,17 @@ var PostHeader = createComponent({
 
     var by = post.postId === BodyPostId ? 'By ' : '';
     var isBodyPostClass = post.postId === BodyPostId ? ' dw-ar-p-hd' : '';
+    var suspendedClass = post.authorSuspendedTill ? ' dw-suspended' : '';
+
+    var userLinkProps: any = { className: 'dw-p-by' + suspendedClass, href: authorUrl };
+
+    if (post.authorSuspendedTill === 'Forever') {
+      userLinkProps.title = 'User banned';
+    }
+    else if (post.authorSuspendedTill) {
+      userLinkProps.title = 'User suspended until ' +
+          moment(post.authorSuspendedTill).format('YYYY-MM-DD')
+    }
 
     return (
         r.div({ className: 'dw-p-hd' + isBodyPostClass },
@@ -607,7 +618,7 @@ var PostHeader = createComponent({
           postId,
           anyMark,
           by,
-          r[linkFn]({ className: 'dw-p-by', href: authorUrl }, authorNameElems),
+          r[linkFn](userLinkProps, authorNameElems),
           createdAt,
           editInfo, '. ',
           voteCounts));

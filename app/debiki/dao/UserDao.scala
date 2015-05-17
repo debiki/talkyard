@@ -17,10 +17,10 @@
 
 package debiki.dao
 
-import java.util.Date
-
+import actions.SafeActions.SessionRequest
 import com.debiki.core._
 import debiki.DebikiHttp.{throwNotFound, throwForbidden}
+import java.net.InetAddress
 import java.{util => ju}
 import requests.ApiRequest
 import scala.collection.immutable
@@ -110,6 +110,33 @@ trait UserDao {
   }
 
 
+  def suspendUser(userId: UserId, numDays: Int, reason: String, suspendedById: UserId) {
+    require(numDays >= 1, "DwE4PKF8")
+    readWriteTransaction { transaction =>
+      var user = transaction.loadTheCompleteUser(userId)
+      val suspendedTill = new ju.Date(transaction.currentTime.getTime + numDays * MillisPerDay)
+      user = user.copy(
+        suspendedAt = Some(transaction.currentTime),
+        suspendedTill = Some(suspendedTill),
+        suspendedById = Some(suspendedById),
+        suspendedReason = Some(reason.trim))
+      transaction.updateCompleteUser(user)
+    }
+    refreshUserInAnyCache(userId)
+  }
+
+
+  def unsuspendUser(userId: UserId) {
+    readWriteTransaction { transaction =>
+      var user = transaction.loadTheCompleteUser(userId)
+      user = user.copy(suspendedAt = None, suspendedTill = None, suspendedById = None,
+        suspendedReason = None)
+      transaction.updateCompleteUser(user)
+    }
+    refreshUserInAnyCache(userId)
+  }
+
+
   def createIdentityUserAndLogin(newUserData: NewUserData): LoginGrant = {
     readWriteTransaction { transaction =>
       val userId = transaction.nextAuthenticatedUserId
@@ -149,8 +176,24 @@ trait UserDao {
   }
 
 
-  def tryLogin(loginAttempt: LoginAttempt): LoginGrant =
-    siteDbDao.tryLogin(loginAttempt)
+  def tryLogin(loginAttempt: LoginAttempt): LoginGrant = {
+    val loginGrant = siteDbDao.tryLogin(loginAttempt)
+    if (loginGrant.user.isSuspendedAt(loginAttempt.date)) {
+      // (This is being rate limited, all post requests are.)
+      val user = loadCompleteUser(loginGrant.user.id) getOrElse throwForbidden(
+        "DwE05KW2", "User gone")
+      // Still suspended?
+      if (user.suspendedAt.isDefined) {
+        val forHowLong = user.suspendedTill match {
+          case None => "forever"
+          case Some(date) => "until " + toIso8601(date)
+        }
+        throwForbidden("DwE403SP0", o"""Account suspended $forHowLong,
+            reason: ${user.suspendedReason getOrElse "?"}""")
+      }
+    }
+    loginGrant
+  }
 
 
   def loadUsers(): immutable.Seq[User] = {
@@ -301,6 +344,20 @@ trait UserDao {
       transaction.updateCompleteUser(user)
     }
     refreshUserInAnyCache(preferences.userId)
+  }
+
+
+  def perhapsBlockRequest(request: SessionRequest[_]) {
+    /*
+    val blockedTillMap = loadBlockedTillMap()
+    if (blockedThings.nonEmpty)
+      throwForbidden("DwE403BKD1", "Access denied")
+      */
+  }
+
+
+  def loadBlockedThings(ip: InetAddress, browserId: Option[String]): immutable.Seq[BlockedThing] = {
+    Nil
   }
 
 

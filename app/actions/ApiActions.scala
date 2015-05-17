@@ -20,6 +20,7 @@ package actions
 import actions.SafeActions.{SessionAction, SessionRequest}
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import controllers.LoginController
 import debiki._
 import debiki.DebikiHttp._
 import debiki.RateLimits.NoRateLimits
@@ -29,6 +30,7 @@ import play.api.libs.json.JsValue
 import play.api.mvc._
 import requests._
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 import controllers.Utils
 
 
@@ -116,8 +118,14 @@ object ApiActions {
       val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
 
       val dao = Globals.siteDao(siteId = tenantId)
+      dao.perhapsBlockRequest(request)
 
-      val user = Utils.loadUserOrThrow(request.sidStatus, dao)
+      var user: Option[User] = Utils.loadUserOrThrow(request.sidStatus, dao)
+      var logoutBecauseSuspended = false
+      if (user.map(_.isSuspendedAt(new ju.Date)) == Some(true)) {
+        user = None
+        logoutBecauseSuspended = true
+      }
 
       if (adminOnly && user.map(_.isAdmin) != Some(true))
         throwForbidden("DwE1GfK7", "Please login as admin")
@@ -127,7 +135,12 @@ object ApiActions {
 
       RateLimiter.rateLimit(rateLimits, apiRequest)
 
-      val result = block(apiRequest)
+      var result = block(apiRequest)
+      if (logoutBecauseSuspended) {
+        // We won't get here if e.g. a 403 Forbidden exception was thrown because 'user' was
+        // set to None. How solve that?
+        result = result.map(_.discardingCookies(LoginController.DiscardingSessionCookie))
+      }
       result
     }
   }
