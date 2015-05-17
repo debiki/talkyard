@@ -358,6 +358,7 @@ case class User(
 
   require(User.isOkayUserId(id), "DwE02k12R5")
   require(username.isEmpty || username.get.length >= 2)
+  require(!isGuest || displayName.trim.nonEmpty, "DwE4KEPF8")
   require(!isGuest || (
     username.isEmpty && createdAt.isEmpty && !isAdmin && !isOwner &&
       isApproved.isEmpty && suspendedTill.isEmpty &&
@@ -485,7 +486,14 @@ case class GuestLoginAttempt(
   name: String,
   email: String = "",
   location: String = "",
-  website: String = "")
+  website: String = "") {
+
+  require(ip == ip.trim, "DwE4KWF0")
+  require(name == name.trim && name.trim.nonEmpty, "DwE6FKW3")
+  require(email == email.trim, "DwE83WK2")
+  require(location == location.trim, "DwE0FYF8")
+  require(website == website.trim, "DwE5BKPX0")
+}
 
 case class GuestLoginResult(user: User, isNewUser: Boolean)
 

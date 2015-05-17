@@ -89,6 +89,7 @@ POST  /-/save-page-notf-level   controllers.UserController.savePageNotfLevel
 GET   /-/list-usernames         controllers.UserController.listUsernames(pageId, prefix)
 GET   /-/load-user-preferences  controllers.UserController.loadUserPreferences(userId)
 POST  /-/save-user-preferences  controllers.UserController.saveUserPreferences
+POST  /-/save-guest             controllers.UserController.saveGuest
 GET   /-/list-complete-users    controllers.UserController.listCompleteUsers(whichUsers)
 GET   /-/load-complete-user     controllers.UserController.loadCompleteUser(userId)
 POST  /-/approve-reject-user    controllers.UserController.approveRejectUser

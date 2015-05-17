@@ -151,7 +151,7 @@ var UserBar = React.createClass({
     var preferencesNavItem = null;
     if (showPrivateStuff) {
       preferencesNavItem = NavItem({ eventKey: 'user-preferences' }, 'Preferences');
-      if (loggedInUser.isAdmin) {
+      if (loggedInUser.isAdmin && !isGuest(user)) {
         invitesNavItem = NavItem({ eventKey: 'user-invites' }, 'Invites');
       }
     }
@@ -184,10 +184,13 @@ var UserInfo = createComponent({
           'This user is ' + whatAndUntilWhen, r.br(),
           'Reason: ' + user.suspendedReason);
     }
+    var isGuestInfo = isGuest(user)
+        ? r.span({ className: 'dw-is-guest' }, ' — a guest user, could be anyone')
+        : null;
     return (
       r.div({ className: 'user-info' },
         r.h1({}, user.username),
-        r.h2({}, user.fullName),
+        r.h2({}, user.fullName, isGuestInfo),
         suspendedInfo));
   }
 });

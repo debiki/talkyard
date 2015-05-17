@@ -4,6 +4,9 @@
   margin: 20px 0;
   background: #b3cce6;
 
+  nav.dw-sub-nav
+    padding: 0; // no idea why React-Bootstrap adds .dw-sub-nav twice, on the 'nav' too
+
   .dw-sub-nav
     float: right;
     a
@@ -20,6 +23,9 @@
   h2
     font-size: 18px;
     margin: 5px 0 8px;
+    .dw-is-guest
+      font-family: sans-serif;
+      font-size: 80%;
 
 .dw-user-nav
   display: table-cell;

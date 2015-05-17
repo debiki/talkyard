@@ -98,8 +98,10 @@ trait SiteTransaction {
     loadCompleteUser(userId).getOrElse(throw UserNotFoundException(userId))
 
   def updateCompleteUser(user: CompleteUser): Boolean
+  def updateGuest(guest: User): Boolean
 
   def loadUser(userId: UserId): Option[User]
+  def loadTheUser(userId: UserId) = loadUser(userId).getOrElse(throw UserNotFoundException(userId))
   def loadUsers(userIds: Seq[UserId]): immutable.Seq[User]
   def loadUsersOnPageAsMap2(pageId: PageId, siteId: Option[SiteId] = None): Map[UserId, User]
   def loadUsersAsMap(userIds: Iterable[UserId]): Map[UserId, User]

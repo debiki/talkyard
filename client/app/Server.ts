@@ -359,7 +359,24 @@ export function saveUserPreferences(prefs, doneCallback: () => void) {
   d.u.postJson({
     url: origin + '/-/save-user-preferences',
     data: prefs,
-    success: doneCallback
+    success: doneCallback,
+    error: (x, y, z) => {
+      console.error('Error saving user preferences: ' + JSON.stringify([x, y, z]));
+      alert(x.responseText);
+    }
+  });
+}
+
+
+export function saveGuest(guest, doneCallback: () => void) {
+  d.u.postJson({
+    url: origin + '/-/save-guest',
+    data: guest,
+    success: doneCallback,
+    error: (x, y, z) => {
+      console.error('Error saving guest: ' + JSON.stringify([x, y, z]));
+      alert(x.responseText);
+    }
   });
 }
 

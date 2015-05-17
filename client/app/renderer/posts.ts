@@ -32,6 +32,11 @@ module boo {
 };
 //------------------------------------------------------------------------------
 
+var MaxGuestId = -2; // place where?
+function isGuest(user: CompleteUser) {
+  return user.id <= MaxGuestId;
+}
+
 var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;

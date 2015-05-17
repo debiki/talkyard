@@ -632,6 +632,7 @@ object DbDao {
 
   case object DuplicateUsername extends RuntimeException("Duplicate username")
   case object DuplicateUserEmail extends RuntimeException("Duplicate user email")
+  case object DuplicateGuest extends RuntimeException("Duplicate guest")
 
   case class IdentityNotFoundException(message: String)
     extends RuntimeException(message)

@@ -35,7 +35,7 @@ var RouterNavigation = window['ReactRouter'].Navigation;
 import UserPreferences = debiki2.users.UserPreferences;
 
 
-export var UserPreferencesComponent = React.createClass({
+export var UserPreferencesComponent = createComponent({
   render: function() {
     var loggedInUser = this.props.loggedInUser;
     var user = this.props.user;
@@ -53,17 +53,75 @@ export var UserPreferencesComponent = React.createClass({
           "user's preferences. You can do that, because you're an administrator.");
     }
 
+    var preferences = isGuest(user)
+        ? GuestPreferences({ guest: user })
+        : ShowAndEditPreferences({ user: user });
+
     return (
       r.div({ className: 'users-page' },
         anyNotYourPrefsInfo,
-        ShowAndEditPreferences({ user: user })));
+        preferences));
   }
 });
 
 
-var ShowAndEditPreferences = React.createClass({
-  mixins: [RouterState],
+var GuestPreferences = createComponent({
+  getInitialState: function() {
+    return {};
+  },
 
+  savePrefs: function(event) {
+    event.preventDefault();
+    var form = $(event.target);
+    var prefs = {
+      guestId: this.props.guest.id,
+      name: form.find('#fullName').val(),
+      url: form.find('#url').val()
+    };
+    Server.saveGuest(prefs, () => {
+      this.setState({ savingStatus: 'Saved' });
+    });
+    this.setState({ savingStatus: 'Saving' });
+  },
+
+  render: function() {
+    var guest: Guest = this.props.guest;
+
+    var savingInfo = null;
+    if (this.state.savingStatus === 'Saving') {
+      savingInfo = r.i({}, ' Saving...');
+    }
+    else if (this.state.savingStatus === 'Saved') {
+      savingInfo = r.i({}, ' Saved.');
+    }
+
+    return (
+      r.form({ role: 'form', onSubmit: this.savePrefs },
+
+        r.div({ className: 'form-group' },
+          r.label({ htmlFor: 'fullName' }, 'Name'),
+          r.input({ className: 'form-control', id: 'fullName',
+              defaultValue: guest.fullName })),
+
+        r.div({ className: 'form-group' },
+          r.label({ htmlFor: 'emailAddress' }, 'Email address'),
+          r.input({ type: 'email', className: 'form-control', id: 'emailAddress',
+              defaultValue: guest.email, disabled: true }),
+          r.p({ className: 'help-block' }, 'Not shown publicly. Cannot be changed.')),
+
+        r.div({ className: 'form-group' },
+          r.label({ htmlFor: 'url' }, 'URL'),
+          r.input({ className: 'form-control', id: 'url',
+              defaultValue: guest.url }),
+          r.p({ className: 'help-block' }, 'Any website or page that this guest has specified.')),
+
+        Button({ type: 'submit' }, 'Save'),
+        savingInfo));
+  }
+});
+
+
+var ShowAndEditPreferences = createComponent({
   getInitialState: function() {
     return {};
   },

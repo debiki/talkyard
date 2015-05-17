@@ -151,6 +151,15 @@ interface SpecialContent {
 }
 
 
+interface Guest {
+  id: any;  // TODO change to number, and User.userId too
+  fullName: string;
+  email: string;
+  country: string;
+  url: string;
+}
+
+
 interface CompleteUser {
   id: any;  // TODO change to number, and User.userId too
   createdAtEpoch: number;

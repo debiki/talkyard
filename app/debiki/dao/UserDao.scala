@@ -347,6 +347,17 @@ trait UserDao {
   }
 
 
+  def saveGuest(guestId: UserId, name: String, url: String): Unit = {
+    // BUG: the lost update bug.
+    readWriteTransaction { transaction =>
+      var guest = transaction.loadTheUser(guestId)
+      guest = guest.copy(displayName = name, website = url)
+      transaction.updateGuest(guest)
+    }
+    refreshUserInAnyCache(guestId)
+  }
+
+
   def perhapsBlockRequest(request: SessionRequest[_]) {
     /*
     val blockedTillMap = loadBlockedTillMap()
