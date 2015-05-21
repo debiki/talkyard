@@ -34,9 +34,10 @@ trait PagesDao {
   self: SiteDao =>
 
 
-  def createPage2(pageRole: PageRole, pageStatus: PageStatus, anyParentPageId: Option[PageId],
+  def createPage(pageRole: PageRole, pageStatus: PageStatus, anyParentPageId: Option[PageId],
         anyFolder: Option[String], titleSource: String, bodySource: String,
-        showId: Boolean, pageSlug: String, authorId: UserId): PagePath = {
+        showId: Boolean, pageSlug: String, authorId: UserId, browserIdData: BrowserIdData)
+        : PagePath = {
 
     val bodyHtmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(bodySource,
       allowClassIdDataAttrs = true, followLinks = !pageRole.isWidelyEditable)
@@ -111,10 +112,21 @@ trait PagesDao {
       val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.currentTime,
         parentPageId = anyParentPageId, url = None, publishDirectly = true)
 
+      val auditLogEntry = AuditLogEntry(
+        siteId = siteId,
+        id = AuditLogEntry.UnassignedId,
+        tyype = AuditLogEntryType.NewPage,
+        doerId = authorId,
+        doneAt = transaction.currentTime,
+        browserIdData = browserIdData,
+        pageId = Some(pageId),
+        pageRole = Some(pageRole))
+
       transaction.insertPageMeta(pageMeta)
       transaction.insertPagePath(pagePath)
       transaction.insertPost(titlePost)
       transaction.insertPost(bodyPost)
+      insertAuditLogEntry(auditLogEntry, transaction)
 
       val notifications = NotificationGenerator(transaction)
         .generateForNewPost(PageDao(pageId, transaction), bodyPost)
@@ -132,12 +144,13 @@ trait CachingPagesDao extends PagesDao {
   self: CachingSiteDao =>
 
 
-  override def createPage2(pageRole: PageRole, pageStatus: PageStatus,
+  override def createPage(pageRole: PageRole, pageStatus: PageStatus,
         anyParentPageId: Option[PageId], anyFolder: Option[String],
         titleSource: String, bodySource: String,
-        showId: Boolean, pageSlug: String, authorId: UserId): PagePath = {
-    val pagePath = super.createPage2(pageRole, pageStatus, anyParentPageId,
-      anyFolder, titleSource, bodySource, showId, pageSlug, authorId)
+        showId: Boolean, pageSlug: String, authorId: UserId, browserIdData: BrowserIdData)
+        : PagePath = {
+    val pagePath = super.createPage(pageRole, pageStatus, anyParentPageId,
+      anyFolder, titleSource, bodySource, showId, pageSlug, authorId, browserIdData)
     firePageCreated(pagePath)
     pagePath
   }

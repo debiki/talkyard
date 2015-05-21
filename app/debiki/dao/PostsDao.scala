@@ -38,7 +38,7 @@ trait PostsDao {
 
 
   def insertReply(text: String, pageId: PageId, replyToPostIds: Set[PostId],
-        authorId: UserId): PostId = {
+        authorId: UserId, browserIdData: BrowserIdData): PostId = {
     val htmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(
       text, allowClassIdDataAttrs = false, followLinks = false)
 
@@ -99,8 +99,20 @@ trait PostsDao {
         numRepliesVisible = page.parts.numRepliesVisible + (isApproved ? 1 | 0),
         numRepliesTotal = page.parts.numRepliesTotal + 1)
 
+      val auditLogEntry = AuditLogEntry(
+        siteId = siteId,
+        id = AuditLogEntry.UnassignedId,
+        tyype = AuditLogEntryType.NewPost,
+        doerId = authorId,
+        doneAt = transaction.currentTime,
+        browserIdData = browserIdData,
+        pageId = Some(pageId),
+        postId = Some(postId),
+        targetPostId = newPost.parentId)
+
       transaction.insertPost(newPost)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      insertAuditLogEntry(auditLogEntry, transaction)
 
       val notifications = NotificationGenerator(transaction).generateForNewPost(page, newPost)
       transaction.saveDeleteNotifications(notifications)
@@ -112,7 +124,8 @@ trait PostsDao {
   }
 
 
-  def editPost(pageId: PageId, postId: PostId, editorId: UserId, newText: String) {
+  def editPost(pageId: PageId, postId: PostId, editorId: UserId, browserIdData: BrowserIdData,
+        newText: String) {
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       var postToEdit = page.parts.post(postId).getOrElse(
@@ -170,7 +183,18 @@ trait PostsDao {
         editedPost = editedPost.copy(numDistinctEditors = 2)  // for now
       }
 
+      val auditLogEntry = AuditLogEntry(
+        siteId = siteId,
+        id = AuditLogEntry.UnassignedId,
+        tyype = AuditLogEntryType.EditPost,
+        doerId = editorId,
+        doneAt = transaction.currentTime,
+        browserIdData = browserIdData,
+        pageId = Some(pageId),
+        postId = Some(postId))
+
       transaction.updatePost(editedPost)
+      insertAuditLogEntry(auditLogEntry, transaction)
 
       if (editedPost.isCurrentVersionApproved) {
         val notfs = NotificationGenerator(transaction).generateForEdits(postToEdit, editedPost)
@@ -476,18 +500,6 @@ trait PostsDao {
 
 trait CachingPostsDao extends PagesDao {
   self: CachingSiteDao =>
-
-
-  override def createPage2(pageRole: PageRole, pageStatus: PageStatus,
-        anyParentPageId: Option[PageId], anyFolder: Option[String],
-        titleSource: String, bodySource: String,
-        showId: Boolean, pageSlug: String, authorId: UserId): PagePath = {
-    val pagePath = super.createPage2(pageRole, pageStatus, anyParentPageId,
-      anyFolder, titleSource, bodySource, showId, pageSlug, authorId)
-    firePageCreated(pagePath)
-    pagePath
-  }
-
 
   protected override def refreshPageInAnyCache(pageId: PageId) {
     firePageSaved(SitePageId(siteId = siteId, pageId = pageId))

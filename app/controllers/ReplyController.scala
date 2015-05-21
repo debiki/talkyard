@@ -61,7 +61,7 @@ object ReplyController extends mvc.Controller {
       throwBadReq("DwE85FK03", "Empty post")
 
     val postId = pageReq.dao.insertReply(text, pageId = pageId, replyToPostIds,
-      authorId = pageReq.theUser.id)
+      authorId = pageReq.theUser.id, pageReq.theBrowserIdData)
 
     val json = ReactJson.postToJson2(postId = postId, pageId = pageId, pageReq.dao,
       includeUnapproved = true)

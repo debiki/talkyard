@@ -43,7 +43,8 @@ abstract class DebikiRequest[A] {
 
   def siteSettings = dao.loadWholeSiteSettings()
 
-  def browserIdData = BrowserIdData(ip = ip, idCookie = browserId.map(_.cookieValue),
+  def theBrowserIdData = BrowserIdData(ip = ip,
+    idCookie = browserId.getOrElse(throwForbidden("DwE4WKU7", "No browser id cookie")).cookieValue,
     fingerprint = 0) // skip for now
 
   def browserIdIsNew = browserId.map(_.isNew) == Some(true)

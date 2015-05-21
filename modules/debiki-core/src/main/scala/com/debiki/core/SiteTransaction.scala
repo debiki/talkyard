@@ -120,6 +120,9 @@ trait SiteTransaction {
 
   def saveDeleteNotifications(notifications: Notifications)
 
+  def nextAuditLogEntryId: AuditLogEntryId
+  def insertAuditLogEntry(entry: AuditLogEntry)
+
 }
 
 

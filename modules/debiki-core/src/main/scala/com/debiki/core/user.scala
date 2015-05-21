@@ -665,3 +665,10 @@ class BlockedTillMap(
     blockedTillMap.get(browserIdCookie)
 
 }
+
+
+
+case class BrowserIdData(ip: String, idCookie: String, fingerprint: Int) {
+  require(ip.nonEmpty, "DwE6G9F0")
+  require(idCookie.nonEmpty, "DwE3GJ79")
+}

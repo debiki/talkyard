@@ -67,7 +67,8 @@ abstract class SiteDao
   with PageStuffDao
   with RenderedPageHtmlDao
   with PostsDao
-  with UserDao {
+  with UserDao
+  with AuditDao {
 
   def siteDbDao: SiteDbDao
   def dbDao2: DbDao2

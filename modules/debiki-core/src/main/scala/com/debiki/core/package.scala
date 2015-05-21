@@ -45,6 +45,7 @@ package object core {
 
   type EmailId = String
 
+  type AuditLogEntryId = Int
 
   /** Where to start rendering a page. The specified post and all its successors
     * will be included in the resulting page. If None, then all top level posts are

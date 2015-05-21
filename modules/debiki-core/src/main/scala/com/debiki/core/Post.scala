@@ -558,13 +558,3 @@ object Post {
 
 }
 
-
-
-case class BrowserIdData(
-  ip: String,
-  idCookie: Option[String],
-  fingerprint: Int) {
-
-  require(ip.nonEmpty, "DwE6G9F0")
-  require(idCookie.map(_.isEmpty) != Some(true), "DwE3GJ79")
-}
