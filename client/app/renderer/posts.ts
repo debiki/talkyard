@@ -519,6 +519,11 @@ var ReplyReceivers = createComponent({
 
 
 var PostHeader = createComponent({
+  onUserClick: function(event) {
+    debiki2.pagedialogs.aboutUserDialog.open(this.props.post);
+    event.preventDefault();
+  },
+
   copyPermalink: function() {
     var hash = '#post-' + this.props.post.postId;
     var url = window.location.host + '/-' + debiki.getPageId() + hash;
@@ -607,7 +612,11 @@ var PostHeader = createComponent({
     var isBodyPostClass = post.postId === BodyPostId ? ' dw-ar-p-hd' : '';
     var suspendedClass = post.authorSuspendedTill ? ' dw-suspended' : '';
 
-    var userLinkProps: any = { className: 'dw-p-by' + suspendedClass, href: authorUrl };
+    var userLinkProps: any = {
+      className: 'dw-p-by' + suspendedClass,
+      onClick: this.onUserClick,
+      href: authorUrl
+    };
 
     if (post.authorSuspendedTill === 'Forever') {
       userLinkProps.title = 'User banned';
