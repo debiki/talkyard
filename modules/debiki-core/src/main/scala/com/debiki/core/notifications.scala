@@ -52,6 +52,7 @@ object Notification {
     notfType: NewPostNotfType,
     siteId: SiteId,
     createdAt: ju.Date,
+    uniquePostId: UniquePostId,
     pageId: PageId,
     postId: PostId,
     byUserId: UserId,

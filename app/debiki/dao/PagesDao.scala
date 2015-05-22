@@ -87,8 +87,12 @@ trait PagesDao {
       val pagePath = PagePath(siteId, folder = folder, pageId = Some(pageId),
         showId = showId, pageSlug = pageSlug)
 
+      val titleUniqueId = transaction.nextPostId()
+      val bodyUniqueId = titleUniqueId + 1
+
       val titlePost = Post2.createTitle(
         siteId = siteId,
+        uniqueId = titleUniqueId,
         pageId = pageId,
         createdAt = transaction.currentTime,
         createdById = authorId,
@@ -98,6 +102,7 @@ trait PagesDao {
 
       val bodyPost = Post2.createBody(
         siteId = siteId,
+        uniqueId = bodyUniqueId,
         pageId = pageId,
         createdAt = transaction.currentTime,
         createdById = authorId,

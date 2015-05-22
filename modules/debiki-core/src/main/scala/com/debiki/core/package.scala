@@ -22,7 +22,11 @@ package object core {
 
   type ActionId = Int
 
-  type PostId = ActionId
+  // TODO rename to PostId, but first rename PostId to PostNr.
+  type UniquePostId = Int
+
+  // TODO rename to PostNr.
+  type PostId = Int
 
   type PageId = String
 
@@ -53,7 +57,8 @@ package object core {
   type SettingNameValue[A] = (String, A)
 
   /** Change this to a Long before year 2038. /KajMagnus, Jan 2015 */
-  type UnixTime = Int
+  type UnixTime = Int    // don't use, I always forget if it's seconds or millis
+  type UnixMillis = Long // this is millis :-)
 
   val HomepageUrlPath = "/"
 

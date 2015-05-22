@@ -21,20 +21,57 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.PostStatusBits._
 import java.{util => ju}
-import scala.collection.mutable
+import scala.collection.{mutable, immutable}
+import scala.collection.mutable.ArrayBuffer
 
 
 object Migration14 {
 
   var siteTransaction: SiteTransaction = null
 
+  var oldPostsByCreatedAt: immutable.TreeMap[UnixMillis, ArrayBuffer[Post]] = null
+  var newIdsMap: mutable.HashMap[PagePostId, UniquePostId] = null
+
   def run(systemTransaction: SystemTransaction) {
     val allSites = systemTransaction.loadSites()
     for (site <- allSites) {
       siteTransaction = systemTransaction.siteTransaction(site.id)
+      newIdsMap = mutable.HashMap[PagePostId, UniquePostId]()
+      oldPostsByCreatedAt = immutable.TreeMap[UnixMillis, ArrayBuffer[Post]]()
       val allPageMetas = siteTransaction.loadAllPageMetas()
+
+      for (pageMeta <- allPageMetas) {
+        insertOldPostsInByTimeMap(pageMeta)
+      }
+      deriveNewPostIds()
+
       for (pageMeta <- allPageMetas) {
         migratePage(pageMeta)
+      }
+    }
+
+
+    def insertOldPostsInByTimeMap(pageMeta: PageMeta): Unit = {
+      val partsOld = siteTransaction.loadPagePartsOld(pageMeta.pageId) getOrDie "DwE4WKW8"
+      for (oldPost <- partsOld.getAllPosts) {
+        var postsCreatedSameTime = oldPostsByCreatedAt.get(oldPost.creationDati.getTime)
+        if (postsCreatedSameTime.isEmpty) {
+          postsCreatedSameTime = Some(ArrayBuffer[Post]())
+          oldPostsByCreatedAt += oldPost.creationDati.getTime -> postsCreatedSameTime.get
+        }
+        postsCreatedSameTime.get.append(oldPost)
+      }
+    }
+
+
+    def deriveNewPostIds() {
+      var nextPostId = 1
+      for ((createdAtMillis, oldPosts) <- oldPostsByCreatedAt) {
+        val oldPostsSorted = oldPosts.sortBy(_.id)
+        for (oldPost <- oldPostsSorted) {
+          newIdsMap(oldPost.pagePostId) = nextPostId
+          nextPostId += 1
+        }
       }
     }
 
@@ -74,7 +111,9 @@ object Migration14 {
           if (!alreadyVoted.contains(voteKey)) {
             alreadyVoted.add(voteKey)
             postIdsWithVotes.add(postId)
-            siteTransaction.insertVote(pageMeta.pageId, postId, voteType, voterId = voterId)
+            val uniquePostId = newIdsMap.get(PagePostId(pageMeta.pageId, postId)) getOrDie "DwE4FK8"
+            siteTransaction.insertVote(
+              uniquePostId, pageMeta.pageId, postId, voteType, voterId = voterId)
           }
         case _ =>
           // skip
@@ -163,8 +202,11 @@ object Migration14 {
         approvedAt = Some(oldPost.creationDati)
       }
 
+      val uniquePostId = newIdsMap.get(oldPost.pagePostId) getOrDie "DwE2KFWEGP0"
+
       Post2(
         siteId = siteTransaction.siteId,
+        uniqueId = uniquePostId,
         pageId = pageId,
         id = oldPost.id,
         parentId = oldPost.parentId,
