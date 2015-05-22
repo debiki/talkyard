@@ -44,6 +44,7 @@ trait PostsDao {
 
     val postId = readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
+      val uniqueId = transaction.nextPostId()
       val postId = page.parts.highestReplyId.map(_ + 1) getOrElse PageParts.FirstReplyId
       val commonAncestorId = page.parts.findCommonAncestorId(replyToPostIds.toSeq)
       val parentId =
@@ -81,6 +82,7 @@ trait PostsDao {
 
       val newPost = Post.create(
         siteId = siteId,
+        uniqueId = uniqueId,
         pageId = pageId,
         postId = postId,
         parent = anyParent,
@@ -366,7 +368,7 @@ trait PostsDao {
           throwForbidden("DwE84QM0", "Cannot like own post")
       }
 
-      try { transaction.insertVote(pageId, postId, voteType, voterId = voterId) }
+      try { transaction.insertVote(post.uniqueId, pageId, postId, voteType, voterId = voterId) }
       catch {
         case DbDao.DuplicateVoteException =>
           throwForbidden("Dw403BKW2", "You have already voted")
@@ -412,7 +414,7 @@ trait PostsDao {
       val postBefore = transaction.loadThePost(pageId, postId)
       // SHOULD if >= 2 pending flags, then hide post until reviewed? And unhide, if flags cleared.
       val postAfter = postBefore.copy(numPendingFlags = postBefore.numPendingFlags + 1)
-      transaction.insertFlag(pageId, postId, flagType, flaggerId)
+      transaction.insertFlag(postBefore.uniqueId, pageId, postId, flagType, flaggerId)
       transaction.updatePost(postAfter)
     }
     refreshPageInAnyCache(pageId)

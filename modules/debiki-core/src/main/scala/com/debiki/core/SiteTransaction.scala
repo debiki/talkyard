@@ -39,6 +39,8 @@ trait SiteTransaction {
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
   def loadPosts(pagePostIds: Iterable[PagePostId]): immutable.Seq[Post]
   def loadPostsToReview(): immutable.Seq[Post]
+
+  def nextPostId(): UniquePostId
   def insertPost(newPost: Post)
   def updatePost(newPost: Post)
 
@@ -46,7 +48,7 @@ trait SiteTransaction {
   def loadActionsDoneToPost(pageId: PageId, postId: PostId): immutable.Seq[PostAction]
 
   def deleteVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId): Boolean
-  def insertVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId)
+  def insertVote(uniquePostId: UniquePostId, pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId)
 
   /** Remembers that the specified posts have been read by a certain user.
     */
@@ -57,9 +59,8 @@ trait SiteTransaction {
 
 
   def loadFlagsFor(pagePostIds: immutable.Seq[PagePostId]): immutable.Seq[PostFlag]
-  def insertFlag(pageId: PageId, postId: PostId, flagType: PostFlagType, flaggerId: UserId)
+  def insertFlag(uniquePostId: UniquePostId, pageId: PageId, postId: PostId, flagType: PostFlagType, flaggerId: UserId)
   def clearFlags(pageId: PageId, postId: PostId, clearedById: UserId)
-
 
   def nextPageId(): PageId
 

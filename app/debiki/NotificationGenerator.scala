@@ -105,6 +105,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       notfType,
       siteId = transaction.siteId,
       createdAt = newPost.createdAt,
+      uniquePostId = newPost.uniqueId,
       pageId = newPost.pageId,
       postId = newPost.id,
       byUserId = newPost.createdById,

@@ -87,7 +87,10 @@ object PostStatusBits {
   */
 case class Post(
   siteId: SiteId,
+  // TODO rename to 'id', but first rename 'id' to 'nr'.
+  uniqueId: UniquePostId,
   pageId: PageId,
+  // TODO rename to 'nr'.
   id: PostId,
   parentId: Option[PostId],
   multireplyPostIds: immutable.Set[PostId],
@@ -126,6 +129,7 @@ case class Post(
   numWrongVotes: Int,
   numTimesRead: Int) {
 
+  require(uniqueId >= 1, "DwE4WEKQ8")
   require(parentId != Some(id), "DwE5BK4")
   require(!multireplyPostIds.contains(id), "DwE4kWW2")
 
@@ -378,6 +382,7 @@ object Post {
 
   def create(
         siteId: SiteId,
+        uniqueId: UniquePostId,
         pageId: PageId,
         postId: PostId,
         parent: Option[Post],
@@ -420,6 +425,7 @@ object Post {
 
     Post(
       siteId = siteId,
+      uniqueId = uniqueId,
       pageId = pageId,
       id = postId,
       parentId = parent.map(_.id),
@@ -461,25 +467,27 @@ object Post {
 
   def createTitle(
         siteId: SiteId,
+        uniqueId: UniquePostId,
         pageId: PageId,
         createdAt: ju.Date,
         createdById: UserId,
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId]): Post =
-    create(siteId, pageId = pageId, postId = PageParts.TitleId, parent = None,
+    create(siteId, uniqueId, pageId = pageId, postId = PageParts.TitleId, parent = None,
       multireplyPostIds = Set.empty, createdAt = createdAt, createdById = createdById,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 
   def createBody(
         siteId: SiteId,
+        uniqueId: UniquePostId,
         pageId: PageId,
         createdAt: ju.Date,
         createdById: UserId,
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId]): Post =
-    create(siteId, pageId = pageId, postId = PageParts.BodyId, parent = None,
+    create(siteId, uniqueId, pageId = pageId, postId = PageParts.BodyId, parent = None,
       multireplyPostIds = Set.empty, createdAt = createdAt, createdById = createdById,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 

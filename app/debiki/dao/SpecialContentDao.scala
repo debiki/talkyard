@@ -128,8 +128,11 @@ trait SpecialContentDao {
     val pageMeta = PageMeta.forNewPage(pageId, PageRole.SpecialContent, authorId,
       transaction.currentTime, parentPageId = None, url = None, publishDirectly = true)
 
+    val uniqueId = transaction.nextPostId()
+
     val bodyPost = Post.createBody(
       siteId = siteId,
+      uniqueId = uniqueId,
       pageId = pageId,
       createdAt = transaction.currentTime,
       createdById = authorId,
