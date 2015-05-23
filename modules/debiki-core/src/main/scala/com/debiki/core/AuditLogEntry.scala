@@ -51,8 +51,18 @@ case class AuditLogEntry(
   browserLocation: Option[BrowserLocation] = None,
   pageId: Option[PageId] = None,
   pageRole: Option[PageRole] = None,
-  postId: Option[PostId] = None,
-  targetPostId: Option[PostId] = None) {
+  uniquePostId: Option[UniquePostId] = None,
+  postNr: Option[PostId] = None,
+  targetUniquePostId: Option[UniquePostId] = None,
+  targetPageId: Option[PageId] = None,
+  targetPostNr: Option[PostId] = None,
+  targetUserId: Option[UserId] = None) {
+
+  require(pageRole.isEmpty || pageId.isDefined, "DwE4PFKW7")
+  require(postNr.isEmpty || pageId.isDefined, "DwE3574FK2")
+  require(postNr.isDefined == uniquePostId.isDefined, "DwE2WKEFW8")
+  require(targetPostNr.isDefined == targetUniquePostId.isDefined, "DwE4QU38")
+  require(targetPostNr.isEmpty || targetUserId.isDefined, "DwE5PFK2")
 }
 
 

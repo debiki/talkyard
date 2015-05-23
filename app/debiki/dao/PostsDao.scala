@@ -47,7 +47,7 @@ trait PostsDao {
       val uniqueId = transaction.nextPostId()
       val postId = page.parts.highestReplyId.map(_ + 1) getOrElse PageParts.FirstReplyId
       val commonAncestorId = page.parts.findCommonAncestorId(replyToPostIds.toSeq)
-      val parentId =
+      val anyParent =
         if (commonAncestorId == PageParts.NoId) {
           if (page.role == PageRole.EmbeddedComments) {
             // There is no page body. Allow new comment threads with no parent post.
@@ -57,14 +57,14 @@ trait PostsDao {
             throwBadReq("DwE260G8", "Not an embedded discussion. You must reply to something")
           }
         }
-        else if (page.parts.post(commonAncestorId).isDefined) {
-          Some(commonAncestorId)
-        }
         else {
-          throwBadReq("DwEe8HD36", o"""Cannot reply to common ancestor post '$commonAncestorId';
-            it does not exist""")
+          val anyParent = page.parts.post(commonAncestorId)
+          if (anyParent.isEmpty) {
+            throwBadReq("DwEe8HD36", o"""Cannot reply to common ancestor post '$commonAncestorId';
+                it does not exist""")
+          }
+          anyParent
         }
-      val anyParent = parentId.map(page.parts.thePost)
       if (anyParent.map(_.deletedStatus.isDeleted) == Some(true))
         throwForbidden(
           "The parent post has been deleted; cannot reply to a deleted post", "DwE5KDE7")
@@ -107,8 +107,11 @@ trait PostsDao {
         doneAt = transaction.currentTime,
         browserIdData = browserIdData,
         pageId = Some(pageId),
-        postId = Some(postId),
-        targetPostId = newPost.parentId)
+        uniquePostId = Some(newPost.uniqueId),
+        postNr = Some(newPost.id),
+        targetUniquePostId = anyParent.map(_.uniqueId),
+        targetPostNr = anyParent.map(_.id),
+        targetUserId = anyParent.map(_.createdById))
 
       transaction.insertPost(newPost)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
@@ -191,7 +194,9 @@ trait PostsDao {
         doneAt = transaction.currentTime,
         browserIdData = browserIdData,
         pageId = Some(pageId),
-        postId = Some(postId))
+        uniquePostId = Some(postToEdit.uniqueId),
+        postNr = Some(postId),
+        targetUserId = Some(postToEdit.createdById))
 
       transaction.updatePost(editedPost)
       insertAuditLogEntry(auditLogEntry, transaction)
