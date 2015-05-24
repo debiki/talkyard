@@ -41,10 +41,11 @@ object AuditLogEntryType {
   case object EditPost extends AuditLogEntryType
 }
 
+
 case class AuditLogEntry(
   siteId: SiteId,
   id: AuditLogEntryId,
-  tyype: AuditLogEntryType,
+  didWhat: AuditLogEntryType,
   doerId: UserId,
   doneAt: ju.Date,
   browserIdData: BrowserIdData,

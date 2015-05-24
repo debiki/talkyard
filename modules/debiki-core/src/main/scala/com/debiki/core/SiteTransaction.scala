@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import java.net.InetAddress
 import java.{util => ju}
 import scala.collection.immutable
 
@@ -31,6 +32,10 @@ trait SiteTransaction {
 
   def loadResourceUsage(): ResourceUse
   def loadAncestorPostIdsParentFirst(pageId: PageId): immutable.Seq[PageId]
+
+  def loadPost(uniquePostId: UniquePostId): Option[Post]
+  def loadThePost(uniquePostId: UniquePostId): Post =
+    loadPost(uniquePostId).getOrElse(throw PostNotFoundByIdException(uniquePostId))
 
   def loadPost(pageId: PageId, postId: PostId): Option[Post]
   def loadThePost(pageId: PageId, postId: PostId): Post =
@@ -122,11 +127,17 @@ trait SiteTransaction {
 
   def nextAuditLogEntryId: AuditLogEntryId
   def insertAuditLogEntry(entry: AuditLogEntry)
+  def loadFirstAuditLogEntry(postId: UniquePostId): Option[AuditLogEntry]
 
+  def loadBlocks(ip: String, browserIdCookie: String): immutable.Seq[Block]
+  def insertBlock(block: Block)
+  def unblockIp(ip: InetAddress)
+  def unblockBrowser(browserIdCookie: String)
 }
 
 
 case class UserNotFoundException(userId: UserId) extends QuickException
 case class PageNotFoundException(pageId: PageId) extends QuickException
 case class PostNotFoundException(pageId: PageId, postId: PostId) extends QuickException
+case class PostNotFoundByIdException(postId: UniquePostId) extends QuickException
 

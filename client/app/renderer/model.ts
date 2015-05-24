@@ -27,7 +27,8 @@ interface PostToModerate {
 
 
 interface Post {
-  postId: number;
+  uniqueId: number; // TODO rename to id
+  postId: number;   // TODO rename to nr
   parentId: number;
   multireplyPostIds: number[];
   authorId: string;
@@ -205,3 +206,22 @@ interface Invite {
   userThreatLevel?: number;
   */
 }
+
+
+interface Blocks {
+  isBlocked: boolean;
+  reason?: string;
+  blockedForever?: boolean;
+  blockedTillMs?: number;
+  blocks?: Block[];
+}
+
+
+interface Block {
+  ip?: string;
+  browserIdCookie?: string;
+  blockedById: number;
+  blockedAtMs: number;
+  blockedTillMs?: number;
+}
+

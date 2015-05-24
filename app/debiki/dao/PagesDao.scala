@@ -115,7 +115,7 @@ trait PagesDao {
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
-        tyype = AuditLogEntryType.NewPage,
+        didWhat = AuditLogEntryType.NewPage,
         doerId = authorId,
         doneAt = transaction.currentTime,
         browserIdData = browserIdData,

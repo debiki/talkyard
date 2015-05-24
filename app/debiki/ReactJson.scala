@@ -197,6 +197,7 @@ object ReactJson {
     val author = post.createdByUser(people)
 
     var fields = Vector(
+      "uniqueId" -> JsNumber(post.uniqueId),
       "postId" -> JsNumber(post.id),
       "parentId" -> post.parentId.map(JsNumber(_)).getOrElse(JsNull),
       "multireplyPostIds" -> JsArray(post.multireplyPostIds.toSeq.map(JsNumber(_))),
@@ -371,7 +372,7 @@ object ReactJson {
   def JsNumberOrNull(value: Option[Int]) =
     value.map(JsNumber(_)).getOrElse(JsNull)
 
-  def JsLongNumberOrNull(value: Option[Long]) =
+  def JsLongOrNull(value: Option[Long]) =
     value.map(JsNumber(_)).getOrElse(JsNull)
 
   def DateEpochOrNull(value: Option[ju.Date]) =

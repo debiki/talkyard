@@ -629,9 +629,9 @@ case class LoginGrant(
 
 
 /** An IP number or a browser id cookie that has been blocked and may not
-  * sign up or post comments or vote or anything.
+  * post comments or vote.
   */
-case class BlockedThing(
+case class Block(
   ip: Option[jn.InetAddress],
   browserIdCookie: Option[String],
   blockedById: UserId,
@@ -671,4 +671,7 @@ class BlockedTillMap(
 case class BrowserIdData(ip: String, idCookie: String, fingerprint: Int) {
   require(ip.nonEmpty, "DwE6G9F0")
   require(idCookie.nonEmpty, "DwE3GJ79")
+
+  def inetAddress = com.google.common.net.InetAddresses.forString(ip)
+
 }

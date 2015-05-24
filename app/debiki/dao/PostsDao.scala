@@ -102,7 +102,7 @@ trait PostsDao {
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
-        tyype = AuditLogEntryType.NewPost,
+        didWhat = AuditLogEntryType.NewPost,
         doerId = authorId,
         doneAt = transaction.currentTime,
         browserIdData = browserIdData,
@@ -189,7 +189,7 @@ trait PostsDao {
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
-        tyype = AuditLogEntryType.EditPost,
+        didWhat = AuditLogEntryType.EditPost,
         doerId = editorId,
         doneAt = transaction.currentTime,
         browserIdData = browserIdData,

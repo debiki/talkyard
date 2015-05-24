@@ -137,6 +137,62 @@ trait UserDao {
   }
 
 
+  def blockGuest(postId: UniquePostId, numDays: Int, blockerId: UserId) {
+    readWriteTransaction { transaction =>
+      val auditLogEntry: AuditLogEntry = transaction.loadFirstAuditLogEntry(postId) getOrElse {
+        throwForbidden("DwE2WKF5", "Cannot block user: No audit log entry, IP unknown")
+      }
+
+      if (!User.isGuestId(auditLogEntry.doerId))
+        throwForbidden("DwE4WKQ2", "Cannot block authenticated users. Suspend them instead")
+
+      val blockedTill =
+        Some(new ju.Date(transaction.currentTime.getTime + MillisPerDay * numDays))
+
+      val ipBlock = Block(
+        ip = Some(auditLogEntry.browserIdData.inetAddress),
+        browserIdCookie = None,
+        blockedById = blockerId,
+        blockedAt = transaction.currentTime,
+        blockedTill = blockedTill)
+
+      val browserIdCookieBlock = Block(
+        ip = None,
+        browserIdCookie = Some(auditLogEntry.browserIdData.idCookie),
+        blockedById = blockerId,
+        blockedAt = transaction.currentTime,
+        blockedTill = blockedTill)
+
+      // COULD catch dupl key error when inserting IP block, and continue anyway
+      // with inserting browser id cookie block.
+      transaction.insertBlock(ipBlock)
+      transaction.insertBlock(browserIdCookieBlock)
+    }
+  }
+
+
+  def unblockGuest(postId: PostId, unblockerId: UserId) {
+    readWriteTransaction { transaction =>
+      val auditLogEntry: AuditLogEntry = transaction.loadFirstAuditLogEntry(postId) getOrElse {
+        throwForbidden("DwE5FK83", "Cannot unblock guest: No audit log entry, IP unknown")
+      }
+      transaction.unblockIp(auditLogEntry.browserIdData.inetAddress)
+      transaction.unblockBrowser(auditLogEntry.browserIdData.idCookie)
+    }
+  }
+
+
+  def loadAuthorBlocks(postId: UniquePostId): immutable.Seq[Block] = {
+    readOnlyTransaction { transaction =>
+      val auditLogEntry = transaction.loadFirstAuditLogEntry(postId) getOrElse {
+        return Nil
+      }
+      val browserIdData = auditLogEntry.browserIdData
+      transaction.loadBlocks(ip = browserIdData.ip, browserIdCookie = browserIdData.idCookie)
+    }
+  }
+
+
   def createIdentityUserAndLogin(newUserData: NewUserData): LoginGrant = {
     readWriteTransaction { transaction =>
       val userId = transaction.nextAuthenticatedUserId
@@ -367,7 +423,7 @@ trait UserDao {
   }
 
 
-  def loadBlockedThings(ip: InetAddress, browserId: Option[String]): immutable.Seq[BlockedThing] = {
+  def loadBlockedThings(ip: InetAddress, browserId: Option[String]): immutable.Seq[Block] = {
     Nil
   }
 

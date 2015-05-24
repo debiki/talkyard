@@ -23,7 +23,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.User.{isGuestId, MinUsernameLength}
 import debiki._
-import debiki.ReactJson.{DateEpochOrNull, JsStringOrNull, JsBooleanOrNull, JsNumberOrNull}
+import debiki.ReactJson.{DateEpochOrNull, JsStringOrNull, JsBooleanOrNull, JsNumberOrNull, JsLongOrNull}
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
@@ -172,6 +172,66 @@ object UserController extends mvc.Controller {
       throwBadReq("DwE7GPKU8", "Cannot unsuspend guest user ids")
     request.dao.unsuspendUser(userId)
     Ok
+  }
+
+
+  def blockGuest = AdminPostJsonAction(maxLength = 100) { request =>
+    val postId = (request.body \ "postId").as[PostId]
+    val numDays = (request.body \ "numDays").as[Int]
+    request.dao.blockGuest(postId, numDays = numDays, blockerId = request.theUserId)
+    Ok
+  }
+
+
+  def unblockGuest = AdminPostJsonAction(maxLength = 100) { request =>
+    val postId = (request.body \ "postId").as[PostId]
+    request.dao.unblockGuest(postId, unblockerId = request.theUserId)
+    Ok
+  }
+
+
+  def loadAuthorBlocks(postId: String) = GetAction { request =>
+    val postIdInt = Try(postId.toInt) getOrElse throwBadReq("DwE4WK78", "Bad post id")
+    val blocks: Seq[Block] = request.dao.loadAuthorBlocks(postIdInt)
+    var json = blocksSummaryJson(blocks, request.ctime)
+    if (request.user.map(_.isStaff) == Some(true)) {
+      json += "blocks" -> JsArray(blocks map blockToJson)
+    }
+    OkSafeJson(json)
+  }
+
+
+  private def blocksSummaryJson(blocks: Seq[Block], now: ju.Date): JsObject = {
+    var isBlocked = false
+    var blockedForever = false
+    var maxEndUnixMillis: UnixMillis = 0L
+    for (block <- blocks) {
+      if (block.blockedTill.isEmpty) {
+        isBlocked = true
+        blockedForever = true
+      }
+      else if (now.getTime <= block.blockedTill.get.getTime) {
+        isBlocked = true
+        maxEndUnixMillis = math.max(maxEndUnixMillis, block.blockedTill.get.getTime)
+      }
+    }
+    var json = Json.obj(
+      "isBlocked" -> isBlocked,
+      "blockedForever" -> blockedForever)
+    if (maxEndUnixMillis != 0L && !blockedForever) {
+      json += "blockedTillMs" -> JsNumber(maxEndUnixMillis)
+    }
+    json
+  }
+
+
+  private def blockToJson(block: Block): JsObject = {
+    Json.obj(
+      "ip" -> JsStringOrNull(block.ip.map(_.toString)),
+      "browserIdCookie" -> block.browserIdCookie,
+      "blockedById" -> block.blockedById,
+      "blockedAtMs" -> block.blockedAt.getTime,
+      "blockedTillMs" -> JsLongOrNull(block.blockedTill.map(_.getTime)))
   }
 
 

@@ -31,6 +31,7 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var Input = reactCreateFactory(ReactBootstrap.Input);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
+var ModalTrigger = reactCreateFactory(ReactBootstrap.ModalTrigger);
 var OverlayMixin = ReactBootstrap.OverlayMixin;
 
 
@@ -49,11 +50,16 @@ var AboutUserDialog = createComponent({
   mixins: [OverlayMixin],
 
   getInitialState: function () {
-    return { isOpen: false, user: null, post: null };
+    return {
+      isOpen: false,
+      user: null,
+      post: null,
+      loggedInUser: debiki2.ReactStore.getUser()
+    };
   },
 
   open: function(post: Post) {
-    this.setState({ isOpen: true, pots: post });
+    this.setState({ isOpen: true, post: post, blocks: {} });
     this.loadUser(post.authorId);
   },
 
@@ -61,21 +67,43 @@ var AboutUserDialog = createComponent({
     this.setState({ isOpen: false, user: null, post: null });
   },
 
+  reload: function() {
+    this.loadUser(this.state.user.id);
+    this.setState({ user: null, blocks: {} });
+  },
+
   loadUser: function(userId: number) {
     Server.loadCompleteUser(userId, (user: CompleteUser) => {
       if (!this.isMounted()) return;
-      this.setState({ user: user });
+      Server.loadAuthorBlockedInfo(this.state.post.uniqueId, (blocks: Blocks) => {
+        if (!this.isMounted()) return;
+        // These two are only included in the response for staff.
+        var ipBlock;
+        var browserBlock;
+        _.each(blocks.blocks, (block: Block) => {
+          if (block.ip) {
+            ipBlock = block;
+          }
+          if (block.browserIdCookie) {
+            browserBlock = block;
+          }
+        })
+        this.setState({
+          user: user,
+          blocks: {
+            isBlocked: blocks.isBlocked,
+            ipBlock: ipBlock,
+            browserBlock: browserBlock,
+            blockedForever: blocks.blockedForever,
+            blockedTillMs: blocks.blockedTillMs
+          }
+        });
+      });
     });
   },
 
-  submit: function() {
-    Server.flagPost(this.state.postId, this.state.flagType, this.state.reason, () => {
-      this.close();
-      setTimeout(() => {
-        alert("Thanks. You have reported it. Someone will review it and "+
-          "perhaps delete it or remove parts of it.");
-      }, 0);
-    });
+  viewUserProfile: function() {
+    window.location.assign('/-/users/#/id/' + this.state.user.id);
   },
 
   render: function () {
@@ -87,21 +115,34 @@ var AboutUserDialog = createComponent({
       return null;
 
     var user: CompleteUser = this.state.user;
+    var childProps = $.extend({
+      reload: this.reload,
+      loggedInUser: this.state.loggedInUser,
+      post: this.state.post,
+      user: user,
+      viewUserProfile: this.viewUserProfile,
+      blocks: this.state.blocks
+    }, this.props);
+
     var content;
+    var who;
     if (!user) {
       content = r.p({}, 'Loading...');
     }
     else if (isGuest(user)) {
-      content = AboutUser({ user: user });
+      content = AboutGuest(childProps);
+      who = 'Guest';
     }
     else {
-      content = AboutGuest({ guest: user });
+      content = AboutUser(childProps);
+      who = 'User';
     }
 
     return (
-      Modal({ title: 'About User', onRequestHide: this.close },
+      Modal({ title: 'About ' + who, onRequestHide: this.close },
         r.div({ className: 'modal-body' }, content),
-        r.div({ className: 'modal-footer' }, Button({ onClick: this.close }, 'Close'))));
+        r.div({ className: 'modal-footer' },
+          Button({ onClick: this.close }, 'Close'))));
   }
 });
 
@@ -111,21 +152,109 @@ var AboutUser = createComponent({
     var user: CompleteUser = this.props.user;
     return (
       r.div({},
-        'Username: ' + user.username, r.br(),
-        'Name: ' + user.fullName));
+        r.div({ className: 'dw-about-user-actions' },
+          Button({ onClick: this.props.viewUserProfile }, 'View Profile')),
+        r.p({},
+          'Username: ' + user.username, r.br(),
+          'Name: ' + user.fullName)));
   }
 });
 
 
 var AboutGuest = createComponent({
+  unblockGuest: function() {
+    Server.unblockGuest(this.props.post.uniqueId, () => {
+      this.props.reload();
+    });
+  },
+
   render: function() {
-    var guest: Guest = this.props.guest;
+    var guest: Guest = this.props.user;
+    var loggedInUser: User = this.props.loggedInUser;
+    var blocks: Blocks = this.props.blocks;
+    var postId = this.props.post.uniqueId;
+
+    var blockButton;
+    if (loggedInUser.isAdmin) {
+      if (blocks.isBlocked) {
+        blockButton =
+          Button({ title: 'Let this guest post comments again', onClick: this.unblockGuest },
+            'Unblock');
+      }
+      else {
+        blockButton =
+            ModalTrigger({ modal: BlockGuestDialog({ postId: postId, reload: this.props.reload }) },
+              Button({ title: 'Prevent this guest from posting more comments' },
+                'Block This Guest'));
+      }
+    }
+
+    var blockedInfo;
+    if (blocks.isBlocked) {
+      var text = 'This guest is blocked ';
+      if (blocks.blockedForever) {
+        text += 'forever';
+      }
+      else {
+        text += 'until ' + moment(blocks.blockedTillMs).format('YYYY-MM-DD HH:mm');
+      }
+      var reason = blocks.reason ? blocks.reason : '(unspecified)';
+      blockedInfo =
+        r.p({ className: 'dw-guest-blocked' },
+          text, r.br());
+          // 'Reason: ' + reason);
+    }
+
     return (
-      r.div({},
-        'Name: ' + guest.fullName + ' — is a guest user, could be anyone'));
+      r.div({ className: 'clearfix' },
+        r.div({ className: 'dw-about-user-actions' },
+          Button({ onClick: this.props.viewUserProfile }, 'View Other Comments'),
+          blockButton),
+        r.p({},
+          'Name: ' + guest.fullName, r.br(),
+          'This is a guest user. He or she could in fact be just anyone.'),
+        blockedInfo));
   }
 });
 
+
+var BlockGuestDialog = createComponent({
+  doBlock: function() {
+    var numDays = parseInt(this.refs.daysInput.getValue());
+    if (isNaN(numDays)) {
+      alert('Please enter a number');
+      return;
+    }
+    var reason = ''; // this.refs.reasonInput.getValue();
+    if (reason.length > 255) {
+      alert("At most 255 characters please");
+      return;
+    }
+    Server.blockGuest(this.props.postId, numDays, () => {
+      this.props.onRequestHide();
+      this.props.reload();
+    });
+  },
+
+  render: function() {
+    var props = $.extend({ title: 'Block Guest' }, this.props);
+    return (
+      Modal(props,
+        r.div({ className: 'modal-body' },
+          r.p({}, "Once blocked, this guest cannot post any comments or like any posts. " +
+            "He or she can, however, still authenticate himself / herself " +
+            "and sign up as a real user."),
+          Input({ type: 'number', label: 'Block for how many days?', ref: 'daysInput' })
+          /*
+          Input({ type: 'text', label: 'Why block this guest? (Optional)',
+              help: "This will be visible to everyone. Keep it short.", ref: 'reasonInput' })),
+             */ ),
+
+        r.div({ className: 'modal-footer' },
+          Button({ onClick: this.doBlock }, 'Block'),
+          Button({ onClick: this.props.onRequestHide }, 'Cancel'))));
+  }
+});
 
 //------------------------------------------------------------------------------
    }

@@ -381,6 +381,43 @@ export function saveGuest(guest, doneCallback: () => void) {
 }
 
 
+export function blockGuest(postId: number, numDays: number, doneCallback: () => void) {
+  d.u.postJson({
+    url: origin + '/-/block-guest',
+    data: { postId: postId, numDays: numDays },
+    success: doneCallback,
+    error: (x, y, z) => {
+      console.error('Error blocking guest: ' + JSON.stringify([x, y, z]));
+      alert(x.responseText);
+    }
+  });
+}
+
+
+export function unblockGuest(postId: number, whenDone: () => void) {
+  d.u.postJson({
+    url: origin + '/-/unblock-guest',
+    data: { postId: postId },
+    success: whenDone,
+    error: (x, y, z) => {
+      console.error('Error unblocking guest: ' + JSON.stringify([x, y, z]));
+      alert(x.responseText);
+    }
+  });
+}
+
+
+export function loadAuthorBlockedInfo(postId: number, whenDone: (response: Blocks) => void) {
+  $.get(origin + '/-/load-author-blocks?postId=' + postId)
+    .done((response: any) => {
+      whenDone(response);
+    })
+    .fail((x, y, z) => {
+      console.error('Error loading is-blocked info: ' + JSON.stringify([x, y, z]));
+    });
+}
+
+
 export function loadForumCategories(forumPageId: string,
       doneCallback: (categories: Category[]) => void) {
   $.get(origin + '/-/list-categories?forumId=' + forumPageId)
