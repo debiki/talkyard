@@ -77,7 +77,10 @@ abstract class SiteDao
     dbDao2.readWriteSiteTransaction(siteId, allowOverQuota) { fn(_) }
 
   def readOnlyTransaction[R](fn: SiteTransaction => R): R =
-    dbDao2.readOnlySiteTransaction(siteId) { fn(_) }
+    dbDao2.readOnlySiteTransaction(siteId, mustBeSerializable = true) { fn(_) }
+
+  def readOnlyTransactionNotSerializable[R](fn: SiteTransaction => R): R =
+    dbDao2.readOnlySiteTransaction(siteId, mustBeSerializable = false) { fn(_) }
 
 
   // ----- Tenant

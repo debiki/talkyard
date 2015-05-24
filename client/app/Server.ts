@@ -522,6 +522,7 @@ export function saveReply(postIds: number[], text: string, doneCallback: () => v
     },
     error: (x, y, z) => {
       console.error('Error saving new reply: ' + JSON.stringify([x, y, z]));
+      pagedialogs.serverErrorDialog.open(x);
     },
   });
 }

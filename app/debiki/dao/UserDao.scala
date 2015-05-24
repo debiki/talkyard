@@ -193,6 +193,13 @@ trait UserDao {
   }
 
 
+  def loadBlocks(ip: String, browserIdCookie: String): immutable.Seq[Block] = {
+    readOnlyTransactionNotSerializable { transaction =>
+      transaction.loadBlocks(ip = ip, browserIdCookie = browserIdCookie)
+    }
+  }
+
+
   def createIdentityUserAndLogin(newUserData: NewUserData): LoginGrant = {
     readWriteTransaction { transaction =>
       val userId = transaction.nextAuthenticatedUserId
@@ -414,17 +421,36 @@ trait UserDao {
   }
 
 
-  def perhapsBlockRequest(request: SessionRequest[_]) {
-    /*
-    val blockedTillMap = loadBlockedTillMap()
-    if (blockedThings.nonEmpty)
-      throwForbidden("DwE403BKD1", "Access denied")
-      */
-  }
+  def perhapsBlockGuest(request: SessionRequest[_]) {
+    if (request.underlying.method == "GET")
+      return
 
+    // Authenticated users are ignored here. Suspend them instead.
+    if (request.sidStatus.userId.map(User.isRoleId) == Some(true))
+      return
 
-  def loadBlockedThings(ip: InetAddress, browserId: Option[String]): immutable.Seq[Block] = {
-    Nil
+    // Ignore not-logged-in people, unless they attempt to login as guests.
+    if (request.sidStatus.userId.isEmpty) {
+      val guestLoginPath = controllers.routes.LoginAsGuestController.loginGuest().url
+      if (!request.path.contains(guestLoginPath))
+        return
+    }
+
+    if (request.browserId.isEmpty)
+      throwForbidden("DwE403NBI0", "No browser id cookie")
+
+    // COULD cache blocks, but not really needed since this is for post requests only.
+    val blocks = loadBlocks(
+      ip = request.remoteAddress,
+      browserIdCookie = request.browserId.get.cookieValue)
+
+    val nowMillis = System.currentTimeMillis
+    for (block <- blocks) {
+      if (block.isActiveAt(nowMillis)) {
+        throwForbidden(
+          "DwE403BK01", "Not allowed. Please authenticate yourself by creating a real account.")
+      }
+    }
   }
 
 

@@ -25,8 +25,10 @@ package com.debiki.core
 class DbDao2(val dbDaoFactory: DbDaoFactory) {
 
 
-  def readOnlySiteTransaction[R](siteId: SiteId)(fn: (SiteTransaction) => R): R = {
-    val transaction = dbDaoFactory.newSiteTransaction(siteId, readOnly = true)
+  def readOnlySiteTransaction[R](siteId: SiteId, mustBeSerializable: Boolean)(
+        fn: (SiteTransaction) => R): R = {
+    val transaction = dbDaoFactory.newSiteTransaction(siteId, readOnly = true,
+      mustBeSerializable = mustBeSerializable)
     try {
       fn(transaction)
     }
@@ -38,7 +40,8 @@ class DbDao2(val dbDaoFactory: DbDaoFactory) {
 
   def readWriteSiteTransaction[R](siteId: SiteId, allowOverQuota: Boolean = false)(
         fn: (SiteTransaction) => R): R = {
-    val transaction = dbDaoFactory.newSiteTransaction(siteId, readOnly = false)
+    val transaction = dbDaoFactory.newSiteTransaction(siteId, readOnly = false,
+      mustBeSerializable = true)
     var committed = false
     try {
       val result = fn(transaction)

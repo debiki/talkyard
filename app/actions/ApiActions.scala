@@ -118,7 +118,7 @@ object ApiActions {
       val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
 
       val dao = Globals.siteDao(siteId = tenantId)
-      dao.perhapsBlockRequest(request)
+      dao.perhapsBlockGuest(request)
 
       var user: Option[User] = Utils.loadUserOrThrow(request.sidStatus, dao)
       var logoutBecauseSuspended = false
