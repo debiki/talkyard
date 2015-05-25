@@ -50,7 +50,8 @@ abstract class DbDaoFactory {
   final def newDbDao2(): DbDao2 =
     new DbDao2(this)
 
-  protected[core] def newSiteTransaction(siteId: SiteId, readOnly: Boolean): SiteTransaction
+  protected[core] def newSiteTransaction(siteId: SiteId, readOnly: Boolean,
+    mustBeSerializable: Boolean): SiteTransaction
   protected[core] def newSystemTransaction(readOnly: Boolean): SystemTransaction
 
   /** Helpful for search engine database tests. */
@@ -632,6 +633,7 @@ object DbDao {
 
   case object DuplicateUsername extends RuntimeException("Duplicate username")
   case object DuplicateUserEmail extends RuntimeException("Duplicate user email")
+  case object DuplicateGuest extends RuntimeException("Duplicate guest")
 
   case class IdentityNotFoundException(message: String)
     extends RuntimeException(message)

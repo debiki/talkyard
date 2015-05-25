@@ -23,6 +23,7 @@
 /// <reference path="review.ts" />
 /// <reference path="review-posts.ts" />
 /// <reference path="users.ts" />
+/// <reference path="users-one.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
@@ -61,7 +62,8 @@ export function routes() {
       Route({ name: 'users-new', path: 'new', handler: NewUsersPanel }),
       Route({ name: 'users-staff', path: 'staff', handler: NotYetImplemented }),
       Route({ name: 'users-suspended', path: 'suspended', handler: NotYetImplemented }),
-      Route({ name: 'users-threats', path: 'threads', handler: NotYetImplemented })),
+      Route({ name: 'users-threats', path: 'threads', handler: NotYetImplemented }),
+      Route({ name: 'users-one', path: 'id/:userId', handler: AdminUserPage })),
     Route({ name: 'customize', path: 'customize', handler: CustomizePanel }),
     Route({ name: 'review', path: 'review', handler: ReviewPanel },
       Route({ name: 'review-posts', path: 'posts', handler: ReviewPostsPanel })));
@@ -79,12 +81,19 @@ var NotYetImplemented = createComponent({
 
 
 var AdminApp = createComponent({
-  mixins: [Navigation, State],
+  mixins: [Navigation, State, debiki2.StoreListenerMixin],
 
   getInitialState: function() {
     return {
+      loggedInUser: debiki2.ReactStore.getUser(),
       activeRoute: this.getRoutes()[1].name
     };
+  },
+
+  onChange: function() {
+    this.setState({
+      loggedInUser: debiki2.ReactStore.getUser()
+    });
   },
 
   handleSelect: function(newRoute) {
@@ -93,6 +102,9 @@ var AdminApp = createComponent({
   },
 
   render: function() {
+    if (!this.state.loggedInUser)
+      return r.p({}, 'Not logged in');
+
     return (
       r.div({ className: 'admin-app' },
         Nav({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect,
@@ -101,7 +113,7 @@ var AdminApp = createComponent({
           NavItem({ eventKey: 'users' }, 'Users'),
           NavItem({ eventKey: 'customize' }, 'Customize'),
           NavItem({ eventKey: 'review' }, 'Review')),
-        RouteHandler({})));
+        RouteHandler({ loggedInUser: this.state.loggedInUser })));
   }
 });
 

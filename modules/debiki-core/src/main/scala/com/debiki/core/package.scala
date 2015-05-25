@@ -45,6 +45,7 @@ package object core {
 
   type EmailId = String
 
+  type AuditLogEntryId = Int
 
   /** Where to start rendering a page. The specified post and all its successors
     * will be included in the resulting page. If None, then all top level posts are
@@ -61,6 +62,8 @@ package object core {
   type UnixMillis = Long // this is millis :-)
 
   val HomepageUrlPath = "/"
+
+  val MillisPerDay: Long = 24 * 3600 * 1000
 
 }
 

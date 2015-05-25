@@ -67,7 +67,7 @@ object EditController extends mvc.Controller {
     _throwIfTooMuchData(newText, pageRequest)
 
     request.dao.editPost(pageId = pageId, postId = postId, editorId = pageRequest.theUser.id,
-      newText)
+      pageRequest.theBrowserIdData, newText)
 
     OkSafeJson(ReactJson.postToJson2(postId = postId, pageId = pageId,
       request.dao, includeUnapproved = true))

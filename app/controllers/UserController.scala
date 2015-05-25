@@ -21,9 +21,9 @@ import actions.ApiActions._
 import collection.mutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.core.User.MinUsernameLength
+import com.debiki.core.User.{isGuestId, MinUsernameLength}
 import debiki._
-import debiki.ReactJson.{DateEpochOrNull, JsStringOrNull, JsBooleanOrNull, JsNumberOrNull}
+import debiki.ReactJson.{DateEpochOrNull, JsStringOrNull, JsBooleanOrNull, JsNumberOrNull, JsLongOrNull}
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
@@ -54,9 +54,10 @@ object UserController extends mvc.Controller {
         onlyApproved = onlyApproved,
         onlyPendingApproval = onlyPendingApproval)
       val approverIds = usersPendingApproval.flatMap(_.approvedById)
-      val approversById = transaction.loadUsersAsMap(approverIds)
+      val suspenderIds = usersPendingApproval.flatMap(_.suspendedById)
+      val usersById = transaction.loadUsersAsMap(approverIds ++ suspenderIds)
       val usersJson = JsArray(usersPendingApproval.map(
-        jsonForCompleteUser(_, approversById, callerIsAdmin = true)))
+        jsonForCompleteUser(_, usersById, callerIsAdmin = true)))
       OkSafeJson(Json.toJson(Map("users" -> usersJson)))
     }
   }
@@ -64,18 +65,26 @@ object UserController extends mvc.Controller {
 
   def loadCompleteUser(userId: String) = GetAction { request =>
     val userIdInt = Try(userId.toInt) getOrElse throwBadReq("DwE6FWV0", "Bad user id")
-    val callerIsAdmin = request.theUser.isAdmin
-    val callerIsUserHerself = request.theUserId == userIdInt
+    val callerIsAdmin = request.user.map(_.isAdmin) == Some(true)
+    val callerIsUserHerself = request.user.map(_.id == userIdInt) == Some(true)
     request.dao.readOnlyTransaction { transaction =>
-      val user = transaction.loadTheCompleteUser(userIdInt)
-      val usersJson = jsonForCompleteUser(user, Map.empty, callerIsAdmin = callerIsAdmin,
-        callerIsUserHerself = callerIsUserHerself)
+      val usersJson =
+        if (User.isRoleId(userIdInt)) {
+          val user = transaction.loadTheCompleteUser(userIdInt)
+          jsonForCompleteUser(user, Map.empty, callerIsAdmin = callerIsAdmin,
+            callerIsUserHerself = callerIsUserHerself)
+        }
+        else {
+          val user = transaction.loadTheUser(userIdInt)
+          jsonForGuest(user, Map.empty, callerIsAdmin = callerIsAdmin)
+
+        }
       OkSafeJson(Json.toJson(Map("user" -> usersJson)))
     }
   }
 
 
-  private def jsonForCompleteUser(user: CompleteUser, approversById: Map[UserId, User],
+  private def jsonForCompleteUser(user: CompleteUser, usersById: Map[UserId, User],
         callerIsAdmin: Boolean = false, callerIsUserHerself: Boolean = false)
         : JsObject = {
     var userJson = Json.obj(
@@ -83,11 +92,14 @@ object UserController extends mvc.Controller {
       "createdAtEpoch" -> JsNumber(user.createdAt.getTime),
       "username" -> user.username,
       "fullName" -> user.fullName,
+      "isAdmin" -> user.isAdmin,
       "country" -> user.country,
-      "url" -> user.website)
+      "url" -> user.website,
+      "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill))
 
     if (callerIsAdmin || callerIsUserHerself) {
-      val anyApprover = user.approvedById.flatMap(approversById.get)
+      val anyApprover = user.approvedById.flatMap(usersById.get)
+      val anySuspender = user.suspendedById.flatMap(usersById.get)
       userJson += "email" -> JsString(user.emailAddress)
       userJson += "emailForEveryNewPost" -> JsBoolean(user.emailForEveryNewPost)
       userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
@@ -95,8 +107,30 @@ object UserController extends mvc.Controller {
       userJson += "approvedById" -> JsNumberOrNull(user.approvedById)
       userJson += "approvedByName" -> JsStringOrNull(anyApprover.map(_.displayName))
       userJson += "approvedByUsername" -> JsStringOrNull(anyApprover.flatMap(_.username))
+      userJson += "suspendedAtEpoch" -> DateEpochOrNull(user.suspendedAt)
+      userJson += "suspendedById" -> JsNumberOrNull(user.suspendedById)
+      userJson += "suspendedByUsername" -> JsStringOrNull(anySuspender.flatMap(_.username))
+      userJson += "suspendedReason" -> JsStringOrNull(user.suspendedReason)
     }
 
+    userJson
+  }
+
+
+  private def jsonForGuest(user: User, usersById: Map[UserId, User],
+        callerIsAdmin: Boolean = false): JsObject = {
+    var userJson = Json.obj(
+      "id" -> user.id,
+      "fullName" -> user.displayName,
+      "country" -> user.country,
+      "url" -> user.website)
+      // += ipSuspendedTill
+      // += browserIdCookieSuspendedTill
+    if (callerIsAdmin) {
+      userJson += "email" -> JsString(user.email)
+      // += ipSuspendedAt, ById, ByUsername, Reason
+      // += browserIdCookieSuspendedAt, ById, ByUsername, Reason
+    }
     userJson
   }
 
@@ -113,6 +147,91 @@ object UserController extends mvc.Controller {
         request.dao.undoApproveOrRejectUser(userId, approverId = request.theUserId)
     }
     Ok
+  }
+
+
+  def suspendUser = AdminPostJsonAction(maxLength = 300) { request =>
+    val userId = (request.body \ "userId").as[UserId]
+    val numDays = (request.body \ "numDays").as[Int]
+    val reason = (request.body \ "reason").as[String]
+    if (numDays < 1)
+      throwBadReq("DwE4FKW0", "Please specify at least one day")
+    if (reason.length > 255)
+      throwBadReq("DwE4FKW0", "Too long suspend-user-reason")
+    if (isGuestId(userId))
+      throwBadReq("DwE5KE8", "Cannot suspend guest user ids")
+
+    request.dao.suspendUser(userId, numDays, reason, suspendedById = request.theUserId)
+    Ok
+  }
+
+
+  def unsuspendUser = AdminPostJsonAction(maxLength = 100) { request =>
+    val userId = (request.body \ "userId").as[UserId]
+    if (isGuestId(userId))
+      throwBadReq("DwE7GPKU8", "Cannot unsuspend guest user ids")
+    request.dao.unsuspendUser(userId)
+    Ok
+  }
+
+
+  def blockGuest = AdminPostJsonAction(maxLength = 100) { request =>
+    val postId = (request.body \ "postId").as[PostId]
+    val numDays = (request.body \ "numDays").as[Int]
+    request.dao.blockGuest(postId, numDays = numDays, blockerId = request.theUserId)
+    Ok
+  }
+
+
+  def unblockGuest = AdminPostJsonAction(maxLength = 100) { request =>
+    val postId = (request.body \ "postId").as[PostId]
+    request.dao.unblockGuest(postId, unblockerId = request.theUserId)
+    Ok
+  }
+
+
+  def loadAuthorBlocks(postId: String) = GetAction { request =>
+    val postIdInt = Try(postId.toInt) getOrElse throwBadReq("DwE4WK78", "Bad post id")
+    val blocks: Seq[Block] = request.dao.loadAuthorBlocks(postIdInt)
+    var json = blocksSummaryJson(blocks, request.ctime)
+    if (request.user.map(_.isStaff) == Some(true)) {
+      json += "blocks" -> JsArray(blocks map blockToJson)
+    }
+    OkSafeJson(json)
+  }
+
+
+  private def blocksSummaryJson(blocks: Seq[Block], now: ju.Date): JsObject = {
+    var isBlocked = false
+    var blockedForever = false
+    var maxEndUnixMillis: UnixMillis = 0L
+    for (block <- blocks) {
+      if (block.blockedTill.isEmpty) {
+        isBlocked = true
+        blockedForever = true
+      }
+      else if (now.getTime <= block.blockedTill.get.getTime) {
+        isBlocked = true
+        maxEndUnixMillis = math.max(maxEndUnixMillis, block.blockedTill.get.getTime)
+      }
+    }
+    var json = Json.obj(
+      "isBlocked" -> isBlocked,
+      "blockedForever" -> blockedForever)
+    if (maxEndUnixMillis != 0L && !blockedForever) {
+      json += "blockedTillMs" -> JsNumber(maxEndUnixMillis)
+    }
+    json
+  }
+
+
+  private def blockToJson(block: Block): JsObject = {
+    Json.obj(
+      "ip" -> JsStringOrNull(block.ip.map(_.toString)),
+      "browserIdCookie" -> block.browserIdCookie,
+      "blockedById" -> block.blockedById,
+      "blockedAtMs" -> block.blockedAt.getTime,
+      "blockedTillMs" -> JsLongOrNull(block.blockedTill.map(_.getTime)))
   }
 
 
@@ -203,6 +322,24 @@ object UserController extends mvc.Controller {
       throwForbidden("DwE44ELK9", "Must not modify one's email")
 
     request.dao.saveRolePreferences(prefs)
+    Ok
+  }
+
+
+  def saveGuest = PostJsonAction(RateLimits.ConfigUser, maxLength = 300) { request =>
+    val guestId = (request.body \ "guestId").as[UserId]
+    val name = (request.body \ "name").as[String].trim
+    val url = (request.body \ "url").as[String].trim
+
+    if (name.isEmpty)
+      throwForbidden("DwE4KWP9", "No name specified")
+
+    try { request.dao.saveGuest(guestId, name = name, url = url) }
+    catch {
+      case DbDao.DuplicateGuest =>
+        throwForbidden("DwE5KQP4", o"""There is another guest with the exact same name
+            and other data. Please change the name, e.g. append "2".""")
+    }
     Ok
   }
 

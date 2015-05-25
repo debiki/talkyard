@@ -71,6 +71,8 @@ export function initAllReactRoots() {
   }
 
   createAnyFlagDialog();
+  pagedialogs.createAboutUserDialog();
+  pagedialogs.createServerErrorDialog();
 }
 
 

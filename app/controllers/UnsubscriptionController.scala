@@ -76,6 +76,7 @@ object UnsubscriptionController extends mvc.Controller {
   def handleForm(tenantId: String) =
         ExceptionAction(parse.urlFormEncoded(maxLength = 200)) {
         implicit request =>
+    SECURITY // SHOULD rate limit and check email type.
 
     // Login.
     val loginAttempt = EmailLoginAttempt(

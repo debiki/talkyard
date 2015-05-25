@@ -35,6 +35,8 @@ object LoginController extends mvc.Controller {
 
   val BecomeOwnerEmailConfigValue = "debiki.becomeOwnerEmailAddress"
 
+  val DiscardingSessionCookie = DiscardingCookie("dwCoSid")
+
 
   /** Opens a popup and a login dialog inside that popup. Useful when logging in
     * in an iframe, because it's not feasible to open modal dialogs from inside
@@ -53,7 +55,7 @@ object LoginController extends mvc.Controller {
     */
   def logout = mvc.Action(parse.empty) { request =>
     // Keep the xsrf cookie, so login dialog works:
-    Ok.discardingCookies(DiscardingCookie("dwCoSid"))
+    Ok.discardingCookies(DiscardingSessionCookie)
   }
 
 

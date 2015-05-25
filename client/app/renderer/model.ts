@@ -27,12 +27,14 @@ interface PostToModerate {
 
 
 interface Post {
-  postId: number;
+  uniqueId: number; // TODO rename to id
+  postId: number;   // TODO rename to nr
   parentId: number;
   multireplyPostIds: number[];
   authorId: string;
   authorFullName: string;
-  authorUsername: string
+  authorUsername: string;
+  authorSuspendedTill?: any;
   createdAt: number;
   lastApprovedEditAt: number;
   numEditors: number;
@@ -150,6 +152,15 @@ interface SpecialContent {
 }
 
 
+interface Guest {
+  id: any;  // TODO change to number, and User.userId too
+  fullName: string;
+  email: string;
+  country: string;
+  url: string;
+}
+
+
 interface CompleteUser {
   id: any;  // TODO change to number, and User.userId too
   createdAtEpoch: number;
@@ -159,11 +170,17 @@ interface CompleteUser {
   emailForEveryNewPost: boolean;
   country: string;
   url: string;
+  isAdmin: boolean;
   isApproved: boolean;
   approvedAtEpoch: number;
   approvedById: number;
   approvedByName: string;
   approvedByUsername: string;
+  suspendedAtEpoch?: number;
+  suspendedTillEpoch?: number;
+  suspendedById?: number;
+  suspendedByUsername?: string;
+  suspendedReason?: string;
 }
 
 
@@ -189,3 +206,22 @@ interface Invite {
   userThreatLevel?: number;
   */
 }
+
+
+interface Blocks {
+  isBlocked: boolean;
+  reason?: string;
+  blockedForever?: boolean;
+  blockedTillMs?: number;
+  blocks?: Block[];
+}
+
+
+interface Block {
+  ip?: string;
+  browserIdCookie?: string;
+  blockedById: number;
+  blockedAtMs: number;
+  blockedTillMs?: number;
+}
+

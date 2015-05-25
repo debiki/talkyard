@@ -462,6 +462,12 @@ object Prelude {
       if (underlying nonEmpty) underlying
       else other
     }
+
+    def trimNoneIfEmpty: Option[String] = {
+      val trimmed = underlying.trim
+      if (trimmed.isEmpty) None
+      else Some(trimmed)
+    }
   }
 
 

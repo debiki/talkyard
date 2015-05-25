@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import java.net.InetAddress
 import java.{util => ju}
 import scala.collection.immutable
 
@@ -31,6 +32,10 @@ trait SiteTransaction {
 
   def loadResourceUsage(): ResourceUse
   def loadAncestorPostIdsParentFirst(pageId: PageId): immutable.Seq[PageId]
+
+  def loadPost(uniquePostId: UniquePostId): Option[Post]
+  def loadThePost(uniquePostId: UniquePostId): Post =
+    loadPost(uniquePostId).getOrElse(throw PostNotFoundByIdException(uniquePostId))
 
   def loadPost(pageId: PageId, postId: PostId): Option[Post]
   def loadThePost(pageId: PageId, postId: PostId): Post =
@@ -98,8 +103,10 @@ trait SiteTransaction {
     loadCompleteUser(userId).getOrElse(throw UserNotFoundException(userId))
 
   def updateCompleteUser(user: CompleteUser): Boolean
+  def updateGuest(guest: User): Boolean
 
   def loadUser(userId: UserId): Option[User]
+  def loadTheUser(userId: UserId) = loadUser(userId).getOrElse(throw UserNotFoundException(userId))
   def loadUsers(userIds: Seq[UserId]): immutable.Seq[User]
   def loadUsersOnPageAsMap2(pageId: PageId, siteId: Option[SiteId] = None): Map[UserId, User]
   def loadUsersAsMap(userIds: Iterable[UserId]): Map[UserId, User]
@@ -118,10 +125,19 @@ trait SiteTransaction {
 
   def saveDeleteNotifications(notifications: Notifications)
 
+  def nextAuditLogEntryId: AuditLogEntryId
+  def insertAuditLogEntry(entry: AuditLogEntry)
+  def loadFirstAuditLogEntry(postId: UniquePostId): Option[AuditLogEntry]
+
+  def loadBlocks(ip: String, browserIdCookie: String): immutable.Seq[Block]
+  def insertBlock(block: Block)
+  def unblockIp(ip: InetAddress)
+  def unblockBrowser(browserIdCookie: String)
 }
 
 
 case class UserNotFoundException(userId: UserId) extends QuickException
 case class PageNotFoundException(pageId: PageId) extends QuickException
 case class PostNotFoundException(pageId: PageId, postId: PostId) extends QuickException
+case class PostNotFoundByIdException(postId: UniquePostId) extends QuickException
 

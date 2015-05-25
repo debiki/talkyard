@@ -38,7 +38,7 @@ trait PostsDao {
 
 
   def insertReply(text: String, pageId: PageId, replyToPostIds: Set[PostId],
-        authorId: UserId): PostId = {
+        authorId: UserId, browserIdData: BrowserIdData): PostId = {
     val htmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(
       text, allowClassIdDataAttrs = false, followLinks = false)
 
@@ -47,7 +47,7 @@ trait PostsDao {
       val uniqueId = transaction.nextPostId()
       val postId = page.parts.highestReplyId.map(_ + 1) getOrElse PageParts.FirstReplyId
       val commonAncestorId = page.parts.findCommonAncestorId(replyToPostIds.toSeq)
-      val parentId =
+      val anyParent =
         if (commonAncestorId == PageParts.NoId) {
           if (page.role == PageRole.EmbeddedComments) {
             // There is no page body. Allow new comment threads with no parent post.
@@ -57,14 +57,14 @@ trait PostsDao {
             throwBadReq("DwE260G8", "Not an embedded discussion. You must reply to something")
           }
         }
-        else if (page.parts.post(commonAncestorId).isDefined) {
-          Some(commonAncestorId)
-        }
         else {
-          throwBadReq("DwEe8HD36", o"""Cannot reply to common ancestor post '$commonAncestorId';
-            it does not exist""")
+          val anyParent = page.parts.post(commonAncestorId)
+          if (anyParent.isEmpty) {
+            throwBadReq("DwEe8HD36", o"""Cannot reply to common ancestor post '$commonAncestorId';
+                it does not exist""")
+          }
+          anyParent
         }
-      val anyParent = parentId.map(page.parts.thePost)
       if (anyParent.map(_.deletedStatus.isDeleted) == Some(true))
         throwForbidden(
           "The parent post has been deleted; cannot reply to a deleted post", "DwE5KDE7")
@@ -99,8 +99,23 @@ trait PostsDao {
         numRepliesVisible = page.parts.numRepliesVisible + (isApproved ? 1 | 0),
         numRepliesTotal = page.parts.numRepliesTotal + 1)
 
+      val auditLogEntry = AuditLogEntry(
+        siteId = siteId,
+        id = AuditLogEntry.UnassignedId,
+        didWhat = AuditLogEntryType.NewPost,
+        doerId = authorId,
+        doneAt = transaction.currentTime,
+        browserIdData = browserIdData,
+        pageId = Some(pageId),
+        uniquePostId = Some(newPost.uniqueId),
+        postNr = Some(newPost.id),
+        targetUniquePostId = anyParent.map(_.uniqueId),
+        targetPostNr = anyParent.map(_.id),
+        targetUserId = anyParent.map(_.createdById))
+
       transaction.insertPost(newPost)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      insertAuditLogEntry(auditLogEntry, transaction)
 
       val notifications = NotificationGenerator(transaction).generateForNewPost(page, newPost)
       transaction.saveDeleteNotifications(notifications)
@@ -112,7 +127,8 @@ trait PostsDao {
   }
 
 
-  def editPost(pageId: PageId, postId: PostId, editorId: UserId, newText: String) {
+  def editPost(pageId: PageId, postId: PostId, editorId: UserId, browserIdData: BrowserIdData,
+        newText: String) {
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       var postToEdit = page.parts.post(postId).getOrElse(
@@ -170,7 +186,20 @@ trait PostsDao {
         editedPost = editedPost.copy(numDistinctEditors = 2)  // for now
       }
 
+      val auditLogEntry = AuditLogEntry(
+        siteId = siteId,
+        id = AuditLogEntry.UnassignedId,
+        didWhat = AuditLogEntryType.EditPost,
+        doerId = editorId,
+        doneAt = transaction.currentTime,
+        browserIdData = browserIdData,
+        pageId = Some(pageId),
+        uniquePostId = Some(postToEdit.uniqueId),
+        postNr = Some(postId),
+        targetUserId = Some(postToEdit.createdById))
+
       transaction.updatePost(editedPost)
+      insertAuditLogEntry(auditLogEntry, transaction)
 
       if (editedPost.isCurrentVersionApproved) {
         val notfs = NotificationGenerator(transaction).generateForEdits(postToEdit, editedPost)
@@ -476,18 +505,6 @@ trait PostsDao {
 
 trait CachingPostsDao extends PagesDao {
   self: CachingSiteDao =>
-
-
-  override def createPage2(pageRole: PageRole, pageStatus: PageStatus,
-        anyParentPageId: Option[PageId], anyFolder: Option[String],
-        titleSource: String, bodySource: String,
-        showId: Boolean, pageSlug: String, authorId: UserId): PagePath = {
-    val pagePath = super.createPage2(pageRole, pageStatus, anyParentPageId,
-      anyFolder, titleSource, bodySource, showId, pageSlug, authorId)
-    firePageCreated(pagePath)
-    pagePath
-  }
-
 
   protected override def refreshPageInAnyCache(pageId: PageId) {
     firePageSaved(SitePageId(siteId = siteId, pageId = pageId))

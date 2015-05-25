@@ -17,10 +17,10 @@
 
 package debiki.dao
 
-import java.util.Date
-
+import actions.SafeActions.SessionRequest
 import com.debiki.core._
 import debiki.DebikiHttp.{throwNotFound, throwForbidden}
+import java.net.InetAddress
 import java.{util => ju}
 import requests.ApiRequest
 import scala.collection.immutable
@@ -110,6 +110,96 @@ trait UserDao {
   }
 
 
+  def suspendUser(userId: UserId, numDays: Int, reason: String, suspendedById: UserId) {
+    require(numDays >= 1, "DwE4PKF8")
+    readWriteTransaction { transaction =>
+      var user = transaction.loadTheCompleteUser(userId)
+      val suspendedTill = new ju.Date(transaction.currentTime.getTime + numDays * MillisPerDay)
+      user = user.copy(
+        suspendedAt = Some(transaction.currentTime),
+        suspendedTill = Some(suspendedTill),
+        suspendedById = Some(suspendedById),
+        suspendedReason = Some(reason.trim))
+      transaction.updateCompleteUser(user)
+    }
+    refreshUserInAnyCache(userId)
+  }
+
+
+  def unsuspendUser(userId: UserId) {
+    readWriteTransaction { transaction =>
+      var user = transaction.loadTheCompleteUser(userId)
+      user = user.copy(suspendedAt = None, suspendedTill = None, suspendedById = None,
+        suspendedReason = None)
+      transaction.updateCompleteUser(user)
+    }
+    refreshUserInAnyCache(userId)
+  }
+
+
+  def blockGuest(postId: UniquePostId, numDays: Int, blockerId: UserId) {
+    readWriteTransaction { transaction =>
+      val auditLogEntry: AuditLogEntry = transaction.loadFirstAuditLogEntry(postId) getOrElse {
+        throwForbidden("DwE2WKF5", "Cannot block user: No audit log entry, IP unknown")
+      }
+
+      if (!User.isGuestId(auditLogEntry.doerId))
+        throwForbidden("DwE4WKQ2", "Cannot block authenticated users. Suspend them instead")
+
+      val blockedTill =
+        Some(new ju.Date(transaction.currentTime.getTime + MillisPerDay * numDays))
+
+      val ipBlock = Block(
+        ip = Some(auditLogEntry.browserIdData.inetAddress),
+        browserIdCookie = None,
+        blockedById = blockerId,
+        blockedAt = transaction.currentTime,
+        blockedTill = blockedTill)
+
+      val browserIdCookieBlock = Block(
+        ip = None,
+        browserIdCookie = Some(auditLogEntry.browserIdData.idCookie),
+        blockedById = blockerId,
+        blockedAt = transaction.currentTime,
+        blockedTill = blockedTill)
+
+      // COULD catch dupl key error when inserting IP block, and continue anyway
+      // with inserting browser id cookie block.
+      transaction.insertBlock(ipBlock)
+      transaction.insertBlock(browserIdCookieBlock)
+    }
+  }
+
+
+  def unblockGuest(postId: PostId, unblockerId: UserId) {
+    readWriteTransaction { transaction =>
+      val auditLogEntry: AuditLogEntry = transaction.loadFirstAuditLogEntry(postId) getOrElse {
+        throwForbidden("DwE5FK83", "Cannot unblock guest: No audit log entry, IP unknown")
+      }
+      transaction.unblockIp(auditLogEntry.browserIdData.inetAddress)
+      transaction.unblockBrowser(auditLogEntry.browserIdData.idCookie)
+    }
+  }
+
+
+  def loadAuthorBlocks(postId: UniquePostId): immutable.Seq[Block] = {
+    readOnlyTransaction { transaction =>
+      val auditLogEntry = transaction.loadFirstAuditLogEntry(postId) getOrElse {
+        return Nil
+      }
+      val browserIdData = auditLogEntry.browserIdData
+      transaction.loadBlocks(ip = browserIdData.ip, browserIdCookie = browserIdData.idCookie)
+    }
+  }
+
+
+  def loadBlocks(ip: String, browserIdCookie: String): immutable.Seq[Block] = {
+    readOnlyTransactionNotSerializable { transaction =>
+      transaction.loadBlocks(ip = ip, browserIdCookie = browserIdCookie)
+    }
+  }
+
+
   def createIdentityUserAndLogin(newUserData: NewUserData): LoginGrant = {
     readWriteTransaction { transaction =>
       val userId = transaction.nextAuthenticatedUserId
@@ -149,8 +239,24 @@ trait UserDao {
   }
 
 
-  def tryLogin(loginAttempt: LoginAttempt): LoginGrant =
-    siteDbDao.tryLogin(loginAttempt)
+  def tryLogin(loginAttempt: LoginAttempt): LoginGrant = {
+    val loginGrant = siteDbDao.tryLogin(loginAttempt)
+    if (loginGrant.user.isSuspendedAt(loginAttempt.date)) {
+      // (This is being rate limited, all post requests are.)
+      val user = loadCompleteUser(loginGrant.user.id) getOrElse throwForbidden(
+        "DwE05KW2", "User gone")
+      // Still suspended?
+      if (user.suspendedAt.isDefined) {
+        val forHowLong = user.suspendedTill match {
+          case None => "forever"
+          case Some(date) => "until " + toIso8601(date)
+        }
+        throwForbidden("DwE403SP0", o"""Account suspended $forHowLong,
+            reason: ${user.suspendedReason getOrElse "?"}""")
+      }
+    }
+    loginGrant
+  }
 
 
   def loadUsers(): immutable.Seq[User] = {
@@ -301,6 +407,50 @@ trait UserDao {
       transaction.updateCompleteUser(user)
     }
     refreshUserInAnyCache(preferences.userId)
+  }
+
+
+  def saveGuest(guestId: UserId, name: String, url: String): Unit = {
+    // BUG: the lost update bug.
+    readWriteTransaction { transaction =>
+      var guest = transaction.loadTheUser(guestId)
+      guest = guest.copy(displayName = name, website = url)
+      transaction.updateGuest(guest)
+    }
+    refreshUserInAnyCache(guestId)
+  }
+
+
+  def perhapsBlockGuest(request: SessionRequest[_]) {
+    if (request.underlying.method == "GET")
+      return
+
+    // Authenticated users are ignored here. Suspend them instead.
+    if (request.sidStatus.userId.map(User.isRoleId) == Some(true))
+      return
+
+    // Ignore not-logged-in people, unless they attempt to login as guests.
+    if (request.sidStatus.userId.isEmpty) {
+      val guestLoginPath = controllers.routes.LoginAsGuestController.loginGuest().url
+      if (!request.path.contains(guestLoginPath))
+        return
+    }
+
+    if (request.browserId.isEmpty)
+      throwForbidden("DwE403NBI0", "No browser id cookie")
+
+    // COULD cache blocks, but not really needed since this is for post requests only.
+    val blocks = loadBlocks(
+      ip = request.remoteAddress,
+      browserIdCookie = request.browserId.get.cookieValue)
+
+    val nowMillis = System.currentTimeMillis
+    for (block <- blocks) {
+      if (block.isActiveAt(nowMillis)) {
+        throwForbidden(
+          "DwE403BK01", "Not allowed. Please authenticate yourself by creating a real account.")
+      }
+    }
   }
 
 

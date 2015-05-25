@@ -17,8 +17,10 @@
 
 package com.debiki.core
 
-import java.{util => ju}
+import java.net.InetAddress
+import java.{net => jn, util => ju}
 import org.scalactic.{Or, Every, ErrorMessage}
+import scala.collection.mutable
 import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
 import User._
@@ -317,6 +319,9 @@ case object User {
     false
   }
 
+  def isSuspendedAt(now: ju.Date, suspendedTill: Option[ju.Date]): Boolean =
+    suspendedTill.map(now.getTime <= _.getTime) == Some(true)
+
 }
 
 
@@ -347,15 +352,16 @@ case class User(
   country: String = "",
   website: String = "",
   isApproved: Option[Boolean],
-  isSuspended: Boolean,
+  suspendedTill: Option[ju.Date],
   isAdmin: Boolean = false,
   isOwner: Boolean = false) {
 
   require(User.isOkayUserId(id), "DwE02k12R5")
   require(username.isEmpty || username.get.length >= 2)
+  require(!isGuest || displayName.trim.nonEmpty, "DwE4KEPF8")
   require(!isGuest || (
     username.isEmpty && createdAt.isEmpty && !isAdmin && !isOwner &&
-      isApproved.isEmpty && !isSuspended &&
+      isApproved.isEmpty && suspendedTill.isEmpty &&
       emailVerifiedAt.isEmpty && passwordHash.isEmpty), "DwE0GUEST426")
   require(!isAuthenticated || (
     username.isDefined &&
@@ -367,6 +373,8 @@ case class User(
 
   def isGuest = User.isGuestId(id)
   def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
+
+  def isSuspendedAt(when: ju.Date) = User.isSuspendedAt(when, suspendedTill = suspendedTill)
 }
 
 
@@ -389,7 +397,8 @@ case class CompleteUser(
   isOwner: Boolean = false,
   suspendedAt: Option[ju.Date] = None,
   suspendedTill: Option[ju.Date] = None,
-  suspendedById: Option[UserId] = None) {
+  suspendedById: Option[UserId] = None,
+  suspendedReason: Option[String] = None) {
 
   require(User.isOkayUserId(id), "DwE077KF2")
   require(username.length >= 2, "DwE6KYU9")
@@ -398,6 +407,9 @@ case class CompleteUser(
   require(isApproved.isEmpty || (approvedById.isDefined && approvedAt.isDefined), "DwE4DKQ1")
   require(suspendedAt.isDefined == suspendedById.isDefined, "DwE64kfe2")
   require(suspendedTill.isEmpty || suspendedAt.isDefined, "DwEJKP75")
+  require(suspendedReason.isDefined == suspendedAt.isDefined, "DwE5JK26")
+  require(suspendedReason.map(_.trim.length) != Some(0), "DwE2KFER0")
+  require(suspendedReason.map(r => r.trim.length < r.length) != Some(true), "DwE4KPF8")
   require(suspendedById.map(_ >= LowestNonGuestId) != Some(false), "DwE7K2WF5")
   require(!isGuest, "DwE0GUEST223")
 
@@ -405,6 +417,8 @@ case class CompleteUser(
 
   def isGuest = User.isGuestId(id)
   def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
+
+  def isSuspendedAt(when: ju.Date) = User.isSuspendedAt(when, suspendedTill = suspendedTill)
 
   def preferences = UserPreferences(
     userId = id,
@@ -433,7 +447,7 @@ case class CompleteUser(
     country = country,
     website = website,
     isApproved = isApproved,
-    isSuspended = false,
+    suspendedTill = suspendedTill,
     isAdmin = isAdmin,
     isOwner = isOwner)
 }
@@ -472,7 +486,14 @@ case class GuestLoginAttempt(
   name: String,
   email: String = "",
   location: String = "",
-  website: String = "")
+  website: String = "") {
+
+  require(ip == ip.trim, "DwE4KWF0")
+  require(name == name.trim && name.trim.nonEmpty, "DwE6FKW3")
+  require(email == email.trim, "DwE83WK2")
+  require(location == location.trim, "DwE0FYF8")
+  require(website == website.trim, "DwE5BKPX0")
+}
 
 case class GuestLoginResult(user: User, isNewUser: Boolean)
 
@@ -606,3 +627,57 @@ case class LoginGrant(
   require(!isNewRole || isNewIdentity)
 }
 
+
+/** An IP number or a browser id cookie that has been blocked and may not
+  * post comments or vote.
+  */
+case class Block(
+  ip: Option[jn.InetAddress],
+  browserIdCookie: Option[String],
+  blockedById: UserId,
+  blockedAt: ju.Date,
+  blockedTill: Option[ju.Date]) {
+
+  require(ip.isDefined != browserIdCookie.isDefined, "DwE5KGU8")
+  require(blockedTill.isEmpty || blockedTill.get.getTime >= blockedAt.getTime, "Dwe2KWC8")
+  require(browserIdCookie.map(_.trim.isEmpty) != Some(true), "DwE4FUK7")
+
+  def isActiveAt(time: UnixMillis): Boolean = blockedTill match {
+    case None => true
+    case Some(date) => time <= date.getTime
+  }
+
+}
+
+
+class BlockedTillMap(
+  datesByIp: Map[InetAddress, ju.Date],
+  datesByBrowserIdCookie: Map[String, ju.Date]) {
+
+  private val blockedTillMap = mutable.HashMap[String, ju.Date]()
+
+  for ((ip, date) <- datesByIp) {
+    blockedTillMap.put(ip.toString, date)
+  }
+
+  for ((id, date) <- datesByBrowserIdCookie) {
+    blockedTillMap.put(id, date)
+  }
+
+  def blockedTill(ip: InetAddress): Option[ju.Date] =
+    blockedTillMap.get(ip.toString)
+
+  def blockedTill(browserIdCookie: String): Option[ju.Date] =
+    blockedTillMap.get(browserIdCookie)
+
+}
+
+
+
+case class BrowserIdData(ip: String, idCookie: String, fingerprint: Int) {
+  require(ip.nonEmpty, "DwE6G9F0")
+  require(idCookie.nonEmpty, "DwE3GJ79")
+
+  def inetAddress = com.google.common.net.InetAddresses.forString(ip)
+
+}

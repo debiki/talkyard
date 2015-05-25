@@ -32,6 +32,11 @@ module boo {
 };
 //------------------------------------------------------------------------------
 
+var MaxGuestId = -2; // place where?
+function isGuest(user: CompleteUser) {
+  return user.id <= MaxGuestId;
+}
+
 var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
@@ -514,6 +519,11 @@ var ReplyReceivers = createComponent({
 
 
 var PostHeader = createComponent({
+  onUserClick: function(event) {
+    debiki2.pagedialogs.aboutUserDialog.open(this.props.post);
+    event.preventDefault();
+  },
+
   copyPermalink: function() {
     var hash = '#post-' + this.props.post.postId;
     var url = window.location.host + '/-' + debiki.getPageId() + hash;
@@ -600,6 +610,21 @@ var PostHeader = createComponent({
 
     var by = post.postId === BodyPostId ? 'By ' : '';
     var isBodyPostClass = post.postId === BodyPostId ? ' dw-ar-p-hd' : '';
+    var suspendedClass = post.authorSuspendedTill ? ' dw-suspended' : '';
+
+    var userLinkProps: any = {
+      className: 'dw-p-by' + suspendedClass,
+      onClick: this.onUserClick,
+      href: authorUrl
+    };
+
+    if (post.authorSuspendedTill === 'Forever') {
+      userLinkProps.title = 'User banned';
+    }
+    else if (post.authorSuspendedTill) {
+      userLinkProps.title = 'User suspended until ' +
+          moment(post.authorSuspendedTill).format('YYYY-MM-DD')
+    }
 
     return (
         r.div({ className: 'dw-p-hd' + isBodyPostClass },
@@ -607,7 +632,7 @@ var PostHeader = createComponent({
           postId,
           anyMark,
           by,
-          r[linkFn]({ className: 'dw-p-by', href: authorUrl }, authorNameElems),
+          r[linkFn](userLinkProps, authorNameElems),
           createdAt,
           editInfo, '. ',
           voteCounts));
