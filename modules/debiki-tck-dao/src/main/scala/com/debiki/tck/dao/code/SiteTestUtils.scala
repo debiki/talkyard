@@ -70,7 +70,7 @@ class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
 
   val defaultGuestLoginAttempt = GuestLoginAttempt(
     ip = "1.1.1.1", date = new ju.Date,
-    name = "GuestName", email = "guest-email@ex.com", location = "", website = "")
+    name = "GuestName", email = "guest-email@ex.com", guestCookie = "", website = "")
 
 
   def loginAsGuest(name: String, ip: String = "0.0.0.1"): User = {

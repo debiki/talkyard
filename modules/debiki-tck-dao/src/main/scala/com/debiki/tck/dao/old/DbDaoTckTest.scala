@@ -204,7 +204,7 @@ object Templates {
 
   val guestLoginAttempt = GuestLoginAttempt(
     ip = "1.1.1.1", date = new ju.Date,
-    name = "Målligan", email = "no@email.no", location = "", website = "")
+    name = "Målligan", email = "no@email.no", guestCookie = "", website = "")
 
   val openIdLoginAttempt = OpenIdLoginAttempt(
     ip = "1.1.1.1", date = new ju.Date,

@@ -38,7 +38,6 @@ object LoginAsGuestController extends mvc.Controller {
     val json = request.body.as[JsObject]
     val name = (json \ "name").as[String]
     val email = (json \ "email").as[String]
-    val url = (json \ "url").as[String]
 
     def failLogin(errCode: String, summary: String, details: String) =
       throwForbiddenDialog(errCode, "Login Failed", summary, details)
@@ -56,10 +55,6 @@ object LoginAsGuestController extends mvc.Controller {
       failLogin("DwE0432hrsk23", "Weird email.",
         "Please specify an email address with no weird characters.")
 
-    if (User urlIsWeird url)
-      failLogin("DwE734krsn215", "Weird URL.",
-        "Please specify a website address with no weird characters.")
-
     val addr = request.ip
     val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
 
@@ -68,8 +63,7 @@ object LoginAsGuestController extends mvc.Controller {
       date = new ju.Date,
       name = name,
       email = email,
-      location = "",
-      website = url)
+      guestCookie = request.theBrowserIdData.idCookie)
 
     val guestUser = Globals.siteDao(tenantId).loginAsGuest(loginAttempt)
 

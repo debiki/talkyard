@@ -307,17 +307,11 @@ case object User {
   }
 
 
-  /**
-   * Allows all chars but control chars, space and < >
-   */
-  def urlIsWeird(url: String): Boolean = {
-    for (c <- url if c < 0x80) {
-      if (c <= ' ') return true  // forbid control chars and space
-      if ("<>" contains c) return true
-      if (c == 127) return true  // control char?
-    }
-    false
+  def isOkayGuestCookie(anyValue: Option[String]) = anyValue match {
+    case None => false
+    case Some(value) => value.nonEmpty && value.trim == value
   }
+
 
   def isSuspendedAt(now: ju.Date, suspendedTill: Option[ju.Date]): Boolean =
     suspendedTill.map(now.getTime <= _.getTime) == Some(true)
@@ -344,6 +338,7 @@ case class User(
   id: UserId,
   displayName: String,
   username: Option[String],
+  guestCookie: Option[String],
   createdAt: Option[ju.Date],
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
@@ -359,12 +354,14 @@ case class User(
   require(User.isOkayUserId(id), "DwE02k12R5")
   require(username.isEmpty || username.get.length >= 2)
   require(!isGuest || displayName.trim.nonEmpty, "DwE4KEPF8")
+  require(!isGuest || User.isOkayGuestCookie(guestCookie), "DwE5QF7")
   require(!isGuest || (
     username.isEmpty && createdAt.isEmpty && !isAdmin && !isOwner &&
       isApproved.isEmpty && suspendedTill.isEmpty &&
-      emailVerifiedAt.isEmpty && passwordHash.isEmpty), "DwE0GUEST426")
+      emailVerifiedAt.isEmpty && passwordHash.isEmpty && website.isEmpty), "DwE0GUEST426")
   require(!isAuthenticated || (
     username.isDefined &&
+    guestCookie.isEmpty &&
     createdAt.isDefined), "DwE0AUTH6U82")
 
   def isAuthenticated = isRoleId(id)
@@ -439,6 +436,7 @@ case class CompleteUser(
     id = id,
     displayName = fullName,
     username = Some(username),
+    guestCookie = None,
     createdAt = Some(createdAt),
     email = emailAddress,
     emailNotfPrefs = emailNotfPrefs,
@@ -485,14 +483,12 @@ case class GuestLoginAttempt(
   date: ju.Date,
   name: String,
   email: String = "",
-  location: String = "",
-  website: String = "") {
+  guestCookie: String) {
 
   require(ip == ip.trim, "DwE4KWF0")
   require(name == name.trim && name.trim.nonEmpty, "DwE6FKW3")
   require(email == email.trim, "DwE83WK2")
-  require(location == location.trim, "DwE0FYF8")
-  require(website == website.trim, "DwE5BKPX0")
+  require(guestCookie == guestCookie.trim && guestCookie.nonEmpty && guestCookie != "-", "DwE0FYF8")
 }
 
 case class GuestLoginResult(user: User, isNewUser: Boolean)
