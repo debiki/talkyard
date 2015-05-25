@@ -30,10 +30,41 @@ var $: JQueryStatic = d.i.$;
 var origin = d.i.serverOrigin;
 
 
+interface RequestData {
+  data: any;
+  success: (response: any) => void;
+  error?: (jqXhr: any, textStatus?: string, errorThrown?: string) => void;
+}
+
+
+function postJson(urlPath: string, requestData: RequestData) {
+  d.u.postJson({
+    url: origin + urlPath,
+    data: requestData.data,
+    success: requestData.success,
+    error: (jqXhr: any, textStatus: string, errorThrown: string) => {
+      console.error('Error calling ' + urlPath + ': ' + JSON.stringify(jqXhr));
+      pagedialogs.serverErrorDialog.open(jqXhr);
+      if (requestData.error) {
+        requestData.error(jqXhr, textStatus, errorThrown);
+      }
+    }
+  });
+}
+
+
+function postJsonSuccess(urlPath, success: (response: any) => void, data: any) {
+  postJson(urlPath, {
+    data: data,
+    success: success,
+    error: null
+  });
+}
+
+
 export function createSite(emailAddress: string, localHostname: string,
     anyEmbeddingSiteAddress: string, doneCallback: (string) => void) {
-  d.u.postJson({
-    url: origin + '/-/create-site',
+  postJson('/-/create-site', {
     data: {
       acceptTermsAndPrivacy: true,
       emailAddress: emailAddress,
@@ -42,11 +73,7 @@ export function createSite(emailAddress: string, localHostname: string,
     },
     success: (response) => {
       doneCallback(response.newSiteOrigin);
-    },
-    error: (x, y, z) => {
-      console.error('Error creating site: ' + JSON.stringify([x, y, z]));
-      alert(x.responseText);
-    },
+    }
   });
 }
 
@@ -74,17 +101,8 @@ export function loadSettings(type: string, pageId: string, doneCallback: (any) =
 }
 
 
-export function saveSetting(setting: Setting, doneCallback: () => void) {
-  d.u.postJson({
-    url: origin + '/-/save-setting',
-    data: setting,
-    success: (response) => {
-      doneCallback();
-    },
-    error: (x, y, z) => {
-      console.error('Error saving new reply: ' + JSON.stringify([x, y, z]));
-    },
-  });
+export function saveSetting(setting: Setting, success: () => void) {
+  postJsonSuccess('/-/save-setting', success, setting);
 }
 
 
@@ -103,7 +121,7 @@ export function loadSpecialContent(rootPageId: string, contentId: string,
 }
 
 
-export function saveSpecialContent(specialContent: SpecialContent, doneCallback: () => void) {
+export function saveSpecialContent(specialContent: SpecialContent, success: () => void) {
   var data: any = {
     rootPageId: specialContent.rootPageId,
     contentId: specialContent.contentId,
@@ -112,16 +130,7 @@ export function saveSpecialContent(specialContent: SpecialContent, doneCallback:
   if (!data.useDefaultText) {
     data.anyCustomText = specialContent.anyCustomText;
   }
-  d.u.postJson({
-    url: origin + '/-/save-special-content',
-    data: data,
-    success: (response) => {
-      doneCallback();
-    },
-    error: (x, y, z) => {
-      console.error('Error saving special content: ' + JSON.stringify([x, y, z]));
-    },
-  });
+  postJsonSuccess('/-/save-special-content', success, data);
 }
 
 
@@ -166,19 +175,10 @@ export function rejectEdits(post: PostToModerate, doneCallback: () => void) {
 }
 
 
-function doSomethingWithPost(post: PostToModerate, actionUrl: string, doneCallback: () => void) {
-  d.u.postJson({
-    url: origin + actionUrl,
-    data: {
-      pageId: post.pageId,
-      postId: post.id,
-    },
-    success: (response) => {
-      doneCallback();
-    },
-    error: (x, y, z) => {
-      console.error('Error invoking ' + actionUrl + ': ' + JSON.stringify([x, y, z]));
-    },
+function doSomethingWithPost(post: PostToModerate, actionUrl: string, success: () => void) {
+  postJsonSuccess(actionUrl, success, {
+    pageId: post.pageId,
+    postId: post.id,
   });
 }
 
@@ -207,20 +207,8 @@ export function listCompleteUsers(whichUsers,
 }
 
 
-export function sendInvite(toEmailAddress: string, whenDone: (invite: Invite) => void) {
-  d.u.postJson({
-    url: origin + '/-/send-invite',
-    data: {
-      toEmailAddress: toEmailAddress
-    },
-    success: (response) => {
-      whenDone(response);
-    },
-    error: (x, y, z) => {
-      console.error('Error inviting user: ' + JSON.stringify([x, y, z]));
-      alert(x.responseText);
-    },
-  });
+export function sendInvite(toEmailAddress: string, success: (invite: Invite) => void) {
+  postJsonSuccess('/-/send-invite', success, { toEmailAddress: toEmailAddress });
 }
 
 
@@ -235,64 +223,32 @@ export function loadInvitesSentBy(userId: number, doneCallback: (invites: Invite
 }
 
 
-export function approveRejectUser(user: CompleteUser, doWhat: string, whenDone: () => void) {
-  d.u.postJson({
-    url: origin + '/-/approve-reject-user',
-    data: {
-      userId: user.id,
-      doWhat: doWhat
-    },
-    success: (response) => {
-      whenDone();
-    },
-    error: (x, y, z) => {
-      console.error('Error approving/rejecting user: ' + JSON.stringify([x, y, z]));
-    },
+export function approveRejectUser(user: CompleteUser, doWhat: string, success: () => void) {
+  postJsonSuccess( '/-/approve-reject-user', success, {
+    userId: user.id,
+    doWhat: doWhat
   });
 }
 
 
-export function suspendUser(userId: number, numDays: number, reason: string, whenDone: () => void) {
-  d.u.postJson({
-    url: origin + '/-/suspend-user',
-    data: {
-      userId: userId,
-      numDays: numDays,
-      reason: reason
-    },
-    success: (response) => {
-      whenDone();
-    },
-    error: (x, y, z) => {
-      console.error('Error suspending user: ' + JSON.stringify([x, y, z]));
-    },
+export function suspendUser(userId: number, numDays: number, reason: string, success: () => void) {
+  postJsonSuccess('/-/suspend-user', success, {
+    userId: userId,
+    numDays: numDays,
+    reason: reason
   });
 }
 
 
-export function unsuspendUser(userId: number, whenDone: () => void) {
-  d.u.postJson({
-    url: origin + '/-/unsuspend-user',
-    data: {
-      userId: userId
-    },
-    success: (response) => {
-      whenDone();
-    },
-    error: (x, y, z) => {
-      console.error('Error unsuspending user: ' + JSON.stringify([x, y, z]));
-    },
-  });
+export function unsuspendUser(userId: number, success: () => void) {
+  postJsonSuccess('/-/unsuspend-user', success, { userId: userId });
 }
 
 
 export function savePageNoftLevel(newNotfLevel) {
-  d.u.postJson({
-    url: origin + '/-/save-page-notf-level',
-    data: {
-      pageId: d.i.pageId,
-      pageNotfLevel: newNotfLevel
-    }
+  postJsonSuccess('/-/save-page-notf-level', null, {
+    pageId: d.i.pageId,
+    pageNotfLevel: newNotfLevel
   });
 }
 
@@ -355,55 +311,23 @@ export function loadUserPreferences(userId,
 }
 
 
-export function saveUserPreferences(prefs, doneCallback: () => void) {
-  d.u.postJson({
-    url: origin + '/-/save-user-preferences',
-    data: prefs,
-    success: doneCallback,
-    error: (x, y, z) => {
-      console.error('Error saving user preferences: ' + JSON.stringify([x, y, z]));
-      alert(x.responseText);
-    }
-  });
+export function saveUserPreferences(prefs, success: () => void) {
+  postJsonSuccess('/-/save-user-preferences', success, prefs);
 }
 
 
-export function saveGuest(guest, doneCallback: () => void) {
-  d.u.postJson({
-    url: origin + '/-/save-guest',
-    data: guest,
-    success: doneCallback,
-    error: (x, y, z) => {
-      console.error('Error saving guest: ' + JSON.stringify([x, y, z]));
-      alert(x.responseText);
-    }
-  });
+export function saveGuest(guest, success: () => void) {
+  postJsonSuccess('/-/save-guest', success, guest);
 }
 
 
-export function blockGuest(postId: number, numDays: number, doneCallback: () => void) {
-  d.u.postJson({
-    url: origin + '/-/block-guest',
-    data: { postId: postId, numDays: numDays },
-    success: doneCallback,
-    error: (x, y, z) => {
-      console.error('Error blocking guest: ' + JSON.stringify([x, y, z]));
-      alert(x.responseText);
-    }
-  });
+export function blockGuest(postId: number, numDays: number, success: () => void) {
+  postJsonSuccess('/-/block-guest', success, { postId: postId, numDays: numDays });
 }
 
 
-export function unblockGuest(postId: number, whenDone: () => void) {
-  d.u.postJson({
-    url: origin + '/-/unblock-guest',
-    data: { postId: postId },
-    success: whenDone,
-    error: (x, y, z) => {
-      console.error('Error unblocking guest: ' + JSON.stringify([x, y, z]));
-      alert(x.responseText);
-    }
-  });
+export function unblockGuest(postId: number, success: () => void) {
+  postJsonSuccess('/-/unblock-guest', success, { postId: postId });
 }
 
 
@@ -489,8 +413,7 @@ export function loadCurrentPostText(postId: number, doneCallback: (text: string)
 
 
 export function saveEdits(postId: number, text: string, doneCallback: () => void) {
-  d.u.postJson({
-    url: origin + '/-/edit',
+  postJson('/-/edit', {
     data: {
       pageId: d.i.pageId,
       postId: postId,
@@ -499,17 +422,13 @@ export function saveEdits(postId: number, text: string, doneCallback: () => void
     success: (response) => {
       doneCallback();
       d.i.handleEditResult(response);
-    },
-    error: (x, y, z) => {
-      console.error('Error saving text: ' + JSON.stringify([x, y, z]));
-    },
+    }
   });
 }
 
 
-export function saveReply(postIds: number[], text: string, doneCallback: () => void) {
-  d.u.postJson({
-    url: origin + '/-/reply',
+export function saveReply(postIds: number[], text: string, success: () => void) {
+  postJson('/-/reply', {
     data: {
       pageId: d.i.pageId,
       pageUrl: d.i.iframeBaseUrl || undefined,
@@ -517,47 +436,29 @@ export function saveReply(postIds: number[], text: string, doneCallback: () => v
       text: text
     },
     success: (response) => {
-      doneCallback();
+      success();
       d.i.handleReplyResult(response);
-    },
-    error: (x, y, z) => {
-      console.error('Error saving new reply: ' + JSON.stringify([x, y, z]));
-      pagedialogs.serverErrorDialog.open(x);
-    },
+    }
   });
 }
 
 
-export function flagPost(postId: string, flagType: string, reason: string,
-      doneCallback: () => void) {
-  d.u.postJson({
-    url: origin + '/-/flag',
-    data: {
-      pageId: d.i.pageId,
-      postId: postId,
-      type: flagType,
-      reason: reason
-    },
-    success: (response) => {
-      doneCallback();
-    },
-    error: (x, y, z) => {
-      console.error('Error flagging post: ' + JSON.stringify([x, y, z]));
-    },
+export function flagPost(postId: string, flagType: string, reason: string, success: () => void) {
+  postJsonSuccess('/-/flag', success, {
+    pageId: d.i.pageId,
+    postId: postId,
+    type: flagType,
+    reason: reason
   });
 }
 
 
 export function createPage(data, doneCallback: (newPageId: string) => void) {
-  d.u.postJson({
-    url: origin + '/-/create-page',
+  postJson('/-/create-page', {
     data: data,
     success: (response) => {
       doneCallback(response.newPageId);
-    },
-    error: (x, y, z) => {
-      console.error('Error saving new reply: ' + JSON.stringify([x, y, z]));
-    },
+    }
   });
 }
 
