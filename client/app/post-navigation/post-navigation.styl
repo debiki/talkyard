@@ -6,7 +6,7 @@
   width: 100%;
   z-index: 100;
 
-.touch #dw-posts-navigation
+html:not(.mouse) #dw-posts-navigation
   bottom: auto
   top: 0
 
@@ -17,12 +17,12 @@
   bottom: 0;
   background: #bbb;
 
-.touch #dw-post-nav-panel
+html:not(.mouse) #dw-post-nav-panel
   bottom: auto;
   top: 0;
 
 
-html.touch #dw-post-nav-panel
+html:not(.mouse) #dw-post-nav-panel
   left: 0;
 
 #dw-post-nav-back-btn
@@ -41,7 +41,7 @@ html.touch #dw-post-nav-panel
     opacity: 0.45;
 
 // This is for the B and F in Back and Forward, they're shortcuts.
-html:not(.touch)
+html.mouse
   #dw-post-nav-forw-btn,
   #dw-post-nav-back-btn
     .dw-shortcut

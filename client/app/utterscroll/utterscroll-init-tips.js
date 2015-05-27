@@ -35,9 +35,6 @@ var tipsHtmlStr =
  * use the horizontal scrollbar.
  */
 d.i.initUtterscrollAndTips = function() {
-  if (Modernizr.touch && console.error)
-    console.error('Utterscroll loaded on touch device');
-
   // Activate Utterscroll, and show tips if people use the window scrollbars,
   // hide it on utterscroll.
   var hasUtterscrolled = false;

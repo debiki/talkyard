@@ -42,19 +42,16 @@ bower_components/
 # COULD place generated files in public/build/ instead? and ignore build/.
 public/res/admin-app.*
 public/res/admin-old.*
-public/res/combined-debiki*
+public/res/combined-debiki.*
 public/res/debiki-spa-*
 public/res/debiki-dashbar*
 public/res/debiki-embedded-comments.*
-public/res/embedded-comments.js
-public/res/embedded-comments.min.js
-public/res/login-popup.js
-public/res/login-popup.min.js
+public/res/embedded-comments.*
+public/res/login-popup.*
 public/res/mentions-remarkable-plugin.min.js
 public/res/modernizr.min.js
 public/res/renderer.js
 public/res/renderer.min.js
-public/themes/*
 
 # Ignore generated test JS files.
 test-client/debiki-utils.js
@@ -68,4 +65,5 @@ test-client/unit/spa/admin/*.js
 # Ignore my shorthand softlinks (to ./scripts/ and ./scripts/local/).
 s
 scripts/l
+scripts/s.sh
 

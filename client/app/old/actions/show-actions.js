@@ -20,7 +20,7 @@ var $ = d.i.$;
 
 
 d.i.showPostActions = function(node) {
-    if (Modernizr.touch)
+    if (!debiki2.utils.isMouseDetected)
       return;
 
     var $i = $(node);
@@ -50,7 +50,7 @@ d.i.showPostActions = function(node) {
 
 // Shows actions for the current post, or the last post hovered.
 d.i.$showActions = function() {
-  if (Modernizr.touch)
+  if (!debiki2.utils.isMouseDetected)
     return;
 
   var actions = $(this).closest('.dw-t').children('.dw-as');
@@ -66,7 +66,7 @@ d.i.$showActions = function() {
 
 
 function hideActions(anyActionsToShowInstead) {
-  if (Modernizr.touch)
+  if (!debiki2.utils.isMouseDetected)
     return;
 
   var actionsToHide = $('#dw-p-as-shown');

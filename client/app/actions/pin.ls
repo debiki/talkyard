@@ -31,7 +31,7 @@ horizontallySortablePinsSelector = ".dw-res:has(> li #horizontalHandle)"
 
 
 d.i.makePinsDragsortable = !->
-  if Modernizr.touch
+  if Modernizr.touch # COULD do anyway on a [laptopwithtouch].
     return
   # Vertical threads:
   $(verticallySortablePinsSelector).sortable(verticalSettings)

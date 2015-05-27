@@ -35,13 +35,14 @@ d.i.makeThreadResizableForPost = function(post) {
   // `$.find(..)', and finds the wrong resizable stuff,
   // if the *inner* tag is made resizable before the *outer* tag.
   //
-  // However for touch devises, don't enable resizing of posts: it doesn't
+  // For touch devises, don't enable resizing of posts: it doesn't
   // work, and the resize handles steal touch events from buttons nearby.
-  if (!Modernizr.touch)
+  debiki2.utils.onMouseDetected(function() {
     $thread.filter(function() {
       var $i = $(this);
       return !$i.is('.dw-i-t') && $i.parent().closest('.dw-t').is('.dw-hz');
     }).each($makeThreadEastResizable);
+  });
 };
 
 

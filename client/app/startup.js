@@ -199,8 +199,8 @@ function renderDiscussionPage() {
   steps.push(function() {
     debiki2.ReactStore.activateUserSpecificData();
 
-    if (d.i.layout === 'TreeLayout' && !Modernizr.touch) {
-      d.i.initUtterscrollAndTips();
+    if (d.i.layout === 'TreeLayout') {
+      debiki2.utils.onMouseDetected(d.i.initUtterscrollAndTips);
     }
 
     // Show root post actions initially.
@@ -212,6 +212,7 @@ function renderDiscussionPage() {
   steps.push(function() {
     debiki2.initAllReactRoots();
     registerEventHandlersFireLoginOut();
+    debiki2.utils.startDetectingMouse();
   });
 
   // COULD fire login earlier; it's confusing that the 'Login' link
@@ -264,12 +265,11 @@ d.i.renderEmptyPage = function() {
   // root post — e.g. on blog list pages, which list child pages only but no
   // main title or article.)
   configureAjaxRequests();
-  if (!Modernizr.touch) {
-    d.i.initUtterscrollAndTips();
-  }
+  debiki2.utils.onMouseDetected(d.i.initUtterscrollAndTips);
   debiki2.initAllReactRoots();
   debiki2.ReactStore.activateUserSpecificData();
   fireLoginOrLogout();
+  debiki2.utils.startDetectingMouse();
 };
 
 

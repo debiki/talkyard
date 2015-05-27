@@ -32,7 +32,7 @@
   top: -8px
   margin-top: -10px;
 
-html:not(.touch) .dw-p-as:not(.dw-p-as-shown)
+html.mouse .dw-p-as:not(.dw-p-as-shown)
   opacity: 0.15
   .dw-a:before
     // Dim icons even more, since they are otherwise eye catching blubs of colors.
@@ -58,8 +58,10 @@ html:not(.touch) .dw-p-as:not(.dw-p-as-shown)
   .dw-a-close-tree
     display: none !important
 
-.dw-depth-0 > .dw-num-likes > a
-  float: right
+.dw-depth-0 > .dw-num-likes
+  margin-top: 5px;
+  & > a
+    float: right
 
 .dw-ar-t > .dw-p-as > .dw-a-wrong
   // Don't make it possible to vote "Wrong" for the forum question or blog post.
@@ -71,10 +73,10 @@ html:not(.touch) .dw-p-as:not(.dw-p-as-shown)
   font-weight: bold;
   margin-left: 0
 
-.dw-ar-t > .dw-p-as > .dw-a-reply
+html.mouse .dw-ar-t > .dw-p-as .dw-a
   padding: 5px 8px 5px 5px !important;
 
-html.touch .dw-ar-t > .dw-p-as > .dw-a-reply
+html:not(.mouse) .dw-ar-t > .dw-p-as > .dw-a-reply
   padding: 10px 10px 9px 6px !important;  // 10 + 2 = 12 [9kDF35Q]
   top: 2px;
   position: relative;
@@ -97,7 +99,7 @@ html.touch .dw-ar-t > .dw-p-as > .dw-a-reply
   float: right;
 
 .DW .dw-t > .dw-p-as .dw-a
-  padding: 5px 7px 5px 3px;
+  padding: 12px 8px 10px 6px;  //  12px high [9kDF35Q]
   background: #fff;
   border: none;
 
@@ -114,11 +116,9 @@ html.touch .dw-ar-t > .dw-p-as > .dw-a-reply
     color: hsl(210, 100%, 30%);
     text-decoration: none;
 
-html.touch .dw-t > .dw-p-as .dw-a
-  padding: 12px 8px 10px 6px;  //  12px high [9kDF35Q]
+html:not(.mouse) .dw-t > .dw-p-as .dw-a
   outline: none; // no is-focused outline
-  &.dw-a-more
-    padding-left: 8px;
+
 
 // Prevent float drop when vote highlighted and font larger and button therefore wider.
 .DW.DW .dw-p-as .dw-a.dw-my-vote

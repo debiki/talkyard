@@ -120,11 +120,10 @@ occurrence of the magic string with user specific data. *@
     }
   }, debiki);
 
+  @* COULD nowadays inline the script instead and call 'startupCode' from inside the script. *@
   debiki.scriptLoad = $.Deferred();
   yepnope({
-    test: Modernizr.touch,
-    yep: '@asset(s"combined-debiki-touch.$minMaxJs")',
-    nope: '@asset(s"combined-debiki-desktop.$minMaxJs")',
+    load: '@asset(s"combined-debiki.$minMaxJs")',
     complete: function() {
       @* Because of evil magic, this `complete()` callback is sometimes invoked before the above
          lazy-loaded scripts have been evaluated, resulting in an 'undefined' error when calling

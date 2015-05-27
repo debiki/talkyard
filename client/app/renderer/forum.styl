@@ -105,17 +105,19 @@
 // Categories
 //===========================
 
-.parent-forums-list {
-  margin: -20px 0 0;
-}
-
-.touch .parent-forums-list
-  margin-top: 30px;
+.parent-forums-list
+  margin: -25px 0 0; // place inside the #dw-react-topbar, or too much whitespace above title
+  padding-left: 0; // needed for FF, not Chrome. Weird
+  @media (max-width: 600px)
+    margin-top: 30px;  // don't overlap with #dw-react-topbar contents
 
 .parent-forums-list li {
   margin: 0;
   list-style-type: none;
   display: inline-block;
+  // Make it clickable: (otherwise #dw-react-topbar might steal clicks)
+  z-index: 1;
+  position: relative;
 }
 
 .parent-forums-list li::after {

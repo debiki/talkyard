@@ -243,9 +243,6 @@ a:visited { color: hsl(211, 30%, 40%); }
   min-height: 70ex;
   margin: 16px 0;
 }
-.touch #content {
-  margin: 0;
-}
 
 footer, .footer {
   background-color: #3e5a75;
@@ -340,7 +337,7 @@ input, textarea {
   margin-left: 1.1em;
 }
 
-html:not(.dw-admin-page):not(.touch) .container {
+html:not(.dw-admin-page):.mouse .container {
   width: 940px;
 }
 
