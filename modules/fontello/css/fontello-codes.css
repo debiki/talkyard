@@ -50,6 +50,11 @@
 .icon-link:before { content: '\e82a'; } /* '' */
 .icon-comment:before { content: '\e82b'; } /* '' */
 .icon-comment-empty:before { content: '\e82c'; } /* '' */
+.icon-spoon:before { content: '\e82d'; } /* '' */
+.icon-attention-circled:before { content: '\e82e'; } /* '' */
+.icon-circle:before { content: '\e82f'; } /* '' */
+.icon-circle-empty:before { content: '\e830'; } /* '' */
+.icon-cancel-circled:before { content: '\e831'; } /* '' */
 .icon-facebook:before { content: '\f09a'; } /* '' */
 .icon-google-plus:before { content: '\f0d5'; } /* '' */
 .icon-linkedin:before { content: '\f0e1'; } /* '' */

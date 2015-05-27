@@ -61,6 +61,12 @@
       "src": "fontawesome"
     },
     {
+      "uid": "0f4cae16f34ae243a6144c18a003f2d8",
+      "css": "cancel-circled",
+      "code": 59441,
+      "src": "fontawesome"
+    },
+    {
       "uid": "44e04715aecbca7f266a17d5a7863c68",
       "css": "plus",
       "code": 59422,
@@ -157,6 +163,12 @@
       "src": "fontawesome"
     },
     {
+      "uid": "b035c28eba2b35c6ffe92aee8b0df507",
+      "css": "attention-circled",
+      "code": 59438,
+      "src": "fontawesome"
+    },
+    {
       "uid": "f48ae54adfb27d8ada53d0fd9e34ee10",
       "css": "trash",
       "code": 59398,
@@ -229,6 +241,18 @@
       "src": "fontawesome"
     },
     {
+      "uid": "130380e481a7defc690dfb24123a1f0c",
+      "css": "circle",
+      "code": 59439,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "422e07e5afb80258a9c4ed1706498f8a",
+      "css": "circle-empty",
+      "code": 59440,
+      "src": "fontawesome"
+    },
+    {
       "uid": "3e674995cacc2b09692c096ea7eb6165",
       "css": "megaphone",
       "code": 59432,
@@ -250,6 +274,12 @@
       "uid": "44a0e2660ac966cdfaa04deb6aac51df",
       "css": "shield",
       "code": 59420,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "3964e28e6bdf85b3b70df3533db69867",
+      "css": "spoon",
+      "code": 59437,
       "src": "fontawesome"
     },
     {
