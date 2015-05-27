@@ -27,7 +27,7 @@
 var gulp = require('gulp');
 var newer = require('gulp-newer');
 var templateCache = require('gulp-angular-templatecache');
-var typeScript = require('gulp-tsc');
+var typeScript = require('gulp-typescript');
 var liveScript = require('gulp-livescript');
 var stylus = require('gulp-stylus');
 var minifyCSS = require('gulp-minify-css');
@@ -196,17 +196,20 @@ gulp.task('compile-livescript', function () {
     .pipe(gulp.dest('./target/client/'));
 });
 
+var serverSideTypescriptProject = typeScript.createProject({
+    target: 'ES5',
+    allowBool: true,
+    noExternalResolve: true,
+    out: 'renderer.js'
+});
+
 
 function compileServerSideTypescript() {
   var typescriptStream = gulp.src([
         'client/server/**/*.ts',
+        'client/shared/plain-old-javascript.d.ts',
         'client/typedefs/**/*.ts'])
-    .pipe(typeScript({
-      target: 'ES5',
-      allowBool: true,
-      tmpDir: 'target/client/',
-      out: 'renderer.js'
-    }));
+    .pipe(typeScript(serverSideTypescriptProject));
 
   if (watchAndLiveForever) {
     typescriptStream.on('error', function() {
@@ -233,17 +236,21 @@ function compileServerSideTypescript() {
 }
 
 
+var clientSideTypescriptProject = typeScript.createProject({
+    target: 'ES5',
+    allowBool: true,
+    noExternalResolve: true,
+    out: 'all-typescript.js'
+});
+
+
 function compileClientSideTypescript() {
   var stream = gulp.src([
         'client/app/**/*.ts',
         'client/admin-app/**/*.ts',
+        'client/shared/plain-old-javascript.d.ts',
         'client/typedefs/**/*.ts'])
-    .pipe(typeScript({
-      target: 'ES5',
-      allowBool: true,
-      tmpDir: 'target/client/',
-      out: 'all-typescript.js'
-    }));
+    .pipe(typeScript(clientSideTypescriptProject));
 
   if (watchAndLiveForever) {
     stream.on('error', function() {
