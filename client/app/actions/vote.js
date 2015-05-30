@@ -32,20 +32,6 @@ function toggleVoteImpl(voteBtn, voteType) {
   var post = thread.children('.dw-p');
   var postId = post.dwPostId();
 
-  var voteType = undefined;
-  if (voteBtn.is('.dw-a-like')) {
-    voteType = 'VoteLike';
-  }
-  else if (voteBtn.is('.dw-a-wrong')) {
-    voteType = 'VoteWrong';
-  }
-  else if (voteBtn.is('.dw-a-offtopic')) {
-    voteType = 'VoteOffTopic';
-  }
-  else {
-    d.u.die('DwE218F7');
-  }
-
   var action;
   var postIdsRead = undefined;
   if (voteBtn.is('.dw-my-vote')) {

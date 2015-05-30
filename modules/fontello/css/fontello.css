@@ -2,11 +2,11 @@
 
  @font-face {
   font-family: 'fontello';
-  src: url('../font/fontello.eot?65785246');
-  src: url('../font/fontello.eot?65785246#iefix') format('embedded-opentype'),
-       url('../font/fontello.woff?65785246') format('woff'),
-       url('../font/fontello.ttf?65785246') format('truetype'),
-       url('../font/fontello.svg?65785246#fontello') format('svg');
+  src: url('../font/fontello.eot?53672073');
+  src: url('../font/fontello.eot?53672073#iefix') format('embedded-opentype'),
+       url('../font/fontello.woff?53672073') format('woff'),
+       url('../font/fontello.ttf?53672073') format('truetype'),
+       url('../font/fontello.svg?53672073#fontello') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -16,7 +16,7 @@
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   @font-face {
     font-family: 'fontello';
-    src: url('../font/fontello.svg?65785246#fontello') format('svg');
+    src: url('../font/fontello.svg?53672073#fontello') format('svg');
   }
 }
 */
@@ -37,7 +37,7 @@
   /* For safety - reset parent styles, that can break glyph codes*/
   font-variant: normal;
   text-transform: none;
-     
+ 
   /* fix buttons height, for twitter bootstrap */
   line-height: 1em;
  
@@ -47,6 +47,10 @@
  
   /* you can be more comfortable with increased icons size */
   /* font-size: 120%; */
+ 
+  /* Font smoothing. That was taken from TWBS */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
  
   /* Uncomment for 3D effect */
   /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
@@ -101,6 +105,11 @@
 .icon-link:before { content: '\e82a'; } /* '' */
 .icon-comment:before { content: '\e82b'; } /* '' */
 .icon-comment-empty:before { content: '\e82c'; } /* '' */
+.icon-spoon:before { content: '\e82d'; } /* '' */
+.icon-attention-circled:before { content: '\e82e'; } /* '' */
+.icon-circle:before { content: '\e82f'; } /* '' */
+.icon-circle-empty:before { content: '\e830'; } /* '' */
+.icon-cancel-circled:before { content: '\e831'; } /* '' */
 .icon-facebook:before { content: '\f09a'; } /* '' */
 .icon-google-plus:before { content: '\f0d5'; } /* '' */
 .icon-linkedin:before { content: '\f0e1'; } /* '' */

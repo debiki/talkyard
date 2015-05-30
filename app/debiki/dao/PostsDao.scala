@@ -485,10 +485,12 @@ trait PostsDao {
 
     val numNewLikes = postAfter.numLikeVotes - post.numLikeVotes
     val numNewWrongs = postAfter.numWrongVotes - post.numWrongVotes
+    val numNewBurys = postAfter.numBuryVotes - post.numBuryVotes
     val pageMetaBefore = transaction.loadThePageMeta(post.pageId)
     val pageMetaAfter = pageMetaBefore.copy(
       numLikes = pageMetaBefore.numLikes + numNewLikes,
-      numWrongs = pageMetaBefore.numWrongs + numNewWrongs)
+      numWrongs = pageMetaBefore.numWrongs + numNewWrongs,
+      numBurys = pageMetaBefore.numBurys + numNewBurys)
 
     transaction.updatePost(postAfter)
     transaction.updatePageMeta(pageMetaAfter, oldMeta = pageMetaBefore)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2014-2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -640,7 +640,7 @@ var PostHeader = createComponent({
 });
 
 
-function voteCountsToText(post) {
+function voteCountsToText(post: Post) {
   var text = '';
   function numPeople(num) {
     if (text) {
@@ -651,7 +651,7 @@ function voteCountsToText(post) {
     }
   }
   function thisComment() {
-    return text ? ' it ' : ' this comment ';
+    return text ? ' it' : ' this comment';
   }
   if (post.numLikeVotes && post.postId !== BodyPostId) {
     text += numPeople(post.numLikeVotes) +
@@ -660,12 +660,12 @@ function voteCountsToText(post) {
   if (post.numWrongVotes) {
     if (text) text += ', ';
     text += numPeople(post.numWrongVotes) +
-      (post.numWrongVotes == 1 ? 'thinks' : 'think') + thisComment() + 'is wrong';
+      (post.numWrongVotes == 1 ? 'thinks' : 'think') + thisComment() + ' is wrong';
   }
-  if (post.numOffTopicVotes) {
+  if (post.numBuryVotes) {
     if (text) text += ', ';
-    text += numPeople(post.numOffTopicVotes) +
-        (post.numOffTopicVotes == 1 ? 'thinks' : 'think') + thisComment() + 'is off-topic';
+    text += numPeople(post.numBuryVotes) +
+        (post.numBuryVotes == 1 ? 'wants' : 'want') + ' to bury' + thisComment();
   }
   if (text) text += '.';
   return text;
@@ -739,8 +739,8 @@ var PostActions = createComponent({
   onWrongClick: function(event) {
     debiki.internal.$toggleVote('VoteWrong').call(event.target, event);
   },
-  onOffTopicClick: function(event) {
-    debiki.internal.$toggleVote('VoteOffTopic').call(event.target, event);
+  onBuryClick: function(event) {
+    debiki.internal.$toggleVote('VoteBury').call(event.target, event);
   },
   onEditSuggestionsClick: function(event) {
     debiki.internal.$showEditsDialog.call(event.target, event);
@@ -777,38 +777,47 @@ var PostActions = createComponent({
     var deletedOrCollapsed =
       post.isPostDeleted || post.isTreeDeleted || post.isPostCollapsed || post.isTreeCollapsed;
 
-    var replyLikeWrongLinks = null;
+    var replyButton = null;
     if (!deletedOrCollapsed) {
-      // They float right, so they're placed in reverse order.
-      var myLikeVote = votes.indexOf('VoteLike') !== -1 ? ' dw-my-vote' : ''
-      var myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : ''
+      replyButton =
+          r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick }, 'Reply');
+    }
 
-      replyLikeWrongLinks = [
+    var voteButtons = null;
+    if (!deletedOrCollapsed && !isOwnPost) {
+      var myLikeVote = votes.indexOf('VoteLike') !== -1 ? ' dw-my-vote' : '';
+      var myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : '';
+      var myBuryVote = votes.indexOf('VoteBury') !== -1 ? ' dw-my-vote' : '';
+      var myOtherVotes = myWrongVote || myBuryVote ? ' dw-my-vote' : '';
+
+      var otherVotes = [
           r.a({ className: 'dw-a dw-a-wrong icon-warning' + myWrongVote,
-            title: 'Click if you think this post is wrong', onClick: this.onWrongClick },
-            'Wrong')];
+            title: 'Click if you think this post is wrong, for example, factual errors, ' +
+                " or because you disagree.", onClick: this.onWrongClick }, 'Wrong'),
+          r.a({ className: 'dw-a dw-a-bury icon-bury' + myBuryVote,
+              title: "Click if you think it's better that people spend their time " +
+                  "reading other things instead.", onClick: this.onBuryClick }, 'Bury')];
 
-      if (isOwnPost) {
-        replyLikeWrongLinks.push(
-          r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit'));
-      }
-      else {
-        replyLikeWrongLinks.push(
+      var otherVotesDropdown =
+          r.span({ className: 'dropdown navbar-right' },
+            r.a({ className: 'dw-a dw-a-votes' + myOtherVotes, 'data-toggle': 'dropdown' }, ''),
+            r.div({ className: 'dropdown-menu dropdown-menu-right dw-p-as-votes' },
+                otherVotes));
+
+      // Reverse order, floats right.
+      voteButtons = [
+          otherVotesDropdown,
           r.a({ className: 'dw-a dw-a-like icon-heart' + myLikeVote,
-            title: 'Like this', onClick: this.onLikeClick }, 'Like'));
-      }
+            title: 'Like this', onClick: this.onLikeClick }, 'Like')];
+    }
 
-      replyLikeWrongLinks.push(
-        r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick }, 'Reply'));
+    var editOwnPostButton = null;
+    if (!deletedOrCollapsed && isOwnPost) {
+      editOwnPostButton =
+          r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit');
     }
 
     var moreLinks = [];
-
-    var myOffTopicVote = votes.indexOf('VoteOffTopic') !== -1 ? ' dw-my-vote' : ''
-    moreLinks.push(
-        r.a({ className: 'dw-a dw-a-offtopic icon-split' + myOffTopicVote,
-            title: 'Click if you think this post is off-topic', onClick: this.onOffTopicClick },
-          'Off-Topic'));
 
     if (!isOwnPost) {
       moreLinks.push(
@@ -918,7 +927,8 @@ var PostActions = createComponent({
         suggestionsNew,
         suggestionsOld,
         moreDropdown,
-        replyLikeWrongLinks));
+        voteButtons,
+        replyButton));
   }
 });
 

@@ -25,7 +25,7 @@ import Prelude._
 case class UserPostVotes(
   votedLike: Boolean,
   votedWrong: Boolean,
-  votedOffTopic: Boolean)
+  votedBury: Boolean)
 
 
 object UserPostVotes {
@@ -41,7 +41,7 @@ object UserPostVotes {
       val bits = vote.voteType match {
         case PostVoteType.Like => 1
         case PostVoteType.Wrong => 2
-        //case PAP.Rude? Boring? => 4
+        case PostVoteType.Bury => 4
       }
       var voteBits = voteBitsByPostId.getOrElseUpdate(vote.postId, 0)
       voteBits |= bits
@@ -52,7 +52,7 @@ object UserPostVotes {
       val votes = UserPostVotes(
         votedLike = (voteBits & 1) == 1,
         votedWrong = (voteBits & 2) == 2,
-        votedOffTopic = (voteBits & 4) == 4)
+        votedBury = (voteBits & 4) == 4)
       (key, votes)
     }
     Map(postIdsAndVotes: _*)

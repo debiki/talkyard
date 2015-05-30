@@ -24,7 +24,7 @@ import java.{util => ju}
   * @param repliedToPostId If defined, means this action represents a reply to a post.
   * @param votedLike If true, this action represents a Like vote of some post.
   * @param votedWrong
-  * @param votedOffTopic
+  * @param votedBury
   */
 case class UserActionInfo(
   userId: UserId,
@@ -49,5 +49,5 @@ case class UserActionInfo(
   closed: Boolean,
   votedLike: Boolean,
   votedWrong: Boolean,
-  votedOffTopic: Boolean)
+  votedBury: Boolean)
 

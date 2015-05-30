@@ -365,8 +365,8 @@ object UserController extends mvc.Controller {
       "numLikesReceived" -> userInfo.stats.numLikesReceived,
       "numWrongsGiven" -> userInfo.stats.numWrongsGiven,
       "numWrongsReceived" -> userInfo.stats.numWrongsReceived,
-      "numOffTopicsGiven" -> userInfo.stats.numOffTopicsGiven,
-      "numOffTopicsReceived" -> userInfo.stats.numOffTopicsReceived)
+      "numBurysGiven" -> userInfo.stats.numBurysGiven,
+      "numBurysReceived" -> userInfo.stats.numBurysReceived)
 
     /* Discourse also includes:
       "avatar_template": ...
@@ -427,7 +427,7 @@ object UserController extends mvc.Controller {
       "closed" -> JsBoolean(actionInfo.closed),
       "votedLike" -> JsBoolean(actionInfo.votedLike),
       "votedWrong" -> JsBoolean(actionInfo.votedWrong),
-      "votedOffTopic" -> JsBoolean(actionInfo.votedOffTopic))
+      "votedBury" -> JsBoolean(actionInfo.votedBury))
     /* Discourse also includes:
       - usernames
       - the user that wrote the relevant post (avatar, display name, username, id)

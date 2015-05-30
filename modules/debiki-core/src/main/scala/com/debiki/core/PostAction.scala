@@ -29,8 +29,8 @@ sealed abstract class PostVoteType extends PostActionType
 object PostVoteType {
   case object Like extends PostVoteType
   case object Wrong extends PostVoteType
-  //case object Rude extends PostVoteType
-  //case object Boring extends PostVoteType
+  case object Bury extends PostVoteType
+  //case object Unwanted extends PostVoteType
 }
 
 
