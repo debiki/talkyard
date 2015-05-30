@@ -51,8 +51,10 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
     systemDbDao.loadTenants(Seq(siteId)).headOption
 
   // COULD rename to findWebsitesCanonicalHost
-  def lookupTenant(scheme: String, host: String): TenantLookup =
-    systemDbDao.lookupTenant(scheme, host)
+  def lookupTenant(scheme: String, hostname: String): TenantLookup = {
+    dieIf(hostname contains ":", "DwE5KYUU7")
+    systemDbDao.lookupTenant(scheme, hostname)
+  }
 
 
   // ----- Notifications

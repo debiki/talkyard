@@ -180,11 +180,14 @@ class Globals {
         Play.configuration.getString("debiki.baseDomain") getOrElse s"localhost:$listenPort"
       }
 
+    val baseDomainNoPort = baseDomain.span(_ != ':')._1
+
     // The hostname must be directly below the base domain, otherwise
     // wildcard HTTPS certificates won't work: they cover 1 level below the
     // base domain only, e.g. host.example.com but not sub.host.example.com,
     // if the cert was issued for *.example.com.
-    val siteByIdHostnameRegex: Regex = s"""^$SiteByIdHostnamePrefix(.*)\\.$baseDomain""".r
+    val siteByIdHostnameRegex: Regex =
+      s"""^$SiteByIdHostnamePrefix(.*)\\.$baseDomainNoPort$$""".r
 
     private def makeDataSource() = {
       //val dataSourceName = if (Play.isTest) "test" else "default"

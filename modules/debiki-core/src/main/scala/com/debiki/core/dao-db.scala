@@ -284,7 +284,7 @@ abstract class SystemDbDao {
     loadTenants(Seq(siteId)).headOption
 
   // COULD rename to findWebsitesCanonicalHost
-  def lookupTenant(scheme: String, host: String): TenantLookup
+  def lookupTenant(scheme: String, hostname: String): TenantLookup
 
 
   // ----- Notifications

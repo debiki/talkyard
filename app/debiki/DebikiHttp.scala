@@ -211,10 +211,15 @@ object DebikiHttp {
   }
 
   val anyFirstSiteHostname: Option[String] =
-    Play.configuration.getString("debiki.hostname")
+    // A hostname shouldn't include any port.
+    Play.configuration.getString("debiki.hostname").map(_.span(_ != ':')._1)
 
   def lookupTenantIdOrThrow(secure: Boolean, host: String, pathAndQuery: String,
         systemDao: SystemDao): String = {
+
+    // Play supports one HTTP and one HTTPS port only, so it makes little sense
+    // to include any port number when looking up a site.
+    val hostname = if (host contains ':') host.span(_ != ':')._1 else host
 
     // Do this:
     // - Test if the hostname matches any main site hostname in the config files.
@@ -224,7 +229,7 @@ object DebikiHttp {
     //   <link rel='canonical'> to that address (not implemented).
     // - If the hostname is <whatever> then lookup site id by hostname.
 
-    val siteId = host match {
+    val siteId = hostname match {
       case x if Some(x) == anyFirstSiteHostname =>
         Site.FirstSiteId
       case debiki.Globals.siteByIdHostnameRegex(siteId) =>
@@ -238,7 +243,7 @@ object DebikiHttp {
         siteId
       case _ =>
         val scheme = if (secure) "https" else "http"
-        systemDao.lookupTenant(scheme, host = host) match {
+        systemDao.lookupTenant(scheme, hostname = hostname) match {
           case found: FoundChost =>
             found.tenantId
           case found: FoundAlias =>

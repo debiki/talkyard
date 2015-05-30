@@ -8,5 +8,6 @@ cd ..
 # Use a debiki.conf file in a supposed parent Git repo in the parent directory.
 scripts/activator \
   -jvm-debug 9999 \
+  -Dhttps.port=9443 \
   -Dconfig.file=../conf/debiki.conf
 
