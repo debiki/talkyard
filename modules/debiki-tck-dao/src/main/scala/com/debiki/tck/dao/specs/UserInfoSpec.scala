@@ -64,7 +64,7 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
           actionInfo.repliedToPostId mustBe None
           actionInfo.votedLike mustBe false
           actionInfo.votedWrong mustBe false
-          actionInfo.votedOffTopic mustBe false
+          actionInfo.votedBury mustBe false
         case x => fail(s"Wrong number of actions, expected one, got: $x")
       }
     }
@@ -91,7 +91,7 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
           actionInfo.repliedToPostId mustBe Some(PageParts.BodyId)
           actionInfo.votedLike mustBe false
           actionInfo.votedWrong mustBe false
-          actionInfo.votedOffTopic mustBe false
+          actionInfo.votedBury mustBe false
         case x => fail(s"Wrong number of actions, expected one, got: $x")
       }
     }
@@ -116,7 +116,7 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
         siteUtils.vote(passwordLoginGrant, page, comment.id, PostActionPayload.VoteOffTopic)
         siteUtils.dao.loadUserInfoAndStats(passwordRole.id) mustBe Some(
           UserInfoAndStats(info = passwordRole, stats = UserStats.Zero.copy(
-            numPages = 1, numLikesGiven = 1, numWrongsGiven = 1, numOffTopicsGiven = 1)))
+            numPages = 1, numLikesGiven = 1, numWrongsGiven = 1, numBurysGiven = 1)))
       }
 
       "find user action infos" in {
@@ -135,7 +135,7 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
           if (info.editedPostId.isDefined) numThingsDone += 1
           if (info.votedLike) numThingsDone += 1
           if (info.votedWrong) numThingsDone += 1
-          if (info.votedOffTopic) numThingsDone += 1
+          if (info.votedBury) numThingsDone += 1
           numThingsDone mustBe 1
         }
         siteUtils.dao.listUserActions(passwordRole.id) match {
@@ -147,7 +147,7 @@ class UserInfoSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
             newPage.createdNewPage mustBe true
             likeVote.votedLike mustBe true
             wrongVote.votedWrong mustBe true
-            offTopicVote.votedOffTopic mustBe true
+            offTopicVote.votedBury mustBe true
           case x => fail(s"Wrong number of actions, got: $x")
         }
       }

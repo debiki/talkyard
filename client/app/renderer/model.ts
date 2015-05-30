@@ -40,7 +40,7 @@ interface Post {
   numEditors: number;
   numLikeVotes: number;
   numWrongVotes: number;
-  numOffTopicVotes: number;
+  numBuryVotes: number;
   numPendingEditSuggestions: number;
   isTreeDeleted: boolean;
   isPostDeleted: boolean;

@@ -144,6 +144,7 @@ object ForumController extends mvc.Controller {
       "numPosts" -> JsNumber(topic.meta.numRepliesVisible + 1),
       "numLikes" -> topic.meta.numLikes,
       "numWrongs" -> topic.meta.numWrongs,
+      "numBurys" -> topic.meta.numBurys,
       "createdEpoch" -> createdEpoch,
       "lastPostEpoch" -> lastPostEpoch)
   }

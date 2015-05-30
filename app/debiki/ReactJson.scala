@@ -209,7 +209,7 @@ object ReactJson {
       "numEditors" -> JsNumber(post.numDistinctEditors),
       "numLikeVotes" -> JsNumber(post.numLikeVotes),
       "numWrongVotes" -> JsNumber(post.numWrongVotes),
-      "numOffTopicVotes" -> JsNumber(0), // remove off-topic votes? post.numOffTopicVotes
+      "numBuryVotes" -> JsNumber(post.numBuryVotes),
       "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions),
       "isTreeDeleted" -> JsBoolean(post.deletedStatus.isTreeDeleted),
       "isPostDeleted" -> JsBoolean(post.deletedStatus.isPostDeleted),
@@ -315,7 +315,7 @@ object ReactJson {
       var voteStrs = Vector[String]()
       if (votes.votedLike) voteStrs = voteStrs :+ "VoteLike"
       if (votes.votedWrong) voteStrs = voteStrs :+ "VoteWrong"
-      if (votes.votedOffTopic) voteStrs = voteStrs :+ "VoteOffTopic"
+      if (votes.votedBury) voteStrs = voteStrs :+ "VoteBury"
       postId.toString -> Json.toJson(voteStrs)
     }
     JsObject(votesByPostId.toSeq)

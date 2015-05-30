@@ -83,7 +83,7 @@ html:not(.mouse) .dw-ar-t > .dw-p-as > .dw-a-reply
 
 
 .dw-a
-  text-decoration: none
+  text-decoration: none !important
   color: #3872ab
   font-size: 13px
   float: right
@@ -103,17 +103,36 @@ html:not(.mouse) .dw-ar-t > .dw-p-as > .dw-a-reply
   background: #fff;
   border: none;
 
-  &.dw-a-more
-    padding-left: 8px;
+  // Make the Like buttom smaller to the right, so it gets closer to the other-votes-dropdown.
+  // But larger to the left, so it's easier to click (since people will click the left part of it,
+  // to avoid the dropdown).
+  &.dw-a-like
+    padding-right: 2px;
+    padding-left: 13px;
 
-  &:first-child
+  &.dw-a-votes
+    padding-left: 9px;
+    &:after
+      font-size: 17px;
+      border-left: 1px solid hsl(210, 51%, 66%);
+      margin-left: 0;
+      padding: 2px 12px 1px;
+      position: relative;
+      top: -1px;
+    &.dw-my-vote:after
+      font-size: 23px;
+      top: -5px;
+      padding-top: 0;
+
+  &.dw-a-more
+    padding-left: 5px;
     margin-right: 0;
     padding-right: 0;
 
-  &:hover
+  &:hover:not(.dw-a-votes),
+  &.dw-a-votes:hover:after
     background: hsl(210, 100%, 98%);
     outline: 1px solid hsl(210, 100%, 92%);
-    color: hsl(210, 100%, 30%);
     text-decoration: none;
 
 html:not(.mouse) .dw-t > .dw-p-as .dw-a
@@ -122,31 +141,51 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
 
 // Prevent float drop when vote highlighted and font larger and button therefore wider.
 .DW.DW .dw-p-as .dw-a.dw-my-vote
-  padding-left: 0px;
+  padding-left: 9px;
+  &.dw-a-votes
+    padding-left: 5px;
 
 // Avoid float drop (the reply button is to the very left)
 .DW.DW.DW .dw-p-as .dw-a-reply
   padding-left: 0;
 
+// Later on, give Bury access to all regular member who has been introduced to how it works.
+html:not(.dw-is-staff) .dw-a-bury
+  display: none !important;
 
-// Highlight the heart or warning symbol if the user has voted Like or Wrong.
-.dw-a.dw-my-vote:before
+// Highlight the heart and other vote symbols if the user has voted Like or whatever.
+.dw-a.dw-my-vote:before,
+.dw-a-votes.dw-my-vote:after
   color: hsl(8, 100%, 60%)  // red-red-orange-red
   font-size: 120%;
   position: relative;
   top: 1px;
 
-// Show a ▾ icon after "More" text, same as class .icon-down-dir, but :after.
-// Don't use "▾" directly though; it breaks on my mobile.
+// Show a ▾ icon as open-more-votes-dropdown-button and in the 'More' dropdown. Same as
+// class .icon-down-dir, but :after. Don't use "▾" directly though; it breaks on my mobile.
+.dw-a-votes:after,
 .dw-a-more:after
   content: " \e80f"
   font-family: "fontello"
 
+.DW.DW .dw-p-as-votes > .dw-a,
 .DW.DW .dw-p-as-more > .dw-a
   float: none
   display: block
   margin: 8px 10px 14px 12px
 
+
+// Bury = dig = a spade = a rotated spoon.
+.icon-bury:before
+  content: '\e82d'; // the spoon (Font Awesome via Fontello)
+  -webkit-transform: rotate(220deg);
+  -moz-transform: rotate(220deg);
+  -ms-transform: rotate(220deg);
+  -o-transform: rotate(220deg);
+  transform: rotate(220deg);
+  // The spoon is small. But spades are not small.
+  font-size: 110%;
+  margin-right: 0.1em; // instead of 0.2em
 
 .dropdown-menu.dw-p-as-more
   background: white

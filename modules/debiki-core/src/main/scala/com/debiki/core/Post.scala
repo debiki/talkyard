@@ -127,6 +127,7 @@ case class Post(
   numPendingEditSuggestions: Int,
   numLikeVotes: Int,
   numWrongVotes: Int,
+  numBuryVotes: Int,
   numTimesRead: Int) {
 
   require(uniqueId >= 1, "DwE4WEKQ8")
@@ -193,6 +194,7 @@ case class Post(
   require(numHandledFlags >= 0, "DwE6IKF3")
   require(numLikeVotes >= 0, "DwEIK7K")
   require(numWrongVotes >= 0, "DwE7YQ08")
+  require(numBuryVotes >= 0, "DwE5FKW2")
   require(numTimesRead >= 0, "DwE2ZfMI3")
 
   def isReply = PageParts.isReply(id)
@@ -355,6 +357,7 @@ case class Post(
         : Post = {
     var numLikeVotes = 0
     var numWrongVotes = 0
+    var numBuryVotes = 0
     for (action <- actions) {
       action match {
         case vote: PostVote =>
@@ -363,6 +366,8 @@ case class Post(
               numLikeVotes += 1
             case PostVoteType.Wrong =>
               numWrongVotes += 1
+            case PostVoteType.Bury =>
+              numBuryVotes += 1
           }
       }
     }
@@ -370,6 +375,7 @@ case class Post(
     copy(
       numLikeVotes = numLikeVotes,
       numWrongVotes = numWrongVotes,
+      numBuryVotes = numBuryVotes,
       numTimesRead = numTimesRead)
   }
 }
@@ -462,6 +468,7 @@ object Post {
       numPendingEditSuggestions = 0,
       numLikeVotes = 0,
       numWrongVotes = 0,
+      numBuryVotes = 0,
       numTimesRead = 0)
   }
 
@@ -539,6 +546,27 @@ object Post {
       return false
     }
     else if (postB.multireplyPostIds.nonEmpty) {
+      return true
+    }
+
+    // If super many people want to bury the post and almost no one likes it, then
+    // count bury votes, instead of like votes, after a while.
+    // For now however, only admins can bury vote. So count the very first bury vote.
+    // (Later on: Only consider bury votes if ... 5x more Bury than Like? And only after
+    // say 10 people have seen the comment, after it was bury voted? (Could have a vote
+    // review queue for this.))
+    val buryA = postA.numBuryVotes > 0 && postA.numLikeVotes == 0
+    val buryB = postB.numBuryVotes > 0 && postB.numLikeVotes == 0
+    if (buryA && buryB) {
+      if (postA.numBuryVotes < postB.numBuryVotes)
+        return true
+      if (postA.numBuryVotes > postB.numBuryVotes)
+        return false
+    }
+    else if (buryA) {
+      return false
+    }
+    else if (buryB) {
       return true
     }
 

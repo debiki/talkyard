@@ -51,6 +51,8 @@ ReactDispatcher.register(function(payload) {
       if (store.userMustBeAuthenticated !== false || store.userMustBeApproved !== false)
         location.reload();
 
+      $('html').removeClass('dw-is-admin, dw-is-staff');
+
       store.user = {
         userId: undefined,
         permsOnPage: {},
@@ -123,6 +125,10 @@ ReactStore.activateUserSpecificData = function(anyUser) {
     addLocalStorageData(store.user);
     this.emitChange();
     return;
+  }
+
+  if (newUser.isAdmin) {
+    $('html').addClass('dw-is-admin, dw-is-staff');
   }
 
   store.user = newUser;

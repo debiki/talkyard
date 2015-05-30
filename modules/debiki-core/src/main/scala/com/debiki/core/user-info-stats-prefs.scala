@@ -37,8 +37,8 @@ case class UserStats(
   numLikesReceived: Int,
   numWrongsGiven: Int,
   numWrongsReceived: Int,
-  numOffTopicsGiven: Int,
-  numOffTopicsReceived: Int)
+  numBurysGiven: Int,
+  numBurysReceived: Int)
 
 
 object UserStats {

@@ -109,6 +109,7 @@ object PageMeta {
       authorId = authorId,
       numLikes = 0,
       numWrongs = 0,
+      numBurys = 0,
       numRepliesVisible = 0,
       numRepliesTotal = 0,
       numChildPages = 0)
@@ -129,6 +130,7 @@ object PageMeta {
   * @param authorId
   * @param numLikes
   * @param numWrongs
+  * @param numBurys
   * @param numRepliesVisible Replies that haven't been deleted or hidden, and have been approved.
   *                          Includes collapsed and closed replies.
   * @param numRepliesTotal Counts all replies, also deleted, hidden and not-yet-approved replies.
@@ -146,6 +148,7 @@ case class PageMeta(
   authorId: UserId,
   numLikes: Int = 0,
   numWrongs: Int = 0,
+  numBurys: Int = 0,
   numRepliesVisible: Int = 0,
   numRepliesTotal: Int = 0,
   numChildPages: Int = 0) {
