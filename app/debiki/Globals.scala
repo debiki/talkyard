@@ -73,7 +73,8 @@ class Globals {
   }
 
 
-  def baseDomain: String = state.baseDomain
+  def baseDomainWithPort = state.baseDomainWithPort
+  def baseDomainNoPort = state.baseDomainNoPort
 
 
   /** If a hostname matches this pattern, the site id can be extracted directly from the url.
@@ -82,7 +83,8 @@ class Globals {
 
   def SiteByIdHostnamePrefix = "site-"
 
-  def siteByIdOrigin(siteId: String) = s"http://$SiteByIdHostnamePrefix$siteId.$baseDomain"
+  def siteByIdOrigin(siteId: String) =
+    s"http://$SiteByIdHostnamePrefix$siteId.$baseDomainWithPort" // [tohttps]
 
 
   /** The Twitter Ostrich admin service, listens on port 9100. */
@@ -168,7 +170,7 @@ class Globals {
     private def anyFullTextSearchDbPath =
       Play.configuration.getString("fullTextSearchDb.dataPath")
 
-    val baseDomain: String =
+    val baseDomainWithPort: String =
       if (Play.isTest) {
         // Not on classpath: play.api.test.Helpers.testServerPort
         // Instead, duplicate its implementation here:
@@ -180,7 +182,7 @@ class Globals {
         Play.configuration.getString("debiki.baseDomain") getOrElse s"localhost:$listenPort"
       }
 
-    val baseDomainNoPort = baseDomain.span(_ != ':')._1
+    val baseDomainNoPort = baseDomainWithPort.span(_ != ':')._1
 
     // The hostname must be directly below the base domain, otherwise
     // wildcard HTTPS certificates won't work: they cover 1 level below the

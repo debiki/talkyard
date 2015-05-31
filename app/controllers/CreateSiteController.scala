@@ -66,7 +66,7 @@ object CreateSiteController extends mvc.Controller {
     if (!isOkayEmailAddress(emailAddress))
       throwForbidden("DwE8FKJ4", "Bad email address")
 
-    val hostname = s"$localHostname.${Globals.baseDomain}"
+    val hostname = s"$localHostname.${Globals.baseDomainNoPort}"
 
     val newSite: Tenant =
       try {

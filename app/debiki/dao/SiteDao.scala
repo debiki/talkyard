@@ -98,6 +98,7 @@ abstract class SiteDao
   def createSite(name: String, hostname: String,
         embeddingSiteUrl: Option[String], creatorIp: String,
         creatorEmailAddress: String) : Tenant = {
+    dieIf(hostname contains ":", "DwE3KWFE7")
     val quotaLimitMegabytes = play.api.Play.configuration.getInt("debiki.newSite.quotaLimitMegabytes")
     siteDbDao.createSite(name = name, hostname = hostname,
       embeddingSiteUrl, creatorIp = creatorIp, creatorEmailAddress = creatorEmailAddress,

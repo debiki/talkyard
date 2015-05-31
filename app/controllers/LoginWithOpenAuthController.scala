@@ -64,7 +64,7 @@ object LoginWithOpenAuthController extends Controller {
     if (Play.isTest) {
       // The base domain should have been automatically configured with the test server's
       // listen port.
-      Some(s"http://${debiki.Globals.baseDomain}")
+      Some(s"http://${debiki.Globals.baseDomainWithPort}")
     }
     else {
       Play.configuration.getString("debiki.loginOrigin") orElse
