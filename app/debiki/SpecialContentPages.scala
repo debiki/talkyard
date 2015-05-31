@@ -53,7 +53,7 @@ object SpecialContentPages {
   val TermsOfUseContentLicense = Content(
     text = o"""
       User contributions are licensed under a
-      <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons
+      <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons
       Attribution-NonCommercial-ShareAlike 4.0 International License</a>.""")
 
 

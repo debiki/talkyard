@@ -190,7 +190,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       return None
 
     // If this is an embedded discussion, there is no Debiki canonical host address to use.
-    // So use the site-by-id origin, e.g. http://site-123.debiki.com, which always works.
+    // So use the site-by-id origin, e.g. https://site-123.debiki.com, which always works.
     val unsubscriptionUrl =
       s"${Globals.siteByIdOrigin(dao.siteId)}/?unsubscribe&email-id=${email.id}"
 

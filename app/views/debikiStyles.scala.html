@@ -28,7 +28,7 @@
 @* A function that loads CDN CSS from the local server in case we're offline.
 (Looping through document.styleSheets and checking styleSheet.rules or .cssRules for the
 relevant stylesheet didn't work, rules and cssRules were always null, could be
-cross domain issue according to comments here: http://stackoverflow.com/a/7452378/694469
+cross domain issue according to comments here: https://stackoverflow.com/a/7452378/694469
 So instead, if any Javascript fails to load, assume we're offline and
 extra-load all styles, from debikiScripts.scala.html [93GK940])
 *@
