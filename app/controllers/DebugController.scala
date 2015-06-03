@@ -18,7 +18,9 @@
 package controllers
 
 import actions.SafeActions.{ExceptionAction, SessionAction}
+import actions.ApiActions.GetAction
 import com.debiki.core._
+import debiki.Globals
 import java.{util => ju}
 import play.api._
 import play.api.libs.json.JsObject
@@ -40,6 +42,25 @@ object DebugController extends mvc.Controller {
   def pingSessionAction = SessionAction(empty) {
     request: actions.SafeActions.SessionRequestNoBody =>
       Ok("session-action-pong")
+  }
+
+
+  def origin = GetAction { request =>
+    val canonicalHost = request.dao.loadSite().chost
+    val response =
+      s"""Globals.secure: ${Globals.secure}
+         |Globals.scheme: ${Globals.scheme}
+         |Globals.baseDomainWithPort: ${Globals.baseDomainWithPort}
+         |Globals.baseDomainNoPort: ${Globals.baseDomainNoPort}
+         |Globals.colonPort: ${Globals.colonPort}
+         |
+         |Request host: ${request.host}
+         |Request secure: ${request.request.secure}
+         |
+         |Site canonical hostname: ${canonicalHost.map(_.address)}
+         |Site canonical hostname origin: ${canonicalHost.map(Globals.originOf)}
+       """.stripMargin
+    Ok(response)
   }
 
 }
