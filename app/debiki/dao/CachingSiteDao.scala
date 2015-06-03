@@ -66,7 +66,7 @@ class CachingSiteDao(val siteDbDao: SerializingSiteDbDao, val dbDaoFactory: DbDa
   }
 
 
-  override def updateSite(changedSite: Tenant) = {
+  override def updateSite(changedSite: Site) = {
     super.updateSite(changedSite)
     uncacheSiteStatus()
   }

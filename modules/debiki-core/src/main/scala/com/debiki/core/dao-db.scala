@@ -88,7 +88,7 @@ abstract class SiteDbDao {
   /**
    * Loads the tenant for this dao.
    */
-  def loadTenant(): Tenant
+  def loadTenant(): Site
 
   def loadSiteStatus(): SiteStatus
 
@@ -97,11 +97,11 @@ abstract class SiteDbDao {
     * (from the same IP or email address).
     */
   def createSite(name: String, hostname: String, embeddingSiteUrl: Option[String],
-        creatorIp: String, creatorEmailAddress: String, quotaLimitMegabytes: Option[Int]): Tenant
+        creatorIp: String, creatorEmailAddress: String, quotaLimitMegabytes: Option[Int]): Site
 
-  def updateSite(changedSite: Tenant)
+  def updateSite(changedSite: Site)
 
-  def addTenantHost(host: TenantHost)
+  def addTenantHost(host: SiteHost)
 
 
   // ----- Login
@@ -276,12 +276,12 @@ abstract class SystemDbDao {
   // ----- Websites (a.k.a. tenants)
 
   // COULD rename to loadWebsitesByIds
-  def loadTenants(tenantIds: Seq[SiteId]): Seq[Tenant]
+  def loadTenants(tenantIds: Seq[SiteId]): Seq[Site]
 
-  def loadSite(siteId: SiteId): Option[Tenant] =
+  def loadSite(siteId: SiteId): Option[Site] =
     loadTenants(Seq(siteId)).headOption
 
-  def lookupCanonicalHost(hostname: String): Option[TenantLookup]
+  def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup]
 
 
   // ----- Notifications
@@ -329,7 +329,7 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
   def siteId: SiteId = _spi.siteId
 
-  def loadTenant(): Tenant = {
+  def loadTenant(): Site = {
     _spi.loadTenant()
   }
 
@@ -338,19 +338,19 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
   }
 
   def createSite(name: String, hostname: String, embeddingSiteUrl: Option[String],
-        creatorIp: String, creatorEmailAddress: String, quotaLimitBytes: Option[Int]): Tenant = {
+        creatorIp: String, creatorEmailAddress: String, quotaLimitBytes: Option[Int]): Site = {
     _spi.createSite(name = name, hostname = hostname,
       embeddingSiteUrl = embeddingSiteUrl, creatorIp = creatorIp,
       creatorEmailAddress = creatorEmailAddress, quotaLimitMegabytes = quotaLimitBytes)
   }
 
-  def updateSite(changedSite: Tenant) = {
+  def updateSite(changedSite: Site) = {
     serialize {
       _spi.updateSite(changedSite)
     }
   }
 
-  def addTenantHost(host: TenantHost) = {
+  def addTenantHost(host: SiteHost) = {
     // SHOULD hard code max num hosts, e.g. 10.
     serialize {
       _spi.addTenantHost(host)

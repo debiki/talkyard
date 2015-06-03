@@ -46,7 +46,7 @@ object DebugController extends mvc.Controller {
 
 
   def origin = GetAction { request =>
-    val canonicalHost = request.dao.loadSite().chost
+    val canonicalHost = request.dao.loadSite().canonicalHost
     val response =
       s"""Globals.secure: ${Globals.secure}
          |Globals.scheme: ${Globals.scheme}
@@ -57,7 +57,7 @@ object DebugController extends mvc.Controller {
          |Request host: ${request.host}
          |Request secure: ${request.request.secure}
          |
-         |Site canonical hostname: ${canonicalHost.map(_.address)}
+         |Site canonical hostname: ${canonicalHost.map(_.hostname)}
          |Site canonical hostname origin: ${canonicalHost.map(Globals.originOf)}
        """.stripMargin
     Ok(response)

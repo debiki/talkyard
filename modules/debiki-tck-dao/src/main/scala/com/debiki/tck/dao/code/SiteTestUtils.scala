@@ -24,7 +24,7 @@ import com.debiki.core.Prelude._
 import java.{util => ju}
 
 
-class SiteTestUtils(site: Tenant, val daoFactory: DbDaoFactory) {
+class SiteTestUtils(site: Site, val daoFactory: DbDaoFactory) {
 
   val dao = daoFactory.newSiteDbDao(site.id)
 

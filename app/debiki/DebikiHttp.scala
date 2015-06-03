@@ -231,7 +231,7 @@ object DebikiHttp {
           case None =>
             throwNotFound("DwE72SF6", s"No site with id `$siteId'")
           case Some(site) =>
-            if (site.hosts.find(_.role == TenantHost.RoleCanonical).isDefined)
+            if (site.hosts.find(_.role == SiteHost.RoleCanonical).isDefined)
               Logger.warn("Should <link rel='canonical'> to the canonical address [DwE1U80]")
         }
         return siteId
@@ -243,11 +243,11 @@ object DebikiHttp {
         if (result.thisHost == result.canonicalHost)
           result.siteId
         else result.thisHost.role match {
-          case TenantHost.RoleDuplicate =>
+          case SiteHost.RoleDuplicate =>
             result.siteId
-          case TenantHost.RoleRedirect =>
-            throwRedirect(Globals.originOf(result.canonicalHost.address) + pathAndQuery)
-          case TenantHost.RoleLink =>
+          case SiteHost.RoleRedirect =>
+            throwRedirect(Globals.originOf(result.canonicalHost.hostname) + pathAndQuery)
+          case SiteHost.RoleLink =>
             die("DwE2KFW7", "Not implemented: <link rel='canonical'>")
           case _ =>
             die("DwE20SE4")

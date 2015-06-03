@@ -68,7 +68,7 @@ object CreateSiteController extends mvc.Controller {
 
     val hostname = s"$localHostname.${Globals.baseDomainNoPort}"
 
-    val newSite: Tenant =
+    val newSite: Site =
       try {
         request.dao.createSite(
           name = localHostname, hostname = hostname, embeddingSiteUrl = anyEmbeddingSiteAddress,

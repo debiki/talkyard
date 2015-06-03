@@ -142,7 +142,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     }
 
     val site = siteDao.loadSite()
-    if (site.chost.isEmpty && site.embeddingSiteUrl.isEmpty) {
+    if (site.canonicalHost.isEmpty && site.embeddingSiteUrl.isEmpty) {
       val problem = "neither chost nor embedding site url specified"
       logWarning(problem)
       return Some(problem)
@@ -153,7 +153,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
   }
 
 
-  private def constructAndSendEmail(siteDao: SiteDao, site: Tenant,
+  private def constructAndSendEmail(siteDao: SiteDao, site: Site,
         user: User, userNotfs: Seq[Notification]) {
     // Save the email in the db, before sending it, so even if the server
     // crashes it'll always be found, should the receiver attempt to

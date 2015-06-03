@@ -43,21 +43,21 @@ object SiteStatus {
 
 
 
-/** A website. (Should be renamed to Site.)
+/** A website.
   */
-case class Tenant(
-  id: String,
+case class Site(
+  id: SiteId,
   name: String,
   creatorIp: String,
   creatorEmailAddress: String,
   embeddingSiteUrl: Option[String],
-  hosts: List[TenantHost]
-){
+  hosts: List[SiteHost]) {
+
   // Reqiure at most 1 canonical host.
   //require((0 /: hosts)(_ + (if (_.isCanonical) 1 else 0)) <= 1)
 
-  def chost: Option[TenantHost] = hosts.find(_.role == TenantHost.RoleCanonical)
-  def chost_! = chost.get
+  def canonicalHost: Option[SiteHost] = hosts.find(_.role == SiteHost.RoleCanonical)
+  def theCanonicalHost = canonicalHost.get
 }
 
 
@@ -65,7 +65,7 @@ case class Tenant(
 /** A server name that replies to requests to a certain website.
   * (Should be renamed to SiteHost.)
   */
-object TenantHost {
+object SiteHost {
   sealed abstract class Role
   case object RoleCanonical extends Role
   case object RoleRedirect extends Role
@@ -74,19 +74,17 @@ object TenantHost {
 }
 
 
-case class TenantHost(
-  address: String,
-  role: TenantHost.Role) {
-}
+case class SiteHost(
+  hostname: String,
+  role: SiteHost.Role)
 
 
-/** The result of looking up a tenant by host name.
-  * COULD rename to HostnameLookup
+/** The result of looking up a site by hostname.
   */
-case class TenantLookup(
+case class CanonicalHostLookup(
   siteId: SiteId,
-  thisHost: TenantHost,
-  canonicalHost: TenantHost)
+  thisHost: SiteHost,
+  canonicalHost: SiteHost)
 
 
 abstract class NewSiteData {

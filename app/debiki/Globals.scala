@@ -107,8 +107,8 @@ class Globals {
   }
 
 
-  def originOf(site: Tenant): Option[String] = site.chost.map(originOf)
-  def originOf(host: TenantHost): String = originOf(host.address)
+  def originOf(site: Site): Option[String] = site.canonicalHost.map(originOf)
+  def originOf(host: SiteHost): String = originOf(host.hostname)
   def originOf(hostname: String): String = s"$scheme://$hostname$colonPort"
   def originOf(request: p.mvc.Request[_]): String = s"$scheme://${request.host}"
 

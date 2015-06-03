@@ -44,13 +44,13 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
   // ----- Websites (a.k.a. tenants)
 
   // COULD rename to loadWebsitesByIds
-  def loadTenants(tenantIds: Seq[SiteId]): Seq[Tenant] =
+  def loadTenants(tenantIds: Seq[SiteId]): Seq[Site] =
     systemDbDao.loadTenants(tenantIds)
 
-  def loadSite(siteId: SiteId): Option[Tenant] =
+  def loadSite(siteId: SiteId): Option[Site] =
     systemDbDao.loadTenants(Seq(siteId)).headOption
 
-  def lookupCanonicalHost(hostname: String): Option[TenantLookup] = {
+  def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup] = {
     dieIf(hostname contains ":", "DwE5KYUU7")
     systemDbDao.lookupCanonicalHost(hostname)
   }
@@ -87,9 +87,9 @@ class CachingSystemDao(systemDbDao: SystemDbDao)
   def siteId = "?"
 
 
-  override def lookupCanonicalHost(host: String): Option[TenantLookup] = {
+  override def lookupCanonicalHost(host: String): Option[CanonicalHostLookup] = {
     val key = _tenantLookupByOriginKey(host)
-    lookupInCache[TenantLookup](key) foreach { result => TenantLookup
+    lookupInCache[CanonicalHostLookup](key) foreach { result => CanonicalHostLookup
       return Some(result)
     }
     super.lookupCanonicalHost(host) match {

@@ -87,17 +87,17 @@ abstract class SiteDao
 
   def siteId = siteDbDao.siteId
 
-  def loadSite(): Tenant = siteDbDao.loadTenant()
+  def loadSite(): Site = siteDbDao.loadTenant()
 
   @deprecated("use loadSite() instead", "now")
-  def loadTenant(): Tenant = siteDbDao.loadTenant()
+  def loadTenant(): Site = siteDbDao.loadTenant()
 
   def loadSiteStatus(): SiteStatus =
     siteDbDao.loadSiteStatus()
 
   def createSite(name: String, hostname: String,
         embeddingSiteUrl: Option[String], creatorIp: String,
-        creatorEmailAddress: String) : Tenant = {
+        creatorEmailAddress: String) : Site = {
     dieIf(hostname contains ":", "DwE3KWFE7")
     val quotaLimitMegabytes = play.api.Play.configuration.getInt("debiki.newSite.quotaLimitMegabytes")
     siteDbDao.createSite(name = name, hostname = hostname,
@@ -105,10 +105,10 @@ abstract class SiteDao
       quotaLimitMegabytes = quotaLimitMegabytes)
   }
 
-  def updateSite(changedSite: Tenant) =
+  def updateSite(changedSite: Site) =
     siteDbDao.updateSite(changedSite)
 
-  def addTenantHost(host: TenantHost) = siteDbDao.addTenantHost(host)
+  def addTenantHost(host: SiteHost) = siteDbDao.addTenantHost(host)
 
 
   // ----- List pages

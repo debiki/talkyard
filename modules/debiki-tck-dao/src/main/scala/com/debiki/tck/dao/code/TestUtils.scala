@@ -25,9 +25,9 @@ import java.{util => ju}
 
 class TestUtils(val daoFactory: DbDaoFactory) {
 
-  def createFirstSite(): Tenant = {
+  def createFirstSite(): Site = {
     // Nowadays it exists already, so:
-    Tenant(
+    Site(
       Site.FirstSiteId,
       name = "First Site",
       creatorIp = "0.0.0.0",
