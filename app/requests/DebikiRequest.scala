@@ -83,6 +83,7 @@ abstract class DebikiRequest[A] {
   def scheme = if (request.secure) "https" else "http"
 
   def host = request.host
+  def hostname = request.host.span(_ != ':')._1
 
   def uri = request.uri
 

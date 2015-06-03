@@ -27,8 +27,9 @@ import com.mohiva.play.silhouette.core.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.core.providers.oauth2._
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.core.{exceptions => siex}
-import debiki.RateLimits
 import debiki.DebikiHttp._
+import debiki.Globals
+import debiki.RateLimits
 import java.{util => ju}
 import org.scalactic.{Good, Bad}
 import play.{api => p}
@@ -63,21 +64,21 @@ object LoginWithOpenAuthController extends Controller {
   private val LoginOriginConfValName = "debiki.loginOrigin"
   private var configErrorMessage: Option[String] = None
 
-  val anyLoginOrigin =
+
+  lazy val anyLoginOrigin =
     if (Play.isTest) {
       // The base domain should have been automatically configured with the test server's
       // listen port.
-      Some(s"https://${debiki.Globals.baseDomainWithPort}")
+      Some(s"${Globals.scheme}://${Globals.baseDomainWithPort}")
     }
     else {
       val anyOrigin = Play.configuration.getString(LoginOriginConfValName) orElse {
-        val scheme = if (debiki.Globals.secure) "https" else "http"
-        Play.configuration.getString("debiki.host").orElse(
-          Play.configuration.getString("debiki.hostname")) // deprecated, hostname shouldn't include port
-          .map(s"$scheme://" + _)
+        Globals.firstSiteHostname map { hostname =>
+          s"${Globals.scheme}://$hostname${Globals.colonPort}"
+        }
       }
       anyOrigin foreach { origin =>
-        if (debiki.Globals.secure && !origin.contains("https:")) {
+        if (Globals.secure && !origin.startsWith("https:")) {
           configErrorMessage =
             Some(s"Config value '$LoginOriginConfValName' does not start with 'https:'")
           p.Logger.error(s"Disabling OAuth: ${configErrorMessage.get}. It is: '$origin' [DwE6KW5]")

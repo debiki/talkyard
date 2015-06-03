@@ -91,20 +91,17 @@ class Globals {
     * -->
     *  Either HTTP for all sites (assuming a trusted intranet), or HTTPS for all sites.
     */
-  val secure = Play.configuration.getBoolean("debiki.secure") getOrElse {
-    p.Logger.info("Config value 'debiki.secure' missing; defaulting to true. [DwM3KEF2]")
-    true
-  }
+  def secure = state.secure
 
-  def scheme = if (secure) "https" else "http"
+  def scheme = state.scheme
 
-  def colonPort = Play.configuration.getInt("debiki.nonStandardPort") match {
-    case None => ""
-    case Some(port) =>
-      if (port == 80 && scheme == "http") ""
-      else if (port == 443 && scheme == "https") ""
-      else s":$port"
-  }
+
+  def port = state.port
+
+  def colonPort =
+    if (secure && port == 443) ""
+    else if (!secure && port == 80) ""
+    else s":$port"
 
 
   def originOf(site: Site): Option[String] = site.canonicalHost.map(originOf)
@@ -113,12 +110,14 @@ class Globals {
   def originOf(request: p.mvc.Request[_]): String = s"$scheme://${request.host}"
 
 
-  // COULD warn if port doesn't match colonPort
   def baseDomainWithPort = state.baseDomainWithPort
   def baseDomainNoPort = state.baseDomainNoPort
 
 
-  val poweredBy = s"$scheme://www.debiki.com"
+  def firstSiteHostname = state.firstSiteHostname
+
+
+  def poweredBy = s"$scheme://www.debiki.com"
 
 
   /** If a hostname matches this pattern, the site id can be extracted directly from the url.
@@ -214,19 +213,46 @@ class Globals {
     private def anyFullTextSearchDbPath =
       Play.configuration.getString("fullTextSearchDb.dataPath")
 
-    val baseDomainWithPort: String =
+    val secure = Play.configuration.getBoolean("debiki.secure") getOrElse {
+      p.Logger.info("Config value 'debiki.secure' missing; defaulting to true. [DwM3KEF2]")
+      true
+    }
+
+    def scheme = if (secure) "https" else "http"
+
+    val port: Int = {
       if (Play.isTest) {
         // Not on classpath: play.api.test.Helpers.testServerPort
         // Instead, duplicate its implementation here:
-        val testListenPort = System.getProperty("testserver.port", "19001")
-        s"localhost:$testListenPort"
+        sys.props.get("testserver.port").map(_.toInt) getOrElse 19001
+      }
+      else if (Play.isDev) {
+        sys.props.get(s"$scheme.port").map(_.toInt) getOrElse 9000
       }
       else {
-        val listenPort = System.getProperty("http.port", "9000")
-        Play.configuration.getString("debiki.baseDomain") getOrElse s"localhost:$listenPort"
+        Play.configuration.getInt("debiki.port") getOrElse {
+          if (secure) 443
+          else 80
+        }
       }
+    }
 
-    val baseDomainNoPort = baseDomainWithPort.span(_ != ':')._1
+    val baseDomainNoPort =
+      if (Play.isTest) "localhost"
+      else Play.configuration.getString("debiki.baseDomain") getOrElse "localhost"
+
+    val baseDomainWithPort =
+      if (secure && port == 443) baseDomainNoPort
+      else if (!secure && port == 80) baseDomainNoPort
+      else s"$baseDomainNoPort:$port"
+
+
+    /** The hostname of the site created by default when setting up a new server. */
+    val firstSiteHostname = Play.configuration.getString("debiki.hostname")
+
+    if (firstSiteHostname.exists(_ contains ':'))
+      p.Logger.error("Config value debiki.hostname contains ':' [DwE4KUWF7]")
+
 
     // The hostname must be directly below the base domain, otherwise
     // wildcard HTTPS certificates won't work: they cover 1 level below the

@@ -47,18 +47,24 @@ object DebugController extends mvc.Controller {
 
   def origin = GetAction { request =>
     val canonicalHost = request.dao.loadSite().canonicalHost
+    val isFirstSite = Some(request.hostname) == Globals.firstSiteHostname
     val response =
       s"""Globals.secure: ${Globals.secure}
          |Globals.scheme: ${Globals.scheme}
+         |Globals.port: ${Globals.port}
          |Globals.baseDomainWithPort: ${Globals.baseDomainWithPort}
          |Globals.baseDomainNoPort: ${Globals.baseDomainNoPort}
-         |Globals.colonPort: ${Globals.colonPort}
+         |
+         |Is first site: $isFirstSite
+         |First site hostnam: ${Globals.firstSiteHostname}
+         |
+         |OAuth login origin: ${LoginWithOpenAuthController.anyLoginOrigin}
          |
          |Request host: ${request.host}
          |Request secure: ${request.request.secure}
          |
          |Site canonical hostname: ${canonicalHost.map(_.hostname)}
-         |Site canonical hostname origin: ${canonicalHost.map(Globals.originOf)}
+         |Site canonical host origin: ${canonicalHost.map(Globals.originOf)}
        """.stripMargin
     Ok(response)
   }

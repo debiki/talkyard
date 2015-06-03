@@ -210,11 +210,6 @@ object DebikiHttp {
     lookupTenantIdOrThrow(secure, host = host, pathAndQuery, systemDao)
   }
 
-  val anyFirstSiteHostname: Option[String] =
-    // A hostname shouldn't include any port.
-    Play.configuration.getString("debiki.hostname").map(_.span(_ != ':')._1)
-
-
   def lookupTenantIdOrThrow(secure: Boolean, host: String, pathAndQuery: String,
         systemDao: SystemDao): SiteId = {
 
@@ -222,7 +217,7 @@ object DebikiHttp {
     // to include any port number when looking up a site.
     val hostname = if (host contains ':') host.span(_ != ':')._1 else host
 
-    if (Some(hostname) == anyFirstSiteHostname)
+    if (Some(hostname) == Globals.firstSiteHostname)
       return Site.FirstSiteId
 
     hostname match {
