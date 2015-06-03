@@ -24,7 +24,7 @@ trait SystemTransaction {
   def commit()
   def rollback()
 
-  def loadSites(): immutable.Seq[Tenant]
+  def loadSites(): immutable.Seq[Site]
   def siteTransaction(siteId: SiteId): SiteTransaction
 
 }

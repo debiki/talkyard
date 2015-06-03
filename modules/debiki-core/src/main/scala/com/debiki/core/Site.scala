@@ -43,21 +43,21 @@ object SiteStatus {
 
 
 
-/** A website. (Should be renamed to Site.)
+/** A website.
   */
-case class Tenant(
-  id: String,
+case class Site(
+  id: SiteId,
   name: String,
   creatorIp: String,
   creatorEmailAddress: String,
   embeddingSiteUrl: Option[String],
-  hosts: List[TenantHost]
-){
+  hosts: List[SiteHost]) {
+
   // Reqiure at most 1 canonical host.
   //require((0 /: hosts)(_ + (if (_.isCanonical) 1 else 0)) <= 1)
 
-  def chost: Option[TenantHost] = hosts.find(_.role == TenantHost.RoleCanonical)
-  def chost_! = chost.get
+  def canonicalHost: Option[SiteHost] = hosts.find(_.role == SiteHost.RoleCanonical)
+  def theCanonicalHost = canonicalHost.get
 }
 
 
@@ -65,19 +65,7 @@ case class Tenant(
 /** A server name that replies to requests to a certain website.
   * (Should be renamed to SiteHost.)
   */
-object TenantHost {
-  sealed abstract class HttpsInfo { def required = false }
-
-  /** A client that connects over HTTP should be redirected to HTTPS. */
-  case object HttpsRequired extends HttpsInfo { override def required = true }
-
-  /** When showing a page over HTTPS, <link rel=canonical> should point
-   * to the canonical version, which is the HTTP version.
-   */
-  case object HttpsAllowed extends HttpsInfo
-
-  case object HttpsNone extends HttpsInfo
-
+object SiteHost {
   sealed abstract class Role
   case object RoleCanonical extends Role
   case object RoleRedirect extends Role
@@ -86,52 +74,22 @@ object TenantHost {
 }
 
 
-case class TenantHost(
-  address: String,
-  role: TenantHost.Role,
-  https: TenantHost.HttpsInfo) {
-
-  def origin = {
-    val protocol =
-      if (https == TenantHost.HttpsNone) "http://"
-      else "https://"
-    protocol + address
-  }
-}
+case class SiteHost(
+  hostname: String,
+  role: SiteHost.Role)
 
 
-/** The result of looking up a tenant by host name.
+/** The result of looking up a site by hostname.
   */
-sealed abstract class TenantLookup
-
-/** The looked up host is the canonical host for the tenant found.
- */
-case class FoundChost(tenantId: String) extends TenantLookup
-
-/** The host is an alias for the canonical host.
-  */
-case class FoundAlias(
-  tenantId: String,
-
-  /** E.g. `http://www.example.com'. */
-  canonicalHostUrl: String,
-
-  /** What the server should do with this request. Should id redirect to
-   *  the canonical host, or include a <link rel=canonical>?
-   */
-  role: TenantHost.Role
-) extends TenantLookup
-
-
-/** The server could e.g. reply 404 Not Found.
- */
-case object FoundNothing extends TenantLookup
+case class CanonicalHostLookup(
+  siteId: SiteId,
+  thisHost: SiteHost,
+  canonicalHost: SiteHost)
 
 
 abstract class NewSiteData {
   def name: String
   def address: String
-  def https: TenantHost.HttpsInfo
 
   /** Some E2E tests rely on the first site allowing the creation of embedded
     * discussions, so we need to be able to specify an embedding site URL.

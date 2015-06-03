@@ -66,7 +66,6 @@ object AtomFeedXml {
       val pageTitle = page.approvedTitleText getOrElse pagePath.slugOrIdOrQustnMark
       val pageBodyAuthor =
             pageBody.user.map(_.displayName) getOrElse "(Author name unknown)"
-      val hostAndPort = hostUrl.stripPrefix("https://").stripPrefix("http://")
       val urlToPage =  urlTo(pagePath)
 
       // (Should we strip any class names or ids? They make no sense in atom feeds?

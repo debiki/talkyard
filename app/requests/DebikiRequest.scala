@@ -77,14 +77,13 @@ abstract class DebikiRequest[A] {
    */
   lazy val ctime: ju.Date = new ju.Date
 
-  /**
-   * The scheme, host and port specified in the request.
-   *
-   * For now, the scheme is hardcoded to http.
-   */
-  def origin: String = "http://"+ request.host
+  /** The scheme, host and port specified in the request. */
+  def origin: String = s"$scheme://$host"
+
+  def scheme = if (request.secure) "https" else "http"
 
   def host = request.host
+  def hostname = request.host.span(_ != ':')._1
 
   def uri = request.uri
 

@@ -125,7 +125,7 @@ trait StuffCreator {
 
     // Make the site accessible via "localhost": (in addition to 127.0.0.1)
     firstSiteDao.addTenantHost(
-      TenantHost(newSiteDomain, TenantHost.RoleDuplicate, TenantHost.HttpsNone))
+      SiteHost(newSiteDomain, SiteHost.RoleDuplicate, SiteHost.HttpsNone))
 
     // Create ./themes/example/theme.conf and ./themes/example/theme.css,
     // referred to by the new site config page.

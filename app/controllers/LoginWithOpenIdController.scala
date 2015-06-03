@@ -116,13 +116,13 @@ object LoginWithOpenIdController extends mvc.Controller {
    * e.g. *.debiki.se rather than host.subdomain.debiki.se.
    * See http://openid.net/specs/openid-authentication-2_0.html#realms
    * And read even more here (search for 'realm'):
-   *   http://code.google.com/googleapps/marketplace/sso.html
-   *   http://code.google.com/intl/es-ES/apis/accounts/docs/OpenID.html
+   *   https://code.google.com/googleapps/marketplace/sso.html
+   *   https://code.google.com/intl/es-ES/apis/accounts/docs/OpenID.html
    */
   private def _wildcardRealmFor(host: String): String = {
     val isIpNo = _IpRegex matches host
     val hostNameSpecified = !isIpNo && host.count(_ == '.') >= 2
-    val realm = "http://"+ (if (hostNameSpecified) {
+    val realm = Globals.scheme "://" + (if (hostNameSpecified) {
       // The host is like "hostname.example.com". Replace "hostname" with "*"
       // to get a realm like "*.example.com".
       val dotAndDomain = host.dropWhile(_ != '.')

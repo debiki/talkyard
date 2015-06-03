@@ -399,7 +399,7 @@ object UserController extends mvc.Controller {
         "title" : "designerator",
         "trust_level" : 2,
         "username" : "awesomerobot",
-        "website" : "http://"
+        "website" : "https://"
       },
       "user_badges" : [ ]
      */

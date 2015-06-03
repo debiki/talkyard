@@ -2462,9 +2462,8 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 
       lazy val creatorEmailAddress = globalPasswordUser.email
 
-      var newWebsiteOpt: Tenant = null
-      var newHost = TenantHost("website-2.ex.com", TenantHost.RoleCanonical,
-         TenantHost.HttpsNone)
+      var newWebsiteOpt: Site = null
+      var newHost = SiteHost("website-2.ex.com", SiteHost.RoleCanonical)
 
       def newWebsiteDao() =
         newTenantDbDao(newWebsiteOpt.id)
@@ -2474,7 +2473,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       val homepageTitle = RawPostAction.forNewTitleBySystem(
         "Default Homepage", creationDati = now)
 
-      def createWebsite(suffix: Int, sameIpDifferentEmail: Boolean = true): Tenant = {
+      def createWebsite(suffix: Int, sameIpDifferentEmail: Boolean = true): Site = {
         val (ip, email) =
           if (sameIpDifferentEmail)
             (creatorIp, s"email-$suffix@ex.com")
@@ -2490,7 +2489,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           quotaLimitMegabytes = Some(10))
       }
 
-      def createEmbeddedSite(embeddingSiteUrl: String, name: String): Tenant = {
+      def createEmbeddedSite(embeddingSiteUrl: String, name: String): Site = {
         dao.createSite(
           name = name,
           hostname = s"$name.ex.com",
@@ -2504,7 +2503,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
         newWebsiteOpt = createWebsite(2)
         newWebsiteOpt.name must_== "website-2"
         newWebsiteOpt.hosts.length must_== 1
-        newWebsiteOpt.chost_!.address must_== "website-2.ex.com"
+        newWebsiteOpt.theCanonicalHost.hostname must_== "website-2.ex.com"
         newWebsiteOpt.creatorIp must_== creatorIp
         newWebsiteOpt.creatorEmailAddress must_== "email-2@ex.com"
         newWebsiteOpt.embeddingSiteUrl must_== None
@@ -2531,7 +2530,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
           case Some(site) =>
             site.name must_== "embd-site-name"
             site.hosts.length must_== 1
-            site.chost_!.address must_== "embd-site-name.ex.com"
+            site.theCanonicalHost.hostname must_== "embd-site-name.ex.com"
             site.embeddingSiteUrl must_== Some(embeddingSiteUrl)
         }
         ok
@@ -2557,9 +2556,9 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       }
 
       "lookup site by host" in {
-        val lookup = systemDbDao.lookupTenant("http", newWebsiteOpt.chost_!.address)
+        val lookup = systemDbDao.lookupTenant("http", newWebsiteOpt.theCanonicalHost.hostname)
         lookup must_== FoundChost(newWebsiteOpt.id)
-        val lookup2 = dao.lookupOtherTenant("http", newWebsiteOpt.chost_!.address)
+        val lookup2 = dao.lookupOtherTenant("http", newWebsiteOpt.theCanonicalHost.hostname)
         lookup2 must_== FoundChost(newWebsiteOpt.id)
       }
 

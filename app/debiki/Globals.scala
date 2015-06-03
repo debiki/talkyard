@@ -72,8 +72,52 @@ class Globals {
     state.mailerActorRef ! (email, websiteId)
   }
 
+  /** Either exactly all sites uses HTTPS, or all of them use HTTP.
+    * A mixed configuration makes little sense I think:
+    * 1) On the public internet, obviously HTTPS should be used, always.
+    * 2) On an intranet, HTTP might be okay. And HTTPS. But not a combination of HTTP and HTTPS:
+    *   a) What about an intranet with some sites using HTTPS and some using HTTPS?
+    *     Then the organization would setup a Certificate Authority, install
+    *     certs in the members' browsers, but then uses them only sometimes, for some
+    *     sites? Why? That seems weird. Supporting this seems like not-well-spent-time.
+    *   b) What about sites that are accessible over HTTP on the intranet and HTTPS
+    *     on the public Internet? Then email links will break (they'll use either http or https).
+    *   c) What about some sites accessible only over HTTP on an intranet,
+    *     and others accessible only on the public Internet over HTTPS?
+    *     Then some firewall has to block access to the HTTP sites from the public internet.
+    *     Seems like a risky and unusual configuration. Not well spent time.
+    *     They might as well use two servers instead, one for the public internet,
+    *     one internally?
+    * -->
+    *  Either HTTP for all sites (assuming a trusted intranet), or HTTPS for all sites.
+    */
+  def secure = state.secure
 
-  def baseDomain: String = state.baseDomain
+  def scheme = state.scheme
+
+
+  def port = state.port
+
+  def colonPort =
+    if (secure && port == 443) ""
+    else if (!secure && port == 80) ""
+    else s":$port"
+
+
+  def originOf(site: Site): Option[String] = site.canonicalHost.map(originOf)
+  def originOf(host: SiteHost): String = originOf(host.hostname)
+  def originOf(hostname: String): String = s"$scheme://$hostname$colonPort"
+  def originOf(request: p.mvc.Request[_]): String = s"$scheme://${request.host}"
+
+
+  def baseDomainWithPort = state.baseDomainWithPort
+  def baseDomainNoPort = state.baseDomainNoPort
+
+
+  def firstSiteHostname = state.firstSiteHostname
+
+
+  def poweredBy = s"$scheme://www.debiki.com"
 
 
   /** If a hostname matches this pattern, the site id can be extracted directly from the url.
@@ -82,7 +126,8 @@ class Globals {
 
   def SiteByIdHostnamePrefix = "site-"
 
-  def siteByIdOrigin(siteId: String) = s"http://$SiteByIdHostnamePrefix$siteId.$baseDomain"
+  def siteByIdOrigin(siteId: String) =
+    s"$scheme://$SiteByIdHostnamePrefix$siteId.$baseDomainWithPort"
 
 
   /** The Twitter Ostrich admin service, listens on port 9100. */
@@ -168,23 +213,53 @@ class Globals {
     private def anyFullTextSearchDbPath =
       Play.configuration.getString("fullTextSearchDb.dataPath")
 
-    val baseDomain: String =
+    val secure = Play.configuration.getBoolean("debiki.secure") getOrElse {
+      p.Logger.info("Config value 'debiki.secure' missing; defaulting to true. [DwM3KEF2]")
+      true
+    }
+
+    def scheme = if (secure) "https" else "http"
+
+    val port: Int = {
       if (Play.isTest) {
         // Not on classpath: play.api.test.Helpers.testServerPort
         // Instead, duplicate its implementation here:
-        val testListenPort = System.getProperty("testserver.port", "19001")
-        s"localhost:$testListenPort"
+        sys.props.get("testserver.port").map(_.toInt) getOrElse 19001
+      }
+      else if (Play.isDev) {
+        sys.props.get(s"$scheme.port").map(_.toInt) getOrElse 9000
       }
       else {
-        val listenPort = System.getProperty("http.port", "9000")
-        Play.configuration.getString("debiki.baseDomain") getOrElse s"localhost:$listenPort"
+        Play.configuration.getInt("debiki.port") getOrElse {
+          if (secure) 443
+          else 80
+        }
       }
+    }
+
+    val baseDomainNoPort =
+      if (Play.isTest) "localhost"
+      else Play.configuration.getString("debiki.baseDomain") getOrElse "localhost"
+
+    val baseDomainWithPort =
+      if (secure && port == 443) baseDomainNoPort
+      else if (!secure && port == 80) baseDomainNoPort
+      else s"$baseDomainNoPort:$port"
+
+
+    /** The hostname of the site created by default when setting up a new server. */
+    val firstSiteHostname = Play.configuration.getString("debiki.hostname")
+
+    if (firstSiteHostname.exists(_ contains ':'))
+      p.Logger.error("Config value debiki.hostname contains ':' [DwE4KUWF7]")
+
 
     // The hostname must be directly below the base domain, otherwise
     // wildcard HTTPS certificates won't work: they cover 1 level below the
     // base domain only, e.g. host.example.com but not sub.host.example.com,
     // if the cert was issued for *.example.com.
-    val siteByIdHostnameRegex: Regex = s"""^$SiteByIdHostnamePrefix(.*)\\.$baseDomain""".r
+    val siteByIdHostnameRegex: Regex =
+      s"""^$SiteByIdHostnamePrefix(.*)\\.$baseDomainNoPort$$""".r
 
     private def makeDataSource() = {
       //val dataSourceName = if (Play.isTest) "test" else "default"

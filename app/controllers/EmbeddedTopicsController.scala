@@ -52,7 +52,7 @@ object EmbeddedTopicsController extends mvc.Controller {
     * will become invalid. There's a test case for this function in
     * test/controllers/EmbeddedTopicsControllerSpec.scala.
     *
-    * Why the first 16? (1 - (10^10/(36^16))) ^ (10^10) = 0.9999878, see http://web2.0calc.com/,
+    * Why the first 16? (1 - (10^10/(36^16))) ^ (10^10) = 0.9999878, see https://web2.0calc.com/,
     * that is, if a website with 1 page per human (10e9 humans) adds Debiki's
     * comment system, the probability of an id clash is roughly 1 / 100 000.
     * ((Also, 16 is a good size, from an in-memory point of view? The underlying

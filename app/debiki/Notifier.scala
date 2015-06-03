@@ -21,6 +21,7 @@ import akka.actor._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.{SystemDao, SiteDao, SiteDaoFactory}
+import debiki.Globals.originOf
 import java.{util => ju}
 import play.api.libs.concurrent._
 import scala.concurrent.duration._
@@ -141,7 +142,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     }
 
     val site = siteDao.loadSite()
-    if (site.chost.isEmpty && site.embeddingSiteUrl.isEmpty) {
+    if (site.canonicalHost.isEmpty && site.embeddingSiteUrl.isEmpty) {
       val problem = "neither chost nor embedding site url specified"
       logWarning(problem)
       return Some(problem)
@@ -152,16 +153,14 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
   }
 
 
-  private def constructAndSendEmail(siteDao: SiteDao, site: Tenant,
+  private def constructAndSendEmail(siteDao: SiteDao, site: Site,
         user: User, userNotfs: Seq[Notification]) {
     // Save the email in the db, before sending it, so even if the server
     // crashes it'll always be found, should the receiver attempt to
     // unsubscribe. (But if you first send it, then save it, the server
     // might crash inbetween and it wouldn't be possible to unsubscribe.)
 
-    val anyOrigin = site.chost map { chost =>
-      (chost.https.required ? "https://" | "http://") + chost.address
-    }
+    val anyOrigin = originOf(site)
 
     val email = constructEmail(siteDao, anyOrigin, user, userNotfs) getOrElse {
       logger.debug(o"""Not sending any email to ${user.displayName} because the page
@@ -190,7 +189,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       return None
 
     // If this is an embedded discussion, there is no Debiki canonical host address to use.
-    // So use the site-by-id origin, e.g. http://site-123.debiki.com, which always works.
+    // So use the site-by-id origin, e.g. https://site-123.debiki.com, which always works.
     val unsubscriptionUrl =
       s"${Globals.siteByIdOrigin(dao.siteId)}/?unsubscribe&email-id=${email.id}"
 
@@ -200,7 +199,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
         { contents }
         <p>
           Kind regards,<br/>
-          <a href="http://www.debiki.com">Debiki</a>
+          <a href={ Globals.scheme + "://www.debiki.com" }>Debiki</a>
         </p>
         <p style='font-size: 80%; opacity: 0.65; margin-top: 2em;'>
           <a href={unsubscriptionUrl}>Unsubscribe</a>

@@ -130,6 +130,7 @@ POST  /-/change-page-meta       controllers.PageMetaController.changeMeta
 
 GET  /-/ping-exception-action   controllers.DebugController.pingExceptionAction
 GET  /-/ping-session-action     controllers.DebugController.pingSessionAction
+GET  /-/origin                  controllers.DebugController.origin
 
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
 

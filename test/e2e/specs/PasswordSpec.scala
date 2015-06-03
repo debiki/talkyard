@@ -155,8 +155,8 @@ class PasswordSpec extends DebikiBrowserSpec with TestSiteCreator {
       "get a you-alread-have-an-account reminder email" - {
 
         "log out, go to create site page" in {
-          go to s"http://$siteName.${debiki.Globals.baseDomain}/-/api/logout"
-          go to s"http://${debiki.Globals.baseDomain}/-/create-site"
+          go to s"http://$siteName.${debiki.Globals.baseDomainWithPort}/-/api/logout"
+          go to s"http://${debiki.Globals.baseDomainWithPort}/-/create-site"
           waitForLoginPageToLoad()
         }
 

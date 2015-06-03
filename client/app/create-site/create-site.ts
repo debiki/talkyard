@@ -208,7 +208,7 @@ export var EmbeddingAddressInput = createComponent({
   render: function() {
     return (
       Input({ type: 'text', label: this.props.label || 'Embedding Site Address',
-        placeholder: 'http://www.example.com', onChange: this.onChange,
+        placeholder: 'https://www.example.com', onChange: this.onChange,
         ref: 'input', bsStyle: this.state.bsStyle, help: this.props.help ||
           'The address of the website where the embedded comments should appear.' }));
   }
@@ -278,7 +278,7 @@ var LocalHostnameInput = React.createClass({
       r.div({ className: 'form-group' + (anyError ? ' has-error' : '') },
         r.label({ for: 'dw-local-hostname' }, this.props.label),
         r.br(),
-        r.kbd({}, 'http://'),
+        r.kbd({}, location.protocol + '//'),
         r.input({ type: 'text', id: 'dw-local-hostname', className: 'form-control',
             placeholder: this.props.placeholder, ref: 'input', onChange: this.onChange,
             value: value }),
@@ -290,7 +290,7 @@ var LocalHostnameInput = React.createClass({
 
 
 /**
- * Converts e.g. 'http://www.my-lovely.site.com' to 'my-lovely-site'.
+ * Converts e.g. 'https://www.my-lovely.site.com' to 'my-lovely-site'.
  */
 function deriveLocalHostname(embeddingSiteAddress) {
   var debikiAddress = embeddingSiteAddress;

@@ -44,15 +44,16 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
   // ----- Websites (a.k.a. tenants)
 
   // COULD rename to loadWebsitesByIds
-  def loadTenants(tenantIds: Seq[SiteId]): Seq[Tenant] =
+  def loadTenants(tenantIds: Seq[SiteId]): Seq[Site] =
     systemDbDao.loadTenants(tenantIds)
 
-  def loadSite(siteId: SiteId): Option[Tenant] =
+  def loadSite(siteId: SiteId): Option[Site] =
     systemDbDao.loadTenants(Seq(siteId)).headOption
 
-  // COULD rename to findWebsitesCanonicalHost
-  def lookupTenant(scheme: String, host: String): TenantLookup =
-    systemDbDao.lookupTenant(scheme, host)
+  def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup] = {
+    dieIf(hostname contains ":", "DwE5KYUU7")
+    systemDbDao.lookupCanonicalHost(hostname)
+  }
 
 
   // ----- Notifications
@@ -86,27 +87,27 @@ class CachingSystemDao(systemDbDao: SystemDbDao)
   def siteId = "?"
 
 
-  override def lookupTenant(scheme: String, host: String): TenantLookup = {
-    val key = _tenantLookupByOriginKey(scheme, host)
-    lookupInCache[TenantLookup](key) foreach {
-      return _
+  override def lookupCanonicalHost(host: String): Option[CanonicalHostLookup] = {
+    val key = _tenantLookupByOriginKey(host)
+    lookupInCache[CanonicalHostLookup](key) foreach { result => CanonicalHostLookup
+      return Some(result)
     }
-    super.lookupTenant(scheme, host) match {
-      case FoundNothing =>
+    super.lookupCanonicalHost(host) match {
+      case None =>
         // Don't cache this.
-        // There are infinitely many origins that maps to nothing, since
-        // DNS names *.debiki.net resolves to Debiki's servers.
-        FoundNothing
-      case tenantLookup =>
-        putInCache(key, CacheValueIgnoreVersion(tenantLookup))
-        tenantLookup
+        // There would be infinitely many origins that maps to nothing, if the DNS server
+        // maps a wildcard like *.example.com to this server.
+        None
+      case Some(result) =>
+        putInCache(key, CacheValueIgnoreVersion(result))
+        Some(result)
     }
   }
 
 
-  private def _tenantLookupByOriginKey(scheme: String, host: String) =
+  private def _tenantLookupByOriginKey(host: String) =
     // Site id unknown, that's what we're about to lookup.
-    CacheKeyAnySite(s"$scheme|$host|TenantByOrigin")
+    CacheKeyAnySite(s"$host|TenantByOrigin")
 
 }
 

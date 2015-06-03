@@ -14,5 +14,6 @@ scripts/activator \
   -Dcom.sun.management.jmxremote.ssl=false \
   -Dcom.sun.management.jmxremote.authenticate=false \
   -Dconfig.file=../conf/debiki.conf \
+  -Dhttps.port=9443 \
   -DcrazyFastStartSkipSearch=true
 

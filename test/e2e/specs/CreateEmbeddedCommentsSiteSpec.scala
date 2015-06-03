@@ -266,7 +266,7 @@ abstract class CreateEmbeddedCommentsSiteSpecConstructor
     }
 
     "go to admin page and login" in {
-      val adminPageUrl = s"http://site-${embeddedSiteId.get}.${debiki.Globals.baseDomain}/-/admin/"
+      val adminPageUrl = s"http://site-${embeddedSiteId.get}.${debiki.Globals.baseDomainWithPort}/-/admin/"
       click on cssSelector(s"a[href='$adminPageUrl']")
       loginToAdminPage()
       eventually {

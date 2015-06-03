@@ -67,3 +67,5 @@ s
 scripts/l
 scripts/s.sh
 
+# Play's auto generated self signed cert.
+conf/generated.keystore

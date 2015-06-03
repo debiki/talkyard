@@ -66,9 +66,9 @@ object CreateSiteController extends mvc.Controller {
     if (!isOkayEmailAddress(emailAddress))
       throwForbidden("DwE8FKJ4", "Bad email address")
 
-    val hostname = s"$localHostname.${Globals.baseDomain}"
+    val hostname = s"$localHostname.${Globals.baseDomainNoPort}"
 
-    val newSite: Tenant =
+    val newSite: Site =
       try {
         request.dao.createSite(
           name = localHostname, hostname = hostname, embeddingSiteUrl = anyEmbeddingSiteAddress,
@@ -82,7 +82,7 @@ object CreateSiteController extends mvc.Controller {
       }
 
     OkSafeJson(
-      Json.obj("newSiteOrigin" -> newSite.chost_!.origin))
+      Json.obj("newSiteOrigin" -> Globals.originOf(hostname)))
   }
 
 

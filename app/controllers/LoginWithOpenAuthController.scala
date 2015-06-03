@@ -27,8 +27,9 @@ import com.mohiva.play.silhouette.core.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.core.providers.oauth2._
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.core.{exceptions => siex}
-import debiki.RateLimits
 import debiki.DebikiHttp._
+import debiki.Globals
+import debiki.RateLimits
 import java.{util => ju}
 import org.scalactic.{Good, Bad}
 import play.{api => p}
@@ -60,15 +61,30 @@ object LoginWithOpenAuthController extends Controller {
   private val IsInLoginWindowCookieName = "dwCoIsInLoginWindow"
   private val MayCreateUserCookieName = "dwCoMayCreateUser"
 
-  val anyLoginOrigin =
+  private val LoginOriginConfValName = "debiki.loginOrigin"
+  private var configErrorMessage: Option[String] = None
+
+
+  lazy val anyLoginOrigin =
     if (Play.isTest) {
       // The base domain should have been automatically configured with the test server's
       // listen port.
-      Some(s"http://${debiki.Globals.baseDomain}")
+      Some(s"${Globals.scheme}://${Globals.baseDomainWithPort}")
     }
     else {
-      Play.configuration.getString("debiki.loginOrigin") orElse
-        Play.configuration.getString("debiki.hostname").map("http://" + _)
+      val anyOrigin = Play.configuration.getString(LoginOriginConfValName) orElse {
+        Globals.firstSiteHostname map { hostname =>
+          s"${Globals.scheme}://$hostname${Globals.colonPort}"
+        }
+      }
+      anyOrigin foreach { origin =>
+        if (Globals.secure && !origin.startsWith("https:")) {
+          configErrorMessage =
+            Some(s"Config value '$LoginOriginConfValName' does not start with 'https:'")
+          p.Logger.error(s"Disabling OAuth: ${configErrorMessage.get}. It is: '$origin' [DwE6KW5]")
+        }
+      }
+      anyOrigin
     }
 
 
@@ -79,6 +95,9 @@ object LoginWithOpenAuthController extends Controller {
 
 
   def startAuthenticationImpl(provider: String, returnToUrl: String, request: Request[Unit]) = {
+    configErrorMessage foreach { message =>
+      throwInternalError("DwE5WKU3", message)
+    }
     var futureResult = authenticate(provider, request)
     if (returnToUrl.nonEmpty) {
       futureResult = futureResult map { result =>

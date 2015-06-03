@@ -1,7 +1,8 @@
 @(inviterName: String, siteHostname: String, secretKey: String)
 
 @acceptInviteUrl = @{
-  s"http://$siteHostname${routes.InviteController.acceptInvite(secretKey)}"
+  val origin = debiki.Globals.originOf(siteHostname)
+  s"$origin${routes.InviteController.acceptInvite(secretKey)}"
 }
 
 @inviterName invites you to join @siteHostname
