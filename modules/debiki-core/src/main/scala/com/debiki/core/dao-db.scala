@@ -103,8 +103,6 @@ abstract class SiteDbDao {
 
   def addTenantHost(host: TenantHost)
 
-  def lookupOtherTenant(scheme: String, host: String): TenantLookup
-
 
   // ----- Login
 
@@ -283,8 +281,7 @@ abstract class SystemDbDao {
   def loadSite(siteId: SiteId): Option[Tenant] =
     loadTenants(Seq(siteId)).headOption
 
-  // COULD rename to findWebsitesCanonicalHost
-  def lookupTenant(scheme: String, hostname: String): TenantLookup
+  def lookupCanonicalHost(hostname: String): Option[TenantLookup]
 
 
   // ----- Notifications
@@ -358,10 +355,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
     serialize {
       _spi.addTenantHost(host)
     }
-  }
-
-  def lookupOtherTenant(scheme: String, host: String): TenantLookup = {
-    _spi.lookupOtherTenant(scheme, host)
   }
 
 

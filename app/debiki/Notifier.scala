@@ -21,6 +21,7 @@ import akka.actor._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.{SystemDao, SiteDao, SiteDaoFactory}
+import debiki.Globals.originOf
 import java.{util => ju}
 import play.api.libs.concurrent._
 import scala.concurrent.duration._
@@ -159,9 +160,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     // unsubscribe. (But if you first send it, then save it, the server
     // might crash inbetween and it wouldn't be possible to unsubscribe.)
 
-    val anyOrigin = site.chost map { chost =>
-      (chost.https.required ? "https://" | "http://") + chost.address
-    }
+    val anyOrigin = originOf(site)
 
     val email = constructEmail(siteDao, anyOrigin, user, userNotfs) getOrElse {
       logger.debug(o"""Not sending any email to ${user.displayName} because the page
@@ -200,7 +199,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
         { contents }
         <p>
           Kind regards,<br/>
-          <a href="http://www.debiki.com">Debiki</a>
+          <a href={ Globals.scheme + "://www.debiki.com" }>Debiki</a>
         </p>
         <p style='font-size: 80%; opacity: 0.65; margin-top: 2em;'>
           <a href={unsubscriptionUrl}>Unsubscribe</a>

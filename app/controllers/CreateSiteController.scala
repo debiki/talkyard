@@ -82,7 +82,7 @@ object CreateSiteController extends mvc.Controller {
       }
 
     OkSafeJson(
-      Json.obj("newSiteOrigin" -> newSite.chost_!.origin))
+      Json.obj("newSiteOrigin" -> Globals.originOf(hostname)))
   }
 
 

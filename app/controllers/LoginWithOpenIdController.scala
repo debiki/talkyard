@@ -122,7 +122,7 @@ object LoginWithOpenIdController extends mvc.Controller {
   private def _wildcardRealmFor(host: String): String = {
     val isIpNo = _IpRegex matches host
     val hostNameSpecified = !isIpNo && host.count(_ == '.') >= 2
-    val realm = "http://"+ (if (hostNameSpecified) {
+    val realm = Globals.scheme "://" + (if (hostNameSpecified) {
       // The host is like "hostname.example.com". Replace "hostname" with "*"
       // to get a realm like "*.example.com".
       val dotAndDomain = host.dropWhile(_ != '.')

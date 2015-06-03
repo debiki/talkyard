@@ -2463,8 +2463,7 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
       lazy val creatorEmailAddress = globalPasswordUser.email
 
       var newWebsiteOpt: Tenant = null
-      var newHost = TenantHost("website-2.ex.com", TenantHost.RoleCanonical,
-         TenantHost.HttpsNone)
+      var newHost = TenantHost("website-2.ex.com", TenantHost.RoleCanonical)
 
       def newWebsiteDao() =
         newTenantDbDao(newWebsiteOpt.id)

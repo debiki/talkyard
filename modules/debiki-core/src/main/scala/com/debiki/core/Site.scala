@@ -66,18 +66,6 @@ case class Tenant(
   * (Should be renamed to SiteHost.)
   */
 object TenantHost {
-  sealed abstract class HttpsInfo { def required = false }
-
-  /** A client that connects over HTTP should be redirected to HTTPS. */
-  case object HttpsRequired extends HttpsInfo { override def required = true }
-
-  /** When showing a page over HTTPS, <link rel=canonical> should point
-   * to the canonical version, which is the HTTP version.
-   */
-  case object HttpsAllowed extends HttpsInfo
-
-  case object HttpsNone extends HttpsInfo
-
   sealed abstract class Role
   case object RoleCanonical extends Role
   case object RoleRedirect extends Role
@@ -88,50 +76,22 @@ object TenantHost {
 
 case class TenantHost(
   address: String,
-  role: TenantHost.Role,
-  https: TenantHost.HttpsInfo) {
-
-  def origin = {
-    val protocol =
-      if (https == TenantHost.HttpsNone) "http://"
-      else "https://"
-    protocol + address
-  }
+  role: TenantHost.Role) {
 }
 
 
 /** The result of looking up a tenant by host name.
+  * COULD rename to HostnameLookup
   */
-sealed abstract class TenantLookup
-
-/** The looked up host is the canonical host for the tenant found.
- */
-case class FoundChost(tenantId: String) extends TenantLookup
-
-/** The host is an alias for the canonical host.
-  */
-case class FoundAlias(
-  tenantId: String,
-
-  /** E.g. `http://www.example.com'. */
-  canonicalHostUrl: String,
-
-  /** What the server should do with this request. Should id redirect to
-   *  the canonical host, or include a <link rel=canonical>?
-   */
-  role: TenantHost.Role
-) extends TenantLookup
-
-
-/** The server could e.g. reply 404 Not Found.
- */
-case object FoundNothing extends TenantLookup
+case class TenantLookup(
+  siteId: SiteId,
+  thisHost: TenantHost,
+  canonicalHost: TenantHost)
 
 
 abstract class NewSiteData {
   def name: String
   def address: String
-  def https: TenantHost.HttpsInfo
 
   /** Some E2E tests rely on the first site allowing the creation of embedded
     * discussions, so we need to be able to specify an embedding site URL.

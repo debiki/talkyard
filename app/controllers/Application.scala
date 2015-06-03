@@ -141,11 +141,11 @@ object Application extends mvc.Controller {
         pathAndPage._2.getPost_!(PageParts.BodyId).creationDati
       ).getOrElse(new ju.Date)
 
-    val feedUrl = "http://"+ pageReq.request.host + pageReq.request.uri
+    val feedUrl = pageReq.origin + pageReq.request.uri
 
     val feedXml = AtomFeedXml.renderFeed(
-      hostUrl = "http://"+ pageReq.request.host,
-      feedId = feedUrl,
+      hostUrl = pageReq.origin,  // should rename hostUrl to origin
+      feedId = feedUrl,  // send url path + query instead?
       feedTitle = tenant.name +", "+ pagePath.value,
       feedUpdated = mostRecentPageCtime,
       pathsAndPages)

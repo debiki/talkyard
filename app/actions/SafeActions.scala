@@ -171,7 +171,19 @@ object SafeActions {
    */
   object ExceptionAction extends ActionBuilder[Request] {
 
-    def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]) = {
+    def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] = {
+      if (Globals.secure && !request.secure) {
+        // Reject this request, unless an 'insecure' param is set and we're on localhost.
+        val insecureOk = request.queryString.get("insecure").nonEmpty &&
+          request.host.matches("^localhost(:[0-9]+)?$".r)
+        if (!insecureOk)
+          return Future.successful(Results.InternalServerError(o"""I think this is a
+              HTTP request, but I'm configured to be secure, that is,
+              all requests should be HTTPS. Please have a look at your Nginx configuration,
+              or whatever front end HTTP server you're using — does it send the
+              'X-Forwarded-Proto' header? Append '?insecure' to the URL if you want
+              to proceed nevertheless — this works from localhost only. [DwE8KNW2]"""))
+      }
       var futureResult = try {
         block(request)
       }

@@ -50,10 +50,9 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
   def loadSite(siteId: SiteId): Option[Tenant] =
     systemDbDao.loadTenants(Seq(siteId)).headOption
 
-  // COULD rename to findWebsitesCanonicalHost
-  def lookupTenant(scheme: String, hostname: String): TenantLookup = {
+  def lookupCanonicalHost(hostname: String): Option[TenantLookup] = {
     dieIf(hostname contains ":", "DwE5KYUU7")
-    systemDbDao.lookupTenant(scheme, hostname)
+    systemDbDao.lookupCanonicalHost(hostname)
   }
 
 
@@ -88,27 +87,27 @@ class CachingSystemDao(systemDbDao: SystemDbDao)
   def siteId = "?"
 
 
-  override def lookupTenant(scheme: String, host: String): TenantLookup = {
-    val key = _tenantLookupByOriginKey(scheme, host)
-    lookupInCache[TenantLookup](key) foreach {
-      return _
+  override def lookupCanonicalHost(host: String): Option[TenantLookup] = {
+    val key = _tenantLookupByOriginKey(host)
+    lookupInCache[TenantLookup](key) foreach { result => TenantLookup
+      return Some(result)
     }
-    super.lookupTenant(scheme, host) match {
-      case FoundNothing =>
+    super.lookupCanonicalHost(host) match {
+      case None =>
         // Don't cache this.
-        // There are infinitely many origins that maps to nothing, since
-        // DNS names *.debiki.net resolves to Debiki's servers.
-        FoundNothing
-      case tenantLookup =>
-        putInCache(key, CacheValueIgnoreVersion(tenantLookup))
-        tenantLookup
+        // There would be infinitely many origins that maps to nothing, if the DNS server
+        // maps a wildcard like *.example.com to this server.
+        None
+      case Some(result) =>
+        putInCache(key, CacheValueIgnoreVersion(result))
+        Some(result)
     }
   }
 
 
-  private def _tenantLookupByOriginKey(scheme: String, host: String) =
+  private def _tenantLookupByOriginKey(host: String) =
     // Site id unknown, that's what we're about to lookup.
-    CacheKeyAnySite(s"$scheme|$host|TenantByOrigin")
+    CacheKeyAnySite(s"$host|TenantByOrigin")
 
 }
 

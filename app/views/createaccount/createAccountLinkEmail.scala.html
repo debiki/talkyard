@@ -1,5 +1,9 @@
 @(siteAddress: String, username: String, emailId: String, returnToUrl: String, expirationTimeInHours: Int)
 
+@origin = @{
+  debiki.Globals.originOf(siteAddress)
+}
+
 @returnToUrlEscapedHash = @{
   returnToUrl.replaceAllLiterally("#", "__dwHash__")
 }
@@ -9,7 +13,7 @@
 
 <p>
 To finish creation of your account with username <tt>@username</tt> at <tt>@siteAddress</tt>, please click
-<a href="http://@siteAddress@routes.LoginWithPasswordController.confirmEmailAddressAndLogin(emailId, returnToUrlEscapedHash)">
+<a href="@origin@routes.LoginWithPasswordController.confirmEmailAddressAndLogin(emailId, returnToUrlEscapedHash)">
   this link</a>.  It expires in @{expirationTimeInHours - 1} hours.
 </p>
 

@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.Utils.{OkHtml, ForbiddenHtml, BadReqHtml}
 import debiki.dao.SystemDao
+import debiki.Globals.originOf
 import java.{net => jn}
 import play.api._
 import play.api.http.ContentTypes._
@@ -175,8 +176,7 @@ object DebikiHttp {
 
 
   def originOf(request: Request[_]) = {
-    val scheme = if (request.secure) "https" else "http"
-    s"$scheme://${request.host}"
+    Globals.originOf(request)
   }
 
 
@@ -214,24 +214,18 @@ object DebikiHttp {
     // A hostname shouldn't include any port.
     Play.configuration.getString("debiki.hostname").map(_.span(_ != ':')._1)
 
+
   def lookupTenantIdOrThrow(secure: Boolean, host: String, pathAndQuery: String,
-        systemDao: SystemDao): String = {
+        systemDao: SystemDao): SiteId = {
 
     // Play supports one HTTP and one HTTPS port only, so it makes little sense
     // to include any port number when looking up a site.
     val hostname = if (host contains ':') host.span(_ != ':')._1 else host
 
-    // Do this:
-    // - Test if the hostname matches any main site hostname in the config files.
-    // - If the hostname is like: site-<id>.<baseDomain>, e.g. site-123.debiki.com if
-    //   then we have the site id already. Then 1) verify that it's correct, and
-    //   2) if theres' any canonical address for the site, and if so include a
-    //   <link rel='canonical'> to that address (not implemented).
-    // - If the hostname is <whatever> then lookup site id by hostname.
+    if (Some(hostname) == anyFirstSiteHostname)
+      return Site.FirstSiteId
 
-    val siteId = hostname match {
-      case x if Some(x) == anyFirstSiteHostname =>
-        Site.FirstSiteId
+    hostname match {
       case debiki.Globals.siteByIdHostnameRegex(siteId) =>
         systemDao.loadSite(siteId) match {
           case None =>
@@ -240,31 +234,32 @@ object DebikiHttp {
             if (site.hosts.find(_.role == TenantHost.RoleCanonical).isDefined)
               Logger.warn("Should <link rel='canonical'> to the canonical address [DwE1U80]")
         }
-        siteId
+        return siteId
       case _ =>
-        val scheme = if (secure) "https" else "http"
-        systemDao.lookupTenant(scheme, hostname = hostname) match {
-          case found: FoundChost =>
-            found.tenantId
-          case found: FoundAlias =>
-            found.role match {
-              case TenantHost.RoleRedirect =>
-                throwRedirect(found.canonicalHostUrl + pathAndQuery)
-              case TenantHost.RoleLink =>
-                unimplemented("<link rel='canonical'>")
-              case TenantHost.RoleDuplicate =>
-                found.tenantId
-              case _ =>
-                // lookupTenant should have returned FoundChost instead
-                // of FoundAlias with RoleCanonical/Duplicate.
-                assErr("DwE01k5Bk08")
-          }
-          case FoundNothing =>
-            throwNotFound("DwEI5F2", "There is no site with that hostname")
-        }
     }
 
-    siteId
+    systemDao.lookupCanonicalHost(hostname) match {
+      case Some(result) =>
+        if (result.thisHost == result.canonicalHost)
+          result.siteId
+        else result.thisHost.role match {
+          case TenantHost.RoleDuplicate =>
+            result.siteId
+          case TenantHost.RoleRedirect =>
+            throwRedirect(Globals.originOf(result.canonicalHost.address) + pathAndQuery)
+          case TenantHost.RoleLink =>
+            die("DwE2KFW7", "Not implemented: <link rel='canonical'>")
+          case _ =>
+            die("DwE20SE4")
+        }
+      case None =>
+        if (Site.Ipv4AnyPortRegex.matches(hostname)) {
+          // Make it possible to access the server before any domain has been connected
+          // to it and when we still don't know its ip, just after installation.
+          return Site.FirstSiteId
+        }
+        throwNotFound("DwE0NSS0", "There is no site with that hostname")
+    }
   }
 
 

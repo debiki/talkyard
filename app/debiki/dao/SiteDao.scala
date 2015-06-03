@@ -110,9 +110,6 @@ abstract class SiteDao
 
   def addTenantHost(host: TenantHost) = siteDbDao.addTenantHost(host)
 
-  def lookupOtherTenant(scheme: String, host: String): TenantLookup =
-    siteDbDao.lookupOtherTenant(scheme, host)
-
 
   // ----- List pages
 

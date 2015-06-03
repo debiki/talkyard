@@ -72,9 +72,53 @@ class Globals {
     state.mailerActorRef ! (email, websiteId)
   }
 
+  /** Either exactly all sites uses HTTPS, or all of them use HTTP.
+    * A mixed configuration makes little sense I think:
+    * 1) On the public internet, obviously HTTPS should be used, always.
+    * 2) On an intranet, HTTP might be okay. And HTTPS. But not a combination of HTTP and HTTPS:
+    *   a) What about an intranet with some sites using HTTPS and some using HTTPS?
+    *     Then the organization would setup a Certificate Authority, install
+    *     certs in the members' browsers, but then uses them only sometimes, for some
+    *     sites? Why? That seems weird. Supporting this seems like not-well-spent-time.
+    *   b) What about sites that are accessible over HTTP on the intranet and HTTPS
+    *     on the public Internet? Then email links will break (they'll use either http or https).
+    *   c) What about some sites accessible only over HTTP on an intranet,
+    *     and others accessible only on the public Internet over HTTPS?
+    *     Then some firewall has to block access to the HTTP sites from the public internet.
+    *     Seems like a risky and unusual configuration. Not well spent time.
+    *     They might as well use two servers instead, one for the public internet,
+    *     one internally?
+    * -->
+    *  Either HTTP for all sites (assuming a trusted intranet), or HTTPS for all sites.
+    */
+  val secure = Play.configuration.getBoolean("debiki.secure") getOrElse {
+    p.Logger.info("Config value 'debiki.secure' missing; defaulting to true. [DwM3KEF2]")
+    true
+  }
 
+  def scheme = if (secure) "https" else "http"
+
+  def colonPort = Play.configuration.getInt("debiki.nonStandardPort") match {
+    case None => ""
+    case Some(port) =>
+      if (port == 80 && scheme == "http") ""
+      else if (port == 443 && scheme == "https") ""
+      else s":$port"
+  }
+
+
+  def originOf(site: Tenant): Option[String] = site.chost.map(originOf)
+  def originOf(host: TenantHost): String = originOf(host.address)
+  def originOf(hostname: String): String = s"$scheme://$hostname$colonPort"
+  def originOf(request: p.mvc.Request[_]): String = s"$scheme://${request.host}"
+
+
+  // COULD warn if port doesn't match colonPort
   def baseDomainWithPort = state.baseDomainWithPort
   def baseDomainNoPort = state.baseDomainNoPort
+
+
+  val poweredBy = s"$scheme://www.debiki.com"
 
 
   /** If a hostname matches this pattern, the site id can be extracted directly from the url.
@@ -84,7 +128,7 @@ class Globals {
   def SiteByIdHostnamePrefix = "site-"
 
   def siteByIdOrigin(siteId: String) =
-    s"http://$SiteByIdHostnamePrefix$siteId.$baseDomainWithPort" // [tohttps]
+    s"$scheme://$SiteByIdHostnamePrefix$siteId.$baseDomainWithPort"
 
 
   /** The Twitter Ostrich admin service, listens on port 9100. */

@@ -278,7 +278,7 @@ var LocalHostnameInput = React.createClass({
       r.div({ className: 'form-group' + (anyError ? ' has-error' : '') },
         r.label({ for: 'dw-local-hostname' }, this.props.label),
         r.br(),
-        r.kbd({}, 'http://'),
+        r.kbd({}, location.protocol + '//'),
         r.input({ type: 'text', id: 'dw-local-hostname', className: 'form-control',
             placeholder: this.props.placeholder, ref: 'input', onChange: this.onChange,
             value: value }),
