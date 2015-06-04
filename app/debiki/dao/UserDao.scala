@@ -216,7 +216,23 @@ trait UserDao {
   def createPasswordUser(userData: NewPasswordUserData): User = {
     readWriteTransaction { transaction =>
       val userId = transaction.nextAuthenticatedUserId
-      val user = userData.makeUser(userId, transaction.currentTime)
+      var user = userData.makeUser(userId, transaction.currentTime)
+
+      // 2^14 = 16384, 1-2 seconds on my mobile. 2^16 = 65536, takes too long on my mobile.
+      // But 2^14 was the recommended setting 5 years ago. On the server, 2^17 works fine
+      // today though, so let's skip server relief for now and have the server do the
+      // computations.
+      val scryptHash: String = com.lambdaworks.crypto.SCryptUtil.scrypt(userData.password, 65536, 8, 1)
+      scryptHash match {
+        case ScryptHashRegex(hash) =>
+          val hashOfHash = hashSha256Base64UrlSafe(hash)
+          val scryptHashWithoutHash = hash.dropRightWhile(_ != '$')
+          val scryptHashWithHashHash = scryptHashWithoutHash + hashOfHash
+          user = user.copy(passwordHash = Some("scrypt-sha256:" + scryptHashWithHashHash))
+        case _ =>
+          die("DwE4KEW20", "scrypt error")
+      }
+
       transaction.insertAuthenticatedUser(user)
       user.briefUser
     }
@@ -237,6 +253,62 @@ trait UserDao {
       transaction.loginAsGuest(loginAttempt).user
     }
   }
+
+
+  def tryLoginWithPassword(loginAttempt: PasswordLoginAttempt): User = {
+    def fail() = throwForbidden("DwE6KF47", "Bad email or username or password")
+
+    val user = loadUserByEmailOrUsername(loginAttempt.email) getOrElse fail()
+    if (user.emailVerifiedAt.isEmpty)
+      throwForbidden("DwE4UBM2", o"""You have not yet confirmed your email address.
+            Please check your email inbox — you should find an email from us with a
+            verification link; please click it.""")
+
+    val scryptHashHash = user.passwordHash getOrElse fail()
+
+    // The scrpyt hash looks like: (for password "secret")
+    //   $s0$e0801$epIxT/h6HbbwHaehFnh/bw==$7H0vsXlY8UxxyW/BWx/9GuY7jEvGjT71GFd6O4SZND0=
+    //    version. salt_base64------------. derived_key_base64-------------------------.
+    //       params.
+    // where s0 means the salt is 128 bits and the derived key is 256 bits.
+    // and params = 16 bit: log2(N), 8 bit: r, 8 bit: p. So in the example above:
+    // log2(N) = 14, r = 8, p = 1.
+    // However, we calculate the derived key client side (server relief) and send it to
+    // the server which sha256-hashes it (the base64 version of the key).
+    // ScryptHashHash looks like:
+    //   scrypt-sha256:$s0$e0801$epIxT/h6HbbwHaehFnh/bw==$...sha-256-hash-of-the-
+    //                                                            -base64-encoded-derived-key....
+    //
+    // So let us hash the derived key the client sent and see if it matches the sha-256 hash
+    // in the database.
+    //
+    // The client could use:  https://github.com/dchest/scrypt-async-js
+    // it's fast, on my laptop browser, if you specify interruptStep 0.
+    // Just be sure to convert the hash from base64 to a byte array, like so, for example:
+    //   var byteCharacters = atob('epIxT/h6HbbwHaehFnh/bw==');
+    //   var byteNumbers = new Array(byteCharacters.length);
+    //   for (var i = 0; i < byteCharacters.length; i++) {
+    //     byteNumbers[i] = byteCharacters.charCodeAt(i);
+    //   }
+    //   and then call scrypt:
+    //   scrypt('secret', [122, 146, 49, 79, 248, 122, 29, 182, 240, 29, 167, 161,
+    //      22, 120, 127, 111], 14, 8, 32, 99999, function(res) { console.log(res); }, 'base64')
+    //
+
+    val hashOfDerivedKey = hashSha256Base64UrlSafe(loginAttempt.password)
+    scryptHashHash match {
+      case ScryptHashRegex(hash) =>
+        if (hashOfDerivedKey != hash)
+          fail()
+      case _ =>
+        die("DwE5KWE2", s"Corrupt password for user id ${user.id}")
+    }
+
+    user
+  }
+
+
+  private val ScryptHashRegex = """(?:scrypt-sha256:)?\$s0\$[^\$]+\$[^\$]+\$(.+)""".r
 
 
   def tryLogin(loginAttempt: LoginAttempt): LoginGrant = {

@@ -382,10 +382,13 @@ object Prelude {
   def saltAndHashIp = saltAndHash(hashLengthIp) _
 
   private def mdSha1 = js.MessageDigest.getInstance("SHA-1") // not thread safe
+  private def mdSha256 = js.MessageDigest.getInstance("SHA-256") // not thread safe
 
   def hashSha1Base64UrlSafe(text: String): String =
     acb.Base64.encodeBase64URLSafeString(mdSha1.digest(text.getBytes("UTF-8")))
 
+  def hashSha256Base64UrlSafe(text: String): String =
+    acb.Base64.encodeBase64URLSafeString(mdSha256.digest(text.getBytes("UTF-8")))
 
   // ------ Diff, match, patch
 
