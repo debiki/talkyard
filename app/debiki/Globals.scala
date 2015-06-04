@@ -106,7 +106,11 @@ class Globals {
 
   def originOf(site: Site): Option[String] = site.canonicalHost.map(originOf)
   def originOf(host: SiteHost): String = originOf(host.hostname)
-  def originOf(hostname: String): String = s"$scheme://$hostname$colonPort"
+  def originOf(hostOrHostname: String): String = {
+    val (hostname, port) = hostOrHostname.span(_ != ':')
+    dieIf(port.nonEmpty && port != colonPort, "DwE47SK2", s"Bad port: '$hostOrHostname'")
+    s"$scheme://$hostname$colonPort"
+  }
   def originOf(request: p.mvc.Request[_]): String = s"$scheme://${request.host}"
 
 
