@@ -125,11 +125,11 @@ object RateLimits {
   }
 
 
-  /** This is per IP, always, so set fairly high limits. */
+  /** This is per IP, always, so set fairly high limits. Or ... no, computing scrypt takes long. */
   object Login extends RateLimits {
     val key = "Lgi"
     val what = "logged in too many times"
-    def maxPerFifteenSeconds = 15
+    def maxPerFifteenSeconds = 5
     def maxPerFifteenMinutes = Unlimited
     def maxPerDay = Unlimited
     def maxPerDayNewUser = Unlimited

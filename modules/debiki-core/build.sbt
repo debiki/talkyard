@@ -14,7 +14,7 @@ libraryDependencies ++= Seq(
   "commons-codec" % "commons-codec" % "1.5",
   "nu.validator.htmlparser" % "htmlparser" % "1.2.1",
   "com.typesafe.play" %% "play" % "2.3.1", // for parsing JSON, unfortunately brings in all other Play stuff
-  "org.mindrot" % "jbcrypt" % "0.3m", // perhaps try to move to debiki-server?
+  "com.lambdaworks" % "scrypt" % "1.4.0", // COULD move to debiki-server, see comments in src/main/scala/com/debiki/core/dao-db.scala
   "junit" % "junit" % "4.7" % "test",
   "org.specs2" %% "specs2" % "2.3.12" % "test",
   "org.scalatest" %% "scalatest" % "2.2.0" % "test"

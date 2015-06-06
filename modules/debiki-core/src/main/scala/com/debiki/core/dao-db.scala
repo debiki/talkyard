@@ -17,8 +17,8 @@
 
 package com.debiki.core
 
+import com.lambdaworks.crypto.SCryptUtil
 import java.{util => ju}
-import org.mindrot.jbcrypt.BCrypt
 import scala.concurrent.Future
 import DbDao._
 import EmailNotfPrefs.EmailNotfPrefs
@@ -675,14 +675,26 @@ object DbDao {
     case Some(message) => s", details: $message"
   }
 
-  // Perhaps this should be moved to debiki-server, so the database didn't have this
-  // dependency on the password hashing algorithm?
-  def checkPassword(plainTextPassword: String, hash: String) =
-    BCrypt.checkpw(plainTextPassword, hash)
+  /** So we know which algorithm was used when hashing a password. */
+  private val ScryptPrefix = "scrypt:"
+
+  // This could be moved to debiki-server, so the dao won't have this
+  // dependency on the password hashing algorithm? Just have the dao module load the
+  // password hash, but don't actually check the hash inside the dao.
+  def checkPassword(plainTextPassword: String, hash: String) = {
+    dieIf(!hash.startsWith(ScryptPrefix), "DwEKE36", s"Unknown password algorithm: '$hash'")
+    val hashNoPrefix = hash.drop(ScryptPrefix.length)
+    SCryptUtil.check(plainTextPassword, hashNoPrefix)
+  }
+
 
   def saltAndHashPassword(plainTextPassword: String): String = {
-    val logRounds = 13 // for now. 10 is the default.
-    BCrypt.hashpw(plainTextPassword, BCrypt.gensalt(logRounds))
+    // This is what I was using for bcrypt previously: val logRounds = 13 // 10 is the default.
+    // Now, scrypt though, with: n = 2^17 = 131072, r = 8, p = 1  -- no, use 2^16 = 65536
+    // (2^14 was recommended in 2009 for web apps, and 2^20 for files
+    // if waiting 5 seconds was okay. 2^17 is overkill I would think.)
+    val hash = SCryptUtil.scrypt(plainTextPassword, 65536, 8, 1)
+    s"$ScryptPrefix$hash"
   }
 
 }
