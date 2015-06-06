@@ -19,6 +19,8 @@
   anyPageRole: Option[com.debiki.core.PageRole], anyPagePath: Option[com.debiki.core.PagePath],
   reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
 
+@import play.api.Play.current
+
 @asset(file: String) = @{
   routes.Assets.at(path = "/public/res", file)
 }
@@ -103,6 +105,7 @@ occurrence of the magic string with user specific data. *@
     reactPageStore: JSON.parse(unencodeHtmlContent($('#dwReactPageStore').text())),
     reactUserStore: parseAnyDebikiUserSpecificData(),
     getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
+    isDev: @{ if (play.api.Play.isDev) "true" else "false" },
     v0: { util: {} },
     internal: {
       $: jQuery,

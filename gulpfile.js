@@ -310,6 +310,9 @@ function makeConcatDebikiScriptsStream() {
       makeConcatStream('embedded-comments.js', debikiEmbeddedCommentsFiles),
       makeConcatStream('admin-old.js', adminOldFiles),
 
+      gulp.src('bower_components/zxcvbn/zxcvbn.js')
+        .pipe(gulp.dest('public/res/')),
+
       makeConcatStream('debiki-spa-new-website-choose-owner.js', [
           'target/client/new-site/scripts/new-website-choose-owner.js']),
 

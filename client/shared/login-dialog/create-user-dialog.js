@@ -42,6 +42,14 @@ d.i.makeReturnToPostUrlForVerifEmail = function(postId) {
  * and via a link in that email.
  */
 d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
+  var zxcvbnLoaded = false;
+  yepnope({
+    load:  d.i.assetsUrlPathStart + 'zxcvbn.js',
+    complete: function() {
+      zxcvbnLoaded = true;
+    }
+  });
+
   var dialog = createUserDialogHtml();
   dialog.dialog(d.i.newModalDialogSettings({
     width: 380,
@@ -69,6 +77,42 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
       returnToUrl: anyReturnToUrl,
       authDataCacheKey: userData.authDataCacheKey
     };
+
+    if (!zxcvbnLoaded) {
+      // This will never happen. It'll take fairly long for the user to fill in
+      // the form. Well — might happen, if the server is shut down?
+      alert('Please wait 5 seconds for zxcvbn to load, then try again. Sorry. [DwE2KEF8]');
+      return;
+    }
+
+    var passwordStrength = zxcvbn(data.password, [
+        data.name, data.email, data.username, 'debiki']);
+    console.debug(
+        'Password entropy: ' + passwordStrength.entropy +
+        ', crack_time: ' + passwordStrength.crack_time +
+        ' = ' + passwordStrength.crack_time_display +
+        ', score: ' + passwordStrength.score);
+    var problem = null;
+    if (data.password.length < 8) {
+      problem = 'too short, should be at least 8 characters';
+    }
+    else if (!data.password.match(/[0-9!@#$%^&*()_+`=;:{}[\]\\]+/)) {
+      // This extra test is here just in case the current version of zxcvbn happens to be buggy.
+      problem = 'contains no digit or special character';
+    }
+    else if (passwordStrength.score < 4) {
+      problem = 'too weak';
+    }
+    if (problem) {
+      // 100 computers (in the message below)? Well, zxcvbn assumes 10ms per guess and 100 cores.
+      // My scrypt settings are more like 100-200 ms per guess. So, say 100 ms,
+      // and 1 000 cores = 100 computers  -->  can use zxcvbn's default crack time.
+      alert('Password ' + problem + '. Please choose a stronger password.\n\n' +
+          '(Estimated crack time: ' + passwordStrength.crack_time_display +
+          ', for someone with 100 computers and access to the scrypt hash.)');
+      if (!debiki.isDev || !confirm('Development mode. Continue anyway?'))
+        return;
+    }
 
     var url = d.i.serverOrigin;
     if (userData.authDataCacheKey) {
