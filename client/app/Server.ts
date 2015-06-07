@@ -223,6 +223,11 @@ export function loadInvitesSentBy(userId: number, doneCallback: (invites: Invite
 }
 
 
+export function setIsAdminOrModerator(userId: number, doWhat: string, success: () => void) {
+  postJsonSuccess('/-/set-is-admin-or-moderator', success, { userId: userId, doWhat: doWhat });
+}
+
+
 export function approveRejectUser(user: CompleteUser, doWhat: string, success: () => void) {
   postJsonSuccess( '/-/approve-reject-user', success, {
     userId: user.id,

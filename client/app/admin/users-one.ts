@@ -68,6 +68,20 @@ export var AdminUserPage = createComponent({
     return '/-/users/#/id/' + this.state.user.id;
   },
 
+  toggleIsAdmin: function() {
+    var doWhat = this.state.user.isAdmin ? 'RevokeAdmin' : 'GrantAdmin';
+    Server.setIsAdminOrModerator(this.state.user.id, doWhat, () => {
+      this.loadCompleteUser();
+    });
+  },
+
+  toggleIsModerator: function() {
+    var doWhat = this.state.user.isModerator ? 'RevokeModerator' : 'GrantModerator';
+    Server.setIsAdminOrModerator(this.state.user.id, doWhat, () => {
+      this.loadCompleteUser();
+    });
+  },
+
   unsuspendUser: function() {
     Server.unsuspendUser(this.state.user.id, () => {
       this.loadCompleteUser();
@@ -76,15 +90,18 @@ export var AdminUserPage = createComponent({
 
   render: function() {
     var user: CompleteUser = this.state.user;
+    var loggedInUser: User = this.props.loggedInUser;
     if (!user)
       return r.p({}, 'Loading...');
-    
+
     var showPublProfileButton = Button({ href: this.publicProfileLink() }, 'Show Public Profile');
 
     var usernameAndFullName = user.username;
     if (user.fullName) {
       usernameAndFullName += ' (' + user.fullName + ')';
     }
+
+    var thatIsYou = user.id === loggedInUser.userId ? " — that's you" : null;
 
     var suspendedText = user.suspendedTillEpoch
         ? 'from ' + moment(user.suspendedAtEpoch).format('YYYY-MM-DD') +
@@ -93,10 +110,11 @@ export var AdminUserPage = createComponent({
         : 'no';
 
     var suspendButton;
+    var userSuspendedNow = user.suspendedTillEpoch && Date.now() <= user.suspendedTillEpoch;
     if (user.isAdmin) {
       // Cannot suspend admins.
     }
-    else if (user.suspendedTillEpoch && Date.now() <= user.suspendedTillEpoch) {
+    else if (userSuspendedNow) {
       suspendButton =
           Button({ onClick: this.unsuspendUser }, 'Unsuspend');
     }
@@ -106,15 +124,27 @@ export var AdminUserPage = createComponent({
             Button({}, 'Suspend'));
     }
 
+    var toggleAdminButton;
+    var toggleModeratorButton;
+    if (loggedInUser.isAdmin && !thatIsYou && !userSuspendedNow) {
+      toggleAdminButton = Button({ onClick: this.toggleIsAdmin },
+          user.isAdmin ? 'Revoke Admin' : 'Grant Admin');
+      toggleModeratorButton = Button({ onClick: this.toggleIsModerator },
+          user.isModerator ? 'Revoke Moderator' : 'Grant Moderator');
+    }
+
+    var moderatorInfo = user.isAdmin
+        ? null  // then moderator settings have no effect
+        : r.p({}, 'Moderator: ' + user.isModerator, toggleModeratorButton);
+
     return (
       r.div({},
         r.div({ className: 'pull-right' },
           showPublProfileButton),
 
-        r.p({}, 'Username: ' + usernameAndFullName),
-        
-        r.p({}, 'Admin: ' + user.isAdmin),
-
+        r.p({}, 'Username: ' + usernameAndFullName, thatIsYou),
+        r.p({}, 'Admin: ' + user.isAdmin, toggleAdminButton),
+        moderatorInfo,
         r.p({}, 'Suspended: ' + suspendedText, suspendButton)));
   }
 });

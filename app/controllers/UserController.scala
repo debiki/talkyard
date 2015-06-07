@@ -93,6 +93,7 @@ object UserController extends mvc.Controller {
       "username" -> user.username,
       "fullName" -> user.fullName,
       "isAdmin" -> user.isAdmin,
+      "isModerator" -> user.isModerator,
       "country" -> user.country,
       "url" -> user.website,
       "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill))
@@ -145,6 +146,25 @@ object UserController extends mvc.Controller {
         request.dao.rejectUser(userId, approverId = request.theUserId)
       case "Undo" =>
         request.dao.undoApproveOrRejectUser(userId, approverId = request.theUserId)
+    }
+    Ok
+  }
+
+
+  def setIsAdminOrModerator = AdminPostJsonAction(maxLength = 100) { request =>
+    val userId = (request.body \ "userId").as[UserId]
+    val doWhat = (request.body \ "doWhat").as[String]
+    doWhat match {
+      case "GrantAdmin" =>
+        request.dao.setStaffFlags(userId, isAdmin = Some(true), changedById = request.theUserId)
+      case "RevokeAdmin" =>
+        request.dao.setStaffFlags(userId, isAdmin = Some(false), changedById = request.theUserId)
+      case "GrantModerator" =>
+        request.dao.setStaffFlags(userId, isModerator = Some(true), changedById = request.theUserId)
+      case "RevokeModerator" =>
+        request.dao.setStaffFlags(userId, isModerator = Some(false), changedById = request.theUserId)
+      case _ =>
+        throwBadReq("DwE2KGF8", "Bad 'doWhat'")
     }
     Ok
   }
@@ -357,7 +377,7 @@ object UserController extends mvc.Controller {
       "displayName" -> userInfo.info.displayName,
       "username" -> userInfo.info.username.getOrElse(null),
       "isAdmin" -> userInfo.info.isAdmin,
-      "isModerator" -> false, // userInfo.info.isModerator,
+      "isModerator" -> userInfo.info.isModerator,
       "numPages" -> userInfo.stats.numPages,
       "numPosts" -> userInfo.stats.numPosts,
       "numReplies" -> userInfo.stats.numReplies,

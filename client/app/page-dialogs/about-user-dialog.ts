@@ -150,13 +150,23 @@ var AboutUserDialog = createComponent({
 var AboutUser = createComponent({
   render: function() {
     var user: CompleteUser = this.props.user;
+
+    var isStaffInfo = null;
+    if (user.isModerator) {
+      isStaffInfo = 'Is moderator.';
+    }
+    if (user.isAdmin) {
+      isStaffInfo = 'Is administrator.';
+    }
+
     return (
       r.div({},
         r.div({ className: 'dw-about-user-actions' },
           Button({ onClick: this.props.viewUserProfile }, 'View Profile')),
         r.p({},
           'Username: ' + user.username, r.br(),
-          'Name: ' + user.fullName)));
+          'Name: ' + user.fullName, r.br(),
+          isStaffInfo)));
   }
 });
 

@@ -80,7 +80,7 @@ var NotFound = React.createClass({
 
 var UserPage = React.createClass({
   mixins: [RouterState, RouterNavigation, debiki2.StoreListenerMixin],
-  
+
   getInitialState: function() {
     return {
       loggedInUser: debiki2.ReactStore.getUser()
@@ -184,9 +184,21 @@ var UserInfo = createComponent({
           'This user is ' + whatAndUntilWhen, r.br(),
           'Reason: ' + user.suspendedReason);
     }
-    var isGuestInfo = isGuest(user)
-        ? r.span({ className: 'dw-is-guest' }, ' — a guest user, could be anyone')
-        : null;
+
+    var isGuestInfo = null;
+    if (isGuest(user)) {
+      isGuestInfo = ' — a guest user, could be anyone';
+    }
+    if (user.isModerator) {
+      isGuestInfo = ' – moderator';
+    }
+    if (user.isAdmin) {
+      isGuestInfo = ' – administrator';
+    }
+    if (isGuestInfo) {
+      isGuestInfo = r.span({ className: 'dw-is-what' }, isGuestInfo);
+    }
+
     return (
       r.div({ className: 'user-info' },
         r.h1({}, user.username),

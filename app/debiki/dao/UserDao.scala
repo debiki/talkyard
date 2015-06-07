@@ -110,10 +110,35 @@ trait UserDao {
   }
 
 
+  def setStaffFlags(userId: UserId, isAdmin: Option[Boolean] = None,
+        isModerator: Option[Boolean] = None, changedById: UserId) {
+    require(isAdmin.isDefined != isModerator.isDefined, "DwE4KEP20")
+    if (userId == changedById)
+      throwForbidden("DwE4KEF2", "Cannot change one's own is-admin and is-moderator state")
+
+    readWriteTransaction { transaction =>
+      var user = transaction.loadTheCompleteUser(userId)
+
+      if (user.isSuspendedAt(transaction.currentTime) && (
+          isAdmin == Some(true) || isModerator == Some(true)))
+        throwForbidden("DwE2KEP8", "User is suspended")
+
+      user = user.copy(
+        isAdmin = isAdmin.getOrElse(user.isAdmin),
+        isModerator = isModerator.getOrElse(user.isModerator))
+      // COULD update audit log.
+      transaction.updateCompleteUser(user)
+    }
+  }
+
+
   def suspendUser(userId: UserId, numDays: Int, reason: String, suspendedById: UserId) {
     require(numDays >= 1, "DwE4PKF8")
     readWriteTransaction { transaction =>
       var user = transaction.loadTheCompleteUser(userId)
+      if (user.isAdmin)
+        throwForbidden("DwE4KEF24", "Cannot suspend admins")
+
       val suspendedTill = new ju.Date(transaction.currentTime.getTime + numDays * MillisPerDay)
       user = user.copy(
         suspendedAt = Some(transaction.currentTime),

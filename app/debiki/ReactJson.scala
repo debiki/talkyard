@@ -38,6 +38,7 @@ object ReactJson {
         Json.obj(
           "isLoggedIn" -> JsBoolean(true),
           "isAdmin" -> JsBoolean(user.isAdmin),
+          "isModerator" -> JsBoolean(user.isModerator),
           "userId" -> JsNumber(user.id),
           "username" -> JsStringOrNull(user.username),
           "fullName" -> JsString(user.displayName),
@@ -270,6 +271,7 @@ object ReactJson {
     Some(Json.obj(
       "isLoggedIn" -> JsBoolean(true),
       "isAdmin" -> JsBoolean(user.isAdmin),
+      "isModerator" -> JsBoolean(user.isModerator),
       "userId" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.username),
       "fullName" -> JsString(user.displayName),
