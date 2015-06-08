@@ -144,19 +144,19 @@ var UserBar = React.createClass({
     var loggedInUser = this.props.loggedInUser;
     var user = this.props.user;
 
-    var showPrivateStuff = loggedInUser.isAdmin || (
+    var showPrivateStuff = isStaff(loggedInUser) || (
         loggedInUser.isAuthenticated && loggedInUser.userId === user.id);
 
     var invitesNavItem = null;
     var preferencesNavItem = null;
     if (showPrivateStuff) {
       preferencesNavItem = NavItem({ eventKey: 'user-preferences' }, 'Preferences');
-      if (loggedInUser.isAdmin && !isGuest(user)) {
+      if (!isGuest(user)) {
         invitesNavItem = NavItem({ eventKey: 'user-invites' }, 'Invites');
       }
     }
 
-    var adminButton = loggedInUser.isAdmin
+    var adminButton = isStaff(loggedInUser)
         ? r.li({}, r.a({ href: '/-/admin/#/users/id/' + user.id }, 'Admin'))
         : null;
 

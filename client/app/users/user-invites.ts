@@ -76,22 +76,27 @@ export var UserInvites = createComponent({
     var loggedInUser: User = this.props.loggedInUser;
 
     var inviteButton;
-    var introText = r.p({}, 'Here you can invite people to join this site. Invites that you ' +
-        'have already sent are listed below.');
+    var introText = r.p({}, 'Here you can invite people to join this site. ' + (
+        this.state.invites.length
+            ? 'Invites that you have already sent are listed below.'
+            : 'You have not invited anyone yet.'));
     if (user.id === loggedInUser.userId) {
       inviteButton =
         ModalTrigger({ modal: InviteDialog({ addInvite: this.addInvite }) },
           Button({}, 'Send an Invite'));
     }
     else {
-      introText = r.p({}, "Here you can see any invites sent by " + user.username + ".");
+      introText = "Here you can see any invites sent by " + user.username + ".";
+      if (!this.state.invites.length) {
+        introText += " He or she has not invited anyone yet.";
+      }
+      introText = r.p({}, introText);
     }
 
     if (!this.state.invites.length)
       return (
         r.div({},
-          r.p({}, 'Here you can invite people to join this site. You have not invited ' +
-            'anyone thus far.'),
+          introText,
           inviteButton));
 
     var now = Date.now();

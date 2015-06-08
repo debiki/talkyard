@@ -303,6 +303,9 @@ case object User {
       if (c > 'Z' && c < 'a' && !"_".contains(c)) return true  // punctuation
       if (c > 'z' && c <= 127) return true  // punctuation
     }
+    if (isEmailLocalPartHidden(email)) {
+      return true
+    }
     if (email matches """.+@.+\..+""") return false
     true
   }
@@ -331,8 +334,9 @@ case object User {
  * @param emailVerifiedAt
  * @param country
  * @param website COULD rename to url, that's more generic.
- * @param isAdmin
  * @param isOwner
+ * @param isAdmin
+ * @param isModerator
  */
 case class User(
   id: UserId,
@@ -362,10 +366,11 @@ case class User(
   require(!isAuthenticated || (
     username.isDefined &&
     guestCookie.isEmpty), "DwE0AUTH6U82")
+  require(!isEmailLocalPartHidden(email), "DwE6kJ23")
 
   def isAuthenticated = isRoleId(id)
   def isApprovedOrStaff = isApproved == Some(true) || isStaff
-  def isStaff = isAdmin || isOwner
+  def isStaff = isAdmin || isModerator
 
   def isGuest = User.isGuestId(id)
   def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
@@ -409,6 +414,7 @@ case class CompleteUser(
   require(suspendedReason.map(r => r.trim.length < r.length) != Some(true), "DwE4KPF8")
   require(suspendedById.map(_ >= LowestNonGuestId) != Some(false), "DwE7K2WF5")
   require(!isGuest, "DwE0GUEST223")
+  require(!isEmailLocalPartHidden(emailAddress), "DwE2WFE1")
 
   def isStaff = isAdmin || isModerator
   def isApprovedOrStaff = approvedAt == Some(true) || isStaff
@@ -426,12 +432,17 @@ case class CompleteUser(
     url = website,
     emailForEveryNewPost = emailForEveryNewPost)
 
-  def copyWithNewPreferences(preferences: UserPreferences) = copy(
-    fullName = preferences.fullName,
-    username = preferences.username,
-    emailAddress = preferences.emailAddress,
-    website = preferences.url,
-    emailForEveryNewPost = preferences.emailForEveryNewPost)
+  def copyWithNewPreferences(preferences: UserPreferences) = {
+    val newEmailAddress =
+      if (isEmailLocalPartHidden(preferences.emailAddress)) this.emailAddress
+      else preferences.emailAddress
+    copy(
+      fullName = preferences.fullName,
+      username = preferences.username,
+      emailAddress = newEmailAddress,
+      website = preferences.url,
+      emailForEveryNewPost = preferences.emailForEveryNewPost)
+  }
 
   def briefUser = User(
     id = id,

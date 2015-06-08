@@ -64,7 +64,7 @@ trait UserDao {
       val userId = transaction.nextAuthenticatedUserId
       var newUser = invite.makeUser(userId, transaction.currentTime)
       val inviter = transaction.loadUser(invite.createdById) getOrDie "DwE5FKG4"
-      if (inviter.isAdmin) {
+      if (inviter.isStaff) {
         newUser = newUser.copy(
           isApproved = Some(true),
           approvedAt = Some(transaction.currentTime),
@@ -129,6 +129,7 @@ trait UserDao {
       // COULD update audit log.
       transaction.updateCompleteUser(user)
     }
+    refreshUserInAnyCache(userId)
   }
 
 

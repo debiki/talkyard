@@ -47,6 +47,8 @@ object ApiActions {
   def GetAction(f: GetRequest => Result) =
     PlainApiAction(NoRateLimits)(BodyParsers.parse.empty)(f)
 
+  def StaffGetAction(f: GetRequest => Result) =
+    PlainApiActionStaffOnly(BodyParsers.parse.empty)(f)
 
   def AdminGetAction(f: GetRequest => Result) =
     PlainApiActionAdminOnly(BodyParsers.parse.empty)(f)
@@ -58,49 +60,37 @@ object ApiActions {
     PlainApiAction(rateLimits)(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
-
   def AsyncJsonOrFormDataPostAction
         (rateLimits: RateLimits, maxBytes: Int)
         (f: ApiRequest[JsonOrFormDataBody] => Future[Result]): mvc.Action[JsonOrFormDataBody] =
     PlainApiAction(rateLimits).async(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
-  /**
-   * @deprecated Use ApiRequest[JsonOrFormDataBody] instead
-   */
-  def PostFormDataAction
-        (rateLimits: RateLimits, maxUrlEncFormBytes: Int)
-        (f: FormDataPostRequest => Result) =
-    PlainApiAction(rateLimits)(
-      BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(f)
 
-
-  /**
-   * If the JSON data is rather complex and cannot be represented as form-data,
-   * then you cannot use JsonOrFormDataPostAction, and that's when you should
-   * use this function.
-   */
-  def PostJsonAction
-        (rateLimits: RateLimits, maxLength: Int)
-        (f: JsonPostRequest => Result) =
+  def PostJsonAction(rateLimits: RateLimits, maxLength: Int)(f: JsonPostRequest => Result) =
     PlainApiAction(rateLimits)(
       BodyParsers.parse.json(maxLength = maxLength))(f)
 
+  def StaffPostJsonAction(maxLength: Int)(f: JsonPostRequest => Result) =
+    PlainApiActionStaffOnly(
+      BodyParsers.parse.json(maxLength = maxLength))(f)
 
-  def AdminPostJsonAction
-        (maxLength: Int)
-        (f: JsonPostRequest => Result) =
+  def AdminPostJsonAction(maxLength: Int)(f: JsonPostRequest => Result) =
     PlainApiActionAdminOnly(
       BodyParsers.parse.json(maxLength = maxLength))(f)
 
 
   private def PlainApiAction(rateLimits: RateLimits) =
-    PlainApiActionImpl(rateLimits, adminOnly = false)
+    PlainApiActionImpl(rateLimits, adminOnly = false, staffOnly = false)
 
-  private val PlainApiActionAdminOnly = PlainApiActionImpl(NoRateLimits, adminOnly = true)
+  private def PlainApiActionStaffOnly =
+    PlainApiActionImpl(NoRateLimits, adminOnly = false, staffOnly = true)
+
+  private val PlainApiActionAdminOnly =
+    PlainApiActionImpl(NoRateLimits, adminOnly = true, staffOnly = false)
 
 
-  private def PlainApiActionImpl(rateLimits: RateLimits, adminOnly: Boolean) =
+  private def PlainApiActionImpl(rateLimits: RateLimits, adminOnly: Boolean, staffOnly: Boolean) =
       new ActionBuilder[ApiRequest] {
 
     override def composeAction[A](action: Action[A]) = {
@@ -127,7 +117,10 @@ object ApiActions {
         logoutBecauseSuspended = true
       }
 
-      if (adminOnly && user.map(_.isAdmin) != Some(true))
+      if (staffOnly && !user.exists(_.isStaff))
+        throwForbidden("DwE7BSW3", "Please login as admin or moderator")
+
+      if (adminOnly && !user.exists(_.isAdmin))
         throwForbidden("DwE1GfK7", "Please login as admin")
 
       val apiRequest = ApiRequest[A](

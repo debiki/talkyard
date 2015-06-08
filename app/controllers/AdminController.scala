@@ -39,8 +39,13 @@ import Utils.{OkHtml, OkXml}
 object AdminController extends mvc.Controller {
 
 
+  def redirectToAdminPage() = GetAction { request =>
+    Redirect(routes.AdminController.viewAdminPage().url)
+  }
+
+
   def viewAdminPage() = GetAction { apiReq =>
-    if (apiReq.user.map(_.isAdmin) != Some(true)) {
+    if (!apiReq.user.exists(_.isStaff)) {
       Ok(views.html.login.loginPopup(
         mode = "LoginToAdministrate",
         serverAddress = s"//${apiReq.host}",

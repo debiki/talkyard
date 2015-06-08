@@ -40,7 +40,7 @@ import DebikiHttp.{throwForbidden, throwNotFound, throwBadReq}
 object UserController extends mvc.Controller {
 
 
-  def listCompleteUsers(whichUsers: String) = AdminGetAction { request =>
+  def listCompleteUsers(whichUsers: String) = StaffGetAction { request =>
     var onlyApproved = false
     var onlyPendingApproval = false
     whichUsers match {
@@ -57,7 +57,8 @@ object UserController extends mvc.Controller {
       val suspenderIds = usersPendingApproval.flatMap(_.suspendedById)
       val usersById = transaction.loadUsersAsMap(approverIds ++ suspenderIds)
       val usersJson = JsArray(usersPendingApproval.map(
-        jsonForCompleteUser(_, usersById, callerIsAdmin = true)))
+        jsonForCompleteUser(_, usersById, callerIsAdmin = request.theUser.isAdmin,
+          callerIsStaff = true)))
       OkSafeJson(Json.toJson(Map("users" -> usersJson)))
     }
   }
@@ -65,18 +66,20 @@ object UserController extends mvc.Controller {
 
   def loadCompleteUser(userId: String) = GetAction { request =>
     val userIdInt = Try(userId.toInt) getOrElse throwBadReq("DwE6FWV0", "Bad user id")
-    val callerIsAdmin = request.user.map(_.isAdmin) == Some(true)
+    val callerIsStaff = request.user.exists(_.isStaff)
+    val callerIsAdmin = request.user.exists(_.isAdmin)
     val callerIsUserHerself = request.user.map(_.id == userIdInt) == Some(true)
     request.dao.readOnlyTransaction { transaction =>
       val usersJson =
         if (User.isRoleId(userIdInt)) {
           val user = transaction.loadTheCompleteUser(userIdInt)
           jsonForCompleteUser(user, Map.empty, callerIsAdmin = callerIsAdmin,
-            callerIsUserHerself = callerIsUserHerself)
+            callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
         }
         else {
           val user = transaction.loadTheUser(userIdInt)
-          jsonForGuest(user, Map.empty, callerIsAdmin = callerIsAdmin)
+          jsonForGuest(user, Map.empty, callerIsStaff = callerIsStaff,
+            callerIsAdmin = callerIsAdmin)
 
         }
       OkSafeJson(Json.toJson(Map("user" -> usersJson)))
@@ -85,7 +88,7 @@ object UserController extends mvc.Controller {
 
 
   private def jsonForCompleteUser(user: CompleteUser, usersById: Map[UserId, User],
-        callerIsAdmin: Boolean = false, callerIsUserHerself: Boolean = false)
+      callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false)
         : JsObject = {
     var userJson = Json.obj(
       "id" -> user.id,
@@ -98,10 +101,14 @@ object UserController extends mvc.Controller {
       "url" -> user.website,
       "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill))
 
-    if (callerIsAdmin || callerIsUserHerself) {
+    if (callerIsStaff || callerIsUserHerself) {
       val anyApprover = user.approvedById.flatMap(usersById.get)
       val anySuspender = user.suspendedById.flatMap(usersById.get)
-      userJson += "email" -> JsString(user.emailAddress)
+      val safeEmail =
+        if (callerIsAdmin || callerIsUserHerself) user.emailAddress
+        else hideEmailLocalPart(user.emailAddress)
+
+      userJson += "email" -> JsString(safeEmail)
       userJson += "emailForEveryNewPost" -> JsBoolean(user.emailForEveryNewPost)
       userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
       userJson += "approvedAtEpoch" -> DateEpochOrNull(user.approvedAt)
@@ -119,7 +126,8 @@ object UserController extends mvc.Controller {
 
 
   private def jsonForGuest(user: User, usersById: Map[UserId, User],
-        callerIsAdmin: Boolean = false): JsObject = {
+        callerIsStaff: Boolean, callerIsAdmin: Boolean): JsObject = {
+    val safeEmail = callerIsAdmin ? user.email | hideEmailLocalPart(user.email)
     var userJson = Json.obj(
       "id" -> user.id,
       "fullName" -> user.displayName,
@@ -127,8 +135,8 @@ object UserController extends mvc.Controller {
       "url" -> user.website)
       // += ipSuspendedTill
       // += browserIdCookieSuspendedTill
-    if (callerIsAdmin) {
-      userJson += "email" -> JsString(user.email)
+    if (callerIsStaff) {
+      userJson += "email" -> JsString(safeEmail)
       // += ipSuspendedAt, ById, ByUsername, Reason
       // += browserIdCookieSuspendedAt, ById, ByUsername, Reason
     }
@@ -136,7 +144,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def approveRejectUser = AdminPostJsonAction(maxLength = 100) { request =>
+  def approveRejectUser = StaffPostJsonAction(maxLength = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
     val doWhat = (request.body \ "doWhat").as[String]
     doWhat match {
@@ -170,7 +178,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def suspendUser = AdminPostJsonAction(maxLength = 300) { request =>
+  def suspendUser = StaffPostJsonAction(maxLength = 300) { request =>
     val userId = (request.body \ "userId").as[UserId]
     val numDays = (request.body \ "numDays").as[Int]
     val reason = (request.body \ "reason").as[String]
@@ -186,7 +194,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def unsuspendUser = AdminPostJsonAction(maxLength = 100) { request =>
+  def unsuspendUser = StaffPostJsonAction(maxLength = 100) { request =>
     val userId = (request.body \ "userId").as[UserId]
     if (isGuestId(userId))
       throwBadReq("DwE7GPKU8", "Cannot unsuspend guest user ids")
@@ -195,7 +203,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def blockGuest = AdminPostJsonAction(maxLength = 100) { request =>
+  def blockGuest = StaffPostJsonAction(maxLength = 100) { request =>
     val postId = (request.body \ "postId").as[PostId]
     val numDays = (request.body \ "numDays").as[Int]
     request.dao.blockGuest(postId, numDays = numDays, blockerId = request.theUserId)
@@ -203,7 +211,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def unblockGuest = AdminPostJsonAction(maxLength = 100) { request =>
+  def unblockGuest = StaffPostJsonAction(maxLength = 100) { request =>
     val postId = (request.body \ "postId").as[PostId]
     request.dao.unblockGuest(postId, unblockerId = request.theUserId)
     Ok
@@ -321,7 +329,7 @@ object UserController extends mvc.Controller {
     val user = request.dao.loadCompleteUser(userIdInt) getOrElse throwNotFound(
       "DwE3EJ5O2", s"User not found, id: $userId")
     val prefs = user.preferences
-    val json = Json.obj("userPreferences" -> userPrefsToJson(prefs))
+    val json = Json.obj("userPreferences" -> userPrefsToJson(prefs, request.theUser))
     OkSafeJson(json)
   }
 
@@ -365,9 +373,9 @@ object UserController extends mvc.Controller {
 
 
   private def checkUserPrefsAccess(request: DebikiRequest[_], prefsUserId: UserId) {
-    val adminOrOwn = request.theUser.isAdmin || request.theUser.id == prefsUserId
-    if (!adminOrOwn)
-      throwForbidden("DwE15KFE5", "Not your preferences and you're no admin")
+    val staffOrOwn = request.theUser.isStaff || request.theUserId == prefsUserId
+    if (!staffOrOwn)
+      throwForbidden("DwE15KFE5", "Not your preferences")
   }
 
 
@@ -461,12 +469,14 @@ object UserController extends mvc.Controller {
   }
 
 
-  private def userPrefsToJson(prefs: UserPreferences): JsObject = {
+  private def userPrefsToJson(prefs: UserPreferences, requester: User): JsObject = {
+    val adminOrOwn = requester.isAdmin || prefs.userId == requester.id
+    val safeEmail = adminOrOwn ? prefs.emailAddress | hideEmailLocalPart(prefs.emailAddress)
     Json.obj(
       "userId" -> prefs.userId,
       "fullName" -> prefs.fullName,
       "username" -> prefs.username,
-      "emailAddress" -> prefs.emailAddress,
+      "emailAddress" -> safeEmail,
       "url" -> prefs.url,
       "emailForEveryNewPost" -> prefs.emailForEveryNewPost)
   }

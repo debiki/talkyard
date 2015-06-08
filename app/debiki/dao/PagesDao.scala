@@ -51,7 +51,7 @@ trait PagesDao {
       // Authorize and determine approver user id. For now:
       val author = transaction.loadUser(authorId) getOrElse throwForbidden("DwE9GK32", "User gone")
       val approvedById =
-        if (author.isAdmin) {
+        if (author.isStaff) {
           author.id
         }
         else {

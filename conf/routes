@@ -59,6 +59,7 @@ GET   /-/reset-password/password-changed controllers.ResetPasswordController.sho
 GET   /-/create-site            controllers.CreateSiteController.start
 POST  /-/create-site            controllers.CreateSiteController.createSite
 
+GET   /-/admin                  controllers.AdminController.redirectToAdminPage
 GET   /-/admin/                 controllers.AdminController.viewAdminPage
 # Old admin pages:
 GET   /-/admin-old/             controllers.AdminController.viewAdminPageOld

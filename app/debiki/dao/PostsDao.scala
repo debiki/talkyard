@@ -73,7 +73,7 @@ trait PostsDao {
       val isApproved = true // for now
       val author = transaction.loadUser(authorId) getOrElse throwNotFound("DwE404UF3", "Bad user")
       val approverId =
-        if (author.isAdmin) {
+        if (author.isStaff) {
           author.id
         }
         else {
@@ -142,7 +142,7 @@ trait PostsDao {
 
       // For now: (add back edit suggestions later. And should perhaps use PermsOnPage.)
       val editsOwnPost = editorId == postToEdit.createdById
-      val mayEdit = editsOwnPost || editor.isAdmin
+      val mayEdit = editsOwnPost || editor.isStaff
       if (!mayEdit)
         throwForbidden("DwE8KF32", "Currently you may edit your own posts only.")
 
@@ -160,10 +160,10 @@ trait PostsDao {
         else {
           siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(newText,
             allowClassIdDataAttrs = postId == PageParts.BodyId,
-            followLinks = postToEdit.createdByUser(page.parts).isAdmin && editor.isAdmin)
+            followLinks = postToEdit.createdByUser(page.parts).isStaff && editor.isStaff)
         }
 
-      val approverId = if (editor.isAdmin) editor.id else SystemUserId
+      val approverId = if (editor.isStaff) editor.id else SystemUserId
       val nextVersion = postToEdit.currentVersion + 1
 
       // COULD send current version from browser to server, reject edits if != oldPost.currentVersion
@@ -229,7 +229,7 @@ trait PostsDao {
       val user = transaction.loadUser(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
 
       // Authorization.
-      if (!user.isAdmin) {
+      if (!user.isStaff) {
         if (postBefore.createdById != userId)
           throwForbidden("DwE0PK24", "You may not modify that post, it's not yours")
 

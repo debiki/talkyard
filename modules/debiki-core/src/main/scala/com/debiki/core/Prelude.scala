@@ -386,6 +386,15 @@ object Prelude {
   def hashSha1Base64UrlSafe(text: String): String =
     acb.Base64.encodeBase64URLSafeString(mdSha1.digest(text.getBytes("UTF-8")))
 
+  def hideEmailLocalPart(emailAddress: String): String =
+    if (emailAddress.isEmpty) ""
+    else DotDotDot + emailAddress.dropWhile(_ != '@')
+
+  def isEmailLocalPartHidden(emailAddress: String): Boolean =
+    emailAddress startsWith DotDotDot
+
+  private val DotDotDot = "..."
+
 
   // ------ Diff, match, patch
 

@@ -36,6 +36,9 @@ var MaxGuestId = -2; // place where?
 function isGuest(user: CompleteUser) {
   return user.id <= MaxGuestId;
 }
+function isStaff(user) {
+  return user.isAdmin || user.isModerator;
+}
 
 var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
