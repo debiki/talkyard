@@ -80,7 +80,7 @@ var NotFound = React.createClass({
 
 var UserPage = React.createClass({
   mixins: [RouterState, RouterNavigation, debiki2.StoreListenerMixin],
-  
+
   getInitialState: function() {
     return {
       loggedInUser: debiki2.ReactStore.getUser()
@@ -144,19 +144,19 @@ var UserBar = React.createClass({
     var loggedInUser = this.props.loggedInUser;
     var user = this.props.user;
 
-    var showPrivateStuff = loggedInUser.isAdmin || (
+    var showPrivateStuff = isStaff(loggedInUser) || (
         loggedInUser.isAuthenticated && loggedInUser.userId === user.id);
 
     var invitesNavItem = null;
     var preferencesNavItem = null;
     if (showPrivateStuff) {
       preferencesNavItem = NavItem({ eventKey: 'user-preferences' }, 'Preferences');
-      if (loggedInUser.isAdmin && !isGuest(user)) {
+      if (!isGuest(user)) {
         invitesNavItem = NavItem({ eventKey: 'user-invites' }, 'Invites');
       }
     }
 
-    var adminButton = loggedInUser.isAdmin
+    var adminButton = isStaff(loggedInUser)
         ? r.li({}, r.a({ href: '/-/admin/#/users/id/' + user.id }, 'Admin'))
         : null;
 
@@ -184,9 +184,21 @@ var UserInfo = createComponent({
           'This user is ' + whatAndUntilWhen, r.br(),
           'Reason: ' + user.suspendedReason);
     }
-    var isGuestInfo = isGuest(user)
-        ? r.span({ className: 'dw-is-guest' }, ' — a guest user, could be anyone')
-        : null;
+
+    var isGuestInfo = null;
+    if (isGuest(user)) {
+      isGuestInfo = ' — a guest user, could be anyone';
+    }
+    if (user.isModerator) {
+      isGuestInfo = ' – moderator';
+    }
+    if (user.isAdmin) {
+      isGuestInfo = ' – administrator';
+    }
+    if (isGuestInfo) {
+      isGuestInfo = r.span({ className: 'dw-is-what' }, isGuestInfo);
+    }
+
     return (
       r.div({ className: 'user-info' },
         r.h1({}, user.username),

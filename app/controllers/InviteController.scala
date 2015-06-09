@@ -84,7 +84,7 @@ object InviteController extends mvc.Controller {
         // This is a very rare race condition.
         throwForbidden("DwE403JIU3", "You just invited him or her")
     }
-    OkSafeJson(jsonForInvite(invite))
+    OkSafeJson(jsonForInvite(invite, isAdminOrSelf = true))
   }
 
 
@@ -108,19 +108,21 @@ object InviteController extends mvc.Controller {
 
   def listInvites(sentById: String) = GetAction { request =>
     val senderId = Try(sentById.toInt) getOrElse throwBadReq("DwE6FWV0", "Bad user id")
-    if (!request.theUser.isAdmin && request.theUserId != senderId)
+    val isAdminOrSelf = request.theUser.isAdmin || request.theUserId == senderId
+    if (!request.theUser.isStaff && request.theUserId != senderId)
       throwForbidden("DwE403INV0", "Any invites are private")
 
     request.dao.readOnlyTransaction { transaction =>
       val invites = transaction.loadInvites(createdById = senderId)
-      OkSafeJson(JsArray(invites.map(jsonForInvite)))
+      OkSafeJson(JsArray(invites.map(jsonForInvite(_, isAdminOrSelf))))
     }
   }
 
 
-  private def jsonForInvite(invite: Invite): JsValue = {
+  private def jsonForInvite(invite: Invite, isAdminOrSelf: Boolean): JsValue = {
+    val safeEmail = isAdminOrSelf ? invite.emailAddress | hideEmailLocalPart(invite.emailAddress)
     Json.obj(
-      "invitedEmailAddress" -> invite.emailAddress,
+      "invitedEmailAddress" -> safeEmail,
       "invitedById" -> invite.createdById,
       "createdAtEpoch" -> invite.createdAt.getTime,
       "acceptedAtEpoch" -> DateEpochOrNull(invite.acceptedAt),

@@ -155,8 +155,9 @@ case class NewPasswordUserData(
     emailNotfPrefs = EmailNotfPrefs.Receive,
     emailVerifiedAt = None,
     passwordHash = Some(passwordHash),
+    isOwner = isOwner,
     isAdmin = isAdmin,
-    isOwner = isOwner)
+    isModerator = false)
 
   Validation.checkName(name)
   Validation.checkUsername(username)
@@ -302,6 +303,9 @@ case object User {
       if (c > 'Z' && c < 'a' && !"_".contains(c)) return true  // punctuation
       if (c > 'z' && c <= 127) return true  // punctuation
     }
+    if (isEmailLocalPartHidden(email)) {
+      return true
+    }
     if (email matches """.+@.+\..+""") return false
     true
   }
@@ -325,21 +329,20 @@ case object User {
  * @param displayName
  * @param username Is None for guests, and some old users created before usernames had
  *    been implemented.
- * @param createdAt None for guests.
  * @param email
  * @param emailNotfPrefs
  * @param emailVerifiedAt
  * @param country
  * @param website COULD rename to url, that's more generic.
- * @param isAdmin
  * @param isOwner
+ * @param isAdmin
+ * @param isModerator
  */
 case class User(
   id: UserId,
   displayName: String,
   username: Option[String],
   guestCookie: Option[String],
-  createdAt: Option[ju.Date],
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
   emailVerifiedAt: Option[ju.Date] = None,
@@ -349,24 +352,25 @@ case class User(
   isApproved: Option[Boolean],
   suspendedTill: Option[ju.Date],
   isAdmin: Boolean = false,
-  isOwner: Boolean = false) {
+  isOwner: Boolean = false,
+  isModerator: Boolean = false) {
 
   require(User.isOkayUserId(id), "DwE02k12R5")
   require(username.isEmpty || username.get.length >= 2)
   require(!isGuest || displayName.trim.nonEmpty, "DwE4KEPF8")
   require(!isGuest || User.isOkayGuestCookie(guestCookie), "DwE5QF7")
   require(!isGuest || (
-    username.isEmpty && createdAt.isEmpty && !isAdmin && !isOwner &&
+    username.isEmpty && !isOwner && !isAdmin && !isModerator &&
       isApproved.isEmpty && suspendedTill.isEmpty &&
       emailVerifiedAt.isEmpty && passwordHash.isEmpty && website.isEmpty), "DwE0GUEST426")
   require(!isAuthenticated || (
     username.isDefined &&
-    guestCookie.isEmpty &&
-    createdAt.isDefined), "DwE0AUTH6U82")
+    guestCookie.isEmpty), "DwE0AUTH6U82")
+  require(!isEmailLocalPartHidden(email), "DwE6kJ23")
 
   def isAuthenticated = isRoleId(id)
   def isApprovedOrStaff = isApproved == Some(true) || isStaff
-  def isStaff = isAdmin || isOwner
+  def isStaff = isAdmin || isModerator
 
   def isGuest = User.isGuestId(id)
   def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
@@ -390,8 +394,9 @@ case class CompleteUser(
   passwordHash: Option[String] = None,
   country: String = "",
   website: String = "",
-  isAdmin: Boolean = false,
   isOwner: Boolean = false,
+  isAdmin: Boolean = false,
+  isModerator: Boolean = false,
   suspendedAt: Option[ju.Date] = None,
   suspendedTill: Option[ju.Date] = None,
   suspendedById: Option[UserId] = None,
@@ -409,8 +414,10 @@ case class CompleteUser(
   require(suspendedReason.map(r => r.trim.length < r.length) != Some(true), "DwE4KPF8")
   require(suspendedById.map(_ >= LowestNonGuestId) != Some(false), "DwE7K2WF5")
   require(!isGuest, "DwE0GUEST223")
+  require(!isEmailLocalPartHidden(emailAddress), "DwE2WFE1")
 
-  def isApprovedOrStaff = approvedAt == Some(true) || isAdmin || isOwner
+  def isStaff = isAdmin || isModerator
+  def isApprovedOrStaff = approvedAt == Some(true) || isStaff
 
   def isGuest = User.isGuestId(id)
   def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
@@ -425,19 +432,23 @@ case class CompleteUser(
     url = website,
     emailForEveryNewPost = emailForEveryNewPost)
 
-  def copyWithNewPreferences(preferences: UserPreferences) = copy(
-    fullName = preferences.fullName,
-    username = preferences.username,
-    emailAddress = preferences.emailAddress,
-    website = preferences.url,
-    emailForEveryNewPost = preferences.emailForEveryNewPost)
+  def copyWithNewPreferences(preferences: UserPreferences) = {
+    val newEmailAddress =
+      if (isEmailLocalPartHidden(preferences.emailAddress)) this.emailAddress
+      else preferences.emailAddress
+    copy(
+      fullName = preferences.fullName,
+      username = preferences.username,
+      emailAddress = newEmailAddress,
+      website = preferences.url,
+      emailForEveryNewPost = preferences.emailForEveryNewPost)
+  }
 
   def briefUser = User(
     id = id,
     displayName = fullName,
     username = Some(username),
     guestCookie = None,
-    createdAt = Some(createdAt),
     email = emailAddress,
     emailNotfPrefs = emailNotfPrefs,
     emailVerifiedAt = emailVerifiedAt,

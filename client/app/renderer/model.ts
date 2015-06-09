@@ -59,6 +59,7 @@ interface User {
   userId: string;
   isLoggedIn?: boolean;
   isAdmin?: boolean;
+  isModerator?: boolean;
   isAuthenticated?: boolean;
   username?: string;
   fullName?: string;
@@ -171,6 +172,7 @@ interface CompleteUser {
   country: string;
   url: string;
   isAdmin: boolean;
+  isModerator: boolean;
   isApproved: boolean;
   approvedAtEpoch: number;
   approvedById: number;

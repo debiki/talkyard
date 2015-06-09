@@ -95,7 +95,7 @@ export var TopBar = createComponent({
     var logoutButton = !user.isLoggedIn ? null : 
         Button({ className: 'dw-logout', onClick: this.onLogoutClick }, 'Log Out');
 
-    var adminButton = !user.isAdmin ? null :
+    var adminButton = !isStaff(user) ? null :
         Button({ className: 'dw-admin', onClick: () => {
           window.location.assign(d.i.serverOrigin + '/-/admin/?returnTo=' + location.pathname)
         }}, r.a({ className: 'icon-wrench' }, 'Admin'));

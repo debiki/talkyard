@@ -59,6 +59,7 @@ GET   /-/reset-password/password-changed controllers.ResetPasswordController.sho
 GET   /-/create-site            controllers.CreateSiteController.start
 POST  /-/create-site            controllers.CreateSiteController.createSite
 
+GET   /-/admin                  controllers.AdminController.redirectToAdminPage
 GET   /-/admin/                 controllers.AdminController.viewAdminPage
 # Old admin pages:
 GET   /-/admin-old/             controllers.AdminController.viewAdminPageOld
@@ -93,6 +94,7 @@ POST  /-/save-guest             controllers.UserController.saveGuest
 GET   /-/list-complete-users    controllers.UserController.listCompleteUsers(whichUsers)
 GET   /-/load-complete-user     controllers.UserController.loadCompleteUser(userId)
 POST  /-/approve-reject-user    controllers.UserController.approveRejectUser
+POST  /-/set-is-admin-or-moderator controllers.UserController.setIsAdminOrModerator
 POST  /-/suspend-user           controllers.UserController.suspendUser
 POST  /-/unsuspend-user         controllers.UserController.unsuspendUser
 POST  /-/block-guest            controllers.UserController.blockGuest

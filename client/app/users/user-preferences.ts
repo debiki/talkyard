@@ -40,8 +40,8 @@ export var UserPreferencesComponent = createComponent({
     var loggedInUser = this.props.loggedInUser;
     var user = this.props.user;
 
-    var mayViewPrefs = loggedInUser.isAuthenticated && (
-        loggedInUser.isAdmin || loggedInUser.userId === user.id);
+    var mayViewPrefs = isStaff(loggedInUser) || (
+        loggedInUser.isAuthenticated && loggedInUser.userId === user.id);
 
     if (!mayViewPrefs)
       return r.p({}, 'Forbidden');

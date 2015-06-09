@@ -46,33 +46,34 @@ object ModerationController extends mvc.Controller {
   val PostTextLengthLimit = 500
 
 
-  def approve = AdminPostJsonAction(maxLength = 5000) { request =>
+  def approve = StaffPostJsonAction(maxLength = 5000) { request =>
+    SECURITY ; COULD // restrict approval of edits of any homepage or about page to admins only.
     val PagePostId(pageId, postId) = parseBody(request)
     request.dao.approvePost(pageId, postId = postId, approverId = request.theUserId)
     Ok
   }
 
 
-  def hideNewPostSendPm = AdminPostJsonAction(maxLength = 5000) { apiReq =>
+  def hideNewPostSendPm = StaffPostJsonAction(maxLength = 5000) { apiReq =>
     ???
   }
 
 
-  def hideFlaggedPostSendPm = AdminPostJsonAction(maxLength = 5000) { request =>
+  def hideFlaggedPostSendPm = StaffPostJsonAction(maxLength = 5000) { request =>
     val PagePostId(pageId, postId) = parseBody(request)
     ??? // request.dao.hidePostClearFlag(pageId, postId = postId, hiddenById = request.theUserId)
     Ok
   }
 
 
-  def deletePost = AdminPostJsonAction(maxLength = 5000) { request =>
+  def deletePost = StaffPostJsonAction(maxLength = 5000) { request =>
     val PagePostId(pageId, postId) = parseBody(request)
     request.dao.deletePost(pageId, postId = postId, deletedById = request.theUserId)
     Ok
   }
 
 
-  def deleteFlaggedPost = AdminPostJsonAction(maxLength = 5000) { request =>
+  def deleteFlaggedPost = StaffPostJsonAction(maxLength = 5000) { request =>
     // COULD add a specific method deleteFlaggedPost, that also ... marks the flags as accepted?
     // Like Discourse does it. For now:
     val PagePostId(pageId, postId) = parseBody(request)
@@ -81,14 +82,14 @@ object ModerationController extends mvc.Controller {
   }
 
 
-  def clearFlags = AdminPostJsonAction(maxLength = 5000) { request =>
+  def clearFlags = StaffPostJsonAction(maxLength = 5000) { request =>
     val PagePostId(pageId, postId) = parseBody(request)
     request.dao.clearFlags(pageId, postId = postId, clearedById = request.theUserId)
     Ok
   }
 
 
-  def rejectEdits = AdminPostJsonAction(maxLength = 5000) { request =>
+  def rejectEdits = StaffPostJsonAction(maxLength = 5000) { request =>
     val PagePostId(pageId, postId) = parseBody(request)
     ??? // request.dao.rejectEdits(pageId, postId = postId, rejectedById = request.theUserId)
     Ok
@@ -105,7 +106,7 @@ object ModerationController extends mvc.Controller {
   /** Lists posts that require attention, e.g. because they've been flagged or edited
     * or needs to be approved. And after that, list recently modified posts.
     */
-  def listRecentPosts = AdminGetAction { request =>
+  def listRecentPosts = StaffGetAction { request =>
     val thingsToReview = request.dao.loadThingsToReview()
     val postsJson = JsArray(thingsToReview.posts.map(makeJsonSinglePost(_, thingsToReview)))
     OkSafeJson(toJson(Map(

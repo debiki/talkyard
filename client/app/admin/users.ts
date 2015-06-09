@@ -69,7 +69,7 @@ export var UsersTab = createComponent({
             NavItem({ eventKey: 'users-active' }, 'Active'),
             NavItem({ eventKey: 'users-new' }, 'New Waiting'))),
         r.div({ className: 'dw-admin-panel' },
-          RouteHandler({}))));
+          RouteHandler({ loggedInUser: this.props.loggedInUser }))));
   }
 });
 

@@ -52,8 +52,10 @@ var State = ReactRouter.State;
 
 
 export function routes() {
+  // Later on, when there's a Dashboard tab, could use that one as the default instead.
+  var defaultRouteName = debiki2.ReactStore.getUser().isAdmin ? 'settings' : 'review';
   return Route({ path: '/', handler: AdminApp },
-    Redirect({ from: '/', to: 'settings' }),
+    Redirect({ from: '/', to: defaultRouteName }),
     Redirect({ from: '/users', to: 'users-active' }),
     Redirect({ from: '/review', to: 'review-posts' }),
     Route({ name: 'settings', path: 'settings', handler: SettingsPanel }),
@@ -102,16 +104,23 @@ var AdminApp = createComponent({
   },
 
   render: function() {
-    if (!this.state.loggedInUser)
+    var loggedInUser = this.state.loggedInUser;
+    if (!loggedInUser)
       return r.p({}, 'Not logged in');
+
+    var settings = loggedInUser.isAdmin ?
+        NavItem({ eventKey: 'settings' }, 'Settings') : null;
+
+    var customize = loggedInUser.isAdmin ?
+        NavItem({ eventKey: 'customize' }, 'Customize') : null;
 
     return (
       r.div({ className: 'admin-app' },
         Nav({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect,
             className: 'dw-main-nav' },
-          NavItem({ eventKey: 'settings' }, 'Settings'),
+          settings,
           NavItem({ eventKey: 'users' }, 'Users'),
-          NavItem({ eventKey: 'customize' }, 'Customize'),
+          customize,
           NavItem({ eventKey: 'review' }, 'Review')),
         RouteHandler({ loggedInUser: this.state.loggedInUser })));
   }
