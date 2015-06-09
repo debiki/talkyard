@@ -65,6 +65,11 @@ export var TopBar = createComponent({
     goToUserPage(this.state.store.user.userId);
   },
 
+  goToAdminPage: function() {
+    sessionStorage.setItem('returnToUrl', window.location.toString());
+    window.location.assign(d.i.serverOrigin + '/-/admin/');
+  },
+
   closeSearchForm: function() {
     this.setState({
       showSearchForm: false
@@ -96,13 +101,15 @@ export var TopBar = createComponent({
         Button({ className: 'dw-logout', onClick: this.onLogoutClick }, 'Log Out');
 
     var adminButton = !isStaff(user) ? null :
-        Button({ className: 'dw-admin', onClick: () => {
-          window.location.assign(d.i.serverOrigin + '/-/admin/?returnTo=' + location.pathname)
-        }}, r.a({ className: 'icon-wrench' }, 'Admin'));
+        Button({ className: 'dw-admin', onClick: this.goToAdminPage },
+          r.a({ className: 'icon-wrench' }, 'Admin'));
 
     var searchButton =
+        null;
+    /* Hide for now, search broken, after I rewrote from dw1_posts to dw2_posts.
         Button({ className: 'dw-search', onClick: this.onSearchClick },
             r.span({ className: 'icon-search' }));
+    */
 
     var menuButton =
         DropdownButton({ title: r.span({ className: 'icon-menu' }), pullRight: true,

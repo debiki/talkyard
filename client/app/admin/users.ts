@@ -184,7 +184,7 @@ var UserRow = createComponent({
     return (
       r.tr({},
         r.td({},
-          r.a({ href: '/-/users/#/id/' + user.id }, usernameAndFullName)),
+          r.a({ href: '/-/admin/#/users/id/' + user.id }, usernameAndFullName)),
 
         r.td({},
           user.email),

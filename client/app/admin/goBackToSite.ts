@@ -25,16 +25,10 @@
  * or to the homepage ('/') if that's not possible.
  */
 export function goBackToSite() {
-  // The return-to-URL-path must start with '/' but not '//' so we know it refers
-  // to something on the same site. Allowing links to other sites would be a security issue.
-  var anyReturnToPathHits = location.toString().match(/\?returnTo=(\/[^/#][^#]*)/);
-  if (anyReturnToPathHits) {
-    var returnToPath = anyReturnToPathHits[1];
-    window.location.replace(returnToPath);
-  }
-  else {
-    window.location.replace('/');
-  }
+  // Hmm, could inline this instead. Was more complicated in the past, when using
+  // an URL param instead of sessionStorage.
+  var previousUrl = sessionStorage.getItem('returnToUrl') || '/';
+  window.location.replace(previousUrl);
 };
 
 
