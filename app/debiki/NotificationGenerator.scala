@@ -61,7 +61,13 @@ case class NotificationGenerator(transaction: SiteTransaction) {
     // Mentions
     val mentionedUsernames: Seq[String] = findMentions(newPost.approvedSource getOrDie "DwE82FK4")
     val mentionedUsers = mentionedUsernames.flatMap(transaction.loadUserByEmailOrUsername)
-    for (user <- mentionedUsers) {
+    for {
+      user <- mentionedUsers
+      // Right now ignore self-mentions. Later, allow? Could work like a personal to-do item?
+      // Then would have to remove a db constraint. Could do later. Right now feels best
+      // to keep it so it'll catch bugs.
+      if user.id != newPost.createdById  // poster mentions him/herself?
+    } {
       makeNewPostNotf(Notification.NewPostNotfType.Mention, newPost, user)
     }
 
