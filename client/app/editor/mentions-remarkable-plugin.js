@@ -44,7 +44,7 @@ function MentionsRemarkablePlugin() {
   // function. It sends only '@...' to parse, not any [a-z] before the '@'.
   // So skip the char before the '@', and fetch and check it inside parse()
   // instead.
-  plugin.mentionsRegex = /^@[a-zA-Z_]+/;
+  plugin.mentionsRegex = /^@[a-zA-Z][a-zA-Z_0-9]+/;
   plugin.whitespaceRegex = /\s/;
   plugin.id = 'MentionsRemarkablePlugin';
   return plugin;
@@ -87,7 +87,7 @@ MentionsRemarkablePlugin.prototype.parse = function(state, silent) {
 
 
 MentionsRemarkablePlugin.prototype.render = function(tokens, id, options, env) {
-  // The username is [a-zA-Z_] so we don't need to escape it. And besides we sanitize
+  // The username is [a-zA-Z_0-9] so we don't need to escape it. And besides we sanitize
   // everything later on anyway.
   var username = tokens[id].username;
   var url = '/-/users/#!/username/' + username;
