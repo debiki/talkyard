@@ -39,7 +39,7 @@ d.i.loadEditorDependencies = (function() {
         assetsPrefix + 'codemirror-3-13-custom.' + d.i.minMaxJs],
         */
       both: [
-        assetsPrefix + 'remarkable.' + d.i.minMaxJs],
+        assetsPrefix + 'markdown-it.' + d.i.minMaxJs],
       complete: function() {
         loadStatus.resolve();
       }

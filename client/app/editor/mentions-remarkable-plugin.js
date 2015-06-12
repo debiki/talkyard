@@ -78,11 +78,9 @@ MentionsRemarkablePlugin.prototype.parse = function(state, silent) {
   if (silent)
     return true;
 
-  state.push({
-    type  : this.id,
-    level : state.level,
-    username: nextChars.slice(1, match[0].length)
-  });
+  var token = state.push('MentionsRemarkablePlugin', '');
+  token.level = state.level;
+  token.username = nextChars.slice(1, match[0].length);
 
   return true;
 };
@@ -98,3 +96,5 @@ MentionsRemarkablePlugin.prototype.render = function(tokens, id, options, env) {
 
 
 debiki.internal.MentionsRemarkablePlugin = MentionsRemarkablePlugin;
+
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list

@@ -179,7 +179,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   private val RenderAndSanitizeCommonMark = i"""
     |var remarkable;
     |try {
-    |  remarkable = new Remarkable({ html: true });
+    |  remarkable = markdownit({ html: true });
     |  remarkable.use(debiki.internal.MentionsRemarkablePlugin());
     |}
     |catch (e) {
