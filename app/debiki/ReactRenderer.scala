@@ -20,7 +20,8 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import java.{lang => jl, util => ju, io => jio}
+import debiki.DebikiHttp.throwInternalError
+import java.{util => ju, io => jio}
 import javax.{script => js}
 import play.api.Play
 import play.api.Play.current
@@ -50,6 +51,13 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   private val javascriptEngines =
     new java.util.concurrent.LinkedBlockingDeque[js.ScriptEngine](999)
 
+  private val BrokenEngine = new js.AbstractScriptEngine() {
+    override def eval(script: String, context: js.ScriptContext): AnyRef = null
+    override def eval(reader: jio.Reader, context: js.ScriptContext): AnyRef = null
+    override def getFactory: js.ScriptEngineFactory = null
+    override def createBindings(): js.Bindings = null
+  }
+
 
   def startCreatingRenderEngines() {
     dieIf(!javascriptEngines.isEmpty, "DwE50KFE2")
@@ -61,7 +69,15 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
           1
         }
       for (i <- 1 to numCores) {
-        javascriptEngines.putLast(makeJavascriptEngine())
+        val engine = try { makeJavascriptEngine() }
+        catch {
+          case t: Throwable =>
+            logger.error("Error creating Javascript engine: [DwE4KEPF8]", t)
+            javascriptEngines.clear()
+            javascriptEngines.putLast(BrokenEngine)
+            return
+        }
+        javascriptEngines.putLast(engine)
       }
     }
   }
@@ -115,6 +131,13 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
     if (mightBlock) {
       logger.debug(s"...Thread $threadName (id $threadId) got a JS engine.")
+      if (engine eq BrokenEngine) {
+        logger.debug(s"...But it is broken; I'll throw an error. [DwE4KEWV52]")
+      }
+    }
+
+    if (engine eq BrokenEngine) {
+      throwInternalError("DwE5KGF8", "Could not create Javascript engine; cannot render page.")
     }
 
     val result = fn(engine.asInstanceOf[js.Invocable])
