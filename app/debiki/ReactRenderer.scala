@@ -177,10 +177,10 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
 
   private val RenderAndSanitizeCommonMark = i"""
-    |var remarkable;
+    |var md;
     |try {
-    |  remarkable = markdownit({ html: true });
-    |  remarkable.use(debiki.internal.MentionsRemarkablePlugin());
+    |  md = markdownit({ html: true });
+    |  md.use(debiki.internal.MentionsMarkdownItPlugin());
     |}
     |catch (e) {
     |  printStackTrace(e);
@@ -189,7 +189,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     |
     |function renderAndSanitizeCommonMark(source, allowClassIdDataAttrs, followLinks) {
     |  try {
-    |    var unsafeHtml = remarkable.render(source);
+    |    var unsafeHtml = md.render(source);
     |    var allowClassAndIdAttr = allowClassIdDataAttrs;
     |    var allowDataAttr = allowClassIdDataAttrs;
     |    if (!followLinks) {
