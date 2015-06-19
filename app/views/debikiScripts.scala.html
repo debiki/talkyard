@@ -102,6 +102,7 @@ occurrence of the magic string with user specific data. *@
 
   var debiki = $.extend(true, {
     siteId: '@siteId',
+    secure: @{debiki.Globals.secure},
     reactPageStore: JSON.parse(unencodeHtmlContent($('#dwReactPageStore').text())),
     reactUserStore: parseAnyDebikiUserSpecificData(),
     getPageId: function() { return @Html(pageIdQuotedOrUndefined); },

@@ -46,6 +46,7 @@ function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
 
   var md = window.markdownit({ html: true });
   md.use(d.i.MentionsMarkdownItPlugin());
+  md.use(d.i.oneboxMarkdownItPlugin);
   var htmlTextUnsafe = md.render(commonmarkSource);
   return htmlTextUnsafe;
 };
@@ -58,6 +59,7 @@ function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
  * options.allowDataAttribs = true/false
  */
 d.i.sanitizeHtml = function(htmlTextUnsafe, options) {
+  options = options || {};
   var htmlTextSafe = d.i.googleCajaSanitizeHtml(
       htmlTextUnsafe, options.allowClassAndIdAttr, options.allowDataAttr);
   return htmlTextSafe;

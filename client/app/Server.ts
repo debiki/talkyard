@@ -417,6 +417,19 @@ export function loadCurrentPostText(postId: number, doneCallback: (text: string)
 }
 
 
+export function loadOneboxUnsafeHtml(url: string, success: (unsafeHtml: string) => void) {
+  $.get(origin + '/-/onebox?url=' + url, { dataType: 'html' })
+    .done((response: string) => {
+      success(response);
+    })
+    .fail((x, y, z) => {
+      console.debug('Error loading onebox: ' + JSON.stringify([x, y, z]));
+      // Pass null to tell the editor to show no onebox (it should show the link instead).
+      success(null);
+    });
+}
+
+
 export function saveEdits(postId: number, text: string, doneCallback: () => void) {
   postJson('/-/edit', {
     data: {

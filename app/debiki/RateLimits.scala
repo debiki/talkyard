@@ -271,6 +271,16 @@ object RateLimits {
   }
 
 
+  object LoadOnebox extends RateLimits {
+    val key = "LdOb"
+    val what = "loaded too many oneboxes"
+    def maxPerFifteenSeconds = 10
+    def maxPerFifteenMinutes = Unlimited
+    def maxPerDay = Unlimited
+    def maxPerDayNewUser = Unlimited
+  }
+
+
   object PinPost extends RateLimits {
     val key = "PiPo"
     val what = "pinned too many posts"

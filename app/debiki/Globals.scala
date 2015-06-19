@@ -47,6 +47,7 @@ object Globals extends Globals
   */
 class Globals {
 
+  def isInitialized = _state ne null
 
   private var _state: State = null
 
@@ -146,10 +147,11 @@ class Globals {
       throw new jl.IllegalStateException(o"""Server already running, was it not properly
         shut down last time? Please hit CTRL+C to kill it. [DwE83KJ9]""")
 
+    _state = new State
+
     // The render engines might be needed by some Java evolutions applied below.
     debiki.ReactRenderer.startCreatingRenderEngines()
 
-    _state = new State
     state.systemDao.applyEvolutions()
 
     // For now, disable in dev mode — because of the port conflict that

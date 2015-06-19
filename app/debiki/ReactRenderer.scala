@@ -23,6 +23,7 @@ import debiki._
 import debiki.DebikiHttp.throwInternalError
 import java.{util => ju, io => jio}
 import javax.{script => js}
+import debiki.onebox.InstantOneboxRendererForNashorn
 import play.api.Play
 import play.api.Play.current
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -59,6 +60,19 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   }
 
 
+  /** Bug: Apparently this reloads the Javascript code, but won't reload Java/Scala code
+    * called from inside the JS code. This results in weird impossible things like
+    * two versions of debiki.Global: one old version used when calling out to Scala from my
+    * JS code, and one new version used in the rest of the application *after* Play has
+    * soft-reloaded the app. Workaround: Kill the server: ctrl-d (ctrl-c not needed) and restart.
+    * I'm thinking the reason Nashorn reuses old stale classes is that:
+    *   "The only way that a Class can be unloaded is if the Classloader used is garbage collected"
+    *   http://stackoverflow.com/a/148707/694469
+    * but the Extensions class loader loads the script and then also the Java/Scala stuff they
+    * call out to? And that classloader is never unloaded I suppose. In order to refresh
+    * the Scala code called from my Nashorn JS, perhaps I need to somehow use a custom
+    * classloader here?
+    */
   def startCreatingRenderEngines() {
     dieIf(!javascriptEngines.isEmpty, "DwE50KFE2")
     scala.concurrent.Future {
@@ -102,11 +116,17 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
   override def renderAndSanitizeCommonMark(commonMarkSource: String,
         allowClassIdDataAttrs: Boolean, followLinks: Boolean): String = {
-    withJavascriptEngine(engine => {
+    val oneboxRenderer = new InstantOneboxRendererForNashorn
+    val resultMissingOneboxes = withJavascriptEngine(engine => {
       val safeHtml = engine.invokeFunction("renderAndSanitizeCommonMark", commonMarkSource,
-          allowClassIdDataAttrs.asInstanceOf[Object], followLinks.asInstanceOf[Object])
+          allowClassIdDataAttrs.asInstanceOf[Object], followLinks.asInstanceOf[Object],
+          oneboxRenderer)
       safeHtml.asInstanceOf[String]
     })
+    // Before commenting in: Make all render functions async so we won't block when downloading.
+    //oneboxRenderer.waitForDownloadsToFinish()
+    val resultWithOneboxes = oneboxRenderer.replacePlaceholders(resultMissingOneboxes)
+    resultWithOneboxes
   }
 
 
@@ -152,8 +172,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     def threadName = java.lang.Thread.currentThread.getName
     logger.debug(s"Initializing Nashorn engine, thread id: $threadId, name: $threadName...")
 
-    // Pass 'null' to force the correct class loader. Without passing any param,
-    // the "nashorn" JavaScript engine is not found by the `ScriptEngineManager`.
+    // Pass 'null' so that a class loader that finds the Nashorn extension will be used.
+    // Otherwise the Nashorn engine won't be found and `newEngine` will be null.
     // See: https://github.com/playframework/playframework/issues/2532
     val newEngine = new js.ScriptEngineManager(null).getEngineByName("nashorn")
 
@@ -204,14 +224,17 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     |try {
     |  md = markdownit({ html: true });
     |  md.use(debiki.internal.MentionsMarkdownItPlugin());
+    |  md.use(debiki.internal.oneboxMarkdownItPlugin);
     |}
     |catch (e) {
     |  printStackTrace(e);
     |  console.error("Error creating CommonMark renderer [DwE5kFEM9]");
     |}
     |
-    |function renderAndSanitizeCommonMark(source, allowClassIdDataAttrs, followLinks) {
+    |function renderAndSanitizeCommonMark(source, allowClassIdDataAttrs, followLinks,
+    |       instantOneboxRenderer) {
     |  try {
+    |    debiki.internal.oneboxMarkdownItPlugin.instantRenderer = instantOneboxRenderer;
     |    var unsafeHtml = md.render(source);
     |    var allowClassAndIdAttr = allowClassIdDataAttrs;
     |    var allowDataAttr = allowClassIdDataAttrs;
@@ -267,11 +290,12 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     |"""
 
 
-  private val ServerSideDebikiModule = i"""
+  private def ServerSideDebikiModule = i"""
     |var debiki = {
     |  store: {},
     |  v0: { util: {} },
-    |  internal: {}
+    |  internal: {},
+    |  secure: ${Globals.secure}
     |};
     |"""
 
