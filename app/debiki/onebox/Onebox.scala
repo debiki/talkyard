@@ -63,7 +63,7 @@ abstract class OneboxEngine {
   protected def alreadySanitized = false
 
   final def loadRenderSanitize(url: String): Future[String] = {
-    def sanitize(html: String): String = {
+    def sanitizeAndWrap(html: String): String = {
       var safeHtml =
         if (alreadySanitized) html
         else ReactRenderer.sanitizeHtml(html)
@@ -74,16 +74,16 @@ abstract class OneboxEngine {
       if (Globals.secure) {
         safeHtml = safeHtml.replaceAllLiterally("http:", "https:")
       }
-      safeHtml
+      s"""<aside class="onebox">$safeHtml</aside>"""
     }
     // futureHtml.map apparently isn't executed directly, even if the future has been
     // completed already.
     val futureHtml = loadAndRender(url)
     if (futureHtml.isCompleted) {
-      Future.fromTry(futureHtml.value.get.map(sanitize))
+      Future.fromTry(futureHtml.value.get.map(sanitizeAndWrap))
     }
     else {
-      futureHtml.map(sanitize)
+      futureHtml.map(sanitizeAndWrap)
     }
   }
 

@@ -417,10 +417,18 @@ export function loadCurrentPostText(postId: number, doneCallback: (text: string)
 }
 
 
-export function loadOneboxSafeHtml(url: string, success: (unsafeHtml: string) => void) {
+var cachedOneboxHtml = {};
+
+export function loadOneboxSafeHtml(url: string, success: (safeHtml: string) => void) {
+  var cachedHtml = cachedOneboxHtml[url];
+  if (cachedHtml) {
+    setTimeout(() => success(cachedHtml), 0);
+    return;
+  }
   var encodedUrl = encodeURIComponent(url);
   $.get(origin + '/-/onebox?url=' + encodedUrl, { dataType: 'html' })
     .done((response: string) => {
+      cachedOneboxHtml[url] = response;
       success(response);
     })
     .fail((x, y, z) => {

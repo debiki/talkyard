@@ -71,12 +71,11 @@ function renderOnebox(tokens, index, options, env, renderer) {
     oneboxHtml = renderer.renderAndSanitizeOnebox(linkAsJavaString);
   }
   else {
-    console.log('Loading onebox from server...');
     var randomId = 'onebox-' + Math.random().toString(36).slice(2);
-    debiki2.Server.loadOneboxSafeHtml(token.link, function(html) {
+    debiki2.Server.loadOneboxSafeHtml(token.link, function(safeHtml) {
       var replacement;
-      if (html) {
-        replacement = html;
+      if (safeHtml) {
+        replacement = safeHtml;
       }
       else {
         // The link couldn't be oneboxed.
