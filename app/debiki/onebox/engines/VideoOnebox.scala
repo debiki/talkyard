@@ -25,6 +25,7 @@ package debiki.onebox.engines
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.onebox._
+import scala.util.Success
 
 
 
@@ -32,11 +33,11 @@ class VideoOnebox extends InstantOneboxEngine {
 
   val regex = """^(https?:)?\/\/.*\.(mov|mp4|webm|ogv)(\?.*)?$""".r
 
-  def renderInstantly(url: String) = o"""
+  def renderInstantly(url: String) = Success(o"""
      <video width='100%' height='100%' controls src='$url'>
        <a href='$url'>$url</a>
      </video>
-    """
+    """)
 
 }
 

@@ -117,7 +117,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   override def renderAndSanitizeCommonMark(commonMarkSource: String,
         allowClassIdDataAttrs: Boolean, followLinks: Boolean): String = {
     val oneboxRenderer = new InstantOneboxRendererForNashorn
-    val resultMissingOneboxes = withJavascriptEngine(engine => {
+    val resultNoOneboxes = withJavascriptEngine(engine => {
       val safeHtml = engine.invokeFunction("renderAndSanitizeCommonMark", commonMarkSource,
           allowClassIdDataAttrs.asInstanceOf[Object], followLinks.asInstanceOf[Object],
           oneboxRenderer)
@@ -125,7 +125,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     })
     // Before commenting in: Make all render functions async so we won't block when downloading.
     //oneboxRenderer.waitForDownloadsToFinish()
-    val resultWithOneboxes = oneboxRenderer.replacePlaceholders(resultMissingOneboxes)
+    val resultWithOneboxes = oneboxRenderer.replacePlaceholders(resultNoOneboxes)
     resultWithOneboxes
   }
 
@@ -142,6 +142,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     def threadId = Thread.currentThread.getId
     def threadName = Thread.currentThread.getName
 
+    // Deadlock BUG COULD create more engines if mightBlock, because perhaps we've called from
+    // Nashorn to Scala and now back to Nashorn again, then more engines than cores are needed.
     val mightBlock = javascriptEngines.isEmpty
     if (mightBlock) {
       logger.debug(s"Thread $threadName (id $threadId), waits for JS engine...")

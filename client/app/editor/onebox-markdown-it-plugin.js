@@ -68,15 +68,15 @@ function renderOnebox(tokens, index, options, env, renderer) {
     // We're running server side then? In case the string is a Nashorn ConsString,
     // which won't work now when calling back out to Scala/Java code:
     var linkAsJavaString = String(token.link);
-    oneboxHtml = renderer.renderOnebox(linkAsJavaString);
+    oneboxHtml = renderer.renderAndSanitizeOnebox(linkAsJavaString);
   }
   else {
     console.log('Loading onebox from server...');
     var randomId = 'onebox-' + Math.random().toString(36).slice(2);
-    debiki2.Server.loadOneboxUnsafeHtml(token.link, function(html) {
+    debiki2.Server.loadOneboxSafeHtml(token.link, function(html) {
       var replacement;
       if (html) {
-        replacement = sanitizeOneboxHtml(html);
+        replacement = html;
       }
       else {
         // The link couldn't be oneboxed.
@@ -87,25 +87,8 @@ function renderOnebox(tokens, index, options, env, renderer) {
     var safeLink = debiki.internal.sanitizeHtml(token.link)
     oneboxHtml  ='<div id="' + randomId + '" class="icon icon-loading"><a>' + safeLink + '</a></div>';
   }
-  return sanitizeOneboxHtml(oneboxHtml);
+  return oneboxHtml;
 };
 
-
-function sanitizeOneboxHtml(html) {
-  // googleCajaSanitizeHtml below is present both server side and client side. Allow
-  // custom ids and classes because the server adds certain onebox–.. classes, and
-  // also the id is used to identify onebox placeholders that get replaced later when
-  // the related http request to the server has completed.
-  var allowClassAndIdAttr = true;
-  var safeHtml = googleCajaSanitizeHtml(html, allowClassAndIdAttr, false);
-  // Don't link to any HTTP resources from safe HTTPS pages, e.g. don't link
-  // to <img src="http://...">, change to https instead even if the image then breaks.
-  // COULD leave <a href=...> HTTP links as is so they won't break. And also leave
-  // plain text as is. But for now, this is safe and simple and stupid: (?)
-  if (debiki.secure) {
-    safeHtml = safeHtml.replace(/http:/g, 'https:');
-  }
-  return safeHtml;
-}
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list

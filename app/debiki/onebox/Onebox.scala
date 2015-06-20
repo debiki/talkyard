@@ -19,13 +19,13 @@ package debiki.onebox
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.Globals
-import debiki.onebox.engines.VideoOnebox
+import debiki.{ReactRenderer, Globals}
+import debiki.onebox.engines._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{Success, Failure}
+import scala.util.{Try, Success, Failure}
 
 
 
@@ -41,26 +41,65 @@ object RenderOnboxResult {
   /** If the onebox HTML was cached already, or if no HTTP request is needed to construct
     * the onebox.
     */
-  case class DoneDirectly(html: String) extends RenderOnboxResult
+  case class Done(safeHtml: String, placeholder: String) extends RenderOnboxResult
 
   /** If we had to start a HTTP request to fetch the linked page and extract title and excerpt.
     */
-  case class Loading(futureHtml: Future[String], placeholder: String)
+  case class Loading(futureSafeHtml: Future[String], placeholder: String)
     extends RenderOnboxResult
 }
 
 
 
 abstract class OneboxEngine {
+
   def regex: scala.util.matching.Regex
+
   def handles(url: String): Boolean = regex matches url
-  def downloadAndRender(url: String): Future[String]
+
+  /** If an engine needs to include an iframe, then it'll have to sanitize everything itself,
+    * because Google Caja's JsHtmlSanitizer (which we use) removes iframes.
+    */
+  protected def alreadySanitized = false
+
+  final def loadRenderSanitize(url: String): Future[String] = {
+    def sanitize(html: String): String = {
+      var safeHtml =
+        if (alreadySanitized) html
+        else ReactRenderer.sanitizeHtml(html)
+      // Don't link to any HTTP resources from safe HTTPS pages, e.g. don't link
+      // to <img src="http://...">, change to https instead even if the image then breaks.
+      // COULD leave <a href=...> HTTP links as is so they won't break. And also leave
+      // plain text as is. But for now, this is safe and simple and stupid: (?)
+      if (Globals.secure) {
+        safeHtml = safeHtml.replaceAllLiterally("http:", "https:")
+      }
+      safeHtml
+    }
+    // futureHtml.map apparently isn't executed directly, even if the future has been
+    // completed already.
+    val futureHtml = loadAndRender(url)
+    if (futureHtml.isCompleted) {
+      Future.fromTry(futureHtml.value.get.map(sanitize))
+    }
+    else {
+      futureHtml.map(sanitize)
+    }
+  }
+
+  protected def loadAndRender(url: String): Future[String]
+
+  def sanitizeUrl(url: String) = org.owasp.encoder.Encode.forHtml(url)
+
 }
 
 
-abstract class InstantOneboxEngine extends OneboxEngine{
-  def downloadAndRender(url: String) = Future.successful(renderInstantly(url))
-  def renderInstantly(url: String): String
+abstract class InstantOneboxEngine extends OneboxEngine {
+
+  protected def loadAndRender(url: String) =
+    Future.fromTry(renderInstantly(url))
+
+  protected def renderInstantly(url: String): Try[String]
 }
 
 
@@ -75,6 +114,9 @@ abstract class InstantOneboxEngine extends OneboxEngine{
   * be able to re-render comments server side, should this be needed for whatever reason.
   *
   * Inspired by Discourse's onebox, see: https://meta.discourse.org/t/what-is-a-onebox/4546
+  *
+  * The name comes from Google's search result box in which they sometimes show a single
+  * answer directly.
   */
 object Onebox {
 
@@ -83,42 +125,40 @@ object Onebox {
   private val oneboxHtmlByUrl = mutable.HashMap[String, String]()
   private val failedUrls = mutable.HashSet[String]()
   private val PlaceholderPrefix = "onebox-"
-  private val NoEngineException = new DebikiException("DwE3KEF7", "No onebox engine")
+  private val NoEngineException = new DebikiException("DwE3KEF7", "No matching onebox engine")
 
   private val engines = Seq[OneboxEngine](
-    new VideoOnebox)
+    new VideoOnebox,
+    new YouTubeOnebox)
 
 
-  def loadAndRender(url: String): Future[String] = {
+  def loadRenderSanitize(url: String): Future[String] = {
     for (engine <- engines) {
       if (engine.handles(url))
-        return engine.downloadAndRender(url)
+        return engine.loadRenderSanitize(url)
     }
-    /*
-    // For now:
-    Future.successful(
-      s"<div style='background:cyan;'>inited: ${debiki.Globals.isInitialized} Java_Onebox: $url</div>")
-      */
     Future.failed(NoEngineException)
   }
 
 
-  def loadAndRenderInstantly(url: String): RenderOnboxResult = {
-    val futureResult = loadAndRender(url)
-    if (futureResult.isCompleted)
-      return futureResult.value.get match {
-        case Success(html) => RenderOnboxResult.DoneDirectly(html)
+  def loadRenderSanitizeInstantly(url: String): RenderOnboxResult = {
+    def placeholder = PlaceholderPrefix + nextRandomString()
+
+    val futureSafeHtml = loadRenderSanitize(url)
+    if (futureSafeHtml.isCompleted)
+      return futureSafeHtml.value.get match {
+        case Success(safeHtml) => RenderOnboxResult.Done(safeHtml, placeholder)
         case Failure(throwable) => RenderOnboxResult.NoOnebox
       }
 
-    val placeholder = PlaceholderPrefix + nextRandomString()
-
-    futureResult onComplete {
-      case Success(html) =>
-      case Failure(html) =>
+    // Later: Have waitForDownloadsToFinish() return when all futures completed,
+    // and remember the resulting html so placeholders can be replaced. And cache it.
+    futureSafeHtml onComplete {
+      case Success(safeHtml) =>
+      case Failure(throwable) =>
     }
 
-    RenderOnboxResult.Loading(futureResult, placeholder)
+    RenderOnboxResult.Loading(futureSafeHtml, placeholder)
   }
 
 }
@@ -130,10 +170,9 @@ object Onebox {
 class InstantOneboxRendererForNashorn {
 
   private val pendingDownloads: ArrayBuffer[RenderOnboxResult.Loading] = ArrayBuffer()
+  private val doneOneboxes: ArrayBuffer[RenderOnboxResult.Done] = ArrayBuffer()
 
-  /** The returned HTML is sanitized in `sanitizeOneboxHtml` in onebox-markdown-it-plugin.js.
-    */
-  def renderOnebox(url: String): String = {
+  def renderAndSanitizeOnebox(url: String): String = {
     if (!Globals.isInitialized) {
       // Also see the comment for ReactRenderer.startCreatingRenderEngines()
       return o"""<p style="color: red; outline: 2px solid orange; padding: 1px 5px;">
@@ -145,23 +184,31 @@ class InstantOneboxRendererForNashorn {
            soft-restarts the server in development mode. [DwE4KEPF72]</p>"""
     }
 
-    Onebox.loadAndRenderInstantly(url) match {
+    Onebox.loadRenderSanitizeInstantly(url) match {
       case RenderOnboxResult.NoOnebox =>
-        // Return null, we're in Javascript land.
-        null
-      case RenderOnboxResult.DoneDirectly(oneboxHtml) =>
-        oneboxHtml
-      case pendingDownload @ RenderOnboxResult.Loading(futureHtml, placeholder) =>
-        pendingDownloads.append(pendingDownload)
-        placeholder
+        val safeUrl = org.owasp.encoder.Encode.forHtml(url)
+        s"""<a href="$safeUrl">$safeUrl</a>"""
+      case doneOnebox: RenderOnboxResult.Done =>
+        doneOneboxes.append(doneOnebox)
+        // Return a placeholder because `doneOnebox.html` might be an iframe which would
+        // be removed by the sanitizer. So replace the placeholder with the html later, when
+        // the sanitizer has been run.
+        doneOnebox.placeholder
+      case pendingOnebox: RenderOnboxResult.Loading =>
+        pendingDownloads.append(pendingOnebox)
+        pendingOnebox.placeholder
     }
   }
 
-  def waitForDownloadsToFinish() = ???
+  def waitForDownloadsToFinish() = ??? // and make pendingDownloads thread safe if needed
 
   def replacePlaceholders(html: String): String = {
-    dieIf(pendingDownloads.nonEmpty, "DwE4FKEW3", "Not implemented: Replacing Onebox placeholders")
-    html
+    dieIf(pendingDownloads.nonEmpty, "DwE4FKEW3", "Not implemented: Waiting for oneboxes to load")
+    var htmlWithBoxes = html
+    for (doneOnebox <- doneOneboxes) {
+      htmlWithBoxes = htmlWithBoxes.replace(doneOnebox.placeholder, doneOnebox.safeHtml)
+    }
+    htmlWithBoxes
   }
 
 }

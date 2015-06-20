@@ -417,8 +417,9 @@ export function loadCurrentPostText(postId: number, doneCallback: (text: string)
 }
 
 
-export function loadOneboxUnsafeHtml(url: string, success: (unsafeHtml: string) => void) {
-  $.get(origin + '/-/onebox?url=' + url, { dataType: 'html' })
+export function loadOneboxSafeHtml(url: string, success: (unsafeHtml: string) => void) {
+  var encodedUrl = encodeURIComponent(url);
+  $.get(origin + '/-/onebox?url=' + encodedUrl, { dataType: 'html' })
     .done((response: string) => {
       success(response);
     })
