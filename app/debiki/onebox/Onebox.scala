@@ -128,6 +128,7 @@ object Onebox {
   private val NoEngineException = new DebikiException("DwE3KEF7", "No matching onebox engine")
 
   private val engines = Seq[OneboxEngine](
+    new ImageOnebox,
     new VideoOnebox,
     new YouTubeOnebox)
 
