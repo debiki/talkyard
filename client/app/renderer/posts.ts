@@ -801,7 +801,7 @@ var PostActions = createComponent({
               title: "Click if you think it's better that people spend their time " +
                   "reading other things instead.", onClick: this.onBuryClick }, 'Bury')];
 
-      var otherVotesDropdown =
+      var otherVotesDropdown = post.postId === BodyPostId ? null :
           r.span({ className: 'dropdown navbar-right' },
             r.a({ className: 'dw-a dw-a-votes' + myOtherVotes, 'data-toggle': 'dropdown' }, ''),
             r.div({ className: 'dropdown-menu dropdown-menu-right dw-p-as-votes' },
