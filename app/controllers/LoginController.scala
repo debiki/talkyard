@@ -35,7 +35,7 @@ object LoginController extends mvc.Controller {
 
   val BecomeOwnerEmailConfigValue = "debiki.becomeOwnerEmailAddress"
 
-  val DiscardingSessionCookie = DiscardingCookie("dwCoSid")
+  val DiscardingSessionCookie = DiscardingSecureCookie("dwCoSid")
 
 
   /** Opens a popup and a login dialog inside that popup. Useful when logging in

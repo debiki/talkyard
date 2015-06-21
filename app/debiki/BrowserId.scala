@@ -19,6 +19,7 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.DebikiHttp.SecureCookie
 import java.{util => ju}
 import play.api.mvc.Cookie
 import play.api.mvc.Request
@@ -64,10 +65,10 @@ object BrowserId {
     //val cookieValue = s"$unixTimeSeconds$randomString$hash"
     val cookieValue = s"$unixTimeSeconds$randomString"
 
-    val newCookie = Cookie(
+    val newCookie = SecureCookie(
       name = CookieName,
       value = cookieValue,
-      maxAge = Some(3600 * 24 * 365 * 20),
+      maxAgeSeconds = Some(3600 * 24 * 365 * 20),
       httpOnly = true)
 
     (Some(BrowserId(cookieValue, isNew = true)), newCookie :: Nil)

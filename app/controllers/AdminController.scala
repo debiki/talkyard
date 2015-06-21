@@ -56,9 +56,8 @@ object AdminController extends mvc.Controller {
       val siteTpi = SiteTpi(apiReq)
       val adminPageBody = views.html.adminPage(siteTpi).body
       Ok(adminPageBody) as HTML withCookies (
-        mvc.Cookie(
-          DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value,
-          httpOnly = false))
+        SecureCookie(
+          DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value))
     }
   }
 
@@ -74,9 +73,8 @@ object AdminController extends mvc.Controller {
     }
     else {
       Ok(views.html.adminPageOld(apiReq.host).body) as HTML withCookies (
-        mvc.Cookie(
-          DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value,
-          httpOnly = false))
+        SecureCookie(
+          DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value))
     }
   }
 

@@ -281,6 +281,13 @@ object DebikiHttp {
 
   // ----- Cookies
 
+  def SecureCookie(name: String, value: String, maxAgeSeconds: Option[Int] = None,
+        httpOnly: Boolean = false) =
+    Cookie(name, value, maxAge = maxAgeSeconds, secure = Globals.secure, httpOnly = httpOnly)
+
+  def DiscardingSecureCookie(name: String) =
+    DiscardingCookie(name, secure = Globals.secure)
+
   // Two comments on the encoding of the cookie value:
   // 1. If the cookie contains various special characters
   // (whitespace, any of: "[]{]()=,"/\?@:;") it will be
@@ -304,7 +311,7 @@ object DebikiHttp {
       maxAge = maxAgeSecs,
       path = "/",
       domain = None,
-      secure = false,
+      secure = Globals.secure,
       httpOnly = false)
 
   def urlDecodeCookie(name: String, request: Request[_]): Option[String] =

@@ -102,13 +102,13 @@ object LoginWithOpenAuthController extends Controller {
     if (returnToUrl.nonEmpty) {
       futureResult = futureResult map { result =>
         result.withCookies(
-          Cookie(name = ReturnToUrlCookieName, value = returnToUrl, httpOnly = false))
+          SecureCookie(name = ReturnToUrlCookieName, value = returnToUrl, httpOnly = false))
       }
     }
     if (request.rawQueryString.contains("mayNotCreateUser")) {
       futureResult = futureResult map { result =>
         result.withCookies(
-          Cookie(name = MayCreateUserCookieName, value = "false", httpOnly = false))
+          SecureCookie(name = MayCreateUserCookieName, value = "false", httpOnly = false))
       }
     }
     futureResult
@@ -178,9 +178,9 @@ object LoginWithOpenAuthController extends Controller {
       return Future.successful(
         Forbidden("Parallel logins not supported [DwE07G32]")
           .discardingCookies(
-            DiscardingCookie(ReturnToSiteCookieName),
-            DiscardingCookie(ReturnToSiteXsrfTokenCookieName),
-            DiscardingCookie(ReturnToUrlCookieName)))
+            DiscardingSecureCookie(ReturnToSiteCookieName),
+            DiscardingSecureCookie(ReturnToSiteXsrfTokenCookieName),
+            DiscardingSecureCookie(ReturnToUrlCookieName)))
     }
 
     val oauthDetails = OpenAuthDetails(
@@ -200,7 +200,7 @@ object LoginWithOpenAuthController extends Controller {
           originalSiteOrigin + routes.LoginWithOpenAuthController.continueAtOriginalSite(
             oauthDetailsCacheKey, xsrfToken)
         Redirect(continueAtOriginalSiteUrl)
-          .discardingCookies(DiscardingCookie(ReturnToSiteCookieName))
+          .discardingCookies(DiscardingSecureCookie(ReturnToSiteCookieName))
       case None =>
         login(request, anyOauthDetails = Some(oauthDetails))
     }
@@ -244,7 +244,7 @@ object LoginWithOpenAuthController extends Controller {
           }
       }
 
-    result.discardingCookies(DiscardingCookie(MayCreateUserCookieName))
+    result.discardingCookies(DiscardingSecureCookie(MayCreateUserCookieName))
   }
 
 
@@ -280,7 +280,7 @@ object LoginWithOpenAuthController extends Controller {
         }
       }
     response.withCookies(sidAndXsrfCookies: _*)
-      .discardingCookies(DiscardingCookie(ReturnToUrlCookieName))
+      .discardingCookies(DiscardingSecureCookie(ReturnToUrlCookieName))
   }
 
 
@@ -316,8 +316,8 @@ object LoginWithOpenAuthController extends Controller {
     }
 
     result.discardingCookies(
-      DiscardingCookie(IsInLoginWindowCookieName),
-      DiscardingCookie(ReturnToUrlCookieName))
+      DiscardingSecureCookie(IsInLoginWindowCookieName),
+      DiscardingSecureCookie(ReturnToUrlCookieName))
   }
 
 
@@ -409,7 +409,7 @@ object LoginWithOpenAuthController extends Controller {
         routes.LoginWithOpenAuthController.loginThenReturnToOriginalSite(
           providerName, returnToOrigin = originOf(request), xsrfToken)
     Future.successful(Redirect(loginEndpoint).withCookies(
-      Cookie(name = ReturnToSiteXsrfTokenCookieName, value = xsrfToken, httpOnly = false)))
+      SecureCookie(name = ReturnToSiteXsrfTokenCookieName, value = xsrfToken, httpOnly = false)))
   }
 
 
@@ -430,7 +430,7 @@ object LoginWithOpenAuthController extends Controller {
     val futureResponse = authenticate(provider, request)
     futureResponse map { response =>
       response.withCookies(
-        Cookie(name = ReturnToSiteCookieName, value = s"$returnToOrigin$Separator$xsrfToken",
+        SecureCookie(name = ReturnToSiteCookieName, value = s"$returnToOrigin$Separator$xsrfToken",
           httpOnly = false))
     }
   }
@@ -447,7 +447,7 @@ object LoginWithOpenAuthController extends Controller {
         throwForbidden("DwE7GCV0", "No XSRF cookie")
     }
     login(request, oauthDetailsCacheKey = Some(oauthDetailsCacheKey))
-      .discardingCookies(DiscardingCookie(ReturnToSiteXsrfTokenCookieName))
+      .discardingCookies(DiscardingSecureCookie(ReturnToSiteXsrfTokenCookieName))
   }
 
 

@@ -109,7 +109,7 @@ object SafeActions {
               "DwE034ZQ3", "Internal error, please try again, sorry. "+
                 "(A certain login id has become invalid. You now have "+
                 "a new id, but you will probably need to login again.)")
-              .discardingCookies(DiscardingCookie(Sid.CookieName)))
+              .discardingCookies(DiscardingSecureCookie(Sid.CookieName)))
         }
 
       val resultOkSid =
@@ -124,7 +124,7 @@ object SafeActions {
               .withHeaders(MakeInternetExplorerSaveIframeCookiesHeader)
             if (deleteSidCookie) {
               resultWithCookies =
-                resultWithCookies.discardingCookies(DiscardingCookie(Sid.CookieName))
+                resultWithCookies.discardingCookies(DiscardingSecureCookie(Sid.CookieName))
             }
             resultWithCookies
           }
@@ -225,7 +225,7 @@ object SafeActions {
         val anyNewFakeIp = request.queryString.get("fakeIp").flatMap(_.headOption)
         anyNewFakeIp foreach { fakeIp =>
           futureResult = futureResult map { simpleResult =>
-            simpleResult.withCookies(Cookie("dwCoFakeIp", fakeIp))
+            simpleResult.withCookies(SecureCookie("dwCoFakeIp", fakeIp))
           }
         }
       }
