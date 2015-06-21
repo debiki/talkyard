@@ -84,6 +84,8 @@ function renderOnebox(tokens, index, options, env, renderer) {
       $('#' + randomId).replaceWith(replacement);
     });
     var safeLink = debiki.internal.sanitizeHtml(token.link)
+    // The sanitizer must allow the id and class, see [6Q8KEF2] in
+    // client/third-party/html-css-sanitizer-bundle.js for the current quick hack.
     oneboxHtml  ='<div id="' + randomId + '" class="icon icon-loading"><a>' + safeLink + '</a></div>';
   }
   return oneboxHtml;
