@@ -20,10 +20,13 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import java.{lang => jl, util => ju, io => jio}
+import debiki.DebikiHttp.throwInternalError
+import java.{util => ju, io => jio}
 import javax.{script => js}
+import debiki.onebox.InstantOneboxRendererForNashorn
 import play.api.Play
 import play.api.Play.current
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
@@ -50,20 +53,61 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   private val javascriptEngines =
     new java.util.concurrent.LinkedBlockingDeque[js.ScriptEngine](999)
 
+  private val BrokenEngine = new js.AbstractScriptEngine() {
+    override def eval(script: String, context: js.ScriptContext): AnyRef = null
+    override def eval(reader: jio.Reader, context: js.ScriptContext): AnyRef = null
+    override def getFactory: js.ScriptEngineFactory = null
+    override def createBindings(): js.Bindings = null
+  }
 
+
+  /** Bug: Apparently this reloads the Javascript code, but won't reload Java/Scala code
+    * called from inside the JS code. This results in weird impossible things like
+    * two versions of debiki.Global: one old version used when calling out to Scala from my
+    * JS code, and one new version used in the rest of the application *after* Play has
+    * soft-reloaded the app. Workaround: Kill the server: ctrl-d (ctrl-c not needed) and restart.
+    * I'm thinking the reason Nashorn reuses old stale classes is that:
+    *   "The only way that a Class can be unloaded is if the Classloader used is garbage collected"
+    *   http://stackoverflow.com/a/148707/694469
+    * but the Extensions class loader loads the script and then also the Java/Scala stuff they
+    * call out to? And that classloader is never unloaded I suppose. In order to refresh
+    * the Scala code called from my Nashorn JS, perhaps I need to somehow use a custom
+    * classloader here?
+    */
   def startCreatingRenderEngines() {
     dieIf(!javascriptEngines.isEmpty, "DwE50KFE2")
-    scala.concurrent.Future {
+    Future {
       val numCores =
         if (Play.isProd) Runtime.getRuntime.availableProcessors
         else {
-          // Initializing cores takes rather long, so only init one core in dev mode.
-          1
+          // Initializing engiens takes rather long, so only init two in dev mode: one
+          // for rendering CommonMark and one for sanitizing oneboxes.
+          2
         }
       for (i <- 1 to numCores) {
-        javascriptEngines.putLast(makeJavascriptEngine())
+        createOneMoreJavascriptEngine(isVeryFirstEngine = i == 1)
       }
     }
+  }
+
+
+  private def createOneMoreJavascriptEngine(isVeryFirstEngine: Boolean = false): Unit = {
+    val engine = try { makeJavascriptEngine() }
+    catch {
+      case throwable: Throwable =>
+        if (isVeryFirstEngine) {
+          logger.error("Error creating the very first Javascript engine: [DwE4KEPF8]", throwable)
+          javascriptEngines.putLast(BrokenEngine)
+          die("DwE5KEF50", "Broken server side Javascript, this won't work")
+        }
+        else {
+          // Deadlock risk because a thread that needs an engine blocks until one is available.
+          logger.error(o"""Error creating additional Javascript engine, ignoring it,
+              DEADLOCK RISK!: [DwE3KEP58]""", throwable)
+          return
+        }
+    }
+    javascriptEngines.putLast(engine)
   }
 
 
@@ -86,11 +130,17 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
   override def renderAndSanitizeCommonMark(commonMarkSource: String,
         allowClassIdDataAttrs: Boolean, followLinks: Boolean): String = {
-    withJavascriptEngine(engine => {
+    val oneboxRenderer = new InstantOneboxRendererForNashorn
+    val resultNoOneboxes = withJavascriptEngine(engine => {
       val safeHtml = engine.invokeFunction("renderAndSanitizeCommonMark", commonMarkSource,
-          allowClassIdDataAttrs.asInstanceOf[Object], followLinks.asInstanceOf[Object])
+          allowClassIdDataAttrs.asInstanceOf[Object], followLinks.asInstanceOf[Object],
+          oneboxRenderer)
       safeHtml.asInstanceOf[String]
     })
+    // Before commenting in: Make all render functions async so we won't block when downloading.
+    //oneboxRenderer.waitForDownloadsToFinish()
+    val resultWithOneboxes = oneboxRenderer.replacePlaceholders(resultNoOneboxes)
+    resultWithOneboxes
   }
 
 
@@ -109,12 +159,27 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     val mightBlock = javascriptEngines.isEmpty
     if (mightBlock) {
       logger.debug(s"Thread $threadName (id $threadId), waits for JS engine...")
+      // Create one more engine, so we won't block forever below. Sometimes a thread uses
+      // two engines at the same time: 1) it calls Nashorn to render CommonMark, then
+      // Nashorn calls back out to the Scala code in InstantOneboxRendererForNashorn,
+      // which 2) calls Nashorn again to sanitize the onebox. — So many engines might be needed.
+      Future {
+        createOneMoreJavascriptEngine()
+      }
     }
 
     val engine = javascriptEngines.takeFirst()
 
     if (mightBlock) {
       logger.debug(s"...Thread $threadName (id $threadId) got a JS engine.")
+      if (engine eq BrokenEngine) {
+        logger.debug(s"...But it is broken; I'll throw an error. [DwE4KEWV52]")
+      }
+    }
+
+    if (engine eq BrokenEngine) {
+      javascriptEngines.addFirst(engine)
+      throwInternalError("DwE5KGF8", "Could not create Javascript engine; cannot render page.")
     }
 
     val result = fn(engine.asInstanceOf[js.Invocable])
@@ -129,8 +194,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     def threadName = java.lang.Thread.currentThread.getName
     logger.debug(s"Initializing Nashorn engine, thread id: $threadId, name: $threadName...")
 
-    // Pass 'null' to force the correct class loader. Without passing any param,
-    // the "nashorn" JavaScript engine is not found by the `ScriptEngineManager`.
+    // Pass 'null' so that a class loader that finds the Nashorn extension will be used.
+    // Otherwise the Nashorn engine won't be found and `newEngine` will be null.
     // See: https://github.com/playframework/playframework/issues/2532
     val newEngine = new js.ScriptEngineManager(null).getEngineByName("nashorn")
 
@@ -177,19 +242,22 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
 
   private val RenderAndSanitizeCommonMark = i"""
-    |var remarkable;
+    |var md;
     |try {
-    |  remarkable = new Remarkable({ html: true });
-    |  remarkable.use(debiki.internal.MentionsRemarkablePlugin());
+    |  md = markdownit({ html: true });
+    |  md.use(debiki.internal.MentionsMarkdownItPlugin());
+    |  md.use(debiki.internal.oneboxMarkdownItPlugin);
     |}
     |catch (e) {
     |  printStackTrace(e);
     |  console.error("Error creating CommonMark renderer [DwE5kFEM9]");
     |}
     |
-    |function renderAndSanitizeCommonMark(source, allowClassIdDataAttrs, followLinks) {
+    |function renderAndSanitizeCommonMark(source, allowClassIdDataAttrs, followLinks,
+    |       instantOneboxRenderer) {
     |  try {
-    |    var unsafeHtml = remarkable.render(source);
+    |    debiki.internal.oneboxMarkdownItPlugin.instantRenderer = instantOneboxRenderer;
+    |    var unsafeHtml = md.render(source);
     |    var allowClassAndIdAttr = allowClassIdDataAttrs;
     |    var allowDataAttr = allowClassIdDataAttrs;
     |    if (!followLinks) {
@@ -244,11 +312,12 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     |"""
 
 
-  private val ServerSideDebikiModule = i"""
+  private def ServerSideDebikiModule = i"""
     |var debiki = {
     |  store: {},
     |  v0: { util: {} },
-    |  internal: {}
+    |  internal: {},
+    |  secure: ${Globals.secure}
     |};
     |"""
 

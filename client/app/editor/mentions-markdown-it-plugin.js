@@ -29,35 +29,35 @@ nodejsUtilInherits = function(constructor, superConstructor) {
 };
 
 
-nodejsUtilInherits(MentionsRemarkablePlugin, Function);
+nodejsUtilInherits(MentionsMarkdownItPlugin, Function);
 
 
 
-function MentionsRemarkablePlugin() {
-  var plugin = function(remarkable, options) {
+function MentionsMarkdownItPlugin() {
+  var plugin = function(md, options) {
     plugin.options = options;
-    plugin.init(remarkable);
+    plugin.init(md);
   };
-  plugin.__proto__ = MentionsRemarkablePlugin.prototype;
-  // Cannot match '.@(...)' because Remarkable seems to consume all letters,
+  plugin.__proto__ = MentionsMarkdownItPlugin.prototype;
+  // Cannot match '.@(...)' because markdown-it seems to consume all letters,
   // it considers them unimportant and won't feed them to the below parse()
   // function. It sends only '@...' to parse, not any [a-z] before the '@'.
   // So skip the char before the '@', and fetch and check it inside parse()
   // instead.
-  plugin.mentionsRegex = /^@[a-zA-Z_]+/;
+  plugin.mentionsRegex = /^@[a-zA-Z][a-zA-Z_0-9]+/;
   plugin.whitespaceRegex = /\s/;
-  plugin.id = 'MentionsRemarkablePlugin';
+  plugin.id = 'MentionsMarkdownItPlugin';
   return plugin;
 }
 
 
-MentionsRemarkablePlugin.prototype.init = function(remarkable) {
-  remarkable.inline.ruler.push(this.id, this.parse.bind(this));
-  remarkable.renderer.rules[this.id] = this.render.bind(this);
+MentionsMarkdownItPlugin.prototype.init = function(md) {
+  md.inline.ruler.push(this.id, this.parse.bind(this));
+  md.renderer.rules[this.id] = this.render.bind(this);
 };
 
 
-MentionsRemarkablePlugin.prototype.parse = function(state, silent) {
+MentionsMarkdownItPlugin.prototype.parse = function(state, silent) {
   var nextChars = state.src.slice(state.pos);
   var match = nextChars.match(this.mentionsRegex);
   if (!match)
@@ -78,18 +78,16 @@ MentionsRemarkablePlugin.prototype.parse = function(state, silent) {
   if (silent)
     return true;
 
-  state.push({
-    type  : this.id,
-    level : state.level,
-    username: nextChars.slice(1, match[0].length)
-  });
+  var token = state.push('MentionsMarkdownItPlugin', '');
+  token.level = state.level;
+  token.username = nextChars.slice(1, match[0].length);
 
   return true;
 };
 
 
-MentionsRemarkablePlugin.prototype.render = function(tokens, id, options, env) {
-  // The username is [a-zA-Z_] so we don't need to escape it. And besides we sanitize
+MentionsMarkdownItPlugin.prototype.render = function(tokens, id, options, env) {
+  // The username is [a-zA-Z_0-9] so we don't need to escape it. And besides we sanitize
   // everything later on anyway.
   var username = tokens[id].username;
   var url = '/-/users/#!/username/' + username;
@@ -97,4 +95,6 @@ MentionsRemarkablePlugin.prototype.render = function(tokens, id, options, env) {
 };
 
 
-debiki.internal.MentionsRemarkablePlugin = MentionsRemarkablePlugin;
+debiki.internal.MentionsMarkdownItPlugin = MentionsMarkdownItPlugin;
+
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list

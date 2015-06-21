@@ -438,6 +438,16 @@ object Prelude {
     def misses(s: String) = !matches(s)
   }
 
+  implicit class RegexToFindGroup(regex: scala.util.matching.Regex) {
+    def findGroupIn(text: String): Option[String] =
+      text match {
+        case regex(firstGroup) =>
+          Option(firstGroup)
+        case _ =>
+          None
+      }
+  }
+
   implicit class OptionToInt(option: Option[_]) {
     def toInt: Int = if (option.isDefined) 1 else 0
   }

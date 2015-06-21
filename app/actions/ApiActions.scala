@@ -44,8 +44,15 @@ object ApiActions {
   def AsyncGetAction(f: GetRequest => Future[Result]): mvc.Action[Unit] =
     PlainApiAction(NoRateLimits).async(BodyParsers.parse.empty)(f)
 
+  def AsyncGetActionRateLimited(rateLimits: RateLimits)(f: GetRequest => Future[Result])
+        : mvc.Action[Unit] =
+    PlainApiAction(rateLimits).async(BodyParsers.parse.empty)(f)
+
   def GetAction(f: GetRequest => Result) =
     PlainApiAction(NoRateLimits)(BodyParsers.parse.empty)(f)
+
+  def GetActionRateLimited(rateLimits: RateLimits)(f: GetRequest => Result) =
+    PlainApiAction(rateLimits)(BodyParsers.parse.empty)(f)
 
   def StaffGetAction(f: GetRequest => Result) =
     PlainApiActionStaffOnly(BodyParsers.parse.empty)(f)

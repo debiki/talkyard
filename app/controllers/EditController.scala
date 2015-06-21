@@ -22,10 +22,12 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
+import debiki.onebox.Onebox
 import play.api._
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
 import requests._
+import scala.concurrent.ExecutionContext.Implicits.global
 import Utils.{OkSafeJson, parseIntOrThrowBadReq}
 
 
@@ -71,6 +73,16 @@ object EditController extends mvc.Controller {
 
     OkSafeJson(ReactJson.postToJson2(postId = postId, pageId = pageId,
       request.dao, includeUnapproved = true))
+  }
+
+
+  /** Downloads the linked resource via an external request to the URL (assuming it's
+    * a trusted safe site) then creates and returns sanitized onebox html.
+    */
+  def onebox(url: String) = AsyncGetActionRateLimited(RateLimits.LoadOnebox) { request =>
+    Onebox.loadRenderSanitize(url).transform(
+      html => Ok(html),
+      throwable => ResultException(BadReqResult("DwE4PKE2", "Cannot onebox that link")))
   }
 
 

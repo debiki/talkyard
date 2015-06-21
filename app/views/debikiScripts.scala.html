@@ -77,7 +77,15 @@ occurrence of the magic string with user specific data. *@
 *@
 <script>
   @* See https://stackoverflow.com/a/1912522/694469. The <div> isn't added to the document
-   so no <script> would be executed. *@
+   so no <script> would be executed. — But yes it would indeed?
+   Test this in Dev Tools:
+     document.createElement('div').innerHTML =
+        '<img src=http://broken.example.com onerror=alert(1337)>';
+   the image will be requested, that fails, so the script runs.
+   (See http://stackoverflow.com/a/430240/694469)
+   However, we have already escaped the HTML, so any < are already escaped and will be
+   converted back to text only. Search for "Encode.forHtmlContent" above.
+   *@
   function unencodeHtmlContent(escapedHtml) {
     var elem = document.createElement('div');
     elem.innerHTML = escapedHtml;
@@ -102,6 +110,7 @@ occurrence of the magic string with user specific data. *@
 
   var debiki = $.extend(true, {
     siteId: '@siteId',
+    secure: @{debiki.Globals.secure},
     reactPageStore: JSON.parse(unencodeHtmlContent($('#dwReactPageStore').text())),
     reactUserStore: parseAnyDebikiUserSpecificData(),
     getPageId: function() { return @Html(pageIdQuotedOrUndefined); },

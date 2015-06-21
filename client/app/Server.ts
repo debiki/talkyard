@@ -417,6 +417,28 @@ export function loadCurrentPostText(postId: number, doneCallback: (text: string)
 }
 
 
+var cachedOneboxHtml = {};
+
+export function loadOneboxSafeHtml(url: string, success: (safeHtml: string) => void) {
+  var cachedHtml = cachedOneboxHtml[url];
+  if (cachedHtml) {
+    setTimeout(() => success(cachedHtml), 0);
+    return;
+  }
+  var encodedUrl = encodeURIComponent(url);
+  $.get(origin + '/-/onebox?url=' + encodedUrl, { dataType: 'html' })
+    .done((response: string) => {
+      cachedOneboxHtml[url] = response;
+      success(response);
+    })
+    .fail((x, y, z) => {
+      console.debug('Error loading onebox: ' + JSON.stringify([x, y, z]));
+      // Pass null to tell the editor to show no onebox (it should show the link instead).
+      success(null);
+    });
+}
+
+
 export function saveEdits(postId: number, text: string, doneCallback: () => void) {
   postJson('/-/edit', {
     data: {

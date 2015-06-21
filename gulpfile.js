@@ -107,7 +107,8 @@ var debikiJavascriptFiles = [
       'target/client/app/posts/load-page-parts.js',
       'target/client/app/login/login.js',
       'target/client/app/login/login-popup.js',
-      'target/client/app/editor/mentions-remarkable-plugin.js',
+      'target/client/app/editor/mentions-markdown-it-plugin.js',
+      'target/client/app/editor/onebox-markdown-it-plugin.js',
       'target/client/shared/login-dialog/login-dialog.js',
       'target/client/shared/login-dialog/login-guest.js',
       'target/client/shared/login-dialog/login-password.js',
@@ -221,10 +222,11 @@ function compileServerSideTypescript() {
         'bower_components/react/react-with-addons.js',
         'bower_components/react-bootstrap/react-bootstrap.js',
         'bower_components/react-router/dist/react-router.js',
-        'bower_components/remarkable/dist/remarkable.js',
+        'bower_components/markdown-it/dist/markdown-it.js',
         'bower_components/lodash/dist/lodash.js',
         'client/third-party/html-css-sanitizer-bundle.js',
-        'client/app/editor/mentions-remarkable-plugin.js',
+        'client/app/editor/mentions-markdown-it-plugin.js',
+        'client/app/editor/onebox-markdown-it-plugin.js',
         'bower_components/moment/moment.js']);
 
   return es.merge(typescriptStream, javascriptStream)

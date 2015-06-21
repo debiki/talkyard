@@ -4860,7 +4860,19 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
     return url;
   }
   function classAndIdPolicy(token) {
-    if (!allowClassAndIdAttr) return '';
+    if (!allowClassAndIdAttr) {
+      // Hack [6Q8KEF2]. Not sure how to fix this. Perhaps add a function that allows
+      // other modules to register okay id and class patterns?
+      // For now, allow onebox placeholder ids and loading indicator:
+      // (see editor/-onebox-markdown-it-plugin.js)
+      if (token === 'icon icon-loading') { // class
+        return token;
+      }
+      if (/^onebox-\w+$/.test(token)) { // id
+        return token;
+      }
+      return '';
+    }
     return /^dw-/.test(token) ? '' : token;
   }
   function dataPolicy(attrName, value) {
@@ -4875,3 +4887,4 @@ function googleCajaSanitizeHtml(htmlTextUnsafe, allowClassAndIdAttr,
 if (typeof debiki !== 'undefined')
   debiki.internal.googleCajaSanitizeHtml = googleCajaSanitizeHtml;
 
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=tcqwn list

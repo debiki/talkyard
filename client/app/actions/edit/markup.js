@@ -32,7 +32,7 @@ d.i.markdownToSafeHtml = function(markdownSrc, hostAndPort, sanitizerOptions) {
 
 function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
   // SHOULD convert from 'https?:///' to 'https?://servername/', but this
-  // no longer works since I'm using Remarkable + CommonMark now:
+  // no longer works since I'm using Markdown-it + CommonMark now:
   // Fix this server side too, [DK48vPe9]
   /*
   var converter = new Markdown.Converter();
@@ -44,9 +44,10 @@ function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
   var htmlTextUnsafe = converter.makeHtml(markdownSrc, hostAndPort);
    */
 
-  var remarkable = new Remarkable({ html: true });
-  remarkable.use(d.i.MentionsRemarkablePlugin());
-  var htmlTextUnsafe = remarkable.render(commonmarkSource);
+  var md = window.markdownit({ html: true });
+  md.use(d.i.MentionsMarkdownItPlugin());
+  md.use(d.i.oneboxMarkdownItPlugin);
+  var htmlTextUnsafe = md.render(commonmarkSource);
   return htmlTextUnsafe;
 };
 
@@ -58,6 +59,7 @@ function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
  * options.allowDataAttribs = true/false
  */
 d.i.sanitizeHtml = function(htmlTextUnsafe, options) {
+  options = options || {};
   var htmlTextSafe = d.i.googleCajaSanitizeHtml(
       htmlTextUnsafe, options.allowClassAndIdAttr, options.allowDataAttr);
   return htmlTextSafe;
