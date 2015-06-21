@@ -26,6 +26,7 @@ import javax.{script => js}
 import debiki.onebox.InstantOneboxRendererForNashorn
 import play.api.Play
 import play.api.Play.current
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
@@ -75,25 +76,38 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     */
   def startCreatingRenderEngines() {
     dieIf(!javascriptEngines.isEmpty, "DwE50KFE2")
-    scala.concurrent.Future {
+    Future {
       val numCores =
         if (Play.isProd) Runtime.getRuntime.availableProcessors
         else {
-          // Initializing cores takes rather long, so only init one core in dev mode.
-          1
+          // Initializing engiens takes rather long, so only init two in dev mode: one
+          // for rendering CommonMark and one for sanitizing oneboxes.
+          2
         }
       for (i <- 1 to numCores) {
-        val engine = try { makeJavascriptEngine() }
-        catch {
-          case t: Throwable =>
-            logger.error("Error creating Javascript engine: [DwE4KEPF8]", t)
-            javascriptEngines.clear()
-            javascriptEngines.putLast(BrokenEngine)
-            return
-        }
-        javascriptEngines.putLast(engine)
+        createOneMoreJavascriptEngine(isVeryFirstEngine = i == 1)
       }
     }
+  }
+
+
+  private def createOneMoreJavascriptEngine(isVeryFirstEngine: Boolean = false): Unit = {
+    val engine = try { makeJavascriptEngine() }
+    catch {
+      case throwable: Throwable =>
+        if (isVeryFirstEngine) {
+          logger.error("Error creating the very first Javascript engine: [DwE4KEPF8]", throwable)
+          javascriptEngines.putLast(BrokenEngine)
+          die("DwE5KEF50", "Broken server side Javascript, this won't work")
+        }
+        else {
+          // Deadlock risk because a thread that needs an engine blocks until one is available.
+          logger.error(o"""Error creating additional Javascript engine, ignoring it,
+              DEADLOCK RISK!: [DwE3KEP58]""", throwable)
+          return
+        }
+    }
+    javascriptEngines.putLast(engine)
   }
 
 
@@ -142,11 +156,16 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     def threadId = Thread.currentThread.getId
     def threadName = Thread.currentThread.getName
 
-    // Deadlock BUG COULD create more engines if mightBlock, because perhaps we've called from
-    // Nashorn to Scala and now back to Nashorn again, then more engines than cores are needed.
     val mightBlock = javascriptEngines.isEmpty
     if (mightBlock) {
       logger.debug(s"Thread $threadName (id $threadId), waits for JS engine...")
+      // Create one more engine, so we won't block forever below. Sometimes a thread uses
+      // two engines at the same time: 1) it calls Nashorn to render CommonMark, then
+      // Nashorn calls back out to the Scala code in InstantOneboxRendererForNashorn,
+      // which 2) calls Nashorn again to sanitize the onebox. — So many engines might be needed.
+      Future {
+        createOneMoreJavascriptEngine()
+      }
     }
 
     val engine = javascriptEngines.takeFirst()
@@ -159,6 +178,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     }
 
     if (engine eq BrokenEngine) {
+      javascriptEngines.addFirst(engine)
       throwInternalError("DwE5KGF8", "Could not create Javascript engine; cannot render page.")
     }
 
