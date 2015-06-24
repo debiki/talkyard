@@ -16,7 +16,7 @@
  */
 
 package com.debiki.tck.dao.old
-
+/*
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju, lang => jl}
@@ -180,4 +180,5 @@ object DebikiSpecs {
   }
 }
 
+*/
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

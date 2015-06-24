@@ -18,6 +18,7 @@
 
 package com.debiki.tck.dao.specs
 
+/*
 import com.debiki.core._
 import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.Prelude._
@@ -25,7 +26,6 @@ import com.debiki.tck.dao.DbDaoSpec
 import com.debiki.tck.dao.code._
 import java.{util => ju}
 import org.scalatest._
-/*
 
 class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
 

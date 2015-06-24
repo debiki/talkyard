@@ -18,13 +18,13 @@
 
 package com.debiki.tck.dao.code
 
+/*
 import com.debiki.core._
 import com.debiki.core.{PostActionPayload => PAP}
 import com.debiki.core.Prelude._
 import java.{util => ju}
 
 
-/*
 class SiteTestUtils(site: Site, val daoFactory: DbDaoFactory) {
 
   val dao = daoFactory.newSiteDbDao(site.id)
