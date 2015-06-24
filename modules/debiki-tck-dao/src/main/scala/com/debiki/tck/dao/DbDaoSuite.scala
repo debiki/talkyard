@@ -20,7 +20,7 @@ package com.debiki.tck.dao
 
 import com.debiki.core.DbDaoFactory
 import org.scalatest._
-
+/*
 
 /** All tests in ./specs/ should be listed here, or they won't be picked up
   * by database access object modules that are tested by debiki-tck-dao.
@@ -33,4 +33,4 @@ class DbDaoSuite(daoFactory: DbDaoFactory) extends Suites(
   }
 
 }
-
+*/

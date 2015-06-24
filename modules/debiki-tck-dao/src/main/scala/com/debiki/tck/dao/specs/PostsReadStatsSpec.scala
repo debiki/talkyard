@@ -25,7 +25,7 @@ import com.debiki.tck.dao.DbDaoSpec
 import com.debiki.tck.dao.code._
 import java.{util => ju}
 import org.scalatest._
-
+/*
 
 class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) {
 
@@ -194,4 +194,4 @@ class PostsReadStatsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory)
 
 }
 
-
+*/

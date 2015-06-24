@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+/*
 package com.debiki.tck.dao.specs
 
 import com.debiki.core._
@@ -252,3 +252,4 @@ class NotificationsSpec(daoFactory: DbDaoFactory) extends DbDaoSpec(daoFactory) 
 
 }
 
+*/

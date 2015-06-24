@@ -17,6 +17,7 @@
 
 package com.debiki.tck.dao.old
 
+/*
 import com.debiki.core
 import com.debiki.core._
 import com.debiki.core.DbDao._
@@ -2851,4 +2852,5 @@ class DbDaoV002ChildSpec(testContextBuilder: TestContextBuilder)
 }
 
 
+*/
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
