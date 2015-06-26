@@ -108,10 +108,18 @@ occurrence of the magic string with user specific data. *@
     return null;
   }
 
+  // Undo Nashorn JSON parser bug workaround, see [64KEWF2] in ReactJson:
+  var __reactStore = JSON.parse(unencodeHtmlContent($('#dwReactPageStore').text()));
+  for (var underscorePostId in __reactStore.allPosts) {
+    var postId = underscorePostId.substr(1);
+    __reactStore.allPosts[postId] = __reactStore.allPosts[underscorePostId];
+    delete __reactStore.allPosts[underscorePostId];
+  }
+
   var debiki = $.extend(true, {
     siteId: '@siteId',
     secure: @{debiki.Globals.secure},
-    reactPageStore: JSON.parse(unencodeHtmlContent($('#dwReactPageStore').text())),
+    reactPageStore: __reactStore,
     reactUserStore: parseAnyDebikiUserSpecificData(),
     getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
     isDev: @{ if (play.api.Play.isDev) "true" else "false" },

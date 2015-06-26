@@ -208,7 +208,8 @@ var RootPostAndComments = createComponent({
     var user = this.props.user;
     var rootPost = this.props.allPosts[this.props.rootPostId];
     if (!rootPost)
-      return r.p({}, '(Root post missing [DwE8WVP4])');
+      return r.p({}, '(Root post missing, id: ' + this.props.rootPostId +
+          ', these are present: ' + _.keys(this.props.allPosts) + ' [DwE8WVP4])');
     var isBody = this.props.rootPostId === BodyPostId;
     var pageRole = this.props.pageRole;
     var threadClass = 'dw-t dw-depth-0' + horizontalCss(this.props.horizontalLayout);

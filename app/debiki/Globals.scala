@@ -147,6 +147,8 @@ class Globals {
       throw new jl.IllegalStateException(o"""Server already running, was it not properly
         shut down last time? Please hit CTRL+C to kill it. [DwE83KJ9]""")
 
+    p.Logger.info("Search disabled, see debiki-dao-rdb [DwM4KEWKB2]")
+
     _state = new State
 
     // The render engines might be needed by some Java evolutions applied below.

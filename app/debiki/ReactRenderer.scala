@@ -345,6 +345,13 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     |function setInitialStateJson(jsonString) {
     |  var json = JSON.parse(jsonString);
     |  initialStateJson = json;
+    |  // Undo Nashorn JSON parser bug workaround see [64KEWF2] in ReactJson:
+    |  var allPosts = {};
+    |  _.each(json.allPosts, function(post, underscorePostId) {
+    |    var postId = underscorePostId.substr(1);
+    |    allPosts[postId] = post;
+    |  });
+    |  initialStateJson.allPosts = allPosts;
     |}
     |"""
 

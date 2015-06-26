@@ -105,11 +105,21 @@ object ReactJson {
     val page = PageDao(pageReq.thePageId, transaction)
     val pageParts = page.parts
     pageParts.loadAllPosts()
-    var allPostsJson = pageParts.allPosts.filter { post =>
+    var allPostsJson = pageParts.allPosts filter { post =>
       !post.deletedStatus.isDeleted || (
         post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.id))
     } map { post: Post =>
-      post.id.toString -> postToJsonImpl(post, page, pageReq.ctime)
+          // Ooops two other Nashorn JSON parser bugs, happen in 'dist' mode only:
+          // 1. java.lang.ArrayIndexOutOfBoundsException: Array index out of range: 84
+          // 2. The 1 and 2 etc items in:  { 1: ..., 2: ..., 0: ...}
+          //    are thrown away because 0 is last. Works fine with 0 first though.
+          // Solve by using string keys instead, not numeric keys: prefix underscore.
+          // Fixed in later Nashorn versions, see:
+          //   http://hg.openjdk.java.net/jdk9/dev/nashorn/rev/dec3faccd3de
+          //   http://mail.openjdk.java.net/pipermail/nashorn-dev/2015-March/004284.html
+          // COULD remove this workaround when upgraded to JDK 8u60, will be released August 2015)
+          // Also remove in in ReactRenderer and debikiScripts.scala.html, see [64KEWF2].
+      ("_" + post.id.toString) -> postToJsonImpl(post, page, pageReq.ctime)
     }
     val numPosts = allPostsJson.length
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
