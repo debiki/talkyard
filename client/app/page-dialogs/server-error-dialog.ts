@@ -79,8 +79,19 @@ var ServerErrorDialog = createComponent({
       message = matches[1];
     }
 
+    var title = 'Error ' + error.status + ' ' + error.statusText;
+
+    if (!error.status) {
+      // COULD check if we're unloading this page. That results in any ongoing requests being
+      // aborted with status code 0. Then we should suppress this dialog.
+      // See http://stackoverflow.com/a/12621912/694469.
+      title = 'Error: Server not reachable';
+      message = "Has the server stopped? Or did you just get disconnected " +
+          "from the Internet? [DwE4KEF2]";
+    }
+
     return (
-      Modal({ title: 'Error ' + error.status + ' ' + error.statusText, onRequestHide: this.close },
+      Modal({ title: title, onRequestHide: this.close },
         r.div({ className: 'modal-body',
             style: { whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}, message),
         r.div({ className: 'modal-footer' }, Button({ onClick: this.close }, 'Close'))));
