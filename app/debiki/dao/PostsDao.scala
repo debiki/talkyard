@@ -96,6 +96,7 @@ trait PostsDao {
       val oldMeta = page.meta
       val newMeta = oldMeta.copy(
         bumpedAt = Some(transaction.currentTime),
+        lastReplyAt = Some(transaction.currentTime),
         numRepliesVisible = page.parts.numRepliesVisible + (isApproved ? 1 | 0),
         numRepliesTotal = page.parts.numRepliesTotal + 1)
 
@@ -338,9 +339,12 @@ trait PostsDao {
 
       // Bump page if new post added, or page body edited.
       if (isApprovingNewPost || isApprovingPageBody) {
-        val numNewReplies = (isApprovingNewPost && postAfter.isReply) ? 1 | 0
+        val (numNewReplies, newLastReplyAt) =
+          if (isApprovingNewPost && postAfter.isReply) (1, Some(transaction.currentTime))
+          else (0, pageMeta.lastReplyAt)
         val newMeta = pageMeta.copy(
           numRepliesVisible = pageMeta.numRepliesVisible + numNewReplies,
+          lastReplyAt = newLastReplyAt,
           bumpedAt = Some(transaction.currentTime))
         transaction.updatePageMeta(newMeta, oldMeta = pageMeta)
       }

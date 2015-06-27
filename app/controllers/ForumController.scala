@@ -23,6 +23,7 @@ import collection.mutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
+import debiki.ReactJson.DateEpochOrNull
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
@@ -134,7 +135,8 @@ object ForumController extends mvc.Controller {
   def topicToJson(topic: PagePathAndMeta, pageStuffById: Map[PageId, PageStuff]): JsObject = {
     val topicStuff = pageStuffById.get(topic.pageId) getOrDie "DwE1F2I7"
     val createdEpoch = topic.meta.createdAt.getTime
-    val lastPostEpoch = topic.meta.bumpedAt.map(_.getTime) getOrElse createdEpoch
+    val bumpedEpoch = DateEpochOrNull(topic.meta.bumpedAt)
+    val lastReplyEpoch = DateEpochOrNull(topic.meta.lastReplyAt)
     Json.obj(
       "pageId" -> topic.id,
       "title" -> topicStuff.title,
@@ -146,7 +148,8 @@ object ForumController extends mvc.Controller {
       "numWrongs" -> topic.meta.numWrongs,
       "numBurys" -> topic.meta.numBurys,
       "createdEpoch" -> createdEpoch,
-      "lastPostEpoch" -> lastPostEpoch)
+      "bumpedEpoch" -> bumpedEpoch,
+      "lastReplyEpoch" -> lastReplyEpoch)
   }
 
 }

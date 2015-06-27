@@ -143,6 +143,7 @@ case class PageMeta(
   updatedAt: ju.Date,
   publishedAt: Option[ju.Date] = None,
   bumpedAt: Option[ju.Date] = None,
+  lastReplyAt: Option[ju.Date] = None,
   parentPageId: Option[String] = None,
   embeddingPageUrl: Option[String],
   authorId: UserId,

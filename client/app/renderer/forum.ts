@@ -242,7 +242,7 @@ export var ForumTopicList = createComponent({
     else {
       anyLastTopic = _.last(this.state.topics);
       if (anyLastTopic) {
-        anyTimeOffset = anyLastTopic.lastPostEpoch;
+        anyTimeOffset = anyLastTopic.bumpedEpoch || anyLastTopic.createdEpoch;
         anyLikesOffset = anyLastTopic.numLikes;
       }
     }
@@ -390,17 +390,23 @@ var TopicRow = createComponent({
     }
 
     var activityTitle =
-      'Created on ' + new Date(topic.createdEpoch).toUTCString() + '\n ' +
-      'Last post on ' + new Date(topic.lastPostEpoch).toUTCString();
+      'Created on ' + new Date(topic.createdEpoch).toUTCString();
+
+    if (topic.lastReplyEpoch) {
+      activityTitle += '\nLast reply on ' + new Date(topic.lastReplyEpoch).toUTCString();
+    }
+    if (topic.bumpedEpoch && topic.bumpedEpoch !== topic.lastReplyEpoch) {
+      activityTitle += '\nEdited on ' + new Date(topic.bumpedEpoch).toUTCString();
+    }
 
     var categoryName = category ? category.name : '';
+    var activityAgo = moment(topic.bumpedEpoch || topic.createdEpoch).from(this.props.now);
     return (
       r.tr({},
         r.td({}, r.a({ href: topic.url }, topic.title)),
         r.td({}, categoryName),
         r.td({ className: 'num num-posts' }, topic.numPosts),
-        r.td({ className: 'num', title: activityTitle },
-            moment(topic.lastPostEpoch).from(this.props.now)),
+        r.td({ className: 'num', title: activityTitle }, activityAgo),
         r.td({ className: 'num' }, feelings)));
   }
 });
@@ -464,8 +470,8 @@ var CategoryRow = createComponent({
           r.td({},
             r.a({ className: 'topic-title', href: topic.url }, topic.title),
             r.span({ className: 'topic-details' },
-              '– ' + topic.numPosts + ' posts, ',
-              moment(topic.lastPostEpoch).from(this.props.now)))));
+              ' – ' + topic.numPosts + ' posts, ',
+              moment(topic.bumpedEpoch || topic.createdEpoch).from(this.props.now)))));
     });
     return (
       r.tr({},

@@ -89,7 +89,8 @@ interface Topic {
   numLikes: number;
   numWrongs: number;
   createdEpoch: number;
-  lastPostEpoch: number;
+  bumpedEpoch: number;
+  lastReplyEpoch: number;
 }
 
 
