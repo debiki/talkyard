@@ -52,7 +52,7 @@ public/res/mentions-remarkable-plugin.min.js
 public/res/modernizr.min.js
 public/res/renderer.js
 public/res/renderer.min.js
-public/res/zxcvbn.js
+public/res/zxcvbn.*
 
 # Ignore generated test JS files.
 test-client/debiki-utils.js
