@@ -52,8 +52,14 @@ class YouTubeOnebox extends InstantOneboxEngine {
         // the iframe below won't be removed.
         val safeId = sanitizeUrl(videoId)
         val safeParams = sanitizeUrl(findParams(javaUri))
+        // wmode=opaque makes it possible to cover the iframe with a transparent div,
+        // which Utterscroll needs so the iframe won't steal mouse move events.
+        // The default wmode is windowed which in effect places it above everything.
+        // See http://stackoverflow.com/questions/3820325/overlay-opaque-div-over-youtube-iframe
+        // Seems wmode might not be needed in Chrome today (June 2015) but feels better to
+        // add it anyway.
         Success(o"""
-          <iframe src="https://www.youtube.com/embed/$safeId?$safeParams"
+          <iframe src="https://www.youtube.com/embed/$safeId?wmode=opaque&$safeParams"
               frameborder="0" allowfullscreen></iframe>""")
       case None =>
         // To do: Have a look at

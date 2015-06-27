@@ -69,6 +69,8 @@ debiki.Utterscroll = (function(options) {
   var startPos;
   var lastPos;
 
+  var $iframeCover;
+
 
   // Avoids firing onHasUtterscrolled twice.
   var hasFiredHasUtterscrolled = false;
@@ -194,24 +196,31 @@ debiki.Utterscroll = (function(options) {
     // -----
 
     // If there's no text in the event.target, then start scrolling.
-    var containsText = searchForTextIn($target, 0);
-    debug(event.target.nodeName +' containsText: '+ containsText);
-    if (!containsText)
+    var hasText = containsText($target, 0);
+    debug(event.target.nodeName +' hasText: '+ hasText);
+    if (!hasText)
       return startScroll(event);
 
-    function searchForTextIn($elem, recursionDepth) {
+    function containsText($elem, recursionDepth) {
       if (recursionDepth > 6)
         return false;
-      var $textElems = $elem.contents().filter(function(ix, child, ar) {
+      // Don't use $elem.contents() to loop through all children, because that
+      // might result in an "accessing a cross-origin frame" error, for iframes.
+      var childNodes = $elem[0].childNodes;
+      for (var index = 0; index < childNodes.length; ++index) {
+        var child = childNodes[index];
         // Is it a true text node with text?
         // BUG? What about CDATA? Isn't that text? (node type 4)
         if (child.nodeType === 3) {  // 3 is text
           var onlyWhitespace = child.data.match(/^\s*$/);
-          return !onlyWhitespace;
+          if (onlyWhitespace)
+            continue;
+          else
+            return true;
         }
         // Skip comments (or script dies in FF)
         if (child.nodeType === 8)  // 8 is comment
-          return false;
+          continue;
         // COULD skip some more node types? Which?
         // And should also test and verify afterwards.
 
@@ -219,16 +228,18 @@ debiki.Utterscroll = (function(options) {
         // text? E.g. <li><a>...</a></li> or <p><small>...</small></p>.
         var $child = $(child);
         if ($child.css('display') === 'inline') {
-          var foundText = searchForTextIn($child, recursionDepth + 1);
-          return foundText;
+          var foundText = containsText($child, recursionDepth + 1);
+          if (!foundText)
+            continue;
+          else
+            return true;
         }
-        // Skip block level children. If text in them is to be selected,
+        // Here, skip (ignore) block level children. If text in them is to be selected,
         // the user needs to click on those blocks. (Recursing into
         // block level elems could search the whole page, should you
         // click the <html> elem!)
-        return false;
-      });
-      return $textElems.length > 0;
+      }
+      return false;
     };
 
     // Start scrolling if mouse press happened not very close to text.
@@ -379,6 +390,7 @@ debiki.Utterscroll = (function(options) {
     $(document).mousemove(doScroll);
     $(document).mouseup(stopScroll);
     $(document.body).css('cursor', 'move');
+    coverIframes();
 
     // Y is the distance to the top.
     startPos = { x: event.screenX, y: event.screenY };
@@ -498,12 +510,27 @@ debiki.Utterscroll = (function(options) {
     $(document.body).css('cursor', '');  // cancel 'move' cursor
     $.event.remove(document, 'mousemove', doScroll);
     $.event.remove(document, 'mouseup', stopScroll);
+    uncoverIframes();
 
     if (d.i.isInIframe)
       window.parent.postMessage(
           JSON.stringify(['stopUtterscrolling', cloneEvent(event)]), '*');
 
     return false;
+  };
+
+
+  // When scrolling and dragging the mouse over an iframe, it'll steal the mouse
+  // move events. Unless we cover the iframe with something else.
+  function coverIframes() {
+    $iframeCover =
+        $('<div style="z-index:9999999; position: fixed; left: 0; top: 0; bottom: 0; right: 0">')
+        .appendTo('body');
+  };
+
+
+  function uncoverIframes() {
+    $iframeCover.remove();
   };
 
 
@@ -578,4 +605,4 @@ debiki.Utterscroll = (function(options) {
   })(jQuery);
 //----------------------------------------
 
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+// vim: fdm=marker et ts=2 sw=2 tw=0 list
