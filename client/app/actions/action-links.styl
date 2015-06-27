@@ -21,16 +21,13 @@
 
 
 .dw-as
-  margin: 0
+  margin: -9px 0 5px;
   // Old comment: Use padding-top not margin-top here, or there'll be a tiny space between
   // the post and the .dw-as, which triggers a certain $thread.mouseleave() in
   // debiki.js which, for inline actions, hides the action menu — just before
   // you're able to click any action.
   padding: 0
   position: relative // for position: absolute 'Click this...' tips, inside
-
-  top: -8px
-  margin-top: -10px;
 
 html.mouse .dw-p-as:not(.dw-p-as-shown)
   opacity: 0.15

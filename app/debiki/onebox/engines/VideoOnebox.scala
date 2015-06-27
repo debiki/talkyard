@@ -33,6 +33,8 @@ class VideoOnebox extends InstantOneboxEngine {
 
   val regex = """^(https?:)?\/\/.*\.(mov|mp4|webm|ogv)(\?.*)?$""".r
 
+  val cssClassName = "dw-ob-video"
+
   def renderInstantly(url: String) = Success(o"""
      <video width='100%' height='100%' controls src='$url'>
        <a href='$url'>$url</a>

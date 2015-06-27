@@ -35,6 +35,8 @@ class YouTubeOnebox extends InstantOneboxEngine {
 
   val regex = """^https?:\/\/(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/.+$""".r
 
+  val cssClassName = "dw-ob-youtube"
+
   /** Do not use java.net.URL because it might try to do a reverse lookup of the hostname
     * (its operator equals).
     */
@@ -51,8 +53,7 @@ class YouTubeOnebox extends InstantOneboxEngine {
         val safeId = sanitizeUrl(videoId)
         val safeParams = sanitizeUrl(findParams(javaUri))
         Success(o"""
-          <iframe width="480" height="270"
-              src="https://www.youtube.com/embed/$safeId?$safeParams"
+          <iframe src="https://www.youtube.com/embed/$safeId?$safeParams"
               frameborder="0" allowfullscreen></iframe>""")
       case None =>
         // To do: Have a look at
@@ -89,9 +90,7 @@ object YouTubeOnebox {
     }
     else if (javaUri.getQuery.nonEmpty) {
       // The url is like: https://www.youtube.com/watch?v=112233abc
-      val q = javaUri.getQuery
-      val x = QueryStringVideoIdRegex findGroupIn javaUri.getQuery
-      x
+      QueryStringVideoIdRegex findGroupIn javaUri.getQuery
     }
     else {
       None

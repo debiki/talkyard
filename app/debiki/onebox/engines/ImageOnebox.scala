@@ -33,6 +33,8 @@ class ImageOnebox extends InstantOneboxEngine {
 
   val regex = """^(https?:)?\/\/.+\.(png|jpg|jpeg|gif|bmp|tif|tiff)(\?.*)?$""".r
 
+  val cssClassName = "dw-ob-image"
+
   def renderInstantly(url: String) = {
     var betterUrl = url
     // Fix Dropbox image links.

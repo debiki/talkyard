@@ -55,6 +55,8 @@ abstract class OneboxEngine {
 
   def regex: scala.util.matching.Regex
 
+  def cssClassName: String
+
   def handles(url: String): Boolean = regex matches url
 
   /** If an engine needs to include an iframe, then it'll have to sanitize everything itself,
@@ -74,7 +76,7 @@ abstract class OneboxEngine {
       if (Globals.secure) {
         safeHtml = safeHtml.replaceAllLiterally("http:", "https:")
       }
-      s"""<aside class="onebox">$safeHtml</aside>"""
+      s"""<aside class="onebox $cssClassName">$safeHtml</aside>"""
     }
     // futureHtml.map apparently isn't executed directly, even if the future has been
     // completed already.
@@ -173,11 +175,12 @@ class InstantOneboxRendererForNashorn {
   private val pendingDownloads: ArrayBuffer[RenderOnboxResult.Loading] = ArrayBuffer()
   private val doneOneboxes: ArrayBuffer[RenderOnboxResult.Done] = ArrayBuffer()
 
-  def renderAndSanitizeOnebox(url: String): String = {
+  def renderAndSanitizeOnebox(unsafeUrl: String): String = {
+    lazy val safeUrl = org.owasp.encoder.Encode.forHtml(unsafeUrl)
     if (!Globals.isInitialized) {
       // Also see the comment for ReactRenderer.startCreatingRenderEngines()
       return o"""<p style="color: red; outline: 2px solid orange; padding: 1px 5px;">
-           Broken onebox for: <a>$url</a>. Nashorn called out to Scala code
+           Broken onebox for: <a>$safeUrl</a>. Nashorn called out to Scala code
            that uses old stale class files and apparently the wrong classloader (?)
            so singletons are created a second time when inside Nashorn and everything
            is broken. To fix this, restart the server (CTRL+D + run), and edit and save
@@ -185,9 +188,8 @@ class InstantOneboxRendererForNashorn {
            soft-restarts the server in development mode. [DwE4KEPF72]</p>"""
     }
 
-    Onebox.loadRenderSanitizeInstantly(url) match {
+    Onebox.loadRenderSanitizeInstantly(unsafeUrl) match {
       case RenderOnboxResult.NoOnebox =>
-        val safeUrl = org.owasp.encoder.Encode.forHtml(url)
         s"""<a href="$safeUrl">$safeUrl</a>"""
       case doneOnebox: RenderOnboxResult.Done =>
         doneOneboxes.append(doneOnebox)
