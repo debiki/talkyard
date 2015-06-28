@@ -133,6 +133,7 @@ case class Post(
   require(uniqueId >= 1, "DwE4WEKQ8")
   require(parentId != Some(id), "DwE5BK4")
   require(!multireplyPostIds.contains(id), "DwE4kWW2")
+  require(multireplyPostIds.size != 1, "DwE2KFE7") // size 1 = does not reply to many people
 
   require(lastEditedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE7KEF3")
   require(lastEditedAt.isEmpty == lastEditedById.isEmpty, "DwE0GKW2")
@@ -399,7 +400,7 @@ object Post {
         htmlSanitized: String,
         approvedById: Option[UserId]): Post = {
 
-    require(multireplyPostIds.nonEmpty == parent.isDefined)
+    require(multireplyPostIds.isEmpty || parent.isDefined, "DwE4KFK28")
 
     val currentSourcePatch: Option[String] =
       if (approvedById.isDefined) None

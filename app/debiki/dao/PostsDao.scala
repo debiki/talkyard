@@ -86,7 +86,7 @@ trait PostsDao {
         pageId = pageId,
         postId = postId,
         parent = anyParent,
-        multireplyPostIds = replyToPostIds,
+        multireplyPostIds = (replyToPostIds.size > 1) ? replyToPostIds | Set.empty,
         createdAt = transaction.currentTime,
         createdById = authorId,
         source = text,
