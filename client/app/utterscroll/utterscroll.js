@@ -69,7 +69,7 @@ debiki.Utterscroll = (function(options) {
   var startPos;
   var lastPos;
 
-  var $iframeCover;
+  var hasCoveredIframes = false;
 
 
   // Avoids firing onHasUtterscrolled twice.
@@ -390,7 +390,6 @@ debiki.Utterscroll = (function(options) {
     $(document).mousemove(doScroll);
     $(document).mouseup(stopScroll);
     $(document.body).css('cursor', 'move');
-    coverIframes();
 
     // Y is the distance to the top.
     startPos = { x: event.screenX, y: event.screenY };
@@ -443,10 +442,18 @@ debiki.Utterscroll = (function(options) {
       if ($elemToScroll.css('overflow-x') === 'hidden') distNow.x = 0;
     }
 
+    var hasScrolledABit = distTotal.x * distTotal.x + distTotal.y * distTotal.y >
+        fireHasUtterscrolledMinDist * fireHasUtterscrolledMinDist;
+
+    if (hasScrolledABit && !hasCoveredIframes) {
+      // Don't let iframes steal mouse move events. But don't do this too early because then
+      // if the user actually intended to click, the click event might hit the cover instead.
+      // (COULD cover only iframes instead, instead of everything.)
+      coverIframes();
+    }
+
     // Trigger onHasUtterscrolled(), if scrolled > min distance.
-    if (!hasFiredHasUtterscrolled &&
-        (distTotal.x * distTotal.x + distTotal.y * distTotal.y >
-        fireHasUtterscrolledMinDist * fireHasUtterscrolledMinDist)) {
+    if (!hasFiredHasUtterscrolled && hasScrolledABit) {
       hasFiredHasUtterscrolled = true;
       settings.onHasUtterscrolled();
     }
@@ -523,14 +530,16 @@ debiki.Utterscroll = (function(options) {
   // When scrolling and dragging the mouse over an iframe, it'll steal the mouse
   // move events. Unless we cover the iframe with something else.
   function coverIframes() {
-    $iframeCover =
-        $('<div style="z-index:9999999; position: fixed; left: 0; top: 0; bottom: 0; right: 0">')
+    $('<div class="utterscroll-iframe-cover" ' +
+        'style="z-index:9999999; position: fixed; left: 0; top: 0; bottom: 0; right: 0">')
         .appendTo('body');
+    hasCoveredIframes = true;
   };
 
 
   function uncoverIframes() {
-    $iframeCover.remove();
+    $('.utterscroll-iframe-cover').remove();
+    hasCoveredIframes = false;
   };
 
 
