@@ -78,6 +78,11 @@ var ServerErrorDialog = createComponent({
     if (matches && matches.length === 2) {
       message = matches[1];
     }
+    else if (/^\s*<!DOCTYPE html>/.test(message)) {
+      // Play Framework sent back a HTML page
+      message = $(message).filter('#detail').text() +
+          '\n\nSee server logs for stack trace. [DwE4KWE85]';
+    }
 
     var title = 'Error ' + error.status + ' ' + error.statusText;
 
@@ -91,7 +96,7 @@ var ServerErrorDialog = createComponent({
     }
 
     return (
-      Modal({ title: title, onRequestHide: this.close },
+      Modal({ title: title, onRequestHide: this.close, className: 'dw-server-error' },
         r.div({ className: 'modal-body',
             style: { whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}, message),
         r.div({ className: 'modal-footer' }, Button({ onClick: this.close }, 'Close'))));

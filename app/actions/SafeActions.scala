@@ -20,11 +20,13 @@ package actions
 import com.debiki.core._
 import com.debiki.core.DbDao.EmailAddressChangedException
 import com.debiki.core.Prelude._
+import org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace
 import controllers.Utils
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
+import play.{api => p}
 import play.api.Play.current
 import play.api.mvc._
 import requests._
@@ -208,13 +210,13 @@ object SafeActions {
         case ex: play.api.libs.json.JsResultException =>
           Future.successful(Results.BadRequest(s"Bad JSON: $ex [DwE70KX3]"))
         case ex: IllegalArgumentException =>
-          Future.successful(Results.InternalServerError(s"Illegal argument: $ex [DwE500IA]"))
+          successfulInternalError("Illegal argument", ex, "DwE500IA")
         case ex: IllegalStateException =>
-          Future.successful(Results.InternalServerError(s"Illegal state: $ex [DwE500IS]"))
+          successfulInternalError("Illegal state", ex, "DwE500IS")
         case ex: AssertionError =>
-          Future.successful(Results.InternalServerError(s"Assertion error: $ex [DwE500AE]"))
+          successfulInternalError("Assertion error", ex, "DwE500AE")
         case ex: UnsupportedOperationException =>
-          Future.successful(Results.InternalServerError(s"Unsupported operation: $ex [DwE500UO]"))
+          successfulInternalError("Unsupported operation", ex, "DwE500UO")
       }
       futureResult = futureResult recover {
         case DebikiHttp.ResultException(result) => result
@@ -233,5 +235,13 @@ object SafeActions {
     }
   }
 
+  private def successfulInternalError(what: String, throwable: Throwable, errorCode: String) = {
+    p.Logger.error(s"Replying internal error: $what [$errorCode]", throwable)
+    Future.successful(Results.InternalServerError(i"""
+      |Something went wrong: $what [$errorCode]
+      |
+      |${getStackTrace(throwable)}
+      |"""))
+    }
 }
 
