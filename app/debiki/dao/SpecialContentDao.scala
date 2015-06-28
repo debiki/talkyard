@@ -153,6 +153,8 @@ trait SpecialContentDao {
     val nextVersion = oldPost.currentVersion + 1
 
     val editedPost = oldPost.copy(
+      lastEditedAt = Some(transaction.currentTime),
+      lastEditedById = Some(editorId),
       lastApprovedEditAt = Some(transaction.currentTime),
       lastApprovedEditById = Some(editorId),
       approvedSource = Some(newSource),
