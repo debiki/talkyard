@@ -41,8 +41,12 @@ trait PagesDao {
 
     val bodyHtmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(bodySource,
       allowClassIdDataAttrs = true, followLinks = !pageRole.isWidelyEditable)
+    if (bodyHtmlSanitized.trim.isEmpty)
+      throwForbidden("DwE3KFE29", "Page body should not be empty")
 
     val titleHtmlSanitized = siteDbDao.commonMarkRenderer.sanitizeHtml(titleSource)
+    if (titleHtmlSanitized.trim.isEmpty)
+      throwForbidden("DwE5KPEF21", "Page title should not be empty")
 
     readWriteTransaction { transaction =>
 

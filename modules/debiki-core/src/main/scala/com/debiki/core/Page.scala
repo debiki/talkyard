@@ -158,6 +158,7 @@ case class PageMeta(
     if (publishedAt.isDefined) PageStatus.Published
     else PageStatus.Draft
 
+  def bumpedOrPublishedOrCreatedAt = bumpedAt orElse publishedAt getOrElse createdAt
 }
 
 

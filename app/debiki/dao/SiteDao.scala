@@ -96,13 +96,13 @@ abstract class SiteDao
     siteDbDao.loadSiteStatus()
 
   def createSite(name: String, hostname: String,
-        embeddingSiteUrl: Option[String], creatorIp: String,
+        embeddingSiteUrl: Option[String], pricePlan: Option[String], creatorIp: String,
         creatorEmailAddress: String) : Site = {
     dieIf(hostname contains ":", "DwE3KWFE7")
     val quotaLimitMegabytes = play.api.Play.configuration.getInt("debiki.newSite.quotaLimitMegabytes")
     siteDbDao.createSite(name = name, hostname = hostname,
       embeddingSiteUrl, creatorIp = creatorIp, creatorEmailAddress = creatorEmailAddress,
-      quotaLimitMegabytes = quotaLimitMegabytes)
+      pricePlan = pricePlan, quotaLimitMegabytes = quotaLimitMegabytes)
   }
 
   def updateSite(changedSite: Site) =

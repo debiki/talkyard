@@ -41,6 +41,7 @@ var DefaultRoute = ReactRouter.DefaultRoute;
 var NotFoundRoute = ReactRouter.NotFoundRoute;
 var RouteHandler = ReactRouter.RouteHandler;
 var Navigation = ReactRouter.Navigation;
+var State = ReactRouter.State;
 
 
 export function routes() {
@@ -54,8 +55,16 @@ export function routes() {
 
 
 var CreateSiteMain = createComponent({
+  mixins: [State],
+
+  getInitialState: function() {
+    return {
+      pricePlan: this.getQuery().pricePlan
+    };
+  },
+
   render: function() {
-    return RouteHandler({});
+    return RouteHandler({ pricePlan: this.state.pricePlan });
   }
 });
 
@@ -103,6 +112,7 @@ var CreateSimpleSite = createComponent({
         this.refs.emailAddress.getValue(),
         this.refs.localHostname.getValue(),
         null,
+        this.props.pricePlan,
         (newSiteOrigin) => {
           window.location.assign(newSiteOrigin);
         });
@@ -111,7 +121,7 @@ var CreateSimpleSite = createComponent({
   render: function() {
     return (
       r.div({},
-        r.h1({}, 'Create Simple Site'),
+        r.h1({}, 'Create Site'),
         r.form({ onSubmit: this.handleSubmit },
           Input({ type: 'text', label: 'Email', placeholder: 'your-email@example.com',
               help: 'Your email address, which you will use to login and ' +
@@ -152,6 +162,7 @@ var CreateEmbeddedSite = createComponent({
         this.refs.emailAddress.getValue(),
         this.refs.localHostname.getValue(),
         this.refs.embeddingSiteAddress.getValue(),
+        this.props.pricePlan,
         (newSiteOrigin) => {
           window.location.assign(newSiteOrigin);
         });

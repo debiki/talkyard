@@ -56,6 +56,7 @@ object CreateSiteController extends mvc.Controller {
     val emailAddress = (request.body \ "emailAddress").as[String]
     val localHostname = (request.body \ "localHostname").as[String]
     val anyEmbeddingSiteAddress = (request.body \ "embeddingSiteAddress").asOpt[String]
+    val anyPricePlan = (request.body \ "pricePlan").asOpt[String]
 
     if (!acceptTermsAndPrivacy)
       throwForbidden("DwE877FW2", "You need to accept the terms of use and privacy policy")
@@ -66,13 +67,22 @@ object CreateSiteController extends mvc.Controller {
     if (!isOkayEmailAddress(emailAddress))
       throwForbidden("DwE8FKJ4", "Bad email address")
 
+    if (anyPricePlan.isEmpty)
+      throwForbidden("DwE7KJEP8", "No price plan")
+
+    if (anyPricePlan.exists(_.trim.isEmpty))
+      throwForbidden("DwE4KEWW5", "Bad price plan: Empty string")
+
+    if (anyPricePlan.exists(_.length > 50))
+      throwForbidden("DwE7KEP36", "Bad price plan: Too long")
+
     val hostname = s"$localHostname.${Globals.baseDomainNoPort}"
 
     val newSite: Site =
       try {
         request.dao.createSite(
           name = localHostname, hostname = hostname, embeddingSiteUrl = anyEmbeddingSiteAddress,
-          creatorIp = request.ip, creatorEmailAddress = emailAddress)
+          creatorIp = request.ip, creatorEmailAddress = emailAddress, pricePlan = anyPricePlan)
       }
       catch {
         case _: DbDao.SiteAlreadyExistsException =>

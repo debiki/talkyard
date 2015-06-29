@@ -63,13 +63,14 @@ function postJsonSuccess(urlPath, success: (response: any) => void, data: any) {
 
 
 export function createSite(emailAddress: string, localHostname: string,
-    anyEmbeddingSiteAddress: string, doneCallback: (string) => void) {
+    anyEmbeddingSiteAddress: string, pricePlan: string, doneCallback: (string) => void) {
   postJson('/-/create-site', {
     data: {
       acceptTermsAndPrivacy: true,
       emailAddress: emailAddress,
       localHostname: localHostname,
-      embeddingSiteAddress: anyEmbeddingSiteAddress
+      embeddingSiteAddress: anyEmbeddingSiteAddress,
+      pricePlan: pricePlan
     },
     success: (response) => {
       doneCallback(response.newSiteOrigin);
