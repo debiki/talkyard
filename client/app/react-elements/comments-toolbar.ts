@@ -78,13 +78,13 @@ export var CommentsToolbar = createComponent({
           r.span({ className: (ui.showDetails ? 'icon-up-open' : 'icon-down-open') }))
       : null;
 
-    var numPostsOrCommentsText = store.numPostsExclTitle +
-        (store.isInEmbeddedCommentsIframe ? ' comments' : ' posts');
+    var numReplies = store.numPostsExclTitle;
+    if (!store.isInEmbeddedCommentsIframe) numReplies -= 1;
 
     var summaryElem =
       r.div({ className: 'dw-cmts-tlbr-head' },
           r.ul({ className: 'dw-cmts-tlbr-summary' },
-              r.li({ className: 'dw-cmts-count' }, numPostsOrCommentsText),
+              r.li({ className: 'dw-cmts-count' }, numReplies + ' replies'),
               r.li({}, NameLoginBtns({})),
               r.li({}, notfLevelElem)),
           toggleDetailsBtn);

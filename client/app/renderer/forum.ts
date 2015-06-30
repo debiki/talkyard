@@ -299,7 +299,7 @@ export var ForumTopicList = createComponent({
             r.tr({},
               r.th({}, 'Topic'),
               r.th({}, 'Category'),
-              r.th({ className: 'num num-posts' }, 'Posts'),
+              r.th({ className: 'num num-replies' }, 'Replies'),
               r.th({ className: 'num' }, 'Activity'),
               r.th({ className: 'num' }, 'Feelings'))),
           r.tbody({},
@@ -405,7 +405,7 @@ var TopicRow = createComponent({
       r.tr({},
         r.td({}, r.a({ href: topic.url }, topic.title)),
         r.td({}, categoryName),
-        r.td({ className: 'num num-posts' }, topic.numPosts),
+        r.td({ className: 'num num-replies' }, topic.numPosts - 1),
         r.td({ className: 'num', title: activityTitle }, activityAgo),
         r.td({ className: 'num' }, feelings)));
   }
