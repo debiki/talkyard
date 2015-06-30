@@ -55,12 +55,10 @@
 
   button
     float: right
-    margin: marginTop 0 0 0
+    // Why do I need to -2 for the Create Topic button to align with
+    // the category buttons and Latest and Top buttons to the left?
+    margin: (marginTop - 2) 0 0 0
     color: hsl(211, 100%, 40%);
-
-
-.forum-table .forum-title
-  cursor: pointer;  // why needed? It's already an <a>
 
 
 
@@ -72,6 +70,7 @@
 
   th
     color: hsl(0, 0%, 55%)
+    padding-bottom: 8px;
     &:first-child
       padding-left: $firstCellPadding
 
@@ -164,10 +163,6 @@
 
 
 /* --- Forum topic list --- */
-
-.forum-title h1.dw-p-ttl {
-  /* margin-bottom: 30px; */
-}
 
 .DW .dw-a-new-forum-topic {
   margin: 30px 0 13px;

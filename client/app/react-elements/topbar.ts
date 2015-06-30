@@ -120,8 +120,15 @@ export var TopBar = createComponent({
     var searchForm = !this.state.showSearchForm ? null :
         SearchForm({ onClose: this.closeSearchForm });
 
+    var pageTitle;
+    if (store.pageRole === 'Forum') {
+      pageTitle =
+          r.div({ className: 'dw-topbar-title' }, Title(store));
+    }
+
     return (
       r.div({},
+        pageTitle,
         r.div({ id: 'dw-topbar-btns' },
           loggedInAs,
           loginButton,

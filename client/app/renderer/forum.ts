@@ -79,8 +79,8 @@ export var Forum = createComponent({
   render: function() {
     return (
       r.div({},
-        r.div({ className: 'forum-title' },
-          TitleBodyComments(this.state || this.props)),
+        // Include .dw-page to make renderDiscussionPage() in startup.js run: (hacky...)
+        r.div({ className: 'dw-page' }),
         CategoriesAndTopics(this.state || this.props)));
   }
 });
