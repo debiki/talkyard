@@ -271,7 +271,7 @@ var RootPostAndComments = createComponent({
       threadProps.depth = 1;
       threadProps.indentationDepth = 0;
       return (
-        r.li({},
+        r.li({ key: childId },
           Thread(threadProps)));
     });
 
@@ -291,7 +291,8 @@ var RootPostAndComments = createComponent({
 
 var Thread = createComponent({
   shouldComponentUpdate: function(nextProps, nextState) {
-    return nextProps.quickUpdate ? !!nextProps.postsToUpdate[this.props.postId] : true;
+    var should = !nextProps.quickUpdate || !!nextProps.postsToUpdate[this.props.postId];
+    return should;
   },
 
   onPostMouseEnter: function() {
@@ -341,6 +342,7 @@ var Thread = createComponent({
         threadProps.index = childIndex;
         threadProps.depth = deeper;
         threadProps.indentationDepth = childIndentationDepth;
+        threadProps.key = childId;
         return (
             Thread(threadProps));
       });

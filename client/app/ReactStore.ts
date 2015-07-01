@@ -348,6 +348,15 @@ function sortPostIdsInPlace(postIds: number[], allPosts) {
     var postA = allPosts[idA];
     var postB = allPosts[idB];
 
+    // Perhaps the server shouldn't include deleted comments in the children list?
+    // Is that why they're null sometimes? COULD try to find out
+    if (!postA && !postB)
+      return 0;
+    if (!postB)
+      return -1;
+    if (!postA)
+      return +1;
+
     /* From app/debiki/HtmlSerializer.scala:
     if (a.pinnedPosition.isDefined || b.pinnedPosition.isDefined) {
       // 1 means place first, 2 means place first but one, and so on.
