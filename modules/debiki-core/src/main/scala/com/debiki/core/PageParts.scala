@@ -138,12 +138,12 @@ abstract class PageParts extends People {
 
 
   def hasNonDeletedSuccessor(postId: PostId): Boolean = {
-    // For now:
-    childrenOf(postId) find { child =>
-      !child.deletedStatus.isDeleted ||
-        // Perhaps grandchildren not deleted?
-        child.deletedStatus.onlyThisDeleted
-    } nonEmpty
+    // COULD optimize this, bad O(?) complexity when called on each node, like
+    // ReactJson.pageToJsonImpl does — O(n*n)? Could start at the leaves and work up instead
+    // and cache the result -> O(n).
+    childrenOf(postId) exists { child =>
+      !child.deletedStatus.isDeleted || hasNonDeletedSuccessor(child.id)
+    }
   }
 
 
