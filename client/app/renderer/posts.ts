@@ -530,12 +530,6 @@ var PostHeader = createComponent({
     event.preventDefault();
   },
 
-  copyPermalink: function() {
-    var hash = '#post-' + this.props.post.postId;
-    var url = window.location.host + '/-' + debiki.getPageId() + hash;
-    window.prompt('To copy permalink, press Ctrl+C then Enter', url);
-  },
-
   render: function() {
     var post = this.props.post;
     if (!post)
@@ -593,16 +587,14 @@ var PostHeader = createComponent({
     var postId;
     var anyMark;
     if (post.postId !== TitleId && post.postId !== BodyPostId) {
-      postId = r[linkFn]({ className: 'dw-p-link', onClick: this.copyPermalink },
-          '#' + post.postId);
-      /* Doesn't work, the tooltip gets placed far away to the left. You'll find it
-         in Dev Tools like so: $('.tooltip-inner').
-      if (!this.props.abbreviate) {
-        postId = OverlayTrigger({ placement: 'left',
-        overlay: Tooltip({}, 'Click to copy permalink') }, postId);
+      if (debiki.debug) {
+        postId = r.span({ className: 'dw-p-link' }, '#' + post.postId);
       }
-      */
 
+      /* COULD: Later on, move the star to the right? Or to the action list? And 
+         to indicate that the computer has been read, paint a 3px border to the
+         left of the header. And to indicate that the human has marked it as read,
+         set the header's bg color to white.
       var mark = user.marksByPostId[post.postId];
       var starClass = ' icon-star';
       if (mark === ManualReadMark) {
@@ -612,6 +604,7 @@ var PostHeader = createComponent({
       anyMark =
           r.span({ className: 'dw-p-mark-click', onClick: this.props.onMarkClick },
             r.span({ className: 'dw-p-mark icon-star' + starClass }));
+      */
     }
 
     var by = post.postId === BodyPostId ? 'By ' : '';
@@ -739,6 +732,11 @@ var PostActions = createComponent({
   onEditClick: function(event) {
     debiki.internal.$showEditForm.call(event.target, event);
   },
+  onLinkClick: function() {
+    var hash = '#post-' + this.props.post.postId;
+    var url = window.location.host + '/-' + debiki.getPageId() + hash;
+    window.prompt('To copy a link to this post, press Ctrl+C then Enter', url);
+  },
   onLikeClick: function(event) {
     debiki.internal.$toggleVote('VoteLike').call(event.target, event);
   },
@@ -777,7 +775,7 @@ var PostActions = createComponent({
       return null;
 
     var user = this.props.user;
-    var isOwnPost = post.authorId === user.userId;
+    var isOwnPost = post.authorIdInt === user.userId;
     var votes = user.votes[post.postId] || [];
 
     var deletedOrCollapsed =
@@ -814,14 +812,18 @@ var PostActions = createComponent({
       voteButtons = [
           otherVotesDropdown,
           r.a({ className: 'dw-a dw-a-like icon-heart' + myLikeVote,
-            title: 'Like this', onClick: this.onLikeClick }, 'Like')];
+            title: "Like this", onClick: this.onLikeClick }, 'Like')];
     }
 
-    var editOwnPostButton = null;
-    if (!deletedOrCollapsed && isOwnPost) {
-      editOwnPostButton =
-          r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit');
-    }
+    var editOwnPostButton = deletedOrCollapsed || !isOwnPost
+        ? null
+        : r.a({ className: 'dw-a dw-a-edit icon-edit', title: "Edit",
+              onClick: this.onEditClick });
+
+    var link = deletedOrCollapsed
+        ? null
+        : r.a({ className: 'dw-a dw-a-link icon-link', title: "Link to this post",
+              onClick: this.onLinkClick });
 
     var moreLinks = [];
 
@@ -933,6 +935,8 @@ var PostActions = createComponent({
         suggestionsNew,
         suggestionsOld,
         moreDropdown,
+        editOwnPostButton,
+        link,
         voteButtons,
         replyButton));
   }

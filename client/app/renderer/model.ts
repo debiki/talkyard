@@ -31,7 +31,8 @@ interface Post {
   postId: number;   // TODO rename to nr
   parentId: number;
   multireplyPostIds: number[];
-  authorId: string;
+  authorId: string; // COULD change to int and then rename authorIdInt below to authorId.
+  authorIdInt: number;
   authorFullName: string;
   authorUsername: string;
   authorSuspendedTill?: any;
