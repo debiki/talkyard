@@ -7,6 +7,12 @@
   "ascent": 850,
   "glyphs": [
     {
+      "uid": "9bc2902722abb366a213a052ade360bc",
+      "css": "loading",
+      "code": 59442,
+      "src": "fontelico"
+    },
+    {
       "uid": "9dd9e835aebe1060ba7190ad2b2ed951",
       "css": "search",
       "code": 59413,
@@ -145,6 +151,18 @@
       "src": "fontawesome"
     },
     {
+      "uid": "7034e4d22866af82bef811f52fb1ba46",
+      "css": "code",
+      "code": 59445,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "d35a1d35efeb784d1dc9ac18b9b6c2b6",
+      "css": "edit",
+      "code": 59449,
+      "src": "fontawesome"
+    },
+    {
       "uid": "85528017f1e6053b2253785c31047f44",
       "css": "comment",
       "code": 59435,
@@ -277,6 +295,12 @@
       "src": "fontawesome"
     },
     {
+      "uid": "8a67014b864fb93503348593979ddce3",
+      "css": "wheelchair",
+      "code": 59448,
+      "src": "fontawesome"
+    },
+    {
       "uid": "3964e28e6bdf85b3b70df3533db69867",
       "css": "spoon",
       "code": 59437,
@@ -335,12 +359,6 @@
       "css": "split",
       "code": 59400,
       "src": "iconic"
-    },
-    {
-      "uid": "587bjlxppui6u4japooa2foe58rsvicp",
-      "css": "edit",
-      "code": 59405,
-      "src": "modernpics"
     },
     {
       "uid": "7336247ba3db350dec8d6c0a47cef966",

@@ -18,7 +18,6 @@
 .icon-down-open:before { content: '\e80a'; } /* '' */
 .icon-pin:before { content: '\e80b'; } /* '' */
 .icon-left-open:before { content: '\e80c'; } /* '' */
-.icon-edit:before { content: '\e80d'; } /* '' */
 .icon-right-open:before { content: '\e80e'; } /* '' */
 .icon-down-dir:before { content: '\e80f'; } /* '' */
 .icon-archive:before { content: '\e810'; } /* '' */
@@ -55,6 +54,10 @@
 .icon-circle:before { content: '\e82f'; } /* '' */
 .icon-circle-empty:before { content: '\e830'; } /* '' */
 .icon-cancel-circled:before { content: '\e831'; } /* '' */
+.icon-loading:before { content: '\e832'; } /* '' */
+.icon-code:before { content: '\e835'; } /* '' */
+.icon-wheelchair:before { content: '\e838'; } /* '' */
+.icon-edit:before { content: '\e839'; } /* '' */
 .icon-facebook:before { content: '\f09a'; } /* '' */
 .icon-google-plus:before { content: '\f0d5'; } /* '' */
 .icon-linkedin:before { content: '\f0e1'; } /* '' */
