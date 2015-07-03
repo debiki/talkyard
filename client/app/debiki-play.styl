@@ -220,8 +220,10 @@ html:not(.mouse) .dw-rr
 // Users with links to more info, e.g. website or blog
 .dw-pri a.dw-p-by,
 .dw-pri a.dw-p-e-by
-  color: #369 // same as reddit
+  color: hsl(210, 59%, 29%);
   font-weight: bold
+  .dw-username
+    color: hsl(210, 50%, 40%);
 
 // Users with no links to more info
 span.dw-p-by,
@@ -245,6 +247,30 @@ span.dw-p-e-by
   font-size: 90%
   padding-left: 2px
   padding-right: 2px
+
+// Toggle collapsed
+.dw-a-clps.icon-up-open,
+.dw-a-clps.icon-down-open,
+.dw-a-clps.icon-left-open
+.dw-a-clps.icon-right-open
+  float: right;
+  padding: 0 5px;
+  font-size: 11px;
+  color: hsl(210, 0%, 68%);
+  cursor: pointer;
+
+.dw-a-clps.icon-left-open,
+.dw-a-clps.icon-right-open
+  padding-top: 1px;
+
+.dw-a-clps:hover
+  background: hsl(210, 100%, 99%);
+  outline: 2px solid hsl(209, 100%, 86%);
+
+.dw-2dcol.dw-zd > .dw-p .dw-a-clps
+  float: none;
+  padding-top: 2px;
+  display: inline-block;
 
 // Permalinks
 .dw-p-link

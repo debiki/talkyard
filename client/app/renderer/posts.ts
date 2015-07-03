@@ -290,6 +290,10 @@ var RootPostAndComments = createComponent({
 
 
 var Thread = createComponent({
+  getInitialState: function() {
+    return { isClientSideCollapsed: false };
+  },
+
   shouldComponentUpdate: function(nextProps, nextState) {
     var should = !nextProps.quickUpdate || !!nextProps.postsToUpdate[this.props.postId];
     return should;
@@ -305,12 +309,23 @@ var Thread = createComponent({
     this.refs.post.onAnyActionClick();
   },
 
+  toggleCollapsed: function() {
+    this.setState({ isClientSideCollapsed: !this.state.isClientSideCollapsed });
+  },
+
   render: function() {
     var post: Post = this.props.allPosts[this.props.postId];
     if (!post) {
       // This tree has been deleted it seems
       return null;
     }
+
+    var is2dTreeColumn = this.props.horizontalLayout && this.props.depth === 1;
+    var baseElem = r[this.props.elemType];
+    var depthClass = ' dw-depth-' + this.props.depth;
+    var indentationDepthClass = ' dw-id' + this.props.indentationDepth;
+    var is2dColumnClass = is2dTreeColumn ? ' dw-2dcol' : '';
+
     var parentPost = this.props.allPosts[post.parentId];
     var deeper = this.props.depth + 1;
 
@@ -321,6 +336,19 @@ var Thread = createComponent({
       arrows = debiki2.renderer.drawArrowsFromParent(
         this.props.allPosts, parentPost, this.props.depth, this.props.index,
         this.props.horizontalLayout, this.props.rootPostId);
+    }
+
+    if (this.state.isClientSideCollapsed &&
+        // Don't collapse threads in the sidebar; there, comments are rendered in a flat list.
+        !this.props.abbreviate) {
+      var iconClass = is2dTreeColumn ? 'icon-right-open' : 'icon-down-open';
+      var postId = debiki.debug ? ' #' + this.props.postId : '';
+      var text = is2dTreeColumn ? null : 'Click to show comments' + postId;
+      return (
+        baseElem({ className: 'dw-t dw-zd' + depthClass + indentationDepthClass + is2dColumnClass },
+          arrows,
+          r.div({ className: 'dw-p dw-zd', onClick: this.toggleCollapsed },
+            text, r.span({ className: 'dw-a-clps ' + iconClass }))));
     }
 
     var children = [];
@@ -353,20 +381,18 @@ var Thread = createComponent({
       : actions = PostActions({ post: post, user: this.props.user, ref: 'actions',
           onClick: this.onAnyActionClick });
 
-    var baseElem = r[this.props.elemType];
-
     var postProps = _.clone(this.props);
     postProps.post = post;
     postProps.index = this.props.index;
     postProps.onMouseEnter = this.onPostMouseEnter;
+    postProps.toggleCollapsed = this.toggleCollapsed;
     postProps.ref = 'post';
 
-    var depthClass = ' dw-depth-' + this.props.depth;
-    var indentationDepthClass = ' dw-id' + this.props.indentationDepth;
     var multireplyClass = post.multireplyPostIds.length ? ' dw-mr' : '';
 
     return (
-      baseElem({ className: 'dw-t' + depthClass + indentationDepthClass + multireplyClass},
+      baseElem({ className: 'dw-t' + depthClass + indentationDepthClass + multireplyClass +
+          is2dColumnClass },
         arrows,
         Post(postProps),
         actions,
@@ -383,16 +409,25 @@ var Post = createComponent({
   },
 
   onClick: function() {
-    if (!this.props.abbreviate) {
-      debiki2.ReactActions.markPostAsRead(this.props.post.postId, true);
+    var props = this.props;
+    if (!props.abbreviate) {
+      if (props.post.isTreeCollapsed || props.post.isPostCollapsed) {
+        this.onUncollapseClick();
+      }
+      else {
+        // Disable for now. This sets quickUpdate = true, which makes isClientSideCollapsed
+        // impossible to undo, for nearby threads. And not used anyway.
+        // debiki2.ReactActions.markPostAsRead(this.props.post.postId, true);
+      }
     }
-    if (this.props.onClick) {
-      this.props.onClick();
+    if (props.onClick) {
+      props.onClick();
     }
   },
 
   onAnyActionClick: function() {
-    debiki2.ReactActions.markPostAsRead(this.props.post.postId, true);
+    // Disable for now. Not in use anyway and see comment in this.onClick above.
+    // debiki2.ReactActions.markPostAsRead(this.props.post.postId, true);
   },
 
   onMarkClick: function(event) {
@@ -420,8 +455,7 @@ var Post = createComponent({
     }
     else if (post.isTreeCollapsed || post.isPostCollapsed) {
       var what = post.isTreeCollapsed ? 'more comments' : 'this comment';
-      bodyElem = r.a({ className: 'dw-z', onClick: this.onUncollapseClick },
-          'Click to show ', what);
+      bodyElem = r.a({ className: 'dw-z' }, 'Click to show ', what);
       extraClasses += ' dw-zd';
     }
     else if (!post.isApproved && !post.sanitizedHtml) {
@@ -625,9 +659,15 @@ var PostHeader = createComponent({
           moment(post.authorSuspendedTill).format('YYYY-MM-DD')
     }
 
+    var is2dColumn = this.props.horizontalLayout && this.props.depth === 1;
+    var collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
+    var toggleCollapsedButton =
+        r.span({ className: 'dw-a-clps ' + collapseIcon, onClick: this.props.toggleCollapsed });
+
     return (
         r.div({ className: 'dw-p-hd' + isBodyPostClass },
           anyPin,
+          toggleCollapsedButton,
           postId,
           anyMark,
           by,

@@ -104,15 +104,9 @@
   margin-bottom: 42px
   display: block // don't hide the .dw-z, only hide everything else
 
-// For a folded thread, only the open link (.dw-z) is visible.
-// This verbose code works also in IE 7:
-.dw-zd.dw-t > *
-  display: none
-
-// Still show arrows to folded thread and siblings.
-.dw-zd.dw-t > .dw-arw,
-.dw-zd.dw-t > .dw-arw-vt-handle
-  display: block
+.dw-zd.dw-2dcol
+  width: 40px !important;
+  padding-right: 10px !important;
 
 
 // Folded replies
@@ -146,7 +140,7 @@
   padding-left: 3px
   font-size: 10px
   color: #000
-  background-color: #f4f4f4
+  background-color: hsl(0, 0%, 97%);
   border: 1px solid hsl(0, 0%, 90%)
   border-left: none
   border-right: none
@@ -154,6 +148,7 @@
 
 .dw-p.dw-zd  // folded comment
   margin-bottom: 25px;
+  cursor: pointer;
 
 .dw-vt .dw-p-hd,
   // Make the border darker
