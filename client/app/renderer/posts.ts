@@ -270,6 +270,7 @@ var RootPostAndComments = createComponent({
       threadProps.index = childIndex;
       threadProps.depth = 1;
       threadProps.indentationDepth = 0;
+      threadProps.is2dTreeColumn = this.props.horizontalLayout;
       return (
         r.li({ key: childId },
           Thread(threadProps)));
@@ -290,10 +291,6 @@ var RootPostAndComments = createComponent({
 
 
 var Thread = createComponent({
-  getInitialState: function() {
-    return { isClientSideCollapsed: false };
-  },
-
   shouldComponentUpdate: function(nextProps, nextState) {
     var should = !nextProps.quickUpdate || !!nextProps.postsToUpdate[this.props.postId];
     return should;
@@ -309,22 +306,12 @@ var Thread = createComponent({
     this.refs.post.onAnyActionClick();
   },
 
-  toggleCollapsed: function() {
-    this.setState({ isClientSideCollapsed: !this.state.isClientSideCollapsed });
-  },
-
   render: function() {
     var post: Post = this.props.allPosts[this.props.postId];
     if (!post) {
       // This tree has been deleted it seems
       return null;
     }
-
-    var is2dTreeColumn = this.props.horizontalLayout && this.props.depth === 1;
-    var baseElem = r[this.props.elemType];
-    var depthClass = ' dw-depth-' + this.props.depth;
-    var indentationDepthClass = ' dw-id' + this.props.indentationDepth;
-    var is2dColumnClass = is2dTreeColumn ? ' dw-2dcol' : '';
 
     var parentPost = this.props.allPosts[post.parentId];
     var deeper = this.props.depth + 1;
@@ -336,19 +323,6 @@ var Thread = createComponent({
       arrows = debiki2.renderer.drawArrowsFromParent(
         this.props.allPosts, parentPost, this.props.depth, this.props.index,
         this.props.horizontalLayout, this.props.rootPostId);
-    }
-
-    if (this.state.isClientSideCollapsed &&
-        // Don't collapse threads in the sidebar; there, comments are rendered in a flat list.
-        !this.props.abbreviate) {
-      var iconClass = is2dTreeColumn ? 'icon-right-open' : 'icon-down-open';
-      var postId = debiki.debug ? ' #' + this.props.postId : '';
-      var text = is2dTreeColumn ? null : 'Click to show comments' + postId;
-      return (
-        baseElem({ className: 'dw-t dw-zd' + depthClass + indentationDepthClass + is2dColumnClass },
-          arrows,
-          r.div({ className: 'dw-p dw-zd', onClick: this.toggleCollapsed },
-            text, r.span({ className: 'dw-a-clps ' + iconClass }))));
     }
 
     var children = [];
@@ -370,6 +344,7 @@ var Thread = createComponent({
         threadProps.index = childIndex;
         threadProps.depth = deeper;
         threadProps.indentationDepth = childIndentationDepth;
+        threadProps.is2dTreeColumn = false;
         threadProps.key = childId;
         return (
             Thread(threadProps));
@@ -381,18 +356,28 @@ var Thread = createComponent({
       : actions = PostActions({ post: post, user: this.props.user, ref: 'actions',
           onClick: this.onAnyActionClick });
 
+    var renderCollapsed = (post.isTreeCollapsed || post.isPostCollapsed) &&
+        // Don't collapse threads in the sidebar; there, comments are abbreviated
+        // and rendered in a flat list.
+        !this.props.abbreviate;
+
     var postProps = _.clone(this.props);
     postProps.post = post;
     postProps.index = this.props.index;
     postProps.onMouseEnter = this.onPostMouseEnter;
-    postProps.toggleCollapsed = this.toggleCollapsed;
     postProps.ref = 'post';
+    postProps.renderCollapsed = renderCollapsed;
 
+    var baseElem = r[this.props.elemType];
+    var depthClass = ' dw-depth-' + this.props.depth;
+    var indentationDepthClass = ' dw-id' + this.props.indentationDepth;
+    var is2dColumnClass = this.props.is2dTreeColumn ? ' dw-2dcol' : '';
     var multireplyClass = post.multireplyPostIds.length ? ' dw-mr' : '';
+    var collapsedClass = renderCollapsed ? ' dw-zd' : '';
 
     return (
       baseElem({ className: 'dw-t' + depthClass + indentationDepthClass + multireplyClass +
-          is2dColumnClass },
+          is2dColumnClass + collapsedClass },
         arrows,
         Post(postProps),
         actions,
@@ -444,6 +429,7 @@ var Post = createComponent({
       return r.p({}, '(Post missing [DwE4UPK7])');
 
     var pendingApprovalElem;
+    var wrongWarning;
     var headerElem;
     var bodyElem;
     var extraClasses = this.props.className || '';
@@ -453,10 +439,14 @@ var Post = createComponent({
       headerElem = r.div({ className: 'dw-p-hd' }, what, ' deleted');
       extraClasses += ' dw-p-dl';
     }
-    else if (post.isTreeCollapsed || post.isPostCollapsed) {
-      var what = post.isTreeCollapsed ? 'more comments' : 'this comment';
-      bodyElem = r.a({ className: 'dw-z' }, 'Click to show ', what);
-      extraClasses += ' dw-zd';
+    else if (this.props.renderCollapsed) {
+      var text = this.props.is2dTreeColumn ? '' : (
+          "Click to show " + (post.isTreeCollapsed ? "more comments" : "this comment"));
+      if (debiki.debug) text +='  #' + this.props.postId;
+      var iconClass = this.props.is2dTreeColumn ? 'icon-right-open' : 'icon-down-open';
+      bodyElem =
+          r.span({}, text, r.span({ className: 'dw-a-clps ' + iconClass }));
+      extraClasses += ' dw-zd clearfix';
     }
     else if (!post.isApproved && !post.sanitizedHtml) {
       headerElem = r.div({ className: 'dw-p-hd' }, 'Hidden comment pending approval, posted ',
@@ -473,21 +463,20 @@ var Post = createComponent({
       headerProps.onMarkClick = this.onMarkClick;
       headerElem = PostHeader(headerProps);
       bodyElem = PostBody(this.props);
-    }
 
-    var wrongWarning;
-    if (post.numWrongVotes >= 2 && !this.props.abbreviate) {
-      var wrongness = post.numWrongVotes / (post.numLikeVotes || 1);
-      // One, two, three, many.
-      if (post.numWrongVotes > 3 && wrongness > 1) {
-        wrongWarning =
-          r.div({ className: 'dw-wrong dw-very-wrong icon-warning' },
-            'Many think this comment is wrong:');
-      }
-      else if (wrongness > 0.33) {
-        wrongWarning =
-          r.div({ className: 'dw-wrong icon-warning' },
-            'Some think this comment is wrong:');
+      if (post.numWrongVotes >= 2 && !this.props.abbreviate) {
+        var wrongness = post.numWrongVotes / (post.numLikeVotes || 1);
+        // One, two, three, many.
+        if (post.numWrongVotes > 3 && wrongness > 1) {
+          wrongWarning =
+            r.div({ className: 'dw-wrong dw-very-wrong icon-warning' },
+              'Many think this comment is wrong:');
+        }
+        else if (wrongness > 0.33) {
+          wrongWarning =
+            r.div({ className: 'dw-wrong icon-warning' },
+              'Some think this comment is wrong:');
+        }
       }
     }
 
@@ -562,6 +551,10 @@ var PostHeader = createComponent({
   onUserClick: function(event) {
     debiki2.pagedialogs.aboutUserDialog.open(this.props.post);
     event.preventDefault();
+  },
+
+  onCollapseClick: function() {
+    debiki2.ReactActions.collapseTree(this.props.post);
   },
 
   render: function() {
@@ -662,7 +655,7 @@ var PostHeader = createComponent({
     var is2dColumn = this.props.horizontalLayout && this.props.depth === 1;
     var collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
     var toggleCollapsedButton =
-        r.span({ className: 'dw-a-clps ' + collapseIcon, onClick: this.props.toggleCollapsed });
+        r.span({ className: 'dw-a-clps ' + collapseIcon, onClick: this.onCollapseClick });
 
     return (
         r.div({ className: 'dw-p-hd' + isBodyPostClass },

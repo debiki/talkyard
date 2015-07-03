@@ -33,6 +33,7 @@ export var actionTypes = {
   VoteOnPost: 'VoteOnPost',
   MarkPostAsRead: 'MarkPostAsRead',
   CycleToNextMark: 'CycleToNextMark',
+  CollapseTree: 'CollapseTree',
   UncollapsePost: 'UncollapsePost',
   SetHorizontalLayout: 'SetHorizontalLayout',
   ChangeSiteStatus: 'ChangeSiteStatus',
@@ -114,6 +115,14 @@ export function cycleToNextMark(postId: number) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.CycleToNextMark,
     postId: postId
+  });
+}
+
+
+export function collapseTree(post: Post) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.CollapseTree,
+    post: post
   });
 }
 

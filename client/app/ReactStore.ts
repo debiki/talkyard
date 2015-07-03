@@ -89,6 +89,10 @@ ReactDispatcher.register(function(payload) {
       cycleToNextMark(action.postId);
       break;
 
+    case ReactActions.actionTypes.CollapseTree:
+      collapseTree(action.post);
+      break;
+
     case ReactActions.actionTypes.UncollapsePost:
       uncollapsePost(action.post);
       break;
@@ -135,7 +139,7 @@ ReactStore.activateUserSpecificData = function(anyUser) {
   addLocalStorageData(store.user);
 
   // Show the user's own unapproved posts, or all, for admins.
-  _.each(store.user.unapprovedPosts, (post) => {
+  _.each(store.user.unapprovedPosts, (post: Post) => {
     updatePost(post);
   });
 
@@ -199,21 +203,28 @@ export var StoreListenerMixin = {
 };
 
 
-function updatePost(post) {
+function clonePost(postId: number): Post {
+  return _.cloneDeep(store.allPosts[postId]);
+}
+
+
+function updatePost(post: Post, isCollapsing?: boolean) {
   // (Could here remove any old version of the post, if it's being moved to
   // elsewhere in the tree.)
 
   store.now = new Date().getTime();
 
   var oldVersion = store.allPosts[post.postId];
-  if (oldVersion) {
-    // Don't collapse the post if the user has opened it.
+  if (oldVersion && !isCollapsing) {
+    // If we've modified-saved-reloaded-from-the-server this post, then ignore the
+    // collapse settings from the server, in case the user has toggled it client side.
+    // If `isCollapsing`, however, then we're toggling that state client side only.
     post.isTreeCollapsed = oldVersion.isTreeCollapsed;
     post.isPostCollapsed = oldVersion.isPostCollapsed;
   }
   else {
     store.numPosts += 1;
-    if (post.id !== TitleId) {
+    if (post.postId !== TitleId) {
       store.numPostsExclTitle += 1;
     }
   }
@@ -242,7 +253,7 @@ function updatePost(post) {
 
 
 function voteOnPost(action) {
-  var post = action.post;
+  var post: Post = action.post;
 
   var votes = store.user.votes[post.postId];
   if (!votes) {
@@ -320,10 +331,18 @@ function cycleToNextMark(postId: number) {
 }
 
 
-function uncollapsePost(post) {
+function collapseTree(post: Post) {
+  post = clonePost(post.postId);
+  post.isTreeCollapsed = true;
+  updatePost(post, true);
+}
+
+
+function uncollapsePost(post: Post) {
+  post = clonePost(post.postId);
   post.isTreeCollapsed = false;
   post.isPostCollapsed = false;
-  updatePost(post);
+  updatePost(post, true);
 }
 
 

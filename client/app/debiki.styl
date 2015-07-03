@@ -84,10 +84,6 @@
 // Folded threads, .dw-t
 //---------------------------
 
-// Don't underline the fold link, [-]. (Ignore old borken browsers.)
-.dw-t:not(.dw-zd) > .dw-z
-  text-decoration: none
-
 .dw-t > .dw-z
   position: absolute !important // or set to relative by :not(svg) [31Ik53]
 
@@ -96,17 +92,12 @@
   // that it replies to the comment jus above.
   margin-top: 0px
 
-// When a thread is folded, there's nothing in it that occupies any space,
-// and two folded threads would overlap, unless:
-.dw-zd.dw-t > .dw-z,
-.dw-zd.dw-res > li > .dw-z
-  position: relative !important // cancel position: absolute
-  margin-bottom: 42px
-  display: block // don't hide the .dw-z, only hide everything else
-
 .dw-zd.dw-2dcol
   width: 40px !important;
   padding-right: 10px !important;
+
+.dw-t.dw-zd .ui-resizable-handle
+  display: none;
 
 
 // Folded replies
