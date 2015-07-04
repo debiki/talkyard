@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{ReactRenderer, Globals}
 import debiki.onebox.engines._
+import javax.{script => js}
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -64,11 +65,12 @@ abstract class OneboxEngine {
     */
   protected def alreadySanitized = false
 
-  final def loadRenderSanitize(url: String): Future[String] = {
+  final def loadRenderSanitize(url: String, javascriptEngine: Option[js.Invocable])
+        : Future[String] = {
     def sanitizeAndWrap(html: String): String = {
       var safeHtml =
         if (alreadySanitized) html
-        else ReactRenderer.sanitizeHtml(html)
+        else ReactRenderer.sanitizeHtmlReuseEngine(html, javascriptEngine)
       // Don't link to any HTTP resources from safe HTTPS pages, e.g. don't link
       // to <img src="http://...">, change to https instead even if the image then breaks.
       // COULD leave <a href=...> HTTP links as is so they won't break. And also leave
@@ -135,19 +137,21 @@ object Onebox {
     new YouTubeOnebox)
 
 
-  def loadRenderSanitize(url: String): Future[String] = {
+  def loadRenderSanitize(url: String, javascriptEngine: Option[js.Invocable])
+        : Future[String] = {
     for (engine <- engines) {
       if (engine.handles(url))
-        return engine.loadRenderSanitize(url)
+        return engine.loadRenderSanitize(url, javascriptEngine)
     }
     Future.failed(NoEngineException)
   }
 
 
-  def loadRenderSanitizeInstantly(url: String): RenderOnboxResult = {
+  def loadRenderSanitizeInstantly(url: String, javascriptEngine: Option[js.Invocable])
+        : RenderOnboxResult = {
     def placeholder = PlaceholderPrefix + nextRandomString()
 
-    val futureSafeHtml = loadRenderSanitize(url)
+    val futureSafeHtml = loadRenderSanitize(url, javascriptEngine)
     if (futureSafeHtml.isCompleted)
       return futureSafeHtml.value.get match {
         case Success(safeHtml) => RenderOnboxResult.Done(safeHtml, placeholder)
@@ -175,6 +179,11 @@ class InstantOneboxRendererForNashorn {
   private val pendingDownloads: ArrayBuffer[RenderOnboxResult.Loading] = ArrayBuffer()
   private val doneOneboxes: ArrayBuffer[RenderOnboxResult.Done] = ArrayBuffer()
 
+  // Should be set to the Nashorn engine that calls this class, so that we can call
+  // back out to the same engine, when sanitizing html, so we won't have to ask for
+  // another engine, that'd create unnecessarily many engines.
+  var javascriptEngine: Option[js.Invocable] = None
+
   def renderAndSanitizeOnebox(unsafeUrl: String): String = {
     lazy val safeUrl = org.owasp.encoder.Encode.forHtml(unsafeUrl)
     if (!Globals.isInitialized) {
@@ -188,7 +197,7 @@ class InstantOneboxRendererForNashorn {
            soft-restarts the server in development mode. [DwE4KEPF72]</p>"""
     }
 
-    Onebox.loadRenderSanitizeInstantly(unsafeUrl) match {
+    Onebox.loadRenderSanitizeInstantly(unsafeUrl, javascriptEngine) match {
       case RenderOnboxResult.NoOnebox =>
         s"""<a href="$safeUrl">$safeUrl</a>"""
       case doneOnebox: RenderOnboxResult.Done =>
@@ -204,6 +213,7 @@ class InstantOneboxRendererForNashorn {
   }
 
   def waitForDownloadsToFinish() = ??? // and make pendingDownloads thread safe if needed
+                                      // and assert javascriptEngine has been reset to None
 
   def replacePlaceholders(html: String): String = {
     dieIf(pendingDownloads.nonEmpty, "DwE4FKEW3", "Not implemented: Waiting for oneboxes to load")

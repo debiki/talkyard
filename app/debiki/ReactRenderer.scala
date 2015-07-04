@@ -80,9 +80,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
       val numCores =
         if (Play.isProd) Runtime.getRuntime.availableProcessors
         else {
-          // Initializing engiens takes rather long, so only init two in dev mode: one
-          // for rendering CommonMark and one for sanitizing oneboxes.
-          2
+          // Initializing engiens takes rather long, so init only one in dev mode.
+          1
         }
       for (i <- 1 to numCores) {
         createOneMoreJavascriptEngine(isVeryFirstEngine = i == 1)
@@ -132,9 +131,13 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
         allowClassIdDataAttrs: Boolean, followLinks: Boolean): String = {
     val oneboxRenderer = new InstantOneboxRendererForNashorn
     val resultNoOneboxes = withJavascriptEngine(engine => {
+      // The onebox renderer needs a Javascript engine to sanitize html (via Caja JsHtmlSanitizer)
+      // and we'll reuse `engine` so we won't have to create any additional engine.
+      oneboxRenderer.javascriptEngine = Some(engine)
       val safeHtml = engine.invokeFunction("renderAndSanitizeCommonMark", commonMarkSource,
           allowClassIdDataAttrs.asInstanceOf[Object], followLinks.asInstanceOf[Object],
           oneboxRenderer)
+      oneboxRenderer.javascriptEngine = None
       safeHtml.asInstanceOf[String]
     })
     // Before commenting in: Make all render functions async so we won't block when downloading.
@@ -145,10 +148,23 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
 
   override def sanitizeHtml(text: String): String = {
-    withJavascriptEngine(engine => {
+    sanitizeHtmlReuseEngine(text, None)
+  }
+
+
+  def sanitizeHtmlReuseEngine(text: String, javascriptEngine: Option[js.Invocable]): String = {
+    def sanitizeWith(engine: js.Invocable): String = {
       val safeHtml = engine.invokeFunction("sanitizeHtml", text)
       safeHtml.asInstanceOf[String]
-    })
+    }
+    javascriptEngine match {
+      case Some(engine) =>
+        sanitizeWith(engine)
+      case None =>
+        withJavascriptEngine(engine => {
+          sanitizeWith(engine)
+        })
+    }
   }
 
 
@@ -167,10 +183,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     val mightBlock = javascriptEngines.isEmpty
     if (mightBlock) {
       logger.debug(s"Thread $threadName (id $threadId), waits for JS engine...")
-      // Create one more engine, so we won't block forever below. Sometimes a thread uses
-      // two engines at the same time: 1) it calls Nashorn to render CommonMark, then
-      // Nashorn calls back out to the Scala code in InstantOneboxRendererForNashorn,
-      // which 2) calls Nashorn again to sanitize the onebox. — So many engines might be needed.
+      // Create one more engine, so we won't block forever below, if some weird? reason we
+      // need more engines than cores.
       Future {
         createOneMoreJavascriptEngine()
       }

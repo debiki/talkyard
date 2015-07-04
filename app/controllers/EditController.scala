@@ -79,7 +79,7 @@ object EditController extends mvc.Controller {
     * a trusted safe site) then creates and returns sanitized onebox html.
     */
   def onebox(url: String) = AsyncGetActionRateLimited(RateLimits.LoadOnebox) { request =>
-    Onebox.loadRenderSanitize(url).transform(
+    Onebox.loadRenderSanitize(url, javascriptEngine = None).transform(
       html => Ok(html),
       throwable => ResultException(BadReqResult("DwE4PKE2", "Cannot onebox that link")))
   }
