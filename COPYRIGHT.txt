@@ -39,6 +39,11 @@ Javascript and CSS:
   client side modules, and run `bower install` to download licenses and
   copyrights to `bower_components/`.)
 
+  - angular-slugify (but all Angular stuff removed)
+    ./client/third-party/non-angular-slugify.js
+    Copyright © 2013 Paul Smith <paulsmith@pobox.com>
+    MIT license
+
   - Caret.js
     ./bower_components/Caret.js/LICENSE-MIT
     Copyright (c) 2013 chord.luo@gmail.com

@@ -38,6 +38,7 @@ var $: any = window['jQuery'];
 export var TitleEditor = createComponent({
   getInitialState: function() {
     return {
+      slug: getCurrentSlug(),
       showComplicated: false,
       isSaving: false
     };
@@ -47,6 +48,24 @@ export var TitleEditor = createComponent({
     this.setState({
       showComplicated: !this.state.showComplicated
     });
+  },
+
+  onTitleChanged: function(event) {
+    var idWillBeInUrlPath = this.refs.showIdInput ?
+        this.refs.showIdInput.getChecked() : isIdShownInUrl();
+    if (!idWillBeInUrlPath) {
+      // Then don't automatically change the slug to match the title, because links are more fragile
+      // when no id included in the url, and might break if we change the slug. Also, the slug is likely
+      // to be something like 'about' (for http://server/about) which we want to keep unchanged.
+      return;
+    }
+    var editedTitle = event.target.value;
+    var slugMatchingTitle = window['debikiSlugify'](editedTitle);
+    this.setState({ slug: slugMatchingTitle });
+  },
+
+  onSlugChanged: function(event) {
+    this.setState({ slug: event.target.value });
   },
 
   save: function() {
@@ -59,15 +78,14 @@ export var TitleEditor = createComponent({
   },
 
   getSettings: function() {
-    var settings: any = {};
+    var settings: any = {
+      slug: this.state.slug
+    };
     if (this.refs.layoutInput) {
       settings.layout = this.refs.layoutInput.getValue();
     }
     if (this.refs.folderInput) {
       settings.folder = this.refs.folderInput.getValue();
-    }
-    if (this.refs.slugInput) {
-      settings.slug = this.refs.slugInput.getValue();
     }
     if (this.refs.showIdInput) {
       settings.showId = this.refs.showIdInput.getChecked();
@@ -89,7 +107,7 @@ export var TitleEditor = createComponent({
               r.option({ value: 'OneColumnLayout' }, 'One Column'),
               r.option({ value: '2DTreeLayout' }, '2D Tree')),
             Input({ label: 'Slug', type: 'text', ref: 'slugInput', className: 'dw-i-slug',
-                defaultValue: getCurrentSlug() }),
+                value: this.state.slug, onChange: this.onSlugChanged }),
             Input({ label: 'Folder', type: 'text', ref: 'folderInput', className: 'dw-i-folder',
                 defaultValue: getCurrentUrlPathFolder() }),
             Input({ label: 'Show page ID', type: 'checkbox', ref: 'showIdInput',
@@ -113,7 +131,7 @@ export var TitleEditor = createComponent({
     return (
       r.div({ className: 'dw-p-ttl-e' },
         Input({ type: 'text', ref: 'titleInput', className: 'dw-i-title',
-            defaultValue: titleText }),
+            defaultValue: titleText, onChange: this.onTitleChanged }),
         ReactCSSTransitionGroup({ transitionName: 'compl-stuff', transitionAppear: true },
           complicatedStuff),
         saveCancel));

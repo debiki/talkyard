@@ -83,6 +83,7 @@ var debikiJavascriptFiles = [
       'client/third-party/jquery-scrollable.js', //
       'client/third-party/jquery.browser.js', //
       'client/third-party/livescript/prelude-browser.js',
+      'client/third-party/non-angular-slugify.js',
       'client/third-party/popuplib.js',
       'client/third-party/modernizr-positionfixed.js',
       'client/app/actions/edit/tagdog.js',
@@ -225,6 +226,7 @@ function compileServerSideTypescript() {
         'bower_components/markdown-it/dist/markdown-it.js',
         'bower_components/lodash/dist/lodash.js',
         'client/third-party/html-css-sanitizer-bundle.js',
+        'client/third-party/non-angular-slugify.js',
         'client/app/editor/mentions-markdown-it-plugin.js',
         'client/app/editor/onebox-markdown-it-plugin.js',
         'bower_components/moment/moment.js']);

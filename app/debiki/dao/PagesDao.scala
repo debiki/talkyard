@@ -37,7 +37,7 @@ trait PagesDao {
 
   def createPage(pageRole: PageRole, pageStatus: PageStatus, anyParentPageId: Option[PageId],
         anyFolder: Option[String], titleSource: String, bodySource: String,
-        showId: Boolean, pageSlug: String, authorId: UserId, browserIdData: BrowserIdData)
+        showId: Boolean, authorId: UserId, browserIdData: BrowserIdData)
         : PagePath = {
 
     val bodyHtmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(bodySource,
@@ -51,6 +51,8 @@ trait PagesDao {
     val titleHtmlSanitized = siteDbDao.commonMarkRenderer.sanitizeHtml(titleSource)
     if (titleHtmlSanitized.trim.isEmpty)
       throwForbidden("DwE5KPEF21", "Page title should not be empty")
+
+    val pageSlug = siteDbDao.commonMarkRenderer.slugifyTitle(titleSource)
 
     readWriteTransaction { transaction =>
 
@@ -155,10 +157,10 @@ trait CachingPagesDao extends PagesDao {
   override def createPage(pageRole: PageRole, pageStatus: PageStatus,
         anyParentPageId: Option[PageId], anyFolder: Option[String],
         titleSource: String, bodySource: String,
-        showId: Boolean, pageSlug: String, authorId: UserId, browserIdData: BrowserIdData)
+        showId: Boolean, authorId: UserId, browserIdData: BrowserIdData)
         : PagePath = {
     val pagePath = super.createPage(pageRole, pageStatus, anyParentPageId,
-      anyFolder, titleSource, bodySource, showId, pageSlug, authorId, browserIdData)
+      anyFolder, titleSource, bodySource, showId, authorId, browserIdData)
     firePageCreated(pagePath)
     pagePath
   }

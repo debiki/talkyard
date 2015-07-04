@@ -25,4 +25,6 @@ trait CommonMarkRenderer {
 
   def sanitizeHtml(text: String): String
 
+  def slugifyTitle(title: String): String
+
 }

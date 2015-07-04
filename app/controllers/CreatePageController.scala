@@ -44,11 +44,9 @@ object CreatePageController extends mvc.Controller {
     val titleText = (body \ "pageTitle").as[String]
     val bodyText = (body \ "pageBody").as[String]
     val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
-    val pageSlug = (body \ "pageSlug").asOpt[String].getOrElse(
-      "new-forum-topic") // for now, ought to slugify title
 
     val pagePath = request.dao.createPage(pageRole, pageStatus, anyParentPageId, anyFolder,
-      titleText, bodyText, showId, pageSlug = pageSlug, authorId = request.theUserId,
+      titleText, bodyText, showId, authorId = request.theUserId,
       request.theBrowserIdData)
 
     OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))

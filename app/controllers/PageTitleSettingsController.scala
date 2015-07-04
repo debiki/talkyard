@@ -41,10 +41,12 @@ object PageTitleSettingsController extends mvc.Controller {
         request: JsonPostRequest =>
 
     val pageId = (request.body \ "pageId").as[PageId]
-    val newTitle = (request.body \ "newTitle").as[String]
+    val newTitle = (request.body \ "newTitle").as[String].trim
     val anyLayoutString = (request.body \ "layout").asOpt[String]
-    val anyFolder = (request.body \ "folder").asOpt[String]
-    val anySlug = (request.body \ "slug").asOpt[String]
+    val anyFolder = (request.body \ "folder").asOpt[String] map { folder =>
+      if (folder.trim.isEmpty) "/" else folder.trim
+    }
+    val anySlug = (request.body \ "slug").asOpt[String].map(_.trim)
     val anyShowId = (request.body \ "showId").asOpt[Boolean]
 
     // Authorization.

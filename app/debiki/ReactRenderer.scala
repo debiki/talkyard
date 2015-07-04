@@ -152,6 +152,14 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   }
 
 
+  override def slugifyTitle(title: String): String = {
+    withJavascriptEngine(engine => {
+      val slug = engine.invokeFunction("debikiSlugify", title)
+      slug.asInstanceOf[String]
+    })
+  }
+
+
   private def withJavascriptEngine(fn: (js.Invocable) => String): String = {
     def threadId = Thread.currentThread.getId
     def threadName = Thread.currentThread.getName
