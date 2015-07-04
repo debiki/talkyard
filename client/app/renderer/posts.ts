@@ -432,6 +432,7 @@ var Post = createComponent({
     var wrongWarning;
     var headerElem;
     var bodyElem;
+    var clickToExpand;
     var extraClasses = this.props.className || '';
 
     if (post.isTreeDeleted || post.isPostDeleted) {
@@ -439,7 +440,9 @@ var Post = createComponent({
       headerElem = r.div({ className: 'dw-p-hd' }, what, ' deleted');
       extraClasses += ' dw-p-dl';
     }
-    else if (this.props.renderCollapsed) {
+    else if (this.props.renderCollapsed &&
+        // COULD rename isTreeCollapsed since it's not always a boolean.
+        post.isTreeCollapsed !== 'Truncated') {
       var text = this.props.is2dTreeColumn ? '' : (
           "Click to show " + (post.isTreeCollapsed ? "more comments" : "this comment"));
       if (debiki.debug) text +='  #' + this.props.postId;
@@ -463,6 +466,11 @@ var Post = createComponent({
       headerProps.onMarkClick = this.onMarkClick;
       headerElem = PostHeader(headerProps);
       bodyElem = PostBody(this.props);
+
+      if (post.isTreeCollapsed === 'Truncated') {
+        extraClasses += ' dw-x';
+        clickToExpand = r.div({ className: 'dw-x-show' }, "... click to show");
+      }
 
       if (post.numWrongVotes >= 2 && !this.props.abbreviate) {
         var wrongness = post.numWrongVotes / (post.numLikeVotes || 1);
@@ -513,7 +521,8 @@ var Post = createComponent({
         wrongWarning,
         replyReceivers,
         headerElem,
-        bodyElem));
+        bodyElem,
+        clickToExpand));
   }
 });
 
@@ -553,8 +562,9 @@ var PostHeader = createComponent({
     event.preventDefault();
   },
 
-  onCollapseClick: function() {
+  onCollapseClick: function(event) {
     debiki2.ReactActions.collapseTree(this.props.post);
+    event.stopPropagation();
   },
 
   render: function() {

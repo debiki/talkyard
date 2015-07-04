@@ -45,7 +45,8 @@ interface Post {
   numPendingEditSuggestions: number;
   isTreeDeleted: boolean;
   isPostDeleted: boolean;
-  isTreeCollapsed: boolean;
+  // === true means totally collapsed. === 'Truncated' means collapsed but parts of post shown.
+  isTreeCollapsed: any; // COULD rename
   isPostCollapsed: boolean;
   isTreeClosed: boolean;
   isApproved: boolean;

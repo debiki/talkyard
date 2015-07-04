@@ -27,6 +27,7 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
+var Button = reactCreateFactory(ReactBootstrap.Button);
 var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
@@ -131,6 +132,10 @@ var CommentsToolbarDetails = createComponent({
     ReactActions.setPageNoftLevel(newLevel);
   },
 
+  summarizeReplies: function() {
+    ReactActions.summarizeReplies();
+  },
+
   render: function() {
     var user = this.props.user;
     var userAuthenticated = user && user.isAuthenticated;
@@ -144,9 +149,14 @@ var CommentsToolbarDetails = createComponent({
             MenuItem({ eventKey: 'Muted' }, 'Muted'))
         : null;
 
+    var summarizeButton =
+        r.div({ className: 'dw-tlbr-sctn' },
+          Button({ onClick: this.summarizeReplies }, "Summarize Replies"));
+
     var result =
       r.div({ className: 'dw-cmts-tlbr-details' },
-          notificationsElem);
+          notificationsElem,
+          summarizeButton);
 
     return result;
   }

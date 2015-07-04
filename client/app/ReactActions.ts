@@ -33,6 +33,7 @@ export var actionTypes = {
   VoteOnPost: 'VoteOnPost',
   MarkPostAsRead: 'MarkPostAsRead',
   CycleToNextMark: 'CycleToNextMark',
+  SummarizeReplies: 'SummarizeReplies',
   CollapseTree: 'CollapseTree',
   UncollapsePost: 'UncollapsePost',
   SetHorizontalLayout: 'SetHorizontalLayout',
@@ -115,6 +116,13 @@ export function cycleToNextMark(postId: number) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.CycleToNextMark,
     postId: postId
+  });
+}
+
+
+export function summarizeReplies() {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.SummarizeReplies
   });
 }
 

@@ -89,6 +89,10 @@ ReactDispatcher.register(function(payload) {
       cycleToNextMark(action.postId);
       break;
 
+    case ReactActions.actionTypes.SummarizeReplies:
+      summarizeReplies();
+      break;
+
     case ReactActions.actionTypes.CollapseTree:
       collapseTree(action.post);
       break;
@@ -328,6 +332,22 @@ function cycleToNextMark(postId: number) {
   store.user.marksByPostId[postId] = nextMark;
 
   rememberPostsToQuickUpdate(postId);
+}
+
+
+function summarizeReplies() {
+  // For now, just collapse all threads with depth >= 2, if they're too long
+  // i.e. they have successors, or consist of a long (high) comment.
+  _.each(store.allPosts, (post: Post) => {
+    if (post.postId === BodyPostId || post.postId === TitleId || post.parentId === BodyPostId)
+      return;
+
+    // Also see height in debiki-play.styl. [5E7PKW2]
+    var isTooHigh = () => $('#post-' + post.postId).height() > 150;
+    if (post.childIdsSorted.length || isTooHigh()) {
+      post.isTreeCollapsed = 'Truncated';
+    }
+  });
 }
 
 

@@ -87,65 +87,30 @@ del
 //---------------------------
 
 
-.dw-p.dw-x-s > .dw-p-bd,
-.dw-p.dw-x-s > .dw-p-hd
-  max-height: 4em
-  // The max-height of a truncated .dw-p-bd is 4em, but if floating
-  //elements are present inside the -p-bd (e.g. inline reply threads)
-  //its height might grow to e.g. 2000 px. Then at least Chrome places the
-  //truncation mark far away, so the parent .dw-p grows to e.g. 2000 px.
-  //By hiding overflow, the truncation mark won't be pushed down by other
-  //tags inside the .dw-p-bd, and the parent .dw-p won't be larger than
-  //what it's supposed to be (i.e. roughly 4em + 4em).
-  //overflow: hidden;  -- no, doesn't work well: in some unfathomable
-  //weird way, the inline thread disappear upwards, but space is reserved for
-  //them below, as if I had added `relative: -2000px' (which I have not).
+.dw-p.dw-x
+  cursor: pointer;
+  > .dw-p-bd
+    max-height: 120px;  // also see height in ReactStore.ts [5E7PKW2]
+    overflow: hidden;
 
-.dw-p.dw-x-s
-  // Since `overflow: hidden' on .dw-p-bd doesn't work well (see the
-  // long comment above), restrict max-height of the .dw-p instead (again
-  // see the long comment above, for info on why this is done).
-  max-height: 8em
+.dw-x-show
+  position: relative;
+  bottom: 10px;
+  padding: 4px 0 8px 13px;
+  font-style: italic;
+  letter-spacing: 0.3ex;
+  background: #fff;
 
-// Don't truncate the root post. (`:not()` isn't supported in <= IE8.)
-.dw-depth-0 > .dw-p.dw-x-s,
-.dw-depth-0 > .dw-p.dw-x-s > .dw-p-bd,
-.dw-depth-0 > .dw-p.dw-x-s > .dw-p-hd
-  max-height: none
+.dw-p.dw-x:hover
+  .dw-p-hd
+    background-color: hsl(20, 100%, 94%)
 
-.dw-p > .dw-x-mark
-  display: block
-  position: absolute
-  bottom: 0px
-  right: -3px
-  padding: 4px 25px 0 10px // there's a resizable-se grip to the right
-  height: 17px
-  background: white
-  font-style: italic
-  letter-spacing: 0.3ex
+  .dw-p-bd
+    background-color: hsl(20, 100%, 97%);
 
-.dw-p.dw-x-s:hover > .ui-resizable-se,
-.dw-p.dw-x-s:hover > .dw-x-mark
-  background-color: #fdc
-  color: #363636
-
-// Indicate which borders the user has resized.
-.dw-p-rez-e
-  border-right: 1px solid #888
-  padding-right: 3px // or text to close to the border
-  // This post might extend over [a thread to the right], since
-  // it has been resized eastwards. So as not to draw this post and
-  // [the post to the right] over each other, let this post hide
-  // [the post to the right] by specifying a higher z-index.
-  z-index: 11
-
-.dw-p-rez-e:hover
-  z-index: 12 // or resized thread might be merged with each other
-
-.dw-p-rez-s
-  border-bottom: 1px solid #888
-  // padding-bottom: 3px; -- pointless: because of overflow, text might
-  //                      end up immediately next to the border anyway
+  .dw-x-show
+    background-color: hsl(20, 100%, 93%);
+    color: #363636
 
 
 
