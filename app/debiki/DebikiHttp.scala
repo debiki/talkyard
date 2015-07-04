@@ -24,6 +24,7 @@ import debiki.dao.SystemDao
 import debiki.Globals.originOf
 import java.{net => jn}
 import play.api._
+import play.{api => p}
 import play.api.http.ContentTypes._
 import play.api.mvc.{Action => _, _}
 import play.api.Play.current
@@ -94,8 +95,11 @@ object DebikiHttp {
    */
   case class ResultException(result: Result) extends QuickException
 
-  def throwRedirect(url: String) =
+  def throwTemporaryRedirect(url: String) =
     throw ResultException(R.Redirect(url))
+
+  def throwPermanentRedirect(url: String) =
+    throw ResultException(R.Redirect(url, p.http.Status.MOVED_PERMANENTLY))
 
   def throwBadReq(errCode: String, message: String = "") =
     throw ResultException(BadReqResult(errCode, message))
@@ -241,7 +245,7 @@ object DebikiHttp {
           case SiteHost.RoleDuplicate =>
             result.siteId
           case SiteHost.RoleRedirect =>
-            throwRedirect(Globals.originOf(result.canonicalHost.hostname) + pathAndQuery)
+            throwPermanentRedirect(Globals.originOf(result.canonicalHost.hostname) + pathAndQuery)
           case SiteHost.RoleLink =>
             die("DwE2KFW7", "Not implemented: <link rel='canonical'>")
           case _ =>

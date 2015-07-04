@@ -80,7 +80,7 @@ object Global extends WithFilters(new HtmlJsCssGzipFilter()) with GlobalSettings
     val pagePath = PagePath.fromUrlPath(tenantId, request.path) match {
       case PagePath.Parsed.Good(pagePath) => pagePath
       case PagePath.Parsed.Bad(error) => throwBadReq("DwE0kI3E4", error)
-      case PagePath.Parsed.Corrected(newPath) => throwRedirect(newPath)
+      case PagePath.Parsed.Corrected(newPath) => throwTemporaryRedirect(newPath)
     }
 
     // BUG: debiki-core html.scala places view=<root> just after '?',
