@@ -455,6 +455,27 @@ export function saveEdits(postId: number, text: string, doneCallback: () => void
 }
 
 
+export function savePageTitleAndSettings(newTitle: string, settings: any, success: () => void,
+        error: () => void) {
+  var data = $.extend(settings, {
+    pageId: d.i.pageId,
+    newTitle: newTitle
+  });
+  postJson('/-/edit-title-save-settings', {
+    data: data,
+    success: (response) => {
+      success();
+      d.i.handleEditResult(response.newTitlePost);
+      if (window.history.replaceState) {
+        var newPath = response.newUrlPath + location.search + location.hash;
+        window.history.replaceState({}, null, newPath);
+      }
+    },
+    error: error
+  });
+}
+
+
 export function saveReply(postIds: number[], text: string, success: () => void) {
   postJson('/-/reply', {
     data: {

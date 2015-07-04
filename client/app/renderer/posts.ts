@@ -19,6 +19,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../dialogs.ts" />
+/// <reference path="../editor/title-editor.ts" />
 /// <reference path="model.ts" />
 
 // Wrapping in a module causes an ArrayIndexOutOfBoundsException: null error, see:
@@ -159,8 +160,14 @@ var TitleBodyComments = createComponent({
 
 
 var Title = createComponent({
+  getInitialState: function() {
+    return { isEditing: false };
+  },
   editTitle: function(event) {
-    debiki.internal.$showEditForm.call(event.target, event);
+    this.setState({ isEditing: true });
+  },
+  closeEditor: function() {
+    this.setState({ isEditing: false });
   },
   render: function() {
     var titlePost = this.props.allPosts[TitleId];
@@ -175,13 +182,22 @@ var Title = createComponent({
       anyEditTitleBtn =
         r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.editTitle });
     }
+    var contents;
+    if (this.state.isEditing) {
+      var editorProps = _.clone(this.props);
+      editorProps.closeEditor = this.closeEditor;
+      contents = debiki2.titleeditor.TitleEditor(editorProps);
+    }
+    else {
+      contents =
+          r.div({ className: 'dw-p-bd' },
+            r.div({ className: 'dw-p-bd-blk' },
+              r.h1({ className: 'dw-p-ttl' }, titleText), anyEditTitleBtn));
+    }
     return (
       r.div({ className: 'dw-t', id: 'dw-t-0' },
         r.div({ className: 'dw-p dw-p-ttl', id: 'post-0' },
-          r.div({ className: 'dw-p-bd' },
-            r.div({ className: 'dw-p-bd-blk' },
-              r.h1({ className: 'dw-p-ttl' }, titleText),
-              anyEditTitleBtn)))));
+          contents)));
   },
 });
 

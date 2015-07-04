@@ -19,6 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import com.debiki.core.PageParts.MaxTitleLength
 import com.debiki.core.User.SystemUserId
 import debiki._
 import debiki.DebikiHttp._
@@ -43,6 +44,9 @@ trait PagesDao {
       allowClassIdDataAttrs = true, followLinks = !pageRole.isWidelyEditable)
     if (bodyHtmlSanitized.trim.isEmpty)
       throwForbidden("DwE3KFE29", "Page body should not be empty")
+
+    if (titleSource.length > MaxTitleLength)
+      throwBadReq("DwE4HEFW8", s"Title too long, max length is $MaxTitleLength")
 
     val titleHtmlSanitized = siteDbDao.commonMarkRenderer.sanitizeHtml(titleSource)
     if (titleHtmlSanitized.trim.isEmpty)

@@ -62,14 +62,13 @@ object EditController extends mvc.Controller {
     val postId = (request.body \ "postId").as[PostId]
     val newText = (request.body \ "text").as[String]
 
-    val pageRequest =
-        PageRequest.forPageThatExists(request, pageId) getOrElse throwBadReq(
-          "DwE47ZI2", s"Page `$pageId' does not exist")
+    if (postId == PageParts.TitleId)
+      throwForbidden("DwE5KEWF4", "Edit the title via /-/edit-title-save-settings instead")
 
-    _throwIfTooMuchData(newText, pageRequest)
+    _throwIfTooMuchData(newText, request)
 
-    request.dao.editPost(pageId = pageId, postId = postId, editorId = pageRequest.theUser.id,
-      pageRequest.theBrowserIdData, newText)
+    request.dao.editPost(pageId = pageId, postId = postId, editorId = request.theUser.id,
+      request.theBrowserIdData, newText)
 
     OkSafeJson(ReactJson.postToJson2(postId = postId, pageId = pageId,
       request.dao, includeUnapproved = true))

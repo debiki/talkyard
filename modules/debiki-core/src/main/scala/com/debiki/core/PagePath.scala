@@ -73,6 +73,10 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
     throw PagePathException(
       "DwE9IJb2", s"Folder contains whitespace: `$folder'")
 
+  if (pageSlug.length > MaxSlugLength)
+      throw PagePathException(
+        "DwE4KE32", s"Slug too long, length: ${pageSlug.length}, max: $MaxSlugLength")
+
   if (pageSlug startsWith "-")
     throw PagePathException("DwE2Yb35", s"Page slug starts with '-' `$pageSlug'")
 
@@ -170,6 +174,49 @@ object PagePath {
 
   private def _throw(errCode: String,  message: String) =
     throw new PagePathException(errCode, message)
+
+
+  def isOkayFolder(folder: String): Boolean = {
+    // This is over complicated. Why did I throw exceptions everywhere instead of
+    // returning Ok or Error from a test function?
+    // '/-' means an id follows; ids must not be inside a folder.
+    if (!folder.endsWith("/") || folder.contains("/-"))
+      return false
+    try {
+      fromUrlPath("dummy", folder) match {
+        case Parsed.Good(_) => true
+        case _ => false
+      }
+    }
+    catch {
+      case _: Exception => false
+    }
+  }
+
+
+  private val MaxSlugLength = 50
+
+  private val SlugRegex = """[a-z0-9][a-z0-9-]*[a-z0-9]""".r
+
+  def isOkaySlug(slug: String): Boolean = {
+    // Over complicated, see isOkayFolder above.
+    if (slug.isEmpty)
+      return true
+    if (!SlugRegex.matches(slug))
+      return false
+    if (slug.length > MaxSlugLength)
+      return false
+    // Now this isn't needed: ? after I added the if:s above
+    try {
+      fromUrlPath("dummy", "/" + slug) match {
+        case Parsed.Good(_) => true
+        case _ => false
+      }
+    }
+    catch {
+      case _: Exception => false
+    }
+  }
 
 
   /**

@@ -132,8 +132,10 @@ trait PostsDao {
         newText: String) {
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
-      var postToEdit = page.parts.post(postId).getOrElse(
-        throwNotFound("DwE404GKF2", s"Post not found, id: '$postId'"))
+      val postToEdit = page.parts.post(postId) getOrElse {
+        page.meta // this throws page-not-fount if the page doesn't exist
+        throwNotFound("DwE404GKF2", s"Post not found, id: '$postId'")
+      }
 
       if (postToEdit.currentSource == newText)
         return

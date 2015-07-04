@@ -1,0 +1,44 @@
+
+
+.dw-page .dw-p-ttl-e
+  margin-top: (30 + 15 + 5)px;  // 30 + 5 = title margin + padding, 5 = a bit extra
+  margin-bottom: 30px;
+
+  .dw-i-title
+    max-width: 500px;
+
+  .dw-i-layout
+    width: auto;
+
+  .dw-toggle-compl-stuff
+    float: none;
+    margin-left: 10px;
+    opacity: 0.75;
+    position: relative;
+    top: 3px;
+    font-size: 14px;
+
+    &.icon-settings:before
+      opacity: 0.85;
+
+  .dw-compl-stuff
+    margin-top: 15px;
+
+  .compl-stuff-enter,   // old React version?
+  .compl-stuff-appear   // new React version?
+    opacity: 0.01;
+    height: 1px;
+    transition: opacity .6s ease-in;
+
+  .compl-stuff-enter.compl-stuff-enter-active,
+  .compl-stuff-appear.compl-stuff-appear-active
+    opacity: 1;
+    height: auto;
+
+  .compl-stuff-leave
+    opacity: 1;
+    transition: opacity .5s ease-in;
+
+  .compl-stuff-leave-active
+    opacity: 0.01;
+

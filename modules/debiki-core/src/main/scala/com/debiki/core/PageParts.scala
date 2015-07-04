@@ -46,6 +46,7 @@ object PageParts {
   val UnassignedId4 = -1004
   def isActionIdUnknown(id: ActionId) = id <= UnassignedId
 
+  val MaxTitleLength = 90
 
   def isArticleOrConfigPostId(id: ActionId) =
     id == PageParts.BodyId || id == PageParts.TitleId
