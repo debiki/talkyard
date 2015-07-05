@@ -70,6 +70,10 @@ export var Editor = createComponent({
     };
   },
 
+  componentWillMount: function() {
+     this.updatePreview = _.throttle(this.updatePreview, 333);
+  },
+
   componentDidMount: function() {
     this.startMentionsParser();
     this.makeEditorResizable();
@@ -134,7 +138,7 @@ export var Editor = createComponent({
         editingPostId: postId,
         text: text
       });
-      this.updatePreview(text);
+      this.updatePreview();
     });
   },
 
@@ -181,18 +185,20 @@ export var Editor = createComponent({
     this.setState({
       text: event.target.value
     });
-    this.updatePreview(event.target.value);
+    this.updatePreview();
   },
 
-  updatePreview: function(text) {
+  updatePreview: function() {
     d.i.loadEditorDependencies().done(() => {
+      if (!this.isMounted())
+        return;
       // (COULD verify is mounted and still edits same post/thing, or not needed?)
       var isEditingBody = this.state.editingPostId === d.i.BodyId;
       var sanitizerOpts = {
         allowClassAndIdAttr: isEditingBody,
         allowDataAttr: isEditingBody
       };
-      var htmlText = d.i.markdownToSafeHtml(text, window.location.host, sanitizerOpts);
+      var htmlText = d.i.markdownToSafeHtml(this.state.text, window.location.host, sanitizerOpts);
       this.setState({
         safePreviewHtml: htmlText
       });
