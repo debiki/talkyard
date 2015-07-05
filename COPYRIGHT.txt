@@ -54,6 +54,12 @@ Javascript and CSS:
     Copyright (c) 2013 hij1nx
     MIT license
 
+  - Gifffer
+    ./client/third-party/gifffer/
+    Copyright (c) 2014 Krasimir Tsonev
+    MIT license
+    https://github.com/krasimir/gifffer
+
   - LiveScript's prelude.ls
     ./client/third-party/livescript/
     Copyright (c) 2013 George Zahariev
