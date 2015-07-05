@@ -159,13 +159,6 @@ abstract class SiteDbDao {
    */
   def moveRenamePage(pagePath: PagePath)
 
-  /**
-   * Moves the page at pagePath to the location where it was placed before
-   * it was moved to pagePath. Returns that location, or does nothing and
-   * returns None, if there is no such location.
-   */
-  def movePageToItsPreviousLocation(pagePath: PagePath): Option[PagePath]
-
 
   // ----- Page paths
 
@@ -427,12 +420,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
   def moveRenamePage(pagePath: PagePath) {
     serialize {
       _spi.moveRenamePage(pagePath)
-    }
-  }
-
-  def movePageToItsPreviousLocation(pagePath: PagePath): Option[PagePath] = {
-    serialize {
-      _spi.movePageToItsPreviousLocation(pagePath)
     }
   }
 

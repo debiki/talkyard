@@ -117,9 +117,6 @@ POST  /-/edit                   controllers.EditController.edit
 POST  /-/edit-title-save-settings controllers.PageTitleSettingsController.editTitleSaveSettings
 GET   /-/onebox                 controllers.EditController.onebox(url)
 POST  /-/pin-at-position        controllers.PinController.pinAtPosition
-#POST /-/move-pages             controllers.MovePageController.movePages
-POST  /-/move-rename-page       controllers.MovePageController.moveRenamePage
-
 
 POST  /-/collapse-post          controllers.CloseCollapseController.collapsePost
 POST  /-/collapse-tree          controllers.CloseCollapseController.collapseTree

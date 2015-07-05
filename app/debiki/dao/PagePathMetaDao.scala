@@ -40,11 +40,6 @@ trait PagePathMetaDao {
       showId = showId, newSlug = newSlug)
 
 
-  def movePageToItsPreviousLocation(pagePath: PagePath): Option[PagePath] = {
-    siteDbDao.movePageToItsPreviousLocation(pagePath)
-  }
-
-
   def checkPagePath(pathToCheck: PagePath): Option[PagePath] =
     siteDbDao.checkPagePath(pathToCheck)
 
@@ -149,17 +144,6 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
 
     firePageMoved(newPath)
     newPath
-  }
-
-
-  override def movePageToItsPreviousLocation(pagePath: PagePath): Option[PagePath] = {
-    require(pagePath.tenantId == siteId)
-    val restoredPath = super.movePageToItsPreviousLocation(pagePath)
-    restoredPath foreach { path =>
-      _removeCachedPathsTo(path.pageId.get)
-      firePageMoved(path)
-    }
-    restoredPath
   }
 
 

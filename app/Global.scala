@@ -123,14 +123,6 @@ object Global extends WithFilters(new HtmlJsCssGzipFilter()) with GlobalSettings
         ViewPageController.viewPost(pagePath)
       case ("delete", POST) =>
         Application.handleDeleteForm(pagePath, postId = mainFunValAsInt_!)
-      case ("move-page", GET) =>
-        MovePageController.showMovePageForm(pagePath)
-      case ("move-page", POST) =>
-        MovePageController.handleMovePageForm(pagePath)
-      case ("rename-slug", GET) =>
-        MovePageController.showRenamePageSlugForm(pagePath)
-      case ("rename-slug", POST) =>
-        MovePageController.handleRenamePageSlugForm(pagePath)
       case ("list-pages", GET) =>
         ListController.listPages(pagePath, DebikiHttp.ContentType.Html)
       case ("list-pages.json", GET) =>
