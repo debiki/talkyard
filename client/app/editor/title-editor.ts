@@ -38,15 +38,17 @@ var $: any = window['jQuery'];
 export var TitleEditor = createComponent({
   getInitialState: function() {
     return {
-      slug: getCurrentSlug(),
       showComplicated: false,
       isSaving: false
     };
   },
 
-  toggleComplicated: function() {
+  showComplicated: function() {
     this.setState({
-      showComplicated: !this.state.showComplicated
+      showComplicated: true,
+      folder: getCurrentUrlPathFolder(),
+      slug: getCurrentSlug(),
+      showId: isIdShownInUrl(),
     });
   },
 
@@ -64,8 +66,16 @@ export var TitleEditor = createComponent({
     this.setState({ slug: slugMatchingTitle });
   },
 
+  onFolderChanged: function(event) {
+    this.setState({ folder: event.target.value });
+  },
+
   onSlugChanged: function(event) {
     this.setState({ slug: event.target.value });
+  },
+
+  onShowIdChanged: function(event) {
+    this.setState({ showId: event.target.checked });
   },
 
   save: function() {
@@ -79,16 +89,12 @@ export var TitleEditor = createComponent({
 
   getSettings: function() {
     var settings: any = {
-      slug: this.state.slug
+      folder: addFolderSlashes(this.state.folder),
+      slug: this.state.slug,
+      showId: this.state.showId
     };
     if (this.refs.layoutInput) {
       settings.layout = this.refs.layoutInput.getValue();
-    }
-    if (this.refs.folderInput) {
-      settings.folder = this.refs.folderInput.getValue();
-    }
-    if (this.refs.showIdInput) {
-      settings.showId = this.refs.showIdInput.getChecked();
     }
     return settings;
   },
@@ -99,19 +105,31 @@ export var TitleEditor = createComponent({
 
     var complicatedStuff;
     if (this.state.showComplicated) {
+      var dashId = this.state.showId ? '-' + debiki.getPageId() : '';
+      var slashSlug =  this.state.slug;
+      if (dashId && slashSlug) slashSlug = '/' + slashSlug;
+      var url = location.protocol + '//' + location.host +
+          addFolderSlashes(this.state.folder) + dashId + slashSlug;
+
       complicatedStuff =
-        r.div({ className: 'container' },
+        r.div({},
           r.form({ className: 'dw-compl-stuff form-horizontal', key: 'compl-stuff-key' },
-            Input({ type: 'select', ref: 'layoutInput', className: 'dw-i-layout' },
+            Input({ label: 'Layout', type: 'select', ref: 'layoutInput', className: 'dw-i-layout',
+              labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10' },
               r.option({ value: 'DefaultLayout' }, 'Default Layout'),
               r.option({ value: 'OneColumnLayout' }, 'One Column'),
               r.option({ value: '2DTreeLayout' }, '2D Tree')),
             Input({ label: 'Slug', type: 'text', ref: 'slugInput', className: 'dw-i-slug',
+                labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
                 value: this.state.slug, onChange: this.onSlugChanged }),
             Input({ label: 'Folder', type: 'text', ref: 'folderInput', className: 'dw-i-folder',
-                defaultValue: getCurrentUrlPathFolder() }),
-            Input({ label: 'Show page ID', type: 'checkbox', ref: 'showIdInput',
-                className: 'dw-i-showid', defaultChecked: isIdShownInUrl() })));
+                labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
+                value: this.state.folder, onChange: this.onFolderChanged }),
+            Input({ label: 'Show page ID in URL', type: 'checkbox', ref: 'showIdInput',
+                wrapperClassName: 'col-xs-offset-2 col-xs-10',
+                className: 'dw-i-showid', checked: this.state.showId,
+                onChange: this.onShowIdChanged })),
+          r.p({}, "The page URL will be: ", r.kbd({}, url)));
     }
 
     // Once the complicated stuff has been shown, one cannot hide it, except by cancelling
@@ -119,7 +137,7 @@ export var TitleEditor = createComponent({
     var showAdvancedButton = this.state.showComplicated
         ? null
         : r.a({ className: 'dw-toggle-compl-stuff icon-settings',
-            onClick: this.toggleComplicated }, 'Advanced');
+            onClick: this.showComplicated }, 'Advanced');
 
     var saveCancel = this.state.isSaving
       ? r.div({}, 'Saving...')
@@ -168,6 +186,15 @@ function getCurrentUrlPathFolder() {
 
   console.warn('Cannot find folder in path: ' + location.pathname + ' [DwE3KEF5]');
   return '/';
+}
+
+
+function addFolderSlashes(folder) {
+  if (folder || folder === '') {
+    if (folder[folder.length - 1] !== '/') folder = folder + '/';
+    if (folder[0] !== '/') folder = '/' + folder;
+  }
+  return folder;
 }
 
 
