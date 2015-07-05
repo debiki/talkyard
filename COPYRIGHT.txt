@@ -136,9 +136,11 @@ Javascript and CSS:
   - React.js
     Copyright 2013-2014, Facebook, Inc.
 
-  - Remarkable
-    ./bower_components/remarkable/
-    Copyright (c) 2014 Jon Schlinkert, Vitaly Puzrin.
+  - markdown-it
+    ./bower_components/...
+    Copyright (c) 2014 Vitaly Puzrin, Alex Kocharin
+    MIT license
+    https://github.com/markdown-it/markdown-it
 
   - jQuery UI
     ./public/res/jquery-ui

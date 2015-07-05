@@ -61,8 +61,6 @@ POST  /-/create-site            controllers.CreateSiteController.createSite
 
 GET   /-/admin                  controllers.AdminController.redirectToAdminPage
 GET   /-/admin/                 controllers.AdminController.viewAdminPage
-# Old admin pages:
-GET   /-/admin-old/             controllers.AdminController.viewAdminPageOld
 
 GET   /-/load-site-settings     controllers.SettingsController.loadSiteSettings
 GET   /-/load-section-settings  controllers.SettingsController.loadSectionSettings(rootPageId)

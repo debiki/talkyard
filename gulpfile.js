@@ -167,23 +167,6 @@ var debikiEmbeddedCommentsFiles = [
       'client/embedded-comments/parent-footer.js'];  // not ^target/client/...
 
 
-var adminOldFiles = [
-      'target/client/third-party/livescript/prelude-browser-min.js',
-      'target/client/third-party/bootstrap/tooltip.js', // -popup.js dependee
-      'target/client/third-party/bootstrap/*.js',
-      'target/client/third-party/angular-ui/module.js',
-      'target/client/third-party/angular-ui/directives/jq/jq.js',
-      'target/client/third-party/angular-ui/directives/modal/modal.js',
-      'target/client/app/utils/util.js',
-      'client/third-party/diff_match_patch.js',
-      'target/client/app/actions/edit/diff-match-patch.js',
-      'target/client/app/utils/page-path.js',
-      // Include the module first; it's needed by modal-dialog.js.
-      'target/client/admin-old/scripts/module-and-services.js',
-      'target/client/admin-old/scripts/*.js'];
-
-
-
 gulp.task('wrap-javascript', function () {
   // Prevent Javascript variables from polluting the global scope.
   return gulp.src('client/**/*.js')
@@ -312,7 +295,6 @@ function makeConcatDebikiScriptsStream() {
       makeConcatStream('combined-debiki.js', debikiJavascriptFiles),
       makeConcatStream('login-popup.js', loginDialogFiles),
       makeConcatStream('embedded-comments.js', debikiEmbeddedCommentsFiles),
-      makeConcatStream('admin-old.js', adminOldFiles),
 
       gulp.src('bower_components/zxcvbn/zxcvbn.js')
         .pipe(gulp.dest('public/res/')),
@@ -420,15 +402,7 @@ gulp.task('compile-stylus', function () {
 
     makeStyleStream('public/res/', 'admin-app.css', [
         'client/app/dashbar/dashbar.styl',
-        'client/admin-app/**/*.styl']),
-
-    makeStyleStream('client/admin-dart/admin-dart/web/', 'styles.css', [
-        'client/admin-dart/styles/*.styl']),
-
-    makeStyleStream('public/res/', 'admin-old.css', [
-        'client/admin-old/styles/admin-theme.styl',
-        'client/admin-old/styles/admin-page.styl',
-        'client/admin-old/styles/debiki-shared.styl']));
+        'client/admin-app/**/*.styl']));
 });
 
 

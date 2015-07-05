@@ -61,21 +61,4 @@ object AdminController extends mvc.Controller {
     }
   }
 
-
-  // Remove later. (Dupl code, but I'm going to remove it anyway)
-  def viewAdminPageOld() = GetAction { apiReq =>
-    if (apiReq.user.map(_.isAdmin) != Some(true)) {
-      Ok(views.html.login.loginPopup(
-        mode = "LoginToAdministrate",
-        serverAddress = s"//${apiReq.host}",
-        returnToUrl = apiReq.uri)) as HTML
-      // "Login as administrator to access this page."
-    }
-    else {
-      Ok(views.html.adminPageOld(apiReq.host).body) as HTML withCookies (
-        SecureCookie(
-          DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value))
-    }
-  }
-
 }
