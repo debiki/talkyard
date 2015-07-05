@@ -387,7 +387,6 @@ export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
     })
     .fail((x, y, z) => {
       console.error('Error loading topics: ' + JSON.stringify([x, y, z]));
-      doneCallback(null);
     });
 }
 

@@ -58,8 +58,10 @@
     // Why do I need to -2 for the Create Topic button to align with
     // the category buttons and Latest and Top buttons to the left?
     margin: (marginTop - 2) 0 0 0
-    color: hsl(211, 100%, 40%);
 
+  button,
+  span
+    color: hsl(0, 0%, 13%);
 
 
 // Topics
@@ -68,29 +70,41 @@
 #dw-topic-list
   width: 100%
 
+  $paddingLeft = 8px
+
   th
-    color: hsl(0, 0%, 55%)
-    padding-bottom: 8px;
-    &:first-child
-      padding-left: $firstCellPadding
+    padding: 0 $paddingLeft 8px;
+    font-weight: normal;
+    color: hsl(0, 0%, 60%);
 
   .num
     text-align: center
     min-width: 55px
 
-  .num-replies
-    padding-left: 10px
-
   tbody
     tr
-      &:nth-child(odd)
-        background-color: hsl(0, 0%, 97%)
+      border-top: 1px solid hsl(0, 0%, 89%);
+      &:first-child
+        border-top-color: hsl(0, 0%, 91%);
+        border-top-width: 3px;
 
       td
-        padding: 10px 5px
+        padding: 10px $paddingLeft
+        font-size: 14px;
+        a
+          color: hsl(0, 0%, 13%);
+          padding: 3px 6px 5px 0; // makes it easier to click
+          &:hover
+            text-decoration: none;
+            background: hsl(210, 100%, 97%);
+            outline: 1px solid hsl(209, 100%, 92%);
 
-        &:first-child
-          padding-left: $firstCellPadding
+        &.num:not(.dw-tpc-feelings, .dw-tpc-replies)
+          color: hsl(0, 0%, 53%);
+
+        &.dw-tpc-replies
+          color: hsl(0, 0%, 20%);
+
 
 .load-more
   text-align: center
