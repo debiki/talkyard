@@ -103,6 +103,8 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.SetHorizontalLayout:
       store.horizontalLayout = action.enabled;
+      // Now all gifs will be recreated since the page is rerendered.
+      stopGifsPlayOnClick();
       break;
 
     case ReactActions.actionTypes.ChangeSiteStatus:
@@ -253,6 +255,7 @@ function updatePost(post: Post, isCollapsing?: boolean) {
   }
 
   rememberPostsToQuickUpdate(post.postId);
+  stopGifsPlayOnClick();
 }
 
 
@@ -479,6 +482,12 @@ function rememberPostsToQuickUpdate(startPostId: number) {
     post = store.allPosts[post.parentId];
   }
 }
+
+
+function stopGifsPlayOnClick() {
+  setTimeout(window['Gifffer'], 1);
+}
+
 
 //------------------------------------------------------------------------------
    }

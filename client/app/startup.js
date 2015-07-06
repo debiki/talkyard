@@ -296,4 +296,8 @@ d.i.startEmbeddedEditor = function() {
 };
 
 
+// Replace gifs with static images that won't play until clicked.
+Gifffer();
+
+
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

@@ -78,6 +78,7 @@ var debikiJavascriptFiles = [
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',
+      'client/third-party/gifffer/gifffer.js',
       'client/third-party/html-css-sanitizer-bundle.js',
       'client/third-party/jquery-cookie.js',
       'client/third-party/jquery-scrollable.js', //

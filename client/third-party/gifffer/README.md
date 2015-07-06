@@ -1,3 +1,5 @@
+From here: https://github.com/krasimir/gifffer
+
 # Gifffer
 
 ---
