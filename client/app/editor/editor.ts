@@ -71,7 +71,7 @@ export var Editor = createComponent({
   },
 
   componentWillMount: function() {
-     this.updatePreview = _.throttle(this.updatePreview, 333);
+     this.updatePreview = _.debounce(this.updatePreview, 333);
   },
 
   componentDidMount: function() {
