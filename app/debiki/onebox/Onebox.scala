@@ -78,7 +78,7 @@ abstract class OneboxEngine {
       if (Globals.secure) {
         safeHtml = safeHtml.replaceAllLiterally("http:", "https:")
       }
-      s"""<aside class="onebox $cssClassName">$safeHtml</aside>"""
+      s"""<aside class="onebox $cssClassName clearfix">$safeHtml</aside>"""
     }
     // futureHtml.map apparently isn't executed directly, even if the future has been
     // completed already.

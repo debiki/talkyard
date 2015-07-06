@@ -87,12 +87,9 @@ ul, ol {
 ul { list-style-type: disc; }
 ol { list-style-type: decimal; }
 
-img {
-  width: 100%;
-  display: block; /* TODO inline those with no \n\n inbetween preceeding text */
-}
 img, canvas {
-  margin: 1.5em auto; /* TODO margin-bottom 0 if post ends there */
+  margin: 0;
+  display: block; /* TODO inline those with no \n\n inbetween preceeding text */
 }
 
 i, em { font-style: italic; }

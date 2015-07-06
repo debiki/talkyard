@@ -71,10 +71,12 @@
   width: 100%
 
   $paddingLeft = 8px
+  $fontSize = 14px
 
   th
     padding: 0 $paddingLeft 8px;
     font-weight: normal;
+    font-size: $fontSize;
     color: hsl(0, 0%, 60%);
 
   .num
@@ -90,7 +92,7 @@
 
       td
         padding: 10px $paddingLeft
-        font-size: 14px;
+        font-size: $fontSize;
         a
           color: hsl(0, 0%, 13%);
           padding: 3px 6px 5px 0; // makes it easier to click
