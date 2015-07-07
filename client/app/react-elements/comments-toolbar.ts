@@ -74,10 +74,9 @@ export var CommentsToolbar = createComponent({
           'Notifications: ' + user.rolePageSettings.notfLevel)
       : null;
 
-    var toggleDetailsBtn = user.isAuthenticated
-      ? r.button({ className: 'dw-cmts-tlbr-open', onClick: this.onToggleDetailsClick },
+    var toggleDetailsBtn =
+        r.button({ className: 'dw-cmts-tlbr-open', onClick: this.onToggleDetailsClick },
           r.span({ className: (ui.showDetails ? 'icon-up-open' : 'icon-down-open') }))
-      : null;
 
     var numReplies = store.numPostsExclTitle;
     if (!store.isInEmbeddedCommentsIframe) numReplies -= 1;
@@ -128,12 +127,19 @@ export var CommentsToolbar = createComponent({
 
 
 var CommentsToolbarDetails = createComponent({
+  getInitialState: function() {
+    return { numRepliesSummarized: null };
+  },
+
   onNewNotfLevel: function(newLevel) {
     ReactActions.setPageNoftLevel(newLevel);
   },
 
   summarizeReplies: function() {
     ReactActions.summarizeReplies();
+    setTimeout(() => {
+      this.setState({ numRepliesSummarized: $('.dw-p.dw-x').length });
+    }, 1);
   },
 
   render: function() {
@@ -149,9 +155,14 @@ var CommentsToolbarDetails = createComponent({
             MenuItem({ eventKey: 'Muted' }, 'Muted'))
         : null;
 
+    var doneSummarizing = _.isNumber(this.state.numRepliesSummarized)
+      ? r.span({ style: { marginLeft: '1em' }}, "Done. Summarized " +
+            this.state.numRepliesSummarized + " replies.")
+      : null;
+
     var summarizeButton =
         r.div({ className: 'dw-tlbr-sctn' },
-          Button({ onClick: this.summarizeReplies }, "Summarize Replies"));
+          Button({ onClick: this.summarizeReplies }, "Summarize Replies"), doneSummarizing);
 
     var result =
       r.div({ className: 'dw-cmts-tlbr-details' },

@@ -579,6 +579,7 @@ var PostHeader = createComponent({
   onUserClick: function(event) {
     debiki2.pagedialogs.aboutUserDialog.open(this.props.post);
     event.preventDefault();
+    event.stopPropagation();
   },
 
   onCollapseClick: function(event) {
@@ -669,7 +670,7 @@ var PostHeader = createComponent({
 
     var userLinkProps: any = {
       className: 'dw-p-by' + suspendedClass,
-      onClick: this.onUserClick,
+      onClick: this.props.abbreviate ? null : this.onUserClick,
       href: authorUrl
     };
 
