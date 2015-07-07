@@ -683,8 +683,9 @@ var PostHeader = createComponent({
 
     var is2dColumn = this.props.horizontalLayout && this.props.depth === 1;
     var collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
-    var toggleCollapsedButton =
-        r.span({ className: 'dw-a-clps ' + collapseIcon, onClick: this.onCollapseClick });
+    var toggleCollapsedButton = this.props.abbreviate
+        ? null
+        : r.span({ className: 'dw-a-clps ' + collapseIcon, onClick: this.onCollapseClick });
 
     return (
         r.div({ className: 'dw-p-hd' + isBodyPostClass },

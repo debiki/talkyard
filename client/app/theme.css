@@ -90,6 +90,7 @@ ol { list-style-type: decimal; }
 img, canvas {
   margin: 0;
   display: block; /* TODO inline those with no \n\n inbetween preceeding text */
+  max-width: 100%;
 }
 
 i, em { font-style: italic; }

@@ -114,11 +114,13 @@ export var TitleEditor = createComponent({
       complicatedStuff =
         r.div({},
           r.form({ className: 'dw-compl-stuff form-horizontal', key: 'compl-stuff-key' },
+            /* Use page role = mind map instead, and let everything in a forum/category be a forum topic?
             Input({ label: 'Layout', type: 'select', ref: 'layoutInput', className: 'dw-i-layout',
               labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10' },
               r.option({ value: 'DefaultLayout' }, 'Default Layout'),
               r.option({ value: 'OneColumnLayout' }, 'One Column'),
               r.option({ value: '2DTreeLayout' }, '2D Tree')),
+            */
             Input({ label: 'Slug', type: 'text', ref: 'slugInput', className: 'dw-i-slug',
                 labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
                 value: this.state.slug, onChange: this.onSlugChanged }),
