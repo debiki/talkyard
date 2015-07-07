@@ -409,11 +409,11 @@ var Post = createComponent({
     debiki2.ReactActions.uncollapsePost(this.props.post);
   },
 
-  onClick: function() {
+  onClick: function(event) {
     var props = this.props;
     if (!props.abbreviate) {
       if (props.post.isTreeCollapsed || props.post.isPostCollapsed) {
-        this.onUncollapseClick();
+        this.onUncollapseClick(event);
       }
       else {
         // Disable for now. This sets quickUpdate = true, which makes isClientSideCollapsed
@@ -449,6 +449,7 @@ var Post = createComponent({
     var headerElem;
     var bodyElem;
     var clickToExpand;
+    var clickCover;
     var extraClasses = this.props.className || '';
 
     if (post.isTreeDeleted || post.isPostDeleted) {
@@ -483,9 +484,10 @@ var Post = createComponent({
       headerElem = PostHeader(headerProps);
       bodyElem = PostBody(this.props);
 
-      if (post.isTreeCollapsed === 'Truncated') {
+      if (post.isTreeCollapsed === 'Truncated' && !this.props.abbreviate) {
         extraClasses += ' dw-x';
         clickToExpand = r.div({ className: 'dw-x-show' }, "... click to show");
+        clickCover = r.div({ className: 'dw-x-cover' });
       }
 
       if (post.numWrongVotes >= 2 && !this.props.abbreviate) {
@@ -538,7 +540,8 @@ var Post = createComponent({
         replyReceivers,
         headerElem,
         bodyElem,
-        clickToExpand));
+        clickToExpand,
+        clickCover));
   }
 });
 
