@@ -22,6 +22,7 @@
    module debiki2.postnavigation {
 //------------------------------------------------------------------------------
 
+var keymaster: Keymaster = window['keymaster'];
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 
@@ -40,14 +41,14 @@ var PostNavigation = React.createClass({
   },
 
   componentDidMount: function() {
-    key('b', this.goBack);
-    key('f', this.goForward);
+    keymaster('b', this.goBack);
+    keymaster('f', this.goForward);
     window.addEventListener('scroll', this.hideIfCloseToTop, false);
   },
 
   componentWillUnmount: function() {
-    key.unbind('b', this.goBack);
-    key.unbind('f', this.goForward);
+    keymaster.unbind('b', this.goBack);
+    keymaster.unbind('f', this.goForward);
     window.removeEventListener('scroll', this.hideIfCloseToTop, false);
   },
 

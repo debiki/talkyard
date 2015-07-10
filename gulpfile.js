@@ -67,6 +67,9 @@ var nextFileLine =
 
 var debikiJavascriptFiles = [
       'bower_components/keymaster/keymaster.js',
+      // keymaster.js declares window.key, rename it to window.keymaster instead,
+      // see comment in file for details.
+      'client/third-party/rename-key-to-keymaster.js',
       'bower_components/lodash/dist/lodash.js',
       'bower_components/moment/min/moment.min.js',
       'bower_components/eventemitter2/lib/eventemitter2.js',

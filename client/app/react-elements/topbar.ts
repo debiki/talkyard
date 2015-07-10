@@ -24,6 +24,7 @@
    module debiki2.reactelements {
 //------------------------------------------------------------------------------
 
+var keymaster: Keymaster = window['keymaster'];
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
@@ -143,12 +144,12 @@ export var TopBar = createComponent({
 
 var SearchForm = createComponent({
   componentDidMount: function() {
-    key('escape', this.props.onClose);
+    keymaster('escape', this.props.onClose);
     $(this.refs.input.getDOMNode()).focus();
   },
 
   componentWillUnmount: function() {
-    key.unbind('escape', this.props.onClose);
+    keymaster.unbind('escape', this.props.onClose);
   },
 
   search: function() {

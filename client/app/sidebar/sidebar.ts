@@ -28,6 +28,7 @@
    module debiki2.sidebar {
 //------------------------------------------------------------------------------
 
+var keymaster: Keymaster = window['keymaster'];
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
@@ -114,8 +115,11 @@ export var Sidebar = createComponent({
     debiki.v0.util.addZoomOrResizeListener(this.updateSizeAndPosition);
     console.log('sinaf hunt: 7, typeof: ' + typeof this.updateSizeAndPosition);
     this.updateSizeAndPosition();
-    console.log('sinaf hunt: 8, typeof: ' + typeof key);
-    key('s', this.toggleSidebarOpen);
+    console.log('sinaf hunt: 8, typeof keymaster: ' + typeof keymaster);
+    console.log('sinaf hunt: 8, typeof key: ' + typeof key);
+    // --> sinaf hunt: 8, typeof: string  very infrequently, prod only
+    // and in Dev Tools: key is " _ga".
+    keymaster('s', this.toggleSidebarOpen);
     console.log('sinaf hunt: 9, typeof: ' + typeof this.createAnyScrollbars);
     this.createAnyScrollbars();
     console.log('sinaf hunt: 10 done log');
@@ -128,7 +132,7 @@ export var Sidebar = createComponent({
 
     window.removeEventListener('scroll', this.updateSizeAndPosition, false);
     debiki.v0.util.removeZoomOrResizeListener(this.updateSizeAndPosition);
-    key.unbind('s', this.toggleSidebarOpen);
+    keymaster.unbind('s', this.toggleSidebarOpen);
   },
 
   componentWillUpdate: function(nextProps, nextState) {
