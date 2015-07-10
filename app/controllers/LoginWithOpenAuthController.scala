@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2014 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -235,16 +235,44 @@ object LoginWithOpenAuthController extends Controller {
       }
       catch {
         case ex: DbDao.IdentityNotFoundException =>
-          if (mayCreateNewUser) {
-            showCreateUserDialog(request, oauthDetails)
-          }
-          else {
-            // COULD show a nice error dialog instead.
-            throwForbidden("DwE5FK9R2", "Access denied")
+          // Let's check if the user already exists, and if so, create an OpenAuth identity
+          // and connect it to the user.
+          // Details: The user might exist, although no identity was found, if the user
+          // has already signed up as an email + password user, or accepted an invitation
+          // (when the user clicks the invitation link in the invite email, a user entry
+          // is created automatically, without the user having to login).
+          oauthDetails.email.flatMap(dao.loadUserByEmailOrUsername) match {
+            case Some(user) =>
+              if (providerHasVerifiedEmail(oauthDetails)) {
+                val loginGrant = dao.createIdentityConnectToUserAndLogin(user, oauthDetails)
+                createCookiesAndFinishLogin(request, loginGrant.user)
+              }
+              else {
+                throwForbidden("DwE7KGE32", o"""Please login via username and password instead.
+                  The reason you cannot currently login via ${oauthDetails.providerId}
+                  is that I don't know for sure if ${oauthDetails.providerId} has verified
+                  that your email address is really yours. Sorry about that.""")
+              }
+            case None =>
+              if (mayCreateNewUser) {
+                showCreateUserDialog(request, oauthDetails)
+              }
+              else {
+                // COULD show a nice error dialog instead.
+                throwForbidden("DwE5FK9R2", "Access denied")
+              }
           }
       }
 
     result.discardingCookies(DiscardingSecureCookie(MayCreateUserCookieName))
+  }
+
+
+  private def providerHasVerifiedEmail(oauthDetails: OpenAuthDetails) = {
+    // Don't know about Facebook and GitHub. Twitter has no emails at all. So for now:
+    // (I'm fairly sure Google knows that each Gmail address is owned by the correct user.)
+    oauthDetails.providerId == GoogleProvider.Google &&
+      oauthDetails.email.exists(_ endsWith "gmail.com")
   }
 
 
@@ -342,7 +370,7 @@ object LoginWithOpenAuthController extends Controller {
     }
 
     val emailVerifiedAt = oauthDetails.email match {
-      case Some(e) if (e != email) =>
+      case Some(e) if e != email =>
         throwForbidden("DwE523FU2", "Cannot change email from ones' OAuth provider email")
       case Some(e) =>
         // Twitter and GitHub provide no email, or I don't know if any email has been verified.

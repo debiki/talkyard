@@ -239,6 +239,27 @@ trait UserDao {
   }
 
 
+  /** Used if a user without any matching identity has been created (e.g. because
+    * you signup as an email + password user, or accept an invitation). And you then
+    * later on try to login via e.g. a Gmail account with the same email address.
+    * Then we want to create a Gmail OpenAuth identity and connect it to the user
+    * in the database.
+    */
+  def createIdentityConnectToUserAndLogin(user: User, oauthDetails: OpenAuthDetails)
+        : LoginGrant = {
+    require(user.email.nonEmpty, "DwE3KEF7")
+    require(user.emailVerifiedAt.nonEmpty, "DwE5KGE2")
+    require(user.isAuthenticated, "DwE4KEF8")
+    require(user.isApprovedOrStaff, "DwE4KEG20")
+    readWriteTransaction { transaction =>
+      val identityId = transaction.nextIdentityId
+      val identity = OpenAuthIdentity(id = identityId, userId = user.id, oauthDetails)
+      transaction.insertIdentity(identity)
+      LoginGrant(Some(identity), user, isNewIdentity = true, isNewRole = false)
+    }
+  }
+
+
   def createPasswordUser(userData: NewPasswordUserData): User = {
     readWriteTransaction { transaction =>
       val userId = transaction.nextAuthenticatedUserId
