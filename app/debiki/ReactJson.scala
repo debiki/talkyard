@@ -70,7 +70,7 @@ object ReactJson {
     Json.obj(
       "now" -> JsNumber((new ju.Date).getTime),
       "siteStatus" -> JsString(siteStatusString),
-      "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed),
+      "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed && pageReq.siteId == KajMagnusSiteId),
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
       "pageId" -> pageReq.thePageId,
@@ -153,7 +153,7 @@ object ReactJson {
     Json.obj(
       "now" -> JsNumber((new ju.Date).getTime),
       "siteStatus" -> JsString(siteStatusString),
-      "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed),
+      "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed && pageReq.siteId == KajMagnusSiteId),
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
       "pageId" -> pageReq.thePageId,

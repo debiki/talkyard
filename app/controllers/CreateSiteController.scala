@@ -82,7 +82,9 @@ object CreateSiteController extends mvc.Controller {
       try {
         request.dao.createSite(
           name = localHostname, hostname = hostname, embeddingSiteUrl = anyEmbeddingSiteAddress,
-          creatorIp = request.ip, creatorEmailAddress = emailAddress, pricePlan = anyPricePlan)
+          creatorEmailAddress = emailAddress,
+          creatorId = request.user.map(_.id) getOrElse UnknownUserId,
+          browserIdData = request.theBrowserIdData, pricePlan = anyPricePlan)
       }
       catch {
         case _: DbDao.SiteAlreadyExistsException =>

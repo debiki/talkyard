@@ -65,5 +65,14 @@ package object core {
 
   val MillisPerDay: Long = 24 * 3600 * 1000
 
+  def SystemUserId = User.SystemUserId
+  def SystemUserFullName = User.SystemUserFullName
+  def SystemUserUsername = User.SystemUserUsername
+  def UnknownUserId = User.UnknownUserId
+  def UnknownUserName = User.UnknownUserName
+  def UnknownUserGuestCookie = User.UnknownUserGuestCookie
+
+  val KajMagnusSiteId = "3" // for now
+
 }
 

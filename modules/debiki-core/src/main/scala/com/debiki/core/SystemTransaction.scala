@@ -27,5 +27,7 @@ trait SystemTransaction {
   def loadSites(): immutable.Seq[Site]
   def siteTransaction(siteId: SiteId): SiteTransaction
 
+  def insertSiteHost(tenantId: String, host: SiteHost)
+
 }
 

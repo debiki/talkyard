@@ -75,6 +75,9 @@ object DebikiHttp {
   def ForbiddenResult(errCode: String, message: String): Result =
     R.Forbidden("403 Forbidden\n"+ message +" [error "+ errCode +"]")
 
+  def NotImplementedResult(errorCode: String, message: String): Result =
+    R.NotImplemented(s"501 Not Implemented\n$message [$errorCode]")
+
   def NotFoundResult(errCode: String, message: String): Result =
     R.NotFound("404 Not Found\n"+ message +" [error "+ errCode +"]")
 
@@ -123,6 +126,9 @@ object DebikiHttp {
 
   def throwForbidden(errCode: String, message: String = "") =
     throw ResultException(ForbiddenResult(errCode, message))
+
+  def throwNotImplemented(errorCode: String, message: String = "") =
+    throw ResultException(NotImplementedResult(errorCode, message))
 
   def throwNotFound(errCode: String, message: String = "") =
     throw ResultException(NotFoundResult(errCode, message))

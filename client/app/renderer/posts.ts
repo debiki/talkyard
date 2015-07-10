@@ -170,6 +170,7 @@ var Title = createComponent({
     this.setState({ isEditing: false });
   },
   render: function() {
+    var user = this.props.user;
     var titlePost = this.props.allPosts[TitleId];
     if (!titlePost)
       return null;
@@ -178,7 +179,7 @@ var Title = createComponent({
         ? titlePost.sanitizedHtml
         : r.i({}, '(Title pending approval)');
     var anyEditTitleBtn;
-    if (this.props.user.isAdmin || this.props.user.userId === titlePost.authorId) {
+    if (isStaff(user) || user.userId === titlePost.authorId) {
       anyEditTitleBtn =
         r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.editTitle });
     }
@@ -840,6 +841,7 @@ var PostActions = createComponent({
 
     var user = this.props.user;
     var isOwnPost = post.authorIdInt === user.userId;
+    var isPageBody = post.postId === BodyPostId;
     var votes = user.votes[post.postId] || [];
 
     var deletedOrCollapsed =
@@ -899,12 +901,17 @@ var PostActions = createComponent({
     moreLinks.push(
         r.a({ className: 'dw-a dw-a-flag icon-flag', onClick: this.onFlagClick }, 'Report'));
 
-    if (user.isAdmin)
+    /* Doesn't work right now, after Post2 rewrite
+    if (user.isAdmin && !isPageBody)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-pin icon-pin', onClick: this.onPinClick }, 'Pin'));
+    */
 
     var suggestionsOld = [];
     var suggestionsNew = [];
+
+    // Enable some hard-to-use features for me only right now.
+    var isKajMagnusSite = debiki.siteId === '3';
 
     if (post.numPendingEditSuggestions > 0)
       suggestionsNew.push(
@@ -912,55 +919,37 @@ var PostActions = createComponent({
            title: 'View edit suggestions', onClick: this.onEditSuggestionsClick },
             '×', post.numPendingEditSuggestions));
 
-    // TODO [react]
-    // suggestionsNew.push(renderUncollapseSuggestions(post))
-
-    if (!post.isPostCollapsed && post.numCollapsePostVotesPro > 0 && false)
-      suggestionsNew.push(
-        r.a({ className:'dw-a dw-a-collapse-suggs icon-collapse-post dw-a-pending-review',
-          title: 'Vote for or against collapsing this comment' }, '×',
-            post.numCollapsePostVotesPro, '–', post.numCollapsePostVotesCon));
-
-    if (!post.isTreeCollapsed && post.numCollapseTreeVotesPro > 0 && false)
-      suggestionsNew.push(
-        r.a({ className: 'dw-a dw-a-collapse-suggs icon-collapse-tree dw-a-pending-review',
-          title: 'Vote for or against collapsing this whole thread' }, '×',
-            post.numCollapseTreeVotesPro, '–', post.numCollapseTreeVotesCon));
-
-    // People should upvote any already existing suggestion, not create
-    // new ones, so don't include any action link for creating a new suggestion,
-    // if there is one already. Instead, show a link you can click to upvote
-    // the existing suggestion:
-
-    if (!post.isTreeCollapsed && !post.numCollapseTreeVotesPro && user.isAdmin)
+    if (!post.isTreeCollapsed && !isPageBody && user.isAdmin && isKajMagnusSite)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-collapse-tree icon-collapse',
             onClick: this.onCollapseTreeClick }, 'Collapse tree'));
 
-    if (!post.isPostCollapsed && !post.numCollapsePostVotesPro && user.isAdmin)
+    if (!post.isPostCollapsed && !isPageBody && user.isAdmin && isKajMagnusSite)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-collapse-post icon-collapse',
             onClick: this.onCollapsePostClick }, 'Collapse post'));
 
-    if (post.isTreeCollapsed && !post.numUncollapseTreeVotesPro && user.isAdmin)
+    if (post.isTreeCollapsed && user.isAdmin)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-uncollapse-tree' }, 'Uncollapse tree'));
 
-    if (post.isPostCollapsed && !post.numUncollapsePostVotesPro && user.isAdmin)
+    if (post.isPostCollapsed && user.isAdmin)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-uncollapse-post' }, 'Uncollapse post'));
 
     // ----- Close links
 
+    /* Doesn't work any longer, not after Post2 rewrite.
     if (post.isTreeClosed && user.isAdmin) {
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-reopen-tree' }, 'Reopen'));
     }
-    else if (user.isAdmin) {
+    else if (!isPageBody && user.isAdmin) {
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-close-tree icon-archive',
             onClick: this.onCloseTreeClick }, 'Close'));
     }
+    */
 
     // ----- Move links
 
@@ -968,21 +957,13 @@ var PostActions = createComponent({
 
     // ----- Delete links
 
-    if (!post.isPostDeleted && post.numDeletePostVotesPro > 0 && false) {
-      suggestionsNew.push(
-        r.a({ className: 'dw-a dw-a-delete-suggs icon-delete-post dw-a-pending-review',
-          title: 'Vote for or against deleting this comment' }, '×',
-            post.numDeletePostVotesPro, '–', post.numDeletePostVotesCon));
-    }
+   // remove classes:
+   // r.a({ className: 'dw-a dw-a-delete-suggs icon-delete-tree dw-a-pending-review',
+   // r.a({ className: 'dw-a dw-a-delete-suggs icon-delete-post dw-a-pending-review',
+   // r.a({ className:'dw-a dw-a-collapse-suggs icon-collapse-post dw-a-pending-review',
+   // r.a({ className: 'dw-a dw-a-collapse-suggs icon-collapse-tree dw-a-pending-review',
 
-    if (!post.isTreeDeleted && post.numDeleteTreeVotesPro > 0 && false) {
-      suggestionsNew.push(
-        r.a({ className: 'dw-a dw-a-delete-suggs icon-delete-tree dw-a-pending-review',
-          title: 'Vote for or against deleting this whole thread' }, '×',
-            post.numDeleteTreeVotesPro, '–', post.numDeleteTreeVotesCon));
-    }
-
-    if ((!post.numDeleteTreeVotesPro || !post.numDeletePostVotesPro)  && user.isAdmin) {
+    if (!isPageBody && user.isAdmin) {
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-delete icon-trash', onClick: this.onDeleteClick }, 'Delete'));
     }

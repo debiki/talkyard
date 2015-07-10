@@ -122,7 +122,9 @@ export var LoginToCreateSomething = createComponent({
     return (
       r.div({},
         r.h1({}, 'Welcome'),
-        r.p({}, 'Please login as admin.'),
+        r.p({}, 'Please login as admin to create something here.'),
+        r.p({}, "If you haven't done this already: Please click the link in the " +
+            "email address verification email I have sent you."),
         r.br(),
         reactelements.NameLoginBtns({ title: 'Login', purpose: 'LoginAsAdmin' })));
   }

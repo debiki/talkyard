@@ -28,6 +28,16 @@ trait SiteTransaction {
   def rollback()
   def siteId: SiteId
 
+  /** Throws SiteAlreadyExistsException if the site already exists.
+    * Throws TooManySitesCreatedException if you've created too many websites already
+    * (from the same IP or email address).
+    */
+  def createSite(name: String, hostname: String, embeddingSiteUrl: Option[String],
+    creatorIp: String, creatorEmailAddress: String, pricePlan: Option[String],
+    quotaLimitMegabytes: Option[Int]): Site
+
+  def addSiteHost(host: SiteHost)
+
   def loadSettings(targets: Seq[SettingsTarget]): Seq[RawSettings]
 
   def loadResourceUsage(): ResourceUse

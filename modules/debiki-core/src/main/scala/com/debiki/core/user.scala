@@ -226,6 +226,8 @@ case object User {
 
   /** Used when things are inserted or updated automatically in the database. */
   val SystemUserId = -1
+  val SystemUserUsername = "system"
+  val SystemUserFullName = "System"
 
   // Perhaps in the future:
   // /** A user that has logged in and can post comments, but is anonymous. */
@@ -233,6 +235,8 @@ case object User {
 
   /** A user that did something, e.g. voted on a comment, but was not logged in. */
   val UnknownUserId = -3
+  val UnknownUserName = "Unknown"
+  val UnknownUserGuestCookie = "UU"
 
   /** Guests with custom name and email, but not guests with magic ids like the Unknown user. */
   val MaxCustomGuestId = -10

@@ -242,6 +242,6 @@ object SafeActions {
       |
       |${getStackTrace(throwable)}
       |"""))
-    }
+  }
 }
 

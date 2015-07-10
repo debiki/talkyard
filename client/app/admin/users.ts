@@ -178,8 +178,11 @@ var UserRow = createComponent({
         : null;
 
     var usernameAndFullName = [
-        r.span({ className: 'dw-username' }, user.username),
-        r.span({ className: 'dw-fullname' }, ' (' + user.fullName + ')')];
+        r.span({ className: 'dw-username' }, user.username)];
+    if (user.fullName) {
+      usernameAndFullName.push(
+        r.span({ className: 'dw-fullname' }, ' (' + user.fullName + ')'));
+    }
 
     return (
       r.tr({},

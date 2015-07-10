@@ -36,6 +36,7 @@ case class BrowserLocation(
 
 sealed abstract class AuditLogEntryType
 object AuditLogEntryType {
+  case object CreateSite extends AuditLogEntryType
   case object NewPage extends AuditLogEntryType
   case object NewPost extends AuditLogEntryType
   case object EditPost extends AuditLogEntryType
@@ -55,6 +56,7 @@ case class AuditLogEntry(
   uniquePostId: Option[UniquePostId] = None,
   postNr: Option[PostId] = None,
   targetUniquePostId: Option[UniquePostId] = None,
+  targetSiteId: Option[SiteId] = None,
   targetPageId: Option[PageId] = None,
   targetPostNr: Option[PostId] = None,
   targetUserId: Option[UserId] = None) {

@@ -228,7 +228,7 @@ function updatePost(post: Post, isCollapsing?: boolean) {
     post.isTreeCollapsed = oldVersion.isTreeCollapsed;
     post.isPostCollapsed = oldVersion.isPostCollapsed;
   }
-  else {
+  else if (!oldVersion) {
     store.numPosts += 1;
     if (post.postId !== TitleId) {
       store.numPostsExclTitle += 1;

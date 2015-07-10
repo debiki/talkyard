@@ -49,13 +49,25 @@ object PageTitleSettingsController extends mvc.Controller {
     val anySlug = (request.body \ "slug").asOpt[String].map(_.trim)
     val anyShowId = (request.body \ "showId").asOpt[Boolean]
 
+    val hasManuallyEditedSlug = anySlug.exists(slug =>
+      slug != ReactRenderer.slugifyTitle(newTitle))
+
+    val oldMeta = request.dao.loadPageMeta(pageId) getOrElse throwNotFound(
+      "DwE4KEF20", "The page was deleted just now")
+
     // Authorization.
-    if (anyLayoutString.isDefined || anyFolder.isDefined || anySlug.isDefined ||
+    if (!request.theUser.isStaff && request.theUserId != oldMeta.authorId)
+      throwForbidden("DwE4KEP2", "You may not rename this page")
+
+    if (anyLayoutString.isDefined || anyFolder.isDefined || hasManuallyEditedSlug ||
         anyShowId.isDefined) {
-      if (!request.theUser.isStaff)
-        throwForbidden("DwE5KEP8", o"""Only staff may change the URL path and layout
+      if (!request.theUser.isAdmin)
+        throwForbidden("DwE5KEP8", o"""Only admins may change the URL path and layout
            and certain other stuff""")
     }
+
+    // SECURITY COULD prevent non-admins from changing the title of pages other than forum topics.
+    // (A moderator shouldn't be able to rename the whole forum, or e.g. the about-us page.)
 
     // Bad request?
     if (anyFolder.exists(!PagePath.isOkayFolder(_)))
@@ -81,8 +93,6 @@ object PageTitleSettingsController extends mvc.Controller {
       editorId = request.theUser.id, request.theBrowserIdData, newTitle)
 
     // Update page settings.
-    val oldMeta = request.dao.loadPageMeta(pageId) getOrElse throwNotFound(
-      "DwE4KEF20", "The page was deleted just now")
     val newMeta = oldMeta.copy()
     if (newMeta != oldMeta) {
       request.dao.updatePageMeta(newMeta, old = oldMeta)

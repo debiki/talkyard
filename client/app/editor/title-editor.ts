@@ -102,6 +102,7 @@ export var TitleEditor = createComponent({
   render: function() {
     var titlePost: Post = this.props.allPosts[TitleId];
     var titleText = titlePost.sanitizedHtml; // for now. TODO only allow plain text?
+    var user = this.props.user;
 
     var complicatedStuff;
     if (this.state.showComplicated) {
@@ -136,7 +137,7 @@ export var TitleEditor = createComponent({
 
     // Once the complicated stuff has been shown, one cannot hide it, except by cancelling
     // the whole dialog. Because if hiding it, then what about any changes made? Save or ignore?
-    var showAdvancedButton = this.state.showComplicated
+    var showAdvancedButton = this.state.showComplicated || !user.isAdmin
         ? null
         : r.a({ className: 'dw-toggle-compl-stuff icon-settings',
             onClick: this.showComplicated }, 'Advanced');

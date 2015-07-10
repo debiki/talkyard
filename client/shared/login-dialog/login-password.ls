@@ -64,7 +64,7 @@ function passwordLoginDialogHtml
         <span class="dw-login-to-submit">Login and submit</span>
         <span class="dw-login-to-post-comment">Login and post comment</span>
         <span class="dw-login-to-create-topic">Login and create topic</span>
-        <span class="dw-login-to-login">Login</span>
+        <span class="dw-login-to-login dw-login-to-auth">Login</span>
       </button>
       <input class="btn btn-default dw-fi-cancel" type="button" value="Cancel" tabindex="140">
 

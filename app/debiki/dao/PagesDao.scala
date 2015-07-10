@@ -36,7 +36,7 @@ trait PagesDao {
 
 
   def createPage(pageRole: PageRole, pageStatus: PageStatus, anyParentPageId: Option[PageId],
-        anyFolder: Option[String], titleSource: String, bodySource: String,
+        anyFolder: Option[String], anySlug: Option[String], titleSource: String, bodySource: String,
         showId: Boolean, authorId: UserId, browserIdData: BrowserIdData)
         : PagePath = {
 
@@ -52,14 +52,22 @@ trait PagesDao {
     if (titleHtmlSanitized.trim.isEmpty)
       throwForbidden("DwE5KPEF21", "Page title should not be empty")
 
-    val pageSlug = siteDbDao.commonMarkRenderer.slugifyTitle(titleSource)
-
     readWriteTransaction { transaction =>
 
       val pageId = transaction.nextPageId()
 
       // Authorize and determine approver user id. For now:
       val author = transaction.loadUser(authorId) getOrElse throwForbidden("DwE9GK32", "User gone")
+
+      val pageSlug = anySlug match {
+        case Some(slug) =>
+          if (!author.isStaff)
+            throwForbidden("DwE4KFW87", "Only staff may specify page slug")
+          slug
+        case None =>
+          siteDbDao.commonMarkRenderer.slugifyTitle(titleSource)
+      }
+
       val approvedById =
         if (author.isStaff) {
           author.id
@@ -155,12 +163,12 @@ trait CachingPagesDao extends PagesDao {
 
 
   override def createPage(pageRole: PageRole, pageStatus: PageStatus,
-        anyParentPageId: Option[PageId], anyFolder: Option[String],
+        anyParentPageId: Option[PageId], anyFolder: Option[String], anySlug: Option[String],
         titleSource: String, bodySource: String,
         showId: Boolean, authorId: UserId, browserIdData: BrowserIdData)
         : PagePath = {
     val pagePath = super.createPage(pageRole, pageStatus, anyParentPageId,
-      anyFolder, titleSource, bodySource, showId, authorId, browserIdData)
+      anyFolder, anySlug, titleSource, bodySource, showId, authorId, browserIdData)
     firePageCreated(pagePath)
     pagePath
   }

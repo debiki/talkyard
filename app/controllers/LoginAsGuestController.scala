@@ -35,6 +35,10 @@ object LoginAsGuestController extends mvc.Controller {
 
 
   def loginGuest = PostJsonAction(RateLimits.Login, maxLength = 1000) { request =>
+    // For now, until I've built more rate limiting stuff and security features:
+    if (request.siteId != KajMagnusSiteId)
+      throwForbidden("DwE5KEGP8", "Guest login disabled")
+
     val json = request.body.as[JsObject]
     val name = (json \ "name").as[String]
     val email = (json \ "email").as[String]

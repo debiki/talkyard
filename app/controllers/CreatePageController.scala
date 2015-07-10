@@ -41,12 +41,13 @@ object CreatePageController extends mvc.Controller {
     val pageStatusStr = (body \ "pageStatus").as[String]
     val pageStatus = PageStatus.parse(pageStatusStr)
     val anyFolder = (body \ "folder").asOpt[String]
+    val anySlug = (body \ "pageSlug").asOpt[String]
     val titleText = (body \ "pageTitle").as[String]
     val bodyText = (body \ "pageBody").as[String]
     val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
 
     val pagePath = request.dao.createPage(pageRole, pageStatus, anyParentPageId, anyFolder,
-      titleText, bodyText, showId, authorId = request.theUserId,
+      anySlug, titleText, bodyText, showId, authorId = request.theUserId,
       request.theBrowserIdData)
 
     OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))

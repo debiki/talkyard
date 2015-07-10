@@ -92,18 +92,7 @@ abstract class SiteDbDao {
 
   def loadSiteStatus(): SiteStatus
 
-  /** Throws SiteAlreadyExistsException if the site already exists.
-    * Throws TooManySitesCreatedException if you've created too many websites already
-    * (from the same IP or email address).
-    */
-  def createSite(name: String, hostname: String, embeddingSiteUrl: Option[String],
-        creatorIp: String, creatorEmailAddress: String, pricePlan: Option[String],
-        quotaLimitMegabytes: Option[Int]): Site
-
-
   def updateSite(changedSite: Site)
-
-  def addTenantHost(host: SiteHost)
 
 
   // ----- Login
@@ -332,25 +321,9 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
     _spi.loadSiteStatus()
   }
 
-  def createSite(name: String, hostname: String, embeddingSiteUrl: Option[String],
-        creatorIp: String, creatorEmailAddress: String, pricePlan: Option[String],
-        quotaLimitBytes: Option[Int]): Site = {
-    _spi.createSite(name = name, hostname = hostname,
-      embeddingSiteUrl = embeddingSiteUrl, creatorIp = creatorIp,
-      creatorEmailAddress = creatorEmailAddress, pricePlan = pricePlan,
-      quotaLimitMegabytes = quotaLimitBytes)
-  }
-
   def updateSite(changedSite: Site) = {
     serialize {
       _spi.updateSite(changedSite)
-    }
-  }
-
-  def addTenantHost(host: SiteHost) = {
-    // SHOULD hard code max num hosts, e.g. 10.
-    serialize {
-      _spi.addTenantHost(host)
     }
   }
 

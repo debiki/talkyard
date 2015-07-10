@@ -69,16 +69,19 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
   }
 
   dialog.find('.submit').click(function() {
+    var passwordInput = dialog.find('#new-user-password');
     var data = {
       name: dialog.find('#new-user-name').val(),
       email: dialog.find('#new-user-email').val(),
       username: dialog.find('#new-user-username').val(),
-      password: dialog.find('#new-user-password').val(),
+      password: passwordInput.val(),
       returnToUrl: anyReturnToUrl,
       authDataCacheKey: userData.authDataCacheKey
     };
 
-    if (!zxcvbnLoaded) {
+    var needsPassword = passwordInput.is(':visible');
+
+    if (needsPassword && !zxcvbnLoaded) {
       // This will never happen. It'll take fairly long for the user to fill in
       // the form. Well — might happen, if the server is shut down?
       alert('Please wait 5 seconds for zxcvbn to load, then try again. Sorry. [DwE2KEF8]');
@@ -92,8 +95,12 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
         ', crack_time: ' + passwordStrength.crack_time +
         ' = ' + passwordStrength.crack_time_display +
         ', score: ' + passwordStrength.score);
+
     var problem = null;
-    if (data.password.length < 8) {
+    if (!needsPassword) {
+      // Fine, already authenticated: OpenAuth or OpenID or something like that.
+    }
+    else if (data.password.length < 8) {
       problem = 'too short, should be at least 8 characters';
     }
     else if (!data.password.match(/[0-9!@#$%^&*()_+`=;:{}[\]\\]+/)) {

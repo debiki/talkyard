@@ -465,7 +465,7 @@ export function savePageTitleAndSettings(newTitle: string, settings: any, succes
     success: (response) => {
       success();
       d.i.handleEditResult(response.newTitlePost);
-      if (window.history.replaceState) {
+      if (response.newUrlPath && window.history.replaceState) {
         var newPath = response.newUrlPath + location.search + location.hash;
         window.history.replaceState({}, null, newPath);
       }

@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}
+import play.{api => p}
 import play.api.Play.current
 import scala.concurrent.Future
 
@@ -96,19 +97,39 @@ abstract class SiteDao
     siteDbDao.loadSiteStatus()
 
   def createSite(name: String, hostname: String,
-        embeddingSiteUrl: Option[String], pricePlan: Option[String], creatorIp: String,
-        creatorEmailAddress: String) : Site = {
+        embeddingSiteUrl: Option[String], pricePlan: Option[String],
+        creatorEmailAddress: String, creatorId: UserId, browserIdData: BrowserIdData) : Site = {
+
     dieIf(hostname contains ":", "DwE3KWFE7")
-    val quotaLimitMegabytes = play.api.Play.configuration.getInt("debiki.newSite.quotaLimitMegabytes")
-    siteDbDao.createSite(name = name, hostname = hostname,
-      embeddingSiteUrl, creatorIp = creatorIp, creatorEmailAddress = creatorEmailAddress,
-      pricePlan = pricePlan, quotaLimitMegabytes = quotaLimitMegabytes)
+    val quotaLimitMegabytes = p.Play.configuration.getInt("debiki.newSite.quotaLimitMegabytes")
+
+    readWriteTransaction { transaction =>
+      val site = transaction.createSite(name = name, hostname = hostname,
+        embeddingSiteUrl, creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
+        pricePlan = pricePlan, quotaLimitMegabytes = quotaLimitMegabytes)
+
+      insertAuditLogEntry(AuditLogEntry(
+        siteId = this.siteId,
+        id = AuditLogEntry.UnassignedId,
+        didWhat = AuditLogEntryType.CreateSite,
+        doerId = creatorId,
+        doneAt = transaction.currentTime,
+        browserIdData = browserIdData,
+        browserLocation = None,
+        targetSiteId = Some(site.id)), transaction)
+
+      site
+    }
   }
 
   def updateSite(changedSite: Site) =
     siteDbDao.updateSite(changedSite)
 
-  def addTenantHost(host: SiteHost) = siteDbDao.addTenantHost(host)
+  def addTenantHost(host: SiteHost) = {
+    readWriteTransaction { transaction =>
+      transaction.addSiteHost(host)
+    }
+  }
 
 
   // ----- List pages

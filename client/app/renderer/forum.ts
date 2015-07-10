@@ -163,7 +163,9 @@ export var CategoriesAndTopics = createComponent({
     }
 
     var createCategoryBtn;
-    if (activeRoute.name === 'ForumRouteCategories' && user.isAdmin) {
+    if (activeRoute.name === 'ForumRouteCategories' && user.isAdmin
+          && false) {  // disable for now, until I auto create about-this-category topics a la Discourse
+                      // When uncommenting
       createCategoryBtn = Button({ onClick: this.createCategory }, 'Create Category');
     }
 

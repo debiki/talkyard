@@ -32,7 +32,7 @@ import requests.{PageRequest, DebikiRequest}
 import scala.util.Try
 import Utils.OkSafeJson
 import Utils.ValidationImplicits._
-import DebikiHttp.{throwForbidden, throwNotFound, throwBadReq}
+import DebikiHttp.{throwForbidden, throwNotImplemented, throwNotFound, throwBadReq}
 
 
 /** Handles requests related to users.
@@ -293,10 +293,12 @@ object UserController extends mvc.Controller {
 
 
   def listUserActions(userId: String) = GetAction { request =>
+    throwNotImplemented("DwE4KPE7", "Listing user actions hasn't been implemented") /*
     val userIdInt = Try(userId.toInt) getOrElse throwBadReq("DwE8UKG4", "Bad user id")
     val actionInfos: Seq[UserActionInfo] = request.dao.listUserActions(userIdInt)
     val json = Json.obj("actions" -> actionInfos.map(actionToJson(_)))
     OkSafeJson(json)
+    */
   }
 
 

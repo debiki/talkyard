@@ -86,8 +86,8 @@ var ChooseSiteType = createComponent({
       r.h1({}, 'Choose Site Type'),
       r.p({}, 'What do you want to create? (You can change your mind later.)'),
       r.div({},
-        Button({ onClick: this.goToCreateSimpleSite }, 'A forum, bog or simple website'),
-        Button({ onClick: this.goToCreateEmbeddedSite }, 'Embedded comments')));
+        Button({ onClick: this.goToCreateSimpleSite }, 'A forum, bog or simple website')));
+        // Button({ onClick: this.goToCreateEmbeddedSite }, 'Embedded comments')));
   }
 });
 

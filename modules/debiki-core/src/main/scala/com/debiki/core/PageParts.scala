@@ -110,9 +110,9 @@ abstract class PageParts extends People {
   def thePost(postId: PostId): Post = post(postId) getOrDie "DwE9PKG3"
 
 
-  def numRepliesTotal = allPosts.length
+  def numRepliesTotal = allPosts.count(_.isReply)
   def numRepliesVisible = allPosts count { post =>
-    post.isSomeVersionApproved && !post.isDeleted && !post.isHidden
+    post.isReply && post.isSomeVersionApproved && !post.isDeleted && !post.isHidden
   }
 
 

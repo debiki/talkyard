@@ -19,7 +19,7 @@
 
 @import play.api.Play.current
 
-@minMaxJs = @{ if (play.api.Play.isProd) "min.js" else "js" }
+@minMax = @{ if (play.api.Play.isProd) ".min" else "" }
 
 @asset(file: String) = @{
   routes.Assets.at(path = "/public/res", file)
@@ -33,7 +33,7 @@
 <link href="//fonts.googleapis.com/css?family=Bree+Serif" rel="stylesheet">
 <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="@asset("fontello/css/fontello-embedded.css")"/>
-<link rel="stylesheet" href="@asset("admin-app.css")"/>
+<link rel="stylesheet" href="@asset(s"combined-debiki$minMax.css")"/>
 <style>@Html(css)</style>
 </head>
 <body>

@@ -111,8 +111,8 @@ export var AdminUserPage = createComponent({
 
     var suspendButton;
     var userSuspendedNow = user.suspendedTillEpoch && Date.now() <= user.suspendedTillEpoch;
-    if (user.isAdmin) {
-      // Cannot suspend admins.
+    if (user.isAdmin || thatIsYou) {
+      // Cannot suspend admins or oneself.
     }
     else if (userSuspendedNow) {
       suspendButton =
@@ -135,7 +135,7 @@ export var AdminUserPage = createComponent({
 
     var moderatorInfo = user.isAdmin
         ? null  // then moderator settings have no effect
-        : r.p({}, 'Moderator: ' + user.isModerator, toggleModeratorButton);
+        : r.p({}, 'Moderator: ' + user.isModerator, ' ', toggleModeratorButton);
 
     return (
       r.div({},
@@ -143,9 +143,9 @@ export var AdminUserPage = createComponent({
           showPublProfileButton),
 
         r.p({}, 'Username: ' + usernameAndFullName, thatIsYou),
-        r.p({}, 'Admin: ' + user.isAdmin, toggleAdminButton),
+        r.p({}, 'Admin: ' + user.isAdmin, ' ', toggleAdminButton),
         moderatorInfo,
-        r.p({}, 'Suspended: ' + suspendedText, suspendButton)));
+        r.p({}, 'Suspended: ' + suspendedText, ' ', suspendButton)));
   }
 });
 

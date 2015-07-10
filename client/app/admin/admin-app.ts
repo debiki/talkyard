@@ -149,8 +149,8 @@ var SettingsPanel = createComponent({
     return (
       r.div({},
         Setting({ setting: settings.userMustBeAuthenticated, onSave: saveSetting, label: 'Login required',
-          help: 'Require authentication to read content. (Which means that users must login' +
-            'with password, or via Google or Facebook or something like that, but anonymous ' +
+          help: 'Require authentication to read content. (Users must then login' +
+            'with password or via e.g. Google or Facebook, but anonymous ' +
             'access is disabled.)' }),
 
         Setting({ setting: settings.userMustBeApproved, onSave: saveSetting, label: 'Approve users',
@@ -220,9 +220,8 @@ var CustomizePanel = createComponent({
     return (
       r.div({},
         Setting({ setting: settings.horizontalComments, onSave: saveSetting,
-          label: 'Horizontal comments', help: "Shall comments be laid out horizontally, " +
-            "in two dimensions? If not, they're shown in a single column, " +
-            "which is how all other forum and blog software work." }),
+          label: '2D Tree Layout', help: "Shall comments be laid out in a two " +
+            "dimensional tree? By default, they're shown in a single column instead." }),
 
         Setting({ setting: settings.headerHtml, onSave: saveSetting, label: 'Header HTML',
           multiline: true, help: 'Any header, will be shown at the top of the page.' }),
