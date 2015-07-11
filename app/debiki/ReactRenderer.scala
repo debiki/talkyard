@@ -75,6 +75,10 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     override def createBindings(): js.Bindings = null
   }
 
+  // Evaluating zxcvbn.min.js (a Javascript password strength check library) takes almost
+  // a minute in dev mode. So enable server side password strength checks in prod mode only.
+  // COULD run auto test suite on prod build too so server side pwd strength checks gets tested.
+  private val passwordStrengthCheckEnabled = Play.isProd && false // disable for now, toooooo slow
 
   /** Bug: Apparently this reloads the Javascript code, but won't reload Java/Scala code
     * called from inside the JS code. This results in weird impossible things like
@@ -195,7 +199,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
   def calcPasswordStrength(password: String, username: String, fullName: String, email: String)
         : PasswordStrength = {
-    if (!Play.isProd) {
+    if (!passwordStrengthCheckEnabled) {
       return PasswordStrength(entropyBits = 0, crackTimeSeconds = 0,
         crackTimeDisplay = "unknown", score = (password.length >= 8) ? 999 | 0)
     }
@@ -300,10 +304,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
       IOUtils.closeWhileHandlingException(inputStreamReader, javascriptStream)
     }
 
-    // Evaluating zxcvbn takes almost a minute in dev mode. So enable server side
-    // password strength checks in prod mode only.
-    // COULD run auto test suite on prod build too so server side pwd strength checks gets tested.
-    if (Play.isProd) {
+    if (passwordStrengthCheckEnabled) {
       try {
         javascriptStream = getClass.getResourceAsStream("/public/res/zxcvbn.min.js")
         inputStreamReader = new java.io.InputStreamReader(javascriptStream)
