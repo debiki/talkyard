@@ -364,7 +364,8 @@ object LoginWithOpenAuthController extends Controller {
       case Some(details: OpenAuthDetails) =>
         details
       case None =>
-        throwForbidden("DwE50VC4", "Bad auth data cache key")
+        throwForbidden("DwE50VC4", o"""Bad auth data cache key — was the server just restarted?
+             Please login again""")
       case _ =>
         assErr("DwE2GVM0")
     }
