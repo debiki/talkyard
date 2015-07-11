@@ -48,34 +48,42 @@ object ResetPasswordController extends mvc.Controller {
 
   def handleResetPasswordForm = JsonOrFormDataPostAction(RateLimits.ResetPassword,
         maxBytes = 200) { request =>
-    val emailAddress = request.body.getOrThrowBadReq("email")
-    val anyUser = request.dao.loadUserByEmailOrUsername(emailAddress)
+    val emailOrUsername = request.body.getOrThrowBadReq("email") // WOULD rename 'email' param
+    val anyUser = request.dao.loadUserByEmailOrUsername(emailOrUsername)
+    val isEmailAddress = emailOrUsername contains "@"
 
     anyUser match {
       case Some(user) =>
-        assErrIf(user.email != emailAddress, "DwE03UF21")
+        dieIf(user.email != emailOrUsername && !user.username.contains(emailOrUsername), "DwE0F21")
         user.passwordHash match {
           case Some(_) =>
-            Logger.info(s"Sending password reset email to: $emailAddress")
-            sendResetPasswordEmailTo(user, emailAddress, request)
+            Logger.info(s"Sending password reset email to: $emailOrUsername")
+            sendResetPasswordEmailTo(user, request)
           case None =>
-            Logger.info(s"Sending no-password-to-reset email to: $emailAddress")
-            sendNoPasswordToResetEmail(user, emailAddress, request)
+            Logger.info(s"Sending no-password-to-reset email to: $emailOrUsername")
+            sendNoPasswordToResetEmail(user, emailOrUsername, request)
         }
       case None =>
-        // Don't tell the user that this account doesn't exist; that'd be a
-        // security issue.
-        Logger.info(s"Not sending password reset email to non-existing user: $emailAddress")
+        Logger.info(o"""Not sending password reset email to non-existing
+             user or email address: $emailOrUsername""")
+        if (isEmailAddress) {
+          // Don't tell the user that this email address doesn't exist; that'd be a
+          // security issue. Just show the email sent page.
+        }
+        else {
+          // Usernames are publicly visible.
+          throwForbidden("DwE4KFE03", "There is no user with that username")
+        }
     }
 
-    Redirect(routes.ResetPasswordController.showEmailSentPage())
+    Redirect(routes.ResetPasswordController.showEmailSentPage(isEmailAddress.toString).url)
   }
 
 
-  private def sendResetPasswordEmailTo(user: User, emailAddress: String, request: ApiRequest[_]) {
+  private def sendResetPasswordEmailTo(user: User, request: ApiRequest[_]) {
     val email = Email(
       EmailType.ResetPassword,
-      sendTo = emailAddress,
+      sendTo = user.email,
       toUserId = Some(user.id),
       subject = "Reset Password",
       bodyHtmlText = (emailId: String) => {
@@ -108,8 +116,8 @@ object ResetPasswordController extends mvc.Controller {
   }
 
 
-  def showEmailSentPage = GetAction { request =>
-    Ok(views.html.resetpassword.emailSent())
+  def showEmailSentPage(isEmailAddress: String) = GetAction { request =>
+    Ok(views.html.resetpassword.emailSent(isEmailAddress == "true"))
   }
 
 
@@ -130,8 +138,7 @@ object ResetPasswordController extends mvc.Controller {
       throwBadReq("DwE2MJ0", "You specified two different passwords; please go back and try again")
 
     val loginGrant = loginByEmailOrThrow(anyResetPasswordEmailId, request)
-    request.dao.changePassword(
-      loginGrant.user.id, newPasswordSaltHash = DbDao.saltAndHashPassword(newPassword))
+    request.dao.changePasswordCheckStrongEnough(loginGrant.user.id, newPassword)
 
     SECURITY // SHOULD test if reset password email too old, expired
     SECURITY // SHOULD mark reset password email as used, so cannot be used again

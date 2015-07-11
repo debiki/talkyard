@@ -102,9 +102,7 @@ object LoginWithPasswordController extends mvc.Controller {
     if (!isOkayEmailAddress(emailAddress))
       throwUnprocessableEntity("DwE80KFP2", "Bad email address")
 
-    SECURITY ; COULD // check here server side that the password is strong enough.
-    // Then use zxcvb.js via Nashorn. (Currently there's a client side JS check but
-    // it can be bypassed by someone who hacks the source — but why)
+    // Password strength tested in createPasswordUserCheckPasswordStrong() below.
 
     val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress)
 
@@ -118,7 +116,7 @@ object LoginWithPasswordController extends mvc.Controller {
 
     val dao = daoFor(request.request)
     try {
-      val newUser = dao.createPasswordUser(userData)
+      val newUser = dao.createPasswordUserCheckPasswordStrong(userData)
       sendEmailAddressVerificationEmail(newUser, anyReturnToUrl, request.host, request.dao)
     }
     catch {

@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
+@(isEmailAddress: Boolean)
 
 @css = @{("""
 
@@ -25,9 +26,17 @@
 
   <h1>Reset Password</h1>
 
+  <br>
   <p>We just sent you a reset-password email. Please check your inbox.</p>
 
-  <p>(You can close this page.)</p>
+  <p>You can close this page.</p>
+
+  @if(isEmailAddress) {
+    <p>(If however there is in fact no user with that email address, then we
+      did not send any email.)</p>
+  }
+  @* Else: It's a username, they are public, so an error dialog was shown instead
+    if there's no such user. *@
 
 }
 

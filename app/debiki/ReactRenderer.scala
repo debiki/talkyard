@@ -24,10 +24,25 @@ import debiki.DebikiHttp.throwInternalError
 import java.{util => ju, io => jio}
 import javax.{script => js}
 import debiki.onebox.InstantOneboxRendererForNashorn
+import org.apache.lucene.util.IOUtils
 import play.api.Play
 import play.api.Play.current
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Try, Success, Failure}
+
+
+// COULD move elsewhere. Placed here only because the pwd strength function is
+// zxcvbn implemented in Javascript, which is what this file deals with.
+case class PasswordStrength(
+  entropyBits: Float,
+  crackTimeSeconds: Float,
+  crackTimeDisplay: String,
+  score: Int) {
+
+  /** zxcvbn score 4 is the highest score, see https://github.com/dropbox/zxcvbn. */
+  def isStrongEnough = score >= 4
+}
 
 
 /**
@@ -91,7 +106,9 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
 
   private def createOneMoreJavascriptEngine(isVeryFirstEngine: Boolean = false): Unit = {
-    val engine = try { makeJavascriptEngine() }
+    val engine = try {
+      makeJavascriptEngine()
+    }
     catch {
       case throwable: Throwable =>
         if (isVeryFirstEngine) {
@@ -176,7 +193,30 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   }
 
 
-  private def withJavascriptEngine(fn: (js.Invocable) => String): String = {
+  def calcPasswordStrength(password: String, username: String, fullName: String, email: String)
+        : PasswordStrength = {
+    if (!Play.isProd) {
+      return PasswordStrength(entropyBits = 0, crackTimeSeconds = 0,
+        crackTimeDisplay = "unknown", score = (password.length >= 8) ? 999 | 0)
+    }
+
+    withJavascriptEngine(engine => {
+      val resultAsAny = engine.invokeFunction(
+        "checkPasswordStrength", password, username, fullName, email)
+      val resultString = resultAsAny.asInstanceOf[String]
+      val parts = resultString.split('|')
+      dieIf(parts.length != 4, "DwE4KEJ72")
+      val result = PasswordStrength(
+        entropyBits = Try { parts(0).toFloat } getOrElse die("DwE4KEP78"),
+        crackTimeSeconds = Try { parts(1).toFloat } getOrElse die("DwE5KEP2"),
+        crackTimeDisplay = parts(2),
+        score = Try { parts(3).toInt } getOrElse die("DwE6KEF28"))
+      result
+    })
+  }
+
+
+  private def withJavascriptEngine[R](fn: (js.Invocable) => R): R = {
     def threadId = Thread.currentThread.getId
     def threadName = Thread.currentThread.getName
 
@@ -248,11 +288,38 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
         |""")
 
     val min = if (Play.isDev) "" else ".min"
-    val javascriptStream = getClass.getResourceAsStream(s"/public/res/renderer$min.js")
-    newEngine.eval(new java.io.InputStreamReader(javascriptStream))
+
+    var javascriptStream: jio.InputStream = null
+    var inputStreamReader: java.io.InputStreamReader = null
+    try {
+      javascriptStream = getClass.getResourceAsStream(s"/public/res/renderer$min.js")
+      inputStreamReader = new java.io.InputStreamReader(javascriptStream)
+      newEngine.eval(inputStreamReader)
+    }
+    finally {
+      IOUtils.closeWhileHandlingException(inputStreamReader, javascriptStream)
+    }
+
+    // Evaluating zxcvbn takes almost a minute in dev mode. So enable server side
+    // password strength checks in prod mode only.
+    // COULD run auto test suite on prod build too so server side pwd strength checks gets tested.
+    if (Play.isProd) {
+      try {
+        javascriptStream = getClass.getResourceAsStream("/public/res/zxcvbn.min.js")
+        inputStreamReader = new java.io.InputStreamReader(javascriptStream)
+        newEngine.eval(new java.io.InputStreamReader(javascriptStream))
+      }
+      finally {
+        IOUtils.closeWhileHandlingException(inputStreamReader, javascriptStream)
+      }
+    }
 
     newEngine.eval(i"""
         |$RenderAndSanitizeCommonMark
+        |""")
+
+    newEngine.eval(i"""
+        |$CheckPasswordStrength
         |""")
 
     def timeElapsed = (new ju.Date).getTime - timeBefore
@@ -302,6 +369,19 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     |    printStackTrace(e);
     |  }
     |  return "Error sanitizing HTML on server [DwE5GBCU6]";
+    |}
+    |"""
+
+
+  private val CheckPasswordStrength = i"""
+    |function checkPasswordStrength(password, username, userFullName, email) {
+    |  var passwordStrength = zxcvbn(password, [
+    |      userFullName, email, username, 'debiki', 'effectivediscussions']);
+    |  return '' +
+    |      passwordStrength.entropy + '|' +
+    |      passwordStrength.crack_time + '|' +
+    |      passwordStrength.crack_time_display + '|' +
+    |      passwordStrength.score;
     |}
     |"""
 

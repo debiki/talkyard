@@ -160,9 +160,9 @@ object RateLimits {
   object ResetPassword extends RateLimits {
     val key = "RsPw"
     val what = "resetted your password"
-    def maxPerFifteenSeconds = 3
-    def maxPerFifteenMinutes = 10
-    def maxPerDay = 30
+    def maxPerFifteenSeconds = 2
+    def maxPerFifteenMinutes = 7
+    def maxPerDay = 12
     def maxPerDayNewUser = Unlimited
   }
 

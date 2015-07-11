@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
 import java.{util => ju, io => jio}
+import play.{api => p}
 import play.api.mvc.Cookie
 import play.api.{Play, Logger}
 import play.api.Play.current
@@ -172,6 +173,18 @@ object DebikiSecurity {
     * See: http://docs.angularjs.org/api/ng.$http, search for "XSRF-TOKEN".
     */
   val XsrfCookieName = "XSRF-TOKEN"
+
+
+  def throwErrorIfPasswordTooWeak(
+        password: String, username: String, fullName: String, email: String) {
+    val passwordStrength = ReactRenderer.calcPasswordStrength(
+      password = password, username = username, fullName = fullName, email = email)
+    if (!passwordStrength.isStrongEnough)
+      throwBadReq("DwE4KFEK8", o"""Password not strong enough. Please go back and try again.
+          Estimated crack time: ${passwordStrength.crackTimeDisplay}, for someone with
+          100 computers and access to the scrypt hash.""")
+  }
+
 }
 
 

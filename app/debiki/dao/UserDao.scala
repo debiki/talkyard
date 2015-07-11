@@ -22,6 +22,7 @@ import com.debiki.core._
 import debiki.DebikiHttp.{throwNotFound, throwForbidden}
 import java.net.InetAddress
 import java.{util => ju}
+import debiki.DebikiSecurity
 import requests.ApiRequest
 import scala.collection.immutable
 import Prelude._
@@ -260,7 +261,10 @@ trait UserDao {
   }
 
 
-  def createPasswordUser(userData: NewPasswordUserData): User = {
+  def createPasswordUserCheckPasswordStrong(userData: NewPasswordUserData): User = {
+    DebikiSecurity.throwErrorIfPasswordTooWeak(
+      password = userData.password, username = userData.username,
+      fullName = userData.name, email = userData.email)
     readWriteTransaction { transaction =>
       val userId = transaction.nextAuthenticatedUserId
       val user = userData.makeUser(userId, transaction.currentTime)
@@ -270,9 +274,13 @@ trait UserDao {
   }
 
 
-  def changePassword(userId: UserId, newPasswordSaltHash: String): Boolean = {
+  def changePasswordCheckStrongEnough(userId: UserId, newPassword: String): Boolean = {
+    val newPasswordSaltHash = DbDao.saltAndHashPassword(newPassword)
     readWriteTransaction { transaction =>
       var user = transaction.loadTheCompleteUser(userId)
+      DebikiSecurity.throwErrorIfPasswordTooWeak(
+        password = newPassword, username = user.username,
+        fullName = user.fullName, email = user.emailAddress)
       user = user.copy(passwordHash = Some(newPasswordSaltHash))
       transaction.updateCompleteUser(user)
     }
@@ -519,8 +527,8 @@ trait CachingUserDao extends UserDao {
   }
 
 
-  override def createPasswordUser(userData: NewPasswordUserData): User = {
-    val user = super.createPasswordUser(userData)
+  override def createPasswordUserCheckPasswordStrong(userData: NewPasswordUserData): User = {
+    val user = super.createPasswordUserCheckPasswordStrong(userData)
     fireUserCreated(user)
     user
   }

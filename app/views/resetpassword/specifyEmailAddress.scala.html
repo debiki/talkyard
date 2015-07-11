@@ -29,9 +29,10 @@
 <h1>Reset Password</h1>
 
   <div class='row'>
-    <div class='span12'>
+    <div class="col-sm-12">
 
-      <p>Please specify the email address for which to reset the password:</p>
+      <br>
+      <p>Please specify the email address or username for which to reset the password:</p>
 
       <form action="@routes.ResetPasswordController.handleResetPasswordForm"
           class="form" autocomplete="off" method="POST">
@@ -40,6 +41,7 @@
 
         <input type="text" id="email" name="email" value="" class="input-xlarge"><br>
 
+        <br>
         <button type="submit" class="btn btn-default">Submit</button>
       </form>
 

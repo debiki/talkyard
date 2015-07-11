@@ -51,7 +51,7 @@ GET   /-/search/section/:pageId/for/:phrase controllers.FullTextSearchController
 GET   /-/reset-password                  controllers.ResetPasswordController.start
 GET   /-/reset-password/specify-email    controllers.ResetPasswordController.showResetPasswordPage
 POST  /-/reset-password/specify-email    controllers.ResetPasswordController.handleResetPasswordForm
-GET   /-/reset-password/email-sent       controllers.ResetPasswordController.showEmailSentPage
+GET   /-/reset-password/email-sent       controllers.ResetPasswordController.showEmailSentPage(isEmailAddress)
 GET   /-/reset-password/choose-password/:resetPasswordEmailId  controllers.ResetPasswordController.showChooseNewPasswordPage(resetPasswordEmailId)
 POST  /-/reset-password/choose-password/:resetPasswordEmailId  controllers.ResetPasswordController.handleNewPasswordForm(resetPasswordEmailId)
 GET   /-/reset-password/password-changed controllers.ResetPasswordController.showPasswordChangedPage
