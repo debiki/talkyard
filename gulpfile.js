@@ -26,7 +26,6 @@
 
 var gulp = require('gulp');
 var newer = require('gulp-newer');
-var templateCache = require('gulp-angular-templatecache');
 var typeScript = require('gulp-typescript');
 var liveScript = require('gulp-livescript');
 var stylus = require('gulp-stylus');
@@ -140,7 +139,6 @@ var debikiJavascriptFiles = [
       'target/client/app/utils/create-page.js',
       'target/client/shared/post-json.js',
       'target/client/all-typescript.js',
-      'target/client/admin-app-angular-templates.js',
       'target/client/app/startup.js'];
 
 
@@ -238,7 +236,6 @@ var clientSideTypescriptProject = typeScript.createProject({
 function compileClientSideTypescript() {
   var stream = gulp.src([
         'client/app/**/*.ts',
-        'client/admin-app/**/*.ts',
         'client/shared/plain-old-javascript.d.ts',
         'client/typedefs/**/*.ts'])
     .pipe(typeScript(clientSideTypescriptProject));
@@ -260,25 +257,11 @@ gulp.task('compile-typescript', function () {
 });
 
 
-gulp.task('compile-templates', function () {
-  var adminAppTemplateStream = gulp.src('client/admin-app/**/*.html')
-      .pipe(templateCache({
-        module: 'DebikiAdminApp',
-        filename: 'admin-app-angular-templates.js'
-      }))
-      .pipe(gulp.dest('target/client/'));
-
-  return es.merge(
-      adminAppTemplateStream);
-});
-
-
 
 gulp.task('concat-debiki-scripts', [
     'wrap-javascript',
     'compile-livescript',
-    'compile-typescript',
-    'compile-templates'], function() {
+    'compile-typescript'], function() {
   return makeConcatDebikiScriptsStream();
 });
 
@@ -299,15 +282,7 @@ function makeConcatDebikiScriptsStream() {
       makeConcatStream('combined-debiki.js', debikiJavascriptFiles),
       makeConcatStream('login-popup.js', loginDialogFiles),
       makeConcatStream('embedded-comments.js', debikiEmbeddedCommentsFiles),
-
-      gulp.src('bower_components/zxcvbn/zxcvbn.js')
-        .pipe(gulp.dest('public/res/')),
-
-      makeConcatStream('debiki-spa-new-website-choose-owner.js', [
-          'target/client/new-site/scripts/new-website-choose-owner.js']),
-
-      makeConcatStream('debiki-spa-new-website-choose-name.js', [
-          'target/client/new-site/scripts/new-website-choose-name.js']));
+      gulp.src('bower_components/zxcvbn/zxcvbn.js').pipe(gulp.dest('public/res/')));
 };
 
 
@@ -324,12 +299,12 @@ gulp.task('compile-typescript-concat-scripts', ['compile-typescript'], function 
   return makeConcatDebikiScriptsStream();
 });
 
-gulp.task('compile-templates-concat-scripts', ['compile-templates'], function () {
+gulp.task('compile-templates-concat-scripts', [], function () {
   return makeConcatDebikiScriptsStream();
 });
 
 gulp.task('compile-concat-scripts',
-    ['wrap-javascript', 'compile-livescript', 'compile-typescript', 'compile-templates'],
+    ['wrap-javascript', 'compile-livescript', 'compile-typescript'],
     function () {
   return makeConcatAllScriptsStream();
 });
@@ -402,11 +377,7 @@ gulp.task('compile-stylus', function () {
         'client/app/**/theme.css']),
 
     makeStyleStream('public/res/', 'debiki-embedded-comments.css', [
-        'client/app/tips.styl']),
-
-    makeStyleStream('public/res/', 'admin-app.css', [
-        'client/app/dashbar/dashbar.styl',
-        'client/admin-app/**/*.styl']));
+        'client/app/tips.styl']));
 });
 
 

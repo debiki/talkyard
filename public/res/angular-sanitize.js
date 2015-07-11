@@ -1,1 +1,0 @@
-../../bower_components/angular-sanitize/angular-sanitize.js
