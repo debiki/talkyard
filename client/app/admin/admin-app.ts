@@ -189,13 +189,15 @@ var SettingsPanel = createComponent({
                 "the contents of the website. This text will be inserted into " +
                 "the Content License section of your ", termsOfUseLink, " page. " +
                 "By default, content is licensed under a Creative Commonts license " +
-                "(see below) so you can just leave this as is.") }),
+                "(see below) so you can just leave this as is.") })));
 
+        /* Hide this. It's a bad idea to allow each site to use its own jurisdiction?
         SpecialContent({ contentId: '_tou_jurisdiction',
             label: 'Terms of Use: Jurisdiction',
             help: r.span({}, "Please clarify which country's laws you want to abide by, " +
                 "and where any legal issues should be resolved. This text is inserted " +
                 "into the Jurisdiction section of your ", termsOfUseLink, " page.") })));
+        */
   }
 });
 

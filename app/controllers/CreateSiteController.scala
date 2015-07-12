@@ -67,8 +67,13 @@ object CreateSiteController extends mvc.Controller {
     if (!isOkayEmailAddress(emailAddress))
       throwForbidden("DwE8FKJ4", "Bad email address")
 
+    /* Don't force people to choose a price plan directly. Instead just show a link to the pricing
+    page, but let them start use their site for free for a while. Not until later, when
+    they are fairly sure that they to continue using their site, do they need to read
+    details about pricing.
     if (anyPricePlan.isEmpty)
       throwForbidden("DwE7KJEP8", "No price plan")
+    */
 
     if (anyPricePlan.exists(_.trim.isEmpty))
       throwForbidden("DwE4KEWW5", "Bad price plan: Empty string")
