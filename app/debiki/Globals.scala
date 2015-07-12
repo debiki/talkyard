@@ -121,6 +121,9 @@ class Globals {
 
   def firstSiteHostname = state.firstSiteHostname
 
+  /** New sites may be created only from this hostname. */
+  def anyCreateSiteHostname = state.anyCreateSiteHostname
+
 
   def poweredBy = s"$scheme://www.debiki.com"
 
@@ -261,6 +264,7 @@ class Globals {
     if (firstSiteHostname.exists(_ contains ':'))
       p.Logger.error("Config value debiki.hostname contains ':' [DwE4KUWF7]")
 
+    val anyCreateSiteHostname = Play.configuration.getString("debiki.createSiteHostname")
 
     // The hostname must be directly below the base domain, otherwise
     // wildcard HTTPS certificates won't work: they cover 1 level below the

@@ -44,13 +44,13 @@ object CreateSiteController extends mvc.Controller {
 
 
   def start = GetAction { request =>
-    throwIfMayNotCreateWebsite(request)
+    throwIfMayNotCreateSite(request)
     Ok(views.html.createsite.createSitePage(SiteTpi(request)).body) as HTML
   }
 
 
   def createSite = PostJsonAction(RateLimits.CreateSite, maxLength = 200) { request =>
-    throwIfMayNotCreateWebsite(request)
+    throwIfMayNotCreateSite(request)
 
     val acceptTermsAndPrivacy = (request.body \ "acceptTermsAndPrivacy").as[Boolean]
     val emailAddress = (request.body \ "emailAddress").as[String]
@@ -113,12 +113,14 @@ object CreateSiteController extends mvc.Controller {
   private val OkWebsiteNameRegex = """[a-z][a-z0-9\-]{4,38}[a-z0-9]""".r
 
 
-  private def throwIfMayNotCreateWebsite(request: DebikiRequest[_]) {
-    // For now, allow only www.debiki.com. Later on, check some config value?
-    if (request.host != "www.debiki.com" &&
-      !request.host.contains("localhost:") &&
-      !request.host.contains("127.0.0.1:"))
-      throwForbidden("DwE093AQ2", "You cannot create a new website from here.")
+  private def throwIfMayNotCreateSite(request: DebikiRequest[_]) {
+    Globals.anyCreateSiteHostname match {
+      case None =>
+        throwForbidden("DwE4KEGG0", "This server is not configured to allow creation of new sites")
+      case Some(createSiteHostname) =>
+        if (createSiteHostname != request.hostname)
+          throwForbidden("DwE093AQ2", "You cannot create new sites from this address")
+    }
   }
 
 }
