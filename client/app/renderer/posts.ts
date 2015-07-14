@@ -963,7 +963,7 @@ var PostActions = createComponent({
    // r.a({ className:'dw-a dw-a-collapse-suggs icon-collapse-post dw-a-pending-review',
    // r.a({ className: 'dw-a dw-a-collapse-suggs icon-collapse-tree dw-a-pending-review',
 
-    if (!isPageBody && user.isAdmin) {
+    if (!isPageBody && isStaff(user)) {
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-delete icon-trash', onClick: this.onDeleteClick }, 'Delete'));
     }

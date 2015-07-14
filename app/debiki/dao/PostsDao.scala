@@ -20,6 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.User.SystemUserId
+import controllers.EditController
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
@@ -165,6 +166,9 @@ trait PostsDao {
             allowClassIdDataAttrs = postId == PageParts.BodyId,
             followLinks = postToEdit.createdByUser(page.parts).isStaff && editor.isStaff)
         }
+
+      if (approvedHtmlSanitized.trim.isEmpty)
+        throwBadReq("DwE4KEL7", EditController.EmptyPostErrorMessage)
 
       val approverId = if (editor.isStaff) editor.id else SystemUserId
       val nextVersion = postToEdit.currentVersion + 1

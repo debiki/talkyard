@@ -42,6 +42,11 @@ import Utils.{OkSafeJson, parseIntOrThrowBadReq}
  */
 object EditController extends mvc.Controller {
 
+  val EmptyPostErrorMessage =
+    o"""Cannot save empty posts. If you want to delete this post, please click
+        More just below the post, and then Delete. However only the post author
+        and staff members can do this."""
+
 
   /** Sends back a post's current CommonMark source to the browser.
     */
@@ -64,6 +69,9 @@ object EditController extends mvc.Controller {
 
     if (postId == PageParts.TitleId)
       throwForbidden("DwE5KEWF4", "Edit the title via /-/edit-title-save-settings instead")
+
+    if (newText.isEmpty)
+      throwBadReq("DwE6KEFW8", EmptyPostErrorMessage)
 
     _throwIfTooMuchData(newText, request)
 
