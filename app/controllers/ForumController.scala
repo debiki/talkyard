@@ -23,7 +23,7 @@ import collection.mutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.ReactJson.DateEpochOrNull
+import debiki.ReactJson.{DateEpochOrNull, JsNumberOrNull, JsStringOrNull}
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
@@ -89,8 +89,8 @@ object ForumController extends mvc.Controller {
     def anyNumOffset = request.queryString.getInt("num")
 
     val orderOffset: PageOrderOffset = sortOrderStr match {
-      case "ByBumpTime" =>
-        PageOrderOffset.ByBumpTime(anyDateOffset)
+      case "ByPinsAndBumpTime" =>
+        PageOrderOffset.ByPinsAndBumpTime(anyDateOffset)
       case "ByLikesAndBumpTime" =>
         (anyNumOffset, anyDateOffset) match {
           case (Some(num), Some(date)) =>
@@ -143,6 +143,10 @@ object ForumController extends mvc.Controller {
       "url" -> topic.path.value,
       "categoryId" -> topic.parentPageId.getOrDie(
         "DwE49Fk3", s"Topic `${topic.id}', site `${topic.path.siteId}', has no parent page"),
+      "pinOrder" -> JsNumberOrNull(topic.meta.pinOrder),
+      "pinWhere" -> JsNumberOrNull(topic.meta.pinWhere),
+      // loadPageStuff() loads excerps for pinned topics (and categories).
+      "excerpt" -> JsStringOrNull(topicStuff.bodyExcerpt),
       "numPosts" -> JsNumber(topic.meta.numRepliesVisible + 1),
       "numLikes" -> topic.meta.numLikes,
       "numWrongs" -> topic.meta.numWrongs,

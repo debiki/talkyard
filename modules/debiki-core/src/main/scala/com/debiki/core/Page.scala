@@ -147,12 +147,24 @@ case class PageMeta(
   parentPageId: Option[String] = None,
   embeddingPageUrl: Option[String],
   authorId: UserId,
+  pinOrder: Option[Int] = None,
+  pinWhere: Option[Int] = None,
   numLikes: Int = 0,
   numWrongs: Int = 0,
   numBurys: Int = 0,
   numRepliesVisible: Int = 0,
   numRepliesTotal: Int = 0,
   numChildPages: Int = 0) {
+
+  require(pinOrder.isEmpty == pinWhere.isEmpty, "DwE36FK2")
+  require(numLikes >= 0, "DwE6PKF3")
+  require(numWrongs >= 0, "DwE9KEFW2")
+  require(numBurys >= 0, "DwE2KEP4")
+  //require(numRepliesVisible >= 0, "DwE6KPE78") - bug in PostsDao.changePostStatus()?
+  require(numRepliesTotal >= numRepliesVisible, "DwE4REQ2")
+  require(numChildPages >= 0, "DwE8KPEF0")
+
+  def isPinned = pinOrder.isDefined
 
   def status: PageStatus =
     if (publishedAt.isDefined) PageStatus.Published
@@ -266,7 +278,7 @@ object PageOrderOffset {
   case object Any extends PageOrderOffset
   case object ByPath extends PageOrderOffset
   case object ByPublTime extends PageOrderOffset
-  case class ByBumpTime(offset: Option[ju.Date]) extends PageOrderOffset
+  case class ByPinsAndBumpTime(offset: Option[ju.Date]) extends PageOrderOffset
   case class ByLikesAndBumpTime(offset: Option[(Int, ju.Date)]) extends PageOrderOffset
 }
 

@@ -23,6 +23,7 @@ import com.debiki.core.PageParts.{TitleId, BodyId}
 import debiki._
 import java.{util => ju}
 import CachingDao.{CacheKey, CacheValue}
+import org.jsoup.Jsoup
 
 
 /** Page stuff, e.g. title, body excerpt (for forum categories only), author name.
@@ -57,11 +58,13 @@ trait PageStuffDao {
     var stuffById = Map[PageId, PageStuff]()
     val pageMetasById = transaction.loadPageMetasAsMap(pageIds)
 
-    // Load titles for all pages, and bodies for forum categories only.
+    // Load titles for all pages, but bodies for forum categories and pinned topics only
+    // (because on forum topic list pages and category pages, we show excerpts of the
+    // pinned topics and category descriptions).
     val titlesAndBodies = transaction.loadPosts(pageIds flatMap { pageId =>
       var pagePostIds = Seq(PagePostId(pageId, TitleId))
       val pageMeta = pageMetasById.get(pageId)
-      if (pageMeta.map(_.pageRole) == Some(PageRole.ForumCategory)) {
+      if (pageMeta.exists(meta => meta.pageRole == PageRole.ForumCategory || meta.isPinned)) {
         pagePostIds :+= PagePostId(pageId, BodyId)
       }
       pagePostIds
@@ -76,12 +79,10 @@ trait PageStuffDao {
 
       // The text in the first paragraph, but at most ExcerptLength chars.
       val anyExcerpt: Option[String] =
-        if (pageMeta.pageRole != PageRole.ForumCategory) {
-          None
-        }
-        else anyBody.flatMap(_.approvedSource match {
+        anyBody.flatMap(_.approvedHtmlSanitized match {
           case None => None
-          case Some(text) =>
+          case Some(html) =>
+            val text = Jsoup.parse(html).body().text().trim
             var excerpt =
               if (text.length <= ExcerptLength + 3) text
               else text.take(ExcerptLength) + "..."

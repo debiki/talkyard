@@ -101,12 +101,28 @@
             background: hsl(210, 100%, 97%);
             outline: 1px solid hsl(209, 100%, 92%);
 
+        &:not(.dw-tpc-title)
+          white-space: nowrap;
+
+        &.dw-tpc-title .icon-pin:before
+          color: #555;
+          padding-right: 17px;
+          margin-left: 0;
+
         &.num:not(.dw-tpc-feelings, .dw-tpc-replies)
           color: hsl(0, 0%, 53%);
 
         &.dw-tpc-replies
           color: hsl(0, 0%, 20%);
 
+        .dw-p-excerpt
+          color: hsl(0, 0%, 54%);
+          margin: 1ex 20px 1ex 0;
+          max-width: 650px;
+          font-size: 100%;
+          a
+            color: hsl(210, 100%, 40%);
+            margin-left: 6px;
 
 .load-more
   text-align: center

@@ -87,6 +87,9 @@ interface Topic {
   title: string;
   url: string;
   categoryId: string;
+  pinOrder: number;
+  pinWhere: number;
+  excerpt?: string;
   numPosts: number;
   numLikes: number;
   numWrongs: number;

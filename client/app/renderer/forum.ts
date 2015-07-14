@@ -401,11 +401,18 @@ var TopicRow = createComponent({
       activityTitle += '\nEdited on ' + new Date(topic.bumpedEpoch).toUTCString();
     }
 
+    var anyPinIcon = topic.pinOrder ? 'icon-pin' : undefined;
+    var excerptIfPinned = topic.pinOrder
+        ? r.p({ className: 'dw-p-excerpt' }, topic.excerpt, r.a({ href: topic.url }, 'read more'))
+        : null;
+
     var categoryName = category ? category.name : '';
     var activityAgo = moment(topic.bumpedEpoch || topic.createdEpoch).from(this.props.now);
     return (
       r.tr({},
-        r.td({}, r.a({ href: topic.url }, topic.title)),
+        r.td({ className: 'dw-tpc-title' },
+          r.a({ href: topic.url, className: anyPinIcon }, topic.title),
+          excerptIfPinned),
         r.td({}, categoryName),
         r.td({ className: 'num dw-tpc-replies' }, topic.numPosts - 1),
         r.td({ className: 'num dw-tpc-activity', title: activityTitle }, activityAgo),
