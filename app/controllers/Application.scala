@@ -44,6 +44,11 @@ import Utils.{OkHtml, OkXml}
 object Application extends mvc.Controller {
 
 
+  def methodNotAllowed = ExceptionAction { request =>
+    MethodNotAllowedResult
+  }
+
+
   def flag = PostJsonAction(RateLimits.FlagPost, maxLength = 2000) { request =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
@@ -105,7 +110,7 @@ object Application extends mvc.Controller {
   def feed(pathIn: PagePath) = PageGetAction(pathIn, pageMustExist = false) {
         pageReq =>
 
-    unimplemented("Rendering feed with new Post2 [DwE5JKP4]") /*
+    throwNotImplemented("DwE5JKP4", "Currently disabled: Atom or RSS feeds, not with new Post2") /*
     import pageReq.{pagePath}
 
     // The tenant's name will be included in the feed.

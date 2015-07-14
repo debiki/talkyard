@@ -81,6 +81,9 @@ object DebikiHttp {
   def NotFoundResult(errCode: String, message: String): Result =
     R.NotFound("404 Not Found\n"+ message +" [error "+ errCode +"]")
 
+  def MethodNotAllowedResult: Result =
+    R.MethodNotAllowed("405 Method Not Allowed\nTry POST or GET instead please [DwE7KEF2]")
+
   def EntityTooLargeResult(errCode: String, message: String): Result =
     R.EntityTooLarge("413 Request Entity Too Large\n"+
        message +" [error "+ errCode +"]")

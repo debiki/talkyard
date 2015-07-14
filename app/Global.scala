@@ -142,6 +142,8 @@ object Global extends WithFilters(new HtmlJsCssGzipFilter()) with GlobalSettings
       case (_, GET) =>
         // CSS and JS are served via asset bundles, so they can be cached forever.
         ViewPageController.viewPost(pagePath)
+      case (_, _) =>
+        Application.methodNotAllowed()
     }
     Some(action)
   }

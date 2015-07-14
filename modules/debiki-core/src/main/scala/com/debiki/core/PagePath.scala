@@ -251,7 +251,11 @@ object PagePath {
    * - (server)/fold/ers/page-name (here, the pageId is not shown in the path).
    */
   def fromUrlPath(tenantId: String, path: String): PagePath.Parsed = {
-    require(path.head == '/', "DwE77BP4")
+    if (path.isEmpty)
+      return Parsed.Bad("URL path is empty")
+
+    if (path.head != '/')
+      return Parsed.Bad("URL path does not start with '/'")
 
     // Split into folder and any-id-and-slug parts.
     val lastFolderSlash = {
@@ -264,7 +268,10 @@ object PagePath {
     val (folder, pageIdSlug) =
       if (lastFolderSlash != -1) path.splitAt(lastFolderSlash + 1)
       else (path, "")
+
     assert(folder.head == '/' && folder.last == '/')
+    if (pageIdSlug.nonEmpty && pageIdSlug.last == '-')
+      return Parsed.Bad("Page-id-slug ends with '-'")
 
     // Check for bad folder paths.
     folder match {
