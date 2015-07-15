@@ -159,6 +159,8 @@ object ReactJson {
       "pageId" -> pageReq.thePageId,
       "pageRole" -> JsString(page.role.toString),
       "pagePath" -> JsString(pageReq.pagePath.value),
+      "pinOrder" -> JsNumberOrNull(page.meta.pinOrder),
+      "pinWhere" -> JsNumberOrNull(page.meta.pinWhere.map(_.toInt)),
       "numPosts" -> numPosts,
       "numPostsExclTitle" -> numPostsExclTitle,
       "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),

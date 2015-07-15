@@ -114,6 +114,9 @@ object PageMeta {
       numRepliesTotal = 0,
       numChildPages = 0)
 
+  val MinPinOrder = 1
+  val MaxPinOrder = 100
+  def isOkPinOrder(order: Int) = MinPinOrder <= order && order <= MaxPinOrder
 }
 
 
@@ -147,12 +150,25 @@ case class PageMeta(
   parentPageId: Option[String] = None,
   embeddingPageUrl: Option[String],
   authorId: UserId,
+  pinOrder: Option[Int] = None,
+  pinWhere: Option[PinPageWhere] = None,
   numLikes: Int = 0,
   numWrongs: Int = 0,
   numBurys: Int = 0,
   numRepliesVisible: Int = 0,
   numRepliesTotal: Int = 0,
   numChildPages: Int = 0) {
+
+  require(!pinOrder.exists(!PageMeta.isOkPinOrder(_)), "DwE4kEYF2")
+  require(pinOrder.isEmpty == pinWhere.isEmpty, "DwE36FK2")
+  require(numLikes >= 0, "DwE6PKF3")
+  require(numWrongs >= 0, "DwE9KEFW2")
+  require(numBurys >= 0, "DwE2KEP4")
+  //require(numRepliesVisible >= 0, "DwE6KPE78") - bug in PostsDao.changePostStatus()?
+  require(numRepliesTotal >= numRepliesVisible, "DwE4REQ2")
+  require(numChildPages >= 0, "DwE8KPEF0")
+
+  def isPinned = pinOrder.isDefined
 
   def status: PageStatus =
     if (publishedAt.isDefined) PageStatus.Published
@@ -257,6 +273,29 @@ object PageStatus {
 
 
 
+sealed abstract class PinPageWhere { def toInt: Int }
+
+object PinPageWhere {
+  // Don't change the IntValue:s — they're stored in the database.
+
+  case object InCategory extends PinPageWhere { val IntValue = 1; def toInt = IntValue }
+  case object Globally extends PinPageWhere { val IntValue = 3; def toInt = IntValue }
+
+  def fromInt(int: Int): Option[PinPageWhere] = Some(int match {
+    case InCategory.IntValue => InCategory
+    case Globally.IntValue => Globally
+    case _ => return None
+  })
+
+  def fromString(string: String): Option[PinPageWhere] = Some(string match {
+    case "InCategory" => InCategory
+    case "Globally" => Globally
+    case _ => return None
+  })
+}
+
+
+
 /** How to sort pages, and where to start listing them, e.g. if fetching additional
   * pages after the user has scrolled down to the end of a page list.
   */
@@ -266,6 +305,7 @@ object PageOrderOffset {
   case object Any extends PageOrderOffset
   case object ByPath extends PageOrderOffset
   case object ByPublTime extends PageOrderOffset
+  case object ByPinOrderLoadOnlyPinned extends PageOrderOffset
   case class ByBumpTime(offset: Option[ju.Date]) extends PageOrderOffset
   case class ByLikesAndBumpTime(offset: Option[(Int, ju.Date)]) extends PageOrderOffset
 }

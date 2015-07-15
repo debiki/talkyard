@@ -69,6 +69,16 @@ ReactDispatcher.register(function(payload) {
       store.newUserAccountCreated = true;
       break;
 
+    case ReactActions.actionTypes.PinPage:
+      store.pinOrder = action.pinOrder;
+      store.pinWhere = action.pinWhere;
+      break;
+
+    case ReactActions.actionTypes.UnpinPage:
+      store.pinOrder = undefined;
+      store.pinWhere = undefined;
+      break;
+
     case ReactActions.actionTypes.SetPageNotfLevel:
       store.user.rolePageSettings.notfLevel = action.newLevel;
       break;

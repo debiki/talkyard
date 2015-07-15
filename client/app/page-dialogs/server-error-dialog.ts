@@ -80,7 +80,7 @@ var ServerErrorDialog = createComponent({
     }
     else if (/^\s*<!DOCTYPE html>/.test(message)) {
       // Play Framework sent back a HTML page
-      message = $(message).filter('#detail').text() +
+      message = $(message).filter('#detail').text().trim() +
           '\n\nSee server logs for stack trace. [DwE4KWE85]';
     }
 

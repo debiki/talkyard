@@ -365,7 +365,7 @@ export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
       doneCallback: (topics: Topic[]) => void) {
   var url = origin + '/-/list-topics?categoryId=' + categoryId;
   if (orderOffset.sortOrder === TopicSortOrder.BumpTime) {
-    url += '&sortOrder=ByBumpTime';
+    url += '&sortOrder=ByPinsAndBumpTime';
     if (orderOffset.time) {
       url += '&epoch=' + orderOffset.time;
     }
@@ -472,6 +472,20 @@ export function savePageTitleAndSettings(newTitle: string, settings: any, succes
     },
     error: error
   });
+}
+
+
+export function pinPage(pinWhere: PinPageWhere, pinOrder: number, success: () => void) {
+  postJsonSuccess('/-/pin-page', success, {
+    pageId: d.i.pageId,
+    pinWhere: pinWhere,
+    pinOrder: pinOrder,
+  });
+}
+
+
+export function unpinPage(success: () => void) {
+  postJsonSuccess('/-/unpin-page', success, { pageId: d.i.pageId });
 }
 
 

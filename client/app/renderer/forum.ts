@@ -284,7 +284,8 @@ export var ForumTopicList = createComponent({
       return r.p({}, 'No topics.');
 
     var topics = this.state.topics.map((topic) => {
-      return TopicRow({ topic: topic, categories: this.props.categories, now: this.props.now });
+      return TopicRow({ topic: topic, categories: this.props.categories,
+          activeCategory: this.props.activeCategory, now: this.props.now });
     });
 
     var loadMoreTopicsBtn;
@@ -401,11 +402,20 @@ var TopicRow = createComponent({
       activityTitle += '\nEdited on ' + new Date(topic.bumpedEpoch).toUTCString();
     }
 
+    var anyPinIcon = topic.pinWhere ? 'icon-pin' : undefined;
+    var showExcerpt = topic.pinWhere === PinPageWhere.Globally ||
+        (topic.pinWhere && topic.categoryId == this.props.activeCategory.pageId);
+    var excerptIfPinned = showExcerpt
+        ? r.p({ className: 'dw-p-excerpt' }, topic.excerpt, r.a({ href: topic.url }, 'read more'))
+        : null;
+
     var categoryName = category ? category.name : '';
     var activityAgo = moment(topic.bumpedEpoch || topic.createdEpoch).from(this.props.now);
     return (
       r.tr({},
-        r.td({}, r.a({ href: topic.url }, topic.title)),
+        r.td({ className: 'dw-tpc-title' },
+          r.a({ href: topic.url, className: anyPinIcon }, topic.title),
+          excerptIfPinned),
         r.td({}, categoryName),
         r.td({ className: 'num dw-tpc-replies' }, topic.numPosts - 1),
         r.td({ className: 'num dw-tpc-activity', title: activityTitle }, activityAgo),
@@ -467,10 +477,11 @@ var CategoryRow = createComponent({
   render: function() {
     var category = this.props.category;
     var recentTopicRows = category.recentTopics.map((topic) => {
+      var pinIconClass = topic.pinWhere ? ' icon-pin' : '';
       return (
         r.tr({},
           r.td({},
-            r.a({ className: 'topic-title', href: topic.url }, topic.title),
+            r.a({ className: 'topic-title' + pinIconClass, href: topic.url }, topic.title),
             r.span({ className: 'topic-details' },
               ' – ' + topic.numPosts + ' posts, ',
               moment(topic.bumpedEpoch || topic.createdEpoch).from(this.props.now)))));

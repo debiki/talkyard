@@ -509,6 +509,7 @@ trait PostsDao {
   }
 
 
+  // Move to ... elsewhere? Used by PagesDao too.
   protected def refreshPageInAnyCache(pageId: PageId) {}
 
 }

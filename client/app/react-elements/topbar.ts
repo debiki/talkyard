@@ -71,6 +71,10 @@ export var TopBar = createComponent({
     window.location.assign(d.i.serverOrigin + '/-/admin/');
   },
 
+  showTools: function() {
+    debiki2.pagetools.pageToolsDialog.open();
+  },
+
   closeSearchForm: function() {
     this.setState({
       showSearchForm: false
@@ -103,7 +107,11 @@ export var TopBar = createComponent({
 
     var adminButton = !isStaff(user) ? null :
         Button({ className: 'dw-admin', onClick: this.goToAdminPage },
-          r.a({ className: 'icon-wrench' }, 'Admin'));
+          r.a({ className: 'icon-settings' }, 'Admin'));
+
+    var toolsButton = !isStaff(user) || pagetools.pageToolsDialog.isEmpty() ? null :
+        Button({ className: 'dw-a-tools', onClick: this.showTools },
+          r.a({ className: 'icon-wrench' }, 'Tools'));
 
     var searchButton =
         null;
@@ -135,6 +143,7 @@ export var TopBar = createComponent({
           loginButton,
           logoutButton,
           adminButton,
+          toolsButton,
           searchButton,
           menuButton),
         searchForm));
