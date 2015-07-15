@@ -477,10 +477,11 @@ var CategoryRow = createComponent({
   render: function() {
     var category = this.props.category;
     var recentTopicRows = category.recentTopics.map((topic) => {
+      var pinIconClass = topic.pinWhere ? ' icon-pin' : '';
       return (
         r.tr({},
           r.td({},
-            r.a({ className: 'topic-title', href: topic.url }, topic.title),
+            r.a({ className: 'topic-title' + pinIconClass, href: topic.url }, topic.title),
             r.span({ className: 'topic-details' },
               ' – ' + topic.numPosts + ' posts, ',
               moment(topic.bumpedEpoch || topic.createdEpoch).from(this.props.now)))));

@@ -45,26 +45,9 @@ object ForumController extends mvc.Controller {
 
   def listTopics(categoryId: PageId) = GetAction { request =>
     val orderOffset = parseSortOrderAndOffset(request)
-    val topics: Seq[PagePathAndMeta] =
-      request.dao.listTopicsInTree(rootPageId = categoryId, orderOffset, limit = NumTopicsToList)
-
-    val topicsInclPinned = orderOffset match {
-      case orderOffset: PageOrderOffset.ByBumpTime if orderOffset.offset.isEmpty =>
-        val pinnedTopics = request.dao.listTopicsInTree(
-          rootPageId = categoryId, PageOrderOffset.ByPinOrderLoadOnlyPinned,
-          limit = NumTopicsToList)
-        val notPinned = topics.filterNot(topic => pinnedTopics.exists(_.id == topic.id))
-        (pinnedTopics ++ notPinned) sortBy { topic =>
-          val isPinned = topic.meta.pinWhere.contains(PinPageWhere.Globally) ||
-            (topic.meta.isPinned && topic.meta.parentPageId.contains(categoryId))
-          if (isPinned) topic.meta.pinOrder.get // 1..100
-          else Long.MaxValue - topic.meta.bumpedOrPublishedOrCreatedAt.getTime // much larger
-        }
-      case _ => topics
-    }
-
-    val pageStuffById = request.dao.loadPageStuff(topicsInclPinned.map(_.pageId))
-    val topicsJson: Seq[JsObject] = topicsInclPinned.map(topicToJson(_, pageStuffById))
+    val topics = listTopicsInclPinned(categoryId, orderOffset, request.dao)
+    val pageStuffById = request.dao.loadPageStuff(topics.map(_.pageId))
+    val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
     val json = Json.obj("topics" -> topicsJson)
     OkSafeJson(json)
   }
@@ -81,8 +64,12 @@ object ForumController extends mvc.Controller {
     val pageIds = ArrayBuffer[PageId]()
 
     for (category <- categories) {
+      val recentTopics = listTopicsInclPinned(category.id, PageOrderOffset.ByBumpTime(None),
+        request.dao, limit = 5)
+      /*
       val recentTopics = request.dao.listChildPages(parentPageIds = Seq(category.id),
         PageOrderOffset.ByPublTime, limit = 5, filterPageRole = Some(PageRole.ForumTopic))
+        */
       recentTopicsByCategoryId(category.id) = recentTopics
       pageIds.append(category.pageId)
       pageIds.append(recentTopics.map(_.pageId): _*)
@@ -96,6 +83,30 @@ object ForumController extends mvc.Controller {
     }))
 
     OkSafeJson(json)
+  }
+
+
+  private def listTopicsInclPinned(categoryId: PageId, orderOffset: PageOrderOffset,
+        dao: debiki.dao.SiteDao, limit: Int = NumTopicsToList): Seq[PagePathAndMeta] = {
+    val topics: Seq[PagePathAndMeta] =
+      dao.listTopicsInTree(rootPageId = categoryId, orderOffset, limit = limit)
+
+    val topicsInclPinned = orderOffset match {
+      case orderOffset: PageOrderOffset.ByBumpTime if orderOffset.offset.isEmpty =>
+        val pinnedTopics = dao.listTopicsInTree(
+          rootPageId = categoryId, PageOrderOffset.ByPinOrderLoadOnlyPinned,
+          limit = limit)
+        val notPinned = topics.filterNot(topic => pinnedTopics.exists(_.id == topic.id))
+        (pinnedTopics ++ notPinned) sortBy { topic =>
+          val isPinned = topic.meta.pinWhere.contains(PinPageWhere.Globally) ||
+            (topic.meta.isPinned && topic.meta.parentPageId.contains(categoryId))
+          if (isPinned) topic.meta.pinOrder.get // 1..100
+          else Long.MaxValue - topic.meta.bumpedOrPublishedOrCreatedAt.getTime // much larger
+        }
+      case _ => topics
+    }
+
+    topicsInclPinned
   }
 
 
