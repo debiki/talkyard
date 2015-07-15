@@ -154,6 +154,26 @@ trait PagesDao {
     }
   }
 
+
+  def unpinPage(pageId: PageId) {
+    readWriteTransaction { transaction =>
+      val oldMeta = loadPageMeta(pageId) getOrElse throwNotFound("DwE5KEF2", "Page gone")
+      val newMeta = oldMeta.copy(pinWhere = None, pinOrder = None)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+    }
+    refreshPageInAnyCache(pageId)
+  }
+
+
+  def pinPage(pageId: PageId, pinWhere: PinPageWhere, pinOrder: Int) {
+    readWriteTransaction { transaction =>
+      val oldMeta = loadPageMeta(pageId) getOrElse throwNotFound("DwE4KEF2", "Page gone")
+      val newMeta = oldMeta.copy(pinWhere = Some(pinWhere), pinOrder = Some(pinOrder))
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+    }
+    refreshPageInAnyCache(pageId)
+  }
+
 }
 
 

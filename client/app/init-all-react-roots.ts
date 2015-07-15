@@ -31,6 +31,11 @@ var ReactRouter = window['ReactRouter'];
 
 
 export function initAllReactRoots() {
+  createAnyFlagDialog();
+  pagetools.createPageToolsDialog();
+  pagedialogs.createAboutUserDialog();
+  pagedialogs.createServerErrorDialog();
+
   var adminAppElem = document.getElementById('dw-react-admin-app');
   if (adminAppElem) {
     ReactRouter.run(debiki2.admin.routes(), (Handler) => {
@@ -69,10 +74,6 @@ export function initAllReactRoots() {
       React.render(Handler({}), createSiteElem);
     });
   }
-
-  createAnyFlagDialog();
-  pagedialogs.createAboutUserDialog();
-  pagedialogs.createServerErrorDialog();
 }
 
 

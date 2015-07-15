@@ -284,7 +284,8 @@ export var ForumTopicList = createComponent({
       return r.p({}, 'No topics.');
 
     var topics = this.state.topics.map((topic) => {
-      return TopicRow({ topic: topic, categories: this.props.categories, now: this.props.now });
+      return TopicRow({ topic: topic, categories: this.props.categories,
+          activeCategory: this.props.activeCategory, now: this.props.now });
     });
 
     var loadMoreTopicsBtn;
@@ -401,8 +402,10 @@ var TopicRow = createComponent({
       activityTitle += '\nEdited on ' + new Date(topic.bumpedEpoch).toUTCString();
     }
 
-    var anyPinIcon = topic.pinOrder ? 'icon-pin' : undefined;
-    var excerptIfPinned = topic.pinOrder
+    var anyPinIcon = topic.pinWhere ? 'icon-pin' : undefined;
+    var showExcerpt = topic.pinWhere === PinPageWhere.Globally ||
+        (topic.pinWhere && topic.categoryId == this.props.activeCategory.pageId);
+    var excerptIfPinned = showExcerpt
         ? r.p({ className: 'dw-p-excerpt' }, topic.excerpt, r.a({ href: topic.url }, 'read more'))
         : null;
 

@@ -475,6 +475,20 @@ export function savePageTitleAndSettings(newTitle: string, settings: any, succes
 }
 
 
+export function pinPage(pinWhere: PinPageWhere, pinOrder: number, success: () => void) {
+  postJsonSuccess('/-/pin-page', success, {
+    pageId: d.i.pageId,
+    pinWhere: pinWhere,
+    pinOrder: pinOrder,
+  });
+}
+
+
+export function unpinPage(success: () => void) {
+  postJsonSuccess('/-/unpin-page', success, { pageId: d.i.pageId });
+}
+
+
 export function saveReply(postIds: number[], text: string, success: () => void) {
   postJson('/-/reply', {
     data: {

@@ -28,6 +28,8 @@ export var actionTypes = {
   Login: 'Login',
   Logout: 'Logout',
   NewUserAccountCreated: 'NewUserAccountCreated',
+  PinPage: 'PinPage',
+  UnpinPage: 'UnpinPage',
   SetPageNotfLevel: 'SetPageNotfLevel',
   UpdatePost: 'UpdatePost',
   VoteOnPost: 'VoteOnPost',
@@ -72,6 +74,28 @@ export function newUserAccountCreated() {
 export function logout() {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.Logout
+  });
+}
+
+
+export function pinPage(pinOrder: number, pinWhere: PinPageWhere, success: () => void) {
+  Server.pinPage(pinWhere, pinOrder, () => {
+    success();
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.PinPage,
+      pinOrder: pinOrder,
+      pinWhere: pinWhere,
+    });
+  });
+}
+
+
+export function unpinPage(success: () => void) {
+  Server.unpinPage(() => {
+    success();
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.UnpinPage,
+    });
   });
 }
 

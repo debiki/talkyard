@@ -47,8 +47,24 @@ object ForumController extends mvc.Controller {
     val orderOffset = parseSortOrderAndOffset(request)
     val topics: Seq[PagePathAndMeta] =
       request.dao.listTopicsInTree(rootPageId = categoryId, orderOffset, limit = NumTopicsToList)
-    val pageStuffById = request.dao.loadPageStuff(topics.map(_.pageId))
-    val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
+
+    val topicsInclPinned = orderOffset match {
+      case orderOffset: PageOrderOffset.ByBumpTime if orderOffset.offset.isEmpty =>
+        val pinnedTopics = request.dao.listTopicsInTree(
+          rootPageId = categoryId, PageOrderOffset.ByPinOrderLoadOnlyPinned,
+          limit = NumTopicsToList)
+        val notPinned = topics.filterNot(topic => pinnedTopics.exists(_.id == topic.id))
+        (pinnedTopics ++ notPinned) sortBy { topic =>
+          val isPinned = topic.meta.pinWhere.contains(PinPageWhere.Globally) ||
+            (topic.meta.isPinned && topic.meta.parentPageId.contains(categoryId))
+          if (isPinned) topic.meta.pinOrder.get // 1..100
+          else Long.MaxValue - topic.meta.bumpedOrPublishedOrCreatedAt.getTime // much larger
+        }
+      case _ => topics
+    }
+
+    val pageStuffById = request.dao.loadPageStuff(topicsInclPinned.map(_.pageId))
+    val topicsJson: Seq[JsObject] = topicsInclPinned.map(topicToJson(_, pageStuffById))
     val json = Json.obj("topics" -> topicsJson)
     OkSafeJson(json)
   }
@@ -90,7 +106,7 @@ object ForumController extends mvc.Controller {
 
     val orderOffset: PageOrderOffset = sortOrderStr match {
       case "ByPinsAndBumpTime" =>
-        PageOrderOffset.ByPinsAndBumpTime(anyDateOffset)
+        PageOrderOffset.ByBumpTime(anyDateOffset)
       case "ByLikesAndBumpTime" =>
         (anyNumOffset, anyDateOffset) match {
           case (Some(num), Some(date)) =>
@@ -144,7 +160,7 @@ object ForumController extends mvc.Controller {
       "categoryId" -> topic.parentPageId.getOrDie(
         "DwE49Fk3", s"Topic `${topic.id}', site `${topic.path.siteId}', has no parent page"),
       "pinOrder" -> JsNumberOrNull(topic.meta.pinOrder),
-      "pinWhere" -> JsNumberOrNull(topic.meta.pinWhere),
+      "pinWhere" -> JsNumberOrNull(topic.meta.pinWhere.map(_.toInt)),
       // loadPageStuff() loads excerps for pinned topics (and categories).
       "excerpt" -> JsStringOrNull(topicStuff.bodyExcerpt),
       "numPosts" -> JsNumber(topic.meta.numRepliesVisible + 1),

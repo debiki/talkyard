@@ -190,10 +190,18 @@ var Title = createComponent({
       contents = debiki2.titleeditor.TitleEditor(editorProps);
     }
     else {
+      var pinClass = this.props.pinWhere ? ' icon-pin' : '';
+      var title;
+      switch (this.props.pinWhere) {
+        case PinPageWhere.Globally: title = 'Pinned globally'; break;
+        case PinPageWhere.InCategory: title = 'Pinned in this category'; break;
+        default: ;
+      }
       contents =
           r.div({ className: 'dw-p-bd' },
             r.div({ className: 'dw-p-bd-blk' },
-              r.h1({ className: 'dw-p-ttl' }, titleText), anyEditTitleBtn));
+              r.h1({ className: 'dw-p-ttl' + pinClass, title: title }, titleText),
+              anyEditTitleBtn));
     }
     return (
       r.div({ className: 'dw-t', id: 'dw-t-0' },

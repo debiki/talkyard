@@ -1,4 +1,21 @@
+/*
+ * Copyright (C) 2015 Kaj Magnus Lindberg
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
+/// <reference path="constants.ts" />
 
 var TitleId = 0;
 var BodyPostId = 1;
@@ -87,8 +104,8 @@ interface Topic {
   title: string;
   url: string;
   categoryId: string;
-  pinOrder: number;
-  pinWhere: number;
+  pinOrder?: number;
+  pinWhere?: PinPageWhere;
   excerpt?: string;
   numPosts: number;
   numLikes: number;
@@ -117,6 +134,9 @@ interface Store {
   userMustBeApproved: boolean;
   pageId: string;
   pageRole: string;
+  pagePath: string;
+  pinOrder?: number;
+  pinWhere?: PinPageWhere;
   numPosts: number;
   numPostsExclTitle: number;
   isInEmbeddedCommentsIframe: boolean;

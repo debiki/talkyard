@@ -136,7 +136,7 @@ object ReactJson {
 
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
-        val orderOffset = PageOrderOffset.ByPinsAndBumpTime(None)
+        val orderOffset = PageOrderOffset.ByBumpTime(None)
         var topics =
           pageReq.dao.listTopicsInTree(rootPageId = pageReq.thePageId,
             orderOffset, limit = controllers.ForumController.NumTopicsToList)
@@ -160,7 +160,7 @@ object ReactJson {
       "pageRole" -> JsString(page.role.toString),
       "pagePath" -> JsString(pageReq.pagePath.value),
       "pinOrder" -> JsNumberOrNull(page.meta.pinOrder),
-      "pinWhere" -> JsNumberOrNull(page.meta.pinWhere),
+      "pinWhere" -> JsNumberOrNull(page.meta.pinWhere.map(_.toInt)),
       "numPosts" -> numPosts,
       "numPostsExclTitle" -> numPostsExclTitle,
       "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),
