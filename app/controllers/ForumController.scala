@@ -116,7 +116,7 @@ object ForumController extends mvc.Controller {
     def anyNumOffset = request.queryString.getInt("num")
 
     val orderOffset: PageOrderOffset = sortOrderStr match {
-      case "ByPinsAndBumpTime" =>
+      case "ByBumpTime" =>
         PageOrderOffset.ByBumpTime(anyDateOffset)
       case "ByLikesAndBumpTime" =>
         (anyNumOffset, anyDateOffset) match {

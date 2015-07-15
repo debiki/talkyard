@@ -365,7 +365,7 @@ export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
       doneCallback: (topics: Topic[]) => void) {
   var url = origin + '/-/list-topics?categoryId=' + categoryId;
   if (orderOffset.sortOrder === TopicSortOrder.BumpTime) {
-    url += '&sortOrder=ByPinsAndBumpTime';
+    url += '&sortOrder=ByBumpTime';
     if (orderOffset.time) {
       url += '&epoch=' + orderOffset.time;
     }
