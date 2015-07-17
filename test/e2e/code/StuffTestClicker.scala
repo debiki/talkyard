@@ -47,7 +47,7 @@ trait StuffTestClicker extends DebikiSelectors {
       case (PageRole.Forum, _) =>
         fail("Subsequent tests will fail, after I changed ForumGroup+Forum to Forum+ForumCategory")
         // not tested: ("create-forum", "New Forum")
-      case (PageRole.ForumCategory, _) =>
+      case (PageRole.Category, _) =>
         fail("Subsequent tests will fail, after I changed ForumGroup+Forum to Forum+ForumCategory")
       case (PageRole.Code, "css") => ("create-local-theme-style", "/themes/local/theme.css")
       case _ => fail(s"Bad page role: $pageRole")

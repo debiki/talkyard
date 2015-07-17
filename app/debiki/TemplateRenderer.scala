@@ -44,11 +44,14 @@ object TemplateRenderer {
     val template =
       pageReq.thePageRole match {
         case PageRole.HomePage => "homepage"
-        case PageRole.BlogPost => "blogPost"
+        //case PageRole.BlogPost => "blogPost"
         case PageRole.Blog => "blog"
         case PageRole.Forum => "forum"
-        case PageRole.ForumCategory => "editForumCategory"
-        case PageRole.ForumTopic => "forumTopic"
+        case PageRole.Category => "editForumCategory"
+        case PageRole.Discussion => "forumTopic"
+        case PageRole.Question => "forumTopic"
+        case PageRole.MindMap => "forumTopic"
+        case PageRole.About => "forumTopic"
         case PageRole.Code => "codePage"
         case PageRole.EmbeddedComments => "embeddedComments"
         case _ =>

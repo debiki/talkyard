@@ -113,8 +113,8 @@ object DebikiHttp {
   def throwUnprocessableEntity(errCode: String, message: String = "") =
     throw ResultException(UnprocessableEntityResult(errCode, message))
 
-  def throwBadParamValue(errCode: String, paramName: String) =
-    throwBadReq(errCode, "Bad `"+ paramName +"` value")
+  def throwBadArgument(errCode: String, parameterName: String) =
+    throwBadReq(errCode, "Bad `"+ parameterName +"` value")
 
   def throwBadConfigFile(errCode: String, message: String) =
     throwNotFound(errCode, message)

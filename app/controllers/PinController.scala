@@ -51,7 +51,7 @@ object PinController extends p.mvc.Controller {
       throwBadReq("DwE4KEF82", o"""Bad pin order. Please enter a number
            between ${PageMeta.MinPinOrder} and ${PageMeta.MaxPinOrder}""")
 
-    val pinWhere = PinPageWhere.fromInt(pinWhereInt) getOrElse throwBadParamValue(
+    val pinWhere = PinPageWhere.fromInt(pinWhereInt) getOrElse throwBadArgument(
       "DwE4KE28", "pinWhere")
 
     request.dao.pinPage(pageId, pinWhere, pinOrder)

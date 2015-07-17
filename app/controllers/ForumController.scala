@@ -56,7 +56,7 @@ object ForumController extends mvc.Controller {
   def listCategories(forumId: PageId) = GetAction { request =>
     val categories = request.dao.listChildPages(parentPageIds = Seq(forumId),
       orderOffset = PageOrderOffset.ByPublTime, // COULD create a PageOrderOffset.ByPinOrder instead
-      limit = 999, onlyPageRole = Some(PageRole.ForumCategory))
+      limit = 999, onlyPageRole = Some(PageRole.Category))
 
     val recentTopicsByCategoryId =
       mutable.Map[PageId, Seq[PagePathAndMeta]]()

@@ -149,11 +149,11 @@ abstract class SiteDao
   def listTopicsInTree(rootPageId: PageId, orderOffset: PageOrderOffset, limit: Int)
         : Seq[PagePathAndMeta] = {
     val childCategories = listChildPages(parentPageIds = Seq(rootPageId),
-      orderOffset = PageOrderOffset.Any, limit = 999, onlyPageRole = Some(PageRole.ForumCategory))
+      orderOffset = PageOrderOffset.Any, limit = 999, onlyPageRole = Some(PageRole.Category))
     val childCategoryIds = childCategories.map(_.id)
     val allCategoryIds = childCategoryIds :+ rootPageId
     val topics: Seq[PagePathAndMeta] = listChildPages(parentPageIds = allCategoryIds,
-      orderOffset = orderOffset, limit = limit, excludePageRole = Some(PageRole.ForumCategory))
+      orderOffset = orderOffset, limit = limit, excludePageRole = Some(PageRole.Category))
     topics
   }
 

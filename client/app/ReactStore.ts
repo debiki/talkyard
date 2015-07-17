@@ -178,7 +178,7 @@ ReactStore.getPageId = function() {
 }
 
 
-ReactStore.getPageRole = function() {
+ReactStore.getPageRole = function(): PageRole {
   return store.pageRole;
 }
 

@@ -123,11 +123,11 @@ export var CategoriesAndTopics = createComponent({
   },
 
   createCategory: function() {
-    this.createChildPage('ForumCategory');
+    this.createChildPage(PageRole.Category);
   },
 
   createTopic: function() {
-    this.createChildPage('ForumTopic');
+    this.createChildPage(PageRole.Discussion);
   },
 
   createChildPage: function(role: string) {

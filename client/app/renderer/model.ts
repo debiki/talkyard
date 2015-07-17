@@ -133,7 +133,8 @@ interface Store {
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
   pageId: string;
-  pageRole: string;
+  parentPageId?: string;
+  pageRole: PageRole;
   pagePath: string;
   pinOrder?: number;
   pinWhere?: PinPageWhere;

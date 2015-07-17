@@ -156,11 +156,11 @@ export var CreateSomethingHere = createComponent({
     };
   },
   render: function() {
-    var createWhat = this.state.createWhat;
-    var anyCreateForumPanel = createWhat === 'Forum' ?
+    var createWhat: PageRole = this.state.createWhat;
+    var anyCreateForumPanel = createWhat === PageRole.Forum ?
         CreateForumPanel(this.props) : null;
 
-    var anyCreateEmbeddedCommentsPanel = createWhat === 'EmbeddedComments' ?
+    var anyCreateEmbeddedCommentsPanel = createWhat === PageRole.EmbeddedComments ?
         CreateEmbeddedCommentsPanel(this.props) : null;
 
     // For all sites except for the first one, we have already asked the user
@@ -169,7 +169,7 @@ export var CreateSomethingHere = createComponent({
     var anyCreateEmbeddedCommentsButton;
     if (debiki.siteId === debiki.FirstSiteId) {
       anyCreateEmbeddedCommentsButton =
-          Button({ active: createWhat === 'EmbeddedComments',
+          Button({ active: createWhat === PageRole.EmbeddedComments,
               onClick: () => this.setState({ createWhat: 'EmbeddedComments' })},
               'Setup Embedded Comments');
       message = 'This site is empty right now. What do you want to do?';
@@ -183,8 +183,8 @@ export var CreateSomethingHere = createComponent({
         r.h1({}, 'Welcome to Your Site'),
         r.p({}, message),
         r.div({ className: 'do-what-options' },
-          Button({ active: createWhat === 'Forum',
-              onClick: () => this.setState({ createWhat: 'Forum' })},
+          Button({ active: createWhat === PageRole.Forum,
+              onClick: () => this.setState({ createWhat: PageRole.Forum })},
               'Create a Forum'),
           anyCreateEmbeddedCommentsButton),
         anyCreateForumPanel,
@@ -209,7 +209,7 @@ export var CreateForumPanel = createComponent({
 
   createForum: function() {
     var data = {
-      pageRole: 'Forum',
+      pageRole: PageRole.Forum,
       pageStatus: 'Published',
       pageTitle: this.state.forumName,
       pageBody: 'Forum description',

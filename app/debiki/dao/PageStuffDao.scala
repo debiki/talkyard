@@ -64,7 +64,7 @@ trait PageStuffDao {
     val titlesAndBodies = transaction.loadPosts(pageIds flatMap { pageId =>
       var pagePostIds = Seq(PagePostId(pageId, TitleId))
       val pageMeta = pageMetasById.get(pageId)
-      if (pageMeta.exists(meta => meta.pageRole == PageRole.ForumCategory || meta.isPinned)) {
+      if (pageMeta.exists(meta => meta.pageRole == PageRole.Category || meta.isPinned)) {
         pagePostIds :+= PagePostId(pageId, BodyId)
       }
       pagePostIds

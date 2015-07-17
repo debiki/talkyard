@@ -73,8 +73,9 @@ trait PagesDao {
           author.id
         }
         else {
-          if (pageRole != PageRole.ForumTopic)
-            throwForbidden("DwE0GK3w2", "You may create forum topics only")
+          if (pageRole != PageRole.Discussion && pageRole != PageRole.Question &&
+              pageRole != PageRole.MindMap)
+            throwForbidden("DwE5KEPY2", s"Bad forum topic page type: $pageRole")
 
           anyParentPageId match {
             case None =>
@@ -83,9 +84,9 @@ trait PagesDao {
               val parentMeta = loadPageMeta(parentId) getOrElse throwNotFound(
                 "DwE78BI21", s"Parent forum or category does not exist, id: '$parentId'")
 
-              if (parentMeta.pageRole != PageRole.ForumCategory &&
+              if (parentMeta.pageRole != PageRole.Category &&
                   parentMeta.pageRole != PageRole.Forum)
-                throwForbidden("DwE830BIR5", "Parent page is not a Forum or ForumCategory")
+                throwForbidden("DwE830BIR5", "Parent page is not a forum or a forum category")
 
               // The System user currently approves all new forum topics.
               // SECURITY COULD analyze the author's trust level and past actions, and

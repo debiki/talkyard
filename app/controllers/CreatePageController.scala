@@ -36,8 +36,8 @@ object CreatePageController extends mvc.Controller {
     import request.{dao, body}
 
     val anyParentPageId = (body \ "parentPageId").asOpt[PageId]
-    val pageRoleStr = (body \ "pageRole").as[String]
-    val pageRole = PageRole.parse(pageRoleStr)
+    val pageRoleInt = (body \ "pageRole").as[Int]
+    val pageRole = PageRole.fromInt(pageRoleInt) getOrElse throwBadArgument("DwE3KE04", "pageRole")
     val pageStatusStr = (body \ "pageStatus").as[String]
     val pageStatus = PageStatus.parse(pageStatusStr)
     val anyFolder = (body \ "folder").asOpt[String]

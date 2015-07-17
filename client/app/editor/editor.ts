@@ -173,7 +173,7 @@ export var Editor = createComponent({
       return true;
     }
     if (this.state.newForumPageRole) {
-      var what = this.state.newForumPageRole === 'ForumTopic' ? 'topic' : 'category';
+      var what = this.state.newForumPageRole === PageRole.Category ? 'category' : 'topic';
       alert('Please first either save or cancel your new forum ' + what);
       d.i.clearIsReplyingMarks();
       return true;
@@ -278,8 +278,8 @@ export var Editor = createComponent({
   render: function() {
     var titleInput;
     if (this.state.newForumPageRole) {
-      var defaultTitle = this.state.newForumPageRole === 'ForumTopic' ?
-          'Topic title' : 'Category title';
+      var defaultTitle = this.state.newForumPageRole === PageRole.Category ?
+          'Category title' : 'Topic title';
       titleInput =
           r.input({ className: 'title-input', type: 'text', ref: 'titleInput',
               key: this.state.newForumPageRole, defaultValue: defaultTitle });
@@ -292,11 +292,11 @@ export var Editor = createComponent({
         r.div({},
           'Editing ', r.a({ href: '#post-' + editingPostId }, 'post ' + editingPostId + ':'));
     }
-    else if (this.state.newForumPageRole === 'ForumTopic') {
-      doingWhatInfo = r.div({}, 'New topic title and text:');
-    }
-    else if (this.state.newForumPageRole === 'ForumCategory') {
+    else if (this.state.newForumPageRole === PageRole.Category) {
       doingWhatInfo = r.div({}, 'New category title and text:');
+    }
+    else if (this.state.newForumPageRole) {
+      doingWhatInfo = r.div({}, 'New topic title and text:');
     }
     else if (this.state.replyToPostIds.length === 0) {
       doingWhatInfo =
@@ -323,11 +323,11 @@ export var Editor = createComponent({
     else if (this.state.replyToPostIds.length) {
       saveButtonTitle = 'Post reply';
     }
-    else if (this.state.newForumPageRole === 'ForumTopic') {
-      saveButtonTitle = 'Create new topic';
-    }
-    else if (this.state.newForumPageRole === 'ForumCategory') {
+    else if (this.state.newForumPageRole === PageRole.Category) {
       saveButtonTitle = 'Create new category';
+    }
+    else if (this.state.newForumPageRole) {
+      saveButtonTitle = 'Create new topic';
     }
 
     // If not visible, don't remove the editor, just hide it, so we won't have

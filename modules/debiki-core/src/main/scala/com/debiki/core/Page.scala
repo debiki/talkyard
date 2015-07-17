@@ -179,7 +179,7 @@ case class PageMeta(
 
 
 
-sealed abstract class PageRole {
+sealed abstract class PageRole(protected val IntValue: Int) {
 
   /** True if this page is e.g. a blog or a forum — they can have child pages
     * (namely blog posts, forum topics).
@@ -188,61 +188,85 @@ sealed abstract class PageRole {
 
   /** Should use nofollow links if many people can edit a page. */
   def isWidelyEditable: Boolean = true
+
+  def toInt = IntValue
+
 }
 
 
 object PageRole {
 
-  case object HomePage extends PageRole {
+  case object HomePage extends PageRole(1) {
     override def isWidelyEditable = false
   }
 
-  case object WebPage extends PageRole {
+  case object WebPage extends PageRole(2) {
     override def isWidelyEditable = false
   }
 
-  case object Code extends PageRole
+  case object Code extends PageRole(3)
 
-  case object SpecialContent extends PageRole
+  case object SpecialContent extends PageRole(4)
 
-  case object EmbeddedComments extends PageRole
+  case object EmbeddedComments extends PageRole(5)
 
-  case object Blog extends PageRole {
+  /** Lists blog posts. Everything with a Blog as its parent page is a blog post,
+    * unless it's a category. */
+  case object Blog extends PageRole(6) {
     override def isSection = true
   }
 
-  case object BlogPost extends PageRole {
-    override def isWidelyEditable = false
-  }
-
-  case object Forum extends PageRole {
+  /** Lists forum topic categories plus forum topics with no parent category. */
+  case object Forum extends PageRole(7) {
     override def isSection = true
   }
 
-  case object ForumCategory extends PageRole {
+  /** Everything with a forum category as its parent page is a forum topic, unless
+    * it's a ForumCategory itself, then it's a sub category. */
+  case object Category extends PageRole(8) {
     override val isSection = true
   }
 
-  case object ForumTopic extends PageRole
+  /** About a forum category (Discourse's forum category about topic). Shown as a per
+    * category welcome page, and by editing the page body you edit the forum category
+    * description. */
+  case object About extends PageRole(9)
 
+  /** The default topic type in a forum. Unanswered questions will be listed somewhere?
+    * and marked with a question mark icon somehow? */
+  case object Question extends PageRole(10)
+
+  /** Mind maps use 2D layout, even if the site is configured to use 1D layout. */
+  case object MindMap extends PageRole(11)
+
+  /** For discussions (non-questions) or announcements or blog posts, for example.  */
+  case object Discussion extends PageRole(12)
+
+  /*
   case object WikiMainPage extends PageRole {
     override def isSection = true
   }
 
   case object WikiPage extends PageRole
+  */
 
-
-  // Hmm, regrettably this breaks should I rename any case object.
-  // Perhaps use a match ... case list instead?
-  private val _PageRoleLookup = Vector(
-    HomePage, WebPage, EmbeddedComments, Blog, BlogPost,
-    Forum, ForumCategory, ForumTopic,
-    WikiMainPage, WikiPage,
-    Code).map(x => (x, x.toString))
-
-  def parse(pageRoleString: String): PageRole =
-    _PageRoleLookup.find(_._2 == pageRoleString).map(_._1).getOrElse(
-      illArgErr("DwE930rR3", s"Bad page role: `$pageRoleString'"))
+  def fromInt(value: Int): Option[PageRole] = Some(value match {
+    case HomePage.IntValue => HomePage
+    case WebPage.IntValue => WebPage
+    case Code.IntValue => Code
+    case SpecialContent.IntValue => SpecialContent
+    case EmbeddedComments.IntValue => EmbeddedComments
+    case Blog.IntValue => Blog
+    case Forum.IntValue => Forum
+    case Category.IntValue => Category
+    case About.IntValue => About
+    case Question.IntValue => Question
+    case MindMap.IntValue => MindMap
+    case Discussion.IntValue => Discussion
+    //case WikiMainPage.IntValue => WikiMainPage
+    //case WikiPage.IntValue => WikiPage
+    case _ => return None
+  })
 
 }
 

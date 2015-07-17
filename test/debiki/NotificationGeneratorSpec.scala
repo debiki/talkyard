@@ -79,7 +79,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
   val PageWithApprovedBody = EmptyPage + rawBody + approvalOfBody
 
   val pageNoPath = PageNoPath(PageWithApprovedBody, Nil, PageMeta.forNewPage(
-    PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
+    PageRole.Discussion, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
 
   def mockUser(siteDaoMock: SiteDao, user: User) {
     def username = user.username getOrDie "DwE509kEF3"
@@ -148,7 +148,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
       mockUser(siteDaoMock, bodyAuthor)
 
       val page =  PageNoPath(PageWithApprovedBody + rawReply, Nil, PageMeta.forNewPage(
-        PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
+        PageRole.Discussion, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
       val notfs =
         NotificationGenerator(page, siteDaoMock).generateNotifications(approvalOfReply::Nil)
 
@@ -168,7 +168,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
       when(siteDaoMock.loadUser(bodyAuthor.id)).thenReturn(Some(bodyAuthor))
 
       val page =  PageNoPath(PageWithApprovedBody + rawReply, Nil, PageMeta.forNewPage(
-        PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
+        PageRole.Discussion, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
       val approval = approvalOfReply.copy(
         userIdData = UserIdData.newTest(userId = bodyAuthor.id))
       val notfs = NotificationGenerator(page, siteDaoMock).generateNotifications(approval::Nil)
@@ -185,7 +185,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
 
       val page =  PageNoPath(PageWithApprovedBody + rawReplyWellBehvdAprvd, Nil,
         PageMeta.forNewPage(
-          PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
+          PageRole.Discussion, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
       val approval = approvalOfReply.copy(
         userIdData = UserIdData.newTest(userId = bodyAuthor.id))
 
@@ -286,7 +286,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
         userIdData = UserIdData.newTest(userId = theReply.userId), text = patch,
         autoApplied = true, approval = None)
       val page = PageNoPath(PageWithApprovedBody + theReply + theEdit, Nil, PageMeta.forNewPage(
-        PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
+        PageRole.Discussion, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
 
       val notfs =
         NotificationGenerator(page, siteDaoMock).generateNotifications(approvalOfReply::Nil)
@@ -302,7 +302,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
 
       val theReply = copyCreatePost(rawReplyWellBehvdAprvd, text = textBefore)
       val page = PageNoPath(PageWithApprovedBody + theReply, Nil, PageMeta.forNewPage(
-        PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
+        PageRole.Discussion, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
 
       val rawEdit = RawPostAction.toEditPost(
         id = 12345, postId = theReply.id, ctime = new ju.Date,
@@ -339,7 +339,7 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
         userIdData = UserIdData.newTest(userId = theReply.userId), text = patch,
         autoApplied = true, approval = None)
       val page = PageNoPath(PageWithApprovedBody + theReply + rawEdit, Nil, PageMeta.forNewPage(
-        PageRole.ForumTopic, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
+        PageRole.Discussion, author = bodyAuthor, parts = EmptyPage, publishDirectly = true))
 
       val notfs =
         NotificationGenerator(page, siteDaoMock).generateNotifications(
