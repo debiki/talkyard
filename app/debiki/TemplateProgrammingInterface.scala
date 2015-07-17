@@ -300,7 +300,7 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
 
     val pathsAndMeta: Seq[PagePathAndMeta] =
       _pageReq.dao.listChildPages(Seq(parentPageId getOrElse pageId), PageOrderOffset.ByPublTime,
-        limit = limit, filterPageRole = filterPageRole)
+        limit = limit, onlyPageRole = filterPageRole)
 
     // BUG This might result in fewer than `limit` pages being returned.
     // In the future, move filtering to `pageReq.dao` instead?

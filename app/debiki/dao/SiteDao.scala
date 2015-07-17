@@ -135,9 +135,10 @@ abstract class SiteDao
   // ----- List pages
 
   def listChildPages(parentPageIds: Seq[PageId], orderOffset: PageOrderOffset,
-        limit: Int, filterPageRole: Option[PageRole] = None)
-        : Seq[PagePathAndMeta] =
-    siteDbDao.listChildPages(parentPageIds, orderOffset, limit = limit, filterPageRole)
+        limit: Int, onlyPageRole: Option[PageRole] = None,
+        excludePageRole: Option[PageRole] = None): Seq[PagePathAndMeta] =
+    siteDbDao.listChildPages(parentPageIds, orderOffset, limit = limit,
+      onlyPageRole = onlyPageRole, excludePageRole = excludePageRole)
 
 
   /** Lists all topics below rootPageId. Currently intended for forums only.
@@ -148,11 +149,11 @@ abstract class SiteDao
   def listTopicsInTree(rootPageId: PageId, orderOffset: PageOrderOffset, limit: Int)
         : Seq[PagePathAndMeta] = {
     val childCategories = listChildPages(parentPageIds = Seq(rootPageId),
-      PageOrderOffset.Any, limit = 999, filterPageRole = Some(PageRole.ForumCategory))
+      orderOffset = PageOrderOffset.Any, limit = 999, onlyPageRole = Some(PageRole.ForumCategory))
     val childCategoryIds = childCategories.map(_.id)
     val allCategoryIds = childCategoryIds :+ rootPageId
     val topics: Seq[PagePathAndMeta] = listChildPages(parentPageIds = allCategoryIds,
-      orderOffset, limit = limit, filterPageRole = Some(PageRole.ForumTopic))
+      orderOffset = orderOffset, limit = limit, excludePageRole = Some(PageRole.ForumCategory))
     topics
   }
 

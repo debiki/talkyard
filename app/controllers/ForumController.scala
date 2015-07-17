@@ -55,8 +55,8 @@ object ForumController extends mvc.Controller {
 
   def listCategories(forumId: PageId) = GetAction { request =>
     val categories = request.dao.listChildPages(parentPageIds = Seq(forumId),
-      PageOrderOffset.ByPublTime, // COULD use PageOrderOffset.Manual instead
-      limit = 999, filterPageRole = Some(PageRole.ForumCategory))
+      orderOffset = PageOrderOffset.ByPublTime, // COULD create a PageOrderOffset.ByPinOrder instead
+      limit = 999, onlyPageRole = Some(PageRole.ForumCategory))
 
     val recentTopicsByCategoryId =
       mutable.Map[PageId, Seq[PagePathAndMeta]]()
@@ -66,10 +66,6 @@ object ForumController extends mvc.Controller {
     for (category <- categories) {
       val recentTopics = listTopicsInclPinned(category.id, PageOrderOffset.ByBumpTime(None),
         request.dao, limit = 5)
-      /*
-      val recentTopics = request.dao.listChildPages(parentPageIds = Seq(category.id),
-        PageOrderOffset.ByPublTime, limit = 5, filterPageRole = Some(PageRole.ForumTopic))
-        */
       recentTopicsByCategoryId(category.id) = recentTopics
       pageIds.append(category.pageId)
       pageIds.append(recentTopics.map(_.pageId): _*)
@@ -91,6 +87,7 @@ object ForumController extends mvc.Controller {
     val topics: Seq[PagePathAndMeta] =
       dao.listTopicsInTree(rootPageId = categoryId, orderOffset, limit = limit)
 
+    // If sorting by bump time, sort pinned topics first. Otherwise, don't.
     val topicsInclPinned = orderOffset match {
       case orderOffset: PageOrderOffset.ByBumpTime if orderOffset.offset.isEmpty =>
         val pinnedTopics = dao.listTopicsInTree(
