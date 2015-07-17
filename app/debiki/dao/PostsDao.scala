@@ -42,6 +42,8 @@ trait PostsDao {
         authorId: UserId, browserIdData: BrowserIdData): PostId = {
     val htmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(
       text, allowClassIdDataAttrs = false, followLinks = false)
+    if (htmlSanitized.trim.isEmpty)
+      throwBadReq("DwE6KEF2", "Empty reply")
 
     val postId = readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)

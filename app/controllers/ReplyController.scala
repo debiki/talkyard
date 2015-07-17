@@ -40,7 +40,7 @@ object ReplyController extends mvc.Controller {
     val pageId = (body \ "pageId").as[PageId]
     val anyPageUrl = (body \ "pageUrl").asOpt[String]
     val replyToPostIds = (body \ "postIds").as[Set[PostId]]
-    val textUntrimmed = (body \ "text").as[String]
+    val text = (body \ "text").as[String].trim
     val wherePerhapsEmpty = (body \ "where").asOpt[String]
     val whereOpt = if (wherePerhapsEmpty == Some("")) None else wherePerhapsEmpty
 
@@ -56,7 +56,6 @@ object ReplyController extends mvc.Controller {
         */
     }
 
-    val text = textUntrimmed.trim
     if (text.isEmpty)
       throwBadReq("DwE85FK03", "Empty post")
 

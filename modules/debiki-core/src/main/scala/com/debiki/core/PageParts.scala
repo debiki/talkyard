@@ -107,6 +107,7 @@ abstract class PageParts extends People {
   def allPosts: Seq[Post]
 
   def post(postId: PostId): Option[Post] = postsById.get(postId)
+  def post(postId: Option[PostId]): Option[Post] = postId.flatMap(postsById.get)
   def thePost(postId: PostId): Post = post(postId) getOrDie "DwE9PKG3"
 
 
