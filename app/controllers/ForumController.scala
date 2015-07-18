@@ -17,7 +17,7 @@
 
 package controllers
 
-import actions.ApiActions.GetAction
+import actions.ApiActions.{GetAction, StaffPostJsonAction}
 import debiki.dao.PageStuff
 import collection.mutable
 import com.debiki.core._
@@ -41,6 +41,22 @@ object ForumController extends mvc.Controller {
 
   /** Keep synced with client/forum/list-topics/ListTopicsController.NumNewTopicsPerRequest. */
   val NumTopicsToList = 40
+
+
+  def createForumCategory = StaffPostJsonAction(maxLength = 10 * 1000) { request =>
+    val parentPageId = (request.body \ "parentPageId").as[PageId]
+    val anySlug = (request.body \ "categorySlug").asOpt[String]
+    val titleText = (request.body \ "categoryTitle").as[String]
+    val descriptionText = (request.body \ "categoryDescription").as[String]
+
+    val result = request.dao.createForumCategory(parentPageId, anySlug,
+      titleText, descriptionText, authorId = request.theUserId, request.theBrowserIdData)
+
+    OkSafeJson(Json.obj(
+      "allCategories" -> ReactJson.categoriesJson(result.forumId, request.dao),
+      "newCategoryId" -> result.newCategoryId,
+      "newCategorySlug" -> result.newCategorySlug))
+  }
 
 
   def listTopics(categoryId: PageId) = GetAction { request =>
@@ -94,11 +110,19 @@ object ForumController extends mvc.Controller {
           rootPageId = categoryId, PageOrderOffset.ByPinOrderLoadOnlyPinned,
           limit = limit)
         val notPinned = topics.filterNot(topic => pinnedTopics.exists(_.id == topic.id))
-        (pinnedTopics ++ notPinned) sortBy { topic =>
+        val topicsSorted = (pinnedTopics ++ notPinned) sortBy { topic =>
           val isPinned = topic.meta.pinWhere.contains(PinPageWhere.Globally) ||
-            (topic.meta.isPinned && topic.meta.parentPageId.contains(categoryId))
+            (topic.meta.isPinned && (
+              topic.meta.parentPageId.contains(categoryId) ||
+              topic.id == categoryId)) // hack, will vanish when creating category table [forumcategory]
           if (isPinned) topic.meta.pinOrder.get // 1..100
           else Long.MaxValue - topic.meta.bumpedOrPublishedOrCreatedAt.getTime // much larger
+        }
+        // Remove about-category pages for sub categories (or categories, if listing all cats).
+        // Will have to change this once categories have their own table. [forumcategory]
+        topicsSorted filterNot { topic =>
+          topic.meta.parentPageId.contains(categoryId) &&
+            topic.meta.pageRole == PageRole.Category
         }
       case _ => topics
     }
@@ -135,7 +159,8 @@ object ForumController extends mvc.Controller {
     val categoryStuff = pageStuffById.get(category.pageId) getOrDie "DwE5IKJ3"
     val name = categoryStuff.title
     val slug = categoryNameToSlug(name)
-    val recentTopicsJson = recentTopics.map(topicToJson(_, pageStuffById))
+    val topicsNoAboutCategoryPage = recentTopics.filterNot(_.id == category.id)
+    val recentTopicsJson = topicsNoAboutCategoryPage.map(topicToJson(_, pageStuffById))
     Json.obj(
       "pageId" -> category.id,
       "name" -> name,
@@ -161,9 +186,20 @@ object ForumController extends mvc.Controller {
     val createdEpoch = topic.meta.createdAt.getTime
     val bumpedEpoch = DateEpochOrNull(topic.meta.bumpedAt)
     val lastReplyEpoch = DateEpochOrNull(topic.meta.lastReplyAt)
+    val title =
+      if (topic.meta.pageRole == PageRole.Category) {
+        // Temp hack until I've moved categories to their own table, and
+        // there are PageRole.About topics for each category, a la Discourse, with
+        // "About the ... category" titles. [forumcategory]
+        s"About the ${topicStuff.title} category"
+      }
+      else {
+        topicStuff.title
+      }
+
     Json.obj(
       "pageId" -> topic.id,
-      "title" -> topicStuff.title,
+      "title" -> title,
       "url" -> topic.path.value,
       "categoryId" -> topic.parentPageId.getOrDie(
         "DwE49Fk3", s"Topic `${topic.id}', site `${topic.path.siteId}', has no parent page"),

@@ -119,6 +119,14 @@ object PageTitleSettingsController extends mvc.Controller {
       }
     }
 
+    // Refresh cache. If this is a forum category page, we need to refresh the forum and
+    // so it'll reload the category list, which is otherwise cached as JSON in the cached HTML.
+    // This is a hack. It'll go away when forum categories have their own table? [forumcategory]
+    if (oldMeta.pageRole == PageRole.Category) {
+      val ancestorIds = request.dao.loadAncestorIdsParentFirst(pageId)
+      ancestorIds.foreach(request.dao.refreshPageInAnyCache)
+    }
+
     // The browser will update the title and the url path in the address bar.
     OkSafeJson(Json.obj(
       "newTitlePost" -> ReactJson.postToJson2(postId = PageParts.TitleId, pageId = pageId,

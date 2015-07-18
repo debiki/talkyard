@@ -84,6 +84,11 @@ abstract class SiteDao
     dbDao2.readOnlySiteTransaction(siteId, mustBeSerializable = false) { fn(_) }
 
 
+  // Hack. Here for now only, until forum categories have their own table. [forumcategory]
+  // Later on, make protected? Or move to ... where?
+  def refreshPageInAnyCache(pageId: PageId) {}
+
+
   // ----- Tenant
 
   def siteId = siteDbDao.siteId

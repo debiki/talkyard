@@ -94,6 +94,16 @@ export var CategoriesAndTopics = createComponent({
     return {};
   },
 
+  componentWillReceiveProps: function(nextProps) {
+    // If we just created a new category, transition to the latest topics view for
+    // that category.
+    var newCatSlug = nextProps.newCategorySlug;
+    if (newCatSlug && newCatSlug !== this.state.lastCreatedCategorySlug) {
+      this.setState({ lastCreatedCategorySlug: newCatSlug });
+      this.transitionTo('ForumRouteLatest', { categorySlug: newCatSlug });
+    }
+  },
+
   switchCategory: function(newCategorySlug) {
     var routes = this.getRoutes();
     var nextRouteName = routes[routes.length - 1].name;
@@ -130,7 +140,7 @@ export var CategoriesAndTopics = createComponent({
     this.createChildPage(PageRole.Discussion);
   },
 
-  createChildPage: function(role: string) {
+  createChildPage: function(role: PageRole) {
     var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
     d.i.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       var parentPageId = this.getActiveCategory().pageId;
@@ -142,6 +152,13 @@ export var CategoriesAndTopics = createComponent({
     var props: Store = this.props;
     var user = props.user;
     var activeCategory = this.getActiveCategory();
+    if (!activeCategory) {
+      // The user has typed a non-existing category slug in the URL. Or she has just created
+      // a category, opened a page and then clicked Back in the browser. Then this page
+      // reloads, and the browser then uses cached HTML including JSON in which the new
+      // category does not yet exist. Let's try to reload the category list page:
+      location.assign(location.pathname); // works right now when using hash fragment routing [hashrouting]
+    }
 
     var categoryMenuItems =
         props.categories.map((category) => {
@@ -163,9 +180,7 @@ export var CategoriesAndTopics = createComponent({
     }
 
     var createCategoryBtn;
-    if (activeRoute.name === 'ForumRouteCategories' && user.isAdmin
-          && false) {  // disable for now, until I auto create about-this-category topics a la Discourse
-                      // When uncommenting
+    if (activeRoute.name === 'ForumRouteCategories' && user.isAdmin) {
       createCategoryBtn = Button({ onClick: this.createCategory }, 'Create Category');
     }
 
@@ -418,7 +433,10 @@ var TopicRow = createComponent({
 
     var anyPinIcon = topic.pinWhere ? 'icon-pin' : undefined;
     var showExcerpt = topic.pinWhere === PinPageWhere.Globally ||
-        (topic.pinWhere && topic.categoryId == this.props.activeCategory.pageId);
+        (topic.pinWhere && (
+            topic.categoryId === this.props.activeCategory.pageId ||
+            topic.pageId === this.props.activeCategory.pageId)); // hack, will vanish when forum
+                                                // categories have their own db table [forumcategory]
     var excerptIfPinned = showExcerpt
         ? r.p({ className: 'dw-p-excerpt' }, topic.excerpt, r.a({ href: topic.url }, 'read more'))
         : null;

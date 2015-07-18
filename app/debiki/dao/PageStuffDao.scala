@@ -47,6 +47,8 @@ trait PageStuffDao {
 
 
   def loadPageStuff(pageIds: Iterable[PageId]): Map[PageId, PageStuff] = {
+    if (pageIds.isEmpty)
+      return Map.empty
     readOnlyTransaction { transaction =>
       loadStuffImpl(pageIds, transaction)
     }

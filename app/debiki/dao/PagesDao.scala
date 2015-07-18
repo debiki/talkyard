@@ -26,6 +26,13 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 
 
+case class CreateCategoryResult(
+  forumId: PageId,
+  newCategoryId: PageId,
+  newCategorySlug: String)
+
+
+
 /** Loads and saves pages and page parts (e.g. posts and patches).
   *
   * (There's also a class PageDao (with no 's' in the name) that focuses on
@@ -128,7 +135,11 @@ trait PagesDao {
         htmlSanitized = bodyHtmlSanitized,
         approvedById = Some(approvedById))
 
+      val (pinOrder, pinWhere) =
+        if (pageRole == PageRole.Category) (Some(3), Some(PinPageWhere.InCategory))
+        else (None, None)
       val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.currentTime,
+        pinOrder = pinOrder, pinWhere = pinWhere,
         parentPageId = anyParentPageId, url = None, publishDirectly = true)
 
       val auditLogEntry = AuditLogEntry(
@@ -153,6 +164,39 @@ trait PagesDao {
 
       pagePath
     }
+  }
+
+
+  /** Later:[forumcategory] Create a dedicated forum category table. There'll be
+    * something like 20 columns in it (have a look at Discourse) and it makes
+    * no sense to add all that stuff for pages in general.
+    *
+    * And add "faceted search" fields to forum topics: forum id, category id,
+    * sub cat id, so one can directly find all topics in a certain category.
+    */
+  def createForumCategory(parentId: PageId, anySlug: Option[String],
+        titleSource: String, descriptionSource: String,
+        authorId: UserId, browserIdData: BrowserIdData): CreateCategoryResult = {
+
+    // (We currently don't use PageRole.About here, but later on when categories have
+    // been moved to a separate table, I'll remove PageRole.Category and create an about
+    // page here with role About instead.)
+    val categoryPagePath = createPage(PageRole.Category, PageStatus.Published, Some(parentId),
+      anyFolder = None, anySlug = anySlug, titleSource = titleSource,
+      bodySource = descriptionSource, showId = true, authorId = authorId,
+      browserIdData)
+
+    val categoryId = categoryPagePath.pageId getOrDie "DwE4EKYF7"
+    val ancestorIds = loadAncestorIdsParentFirst(categoryId)
+
+    // The forum and and any parent category need to be refreshed because they've
+    // cached the category list (in JSON in the cached HTML).
+    ancestorIds.foreach(refreshPageInAnyCache)
+
+    CreateCategoryResult(
+      forumId = ancestorIds.last,
+      newCategoryId = categoryId,
+      newCategorySlug = categoryPagePath.pageSlug)
   }
 
 

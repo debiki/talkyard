@@ -95,6 +95,8 @@ object PageMeta {
         pageRole: PageRole,
         authorId: UserId,
         creationDati: ju.Date = new ju.Date,
+        pinOrder: Option[Int] = None,
+        pinWhere: Option[PinPageWhere] = None,
         parentPageId: Option[String] = None,
         url: Option[String] = None,
         publishDirectly: Boolean = false) =
@@ -107,6 +109,8 @@ object PageMeta {
       parentPageId = parentPageId,
       embeddingPageUrl = url,
       authorId = authorId,
+      pinOrder = pinOrder,
+      pinWhere = pinWhere,
       numLikes = 0,
       numWrongs = 0,
       numBurys = 0,

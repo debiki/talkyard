@@ -510,10 +510,6 @@ trait PostsDao {
     // COULD split e.g. num_like_votes into ..._total and ..._unique? And update here.
   }
 
-
-  // Move to ... elsewhere? Used by PagesDao too.
-  protected def refreshPageInAnyCache(pageId: PageId) {}
-
 }
 
 
@@ -521,7 +517,7 @@ trait PostsDao {
 trait CachingPostsDao extends PagesDao {
   self: CachingSiteDao =>
 
-  protected override def refreshPageInAnyCache(pageId: PageId) {
+  override def refreshPageInAnyCache(pageId: PageId) {
     firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
   }
 

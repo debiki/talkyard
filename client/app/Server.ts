@@ -515,6 +515,11 @@ export function flagPost(postId: string, flagType: string, reason: string, succe
 }
 
 
+export function createForumCategory(data, success: (response: any) => void) {
+  postJsonSuccess('/-/create-forum-category', success, data);
+}
+
+
 export function createPage(data, doneCallback: (newPageId: string) => void) {
   postJson('/-/create-page', {
     data: data,

@@ -28,6 +28,7 @@ export var actionTypes = {
   Login: 'Login',
   Logout: 'Logout',
   NewUserAccountCreated: 'NewUserAccountCreated',
+  CreateForumCategory: 'CreateForumCategory',
   PinPage: 'PinPage',
   UnpinPage: 'UnpinPage',
   SetPageNotfLevel: 'SetPageNotfLevel',
@@ -74,6 +75,19 @@ export function newUserAccountCreated() {
 export function logout() {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.Logout
+  });
+}
+
+
+export function createForumCategory(categoryData, success: () => void) {
+  Server.createForumCategory(categoryData, (response) => {
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.CreateForumCategory,
+      allCategories: response.allCategories,
+      newCategoryId: response.newCategoryId,
+      newCategorySlug: response.newCategorySlug,
+    });
+    success();
   });
 }
 

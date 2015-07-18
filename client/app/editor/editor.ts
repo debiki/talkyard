@@ -52,7 +52,7 @@ export function openEditorToEditPost(postId: number) {
 }
 
 
-export function editNewForumPage(parentPageId: string, role: string) {
+export function editNewForumPage(parentPageId: string, role: PageRole) {
   theEditor.editNewForumPage(parentPageId, role);
 }
 
@@ -142,15 +142,20 @@ export var Editor = createComponent({
     });
   },
 
-  editNewForumPage: function(parentPageId: string, role: string) {
+  editNewForumPage: function(parentPageId: string, role: PageRole) {
     if (this.alertBadState())
       return;
     this.showEditor();
+    var text = this.state.text || this.state.draft;
+    if (role === PageRole.Category) {
+      text = this.state.draft || newCategoryPlaceholderText;
+    }
     this.setState({
       newForumPageParentId: parentPageId,
       newForumPageRole: role,
-      text: this.state.text ? this.state.text : this.state.draft
+      text: text
     });
+    this.updatePreview();
   },
 
   alertBadState: function(wantsToDoWhat = null) {
@@ -210,7 +215,10 @@ export var Editor = createComponent({
   },
 
   onSaveClick: function() {
-    if (this.state.newForumPageRole) {
+    if (this.state.newForumPageRole === PageRole.Category) {
+      this.saveNewForumCategory();
+    }
+    else if (this.state.newForumPageRole) {
       this.saveNewForumPage();
     }
     else if (_.isNumber(this.state.editingPostId)) {
@@ -229,6 +237,18 @@ export var Editor = createComponent({
 
   saveNewPost: function() {
     Server.saveReply(this.state.replyToPostIds, this.state.text, () => {
+      this.closeEditor();
+    });
+  },
+
+  saveNewForumCategory: function() {
+    var title = $(this.refs.titleInput.getDOMNode()).val();
+    var data = {
+      parentPageId: this.state.newForumPageParentId,
+      categoryTitle: title,
+      categoryDescription: this.state.text
+    };
+    ReactActions.createForumCategory(data, () => {
       this.closeEditor();
     });
   },
@@ -279,7 +299,7 @@ export var Editor = createComponent({
     var titleInput;
     if (this.state.newForumPageRole) {
       var defaultTitle = this.state.newForumPageRole === PageRole.Category ?
-          'Category title' : 'Topic title';
+          'Title' : 'Topic title';
       titleInput =
           r.input({ className: 'title-input', type: 'text', ref: 'titleInput',
               key: this.state.newForumPageRole, defaultValue: defaultTitle });
@@ -362,6 +382,18 @@ export var Editor = createComponent({
               Button({ onClick: this.onCancelClick }, 'Cancel'))))));
   }
 });
+
+
+var newCategoryPlaceholderText =
+    "Replace this first paragraph with a short description of this category.\n" +
+    "Please keep it short — the text will appear on the category list page.]\n" +
+    "\n" +
+    "Here, after the first paragraph, you can add a longer description, with\n" +
+    "for example category guidelines or rules.\n" +
+    "\n" +
+    "Below in the comments section, you can discuss this category. For example,\n" +
+    "should it be merged with another category? Or should it be split\n" +
+    "into many categories?\n";
 
 
 //------------------------------------------------------------------------------

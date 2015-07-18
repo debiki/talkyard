@@ -41,7 +41,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
 
 
   def generateForNewPost(page: Page, newPost: Post): Notifications = {
-    require(page.id == newPost.pageId)
+    require(page.id == newPost.pageId, "DwE4KEW9")
 
     val approverId = newPost.approvedById getOrElse {
       // Don't generate notifications until later when the post gets approved and becomes visible.

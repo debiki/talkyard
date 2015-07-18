@@ -257,10 +257,18 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
    * Returns any parent forums, e.g.: grandparent-forum :: parent-forum :: Nil.
    */
   def listParentForums(): Seq[tpi.ForumOrCategory] = {
-    val parentPageId = _pageReq.thePageMeta.parentPageId match {
-      case None => return Nil
-      case Some(pageId) => pageId
-    }
+    val parentPageId =
+      if (_pageReq.thePageMeta.pageRole == PageRole.Category) {
+        // Hack. The forum category page itself is currently used as the category's
+        // about category page, until I've moved categories to a dedicated table.
+        // Therefore, right now, the category page == the about category page
+        // is placed inside ... itself == the category. [forumcategory]
+        _pageReq.thePageId
+      }
+      else  _pageReq.thePageMeta.parentPageId match {
+        case None => return Nil
+        case Some(pageId) => pageId
+      }
 
     val ancestorPatshAndMeta: Seq[(PagePath, PageMeta)] =
       _pageReq.dao.listAncestorsAndOwnMeta(parentPageId)
