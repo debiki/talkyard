@@ -22,3 +22,18 @@ enum PinPageWhere {
 }
 
 
+enum PageRole {
+  HomePage = 1,
+  WebPage = 2,
+  Code = 3,
+  SpecialContent = 4,
+  EmbeddedComments = 5,
+  Blog = 6,
+  Forum = 7,
+  Category = 8,
+  About = 9,
+  Question = 10,
+  MindMap = 11,
+  Discussion = 12,
+}
+

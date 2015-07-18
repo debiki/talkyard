@@ -121,7 +121,8 @@ var TitleBodyComments = createComponent({
 
   render: function() {
     var anyTitle = null;
-    if (this.props.pageRole === 'HomePage' || this.props.pageRole === 'EmbeddedComments' ||
+    var pageRole: PageRole = this.props.pageRole;
+    if (pageRole === PageRole.HomePage || pageRole === PageRole.EmbeddedComments ||
         this.props.rootPostId !== BodyPostId) {
       // Show no title for the homepage — it should have its own custom HTML with
       // a title and other things.
@@ -134,10 +135,10 @@ var TitleBodyComments = createComponent({
 
     var anyPostHeader = null;
     var anySocialLinks = null;
-    if (this.props.pageRole === 'HomePage' || this.props.pageRole === 'Forum' ||
-        this.props.pageRole === 'ForumCategory' || this.props.pageRole === 'WikiMainPage' ||
-        this.props.pageRole === 'SpecialContent' || this.props.pageRole === 'Blog' ||
-        this.props.pageRole === 'EmbeddedComments' ||
+    if (pageRole === PageRole.HomePage || pageRole === PageRole.Forum ||
+        pageRole === PageRole.Category || // pageRole === PageRole.WikiMainPage ||
+        pageRole === PageRole.SpecialContent || pageRole === PageRole.Blog ||
+        pageRole === PageRole.EmbeddedComments ||
         this.props.rootPostId !== BodyPostId) {
       // Show no author name or social links for these generic pages.
       // And show nothing if we're showing a comment not the article as the root post.
@@ -236,7 +237,7 @@ var RootPostAndComments = createComponent({
       return r.p({}, '(Root post missing, id: ' + this.props.rootPostId +
           ', these are present: ' + _.keys(this.props.allPosts) + ' [DwE8WVP4])');
     var isBody = this.props.rootPostId === BodyPostId;
-    var pageRole = this.props.pageRole;
+    var pageRole: PageRole = this.props.pageRole;
     var threadClass = 'dw-t dw-depth-0' + horizontalCss(this.props.horizontalLayout);
     var postIdAttr = 'post-' + rootPost.postId;
     var postClass = 'dw-p';
@@ -247,16 +248,16 @@ var RootPostAndComments = createComponent({
       postBodyClass += ' dw-ar-p-bd';
     }
 
-    var showComments = pageRole !== 'HomePage' && pageRole !== 'Forum' &&
-        pageRole !== 'ForumCategory' && pageRole !== 'Blog' && pageRole !== 'WikiMainPage' &&
-        pageRole !== 'SpecialContent';
+    var showComments = pageRole !== PageRole.HomePage && pageRole !== PageRole.Forum &&
+        pageRole !== PageRole.Category && pageRole !== PageRole.Blog &&
+        pageRole !== PageRole.SpecialContent; // && pageRole !== PageRole.WikiMainPage
 
     var sanitizedHtml = rootPost.isApproved
         ? rootPost.sanitizedHtml
         : '<p>(Text pending approval.)</p>';
 
     var body = null;
-    if (pageRole !== 'EmbeddedComments') {
+    if (pageRole !== PageRole.EmbeddedComments) {
       body =
         r.div({ className: postClass, id: postIdAttr, onMouseEnter: this.showActions },
           r.div({ className: postBodyClass },
@@ -285,7 +286,7 @@ var RootPostAndComments = createComponent({
           debiki2.renderer.drawHorizontalArrowFromRootPost(rootPost);
     }
 
-    var childIds = pageRole === 'EmbeddedComments' ?
+    var childIds = pageRole === PageRole.EmbeddedComments ?
         this.props.topLevelCommentIdsSorted : rootPost.childIdsSorted;
 
     var children = childIds.map((childId, childIndex) => {
@@ -1023,8 +1024,8 @@ function renderTitleBodyComments() {
   if (!root)
     return;
 
-  var store = debiki2.ReactStore.allData();
-  if (store.pageRole === 'Forum') {
+  var store: Store = debiki2.ReactStore.allData();
+  if (store.pageRole === PageRole.Forum) {
     var router = ReactRouter.create({
       routes: debiki2.renderer.buildForumRoutes(),
       scrollBehavior: debiki2.renderer.ForumScrollBehavior,
@@ -1040,8 +1041,8 @@ function renderTitleBodyComments() {
 
 
 function renderTitleBodyCommentsToString() {
-  var store = debiki2.ReactStore.allData();
-  if (store.pageRole === 'Forum') {
+  var store: Store = debiki2.ReactStore.allData();
+  if (store.pageRole === PageRole.Forum) {
     var routes = debiki2.renderer.buildForumRoutes();
     var result;
     // In the future, when using the HTML5 history API to update the URL when navigating

@@ -214,8 +214,10 @@ export var MiniMap = createComponent({
 });
 
 
-function isPageWithMinimap(pageRole) {
-  return pageRole === 'BlogPost' || pageRole === 'ForumTopic' || pageRole === 'WebPage';
+function isPageWithMinimap(pageRole: PageRole): boolean {
+  return pageRole === PageRole.About || pageRole === PageRole.Question ||
+      pageRole === PageRole.MindMap || pageRole === PageRole.Discussion ||
+      pageRole === PageRole.WebPage;
 }
 
 

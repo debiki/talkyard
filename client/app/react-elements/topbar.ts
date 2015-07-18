@@ -92,7 +92,7 @@ export var TopBar = createComponent({
     var user: User = store.user;
 
     // Don't show all these buttons on a homepage / landing page.
-    if (store.pageRole === 'HomePage')
+    if (store.pageRole === PageRole.HomePage)
       return null;
 
     var loggedInAs = !user.isLoggedIn ? null :
@@ -130,7 +130,7 @@ export var TopBar = createComponent({
         SearchForm({ onClose: this.closeSearchForm });
 
     var pageTitle;
-    if (store.pageRole === 'Forum') {
+    if (store.pageRole === PageRole.Forum) {
       pageTitle =
           r.div({ className: 'dw-topbar-title' }, Title(store));
     }

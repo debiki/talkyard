@@ -131,7 +131,7 @@ occurrence of the magic string with user specific data. *@
       serverOrigin: '//@serverAddress',
       pageUri: '//@serverAddress@pageUriPath',
       pageId: @Html(pageIdQuotedOrUndefined),
-      pageRole: '@{ anyPageRole.map(_.toString) getOrElse "" }',
+      pageRole: @{ anyPageRole.map(_.toInt) getOrElse null },
       isInEmbeddedCommentsIframe: @{
         if (anyPageRole == Some(com.debiki.core.PageRole.EmbeddedComments)) "true" else "false"
       },

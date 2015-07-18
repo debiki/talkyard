@@ -57,10 +57,8 @@ var PageToolsDialog = createComponent({
   },
 
   isEmpty: function() {
-    var store = this.state.store;
-    // Later: check if parent page is forum or forum category instead?
-    // Currently all one can do is to pin forum topics.
-    return store.pageRole !== 'ForumTopic';
+    var store: Store = this.state.store;
+    return !canPinPage(store);
   },
 
   open: function(post: Post) {
@@ -83,17 +81,17 @@ var PageToolsDialog = createComponent({
     if (!this.state.isOpen)
       return null;
 
-    var store = this.state.store;
+    var store: Store = this.state.store;
     var childProps = {
       store: store,
       closeAllDialogs: this.close
     };
 
-    var pinPageButton = store.pageRole !== 'ForumTopic' ? null :
+    var pinPageButton = !canPinPage(store) ? null :
       ModalTrigger({ modal: PinPageDialog(childProps) },
         Button({}, store.pinWhere ? "Edit Pin" : "Pin Topic"));
 
-    var unpinPageButton = (store.pageRole !== 'ForumTopic' || !store.pinWhere) ? null :
+    var unpinPageButton = (!canPinPage(store) || !store.pinWhere) ? null :
       Button({ onClick: this.unpinPage }, "Unpin Topic");
 
     var buttons = [
@@ -106,6 +104,11 @@ var PageToolsDialog = createComponent({
         r.div({ className: 'modal-footer' }, Button({ onClick: this.close }, 'Close'))));
   }
 });
+
+
+function canPinPage(store: Store) {
+  return store.parentPageId;
+}
 
 
 var DefaultPinOrder = 5;

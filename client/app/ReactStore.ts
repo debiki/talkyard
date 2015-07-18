@@ -69,6 +69,12 @@ ReactDispatcher.register(function(payload) {
       store.newUserAccountCreated = true;
       break;
 
+    case ReactActions.actionTypes.CreateForumCategory:
+      store.categories = action.allCategories;
+      store.newCategoryId = action.newCategoryId;
+      store.newCategorySlug = action.newCategorySlug;
+      break;
+
     case ReactActions.actionTypes.PinPage:
       store.pinOrder = action.pinOrder;
       store.pinWhere = action.pinWhere;
@@ -178,7 +184,7 @@ ReactStore.getPageId = function() {
 }
 
 
-ReactStore.getPageRole = function() {
+ReactStore.getPageRole = function(): PageRole {
   return store.pageRole;
 }
 

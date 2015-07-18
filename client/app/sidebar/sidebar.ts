@@ -401,7 +401,7 @@ export var Sidebar = createComponent({
   },
 
   render: function() {
-    var store = this.state.store;
+    var store: Store = this.state.store;
 
     if (!isPageWithSidebar(store.pageRole))
       return null;
@@ -509,7 +509,7 @@ export var Sidebar = createComponent({
     var smallScreen = Math.min(debiki.window.width(), debiki.window.height()) < 500;
     var abbreviateHowMuch = smallScreen ? 'Much' : 'ABit';
     var commentsElems = comments.map((post, index) => {
-      var postProps = _.clone(store);
+      var postProps: any = _.clone(store);
       postProps.post = post;
       postProps.onClick = (event) => this.focusPost(post, index),
       postProps.abbreviate = abbreviateHowMuch;
@@ -561,8 +561,10 @@ export var Sidebar = createComponent({
 });
 
 
-function isPageWithSidebar(pageRole) {
-  return pageRole === 'BlogPost' || pageRole === 'ForumTopic' || pageRole === 'WebPage';
+function isPageWithSidebar(pageRole: PageRole): boolean {
+  return pageRole === PageRole.About || pageRole === PageRole.Question ||
+      pageRole === PageRole.MindMap || pageRole === PageRole.Discussion ||
+      pageRole === PageRole.WebPage || pageRole === PageRole.EmbeddedComments;
 }
 
 

@@ -74,7 +74,7 @@ object ReactJson {
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
       "pageId" -> pageReq.thePageId,
-      "pageRole" -> JsString(pageReq.thePageRole.toString),
+      "pageRole" -> JsNumber(pageReq.thePageRole.toInt),
       "pagePath" -> JsString(pageReq.pagePath.value),
       "numPosts" -> JsNumber(0),
       "numPostsExclTitle" -> JsNumber(0),
@@ -157,7 +157,8 @@ object ReactJson {
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
       "pageId" -> pageReq.thePageId,
-      "pageRole" -> JsString(page.role.toString),
+      "parentPageId" -> JsStringOrNull(page.meta.parentPageId),
+      "pageRole" -> JsNumber(page.role.toInt),
       "pagePath" -> JsString(pageReq.pagePath.value),
       "pinOrder" -> JsNumberOrNull(page.meta.pinOrder),
       "pinWhere" -> JsNumberOrNull(page.meta.pinWhere.map(_.toInt)),
@@ -363,8 +364,13 @@ object ReactJson {
     if (request.pageRole != Some(PageRole.Forum))
       return JsArray(Nil)
 
-    val categories: Seq[Category] = request.dao.loadCategoryTree(request.thePageId)
-    val pageStuffById = request.dao.loadPageStuff(categories.map(_.pageId))
+    categoriesJson(request.thePageId, request.dao)
+  }
+
+
+  def categoriesJson(forumId: PageId, dao: SiteDao): JsArray = {
+    val categories: Seq[Category] = dao.loadCategoryTree(forumId)
+    val pageStuffById = dao.loadPageStuff(categories.map(_.pageId))
     val categoriesJson = JsArray(categories map { category =>
       val pageStuff = pageStuffById.get(category.pageId) getOrDie "DwE3KE78"
       val categoryName = pageStuff.title

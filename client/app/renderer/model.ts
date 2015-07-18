@@ -133,7 +133,8 @@ interface Store {
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
   pageId: string;
-  pageRole: string;
+  parentPageId?: string;
+  pageRole: PageRole;
   pagePath: string;
   pinOrder?: number;
   pinWhere?: PinPageWhere;
@@ -141,6 +142,8 @@ interface Store {
   numPostsExclTitle: number;
   isInEmbeddedCommentsIframe: boolean;
   categories: Category[];
+  newCategoryId: string; // would like to remove. Later, when everything is one SPA and there's just one router available from everywhere. Then I can transition directly to the new category without this variable.
+  newCategorySlug: string; // would like to remove
   user: User;
   userSpecificDataAdded?: boolean;
   newUserAccountCreated?: boolean;

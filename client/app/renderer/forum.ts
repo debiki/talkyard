@@ -94,6 +94,16 @@ export var CategoriesAndTopics = createComponent({
     return {};
   },
 
+  componentWillReceiveProps: function(nextProps) {
+    // If we just created a new category, transition to the latest topics view for
+    // that category.
+    var newCatSlug = nextProps.newCategorySlug;
+    if (newCatSlug && newCatSlug !== this.state.lastCreatedCategorySlug) {
+      this.setState({ lastCreatedCategorySlug: newCatSlug });
+      this.transitionTo('ForumRouteLatest', { categorySlug: newCatSlug });
+    }
+  },
+
   switchCategory: function(newCategorySlug) {
     var routes = this.getRoutes();
     var nextRouteName = routes[routes.length - 1].name;
@@ -123,14 +133,14 @@ export var CategoriesAndTopics = createComponent({
   },
 
   createCategory: function() {
-    this.createChildPage('ForumCategory');
+    this.createChildPage(PageRole.Category);
   },
 
   createTopic: function() {
-    this.createChildPage('ForumTopic');
+    this.createChildPage(PageRole.Discussion);
   },
 
-  createChildPage: function(role: string) {
+  createChildPage: function(role: PageRole) {
     var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
     d.i.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       var parentPageId = this.getActiveCategory().pageId;
@@ -142,6 +152,13 @@ export var CategoriesAndTopics = createComponent({
     var props: Store = this.props;
     var user = props.user;
     var activeCategory = this.getActiveCategory();
+    if (!activeCategory) {
+      // The user has typed a non-existing category slug in the URL. Or she has just created
+      // a category, opened a page and then clicked Back in the browser. Then this page
+      // reloads, and the browser then uses cached HTML including JSON in which the new
+      // category does not yet exist. Let's try to reload the category list page:
+      location.assign(location.pathname); // works right now when using hash fragment routing [hashrouting]
+    }
 
     var categoryMenuItems =
         props.categories.map((category) => {
@@ -163,9 +180,7 @@ export var CategoriesAndTopics = createComponent({
     }
 
     var createCategoryBtn;
-    if (activeRoute.name === 'ForumRouteCategories' && user.isAdmin
-          && false) {  // disable for now, until I auto create about-this-category topics a la Discourse
-                      // When uncommenting
+    if (activeRoute.name === 'ForumRouteCategories' && user.isAdmin) {
       createCategoryBtn = Button({ onClick: this.createCategory }, 'Create Category');
     }
 
@@ -217,25 +232,35 @@ export var ForumTopicList = createComponent({
   },
 
   componentDidMount: function() {
-    this.loadTopics(this.props.activeCategory.pageId, false);
+    // This happens when navigating back to the lates-topics list after having shown
+    // all categories (plus on initial page load).
+    this.loadTopics(this.props, false);
   },
 
   componentWillReceiveProps: function(nextProps) {
-    var keepCurrentTopics =
-        this.props.activeCategory.pageId === nextProps.activeCategory.pageId &&
-        this.props.activeRoute.name === nextProps.activeRoute.name;
-    this.loadTopics(nextProps.activeCategory.pageId, keepCurrentTopics);
+    // This happens when switching category or showing top topics instead of latest topics.
+    this.loadTopics(nextProps, false);
   },
 
   onLoadMoreTopicsClick: function() {
-    this.loadTopics(this.props.activeCategory.pageId, true);
+    this.loadTopics(this.props, true);
   },
 
-  loadTopics: function(categoryId, keepCurrentTopics) {
+  loadTopics: function(nextProps, loadMore) {
+    var isNewView =
+        this.props.activeCategory.pageId !== nextProps.activeCategory.pageId ||
+        this.props.activeRoute.name !== nextProps.activeRoute.name;
+
+    // Avoid loading the same topics many times:
+    // - On page load, componentDidMount() and componentWillReceiveProps() both loads topics.
+    // - When we're refreshing the page because of Flux events, don't load the same topics again.
+    if (!isNewView && !loadMore && (this.state.topics || this.state.isLoading))
+      return;
+
     var anyLastTopic;
     var anyTimeOffset: number;
     var anyLikesOffset: number;
-    if (!keepCurrentTopics) {
+    if (isNewView) {
       this.setState({
         topics: null,
         showLoadMoreButton: false
@@ -244,6 +269,7 @@ export var ForumTopicList = createComponent({
     else {
       anyLastTopic = _.last(this.state.topics);
       if (anyLastTopic) {
+        // Load more topics and append to the topic list.
         anyTimeOffset = anyLastTopic.bumpedEpoch || anyLastTopic.createdEpoch;
         anyLikesOffset = anyLastTopic.numLikes;
       }
@@ -259,16 +285,19 @@ export var ForumTopicList = createComponent({
       orderOffset.sortOrder = TopicSortOrder.BumpTime;
       orderOffset.time = anyTimeOffset;
     }
-    debiki2.Server.loadForumTopics(categoryId, orderOffset, (topics: Topic[]) => {
+    var categoryId = nextProps.activeCategory.pageId;
+    this.setState({ isLoading: true });
+    debiki2.Server.loadForumTopics(categoryId, orderOffset, (newlyLoadedTopics: Topic[]) => {
       if (!this.isMounted())
         return;
 
-      var newTopics = keepCurrentTopics ? (this.state.topics || []) : [];
-      newTopics = newTopics.concat(topics);
-      // `newTopics` includes at least the last old topic twice.
-      newTopics = _.uniq(newTopics, 'pageId');
+      var topics = isNewView ? [] : (this.state.topics || []);
+      topics = topics.concat(newlyLoadedTopics);
+      // `topics` includes at least the last old topic twice.
+      topics = _.uniq(topics, 'pageId');
       this.setState({
-        topics: newTopics,
+        isLoading: false,
+        topics: topics,
         showLoadMoreButton: topics.length >= NumNewTopicsPerRequest
       });
     });
@@ -404,7 +433,10 @@ var TopicRow = createComponent({
 
     var anyPinIcon = topic.pinWhere ? 'icon-pin' : undefined;
     var showExcerpt = topic.pinWhere === PinPageWhere.Globally ||
-        (topic.pinWhere && topic.categoryId == this.props.activeCategory.pageId);
+        (topic.pinWhere && (
+            topic.categoryId === this.props.activeCategory.pageId ||
+            topic.pageId === this.props.activeCategory.pageId)); // hack, will vanish when forum
+                                                // categories have their own db table [forumcategory]
     var excerptIfPinned = showExcerpt
         ? r.p({ className: 'dw-p-excerpt' }, topic.excerpt, r.a({ href: topic.url }, 'read more'))
         : null;
