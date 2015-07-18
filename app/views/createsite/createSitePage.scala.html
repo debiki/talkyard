@@ -29,7 +29,7 @@
 
   @tpi.debikiStyles
 
-  @tpi.debikiScriptsCustomStartupCode("debiki.internal.renderEmptyPage();")
+  @tpi.debikiScriptsInHead
   <script>
     debiki.baseDomain = '@{ debiki.Globals.baseDomainNoPort }';
   </script>
@@ -43,5 +43,6 @@
 
 @tpi.debikiAppendToBodyTags
 
+@tpi.debikiScriptsEndOfBodyCustomStartupCode("debiki.internal.renderEmptyPage();")
 </body>
 </html>

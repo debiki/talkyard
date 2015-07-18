@@ -22,7 +22,7 @@
 <head>
   @tpi.debikiMeta
   @tpi.debikiStyles
-  @tpi.debikiScriptsCustomStartupCode("debiki.internal.startEmbeddedEditor();")
+  @tpi.debikiScriptsInHead
   <script>
       debiki.internal.isInEmbeddedEditor = true;
       debiki.internal.isInEmbeddedCommentsIframe = false;
@@ -31,5 +31,6 @@
 <body>
   <!-- embeddedEditor.scala.html -->
   <div id="dw-editor"></div>
+  @tpi.debikiScriptsEndOfBodyCustomStartupCode("debiki.internal.startEmbeddedEditor();")
 </body>
 </html>

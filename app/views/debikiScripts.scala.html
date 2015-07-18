@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(siteId: String, startupCode: String, anyPageId: Option[String], serverAddress: String, pageUriPath: String,
+@(siteId: String, anyPageId: Option[String], serverAddress: String, pageUriPath: String,
   anyPageRole: Option[com.debiki.core.PageRole], anyPagePath: Option[com.debiki.core.PagePath],
   reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
 
@@ -131,7 +131,7 @@ occurrence of the magic string with user specific data. *@
       serverOrigin: '//@serverAddress',
       pageUri: '//@serverAddress@pageUriPath',
       pageId: @Html(pageIdQuotedOrUndefined),
-      pageRole: @{ anyPageRole.map(_.toInt) getOrElse null },
+      pageRole: @{ anyPageRole.map(_.toInt) getOrElse "undefined" },
       isInEmbeddedCommentsIframe: @{
         if (anyPageRole == Some(com.debiki.core.PageRole.EmbeddedComments)) "true" else "false"
       },
@@ -140,21 +140,6 @@ occurrence of the magic string with user specific data. *@
     }
   }, debiki);
 
-  @* COULD nowadays inline the script instead and call 'startupCode' from inside the script. *@
   debiki.scriptLoad = $.Deferred();
-  yepnope({
-    load: '@asset(s"combined-debiki.$minMaxJs")',
-    complete: function() {
-      @* Because of evil magic, this `complete()` callback is sometimes invoked before the above
-         lazy-loaded scripts have been evaluated, resulting in an 'undefined' error when calling
-         the startup code below. So call it over and over again until it's available. *@
-      var handle = setInterval(function() {
-        @startupCode
-        clearInterval(handle);
-      }, 50);
-    }
-  });
 </script>
-
-@views.html.anyWeinreScript()
 

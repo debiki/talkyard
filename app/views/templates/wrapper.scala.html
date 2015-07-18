@@ -33,7 +33,7 @@
   @tpi.stylesheetBundle("styles.css")
   @Html(tpi.siteSettings.headStylesHtml.valueAsString)
 
-  @tpi.debikiScripts
+  @tpi.debikiScriptsInHead
   @Html(tpi.anyGoogleUniversalAnalyticsScript)
 
   @Html(tpi.siteSettings.headScriptsHtml.valueAsString)
@@ -74,5 +74,7 @@
 <div id="dw-react-flag-dialog"></div>
 <div id="dw-react-about-user-dialog"></div>
 @Html(tpi.siteSettings.endOfBodyHtml.valueAsString)
+
+@tpi.debikiScriptsEndOfBody
 </body>
 </html>

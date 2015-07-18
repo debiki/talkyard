@@ -142,13 +142,9 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
   def debikiStyles = xml.Unparsed(
     views.html.debikiStyles(minMaxJs, minMaxCss).body)
 
-  def debikiScripts =
-    debikiScriptsCustomStartupCode("debiki.internal.startDiscussionPage();")
-
-  def debikiScriptsCustomStartupCode(startupCode: String) = xml.Unparsed(
+  def debikiScriptsInHead = xml.Unparsed(
     views.html.debikiScripts( // Could pass `this` to the template instead of all these params?
       siteId = siteId,
-      startupCode = startupCode,
       anyPageId = anyCurrentPageId,
       serverAddress = debikiRequest.request.host,
       pageUriPath = debikiRequest.request.path,
@@ -157,6 +153,13 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
       reactStoreSafeJsonString = reactStoreSafeJsonString,
       minMaxJs = minMaxJs,
       minMaxCss = minMaxCss).body)
+
+  def debikiScriptsEndOfBody =
+    debikiScriptsEndOfBodyCustomStartupCode("debiki.internal.startDiscussionPage();")
+
+  def debikiScriptsEndOfBodyCustomStartupCode(startupCode: String) = xml.Unparsed(
+    views.html.debikiScriptsEndOfBody(
+      startupCode = startupCode, minMaxJs = minMaxJs).body)
 
 
   /* Perhaps I'll add this back later, or use it in the topbar.

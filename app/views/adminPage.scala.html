@@ -34,7 +34,7 @@
 
   @tpi.debikiStyles
 
-  @tpi.debikiScriptsCustomStartupCode("debiki.internal.renderEmptyPage();")
+  @tpi.debikiScriptsInHead
 </head>
 <body>
 <!-- adminPage.scala.html -->
@@ -49,5 +49,6 @@
   <div id="dw-react-admin-app"></div>
 </div>
 
+@tpi.debikiScriptsEndOfBodyCustomStartupCode("debiki.internal.renderEmptyPage();")
 </body>
 </html>

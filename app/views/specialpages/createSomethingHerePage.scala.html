@@ -30,7 +30,7 @@
 
     @tpi.debikiStyles
 
-    @tpi.debikiScriptsCustomStartupCode("debiki.internal.renderEmptyPage();")
+    @tpi.debikiScriptsInHead
 </head>
 <body>
 <!-- loginAndCreateSomethingHerePage.scala.html -->
@@ -43,5 +43,6 @@
 
 @tpi.debikiAppendToBodyTags
 
+@tpi.debikiScriptsEndOfBodyCustomStartupCode("debiki.internal.renderEmptyPage();")
 </body>
 </html>
