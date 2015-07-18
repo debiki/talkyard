@@ -217,25 +217,35 @@ export var ForumTopicList = createComponent({
   },
 
   componentDidMount: function() {
-    this.loadTopics(this.props.activeCategory.pageId, false);
+    // This happens when navigating back to the lates-topics list after having shown
+    // all categories (plus on initial page load).
+    this.loadTopics(this.props, false);
   },
 
   componentWillReceiveProps: function(nextProps) {
-    var keepCurrentTopics =
-        this.props.activeCategory.pageId === nextProps.activeCategory.pageId &&
-        this.props.activeRoute.name === nextProps.activeRoute.name;
-    this.loadTopics(nextProps.activeCategory.pageId, keepCurrentTopics);
+    // This happens when switching category or showing top topics instead of latest topics.
+    this.loadTopics(nextProps, false);
   },
 
   onLoadMoreTopicsClick: function() {
-    this.loadTopics(this.props.activeCategory.pageId, true);
+    this.loadTopics(this.props, true);
   },
 
-  loadTopics: function(categoryId, keepCurrentTopics) {
+  loadTopics: function(nextProps, loadMore) {
+    var isNewView =
+        this.props.activeCategory.pageId !== nextProps.activeCategory.pageId ||
+        this.props.activeRoute.name !== nextProps.activeRoute.name;
+
+    // Avoid loading the same topics many times:
+    // - On page load, componentDidMount() and componentWillReceiveProps() both loads topics.
+    // - When we're refreshing the page because of Flux events, don't load the same topics again.
+    if (!isNewView && !loadMore && (this.state.topics || this.state.isLoading))
+      return;
+
     var anyLastTopic;
     var anyTimeOffset: number;
     var anyLikesOffset: number;
-    if (!keepCurrentTopics) {
+    if (isNewView) {
       this.setState({
         topics: null,
         showLoadMoreButton: false
@@ -244,6 +254,7 @@ export var ForumTopicList = createComponent({
     else {
       anyLastTopic = _.last(this.state.topics);
       if (anyLastTopic) {
+        // Load more topics and append to the topic list.
         anyTimeOffset = anyLastTopic.bumpedEpoch || anyLastTopic.createdEpoch;
         anyLikesOffset = anyLastTopic.numLikes;
       }
@@ -259,16 +270,19 @@ export var ForumTopicList = createComponent({
       orderOffset.sortOrder = TopicSortOrder.BumpTime;
       orderOffset.time = anyTimeOffset;
     }
-    debiki2.Server.loadForumTopics(categoryId, orderOffset, (topics: Topic[]) => {
+    var categoryId = nextProps.activeCategory.pageId;
+    this.setState({ isLoading: true });
+    debiki2.Server.loadForumTopics(categoryId, orderOffset, (newlyLoadedTopics: Topic[]) => {
       if (!this.isMounted())
         return;
 
-      var newTopics = keepCurrentTopics ? (this.state.topics || []) : [];
-      newTopics = newTopics.concat(topics);
-      // `newTopics` includes at least the last old topic twice.
-      newTopics = _.uniq(newTopics, 'pageId');
+      var topics = isNewView ? [] : (this.state.topics || []);
+      topics = topics.concat(newlyLoadedTopics);
+      // `topics` includes at least the last old topic twice.
+      topics = _.uniq(topics, 'pageId');
       this.setState({
-        topics: newTopics,
+        isLoading: false,
+        topics: topics,
         showLoadMoreButton: topics.length >= NumNewTopicsPerRequest
       });
     });
