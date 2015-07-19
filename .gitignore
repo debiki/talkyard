@@ -44,9 +44,8 @@ public/res/debiki-dashbar*
 public/res/debiki-embedded-comments.*
 public/res/embedded-comments.*
 public/res/login-popup.*
-public/res/modernizr.min.js
-public/res/renderer.js
-public/res/renderer.min.js
+public/res/modernizr.*
+public/res/renderer.*
 public/res/zxcvbn.*
 
 # When running Chrome browser tests, ChromeDriver generates this file and it

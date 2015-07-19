@@ -93,37 +93,20 @@ export var Sidebar = createComponent({
   },
 
   componentDidMount: function() {
-    // Somewhere in here: Sometimes only: "Uncaught TypeError: string is not a function".
     // COULD find a safer way to do this? Breaks if CSS class renamed / HTML
     // structure changed.
-    console.log('sinaf hunt: 1 start, typeof: ' + typeof $);
     this.commentSection = $('.dw-cmts-tlbr + .dw-single-and-multireplies');
-    console.log('sinaf hunt: 2, typeof: ' + typeof (this.refs.sidebar ? this.refs.sidebar.getDOMNode : undefined));
     this.sidebar = $(this.refs.sidebar ? this.refs.sidebar.getDOMNode() : null);
-    console.log('sinaf hunt: 3, typeof: ' + typeof (this.refs.openButton ? this.refs.openButton.getDOMNode : undefined));
     this.openButton = $(this.refs.openButton ? this.refs.openButton.getDOMNode() : null);
-    console.log('sinaf hunt: 4, typeof: ' + typeof isPageWithSidebar);
 
-    if (!isPageWithSidebar(this.state.store.pageRole)) {
-      console.log('sinaf hunt: no sidebar, done');
+    if (!isPageWithSidebar(this.state.store.pageRole))
       return;
-    }
 
-    console.log('sinaf hunt: 5, typeof: ' + typeof window.addEventListener);
     window.addEventListener('scroll', this.updateSizeAndPosition, false);
-    console.log('sinaf hunt: 6, typeof: ' + typeof debiki.v0.util.addZoomOrResizeListener);
     debiki.v0.util.addZoomOrResizeListener(this.updateSizeAndPosition);
-    console.log('sinaf hunt: 7, typeof: ' + typeof this.updateSizeAndPosition);
     this.updateSizeAndPosition();
-    console.log('sinaf hunt: 8, typeof keymaster: ' + typeof keymaster);
-    console.log('sinaf hunt: 8, typeof key: ' + typeof key);
-    // --> sinaf hunt: 8, typeof: string  very infrequently, prod only
-    // and in Dev Tools: key is " _ga".
     keymaster('s', this.toggleSidebarOpen);
-    console.log('sinaf hunt: 9, typeof: ' + typeof this.createAnyScrollbars);
     this.createAnyScrollbars();
-    console.log('sinaf hunt: 10 done log');
-    console.debug('sinaf hunt: 10 done debug');
   },
 
   componentWillUnmount: function() {

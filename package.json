@@ -17,6 +17,7 @@
     "gulp": "^3.6.0",
     "gulp-angular-templatecache": "~1.2.0",
     "gulp-concat": "^2.2.0",
+    "gulp-gzip": "^1.2.0",
     "gulp-header": "^1.0.2",
     "gulp-livescript": "^0.2.1",
     "gulp-minify-css": "^0.3.1",

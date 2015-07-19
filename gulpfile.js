@@ -35,6 +35,7 @@ var rename = require("gulp-rename");
 var header = require('gulp-header');
 var wrap = require('gulp-wrap');
 var uglify = require('gulp-uglify');
+var gzip = require('gulp-gzip');
 var es = require('event-stream');
 var fs = require("fs");
 var path = require("path");
@@ -322,6 +323,8 @@ gulp.task('minify-scripts', ['concat-debiki-scripts'], function() {
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
       .pipe(header(copyrightAndLicenseBanner))
+      .pipe(gulp.dest('public/res/'))
+      .pipe(gzip())
       .pipe(gulp.dest('public/res/'));
 });
 
@@ -355,6 +358,8 @@ gulp.task('compile-stylus', function () {
       .pipe(minifyCSS(minifyOpts))
       .pipe(header(copyrightAndLicenseBanner))
       .pipe(rename({ extname: '.min.css' }))
+      .pipe(gulp.dest(destDir))
+      .pipe(gzip())
       .pipe(gulp.dest(destDir));
   }
 

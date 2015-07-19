@@ -30,8 +30,16 @@ import DebikiHttp._
 
 class HtmlJsCssGzipFilter extends GzipFilter(
   shouldGzip = (request: RequestHeader, response: ResponseHeader) => {
+    // Play Framework won't call this function for responses that already have a content
+    // encoding, e.g. things that have been gzipped already, like min.js.gz files.
+    import org.jboss.netty.handler.codec.http.HttpHeaders.Names
+    assert(response.headers.get(Names.CONTENT_ENCODING).isEmpty)
+
     // Compressing images tend to make them larger (they're compressed already).
-    !request.uri.endsWith(".png") && !request.uri.endsWith(".jpg")
+    val uri = request.uri
+    val isImage = uri.endsWith(".png") || uri.endsWith(".jpg") || uri.endsWith(".gif")
+    val isMovie = uri.endsWith(".mp4")
+    !isImage && !isMovie
   })
 
 
