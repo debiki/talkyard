@@ -20,6 +20,7 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 
 debiki.window = $(window);
+debiki.scriptLoad = $.Deferred();
 debiki.FirstSiteId = '1';
 debiki.debug = window.location.search.indexOf('debug=true') >= 0;
 d.i.TitleId = 0;

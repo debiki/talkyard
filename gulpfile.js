@@ -65,7 +65,34 @@ var nextFileLine =
   '\n\n//=== Next file: ===============================================================\n\n';
 
 
+// What about using a CDN for jQuery + Modernizr + React? Perhaps, but:
+// - jQuery + Modernizr + React is only 33K + 5K + 49K in addition to 160K
+//   for everything else, so it's just 90K ~= 50% extra stuff, doesn't matter much?
+//   (Once jQuery UI is gone — that one is 62K.)
+//   (combined-debiki.min.js.gz is 303K now instead of 157K, but jQuery UI is included.
+//   combined-debiki.min.css.gz is 32K (incl Bootstrap) that seems small enough.)
+// - I think I've noticed before that cdnjs.com was offline for a short while.
+// - If people don't have our version of everything cached already, there
+//   might be DNS lookups and SSL handshakes, which delays the page load with
+//   perhaps some 100ms? See:
+//      https://thethemefoundry.com/blog/why-we-dont-use-a-cdn-spdy-ssl/
+// - Testing that fallbacks to locally served files work is boring.
+// - Plus I read in comments in some blog that some countries actually sometimes
+//   block Google's CDN.
 var debikiJavascriptFiles = [
+      // Concerning when/how to use a CDN for Modernizr, see:
+      // http://www.modernizr.com/news/modernizr-and-cdns
+      // And: "For best performance, you should have them follow after your
+      // stylesheet references", http://modernizr.com/docs/#installing
+      // But placing Modernizr in the <head> is important mostly for IE8, which we don't support.
+      // There might be a flash-of-unstyled-content now with Modnernizr here at the end
+      // of <body>? But I haven't noticed any FOUC so ignore for now.
+      'bower_components/modernizr/modernizr.js',
+      'bower_components/yepnope/yepnope.1.5.4-min.js',
+      'bower_components/jquery/jquery.js',
+      'client/third-party/abbreviate-jquery.js',
+      'bower_components/jquery-ui/ui/jquery-ui.js', // try to remove
+      'bower_components/react/react-with-addons.js',
       'bower_components/keymaster/keymaster.js',
       // keymaster.js declares window.key, rename it to window.keymaster instead,
       // see comment in file for details.
@@ -365,6 +392,7 @@ gulp.task('compile-stylus', function () {
 
   return es.merge(
     makeStyleStream('public/res/', 'combined-debiki.css', [
+        'bower_components/bootstrap/dist/css/bootstrap.css',
         'bower_components/jquery.atwho/dist/css/jquery.atwho.css',
         'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
         'client/app/debiki.styl',

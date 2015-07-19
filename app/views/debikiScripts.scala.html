@@ -29,33 +29,6 @@
   anyPageId.map(id => s"'$id'") getOrElse "undefined"
 }
 
-@* Loads a script from a CDN and fallbacks to local URL if CDN not reachable. If any Javascript
-fails to load, assumes we're offline and loads all CSS from local server too [93GK940]. *@
-@script(primaryUrl: String, global: String, fallbackUrl: String) = {
-  <script src="@primaryUrl"></script>
-  <script>window.@global || (loadAnyMissingStylesFromLocalServer(), document.write('<script src="@asset(fallbackUrl)">\x3C/script>'))</script>
-}
-
-@* Concerning when/how to use a CDN for Modernizr, see:
-http://www.modernizr.com/news/modernizr-and-cdns
-And: "For best performance, you should have them follow after your
-stylesheet references", http://modernizr.com/docs/#installing
-*@
-@script("//cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js",
-    "Modernizr", s"modernizr.$minMaxJs")
-
-@* YepNope is included in Modernizr above. *@
-<script>window.yepnope || document.write('<script src="@asset(s"yepnope.$minMaxJs")">\x3C/script>')</script>
-
-@script(s"//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.$minMaxJs",
-    "jQuery", s"jquery.$minMaxJs")
-
-@script(s"//ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/jquery-ui.$minMaxJs",
-    "jQuery.ui", s"jquery-ui.$minMaxJs")
-
-@script(s"//cdnjs.cloudflare.com/ajax/libs/react/0.12.2/react-with-addons.$minMaxJs",
-    "React", s"react-with-addons.$minMaxJs")
-
 <script id="dwReactUserStore" type="application/json">
 @* The contents of this tag is filled in with any user specific data. Note that
 this tag is placed before 'dwReactPageStore' below, so if e.g. a comment contains
@@ -100,7 +73,8 @@ occurrence of the magic string with user specific data. *@
 
   function parseAnyDebikiUserSpecificData() {
     try {
-      return JSON.parse(unencodeHtmlContent($('#dwReactUserStore').text()));
+      return JSON.parse(unencodeHtmlContent(
+            document.getElementById('dwReactUserStore').text));
     }
     catch (ignored) {
       @* ignore, means not logged in so magic string wasn't replaced *@
@@ -109,14 +83,15 @@ occurrence of the magic string with user specific data. *@
   }
 
   // Undo Nashorn JSON parser bug workaround, see [64KEWF2] in ReactJson:
-  var __reactStore = JSON.parse(unencodeHtmlContent($('#dwReactPageStore').text()));
+  var __reactStore = JSON.parse(unencodeHtmlContent(
+        document.getElementById('dwReactPageStore').text));
   for (var underscorePostId in __reactStore.allPosts) {
     var postId = underscorePostId.substr(1);
     __reactStore.allPosts[postId] = __reactStore.allPosts[underscorePostId];
     delete __reactStore.allPosts[underscorePostId];
   }
 
-  var debiki = $.extend(true, {
+  var debiki = {
     siteId: '@siteId',
     secure: @{debiki.Globals.secure},
     reactPageStore: __reactStore,
@@ -125,7 +100,6 @@ occurrence of the magic string with user specific data. *@
     isDev: @{ if (play.api.Play.isDev) "true" else "false" },
     v0: { util: {} },
     internal: {
-      $: jQuery,
       minMaxJs: '@minMaxJs',
       isInIframe: self !== top,
       serverOrigin: '//@serverAddress',
@@ -138,8 +112,7 @@ occurrence of the magic string with user specific data. *@
       pagePath: '@{ anyPagePath.map(_.value) getOrElse "" }',
       assetsUrlPathStart: '//@serverAddress@asset("")'
     }
-  }, debiki);
+  };
 
-  debiki.scriptLoad = $.Deferred();
 </script>
 

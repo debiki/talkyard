@@ -35,8 +35,6 @@
 
   @tpi.debikiScriptsInHead
   @Html(tpi.anyGoogleUniversalAnalyticsScript)
-
-  @Html(tpi.siteSettings.headScriptsHtml.valueAsString)
 </head>
 <body>
 
@@ -73,8 +71,9 @@
 <div id="dw-react-page-tools-dialog"></div>
 <div id="dw-react-flag-dialog"></div>
 <div id="dw-react-about-user-dialog"></div>
-@Html(tpi.siteSettings.endOfBodyHtml.valueAsString)
 
 @tpi.debikiScriptsEndOfBody
+@Html(tpi.siteSettings.headScriptsHtml.valueAsString)
+@Html(tpi.siteSettings.endOfBodyHtml.valueAsString)
 </body>
 </html>
