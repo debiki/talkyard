@@ -25,6 +25,7 @@
  */
 
 var gulp = require('gulp');
+var gutil = require('gulp-util');
 var newer = require('gulp-newer');
 var typeScript = require('gulp-typescript');
 var liveScript = require('gulp-livescript');
@@ -35,6 +36,7 @@ var rename = require("gulp-rename");
 var header = require('gulp-header');
 var wrap = require('gulp-wrap');
 var uglify = require('gulp-uglify');
+var sourcemaps = require('gulp-sourcemaps');
 var gzip = require('gulp-gzip');
 var es = require('event-stream');
 var fs = require("fs");
@@ -347,9 +349,11 @@ function makeConcatAllScriptsStream() {
 
 gulp.task('minify-scripts', ['concat-debiki-scripts'], function() {
   return gulp.src(['public/res/*.js', '!public/res/*.min.js'])
+      .pipe(sourcemaps.init().on('error', gutil.log))
       .pipe(uglify())
       .pipe(rename({ extname: '.min.js' }))
       .pipe(header(copyrightAndLicenseBanner))
+      .pipe(sourcemaps.write('./').on('error', gutil.log))
       .pipe(gulp.dest('public/res/'))
       .pipe(gzip())
       .pipe(gulp.dest('public/res/'));

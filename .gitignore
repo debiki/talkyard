@@ -43,7 +43,7 @@ public/res/combined-debiki.*
 public/res/debiki-embedded-comments.*
 public/res/embedded-comments.*
 public/res/login-popup.*
-public/res/markdown-it.min.js.gz
+public/res/markdown-it.min.js.*
 public/res/renderer.*
 public/res/zxcvbn.*
 
