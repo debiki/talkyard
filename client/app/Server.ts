@@ -18,6 +18,7 @@
 /// <reference path="../typedefs/jquery/jquery.d.ts" />
 /// <reference path="users/user-info/UserInfo.ts" />
 /// <reference path="renderer/model.ts" />
+/// <reference path="ServerApi.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.Server {
@@ -363,24 +364,8 @@ export function loadForumCategories(forumPageId: string,
 
 export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
       doneCallback: (topics: Topic[]) => void) {
-  var url = origin + '/-/list-topics?categoryId=' + categoryId;
-  if (orderOffset.sortOrder === TopicSortOrder.BumpTime) {
-    url += '&sortOrder=ByBumpTime';
-    if (orderOffset.time) {
-      url += '&epoch=' + orderOffset.time;
-    }
-  }
-  else if (orderOffset.sortOrder === TopicSortOrder.LikesAndBumpTime) {
-    url += '&sortOrder=ByLikesAndBumpTime';
-    if (_.isNumber(orderOffset.numLikes) && orderOffset.time) {
-      url += '&num=' + orderOffset.numLikes;
-      url += '&epoch=' + orderOffset.time;
-    }
-  }
-  else {
-    console.log('Bad orderOffset [DwE5FS0]');
-    return;
-  }
+  var url = origin + '/-/list-topics?categoryId=' + categoryId + '&' +
+      ServerApi.makeForumTopicsQueryParams(orderOffset);
   $.get(url)
     .done((response: any) => {
       doneCallback(response.topics);

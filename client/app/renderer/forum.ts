@@ -21,6 +21,7 @@
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../editor/editor.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../ServerApi.ts" />
 /// <reference path="model.ts" />
 
 //------------------------------------------------------------------------------
@@ -74,6 +75,8 @@ export var Forum = createComponent({
 
   onChange: function() {
     this.setState(debiki2.ReactStore.allData());
+    // Now some time has passed since this page was loaded, so:
+    this.setState({ topicsInStoreMightBeOld: true });
   },
 
   render: function() {
@@ -228,7 +231,18 @@ export var ForumTopicList = createComponent({
   mixins: [State],
 
   getInitialState: function() {
-    return {};
+    // The server has included in the Flux store a list of the most recent topics, and we
+    // can use that lis when rendering the topic list server side, or for the first time
+    // in the browser (but not after that, because then new topics might have appeared).
+    if (!this.props.topicsInStoreMightBeOld) {
+      return {
+        topics: this.props.topics,
+        showLoadMoreButton: this.props.topics.length >= NumNewTopicsPerRequest
+      };
+    }
+    else {
+      return {};
+    }
   },
 
   componentDidMount: function() {
@@ -242,8 +256,9 @@ export var ForumTopicList = createComponent({
     this.loadTopics(nextProps, false);
   },
 
-  onLoadMoreTopicsClick: function() {
+  onLoadMoreTopicsClick: function(event) {
     this.loadTopics(this.props, true);
+    event.preventDefault();
   },
 
   loadTopics: function(nextProps, loadMore) {
@@ -257,33 +272,15 @@ export var ForumTopicList = createComponent({
     if (!isNewView && !loadMore && (this.state.topics || this.state.isLoading))
       return;
 
-    var anyLastTopic;
-    var anyTimeOffset: number;
-    var anyLikesOffset: number;
+    var orderOffset: OrderOffset = this.getOrderOffset();
     if (isNewView) {
       this.setState({
         topics: null,
         showLoadMoreButton: false
       });
-    }
-    else {
-      anyLastTopic = _.last(this.state.topics);
-      if (anyLastTopic) {
-        // Load more topics and append to the topic list.
-        anyTimeOffset = anyLastTopic.bumpedEpoch || anyLastTopic.createdEpoch;
-        anyLikesOffset = anyLastTopic.numLikes;
-      }
-    }
-
-    var orderOffset: OrderOffset = { sortOrder: null };
-    if (this.isActive('ForumRouteTop')) {
-      orderOffset.sortOrder = TopicSortOrder.LikesAndBumpTime;
-      orderOffset.time = anyTimeOffset;
-      orderOffset.numLikes = anyLikesOffset;
-    }
-    else {
-      orderOffset.sortOrder = TopicSortOrder.BumpTime;
-      orderOffset.time = anyTimeOffset;
+      // Load from the start, no offset.
+      delete orderOffset.time;
+      delete orderOffset.numLikes;
     }
     var categoryId = nextProps.activeCategory.pageId;
     this.setState({ isLoading: true });
@@ -298,9 +295,31 @@ export var ForumTopicList = createComponent({
       this.setState({
         isLoading: false,
         topics: topics,
-        showLoadMoreButton: topics.length >= NumNewTopicsPerRequest
+        showLoadMoreButton: newlyLoadedTopics.length >= NumNewTopicsPerRequest
       });
     });
+  },
+
+  getOrderOffset: function() {
+    var anyTimeOffset: number;
+    var anyLikesOffset: number;
+    var anyLastTopic: any = _.last(this.state.topics);
+    if (anyLastTopic) {
+      // If we're loading more topics, we should continue with this offset.
+      anyTimeOffset = anyLastTopic.bumpedEpoch || anyLastTopic.createdEpoch;
+      anyLikesOffset = anyLastTopic.numLikes;
+    }
+    var orderOffset: OrderOffset = { sortOrder: -1 };
+    if (this.isActive('ForumRouteTop')) {
+      orderOffset.sortOrder = TopicSortOrder.LikesAndBumpTime;
+      orderOffset.time = anyTimeOffset;
+      orderOffset.numLikes = anyLikesOffset;
+    }
+    else {
+      orderOffset.sortOrder = TopicSortOrder.BumpTime;
+      orderOffset.time = anyTimeOffset;
+    }
+    return orderOffset;
   },
 
   render: function() {
@@ -319,9 +338,12 @@ export var ForumTopicList = createComponent({
 
     var loadMoreTopicsBtn;
     if (this.state.showLoadMoreButton) {
+      var orderOffset = this.getOrderOffset();
+      var queryString = '?' + debiki2.ServerApi.makeForumTopicsQueryParams(orderOffset);
       loadMoreTopicsBtn =
         r.div({},
-          r.a({ className: 'load-more', onClick: this.onLoadMoreTopicsClick }, 'Load more ...'));
+          r.a({ className: 'load-more', onClick: this.onLoadMoreTopicsClick,
+              href: queryString }, 'Load more ...'));
     }
 
     return (

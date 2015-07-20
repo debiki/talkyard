@@ -19,6 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import controllers.ForumController
 import debiki._
 import java.{util => ju}
 import requests._
@@ -58,6 +59,9 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     var useCache = pageReq.pageExists
     useCache &= pageReq.pageRoot == Some(PageParts.BodyId)
     useCache &= !pageReq.debugStats
+
+    // When paginating forum topics in a non-Javascript client, we cannot use the cache.
+    useCache &= ForumController.parseSortOrderAndOffset(pageReq).isEmpty
 
     if (!useCache)
       return super.renderTemplate(pageReq)

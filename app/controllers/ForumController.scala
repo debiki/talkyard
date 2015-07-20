@@ -28,7 +28,7 @@ import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
-import requests.GetRequest
+import requests.DebikiRequest
 import scala.collection.mutable.ArrayBuffer
 import Utils.OkSafeJson
 import Utils.ValidationImplicits._
@@ -60,7 +60,8 @@ object ForumController extends mvc.Controller {
 
 
   def listTopics(categoryId: PageId) = GetAction { request =>
-    val orderOffset = parseSortOrderAndOffset(request)
+    val orderOffset = parseSortOrderAndOffset(request) getOrElse throwBadReq(
+      "DwE2KTES7", "No sort-order-offset specified")
     val topics = listTopicsInclPinned(categoryId, orderOffset, request.dao)
     val pageStuffById = request.dao.loadPageStuff(topics.map(_.pageId))
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
@@ -98,7 +99,7 @@ object ForumController extends mvc.Controller {
   }
 
 
-  private def listTopicsInclPinned(categoryId: PageId, orderOffset: PageOrderOffset,
+  def listTopicsInclPinned(categoryId: PageId, orderOffset: PageOrderOffset,
         dao: debiki.dao.SiteDao, limit: Int = NumTopicsToList): Seq[PagePathAndMeta] = {
     val topics: Seq[PagePathAndMeta] =
       dao.listTopicsInTree(rootPageId = categoryId, orderOffset, limit = limit)
@@ -131,8 +132,8 @@ object ForumController extends mvc.Controller {
   }
 
 
-  private def parseSortOrderAndOffset(request: GetRequest): PageOrderOffset = {
-    val sortOrderStr = request.queryString.getOrThrowBadReq("sortOrder")
+  def parseSortOrderAndOffset(request: DebikiRequest[_]): Option[PageOrderOffset] = {
+    val sortOrderStr = request.queryString.getFirst("sortOrder") getOrElse { return None }
     def anyDateOffset = request.queryString.getLong("epoch") map (new ju.Date(_))
     def anyNumOffset = request.queryString.getInt("num")
 
@@ -146,11 +147,11 @@ object ForumController extends mvc.Controller {
           case (None, None) =>
             PageOrderOffset.ByLikesAndBumpTime(None)
           case _ =>
-            throwBadReq("Please specify both 'num' and 'epoch' or none at all")
+            throwBadReq("DwE4KEW21", "Please specify both 'num' and 'epoch' or none at all")
         }
       case x => throwBadReq("DwE05YE2", s"Bad sort order: `$x'")
     }
-    orderOffset
+    Some(orderOffset)
   }
 
 

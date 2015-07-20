@@ -19,12 +19,13 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import java.{util => ju}
+import controllers.ForumController
 import debiki.dao.{SiteDao, PageDao}
 import debiki.DebikiHttp.throwNotFound
+import java.{util => ju}
 import play.api.libs.json._
-import scala.collection.immutable
 import requests.PageRequest
+import scala.collection.immutable
 
 
 object ReactJson {
@@ -136,10 +137,10 @@ object ReactJson {
 
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
-        val orderOffset = PageOrderOffset.ByBumpTime(None)
-        var topics =
-          pageReq.dao.listTopicsInTree(rootPageId = pageReq.thePageId,
-            orderOffset, limit = controllers.ForumController.NumTopicsToList)
+        val orderOffset = controllers.ForumController.parseSortOrderAndOffset(pageReq).getOrElse(
+          PageOrderOffset.ByBumpTime(None))
+        var topics = ForumController.listTopicsInclPinned(page.id, orderOffset, pageReq.dao,
+          limit = ForumController.NumTopicsToList)
         val pageStuffById = pageReq.dao.loadPageStuff(topics.map(_.pageId))
         topics.map(controllers.ForumController.topicToJson(_, pageStuffById))
       }
