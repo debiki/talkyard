@@ -51,6 +51,7 @@ export function buildForumRoutes() {
   return (
     Route({ name: 'ForumRoute', path: '/', handler: Forum },
       Redirect({ from: '/', to: '/latest/' }),
+      Redirect({ from: '/latest', to: '/latest/' }),
       Route({ name: 'ForumRouteLatest', path: 'latest/:categorySlug?', handler: ForumTopicList }),
       Route({ name: 'ForumRouteTop', path: 'top/:categorySlug?', handler: ForumTopicList }),
       Route({ name: 'ForumRouteCategories', path: 'categories', handler: ForumCategories })));
@@ -234,7 +235,7 @@ export var ForumTopicList = createComponent({
     // The server has included in the Flux store a list of the most recent topics, and we
     // can use that lis when rendering the topic list server side, or for the first time
     // in the browser (but not after that, because then new topics might have appeared).
-    if (!this.props.topicsInStoreMightBeOld) {
+    if (!this.props.topicsInStoreMightBeOld && this.isAllLatestTopicsView()) {
       return {
         topics: this.props.topics,
         showLoadMoreButton: this.props.topics.length >= NumNewTopicsPerRequest
@@ -243,6 +244,12 @@ export var ForumTopicList = createComponent({
     else {
       return {};
     }
+  },
+
+  isAllLatestTopicsView: function() {
+    return this.getRoutes().length === 2 &&
+        this.getRoutes()[1].name === 'ForumRouteLatest' &&
+        !this.getParams().categorySlug;
   },
 
   componentDidMount: function() {
