@@ -39,8 +39,19 @@ export var TitleEditor = createComponent({
   getInitialState: function() {
     return {
       showComplicated: false,
-      isSaving: false
+      isSaving: false,
+      categories: null,
     };
+  },
+
+  componentDidMount: function() {
+    if (!this.props.forumId)
+      return;
+    debiki2.Server.loadForumCategories(this.props.forumId, (categories: Category[]) => {
+      if (!this.isMounted())
+        return;
+      this.setState({ categories: categories });
+    });
   },
 
   showComplicated: function() {
@@ -89,6 +100,8 @@ export var TitleEditor = createComponent({
 
   getSettings: function() {
     var settings: any = {
+      category: this.refs.categoryInput.getValue(),
+      pageRole: parseInt(this.refs.pageRoleInput.getValue()),
       folder: addFolderSlashes(this.state.folder),
       slug: this.state.slug,
       showId: this.state.showId
@@ -100,6 +113,7 @@ export var TitleEditor = createComponent({
   },
 
   render: function() {
+    var pageRole: PageRole = this.props.pageRole;
     var titlePost: Post = this.props.allPosts[TitleId];
     var titleText = titlePost.sanitizedHtml; // for now. TODO only allow plain text?
     var user = this.props.user;
@@ -114,7 +128,7 @@ export var TitleEditor = createComponent({
 
       complicatedStuff =
         r.div({},
-          r.form({ className: 'dw-compl-stuff form-horizontal', key: 'compl-stuff-key' },
+          r.div({ className: 'dw-compl-stuff form-horizontal', key: 'compl-stuff-key' },
             /* Use page role = mind map instead, and let everything in a forum/category be a forum topic?
             Input({ label: 'Layout', type: 'select', ref: 'layoutInput', className: 'dw-i-layout',
               labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10' },
@@ -142,6 +156,30 @@ export var TitleEditor = createComponent({
         : r.a({ className: 'dw-toggle-compl-stuff icon-settings',
             onClick: this.showComplicated }, 'Advanced');
 
+    var selectCategoryInput;
+    if (this.props.forumId && this.state.categories) {
+      var categoryOptions = this.state.categories.map((category: Category) => {
+        return r.option({ value: category.pageId }, category.name);
+      });
+
+      var selectCategoryInput =
+        Input({ type: 'select', label: 'Category', ref: 'categoryInput', title: 'Category',
+            labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
+            defaultValue: this.props.parentPageId },
+          categoryOptions);
+    }
+    else if (this.props.forumId) {
+      selectCategoryInput = r.p({}, 'Loading categories...');
+    }
+
+    var selectPageRoleInput =
+      Input({ type: 'select', label: 'Page Type', ref: 'pageRoleInput', title: 'Page type',
+            labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10', defaultValue: pageRole },
+        r.option({ value: PageRole.Question }, 'Question'),
+        // r.option({ value: PageRole.WikiPage }, 'Wiki'), -- if 1d layout is default?
+        r.option({ value: PageRole.MindMap }, 'Wiki Mind Map'),
+        r.option({ value: PageRole.Discussion }, 'Other'));
+
     var saveCancel = this.state.isSaving
       ? r.div({}, 'Saving...')
       : r.div({},
@@ -153,6 +191,9 @@ export var TitleEditor = createComponent({
       r.div({ className: 'dw-p-ttl-e' },
         Input({ type: 'text', ref: 'titleInput', className: 'dw-i-title',
             defaultValue: titleText, onChange: this.onTitleChanged }),
+        r.div({ className: 'dw-page-category-role form-horizontal' },
+          selectCategoryInput,
+          selectPageRoleInput),
         ReactCSSTransitionGroup({ transitionName: 'compl-stuff', transitionAppear: true },
           complicatedStuff),
         saveCancel));

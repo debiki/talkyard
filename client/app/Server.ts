@@ -362,6 +362,19 @@ export function loadForumCategories(forumPageId: string,
 }
 
 
+export function loadForumCategoriesTopics(forumPageId: string,
+      doneCallback: (categories: Category[]) => void) {
+  $.get(origin + '/-/list-categories-topics?forumId=' + forumPageId)
+    .done((response: any) => {
+      doneCallback(response.categories);
+    })
+    .fail((x, y, z) => {
+      console.error('Error loading categories and topics: ' + JSON.stringify([x, y, z]));
+      doneCallback(null);
+    });
+}
+
+
 export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
       doneCallback: (topics: Topic[]) => void) {
   var url = origin + '/-/list-topics?categoryId=' + categoryId + '&' +

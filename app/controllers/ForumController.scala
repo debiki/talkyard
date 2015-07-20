@@ -74,6 +74,19 @@ object ForumController extends mvc.Controller {
     val categories = request.dao.listChildPages(parentPageIds = Seq(forumId),
       orderOffset = PageOrderOffset.ByPublTime, // COULD create a PageOrderOffset.ByPinOrder instead
       limit = 999, onlyPageRole = Some(PageRole.Category))
+    val pageStuffById: Map[PageId, debiki.dao.PageStuff] =
+      request.dao.loadPageStuff(categories.map(_.pageId))
+    val json = Json.obj("categories" -> categories.map({ category =>
+      categoryToJson(category, Nil, pageStuffById)
+    }))
+    OkSafeJson(json)
+  }
+
+
+  def listCategoriesAndTopics(forumId: PageId) = GetAction { request =>
+    val categories = request.dao.listChildPages(parentPageIds = Seq(forumId),
+      orderOffset = PageOrderOffset.ByPublTime, // COULD create a PageOrderOffset.ByPinOrder instead
+      limit = 999, onlyPageRole = Some(PageRole.Category))
 
     val recentTopicsByCategoryId =
       mutable.Map[PageId, Seq[PagePathAndMeta]]()
@@ -82,7 +95,7 @@ object ForumController extends mvc.Controller {
 
     for (category <- categories) {
       val recentTopics = listTopicsInclPinned(category.id, PageOrderOffset.ByBumpTime(None),
-        request.dao, limit = 5)
+        request.dao, limit = 6)
       recentTopicsByCategoryId(category.id) = recentTopics
       pageIds.append(category.pageId)
       pageIds.append(recentTopics.map(_.pageId): _*)

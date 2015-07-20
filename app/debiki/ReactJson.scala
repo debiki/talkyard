@@ -135,6 +135,11 @@ object ReactJson {
     val topLevelCommentIdsSorted =
       Post.sortPosts(topLevelComments).map(reply => JsNumber(reply.id))
 
+    val anyForumId: Option[PageId] = {
+      // Right now if there's any parent page, then this page is a forum category or forum topic.
+      page.ancestorIdsParentFirst.lastOption
+    }
+
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
         val orderOffset = controllers.ForumController.parseSortOrderAndOffset(pageReq).getOrElse(
@@ -159,6 +164,7 @@ object ReactJson {
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
       "pageId" -> pageReq.thePageId,
       "parentPageId" -> JsStringOrNull(page.meta.parentPageId),
+      "forumId" -> JsStringOrNull(anyForumId),
       "pageRole" -> JsNumber(page.role.toInt),
       "pagePath" -> JsString(pageReq.pagePath.value),
       "pinOrder" -> JsNumberOrNull(page.meta.pinOrder),

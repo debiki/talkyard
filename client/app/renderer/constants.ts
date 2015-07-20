@@ -24,7 +24,7 @@ enum PinPageWhere {
 
 enum PageRole {
   HomePage = 1,
-  WebPage = 2,
+  WebPage = 2,  // rename to Info?
   Code = 3,
   SpecialContent = 4,
   EmbeddedComments = 5,

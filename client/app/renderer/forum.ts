@@ -493,7 +493,7 @@ export var ForumCategories = createComponent({
   },
 
   loadCategories: function() {
-    debiki2.Server.loadForumCategories(this.props.pageId, (categories: Category[]) => {
+    debiki2.Server.loadForumCategoriesTopics(this.props.pageId, (categories: Category[]) => {
       if (!this.isMounted())
         return;
       this.setState({ categories: categories });

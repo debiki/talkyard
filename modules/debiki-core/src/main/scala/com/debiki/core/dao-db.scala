@@ -613,15 +613,6 @@ object DbDao {
       s"Found no page with id: $pageId, tenant id: $tenantId" +
         prettyDetails(details))
 
-  case class PageNotFoundByIdAndRoleException(
-    tenantId: SiteId,
-    pageId: PageId,
-    pageRole: PageRole,
-    details: Option[String] = None)
-    extends PageNotFoundException(
-      s"Found no page with id: $pageId, tenant id: $tenantId, role: $pageRole" +
-        prettyDetails(details))
-
   case class PageNotFoundByPathException(
     pagePath: PagePath,
     details: Option[String] = None)
