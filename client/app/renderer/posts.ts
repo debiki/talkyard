@@ -353,13 +353,14 @@ var Thread = createComponent({
   },
 
   render: function() {
-    var post: Post = this.props.allPosts[this.props.postId];
+    var allPosts: { [postId: number]: Post; } = this.props.allPosts;
+    var post: Post = allPosts[this.props.postId];
     if (!post) {
-      // This tree has been deleted it seems
+      // This tree has been deleted.
       return null;
     }
 
-    var parentPost = this.props.allPosts[post.parentId];
+    var parentPost = allPosts[post.parentId];
     var deeper = this.props.depth + 1;
 
     // Draw arrows, but not to multireplies, because we don't know if they reply to `post`
@@ -367,16 +368,27 @@ var Thread = createComponent({
     var arrows = [];
     if (!post.multireplyPostIds.length) {
       arrows = debiki2.renderer.drawArrowsFromParent(
-        this.props.allPosts, parentPost, this.props.depth, this.props.index,
+        allPosts, parentPost, this.props.depth, this.props.index,
         this.props.horizontalLayout, this.props.rootPostId);
+    }
+
+    var numDeletedChildren = 0;
+    for (var i = 0; i < post.childIdsSorted.length; ++i) {
+      var childId = post.childIdsSorted[i];
+      if (!allPosts[childId]) {
+        numDeletedChildren += 1;
+      }
     }
 
     var children = [];
     if (!post.isTreeCollapsed && !post.isTreeDeleted) {
       children = post.childIdsSorted.map((childId, childIndex) => {
+        if (!allPosts[childId])
+          return;
+
         var childIndentationDepth = this.props.indentationDepth;
         // All children except for the last one are indented.
-        var isIndented = childIndex < post.childIdsSorted.length - 1;
+        var isIndented = childIndex < post.childIdsSorted.length - 1 - numDeletedChildren;
         if (!this.props.horizontalLayout && this.props.depth === 1) {
           // Replies to article replies are always indented, even the last child.
           isIndented = true;
