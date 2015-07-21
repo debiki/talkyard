@@ -67,6 +67,12 @@
 // Topics
 //===========================
 
+// Avoid undesired flash-of-the-wrong-topic-list before we know if the topic list included
+// by the server is the one we want to show. (The server doesn't know which #/client-route
+// we're using, we don't yet use real URLS, only hash fragment client side router urls.)
+html.js:not(.dw-react-started) #dw-topic-list tbody
+  display: none;
+
 #dw-topic-list
   width: 100%
 

@@ -49,6 +49,9 @@ occurrence of the magic string with user specific data. *@
    on-save callback, to be notified when a newly created page is saved.)
 *@
 <script>
+@* This <html> class helps us avoid flashes-of-whatever. (Moderinzr won't run until later.) *@
+document.documentElement.className += ' js';
+
   @* See https://stackoverflow.com/a/1912522/694469. The <div> isn't added to the document
    so no <script> would be executed. — But yes it would indeed?
    Test this in Dev Tools:

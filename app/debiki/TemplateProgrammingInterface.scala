@@ -109,7 +109,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
     views.html.debikiStyles(minMaxJs, minMaxCss).body)
 
   def debikiScriptsInHead = xml.Unparsed(
-    views.html.debikiScripts( // Could pass `this` to the template instead of all these params?
+    views.html.debikiScriptsHead( // Could pass `this` to the template instead of all these params?
       siteId = siteId,
       anyPageId = anyCurrentPageId,
       serverAddress = debikiRequest.request.host,

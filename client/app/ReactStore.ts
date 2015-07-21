@@ -19,6 +19,13 @@
 /// <reference path="ReactActions.ts" />
 /// <reference path="../typedefs/lodash/lodash.d.ts" />
 
+
+/* This Flux store is perhaps a bit weird, not sure. I'll switch to Redux or
+ * Flummox or Fluxxor or whatever later, and rewrite everything in a better way?
+ * Also perhaps there should be more than one store, so events won't be broadcasted
+ * to everyone all the time.
+ */
+
 //------------------------------------------------------------------------------
    module debiki2 {
 //------------------------------------------------------------------------------
