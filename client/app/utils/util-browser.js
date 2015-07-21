@@ -61,6 +61,16 @@ if (typeof console === 'undefined' || !console.log) {
   };
 }
 
+if (!console.time) {
+  console.time = function() {};
+}
+
+if (typeof performance === 'undefined' || !performance.now) {
+  window.performance = {
+    now: function() { return 0; }
+  };
+}
+
 
 // ------- Zoom and resize events
 

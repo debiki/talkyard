@@ -41,11 +41,6 @@ keymaster.filter = function(event) {
 };
 
 
-function $initStep4() {
-  d.i.makeThreadResizableForPost(this);
-};
-
-
 function fireLoginOrLogout() {
   if (debiki2.ReactStore.getUser().isLoggedIn) {
     d.i.refreshFormXsrfTokens();
@@ -193,14 +188,28 @@ function renderDiscussionPage() {
   d.i.layout = d.i.chooseLayout();
   d.i.layoutThreads();
 
+
+  var timeBefore = performance.now();
   //debiki2.renderer.renderTitleBodyComments();
+
   renderTitleBodyComments();
+  var timeAfterBodyComments = performance.now();
+
+  debiki2.ReactStore.activateUserSpecificData();
+  var timeAfterUserData = performance.now();
+
+  debiki2.startRemainingReactRoots();
+  var timeAfterRemainingRoots = performance.now();
+
+  console.log('Time to render page: ' + (timeAfterBodyComments - timeBefore));
+  console.log('Time to activate user data: ' + (timeAfterUserData - timeAfterBodyComments));
+  console.log('Time for remaining React roots: ' + (timeAfterRemainingRoots - timeAfterUserData));
+
+  $('html').addClass('dw-react-started');
 
   var steps = [];
 
   steps.push(function() {
-    debiki2.ReactStore.activateUserSpecificData();
-
     if (d.i.layout === 'TreeLayout') {
       debiki2.utils.onMouseDetected(d.i.initUtterscrollAndTips);
     }
@@ -209,18 +218,15 @@ function renderDiscussionPage() {
     $('.dw-depth-0 > .dw-p-as').addClass('dw-p-as-shown').attr('id', 'dw-p-as-shown');
     // Don't dim any horizontal root post reply button.
     $('.dw-p-as-hz-reply').addClass('dw-p-as-shown');
-  });
 
-  steps.push(function() {
-    debiki2.initAllReactRoots();
     registerEventHandlersFireLoginOut();
     debiki2.utils.startDetectingMouse();
   });
 
-  // COULD fire login earlier; it's confusing that the 'Login' link
-  // is visible for rather long, when you load a *huge* page.
   steps.push(function() {
-    $posts.each($initStep4)
+    $posts.each(function() {
+      d.i.makeThreadResizableForPost(this);
+    });
   });
 
   // If #post-X is specified in the URL, ensure all posts leading up to
@@ -268,7 +274,7 @@ d.i.renderEmptyPage = function() {
   // main title or article.)
   configureAjaxRequests();
   debiki2.utils.onMouseDetected(d.i.initUtterscrollAndTips);
-  debiki2.initAllReactRoots();
+  debiki2.startRemainingReactRoots();
   debiki2.ReactStore.activateUserSpecificData();
   fireLoginOrLogout();
   debiki2.utils.startDetectingMouse();

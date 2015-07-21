@@ -30,7 +30,7 @@
 var ReactRouter = window['ReactRouter'];
 
 
-export function initAllReactRoots() {
+export function startRemainingReactRoots() {
   createAnyFlagDialog();
   pagetools.createPageToolsDialog();
   pagedialogs.createAboutUserDialog();
