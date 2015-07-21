@@ -89,6 +89,14 @@ ReactDispatcher.register(function(payload) {
       store.user.rolePageSettings.notfLevel = action.newLevel;
       break;
 
+    case ReactActions.actionTypes.EditTitleAndSettings:
+      store.ancestorsRootFirst = action.newAncestorsRootFirst;
+      var parent: any = _.last(action.newAncestorsRootFirst);
+      store.parentPageId = parent ? parent.pageId : null;
+      store.pageRole = action.newPageRole || store.pageRole;
+      updatePost(action.newTitlePost);
+      break;
+
     case ReactActions.actionTypes.UpdatePost:
       updatePost(action.post);
       break;

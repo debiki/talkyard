@@ -46,6 +46,12 @@ trait PageStuffDao {
   val logger = play.api.Logger
 
 
+  def loadPageStuffAsList(pageIds: Iterable[PageId]): Seq[Option[PageStuff]] = {
+    val stuffByPageId = loadPageStuff(pageIds)
+    pageIds.toSeq.map(stuffByPageId.get)
+  }
+
+
   def loadPageStuff(pageIds: Iterable[PageId]): Map[PageId, PageStuff] = {
     if (pageIds.isEmpty)
       return Map.empty

@@ -452,7 +452,7 @@ export function saveEdits(postId: number, text: string, doneCallback: () => void
 }
 
 
-export function savePageTitleAndSettings(newTitle: string, settings: any, success: () => void,
+export function savePageTitleAndSettings(newTitle: string, settings: any, success: (response: any) => void,
         error: () => void) {
   var data = $.extend(settings, {
     pageId: d.i.pageId,
@@ -461,8 +461,7 @@ export function savePageTitleAndSettings(newTitle: string, settings: any, succes
   postJson('/-/edit-title-save-settings', {
     data: data,
     success: (response) => {
-      success();
-      d.i.handleEditResult(response.newTitlePost);
+      success(response);
       if (response.newUrlPath && window.history.replaceState) {
         var newPath = response.newUrlPath + location.search + location.hash;
         window.history.replaceState({}, null, newPath);

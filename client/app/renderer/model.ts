@@ -134,6 +134,7 @@ interface Store {
   userMustBeApproved: boolean;
   pageId: string;
   parentPageId?: string;
+  ancestorsRootFirst?: Ancestor[];
   pageRole: PageRole;
   pagePath: string;
   pinOrder?: number;
@@ -156,6 +157,13 @@ interface Store {
   // If quickUpdate is true only posts in postsToUpdate will be updated.
   quickUpdate: boolean;
   postsToUpdate: { [postId: number]: boolean };
+}
+
+
+interface Ancestor {
+  pageId: string;
+  title: string;
+  path: string;
 }
 
 

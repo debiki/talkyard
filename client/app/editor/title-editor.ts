@@ -93,15 +93,17 @@ export var TitleEditor = createComponent({
     this.setState({ isSaving: true });
     var newTitle = this.refs.titleInput.getValue();
     var pageSettings = this.getSettings();
-    Server.savePageTitleAndSettings(newTitle, pageSettings, this.props.closeEditor, () => {
+    ReactActions.editTitleAndSettings(newTitle, pageSettings, this.props.closeEditor, () => {
       this.setState({ isSaving: false });
     });
   },
 
   getSettings: function() {
+    var categoryInput = this.refs.categoryInput;
+    var pageRoleInput = this.refs.pageRoleInput;
     var settings: any = {
-      category: this.refs.categoryInput.getValue(),
-      pageRole: parseInt(this.refs.pageRoleInput.getValue()),
+      category: categoryInput ? categoryInput.getValue() : null,
+      pageRole: pageRoleInput ? parseInt(pageRoleInput.getValue()) : null,
       folder: addFolderSlashes(this.state.folder),
       slug: this.state.slug,
       showId: this.state.showId
@@ -156,8 +158,12 @@ export var TitleEditor = createComponent({
         : r.a({ className: 'dw-toggle-compl-stuff icon-settings',
             onClick: this.showComplicated }, 'Advanced');
 
+    var isForumOrCategory = pageRole === PageRole.Forum || pageRole === PageRole.Category;
     var selectCategoryInput;
-    if (this.props.forumId && this.state.categories) {
+    if (isForumOrCategory) {
+      // Currently there are no sub categories so categories cannot be moved elsewhere.
+    }
+    else if (this.props.forumId && this.state.categories) {
       var categoryOptions = this.state.categories.map((category: Category) => {
         return r.option({ value: category.pageId }, category.name);
       });
@@ -172,7 +178,7 @@ export var TitleEditor = createComponent({
       selectCategoryInput = r.p({}, 'Loading categories...');
     }
 
-    var selectPageRoleInput =
+    var selectPageRoleInput = isForumOrCategory ? null :
       Input({ type: 'select', label: 'Page Type', ref: 'pageRoleInput', title: 'Page type',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10', defaultValue: pageRole },
         r.option({ value: PageRole.Question }, 'Question'),

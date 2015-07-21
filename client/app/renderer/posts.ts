@@ -120,6 +120,23 @@ var TitleBodyComments = createComponent({
   */
 
   render: function() {
+    var categories;
+    if (this.props.ancestorsRootFirst.length) {
+      categories =
+        r.ol({ className: 'parent-forums-list' },
+          this.props.ancestorsRootFirst.map((ancestor: Ancestor) => {
+            return r.li({}, r.a({ href: ancestor.path }, ancestor.title));
+          }));
+    }
+
+    var anyAboutCategoryClass;
+    var anyAboutCategoryTitle;
+    if (this.props.pageRole === PageRole.Category) {
+      anyAboutCategoryClass = 'dw-about-category';
+      anyAboutCategoryTitle =
+          r.h2({ className: 'dw-about-cat-ttl-prfx' }, "About category:")
+    }
+
     var anyTitle = null;
     var pageRole: PageRole = this.props.pageRole;
     if (pageRole === PageRole.HomePage || pageRole === PageRole.EmbeddedComments ||
@@ -151,11 +168,14 @@ var TitleBodyComments = createComponent({
     var embeddedClass = this.props.isInEmbeddedCommentsIframe ? ' dw-embedded' : '';
 
     return (
-      r.div({ className: 'debiki dw-debate dw-page' + embeddedClass },
-        anyTitle,
-        anyPostHeader,
-        anySocialLinks,
-        RootPostAndComments(this.props)));
+      r.div({ className: anyAboutCategoryClass },
+        categories,
+        anyAboutCategoryTitle,
+        r.div({ className: 'debiki dw-debate dw-page' + embeddedClass },
+          anyTitle,
+          anyPostHeader,
+          anySocialLinks,
+          RootPostAndComments(this.props))));
   },
 });
 

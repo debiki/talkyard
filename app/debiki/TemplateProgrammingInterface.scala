@@ -36,41 +36,6 @@ object InternalTemplateProgrammingInterface {
 }
 
 
-object InternalPageTpi {
-
-
-  case class ForumOrCategory(
-    id: String, path: String, title: String)
-
-
-  object ForumOrCategory {
-    def apply(forumPath: String, pageMeta: PageMeta, pagePath: PagePath, title: String)
-          : ForumOrCategory = {
-      val path =
-        if (pagePath.value == forumPath) {
-          // This is the forum itself.
-          forumPath
-        }
-        else {
-          // This is a category.
-          // Currently the forum React app uses hash fragment URLs for navigation
-          // inside the forum, unfortunately.
-          // Let's show the latest topics for this category:
-          val categoryName =
-            controllers.ForumController.categoryNameToSlug(title)
-          s"$forumPath#/latest/$categoryName"
-        }
-      ForumOrCategory(
-        id = pageMeta.pageId,
-        path = path,
-        title = title)
-    }
-  }
-
-}
-
-
-
 object TemplateProgrammingInterface {
 
   val (minMax, minMaxJs, minMaxCss) = {
@@ -87,6 +52,7 @@ object TemplateProgrammingInterface {
 /**
  * Used by internal templates, e.g. /-/create-website/choose-name.
  */
+// old, empty now, remove later
 class InternalTemplateProgrammingInterface protected (
   protected val dao: SiteDao) {
 
@@ -254,41 +220,6 @@ class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends
 
   def currentFolder = PathRanges(folders = Seq(_pageReq.pagePath.folder))
   def currentTree = PathRanges(trees = Seq(_pageReq.pagePath.folder))
-
-
-  /**
-   * Returns any parent forums, e.g.: grandparent-forum :: parent-forum :: Nil.
-   */
-  def listParentForums(): Seq[tpi.ForumOrCategory] = {
-    val parentPageId =
-      if (_pageReq.thePageMeta.pageRole == PageRole.Category) {
-        // Hack. The forum category page itself is currently used as the category's
-        // about category page, until I've moved categories to a dedicated table.
-        // Therefore, right now, the category page == the about category page
-        // is placed inside ... itself == the category. [forumcategory]
-        _pageReq.thePageId
-      }
-      else  _pageReq.thePageMeta.parentPageId match {
-        case None => return Nil
-        case Some(pageId) => pageId
-      }
-
-    val ancestorPatshAndMeta: Seq[(PagePath, PageMeta)] =
-      _pageReq.dao.listAncestorsAndOwnMeta(parentPageId)
-
-    val forumPath = ancestorPatshAndMeta.headOption match {
-      case None => return Nil
-      case Some((path, meta)) => path
-    }
-
-    val pageStuffById = _pageReq.dao.loadPageStuff(ancestorPatshAndMeta.map(_._2.pageId))
-    val forumsAndCats = ancestorPatshAndMeta map { case (pagePath, pageMeta) =>
-      val pageStuff = pageStuffById.get(pageMeta.pageId) getOrDie "DwE5JJf3"
-      tpi.ForumOrCategory(forumPath.value, pageMeta, pagePath, pageStuff.title)
-    }
-
-    forumsAndCats
-  }
 
 
   def hasChildPages: Boolean = {

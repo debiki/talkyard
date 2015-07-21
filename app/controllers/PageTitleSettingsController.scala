@@ -43,7 +43,7 @@ object PageTitleSettingsController extends mvc.Controller {
     val pageId = (request.body \ "pageId").as[PageId]
     val newTitle = (request.body \ "newTitle").as[String].trim
     val anyNewParentId = (request.body \ "category").asOpt[PageId]
-    val newRoleInt = (request.body \ "pageRole").as[Int]
+    val anyNewRoleInt = (request.body \ "pageRole").asOpt[Int]
     val anyLayoutString = (request.body \ "layout").asOpt[String]
     val anyFolder = (request.body \ "folder").asOpt[String] map { folder =>
       if (folder.trim.isEmpty) "/" else folder.trim
@@ -51,7 +51,9 @@ object PageTitleSettingsController extends mvc.Controller {
     val anySlug = (request.body \ "slug").asOpt[String].map(_.trim)
     val anyShowId = (request.body \ "showId").asOpt[Boolean]
 
-    val newRole = PageRole.fromInt(newRoleInt) getOrElse throwBadArgument("DwE4GU8", "pageRole")
+    val anyNewRole: Option[PageRole] = anyNewRoleInt map { newRoleInt =>
+      PageRole.fromInt(newRoleInt) getOrElse throwBadArgument("DwE4GU8", "pageRole")
+    }
 
     val hasManuallyEditedSlug = anySlug.exists(slug =>
       slug != ReactRenderer.slugifyTitle(newTitle))
@@ -97,7 +99,10 @@ object PageTitleSettingsController extends mvc.Controller {
       editorId = request.theUser.id, request.theBrowserIdData, newTitle)
 
     // Update page settings.
-    val newMeta = oldMeta.copy(pageRole = newRole, parentPageId = anyNewParentId)
+    val oldAncestorIdsParentFirst = request.dao.loadAncestorIdsParentFirst(pageId)
+    val newMeta = oldMeta.copy(
+      pageRole = anyNewRole.getOrElse(oldMeta.pageRole),
+      parentPageId = anyNewParentId.orElse(oldMeta.parentPageId))
     if (newMeta != oldMeta) {
       request.dao.updatePageMeta(newMeta, old = oldMeta)
     }
@@ -123,19 +128,20 @@ object PageTitleSettingsController extends mvc.Controller {
       }
     }
 
-    // Refresh cache. If this is a forum category page, we need to refresh the forum and
-    // so it'll reload the category list, which is otherwise cached as JSON in the cached HTML.
-    // This is a hack. It'll go away when forum categories have their own table? [forumcategory]
-    request.dao.refreshPageInAnyCache(pageId)
-    if (oldMeta.pageRole == PageRole.Category) {
-      val ancestorIds = request.dao.loadAncestorIdsParentFirst(pageId)
-      ancestorIds.foreach(request.dao.refreshPageInAnyCache)
-    }
+    // Refresh cache, plus any ancestors in case one of them is a forum page,
+    // because forum pages cache category JSON and a latest topics list (includes titles).
+    val newAncestorIdsParentFirst = request.dao.loadAncestorIdsParentFirst(pageId)
+    val idsToRefresh = (pageId :: oldAncestorIdsParentFirst ::: newAncestorIdsParentFirst).distinct
+    idsToRefresh.foreach(request.dao.refreshPageInAnyCache)
+
+    val (_, newAncestorsJson) = ReactJson.makeForumIdAndAncestorsJson(
+      newMeta, newAncestorIdsParentFirst, request.dao)
 
     // The browser will update the title and the url path in the address bar.
     OkSafeJson(Json.obj(
       "newTitlePost" -> ReactJson.postToJson2(postId = PageParts.TitleId, pageId = pageId,
           request.dao, includeUnapproved = true),
+      "newAncestorsRootFirst" -> newAncestorsJson,
       "newUrlPath" -> JsStringOrNull(newPath.map(_.value))))
   }
 

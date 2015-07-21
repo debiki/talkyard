@@ -32,6 +32,7 @@ export var actionTypes = {
   PinPage: 'PinPage',
   UnpinPage: 'UnpinPage',
   SetPageNotfLevel: 'SetPageNotfLevel',
+  EditTitleAndSettings: 'EditTitleAndSettings',
   UpdatePost: 'UpdatePost',
   VoteOnPost: 'VoteOnPost',
   MarkPostAsRead: 'MarkPostAsRead',
@@ -120,6 +121,20 @@ export function setPageNoftLevel(newNotfLevel) {
     actionType: actionTypes.SetPageNotfLevel,
     newLevel: newNotfLevel
   });
+}
+
+
+export function editTitleAndSettings(newTitle: string, settings: any, success: () => void,
+      error: () => void) {
+  Server.savePageTitleAndSettings(newTitle, settings, (response: any) => {
+    success();
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.EditTitleAndSettings,
+      newTitlePost: response.newTitlePost,
+      newAncestorsRootFirst: response.newAncestorsRootFirst,
+      newPageRole: settings.pageRole,
+    });
+  }, error);
 }
 
 

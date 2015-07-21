@@ -20,7 +20,7 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
-import debiki.dao.{SiteDao, PageDao}
+import debiki.dao.{PageStuff, SiteDao, PageDao}
 import debiki.DebikiHttp.throwNotFound
 import java.{util => ju}
 import play.api.libs.json._
@@ -135,16 +135,14 @@ object ReactJson {
     val topLevelCommentIdsSorted =
       Post.sortPosts(topLevelComments).map(reply => JsNumber(reply.id))
 
-    val anyForumId: Option[PageId] = {
-      // Right now if there's any parent page, then this page is a forum category or forum topic.
-      page.ancestorIdsParentFirst.lastOption
-    }
+    val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
+      makeForumIdAndAncestorsJson(page.meta, page.ancestorIdsParentFirst, pageReq.dao)
 
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
         val orderOffset = controllers.ForumController.parseSortOrderAndOffset(pageReq).getOrElse(
           PageOrderOffset.ByBumpTime(None))
-        var topics = ForumController.listTopicsInclPinned(page.id, orderOffset, pageReq.dao,
+        val topics = ForumController.listTopicsInclPinned(page.id, orderOffset, pageReq.dao,
           limit = ForumController.NumTopicsToList)
         val pageStuffById = pageReq.dao.loadPageStuff(topics.map(_.pageId))
         topics.map(controllers.ForumController.topicToJson(_, pageStuffById))
@@ -165,6 +163,7 @@ object ReactJson {
       "pageId" -> pageReq.thePageId,
       "parentPageId" -> JsStringOrNull(page.meta.parentPageId),
       "forumId" -> JsStringOrNull(anyForumId),
+      "ancestorsRootFirst" -> ancestorsJsonRootFirst,
       "pageRole" -> JsNumber(page.role.toInt),
       "pagePath" -> JsString(pageReq.pagePath.value),
       "pinOrder" -> JsNumberOrNull(page.meta.pinOrder),
@@ -180,6 +179,50 @@ object ReactJson {
       "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
       "horizontalLayout" -> JsBoolean(pageReq.thePageSettings.horizontalComments.valueAsBoolean),
       "socialLinksHtml" -> JsString(socialLinksHtml))
+  }
+
+
+  /** Returns (any-forum-id, json-for-ancestor-forum-and-categories-forum-first).
+    */
+  def makeForumIdAndAncestorsJson(pageMeta: PageMeta, ancestorIdsParentFirst: Seq[PageId],
+        dao: SiteDao): (Option[PageId], Seq[JsObject]) = {
+    var categoryIds = ancestorIdsParentFirst.reverse
+    if (pageMeta.pageRole == PageRole.Category) {
+      categoryIds = categoryIds :+ pageMeta.pageId // hack: a category is its own about page, placed in itself — this will go away when categoris have their own table [forumcategory]
+    }
+    if (categoryIds.isEmpty) {
+      val anyForumId = if (pageMeta.pageRole == PageRole.Forum) Some(pageMeta.pageId) else None
+      return (anyForumId, Nil)
+    }
+    dao.lookupPagePath(categoryIds.head) match {
+      case None => (None, Nil)
+      case Some(forumPath) =>
+        val stuffRootFirst = dao.loadPageStuffAsList(categoryIds)
+        val jsonRootFirst = stuffRootFirst.flatten map { pageStuff =>
+          makeForumOrCategoryJson(forumPath, pageStuff)
+        }
+        (Some(categoryIds.head), jsonRootFirst)
+    }
+  }
+
+
+  /** Returns the URL path, page id and title for a forum or category in that forum.
+    */
+  private def makeForumOrCategoryJson(forumPath: PagePath, pageStuff: PageStuff): JsObject = {
+    // Right now if there is any parent pages then this page is a forum category or
+    // forum topic, and the topmost ancestor (the root) is the forum main page.
+    val path =
+      if (pageStuff.pageId == forumPath.pageId.getOrDie("DwE5GK2")) {
+        s"${forumPath.value}#/latest/"
+      }
+      else {
+        val categorySlug = controllers.ForumController.categoryNameToSlug(pageStuff.title)
+        s"${forumPath.value}#/latest/$categorySlug"
+      }
+    Json.obj(
+      "pageId" -> pageStuff.pageId,
+      "title" -> pageStuff.title,
+      "path" -> path)
   }
 
 

@@ -88,25 +88,6 @@ trait PagePathMetaDao {
     }
   }
 
-
-  /**
-   * Returns a list like: grandparent-meta :: parent-meta :: meta-for-pageId :: Nil
-   */
-  def listAncestorsAndOwnMeta(pageId: PageId): List[(PagePath, PageMeta)] = {
-    var curPageMeta = loadPageMeta(pageId)
-    var curPagePath = lookupPagePath(pageId)
-    var result: List[(PagePath, PageMeta)] = Nil
-
-    while (curPageMeta.isDefined && curPagePath.isDefined) {
-      result ::= (curPagePath.get, curPageMeta.get)
-      val parentId = curPageMeta.get.parentPageId
-      curPageMeta = parentId.flatMap(loadPageMeta _)
-      curPagePath = parentId.flatMap(lookupPagePath _)
-    }
-
-    result
-  }
-
 }
 
 
@@ -126,7 +107,7 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
 
 
   onPageSaved { sitePageId =>
-    uncachePageMeta(sitePageId)
+    uncacheMetaAndAncestors(sitePageId)
   }
 
 
@@ -204,7 +185,7 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
   override def loadAncestorIdsParentFirst(pageId: PageId): List[PageId] = {
     // [freshcache] SHOULD discard cached values older than a certain whole-site-invalidation value.
     lookupInCache(
-      ancestorIdsByIdKey(pageId),
+      ancestorIdsKey(SitePageId(siteId, pageId)),
       orCacheAndReturn = Some(super.loadAncestorIdsParentFirst(pageId))) getOrDie "DwE4GLi6"
   }
 
@@ -213,13 +194,14 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
     // BUG SHOULD uncache meta for old and new parent page too,
     // if this page changes parent page?
     if (meta != old) {
-      uncachePageMeta(SitePageId(siteId, meta.pageId))
+      uncacheMetaAndAncestors(SitePageId(siteId, meta.pageId))
       super.updatePageMeta(meta, old = old)
     }
   }
 
 
-  def uncachePageMeta(sitePageId: SitePageId) {
+  private def uncacheMetaAndAncestors(sitePageId: SitePageId) {
+    removeFromCache(ancestorIdsKey(sitePageId))
     removeFromCache(pageMetaByIdKey(sitePageId))
   }
 
@@ -236,8 +218,8 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
   private def pageMetaByIdKey(sitePageId: SitePageId) =
     CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|PageMetaById")
 
-  private def ancestorIdsByIdKey(pageId: PageId) =
-    CacheKey(siteId, s"$pageId|AncestorIdsById")
+  private def ancestorIdsKey(sitePageId: SitePageId) =
+    CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|AncestorIdsById")
 
 }
 

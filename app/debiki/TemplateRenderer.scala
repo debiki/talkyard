@@ -25,7 +25,7 @@ import play.api._
 import requests.PageRequest
 
 
-object TemplateRenderer {
+object TemplateRenderer { // try to delete
 
 
   def renderTemplate(pageReq: PageRequest[_], appendToBody: xml.NodeSeq = Nil): String = {
@@ -43,20 +43,10 @@ object TemplateRenderer {
 
     val template =
       pageReq.thePageRole match {
-        case PageRole.HomePage => "homepage"
-        //case PageRole.BlogPost => "blogPost"
-        case PageRole.Blog => "blog"
-        case PageRole.Forum => "forum"
-        case PageRole.Category => "editForumCategory"
-        case PageRole.Discussion => "forumTopic"
-        case PageRole.Question => "forumTopic"
-        case PageRole.MindMap => "forumTopic"
-        case PageRole.About => "forumTopic"
-        case PageRole.Code => "codePage"
+        case PageRole.HomePage => "homepage" // try to delete
+        case PageRole.Blog => "blog" // try to delete
         case PageRole.EmbeddedComments => "embeddedComments"
-        case _ =>
-        // A blog post template works well for most pages?
-        "blogPost"
+        case _ => "page"
       }
 
     renderThemeTemplate(template, tpi::Nil)
