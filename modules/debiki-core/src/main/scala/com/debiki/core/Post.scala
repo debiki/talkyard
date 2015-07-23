@@ -265,7 +265,7 @@ case class Post(
     parentId.flatMap(pageParts.post)
 
   def children(pageParts: PageParts): Seq[Post] =
-    pageParts.childrenOf(id)
+    pageParts.childrenBestFirstOf(id)
 
 
   /** Setting any flag to true means that status will change to true. Leaving it
@@ -505,7 +505,7 @@ object Post {
 
   /** Sorts posts so e.g. interesting ones appear first, and deleted ones last.
     */
-  def sortPosts(posts: Seq[Post]): Seq[Post] = {
+  def sortPostsBestFirst(posts: immutable.Seq[Post]): immutable.Seq[Post] = {
     posts.sortWith(sortPostsFn)
   }
 
@@ -580,9 +580,9 @@ object Post {
 
     // Newest posts first. No, last
     if (postA.createdAt.getTime < postB.createdAt.getTime)
-      return true
+      true
     else
-      return false
+      false
   }
 
 }

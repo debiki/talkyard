@@ -38,6 +38,7 @@ export var actionTypes = {
   MarkPostAsRead: 'MarkPostAsRead',
   CycleToNextMark: 'CycleToNextMark',
   SummarizeReplies: 'SummarizeReplies',
+  UnsquashTrees: 'UnsquashTrees',
   CollapseTree: 'CollapseTree',
   UncollapsePost: 'UncollapsePost',
   SetHorizontalLayout: 'SetHorizontalLayout',
@@ -179,6 +180,13 @@ export function summarizeReplies() {
   });
 }
 
+
+export function unsquashTrees(postId: number) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.UnsquashTrees,
+    postId: postId
+  });
+}
 
 export function collapseTree(post: Post) {
   ReactDispatcher.handleViewAction({

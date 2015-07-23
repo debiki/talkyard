@@ -59,7 +59,15 @@ export function drawHorizontalArrowFromRootPost(rootPost) {
 export function drawArrowsFromParent(allPosts, parentPost, depth: number,
       index: number, horizontalLayout: boolean, rootPostId: number) {
 
-  var numRemainingNonMultireplies = 0;
+  var postId = parentPost.childIdsSorted[index];
+  var post = allPosts[postId];
+  if (!post)
+    return []; // deleted
+
+  var isSquashing = post.squash;
+
+  // Find out how many siblings after `index` to which we shall draw arrows.
+  var numRemainingWithArrows = 0;
   if (parentPost) {
     for (var i = index + 1; i < parentPost.childIdsSorted.length; ++i) {
       var siblingId = parentPost.childIdsSorted[i];
@@ -68,15 +76,23 @@ export function drawArrowsFromParent(allPosts, parentPost, depth: number,
         // This post has been deleted?
         continue;
       }
+      if (isSquashing && sibling.squash) {
+        // Don't break — there might be non-squashed siblings later.
+        continue;
+      }
+      if (sibling.squash) {
+        // Don't increase numRemainingWithArrows with more than 1 for a bunch of squashed siblings.
+        isSquashing = true;
+      }
       if (sibling.multireplyPostIds.length) {
         break;
       }
-      numRemainingNonMultireplies += 1;
+      numRemainingWithArrows += 1;
     }
   }
 
   if (parentPost && horizontalLayout && parentPost.postId === rootPostId) {
-    return drawHorizontalArrows(index === 0, numRemainingNonMultireplies);
+    return drawHorizontalArrows(index === 0, numRemainingWithArrows);
   }
 
   if (parentPost) {
@@ -84,14 +100,14 @@ export function drawArrowsFromParent(allPosts, parentPost, depth: number,
     if (!horizontalLayout && depth === 1)
       return [];
 
-    return drawVerticalArrows(depth, index === 0, horizontalLayout, numRemainingNonMultireplies);
+    return drawVerticalArrows(depth, index === 0, horizontalLayout, numRemainingWithArrows);
   }
 
   return [];
 }
 
 
-function drawHorizontalArrows(isFirstChild, numRemainingNonMultireplies) {
+function drawHorizontalArrows(isFirstChild: boolean, numRemainingWithArrows: number) {
   // We're rendering a top level reply in its own column. Draw horizontal arrows from
   // the root post. First, and arrow to this thread. Then, if there are any sibling
   // therad columns to the right, arrows to them too. But if this thread is the very
@@ -104,7 +120,7 @@ function drawHorizontalArrows(isFirstChild, numRemainingNonMultireplies) {
         r.div({ className: 'dw-arw dw-arw-hz-curve-to-this' }));
   }
 
-  if (numRemainingNonMultireplies > 0) {
+  if (numRemainingWithArrows > 0) {
     if (!isFirstChild) {
       arrows.push(
          r.div({ className: 'dw-arw dw-arw-hz-line-to-this' }));
@@ -118,7 +134,7 @@ function drawHorizontalArrows(isFirstChild, numRemainingNonMultireplies) {
 
 
 function drawVerticalArrows(depth: number, isFirstChild: boolean,
-    horizontalLayout: boolean, numRemainingNonMultireplies: number) {
+    horizontalLayout: boolean, numRemainingWithArrows: number) {
 
   var arrows = [];
 
@@ -154,7 +170,7 @@ function drawVerticalArrows(depth: number, isFirstChild: boolean,
   //                                             |comment text…     |
   //                                             +------------------+
 
-  var isOnlyChild = isFirstChild && numRemainingNonMultireplies === 0;
+  var isOnlyChild = isFirstChild && numRemainingWithArrows === 0;
   if (isOnlyChild) {
     arrows.push(
       r.div({ className: 'dw-arw dw-arw-vt-curve-to-this' }));
@@ -190,12 +206,12 @@ function drawVerticalArrows(depth: number, isFirstChild: boolean,
   //                                             \
   // This very last line to the :last-child -->   v
   // is "dw-arw-vt-curve-to-unindented".         +-----—------------+
-  // Here, numRemainingNonMultireplies is 0.     |:last-child       |
+  // Here, numRemainingWithArrows is 0.          |:last-child       |
   //                                             |comment text…     |
   //                                             +------------------+
 
   // Draw the `-> part:
-  if (numRemainingNonMultireplies >= 1) {
+  if (numRemainingWithArrows >= 1) {
     arrows.push(
         r.div({ className: 'dw-arw dw-arw-vt-curve-to-this' }));
   }
@@ -203,15 +219,15 @@ function drawVerticalArrows(depth: number, isFirstChild: boolean,
   // Start or continue an arrow to the siblings below, but not to
   // multireplies, since we don't know if they reply to the current post,
   // or to posts elsewhere in the tree.
-  if (numRemainingNonMultireplies >= 1) {
+  if (numRemainingWithArrows >= 1) {
     arrows.push(
         r.div({ className: 'dw-arw dw-arw-vt-line-to-sibling-1' }));
     arrows.push(
         r.div({ className: 'dw-arw dw-arw-vt-line-to-sibling-2' }));
 
     //          \
-    // Draw the  v  arrow to the very last non-multireply:
-    if (numRemainingNonMultireplies === 1) {
+    // Draw the  v  arrow to the very last sibling:
+    if (numRemainingWithArrows === 1) {
       if (!horizontalLayout && depth === 2) {
         arrows.push(
           r.div({ className: 'dw-arw dw-arw-vt-curve-to-last-sibling-indented' }));

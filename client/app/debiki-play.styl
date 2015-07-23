@@ -101,10 +101,29 @@ del
 .dw-x-show
   position: relative;
   bottom: 10px;
-  padding: 4px 0 8px 13px;
+  padding: 0 0 8px 3px;  // padding-top hides parts of any <p> above
+  margin-top: 6px;
   font-style: italic;
   letter-spacing: 0.3ex;
   background: #fff;
+  color: hsl(210, 100%, 30%);
+
+.dw-ts-squashed
+  .dw-x-show
+    bottom: 0;
+    padding: 10px 0 17px 5px;
+    display: block;
+    margin: -8px 0 8px;
+    z-index: 1;
+    float: left;
+    color: hsl(0, 0%, 53%);
+    &:hover
+      background-color: hsl(210, 100%, 97%);
+      color: hsl(210, 100%, 33%);
+      text-decoration: none;
+
+  &.dw-2dcol > .dw-x-show
+    color: hsl(0, 0%, 20%);
 
 .dw-p.dw-x:hover
   .dw-p-hd

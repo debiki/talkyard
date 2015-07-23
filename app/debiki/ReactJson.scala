@@ -30,6 +30,33 @@ import scala.collection.immutable
 
 object ReactJson {
 
+  /** If there are more than this many visible replies, we'll summarize the page, otherwise
+    * it'll take a bit long to render in the browser, especially on mobiles.
+    */
+  val SummarizeNumRepliesVisibleLimit = 80
+
+  /** If we're summarizing a page, we'll show the first replies to each comment non-summarized.
+    * But the rest will be summarized.
+    */
+  val SummarizeSiblingIndexLimit = 5
+
+  val SummarizeAllDepthLimit = 5
+
+  /** If we're summarizing a page, we'll squash the last replies to a comment into one
+    * single "Click to show more comments..." html elem.
+    */
+  val SquashSiblingIndexLimit = 8
+
+  /** Like a tweet :-)  */
+  val PostSummaryLength = 140
+
+  /** Posts shorter than this won't be summarized if they're one single paragraph only,
+    * because the "Click to show..." text would then make the summarized post as large
+    * as the non-summarized version.
+    */
+  val SummarizePostLengthLimit =
+    PostSummaryLength + 80 // one line is roughly 80 chars
+
 
   def userNoPageToJson(anyUser: Option[User]): JsObject = {
     // Warning: some dupl code, see `userDataJson()` below.
@@ -133,7 +160,7 @@ object ReactJson {
 
     val topLevelComments = pageParts.topLevelComments
     val topLevelCommentIdsSorted =
-      Post.sortPosts(topLevelComments).map(reply => JsNumber(reply.id))
+      Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.id))
 
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
       makeForumIdAndAncestorsJson(page.meta, page.ancestorIdsParentFirst, pageReq.dao)
@@ -253,10 +280,48 @@ object ReactJson {
       else
         (post.approvedHtmlSanitized, post.approvedAt.isDefined)
 
-    val childrenSorted = {
-      val children = page.parts.childrenOf(post.id)
-      Post.sortPosts(children)
-    }
+    val depth = page.parts.depthOf(post.id)
+
+    // Find out if we should summarize post, or squash it and its subsequent siblings.
+    // This is simple but a bit too stupid? COULD come up with a better algorithm (better
+    // in the sense that it better avoids summarizing or squashing interesting stuff).
+    // (Note: We'll probably have to do this server side in order to do it well, because
+    // only server side all information is available, e.g. how trustworthy certain users
+    // are or if they are trolls. Cannot include that in JSON sent to the browser, privacy issue.)
+    val (summarize, jsSummary, squash) =
+      if (page.parts.numRepliesVisible < SummarizeNumRepliesVisibleLimit) {
+        (false, JsNull, false)
+      }
+      else {
+        val (siblingIndex, hasNonDeletedSuccessorSiblingTrees) = page.parts.siblingIndexOf(post)
+        val squashTime = siblingIndex > SquashSiblingIndexLimit / math.max(depth, 1)
+        // Don't squash a single comment with no replies – summarize it instead.
+        val squash = squashTime && (hasNonDeletedSuccessorSiblingTrees ||
+          page.parts.hasNonDeletedSuccessor(post.id))
+        var summarize = !squash && (squashTime || siblingIndex > SummarizeSiblingIndexLimit ||
+          depth >= SummarizeAllDepthLimit)
+        val summary: JsValue =
+          if (summarize) post.approvedHtmlSanitized match {
+            case None =>
+              JsString("(Not approved [DwE4FGEU7])")
+            case Some(html) =>
+              // Include only the first paragraph or header.
+              val ToTextResult(text, isSingleParagraph) =
+                htmlToTextWithNewlines(html, firstLineOnly = true)
+              if (isSingleParagraph && text.length <= SummarizePostLengthLimit) {
+                // There's just one short paragraph. Don't summarize.
+                summarize = false
+                JsNull
+              }
+              else {
+                JsString(text.take(PostSummaryLength))
+              }
+          }
+          else JsNull
+        (summarize, summary, squash)
+      }
+
+    val childrenSorted = page.parts.childrenBestFirstOf(post.id)
 
     val author = post.createdByUser(people)
 
@@ -276,10 +341,15 @@ object ReactJson {
       "numWrongVotes" -> JsNumber(post.numWrongVotes),
       "numBuryVotes" -> JsNumber(post.numBuryVotes),
       "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions),
+      "summarize" -> JsBoolean(summarize),
+      "summary" -> jsSummary,
+      "squash" -> JsBoolean(squash),
       "isTreeDeleted" -> JsBoolean(post.deletedStatus.isTreeDeleted),
       "isPostDeleted" -> JsBoolean(post.deletedStatus.isPostDeleted),
-      "isTreeCollapsed" -> JsBoolean(post.collapsedStatus.isTreeCollapsed),
-      "isPostCollapsed" -> JsBoolean(post.collapsedStatus.isPostCollapsed),
+      "isTreeCollapsed" -> (
+        if (summarize) JsString("Truncated")
+        else JsBoolean(!squash && post.collapsedStatus.isTreeCollapsed)),
+      "isPostCollapsed" -> JsBoolean(!summarize && !squash && post.collapsedStatus.isPostCollapsed),
       "isTreeClosed" -> JsBoolean(post.closedStatus.isTreeClosed),
       "isApproved" -> JsBoolean(isApproved),
       "pinnedPosition" -> post.pinnedPosition.map(JsNumber(_)).getOrElse(JsNull),
@@ -299,9 +369,10 @@ object ReactJson {
 
 
   /** Creates a dummy root post, needed when rendering React elements. */
-  def embeddedCommentsDummyRootPost(topLevelComments: Seq[Post]) = Json.obj(
+  def embeddedCommentsDummyRootPost(topLevelComments: immutable.Seq[Post]) = Json.obj(
     "postId" -> JsNumber(PageParts.BodyId),
-    "childIdsSorted" -> JsArray(Post.sortPosts(topLevelComments).map(reply => JsNumber(reply.id))))
+    "childIdsSorted" ->
+      JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.id))))
 
 
   val NoUserSpecificData = Json.obj(
@@ -431,6 +502,71 @@ object ReactJson {
         "subCategories" -> JsArray()))
     })
     categoriesJson
+  }
+
+
+  case class ToTextResult(text: String, isSingleParagraph: Boolean)
+
+
+  def htmlToTextWithNewlines(htmlText: String, firstLineOnly: Boolean = false): ToTextResult = {
+    // This includes no newlines: Jsoup.parse(htmlText).body.text
+    // Instead we'll have to traverse all nodes. There are some alternative approaches
+    // at StackOverflow but I think this is the only way to do it properly.
+    // This implementation is based on how above `.text` works)
+    import org.jsoup.Jsoup
+    import org.jsoup.nodes.{Element, TextNode, Node}
+    import org.jsoup.select.{NodeTraversor, NodeVisitor}
+    import scala.util.control.ControlThrowable
+
+    val result = new StringBuilder
+    var numParagraphBlocks = 0
+    var numOtherBlocks = 0
+    def isInFirstParagraph = numParagraphBlocks == 0 && numOtherBlocks == 0
+    def canStillBeSingleParagraph = numOtherBlocks == 0 && numParagraphBlocks <= 1
+
+    val nodeTraversor = new NodeTraversor(new NodeVisitor() {
+      override def head(node: Node, depth: Int) {
+        node match {
+          case textNode: TextNode =>
+            if (!firstLineOnly || isInFirstParagraph) {
+              result.append(textNode.getWholeText.trim)
+            }
+          case _ => ()
+        }
+      }
+      override def tail(node: Node, depth: Int) {
+        node match {
+          case element: Element if result.nonEmpty =>
+            val tagName = element.tag.getName
+            if (tagName == "body")
+              return
+            if (element.isBlock) {
+              // Consider a <br>, not just </p>, the end of a paragraph.
+              if (tagName == "p" || tagName == "br")
+                numParagraphBlocks += 1
+              else
+                numOtherBlocks += 1
+            }
+            if (element.isBlock || tagName == "br") {
+              if (firstLineOnly) {
+                // Don't break traversal before we know if there's at most one paragraph.
+                if (!canStillBeSingleParagraph)
+                  throw new ControlThrowable {}
+              }
+              else {
+                result.append("\n")
+              }
+            }
+          case _ => ()
+        }
+      }
+    })
+
+    try { nodeTraversor.traverse(Jsoup.parse(htmlText).body) }
+    catch {
+      case _: ControlThrowable => ()
+    }
+    ToTextResult(text = result.toString().trim, isSingleParagraph = canStillBeSingleParagraph)
   }
 
 

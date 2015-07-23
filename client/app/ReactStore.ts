@@ -124,6 +124,10 @@ ReactDispatcher.register(function(payload) {
       summarizeReplies();
       break;
 
+    case ReactActions.actionTypes.UnsquashTrees:
+      unsquashTrees(action.postId);
+      break;
+
     case ReactActions.actionTypes.CollapseTree:
       collapseTree(action.post);
       break;
@@ -258,6 +262,8 @@ function updatePost(post: Post, isCollapsing?: boolean) {
     // If `isCollapsing`, however, then we're toggling that state client side only.
     post.isTreeCollapsed = oldVersion.isTreeCollapsed;
     post.isPostCollapsed = oldVersion.isPostCollapsed;
+    post.squash = oldVersion.squash;
+    post.summarize = oldVersion.summarize;
   }
   else if (!oldVersion) {
     store.numPosts += 1;
@@ -385,6 +391,30 @@ function summarizeReplies() {
 }
 
 
+function unsquashTrees(postId: number) {
+  // Mark postId and its nearest subsequent siblings as not squashed.
+  var post = store.allPosts[postId];
+  var parent = store.allPosts[post.parentId];
+  var numLeftToUnsquash = -1;
+  for (var i = 0; i < parent.childIdsSorted.length; ++i) {
+    var childId = parent.childIdsSorted[i];
+    var child = store.allPosts[childId];
+    if (!child)
+      continue; // deleted
+    if (child.postId == postId) {
+      numLeftToUnsquash = 5;
+    }
+    if (numLeftToUnsquash !== -1) {
+      // Updating in-place, should perhaps not. But works right now anyway
+      child.squash = false;
+      numLeftToUnsquash -= 1;
+    }
+    if (numLeftToUnsquash === 0)
+      break;
+  }
+}
+
+
 function collapseTree(post: Post) {
   post = clonePost(post.postId);
   post.isTreeCollapsed = true;
@@ -393,10 +423,30 @@ function collapseTree(post: Post) {
 
 
 function uncollapsePost(post: Post) {
-  post = clonePost(post.postId);
-  post.isTreeCollapsed = false;
-  post.isPostCollapsed = false;
-  updatePost(post, true);
+  function uncollapseOne(p: Post) {
+    var p2 = clonePost(post.postId);
+    p2.isTreeCollapsed = false;
+    p2.isPostCollapsed = false;
+    p2.summarize = false;
+    p2.squash = false;
+    updatePost(p2, true);
+  }
+  uncollapseOne(post)
+  // Also uncollapse children and grandchildren so one won't have to Click-to-show... all the time.
+  for (var i = 0; i < Math.min(post.childIdsSorted.length, 5); ++i) {
+    var childId = post.childIdsSorted[i];
+    var child = store.allPosts[childId];
+    if (!child)
+      continue;
+    uncollapseOne(child)
+    for (var i2 = 0; i2 < Math.min(child.childIdsSorted.length, 3); ++i2) {
+      var grandchildId = child.childIdsSorted[i2];
+      var grandchild = store.allPosts[grandchildId];
+      if (!grandchild)
+        continue;
+      uncollapseOne(grandchild)
+    }
+  }
 }
 
 

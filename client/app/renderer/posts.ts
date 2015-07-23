@@ -251,11 +251,12 @@ var RootPostAndComments = createComponent({
     }
   },
   render: function() {
+    var allPosts: { [postId: number]: Post; } = this.props.allPosts;
     var user = this.props.user;
-    var rootPost = this.props.allPosts[this.props.rootPostId];
+    var rootPost = allPosts[this.props.rootPostId];
     if (!rootPost)
       return r.p({}, '(Root post missing, id: ' + this.props.rootPostId +
-          ', these are present: ' + _.keys(this.props.allPosts) + ' [DwE8WVP4])');
+          ', these are present: ' + _.keys(allPosts) + ' [DwE8WVP4])');
     var isBody = this.props.rootPostId === BodyPostId;
     var pageRole: PageRole = this.props.pageRole;
     var threadClass = 'dw-t dw-depth-0' + horizontalCss(this.props.horizontalLayout);
@@ -309,7 +310,15 @@ var RootPostAndComments = createComponent({
     var childIds = pageRole === PageRole.EmbeddedComments ?
         this.props.topLevelCommentIdsSorted : rootPost.childIdsSorted;
 
+    var isSquashing = false;
+
     var children = childIds.map((childId, childIndex) => {
+      var child = allPosts[childId];
+      if (!child)
+        return null; // deleted
+      if (isSquashing && child.squash)
+        return null;
+      isSquashing = false;
       var threadProps = _.clone(this.props);
       threadProps.elemType = 'div';
       threadProps.postId = childId;
@@ -317,9 +326,17 @@ var RootPostAndComments = createComponent({
       threadProps.depth = 1;
       threadProps.indentationDepth = 0;
       threadProps.is2dTreeColumn = this.props.horizontalLayout;
-      return (
-        r.li({ key: childId },
-          Thread(threadProps)));
+      if (child.squash) {
+        isSquashing = true;
+        return (
+          r.li({ key: childId },
+            SquashedThreads(threadProps)));
+      }
+      else {
+        return (
+          r.li({ key: childId },
+            Thread(threadProps)));
+      }
     });
 
     return (
@@ -333,6 +350,36 @@ var RootPostAndComments = createComponent({
           r.ol({ className: 'dw-res dw-singlereplies' },
             children))));
   },
+});
+
+
+var SquashedThreads = createComponent({
+  onClick: function() {
+    debiki2.ReactActions.unsquashTrees(this.props.postId);
+  },
+
+  render: function() {
+    var allPosts: { [postId: number]: Post; } = this.props.allPosts;
+    var post = allPosts[this.props.postId];
+    var parentPost = allPosts[post.parentId];
+
+    var arrows = debiki2.renderer.drawArrowsFromParent(
+      allPosts, parentPost, this.props.depth, this.props.index,
+      this.props.horizontalLayout, this.props.rootPostId);
+
+    var baseElem = r[this.props.elemType];
+    var depthClass = ' dw-depth-' + this.props.depth;
+    var indentationDepthClass = ' dw-id' + this.props.indentationDepth;
+    var is2dColumnClass = this.props.is2dTreeColumn ? ' dw-2dcol' : '';
+    var postIdDebug = debiki.debug ? postIdDebug ='  #' + post.postId : '';
+
+    return (
+      baseElem({ className: 'dw-t dw-ts-squashed' + depthClass + indentationDepthClass +
+          is2dColumnClass },
+        arrows,
+        r.a({ className: 'dw-x-show', onClick: this.onClick },
+          "Click to show more replies" + postIdDebug)));
+  }
 });
 
 
@@ -380,11 +427,17 @@ var Thread = createComponent({
       }
     }
 
+    var isSquashingChildren = false;
+
     var children = [];
     if (!post.isTreeCollapsed && !post.isTreeDeleted) {
       children = post.childIdsSorted.map((childId, childIndex) => {
-        if (!allPosts[childId])
-          return;
+        var child = allPosts[childId];
+        if (!child)
+          return null; // deleted
+        if (isSquashingChildren && child.squash)
+          return null;
+        isSquashingChildren = false;
 
         var childIndentationDepth = this.props.indentationDepth;
         // All children except for the last one are indented.
@@ -404,8 +457,15 @@ var Thread = createComponent({
         threadProps.indentationDepth = childIndentationDepth;
         threadProps.is2dTreeColumn = false;
         threadProps.key = childId;
-        return (
+        if (child.squash) {
+          isSquashingChildren = true;
+          return (
+            SquashedThreads(threadProps));
+        }
+        else {
+          return (
             Thread(threadProps));
+        }
       });
     }
 
@@ -726,7 +786,7 @@ var PostHeader = createComponent({
 
     var is2dColumn = this.props.horizontalLayout && this.props.depth === 1;
     var collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
-    var toggleCollapsedButton = this.props.abbreviate
+    var toggleCollapsedButton = is2dColumn || this.props.abbreviate
         ? null
         : r.span({ className: 'dw-a-clps ' + collapseIcon, onClick: this.onCollapseClick });
 
@@ -779,7 +839,13 @@ function voteCountsToText(post: Post) {
 
 var PostBody = createComponent({
   render: function() {
-    var post = this.props.post;
+    var post: Post = this.props.post;
+    if (post.summarize) {
+      return (
+        r.div({ className: 'dw-p-bd' },
+          r.div({ className: 'dw-p-bd-blk' },
+            r.p({}, post.summary))));
+    }
     var body;
     if (this.props.abbreviate) {
       this.textDiv = this.textDiv || $('<div></div>');
@@ -799,7 +865,12 @@ var PostBody = createComponent({
           dangerouslySetInnerHTML: { __html: post.sanitizedHtml }});
     }
     return (
-      r.div({ className: 'dw-p-bd' }, body));
+      r.div({ className: 'dw-p-bd' },
+        // Beause of evil magic, without `null`, then `body` is ignored and the post becomes
+        // empty, iff it was summarized and you clicked it to show it.
+        // COULD test to remove `null` after having upgraded to React 0.13.
+        null,
+        body));
   }
 });
 

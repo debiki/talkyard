@@ -76,7 +76,7 @@ abstract class PageParts extends People {
     postsMap
   }
 
-  private lazy val childrenByParentId: collection.Map[PostId, immutable.Seq[Post]] = {
+  private lazy val childrenBestFirstByParentId: collection.Map[PostId, immutable.Seq[Post]] = {
     // COULD find out how to specify the capacity?
     val childMap = mutable.HashMap[PostId, Vector[Post]]()
     for (post <- allPosts) {
@@ -85,7 +85,7 @@ abstract class PageParts extends People {
       siblings = siblings :+ post
       childMap.put(parentIdOrNoId, siblings)
     }
-    childMap
+    childMap.mapValues(Post.sortPostsBestFirst)
   }
 
   def highestReplyId: Option[PostId] = {
@@ -100,7 +100,7 @@ abstract class PageParts extends People {
   def titlePost: Option[Post] = post(PageParts.TitleId)
 
   def topLevelComments: immutable.Seq[Post] =
-    childrenByParentId.getOrElse(PageParts.NoId, Nil) filterNot { post =>
+    childrenBestFirstByParentId.getOrElse(PageParts.NoId, Nil) filterNot { post =>
       PageParts.isArticleOrConfigPostId(post.id)
     }
 
@@ -112,7 +112,7 @@ abstract class PageParts extends People {
 
 
   def numRepliesTotal = allPosts.count(_.isReply)
-  def numRepliesVisible = allPosts count { post =>
+  lazy val numRepliesVisible = allPosts count { post =>
     post.isReply && post.isSomeVersionApproved && !post.isDeleted && !post.isHidden
   }
 
@@ -120,12 +120,37 @@ abstract class PageParts extends People {
   def theUser(userId: UserId): User
 
 
-  def childrenOf(postId: PostId): immutable.Seq[Post] =
-    childrenByParentId.getOrElse(postId, Nil)
+  /** Returns the index of `post` among its siblings, the first sibling is no 0.
+    * Also tells if there are any non-deleted trees afterwards.
+    */
+  def siblingIndexOf(post: Post): (Int, Boolean) = post.parentId match {
+    case None => (0, false)
+    case Some(parentId) =>
+      val siblings = childrenBestFirstOf(parentId)
+      var index = 0
+      var result = -1
+      while (index < siblings.length) {
+        val sibling = siblings(index)
+        if (sibling.id == post.id) {
+          dieIf(result != -1, "DwE4JPU7")
+          result = index
+        }
+        else if (result != -1) {
+          if (!sibling.isDeleted || hasNonDeletedSuccessor(sibling.id))
+            return (result, true)
+        }
+        index += 1
+      }
+      (result, false)
+  }
+
+
+  def childrenBestFirstOf(postId: PostId): immutable.Seq[Post] =
+    childrenBestFirstByParentId.getOrElse(postId, Nil)
 
 
   def successorsOf(postId: PostId): immutable.Seq[Post] = {
-    val pending = ArrayBuffer[Post](childrenByParentId.getOrElse(postId, Nil): _*)
+    val pending = ArrayBuffer[Post](childrenBestFirstByParentId.getOrElse(postId, Nil): _*)
     val successors = ArrayBuffer[Post]()
     while (pending.nonEmpty) {
       val next = pending.remove(0)
@@ -133,7 +158,7 @@ abstract class PageParts extends People {
         die("DwE9FKW3", s"Cycle detected on page '$pageId'; it includes post '${next.id}'")
       }
       successors.append(next)
-      pending.append(childrenOf(next.id): _*)
+      pending.append(childrenBestFirstOf(next.id): _*)
     }
     successors.toVector
   }
@@ -143,7 +168,7 @@ abstract class PageParts extends People {
     // COULD optimize this, bad O(?) complexity when called on each node, like
     // ReactJson.pageToJsonImpl does — O(n*n)? Could start at the leaves and work up instead
     // and cache the result -> O(n).
-    childrenOf(postId) exists { child =>
+    childrenBestFirstOf(postId) exists { child =>
       !child.deletedStatus.isDeleted || hasNonDeletedSuccessor(child.id)
     }
   }
@@ -151,6 +176,10 @@ abstract class PageParts extends People {
 
   def parentOf(postId: PostId): Option[Post] =
     thePost(postId).parentId.map(id => thePost(id))
+
+
+  def depthOf(postId: PostId): Int =
+    ancestorsOf(postId).length
 
 
   /** Ancestors, starting with postId's parent. */

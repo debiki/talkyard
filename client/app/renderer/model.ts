@@ -60,6 +60,9 @@ interface Post {
   numWrongVotes: number;
   numBuryVotes: number;
   numPendingEditSuggestions: number;
+  summarize: boolean;
+  summary?: string;
+  squash: boolean;
   isTreeDeleted: boolean;
   isPostDeleted: boolean;
   // === true means totally collapsed. === 'Truncated' means collapsed but parts of post shown.
