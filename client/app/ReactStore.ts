@@ -400,12 +400,24 @@ function summarizeReplies() {
     if (post.postId === BodyPostId || post.postId === TitleId || post.parentId === BodyPostId)
       return;
 
-    // Also see height in debiki-play.styl. [5E7PKW2]
     var isTooHigh = () => $('#post-' + post.postId).height() > 150;
     if (post.childIdsSorted.length || isTooHigh()) {
       post.isTreeCollapsed = 'Truncated';
+      post.summarize = true;
+      post.summary = makeSummaryFor(post);
     }
   });
+}
+
+
+function makeSummaryFor(post: Post, maxLength?: number): string {
+  var text = $(post.sanitizedHtml).text();
+  var firstParagraph = text.split('\n');
+  var summary = firstParagraph[0] || '';
+  if (summary.length > maxLength || 200) {
+    summary = summary.substr(0, maxLength || 140);
+  }
+  return summary;
 }
 
 
@@ -435,7 +447,9 @@ function unsquashTrees(postId: number) {
 
 function collapseTree(post: Post) {
   post = clonePost(post.postId);
-  post.isTreeCollapsed = true;
+  post.isTreeCollapsed = 'Truncated';
+  post.summarize = true;
+  post.summary = makeSummaryFor(post, 70);
   updatePost(post, true);
 }
 

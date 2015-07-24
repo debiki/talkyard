@@ -562,6 +562,8 @@ var Post = createComponent({
     else if (this.props.renderCollapsed &&
         // COULD rename isTreeCollapsed since it's not always a boolean.
         post.isTreeCollapsed !== 'Truncated') {
+      // COULD remove this way of collapsing comments, which doesn't show the first line?
+      // Currently inactive, this is dead code (!== 'Truncated' is always false).
       var text = this.props.is2dTreeColumn ? '' : (
           "Click to show " + (post.isTreeCollapsed ? "more comments" : "this comment"));
       if (debiki.debug) text +='  #' + this.props.postId;
@@ -588,7 +590,7 @@ var Post = createComponent({
 
       if (post.isTreeCollapsed === 'Truncated' && !this.props.abbreviate) {
         extraClasses += ' dw-x';
-        clickToExpand = r.div({ className: 'dw-x-show' }, "... click to show");
+        clickToExpand = r.div({ className: 'dw-x-show' }, "click to show");
         clickCover = r.div({ className: 'dw-x-cover' });
       }
 
@@ -786,7 +788,7 @@ var PostHeader = createComponent({
 
     var is2dColumn = this.props.horizontalLayout && this.props.depth === 1;
     var collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
-    var toggleCollapsedButton = is2dColumn || this.props.abbreviate
+    var toggleCollapsedButton = is2dColumn || this.props.abbreviate || post.isTreeCollapsed
         ? null
         : r.span({ className: 'dw-a-clps ' + collapseIcon, onClick: this.onCollapseClick });
 
