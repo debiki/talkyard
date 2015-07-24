@@ -180,6 +180,9 @@ object ReactJson {
 
     val siteStatusString = loadSiteStatusString(pageReq)
     val siteSettings = pageReq.dao.loadWholeSiteSettings()
+    val horizontalLayout = pageReq.thePageRole == PageRole.MindMap ||
+      pageReq.thePageSettings.horizontalComments.valueAsBoolean
+    val is2dTreeDefault = pageReq.thePageSettings.horizontalComments.valueAsBoolean
 
     Json.obj(
       "now" -> JsNumber((new ju.Date).getTime),
@@ -204,7 +207,8 @@ object ReactJson {
       "rootPostId" -> JsNumber(BigDecimal(pageReq.pageRoot getOrElse PageParts.BodyId)),
       "allPosts" -> JsObject(allPostsJson),
       "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
-      "horizontalLayout" -> JsBoolean(pageReq.thePageSettings.horizontalComments.valueAsBoolean),
+      "horizontalLayout" -> JsBoolean(horizontalLayout),
+      "is2dTreeDefault" -> JsBoolean(is2dTreeDefault),
       "socialLinksHtml" -> JsString(socialLinksHtml))
   }
 

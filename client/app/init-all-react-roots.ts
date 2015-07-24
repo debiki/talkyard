@@ -51,9 +51,7 @@ export function startRemainingReactRoots() {
   if (topbarElem)
     React.render(debiki2.reactelements.TopBar({}), topbarElem);
 
-  var sidebarElem = document.getElementById('dw-any-sidebar');
-  if (sidebarElem)
-    React.render(debiki2.sidebar.Sidebar({}), sidebarElem);
+  createSidebar();
 
   var commentsToolbarElem = document.getElementById('dw-comments-toolbar');
   if (commentsToolbarElem)
@@ -74,6 +72,18 @@ export function startRemainingReactRoots() {
       React.render(Handler({}), createSiteElem);
     });
   }
+}
+
+
+export function createSidebar() {
+  var sidebarElem = document.getElementById('dw-any-sidebar');
+  if (sidebarElem)
+    React.render(debiki2.sidebar.Sidebar({}), sidebarElem);
+}
+
+
+export function removeSidebar() {
+  React.unmountComponentAtNode(document.getElementById('dw-any-sidebar'));
 }
 
 

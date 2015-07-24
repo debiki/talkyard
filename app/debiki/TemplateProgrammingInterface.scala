@@ -265,7 +265,8 @@ class TemplateProgrammingInterface(
 
   def pageSettings = pageReq.thePageSettings
 
-  val horizontalComments = pageReq.thePageSettings.horizontalComments.valueAsBoolean
+  val horizontalComments = pageReq.thePageRole == PageRole.MindMap ||
+    pageReq.thePageSettings.horizontalComments.valueAsBoolean
 
 
   override def debikiHtmlTagClasses =

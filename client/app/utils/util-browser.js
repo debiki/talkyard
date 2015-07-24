@@ -81,7 +81,7 @@ d.u.addZoomOrResizeListener = function(listener) {
 
 
 d.u.removeZoomOrResizeListener = function(listenerToRemove) {
-  _.remove(zoomListeners, function(listener) {
+  _.remove(d.u.zoomListeners, function(listener) {
     return listener === listenerToRemove;
   });
 };

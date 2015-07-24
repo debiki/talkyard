@@ -155,6 +155,7 @@ interface Store {
   allPosts: { [postId: number]: Post };
   topLevelCommentIdsSorted: number[];
   horizontalLayout: boolean;
+  is2dTreeDefault: boolean;
   socialLinksHtml: string;
 
   // If quickUpdate is true only posts in postsToUpdate will be updated.

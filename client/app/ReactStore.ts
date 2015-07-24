@@ -100,8 +100,26 @@ ReactDispatcher.register(function(payload) {
       store.ancestorsRootFirst = action.newAncestorsRootFirst;
       var parent: any = _.last(action.newAncestorsRootFirst);
       store.parentPageId = parent ? parent.pageId : null;
+      var was2dTree = store.horizontalLayout;
       store.pageRole = action.newPageRole || store.pageRole;
+      store.horizontalLayout = action.newPageRole === PageRole.MindMap || store.is2dTreeDefault;
+      var is2dTree = store.horizontalLayout;
       updatePost(action.newTitlePost);
+      if (was2dTree !== is2dTree) {
+        // Rerender the page with the new layout.
+        store.quickUpdate = false;
+        if (is2dTree) {
+          $('html').removeClass('dw-vt').addClass('dw-hz');
+          debiki.internal.layoutThreads();
+          debiki2.utils.onMouseDetected(debiki.internal.initUtterscrollAndTips);
+        }
+        else {
+          $('html').removeClass('dw-hz').addClass('dw-vt');
+          $('.dw-t.dw-depth-1').css('width', 'auto'); // 2d columns had a certain width
+        }
+        debiki2.removeSidebar();
+        setTimeout(debiki2.createSidebar, 1);
+      }
       break;
 
     case ReactActions.actionTypes.UpdatePost:
