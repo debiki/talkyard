@@ -147,6 +147,19 @@ export function updatePost(post) {
 }
 
 
+export function changePostType(post: Post, newType: PostType, success: () => void) {
+  Server.changePostType(post.postId, newType, () => {
+    success();
+    post = clonePost(post.postId);
+    post.postType = newType;
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.UpdatePost,
+      post: post
+    });
+  });
+}
+
+
 export function vote(post, doWhat: string, voteType: string) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.VoteOnPost,

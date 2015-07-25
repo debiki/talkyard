@@ -117,7 +117,15 @@ trait SiteTransaction {
 
   def loadUser(userId: UserId): Option[User]
   def loadTheUser(userId: UserId) = loadUser(userId).getOrElse(throw UserNotFoundException(userId))
+
   def loadUsers(userIds: Seq[UserId]): immutable.Seq[User]
+  def loadTheUsers(userIds: UserId*): immutable.Seq[User] = {
+    val usersById = loadUsersAsMap(userIds)
+    userIds.to[immutable.Seq] map { id =>
+      usersById.getOrElse(id, throw UserNotFoundException(id))
+    }
+  }
+
   def loadUsersOnPageAsMap2(pageId: PageId, siteId: Option[SiteId] = None): Map[UserId, User]
   def loadUsersAsMap(userIds: Iterable[UserId]): Map[UserId, User]
   def loadUserByEmailOrUsername(emailOrUsername: String): Option[User]

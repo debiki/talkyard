@@ -334,6 +334,8 @@ object ReactJson {
       "postId" -> JsNumber(post.id),
       "parentId" -> post.parentId.map(JsNumber(_)).getOrElse(JsNull),
       "multireplyPostIds" -> JsArray(post.multireplyPostIds.toSeq.map(JsNumber(_))),
+      "postType" -> JsNumberOrNull(
+        if (post.tyype == PostType.Normal) None else Some(post.tyype.toInt)),
       "authorId" -> JsString(post.createdById.toString),  // COULD remove, but be careful when converting to int client side
       "authorIdInt" -> JsNumber(post.createdById),  // Rename to authorId when it's been converted to int (the line above)
       "authorFullName" -> JsString(author.displayName),

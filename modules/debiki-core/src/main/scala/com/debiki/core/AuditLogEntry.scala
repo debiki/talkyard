@@ -40,6 +40,7 @@ object AuditLogEntryType {
   case object NewPage extends AuditLogEntryType
   case object NewPost extends AuditLogEntryType
   case object EditPost extends AuditLogEntryType
+  case object ChangePostType extends AuditLogEntryType
 }
 
 

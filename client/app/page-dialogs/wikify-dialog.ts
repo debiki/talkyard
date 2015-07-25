@@ -1,0 +1,139 @@
+/*
+ * Copyright (C) 2015 Kaj Magnus Lindberg
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../../shared/plain-old-javascript.d.ts" />
+/// <reference path="../ReactStore.ts" />
+/// <reference path="../Server.ts" />
+
+//------------------------------------------------------------------------------
+   module debiki2.pagedialogs {
+//------------------------------------------------------------------------------
+
+var d = { i: debiki.internal, u: debiki.v0.util };
+var r = React.DOM;
+var reactCreateFactory = React['createFactory'];
+var ReactBootstrap: any = window['ReactBootstrap'];
+var Button = reactCreateFactory(ReactBootstrap.Button);
+var Input = reactCreateFactory(ReactBootstrap.Input);
+var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
+var Modal = reactCreateFactory(ReactBootstrap.Modal);
+var ModalTrigger = reactCreateFactory(ReactBootstrap.ModalTrigger);
+var OverlayMixin = ReactBootstrap.OverlayMixin;
+
+
+export var wikifyDialog;
+
+
+export function createWikifyDialog() {
+  var wikifyDialogElem = document.getElementById('dw-react-wikify-dialog');
+  if (wikifyDialogElem) {
+    wikifyDialog = React.render(WikifyDialog(), wikifyDialogElem);
+  }
+}
+
+
+var WikifyDialog = createComponent({
+  mixins: [OverlayMixin],
+
+  getInitialState: function () {
+    return {
+      isOpen: false,
+      post: null,
+      loggedInUser: debiki2.ReactStore.getUser()
+    };
+  },
+
+  open: function(post: Post) {
+    this.setState({ isOpen: true, post: post });
+  },
+
+  close: function() {
+    this.setState({ isOpen: false, post: null });
+  },
+
+  render: function () {
+    return null;
+  },
+
+  changeToStaffWiki: function() {
+    ReactActions.changePostType(this.state.post, PostType.StaffWiki, this.close);
+  },
+
+  changeToCommunityWiki: function() {
+    ReactActions.changePostType(this.state.post, PostType.CommunityWiki, this.close);
+  },
+
+  changeBackToNormal: function() {
+    ReactActions.changePostType(this.state.post, PostType.Normal, this.close);
+  },
+
+  renderOverlay: function () {
+    if (!this.state.isOpen)
+      return null;
+
+    var post: Post = this.state.post;
+    var isWiki = isWikiPost(post);
+    var title;
+    var content;
+
+    if (isWiki) {
+      title = "Cancel Wiki status?"
+      var whichPeople = post.postType === PostType.StaffWiki ? "staff" : "community";
+      content =
+        r.div({},
+          r.p({}, "This post is a wiki editable by " + whichPeople +
+              " members and the original author."),
+          r.div({ className: 'dw-wikify-btns' },
+            Input({ type: 'Button', value: "Change back to normal",
+                onClick: this.changeBackToNormal,
+                help: "The original author's name will be shown again. Only he or she " +
+                  "and staff will be able to edit it. The author will be credited " +
+                  "with any like votes."})));
+    }
+    else {
+      title = "Change to Wiki?"
+      content =
+        r.div({},
+          r.p({}, "Change this post to a Wiki post so many people can edit it? " +
+            "Usually you do *not* want to do this, because then " +
+            "the author of this post will no longer get any like votes for this post."),
+          r.div({ className: 'dw-wikify-btns' },
+            Input({ type: 'Button', value: "Change to Staff Wiki",
+                onClick: this.changeToStaffWiki,
+                help: "All staff members will be able to edit this post." }),
+            Input({ type: 'Button', value: "Change to Community Wiki",
+                onClick: this.changeToCommunityWiki,
+                help: "All community members will be able to edit this post, " +
+                  "except for fairly new users and those who seem a bit risky " +
+                  "(not yet implemented though). " +
+                  "Guest users may not edit it."})));
+    }
+
+    return (
+      Modal({ title: title, onRequestHide: this.close, className: 'dw-wikify-dialog' },
+        r.div({ className: 'modal-body' }, content),
+        r.div({ className: 'modal-footer' },
+          Button({ onClick: this.close }, 'Cancel'))));
+  }
+});
+
+
+//------------------------------------------------------------------------------
+   }
+//------------------------------------------------------------------------------
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

@@ -21,6 +21,7 @@ import actions.SafeActions.{SessionAction, SessionRequest}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.LoginController
+import controllers.Utils
 import debiki._
 import debiki.DebikiHttp._
 import debiki.RateLimits.NoRateLimits
@@ -31,7 +32,6 @@ import play.api.mvc._
 import requests._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import controllers.Utils
 
 
 /** Play Framework Actions for requests to Debiki's HTTP API.
@@ -117,21 +117,26 @@ object ApiActions {
       val dao = Globals.siteDao(siteId = tenantId)
       dao.perhapsBlockGuest(request)
 
-      var user: Option[User] = Utils.loadUserOrThrow(request.sidStatus, dao)
+      var anyUser = Utils.loadUserOrThrow(request.sidStatus, dao)
       var logoutBecauseSuspended = false
-      if (user.map(_.isSuspendedAt(new ju.Date)) == Some(true)) {
-        user = None
+      if (anyUser.map(_.isSuspendedAt(new ju.Date)) == Some(true)) {
+        anyUser = None
         logoutBecauseSuspended = true
       }
 
-      if (staffOnly && !user.exists(_.isStaff))
+      if (staffOnly && !anyUser.exists(_.isStaff))
         throwForbidden("DwE7BSW3", "Please login as admin or moderator")
 
-      if (adminOnly && !user.exists(_.isAdmin))
+      if (adminOnly && !anyUser.exists(_.isAdmin))
         throwForbidden("DwE1GfK7", "Please login as admin")
 
+      val siteSettings = dao.loadWholeSiteSettings()
+
+      if (!anyUser.exists(_.isApprovedOrStaff) && siteSettings.userMustBeApproved.asBoolean)
+        throwForbidden("DwE4HKG5", "Not approved")
+
       val apiRequest = ApiRequest[A](
-        request.sidStatus, request.xsrfOk, request.browserId, user, dao, request)
+        request.sidStatus, request.xsrfOk, request.browserId, anyUser, dao, request)
 
       RateLimiter.rateLimit(rateLimits, apiRequest)
 

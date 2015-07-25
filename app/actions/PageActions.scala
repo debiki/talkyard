@@ -20,6 +20,7 @@ package actions
 import actions.SafeActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import controllers.Utils
 import debiki._
 import debiki.DebikiHttp._
 import debiki.dao.SiteDao
@@ -28,7 +29,6 @@ import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import requests._
-import controllers.Utils
 
 
 /**
@@ -83,7 +83,7 @@ object PageActions {
 
     val tenantId = pathIn.tenantId
     val pagePath = pathOkOpt.getOrElse(pathIn)
-    val user = Utils.loadUserOrThrow(sidStatus, dao)
+    val anyUser = Utils.loadUserOrThrow(sidStatus, dao)
     val pageExists = pathOkOpt.isDefined
 
     val anyPageMeta = pagePath.pageId.flatMap(dao.loadPageMeta(_))
@@ -94,7 +94,7 @@ object PageActions {
     val permsReq = PermsOnPageQuery(
       tenantId = tenantId,
       ip = realOrFakeIpOf(request),
-      user = user,
+      user = anyUser,
       pagePath = pagePath,
       pageMeta = anyPageMeta)
 
@@ -107,7 +107,7 @@ object PageActions {
       sid = sidStatus,
       xsrfToken = xsrfOk,
       browserId = browserId,
-      user = user,
+      user = anyUser,
       pageExists = pageExists,
       pagePath = pagePath,
       pageMeta = anyPageMeta,

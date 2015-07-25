@@ -512,6 +512,15 @@ export function flagPost(postId: string, flagType: string, reason: string, succe
 }
 
 
+export function changePostType(postId: number, newType: PostType, success: () => void) {
+  postJsonSuccess('/-/change-post-type', success, {
+    pageId: d.i.pageId,
+    postNr: postId,
+    newType: newType,
+  });
+}
+
+
 export function createForumCategory(data, success: (response: any) => void) {
   postJsonSuccess('/-/create-forum-category', success, data);
 }

@@ -59,8 +59,8 @@ h2 {
 }
 
 h3 { font-size: 20px; color: #333; margin-top: 29px; }
-h4 { font-size: 15px; color: #555; }
-h5, h6 { font-size: 13px; color: #707070; font-family: Arial, sans-serif; }
+h4 { font-size: 15px; color: hsl(0, 0%, 20%); }
+h5, h6 { font-size: 13px; color: hsl(0, 0%, 38%); font-family: Arial, sans-serif; }
 
 p, li { color: #111; }
 

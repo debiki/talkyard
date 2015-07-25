@@ -48,6 +48,7 @@ interface Post {
   postId: number;   // TODO rename to nr
   parentId: number;
   multireplyPostIds: number[];
+  postType?: PostType;
   authorId: string; // COULD change to int and then rename authorIdInt below to authorId.
   authorIdInt: number;
   authorFullName: string;
@@ -78,7 +79,7 @@ interface Post {
 
 
 interface User {
-  userId: string;
+  userId: string; // it's a number in fact I think
   isLoggedIn?: boolean;
   isAdmin?: boolean;
   isModerator?: boolean;

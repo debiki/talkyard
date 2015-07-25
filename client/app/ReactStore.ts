@@ -262,7 +262,7 @@ export var StoreListenerMixin = {
 };
 
 
-function clonePost(postId: number): Post {
+export function clonePost(postId: number): Post {
   return _.cloneDeep(store.allPosts[postId]);
 }
 

@@ -93,6 +93,19 @@ object EditController extends mvc.Controller {
   }
 
 
+  def changePostType = PostJsonAction(RateLimits.EditPost, maxLength = 100) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    val postNr = (request.body \ "postNr").as[PostId]
+    val newTypeInt = (request.body \ "newType").as[Int]
+    val newType = PostType.fromInt(newTypeInt) getOrElse throwBadArgument("DwE4EWL3", "newType")
+
+    request.dao.changePostType(pageId = pageId, postNr = postNr, newType,
+      changerId = request.theUser.id, request.theBrowserIdData)
+
+    Ok
+  }
+
+
   private def _throwIfTooMuchData(text: String, request: DebikiRequest[_]) {
     val postSize = text.size
     val user = request.user_!

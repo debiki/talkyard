@@ -148,9 +148,10 @@ trait PostsDao {
 
       // For now: (add back edit suggestions later. And should perhaps use PermsOnPage.)
       val editsOwnPost = editorId == postToEdit.createdById
-      val mayEdit = editsOwnPost || editor.isStaff
+      val mayEditWiki = editor.isAuthenticated && postToEdit.tyype == PostType.CommunityWiki
+      val mayEdit = editsOwnPost || editor.isStaff || mayEditWiki
       if (!mayEdit)
-        throwForbidden("DwE8KF32", "Currently you may edit your own posts only.")
+        throwForbidden("DwE8KF32", "You may not edit that post")
 
       //val appliedDirectly = true // for now, add back edit suggestions later
       //val approvedDirectly = true // later: && editor.isWellBehavedUser
@@ -223,6 +224,59 @@ trait PostsDao {
         val newMeta = oldMeta.copy(bumpedAt = Some(transaction.currentTime))
         transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
       }
+    }
+
+    refreshPageInAnyCache(pageId)
+  }
+
+
+  def changePostType(pageId: PageId, postNr: PostId, newType: PostType,
+        changerId: UserId, browserIdData: BrowserIdData) {
+    readWriteTransaction { transaction =>
+      val page = PageDao(pageId, transaction)
+      val postBefore = page.parts.thePost(postNr)
+      val postAfter = postBefore.copy(tyype = newType)
+      val Seq(author, changer) = transaction.loadTheUsers(postBefore.createdById, changerId)
+
+      // Test if the changer is allowed to change the post type in this way.
+      if (changer.isStaff) {
+        (postBefore.tyype, postAfter.tyype) match {
+          case (before, after)
+            if before == PostType.Normal && after.isWiki => // Fine, staff wikifies post.
+          case (before, after)
+            if before.isWiki && after == PostType.Normal => // Fine, staff removes wiki status.
+          case (before, after) =>
+            throwForbidden("DwE7KFE2", s"Cannot change post type from $before to $after")
+        }
+      }
+      else {
+        // All normal users may do is to remove wiki status of their own posts.
+        if (postBefore.isWiki && postAfter.tyype == PostType.Normal) {
+          if (changer.id != author.id)
+            throwForbidden("DwE5KGPF2", o"""You are not the author and not staff,
+                so you cannot remove the Wiki status of this post""")
+        }
+        else {
+            throwForbidden("DwE4KXB2", s"""Cannot change post type from
+                ${postBefore.tyype} to ${postAfter.tyype}""")
+        }
+      }
+
+      val auditLogEntry = AuditLogEntry(
+        siteId = siteId,
+        id = AuditLogEntry.UnassignedId,
+        didWhat = AuditLogEntryType.ChangePostType,
+        doerId = changerId,
+        doneAt = transaction.currentTime,
+        browserIdData = browserIdData,
+        pageId = Some(pageId),
+        uniquePostId = Some(postBefore.uniqueId),
+        postNr = Some(postNr),
+        targetUserId = Some(postBefore.createdById))
+
+      transaction.updatePost(postAfter)
+      insertAuditLogEntry(auditLogEntry, transaction)
+      // COULD generate some notification? E.g. "Your post was made wiki-editable."
     }
 
     refreshPageInAnyCache(pageId)

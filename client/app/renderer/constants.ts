@@ -37,3 +37,10 @@ enum PageRole {
   Discussion = 12,
 }
 
+
+enum PostType {
+  Normal = 1,
+  StaffWiki = 11,
+  CommunityWiki = 12,
+}
+

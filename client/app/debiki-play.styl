@@ -276,6 +276,16 @@ span.dw-p-e-by
   padding-top: 2px;
   display: inline-block;
 
+.dw-p.dw-wiki > .dw-a-clps
+  position: absolute;
+  right: 0;
+  top: 0;
+
+.dw-p.dw-wiki:hover > .dw-a-clps
+  z-index: 1;
+  opacity: 0.8;
+
+
 // Permalinks
 .dw-p-link
   float: right
@@ -346,6 +356,17 @@ span.dw-p-e-by
   clear: left
   width: 100%
 
+  &:first-child
+    > h1:not(.dw-p-ttl),
+    > h2, > h3, > h4, > h5, > h6
+      &:first-child
+        margin-top: 0;
+        padding-top: 0;
+
+.dw-p.dw-wiki
+  .dw-p-bd-blk:first-child
+    // There's no head so move the body up a bit.
+    margin-top: -6px
 
 
 // Post info

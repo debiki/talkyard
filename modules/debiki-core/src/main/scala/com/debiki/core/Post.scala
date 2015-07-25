@@ -79,6 +79,41 @@ object PostStatusBits {
 }
 
 
+
+sealed abstract class PostType(protected val IntValue: Int) {
+  def toInt = IntValue
+  def isWiki = false
+}
+
+object PostType {
+  /** A normal post, e.g. a forum topic or reply or blog post, whatever. */
+  case object Normal extends PostType(1)
+
+  /** Any staff member can edit this post. No author name shown. */
+  case object StaffWiki extends PostType(11) {
+    override def isWiki = true
+  }
+
+  /** Any community member (doesn't include guests) can edit this post. No author name shown. */
+  case object CommunityWiki extends PostType(12) {
+    override def isWiki = true
+  }
+
+  // Later:
+  // - FormSubmission(21)? Shown only to the page author(s) + admins? Cannot be voted on. Sorted by
+  //    date. For FormSubmission pages only.
+  // - PrivateMessage(31)? Shown to the receiver only plus admins.
+
+  def fromInt(value: Int): Option[PostType] = Some(value match {
+    case Normal.IntValue => Normal
+    case StaffWiki.IntValue => StaffWiki
+    case CommunityWiki.IntValue => CommunityWiki
+    case _ => return None
+  })
+}
+
+
+
 /** A post is a page title, a page body or a comment.
   * For example, a forum topic title, topic text, or a reply.
   *
@@ -94,6 +129,7 @@ case class Post(
   id: PostId,
   parentId: Option[PostId],
   multireplyPostIds: immutable.Set[PostId],
+  tyype: PostType,
   createdAt: ju.Date,
   createdById: UserId,
   lastEditedAt: Option[ju.Date],
@@ -205,6 +241,7 @@ case class Post(
   def isSomeVersionApproved = approvedVersion.isDefined
   def isCurrentVersionApproved = approvedVersion == Some(currentVersion)
   def isVisible = isSomeVersionApproved && !isHidden && !isDeleted
+  def isWiki = tyype.isWiki
 
   def pagePostId = PagePostId(pageId, id)
   def hasAnId = id >= PageParts.LowestPostId
@@ -437,6 +474,7 @@ object Post {
       id = postId,
       parentId = parent.map(_.id),
       multireplyPostIds = multireplyPostIds,
+      tyype = PostType.Normal,
       createdAt = createdAt,
       createdById = createdById,
       lastEditedAt = None,

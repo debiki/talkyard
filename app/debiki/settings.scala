@@ -24,10 +24,10 @@ import play.api.libs.json._
 
 
 case class AnySetting(
-  val name: String,
-  val assignedValue: Option[Any],
-  val default: Any,
-  val section: Option[SettingsTarget]) {
+  name: String,
+  assignedValue: Option[Any],
+  default: Any,
+  section: Option[SettingsTarget]) {
 
   def value: Any = assignedValue getOrElse default
   def valueAsBoolean: Boolean = value == "T" || value == true

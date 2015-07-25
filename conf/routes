@@ -116,6 +116,7 @@ GET   /-/edit                   controllers.EditController.loadCurrentText(pageI
 POST  /-/edit                   controllers.EditController.edit
 POST  /-/edit-title-save-settings controllers.PageTitleSettingsController.editTitleSaveSettings
 GET   /-/onebox                 controllers.EditController.onebox(url)
+POST  /-/change-post-type       controllers.EditController.changePostType
 
 POST  /-/pin-at-position        controllers.PinController.pinAtPosition
 POST  /-/pin-page               controllers.PinController.pinPage

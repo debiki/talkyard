@@ -21,6 +21,7 @@
 /// <reference path="react-elements/comments-toolbar.ts" />
 /// <reference path="react-elements/name-login-btns.ts" />
 /// <reference path="users/users-page.ts" />
+/// <reference path="page-dialogs/wikify-dialog.ts" />
 /// <reference path="dialogs.ts" />
 
 //------------------------------------------------------------------------------
@@ -35,6 +36,7 @@ export function startRemainingReactRoots() {
   pagetools.createPageToolsDialog();
   pagedialogs.createAboutUserDialog();
   pagedialogs.createServerErrorDialog();
+  pagedialogs.createWikifyDialog();
 
   var adminAppElem = document.getElementById('dw-react-admin-app');
   if (adminAppElem) {

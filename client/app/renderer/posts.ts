@@ -20,6 +20,7 @@
 /// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../dialogs.ts" />
 /// <reference path="../editor/title-editor.ts" />
+/// <reference path="../page-dialogs/wikify-dialog.ts" />
 /// <reference path="model.ts" />
 
 // Wrapping in a module causes an ArrayIndexOutOfBoundsException: null error, see:
@@ -37,7 +38,7 @@ var MaxGuestId = -2; // place where?
 function isGuest(user: CompleteUser) {
   return user.id <= MaxGuestId;
 }
-function isStaff(user) {
+function isStaff(user: User) {
   return user.isAdmin || user.isModerator;
 }
 
@@ -161,7 +162,8 @@ var TitleBodyComments = createComponent({
       // And show nothing if we're showing a comment not the article as the root post.
     }
     else {
-      anyPostHeader = PostHeader({ post: this.props.allPosts[this.props.rootPostId] });
+      var post = this.props.allPosts[this.props.rootPostId];
+      anyPostHeader = PostHeader({ post: post });
       anySocialLinks = SocialLinks({ socialLinksHtml: this.props.socialLinksHtml });
     }
 
@@ -634,6 +636,9 @@ var Post = createComponent({
         }
     }
 
+    if (isWikiPost(post))
+      extraClasses += ' dw-wiki';
+
     var id = this.props.abbreviate ? undefined : 'post-' + post.postId;
 
     return (
@@ -692,9 +697,21 @@ var PostHeader = createComponent({
   },
 
   render: function() {
-    var post = this.props.post;
+    var post: Post = this.props.post;
     if (!post)
-      return r.p({}, '(Post header missing [DwE7IKW2])');
+      return r.p({}, '(Post missing [DwE7IKW2])');
+
+    if (isWikiPost(post)) {
+      if (this.props.abbreviate) {
+        return r.div({ className: 'dw-p-hd' }, 'Wiki');
+      }
+      if (this.props.is2dColumn || post.isTreeCollapsed || post.postId === BodyPostId) {
+        return null;
+      }
+      // Show a collapse button for this wiki post, but no author name because this is
+      // a wiki post contributed to by everyone.
+      return r.span({ className: 'dw-a-clps icon-up-open', onClick: this.onCollapseClick });
+    }
 
     var user: User = this.props.user;
     var linkFn = this.props.abbreviate ? 'span' : 'a';
@@ -934,6 +951,9 @@ var PostActions = createComponent({
   onDeleteClick: function(event) {
     debiki.internal.$showDeleteForm.call(event.target, event);
   },
+  onWikifyClick: function(event) {
+    debiki2.pagedialogs.wikifyDialog.open(this.props.post);
+  },
   onCollapsePostClick: function(event) {
     debiki.internal.$showActionDialog('CollapsePost').call(event.target, event);
   },
@@ -950,10 +970,10 @@ var PostActions = createComponent({
   render: function() {
     var post = this.props.post;
 
-    if (!post.isApproved && !post.text)
+    if (!post.isApproved) // what?:  && !post.text)
       return null;
 
-    var user = this.props.user;
+    var user: User = this.props.user;
     var isOwnPost = post.authorIdInt === user.userId;
     var isPageBody = post.postId === BodyPostId;
     var votes = user.votes[post.postId] || [];
@@ -1008,8 +1028,12 @@ var PostActions = createComponent({
     var moreLinks = [];
 
     if (!isOwnPost) {
-      moreLinks.push(
-        r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit'));
+      var mayEdit = isStaff(user) || (
+          user.isAuthenticated && post.postType === PostType.CommunityWiki);
+      if (mayEdit) {
+        moreLinks.push(
+          r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit'));
+      }
     }
 
     moreLinks.push(
@@ -1082,6 +1106,12 @@ var PostActions = createComponent({
         r.a({ className: 'dw-a dw-a-delete icon-trash', onClick: this.onDeleteClick }, 'Delete'));
     }
 
+    if (isStaff(user)) {
+      moreLinks.push(
+        r.a({ className: 'dw-a icon-users', onClick: this.onWikifyClick },
+          isWikiPost(post) ? 'Un-Wikify' : 'Wikify'));
+    }
+
     var moreDropdown =
       r.span({ className: 'dropdown navbar-right' },
         r.a({ className: 'dw-a dw-a-more', 'data-toggle': 'dropdown' }, 'More'),
@@ -1116,6 +1146,14 @@ function isDeleted(post) {
   return !post || post.isTreeDeleted || post.isPostDeleted;
 }
 
+
+function isWikiPost(postOrPostType: any) {
+  var type;
+  if (postOrPostType) {
+    type = postOrPostType.postType || postOrPostType;
+  }
+  return type === PostType.StaffWiki || type === PostType.CommunityWiki;
+}
 
 
 function authorIsGuest(post) {
