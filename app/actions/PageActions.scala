@@ -55,21 +55,7 @@ object PageActions {
       pathIn, pageMustExist, fixPath = fixPath, maySetCookies = maySetCookies)(f)
 
 
-  /**
-   * Supports form data only.
-   * @deprecated
-   */
-  @deprecated("Stop using /path/to/page?action paths", "now")
-  def PagePostAction
-        (rateLimitsType: RateLimits, maxUrlEncFormBytes: Int)
-        (pathIn: PagePath, pageMustExist: Boolean = true, fixPath: Boolean = true)
-        (f: PagePostRequest => Result) =
-    PageReqAction(
-      rateLimitsType, BodyParsers.parse.urlFormEncoded(maxLength = maxUrlEncFormBytes))(
-      pathIn, pageMustExist, fixPath = fixPath)(f)
-
-
-  def PageReqAction[A]
+  private def PageReqAction[A]
         (rateLimitsType: RateLimits, parser: BodyParser[A])
         (pathIn: PagePath, pageMustExist: Boolean, fixPath: Boolean,
          maySetCookies: Boolean = true)
@@ -122,22 +108,8 @@ object PageActions {
   }
 
 
-  /**
-   * Attempts to redirect almost correct requests to the correct path,
-   * e.g. adds/removes an absent or superfluous trailing slash
-   * or looks up a page id and finds out that the page
-   * has been moved.
-   */
   @deprecated("Stop using /path/to/page?action paths", "now")
-  def CheckPathActionNoBody
-        (pathIn: PagePath)
-        (f: (SidStatus, XsrfOk, Option[BrowserId], Option[PagePath], SiteDao,
-           Request[Unit]) => Result) =
-    CheckPathAction(BodyParsers.parse.empty)(pathIn)(f)
-
-
-  @deprecated("Stop using /path/to/page?action paths", "now")
-  def CheckPathAction[A]
+  private def CheckPathAction[A]
         (parser: BodyParser[A])
         (pathIn: PagePath, maySetCookies: Boolean = true, fixPath: Boolean = true)
         (f: (SidStatus, XsrfOk, Option[BrowserId], Option[PagePath], SiteDao, Request[A]) =>

@@ -186,6 +186,10 @@ h1.dw-p-ttl + .dw-a-edit
 .dw-p-dl > .dw-p-hd
   margin-bottom: 8px
 
+// If a deleted comment is shown, then there're non-deleted children, so make some
+// space for the arrow to the non-deleted children.
+.dw-p-dl + .dw-p-as
+  min-height: 42px;
 
 .dw-rrs // reply receivers
   font-style: italic;

@@ -32,8 +32,9 @@ var ReactRouter = window['ReactRouter'];
 
 
 export function startRemainingReactRoots() {
-  createAnyFlagDialog();
   pagetools.createPageToolsDialog();
+  createAnyFlagDialog();
+  pagedialogs.createDeletePostDialog();
   pagedialogs.createAboutUserDialog();
   pagedialogs.createServerErrorDialog();
   pagedialogs.createWikifyDialog();

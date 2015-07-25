@@ -25,6 +25,7 @@ import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
 import Prelude._
 
 
+// try to delete
 /**
  * HTML forms.
  *
@@ -39,13 +40,6 @@ object HtmlForms {
     new HtmlForms(xsrfToken, pageRoot, permsOnPage)
 
   val XsrfInpName = "dw-fi-xsrf"
-
-  object Delete {
-    object InputNames {
-      val Reason = "dw-fi-dl-reason"
-      val DeleteTree = "dw-fi-dl-tree"
-    }
-  }
 
   def respDlgOk(title: String, summary: String, details: String) =
     _responseDialog(
@@ -71,17 +65,12 @@ object HtmlForms {
   }
 }
 
-
+// try to delete
 class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: PermsOnPage) {
 
   import HtmlForms._
 
   val config = new {
-    // It'd be better to use Play's revere routing, rather than these old weird constants.
-
-    val termsOfUseUrl = "/terms-of-use"
-
-    val loginActionOpenId = "/-/api/login-openid"
     val loginOkAction = ""
     val loginFailedAction = ""
   }
@@ -89,8 +78,7 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
 
   def dialogTemplates = {
     <div id="dw-hidden-templates">
-    { loginForms ++
-      deleteForm }
+    { loginForms }
     </div>
   }
 
@@ -98,16 +86,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
   def loginForms =
     loginOkForm() ++
     loginFailedForm()
-
-
-  /** A query string param that remembers which part of a page we are
-   *  currently viewing.
-   */
-  private def _viewRoot = pageRoot match {
-    case DefaultPageRoot => "" // The page body is the default, need not be specified.
-    case Some(commentId) => s"&view=$commentId"
-    case None => "&view=todo-DwE80IWk5" // This isn't in use right now, could fix later
-  }
 
 
   private def _xsrfToken = {
@@ -141,34 +119,6 @@ class HtmlForms(xsrfToken: String, val pageRoot: AnyPageRoot, val permsOnPage: P
           </div>
         </form>
       </div>
-
-
-  def deleteForm: NodeSeq = {
-    val deleteAction = ""
-    <div class='dw-fs' title='Delete Comment'>
-      <form id='dw-f-dl' action={deleteAction + _viewRoot}
-            accept-charset='UTF-8' method='post'>{
-        import Delete.{InputNames => Inp}
-        val deleteTreeLabel = "Delete replies too"
-        _xsrfToken ++
-        <div>
-          <label for={Inp.Reason}>Reason for deletion? (optional)</label><br/>
-          <textarea id={Inp.Reason} rows='2' cols='33'
-                 name={Inp.Reason} value=''></textarea>
-        </div>
-        <div>
-          <label for={Inp.DeleteTree}>{deleteTreeLabel}</label>
-          <input id={Inp.DeleteTree} type='checkbox'
-                 name={Inp.DeleteTree} value='t' />
-        </div>
-        <div class='dw-submit-set'>
-          <input class='dw-fi-submit' type='submit' value='Delete'/>
-          <input class='dw-fi-cancel' type='button' value='Cancel'/>
-        </div>
-      }
-      </form>
-    </div>
-  }
 
 }
 

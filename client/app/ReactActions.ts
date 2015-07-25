@@ -139,6 +139,17 @@ export function editTitleAndSettings(newTitle: string, settings: any, success: (
 }
 
 
+export function deletePost(postNr: number, repliesToo: boolean, success: () => void) {
+  Server.deletePostInPage(postNr, repliesToo, (deletedPost) => {
+    success();
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.UpdatePost,
+      post: deletedPost
+    });
+  });
+}
+
+
 export function updatePost(post) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.UpdatePost,

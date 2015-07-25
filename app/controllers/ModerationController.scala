@@ -68,7 +68,8 @@ object ModerationController extends mvc.Controller {
 
   def deletePost = StaffPostJsonAction(maxLength = 5000) { request =>
     val PagePostId(pageId, postId) = parseBody(request)
-    request.dao.deletePost(pageId, postId = postId, deletedById = request.theUserId)
+    request.dao.deletePost(pageId, postId = postId, deletedById = request.theUserId,
+        request.theBrowserIdData)
     Ok
   }
 
@@ -77,7 +78,8 @@ object ModerationController extends mvc.Controller {
     // COULD add a specific method deleteFlaggedPost, that also ... marks the flags as accepted?
     // Like Discourse does it. For now:
     val PagePostId(pageId, postId) = parseBody(request)
-    request.dao.deletePost(pageId, postId = postId, deletedById = request.theUserId)
+    request.dao.deletePost(pageId, postId = postId, deletedById = request.theUserId,
+        request.theBrowserIdData)
     Ok
   }
 

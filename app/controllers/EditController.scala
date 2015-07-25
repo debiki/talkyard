@@ -101,13 +101,28 @@ object EditController extends mvc.Controller {
 
     request.dao.changePostType(pageId = pageId, postNr = postNr, newType,
       changerId = request.theUser.id, request.theBrowserIdData)
-
     Ok
   }
 
 
+  def deletePost = PostJsonAction(RateLimits.DeletePost, maxLength = 5000) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    val postNr = (request.body \ "postNr").as[PostId]
+    val repliesToo = (request.body \ "repliesToo").as[Boolean]
+
+    val action =
+      if (repliesToo) PostStatusAction.DeleteTree
+      else PostStatusAction.DeletePost(clearFlags = false)
+
+    request.dao.changePostStatus(postNr, pageId = pageId, action, userId = request.theUserId)
+
+    OkSafeJson(ReactJson.postToJson2(postId = postNr, pageId = pageId, // COULD: don't include post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
+      request.dao, includeUnapproved = request.theUser.isStaff))
+  }
+
+
   private def _throwIfTooMuchData(text: String, request: DebikiRequest[_]) {
-    val postSize = text.size
+    val postSize = text.length
     val user = request.user_!
     if (user.isAdmin) {
       // Allow up to MaxPostSize chars (see above).

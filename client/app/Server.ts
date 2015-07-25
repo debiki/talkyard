@@ -160,6 +160,7 @@ export function hideFlaggedPostSendPm(post: PostToModerate, doneCallback: () => 
   doSomethingWithPost(post, '/-/hide-flagged-send-pm', doneCallback);
 }
 
+// This is for moderators. Could merge with /-/delete-post, open to anyone?
 export function deletePost(post: PostToModerate, doneCallback: () => void) {
   doSomethingWithPost(post, '/-/delete', doneCallback);
 }
@@ -508,6 +509,16 @@ export function flagPost(postId: string, flagType: string, reason: string, succe
     postId: postId,
     type: flagType,
     reason: reason
+  });
+}
+
+
+export function deletePostInPage(postId: number, repliesToo: boolean,
+      success: (deletedPost) => void) {
+  postJsonSuccess('/-/delete-post', success, {
+    pageId: d.i.pageId,
+    postNr: postId,
+    repliesToo: repliesToo,
   });
 }
 

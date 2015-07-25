@@ -120,27 +120,18 @@ object Global extends WithFilters(new HtmlJsCssGzipFilter()) with GlobalSettings
       firstValueOf(versionAndMainFun) getOrElse ""
     lazy val mainFunVal_! : String = firstValueOf(versionAndMainFun).getOrElse(
       throwBadReq("DwE0k32", "No `"+ mainFun +"` value specified"))
-    def mainFunValAsInt_! = parseIntOrThrowBadReq(mainFunVal_!, "DwE451RW0")
 
-    // Route based on the query string.
+    // Route based on the query string. -- try to remove this
     import controllers._
     val GET = "GET"
     val POST = "POST"
     val action = (mainFun, request.method) match {
       case ("view", GET) =>
         ViewPageController.viewPost(pagePath)
-      case ("delete", POST) =>
-        Application.handleDeleteForm(pagePath, postId = mainFunValAsInt_!)
       case ("list-pages", GET) =>
         ListController.listPages(pagePath, DebikiHttp.ContentType.Html)
       case ("list-pages.json", GET) =>
         ListController.listPages(pagePath, DebikiHttp.ContentType.Json)
-        /*
-      case ("list-newest-pages", GET) =>
-        ListController.listNewestPages(pagePath, DebikiHttp.ContentType.Html)
-      case ("list-newest-pages.json", GET) =>
-        ListController.listNewestPages(pagePath, DebikiHttp.ContentType.Json)
-        */
       case ("feed", GET) =>
         Application.feed(pagePath)
       case ("unsubscribe", GET) =>

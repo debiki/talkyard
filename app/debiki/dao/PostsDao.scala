@@ -140,6 +140,9 @@ trait PostsDao {
         throwNotFound("DwE404GKF2", s"Post not found, id: '$postId'")
       }
 
+      if (postToEdit.isDeleted)
+        throwForbidden("DwE6PK2", "The post has been deleted")
+
       if (postToEdit.currentSource == newText)
         return
 
@@ -425,7 +428,8 @@ trait PostsDao {
   }
 
 
-  def deletePost(pageId: PageId, postId: PostId, deletedById: UserId) {
+  def deletePost(pageId: PageId, postId: PostId, deletedById: UserId,
+        browserIdData: BrowserIdData) {
     changePostStatus(pageId = pageId, postId = postId,
       action = PostStatusAction.DeletePost(clearFlags = false), userId = deletedById)
   }

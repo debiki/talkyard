@@ -39,7 +39,7 @@ import Utils.{OkHtml, OkXml}
 
 
 
-/** Miscellaneous controller functions, including rate, flag and delete comment.
+/** Miscellaneous controller functions -- try to move elsewhere and/or rename this class
   */
 object Application extends mvc.Controller {
 
@@ -72,27 +72,6 @@ object Application extends mvc.Controller {
 
     val json = ReactJson.postToJson2(postId = postId, pageId = pageId, dao = request.dao)
     OkSafeJson(json)
-  }
-
-
-  def handleDeleteForm(pathIn: PagePath, postId: ActionId)
-        = PagePostAction(RateLimits.DeletePost, MaxDetailsSize)(pathIn) { pageReq =>
-
-    import HtmlForms.Delete.{InputNames => Inp}
-    val wholeTree = "t" == pageReq.getNoneAsEmpty(Inp.DeleteTree).
-       ifNotOneOf("tf", throwBadReq("DwE93kK3", "Bad whole tree value"))
-    val reason = pageReq.getNoneAsEmpty(Inp.Reason)
-
-    val pageId = pageReq.thePageId
-
-    val action =
-      if (wholeTree) PostStatusAction.DeleteTree
-      else PostStatusAction.DeletePost(clearFlags = false)
-
-    pageReq.dao.changePostStatus(postId, pageId = pageId, action, userId = pageReq.theUser.id)
-
-    OkSafeJson(ReactJson.postToJson2(postId = postId, pageId = pageId, // TODO: don't include post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
-      pageReq.dao, includeUnapproved = true))
   }
 
 

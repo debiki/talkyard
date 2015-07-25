@@ -74,6 +74,7 @@ POST  /-/save-special-content   controllers.SpecialContentController.saveContent
 POST  /-/approve                controllers.ModerationController.approve
 POST  /-/hide-new-send-pm       controllers.ModerationController.hideNewPostSendPm
 POST  /-/hide-flagged-send-pm   controllers.ModerationController.hideFlaggedPostSendPm
+# Rename to something else or merge with /-/delete-post below?
 POST  /-/delete                 controllers.ModerationController.deletePost
 POST  /-/delete-flagged         controllers.ModerationController.deleteFlaggedPost
 POST  /-/clear-flags            controllers.ModerationController.clearFlags
@@ -117,6 +118,7 @@ POST  /-/edit                   controllers.EditController.edit
 POST  /-/edit-title-save-settings controllers.PageTitleSettingsController.editTitleSaveSettings
 GET   /-/onebox                 controllers.EditController.onebox(url)
 POST  /-/change-post-type       controllers.EditController.changePostType
+POST  /-/delete-post            controllers.EditController.deletePost
 
 POST  /-/pin-at-position        controllers.PinController.pinAtPosition
 POST  /-/pin-page               controllers.PinController.pinPage

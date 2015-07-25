@@ -21,6 +21,7 @@
 /// <reference path="../dialogs.ts" />
 /// <reference path="../editor/title-editor.ts" />
 /// <reference path="../page-dialogs/wikify-dialog.ts" />
+/// <reference path="../page-dialogs/delete-post-dialog.ts" />
 /// <reference path="model.ts" />
 
 // Wrapping in a module causes an ArrayIndexOutOfBoundsException: null error, see:
@@ -949,7 +950,7 @@ var PostActions = createComponent({
     debiki2.flagDialog.open(this.props.post.postId);
   },
   onDeleteClick: function(event) {
-    debiki.internal.$showDeleteForm.call(event.target, event);
+    debiki2.pagedialogs.deletePostDialog.open(this.props.post);
   },
   onWikifyClick: function(event) {
     debiki2.pagedialogs.wikifyDialog.open(this.props.post);
@@ -980,6 +981,11 @@ var PostActions = createComponent({
 
     var deletedOrCollapsed =
       post.isPostDeleted || post.isTreeDeleted || post.isPostCollapsed || post.isTreeCollapsed;
+
+    // For now. Later, add e.g. Undelete or View Deleted actions.
+    // (Do return a <div> so there'll be some whitespace below for arrows to any replies.)
+    if (deletedOrCollapsed)
+      return r.div({ className: 'dw-p-as dw-as' });
 
     var replyButton = null;
     if (!deletedOrCollapsed) {
