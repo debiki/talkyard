@@ -44,14 +44,8 @@ object Utils extends Results with http.ContentTypes {
   def OkHtml(htmlNode: xml.NodeSeq) =
     Ok(serializeHtml(htmlNode)) as HTML
 
-  def OkHtmlBody(bodyNodes: xml.NodeSeq) =
-    OkHtml(<body>{bodyNodes}</body>)
-
   def ForbiddenHtml(htmlNode: xml.NodeSeq) =
     Forbidden(serializeHtml(htmlNode)) as HTML
-
-  def BadReqHtml(htmlNode: xml.NodeSeq) =
-    BadRequest(serializeHtml(htmlNode)) as HTML
 
   /**
    * Adds doctype and serializes to html using a real HTML5 writer.
@@ -95,15 +89,6 @@ object Utils extends Results with http.ContentTypes {
    */
   def OkXml(xmlNode: xml.NodeSeq, contentType: String = "text/xml") =
     Ok("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"+ xmlNode) as contentType
-
-
-  // COULD move to new object debiki.Utils?
-  def isPublicArticlePage(pagePath: PagePath): Boolean =
-    !isPrivatePage(pagePath) && !pagePath.isFolderOrIndexPage
-
-
-  def isPrivatePage(pagePath: PagePath): Boolean =
-    pagePath.isHiddenPage
 
 
   /**

@@ -19,7 +19,7 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.Utils.{OkHtml, ForbiddenHtml, BadReqHtml}
+import controllers.Utils.{OkHtml, ForbiddenHtml}
 import debiki.dao.SystemDao
 import debiki.Globals.originOf
 import java.{net => jn}
@@ -169,11 +169,7 @@ object DebikiHttp {
   def throwInternalError(errCode: String, message: String = "") =
     throw ResultException(InternalErrorResult(errCode, message))
 
-  def throwBadReqDialog(
-        errCode: String, title: String, summary: String, details: String) =
-    throw ResultException(BadReqHtml(
-        errorDialogXml(errCode, title, summary, details)))
-
+  // try to remove:
   def throwForbiddenDialog(
         errCode: String, title: String, summary: String, details: String,
         withCookie: Option[Cookie] = None) = {
@@ -274,11 +270,6 @@ object DebikiHttp {
   // ----- HTML dialog responses
 
   // Javascript shows these dialogs as modal dialogs.
-
-  def OkDialogResult(title: String, summary: String, details: String): Result =
-    OkHtml(<html><body>{
-      HtmlForms.respDlgOk(title, summary, details)
-    }</body></html>)
 
   def errorDialogXml(
         errCode: String, title: String, summary: String, details: String) =

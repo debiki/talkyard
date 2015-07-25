@@ -41,9 +41,6 @@ object HtmlForms {
 
   val XsrfInpName = "dw-fi-xsrf"
 
-  def respDlgOk(title: String, summary: String, details: String) =
-    _responseDialog(
-      title, summary, details, debikiErrorCode = "", tyype = "dw-dlg-type-ok")
 
   def respDlgError(title: String, summary: String, details: String,
                    debikiErrorCode: String) =
