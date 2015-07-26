@@ -141,7 +141,7 @@ object EmbeddedTopicsController extends mvc.Controller {
       throwForbidden("DwE21FG4", "This is currently not an embedded comments site")
 
     Ok(views.html.createsite.embeddingSiteInstructionsPage(
-      request.dao.loadSite()).body) as HTML
+      SiteTpi(request), request.dao.loadSite()).body) as HTML
   }
 
 }

@@ -42,7 +42,8 @@ object ResetPasswordController extends mvc.Controller {
 
 
   def showResetPasswordPage = GetAction { request =>
-    Ok(views.html.resetpassword.specifyEmailAddress(xsrfToken = request.xsrfToken.value))
+    Ok(views.html.resetpassword.specifyEmailAddress(
+      SiteTpi(request), xsrfToken = request.xsrfToken.value))
   }
 
 
@@ -117,7 +118,7 @@ object ResetPasswordController extends mvc.Controller {
 
 
   def showEmailSentPage(isEmailAddress: String) = GetAction { request =>
-    Ok(views.html.resetpassword.emailSent(isEmailAddress == "true"))
+    Ok(views.html.resetpassword.emailSent(SiteTpi(request), isEmailAddress == "true"))
   }
 
 
@@ -125,6 +126,7 @@ object ResetPasswordController extends mvc.Controller {
     SECURITY // COULD check email type: ResetPassword or InvitePassword. SHOULD rate limit.
     loginByEmailOrThrow(resetPasswordEmailId, request)
     Ok(views.html.resetpassword.chooseNewPassword(
+      SiteTpi(request),
       xsrfToken = request.xsrfToken.value,
       anyResetPasswordEmailId = resetPasswordEmailId))
   }
@@ -146,12 +148,13 @@ object ResetPasswordController extends mvc.Controller {
     // Log the user in and show password changed message.
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(loginGrant.user)
     val newSessionCookies = sidAndXsrfCookies
-    Ok(views.html.resetpassword.passwordHasBeenChanged()).withCookies(newSessionCookies: _*)
+    Ok(views.html.resetpassword.passwordHasBeenChanged(SiteTpi(request)))
+      .withCookies(newSessionCookies: _*)
   }
 
 
   def showPasswordChangedPage = GetAction { request =>
-    Ok(views.html.resetpassword.passwordHasBeenChanged())
+    Ok(views.html.resetpassword.passwordHasBeenChanged(SiteTpi(request)))
   }
 
 

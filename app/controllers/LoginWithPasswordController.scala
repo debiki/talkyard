@@ -191,7 +191,7 @@ object LoginWithPasswordController extends mvc.Controller {
 
     val anyReturnToUrl: Option[String] = if (returnToUrl.nonEmpty) Some(returnToUrl) else None
 
-    Ok(views.html.createaccount.welcomePage(anyReturnToUrl))
+    Ok(views.html.createaccount.welcomePage(SiteTpi(request), anyReturnToUrl))
       .withCookies(newSessionCookies: _*)
   }
 

@@ -16,7 +16,7 @@
  *@
 
 
-@(site: com.debiki.core.Site)
+@(tpi: debiki.SiteTpi, site: com.debiki.core.Site)
 
 @css = @{("""
   h1 {
@@ -35,7 +35,7 @@
 }
 
 
-@main("Embedded Comments Setup Instructions", css = css) {
+@main(tpi, css = css) {
   <div>
 
     <h1>Embedded Comments Setup Instructions</h1>

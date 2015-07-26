@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(xsrfToken: String)
+@(tpi: debiki.SiteTpi, xsrfToken: String)
 
 
 @css = @{("""
@@ -24,7 +24,7 @@
 
 
 @* For now only, use `createsite.main`. *@
-@createsite.main(title = "Reset Password", css = css) {
+@createsite.main(tpi, css = css) {
 
 <h1>Reset Password</h1>
 

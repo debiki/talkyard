@@ -17,23 +17,11 @@
 
 @(tpi: debiki.SiteTpi)
 
-@minMaxCss = @{ debiki.TemplateProgrammingInterface.minMaxCss }
-
-@asset(file: String) = @{
-  routes.Assets.at(path = "/public/res", file)
-}
-
 <!DOCTYPE html>
 <html class="dw-pri DW dw-admin-page">
 <head>
   @tpi.debikiMeta
-
-  @* For now, use this font always, so if people create a new forum they'll get what they
-  saw at www.debiki.com. Later on, make this configurable somehow.  *@
-  <link rel='stylesheet' href='//fonts.googleapis.com/css?family=Bree+Serif'>
-
   @tpi.debikiStyles
-
   @tpi.debikiScriptsInHead
 </head>
 <body>

@@ -360,12 +360,13 @@ span.dw-p-e-by
   clear: left
   width: 100%
 
-  &:first-child
-    > h1:not(.dw-p-ttl),
-    > h2, > h3, > h4, > h5, > h6
-      &:first-child
-        margin-top: 0;
-        padding-top: 0;
+// No margin-top for any title at the top in a comment.
+:not(.dw-ar-p-bd) > .dw-p-bd-blk:first-child
+  > h1:not(.dw-p-ttl),
+  > h2, > h3, > h4, > h5, > h6
+    &:first-child
+      margin-top: 0;
+      padding-top: 0;
 
 .dw-p.dw-wiki
   .dw-p-bd-blk:first-child

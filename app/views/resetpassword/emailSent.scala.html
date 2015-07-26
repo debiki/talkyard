@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(isEmailAddress: Boolean)
+@(tpi: debiki.SiteTpi, isEmailAddress: Boolean)
 
 @css = @{("""
 
 """)}
 
 
-@createsite.main(title = "Reset Password", css = css) {
+@createsite.main(tpi, css = css) {
 
   <h1>Reset Password</h1>
 

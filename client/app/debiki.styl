@@ -41,7 +41,7 @@
   // people notice that they can close threads.
   color: #777
   font-size: 13px
-  font-family: Verdana
+  font-family: open sans, sans-serif;
   text-decoration: none
   z-index: 3 // place above PNG arrow hiders
   left: 2px
@@ -129,8 +129,8 @@
 .dw-p-hd,
 .dw-p.dw-zd  // folded comment
   padding-left: 3px
-  font-size: 10px
-  color: #000
+  font-size: 11px
+  color: hsl(0, 0%, 8%);
   background-color: hsl(0, 0%, 97%);
   border: 1px solid hsl(0, 0%, 90%)
   border-left: none
@@ -148,11 +148,11 @@
   border-right: none
 
 // Threads are wider in vertical layout, so the headers are much larger.
-// Therefore make their backgrounds brighter.
+// Therefore make their backgrounds brighter. ?? What ?? 96% is darker than 97%. Looks ok anyway.
 .DW.dw-vt
   .dw-p-hd,
   .dw-p.dw-zd
-    background-color: hsl(0, 0%, 95%)
+    background-color: hsl(0, 0%, 96%)
 
   .dw-ar-p-hd
     background-color: transparent
@@ -303,4 +303,4 @@ html.touch .dw-p-mark-click
 
 
 
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

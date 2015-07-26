@@ -19,21 +19,14 @@
 
 
 <!DOCTYPE html>
-
 <html class="dw-pri DW">
 <head>
-    @tpi.debikiMeta
-
-    @* For now, use this font always, so if people create a new forum they'll get what they
-    saw at www.debiki.com. Later on, make this configurable somehow.  *@
-    <link rel='stylesheet' href='//fonts.googleapis.com/css?family=Bree+Serif'>
-
-    @tpi.debikiStyles
-
-    @tpi.debikiScriptsInHead
+@tpi.debikiMeta
+@tpi.debikiStyles
+@tpi.debikiScriptsInHead
 </head>
 <body>
-<!-- loginAndCreateSomethingHerePage.scala.html -->
+<!-- createSomethingHerePage.scala.html -->
 
 <div id='dw-dashbar'></div>
 
@@ -42,7 +35,6 @@
 </div>
 
 @tpi.debikiAppendToBodyTags
-
 @tpi.debikiScriptsEndOfBodyCustomStartupCode("debiki.internal.renderEmptyPage();")
 </body>
 </html>

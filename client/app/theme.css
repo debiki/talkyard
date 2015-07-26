@@ -9,7 +9,7 @@ body,
 p, /* override Twitter Bootstrap */
 body,
 .dw-depth-1 blockquote p { /* override Bootstrap */
-  font: 13px Verdana, sans-serif;
+  font: 13px open sans, sans-serif;
 }
 
 article {
@@ -17,11 +17,10 @@ article {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  /* For now, always use Bree serif, so people that setup a forum get one that looks
+  /* For now, always use Open Sans, so people that setup a forum get one that looks
      like the demo forum. Later on, make the styles more configurabe. */
-  font-family: Bree serif, Georgia, serif;
-  font-weight: normal;
-
+  font-family: open sans, sans-serif;
+  font-weight: bold;
   letter-spacing: 1px;
   line-height: 1em;
   margin-top: 30px;
@@ -29,18 +28,8 @@ h1, h2, h3, h4, h5, h6 {
   color: #393939;
 }
 
-/*
-h1, h2, h3, h4, h5, h6,
-.jumbotron .lead p,
-.jumbotron .or-a-blog,
-.jumbotron .subtitle,
-.homepage .btn-large {
-  font-family: Bree serif, Georgia, serif;
-  font-weight: normal;
-} */
-
 h1 {
-  font-size: 35px;
+  font-size: 33px;
   color: #454545;
   padding-top: 15px;
   margin-bottom: 4px;
@@ -58,9 +47,19 @@ h2 {
   padding-bottom: 5px;
 }
 
-h3 { font-size: 20px; color: #333; margin-top: 29px; }
-h4 { font-size: 15px; color: hsl(0, 0%, 20%); }
-h5, h6 { font-size: 13px; color: hsl(0, 0%, 38%); font-family: Arial, sans-serif; }
+h3 {
+  font-size: 20px;
+  color: #333;
+  margin-top: 29px;
+}
+h4 {
+  font-size: 15px;
+  color: hsl(0, 0%, 20%);
+}
+h5, h6 {
+  font-size: 13px;
+  color: hsl(0, 0%, 36%);
+}
 
 p, li { color: #111; }
 
@@ -123,8 +122,6 @@ a, a:link { color: hsl(211, 88%, 35%);  }
 a:visited { color: hsl(211, 30%, 40%); }
 
 
-#topbar, .footer { font-family: "Bitstream Vera Sans", sans-serif; }
-
 #topbar {
   background: #3e5a75;
 }
@@ -142,9 +139,7 @@ a:visited { color: hsl(211, 30%, 40%); }
 }
 
 .logo {
-  font-family: purisa;
   font-size: 13px;
-  font-weight: bold;
 }
 
 #topbar .logo-slogan img {

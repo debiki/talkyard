@@ -22,27 +22,20 @@
 <html class="dw-pri DW">
 <head>
   @tpi.debikiMeta
-
-  @* For now, use this font always, so if people create a new forum they'll get what they
-  saw at www.debiki.com. Later on, make this configurable somehow.  *@
-  <link rel='stylesheet' href='//fonts.googleapis.com/css?family=Bree+Serif'>
-
   @tpi.debikiStyles
-
   @tpi.debikiScriptsInHead
   <script>
     debiki.baseDomain = '@{ debiki.Globals.baseDomainNoPort }';
   </script>
 </head>
 <body>
-<!-- addressAndEmail.scala.html -->
+<!-- createSitePage.scala.html -->
 
 <div class="container" style="padding-top:30px">
   <div id="dw-react-create-site"></div>
 </div>
 
 @tpi.debikiAppendToBodyTags
-
 @tpi.debikiScriptsEndOfBodyCustomStartupCode("debiki.internal.renderEmptyPage();")
 </body>
 </html>

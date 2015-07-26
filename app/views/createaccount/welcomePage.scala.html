@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(returnToUrl: Option[String])
+@(tpi: debiki.SiteTpi, returnToUrl: Option[String])
 
 
 @css = @{("""
@@ -26,7 +26,7 @@
   returnToUrl.map(_.replaceAllLiterally("__dwHash__", "#"))
 }
 
-@createsite.main(title = "Account Created", css = css) {
+@createsite.main(tpi, css = css) {
   <h1>Welcome!</h1>
 
   <br>
