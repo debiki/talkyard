@@ -20,6 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.{TitleId, BodyId}
+import debiki.ReactJson.{htmlToTextWithNewlines, ToTextResult}
 import debiki._
 import java.{util => ju}
 import CachingDao.{CacheKey, CacheValue}
@@ -90,7 +91,7 @@ trait PageStuffDao {
         anyBody.flatMap(_.approvedHtmlSanitized match {
           case None => None
           case Some(html) =>
-            val text = Jsoup.parse(html).body().text().trim
+            val ToTextResult(text, _) = htmlToTextWithNewlines(html, firstLineOnly = true)
             var excerpt =
               if (text.length <= ExcerptLength + 3) text
               else text.take(ExcerptLength) + "..."

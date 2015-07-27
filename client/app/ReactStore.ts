@@ -590,6 +590,23 @@ function rememberPostsToQuickUpdate(startPostId: number) {
   store.quickUpdate = true;
   store.postsToUpdate = {};
   var post = store.allPosts[startPostId];
+  if (!post) {
+    console.warn('Cannot find post to quick update, nr: ' + startPostId + ' [DwE4KJG0]');
+    return;
+  }
+
+  // In case `post` is a newly added reply, we'll update all earlier siblings, because they
+  // draw an arrow to `post`.
+  var parent: any = store.allPosts[post.parentId] || {};
+  for (var i = 0; i < (parent.childIdsSorted || []).length; ++i) {
+    var siblingId = parent.childIdsSorted[i];
+    if (siblingId === startPostId)
+      break;
+    store.postsToUpdate[siblingId] = true;
+  }
+
+  // Need to update all ancestors, otherwise when rendering the React root we won't reach
+  // `post` at all.
   while (post) {
     store.postsToUpdate[post.postId] = true;
     post = store.allPosts[post.parentId];

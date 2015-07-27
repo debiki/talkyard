@@ -706,7 +706,7 @@ var PostHeader = createComponent({
       if (this.props.abbreviate) {
         return r.div({ className: 'dw-p-hd' }, 'Wiki');
       }
-      if (this.props.is2dColumn || post.isTreeCollapsed || post.postId === BodyPostId) {
+      if (this.props.is2dTreeColumn || post.isTreeCollapsed || post.postId === BodyPostId) {
         return null;
       }
       // Show a collapse button for this wiki post, but no author name because this is

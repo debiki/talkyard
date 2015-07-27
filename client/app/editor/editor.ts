@@ -231,12 +231,14 @@ export var Editor = createComponent({
 
   saveEdits: function() {
     Server.saveEdits(this.state.editingPostId, this.state.text, () => {
+      this.clearText();
       this.closeEditor();
     });
   },
 
   saveNewPost: function() {
     Server.saveReply(this.state.replyToPostIds, this.state.text, () => {
+      this.clearText();
       this.closeEditor();
     });
   },
@@ -249,6 +251,7 @@ export var Editor = createComponent({
       categoryDescription: this.state.text
     };
     ReactActions.createForumCategory(data, () => {
+      this.clearText();
       this.closeEditor();
     });
   },
@@ -263,6 +266,7 @@ export var Editor = createComponent({
       pageBody: this.state.text
     };
     Server.createPage(data, (newPageId: string) => {
+      this.clearText();
       window.location.assign('/-' + newPageId);
     });
   },
@@ -293,6 +297,10 @@ export var Editor = createComponent({
       // (Old jQuery code.)
       $('.dw-replying').removeClass('dw-replying');
     }
+  },
+
+  clearText: function() {
+    this.setState({ text: null, draft: null });
   },
 
   render: function() {
