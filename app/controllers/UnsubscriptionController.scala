@@ -18,6 +18,7 @@
 package controllers
 
 import actions.SafeActions._
+import com.debiki.core.EmailNotfPrefs
 import com.debiki.core._
 import debiki._
 import debiki.DebikiHttp._
@@ -92,10 +93,10 @@ object UnsubscriptionController extends mvc.Controller {
       }
 
     import loginGrant.{identity, user}
-    val idtyEmailId = identity.asInstanceOf[IdentityEmailId]
+    val idtyEmailId: IdentityEmailId = identity.getOrDie("DwE4YPF8").asInstanceOf[IdentityEmailId]
 
     // Find out what to do.
-    val emailNotfPrefs = doWhat match {
+    val emailNotfPrefs: EmailNotfPrefs.Value = doWhat match {
       case Unsub => EmailNotfPrefs.DontReceive
       case PreventResub => EmailNotfPrefs.ForbiddenForever
       case x => assErr("DwE82WM91")
