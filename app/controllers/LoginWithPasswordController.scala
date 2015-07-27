@@ -19,7 +19,7 @@ package controllers
 
 import actions.ApiActions.JsonOrFormDataPostAction
 import actions.ApiActions.PostJsonAction
-import actions.ApiActions.GetAction
+import actions.ApiActions.GetActionRateLimited
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.Utils.isOkayEmailAddress
@@ -43,7 +43,8 @@ object LoginWithPasswordController extends mvc.Controller {
   private val MaxAddressVerificationEmailAgeInHours = 25
 
 
-  def login = JsonOrFormDataPostAction(RateLimits.Login, maxBytes = 1000) { request =>
+  def login = JsonOrFormDataPostAction(RateLimits.Login, maxBytes = 1000,
+        allowUnapproved = true) { request =>
     val email = request.body.getOrThrowBadReq("email")
     val password = request.body.getOrThrowBadReq("password")
     val anyReturnToUrl = request.body.getFirst("returnToUrl")
@@ -62,7 +63,7 @@ object LoginWithPasswordController extends mvc.Controller {
   }
 
 
-  def doLogin(request: ApiRequest[_], dao: SiteDao, email: String, password: String)
+  private def doLogin(request: ApiRequest[_], dao: SiteDao, email: String, password: String)
         : Seq[Cookie] = {
     val loginAttempt = PasswordLoginAttempt(
       ip = request.ip,
@@ -89,8 +90,8 @@ object LoginWithPasswordController extends mvc.Controller {
   }
 
 
-  def handleCreateUserDialog = PostJsonAction(RateLimits.CreateUser, maxLength = 1000) {
-        request: JsonPostRequest =>
+  def handleCreateUserDialog = PostJsonAction(RateLimits.CreateUser, maxLength = 1000,
+        allowUnapproved = true) { request: JsonPostRequest =>
     val body = request.body
     val name = (body \ "name").as[String]
     val emailAddress = (body \ "email").as[String]
@@ -178,7 +179,7 @@ object LoginWithPasswordController extends mvc.Controller {
 
 
   def confirmEmailAddressAndLogin(confirmationEmailId: String, returnToUrl: String) =
-        GetAction { request =>
+        GetActionRateLimited(RateLimits.ConfirmEmailAddress, allowUnapproved = true) { request =>
 
     val userId = finishEmailAddressVerification(confirmationEmailId, request)
     val user = request.dao.loadUser(userId) getOrElse {
@@ -196,7 +197,7 @@ object LoginWithPasswordController extends mvc.Controller {
   }
 
 
-  def finishEmailAddressVerification(emailId: String, request: ApiRequest[_]): UserId = {
+  private def finishEmailAddressVerification(emailId: String, request: ApiRequest[_]): UserId = {
     val email = request.dao.loadEmailById(emailId) getOrElse {
       throwForbidden("DwE7GJP03", "Link expired? Bad email id; email not found.")
     }

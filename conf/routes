@@ -54,7 +54,6 @@ POST  /-/reset-password/specify-email    controllers.ResetPasswordController.han
 GET   /-/reset-password/email-sent       controllers.ResetPasswordController.showEmailSentPage(isEmailAddress)
 GET   /-/reset-password/choose-password/:resetPasswordEmailId  controllers.ResetPasswordController.showChooseNewPasswordPage(resetPasswordEmailId)
 POST  /-/reset-password/choose-password/:resetPasswordEmailId  controllers.ResetPasswordController.handleNewPasswordForm(resetPasswordEmailId)
-GET   /-/reset-password/password-changed controllers.ResetPasswordController.showPasswordChangedPage
 
 GET   /-/create-site            controllers.CreateSiteController.start
 POST  /-/create-site            controllers.CreateSiteController.createSite

@@ -349,8 +349,8 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  def handleCreateUserDialog = PostJsonAction(RateLimits.CreateUser, maxLength = 1000) {
-        request: JsonPostRequest =>
+  def handleCreateUserDialog = PostJsonAction(RateLimits.CreateUser, maxLength = 1000,
+        allowUnapproved = true) { request: JsonPostRequest =>
     val body = request.body
 
     val name = (body \ "name").as[String]

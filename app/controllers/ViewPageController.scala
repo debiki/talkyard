@@ -68,8 +68,8 @@ object ViewPageController extends mvc.Controller {
     else if (siteSettings.userMustBeApproved.asBoolean && !pageReq.isApprovedOrStaff) {
       val message = pageReq.theUser.isApproved match {
         case None =>
-          o"""Your account has not yet been approved; please wait until
-            someone in our staff has approved it. Thanks for being here anyway"""
+          o"""Your account has not yet been approved. Please wait until
+            someone in our staff has approved it."""
         case Some(false) =>
           "You may not access this site, sorry. There is no point in trying again."
         case Some(true) =>

@@ -145,6 +145,10 @@ d.i.showCreateUserDialog = function(userData, anyReturnToUrl) {
             anyReturnToUrl.search('_RedirFromVerifEmailOnly_') == -1) {
           window.location = anyReturnToUrl;
         }
+        else if (!window.debiki2) {
+          // We haven't loaded all JS that would be needed to continue on the same page.
+          window.location = '/';
+        }
         else {
           continueOnSamePage();
         }

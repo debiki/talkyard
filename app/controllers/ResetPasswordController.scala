@@ -41,14 +41,14 @@ object ResetPasswordController extends mvc.Controller {
   }
 
 
-  def showResetPasswordPage = GetAction { request =>
+  def showResetPasswordPage = GetActionAllowUnapproved { request =>
     Ok(views.html.resetpassword.specifyEmailAddress(
       SiteTpi(request), xsrfToken = request.xsrfToken.value))
   }
 
 
   def handleResetPasswordForm = JsonOrFormDataPostAction(RateLimits.ResetPassword,
-        maxBytes = 200) { request =>
+        maxBytes = 200, allowUnapproved = true) { request =>
     val emailOrUsername = request.body.getOrThrowBadReq("email") // WOULD rename 'email' param
     val anyUser = request.dao.loadUserByEmailOrUsername(emailOrUsername)
     val isEmailAddress = emailOrUsername contains "@"
@@ -117,12 +117,13 @@ object ResetPasswordController extends mvc.Controller {
   }
 
 
-  def showEmailSentPage(isEmailAddress: String) = GetAction { request =>
+  def showEmailSentPage(isEmailAddress: String) = GetActionAllowUnapproved { request =>
     Ok(views.html.resetpassword.emailSent(SiteTpi(request), isEmailAddress == "true"))
   }
 
 
-  def showChooseNewPasswordPage(resetPasswordEmailId: String) = GetAction { request =>
+  def showChooseNewPasswordPage(resetPasswordEmailId: String) = GetActionAllowUnapproved {
+        request =>
     SECURITY // COULD check email type: ResetPassword or InvitePassword. SHOULD rate limit.
     loginByEmailOrThrow(resetPasswordEmailId, request)
     Ok(views.html.resetpassword.chooseNewPassword(
@@ -133,7 +134,8 @@ object ResetPasswordController extends mvc.Controller {
 
 
   def handleNewPasswordForm(anyResetPasswordEmailId: String) =
-        JsonOrFormDataPostAction(RateLimits.ChangePassword, maxBytes = 200) { request =>
+        JsonOrFormDataPostAction(RateLimits.ChangePassword, maxBytes = 200,
+          allowUnapproved = true) { request =>
     val newPassword = request.body.getOrThrowBadReq("newPassword")
     val newPasswordAgain = request.body.getOrThrowBadReq("newPasswordAgain")
     if (newPassword != newPasswordAgain)
@@ -150,11 +152,6 @@ object ResetPasswordController extends mvc.Controller {
     val newSessionCookies = sidAndXsrfCookies
     Ok(views.html.resetpassword.passwordHasBeenChanged(SiteTpi(request)))
       .withCookies(newSessionCookies: _*)
-  }
-
-
-  def showPasswordChangedPage = GetAction { request =>
-    Ok(views.html.resetpassword.passwordHasBeenChanged(SiteTpi(request)))
   }
 
 

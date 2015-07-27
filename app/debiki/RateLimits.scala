@@ -146,6 +146,17 @@ object RateLimits {
   }
 
 
+  /** Not sure what limits to use. */
+  object ConfirmEmailAddress extends RateLimits {
+    val key = "CfEA"
+    val what = "confirmed email addresses too many times"
+    def maxPerFifteenSeconds = 5
+    def maxPerFifteenMinutes = 10
+    def maxPerDay = 50
+    def maxPerDayNewUser = Unlimited
+  }
+
+
   /** Discourse defaults to max 10 invites per day, let's just copy that. */
   object SendInvite extends RateLimits {
     val key = "SeIn"
