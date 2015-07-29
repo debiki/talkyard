@@ -105,7 +105,7 @@ export var Sidebar = createComponent({
     window.addEventListener('scroll', this.updateSizeAndPosition, false);
     debiki.v0.util.addZoomOrResizeListener(this.updateSizeAndPosition);
     this.updateSizeAndPosition();
-    keymaster('s', 'Sidebar', this.toggleSidebarOpen);
+    keymaster('s', this.toggleSidebarOpen);
     this.createAnyScrollbars();
   },
 
@@ -115,7 +115,7 @@ export var Sidebar = createComponent({
 
     window.removeEventListener('scroll', this.updateSizeAndPosition, false);
     debiki.v0.util.removeZoomOrResizeListener(this.updateSizeAndPosition);
-    keymaster.unbind('s', 'Sidebar');
+    keymaster.unbind('s', 'all');
   },
 
   componentWillUpdate: function(nextProps, nextState) {
