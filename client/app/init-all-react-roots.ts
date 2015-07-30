@@ -41,8 +41,8 @@ export function startRemainingReactRoots() {
 
   var adminAppElem = document.getElementById('dw-react-admin-app');
   if (adminAppElem) {
-    ReactRouter.run(debiki2.admin.routes(), (Handler) => {
-      React.render(Handler({}), adminAppElem);
+    ReactRouter.run(debiki2.admin.routes(), (HandlerComponent) => {
+      React.render(React.createElement(HandlerComponent, {}), adminAppElem);
     });
   }
 
@@ -64,15 +64,15 @@ export function startRemainingReactRoots() {
 
   var userPageElem = document.getElementById('dw-react-user-page');
   if (userPageElem) {
-    ReactRouter.run(debiki2.users.routes(), (Handler) => {
-      React.render(Handler({}), userPageElem);
+    ReactRouter.run(debiki2.users.routes(), (HandlerComponent) => {
+      React.render(React.createElement(HandlerComponent, {}), userPageElem);
     });
   }
 
   var createSiteElem = document.getElementById('dw-react-create-site');
   if (createSiteElem) {
-    ReactRouter.run(debiki2.createsite.routes(), (Handler) => {
-      React.render(Handler({}), createSiteElem);
+    ReactRouter.run(debiki2.createsite.routes(), (HandlerComponent) => {
+      React.render(React.createElement(HandlerComponent, {}), createSiteElem);
     });
   }
 }

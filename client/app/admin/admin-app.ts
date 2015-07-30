@@ -31,7 +31,6 @@
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 var reactCreateFactory = React['createFactory'];
 
 var ReactBootstrap: any = window['ReactBootstrap'];
@@ -42,38 +41,38 @@ var TabPane = reactCreateFactory(ReactBootstrap.TabPane);
 var Button = reactCreateFactory(ReactBootstrap.Button);
 
 var ReactRouter = window['ReactRouter'];
-var Route = ReactRouter.Route;
-var Redirect = ReactRouter.Redirect;
-var DefaultRoute = ReactRouter.DefaultRoute;
-var NotFoundRoute = ReactRouter.NotFoundRoute;
-var RouteHandler = ReactRouter.RouteHandler;
-var Navigation = ReactRouter.Navigation;
-var State = ReactRouter.State;
+var Route = reactCreateFactory(ReactRouter.Route);
+var Redirect = reactCreateFactory(ReactRouter.Redirect);
+var DefaultRoute = reactCreateFactory(ReactRouter.DefaultRoute);
+var NotFoundRoute = reactCreateFactory(ReactRouter.NotFoundRoute);
+var RouteHandler = reactCreateFactory(ReactRouter.RouteHandler);
+var RouterNavigationMixin = ReactRouter.Navigation;
+var RouterStateMixin = ReactRouter.State;
 
 
 export function routes() {
   // Later on, when there's a Dashboard tab, could use that one as the default instead.
   var defaultRouteName = debiki2.ReactStore.getUser().isAdmin ? 'settings' : 'review';
-  return Route({ path: '/', handler: AdminApp },
+  return Route({ path: '/', handler: AdminAppComponent },
     Redirect({ from: '/', to: defaultRouteName }),
     Redirect({ from: '/users', to: 'users-active' }),
     Redirect({ from: '/review', to: 'review-posts' }),
-    Route({ name: 'settings', path: 'settings', handler: SettingsPanel }),
-    Route({ name: 'users', path: 'users', handler: UsersTab },
-      Route({ name: 'users-active', path: 'active', handler: ActiveUsersPanel }),
-      Route({ name: 'users-new', path: 'new', handler: NewUsersPanel }),
-      Route({ name: 'users-staff', path: 'staff', handler: NotYetImplemented }),
-      Route({ name: 'users-suspended', path: 'suspended', handler: NotYetImplemented }),
-      Route({ name: 'users-threats', path: 'threads', handler: NotYetImplemented }),
-      Route({ name: 'users-one', path: 'id/:userId', handler: AdminUserPage })),
-    Route({ name: 'customize', path: 'customize', handler: CustomizePanel }),
-    Route({ name: 'review', path: 'review', handler: ReviewPanel },
-      Route({ name: 'review-posts', path: 'posts', handler: ReviewPostsPanel })));
+    Route({ name: 'settings', path: 'settings', handler: SettingsPanelComponent }),
+    Route({ name: 'users', path: 'users', handler: UsersTabComponent },
+      Route({ name: 'users-active', path: 'active', handler: ActiveUsersPanelComponent }),
+      Route({ name: 'users-new', path: 'new', handler: NewUsersPanelComponent }),
+      Route({ name: 'users-staff', path: 'staff', handler: NotYetImplementedComponent }),
+      Route({ name: 'users-suspended', path: 'suspended', handler: NotYetImplementedComponent }),
+      Route({ name: 'users-threats', path: 'threads', handler: NotYetImplementedComponent }),
+      Route({ name: 'users-one', path: 'id/:userId', handler: AdminUserPageComponent })),
+    Route({ name: 'customize', path: 'customize', handler: CustomizePanelComponent }),
+    Route({ name: 'review', path: 'review', handler: ReviewPanelComponent },
+      Route({ name: 'review-posts', path: 'posts', handler: ReviewPostsPanelComponent })));
 }
 
 
 
-var NotYetImplemented = createComponent({
+var NotYetImplementedComponent = React.createClass({
   render: function() {
     return (
       r.p({}, 'Not yet implemented.'));
@@ -82,8 +81,8 @@ var NotYetImplemented = createComponent({
 
 
 
-var AdminApp = createComponent({
-  mixins: [Navigation, State, debiki2.StoreListenerMixin],
+var AdminAppComponent = React.createClass({
+  mixins: [RouterNavigationMixin, RouterStateMixin, debiki2.StoreListenerMixin],
 
   getInitialState: function() {
     return {
@@ -128,7 +127,7 @@ var AdminApp = createComponent({
 
 
 
-var SettingsPanel = createComponent({
+var SettingsPanelComponent = React.createClass({
   mixins: [SaveSettingMixin],
 
   componentDidMount: function() {
@@ -203,7 +202,7 @@ var SettingsPanel = createComponent({
 
 
 
-var CustomizePanel = createComponent({
+var CustomizePanelComponent = React.createClass({
   mixins: [SaveSettingMixin],
 
   componentDidMount: function() {

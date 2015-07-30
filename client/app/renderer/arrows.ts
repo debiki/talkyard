@@ -117,16 +117,16 @@ function drawHorizontalArrows(isFirstChild: boolean, numRemainingWithArrows: num
 
   if (!isFirstChild) {
     arrows.push(
-        r.div({ className: 'dw-arw dw-arw-hz-curve-to-this' }));
+        r.div({ className: 'dw-arw dw-arw-hz-curve-to-this', key: 11 }));
   }
 
   if (numRemainingWithArrows > 0) {
     if (!isFirstChild) {
       arrows.push(
-         r.div({ className: 'dw-arw dw-arw-hz-line-to-this' }));
+         r.div({ className: 'dw-arw dw-arw-hz-line-to-this', key: 12 }));
     }
     arrows.push(
-        r.div({ className: 'dw-arw dw-arw-hz-line-to-sibling' }));
+        r.div({ className: 'dw-arw dw-arw-hz-line-to-sibling', key: 13 }));
   }
 
   return arrows;
@@ -144,7 +144,7 @@ function drawVerticalArrows(depth: number, isFirstChild: boolean,
     // the very first child (and this post won't be indented, so we'll hide
     // all arrows to any siblings).
     arrows.push(
-      r.div({ className: 'dw-arw dw-arw-vt-curve-to-this-first-unindented' }));
+      r.div({ className: 'dw-arw dw-arw-vt-curve-to-this-first-unindented', key: 21 }));
   }
 
   // Only one reply
@@ -173,7 +173,7 @@ function drawVerticalArrows(depth: number, isFirstChild: boolean,
   var isOnlyChild = isFirstChild && numRemainingWithArrows === 0;
   if (isOnlyChild) {
     arrows.push(
-      r.div({ className: 'dw-arw dw-arw-vt-curve-to-this' }));
+      r.div({ className: 'dw-arw dw-arw-vt-curve-to-this', key: 22 }));
     return arrows;
   }
 
@@ -213,7 +213,7 @@ function drawVerticalArrows(depth: number, isFirstChild: boolean,
   // Draw the `-> part:
   if (numRemainingWithArrows >= 1) {
     arrows.push(
-        r.div({ className: 'dw-arw dw-arw-vt-curve-to-this' }));
+        r.div({ className: 'dw-arw dw-arw-vt-curve-to-this', key: 23 }));
   }
 
   // Start or continue an arrow to the siblings below, but not to
@@ -221,26 +221,26 @@ function drawVerticalArrows(depth: number, isFirstChild: boolean,
   // or to posts elsewhere in the tree.
   if (numRemainingWithArrows >= 1) {
     arrows.push(
-        r.div({ className: 'dw-arw dw-arw-vt-line-to-sibling-1' }));
+        r.div({ className: 'dw-arw dw-arw-vt-line-to-sibling-1', key: 24 }));
     arrows.push(
-        r.div({ className: 'dw-arw dw-arw-vt-line-to-sibling-2' }));
+        r.div({ className: 'dw-arw dw-arw-vt-line-to-sibling-2', key: 25 }));
 
     //          \
     // Draw the  v  arrow to the very last sibling:
     if (numRemainingWithArrows === 1) {
       if (!horizontalLayout && depth === 2) {
         arrows.push(
-          r.div({ className: 'dw-arw dw-arw-vt-curve-to-last-sibling-indented' }));
+          r.div({ className: 'dw-arw dw-arw-vt-curve-to-last-sibling-indented', key: 26 }));
       }
       else {
         arrows.push(
-          r.div({ className: 'dw-arw dw-arw-vt-curve-to-last-sibling-unindented' }));
+          r.div({ className: 'dw-arw dw-arw-vt-curve-to-last-sibling-unindented', key: 27 }));
       }
     }
 
     // Add a clickable handle that scrolls to the parent post and highlights it.
     arrows.push(
-        r.div({ className: 'dw-arw-vt-handle' }));
+        r.div({ className: 'dw-arw-vt-handle', key: 28 }));
   }
 
   return arrows;

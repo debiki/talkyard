@@ -43,6 +43,14 @@ interface PostToModerate {
 }
 
 
+interface Flag {
+  flaggerId: number;
+  flaggerDisplayName: string;
+  flagType: string;
+  flagReason?: string;
+}
+
+
 interface Post {
   uniqueId: number; // TODO rename to id
   postId: number;   // TODO rename to nr
@@ -100,6 +108,9 @@ interface Category {
   pageId: string;
   slug: string;
   subCategories: number[];
+  description: string;
+  numTopics: number;
+  recentTopics: Topic[];
 }
 
 
@@ -269,3 +280,5 @@ interface Block {
   blockedTillMs?: number;
 }
 
+
+// vim: et ts=2 sw=2 tw=0 fo=r list

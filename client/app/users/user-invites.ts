@@ -37,7 +37,7 @@ var RouterNavigation = window['ReactRouter'].Navigation;
 import UserPreferences = debiki2.users.UserPreferences;
 
 
-export var UserInvites = createComponent({
+export var UserInvitesComponent = React.createClass({
   getInitialState: function() {
     this.loadInvites(this.props.user.id);
     return {

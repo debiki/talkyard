@@ -36,7 +36,7 @@ var RouterNavigation = ReactRouter.Navigation;
 var RouterState = ReactRouter.State;
 
 
-export var AdminUserPage = createComponent({
+export var AdminUserPageComponent = React.createClass({
   mixins: [RouterState, RouterNavigation],
 
   getInitialState: function() {

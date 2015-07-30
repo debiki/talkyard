@@ -34,13 +34,13 @@ var Nav = reactCreateFactory(ReactBootstrap.Nav);
 var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
 
 var ReactRouter = window['ReactRouter'];
-var RouteHandler = ReactRouter.RouteHandler;
-var Navigation = ReactRouter.Navigation;
-var State = ReactRouter.State;
+var RouteHandler = reactCreateFactory(ReactRouter.RouteHandler);
+var RouterNavigationMixin = ReactRouter.Navigation;
+var RouterStateMixin = ReactRouter.State;
 
 
-export var ReviewPanel = createComponent({
-  mixins: [Navigation, State],
+export var ReviewPanelComponent = React.createClass({
+  mixins: [RouterNavigationMixin, RouterStateMixin],
 
   getInitialState: function() {
     return {

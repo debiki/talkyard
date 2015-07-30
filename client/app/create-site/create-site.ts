@@ -26,7 +26,6 @@
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 var reactCreateFactory = React['createFactory'];
 
 var ReactBootstrap: any = window['ReactBootstrap'];

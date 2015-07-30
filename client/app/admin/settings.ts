@@ -134,8 +134,8 @@ export var Setting = createComponent({
 
     var boolClass = isBoolSetting ? ' bool-setting' : '';
     var defaultValue = isBoolSetting
-        ? [' Default value: ', r.samp({}, setting.defaultValue ? 'true' : 'false')]
-        : [' Default value: "', r.samp({}, setting.defaultValue), '"']
+        ? r.span({}, ' Default value: ', r.samp({}, setting.defaultValue ? 'true' : 'false'))
+        : r.span({}, ' Default value: "', r.samp({}, setting.defaultValue), '"');
 
     return (
       r.div({ className: 'fourm-group row'},

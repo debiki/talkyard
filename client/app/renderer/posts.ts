@@ -66,7 +66,7 @@ function isServerSide() {
 }
 
 
-function createComponent(componentDefinition) {
+function createComponent(componentDefinition) { // oops should obviously be named createFactory
   if (isServerSide()) {
     // The mere presence of these functions cause an unknown error when rendering
     // React-Router server side. So remove them; they're never called server side anyway.
@@ -127,7 +127,7 @@ var TitleBodyComments = createComponent({
       categories =
         r.ol({ className: 'parent-forums-list' },
           this.props.ancestorsRootFirst.map((ancestor: Ancestor) => {
-            return r.li({}, r.a({ href: ancestor.path }, ancestor.title));
+            return r.li({ key: ancestor.pageId }, r.a({ href: ancestor.path }, ancestor.title));
           }));
     }
 
@@ -672,7 +672,7 @@ var ReplyReceivers = createComponent({
         return r.i({}, '?someone unknown?');
 
       var link =
-        r.a({ href: '#post-' + post.postId, className: 'dw-rr' }, // rr = reply receiver
+        r.a({ href: '#post-' + post.postId, className: 'dw-rr', key: post.postId },
           post.authorUsername || post.authorFullName);
 
       return index === 0 ? link : r.span({}, ' and', link);
@@ -718,16 +718,16 @@ var PostHeader = createComponent({
     var linkFn = this.props.abbreviate ? 'span' : 'a';
 
     var authorUrl = '/-/users/#/id/' + post.authorId;
-    var authorNameElems;
+    var namePart1;
+    var namePart2;
     if (post.authorFullName && post.authorUsername) {
-      authorNameElems = [
-        r.span({ className: 'dw-username' }, post.authorUsername),
-        r.span({ className: 'dw-fullname' }, ' (' + post.authorFullName + ')')];
+      namePart1 = r.span({ className: 'dw-username' }, post.authorUsername);
+      namePart2 = r.span({ className: 'dw-fullname' }, ' (' + post.authorFullName + ')');
     }
     else if (post.authorFullName) {
-      authorNameElems = [
-          r.span({ className: 'dw-fullname' }, post.authorFullName),
-          r.span({ className: 'dw-lg-t-spl' }, '?')]; // {if (user.email isEmpty) "??" else "?"
+      namePart1 = r.span({ className: 'dw-fullname' }, post.authorFullName);
+      namePart2 =
+          r.span({ className: 'dw-lg-t-spl' }, '?'); // {if (user.email isEmpty) "??" else "?"
         /* Could add back tooltip:
           '<b>??</b> means that the user has not logged in,'+
           ' so <i>anyone</i> can pretend to be this user&nbsp;(!),'+
@@ -739,10 +739,10 @@ var PostHeader = createComponent({
         */
     }
     else if (post.authorUsername) {
-      authorNameElems = r.span({ className: 'dw-username' }, post.authorUsername);
+      namePart1 = r.span({ className: 'dw-username' }, post.authorUsername);
     }
     else {
-      authorNameElems = r.span({}, '(Unknown author)');
+      namePart1 = r.span({}, '(Unknown author)');
     }
 
     var createdAt = moment(post.createdAt).from(this.props.now);
@@ -817,7 +817,7 @@ var PostHeader = createComponent({
           postId,
           anyMark,
           by,
-          r[linkFn](userLinkProps, authorNameElems),
+          r[linkFn](userLinkProps, namePart1, namePart2),
           createdAt,
           editInfo, '. ',
           voteCounts));
@@ -906,10 +906,10 @@ var NoCommentsPageActions = createComponent({
     if (!post.isApproved && !post.sanitizedHtml)
       return null;
 
-    var actions = [];
+    var actions;
     if (user.isAdmin) {
-      actions.push(
-        r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit'));
+      actions =
+          r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit');
     }
 
     return (
@@ -993,7 +993,8 @@ var PostActions = createComponent({
           r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick }, 'Reply');
     }
 
-    var voteButtons = null;
+    var otherVotesDropdown = null;
+    var likeVote = null;
     if (!deletedOrCollapsed && !isOwnPost) {
       var myLikeVote = votes.indexOf('VoteLike') !== -1 ? ' dw-my-vote' : '';
       var myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : '';
@@ -1003,22 +1004,20 @@ var PostActions = createComponent({
       var otherVotes = [
           r.a({ className: 'dw-a dw-a-wrong icon-warning' + myWrongVote,
             title: 'Click if you think this post is wrong, for example, factual errors, ' +
-                " or because you disagree.", onClick: this.onWrongClick }, 'Wrong'),
+                " or because you disagree.", onClick: this.onWrongClick, key: 'w' }, 'Wrong'),
           r.a({ className: 'dw-a dw-a-bury icon-bury' + myBuryVote,
               title: "Click if you think it's better that people spend their time " +
-                  "reading other things instead.", onClick: this.onBuryClick }, 'Bury')];
+                  "reading other things instead.", onClick: this.onBuryClick, key: 'b' }, 'Bury')];
 
-      var otherVotesDropdown = post.postId === BodyPostId ? null :
+      otherVotesDropdown = post.postId === BodyPostId ? null :
           r.span({ className: 'dropdown navbar-right' },
             r.a({ className: 'dw-a dw-a-votes' + myOtherVotes, 'data-toggle': 'dropdown' }, ''),
             r.div({ className: 'dropdown-menu dropdown-menu-right dw-p-as-votes' },
                 otherVotes));
 
-      // Reverse order, floats right.
-      voteButtons = [
-          otherVotesDropdown,
+      likeVote =
           r.a({ className: 'dw-a dw-a-like icon-heart' + myLikeVote,
-            title: "Like this", onClick: this.onLikeClick }, 'Like')];
+            title: "Like this", onClick: this.onLikeClick }, 'Like');
     }
 
     var editOwnPostButton = deletedOrCollapsed || !isOwnPost
@@ -1038,60 +1037,61 @@ var PostActions = createComponent({
           user.isAuthenticated && post.postType === PostType.CommunityWiki);
       if (mayEdit) {
         moreLinks.push(
-          r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit'));
+          r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick, key: 'ed' },
+            'Edit'));
       }
     }
 
     moreLinks.push(
-        r.a({ className: 'dw-a dw-a-flag icon-flag', onClick: this.onFlagClick }, 'Report'));
+        r.a({ className: 'dw-a dw-a-flag icon-flag', onClick: this.onFlagClick, key: 'rp' },
+          'Report'));
 
     /* Doesn't work right now, after Post2 rewrite
     if (user.isAdmin && !isPageBody)
       moreLinks.push(
-        r.a({ className: 'dw-a dw-a-pin icon-pin', onClick: this.onPinClick }, 'Pin'));
+        r.a({ className: 'dw-a dw-a-pin icon-pin', onClick: this.onPinClick, key: 'pn' }, 'Pin'));
     */
-
-    var suggestionsOld = [];
-    var suggestionsNew = [];
 
     // Enable some hard-to-use features for me only right now.
     var isKajMagnusSite = debiki.siteId === '3';
 
+    /* Suggestions code removed, I'll rewrite and add back later.
     if (post.numPendingEditSuggestions > 0)
       suggestionsNew.push(
           r.a({ className: 'dw-a dw-a-edit-suggs icon-edit dw-a-pending-review',
            title: 'View edit suggestions', onClick: this.onEditSuggestionsClick },
             '×', post.numPendingEditSuggestions));
+    */
 
     if (!post.isTreeCollapsed && !isPageBody && user.isAdmin && isKajMagnusSite)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-collapse-tree icon-collapse',
-            onClick: this.onCollapseTreeClick }, 'Collapse tree'));
+            onClick: this.onCollapseTreeClick, key: 'ct' }, 'Collapse tree'));
 
     if (!post.isPostCollapsed && !isPageBody && user.isAdmin && isKajMagnusSite)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-collapse-post icon-collapse',
-            onClick: this.onCollapsePostClick }, 'Collapse post'));
+            onClick: this.onCollapsePostClick, key: 'cp' }, 'Collapse post'));
 
     if (post.isTreeCollapsed && user.isAdmin)
       moreLinks.push(
-        r.a({ className: 'dw-a dw-a-uncollapse-tree' }, 'Uncollapse tree'));
+        r.a({ className: 'dw-a dw-a-uncollapse-tree', key: 'ut' }, 'Uncollapse tree'));
 
     if (post.isPostCollapsed && user.isAdmin)
       moreLinks.push(
-        r.a({ className: 'dw-a dw-a-uncollapse-post' }, 'Uncollapse post'));
+        r.a({ className: 'dw-a dw-a-uncollapse-post', key: 'up' }, 'Uncollapse post'));
 
     // ----- Close links
 
     /* Doesn't work any longer, not after Post2 rewrite.
     if (post.isTreeClosed && user.isAdmin) {
       moreLinks.push(
-        r.a({ className: 'dw-a dw-a-reopen-tree' }, 'Reopen'));
+        r.a({ className: 'dw-a dw-a-reopen-tree', key: 'ro' }, 'Reopen'));
     }
     else if (!isPageBody && user.isAdmin) {
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-close-tree icon-archive',
-            onClick: this.onCloseTreeClick }, 'Close'));
+            onClick: this.onCloseTreeClick, key: 'cl' }, 'Close'));
     }
     */
 
@@ -1109,12 +1109,13 @@ var PostActions = createComponent({
 
     if (!isPageBody && isStaff(user)) {
       moreLinks.push(
-        r.a({ className: 'dw-a dw-a-delete icon-trash', onClick: this.onDeleteClick }, 'Delete'));
+        r.a({ className: 'dw-a dw-a-delete icon-trash', onClick: this.onDeleteClick, key: 'dl' },
+          'Delete'));
     }
 
     if (isStaff(user)) {
       moreLinks.push(
-        r.a({ className: 'dw-a icon-users', onClick: this.onWikifyClick },
+        r.a({ className: 'dw-a icon-users', onClick: this.onWikifyClick, key: 'wf' },
           isWikiPost(post) ? 'Un-Wikify' : 'Wikify'));
     }
 
@@ -1127,12 +1128,13 @@ var PostActions = createComponent({
     return (
       r.div({ className: 'dw-p-as dw-as', onMouseEnter: this.showActions,
           onClick: this.props.onClick },
-        suggestionsNew,
-        suggestionsOld,
+        //suggestionsNew,
+        //suggestionsOld,
         moreDropdown,
         editOwnPostButton,
         link,
-        voteButtons,
+        otherVotesDropdown,
+        likeVote,
         replyButton));
   }
 });
@@ -1180,7 +1182,7 @@ function renderTitleBodyComments() {
       scrollBehavior: debiki2.renderer.ForumScrollBehavior,
     });
     router.run(function(handler) {
-      React.render(handler(store), root);
+      React.render(React.createElement(handler, store), root);
     });
   }
   else {
@@ -1199,7 +1201,7 @@ function renderTitleBodyCommentsToString() {
     // the hash fragment, start at #/latest/ (the default route) always:
     var pagePath = '/latest/';
     ReactRouter.run(routes, pagePath, function(handler) {
-      result = React.renderToString(handler(store));
+      result = React.renderToString(React.createElement(handler, store));
     });
     return result;
   }

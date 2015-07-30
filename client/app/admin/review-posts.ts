@@ -32,7 +32,7 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 
 
-export var ReviewPostsPanel = createComponent({
+export var ReviewPostsPanelComponent = React.createClass({
   mixins: [SaveSettingMixin],
 
   componentDidMount: function() {
@@ -46,8 +46,8 @@ export var ReviewPostsPanel = createComponent({
       return r.p({}, 'Loading...');
 
     var now = Date.now();
-    var postsElems = this.state.posts.map(post => {
-      return Post({ post: post, now: now });
+    var postsElems = this.state.posts.map((post: PostToModerate) => {
+      return Post({ post: post, now: now, key: post.id });
     });
 
     return (
@@ -248,9 +248,10 @@ var Post = createComponent({
 
     var flagsAndFlagActions;
     if (state.pendingFlags && state.pendingFlags.length) {
-      var flags = state.pendingFlags.map(flag => {  /// ?? zz WHY dupl flags ?? 
+      var flags = state.pendingFlags.map((flag: Flag) => {  /// ?? zz WHY dupl flags ?? 
         return (
-          r.li({}, 'Type: ' + flag.flagType + ', reason: ' + flag.flagReason + ', by: ',
+          r.li({ key: flag.flaggerId },
+              'Type: ' + flag.flagType + ', reason: ' + flag.flagReason + ', by: ',
               r.a({ href: '/-/users/#/id/' + flag.flaggerId }, flag.flaggerDisplayName)));
       });
 

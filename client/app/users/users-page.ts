@@ -32,54 +32,55 @@ var Nav = reactCreateFactory(ReactBootstrap.Nav);
 var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
 
 var ReactRouter = window['ReactRouter'];
-var Route = ReactRouter.Route;
-var DefaultRoute = ReactRouter.DefaultRoute;
-var NotFoundRoute = ReactRouter.NotFoundRoute;
-var RouteHandler = ReactRouter.RouteHandler;
-var RouterNavigation = ReactRouter.Navigation;
-var RouterState = ReactRouter.State;
+var Route = reactCreateFactory(ReactRouter.Route);
+var Redirect = reactCreateFactory(ReactRouter.Redirect);
+var DefaultRoute = reactCreateFactory(ReactRouter.DefaultRoute);
+var NotFoundRoute = reactCreateFactory(ReactRouter.NotFoundRoute);
+var RouteHandler = reactCreateFactory(ReactRouter.RouteHandler);
+var RouterNavigationMixin = ReactRouter.Navigation;
+var RouterStateMixin = ReactRouter.State;
 
 
 export function routes() {
-  return Route({ path: '/', handler: UsersHome },
-    DefaultRoute({ handler: Default }),
-    NotFoundRoute({ handler: NotFound }),
-    Route({ path: '/id/:userId', handler: UserPage },
+  return Route({ path: '/', handler: UsersHomeComponent },
+    DefaultRoute({ handler: DefaultComponent }),
+    NotFoundRoute({ handler: NotFoundComponent }),
+    Route({ path: '/id/:userId', handler: UserPageComponent },
       DefaultRoute({ handler: debiki2.users.UserDetailsAndActionsComponent }),
-      Route({ name: 'user-all', path: 'all', handler: UserAll }),
-      Route({ name: 'user-topics', path: 'topics', handler: UserTopics }),
-      Route({ name: 'user-posts', path: 'posts', handler: UserPosts }),
-      Route({ name: 'user-likes-given', path: 'likes-given', handler: UserLikesGiven }),
-      Route({ name: 'user-likes-received', path: 'likes-received', handler: UserLikesReceived }),
-      Route({ name: 'user-notifications', path: 'notifications', handler: UserNotifications }),
+      Route({ name: 'user-all', path: 'all', handler: UserAllComponent }),
+      Route({ name: 'user-topics', path: 'topics', handler: UserTopicsComponent }),
+      Route({ name: 'user-posts', path: 'posts', handler: UserPostsComponent }),
+      Route({ name: 'user-likes-given', path: 'likes-given', handler: UserLikesGivenComponent }),
+      Route({ name: 'user-likes-received', path: 'likes-received', handler: UserLikesReceivedComponent }),
+      Route({ name: 'user-notifications', path: 'notifications', handler: UserNotificationsComponent }),
       Route({ name: 'user-preferences', path: 'preferences', handler: debiki2.users.UserPreferencesComponent }),
-      Route({ name: 'user-invites', path: 'invites', handler: debiki2.users.UserInvites })));
+      Route({ name: 'user-invites', path: 'invites', handler: debiki2.users.UserInvitesComponent })));
 }
 
 
-var UsersHome = React.createClass({
+var UsersHomeComponent = React.createClass({
   render: function() {
     return RouteHandler({});
   }
 });
 
 
-var Default = React.createClass({
+var DefaultComponent = React.createClass({
   render: function() {
     return r.div({}, 'Unexpected URL [DwE7E1W31]');
   }
 });
 
 
-var NotFound = React.createClass({
+var NotFoundComponent = React.createClass({
   render: function() {
     return r.h1({}, 'Not found [DwE8YK4P5]');
   }
 });
 
 
-var UserPage = React.createClass({
-  mixins: [RouterState, RouterNavigation, debiki2.StoreListenerMixin],
+var UserPageComponent = React.createClass({
+  mixins: [RouterStateMixin, RouterNavigationMixin, debiki2.StoreListenerMixin],
 
   getInitialState: function() {
     return {
@@ -139,7 +140,7 @@ var UserPage = React.createClass({
 });
 
 
-var UserBar = React.createClass({
+var UserBar = createComponent({
   render: function() {
     var loggedInUser = this.props.loggedInUser;
     var user = this.props.user;
@@ -208,7 +209,7 @@ var UserInfo = createComponent({
 });
 
 
-var UserNav = React.createClass({
+var UserNav = createComponent({
   render: function() {
     var messages = null;
     // if (this.props.)
@@ -227,7 +228,7 @@ var UserNav = React.createClass({
 });
 
 
-var UserContent = React.createClass({
+var UserContent = createComponent({
   render: function() {
     return (
       r.div({ className: 'dw-user-content' },
@@ -236,7 +237,7 @@ var UserContent = React.createClass({
 });
 
 
-var UserAll = React.createClass({
+var UserAllComponent = React.createClass({
   render: function() {
     return (
       r.p({}, 'UserAll'));
@@ -244,7 +245,7 @@ var UserAll = React.createClass({
 });
 
 
-var UserTopics = React.createClass({
+var UserTopicsComponent = React.createClass({
   render: function() {
     return (
       r.p({}, 'UserTopics'));
@@ -252,7 +253,7 @@ var UserTopics = React.createClass({
 });
 
 
-var UserPosts = React.createClass({
+var UserPostsComponent = React.createClass({
   render: function() {
     return (
       r.p({}, 'UserPosts'));
@@ -260,7 +261,7 @@ var UserPosts = React.createClass({
 });
 
 
-var UserLikesGiven = React.createClass({
+var UserLikesGivenComponent = React.createClass({
   render: function() {
     return (
       r.p({}, 'UserLikesGiven'));
@@ -268,7 +269,7 @@ var UserLikesGiven = React.createClass({
 });
 
 
-var UserLikesReceived = React.createClass({
+var UserLikesReceivedComponent = React.createClass({
   render: function() {
     return (
       r.p({}, 'UserLikesReceived'));
@@ -276,7 +277,7 @@ var UserLikesReceived = React.createClass({
 });
 
 
-var UserNotifications = React.createClass({
+var UserNotificationsComponent = React.createClass({
   render: function() {
     return (
       r.p({}, 'UserNotifications'));

@@ -26,7 +26,7 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 
 
-export var NameLoginBtns = React.createClass({
+export var NameLoginBtns = createComponent({
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {

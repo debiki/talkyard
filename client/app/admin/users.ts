@@ -35,13 +35,13 @@ var Nav = reactCreateFactory(ReactBootstrap.Nav);
 var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
 
 var ReactRouter = window['ReactRouter'];
-var RouteHandler = ReactRouter.RouteHandler;
-var Navigation = ReactRouter.Navigation;
-var State = ReactRouter.State;
+var RouteHandler = reactCreateFactory(ReactRouter.RouteHandler);
+var RouterNavigationMixin = ReactRouter.Navigation;
+var RouterStateMixin = ReactRouter.State;
 
 
-export var UsersTab = createComponent({
-  mixins: [Navigation, State],
+export var UsersTabComponent = React.createClass({
+  mixins: [RouterNavigationMixin, RouterStateMixin],
 
   getInitialState: function() {
     return {
@@ -74,14 +74,14 @@ export var UsersTab = createComponent({
 });
 
 
-export var ActiveUsersPanel = createComponent({
+export var ActiveUsersPanelComponent = React.createClass({
   render: function() {
     return UserList({ whichUsers: 'ActiveUsers' });
   }
 });
 
 
-export var NewUsersPanel = createComponent({
+export var NewUsersPanelComponent = React.createClass({
   render: function() {
     return UserList({ whichUsers: 'NewUsers' });
   }
@@ -102,8 +102,8 @@ var UserList = createComponent({
       return r.p({}, 'Loading...');
 
     var now = new Date().getTime();
-    var userRows = this.state.users.map(user => {
-      return UserRow({ user: user, now: now, whichUsers: this.props.whichUsers });
+    var userRows = this.state.users.map((user: CompleteUser) => {
+      return UserRow({ user: user, now: now, key: user.id, whichUsers: this.props.whichUsers });
     });
 
     var actionHeader = this.props.whichUsers === 'NewUsers'
@@ -158,36 +158,35 @@ var UserRow = createComponent({
       // Don't show any actions.
     }
     else if (this.state.wasJustApproved) {
-      actions = [
+      actions = r.span({},
         'Approved.',
-         Button({ onClick: this.undoApproveOrReject }, 'Undo')];
+         Button({ onClick: this.undoApproveOrReject }, 'Undo'));
     }
     else if (this.state.wasJustRejected) {
-      actions = [
+      actions = r.span({},
         'Rejected.',
-         Button({ onClick: this.undoApproveOrReject }, 'Undo')];
+         Button({ onClick: this.undoApproveOrReject }, 'Undo'));
     }
     else {
-      actions = [
+      actions = r.span({},
           Button({ onClick: this.approveUser }, 'Approve'),
-          Button({ onClick: this.rejectUser }, 'Reject')];
+          Button({ onClick: this.rejectUser }, 'Reject'));
     }
 
     var actionsCell = actions
         ? r.td({}, actions)
         : null;
 
-    var usernameAndFullName = [
-        r.span({ className: 'dw-username' }, user.username)];
+    var usernameElem = r.span({ className: 'dw-username' }, user.username);
+    var fullNameElem;
     if (user.fullName) {
-      usernameAndFullName.push(
-        r.span({ className: 'dw-fullname' }, ' (' + user.fullName + ')'));
+      fullNameElem = r.span({ className: 'dw-fullname' }, ' (' + user.fullName + ')');
     }
 
     return (
       r.tr({},
         r.td({},
-          r.a({ href: '/-/admin/#/users/id/' + user.id }, usernameAndFullName)),
+          r.a({ href: '/-/admin/#/users/id/' + user.id }, usernameElem, fullNameElem)),
 
         r.td({},
           user.email),

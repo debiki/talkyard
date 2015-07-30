@@ -94,9 +94,9 @@ var PageToolsDialog = createComponent({
     var unpinPageButton = (!canPinPage(store) || !store.pinWhere) ? null :
       Button({ onClick: this.unpinPage }, "Unpin Topic");
 
-    var buttons = [
+    var buttons = r.div({},
       pinPageButton,
-      unpinPageButton];
+      unpinPageButton);
 
     return (
       Modal({ title: "Do what?", onRequestHide: this.close },

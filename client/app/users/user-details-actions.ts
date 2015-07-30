@@ -80,7 +80,7 @@ export var UserDetailsAndActionsComponent = React.createClass({
 });
 
 
-var UserDetails = React.createClass({
+var UserDetails = createComponent({
   render: function() {
     var info: UserInfo = this.props.userInfo;
     return r.div({},
@@ -101,7 +101,7 @@ var UserDetails = React.createClass({
 });
 
 
-var UserActions = React.createClass({
+var UserActions = createComponent({
   render: function() {
     var actions: ActionListItem[] = this.props.userActions;
     if (!actions)
@@ -115,7 +115,7 @@ var UserActions = React.createClass({
 });
 
 
-var SingleAction = React.createClass({
+var SingleAction = createComponent({
   render: function() {
     var action: ActionListItem = this.props.action;
 

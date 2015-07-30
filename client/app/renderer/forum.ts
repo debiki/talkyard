@@ -37,24 +37,29 @@ var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 var ReactRouter = window['ReactRouter'];
-var Navigation = ReactRouter.Navigation;
-var State = ReactRouter.State;
-var RouteHandler = ReactRouter.RouteHandler;
-var Route = ReactRouter.Route;
-var Redirect = ReactRouter.Redirect;
-var DefaultRoute = ReactRouter.DefaultRoute;
+var Route = reactCreateFactory(ReactRouter.Route);
+var Redirect = reactCreateFactory(ReactRouter.Redirect);
+var DefaultRoute = reactCreateFactory(ReactRouter.DefaultRoute);
+var NotFoundRoute = reactCreateFactory(ReactRouter.NotFoundRoute);
+var RouteHandler = reactCreateFactory(ReactRouter.RouteHandler);
+var RouterNavigationMixin = ReactRouter.Navigation;
+var RouterStateMixin = ReactRouter.State;
+
 
 /** Keep in sync with app/controllers/ForumController.NumTopicsToList. */
 var NumNewTopicsPerRequest = 40;
 
 export function buildForumRoutes() {
   return (
-    Route({ name: 'ForumRoute', path: '/', handler: Forum },
+    Route({ name: 'ForumRoute', path: '/', handler: ForumComponent },
       Redirect({ from: '/', to: '/latest/' }),
       Redirect({ from: '/latest', to: '/latest/' }),
-      Route({ name: 'ForumRouteLatest', path: 'latest/:categorySlug?', handler: ForumTopicList }),
-      Route({ name: 'ForumRouteTop', path: 'top/:categorySlug?', handler: ForumTopicList }),
-      Route({ name: 'ForumRouteCategories', path: 'categories', handler: ForumCategories })));
+      Route({ name: 'ForumRouteLatest', path: 'latest/:categorySlug?',
+          handler: ForumTopicListComponent }),
+      Route({ name: 'ForumRouteTop', path: 'top/:categorySlug?',
+          handler: ForumTopicListComponent }),
+      Route({ name: 'ForumRouteCategories', path: 'categories',
+          handler: ForumCategoriesComponent })));
 }
 
 
@@ -71,7 +76,7 @@ export var ForumScrollBehavior = {
 };
 
 
-export var Forum = createComponent({
+var ForumComponent = React.createClass({
   mixins: [debiki2.StoreListenerMixin],
 
   onChange: function() {
@@ -91,8 +96,8 @@ export var Forum = createComponent({
 
 
 
-export var CategoriesAndTopics = createComponent({
-  mixins: [Navigation, State],
+var CategoriesAndTopics = createComponent({
+  mixins: [RouterNavigationMixin, RouterStateMixin],
 
   getInitialState: function() {
     return {};
@@ -165,11 +170,11 @@ export var CategoriesAndTopics = createComponent({
     }
 
     var categoryMenuItems =
-        props.categories.map((category) => {
-          return MenuItem({ eventKey: category.slug }, category.name);
+        props.categories.map((category: Category) => {
+          return MenuItem({ eventKey: category.slug, key: category.pageId }, category.name);
         });
     categoryMenuItems.unshift(
-      MenuItem({ eventKey: null }, 'All Categories'));
+      MenuItem({ eventKey: null, key: -1 }, 'All Categories'));
 
     var categoriesDropdown =
         r.div({ className: 'dw-main-category-dropdown' },
@@ -215,7 +220,7 @@ export var CategoriesAndTopics = createComponent({
 
 
 var NavButton = createComponent({
-  mixins: [Navigation, State],
+  mixins: [RouterNavigationMixin, RouterStateMixin],
   onClick: function() {
     this.transitionTo(this.props.routeName, this.getParams());
   },
@@ -228,8 +233,8 @@ var NavButton = createComponent({
 
 
 
-export var ForumTopicList = createComponent({
-  mixins: [State],
+var ForumTopicListComponent = React.createClass({
+  mixins: [RouterStateMixin],
 
   getInitialState: function() {
     // The server has included in the Flux store a list of the most recent topics, and we
@@ -338,9 +343,10 @@ export var ForumTopicList = createComponent({
     if (!this.state.topics.length)
       return r.p({}, 'No topics.');
 
-    var topics = this.state.topics.map((topic) => {
+    var topics = this.state.topics.map((topic: Topic) => {
       return TopicRow({ topic: topic, categories: this.props.categories,
-          activeCategory: this.props.activeCategory, now: this.props.now });
+          activeCategory: this.props.activeCategory, now: this.props.now,
+          key: topic.pageId });
     });
 
     var loadMoreTopicsBtn;
@@ -433,12 +439,12 @@ var TopicRow = createComponent({
     var heartStyle = this.styleFeeeling(topic.numLikes, topic.numPosts);
     if (heartStyle) {
       feelingsIcons.push(
-          r.span({ className: 'icon-heart', style: heartStyle }));
+          r.span({ className: 'icon-heart', style: heartStyle, key: 'h' }));
     }
     var wrongStyle = this.styleFeeeling(topic.numWrongs, topic.numPosts);
     if (wrongStyle) {
       feelingsIcons.push(
-          r.span({ className: 'icon-warning', style: wrongStyle }));
+          r.span({ className: 'icon-warning', style: wrongStyle, key: 'w' }));
     }
 
     var feelings;
@@ -486,7 +492,7 @@ var TopicRow = createComponent({
 
 
 
-export var ForumCategories = createComponent({
+var ForumCategoriesComponent = React.createClass({
   getInitialState: function() {
     return {};
   },
@@ -511,8 +517,8 @@ export var ForumCategories = createComponent({
     if (!this.state.categories)
       return r.p({}, 'Loading...');
 
-    var categoryRows = this.state.categories.map((category) => {
-      return CategoryRow({ category: category });
+    var categoryRows = this.state.categories.map((category: Category) => {
+      return CategoryRow({ category: category, key: category.pageId });
     });
 
     return (
@@ -529,18 +535,18 @@ export var ForumCategories = createComponent({
 
 
 var CategoryRow = createComponent({
-  mixins: [Navigation, State],
+  mixins: [RouterNavigationMixin, RouterStateMixin],
 
   onCategoryClick: function() {
     this.transitionTo('ForumRouteLatest', { categorySlug: this.props.category.slug });
   },
 
   render: function() {
-    var category = this.props.category;
-    var recentTopicRows = category.recentTopics.map((topic) => {
+    var category: Category = this.props.category;
+    var recentTopicRows = category.recentTopics.map((topic: Topic) => {
       var pinIconClass = topic.pinWhere ? ' icon-pin' : '';
       return (
-        r.tr({},
+        r.tr({ key: topic.pageId },
           r.td({},
             r.a({ className: 'topic-title' + pinIconClass, href: topic.url }, topic.title),
             r.span({ className: 'topic-details' },

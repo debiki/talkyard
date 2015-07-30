@@ -35,7 +35,7 @@ var RouterNavigation = window['ReactRouter'].Navigation;
 import UserPreferences = debiki2.users.UserPreferences;
 
 
-export var UserPreferencesComponent = createComponent({
+export var UserPreferencesComponent = React.createClass({
   render: function() {
     var loggedInUser = this.props.loggedInUser;
     var user = this.props.user;

@@ -31,8 +31,8 @@
 var keymaster: Keymaster = window['keymaster'];
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 var reactCreateFactory = React['createFactory'];
+var ReactCSSTransitionGroup = reactCreateFactory(React.addons.CSSTransitionGroup);
 var ReactBootstrap: any = window['ReactBootstrap'];
 var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);

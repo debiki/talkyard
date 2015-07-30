@@ -28,7 +28,7 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
-var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
+var ReactCSSTransitionGroup = reactCreateFactory(React.addons.CSSTransitionGroup);
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var Input = reactCreateFactory(ReactBootstrap.Input);
@@ -165,7 +165,7 @@ export var TitleEditor = createComponent({
     }
     else if (this.props.forumId && this.state.categories) {
       var categoryOptions = this.state.categories.map((category: Category) => {
-        return r.option({ value: category.pageId }, category.name);
+        return r.option({ value: category.pageId, key: category.pageId }, category.name);
       });
 
       var selectCategoryInput =
