@@ -1192,6 +1192,8 @@ function renderTitleBodyComments() {
 
 
 function renderTitleBodyCommentsToString() {
+  // Comment in the next line to skip React server side and debug in browser only.
+  //return '<p class="dw-page" data-reactid=".123" data-react-checksum="123">react_skipped</p>'
   var store: Store = debiki2.ReactStore.allData();
   if (store.pageRole === PageRole.Forum) {
     var routes = debiki2.renderer.buildForumRoutes();
