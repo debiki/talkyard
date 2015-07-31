@@ -264,13 +264,13 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     // Otherwise the Nashorn engine won't be found and `newEngine` will be null.
     // See: https://github.com/playframework/playframework/issues/2532
     val newEngine = new js.ScriptEngineManager(null).getEngineByName("nashorn")
+    val scriptBuilder = new StringBuilder
 
     // React expects `window` or `global` to exist, and my React code sometimes
     // load React components from `window['component-name']`.
-    newEngine.eval("var global = window = this;")
+    scriptBuilder.append("var global = window = this;")
 
-    newEngine.eval(i"""
-        |var exports = {};
+    scriptBuilder.append(i"""
         |$DummyConsoleLogFunctions
         |$ServerSideDebikiModule
         |$ServerSideReactStore
@@ -294,34 +294,36 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     val min = if (Play.isDev) "" else ".min"
 
     var javascriptStream: jio.InputStream = null
-    var inputStreamReader: java.io.InputStreamReader = null
     try {
       javascriptStream = getClass.getResourceAsStream(s"/public/res/renderer$min.js")
-      inputStreamReader = new java.io.InputStreamReader(javascriptStream)
-      newEngine.eval(inputStreamReader)
+      val rendererScript = scala.io.Source.fromInputStream(javascriptStream).mkString
+      scriptBuilder.append(rendererScript)
     }
     finally {
-      IOUtils.closeWhileHandlingException(inputStreamReader, javascriptStream)
+      IOUtils.closeWhileHandlingException(javascriptStream)
     }
 
     if (passwordStrengthCheckEnabled) {
       try {
         javascriptStream = getClass.getResourceAsStream("/public/res/zxcvbn.min.js")
-        inputStreamReader = new java.io.InputStreamReader(javascriptStream)
-        newEngine.eval(new java.io.InputStreamReader(javascriptStream))
+        val zxcvbnScript = scala.io.Source.fromInputStream(javascriptStream).mkString
+        scriptBuilder.append(zxcvbnScript)
       }
       finally {
-        IOUtils.closeWhileHandlingException(inputStreamReader, javascriptStream)
+        IOUtils.closeWhileHandlingException(javascriptStream)
       }
     }
 
-    newEngine.eval(i"""
+    scriptBuilder.append(i"""
         |$RenderAndSanitizeCommonMark
-        |""")
-
-    newEngine.eval(i"""
         |$CheckPasswordStrength
         |""")
+
+    // Output the script so we can lookup line numbers if there's an error.
+    val script = scriptBuilder.toString()
+    new jio.PrintWriter("nashorn-ok-delete.js") { write(script); close() }
+
+    newEngine.eval(script)
 
     def timeElapsed = (new ju.Date).getTime - timeBefore
     logger.debug(o"""... Done initializing Nashorn engine, took: $timeElapsed ms,
@@ -406,11 +408,15 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     |  }
     |};
     |
+    |// If line and column numbers aren't defined, the exception might be a Nashorn bug.
+    |// For example, if the exception.toString is: 'java.lang.ArrayIndexOutOfBoundsException: 10'.
     |function printStackTrace(exception) {
-    |  console.error('File: ' + exception.fileName);
+    |  console.error('File: nashorn-ok-delete.js');
     |  console.error('Line: ' + exception.lineNumber);
     |  console.error('Column: ' + exception.columnNumber);
     |  console.error('Stack trace: ' + exception.stack);
+    |  console.error('Exception as is: ' + exception);
+    |  console.error('Exception as JSON: ' + JSON.stringify(exception));
     |}
     |"""
 
