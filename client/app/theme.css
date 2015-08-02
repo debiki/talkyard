@@ -222,11 +222,6 @@ a:visited { color: hsl(211, 30%, 40%); }
   font-size: 13px;
 }
 
-#content {
-  min-height: 70ex;
-  margin: 16px 0;
-}
-
 footer, .footer {
   background-color: #3e5a75;
   text-align: center;
@@ -264,8 +259,12 @@ footer p {
 /* I should probably build my own Bootstrap version and update the
 jQuery UI theme, but ... not right now. */
 
+
+.nav-pills > li.active > a,
+.nav-pills > li.active > a:hover,
+.nav-pills > li.active > a:focus,
 .nav > .active {
-  background-color: hsl(210, 50%, 53%);
+  background-color: hsl(210, 50%, 50%);
   color: white;
 }
 

@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../login/login-dialog.ts" />
+/// <reference path="../page-tools/page-tools.ts" />
 /// <reference path="name-login-btns.ts" />
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 
@@ -71,7 +72,7 @@ export var TopBar = createComponent({
   },
 
   showTools: function() {
-    debiki2.pagetools.pageToolsDialog.open();
+    pagetools.pageToolsDialog.open();
   },
 
   closeSearchForm: function() {
@@ -135,7 +136,7 @@ export var TopBar = createComponent({
     }
 
     return (
-      r.div({},
+      r.div({ id: 'dw-react-topbar' },
         pageTitle,
         r.div({ id: 'dw-topbar-btns' },
           loggedInAs,

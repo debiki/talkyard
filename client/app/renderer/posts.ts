@@ -20,6 +20,7 @@
 /// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../dialogs.ts" />
 /// <reference path="../editor/title-editor.ts" />
+/// <reference path="../react-elements/topbar.ts" />
 /// <reference path="../page-dialogs/wikify-dialog.ts" />
 /// <reference path="../page-dialogs/delete-post-dialog.ts" />
 /// <reference path="model.ts" />
@@ -102,7 +103,11 @@ var PageWithState = createComponent({
 
 var Page = createComponent({
   render: function() {
-    return TitleBodyComments(this.props);
+    return (
+      r.div({ className: 'container' },
+        debiki2.reactelements.TopBar({}),
+        r.article({},
+          TitleBodyComments(this.props))));
   }
 });
 

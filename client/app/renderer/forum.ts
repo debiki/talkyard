@@ -20,6 +20,7 @@
 /// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../editor/editor.ts" />
+/// <reference path="../react-elements/topbar.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../ServerApi.ts" />
 /// <reference path="model.ts" />
@@ -87,8 +88,9 @@ var ForumComponent = React.createClass({
 
   render: function() {
     return (
-      r.div({},
-        // Include .dw-page to make renderDiscussionPage() in startup.js run: (hacky...)
+      r.div({ className: 'container' },
+        debiki2.reactelements.TopBar({}),
+        // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
         r.div({ className: 'dw-page' }),
         CategoriesAndTopics(this.state || this.props)));
   }

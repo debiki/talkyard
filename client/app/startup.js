@@ -168,16 +168,6 @@ function renderDiscussionPage() {
 
   (d.u.workAroundAndroidZoomBug || function() {})($);
 
-  // IE 6, 7 and 8 specific elems (e.g. upgrade-to-newer-browser info)
-  // (Could do this on the server instead, that'd work also with Javascript
-  // disabled. But people who know what javascript is and disable it,
-  // probably don't use IE 6 and 7? So this'll be fine for now.)
-  var $body =  $('body');
-  if ($.browser.msie && $.browser.version.length == 1) {
-    if ($.browser.version < '8') $body.addClass('dw-ua-lte-ie7');
-    if ($.browser.version < '9') $body.addClass('dw-ua-lte-ie8');
-  }
-
   d.i.showCurLocationInSiteNav();
 
   // Do this before rendering the page.
@@ -191,6 +181,7 @@ function renderDiscussionPage() {
   renderTitleBodyComments();
   var timeAfterBodyComments = performance.now();
 
+  debiki2.startEarlyReactRoots();
   debiki2.ReactStore.activateUserSpecificData();
   var timeAfterUserData = performance.now();
 
@@ -202,6 +193,7 @@ function renderDiscussionPage() {
   console.log('Time for remaining React roots: ' + (timeAfterRemainingRoots - timeAfterUserData));
 
   $('html').addClass('dw-react-started');
+
 
   var steps = [];
 
@@ -271,6 +263,7 @@ d.i.renderEmptyPage = function() {
   // main title or article.)
   configureAjaxRequests();
   debiki2.utils.onMouseDetected(d.i.initUtterscrollAndTips);
+  debiki2.startEarlyReactRoots();
   debiki2.startRemainingReactRoots();
   debiki2.ReactStore.activateUserSpecificData();
   fireLoginOrLogout();

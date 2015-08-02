@@ -31,8 +31,12 @@
 var ReactRouter = window['ReactRouter'];
 
 
-export function startRemainingReactRoots() {
+export function startEarlyReactRoots() {
   pagetools.createPageToolsDialog();
+}
+
+
+export function startRemainingReactRoots() {
   createAnyFlagDialog();
   pagedialogs.createDeletePostDialog();
   pagedialogs.createAboutUserDialog();
@@ -51,10 +55,6 @@ export function startRemainingReactRoots() {
   var nonExistingPageElem = document.getElementById('dw-non-existing-page');
   if (nonExistingPageElem)
     React.render(debiki2.nopage.NonExistingPage({}), nonExistingPageElem);
-
-  var topbarElem = document.getElementById('dw-react-topbar');
-  if (topbarElem)
-    React.render(debiki2.reactelements.TopBar({}), topbarElem);
 
   createSidebar();
 

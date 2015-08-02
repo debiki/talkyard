@@ -60,7 +60,10 @@ export function routes() {
 
 var UsersHomeComponent = React.createClass({
   render: function() {
-    return RouteHandler({});
+    return (
+      r.div({ className: 'container' },
+        debiki2.reactelements.TopBar({}),
+        RouteHandler({})));
   }
 });
 
