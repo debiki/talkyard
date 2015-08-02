@@ -100,12 +100,13 @@ export var Editor = createComponent({
     var placeholder = $(this.refs.placeholder.getDOMNode());
     var editor = $(this.refs.editor.getDOMNode());
     editor.css('border-top', '8px solid #888');
+    /* jQuery UI removed :-(
     editor.resizable({
       handles: 'n',
       resize: function() {
         placeholder.height(editor.height());
       }
-    });
+    }); */
   },
 
   toggleWriteReplyToPost: function(postId: number) {

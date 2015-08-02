@@ -68,9 +68,8 @@ var nextFileLine =
 // What about using a CDN for jQuery + Modernizr + React? Perhaps, but:
 // - jQuery + Modernizr + React is only 33K + 5K + 49K in addition to 160K
 //   for everything else, so it's just 90K ~= 50% extra stuff, doesn't matter much?
-//   (Once jQuery UI is gone — that one is 62K.)
-//   (combined-debiki.min.js.gz is 303K now instead of 157K, but jQuery UI is included.
-//   combined-debiki.min.css.gz is 32K (incl Bootstrap) that seems small enough.)
+//   (combined-debiki.min.js.gz is 254K now instead of 157K.
+//   combined-debiki.min.css.gz is < 30K (incl Bootstrap) that seems small enough.)
 // - I think I've noticed before that cdnjs.com was offline for a short while.
 // - If people don't have our version of everything cached already, there
 //   might be DNS lookups and SSL handshakes, which delays the page load with
@@ -91,7 +90,6 @@ var debikiJavascriptFiles = [
       'bower_components/yepnope/yepnope.1.5.4-min.js',
       'bower_components/jquery/jquery.js',
       'client/third-party/abbreviate-jquery.js',
-      'bower_components/jquery-ui/ui/jquery-ui.js', // try to remove
       'bower_components/react/react-with-addons.js',
       'bower_components/keymaster/keymaster.js',
       // keymaster.js declares window.key, rename it to window.keymaster instead,
@@ -168,20 +166,6 @@ var debikiJavascriptFiles = [
       'target/client/shared/post-json.js',
       'target/client/all-typescript.js',
       'target/client/app/startup.js'];
-
-
-// For both touch devices and desktops.
-var loginDialogFiles = [
-      'client/third-party/jquery-cookie.js',
-      'target/client/shared/debiki-jquery-dialogs.js',
-      'target/client/shared/show-server-response-dialog.js',
-      'target/client/shared/post-json.js',
-      'target/client/shared/login-dialog/login-dialog.js',
-      'target/client/shared/login-dialog/login-guest.js',
-      'target/client/shared/login-dialog/login-password.js',
-      'target/client/shared/login-dialog/login-openid.js',
-      'target/client/shared/login-dialog/login-openid-dialog-html.js',
-      'target/client/shared/login-dialog/create-user-dialog.js'];
 
 
 // For both touch devices and desktops.
@@ -308,7 +292,6 @@ function makeConcatDebikiScriptsStream() {
 
   return es.merge(
       makeConcatStream('combined-debiki.js', debikiJavascriptFiles),
-      makeConcatStream('login-popup.js', loginDialogFiles),
       makeConcatStream('embedded-comments.js', debikiEmbeddedCommentsFiles),
       gulp.src('bower_components/zxcvbn/zxcvbn.js').pipe(gulp.dest('public/res/')));
 };
@@ -394,7 +377,6 @@ gulp.task('compile-stylus', function () {
     makeStyleStream('public/res/', 'combined-debiki.css', [
         'bower_components/bootstrap/dist/css/bootstrap.css',
         'bower_components/jquery.atwho/dist/css/jquery.atwho.css',
-        'public/res/jquery-ui/jquery-ui-1.9.2.custom.css',
         'client/app/debiki.styl',
         'client/app/posts/layout.styl',
         'client/app/sidebar/minimap.styl',

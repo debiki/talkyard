@@ -14,7 +14,6 @@
     "eventemitter2": "=0.4.14",
     "jquery": "=1.7.2",
     "jquery.atwho": "=0.5.2",
-    "jquery-ui": "=1.9.2",
     "keymaster": "=1.6.3",
     "lodash": "=2.4.2",
     "markdown-it": "=4.2.2",
