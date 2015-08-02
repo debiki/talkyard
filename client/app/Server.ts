@@ -186,6 +186,37 @@ function doSomethingWithPost(post: PostToModerate, actionUrl: string, success: (
 }
 
 
+export function createOauthUser(data, success: (response) => void) {
+  postJsonSuccess('/-/login-oauth-create-user', success, data);
+}
+
+
+export function createPasswordUser(data, success: (response) => void) {
+  postJsonSuccess('/-/login-password-create-user', success, data);
+}
+
+
+export function loginWithPassword(emailOrUsername: string, password: string, success: () => void) {
+  postJsonSuccess('/-/login-password', success, {
+    email: emailOrUsername,
+    password: password,
+  });
+}
+
+
+export function loginAsGuest(name: string, email: string, success?: () => void) {
+  postJsonSuccess('/-/login-guest', success, {
+    name: name,
+    email: email
+  });
+}
+
+
+export function logout(success: () => void) {
+  postJsonSuccess('/-/logout', success, null);
+}
+
+
 export function loadCompleteUser(userId: number,
         doneCallback: (user: CompleteUser) => void) {
   $.get(origin + '/-/load-complete-user?userId=' + userId)
@@ -435,6 +466,11 @@ export function loadOneboxSafeHtml(url: string, success: (safeHtml: string) => v
       // Pass null to tell the editor to show no onebox (it should show the link instead).
       success(null);
     });
+}
+
+
+export function saveVote(data, success: (updatedPost) => void) {
+  postJsonSuccess('/-/vote', success, data);
 }
 
 

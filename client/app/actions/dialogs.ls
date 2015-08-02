@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
 
 d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
@@ -211,5 +212,6 @@ function submit($dialog, apiFunction, data)
   # Prevent browser's built-in action.
   false
 
+*/
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

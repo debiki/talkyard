@@ -30,7 +30,7 @@ var visitedPosts = [];
 var currentVisitedPostIndex = -1;
 
 
-var PostNavigation = React.createClass({
+var PostNavigation = createClassAndFactory({
   canGoBack: function() {
     return this.props.currentVisitedPostIndex >= 1;
   },
@@ -128,7 +128,7 @@ var PostNavigation = React.createClass({
 
 
 export function renderPostNavigationPanel() {
-  React.renderComponent(
+  React.render(
       PostNavigation({
         decreaseCurrentPostIndex: () => {
           currentVisitedPostIndex -= 1;

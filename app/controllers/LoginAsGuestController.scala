@@ -24,7 +24,6 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
-import requests.DebikiRequest
 import actions.ApiActions.PostJsonAction
 import play.api.libs.json.JsObject
 
@@ -40,24 +39,18 @@ object LoginAsGuestController extends mvc.Controller {
       throwForbidden("DwE5KEGP8", "Guest login disabled")
 
     val json = request.body.as[JsObject]
-    val name = (json \ "name").as[String]
-    val email = (json \ "email").as[String]
-
-    def failLogin(errCode: String, summary: String, details: String) =
-      throwForbiddenDialog(errCode, "Login Failed", summary, details)
+    val name = (json \ "name").as[String].trim
+    val email = (json \ "email").as[String].trim
 
     val settings = request.dao.loadWholeSiteSettings()
     if (!settings.guestLoginAllowed)
-      failLogin("DwE4KFW2", "Guest login disabled", "You cannot login as guest at this site")
+      throwForbidden("DwE4K5FW2", "Guest login disabled; you cannot login as guest here")
     if (User nameIsWeird name)
-      failLogin("DwE82ckWE19", "Weird name.",
-        "Please specify another name, with no weird characters.")
-    if (name isEmpty)
-      failLogin("DwE873k2e90", "No name specified.",
-        "Please fill in your name.")
+      throwForbidden("DwE82CW19", "Weird name. Please specify a name with no weird characters")
+    if (name.isEmpty)
+      throwForbidden("DwE872Y90", "Please fill in your name")
     if (email.nonEmpty && User.emailIsWeird(email))
-      failLogin("DwE0432hrsk23", "Weird email.",
-        "Please specify an email address with no weird characters.")
+      throwForbidden("DwE04HK83", "Weird email. Please use a real email address")
 
     val addr = request.ip
     val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)

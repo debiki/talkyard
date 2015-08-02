@@ -31,7 +31,6 @@ function toggleVoteImpl(voteBtn, voteType) {
   var thread = voteBtn.closest('.dw-t');
   var post = thread.children('.dw-p');
   var postId = post.dwPostId();
-
   var action;
   var postIdsRead = undefined;
   if (voteBtn.is('.dw-my-vote')) {
@@ -42,22 +41,17 @@ function toggleVoteImpl(voteBtn, voteType) {
     postIdsRead = findPostIdsRead(post);
   }
 
-  d.u.postJson({
-      url: d.i.serverOrigin + '/-/vote',
-      data: {
-        pageId: d.i.pageId,
-        postId: postId,
-        vote: voteType,
-        action: action,
-        postIdsRead: postIdsRead
-      },
-      error: d.i.showServerResponseDialog,
-      success: onVoteToggled
-    });
-
-  function onVoteToggled(updatedPost) {
-    debiki2.ReactActions.vote(updatedPost, action, voteType);
+  var data = {
+    pageId: d.i.pageId,
+    postId: postId,
+    vote: voteType,
+    action: action,
+    postIdsRead: postIdsRead
   };
+
+  debiki2.Server.saveVote(data, function(updatedPost) {
+    debiki2.ReactActions.vote(updatedPost, action, voteType);
+  });
 };
 
 

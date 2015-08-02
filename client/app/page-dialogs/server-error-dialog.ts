@@ -31,7 +31,10 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var Input = reactCreateFactory(ReactBootstrap.Input);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var OverlayMixin = ReactBootstrap.OverlayMixin;
+var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
+var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
+var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 
 export var serverErrorDialog;
@@ -44,8 +47,6 @@ export function createServerErrorDialog() {
 
 
 var ServerErrorDialog = createComponent({
-  mixins: [OverlayMixin],
-
   getInitialState: function () {
     return {
       isOpen: false,
@@ -62,44 +63,44 @@ var ServerErrorDialog = createComponent({
   },
 
   render: function () {
-    return null;
-  },
+    var title: string;
+    var message: string;
 
-  renderOverlay: function () {
-    if (!this.state.isOpen)
-      return null;
+    if (this.state.isOpen) {
+      var error = this.state.error;
 
-    var error = this.state.error;
+      // Is the status message included on the first line? If so, remove it, because we'll
+      // shown it in the dialog title.
+      message = error.responseText;
+      var matches = message.match(/\d\d\d [a-zA-Z ]+\n(.*)/);
+      if (matches && matches.length === 2) {
+        message = matches[1];
+      }
+      else if (/^\s*<!DOCTYPE html>/.test(message)) {
+        // Play Framework sent back a HTML page
+        message = $(message).filter('#detail').text().trim() +
+            '\n\nSee server logs for stack trace. [DwE4KWE85]';
+      }
 
-    // Is the status message included on the first line? If so, remove it, because we'll
-    // shown it in the dialog title.
-    var message = error.responseText;
-    var matches = message.match(/\d\d\d [a-zA-Z ]+\n(.*)/);
-    if (matches && matches.length === 2) {
-      message = matches[1];
-    }
-    else if (/^\s*<!DOCTYPE html>/.test(message)) {
-      // Play Framework sent back a HTML page
-      message = $(message).filter('#detail').text().trim() +
-          '\n\nSee server logs for stack trace. [DwE4KWE85]';
-    }
+      title = 'Error ' + error.status + ' ' + error.statusText;
 
-    var title = 'Error ' + error.status + ' ' + error.statusText;
-
-    if (!error.status) {
-      // COULD check if we're unloading this page. That results in any ongoing requests being
-      // aborted with status code 0. Then we should suppress this dialog.
-      // See http://stackoverflow.com/a/12621912/694469.
-      title = 'Error: Server not reachable';
-      message = "Has the server stopped? Or did you just get disconnected " +
-          "from the Internet? [DwE4KEF2]";
+      if (!error.status) {
+        // COULD check if we're unloading this page. That results in any ongoing requests being
+        // aborted with status code 0. Then we should suppress this dialog.
+        // See http://stackoverflow.com/a/12621912/694469.
+        title = 'Error: Server not reachable';
+        message = "Has the server stopped? Or did you just get disconnected " +
+            "from the Internet? [DwE4KEF2]";
+      }
     }
 
     return (
-      Modal({ title: title, onRequestHide: this.close, className: 'dw-server-error' },
-        r.div({ className: 'modal-body',
-            style: { whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}, message),
-        r.div({ className: 'modal-footer' }, Button({ onClick: this.close }, 'Close'))));
+      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'dw-server-error' },
+        ModalHeader({}, ModalTitle({}, title)),
+        ModalBody({},
+          r.div({ style: { whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}, message)),
+        ModalFooter({},
+          Button({ onClick: this.close }, 'Close'))));
   }
 });
 

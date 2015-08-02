@@ -57,7 +57,7 @@ function showReplyFormImpl($this) {
   }
 
   var anyReturnToUrl = d.i.makeReturnToPostUrlForVerifEmail(postId);
-  d.i.loginIfNeeded('LoginToLogin', anyReturnToUrl, function() {
+  d.i.loginIfNeeded('LoginToComment', anyReturnToUrl, function() {
     // Toggle highlighting first, because it'll be cleared later if the
     // editor is closed, and then we don't want to toggle it afterwards.
     toggleReplyButtonHighlighting(replyAction);

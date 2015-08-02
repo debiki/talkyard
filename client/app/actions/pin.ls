@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*  No longer works, after I ported to React.
+
 
 d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$
@@ -163,8 +165,9 @@ function tellServerChangePinnedPos(item, newPosition)
   postId = item.find('> .dw-t > .dw-p, > .dw-p').dwPostId!
   data = [{ pageId: d.i.pageId, postId, position: newPosition }]
   d.u.postJson { url:  "#{d.i.serverOrigin}/-/pin-at-position", data }
-      .fail d.i.showServerResponseDialog
+      .fail d.i.showSe rverResponseDialog
 
+*/
 
 
 # vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

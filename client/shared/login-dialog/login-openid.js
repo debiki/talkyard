@@ -15,11 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-var d = { i: debiki.internal, u: debiki.v0.util };
-var $ = d.i.$;
-
-
+/*
 d.i.showLoginOpenId = function() {
   d.i.loadOpenIdResources().done(function() {
     initLoginOpenId();
@@ -85,7 +81,7 @@ function initLoginOpenId() {
 
 /**
  * Submits an OpenID login <form> in a popup.
- */
+ *
 d.i.createOpenIdLoginPopup = function($openidLoginForm) {
   var windowName = d.i.createLoginPopup();
   // Make the default submit action submit the login form in the popup window.
@@ -119,3 +115,4 @@ d.i.createOpenIdLoginPopup = function($openidLoginForm) {
 // }}}
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
+*/

@@ -16,6 +16,8 @@
  */
 
 
+/*  Not in use, currently all posts included in JSON from server.
+
 d = i: debiki.internal, u: debiki.v0.util
 $ = d.i.$;
 
@@ -40,7 +42,7 @@ d.i.loadAndInsertReplies = !(postId) ->
 
 /**
  * Currently also scrolls postId into view.
- */
+
 !function loadAndInsert (postId, url, anyCallback)
   data = [{ pageId: d.i.pageId, actionId: postId }]
   d.u.postJson { url, data }
@@ -53,6 +55,6 @@ d.i.loadAndInsertReplies = !(postId) ->
         else
           d.i.findPost$(postId).dwScrollIntoView!
 
-
+*/
 
 # vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

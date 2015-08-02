@@ -15,17 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-d = i: debiki.internal, u: debiki.v0.util
-$ = d.i.$;
-
-
 /**
  *  The login form below is based on this JavaScript OpenID Selector
  *  example file:
  *    debiki-core/src/main/resources/toserve/lib/openid-selector/demo.html
- */
-d.i.newOpenidLoginDialog = ->
+
+d.i.xx_newOpenidLoginDialog = ->
   $('''
   <div class='dw-fs' id='dw-fs-openid-login' title="Sign In or Create New Account">
     <form action="/-/api/login-openid" method='post' id='openid_form'>
@@ -48,6 +43,4 @@ d.i.newOpenidLoginDialog = ->
       </noscript>
     </form>
   </div>''')
-
-
-# vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
+*/

@@ -75,10 +75,6 @@ function handleLoginInOtherBrowserTab() {
 
 
 function registerEventHandlersFireLoginOut() {
-
-  // Hide all action forms, since they will be slided in.
-  $('#dw-hidden-templates .dw-fs').hide();
-
   fireLoginOrLogout();
 
   // If the user switches browser tab, s/he might logout and login
@@ -241,9 +237,10 @@ function renderDiscussionPage() {
   // Disable for now, I'll rewrite it to consider timestamps.
   //steps.push(d.i.startNextUnreadPostCycler);
 
+  /* Post pins disabled right now, after I ported to React.
   steps.push(function() {
     d.i.makePinsDragsortable();
-  });
+  }); */
 
   steps.push(function() {
     debiki.scriptLoad.resolve();
