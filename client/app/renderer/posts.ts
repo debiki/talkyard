@@ -78,6 +78,11 @@ function createComponent(componentDefinition) { // oops should obviously be name
 }
 
 
+function createClassAndFactory(componentDefinition) { // rename createComponent to this
+  return createComponent(componentDefinition);
+}
+
+
 var PageWithState = createComponent({
   mixins: [debiki2.StoreListenerMixin],
 

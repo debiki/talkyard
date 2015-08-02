@@ -186,6 +186,32 @@ function doSomethingWithPost(post: PostToModerate, actionUrl: string, success: (
 }
 
 
+export function createOauthUser(data, success: () => void) {
+  postJsonSuccess('/-/login-oauth-create-user', success, data);
+}
+
+
+export function createPasswordUser(data, success: () => void) {
+  postJsonSuccess('/-/login-password-create-user', success, data);
+}
+
+
+export function loginWithPassword(emailOrUsername: string, password: string, success: () => void) {
+  postJsonSuccess('/-/login-password', success, {
+    email: emailOrUsername,
+    password: password,
+  });
+}
+
+
+export function loginAsGuest(name: string, email: string, success?: () => void) {
+  postJsonSuccess('/-/login-guest', success, {
+    name: name,
+    email: email
+  });
+}
+
+
 export function loadCompleteUser(userId: number,
         doneCallback: (user: CompleteUser) => void) {
   $.get(origin + '/-/load-complete-user?userId=' + userId)

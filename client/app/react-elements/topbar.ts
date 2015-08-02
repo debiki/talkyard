@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../ReactStore.ts" />
+/// <reference path="../login/login-dialog.ts" />
 /// <reference path="name-login-btns.ts" />
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 
@@ -52,7 +53,7 @@ export var TopBar = createComponent({
 
   onLoginClick: function() {
     // COULD call new fn ReactActions.login() instead?
-    d.i.showLoginDialog(this.props.purpose || 'LoginToLogin');
+    login.loginDialog.open(this.props.purpose || 'LoginToLogin');
   },
 
   onLogoutClick: function() {

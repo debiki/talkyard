@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../login/login-dialog.ts" />
 /// <reference path="../ReactStore.ts" />
 
 //------------------------------------------------------------------------------
@@ -42,7 +43,7 @@ export var NameLoginBtns = createComponent({
   },
 
   onLoginClick: function() {
-    d.i.showLoginDialog(this.props.purpose || 'LoginToLogin');
+    login.loginDialog.open(this.props.purpose || 'LoginToLogin');
   },
 
   onLogoutClick: function() {

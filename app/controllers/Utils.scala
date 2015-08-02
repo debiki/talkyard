@@ -44,9 +44,6 @@ object Utils extends Results with http.ContentTypes {
   def OkHtml(htmlNode: xml.NodeSeq) =
     Ok(serializeHtml(htmlNode)) as HTML
 
-  def ForbiddenHtml(htmlNode: xml.NodeSeq) =
-    Forbidden(serializeHtml(htmlNode)) as HTML
-
   /**
    * Adds doctype and serializes to html using a real HTML5 writer.
    *

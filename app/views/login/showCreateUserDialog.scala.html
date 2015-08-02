@@ -17,12 +17,16 @@
 
 @(serverAddress: String, newUserName: String, newUserEmail: String, authDataCacheKey: String, anyContinueToUrl: Option[String])
 
+@* After OpenAuth or OpenID login authentication has been completed in this login popup window,
+ * we here continue by showing a create user dialog. This is for embedded comments pages —
+ * then, login and user creation happens in this login popup window.
+ *@
+
 @continueToUrlOrEmpty = @{
   anyContinueToUrl getOrElse ""
 }
 
-@popupMain(serverAddress, "login-popup.js") {
-
+@popupMain(serverAddress) {
   <!-- views/login/showCreateUserDialog.scala.html -->
   <script>
     debiki.internal.showCreateUserDialog({
@@ -31,6 +35,5 @@
       authDataCacheKey: '@authDataCacheKey'
     }, '@continueToUrlOrEmpty');
   </script>
-
 }
 

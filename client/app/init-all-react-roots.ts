@@ -38,6 +38,8 @@ export function startRemainingReactRoots() {
   pagedialogs.createAboutUserDialog();
   pagedialogs.createServerErrorDialog();
   pagedialogs.createWikifyDialog();
+  login.createLoginDialog();
+  login.createCreateUserDialogs();
 
   var adminAppElem = document.getElementById('dw-react-admin-app');
   if (adminAppElem) {

@@ -32,7 +32,7 @@ d.i.closeAnyLoginDialogs = !->
 
 
 d.i.showLoginSubmitDialog = !(anyMode, anyReturnToUrl) ->
-  d.i.showLoginDialog(anyMode || 'LoginToSubmit', anyReturnToUrl)
+  debiki2.login.loginDialog.open(anyMode || 'LoginToSubmit', anyReturnToUrl);
 
 
 

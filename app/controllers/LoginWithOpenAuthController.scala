@@ -337,6 +337,7 @@ object LoginWithOpenAuthController extends Controller {
       // popup that closes the popup and continues execution in the main window (the popup's
       // window.opener).
       Ok(views.html.login.closePopupShowCreateUserDialog(
+        providerId = oauthDetails.providerId,
         newUserName = oauthDetails.displayName,
         newUserEmail = oauthDetails.email getOrElse "",
         authDataCacheKey = cacheKey,

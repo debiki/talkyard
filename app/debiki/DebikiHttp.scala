@@ -19,7 +19,6 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.Utils.{OkHtml, ForbiddenHtml}
 import debiki.dao.SystemDao
 import debiki.Globals.originOf
 import java.{net => jn}
@@ -169,17 +168,6 @@ object DebikiHttp {
   def throwInternalError(errCode: String, message: String = "") =
     throw ResultException(InternalErrorResult(errCode, message))
 
-  // try to remove:
-  def throwForbiddenDialog(
-        errCode: String, title: String, summary: String, details: String,
-        withCookie: Option[Cookie] = None) = {
-    var result = ForbiddenHtml(errorDialogXml(errCode, title, summary, details))
-    if (withCookie.isDefined)
-      result = result withCookies withCookie.get
-
-    throw ResultException(result)
-  }
-
 
   // ----- Tenant ID lookup
 
@@ -265,22 +253,6 @@ object DebikiHttp {
         throwNotFound("DwE0NSS0", "There is no site with that hostname")
     }
   }
-
-
-  // ----- HTML dialog responses
-
-  // Javascript shows these dialogs as modal dialogs.
-
-  def errorDialogXml(
-        errCode: String, title: String, summary: String, details: String) =
-    <html><body>{
-      HtmlForms.respDlgError(debikiErrorCode = errCode, title = title,
-        summary = summary, details = details)
-    }</body></html>
-
-  def ForbiddenDialogResult(
-        errCode: String,  title: String, summary: String, details: String): Result =
-    ForbiddenHtml(errorDialogXml(errCode, title, summary, details))
 
 
   // ----- Cookies
