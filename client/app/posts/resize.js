@@ -48,17 +48,9 @@ d.i.makeThreadResizableForPost = function(post) {
 
 // Makes [threads layed out vertically] horizontally resizable.
 function $makeThreadEastResizable() {
-  /* I've removed jQuery UI. So this won't work. Replace with what?
   $(this).resizable({
-    handles: 'e',
-    stop: function(event, ui) {
-      // jQuery has added `height: ...' to the thread's style attribute.
-      // Unless removed, the therad won't resize itself when child
-      // threads are opened/closed.
-      $(this).css('height', '');
-    }
+    direction: ['right']
   });
-  */
 };
 
 

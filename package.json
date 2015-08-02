@@ -11,7 +11,9 @@
   "engines": {
     "node": "~0.6.10 || 0.8 || 0.9"
   },
-  "dependencies": {},
+  "dependencies": {
+    "jquery-resizable": "=1.0.3"
+  },
   "devDependencies": {
     "event-stream": "^3.1.1",
     "gulp": "^3.6.0",

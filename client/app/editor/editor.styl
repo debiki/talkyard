@@ -11,15 +11,16 @@
   height: 300px
 
 #debiki-editor-controller
-  // These four are !important because otherwise jQuery.resizable() overwrites
-  // them with position: absolute and top: 0 and a narrower and narrower width.
-  position: fixed !important
-  top: initial !important;
-  bottom: 0 !important
-  width: 100% !important
+  position: fixed !important; // !important so jQuery.resizable() won't overwrite
+  top: initial;
+  bottom: 0
+  width: 100%
   height: 300px
   background: hsl(0, 0%, 70%)
   z-index: 1030
+
+  .resizable-t
+    height: 15px;
 
   #editor-after-borders
     position: absolute;

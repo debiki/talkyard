@@ -96,7 +96,7 @@
   // width: 40px !important;
   padding-right: 10px !important;
 
-.dw-t.dw-zd .ui-resizable-handle
+.dw-t.dw-zd .resizable-handle
   display: none;
 
 
@@ -260,47 +260,6 @@ html.touch .dw-p-mark-click
   height: 0
   clear: both
   visibility: hidden
-
-
-
-// jQuery UI integration
-//===========================
-
-
-.dw-pri .ui-resizable-se
-  // The small grip has been replaced with the normal grip
-  // (search for "ui-icon-grip" in debiki.js), so we make the
-  // tag a few pixels wider.
-  height: 17px
-  width: 17px
-  background-position: -80px -222px
-  background-color: white // hides text beneath, else grip hard to notice
-
-// Make the s,n,e,w handles larger (else hard to drag) and place them
-// 1 layer below the .ui-resizable-se handle (see above),
-// so as not to hide that handle (which is assigned z-index 1001 by
-// some jQuery code somewhere; I cannot find 1001 in any CSS class)
-.dw-pri .ui-resizable-n,
-.dw-pri .ui-resizable-s
-  height: 10px
-  z-index: 1000
-
-.dw-pri .ui-resizable-s
-  bottom: 0 // jquery-ui says -5 which overflows
-
-.dw-pri .ui-resizable-e,
-.dw-pri .ui-resizable-w
-  width: 13px
-  z-index: 1000
-
-.dw-pri .ui-resizable-e
-  right: 0 // jquery-ui says -5 which overflows
-
-// But don't raise the vertical lines between depth-1 threads
-// above ?? .dw-p:hover, with z-index: 10 ?? (rewrote old comment)
-.dw-depth-1 > .ui-resizable-handle
-  z-index: 1 // [0QKxg2]
-
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

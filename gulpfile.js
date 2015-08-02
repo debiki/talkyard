@@ -103,6 +103,7 @@ var debikiJavascriptFiles = [
       'bower_components/Caret.js/dist/jquery.caret.js',
       'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
       'bower_components/nicescroll/jquery.nicescroll.js',
+      'node_modules/jquery-resizable/resizable.js',
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/bootstrap/tab.js',
       'client/third-party/diff_match_patch.js',
@@ -377,6 +378,7 @@ gulp.task('compile-stylus', function () {
     makeStyleStream('public/res/', 'combined-debiki.css', [
         'bower_components/bootstrap/dist/css/bootstrap.css',
         'bower_components/jquery.atwho/dist/css/jquery.atwho.css',
+        'node_modules/jquery-resizable/resizable.css',
         'client/app/debiki.styl',
         'client/app/posts/layout.styl',
         'client/app/sidebar/minimap.styl',
