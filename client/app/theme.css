@@ -115,10 +115,8 @@ small code {
 a { text-decoration: none; }
 a:hover, a:active { text-decoration:underline; }
 
-.dw-pri .ui-widget-content a, /* undo jQuery UI settings */
 a, a:link { color: hsl(211, 88%, 35%);  }
 
-.dw-pri .ui-widget-content a:visited,
 a:visited { color: hsl(211, 30%, 40%); }
 
 
@@ -287,11 +285,6 @@ input, textarea {
   -ms-transition: none;
   -o-transition: none;
   transition: none;
-}
-
-/* Tweak jQuery UI colors. */
-.dw-pri .ui-state-default, .dw-pri .ui-widget-content .ui-state-default, .dw-pri .ui-widget-header .ui-state-default {
-  color: hsl(210, 75%, 56%);  /* instead of hsl(204, 75%, 44%); */
 }
 
 
