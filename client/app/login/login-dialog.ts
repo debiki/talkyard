@@ -39,6 +39,15 @@ var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 
+/* All login reasons?
+  'LoginBecomeAdmin'
+  'LoginAsAdmin'
+  'LoginToAuthenticate'
+  'LoginToSubmit'
+  'LoginToComment'
+  'LoginToLogin'
+  'LoginToCreateTopic'
+*/
 
 export var loginDialog;
 
@@ -73,13 +82,22 @@ var LoginDialog = createClassAndFactory({
 
   open: function(loginReason: string, anyReturnToUrl: string, preventClose: boolean) {
     this.clearLoginRelatedCookies();
-    this.setState({
-      isOpen: true,
-      loginReason: loginReason,
-      anyReturnToUrl: anyReturnToUrl,
-      preventClose: preventClose,
-      isLoggedIn: !!$['cookie']('dwCoSid'),
-    });
+    if (d.i.isInIframe) {
+      // UNTESTED after port to React
+      var url = d.i.serverOrigin + '/-/login-popup?mode=' + loginReason +
+          '&returnToUrl=' + anyReturnToUrl;
+      d.i.createLoginPopup(url)
+    }
+    else {
+      this.setState({
+        isOpen: true,
+        loginReason: loginReason,
+        anyReturnToUrl: anyReturnToUrl,
+        preventClose: preventClose || loginReason === 'LoginToAuthenticate' ||
+            loginReason === 'LoginToAdministrate',
+        isLoggedIn: !!$['cookie']('dwCoSid'),
+      });
+    }
   },
 
   /**
@@ -107,19 +125,27 @@ var LoginDialog = createClassAndFactory({
   },
 
   render: function () {
-    var fade = this.state.childDialog ? ' dw-modal-fade' : '';
+    var state = this.state;
+    var fade = state.childDialog ? ' dw-modal-fade' : '';
 
-    var content = LoginDialogContent({ loginReason: this.state.loginReason,
-        anyReturnToUrl: this.state.anyReturnToUrl, setChildDialog: this.setChildDialog,
-        childDialog: this.state.childDialog, close: this.close, isLoggedIn: this.state.isLoggedIn });
+    var title = state.loginReason === 'LoginToAuthenticate'
+        ? "Authentication required to access this site"
+        : "Who are you?";
+
+    var content = LoginDialogContent({ loginReason: state.loginReason,
+        anyReturnToUrl: state.anyReturnToUrl, setChildDialog: this.setChildDialog,
+        childDialog: state.childDialog, close: this.close, isLoggedIn: state.isLoggedIn });
+
+    var modalFooter = state.preventClose ? ModalFooter({}) :
+        ModalFooter({}, Button({ onClick: this.close }, 'Cancel'));
 
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'dw-login-modal' + fade,
-          keyboard: !this.state.childDialog && !this.state.preventClose,
-          backdrop: this.state.preventClose ? 'static' : true },
-        ModalHeader({ closeButton: !this.state.preventClose }, ModalTitle({}, "Who are you?")),
+      Modal({ show: state.isOpen, onHide: this.close, dialogClassName: 'dw-login-modal' + fade,
+          keyboard: !state.childDialog && !state.preventClose,
+          backdrop: state.preventClose ? 'static' : true },
+        ModalHeader({ closeButton: !state.preventClose }, ModalTitle({}, title)),
         ModalBody({}, content),
-        ModalFooter({}, Button({ onClick: this.close }, 'Cancel'))));
+        modalFooter));
   }
 });
 
@@ -130,6 +156,8 @@ var LoginDialog = createClassAndFactory({
  */
 export var LoginDialogContent = createClassAndFactory({
   render: function() {
+    var loginReason = this.props.loginReason;
+
     var openChildDialog = (whichDialog) => {
       return (clickEvent) => {
         this.props.setChildDialog(whichDialog);
@@ -162,7 +190,7 @@ export var LoginDialogContent = createClassAndFactory({
       return {
         iconClass: iconClass,
         provider: provider,
-        loginReason: this.props.loginReason,
+        loginReason: loginReason,
         anyReturnToUrl: this.props.anyReturnToUrl,
       };
     };
@@ -172,7 +200,32 @@ export var LoginDialogContent = createClassAndFactory({
             "to this part of the site. Please login below, as someone with access.")
         : null;
 
-    var andDoWhat = ', and zzz, ';
+    var andDoWhat = "";
+    switch (loginReason) {
+      case 'LoginToComment': andDoWhat = ", to post a comment,"; break;
+      case 'LoginToCreateTopic': andDoWhat = ", to create a topic,"; break;
+    }
+
+    var createAccountButton;
+    if (loginReason !== 'LoginAsAdmin' && loginReason !== 'LoginToAdministrate') { // both really used? Can I remove one?
+      createAccountButton =
+          Button({ onClick: openChildDialog(CreateUserDialogContent) }, "Create New Account");
+    }
+
+    var loginWithPasswordButton;
+    if (loginReason !== 'LoginBecomeAdmin') {
+      loginWithPasswordButton =
+          Button({ onClick: openChildDialog(PasswordLoginDialogContent) }, "Login with Password");
+    }
+
+    var loginAsGuestButton;
+    if (loginReason !== 'LoginBecomeAdmin' && loginReason !== 'LoginAsAdmin' &&
+        loginReason !== 'LoginToAdministrate' && loginReason !== 'LoginToAuthenticate' &&
+        debiki2.ReactStore.isGuestLoginAllowed()) {
+      loginAsGuestButton =
+          Button({ onClick: openChildDialog(GuestLoginDialogContent) }, "Login as Guest");
+    }
+
     return (
       r.div({ className: 'dw-login-dialog' },
         createUserDialog,
@@ -184,7 +237,7 @@ export var LoginDialogContent = createClassAndFactory({
           " and the ", r.a({ href: '/-/privacy-policy' }, "Privacy Policy")),
 
         r.p({ id: 'dw-lgi-or-login-using' },
-          "Login" + andDoWhat + "using your account (if any) at"),
+          "Login" + andDoWhat + " using your account (if any) at:"),
         r.div({ id: 'dw-lgi-other-sites' },
           OpenAuthButton(makeOauthProps('icon-google-plus', 'Google')),
           OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook')),
@@ -195,9 +248,9 @@ export var LoginDialogContent = createClassAndFactory({
         r.p({ id: 'dw-lgi-or-login-using' }, "Or, alternatively:"),
 
         ButtonGroup({ vertical: true },
-          Button({ onClick: openChildDialog(CreateUserDialogContent) }, "Create New Account"),
-          Button({ onClick: openChildDialog(PasswordLoginDialogContent) }, "Login with Password"),
-          Button({ onClick: openChildDialog(GuestLoginDialogContent) }, "Login as Guest"))));
+          createAccountButton,
+          loginWithPasswordButton,
+          loginAsGuestButton)));
   }
 });
 
@@ -260,13 +313,12 @@ var GuestLoginDialogContent = createClassAndFactory({
     });
   },
   render: function() {
-    var inOrderTo = "";
     return (
       r.form({},
         Input({ type: 'text', label: "Your name:", ref: 'nameInput' }),
         Input({ type: 'text', label: "Email: (optional, not shown)", ref: 'emailInput',
             help: "If you want to be notified about replies to your comments." }),
-        Button({ onClick: this.doLogin }, "Login" + inOrderTo),
+        Button({ onClick: this.doLogin }, "Login" + inOrderTo(this.props.loginReason)),
         Button({ onClick: this.props.closeDialog }, "Cancel")));
   }
 });
@@ -281,12 +333,11 @@ var PasswordLoginDialogContent = createClassAndFactory({
     });
   },
   render: function() {
-    var inOrderTo = "";
     return (
       r.form({},
         Input({ type: 'text', label: "Email or username:", ref: 'whoInput' }),
-        Input({ type: 'text', label: "Password:", ref: 'passwordInput' }),
-        Button({ onClick: this.doLogin }, "Login" + inOrderTo),
+        Input({ type: 'password', label: "Password:", ref: 'passwordInput' }),
+        Button({ onClick: this.doLogin }, "Login" + inOrderTo(this.props.loginReason)),
         Button({ onClick: this.props.closeDialog }, "Cancel"),
         r.br(),
         r.a({ href: debiki.internal.serverOrigin + '/-/reset-password/specify-email',
@@ -294,6 +345,19 @@ var PasswordLoginDialogContent = createClassAndFactory({
           "Did you forget your password?")));
   }
 });
+
+
+/**
+ * Text to append to the login button so it reads e.g. "Login to write a comment".
+ */
+function inOrderTo(loginReason: string): string {
+  switch (loginReason) {
+    case 'LoginToSubmit': return " and submit";
+    case 'LoginToComment': return " to write a comment";
+    case 'LoginToCreateTopic': return " to create topic";
+    default: return "";
+  }
+}
 
 
 function continueAfterLogin(anyReturnToUrl: string) {
@@ -325,6 +389,7 @@ function continueAfterLogin(anyReturnToUrl: string) {
     if (debiki.internal.continueAnySubmission) {
       debiki.internal.continueAnySubmission();
     }
+    // The login dialogs close themselves when the login event is fired (above).
   }
 }
 

@@ -53,6 +53,22 @@ export function createCreateUserDialogs() {
 }
 
 
+debiki.internal.makeReturnToPostUrlForVerifEmail = function(postId) {
+  // The magic '__Redir...' string tells the server to use the return-to-URL only if it
+  // needs to send an email address verification email (it'd include the return
+  // to URL on a welcome page show via a link in the email).
+  // '__dwHash__' is an encoded hash that won't be lost when included in a GET URL.
+  // The server replaces it with '#' later on.
+  // `d.i.iframeBaseUrl` is for embedded comments in an <iframe>: it's the URL of
+  // the embedding parent page.
+  var pageUrl = d.i.iframeBaseUrl ? d.i.iframeBaseUrl : window.location.toString();
+  return '_RedirFromVerifEmailOnly_' +
+    pageUrl.replace(/#.*/, '') +
+    '__dwHash__' +
+    'post-' + postId;
+};
+
+
 // Backwards compatibility, for now:
 /**
  * Prefix `RedirFromVerifEmailOnly` to the return-to-url, to indicate that
@@ -111,6 +127,44 @@ export var CreateUserDialogContent = createClassAndFactory({
     });
   },
 
+  checkPasswordStrength: function () {
+    return 4; // for now
+    /* From the old jQuery UI dialog:
+    var passwordStrength = zxcvbn(data.password, [
+        data.name, data.email, data.username, 'debiki']);
+    console.debug(
+        'Password entropy: ' + passwordStrength.entropy +
+        ', crack_time: ' + passwordStrength.crack_time +
+        ' = ' + passwordStrength.crack_time_display +
+        ', score: ' + passwordStrength.score);
+
+    var problem = null;
+    if (!needsPassword) {
+      // Fine, already authenticated: OpenAuth or OpenID or something like that.
+    }
+    else if (data.password.length < 8) {
+      problem = 'too short, should be at least 8 characters';
+    }
+    else if (!data.password.match(/[0-9!@#$%^&*()_+`=;:{}[\]\\]+/)) {
+      // This extra test is here just in case the current version of zxcvbn happens to be buggy.
+      problem = 'contains no digit or special character';
+    }
+    else if (passwordStrength.score < 4) {
+      problem = 'too weak';
+    }
+    if (problem) {
+      // 100 computers (in the message below)? Well, zxcvbn assumes 10ms per guess and 100 cores.
+      // My scrypt settings are more like 100-200 ms per guess. So, say 100 ms,
+      // and 1 000 cores = 100 computers  -->  can use zxcvbn's default crack time.
+      alert('Password ' + problem + '. Please choose a stronger password.\n\n' +
+          '(Estimated crack time: ' + passwordStrength.crack_time_display +
+          ', for someone with 100 computers and access to the scrypt hash.)');
+      if (!debiki.isDev || !confirm('Development mode. Continue anyway?'))
+        return;
+    }
+    */
+  },
+
   doCreateUser: function() {
     if (!this.state.zxcvbnLoaded) {
       alert("zxcvbn.js not yet loaded, why not, what is the server doing? [DwE50GP3]");
@@ -146,12 +200,14 @@ export var CreateUserDialogContent = createClassAndFactory({
       window.location.assign(this.props.anyReturnToUrl);
     }
     else if (!window['debiki2']) {
+      // COULD remove — this cannot hapen any longer, loading the same script bundle
+      // everywhere right now. Remove this?
       // We haven't loaded all JS that would be needed to continue on the same page.
       window.location.assign('/');
     }
     else {
       var isPage = $('.dw-page');
-      if (!isPage) console.log('should reload ... /?');
+      if (!isPage) console.log('should reload ... /? [DwE2KWF1]');
       continueOnMainPageAfterHavingCreatedUser();
     }
   },
@@ -226,7 +282,6 @@ function continueOnMainPageAfterHavingCreatedUser() {
   debikiInternal.continueAnySubmission();
 
   if (d.i.isInLoginPopup) {
-    debikiInternal.closeAnyLoginDialogs();
     close();
   }
 }

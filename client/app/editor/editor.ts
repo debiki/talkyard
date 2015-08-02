@@ -337,7 +337,7 @@ export var Editor = createComponent({
           this.state.replyToPostIds.map((postId, index) => {
             var anyAnd = index > 0 ? ' and ' : '';
             return (
-              r.span({},
+              r.span({ key: postId },
                 anyAnd,
                 r.a({ href: '#post-' + postId }, 'post ' + postId)));
           }),

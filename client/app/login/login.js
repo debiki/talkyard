@@ -25,11 +25,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-// Remembers which .dw-loginsubmit-on-click button (e.g. "Post as...")
-// was clicked when a login dialog is shown.
-var loginOnClickBtnClicked = null;
-
-
 // Any callback to call after login.
 var onLoginCallback = null;
 
@@ -43,29 +38,8 @@ d.i.loginIfNeeded = function(reason, anyReturnToUrl, callback) {
   }
   else {
     onLoginCallback = callback;
-    d.i.showLoginSubmitDialog(reason, anyReturnToUrl);
+    debiki2.login.loginDialog.open(reason, anyReturnToUrl);
   }
-};
-
-
-// Invoke on a .login-on-click submit <input>. After the login
-// has been completed, the button will be submitted, see
-// continueAnySubmission(). If already logged in, submits immediately.
-d.i.$loginThenSubmit = function(event) {
-  loginOnClickBtnClicked = this;
-  if (!debiki2.ReactStore.getUser().isLoggedIn) {
-    // Will call continueAnySubmission(), after login.
-    // {{{ Hmm, could add a `continue' callback to showLogin() instead!?
-    // But initLoginSimple/OpenId runs once only, so the very first
-    // anonymous function is the only one considered, so a somewhat
-    // global callback-to-invoke-state is needed anyway.
-    // Better move login stuff to a separate module (with a module
-    // local "global" callback state).}}}
-    d.i.showLoginSubmitDialog(event.data ? event.data.mode : undefined);
-  } else {
-    d.i.continueAnySubmission();
-  }
-  return false;  // skip default action; don't submit until after login
 };
 
 
@@ -78,46 +52,15 @@ d.i.continueAnySubmission = function() {
     onLoginCallback();
     onLoginCallback = null;
   }
-  else if (loginOnClickBtnClicked) {
-    // If the login was initiated via a click on a
-    // .dw-loginsubmit-on-click button, continue the submission
-    // process that button is supposed to start.
-    $(loginOnClickBtnClicked).closest('form').submit();
-    loginOnClickBtnClicked = null;
-  }
 };
 
 
 d.i.showLoginFailed = function(errorMessage) {
-  initLoginResultForms();
-  $('#dw-fs-lgi-failed-errmsg').text(errorMessage);
-  $('#dw-fs-lgi-failed').dialog('open');
+  // For now:
+  alert('Login failed: ' + errorMessage);
 };
 
 
-var initLoginResultForms = (function() {
-  var continueClbk;
-  return function(opt_continue) {  // COULD remove this function?...
-          // ...No longer called on login OK? Is it called on failure?
-    continueClbk = opt_continue;
-    if ($('#dw-fs-lgi-ok.ui-dialog-content').length)
-      return; // login-ok and -failed already inited
-
-    var $loginResult = $('#dw-fs-lgi-ok, #dw-fs-lgi-failed');
-    var $loginResultForm = $loginResult.find('form');
-    $loginResult.find('input').hide(); // Use jQuery UI's dialog buttons instead
-    $loginResult.dialog($.extend({}, d.i.jQueryDialogNoClose, {
-      buttons: [{
-        text: 'OK',
-        id: 'dw-f-lgi-ok-ok',
-        click: function() {
-          $(this).dialog('close');
-          !continueClbk || continueClbk();
-        }
-      }]
-    }));
-  }
-})();
 
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
