@@ -18,42 +18,6 @@
 // Styles specific to Debiki's Play Framework application.
 
 
-
-// Hidden templates
-//---------------------------
-
-#dw-hidden-templates
-  display: none
-
-
-
-// Edit suggestions -- is in use? Merge with other edit suggestions section below?
-//---------------------------
-
-.dw-e-sgs
-  font-size: 85%
-
-.dw-e-sg
-  border-bottom: dotted 1px #ccc
-  padding: 7px 0 2px 0
-  margin: 0 0 0 0
-
-  &:last-child
-    border-bottom: none
-
-  &:hover
-    background-color: #e5e5e5
-
-.dw-e-sg-e
-  position: relative
-  margin-left: 30px
-
-.dw-e-sg .dw-e-text,
-.dw-e-sg .dw-e-rslt
-  display: none // text used by javascript diff algorithm
-
-
-
 // Full screen dialogs
 //===========================
 
@@ -209,56 +173,6 @@
     text-align: right
 
 
-
-// Edits dialog
-//===========================
-
-
-// Dialog background made white by javascript.
-
-#dw-e-sgs
-  overflow: hidden // child height is 100%, so border exdends downw
-
-#dw-e-sgs > .row
-  margin-left: 0 // cancel Bootstrap's -15px
-
-#dw-e-sgss
-  padding-left: 0
-  border-left: none
-
-//#dw-e-sgs-diff
-
-#dw-e-sgs-save-diff
-  display: none // for now
-
-#dw-e-sgs-prvw
-  padding-right: 0
-
-#dw-e-sgs-org-src
-  display: none
-
-#dw-e-sgs .dw-e-sgs
-  margin: 1ex 0 25px 0
-
-#dw-e-sgs .dw-e-sg-e
-  margin-left: 9px
-
-#dw-e-sgs .dw-e-sgs .dw-as
-  margin: 7px 0px 3px 0px
-
-#dw-e-sgs .dw-e-sg .dw-as .ui-button-text
-  padding: .15em 1ex // or a relatively huge button
-
-#dw-e-sgs-diff-text,
-#dw-e-sgs-prvw-html
-  background: hsl(0, 0%, 94%)
-
-#dw-e-sgs .dw-submit-set
-  float: none
-  text-align: center
-
-
-
 // Edit form
 //===========================
 
@@ -401,41 +315,6 @@
 
   &:after
     clear: both;
-
-
-
-// Notifications
-//===========================
-
-
-.dw-dlg-rsp
-  height: auto !important // or jQuery UI [1.8.16] sets 38px and scrollbars appear
-
-.dw-dlg-rsp-status,
-.dw-dlg-rsp-message
-  font-family: "courier new", monospace
-
-
-form .dw-ntf
-  float: left // or floating stuff might end up floating inside the .dw-ntf
-  clear: both
-  margin-bottom: 10px // or might overlap with resize form southeast handle
-
-.dw-ntf
-  font-family: monospace
-  margin-top: 1em
-
-.dw-ntf .ui-state-error
-  padding: 0.1em 0.1em 0.2em 0.4em
-
-.dw-ntf .ui-dialog-titlebar-close
-  float: right
-  height: 20px // easier to click, if 20px instead of default 16px
-  width: 20px
-
-.dw-ntf .dw-ntf-bd
-  margin-left: 20px // no text below the notification icon
-
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=100 fo=tcqwn list

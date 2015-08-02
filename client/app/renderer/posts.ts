@@ -960,6 +960,7 @@ var PostActions = createComponent({
   onWikifyClick: function(event) {
     debiki2.pagedialogs.wikifyDialog.open(this.props.post);
   },
+  /*
   onCollapsePostClick: function(event) {
     debiki.internal.$showActionDialog('CollapsePost').call(event.target, event);
   },
@@ -971,7 +972,7 @@ var PostActions = createComponent({
   },
   onPinClick: function(event) {
     debiki.internal.$showActionDialog('PinTree').call(event.target, event);
-  },
+  }, */
 
   render: function() {
     var post = this.props.post;
@@ -1068,6 +1069,7 @@ var PostActions = createComponent({
             '×', post.numPendingEditSuggestions));
     */
 
+    /*  Find some better way to do this. And also, don't show so many buttons below More.
     if (!post.isTreeCollapsed && !isPageBody && user.isAdmin && isKajMagnusSite)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-collapse-tree icon-collapse',
@@ -1085,6 +1087,7 @@ var PostActions = createComponent({
     if (post.isPostCollapsed && user.isAdmin)
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-uncollapse-post', key: 'up' }, 'Uncollapse post'));
+    */
 
     // ----- Close links
 
