@@ -15,30 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-(function() {
-
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
-
-
-// ------- Time utils
-
-
-// IE 6, 7, 8 has no toISOString.
-if (!Date.prototype.toISOString) {
-  Date.prototype.toISOString = function () {
-    function pad(n) {
-      return n < 10 ? '0' + n : n;
-    }
-    return '"' + this.getUTCFullYear() + '-' +
-        pad(this.getUTCMonth() + 1) + '-' +
-        pad(this.getUTCDate())      + 'T' +
-        pad(this.getUTCHours())     + ':' +
-        pad(this.getUTCMinutes())   + ':' +
-        pad(this.getUTCSeconds())   + 'Z"';
-  };
-}
 
 
 // ------- Dummy log functions
@@ -127,94 +105,6 @@ $.fn.dwBugIfEmpty = function(errorGuid) {
   d.u.bugIf(!this.length, errorGuid);
   return this;
 };
-
-
-// ------- HTML helpers
-
-
-// Finds all tags with an id attribute, and (hopefully) makes
-// the ids unique by appending a unique (within this Web page) number to
-// the ids. Updates any <label> `for' attributes to match the new ids.
-// If hrefStart specified, appends the unique number to hrefs that starts
-// with hrefStart.  (This is useful e.g. if many instances of a jQuery UI
-// widget is to be instantiated, and widget internal stuff reference other
-// widget internal stuff via ids.)
-d.u.makeIdsUniqueUpdateLabels = function(jqueryObj, hrefStart) {
-  var seqNo = '_sno-'+ (++idSuffixSequence);
-  jqueryObj.find("*[id]").each(function(ix) {
-      $(this).attr('id', $(this).attr('id') + seqNo);
-    });
-  jqueryObj.find('label').each(function(ix) {
-      $(this).attr('for', $(this).attr('for') + seqNo);
-    });
-  jqueryObj.find('*[href^='+ hrefStart + ']').each(function(ix) {
-    $(this).attr('href', this.hash + seqNo);
-  });
-};
-
-
-// When forms are loaded from the server, they might have ID fields.
-// If the same form is loaded twice (e.g. to reply twice to the same comment),
-// their ids would clash. So their ids are made unique by appending a form no.
-var idSuffixSequence = 0;
-
-
-d.u.buildTagFind = function(html, selector) {
-  if (selector.indexOf('#') !== -1) d.u.die('Cannot lookup by ID: '+
-      'getElementById might return false, so use buildTagFindId instead');
-  // From jQuery 1.4.2, jQuery.fn.load():
-  var $wrap =
-      // Create a dummy div to hold the results
-      $('<div />')
-      // inject the contents of the document in, removing the scripts
-      // to avoid any 'Permission Denied' errors in IE
-      .append(html.replace(/<script(.|\s)*?\/script>/gi, ''));
-  var $tag = $wrap.find(selector);
-  return $tag;
-};
-
-
-// Builds HTML tags from `html' and returns the tag with the specified id.
-// Works also when $.find('#id') won't (because of corrupt XML?).
-d.u.buildTagFindId = function(html, id) {
-  if (id.indexOf('#') !== -1) d.u.die('Include no # in id [error DwE85x2jh]');
-  var $tag = d.u.buildTagFind(html, '[id="'+ id +'"]');
-  return $tag;
-};
-
-
-// ------- jQuery extensions
-
-
-(function() {
-  $.fn.dwDisable = function() {
-    this.each(function() {
-      _dwEnableDisableImpl($(this), true);
-    });
-    return this;
-  };
-
-  $.fn.dwEnable = function() {
-    this.each(function() {
-      _dwEnableDisableImpl($(this), false);
-    });
-    return this;
-  };
-
-  function _dwEnableDisableImpl(self, disabled) {
-    // (Radio buttons and checkboxes have the
-    // .ui-helper-hidden-accessible class – jQuery UI places
-    // .ui-button on the related <label>, not the <input>.)
-    if (self.filter('input, button')
-        .is('.ui-button, .ui-helper-hidden-accessible'))
-      self.button('option', 'disabled', disabled);
-    else self.prop('disabled', disabled);
-    return self;
-  };
-})();
-
-
-})();
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list

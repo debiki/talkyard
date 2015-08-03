@@ -19,9 +19,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-d.i.pageConfigPostId = '65503';
-
-
 function confirmClosePage() {
   // If there're any reply forms with non-empty replies (textareas),
   // or any edit forms, then return a confirm close message.
@@ -42,26 +39,6 @@ function confirmClosePage() {
 
 
 window.onbeforeunload = confirmClosePage;
-
-
-/**
- * Returns the text of the title of the page in which the current $ elem
- * is located.
- */
-$.fn.dwPageTitleText = function() {
-  var $page = this.closest('.dw-page');
-  var $title = $page.find('.dw-p.dw-p-ttl .dw-p-ttl');
-  return $title.text();
-};
-
-
-/**
- * For now only. Would be better to hide stuff via CSS? Perhaps add a
- * clarifying message at the top of the page, server side?
- */
-d.i.isViewingOldPageVersion = function() {
-  return window.location.toString().search('&version=') !== -1;
-};
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
