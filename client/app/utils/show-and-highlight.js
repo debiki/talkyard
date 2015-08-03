@@ -163,7 +163,7 @@ function anyAnchorPostId() {
 // When hovering a in-reply-to link, outline the post that was replied to.
 // Use a dedicated CSS class so we won't accidentally remove any outline added
 // because of other reasons, when removing this outline.
-$(document).on('hover', '.dw-rr', function(event) {  // dw-rr = reply receiver
+$(document).on('mouseenter mouseleave', '.dw-rr', function(event) {  // dw-rr = reply receiver
   var referencedPost = getPostMultirepliedTo(this);
   if (event.type === 'mouseenter') {
     referencedPost.addClass('dw-highlighted-multireply-hover');
@@ -191,7 +191,7 @@ function getPostMultirepliedTo(elem) {
 }
 
 
-$(document).on('hover', '.dw-arw-vt-handle', function(event) {
+$(document).on('mouseenter mouseleave', '.dw-arw-vt-handle', function(event) {
   var allArrowHandles = $(this).closest('.dw-res').find('> .dw-t > .dw-arw-vt-handle');
   var parentPost = $(this).closest('.dw-res').closest('.dw-t').children('.dw-p');
   if (event.type === 'mouseenter' || event.type === 'mouseover') {

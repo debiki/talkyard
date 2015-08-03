@@ -36,7 +36,7 @@ d.i.DEBIKI_TABINDEX_DIALOG_MAX = 109;
 keymaster.filter = function(event) {
   if (event.keyCode === 27) // escape is 27
     return true;
-  var tagName = (event.target || event.srcElement).tagName;
+  var tagName = (event.target || event.originalTarget).tagName;
   return !(tagName == 'INPUT' || tagName == 'SELECT' || tagName == 'TEXTAREA');
 };
 

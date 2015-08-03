@@ -20,13 +20,15 @@ var $ = d.i.$;
 
 
 d.u.postJson = function(options) {
+  // Interpret the response using the data type specified by the server. Don't
+  // specify 'json' because then jQuery complains if the server sends back nothing
+  // (an empty string isn't ok JSON).
   return $.ajax({
     url: options.url,
     type: 'POST',
     data: JSON.stringify(options.data),
     contentType: 'application/json; charset=utf-8',
     headers: { 'X-XSRF-TOKEN': $.cookie('XSRF-TOKEN') },
-    dataType: 'json',
     error: options.error,
     success: options.success
   });

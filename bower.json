@@ -12,7 +12,7 @@
   "dependencies": {
     "bootstrap": "=v3.1.1",
     "eventemitter2": "=0.4.14",
-    "jquery": "=1.7.2",
+    "jquery": "=1.9.1",
     "jquery.atwho": "=0.5.2",
     "keymaster": "=1.6.3",
     "lodash": "=2.4.2",
@@ -24,8 +24,5 @@
     "react-bootstrap": "=0.24.2",
     "react-router": "=0.13.3",
     "yepnope": "=v1.5.4"
-  },
-  "resolutions": {
-    "jquery": "1.7.2"
   }
 }
