@@ -166,7 +166,7 @@ trait UserDao {
 
   def blockGuest(postId: UniquePostId, numDays: Int, blockerId: UserId) {
     readWriteTransaction { transaction =>
-      val auditLogEntry: AuditLogEntry = transaction.loadFirstAuditLogEntry(postId) getOrElse {
+      val auditLogEntry: AuditLogEntry = transaction.loadCreatePostAuditLogEntry(postId) getOrElse {
         throwForbidden("DwE2WKF5", "Cannot block user: No audit log entry, IP unknown")
       }
 
@@ -200,7 +200,7 @@ trait UserDao {
 
   def unblockGuest(postId: PostId, unblockerId: UserId) {
     readWriteTransaction { transaction =>
-      val auditLogEntry: AuditLogEntry = transaction.loadFirstAuditLogEntry(postId) getOrElse {
+      val auditLogEntry: AuditLogEntry = transaction.loadCreatePostAuditLogEntry(postId) getOrElse {
         throwForbidden("DwE5FK83", "Cannot unblock guest: No audit log entry, IP unknown")
       }
       transaction.unblockIp(auditLogEntry.browserIdData.inetAddress)
@@ -211,7 +211,7 @@ trait UserDao {
 
   def loadAuthorBlocks(postId: UniquePostId): immutable.Seq[Block] = {
     readOnlyTransaction { transaction =>
-      val auditLogEntry = transaction.loadFirstAuditLogEntry(postId) getOrElse {
+      val auditLogEntry = transaction.loadCreatePostAuditLogEntry(postId) getOrElse {
         return Nil
       }
       val browserIdData = auditLogEntry.browserIdData
