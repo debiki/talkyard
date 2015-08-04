@@ -685,7 +685,7 @@ var ReplyReceivers = createComponent({
         r.a({ href: '#post-' + post.postId, className: 'dw-rr', key: post.postId },
           post.authorUsername || post.authorFullName);
 
-      return index === 0 ? link : r.span({}, ' and', link);
+      return index === 0 ? link : r.span({ key: post.postId }, ' and', link);
     });
     return (
       r.div({ className: 'dw-rrs' + multireplyClass }, // rrs = reply receivers

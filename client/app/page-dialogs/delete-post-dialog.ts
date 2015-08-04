@@ -32,8 +32,10 @@ var Button = reactCreateFactory(ReactBootstrap.Button);
 var Input = reactCreateFactory(ReactBootstrap.Input);
 var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalTrigger = reactCreateFactory(ReactBootstrap.ModalTrigger);
-var OverlayMixin = ReactBootstrap.OverlayMixin;
+var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
+var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
+var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 
 export var deletePostDialog;
@@ -48,8 +50,6 @@ export function createDeletePostDialog() {
 
 
 var DeletePostDialog = createComponent({
-  mixins: [OverlayMixin],
-
   getInitialState: function () {
     return {
       isOpen: false,
@@ -66,35 +66,30 @@ var DeletePostDialog = createComponent({
     this.setState({ isOpen: false, post: null });
   },
 
-  render: function () {
-    return null;
-  },
-
   doDelete: function() {
     var repliesToo = $('#deleteRepliesTooInput').is(':checked');
     ReactActions.deletePost(this.state.post.postId, repliesToo, this.close);
   },
 
-  renderOverlay: function () {
-    if (!this.state.isOpen)
-      return null;
-
-    var title = "Delete " + yourOrThis + " post?";
-    var post: Post = this.state.post;
-    var yourOrThis = this.state.loggedInUser.userId === post.authorId ? "your" : "this";
-
-    var content =
-      r.div({},
-        r.div({ className: 'dw-delete-btns' },
-          Input({ type: 'Button', value: "Yes delete it", onClick: this.doDelete }),
-          Input({ type: 'checkbox', label: "Delete replies too",
-              id: 'deleteRepliesTooInput' })));  // cannot use 'ref:' because not in render()
-
+  render: function () {
+    var title;
+    var content;
+    if (this.state.isOpen) {
+      var post: Post = this.state.post;
+      var yourOrThis = this.state.loggedInUser.userId === post.authorId ? "your" : "this";
+      title = "Delete " + yourOrThis + " post?";
+      content =
+        r.div({},
+          r.div({ className: 'dw-delete-btns' },
+            Input({ type: 'Button', value: "Yes delete it", onClick: this.doDelete }),
+            Input({ type: 'checkbox', label: "Delete replies too",
+                id: 'deleteRepliesTooInput' })));  // cannot use 'ref:' because not in render()
+    }
     return (
-      Modal({ title: title, onRequestHide: this.close, className: 'dw-delete-post-dialog' },
-        r.div({ className: 'modal-body' }, content),
-        r.div({ className: 'modal-footer' },
-          Button({ onClick: this.close }, 'Cancel'))));
+      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'dw-delete-post-dialog' },
+        ModalHeader({}, ModalTitle({}, title)),
+        ModalBody({}, content),
+        ModalFooter({}, Button({ onClick: this.close }, 'Cancel'))));
   }
 });
 

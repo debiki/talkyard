@@ -31,7 +31,10 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var Input = reactCreateFactory(ReactBootstrap.Input);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var OverlayMixin = ReactBootstrap.OverlayMixin;
+var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
+var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
+var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 
 export var flagDialog;
@@ -46,8 +49,6 @@ export function createAnyFlagDialog() {
 
 
 var FlagDialog = createComponent({
-  mixins: [OverlayMixin],
-
   getInitialState: function () {
     return {
       isOpen: false,
@@ -91,17 +92,12 @@ var FlagDialog = createComponent({
   },
 
   render: function () {
-    return null;
-  },
-
-  renderOverlay: function () {
-    if (!this.state.isOpen)
-      return null;
-
     var flagType = this.state.flagType;
-
     var anyReasonInput;
-    if (flagType === 'Other') {
+    if (!this.state.isOpen) {
+      // Nothing.
+    }
+    else if (flagType === 'Other') {
       anyReasonInput =
         r.div({ style: { margin: '-15px 30px 0' } },
           Input({ type: 'textarea', onChange: this.editReason, value: this.state.reason,
@@ -109,8 +105,9 @@ var FlagDialog = createComponent({
     }
 
     return (
-      Modal({ title: 'Report Comment', onRequestHide: this.close },
-        r.div({ className: 'modal-body' },
+      Modal({ show: this.state.isOpen, onHide: this.close },
+        ModalHeader({}, ModalTitle({}, "Report Comment")),
+        ModalBody({},
           r.form({},
             Input({ type: 'radio', label: 'Inappropriate', checked: flagType === 'Inapt',
                 onChange: () => this.chooseFlag('Inapt'),
@@ -127,9 +124,9 @@ var FlagDialog = createComponent({
                 help: "This post requires moderation attention for some reason not " +
                   "listed above." }))),
 
-        anyReasonInput,
+          anyReasonInput,
 
-        r.div({ className: 'modal-footer' },
+        ModalFooter({},
           Button({ onClick: this.submit }, 'Submit'),
           Button({ onClick: this.close }, 'Cancel'))));
   }

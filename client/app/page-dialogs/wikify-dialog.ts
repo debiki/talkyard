@@ -32,8 +32,10 @@ var Button = reactCreateFactory(ReactBootstrap.Button);
 var Input = reactCreateFactory(ReactBootstrap.Input);
 var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalTrigger = reactCreateFactory(ReactBootstrap.ModalTrigger);
-var OverlayMixin = ReactBootstrap.OverlayMixin;
+var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
+var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
+var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 
 export var wikifyDialog;
@@ -48,8 +50,6 @@ export function createWikifyDialog() {
 
 
 var WikifyDialog = createComponent({
-  mixins: [OverlayMixin],
-
   getInitialState: function () {
     return {
       isOpen: false,
@@ -66,10 +66,6 @@ var WikifyDialog = createComponent({
     this.setState({ isOpen: false, post: null });
   },
 
-  render: function () {
-    return null;
-  },
-
   changeToStaffWiki: function() {
     ReactActions.changePostType(this.state.post, PostType.StaffWiki, this.close);
   },
@@ -82,16 +78,15 @@ var WikifyDialog = createComponent({
     ReactActions.changePostType(this.state.post, PostType.Normal, this.close);
   },
 
-  renderOverlay: function () {
-    if (!this.state.isOpen)
-      return null;
-
-    var post: Post = this.state.post;
-    var isWiki = isWikiPost(post);
+  render: function () {
     var title;
     var content;
-
-    if (isWiki) {
+    var post: Post = this.state.post;
+    var isWiki = isWikiPost(post);
+    if (!this.state.isOpen) {
+      // Nothing.
+    }
+    else if (isWiki) {
       title = "Cancel Wiki status?"
       var whichPeople = post.postType === PostType.StaffWiki ? "staff" : "community";
       content =
@@ -125,10 +120,10 @@ var WikifyDialog = createComponent({
     }
 
     return (
-      Modal({ title: title, onRequestHide: this.close, className: 'dw-wikify-dialog' },
-        r.div({ className: 'modal-body' }, content),
-        r.div({ className: 'modal-footer' },
-          Button({ onClick: this.close }, 'Cancel'))));
+      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'dw-wikify-dialog' },
+        ModalHeader({}, ModalTitle({}, title)),
+        ModalBody({}, content),
+        ModalFooter({}, Button({ onClick: this.close }, 'Cancel'))));
   }
 });
 

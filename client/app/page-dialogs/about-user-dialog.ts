@@ -31,8 +31,10 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var Input = reactCreateFactory(ReactBootstrap.Input);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalTrigger = reactCreateFactory(ReactBootstrap.ModalTrigger);
-var OverlayMixin = ReactBootstrap.OverlayMixin;
+var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
+var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
+var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 
 export var aboutUserDialog;
@@ -47,8 +49,6 @@ export function createAboutUserDialog() {
 
 
 var AboutUserDialog = createComponent({
-  mixins: [OverlayMixin],
-
   getInitialState: function () {
     return {
       isOpen: false,
@@ -107,42 +107,38 @@ var AboutUserDialog = createComponent({
   },
 
   render: function () {
-    return null;
-  },
-
-  renderOverlay: function () {
-    if (!this.state.isOpen)
-      return null;
-
-    var user: CompleteUser = this.state.user;
-    var childProps = $.extend({
-      reload: this.reload,
-      loggedInUser: this.state.loggedInUser,
-      post: this.state.post,
-      user: user,
-      viewUserProfile: this.viewUserProfile,
-      blocks: this.state.blocks
-    }, this.props);
-
+    var title;
     var content;
-    var who;
-    if (!user) {
-      content = r.p({}, 'Loading...');
-    }
-    else if (isGuest(user)) {
-      content = AboutGuest(childProps);
-      who = 'Guest';
-    }
-    else {
-      content = AboutUser(childProps);
-      who = 'User';
+
+    if (this.state.isOpen) {
+      var user: CompleteUser = this.state.user;
+      var childProps = $.extend({
+        reload: this.reload,
+        loggedInUser: this.state.loggedInUser,
+        post: this.state.post,
+        user: user,
+        viewUserProfile: this.viewUserProfile,
+        blocks: this.state.blocks
+      }, this.props);
+
+      if (!user) {
+        content = r.p({}, 'Loading...');
+      }
+      else if (isGuest(user)) {
+        content = AboutGuest(childProps);
+        title = 'About Guest';
+      }
+      else {
+        content = AboutUser(childProps);
+        title = 'About User';
+      }
     }
 
     return (
-      Modal({ title: 'About ' + who, onRequestHide: this.close },
-        r.div({ className: 'modal-body' }, content),
-        r.div({ className: 'modal-footer' },
-          Button({ onClick: this.close }, 'Close'))));
+      Modal({ show: this.state.isOpen, onHide: this.close },
+        ModalHeader({}, ModalTitle({}, title)),
+        ModalBody({}, content,
+        ModalFooter({}, Button({ onClick: this.close }, 'Close')))));
   }
 });
 
@@ -172,10 +168,22 @@ var AboutUser = createComponent({
 
 
 var AboutGuest = createComponent({
+  getInitialState: function() {
+    return { isBlockGuestModalOpen: false };
+  },
+
   unblockGuest: function() {
     Server.unblockGuest(this.props.post.uniqueId, () => {
       this.props.reload();
     });
+  },
+
+  openBlockGuestModal: function() {
+    this.setState({ isBlockGuestModalOpen: true });
+  },
+
+  closeBlockGuestModal: function() {
+    this.setState({ isBlockGuestModalOpen: false });
   },
 
   render: function() {
@@ -185,6 +193,7 @@ var AboutGuest = createComponent({
     var postId = this.props.post.uniqueId;
 
     var blockButton;
+    var blockModal;
     if (loggedInUser.isAdmin) {
       if (blocks.isBlocked) {
         blockButton =
@@ -193,10 +202,11 @@ var AboutGuest = createComponent({
       }
       else {
         blockButton =
-            ModalTrigger({ modal: BlockGuestDialog({ postId: postId, reload: this.props.reload }) },
-              Button({ title: 'Prevent this guest from posting more comments' },
-                'Block This Guest'));
+            Button({ title: "Prevent this guest from posting more comments",
+                onClick: this.openBlockGuestModal }, 'Block This Guest');
       }
+      blockModal = BlockGuestDialog({ postId: postId, reload: this.props.reload,
+          show: this.state.isBlockGuestModalOpen, close: this.closeBlockGuestModal });
     }
 
     var blockedInfo;
@@ -217,6 +227,7 @@ var AboutGuest = createComponent({
 
     return (
       r.div({ className: 'clearfix' },
+        blockModal,
         r.div({ className: 'dw-about-user-actions' },
           Button({ onClick: this.props.viewUserProfile }, 'View Other Comments'),
           blockButton),
@@ -241,16 +252,16 @@ var BlockGuestDialog = createComponent({
       return;
     }
     Server.blockGuest(this.props.postId, numDays, () => {
-      this.props.onRequestHide();
+      this.props.close();
       this.props.reload();
     });
   },
 
   render: function() {
-    var props = $.extend({ title: 'Block Guest' }, this.props);
     return (
-      Modal(props,
-        r.div({ className: 'modal-body' },
+      Modal({ show: this.props.show, onHide: this.props.close },
+        ModalHeader({}, ModalTitle({}, "Block Guest")),
+        ModalBody({},
           r.p({}, "Once blocked, this guest cannot post any comments or like any posts. " +
             "He or she can, however, still authenticate himself / herself " +
             "and sign up as a real user."),
@@ -259,10 +270,9 @@ var BlockGuestDialog = createComponent({
           Input({ type: 'text', label: 'Why block this guest? (Optional)',
               help: "This will be visible to everyone. Keep it short.", ref: 'reasonInput' })),
              */ ),
-
-        r.div({ className: 'modal-footer' },
+      ModalFooter({},
           Button({ onClick: this.doBlock }, 'Block'),
-          Button({ onClick: this.props.onRequestHide }, 'Cancel'))));
+          Button({ onClick: this.props.close }, 'Cancel'))));
   }
 });
 
