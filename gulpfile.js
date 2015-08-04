@@ -88,7 +88,7 @@ var debikiJavascriptFiles = [
       // of <body>? But I haven't noticed any FOUC so ignore for now.
       'bower_components/modernizr/modernizr.js',
       'bower_components/yepnope/yepnope.1.5.4-min.js',
-      'bower_components/jquery/jquery.js',
+      'bower_components/jquery/dist/jquery.js',
       'client/third-party/abbreviate-jquery.js',
       'bower_components/react/react-with-addons.js',
       'bower_components/keymaster/keymaster.js',
