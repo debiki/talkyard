@@ -380,6 +380,8 @@ case class User(
   def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
 
   def isSuspendedAt(when: ju.Date) = User.isSuspendedAt(when, suspendedTill = suspendedTill)
+
+  def theUsername = username getOrDie "DwE4GKS2"
 }
 
 

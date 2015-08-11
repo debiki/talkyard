@@ -125,10 +125,10 @@ object ResetPasswordController extends mvc.Controller {
   def showChooseNewPasswordPage(resetPasswordEmailId: String) = GetActionAllowUnapproved {
         request =>
     SECURITY // COULD check email type: ResetPassword or InvitePassword. SHOULD rate limit.
-    loginByEmailOrThrow(resetPasswordEmailId, request)
+    val loginGrant = loginByEmailOrThrow(resetPasswordEmailId, request)
     Ok(views.html.resetpassword.chooseNewPassword(
       SiteTpi(request),
-      xsrfToken = request.xsrfToken.value,
+      user = loginGrant.user,
       anyResetPasswordEmailId = resetPasswordEmailId))
   }
 
@@ -137,9 +137,6 @@ object ResetPasswordController extends mvc.Controller {
         JsonOrFormDataPostAction(RateLimits.ChangePassword, maxBytes = 200,
           allowUnapproved = true) { request =>
     val newPassword = request.body.getOrThrowBadReq("newPassword")
-    val newPasswordAgain = request.body.getOrThrowBadReq("newPasswordAgain")
-    if (newPassword != newPasswordAgain)
-      throwBadReq("DwE2MJ0", "You specified two different passwords; please go back and try again")
 
     val loginGrant = loginByEmailOrThrow(anyResetPasswordEmailId, request)
     request.dao.changePasswordCheckStrongEnough(loginGrant.user.id, newPassword)

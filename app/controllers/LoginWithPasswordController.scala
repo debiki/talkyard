@@ -93,7 +93,7 @@ object LoginWithPasswordController extends mvc.Controller {
   def handleCreateUserDialog = PostJsonAction(RateLimits.CreateUser, maxLength = 1000,
         allowUnapproved = true) { request: JsonPostRequest =>
     val body = request.body
-    val name = (body \ "name").as[String]
+    val fullName = (body \ "fullName").as[String]
     val emailAddress = (body \ "email").as[String]
     val username = (body \ "username").as[String]
     val password = (body \ "password").asOpt[String] getOrElse
@@ -108,7 +108,7 @@ object LoginWithPasswordController extends mvc.Controller {
     val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress)
 
     val userData =
-      NewPasswordUserData.create(name = name, email = emailAddress, username = username,
+      NewPasswordUserData.create(name = fullName, email = emailAddress, username = username,
           password = password, isAdmin = becomeOwner, isOwner = becomeOwner) match {
         case Good(data) => data
         case Bad(errorMessage) =>

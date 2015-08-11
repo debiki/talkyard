@@ -33,28 +33,31 @@ var Button = reactCreateFactory(ReactBootstrap.Button);
 var ButtonGroup = reactCreateFactory(ReactBootstrap.ButtonGroup);
 var Panel = reactCreateFactory(ReactBootstrap.Panel);
 var Input = reactCreateFactory(ReactBootstrap.Input);
+var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 
 var ReactRouter = window['ReactRouter'];
-var Route = ReactRouter.Route;
-var DefaultRoute = ReactRouter.DefaultRoute;
-var NotFoundRoute = ReactRouter.NotFoundRoute;
-var RouteHandler = ReactRouter.RouteHandler;
-var Navigation = ReactRouter.Navigation;
-var State = ReactRouter.State;
+var Route = reactCreateFactory(ReactRouter.Route);
+var Redirect = reactCreateFactory(ReactRouter.Redirect);
+var DefaultRoute = reactCreateFactory(ReactRouter.DefaultRoute);
+var NotFoundRoute = reactCreateFactory(ReactRouter.NotFoundRoute);
+var RouteHandler = reactCreateFactory(ReactRouter.RouteHandler);
+var RouterNavigationMixin = ReactRouter.Navigation;
+var RouterStateMixin = ReactRouter.State;
+
 
 
 export function routes() {
-  return Route({ path: '/', handler: CreateSiteMain },
-    DefaultRoute({ handler: ChooseSiteType }),
-    Route({ name: 'create-simple-site', path: 'create-simple-site', handler: CreateSimpleSite }),
+  return Route({ path: '/', handler: CreateSiteComponent },
+    DefaultRoute({ handler: ChooseSiteTypeComponent }),
+    Route({ name: 'create-simple-site', path: 'create-simple-site', handler: CreateSimpleSiteComponent }),
     Route({ name: 'create-embedded-comments', path: 'create-embedded-comments',
-      handler: CreateEmbeddedSite }));
+      handler: CreateEmbeddedSiteComponent }));
 }
 
 
 
-var CreateSiteMain = createComponent({
-  mixins: [State],
+var CreateSiteComponent = React.createClass({
+  mixins: [RouterStateMixin],
 
   getInitialState: function() {
     return {
@@ -69,8 +72,8 @@ var CreateSiteMain = createComponent({
 
 
 
-var ChooseSiteType = createComponent({
-  mixins: [Navigation],
+var ChooseSiteTypeComponent = React.createClass({
+  mixins: [RouterNavigationMixin],
 
   goToCreateSimpleSite: function() {
     this.transitionTo('create-simple-site');
@@ -92,7 +95,7 @@ var ChooseSiteType = createComponent({
 
 
 
-var CreateSimpleSite = createComponent({
+var CreateSimpleSiteComponent = React.createClass({
   getInitialState: function() {
     return { showErrors: false };
   },
@@ -135,13 +138,13 @@ var CreateSimpleSite = createComponent({
 
           AcceptTerms({ ref: 'terms' }),
 
-          Input({ type: 'submit', value: 'Create Site', bsStyle: 'primary' }))));
+          ButtonInput({ type: 'submit', value: 'Create Site', bsStyle: 'primary' }))));
   }
 });
 
 
 
-var CreateEmbeddedSite = createComponent({
+var CreateEmbeddedSiteComponent = React.createClass({
   getInitialState: function() {
     return { showErrors: false };
   },
@@ -191,13 +194,13 @@ var CreateEmbeddedSite = createComponent({
 
           AcceptTerms({ ref: 'terms' }),
 
-          Input({ type: 'submit', value: 'Create Site', bsStyle: 'primary' }))));
+          ButtonInput({ type: 'submit', value: 'Create Site', bsStyle: 'primary' }))));
   }
 });
 
 
 
-export var EmbeddingAddressInput = createComponent({
+export var EmbeddingAddressInput = createClassAndFactory({
   getInitialState: function() {
     return { bsStyle: 'error' };
   },
@@ -226,7 +229,7 @@ export var EmbeddingAddressInput = createComponent({
 
 
 
-var AcceptTerms = createComponent({
+var AcceptTerms = createClassAndFactory({
   areTermsAccepted: function() {
     return this.refs.checkbox.getChecked();
   },
@@ -246,7 +249,7 @@ var AcceptTerms = createComponent({
 
 
 
-var LocalHostnameInput = React.createClass({
+var LocalHostnameInput = createClassAndFactory({
   getInitialState: function() {
     return { value: '' }
   },
@@ -286,7 +289,7 @@ var LocalHostnameInput = React.createClass({
 
     return (
       r.div({ className: 'form-group' + (anyError ? ' has-error' : '') },
-        r.label({ for: 'dw-local-hostname' }, this.props.label),
+        r.label({ htmlFor: 'dw-local-hostname' }, this.props.label),
         r.br(),
         r.kbd({}, location.protocol + '//'),
         r.input({ type: 'text', id: 'dw-local-hostname', className: 'form-control',

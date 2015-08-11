@@ -354,7 +354,7 @@ object LoginWithOpenAuthController extends Controller {
         allowUnapproved = true) { request: JsonPostRequest =>
     val body = request.body
 
-    val name = (body \ "name").as[String]
+    val fullName = (body \ "fullName").as[String]
     val email = (body \ "email").as[String]
     val username = (body \ "username").as[String]
     val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
@@ -392,7 +392,7 @@ object LoginWithOpenAuthController extends Controller {
 
     val dao = daoFor(request.request)
     val userData =
-      NewOauthUserData.create(name = name, username = username, email = email,
+      NewOauthUserData.create(name = fullName, username = username, email = email,
           emailVerifiedAt = emailVerifiedAt, identityData = oauthDetails,
           isAdmin = becomeOwner, isOwner = becomeOwner) match {
         case Good(data) => data

@@ -113,69 +113,34 @@ var CreateUserDialog = createClassAndFactory({
 export var CreateUserDialogContent = createClassAndFactory({
   getInitialState: function() {
     return {
-      zxcvbnLoaded: false,
+      passwordOk: !this.props.createPasswordUser,
+      userData: { fullName: '', email: '', username: '' },
     };
   },
 
-  componentDidMount: function() {
-    // The password strength test library is large, because it contains lists of all words.
-    window['yepnope']({
-      load:  debiki.internal.assetsUrlPathStart + 'zxcvbn.js',
-      complete: () => {
-        this.setState({ zxcvbnLoaded: true });
-      }
+  setPasswordOk: function(passwordOk: boolean) {
+    this.setState({
+      passwordOk: passwordOk
     });
   },
 
-  checkPasswordStrength: function () {
-    return 4; // for now
-    /* From the old jQuery UI dialog:
-    var passwordStrength = zxcvbn(data.password, [
-        data.name, data.email, data.username, 'debiki']);
-    console.debug(
-        'Password entropy: ' + passwordStrength.entropy +
-        ', crack_time: ' + passwordStrength.crack_time +
-        ' = ' + passwordStrength.crack_time_display +
-        ', score: ' + passwordStrength.score);
-
-    var problem = null;
-    if (!needsPassword) {
-      // Fine, already authenticated: OpenAuth or OpenID or something like that.
-    }
-    else if (data.password.length < 8) {
-      problem = 'too short, should be at least 8 characters';
-    }
-    else if (!data.password.match(/[0-9!@#$%^&*()_+`=;:{}[\]\\]+/)) {
-      // This extra test is here just in case the current version of zxcvbn happens to be buggy.
-      problem = 'contains no digit or special character';
-    }
-    else if (passwordStrength.score < 4) {
-      problem = 'too weak';
-    }
-    if (problem) {
-      // 100 computers (in the message below)? Well, zxcvbn assumes 10ms per guess and 100 cores.
-      // My scrypt settings are more like 100-200 ms per guess. So, say 100 ms,
-      // and 1 000 cores = 100 computers  -->  can use zxcvbn's default crack time.
-      alert('Password ' + problem + '. Please choose a stronger password.\n\n' +
-          '(Estimated crack time: ' + passwordStrength.crack_time_display +
-          ', for someone with 100 computers and access to the scrypt hash.)');
-      if (!debiki.isDev || !confirm('Development mode. Continue anyway?'))
-        return;
-    }
-    */
+  updateUserData: function() {
+    this.setState({
+      userData: {
+        fullName: this.refs.fullNameInput.getValue(),
+        email: this.props.emailAddress || this.refs.emailInput.getValue(),
+        username: this.refs.usernameInput.getValue(),
+      }
+    });
+    // Check strength again since e.g. fullName might now be (or no longer be)
+    // part of the password. But not until we've rerendered everything and sent new
+    // props to the password input.
+    setTimeout(this.refs.passwordInput.checkPasswordStrength, 1);
   },
 
   doCreateUser: function() {
-    if (!this.state.zxcvbnLoaded) {
-      alert("zxcvbn.js not yet loaded, why not, what is the server doing? [DwE50GP3]");
-      return;
-    }
-    var data: any = {
-      name: this.refs.fullNameInput.getValue(),
-      email: this.props.emailAddress || this.refs.emailInput.getValue(),
-      username: this.refs.usernameInput.getValue(),
-      returnToUrl: this.props.anyReturnToUrl,
-    };
+    var data: any = this.state.userData;
+    data.returnToUrl = this.props.anyReturnToUrl;
     if (this.props.authDataCacheKey) {
       data.authDataCacheKey = this.props.authDataCacheKey;
       Server.createOauthUser(data, this.handleCreateUserResponse);
@@ -214,27 +179,29 @@ export var CreateUserDialogContent = createClassAndFactory({
 
   render: function() {
     var props = this.props;
+    var state = this.state;
 
     var fullNameInput =
         Input({ type: 'text', label: "Your name: (the long version)", ref: 'fullNameInput',
-            defaultValue: props.name });
+            defaultValue: props.name, onChange: this.updateUserData });
 
     var anyEmailHelp = props.providerId ?
         "Your email has been verified by " + props.providerId + "." : null;
 
-    var emailInput = 
+    var emailInput =
         Input({ type: 'text', label: "Email: (will be kept private)", ref: 'emailInput',
             // If email already provided by e.g. Google, don't let the user change it.
             disabled: props.email && props.email.length, defaultValue: props.email,
-            help: anyEmailHelp });
+            help: anyEmailHelp, onChange: this.updateUserData });
 
     var usernameInput =
         Input({ type: 'text', label: "Username:", ref: 'usernameInput',
-            help: r.span({},
+            onChange: this.updateUserData, help: r.span({},
               "Your ", r.code({}, "@username"), " must be unique, short, no spaces.") });
 
     var passwordInput = props.createPasswordUser
-        ? Input({ type: 'password', label: "Password:", ref: 'passwordInput' })
+        ? NewPasswordInput({ newPasswordData: state.userData, setPasswordOk: this.setPasswordOk,
+              ref: 'passwordInput' })
         : null;
 
     return (
@@ -243,7 +210,7 @@ export var CreateUserDialogContent = createClassAndFactory({
         emailInput,
         usernameInput,
         passwordInput,
-        Button({ onClick: this.doCreateUser }, "Create User"),
+        Button({ onClick: this.doCreateUser, disabled: !state.passwordOk }, "Create User"),
         Button({ onClick: props.closeDialog }, "Cancel")));
   }
 });
