@@ -22,6 +22,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
+/// <reference path="../utils/page-scroll-mixin.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.sidebar {
@@ -33,48 +34,13 @@ var $window = $(window);
 var $document = $(document);
 
 
-// Move to where?
-var PageScrollMixin = {
-  componentDidMount: function() {
-    window.addEventListener('scroll', this.__onScroll, false);
-    this.checkIsScrollingHandle = setInterval(this.__checkIsScrolling, 100);
-    this.isScrolling = false;
-    this.lastScrollTime = 0;
-  },
-  componentWillUnmount: function() {
-    window.removeEventListener('scroll', this.__onScroll, false);
-    clearInterval(this.checkIsScrollingHandle);
-  },
-  __checkIsScrolling: function() {
-    if (Date.now() - this.lastScrollTime > 200 && this.isScrolling) {
-      this.isScrolling = false;
-      if (this.onScrollStop) {
-        this.onScrollStop();
-      }
-    }
-  },
-  __onScroll: function() {
-    if (!this.isScrolling) {
-      this.isScrolling = true;
-      if (this.onScrollStart) {
-        this.onScrollStart();
-      }
-    }
-    if (this.onScroll) {
-      this.onScroll();
-    }
-    this.lastScrollTime = Date.now();
-  }
-};
-
-
 var ShowMinimapMinLeft = 80;
 var ShowMinimapMinTop = 200;
 var TooFewPosts = 5 + 2; // + 2 becaus of title and body
 
 
 export var MiniMap = createComponent({
-  mixins: [PageScrollMixin],
+  mixins: [utils.PageScrollMixin],
 
   componentDidMount: function() {
     this.redrawMinimap();
@@ -188,7 +154,7 @@ export var MiniMap = createComponent({
     var docPosClickedY = (event.pageY - canvasOffset.top) / this.height * $document.height();
     var newDocCornerX = docPosClickedX - $window.width() / 2;
     var newDocCornerY = docPosClickedY - $window.height() / 2;
-    $window[0]['scrollTo'](newDocCornerX, newDocCornerY)
+    window.scrollTo(newDocCornerX, newDocCornerY)
   },
 
   render: function() {

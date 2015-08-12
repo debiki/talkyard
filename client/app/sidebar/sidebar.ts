@@ -37,6 +37,7 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
+var TopBarHegiht = 44; // [KP43WV3]
 
 export var Sidebar = createComponent({
   mixins: [debiki2.StoreListenerMixin],
@@ -216,14 +217,14 @@ export var Sidebar = createComponent({
     var commentSectionHeight = win.height() - commentSectionBounds.top;
 
     var nextState = '' + win.width() + ',' + win.height() + ':';
-    if (commentSectionBounds.top <= 0) {
+    if (commentSectionBounds.top <= TopBarHegiht) {
       nextState += 'below:' + this.state.showSidebar;
       if (nextState === this.lastState) {
         return;
       }
 
       // We've scrolled down; let the sidebar span from top to bottom.
-      sidebar.css('top', 0);
+      sidebar.css('top', TopBarHegiht);
       sidebar.css('position', 'fixed');
       if (this.state.showSidebar) {
         sidebar.addClass('dw-sidebar-fixed');
@@ -249,8 +250,8 @@ export var Sidebar = createComponent({
       // the browser window is very wide and we can safely show the whole sidebar
       // at the right edge, without occluding the article.
       sidebar.removeClass('dw-sidebar-fixed');
-      sidebar.offset({ top: win.scrollTop() + commentSectionBounds.top, left: undefined });
       sidebar.css('position', 'absolute');
+      sidebar.offset({ top: win.scrollTop() + commentSectionBounds.top, left: undefined });
       if (this.state.showSidebar) {
         sidebar.height(commentSectionHeight);
         openButton.css('position', 'relative');
@@ -402,7 +403,7 @@ export var Sidebar = createComponent({
           // commentsFound.new.length + ' new');
       if (store.horizontalLayout) {
         return (
-          r.div({},
+          r.div({ className: 'dw-sidebar-z-index' },
             r.div({ id: 'dw-minimap-holder', style: { width: '100%' }},
               r.div({ className: 'dw-upper-right-corner' },
                 MiniMap(minimapProps),
@@ -525,7 +526,7 @@ export var Sidebar = createComponent({
     }
 
     return (
-      r.div({},
+      r.div({ className: 'dw-sidebar-z-index' },
       r.div({ id: 'dw-minimap-holder', className: 'dw-sidebar-is-open' },
         r.div({ className: 'dw-upper-right-corner' },
           MiniMap(minimapProps))),

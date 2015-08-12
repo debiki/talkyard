@@ -213,7 +213,8 @@ var Title = createComponent({
         ? titlePost.sanitizedHtml
         : r.i({}, '(Title pending approval)');
     var anyEditTitleBtn;
-    if (isStaff(user) || user.userId === titlePost.authorId) {
+    if (!this.props.hideTitleEditButton && (
+          isStaff(user) || user.userId === titlePost.authorId)) {
       anyEditTitleBtn =
         r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.editTitle });
     }

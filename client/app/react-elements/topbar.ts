@@ -19,6 +19,7 @@
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../login/login-dialog.ts" />
 /// <reference path="../page-tools/page-tools.ts" />
+/// <reference path="../utils/page-scroll-mixin.ts" />
 /// <reference path="name-login-btns.ts" />
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 
@@ -37,19 +38,43 @@ var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 
 export var TopBar = createComponent({
-  mixins: [debiki2.StoreListenerMixin],
+  mixins: [debiki2.StoreListenerMixin, debiki2.utils.PageScrollMixin],
 
   getInitialState: function() {
     return {
       store: debiki2.ReactStore.allData(),
       showSearchForm: false,
+      fixed: false,
+      initialOffsetTop: -1,
     };
+  },
+
+  componentDidMount: function() {
+    var rect = this.getDOMNode().getBoundingClientRect();
+    this.setState({
+      initialOffsetTop: rect.top + window.pageYOffset,
+      initialHeight: rect.bottom - rect.top,
+    });
   },
 
   onChange: function() {
     this.setState({
       store: debiki2.ReactStore.allData()
     });
+  },
+
+  onScroll: function(event) {
+    var node = this.getDOMNode();
+    if (!this.state.fixed) {
+      if (node.getBoundingClientRect().top < -6) {
+        this.setState({ fixed: true });
+      }
+    }
+    else {
+      if (window.pageYOffset < this.state.initialOffsetTop) {
+        this.setState({ fixed: false });
+      }
+    }
   },
 
   onLoginClick: function() {
@@ -133,12 +158,14 @@ export var TopBar = createComponent({
 
     var pageTitle;
     if (store.pageRole === PageRole.Forum) {
+      var titleProps: any = _.clone(store);
+      titleProps.hideTitleEditButton = this.state.fixed;
       pageTitle =
-          r.div({ className: 'dw-topbar-title' }, Title(store));
+          r.div({ className: 'dw-topbar-title' }, Title(titleProps));
     }
 
-    return (
-      r.div({ id: 'dw-react-topbar' },
+    var topbar =
+      r.div({ id: 'dw-react-topbar', className: 'clearfix' },
         pageTitle,
         r.div({ id: 'dw-topbar-btns' },
           loggedInAs,
@@ -148,7 +175,21 @@ export var TopBar = createComponent({
           toolsButton,
           searchButton,
           menuButton),
-        searchForm));
+        searchForm);
+
+    if (!this.state.fixed) {
+      return topbar;
+    }
+    else {
+      return (
+        r.div({},
+          // The placeholder prevents the page height from suddenly changing when the
+          // topbar becomes fixed and thus is removed from the flow.
+          r.div({ style: { height: this.state.initialHeight }}),
+          r.div({ className: 'dw-fixed-topbar-wrap' },
+            r.div({ className: 'container' },
+              topbar))));
+    }
   }
 });
 

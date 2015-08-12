@@ -20,8 +20,8 @@
   display: none;
 
 #dw-react-topbar
-  height: 51px; // avoids height changes when filled with contents
   z-index: 1;
+  min-height: 51px; // avoids height changes when filled with contents
 
   .dw-topbar-title
     float: left;
@@ -105,6 +105,29 @@
 
 .dw-lower-right-corner
   position: absolute; bottom: 0px; right: 0px;
+
+
+// The fixed topbar height should be a little bit less than 44, see sidebar/sidebar.ts [KP43WV3].
+.dw-fixed-topbar-wrap
+  position: fixed;
+  width: 100%;
+  left: 0;
+  top: 0;
+  z-index: 1010;
+  background: white;
+  box-shadow: 0 2px 4px gray;
+
+  #dw-react-topbar
+    min-height: auto;
+
+    h1.dw-p-ttl
+      margin: 12px 0 0;
+      font-size: 18px;
+
+    #dw-topbar-btns
+      margin: 7px 0;
+      .btn
+        font-size: 12px;
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list
