@@ -31,8 +31,10 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var Input = reactCreateFactory(ReactBootstrap.Input);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalTrigger = reactCreateFactory(ReactBootstrap.ModalTrigger);
-var OverlayMixin = ReactBootstrap.OverlayMixin;
+var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
+var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
+var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 
 export var pageToolsDialog;
@@ -47,8 +49,6 @@ export function createPageToolsDialog() {
 
 
 var PageToolsDialog = createComponent({
-  mixins: [OverlayMixin],
-
   getInitialState: function () {
     return {
       isOpen: false,
@@ -69,27 +69,25 @@ var PageToolsDialog = createComponent({
     this.setState({ isOpen: false });
   },
 
-  render: function () {
-    return null;
-  },
-
   unpinPage: function() {
     ReactActions.unpinPage(this.close);
   },
 
-  renderOverlay: function () {
-    if (!this.state.isOpen)
-      return null;
-
+  render: function () {
     var store: Store = this.state.store;
     var childProps = {
       store: store,
       closeAllDialogs: this.close
     };
 
-    var pinPageButton = !canPinPage(store) ? null :
-      ModalTrigger({ modal: PinPageDialog(childProps) },
-        Button({}, store.pinWhere ? "Edit Pin" : "Pin Topic"));
+    var pinPageButton;
+    var pinPageDialog;
+    if (canPinPage(store)) {
+      pinPageDialog = PinPageDialog($.extend({ ref: 'pinPageDialog' }, childProps));
+      pinPageButton =
+          Button({ onClick: () => this.refs.pinPageDialog.open() },
+            store.pinWhere ? "Edit Pin" : "Pin Topic");
+    }
 
     var unpinPageButton = (!canPinPage(store) || !store.pinWhere) ? null :
       Button({ onClick: this.unpinPage }, "Unpin Topic");
@@ -99,9 +97,11 @@ var PageToolsDialog = createComponent({
       unpinPageButton);
 
     return (
-      Modal({ title: "Do what?", onRequestHide: this.close },
-        r.div({ className: 'modal-body' }, buttons),
-        r.div({ className: 'modal-footer' }, Button({ onClick: this.close }, 'Close'))));
+      Modal({ show: this.state.isOpen, onHide: this.close },
+        pinPageDialog,
+        ModalHeader({}, ModalTitle({}, "Do what?")),
+        ModalBody({}, buttons),
+        ModalFooter({}, Button({ onClick: this.close }, 'Close'))));
   }
 });
 
@@ -115,6 +115,18 @@ var DefaultPinOrder = 5;
 
 
 var PinPageDialog = createComponent({
+  getInitialState: function() {
+    return { isOpen: false };
+  },
+
+  open: function() {
+    this.setState({ isOpen: true });
+  },
+
+  close: function() {
+    this.setState({ isOpen: false });
+  },
+
   doPin: function() {
     var pinWhere = this.refs.pinGloballyInput.getChecked() ?
         PinPageWhere.Globally : PinPageWhere.InCategory;
@@ -124,18 +136,19 @@ var PinPageDialog = createComponent({
       return;
     }
     ReactActions.pinPage(pinOrder, pinWhere, () => {
+      this.close();
       this.props.closeAllDialogs();
     });
   },
 
   render: function() {
-    var props = $.extend({ title: 'Pin Page' }, this.props);
-    var store = props.store;
+    var store = this.props.store;
     var pinInThisCategoryChecked = !store.pinWhere || store.pinWhere === PinPageWhere.InCategory;
     var pinGloballyChecked = store.pinWhere === PinPageWhere.Globally;
     return (
-      Modal(props,
-        r.div({ className: 'modal-body' },
+      Modal({ show: this.state.isOpen, onHide: this.close },
+        ModalHeader({}, ModalTitle({}, "Pin Page")),
+        ModalBody({},
           r.p({}, "Pin this topic to make it show up first in the forum topic list."),
           r.p({}, r.b({}, "Pin where?")),
           r.form({},
@@ -147,9 +160,9 @@ var PinPageDialog = createComponent({
           Input({ type: 'number', label: "Pin order (you can ignore this)", ref: 'pinOrderInput',
               help: "Sort order if many topics are pinned, 1 is first.",
               defaultValue: store.pinOrder || DefaultPinOrder })),
-        r.div({ className: 'modal-footer' },
+        ModalFooter({},
           Button({ onClick: this.doPin }, store.pinWhere ? 'Save' : 'Pin'),
-          Button({ onClick: this.props.onRequestHide }, 'Cancel'))));
+          Button({ onClick: this.close }, 'Cancel'))));
   }
 });
 

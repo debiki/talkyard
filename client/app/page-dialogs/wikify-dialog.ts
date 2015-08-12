@@ -29,8 +29,6 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
-var Input = reactCreateFactory(ReactBootstrap.Input);
-var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
@@ -94,11 +92,10 @@ var WikifyDialog = createComponent({
           r.p({}, "This post is a wiki editable by " + whichPeople +
               " members and the original author."),
           r.div({ className: 'dw-wikify-btns' },
-            Input({ type: 'Button', value: "Change back to normal",
-                onClick: this.changeBackToNormal,
+            Button({ onClick: this.changeBackToNormal,
                 help: "The original author's name will be shown again. Only he or she " +
                   "and staff will be able to edit it. The author will be credited " +
-                  "with any like votes."})));
+                  "with any like votes."}, "Change back to normal")));
     }
     else {
       title = "Change to Wiki?"
@@ -108,15 +105,15 @@ var WikifyDialog = createComponent({
             "Usually you do *not* want to do this, because then " +
             "the author of this post will no longer get any like votes for this post."),
           r.div({ className: 'dw-wikify-btns' },
-            Input({ type: 'Button', value: "Change to Staff Wiki",
-                onClick: this.changeToStaffWiki,
-                help: "All staff members will be able to edit this post." }),
-            Input({ type: 'Button', value: "Change to Community Wiki",
-                onClick: this.changeToCommunityWiki,
+            Button({ onClick: this.changeToStaffWiki,
+                help: "All staff members will be able to edit this post." },
+              "Change to Staff Wiki"),
+            Button({ onClick: this.changeToCommunityWiki,
                 help: "All community members will be able to edit this post, " +
                   "except for fairly new users and those who seem a bit risky " +
                   "(not yet implemented though). " +
-                  "Guest users may not edit it."})));
+                  "Guest users may not edit it." },
+                "Change to Community Wiki")));
     }
 
     return (

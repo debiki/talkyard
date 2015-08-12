@@ -109,20 +109,22 @@ var PostNavigation = createClassAndFactory({
   },
 
   render: function() {
-    var buttons = [];
-    buttons.push(
+    var backButton =
         r.button({
             id: 'dw-post-nav-back-btn', onClick: this.goBack, className: 'btn btn-default',
                 disabled: !this.canGoBack() },
-            r.span({ className: 'dw-shortcut' }, 'B'), 'ack'));
-    buttons.push(
+            r.span({ className: 'dw-shortcut' }, 'B'), 'ack');
+    var forwardsButton =
         r.button({
             id: 'dw-post-nav-forw-btn', onClick: this.goForward, className: 'btn btn-default',
                 disabled: !this.canGoForward() },
             r.span({ className: 'dw-shortcut' }, 'F'),
               r.span({ className: 'dw-narrow' }, 'wd'),
-              r.span({ className: 'dw-wide' }, 'orward')));
-    return this.props.visitedPosts.length === 0 ? null : r.div({ id: 'dw-post-nav-panel'}, buttons);
+              r.span({ className: 'dw-wide' }, 'orward'));
+    return (
+        this.props.visitedPosts.length === 0
+          ? null
+          : r.div({ id: 'dw-post-nav-panel'}, backButton, forwardsButton));
   }
 });
 
