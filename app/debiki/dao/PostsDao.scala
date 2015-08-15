@@ -96,12 +96,14 @@ trait PostsDao {
         htmlSanitized = htmlSanitized,
         approvedById = Some(approverId))
 
+      val numNewOrigPostReplies = (isApproved && newPost.isOrigPostReply) ? 1 | 0
       val oldMeta = page.meta
       val newMeta = oldMeta.copy(
         bumpedAt = Some(transaction.currentTime),
         lastReplyAt = Some(transaction.currentTime),
         numRepliesVisible = page.parts.numRepliesVisible + (isApproved ? 1 | 0),
-        numRepliesTotal = page.parts.numRepliesTotal + 1)
+        numRepliesTotal = page.parts.numRepliesTotal + 1,
+        numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible + numNewOrigPostReplies)
 
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
@@ -214,6 +216,10 @@ trait PostsDao {
       transaction.updatePost(editedPost)
       insertAuditLogEntry(auditLogEntry, transaction)
 
+      if (!postToEdit.isSomeVersionApproved && editedPost.isSomeVersionApproved) {
+        unimplemented("Updating visible post counts when post approved via an edit", "DwE5WE28")
+      }
+
       if (editedPost.isCurrentVersionApproved) {
         val notfs = NotificationGenerator(transaction).generateForEdits(postToEdit, editedPost)
         transaction.saveDeleteNotifications(notfs)
@@ -306,9 +312,10 @@ trait PostsDao {
       val isChangingDeletePostToDeleteTree =
         postBefore.deletedStatus.onlyThisDeleted && action == PSA.DeleteTree
       if (postBefore.isDeleted && !isChangingDeletePostToDeleteTree)
-        throwForbidden("DwE5GUK5", "This post has been deleted")
+        throwForbidden("DwE5GUK5", "This post has already been deleted")
 
-      var numRepliesGone = 0
+      var numVisibleRepliesGone = 0
+      var numOrigPostVisibleRepliesGone = 0
 
       // Update the directly affected post.
       val postAfter = action match {
@@ -319,13 +326,19 @@ trait PostsDao {
         case PSA.CollapseTree =>
           postBefore.copyWithNewStatus(transaction.currentTime, userId, treeCollapsed = true)
         case PSA.DeletePost(clearFlags) =>
-          if (postBefore.isReply) {
-            numRepliesGone += 1
+          if (postBefore.isVisible && postBefore.isReply) {
+            numVisibleRepliesGone += 1
+            if (postBefore.isOrigPostReply) {
+              numOrigPostVisibleRepliesGone += 1
+            }
           }
           postBefore.copyWithNewStatus(transaction.currentTime, userId, postDeleted = true)
         case PSA.DeleteTree =>
-          if (postBefore.isReply) {
-            numRepliesGone += 1
+          if (postBefore.isVisible && postBefore.isReply) {
+            numVisibleRepliesGone += 1
+            if (postBefore.isOrigPostReply) {
+              numOrigPostVisibleRepliesGone += 1
+            }
           }
           postBefore.copyWithNewStatus(transaction.currentTime, userId, treeDeleted = true)
       }
@@ -349,8 +362,12 @@ trait PostsDao {
           case PSA.DeletePost(clearFlags) =>
             None
           case PSA.DeleteTree =>
-            if (!successor.deletedStatus.isDeleted && successor.isReply) {
-              numRepliesGone += 1
+            if (successor.isVisible && successor.isReply) {
+              numVisibleRepliesGone += 1
+              if (successor.isOrigPostReply) {
+                // Was the orig post + all replies deleted recursively? Weird.
+                numOrigPostVisibleRepliesGone += 1
+              }
             }
             if (successor.deletedStatus.areAncestorsDeleted) None
             else Some(successor.copyWithNewStatus(
@@ -362,10 +379,12 @@ trait PostsDao {
         }
       }
 
-      if (numRepliesGone > 0) {
+      if (numVisibleRepliesGone > 0) {
         val oldMeta = page.meta
         val newMeta = oldMeta.copy(
-          numRepliesVisible = oldMeta.numRepliesVisible - numRepliesGone)
+          numRepliesVisible = oldMeta.numRepliesVisible - numVisibleRepliesGone,
+          numOrigPostRepliesVisible =
+            oldMeta.numOrigPostRepliesVisible - numOrigPostVisibleRepliesGone)
         transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
       }
 
@@ -402,13 +421,18 @@ trait PostsDao {
       val isApprovingPageBody = postId == PageParts.BodyId
       val isApprovingNewPost = postBefore.approvedVersion.isEmpty
 
-      // Bump page if new post added, or page body edited.
+      // Bump page and update reply counts if a new post was approved and became visible,
+      // or if the original post was edited.
       if (isApprovingNewPost || isApprovingPageBody) {
-        val (numNewReplies, newLastReplyAt) =
-          if (isApprovingNewPost && postAfter.isReply) (1, Some(transaction.currentTime))
-          else (0, pageMeta.lastReplyAt)
+        val (numNewReplies, numNewOrigPostReplies, newLastReplyAt) =
+          if (isApprovingNewPost && postAfter.isReply)
+            (1, postAfter.isOrigPostReply ? 1 | 0, Some(transaction.currentTime))
+          else
+            (0, 0, pageMeta.lastReplyAt)
+
         val newMeta = pageMeta.copy(
           numRepliesVisible = pageMeta.numRepliesVisible + numNewReplies,
+          numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewOrigPostReplies,
           lastReplyAt = newLastReplyAt,
           bumpedAt = Some(transaction.currentTime))
         transaction.updatePageMeta(newMeta, oldMeta = pageMeta)
@@ -556,11 +580,21 @@ trait PostsDao {
     val numNewLikes = postAfter.numLikeVotes - post.numLikeVotes
     val numNewWrongs = postAfter.numWrongVotes - post.numWrongVotes
     val numNewBurys = postAfter.numBuryVotes - post.numBuryVotes
+
+    val (numNewOpLikes, numNewOpWrongs, numNewOpBurys) =
+      if (post.isOrigPostReply)
+        (numNewLikes, numNewWrongs, numNewBurys)
+      else
+        (0, 0, 0)
+
     val pageMetaBefore = transaction.loadThePageMeta(post.pageId)
     val pageMetaAfter = pageMetaBefore.copy(
       numLikes = pageMetaBefore.numLikes + numNewLikes,
       numWrongs = pageMetaBefore.numWrongs + numNewWrongs,
-      numBurys = pageMetaBefore.numBurys + numNewBurys)
+      numBurys = pageMetaBefore.numBurys + numNewBurys,
+      numOrigPostLikeVotes = pageMetaBefore.numOrigPostLikeVotes + numNewOpLikes,
+      numOrigPostWrongVotes = pageMetaBefore.numOrigPostWrongVotes + numNewOpWrongs,
+      numOrigPostBuryVotes = pageMetaBefore.numOrigPostBuryVotes + numNewOpBurys)
 
     transaction.updatePost(postAfter)
     transaction.updatePageMeta(pageMetaAfter, oldMeta = pageMetaBefore)

@@ -202,9 +202,10 @@ trait PagesDao {
 
   def unpinPage(pageId: PageId) {
     readWriteTransaction { transaction =>
-      val oldMeta = loadPageMeta(pageId) getOrElse throwNotFound("DwE5KEF2", "Page gone")
+      val oldMeta = transaction.loadThePageMeta(pageId)
       val newMeta = oldMeta.copy(pinWhere = None, pinOrder = None)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      // (COULD update audit log)
     }
     refreshPageInAnyCache(pageId)
   }
@@ -212,13 +213,33 @@ trait PagesDao {
 
   def pinPage(pageId: PageId, pinWhere: PinPageWhere, pinOrder: Int) {
     readWriteTransaction { transaction =>
-      val oldMeta = loadPageMeta(pageId) getOrElse throwNotFound("DwE4KEF2", "Page gone")
+      val oldMeta = transaction.loadThePageMeta(pageId)
       val newMeta = oldMeta.copy(pinWhere = Some(pinWhere), pinOrder = Some(pinOrder))
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      // (COULD update audit log)
     }
     refreshPageInAnyCache(pageId)
   }
 
+
+  def togglePageIsDone(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
+        : Option[ju.Date] = {
+    val newDoneAt = readWriteTransaction { transaction =>
+      val oldMeta = transaction.loadThePageMeta(pageId)
+      if (oldMeta.pageRole != PageRole.ToDo)
+        throwBadReq("DwE6KEW2", "This page is not a To-Do page; it cannot be toggled done")
+      val newDoneAt = oldMeta.doneAt match {
+        case None => Some(transaction.currentTime)
+        case Some(_) => None
+      }
+      val newMeta = oldMeta.copy(doneAt = newDoneAt)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      // (COULD update audit log)
+      newDoneAt
+    }
+    refreshPageInAnyCache(pageId)
+    newDoneAt
+  }
 }
 
 

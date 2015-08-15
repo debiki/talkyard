@@ -96,6 +96,10 @@ ReactDispatcher.register(function(payload) {
       store.user.rolePageSettings.notfLevel = action.newLevel;
       break;
 
+    case ReactActions.actionTypes.TogglePageIsDone:
+      store.pageDoneAtMs = action.doneAtMs;
+      break;
+
     case ReactActions.actionTypes.EditTitleAndSettings:
       store.ancestorsRootFirst = action.newAncestorsRootFirst;
       var parent: any = _.last(action.newAncestorsRootFirst);

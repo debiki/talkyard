@@ -32,6 +32,7 @@ export var actionTypes = {
   PinPage: 'PinPage',
   UnpinPage: 'UnpinPage',
   SetPageNotfLevel: 'SetPageNotfLevel',
+  TogglePageIsDone: 'TogglePageIsDone',
   EditTitleAndSettings: 'EditTitleAndSettings',
   UpdatePost: 'UpdatePost',
   VoteOnPost: 'VoteOnPost',
@@ -121,6 +122,16 @@ export function setPageNoftLevel(newNotfLevel) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.SetPageNotfLevel,
     newLevel: newNotfLevel
+  });
+}
+
+
+export function togglePageIsDone() {
+  Server.togglePageIsDone((doneAtMs) => {
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.TogglePageIsDone,
+      doneAtMs: doneAtMs
+    });
   });
 }
 

@@ -478,12 +478,35 @@ var TopicRow = createComponent({
         ? r.p({ className: 'dw-p-excerpt' }, topic.excerpt, r.a({ href: topic.url }, 'read more'))
         : null;
 
+    var title = topic.title;
+
+    if (topic.pageRole === PageRole.Question) {
+      var tooltip = "This is an unsolved question or problem"
+      var questionIcon = r.span({ className: 'icon-help-circled' });
+      var answerIcon;
+      var answerCount;
+      if (topic.numOrigPostReplies > 0) {
+        answerIcon = r.span({ className: 'icon-info-circled dw-icon-inverted' }, ' ');
+        answerCount = r.span({ className: 'dw-qa-ans-count' }, topic.numOrigPostReplies);
+        tooltip += " with " + topic.numOrigPostReplies + " answers";
+      }
+      title = r.span({ title: tooltip }, questionIcon, answerCount, answerIcon, title);
+    }
+
+    if (topic.pageRole === PageRole.ToDo) {
+      var iconClass = topic.doneAtMs ? 'icon-check' : 'icon-check-empty';
+      var tooltip = topic.doneAtMs
+          ? "This has been done or fixed"
+          : "This is something to do or to fix, not yet done";
+      title = r.span({ title: tooltip }, r.span({ className: iconClass }, title));
+    }
+
     var categoryName = category ? category.name : '';
     var activityAgo = moment(topic.bumpedEpoch || topic.createdEpoch).from(this.props.now);
     return (
       r.tr({},
         r.td({ className: 'dw-tpc-title' },
-          r.a({ href: topic.url, className: anyPinIcon }, topic.title),
+          r.a({ href: topic.url, className: anyPinIcon }, title),
           excerptIfPinned),
         r.td({}, categoryName),
         r.td({ className: 'num dw-tpc-replies' }, topic.numPosts - 1),

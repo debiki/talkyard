@@ -23,7 +23,7 @@ import collection.mutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.ReactJson.{DateEpochOrNull, JsNumberOrNull, JsStringOrNull}
+import debiki.ReactJson.{DateEpochOrNull, JsNumberOrNull, JsLongOrNull, JsStringOrNull}
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
@@ -213,6 +213,7 @@ object ForumController extends mvc.Controller {
 
     Json.obj(
       "pageId" -> topic.id,
+      "pageRole" -> topic.pageRole.toInt,
       "title" -> title,
       "url" -> topic.path.value,
       "categoryId" -> topic.parentPageId.getOrDie(
@@ -225,9 +226,17 @@ object ForumController extends mvc.Controller {
       "numLikes" -> topic.meta.numLikes,
       "numWrongs" -> topic.meta.numWrongs,
       "numBurys" -> topic.meta.numBurys,
+      "numOrigPostLikes" -> topic.meta.numOrigPostLikeVotes,
+      "numOrigPostReplies" -> topic.meta.numOrigPostRepliesVisible,
       "createdEpoch" -> createdEpoch,
       "bumpedEpoch" -> bumpedEpoch,
-      "lastReplyEpoch" -> lastReplyEpoch)
+      "lastReplyEpoch" -> lastReplyEpoch,
+      "answeredAtMs" -> JsLongOrNull(topic.meta.answeredAt.map(_.getTime)),
+      "answerPostUniqueId" -> JsNumberOrNull(topic.meta.answerPostUniqueId),
+      "doneAtMs" -> JsLongOrNull(topic.meta.doneAt.map(_.getTime)),
+      "closedAtMs" -> JsLongOrNull(topic.meta.closedAt.map(_.getTime)),
+      "lockedAtMs" -> JsLongOrNull(topic.meta.lockedAt.map(_.getTime)),
+      "frozenAtMs" -> JsLongOrNull(topic.meta.frozenAt.map(_.getTime)))
   }
 
 }

@@ -182,6 +182,7 @@ export var TitleEditor = createComponent({
       Input({ type: 'select', label: 'Page Type', ref: 'pageRoleInput', title: 'Page type',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10', defaultValue: pageRole },
         r.option({ value: PageRole.Question }, 'Question'),
+        r.option({ value: PageRole.ToDo }, 'To Do'),
         // r.option({ value: PageRole.WikiPage }, 'Wiki'), -- if 1d layout is default?
         r.option({ value: PageRole.MindMap }, 'Wiki Mind Map'),
         r.option({ value: PageRole.Discussion }, 'Other'));

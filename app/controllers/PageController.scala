@@ -17,19 +17,21 @@
 
 package controllers
 
-import actions.ApiActions.PostJsonAction
+import actions.ApiActions.{PostJsonAction, StaffPostJsonAction}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
+import debiki.ReactJson.JsLongOrNull
+import java.{util => ju}
 import play.api._
 import play.api.libs.json.Json
 import Utils._
 
 
-/** Creates pages.
+/** Creates pages, toggles is-done, deletes them.
   */
-object CreatePageController extends mvc.Controller {
+object PageController extends mvc.Controller {
 
 
   def createPage = PostJsonAction(RateLimits.CreateTopic, maxLength = 20 * 1000) { request =>
@@ -51,6 +53,14 @@ object CreatePageController extends mvc.Controller {
       request.theBrowserIdData)
 
     OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))
+  }
+
+
+  def togglePageIsDone = StaffPostJsonAction(maxLength = 100) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    val doneAt: Option[ju.Date] = request.dao.togglePageIsDone(pageId, userId = request.theUserId,
+      request.theBrowserIdData)
+    OkSafeJson(JsLongOrNull(doneAt.map(_.getTime)))
   }
 
 }

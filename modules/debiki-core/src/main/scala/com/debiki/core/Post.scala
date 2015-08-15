@@ -235,6 +235,7 @@ case class Post(
   require(numTimesRead >= 0, "DwE2ZfMI3")
 
   def isReply = PageParts.isReply(id)
+  def isOrigPostReply = PageParts.isReply(id) && parentId == Some(PageParts.BodyId)
   def isMultireply = multireplyPostIds.nonEmpty
   def isHidden = hiddenAt.isDefined
   def isDeleted = deletedStatus.isDeleted

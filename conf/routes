@@ -108,7 +108,8 @@ GET   /-/list-categories        controllers.ForumController.listCategories(forum
 GET   /-/list-categories-topics controllers.ForumController.listCategoriesAndTopics(forumId)
 POST  /-/create-forum-category  controllers.ForumController.createForumCategory
 
-POST  /-/create-page            controllers.CreatePageController.createPage
+POST  /-/create-page            controllers.PageController.createPage
+POST  /-/toggle-page-done       controllers.PageController.togglePageIsDone
 POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/vote                   controllers.VoteController.handleVotes
 POST  /-/flag                   controllers.Application.flag
@@ -132,7 +133,6 @@ POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 #POST  /-/load-replies           controllers.LoadPagePartsController.loadReplies
 #POST  /-/load-threads-and-trees controllers.LoadPagePartsController.loadThreadsAndTrees
 GET   /-/list-pages             controllers.ListController.listPages
-POST  /-/change-page-meta       controllers.PageMetaController.changeMeta
 
 GET  /-/ping-exception-action   controllers.DebugController.pingExceptionAction
 GET  /-/ping-session-action     controllers.DebugController.pingSessionAction

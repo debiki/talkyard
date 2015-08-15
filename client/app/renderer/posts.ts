@@ -197,13 +197,21 @@ var Title = createComponent({
   getInitialState: function() {
     return { isEditing: false };
   },
+
   editTitle: function(event) {
     this.setState({ isEditing: true });
   },
+
   closeEditor: function() {
     this.setState({ isEditing: false });
   },
+
+  toggleIsDone: function() {
+    debiki2.ReactActions.togglePageIsDone();
+  },
+
   render: function() {
+    var store: Store = this.props;
     var user = this.props.user;
     var titlePost = this.props.allPosts[TitleId];
     if (!titlePost)
@@ -226,16 +234,30 @@ var Title = createComponent({
     }
     else {
       var pinClass = this.props.pinWhere ? ' icon-pin' : '';
-      var title;
+      var tooltip;
+      var icon;
+      if (store.pageRole === PageRole.Question) {
+        icon = r.span({ className: 'icon-help-circled' });
+        tooltip = "This is a question or problem. ";
+      }
+      if (store.pageRole === PageRole.ToDo) {
+        var iconClass = store.pageDoneAtMs ? 'icon-check' : 'icon-check-empty';
+        var clickableClass = isStaff(store.user) ? ' dw-clickable' : '';
+        var onClick = isStaff(store.user) ? this.toggleIsDone : null;
+        icon = r.span({ className: iconClass + clickableClass, onClick: onClick });
+        tooltip = store.pageDoneAtMs
+            ? "This has been done or fixed. "
+            : "This topic is about something to do or fix, not yet done. ";
+      }
       switch (this.props.pinWhere) {
-        case PinPageWhere.Globally: title = 'Pinned globally'; break;
-        case PinPageWhere.InCategory: title = 'Pinned in this category'; break;
+        case PinPageWhere.Globally: tooltip += 'Pinned globally.'; break;
+        case PinPageWhere.InCategory: tooltip += 'Pinned in this category.'; break;
         default: ;
       }
       contents =
           r.div({ className: 'dw-p-bd' },
             r.div({ className: 'dw-p-bd-blk' },
-              r.h1({ className: 'dw-p-ttl' + pinClass, title: title }, titleText),
+              r.h1({ className: 'dw-p-ttl' + pinClass, title: tooltip }, icon, titleText),
               anyEditTitleBtn));
     }
     return (

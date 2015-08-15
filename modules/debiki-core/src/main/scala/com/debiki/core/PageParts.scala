@@ -29,7 +29,7 @@ object PageParts {
 
   // Letting the page body / original post be number 1 is compatible with Discourse.
   val TitleId = 0
-  val BodyId = 1
+  val BodyId = 1  // (could rename to OrigPostId)
   val FirstReplyId = 2
 
   val LowestPostId = TitleId
@@ -113,7 +113,11 @@ abstract class PageParts extends People {
 
   def numRepliesTotal = allPosts.count(_.isReply)
   lazy val numRepliesVisible = allPosts count { post =>
-    post.isReply && post.isSomeVersionApproved && !post.isDeleted && !post.isHidden
+    post.isReply && post.isVisible
+  }
+
+  lazy val numOrigPostRepliesVisible = allPosts count { post =>
+    post.isOrigPostReply && post.isVisible
   }
 
 
