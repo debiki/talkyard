@@ -480,7 +480,12 @@ var TopicRow = createComponent({
 
     var title = topic.title;
 
-    if (topic.pageRole === PageRole.Question) {
+    if (topic.closedAtMs) {
+      var tooltip = makePageClosedTooltipText(topic.pageRole);
+      var closedIcon = r.span({ className: 'icon-cancel-circled-empty' });
+      title = r.span({ title: tooltip }, closedIcon, title);
+    }
+    else if (topic.pageRole === PageRole.Question) {
       var tooltip = "This is an unsolved question or problem"
       var questionIcon = r.span({ className: 'icon-help-circled' });
       var answerIcon;
@@ -492,8 +497,7 @@ var TopicRow = createComponent({
       }
       title = r.span({ title: tooltip }, questionIcon, answerCount, answerIcon, title);
     }
-
-    if (topic.pageRole === PageRole.ToDo) {
+    else if (topic.pageRole === PageRole.ToDo) {
       var iconClass = topic.doneAtMs ? 'icon-check' : 'icon-check-empty';
       var tooltip = topic.doneAtMs
           ? "This has been done or fixed"

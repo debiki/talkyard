@@ -583,9 +583,14 @@ export function createPage(data, doneCallback: (newPageId: string) => void) {
 }
 
 
-export function togglePageIsDone(success: (doneAtMs: number) => void) {
+export function togglePageDone(success: (doneAtMs: number) => void) {
   postJsonSuccess('/-/toggle-page-done', success, { pageId: d.i.pageId });
 }
+
+export function togglePageClosed(success: (closedAtMs: number) => void) {
+  postJsonSuccess('/-/toggle-page-closed', success, { pageId: d.i.pageId });
+}
+
 
 
 //------------------------------------------------------------------------------

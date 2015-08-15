@@ -33,6 +33,7 @@ export var actionTypes = {
   UnpinPage: 'UnpinPage',
   SetPageNotfLevel: 'SetPageNotfLevel',
   TogglePageIsDone: 'TogglePageIsDone',
+  TogglePageClosed: 'TogglePageClosed',
   EditTitleAndSettings: 'EditTitleAndSettings',
   UpdatePost: 'UpdatePost',
   VoteOnPost: 'VoteOnPost',
@@ -127,10 +128,20 @@ export function setPageNoftLevel(newNotfLevel) {
 
 
 export function togglePageIsDone() {
-  Server.togglePageIsDone((doneAtMs) => {
+  Server.togglePageDone((doneAtMs) => {
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.TogglePageIsDone,
       doneAtMs: doneAtMs
+    });
+  });
+}
+
+
+export function togglePageClosed() {
+  Server.togglePageClosed((closedAtMs) => {
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.TogglePageClosed,
+      closedAtMs: closedAtMs
     });
   });
 }

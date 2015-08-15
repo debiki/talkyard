@@ -35,7 +35,7 @@ object PageController extends mvc.Controller {
 
 
   def createPage = PostJsonAction(RateLimits.CreateTopic, maxLength = 20 * 1000) { request =>
-    import request.{dao, body}
+    import request.body
 
     val anyParentPageId = (body \ "parentPageId").asOpt[PageId]
     val pageRoleInt = (body \ "pageRole").as[Int]
@@ -56,11 +56,19 @@ object PageController extends mvc.Controller {
   }
 
 
-  def togglePageIsDone = StaffPostJsonAction(maxLength = 100) { request =>
+  def togglePageDone = StaffPostJsonAction(maxLength = 100) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
-    val doneAt: Option[ju.Date] = request.dao.togglePageIsDone(pageId, userId = request.theUserId,
+    val doneAt: Option[ju.Date] = request.dao.togglePageDone(pageId, userId = request.theUserId,
       request.theBrowserIdData)
     OkSafeJson(JsLongOrNull(doneAt.map(_.getTime)))
+  }
+
+
+  def togglePageClosed = PostJsonAction(RateLimits.TogglePage, maxLength = 100) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    val closedAt: Option[ju.Date] = request.dao.ifAuthTogglePageClosed(
+      pageId, userId = request.theUserId, request.theBrowserIdData)
+    OkSafeJson(JsLongOrNull(closedAt.map(_.getTime)))
   }
 
 }

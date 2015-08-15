@@ -222,12 +222,16 @@ trait PagesDao {
   }
 
 
-  def togglePageIsDone(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
+  def togglePageDone(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
         : Option[ju.Date] = {
     val newDoneAt = readWriteTransaction { transaction =>
       val oldMeta = transaction.loadThePageMeta(pageId)
       if (oldMeta.pageRole != PageRole.ToDo)
         throwBadReq("DwE6KEW2", "This page is not a To-Do page; it cannot be toggled done")
+
+      if (oldMeta.closedAt.isDefined)
+        throwBadReq("DwE5KEP0", "This To-Do is closed; reopen it before you can complete it")
+
       val newDoneAt = oldMeta.doneAt match {
         case None => Some(transaction.currentTime)
         case Some(_) => None
@@ -239,6 +243,28 @@ trait PagesDao {
     }
     refreshPageInAnyCache(pageId)
     newDoneAt
+  }
+
+
+  def ifAuthTogglePageClosed(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
+        : Option[ju.Date] = {
+    val newClosedAt = readWriteTransaction { transaction =>
+      val user = transaction.loadTheUser(userId)
+      val oldMeta = transaction.loadThePageMeta(pageId)
+      if (!user.isStaff && user.id != oldMeta.authorId)
+        throwForbidden("DwE5JPK7", "Only staff and the topic author can toggle it closed")
+
+      val newClosedAt = oldMeta.closedAt match {
+        case None => Some(transaction.currentTime)
+        case Some(_) => None
+      }
+      val newMeta = oldMeta.copy(closedAt = newClosedAt)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      // (COULD update audit log)
+      newClosedAt
+    }
+    refreshPageInAnyCache(pageId)
+    newClosedAt
   }
 }
 

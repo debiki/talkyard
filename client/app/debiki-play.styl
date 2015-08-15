@@ -151,25 +151,37 @@ h1.dw-p-ttl
     position: relative;
     top: 2px;
 
+  .icon-help-circled:before
+    color: hsl(0, 0%, 55%);
+    font-size: 95%;
+    top: 1px;
+
+  .icon-cancel-circled-empty:before
+    top: -1px !important;
+    font-size: 80%;
+    color: hsl(0, 0%, 47%);
+
   .icon-check
     color: #555;
 
   .icon-check-empty:before
     left: -2px;  // there's some whitespace to the left inside the icon itself
 
-  // Highlight the done/not-done checkbox on hover, since it's clickable.
-  .dw-clickable[class^=icon-check]:hover:before
-    outline: 2px solid hsl(210, 100%, 90%);
-    background-color: hsl(210, 100%, 96%);
-    cursor: pointer;
+  // The done/not-done checkbox, if it's clickable (it is for staff and topic author).
+  .dw-clickable[class^=icon-check]:before
+    color: hsl(210, 51%, 45%);
+    &:hover
+      outline: 2px solid hsl(210, 100%, 90%);
+      background-color: hsl(210, 100%, 96%);
+      cursor: pointer;
 
-h1.dw-p-ttl + .dw-a-edit
-  float: none;
-  font-size: 20px;
-  margin-left: 8px;
-  position: relative;
-  bottom: 2px;
-  opacity: 0.83;
+  .dw-a-edit
+    float: none;
+    font-size: 20px;
+    margin-left: 8px;
+    opacity: 0.83;
+    &:before
+      top: -2px;
 
 .dw-p-unapproved > .dw-p-hd,
 .dw-p-dl > .dw-p-hd

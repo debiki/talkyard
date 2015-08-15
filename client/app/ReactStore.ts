@@ -100,6 +100,10 @@ ReactDispatcher.register(function(payload) {
       store.pageDoneAtMs = action.doneAtMs;
       break;
 
+    case ReactActions.actionTypes.TogglePageClosed:
+      store.pageClosedAtMs = action.closedAtMs;
+      break;
+
     case ReactActions.actionTypes.EditTitleAndSettings:
       store.ancestorsRootFirst = action.newAncestorsRootFirst;
       var parent: any = _.last(action.newAncestorsRootFirst);

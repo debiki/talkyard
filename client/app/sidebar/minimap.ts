@@ -181,7 +181,8 @@ export var MiniMap = createComponent({
 
 
 function isPageWithMinimap(pageRole: PageRole): boolean {
-  return pageRole === PageRole.About || pageRole === PageRole.Question ||
+  return pageRole === PageRole.About ||
+      pageRole === PageRole.Question || pageRole === PageRole.ToDo ||
       pageRole === PageRole.MindMap || pageRole === PageRole.Discussion ||
       pageRole === PageRole.WebPage;
 }
