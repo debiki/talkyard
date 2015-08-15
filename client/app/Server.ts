@@ -573,13 +573,23 @@ export function createForumCategory(data, success: (response: any) => void) {
 }
 
 
-export function createPage(data, doneCallback: (newPageId: string) => void) {
+export function createPage(data, success: (newPageId: string) => void) {
   postJson('/-/create-page', {
     data: data,
     success: (response) => {
-      doneCallback(response.newPageId);
+      success(response.newPageId);
     }
   });
+}
+
+
+export function acceptAnswer(postId: number, success: (answeredAtMs: number) => void) {
+  postJsonSuccess('/-/accept-answer', success, { pageId: d.i.pageId, postId: postId });
+}
+
+
+export function unacceptAnswer(success: () => void) {
+  postJsonSuccess('/-/unaccept-answer', success, { pageId: d.i.pageId });
 }
 
 

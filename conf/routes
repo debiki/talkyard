@@ -111,6 +111,8 @@ POST  /-/create-forum-category  controllers.ForumController.createForumCategory
 POST  /-/create-page            controllers.PageController.createPage
 POST  /-/toggle-page-done       controllers.PageController.togglePageDone
 POST  /-/toggle-page-closed     controllers.PageController.togglePageClosed
+POST  /-/accept-answer          controllers.PageController.acceptAnswer
+POST  /-/unaccept-answer        controllers.PageController.unacceptAnswer
 POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/vote                   controllers.VoteController.handleVotes
 POST  /-/flag                   controllers.Application.flag

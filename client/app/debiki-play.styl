@@ -156,6 +156,10 @@ h1.dw-p-ttl
     font-size: 95%;
     top: 1px;
 
+  .icon-ok-circled-empty:before
+    font-size: 90%;
+    position: static;
+
   .icon-cancel-circled-empty:before
     top: -1px !important;
     font-size: 80%;
@@ -168,8 +172,9 @@ h1.dw-p-ttl
     left: -2px;  // there's some whitespace to the left inside the icon itself
 
   // The done/not-done checkbox, if it's clickable (it is for staff and topic author).
-  .dw-clickable[class^=icon-check]:before
+  .dw-clickable[class^=icon-]:before
     color: hsl(210, 51%, 45%);
+    text-decoration: none;
     &:hover
       outline: 2px solid hsl(210, 100%, 90%);
       background-color: hsl(210, 100%, 96%);
@@ -182,6 +187,13 @@ h1.dw-p-ttl
     opacity: 0.83;
     &:before
       top: -2px;
+
+.dw-solved-by
+  float: left;
+  margin-top: 15px;
+  font-weight: bold;
+  z-index: 1;
+  position: relative;
 
 .dw-p-unapproved > .dw-p-hd,
 .dw-p-dl > .dw-p-hd

@@ -32,6 +32,8 @@ export var actionTypes = {
   PinPage: 'PinPage',
   UnpinPage: 'UnpinPage',
   SetPageNotfLevel: 'SetPageNotfLevel',
+  AcceptAnswer: 'AcceptAnswer',
+  UnacceptAnswer: 'UnacceptAnswer',
   TogglePageIsDone: 'TogglePageIsDone',
   TogglePageClosed: 'TogglePageClosed',
   EditTitleAndSettings: 'EditTitleAndSettings',
@@ -142,6 +144,26 @@ export function togglePageClosed() {
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.TogglePageClosed,
       closedAtMs: closedAtMs
+    });
+  });
+}
+
+
+export function acceptAnswer(postId: number) {
+  Server.acceptAnswer(postId, (answeredAtMs) => {
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.AcceptAnswer,
+      answeredAtMs: answeredAtMs,
+      answerPostUniqueId: postId,
+    });
+  });
+}
+
+
+export function unacceptAnswer() {
+  Server.unacceptAnswer(() => {
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.UnacceptAnswer,
     });
   });
 }

@@ -56,6 +56,22 @@ object PageController extends mvc.Controller {
   }
 
 
+  def acceptAnswer = PostJsonAction(RateLimits.TogglePage, maxLength = 100) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    val postUniqueId = (request.body \ "postId").as[UniquePostId]
+    val acceptedAt: Option[ju.Date] = request.dao.ifAuthAcceptAnswer(
+      pageId, postUniqueId, userId = request.theUserId, request.theBrowserIdData)
+    OkSafeJson(JsLongOrNull(acceptedAt.map(_.getTime)))
+  }
+
+
+  def unacceptAnswer = PostJsonAction(RateLimits.TogglePage, maxLength = 100) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    request.dao.ifAuthUnacceptAnswer(pageId, userId = request.theUserId, request.theBrowserIdData)
+    Ok
+  }
+
+
   def togglePageDone = StaffPostJsonAction(maxLength = 100) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val doneAt: Option[ju.Date] = request.dao.togglePageDone(pageId, userId = request.theUserId,

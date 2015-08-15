@@ -198,6 +198,11 @@ var Title = createComponent({
     return { isEditing: false };
   },
 
+  scrollToAnswer: function() {
+    debiki.internal.showAndHighlightPost(debiki.internal.findPost$(this.props.pageAnswerPostNr));
+    debiki2['postnavigation'].addVisitedPosts(TitleId, this.props.pageAnswerPostNr);
+  },
+
   editTitle: function(event) {
     this.setState({ isEditing: true });
   },
@@ -238,11 +243,13 @@ var Title = createComponent({
       var icon;
       if (store.pageClosedAtMs) {
         icon = r.span({ className: 'icon-cancel-circled-empty' });
-        tooltip = makePageClosedTooltipText(store.pageRole);
+        tooltip = makePageClosedTooltipText(store.pageRole) + '\n';
       }
       else if (store.pageRole === PageRole.Question) {
-        icon = r.span({ className: 'icon-help-circled' });
-        tooltip = "This is a question or problem. ";
+        var icon = store.pageAnsweredAtMs
+            ? r.a({ className: 'icon-ok-circled-empty dw-clickable', onClick: this.scrollToAnswer })
+            : r.span({ className: 'icon-help-circled' });;
+        tooltip = makeQuestionTooltipText(store.pageAnsweredAtMs) + ".\n";
       }
       else if (store.pageRole === PageRole.ToDo) {
         var iconClass = store.pageDoneAtMs ? 'icon-check' : 'icon-check-empty';
@@ -250,12 +257,12 @@ var Title = createComponent({
         var onClick = isStaff(store.user) ? this.toggleIsDone : null;
         icon = r.span({ className: iconClass + clickableClass, onClick: onClick });
         tooltip = store.pageDoneAtMs
-            ? "This has been done or fixed. "
-            : "This topic is about something to do or fix, not yet done. ";
+            ? "This has been done or fixed.\n"
+            : "This is about something to do or fix.\n";
       }
       switch (this.props.pinWhere) {
-        case PinPageWhere.Globally: tooltip += 'Pinned globally.'; break;
-        case PinPageWhere.InCategory: tooltip += 'Pinned in this category.'; break;
+        case PinPageWhere.Globally: tooltip += "Pinned globally."; break;
+        case PinPageWhere.InCategory: tooltip += "Pinned in this category."; break;
         default: ;
       }
       contents =
@@ -290,7 +297,9 @@ var RootPostAndComments = createComponent({
       this.refs.actions.showActions();
     }
   },
+
   render: function() {
+    var store: Store = this.props;
     var allPosts: { [postId: number]: Post; } = this.props.allPosts;
     var user = this.props.user;
     var rootPost = allPosts[this.props.rootPostId];
@@ -331,6 +340,14 @@ var RootPostAndComments = createComponent({
         r.div({ className: threadClass },
           body,
           NoCommentsPageActions({ post: rootPost, user: user })));
+    }
+
+    var solvedBy;
+    if (store.pageRole === PageRole.Question && store.pageAnsweredAtMs) {
+      // onClick:... handled in ../utils/show-and-highlight.js currently (scrolls to solution).
+      solvedBy = r.a({ className: 'dw-solved-by icon-ok-circled',
+          href: '#post-' + store.pageAnswerPostNr },
+        "Solved in post #" + store.pageAnswerPostNr);
     }
 
     var anyLikeCount;
@@ -382,6 +399,7 @@ var RootPostAndComments = createComponent({
     return (
       r.div({ className: threadClass },
         body,
+        solvedBy,
         PostActions({ store: this.props, post: rootPost, ref: 'actions' }),
         anyLikeCount,
         debiki2.reactelements.CommentsToolbar(),
@@ -960,6 +978,12 @@ var PostActions = createComponent({
   showActions: function() {
     debiki.internal.showPostActions(this.getDOMNode());
   },
+  onAcceptAnswerClick: function() {
+    debiki2.ReactActions.acceptAnswer(this.props.post.uniqueId);
+  },
+  onUnacceptAnswerClick: function() {
+    debiki2.ReactActions.unacceptAnswer();
+  },
   onReplyClick: function(event) {
     debiki.internal.$showReplyForm.call(event.target, event);
   },
@@ -1022,6 +1046,7 @@ var PostActions = createComponent({
     var isOwnPost = post.authorIdInt === user.userId;
     var isPageBody = post.postId === BodyPostId;
     var votes = user.votes[post.postId] || [];
+    var isStaffOrOwnPost: boolean = isStaff(user) || isOwnPost;
 
     var deletedOrCollapsed =
       post.isPostDeleted || post.isTreeDeleted || post.isPostCollapsed || post.isTreeCollapsed;
@@ -1030,6 +1055,22 @@ var PostActions = createComponent({
     // (Do return a <div> so there'll be some whitespace below for arrows to any replies.)
     if (deletedOrCollapsed)
       return r.div({ className: 'dw-p-as dw-as' });
+
+    var acceptAnswerButton;
+    if (isStaffOrOwnPost && isQuestion && !store.pageAnsweredAtMs && !store.pageClosedAtMs &&
+        !isPageBody) {
+      acceptAnswerButton = r.a({ className: 'dw-a dw-a-solve icon-ok-circled-empty',
+          onClick: this.onAcceptAnswerClick, title: "Accept this as the answer to the " +
+              "question or problem" }, "Solution?");
+    }
+    else if (isQuestion && post.uniqueId === store.pageAnswerPostUniqueId) {
+      var solutionTooltip = isStaffOrOwnPost
+          ? "Click to un-accept this answer"
+          : "This post has been accepted as the answer";
+      acceptAnswerButton = r.a({ className: 'dw-a dw-a-solve icon-ok-circled',
+          onClick: isStaffOrOwnPost ? this.onUnacceptAnswerClick : null, title: solutionTooltip },
+        "Solution");
+    }
 
     var replyButton = null;
     if (!deletedOrCollapsed) {
@@ -1041,30 +1082,30 @@ var PostActions = createComponent({
     var closeReopenButton;
     var canReopen = store.pageClosedAtMs;
     var canClose = !(isQuestion && store.pageAnsweredAtMs) && !(isToDo && store.pageDoneAtMs);
-    if ((canClose || canReopen) && (isOwnPost || isStaff(user))) {
+    if (isPageBody && (canClose || canReopen) && isStaffOrOwnPost) {
       var closeReopenTitle = "Reopen";
       var closeReopenIcon = 'icon-circle';
-      var tooltip;
+      var closeReopenTooltip;
       if (!store.pageClosedAtMs) {
         closeReopenTitle = "Close";
         closeReopenIcon = 'icon-cancel-circled';
         switch (store.pageRole) {
           case PageRole.Question:
             if (isOwnPost)
-              tooltip = "Close this question if you don't need an answer any more.";
+              closeReopenTooltip = "Close this question if you don't need an answer any more.";
             else
-              tooltip = "Close this question if it doesn't need an answer, e.g. if " +
+              closeReopenTooltip = "Close this question if it doesn't need an answer, e.g. if " +
                   "it is off-topic or already answered in another topic.";
             break;
           case PageRole.ToDo:
-            tooltip = "Close this To-Do if it does not need to be done or fixed.";
+            closeReopenTooltip = "Close this To-Do if it does not need to be done or fixed.";
             break;
           default:
-            tooltip = "Close this topic if it needs no further consideration.";
+            closeReopenTooltip = "Close this topic if it needs no further consideration.";
         }
       }
       closeReopenButton = r.a({ className: 'dw-a dw-a-close ' + closeReopenIcon,
-          onClick: this.onCloseClick, title: tooltip }, closeReopenTitle);
+          onClick: this.onCloseClick, title: closeReopenTooltip }, closeReopenTitle);
     }
 
     var otherVotesDropdown = null;
@@ -1212,7 +1253,8 @@ var PostActions = createComponent({
         otherVotesDropdown,
         likeVote,
         closeReopenButton,
-        replyButton));
+        replyButton,
+        acceptAnswerButton));
   }
 });
 
@@ -1256,6 +1298,13 @@ function makePageClosedTooltipText(pageRole: PageRole) {
     default:
       return "This topic is closed.";
   }
+}
+
+
+function makeQuestionTooltipText(isAnswered) {
+  return (isAnswered
+      ? "This is a solved question or problem"
+      : "This is an unsolved question or problem");
 }
 
 

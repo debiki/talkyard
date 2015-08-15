@@ -222,6 +222,55 @@ trait PagesDao {
   }
 
 
+  def ifAuthAcceptAnswer(pageId: PageId, postUniqueId: PostId, userId: UserId,
+        browserIdData: BrowserIdData): Option[ju.Date] = {
+    val answeredAt = readWriteTransaction { transaction =>
+      val user = transaction.loadTheUser(userId)
+      val oldMeta = transaction.loadThePageMeta(pageId)
+      if (oldMeta.pageRole != PageRole.Question)
+        throwBadReq("DwE4KGP2", "This page is not a question so no answer can be selected")
+
+      if (!user.isStaff && user.id != oldMeta.authorId)
+        throwForbidden("DwE8JGY3", "Only staff and the topic author can accept an answer")
+
+      val post = transaction.loadThePost(postUniqueId)
+      if (post.pageId != pageId)
+        throwBadReq("DwE5G2Y2", "That post is placed on another page, page id: " + post.pageId)
+
+      // Pages are probably closed for good reasons, e.g. off-topic, and then it gives
+      // the wrong impression if the author can still select an answer. It would seem as
+      // if that kind of questions were allowed / on-topic.
+      if (oldMeta.closedAt.isDefined)
+        throwBadReq("DwE0PG26", "This question is closed, therefore no answer can be accepted")
+
+      val answeredAt = Some(transaction.currentTime)
+      val newMeta = oldMeta.copy(answeredAt = answeredAt, answerPostUniqueId = Some(postUniqueId))
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      // (COULD update audit log)
+      // (COULD wait 5 minutes (in case the answer gets un-accepted) then send email
+      // to the author of the answer)
+      answeredAt
+    }
+    refreshPageInAnyCache(pageId)
+    answeredAt
+  }
+
+
+  def ifAuthUnacceptAnswer(pageId: PageId, userId: UserId, browserIdData: BrowserIdData) {
+    readWriteTransaction { transaction =>
+      val user = transaction.loadTheUser(userId)
+      val oldMeta = transaction.loadThePageMeta(pageId)
+      if (!user.isStaff && user.id != oldMeta.authorId)
+        throwForbidden("DwE2GKU4", "Only staff and the topic author can unaccept the answer")
+
+      val newMeta = oldMeta.copy(answeredAt = None, answerPostUniqueId = None)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      // (COULD update audit log)
+    }
+    refreshPageInAnyCache(pageId)
+  }
+
+
   def togglePageDone(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
         : Option[ju.Date] = {
     val newDoneAt = readWriteTransaction { transaction =>

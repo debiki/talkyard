@@ -165,6 +165,7 @@ interface Store {
   pinWhere?: PinPageWhere;
   pageAnsweredAtMs?: number;
   pageAnswerPostUniqueId?: number;
+  pageAnswerPostNr?: number;
   pageDoneAtMs?: number;
   pageClosedAtMs?: number;
   pageLockedAtMs?: number;

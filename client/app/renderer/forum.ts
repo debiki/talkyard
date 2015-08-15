@@ -486,13 +486,17 @@ var TopicRow = createComponent({
       title = r.span({ title: tooltip }, closedIcon, title);
     }
     else if (topic.pageRole === PageRole.Question) {
-      var tooltip = "This is an unsolved question or problem"
-      var questionIcon = r.span({ className: 'icon-help-circled' });
+      var tooltip = makeQuestionTooltipText(topic.answeredAtMs);
+      var questionIconClass = topic.answeredAtMs ? 'icon-ok-circled-empty' : 'icon-help-circled';
+      var questionIcon = r.span({ className: questionIconClass });
       var answerIcon;
       var answerCount;
-      if (topic.numOrigPostReplies > 0) {
+      // (Don't show answer count if question already solved — too much clutter.)
+      if (!topic.answeredAtMs && topic.numOrigPostReplies > 0) {
+        /* Skip this answer count stuff for now (or permanently?), too much clutter.
         answerIcon = r.span({ className: 'icon-info-circled dw-icon-inverted' }, ' ');
         answerCount = r.span({ className: 'dw-qa-ans-count' }, topic.numOrigPostReplies);
+        */
         tooltip += " with " + topic.numOrigPostReplies + " answers";
       }
       title = r.span({ title: tooltip }, questionIcon, answerCount, answerIcon, title);
@@ -501,7 +505,7 @@ var TopicRow = createComponent({
       var iconClass = topic.doneAtMs ? 'icon-check' : 'icon-check-empty';
       var tooltip = topic.doneAtMs
           ? "This has been done or fixed"
-          : "This is something to do or to fix, not yet done";
+          : "This is something to do or to fix";
       title = r.span({ title: tooltip }, r.span({ className: iconClass }, title));
     }
 
