@@ -202,12 +202,6 @@ function renderDiscussionPage() {
     if (d.i.layout === 'TreeLayout') {
       debiki2.utils.onMouseDetected(d.i.initUtterscrollAndTips);
     }
-
-    // Show root post actions initially.
-    $('.dw-depth-0 > .dw-p-as').addClass('dw-p-as-shown').attr('id', 'dw-p-as-shown');
-    // Don't dim any horizontal root post reply button.
-    $('.dw-p-as-hz-reply').addClass('dw-p-as-shown');
-
     registerEventHandlersFireLoginOut();
     debiki2.utils.startDetectingMouse();
   });

@@ -106,7 +106,7 @@ export var CommentsToolbar = createComponent({
       result =
         r.div({},
           r.div({ className: 'dw-t dw-depth-0 dw-ar-t' },
-            r.div({ className: 'dw-p-as dw-as dw-p-as-shown' },
+            r.div({ className: 'dw-p-as dw-as' },
               r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick },
                 'Reply'),
               adminLink)),

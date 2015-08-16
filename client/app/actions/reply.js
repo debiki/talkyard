@@ -118,7 +118,6 @@ function doHandleReplyResult(newPost) {
   setTimeout(function() {
     var myNewPost = $('#post-' + newPost.postId);
     d.i.showAndHighlightPost(myNewPost, { marginRight: 300, marginBottom: 300 });
-    d.i.$showActions.apply(myNewPost);
   }, 1);
 
   debiki2.ReactActions.updatePost(newPost);

@@ -292,12 +292,6 @@ var SocialLinks = createComponent({
 
 
 var RootPostAndComments = createComponent({
-  showActions: function() {
-    if (this.refs.actions) {
-      this.refs.actions.showActions();
-    }
-  },
-
   render: function() {
     var store: Store = this.props;
     var allPosts: { [postId: number]: Post; } = this.props.allPosts;
@@ -329,7 +323,7 @@ var RootPostAndComments = createComponent({
     var body = null;
     if (pageRole !== PageRole.EmbeddedComments) {
       body =
-        r.div({ className: postClass, id: postIdAttr, onMouseEnter: this.showActions },
+        r.div({ className: postClass, id: postIdAttr },
           r.div({ className: postBodyClass },
             r.div({ className: 'dw-p-bd-blk',
               dangerouslySetInnerHTML: { __html: sanitizedHtml }})));
@@ -400,7 +394,7 @@ var RootPostAndComments = createComponent({
       r.div({ className: threadClass },
         body,
         solvedBy,
-        PostActions({ store: this.props, post: rootPost, ref: 'actions' }),
+        PostActions({ store: this.props, post: rootPost }),
         anyLikeCount,
         debiki2.reactelements.CommentsToolbar(),
         anyHorizontalArrowToChildren,
@@ -445,12 +439,6 @@ var Thread = createComponent({
   shouldComponentUpdate: function(nextProps, nextState) {
     var should = !nextProps.quickUpdate || !!nextProps.postsToUpdate[this.props.postId];
     return should;
-  },
-
-  onPostMouseEnter: function() {
-    if (this.refs.actions) {
-      this.refs.actions.showActions();
-    }
   },
 
   onAnyActionClick: function() {
@@ -529,7 +517,7 @@ var Thread = createComponent({
 
     var actions = isCollapsed(post)
       ? null
-      : actions = PostActions({ store: this.props, post: post, ref: 'actions',
+      : actions = PostActions({ store: this.props, post: post,
           onClick: this.onAnyActionClick });
 
     var renderCollapsed = (post.isTreeCollapsed || post.isPostCollapsed) &&
@@ -968,16 +956,12 @@ var NoCommentsPageActions = createComponent({
     }
 
     return (
-      r.div({ className: 'dw-p-as dw-as', onMouseEnter: this.showActions },
-        actions));
+      r.div({ className: 'dw-p-as dw-as' }, actions));
   }
 });
 
 
 var PostActions = createComponent({
-  showActions: function() {
-    debiki.internal.showPostActions(this.getDOMNode());
-  },
   onAcceptAnswerClick: function() {
     debiki2.ReactActions.acceptAnswer(this.props.post.uniqueId);
   },
@@ -1067,7 +1051,7 @@ var PostActions = createComponent({
       var solutionTooltip = isStaffOrOwnPost
           ? "Click to un-accept this answer"
           : "This post has been accepted as the answer";
-      acceptAnswerButton = r.a({ className: 'dw-a dw-a-solve icon-ok-circled',
+      acceptAnswerButton = r.a({ className: 'dw-a dw-a-unsolve icon-ok-circled',
           onClick: isStaffOrOwnPost ? this.onUnacceptAnswerClick : null, title: solutionTooltip },
         "Solution");
     }
@@ -1243,8 +1227,7 @@ var PostActions = createComponent({
           moreLinks));
 
     return (
-      r.div({ className: 'dw-p-as dw-as', onMouseEnter: this.showActions,
-          onClick: this.props.onClick },
+      r.div({ className: 'dw-p-as dw-as', onClick: this.props.onClick },
         //suggestionsNew,
         //suggestionsOld,
         moreDropdown,
