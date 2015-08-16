@@ -95,7 +95,8 @@ var ServerErrorDialog = createComponent({
     }
 
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'dw-server-error' },
+      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'dw-server-error',
+          bsSize: 'large' },
         ModalHeader({}, ModalTitle({}, title)),
         ModalBody({},
           r.div({ style: { whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}, message)),

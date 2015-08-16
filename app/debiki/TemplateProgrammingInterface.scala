@@ -29,13 +29,6 @@ import requests.{DebikiRequest, PageRequest}
 import SiteAssetBundlesController.{AssetBundleNameRegex, assetBundleFileName}
 
 
-object InternalTemplateProgrammingInterface {
-
-  def apply(dao: SiteDao) = new InternalTemplateProgrammingInterface(dao)
-
-}
-
-
 object TemplateProgrammingInterface {
 
   val (minMax, minMaxJs, minMaxCss) = {
@@ -46,18 +39,6 @@ object TemplateProgrammingInterface {
   }
 
 }
-
-
-
-/**
- * Used by internal templates, e.g. /-/create-website/choose-name.
- */
-// old, empty now, remove later
-class InternalTemplateProgrammingInterface protected (
-  protected val dao: SiteDao) {
-
-}
-
 
 
 object SiteTpi {
@@ -78,8 +59,7 @@ object SiteTpi {
   * There is also a Page Template Programming Interface which is used
   * when rendering e.g. blog and forum pages.
   */
-class SiteTpi protected (val debikiRequest: DebikiRequest[_])
-  extends InternalTemplateProgrammingInterface(debikiRequest.dao) {
+class SiteTpi protected (val debikiRequest: DebikiRequest[_]) {
 
   def siteId  = debikiRequest.siteId
   def siteSettings = debikiRequest.siteSettings
@@ -170,7 +150,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
     }
 
     try {
-      val version = dao.loadAssetBundleVersion(nameNoSuffix, suffix)
+      val version = debikiRequest.dao.loadAssetBundleVersion(nameNoSuffix, suffix)
       val fileName = assetBundleFileName(nameNoSuffix, version, suffix)
         <link rel="stylesheet" href={ routes.SiteAssetBundlesController.at(fileName).url }/>
     }
@@ -198,70 +178,23 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_])
 }
 
 
-
-/**
- * Used by both Scala templates (via TemplateProgrammingInterface
- * which inherits it) and HTTP interface controllers.
- *
- * Does not provide any functionality for rendering a whole page.
- * Such stuff is placed in TemplateProgrammingInterface instead
- * (because that stuff has some more dependencies).
- */
-class InternalPageTpi protected (protected val _pageReq: PageRequest[_]) extends SiteTpi(_pageReq) {
-
-  import debiki.{InternalPageTpi => tpi}
-
-  override def anyCurrentPageId = Some(pageId)
-  override def anyCurrentPageRole = Some(pageRole)
-  override def anyCurrentPagePath = Some(_pageReq.pagePath)
-
-  def pageId = _pageReq.thePageId
-  def pageRole = _pageReq.thePageRole
-
-  def currentFolder = PathRanges(folders = Seq(_pageReq.pagePath.folder))
-  def currentTree = PathRanges(trees = Seq(_pageReq.pagePath.folder))
-
-
-  def hasChildPages: Boolean = {
-    // COULD make this more efficient. We already do a database roundtrip
-    // via e.g. `listPublishedSubForums` — Might as well ask for all successor
-    // pages from here, because if there *are* any successors, we will
-    // likely list all of them.
-    val pathsAndMeta = _pageReq.dao.listChildPages(
-      Seq(pageId), PageOrderOffset.ByPublTime, limit = 1)
-    pathsAndMeta.nonEmpty
-  }
-
-
-  private def listPublishedChildren(
-        parentPageId: Option[String] = None,
-        filterPageRole: Option[PageRole],
-        limit: Int = 10,
-        offset: Int = 0)
-        : Seq[PagePathAndMeta] = {
-
-    val pathsAndMeta: Seq[PagePathAndMeta] =
-      _pageReq.dao.listChildPages(Seq(parentPageId getOrElse pageId), PageOrderOffset.ByPublTime,
-        limit = limit, onlyPageRole = filterPageRole)
-
-    // BUG This might result in fewer than `limit` pages being returned.
-    // In the future, move filtering to `pageReq.dao` instead?
-    val publishedPathsAndMeta = pathsAndMeta filter { pathAndMeta =>
-      pathAndMeta.meta.publishedAt.map(_.getTime < _pageReq.ctime.getTime) == Some(true)
-    }
-    publishedPathsAndMeta
-  }
-
-}
-
-
 /**
  * Passed to Scala templates.
  */
 class TemplateProgrammingInterface(
   private val pageReq: PageRequest[_],
   private val tagsToAppendToBody: xml.NodeSeq)
-  extends InternalPageTpi(pageReq) {
+  extends SiteTpi(pageReq) {
+
+  override def anyCurrentPageId = Some(pageId)
+  override def anyCurrentPageRole = Some(pageRole)
+  override def anyCurrentPagePath = Some(pageReq.pagePath)
+
+  def pageId = pageReq.thePageId
+  def pageRole = pageReq.thePageRole
+
+  def currentFolder = PathRanges(folders = Seq(pageReq.pagePath.folder))
+  def currentTree = PathRanges(trees = Seq(pageReq.pagePath.folder))
 
   def pageSettings = pageReq.thePageSettings
 
@@ -286,7 +219,7 @@ class TemplateProgrammingInterface(
     * this function would return the id of the forum group (that'd be the "root" section).
     */
   def anyRootSectionPageId: Option[PageId] =
-    _pageReq.ancestorIdsParentFirst_!.lastOption orElse {
+    pageReq.ancestorIdsParentFirst_!.lastOption orElse {
       // If this page itself is a section, its id is the root section id.
       if (pageRole.isSection) Some(pageId) else None
     }

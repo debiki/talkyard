@@ -238,6 +238,14 @@ html.touch .dw-p-mark-click
 //===========================
 
 
+// Inverted icons (changes e.g. a black disc with a white question mark to a black circle,
+// filled with white and a black question mark). This supposedly does *not* work in IE9,
+// in IE9 I suppose the icon will just disappear (color: white). So be it.
+.dw-icon-inverted
+  text-shadow: -1px -1px 0 #333, 1px -1px 0 #333, -1px 1px 0 #333, 1px 1px 0 #333;
+  color: white;
+
+
 /* --- Clearfix --- */
 
 // A child, the root thread .dw-depth-0, floats left.

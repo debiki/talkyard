@@ -96,6 +96,26 @@ ReactDispatcher.register(function(payload) {
       store.user.rolePageSettings.notfLevel = action.newLevel;
       break;
 
+    case ReactActions.actionTypes.AcceptAnswer:
+      store.pageAnsweredAtMs = action.answeredAtMs;
+      store.pageAnswerPostUniqueId = action.answerPostUniqueId;
+      findAnyAcceptedAnswerPostNr();
+      break;
+
+    case ReactActions.actionTypes.UnacceptAnswer:
+      store.pageAnsweredAtMs = null;
+      store.pageAnswerPostUniqueId = null;
+      store.pageAnswerPostNr = null;
+      break;
+
+    case ReactActions.actionTypes.TogglePageIsDone:
+      store.pageDoneAtMs = action.doneAtMs;
+      break;
+
+    case ReactActions.actionTypes.TogglePageClosed:
+      store.pageClosedAtMs = action.closedAtMs;
+      break;
+
     case ReactActions.actionTypes.EditTitleAndSettings:
       store.ancestorsRootFirst = action.newAncestorsRootFirst;
       var parent: any = _.last(action.newAncestorsRootFirst);
@@ -175,6 +195,23 @@ ReactDispatcher.register(function(payload) {
   // Tell the dispatcher that there were no errors:
   return true;
 });
+
+
+ReactStore.initialize = function() {
+  findAnyAcceptedAnswerPostNr();
+}
+
+
+function findAnyAcceptedAnswerPostNr() {
+  if (!store.pageAnswerPostUniqueId)
+    return;
+
+  _.each(store.allPosts, (post: Post) => {
+    if (post.uniqueId === store.pageAnswerPostUniqueId) {
+      store.pageAnswerPostNr = post.postId;
+    }
+  });
+}
 
 
 // COULD change this to an action instead
@@ -615,7 +652,7 @@ function rememberPostsToQuickUpdate(startPostId: number) {
 
 
 function stopGifsPlayOnClick() {
-  setTimeout(window['Gifffer'], 1);
+  setTimeout(window['Gifffer'], 50);
 }
 
 

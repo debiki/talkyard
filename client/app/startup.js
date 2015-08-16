@@ -181,6 +181,7 @@ function renderDiscussionPage() {
   renderTitleBodyComments();
   var timeAfterBodyComments = performance.now();
 
+  debiki2.ReactStore.initialize();
   debiki2.startEarlyReactRoots();
   debiki2.ReactStore.activateUserSpecificData();
   var timeAfterUserData = performance.now();
@@ -263,6 +264,7 @@ d.i.renderEmptyPage = function() {
   // main title or article.)
   configureAjaxRequests();
   debiki2.utils.onMouseDetected(d.i.initUtterscrollAndTips);
+  debiki2.ReactStore.initialize();
   debiki2.startEarlyReactRoots();
   debiki2.startRemainingReactRoots();
   debiki2.ReactStore.activateUserSpecificData();

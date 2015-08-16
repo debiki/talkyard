@@ -53,11 +53,21 @@
       padding-right: 15px;
       min-width: 70px;
 
+  .dw-filter
+    float: right;
+    max-width: 300px;
+    margin-right: 20px;
+    //.dw-active a
+    //  font-weight: bold;
+
+  .dw-filter select,
   button
-    float: right
     // Why do I need to -2 for the Create Topic button to align with
     // the category buttons and Latest and Top buttons to the left?
     margin: (marginTop - 2) 0 0 0
+
+  button
+    float: right
 
   button,
   span
@@ -114,6 +124,40 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
           color: #555;
           padding-right: 17px;
           margin-left: 0;
+
+        .icon-help-circled:before
+          font-size: 17px;
+          color: #555;
+          margin: 0 5px 0 0;
+          top: 1px;
+          position: relative;
+
+        .dw-qa-ans-count
+          font-size: 85%;
+          margin-left: -5px;
+
+        .icon-check-empty:before
+          font-weight: bold;
+          font-size: 105%;
+          margin: 0 5px 0 0;
+          position: relative;
+          top: 1px;
+
+        .icon-cancel-circled-empty:before, // closed topics
+        .icon-ok-circled-empty:before, // solved questions
+        .icon-check:before
+          color: hsl(0, 0%, 40%);
+          margin: 0 5px 0 0;
+
+        .icon-ok-circled-empty:before
+          margin: 0 7px 0 0;
+          position: relative;
+          left: 1px;
+
+        .icon-check:before
+          font-size: 17px;
+          position: relative;
+          top: 2px;
 
         &.num:not(.dw-tpc-feelings, .dw-tpc-replies)
           color: hsl(0, 0%, 53%);

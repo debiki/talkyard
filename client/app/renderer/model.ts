@@ -116,6 +116,7 @@ interface Category {
 
 interface Topic {
   pageId: string;
+  pageRole: PageRole;
   title: string;
   url: string;
   categoryId: string;
@@ -128,16 +129,25 @@ interface Topic {
   createdEpoch: number;
   bumpedEpoch: number;
   lastReplyEpoch: number;
+  numOrigPostReplies: number;
+  numOrigPostLikes: number;
+  answeredAtMs?: number;
+  answerPostUniqueId?: number;
+  doneAtMs?: number;
+  closedAtMs?: number;
+  lockedAtMs?: number;
+  frozenAtMs?: number;
 }
 
 
 enum TopicSortOrder { BumpTime = 1, LikesAndBumpTime };
 
 
-interface OrderOffset {
+interface OrderOffset {  // COULD rename to TopicQuery? (because includes filter too now)
   sortOrder: TopicSortOrder;
   time?: number;
   numLikes?: number;
+  topicFilter?: string;
 }
 
 
@@ -154,6 +164,14 @@ interface Store {
   pagePath: string;
   pinOrder?: number;
   pinWhere?: PinPageWhere;
+  pageAnsweredAtMs?: number;
+  pageAnswerPostUniqueId?: number;
+  pageAnswerPostNr?: number;
+  pageDoneAtMs?: number;
+  pageClosedAtMs?: number;
+  pageLockedAtMs?: number;
+  pageFrozenAtMs?: number;
+  //pageDeletedAtMs: number;
   numPosts: number;
   numPostsExclTitle: number;
   isInEmbeddedCommentsIframe: boolean;

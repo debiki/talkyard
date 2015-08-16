@@ -64,6 +64,7 @@ html.mouse .dw-p-as:not(.dw-p-as-shown)
   // Don't make it possible to vote "Wrong" for the forum question or blog post.
   display: none !important
 
+.dw-ar-t > .dw-p-as > .dw-a-close,
 .dw-ar-t > .dw-p-as > .dw-a-reply
   background: hsl(210, 51%, 50%) !important;
   color: white !important;
@@ -99,6 +100,9 @@ html:not(.mouse) .dw-ar-t > .dw-p-as > .dw-a-reply
   padding: 12px 8px 10px 6px;  //  12px high [9kDF35Q]
   background: #fff;
   border: none;
+
+  &.dw-a-solve
+    padding-right: 1.2em;
 
   // Make the Like buttom smaller to the right, so it gets closer to the other-votes-dropdown.
   // But larger to the left, so it's easier to click (since people will click the left part of it,

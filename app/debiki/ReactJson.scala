@@ -167,8 +167,8 @@ object ReactJson {
 
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
-        val orderOffset = controllers.ForumController.parseSortOrderAndOffset(pageReq).getOrElse(
-          PageOrderOffset.ByBumpTime(None))
+        val orderOffset = controllers.ForumController.parsePageQuery(pageReq).getOrElse(
+          PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll))
         val topics = ForumController.listTopicsInclPinned(page.id, orderOffset, pageReq.dao,
           limit = ForumController.NumTopicsToList)
         val pageStuffById = pageReq.dao.loadPageStuff(topics.map(_.pageId))
@@ -198,6 +198,13 @@ object ReactJson {
       "pagePath" -> JsString(pageReq.pagePath.value),
       "pinOrder" -> JsNumberOrNull(page.meta.pinOrder),
       "pinWhere" -> JsNumberOrNull(page.meta.pinWhere.map(_.toInt)),
+      "pageAnsweredAtMs" -> JsLongOrNull(page.meta.answeredAt.map(_.getTime)),
+      "pageAnswerPostUniqueId" -> JsNumberOrNull(page.meta.answerPostUniqueId),
+      "pageDoneAtMs" -> JsLongOrNull(page.meta.doneAt.map(_.getTime)),
+      "pageClosedAtMs" -> JsLongOrNull(page.meta.closedAt.map(_.getTime)),
+      "pageLockedAtMs" -> JsLongOrNull(page.meta.lockedAt.map(_.getTime)),
+      "pageFrozenAtMs" -> JsLongOrNull(page.meta.frozenAt.map(_.getTime)),
+      //"pageDeletedAtMs" -> ...
       "numPosts" -> numPosts,
       "numPostsExclTitle" -> numPostsExclTitle,
       "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),

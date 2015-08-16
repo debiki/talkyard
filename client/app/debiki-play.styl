@@ -144,13 +144,57 @@ h1.dw-p-ttl
     color: hsl(0, 0%, 47%);
     margin: 0 9px 0 0;
 
-h1.dw-p-ttl + .dw-a-edit
-  float: none;
-  font-size: 20px;
-  margin-left: 8px;
+  // Question and to-do icons.
+  [class^="icon-"]:before,
+  [class*=" icon-"]:before
+    margin: 0 8ex 0 0;
+    position: relative;
+    top: 2px;
+
+  .icon-help-circled:before
+    color: hsl(0, 0%, 55%);
+    font-size: 95%;
+    top: 1px;
+
+  .icon-ok-circled-empty:before
+    font-size: 90%;
+    position: static;
+
+  .icon-cancel-circled-empty:before
+    top: -1px !important;
+    font-size: 80%;
+    color: hsl(0, 0%, 47%);
+
+  .icon-check
+    color: #555;
+
+  .icon-check-empty:before
+    left: -2px;  // there's some whitespace to the left inside the icon itself
+
+  // The done/not-done checkbox, if it's clickable (it is for staff and topic author).
+  .dw-clickable[class^=icon-]
+    &:before
+      color: hsl(210, 51%, 45%);
+      text-decoration: none;
+    &:hover:before
+      outline: 2px solid hsl(210, 100%, 90%);
+      background-color: hsl(210, 100%, 96%);
+      cursor: pointer;
+
+  .dw-a-edit
+    float: none;
+    font-size: 20px;
+    margin-left: 8px;
+    opacity: 0.83;
+    &:before
+      top: -2px;
+
+.dw-solved-by
+  float: left;
+  margin-top: 15px;
+  font-weight: bold;
+  z-index: 1;
   position: relative;
-  bottom: 2px;
-  opacity: 0.83;
 
 .dw-p-unapproved > .dw-p-hd,
 .dw-p-dl > .dw-p-hd

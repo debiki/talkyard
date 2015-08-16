@@ -141,6 +141,12 @@ object PageMeta {
   * @param numRepliesVisible Replies that haven't been deleted or hidden, and have been approved.
   *                          Includes collapsed and closed replies.
   * @param numRepliesTotal Counts all replies, also deleted, hidden and not-yet-approved replies.
+  * @param answeredAt For questions: when a reply was accepted as the answer to the question.
+  * @param answerPostUniqueId The id of the post that answers this question.
+  * @param doneAt For ToDos: when it was done, e.g. when a bug was fixed or idea implemented.
+  * @param closedAt When the topic was closed, e.g. if a question was off-topic or idea rejected.
+  * @param lockedAt When locked so no new replies can be added.
+  * @param frozenAt When frozen, so cannot be changed in any way at all (not even edits).
   * @param numChildPages
   */
 case class PageMeta(
@@ -159,18 +165,44 @@ case class PageMeta(
   numLikes: Int = 0,
   numWrongs: Int = 0,
   numBurys: Int = 0,
+  //numUnwanteds: Int = 0,
   numRepliesVisible: Int = 0,
   numRepliesTotal: Int = 0,
-  numChildPages: Int = 0) {
+  numOrigPostLikeVotes: Int = 0,
+  numOrigPostWrongVotes: Int = 0,
+  numOrigPostBuryVotes: Int = 0,
+  numOrigPostUnwantedVotes: Int = 0,
+  numOrigPostRepliesVisible: Int = 0,
+  answeredAt: Option[ju.Date] = None,
+  answerPostUniqueId: Option[UniquePostId] = None,
+  doneAt: Option[ju.Date] = None,
+  closedAt: Option[ju.Date] = None,
+  lockedAt: Option[ju.Date] = None,
+  frozenAt: Option[ju.Date] = None,
+  // unwantedAt: Option[ju.Date] = None, -- when enough core members voted Unwanted
+  // deletedAt: Option[ju.Date] = None,
+  numChildPages: Int = 0) { // <-- DoLater: remove, replace with category table
 
   require(!pinOrder.exists(!PageMeta.isOkPinOrder(_)), "DwE4kEYF2")
   require(pinOrder.isEmpty == pinWhere.isEmpty, "DwE36FK2")
   require(numLikes >= 0, "DwE6PKF3")
   require(numWrongs >= 0, "DwE9KEFW2")
   require(numBurys >= 0, "DwE2KEP4")
+  //require(numUnwanteds >= 0, "DwE4JGY7")
+  require(numOrigPostLikeVotes >= 0, "DwE5KJF2")
+  require(numOrigPostLikeVotes <= numLikes, "DwE5KJF2B")
+  require(numOrigPostWrongVotes >= 0, "DwE4WKEQ1")
+  require(numOrigPostWrongVotes <= numWrongs, "DwE4WKEQ1B")
+  require(numOrigPostBuryVotes >= 0, "DwE8KGY4")
+  require(numOrigPostBuryVotes <= numBurys, "DwE8KGY4B")
+  require(numOrigPostUnwantedVotes >= 0, "DwE0GFW8")
+  //require(numOrigPostUnwantedVotes <= numUnwanteds, "DwE0GFW8B")
+  require(numOrigPostRepliesVisible >= 0, "DwE0GY42")
+  require(numOrigPostRepliesVisible <= numRepliesVisible, "DwE0GY42B")
   //require(numRepliesVisible >= 0, "DwE6KPE78") - bug in PostsDao.changePostStatus()?
   require(numRepliesTotal >= numRepliesVisible, "DwE4REQ2")
   //require(numChildPages >= 0, "DwE8KPEF0") -- oops fails, not so very important, for now instead:
+  require(answeredAt.isEmpty == answerPostUniqueId.isEmpty, "DwE2PYU5")
   if (numChildPages < 0)
     play.api.Logger.warn(s"Negative child page count, parent: $pageId [DwE8KPEF0]")
 
@@ -216,19 +248,19 @@ object PageRole {
 
   case object EmbeddedComments extends PageRole(5)
 
-  /** Lists blog posts. Everything with a Blog as its parent page is a blog post,
-    * unless it's a category. */
+  /** Lists blog posts. */
   case object Blog extends PageRole(6) {
     override def isSection = true
   }
 
-  /** Lists forum topic categories plus forum topics with no parent category. */
+  /** Lists forum topics and categories. */
   case object Forum extends PageRole(7) {
     override def isSection = true
   }
 
   /** Everything with a forum category as its parent page is a forum topic, unless
-    * it's a ForumCategory itself, then it's a sub category. */
+    * it's a ForumCategory itself, then it's a sub category.
+    * DoLater: Remove, instead add a separate categories table. */
   case object Category extends PageRole(8) {
     override val isSection = true
   }
@@ -238,9 +270,13 @@ object PageRole {
     * description. */
   case object About extends PageRole(9)
 
-  /** The default topic type in a forum. Unanswered questions will be listed somewhere?
-    * and marked with a question mark icon somehow? */
+  /** A question is considered answered when the author (or the staff) has marked some
+    * reply as being the answer to the question. */
   case object Question extends PageRole(10)
+
+  /** E.g. an idea to implement or bug to fix. Normally, only staff can change the page type
+    * to ToDo, because normally only staff can decide what things to fix / do. */
+  case object ToDo extends PageRole(13)
 
   /** Mind maps use 2D layout, even if the site is configured to use 1D layout. */
   case object MindMap extends PageRole(11)
@@ -267,6 +303,7 @@ object PageRole {
     case Category.IntValue => Category
     case About.IntValue => About
     case Question.IntValue => Question
+    case ToDo.IntValue => ToDo
     case MindMap.IntValue => MindMap
     case Discussion.IntValue => Discussion
     //case WikiMainPage.IntValue => WikiMainPage
@@ -326,6 +363,8 @@ object PinPageWhere {
 
 
 
+case class PageQuery(orderOffset: PageOrderOffset, pageFilter: PageFilter)
+
 /** How to sort pages, and where to start listing them, e.g. if fetching additional
   * pages after the user has scrolled down to the end of a page list.
   */
@@ -340,6 +379,11 @@ object PageOrderOffset {
   case class ByLikesAndBumpTime(offset: Option[(Int, ju.Date)]) extends PageOrderOffset
 }
 
+sealed abstract class PageFilter
+object PageFilter {
+  case object ShowAll extends PageFilter
+  case object ShowOpenQuestionsTodos extends PageFilter
+}
 
 
 case class PagePostId(pageId: PageId, postId: PostId) {

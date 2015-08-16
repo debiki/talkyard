@@ -202,9 +202,10 @@ trait PagesDao {
 
   def unpinPage(pageId: PageId) {
     readWriteTransaction { transaction =>
-      val oldMeta = loadPageMeta(pageId) getOrElse throwNotFound("DwE5KEF2", "Page gone")
+      val oldMeta = transaction.loadThePageMeta(pageId)
       val newMeta = oldMeta.copy(pinWhere = None, pinOrder = None)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      // (COULD update audit log)
     }
     refreshPageInAnyCache(pageId)
   }
@@ -212,13 +213,108 @@ trait PagesDao {
 
   def pinPage(pageId: PageId, pinWhere: PinPageWhere, pinOrder: Int) {
     readWriteTransaction { transaction =>
-      val oldMeta = loadPageMeta(pageId) getOrElse throwNotFound("DwE4KEF2", "Page gone")
+      val oldMeta = transaction.loadThePageMeta(pageId)
       val newMeta = oldMeta.copy(pinWhere = Some(pinWhere), pinOrder = Some(pinOrder))
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      // (COULD update audit log)
     }
     refreshPageInAnyCache(pageId)
   }
 
+
+  def ifAuthAcceptAnswer(pageId: PageId, postUniqueId: PostId, userId: UserId,
+        browserIdData: BrowserIdData): Option[ju.Date] = {
+    val answeredAt = readWriteTransaction { transaction =>
+      val user = transaction.loadTheUser(userId)
+      val oldMeta = transaction.loadThePageMeta(pageId)
+      if (oldMeta.pageRole != PageRole.Question)
+        throwBadReq("DwE4KGP2", "This page is not a question so no answer can be selected")
+
+      if (!user.isStaff && user.id != oldMeta.authorId)
+        throwForbidden("DwE8JGY3", "Only staff and the topic author can accept an answer")
+
+      val post = transaction.loadThePost(postUniqueId)
+      if (post.pageId != pageId)
+        throwBadReq("DwE5G2Y2", "That post is placed on another page, page id: " + post.pageId)
+
+      // Pages are probably closed for good reasons, e.g. off-topic, and then it gives
+      // the wrong impression if the author can still select an answer. It would seem as
+      // if that kind of questions were allowed / on-topic.
+      if (oldMeta.closedAt.isDefined)
+        throwBadReq("DwE0PG26", "This question is closed, therefore no answer can be accepted")
+
+      val answeredAt = Some(transaction.currentTime)
+      val newMeta = oldMeta.copy(answeredAt = answeredAt, answerPostUniqueId = Some(postUniqueId))
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      // (COULD update audit log)
+      // (COULD wait 5 minutes (in case the answer gets un-accepted) then send email
+      // to the author of the answer)
+      answeredAt
+    }
+    refreshPageInAnyCache(pageId)
+    answeredAt
+  }
+
+
+  def ifAuthUnacceptAnswer(pageId: PageId, userId: UserId, browserIdData: BrowserIdData) {
+    readWriteTransaction { transaction =>
+      val user = transaction.loadTheUser(userId)
+      val oldMeta = transaction.loadThePageMeta(pageId)
+      if (!user.isStaff && user.id != oldMeta.authorId)
+        throwForbidden("DwE2GKU4", "Only staff and the topic author can unaccept the answer")
+
+      val newMeta = oldMeta.copy(answeredAt = None, answerPostUniqueId = None)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      // (COULD update audit log)
+    }
+    refreshPageInAnyCache(pageId)
+  }
+
+
+  def togglePageDone(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
+        : Option[ju.Date] = {
+    val newDoneAt = readWriteTransaction { transaction =>
+      val oldMeta = transaction.loadThePageMeta(pageId)
+      if (oldMeta.pageRole != PageRole.ToDo)
+        throwBadReq("DwE6KEW2", "This page is not a To-Do page; it cannot be toggled done")
+
+      if (oldMeta.closedAt.isDefined)
+        throwBadReq("DwE5KEP0", "This To-Do is closed; reopen it before you can complete it")
+
+      val newDoneAt = oldMeta.doneAt match {
+        case None => Some(transaction.currentTime)
+        case Some(_) => None
+      }
+      val newMeta = oldMeta.copy(doneAt = newDoneAt)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      // (COULD update audit log)
+      newDoneAt
+    }
+    refreshPageInAnyCache(pageId)
+    newDoneAt
+  }
+
+
+  def ifAuthTogglePageClosed(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
+        : Option[ju.Date] = {
+    val newClosedAt = readWriteTransaction { transaction =>
+      val user = transaction.loadTheUser(userId)
+      val oldMeta = transaction.loadThePageMeta(pageId)
+      if (!user.isStaff && user.id != oldMeta.authorId)
+        throwForbidden("DwE5JPK7", "Only staff and the topic author can toggle it closed")
+
+      val newClosedAt = oldMeta.closedAt match {
+        case None => Some(transaction.currentTime)
+        case Some(_) => None
+      }
+      val newMeta = oldMeta.copy(closedAt = newClosedAt)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      // (COULD update audit log)
+      newClosedAt
+    }
+    refreshPageInAnyCache(pageId)
+    newClosedAt
+  }
 }
 
 

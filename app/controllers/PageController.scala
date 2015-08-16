@@ -17,23 +17,25 @@
 
 package controllers
 
-import actions.ApiActions.PostJsonAction
+import actions.ApiActions.{PostJsonAction, StaffPostJsonAction}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
+import debiki.ReactJson.JsLongOrNull
+import java.{util => ju}
 import play.api._
 import play.api.libs.json.Json
 import Utils._
 
 
-/** Creates pages.
+/** Creates pages, toggles is-done, deletes them.
   */
-object CreatePageController extends mvc.Controller {
+object PageController extends mvc.Controller {
 
 
   def createPage = PostJsonAction(RateLimits.CreateTopic, maxLength = 20 * 1000) { request =>
-    import request.{dao, body}
+    import request.body
 
     val anyParentPageId = (body \ "parentPageId").asOpt[PageId]
     val pageRoleInt = (body \ "pageRole").as[Int]
@@ -51,6 +53,38 @@ object CreatePageController extends mvc.Controller {
       request.theBrowserIdData)
 
     OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))
+  }
+
+
+  def acceptAnswer = PostJsonAction(RateLimits.TogglePage, maxLength = 100) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    val postUniqueId = (request.body \ "postId").as[UniquePostId]
+    val acceptedAt: Option[ju.Date] = request.dao.ifAuthAcceptAnswer(
+      pageId, postUniqueId, userId = request.theUserId, request.theBrowserIdData)
+    OkSafeJson(JsLongOrNull(acceptedAt.map(_.getTime)))
+  }
+
+
+  def unacceptAnswer = PostJsonAction(RateLimits.TogglePage, maxLength = 100) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    request.dao.ifAuthUnacceptAnswer(pageId, userId = request.theUserId, request.theBrowserIdData)
+    Ok
+  }
+
+
+  def togglePageDone = StaffPostJsonAction(maxLength = 100) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    val doneAt: Option[ju.Date] = request.dao.togglePageDone(pageId, userId = request.theUserId,
+      request.theBrowserIdData)
+    OkSafeJson(JsLongOrNull(doneAt.map(_.getTime)))
+  }
+
+
+  def togglePageClosed = PostJsonAction(RateLimits.TogglePage, maxLength = 100) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    val closedAt: Option[ju.Date] = request.dao.ifAuthTogglePageClosed(
+      pageId, userId = request.theUserId, request.theBrowserIdData)
+    OkSafeJson(JsLongOrNull(closedAt.map(_.getTime)))
   }
 
 }

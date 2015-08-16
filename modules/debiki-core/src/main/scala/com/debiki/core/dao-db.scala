@@ -170,7 +170,7 @@ abstract class SiteDbDao {
         orderOffset: PageOrderOffset,
         limit: Int): Seq[PagePathAndMeta]
 
-  def listChildPages(parentPageIds: Seq[PageId], orderOffset: PageOrderOffset,
+  def listChildPages(parentPageIds: Seq[PageId], pageQuery: PageQuery,
         limit: Int, onlyPageRole: Option[PageRole] = None,
         excludePageRole: Option[PageRole] = None): Seq[PagePathAndMeta]
 
@@ -417,10 +417,10 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
     _spi.listPagePaths(pageRanges, include, orderOffset, limit)
   }
 
-  def listChildPages(parentPageIds: Seq[PageId], orderOffset: PageOrderOffset,
+  def listChildPages(parentPageIds: Seq[PageId], pageQuery: PageQuery,
         limit: Int, onlyPageRole: Option[PageRole], excludePageRole: Option[PageRole])
         : Seq[PagePathAndMeta] = {
-    _spi.listChildPages(parentPageIds, orderOffset, limit = limit, onlyPageRole = onlyPageRole,
+    _spi.listChildPages(parentPageIds, pageQuery, limit = limit, onlyPageRole = onlyPageRole,
       excludePageRole = excludePageRole)
   }
 

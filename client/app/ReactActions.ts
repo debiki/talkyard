@@ -32,6 +32,10 @@ export var actionTypes = {
   PinPage: 'PinPage',
   UnpinPage: 'UnpinPage',
   SetPageNotfLevel: 'SetPageNotfLevel',
+  AcceptAnswer: 'AcceptAnswer',
+  UnacceptAnswer: 'UnacceptAnswer',
+  TogglePageIsDone: 'TogglePageIsDone',
+  TogglePageClosed: 'TogglePageClosed',
   EditTitleAndSettings: 'EditTitleAndSettings',
   UpdatePost: 'UpdatePost',
   VoteOnPost: 'VoteOnPost',
@@ -121,6 +125,46 @@ export function setPageNoftLevel(newNotfLevel) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.SetPageNotfLevel,
     newLevel: newNotfLevel
+  });
+}
+
+
+export function togglePageIsDone() {
+  Server.togglePageDone((doneAtMs) => {
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.TogglePageIsDone,
+      doneAtMs: doneAtMs
+    });
+  });
+}
+
+
+export function togglePageClosed() {
+  Server.togglePageClosed((closedAtMs) => {
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.TogglePageClosed,
+      closedAtMs: closedAtMs
+    });
+  });
+}
+
+
+export function acceptAnswer(postId: number) {
+  Server.acceptAnswer(postId, (answeredAtMs) => {
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.AcceptAnswer,
+      answeredAtMs: answeredAtMs,
+      answerPostUniqueId: postId,
+    });
+  });
+}
+
+
+export function unacceptAnswer() {
+  Server.unacceptAnswer(() => {
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.UnacceptAnswer,
+    });
   });
 }
 

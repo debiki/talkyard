@@ -160,11 +160,11 @@ function anyAnchorPostId() {
 }
 
 
-// When hovering a in-reply-to link, outline the post that was replied to.
-// Use a dedicated CSS class so we won't accidentally remove any outline added
-// because of other reasons, when removing this outline.
-$(document).on('mouseenter mouseleave', '.dw-rr', function(event) {  // dw-rr = reply receiver
-  var referencedPost = getPostMultirepliedTo(this);
+// When hovering a in-reply-to ("rr" = reply receiver) or solved-by link, outline
+// the linked post. Use a dedicated CSS class so we won't accidentally remove
+// any outline added because of other reasons, when removing this outline.
+$(document).on('mouseenter mouseleave', '.dw-rr, .dw-solved-by', function(event) {
+  var referencedPost = getLinkedPost(this);
   if (event.type === 'mouseenter') {
     referencedPost.addClass('dw-highlighted-multireply-hover');
   }
@@ -175,8 +175,8 @@ $(document).on('mouseenter mouseleave', '.dw-rr', function(event) {  // dw-rr = 
 
 
 // When clicking a in-reply-to link, scroll the post that was replied to into view.
-$(document).on('click', '.dw-rr', function(event) {  // dw-rr = reply receiver
-  var referencedPost = getPostMultirepliedTo(this);
+$(document).on('click', '.dw-rr, .dw-solved-by', function(event) {
+  var referencedPost = getLinkedPost(this);
   d.i.showAndHighlightPost(referencedPost);
   var currentPostId = $(this).closest('.dw-t').dwPostId();
   var nextPostId = referencedPost.dwPostId();
@@ -185,7 +185,7 @@ $(document).on('click', '.dw-rr', function(event) {  // dw-rr = reply receiver
 });
 
 
-function getPostMultirepliedTo(elem) {
+function getLinkedPost(elem) {
   var multireplyPostLink = $(elem).attr('href');
   return $(multireplyPostLink);
 }

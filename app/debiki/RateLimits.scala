@@ -222,6 +222,16 @@ object RateLimits {
   }
 
 
+  object TogglePage extends RateLimits {
+    val key = "TgPg"
+    val what = "Changed the page state"
+    val maxPerFifteenSeconds = 6
+    val maxPerFifteenMinutes = 50
+    val maxPerDay = 150
+    val maxPerDayNewUser = 30
+  }
+
+
   /** Somewhat likely that one moves many pages at roughly the same time? */
   object MoveRenamePage extends RateLimits {
     val key = "MvPg"

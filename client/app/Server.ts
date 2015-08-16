@@ -394,9 +394,13 @@ export function loadForumCategories(forumPageId: string,
 }
 
 
-export function loadForumCategoriesTopics(forumPageId: string,
+export function loadForumCategoriesTopics(forumPageId: string, topicFilter: string,
       doneCallback: (categories: Category[]) => void) {
-  $.get(origin + '/-/list-categories-topics?forumId=' + forumPageId)
+  var url = origin + '/-/list-categories-topics?forumId=' + forumPageId;
+  if (topicFilter) {
+    url += '&filter=' + topicFilter;
+  }
+  $.get(url)
     .done((response: any) => {
       doneCallback(response.categories);
     })
@@ -573,14 +577,34 @@ export function createForumCategory(data, success: (response: any) => void) {
 }
 
 
-export function createPage(data, doneCallback: (newPageId: string) => void) {
+export function createPage(data, success: (newPageId: string) => void) {
   postJson('/-/create-page', {
     data: data,
     success: (response) => {
-      doneCallback(response.newPageId);
+      success(response.newPageId);
     }
   });
 }
+
+
+export function acceptAnswer(postId: number, success: (answeredAtMs: number) => void) {
+  postJsonSuccess('/-/accept-answer', success, { pageId: d.i.pageId, postId: postId });
+}
+
+
+export function unacceptAnswer(success: () => void) {
+  postJsonSuccess('/-/unaccept-answer', success, { pageId: d.i.pageId });
+}
+
+
+export function togglePageDone(success: (doneAtMs: number) => void) {
+  postJsonSuccess('/-/toggle-page-done', success, { pageId: d.i.pageId });
+}
+
+export function togglePageClosed(success: (closedAtMs: number) => void) {
+  postJsonSuccess('/-/toggle-page-closed', success, { pageId: d.i.pageId });
+}
+
 
 
 //------------------------------------------------------------------------------
