@@ -363,6 +363,8 @@ object PinPageWhere {
 
 
 
+case class PageQuery(orderOffset: PageOrderOffset, pageFilter: PageFilter)
+
 /** How to sort pages, and where to start listing them, e.g. if fetching additional
   * pages after the user has scrolled down to the end of a page list.
   */
@@ -377,6 +379,11 @@ object PageOrderOffset {
   case class ByLikesAndBumpTime(offset: Option[(Int, ju.Date)]) extends PageOrderOffset
 }
 
+sealed abstract class PageFilter
+object PageFilter {
+  case object ShowAll extends PageFilter
+  case object ShowOpenQuestionsTodos extends PageFilter
+}
 
 
 case class PagePostId(pageId: PageId, postId: PostId) {

@@ -61,7 +61,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     useCache &= !pageReq.debugStats
 
     // When paginating forum topics in a non-Javascript client, we cannot use the cache.
-    useCache &= ForumController.parseSortOrderAndOffset(pageReq).isEmpty
+    useCache &= ForumController.parsePageQuery(pageReq).isEmpty
 
     if (!useCache)
       return super.renderTemplate(pageReq)

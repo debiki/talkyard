@@ -60,9 +60,9 @@ object ForumController extends mvc.Controller {
 
 
   def listTopics(categoryId: PageId) = GetAction { request =>
-    val orderOffset = parseSortOrderAndOffset(request) getOrElse throwBadReq(
+    val pageQuery = parsePageQuery(request) getOrElse throwBadReq(
       "DwE2KTES7", "No sort-order-offset specified")
-    val topics = listTopicsInclPinned(categoryId, orderOffset, request.dao)
+    val topics = listTopicsInclPinned(categoryId, pageQuery, request.dao)
     val pageStuffById = request.dao.loadPageStuff(topics.map(_.pageId))
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
     val json = Json.obj("topics" -> topicsJson)
@@ -72,7 +72,9 @@ object ForumController extends mvc.Controller {
 
   def listCategories(forumId: PageId) = GetAction { request =>
     val categories = request.dao.listChildPages(parentPageIds = Seq(forumId),
-      orderOffset = PageOrderOffset.ByPublTime, // COULD create a PageOrderOffset.ByPinOrder instead
+      pageQuery = PageQuery(
+        PageOrderOffset.ByPublTime, // COULD create a PageOrderOffset.ByPinOrder instead
+        PageFilter.ShowAll),
       limit = 999, onlyPageRole = Some(PageRole.Category))
     val pageStuffById: Map[PageId, debiki.dao.PageStuff] =
       request.dao.loadPageStuff(categories.map(_.pageId))
@@ -84,17 +86,21 @@ object ForumController extends mvc.Controller {
 
 
   def listCategoriesAndTopics(forumId: PageId) = GetAction { request =>
-    val categories = request.dao.listChildPages(parentPageIds = Seq(forumId),
-      orderOffset = PageOrderOffset.ByPublTime, // COULD create a PageOrderOffset.ByPinOrder instead
-      limit = 999, onlyPageRole = Some(PageRole.Category))
+    val categories = request.dao.listChildPages(
+      parentPageIds = Seq(forumId),
+      pageQuery = PageQuery(PageOrderOffset.ByPublTime, // COULD create PageOrderOffset.ByPinOrder instead
+        PageFilter.ShowAll),
+      limit = 999,
+      onlyPageRole = Some(PageRole.Category))
 
     val recentTopicsByCategoryId =
       mutable.Map[PageId, Seq[PagePathAndMeta]]()
 
     val pageIds = ArrayBuffer[PageId]()
+    val pageQuery = PageQuery(PageOrderOffset.ByBumpTime(None), parsePageFilter(request))
 
     for (category <- categories) {
-      val recentTopics = listTopicsInclPinned(category.id, PageOrderOffset.ByBumpTime(None),
+      val recentTopics = listTopicsInclPinned(category.id, pageQuery,
         request.dao, limit = 6)
       recentTopicsByCategoryId(category.id) = recentTopics
       pageIds.append(category.pageId)
@@ -112,16 +118,17 @@ object ForumController extends mvc.Controller {
   }
 
 
-  def listTopicsInclPinned(categoryId: PageId, orderOffset: PageOrderOffset,
+  def listTopicsInclPinned(categoryId: PageId, pageQuery: PageQuery,
         dao: debiki.dao.SiteDao, limit: Int = NumTopicsToList): Seq[PagePathAndMeta] = {
     val topics: Seq[PagePathAndMeta] =
-      dao.listTopicsInTree(rootPageId = categoryId, orderOffset, limit = limit)
+      dao.listTopicsInTree(rootPageId = categoryId, pageQuery, limit = limit)
 
     // If sorting by bump time, sort pinned topics first. Otherwise, don't.
-    val topicsInclPinned = orderOffset match {
+    val topicsInclPinned = pageQuery.orderOffset match {
       case orderOffset: PageOrderOffset.ByBumpTime if orderOffset.offset.isEmpty =>
         val pinnedTopics = dao.listTopicsInTree(
-          rootPageId = categoryId, PageOrderOffset.ByPinOrderLoadOnlyPinned,
+          rootPageId = categoryId,
+          PageQuery(PageOrderOffset.ByPinOrderLoadOnlyPinned, pageQuery.pageFilter),
           limit = limit)
         val notPinned = topics.filterNot(topic => pinnedTopics.exists(_.id == topic.id))
         val topicsSorted = (pinnedTopics ++ notPinned) sortBy { topic =>
@@ -145,7 +152,7 @@ object ForumController extends mvc.Controller {
   }
 
 
-  def parseSortOrderAndOffset(request: DebikiRequest[_]): Option[PageOrderOffset] = {
+  def parsePageQuery(request: DebikiRequest[_]): Option[PageQuery] = {
     val sortOrderStr = request.queryString.getFirst("sortOrder") getOrElse { return None }
     def anyDateOffset = request.queryString.getLong("epoch") map (new ju.Date(_))
     def anyNumOffset = request.queryString.getInt("num")
@@ -164,8 +171,17 @@ object ForumController extends mvc.Controller {
         }
       case x => throwBadReq("DwE05YE2", s"Bad sort order: `$x'")
     }
-    Some(orderOffset)
+
+    val filter = parsePageFilter(request)
+    Some(PageQuery(orderOffset, filter))
   }
+
+
+  def parsePageFilter(request: DebikiRequest[_]): PageFilter =
+    request.queryString.getFirst("filter") match {
+      case Some("ShowOpenQuestionsTodos") => PageFilter.ShowOpenQuestionsTodos
+      case _ => PageFilter.ShowAll
+    }
 
 
   private def categoryToJson(category: PagePathAndMeta, recentTopics: Seq[PagePathAndMeta],

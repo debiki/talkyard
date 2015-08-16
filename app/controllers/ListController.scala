@@ -44,7 +44,7 @@ object ListController extends mvc.Controller {
   val PostTextLengthLimit = 500
 
 
-  def listPages = GetAction { implicit request =>
+  def listPages = StaffGetAction { implicit request =>
     val pathRanges = Utils.parsePathRanges("/", request.queryString)
     listPagesImpl(pathRanges, DebikiHttp.ContentType.Json)
   }
@@ -62,7 +62,7 @@ object ListController extends mvc.Controller {
   }
 
 
-  def listPagesImpl(pathRanges: PathRanges, contentType: DebikiHttp.ContentType)(
+  private def listPagesImpl(pathRanges: PathRanges, contentType: DebikiHttp.ContentType)(
         implicit request: DebikiRequest[_]) = {
 
     val pathsAndDetails = request.dao.listPagePaths(

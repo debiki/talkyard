@@ -139,10 +139,10 @@ abstract class SiteDao
 
   // ----- List pages
 
-  def listChildPages(parentPageIds: Seq[PageId], orderOffset: PageOrderOffset,
+  def listChildPages(parentPageIds: Seq[PageId], pageQuery: PageQuery,
         limit: Int, onlyPageRole: Option[PageRole] = None,
         excludePageRole: Option[PageRole] = None): Seq[PagePathAndMeta] =
-    siteDbDao.listChildPages(parentPageIds, orderOffset, limit = limit,
+    siteDbDao.listChildPages(parentPageIds, pageQuery, limit = limit,
       onlyPageRole = onlyPageRole, excludePageRole = excludePageRole)
 
 
@@ -151,14 +151,15 @@ abstract class SiteDao
     * those categories, plus topics that are  direct children of rootPageId.
     * For now, allows one level of categories only (that is, no sub categories).
     */
-  def listTopicsInTree(rootPageId: PageId, orderOffset: PageOrderOffset, limit: Int)
+  def listTopicsInTree(rootPageId: PageId, pageQuery: PageQuery, limit: Int)
         : Seq[PagePathAndMeta] = {
+    val categoriesQuery = PageQuery(PageOrderOffset.Any, PageFilter.ShowAll)
     val childCategories = listChildPages(parentPageIds = Seq(rootPageId),
-      orderOffset = PageOrderOffset.Any, limit = 999, onlyPageRole = Some(PageRole.Category))
+      pageQuery = categoriesQuery, limit = 999, onlyPageRole = Some(PageRole.Category))
     val childCategoryIds = childCategories.map(_.id)
     val allCategoryIds = childCategoryIds :+ rootPageId
     val topics: Seq[PagePathAndMeta] = listChildPages(parentPageIds = allCategoryIds,
-      orderOffset = orderOffset, limit = limit, excludePageRole = Some(PageRole.Category))
+      pageQuery = pageQuery, limit = limit, excludePageRole = Some(PageRole.Category))
     topics
   }
 
