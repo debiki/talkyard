@@ -36,6 +36,7 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
+var Input = reactCreateFactory(ReactBootstrap.Input);
 
 var ReactRouter = window['ReactRouter'];
 var Route = reactCreateFactory(ReactRouter.Route);
@@ -102,7 +103,7 @@ var CategoriesAndTopics = createComponent({
   mixins: [RouterNavigationMixin, RouterStateMixin],
 
   getInitialState: function() {
-    return {};
+    return { topicFilter: 'ShowAll' };
   },
 
   componentWillReceiveProps: function(nextProps) {
@@ -138,6 +139,29 @@ var CategoriesAndTopics = createComponent({
     }
     return activeCategory;
   },
+
+  setTopicFilter: function(event) {
+    this.setState({ topicFilter: event.target.value });
+  },
+
+  /* If using a filter dropdown + full search text field like GitHub does:
+  activateFilter: function(filterKey: string) {
+    this.setState({
+      searchFilterKey: filterKey,
+      searchText: this.searchTextForFilter(filterKey),
+    });
+  },
+
+  searchTextForFilter: function(filterKey: string) {
+    switch (filterKey) {
+      case 'ShowAll': return '';
+      case 'ShowOpenQuestionsTodos': return 'is:open is:question-or-todo';
+    }
+  },
+
+  updateSearchText: function(event) {
+    this.setState({ searchText: event.target.value });
+  }, */
 
   editCategory: function() {
     location.href = '/-' + this.getActiveCategory().pageId;
@@ -185,6 +209,33 @@ var CategoriesAndTopics = createComponent({
 
     var activeRoute = this.getRoutes()[this.getRoutes().length - 1];
 
+    // The filter topics select.
+    var topicFilter =
+        r.div({ className: 'dw-filter' },
+          Input({ type: 'select', ref: 'topicFilterInput', onChange: this.setTopicFilter },
+            r.option({ value: 'ShowAll' }, "Show all"),
+            r.option({ value: 'ShowOpenQuestionsTodos' }, "Show open questions and todo:s")));
+
+    /* A filter dropdown and search box instead of the <select> above:
+    var makeFilterItemProps = (key: string) => {
+      var props: any = { eventKey: key };
+      if (this.state.searchFilterKey === key) {
+        props.className = 'dw-active';
+      }
+      return props;
+    }
+    var topicsFilterButton =
+        DropdownButton({ title: "Filter", onSelect: this.activateFilter },
+          MenuItem(makeFilterItemProps('ShowAll'), "Show everything"),
+          MenuItem(makeFilterItemProps('ShowOpenQuestionsTodos'), "Open questions and todo:s"));
+    var topicFilter =
+        r.div({ className: 'dw-filter' },
+          Input({ type: 'text', buttonBefore: topicsFilterButton, value: this.state.searchText,
+              onChange: this.updateSearchText,
+              // ElasticSearch disabled server side, and is:* not supported anyway.
+              disabled: true, title: "Not completely implemented" }));
+    */
+
     var createTopicBtn;
     if (activeRoute.name !== 'ForumRouteCategories') {
       createTopicBtn  = Button({ onClick: this.createTopic }, 'Create Topic');
@@ -203,18 +254,20 @@ var CategoriesAndTopics = createComponent({
     var viewProps = _.clone(this.props);
     viewProps.activeCategory = activeCategory;
     viewProps.activeRoute = activeRoute;
+    viewProps.topicFilter = this.state.topicFilter;
 
     return (
       r.div({},
         r.div({ className: 'dw-forum-actionbar clearfix' },
           categoriesDropdown,
-          createTopicBtn,
-          createCategoryBtn,
-          editCategoryBtn,
           r.ul({ className: 'nav nav-pills' },
             NavButton({ routeName: 'ForumRouteLatest' }, 'Latest'),
             NavButton({ routeName: 'ForumRouteTop' }, 'Top'),
-            NavButton({ routeName: 'ForumRouteCategories' }, 'Categories'))),
+            NavButton({ routeName: 'ForumRouteCategories' }, 'Categories')),
+          createTopicBtn,
+          createCategoryBtn,
+          editCategoryBtn,
+          topicFilter),
         RouteHandler(viewProps)));
   }
 });
@@ -278,7 +331,8 @@ var ForumTopicListComponent = React.createClass({
   loadTopics: function(nextProps, loadMore) {
     var isNewView =
         this.props.activeCategory.pageId !== nextProps.activeCategory.pageId ||
-        this.props.activeRoute.name !== nextProps.activeRoute.name;
+        this.props.activeRoute.name !== nextProps.activeRoute.name ||
+        this.props.topicFilter !== nextProps.topicFilter;
 
     // Avoid loading the same topics many times:
     // - On page load, componentDidMount() and componentWillReceiveProps() both loads topics.
@@ -287,12 +341,13 @@ var ForumTopicListComponent = React.createClass({
       return;
 
     var orderOffset: OrderOffset = this.getOrderOffset();
+    orderOffset.topicFilter = nextProps.topicFilter;
     if (isNewView) {
       this.setState({
         topics: null,
         showLoadMoreButton: false
       });
-      // Load from the start, no offset.
+      // Load from the start, no offset. Keep any topic filter though.
       delete orderOffset.time;
       delete orderOffset.numLikes;
     }
@@ -531,15 +586,16 @@ var ForumCategoriesComponent = React.createClass({
   },
 
   componentDidMount: function() {
-    this.loadCategories();
+    this.loadCategories(this.props);
   },
 
-  componentWillReceiveProps: function() {
-    this.loadCategories();
+  componentWillReceiveProps: function(nextProps) {
+    this.loadCategories(nextProps);
   },
 
-  loadCategories: function() {
-    debiki2.Server.loadForumCategoriesTopics(this.props.pageId, (categories: Category[]) => {
+  loadCategories: function(props) {
+    debiki2.Server.loadForumCategoriesTopics(this.props.pageId, props.topicFilter,
+        (categories: Category[]) => {
       if (!this.isMounted())
         return;
       this.setState({ categories: categories });

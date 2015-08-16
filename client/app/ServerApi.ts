@@ -46,6 +46,9 @@ export function makeForumTopicsQueryParams(orderOffset: OrderOffset): string {
   else {
     console.error('Bad orderOffset [DwE5FS0]');
   }
+  if (orderOffset.topicFilter) {
+    params += '&filter=' + orderOffset.topicFilter;
+  }
   return params;
 }
 

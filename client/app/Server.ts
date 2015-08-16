@@ -394,9 +394,13 @@ export function loadForumCategories(forumPageId: string,
 }
 
 
-export function loadForumCategoriesTopics(forumPageId: string,
+export function loadForumCategoriesTopics(forumPageId: string, topicFilter: string,
       doneCallback: (categories: Category[]) => void) {
-  $.get(origin + '/-/list-categories-topics?forumId=' + forumPageId)
+  var url = origin + '/-/list-categories-topics?forumId=' + forumPageId;
+  if (topicFilter) {
+    url += '&filter=' + topicFilter;
+  }
+  $.get(url)
     .done((response: any) => {
       doneCallback(response.categories);
     })

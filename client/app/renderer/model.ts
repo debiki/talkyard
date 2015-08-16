@@ -143,10 +143,11 @@ interface Topic {
 enum TopicSortOrder { BumpTime = 1, LikesAndBumpTime };
 
 
-interface OrderOffset {
+interface OrderOffset {  // COULD rename to TopicQuery? (because includes filter too now)
   sortOrder: TopicSortOrder;
   time?: number;
   numLikes?: number;
+  topicFilter?: string;
 }
 
 
