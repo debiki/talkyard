@@ -29,7 +29,7 @@
   padding: 0
   position: relative // for position: absolute 'Click this...' tips, inside
 
-html.mouse .dw-p-as
+.dw-p-as
   .dw-a:before,
   .dw-a:after
     // Dim icons; they are otherwise eye catching blubs of colors.
@@ -64,21 +64,13 @@ html.mouse .dw-p-as
   // Don't make it possible to vote "Wrong" for the forum question or blog post.
   display: none !important
 
-.dw-ar-t > .dw-p-as > .dw-a-close,
+.DW.DW .dw-ar-t > .dw-p-as
+  .dw-a-close,
+  .dw-a-reopen
+    margin-left: 10px;
+
 .dw-ar-t > .dw-p-as > .dw-a-reply
-  background: hsl(210, 51%, 50%) !important;
-  color: white !important;
   font-weight: bold;
-  margin-left: 0
-
-html.mouse .dw-ar-t > .dw-p-as .dw-a
-  padding: 5px 8px 5px 5px !important;
-
-html:not(.mouse) .dw-ar-t > .dw-p-as > .dw-a-reply
-  padding: 10px 10px 9px 6px !important;  // 10 + 2 = 12 [9kDF35Q]
-  top: 2px;
-  position: relative;
-
 
 .dw-a
   text-decoration: none !important
@@ -97,18 +89,21 @@ html:not(.mouse) .dw-ar-t > .dw-p-as > .dw-a-reply
   float: right;
 
 .DW .dw-t > .dw-p-as .dw-a
-  padding: 12px 8px 10px 6px;  //  12px high [9kDF35Q]
+  padding: 12px 9px 10px 9px;  //  12px high ?? what, who cares?
   background: #fff;
   color: hsl(210, 0%, 52%);
   border: none;
 
   &.dw-a-solve,
   &.dw-a-unsolve
-    padding-right: 1.1em;
+    padding-right: 0.45em;
 
   // Make the "Solved" text dark so it's easy to see which post is the answer.
   &.dw-a-unsolve
     color: black;
+
+  &.dw-a-solve,
+  &.dw-a-unsolve
     &:before
       opacity: 0.6;
 
@@ -116,27 +111,27 @@ html:not(.mouse) .dw-ar-t > .dw-p-as > .dw-a-reply
   // But larger to the left, so it's easier to click (since people will click the left part of it,
   // to avoid the dropdown).
   &.dw-a-like
-    padding-right: 2px;
+    padding-right: 11px;
     padding-left: 13px;
 
   &.dw-a-votes
-    padding-left: 9px;
+    padding-left: 0;
     padding-right: 1px;
     &:after
-      font-size: 20px;
+      font-size: 22px;
       border-left: 1px solid hsl(0, 0, 64%);
       margin-left: 0;
-      padding: 2px 12px 1px 10px;
+      padding: 2px 14px 1px 10px;
       position: relative;
-      top: -1px;
+      top: -3px;
     &.dw-my-vote:after
-      font-size: 23px;
-      top: -5px;
+      font-size: 24px;
+      top: -4px;
       padding-top: 0;
 
   &.dw-a-link
-    padding-right: 13px;
-    padding-left: 6px;
+    padding-right: 9px;
+    padding-left: 8px;
 
   &.dw-a-link,
   &.dw-a-edit
@@ -145,14 +140,13 @@ html:not(.mouse) .dw-ar-t > .dw-p-as > .dw-a-reply
     &:hover:before
       opacity: 1;
 
+  &.dw-a-edit.icon-edit:before
+    color: hsl(0, 0%, 62%); // or too dark (it's a compact icon)
+
   &.dw-a-more
-    padding-left: 5px;
     margin-right: 0;
-    padding-right: 0;
-    a
-      color: hsl(0, 0%, 23%);
-      &.icon-trash:before
-        opacity: 0.7; // or too opaque, hard to see
+    padding-left: 9px;
+    padding-right: 13px;
 
   &:hover:not(.dw-a-votes),
   &.dw-a-votes:hover:after
@@ -167,7 +161,7 @@ html:not(.mouse) .dw-ar-t > .dw-p-as > .dw-a-reply
 
   &.dw-my-vote:before,
   &.dw-my-vote:after
-    opacity: 0.74;
+    opacity: 0.84;
 
 
 .dw-ar-t > .dw-p-as
@@ -176,18 +170,21 @@ html:not(.mouse) .dw-ar-t > .dw-p-as > .dw-a-reply
     opacity: 1 !important;
 
 .DW .dw-ar-t > .dw-p-as .dw-a
-  color: hsl(210, 100%, 25%);
+  color: hsl(0, 0%, 20%);
 
 
 html:not(.mouse) .dw-t > .dw-p-as .dw-a
   outline: none; // no is-focused outline
 
 
-// Prevent float drop when vote highlighted and font larger and button therefore wider.
+// Prevent float drop when vote highlighted and font larger and button therefore wider,
+// by reducing padding.
 .DW.DW .dw-p-as .dw-a.dw-my-vote
   padding-left: 9px;
   &.dw-a-votes
-    padding-left: 5px;
+    padding-left: 0px;  // was already 0 ...
+    &:after
+      padding-right: 12px; // ... so reduce padding-right instead
 
 // Avoid float drop (the reply button is to the very left)
 .DW.DW.DW .dw-p-as .dw-a-reply
@@ -201,14 +198,11 @@ html:not(.dw-is-staff) .dw-a-bury
 .dw-a.dw-my-vote:before,
 .dw-a-votes.dw-my-vote:after
   color: hsl(8, 100%, 60%)  // red-red-orange-red
-  font-size: 120%;
-  position: relative;
-  top: 1px;
+  font-size: 110%;
 
-// Show a ▾ icon as open-more-votes-dropdown-button and in the 'More' dropdown. Same as
+// Show a ▾ icon as open-more-votes-dropdown-button. Same as
 // class .icon-down-dir, but :after. Don't use "▾" directly though; it breaks on my mobile.
-.dw-a-votes:after,
-.dw-a-more:after
+.dw-a-votes:after
   content: " \e80f"
   font-family: "fontello"
 
@@ -217,6 +211,10 @@ html:not(.dw-is-staff) .dw-a-bury
   float: none
   display: block
   margin: 8px 10px 14px 12px
+  color: hsl(0, 0%, 23%);
+  &.icon-trash:before
+    opacity: 0.7; // or too opaque, hard to see
+
 
 
 // Bury = dig = a spade = a rotated spoon.
@@ -264,17 +262,10 @@ html:not(.dw-is-staff) .dw-a-bury
     top: -2px
     left: 3px
 
-// The article's reply button already has a background and square borders.
-// Make it even darker, when replying to the article.
-.dw-ar-t > .dw-p-as.dw-replying > .dw-a-reply
-  background: hsl(210, 51%, 35%) !important;
-  border-radius: 0;
-
 .dw-embedded .dw-depth-0.dw-t
   float: none;
 
 .dw-embedded .dw-ar-t > .dw-p-as
-  opacity: 1 !important;
   & > .dw-a-reply
     top: 5px;
     padding: 8px 11px 8px 8px !important;

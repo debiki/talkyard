@@ -829,8 +829,9 @@ var PostHeader = createComponent({
       */
     }
 
-    var by = post.postId === BodyPostId ? 'By ' : '';
-    var isBodyPostClass = post.postId === BodyPostId ? ' dw-ar-p-hd' : '';
+    var isPageBody = post.postId === BodyPostId;
+    var by = isPageBody ? 'By ' : '';
+    var isBodyPostClass = isPageBody ? ' dw-ar-p-hd' : '';
     var suspendedClass = post.authorSuspendedTill ? ' dw-suspended' : '';
 
     var userLinkProps: any = {
@@ -849,9 +850,10 @@ var PostHeader = createComponent({
 
     var is2dColumn = this.props.horizontalLayout && this.props.depth === 1;
     var collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
-    var toggleCollapsedButton = is2dColumn || this.props.abbreviate || post.isTreeCollapsed
-        ? null
-        : r.span({ className: 'dw-a-clps ' + collapseIcon, onClick: this.onCollapseClick });
+    var toggleCollapsedButton =
+        is2dColumn || this.props.abbreviate || post.isTreeCollapsed || isPageBody
+          ? null
+          : r.span({ className: 'dw-a-clps ' + collapseIcon, onClick: this.onCollapseClick });
 
     return (
         r.div({ className: 'dw-p-hd' + isBodyPostClass },
@@ -1068,7 +1070,7 @@ var PostActions = createComponent({
     var canClose = !(isQuestion && store.pageAnsweredAtMs) && !(isToDo && store.pageDoneAtMs);
     if (isPageBody && (canClose || canReopen) && isStaffOrOwnPost) {
       var closeReopenTitle = "Reopen";
-      var closeReopenIcon = 'icon-circle';
+      var closeReopenIcon = 'icon-circle-empty';
       var closeReopenTooltip;
       if (!store.pageClosedAtMs) {
         closeReopenTitle = "Close";
@@ -1116,7 +1118,7 @@ var PostActions = createComponent({
 
       likeVote =
           r.a({ className: 'dw-a dw-a-like icon-heart' + myLikeVote,
-            title: "Like this", onClick: this.onLikeClick }, 'Like');
+            title: "Like this", onClick: this.onLikeClick });
     }
 
     var editOwnPostButton = deletedOrCollapsed || !isOwnPost
@@ -1222,7 +1224,7 @@ var PostActions = createComponent({
 
     var moreDropdown =
       r.span({ className: 'dropdown navbar-right' },
-        r.a({ className: 'dw-a dw-a-more', 'data-toggle': 'dropdown' }, 'More'),
+        r.a({ className: 'dw-a dw-a-more icon-menu', 'data-toggle': 'dropdown' }),
         r.div({ className: 'dropdown-menu dropdown-menu-right dw-p-as-more' },
           moreLinks));
 
@@ -1230,13 +1232,13 @@ var PostActions = createComponent({
       r.div({ className: 'dw-p-as dw-as', onClick: this.props.onClick },
         //suggestionsNew,
         //suggestionsOld,
+        replyButton,
+        closeReopenButton,
         moreDropdown,
-        editOwnPostButton,
         link,
+        editOwnPostButton,
         otherVotesDropdown,
         likeVote,
-        closeReopenButton,
-        replyButton,
         acceptAnswerButton));
   }
 });
