@@ -384,7 +384,8 @@ trait PostsDao {
         val newMeta = oldMeta.copy(
           numRepliesVisible = oldMeta.numRepliesVisible - numVisibleRepliesGone,
           numOrigPostRepliesVisible =
-            oldMeta.numOrigPostRepliesVisible - numOrigPostVisibleRepliesGone)
+            // For now: use max() because the db field was just added so some counts are off.
+            math.max(oldMeta.numOrigPostRepliesVisible - numOrigPostVisibleRepliesGone, 0))
         transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
       }
 
@@ -583,7 +584,8 @@ trait PostsDao {
 
     val (numNewOpLikes, numNewOpWrongs, numNewOpBurys) =
       if (post.isOrigPostReply)
-        (numNewLikes, numNewWrongs, numNewBurys)
+        // For now: use max() because the db fields were just added so some counts are off.
+        (math.max(numNewLikes, 0), math.max(numNewWrongs, 0), math.max(numNewBurys, 0))
       else
         (0, 0, 0)
 
