@@ -158,8 +158,10 @@ object Application extends mvc.Controller {
       return controllers.Assets.at(path, file)(request)
     }
 
-    val mimeType = MimeTypes.forFileName(file) getOrElse
-      throwForbidden("DwE5Kf24", "Unknown file type")
+    val mimeType = MimeTypes.forFileName(file) getOrElse {
+      if (file.endsWith(".m4v")) "video/mp4"
+      else throwForbidden("DwE5Kf24", "Unknown file type")
+    }
 
     val stream: jio.InputStream = getClass.getResourceAsStream(s"$path/$file")
     if (stream == null)

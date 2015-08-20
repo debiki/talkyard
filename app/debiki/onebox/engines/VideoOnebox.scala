@@ -31,7 +31,7 @@ import scala.util.Success
 
 class VideoOnebox extends InstantOneboxEngine {
 
-  val regex = """^(https?:)?\/\/.*\.(mov|mp4|webm|ogv)(\?.*)?$""".r
+  val regex = """^(https?:)?\/\/.*\.(mov|mp4|m4v|webm|ogv)(\?.*)?$""".r
 
   val cssClassName = "dw-ob-video"
 

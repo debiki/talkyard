@@ -38,7 +38,7 @@ class HtmlJsCssGzipFilter extends GzipFilter(
     // Compressing images tend to make them larger (they're compressed already).
     val uri = request.uri
     val isImage = uri.endsWith(".png") || uri.endsWith(".jpg") || uri.endsWith(".gif")
-    val isMovie = uri.endsWith(".mp4")
+    val isMovie = uri.endsWith(".mp4") || uri.endsWith(".m4v")
     !isImage && !isMovie
   })
 
