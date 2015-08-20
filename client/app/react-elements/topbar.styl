@@ -16,9 +16,6 @@
  */
 
 
-.homepage #dw-react-topbar
-  display: none;
-
 #dw-react-topbar
   z-index: 1;
   min-height: 51px; // avoids height changes when filled with contents
@@ -56,6 +53,8 @@
       margin-left: 10px;
       border: none;
 
+      &.dw-scrollback,
+      &.dw-clear-scroll,
       &.dw-login,
       &.dw-logout,
       &.dw-admin,
@@ -88,6 +87,40 @@
 
         .caret
           display: none;
+
+      &.dw-scrollback,
+      &.dw-clear-scroll
+        height: 17px;
+        box-sizing: content-box;
+        color: #222;
+        background: white;
+        border: 1px solid #333;
+        &:hover
+          border-color: hsl(210, 100%, 55%);
+          background: hsl(210, 100%, 96%);
+
+      &.dw-clear-scroll
+        border-right: none;
+        padding-right: 12px;
+        padding-left: 12px;
+        margin-left: 11px;
+
+      &.dw-scrollback .icon-down-dir:before
+        font-size: 16px;
+        // rotate so points leftwards not down
+        -webkit-transform: rotate(90deg);
+        -moz-transform: rotate(90deg);
+        -ms-transform: rotate(90deg);
+        -o-transform: rotate(90deg);
+        transform: rotate(90deg);
+        position: relative;
+        top: 1px;
+        margin: 0;
+
+      &.dw-scrollback
+        padding-left: 3px;
+        margin-left: 0;
+
 
   #dw-search-form
     position: absolute;

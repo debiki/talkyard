@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
+/// <reference path="../utils/react-utils.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.postnavigation {
@@ -25,50 +26,87 @@
 var keymaster: Keymaster = window['keymaster'];
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
+var ReactBootstrap: any = window['ReactBootstrap'];
+var Button = React.createFactory(ReactBootstrap.Button);
 
-var visitedPosts = [];
-var currentVisitedPostIndex = -1;
+export var addVisitedPosts: (currentPostId: number, nextPostId: number) => void = null;
+export var addVisitedPositionAndPost: (nextPostId: number) => void = null;
 
 
-var PostNavigation = createClassAndFactory({
+export var PostNavigation = debiki2.utils.createClassAndFactory({
+  getInitialState: function() {
+    return {
+      visitedPosts: [],
+      currentVisitedPostIndex: -1,
+      hideIfTotallyBack: true,
+    };
+  },
+
+  addVisitedPosts: function(currentPostId: number, nextPostId: number) {
+    var visitedPosts = this.state.visitedPosts; // TODO clone, don't modify visitedPosts directly below [immutablejs]
+    visitedPosts.splice(this.state.currentVisitedPostIndex + 1, 999999);
+    if (visitedPosts.length && visitedPosts[visitedPosts.length - 1].postId === currentPostId) {
+      // Don't duplicate postId.
+      visitedPosts.splice(visitedPosts.length - 1, 1);
+    }
+    visitedPosts.push({
+      windowLeft: $(window).scrollLeft(),
+      windowTop: $(window).scrollTop(),
+      postId: currentPostId
+    });
+    visitedPosts.push({ postId: nextPostId });
+    this.setState({
+      visitedPosts: visitedPosts,
+      currentVisitedPostIndex: visitedPosts.length - 1,
+      hideIfTotallyBack: false,
+    });
+  },
+
+  addVisitedPositionAndPost: function(nextPostId: number) {
+    this.addVisitedPosts(null, nextPostId);
+  },
+
   canGoBack: function() {
-    return this.props.currentVisitedPostIndex >= 1;
+    return this.state.currentVisitedPostIndex >= 1;
   },
 
   canGoForward: function() {
-    return this.props.currentVisitedPostIndex >= 0 &&
-        this.props.currentVisitedPostIndex < this.props.visitedPosts.length - 1;
+    return this.state.currentVisitedPostIndex >= 0 &&
+        this.state.currentVisitedPostIndex < this.state.visitedPosts.length - 1;
   },
 
   componentDidMount: function() {
+    addVisitedPosts = this.addVisitedPosts;
+    addVisitedPositionAndPost = this.addVisitedPositionAndPost;
     keymaster('b', this.goBack);
     keymaster('f', this.goForward);
     window.addEventListener('scroll', this.hideIfCloseToTop, false);
   },
 
   componentWillUnmount: function() {
+    addVisitedPosts = null;
+    addVisitedPositionAndPost = null;
     keymaster.unbind('b', this.goBack);
     keymaster.unbind('f', this.goForward);
     window.removeEventListener('scroll', this.hideIfCloseToTop, false);
   },
 
-  hideIfCloseToTop: function() {
-    var node = this.getDOMNode();
-    if (!node)
-      return;
-
-    if (node.getBoundingClientRect().top < 30 && $(window).scrollTop() < 100) {
-      $(node).hide();
-    }
-    else {
-      $(node).show();
-    }
-  },
-
   goBack: function() {
     if (!this.canGoBack()) return;
-    var backPost = this.props.visitedPosts[this.props.currentVisitedPostIndex - 1];
-    this.props.decreaseCurrentPostIndex();
+    var backPost = this.state.visitedPosts[this.state.currentVisitedPostIndex - 1];
+    var nextIndex = this.state.currentVisitedPostIndex - 1;
+    this.setState({
+      currentVisitedPostIndex: nextIndex,
+    });
+    if (nextIndex === 0) {
+      // Don't hide direcltly, wait half a second so "0" shows so one understands
+      // that the scroll back list has ended.
+      setTimeout(() => {
+        if (this.isMounted() && this.state.currentVisitedPostIndex === 0) {
+          this.setState({ hideIfTotallyBack: true });
+        }
+      }, 600);
+    }
     if (typeof backPost.windowLeft !== 'undefined' && (
         backPost.windowLeft !== $(window).scrollLeft() ||
         backPost.windowTop !== $(window).scrollTop())) {
@@ -90,10 +128,22 @@ var PostNavigation = createClassAndFactory({
     }
   },
 
+  clearBackList: function() {
+    this.setState({
+      visitedPosts: [],
+      currentVisitedPostIndex: -1,
+      hideIfTotallyBack: true,
+    });
+  },
+
+  // Only invokable via the 'F' key — I rarely go forwards, and a button makes the UI to cluttered.
   goForward: function() {
     if (!this.canGoForward()) return;
-    var forwPost = this.props.visitedPosts[this.props.currentVisitedPostIndex + 1];
-    this.props.increaseCurrentPostIndex();
+    var forwPost = this.state.visitedPosts[this.state.currentVisitedPostIndex + 1];
+    this.setState({
+      currentVisitedPostIndex: this.state.currentVisitedPostIndex + 1,
+      hideIfTotallyBack: false,
+    });
     if (forwPost.postId) {
       d.i.showAndHighlightPost($('#post-' + forwPost.postId));
     }
@@ -109,64 +159,21 @@ var PostNavigation = createClassAndFactory({
   },
 
   render: function() {
-    var backButton =
-        r.button({
-            id: 'dw-post-nav-back-btn', onClick: this.goBack, className: 'btn btn-default',
-                disabled: !this.canGoBack() },
-            r.span({ className: 'dw-shortcut' }, 'B'), 'ack');
-    var forwardsButton =
-        r.button({
-            id: 'dw-post-nav-forw-btn', onClick: this.goForward, className: 'btn btn-default',
-                disabled: !this.canGoForward() },
-            r.span({ className: 'dw-shortcut' }, 'F'),
-              r.span({ className: 'dw-narrow' }, 'wd'),
-              r.span({ className: 'dw-wide' }, 'orward'));
+    if (this.state.currentVisitedPostIndex <= 0 && this.state.hideIfTotallyBack)
+      return null;
+
+    var scrollBackButton =
+          Button({ className: 'dw-scrollback', onClick: this.goBack },
+              r.span({ className: 'icon-down-dir' },
+                "Scroll ", r.span({ style: { fontWeight: 'bold' }}, "B"), "ack (" +
+                    this.state.currentVisitedPostIndex + ")"));
+    var clearScrollBackButton =
+          Button({ className: 'dw-clear-scroll', onClick: this.clearBackList },
+              r.span({ className: ' icon-cancel-circled' }));
     return (
-        this.props.visitedPosts.length === 0
-          ? null
-          : r.div({ id: 'dw-post-nav-panel'}, backButton, forwardsButton));
+      r.span({}, clearScrollBackButton, scrollBackButton));
   }
 });
-
-
-export function renderPostNavigationPanel() {
-  React.render(
-      PostNavigation({
-        decreaseCurrentPostIndex: () => {
-          currentVisitedPostIndex -= 1;
-          renderPostNavigationPanel();
-        },
-        increaseCurrentPostIndex: () => {
-          currentVisitedPostIndex += 1;
-          renderPostNavigationPanel();
-        },
-        visitedPosts: visitedPosts,
-        currentVisitedPostIndex: currentVisitedPostIndex
-      }),
-      document.getElementById('dw-posts-navigation'));
-}
-
-
-export function addVisitedPosts(currentPostId: number, nextPostId: number) {
-  visitedPosts.splice(currentVisitedPostIndex + 1, 999999);
-  if (visitedPosts.length && visitedPosts[visitedPosts.length - 1].postId === currentPostId) {
-    // Don't duplicate postId.
-    visitedPosts.splice(visitedPosts.length - 1, 1);
-  }
-  visitedPosts.push({
-    windowLeft: $(window).scrollLeft(),
-    windowTop: $(window).scrollTop(),
-    postId: currentPostId
-  });
-  visitedPosts.push({ postId: nextPostId });
-  currentVisitedPostIndex = visitedPosts.length - 1;
-  renderPostNavigationPanel();
-}
-
-
-export function addVisitedPositionAndPost(nextPostId: number) {
-  addVisitedPosts(null, nextPostId);
-}
 
 
 //------------------------------------------------------------------------------

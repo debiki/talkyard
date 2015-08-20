@@ -18,6 +18,7 @@
 /// <reference path="../../shared/plain-old-javascript.d.ts" />
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
+/// <reference path="../utils/react-utils.ts" />
 /// <reference path="../dialogs.ts" />
 /// <reference path="../editor/title-editor.ts" />
 /// <reference path="../react-elements/topbar.ts" />
@@ -53,7 +54,6 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var OverlayTrigger = reactCreateFactory(ReactBootstrap.OverlayTrigger);
 var Tooltip = reactCreateFactory(ReactBootstrap.Tooltip);
 
-
 var ManualReadMark = 1;
 var YellowStarMark = 2;
 var FirstStarMark = 2;
@@ -64,23 +64,6 @@ function isServerSide() {
   // Don't change this to a static variable, because it'd be initialized rather late,
   // so some code would believe we were running client side.
   return !!window['java'];
-}
-
-
-function createComponent(componentDefinition) { // oops should obviously be named createFactory
-  if (isServerSide()) {
-    // The mere presence of these functions cause an unknown error when rendering
-    // React-Router server side. So remove them; they're never called server side anyway.
-    // The error logs the message '{}' to console.error(); no idea what that means.
-    delete componentDefinition.componentWillUpdate;
-    delete componentDefinition.componentWillReceiveProps;
-  }
-  return React.createFactory(React.createClass(componentDefinition));
-}
-
-
-function createClassAndFactory(componentDefinition) { // rename createComponent to this
-  return createComponent(componentDefinition);
 }
 
 

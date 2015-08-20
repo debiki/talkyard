@@ -20,6 +20,7 @@
 /// <reference path="../login/login-dialog.ts" />
 /// <reference path="../page-tools/page-tools.ts" />
 /// <reference path="../utils/page-scroll-mixin.ts" />
+/// <reference path="../post-navigation/posts-trail.ts" />
 /// <reference path="name-login-btns.ts" />
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 
@@ -116,9 +117,10 @@ export var TopBar = createComponent({
     var store: Store = this.state.store;
     var user: User = store.user;
 
-    // Don't show all these buttons on a homepage / landing page.
-    if (store.pageRole === PageRole.HomePage)
-      return null;
+    // Don't show all these buttons on a homepage / landing page, until after has scrolled down.
+    // If not logged in, never show it — there's no reason for new users to login on the homepage.
+    if (store.pageRole === PageRole.HomePage && (!this.state.fixed || !user))
+      return r.span({});
 
     var loggedInAs = !user.isLoggedIn ? null :
         r.a({ className: 'dw-name', onClick: this.goToUserPage }, user.username || user.fullName);
@@ -174,22 +176,26 @@ export var TopBar = createComponent({
           adminButton,
           toolsButton,
           searchButton,
-          menuButton),
+          menuButton,
+          debiki2.postnavigation.PostNavigation()),
         searchForm);
 
-    if (!this.state.fixed) {
-      return topbar;
+    var placeholder;
+    var fixItClass;
+    var containerClass;
+    if (this.state.fixed) {
+      // The placeholder prevents the page height from suddenly changing when the
+      // topbar becomes fixed and thus is removed from the flow.
+      placeholder = r.div({ style: { height: this.state.initialHeight }});
+      fixItClass = 'dw-fixed-topbar-wrap';
+      containerClass = 'container';
     }
-    else {
-      return (
-        r.div({},
-          // The placeholder prevents the page height from suddenly changing when the
-          // topbar becomes fixed and thus is removed from the flow.
-          r.div({ style: { height: this.state.initialHeight }}),
-          r.div({ className: 'dw-fixed-topbar-wrap' },
-            r.div({ className: 'container' },
-              topbar))));
-    }
+    return (
+      r.div({},
+        placeholder,
+        r.div({ className: fixItClass },
+          r.div({ className: containerClass },
+            topbar))));
   }
 });
 
