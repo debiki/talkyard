@@ -533,36 +533,7 @@ var TopicRow = createComponent({
         ? r.p({ className: 'dw-p-excerpt' }, topic.excerpt, r.a({ href: topic.url }, 'read more'))
         : null;
 
-    var title = topic.title;
-
-    if (topic.closedAtMs) {
-      var tooltip = makePageClosedTooltipText(topic.pageRole);
-      var closedIcon = r.span({ className: 'icon-cancel-circled-empty' });
-      title = r.span({ title: tooltip }, closedIcon, title);
-    }
-    else if (topic.pageRole === PageRole.Question) {
-      var tooltip = makeQuestionTooltipText(topic.answeredAtMs);
-      var questionIconClass = topic.answeredAtMs ? 'icon-ok-circled-empty' : 'icon-help-circled';
-      var questionIcon = r.span({ className: questionIconClass });
-      var answerIcon;
-      var answerCount;
-      // (Don't show answer count if question already solved — too much clutter.)
-      if (!topic.answeredAtMs && topic.numOrigPostReplies > 0) {
-        /* Skip this answer count stuff for now (or permanently?), too much clutter.
-        answerIcon = r.span({ className: 'icon-info-circled dw-icon-inverted' }, ' ');
-        answerCount = r.span({ className: 'dw-qa-ans-count' }, topic.numOrigPostReplies);
-        */
-        tooltip += " with " + topic.numOrigPostReplies + " answers";
-      }
-      title = r.span({ title: tooltip }, questionIcon, answerCount, answerIcon, title);
-    }
-    else if (topic.pageRole === PageRole.ToDo) {
-      var iconClass = topic.doneAtMs ? 'icon-check' : 'icon-check-empty';
-      var tooltip = topic.doneAtMs
-          ? "This has been done or fixed"
-          : "This is something to do or to fix";
-      title = r.span({ title: tooltip }, r.span({ className: iconClass }, title));
-    }
+    var title = makeTitle(topic);
 
     var categoryName = category ? category.name : '';
     var activityAgo = moment(topic.bumpedEpoch || topic.createdEpoch).from(this.props.now);
@@ -634,10 +605,11 @@ var CategoryRow = createComponent({
     var category: Category = this.props.category;
     var recentTopicRows = category.recentTopics.map((topic: Topic) => {
       var pinIconClass = topic.pinWhere ? ' icon-pin' : '';
+      var title = makeTitle(topic);
       return (
         r.tr({ key: topic.pageId },
           r.td({},
-            r.a({ className: 'topic-title' + pinIconClass, href: topic.url }, topic.title),
+            r.a({ className: 'topic-title' + pinIconClass, href: topic.url }, title),
             r.span({ className: 'topic-details' },
               ' – ' + topic.numPosts + ' posts, ',
               moment(topic.bumpedEpoch || topic.createdEpoch).from(this.props.now)))));
@@ -655,6 +627,41 @@ var CategoryRow = createComponent({
               recentTopicRows)))));
     }
 });
+
+
+
+function makeTitle(topic: Topic) {
+  var title = topic.title;
+  if (topic.closedAtMs) {
+    var tooltip = makePageClosedTooltipText(topic.pageRole);
+    var closedIcon = r.span({ className: 'icon-cancel-circled-empty' });
+    title = r.span({ title: tooltip }, closedIcon, title);
+  }
+  else if (topic.pageRole === PageRole.Question) {
+    var tooltip = makeQuestionTooltipText(topic.answeredAtMs);
+    var questionIconClass = topic.answeredAtMs ? 'icon-ok-circled-empty' : 'icon-help-circled';
+    var questionIcon = r.span({ className: questionIconClass });
+    var answerIcon;
+    var answerCount;
+    // (Don't show answer count if question already solved — too much clutter.)
+    if (!topic.answeredAtMs && topic.numOrigPostReplies > 0) {
+      /* Skip this answer count stuff for now (or permanently?), too much clutter.
+      answerIcon = r.span({ className: 'icon-info-circled dw-icon-inverted' }, ' ');
+      answerCount = r.span({ className: 'dw-qa-ans-count' }, topic.numOrigPostReplies);
+      */
+      tooltip += " with " + topic.numOrigPostReplies + " answers";
+    }
+    title = r.span({ title: tooltip }, questionIcon, answerCount, answerIcon, title);
+  }
+  else if (topic.pageRole === PageRole.ToDo) {
+    var iconClass = topic.doneAtMs ? 'icon-check' : 'icon-check-empty';
+    var tooltip = topic.doneAtMs
+        ? "This has been done or fixed"
+        : "This is something to do or to fix";
+    title = r.span({ title: tooltip }, r.span({ className: iconClass }, title));
+  }
+  return title;
+}
 
 
 //------------------------------------------------------------------------------

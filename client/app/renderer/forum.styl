@@ -218,6 +218,20 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
   & > tbody > tr > td:first-child
     width: 45%; // or sometimes 80-90% wide
 
+  .topic-title
+    .icon-check-empty:before
+      position: relative;
+      top: 1px;
+
+    .icon-pin:before,
+    .icon-ok-circled-empty:before
+      opacity: 0.85;
+
+    .icon-help-circled:before,
+    .icon-cancel-circled-empty:before
+      opacity: 0.8;
+
+
 .forum-table > tbody > tr > td {
   padding: 15px 5px 10px 8px; /* 8x paddin-left aligns w/ row header */
 }

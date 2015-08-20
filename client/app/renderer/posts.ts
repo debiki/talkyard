@@ -235,10 +235,14 @@ var Title = createComponent({
         tooltip = makeQuestionTooltipText(store.pageAnsweredAtMs) + ".\n";
       }
       else if (store.pageRole === PageRole.ToDo) {
+        var iconTooltip = store.pageDoneAtMs
+            ? "Click to change status to not-yet-done"
+            : "Click to mark as done";
         var iconClass = store.pageDoneAtMs ? 'icon-check' : 'icon-check-empty';
         var clickableClass = isStaff(store.user) ? ' dw-clickable' : '';
         var onClick = isStaff(store.user) ? this.toggleIsDone : null;
-        icon = r.span({ className: iconClass + clickableClass, onClick: onClick });
+        icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
+            title: iconTooltip });
         tooltip = store.pageDoneAtMs
             ? "This has been done or fixed.\n"
             : "This is about something to do or fix.\n";
