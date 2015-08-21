@@ -584,8 +584,7 @@ trait PostsDao {
 
     val (numNewOpLikes, numNewOpWrongs, numNewOpBurys) =
       if (post.isOrigPostReply)
-        // For now: use max() because the db fields were just added so some counts are off.
-        (math.max(numNewLikes, 0), math.max(numNewWrongs, 0), math.max(numNewBurys, 0))
+        (numNewLikes, numNewWrongs, numNewBurys)
       else
         (0, 0, 0)
 
@@ -594,9 +593,10 @@ trait PostsDao {
       numLikes = pageMetaBefore.numLikes + numNewLikes,
       numWrongs = pageMetaBefore.numWrongs + numNewWrongs,
       numBurys = pageMetaBefore.numBurys + numNewBurys,
-      numOrigPostLikeVotes = pageMetaBefore.numOrigPostLikeVotes + numNewOpLikes,
-      numOrigPostWrongVotes = pageMetaBefore.numOrigPostWrongVotes + numNewOpWrongs,
-      numOrigPostBuryVotes = pageMetaBefore.numOrigPostBuryVotes + numNewOpBurys)
+      // For now: use max() because the db fields were just added so some counts are off.
+      numOrigPostLikeVotes = math.max(0, pageMetaBefore.numOrigPostLikeVotes + numNewOpLikes),
+      numOrigPostWrongVotes = math.max(0, pageMetaBefore.numOrigPostWrongVotes + numNewOpWrongs),
+      numOrigPostBuryVotes = math.max(0, pageMetaBefore.numOrigPostBuryVotes + numNewOpBurys))
 
     transaction.updatePost(postAfter)
     transaction.updatePageMeta(pageMetaAfter, oldMeta = pageMetaBefore)

@@ -40,8 +40,8 @@ var Gifffer = function() {
         if(w && h && isC) cc = createContainer(w, h, el);
         el.onload = function() {
             if(isC) {
-                w = w || el.width;
-                h = h || el.height;
+                w = w || el.naturalWidth || el.width;
+                h = h || el.naturalHeight || el.height;
                 // creating the container
                 if(!cc) cc = createContainer(w, h, el);
                 con = cc.c;

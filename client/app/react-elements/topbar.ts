@@ -67,12 +67,13 @@ export var TopBar = createComponent({
   onScroll: function(event) {
     var node = this.getDOMNode();
     if (!this.state.fixed) {
-      if (node.getBoundingClientRect().top < -6) {
+      if (node.getBoundingClientRect().top < -8) {
         this.setState({ fixed: true });
       }
     }
     else {
-      if (window.pageYOffset < this.state.initialOffsetTop) {
+      // Add +X otherwise sometimes the fixed state won't vanish although back at top of page.
+      if (window.pageYOffset < this.state.initialOffsetTop + 5) {
         this.setState({ fixed: false });
       }
     }
