@@ -1,0 +1,47 @@
+/* The Stupid Lightbox.
+ * Copyright (c) 2015 Kaj Magnus Lindberg
+ * License: The MIT license.
+ */
+
+.stupid-lightbox-overlay {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 2000;
+  background-color: black;
+  opacity: 0.75;
+}
+
+.stupid-lightbox-wrap {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 2010;
+
+  /* This supposedly prevents problems with the image being placed on a half-pixel,
+  see http://zerosixthree.se/vertical-align-anything-with-just-3-lines-of-css/  */
+  -webkit-transform-style: preserve-3d;
+  -moz-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+
+  user-select: none;
+}
+
+.stupid-lightbox-image {
+  max-width: 100%;
+  max-height: 100%;
+  /* Place the image in the middle of the browser window:
+  (see  http://zerosixthree.se/vertical-align-anything-with-just-3-lines-of-css/ )*/
+  position: relative;
+  top: 50%;
+  left: 50%;
+  -webkit-transform: translateY(-50%) translateX(-50%);
+  -ms-transform: translateY(-50%) translateX(-50%);
+  transform: translateY(-50%) translateX(-50%);
+}
+
+/* vim: set fdm=marker et ts=2 sw=2 tw=0 fo=r list :*/

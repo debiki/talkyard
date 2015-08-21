@@ -291,5 +291,8 @@ d.i.startEmbeddedEditor = function() {
 // Replace gifs with static images that won't play until clicked.
 Gifffer();
 
+// Show large images on click.
+StupidLightbox.start('.dw-p-bd', ':not(.giffferated)');
+
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list
