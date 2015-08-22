@@ -486,7 +486,8 @@ trait PostsDao {
   def voteOnPost(pageId: PageId, postId: PostId, voteType: PostVoteType,
         voterId: UserId, voterIp: String, postIdsRead: Set[PostId]) {
     readWriteTransaction { transaction =>
-      val post = transaction.loadThePost(pageId, postId)
+      val page = PageDao(pageId, transaction)
+      val post = page.parts.thePost(postId)
       if (voteType == PostVoteType.Like) {
         if (post.createdById == voterId)
           throwForbidden("DwE84QM0", "Cannot like own post")
@@ -499,15 +500,22 @@ trait PostsDao {
       }
 
       // Update post read stats.
-      // Downvotes (wrong, boring) should result in only the downvoted post
-      // being marked as read, because a post *not* being downvoted shouldn't
-      // give that post worse rating. (Remember that the rating of a post is
-      // roughly the number of Like votes / num-times-it's-been-read.)
       val postsToMarkAsRead =
-        if (voteType == PostVoteType.Like)
-          postIdsRead  // those posts were not upvoted
-        else
-          Set(postId)  // that post was downvoted
+        if (voteType == PostVoteType.Like) {
+          // Upvoting a post shouldn't affect its ancestors, because they're on the
+          // path to the interesting post so they are a bit useful/interesting. However
+          // do mark all earlier siblings as read since they weren't upvoted (this time).
+          val ancestorIds = page.parts.ancestorsOf(postId).map(_.id)
+          postIdsRead -- ancestorIds.toSet
+        }
+        else {
+          // The post got a non-like vote, e.g. wrong, boring, off-topic.
+          // This should result in only the downvoted post
+          // being marked as read, because a post *not* being downvoted shouldn't
+          // give that post worse rating. (Remember that the rating of a post is
+          // roughly the number of Like votes / num-times-it's-been-read.)
+          Set(postId)
+        }
 
       transaction.updatePostsReadStats(pageId, postsToMarkAsRead, readById = voterId,
         readFromIp = voterIp)
