@@ -128,7 +128,7 @@
 
 .dw-p-hd,
 .dw-p.dw-zd  // folded comment
-  padding-left: 3px
+  padding: 2px 0 2px 3px;
   font-size: 11px
   color: hsl(0, 0%, 8%);
   background-color: hsl(0, 0%, 97%);
@@ -148,18 +148,18 @@
   border-right: none
 
 // Threads are wider in vertical layout, so the headers are much larger.
-// Therefore make their backgrounds brighter. ?? What ?? 96% is darker than 97%. Looks ok anyway.
+// Therefore make their backgrounds brighter.
 .DW.dw-vt
   .dw-p-hd,
   .dw-p.dw-zd
-    background-color: hsl(0, 0%, 96%)
+    background-color: hsl(0, 0%, 98%)
 
   .dw-ar-p-hd
     background-color: transparent
 
 .dw-p-bd,
 .dw-p-diff // COULD place -bd on -diff too, remove this -diff row?
-  padding: 6px 1px 0 3px // 3px aligns w .dw-p-hd (also padded left 3px)
+  padding: 8px 1px 0 3px // 3px aligns w .dw-p-hd (also padded left 3px)
   position: relative
   background-color: white
   min-width: 5em

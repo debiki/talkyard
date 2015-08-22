@@ -21,7 +21,6 @@ h1, h2, h3, h4, h5, h6 {
      like the demo forum. Later on, make the styles more configurabe. */
   font-family: open sans, sans-serif;
   font-weight: bold;
-  letter-spacing: 1px;
   line-height: 1em;
   margin-top: 30px;
   margin-bottom: 15px;
@@ -126,7 +125,6 @@ a:visited { color: hsl(211, 30%, 40%); }
 
 #topbar > .container {
   padding: 13px 0 12px;
-  letter-spacing: 1px;
   line-height: 100%;
   font-size: 12px;
   color: #fff;
