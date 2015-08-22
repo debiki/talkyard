@@ -27,7 +27,6 @@
 var gulp = require('gulp');
 var newer = require('gulp-newer');
 var typeScript = require('gulp-typescript');
-var liveScript = require('gulp-livescript');
 var stylus = require('gulp-stylus');
 var minifyCSS = require('gulp-minify-css');
 var concat = require('gulp-concat');
@@ -117,7 +116,6 @@ var debikiJavascriptFiles = [
       'client/third-party/popuplib.js',
       'client/third-party/modernizr-positionfixed.js',
       'target/client/app/actions/edit/edit.js',
-      'target/client/app/old/actions/show-actions.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
       'target/client/app/actions/edit/diff-match-patch.js',
@@ -165,12 +163,6 @@ gulp.task('wrap-javascript', function () {
     .pipe(gulp.dest('./target/client/'));
 });
 
-
-gulp.task('compile-livescript', function () {
-  return gulp.src('client/**/*.ls')
-    .pipe(liveScript())
-    .pipe(gulp.dest('./target/client/'));
-});
 
 var serverSideTypescriptProject = typeScript.createProject({
     target: 'ES5',
@@ -247,10 +239,7 @@ gulp.task('compile-typescript', function () {
 
 
 
-gulp.task('concat-debiki-scripts', [
-    'wrap-javascript',
-    'compile-livescript',
-    'compile-typescript'], function() {
+gulp.task('concat-debiki-scripts', ['wrap-javascript', 'compile-typescript'], function() {
   return makeConcatDebikiScriptsStream();
 });
 
@@ -279,10 +268,6 @@ gulp.task('wrap-javascript-concat-scripts', ['wrap-javascript'], function () {
   return makeConcatAllScriptsStream();
 });
 
-gulp.task('compile-livescript-concat-scripts', ['compile-livescript'], function () {
-  return makeConcatDebikiScriptsStream();
-});
-
 gulp.task('compile-typescript-concat-scripts', ['compile-typescript'], function () {
   return makeConcatDebikiScriptsStream();
 });
@@ -292,7 +277,7 @@ gulp.task('compile-templates-concat-scripts', [], function () {
 });
 
 gulp.task('compile-concat-scripts',
-    ['wrap-javascript', 'compile-livescript', 'compile-typescript'],
+    ['wrap-javascript', 'compile-typescript'],
     function () {
   return makeConcatAllScriptsStream();
 });
@@ -388,7 +373,6 @@ gulp.task('watch', ['default'], function() {
 
   gulp.watch('client/**/*.html', ['compile-templates-concat-scripts']).on('change', logChangeFn('HTML'));
   gulp.watch('client/**/*.ts', ['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
-  gulp.watch('client/**/*.ls', ['compile-livescript-concat-scripts']).on('change', logChangeFn('LiveScript'));
   gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
   gulp.watch(['app/views/themes/**/*.css', 'app/views/themesbuiltin/default20121009/styles.css/**/*.css']).on('change', logChangeFn('CSS'));

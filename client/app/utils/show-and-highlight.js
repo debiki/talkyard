@@ -129,7 +129,8 @@ d.i.ensureAnyAnchorPostLoaded = function(callback) {
     return;
   var $post = d.i.findPost$(anchorPostId);
   if (!$post.length) {
-    d.i.loadAndInsertThreadAndTree(anchorPostId, callback);
+    console.error("Not implemented: Loading collapsed post [DwE4KFEW2]");
+    // d.i.loadAndInsertThreadAndTree(anchorPostId, callback);
   }
   else {
     callback();
