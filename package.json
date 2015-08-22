@@ -17,11 +17,9 @@
   "devDependencies": {
     "event-stream": "^3.1.1",
     "gulp": "^3.6.0",
-    "gulp-angular-templatecache": "~1.2.0",
     "gulp-concat": "^2.2.0",
     "gulp-gzip": "^1.2.0",
     "gulp-header": "^1.0.2",
-    "gulp-livescript": "^0.2.1",
     "gulp-minify-css": "^0.3.1",
     "gulp-newer": "^0.3.0",
     "gulp-react": "^1.0.2",
@@ -31,7 +29,6 @@
     "gulp-uglify": "^0.2.1",
     "gulp-watch": "^0.5.3",
     "gulp-wrap": "^0.3.0",
-    "prelude-ls": "~0.6.0",
     "react-typescript-definitions": "0.0.6"
   }
 }

@@ -28,13 +28,13 @@ d.i.layoutThreads = function() {
     thread = ref$[i$];
     maxNesting = findMaxNesting(thread);
     width = 333 + maxNesting * 33;
-    width = min(500, width);
+    width = Math.min(500, width);
     $thread = $(thread);
     // Hack: Is this a YouTube video thread? Then set width 480, that's how wide
     // the videos want to be. Set 505px though because there's padding, and jQuery 1.7
     // doesn't understand box-sizing: border-box; [fix_when_upgraded_jquery]
     if ($thread.find('> .dw-p .dw-ob-youtube').length) {
-      width = max(width, 505);
+      width = Math.max(width, 505);
     }
     $thread.css('width', width + 'px');
   }
@@ -43,17 +43,16 @@ d.i.layoutThreads = function() {
 
 function findMaxNesting(thread) {
   var $children = $(thread).find('> .dw-single-and-multireplies > .dw-res > .dw-t');
-  // If passing $children to `fold` when `$children.length == 1`,
-  // it seems as if `fold` wraps jQuery in an array, resulting
-  // in eternal recursion.
   var children = $children.toArray();
-  if (empty(children)) {
-    return 0;
-  } else {
-    return fold(function(a, b) {
-      return max(a, 1 + findMaxNesting(b));
-    }, 0, children);
+  var max = 0;
+  for (var i = 0; i < children.length; ++i) {
+    var child = children[i];
+    var childMax = 1 + findMaxNesting(child);
+    if (childMax > max) {
+      max = childMax;
+    }
   }
+  return max;
 }
 
 

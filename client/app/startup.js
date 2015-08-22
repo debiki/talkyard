@@ -268,9 +268,6 @@ d.i.renderEmptyPage = function() {
 
 d.i.startDiscussionPage = function() {
   $(function() {
-    // Import LiveScript's prelude, http://gkz.github.com/prelude-ls/.
-    prelude.installPrelude(window);
-
     if ($('.dw-page').length) {
       renderDiscussionPage();
     }

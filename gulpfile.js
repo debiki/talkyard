@@ -111,7 +111,6 @@ var debikiJavascriptFiles = [
       'client/third-party/jquery-cookie.js',
       'client/third-party/jquery-scrollable.js', //
       'client/third-party/jquery.browser.js', //
-      'client/third-party/livescript/prelude-browser.js',
       'client/third-party/non-angular-slugify.js',
       'client/third-party/popuplib.js',
       'client/third-party/modernizr-positionfixed.js',
@@ -272,10 +271,6 @@ gulp.task('compile-typescript-concat-scripts', ['compile-typescript'], function 
   return makeConcatDebikiScriptsStream();
 });
 
-gulp.task('compile-templates-concat-scripts', [], function () {
-  return makeConcatDebikiScriptsStream();
-});
-
 gulp.task('compile-concat-scripts',
     ['wrap-javascript', 'compile-typescript'],
     function () {
@@ -371,7 +366,6 @@ gulp.task('watch', ['default'], function() {
     };
   };
 
-  gulp.watch('client/**/*.html', ['compile-templates-concat-scripts']).on('change', logChangeFn('HTML'));
   gulp.watch('client/**/*.ts', ['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
   gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
