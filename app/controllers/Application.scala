@@ -182,6 +182,7 @@ object Application extends mvc.Controller {
     Future(Result(
       ResponseHeader(PARTIAL_CONTENT, Map[String, String](
         CONNECTION -> "keep-alive",
+        CACHE_CONTROL -> "public, max-age=31536000",
         ACCEPT_RANGES -> "bytes",
         CONTENT_RANGE -> s"bytes $start-$end/$streamLength",
         CONTENT_LENGTH -> (end - start + 1).toString,
