@@ -17,7 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
-/// <reference path="../../shared/plain-old-javascript.d.ts" />
+/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 
 //------------------------------------------------------------------------------

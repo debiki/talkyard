@@ -140,7 +140,7 @@ var debikiJavascriptFiles = [
       'target/client/app/utils/util-play.js',
       'target/client/app/utterscroll/utterscroll-init-tips.js',//
       'client/app/utterscroll/utterscroll.js',//
-      'target/client/shared/post-json.js',
+      'target/client/app/utils/post-json.js',
       'target/client/all-typescript.js',
       'target/client/app/startup.js'];
 

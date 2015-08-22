@@ -28,9 +28,9 @@
  * replies "too much".
  */
 
-/// <reference path="../../shared/plain-old-javascript.d.ts" />
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
+/// <reference path="../plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
   module debiki2.renderer {

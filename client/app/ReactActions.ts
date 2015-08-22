@@ -15,9 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="plain-old-javascript.d.ts" />
 /// <reference path="ReactDispatcher.ts" />
 /// <reference path="Server.ts" />
-/// <reference path="../shared/plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.ReactActions {
