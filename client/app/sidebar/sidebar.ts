@@ -381,7 +381,7 @@ export var Sidebar = createComponent({
     this.setState({
       currentPostId: post.postId
     });
-    d.i.showAndHighlightPost($('#post-' + post.postId));
+    ReactActions.loadAndShowPost(post.postId);
   },
 
   render: function() {

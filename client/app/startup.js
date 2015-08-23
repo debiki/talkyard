@@ -212,12 +212,8 @@ function renderDiscussionPage() {
     });
   });
 
-  // If #post-X is specified in the URL, ensure all posts leading up to
-  // and including X have been loaded. Then scroll to X.
   steps.push(function() {
-    d.i.ensureAnyAnchorPostLoaded(function() {
-      d.i.scrollToUrlAnchorPost();
-    });
+    d.i.loadAndScrollToAnyUrlAnchorPost();
   });
 
   // Disable for now, I'll rewrite it to consider timestamps.

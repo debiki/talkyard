@@ -118,13 +118,13 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
       }, 'slow', 'swing');
       if (backPost.postId) {
         htmlBody.queue(function(next) {
-          d.i.showAndHighlightPost($('#post-' + backPost.postId));
+          ReactActions.loadAndShowPost(backPost.postId);
           next();
         });
       }
     }
     else {
-      d.i.showAndHighlightPost($('#post-' + backPost.postId));
+      ReactActions.loadAndShowPost(backPost.postId);
     }
   },
 
@@ -145,7 +145,7 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
       hideIfTotallyBack: false,
     });
     if (forwPost.postId) {
-      d.i.showAndHighlightPost($('#post-' + forwPost.postId));
+      ReactActions.loadAndShowPost(forwPost.postId);
     }
     else if (forwPost.windowTop) {
       $('html, body').animate({

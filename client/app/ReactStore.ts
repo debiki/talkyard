@@ -45,6 +45,8 @@ export var ReactStore = new EventEmitter2();
 // ReactStore.activateUserSpecificData().
 var store: Store = debiki.reactPageStore;
 
+store.postsToUpdate = {};
+
 
 ReactDispatcher.register(function(payload) {
   var action = payload.action;
@@ -171,7 +173,11 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.UncollapsePost:
-      uncollapsePost(action.post);
+      uncollapsePostAndChildren(action.post);
+      break;
+
+    case ReactActions.actionTypes.ShowPost:
+      showPost(action.postId, action.showChildrenToo);
       break;
 
     case ReactActions.actionTypes.SetHorizontalLayout:
@@ -191,6 +197,7 @@ ReactDispatcher.register(function(payload) {
 
   ReactStore.emitChange();
   store.quickUpdate = false;
+  store.postsToUpdate = {};
 
   // Tell the dispatcher that there were no errors:
   return true;
@@ -491,15 +498,23 @@ function collapseTree(post: Post) {
 }
 
 
-function uncollapsePost(post: Post) {
-  function uncollapseOne(p: Post) {
-    var p2 = clonePost(post.postId);
-    p2.isTreeCollapsed = false;
-    p2.isPostCollapsed = false;
-    p2.summarize = false;
-    p2.squash = false;
-    updatePost(p2, true);
+function showPost(postId: number, showChildrenToo?: boolean) {
+  var post = store.allPosts[postId];
+  if (showChildrenToo) {
+    uncollapsePostAndChildren(post);
   }
+  // Uncollapse ancestors, to make postId visible.
+  while (post) {
+    uncollapseOne(post);
+    post = store.allPosts[post.parentId];
+  }
+  setTimeout(() => {
+    debiki.internal.showAndHighlightPost($('#post-' + postId));
+  }, 1);
+}
+
+
+function uncollapsePostAndChildren(post: Post) {
   uncollapseOne(post)
   // Also uncollapse children and grandchildren so one won't have to Click-to-show... all the time.
   for (var i = 0; i < Math.min(post.childIdsSorted.length, 5); ++i) {
@@ -516,6 +531,16 @@ function uncollapsePost(post: Post) {
       uncollapseOne(grandchild)
     }
   }
+}
+
+
+function uncollapseOne(post: Post) {
+  var p2 = clonePost(post.postId);
+  p2.isTreeCollapsed = false;
+  p2.isPostCollapsed = false;
+  p2.summarize = false;
+  p2.squash = false;
+  updatePost(p2, true);
 }
 
 
@@ -625,7 +650,6 @@ function saveMarksInLocalStorage(marks: { [postId: number]: any }) {
 
 function rememberPostsToQuickUpdate(startPostId: number) {
   store.quickUpdate = true;
-  store.postsToUpdate = {};
   var post = store.allPosts[startPostId];
   if (!post) {
     console.warn('Cannot find post to quick update, nr: ' + startPostId + ' [DwE4KJG0]');

@@ -116,6 +116,7 @@ d.i.showAndHighlightPost = function($post, options) {
   options = addAnySidebarWidth(options);
   // Add space for position-fixed stuff at the top: Forw/Back btns and open-sidebar btn.
   options.marginTop = options.marginTop || 60;
+  options.marginBottom = options.marginBottom || 300;
   $post.dwScrollIntoView(options).queue(function(next) {
     highlightBriefly($post, '.dw-p-bd, .dw-p-hd');
     next();
@@ -123,29 +124,21 @@ d.i.showAndHighlightPost = function($post, options) {
 };
 
 
-d.i.ensureAnyAnchorPostLoaded = function(callback) {
+// If #post-X is specified in the URL, ensure all posts leading up to
+// and including X have been loaded. Then scroll to X.
+d.i.loadAndScrollToAnyUrlAnchorPost = function() {
   var anchorPostId = anyAnchorPostId();
-  if (!anchorPostId)
+  if (!anchorPostId) {
+    // No #post-X in the URL.
     return;
+  }
   var $post = d.i.findPost$(anchorPostId);
   if (!$post.length) {
-    console.error("Not implemented: Loading collapsed post [DwE4KFEW2]");
-    // d.i.loadAndInsertThreadAndTree(anchorPostId, callback);
+    debiki2.ReactActions.loadAndShowPost(anchorPostId);
   }
   else {
-    callback();
+    d.i.showAndHighlightPost($post);
   }
-}
-
-
-d.i.scrollToUrlAnchorPost = function() {
-  var anchorPostId = anyAnchorPostId();
-  if (!anchorPostId)
-    return;
-  var $anchorPost = $('#post-' + anchorPostId).filter('.dw-p');
-  if (!$anchorPost.length) return;
-  d.i.showAndHighlightPost($anchorPost, { marginRight: 200, marginBottom: 300 });
-  $anchorPost.parent().addClass('dw-m-t-new');  // outlines it
 };
 
 

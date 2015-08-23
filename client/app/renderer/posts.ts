@@ -182,7 +182,7 @@ var Title = createComponent({
   },
 
   scrollToAnswer: function() {
-    debiki.internal.showAndHighlightPost(debiki.internal.findPost$(this.props.pageAnswerPostNr));
+    debiki2.ReactActions.loadAndShowPost(this.props.pageAnswerPostNr);
     debiki2['postnavigation'].addVisitedPosts(TitleId, this.props.pageAnswerPostNr);
   },
 

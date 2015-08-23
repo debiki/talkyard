@@ -45,6 +45,7 @@ export var actionTypes = {
   UnsquashTrees: 'UnsquashTrees',
   CollapseTree: 'CollapseTree',
   UncollapsePost: 'UncollapsePost',
+  ShowPost: 'ShowPost',
   SetHorizontalLayout: 'SetHorizontalLayout',
   ChangeSiteStatus: 'ChangeSiteStatus',
 }
@@ -256,6 +257,7 @@ export function unsquashTrees(postId: number) {
   });
 }
 
+
 export function collapseTree(post: Post) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.CollapseTree,
@@ -269,6 +271,20 @@ export function uncollapsePost(post) {
     actionType: actionTypes.UncollapsePost,
     post: post
   });
+}
+
+
+export function loadAndShowPost(postId: number, showChildrenToo?: boolean, callback?) {
+  // Currently all posts are included in the store already; need load nothing.
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.ShowPost,
+    postId: postId,
+    showChildrenToo: showChildrenToo,
+  });
+  if (callback) {
+    // Wait until React has rendered everything. (When exactly does that happen?)
+    setTimeout(callback, 1);
+  }
 }
 
 
