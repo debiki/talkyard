@@ -196,7 +196,12 @@ trait CachingSpecialContentDao extends SpecialContentDao {
     super.createSpecialContentPage(pageId, authorId, source = source,
       htmlSanitized = htmlSanitized, transaction)
     val dummyPagePath = PagePath(siteId, "/", Some(pageId), showId = true, pageSlug = "dummy")
-    firePageCreated(dummyPagePath)
+    if (affectsWholeSite(pageId)) {
+      emptyCache(siteId)
+    }
+    else {
+      firePageCreated(dummyPagePath)
+    }
   }
 
 
@@ -204,8 +209,18 @@ trait CachingSpecialContentDao extends SpecialContentDao {
         editorId: UserId, transaction: SiteTransaction) {
     super.updateSpecialContentPage(oldPost, newSource, htmlSanitized = htmlSanitized,
       editorId = editorId, transaction)
-    firePageSaved(SitePageId(siteId = siteId, pageId = oldPost.pageId))
+    if (affectsWholeSite(oldPost.pageId)) {
+      emptyCache(siteId)
+    }
+    else {
+      firePageSaved(SitePageId(siteId = siteId, pageId = oldPost.pageId))
+    }
   }
+
+
+  private def affectsWholeSite(pageId: PageId) =
+    pageId != SpecialContentPages.TermsOfUseContentLicenseId &&
+      pageId != SpecialContentPages.TermsOfUseJurisdictionId
 
 }
 
