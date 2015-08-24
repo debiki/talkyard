@@ -133,6 +133,7 @@ interface Topic {
   numOrigPostLikes: number;
   answeredAtMs?: number;
   answerPostUniqueId?: number;
+  plannedAtMs?: number;
   doneAtMs?: number;
   closedAtMs?: number;
   lockedAtMs?: number;
@@ -167,6 +168,7 @@ interface Store {
   pageAnsweredAtMs?: number;
   pageAnswerPostUniqueId?: number;
   pageAnswerPostNr?: number;
+  pagePlannedAtMs?: number;
   pageDoneAtMs?: number;
   pageClosedAtMs?: number;
   pageLockedAtMs?: number;

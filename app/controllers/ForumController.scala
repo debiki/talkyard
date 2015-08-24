@@ -249,6 +249,7 @@ object ForumController extends mvc.Controller {
       "lastReplyEpoch" -> lastReplyEpoch,
       "answeredAtMs" -> JsLongOrNull(topic.meta.answeredAt.map(_.getTime)),
       "answerPostUniqueId" -> JsNumberOrNull(topic.meta.answerPostUniqueId),
+      "plannedAtMs" -> JsLongOrNull(topic.meta.plannedAt.map(_.getTime)),
       "doneAtMs" -> JsLongOrNull(topic.meta.doneAt.map(_.getTime)),
       "closedAtMs" -> JsLongOrNull(topic.meta.closedAt.map(_.getTime)),
       "lockedAtMs" -> JsLongOrNull(topic.meta.lockedAt.map(_.getTime)),

@@ -143,11 +143,20 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
           position: relative;
           top: 1px;
 
+        .icon-idea:before,
+        .icon-attention-circled:before, // problems
         .icon-cancel-circled-empty:before, // closed topics
         .icon-ok-circled-empty:before, // solved questions
-        .icon-check:before
+        .icon-check:before  // fixed todos
           color: hsl(0, 0%, 40%);
           margin: 0 5px 0 0;
+
+        .icon-attention-circled:before
+          color: hsl(0, 0%, 37%);
+
+        .icon-idea:before
+          color: hsl(0, 0%, 15%);
+          margin-right: 3px; // there's some whitespace to the right inside the icon
 
         .icon-ok-circled-empty:before
           margin: 0 7px 0 0;

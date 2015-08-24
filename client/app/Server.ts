@@ -597,8 +597,8 @@ export function unacceptAnswer(success: () => void) {
 }
 
 
-export function togglePageDone(success: (doneAtMs: number) => void) {
-  postJsonSuccess('/-/toggle-page-done', success, { pageId: d.i.pageId });
+export function cyclePageDone(success: (newPlannedAndDoneAt: any) => void) {
+  postJsonSuccess('/-/cycle-page-done', success, { pageId: d.i.pageId });
 }
 
 export function togglePageClosed(success: (closedAtMs: number) => void) {

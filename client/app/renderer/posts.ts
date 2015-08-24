@@ -194,8 +194,8 @@ var Title = createComponent({
     this.setState({ isEditing: false });
   },
 
-  toggleIsDone: function() {
-    debiki2.ReactActions.togglePageIsDone();
+  cycleIsDone: function() {
+    debiki2.ReactActions.cyclePageDone();
   },
 
   render: function() {
@@ -224,7 +224,8 @@ var Title = createComponent({
       var pinClass = this.props.pinWhere ? ' icon-pin' : '';
       var tooltip;
       var icon;
-      if (store.pageClosedAtMs) {
+      // (Some dupl code, see PostActions below and isDone() and isAnswered() in forum.ts [4KEPW2]
+      if (store.pageClosedAtMs && !store.pageDoneAtMs && !store.pageAnsweredAtMs) {
         icon = r.span({ className: 'icon-cancel-circled-empty' });
         tooltip = makePageClosedTooltipText(store.pageRole) + '\n';
       }
@@ -234,18 +235,55 @@ var Title = createComponent({
             : r.span({ className: 'icon-help-circled' });;
         tooltip = makeQuestionTooltipText(store.pageAnsweredAtMs) + ".\n";
       }
-      else if (store.pageRole === PageRole.ToDo) {
-        var iconTooltip = store.pageDoneAtMs
-            ? "Click to change status to not-yet-done"
-            : "Click to mark as done";
-        var iconClass = store.pageDoneAtMs ? 'icon-check' : 'icon-check-empty';
+      else if (store.pageRole === PageRole.Problem || store.pageRole === PageRole.Idea ||
+                store.pageRole === PageRole.ToDo) {
+        // (Some dupl code, see [5KEFEW2] in forum.ts.
+        var iconClass;
+        var iconTooltip;
+        if (store.pageRole === PageRole.Problem || store.pageRole === PageRole.Idea) {
+          if (!store.pagePlannedAtMs) {
+            tooltip = store.pageRole === PageRole.Problem
+                ? "This is a new problem"
+                : "This is a new idea";
+            iconClass = store.pageRole === PageRole.Problem ?
+                'icon-attention-circled' : 'icon-idea';
+            iconTooltip = "Click to change status to planned";
+          }
+          else if (!store.pageDoneAtMs) {
+            tooltip = store.pageRole === PageRole.Problem
+                ? "We're planning to fix this"
+                : "We're planning to implement this";
+            iconClass = 'icon-check-empty';
+            iconTooltip = "Click to mark as done";
+          }
+          else {
+            tooltip = store.pageRole === PageRole.Problem
+                ? "This has been fixed"
+                : "This has been done";
+            iconClass = 'icon-check';
+            iconTooltip = "Click to change status to new";
+          }
+        }
+        else {
+          tooltip = store.pageDoneAtMs
+              ? "This has been done or fixed.\n"
+              : "This is about something to do or fix.\n";
+          iconClass = store.pageDoneAtMs ? 'icon-check' : 'icon-check-empty';
+          iconTooltip = store.pageDoneAtMs
+              ? "Click to change status to not-yet-done"
+              : "Click to mark as done";
+        }
+        if (!isStaff(store.user)) iconTooltip = null;
         var clickableClass = isStaff(store.user) ? ' dw-clickable' : '';
-        var onClick = isStaff(store.user) ? this.toggleIsDone : null;
+        var onClick = isStaff(store.user) ? this.cycleIsDone : null;
         icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
             title: iconTooltip });
-        tooltip = store.pageDoneAtMs
-            ? "This has been done or fixed.\n"
-            : "This is about something to do or fix.\n";
+      }
+      else if (store.pageRole === PageRole.ToDo) {
+        var clickableClass = isStaff(store.user) ? ' dw-clickable' : '';
+        var onClick = isStaff(store.user) ? this.cycleIsDone : null;
+        icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
+            title: iconTooltip });
       }
       switch (this.props.pinWhere) {
         case PinPageWhere.Globally: tooltip += "Pinned globally."; break;
@@ -1010,7 +1048,10 @@ var PostActions = createComponent({
     var post = this.props.post;
     var store: Store = this.props.store;
     var isQuestion = store.pageRole === PageRole.Question;
-    var isToDo = store.pageRole === PageRole.ToDo;
+    // (Some dupl code, see Title above and isDone() and isAnswered() in forum.ts [4KEPW2]
+    var isAnswered = isQuestion && store.pageAnsweredAtMs;
+    var isDone = store.pageDoneAtMs && (store.pageRole === PageRole.Problem ||
+      store.pageRole === PageRole.Idea || store.pageRole === PageRole.ToDo);
 
     if (!post.isApproved) // what?:  && !post.text)
       return null;
@@ -1051,11 +1092,13 @@ var PostActions = createComponent({
           r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick }, 'Reply');
     }
 
-    // Show a close button for unanswered questions and pending to-dos.
+    // Show a close button for unanswered questions and pending to-dos, and a reopen
+    // button if the topic has been closed unanswered / unfixed. (But if it's been
+    // answered/fixed, the way to reopen it is to click the answered/fixed icon, to
+    // mark it as not-answered/not-fixed again.)
     var closeReopenButton;
-    var canReopen = store.pageClosedAtMs;
-    var canClose = !(isQuestion && store.pageAnsweredAtMs) && !(isToDo && store.pageDoneAtMs);
-    if (isPageBody && (canClose || canReopen) && isStaffOrOwnPost) {
+    var canCloseOrReopen = !isDone && !isAnswered;
+    if (isPageBody && canCloseOrReopen && isStaffOrOwnPost) {
       var closeReopenTitle = "Reopen";
       var closeReopenIcon = 'icon-circle-empty';
       var closeReopenTooltip;
