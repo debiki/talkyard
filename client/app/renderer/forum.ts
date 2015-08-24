@@ -632,7 +632,7 @@ var CategoryRow = createComponent({
 
 function makeTitle(topic: Topic) {
   var title = topic.title;
-  if (topic.closedAtMs) {
+  if (topic.closedAtMs && !isDone(topic) && !isAnswered(topic)) {
     var tooltip = makePageClosedTooltipText(topic.pageRole);
     var closedIcon = r.span({ className: 'icon-cancel-circled-empty' });
     title = r.span({ title: tooltip }, closedIcon, title);
@@ -653,6 +653,28 @@ function makeTitle(topic: Topic) {
     }
     title = r.span({ title: tooltip }, questionIcon, answerCount, answerIcon, title);
   }
+  else if (topic.pageRole === PageRole.Problem || topic.pageRole === PageRole.Idea) {
+    // (Some dupl code, see [5KEFEW2] in posts.ts.
+    if (!topic.plannedAtMs) {
+      tooltip = topic.pageRole === PageRole.Problem
+          ? "This is a new problem"
+          : "This is a new idea";
+      iconClass = topic.pageRole === PageRole.Problem ? 'icon-attention-circled' : 'icon-idea';
+    }
+    else if (!topic.doneAtMs) {
+      tooltip = topic.pageRole === PageRole.Problem
+          ? "We're planning to fix this"
+          : "We're planning to do this";
+      iconClass = 'icon-check-empty';
+    }
+    else {
+      tooltip = topic.pageRole === PageRole.Problem
+          ? "This has been fixed"
+          : "This has been done";
+      iconClass = 'icon-check';
+    }
+    title = r.span({ title: tooltip }, r.span({ className: iconClass }, title));
+  }
   else if (topic.pageRole === PageRole.ToDo) {
     var iconClass = topic.doneAtMs ? 'icon-check' : 'icon-check-empty';
     var tooltip = topic.doneAtMs
@@ -661,6 +683,19 @@ function makeTitle(topic: Topic) {
     title = r.span({ title: tooltip }, r.span({ className: iconClass }, title));
   }
   return title;
+}
+
+
+// Some dupl code, see  [4KEPW2].
+function isDone(topic: Topic): boolean {
+  return topic.doneAtMs && (topic.pageRole === PageRole.Problem ||
+      topic.pageRole === PageRole.Idea || topic.pageRole === PageRole.ToDo);
+}
+
+
+// Some dupl code, see  [4KEPW2].
+function isAnswered(topic: Topic): boolean {
+  return topic.answeredAtMs && topic.pageRole === PageRole.Question;
 }
 
 

@@ -108,10 +108,13 @@ ReactDispatcher.register(function(payload) {
       store.pageAnsweredAtMs = null;
       store.pageAnswerPostUniqueId = null;
       store.pageAnswerPostNr = null;
+      store.pageClosedAtMs = null;
       break;
 
-    case ReactActions.actionTypes.TogglePageIsDone:
+    case ReactActions.actionTypes.CyclePageDone:
+      store.pagePlannedAtMs = action.plannedAtMs;
       store.pageDoneAtMs = action.doneAtMs;
+      store.pageClosedAtMs = action.closedAtMs;
       break;
 
     case ReactActions.actionTypes.TogglePageClosed:

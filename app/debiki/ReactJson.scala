@@ -200,6 +200,7 @@ object ReactJson {
       "pinWhere" -> JsNumberOrNull(page.meta.pinWhere.map(_.toInt)),
       "pageAnsweredAtMs" -> JsLongOrNull(page.meta.answeredAt.map(_.getTime)),
       "pageAnswerPostUniqueId" -> JsNumberOrNull(page.meta.answerPostUniqueId),
+      "pagePlannedAtMs" -> JsLongOrNull(page.meta.plannedAt.map(_.getTime)),
       "pageDoneAtMs" -> JsLongOrNull(page.meta.doneAt.map(_.getTime)),
       "pageClosedAtMs" -> JsLongOrNull(page.meta.closedAt.map(_.getTime)),
       "pageLockedAtMs" -> JsLongOrNull(page.meta.lockedAt.map(_.getTime)),

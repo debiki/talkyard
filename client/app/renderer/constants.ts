@@ -33,6 +33,8 @@ enum PageRole {
   Category = 8,
   About = 9,
   Question = 10,
+  Problem = 14,
+  Idea = 15,
   ToDo = 13,
   MindMap = 11,
   Discussion = 12,

@@ -244,7 +244,10 @@ trait PagesDao {
         throwBadReq("DwE0PG26", "This question is closed, therefore no answer can be accepted")
 
       val answeredAt = Some(transaction.currentTime)
-      val newMeta = oldMeta.copy(answeredAt = answeredAt, answerPostUniqueId = Some(postUniqueId))
+      val newMeta = oldMeta.copy(
+        answeredAt = answeredAt,
+        answerPostUniqueId = Some(postUniqueId),
+        closedAt = answeredAt)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
       // (COULD update audit log)
       // (COULD wait 5 minutes (in case the answer gets un-accepted) then send email
@@ -263,7 +266,7 @@ trait PagesDao {
       if (!user.isStaff && user.id != oldMeta.authorId)
         throwForbidden("DwE2GKU4", "Only staff and the topic author can unaccept the answer")
 
-      val newMeta = oldMeta.copy(answeredAt = None, answerPostUniqueId = None)
+      val newMeta = oldMeta.copy(answeredAt = None, answerPostUniqueId = None, closedAt = None)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
       // (COULD update audit log)
     }
@@ -271,27 +274,44 @@ trait PagesDao {
   }
 
 
-  def togglePageDone(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
-        : Option[ju.Date] = {
-    val newDoneAt = readWriteTransaction { transaction =>
+  /** Changes status from New to Planned to Done, and back to New again.
+    */
+  def cyclePageDone(pageId: PageId, userId: UserId, browserIdData: BrowserIdData): PageMeta = {
+    val newMeta = readWriteTransaction { transaction =>
       val oldMeta = transaction.loadThePageMeta(pageId)
-      if (oldMeta.pageRole != PageRole.ToDo)
-        throwBadReq("DwE6KEW2", "This page is not a To-Do page; it cannot be toggled done")
+      val pageRole = oldMeta.pageRole
+      if (pageRole != PageRole.Problem && pageRole != PageRole.Idea && pageRole != PageRole.ToDo)
+        throwBadReq("DwE6KEW2", "This page cannot be marked as planned or done")
 
-      if (oldMeta.closedAt.isDefined)
-        throwBadReq("DwE5KEP0", "This To-Do is closed; reopen it before you can complete it")
+      var newPlannedAt: Option[ju.Date] = None
+      var newDoneAt: Option[ju.Date] = None
+      var newClosedAt: Option[ju.Date] = None
 
-      val newDoneAt = oldMeta.doneAt match {
-        case None => Some(transaction.currentTime)
-        case Some(_) => None
+      if (oldMeta.doneAt.isDefined) {
+        // Keep all None, except for todos because they cannot be not-planned.
+        if (pageRole == PageRole.ToDo) {
+          newPlannedAt = oldMeta.plannedAt
+        }
       }
-      val newMeta = oldMeta.copy(doneAt = newDoneAt)
+      else if (oldMeta.plannedAt.isDefined) {
+        newPlannedAt = oldMeta.plannedAt
+        newDoneAt = Some(transaction.currentTime)
+        newClosedAt = Some(transaction.currentTime)
+      }
+      else {
+        newPlannedAt = Some(transaction.currentTime)
+      }
+
+      val newMeta = oldMeta.copy(
+        plannedAt = newPlannedAt,
+        doneAt = newDoneAt,
+        closedAt = newClosedAt)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
       // (COULD update audit log)
-      newDoneAt
+      newMeta
     }
     refreshPageInAnyCache(pageId)
-    newDoneAt
+    newMeta
   }
 
 

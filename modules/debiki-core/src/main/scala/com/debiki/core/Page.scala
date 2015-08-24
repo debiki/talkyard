@@ -143,7 +143,8 @@ object PageMeta {
   * @param numRepliesTotal Counts all replies, also deleted, hidden and not-yet-approved replies.
   * @param answeredAt For questions: when a reply was accepted as the answer to the question.
   * @param answerPostUniqueId The id of the post that answers this question.
-  * @param doneAt For ToDos: when it was done, e.g. when a bug was fixed or idea implemented.
+  * @param plannedAt When a problem/idea/todo got planned to be fixed/done.
+  * @param doneAt When a problem/idea/todo was done, e.g. when bug fixed or idea implemented.
   * @param closedAt When the topic was closed, e.g. if a question was off-topic or idea rejected.
   * @param lockedAt When locked so no new replies can be added.
   * @param frozenAt When frozen, so cannot be changed in any way at all (not even edits).
@@ -175,6 +176,7 @@ case class PageMeta(
   numOrigPostRepliesVisible: Int = 0,
   answeredAt: Option[ju.Date] = None,
   answerPostUniqueId: Option[UniquePostId] = None,
+  plannedAt: Option[ju.Date] = None,
   doneAt: Option[ju.Date] = None,
   closedAt: Option[ju.Date] = None,
   lockedAt: Option[ju.Date] = None,
@@ -202,6 +204,16 @@ case class PageMeta(
   //require(numRepliesVisible >= 0, "DwE6KPE78") - bug in PostsDao.changePostStatus()?
   require(numRepliesTotal >= numRepliesVisible, "DwE4REQ2")
   //require(numChildPages >= 0, "DwE8KPEF0") -- oops fails, not so very important, for now instead:
+  require(answeredAt.isEmpty || createdAt.getTime < answeredAt.get.getTime, "DwE4KG22")
+  require(plannedAt.isEmpty || createdAt.getTime < plannedAt.get.getTime, "DwE0FUY2")
+  require(doneAt.isEmpty || createdAt.getTime < doneAt.get.getTime, "DwE4PUG2")
+  require(closedAt.isEmpty || createdAt.getTime < closedAt.get.getTime, "DwE7KPE8")
+  require(lockedAt.isEmpty || createdAt.getTime < lockedAt.get.getTime, "DwE3KWV6")
+  require(frozenAt.isEmpty || createdAt.getTime < frozenAt.get.getTime, "DwE4YUF8")
+  require(doneAt.isEmpty || plannedAt.isDefined, "DwE59KEW2")
+  require(doneAt.isEmpty || plannedAt.get.getTime <= doneAt.get.getTime, "DwE6K8PY2")
+  // A topic that has been fixed or solved, should be in the closed state.
+  require((doneAt.isEmpty && answeredAt.isEmpty) || closedAt.isDefined, "DwE4KEF7")
   require(answeredAt.isEmpty == answerPostUniqueId.isEmpty, "DwE2PYU5")
   if (numChildPages < 0)
     play.api.Logger.warn(s"Negative child page count, parent: $pageId [DwE8KPEF0]")
@@ -274,8 +286,13 @@ object PageRole {
     * reply as being the answer to the question. */
   case object Question extends PageRole(10)
 
-  /** E.g. an idea to implement or bug to fix. Normally, only staff can change the page type
-    * to ToDo, because normally only staff can decide what things to fix / do. */
+  /** Something that is broken and should be fixed. Can change status to Planned and Done. */
+  case object Problem extends PageRole(14)
+
+  /** An idea about something to do, or a feature request. Can change status to Planned and Done. */
+  case object Idea extends PageRole(15)
+
+  /** Something that's been planned, perhaps done, but perhaps not an Idea or Problem. */
   case object ToDo extends PageRole(13)
 
   /** Mind maps use 2D layout, even if the site is configured to use 1D layout. */
@@ -303,6 +320,8 @@ object PageRole {
     case Category.IntValue => Category
     case About.IntValue => About
     case Question.IntValue => Question
+    case Problem.IntValue => Problem
+    case Idea.IntValue => Idea
     case ToDo.IntValue => ToDo
     case MindMap.IntValue => MindMap
     case Discussion.IntValue => Discussion

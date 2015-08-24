@@ -34,7 +34,7 @@ export var actionTypes = {
   SetPageNotfLevel: 'SetPageNotfLevel',
   AcceptAnswer: 'AcceptAnswer',
   UnacceptAnswer: 'UnacceptAnswer',
-  TogglePageIsDone: 'TogglePageIsDone',
+  CyclePageDone: 'CyclePageDone',
   TogglePageClosed: 'TogglePageClosed',
   EditTitleAndSettings: 'EditTitleAndSettings',
   UpdatePost: 'UpdatePost',
@@ -130,11 +130,13 @@ export function setPageNoftLevel(newNotfLevel) {
 }
 
 
-export function togglePageIsDone() {
-  Server.togglePageDone((doneAtMs) => {
+export function cyclePageDone() {
+  Server.cyclePageDone((response) => {
     ReactDispatcher.handleViewAction({
-      actionType: actionTypes.TogglePageIsDone,
-      doneAtMs: doneAtMs
+      actionType: actionTypes.CyclePageDone,
+      plannedAtMs: response.plannedAtMs,
+      doneAtMs: response.doneAtMs,
+      closedAtMs: response.closedAtMs,
     });
   });
 }

@@ -109,7 +109,7 @@ GET   /-/list-categories-topics controllers.ForumController.listCategoriesAndTop
 POST  /-/create-forum-category  controllers.ForumController.createForumCategory
 
 POST  /-/create-page            controllers.PageController.createPage
-POST  /-/toggle-page-done       controllers.PageController.togglePageDone
+POST  /-/cycle-page-done        controllers.PageController.cyclePageDone
 POST  /-/toggle-page-closed     controllers.PageController.togglePageClosed
 POST  /-/accept-answer          controllers.PageController.acceptAnswer
 POST  /-/unaccept-answer        controllers.PageController.unacceptAnswer
