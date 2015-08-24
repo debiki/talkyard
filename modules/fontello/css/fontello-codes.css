@@ -71,6 +71,8 @@
 .icon-back-in-time:before { content: '\e83f'; } /* '' */
 .icon-check:before { content: '\e840'; } /* '' */
 .icon-check-empty:before { content: '\e841'; } /* '' */
+.icon-idea:before { content: '\e842'; } /* '' */
+.icon-location:before { content: '\e843'; } /* '' */
 .icon-facebook:before { content: '\f09a'; } /* '' */
 .icon-google-plus:before { content: '\f0d5'; } /* '' */
 .icon-linkedin:before { content: '\f0e1'; } /* '' */
