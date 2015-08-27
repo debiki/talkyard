@@ -118,6 +118,55 @@ del
   z-index: 1;
 
 
+// Unwanted posts
+//---------------------------
+
+// Dim the post and draw a X over it, darker if there are many Unwanted votes.
+.dw-p.dw-unwanted
+
+  // Sync the number of steps with JS in client/app/renderer/pots.ts. [4KEF28]
+  &.dw-unwanted-1 > .dw-p-bd
+    opacity: 0.80;
+  &.dw-unwanted-2 > .dw-p-bd
+    opacity: 0.72;
+  &.dw-unwanted-3 > .dw-p-bd
+    opacity: 0.65;
+  &.dw-unwanted-4 > .dw-p-bd
+    opacity: 0.60;
+  &.dw-unwanted-5 > .dw-p-bd
+    opacity: 0.55;
+  &.dw-unwanted-6 > .dw-p-bd
+    opacity: 0.50;
+  &.dw-unwanted-max > .dw-p-bd
+    opacity: 0.45;
+
+  &.dw-unwanted-1 > .dw-unwanted-cross,
+  &.dw-unwanted-2 > .dw-unwanted-cross
+    opacity: 0.25;
+  &.dw-unwanted-3 > .dw-unwanted-cross,
+  &.dw-unwanted-4 > .dw-unwanted-cross
+    opacity: 0.37;
+  &.dw-unwanted-5 > .dw-unwanted-cross,
+  &.dw-unwanted-max > .dw-unwanted-cross
+    opacity: 0.7;
+
+  // Draw an X.
+  & > .dw-unwanted-cross
+    pointer-events: none; // doesn't work in IE9 and 10...
+    display: none;        // ... so hide for now, wait a year?
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 99;
+    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 100 100'><path d='M100 0 L0 100 ' stroke='black' stroke-width='1'/><path d='M0 0 L100 100 ' stroke='black' stroke-width='1'/></svg>");
+    background-repeat:no-repeat;
+    background-position:center center;
+    // Leave 20px at the bottom because the action button overlaps the lower parts of the post.
+    background-size: 100% calc(100% - 20px), auto;
+
+
 // Comments
 //---------------------------
 
@@ -557,4 +606,4 @@ img.debiki-0-inline
 
 
 
-// vim: fdm=marker et ts=2 sw=2 tw=100 fo=tcqwn list
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

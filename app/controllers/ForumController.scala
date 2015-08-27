@@ -242,6 +242,7 @@ object ForumController extends mvc.Controller {
       "numLikes" -> topic.meta.numLikes,
       "numWrongs" -> topic.meta.numWrongs,
       "numBurys" -> topic.meta.numBurys,
+      "numUnwanteds" -> topic.meta.numUnwanteds,
       "numOrigPostLikes" -> topic.meta.numOrigPostLikeVotes,
       "numOrigPostReplies" -> topic.meta.numOrigPostRepliesVisible,
       "createdEpoch" -> createdEpoch,

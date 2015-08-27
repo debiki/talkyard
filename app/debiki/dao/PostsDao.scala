@@ -483,17 +483,27 @@ trait PostsDao {
   }
 
 
-  def voteOnPost(pageId: PageId, postId: PostId, voteType: PostVoteType,
+  def ifAuthAddVote(pageId: PageId, postId: PostId, voteType: PostVoteType,
         voterId: UserId, voterIp: String, postIdsRead: Set[PostId]) {
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val post = page.parts.thePost(postId)
+      val voter = transaction.loadTheUser(voterId)
+
+      if (voteType == PostVoteType.Bury && !voter.isStaff)
+        throwForbidden("DwE2WU74", "Only staff and regular members may Bury-vote")
+
+      if (voteType == PostVoteType.Unwanted && !voter.isStaff && page.meta.authorId != voterId)
+        throwForbidden("DwE5JUK0", "Only staff and the page author may Unwanted-vote")
+
       if (voteType == PostVoteType.Like) {
         if (post.createdById == voterId)
           throwForbidden("DwE84QM0", "Cannot like own post")
       }
 
-      try { transaction.insertVote(post.uniqueId, pageId, postId, voteType, voterId = voterId) }
+      try {
+        transaction.insertVote(post.uniqueId, pageId, postId, voteType, voterId = voterId)
+      }
       catch {
         case DbDao.DuplicateVoteException =>
           throwForbidden("Dw403BKW2", "You have already voted")
@@ -509,7 +519,7 @@ trait PostsDao {
           postIdsRead -- ancestorIds.toSet
         }
         else {
-          // The post got a non-like vote, e.g. wrong, boring, off-topic.
+          // The post got a non-like vote: wrong, bury or unwanted.
           // This should result in only the downvoted post
           // being marked as read, because a post *not* being downvoted shouldn't
           // give that post worse rating. (Remember that the rating of a post is
@@ -575,7 +585,7 @@ trait PostsDao {
     readOnlyTransaction(_.loadPost(pageId, postId))
 
 
-  private def updateVoteCounts(pageId: PageId, postId: PostId, transaction: SiteTransaction): Unit = {
+  private def updateVoteCounts(pageId: PageId, postId: PostId, transaction: SiteTransaction) {
     val post = transaction.loadThePost(pageId, postId = postId)
     updateVoteCounts(post, transaction)
   }
@@ -589,22 +599,26 @@ trait PostsDao {
     val numNewLikes = postAfter.numLikeVotes - post.numLikeVotes
     val numNewWrongs = postAfter.numWrongVotes - post.numWrongVotes
     val numNewBurys = postAfter.numBuryVotes - post.numBuryVotes
+    val numNewUnwanteds = postAfter.numUnwantedVotes - post.numUnwantedVotes
 
-    val (numNewOpLikes, numNewOpWrongs, numNewOpBurys) =
-      if (post.isOrigPostReply)
-        (numNewLikes, numNewWrongs, numNewBurys)
+    val (numNewOpLikes, numNewOpWrongs, numNewOpBurys, numNewOpUnwanteds) =
+      if (post.isOrigPost)
+        (numNewLikes, numNewWrongs, numNewBurys, numNewUnwanteds)
       else
-        (0, 0, 0)
+        (0, 0, 0, 0)
 
     val pageMetaBefore = transaction.loadThePageMeta(post.pageId)
     val pageMetaAfter = pageMetaBefore.copy(
       numLikes = pageMetaBefore.numLikes + numNewLikes,
       numWrongs = pageMetaBefore.numWrongs + numNewWrongs,
       numBurys = pageMetaBefore.numBurys + numNewBurys,
+      numUnwanteds = pageMetaBefore.numUnwanteds + numNewUnwanteds,
       // For now: use max() because the db fields were just added so some counts are off.
+      // (but not for Unwanted, that vote was added after the vote count fields)
       numOrigPostLikeVotes = math.max(0, pageMetaBefore.numOrigPostLikeVotes + numNewOpLikes),
       numOrigPostWrongVotes = math.max(0, pageMetaBefore.numOrigPostWrongVotes + numNewOpWrongs),
-      numOrigPostBuryVotes = math.max(0, pageMetaBefore.numOrigPostBuryVotes + numNewOpBurys))
+      numOrigPostBuryVotes = math.max(0, pageMetaBefore.numOrigPostBuryVotes + numNewOpBurys),
+      numOrigPostUnwantedVotes = pageMetaBefore.numOrigPostUnwantedVotes + numNewOpUnwanteds)
 
     transaction.updatePost(postAfter)
     transaction.updatePageMeta(pageMetaAfter, oldMeta = pageMetaBefore)

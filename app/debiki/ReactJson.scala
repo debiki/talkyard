@@ -354,6 +354,7 @@ object ReactJson {
       "numLikeVotes" -> JsNumber(post.numLikeVotes),
       "numWrongVotes" -> JsNumber(post.numWrongVotes),
       "numBuryVotes" -> JsNumber(post.numBuryVotes),
+      "numUnwantedVotes" -> JsNumber(post.numUnwantedVotes),
       "numPendingEditSuggestions" -> JsNumber(post.numPendingEditSuggestions),
       "summarize" -> JsBoolean(summarize),
       "summary" -> jsSummary,
@@ -467,6 +468,7 @@ object ReactJson {
       if (votes.votedLike) voteStrs = voteStrs :+ "VoteLike"
       if (votes.votedWrong) voteStrs = voteStrs :+ "VoteWrong"
       if (votes.votedBury) voteStrs = voteStrs :+ "VoteBury"
+      if (votes.votedUnwanted) voteStrs = voteStrs :+ "VoteUnwanted"
       postId.toString -> Json.toJson(voteStrs)
     }
     JsObject(votesByPostId.toSeq)

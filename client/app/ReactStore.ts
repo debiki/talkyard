@@ -597,11 +597,7 @@ function sortPostIdsInPlace(postIds: number[], allPosts) {
     if (isDeleted(postA) && !isDeleted(postB))
       return +1;
 
-    // Place multireplies after normal replies. And sort multireplies by time,
-    // for now, so it never happens that a multireply ends up placed before another
-    // multireply that it replies to.
-    // COULD place interesting multireplies first, if they're not constrained by
-    // one being a reply to another.
+    // Place multireplies after normal replies. See Post.scala.
     if (postA.multireplyPostIds.length && postB.multireplyPostIds.length) {
       if (postA.createdAt < postB.createdAt)
         return -1;
@@ -612,6 +608,38 @@ function sortPostIdsInPlace(postIds: number[], allPosts) {
       return +1;
     }
     else if (postB.multireplyPostIds.length) {
+      return -1;
+    }
+
+    // Show unwanted posts last. See debiki-core/src/main/scala/com/debiki/core/Post.scala.
+    var unwantedA = postA.numUnwantedVotes > 0;
+    var unwantedB = postB.numUnwantedVotes > 0;
+    if (unwantedA && unwantedB) {
+      if (postA.numUnwantedVotes < postB.numUnwantedVotes)
+        return -1;
+      if (postA.numUnwantedVotes > postB.numUnwantedVotes)
+        return +1;
+    }
+    else if (unwantedA) {
+      return +1;
+    }
+    else if (unwantedB) {
+      return -1;
+    }
+
+    // Bury bury-voted posts. See debiki-core/src/main/scala/com/debiki/core/Post.scala.
+    var buryA = postA.numBuryVotes > 0 && !postA.numLikeVotes;
+    var buryB = postB.numBuryVotes > 0 && !postB.numLikeVotes;
+    if (buryA && buryB) {
+      if (postA.numBuryVotes < postB.numBuryVotes)
+        return -1;
+      if (postA.numBuryVotes > postB.numBuryVotes)
+        return +1;
+    }
+    else if (buryA) {
+      return +1;
+    }
+    else if (buryB) {
       return -1;
     }
 
@@ -660,12 +688,12 @@ function rememberPostsToQuickUpdate(startPostId: number) {
   }
 
   // In case `post` is a newly added reply, we'll update all earlier siblings, because they
-  // draw an arrow to `post`.
+  // draw an arrow to `post`. However if you've added an Unwanted vote, and post a new reply,
+  // then a hereafter unwanted earlier sibling might be moved below startPostId. So we need
+  // to update all subsequent siblings too.
   var parent: any = store.allPosts[post.parentId] || {};
   for (var i = 0; i < (parent.childIdsSorted || []).length; ++i) {
     var siblingId = parent.childIdsSorted[i];
-    if (siblingId === startPostId)
-      break;
     store.postsToUpdate[siblingId] = true;
   }
 

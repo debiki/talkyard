@@ -164,6 +164,7 @@ case class Post(
   numLikeVotes: Int,
   numWrongVotes: Int,
   numBuryVotes: Int,
+  numUnwantedVotes: Int,
   numTimesRead: Int) {
 
   require(uniqueId >= 1, "DwE4WEKQ8")
@@ -232,9 +233,11 @@ case class Post(
   require(numLikeVotes >= 0, "DwEIK7K")
   require(numWrongVotes >= 0, "DwE7YQ08")
   require(numBuryVotes >= 0, "DwE5FKW2")
+  require(numUnwantedVotes >= 0, "DwE4GKY2")
   require(numTimesRead >= 0, "DwE2ZfMI3")
 
   def isReply = PageParts.isReply(id)
+  def isOrigPost = id == PageParts.BodyId
   def isOrigPostReply = PageParts.isReply(id) && parentId == Some(PageParts.BodyId)
   def isMultireply = multireplyPostIds.nonEmpty
   def isHidden = hiddenAt.isDefined
@@ -397,6 +400,7 @@ case class Post(
     var numLikeVotes = 0
     var numWrongVotes = 0
     var numBuryVotes = 0
+    var numUnwantedVotes = 0
     for (action <- actions) {
       action match {
         case vote: PostVote =>
@@ -407,6 +411,8 @@ case class Post(
               numWrongVotes += 1
             case PostVoteType.Bury =>
               numBuryVotes += 1
+            case PostVoteType.Unwanted =>
+              numUnwantedVotes += 1
           }
       }
     }
@@ -415,6 +421,7 @@ case class Post(
       numLikeVotes = numLikeVotes,
       numWrongVotes = numWrongVotes,
       numBuryVotes = numBuryVotes,
+      numUnwantedVotes = numUnwantedVotes,
       numTimesRead = numTimesRead)
   }
 }
@@ -509,6 +516,7 @@ object Post {
       numLikeVotes = 0,
       numWrongVotes = 0,
       numBuryVotes = 0,
+      numUnwantedVotes = 0,
       numTimesRead = 0)
   }
 
@@ -586,6 +594,22 @@ object Post {
       return false
     }
     else if (postB.multireplyPostIds.nonEmpty) {
+      return true
+    }
+
+    // Show unwanted posts last.
+    val unwantedA = postA.numUnwantedVotes > 0
+    val unwantedB = postB.numUnwantedVotes > 0
+    if (unwantedA && unwantedB) {
+      if (postA.numUnwantedVotes < postB.numUnwantedVotes)
+        return true
+      if (postA.numUnwantedVotes > postB.numUnwantedVotes)
+        return false
+    }
+    else if (unwantedA) {
+      return false
+    }
+    else if (unwantedB) {
       return true
     }
 

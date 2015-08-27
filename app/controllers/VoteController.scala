@@ -73,17 +73,15 @@ object VoteController extends mvc.Controller {
       case "VoteLike" => PostVoteType.Like
       case "VoteWrong" => PostVoteType.Wrong
       case "VoteBury" => PostVoteType.Bury
+      case "VoteUnwanted" => PostVoteType.Unwanted
       case _ => throwBadReq("DwE35gKP8", s"Bad vote type: $voteStr")
     }
-
-    if (voteType == PostVoteType.Bury && !request.theUser.isStaff)
-      throwForbidden("DwE2WKU74", "Only staff and regular members may Bury-vote")
 
     if (delete) {
       request.dao.deleteVote(pageId, postId, voteType, voterId = request.theUser.id)
     }
     else {
-      request.dao.voteOnPost(pageId, postId, voteType,
+      request.dao.ifAuthAddVote(pageId, postId, voteType,
         voterId = request.theUser.id, voterIp = request.ip, postIdsRead)
     }
 

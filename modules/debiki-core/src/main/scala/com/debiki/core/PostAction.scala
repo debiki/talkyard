@@ -30,7 +30,7 @@ object PostVoteType {
   case object Like extends PostVoteType
   case object Wrong extends PostVoteType
   case object Bury extends PostVoteType
-  //case object Unwanted extends PostVoteType
+  case object Unwanted extends PostVoteType
 }
 
 

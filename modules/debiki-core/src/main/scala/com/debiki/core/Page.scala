@@ -114,6 +114,7 @@ object PageMeta {
       numLikes = 0,
       numWrongs = 0,
       numBurys = 0,
+      numUnwanteds = 0,
       numRepliesVisible = 0,
       numRepliesTotal = 0,
       numChildPages = 0)
@@ -138,6 +139,7 @@ object PageMeta {
   * @param numLikes
   * @param numWrongs
   * @param numBurys
+  * @param numUnwanteds
   * @param numRepliesVisible Replies that haven't been deleted or hidden, and have been approved.
   *                          Includes collapsed and closed replies.
   * @param numRepliesTotal Counts all replies, also deleted, hidden and not-yet-approved replies.
@@ -166,7 +168,7 @@ case class PageMeta(
   numLikes: Int = 0,
   numWrongs: Int = 0,
   numBurys: Int = 0,
-  //numUnwanteds: Int = 0,
+  numUnwanteds: Int = 0,
   numRepliesVisible: Int = 0,
   numRepliesTotal: Int = 0,
   numOrigPostLikeVotes: Int = 0,
@@ -190,7 +192,7 @@ case class PageMeta(
   require(numLikes >= 0, "DwE6PKF3")
   require(numWrongs >= 0, "DwE9KEFW2")
   require(numBurys >= 0, "DwE2KEP4")
-  //require(numUnwanteds >= 0, "DwE4JGY7")
+  require(numUnwanteds >= 0, "DwE4JGY7")
   require(numOrigPostLikeVotes >= 0, "DwE5KJF2")
   require(numOrigPostLikeVotes <= numLikes, "DwE5KJF2B")
   require(numOrigPostWrongVotes >= 0, "DwE4WKEQ1")
@@ -198,7 +200,7 @@ case class PageMeta(
   require(numOrigPostBuryVotes >= 0, "DwE8KGY4")
   require(numOrigPostBuryVotes <= numBurys, "DwE8KGY4B")
   require(numOrigPostUnwantedVotes >= 0, "DwE0GFW8")
-  //require(numOrigPostUnwantedVotes <= numUnwanteds, "DwE0GFW8B")
+  require(numOrigPostUnwantedVotes <= numUnwanteds, "DwE4GKY8")
   require(numOrigPostRepliesVisible >= 0, "DwE0GY42")
   require(numOrigPostRepliesVisible <= numRepliesVisible, "DwE0GY42B")
   //require(numRepliesVisible >= 0, "DwE6KPE78") - bug in PostsDao.changePostStatus()?

@@ -708,6 +708,16 @@ var Post = createComponent({
     if (isWikiPost(post))
       extraClasses += ' dw-wiki';
 
+    var unwantedCross;
+    if (post.numUnwantedVotes) {
+      extraClasses += ' dw-unwanted dw-unwanted-' + post.numUnwantedVotes;
+      // Sync the max limit with CSS in client/app/.debiki-play.styl. [4KEF28]
+      if (post.numUnwantedVotes >= 7) {
+        extraClasses += ' dw-unwanted-max';
+      }
+      unwantedCross = r.div({ className: 'dw-unwanted-cross' });
+    }
+
     var id = this.props.abbreviate ? undefined : 'post-' + post.postId;
 
     return (
@@ -719,7 +729,8 @@ var Post = createComponent({
         headerElem,
         bodyElem,
         clickToExpand,
-        clickCover));
+        clickCover,
+        unwantedCross));
   }
 });
 
@@ -1018,6 +1029,9 @@ var PostActions = createComponent({
   onBuryClick: function(event) {
     debiki.internal.$toggleVote('VoteBury').call(event.target, event);
   },
+  onUnwantedClick: function(event) {
+    debiki.internal.$toggleVote('VoteUnwanted').call(event.target, event);
+  },
   onEditSuggestionsClick: function(event) {
     debiki.internal.$showEditsDialog.call(event.target, event);
   },
@@ -1125,28 +1139,34 @@ var PostActions = createComponent({
     }
 
     var otherVotesDropdown = null;
-    var likeVote = null;
+    var likeVoteButton = null;
     if (!deletedOrCollapsed && !isOwnPost) {
       var myLikeVote = votes.indexOf('VoteLike') !== -1 ? ' dw-my-vote' : '';
       var myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : '';
       var myBuryVote = votes.indexOf('VoteBury') !== -1 ? ' dw-my-vote' : '';
-      var myOtherVotes = myWrongVote || myBuryVote ? ' dw-my-vote' : '';
+      var myUnwantedVote = votes.indexOf('VoteUnwanted') !== -1 ? ' dw-my-vote' : '';
+      var myOtherVotes = myWrongVote || myBuryVote || myUnwantedVote ? ' dw-my-vote' : '';
 
-      var otherVotes = [
+      var wrongVoteButton =
           r.a({ className: 'dw-a dw-a-wrong icon-warning' + myWrongVote,
             title: 'Click if you think this post is wrong, for example, factual errors, ' +
-                " or because you disagree.", onClick: this.onWrongClick, key: 'w' }, 'Wrong'),
+                " or because you disagree.", onClick: this.onWrongClick }, 'Wrong');
+      var buryVoteButton =
           r.a({ className: 'dw-a dw-a-bury icon-bury' + myBuryVote,
               title: "Click if you think it's better that people spend their time " +
-                  "reading other things instead.", onClick: this.onBuryClick, key: 'b' }, 'Bury')];
+                  "reading other things instead.", onClick: this.onBuryClick }, 'Bury');
+      var unwantedVoteButton =
+          r.a({ className: 'dw-a dw-a-unwanted icon-cancel' + myUnwantedVote,
+              title: "Click if you do not want this comment on this site.",
+                  onClick: this.onUnwantedClick }, "Unwanted");
 
       otherVotesDropdown = post.postId === BodyPostId ? null :
           r.span({ className: 'dropdown navbar-right' },
             r.a({ className: 'dw-a dw-a-votes' + myOtherVotes, 'data-toggle': 'dropdown' }, ''),
             r.div({ className: 'dropdown-menu dropdown-menu-right dw-p-as-votes' },
-                otherVotes));
+                wrongVoteButton, buryVoteButton, unwantedVoteButton));
 
-      likeVote =
+      likeVoteButton =
           r.a({ className: 'dw-a dw-a-like icon-heart' + myLikeVote,
             title: "Like this", onClick: this.onLikeClick });
     }
@@ -1268,7 +1288,7 @@ var PostActions = createComponent({
         link,
         editOwnPostButton,
         otherVotesDropdown,
-        likeVote,
+        likeVoteButton,
         acceptAnswerButton));
   }
 });

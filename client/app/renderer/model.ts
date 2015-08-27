@@ -68,6 +68,7 @@ interface Post {
   numLikeVotes: number;
   numWrongVotes: number;
   numBuryVotes: number;
+  numUnwantedVotes: number;
   numPendingEditSuggestions: number;
   summarize: boolean;
   summary?: string;
