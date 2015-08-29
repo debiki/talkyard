@@ -272,22 +272,24 @@ h1.dw-p-ttl
 .dw-p-dl + .dw-p-as
   min-height: 42px;
 
-.dw-rrs // reply receivers
+.dw-p:not(.dw-p-flat) > .dw-rrs // reply receivers
   font-style: italic;
-  font-size: 90%;
+  color: hsl(0, 0%, 41%);
 
-
-.dw-rr // reply receiver
+.DW .dw-rr // reply receiver
   padding: 7px 0 6px 5px
   display: inline-block;
-  color: hsl(211, 88%, 20%);
-  text-decoration: underline;
+  font-weight: bold;
+  color: hsl(0, 0%, 28%);
 
 // Make it easier to touch.
 html:not(.mouse) .dw-rr
   padding: 15px 0 16px 6px;
   margin-top: -6px;
 
+// ... but don't push the .dw-p-bd text away:
+.dw-p-flat .dw-rr
+  padding-bottom: 0;
 
 .dw-wrong
   font-style: italic;

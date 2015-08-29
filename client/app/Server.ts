@@ -527,12 +527,14 @@ export function unpinPage(success: () => void) {
 }
 
 
-export function saveReply(postIds: number[], text: string, success: () => void) {
+export function saveReply(postIds: number[], text: string, anyPostType: number,
+    success: () => void) {
   postJson('/-/reply', {
     data: {
       pageId: d.i.pageId,
       pageUrl: d.i.iframeBaseUrl || undefined,
       postIds: postIds,
+      postType: anyPostType || PostType.Normal,
       text: text
     },
     success: (response) => {

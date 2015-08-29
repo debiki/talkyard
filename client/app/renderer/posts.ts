@@ -317,6 +317,10 @@ var SocialLinks = createComponent({
 
 
 var RootPostAndComments = createComponent({
+  onChatReplyClick: function() {
+    debiki.internal.showReplyFormForFlatChat();
+  },
+
   render: function() {
     var store: Store = this.props;
     var allPosts: { [postId: number]: Post; } = this.props.allPosts;
@@ -388,11 +392,13 @@ var RootPostAndComments = createComponent({
 
     var isSquashing = false;
 
-    var children = childIds.map((childId, childIndex) => {
+    var threadedChildren = childIds.map((childId, childIndex) => {
       var child = allPosts[childId];
       if (!child)
         return null; // deleted
       if (isSquashing && child.squash)
+        return null;
+      if (child.postType === PostType.Flat)
         return null;
       isSquashing = false;
       var threadProps = _.clone(this.props);
@@ -415,6 +421,22 @@ var RootPostAndComments = createComponent({
       }
     });
 
+    var flatComments = [];
+    _.each(store.allPosts, (child: Post, childId) => {
+      if (!child || child.postType !== PostType.Flat)
+        return null;
+      var threadProps = _.clone(this.props);
+      threadProps.elemType = 'div';
+      threadProps.postId = childId;
+      // The index is used for drawing arrows but here there'll be no arrows.
+      threadProps.index = null;
+      threadProps.depth = 1;
+      threadProps.indentationDepth = 0;
+      flatComments.push(
+        r.li({ key: childId },
+          Thread(threadProps)));
+    });
+
     return (
       r.div({ className: threadClass },
         body,
@@ -425,7 +447,16 @@ var RootPostAndComments = createComponent({
         anyHorizontalArrowToChildren,
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
-            children))));
+            threadedChildren)),
+
+        r.div({ className: 'dw-chat-title' }, "Chat and status updates"),
+        r.div({ className: 'dw-chat dw-single-and-multireplies' },
+          r.ol({ className: 'dw-res dw-singlereplies' },
+            flatComments)),
+
+        r.div({ className: 'dw-chat-as' },
+          r.a({ className: 'dw-a dw-a-reply icon-comment-empty', onClick: this.onChatReplyClick },
+            " Add comment"))));
   },
 });
 
@@ -480,11 +511,12 @@ var Thread = createComponent({
 
     var parentPost = allPosts[post.parentId];
     var deeper = this.props.depth + 1;
+    var isFlat = post.postType === PostType.Flat;
 
     // Draw arrows, but not to multireplies, because we don't know if they reply to `post`
     // or to other posts deeper in the thread.
     var arrows = [];
-    if (!post.multireplyPostIds.length) {
+    if (!post.multireplyPostIds.length && !isFlat) {
       arrows = debiki2.renderer.drawArrowsFromParent(
         allPosts, parentPost, this.props.depth, this.props.index,
         this.props.horizontalLayout, this.props.rootPostId);
@@ -501,12 +533,14 @@ var Thread = createComponent({
     var isSquashingChildren = false;
 
     var children = [];
-    if (!post.isTreeCollapsed && !post.isTreeDeleted) {
+    if (!post.isTreeCollapsed && !post.isTreeDeleted && !isFlat) {
       children = post.childIdsSorted.map((childId, childIndex) => {
         var child = allPosts[childId];
         if (!child)
           return null; // deleted
         if (isSquashingChildren && child.squash)
+          return null;
+        if (child.postType === PostType.Flat)
           return null;
         isSquashingChildren = false;
 
@@ -558,8 +592,12 @@ var Thread = createComponent({
     postProps.renderCollapsed = renderCollapsed;
 
     var baseElem = r[this.props.elemType];
-    var depthClass = ' dw-depth-' + this.props.depth;
-    var indentationDepthClass = ' dw-id' + this.props.indentationDepth;
+    var depthClass = '';
+    var indentationDepthClass = '';
+    if (!isFlat) {
+      depthClass = ' dw-depth-' + this.props.depth;
+      indentationDepthClass = ' dw-id' + this.props.indentationDepth;
+    }
     var is2dColumnClass = this.props.is2dTreeColumn ? ' dw-2dcol' : '';
     var multireplyClass = post.multireplyPostIds.length ? ' dw-mr' : '';
     var collapsedClass = renderCollapsed ? ' dw-zd' : '';
@@ -624,6 +662,7 @@ var Post = createComponent({
     var clickToExpand;
     var clickCover;
     var extraClasses = this.props.className || '';
+    var isFlat = post.postType === PostType.Flat;
 
     if (post.isTreeDeleted || post.isPostDeleted) {
       var what = post.isTreeDeleted ? 'Thread' : 'Comment';
@@ -682,9 +721,11 @@ var Post = createComponent({
     }
 
     // For non-multireplies, we never show "In response to" for the very first reply (index 0),
-    // instead we draw an arrow.
+    // instead we draw an arrow. For flat replies, show "In response to" inside the header instead,
+    // that looks better (see PostHeader).
     var replyReceivers;
-    if (!this.props.abbreviate && (this.props.index > 0 || post.multireplyPostIds.length)) {
+    if (!this.props.abbreviate && !isFlat && (
+          this.props.index > 0 || post.multireplyPostIds.length)) {
       replyReceivers = ReplyReceivers({ post: post, allPosts: this.props.allPosts });
     }
 
@@ -707,6 +748,9 @@ var Post = createComponent({
 
     if (isWikiPost(post))
       extraClasses += ' dw-wiki';
+
+    if (isFlat)
+      extraClasses += ' dw-p-flat';
 
     var unwantedCross;
     if (post.numUnwantedVotes) {
@@ -756,9 +800,10 @@ var ReplyReceivers = createComponent({
 
       return index === 0 ? link : r.span({ key: post.postId }, ' and', link);
     });
+    var elem = this.props.comma ? 'span' : 'div';
     return (
-      r.div({ className: 'dw-rrs' + multireplyClass }, // rrs = reply receivers
-        'In reply to', receivers, ':'));
+      r[elem]({ className: 'dw-rrs' + multireplyClass }, // rrs = reply receivers
+        (this.props.comma ? ', i' : 'I') + 'n reply to', receivers, ':'));
   }
 });
 
@@ -886,10 +931,18 @@ var PostHeader = createComponent({
 
     var is2dColumn = this.props.horizontalLayout && this.props.depth === 1;
     var collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
+    var isFlat = post.postType === PostType.Flat;
     var toggleCollapsedButton =
-        is2dColumn || this.props.abbreviate || post.isTreeCollapsed || isPageBody
+        is2dColumn || this.props.abbreviate || post.isTreeCollapsed || isPageBody || isFlat
           ? null
           : r.span({ className: 'dw-a-clps ' + collapseIcon, onClick: this.onCollapseClick });
+
+    // For flat replies, show "In response to" here inside the header instead,
+    // rather than above the header — that looks better.
+    var inReplyTo;
+    if (!this.props.abbreviate && isFlat && post.parentId) {
+      inReplyTo = ReplyReceivers({ post: post, allPosts: this.props.allPosts, comma: true });
+    }
 
     return (
         r.div({ className: 'dw-p-hd' + isBodyPostClass },
@@ -900,7 +953,8 @@ var PostHeader = createComponent({
           by,
           r[linkFn](userLinkProps, namePart1, namePart2),
           createdAt,
-          editInfo, '. ',
+          editInfo,
+          inReplyTo || '. ',
           voteCounts));
   }
 });
@@ -1007,7 +1061,8 @@ var PostActions = createComponent({
     debiki2.ReactActions.unacceptAnswer();
   },
   onReplyClick: function(event) {
-    debiki.internal.$showReplyForm.call(event.target, event);
+    var newPostType = this.props.post.postType === PostType.Flat ? PostType.Flat : PostType.Normal;
+    debiki.internal.$showReplyForm.call(event.target, event, newPostType);
   },
   onCloseClick: function() {
     debiki2.ReactActions.togglePageClosed();
@@ -1138,6 +1193,24 @@ var PostActions = createComponent({
           onClick: this.onCloseClick, title: closeReopenTooltip }, closeReopenTitle);
     }
 
+    var numLikesText;
+    if (post.numLikeVotes && !isPageBody) {
+      numLikesText = r.a({ className: 'dw-a dw-vote-count' },
+          post.numLikeVotes === 1 ? "1 Like" : post.numLikeVotes + " Likes");
+    }
+
+    var numWrongsText;
+    if (post.numWrongVotes && !isPageBody) {
+      numWrongsText = r.a({ className: 'dw-a dw-vote-count' },
+          post.numWrongVotes === 1 ? "1 Wrong" : post.numWrongVotes + " Wrongs");
+    }
+
+    var numUnwantedsText;
+    if (post.numUnwantedVotes && !isPageBody) {
+      numUnwantedsText = r.a({ className: 'dw-a dw-vote-count' },
+          post.numUnwantedVotes === 1 ? "1 Unwanted" : post.numUnwantedVotes + " Unwanteds");
+    }
+
     var otherVotesDropdown = null;
     var likeVoteButton = null;
     if (!deletedOrCollapsed && !isOwnPost) {
@@ -1152,7 +1225,9 @@ var PostActions = createComponent({
             title: 'Click if you think this post is wrong, for example, factual errors, ' +
                 " or because you disagree.", onClick: this.onWrongClick }, 'Wrong');
       var buryVoteButton =
-          r.a({ className: 'dw-a dw-a-bury icon-bury' + myBuryVote,
+        post.postType === PostType.Flat
+            ? null // cannot change sort order or collapse flat comments
+            : r.a({ className: 'dw-a dw-a-bury icon-bury' + myBuryVote,
               title: "Click if you think it's better that people spend their time " +
                   "reading other things instead.", onClick: this.onBuryClick }, 'Bury');
       var unwantedVoteButton =
@@ -1266,7 +1341,7 @@ var PostActions = createComponent({
           'Delete'));
     }
 
-    if (isStaff(user)) {
+    if (isStaff(user) && post.postType !== PostType.Flat) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-users', onClick: this.onWikifyClick, key: 'wf' },
           isWikiPost(post) ? 'Un-Wikify' : 'Wikify'));
@@ -1289,6 +1364,9 @@ var PostActions = createComponent({
         editOwnPostButton,
         otherVotesDropdown,
         likeVoteButton,
+        numWrongsText,
+        numLikesText,
+        numUnwantedsText,
         acceptAnswerButton));
   }
 });

@@ -42,8 +42,8 @@ export function createEditor() {
 }
 
 
-export function toggleWriteReplyToPost(postId: number) {
-  theEditor.toggleWriteReplyToPost(postId);
+export function toggleWriteReplyToPost(postId: number, anyPostType?: number) {
+  theEditor.toggleWriteReplyToPost(postId, anyPostType);
 }
 
 
@@ -108,7 +108,7 @@ export var Editor = createComponent({
     });
   },
 
-  toggleWriteReplyToPost: function(postId: number) {
+  toggleWriteReplyToPost: function(postId: number, anyPostType?: number) {
     if (this.alertBadState('WriteReply'))
       return;
     var postIds = this.state.replyToPostIds;
@@ -121,6 +121,7 @@ export var Editor = createComponent({
       postIds.splice(index, 1);
     }
     this.setState({
+      anyPostType: anyPostType,
       replyToPostIds: postIds,
       text: this.state.text ? this.state.text : this.state.draft
     });
@@ -135,6 +136,7 @@ export var Editor = createComponent({
     Server.loadCurrentPostText(postId, (text: string) => {
       this.showEditor();
       this.setState({
+        anyPostType: null,
         editingPostId: postId,
         text: text
       });
@@ -151,6 +153,7 @@ export var Editor = createComponent({
       text = this.state.draft || newCategoryPlaceholderText;
     }
     this.setState({
+      anyPostType: null,
       newForumPageParentId: parentPageId,
       newForumPageRole: role,
       text: text
@@ -237,7 +240,7 @@ export var Editor = createComponent({
   },
 
   saveNewPost: function() {
-    Server.saveReply(this.state.replyToPostIds, this.state.text, () => {
+    Server.saveReply(this.state.replyToPostIds, this.state.text, this.state.anyPostType, () => {
       this.clearText();
       this.closeEditor();
     });

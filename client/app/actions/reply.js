@@ -21,9 +21,9 @@ var $ = d.i.$;
 var NO_ID = -1;
 
 
-d.i.$showReplyForm = function(event, opt_where) {
+d.i.$showReplyForm = function(event, anyPostType) {
   event.preventDefault();
-  showReplyFormImpl($(this));
+  showReplyFormImpl($(this), anyPostType);
 };
 
 
@@ -32,7 +32,12 @@ d.i.showReplyFormEmbeddedComments = function() {
 };
 
 
-function showReplyFormImpl($this) {
+d.i.showReplyFormForFlatChat = function() {
+  showReplyFormImpl(null, PostType.Flat);
+};
+
+
+function showReplyFormImpl($this, anyPostType) {
   var replyAction;
   if ($this) {
     var thread = $this.closest('.dw-t');
@@ -40,8 +45,8 @@ function showReplyFormImpl($this) {
   }
   else {
     // This is an embedded comments page and the reply button clicked is in the
-    // comments toolbar.
-    replyAction = $('.dw-cmts-tlbr .dw-a-reply');
+    // comments toolbar. Or we're in the flat chat section on a non-embedded page.
+    replyAction = $('.dw-cmts-tlbr .dw-a-reply, .dw-chat-as .dw-a-reply');
   }
 
   var postId;
@@ -62,10 +67,11 @@ function showReplyFormImpl($this) {
     // editor is closed, and then we don't want to toggle it afterwards.
     toggleReplyButtonHighlighting(replyAction);
     if (d.i.isInEmbeddedCommentsIframe) {
-      sendWriteReplyMessageToEmbeddedEditor(postId);
+      console.warn("anyPostType ignored [DwE4KEPF0]");
+      sendWriteReplyMessageToEmbeddedEditor(postId, anyPostType);
     }
     else {
-      d.i.openEditorToWriteReply(postId);
+      d.i.openEditorToWriteReply(postId, anyPostType);
     }
   });
 };
@@ -78,8 +84,8 @@ function sendWriteReplyMessageToEmbeddedEditor(postId) {
 };
 
 
-d.i.openEditorToWriteReply = function(postId) {
-  debiki2.editor.toggleWriteReplyToPost(postId);
+d.i.openEditorToWriteReply = function(postId, anyPostType) {
+  debiki2.editor.toggleWriteReplyToPost(postId, anyPostType || PostType.Normal);
 };
 
 

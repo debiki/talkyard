@@ -43,6 +43,8 @@ object ReplyController extends mvc.Controller {
     val text = (body \ "text").as[String].trim
     val wherePerhapsEmpty = (body \ "where").asOpt[String]
     val whereOpt = if (wherePerhapsEmpty == Some("")) None else wherePerhapsEmpty
+    val postType = PostType.fromInt((body \ "postType").as[Int]) getOrElse throwBadReq(
+      "DwE6KG4", "Bad post type")
 
     // Construct a request that concerns the specified page. Create the page
     // lazily if it's supposed to be a discussion embedded on a static HTML page.
@@ -59,7 +61,7 @@ object ReplyController extends mvc.Controller {
     if (text.isEmpty)
       throwBadReq("DwE85FK03", "Empty post")
 
-    val postId = pageReq.dao.insertReply(text, pageId = pageId, replyToPostIds,
+    val postId = pageReq.dao.insertReply(text, pageId = pageId, replyToPostIds, postType,
       authorId = pageReq.theUser.id, pageReq.theBrowserIdData)
 
     val json = ReactJson.postToJson2(postId = postId, pageId = pageId, pageReq.dao,
