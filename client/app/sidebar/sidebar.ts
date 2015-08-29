@@ -58,7 +58,7 @@ export var Sidebar = createComponent({
       store: store,
       showSidebar: showSidebar,
       commentsType: 'Recent',
-      showPerhapsUnread: false,
+      // showPerhapsUnread: false,
     };
   },
 
@@ -75,11 +75,12 @@ export var Sidebar = createComponent({
     });
   },
 
+  /*
   showUnread: function() {
     this.setState({
       commentsType: 'Unread'
     });
-  },
+  },*/
 
   showStarred: function() {
     this.setState({
@@ -87,11 +88,12 @@ export var Sidebar = createComponent({
     });
   },
 
+  /*
   togglePerhapsUnread: function() {
     this.setState({
       showPerhapsUnread: !this.state.showPerhapsUnread
     });
-  },
+  }, */
 
   componentDidMount: function() {
     // COULD find a safer way to do this? Breaks if CSS class renamed / HTML
@@ -315,43 +317,50 @@ export var Sidebar = createComponent({
 
     // Find 1) all unread comments, sorted in the way they appear on the page
     // And 2) all visible comments.
-    var addComments = (postIds: number[], ancestorCollapsed: boolean) => {
+    var addRecursively = (postIds: number[]) => {
       _.each(postIds, (postId) => {
         var post: Post = store.allPosts[postId];
-        if (isDeleted(post))
-          return;
-
-        if (!ancestorCollapsed) {
-          // Do include comments that where auto-read right now — it'd be annoying
-          // if they suddenly vanished from the sidebar just because the computer
-          // suddenly automatically thought you've read them.
-          var autoReadLongAgo = store.user.postIdsAutoReadLongAgo.indexOf(postId) !== -1;
-          // No do include comments auto-read just now. Otherwise it's impossible to
-          // figure out how the Unread tab works and the 'Let computer determine' checkbox.
-          autoReadLongAgo =
-              autoReadLongAgo || store.user.postIdsAutoReadNow.indexOf(postId) !== -1;
-
-          var hasReadItForSure = this.manuallyMarkedAsRead(postId);
-          var ownPost = post.authorId === store.user.userId;
-          if (!ownPost && !hasReadItForSure) {
-            if (!autoReadLongAgo || this.state.showPerhapsUnread) {
-              unreadComments.push(post);
-            }
-          }
-
-          recentComments.push(post);
-        }
-
-        if (this.isStarred(postId)) {
-          starredComments.push(post);
-        }
-
-        addComments(post.childIdsSorted, ancestorCollapsed || isCollapsed(post));
+        addPost(post);
+        addRecursively(post.childIdsSorted);
       });
     };
 
+    var addPost = (post: Post) => {
+      var postId = post.postId;
+      if (isDeleted(post))
+        return;
+
+      recentComments.push(post);
+      if (this.isStarred(postId)) {
+        starredComments.push(post);
+      }
+
+      /* Unread? Skip for now, not saved anywhere anyway
+      // Do include comments that where auto-read right now — it'd be annoying
+      // if they suddenly vanished from the sidebar just because the computer
+      // suddenly automatically thought you've read them.
+      var autoReadLongAgo = store.user.postIdsAutoReadLongAgo.indexOf(postId) !== -1;
+      // No do include comments auto-read just now. Otherwise it's impossible to
+      // figure out how the Unread tab works and the 'Let computer determine' checkbox.
+      autoReadLongAgo = autoReadLongAgo || store.user.postIdsAutoReadNow.indexOf(postId) !== -1;
+      var hasReadItForSure = this.manuallyMarkedAsRead(postId);
+      var ownPost = post.authorId === store.user.userId;
+      if (!ownPost && !hasReadItForSure) {
+        if (!autoReadLongAgo || this.state.showPerhapsUnread) {
+          unreadComments.push(post);
+        }
+      }
+      */
+    }
+
     var rootPost = store.allPosts[store.rootPostId];
-    addComments(rootPost.childIdsSorted, false);
+    addRecursively(rootPost.childIdsSorted);
+
+    _.each(store.allPosts, (child: Post, childId) => {
+      if (child.postType === PostType.Flat) {
+        addPost(child);
+      }
+    });
 
     recentComments.sort((a, b) => {
       if (a.createdAt < b.createdAt)
@@ -426,7 +435,7 @@ export var Sidebar = createComponent({
       sidebarClasses += ' dw-sidebar-fixed';
     }
 
-    var unreadBtnTitle = 'Unread (' + commentsFound.unread.length + ')';
+    //var unreadBtnTitle = 'Unread (' + commentsFound.unread.length + ')';
     var starredBtnTitle = 'Starred (' + commentsFound.starred.length + ')';
 
     var title;
@@ -441,12 +450,14 @@ export var Sidebar = createComponent({
         recentClass = ' active';
         comments = commentsFound.recent;
         break;
+      /*
       case 'Unread':
         title = commentsFound.unread.length ?
             'Unread Comments: (click to show)' : 'No unread comments found.';
         unreadClass = ' active';
         comments = commentsFound.unread;
         break;
+        */
       case 'Starred':
         title = commentsFound.starred.length ?
             'Starred Comments: (click to show)' : 'No starred comments.';
@@ -474,6 +485,7 @@ export var Sidebar = createComponent({
             "corner, so the star turns blue or yellow. (You can use these two colors in " +
             'any way you want.)');
     }
+    /*
     else if (this.state.commentsType === 'Unread') {
       var tips = this.state.showPerhapsUnread
           ? r.p({}, 'Find listed below all comments that you have not marked as ' +
@@ -488,7 +500,7 @@ export var Sidebar = createComponent({
                 onChange: this.togglePerhapsUnread }),
             'Let the computer try to determine when you have read a comment.'),
           tips);
-    }
+    }*/
 
     var smallScreen = Math.min(debiki.window.width(), debiki.window.height()) < 500;
     var abbreviateHowMuch = smallScreen ? 'Much' : 'ABit';
@@ -509,8 +521,9 @@ export var Sidebar = createComponent({
     if ($(window).width() > 800 && $(window).height() > 600) {
       tabButtons =
         r.div({},
+          /*
           r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread },
-              unreadBtnTitle),
+              unreadBtnTitle), */
           r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent },
               'Recent'),
           r.button({ className: 'btn btn-default' + starredClass, onClick: this.showStarred },
@@ -520,7 +533,7 @@ export var Sidebar = createComponent({
       tabButtons =
         DropdownButton({ title: this.state.commentsType, key: 'showRecent', pullRight: true,
             onSelect: (key) => { this[key](); } },
-          MenuItem({ eventKey: 'showUnread' }, 'Unread'),
+          // MenuItem({ eventKey: 'showUnread' }, 'Unread'),
           MenuItem({ eventKey: 'showRecent' }, 'Recent'),
           MenuItem({ eventKey: 'showStarred' }, 'Starred'));
     }
