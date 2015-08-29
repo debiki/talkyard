@@ -114,14 +114,45 @@ export var TopBar = createComponent({
     });
   },
 
+  goToTop: function() {
+    debiki2.postnavigation.addVisitedPosition();
+    $('.dw-page')['dwScrollIntoView']();
+  },
+
+  goToReplies: function() {
+    debiki2.postnavigation.addVisitedPosition();
+    $('#dw-cmts-tlbr')['dwScrollIntoView']({ marginTop: 60, marginBottom: 9999 });
+  },
+
+  goToChat: function() {
+    debiki2.postnavigation.addVisitedPosition();
+    $('#dw-chat')['dwScrollIntoView']({ marginTop: 60, marginBottom: 9999 });
+  },
+
+  goToEnd: function() {
+    debiki2.postnavigation.addVisitedPosition();
+    $('html, body').animate({ 'scrollTop': $(document).height(), 'scrollLeft': 0 }, 500, 'swing');
+  },
+
   render: function() {
     var store: Store = this.state.store;
     var user: User = store.user;
+    var pageRole = store.pageRole;
 
     // Don't show all these buttons on a homepage / landing page, until after has scrolled down.
     // If not logged in, never show it — there's no reason for new users to login on the homepage.
-    if (store.pageRole === PageRole.HomePage && (!this.state.fixed || !user))
+    if (pageRole === PageRole.HomePage && (!this.state.fixed || !user))
       return r.span({});
+
+    var goToButtons;
+    if (this.state.fixed && pageRole !== PageRole.HomePage && pageRole !== PageRole.Forum) {
+      var goToTop = Button({ className: 'dw-goto', onClick: this.goToTop }, "Top");
+      var goToReplies = Button({ className: 'dw-goto', onClick: this.goToReplies }, "Replies");
+      var goToChat = Button({ className: 'dw-goto', onClick: this.goToChat }, "Chat");
+      var goToEnd = Button({ className: 'dw-goto', onClick: this.goToEnd }, "End");
+      goToButtons = r.span({ className: 'dw-goto-btns' },
+          goToTop, goToReplies, goToChat, goToEnd, debiki2.postnavigation.PostNavigation());
+    }
 
     var loggedInAs = !user.isLoggedIn ? null :
         r.a({ className: 'dw-name', onClick: this.goToUserPage }, user.username || user.fullName);
@@ -160,7 +191,7 @@ export var TopBar = createComponent({
         SearchForm({ onClose: this.closeSearchForm });
 
     var pageTitle;
-    if (store.pageRole === PageRole.Forum) {
+    if (pageRole === PageRole.Forum) {
       var titleProps: any = _.clone(store);
       titleProps.hideTitleEditButton = this.state.fixed;
       pageTitle =
@@ -170,6 +201,7 @@ export var TopBar = createComponent({
     var topbar =
       r.div({ id: 'dw-react-topbar', className: 'clearfix' },
         pageTitle,
+        goToButtons,
         r.div({ id: 'dw-topbar-btns' },
           loggedInAs,
           loginButton,
@@ -177,8 +209,7 @@ export var TopBar = createComponent({
           adminButton,
           toolsButton,
           searchButton,
-          menuButton,
-          debiki2.postnavigation.PostNavigation()),
+          menuButton),
         searchForm);
 
     var placeholder;

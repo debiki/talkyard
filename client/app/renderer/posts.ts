@@ -449,7 +449,7 @@ var RootPostAndComments = createComponent({
           r.ol({ className: 'dw-res dw-singlereplies' },
             threadedChildren)),
 
-        r.div({ className: 'dw-chat-title' }, "Chat and status updates"),
+        r.div({ className: 'dw-chat-title', id: 'dw-chat' }, "Chat and status updates"),
         r.div({ className: 'dw-chat dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
             flatComments)),

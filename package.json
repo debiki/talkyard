@@ -24,7 +24,7 @@
     "gulp-newer": "^0.3.0",
     "gulp-react": "^1.0.2",
     "gulp-rename": "^1.2.0",
-    "gulp-stylus": "^0.2.1",
+    "gulp-stylus": "^2.0.6",
     "gulp-typescript": "^2.7.5",
     "gulp-uglify": "^0.2.1",
     "gulp-watch": "^0.5.3",

@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+$topbarButtonPaddingTop = 3px
+$topbarBorderButtonPaddingTop = $topbarButtonPaddingTop - 1px;
+
 
 #dw-react-topbar
   z-index: 1;
@@ -37,6 +40,75 @@
       @media (min-width: 1100px)
         width: 500px;
 
+  .btn
+    margin-left: 10px;
+    border-radius: 0;
+    border: none;
+
+    &.dw-scrollback,
+    &.dw-clear-scroll,
+    &.dw-login,
+    &.dw-logout,
+    &.dw-admin,
+    &.dw-a-tools
+      background: hsl(210, 51%, 50%);
+      font-size: 1em;
+      color: white;
+      padding: $topbarButtonPaddingTop 8px 4px 5px;
+      a
+        color: white;
+
+    &.dw-goto,
+    &.dw-scrollback,
+    &.dw-clear-scroll
+      height: 17px;
+      box-sizing: content-box;
+      color: hsl(0, 0%, 23%);
+      background: white;
+      border: 1px solid hsl(0, 0%, 70%);
+
+      padding: $topbarBorderButtonPaddingTop 8px 3px 8px;
+      &.dw-scrollback
+        padding-left: 2px;
+
+      &:hover
+        color: hsl(210, 100%, 20%);
+        border-color: hsl(210, 100%, 60%);
+        background: hsl(210, 100%, 94%);
+
+    &.dw-goto
+      margin: 0;
+      min-width: 37px;
+      &:first-child
+        margin-left: 0;
+      &:not(:first-child)
+        border-left: none;
+
+    &.dw-clear-scroll
+      border-right: none;
+      padding-right: 12px;
+      padding-left: 12px;
+      margin-left: 14px;
+
+    &.dw-scrollback .icon-down-dir:before
+      font-size: 16px;
+      // rotate so points leftwards not down
+      -webkit-transform: rotate(90deg);
+      -moz-transform: rotate(90deg);
+      -ms-transform: rotate(90deg);
+      -o-transform: rotate(90deg);
+      transform: rotate(90deg);
+      position: relative;
+      top: 1px;
+      margin: 0;
+
+    &.dw-scrollback
+      padding-left: 3px;
+      margin-left: 0;
+
+  .dw-goto-btns
+    float: left;
+
   #dw-topbar-btns
     float: right;
     margin-top: 15px;
@@ -49,23 +121,6 @@
       top: 2px;
       cursor: pointer;
 
-    .btn
-      margin-left: 10px;
-      border: none;
-
-      &.dw-scrollback,
-      &.dw-clear-scroll,
-      &.dw-login,
-      &.dw-logout,
-      &.dw-admin,
-      &.dw-a-tools
-        background: hsl(210, 51%, 50%);
-        font-size: 1em;
-        color: white;
-        border-radius: 0;
-        padding: 3px 8px 4px 5px;
-        a
-          color: white;
 
       .icon-settings:before
         position: relative;
@@ -87,39 +142,6 @@
 
         .caret
           display: none;
-
-      &.dw-scrollback,
-      &.dw-clear-scroll
-        height: 17px;
-        box-sizing: content-box;
-        color: #222;
-        background: white;
-        border: 1px solid #333;
-        &:hover
-          border-color: hsl(210, 100%, 55%);
-          background: hsl(210, 100%, 96%);
-
-      &.dw-clear-scroll
-        border-right: none;
-        padding-right: 12px;
-        padding-left: 12px;
-        margin-left: 11px;
-
-      &.dw-scrollback .icon-down-dir:before
-        font-size: 16px;
-        // rotate so points leftwards not down
-        -webkit-transform: rotate(90deg);
-        -moz-transform: rotate(90deg);
-        -ms-transform: rotate(90deg);
-        -o-transform: rotate(90deg);
-        transform: rotate(90deg);
-        position: relative;
-        top: 1px;
-        margin: 0;
-
-      &.dw-scrollback
-        padding-left: 3px;
-        margin-left: 0;
 
 
   #dw-search-form
@@ -153,16 +175,37 @@
   #dw-react-topbar
     min-height: auto;
 
+    margin: 7px 0;
+    @media (max-height: 450px)
+      margin: 5px 0;
+
     h1.dw-p-ttl
-      margin: 12px 0 0;
+      margin: 5px 0 0;
       font-size: 18px;
 
+    .btn
+      font-size: 12px;
+
+    // Make buttons easier to click on small screens.
+    .dw-scrollback,
+    .dw-clear-scroll,
+    .dw-login,
+    .dw-logout,
+    .dw-admin,
+    .dw-a-tools
+      padding-top: $topbarButtonPaddingTop + 1px;
+
+    .dw-goto,
+    .dw-scrollback,
+    .dw-clear-scroll
+      padding-top: $topbarBorderButtonPaddingTop + 1px;
+
     #dw-topbar-btns
-      margin: 7px 0;
-      @media (max-height: 400px)
-        margin: 5px 0;
-      .btn
-        font-size: 12px;
+      margin-top: 0;
+
+    .dropdown-toggle
+      max-height: 24px;
+      padding-top: 4px;
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

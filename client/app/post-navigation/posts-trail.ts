@@ -31,6 +31,7 @@ var Button = React.createFactory(ReactBootstrap.Button);
 
 export var addVisitedPosts: (currentPostId: number, nextPostId: number) => void = null;
 export var addVisitedPositionAndPost: (nextPostId: number) => void = null;
+export var addVisitedPosition: () => void = null;
 
 
 export var PostNavigation = debiki2.utils.createClassAndFactory({
@@ -45,9 +46,15 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
   addVisitedPosts: function(currentPostId: number, nextPostId: number) {
     var visitedPosts = this.state.visitedPosts; // TODO clone, don't modify visitedPosts directly below [immutablejs]
     visitedPosts.splice(this.state.currentVisitedPostIndex + 1, 999999);
-    if (visitedPosts.length && visitedPosts[visitedPosts.length - 1].postId === currentPostId) {
-      // Don't duplicate postId.
-      visitedPosts.splice(visitedPosts.length - 1, 1);
+    // Don't duplicate the last post, and also remove it if it is empty, which happens when
+    // a position without any post is added via this.addVisitedPosition().
+    var lastPost = visitedPosts[visitedPosts.length - 1];
+    if (lastPost) {
+      var isSameAsCurrent = lastPost.postId === currentPostId;
+      var isNothing = !lastPost.postId && !lastPost.windowLeft && !lastPost.windowTop;
+      if (isSameAsCurrent || isNothing) {
+        visitedPosts.splice(visitedPosts.length - 1, 1);
+      }
     }
     visitedPosts.push({
       windowLeft: $(window).scrollLeft(),
@@ -66,6 +73,10 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
     this.addVisitedPosts(null, nextPostId);
   },
 
+  addVisitedPosition: function() {
+    this.addVisitedPosts(null, null);
+  },
+
   canGoBack: function() {
     return this.state.currentVisitedPostIndex >= 1;
   },
@@ -78,6 +89,7 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
   componentDidMount: function() {
     addVisitedPosts = this.addVisitedPosts;
     addVisitedPositionAndPost = this.addVisitedPositionAndPost;
+    addVisitedPosition = this.addVisitedPosition;
     keymaster('b', this.goBack);
     keymaster('f', this.goForward);
     window.addEventListener('scroll', this.hideIfCloseToTop, false);
@@ -86,6 +98,7 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
   componentWillUnmount: function() {
     addVisitedPosts = null;
     addVisitedPositionAndPost = null;
+    addVisitedPosition = null;
     keymaster.unbind('b', this.goBack);
     keymaster.unbind('f', this.goForward);
     window.removeEventListener('scroll', this.hideIfCloseToTop, false);

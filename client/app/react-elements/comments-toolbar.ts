@@ -116,7 +116,7 @@ export var CommentsToolbar = createComponent({
     }
     else {
       result =
-        r.div({ className: 'dw-cmts-tlbr' },
+        r.div({ className: 'dw-cmts-tlbr', id: 'dw-cmts-tlbr' },
           summaryElem,
           detailsElem);
     }
