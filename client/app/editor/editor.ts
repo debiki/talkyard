@@ -32,6 +32,7 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var theEditor: any;
 var $: any = window['jQuery'];
+var NoPostId = -1; // also in reply.js
 
 
 export function createEditor() {
@@ -308,6 +309,7 @@ export var Editor = createComponent({
 
   render: function() {
     var titleInput;
+    var state = this.state;
     if (this.state.newForumPageRole) {
       var defaultTitle = this.state.newForumPageRole === PageRole.Category ?
           'Title' : 'Topic title';
@@ -352,7 +354,12 @@ export var Editor = createComponent({
       saveButtonTitle = 'Save edits';
     }
     else if (this.state.replyToPostIds.length) {
-      saveButtonTitle = 'Post reply';
+      if (state.replyToPostIds.length === 1 && state.replyToPostIds[0] === NoPostId) {
+        saveButtonTitle = "Post comment";
+      }
+      else {
+        saveButtonTitle = "Post reply";
+      }
     }
     else if (this.state.newForumPageRole === PageRole.Category) {
       saveButtonTitle = 'Create new category';
