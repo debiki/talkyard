@@ -43,6 +43,7 @@ enum PageRole {
 
 enum PostType {
   Normal = 1,
+  Flat = 2,
   StaffWiki = 11,
   CommunityWiki = 12,
 }

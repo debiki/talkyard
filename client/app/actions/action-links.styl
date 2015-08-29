@@ -114,6 +114,15 @@
     padding-right: 11px;
     padding-left: 13px;
 
+  &.dw-vote-count
+    padding-right: 4px;
+    padding-left: 0;
+    white-space: nowrap;
+
+    // Add space between e.g. "1 Like" and "2 Wrongs":
+    + .dw-vote-count
+      margin-right: 5px;
+
   &.dw-a-votes
     padding-left: 0;
     padding-right: 1px;

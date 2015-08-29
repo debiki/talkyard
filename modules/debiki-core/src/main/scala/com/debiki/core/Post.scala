@@ -89,6 +89,9 @@ object PostType {
   /** A normal post, e.g. a forum topic or reply or blog post, whatever. */
   case object Normal extends PostType(1)
 
+  /** A comment in the flat chat below the threaded discussion section. */
+  case object Flat extends PostType(2)
+
   /** Any staff member can edit this post. No author name shown. */
   case object StaffWiki extends PostType(11) {
     override def isWiki = true
@@ -106,6 +109,7 @@ object PostType {
 
   def fromInt(value: Int): Option[PostType] = Some(value match {
     case Normal.IntValue => Normal
+    case Flat.IntValue => Flat
     case StaffWiki.IntValue => StaffWiki
     case CommunityWiki.IntValue => CommunityWiki
     case _ => return None
@@ -439,6 +443,7 @@ object Post {
         postId: PostId,
         parent: Option[Post],
         multireplyPostIds: Set[PostId],
+        postType: PostType,
         createdAt: ju.Date,
         createdById: UserId,
         source: String,
@@ -482,7 +487,7 @@ object Post {
       id = postId,
       parentId = parent.map(_.id),
       multireplyPostIds = multireplyPostIds,
-      tyype = PostType.Normal,
+      tyype = postType,
       createdAt = createdAt,
       createdById = createdById,
       lastEditedAt = None,
@@ -530,7 +535,8 @@ object Post {
         htmlSanitized: String,
         approvedById: Option[UserId]): Post =
     create(siteId, uniqueId, pageId = pageId, postId = PageParts.TitleId, parent = None,
-      multireplyPostIds = Set.empty, createdAt = createdAt, createdById = createdById,
+      multireplyPostIds = Set.empty, postType = PostType.Normal,
+      createdAt = createdAt, createdById = createdById,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 
   def createBody(
@@ -543,7 +549,8 @@ object Post {
         htmlSanitized: String,
         approvedById: Option[UserId]): Post =
     create(siteId, uniqueId, pageId = pageId, postId = PageParts.BodyId, parent = None,
-      multireplyPostIds = Set.empty, createdAt = createdAt, createdById = createdById,
+      multireplyPostIds = Set.empty, postType = PostType.Normal,
+      createdAt = createdAt, createdById = createdById,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 
 

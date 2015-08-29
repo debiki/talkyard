@@ -38,7 +38,7 @@ trait PostsDao {
   self: SiteDao =>
 
 
-  def insertReply(text: String, pageId: PageId, replyToPostIds: Set[PostId],
+  def insertReply(text: String, pageId: PageId, replyToPostIds: Set[PostId], postType: PostType,
         authorId: UserId, browserIdData: BrowserIdData): PostId = {
     val htmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(
       text, allowClassIdDataAttrs = false, followLinks = false)
@@ -52,13 +52,13 @@ trait PostsDao {
       val commonAncestorId = page.parts.findCommonAncestorId(replyToPostIds.toSeq)
       val anyParent =
         if (commonAncestorId == PageParts.NoId) {
-          if (page.role == PageRole.EmbeddedComments) {
-            // There is no page body. Allow new comment threads with no parent post.
+          // Flat chat comments might not reply to anyone in particular.
+          // On embedded comments pages, there's no Original Post, so top level comments
+          // have no parent post.
+          if (postType != PostType.Flat && page.role != PageRole.EmbeddedComments)
+            throwBadReq("DwE2CGW7", "Non-flat non-embedded comment with no parent post id")
+          else
             None
-          }
-          else {
-            throwBadReq("DwE260G8", "Not an embedded discussion. You must reply to something")
-          }
         }
         else {
           val anyParent = page.parts.post(commonAncestorId)
@@ -90,6 +90,7 @@ trait PostsDao {
         postId = postId,
         parent = anyParent,
         multireplyPostIds = (replyToPostIds.size > 1) ? replyToPostIds | Set.empty,
+        postType = postType,
         createdAt = transaction.currentTime,
         createdById = authorId,
         source = text,
