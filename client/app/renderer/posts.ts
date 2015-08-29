@@ -879,8 +879,6 @@ var PostHeader = createComponent({
         r.span({}, ', edited ', editedAt, byVariousPeople);
     }
 
-    var voteCounts = this.props.abbreviate === 'Much' ? null : voteCountsToText(post);
-
     var anyPin;
     if (post.pinnedPosition) {
       anyPin =
@@ -954,42 +952,9 @@ var PostHeader = createComponent({
           r[linkFn](userLinkProps, namePart1, namePart2),
           createdAt,
           editInfo,
-          inReplyTo || '. ',
-          voteCounts));
+          inReplyTo));
   }
 });
-
-
-function voteCountsToText(post: Post) {
-  var text = '';
-  function numPeople(num) {
-    if (text) {
-      return num + ' ';
-    }
-    else {
-      return num > 1 ? num + ' people ' : num + ' person ';
-    }
-  }
-  function thisComment() {
-    return text ? ' it' : ' this comment';
-  }
-  if (post.numLikeVotes && post.postId !== BodyPostId) {
-    text += numPeople(post.numLikeVotes) +
-      (post.numWrongVotes == 1 ? 'likes' : 'like') + ' this comment';
-  }
-  if (post.numWrongVotes) {
-    if (text) text += ', ';
-    text += numPeople(post.numWrongVotes) +
-      (post.numWrongVotes == 1 ? 'thinks' : 'think') + thisComment() + ' is wrong';
-  }
-  if (post.numBuryVotes) {
-    if (text) text += ', ';
-    text += numPeople(post.numBuryVotes) +
-        (post.numBuryVotes == 1 ? 'wants' : 'want') + ' to bury' + thisComment();
-  }
-  if (text) text += '.';
-  return text;
-}
 
 
 var PostBody = createComponent({
@@ -1205,6 +1170,14 @@ var PostActions = createComponent({
           post.numWrongVotes === 1 ? "1 Wrong" : post.numWrongVotes + " Wrongs");
     }
 
+    // Bury votes aren't downvotes or bad in any way, so don't show them, except for
+    // staff, so they can detect misuse.
+    var numBurysText;
+    if (isStaff(user) && post.numBuryVotes && !isPageBody) {
+      numBurysText = r.a({ className: 'dw-a dw-vote-count' },
+          post.numBuryVotes === 1 ? "1 Bury" : post.numBuryVotes + " Burys");
+    }
+
     var numUnwantedsText;
     if (post.numUnwantedVotes && !isPageBody) {
       numUnwantedsText = r.a({ className: 'dw-a dw-vote-count' },
@@ -1364,6 +1337,7 @@ var PostActions = createComponent({
         editOwnPostButton,
         otherVotesDropdown,
         likeVoteButton,
+        numBurysText,
         numWrongsText,
         numLikesText,
         numUnwantedsText,
