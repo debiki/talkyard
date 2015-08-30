@@ -224,7 +224,7 @@ object RateLimits {
 
   object TogglePage extends RateLimits {
     val key = "TgPg"
-    val what = "Changed the page state"
+    val what = "changed the page state too many times"
     val maxPerFifteenSeconds = 6
     val maxPerFifteenMinutes = 50
     val maxPerDay = 150

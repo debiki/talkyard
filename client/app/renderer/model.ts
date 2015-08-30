@@ -176,6 +176,8 @@ interface Store {
   pageFrozenAtMs?: number;
   //pageDeletedAtMs: number;
   numPosts: number;
+  numPostsRepliesSection: number;
+  numPostsChatSection: number;
   numPostsExclTitle: number;
   isInEmbeddedCommentsIframe: boolean;
   categories: Category[];

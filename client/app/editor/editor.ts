@@ -121,8 +121,13 @@ export var Editor = createComponent({
     else {
       postIds.splice(index, 1);
     }
+    // Don't change post type from flat to something else.
+    var postType = anyPostType;
+    if (postIds.length >= 2 && this.state.anyPostType === PostType.Flat) {
+      postType = PostType.Flat;
+    }
     this.setState({
-      anyPostType: anyPostType,
+      anyPostType: postType,
       replyToPostIds: postIds,
       text: this.state.text ? this.state.text : this.state.draft
     });
@@ -320,6 +325,8 @@ export var Editor = createComponent({
 
     var doingWhatInfo;
     var editingPostId = this.state.editingPostId;
+    var replyToPostIds = this.state.replyToPostIds;
+    var isChatComment = replyToPostIds.length === 1 && replyToPostIds[0] === NoPostId;
     if (_.isNumber(editingPostId)) {
       doingWhatInfo =
         r.div({},
@@ -331,15 +338,19 @@ export var Editor = createComponent({
     else if (this.state.newForumPageRole) {
       doingWhatInfo = r.div({}, 'New topic title and text:');
     }
-    else if (this.state.replyToPostIds.length === 0) {
+    else if (replyToPostIds.length === 0) {
       doingWhatInfo =
         r.div({}, 'Please select one or more posts to reply to.');
     }
-    else if (this.state.replyToPostIds.length > 0) {
+    else if (isChatComment) {
+      doingWhatInfo =
+        r.div({}, "New comment:");
+    }
+    else if (replyToPostIds.length > 0) {
       doingWhatInfo =
         r.div({},
           'Replying to ',
-          this.state.replyToPostIds.map((postId, index) => {
+          replyToPostIds.map((postId, index) => {
             var anyAnd = index > 0 ? ' and ' : '';
             return (
               r.span({ key: postId },
@@ -353,8 +364,8 @@ export var Editor = createComponent({
     if (_.isNumber(this.state.editingPostId)) {
       saveButtonTitle = 'Save edits';
     }
-    else if (this.state.replyToPostIds.length) {
-      if (state.replyToPostIds.length === 1 && state.replyToPostIds[0] === NoPostId) {
+    else if (replyToPostIds.length) {
+      if (isChatComment) {
         saveButtonTitle = "Post comment";
       }
       else {

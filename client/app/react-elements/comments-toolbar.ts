@@ -78,14 +78,14 @@ export var CommentsToolbar = createComponent({
         r.button({ className: 'dw-cmts-tlbr-open', onClick: this.onToggleDetailsClick },
           r.span({ className: (ui.showDetails ? 'icon-up-open' : 'icon-down-open') }))
 
-    var numReplies = store.numPostsExclTitle;
-    if (!store.isInEmbeddedCommentsIframe) numReplies -= 1;
+    var nameLoginBtns = store.isInEmbeddedCommentsIframe ?
+        r.li({}, NameLoginBtns({})) : null;
 
     var summaryElem =
       r.div({ className: 'dw-cmts-tlbr-head' },
           r.ul({ className: 'dw-cmts-tlbr-summary' },
-              r.li({ className: 'dw-cmts-count' }, numReplies + ' replies'),
-              r.li({}, NameLoginBtns({})),
+              r.li({ className: 'dw-cmts-count' }, store.numPostsRepliesSection + " replies"),
+              nameLoginBtns,
               r.li({}, notfLevelElem)),
           toggleDetailsBtn);
 

@@ -331,9 +331,16 @@ function updatePost(post: Post, isCollapsing?: boolean) {
     post.summarize = oldVersion.summarize;
   }
   else if (!oldVersion) {
+    // Hmm, subtract instead, if oldVersion and isDeleted(post). Fix later...
     store.numPosts += 1;
     if (post.postId !== TitleId) {
       store.numPostsExclTitle += 1;
+    }
+    if (post.postType === PostType.Flat) {
+      store.numPostsChatSection += 1;
+    }
+    else if (post.postId !== TitleId && post.postId !== BodyPostId) {
+      store.numPostsRepliesSection += 1;
     }
   }
 

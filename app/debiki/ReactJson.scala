@@ -105,6 +105,8 @@ object ReactJson {
       "pageRole" -> JsNumber(pageReq.thePageRole.toInt),
       "pagePath" -> JsString(pageReq.pagePath.value),
       "numPosts" -> JsNumber(0),
+      "numPostsRepliesSection" -> JsNumber(0),
+      "numPostsChatSection" -> JsNumber(0),
       "numPostsExclTitle" -> JsNumber(0),
       "isInEmbeddedCommentsIframe" -> JsBoolean(false),
       "categories" -> JsArray(),
@@ -133,10 +135,21 @@ object ReactJson {
     val page = PageDao(pageReq.thePageId, transaction)
     val pageParts = page.parts
     pageParts.loadAllPosts()
+
+    var numPosts = 0
+    var numPostsRepliesSection = 0
+    var numPostsChatSection = 0
+
     var allPostsJson = pageParts.allPosts filter { post =>
       !post.deletedStatus.isDeleted || (
         post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.id))
     } map { post: Post =>
+      numPosts += 1
+      if (post.tyype == PostType.Flat)
+        numPostsChatSection += 1
+      else if (!post.isOrigPost && !post.isTitle)
+        numPostsRepliesSection += 1
+
           // Ooops two other Nashorn JSON parser bugs, happen in 'dist' mode only:
           // 1. java.lang.ArrayIndexOutOfBoundsException: Array index out of range: 84
           // 2. The 1 and 2 etc items in:  { 1: ..., 2: ..., 0: ...}
@@ -149,7 +162,7 @@ object ReactJson {
           // Also remove in in ReactRenderer and debikiScripts.scala.html, see [64KEWF2].
       ("_" + post.id.toString) -> postToJsonImpl(post, page, pageReq.ctime)
     }
-    val numPosts = allPostsJson.length
+
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
     if (page.role == PageRole.EmbeddedComments) {
@@ -207,6 +220,8 @@ object ReactJson {
       "pageFrozenAtMs" -> JsLongOrNull(page.meta.frozenAt.map(_.getTime)),
       //"pageDeletedAtMs" -> ...
       "numPosts" -> numPosts,
+      "numPostsRepliesSection" -> numPostsRepliesSection,
+      "numPostsChatSection" -> numPostsChatSection,
       "numPostsExclTitle" -> numPostsExclTitle,
       "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),
       "categories" -> categoriesJson(pageReq),

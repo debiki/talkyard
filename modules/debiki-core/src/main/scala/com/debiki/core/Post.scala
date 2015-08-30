@@ -175,6 +175,7 @@ case class Post(
   require(parentId != Some(id), "DwE5BK4")
   require(!multireplyPostIds.contains(id), "DwE4kWW2")
   require(multireplyPostIds.size != 1, "DwE2KFE7") // size 1 = does not reply to many people
+  require(multireplyPostIds.isEmpty || parentId.isDefined || isFlat, "DwE5GKF2")
 
   require(lastEditedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE7KEF3")
   require(lastEditedAt.isEmpty == lastEditedById.isEmpty, "DwE0GKW2")
@@ -241,9 +242,11 @@ case class Post(
   require(numTimesRead >= 0, "DwE2ZfMI3")
 
   def isReply = PageParts.isReply(id)
+  def isTitle = id == PageParts.TitleId
   def isOrigPost = id == PageParts.BodyId
   def isOrigPostReply = PageParts.isReply(id) && parentId == Some(PageParts.BodyId)
   def isMultireply = multireplyPostIds.nonEmpty
+  def isFlat = tyype == PostType.Flat
   def isHidden = hiddenAt.isDefined
   def isDeleted = deletedStatus.isDeleted
   def isSomeVersionApproved = approvedVersion.isDefined
@@ -450,7 +453,7 @@ object Post {
         htmlSanitized: String,
         approvedById: Option[UserId]): Post = {
 
-    require(multireplyPostIds.isEmpty || parent.isDefined, "DwE4KFK28")
+    require(multireplyPostIds.isEmpty || parent.isDefined || postType == PostType.Flat, "DwE4KFK28")
 
     val currentSourcePatch: Option[String] =
       if (approvedById.isDefined) None

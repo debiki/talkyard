@@ -175,13 +175,16 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
     if (this.state.currentVisitedPostIndex <= 0 && this.state.hideIfTotallyBack)
       return null;
 
+    var backHelp = "Scroll back to your previous position on this page";
+    var clearHelp = "Clear all scroll-back history on this page";
+
     var scrollBackButton =
-          Button({ className: 'dw-scrollback', onClick: this.goBack },
+          Button({ className: 'dw-scrollback', onClick: this.goBack, title: backHelp },
               r.span({ className: 'icon-down-dir' },
-                "Scroll ", r.span({ style: { fontWeight: 'bold' }}, "B"), "ack (" +
+                r.span({ style: { fontWeight: 'bold' }}, "B"), "ack (" +
                     this.state.currentVisitedPostIndex + ")"));
     var clearScrollBackButton =
-          Button({ className: 'dw-clear-scroll', onClick: this.clearBackList },
+          Button({ className: 'dw-clear-scroll', onClick: this.clearBackList, title: clearHelp },
               r.span({ className: ' icon-cancel-circled' }));
     return (
       r.span({}, clearScrollBackButton, scrollBackButton));

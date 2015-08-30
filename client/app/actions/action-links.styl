@@ -69,8 +69,18 @@
   .dw-a-reopen
     margin-left: 10px;
 
-.dw-ar-t > .dw-p-as > .dw-a-reply
+.DW.DW .dw-ar-t > .dw-p-as > .dw-a-reply
   font-weight: bold;
+  color: hsl(0, 0%, 15%);
+  padding: 8px 17px 8px 13px !important;
+  top: 4px;
+  position: relative;
+
+.DW.DW .dw-ar-t > .dw-p-as > .dw-a-reply,
+.dw-chat-as .dw-a-reply
+  background-color: #f2f2f2;
+  &:hover
+    background: hsl(210, 40%, 90%) !important;
 
 .dw-a
   text-decoration: none !important

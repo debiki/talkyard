@@ -37,6 +37,7 @@ module boo {
 };
 //------------------------------------------------------------------------------
 
+var NoPostId = -1; // also in editor.ts
 var MaxGuestId = -2; // place where?
 function isGuest(user: CompleteUser) {
   return user.id <= MaxGuestId;
@@ -449,14 +450,21 @@ var RootPostAndComments = createComponent({
           r.ol({ className: 'dw-res dw-singlereplies' },
             threadedChildren)),
 
-        r.div({ className: 'dw-chat-title', id: 'dw-chat' }, "Chat and status updates"),
+        r.div({ className: 'dw-chat-title', id: 'dw-chat' }, "Chat (" + store.numPostsChatSection +
+            " comments)"),
         r.div({ className: 'dw-chat dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
             flatComments)),
 
         r.div({ className: 'dw-chat-as' },
-          r.a({ className: 'dw-a dw-a-reply icon-comment-empty', onClick: this.onChatReplyClick },
-            " Add comment"))));
+          r.a({ className: 'dw-a dw-a-reply icon-comment-empty', onClick: this.onChatReplyClick,
+              title: "Add a chat comment if you want to talk lightly and casually " +
+                "with others about this topic.\nHowever, if you want to reply to the " +
+                "Original Post (at the top of the page), then instead click Reply just below " +
+                "that post." },
+            " Add chat comment")),
+
+        r.div({ id: 'dw-the-end', style: { clear: 'both' } })));
   },
 });
 
@@ -789,17 +797,27 @@ var ReplyReceivers = createComponent({
       multireplyClass = '';
       repliedToPostIds = [thisPost.parentId];
     }
-    var receivers = repliedToPostIds.map((repliedToPostId, index) => {
-      var post = this.props.allPosts[repliedToPostId];
-      if (!post)
-        return r.i({}, '?someone unknown?');
-
+    var receivers = [];
+    for (var index = 0; index < repliedToPostIds.length; ++index) {
+      var repliedToId = repliedToPostIds[index];
+      if (repliedToId === NoPostId) {
+        // This was a reply to the whole page, happens if one clicks the "Add comment"
+        // button in the chat section, and then replies to someone too.
+        continue;
+      }
+      var post = this.props.allPosts[repliedToId];
+      if (!post) {
+        receivers.push(r.i({ key: repliedToId }, 'Unknown [DwE4KFYW2]'));
+        continue;
+      }
       var link =
         r.a({ href: '#post-' + post.postId, className: 'dw-rr', key: post.postId },
           post.authorUsername || post.authorFullName);
-
-      return index === 0 ? link : r.span({ key: post.postId }, ' and', link);
-    });
+      if (receivers.length) {
+        link = r.span({ key: post.postId }, ' and', link);
+      }
+      receivers.push(link);
+    }
     var elem = this.props.comma ? 'span' : 'div';
     return (
       r[elem]({ className: 'dw-rrs' + multireplyClass }, // rrs = reply receivers
@@ -938,7 +956,7 @@ var PostHeader = createComponent({
     // For flat replies, show "In response to" here inside the header instead,
     // rather than above the header — that looks better.
     var inReplyTo;
-    if (!this.props.abbreviate && isFlat && post.parentId) {
+    if (!this.props.abbreviate && isFlat && (post.parentId || post.multireplyPostIds.length)) {
       inReplyTo = ReplyReceivers({ post: post, allPosts: this.props.allPosts, comma: true });
     }
 

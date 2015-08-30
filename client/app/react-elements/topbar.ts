@@ -131,7 +131,7 @@ export var TopBar = createComponent({
 
   goToEnd: function() {
     debiki2.postnavigation.addVisitedPosition();
-    $('html, body').animate({ 'scrollTop': $(document).height(), 'scrollLeft': 0 }, 500, 'swing');
+    $('#dw-the-end')['dwScrollIntoView']({ marginTop: 60, marginBottom: 30 });
   },
 
   render: function() {
@@ -146,10 +146,20 @@ export var TopBar = createComponent({
 
     var goToButtons;
     if (this.state.fixed && pageRole !== PageRole.HomePage && pageRole !== PageRole.Forum) {
-      var goToTop = Button({ className: 'dw-goto', onClick: this.goToTop }, "Top");
-      var goToReplies = Button({ className: 'dw-goto', onClick: this.goToReplies }, "Replies");
-      var goToChat = Button({ className: 'dw-goto', onClick: this.goToChat }, "Chat");
-      var goToEnd = Button({ className: 'dw-goto', onClick: this.goToEnd }, "End");
+      var topHelp = "Go to the top of the page";
+      var repliesHelp = "Go to the replies section. There are " + store.numPostsRepliesSection +
+        " replies."
+      var chatHelp = "Go to the chat section. There are " + store.numPostsChatSection +
+        " comments.";
+      var endHelp = "Go to the bottom of the page";
+
+      var goToTop = Button({ className: 'dw-goto', onClick: this.goToTop, title: topHelp }, "Top");
+      var goToReplies = Button({ className: 'dw-goto', onClick: this.goToReplies,
+            title: repliesHelp }, "Replies (" + store.numPostsRepliesSection + ")");
+      var goToChat = Button({ className: 'dw-goto', onClick: this.goToChat,
+            title: chatHelp }, "Chat (" + store.numPostsChatSection + ")");
+      var goToEnd = Button({ className: 'dw-goto', onClick: this.goToEnd, title: endHelp }, "End");
+
       goToButtons = r.span({ className: 'dw-goto-btns' },
           goToTop, goToReplies, goToChat, goToEnd, debiki2.postnavigation.PostNavigation());
     }
