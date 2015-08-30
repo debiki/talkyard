@@ -26,12 +26,19 @@
 
   marginTop = 20px
 
+  .form-group
+    margin-bottom: 0;
+
   li
     margin-left: 0
 
   .dw-main-category-dropdown
     float: left
     margin: marginTop 15px 0 0
+    @media (max-width: 801px)
+      margin-right: 8px
+    @media (max-width: 651px)
+      margin-right: 5px
 
     .dropdown-toggle
       margin 0
@@ -39,6 +46,9 @@
 
     a
       cursor: pointer
+
+  .dw-sort-order
+    float: left
 
   .nav
     float: left
@@ -48,17 +58,22 @@
       border: none;
       box-shadow: none;
 
+      min-width: 70px;
       margin-top: marginTop
       padding-left: 15px;
       padding-right: 15px;
-      min-width: 70px;
+      @media (max-width: 801px)
+        padding-left: 12px;
+        padding-right: 12px;
 
   .dw-filter
-    float: right;
+    float: left;
     max-width: 300px;
-    margin-right: 20px;
-    //.dw-active a
-    //  font-weight: bold;
+    margin-left: 10px;
+    @media (max-width: 801px)
+      margin-left: 8px
+    @media (max-width: 651px)
+      margin-left: 5px
 
   .dw-filter select,
   button
@@ -72,6 +87,22 @@
   button,
   span
     color: hsl(0, 0%, 13%);
+
+  @media (max-width: 801px)
+    select.form-control,
+    .btn
+      font-size: 13px;
+
+    .dw-forum-actionbar .nav button
+      min-width: 50px;
+      padding-left: 12px;
+      padding-right: 12px;
+
+  @media (max-width: 651px)
+    .dw-forum-actionbar .nav button
+      min-width: 40px;
+      padding-left: 8px;
+      padding-right: 8px;
 
 
 // Topics

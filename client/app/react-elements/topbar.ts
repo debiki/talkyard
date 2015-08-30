@@ -221,8 +221,6 @@ export var TopBar = createComponent({
 
     var topbar =
       r.div({ id: 'dw-react-topbar', className: 'clearfix' },
-        pageTitle,
-        goToButtons,
         r.div({ id: 'dw-topbar-btns' },
           loggedInAs,
           loginButton,
@@ -231,7 +229,9 @@ export var TopBar = createComponent({
           toolsButton,
           searchButton,
           menuButton),
-        searchForm);
+        searchForm,
+        pageTitle,
+        goToButtons);
 
     var placeholder;
     var fixItClass;

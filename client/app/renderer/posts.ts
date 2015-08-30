@@ -1398,7 +1398,7 @@ function authorIsGuest(post) {
 function makePageClosedTooltipText(pageRole: PageRole) {
   switch (pageRole) {
     case PageRole.Question:
-      return "This question or problem has been closed without any accepted answer.";
+      return "This question has been closed without any accepted answer.";
     case PageRole.ToDo:
       return "This To-Do has been closed. It probably won't be done or fixed.";
     default:
@@ -1408,9 +1408,7 @@ function makePageClosedTooltipText(pageRole: PageRole) {
 
 
 function makeQuestionTooltipText(isAnswered) {
-  return (isAnswered
-      ? "This is a solved question or problem"
-      : "This is an unsolved question or problem");
+  return isAnswered ? "This is a solved question" : "This is an unsolved question";
 }
 
 

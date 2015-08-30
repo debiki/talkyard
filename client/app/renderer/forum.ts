@@ -20,6 +20,7 @@
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../editor/editor.ts" />
+/// <reference path="../utils/window-zoom-resize-mixin.ts" />
 /// <reference path="../react-elements/topbar.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../ServerApi.ts" />
@@ -100,10 +101,20 @@ var ForumComponent = React.createClass({
 
 
 var CategoriesAndTopics = createComponent({
-  mixins: [RouterNavigationMixin, RouterStateMixin],
+  mixins: [RouterNavigationMixin, RouterStateMixin, utils.WindowZoomResizeMixin],
 
   getInitialState: function() {
-    return { topicFilter: 'ShowAll' };
+    return {
+      topicFilter: 'ShowAll',
+      compact: false,
+    };
+  },
+
+  onWindowZoomOrResize: function() {
+    var newCompact = $(window).width() < 801;
+    if (this.state.compact !== newCompact) {
+      this.setState({ compact: newCompact });
+    }
   },
 
   componentWillReceiveProps: function(nextProps) {
@@ -138,6 +149,23 @@ var CategoriesAndTopics = createComponent({
       });
     }
     return activeCategory;
+  },
+
+  switchSortOrder: function(newRouteName: string) {
+    this.transitionTo(newRouteName, this.getParams());
+  },
+
+  getSortOrderName: function(routeName?: string) {
+    if (!routeName) {
+      var routes = this.getRoutes();
+      routeName = routes[routes.length - 1].name;
+    }
+    switch (routeName) {
+      case 'ForumRouteLatest': return "Latest";
+      case 'ForumRouteTop': return "Top";
+      case 'ForumRouteCategories': return "Categories";
+    }
+    console.error("Unknown route [DwE5KFIW2]");
   },
 
   setTopicFilter: function(event) {
@@ -209,12 +237,32 @@ var CategoriesAndTopics = createComponent({
 
     var activeRoute = this.getRoutes()[this.getRoutes().length - 1];
 
+    // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
+    var latestTopCategories;
+    if (this.state.compact) {
+      latestTopCategories =
+        r.div({ className: 'dw-sort-order' },
+          DropdownButton({ title: this.getSortOrderName(), onSelect: this.switchSortOrder },
+            MenuItem({ eventKey: 'ForumRouteLatest' }, this.getSortOrderName('ForumRouteLatest')),
+            MenuItem({ eventKey: 'ForumRouteTop' }, this.getSortOrderName('ForumRouteTop')),
+            MenuItem({ eventKey: 'ForumRouteCategories' },
+              this.getSortOrderName('ForumRouteCategories'))));
+    }
+    else {
+      latestTopCategories =
+          r.ul({ className: 'nav nav-pills dw-sort-order' },
+            NavButton({ routeName: 'ForumRouteLatest' }, 'Latest'),
+            NavButton({ routeName: 'ForumRouteTop' }, 'Top'),
+            NavButton({ routeName: 'ForumRouteCategories' }, 'Categories'));
+    }
+
     // The filter topics select.
     var topicFilter =
         r.div({ className: 'dw-filter' },
           Input({ type: 'select', ref: 'topicFilterInput', onChange: this.setTopicFilter },
             r.option({ value: 'ShowAll' }, "Show all"),
-            r.option({ value: 'ShowOpenQuestionsTodos' }, "Show open questions and todo:s")));
+            r.option({ value: 'ShowOpenQuestionsTodos' }, "Show waiting")));
+                                                      // or "Questions and todos"?
 
     /* A filter dropdown and search box instead of the <select> above:
     var makeFilterItemProps = (key: string) => {
@@ -260,14 +308,11 @@ var CategoriesAndTopics = createComponent({
       r.div({},
         r.div({ className: 'dw-forum-actionbar clearfix' },
           categoriesDropdown,
-          r.ul({ className: 'nav nav-pills' },
-            NavButton({ routeName: 'ForumRouteLatest' }, 'Latest'),
-            NavButton({ routeName: 'ForumRouteTop' }, 'Top'),
-            NavButton({ routeName: 'ForumRouteCategories' }, 'Categories')),
+          latestTopCategories,
+          topicFilter,
           createTopicBtn,
           createCategoryBtn,
-          editCategoryBtn,
-          topicFilter),
+          editCategoryBtn),
         RouteHandler(viewProps)));
   }
 });
@@ -344,6 +389,7 @@ var ForumTopicListComponent = React.createClass({
     orderOffset.topicFilter = nextProps.topicFilter;
     if (isNewView) {
       this.setState({
+        minHeight: $(this.getDOMNode()).height(),
         topics: null,
         showLoadMoreButton: false
       });
@@ -362,6 +408,7 @@ var ForumTopicListComponent = React.createClass({
       // `topics` includes at least the last old topic twice.
       topics = _.uniq(topics, 'pageId');
       this.setState({
+        minHeight: null,
         isLoading: false,
         topics: topics,
         showLoadMoreButton: newlyLoadedTopics.length >= NumNewTopicsPerRequest
@@ -393,8 +440,13 @@ var ForumTopicListComponent = React.createClass({
 
   render: function() {
     if (!this.state.topics) {
+      // The min height preserves scrollTop, even though the topic list becomes empty
+      // for a short while (which would otherwise reduce the windows height which
+      // in turn might reduce scrollTop).
+      // COULD make minHeight work when switching to the Categories view too? But should
+      // then probably scroll the top of the categories list into view.
       // COULD use this.props.topics, used when rendering server side, but for now:
-      return r.p({}, 'Loading...');
+      return r.p({ style: { minHeight: this.state.minHeight } }, 'Loading...');
     }
 
     if (!this.state.topics.length)
@@ -649,7 +701,9 @@ function makeTitle(topic: Topic) {
       answerIcon = r.span({ className: 'icon-info-circled dw-icon-inverted' }, ' ');
       answerCount = r.span({ className: 'dw-qa-ans-count' }, topic.numOrigPostReplies);
       */
-      tooltip += " with " + topic.numOrigPostReplies + " answers";
+      tooltip += " with " + topic.numOrigPostReplies;
+      if (topic.numOrigPostReplies > 1) tooltip += "answers";
+      else tooltip += "answer";
     }
     title = r.span({ title: tooltip }, questionIcon, answerCount, answerIcon, title);
   }

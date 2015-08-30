@@ -331,12 +331,36 @@ body > .container {
 #topbar > .container nav { text-align: right; }
 
 
-@media (min-width: 1200px) {
-}
-
+/* Container width */
 @media (max-width: 980px) {
   .container {
     width: 100%;
   }
 }
+@media (min-width: 980px) {
+  .container {
+    width: 980px;
+  }
+}
+@media (min-width: 1200px) {
+  .container {
+    width: 1170px;
+  }
+}
 
+/* Container padding */
+@media (max-width: 801px) {
+  .container {
+    padding: 0 12px;
+  }
+}
+@media (max-width: 651px) {
+  .container {
+    padding: 0 8px;
+  }
+}
+@media (max-width: 581px) {
+  .container {
+    padding: 0 6px;
+  }
+}
