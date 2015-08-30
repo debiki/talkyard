@@ -320,16 +320,18 @@ export var Sidebar = createComponent({
     var addRecursively = (postIds: number[]) => {
       _.each(postIds, (postId) => {
         var post: Post = store.allPosts[postId];
-        addPost(post);
-        addRecursively(post.childIdsSorted);
+        if (post) {
+          addPost(post);
+          addRecursively(post.childIdsSorted);
+        }
       });
     };
 
     var addPost = (post: Post) => {
-      var postId = post.postId;
       if (isDeleted(post))
         return;
 
+      var postId = post.postId;
       recentComments.push(post);
       if (this.isStarred(postId)) {
         starredComments.push(post);

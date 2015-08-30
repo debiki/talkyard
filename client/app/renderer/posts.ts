@@ -450,11 +450,12 @@ var RootPostAndComments = createComponent({
           r.ol({ className: 'dw-res dw-singlereplies' },
             threadedChildren)),
 
-        r.div({ className: 'dw-chat-title', id: 'dw-chat' }, "Chat (" + store.numPostsChatSection +
-            " comments)"),
-        r.div({ className: 'dw-chat dw-single-and-multireplies' },
-          r.ol({ className: 'dw-res dw-singlereplies' },
-            flatComments)),
+        r.div({ className: 'dw-chat-title', id: 'dw-chat' },
+          store.numPostsChatSection + " chat comments"),
+        r.div({ className: 'dw-vt' },
+          r.div({ className: 'dw-chat dw-single-and-multireplies' },
+            r.ol({ className: 'dw-res dw-singlereplies' },
+              flatComments))),
 
         r.div({ className: 'dw-chat-as' },
           r.a({ className: 'dw-a dw-a-reply icon-comment-empty', onClick: this.onChatReplyClick,

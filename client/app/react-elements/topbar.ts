@@ -51,11 +51,22 @@ export var TopBar = createComponent({
   },
 
   componentDidMount: function() {
+    keymaster('1', this.goToTop);
+    keymaster('2', this.goToReplies);
+    keymaster('3', this.goToChat);
+    keymaster('4', this.goToEnd);
     var rect = this.getDOMNode().getBoundingClientRect();
     this.setState({
       initialOffsetTop: rect.top + window.pageYOffset,
       initialHeight: rect.bottom - rect.top,
     });
+  },
+
+  componentWillUnmount: function() {
+    keymaster.unbind('1', 'all');
+    keymaster.unbind('2', 'all');
+    keymaster.unbind('3', 'all');
+    keymaster.unbind('4', 'all');
   },
 
   onChange: function() {
@@ -121,7 +132,7 @@ export var TopBar = createComponent({
 
   goToReplies: function() {
     debiki2.postnavigation.addVisitedPosition();
-    $('#dw-cmts-tlbr')['dwScrollIntoView']({ marginTop: 60, marginBottom: 9999 });
+    $('.dw-depth-0 > .dw-p-as')['dwScrollIntoView']({ marginTop: 48, marginBottom: 9999 });
   },
 
   goToChat: function() {
@@ -146,12 +157,12 @@ export var TopBar = createComponent({
 
     var goToButtons;
     if (this.state.fixed && pageRole !== PageRole.HomePage && pageRole !== PageRole.Forum) {
-      var topHelp = "Go to the top of the page";
+      var topHelp = "Go to the top of the page. Shortcut: 1 (on the keyboard)";
       var repliesHelp = "Go to the replies section. There are " + store.numPostsRepliesSection +
-        " replies."
+        " replies. Shortcut: 2"
       var chatHelp = "Go to the chat section. There are " + store.numPostsChatSection +
-        " comments.";
-      var endHelp = "Go to the bottom of the page";
+        " comments. Shortcut: 3";
+      var endHelp = "Go to the bottom of the page. Shortcut: 4";
 
       var goToTop = Button({ className: 'dw-goto', onClick: this.goToTop, title: topHelp }, "Top");
       var goToReplies = Button({ className: 'dw-goto', onClick: this.goToReplies,
@@ -249,7 +260,7 @@ var SearchForm = createComponent({
   },
 
   componentWillUnmount: function() {
-    keymaster.unbind('escape', this.props.onClose);
+    keymaster.unbind('escape', 'all');
   },
 
   search: function() {

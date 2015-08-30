@@ -29,9 +29,9 @@ var r = React.DOM;
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = React.createFactory(ReactBootstrap.Button);
 
-export var addVisitedPosts: (currentPostId: number, nextPostId: number) => void = null;
-export var addVisitedPositionAndPost: (nextPostId: number) => void = null;
-export var addVisitedPosition: () => void = null;
+export var addVisitedPosts: (currentPostId: number, nextPostId: number) => void = _.noop;
+export var addVisitedPositionAndPost: (nextPostId: number) => void = _.noop;
+export var addVisitedPosition: () => void = _.noop;
 
 
 export var PostNavigation = debiki2.utils.createClassAndFactory({
@@ -81,7 +81,7 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
     return this.state.currentVisitedPostIndex >= 1;
   },
 
-  canGoForward: function() {
+  canPerhapsGoForward: function() {
     return this.state.currentVisitedPostIndex >= 0 &&
         this.state.currentVisitedPostIndex < this.state.visitedPosts.length - 1;
   },
@@ -96,11 +96,11 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
   },
 
   componentWillUnmount: function() {
-    addVisitedPosts = null;
-    addVisitedPositionAndPost = null;
-    addVisitedPosition = null;
-    keymaster.unbind('b', this.goBack);
-    keymaster.unbind('f', this.goForward);
+    addVisitedPosts = _.noop;
+    addVisitedPositionAndPost = _.noop;
+    addVisitedPosition = _.noop;
+    keymaster.unbind('b', 'all');
+    keymaster.unbind('f', 'all');
     window.removeEventListener('scroll', this.hideIfCloseToTop, false);
   },
 
@@ -151,12 +151,8 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
 
   // Only invokable via the 'F' key — I rarely go forwards, and a button makes the UI to cluttered.
   goForward: function() {
-    if (!this.canGoForward()) return;
+    if (!this.canPerhapsGoForward()) return;
     var forwPost = this.state.visitedPosts[this.state.currentVisitedPostIndex + 1];
-    this.setState({
-      currentVisitedPostIndex: this.state.currentVisitedPostIndex + 1,
-      hideIfTotallyBack: false,
-    });
     if (forwPost.postId) {
       ReactActions.loadAndShowPost(forwPost.postId);
     }
@@ -167,8 +163,14 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
       }, 'slow', 'swing');
     }
     else {
-      throw new Error('DwE49dFK2');
+      // Ignore. Empty objects are added when the user uses the Top/Replies/Chat/End
+      // naviation buttons.
+      return;
     }
+    this.setState({
+      currentVisitedPostIndex: this.state.currentVisitedPostIndex + 1,
+      hideIfTotallyBack: false,
+    });
   },
 
   render: function() {
