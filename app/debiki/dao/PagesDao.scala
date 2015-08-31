@@ -42,7 +42,7 @@ trait PagesDao {
   self: SiteDao =>
 
 
-  def createPage(pageRole: PageRole, pageStatus: PageStatus, anyParentPageId: Option[PageId],
+  def createPage(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
         anyFolder: Option[String], anySlug: Option[String], titleSource: String, bodySource: String,
         showId: Boolean, authorId: UserId, browserIdData: BrowserIdData)
         : PagePath = {
@@ -81,13 +81,14 @@ trait PagesDao {
         }
         else {
           if (pageRole != PageRole.Discussion && pageRole != PageRole.Question &&
-              pageRole != PageRole.MindMap)
+              pageRole != PageRole.MindMap)  //xx more topic types
             throwForbidden("DwE5KEPY2", s"Bad forum topic page type: $pageRole")
 
-          anyParentPageId match {
+          anyCategoryId match {
             case None =>
-              throwForbidden("DwE8GKE4", "No parent forum or category specified")
+              throwForbidden("DwE8GKE4", "No category specified")
             case Some(parentId) =>
+              die("63047490", "categories") /*
               val parentMeta = loadPageMeta(parentId) getOrElse throwNotFound(
                 "DwE78BI21", s"Parent forum or category does not exist, id: '$parentId'")
 
@@ -99,15 +100,11 @@ trait PagesDao {
               // SECURITY COULD analyze the author's trust level and past actions, and
               // based on that, approve, reject or review later.
               SystemUserId
+              */
           }
         }
 
-      val folder = anyFolder getOrElse {
-        val anyParentPath = anyParentPageId flatMap { id =>
-          transaction.loadPagePath(id)
-        }
-        anyParentPath.map(_.folder) getOrElse "/"
-      }
+      val folder = anyFolder getOrElse "/"
 
       val pagePath = PagePath(siteId, folder = folder, pageId = Some(pageId),
         showId = showId, pageSlug = pageSlug)
@@ -140,7 +137,7 @@ trait PagesDao {
         else (None, None)
       val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.currentTime,
         pinOrder = pinOrder, pinWhere = pinWhere,
-        parentPageId = anyParentPageId, url = None, publishDirectly = true)
+        categoryId = anyCategoryId, url = None, publishDirectly = true)
 
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
@@ -174,14 +171,17 @@ trait PagesDao {
     * And add "faceted search" fields to forum topics: forum id, category id,
     * sub cat id, so one can directly find all topics in a certain category.
     */
-  def createForumCategory(parentId: PageId, anySlug: Option[String],
+  def createForumCategory(parentCategoryId: CategoryId, anySlug: Option[String],
         titleSource: String, descriptionSource: String,
         authorId: UserId, browserIdData: BrowserIdData): CreateCategoryResult = {
+
+    die("DwE4023", "categories")
 
     // (We currently don't use PageRole.About here, but later on when categories have
     // been moved to a separate table, I'll remove PageRole.Category and create an about
     // page here with role About instead.)
-    val categoryPagePath = createPage(PageRole.Category, PageStatus.Published, Some(parentId),
+    val categoryPagePath = createPage(  //xx don't use createPage
+      PageRole.Category, PageStatus.Published, Some(parentCategoryId),
       anyFolder = None, anySlug = anySlug, titleSource = titleSource,
       bodySource = descriptionSource, showId = true, authorId = authorId,
       browserIdData)
@@ -344,11 +344,11 @@ trait CachingPagesDao extends PagesDao {
 
 
   override def createPage(pageRole: PageRole, pageStatus: PageStatus,
-        anyParentPageId: Option[PageId], anyFolder: Option[String], anySlug: Option[String],
+        anyCategoryId: Option[CategoryId], anyFolder: Option[String], anySlug: Option[String],
         titleSource: String, bodySource: String,
         showId: Boolean, authorId: UserId, browserIdData: BrowserIdData)
         : PagePath = {
-    val pagePath = super.createPage(pageRole, pageStatus, anyParentPageId,
+    val pagePath = super.createPage(pageRole, pageStatus, anyCategoryId,
       anyFolder, anySlug, titleSource, bodySource, showId, authorId, browserIdData)
     firePageCreated(pagePath)
     pagePath

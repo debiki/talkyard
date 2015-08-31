@@ -119,7 +119,7 @@ object ViewPageController extends mvc.Controller {
       pageRole = pageRole,
       authorId = SystemUserId,
       creationDati = new ju.Date,
-      parentPageId = None,
+      categoryId = None,
       publishDirectly = true)
 
     new requests.DummyPageRequest(

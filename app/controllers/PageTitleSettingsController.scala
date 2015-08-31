@@ -42,7 +42,7 @@ object PageTitleSettingsController extends mvc.Controller {
 
     val pageId = (request.body \ "pageId").as[PageId]
     val newTitle = (request.body \ "newTitle").as[String].trim
-    val anyNewParentId = (request.body \ "category").asOpt[PageId]
+    val anyNewCategoryId = (request.body \ "category").asOpt[CategoryId] //xx check JS ok?
     val anyNewRoleInt = (request.body \ "pageRole").asOpt[Int]
     val anyLayoutString = (request.body \ "layout").asOpt[String]
     val anyFolder = (request.body \ "folder").asOpt[String] map { folder =>
@@ -102,7 +102,7 @@ object PageTitleSettingsController extends mvc.Controller {
     val oldAncestorIdsParentFirst = request.dao.loadAncestorIdsParentFirst(pageId)
     val newMeta = oldMeta.copy(
       pageRole = anyNewRole.getOrElse(oldMeta.pageRole),
-      parentPageId = anyNewParentId.orElse(oldMeta.parentPageId))
+      categoryId = anyNewCategoryId.orElse(oldMeta.categoryId))
     if (newMeta != oldMeta) {
       request.dao.updatePageMeta(newMeta, old = oldMeta)
     }

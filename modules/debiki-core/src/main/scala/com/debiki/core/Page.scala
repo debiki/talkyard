@@ -30,7 +30,7 @@ trait Page {
 
   def id: PageId
   def siteId: SiteId
-  def parentPageId: Option[PageId] = meta.parentPageId
+  def categoryId: Option[CategoryId] = meta.categoryId
   def role: PageRole = meta.pageRole
   def meta: PageMeta
   def path: PagePath
@@ -57,12 +57,11 @@ object Page {
   */
 case class PagePathAndMeta(
   path: PagePath,
-  ancestorIdsParentFirst: List[PageId],
   meta: PageMeta) {
 
   def id = meta.pageId
   def pageId = meta.pageId
-  def parentPageId = meta.parentPageId
+  def categoryId = meta.categoryId
   def pageRole = meta.pageRole
 
   requireMetaMatchesPaths(this)
@@ -75,14 +74,9 @@ object requireMetaMatchesPaths {
   def apply(page: {
     def meta: PageMeta
     def path: PagePath
-    def ancestorIdsParentFirst: List[PageId]
   }) {
     if (page.path.pageId.isDefined) require(page.meta.pageId == page.path.pageId.get)
     else require(page.meta.pageId == "?")
-
-    require(page.ancestorIdsParentFirst.headOption == page.meta.parentPageId,
-      o"""meta.parentPageId != ancestorIdsParentFirst.head:
-    ${page.meta.parentPageId} and ${page.ancestorIdsParentFirst}, page id: ${page.meta.pageId}""")
   }
 }
 
@@ -97,7 +91,7 @@ object PageMeta {
         creationDati: ju.Date = new ju.Date,
         pinOrder: Option[Int] = None,
         pinWhere: Option[PinPageWhere] = None,
-        parentPageId: Option[String] = None,
+        categoryId: Option[CategoryId] = None,
         url: Option[String] = None,
         publishDirectly: Boolean = false) =
     PageMeta(
@@ -106,7 +100,7 @@ object PageMeta {
       createdAt = creationDati,
       updatedAt = creationDati,
       publishedAt = if (publishDirectly) Some(creationDati) else None,
-      parentPageId = parentPageId,
+      categoryId = categoryId,
       embeddingPageUrl = url,
       authorId = authorId,
       pinOrder = pinOrder,
@@ -131,7 +125,7 @@ object PageMeta {
   * @param updatedAt
   * @param publishedAt
   * @param bumpedAt
-  * @param parentPageId
+  * @param categoryId
   * @param embeddingPageUrl The canonical URL to the page, useful when linking to the page.
   *            Currently only needed and used for embedded comments, and then it
   *            is the URL of the embedding page.
@@ -160,7 +154,7 @@ case class PageMeta(
   publishedAt: Option[ju.Date] = None,
   bumpedAt: Option[ju.Date] = None,
   lastReplyAt: Option[ju.Date] = None,
-  parentPageId: Option[String] = None,
+  categoryId: Option[CategoryId] = None,
   embeddingPageUrl: Option[String],
   authorId: UserId,
   pinOrder: Option[Int] = None,

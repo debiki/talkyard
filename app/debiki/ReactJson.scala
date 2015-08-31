@@ -204,7 +204,7 @@ object ReactJson {
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
       "pageId" -> pageReq.thePageId,
-      "parentPageId" -> JsStringOrNull(page.meta.parentPageId),
+      "categoryId" -> JsNumberOrNull(page.meta.categoryId), //xx JS
       "forumId" -> JsStringOrNull(anyForumId),
       "ancestorsRootFirst" -> ancestorsJsonRootFirst,
       "pageRole" -> JsNumber(page.role.toInt),
@@ -528,7 +528,7 @@ object ReactJson {
       val categoryName = pageStuff.title
       JsObject(Seq(
         "name" -> JsString(categoryName),
-        "pageId" -> JsString(category.pageId),
+        "pageId" -> JsString(category.pageId), //xx JS
         "slug" -> JsString(controllers.ForumController.categoryNameToSlug(categoryName)),
         "subCategories" -> JsArray()))
     })

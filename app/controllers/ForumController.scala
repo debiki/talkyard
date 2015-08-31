@@ -44,12 +44,12 @@ object ForumController extends mvc.Controller {
 
 
   def createForumCategory = StaffPostJsonAction(maxLength = 10 * 1000) { request =>
-    val parentPageId = (request.body \ "parentPageId").as[PageId]
+    val parentCategoryId = (request.body \ "parentCategoryId").as[CategoryId] //xx JS
     val anySlug = (request.body \ "categorySlug").asOpt[String]
     val titleText = (request.body \ "categoryTitle").as[String]
     val descriptionText = (request.body \ "categoryDescription").as[String]
 
-    val result = request.dao.createForumCategory(parentPageId, anySlug,
+    val result = request.dao.createForumCategory(parentCategoryId, anySlug,
       titleText, descriptionText, authorId = request.theUserId, request.theBrowserIdData)
 
     OkSafeJson(Json.obj(
@@ -134,7 +134,7 @@ object ForumController extends mvc.Controller {
         val topicsSorted = (pinnedTopics ++ notPinned) sortBy { topic =>
           val isPinned = topic.meta.pinWhere.contains(PinPageWhere.Globally) ||
             (topic.meta.isPinned && (
-              topic.meta.parentPageId.contains(categoryId) ||
+              topic.meta.categoryId.contains(categoryId) ||
               topic.id == categoryId)) // hack, will vanish when creating category table [forumcategory]
           if (isPinned) topic.meta.pinOrder.get // 1..100
           else Long.MaxValue - topic.meta.bumpedOrPublishedOrCreatedAt.getTime // much larger
@@ -142,7 +142,7 @@ object ForumController extends mvc.Controller {
         // Remove about-category pages for sub categories (or categories, if listing all cats).
         // Will have to change this once categories have their own table. [forumcategory]
         topicsSorted filterNot { topic =>
-          topic.meta.parentPageId.contains(categoryId) &&
+          topic.meta.categoryId.contains(categoryId) &&
             topic.meta.pageRole == PageRole.Category
         }
       case _ => topics
@@ -232,8 +232,8 @@ object ForumController extends mvc.Controller {
       "pageRole" -> topic.pageRole.toInt,
       "title" -> title,
       "url" -> topic.path.value,
-      "categoryId" -> topic.parentPageId.getOrDie(
-        "DwE49Fk3", s"Topic `${topic.id}', site `${topic.path.siteId}', has no parent page"),
+      "categoryId" -> topic.categoryId.getOrDie(
+        "DwE49Fk3", s"Topic `${topic.id}', site `${topic.path.siteId}', belongs to no category"),
       "pinOrder" -> JsNumberOrNull(topic.meta.pinOrder),
       "pinWhere" -> JsNumberOrNull(topic.meta.pinWhere.map(_.toInt)),
       // loadPageStuff() loads excerps for pinned topics (and categories).

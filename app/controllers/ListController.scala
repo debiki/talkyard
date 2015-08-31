@@ -73,11 +73,11 @@ object ListController extends mvc.Controller {
 
     def renderPageListHtml(pagePathsDetails: Seq[PagePathAndMeta]) =
       <ol>{
-        for (PagePathAndMeta(pagePath, _, details) <- pagePathsDetails) yield {
+        for (PagePathAndMeta(pagePath, details) <- pagePathsDetails) yield {
           <li>
             <a href={pagePath.value}>{pagePath.value}</a>,
             { details.pageRole.toString +
-              details.parentPageId.map(", parent page id: "+ _).getOrElse("") }
+              details.categoryId.map(", category id: "+ _).getOrElse("") }
           </li>
         }
       }</ol>
@@ -133,16 +133,6 @@ object ListController extends mvc.Controller {
   }*/
 
 
-  def listIps(pathIn: PagePath, contentType: DebikiHttp.ContentType) =
-        PageGetAction(pathIn, pageMustExist = false) { pageReq =>
-    Ok
-  }
-
-
-  def jsonForPath(pagePath: PagePath): JsValue =
-    toJson(jsonMapForPath(pagePath))
-
-
   // COULD move to other file, e.g. DebikiJson.scala?
   private def jsonForPathAndMeta(pathAndMeta: PagePathAndMeta): JsValue = {
     var data = jsonMapForPath(pathAndMeta.path)
@@ -151,8 +141,8 @@ object ListController extends mvc.Controller {
     data += "role" -> JsString(pageMeta.pageRole.toString)
     data += "status" -> JsString(pageMeta.status.toString)
 
-    if (pageMeta.parentPageId.isDefined)
-      data += "parentPageId" -> JsString(pageMeta.parentPageId.get)
+    if (pageMeta.categoryId.isDefined)
+      data += "categoryId" -> JsString(pageMeta.categoryId.get.toString)
 
     unimplemented("Loading pagle title, inserting as json. SHOULD.") /*
     if (pageMeta.cachedTitle.isDefined)

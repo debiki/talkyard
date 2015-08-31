@@ -37,7 +37,7 @@ object PageController extends mvc.Controller {
   def createPage = PostJsonAction(RateLimits.CreateTopic, maxLength = 20 * 1000) { request =>
     import request.body
 
-    val anyParentPageId = (body \ "parentPageId").asOpt[PageId]
+    val anyCategoryId = (body \ "categoryId").asOpt[CategoryId]  //xx JS
     val pageRoleInt = (body \ "pageRole").as[Int]
     val pageRole = PageRole.fromInt(pageRoleInt) getOrElse throwBadArgument("DwE3KE04", "pageRole")
     val pageStatusStr = (body \ "pageStatus").as[String]
@@ -48,7 +48,7 @@ object PageController extends mvc.Controller {
     val bodyText = (body \ "pageBody").as[String]
     val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
 
-    val pagePath = request.dao.createPage(pageRole, pageStatus, anyParentPageId, anyFolder,
+    val pagePath = request.dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,
       anySlug, titleText, bodyText, showId, authorId = request.theUserId,
       request.theBrowserIdData)
 

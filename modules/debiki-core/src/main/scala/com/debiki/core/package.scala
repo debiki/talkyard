@@ -30,6 +30,8 @@ package object core {
 
   type PageId = String
 
+  type CategoryId = Int
+
   type SiteId = String
 
   type LoginId = String

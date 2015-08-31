@@ -189,8 +189,6 @@ class PageRequest[A](
 
   def thePageRole : PageRole = thePageMeta.pageRole
 
-  def theParentPageId : Option[String] = thePageMeta.parentPageId
-
   def thePageMeta = pageMeta getOrElse throwNotFound(
     "DwE3ES58", s"No page meta found, page id: $pageId")
 
@@ -198,16 +196,15 @@ class PageRequest[A](
     dao.loadAncestorIdsParentFirst(thePageId)
 
 
-  def thePathAndMeta = PagePathAndMeta(pagePath, ancestorIdsParentFirst_!, thePageMeta)
-
-
   lazy val thePageSettings: Settings = {
     if (pageExists) {
       dao.loadSinglePageSettings(thePageId)
     }
+    /* Now when using categories instead of category pages, should I load settings
+       for the categories somehow? Currently there are none though, so just skip this.
     else if (theParentPageId.isDefined) {
       dao.loadPageTreeSettings(theParentPageId.get)
-    }
+    } */
     else {
       dao.loadWholeSiteSettings()
     }
