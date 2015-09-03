@@ -34,7 +34,6 @@ trait Page {
   def role: PageRole = meta.pageRole
   def meta: PageMeta
   def path: PagePath
-  def ancestorIdsParentFirst: immutable.Seq[PageId]
   def parts: PageParts
 
 }
@@ -181,6 +180,7 @@ case class PageMeta(
   // deletedAt: Option[ju.Date] = None,
   numChildPages: Int = 0) { // <-- DoLater: remove, replace with category table
 
+  require(!pageRole.isSection || categoryId.isDefined, "DwE7KYF2")
   require(!pinOrder.exists(!PageMeta.isOkPinOrder(_)), "DwE4kEYF2")
   require(pinOrder.isEmpty == pinWhere.isEmpty, "DwE36FK2")
   require(numLikes >= 0, "DwE6PKF3")
@@ -266,13 +266,6 @@ object PageRole {
     override def isSection = true
   }
 
-  /** Everything with a forum category as its parent page is a forum topic, unless
-    * it's a ForumCategory itself, then it's a sub category.
-    * DoLater: Remove, instead add a separate categories table. */
-  case object Category extends PageRole(8) {
-    override val isSection = true
-  }
-
   /** About a forum category (Discourse's forum category about topic). Shown as a per
     * category welcome page, and by editing the page body you edit the forum category
     * description. */
@@ -313,7 +306,6 @@ object PageRole {
     case EmbeddedComments.IntValue => EmbeddedComments
     case Blog.IntValue => Blog
     case Forum.IntValue => Forum
-    case Category.IntValue => Category
     case About.IntValue => About
     case Question.IntValue => Question
     case Problem.IntValue => Problem
@@ -406,5 +398,25 @@ case class PagePostId(pageId: PageId, postId: PostId) {
 }
 
 
-case class Category(pageId: String, subCategories: Seq[Category])
+case class Category(
+  id: CategoryId,
+  sectionPageId: PageId,
+  parentId: Option[CategoryId],
+  position: Int,
+  name: String,
+  slug: String,
+  aboutTopicId: Option[PageId],
+  description: Option[String],
+  numTopics: Int,
+  numPosts: Int,
+  newTopicTypes: immutable.Seq[PageRole],
+  createdAt: ju.Date,
+  updatedAt: ju.Date,
+  lockedAt: Option[ju.Date] = None,
+  frozenAt: Option[ju.Date] = None,
+  deletedAt: Option[ju.Date] = None) {
+
+  def isRoot = parentId.isEmpty
+
+}
 

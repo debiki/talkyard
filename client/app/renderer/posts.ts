@@ -121,13 +121,13 @@ var TitleBodyComments = createComponent({
       categories =
         r.ol({ className: 'parent-forums-list' },
           this.props.ancestorsRootFirst.map((ancestor: Ancestor) => {
-            return r.li({ key: ancestor.pageId }, r.a({ href: ancestor.path }, ancestor.title));
+            return r.li({ key: ancestor.categoryId }, r.a({ href: ancestor.path }, ancestor.title));
           }));
     }
 
     var anyAboutCategoryClass;
     var anyAboutCategoryTitle;
-    if (this.props.pageRole === PageRole.Category) {
+    if (this.props.pageRole === PageRole.About) {
       anyAboutCategoryClass = 'dw-about-category';
       anyAboutCategoryTitle =
           r.h2({ className: 'dw-about-cat-ttl-prfx' }, "About category:")
@@ -149,7 +149,7 @@ var TitleBodyComments = createComponent({
     var anyPostHeader = null;
     var anySocialLinks = null;
     if (pageRole === PageRole.HomePage || pageRole === PageRole.Forum ||
-        pageRole === PageRole.Category || // pageRole === PageRole.WikiMainPage ||
+        pageRole === PageRole.About || // pageRole === PageRole.WikiMainPage ||
         pageRole === PageRole.SpecialContent || pageRole === PageRole.Blog ||
         pageRole === PageRole.EmbeddedComments ||
         this.props.rootPostId !== BodyPostId) {
@@ -343,7 +343,7 @@ var RootPostAndComments = createComponent({
     }
 
     var showComments = pageRole !== PageRole.HomePage && pageRole !== PageRole.Forum &&
-        pageRole !== PageRole.Category && pageRole !== PageRole.Blog &&
+        pageRole !== PageRole.Blog &&
         pageRole !== PageRole.SpecialContent; // && pageRole !== PageRole.WikiMainPage
 
     var sanitizedHtml = rootPost.isApproved

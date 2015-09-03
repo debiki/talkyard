@@ -140,7 +140,7 @@ var CategoriesAndTopics = createComponent({
     var activeCategorySlug = this.getParams().categorySlug;
     var activeCategory: any = {
       name: 'All Categories',
-      pageId: this.props.pageId, // this is the forum id
+      id: this.props.categoryId, // the forum root category id
       isForumItself: true,
     };
     if (activeCategorySlug) {
@@ -192,11 +192,13 @@ var CategoriesAndTopics = createComponent({
   }, */
 
   editCategory: function() {
-    location.href = '/-' + this.getActiveCategory().pageId;
+    console.error("Edit category -- unimplemented [DwE4kEWK2]");
+    // location.href = '/-' + this.getActiveCategory().pageId;
   },
 
   createCategory: function() {
-    this.createChildPage(PageRole.Category);
+    console.error("Create category -- unimplemented [DwE4893K2]");
+    // this.createChildPage(PageRole.Category);
   },
 
   createTopic: function() {
@@ -206,7 +208,7 @@ var CategoriesAndTopics = createComponent({
   createChildPage: function(role: PageRole) {
     var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
     d.i.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
-      var parentPageId = this.getActiveCategory().pageId;
+      var parentPageId = this.getActiveCategory().id;
       debiki2.editor.editNewForumPage(parentPageId, role);
     });
   },
@@ -225,7 +227,7 @@ var CategoriesAndTopics = createComponent({
 
     var categoryMenuItems =
         props.categories.map((category: Category) => {
-          return MenuItem({ eventKey: category.slug, key: category.pageId }, category.name);
+          return MenuItem({ eventKey: category.slug, key: category.id }, category.name);
         });
     categoryMenuItems.unshift(
       MenuItem({ eventKey: null, key: -1 }, 'All Categories'));
@@ -375,7 +377,7 @@ var ForumTopicListComponent = React.createClass({
 
   loadTopics: function(nextProps, loadMore) {
     var isNewView =
-        this.props.activeCategory.pageId !== nextProps.activeCategory.pageId ||
+        this.props.activeCategory.id !== nextProps.activeCategory.id ||
         this.props.activeRoute.name !== nextProps.activeRoute.name ||
         this.props.topicFilter !== nextProps.topicFilter;
 
@@ -397,7 +399,7 @@ var ForumTopicListComponent = React.createClass({
       delete orderOffset.time;
       delete orderOffset.numLikes;
     }
-    var categoryId = nextProps.activeCategory.pageId;
+    var categoryId = nextProps.activeCategory.id;
     this.setState({ isLoading: true });
     debiki2.Server.loadForumTopics(categoryId, orderOffset, (newlyLoadedTopics: Topic[]) => {
       if (!this.isMounted())
@@ -541,7 +543,7 @@ var TopicRow = createComponent({
   render: function() {
     var topic: Topic = this.props.topic;
     var category = _.find(this.props.categories, (category: Category) => {
-      return category.pageId === topic.categoryId;
+      return category.id === topic.categoryId;
     });
 
     var feelingsIcons = [];
@@ -577,10 +579,7 @@ var TopicRow = createComponent({
 
     var anyPinIcon = topic.pinWhere ? 'icon-pin' : undefined;
     var showExcerpt = topic.pinWhere === PinPageWhere.Globally ||
-        (topic.pinWhere && (
-            topic.categoryId === this.props.activeCategory.pageId ||
-            topic.pageId === this.props.activeCategory.pageId)); // hack, will vanish when forum
-                                                // categories have their own db table [forumcategory]
+        (topic.pinWhere && topic.categoryId === this.props.activeCategory.id);
     var excerptIfPinned = showExcerpt
         ? r.p({ className: 'dw-p-excerpt' }, topic.excerpt, r.a({ href: topic.url }, 'read more'))
         : null;
@@ -630,7 +629,7 @@ var ForumCategoriesComponent = React.createClass({
       return r.p({}, 'Loading...');
 
     var categoryRows = this.state.categories.map((category: Category) => {
-      return CategoryRow({ category: category, key: category.pageId });
+      return CategoryRow({ category: category, key: category.id });
     });
 
     return (

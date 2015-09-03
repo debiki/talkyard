@@ -105,11 +105,11 @@ interface User {
 
 
 interface Category {
+  id: number;
   name: string;
-  pageId: string;
   slug: string;
-  subCategories: number[];
   description: string;
+  subCategories: number[];
   numTopics: number;
   recentTopics: Topic[];
 }
@@ -120,7 +120,7 @@ interface Topic {
   pageRole: PageRole;
   title: string;
   url: string;
-  categoryId: string;
+  categoryId: number;
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   excerpt?: string;
@@ -160,7 +160,8 @@ interface Store {
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
   pageId: string;
-  parentPageId?: string;
+  parentPageId?: string;  //xx
+  categoryId?: number;
   ancestorsRootFirst?: Ancestor[];
   pageRole: PageRole;
   pagePath: string;
@@ -200,7 +201,7 @@ interface Store {
 
 
 interface Ancestor {
-  pageId: string;
+  categoryId: number;
   title: string;
   path: string;
 }

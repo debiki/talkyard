@@ -192,9 +192,6 @@ class PageRequest[A](
   def thePageMeta = pageMeta getOrElse throwNotFound(
     "DwE3ES58", s"No page meta found, page id: $pageId")
 
-  lazy val ancestorIdsParentFirst_! : List[PageId] =
-    dao.loadAncestorIdsParentFirst(thePageId)
-
 
   lazy val thePageSettings: Settings = {
     if (pageExists) {
@@ -236,7 +233,5 @@ class DummyPageRequest[A](
   request: Request[A]) extends PageRequest[A](
     sid, xsrfToken, browserId, user, pageExists,  pagePath, Some(pageMeta),
     permsOnPage, dao, request) {
-
-  override lazy val ancestorIdsParentFirst_! : List[PageId] = Nil
 
 }

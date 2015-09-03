@@ -56,8 +56,8 @@ function handleLoginInOtherBrowserTab() {
       // Session id example: (parts: hash, user id, name, login time, random value)
       // 'Y1pBlH7vY4JW9A.11.Magnus.1316266102779.15gl0p4xf7'
       var parts = sessionId.split('.');
-      var newUserId = parts[1];
-      if (currentUser.userId !== newUserId) {
+      var newUserIdString = parts[1];
+      if (currentUser.userId !== parseInt(newUserIdString)) {
         // We've logged in as another user in another browser tab.
         debiki2.ReactActions.login();
       }

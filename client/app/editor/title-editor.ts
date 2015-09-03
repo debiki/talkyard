@@ -158,14 +158,14 @@ export var TitleEditor = createComponent({
         : r.a({ className: 'dw-toggle-compl-stuff icon-settings',
             onClick: this.showComplicated }, 'Advanced');
 
-    var isForumOrCategory = pageRole === PageRole.Forum || pageRole === PageRole.Category;
+    var isForumOrAbout = pageRole === PageRole.Forum || pageRole === PageRole.About;
     var selectCategoryInput;
-    if (isForumOrCategory) {
-      // Currently there are no sub categories so categories cannot be moved elsewhere.
+    if (isForumOrAbout) {
+      // About-category pages cannot be moved to other categories.
     }
     else if (this.props.forumId && this.state.categories) {
       var categoryOptions = this.state.categories.map((category: Category) => {
-        return r.option({ value: category.pageId, key: category.pageId }, category.name);
+        return r.option({ value: category.id, key: category.id }, category.name);
       });
 
       var selectCategoryInput =
@@ -178,13 +178,13 @@ export var TitleEditor = createComponent({
       selectCategoryInput = r.p({}, 'Loading categories...');
     }
 
-    var selectPageRoleInput = isForumOrCategory ? null :
+    var selectPageRoleInput = isForumOrAbout ? null :
       Input({ type: 'select', label: 'Page Type', ref: 'pageRoleInput', title: 'Page type',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10', defaultValue: pageRole },
         r.option({ value: PageRole.Question }, 'Question'),
         r.option({ value: PageRole.Problem }, 'Problem'),
         r.option({ value: PageRole.Idea }, 'Idea'),
-        r.option({ value: PageRole.ToDo }, 'To Do'),
+        r.option({ value: PageRole.ToDo }, 'Todo'),
         // r.option({ value: PageRole.WikiPage }, 'Wiki'), -- if 1d layout is default?
         r.option({ value: PageRole.MindMap }, 'Wiki Mind Map'),
         r.option({ value: PageRole.Discussion }, 'Other'));

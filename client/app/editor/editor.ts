@@ -150,6 +150,7 @@ export var Editor = createComponent({
     });
   },
 
+            /* //xx
   editNewForumPage: function(parentPageId: string, role: PageRole) {
     if (this.alertBadState())
       return;
@@ -166,6 +167,7 @@ export var Editor = createComponent({
     });
     this.updatePreview();
   },
+    */
 
   alertBadState: function(wantsToDoWhat = null) {
     if (wantsToDoWhat !== 'WriteReply' && this.state.replyToPostIds.length > 0) {
@@ -187,8 +189,7 @@ export var Editor = createComponent({
       return true;
     }
     if (this.state.newForumPageRole) {
-      var what = this.state.newForumPageRole === PageRole.Category ? 'category' : 'topic';
-      alert('Please first either save or cancel your new forum ' + what);
+      alert("Please first either save or cancel your new forum topic");
       d.i.clearIsReplyingMarks();
       return true;
     }
@@ -224,10 +225,7 @@ export var Editor = createComponent({
   },
 
   onSaveClick: function() {
-    if (this.state.newForumPageRole === PageRole.Category) {
-      this.saveNewForumCategory();
-    }
-    else if (this.state.newForumPageRole) {
+    if (this.state.newForumPageRole) {
       this.saveNewForumPage();
     }
     else if (_.isNumber(this.state.editingPostId)) {
@@ -316,11 +314,9 @@ export var Editor = createComponent({
     var titleInput;
     var state = this.state;
     if (this.state.newForumPageRole) {
-      var defaultTitle = this.state.newForumPageRole === PageRole.Category ?
-          'Title' : 'Topic title';
       titleInput =
           r.input({ className: 'title-input', type: 'text', ref: 'titleInput',
-              key: this.state.newForumPageRole, defaultValue: defaultTitle });
+              key: this.state.newForumPageRole, defaultValue: 'Topic title' });
     }
 
     var doingWhatInfo;
@@ -331,9 +327,6 @@ export var Editor = createComponent({
       doingWhatInfo =
         r.div({},
           'Editing ', r.a({ href: '#post-' + editingPostId }, 'post ' + editingPostId + ':'));
-    }
-    else if (this.state.newForumPageRole === PageRole.Category) {
-      doingWhatInfo = r.div({}, 'New category title and text:');
     }
     else if (this.state.newForumPageRole) {
       doingWhatInfo = r.div({}, 'New topic title and text:');
@@ -371,9 +364,6 @@ export var Editor = createComponent({
       else {
         saveButtonTitle = "Post reply";
       }
-    }
-    else if (this.state.newForumPageRole === PageRole.Category) {
-      saveButtonTitle = 'Create new category';
     }
     else if (this.state.newForumPageRole) {
       saveButtonTitle = 'Create new topic';

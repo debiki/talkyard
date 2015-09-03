@@ -107,7 +107,7 @@ var PageToolsDialog = createComponent({
 
 
 function canPinPage(store: Store) {
-  return store.parentPageId;
+  return store.categoryId;
 }
 
 

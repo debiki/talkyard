@@ -133,7 +133,7 @@ trait PagesDao {
         approvedById = Some(approvedById))
 
       val (pinOrder, pinWhere) =
-        if (pageRole == PageRole.Category) (Some(3), Some(PinPageWhere.InCategory))
+        if (pageRole == PageRole.About) (Some(3), Some(PinPageWhere.InCategory))
         else (None, None)
       val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.currentTime,
         pinOrder = pinOrder, pinWhere = pinWhere,
@@ -176,7 +176,7 @@ trait PagesDao {
         authorId: UserId, browserIdData: BrowserIdData): CreateCategoryResult = {
 
     die("DwE4023", "categories")
-
+    /*
     // (We currently don't use PageRole.About here, but later on when categories have
     // been moved to a separate table, I'll remove PageRole.Category and create an about
     // page here with role About instead.)
@@ -187,7 +187,7 @@ trait PagesDao {
       browserIdData)
 
     val categoryId = categoryPagePath.pageId getOrDie "DwE4EKYF7"
-    val ancestorIds = loadAncestorIdsParentFirst(categoryId)
+    val ancestorIds = loadCategoriesRootLast(categoryId)
 
     // The forum and and any parent category need to be refreshed because they've
     // cached the category list (in JSON in the cached HTML).
@@ -197,6 +197,7 @@ trait PagesDao {
       forumId = ancestorIds.last,
       newCategoryId = categoryId,
       newCategorySlug = categoryPagePath.pageSlug)
+      */
   }
 
 

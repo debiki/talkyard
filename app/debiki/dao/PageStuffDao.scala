@@ -67,13 +67,12 @@ trait PageStuffDao {
     var stuffById = Map[PageId, PageStuff]()
     val pageMetasById = transaction.loadPageMetasAsMap(pageIds)
 
-    // Load titles for all pages, but bodies for forum categories and pinned topics only
-    // (because on forum topic list pages and category pages, we show excerpts of the
-    // pinned topics and category descriptions).
+    // Load titles for all pages, and bodies for pinned topics
+    // (because in forum topic lists, we show excerpts of pinned topics).
     val titlesAndBodies = transaction.loadPosts(pageIds flatMap { pageId =>
       var pagePostIds = Seq(PagePostId(pageId, TitleId))
       val pageMeta = pageMetasById.get(pageId)
-      if (pageMeta.exists(meta => meta.pageRole == PageRole.Category || meta.isPinned)) {
+      if (pageMeta.exists(_.isPinned)) {
         pagePostIds :+= PagePostId(pageId, BodyId)
       }
       pagePostIds

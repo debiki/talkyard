@@ -20,7 +20,6 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import java.{util => ju}
 import debiki.dao.CachingDao.CacheKey
 
 
@@ -44,8 +43,10 @@ trait SettingsDao {
 
 
   def loadPageTreeSettings(pageId: PageId): Settings = {
-    val pageAndAncestorIds = pageId :: loadAncestorIdsParentFirst(pageId)
-    val treeTargets = pageAndAncestorIds.map(SettingsTarget.PageTree(_))
+    // Categories now in separate table, loadCategoriesRootLast(pageId) is gone.
+    // Currently there are no category settings. Fix later when/if needed.
+    val pageAndAncestorIds = List(pageId) // :: loadCategoriesRootLast(pageId)
+    val treeTargets = pageAndAncestorIds.map(SettingsTarget.PageTree)
     val allTargets = treeTargets ++ Vector(SettingsTarget.WholeSite)
     val rawSettingsMaps = siteDbDao.loadSettings(allTargets)
     Settings(SettingsChain(rawSettingsMaps))
@@ -54,8 +55,10 @@ trait SettingsDao {
 
   def loadSinglePageSettings(pageId: PageId): Settings = {
     val pageTarget = SettingsTarget.SinglePage(pageId)
-    val pageAndAncestorIds = pageId :: loadAncestorIdsParentFirst(pageId)
-    val treeTargets = pageAndAncestorIds.map(SettingsTarget.PageTree(_))
+    // Categories now in separate table, loadCategoriesRootLast(pageId) is gone.
+    // Currently there are no category settings. Fix later when/if needed.
+    val pageAndAncestorIds = List(pageId) //:: loadCategoriesRootLast(pageId)
+    val treeTargets = pageAndAncestorIds.map(SettingsTarget.PageTree)
     val allTargets = Vector(pageTarget) ++ treeTargets ++ Vector(SettingsTarget.WholeSite)
     val rawSettingsMaps = siteDbDao.loadSettings(allTargets)
     Settings(SettingsChain(rawSettingsMaps))
