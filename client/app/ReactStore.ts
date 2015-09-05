@@ -78,8 +78,9 @@ ReactDispatcher.register(function(payload) {
       store.newUserAccountCreated = true;
       break;
 
-    case ReactActions.actionTypes.CreateForumCategory:
+    case ReactActions.actionTypes.CreateEditForumCategory:
       store.categories = action.allCategories;
+      // (If editing, only the slug might have been changed, not the id.)
       store.newCategoryId = action.newCategoryId;
       store.newCategorySlug = action.newCategorySlug;
       break;
@@ -280,6 +281,11 @@ ReactStore.getUser = function() {
 
 ReactStore.getCategories = function() {
   return store.categories;
+};
+
+
+ReactStore.getCategoryId = function() {
+  return store.categoryId;
 };
 
 

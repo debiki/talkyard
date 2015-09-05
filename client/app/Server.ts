@@ -17,7 +17,7 @@
 
 /// <reference path="../typedefs/jquery/jquery.d.ts" />
 /// <reference path="users/user-info/UserInfo.ts" />
-/// <reference path="renderer/model.ts" />
+/// <reference path="model.ts" />
 /// <reference path="ServerApi.ts" />
 
 //------------------------------------------------------------------------------
@@ -54,12 +54,22 @@ function postJson(urlPath: string, requestData: RequestData) {
 }
 
 
-function postJsonSuccess(urlPath, success: (response: any) => void, data: any) {
+function postJsonSuccess(urlPath, success: (response: any) => void, data: any, error?) {
   postJson(urlPath, {
     data: data,
     success: success,
-    error: null
+    error: error
   });
+}
+
+
+function get(uri: string, success: (response) => void) {
+  $.get(origin + uri)
+    .done(success)
+    .fail((jqXhr: any, textStatus: string, errorThrown: string) => {
+      console.error('Error calling ' + uri + ': ' + JSON.stringify(jqXhr));
+      pagedialogs.serverErrorDialog.open(jqXhr);
+    });
 }
 
 
@@ -382,32 +392,18 @@ export function loadAuthorBlockedInfo(postId: number, whenDone: (response: Block
 
 
 export function loadForumCategories(forumPageId: string,
-      doneCallback: (categories: Category[]) => void) {
-  $.get(origin + '/-/list-categories?forumId=' + forumPageId)
-    .done((response: any) => {
-      doneCallback(response.categories);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading categories: ' + JSON.stringify([x, y, z]));
-      doneCallback(null);
-    });
+      success: (categories: Category[]) => void) {
+  get('/-/list-categories?forumId=' + forumPageId, success);
 }
 
 
 export function loadForumCategoriesTopics(forumPageId: string, topicFilter: string,
-      doneCallback: (categories: Category[]) => void) {
-  var url = origin + '/-/list-categories-topics?forumId=' + forumPageId;
+      success: (categories: Category[]) => void) {
+  var url = '/-/list-categories-topics?forumId=' + forumPageId;
   if (topicFilter) {
     url += '&filter=' + topicFilter;
   }
-  $.get(url)
-    .done((response: any) => {
-      doneCallback(response.categories);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading categories and topics: ' + JSON.stringify([x, y, z]));
-      doneCallback(null);
-    });
+  get(url, success);
 }
 
 
@@ -574,8 +570,13 @@ export function changePostType(postId: number, newType: PostType, success: () =>
 }
 
 
-export function createForumCategory(data, success: (response: any) => void) {
-  postJsonSuccess('/-/create-forum-category', success, data);
+export function saveCategory(data, success: (response: any) => void, error?: () => void) {
+  postJsonSuccess('/-/save-category', success, data, error);
+}
+
+
+export function loadCategory(id: number, success: (response: any) => void) {
+  get('/-/load-category?id=' + id, success);
 }
 
 

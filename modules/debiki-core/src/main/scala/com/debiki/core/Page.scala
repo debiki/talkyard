@@ -397,26 +397,3 @@ case class PagePostId(pageId: PageId, postId: PostId) {
   def toList: List[AnyRef] = List(pageId, postId.asInstanceOf[AnyRef])
 }
 
-
-case class Category(
-  id: CategoryId,
-  sectionPageId: PageId,
-  parentId: Option[CategoryId],
-  position: Int,
-  name: String,
-  slug: String,
-  aboutTopicId: Option[PageId],
-  description: Option[String],
-  numTopics: Int,
-  numPosts: Int,
-  newTopicTypes: immutable.Seq[PageRole],
-  createdAt: ju.Date,
-  updatedAt: ju.Date,
-  lockedAt: Option[ju.Date] = None,
-  frozenAt: Option[ju.Date] = None,
-  deletedAt: Option[ju.Date] = None) {
-
-  def isRoot = parentId.isEmpty
-
-}
-

@@ -18,7 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/modernizr/modernizr.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
-/// <reference path="../renderer/model.ts" />
+/// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
 
 //------------------------------------------------------------------------------
@@ -150,15 +150,11 @@ export var Editor = createComponent({
     });
   },
 
-            /* //xx
   editNewForumPage: function(parentPageId: string, role: PageRole) {
     if (this.alertBadState())
       return;
     this.showEditor();
     var text = this.state.text || this.state.draft;
-    if (role === PageRole.Category) {
-      text = this.state.draft || newCategoryPlaceholderText;
-    }
     this.setState({
       anyPostType: null,
       newForumPageParentId: parentPageId,
@@ -167,7 +163,6 @@ export var Editor = createComponent({
     });
     this.updatePreview();
   },
-    */
 
   alertBadState: function(wantsToDoWhat = null) {
     if (wantsToDoWhat !== 'WriteReply' && this.state.replyToPostIds.length > 0) {
@@ -245,19 +240,6 @@ export var Editor = createComponent({
 
   saveNewPost: function() {
     Server.saveReply(this.state.replyToPostIds, this.state.text, this.state.anyPostType, () => {
-      this.clearText();
-      this.closeEditor();
-    });
-  },
-
-  saveNewForumCategory: function() {
-    var title = $(this.refs.titleInput.getDOMNode()).val();
-    var data = {
-      parentPageId: this.state.newForumPageParentId,
-      categoryTitle: title,
-      categoryDescription: this.state.text
-    };
-    ReactActions.createForumCategory(data, () => {
       this.clearText();
       this.closeEditor();
     });

@@ -108,6 +108,8 @@ interface Category {
   id: number;
   name: string;
   slug: string;
+  newTopicTypes: number[];
+  position?: number;
   description: string;
   subCategories: number[];
   numTopics: number;

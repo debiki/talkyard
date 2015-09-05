@@ -18,7 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/modernizr/modernizr.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
-/// <reference path="../renderer/model.ts" />
+/// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
 
 //------------------------------------------------------------------------------

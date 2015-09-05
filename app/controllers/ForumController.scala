@@ -17,7 +17,7 @@
 
 package controllers
 
-import actions.ApiActions.{GetAction, StaffPostJsonAction}
+import actions.ApiActions.{GetAction, StaffGetAction, StaffPostJsonAction}
 import debiki.dao.PageStuff
 import collection.mutable
 import com.debiki.core._
@@ -33,7 +33,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
 import Utils.OkSafeJson
 import Utils.ValidationImplicits._
-import DebikiHttp.{throwBadReq, throwBadRequest}
+import DebikiHttp.{throwBadReq, throwBadRequest, throwNotFound}
 
 
 /** Handles requests related to forums and forum categories.
@@ -44,19 +44,48 @@ object ForumController extends mvc.Controller {
   val NumTopicsToList = 40
 
 
-  def createForumCategory = StaffPostJsonAction(maxLength = 10 * 1000) { request =>
-    val parentCategoryId = (request.body \ "parentCategoryId").as[CategoryId] //xx JS
-    val anySlug = (request.body \ "categorySlug").asOpt[String]
-    val titleText = (request.body \ "categoryTitle").as[String]
-    val descriptionText = (request.body \ "categoryDescription").as[String]
+  def loadCategory(id: String) = StaffGetAction { request =>
+    val categoryId = Try(id.toInt) getOrElse throwBadRequest("DwE6PU1", "Invalid category id")
+    val category = request.dao.loadTheCategory(categoryId)
+    val json = categoryToJson(category, recentTopics = Nil, pageStuffById = Map.empty)
+    OkSafeJson(json)
+  }
 
-    val result = request.dao.createForumCategory(parentCategoryId, anySlug,
-      titleText, descriptionText, authorId = request.theUserId, request.theBrowserIdData)
+
+  def saveCategory = StaffPostJsonAction(maxLength = 1000) { request =>
+    val body = request.body
+    val sectionPageId = (body \ "sectionPageId").as[PageId]
+    val newTopicTypeInts = (body \ "newTopicTypes").as[List[Int]]
+    val newTopicTypes = newTopicTypeInts map { typeInt =>
+      PageRole.fromInt(typeInt) getOrElse throwBadReq(
+        "DwE7KUP3", s"Bad new topic type int: $typeInt")
+    }
+
+    val creteEditCategoryData = CreateEditCategoryData(
+      anyId = (body \ "categoryId").asOpt[CategoryId],
+      sectionPageId = sectionPageId,
+      parentId = (body \ "parentCategoryId").as[CategoryId],
+      name = (body \ "name").as[String],
+      slug = (body \ "slug").as[String],
+      position = (body \ "position").as[Int],
+      newTopicTypes = newTopicTypes)
+
+    var resultJson: JsObject = null
+
+    val category = creteEditCategoryData.anyId match {
+      case Some(categoryId) =>
+        request.dao.editCategory(creteEditCategoryData, editorId = request.theUserId,
+          request.theBrowserIdData)
+      case None =>
+        val (category, _) = request.dao.createCategory(
+          creteEditCategoryData, creatorId = request.theUserId, request.theBrowserIdData)
+        category
+    }
 
     OkSafeJson(Json.obj(
-      "allCategories" -> ReactJson.categoriesJson(result.forumId, request.dao),
-      "newCategoryId" -> result.newCategoryId,
-      "newCategorySlug" -> result.newCategorySlug))
+      "allCategories" -> ReactJson.categoriesJson(category.sectionPageId, request.dao),
+      "newCategoryId" -> category.id,
+      "newCategorySlug" -> category.slug))
   }
 
 
@@ -75,7 +104,7 @@ object ForumController extends mvc.Controller {
 
   def listCategories(forumId: PageId) = GetAction { request =>
     val categories = request.dao.listSectionCategories(forumId)
-    val json = Json.obj("categories" -> categories.map({ category =>
+    val json = JsArray(categories.map({ category =>
       categoryToJson(category, recentTopics = Nil, pageStuffById = Map.empty)
     }))
     OkSafeJson(json)
@@ -91,7 +120,7 @@ object ForumController extends mvc.Controller {
     val pageIds = ArrayBuffer[PageId]()
     val pageQuery = PageQuery(PageOrderOffset.ByBumpTime(None), parsePageFilter(request))
 
-    for (category <- categories.sortBy(_.position)) {
+    for (category <- categories) {
       val recentTopics = listTopicsInclPinned(category.id, pageQuery, request.dao,
         includeDescendantCategories = true, limit = 6)
       recentTopicsByCategoryId(category.id) = recentTopics
@@ -101,7 +130,7 @@ object ForumController extends mvc.Controller {
     val pageStuffById: Map[PageId, debiki.dao.PageStuff] =
       request.dao.loadPageStuff(pageIds)
 
-    val json = Json.obj("categories" -> categories.map({ category =>
+    val json = JsArray(categories.map({ category =>
       categoryToJson(category, recentTopicsByCategoryId(category.id), pageStuffById)
     }))
 
@@ -175,12 +204,15 @@ object ForumController extends mvc.Controller {
 
   private def categoryToJson(category: Category, recentTopics: Seq[PagePathAndMeta],
       pageStuffById: Map[PageId, debiki.dao.PageStuff]): JsObject = {
+    require(recentTopics.isEmpty || pageStuffById.nonEmpty, "DwE8QKU2")
     val topicsNoAboutCategoryPage = recentTopics.filter(_.pageRole != PageRole.About)
     val recentTopicsJson = topicsNoAboutCategoryPage.map(topicToJson(_, pageStuffById))
     Json.obj(
       "id" -> category.id,
-      "name" -> (if (category.isRoot) "Uncategorized" else category.name),
+      "name" -> category.name,
       "slug" -> category.slug,
+      "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
+      "position" -> category.position,
       "description" -> category.description,
       "numTopics" -> category.numTopics,
       "recentTopics" -> recentTopicsJson)

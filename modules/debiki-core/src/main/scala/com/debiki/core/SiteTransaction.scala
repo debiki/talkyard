@@ -41,7 +41,11 @@ trait SiteTransaction {
   def loadSettings(targets: Seq[SettingsTarget]): Seq[RawSettings]
 
   def loadResourceUsage(): ResourceUse
-  //def loadCategoriesRootLast(pageId: PageId): immutable.Seq[Category]
+
+  def loadCategory(categoryId: CategoryId): Option[Category]
+  def nextCategoryId(): Int
+  def insertCategory(category: Category)
+  def updateCategory(category: Category)
 
   def loadPost(uniquePostId: UniquePostId): Option[Post]
   def loadThePost(uniquePostId: UniquePostId): Post =

@@ -19,6 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.DebikiHttp.throwNotFound
 import java.{util => ju}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
@@ -35,12 +36,13 @@ trait CategoriesDao {
 
 
   /** List categories in the site section (forum/blog/whatever) at page pageId.
+    * Sorts by Category.position.
     * Excludes the root of the category tree.
     */
   def listSectionCategories(pageId: PageId): Seq[Category] = {
     loadRootCategory(pageId) match {
       case Some(rootCategory) =>
-        listCategoriesInTree(rootCategory.id, includeRoot = false)
+        listCategoriesInTree(rootCategory.id, includeRoot = false).sortBy(_.position)
       case None =>
         Nil
     }
@@ -100,8 +102,12 @@ trait CategoriesDao {
   }
 
 
-  def loadCategory(categoryId: CategoryId) =
-    loadBuildRememberCategoryMaps()._1.get(categoryId)
+  def loadCategory(id: CategoryId): Option[Category] =
+    loadBuildRememberCategoryMaps()._1.get(id)
+
+
+  def loadTheCategory(id: CategoryId): Category =
+    loadCategory(id) getOrElse throwNotFound("DwE8YUF0", s"No category with id $id")
 
 
   def loadRootCategory(categoryId: CategoryId): Option[Category] =
@@ -166,6 +172,66 @@ trait CategoriesDao {
 
   protected def loadCategoryMap() =
     siteDbDao.loadCategoryMap()
+
+
+  def editCategory(editCategoryData: CreateEditCategoryData,
+        editorId: UserId, browserIdData: BrowserIdData): Category = {
+    val editedCategory = readWriteTransaction { transaction =>
+      val categoryId = editCategoryData.anyId getOrDie "DwE7KPE0"
+      val oldCategory = transaction.loadCategory(categoryId).getOrElse(throwNotFound(
+        "DwE5FRA2", s"Category not found, id: $categoryId"))
+      // Currently cannot change parent category because then topic counts will be wrong.
+      // Could just remove all counts, who cares anyway
+      require(oldCategory.parentId == Some(editCategoryData.parentId), "DwE903SW2")
+      val editedCategory = oldCategory.copy(
+        name = editCategoryData.name,
+        slug = editCategoryData.slug,
+        position = editCategoryData.position,
+        newTopicTypes = editCategoryData.newTopicTypes,
+        updatedAt = transaction.currentTime)
+      transaction.updateCategory(editedCategory)
+      editedCategory
+      // COULD create audit log entry
+    }
+    refreshPageInAnyCache(editedCategory.sectionPageId)
+    editedCategory
+  }
+
+
+  def createCategory(newCategoryData: CreateEditCategoryData, creatorId: UserId,
+        browserIdData: BrowserIdData): (Category, PagePath) = {
+
+    val bodyHtmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(
+      CategoryDescriptionTemplate, allowClassIdDataAttrs = false, followLinks = true)
+
+    val titleSource = s"About the ${newCategoryData.name} category"
+    val titleHtmlSanitized = siteDbDao.commonMarkRenderer.sanitizeHtml(titleSource)
+
+    val result = readWriteTransaction { transaction =>
+      val categoryId = transaction.nextCategoryId()
+      val category = newCategoryData.makeCategory(categoryId, transaction.currentTime)
+      transaction.insertCategory(category)
+
+      val (aboutPagePath, _) = createPageImpl(
+        PageRole.About, PageStatus.Published, anyCategoryId = Some(categoryId),
+        anyFolder = None, anySlug = Some("about-" + newCategoryData.slug),
+        titleSource = titleSource,
+        titleHtmlSanitized = titleHtmlSanitized,
+        bodySource = CategoryDescriptionTemplate,
+        bodyHtmlSanitized = bodyHtmlSanitized,
+        showId = true, authorId = SystemUserId, browserIdData, transaction)
+
+      // COULD create audit log entry
+      (category, aboutPagePath)
+    }
+    // The forum needs to be refreshed because it has cached the category list
+    // (in JSON in the cached HTML).
+    refreshPageInAnyCache(result._1.sectionPageId)
+    result
+  }
+
+
+  val CategoryDescriptionTemplate = "descr"  // [i18n]
 
 }
 

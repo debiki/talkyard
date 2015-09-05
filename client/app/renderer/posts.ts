@@ -24,7 +24,7 @@
 /// <reference path="../react-elements/topbar.ts" />
 /// <reference path="../page-dialogs/wikify-dialog.ts" />
 /// <reference path="../page-dialogs/delete-post-dialog.ts" />
-/// <reference path="model.ts" />
+/// <reference path="../model.ts" />
 
 // Wrapping in a module causes an ArrayIndexOutOfBoundsException: null error, see:
 //  http://stackoverflow.com/questions/26189940/java-8-nashorn-arrayindexoutofboundsexception
@@ -1420,8 +1420,8 @@ function renderTitleBodyComments() {
   var store: Store = debiki2.ReactStore.allData();
   if (store.pageRole === PageRole.Forum) {
     var router = ReactRouter.create({
-      routes: debiki2.renderer.buildForumRoutes(),
-      scrollBehavior: debiki2.renderer.ForumScrollBehavior,
+      routes: debiki2.forum.buildForumRoutes(),
+      scrollBehavior: debiki2.forum.ForumScrollBehavior,
     });
     router.run(function(handler) {
       React.render(React.createElement(handler, store), root);
@@ -1438,7 +1438,7 @@ function renderTitleBodyCommentsToString() {
   //return '<p class="dw-page" data-reactid=".123" data-react-checksum="123">react_skipped</p>'
   var store: Store = debiki2.ReactStore.allData();
   if (store.pageRole === PageRole.Forum) {
-    var routes = debiki2.renderer.buildForumRoutes();
+    var routes = debiki2.forum.buildForumRoutes();
     var result;
     // In the future, when using the HTML5 history API to update the URL when navigating
     // inside the forum, we can use `store.pagePath` below. But for now, when using

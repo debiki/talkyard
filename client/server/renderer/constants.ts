@@ -1,1 +1,0 @@
-../../app/renderer/constants.ts

@@ -78,7 +78,7 @@ function onFirstTouch() {
 
 
 function onFirstMouseMove() {
-  console.log('Mouse detected.');
+  console.log('Mouse detected. [DwM4KGEW0]');
   stopDetectingMouse();
   isMouseDetected = true;
   $('html').addClass('mouse');

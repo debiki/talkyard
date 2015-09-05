@@ -106,7 +106,8 @@ GET   /-/accept-invite/:key     controllers.InviteController.acceptInvite(key)
 GET   /-/list-topics            controllers.ForumController.listTopics(categoryId)
 GET   /-/list-categories        controllers.ForumController.listCategories(forumId)
 GET   /-/list-categories-topics controllers.ForumController.listCategoriesAndTopics(forumId)
-POST  /-/create-forum-category  controllers.ForumController.createForumCategory
+POST  /-/save-category          controllers.ForumController.saveCategory
+GET   /-/load-category          controllers.ForumController.loadCategory(id)
 
 POST  /-/create-page            controllers.PageController.createPage
 POST  /-/cycle-page-done        controllers.PageController.cyclePageDone

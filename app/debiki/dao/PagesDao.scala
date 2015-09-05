@@ -26,13 +26,6 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 
 
-case class CreateCategoryResult(
-  forumId: PageId,
-  newCategoryId: PageId,
-  newCategorySlug: String)
-
-
-
 /** Loads and saves pages and page parts (e.g. posts and patches).
   *
   * (There's also a class PageDao (with no 's' in the name) that focuses on
@@ -60,6 +53,27 @@ trait PagesDao {
       throwForbidden("DwE5KPEF21", "Page title should not be empty")
 
     readWriteTransaction { transaction =>
+      val (pagePath, bodyPost) = createPageImpl(pageRole, pageStatus, anyCategoryId,
+        anyFolder = anyFolder, anySlug = anySlug,
+        titleSource = titleSource, titleHtmlSanitized = titleHtmlSanitized,
+        bodySource = bodySource, bodyHtmlSanitized = bodyHtmlSanitized,
+        showId = showId, authorId = authorId, browserIdData,
+        transaction)
+
+      val notifications = NotificationGenerator(transaction)
+        .generateForNewPost(PageDao(pagePath.pageId getOrDie "DwE5KWI2", transaction), bodyPost)
+      transaction.saveDeleteNotifications(notifications)
+      pagePath
+    }
+  }
+
+
+  def createPageImpl(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
+        anyFolder: Option[String], anySlug: Option[String],
+        titleSource: String, titleHtmlSanitized: String,
+        bodySource: String, bodyHtmlSanitized: String,
+        showId: Boolean, authorId: UserId, browserIdData: BrowserIdData,
+        transaction: SiteTransaction): (PagePath, Post) = {
 
       val pageId = transaction.nextPageId()
 
@@ -81,7 +95,8 @@ trait PagesDao {
         }
         else {
           if (pageRole != PageRole.Discussion && pageRole != PageRole.Question &&
-              pageRole != PageRole.MindMap)  //xx more topic types
+              pageRole != PageRole.Problem && pageRole != PageRole.Idea &&
+              pageRole != PageRole.MindMap)
             throwForbidden("DwE5KEPY2", s"Bad forum topic page type: $pageRole")
 
           anyCategoryId match {
@@ -155,49 +170,7 @@ trait PagesDao {
       transaction.insertPost(bodyPost)
       insertAuditLogEntry(auditLogEntry, transaction)
 
-      val notifications = NotificationGenerator(transaction)
-        .generateForNewPost(PageDao(pageId, transaction), bodyPost)
-      transaction.saveDeleteNotifications(notifications)
-
-      pagePath
-    }
-  }
-
-
-  /** Later:[forumcategory] Create a dedicated forum category table. There'll be
-    * something like 20 columns in it (have a look at Discourse) and it makes
-    * no sense to add all that stuff for pages in general.
-    *
-    * And add "faceted search" fields to forum topics: forum id, category id,
-    * sub cat id, so one can directly find all topics in a certain category.
-    */
-  def createForumCategory(parentCategoryId: CategoryId, anySlug: Option[String],
-        titleSource: String, descriptionSource: String,
-        authorId: UserId, browserIdData: BrowserIdData): CreateCategoryResult = {
-
-    die("DwE4023", "categories")
-    /*
-    // (We currently don't use PageRole.About here, but later on when categories have
-    // been moved to a separate table, I'll remove PageRole.Category and create an about
-    // page here with role About instead.)
-    val categoryPagePath = createPage(  //xx don't use createPage
-      PageRole.Category, PageStatus.Published, Some(parentCategoryId),
-      anyFolder = None, anySlug = anySlug, titleSource = titleSource,
-      bodySource = descriptionSource, showId = true, authorId = authorId,
-      browserIdData)
-
-    val categoryId = categoryPagePath.pageId getOrDie "DwE4EKYF7"
-    val ancestorIds = loadCategoriesRootLast(categoryId)
-
-    // The forum and and any parent category need to be refreshed because they've
-    // cached the category list (in JSON in the cached HTML).
-    ancestorIds.foreach(refreshPageInAnyCache)
-
-    CreateCategoryResult(
-      forumId = ancestorIds.last,
-      newCategoryId = categoryId,
-      newCategorySlug = categoryPagePath.pageSlug)
-      */
+      (pagePath, bodyPost)
   }
 
 
