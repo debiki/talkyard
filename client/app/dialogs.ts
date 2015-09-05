@@ -17,6 +17,7 @@
 
 /// <reference path="../typedefs/react/react.d.ts" />
 /// <reference path="plain-old-javascript.d.ts" />
+/// <reference path="utils/react-utils.ts" />
 /// <reference path="ReactStore.ts" />
 /// <reference path="Server.ts" />
 

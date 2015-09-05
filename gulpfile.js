@@ -103,6 +103,9 @@ var debikiJavascriptFiles = [
       'bower_components/Caret.js/dist/jquery.caret.js',
       'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
       'bower_components/nicescroll/jquery.nicescroll.js',
+      'bower_components/classnames/index.js', // needed by react-select
+      'bower_components/react-input-autosize/dist/react-input-autosize.min.js', // needed by react-select
+      'bower_components/react-select/dist/react-select.min.js',
       'node_modules/jquery-resizable/resizable.js',
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/diff_match_patch.js',
@@ -334,6 +337,7 @@ gulp.task('compile-stylus', function () {
     makeStyleStream('public/res/', 'combined-debiki.css', [
         'bower_components/bootstrap/dist/css/bootstrap.css',
         'bower_components/jquery.atwho/dist/css/jquery.atwho.css',
+        'bower_components/react-select/dist/default.css',
         'node_modules/jquery-resizable/resizable.css',
         'client/third-party/stupid-lightbox.css',
         'client/app/debiki.styl',

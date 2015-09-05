@@ -207,15 +207,7 @@ object ForumController extends mvc.Controller {
     require(recentTopics.isEmpty || pageStuffById.nonEmpty, "DwE8QKU2")
     val topicsNoAboutCategoryPage = recentTopics.filter(_.pageRole != PageRole.AboutCategory)
     val recentTopicsJson = topicsNoAboutCategoryPage.map(topicToJson(_, pageStuffById))
-    Json.obj(
-      "id" -> category.id,
-      "name" -> category.name,
-      "slug" -> category.slug,
-      "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
-      "position" -> category.position,
-      "description" -> JsStringOrNull(category.description),
-      "numTopics" -> category.numTopics,
-      "recentTopics" -> recentTopicsJson)
+    ReactJson.categoryJson(category, recentTopicsJson)
   }
 
 

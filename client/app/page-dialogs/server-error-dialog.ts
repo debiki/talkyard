@@ -20,6 +20,7 @@
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 
+
 //------------------------------------------------------------------------------
    module debiki2.pagedialogs {
 //------------------------------------------------------------------------------
@@ -46,16 +47,35 @@ export function createServerErrorDialog() {
 }
 
 
+export function showAndThrowClientSideError(errorMessage: string) {
+  serverErrorDialog.openForBrowserError(errorMessage);
+  throw Error(errorMessage);
+}
+
+
 var ServerErrorDialog = createComponent({
   getInitialState: function () {
     return {
       isOpen: false,
-      error: null
+      error: null,  // COULD rename to serverError
+      clientErrorMessage: null,
     };
   },
 
+  openForBrowserError: function(errorMessage: string) {
+    this.setState({
+      isOpen: true,
+      error: null,
+      clientErrorMessage: errorMessage,
+    });
+  },
+
   open: function(error: any) {
-    this.setState({ isOpen: true, error: error });
+    this.setState({
+      isOpen: true,
+      error: error,
+      clientErrorMessage: null
+    });
   },
 
   close: function() {
@@ -66,7 +86,20 @@ var ServerErrorDialog = createComponent({
     var title: string;
     var message: string;
 
-    if (this.state.isOpen) {
+    if (!this.state.isOpen) {
+      // Do nothing.
+    }
+    else if (this.state.clientErrorMessage) {
+      title = "Error";
+      message = this.state.clientErrorMessage;
+      if (debiki2.utils.isMouseDetected) {
+        message += "\n\n" +
+            "Check Dev Tools for details, usually Ctrl + Shift + C (here directly " +
+            "in the browser, now) and then click Console. [DwE5KFW2]";
+      }
+    }
+    else {
+      // Server side error.
       var error = this.state.error;
 
       // Is the status message included on the first line? If so, remove it, because we'll
@@ -108,4 +141,12 @@ var ServerErrorDialog = createComponent({
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------
+
+
+module debiki2 {
+  // Move to which file?
+  export var die: any = debiki2.pagedialogs.showAndThrowClientSideError;
+}
+
+
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

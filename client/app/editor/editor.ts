@@ -53,8 +53,8 @@ export function openEditorToEditPost(postId: number) {
 }
 
 
-export function editNewForumPage(parentPageId: string, role: PageRole) {
-  theEditor.editNewForumPage(parentPageId, role);
+export function editNewForumPage(categoryId: number, role: PageRole) {
+  theEditor.editNewForumPage(categoryId, role);
 }
 
 
@@ -66,7 +66,7 @@ export var Editor = createComponent({
       draft: '',
       safePreviewHtml: '',
       replyToPostIds: [],
-      newForumPageParentId: null,
+      newForumTopicCategoryId: null,
       newForumPageRole: null,
     };
   },
@@ -150,14 +150,14 @@ export var Editor = createComponent({
     });
   },
 
-  editNewForumPage: function(parentPageId: string, role: PageRole) {
+  editNewForumPage: function(categoryId: number, role: PageRole) {
     if (this.alertBadState())
       return;
     this.showEditor();
     var text = this.state.text || this.state.draft;
     this.setState({
       anyPostType: null,
-      newForumPageParentId: parentPageId,
+      newForumTopicCategoryId: categoryId,
       newForumPageRole: role,
       text: text
     });
@@ -248,7 +248,7 @@ export var Editor = createComponent({
   saveNewForumPage: function() {
     var title = $(this.refs.titleInput.getDOMNode()).val();
     var data = {
-      parentPageId: this.state.newForumPageParentId,
+      categoryId: this.state.newForumTopicCategoryId,
       pageRole: this.state.newForumPageRole,
       pageStatus: 'Published',
       pageTitle: title,
@@ -272,7 +272,7 @@ export var Editor = createComponent({
       visible: false,
       replyToPostIds: [],
       editingPostId: null,
-      newForumPageParentId: null,
+      newForumTopicCategoryId: null,
       newForumPageRole: null,
       text: '',
       draft: _.isNumber(this.state.editingPostId) ? '' : this.state.text,
@@ -348,7 +348,7 @@ export var Editor = createComponent({
       }
     }
     else if (this.state.newForumPageRole) {
-      saveButtonTitle = 'Create new topic';
+      saveButtonTitle = 'Create topic';
     }
 
     // If not visible, don't remove the editor, just hide it, so we won't have

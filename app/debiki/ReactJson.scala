@@ -517,14 +517,22 @@ object ReactJson {
     val categories: Seq[Category] = dao.listSectionCategories(sectionId)
     val pageStuffById = dao.loadPageStuff(categories.map(_.sectionPageId))
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
-      JsObject(Seq(
-        "id" -> JsNumber(category.id),
-        "name" -> JsString(category.name),
-        "slug" -> JsString(category.slug),
-        "subCategories" -> JsArray()))
+      categoryJson(category)
     })
     categoriesJson
   }
+
+
+  def categoryJson(category: Category, recentTopicsJson: Seq[JsObject] = Nil) =
+    Json.obj(
+      "id" -> category.id,
+      "name" -> category.name,
+      "slug" -> category.slug,
+      "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
+      "position" -> category.position,
+      "description" -> JsStringOrNull(category.description),
+      "numTopics" -> category.numTopics,
+      "recentTopics" -> recentTopicsJson)
 
 
   case class ToTextResult(text: String, isSingleParagraph: Boolean)

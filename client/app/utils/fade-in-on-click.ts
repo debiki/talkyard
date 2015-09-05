@@ -16,42 +16,44 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
-
-
-var reactCreateFactory = React['createFactory'];
-
-
-function createComponent(componentDefinition) { // oops should obviously be named createFactory
-  if (isServerSide()) {
-    // The mere presence of these functions cause an unknown error when rendering
-    // React-Router server side. So remove them; they're never called server side anyway.
-    // The error logs the message '{}' to console.error(); no idea what that means.
-    delete componentDefinition.componentWillUpdate;
-    delete componentDefinition.componentWillReceiveProps;
-  }
-  return reactCreateFactory(React.createClass(componentDefinition));
-}
-
-
-function createClassAndFactory(componentDefinition) { // rename createComponent to this
-  return createComponent(componentDefinition);
-}
-
+/// <reference path="react-utils.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.utils {
 //------------------------------------------------------------------------------
 
-export var createComponent = window['createComponent'];
-export var createClassAndFactory = window['createClassAndFactory'];
-export var reactCreateFactory = React['createFactory'];
+var r = React.DOM;
+var ReactCSSTransitionGroup = reactCreateFactory(React.addons.CSSTransitionGroup);
 
-export function makeMountNode() {
-  return $('<div>').appendTo('body')[0];
-}
+
+/**
+ * Use e.g. in a dialog to hide complicated settings, and have them fade in
+ * if the user clicks "Show advanced stuff".
+ */
+export var FadeInOnClick = createClassAndFactory({
+  getInitialState: function() {
+    return { show: false };
+  },
+
+  show: function() {
+    this.setState({ show: true });
+  },
+
+  render: function() {
+    var contents = this.state.show ? this.props.children : null;
+    var clickToShowButton = this.state.show ? null :
+        r.a({ className: 'dw-click-to-show', onClick: this.show }, this.props.clickToShowText);
+
+    return (
+      r.div({ id: this.props.id, className: this.props.className },
+        ReactCSSTransitionGroup({ transitionName: 'compl-stuff', transitionAppear: true },
+          contents),
+        clickToShowButton));
+  }
+});
+
 
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------
-// vim: fdm=marker et ts=2 sw=2 tw=0 list
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

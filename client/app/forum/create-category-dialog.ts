@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../utils/fade-in-on-click.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 
@@ -37,6 +38,7 @@ var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+var ReactSelect = reactCreateFactory(window['Select']); // react-select
 
 var DefaultPosition = 50;
 
@@ -55,7 +57,10 @@ export function getEditCategoryDialog() {
 
 var EditCategoryDialog = createClassAndFactory({
   getInitialState: function () {
-    return { isOpen: false };
+    return {
+      isOpen: false,
+      newTopicTypes: [],
+    };
   },
 
   open: function(categoryId?: number) {
@@ -66,8 +71,6 @@ var EditCategoryDialog = createClassAndFactory({
       isSaving: false,
       isCreating: !categoryId,
       isEditing: !!categoryId,
-      customSlug: false,
-      customPosition: false,
     });
     if (categoryId) {
       Server.loadCategory(categoryId, (category: Category) => {
@@ -84,7 +87,7 @@ var EditCategoryDialog = createClassAndFactory({
       this.setState({
         name: '',
         slug: '',
-        newTopicTypes: [],
+        newTopicTypes: [PageRole.Discussion],
         position: DefaultPosition,
       });
     }
@@ -116,6 +119,11 @@ var EditCategoryDialog = createClassAndFactory({
     this.setState({ position: isNaN(newPosition) ? '' : newPosition });
   },
 
+  onTopicTypesChange: function(topicTypesText: string, selectedOptions) {
+    var topicTypes = selectedOptions.map(x => x.value);
+    this.setState({ newTopicTypes: topicTypes });
+  },
+
   save: function() {
     this.setState({ isSaving: true });
     var category = {
@@ -125,7 +133,7 @@ var EditCategoryDialog = createClassAndFactory({
       name: this.state.name,
       slug: this.state.slug,
       position: this.state.position || DefaultPosition,
-      newTopicTypes: [],
+      newTopicTypes: this.state.newTopicTypes,
     };
     ReactActions.saveCategory(category, this.close, () => {
       this.setState({ isSaving: false });
@@ -134,28 +142,50 @@ var EditCategoryDialog = createClassAndFactory({
 
   render: function () {
     var nameInput =
-        Input({ type: 'text', label: "Name:", ref: 'nameInput',
-            value: this.state.name, onChange: this.onNameChanged });
+        Input({ type: 'text', label: "Name", ref: 'nameInput',
+            value: this.state.name, onChange: this.onNameChanged,
+            help: "Keep it short, only one word, if possible." });
 
-    var slugInput = this.state.customSlug
-        ? Input({ type: 'text', label: "Slug:",
-            ref: 'slugInput', value: this.state.slug, onChange: this.onSlugChanged,
-            help: "The slug is shown in the URL in the browser's address bar." })
-        : r.a({ className: 'dw-click-to-show', onClick: () => this.setState({ customSlug: true }) },
-            "Click to change how the category name looks in URLs");
+    var topicTypes = [   // [i18n]
+        { value: PageRole.Question, label: 'Question' },
+        { value: PageRole.Problem, label: 'Problem' },
+        { value: PageRole.Idea, label: 'Idea' },
+        { value: PageRole.Discussion, label: 'Discussion' }];
 
-    var positionnput = this.state.customPosition
-        ? Input({ type: 'number', label: "Position:",
-              value: this.state.position || '', onChange: this.onPositionChanged,
-              help: "Categories with lower positions are listed first. Default: " +
-                  DefaultPosition })
-        : r.a({ className: 'dw-click-to-show',
-              onClick: () => this.setState({ customPosition: true }) },
-            "Click to set sort position");
+    var topicTypesInput =
+      r.div({ className: 'form-group' },
+        r.label({ className: 'control-label' }, "Topic types"),
+        ReactSelect({ value: this.state.newTopicTypes.join(), options: topicTypes, multi: true,
+            onChange: this.onTopicTypesChange, className: 'dw-topic-types' }),
+        r.span({ className: 'help-block' },
+          "The topic types to choose among, when creating a new topic. ",
+          r.i({}, "Discussion"), " is the default. ",
+          r.i({}, "Problem"), " is if something is broken or doesn't work, needs to be fixed."));
+
+    var slugInput =
+        utils.FadeInOnClick({ clickToShowText: "Click to change how the name looks in URLs" },
+          Input({ type: 'text', label: "Slug",
+              ref: 'slugInput', value: this.state.slug, onChange: this.onSlugChanged,
+              help: "The slug is shown in the URL in the browser address bar." }));
+
+    var sortPositionText = "Click to set sort position";
+    if (this.props.position !== DefaultPosition) {
+      sortPositionText += " (" + this.props.position + ")";
+    }
+    var positionnput =
+        utils.FadeInOnClick({ clickToShowText: sortPositionText },
+          Input({ type: 'number', label: "Position",
+            value: this.state.position || '', onChange: this.onPositionChanged,
+            help: "Categories with lower positions are listed first. Default: " +
+                DefaultPosition }));
 
     var body = this.state.isLoading
         ? r.div({}, "Loading...")
-        : r.div({}, nameInput, slugInput, positionnput);
+        : r.div({},
+            nameInput,
+            topicTypesInput,
+            slugInput,
+            positionnput);
 
     var saveButtonTitle = this.state.isCreating ? "Create Category" : "Save Edits";
     var dialogTitle = this.state.isCreating ? saveButtonTitle : "Edit Category";

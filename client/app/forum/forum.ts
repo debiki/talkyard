@@ -212,14 +212,19 @@ var CategoriesAndTopics = createComponent({
   },
 
   createTopic: function() {
-    this.createChildPage(PageRole.Discussion);
-  },
-
-  createChildPage: function(role: PageRole) {
     var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
     d.i.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
-      var parentPageId = this.getActiveCategory().id;
-      debiki2.editor.editNewForumPage(parentPageId, role);
+      var category: Category = this.getActiveCategory();
+      var newTopicTypes = category.newTopicTypes || [];
+      if (newTopicTypes.length === 0) {
+        debiki2.editor.editNewForumPage(category.id, PageRole.Discussion);
+      }
+      else if (newTopicTypes.length === 1) {
+        debiki2.editor.editNewForumPage(category.id, newTopicTypes[0]);
+      }
+      else {
+        forum['getCreateTopicDialog']().open(category);
+      }
     });
   },
 

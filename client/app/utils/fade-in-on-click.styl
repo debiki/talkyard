@@ -1,0 +1,23 @@
+
+// COULD rename these classes to... "fade-in--..."?
+
+.compl-stuff-enter,   // old React version?
+.compl-stuff-appear   // new React version?
+  opacity: 0.01;
+  height: 1px;
+  transition: opacity .6s ease-in;
+
+.compl-stuff-enter.compl-stuff-enter-active,
+.compl-stuff-appear.compl-stuff-appear-active
+  opacity: 1;
+  height: auto;
+
+.compl-stuff-leave
+  opacity: 1;
+  transition: opacity .5s ease-in;
+
+.compl-stuff-leave-active
+  opacity: 0.01;
+
+
+// vim: fdm=marker et ts=2 sw=2 tw=0 list
