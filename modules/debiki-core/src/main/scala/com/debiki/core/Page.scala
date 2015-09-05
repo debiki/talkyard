@@ -181,6 +181,7 @@ case class PageMeta(
   numChildPages: Int = 0) { // <-- DoLater: remove, replace with category table
 
   require(!pageRole.isSection || categoryId.isDefined, "DwE7KYF2")
+  require(pageRole != PageRole.AboutCategory || categoryId.isDefined, "DwE5PKI8")
   require(!pinOrder.exists(!PageMeta.isOkPinOrder(_)), "DwE4kEYF2")
   require(pinOrder.isEmpty == pinWhere.isEmpty, "DwE36FK2")
   require(numLikes >= 0, "DwE6PKF3")
@@ -269,7 +270,7 @@ object PageRole {
   /** About a forum category (Discourse's forum category about topic). Shown as a per
     * category welcome page, and by editing the page body you edit the forum category
     * description. */
-  case object About extends PageRole(9)
+  case object AboutCategory extends PageRole(9)
 
   /** A question is considered answered when the author (or the staff) has marked some
     * reply as being the answer to the question. */
@@ -306,7 +307,7 @@ object PageRole {
     case EmbeddedComments.IntValue => EmbeddedComments
     case Blog.IntValue => Blog
     case Forum.IntValue => Forum
-    case About.IntValue => About
+    case AboutCategory.IntValue => AboutCategory
     case Question.IntValue => Question
     case Problem.IntValue => Problem
     case Idea.IntValue => Idea

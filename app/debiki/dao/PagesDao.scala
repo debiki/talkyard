@@ -148,7 +148,7 @@ trait PagesDao {
         approvedById = Some(approvedById))
 
       val (pinOrder, pinWhere) =
-        if (pageRole == PageRole.About) (Some(3), Some(PinPageWhere.InCategory))
+        if (pageRole == PageRole.AboutCategory) (Some(3), Some(PinPageWhere.InCategory))
         else (None, None)
       val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.currentTime,
         pinOrder = pinOrder, pinWhere = pinWhere,

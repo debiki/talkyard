@@ -44,6 +44,11 @@ case class Category(
 }
 
 
+object Category {
+  val DescriptionExcerptLength = 300
+}
+
+
 case class CreateEditCategoryData(
   sectionPageId: PageId,
   parentId: CategoryId,

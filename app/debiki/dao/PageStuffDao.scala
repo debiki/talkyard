@@ -27,13 +27,13 @@ import CachingDao.{CacheKey, CacheValue}
 import org.jsoup.Jsoup
 
 
-/** Page stuff, e.g. title, body excerpt (for forum categories only), author name.
+/** Page stuff, e.g. title, body excerpt (for pinned topics), author name.
   */
 case class PageStuff(
   pageId: PageId,
   pageRole: PageRole,
   title: String,
-  bodyExcerpt: Option[String],
+  bodyExcerptIfPinned: Option[String],
   authorDisplayName: String,
   authorUserId: UserId)
 
@@ -86,28 +86,22 @@ trait PageStuffDao {
       val anyAuthor = usersById.get(pageMeta.authorId)
 
       // The text in the first paragraph, but at most ExcerptLength chars.
-      val anyExcerpt: Option[String] =
-        anyBody.flatMap(_.approvedHtmlSanitized match {
+      // For pinned topics only — the excerpt is only shown in forum topic lists for pinned topics.
+      var anyExcerpt: Option[String] = None
+      if (pageMeta.isPinned) {
+        anyExcerpt = anyBody.flatMap(_.approvedHtmlSanitized match {
           case None => None
           case Some(html) =>
-            val ToTextResult(text, _) = htmlToTextWithNewlines(html, firstLineOnly = true)
-            var excerpt =
-              if (text.length <= ExcerptLength + 3) text
-              else text.take(ExcerptLength) + "..."
-            var lastChar = 'x'
-            excerpt = excerpt takeWhile { ch =>
-              val newParagraph = ch == '\n' && lastChar == '\n'
-              lastChar = ch
-              !newParagraph
-            }
+            val excerpt = ReactJson.htmlToExcerpt(html, ExcerptLength)
             Some(excerpt)
         })
+      }
 
       val summary = PageStuff(
         pageId,
         pageMeta.pageRole,
         title = anyTitle.flatMap(_.approvedSource) getOrElse "(No title)",
-        bodyExcerpt = anyExcerpt,
+        bodyExcerptIfPinned = anyExcerpt,
         authorDisplayName = anyAuthor.map(_.displayName) getOrElse "(Author absent, DwE7SKF2)",
         authorUserId = pageMeta.authorId)
 

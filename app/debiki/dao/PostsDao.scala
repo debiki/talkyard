@@ -202,6 +202,19 @@ trait PostsDao {
         editedPost = editedPost.copy(numDistinctEditors = 2)  // for now
       }
 
+      val anyEditedCategory =
+        if (page.role != PageRole.AboutCategory || !editedPost.isOrigPost) {
+          // Later: Go here also if new text not yet approved.
+          None
+        }
+        else {
+          // COULD reuse the same transaction, when loading the category. Barely matters.
+          val category = loadTheCategory(page.meta.categoryId getOrDie "DwE2PKF0")
+          val newDescription = ReactJson.htmlToExcerpt(
+            approvedHtmlSanitized,  Category.DescriptionExcerptLength)
+          Some(category.copy(description = Some(newDescription)))
+        }
+
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
@@ -216,6 +229,7 @@ trait PostsDao {
 
       transaction.updatePost(editedPost)
       insertAuditLogEntry(auditLogEntry, transaction)
+      anyEditedCategory.foreach(transaction.updateCategory)
 
       if (!postToEdit.isSomeVersionApproved && editedPost.isSomeVersionApproved) {
         unimplemented("Updating visible post counts when post approved via an edit", "DwE5WE28")

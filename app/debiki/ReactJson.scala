@@ -592,6 +592,21 @@ object ReactJson {
   }
 
 
+  def htmlToExcerpt(htmlText: String, length: Int): String = {
+    val ToTextResult(text, _) = htmlToTextWithNewlines(htmlText, firstLineOnly = true)
+    var excerpt =
+      if (text.length <= length + 3) text
+      else text.take(length) + "..."
+    var lastChar = 'x'
+    excerpt = excerpt takeWhile { ch =>
+      val newParagraph = ch == '\n' && lastChar == '\n'
+      lastChar = ch
+      !newParagraph
+    }
+    excerpt
+  }
+
+
   def JsStringOrNull(value: Option[String]) =
     value.map(JsString(_)).getOrElse(JsNull)
 

@@ -205,7 +205,7 @@ object ForumController extends mvc.Controller {
   private def categoryToJson(category: Category, recentTopics: Seq[PagePathAndMeta],
       pageStuffById: Map[PageId, debiki.dao.PageStuff]): JsObject = {
     require(recentTopics.isEmpty || pageStuffById.nonEmpty, "DwE8QKU2")
-    val topicsNoAboutCategoryPage = recentTopics.filter(_.pageRole != PageRole.About)
+    val topicsNoAboutCategoryPage = recentTopics.filter(_.pageRole != PageRole.AboutCategory)
     val recentTopicsJson = topicsNoAboutCategoryPage.map(topicToJson(_, pageStuffById))
     Json.obj(
       "id" -> category.id,
@@ -213,7 +213,7 @@ object ForumController extends mvc.Controller {
       "slug" -> category.slug,
       "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
       "position" -> category.position,
-      "description" -> category.description,
+      "description" -> JsStringOrNull(category.description),
       "numTopics" -> category.numTopics,
       "recentTopics" -> recentTopicsJson)
   }
@@ -244,8 +244,7 @@ object ForumController extends mvc.Controller {
         "DwE49Fk3", s"Topic `${topic.id}', site `${topic.path.siteId}', belongs to no category"),
       "pinOrder" -> JsNumberOrNull(topic.meta.pinOrder),
       "pinWhere" -> JsNumberOrNull(topic.meta.pinWhere.map(_.toInt)),
-      // loadPageStuff() loads excerps for pinned topics (and categories).
-      "excerpt" -> JsStringOrNull(topicStuff.bodyExcerpt),
+      "excerpt" -> JsStringOrNull(topicStuff.bodyExcerptIfPinned),
       "numPosts" -> JsNumber(topic.meta.numRepliesVisible + 1),
       "numLikes" -> topic.meta.numLikes,
       "numWrongs" -> topic.meta.numWrongs,

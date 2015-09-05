@@ -213,7 +213,7 @@ trait CategoriesDao {
       transaction.insertCategory(category)
 
       val (aboutPagePath, _) = createPageImpl(
-        PageRole.About, PageStatus.Published, anyCategoryId = Some(categoryId),
+        PageRole.AboutCategory, PageStatus.Published, anyCategoryId = Some(categoryId),
         anyFolder = None, anySlug = Some("about-" + newCategoryData.slug),
         titleSource = titleSource,
         titleHtmlSanitized = titleHtmlSanitized,
