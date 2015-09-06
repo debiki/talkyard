@@ -202,7 +202,7 @@ trait CategoriesDao {
         browserIdData: BrowserIdData): (Category, PagePath) = {
 
     val bodyHtmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(
-      CategoryDescriptionTemplate, allowClassIdDataAttrs = false, followLinks = true)
+      CategoryDescriptionSource, allowClassIdDataAttrs = false, followLinks = true)
 
     val titleSource = s"About the ${newCategoryData.name} category"
     val titleHtmlSanitized = siteDbDao.commonMarkRenderer.sanitizeHtml(titleSource)
@@ -217,9 +217,9 @@ trait CategoriesDao {
         anyFolder = None, anySlug = Some("about-" + newCategoryData.slug),
         titleSource = titleSource,
         titleHtmlSanitized = titleHtmlSanitized,
-        bodySource = CategoryDescriptionTemplate,
+        bodySource = CategoryDescriptionSource,
         bodyHtmlSanitized = bodyHtmlSanitized,
-        showId = true, authorId = SystemUserId, browserIdData, transaction)
+        showId = true, authorId = creatorId, browserIdData, transaction)
 
       // COULD create audit log entry
       (category, aboutPagePath)
@@ -231,7 +231,12 @@ trait CategoriesDao {
   }
 
 
-  val CategoryDescriptionTemplate = "descr"  // [i18n]
+  val CategoryDescriptionSource =  // [i18n]
+    i"""[Replace this paragraph with a description of the category. Keep it short;
+       |the description will be shown on the category list page.]
+       |
+       |Here, after the first paragraph, you can add more details about the category.
+       |"""
 
 }
 

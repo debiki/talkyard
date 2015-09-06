@@ -40,6 +40,11 @@ trait PagesDao {
         showId: Boolean, authorId: UserId, browserIdData: BrowserIdData)
         : PagePath = {
 
+    if (pageRole.isSection) {
+      // Should use e.g. ForumController.createForum() instead.
+      throwBadRequest("DwE4FKW8", s"Bad page role: $pageRole")
+    }
+
     val bodyHtmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(bodySource,
       allowClassIdDataAttrs = true, followLinks = !pageRole.isWidelyEditable)
     if (bodyHtmlSanitized.trim.isEmpty)
@@ -75,8 +80,6 @@ trait PagesDao {
         showId: Boolean, authorId: UserId, browserIdData: BrowserIdData,
         transaction: SiteTransaction): (PagePath, Post) = {
 
-      val pageId = transaction.nextPageId()
-
       // Authorize and determine approver user id. For now:
       val author = transaction.loadUser(authorId) getOrElse throwForbidden("DwE9GK32", "User gone")
 
@@ -94,33 +97,46 @@ trait PagesDao {
           author.id
         }
         else {
-          if (pageRole != PageRole.Discussion && pageRole != PageRole.Question &&
-              pageRole != PageRole.Problem && pageRole != PageRole.Idea &&
-              pageRole != PageRole.MindMap)
-            throwForbidden("DwE5KEPY2", s"Bad forum topic page type: $pageRole")
-
-          anyCategoryId match {
-            case None =>
-              throwForbidden("DwE8GKE4", "No category specified")
-            case Some(parentId) =>
-              die("63047490", "categories") /*
-              val parentMeta = loadPageMeta(parentId) getOrElse throwNotFound(
-                "DwE78BI21", s"Parent forum or category does not exist, id: '$parentId'")
-
-              if (parentMeta.pageRole != PageRole.Category &&
-                  parentMeta.pageRole != PageRole.Forum)
-                throwForbidden("DwE830BIR5", "Parent page is not a forum or a forum category")
-
-              // The System user currently approves all new forum topics.
-              // SECURITY COULD analyze the author's trust level and past actions, and
-              // based on that, approve, reject or review later.
-              SystemUserId
-              */
-          }
+          // The System user currently approves new forum topics.
+          // SECURITY COULD analyze the author's trust level and past actions, and
+          // based on that, approve, reject or review later.
+          SystemUserId
         }
 
-      val folder = anyFolder getOrElse "/"
+      if (!author.isStaff && pageRole.staffOnly)
+        throwForbidden("DwE5KEPY2", s"Forbidden page type: $pageRole")
 
+    if (pageRole.isSection) {
+      // A forum page is created before its root category — verify that the root category
+      // does not yet exist (if so, the category id is probably wrong).
+      val categoryId = anyCategoryId getOrElse {
+        throwForbidden("DwE4KFE0", s"Pages type $pageRole needs a root category id")
+      }
+      if (transaction.loadCategory(categoryId).isDefined) {
+        throwForbidden("DwE5KPW2", s"Category already exists, id: $categoryId")
+      }
+    }
+    else {
+      anyCategoryId match {
+        case None if !author.isStaff =>
+          throwForbidden("DwE8GKE4", "No category specified")
+        case Some(categoryId) =>
+          val category = transaction.loadCategory(categoryId) getOrElse throwNotFound(
+            "DwE4KGP8", s"Category not found, id: $categoryId")
+          if (category.isRoot)
+            throwForbidden("DwE5GJU0", o"""The root category cannot have any child pages;
+              use the Uncategorized category instead""")
+          if (category.isLocked)
+            throwForbidden("DwE4KFW2", "Category locked")
+          if (category.isFrozen)
+            throwForbidden("DwE1QXF2", "Category frozen")
+          if (category.isDeleted)
+            throwForbidden("DwE6GPY2", "Category deleted")
+      }
+    }
+
+      val folder = anyFolder getOrElse "/"
+      val pageId = transaction.nextPageId()
       val pagePath = PagePath(siteId, folder = folder, pageId = Some(pageId),
         showId = showId, pageSlug = pageSlug)
 
@@ -294,6 +310,9 @@ trait PagesDao {
     val newClosedAt = readWriteTransaction { transaction =>
       val user = transaction.loadTheUser(userId)
       val oldMeta = transaction.loadThePageMeta(pageId)
+      if (oldMeta.pageRole.isSection || oldMeta.pageRole == PageRole.AboutCategory)
+        throwBadRequest("DwE4PKF7", s"Cannot close pages of type ${oldMeta.pageRole}")
+
       if (!user.isStaff && user.id != oldMeta.authorId)
         throwForbidden("DwE5JPK7", "Only staff and the topic author can toggle it closed")
 

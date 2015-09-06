@@ -225,7 +225,7 @@ case class PageMeta(
 
 
 
-sealed abstract class PageRole(protected val IntValue: Int) {
+sealed abstract class PageRole(protected val IntValue: Int, val staffOnly: Boolean = true) {
 
   /** True if this page is e.g. a blog or a forum — they can have child pages
     * (namely blog posts, forum topics).
@@ -254,7 +254,7 @@ object PageRole {
 
   case object SpecialContent extends PageRole(4)
 
-  case object EmbeddedComments extends PageRole(5)
+  case object EmbeddedComments extends PageRole(5, staffOnly = false)
 
   /** Lists blog posts. */
   case object Blog extends PageRole(6) {
@@ -273,22 +273,22 @@ object PageRole {
 
   /** A question is considered answered when the author (or the staff) has marked some
     * reply as being the answer to the question. */
-  case object Question extends PageRole(10)
+  case object Question extends PageRole(10, staffOnly = false)
 
   /** Something that is broken and should be fixed. Can change status to Planned and Done. */
-  case object Problem extends PageRole(14)
+  case object Problem extends PageRole(14, staffOnly = false)
 
   /** An idea about something to do, or a feature request. Can change status to Planned and Done. */
-  case object Idea extends PageRole(15)
+  case object Idea extends PageRole(15, staffOnly = false)
 
   /** Something that's been planned, perhaps done, but perhaps not an Idea or Problem. */
-  case object ToDo extends PageRole(13)
+  case object ToDo extends PageRole(13, staffOnly = false)
 
   /** Mind maps use 2D layout, even if the site is configured to use 1D layout. */
-  case object MindMap extends PageRole(11)
+  case object MindMap extends PageRole(11, staffOnly = false)
 
   /** For discussions (non-questions) or announcements or blog posts, for example.  */
-  case object Discussion extends PageRole(12)
+  case object Discussion extends PageRole(12, staffOnly = false)
 
   /*
   case object WikiMainPage extends PageRole {

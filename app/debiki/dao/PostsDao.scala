@@ -208,10 +208,14 @@ trait PostsDao {
           None
         }
         else {
+          if (newText == Category.UncategorizedDescription) {
+            // We recognize Uncategorized categories via the magic text tested for above.
+            throwForbidden("DwE4KEP8", "Forbidden magic text")
+          }
           // COULD reuse the same transaction, when loading the category. Barely matters.
           val category = loadTheCategory(page.meta.categoryId getOrDie "DwE2PKF0")
           val newDescription = ReactJson.htmlToExcerpt(
-            approvedHtmlSanitized,  Category.DescriptionExcerptLength)
+            approvedHtmlSanitized, Category.DescriptionExcerptLength)
           Some(category.copy(description = Some(newDescription)))
         }
 

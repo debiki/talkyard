@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2013-2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -175,9 +175,11 @@ object ForumController extends mvc.Controller {
     topicsInclPinned
   }
 
+
   def parseThePageQuery(request: DebikiRequest[_]): PageQuery =
     parsePageQuery(request) getOrElse throwBadRequest(
       "DwE2KTES7", "No sort-order-offset specified")
+
 
   def parsePageQuery(request: DebikiRequest[_]): Option[PageQuery] = {
     val sortOrderStr = request.queryString.getFirst("sortOrder") getOrElse { return None }
@@ -220,22 +222,12 @@ object ForumController extends mvc.Controller {
   }
 
 
-  /** For now only. In the future I'll generate the slug when the category is created?
-    */
-  def categoryNameToSlug(name: String): String = {
-    name.toLowerCase.replaceAll(" ", "-") filterNot { char =>
-      "()!?[].," contains char
-    }
-  }
-
-
   def topicToJson(topic: PagePathAndMeta, pageStuffById: Map[PageId, PageStuff]): JsObject = {
     val topicStuff = pageStuffById.get(topic.pageId) getOrDie "DwE1F2I7"
     val createdEpoch = topic.meta.createdAt.getTime
     val bumpedEpoch = DateEpochOrNull(topic.meta.bumpedAt)
     val lastReplyEpoch = DateEpochOrNull(topic.meta.lastReplyAt)
     val title = topicStuff.title
-
     Json.obj(
       "pageId" -> topic.id,
       "pageRole" -> topic.pageRole.toInt,

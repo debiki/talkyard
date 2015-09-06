@@ -169,8 +169,8 @@ var EditCategoryDialog = createClassAndFactory({
               help: "The slug is shown in the URL in the browser address bar." }));
 
     var sortPositionText = "Click to set sort position";
-    if (this.props.position !== DefaultPosition) {
-      sortPositionText += " (" + this.props.position + ")";
+    if (this.state.position !== DefaultPosition) {
+      sortPositionText += " (" + this.state.position + ")";
     }
     var positionnput =
         utils.FadeInOnClick({ clickToShowText: sortPositionText },

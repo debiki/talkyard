@@ -1150,7 +1150,7 @@ var PostActions = createComponent({
     // answered/fixed, the way to reopen it is to click the answered/fixed icon, to
     // mark it as not-answered/not-fixed again.)
     var closeReopenButton;
-    var canCloseOrReopen = !isDone && !isAnswered;
+    var canCloseOrReopen = !isDone && !isAnswered && store.pageRole !== PageRole.About;
     if (isPageBody && canCloseOrReopen && isStaffOrOwnPost) {
       var closeReopenTitle = "Reopen";
       var closeReopenIcon = 'icon-circle-empty';

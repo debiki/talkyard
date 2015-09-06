@@ -39,12 +39,15 @@ case class Category(
 
   def isRoot = parentId.isEmpty
   def isTheUncategorizedCategory = description.contains(Category.UncategorizedDescription)
+  def isLocked = lockedAt.isDefined
+  def isFrozen = frozenAt.isDefined
+  def isDeleted = deletedAt.isDefined
 
 }
 
 
 object Category {
-  val DescriptionExcerptLength = 300
+  val DescriptionExcerptLength = 280
   val UncategorizedDescription = "__uncategorized__"
 }
 
