@@ -80,31 +80,31 @@ trait PagesDao {
         showId: Boolean, authorId: UserId, browserIdData: BrowserIdData,
         transaction: SiteTransaction): (PagePath, Post) = {
 
-      // Authorize and determine approver user id. For now:
-      val author = transaction.loadUser(authorId) getOrElse throwForbidden("DwE9GK32", "User gone")
+    // Authorize and determine approver user id. For now:
+    val author = transaction.loadUser(authorId) getOrElse throwForbidden("DwE9GK32", "User gone")
 
-      val pageSlug = anySlug match {
-        case Some(slug) =>
-          if (!author.isStaff)
-            throwForbidden("DwE4KFW87", "Only staff may specify page slug")
-          slug
-        case None =>
-          siteDbDao.commonMarkRenderer.slugifyTitle(titleSource)
+    val pageSlug = anySlug match {
+      case Some(slug) =>
+        if (!author.isStaff)
+          throwForbidden("DwE4KFW87", "Only staff may specify page slug")
+        slug
+      case None =>
+        siteDbDao.commonMarkRenderer.slugifyTitle(titleSource)
+    }
+
+    val approvedById =
+      if (author.isStaff) {
+        author.id
+      }
+      else {
+        // The System user currently approves new forum topics.
+        // SECURITY COULD analyze the author's trust level and past actions, and
+        // based on that, approve, reject or review later.
+        SystemUserId
       }
 
-      val approvedById =
-        if (author.isStaff) {
-          author.id
-        }
-        else {
-          // The System user currently approves new forum topics.
-          // SECURITY COULD analyze the author's trust level and past actions, and
-          // based on that, approve, reject or review later.
-          SystemUserId
-        }
-
-      if (!author.isStaff && pageRole.staffOnly)
-        throwForbidden("DwE5KEPY2", s"Forbidden page type: $pageRole")
+    if (!author.isStaff && pageRole.staffOnly)
+      throwForbidden("DwE5KEPY2", s"Forbidden page type: $pageRole")
 
     if (pageRole.isSection) {
       // A forum page is created before its root category — verify that the root category
@@ -135,58 +135,58 @@ trait PagesDao {
       }
     }
 
-      val folder = anyFolder getOrElse "/"
-      val pageId = transaction.nextPageId()
-      val pagePath = PagePath(siteId, folder = folder, pageId = Some(pageId),
-        showId = showId, pageSlug = pageSlug)
+    val folder = anyFolder getOrElse "/"
+    val pageId = transaction.nextPageId()
+    val pagePath = PagePath(siteId, folder = folder, pageId = Some(pageId),
+      showId = showId, pageSlug = pageSlug)
 
-      val titleUniqueId = transaction.nextPostId()
-      val bodyUniqueId = titleUniqueId + 1
+    val titleUniqueId = transaction.nextPostId()
+    val bodyUniqueId = titleUniqueId + 1
 
-      val titlePost = Post.createTitle(
-        siteId = siteId,
-        uniqueId = titleUniqueId,
-        pageId = pageId,
-        createdAt = transaction.currentTime,
-        createdById = authorId,
-        source = titleSource,
-        htmlSanitized = titleHtmlSanitized,
-        approvedById = Some(approvedById))
+    val titlePost = Post.createTitle(
+      siteId = siteId,
+      uniqueId = titleUniqueId,
+      pageId = pageId,
+      createdAt = transaction.currentTime,
+      createdById = authorId,
+      source = titleSource,
+      htmlSanitized = titleHtmlSanitized,
+      approvedById = Some(approvedById))
 
-      val bodyPost = Post.createBody(
-        siteId = siteId,
-        uniqueId = bodyUniqueId,
-        pageId = pageId,
-        createdAt = transaction.currentTime,
-        createdById = authorId,
-        source = bodySource,
-        htmlSanitized = bodyHtmlSanitized,
-        approvedById = Some(approvedById))
+    val bodyPost = Post.createBody(
+      siteId = siteId,
+      uniqueId = bodyUniqueId,
+      pageId = pageId,
+      createdAt = transaction.currentTime,
+      createdById = authorId,
+      source = bodySource,
+      htmlSanitized = bodyHtmlSanitized,
+      approvedById = Some(approvedById))
 
-      val (pinOrder, pinWhere) =
-        if (pageRole == PageRole.AboutCategory) (Some(3), Some(PinPageWhere.InCategory))
-        else (None, None)
-      val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.currentTime,
-        pinOrder = pinOrder, pinWhere = pinWhere,
-        categoryId = anyCategoryId, url = None, publishDirectly = true)
+    val (pinOrder, pinWhere) =
+      if (pageRole == PageRole.AboutCategory) (Some(3), Some(PinPageWhere.InCategory))
+      else (None, None)
+    val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.currentTime,
+      pinOrder = pinOrder, pinWhere = pinWhere,
+      categoryId = anyCategoryId, url = None, publishDirectly = true)
 
-      val auditLogEntry = AuditLogEntry(
-        siteId = siteId,
-        id = AuditLogEntry.UnassignedId,
-        didWhat = AuditLogEntryType.NewPage,
-        doerId = authorId,
-        doneAt = transaction.currentTime,
-        browserIdData = browserIdData,
-        pageId = Some(pageId),
-        pageRole = Some(pageRole))
+    val auditLogEntry = AuditLogEntry(
+      siteId = siteId,
+      id = AuditLogEntry.UnassignedId,
+      didWhat = AuditLogEntryType.NewPage,
+      doerId = authorId,
+      doneAt = transaction.currentTime,
+      browserIdData = browserIdData,
+      pageId = Some(pageId),
+      pageRole = Some(pageRole))
 
-      transaction.insertPageMeta(pageMeta)
-      transaction.insertPagePath(pagePath)
-      transaction.insertPost(titlePost)
-      transaction.insertPost(bodyPost)
-      insertAuditLogEntry(auditLogEntry, transaction)
+    transaction.insertPageMeta(pageMeta)
+    transaction.insertPagePath(pagePath)
+    transaction.insertPost(titlePost)
+    transaction.insertPost(bodyPost)
+    insertAuditLogEntry(auditLogEntry, transaction)
 
-      (pagePath, bodyPost)
+    (pagePath, bodyPost)
   }
 
 
