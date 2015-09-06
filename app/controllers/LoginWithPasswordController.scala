@@ -23,6 +23,7 @@ import actions.ApiActions.GetActionRateLimited
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.Utils.isOkayEmailAddress
+import controllers.Utils.OkSafeJson
 import debiki._
 import debiki.dao.SiteDao
 import debiki.DebikiHttp._
@@ -30,7 +31,7 @@ import java.{util => ju}
 import org.scalactic.{Good, Bad}
 import play.api._
 import play.api.mvc.{Action => _, _}
-import play.api.libs.json.JsObject
+import play.api.libs.json.{Json, JsBoolean}
 import requests.ApiRequest
 import requests.JsonPostRequest
 
@@ -131,7 +132,7 @@ object LoginWithPasswordController extends mvc.Controller {
           dao, emailAddress, siteHostname = request.host, siteId = request.siteId)
     }
 
-    Ok("""{ "emailVerifiedAndLoggedIn": false }""")
+    OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsBoolean(false)))
   }
 
 
