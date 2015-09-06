@@ -42,7 +42,7 @@ object PageTitleSettingsController extends mvc.Controller {
 
     val pageId = (request.body \ "pageId").as[PageId]
     val newTitle = (request.body \ "newTitle").as[String].trim
-    val anyNewCategoryId = (request.body \ "category").asOpt[CategoryId] //xx check JS ok?
+    val anyNewCategoryId = (request.body \ "categoryId").asOpt[CategoryId]
     val anyNewRoleInt = (request.body \ "pageRole").asOpt[Int]
     val anyLayoutString = (request.body \ "layout").asOpt[String]
     val anyFolder = (request.body \ "folder").asOpt[String] map { folder =>
@@ -130,8 +130,8 @@ object PageTitleSettingsController extends mvc.Controller {
       }
     }
 
-    // Refresh cache, plus any ancestors in case one of them is a forum page,
-    // because forum pages cache category JSON and a latest topics list (includes titles).
+    // Refresh cache, plus any forum page if this page is a forum topic.
+    // (Forum pages cache category JSON and a latest topics list, includes titles.)
     val newSectionPageId = newMeta.categoryId map request.dao.loadTheSectionPageId
     val idsToRefresh = (pageId :: oldSectionPageId.toList ::: newSectionPageId.toList).distinct
     idsToRefresh.foreach(request.dao.refreshPageInAnyCache)

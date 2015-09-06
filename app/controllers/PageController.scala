@@ -37,7 +37,7 @@ object PageController extends mvc.Controller {
   def createPage = PostJsonAction(RateLimits.CreateTopic, maxLength = 20 * 1000) { request =>
     import request.body
 
-    val anyCategoryId = (body \ "categoryId").asOpt[CategoryId]  //xx JS
+    val anyCategoryId = (body \ "categoryId").asOpt[CategoryId]
     val pageRoleInt = (body \ "pageRole").as[Int]
     val pageRole = PageRole.fromInt(pageRoleInt) getOrElse throwBadArgument("DwE3KE04", "pageRole")
     val pageStatusStr = (body \ "pageStatus").as[String]

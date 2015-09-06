@@ -111,9 +111,7 @@ interface Category {
   newTopicTypes: number[];
   position?: number;
   description: string;
-  subCategories: number[];
-  numTopics: number;
-  recentTopics: Topic[];
+  recentTopics?: Topic[];
   isTheUncategorizedCategory?: boolean;
   isForumItself?: boolean;
 }
@@ -164,7 +162,6 @@ interface Store {
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
   pageId: string;
-  parentPageId?: string;  //xx
   categoryId?: number;
   ancestorsRootFirst?: Ancestor[];
   pageRole: PageRole;

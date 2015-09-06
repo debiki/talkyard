@@ -205,7 +205,7 @@ object ReactJson {
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
       "pageId" -> pageReq.thePageId,
-      "categoryId" -> JsNumberOrNull(page.meta.categoryId), //xx JS
+      "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "forumId" -> JsStringOrNull(anyForumId),
       "ancestorsRootFirst" -> ancestorsJsonRootFirst,
       "pageRole" -> JsNumber(page.role.toInt),
@@ -530,8 +530,7 @@ object ReactJson {
       "slug" -> category.slug,
       "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
       "position" -> category.position,
-      "description" -> JsStringOrNull(category.description),
-      "numTopics" -> category.numTopics)
+      "description" -> JsStringOrNull(category.description))
     if (recentTopicsJson ne null) {
       json += "recentTopics" -> JsArray(recentTopicsJson)
     }

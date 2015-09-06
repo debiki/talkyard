@@ -124,8 +124,8 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.EditTitleAndSettings:
       store.ancestorsRootFirst = action.newAncestorsRootFirst;
-      var parent: any = _.last(action.newAncestorsRootFirst);
-      store.parentPageId = parent ? parent.pageId : null;
+      var parent: Ancestor = <Ancestor> _.last(action.newAncestorsRootFirst);
+      store.categoryId = parent ? parent.categoryId : null;
       var was2dTree = store.horizontalLayout;
       store.pageRole = action.newPageRole || store.pageRole;
       store.horizontalLayout = action.newPageRole === PageRole.MindMap || store.is2dTreeDefault;

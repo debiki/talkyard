@@ -102,7 +102,7 @@ export var TitleEditor = createComponent({
     var categoryInput = this.refs.categoryInput;
     var pageRoleInput = this.refs.pageRoleInput;
     var settings: any = {
-      category: categoryInput ? categoryInput.getValue() : null,
+      categoryId: categoryInput ? parseInt(categoryInput.getValue()) : null,
       pageRole: pageRoleInput ? parseInt(pageRoleInput.getValue()) : null,
       folder: addFolderSlashes(this.state.folder),
       slug: this.state.slug,
@@ -171,7 +171,7 @@ export var TitleEditor = createComponent({
       var selectCategoryInput =
         Input({ type: 'select', label: 'Category', ref: 'categoryInput', title: 'Category',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
-            defaultValue: this.props.parentPageId },
+            defaultValue: this.props.categoryId },
           categoryOptions);
     }
     else if (this.props.forumId) {

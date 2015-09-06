@@ -30,8 +30,6 @@ case class Category(
   slug: String,
   position: Int,
   description: Option[String],
-  numTopics: Int,
-  numPosts: Int,
   newTopicTypes: immutable.Seq[PageRole],
   createdAt: ju.Date,
   updatedAt: ju.Date,
@@ -68,8 +66,6 @@ case class CreateEditCategoryData(
     slug = slug,
     position = position,
     description = None,
-    numTopics = 0,
-    numPosts = 0,
     newTopicTypes = newTopicTypes,
     createdAt = createdAt,
     updatedAt = createdAt)
