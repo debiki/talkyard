@@ -94,8 +94,8 @@ var ServerErrorDialog = createComponent({
       message = this.state.clientErrorMessage;
       if (debiki2.utils.isMouseDetected) {
         message += "\n\n" +
-            "Check Dev Tools for details, usually Ctrl + Shift + C (here directly " +
-            "in the browser, now) and then click Console. [DwE5KFW2]";
+            "See Dev Tools for details: usually Ctrl + Shift + C, here in the browser, " +
+            "then click Console.";
       }
     }
     else {

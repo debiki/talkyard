@@ -44,6 +44,15 @@ object ForumController extends mvc.Controller {
   val NumTopicsToList = 40
 
 
+  def createForum = StaffPostJsonAction(maxLength = 200) { request =>
+    val title = (request.body \ "title").as[String]
+    val folder = (request.body \ "folder").as[String]
+    val pagePath = request.dao.createForum(title, folder = folder,
+      creatorId = request.theUserId, request.theBrowserIdData)
+    OkSafeJson(JsString(pagePath.value))
+  }
+
+
   def loadCategory(id: String) = StaffGetAction { request =>
     val categoryId = Try(id.toInt) getOrElse throwBadRequest("DwE6PU1", "Invalid category id")
     val category = request.dao.loadTheCategory(categoryId)

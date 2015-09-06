@@ -391,6 +391,14 @@ export function loadAuthorBlockedInfo(postId: number, whenDone: (response: Block
 }
 
 
+export function createForum(title: string, folder: string, success: (urlPath: string) => void) {
+  postJsonSuccess('/-/create-forum', success, {
+    title: title,
+    folder: folder,
+  });
+}
+
+
 export function loadForumCategories(forumPageId: string,
       success: (categories: Category[]) => void) {
   get('/-/list-categories?forumId=' + forumPageId, success);

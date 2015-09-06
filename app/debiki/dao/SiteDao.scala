@@ -66,6 +66,7 @@ abstract class SiteDao
   with AssetBundleDao
   with SettingsDao
   with SpecialContentDao
+  with ForumDao
   with CategoriesDao
   with PagesDao
   with PagePathMetaDao

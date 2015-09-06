@@ -103,6 +103,7 @@ GET   /-/list-invites           controllers.InviteController.listInvites(sentByI
 POST  /-/send-invite            controllers.InviteController.sendInvite
 GET   /-/accept-invite/:key     controllers.InviteController.acceptInvite(key)
 
+POST  /-/create-forum           controllers.ForumController.createForum
 GET   /-/list-topics            controllers.ForumController.listTopics(categoryId)
 GET   /-/list-categories        controllers.ForumController.listCategories(forumId)
 GET   /-/list-categories-topics controllers.ForumController.listCategoriesAndTopics(forumId)

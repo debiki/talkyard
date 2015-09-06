@@ -208,16 +208,8 @@ export var CreateForumPanel = createComponent({
   },
 
   createForum: function() {
-    var data = {
-      pageRole: PageRole.Forum,
-      pageStatus: 'Published',
-      pageTitle: this.state.forumName,
-      pageBody: 'Forum description',
-      showId: false,
-      pageSlug: '',
-    };
-    Server.createPage(data, (newPageId: string) => {
-      window.location.assign('/-' + newPageId);
+    Server.createForum(this.state.forumName, '/', (forumUrlPath: string) => {
+      window.location.assign(forumUrlPath);
     });
   },
 

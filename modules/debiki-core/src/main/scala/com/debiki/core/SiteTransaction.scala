@@ -28,6 +28,8 @@ trait SiteTransaction {
   def rollback()
   def siteId: SiteId
 
+  def deferConstraints()
+
   /** Throws SiteAlreadyExistsException if the site already exists.
     * Throws TooManySitesCreatedException if you've created too many websites already
     * (from the same IP or email address).

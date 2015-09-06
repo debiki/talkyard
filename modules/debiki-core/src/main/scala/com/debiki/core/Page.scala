@@ -180,7 +180,6 @@ case class PageMeta(
   // deletedAt: Option[ju.Date] = None,
   numChildPages: Int = 0) { // <-- DoLater: remove, replace with category table
 
-  require(!pageRole.isSection || categoryId.isDefined, "DwE7KYF2")
   require(pageRole != PageRole.AboutCategory || categoryId.isDefined, "DwE5PKI8")
   require(!pinOrder.exists(!PageMeta.isOkPinOrder(_)), "DwE4kEYF2")
   require(pinOrder.isEmpty == pinWhere.isEmpty, "DwE36FK2")
