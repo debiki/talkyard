@@ -193,9 +193,6 @@ class TemplateProgrammingInterface(
   def pageId = pageReq.thePageId
   def pageRole = pageReq.thePageRole
 
-  def currentFolder = PathRanges(folders = Seq(pageReq.pagePath.folder))
-  def currentTree = PathRanges(trees = Seq(pageReq.pagePath.folder))
-
   def pageSettings = pageReq.thePageSettings
 
   val horizontalComments = pageReq.thePageRole == PageRole.MindMap ||
@@ -213,16 +210,6 @@ class TemplateProgrammingInterface(
 
   def reactTest =
     xml.Unparsed(ReactRenderer.renderPage(reactStoreSafeJsonString))
-
-
-  /** Example: if this is a forum topic  in a forum  in a forum group,
-    * this function would return the id of the forum group (that'd be the "root" section).
-    */
-  def anyRootSectionPageId: Option[PageId] =
-    pageReq.ancestorIdsParentFirst_!.lastOption orElse {
-      // If this page itself is a section, its id is the root section id.
-      if (pageRole.isSection) Some(pageId) else None
-    }
 
 
   def pageUrlPath = pageReq.pagePath.value

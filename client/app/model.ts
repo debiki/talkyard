@@ -105,13 +105,15 @@ interface User {
 
 
 interface Category {
+  id: number;
   name: string;
-  pageId: string;
   slug: string;
-  subCategories: number[];
+  newTopicTypes: number[];
+  position?: number;
   description: string;
-  numTopics: number;
-  recentTopics: Topic[];
+  recentTopics?: Topic[];
+  isTheUncategorizedCategory?: boolean;
+  isForumItself?: boolean;
 }
 
 
@@ -120,7 +122,7 @@ interface Topic {
   pageRole: PageRole;
   title: string;
   url: string;
-  categoryId: string;
+  categoryId: number;
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   excerpt?: string;
@@ -160,7 +162,7 @@ interface Store {
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
   pageId: string;
-  parentPageId?: string;
+  categoryId?: number;
   ancestorsRootFirst?: Ancestor[];
   pageRole: PageRole;
   pagePath: string;
@@ -200,7 +202,7 @@ interface Store {
 
 
 interface Ancestor {
-  pageId: string;
+  categoryId: number;
   title: string;
   path: string;
 }

@@ -224,9 +224,6 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
 // Categories
 //===========================
 
-.forum-table .topic-title.icon-pin:before
-  margin: 0 4px 0 0;
-
 .parent-forums-list
   margin: -25px 0 0; // place inside the #dw-react-topbar, or too much whitespace above title
   padding-left: 0; // needed for FF, not Chrome. Weird
@@ -256,7 +253,14 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
   & > tbody > tr > td:first-child
     width: 45%; // or sometimes 80-90% wide
 
+  .topic-title.icon-pin:before
+    margin: 0 4px 0 0;
+
   .topic-title
+    [class^="icon-"]:before, [class*=" icon-"]:before
+      margin: 0 4px 0 0;
+      font-size: 95%;
+
     .icon-check-empty:before
       position: relative;
       top: 1px;
@@ -293,7 +297,6 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
   margin-bottom: 10px;
 }
 
-.forum-table .topic-count,
 .forum-table .topic-table-excerpt .topic-details {
   font-size: 12px;
 }
@@ -317,7 +320,6 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
   border-bottom: 1px solid hsl(0, 0%, 87%);
 }
 
-.forum-table .topic-count,
 .topic-details {
   color: gray;
 }

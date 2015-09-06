@@ -57,12 +57,17 @@ object SiteDaoFactory {
   * Delegates most requests to SiteDbDao. However, hides some
   * SiteDbDao methods, because calling them directly would mess up
   * the cache in SiteDao's subclass CachingSiteDao.
+  *
+  * Don't use for more than one http request — it might cache things,
+  * in private fields, and is perhaps not thread safe.
   */
 abstract class SiteDao
   extends AnyRef
   with AssetBundleDao
   with SettingsDao
   with SpecialContentDao
+  with ForumDao
+  with CategoriesDao
   with PagesDao
   with PagePathMetaDao
   with PageStuffDao
@@ -134,33 +139,6 @@ abstract class SiteDao
     readWriteTransaction { transaction =>
       transaction.addSiteHost(host)
     }
-  }
-
-
-  // ----- List pages
-
-  def listChildPages(parentPageIds: Seq[PageId], pageQuery: PageQuery,
-        limit: Int, onlyPageRole: Option[PageRole] = None,
-        excludePageRole: Option[PageRole] = None): Seq[PagePathAndMeta] =
-    siteDbDao.listChildPages(parentPageIds, pageQuery, limit = limit,
-      onlyPageRole = onlyPageRole, excludePageRole = excludePageRole)
-
-
-  /** Lists all topics below rootPageId. Currently intended for forums only.
-    * Details: finds all categories with parent rootPageId, then all topics for
-    * those categories, plus topics that are  direct children of rootPageId.
-    * For now, allows one level of categories only (that is, no sub categories).
-    */
-  def listTopicsInTree(rootPageId: PageId, pageQuery: PageQuery, limit: Int)
-        : Seq[PagePathAndMeta] = {
-    val categoriesQuery = PageQuery(PageOrderOffset.Any, PageFilter.ShowAll)
-    val childCategories = listChildPages(parentPageIds = Seq(rootPageId),
-      pageQuery = categoriesQuery, limit = 999, onlyPageRole = Some(PageRole.Category))
-    val childCategoryIds = childCategories.map(_.id)
-    val allCategoryIds = childCategoryIds :+ rootPageId
-    val topics: Seq[PagePathAndMeta] = listChildPages(parentPageIds = allCategoryIds,
-      pageQuery = pageQuery, limit = limit, excludePageRole = Some(PageRole.Category))
-    topics
   }
 
 

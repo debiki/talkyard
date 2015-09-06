@@ -176,14 +176,15 @@ object ReactJson {
       Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.id))
 
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
-      makeForumIdAndAncestorsJson(page.meta, page.ancestorIdsParentFirst, pageReq.dao)
+      makeForumIdAndAncestorsJson(page.meta, pageReq.dao)
 
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
+        val rootCategoryId = page.meta.categoryId getOrDie "Dwe7KYP2"
         val orderOffset = controllers.ForumController.parsePageQuery(pageReq).getOrElse(
           PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll))
-        val topics = ForumController.listTopicsInclPinned(page.id, orderOffset, pageReq.dao,
-          limit = ForumController.NumTopicsToList)
+        val topics = ForumController.listTopicsInclPinned(rootCategoryId, orderOffset, pageReq.dao,
+          includeDescendantCategories = true, limit = ForumController.NumTopicsToList)
         val pageStuffById = pageReq.dao.loadPageStuff(topics.map(_.pageId))
         topics.map(controllers.ForumController.topicToJson(_, pageStuffById))
       }
@@ -204,7 +205,7 @@ object ReactJson {
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
       "pageId" -> pageReq.thePageId,
-      "parentPageId" -> JsStringOrNull(page.meta.parentPageId),
+      "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "forumId" -> JsStringOrNull(anyForumId),
       "ancestorsRootFirst" -> ancestorsJsonRootFirst,
       "pageRole" -> JsNumber(page.role.toInt),
@@ -238,44 +239,36 @@ object ReactJson {
 
   /** Returns (any-forum-id, json-for-ancestor-forum-and-categories-forum-first).
     */
-  def makeForumIdAndAncestorsJson(pageMeta: PageMeta, ancestorIdsParentFirst: Seq[PageId],
-        dao: SiteDao): (Option[PageId], Seq[JsObject]) = {
-    var categoryIds = ancestorIdsParentFirst.reverse
-    if (pageMeta.pageRole == PageRole.Category) {
-      categoryIds = categoryIds :+ pageMeta.pageId // hack: a category is its own about page, placed in itself — this will go away when categoris have their own table [forumcategory]
+  def makeForumIdAndAncestorsJson(pageMeta: PageMeta, dao: SiteDao)
+        : (Option[PageId], Seq[JsObject]) = {
+    val categoryId = pageMeta.categoryId getOrElse {
+      return (None, Nil)
     }
-    if (categoryIds.isEmpty) {
-      val anyForumId = if (pageMeta.pageRole == PageRole.Forum) Some(pageMeta.pageId) else None
-      return (anyForumId, Nil)
+    val categoriesRootFirst = dao.loadCategoriesRootLast(categoryId).reverse
+    if (categoriesRootFirst.isEmpty) {
+      return (None, Nil)
     }
-    dao.lookupPagePath(categoryIds.head) match {
+    val forumPageId = categoriesRootFirst.head.sectionPageId
+    dao.lookupPagePath(forumPageId) match {
       case None => (None, Nil)
       case Some(forumPath) =>
-        val stuffRootFirst = dao.loadPageStuffAsList(categoryIds)
-        val jsonRootFirst = stuffRootFirst.flatten map { pageStuff =>
-          makeForumOrCategoryJson(forumPath, pageStuff)
-        }
-        (Some(categoryIds.head), jsonRootFirst)
+        val jsonRootFirst = categoriesRootFirst.map(makeForumOrCategoryJson(forumPath, _))
+        (Some(forumPageId), jsonRootFirst)
     }
   }
 
 
-  /** Returns the URL path, page id and title for a forum or category in that forum.
+  /** Returns the URL path, category id and title for a forum or category.
     */
-  private def makeForumOrCategoryJson(forumPath: PagePath, pageStuff: PageStuff): JsObject = {
-    // Right now if there is any parent pages then this page is a forum category or
-    // forum topic, and the topmost ancestor (the root) is the forum main page.
-    val path =
-      if (pageStuff.pageId == forumPath.pageId.getOrDie("DwE5GK2")) {
-        s"${forumPath.value}#/latest/"
-      }
-      else {
-        val categorySlug = controllers.ForumController.categoryNameToSlug(pageStuff.title)
-        s"${forumPath.value}#/latest/$categorySlug"
-      }
+  private def makeForumOrCategoryJson(forumPath: PagePath, category: Category): JsObject = {
+    val (name, path) =
+      if (category.isRoot)
+        ("Forum", s"${forumPath.value}#/latest/")   // [i18n]
+      else
+        (category.name, s"${forumPath.value}#/latest/${category.slug}")
     Json.obj(
-      "pageId" -> pageStuff.pageId,
-      "title" -> pageStuff.title,
+      "categoryId" -> category.id,
+      "title" -> name,
       "path" -> path)
   }
 
@@ -520,19 +513,31 @@ object ReactJson {
   }
 
 
-  def categoriesJson(forumId: PageId, dao: SiteDao): JsArray = {
-    val categories: Seq[Category] = dao.loadCategoryTree(forumId)
-    val pageStuffById = dao.loadPageStuff(categories.map(_.pageId))
-    val categoriesJson = JsArray(categories map { category =>
-      val pageStuff = pageStuffById.get(category.pageId) getOrDie "DwE3KE78"
-      val categoryName = pageStuff.title
-      JsObject(Seq(
-        "name" -> JsString(categoryName),
-        "pageId" -> JsString(category.pageId),
-        "slug" -> JsString(controllers.ForumController.categoryNameToSlug(categoryName)),
-        "subCategories" -> JsArray()))
+  def categoriesJson(sectionId: PageId, dao: SiteDao): JsArray = {
+    val categories: Seq[Category] = dao.listSectionCategories(sectionId)
+    val pageStuffById = dao.loadPageStuff(categories.map(_.sectionPageId))
+    val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
+      categoryJson(category)
     })
     categoriesJson
+  }
+
+
+  def categoryJson(category: Category, recentTopicsJson: Seq[JsObject] = null) = {
+    var json = Json.obj(
+      "id" -> category.id,
+      "name" -> category.name,
+      "slug" -> category.slug,
+      "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
+      "position" -> category.position,
+      "description" -> JsStringOrNull(category.description))
+    if (recentTopicsJson ne null) {
+      json += "recentTopics" -> JsArray(recentTopicsJson)
+    }
+    if (category.isTheUncategorizedCategory) {
+      json += "isTheUncategorizedCategory" -> JsBoolean(true)
+    }
+    json
   }
 
 
@@ -598,6 +603,21 @@ object ReactJson {
       case _: ControlThrowable => ()
     }
     ToTextResult(text = result.toString().trim, isSingleParagraph = canStillBeSingleParagraph)
+  }
+
+
+  def htmlToExcerpt(htmlText: String, length: Int): String = {
+    val ToTextResult(text, _) = htmlToTextWithNewlines(htmlText, firstLineOnly = true)
+    var excerpt =
+      if (text.length <= length + 3) text
+      else text.take(length) + "..."
+    var lastChar = 'x'
+    excerpt = excerpt takeWhile { ch =>
+      val newParagraph = ch == '\n' && lastChar == '\n'
+      lastChar = ch
+      !newParagraph
+    }
+    excerpt
   }
 
 

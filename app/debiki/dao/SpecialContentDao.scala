@@ -126,7 +126,7 @@ trait SpecialContentDao {
   protected def createSpecialContentPage(pageId: PageId, authorId: UserId,
       source: String, htmlSanitized: String, transaction: SiteTransaction) {
     val pageMeta = PageMeta.forNewPage(pageId, PageRole.SpecialContent, authorId,
-      transaction.currentTime, parentPageId = None, url = None, publishDirectly = true)
+      transaction.currentTime, categoryId = None, url = None, publishDirectly = true)
 
     val uniqueId = transaction.nextPostId()
 

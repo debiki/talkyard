@@ -16,9 +16,10 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../prelude.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
+
 
 //------------------------------------------------------------------------------
    module debiki2.pagedialogs {
@@ -46,16 +47,35 @@ export function createServerErrorDialog() {
 }
 
 
+export function showAndThrowClientSideError(errorMessage: string) {
+  serverErrorDialog.openForBrowserError(errorMessage);
+  throw Error(errorMessage);
+}
+
+
 var ServerErrorDialog = createComponent({
   getInitialState: function () {
     return {
       isOpen: false,
-      error: null
+      error: null,  // COULD rename to serverError
+      clientErrorMessage: null,
     };
   },
 
+  openForBrowserError: function(errorMessage: string) {
+    this.setState({
+      isOpen: true,
+      error: null,
+      clientErrorMessage: errorMessage,
+    });
+  },
+
   open: function(error: any) {
-    this.setState({ isOpen: true, error: error });
+    this.setState({
+      isOpen: true,
+      error: error,
+      clientErrorMessage: null
+    });
   },
 
   close: function() {
@@ -66,7 +86,20 @@ var ServerErrorDialog = createComponent({
     var title: string;
     var message: string;
 
-    if (this.state.isOpen) {
+    if (!this.state.isOpen) {
+      // Do nothing.
+    }
+    else if (this.state.clientErrorMessage) {
+      title = "Error";
+      message = this.state.clientErrorMessage;
+      if (debiki2.utils.isMouseDetected) {
+        message += "\n\n" +
+            "See Dev Tools for details: usually Ctrl + Shift + C, here in the browser, " +
+            "then click Console.";
+      }
+    }
+    else {
+      // Server side error.
       var error = this.state.error;
 
       // Is the status message included on the first line? If so, remove it, because we'll

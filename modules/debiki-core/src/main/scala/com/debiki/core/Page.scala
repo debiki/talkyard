@@ -30,11 +30,10 @@ trait Page {
 
   def id: PageId
   def siteId: SiteId
-  def parentPageId: Option[PageId] = meta.parentPageId
+  def categoryId: Option[CategoryId] = meta.categoryId
   def role: PageRole = meta.pageRole
   def meta: PageMeta
   def path: PagePath
-  def ancestorIdsParentFirst: immutable.Seq[PageId]
   def parts: PageParts
 
 }
@@ -57,12 +56,11 @@ object Page {
   */
 case class PagePathAndMeta(
   path: PagePath,
-  ancestorIdsParentFirst: List[PageId],
   meta: PageMeta) {
 
   def id = meta.pageId
   def pageId = meta.pageId
-  def parentPageId = meta.parentPageId
+  def categoryId = meta.categoryId
   def pageRole = meta.pageRole
 
   requireMetaMatchesPaths(this)
@@ -75,14 +73,9 @@ object requireMetaMatchesPaths {
   def apply(page: {
     def meta: PageMeta
     def path: PagePath
-    def ancestorIdsParentFirst: List[PageId]
   }) {
     if (page.path.pageId.isDefined) require(page.meta.pageId == page.path.pageId.get)
     else require(page.meta.pageId == "?")
-
-    require(page.ancestorIdsParentFirst.headOption == page.meta.parentPageId,
-      o"""meta.parentPageId != ancestorIdsParentFirst.head:
-    ${page.meta.parentPageId} and ${page.ancestorIdsParentFirst}, page id: ${page.meta.pageId}""")
   }
 }
 
@@ -97,7 +90,7 @@ object PageMeta {
         creationDati: ju.Date = new ju.Date,
         pinOrder: Option[Int] = None,
         pinWhere: Option[PinPageWhere] = None,
-        parentPageId: Option[String] = None,
+        categoryId: Option[CategoryId] = None,
         url: Option[String] = None,
         publishDirectly: Boolean = false) =
     PageMeta(
@@ -106,7 +99,7 @@ object PageMeta {
       createdAt = creationDati,
       updatedAt = creationDati,
       publishedAt = if (publishDirectly) Some(creationDati) else None,
-      parentPageId = parentPageId,
+      categoryId = categoryId,
       embeddingPageUrl = url,
       authorId = authorId,
       pinOrder = pinOrder,
@@ -131,7 +124,7 @@ object PageMeta {
   * @param updatedAt
   * @param publishedAt
   * @param bumpedAt
-  * @param parentPageId
+  * @param categoryId
   * @param embeddingPageUrl The canonical URL to the page, useful when linking to the page.
   *            Currently only needed and used for embedded comments, and then it
   *            is the URL of the embedding page.
@@ -160,7 +153,7 @@ case class PageMeta(
   publishedAt: Option[ju.Date] = None,
   bumpedAt: Option[ju.Date] = None,
   lastReplyAt: Option[ju.Date] = None,
-  parentPageId: Option[String] = None,
+  categoryId: Option[CategoryId] = None,
   embeddingPageUrl: Option[String],
   authorId: UserId,
   pinOrder: Option[Int] = None,
@@ -187,6 +180,7 @@ case class PageMeta(
   // deletedAt: Option[ju.Date] = None,
   numChildPages: Int = 0) { // <-- DoLater: remove, replace with category table
 
+  require(pageRole != PageRole.AboutCategory || categoryId.isDefined, "DwE5PKI8")
   require(!pinOrder.exists(!PageMeta.isOkPinOrder(_)), "DwE4kEYF2")
   require(pinOrder.isEmpty == pinWhere.isEmpty, "DwE36FK2")
   require(numLikes >= 0, "DwE6PKF3")
@@ -231,7 +225,7 @@ case class PageMeta(
 
 
 
-sealed abstract class PageRole(protected val IntValue: Int) {
+sealed abstract class PageRole(protected val IntValue: Int, val staffOnly: Boolean = true) {
 
   /** True if this page is e.g. a blog or a forum — they can have child pages
     * (namely blog posts, forum topics).
@@ -260,7 +254,7 @@ object PageRole {
 
   case object SpecialContent extends PageRole(4)
 
-  case object EmbeddedComments extends PageRole(5)
+  case object EmbeddedComments extends PageRole(5, staffOnly = false)
 
   /** Lists blog posts. */
   case object Blog extends PageRole(6) {
@@ -272,36 +266,29 @@ object PageRole {
     override def isSection = true
   }
 
-  /** Everything with a forum category as its parent page is a forum topic, unless
-    * it's a ForumCategory itself, then it's a sub category.
-    * DoLater: Remove, instead add a separate categories table. */
-  case object Category extends PageRole(8) {
-    override val isSection = true
-  }
-
   /** About a forum category (Discourse's forum category about topic). Shown as a per
     * category welcome page, and by editing the page body you edit the forum category
     * description. */
-  case object About extends PageRole(9)
+  case object AboutCategory extends PageRole(9)
 
   /** A question is considered answered when the author (or the staff) has marked some
     * reply as being the answer to the question. */
-  case object Question extends PageRole(10)
+  case object Question extends PageRole(10, staffOnly = false)
 
   /** Something that is broken and should be fixed. Can change status to Planned and Done. */
-  case object Problem extends PageRole(14)
+  case object Problem extends PageRole(14, staffOnly = false)
 
   /** An idea about something to do, or a feature request. Can change status to Planned and Done. */
-  case object Idea extends PageRole(15)
+  case object Idea extends PageRole(15, staffOnly = false)
 
   /** Something that's been planned, perhaps done, but perhaps not an Idea or Problem. */
-  case object ToDo extends PageRole(13)
+  case object ToDo extends PageRole(13, staffOnly = false)
 
   /** Mind maps use 2D layout, even if the site is configured to use 1D layout. */
-  case object MindMap extends PageRole(11)
+  case object MindMap extends PageRole(11, staffOnly = false)
 
   /** For discussions (non-questions) or announcements or blog posts, for example.  */
-  case object Discussion extends PageRole(12)
+  case object Discussion extends PageRole(12, staffOnly = false)
 
   /*
   case object WikiMainPage extends PageRole {
@@ -319,8 +306,7 @@ object PageRole {
     case EmbeddedComments.IntValue => EmbeddedComments
     case Blog.IntValue => Blog
     case Forum.IntValue => Forum
-    case Category.IntValue => Category
-    case About.IntValue => About
+    case AboutCategory.IntValue => AboutCategory
     case Question.IntValue => Question
     case Problem.IntValue => Problem
     case Idea.IntValue => Idea
@@ -410,7 +396,4 @@ object PageFilter {
 case class PagePostId(pageId: PageId, postId: PostId) {
   def toList: List[AnyRef] = List(pageId, postId.asInstanceOf[AnyRef])
 }
-
-
-case class Category(pageId: String, subCategories: Seq[Category])
 

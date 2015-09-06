@@ -30,7 +30,6 @@ enum PageRole {
   EmbeddedComments = 5,
   Blog = 6,
   Forum = 7,
-  Category = 8,
   About = 9,
   Question = 10,
   Problem = 14,

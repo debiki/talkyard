@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="renderer/model.ts" />
+/// <reference path="model.ts" />
 
 
 /* This file is available in both server and client side JS.

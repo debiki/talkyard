@@ -18,7 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/modernizr/modernizr.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
-/// <reference path="../renderer/model.ts" />
+/// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
 
 //------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ export var TitleEditor = createComponent({
     var categoryInput = this.refs.categoryInput;
     var pageRoleInput = this.refs.pageRoleInput;
     var settings: any = {
-      category: categoryInput ? categoryInput.getValue() : null,
+      categoryId: categoryInput ? parseInt(categoryInput.getValue()) : null,
       pageRole: pageRoleInput ? parseInt(pageRoleInput.getValue()) : null,
       folder: addFolderSlashes(this.state.folder),
       slug: this.state.slug,
@@ -158,33 +158,33 @@ export var TitleEditor = createComponent({
         : r.a({ className: 'dw-toggle-compl-stuff icon-settings',
             onClick: this.showComplicated }, 'Advanced');
 
-    var isForumOrCategory = pageRole === PageRole.Forum || pageRole === PageRole.Category;
+    var isForumOrAbout = pageRole === PageRole.Forum || pageRole === PageRole.About;
     var selectCategoryInput;
-    if (isForumOrCategory) {
-      // Currently there are no sub categories so categories cannot be moved elsewhere.
+    if (isForumOrAbout) {
+      // About-category pages cannot be moved to other categories.
     }
     else if (this.props.forumId && this.state.categories) {
       var categoryOptions = this.state.categories.map((category: Category) => {
-        return r.option({ value: category.pageId, key: category.pageId }, category.name);
+        return r.option({ value: category.id, key: category.id }, category.name);
       });
 
       var selectCategoryInput =
         Input({ type: 'select', label: 'Category', ref: 'categoryInput', title: 'Category',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
-            defaultValue: this.props.parentPageId },
+            defaultValue: this.props.categoryId },
           categoryOptions);
     }
     else if (this.props.forumId) {
       selectCategoryInput = r.p({}, 'Loading categories...');
     }
 
-    var selectPageRoleInput = isForumOrCategory ? null :
+    var selectPageRoleInput = isForumOrAbout ? null :
       Input({ type: 'select', label: 'Page Type', ref: 'pageRoleInput', title: 'Page type',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10', defaultValue: pageRole },
         r.option({ value: PageRole.Question }, 'Question'),
         r.option({ value: PageRole.Problem }, 'Problem'),
         r.option({ value: PageRole.Idea }, 'Idea'),
-        r.option({ value: PageRole.ToDo }, 'To Do'),
+        r.option({ value: PageRole.ToDo }, 'Todo'),
         // r.option({ value: PageRole.WikiPage }, 'Wiki'), -- if 1d layout is default?
         r.option({ value: PageRole.MindMap }, 'Wiki Mind Map'),
         r.option({ value: PageRole.Discussion }, 'Other'));

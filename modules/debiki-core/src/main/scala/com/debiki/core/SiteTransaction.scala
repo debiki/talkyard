@@ -28,6 +28,8 @@ trait SiteTransaction {
   def rollback()
   def siteId: SiteId
 
+  def deferConstraints()
+
   /** Throws SiteAlreadyExistsException if the site already exists.
     * Throws TooManySitesCreatedException if you've created too many websites already
     * (from the same IP or email address).
@@ -41,7 +43,11 @@ trait SiteTransaction {
   def loadSettings(targets: Seq[SettingsTarget]): Seq[RawSettings]
 
   def loadResourceUsage(): ResourceUse
-  def loadAncestorPostIdsParentFirst(pageId: PageId): immutable.Seq[PageId]
+
+  def loadCategory(categoryId: CategoryId): Option[Category]
+  def nextCategoryId(): Int
+  def insertCategory(category: Category)
+  def updateCategory(category: Category)
 
   def loadPost(uniquePostId: UniquePostId): Option[Post]
   def loadThePost(uniquePostId: UniquePostId): Post =

@@ -24,7 +24,7 @@
 /// <reference path="../react-elements/topbar.ts" />
 /// <reference path="../page-dialogs/wikify-dialog.ts" />
 /// <reference path="../page-dialogs/delete-post-dialog.ts" />
-/// <reference path="model.ts" />
+/// <reference path="../model.ts" />
 
 // Wrapping in a module causes an ArrayIndexOutOfBoundsException: null error, see:
 //  http://stackoverflow.com/questions/26189940/java-8-nashorn-arrayindexoutofboundsexception
@@ -121,13 +121,13 @@ var TitleBodyComments = createComponent({
       categories =
         r.ol({ className: 'parent-forums-list' },
           this.props.ancestorsRootFirst.map((ancestor: Ancestor) => {
-            return r.li({ key: ancestor.pageId }, r.a({ href: ancestor.path }, ancestor.title));
+            return r.li({ key: ancestor.categoryId }, r.a({ href: ancestor.path }, ancestor.title));
           }));
     }
 
     var anyAboutCategoryClass;
     var anyAboutCategoryTitle;
-    if (this.props.pageRole === PageRole.Category) {
+    if (this.props.pageRole === PageRole.About) {
       anyAboutCategoryClass = 'dw-about-category';
       anyAboutCategoryTitle =
           r.h2({ className: 'dw-about-cat-ttl-prfx' }, "About category:")
@@ -149,7 +149,7 @@ var TitleBodyComments = createComponent({
     var anyPostHeader = null;
     var anySocialLinks = null;
     if (pageRole === PageRole.HomePage || pageRole === PageRole.Forum ||
-        pageRole === PageRole.Category || // pageRole === PageRole.WikiMainPage ||
+        pageRole === PageRole.About || // pageRole === PageRole.WikiMainPage ||
         pageRole === PageRole.SpecialContent || pageRole === PageRole.Blog ||
         pageRole === PageRole.EmbeddedComments ||
         this.props.rootPostId !== BodyPostId) {
@@ -343,7 +343,7 @@ var RootPostAndComments = createComponent({
     }
 
     var showComments = pageRole !== PageRole.HomePage && pageRole !== PageRole.Forum &&
-        pageRole !== PageRole.Category && pageRole !== PageRole.Blog &&
+        pageRole !== PageRole.Blog &&
         pageRole !== PageRole.SpecialContent; // && pageRole !== PageRole.WikiMainPage
 
     var sanitizedHtml = rootPost.isApproved
@@ -1150,7 +1150,7 @@ var PostActions = createComponent({
     // answered/fixed, the way to reopen it is to click the answered/fixed icon, to
     // mark it as not-answered/not-fixed again.)
     var closeReopenButton;
-    var canCloseOrReopen = !isDone && !isAnswered;
+    var canCloseOrReopen = !isDone && !isAnswered && store.pageRole !== PageRole.About;
     if (isPageBody && canCloseOrReopen && isStaffOrOwnPost) {
       var closeReopenTitle = "Reopen";
       var closeReopenIcon = 'icon-circle-empty';
@@ -1420,8 +1420,8 @@ function renderTitleBodyComments() {
   var store: Store = debiki2.ReactStore.allData();
   if (store.pageRole === PageRole.Forum) {
     var router = ReactRouter.create({
-      routes: debiki2.renderer.buildForumRoutes(),
-      scrollBehavior: debiki2.renderer.ForumScrollBehavior,
+      routes: debiki2.forum.buildForumRoutes(),
+      scrollBehavior: debiki2.forum.ForumScrollBehavior,
     });
     router.run(function(handler) {
       React.render(React.createElement(handler, store), root);
@@ -1438,7 +1438,7 @@ function renderTitleBodyCommentsToString() {
   //return '<p class="dw-page" data-reactid=".123" data-react-checksum="123">react_skipped</p>'
   var store: Store = debiki2.ReactStore.allData();
   if (store.pageRole === PageRole.Forum) {
-    var routes = debiki2.renderer.buildForumRoutes();
+    var routes = debiki2.forum.buildForumRoutes();
     var result;
     // In the future, when using the HTML5 history API to update the URL when navigating
     // inside the forum, we can use `store.pagePath` below. But for now, when using

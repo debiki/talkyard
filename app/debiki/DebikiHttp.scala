@@ -106,6 +106,8 @@ object DebikiHttp {
   def throwPermanentRedirect(url: String) =
     throw ResultException(R.Redirect(url, p.http.Status.MOVED_PERMANENTLY))
 
+  def throwBadRequest(errCode: String, message: String = "") = throwBadReq(errCode, message)
+
   def throwBadReq(errCode: String, message: String = "") =
     throw ResultException(BadReqResult(errCode, message))
 

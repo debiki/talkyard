@@ -286,6 +286,24 @@ input, textarea {
 }
 
 
+/* React-select
+============================== */
+
+.Select-item {
+  background-color: hsl(210, 63%, 97%);
+  border: 1px solid hsl(210, 61%, 87%);
+  color: hsl(210, 80%, 35%);
+}
+
+.Select-control {
+  border-color: hsl(0, 0%, 90%) hsl(0, 0%, 83%) hsl(0, 0%, 80%);
+}
+
+.Select-option.is-focused {
+  background-color: hsl(210, 80%, 97%);
+  color: hsl(210, 80%, 28%);
+}
+
 
 /* Code pages
 ============================== */

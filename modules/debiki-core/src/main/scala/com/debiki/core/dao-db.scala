@@ -117,9 +117,7 @@ abstract class SiteDbDao {
 
   def updatePageMeta(meta: PageMeta, old: PageMeta)
 
-  def loadAncestorIdsParentFirst(pageId: PageId): List[PageId]
-
-  def loadCategoryTree(rootPageId: PageId): Seq[Category]
+  def loadCategoryMap(): Map[CategoryId, Category]
 
   def saveSetting(target: SettingsTarget, setting: SettingNameValue[_])
 
@@ -170,9 +168,8 @@ abstract class SiteDbDao {
         orderOffset: PageOrderOffset,
         limit: Int): Seq[PagePathAndMeta]
 
-  def listChildPages(parentPageIds: Seq[PageId], pageQuery: PageQuery,
-        limit: Int, onlyPageRole: Option[PageRole] = None,
-        excludePageRole: Option[PageRole] = None): Seq[PagePathAndMeta]
+  def loadPagesInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery, limit: Int)
+        : Seq[PagePathAndMeta]
 
 
   // ----- Loading and saving pages
@@ -358,12 +355,8 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
     }
   }
 
-  def loadAncestorIdsParentFirst(pageId: PageId): List[PageId] = {
-    _spi.loadAncestorIdsParentFirst(pageId)
-  }
-
-  def loadCategoryTree(rootPageId: PageId): Seq[Category] = {
-    _spi.loadCategoryTree(rootPageId)
+  def loadCategoryMap(): Map[CategoryId, Category] = {
+    _spi.loadCategoryMap()
   }
 
   def saveSetting(target: SettingsTarget, setting: SettingNameValue[_]) {
@@ -417,11 +410,9 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
     _spi.listPagePaths(pageRanges, include, orderOffset, limit)
   }
 
-  def listChildPages(parentPageIds: Seq[PageId], pageQuery: PageQuery,
-        limit: Int, onlyPageRole: Option[PageRole], excludePageRole: Option[PageRole])
+  def loadPagesInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery, limit: Int)
         : Seq[PagePathAndMeta] = {
-    _spi.listChildPages(parentPageIds, pageQuery, limit = limit, onlyPageRole = onlyPageRole,
-      excludePageRole = excludePageRole)
+    _spi.loadPagesInCategories(categoryIds, pageQuery, limit)
   }
 
 

@@ -26,13 +26,6 @@ import debiki.DebikiHttp._
 import java.{util => ju}
 
 
-case class CreateCategoryResult(
-  forumId: PageId,
-  newCategoryId: PageId,
-  newCategorySlug: String)
-
-
-
 /** Loads and saves pages and page parts (e.g. posts and patches).
   *
   * (There's also a class PageDao (with no 's' in the name) that focuses on
@@ -42,10 +35,15 @@ trait PagesDao {
   self: SiteDao =>
 
 
-  def createPage(pageRole: PageRole, pageStatus: PageStatus, anyParentPageId: Option[PageId],
+  def createPage(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
         anyFolder: Option[String], anySlug: Option[String], titleSource: String, bodySource: String,
         showId: Boolean, authorId: UserId, browserIdData: BrowserIdData)
         : PagePath = {
+
+    if (pageRole.isSection) {
+      // Should use e.g. ForumController.createForum() instead.
+      throwBadRequest("DwE4FKW8", s"Bad page role: $pageRole")
+    }
 
     val bodyHtmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(bodySource,
       allowClassIdDataAttrs = true, followLinks = !pageRole.isWidelyEditable)
@@ -60,143 +58,135 @@ trait PagesDao {
       throwForbidden("DwE5KPEF21", "Page title should not be empty")
 
     readWriteTransaction { transaction =>
-
-      val pageId = transaction.nextPageId()
-
-      // Authorize and determine approver user id. For now:
-      val author = transaction.loadUser(authorId) getOrElse throwForbidden("DwE9GK32", "User gone")
-
-      val pageSlug = anySlug match {
-        case Some(slug) =>
-          if (!author.isStaff)
-            throwForbidden("DwE4KFW87", "Only staff may specify page slug")
-          slug
-        case None =>
-          siteDbDao.commonMarkRenderer.slugifyTitle(titleSource)
-      }
-
-      val approvedById =
-        if (author.isStaff) {
-          author.id
-        }
-        else {
-          if (pageRole != PageRole.Discussion && pageRole != PageRole.Question &&
-              pageRole != PageRole.MindMap)
-            throwForbidden("DwE5KEPY2", s"Bad forum topic page type: $pageRole")
-
-          anyParentPageId match {
-            case None =>
-              throwForbidden("DwE8GKE4", "No parent forum or category specified")
-            case Some(parentId) =>
-              val parentMeta = loadPageMeta(parentId) getOrElse throwNotFound(
-                "DwE78BI21", s"Parent forum or category does not exist, id: '$parentId'")
-
-              if (parentMeta.pageRole != PageRole.Category &&
-                  parentMeta.pageRole != PageRole.Forum)
-                throwForbidden("DwE830BIR5", "Parent page is not a forum or a forum category")
-
-              // The System user currently approves all new forum topics.
-              // SECURITY COULD analyze the author's trust level and past actions, and
-              // based on that, approve, reject or review later.
-              SystemUserId
-          }
-        }
-
-      val folder = anyFolder getOrElse {
-        val anyParentPath = anyParentPageId flatMap { id =>
-          transaction.loadPagePath(id)
-        }
-        anyParentPath.map(_.folder) getOrElse "/"
-      }
-
-      val pagePath = PagePath(siteId, folder = folder, pageId = Some(pageId),
-        showId = showId, pageSlug = pageSlug)
-
-      val titleUniqueId = transaction.nextPostId()
-      val bodyUniqueId = titleUniqueId + 1
-
-      val titlePost = Post.createTitle(
-        siteId = siteId,
-        uniqueId = titleUniqueId,
-        pageId = pageId,
-        createdAt = transaction.currentTime,
-        createdById = authorId,
-        source = titleSource,
-        htmlSanitized = titleHtmlSanitized,
-        approvedById = Some(approvedById))
-
-      val bodyPost = Post.createBody(
-        siteId = siteId,
-        uniqueId = bodyUniqueId,
-        pageId = pageId,
-        createdAt = transaction.currentTime,
-        createdById = authorId,
-        source = bodySource,
-        htmlSanitized = bodyHtmlSanitized,
-        approvedById = Some(approvedById))
-
-      val (pinOrder, pinWhere) =
-        if (pageRole == PageRole.Category) (Some(3), Some(PinPageWhere.InCategory))
-        else (None, None)
-      val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.currentTime,
-        pinOrder = pinOrder, pinWhere = pinWhere,
-        parentPageId = anyParentPageId, url = None, publishDirectly = true)
-
-      val auditLogEntry = AuditLogEntry(
-        siteId = siteId,
-        id = AuditLogEntry.UnassignedId,
-        didWhat = AuditLogEntryType.NewPage,
-        doerId = authorId,
-        doneAt = transaction.currentTime,
-        browserIdData = browserIdData,
-        pageId = Some(pageId),
-        pageRole = Some(pageRole))
-
-      transaction.insertPageMeta(pageMeta)
-      transaction.insertPagePath(pagePath)
-      transaction.insertPost(titlePost)
-      transaction.insertPost(bodyPost)
-      insertAuditLogEntry(auditLogEntry, transaction)
+      val (pagePath, bodyPost) = createPageImpl(pageRole, pageStatus, anyCategoryId,
+        anyFolder = anyFolder, anySlug = anySlug,
+        titleSource = titleSource, titleHtmlSanitized = titleHtmlSanitized,
+        bodySource = bodySource, bodyHtmlSanitized = bodyHtmlSanitized,
+        showId = showId, authorId = authorId, browserIdData,
+        transaction)
 
       val notifications = NotificationGenerator(transaction)
-        .generateForNewPost(PageDao(pageId, transaction), bodyPost)
+        .generateForNewPost(PageDao(pagePath.pageId getOrDie "DwE5KWI2", transaction), bodyPost)
       transaction.saveDeleteNotifications(notifications)
-
       pagePath
     }
   }
 
 
-  /** Later:[forumcategory] Create a dedicated forum category table. There'll be
-    * something like 20 columns in it (have a look at Discourse) and it makes
-    * no sense to add all that stuff for pages in general.
-    *
-    * And add "faceted search" fields to forum topics: forum id, category id,
-    * sub cat id, so one can directly find all topics in a certain category.
-    */
-  def createForumCategory(parentId: PageId, anySlug: Option[String],
-        titleSource: String, descriptionSource: String,
-        authorId: UserId, browserIdData: BrowserIdData): CreateCategoryResult = {
+  def createPageImpl(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
+        anyFolder: Option[String], anySlug: Option[String],
+        titleSource: String, titleHtmlSanitized: String,
+        bodySource: String, bodyHtmlSanitized: String,
+        showId: Boolean, authorId: UserId, browserIdData: BrowserIdData,
+        transaction: SiteTransaction): (PagePath, Post) = {
 
-    // (We currently don't use PageRole.About here, but later on when categories have
-    // been moved to a separate table, I'll remove PageRole.Category and create an about
-    // page here with role About instead.)
-    val categoryPagePath = createPage(PageRole.Category, PageStatus.Published, Some(parentId),
-      anyFolder = None, anySlug = anySlug, titleSource = titleSource,
-      bodySource = descriptionSource, showId = true, authorId = authorId,
-      browserIdData)
+    // Authorize and determine approver user id. For now:
+    val author = transaction.loadUser(authorId) getOrElse throwForbidden("DwE9GK32", "User gone")
 
-    val categoryId = categoryPagePath.pageId getOrDie "DwE4EKYF7"
-    val ancestorIds = loadAncestorIdsParentFirst(categoryId)
+    val pageSlug = anySlug match {
+      case Some(slug) =>
+        if (!author.isStaff)
+          throwForbidden("DwE4KFW87", "Only staff may specify page slug")
+        slug
+      case None =>
+        siteDbDao.commonMarkRenderer.slugifyTitle(titleSource)
+    }
 
-    // The forum and and any parent category need to be refreshed because they've
-    // cached the category list (in JSON in the cached HTML).
-    ancestorIds.foreach(refreshPageInAnyCache)
+    val approvedById =
+      if (author.isStaff) {
+        author.id
+      }
+      else {
+        // The System user currently approves new forum topics.
+        // SECURITY COULD analyze the author's trust level and past actions, and
+        // based on that, approve, reject or review later.
+        SystemUserId
+      }
 
-    CreateCategoryResult(
-      forumId = ancestorIds.last,
-      newCategoryId = categoryId,
-      newCategorySlug = categoryPagePath.pageSlug)
+    if (!author.isStaff && pageRole.staffOnly)
+      throwForbidden("DwE5KEPY2", s"Forbidden page type: $pageRole")
+
+    if (pageRole.isSection) {
+      // A forum page is created before its root category — verify that the root category
+      // does not yet exist (if so, the category id is probably wrong).
+      val categoryId = anyCategoryId getOrElse {
+        throwForbidden("DwE4KFE0", s"Pages type $pageRole needs a root category id")
+      }
+      if (transaction.loadCategory(categoryId).isDefined) {
+        throwForbidden("DwE5KPW2", s"Category already exists, id: $categoryId")
+      }
+    }
+    else {
+      anyCategoryId match {
+        case None if !author.isStaff =>
+          throwForbidden("DwE8GKE4", "No category specified")
+        case Some(categoryId) =>
+          val category = transaction.loadCategory(categoryId) getOrElse throwNotFound(
+            "DwE4KGP8", s"Category not found, id: $categoryId")
+          if (category.isRoot)
+            throwForbidden("DwE5GJU0", o"""The root category cannot have any child pages;
+              use the Uncategorized category instead""")
+          if (category.isLocked)
+            throwForbidden("DwE4KFW2", "Category locked")
+          if (category.isFrozen)
+            throwForbidden("DwE1QXF2", "Category frozen")
+          if (category.isDeleted)
+            throwForbidden("DwE6GPY2", "Category deleted")
+      }
+    }
+
+    val folder = anyFolder getOrElse "/"
+    val pageId = transaction.nextPageId()
+    val pagePath = PagePath(siteId, folder = folder, pageId = Some(pageId),
+      showId = showId, pageSlug = pageSlug)
+
+    val titleUniqueId = transaction.nextPostId()
+    val bodyUniqueId = titleUniqueId + 1
+
+    val titlePost = Post.createTitle(
+      siteId = siteId,
+      uniqueId = titleUniqueId,
+      pageId = pageId,
+      createdAt = transaction.currentTime,
+      createdById = authorId,
+      source = titleSource,
+      htmlSanitized = titleHtmlSanitized,
+      approvedById = Some(approvedById))
+
+    val bodyPost = Post.createBody(
+      siteId = siteId,
+      uniqueId = bodyUniqueId,
+      pageId = pageId,
+      createdAt = transaction.currentTime,
+      createdById = authorId,
+      source = bodySource,
+      htmlSanitized = bodyHtmlSanitized,
+      approvedById = Some(approvedById))
+
+    val (pinOrder, pinWhere) =
+      if (pageRole == PageRole.AboutCategory) (Some(3), Some(PinPageWhere.InCategory))
+      else (None, None)
+    val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.currentTime,
+      pinOrder = pinOrder, pinWhere = pinWhere,
+      categoryId = anyCategoryId, url = None, publishDirectly = true)
+
+    val auditLogEntry = AuditLogEntry(
+      siteId = siteId,
+      id = AuditLogEntry.UnassignedId,
+      didWhat = AuditLogEntryType.NewPage,
+      doerId = authorId,
+      doneAt = transaction.currentTime,
+      browserIdData = browserIdData,
+      pageId = Some(pageId),
+      pageRole = Some(pageRole))
+
+    transaction.insertPageMeta(pageMeta)
+    transaction.insertPagePath(pagePath)
+    transaction.insertPost(titlePost)
+    transaction.insertPost(bodyPost)
+    insertAuditLogEntry(auditLogEntry, transaction)
+
+    (pagePath, bodyPost)
   }
 
 
@@ -320,6 +310,9 @@ trait PagesDao {
     val newClosedAt = readWriteTransaction { transaction =>
       val user = transaction.loadTheUser(userId)
       val oldMeta = transaction.loadThePageMeta(pageId)
+      if (oldMeta.pageRole.isSection || oldMeta.pageRole == PageRole.AboutCategory)
+        throwBadRequest("DwE4PKF7", s"Cannot close pages of type ${oldMeta.pageRole}")
+
       if (!user.isStaff && user.id != oldMeta.authorId)
         throwForbidden("DwE5JPK7", "Only staff and the topic author can toggle it closed")
 
@@ -344,11 +337,11 @@ trait CachingPagesDao extends PagesDao {
 
 
   override def createPage(pageRole: PageRole, pageStatus: PageStatus,
-        anyParentPageId: Option[PageId], anyFolder: Option[String], anySlug: Option[String],
+        anyCategoryId: Option[CategoryId], anyFolder: Option[String], anySlug: Option[String],
         titleSource: String, bodySource: String,
         showId: Boolean, authorId: UserId, browserIdData: BrowserIdData)
         : PagePath = {
-    val pagePath = super.createPage(pageRole, pageStatus, anyParentPageId,
+    val pagePath = super.createPage(pageRole, pageStatus, anyCategoryId,
       anyFolder, anySlug, titleSource, bodySource, showId, authorId, browserIdData)
     firePageCreated(pagePath)
     pagePath

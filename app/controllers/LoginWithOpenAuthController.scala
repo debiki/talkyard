@@ -27,11 +27,13 @@ import com.mohiva.play.silhouette.core.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.core.providers.oauth2._
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.core.{exceptions => siex}
+import controllers.Utils.OkSafeJson
 import debiki.DebikiHttp._
 import debiki.Globals
 import debiki.RateLimits
 import java.{util => ju}
 import org.scalactic.{Good, Bad}
+import play.api.libs.json.{Json, JsBoolean}
 import play.{api => p}
 import play.api.mvc._
 import play.api.mvc.BodyParsers.parse.empty
@@ -284,7 +286,7 @@ object LoginWithOpenAuthController extends Controller {
         // We've shown but closed an OAuth provider login popup, and now we're
         // handling a create-user Ajax request from a certain showCreateUserDialog()
         // Javascript dialog. It already knows about any pending redirects.
-        Ok("""{ "emailVerifiedAndLoggedIn": true }""")
+        OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsBoolean(true)))
       }
       else {
         def loginPopupCallback =
@@ -408,7 +410,7 @@ object LoginWithOpenAuthController extends Controller {
       else {
         LoginWithPasswordController.sendEmailAddressVerificationEmail(
           loginGrant.user, anyReturnToUrl, request.host, request.dao)
-        Ok("""{ "emailVerifiedAndLoggedIn": false }""")
+        OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsBoolean(false)))
       }
     }
     catch {
@@ -424,7 +426,7 @@ object LoginWithOpenAuthController extends Controller {
         // Don't indicate that there is already an account with this email.
         LoginWithPasswordController.sendYouAlreadyHaveAnAccountWithThatAddressEmail(
           request.dao, email, siteHostname = request.host, siteId = request.siteId)
-        Ok("""{ "emailVerifiedAndLoggedIn": false }""")
+        OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsBoolean(false)))
     }
   }
 

@@ -23,6 +23,7 @@
     "react": "=0.13.3",
     "react-bootstrap": "=0.24.2",
     "react-router": "=0.13.3",
+    "react-select": "=0.6.7",
     "yepnope": "=v1.5.4"
   }
 }

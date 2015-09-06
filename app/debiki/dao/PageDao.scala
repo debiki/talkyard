@@ -28,7 +28,6 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction) extend
 
   var _meta: Option[PageMeta] = null
   var _path: Option[PagePath] = null
-  var _ancestorIdsParentFirst: immutable.Seq[PageId] = null
 
   val parts = new PagePartsDao(id, transaction)
 
@@ -40,14 +39,6 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction) extend
       _meta = transaction.loadPageMeta(id)
     }
     _meta getOrElse throwPageNotFound()
-  }
-
-
-  override def ancestorIdsParentFirst: immutable.Seq[PageId] = {
-    if (_ancestorIdsParentFirst eq null) {
-      _ancestorIdsParentFirst = transaction.loadAncestorPostIdsParentFirst(id)
-    }
-    _ancestorIdsParentFirst
   }
 
 

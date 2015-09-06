@@ -42,7 +42,7 @@ object PageTitleSettingsController extends mvc.Controller {
 
     val pageId = (request.body \ "pageId").as[PageId]
     val newTitle = (request.body \ "newTitle").as[String].trim
-    val anyNewParentId = (request.body \ "category").asOpt[PageId]
+    val anyNewCategoryId = (request.body \ "categoryId").asOpt[CategoryId]
     val anyNewRoleInt = (request.body \ "pageRole").asOpt[Int]
     val anyLayoutString = (request.body \ "layout").asOpt[String]
     val anyFolder = (request.body \ "folder").asOpt[String] map { folder =>
@@ -98,11 +98,13 @@ object PageTitleSettingsController extends mvc.Controller {
     request.dao.editPost(pageId = pageId, postId = PageParts.TitleId,
       editorId = request.theUser.id, request.theBrowserIdData, newTitle)
 
+    // Load old section page id before changing it.
+    val oldSectionPageId: Option[PageId] = oldMeta.categoryId map request.dao.loadTheSectionPageId
+
     // Update page settings.
-    val oldAncestorIdsParentFirst = request.dao.loadAncestorIdsParentFirst(pageId)
     val newMeta = oldMeta.copy(
       pageRole = anyNewRole.getOrElse(oldMeta.pageRole),
-      parentPageId = anyNewParentId.orElse(oldMeta.parentPageId))
+      categoryId = anyNewCategoryId.orElse(oldMeta.categoryId))
     if (newMeta != oldMeta) {
       request.dao.updatePageMeta(newMeta, old = oldMeta)
     }
@@ -128,14 +130,13 @@ object PageTitleSettingsController extends mvc.Controller {
       }
     }
 
-    // Refresh cache, plus any ancestors in case one of them is a forum page,
-    // because forum pages cache category JSON and a latest topics list (includes titles).
-    val newAncestorIdsParentFirst = request.dao.loadAncestorIdsParentFirst(pageId)
-    val idsToRefresh = (pageId :: oldAncestorIdsParentFirst ::: newAncestorIdsParentFirst).distinct
+    // Refresh cache, plus any forum page if this page is a forum topic.
+    // (Forum pages cache category JSON and a latest topics list, includes titles.)
+    val newSectionPageId = newMeta.categoryId map request.dao.loadTheSectionPageId
+    val idsToRefresh = (pageId :: oldSectionPageId.toList ::: newSectionPageId.toList).distinct
     idsToRefresh.foreach(request.dao.refreshPageInAnyCache)
 
-    val (_, newAncestorsJson) = ReactJson.makeForumIdAndAncestorsJson(
-      newMeta, newAncestorIdsParentFirst, request.dao)
+    val (_, newAncestorsJson) = ReactJson.makeForumIdAndAncestorsJson(newMeta, request.dao)
 
     // The browser will update the title and the url path in the address bar.
     OkSafeJson(Json.obj(

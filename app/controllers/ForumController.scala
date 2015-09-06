@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2013-2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,7 +17,7 @@
 
 package controllers
 
-import actions.ApiActions.{GetAction, StaffPostJsonAction}
+import actions.ApiActions.{GetAction, StaffGetAction, StaffPostJsonAction}
 import debiki.dao.PageStuff
 import collection.mutable
 import com.debiki.core._
@@ -30,9 +30,10 @@ import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
 import requests.DebikiRequest
 import scala.collection.mutable.ArrayBuffer
+import scala.util.Try
 import Utils.OkSafeJson
 import Utils.ValidationImplicits._
-import DebikiHttp.throwBadReq
+import DebikiHttp.{throwBadReq, throwBadRequest, throwNotFound}
 
 
 /** Handles requests related to forums and forum categories.
@@ -43,26 +44,66 @@ object ForumController extends mvc.Controller {
   val NumTopicsToList = 40
 
 
-  def createForumCategory = StaffPostJsonAction(maxLength = 10 * 1000) { request =>
-    val parentPageId = (request.body \ "parentPageId").as[PageId]
-    val anySlug = (request.body \ "categorySlug").asOpt[String]
-    val titleText = (request.body \ "categoryTitle").as[String]
-    val descriptionText = (request.body \ "categoryDescription").as[String]
-
-    val result = request.dao.createForumCategory(parentPageId, anySlug,
-      titleText, descriptionText, authorId = request.theUserId, request.theBrowserIdData)
-
-    OkSafeJson(Json.obj(
-      "allCategories" -> ReactJson.categoriesJson(result.forumId, request.dao),
-      "newCategoryId" -> result.newCategoryId,
-      "newCategorySlug" -> result.newCategorySlug))
+  def createForum = StaffPostJsonAction(maxLength = 200) { request =>
+    val title = (request.body \ "title").as[String]
+    val folder = (request.body \ "folder").as[String]
+    val pagePath = request.dao.createForum(title, folder = folder,
+      creatorId = request.theUserId, request.theBrowserIdData)
+    OkSafeJson(JsString(pagePath.value))
   }
 
 
-  def listTopics(categoryId: PageId) = GetAction { request =>
-    val pageQuery = parsePageQuery(request) getOrElse throwBadReq(
-      "DwE2KTES7", "No sort-order-offset specified")
-    val topics = listTopicsInclPinned(categoryId, pageQuery, request.dao)
+  def loadCategory(id: String) = StaffGetAction { request =>
+    val categoryId = Try(id.toInt) getOrElse throwBadRequest("DwE6PU1", "Invalid category id")
+    val category = request.dao.loadTheCategory(categoryId)
+    val json = categoryToJson(category, recentTopics = Nil, pageStuffById = Map.empty)
+    OkSafeJson(json)
+  }
+
+
+  def saveCategory = StaffPostJsonAction(maxLength = 1000) { request =>
+    val body = request.body
+    val sectionPageId = (body \ "sectionPageId").as[PageId]
+    val newTopicTypeInts = (body \ "newTopicTypes").as[List[Int]]
+    val newTopicTypes = newTopicTypeInts map { typeInt =>
+      PageRole.fromInt(typeInt) getOrElse throwBadReq(
+        "DwE7KUP3", s"Bad new topic type int: $typeInt")
+    }
+
+    val creteEditCategoryData = CreateEditCategoryData(
+      anyId = (body \ "categoryId").asOpt[CategoryId],
+      sectionPageId = sectionPageId,
+      parentId = (body \ "parentCategoryId").as[CategoryId],
+      name = (body \ "name").as[String],
+      slug = (body \ "slug").as[String],
+      position = (body \ "position").as[Int],
+      newTopicTypes = newTopicTypes)
+
+    var resultJson: JsObject = null
+
+    val category = creteEditCategoryData.anyId match {
+      case Some(categoryId) =>
+        request.dao.editCategory(creteEditCategoryData, editorId = request.theUserId,
+          request.theBrowserIdData)
+      case None =>
+        val (category, _) = request.dao.createCategory(
+          creteEditCategoryData, creatorId = request.theUserId, request.theBrowserIdData)
+        category
+    }
+
+    OkSafeJson(Json.obj(
+      "allCategories" -> ReactJson.categoriesJson(category.sectionPageId, request.dao),
+      "newCategoryId" -> category.id,
+      "newCategorySlug" -> category.slug))
+  }
+
+
+  def listTopics(categoryId: String) = GetAction { request =>
+    val categoryIdInt: CategoryId = Try(categoryId.toInt) getOrElse throwBadReq(
+      "DwE4KG08", "Bat category id")
+    val pageQuery: PageQuery = parseThePageQuery(request)
+    val topics = listTopicsInclPinned(categoryIdInt, pageQuery, request.dao,
+      includeDescendantCategories = true)
     val pageStuffById = request.dao.loadPageStuff(topics.map(_.pageId))
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
     val json = Json.obj("topics" -> topicsJson)
@@ -71,46 +112,34 @@ object ForumController extends mvc.Controller {
 
 
   def listCategories(forumId: PageId) = GetAction { request =>
-    val categories = request.dao.listChildPages(parentPageIds = Seq(forumId),
-      pageQuery = PageQuery(
-        PageOrderOffset.ByPublTime, // COULD create a PageOrderOffset.ByPinOrder instead
-        PageFilter.ShowAll),
-      limit = 999, onlyPageRole = Some(PageRole.Category))
-    val pageStuffById: Map[PageId, debiki.dao.PageStuff] =
-      request.dao.loadPageStuff(categories.map(_.pageId))
-    val json = Json.obj("categories" -> categories.map({ category =>
-      categoryToJson(category, Nil, pageStuffById)
+    val categories = request.dao.listSectionCategories(forumId)
+    val json = JsArray(categories.map({ category =>
+      categoryToJson(category, recentTopics = Nil, pageStuffById = Map.empty)
     }))
     OkSafeJson(json)
   }
 
 
   def listCategoriesAndTopics(forumId: PageId) = GetAction { request =>
-    val categories = request.dao.listChildPages(
-      parentPageIds = Seq(forumId),
-      pageQuery = PageQuery(PageOrderOffset.ByPublTime, // COULD create PageOrderOffset.ByPinOrder instead
-        PageFilter.ShowAll),
-      limit = 999,
-      onlyPageRole = Some(PageRole.Category))
+    val categories = request.dao.listSectionCategories(forumId)
 
     val recentTopicsByCategoryId =
-      mutable.Map[PageId, Seq[PagePathAndMeta]]()
+      mutable.Map[CategoryId, Seq[PagePathAndMeta]]()
 
     val pageIds = ArrayBuffer[PageId]()
     val pageQuery = PageQuery(PageOrderOffset.ByBumpTime(None), parsePageFilter(request))
 
     for (category <- categories) {
-      val recentTopics = listTopicsInclPinned(category.id, pageQuery,
-        request.dao, limit = 6)
+      val recentTopics = listTopicsInclPinned(category.id, pageQuery, request.dao,
+        includeDescendantCategories = true, limit = 6)
       recentTopicsByCategoryId(category.id) = recentTopics
-      pageIds.append(category.pageId)
       pageIds.append(recentTopics.map(_.pageId): _*)
     }
 
     val pageStuffById: Map[PageId, debiki.dao.PageStuff] =
       request.dao.loadPageStuff(pageIds)
 
-    val json = Json.obj("categories" -> categories.map({ category =>
+    val json = JsArray(categories.map({ category =>
       categoryToJson(category, recentTopicsByCategoryId(category.id), pageStuffById)
     }))
 
@@ -118,38 +147,38 @@ object ForumController extends mvc.Controller {
   }
 
 
-  def listTopicsInclPinned(categoryId: PageId, pageQuery: PageQuery,
-        dao: debiki.dao.SiteDao, limit: Int = NumTopicsToList): Seq[PagePathAndMeta] = {
-    val topics: Seq[PagePathAndMeta] =
-      dao.listTopicsInTree(rootPageId = categoryId, pageQuery, limit = limit)
+  def listTopicsInclPinned(categoryId: CategoryId, pageQuery: PageQuery, dao: debiki.dao.SiteDao,
+        includeDescendantCategories: Boolean, limit: Int = NumTopicsToList)
+        : Seq[PagePathAndMeta] = {
+    val topics: Seq[PagePathAndMeta] = dao.listPagesInCategory(
+      categoryId, includeDescendantCategories, pageQuery, limit)
 
     // If sorting by bump time, sort pinned topics first. Otherwise, don't.
     val topicsInclPinned = pageQuery.orderOffset match {
       case orderOffset: PageOrderOffset.ByBumpTime if orderOffset.offset.isEmpty =>
-        val pinnedTopics = dao.listTopicsInTree(
-          rootPageId = categoryId,
-          PageQuery(PageOrderOffset.ByPinOrderLoadOnlyPinned, pageQuery.pageFilter),
-          limit = limit)
+        val pinnedTopics = dao.listPagesInCategory(
+          categoryId, includeDescendantCategories,
+          PageQuery(PageOrderOffset.ByPinOrderLoadOnlyPinned, pageQuery.pageFilter), limit)
         val notPinned = topics.filterNot(topic => pinnedTopics.exists(_.id == topic.id))
         val topicsSorted = (pinnedTopics ++ notPinned) sortBy { topic =>
-          val isPinned = topic.meta.pinWhere.contains(PinPageWhere.Globally) ||
-            (topic.meta.isPinned && (
-              topic.meta.parentPageId.contains(categoryId) ||
-              topic.id == categoryId)) // hack, will vanish when creating category table [forumcategory]
+          val meta = topic.meta
+          val pinnedGlobally = meta.pinWhere.contains(PinPageWhere.Globally)
+          val pinnedInThisCategory = meta.isPinned && meta.categoryId.contains(categoryId)
+          val isPinned = pinnedGlobally || pinnedInThisCategory
           if (isPinned) topic.meta.pinOrder.get // 1..100
           else Long.MaxValue - topic.meta.bumpedOrPublishedOrCreatedAt.getTime // much larger
         }
-        // Remove about-category pages for sub categories (or categories, if listing all cats).
-        // Will have to change this once categories have their own table. [forumcategory]
-        topicsSorted filterNot { topic =>
-          topic.meta.parentPageId.contains(categoryId) &&
-            topic.meta.pageRole == PageRole.Category
-        }
+        topicsSorted
       case _ => topics
     }
 
     topicsInclPinned
   }
+
+
+  def parseThePageQuery(request: DebikiRequest[_]): PageQuery =
+    parsePageQuery(request) getOrElse throwBadRequest(
+      "DwE2KTES7", "No sort-order-offset specified")
 
 
   def parsePageQuery(request: DebikiRequest[_]): Option[PageQuery] = {
@@ -184,30 +213,12 @@ object ForumController extends mvc.Controller {
     }
 
 
-  private def categoryToJson(category: PagePathAndMeta, recentTopics: Seq[PagePathAndMeta],
+  private def categoryToJson(category: Category, recentTopics: Seq[PagePathAndMeta],
       pageStuffById: Map[PageId, debiki.dao.PageStuff]): JsObject = {
-    val categoryStuff = pageStuffById.get(category.pageId) getOrDie "DwE5IKJ3"
-    val name = categoryStuff.title
-    val slug = categoryNameToSlug(name)
-    val topicsNoAboutCategoryPage = recentTopics.filterNot(_.id == category.id)
+    require(recentTopics.isEmpty || pageStuffById.nonEmpty, "DwE8QKU2")
+    val topicsNoAboutCategoryPage = recentTopics.filter(_.pageRole != PageRole.AboutCategory)
     val recentTopicsJson = topicsNoAboutCategoryPage.map(topicToJson(_, pageStuffById))
-    Json.obj(
-      "pageId" -> category.id,
-      "name" -> name,
-      "slug" -> slug,
-      "description" -> categoryStuff.bodyExcerpt.getOrDie("DwE4KIGW3"),
-      "numTopics" -> category.meta.numChildPages, // COULD use ??cachedNumTopics?? instead?
-                                                // because child pages includes categories too.
-      "recentTopics" -> recentTopicsJson)
-  }
-
-
-  /** For now only. In the future I'll generate the slug when the category is created?
-    */
-  def categoryNameToSlug(name: String): String = {
-    name.toLowerCase.replaceAll(" ", "-") filterNot { char =>
-      "()!?[].," contains char
-    }
+    ReactJson.categoryJson(category, recentTopicsJson)
   }
 
 
@@ -216,28 +227,17 @@ object ForumController extends mvc.Controller {
     val createdEpoch = topic.meta.createdAt.getTime
     val bumpedEpoch = DateEpochOrNull(topic.meta.bumpedAt)
     val lastReplyEpoch = DateEpochOrNull(topic.meta.lastReplyAt)
-    val title =
-      if (topic.meta.pageRole == PageRole.Category) {
-        // Temp hack until I've moved categories to their own table, and
-        // there are PageRole.About topics for each category, a la Discourse, with
-        // "About the ... category" titles. [forumcategory]
-        s"About the ${topicStuff.title} category"
-      }
-      else {
-        topicStuff.title
-      }
-
+    val title = topicStuff.title
     Json.obj(
       "pageId" -> topic.id,
       "pageRole" -> topic.pageRole.toInt,
       "title" -> title,
       "url" -> topic.path.value,
-      "categoryId" -> topic.parentPageId.getOrDie(
-        "DwE49Fk3", s"Topic `${topic.id}', site `${topic.path.siteId}', has no parent page"),
+      "categoryId" -> topic.categoryId.getOrDie(
+        "DwE49Fk3", s"Topic `${topic.id}', site `${topic.path.siteId}', belongs to no category"),
       "pinOrder" -> JsNumberOrNull(topic.meta.pinOrder),
       "pinWhere" -> JsNumberOrNull(topic.meta.pinWhere.map(_.toInt)),
-      // loadPageStuff() loads excerps for pinned topics (and categories).
-      "excerpt" -> JsStringOrNull(topicStuff.bodyExcerpt),
+      "excerpt" -> JsStringOrNull(topicStuff.bodyExcerptIfPinned),
       "numPosts" -> JsNumber(topic.meta.numRepliesVisible + 1),
       "numLikes" -> topic.meta.numLikes,
       "numWrongs" -> topic.meta.numWrongs,

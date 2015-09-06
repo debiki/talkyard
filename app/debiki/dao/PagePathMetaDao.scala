@@ -63,22 +63,13 @@ trait PagePathMetaDao {
     siteDbDao.loadPageMetasAsMap(pageIds, anySiteId)
 
 
-  def loadAncestorIdsParentFirst(pageId: PageId): List[PageId] =
-    siteDbDao.loadAncestorIdsParentFirst(pageId)
-
-
-  def loadCategoryTree(rootPageId: PageId): Seq[Category] =
-    siteDbDao.loadCategoryTree(rootPageId)
-
-
   def loadPageMetaAndPath(pageId: PageId): Option[PagePathAndMeta] = {
     // I don't think writing a dedicated SQL query that does this in one
     // roundtrip is worth the trouble? Won't work with NoSQL databases anyway?
     val anyMeta = loadPageMeta(pageId)
-    val ancestorIds = loadAncestorIdsParentFirst(pageId)
     val anyPath = lookupPagePath(pageId)
     for (meta <- anyMeta; path <- anyPath)
-      yield PagePathAndMeta(path, ancestorIds, meta)
+      yield PagePathAndMeta(path, meta)
   }
 
 
@@ -180,14 +171,6 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
     lookupInCache[PageMeta](
       pageMetaByIdKey(SitePageId(siteId, pageId)),
       orCacheAndReturn = super.loadPageMeta(pageId))
-
-
-  override def loadAncestorIdsParentFirst(pageId: PageId): List[PageId] = {
-    // [freshcache] SHOULD discard cached values older than a certain whole-site-invalidation value.
-    lookupInCache(
-      ancestorIdsKey(SitePageId(siteId, pageId)),
-      orCacheAndReturn = Some(super.loadAncestorIdsParentFirst(pageId))) getOrDie "DwE4GLi6"
-  }
 
 
   override def updatePageMeta(meta: PageMeta, old: PageMeta) {

@@ -1,1 +1,0 @@
-../../app/renderer/model.ts

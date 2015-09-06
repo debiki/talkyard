@@ -75,7 +75,8 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
 
   if (pageSlug.length > MaxSlugLength)
       throw PagePathException(
-        "DwE4KE32", s"Slug too long, length: ${pageSlug.length}, max: $MaxSlugLength")
+        "DwE4KE32", o"""Slug too long, length: ${pageSlug.length}, max: $MaxSlugLength,
+            the slug: "$pageSlug"""")
 
   if (pageSlug startsWith "-")
     throw PagePathException("DwE2Yb35", s"Page slug starts with '-' `$pageSlug'")

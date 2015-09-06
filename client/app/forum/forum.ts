@@ -18,16 +18,16 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../prelude.ts" />
 /// <reference path="../editor/editor.ts" />
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
 /// <reference path="../react-elements/topbar.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../ServerApi.ts" />
-/// <reference path="model.ts" />
+/// <reference path="../model.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.renderer {
+   module debiki2.forum {
 //------------------------------------------------------------------------------
 
 var d = { i: debiki.internal, u: debiki.v0.util };
@@ -121,8 +121,8 @@ var CategoriesAndTopics = createComponent({
     // If we just created a new category, transition to the latest topics view for
     // that category.
     var newCatSlug = nextProps.newCategorySlug;
-    if (newCatSlug && newCatSlug !== this.state.lastCreatedCategorySlug) {
-      this.setState({ lastCreatedCategorySlug: newCatSlug });
+    if (newCatSlug && newCatSlug !== this.state.newCategorySlug) {
+      this.setState({ newCategorySlug: newCatSlug });
       this.transitionTo('ForumRouteLatest', { categorySlug: newCatSlug });
     }
   },
@@ -137,18 +137,36 @@ var CategoriesAndTopics = createComponent({
   },
 
   getActiveCategory: function() {
+    var activeCategory: any;
     var activeCategorySlug = this.getParams().categorySlug;
-    var activeCategory: any = {
-      name: 'All Categories',
-      pageId: this.props.pageId, // this is the forum id
-      isForumItself: true,
-    };
     if (activeCategorySlug) {
+      // Don't know why, but sometimes after having edited or created a category and
+      // then transitioned to its edited/new slug, then getParams().categorySlug
+      // still points to the old previous slug. Therefore, if we didn't find
+      // activeCategorySlug, try this.state.newCategorySlug instead.
       activeCategory = _.find(this.props.categories, (category: Category) => {
         return category.slug === activeCategorySlug;
       });
+      if (!activeCategory) {
+        activeCategory = _.find(this.props.categories, (category: Category) => {
+          return category.slug === this.state.newCategorySlug;
+        });
+      }
+    }
+    if (!activeCategory) {
+      activeCategory = {
+        name: 'All Categories',  // [i18n]
+        id: this.props.categoryId, // the forum root category id
+        isForumItself: true,
+      };
     }
     return activeCategory;
+  },
+
+  findTheUncategorizedCategory: function() {
+    return _.find(this.props.categories, (category: Category) => {
+        return category.isTheUncategorizedCategory;
+    });
   },
 
   switchSortOrder: function(newRouteName: string) {
@@ -192,22 +210,31 @@ var CategoriesAndTopics = createComponent({
   }, */
 
   editCategory: function() {
-    location.href = '/-' + this.getActiveCategory().pageId;
+    debiki2.forum['getEditCategoryDialog']().open(this.getActiveCategory().id);
   },
 
   createCategory: function() {
-    this.createChildPage(PageRole.Category);
+    debiki2.forum['getEditCategoryDialog']().open();
   },
 
   createTopic: function() {
-    this.createChildPage(PageRole.Discussion);
-  },
-
-  createChildPage: function(role: PageRole) {
     var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
     d.i.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
-      var parentPageId = this.getActiveCategory().pageId;
-      debiki2.editor.editNewForumPage(parentPageId, role);
+      var category: Category = this.getActiveCategory();
+      if (category.isForumItself) {
+        category = this.findTheUncategorizedCategory();
+        dieIf(!category, "No Uncategorized category [DwE5GKY8]");
+      }
+      var newTopicTypes = category.newTopicTypes || [];
+      if (newTopicTypes.length === 0) {
+        debiki2.editor.editNewForumPage(category.id, PageRole.Discussion);
+      }
+      else if (newTopicTypes.length === 1) {
+        debiki2.editor.editNewForumPage(category.id, newTopicTypes[0]);
+      }
+      else {
+        forum['getCreateTopicDialog']().open(category);
+      }
     });
   },
 
@@ -220,12 +247,14 @@ var CategoriesAndTopics = createComponent({
       // a category, opened a page and then clicked Back in the browser. Then this page
       // reloads, and the browser then uses cached HTML including JSON in which the new
       // category does not yet exist. Let's try to reload the category list page:
+      console.log("Category not found, navigating to forum index page [DwM5KPE2]");
       location.assign(location.pathname); // works right now when using hash fragment routing [hashrouting]
+      return null;
     }
 
     var categoryMenuItems =
         props.categories.map((category: Category) => {
-          return MenuItem({ eventKey: category.slug, key: category.pageId }, category.name);
+          return MenuItem({ eventKey: category.slug, key: category.id }, category.name);
         });
     categoryMenuItems.unshift(
       MenuItem({ eventKey: null, key: -1 }, 'All Categories'));
@@ -375,7 +404,7 @@ var ForumTopicListComponent = React.createClass({
 
   loadTopics: function(nextProps, loadMore) {
     var isNewView =
-        this.props.activeCategory.pageId !== nextProps.activeCategory.pageId ||
+        this.props.activeCategory.id !== nextProps.activeCategory.id ||
         this.props.activeRoute.name !== nextProps.activeRoute.name ||
         this.props.topicFilter !== nextProps.topicFilter;
 
@@ -397,7 +426,7 @@ var ForumTopicListComponent = React.createClass({
       delete orderOffset.time;
       delete orderOffset.numLikes;
     }
-    var categoryId = nextProps.activeCategory.pageId;
+    var categoryId = nextProps.activeCategory.id;
     this.setState({ isLoading: true });
     debiki2.Server.loadForumTopics(categoryId, orderOffset, (newlyLoadedTopics: Topic[]) => {
       if (!this.isMounted())
@@ -541,7 +570,7 @@ var TopicRow = createComponent({
   render: function() {
     var topic: Topic = this.props.topic;
     var category = _.find(this.props.categories, (category: Category) => {
-      return category.pageId === topic.categoryId;
+      return category.id === topic.categoryId;
     });
 
     var feelingsIcons = [];
@@ -577,10 +606,7 @@ var TopicRow = createComponent({
 
     var anyPinIcon = topic.pinWhere ? 'icon-pin' : undefined;
     var showExcerpt = topic.pinWhere === PinPageWhere.Globally ||
-        (topic.pinWhere && (
-            topic.categoryId === this.props.activeCategory.pageId ||
-            topic.pageId === this.props.activeCategory.pageId)); // hack, will vanish when forum
-                                                // categories have their own db table [forumcategory]
+        (topic.pinWhere && topic.categoryId === this.props.activeCategory.id);
     var excerptIfPinned = showExcerpt
         ? r.p({ className: 'dw-p-excerpt' }, topic.excerpt, r.a({ href: topic.url }, 'read more'))
         : null;
@@ -630,7 +656,7 @@ var ForumCategoriesComponent = React.createClass({
       return r.p({}, 'Loading...');
 
     var categoryRows = this.state.categories.map((category: Category) => {
-      return CategoryRow({ category: category, key: category.pageId });
+      return CategoryRow({ category: category, key: category.id });
     });
 
     return (
@@ -666,13 +692,17 @@ var CategoryRow = createComponent({
               ' – ' + topic.numPosts + ' posts, ',
               moment(topic.bumpedEpoch || topic.createdEpoch).from(this.props.now)))));
     });
+
+    var description = category.isTheUncategorizedCategory
+        ? null
+        : r.p({ className: 'forum-description' }, category.description);
+
     return (
       r.tr({},
         r.td({ className: 'forum-info' },
           r.div({ className: 'forum-title-wrap' },
             r.a({ className: 'forum-title', onClick: this.onCategoryClick }, category.name)),
-          r.p({ className: 'forum-description' }, category.description),
-          r.p({ className: 'topic-count' }, category.numTopics + ' topics')),
+          description),
         r.td({},
           r.table({ className: 'topic-table-excerpt table table-condensed' },
             r.tbody({},
