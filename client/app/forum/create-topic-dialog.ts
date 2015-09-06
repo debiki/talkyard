@@ -91,15 +91,18 @@ var CreateTopicDialog = createClassAndFactory({
 
     var askQuestionButton = topicTypes.indexOf(PageRole.Question) === -1 ? null :
         Button({ onClick: openEditor(PageRole.Question) },
-          "A question");
+          r.span({ className: 'icon-help-circled' },
+            "A question"));
 
     var problemButton = topicTypes.indexOf(PageRole.Problem) === -1 ? null :
         Button({ onClick: openEditor(PageRole.Problem) },
-          "Something doesn't work, seems broken");
+          r.span({ className: 'icon-attention-circled' },
+            "Something doesn't work, seems broken"));
 
     var ideaButton = topicTypes.indexOf(PageRole.Idea) === -1 ? null :
         Button({ onClick: openEditor(PageRole.Idea) },
-          "An idea");
+          r.span({ className: 'icon-idea' },
+            "An idea"));
 
     var discussionButton = topicTypes.indexOf(PageRole.Discussion) === -1 ? null :
         Button({ onClick: openEditor(PageRole.Discussion) },
@@ -114,7 +117,7 @@ var CreateTopicDialog = createClassAndFactory({
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close,
-          dialogClassName: 'dw-dlg-create-topic' },
+          dialogClassName: 'dw-dlg-create-topic dw-no-borders' },
         ModalHeader({}, ModalTitle({}, "What kind of topic?")),
         ModalBody({}, body),
         ModalFooter({}, Button({ onClick: this.close }, "Cancel"))));

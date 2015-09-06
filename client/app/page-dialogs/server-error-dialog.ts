@@ -16,7 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../prelude.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 
@@ -141,12 +141,4 @@ var ServerErrorDialog = createComponent({
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------
-
-
-module debiki2 {
-  // Move to which file?
-  export var die: any = debiki2.pagedialogs.showAndThrowClientSideError;
-}
-
-
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

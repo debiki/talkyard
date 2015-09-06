@@ -523,16 +523,23 @@ object ReactJson {
   }
 
 
-  def categoryJson(category: Category, recentTopicsJson: Seq[JsObject] = Nil) =
-    Json.obj(
+  def categoryJson(category: Category, recentTopicsJson: Seq[JsObject] = null) = {
+    var json = Json.obj(
       "id" -> category.id,
       "name" -> category.name,
       "slug" -> category.slug,
       "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
       "position" -> category.position,
       "description" -> JsStringOrNull(category.description),
-      "numTopics" -> category.numTopics,
-      "recentTopics" -> recentTopicsJson)
+      "numTopics" -> category.numTopics)
+    if (recentTopicsJson ne null) {
+      json += "recentTopics" -> JsArray(recentTopicsJson)
+    }
+    if (category.isTheUncategorizedCategory) {
+      json += "isTheUncategorizedCategory" -> JsBoolean(true)
+    }
+    json
+  }
 
 
   case class ToTextResult(text: String, isSingleParagraph: Boolean)

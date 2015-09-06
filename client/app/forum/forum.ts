@@ -18,7 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../prelude.ts" />
 /// <reference path="../editor/editor.ts" />
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
 /// <reference path="../react-elements/topbar.ts" />
@@ -163,6 +163,12 @@ var CategoriesAndTopics = createComponent({
     return activeCategory;
   },
 
+  findTheUncategorizedCategory: function() {
+    return _.find(this.props.categories, (category: Category) => {
+        return category.isTheUncategorizedCategory;
+    });
+  },
+
   switchSortOrder: function(newRouteName: string) {
     this.transitionTo(newRouteName, this.getParams());
   },
@@ -215,6 +221,10 @@ var CategoriesAndTopics = createComponent({
     var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
     d.i.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       var category: Category = this.getActiveCategory();
+      if (category.isForumItself) {
+        category = this.findTheUncategorizedCategory();
+        dieIf(!category, "No Uncategorized category [DwE5GKY8]");
+      }
       var newTopicTypes = category.newTopicTypes || [];
       if (newTopicTypes.length === 0) {
         debiki2.editor.editNewForumPage(category.id, PageRole.Discussion);
@@ -682,12 +692,17 @@ var CategoryRow = createComponent({
               ' – ' + topic.numPosts + ' posts, ',
               moment(topic.bumpedEpoch || topic.createdEpoch).from(this.props.now)))));
     });
+
+    var description = category.isTheUncategorizedCategory
+        ? null
+        : r.p({ className: 'forum-description' }, category.description);
+
     return (
       r.tr({},
         r.td({ className: 'forum-info' },
           r.div({ className: 'forum-title-wrap' },
             r.a({ className: 'forum-title', onClick: this.onCategoryClick }, category.name)),
-          r.p({ className: 'forum-description' }, category.description),
+          description,
           r.p({ className: 'topic-count' }, category.numTopics + ' topics')),
         r.td({},
           r.table({ className: 'topic-table-excerpt table table-condensed' },

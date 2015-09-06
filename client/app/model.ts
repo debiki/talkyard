@@ -114,6 +114,8 @@ interface Category {
   subCategories: number[];
   numTopics: number;
   recentTopics: Topic[];
+  isTheUncategorizedCategory?: boolean;
+  isForumItself?: boolean;
 }
 
 

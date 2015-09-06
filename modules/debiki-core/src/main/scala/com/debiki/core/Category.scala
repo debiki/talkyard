@@ -40,12 +40,14 @@ case class Category(
   deletedAt: Option[ju.Date] = None) {
 
   def isRoot = parentId.isEmpty
+  def isTheUncategorizedCategory = description.contains(Category.UncategorizedDescription)
 
 }
 
 
 object Category {
   val DescriptionExcerptLength = 300
+  val UncategorizedDescription = "__uncategorized__"
 }
 
 
