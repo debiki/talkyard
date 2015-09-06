@@ -213,7 +213,7 @@ function renderDiscussionPage() {
   });
 
   steps.push(function() {
-    d.i.loadAndScrollToAnyUrlAnchorPost();
+    debiki2.ReactActions.loadAndScrollToAnyUrlAnchorPost();
   });
 
   // Disable for now, I'll rewrite it to consider timestamps.

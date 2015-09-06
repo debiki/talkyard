@@ -19,70 +19,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-var anyCurrentlyHighlighted = null;
-var anyCurrentlyHighlightedTimeout = null;
-//var anyCurrentlyHighlightedBackground = null;
-
-/**
- * Highlights and outlines $tag, for a little while. If there're opaque
- * elems inside, you can list them in the `opt_backgroundSelector`
- * and then background highlighting is placed on them instead of on $tag.
- */
-function highlightBriefly($tag, opt_backgroundSelector) {
-  // Stop any old animation, doesn't look well with many highlightings.
-  if (anyCurrentlyHighlighted) {
-    anyCurrentlyHighlighted.css('outline', '');
-    anyCurrentlyHighlighted.stop(true, true);
-    anyCurrentlyHighlighted = null;
-  }
-  /*
-  if (anyCurrentlyHighlightedBackground) {
-    anyCurrentlyHighlightedBackground.stop(true, true);
-    anyCurrentlyHighlightedBackground = null;
-  } */
-  if (anyCurrentlyHighlightedTimeout) {
-    clearTimeout(anyCurrentlyHighlightedTimeout);
-    anyCurrentlyHighlightedTimeout = null;
-  }
-
-  var duration = 2147483647; // 7500;  -- highlight forever instead
-  /*
-  var $background = opt_backgroundSelector ?
-      $tag.find(opt_backgroundSelector) : $tag;
-  $background.effect('highlight',
-      { easing: 'easeInExpo', color: 'yellow' }, duration);
-  anyCurrentlyHighlightedBackground = $background;
-      */
-
-  $tag.css('outline', 'hsl(211, 100%, 77%) solid 7px'); // duplicated style [FK209EIZ]
-  anyCurrentlyHighlighted = $tag;
-  // Remove the outline somewhat quickly (during 600 ms). Otherwise it looks
-  // jerky: removing 1px at a time, slowly, is very noticeable!
-  anyCurrentlyHighlightedTimeout = setTimeout(function() {
-    $tag.animate({ outlineWidth: '0px' }, 600);
-  }, Math.max(duration, 0));
-
-  /// This won't work, jQuery plugin doesn't support rgba animation:
-  //$post.animate(
-  //    { outlineColor: 'rgba(255, 0, 0, .5)' }, duration, 'easeInExpo');
-  /// There's a rgba color support plugin though:
-  /// http://pioupioum.fr/sandbox/jquery-color/
-};
-
-
-/**
- * Scrolls to `this`, then highlights `$tag`.
- */
-$.fn.dwScrollToThenHighlight = function($tag, options) {
-  options = addAnySidebarWidth(options);
-  this.dwScrollIntoView(options).queue(function(next) {
-    highlightBriefly($tag);
-    next();
-  });
-  return this;
-};
-
-
 /**
  * There might be a position: fixed sidebar to the right. This hacky
  * function ensures the sidebar won't hide the elem we scroll to,
@@ -104,53 +40,29 @@ function addAnySidebarWidth(options) {
 }
 
 
-/**
- * Scrolls to and highlights `this`.
- */
-$.fn.dwScrollToHighlighted = function(options) {
-  return this.dwScrollToThenHighlight(this);
-};
-
-
 d.i.showAndHighlightPost = function($post, options) {
   options = addAnySidebarWidth(options);
   // Add space for position-fixed stuff at the top: Forw/Back btns and open-sidebar btn.
   options.marginTop = options.marginTop || 60;
   options.marginBottom = options.marginBottom || 300;
   $post.dwScrollIntoView(options).queue(function(next) {
-    highlightBriefly($post, '.dw-p-bd, .dw-p-hd');
+    highlightPostBriefly($post);
     next();
   });
 };
 
 
-// If #post-X is specified in the URL, ensure all posts leading up to
-// and including X have been loaded. Then scroll to X.
-d.i.loadAndScrollToAnyUrlAnchorPost = function() {
-  var anchorPostId = anyAnchorPostId();
-  if (!anchorPostId) {
-    // No #post-X in the URL.
-    return;
-  }
-  var $post = d.i.findPost$(anchorPostId);
-  if (!$post.length) {
-    debiki2.ReactActions.loadAndShowPost(anchorPostId);
-  }
-  else {
-    d.i.showAndHighlightPost($post);
-  }
-};
-
-
-function anyAnchorPostId() {
-  // AngularJS (I think it is) somehow inserts a '/' at the start of the hash. I'd
-  // guess it's Angular's router that messes with the hash. I don't want the '/' but
-  // don't know how to get rid of it, so simply ignore it.
-  var hashIsPostId = /#post-\d+/.test(location.hash);
-  var hashIsSlashPostId = /#\/post-\d+/.test(location.hash);
-  if (hashIsPostId) return location.hash.substr(6, 999)
-  if (hashIsSlashPostId) return location.hash.substr(7, 999)
-  return undefined;
+function highlightPostBriefly($post) {
+  var $headBody = $post.children('.dw-p-hd, .dw-p-bd');
+  $headBody.addClass('dw-highlight-on');
+  setTimeout(function() {
+    $headBody.addClass('dw-highlight-off');
+    // At least Chrome returns 'Xs', e.g. '1.5s', regardles of the units in the CSS file.
+    var durationSeconds = parseFloat($headBody.css('transition-duration'));
+    setTimeout(function() {
+      $headBody.removeClass('dw-highlight-on dw-highlight-off');
+    }, durationSeconds * 1000);
+  }, 500);
 }
 
 

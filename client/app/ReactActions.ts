@@ -290,6 +290,38 @@ export function loadAndShowPost(postId: number, showChildrenToo?: boolean, callb
 }
 
 
+/**
+ * If #post-X is specified in the URL, ensures all posts leading up to
+ * and including X have been loaded. Then scrolls to X.
+ */
+export function loadAndScrollToAnyUrlAnchorPost() {
+  var anchorPostId = anyAnchorPostId();
+  if (!anchorPostId) {
+    // No #post-X in the URL.
+    return;
+  }
+  var $post = debiki.internal.findPost$(anchorPostId);
+  if (!$post.length) {
+    loadAndShowPost(anchorPostId);
+  }
+  else {
+    debiki.internal.showAndHighlightPost($post);
+  }
+};
+
+
+function anyAnchorPostId() {
+  // AngularJS (I think it is) somehow inserts a '/' at the start of the hash. I'd
+  // guess it's Angular's router that messes with the hash. I don't want the '/' but
+  // don't know how to get rid of it, so simply ignore it.
+  var hashIsPostId = /#post-\d+/.test(location.hash);
+  var hashIsSlashPostId = /#\/post-\d+/.test(location.hash);
+  if (hashIsPostId) return location.hash.substr(6, 999)
+  if (hashIsSlashPostId) return location.hash.substr(7, 999)
+  return undefined;
+}
+
+
 export function setHorizontalLayout(enabled: boolean) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.SetHorizontalLayout,

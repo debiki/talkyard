@@ -126,6 +126,7 @@
   background-color: white
   position: relative;
 
+.DW.DW .dw-p-hd.dw-highlight-off,
 .dw-p-hd,
 .dw-p.dw-zd  // folded comment
   padding: 2px 0 2px 3px;
@@ -157,6 +158,7 @@
   .dw-ar-p-hd
     background-color: transparent
 
+.DW.DW .dw-p-bd.dw-highlight-off,
 .dw-p-bd,
 .dw-p-diff // COULD place -bd on -diff too, remove this -diff row?
   padding: 8px 1px 0 3px // 3px aligns w .dw-p-hd (also padded left 3px)
@@ -168,6 +170,26 @@
 .dw-p-hd
   z-index: 1;
   position: relative;
+
+
+// Highlighted posts
+//---------------------------
+
+.DW .dw-highlight-on
+  &.dw-p-hd
+    background-color: hsl(211, 100%, 76%);
+  &.dw-p-bd
+    background-color: hsl(211, 100%, 86%);
+    // Place background above action buttons.
+    z-index: 1;
+
+.dw-highlight-off
+  // (Color reset higher up in this file, see .dw-highlight-off.
+  -webkit-transition: background-color 4s;
+  -moz-transition: background-color 4s;
+  -o-transition: background-color 4s;
+  -ms-transition: background-color 4s;
+  transition: background-color 4s;
 
 
 // Marks
