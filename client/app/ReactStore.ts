@@ -60,7 +60,7 @@ ReactDispatcher.register(function(payload) {
       if (store.userMustBeAuthenticated !== false || store.userMustBeApproved !== false)
         location.reload();
 
-      $('html').removeClass('dw-is-admin, dw-is-staff');
+      $('html').removeClass('dw-is-admin, dw-is-staff, dw-is-authenticated');
 
       store.user = {
         userId: undefined,
@@ -240,6 +240,12 @@ ReactStore.activateUserSpecificData = function(anyUser) {
 
   if (newUser.isAdmin) {
     $('html').addClass('dw-is-admin, dw-is-staff');
+  }
+  if (newUser.isModerator) {
+    $('html').addClass('dw-is-staff');
+  }
+  if (newUser.isAuthenticated) {
+    $('html').addClass('dw-is-authenticated');
   }
 
   store.user = newUser;

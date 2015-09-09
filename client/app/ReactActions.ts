@@ -310,14 +310,14 @@ export function loadAndScrollToAnyUrlAnchorPost() {
 };
 
 
-function anyAnchorPostId() {
+function anyAnchorPostId(): number {
   // AngularJS (I think it is) somehow inserts a '/' at the start of the hash. I'd
   // guess it's Angular's router that messes with the hash. I don't want the '/' but
   // don't know how to get rid of it, so simply ignore it.
   var hashIsPostId = /#post-\d+/.test(location.hash);
   var hashIsSlashPostId = /#\/post-\d+/.test(location.hash);
-  if (hashIsPostId) return location.hash.substr(6, 999)
-  if (hashIsSlashPostId) return location.hash.substr(7, 999)
+  if (hashIsPostId) return parseInt(location.hash.substr(6, 999));
+  if (hashIsSlashPostId) return parseInt(location.hash.substr(7, 999));
   return undefined;
 }
 

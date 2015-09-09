@@ -152,7 +152,7 @@ export var TopBar = createComponent({
 
     // Don't show all these buttons on a homepage / landing page, until after has scrolled down.
     // If not logged in, never show it — there's no reason for new users to login on the homepage.
-    if (pageRole === PageRole.HomePage && (!this.state.fixed || !user))
+    if (pageRole === PageRole.HomePage && (!this.state.fixed || !user || !user.isLoggedIn))
       return r.span({});
 
     var goToButtons;
