@@ -20,7 +20,6 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp.throwNotFound
-import java.{util => ju}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 
@@ -36,7 +35,7 @@ trait CategoriesDao {
 
 
   /** List categories in the site section (forum/blog/whatever) at page pageId.
-    * Sorts by Category.position.
+    * Sorts by Category.position (which doesn't make much sense if there are sub categories).
     * Excludes the root of the category tree.
     */
   def listSectionCategories(pageId: PageId): Seq[Category] = {
@@ -176,7 +175,7 @@ trait CategoriesDao {
 
   def editCategory(editCategoryData: CreateEditCategoryData,
         editorId: UserId, browserIdData: BrowserIdData): Category = {
-    val editedCategory = readWriteTransaction { transaction =>
+    val (oldCategory, editedCategory) = readWriteTransaction { transaction =>
       val categoryId = editCategoryData.anyId getOrDie "DwE7KPE0"
       val oldCategory = transaction.loadCategory(categoryId).getOrElse(throwNotFound(
         "DwE5FRA2", s"Category not found, id: $categoryId"))
@@ -190,9 +189,10 @@ trait CategoriesDao {
         newTopicTypes = editCategoryData.newTopicTypes,
         updatedAt = transaction.currentTime)
       transaction.updateCategory(editedCategory)
-      editedCategory
+      (oldCategory, editedCategory)
       // COULD create audit log entry
     }
+    refreshPageInAnyCache(oldCategory.sectionPageId)
     refreshPageInAnyCache(editedCategory.sectionPageId)
     editedCategory
   }

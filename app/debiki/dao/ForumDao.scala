@@ -71,7 +71,7 @@ trait ForumDao {
         parentId = Some(rootCategoryId),
         name = UncategorizedName,
         slug = UncategorizedSlug,
-        position = 1000,
+        position = UncategorizedPosition,
         description = Some(Category.UncategorizedDescription),
         newTopicTypes = immutable.Seq(PageRole.Discussion),
         createdAt = transaction.currentTime,
@@ -88,6 +88,7 @@ trait ForumDao {
 
   private val UncategorizedName = "Uncategorized"
   private val UncategorizedSlug = "uncategorized"
+  private val UncategorizedPosition = 1000
 
   private val ForumBodySanitized = "(Forum body not used [DwM4KZP2])"
 
