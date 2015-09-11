@@ -209,19 +209,23 @@ object SafeActions {
           Future.successful(result)
         case ex: play.api.libs.json.JsResultException =>
           Future.successful(Results.BadRequest(s"Bad JSON: $ex [DwE70KX3]"))
-        case ex: IllegalArgumentException =>
-          successfulInternalError("Illegal argument", ex, "DwE500IA")
-        case ex: IllegalStateException =>
-          successfulInternalError("Illegal state", ex, "DwE500IS")
-        case ex: AssertionError =>
-          successfulInternalError("Assertion error", ex, "DwE500AE")
-        case ex: UnsupportedOperationException =>
-          successfulInternalError("Unsupported operation", ex, "DwE500UO")
+        case ex: RuntimeException =>
+          Future.successful(internalError(request, ex, "DwE500REX"))
+        case ex: Exception =>
+          Future.successful(internalError(request, ex, "DwE500EXC"))
+        case ex: Error =>
+          Future.successful(internalError(request, ex, "DwE500ERR"))
       }
       futureResult = futureResult recover {
         case DebikiHttp.ResultException(result) => result
         case ex: play.api.libs.json.JsResultException =>
-          Results.BadRequest(s"Bad JSON: $ex [error DwE70KX3]")
+          Results.BadRequest(s"Bad JSON: $ex [error DwE6PK30]")
+        case ex: RuntimeException =>
+          internalError(request, ex, "DwE500REXA")
+        case ex: Exception =>
+          internalError(request, ex, "DwE500EXCA")
+        case ex: Error =>
+          internalError(request, ex, "DwE500ERRA")
       }
       if (allowFakeIp) {
         val anyNewFakeIp = request.queryString.get("fakeIp").flatMap(_.headOption)
@@ -235,13 +239,18 @@ object SafeActions {
     }
   }
 
-  private def successfulInternalError(what: String, throwable: Throwable, errorCode: String) = {
-    p.Logger.error(s"Replying internal error: $what [$errorCode]", throwable)
-    Future.successful(Results.InternalServerError(i"""
-      |Something went wrong: $what [$errorCode]
+  private def internalError(request: Request[_], throwable: Throwable,
+        errorCode: String) = {
+    val scheme = if (request.secure) "https://" else "http://"
+    val url = request.method + " " + scheme + request.host + request.uri
+    p.Logger.error(s"Replying internal error to: $url [$errorCode]",
+      throwable)
+    Results.InternalServerError(i"""500 Internal Server Error
+      |
+      |Something went wrong: [$errorCode]
       |
       |${getStackTrace(throwable)}
-      |"""))
+      |""")
   }
 }
 

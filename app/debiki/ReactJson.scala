@@ -180,7 +180,8 @@ object ReactJson {
 
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
-        val rootCategoryId = page.meta.categoryId getOrDie "Dwe7KYP2"
+        val rootCategoryId = page.meta.categoryId.getOrDie(
+          "DwE7KYP2", s"Forum page '${page.id}', site '${pageReq.siteId}', has no category id")
         val orderOffset = controllers.ForumController.parsePageQuery(pageReq).getOrElse(
           PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll))
         val topics = ForumController.listTopicsInclPinned(rootCategoryId, orderOffset, pageReq.dao,
