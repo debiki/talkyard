@@ -150,6 +150,7 @@ class Globals {
         shut down last time? Please hit CTRL+C to kill it. [DwE83KJ9]""")
 
     p.Logger.info("Search disabled, see debiki-dao-rdb [DwM4KEWKB2]")
+    DeadlockDetector.ensureStarted()
 
     _state = new State
 

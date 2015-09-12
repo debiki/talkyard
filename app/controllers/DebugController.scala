@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2014-2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -24,6 +24,7 @@ import debiki.{RateLimits, Globals}
 import java.{util => ju, io => jio}
 import play.api._
 import play.{api => p}
+import play.api.Play.current
 import play.api.mvc.BodyParsers.parse.empty
 
 
@@ -104,5 +105,13 @@ object DebugController extends mvc.Controller {
     Ok(response)
   }
 
+
+  def createDeadlock = ExceptionAction(empty) { request =>
+    if (Play.isProd)
+      debiki.DebikiHttp.throwForbidden("DwE5K7G4", "You didn't say the magic word")
+
+    debiki.DeadlockDetector.createDebugTestDeadlock()
+    Ok("Deadlock created, current time: " + toIso8601(new ju.Date)) as TEXT
+  }
 }
 

@@ -144,6 +144,7 @@ GET  /-/metrics                 controllers.DebugController.showMetrics
 GET  /-/ping-exception-action   controllers.DebugController.pingExceptionAction
 GET  /-/ping-session-action     controllers.DebugController.pingSessionAction
 GET  /-/origin                  controllers.DebugController.origin
+GET  /-/create-deadlock         controllers.DebugController.createDeadlock
 
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
 
