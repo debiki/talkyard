@@ -17,6 +17,8 @@
 
 package controllers
 
+import java.lang.management.ManagementFactory
+
 import actions.SafeActions.{ExceptionAction, SessionAction}
 import actions.ApiActions.{GetAction, PostJsonAction, AdminGetAction}
 import com.debiki.core.Prelude._
@@ -49,6 +51,22 @@ object DebugController extends mvc.Controller {
 
   // SECURITY SHOULD allow only if a Ops team password header? is included?
   def showMetrics = AdminGetAction { request =>
+    val osMXBean = ManagementFactory.getOperatingSystemMXBean
+    val systemLoad = osMXBean.getSystemLoadAverage
+    val runtime = Runtime.getRuntime
+    val toMegabytes = 0.000001d
+    val systemStats = StringBuilder.newBuilder
+      .append("System stats: (in megabytes)")
+      .append("\n================================================================================")
+      .append("\n")
+      .append("\nCPU load: ").append(systemLoad)
+      .append("\nMax memory: ").append(runtime.maxMemory * toMegabytes)
+      .append("\nAllocated memory: ").append(runtime.totalMemory * toMegabytes)
+      .append("\nFree allocated memory: ").append(runtime.freeMemory * toMegabytes)
+      .append("\nTotal free memory: ").append((
+        runtime.freeMemory + runtime.maxMemory - runtime.totalMemory) * toMegabytes)
+      .append("\n\nMetrics:\n").toString()
+
     val outputStream = new jio.ByteArrayOutputStream(100 * 1000)
     val printStream = new jio.PrintStream(outputStream, false, "utf-8")
     val metricsText = try {
@@ -59,7 +77,7 @@ object DebugController extends mvc.Controller {
           .outputTo(printStream)
           .build()
       metricsReporter.report()
-      outputStream.toString("utf-8")
+      systemStats + outputStream.toString("utf-8")
     }
     finally {
       org.apache.lucene.util.IOUtils.closeWhileHandlingException(printStream, outputStream)

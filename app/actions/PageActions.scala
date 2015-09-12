@@ -26,7 +26,7 @@ import debiki.DebikiHttp._
 import debiki.dao.SiteDao
 import debiki.RateLimits.NoRateLimits
 import java.{util => ju}
-import play.api._
+import play.{api => p}
 import play.api.mvc.{Action => _, _}
 import requests._
 
@@ -67,7 +67,7 @@ object PageActions {
     if (pathOkOpt.isEmpty && pageMustExist)
       throwNotFound("DwE0404", "Page not found")
 
-    val tenantId = pathIn.tenantId
+    val siteId = pathIn.siteId
     val pagePath = pathOkOpt.getOrElse(pathIn)
     val anyUser = Utils.loadUserOrThrow(sidStatus, dao)
     val pageExists = pathOkOpt.isDefined
@@ -78,7 +78,7 @@ object PageActions {
 
     // Load permissions.
     val permsReq = PermsOnPageQuery(
-      tenantId = tenantId,
+      tenantId = siteId,
       ip = realOrFakeIpOf(request),
       user = anyUser,
       pagePath = pagePath,
@@ -103,15 +103,22 @@ object PageActions {
 
     RateLimiter.rateLimit(rateLimitsType, pageReq)
 
+    // COULD use markers instead for site id and ip, and perhaps uri too? Dupl code [5KWC28]
+    val requestUriAndIp = s"site $siteId, ip ${request.remoteAddress}: ${request.uri}"
+    p.Logger.debug(s"Page request started [DwM4W7], " + requestUriAndIp)
+
     val timer = Globals.metricRegistry.timer("?view")
     val timerContext = timer.time()
-
-    try {
+    val result = try {
       f(pageReq)
     }
     finally {
       timerContext.stop()
     }
+
+    // Response not yet sent though, if async.
+    p.Logger.debug(s"Page request ended [DwM2F5], " + requestUriAndIp)
+    result
   }
 
 
