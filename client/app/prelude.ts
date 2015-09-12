@@ -26,6 +26,9 @@
 
 export function die(errorMessage: string) {
   var dialogs: any = debiki2['pagedialogs'];
+  setTimeout(() => {
+    debiki2['Server'].logBrowserError(errorMessage);
+  });
   if (dialogs && dialogs.showAndThrowClientSideError) {
     dialogs.showAndThrowClientSideError(errorMessage);
   }

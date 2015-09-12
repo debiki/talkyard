@@ -139,6 +139,7 @@ POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 #POST  /-/load-threads-and-trees controllers.LoadPagePartsController.loadThreadsAndTrees
 GET   /-/list-pages             controllers.ListController.listPages
 
+POST /-/log-browser-error       controllers.DebugController.logBrowserError
 GET  /-/ping-exception-action   controllers.DebugController.pingExceptionAction
 GET  /-/ping-session-action     controllers.DebugController.pingSessionAction
 GET  /-/origin                  controllers.DebugController.origin

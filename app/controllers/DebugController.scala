@@ -18,12 +18,12 @@
 package controllers
 
 import actions.SafeActions.{ExceptionAction, SessionAction}
-import actions.ApiActions.GetAction
-import com.debiki.core._
-import debiki.Globals
+import actions.ApiActions.{GetAction, PostJsonAction}
+import com.debiki.core.Prelude._
+import debiki.{RateLimits, Globals}
 import java.{util => ju}
 import play.api._
-import play.api.libs.json.JsObject
+import play.{api => p}
 import play.api.mvc.BodyParsers.parse.empty
 
 
@@ -32,10 +32,24 @@ import play.api.mvc.BodyParsers.parse.empty
 object DebugController extends mvc.Controller {
 
 
+  /** If a JS error happens in the browser, it'll post the error message to this
+    * endpoint, which logs it, so we'll get to know about client side errors.
+    */
+  def logBrowserError = PostJsonAction(RateLimits.BrowserError, maxLength = 1000) { request =>
+    val errorMessage = request.body.toString()
+    p.Logger.warn(o"""Browser error: $errorMessage,
+      ip: ${request.ip},
+      user: ${request.user.map(_.id)},
+      site: ${request.siteId}
+      [DwE4KF6]""")
+    Ok
+  }
+
+
   /** For performance tests. */
   def pingExceptionAction = ExceptionAction(empty) { request =>
-      Ok("exception-action-pong")
-    }
+    Ok("exception-action-pong")
+  }
 
 
   /** For performance tests. */
