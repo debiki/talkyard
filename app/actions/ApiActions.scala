@@ -27,7 +27,7 @@ import debiki.DebikiHttp._
 import debiki.RateLimits.NoRateLimits
 import java.{util => ju}
 import play.api._
-import play.api.libs.json.JsValue
+import play.{api => p}
 import play.api.mvc._
 import requests._
 import scala.concurrent.Future
@@ -118,9 +118,9 @@ object ApiActions {
       // We've wrapped PlainApiActionImpl in a SessionAction which only provides SessionRequest:s.
       val request = genericRequest.asInstanceOf[SessionRequest[A]]
 
-      val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
+      val siteId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
 
-      val dao = Globals.siteDao(siteId = tenantId)
+      val dao = Globals.siteDao(siteId = siteId)
       dao.perhapsBlockGuest(request)
 
       var anyUser = Utils.loadUserOrThrow(request.sidStatus, dao)
@@ -147,7 +147,22 @@ object ApiActions {
 
       RateLimiter.rateLimit(rateLimits, apiRequest)
 
-      var result = block(apiRequest)
+      // COULD use markers instead for site id and ip, and perhaps uri too? Dupl code [5KWC28]
+      val requestUriAndIp = s"site $siteId, ip ${request.remoteAddress}: ${request.uri}"
+      p.Logger.debug(s"API request started [DwM6L8], " + requestUriAndIp)
+
+      val timer = Globals.metricRegistry.timer(request.path)
+      val timerContext = timer.time()
+      var result = try {
+        block(apiRequest)
+      }
+      finally {
+        timerContext.stop()
+      }
+
+      // Response not yet sent though, if async.
+      p.Logger.debug(s"API request ended [DwM9Z2], " + requestUriAndIp)
+
       if (logoutBecauseSuspended) {
         // We won't get here if e.g. a 403 Forbidden exception was thrown because 'user' was
         // set to None. How solve that?

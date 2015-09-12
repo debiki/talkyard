@@ -26,6 +26,8 @@ import debiki.DebikiHttp._
 import debiki.dao.{PageDao, SiteDao}
 import java.{util => ju}
 import play.api.mvc.{Action => _, _}
+import play.api.Play
+import play.api.Play.current
 import DbDao.PathClashException
 
 
@@ -212,6 +214,14 @@ class PageRequest[A](
     */
   def debugStats: Boolean =
     request.queryString.getEmptyAsNone("debugStats") == Some("true")
+
+
+  /** In Prod mode only staff can bypass the cache, otherwise it'd be a bit too easy
+    * to DoS attack the server. SECURITY COULD use a magic config file password instead.
+    */
+  def bypassCache: Boolean =
+    (!Play.isProd || user.exists(_.isStaff)) &&
+      request.queryString.getEmptyAsNone("bypassCache") == Some("true")
 
 }
 

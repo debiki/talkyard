@@ -617,6 +617,10 @@ export function togglePageClosed(success: (closedAtMs: number) => void) {
 }
 
 
+export function logBrowserError(errorMessage: string) {
+  postJsonSuccess('/-/log-browser-error', () => {}, errorMessage);
+}
+
 
 //------------------------------------------------------------------------------
    }

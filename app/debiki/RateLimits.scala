@@ -115,6 +115,16 @@ object RateLimits {
   }
 
 
+  object BrowserError extends RateLimits {
+    val key = "BrEr"
+    val what = "uploaded too many errors"
+    def maxPerFifteenSeconds = 15
+    def maxPerFifteenMinutes = 50
+    def maxPerDay = 100
+    def maxPerDayNewUser = 100
+  }
+
+
   object CreateSite extends RateLimits {
     val key = "CrSt"
     val what = "created too many sites"

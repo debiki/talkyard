@@ -19,14 +19,13 @@ package debiki
 
 import akka.actor._
 import akka.pattern.gracefulStop
+import com.codahale.metrics
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
 import debiki.dao.{SystemDao, SiteDao, CachingSiteDaoFactory, CachingSystemDao}
 import debiki.dao.migrations.ScalaBasedMigrations
-//import com.twitter.ostrich.stats.Stats
-//import com.twitter.ostrich.{admin => toa}
-import java.{lang => jl}
+import java.{lang => jl, util => ju}
 import play.{api => p}
 import play.api.libs.concurrent.Akka
 import play.api.Play
@@ -52,9 +51,16 @@ class Globals {
   private var _state: State = null
 
   private def state: State = {
-    assert(_state ne null, "No Globals.State created, please call onServerStartup()")
+    if (_state eq null) {
+      die("DwE4KF03", "No Globals.State created, please call onServerStartup()")
+    }
     _state
   }
+
+
+  def metricRegistry = state.metricRegistry
+
+  def mostMetrics: MostMetrics = state.mostMetrics
 
 
   val applicationSecret =
@@ -138,19 +144,13 @@ class Globals {
     s"$scheme://$SiteByIdHostnamePrefix$siteId.$baseDomainWithPort"
 
 
-  /** The Twitter Ostrich admin service, listens on port 9100. */
-  /*
-  private val _ostrichAdminService = new toa.AdminHttpService(9100, 20, Stats,
-    new toa.RuntimeEnvironment(getClass))
-   */
-
-
   def onServerStartup(app: p.Application) {
     if (_state ne null)
       throw new jl.IllegalStateException(o"""Server already running, was it not properly
         shut down last time? Please hit CTRL+C to kill it. [DwE83KJ9]""")
 
     p.Logger.info("Search disabled, see debiki-dao-rdb [DwM4KEWKB2]")
+    DeadlockDetector.ensureStarted()
 
     _state = new State
 
@@ -158,14 +158,6 @@ class Globals {
     debiki.ReactRenderer.startCreatingRenderEngines()
 
     state.systemDao.applyEvolutions()
-
-    // For now, disable in dev mode — because of the port conflict that
-    // causes an error on reload and restart, see below (search for "conflict").
-    /*
-    _ostrichAdminService.start()
-    Logger.info("Twitter Ostrich listening on port "+
-       _ostrichAdminService.address.getPort)
-     */
   }
 
 
@@ -181,17 +173,6 @@ class Globals {
     shutdownActorAndWait(state.mailerActorRef)
     state.dbDaoFactory.shutdown()
     _state = null
-
-    //_ostrichAdminService.shutdown()
-
-    // COULD stop Twitter Ostrich on reload too -- currently there's a
-    // port conflict on reload.
-    // See: <https://groups.google.com/
-    //    forum/?fromgroups#!topic/play-framework/g6uixxX2BVw>
-    // "There is an Actor system reserved for the application code that is
-    // automatically shutdown when the application restart. You can access it
-    // in:  play.api.libs.Akka.system"
-
   }
 
 
@@ -205,6 +186,9 @@ class Globals {
   private class State {
 
     val ShutdownTimeout = 30 seconds
+
+    val metricRegistry = new metrics.MetricRegistry()
+    val mostMetrics = new MostMetrics(metricRegistry)
 
     val dbDaoFactory = new RdbDaoFactory(
       makeDataSource(), ScalaBasedMigrations, Akka.system, debiki.ReactRenderer,
