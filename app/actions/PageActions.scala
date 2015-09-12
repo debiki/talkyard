@@ -103,8 +103,15 @@ object PageActions {
 
     RateLimiter.rateLimit(rateLimitsType, pageReq)
 
-    val result = f(pageReq)
-    result
+    val timer = Globals.metricRegistry.timer("?view")
+    val timerContext = timer.time()
+
+    try {
+      f(pageReq)
+    }
+    finally {
+      timerContext.stop()
+    }
   }
 
 

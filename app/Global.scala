@@ -17,9 +17,6 @@
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-//import com.twitter.ostrich.stats.Stats
-//import com.twitter.ostrich.{admin => toa}
-import controllers.Utils.parseIntOrThrowBadReq
 import debiki._
 import play.api._
 import play.api.mvc._

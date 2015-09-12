@@ -49,6 +49,9 @@ object ApplicationBuild extends Build {
     "com.google.guava" % "guava" % "13.0.1",
     "org.owasp.encoder" % "encoder" % "1.1.1",
     "org.jsoup" % "jsoup" % "1.8.2",
+    "io.dropwizard.metrics" % "metrics-core" % "3.1.2",
+    //"io.dropwizard.metrics" % "metrics-ehcache" % "3.1.2", -- doesn't work right now
+    "nl.grons" %% "metrics-scala" % "3.5.2_a2.3",
     // JSR 305 is requried by Guava, at build time only (so specify "provided"
     // so it won't be included in the JAR), or there's this weird error: """
     //   class file '...guava-13.0.1.jar(.../LocalCache.class)' is broken
@@ -58,7 +61,6 @@ object ApplicationBuild extends Build {
     // and: http://stackoverflow.com/questions/10007994/
     //              why-do-i-need-jsr305-to-use-guava-in-scala
     "com.google.code.findbugs" % "jsr305" % "1.3.9" % "provided",
-    // "com.twitter" %% "ostrich" % "4.10.6",
     "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
     "org.scalatest" %% "scalatest" % "2.2.0" % "test", // but prefer ScalaTest
     "org.scalatestplus" %% "play" % "1.2.0" % "test",

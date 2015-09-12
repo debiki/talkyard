@@ -147,7 +147,16 @@ object ApiActions {
 
       RateLimiter.rateLimit(rateLimits, apiRequest)
 
-      var result = block(apiRequest)
+      val timer = Globals.metricRegistry.timer(request.path)
+      val timerContext = timer.time()
+
+      var result = try {
+        block(apiRequest)
+      }
+      finally {
+        timerContext.stop()
+      }
+
       if (logoutBecauseSuspended) {
         // We won't get here if e.g. a 403 Forbidden exception was thrown because 'user' was
         // set to None. How solve that?

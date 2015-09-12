@@ -140,6 +140,7 @@ POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 GET   /-/list-pages             controllers.ListController.listPages
 
 POST /-/log-browser-error       controllers.DebugController.logBrowserError
+GET  /-/metrics                 controllers.DebugController.showMetrics
 GET  /-/ping-exception-action   controllers.DebugController.pingExceptionAction
 GET  /-/ping-session-action     controllers.DebugController.pingSessionAction
 GET  /-/origin                  controllers.DebugController.origin

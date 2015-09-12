@@ -32,7 +32,9 @@ trait RenderedPageHtmlDao {
   self: SiteDao =>
 
   def renderTemplate(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil): String =
-    TemplateRenderer.renderTemplate(pageReq, appendToBody)
+    Globals.mostMetrics.getRenderPageTimer(pageReq.pageRole).time {
+      TemplateRenderer.renderTemplate(pageReq, appendToBody)
+    }
 
 }
 
@@ -59,6 +61,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     var useCache = pageReq.pageExists
     useCache &= pageReq.pageRoot == Some(PageParts.BodyId)
     useCache &= !pageReq.debugStats
+    useCache &= !pageReq.bypassCache
 
     // When paginating forum topics in a non-Javascript client, we cannot use the cache.
     useCache &= ForumController.parsePageQuery(pageReq).isEmpty
@@ -73,7 +76,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
         rememberForum(pageReq.thePageId)
       }
       Some(super.renderTemplate(pageReq))
-    }) getOrDie "DwE93IB7"
+    }, metric = Globals.mostMetrics.renderPageCacheMetrics) getOrDie "DwE93IB7"
   }
 
 

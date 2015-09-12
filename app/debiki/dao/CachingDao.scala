@@ -19,6 +19,8 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.{CacheMetric, Globals}
+import nl.grons.metrics.scala.Meter
 import scala.reflect.ClassTag
 import CachingDao._
 
@@ -90,6 +92,21 @@ object CachingDao {
 
   case object CacheMiss
 
+  /** An EhCache instance. Right now, all caches use the same instance, could change that.
+    * However doesn't matter? Won't have 2 applications running in the same JVM.
+    * I suppose/guess it's good w.r.t. performance to have only 1 EhCache instance?
+    * So might as well reuse Play's?
+    *
+    * In class EhCachePlugin in play/api/cache/Cache.scala you'll see how Play
+    * creates its per-application cache, namely exactly like below.
+    */
+  private lazy val ehcache: net.sf.ehcache.Ehcache = {
+    val playCache = net.sf.ehcache.CacheManager.create().getCache("play")
+    // Results in "java.lang.NoSuchMethodError: net.sf.ehcache.Ehcache.getStatistics":
+    //com.codahale.metrics.ehcache.InstrumentedEhcache.instrument(Globals.metricRegistry, playCache)
+    playCache
+  }
+
 }
 
 
@@ -105,21 +122,19 @@ trait CachingDao extends CacheEvents {
   self: { def siteId: SiteId } =>
 
 
-  /** An EhCache instance. Right now, all caches use the same instance, could change that.
-    * However doesn't matter? Won't have 2 applications running in the same JVM.
-    * I suppose/guess it's good w.r.t. performance to have only 1 EhCache instance?
-    * So might as well reuse Play's?
-    *
-    * In class EhCachePlugin in play/api/cache/Cache.scala you'll see how Play
-    * creates its per-application cache, namely exactly like below.
-    */
-  private val ehcache: net.sf.ehcache.Cache =
-    net.sf.ehcache.CacheManager.create().getCache("play")
-
-
   /** Remembers the current site's cache version, so we don't need to look it up in the cache.
     */
-  private val thisSitesCacheVersionNow = lookupSiteCacheVersion(this.siteId)
+  private lazy val thisSitesCacheVersionNow = lookupSiteCacheVersion(this.siteId)
+
+
+  private def time[A](anyCacheMetric: CacheMetric)(block: Function[Meter, A]): A = {
+    val cacheMetric =
+      if (anyCacheMetric ne null) anyCacheMetric
+      else Globals.mostMetrics.defaultSiteDaoCacheMetric
+    cacheMetric.timer.time {
+      block(cacheMetric.hitMeter)
+    }
+  }
 
 
   /**
@@ -130,10 +145,13 @@ trait CachingDao extends CacheEvents {
   def lookupInCache[A](
         key: CacheKey,
         orCacheAndReturn: => Option[A] = null,
+        metric: CacheMetric = null,
         ignoreSiteCacheVersion: Boolean = false,
         expiration: Int = 0)(
-        implicit classTag: ClassTag[A]): Option[A] = {
+        implicit classTag: ClassTag[A]): Option[A] = time(metric) { hitMeter =>
+
     lookupInCacheToReplace(key) foreach { case CacheValue(value, version) =>
+      hitMeter.mark()
       return Some(value)
     }
 

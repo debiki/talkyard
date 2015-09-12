@@ -18,10 +18,10 @@
 package controllers
 
 import actions.SafeActions.{ExceptionAction, SessionAction}
-import actions.ApiActions.{GetAction, PostJsonAction}
+import actions.ApiActions.{GetAction, PostJsonAction, AdminGetAction}
 import com.debiki.core.Prelude._
 import debiki.{RateLimits, Globals}
-import java.{util => ju}
+import java.{util => ju, io => jio}
 import play.api._
 import play.{api => p}
 import play.api.mvc.BodyParsers.parse.empty
@@ -43,6 +43,27 @@ object DebugController extends mvc.Controller {
       site: ${request.siteId}
       [DwE4KF6]""")
     Ok
+  }
+
+
+  // SECURITY SHOULD allow only if a Ops team password header? is included?
+  def showMetrics = AdminGetAction { request =>
+    val outputStream = new jio.ByteArrayOutputStream(100 * 1000)
+    val printStream = new jio.PrintStream(outputStream, false, "utf-8")
+    val metricsText = try {
+      val metricsReporter =
+        com.codahale.metrics.ConsoleReporter.forRegistry(Globals.metricRegistry)
+          .convertRatesTo(ju.concurrent.TimeUnit.SECONDS)
+          .convertDurationsTo(ju.concurrent.TimeUnit.MILLISECONDS)
+          .outputTo(printStream)
+          .build()
+      metricsReporter.report()
+      outputStream.toString("utf-8")
+    }
+    finally {
+      org.apache.lucene.util.IOUtils.closeWhileHandlingException(printStream, outputStream)
+    }
+    Ok(metricsText) as TEXT
   }
 
 
