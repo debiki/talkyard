@@ -264,8 +264,7 @@ object UserController extends mvc.Controller {
 
 
   def viewUserPage() = GetAction { request =>
-    val htmlStr = debiki.TemplateRenderer.renderThemeTemplate(
-      template = "users", arguments = Seq(SiteTpi(request)))
+    val htmlStr = views.html.templates.users(SiteTpi(request)).body
     Ok(htmlStr) as HTML
   }
 

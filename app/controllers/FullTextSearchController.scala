@@ -19,7 +19,6 @@ package controllers
 
 import actions.ApiActions._
 import com.debiki.core._
-import debiki.TemplateRenderer
 import debiki.RateLimits
 import java.{util => ju}
 import play.api._
@@ -35,9 +34,6 @@ import Prelude._
 object FullTextSearchController extends mvc.Controller {
 
   private val SearchPhraseFieldName = "searchPhrase"
-
-  private val SearchResultsTemplate = "searchResults"
-
 
   def searchWholeSiteFor(phrase: String) = AsyncGetAction { apiReq =>
     searchImpl(phrase, anyRootPageId = None, apiReq)
@@ -72,8 +68,8 @@ object FullTextSearchController extends mvc.Controller {
     val futureSearchResult = apiReq.dao.fullTextSearch(phrase, anyRootPageId)
     val futureResponse = futureSearchResult map { searchResult =>
       val siteTpi = debiki.SiteTpi(apiReq)
-      val htmlStr = TemplateRenderer.renderThemeTemplate(
-        SearchResultsTemplate, Vector(siteTpi, anyRootPageId, phrase, searchResult))
+      val htmlStr = views.html.templates.searchResults(
+        siteTpi, anyRootPageId, phrase, searchResult).body
       Ok(htmlStr) as HTML
     }
 

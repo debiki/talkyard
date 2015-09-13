@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki._
+import debiki.DebikiHttp.throwNotFound
 import java.{util => ju}
 import requests._
 import scala.xml.NodeSeq
@@ -31,10 +32,34 @@ import CachingDao._
 trait RenderedPageHtmlDao {
   self: SiteDao =>
 
-  def renderTemplate(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil): String =
+  def renderTemplate(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil): String = {
+    val pageMissingAndNotEmbeddedComments =
+      !pageReq.pageExists && pageReq.pageRole != Some(PageRole.EmbeddedComments)
+
+    if (pageMissingAndNotEmbeddedComments && pageReq.pagePath.value != HomepageUrlPath)
+      throwNotFound("DwE00404", "Page not found")
+
     Globals.mostMetrics.getRenderPageTimer(pageReq.pageRole).time {
-      TemplateRenderer.renderTemplate(pageReq, appendToBody)
+      val tpi = new TemplateProgrammingInterface(pageReq, appendToBody)
+
+      if (pageMissingAndNotEmbeddedComments) {
+        dieIf(pageReq.pagePath.value != HomepageUrlPath, "DwE6K4W2")
+        return views.html.specialpages.createSomethingHerePage(tpi).body
+      }
+
+      val result: String = pageReq.thePageRole match {
+        case PageRole.HomePage =>
+          views.html.templates.homepage(tpi).body  // try to delete
+        case PageRole.Blog =>
+          views.html.templates.blog(tpi).body  // try to delete
+        case PageRole.EmbeddedComments =>
+          views.html.templates.embeddedComments(tpi).body
+        case _ =>
+          views.html.templates.page(tpi).body
+      }
+      result
     }
+  }
 
 }
 
