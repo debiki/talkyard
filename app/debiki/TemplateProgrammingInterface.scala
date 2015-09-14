@@ -108,19 +108,6 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_]) {
       startupCode = startupCode, minMaxJs = minMaxJs).body)
 
 
-  /* Perhaps I'll add this back later, or use it in the topbar.
-  def logoHtml = {
-    val logoUrlOrHtml = debikiRequest.siteSettings.logoUrlOrHtml.value.toString.trim
-    if (logoUrlOrHtml.headOption == Some('<')) {
-      // It's HTML, use it as is
-      logoUrlOrHtml
-    }
-    else {
-      // `logoUrlOrHtml` should be an image URL, wrap in a tag.
-      <img src={logoUrlOrHtml}></img>.toString
-    }
-  } */
-
   def hostname = debikiRequest.host
 
   def companyDomain = debikiRequest.siteSettings.companyDomain
@@ -171,19 +158,17 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_]) {
 
   /** The initial data in the React-Flux model, a.k.a. store. */
   def reactStoreSafeJsonString: String =
-    Json.obj("user" -> ReactJson.userNoPageToJson(debikiRequest.user)).toString
-
-  def debikiAppendToBodyTags: xml.NodeSeq = Nil
+    Json.obj("user" -> ReactJson.userNoPageToJson(debikiRequest.user)).toString()
 
 }
 
 
-/**
- * Passed to Scala templates.
- */
+/** Used by Scala templates.
+  */
 class TemplateProgrammingInterface(
   private val pageReq: PageRequest[_],
-  private val tagsToAppendToBody: xml.NodeSeq)
+  override val reactStoreSafeJsonString: String,
+  private val contentHtml: String)
   extends SiteTpi(pageReq) {
 
   override def anyCurrentPageId = Some(pageId)
@@ -203,23 +188,10 @@ class TemplateProgrammingInterface(
     super.debikiHtmlTagClasses + (if (horizontalComments) "dw-hz " else "dw-vt ")
 
 
-  override def debikiAppendToBodyTags: xml.NodeSeq = {
-    tagsToAppendToBody
-  }
-
-
-  def reactTest =
-    xml.Unparsed(ReactRenderer.renderPage(reactStoreSafeJsonString))
+  def renderedPage = xml.Unparsed(contentHtml)
 
 
   def pageUrlPath = pageReq.pagePath.value
-
-
-  override lazy val reactStoreSafeJsonString: String = {
-    ReactJson.pageToJson(pageReq, socialLinksHtml =
-        siteSettings.socialLinksHtml.valueAsString).toString
-
-  }
 
 }
 

@@ -23,7 +23,7 @@ import com.codahale.metrics
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
-import debiki.dao.{SystemDao, SiteDao, CachingSiteDaoFactory, CachingSystemDao}
+import debiki.dao._
 import debiki.dao.migrations.ScalaBasedMigrations
 import java.{lang => jl, util => ju}
 import play.{api => p}
@@ -78,6 +78,11 @@ class Globals {
   def sendEmail(email: Email, websiteId: String) {
     state.mailerActorRef ! (email, websiteId)
   }
+
+  def renderPageContentInBackground(sitePageId: SitePageId) {
+    state.renderContentActorRef ! sitePageId
+  }
+
 
   /** Either exactly all sites uses HTTPS, or all of them use HTTP.
     * A mixed configuration makes little sense I think:
@@ -171,6 +176,7 @@ class Globals {
     // because there was no mailer that could send them.
     shutdownActorAndWait(state.notifierActorRef)
     shutdownActorAndWait(state.mailerActorRef)
+    shutdownActorAndWait(state.renderContentActorRef)
     state.dbDaoFactory.shutdown()
     _state = null
   }
@@ -199,6 +205,8 @@ class Globals {
     val mailerActorRef = Mailer.startNewActor(Akka.system, siteDaoFactory)
 
     val notifierActorRef = Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory)
+
+    val renderContentActorRef = RenderContentService.startNewActor(Akka.system, siteDaoFactory)
 
     def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory.systemDbDao)
 

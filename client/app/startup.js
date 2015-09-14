@@ -174,6 +174,11 @@ function renderDiscussionPage() {
   d.i.layout = d.i.chooseLayout();
   d.i.layoutThreads();
 
+  // Make it possible to test React.js performance in the browser.
+  if (location.search.indexOf('breakReactChecksums=true') !== -1) {
+    $('[data-react-checksum]').attr('data-react-checksum', 'wrong-checksum-DwM4FKW21');
+    console.log("I've altered the React.js checksums, everything will be rerendered. [DwM4KPW2]");
+  }
 
   var timeBefore = performance.now();
   //debiki2.renderer.renderTitleBodyComments();

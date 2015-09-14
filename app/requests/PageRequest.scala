@@ -155,6 +155,7 @@ class PageRequest[A](
 
 
   def pageId: Option[String] = pagePath.pageId
+  def theSitePageId = SitePageId(siteId, thePageId)
 
   /**
    * Throws 404 Not Found if id unknown. The page id is known if it

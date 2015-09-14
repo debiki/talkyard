@@ -87,14 +87,13 @@ object ViewPageController extends mvc.Controller {
 
 
   def viewPostImpl(pageReq: PageGetRequest) = {
-    // COULD try to run the render stuff in a single read only transaction
-    var pageHtml = pageReq.dao.renderTemplate(pageReq)
+    var pageHtml = pageReq.dao.renderPage(pageReq)
     val anyUserSpecificDataJson = ReactJson.userDataJson(pageReq)
 
     // Insert user specific data into the HTML.
     // The Scala templates take care to place the <script type="application/json">
     // tag with the magic-string-that-we'll-replace-with-user-specific-data before
-    // unsafe data like JSON and HTML for comments and the page title and body.
+    // user editable HTML for comments and the page title and body.
     anyUserSpecificDataJson foreach { json =>
       val htmlEncodedJson = org.owasp.encoder.Encode.forHtmlContent(json.toString)
       pageHtml = org.apache.commons.lang3.StringUtils.replaceOnce(
