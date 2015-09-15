@@ -95,6 +95,11 @@ trait SiteTransaction {
   def insertPageMeta(newMeta: PageMeta)
   def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta)
 
+  def loadCachedPageContentHtml(pageId: PageId): Option[(String, PageVersion)]
+  // (Could move this one to a transactionless Dao interface?)
+  def saveCachedPageContentHtmlPerhapsBreakTransaction(
+    pageId: PageId, version: PageVersion, html: String): Boolean
+
   def loadPagePath(pageId: PageId): Option[PagePath]
   def insertPagePath(pagePath: PagePath)
 

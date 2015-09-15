@@ -19,7 +19,11 @@ package debiki.dao
 
 import akka.actor.{Actor, Props, ActorRef, ActorSystem}
 import com.debiki.core._
-import debiki.{ReactJson, ReactRenderer}
+import debiki.{Globals, ReactJson, ReactRenderer}
+import play.{api => p}
+import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext.Implicits.global
+import RenderContentService._
 
 
 /** Renders page contents using React.js and Nashorn. Is done in background threads
@@ -30,37 +34,68 @@ object RenderContentService {
   /** PERFORMANCE COULD create one thread/actor per processor instead.
     */
   def startNewActor(actorSystem: ActorSystem, daoFactory: SiteDaoFactory): ActorRef = {
-    actorSystem.actorOf(
+    val actorRef = actorSystem.actorOf(
       Props(new RenderContentActor(daoFactory)),
       name = s"RenderContentActor")
+    actorSystem.scheduler.scheduleOnce(5 seconds, actorRef, RegenerateStaleHtml)
+    actorRef
   }
+
+  object RegenerateStaleHtml
 
 }
 
 
+/** Send this actor a SitePageId and it'll regenerate and update cached content html
+  * for that page. Otherwise, it continuously keeps looking for any out-of-date cached
+  * content html and makes them up-to-date.
+  */
 class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
 
   override def receive: Receive = {
     case sitePageId: SitePageId =>
-      // TODO don't rerender a page many times if it hasn't changed inbetween.
-      rerenderContentHtmlUpdateCache(sitePageId)
-      uncacheOldWholePageHtml(sitePageId)
+      if (isOutOfDate(sitePageId))
+        rerenderContentHtmlUpdateCache(sitePageId)
+    case RegenerateStaleHtml =>
+      try {
+        findAndUpdateOneOutOfDatePage()
+      }
+      finally {
+        context.system.scheduler.scheduleOnce(333 millis, self, RegenerateStaleHtml)
+      }
   }
+
+
+  private def isOutOfDate(sitePageId: SitePageId): Boolean = {
+    Globals.systemDao.isCachedContentHtmlStale(sitePageId)
+  }
+
 
   private def rerenderContentHtmlUpdateCache(sitePageId: SitePageId) {
+    // COULD add Metrics that times this.
     val dao = daoFactory.newSiteDao(sitePageId.siteId)
-    val storeJson = ReactJson.pageToJson(sitePageId.pageId, dao).toString()
-    val contentHtml = ReactRenderer.renderPage(storeJson)
-    CachingDao.putInCache(
-      CachingRenderedPageHtmlDao.renderedContentKey(sitePageId),
-      // TODO do uncache all cached content for the whole site if needed.
-      // Use a low priority queue for this?
-      CachingDao.CacheValueIgnoreVersion(contentHtml))
-  }
-
-  private def uncacheOldWholePageHtml(sitePageId: SitePageId) {
+    val (storeJson, pageVersion) = ReactJson.pageToJson(sitePageId.pageId, dao)
+    val html = ReactRenderer.renderPage(storeJson.toString())
+    val wasSaved = dao.readWriteTransaction { transaction =>
+      transaction.saveCachedPageContentHtmlPerhapsBreakTransaction(
+        sitePageId.pageId, pageVersion, html)
+    }
+    var message = s"Rerendered content for ${sitePageId.toPrettyString}."
+    if (!wasSaved) {
+      message += " Couldn't save it though — something else saved it first."
+    }
+    p.Logger.debug(message)
+    // Remove cached whole-page-html, so we'll generate a new page with the new content.
     CachingDao.removeFromCache(
       CachingRenderedPageHtmlDao.renderedPageKey(sitePageId))
+  }
+
+
+  private def findAndUpdateOneOutOfDatePage() {
+    val pageIdsToRerender = Globals.systemDao.loadPageIdsToRerender(1)
+    for (toRerender <- pageIdsToRerender) {
+      rerenderContentHtmlUpdateCache(toRerender.sitePageId)
+    }
   }
 
 }

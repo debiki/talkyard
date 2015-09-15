@@ -46,13 +46,13 @@ trait RenderedPageHtmlDao {
       val anyPageQuery = controllers.ForumController.parsePageQuery(pageRequest)
       val anyPageRoot = pageRequest.pageRoot
 
-      val reactStoreSafeJsonString =
-        ReactJson.pageToJson(pageRequest.thePageId, this, anyPageRoot, anyPageQuery).toString()
+      val (pageJson, pageVersion) = ReactJson.pageToJson(
+        pageRequest.thePageId, this, anyPageRoot, anyPageQuery)
+      val pageJsonString = pageJson.toString()
 
-      val content = renderContent(pageRequest.thePageId, reactStoreSafeJsonString)
+      val content = renderContent(pageRequest.thePageId, pageVersion, pageJsonString)
 
-      val tpi = new TemplateProgrammingInterface(pageRequest, reactStoreSafeJsonString, content)
-
+      val tpi = new TemplateProgrammingInterface(pageRequest, pageJsonString, content)
       val result: String = pageRequest.thePageRole match {
         case PageRole.HomePage =>
           views.html.templates.homepage(tpi).body  // try to delete
@@ -68,7 +68,7 @@ trait RenderedPageHtmlDao {
   }
 
 
-  def renderContent(pageId: PageId, reactStoreJsonString: String): String = {
+  def renderContent(pageId: PageId, version: PageVersion, reactStoreJsonString: String): String = {
     ReactRenderer.renderPage(reactStoreJsonString)
   }
 
@@ -77,9 +77,6 @@ trait RenderedPageHtmlDao {
 
 
 object CachingRenderedPageHtmlDao {
-
-  def renderedContentKey(sitePageId: SitePageId) =
-    CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|ContentHtml")
 
   def renderedPageKey(sitePageId: SitePageId) =
     CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|PageHtml")
@@ -127,12 +124,25 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   }
 
 
-  override def renderContent(pageId: PageId, reactStoreJsonString: String): String = {
-    val key = renderedContentKey(SitePageId(siteId, pageId))
-    lookupInCache(key,
-      orCacheAndReturn = {
-        Some(super.renderContent(pageId, reactStoreJsonString))
-      }) getOrDie "DwE5KJW2"
+  override def renderContent(pageId: PageId, version: PageVersion, reactStoreJsonString: String)
+        : String = {
+    // COULD reuse the caller's transaction, but the caller currently uses > 1  :-(
+    // Or could even do this outside any transaction.
+    readOnlyTransaction { transaction =>
+      transaction.loadCachedPageContentHtml(pageId) foreach { case (oldCachedHtml, _) =>
+        // If the html is out-of-date, the browser will make it up-to-date by running
+        // React.js with up-to-date json.
+        return oldCachedHtml
+      }
+    }
+    // Now we'll have to render the page contents [5KWC58], so we have some html to send back
+    // to the client, in case the client is a search engine bot — I suppose those
+    // aren't happy with only up-to-date json (but no html) + running React.js.
+    val newHtml = super.renderContent(pageId, version, reactStoreJsonString)
+    readWriteTransaction { transaction =>
+      transaction.saveCachedPageContentHtmlPerhapsBreakTransaction(pageId, version, newHtml)
+    }
+    newHtml
   }
 
 

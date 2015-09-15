@@ -82,7 +82,7 @@ object ReactJson {
         pageId: PageId,
         dao: SiteDao,
         anyPageRoot: Option[PostId] = None,
-        anyPageQuery: Option[PageQuery] = None): JsObject = {
+        anyPageQuery: Option[PageQuery] = None): (JsObject, PageVersion) = {
     dao.readOnlyTransaction(
       pageToJsonImpl(pageId, dao, _, anyPageRoot, anyPageQuery))
     /*
@@ -143,7 +143,7 @@ object ReactJson {
         dao: SiteDao,
         transaction: SiteTransaction,
         anyPageRoot: Option[PostId],
-        anyPageQuery: Option[PageQuery]): JsObject = {
+        anyPageQuery: Option[PageQuery]): (JsObject, PageVersion) = {
 
     val socialLinksHtml = dao.loadWholeSiteSettings().socialLinksHtml.valueAsString
     val page = PageDao(pageId, transaction)
@@ -214,7 +214,7 @@ object ReactJson {
       pageSettings.horizontalComments.valueAsBoolean
     val is2dTreeDefault = pageSettings.horizontalComments.valueAsBoolean
 
-    Json.obj(
+    val json = Json.obj(
       "now" -> JsNumber((new ju.Date).getTime),
       "siteStatus" -> JsString(siteStatusString),
       "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed && transaction.siteId == KajMagnusSiteId),
@@ -250,6 +250,8 @@ object ReactJson {
       "horizontalLayout" -> JsBoolean(horizontalLayout),
       "is2dTreeDefault" -> JsBoolean(is2dTreeDefault),
       "socialLinksHtml" -> JsString(socialLinksHtml))
+
+    (json, page.version)
   }
 
 

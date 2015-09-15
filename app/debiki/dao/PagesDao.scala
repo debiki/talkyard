@@ -70,6 +70,8 @@ trait PagesDao {
       transaction.saveDeleteNotifications(notifications)
       pagePath
     }
+
+    // Don't start rendering any html. See comment below [5KWC58]
   }
 
 
@@ -185,6 +187,12 @@ trait PagesDao {
     transaction.insertPost(titlePost)
     transaction.insertPost(bodyPost)
     insertAuditLogEntry(auditLogEntry, transaction)
+
+    // Don't start rendering html for this page in the background. [5KWC58]
+    // (Instead, when the user requests the page, we'll render it directly in
+    // the request thread. Otherwise either 1) the request thread would have to wait
+    // for the background thread (which is too complicated) or 2) we'd generate
+    // the page twice, both in the request thread and in a background thread.)
 
     (pagePath, bodyPost)
   }

@@ -208,7 +208,7 @@ class Globals {
 
     val renderContentActorRef = RenderContentService.startNewActor(Akka.system, siteDaoFactory)
 
-    def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory.systemDbDao)
+    def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory)
 
     private def fastStartSkipSearch =
       Play.configuration.getBoolean("crazyFastStartSkipSearch") getOrElse false

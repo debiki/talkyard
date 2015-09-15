@@ -376,14 +376,21 @@ object PathRanges {
 }
 
 
-/**
- * If not the full page path is needed, but only website and page ids.
- */
-case class SitePageId(siteId: String, pageId: String)
+case class SitePageId(siteId: SiteId, pageId: PageId) {
+  def toPrettyString = s"site $siteId, page $pageId"
+}
 
+case class SitePageIdVersion(siteId: String, pageId: PageId, version: PageVersion)
 
-/**
- * An URL path, relative a certain site.
- */
-case class SitePath(siteId: String, path: String)
+case class PageIdVersion(pageId: PageId, version: PageVersion)
+
+case class PageIdToRerender(siteId: SiteId, pageId: PageId, currentVersion: Int,
+  cachedVersion: Option[Int]) {
+
+  def sitePageId = SitePageId(siteId, pageId)
+}
+
+/** An URL path, relative a certain site.
+  */
+case class SitePath(siteId: SiteId, path: String)
 
