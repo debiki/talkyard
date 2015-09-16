@@ -140,7 +140,7 @@ trait SpecialContentDao {
       htmlSanitized = htmlSanitized,
       approvedById = Some(authorId))
 
-    transaction.insertPageMeta(pageMeta)
+    transaction.insertPageMetaMarkSectionPageStale(pageMeta)
     transaction.insertPost(bodyPost)
   }
 

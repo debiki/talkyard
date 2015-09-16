@@ -115,8 +115,6 @@ abstract class SiteDbDao {
   def loadPageMetasAsMap(pageIds: Seq[PageId], anySiteId: Option[SiteId] = None)
         : Map[PageId, PageMeta]
 
-  def updatePageMeta(meta: PageMeta, old: PageMeta)
-
   def loadCategoryMap(): Map[CategoryId, Category]
 
   def saveSetting(target: SettingsTarget, setting: SettingNameValue[_])
@@ -347,12 +345,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
   def loadPageMetasAsMap(pageIds: Seq[PageId], anySiteId: Option[SiteId]): Map[PageId, PageMeta] = {
     _spi.loadPageMetasAsMap(pageIds, anySiteId)
-  }
-
-  def updatePageMeta(meta: PageMeta, old: PageMeta) {
-    serialize {
-      _spi.updatePageMeta(meta, old = old)
-    }
   }
 
   def loadCategoryMap(): Map[CategoryId, Category] = {

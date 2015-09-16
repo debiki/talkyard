@@ -104,7 +104,8 @@ trait PostsDao {
         lastReplyAt = Some(transaction.currentTime),
         numRepliesVisible = page.parts.numRepliesVisible + (isApproved ? 1 | 0),
         numRepliesTotal = page.parts.numRepliesTotal + 1,
-        numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible + numNewOrigPostReplies)
+        numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible + numNewOrigPostReplies,
+        version = oldMeta.version + 1)
 
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
@@ -121,7 +122,7 @@ trait PostsDao {
         targetUserId = anyParent.map(_.createdById))
 
       transaction.insertPost(newPost)
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = isApproved)
       insertAuditLogEntry(auditLogEntry, transaction)
 
       val notifications = NotificationGenerator(transaction).generateForNewPost(page, newPost)
@@ -233,7 +234,7 @@ trait PostsDao {
 
       transaction.updatePost(editedPost)
       insertAuditLogEntry(auditLogEntry, transaction)
-      anyEditedCategory.foreach(transaction.updateCategory)
+      anyEditedCategory.foreach(transaction.updateCategoryMarkSectionPageStale)
 
       if (!postToEdit.isSomeVersionApproved && editedPost.isSomeVersionApproved) {
         unimplemented("Updating visible post counts when post approved via an edit", "DwE5WE28")
@@ -244,14 +245,17 @@ trait PostsDao {
         transaction.saveDeleteNotifications(notfs)
       }
 
+      val oldMeta = page.meta
+      var newMeta = oldMeta.copy(version = oldMeta.version + 1)
+      var makesSectionPageHtmlStale = false
       // Bump the page, if the article / original post was edited.
       // (This is how Discourse works and people seems to like it. However,
       // COULD add a don't-bump option for minor edits.)
       if (postId == PageParts.BodyId && editedPost.isCurrentVersionApproved) {
-        val oldMeta = page.meta
-        val newMeta = oldMeta.copy(bumpedAt = Some(transaction.currentTime))
-        transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+        newMeta = newMeta.copy(bumpedAt = Some(transaction.currentTime))
+        makesSectionPageHtmlStale = true
       }
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, makesSectionPageHtmlStale)
     }
 
     refreshPageInAnyCache(pageId)
@@ -302,7 +306,11 @@ trait PostsDao {
         postNr = Some(postNr),
         targetUserId = Some(postBefore.createdById))
 
+      val oldMeta = page.meta
+      val newMeta = oldMeta.copy(version = oldMeta.version + 1)
+
       transaction.updatePost(postAfter)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = false)
       insertAuditLogEntry(auditLogEntry, transaction)
       // COULD generate some notification? E.g. "Your post was made wiki-editable."
     }
@@ -398,15 +406,18 @@ trait PostsDao {
         }
       }
 
+      val oldMeta = page.meta
+      var newMeta = oldMeta.copy(version = oldMeta.version + 1)
+      var markSectionPageStale = false
       if (numVisibleRepliesGone > 0) {
-        val oldMeta = page.meta
-        val newMeta = oldMeta.copy(
+        newMeta = newMeta.copy(
           numRepliesVisible = oldMeta.numRepliesVisible - numVisibleRepliesGone,
           numOrigPostRepliesVisible =
             // For now: use max() because the db field was just added so some counts are off.
             math.max(oldMeta.numOrigPostRepliesVisible - numOrigPostVisibleRepliesGone, 0))
-        transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+        markSectionPageStale = true
       }
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale)
 
       // In the future: if is a forum topic, and we're restoring the OP, then bump the topic.
     }
@@ -441,8 +452,10 @@ trait PostsDao {
       val isApprovingPageBody = postId == PageParts.BodyId
       val isApprovingNewPost = postBefore.approvedVersion.isEmpty
 
+      var newMeta = pageMeta.copy(version = pageMeta.version + 1)
       // Bump page and update reply counts if a new post was approved and became visible,
       // or if the original post was edited.
+      var makesSectionPageHtmlStale = false
       if (isApprovingNewPost || isApprovingPageBody) {
         val (numNewReplies, numNewOrigPostReplies, newLastReplyAt) =
           if (isApprovingNewPost && postAfter.isReply)
@@ -450,13 +463,14 @@ trait PostsDao {
           else
             (0, 0, pageMeta.lastReplyAt)
 
-        val newMeta = pageMeta.copy(
+        newMeta = newMeta.copy(
           numRepliesVisible = pageMeta.numRepliesVisible + numNewReplies,
           numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewOrigPostReplies,
           lastReplyAt = newLastReplyAt,
           bumpedAt = Some(transaction.currentTime))
-        transaction.updatePageMeta(newMeta, oldMeta = pageMeta)
+        makesSectionPageHtmlStale = true
       }
+      transaction.updatePageMeta(newMeta, oldMeta = pageMeta, makesSectionPageHtmlStale)
 
       val notifications =
         if (isApprovingNewPost) {
@@ -577,6 +591,7 @@ trait PostsDao {
       val postAfter = postBefore.copy(numPendingFlags = postBefore.numPendingFlags + 1)
       transaction.insertFlag(postBefore.uniqueId, pageId, postId, flagType, flaggerId)
       transaction.updatePost(postAfter)
+      // Need not update page version: flags aren't shown (except perhaps for staff users).
     }
     refreshPageInAnyCache(pageId)
   }
@@ -590,6 +605,7 @@ trait PostsDao {
         numHandledFlags = postBefore.numHandledFlags + postBefore.numPendingFlags)
       transaction.updatePost(postAfter)
       transaction.clearFlags(pageId, postId, clearedById = clearedById)
+      // Need not update page version: flags aren't shown (except perhaps for staff users).
     }
     // In case the post gets unhidden now when flags gone:
     refreshPageInAnyCache(pageId)
@@ -637,10 +653,12 @@ trait PostsDao {
       numOrigPostLikeVotes = math.max(0, pageMetaBefore.numOrigPostLikeVotes + numNewOpLikes),
       numOrigPostWrongVotes = math.max(0, pageMetaBefore.numOrigPostWrongVotes + numNewOpWrongs),
       numOrigPostBuryVotes = math.max(0, pageMetaBefore.numOrigPostBuryVotes + numNewOpBurys),
-      numOrigPostUnwantedVotes = pageMetaBefore.numOrigPostUnwantedVotes + numNewOpUnwanteds)
+      numOrigPostUnwantedVotes = pageMetaBefore.numOrigPostUnwantedVotes + numNewOpUnwanteds,
+      version = pageMetaBefore.version + 1)
 
     transaction.updatePost(postAfter)
-    transaction.updatePageMeta(pageMetaAfter, oldMeta = pageMetaBefore)
+    transaction.updatePageMeta(pageMetaAfter, oldMeta = pageMetaBefore,
+      markSectionPageStale = true)
 
     // COULD split e.g. num_like_votes into ..._total and ..._unique? And update here.
   }

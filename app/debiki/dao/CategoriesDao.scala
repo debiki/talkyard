@@ -188,7 +188,7 @@ trait CategoriesDao {
         position = editCategoryData.position,
         newTopicTypes = editCategoryData.newTopicTypes,
         updatedAt = transaction.currentTime)
-      transaction.updateCategory(editedCategory)
+      transaction.updateCategoryMarkSectionPageStale(editedCategory)
       (oldCategory, editedCategory)
       // COULD create audit log entry
     }
@@ -210,7 +210,7 @@ trait CategoriesDao {
     val result = readWriteTransaction { transaction =>
       val categoryId = transaction.nextCategoryId()
       val category = newCategoryData.makeCategory(categoryId, transaction.currentTime)
-      transaction.insertCategory(category)
+      transaction.insertCategoryMarkSectionPageStale(category)
 
       val (aboutPagePath, _) = createPageImpl(
         PageRole.AboutCategory, PageStatus.Published, anyCategoryId = Some(categoryId),

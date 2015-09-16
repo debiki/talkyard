@@ -73,18 +73,22 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
 
   private def rerenderContentHtmlUpdateCache(sitePageId: SitePageId) {
     // COULD add Metrics that times this.
+    p.Logger.debug(s"Background rendering ${sitePageId.toPrettyString} [DwM7KGE2]")
     val dao = daoFactory.newSiteDao(sitePageId.siteId)
     val (storeJson, pageVersion) = ReactJson.pageToJson(sitePageId.pageId, dao)
     val html = ReactRenderer.renderPage(storeJson.toString())
+
     val wasSaved = dao.readWriteTransaction { transaction =>
       transaction.saveCachedPageContentHtmlPerhapsBreakTransaction(
         sitePageId.pageId, pageVersion, html)
     }
-    var message = s"Rerendered content for ${sitePageId.toPrettyString}."
+
+    var message = s"...Done background rendering ${sitePageId.toPrettyString}. [DwM2YGH9]"
     if (!wasSaved) {
       message += " Couldn't save it though — something else saved it first."
     }
     p.Logger.debug(message)
+
     // Remove cached whole-page-html, so we'll generate a new page with the new content.
     CachingDao.removeFromCache(
       CachingRenderedPageHtmlDao.renderedPageKey(sitePageId))

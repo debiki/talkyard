@@ -46,8 +46,8 @@ trait SiteTransaction {
 
   def loadCategory(categoryId: CategoryId): Option[Category]
   def nextCategoryId(): Int
-  def insertCategory(category: Category)
-  def updateCategory(category: Category)
+  def insertCategoryMarkSectionPageStale(category: Category)
+  def updateCategoryMarkSectionPageStale(category: Category)
 
   def loadPost(uniquePostId: UniquePostId): Option[Post]
   def loadThePost(uniquePostId: UniquePostId): Post =
@@ -92,9 +92,10 @@ trait SiteTransaction {
 
   def loadPageMetas(pageIds: Seq[PageId]): immutable.Seq[PageMeta]
   def loadPageMetasAsMap(pageIds: Iterable[PageId]): Map[PageId, PageMeta]
-  def insertPageMeta(newMeta: PageMeta)
-  def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta)
+  def insertPageMetaMarkSectionPageStale(newMeta: PageMeta)
+  def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean)
 
+  def markSectionPageContentHtmlAsStale(categoryId: CategoryId)
   def loadCachedPageContentHtml(pageId: PageId): Option[(String, PageVersion)]
   // (Could move this one to a transactionless Dao interface?)
   def saveCachedPageContentHtmlPerhapsBreakTransaction(
