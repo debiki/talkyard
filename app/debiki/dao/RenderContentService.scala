@@ -19,6 +19,7 @@ package debiki.dao
 
 import akka.actor.{Actor, Props, ActorRef, ActorSystem}
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki.{Globals, ReactJson, ReactRenderer}
 import play.{api => p}
 import scala.concurrent.duration._
@@ -54,8 +55,15 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
 
   override def receive: Receive = {
     case sitePageId: SitePageId =>
-      if (isOutOfDate(sitePageId))
+      // The page has been modified, or accessed and was out-of-date. [4KGJW2]
+      // There might be many threads and servers that re-render this page.
+      if (isStillOutOfDate(sitePageId)) {
         rerenderContentHtmlUpdateCache(sitePageId)
+      }
+      else {
+        p.Logger.debug(o"""Page ${sitePageId.pageId} site ${sitePageId.siteId}
+             is up-to-date, ignoring re-render message. [DwE4KPL8]""")
+      }
     case RegenerateStaleHtml =>
       try {
         findAndUpdateOneOutOfDatePage()
@@ -66,8 +74,17 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
   }
 
 
-  private def isOutOfDate(sitePageId: SitePageId): Boolean = {
-    Globals.systemDao.isCachedContentHtmlStale(sitePageId)
+  private def isStillOutOfDate(sitePageId: SitePageId): Boolean = {
+    val (cachedVersion, currentVersion) =
+      Globals.systemDao.loadCachedPageVersion(sitePageId) getOrElse {
+        return true
+      }
+    // We don't have any hash of any up-to-date data for this page, so we cannot use
+    // cachedVersion.dataHash. Instead, compare site and page version numbers.
+    // (We might re-render a little bit too often.)
+    cachedVersion.siteVersion != currentVersion.siteVersion ||
+      cachedVersion.pageVersion != currentVersion.pageVersion ||
+      cachedVersion.appVersion != Globals.applicationVersion
   }
 
 
@@ -75,8 +92,8 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
     // COULD add Metrics that times this.
     p.Logger.debug(s"Background rendering ${sitePageId.toPrettyString} [DwM7KGE2]")
     val dao = daoFactory.newSiteDao(sitePageId.siteId)
-    val (storeJson, pageVersion) = ReactJson.pageToJson(sitePageId.pageId, dao)
-    val html = ReactRenderer.renderPage(storeJson.toString())
+    val (json, pageVersion) = ReactJson.pageToJson(sitePageId.pageId, dao)
+    val html = ReactRenderer.renderPage(json)
 
     val wasSaved = dao.readWriteTransaction { transaction =>
       transaction.saveCachedPageContentHtmlPerhapsBreakTransaction(

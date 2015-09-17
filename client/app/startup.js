@@ -197,13 +197,11 @@ function renderDiscussionPage() {
   console.log("Millis to render page: " + (timeAfterBodyComments - timeBefore) +
     ", to activate user data: " + (timeAfterUserData - timeAfterBodyComments) +
     ", for remaining React roots: " + (timeAfterRemainingRoots - timeAfterUserData) + " [DwM2FKQ1]");
-  if (debiki.currentVersion === debiki.cachedVersion) {
-    console.log("Page version: " + debiki.cachedVersion + " [DwM5KPJ9]");
-  }
-  else {
-    console.log("Using old cached html version: [" + debiki.cachedVersion +
-        "], current: [" + debiki.currentVersion +
-        "], React.js should have logged a 'checksum was invalid' warning (in dev builds) [DwM4KGE8]");
+  console.log("Cached html version: <" + debiki.cachedVersion +
+      ">, current: <" + debiki.currentVersion + "> [DwM4KGE8]");
+  if (debiki.currentVersion.split('|')[1] !== debiki.cachedVersion.split('|')[1]) {
+    console.log("Cached html is stale. React.js might have logged a " +
+        "'checksum was invalid' warning above (in dev builds) [DwM5KJG4]");
   }
 
   $('html').addClass('dw-react-started');

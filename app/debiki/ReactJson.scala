@@ -26,6 +26,7 @@ import java.{util => ju}
 import play.api.libs.json._
 import requests.PageRequest
 import scala.collection.immutable
+import scala.math.BigDecimal.decimal
 
 
 object ReactJson {
@@ -82,7 +83,7 @@ object ReactJson {
         pageId: PageId,
         dao: SiteDao,
         anyPageRoot: Option[PostId] = None,
-        anyPageQuery: Option[PageQuery] = None): (JsObject, CachedPageVersion) = {
+        anyPageQuery: Option[PageQuery] = None): (String, CachedPageVersion) = {
     dao.readOnlyTransaction(
       pageToJsonImpl(pageId, dao, _, anyPageRoot, anyPageQuery))
     /*
@@ -143,7 +144,7 @@ object ReactJson {
         dao: SiteDao,
         transaction: SiteTransaction,
         anyPageRoot: Option[PostId],
-        anyPageQuery: Option[PageQuery]): (JsObject, CachedPageVersion) = {
+        anyPageQuery: Option[PageQuery]): (String, CachedPageVersion) = {
 
     val socialLinksHtml = dao.loadWholeSiteSettings().socialLinksHtml.valueAsString
     val page = PageDao(pageId, transaction)
@@ -214,7 +215,7 @@ object ReactJson {
       pageSettings.horizontalComments.valueAsBoolean
     val is2dTreeDefault = pageSettings.horizontalComments.valueAsBoolean
 
-    val json = Json.obj(
+    val jsonObj = Json.obj(
       "now" -> JsNumber((new ju.Date).getTime),
       "siteStatus" -> JsString(siteStatusString),
       "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed && transaction.siteId == KajMagnusSiteId),
@@ -251,12 +252,14 @@ object ReactJson {
       "is2dTreeDefault" -> JsBoolean(is2dTreeDefault),
       "socialLinksHtml" -> JsString(socialLinksHtml))
 
+    val jsonString = jsonObj.toString()
     val version = CachedPageVersion(
       siteVersion = transaction.loadSiteVersion(),
       pageVersion = page.version,
-      appVersion = "0.00.00")  // later, read from config file with version no?
+      appVersion = Globals.applicationVersion,
+      dataHash = hashSha1Base64UrlSafe(jsonString))
 
-    (json, version)
+    (jsonString, version)
   }
 
 
@@ -365,16 +368,15 @@ object ReactJson {
       }
 
     val childrenSorted = page.parts.childrenBestFirstOf(post.id)
-
     val author = post.createdByUser(people)
+    val postType: Option[Int] = if (post.tyype == PostType.Normal) None else Some(post.tyype.toInt)
 
     var fields = Vector(
       "uniqueId" -> JsNumber(post.uniqueId),
       "postId" -> JsNumber(post.id),
       "parentId" -> post.parentId.map(JsNumber(_)).getOrElse(JsNull),
       "multireplyPostIds" -> JsArray(post.multireplyPostIds.toSeq.map(JsNumber(_))),
-      "postType" -> JsNumberOrNull(
-        if (post.tyype == PostType.Normal) None else Some(post.tyype.toInt)),
+      "postType" -> JsNumberOrNull(postType),
       "authorId" -> JsString(post.createdById.toString),  // COULD remove, but be careful when converting to int client side
       "authorIdInt" -> JsNumber(post.createdById),  // Rename to authorId when it's been converted to int (the line above)
       "authorFullName" -> JsString(author.displayName),
@@ -399,7 +401,7 @@ object ReactJson {
       "isTreeClosed" -> JsBoolean(post.closedStatus.isTreeClosed),
       "isApproved" -> JsBoolean(isApproved),
       "pinnedPosition" -> post.pinnedPosition.map(JsNumber(_)).getOrElse(JsNull),
-      "likeScore" -> JsNumber(post.likeScore),
+      "likeScore" -> JsNumber(decimal(post.likeScore)),
       "childIdsSorted" -> JsArray(childrenSorted.map(reply => JsNumber(reply.id))),
       "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml))
 

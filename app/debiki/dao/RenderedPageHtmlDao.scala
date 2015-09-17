@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki._
 import debiki.DebikiHttp._
+import play.{api => p}
 import requests._
 import CachingDao._
 import CachingRenderedPageHtmlDao._
@@ -46,15 +47,14 @@ trait RenderedPageHtmlDao {
       val anyPageQuery = controllers.ForumController.parsePageQuery(pageRequest)
       val anyPageRoot = pageRequest.pageRoot
 
-      val (pageJson, jsonVersion) = ReactJson.pageToJson(
+      val (currentJson, currentVersion) = ReactJson.pageToJson(
         pageRequest.thePageId, this, anyPageRoot, anyPageQuery)
-      val pageJsonString = pageJson.toString()
 
-      val (cachedContent, cachedVersion) =
-        renderContent(pageRequest.thePageId, jsonVersion, pageJsonString)
+      val (cachedHtml, cachedVersion) =
+        renderContent(pageRequest.thePageId, currentVersion, currentJson)
 
-      val tpi = new TemplateProgrammingInterface(pageRequest, pageJsonString, jsonVersion,
-        cachedContent, cachedVersion)
+      val tpi = new TemplateProgrammingInterface(pageRequest, currentJson, currentVersion,
+        cachedHtml, cachedVersion)
       val result: String = pageRequest.thePageRole match {
         case PageRole.HomePage =>
           views.html.templates.homepage(tpi).body  // try to delete
@@ -133,10 +133,16 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     // Or could even do this outside any transaction.
     readOnlyTransaction { transaction =>
       transaction.loadCachedPageContentHtml(pageId) foreach { case (cachedHtml, cachedVersion) =>
-        if (cachedVersion != currentVersion) {
-          // The browser will make cachedhtml up-to-date by running React.js with
-          // up-to-date json, so it's okay to return cachedHtml. However, we'd rather
-          // send up-to-date html, and this page is being accessed, so regenerate html.
+        // Here we can compare hash sums of the up-to-date data and the data that was
+        // used to generate the cached page. We ignore page version and site version.
+        // Hash sums are always correct, so we'll never rerender unless we actually need to.
+        if (cachedVersion.appVersion != currentVersion.appVersion ||
+            cachedVersion.dataHash != currentVersion.dataHash) {
+          // The browser will make cachedhtml up-to-date by running React.js with up-to-date
+          // json, so it's okay to return cachedHtml. However, we'd rather send up-to-date
+          // html, and this page is being accessed, so regenerate html. [4KGJW2]
+          p.Logger.debug(o"""Page $pageId site $siteId is accessed and out-of-date,
+               sending rerender-in-background message [DwE5KGF2]""")
           Globals.renderPageContentInBackground(SitePageId(siteId, pageId))
         }
         return (cachedHtml, cachedVersion)

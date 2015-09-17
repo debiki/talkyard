@@ -181,8 +181,8 @@ class TemplateProgrammingInterface(
   override def anyCurrentPageRole = Some(pageReq.thePageRole)
   override def anyCurrentPagePath = Some(pageReq.pagePath)
 
-  override def currentVersionString = jsonVersion.prettyString
-  override def cachedVersionString = cachedVersion.prettyString
+  override def currentVersionString = jsonVersion.computerString
+  override def cachedVersionString = cachedVersion.computerString
 
   private val horizontalComments =
     pageReq.thePageRole == PageRole.MindMap ||

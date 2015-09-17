@@ -70,9 +70,10 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory) {
     systemDbDao.loadNotificationsToMailOut(delayInMinutes, numToLoad)
 
 
-  def isCachedContentHtmlStale(sitePageId: SitePageId): Boolean = {
+  def loadCachedPageVersion(sitePageId: SitePageId)
+        : Option[(CachedPageVersion, SitePageVersion)] = {
     readOnlyTransaction { transaction =>
-      transaction.isCachedContentHtmlStale(sitePageId)
+      transaction.loadCachedPageVersion(sitePageId)
     }
   }
 

@@ -80,12 +80,26 @@ package object core {
 
   val KajMagnusSiteId = "3" // for now
 
+  case class SitePageVersion(siteVersion: SiteVersion, pageVersion: PageVersion)
+
+  /** If the up-to-date data hash and the cached hash, or the app version, are different,
+    * the page should be re-rendered. Sometimes however, the hash is not available,
+    * and then we'll compare siteVersion, pageVersion, appVersion instead. This might
+    * result in the page being re-rendered a little bit too often.
+    *
+    * An example of when the site and page versions are different, but this doesn't affect
+    * the resulting html: The site version is changed because a category is renamed,
+    * but the category name isn't included anywhere on this page.
+    */
   case class CachedPageVersion(
     siteVersion: SiteVersion,
     pageVersion: PageVersion,
-    appVersion: String) {
+    appVersion: String,
+    dataHash: String) {
 
-    def prettyString = s"site: $siteVersion, page: $pageVersion, app: $appVersion"
+    /** Interpreted by the computer (startup.js looks for the '|'). */
+    def computerString =
+      s"site: $siteVersion, page: $pageVersion | app: $appVersion, hash: $dataHash"
   }
 
 }
