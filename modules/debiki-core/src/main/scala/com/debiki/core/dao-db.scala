@@ -91,7 +91,7 @@ abstract class SiteDbDao {
   def loadTenant(): Site
 
   def loadSiteStatus(): SiteStatus
-
+  def bumpSiteVersion()
   def updateSite(changedSite: Site)
 
 
@@ -315,6 +315,10 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
   def loadSiteStatus(): SiteStatus = {
     _spi.loadSiteStatus()
+  }
+
+  def bumpSiteVersion() {
+    _spi.bumpSiteVersion()
   }
 
   def updateSite(changedSite: Site) = {

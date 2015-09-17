@@ -194,9 +194,17 @@ function renderDiscussionPage() {
   debiki2.startRemainingReactRoots();
   var timeAfterRemainingRoots = performance.now();
 
-  console.log('Time to render page: ' + (timeAfterBodyComments - timeBefore));
-  console.log('Time to activate user data: ' + (timeAfterUserData - timeAfterBodyComments));
-  console.log('Time for remaining React roots: ' + (timeAfterRemainingRoots - timeAfterUserData));
+  console.log("Millis to render page: " + (timeAfterBodyComments - timeBefore) +
+    ", to activate user data: " + (timeAfterUserData - timeAfterBodyComments) +
+    ", for remaining React roots: " + (timeAfterRemainingRoots - timeAfterUserData) + " [DwM2FKQ1]");
+  if (debiki.currentVersion === debiki.cachedVersion) {
+    console.log("Page version: " + debiki.cachedVersion + " [DwM5KPJ9]");
+  }
+  else {
+    console.log("Using old cached html version: [" + debiki.cachedVersion +
+        "], current: [" + debiki.currentVersion +
+        "], React.js should have logged a 'checksum was invalid' warning (in dev builds) [DwM4KGE8]");
+  }
 
   $('html').addClass('dw-react-started');
 

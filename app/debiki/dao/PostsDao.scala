@@ -674,5 +674,10 @@ trait CachingPostsDao extends PagesDao {
     firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
   }
 
+  override def emptyCache() {
+    siteDbDao.bumpSiteVersion()
+    emptyCache(siteId)
+  }
+
 }
 

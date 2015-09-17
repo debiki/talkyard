@@ -36,6 +36,8 @@ package object core {
 
   type SiteId = String
 
+  type SiteVersion = Int
+
   type LoginId = String
 
   type UserId = Int // when removing/renaming-to-UserId, search for UserId2 everywhere
@@ -77,6 +79,14 @@ package object core {
   def UnknownUserGuestCookie = User.UnknownUserGuestCookie
 
   val KajMagnusSiteId = "3" // for now
+
+  case class CachedPageVersion(
+    siteVersion: SiteVersion,
+    pageVersion: PageVersion,
+    appVersion: String) {
+
+    def prettyString = s"site: $siteVersion, page: $pageVersion, app: $appVersion"
+  }
 
 }
 

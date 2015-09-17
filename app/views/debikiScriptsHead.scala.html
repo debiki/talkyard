@@ -15,7 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(siteId: String, anyPageId: Option[String], serverAddress: String, pageUriPath: String,
+@(tpi: debiki.SiteTpi, siteId: String, anyPageId: Option[String],
+  serverAddress: String, pageUriPath: String,
   anyPageRole: Option[com.debiki.core.PageRole], anyPagePath: Option[com.debiki.core.PagePath],
   reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
 
@@ -96,6 +97,8 @@ document.documentElement.className += ' js';
 
   var debiki = {
     siteId: '@siteId',
+    currentVersion: '@tpi.currentVersionString',
+    cachedVersion: '@tpi.cachedVersionString',
     secure: @{debiki.Globals.secure},
     reactPageStore: __reactStore,
     reactUserStore: parseAnyDebikiUserSpecificData(),

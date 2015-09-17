@@ -39,6 +39,7 @@ trait SiteTransaction {
     quotaLimitMegabytes: Option[Int]): Site
 
   def addSiteHost(host: SiteHost)
+  def loadSiteVersion(): Int
 
   def loadSettings(targets: Seq[SettingsTarget]): Seq[RawSettings]
 
@@ -96,10 +97,10 @@ trait SiteTransaction {
   def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean)
 
   def markSectionPageContentHtmlAsStale(categoryId: CategoryId)
-  def loadCachedPageContentHtml(pageId: PageId): Option[(String, PageVersion)]
+  def loadCachedPageContentHtml(pageId: PageId): Option[(String, CachedPageVersion)]
   // (Could move this one to a transactionless Dao interface?)
   def saveCachedPageContentHtmlPerhapsBreakTransaction(
-    pageId: PageId, version: PageVersion, html: String): Boolean
+    pageId: PageId, version: CachedPageVersion, html: String): Boolean
 
   def loadPagePath(pageId: PageId): Option[PagePath]
   def insertPagePath(pagePath: PagePath)

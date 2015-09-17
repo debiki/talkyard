@@ -76,6 +76,9 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_]) {
   def anyCurrentPageRole: Option[PageRole] = None
   def anyCurrentPagePath: Option[PagePath] = None
 
+  def currentVersionString = ""
+  def cachedVersionString = ""
+
   /** Classes for the <html> tag. */
   def debikiHtmlTagClasses = "DW dw-pri "
 
@@ -89,7 +92,8 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_]) {
     views.html.debikiStyles(minMaxJs, minMaxCss).body)
 
   def debikiScriptsInHead = xml.Unparsed(
-    views.html.debikiScriptsHead( // Could pass `this` to the template instead of all these params?
+    views.html.debikiScriptsHead(
+      this, // Could remove all params below, use 'this' instead in the template.
       siteId = siteId,
       anyPageId = anyCurrentPageId,
       serverAddress = debikiRequest.request.host,
@@ -168,19 +172,20 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_]) {
 class TemplateProgrammingInterface(
   private val pageReq: PageRequest[_],
   override val reactStoreSafeJsonString: String,
-  private val contentHtml: String)
+  private val jsonVersion: CachedPageVersion,
+  private val cachedPageHtml: String,
+  private val cachedVersion: CachedPageVersion)
   extends SiteTpi(pageReq) {
 
-  override def anyCurrentPageId = Some(pageId)
-  override def anyCurrentPageRole = Some(pageRole)
+  override def anyCurrentPageId = Some(pageReq.thePageId)
+  override def anyCurrentPageRole = Some(pageReq.thePageRole)
   override def anyCurrentPagePath = Some(pageReq.pagePath)
 
-  def pageId = pageReq.thePageId
-  def pageRole = pageReq.thePageRole
+  override def currentVersionString = jsonVersion.prettyString
+  override def cachedVersionString = cachedVersion.prettyString
 
-  def pageSettings = pageReq.thePageSettings
-
-  val horizontalComments = pageReq.thePageRole == PageRole.MindMap ||
+  private val horizontalComments =
+    pageReq.thePageRole == PageRole.MindMap ||
     pageReq.thePageSettings.horizontalComments.valueAsBoolean
 
 
@@ -188,10 +193,7 @@ class TemplateProgrammingInterface(
     super.debikiHtmlTagClasses + (if (horizontalComments) "dw-hz " else "dw-vt ")
 
 
-  def renderedPage = xml.Unparsed(contentHtml)
-
-
-  def pageUrlPath = pageReq.pagePath.value
+  def renderedPage = xml.Unparsed(cachedPageHtml)
 
 }
 

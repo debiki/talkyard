@@ -82,7 +82,7 @@ object ReactJson {
         pageId: PageId,
         dao: SiteDao,
         anyPageRoot: Option[PostId] = None,
-        anyPageQuery: Option[PageQuery] = None): (JsObject, PageVersion) = {
+        anyPageQuery: Option[PageQuery] = None): (JsObject, CachedPageVersion) = {
     dao.readOnlyTransaction(
       pageToJsonImpl(pageId, dao, _, anyPageRoot, anyPageQuery))
     /*
@@ -143,7 +143,7 @@ object ReactJson {
         dao: SiteDao,
         transaction: SiteTransaction,
         anyPageRoot: Option[PostId],
-        anyPageQuery: Option[PageQuery]): (JsObject, PageVersion) = {
+        anyPageQuery: Option[PageQuery]): (JsObject, CachedPageVersion) = {
 
     val socialLinksHtml = dao.loadWholeSiteSettings().socialLinksHtml.valueAsString
     val page = PageDao(pageId, transaction)
@@ -251,7 +251,12 @@ object ReactJson {
       "is2dTreeDefault" -> JsBoolean(is2dTreeDefault),
       "socialLinksHtml" -> JsString(socialLinksHtml))
 
-    (json, page.version)
+    val version = CachedPageVersion(
+      siteVersion = transaction.loadSiteVersion(),
+      pageVersion = page.version,
+      appVersion = "0.00.00")  // later, read from config file with version no?
+
+    (json, version)
   }
 
 

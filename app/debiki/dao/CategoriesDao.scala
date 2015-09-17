@@ -192,8 +192,18 @@ trait CategoriesDao {
       (oldCategory, editedCategory)
       // COULD create audit log entry
     }
+
+    if (oldCategory.name != editedCategory.name) {
+      // All pages in this category need to be regenerated, because the category name is
+      // included on the pages.
+      emptyCache()
+    }
+
+    // Do this even if we just emptied the cache above, because then the forum page
+    // will be regenerated earlier.
     refreshPageInAnyCache(oldCategory.sectionPageId)
     refreshPageInAnyCache(editedCategory.sectionPageId)
+
     editedCategory
   }
 
