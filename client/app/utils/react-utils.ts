@@ -39,6 +39,42 @@ function createClassAndFactory(componentDefinition) { // rename createComponent 
 }
 
 
+/**
+ * An ISO date that shall not be converted to "X time ago" format.
+ * It doesn't really do anything, but use it so that it'll be easy to find all
+ * date formatting code.
+ */
+function dateTimeFix(isoDate: string) {
+  return isoDate;
+}
+
+/**
+ * Wraps the ISO8601 in a <span class="dw-ago"> so jQuery can find it and replace
+ * the fixed ISO date with something like "5 hours ago" — see processTimeAgo
+ * just below.  The server inculdes only ISO dates, not "x time ago", in its HTML,
+ * so that it can be cached.
+ */
+function timeAgo(isoDate: string) {
+  return r.span({ className: 'dw-ago' }, isoDate);
+}
+
+/**
+ * Takes 25-30ms for 80 unprocessed comments on my computer, and 2ms for 160
+ * that have been processed already.
+ */
+function processTimeAgo() {
+  $('.dw-ago').each(function() {
+    var $this = $(this);
+    if ($this.attr('title'))
+      return; // already converted to "x ago" format
+    var isoDate = $this.text();
+    var timeAgoString = moment(isoDate).fromNow();
+    $this.text(timeAgoString);
+    $this.attr('title', isoDate);
+  });
+}
+
+
 //------------------------------------------------------------------------------
    module debiki2.utils {
 //------------------------------------------------------------------------------

@@ -248,6 +248,22 @@ object Prelude {
     sdf.format(date).toString
   }
 
+  /** A date like "2015-12-31 23:59Z", i.e. no T and no seconds.
+    *
+    * 1) It is permitted, in ISO 8601, to omit the 'T' character by mutual agreement of
+    * the partners in information interchange (i.e. this server and the JS code in
+    * the browser).
+    *
+    * 2) Don't add a quote "'" before the 'Z' or moment.js says "Invalid date".
+    */
+  def toIso8601NoSecondsNoT(date: ju.Date): String = {
+    // Don't include 'Z' in the format string, it gets replaced by "+0000". Append later instead.
+    // SimpleDateFormat is not thread safe.
+    val sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm")
+    sdf.setTimeZone(_timezoneUtc)
+    sdf.format(date) + "Z"
+  }
+
   def toIso8601T(date: ju.Date): String = {
     // SimpleDateFormat is not thread safe.
     val sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")

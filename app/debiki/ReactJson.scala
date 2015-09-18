@@ -216,7 +216,6 @@ object ReactJson {
     val is2dTreeDefault = pageSettings.horizontalComments.valueAsBoolean
 
     val jsonObj = Json.obj(
-      "now" -> JsNumber((new ju.Date).getTime),
       "siteStatus" -> JsString(siteStatusString),
       "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed && transaction.siteId == KajMagnusSiteId),
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
@@ -229,13 +228,13 @@ object ReactJson {
       "pagePath" -> JsString(page.path.value),
       "pinOrder" -> JsNumberOrNull(page.meta.pinOrder),
       "pinWhere" -> JsNumberOrNull(page.meta.pinWhere.map(_.toInt)),
-      "pageAnsweredAtMs" -> JsLongOrNull(page.meta.answeredAt.map(_.getTime)),
+      "pageAnsweredAtMs" -> dateOrNull(page.meta.answeredAt),
       "pageAnswerPostUniqueId" -> JsNumberOrNull(page.meta.answerPostUniqueId),
-      "pagePlannedAtMs" -> JsLongOrNull(page.meta.plannedAt.map(_.getTime)),
-      "pageDoneAtMs" -> JsLongOrNull(page.meta.doneAt.map(_.getTime)),
-      "pageClosedAtMs" -> JsLongOrNull(page.meta.closedAt.map(_.getTime)),
-      "pageLockedAtMs" -> JsLongOrNull(page.meta.lockedAt.map(_.getTime)),
-      "pageFrozenAtMs" -> JsLongOrNull(page.meta.frozenAt.map(_.getTime)),
+      "pagePlannedAtMs" -> dateOrNull(page.meta.plannedAt),
+      "pageDoneAtMs" -> dateOrNull(page.meta.doneAt),
+      "pageClosedAtMs" -> dateOrNull(page.meta.closedAt),
+      "pageLockedAtMs" -> dateOrNull(page.meta.lockedAt),
+      "pageFrozenAtMs" -> dateOrNull(page.meta.frozenAt),
       //"pageDeletedAtMs" -> ...
       "numPosts" -> numPosts,
       "numPostsRepliesSection" -> numPostsRepliesSection,
@@ -315,9 +314,6 @@ object ReactJson {
   private def postToJsonImpl(post: Post, page: Page, currentTime: ju.Date,
         includeUnapproved: Boolean = false): JsObject = {
     val people = page.parts
-    val lastApprovedEditAt = post.lastApprovedEditAt map { date =>
-      JsNumber(date.getTime)
-    } getOrElse JsNull
 
     val (anySanitizedHtml: Option[String], isApproved: Boolean) =
       if (includeUnapproved)
@@ -381,8 +377,8 @@ object ReactJson {
       "authorIdInt" -> JsNumber(post.createdById),  // Rename to authorId when it's been converted to int (the line above)
       "authorFullName" -> JsString(author.displayName),
       "authorUsername" -> JsStringOrNull(author.username),
-      "createdAt" -> JsNumber(post.createdAt.getTime),
-      "lastApprovedEditAt" -> lastApprovedEditAt,
+      "createdAt" -> date(post.createdAt),
+      "lastApprovedEditAt" -> dateOrNull(post.lastApprovedEditAt),
       "numEditors" -> JsNumber(post.numDistinctEditors),
       "numLikeVotes" -> JsNumber(post.numLikeVotes),
       "numWrongVotes" -> JsNumber(post.numWrongVotes),
@@ -660,6 +656,14 @@ object ReactJson {
 
   def DateEpochOrNull(value: Option[ju.Date]) =
     value.map(date => JsNumber(date.getTime)).getOrElse(JsNull)
+
+  def date(value: ju.Date) =
+    JsString(toIso8601NoSecondsNoT(value))
+
+  def dateOrNull(value: Option[ju.Date]) = value match {
+    case Some(v) => date(v)
+    case None => JsNull
+  }
 
 }
 
