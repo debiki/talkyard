@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012-2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2012-2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,20 +21,68 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki._
-import java.{util => ju}
+import debiki.DebikiHttp._
+import play.{api => p}
 import requests._
-import scala.xml.NodeSeq
 import CachingDao._
+import CachingRenderedPageHtmlDao._
 
 
 
 trait RenderedPageHtmlDao {
   self: SiteDao =>
 
-  def renderTemplate(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil): String =
-    Globals.mostMetrics.getRenderPageTimer(pageReq.pageRole).time {
-      TemplateRenderer.renderTemplate(pageReq, appendToBody)
+  def renderPage(pageRequest: PageRequest[_]): String = {
+    if (!pageRequest.pageExists) {
+      if (pageRequest.pageRole == Some(PageRole.EmbeddedComments))
+        throwNotImplemented("DwE5KFW2", "Embedded comments disabled right now")
+
+      if (pageRequest.pagePath.value != HomepageUrlPath)
+        throwNotFound("DwE00404", "Page not found")
+
+      return views.html.specialpages.createSomethingHerePage(SiteTpi(pageRequest)).body
     }
+
+    Globals.mostMetrics.getRenderPageTimer(pageRequest.pageRole).time {
+      val anyPageQuery = controllers.ForumController.parsePageQuery(pageRequest)
+      val anyPageRoot = pageRequest.pageRoot
+
+      val (currentJson, currentVersion) = ReactJson.pageToJson(
+        pageRequest.thePageId, this, anyPageRoot, anyPageQuery)
+
+      val (cachedHtml, cachedVersion) =
+        renderContent(pageRequest.thePageId, currentVersion, currentJson)
+
+      val tpi = new TemplateProgrammingInterface(pageRequest, currentJson, currentVersion,
+        cachedHtml, cachedVersion)
+      val result: String = pageRequest.thePageRole match {
+        case PageRole.HomePage =>
+          views.html.templates.homepage(tpi).body  // try to delete
+        case PageRole.Blog =>
+          views.html.templates.blog(tpi).body  // try to delete
+        case PageRole.EmbeddedComments =>
+          views.html.templates.embeddedComments(tpi).body
+        case _ =>
+          views.html.templates.page(tpi).body
+      }
+      result
+    }
+  }
+
+
+  def renderContent(pageId: PageId, currentVersion: CachedPageVersion, reactStore: String)
+        : (String, CachedPageVersion) = {
+    (ReactRenderer.renderPage(reactStore), currentVersion)
+  }
+
+}
+
+
+
+object CachingRenderedPageHtmlDao {
+
+  def renderedPageKey(sitePageId: SitePageId) =
+    CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|PageHtml")
 
 }
 
@@ -54,7 +102,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   }
 
 
-  override def renderTemplate(pageReq: PageRequest[_], appendToBody: NodeSeq = Nil): String = {
+  override def renderPage(pageReq: PageRequest[_]): String = {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
@@ -67,43 +115,48 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     useCache &= ForumController.parsePageQuery(pageReq).isEmpty
 
     if (!useCache)
-      return super.renderTemplate(pageReq)
+      return super.renderPage(pageReq)
 
-    val key = _pageHtmlKey(SitePageId(siteId, pageReq.thePageId), origin = pageReq.host)
+    val key = renderedPageKey(pageReq.theSitePageId)
     lookupInCache(key, orCacheAndReturn = {
-      rememberOrigin(pageReq.host)
       if (pageReq.thePageRole == PageRole.Forum) {
         rememberForum(pageReq.thePageId)
       }
-      Some(super.renderTemplate(pageReq))
+      Some(super.renderPage(pageReq))
     }, metric = Globals.mostMetrics.renderPageCacheMetrics) getOrDie "DwE93IB7"
   }
 
 
-  /**
-   * Remembers (caches) origins via which this server has been accessed.
-   * Sometimes a server is accessed via many addresses/origins,
-   * e.g. www.debiki.com and localhost:9003 (SSH tunnel),
-   * or https://www.debiki.com and http://www.debiki.com.
-   */
-  private def rememberOrigin(origin: String) {
-    // The origin list should never change, so don't invalidate the origin list cache
-    // item when the per site cache version changes. So use CacheValueIgnoreVersion.
-    var done = false
-    do {
-      val originsKey = this.originsKey(siteId)
-      lookupInCache[List[String]](originsKey) match {
-        case None =>
-          done = putInCacheIfAbsent(originsKey, CacheValueIgnoreVersion(List(origin)))
-        case Some(cachedKnownOrigins) =>
-          if (cachedKnownOrigins contains origin)
-            return
-          val newOrigins = origin :: cachedKnownOrigins
-          done = replaceInCache(originsKey, CacheValueIgnoreVersion(cachedKnownOrigins),
-            newValue = CacheValueIgnoreVersion(newOrigins))
+  override def renderContent(pageId: PageId, currentVersion: CachedPageVersion,
+        reactStore: String): (String, CachedPageVersion) = {
+    // COULD reuse the caller's transaction, but the caller currently uses > 1  :-(
+    // Or could even do this outside any transaction.
+    readOnlyTransaction { transaction =>
+      transaction.loadCachedPageContentHtml(pageId) foreach { case (cachedHtml, cachedVersion) =>
+        // Here we can compare hash sums of the up-to-date data and the data that was
+        // used to generate the cached page. We ignore page version and site version.
+        // Hash sums are always correct, so we'll never rerender unless we actually need to.
+        if (cachedVersion.appVersion != currentVersion.appVersion ||
+            cachedVersion.dataHash != currentVersion.dataHash) {
+          // The browser will make cachedhtml up-to-date by running React.js with up-to-date
+          // json, so it's okay to return cachedHtml. However, we'd rather send up-to-date
+          // html, and this page is being accessed, so regenerate html. [4KGJW2]
+          p.Logger.debug(o"""Page $pageId site $siteId is accessed and out-of-date,
+               sending rerender-in-background message [DwE5KGF2]""")
+          Globals.renderPageContentInBackground(SitePageId(siteId, pageId))
+        }
+        return (cachedHtml, cachedVersion)
       }
     }
-    while (!done)
+    // Now we'll have to render the page contents [5KWC58], so we have some html to send back
+    // to the client, in case the client is a search engine bot — I suppose those
+    // aren't happy with only up-to-date json (but no html) + running React.js.
+    val (newHtml, _) = super.renderContent(pageId, currentVersion, reactStore)
+    readWriteTransaction { transaction =>
+      transaction.saveCachedPageContentHtmlPerhapsBreakTransaction(
+        pageId, currentVersion, newHtml)
+    }
+    (newHtml, currentVersion)
   }
 
 
@@ -126,18 +179,19 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
   }
 
 
-  private def knownOrigins(siteId: SiteId): List[String] =
-    lookupInCache[List[String]](originsKey(siteId)) getOrElse Nil
-
-
   private def uncacheRenderedPage(sitePageId: SitePageId) {
-    // Since the server address might be included in the generated html,
-    // we need to uncache pageId for each server address that maps
-    // to the current website (this.tenantId).
-    val origins = knownOrigins(sitePageId.siteId)
-    for (origin <- origins) {
-      removeFromCache(_pageHtmlKey(sitePageId, origin))
-    }
+    removeFromCache(renderedPageKey(sitePageId))
+
+    // Don't remove the cached contents, because it takes long to regenerate. [6KP368]
+    // Instead, send old stale cached content html to the browsers,
+    // and they'll make it up-to-date when they render the React json client side
+    // (we do send up-to-date json, always). — After a short while, some background
+    // threads will have regenerated the content and updated the cache, and then
+    // the browsers will get up-to-date html again.
+    // So don't:
+    //    removeFromCache(contentKey(sitePageId))
+    // Instead:
+    Globals.renderPageContentInBackground(sitePageId)
 
     // BUG race condition: What if anotoher thread started rendering a page
     // just before the invokation of this function, and is finished
@@ -155,20 +209,12 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     * For simplicity, we here uncache all forums.
     */
   private def uncacheForums(siteId: SiteId) {
-    val origins = knownOrigins(siteId)
-    var forumIds = lookupInCache[List[String]](forumsKey(siteId)) getOrElse Nil
-    for (origin <- origins; forumId <- forumIds) {
-      removeFromCache(_pageHtmlKey(SitePageId(siteId, forumId), origin))
+    val forumIds = lookupInCache[List[String]](forumsKey(siteId)) getOrElse Nil
+    for (forumId <- forumIds) {
+      removeFromCache(renderedPageKey(SitePageId(siteId, forumId)))
     }
+    // Don't remove any cached content, see comment above. [6KP368]
   }
-
-
-  private def _pageHtmlKey(sitePageId: SitePageId, origin: String) =
-    CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|$origin|PageHtml")
-
-
-  private def originsKey(siteId: SiteId) =
-    CacheKey(siteId, "|PossibleOrigins") // "|" required by a debug check function
 
 
   private def forumsKey(siteId: SiteId) =

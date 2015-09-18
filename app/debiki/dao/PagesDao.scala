@@ -70,6 +70,8 @@ trait PagesDao {
       transaction.saveDeleteNotifications(notifications)
       pagePath
     }
+
+    // Don't start rendering any html. See comment below [5KWC58]
   }
 
 
@@ -163,7 +165,7 @@ trait PagesDao {
       htmlSanitized = bodyHtmlSanitized,
       approvedById = Some(approvedById))
 
-    val (pinOrder, pinWhere) =
+    val (pinOrder: Option[Int], pinWhere: Option[PinPageWhere]) =
       if (pageRole == PageRole.AboutCategory) (Some(3), Some(PinPageWhere.InCategory))
       else (None, None)
     val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.currentTime,
@@ -180,11 +182,17 @@ trait PagesDao {
       pageId = Some(pageId),
       pageRole = Some(pageRole))
 
-    transaction.insertPageMeta(pageMeta)
+    transaction.insertPageMetaMarkSectionPageStale(pageMeta)
     transaction.insertPagePath(pagePath)
     transaction.insertPost(titlePost)
     transaction.insertPost(bodyPost)
     insertAuditLogEntry(auditLogEntry, transaction)
+
+    // Don't start rendering html for this page in the background. [5KWC58]
+    // (Instead, when the user requests the page, we'll render it directly in
+    // the request thread. Otherwise either 1) the request thread would have to wait
+    // for the background thread (which is too complicated) or 2) we'd generate
+    // the page twice, both in the request thread and in a background thread.)
 
     (pagePath, bodyPost)
   }
@@ -193,8 +201,8 @@ trait PagesDao {
   def unpinPage(pageId: PageId) {
     readWriteTransaction { transaction =>
       val oldMeta = transaction.loadThePageMeta(pageId)
-      val newMeta = oldMeta.copy(pinWhere = None, pinOrder = None)
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      val newMeta = oldMeta.copy(pinWhere = None, pinOrder = None, version = oldMeta.version + 1)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // (COULD update audit log)
     }
     refreshPageInAnyCache(pageId)
@@ -204,8 +212,9 @@ trait PagesDao {
   def pinPage(pageId: PageId, pinWhere: PinPageWhere, pinOrder: Int) {
     readWriteTransaction { transaction =>
       val oldMeta = transaction.loadThePageMeta(pageId)
-      val newMeta = oldMeta.copy(pinWhere = Some(pinWhere), pinOrder = Some(pinOrder))
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      val newMeta = oldMeta.copy(pinWhere = Some(pinWhere), pinOrder = Some(pinOrder),
+        version = oldMeta.version + 1)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // (COULD update audit log)
     }
     refreshPageInAnyCache(pageId)
@@ -237,8 +246,9 @@ trait PagesDao {
       val newMeta = oldMeta.copy(
         answeredAt = answeredAt,
         answerPostUniqueId = Some(postUniqueId),
-        closedAt = answeredAt)
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+        closedAt = answeredAt,
+        version = oldMeta.version + 1)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // (COULD update audit log)
       // (COULD wait 5 minutes (in case the answer gets un-accepted) then send email
       // to the author of the answer)
@@ -256,8 +266,9 @@ trait PagesDao {
       if (!user.isStaff && user.id != oldMeta.authorId)
         throwForbidden("DwE2GKU4", "Only staff and the topic author can unaccept the answer")
 
-      val newMeta = oldMeta.copy(answeredAt = None, answerPostUniqueId = None, closedAt = None)
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      val newMeta = oldMeta.copy(answeredAt = None, answerPostUniqueId = None, closedAt = None,
+        version = oldMeta.version + 1)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // (COULD update audit log)
     }
     refreshPageInAnyCache(pageId)
@@ -295,8 +306,9 @@ trait PagesDao {
       val newMeta = oldMeta.copy(
         plannedAt = newPlannedAt,
         doneAt = newDoneAt,
-        closedAt = newClosedAt)
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+        closedAt = newClosedAt,
+        version = oldMeta.version + 1)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // (COULD update audit log)
       newMeta
     }
@@ -316,12 +328,12 @@ trait PagesDao {
       if (!user.isStaff && user.id != oldMeta.authorId)
         throwForbidden("DwE5JPK7", "Only staff and the topic author can toggle it closed")
 
-      val newClosedAt = oldMeta.closedAt match {
+      val newClosedAt: Option[ju.Date] = oldMeta.closedAt match {
         case None => Some(transaction.currentTime)
         case Some(_) => None
       }
-      val newMeta = oldMeta.copy(closedAt = newClosedAt)
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta)
+      val newMeta = oldMeta.copy(closedAt = newClosedAt, version = oldMeta.version + 1)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // (COULD update audit log)
       newClosedAt
     }

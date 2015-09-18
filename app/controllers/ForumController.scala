@@ -23,7 +23,7 @@ import collection.mutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.ReactJson.{DateEpochOrNull, JsNumberOrNull, JsLongOrNull, JsStringOrNull}
+import debiki.ReactJson._
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
@@ -224,14 +224,10 @@ object ForumController extends mvc.Controller {
 
   def topicToJson(topic: PagePathAndMeta, pageStuffById: Map[PageId, PageStuff]): JsObject = {
     val topicStuff = pageStuffById.get(topic.pageId) getOrDie "DwE1F2I7"
-    val createdEpoch = topic.meta.createdAt.getTime
-    val bumpedEpoch = DateEpochOrNull(topic.meta.bumpedAt)
-    val lastReplyEpoch = DateEpochOrNull(topic.meta.lastReplyAt)
-    val title = topicStuff.title
     Json.obj(
       "pageId" -> topic.id,
       "pageRole" -> topic.pageRole.toInt,
-      "title" -> title,
+      "title" -> topicStuff.title,
       "url" -> topic.path.value,
       "categoryId" -> topic.categoryId.getOrDie(
         "DwE49Fk3", s"Topic `${topic.id}', site `${topic.path.siteId}', belongs to no category"),
@@ -245,16 +241,16 @@ object ForumController extends mvc.Controller {
       "numUnwanteds" -> topic.meta.numUnwanteds,
       "numOrigPostLikes" -> topic.meta.numOrigPostLikeVotes,
       "numOrigPostReplies" -> topic.meta.numOrigPostRepliesVisible,
-      "createdEpoch" -> createdEpoch,
-      "bumpedEpoch" -> bumpedEpoch,
-      "lastReplyEpoch" -> lastReplyEpoch,
-      "answeredAtMs" -> JsLongOrNull(topic.meta.answeredAt.map(_.getTime)),
+      "createdEpoch" -> date(topic.meta.createdAt),
+      "bumpedEpoch" -> dateOrNull(topic.meta.bumpedAt),
+      "lastReplyEpoch" -> dateOrNull(topic.meta.lastReplyAt),
+      "answeredAtMs" -> dateOrNull(topic.meta.answeredAt),
       "answerPostUniqueId" -> JsNumberOrNull(topic.meta.answerPostUniqueId),
-      "plannedAtMs" -> JsLongOrNull(topic.meta.plannedAt.map(_.getTime)),
-      "doneAtMs" -> JsLongOrNull(topic.meta.doneAt.map(_.getTime)),
-      "closedAtMs" -> JsLongOrNull(topic.meta.closedAt.map(_.getTime)),
-      "lockedAtMs" -> JsLongOrNull(topic.meta.lockedAt.map(_.getTime)),
-      "frozenAtMs" -> JsLongOrNull(topic.meta.frozenAt.map(_.getTime)))
+      "plannedAtMs" -> dateOrNull(topic.meta.plannedAt),
+      "doneAtMs" -> dateOrNull(topic.meta.doneAt),
+      "closedAtMs" -> dateOrNull(topic.meta.closedAt),
+      "lockedAtMs" -> dateOrNull(topic.meta.lockedAt),
+      "frozenAtMs" -> dateOrNull(topic.meta.frozenAt))
   }
 
 }

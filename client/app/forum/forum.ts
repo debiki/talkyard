@@ -16,9 +16,9 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../prelude.ts" />
+/// <reference path="../utils/react-utils.ts" />
 /// <reference path="../editor/editor.ts" />
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
 /// <reference path="../react-elements/topbar.ts" />
@@ -595,13 +595,13 @@ var TopicRow = createComponent({
     }
 
     var activityTitle =
-      'Created on ' + new Date(topic.createdEpoch).toUTCString();
+      'Created on ' + dateTimeFix(topic.createdEpoch);
 
     if (topic.lastReplyEpoch) {
-      activityTitle += '\nLast reply on ' + new Date(topic.lastReplyEpoch).toUTCString();
+      activityTitle += '\nLast reply on ' + dateTimeFix(topic.lastReplyEpoch);
     }
     if (topic.bumpedEpoch && topic.bumpedEpoch !== topic.lastReplyEpoch) {
-      activityTitle += '\nEdited on ' + new Date(topic.bumpedEpoch).toUTCString();
+      activityTitle += '\nEdited on ' + dateTimeFix(topic.bumpedEpoch);
     }
 
     var anyPinIcon = topic.pinWhere ? 'icon-pin' : undefined;
@@ -614,7 +614,7 @@ var TopicRow = createComponent({
     var title = makeTitle(topic);
 
     var categoryName = category ? category.name : '';
-    var activityAgo = moment(topic.bumpedEpoch || topic.createdEpoch).from(this.props.now);
+    var activityAgo = timeAgo(topic.bumpedEpoch || topic.createdEpoch);
     return (
       r.tr({},
         r.td({ className: 'dw-tpc-title' },
@@ -690,7 +690,7 @@ var CategoryRow = createComponent({
             r.a({ className: 'topic-title' + pinIconClass, href: topic.url }, title),
             r.span({ className: 'topic-details' },
               ' – ' + topic.numPosts + ' posts, ',
-              moment(topic.bumpedEpoch || topic.createdEpoch).from(this.props.now)))));
+              timeAgo(topic.bumpedEpoch || topic.createdEpoch)))));
     });
 
     var description = category.isTheUncategorizedCategory

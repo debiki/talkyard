@@ -96,13 +96,15 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   def startCreatingRenderEngines() {
     dieIf(!javascriptEngines.isEmpty, "DwE50KFE2")
     Future {
-      val numCores =
+      val numEngines =
         if (Play.isProd) Runtime.getRuntime.availableProcessors
         else {
-          // Initializing engiens takes rather long, so init only one in dev mode.
-          1
+          // Initializing engines takes rather long, so create only two in dev mode:
+          // one for the RenderContentService background actor, and one for
+          // http request handler threads that need to render content directly.
+          2
         }
-      for (i <- 1 to numCores) {
+      for (i <- 1 to numEngines) {
         createOneMoreJavascriptEngine(isVeryFirstEngine = i == 1)
       }
     }

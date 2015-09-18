@@ -29,5 +29,8 @@ trait SystemTransaction {
 
   def insertSiteHost(tenantId: String, host: SiteHost)
 
+  def loadCachedPageVersion(sitePageId: SitePageId): Option[(CachedPageVersion, SitePageVersion)]
+  def loadPageIdsToRerender(limit: Int): Seq[PageIdToRerender]
+
 }
 

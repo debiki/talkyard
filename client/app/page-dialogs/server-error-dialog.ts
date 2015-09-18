@@ -105,7 +105,7 @@ var ServerErrorDialog = createComponent({
       // Is the status message included on the first line? If so, remove it, because we'll
       // shown it in the dialog title.
       message = error.responseText;
-      var matches = message.match(/\d\d\d [a-zA-Z ]+\n(.*)/);
+      var matches = message ? message.match(/\d\d\d [a-zA-Z ]+\n(.*)/) : null;
       if (matches && matches.length === 2) {
         message = matches[1];
       }
@@ -121,9 +121,14 @@ var ServerErrorDialog = createComponent({
         // COULD check if we're unloading this page. That results in any ongoing requests being
         // aborted with status code 0. Then we should suppress this dialog.
         // See http://stackoverflow.com/a/12621912/694469.
+        // Or we might be accessing the website via the wrong URL, e.g. site-NNN.domain.com rather
+        // than the-real-name.domain.com, which would result in a cross origin request error.
         title = 'Error: Server not reachable';
         message = "Has the server stopped? Or did you just get disconnected " +
-            "from the Internet? [DwE4KEF2]";
+            "from the Internet? Or are you using the wrong hostname, " +
+            "cross-origin request blocked? [DwE4KEF2]\n" +
+            "\n" +
+            "Details: " + JSON.stringify(error);
       }
     }
 

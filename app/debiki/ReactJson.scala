@@ -26,6 +26,7 @@ import java.{util => ju}
 import play.api.libs.json._
 import requests.PageRequest
 import scala.collection.immutable
+import scala.math.BigDecimal.decimal
 
 
 object ReactJson {
@@ -77,8 +78,16 @@ object ReactJson {
   }
 
 
-  def pageToJson(pageReq: PageRequest[_], socialLinksHtml: String): JsObject = {
-    if (pageReq.pageExists) {
+
+  def pageToJson(
+        pageId: PageId,
+        dao: SiteDao,
+        anyPageRoot: Option[PostId] = None,
+        anyPageQuery: Option[PageQuery] = None): (String, CachedPageVersion) = {
+    dao.readOnlyTransaction(
+      pageToJsonImpl(pageId, dao, _, anyPageRoot, anyPageQuery))
+    /*
+    if (pageReq.pageExists) {   //xx
       pageReq.dao.readOnlyTransaction(pageToJsonImpl(pageReq, socialLinksHtml, _))
     }
     else {
@@ -88,12 +97,12 @@ object ReactJson {
       else {
         throwNotFound("DwE404KGF2", "Page not found")
       }
-    }
+    }*/
   }
 
 
   private def newEmptySitePageJson(pageReq: PageRequest[_]): JsObject = {
-    val siteStatusString = loadSiteStatusString(pageReq)
+    val siteStatusString = loadSiteStatusString(pageReq.dao)
     val siteSettings = pageReq.dao.loadWholeSiteSettings()
     Json.obj(
       "now" -> JsNumber((new ju.Date).getTime),
@@ -120,8 +129,8 @@ object ReactJson {
   }
 
 
-  def loadSiteStatusString(pageReq: PageRequest[_]): String =
-    pageReq.dao.loadSiteStatus() match {
+  def loadSiteStatusString(dao: SiteDao): String =
+    dao.loadSiteStatus() match {
       case SiteStatus.OwnerCreationPending(adminEmail) =>
         var obfuscatedEmail = adminEmail.takeWhile(_ != '@')
         obfuscatedEmail = obfuscatedEmail.dropRight(3).take(4)
@@ -130,9 +139,15 @@ object ReactJson {
     }
 
 
-  private def pageToJsonImpl(pageReq: PageRequest[_], socialLinksHtml: String,
-        transaction: SiteTransaction): JsObject = {
-    val page = PageDao(pageReq.thePageId, transaction)
+  private def pageToJsonImpl(
+        pageId: PageId,
+        dao: SiteDao,
+        transaction: SiteTransaction,
+        anyPageRoot: Option[PostId],
+        anyPageQuery: Option[PageQuery]): (String, CachedPageVersion) = {
+
+    val socialLinksHtml = dao.loadWholeSiteSettings().socialLinksHtml.valueAsString
+    val page = PageDao(pageId, transaction)
     val pageParts = page.parts
     pageParts.loadAllPosts()
 
@@ -160,7 +175,7 @@ object ReactJson {
           //   http://mail.openjdk.java.net/pipermail/nashorn-dev/2015-March/004284.html
           // COULD remove this workaround when upgraded to JDK 8u60, will be released August 2015)
           // Also remove in in ReactRenderer and debikiScripts.scala.html, see [64KEWF2].
-      ("_" + post.id.toString) -> postToJsonImpl(post, page, pageReq.ctime)
+      ("_" + post.id.toString) -> postToJsonImpl(post, page, transaction.currentTime)
     }
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
@@ -176,65 +191,74 @@ object ReactJson {
       Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.id))
 
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
-      makeForumIdAndAncestorsJson(page.meta, pageReq.dao)
+      makeForumIdAndAncestorsJson(page.meta, dao)
 
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
         val rootCategoryId = page.meta.categoryId.getOrDie(
-          "DwE7KYP2", s"Forum page '${page.id}', site '${pageReq.siteId}', has no category id")
-        val orderOffset = controllers.ForumController.parsePageQuery(pageReq).getOrElse(
+          "DwE7KYP2", s"Forum page '${page.id}', site '${transaction.siteId}', has no category id")
+        val orderOffset = anyPageQuery.getOrElse(
           PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll))
-        val topics = ForumController.listTopicsInclPinned(rootCategoryId, orderOffset, pageReq.dao,
+        val topics = ForumController.listTopicsInclPinned(rootCategoryId, orderOffset, dao,
           includeDescendantCategories = true, limit = ForumController.NumTopicsToList)
-        val pageStuffById = pageReq.dao.loadPageStuff(topics.map(_.pageId))
+        val pageStuffById = dao.loadPageStuff(topics.map(_.pageId))
         topics.map(controllers.ForumController.topicToJson(_, pageStuffById))
       }
       else {
         Nil
       }
 
-    val siteStatusString = loadSiteStatusString(pageReq)
-    val siteSettings = pageReq.dao.loadWholeSiteSettings()
-    val horizontalLayout = pageReq.thePageRole == PageRole.MindMap ||
-      pageReq.thePageSettings.horizontalComments.valueAsBoolean
-    val is2dTreeDefault = pageReq.thePageSettings.horizontalComments.valueAsBoolean
+    val siteStatusString = loadSiteStatusString(dao)
+    val siteSettings = dao.loadWholeSiteSettings()
+    val pageSettings = dao.loadSinglePageSettings(pageId)
+    val horizontalLayout = page.role == PageRole.MindMap ||
+      pageSettings.horizontalComments.valueAsBoolean
+    val is2dTreeDefault = pageSettings.horizontalComments.valueAsBoolean
 
-    Json.obj(
-      "now" -> JsNumber((new ju.Date).getTime),
+    val jsonObj = Json.obj(
       "siteStatus" -> JsString(siteStatusString),
-      "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed && pageReq.siteId == KajMagnusSiteId),
+      "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed && transaction.siteId == KajMagnusSiteId),
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
-      "pageId" -> pageReq.thePageId,
+      "pageId" -> pageId,
       "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "forumId" -> JsStringOrNull(anyForumId),
       "ancestorsRootFirst" -> ancestorsJsonRootFirst,
       "pageRole" -> JsNumber(page.role.toInt),
-      "pagePath" -> JsString(pageReq.pagePath.value),
+      "pagePath" -> JsString(page.path.value),
       "pinOrder" -> JsNumberOrNull(page.meta.pinOrder),
       "pinWhere" -> JsNumberOrNull(page.meta.pinWhere.map(_.toInt)),
-      "pageAnsweredAtMs" -> JsLongOrNull(page.meta.answeredAt.map(_.getTime)),
+      "pageAnsweredAtMs" -> dateOrNull(page.meta.answeredAt),
       "pageAnswerPostUniqueId" -> JsNumberOrNull(page.meta.answerPostUniqueId),
-      "pagePlannedAtMs" -> JsLongOrNull(page.meta.plannedAt.map(_.getTime)),
-      "pageDoneAtMs" -> JsLongOrNull(page.meta.doneAt.map(_.getTime)),
-      "pageClosedAtMs" -> JsLongOrNull(page.meta.closedAt.map(_.getTime)),
-      "pageLockedAtMs" -> JsLongOrNull(page.meta.lockedAt.map(_.getTime)),
-      "pageFrozenAtMs" -> JsLongOrNull(page.meta.frozenAt.map(_.getTime)),
+      "pagePlannedAtMs" -> dateOrNull(page.meta.plannedAt),
+      "pageDoneAtMs" -> dateOrNull(page.meta.doneAt),
+      "pageClosedAtMs" -> dateOrNull(page.meta.closedAt),
+      "pageLockedAtMs" -> dateOrNull(page.meta.lockedAt),
+      "pageFrozenAtMs" -> dateOrNull(page.meta.frozenAt),
       //"pageDeletedAtMs" -> ...
       "numPosts" -> numPosts,
       "numPostsRepliesSection" -> numPostsRepliesSection,
       "numPostsChatSection" -> numPostsChatSection,
       "numPostsExclTitle" -> numPostsExclTitle,
-      "isInEmbeddedCommentsIframe" -> JsBoolean(pageReq.pageRole == Some(PageRole.EmbeddedComments)),
-      "categories" -> categoriesJson(pageReq),
+      "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
+      "categories" -> categoriesJson(page, dao),
       "topics" -> JsArray(anyLatestTopics),
       "user" -> NoUserSpecificData,
-      "rootPostId" -> JsNumber(BigDecimal(pageReq.pageRoot getOrElse PageParts.BodyId)),
+      "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyId)),
       "allPosts" -> JsObject(allPostsJson),
       "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
       "horizontalLayout" -> JsBoolean(horizontalLayout),
       "is2dTreeDefault" -> JsBoolean(is2dTreeDefault),
       "socialLinksHtml" -> JsString(socialLinksHtml))
+
+    val jsonString = jsonObj.toString()
+    val version = CachedPageVersion(
+      siteVersion = transaction.loadSiteVersion(),
+      pageVersion = page.version,
+      appVersion = Globals.applicationVersion,
+      dataHash = hashSha1Base64UrlSafe(jsonString))
+
+    (jsonString, version)
   }
 
 
@@ -290,9 +314,6 @@ object ReactJson {
   private def postToJsonImpl(post: Post, page: Page, currentTime: ju.Date,
         includeUnapproved: Boolean = false): JsObject = {
     val people = page.parts
-    val lastApprovedEditAt = post.lastApprovedEditAt map { date =>
-      JsNumber(date.getTime)
-    } getOrElse JsNull
 
     val (anySanitizedHtml: Option[String], isApproved: Boolean) =
       if (includeUnapproved)
@@ -343,22 +364,21 @@ object ReactJson {
       }
 
     val childrenSorted = page.parts.childrenBestFirstOf(post.id)
-
     val author = post.createdByUser(people)
+    val postType: Option[Int] = if (post.tyype == PostType.Normal) None else Some(post.tyype.toInt)
 
     var fields = Vector(
       "uniqueId" -> JsNumber(post.uniqueId),
       "postId" -> JsNumber(post.id),
       "parentId" -> post.parentId.map(JsNumber(_)).getOrElse(JsNull),
       "multireplyPostIds" -> JsArray(post.multireplyPostIds.toSeq.map(JsNumber(_))),
-      "postType" -> JsNumberOrNull(
-        if (post.tyype == PostType.Normal) None else Some(post.tyype.toInt)),
+      "postType" -> JsNumberOrNull(postType),
       "authorId" -> JsString(post.createdById.toString),  // COULD remove, but be careful when converting to int client side
       "authorIdInt" -> JsNumber(post.createdById),  // Rename to authorId when it's been converted to int (the line above)
       "authorFullName" -> JsString(author.displayName),
       "authorUsername" -> JsStringOrNull(author.username),
-      "createdAt" -> JsNumber(post.createdAt.getTime),
-      "lastApprovedEditAt" -> lastApprovedEditAt,
+      "createdAt" -> date(post.createdAt),
+      "lastApprovedEditAt" -> dateOrNull(post.lastApprovedEditAt),
       "numEditors" -> JsNumber(post.numDistinctEditors),
       "numLikeVotes" -> JsNumber(post.numLikeVotes),
       "numWrongVotes" -> JsNumber(post.numWrongVotes),
@@ -377,7 +397,7 @@ object ReactJson {
       "isTreeClosed" -> JsBoolean(post.closedStatus.isTreeClosed),
       "isApproved" -> JsBoolean(isApproved),
       "pinnedPosition" -> post.pinnedPosition.map(JsNumber(_)).getOrElse(JsNull),
-      "likeScore" -> JsNumber(post.likeScore),
+      "likeScore" -> JsNumber(decimal(post.likeScore)),
       "childIdsSorted" -> JsArray(childrenSorted.map(reply => JsNumber(reply.id))),
       "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml))
 
@@ -506,11 +526,11 @@ object ReactJson {
   }
 
 
-  private def categoriesJson(request: PageRequest[_]): JsArray = {
-    if (request.pageRole != Some(PageRole.Forum))
+  private def categoriesJson(page: PageDao, dao: SiteDao): JsArray = {
+    if (page.role != PageRole.Forum)
       return JsArray(Nil)
 
-    categoriesJson(request.thePageId, request.dao)
+    categoriesJson(page.id, dao)
   }
 
 
@@ -636,6 +656,14 @@ object ReactJson {
 
   def DateEpochOrNull(value: Option[ju.Date]) =
     value.map(date => JsNumber(date.getTime)).getOrElse(JsNull)
+
+  def date(value: ju.Date) =
+    JsString(toIso8601NoSecondsNoT(value))
+
+  def dateOrNull(value: Option[ju.Date]) = value match {
+    case Some(v) => date(v)
+    case None => JsNull
+  }
 
 }
 

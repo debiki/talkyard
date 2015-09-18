@@ -84,13 +84,10 @@ object CachingDao {
   def CacheKeyAnySite(value: String) = CacheKey(siteId = "?", value)
 
   case class CacheValue[A](value: A, siteCacheVersion: Long)
+  def CacheValueIgnoreVersion[A](value: A) = CacheValue(value, IgnoreSiteCacheVersion)
 
   private val IgnoreSiteCacheVersion = 0
   private val FirstSiteCacheVersion = 1
-
-  def CacheValueIgnoreVersion[A](value: A) = CacheValue(value, IgnoreSiteCacheVersion)
-
-  case object CacheMiss
 
   /** An EhCache instance. Right now, all caches use the same instance, could change that.
     * However doesn't matter? Won't have 2 applications running in the same JVM.
@@ -105,6 +102,25 @@ object CachingDao {
     // Results in "java.lang.NoSuchMethodError: net.sf.ehcache.Ehcache.getStatistics":
     //com.codahale.metrics.ehcache.InstrumentedEhcache.instrument(Globals.metricRegistry, playCache)
     playCache
+  }
+
+  def putInCache[A](key: CacheKey, value: CacheValue[A], expiration: Int = 0) {
+    ehcache.put(cacheElem(key, value, expiration))
+  }
+
+  def removeFromCache(key: CacheKey) {
+    ehcache.remove(key)
+  }
+
+  private def cacheElem(key: Any, value: CacheValue[_], expiration: Int = 0) = {
+    val elem = new net.sf.ehcache.Element(key, value.value)
+    elem.setVersion(value.siteCacheVersion)
+    // This is what Play Framework does, see class  EhCachePlugin
+    // in play/api/cache/Cache.scala. Without this code, I think EHCache removes
+    // the elem after a few seconds or minutes.
+    if (expiration == 0) elem.setEternal(true)
+    elem.setTimeToLive(expiration)
+    elem
   }
 
 }
@@ -211,7 +227,7 @@ trait CachingDao extends CacheEvents {
 
 
   def putInCache[A](key: CacheKey, value: CacheValue[A], expiration: Int = 0) {
-    ehcache.put(cacheElem(key, value, expiration))
+    CachingDao.putInCache(key, value, expiration)
   }
 
 
@@ -232,19 +248,7 @@ trait CachingDao extends CacheEvents {
 
 
   def removeFromCache(key: CacheKey) {
-    ehcache.remove(key)
-  }
-
-
-  private def cacheElem(key: Any, value: CacheValue[_], expiration: Int = 0) = {
-    val elem = new net.sf.ehcache.Element(key, value.value)
-    elem.setVersion(value.siteCacheVersion)
-    // This is what Play Framework does, see class  EhCachePlugin
-    // in play/api/cache/Cache.scala. Without this code, I think EHCache removes
-    // the elem after a few seconds or minutes.
-    if (expiration == 0) elem.setEternal(true)
-    elem.setTimeToLive(expiration)
-    elem
+    CachingDao.removeFromCache(key)
   }
 
 

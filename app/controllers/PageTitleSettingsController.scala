@@ -104,9 +104,11 @@ object PageTitleSettingsController extends mvc.Controller {
     // Update page settings.
     val newMeta = oldMeta.copy(
       pageRole = anyNewRole.getOrElse(oldMeta.pageRole),
-      categoryId = anyNewCategoryId.orElse(oldMeta.categoryId))
-    if (newMeta != oldMeta) {
-      request.dao.updatePageMeta(newMeta, old = oldMeta)
+      categoryId = anyNewCategoryId.orElse(oldMeta.categoryId),
+      version = oldMeta.version + 1)
+    request.dao.readWriteTransaction { transaction =>  // COULD wrap everything in this transaction
+                                                        // and move it to PagesDao?
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
     }
 
     // Update URL path (folder, slug, show/hide page id).

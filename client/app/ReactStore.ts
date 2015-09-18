@@ -377,6 +377,7 @@ function updatePost(post: Post, isCollapsing?: boolean) {
 
   rememberPostsToQuickUpdate(post.postId);
   stopGifsPlayOnClick();
+  setTimeout(processTimeAgo);
 }
 
 
@@ -508,6 +509,7 @@ function unsquashTrees(postId: number) {
     if (numLeftToUnsquash === 0)
       break;
   }
+  setTimeout(processTimeAgo);
 }
 
 
@@ -532,6 +534,7 @@ function showPost(postId: number, showChildrenToo?: boolean) {
   }
   setTimeout(() => {
     debiki.internal.showAndHighlightPost($('#post-' + postId));
+    processTimeAgo();
   }, 1);
 }
 
@@ -553,6 +556,7 @@ function uncollapsePostAndChildren(post: Post) {
       uncollapseOne(grandchild)
     }
   }
+  setTimeout(processTimeAgo);
 }
 
 

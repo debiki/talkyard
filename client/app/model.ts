@@ -62,8 +62,8 @@ interface Post {
   authorFullName: string;
   authorUsername: string;
   authorSuspendedTill?: any;
-  createdAt: number;
-  lastApprovedEditAt: number;
+  createdAt: string;
+  lastApprovedEditAt: string;
   numEditors: number;
   numLikeVotes: number;
   numWrongVotes: number;
@@ -129,18 +129,18 @@ interface Topic {
   numPosts: number;
   numLikes: number;
   numWrongs: number;
-  createdEpoch: number;
-  bumpedEpoch: number;
-  lastReplyEpoch: number;
+  createdEpoch: string;
+  bumpedEpoch: string;
+  lastReplyEpoch: string;
   numOrigPostReplies: number;
   numOrigPostLikes: number;
-  answeredAtMs?: number;
+  answeredAtMs?: string;
   answerPostUniqueId?: number;
-  plannedAtMs?: number;
-  doneAtMs?: number;
-  closedAtMs?: number;
-  lockedAtMs?: number;
-  frozenAtMs?: number;
+  plannedAtMs?: string;
+  doneAtMs?: string;
+  closedAtMs?: string;
+  lockedAtMs?: string;
+  frozenAtMs?: string;
 }
 
 

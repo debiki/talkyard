@@ -52,7 +52,7 @@ trait ForumDao {
       val forumPageId = forumPagePath.pageId getOrDie "DwE5KPFW2"
 
       // Create forum root category.
-      transaction.insertCategory(Category(
+      transaction.insertCategoryMarkSectionPageStale(Category(
         id = rootCategoryId,
         sectionPageId = forumPageId,
         parentId = None,
@@ -65,7 +65,7 @@ trait ForumDao {
         updatedAt = transaction.currentTime))
 
       // Create an Uncategorized category.
-      transaction.insertCategory(Category(
+      transaction.insertCategoryMarkSectionPageStale(Category(
         id = rootCategoryId + 1,
         sectionPageId = forumPageId,
         parentId = Some(rootCategoryId),

@@ -31,7 +31,12 @@ import CachingDao.{CacheKeyAnySite, CacheValueIgnoreVersion}
  *
  * Thread safe.
  */
-class SystemDao(protected val systemDbDao: SystemDbDao) {
+class SystemDao(private val dbDaoFactory: DbDaoFactory) {
+
+  @deprecated("use readOnlyTransaction() instead", "now")
+  protected val systemDbDao = dbDaoFactory.systemDbDao
+
+  def dbDao2 = dbDaoFactory.newDbDao2()
 
   def applyEvolutions() {
     systemDbDao.applyEvolutions()
@@ -40,6 +45,8 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
   def loadUser(siteId: SiteId, userId: UserId) =
     systemDbDao.loadUser(siteId, userId)
 
+  protected def readOnlyTransaction[R](fn: SystemTransaction => R): R =
+    dbDao2.readOnlySystemTransaction(fn)
 
   // ----- Websites (a.k.a. tenants)
 
@@ -63,6 +70,20 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
     systemDbDao.loadNotificationsToMailOut(delayInMinutes, numToLoad)
 
 
+  def loadCachedPageVersion(sitePageId: SitePageId)
+        : Option[(CachedPageVersion, SitePageVersion)] = {
+    readOnlyTransaction { transaction =>
+      transaction.loadCachedPageVersion(sitePageId)
+    }
+  }
+
+  def loadPageIdsToRerender(limit: Int): Seq[PageIdToRerender] = {
+    readOnlyTransaction { transaction =>
+      transaction.loadPageIdsToRerender(limit)
+    }
+  }
+
+
   // ----- Testing
 
   def emptyDatabase() {
@@ -81,8 +102,8 @@ class SystemDao(protected val systemDbDao: SystemDbDao) {
  *
  * Thread safe.
  */
-class CachingSystemDao(systemDbDao: SystemDbDao)
-  extends SystemDao(systemDbDao) with CachingDao {
+class CachingSystemDao(dbDaoFactory: DbDaoFactory)
+  extends SystemDao(dbDaoFactory) with CachingDao {
 
   def siteId = "?"
 

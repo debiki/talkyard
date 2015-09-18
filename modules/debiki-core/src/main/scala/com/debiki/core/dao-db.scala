@@ -91,7 +91,7 @@ abstract class SiteDbDao {
   def loadTenant(): Site
 
   def loadSiteStatus(): SiteStatus
-
+  def bumpSiteVersion()
   def updateSite(changedSite: Site)
 
 
@@ -114,8 +114,6 @@ abstract class SiteDbDao {
 
   def loadPageMetasAsMap(pageIds: Seq[PageId], anySiteId: Option[SiteId] = None)
         : Map[PageId, PageMeta]
-
-  def updatePageMeta(meta: PageMeta, old: PageMeta)
 
   def loadCategoryMap(): Map[CategoryId, Category]
 
@@ -319,6 +317,10 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
     _spi.loadSiteStatus()
   }
 
+  def bumpSiteVersion() {
+    _spi.bumpSiteVersion()
+  }
+
   def updateSite(changedSite: Site) = {
     serialize {
       _spi.updateSite(changedSite)
@@ -347,12 +349,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
   def loadPageMetasAsMap(pageIds: Seq[PageId], anySiteId: Option[SiteId]): Map[PageId, PageMeta] = {
     _spi.loadPageMetasAsMap(pageIds, anySiteId)
-  }
-
-  def updatePageMeta(meta: PageMeta, old: PageMeta) {
-    serialize {
-      _spi.updatePageMeta(meta, old = old)
-    }
   }
 
   def loadCategoryMap(): Map[CategoryId, Category] = {

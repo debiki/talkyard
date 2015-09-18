@@ -96,6 +96,7 @@ object PageMeta {
     PageMeta(
       pageId = pageId,
       pageRole = pageRole,
+      version = 1,
       createdAt = creationDati,
       updatedAt = creationDati,
       publishedAt = if (publishDirectly) Some(creationDati) else None,
@@ -148,6 +149,7 @@ object PageMeta {
 case class PageMeta(
   pageId: String,
   pageRole: PageRole,
+  version: PageVersion,
   createdAt: ju.Date,
   updatedAt: ju.Date,
   publishedAt: Option[ju.Date] = None,
@@ -180,6 +182,7 @@ case class PageMeta(
   // deletedAt: Option[ju.Date] = None,
   numChildPages: Int = 0) { // <-- DoLater: remove, replace with category table
 
+  require(version > 0, "DwE6KFU2")
   require(pageRole != PageRole.AboutCategory || categoryId.isDefined, "DwE5PKI8")
   require(!pinOrder.exists(!PageMeta.isOkPinOrder(_)), "DwE4kEYF2")
   require(pinOrder.isEmpty == pinWhere.isEmpty, "DwE36FK2")

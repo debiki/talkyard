@@ -16,7 +16,6 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../dialogs.ts" />
@@ -693,7 +692,7 @@ var Post = createComponent({
     }
     else if (!post.isApproved && !post.sanitizedHtml) {
       headerElem = r.div({ className: 'dw-p-hd' }, 'Hidden comment pending approval, posted ',
-            moment(post.createdAt).from(this.props.now), '.');
+            timeAgo(post.createdAt), '.');
       extraClasses += ' dw-p-unapproved';
     }
     else {
@@ -888,11 +887,9 @@ var PostHeader = createComponent({
       namePart1 = r.span({}, '(Unknown author)');
     }
 
-    var createdAt = moment(post.createdAt).from(this.props.now);
-
     var editInfo = null;
     if (post.lastApprovedEditAt) {
-      var editedAt = moment(post.lastApprovedEditAt).from(this.props.now);
+      var editedAt = timeAgo(post.lastApprovedEditAt);
       var byVariousPeople = post.numEditors > 1 ? ' by various people' : null;
       editInfo =
         r.span({}, ', edited ', editedAt, byVariousPeople);
@@ -942,8 +939,7 @@ var PostHeader = createComponent({
       userLinkProps.title = 'User banned';
     }
     else if (post.authorSuspendedTill) {
-      userLinkProps.title = 'User suspended until ' +
-          moment(post.authorSuspendedTill).format('YYYY-MM-DD')
+      userLinkProps.title = 'User suspended until ' + dateTimeFix(post.authorSuspendedTill);
     }
 
     var is2dColumn = this.props.horizontalLayout && this.props.depth === 1;
@@ -969,7 +965,7 @@ var PostHeader = createComponent({
           anyMark,
           by,
           r[linkFn](userLinkProps, namePart1, namePart2),
-          createdAt,
+          timeAgo(post.createdAt),
           editInfo,
           inReplyTo));
   }

@@ -76,6 +76,9 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_]) {
   def anyCurrentPageRole: Option[PageRole] = None
   def anyCurrentPagePath: Option[PagePath] = None
 
+  def currentVersionString = ""
+  def cachedVersionString = ""
+
   /** Classes for the <html> tag. */
   def debikiHtmlTagClasses = "DW dw-pri "
 
@@ -89,7 +92,8 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_]) {
     views.html.debikiStyles(minMaxJs, minMaxCss).body)
 
   def debikiScriptsInHead = xml.Unparsed(
-    views.html.debikiScriptsHead( // Could pass `this` to the template instead of all these params?
+    views.html.debikiScriptsHead(
+      this, // Could remove all params below, use 'this' instead in the template.
       siteId = siteId,
       anyPageId = anyCurrentPageId,
       serverAddress = debikiRequest.request.host,
@@ -107,19 +111,6 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_]) {
     views.html.debikiScriptsEndOfBody(
       startupCode = startupCode, minMaxJs = minMaxJs).body)
 
-
-  /* Perhaps I'll add this back later, or use it in the topbar.
-  def logoHtml = {
-    val logoUrlOrHtml = debikiRequest.siteSettings.logoUrlOrHtml.value.toString.trim
-    if (logoUrlOrHtml.headOption == Some('<')) {
-      // It's HTML, use it as is
-      logoUrlOrHtml
-    }
-    else {
-      // `logoUrlOrHtml` should be an image URL, wrap in a tag.
-      <img src={logoUrlOrHtml}></img>.toString
-    }
-  } */
 
   def hostname = debikiRequest.host
 
@@ -171,31 +162,30 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_]) {
 
   /** The initial data in the React-Flux model, a.k.a. store. */
   def reactStoreSafeJsonString: String =
-    Json.obj("user" -> ReactJson.userNoPageToJson(debikiRequest.user)).toString
-
-  def debikiAppendToBodyTags: xml.NodeSeq = Nil
+    Json.obj("user" -> ReactJson.userNoPageToJson(debikiRequest.user)).toString()
 
 }
 
 
-/**
- * Passed to Scala templates.
- */
+/** Used by Scala templates.
+  */
 class TemplateProgrammingInterface(
   private val pageReq: PageRequest[_],
-  private val tagsToAppendToBody: xml.NodeSeq)
+  override val reactStoreSafeJsonString: String,
+  private val jsonVersion: CachedPageVersion,
+  private val cachedPageHtml: String,
+  private val cachedVersion: CachedPageVersion)
   extends SiteTpi(pageReq) {
 
-  override def anyCurrentPageId = Some(pageId)
-  override def anyCurrentPageRole = Some(pageRole)
+  override def anyCurrentPageId = Some(pageReq.thePageId)
+  override def anyCurrentPageRole = Some(pageReq.thePageRole)
   override def anyCurrentPagePath = Some(pageReq.pagePath)
 
-  def pageId = pageReq.thePageId
-  def pageRole = pageReq.thePageRole
+  override def currentVersionString = jsonVersion.computerString
+  override def cachedVersionString = cachedVersion.computerString
 
-  def pageSettings = pageReq.thePageSettings
-
-  val horizontalComments = pageReq.thePageRole == PageRole.MindMap ||
+  private val horizontalComments =
+    pageReq.thePageRole == PageRole.MindMap ||
     pageReq.thePageSettings.horizontalComments.valueAsBoolean
 
 
@@ -203,23 +193,7 @@ class TemplateProgrammingInterface(
     super.debikiHtmlTagClasses + (if (horizontalComments) "dw-hz " else "dw-vt ")
 
 
-  override def debikiAppendToBodyTags: xml.NodeSeq = {
-    tagsToAppendToBody
-  }
-
-
-  def reactTest =
-    xml.Unparsed(ReactRenderer.renderPage(reactStoreSafeJsonString))
-
-
-  def pageUrlPath = pageReq.pagePath.value
-
-
-  override lazy val reactStoreSafeJsonString: String = {
-    ReactJson.pageToJson(pageReq, socialLinksHtml =
-        siteSettings.socialLinksHtml.valueAsString).toString
-
-  }
+  def renderedPage = xml.Unparsed(cachedPageHtml)
 
 }
 

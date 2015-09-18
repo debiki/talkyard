@@ -72,13 +72,6 @@ trait PagePathMetaDao {
       yield PagePathAndMeta(path, meta)
   }
 
-
-  def updatePageMeta(meta: PageMeta, old: PageMeta) = {
-    if (meta != old) {
-      siteDbDao.updatePageMeta(meta, old = old)
-    }
-  }
-
 }
 
 
@@ -171,16 +164,6 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
     lookupInCache[PageMeta](
       pageMetaByIdKey(SitePageId(siteId, pageId)),
       orCacheAndReturn = super.loadPageMeta(pageId))
-
-
-  override def updatePageMeta(meta: PageMeta, old: PageMeta) {
-    // BUG SHOULD uncache meta for old and new parent page too,
-    // if this page changes parent page?
-    if (meta != old) {
-      uncacheMetaAndAncestors(SitePageId(siteId, meta.pageId))
-      super.updatePageMeta(meta, old = old)
-    }
-  }
 
 
   private def uncacheMetaAndAncestors(sitePageId: SitePageId) {

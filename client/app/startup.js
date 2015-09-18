@@ -174,12 +174,33 @@ function renderDiscussionPage() {
   d.i.layout = d.i.chooseLayout();
   d.i.layoutThreads();
 
+  // Make it possible to test React.js performance in the browser.
+  if (location.search.indexOf('breakReactChecksums=true') !== -1) {
+    $('[data-react-checksum]').attr('data-react-checksum', 'wrong-checksum-DwM4FKW21');
+    console.log("I've altered the React.js checksums, everything will be rerendered. [DwM4KPW2]");
+  }
 
+  var Perf = location.search.indexOf('react-perf=true') !== -1 ? React.addons.Perf : null;
+  !Perf || Perf.start();
   var timeBefore = performance.now();
-  //debiki2.renderer.renderTitleBodyComments();
 
   renderTitleBodyComments();
+
   var timeAfterBodyComments = performance.now();
+  if (Perf) {
+    Perf.stop();
+    console.log('Perf.printInclusive:');
+    Perf.printInclusive();
+    console.log('Perf.printExclusive:');
+    Perf.printExclusive();
+    console.log('Perf.printWasted:');
+    Perf.printWasted();
+    console.log('You could also:  Perf.printDOM()');
+  }
+
+  var timeBeforeTimeAgo = performance.now();
+  processTimeAgo();
+  var timeAfterTimeAgo = performance.now();
 
   debiki2.ReactStore.initialize();
   debiki2.startEarlyReactRoots();
@@ -189,9 +210,16 @@ function renderDiscussionPage() {
   debiki2.startRemainingReactRoots();
   var timeAfterRemainingRoots = performance.now();
 
-  console.log('Time to render page: ' + (timeAfterBodyComments - timeBefore));
-  console.log('Time to activate user data: ' + (timeAfterUserData - timeAfterBodyComments));
-  console.log('Time for remaining React roots: ' + (timeAfterRemainingRoots - timeAfterUserData));
+  console.log("Millis to render page: " + (timeAfterBodyComments - timeBefore) +
+    ", process time-ago: " + (timeAfterTimeAgo - timeBeforeTimeAgo) +
+    ", activate user data: " + (timeAfterUserData - timeAfterTimeAgo) +
+    ", remaining React roots: " + (timeAfterRemainingRoots - timeAfterUserData) + " [DwM2F51]");
+  console.log("Cached html version: <" + debiki.cachedVersion +
+      ">, current: <" + debiki.currentVersion + "> [DwM4KGE8]");
+  if (debiki.currentVersion.split('|')[1] !== debiki.cachedVersion.split('|')[1]) {
+    console.log("Cached html is stale. React.js might have logged a " +
+        "'checksum was invalid' warning above (in dev builds) [DwM5KJG4]");
+  }
 
   $('html').addClass('dw-react-started');
 
