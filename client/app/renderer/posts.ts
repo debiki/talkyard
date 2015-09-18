@@ -373,14 +373,6 @@ var RootPostAndComments = createComponent({
         "Solved in post #" + store.pageAnswerPostNr);
     }
 
-    var anyLikeCount;
-    if (rootPost.numLikeVotes >= 1) {
-      var peopleLike = rootPost.numLikeVotes === 1 ? ' person likes' : ' people like';
-      anyLikeCount =
-        r.div({ className: 'dw-num-likes clearfix' },
-          r.a({}, rootPost.numLikeVotes, peopleLike, ' this.'));
-    }
-
     var anyHorizontalArrowToChildren = null;
     if (this.props.horizontalLayout) {
       anyHorizontalArrowToChildren =
@@ -442,7 +434,6 @@ var RootPostAndComments = createComponent({
         body,
         solvedBy,
         PostActions({ store: this.props, post: rootPost }),
-        anyLikeCount,
         debiki2.reactelements.CommentsToolbar(),
         anyHorizontalArrowToChildren,
         r.div({ className: 'dw-single-and-multireplies' },
@@ -1174,13 +1165,13 @@ var PostActions = createComponent({
     }
 
     var numLikesText;
-    if (post.numLikeVotes && !isPageBody) {
+    if (post.numLikeVotes) {
       numLikesText = r.a({ className: 'dw-a dw-vote-count' },
           post.numLikeVotes === 1 ? "1 Like" : post.numLikeVotes + " Likes");
     }
 
     var numWrongsText;
-    if (post.numWrongVotes && !isPageBody) {
+    if (post.numWrongVotes) {
       numWrongsText = r.a({ className: 'dw-a dw-vote-count' },
           post.numWrongVotes === 1 ? "1 Wrong" : post.numWrongVotes + " Wrongs");
     }
@@ -1188,13 +1179,13 @@ var PostActions = createComponent({
     // Bury votes aren't downvotes or bad in any way, so don't show them, except for
     // staff, so they can detect misuse.
     var numBurysText;
-    if (isStaff(user) && post.numBuryVotes && !isPageBody) {
+    if (isStaff(user) && post.numBuryVotes) {
       numBurysText = r.a({ className: 'dw-a dw-vote-count' },
           post.numBuryVotes === 1 ? "1 Bury" : post.numBuryVotes + " Burys");
     }
 
     var numUnwantedsText;
-    if (post.numUnwantedVotes && !isPageBody) {
+    if (post.numUnwantedVotes) {
       numUnwantedsText = r.a({ className: 'dw-a dw-vote-count' },
           post.numUnwantedVotes === 1 ? "1 Unwanted" : post.numUnwantedVotes + " Unwanteds");
     }
