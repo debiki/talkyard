@@ -78,6 +78,7 @@ var nextFileLine =
 // - Plus I read in comments in some blog that some countries actually sometimes
 //   block Google's CDN.
 var debikiJavascriptFiles = [
+      // About Modernizr:
       // Concerning when/how to use a CDN for Modernizr, see:
       // http://www.modernizr.com/news/modernizr-and-cdns
       // And: "For best performance, you should have them follow after your
@@ -85,7 +86,9 @@ var debikiJavascriptFiles = [
       // But placing Modernizr in the <head> is important mostly for IE8, which we don't support.
       // There might be a flash-of-unstyled-content now with Modnernizr here at the end
       // of <body>? But I haven't noticed any FOUC so ignore for now.
-      'bower_components/modernizr/modernizr.js',
+      // Evaluating all Modernizr tests takes long (~70ms on my core i7) so use a custom
+      // build with only what's needed.
+      'client/third-party/modernizr-custom.min.js',
       'bower_components/yepnope/yepnope.1.5.4-min.js',
       'bower_components/jquery/dist/jquery.js',
       'client/third-party/abbreviate-jquery.js',
@@ -116,7 +119,6 @@ var debikiJavascriptFiles = [
       'client/third-party/jquery.browser.js', //
       'client/third-party/non-angular-slugify.js',
       'client/third-party/popuplib.js',
-      'client/third-party/modernizr-positionfixed.js',
       'target/client/app/actions/edit/edit.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
