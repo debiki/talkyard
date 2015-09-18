@@ -122,8 +122,7 @@ function doHandleReplyResult(newPost) {
   // and the one after emitChange after `switch (action.actionType)` in ReactStore was
   // the first one that was never displayed.)
   setTimeout(function() {
-    var myNewPost = $('#post-' + newPost.postId);
-    d.i.showAndHighlightPost(myNewPost, { marginRight: 300, marginBottom: 300 });
+    debiki2.ReactActions.loadAndShowPost(newPost.postId);
   }, 1);
 
   debiki2.ReactActions.updatePost(newPost);
