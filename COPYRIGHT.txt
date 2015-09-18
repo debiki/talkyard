@@ -60,11 +60,6 @@ Javascript and CSS:
     MIT license
     https://github.com/krasimir/gifffer
 
-  - LiveScript's prelude.ls
-    ./client/third-party/livescript/
-    Copyright (c) 2013 George Zahariev
-    http://gkz.github.io/prelude-ls/
-
   - Twitter Bootstrap
     ./modules/twitter-bootstrap/
     Copyright 2012 Twitter, Inc.
@@ -142,26 +137,22 @@ Javascript and CSS:
   - React.js
     Copyright 2013-2014, Facebook, Inc.
 
+  - React Bootstrap
+    Copyright (c) 2014 Stephen J. Collings, Matthew Honnibal, Pieter Vanderwerff
+
+  - React Router
+    Copyright (c) 2014 Ryan Florence, Michael Jackson
+
+  - React-Select
+    Copyright (c) 2015 Jed Watson
+    MIT license
+    https://github.com/JedWatson/react-select
+
   - markdown-it
     ./bower_components/...
     Copyright (c) 2014 Vitaly Puzrin, Alex Kocharin
     MIT license
     https://github.com/markdown-it/markdown-it
-
-  - jQuery UI
-    ./public/res/jquery-ui
-    MIT license
-    http://jquery.org
-
-  - Javascript OpenID Selector v1.3
-    ./public/res/openid-selector/
-    New BSD License
-    http://code.google.com/p/openid-selector/
-
-  - Yoxview
-    ./public/tmp/yoxview/
-    MIT license
-    http://yoxigen.com/yoxview/
 
   - jQuery Browser Plugin
     ./client/third-party/jquery.browser.js
