@@ -208,8 +208,10 @@ object ForumController extends mvc.Controller {
 
   def parsePageFilter(request: DebikiRequest[_]): PageFilter =
     request.queryString.getFirst("filter") match {
-      case Some("ShowOpenQuestionsTodos") => PageFilter.ShowOpenQuestionsTodos
-      case _ => PageFilter.ShowAll
+      case None => PageFilter.ShowAll
+      case Some("ShowAll") => PageFilter.ShowAll
+      case Some("ShowWaiting") => PageFilter.ShowWaiting
+      case Some(x) => throwBadRequest("DwE5KGP8", s"Bad topic filter: $x")
     }
 
 

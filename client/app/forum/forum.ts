@@ -105,7 +105,6 @@ var CategoriesAndTopics = createComponent({
 
   getInitialState: function() {
     return {
-      topicFilter: 'ShowAll',
       compact: false,
     };
   },
@@ -123,7 +122,7 @@ var CategoriesAndTopics = createComponent({
     var newCatSlug = nextProps.newCategorySlug;
     if (newCatSlug && newCatSlug !== this.state.newCategorySlug) {
       this.setState({ newCategorySlug: newCatSlug });
-      this.transitionTo('ForumRouteLatest', { categorySlug: newCatSlug });
+      this.transitionTo('ForumRouteLatest', { categorySlug: newCatSlug }, this.getQuery());
     }
   },
 
@@ -133,7 +132,7 @@ var CategoriesAndTopics = createComponent({
     if (nextRouteName === 'ForumRouteCategories' || nextRouteName === 'ForumRouteDefault') {
       nextRouteName = 'ForumRouteLatest';
     }
-    this.transitionTo(nextRouteName, { categorySlug: newCategorySlug });
+    this.transitionTo(nextRouteName, { categorySlug: newCategorySlug }, this.getQuery());
   },
 
   getActiveCategory: function() {
@@ -170,13 +169,12 @@ var CategoriesAndTopics = createComponent({
   },
 
   switchSortOrder: function(newRouteName: string) {
-    this.transitionTo(newRouteName, this.getParams());
+    this.transitionTo(newRouteName, this.getParams(), this.getQuery());
   },
 
   getSortOrderName: function(routeName?: string) {
     if (!routeName) {
-      var routes = this.getRoutes();
-      routeName = routes[routes.length - 1].name;
+      routeName = this.getCurrentRouteName();
     }
     switch (routeName) {
       case 'ForumRouteLatest': return "Latest";
@@ -186,8 +184,19 @@ var CategoriesAndTopics = createComponent({
     console.error("Unknown route [DwE5KFIW2]");
   },
 
+  getCurrentRouteName: function() {
+    return _.last(this.getRoutes())['name'];
+  },
+
   setTopicFilter: function(event) {
-    this.setState({ topicFilter: event.target.value });
+    var newQuery = _.clone(this.getQuery());
+    if (event.target.value === 'ShowAll') {
+      delete newQuery.filter;
+    }
+    else {
+      newQuery.filter = event.target.value;
+    }
+    this.replaceWith(this.getCurrentRouteName(), this.getParams(), newQuery);
   },
 
   /* If using a filter dropdown + full search text field like GitHub does:
@@ -201,7 +210,7 @@ var CategoriesAndTopics = createComponent({
   searchTextForFilter: function(filterKey: string) {
     switch (filterKey) {
       case 'ShowAll': return '';
-      case 'ShowOpenQuestionsTodos': return 'is:open is:question-or-todo';
+      case 'ShowWaiting': return 'is:open is:question-or-todo';
     }
   },
 
@@ -286,11 +295,13 @@ var CategoriesAndTopics = createComponent({
     }
 
     // The filter topics select.
-    var topicFilter =
+    var topicFilterValue = this.getQuery().filter || 'ShowAll';
+    var topicFilterInput =
         r.div({ className: 'dw-filter' },
-          Input({ type: 'select', ref: 'topicFilterInput', onChange: this.setTopicFilter },
+          Input({ type: 'select', ref: 'topicFilterInput', onChange: this.setTopicFilter,
+              value: topicFilterValue },
             r.option({ value: 'ShowAll' }, "Show all"),
-            r.option({ value: 'ShowOpenQuestionsTodos' }, "Show waiting")));
+            r.option({ value: 'ShowWaiting' }, "Show waiting")));
                                                       // or "Questions and todos"?
 
     /* A filter dropdown and search box instead of the <select> above:
@@ -304,7 +315,7 @@ var CategoriesAndTopics = createComponent({
     var topicsFilterButton =
         DropdownButton({ title: "Filter", onSelect: this.activateFilter },
           MenuItem(makeFilterItemProps('ShowAll'), "Show everything"),
-          MenuItem(makeFilterItemProps('ShowOpenQuestionsTodos'), "Open questions and todo:s"));
+          MenuItem(makeFilterItemProps('ShowWaiting'), "Show waiting"));
     var topicFilter =
         r.div({ className: 'dw-filter' },
           Input({ type: 'text', buttonBefore: topicsFilterButton, value: this.state.searchText,
@@ -328,17 +339,18 @@ var CategoriesAndTopics = createComponent({
       editCategoryBtn = Button({ onClick: this.editCategory }, 'Edit Category');
     }
 
-    var viewProps = _.clone(this.props);
-    viewProps.activeCategory = activeCategory;
-    viewProps.activeRoute = activeRoute;
-    viewProps.topicFilter = this.state.topicFilter;
+    var viewProps = _.extend({}, this.props, {
+      activeCategory: activeCategory,
+      activeRoute: activeRoute,
+      topicFilter: topicFilterValue,
+    });
 
     return (
       r.div({},
         r.div({ className: 'dw-forum-actionbar clearfix' },
           categoriesDropdown,
           latestTopCategories,
-          topicFilter,
+          topicFilterInput,
           createTopicBtn,
           createCategoryBtn,
           editCategoryBtn),
@@ -351,7 +363,7 @@ var CategoriesAndTopics = createComponent({
 var NavButton = createComponent({
   mixins: [RouterNavigationMixin, RouterStateMixin],
   onClick: function() {
-    this.transitionTo(this.props.routeName, this.getParams());
+    this.transitionTo(this.props.routeName, this.getParams(), this.getQuery());
   },
   render: function() {
     var isActive = this.isActive(this.props.routeName);
@@ -676,7 +688,8 @@ var CategoryRow = createComponent({
   mixins: [RouterNavigationMixin, RouterStateMixin],
 
   onCategoryClick: function() {
-    this.transitionTo('ForumRouteLatest', { categorySlug: this.props.category.slug });
+    var newParams = { categorySlug: this.props.category.slug };
+    this.transitionTo('ForumRouteLatest', newParams, this.getQuery());
   },
 
   render: function() {

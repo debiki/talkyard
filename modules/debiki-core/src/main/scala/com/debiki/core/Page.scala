@@ -392,7 +392,7 @@ object PageOrderOffset {
 sealed abstract class PageFilter
 object PageFilter {
   case object ShowAll extends PageFilter
-  case object ShowOpenQuestionsTodos extends PageFilter
+  case object ShowWaiting extends PageFilter
 }
 
 

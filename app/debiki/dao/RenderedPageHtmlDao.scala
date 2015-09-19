@@ -145,6 +145,8 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
           // html, and this page is being accessed, so regenerate html. [4KGJW2]
           p.Logger.debug(o"""Page $pageId site $siteId is accessed and out-of-date,
                sending rerender-in-background message [DwE5KGF2]""")
+          // COULD wait 150 ms for the background thread to finish rendering the page?
+          // Then timeout and return the old cached page.
           Globals.renderPageContentInBackground(SitePageId(siteId, pageId))
         }
         return (cachedHtml, cachedVersion)
