@@ -1,7 +1,7 @@
-declare module debiki2 {
-  var flagDialog: any;
+module debiki2 {
+  export function getFlagDialog(): any {}
 }
 
-declare module debiki2.pagedialogs {
-  var aboutUserDialog: any;
+module debiki2.pagedialogs {
+  export function getAboutUserDialog(): any {}
 }

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.SiteTpi, isHomepage: Boolean = false)(body: Html)
+@(tpi: debiki.SiteTpi, isHomepage: Boolean = false)(content: Html)
 
 @homepage = @{ if (isHomepage) " homepage" else "" }
 
@@ -32,22 +32,12 @@
   @Html(tpi.anyGoogleUniversalAnalyticsScript)
 </head>
 <body>
-
 <div id="dw-any-sidebar"></div>
-
 @Html(tpi.siteSettings.headerHtml.valueAsString)
 
-@body
+@content
 
 @Html(tpi.siteSettings.footerHtml.valueAsString)
-
-<div id="dw-editor"></div>
-<div id="dw-react-page-tools-dialog"></div>
-<div id="dw-react-flag-dialog"></div>
-<div id="dw-react-delete-post-dialog"></div>
-<div id="dw-react-about-user-dialog"></div>
-<div id="dw-react-wikify-dialog"></div>
-
 @tpi.debikiScriptsEndOfBody
 @Html(tpi.siteSettings.headScriptsHtml.valueAsString)
 @Html(tpi.siteSettings.endOfBodyHtml.valueAsString)

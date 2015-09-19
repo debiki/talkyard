@@ -38,7 +38,7 @@ d.i.loginIfNeeded = function(reason, anyReturnToUrl, callback) {
   }
   else {
     onLoginCallback = callback;
-    debiki2.login.loginDialog.open(reason, anyReturnToUrl);
+    debiki2.login.getLoginDialog().open(reason, anyReturnToUrl);
   }
 };
 

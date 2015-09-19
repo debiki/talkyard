@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../utils/react-utils.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="create-user-dialog.ts" />
@@ -49,14 +50,14 @@ var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
   'LoginToCreateTopic'
 */
 
-export var loginDialog;
+var loginDialog;
 
 
-export function createLoginDialog() {
-  function makeMountNode() {
-    return $('<div>').appendTo('body')[0];
+export function getLoginDialog() {
+  if (!loginDialog) {
+    loginDialog = React.render(LoginDialog(), utils.makeMountNode());
   }
-  loginDialog = React.render(LoginDialog(), makeMountNode());
+  return loginDialog;
 }
 
 

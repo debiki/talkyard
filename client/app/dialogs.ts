@@ -38,14 +38,14 @@ var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 
-export var flagDialog;
+var flagDialog;
 
 
-export function createAnyFlagDialog() {
-  var flagDialogElem = document.getElementById('dw-react-flag-dialog');
-  if (flagDialogElem) {
-    flagDialog = React.render(FlagDialog(), flagDialogElem);
+export function getFlagDialog() {
+  if (!flagDialog) {
+    flagDialog = React.render(FlagDialog(), utils.makeMountNode());
   }
+  return flagDialog;
 }
 
 

@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../prelude.ts" />
+/// <reference path="../utils/react-utils.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 
@@ -38,17 +39,19 @@ var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 
-export var serverErrorDialog;
+var serverErrorDialog;
 
 
-export function createServerErrorDialog() {
-  var dialogTag = $('<div>').appendTo(document.body);
-  serverErrorDialog = React.render(ServerErrorDialog(), dialogTag[0]);
+export function getServerErrorDialog() {
+  if (!serverErrorDialog) {
+    serverErrorDialog = React.render(ServerErrorDialog(), utils.makeMountNode());
+  }
+  return serverErrorDialog;
 }
 
 
 export function showAndThrowClientSideError(errorMessage: string) {
-  serverErrorDialog.openForBrowserError(errorMessage);
+  getServerErrorDialog().openForBrowserError(errorMessage);
   throw Error(errorMessage);
 }
 

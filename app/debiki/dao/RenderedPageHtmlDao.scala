@@ -72,7 +72,9 @@ trait RenderedPageHtmlDao {
 
   def renderContent(pageId: PageId, currentVersion: CachedPageVersion, reactStore: String)
         : (String, CachedPageVersion) = {
-    (ReactRenderer.renderPage(reactStore), currentVersion)
+    val html = ReactRenderer.renderPage(reactStore) getOrElse throwInternalError(
+      "DwE500RNDR", "Error rendering page")
+    (html, currentVersion)
   }
 
 }

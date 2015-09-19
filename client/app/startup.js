@@ -180,7 +180,7 @@ function renderDiscussionPage() {
     console.log("I've altered the React.js checksums, everything will be rerendered. [DwM4KPW2]");
   }
 
-  var Perf = location.search.indexOf('react-perf=true') !== -1 ? React.addons.Perf : null;
+  var Perf = location.search.indexOf('reactPerf=true') !== -1 ? React.addons.Perf : null;
   !Perf || Perf.start();
   var timeBefore = performance.now();
 
@@ -199,11 +199,11 @@ function renderDiscussionPage() {
   }
 
   var timeBeforeTimeAgo = performance.now();
-  processTimeAgo();
+  // Only process the header right now if there are many posts.
+  processTimeAgo($posts.length > 20 ? '.dw-ar-p-hd' : '');
   var timeAfterTimeAgo = performance.now();
 
   debiki2.ReactStore.initialize();
-  debiki2.startEarlyReactRoots();
   debiki2.ReactStore.activateUserSpecificData();
   var timeAfterUserData = performance.now();
 
@@ -211,9 +211,9 @@ function renderDiscussionPage() {
   var timeAfterRemainingRoots = performance.now();
 
   console.log("Millis to render page: " + (timeAfterBodyComments - timeBefore) +
-    ", process time-ago: " + (timeAfterTimeAgo - timeBeforeTimeAgo) +
-    ", activate user data: " + (timeAfterUserData - timeAfterTimeAgo) +
-    ", remaining React roots: " + (timeAfterRemainingRoots - timeAfterUserData) + " [DwM2F51]");
+    ", time-ago: " + (timeAfterTimeAgo - timeBeforeTimeAgo) +
+    ", user data: " + (timeAfterUserData - timeAfterTimeAgo) +
+    ", remaining roots: " + (timeAfterRemainingRoots - timeAfterUserData) + " [DwM2F51]");
   console.log("Cached html version: <" + debiki.cachedVersion +
       ">, current: <" + debiki.currentVersion + "> [DwM4KGE8]");
   if (debiki.currentVersion.split('|')[1] !== debiki.cachedVersion.split('|')[1]) {
@@ -222,6 +222,7 @@ function renderDiscussionPage() {
   }
 
   $('html').addClass('dw-react-started');
+  setTimeout(runNextStep, 60);
 
 
   var steps = [];
@@ -238,9 +239,6 @@ function renderDiscussionPage() {
     $posts.each(function() {
       d.i.makeThreadResizableForPost(this);
     });
-  });
-
-  steps.push(function() {
     debiki2.ReactActions.loadAndScrollToAnyUrlAnchorPost();
   });
 
@@ -253,19 +251,20 @@ function renderDiscussionPage() {
   }); */
 
   steps.push(function() {
+    // Process any remaining time-ago:s, in case we didn't do all at once earlier.
+    processTimeAgo();
     debiki.scriptLoad.resolve();
     // Disable for now, because it's a bit slow, and I don't save this server side anyway now.
     //debiki2.sidebar.UnreadCommentsTracker.start();
   });
 
   function runNextStep() {
+    debiki2.dieIf(!steps.length, "steps is empty [DwE5KPEW2]");
     steps[0]();
     steps.shift();
     if (steps.length > 0)
       setTimeout(runNextStep, 70);
   }
-
-  setTimeout(runNextStep, 60);
 };
 
 
@@ -282,7 +281,6 @@ d.i.renderEmptyPage = function() {
   configureAjaxRequests();
   debiki2.utils.onMouseDetected(d.i.initUtterscrollAndTips);
   debiki2.ReactStore.initialize();
-  debiki2.startEarlyReactRoots();
   debiki2.startRemainingReactRoots();
   debiki2.ReactStore.activateUserSpecificData();
   fireLoginOrLogout();
@@ -305,7 +303,7 @@ d.i.startDiscussionPage = function() {
 
 d.i.startEmbeddedEditor = function() {
   configureAjaxRequests();
-  debiki2.editor.createEditor();
+  console.warn("The editor is lazily created nowadays [DwE4KGF0]");
 };
 
 

@@ -820,7 +820,7 @@ var ReplyReceivers = createComponent({
 
 var PostHeader = createComponent({
   onUserClick: function(event) {
-    debiki2.pagedialogs.aboutUserDialog.open(this.props.post);
+    debiki2.pagedialogs.getAboutUserDialog().open(this.props.post);
     event.preventDefault();
     event.stopPropagation();
   },
@@ -1062,13 +1062,13 @@ var PostActions = createComponent({
     debiki.internal.$showEditsDialog.call(event.target, event);
   },
   onFlagClick: function(event) {
-    debiki2.flagDialog.open(this.props.post.postId);
+    debiki2.getFlagDialog().open(this.props.post.postId);
   },
   onDeleteClick: function(event) {
-    debiki2.pagedialogs.deletePostDialog.open(this.props.post);
+    debiki2.pagedialogs.getDeletePostDialog().open(this.props.post);
   },
   onWikifyClick: function(event) {
-    debiki2.pagedialogs.wikifyDialog.open(this.props.post);
+    debiki2.pagedialogs.getWikifyDialog().open(this.props.post);
   },
   /*
   onCollapsePostClick: function(event) {

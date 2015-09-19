@@ -45,7 +45,7 @@ function postJson(urlPath: string, requestData: RequestData) {
     success: requestData.success,
     error: (jqXhr: any, textStatus: string, errorThrown: string) => {
       console.error('Error calling ' + urlPath + ': ' + JSON.stringify(jqXhr));
-      pagedialogs.serverErrorDialog.open(jqXhr);
+      pagedialogs.getServerErrorDialog().open(jqXhr);
       if (requestData.error) {
         requestData.error(jqXhr, textStatus, errorThrown);
       }
@@ -68,7 +68,7 @@ function get(uri: string, success: (response) => void) {
     .done(success)
     .fail((jqXhr: any, textStatus: string, errorThrown: string) => {
       console.error('Error calling ' + uri + ': ' + JSON.stringify(jqXhr));
-      pagedialogs.serverErrorDialog.open(jqXhr);
+      pagedialogs.getServerErrorDialog().open(jqXhr);
     });
 }
 

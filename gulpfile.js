@@ -78,6 +78,8 @@ var nextFileLine =
 // - Plus I read in comments in some blog that some countries actually sometimes
 //   block Google's CDN.
 var debikiJavascriptFiles = [
+      // Place React first so we can replace it at index 0 with the optimized min.js version.
+      'bower_components/react/react-with-addons.js',
       // About Modernizr:
       // Concerning when/how to use a CDN for Modernizr, see:
       // http://www.modernizr.com/news/modernizr-and-cdns
@@ -93,7 +95,6 @@ var debikiJavascriptFiles = [
       'bower_components/jquery/dist/jquery.js',
       'client/third-party/abbreviate-jquery.js',
       'client/third-party/stupid-lightbox.js',
-      'bower_components/react/react-with-addons.js',
       'bower_components/keymaster/keymaster.js',
       // keymaster.js declares window.key, rename it to window.keymaster instead,
       // see comment in file for details.
@@ -147,6 +148,7 @@ var debikiJavascriptFiles = [
       'target/client/app/startup.js'];
 
 
+
 // For both touch devices and desktops.
 // (parten-header.js and parent-footer.js wraps and lazy loads the files inbetween,
 // see client/embedded-comments/readme.txt.)
@@ -190,7 +192,8 @@ function compileServerSideTypescript() {
   }
 
   var javascriptStream = gulp.src([
-        'bower_components/react/react-with-addons.js',
+        // Don't need any React addons server side (e.g. CSS transitions or performance measurements).
+        'bower_components/react/react.min.js',
         'bower_components/react-bootstrap/react-bootstrap.js',
         'bower_components/react-router/build/umd/ReactRouter.js',
         'bower_components/markdown-it/dist/markdown-it.js',
@@ -198,8 +201,7 @@ function compileServerSideTypescript() {
         'client/third-party/html-css-sanitizer-bundle.js',
         'client/third-party/non-angular-slugify.js',
         'client/app/editor/mentions-markdown-it-plugin.js',
-        'client/app/editor/onebox-markdown-it-plugin.js',
-        'bower_components/moment/moment.js']);
+        'client/app/editor/onebox-markdown-it-plugin.js']);
 
   return es.merge(typescriptStream, javascriptStream)
       .pipe(concat('renderer.js'))
@@ -288,6 +290,12 @@ function makeConcatAllScriptsStream() {
       makeConcatDebikiScriptsStream());
 };
 
+
+
+gulp.task('insert-prod-scripts', function() {
+  // This script isn't just a minified script — it contains lots of optimizations.
+  debikiJavascriptFiles[0] = 'bower_components/react/react-with-addons.min.js';
+});
 
 
 gulp.task('minify-scripts', ['concat-debiki-scripts'], function() {
@@ -383,7 +391,7 @@ gulp.task('default', ['compile-concat-scripts', 'compile-stylus'], function () {
 });
 
 
-gulp.task('release', ['minify-scripts', 'compile-stylus'], function() {
+gulp.task('release', ['insert-prod-scripts', 'minify-scripts', 'compile-stylus'], function() {
 });
 
 

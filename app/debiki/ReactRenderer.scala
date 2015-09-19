@@ -124,8 +124,9 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
         }
         else {
           // Deadlock risk because a thread that needs an engine blocks until one is available.
+          // Use error code DwEDEADLOCK which DeadlockDetector also does.
           logger.error(o"""Error creating additional Javascript engine, ignoring it,
-              DEADLOCK RISK!: [DwE3KEP58]""", throwable)
+              DEADLOCK RISK: [DwEDEADLOCKR0]""", throwable)
           return
         }
     }
@@ -133,19 +134,23 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   }
 
 
-  def renderPage(initialStateJson: String): String = {
+  def renderPage(initialStateJson: String): Option[String] = {
     withJavascriptEngine(engine => {
       val timeBefore = (new ju.Date).getTime
 
       engine.invokeFunction("setInitialStateJson", initialStateJson)
       val pageHtml = engine.invokeFunction("renderReactServerSide").asInstanceOf[String]
+      if (pageHtml == ErrorRenderingReact) {
+        logger.error(s"Error rendering page with React server side [DwE5KGW2]")
+        return None
+      }
 
       def timeElapsed = (new ju.Date).getTime - timeBefore
       def threadId = java.lang.Thread.currentThread.getId
       def threadName = java.lang.Thread.currentThread.getName
       logger.trace(s"Done rendering: $timeElapsed ms, thread $threadName  (id $threadId)")
 
-      pageHtml
+      Some(pageHtml)
     })
   }
 
@@ -250,9 +255,10 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
       throwInternalError("DwE5KGF8", "Could not create Javascript engine; cannot render page.")
     }
 
-    val result = fn(engine.asInstanceOf[js.Invocable])
-    javascriptEngines.addFirst(engine)
-    result
+    try fn(engine.asInstanceOf[js.Invocable])
+    finally {
+      javascriptEngines.addFirst(engine)
+    }
   }
 
 
@@ -289,7 +295,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
         |  catch (e) {
         |    printStackTrace(e);
         |  }
-        |  return "Error rendering React components on server [DwE2GKD92]";
+        |  return '$ErrorRenderingReact';
         |}
         |""")
 
@@ -333,6 +339,9 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
     newEngine
   }
+
+
+  private val ErrorRenderingReact = "__error_rendering_react_5KGF25X8__"
 
 
   private val RenderAndSanitizeCommonMark = i"""

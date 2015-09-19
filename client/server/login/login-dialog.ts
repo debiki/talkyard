@@ -1,3 +1,3 @@
-declare module debiki2.login {
-  var loginDialog: any;
+module debiki2.login {
+  export function getLoginDialog(): any {}
 }

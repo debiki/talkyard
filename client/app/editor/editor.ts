@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/modernizr/modernizr.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../utils/react-utils.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
 
@@ -35,25 +36,27 @@ var $: any = window['jQuery'];
 var NoPostId = -1; // also in reply.js
 
 
-export function createEditor() {
-  var editorElem = document.getElementById('dw-editor');
-  if (editorElem) {
-    theEditor = React.render(Editor({}), editorElem);
+function ensureEditorCreated() {
+  if (!theEditor) {
+    theEditor = React.render(Editor({}), utils.makeMountNode());
   }
 }
 
 
 export function toggleWriteReplyToPost(postId: number, anyPostType?: number) {
+  ensureEditorCreated();
   theEditor.toggleWriteReplyToPost(postId, anyPostType);
 }
 
 
 export function openEditorToEditPost(postId: number) {
+  ensureEditorCreated();
   theEditor.editPost(postId);
 }
 
 
 export function editNewForumPage(categoryId: number, role: PageRole) {
+  ensureEditorCreated();
   theEditor.editNewForumPage(categoryId, role);
 }
 

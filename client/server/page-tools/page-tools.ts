@@ -1,4 +1,4 @@
-declare module debiki2.pagetools {
-  var pageToolsDialog: any;
+module debiki2.pagetools {
+  export function getPageToolsDialog(): any {}
 }
 

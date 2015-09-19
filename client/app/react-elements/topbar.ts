@@ -50,6 +50,11 @@ export var TopBar = createComponent({
     };
   },
 
+  componentWillMount: function() {
+    // We call it from render(). (Is that ok?)
+    pagetools.getPageToolsDialog();
+  },
+
   componentDidMount: function() {
     keymaster('1', this.goToTop);
     keymaster('2', this.goToReplies);
@@ -92,7 +97,7 @@ export var TopBar = createComponent({
 
   onLoginClick: function() {
     // COULD call new fn ReactActions.login() instead?
-    login.loginDialog.open(this.props.purpose || 'LoginToLogin');
+    login.getLoginDialog().open(this.props.purpose || 'LoginToLogin');
   },
 
   onLogoutClick: function() {
@@ -110,7 +115,7 @@ export var TopBar = createComponent({
   },
 
   showTools: function() {
-    pagetools.pageToolsDialog.open();
+    pagetools.getPageToolsDialog().open();
   },
 
   closeSearchForm: function() {
@@ -189,7 +194,8 @@ export var TopBar = createComponent({
         Button({ className: 'dw-admin', onClick: this.goToAdminPage },
           r.a({ className: 'icon-settings' }, 'Admin'));
 
-    var toolsButton = !isStaff(user) || pagetools.pageToolsDialog.isEmpty() ? null :
+    // (Is it ok to call another React component from here? I.e. the page tools dialog.)
+    var toolsButton = !isStaff(user) || pagetools.getPageToolsDialog().isEmpty() ? null :
         Button({ className: 'dw-a-tools', onClick: this.showTools },
           r.a({ className: 'icon-wrench' }, 'Tools'));
 

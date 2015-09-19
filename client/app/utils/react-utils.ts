@@ -62,8 +62,9 @@ function timeAgo(isoDate: string) {
  * Takes 25-30ms for 80 unprocessed comments on my computer, and 2ms for 160
  * that have been processed already.
  */
-function processTimeAgo() {
-  $('.dw-ago').each(function() {
+function processTimeAgo(selector?: string) {
+  selector = selector || '';
+  $(selector + ' .dw-ago').each(function() {
     var $this = $(this);
     if ($this.attr('title'))
       return; // already converted to "x ago" format

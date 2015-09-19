@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../utils/react-utils.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 
@@ -36,14 +37,14 @@ var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 
-export var wikifyDialog;
+var wikifyDialog;
 
 
-export function createWikifyDialog() {
-  var wikifyDialogElem = document.getElementById('dw-react-wikify-dialog');
-  if (wikifyDialogElem) {
-    wikifyDialog = React.render(WikifyDialog(), wikifyDialogElem);
+export function getWikifyDialog() {
+  if (!wikifyDialog) {
+    wikifyDialog = React.render(WikifyDialog(), utils.makeMountNode());
   }
+  return wikifyDialog;
 }
 
 

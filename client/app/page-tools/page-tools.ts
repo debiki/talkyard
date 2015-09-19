@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../utils/react-utils.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 
@@ -37,14 +38,14 @@ var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 
-export var pageToolsDialog;
+var pageToolsDialog;
 
 
-export function createPageToolsDialog() {
-  var elem = document.getElementById('dw-react-page-tools-dialog');
-  if (elem) {
-    pageToolsDialog = React.render(PageToolsDialog(), elem);
+export function getPageToolsDialog() {
+  if (!pageToolsDialog) {
+    pageToolsDialog = React.render(PageToolsDialog(), utils.makeMountNode());
   }
+  return pageToolsDialog;
 }
 
 

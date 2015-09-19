@@ -31,20 +31,7 @@
 var ReactRouter = window['ReactRouter'];
 
 
-export function startEarlyReactRoots() {
-  pagetools.createPageToolsDialog();
-}
-
-
 export function startRemainingReactRoots() {
-  createAnyFlagDialog();
-  pagedialogs.createDeletePostDialog();
-  pagedialogs.createAboutUserDialog();
-  pagedialogs.createServerErrorDialog();
-  pagedialogs.createWikifyDialog();
-  login.createLoginDialog();
-  login.createCreateUserDialogs();
-
   var adminAppElem = document.getElementById('dw-react-admin-app');
   if (adminAppElem) {
     ReactRouter.run(debiki2.admin.routes(), (HandlerComponent) => {
@@ -61,8 +48,6 @@ export function startRemainingReactRoots() {
   var commentsToolbarElem = document.getElementById('dw-comments-toolbar');
   if (commentsToolbarElem)
     React.render(debiki2.reactelements.CommentsToolbar({}), commentsToolbarElem);
-
-  debiki2.editor.createEditor();
 
   var userPageElem = document.getElementById('dw-react-user-page');
   if (userPageElem) {

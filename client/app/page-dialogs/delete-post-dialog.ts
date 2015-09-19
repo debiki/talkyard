@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../utils/react-utils.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 
@@ -38,14 +39,14 @@ var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 
-export var deletePostDialog;
+var deletePostDialog;
 
 
-export function createDeletePostDialog() {
-  var elem = document.getElementById('dw-react-delete-post-dialog');
-  if (elem) {
-    deletePostDialog = React.render(DeletePostDialog(), elem);
+export function getDeletePostDialog() {
+  if (!deletePostDialog) {
+    deletePostDialog = React.render(DeletePostDialog(), utils.makeMountNode());
   }
+  return deletePostDialog;
 }
 
 

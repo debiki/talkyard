@@ -1,5 +1,5 @@
 
-declare module debiki2.pagedialogs {
-  var deletePostDialog: any;
+module debiki2.pagedialogs {
+  export function getDeletePostDialog(): any {}
 }
 

@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../utils/react-utils.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 
@@ -39,17 +40,24 @@ var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 
 
-export var createUserDialog;
+var createUserDialog;
 var addressVerificationEmailSentDialog;
 
-
-export function createCreateUserDialogs() {
-  function makeMountNode() {
-    return $('<div>').appendTo('body')[0];
+/*
+export function getCreateUserDialogs() {
+  if (!createUserDialog) {
+    createUserDialog = React.render(CreateUserDialog(), utils.makeMountNode());
   }
-  createUserDialog = React.render(CreateUserDialog(), makeMountNode());
-  addressVerificationEmailSentDialog =
-      React.render(AddressVerificationEmailSentDialog(), makeMountNode());
+  return createUserDialog;
+} */
+
+
+function getAddressVerificationEmailSentDialog() {
+  if (!addressVerificationEmailSentDialog) {
+    addressVerificationEmailSentDialog =
+        React.render(AddressVerificationEmailSentDialog(), utils.makeMountNode());
+  }
+  return addressVerificationEmailSentDialog;
 }
 
 
@@ -88,7 +96,7 @@ var CreateUserDialog = createClassAndFactory({
   },
   open: function(userData, anyReturnToUrl: string) {
     // In case any login dialog is still open:
-    login.loginDialog.close();
+    login.getLoginDialog().close();
     this.setState({
       isOpen: true,
       userData: userData,
@@ -158,7 +166,7 @@ export var CreateUserDialogContent = createClassAndFactory({
     this.props.closeDialog('CloseAllLoginDialogs');
     if (!response.emailVerifiedAndLoggedIn) {
       ReactActions.newUserAccountCreated();
-      addressVerificationEmailSentDialog.open();
+      getAddressVerificationEmailSentDialog().open();
     }
     else if (this.props.anyReturnToUrl && !debiki.internal.isInLoginPopup &&
         this.props.anyReturnToUrl.search('_RedirFromVerifEmailOnly_') === -1) {

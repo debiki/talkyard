@@ -58,15 +58,21 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
       // The page has been modified, or accessed and was out-of-date. [4KGJW2]
       // There might be many threads and servers that re-render this page.
       if (isStillOutOfDate(sitePageId)) {
-        rerenderContentHtmlUpdateCache(sitePageId)
+        try rerenderContentHtmlUpdateCache(sitePageId)
+        catch {
+          case throwable: Throwable =>
+            p.Logger.error("Error rendering one got-message-about page [DwE5KGP0]", throwable)
+        }
       }
       else {
         p.Logger.debug(o"""Page ${sitePageId.pageId} site ${sitePageId.siteId}
              is up-to-date, ignoring re-render message. [DwE4KPL8]""")
       }
     case RegenerateStaleHtml =>
-      try {
-        findAndUpdateOneOutOfDatePage()
+      try findAndUpdateOneOutOfDatePage()
+      catch {
+        case throwable: Throwable =>
+          p.Logger.error("Error rendering one out-of-date page [DwE4KFW2]", throwable)
       }
       finally {
         context.system.scheduler.scheduleOnce(333 millis, self, RegenerateStaleHtml)
@@ -93,7 +99,10 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
     p.Logger.debug(s"Background rendering ${sitePageId.toPrettyString} [DwM7KGE2]")
     val dao = daoFactory.newSiteDao(sitePageId.siteId)
     val (json, pageVersion) = ReactJson.pageToJson(sitePageId.pageId, dao)
-    val html = ReactRenderer.renderPage(json)
+    val html = ReactRenderer.renderPage(json) getOrElse {
+      p.Logger.error(s"Error rendering ${sitePageId.toPrettyString} [DwE5KJG2]")
+      return
+    }
 
     val wasSaved = dao.readWriteTransaction { transaction =>
       transaction.saveCachedPageContentHtmlPerhapsBreakTransaction(

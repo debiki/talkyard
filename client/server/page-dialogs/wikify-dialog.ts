@@ -1,4 +1,4 @@
 
-declare module debiki2.pagedialogs {
-  var wikifyDialog: any;
+module debiki2.pagedialogs {
+  export function getWikifyDialog(): any {}
 }
