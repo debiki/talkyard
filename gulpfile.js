@@ -30,6 +30,7 @@ var typeScript = require('gulp-typescript');
 var stylus = require('gulp-stylus');
 var minifyCSS = require('gulp-minify-css');
 var concat = require('gulp-concat');
+var del = require('del');
 var rename = require("gulp-rename");
 var header = require('gulp-header');
 var wrap = require('gulp-wrap');
@@ -38,6 +39,8 @@ var gzip = require('gulp-gzip');
 var es = require('event-stream');
 var fs = require("fs");
 var path = require("path");
+var nightwatch = require('gulp-nightwatch');
+var exec = require('child_process').exec;
 
 var watchAndLiveForever = false;
 
@@ -386,12 +389,84 @@ gulp.task('watch', ['default'], function() {
   gulp.watch(['app/views/themes/**/*.css', 'app/views/themesbuiltin/default20121009/styles.css/**/*.css']).on('change', logChangeFn('CSS'));
 });
 
-
 gulp.task('default', ['compile-concat-scripts', 'compile-stylus'], function () {
 });
 
 
 gulp.task('release', ['insert-prod-scripts', 'minify-scripts', 'compile-stylus'], function() {
+});
+
+
+// ---- Tests -------------------------------------------------------------
+
+
+gulp.task('start-server', function() {
+  /* Later:  (for now, start manually)
+  exec('scripts/start-e2e-test-server.sh', ...);
+  exec('scripts/start-e2e-test-database.sh', ...);
+  */
+});
+
+
+// Sometimes Nightwatch crashes (a node.js bug, not Nightwatch) without
+// stopping Selenium. But if Selenium is already running when Nightwatch
+// starts, then Nightwatch complains and aborts.
+//
+gulp.task('stop-selenium', function() {
+  exec('scripts/stop-selenium.sh', function(error, stdout, stderr) {
+    !stdout || console.log("Stop selenium: ", stdout);
+    !stderr || console.log("Stop selenium stderr: ", stderr);
+    !error || console.log("Stop selenium error: ", error);
+  });
+  // This'll finish much faster than TypeScript compilation; don't bother
+  // to return any stream.
+});
+
+
+gulp.task('clean-e2e', function () {
+  return del([
+    'target/e2e-tests/**/*']);
+});
+
+
+var e2eTestsTypescriptProject = typeScript.createProject({
+  target : "ES5",
+  removeComments : false,
+  noImplicitAny : false,
+  noExternalResolve: true,
+  module : "commonjs",
+  declarationFiles : false
+});
+
+
+gulp.task('compile-e2e-scripts', function() {
+  var stream = gulp.src([
+        'test/e2e/**/*.ts',
+        'client/typedefs/**/*.ts'])
+    .pipe(typeScript(e2eTestsTypescriptProject));
+  if (watchAndLiveForever) {
+    stream.on('error', function() {
+      console.log('\n!!! Error compiling End-to-End tests TypeScript !!!\n');
+    });
+  }
+  return stream.pipe(gulp.dest('target/e2e-tests/code/'));
+});
+
+
+// Compiles TypeScript code in test/e2e/ and places it in target/e2e-tests/code/,
+// then starts Nightwatch (which in turn starts Selenium).
+//
+// Example:  gulp e2e --env firefox --tag TestTag
+// The arguments are passed on to Nightwatch.
+//
+gulp.task('e2e', ['start-server', 'stop-selenium', 'clean-e2e', 'compile-e2e-scripts'], function() {
+  var args = process.argv.slice(3).join(' ');  // skips "gulp e2e"
+  console.log('Nightwatch arguments: ' + args);
+  return gulp.src('')
+    .pipe(nightwatch({
+      configFile: 'test/e2e/nightwatch.json',
+      cliArgs: [args],
+    }));
 });
 
 

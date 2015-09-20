@@ -15,6 +15,7 @@
     "jquery-resizable": "=1.0.3"
   },
   "devDependencies": {
+    "del": "^2.0.2",
     "event-stream": "^3.1.1",
     "gulp": "^3.6.0",
     "gulp-concat": "^2.2.0",
@@ -22,6 +23,7 @@
     "gulp-header": "^1.0.2",
     "gulp-minify-css": "^0.3.1",
     "gulp-newer": "^0.3.0",
+    "gulp-nightwatch": "^0.2.4",
     "gulp-react": "^1.0.2",
     "gulp-rename": "^1.2.0",
     "gulp-stylus": "^2.0.6",
