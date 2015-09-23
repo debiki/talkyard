@@ -21,12 +21,14 @@ import actions.ApiActions.PostJsonAction
 import actions.SafeActions.ExceptionAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
+/*
 import com.mohiva.play.silhouette.contrib.services.PlayOAuth1Service
 import com.mohiva.play.silhouette.core.providers._
 import com.mohiva.play.silhouette.core.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.core.providers.oauth2._
 import com.mohiva.play.silhouette
 import com.mohiva.play.silhouette.core.{exceptions => siex}
+*/
 import controllers.Utils.OkSafeJson
 import debiki.DebikiHttp._
 import debiki.Globals
@@ -129,6 +131,7 @@ object LoginWithOpenAuthController extends Controller {
     *                     app/controllers/SocialAuthController.scala#L32
     */
   private def authenticate(providerName: String, request: Request[Unit]): Future[Result] = {
+    ??? /*
     if (anyLoginOrigin.map(_ == originOf(request)) == Some(false)) {
       // OAuth providers have been configured to send authentication data to another
       // origin (namely anyLoginOrigin.get); we need to redirect to that origin
@@ -158,10 +161,11 @@ object LoginWithOpenAuthController extends Controller {
         Future.successful(Results.Forbidden(s"${e.getMessage} [DwE39DG42]"))
       case e: siex.AuthenticationException =>
         Future.successful(Results.Forbidden(s"${e.getMessage} [DwE56FZ21]"))
-    })
+    }) */
   }
 
 
+  /*
   private def handleAuthenticationData(request: Request[Unit], profile: CommonSocialProfile[_])
         : Future[Result] = {
     p.Logger.debug(s"OAuth data received at ${originOf(request)}: $profile")
@@ -208,7 +212,7 @@ object LoginWithOpenAuthController extends Controller {
     }
 
     Future.successful(result)
-  }
+  } */
 
 
   private def login(request: Request[_], oauthDetailsCacheKey: Option[String] = None,
@@ -271,10 +275,12 @@ object LoginWithOpenAuthController extends Controller {
 
 
   private def providerHasVerifiedEmail(oauthDetails: OpenAuthDetails) = {
+    ??? /*
     // Don't know about Facebook and GitHub. Twitter has no emails at all. So for now:
     // (I'm fairly sure Google knows that each Gmail address is owned by the correct user.)
     oauthDetails.providerId == GoogleProvider.Google &&
       oauthDetails.email.exists(_ endsWith "gmail.com")
+       */
   }
 
 
@@ -373,6 +379,7 @@ object LoginWithOpenAuthController extends Controller {
         assErr("DwE2GVM0")
     }
 
+    ??? /*
     val emailVerifiedAt = oauthDetails.email match {
       case Some(e) if e != email =>
         throwForbidden("DwE523FU2", "Cannot change email from ones' OAuth provider email")
@@ -427,7 +434,7 @@ object LoginWithOpenAuthController extends Controller {
         LoginWithPasswordController.sendYouAlreadyHaveAnAccountWithThatAddressEmail(
           request.dao, email, siteHostname = request.host, siteId = request.siteId)
         OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsBoolean(false)))
-    }
+    } */
   }
 
 
@@ -483,6 +490,7 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
+  /*
   private val CacheLayer =
     new silhouette.contrib.utils.PlayCacheLayer
 
@@ -536,7 +544,7 @@ object LoginWithOpenAuthController extends Controller {
       clientID = Play.configuration.getString("silhouette.github.clientID").get,
       clientSecret = Play.configuration.getString("silhouette.github.clientSecret").get,
       scope = Play.configuration.getString("silhouette.github.scope")))
-  }
+  } */
 
 
   private def buildRedirectUrl(request: Request[_], provider: String) = {

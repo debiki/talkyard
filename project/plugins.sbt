@@ -19,7 +19,7 @@ resolvers ++= Seq("snapshots" at "http://oss.sonatype.org/content/repositories/s
                     "releases"  at "http://oss.sonatype.org/content/repositories/releases")
 
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.3.1")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.4.0")
 
 
 // The SBT-Idea plugin, https://github.com/mpeltonen/sbt-idea
@@ -35,13 +35,6 @@ resolvers += "sbt-idea-repo" at "http://mpeltonen.github.com/maven/"
 //addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.1.0")
 //addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.5.1")
 addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.6.0")
-
-
-// Eclipse project files
-// ---------------------------------------------------------------
-addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.1.1")
-// And see `override def settings =` in Build.scala.
-// Generate Eclipse project files like so: `eclipse with-source=true` (in SBT)
 
 
 // Dependency tree, https://github.com/jrudolph/sbt-dependency-graph
