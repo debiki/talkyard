@@ -284,7 +284,7 @@ trait CachingDao extends CacheEvents {
     if (elem eq null)
       return FirstSiteCacheVersion
 
-    val value = elem.getValue
+    val value = elem.getObjectValue
     alwaysAssert(value.isInstanceOf[Long], "DwE996F2")
     value.asInstanceOf[Long]
   }

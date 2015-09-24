@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Kaj Magnus Lindberg
+ * Copyright (C) 2014-2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,21 +21,19 @@ import actions.ApiActions.PostJsonAction
 import actions.SafeActions.ExceptionAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
-/*
-import com.mohiva.play.silhouette.contrib.services.PlayOAuth1Service
-import com.mohiva.play.silhouette.core.providers._
-import com.mohiva.play.silhouette.core.providers.oauth1.TwitterProvider
-import com.mohiva.play.silhouette.core.providers.oauth2._
-import com.mohiva.play.silhouette
-import com.mohiva.play.silhouette.core.{exceptions => siex}
-*/
+import com.mohiva.play.silhouette.impl.providers.oauth1.services.PlayOAuth1Service
+import com.mohiva.play.silhouette.{api => sia, impl => sii}
+import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
+import com.mohiva.play.silhouette.impl.providers.oauth2._
+import com.mohiva.play.silhouette.impl.providers._
 import controllers.Utils.OkSafeJson
+import debiki.{JsFalse, JsTrue}
 import debiki.DebikiHttp._
 import debiki.Globals
 import debiki.RateLimits
 import java.{util => ju}
 import org.scalactic.{Good, Bad}
-import play.api.libs.json.{Json, JsBoolean}
+import play.api.libs.json.Json
 import play.{api => p}
 import play.api.mvc._
 import play.api.mvc.BodyParsers.parse.empty
@@ -131,42 +129,41 @@ object LoginWithOpenAuthController extends Controller {
     *                     app/controllers/SocialAuthController.scala#L32
     */
   private def authenticate(providerName: String, request: Request[Unit]): Future[Result] = {
-    ??? /*
+
     if (anyLoginOrigin.map(_ == originOf(request)) == Some(false)) {
       // OAuth providers have been configured to send authentication data to another
       // origin (namely anyLoginOrigin.get); we need to redirect to that origin
       // and login from there.
       return loginViaLoginOrigin(providerName, request)
     }
-    val provider: SocialProvider[_] with CommonSocialProfileBuilder[_] = providerName match {
-      case FacebookProvider.Facebook =>
+    val provider: SocialProvider with CommonSocialProfileBuilder = providerName match {
+      case FacebookProvider.ID =>
         facebookProvider(request)
-      case GoogleProvider.Google =>
+      case GoogleProvider.ID =>
         googleProvider(request)
-      case TwitterProvider.Twitter =>
+      case TwitterProvider.ID =>
         twitterProvider(request)
-      case GitHubProvider.GitHub =>
+      case GitHubProvider.ID =>
         githubProvider(request)
       case x =>
         return Future.successful(Results.Forbidden(s"Bad provider: `$providerName' [DwE2F0D6]"))
     }
-    val authFutureResult = provider.authenticate()(request)
-    authFutureResult.flatMap {
+    provider.authenticate()(request) flatMap {
       case Left(result) =>
         Future.successful(result)
-      case Right(profile: provider.Profile) =>
-        handleAuthenticationData(request, profile)
-    }.recoverWith({
-      case e: siex.AccessDeniedException =>
+      case Right(authInfo) =>
+        val futureProfile: Future[CommonSocialProfile] = provider.retrieveProfile(authInfo)
+        futureProfile flatMap { profile =>
+          handleAuthenticationData(request, profile)
+        }
+    } recoverWith {
+      case e: sia.exceptions.ProviderException =>
         Future.successful(Results.Forbidden(s"${e.getMessage} [DwE39DG42]"))
-      case e: siex.AuthenticationException =>
-        Future.successful(Results.Forbidden(s"${e.getMessage} [DwE56FZ21]"))
-    }) */
+    }
   }
 
 
-  /*
-  private def handleAuthenticationData(request: Request[Unit], profile: CommonSocialProfile[_])
+  private def handleAuthenticationData(request: Request[Unit], profile: CommonSocialProfile)
         : Future[Result] = {
     p.Logger.debug(s"OAuth data received at ${originOf(request)}: $profile")
 
@@ -212,7 +209,7 @@ object LoginWithOpenAuthController extends Controller {
     }
 
     Future.successful(result)
-  } */
+  }
 
 
   private def login(request: Request[_], oauthDetailsCacheKey: Option[String] = None,
@@ -254,10 +251,15 @@ object LoginWithOpenAuthController extends Controller {
                 createCookiesAndFinishLogin(request, loginGrant.user)
               }
               else {
-                throwForbidden("DwE7KGE32", o"""Please login via username and password instead.
-                  The reason you cannot currently login via ${oauthDetails.providerId}
-                  is that I don't know for sure if ${oauthDetails.providerId} has verified
-                  that your email address is really yours. Sorry about that.""")
+                throwForbidden("DwE7KGE32", o"""A user with the same email address as
+                  the user you're trying to login as, already exists. Please login as
+                  that user in the way you usually login, but not via ${oauthDetails.providerId}.
+                  (The reason we don't currently let you login via ${oauthDetails.providerId}
+                  is that we don't know if ${oauthDetails.providerId} has verified that
+                  the mail address is really yours.)""")
+                // If the user does *not* own the email address, s/he would be able to
+                // impersonate another user, when his/her new account gets associated with
+                // the old one just because they have the same email address.
               }
             case None =>
               if (mayCreateNewUser) {
@@ -275,12 +277,10 @@ object LoginWithOpenAuthController extends Controller {
 
 
   private def providerHasVerifiedEmail(oauthDetails: OpenAuthDetails) = {
-    ??? /*
     // Don't know about Facebook and GitHub. Twitter has no emails at all. So for now:
     // (I'm fairly sure Google knows that each Gmail address is owned by the correct user.)
-    oauthDetails.providerId == GoogleProvider.Google &&
+    oauthDetails.providerId == GoogleProvider.ID &&
       oauthDetails.email.exists(_ endsWith "gmail.com")
-       */
   }
 
 
@@ -292,7 +292,7 @@ object LoginWithOpenAuthController extends Controller {
         // We've shown but closed an OAuth provider login popup, and now we're
         // handling a create-user Ajax request from a certain showCreateUserDialog()
         // Javascript dialog. It already knows about any pending redirects.
-        OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsBoolean(true)))
+        OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsTrue))
       }
       else {
         def loginPopupCallback =
@@ -379,15 +379,14 @@ object LoginWithOpenAuthController extends Controller {
         assErr("DwE2GVM0")
     }
 
-    ??? /*
     val emailVerifiedAt = oauthDetails.email match {
       case Some(e) if e != email =>
         throwForbidden("DwE523FU2", "Cannot change email from ones' OAuth provider email")
       case Some(e) =>
         // Twitter and GitHub provide no email, or I don't know if any email has been verified.
         // Google and Facebook emails have been verified though.
-        if (oauthDetails.providerId == GoogleProvider.Google ||
-            oauthDetails.providerId == FacebookProvider.Facebook) {
+        if (oauthDetails.providerId == GoogleProvider.ID ||
+            oauthDetails.providerId == FacebookProvider.ID) {
           Some(request.ctime)
         }
         else {
@@ -417,7 +416,7 @@ object LoginWithOpenAuthController extends Controller {
       else {
         LoginWithPasswordController.sendEmailAddressVerificationEmail(
           loginGrant.user, anyReturnToUrl, request.host, request.dao)
-        OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsBoolean(false)))
+        OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsFalse))
       }
     }
     catch {
@@ -433,8 +432,8 @@ object LoginWithOpenAuthController extends Controller {
         // Don't indicate that there is already an account with this email.
         LoginWithPasswordController.sendYouAlreadyHaveAnAccountWithThatAddressEmail(
           request.dao, email, siteHostname = request.host, siteId = request.siteId)
-        OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsBoolean(false)))
-    } */
+        OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsFalse))
+    }
   }
 
 
@@ -490,18 +489,24 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  /*
-  private val CacheLayer =
-    new silhouette.contrib.utils.PlayCacheLayer
-
   private val HttpLayer =
-    new silhouette.core.utils.PlayHTTPLayer
+    new sia.util.PlayHTTPLayer(play.api.libs.ws.WS.client)
 
+  private val Oauth2StateProvider = new sii.providers.oauth2.state.CookieStateProvider(
+    sii.providers.oauth2.state.CookieStateSettings(
+      cookieName = "dwCoOAuth2State", secureCookie = Globals.secure),
+    new sii.util.SecureRandomIDGenerator(),
+    sia.util.Clock())
+
+  private val OAuth1TokenSecretProvider = new sii.providers.oauth1.secrets.CookieSecretProvider(
+    sii.providers.oauth1.secrets.CookieSecretSettings(
+      cookieName = "dwCoOAuth1TokenSecret", secureCookie = Globals.secure),
+    sia.util.Clock())
 
   private def googleProvider(request: Request[Unit])
-        : GoogleProvider with CommonSocialProfileBuilder[OAuth2Info] = {
-    GoogleProvider(CacheLayer, HttpLayer, OAuth2Settings(
-      authorizationURL = Play.configuration.getString("silhouette.google.authorizationURL").get,
+        : GoogleProvider with CommonSocialProfileBuilder = {
+    new GoogleProvider(HttpLayer, Oauth2StateProvider, OAuth2Settings(
+      authorizationURL = Play.configuration.getString("silhouette.google.authorizationURL"),
       accessTokenURL = Play.configuration.getString("silhouette.google.accessTokenURL").get,
       redirectURL = buildRedirectUrl(request, "google"),
       clientID = Play.configuration.getString("silhouette.google.clientID").get,
@@ -511,9 +516,9 @@ object LoginWithOpenAuthController extends Controller {
 
 
   private def facebookProvider(request: Request[Unit])
-        : FacebookProvider with CommonSocialProfileBuilder[OAuth2Info] = {
-    FacebookProvider(CacheLayer, HttpLayer, OAuth2Settings(
-      authorizationURL = Play.configuration.getString("silhouette.facebook.authorizationURL").get,
+        : FacebookProvider with CommonSocialProfileBuilder = {
+    new FacebookProvider(HttpLayer, Oauth2StateProvider, OAuth2Settings(
+      authorizationURL = Play.configuration.getString("silhouette.facebook.authorizationURL"),
       accessTokenURL = Play.configuration.getString("silhouette.facebook.accessTokenURL").get,
       redirectURL = buildRedirectUrl(request, "facebook"),
       clientID = Play.configuration.getString("silhouette.facebook.clientID").get,
@@ -523,7 +528,7 @@ object LoginWithOpenAuthController extends Controller {
 
 
   private def twitterProvider(request: Request[Unit])
-        : TwitterProvider with CommonSocialProfileBuilder[OAuth1Info] = {
+        : TwitterProvider with CommonSocialProfileBuilder = {
     val settings = OAuth1Settings(
       requestTokenURL = Play.configuration.getString("silhouette.twitter.requestTokenURL").get,
       accessTokenURL = Play.configuration.getString("silhouette.twitter.accessTokenURL").get,
@@ -531,20 +536,21 @@ object LoginWithOpenAuthController extends Controller {
       callbackURL = buildRedirectUrl(request, "twitter"),
       consumerKey = Play.configuration.getString("silhouette.twitter.consumerKey").get,
       consumerSecret = Play.configuration.getString("silhouette.twitter.consumerSecret").get)
-    TwitterProvider(CacheLayer, HttpLayer, new PlayOAuth1Service(settings), settings)
+    new TwitterProvider(
+      HttpLayer, new PlayOAuth1Service(settings), OAuth1TokenSecretProvider, settings)
   }
 
 
   private def githubProvider(request: Request[Unit])
-        : GitHubProvider with CommonSocialProfileBuilder[OAuth2Info] = {
-    GitHubProvider(CacheLayer, HttpLayer, OAuth2Settings(
-      authorizationURL = Play.configuration.getString("silhouette.github.authorizationURL").get,
+        : GitHubProvider with CommonSocialProfileBuilder = {
+    new GitHubProvider(HttpLayer, Oauth2StateProvider, OAuth2Settings(
+      authorizationURL = Play.configuration.getString("silhouette.github.authorizationURL"),
       accessTokenURL = Play.configuration.getString("silhouette.github.accessTokenURL").get,
       redirectURL = buildRedirectUrl(request, "github"),
       clientID = Play.configuration.getString("silhouette.github.clientID").get,
       clientSecret = Play.configuration.getString("silhouette.github.clientSecret").get,
       scope = Play.configuration.getString("silhouette.github.scope")))
-  } */
+  }
 
 
   private def buildRedirectUrl(request: Request[_], provider: String) = {
