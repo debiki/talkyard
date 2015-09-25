@@ -43,13 +43,13 @@ var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 var createUserDialog;
 var addressVerificationEmailSentDialog;
 
-/*
-export function getCreateUserDialogs() {
+
+function getCreateUserDialogs() {
   if (!createUserDialog) {
     createUserDialog = React.render(CreateUserDialog(), utils.makeMountNode());
   }
   return createUserDialog;
-} */
+}
 
 
 function getAddressVerificationEmailSentDialog() {
@@ -86,7 +86,7 @@ debiki.internal.makeReturnToPostUrlForVerifEmail = function(postId) {
  * userData: { name, email, authDataCacheKey }
  */
 debiki.internal.showCreateUserDialog = function(userData, anyReturnToUrl) {
-  createUserDialog.open(userData, anyReturnToUrl);
+  getCreateUserDialogs().open(userData, anyReturnToUrl);
 };
 
 

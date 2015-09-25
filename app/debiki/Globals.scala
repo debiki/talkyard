@@ -66,8 +66,8 @@ class Globals {
   val applicationVersion = "0.00.00"  // later, read from some build config file
 
   val applicationSecret =
-    Play.configuration.getString("application.secret").getOrDie(
-      "application.secret config value missing [DwE75FX0]")
+    Play.configuration.getString("play.crypto.secret").getOrDie(
+      "Config value 'play.crypto.secret' missing [DwE75FX0]")
 
 
   def systemDao = state.systemDao

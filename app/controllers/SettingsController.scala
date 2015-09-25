@@ -52,7 +52,7 @@ object SettingsController extends mvc.Controller {
     val tyype = (body \ "type").as[String]
     val name = (body \ "name").as[String]
 
-    val newValue: Any = (body \ "newValue") match {
+    val newValue: Any = (body \ "newValue").get match {
       case JsBoolean(value) =>
         value
       case JsNumber(value: BigDecimal) =>

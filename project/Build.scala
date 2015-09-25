@@ -17,8 +17,8 @@
 
 import sbt._
 import Keys._
-import com.typesafe.sbteclipse.plugin.EclipsePlugin.EclipseKeys
 import java.{net => jn}
+import play.sbt.PlayImport._
 
 object ApplicationBuild extends Build {
 
@@ -41,7 +41,7 @@ object ApplicationBuild extends Build {
     play.Play.autoImport.cache,
     play.Play.autoImport.filters,
     // Authentication.
-    "com.mohiva" %% "play-silhouette" % "1.0",
+    "com.mohiva" %% "play-silhouette" % "3.0.4",
     // There's a PostgreSQL 903 build number too but it's not in the Maven repos.
     // PostgreSQL 9.2 drivers are also not in the Maven repos (as of May 2013).
     "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
@@ -73,16 +73,6 @@ object ApplicationBuild extends Build {
     "org.seleniumhq.selenium" % "selenium-java" % "2.35.0" % "test")
 
 
-  // Make `idea with-sources` work in subprojects.
-  // No longer needed, don't know why.
-  override def settings =
-    super.settings ++
-    // By default, sbteclipse skips parent projects.
-    // See the "skipParents" section, here:
-    // https://github.com/typesafehub/sbteclipse/wiki/Using-sbteclipse
-    Seq(EclipseKeys.skipParents := false, resolvers := Seq())
-
-
   val main = Project(appName, file(".")).enablePlugins(play.PlayScala)
     .settings(mainSettings: _*)
     .dependsOn(debikiCore % "test->test;compile->compile", debikiDaoRdb)
@@ -91,7 +81,18 @@ object ApplicationBuild extends Build {
   def mainSettings = List(
     version := appVersion,
     libraryDependencies ++= appDependencies,
-    scalaVersion := "2.11.1",
+    scalaVersion := "2.11.7",
+
+    // Silhouette needs com.atlassian.jwt:jwt-core and jwt-api, but there's a problem:
+    // """the problem is that the jwt-lib is hosted on bintray.com and then mirrored to
+    // the typesafe.com repository. It seems that the typesafe repository uses a redirect
+    // which sbt doesn't understand""" (says akkie = Christian Kaps the Silhouette author)
+    // with a solution:
+    //   https://github.com/mohiva/play-silhouette-seed/issues/20#issuecomment-75367376
+    // namely to add the Atlassian repo before the Typesafe repo:
+    resolvers :=
+      ("Atlassian Releases" at "https://maven.atlassian.com/public/") +:
+        Keys.resolvers.value,
 
     // Disable ScalaDoc generation, it breaks seemingly because I'm compiling some Javascript
     // files to Java, and ScalaDoc complains the generated classes don't exist and breaks

@@ -98,6 +98,10 @@ object CachingDao {
     * creates its per-application cache, namely exactly like below.
     */
   private lazy val ehcache: net.sf.ehcache.Ehcache = {
+    // Ensure Play has created its default cache:
+    import play.api.Play.current
+    play.api.cache.Cache.get("dummy")
+    // Then fetch and reuse that default cache:
     val playCache = net.sf.ehcache.CacheManager.create().getCache("play")
     // Results in "java.lang.NoSuchMethodError: net.sf.ehcache.Ehcache.getStatistics":
     //com.codahale.metrics.ehcache.InstrumentedEhcache.instrument(Globals.metricRegistry, playCache)
@@ -280,7 +284,7 @@ trait CachingDao extends CacheEvents {
     if (elem eq null)
       return FirstSiteCacheVersion
 
-    val value = elem.getValue
+    val value = elem.getObjectValue
     alwaysAssert(value.isInstanceOf[Long], "DwE996F2")
     value.asInstanceOf[Long]
   }
