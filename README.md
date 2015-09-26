@@ -1,8 +1,9 @@
 Debiki Server
 =============================
 
-Debiki is an open source discussion platform for forums, blogs, embedded comments
-and simple websites. Read more, and see it live, at http://www.debiki.com/.
+Debiki (now I've renamed it to EffectiveDiscussions though) is an open source
+combined forum and question & answers platform.  Read more, and see it live, at
+http://www.effectivediscussions.org/.
 
 Debiki is under development and there is currently no stable version or simple
 installation instructions.
@@ -10,6 +11,11 @@ installation instructions.
 
 Getting Started
 -----------------------------
+
+*Warning:* I suggest that you don't try to get started, right now, because I
+haven't tested these getting-started instructions the last 6 months or so, so
+they might no longer work.  Anyway, the instructions:
+
 
 You'll need to install Docker (see below), clone a Git repo, and run some scripts.
 
@@ -63,8 +69,7 @@ watch`.
 Technology
 -----------------------------
 
-Client: React.js, TypeScript, Bower, Gulp. Some old code uses LiveScript and
-AngularJS and jQuery.
+Client: React.js, TypeScript, Bower, Gulp.
 
 Server: Scala and Play Framework. We render HTML server side by running
 React.js in Java 8's Nashorn Javascript engine.
@@ -76,7 +81,7 @@ Contributing
 -----------------------------
 
 If you'd like to contribute, read more
-[at the end of this page](http://www.debiki.com/-81n25/source-code) about contributing.
+[at the end of this page](http://www.effectivediscussions.com/-81n25/source-code) about contributing.
 
 In the future, I suppose there will be a Contributor License Agreement (CLA), similar to
 [Google's CLA](https://developers.google.com/open-source/cla/individual) — you'd open
@@ -94,7 +99,6 @@ This project looks like so:
      +-client/         <-- Javascript, CSS, React.js components
      | +-app/          <-- Client side code
      | +-server/       <-- React.js components rendered server side
-     | +-admin-app/    <-- The admin pages
      | +...
      |
      +-app/            <-- Scala code — a Play Framework 2 app
@@ -133,7 +137,7 @@ https://github.com/debiki/debiki-server-old
 License
 -----------------------------
 
-Currently AGPL — please let me know if you want me to change to GPL, contact info here: http://www.debiki.com/about/
+Currently AGPL — please let me know if you want me to change to GPL, contact info here: http://www.effectivediscussions.com/about/
 
 
     Copyright (C) 2010-2015  Kaj Magnus Lindberg
