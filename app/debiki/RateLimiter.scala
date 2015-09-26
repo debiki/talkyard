@@ -96,7 +96,7 @@ object RateLimiter {
 
     val now: UnixTime = (request.ctime.getTime / 1000).toInt // change before year 2038
 
-    throwIfTooManyRequests(rateLimits, now, requestTimestamps)
+    throwIfTooManyRequests(rateLimits, now, requestTimestamps, key)
 
     // Ignore race conditions. Other parts of the architecture ought to ensure we
     // don't get to here more than at most a few times each second, for each key.
@@ -120,7 +120,7 @@ object RateLimiter {
 
 
   def throwIfTooManyRequests(rateLimits: RateLimits, now: UnixTime,
-        recentRequestTimestamps: Array[UnixTime]) {
+        recentRequestTimestamps: Array[UnixTime], key: String) {
 
     var index = 0
     var numRequestsLast15Seconds = 0
@@ -154,6 +154,7 @@ object RateLimiter {
       else
         return
 
+    play.api.Logger.debug(s"Rate limiting ${classNameOf(rateLimits)} for key: $key [DwM429RLMT]")
     throwTooManyRequests(errorMessage)
   }
 

@@ -72,7 +72,9 @@ object Debiki {
     ds.setUser(user)
     ds.setPassword(password)
     ds.setInitialConnections(2)
-    ds.setMaxConnections(10)
+    // Currently I'm sometimes using > 1 connection per http request (will fix later),
+    // so in order to avoid out-of-connection deadlocks, set a large pool size.
+    ds.setMaxConnections(100)
     ds.setPrepareThreshold(3)
 
     play.Logger.info(s"""Connected to database: $server:$port/$dbName as $user""")

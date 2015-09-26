@@ -32,6 +32,7 @@ import play.api.mvc._
 import requests._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success}
 
 
 /** Play Framework Actions for requests to Debiki's HTTP API.
@@ -148,7 +149,7 @@ object ApiActions {
       RateLimiter.rateLimit(rateLimits, apiRequest)
 
       // COULD use markers instead for site id and ip, and perhaps uri too? Dupl code [5KWC28]
-      val requestUriAndIp = s"site $siteId, ip ${request.remoteAddress}: ${request.uri}"
+      val requestUriAndIp = s"site $siteId, ip ${apiRequest.ip}: ${apiRequest.uri}"
       p.Logger.debug(s"API request started [DwM6L8], " + requestUriAndIp)
 
       val timer = Globals.metricRegistry.timer(request.path)
@@ -160,8 +161,14 @@ object ApiActions {
         timerContext.stop()
       }
 
-      // Response not yet sent though, if async.
-      p.Logger.debug(s"API request ended [DwM9Z2], " + requestUriAndIp)
+      result onComplete {
+        case Success(r) =>
+          p.Logger.debug(
+            s"API request ended, status ${r.header.status} [DwM9Z2], $requestUriAndIp")
+        case Failure(exception) =>
+          p.Logger.debug(
+            s"API request exception: ${classNameOf(exception)} [DwE4P7], $requestUriAndIp")
+      }
 
       if (logoutBecauseSuspended) {
         // We won't get here if e.g. a 403 Forbidden exception was thrown because 'user' was

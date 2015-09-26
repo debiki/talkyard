@@ -104,7 +104,7 @@ object PageActions {
     RateLimiter.rateLimit(rateLimitsType, pageReq)
 
     // COULD use markers instead for site id and ip, and perhaps uri too? Dupl code [5KWC28]
-    val requestUriAndIp = s"site $siteId, ip ${request.remoteAddress}: ${request.uri}"
+    val requestUriAndIp = s"site $siteId, ip ${pageReq.ip}: ${request.uri}"
     p.Logger.debug(s"Page request started [DwM4W7], " + requestUriAndIp)
 
     val timer = Globals.metricRegistry.timer("?view")
@@ -116,8 +116,7 @@ object PageActions {
       timerContext.stop()
     }
 
-    // Response not yet sent though, if async.
-    p.Logger.debug(s"Page request ended [DwM2F5], " + requestUriAndIp)
+    p.Logger.debug(s"Page request ended, code ${result.header.status} [DwM2F5], $requestUriAndIp")
     result
   }
 
@@ -140,7 +139,8 @@ object PageActions {
           } else {
             Results.MovedPermanently(correct.value)
           }
-        case None => f(request.sidStatus, request.xsrfOk, request.browserId, None, dao, request.underlying)
+        case None => f(request.sidStatus, request.xsrfOk, request.browserId, None,
+          dao, request.underlying)
       }
     }
 
