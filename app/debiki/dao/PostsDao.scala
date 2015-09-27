@@ -346,6 +346,10 @@ trait PostsDao {
 
       // Update the directly affected post.
       val postAfter = action match {
+        case PSA.HidePost =>
+          postBefore.copyWithNewStatus(transaction.currentTime, userId, postHidden = true)
+        case PSA.UnhidePost =>
+          postBefore.copyWithNewStatus(transaction.currentTime, userId, postUnhidden = true)
         case PSA.CloseTree =>
           postBefore.copyWithNewStatus(transaction.currentTime, userId, treeClosed = true)
         case PSA.CollapsePost =>

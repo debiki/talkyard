@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+var BodyId = 1;
 
 enum PinPageWhere {
   InCategory = 1,

@@ -189,12 +189,32 @@ export var TitleEditor = createComponent({
         r.option({ value: PageRole.MindMap }, 'Wiki Mind Map'),
         r.option({ value: PageRole.Discussion }, 'Other'));
 
+    var editForumIntroButton;
+    var hideShowIntroButton;
+    if (this.props.pageRole === PageRole.Forum) {
+      var introPost = this.props.allPosts[BodyId];
+      var hasIntro = introPost && introPost.sanitizedHtml && !introPost.isPostHidden;
+      if (hasIntro) {
+        editForumIntroButton =
+            r.a({ className: 'icon-edit', onClick: () => editor.openEditorToEditPost(BodyId) },
+              "Edit intro text");
+        hideShowIntroButton =
+            r.a({ className: 'icon-eye-off', onClick: () => ReactActions.hidePost(BodyId, true) },
+              "Hide intro");
+      }
+      else {
+        hideShowIntroButton =
+            r.a({ className: 'icon-eye', onClick: () => ReactActions.hidePost(BodyId, false) },
+              "Show forum intro (just below)");
+      }
+    }
+
     var saveCancel = this.state.isSaving
       ? r.div({}, 'Saving...')
-      : r.div({},
+      : r.div({ className: 'dw-save-btns-etc' },
           Button({ onClick: this.save }, 'Save'),
           Button({ onClick: this.props.closeEditor }, 'Cancel'),
-          showAdvancedButton);
+          showAdvancedButton, editForumIntroButton, hideShowIntroButton);
 
     return (
       r.div({ className: 'dw-p-ttl-e' },

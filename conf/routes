@@ -129,6 +129,7 @@ POST  /-/pin-at-position        controllers.PinController.pinAtPosition
 POST  /-/pin-page               controllers.PinController.pinPage
 POST  /-/unpin-page             controllers.PinController.unpinPage
 
+POST  /-/hide-post              controllers.CloseCollapseController.hidePost
 POST  /-/collapse-post          controllers.CloseCollapseController.collapsePost
 POST  /-/collapse-tree          controllers.CloseCollapseController.collapseTree
 POST  /-/close-tree             controllers.CloseCollapseController.closeTree

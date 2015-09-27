@@ -41,10 +41,6 @@ $topbarBorderButtonPaddingTop = $topbarButtonPaddingTop - 1px;
         width: 500px;
 
   .btn
-    margin-left: 10px;
-    border-radius: 0;
-    border: none;
-
     &.dw-scrollback,
     &.dw-clear-scroll,
     &.dw-login,
@@ -66,6 +62,7 @@ $topbarBorderButtonPaddingTop = $topbarButtonPaddingTop - 1px;
       color: hsl(0, 0%, 23%);
       background: white;
       border: 1px solid hsl(0, 0%, 70%);
+      border-radius: 0;
 
       padding: $topbarBorderButtonPaddingTop 8px 3px 8px;
       &.dw-scrollback
@@ -112,6 +109,11 @@ $topbarBorderButtonPaddingTop = $topbarButtonPaddingTop - 1px;
   #dw-topbar-btns
     float: right;
     margin-top: 15px;
+
+    .btn
+      margin-left: 10px;
+      border-radius: 0;
+      border: none;
 
     .dw-name
       font-weight: bold;

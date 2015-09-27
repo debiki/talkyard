@@ -559,6 +559,11 @@ export function flagPost(postId: string, flagType: string, reason: string, succe
 }
 
 
+export function hidePostInPage(postNr: number, hide: boolean, success: (postAfter: Post) => void) {
+  postJsonSuccess('/-/hide-post', success, { pageId: d.i.pageId, postNr: postNr, hide: hide });
+}
+
+
 export function deletePostInPage(postId: number, repliesToo: boolean,
       success: (deletedPost) => void) {
   postJsonSuccess('/-/delete-post', success, {

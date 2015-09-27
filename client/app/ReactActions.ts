@@ -186,6 +186,17 @@ export function editTitleAndSettings(newTitle: string, settings: any, success: (
 }
 
 
+export function hidePost(postNr: number, hide: boolean, success?: () => void) {
+  Server.hidePostInPage(postNr, hide, (postAfter) => {
+    if (success) success();
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.UpdatePost,
+      post: postAfter
+    });
+  });
+}
+
+
 export function deletePost(postNr: number, repliesToo: boolean, success: () => void) {
   Server.deletePostInPage(postNr, repliesToo, (deletedPost) => {
     success();

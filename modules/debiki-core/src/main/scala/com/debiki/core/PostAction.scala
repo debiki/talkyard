@@ -44,6 +44,8 @@ object PostFlagType {
 
 sealed abstract class PostStatusAction
 object PostStatusAction {
+  case object HidePost extends PostStatusAction
+  case object UnhidePost extends PostStatusAction
   case object CloseTree extends PostStatusAction
   case object CollapsePost extends PostStatusAction
   case object CollapseTree extends PostStatusAction

@@ -34,27 +34,33 @@ import requests.JsonPostRequest
 object CloseCollapseController extends mvc.Controller {
 
 
-  def collapsePost = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 5000) { apiReq =>
-    closeOrReopenTree(apiReq, PostStatusAction.CollapsePost)
+  def hidePost = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 100) { apiReq =>
+    val hide = (apiReq.body \ "hide").as[Boolean]
+    changeStatus(apiReq, if (hide) PostStatusAction.HidePost else PostStatusAction.UnhidePost)
   }
 
 
-  def collapseTree = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 5000) { apiReq =>
-    closeOrReopenTree(apiReq, PostStatusAction.CollapseTree)
+  def collapsePost = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 100) { apiReq =>
+    changeStatus(apiReq, PostStatusAction.CollapsePost)
   }
 
 
-  def closeTree = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 5000) { apiReq =>
-    closeOrReopenTree(apiReq, PostStatusAction.CloseTree)
+  def collapseTree = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 100) { apiReq =>
+    changeStatus(apiReq, PostStatusAction.CollapseTree)
   }
 
 
-  private def closeOrReopenTree(apiReq: JsonPostRequest, action: PostStatusAction): mvc.Result = {
+  def closeTree = PostJsonAction(RateLimits.CloseCollapsePost, maxLength = 100) { apiReq =>
+    changeStatus(apiReq, PostStatusAction.CloseTree)
+  }
+
+
+  private def changeStatus(apiReq: JsonPostRequest, action: PostStatusAction): mvc.Result = {
     if (!apiReq.user_!.isAdmin)
-      throwForbidden("DwE95Xf2", "Insufficient permissions to close and reopen threads")
+      throwForbidden("DwE95Xf2", "Insufficient permissions to change post or thread status")
 
     val pageId = (apiReq.body \ "pageId").as[PageId]
-    val postId = (apiReq.body \ "postId").as[PostId]
+    val postId = (apiReq.body \ "postNr").as[PostId]
 
     apiReq.dao.changePostStatus(postId, pageId = pageId, action, userId = apiReq.theUserId)
 

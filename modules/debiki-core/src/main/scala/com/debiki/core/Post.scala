@@ -322,6 +322,8 @@ case class Post(
   def copyWithNewStatus(
     currentTime: ju.Date,
     userId: UserId,
+    postHidden: Boolean = false,
+    postUnhidden: Boolean = false,
     postCollapsed: Boolean = false,
     treeCollapsed: Boolean = false,
     ancestorsCollapsed: Boolean = false,
@@ -330,6 +332,20 @@ case class Post(
     postDeleted: Boolean = false,
     treeDeleted: Boolean = false,
     ancestorsDeleted: Boolean = false): Post = {
+
+    var newHiddenAt = hiddenAt
+    var newHiddenById = hiddenById
+    if (postHidden && postUnhidden) {
+      die("DwE6KUP2")
+    }
+    else if (postHidden && !isHidden) {
+      newHiddenAt = Some(currentTime)
+      newHiddenById = Some(userId)
+    }
+    else if (postUnhidden && isHidden) {
+      newHiddenAt = None
+      newHiddenById = None
+    }
 
     // You can collapse a post, although an ancestor is already collapsed. Collapsing it,
     // simply means that it'll remain collapsed, even if the ancestor gets expanded.
@@ -390,6 +406,8 @@ case class Post(
     }
 
     copy(
+      hiddenAt = newHiddenAt,
+      hiddenById = newHiddenById,
       collapsedStatus = new CollapsedStatus(newCollapsedUnderlying),
       collapsedById = newCollapsedById,
       collapsedAt = newCollapsedAt,

@@ -90,11 +90,25 @@ var ForumComponent = React.createClass({
 
   render: function() {
     return (
-      r.div({ className: 'container' },
+      r.div({ className: 'container dw-forum' },
         debiki2.reactelements.TopBar({}),
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
         r.div({ className: 'dw-page' }),
+        ForumIntroText(this.state || this.props),
         CategoriesAndTopics(this.state || this.props)));
+  }
+});
+
+
+
+var ForumIntroText = createComponent({
+  render: function() {
+    var introPost = this.props.allPosts[BodyId];
+    if (!introPost || introPost.isPostHidden)
+      return null;
+
+    return r.div({ className: 'dw-forum-intro',
+        dangerouslySetInnerHTML: { __html: introPost.sanitizedHtml }});
   }
 });
 

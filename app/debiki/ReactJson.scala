@@ -401,6 +401,8 @@ object ReactJson {
       "childIdsSorted" -> JsArray(childrenSorted.map(reply => JsNumber(reply.id))),
       "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml))
 
+    if (post.isHidden) fields :+= "isPostHidden" -> JsTrue
+
     if (author.isSuspendedAt(currentTime)) {
       author.suspendedTill match {
         case None => fields :+= "authorSuspendedTill" -> JsString("Forever")
