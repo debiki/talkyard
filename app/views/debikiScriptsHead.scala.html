@@ -95,6 +95,12 @@ document.documentElement.className += ' js';
     delete __reactStore.allPosts[underscorePostId];
   }
 
+  var hideIntro = localStorage.getItem('hideForumIntro')
+  __reactStore.hideForumIntro = hideIntro && hideIntro !== 'false';
+  if (__reactStore.hideForumIntro) {
+    document.documentElement.className += ' dw-hide-forum-intro';
+  }
+
   var debiki = {
     siteId: '@siteId',
     currentVersion: '@tpi.currentVersionString',

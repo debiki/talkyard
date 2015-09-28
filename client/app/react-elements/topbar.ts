@@ -220,7 +220,7 @@ export var TopBar = createComponent({
     var pageTitle;
     if (pageRole === PageRole.Forum) {
       var titleProps: any = _.clone(store);
-      titleProps.hideTitleEditButton = this.state.fixed;
+      titleProps.hideButtons = this.state.fixed;
       pageTitle =
           r.div({ className: 'dw-topbar-title' }, Title(titleProps));
     }

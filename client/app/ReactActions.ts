@@ -37,6 +37,7 @@ export var actionTypes = {
   CyclePageDone: 'CyclePageDone',
   TogglePageClosed: 'TogglePageClosed',
   EditTitleAndSettings: 'EditTitleAndSettings',
+  ShowForumIntro: 'ShowForumIntro',
   UpdatePost: 'UpdatePost',
   VoteOnPost: 'VoteOnPost',
   MarkPostAsRead: 'MarkPostAsRead',
@@ -186,7 +187,15 @@ export function editTitleAndSettings(newTitle: string, settings: any, success: (
 }
 
 
-export function hidePost(postNr: number, hide: boolean, success?: () => void) {
+export function showForumIntro(visible: boolean) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.ShowForumIntro,
+    visible: visible,
+  });
+}
+
+
+export function setPostHidden(postNr: number, hide: boolean, success?: () => void) {
   Server.hidePostInPage(postNr, hide, (postAfter) => {
     if (success) success();
     ReactDispatcher.handleViewAction({

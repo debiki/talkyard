@@ -17,11 +17,23 @@
 
 
 .dw-forum-intro
-  margin: 1em 0 2em;
+  margin-top: 1em;
   max-width: 100ex;
   p
     margin-bottom: 0.8em;
 
+.dw-forum-intro-close
+  display: block;
+  padding: 4px 0 8px;
+  position: relative;
+  left: -3px;
+  color: hsl(211, 50%, 50%);
+  float: left; // else underline appears although mouse far away
+  font-size: 93%;
+
+
+.dw-hide-forum-intro .dw-forum-intro
+  display: none;
 
 // Action bar
 //===========================

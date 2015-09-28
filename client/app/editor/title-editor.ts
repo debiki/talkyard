@@ -199,13 +199,16 @@ export var TitleEditor = createComponent({
             r.a({ className: 'icon-edit', onClick: () => editor.openEditorToEditPost(BodyId) },
               "Edit intro text");
         hideShowIntroButton =
-            r.a({ className: 'icon-eye-off', onClick: () => ReactActions.hidePost(BodyId, true) },
+            r.a({ className: 'icon-eye-off',
+                onClick: () => ReactActions.setPostHidden(BodyId, true) },
               "Hide intro");
       }
       else {
         hideShowIntroButton =
-            r.a({ className: 'icon-eye', onClick: () => ReactActions.hidePost(BodyId, false) },
-              "Show forum intro (just below)");
+            r.a({ className: 'icon-eye', onClick: () => {
+              ReactActions.setPostHidden(BodyId, false);
+              debiki2['ReactActions'].showForumIntro(true);
+            }}, "Show forum intro (just below)");
       }
     }
 

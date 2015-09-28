@@ -107,8 +107,10 @@ var ForumIntroText = createComponent({
     if (!introPost || introPost.isPostHidden)
       return null;
 
-    return r.div({ className: 'dw-forum-intro',
-        dangerouslySetInnerHTML: { __html: introPost.sanitizedHtml }});
+    return r.div({ className: 'dw-forum-intro' },
+      r.div({ dangerouslySetInnerHTML: { __html: introPost.sanitizedHtml }}),
+      r.a({ className: 'icon-cancel dw-forum-intro-close',
+          onClick: () => ReactActions.showForumIntro(false) }, "Hide intro"));
   }
 });
 

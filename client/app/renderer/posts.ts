@@ -208,12 +208,23 @@ var Title = createComponent({
     var titleText = titlePost.isApproved
         ? titlePost.sanitizedHtml
         : r.i({}, '(Title pending approval)');
+
+    var anyShowForumInroBtn;
+    if (!this.props.hideButtons && store.pageRole === PageRole.Forum && store.hideForumIntro) {
+      var introPost = store.allPosts[BodyId];
+      if (introPost && !introPost.isPostHidden) {
+        anyShowForumInroBtn =
+          r.a({ className: 'icon-info-circled dw-forum-intro-show',
+              onClick: () => debiki2['ReactActions'].showForumIntro(true) });
+      }
+    }
+
     var anyEditTitleBtn;
-    if (!this.props.hideTitleEditButton && (
-          isStaff(user) || user.userId === titlePost.authorId)) {
+    if (!this.props.hideButtons && (isStaff(user) || user.userId === titlePost.authorId)) {
       anyEditTitleBtn =
         r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.editTitle });
     }
+
     var contents;
     if (this.state.isEditing) {
       var editorProps = _.clone(this.props);
@@ -294,7 +305,7 @@ var Title = createComponent({
           r.div({ className: 'dw-p-bd' },
             r.div({ className: 'dw-p-bd-blk' },
               r.h1({ className: 'dw-p-ttl' + pinClass, title: tooltip },
-                icon, titleText, anyEditTitleBtn)));
+                icon, titleText, anyShowForumInroBtn, anyEditTitleBtn)));
     }
     return (
       r.div({ className: 'dw-t', id: 'dw-t-0' },

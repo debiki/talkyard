@@ -148,6 +148,13 @@ ReactDispatcher.register(function(payload) {
       }
       break;
 
+    case ReactActions.actionTypes.ShowForumIntro:
+      store.hideForumIntro = !action.visible;
+      localStorage.setItem('hideForumIntro', action.visible ? 'false' : 'true');
+      if (store.hideForumIntro) $('html').addClass('dw-hide-forum-intro');
+      else $('html').removeClass('dw-hide-forum-intro');
+      break;
+
     case ReactActions.actionTypes.UpdatePost:
       updatePost(action.post);
       break;

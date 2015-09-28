@@ -165,6 +165,7 @@ interface Store {
   pageId: string;
   categoryId?: number;
   ancestorsRootFirst?: Ancestor[];
+  hideForumIntro?: boolean;
   pageRole: PageRole;
   pagePath: string;
   pinOrder?: number;
