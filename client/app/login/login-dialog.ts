@@ -210,7 +210,8 @@ export var LoginDialogContent = createClassAndFactory({
     var createAccountButton;
     if (loginReason !== 'LoginAsAdmin' && loginReason !== 'LoginToAdministrate') { // both really used? Can I remove one?
       createAccountButton =
-          Button({ onClick: openChildDialog(CreateUserDialogContent) }, "Create New Account");
+          Button({ onClick: openChildDialog(CreateUserDialogContent),
+              id: 'e2eCreateNewAccount' }, "Create New Account");
     }
 
     var loginWithPasswordButton;
@@ -316,7 +317,7 @@ var GuestLoginDialogContent = createClassAndFactory({
   render: function() {
     return (
       r.form({},
-        Input({ type: 'text', label: "Your name:", ref: 'nameInput' }),
+        Input({ type: 'text', label: "Your name:", ref: 'nameInput', id: 'e2eName' }),
         Input({ type: 'text', label: "Email: (optional, not shown)", ref: 'emailInput',
             help: "If you want to be notified about replies to your comments." }),
         Button({ onClick: this.doLogin }, "Login" + inOrderTo(this.props.loginReason)),

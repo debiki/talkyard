@@ -90,7 +90,13 @@ trait ForumDao {
   private val UncategorizedSlug = "uncategorized"
   private val UncategorizedPosition = 1000
 
-  private val ForumBodySanitized = "(Forum body not used [DwM4KZP2])"
+  private val ForumBodySanitized = i"""
+    |<p>[Replace this text with an introduction to this forum, so people know what it is about.
+    |You can include a link to your main website, if any.
+    |<p>Edit this text, by clicking the pencil above, and then click <b>Edit intro text</b>.
+    |People can hide this intro text once they have read it,
+    |by clicking <b>Hide intro</b> below.]
+    """
 
 }
 

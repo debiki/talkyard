@@ -86,22 +86,14 @@ object ReactJson {
         anyPageQuery: Option[PageQuery] = None): (String, CachedPageVersion) = {
     dao.readOnlyTransaction(
       pageToJsonImpl(pageId, dao, _, anyPageRoot, anyPageQuery))
-    /*
-    if (pageReq.pageExists) {   //xx
-      pageReq.dao.readOnlyTransaction(pageToJsonImpl(pageReq, socialLinksHtml, _))
-    }
-    else {
-      if (pageReq.pagePath.value == HomepageUrlPath) {
-        newEmptySitePageJson(pageReq)
-      }
-      else {
-        throwNotFound("DwE404KGF2", "Page not found")
-      }
-    }*/
   }
 
 
-  private def newEmptySitePageJson(pageReq: PageRequest[_]): JsObject = {
+  /** When a site has just been created, and has no contents.
+    */
+  def emptySiteJson(pageReq: PageRequest[_]): JsObject = {
+    require(!pageReq.pageExists, "DwE7KEG2")
+    require(pageReq.pagePath.value == HomepageUrlPath, "DwE8UPY4")
     val siteStatusString = loadSiteStatusString(pageReq.dao)
     val siteSettings = pageReq.dao.loadWholeSiteSettings()
     Json.obj(

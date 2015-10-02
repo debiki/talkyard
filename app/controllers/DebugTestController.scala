@@ -21,18 +21,27 @@ import java.lang.management.ManagementFactory
 
 import actions.SafeActions.{ExceptionAction, SessionAction}
 import actions.ApiActions.{GetAction, PostJsonAction, AdminGetAction}
+import akka.pattern.ask
+import com.debiki.core.Email
 import com.debiki.core.Prelude._
 import debiki.{RateLimits, Globals}
+import debiki.DebikiHttp._
 import java.{util => ju, io => jio}
 import play.api._
+import play.api.libs.json._
 import play.{api => p}
 import play.api.Play.current
 import play.api.mvc.BodyParsers.parse.empty
+import scala.concurrent.duration._
+import scala.concurrent.Future
+import scala.concurrent.Future._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.Try
 
 
-/** Intended for troubleshooting, via the browser.
+/** Intended for troubleshooting, via the browser, and helps running End-to-End tests.
   */
-object DebugController extends mvc.Controller {
+object DebugTestController extends mvc.Controller {
 
 
   /** If a JS error happens in the browser, it'll post the error message to this
@@ -131,5 +140,54 @@ object DebugController extends mvc.Controller {
     debiki.DeadlockDetector.createDebugTestDeadlock()
     Ok("Deadlock created, current time: " + toIso8601(new ju.Date)) as TEXT
   }
+
+
+  def showLastE2eTestEmailSent(sentTo: String) = ExceptionAction.async(empty) { request =>
+    val timeout = request.queryString.get("timeoutMs") match {
+      case Some(values: Seq[String]) if values.nonEmpty =>
+        val value = Try(values.head.toInt) getOrElse throwBadArgument("DwE4WK55", "timeoutMs")
+        if (value <= 0) throwBadRequest("DwE6KGU3", "timeoutMs is <= 0")
+        value millis
+      case None =>
+        5000 millis
+    }
+
+    // Later: We'll run e2e tests in Prod mode too. For now: mostRecentEmailSent available only in
+    // dev mode. Later: store all emails like 'e2e-test-...@example.com' + password to access.
+    if (Play.isProd)
+      throwForbidden("DwE5KFW2", "Prod mode, no E2E tests then, right now")
+
+    val futureReply: Future[Any] =
+      Globals.endToEndTestMailer.ask("GetEndToEndTestEmail", sentTo)(akka.util.Timeout(timeout))
+
+    futureReply.flatMap({
+      case futureEmail: Future[Email] =>
+        val scheduler = p.libs.concurrent.Akka.system.scheduler
+        val futureTimeout = akka.pattern.after(timeout, scheduler)(
+          failed(ResultException(InternalErrorResult(
+            "DwE5KGU0", "Timeout waiting for an email to get sent to that address"))))
+
+        firstCompletedOf(Seq(futureEmail, futureTimeout)).map({
+          case email: Email =>
+            Ok(Json.obj(
+              "subject" -> email.subject,
+              "bodyHtmlText" -> email.bodyHtmlText)) as JSON
+          case x =>
+            InternalErrorResult("DwE7UGY4", "Mailer sent the wrong class: " + classNameOf(x))
+        }).recover({
+          case exception: ResultException =>
+            exception.result
+          case throwable: Throwable =>
+            InternalErrorResult("DwE4KPB2", throwable.toString)
+        })
+      case x =>
+        successful(InternalErrorResult(
+          "DwE5KU42", "Mailer didn't send a Future, but this: " + classNameOf(x)))
+    }).recover({
+      case throwable: Throwable =>
+        InternalErrorResult("DwE4KFE2", "Timeout waiting for email: " + throwable.toString)
+    })
+  }
+
 }
 

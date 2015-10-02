@@ -23,7 +23,7 @@
     "gulp-header": "^1.0.2",
     "gulp-minify-css": "^0.3.1",
     "gulp-newer": "^0.3.0",
-    "gulp-nightwatch": "^0.2.4",
+    "gulp-nightwatch": "=0.2.6",
     "gulp-react": "^1.0.2",
     "gulp-rename": "^1.2.0",
     "gulp-stylus": "^2.0.6",
@@ -31,6 +31,7 @@
     "gulp-uglify": "^0.2.1",
     "gulp-watch": "^0.5.3",
     "gulp-wrap": "^0.3.0",
-    "react-typescript-definitions": "0.0.6"
+    "react-typescript-definitions": "0.0.6",
+    "request": "^2.64.0"
   }
 }

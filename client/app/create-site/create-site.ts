@@ -48,8 +48,11 @@ var RouterStateMixin = ReactRouter.State;
 
 export function routes() {
   return Route({ path: '/', handler: CreateSiteComponent },
+    /* Later, if one should choose between a site and embedded comments:
     DefaultRoute({ handler: ChooseSiteTypeComponent }),
     Route({ name: 'create-simple-site', path: 'create-simple-site', handler: CreateSimpleSiteComponent }),
+    */
+    DefaultRoute({ handler: CreateSimpleSiteComponent }),
     Route({ name: 'create-embedded-comments', path: 'create-embedded-comments',
       handler: CreateEmbeddedSiteComponent }));
 }
@@ -71,7 +74,7 @@ var CreateSiteComponent = React.createClass({
 });
 
 
-
+/* Later, if I make embedded comments work again:
 var ChooseSiteTypeComponent = React.createClass({
   mixins: [RouterNavigationMixin],
 
@@ -91,7 +94,7 @@ var ChooseSiteTypeComponent = React.createClass({
         Button({ onClick: this.goToCreateSimpleSite }, 'A forum, bog or simple website')));
         // Button({ onClick: this.goToCreateEmbeddedSite }, 'Embedded comments')));
   }
-});
+}); */
 
 
 
@@ -125,7 +128,8 @@ var CreateSimpleSiteComponent = React.createClass({
       r.div({},
         r.h1({}, 'Create Site'),
         r.form({ onSubmit: this.handleSubmit },
-          Input({ type: 'text', label: 'Email', placeholder: 'your-email@example.com',
+          Input({ type: 'text', label: 'Email', id: 'e2eEmail',
+              placeholder: 'your-email@example.com',
               help: 'Your email address, which you will use to login and ' +
                 'administrate the site.', ref: 'emailAddress' }),
 
@@ -144,6 +148,7 @@ var CreateSimpleSiteComponent = React.createClass({
 
 
 
+// Currently not in use; embedded comments disabled & broken right now.
 var CreateEmbeddedSiteComponent = React.createClass({
   getInitialState: function() {
     return { showErrors: false };
@@ -200,6 +205,7 @@ var CreateEmbeddedSiteComponent = React.createClass({
 
 
 
+// Currently not in use; embedded comments disabled & broken right now.
 export var EmbeddingAddressInput = createClassAndFactory({
   getInitialState: function() {
     return { bsStyle: 'error' };
@@ -243,12 +249,19 @@ var AcceptTerms = createClassAndFactory({
           r.a({ href: '/-/privacy-policy', target: '_blank' }, 'Privacy Policy'));
 
     return (
-      Input({ type: 'checkbox', label: label, ref: 'checkbox' }));
+      Input({ type: 'checkbox', label: label, ref: 'checkbox', id: 'e2eAcceptTerms' }));
   }
 });
 
 
 
+/**
+ * Don't make the domain editable at this point, because then some people would edit it,
+ * without realizing or remembering that they need to update their domain name server
+ * records before this'll work. So instead: 1) let people create a default-domain site,
+ * and later 2) let them connect it to their own main domain, from the admin pages.
+ * Then they can return to the default-domain address, if they mess up, and fix things.
+ */
 var LocalHostnameInput = createClassAndFactory({
   getInitialState: function() {
     return { value: '' }
@@ -289,10 +302,10 @@ var LocalHostnameInput = createClassAndFactory({
 
     return (
       r.div({ className: 'form-group' + (anyError ? ' has-error' : '') },
-        r.label({ htmlFor: 'dw-local-hostname' }, this.props.label),
+        r.label({ htmlFor: 'dwLocalHostname' }, this.props.label),
         r.br(),
         r.kbd({}, location.protocol + '//'),
-        r.input({ type: 'text', id: 'dw-local-hostname', className: 'form-control',
+        r.input({ type: 'text', id: 'dwLocalHostname', className: 'form-control',
             placeholder: this.props.placeholder, ref: 'input', onChange: this.onChange,
             value: value }),
         r.kbd({}, '.' + debiki.baseDomain),

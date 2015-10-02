@@ -93,7 +93,8 @@ export var SignUpAsAdmin = createComponent({
         ', or login with e.g. Google, if you specified a Gmail email address.'];
 
     var loginBtn =
-        reactelements.NameLoginBtns({ title: 'Sign Up as Admin', purpose: 'LoginBecomeAdmin' });
+        reactelements.NameLoginBtns({ title: 'Sign Up as Admin', purpose: 'LoginBecomeAdmin',
+            id: 'e2eLogin' });
 
     var contents = debiki.siteId === debiki.FirstSiteId
       ? r.div({},
@@ -183,7 +184,7 @@ export var CreateSomethingHere = createComponent({
         r.h1({}, 'Welcome to Your Site'),
         r.p({}, message),
         r.div({ className: 'do-what-options' },
-          Button({ active: createWhat === PageRole.Forum,
+          Button({ active: createWhat === PageRole.Forum, id: 'e2eCreateForum',
               onClick: () => this.setState({ createWhat: PageRole.Forum })},
               'Create a Forum'),
           anyCreateEmbeddedCommentsButton),
@@ -218,8 +219,8 @@ export var CreateForumPanel = createComponent({
       r.div({},
         Input({ type: 'text', label: 'Forum name:', placeholder: 'Enter forum name here',
             ref: 'forumName', onChange: this.handleChange }),
-        Button({ onClick: this.createForum, disabled: !this.state.forumName.length },
-            'Create Forum')));
+        Button({ onClick: this.createForum, disabled: !this.state.forumName.length,
+            id: 'e2eDoCreateForum' }, 'Create Forum')));
   }
 });
 

@@ -21,13 +21,14 @@ import akka.actor._
 import akka.actor.Actor._
 import org.apache.commons.{mail => acm}
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import debiki.dao.SiteDao
 import debiki.dao.SiteDaoFactory
 import java.{util => ju}
 import play.{api => p}
 import play.api.Play.current
-import Prelude._
-
+import scala.collection.mutable
+import scala.concurrent.{Promise, Future}
 
 
 object Mailer {
@@ -70,7 +71,8 @@ object Mailer {
             useSslOrTls = useSslOrTls,
             userName = userName,
             password = password,
-            fromAddress = fromAddress)),
+            fromAddress = fromAddress,
+            broken = false)),
           name = s"MailerActor-$testInstanceCounter")
       case _ =>
         var message = "I won't send emails, because:"
@@ -81,8 +83,10 @@ object Mailer {
         if (anyFromAddress.isEmpty) message += " No debiki.smtp.fromAddress configured."
         p.Logger.info(message)
         actorSystem.actorOf(
-          Props(new ConsoleMailer(daoFactory)),
-          name = s"ConsoleMailerActor-$testInstanceCounter")
+          Props(new Mailer(
+            daoFactory, serverName = "", port = -1, useSslOrTls = false,
+            userName = "", password = "", fromAddress = "", broken = true)),
+          name = s"BrokenMailerActor-$testInstanceCounter")
     }
 
     testInstanceCounter += 1
@@ -92,30 +96,13 @@ object Mailer {
   // Not thread safe; only needed in integration tests.
   private var testInstanceCounter = 1
 
-
-  object EndToEndTest {
-
-    /** The most recent email sent to an @example.com address,
-      * made available her for end to end tests.
-      */
-    @volatile
-    var mostRecentEmailSent: Option[Email] = None
-
-    /** Returns the most recent email sent, and then forgets it, so it won't
-      * mess up subsequent E2E tests that shouldn't try to reuse it.
-      */
-    def getAndForgetMostRecentEmail(): Option[Email] = {
-      val email = mostRecentEmailSent
-      mostRecentEmailSent = None
-      email
-    }
-  }
-
 }
 
 
 
-/** Sends emails via SMTP. Does not handle any incoming mail.
+/** Sends emails via SMTP. Does not handle any incoming mail. If broken, however,
+  * then only logs emails to the console. It'll be broken e.g. if you run on localhost
+  * with no SMTP settings configured — it'll still work for E2E tests though.
   *
   * In the past I was using Amazon AWS SES API, but now plain SMTP
   * is used instead. I removed the SES code in commit
@@ -128,11 +115,13 @@ class Mailer(
   val useSslOrTls: Boolean,
   val userName: String,
   val password: String,
-  val fromAddress: String) extends Actor {
+  val fromAddress: String,
+  val broken: Boolean) extends Actor {
 
 
   val logger = play.api.Logger("app.mailer")
 
+  private val e2eTestEmails = mutable.HashMap[String, Promise[Email]]()
 
   /**
    * Accepts an (Email, tenant-id), and then sends that email on behalf of
@@ -143,6 +132,16 @@ class Mailer(
   def receive = {
     case (email: Email, tenantId: String) =>
       sendEmail(email, tenantId)
+    case ("GetEndToEndTestEmail", address: String) =>
+      e2eTestEmails.get(address) match {
+        case Some(promise) =>
+          sender() ! promise.future
+        case None =>
+          SECURITY // DoS attack: don't add infinitely many promises in prod mode
+          val newPromise = Promise[Email]()
+          e2eTestEmails.put(address, newPromise)
+          sender() ! newPromise.future
+      }
     /*
     case Bounce/Rejection/Complaint/Other =>
      */
@@ -156,9 +155,9 @@ class Mailer(
 
     // I often use @example.com, or simply @ex.com, when posting test comments
     // — don't send those emails, to keep down the bounce rate.
-    if (emailToSend.sentTo.endsWith("example.com") ||
+    if (broken || emailToSend.sentTo.endsWith("example.com") ||
         emailToSend.sentTo.endsWith("ex.com")) {
-      ConsoleMailer.fakeSendAndWriteToConsole(emailToSend, tenantDao)
+      fakeSendAndRememberForE2eTests(emailToSend, tenantDao)
       return
     }
 
@@ -207,37 +206,24 @@ class Mailer(
     apacheCommonsEmail
   }
 
-}
 
-
-
-/** Writes emails to the console, does not actually send them anywhere.
-  * Used if no email settings have been configured.
-  */
-class ConsoleMailer(val daoFactory: SiteDaoFactory) extends Actor {
-
-  def receive = {
-    case (email: Email, siteId: String) =>
-      val siteDao = daoFactory.newSiteDao(siteId)
-      ConsoleMailer.fakeSendAndWriteToConsole(email, siteDao)
-  }
-
-}
-
-
-
-object ConsoleMailer {
-
-  /** Pretends the email has been sent and makes it available for end-to-end tests.
+  /** Updates the database so it looks as if the email has been sent, plus makes the
+    * email accessible to end-to-end tests.
     */
-  def fakeSendAndWriteToConsole(email: Email, siteDao: SiteDao) {
+  def fakeSendAndRememberForE2eTests(email: Email, siteDao: SiteDao) {
     play.api.Logger.debug(i"""
       |Fake-sending email (only logging it to the console):
       |  $email
       |""")
     val emailSent = email.copy(sentOn = Some(new ju.Date))
     siteDao.updateSentEmail(emailSent)
-    Mailer.EndToEndTest.mostRecentEmailSent = Some(emailSent)
+    e2eTestEmails.get(email.sentTo) match {
+      case Some(promise: Promise[Email]) =>
+        promise.success(email)
+      case None =>
+        SECURITY // DoS attack: don't remember infinitely many addresses in prod mode
+        e2eTestEmails.put(email.sentTo, Promise.successful(email))
+    }
   }
 
 }

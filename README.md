@@ -66,6 +66,43 @@ once I've understood what has happened, is that I stop and restart `gulp
 watch`.
 
 
+Running tests
+-----------------------------
+
+This might work on Linux (and Mac?) only. Some things you'd need to do:
+
+### End to end tests
+
+1) If testing with a browser other than Chrome,
+you need to add a `127.0.0.1  *.localhost` entry to `/etc/hosts`,
+so that the end-to-end tests will be able to generate and resolve their own
+local hostnames with random ids, e.g.  `e2e-test-site-random_id.localhost`. But
+wildcard `/etc/hosts` entries are not allowed. Instead use dnsmasq, see
+http://serverfault.com/a/118589/44112
+
+*On Linux Mint (and Ubuntu?)*, Network Manager already runs its own instance of
+dnsmasq. You can make `*.localhost` work like so: (do this only once)
+
+    sudo sh -c 'echo "address=/localhost/127.0.0.1" >> /etc/NetworkManager/dnsmasq.d/wildcard.localhost.conf'
+
+Then restart Network Manager:
+
+    sudo service network-manager restart
+
+Wait half a minute, then this should work: `ping whatever.localhost`.
+
+2) Download Selenium to ./downloads/  (todo: explain in more details. See http://nightwatchjs.org )
+and download Chrome Driver too.
+
+
+### Performance tests
+
+Append to `/etc/security/limits.conf`:
+
+    your_login_name hard nofile 65535
+    your_login_name soft nofile 65535
+
+
 Technology
 -----------------------------
 

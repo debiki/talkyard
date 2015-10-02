@@ -40,7 +40,8 @@ trait RenderedPageHtmlDao {
       if (pageRequest.pagePath.value != HomepageUrlPath)
         throwNotFound("DwE00404", "Page not found")
 
-      return views.html.specialpages.createSomethingHerePage(SiteTpi(pageRequest)).body
+      val json = ReactJson.emptySiteJson(pageRequest).toString()
+      return views.html.specialpages.createSomethingHerePage(SiteTpi(pageRequest, Some(json))).body
     }
 
     Globals.mostMetrics.getRenderPageTimer(pageRequest.pageRole).time {

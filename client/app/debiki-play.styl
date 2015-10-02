@@ -196,7 +196,7 @@ h1.dw-p-ttl
   // Question and to-do icons.
   [class^="icon-"]:before,
   [class*=" icon-"]:before
-    margin: 0 8ex 0 0;
+    margin: 0 8px 0 0;
     position: relative;
     top: 2px;
 
@@ -248,9 +248,13 @@ h1.dw-p-ttl
     top: -1px;
     font-size: 93%;
     color: hsl(211, 0%, 55%);
-    // Doesn't work in IE9 though: (COULD add (i) icon instead)
+    // text-shadow doesn't work in IE9 though, fixed 3 lines below:
     text-shadow: 0px 0px 5px #666;
     color: white;
+    // IE9 only (see http://stackoverflow.com/a/27815403/694469 )
+    text-shadow: none\9;
+    color: #999\9;
+
 
   .dw-a-edit
     position: absolute; // so it won't push the stuff below downwards

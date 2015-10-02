@@ -113,7 +113,7 @@ export var NewPasswordInput = createClassAndFactory({
     }
     return (
       Input({ type: 'password', label: "Password:", name: 'newPassword', ref: 'passwordInput',
-          onChange: this.checkPasswordStrength, help: passwordWarning }));
+          id: 'e2ePassword', onChange: this.checkPasswordStrength, help: passwordWarning }));
   }
 });
 

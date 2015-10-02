@@ -43,7 +43,7 @@ object TemplateProgrammingInterface {
 
 object SiteTpi {
 
-  def apply(request: DebikiRequest[_]) = new SiteTpi(request)
+  def apply(request: DebikiRequest[_], json: Option[String] = None) = new SiteTpi(request, json)
 
 }
 
@@ -59,7 +59,7 @@ object SiteTpi {
   * There is also a Page Template Programming Interface which is used
   * when rendering e.g. blog and forum pages.
   */
-class SiteTpi protected (val debikiRequest: DebikiRequest[_]) {
+class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[String]) {
 
   def siteId  = debikiRequest.siteId
   def siteSettings = debikiRequest.siteSettings
@@ -162,7 +162,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_]) {
 
   /** The initial data in the React-Flux model, a.k.a. store. */
   def reactStoreSafeJsonString: String =
-    Json.obj("user" -> ReactJson.userNoPageToJson(debikiRequest.user)).toString()
+    json getOrElse Json.obj("user" -> ReactJson.userNoPageToJson(debikiRequest.user)).toString()
 
 }
 
@@ -175,7 +175,7 @@ class TemplateProgrammingInterface(
   private val jsonVersion: CachedPageVersion,
   private val cachedPageHtml: String,
   private val cachedVersion: CachedPageVersion)
-  extends SiteTpi(pageReq) {
+  extends SiteTpi(pageReq, None) {
 
   override def anyCurrentPageId = Some(pageReq.thePageId)
   override def anyCurrentPageRole = Some(pageReq.thePageRole)

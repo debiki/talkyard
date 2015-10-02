@@ -67,14 +67,15 @@ export var NameLoginBtns = createComponent({
     var loginBtnElem = null;
     if (!user.isLoggedIn) {
       loginBtnElem =
-          r.span({ className: 'dw-a-login', onClick: this.onLoginClick },
+          r.span({ className: 'dw-a-login', onClick: this.onLoginClick, id: this.props.id },
               this.props.title || 'Login');
     }
 
     var logoutBtnElem = null;
     if (user.isLoggedIn) {
       logoutBtnElem =
-          r.span({ className: 'dw-a-logout', onClick: this.onLogoutClick }, 'Logout');
+          r.span({ className: 'dw-a-logout', onClick: this.onLogoutClick, id: this.props.id },
+              'Logout');
     }
 
     var elems =

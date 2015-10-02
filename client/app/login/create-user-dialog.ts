@@ -191,19 +191,20 @@ export var CreateUserDialogContent = createClassAndFactory({
 
     var fullNameInput =
         Input({ type: 'text', label: "Your name: (the long version)", ref: 'fullNameInput',
-            defaultValue: props.name, onChange: this.updateUserData });
+            id: 'e2eFullName', defaultValue: props.name, onChange: this.updateUserData });
 
     var anyEmailHelp = props.providerId ?
         "Your email has been verified by " + props.providerId + "." : null;
 
     var emailInput =
         Input({ type: 'text', label: "Email: (will be kept private)", ref: 'emailInput',
+            id: 'e2eEmail',
             // If email already provided by e.g. Google, don't let the user change it.
             disabled: props.email && props.email.length, defaultValue: props.email,
             help: anyEmailHelp, onChange: this.updateUserData });
 
     var usernameInput =
-        Input({ type: 'text', label: "Username:", ref: 'usernameInput',
+        Input({ type: 'text', label: "Username:", ref: 'usernameInput', id: 'e2eUsername',
             onChange: this.updateUserData, help: r.span({},
               "Your ", r.code({}, "@username"), " must be unique, short, no spaces.") });
 
@@ -218,8 +219,9 @@ export var CreateUserDialogContent = createClassAndFactory({
         emailInput,
         usernameInput,
         passwordInput,
-        Button({ onClick: this.doCreateUser, disabled: !state.passwordOk }, "Create User"),
-        Button({ onClick: props.closeDialog }, "Cancel")));
+        Button({ onClick: this.doCreateUser, disabled: !state.passwordOk, id: 'e2eSubmit' },
+          "Create User"),
+        Button({ onClick: props.closeDialog, id: 'e2eCancel' }, "Cancel")));
   }
 });
 
@@ -274,7 +276,7 @@ var AddressVerificationEmailSentDialog = createComponent({
   },
   render: function () {
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close },
+      Modal({ show: this.state.isOpen, onHide: this.close, id: 'e2eNeedVerifyEmailDialog' },
         ModalHeader({}, ModalTitle({}, "Welcome")),
         ModalBody({},
           r.p({}, "Almost done! You just need to confirm your email address. We have " +

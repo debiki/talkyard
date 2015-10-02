@@ -81,6 +81,8 @@ class Globals {
     state.mailerActorRef ! (email, websiteId)
   }
 
+  def endToEndTestMailer = state.mailerActorRef
+
   def renderPageContentInBackground(sitePageId: SitePageId) {
     state.renderContentActorRef ! sitePageId
   }

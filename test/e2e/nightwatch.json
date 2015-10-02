@@ -2,7 +2,7 @@
   "src_folders": ["target/e2e-tests/code/"],
   "output_folder": "target/e2e-tests/reports/",
 
-  "custom_commands_path": "",
+  "custom_commands_path": "test/e2e/custom-commands",
   "custom_assertions_path": "",
   "page_objects_path": "",
   "globals_path": "",

@@ -140,12 +140,13 @@ POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 #POST  /-/load-threads-and-trees controllers.LoadPagePartsController.loadThreadsAndTrees
 GET   /-/list-pages             controllers.ListController.listPages
 
-POST /-/log-browser-error       controllers.DebugController.logBrowserError
-GET  /-/metrics                 controllers.DebugController.showMetrics
-GET  /-/ping-exception-action   controllers.DebugController.pingExceptionAction
-GET  /-/ping-session-action     controllers.DebugController.pingSessionAction
-GET  /-/origin                  controllers.DebugController.origin
-GET  /-/create-deadlock         controllers.DebugController.createDeadlock
+POST /-/log-browser-error       controllers.DebugTestController.logBrowserError
+GET  /-/metrics                 controllers.DebugTestController.showMetrics
+GET  /-/ping-exception-action   controllers.DebugTestController.pingExceptionAction
+GET  /-/ping-session-action     controllers.DebugTestController.pingSessionAction
+GET  /-/origin                  controllers.DebugTestController.origin
+GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
+GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(sentTo)
 
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
 

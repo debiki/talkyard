@@ -42,6 +42,10 @@ object CreateSiteController extends mvc.Controller {
 
   private val log = play.api.Logger
 
+  // Let people use hostnames that start with 'test-' — good to know which sites are
+  // in fact just people's test sites.
+  // But reserve 'test--' (see if statement further below) and these prefixes:
+  private val TestSitePrefixes = Seq("smoke-test-", "smoketest-", "delete-", "e2e-")
 
   def start = GetAction { request =>
     throwIfMayNotCreateSite(request)
@@ -57,6 +61,7 @@ object CreateSiteController extends mvc.Controller {
     val localHostname = (request.body \ "localHostname").as[String]
     val anyEmbeddingSiteAddress = (request.body \ "embeddingSiteAddress").asOpt[String]
     val anyPricePlan = (request.body \ "pricePlan").asOpt[String]
+    val isTestSiteOkayToDelete = (request.body \ "testSiteOkDelete").asOpt[Boolean] == Some(true)
 
     if (!acceptTermsAndPrivacy)
       throwForbidden("DwE877FW2", "You need to accept the terms of use and privacy policy")
@@ -66,6 +71,13 @@ object CreateSiteController extends mvc.Controller {
 
     if (!isOkayEmailAddress(emailAddress))
       throwForbidden("DwE8FKJ4", "Bad email address")
+
+    // Test sites have a certain prefix, so I know it's okay to delete them.
+    if (TestSitePrefixes.exists(localHostname startsWith) && !isTestSiteOkayToDelete)
+      throwForbidden("DwE48WK3", o"""Please choose another hostname; it must not
+          start with any of: ${ TestSitePrefixes.mkString(", ") }""")
+    if (localHostname.contains("test--") && !isTestSiteOkayToDelete)
+      throwForbidden("DwE5JKP3", "Please choose another hostname; it must not contain: test--")
 
     /* Don't force people to choose a price plan directly. Instead just show a link to the pricing
     page, but let them start use their site for free for a while. Not until later, when

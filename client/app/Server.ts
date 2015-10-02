@@ -81,7 +81,8 @@ export function createSite(emailAddress: string, localHostname: string,
       emailAddress: emailAddress,
       localHostname: localHostname,
       embeddingSiteAddress: anyEmbeddingSiteAddress,
-      pricePlan: pricePlan
+      pricePlan: pricePlan,
+      testSiteOkDelete: window.location.search.indexOf('testSiteOkDelete=true') !== -1,
     },
     success: (response) => {
       doneCallback(response.newSiteOrigin);
