@@ -1,11 +1,11 @@
-{
+module.exports = {
   "src_folders": ["target/e2e-tests/code/"],
   "output_folder": "target/e2e-tests/reports/",
 
   "custom_commands_path": "test/e2e/custom-commands",
   "custom_assertions_path": "",
   "page_objects_path": "",
-  "globals_path": "",
+  "globals_path": "test/e2e/globals.js",
 
   "selenium": {
     "start_process": true,
@@ -56,5 +56,6 @@
       }
     }
   }
-}
+};
 
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

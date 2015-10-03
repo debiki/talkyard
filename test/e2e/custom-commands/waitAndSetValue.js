@@ -1,5 +1,8 @@
 
 exports.command = function(selector, timeout, value) {
+  if (typeof value === 'undefined')
+    value = timeout;
+
   this.waitForElementVisible(selector, timeout)
       .setValue(selector, value);
   return this;

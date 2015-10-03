@@ -464,7 +464,7 @@ gulp.task('e2e', ['start-server', 'stop-selenium', 'clean-e2e', 'compile-e2e-scr
   console.log('Nightwatch arguments: ' + args);
   return gulp.src('')
     .pipe(nightwatch({
-      configFile: 'test/e2e/nightwatch.json',
+      configFile: 'test/e2e/nightwatch.conf.js',
       cliArgs: [args],
     }));
 });

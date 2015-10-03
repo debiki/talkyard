@@ -152,10 +152,9 @@ object DebugTestController extends mvc.Controller {
         5000 millis
     }
 
-    // Later: We'll run e2e tests in Prod mode too. For now: mostRecentEmailSent available only in
-    // dev mode. Later: store all emails like 'e2e-test-...@example.com' + password to access.
-    if (Play.isProd)
-      throwForbidden("DwE5KFW2", "Prod mode, no E2E tests then, right now")
+    SECURITY // COULD add and check an e2e password.
+    if (!sentTo.startsWith("e2e-test--") || !sentTo.endsWith("@example.com"))
+      throwForbidden("DwE5KFW2", "Not an end-to-end test email address")
 
     val futureReply: Future[Any] =
       Globals.endToEndTestMailer.ask("GetEndToEndTestEmail", sentTo)(akka.util.Timeout(timeout))

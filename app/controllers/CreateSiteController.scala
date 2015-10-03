@@ -76,8 +76,8 @@ object CreateSiteController extends mvc.Controller {
     if (TestSitePrefixes.exists(localHostname startsWith) && !isTestSiteOkayToDelete)
       throwForbidden("DwE48WK3", o"""Please choose another hostname; it must not
           start with any of: ${ TestSitePrefixes.mkString(", ") }""")
-    if (localHostname.contains("test--") && !isTestSiteOkayToDelete)
-      throwForbidden("DwE5JKP3", "Please choose another hostname; it must not contain: test--")
+    if (localHostname.contains("--") && !isTestSiteOkayToDelete)
+      throwForbidden("DwE5JKP3", "Please choose another hostname; it must not contain: --")
 
     /* Don't force people to choose a price plan directly. Instead just show a link to the pricing
     page, but let them start use their site for free for a while. Not until later, when

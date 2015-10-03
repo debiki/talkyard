@@ -1,5 +1,8 @@
 
 exports.command = function(selector, timeout, callback) {
+  if (!callback)
+    callback = timeout;
+
   this.waitForElementVisible(selector, timeout)
       .getText(selector, callback);
   return this;
