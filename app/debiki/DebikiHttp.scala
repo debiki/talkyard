@@ -103,8 +103,16 @@ object DebikiHttp {
   def throwTemporaryRedirect(url: String) =
     throw ResultException(R.Redirect(url))
 
+  /** Sets a Cache-Control max-age = 1 week, so that permanent redirects can be undone.
+    * Otherwise browsers might cache them forever.
+    */
   def throwPermanentRedirect(url: String) =
-    throw ResultException(R.Redirect(url, p.http.Status.MOVED_PERMANENTLY))
+    throw ResultException(R.Redirect(url).withHeaders(
+      p.http.HeaderNames.CACHE_CONTROL -> ("public, max-age=" + 3600 * 24 * 7)))
+    // Test that the above cache control headers work, before I redirect permanently,
+    // otherwise browsers might cache the redirect *forever*, can never be undone.
+    // So, right now, don't:
+    //   p.http.Status.MOVED_PERMANENTLY
 
   def throwBadRequest(errCode: String, message: String = "") = throwBadReq(errCode, message)
 
