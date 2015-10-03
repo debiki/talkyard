@@ -90,6 +90,7 @@ case class Settings(settingsChain: SettingsChain) {
   val userMustBeAuthenticated = derive("userMustBeAuthenticated", false)
   val userMustBeApproved = derive("userMustBeApproved", false)
 
+  val showForumCategories = derive("showForumCategories", false)
   val horizontalComments = derive("horizontalComments", false)
 
   val headStylesHtml = derive("headStylesHtml", "")
@@ -128,6 +129,7 @@ case class Settings(settingsChain: SettingsChain) {
       "endOfBodyHtml" -> jsonFor(endOfBodyHtml),
       "headerHtml" -> jsonFor(headerHtml),
       "footerHtml" -> jsonFor(footerHtml),
+      "showForumCategories" -> jsonFor(showForumCategories),
       "horizontalComments" -> jsonFor(horizontalComments),
       "socialLinksHtml" -> jsonFor(socialLinksHtml),
       "logoUrlOrHtml" -> jsonFor(logoUrlOrHtml),

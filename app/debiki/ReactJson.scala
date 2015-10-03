@@ -206,6 +206,9 @@ object ReactJson {
     val horizontalLayout = page.role == PageRole.MindMap ||
       pageSettings.horizontalComments.valueAsBoolean
     val is2dTreeDefault = pageSettings.horizontalComments.valueAsBoolean
+    val showForumCategories =
+      if (page.role == PageRole.Forum) Some(siteSettings.showForumCategories.asBoolean)
+      else None
 
     val jsonObj = Json.obj(
       "siteStatus" -> JsString(siteStatusString),
@@ -215,6 +218,7 @@ object ReactJson {
       "pageId" -> pageId,
       "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "forumId" -> JsStringOrNull(anyForumId),
+      "showForumCategories" -> JsBooleanOrNull(showForumCategories),
       "ancestorsRootFirst" -> ancestorsJsonRootFirst,
       "pageRole" -> JsNumber(page.role.toInt),
       "pagePath" -> JsString(page.path.value),

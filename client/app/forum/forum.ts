@@ -53,10 +53,14 @@ var RouterStateMixin = ReactRouter.State;
 var NumNewTopicsPerRequest = 40;
 
 export function buildForumRoutes() {
+  var defaultPath =
+      debiki2.ReactStore.allData().showForumCategories ? '/categories' : '/latest/';
+
   return (
     Route({ name: 'ForumRoute', path: '/', handler: ForumComponent },
-      Redirect({ from: '/', to: '/latest/' }),
+      Redirect({ from: '/', to: defaultPath }),
       Redirect({ from: '/latest', to: '/latest/' }),
+      Redirect({ from: '/categories/', to: '/categories' }),
       Route({ name: 'ForumRouteLatest', path: 'latest/:categorySlug?',
           handler: ForumTopicListComponent }),
       Route({ name: 'ForumRouteTop', path: 'top/:categorySlug?',

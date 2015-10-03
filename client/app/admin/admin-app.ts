@@ -220,6 +220,10 @@ var CustomizePanelComponent = React.createClass({
 
     return (
       r.div({},
+        Setting({ setting: settings.showForumCategories, onSave: saveSetting,
+          label: 'Show Forum Categories', help: "Shall a forum main page list " +
+            "all forum categories, instead of the latest topics?" }),
+
         Setting({ setting: settings.horizontalComments, onSave: saveSetting,
           label: '2D Tree Layout', help: "Shall comments be laid out in a two " +
             "dimensional tree? By default, they're shown in a single column instead." }),
