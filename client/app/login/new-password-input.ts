@@ -55,7 +55,8 @@ export var NewPasswordInput = createClassAndFactory({
     window['yepnope']({
       load:  debiki.internal.assetsUrlPathStart + 'zxcvbn.js',
       complete: () => {
-        this.setState({ zxcvbnLoaded: true });
+        // Check the password afterwards, in case a fast e2e test has already filled it in.
+        this.setState({ zxcvbnLoaded: true }, this.checkPasswordStrength);
       }
     });
   },
