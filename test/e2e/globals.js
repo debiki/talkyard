@@ -10,11 +10,14 @@ console.log('--- Test settings: --------------------------');
 console.log('host: ' + args.host);
 console.log('secure: ' + args.secure);
 console.log('derived origin: ' + mainSiteOrigin);
+console.log('e2e test password: ' + (args.password ? 'specified' : 'not specified'));
 console.log('--------------------------------------------------');
 
 
 var self = module.exports = {
   waitForConditionTimeout: 5000,
+
+  e2eTestPassword: args.password,
 
   generateTestId: function() {
     return (new Date()).getTime().toString().slice(3, 10);
@@ -23,6 +26,7 @@ var self = module.exports = {
   testLocalHostnamePrefix: 'e2e-test--',
   testEmailAddressPrefix: 'e2e-test--',
 
+  mainSiteHost: host,
   mainSiteOrigin: mainSiteOrigin,
 
   makeSiteOrigin: function(localHostname) {

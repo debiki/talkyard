@@ -70,6 +70,14 @@ class Globals {
       "Config value 'play.crypto.secret' missing [DwE75FX0]")
 
 
+  /** Lets people do weird things, namely fake their ip address (&fakeIp=... url param)
+    * in order to create many e2e test sites — also in prod mode, for smoke tests.
+    * The e2e test sites will have ids like 'test__...' so that they can be deleted safely.
+    */
+  val e2eTestPassword: Option[String] =
+    Play.configuration.getString("debiki.e2eTestPassword")
+
+
   def systemDao = state.systemDao
 
 

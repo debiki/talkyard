@@ -143,7 +143,9 @@ export var CreateUserDialogContent = createClassAndFactory({
     // Check strength again since e.g. fullName might now be (or no longer be)
     // part of the password. But not until we've rerendered everything and sent new
     // props to the password input.
-    setTimeout(this.refs.passwordInput.checkPasswordStrength, 1);
+    if (this.refs.passwordInput) {
+      setTimeout(this.refs.passwordInput.checkPasswordStrength, 1);
+    }
   },
 
   doCreateUser: function() {

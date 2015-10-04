@@ -75,7 +75,12 @@ function get(uri: string, success: (response) => void) {
 
 export function createSite(emailAddress: string, localHostname: string,
     anyEmbeddingSiteAddress: string, pricePlan: string, doneCallback: (string) => void) {
-  postJson('/-/create-site', {
+  var e2eTestPassword = (window.location.search.match(/e2eTestPassword=([^&#]+)/) || [])[1];
+  var url = '/-/create-site';
+  if (e2eTestPassword) {
+    url += '?e2eTestPassword=' + e2eTestPassword;
+  }
+  postJson(url, {
     data: {
       acceptTermsAndPrivacy: true,
       emailAddress: emailAddress,

@@ -101,7 +101,8 @@ object CreateSiteController extends mvc.Controller {
           name = localHostname, hostname = hostname, embeddingSiteUrl = anyEmbeddingSiteAddress,
           creatorEmailAddress = emailAddress,
           creatorId = request.user.map(_.id) getOrElse UnknownUserId,
-          browserIdData = request.theBrowserIdData, pricePlan = anyPricePlan)
+          browserIdData = request.theBrowserIdData, pricePlan = anyPricePlan,
+          isTestSiteOkayToDelete = isTestSiteOkayToDelete)
       }
       catch {
         case _: DbDao.SiteAlreadyExistsException =>

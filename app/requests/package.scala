@@ -18,6 +18,7 @@
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.JsValue
+import debiki.DebikiHttp.throwForbidden
 
 
 package object requests {
@@ -50,17 +51,36 @@ package object requests {
   type PagePostRequest = PageRequest[Map[String, Seq[String]]]
 
 
-  /** In prod mode, if not testing: The real ip address of the client.
-    * Otherwise: Any 'fakeIp' query string parameter value, or any 'dwCoFakeIp' cookie.
+  /** The real ip address of the client, unless a fakeIp url param or dwCoFakeIp cookie specified
+    * In prod mode, an e2e test password cookie is required.
+    *
     * (If 'fakeIp' is specified, actions.SafeActions.scala copies the value to
     * the dwCoFakeIp cookie.)
     */
   def realOrFakeIpOf(request: play.api.mvc.Request[_]): String = {
-    if (!actions.SafeActions.allowFakeIp)
-      request.remoteAddress
-    else
-      request.queryString.get("fakeIp").flatMap(_.headOption).orElse(
-        request.cookies.get("dwCoFakeIp").map(_.value)) getOrElse request.remoteAddress
+    val fakeIp = request.queryString.get("fakeIp").flatMap(_.headOption).orElse(
+      request.cookies.get("dwCoFakeIp").map(_.value))  getOrElse {
+        return request.remoteAddress
+      }
+
+    if (Play.isProd) {
+      val password = request.queryString.get("e2eTestPassword").flatMap(_.headOption).orElse(
+          request.cookies.get("dwCoE2eTestPassword").map(_.value)) getOrElse {
+        throwForbidden(
+          "DwE6KJf2", "Fake ip specified, but no e2e test password cookie — required in prod mode")
+      }
+      val correctPassword = debiki.Globals.e2eTestPassword getOrElse {
+        throwForbidden(
+          "DwE7KUF2", "Fake ips not allowed, because no e2e test password has been configured")
+      }
+      if (password != correctPassword) {
+        throwForbidden(
+          "DwE2YUF2", "Fake ip forbidden: Wrong e2e test password")
+      }
+    }
+
+    // Dev or test mode, or correct password, so:
+    fakeIp
   }
 
 }

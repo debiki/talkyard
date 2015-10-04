@@ -227,12 +227,10 @@ object SafeActions {
         case ex: Error =>
           internalError(request, ex, "DwE500ERRA")
       }
-      if (allowFakeIp) {
-        val anyNewFakeIp = request.queryString.get("fakeIp").flatMap(_.headOption)
-        anyNewFakeIp foreach { fakeIp =>
-          futureResult = futureResult map { simpleResult =>
-            simpleResult.withCookies(SecureCookie("dwCoFakeIp", fakeIp))
-          }
+      val anyNewFakeIp = request.queryString.get("fakeIp").flatMap(_.headOption)
+      anyNewFakeIp foreach { fakeIp =>
+        futureResult = futureResult map { result =>
+          result.withCookies(SecureCookie("dwCoFakeIp", fakeIp))
         }
       }
       futureResult

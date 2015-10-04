@@ -18,7 +18,9 @@ var tests = {
     function randomIpPart() { return '.' + Math.floor(Math.random() * 256); }
     var ip = '0' + randomIpPart() + randomIpPart() + randomIpPart();
 
-    b.url(globals.mainSiteOrigin + '/-/create-site?fakeIp=' + ip + '&testSiteOkDelete=true');
+    b.url(globals.mainSiteOrigin + '/-/create-site?fakeIp=' + ip +
+        '&e2eTestPassword=' + globals.e2eTestPassword + '&testSiteOkDelete=true');
+
     b.waitAndSetValue('#e2eEmail', email);
     b.setValue('#dwLocalHostname', localHostname);
     b.click('#e2eAcceptTerms');
