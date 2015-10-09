@@ -60,6 +60,7 @@ var tests = {
     b.click('#e2eDoCreateForum');
     b.waitForElementVisible('.dw-p-ttl');
     b.assert.containsText('.dw-p-ttl', forumTitle);
+    b.pause();
     b.end();
   },
 };

@@ -18,13 +18,14 @@
 package controllers
 
 import actions.ApiActions.JsonOrFormDataPostAction
-import actions.ApiActions.PostJsonAction
+import actions.ApiActions.AsyncPostJsonAction
 import actions.ApiActions.GetActionRateLimited
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.Utils.isOkayEmailAddress
 import controllers.Utils.OkSafeJson
 import debiki._
+import debiki.antispam.AntiSpam
 import debiki.dao.SiteDao
 import debiki.DebikiHttp._
 import java.{util => ju}
@@ -34,6 +35,7 @@ import play.api.mvc.{Action => _, _}
 import play.api.libs.json.{Json, JsBoolean}
 import requests.ApiRequest
 import requests.JsonPostRequest
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
 
@@ -91,7 +93,7 @@ object LoginWithPasswordController extends mvc.Controller {
   }
 
 
-  def handleCreateUserDialog = PostJsonAction(RateLimits.CreateUser, maxLength = 1000,
+  def handleCreateUserDialog = AsyncPostJsonAction(RateLimits.CreateUser, maxLength = 1000,
         allowUnapproved = true) { request: JsonPostRequest =>
     val body = request.body
     val fullName = (body \ "fullName").as[String]
@@ -104,35 +106,40 @@ object LoginWithPasswordController extends mvc.Controller {
     if (!isOkayEmailAddress(emailAddress))
       throwUnprocessableEntity("DwE80KFP2", "Bad email address")
 
-    // Password strength tested in createPasswordUserCheckPasswordStrong() below.
+    Globals.antiSpam.detectRegistrationSpam(request, name = username, email = emailAddress) map {
+        isSpamReason =>
+      AntiSpam.throwForbiddenIfSpam(isSpamReason, "DwE7KVF2")
 
-    val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress)
+      // Password strength tested in createPasswordUserCheckPasswordStrong() below.
 
-    val userData =
-      NewPasswordUserData.create(name = fullName, email = emailAddress, username = username,
-          password = password, isAdmin = becomeOwner, isOwner = becomeOwner) match {
-        case Good(data) => data
-        case Bad(errorMessage) =>
-          throwUnprocessableEntity("DwE805T4", s"$errorMessage, please try again.")
+      val becomeOwner = LoginController.shallBecomeOwner(request, emailAddress)
+
+      val userData =
+        NewPasswordUserData.create(name = fullName, email = emailAddress, username = username,
+            password = password, isAdmin = becomeOwner, isOwner = becomeOwner) match {
+          case Good(data) => data
+          case Bad(errorMessage) =>
+            throwUnprocessableEntity("DwE805T4", s"$errorMessage, please try again.")
+        }
+
+      val dao = daoFor(request.request)
+      try {
+        val newUser = dao.createPasswordUserCheckPasswordStrong(userData)
+        sendEmailAddressVerificationEmail(newUser, anyReturnToUrl, request.host, request.dao)
+      }
+      catch {
+        case DbDao.DuplicateUsername =>
+          throwForbidden(
+            "DwE65EF0", "Username already taken, please try again with another username")
+        case DbDao.DuplicateUserEmail =>
+          // Send account reminder email. But don't otherwise indicate that the account exists,
+          // so no email addresses are leaked.
+          sendYouAlreadyHaveAnAccountWithThatAddressEmail(
+            dao, emailAddress, siteHostname = request.host, siteId = request.siteId)
       }
 
-    val dao = daoFor(request.request)
-    try {
-      val newUser = dao.createPasswordUserCheckPasswordStrong(userData)
-      sendEmailAddressVerificationEmail(newUser, anyReturnToUrl, request.host, request.dao)
+      OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsBoolean(false)))
     }
-    catch {
-      case DbDao.DuplicateUsername =>
-        throwForbidden(
-          "DwE65EF0", "Username already taken, please try again with another username")
-      case DbDao.DuplicateUserEmail =>
-        // Send account reminder email. But don't otherwise indicate that the account exists,
-        // so no email addresses are leaked.
-        sendYouAlreadyHaveAnAccountWithThatAddressEmail(
-          dao, emailAddress, siteHostname = request.host, siteId = request.siteId)
-    }
-
-    OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsBoolean(false)))
   }
 
 

@@ -36,32 +36,29 @@ trait PagesDao {
 
 
   def createPage(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
-        anyFolder: Option[String], anySlug: Option[String], titleSource: String, bodySource: String,
-        showId: Boolean, authorId: UserId, browserIdData: BrowserIdData)
-        : PagePath = {
+        anyFolder: Option[String], anySlug: Option[String], titleTextAndHtml: TextAndHtml,
+        bodyTextAndHtml: TextAndHtml, showId: Boolean, authorId: UserId,
+        browserIdData: BrowserIdData): PagePath = {
 
     if (pageRole.isSection) {
       // Should use e.g. ForumController.createForum() instead.
       throwBadRequest("DwE4FKW8", s"Bad page role: $pageRole")
     }
 
-    val bodyHtmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(bodySource,
-      allowClassIdDataAttrs = true, followLinks = !pageRole.isWidelyEditable)
-    if (bodyHtmlSanitized.trim.isEmpty)
+    if (bodyTextAndHtml.safeHtml.trim.isEmpty)
       throwForbidden("DwE3KFE29", "Page body should not be empty")
 
-    if (titleSource.length > MaxTitleLength)
+    if (titleTextAndHtml.text.length > MaxTitleLength)
       throwBadReq("DwE4HEFW8", s"Title too long, max length is $MaxTitleLength")
 
-    val titleHtmlSanitized = siteDbDao.commonMarkRenderer.sanitizeHtml(titleSource)
-    if (titleHtmlSanitized.trim.isEmpty)
+    if (titleTextAndHtml.safeHtml.trim.isEmpty)
       throwForbidden("DwE5KPEF21", "Page title should not be empty")
 
     readWriteTransaction { transaction =>
       val (pagePath, bodyPost) = createPageImpl(pageRole, pageStatus, anyCategoryId,
         anyFolder = anyFolder, anySlug = anySlug,
-        titleSource = titleSource, titleHtmlSanitized = titleHtmlSanitized,
-        bodySource = bodySource, bodyHtmlSanitized = bodyHtmlSanitized,
+        titleSource = titleTextAndHtml.text, titleHtmlSanitized = titleTextAndHtml.safeHtml,
+        bodySource = bodyTextAndHtml.text, bodyHtmlSanitized = bodyTextAndHtml.safeHtml,
         showId = showId, authorId = authorId, browserIdData,
         transaction)
 
@@ -350,11 +347,11 @@ trait CachingPagesDao extends PagesDao {
 
   override def createPage(pageRole: PageRole, pageStatus: PageStatus,
         anyCategoryId: Option[CategoryId], anyFolder: Option[String], anySlug: Option[String],
-        titleSource: String, bodySource: String,
+        titleTextAndHtml: TextAndHtml, bodyTextAndHtml: TextAndHtml,
         showId: Boolean, authorId: UserId, browserIdData: BrowserIdData)
         : PagePath = {
     val pagePath = super.createPage(pageRole, pageStatus, anyCategoryId,
-      anyFolder, anySlug, titleSource, bodySource, showId, authorId, browserIdData)
+      anyFolder, anySlug, titleTextAndHtml, bodyTextAndHtml, showId, authorId, browserIdData)
     firePageCreated(pagePath)
     pagePath
   }

@@ -23,6 +23,7 @@ import com.codahale.metrics
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
+import debiki.antispam.AntiSpam
 import debiki.dao._
 import debiki.dao.migrations.ScalaBasedMigrations
 import java.{lang => jl, util => ju}
@@ -94,6 +95,11 @@ class Globals {
   def renderPageContentInBackground(sitePageId: SitePageId) {
     state.renderContentActorRef ! sitePageId
   }
+
+  def antiSpam: AntiSpam = state.antiSpam
+
+  val securityComplaintsEmailAddress = Play.configuration.getString(
+    "debiki.securityComplaintsEmailAddress")
 
 
   /** Either exactly all sites uses HTTPS, or all of them use HTTP.
@@ -219,6 +225,9 @@ class Globals {
     val notifierActorRef = Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory)
 
     val renderContentActorRef = RenderContentService.startNewActor(Akka.system, siteDaoFactory)
+
+    val antiSpam = new AntiSpam()
+    antiSpam.start()
 
     def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory)
 

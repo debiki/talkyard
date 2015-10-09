@@ -17,15 +17,17 @@
 
 package controllers
 
-import actions.ApiActions.PostJsonAction
+import actions.ApiActions.AsyncPostJsonAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.Utils.OkSafeJson
 import debiki._
 import debiki.DebikiHttp._
+import debiki.antispam.AntiSpam.throwForbiddenIfSpam
 import play.api._
 import play.api.mvc.{Action => _, _}
 import requests._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
 /** Handles reply form submissions. Lazily creates pages for embedded discussions
@@ -34,7 +36,7 @@ import requests._
 object ReplyController extends mvc.Controller {
 
 
-  def handleReply = PostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
+  def handleReply = AsyncPostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
         request: JsonPostRequest =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
@@ -61,12 +63,17 @@ object ReplyController extends mvc.Controller {
     if (text.isEmpty)
       throwBadReq("DwE85FK03", "Empty post")
 
-    val postId = pageReq.dao.insertReply(text, pageId = pageId, replyToPostIds, postType,
-      authorId = pageReq.theUser.id, pageReq.theBrowserIdData)
+    val textAndHtml = TextAndHtml(text, isTitle = false)
+    Globals.antiSpam.detectPostSpam(request, pageId, textAndHtml) map { isSpamReason =>
+      throwForbiddenIfSpam(isSpamReason, "DwE5JGY0")
 
-    val json = ReactJson.postToJson2(postId = postId, pageId = pageId, pageReq.dao,
-      includeUnapproved = true)
-    OkSafeJson(json)
+      val postId = pageReq.dao.insertReply(textAndHtml, pageId = pageId, replyToPostIds, postType,
+        authorId = pageReq.theUser.id, pageReq.theBrowserIdData)
+
+      val json = ReactJson.postToJson2(postId = postId, pageId = pageId, pageReq.dao,
+        includeUnapproved = true)
+      OkSafeJson(json)
+    }
   }
 
 

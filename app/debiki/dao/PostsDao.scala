@@ -38,11 +38,9 @@ trait PostsDao {
   self: SiteDao =>
 
 
-  def insertReply(text: String, pageId: PageId, replyToPostIds: Set[PostId], postType: PostType,
-        authorId: UserId, browserIdData: BrowserIdData): PostId = {
-    val htmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(
-      text, allowClassIdDataAttrs = false, followLinks = false)
-    if (htmlSanitized.trim.isEmpty)
+  def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostIds: Set[PostId],
+        postType: PostType, authorId: UserId, browserIdData: BrowserIdData): PostId = {
+    if (textAndHtml.safeHtml.trim.isEmpty)
       throwBadReq("DwE6KEF2", "Empty reply")
 
     val postId = readWriteTransaction { transaction =>
@@ -93,8 +91,8 @@ trait PostsDao {
         postType = postType,
         createdAt = transaction.currentTime,
         createdById = authorId,
-        source = text,
-        htmlSanitized = htmlSanitized,
+        source = textAndHtml.text,
+        htmlSanitized = textAndHtml.safeHtml,
         approvedById = Some(approverId))
 
       val numNewOrigPostReplies = (isApproved && newPost.isOrigPostReply) ? 1 | 0
@@ -136,7 +134,11 @@ trait PostsDao {
 
 
   def editPost(pageId: PageId, postId: PostId, editorId: UserId, browserIdData: BrowserIdData,
-        newText: String) {
+        newTextAndHtml: TextAndHtml) {
+
+    if (newTextAndHtml.safeHtml.trim.isEmpty)
+      throwBadReq("DwE4KEL7", EditController.EmptyPostErrorMessage)
+
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val postToEdit = page.parts.post(postId) getOrElse {
@@ -147,7 +149,7 @@ trait PostsDao {
       if (postToEdit.isDeleted)
         throwForbidden("DwE6PK2", "The post has been deleted")
 
-      if (postToEdit.currentSource == newText)
+      if (postToEdit.currentSource == newTextAndHtml.text)
         return
 
       val editor = transaction.loadUser(editorId).getOrElse(
@@ -167,19 +169,6 @@ trait PostsDao {
         lastEditedAt = Some(transaction.currentTime),
         lastEditedById = Some(editorId))
 
-      val approvedHtmlSanitized =
-        if (postId == PageParts.TitleId) {
-          siteDbDao.commonMarkRenderer.sanitizeHtml(newText)
-        }
-        else {
-          siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(newText,
-            allowClassIdDataAttrs = postId == PageParts.BodyId,
-            followLinks = postToEdit.createdByUser(page.parts).isStaff && editor.isStaff)
-        }
-
-      if (approvedHtmlSanitized.trim.isEmpty)
-        throwBadReq("DwE4KEL7", EditController.EmptyPostErrorMessage)
-
       val approverId = if (editor.isStaff) editor.id else SystemUserId
       val nextVersion = postToEdit.currentVersion + 1
 
@@ -191,8 +180,8 @@ trait PostsDao {
       editedPost = editedPost.copy(
         lastApprovedEditAt = Some(transaction.currentTime),
         lastApprovedEditById = Some(editorId),
-        approvedSource = Some(newText),
-        approvedHtmlSanitized = Some(approvedHtmlSanitized),
+        approvedSource = Some(newTextAndHtml.text),
+        approvedHtmlSanitized = Some(newTextAndHtml.safeHtml),
         approvedAt = Some(transaction.currentTime),
         approvedById = Some(approverId),
         approvedVersion = Some(nextVersion),
@@ -209,14 +198,14 @@ trait PostsDao {
           None
         }
         else {
-          if (newText == Category.UncategorizedDescription) {
+          if (newTextAndHtml.text == Category.UncategorizedDescription) {
             // We recognize Uncategorized categories via the magic text tested for above.
             throwForbidden("DwE4KEP8", "Forbidden magic text")
           }
           // COULD reuse the same transaction, when loading the category. Barely matters.
           val category = loadTheCategory(page.meta.categoryId getOrDie "DwE2PKF0")
           val newDescription = ReactJson.htmlToExcerpt(
-            approvedHtmlSanitized, Category.DescriptionExcerptLength)
+            newTextAndHtml.safeHtml, Category.DescriptionExcerptLength)
           Some(category.copy(description = Some(newDescription)))
         }
 

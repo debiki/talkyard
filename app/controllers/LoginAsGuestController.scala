@@ -17,15 +17,17 @@
 
 package controllers
 
+import actions.ApiActions.AsyncPostJsonAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
+import debiki.antispam.AntiSpam
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
-import actions.ApiActions.PostJsonAction
 import play.api.libs.json.JsObject
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
 /** Logs in guest users.
@@ -33,7 +35,7 @@ import play.api.libs.json.JsObject
 object LoginAsGuestController extends mvc.Controller {
 
 
-  def loginGuest = PostJsonAction(RateLimits.Login, maxLength = 1000) { request =>
+  def loginGuest = AsyncPostJsonAction(RateLimits.Login, maxLength = 1000) { request =>
     // For now, until I've built more rate limiting stuff and security features:
     if (request.siteId != KajMagnusSiteId)
       throwForbidden("DwE5KEGP8", "Guest login disabled")
@@ -52,24 +54,29 @@ object LoginAsGuestController extends mvc.Controller {
     if (email.nonEmpty && User.emailIsWeird(email))
       throwForbidden("DwE04HK83", "Weird email. Please use a real email address")
 
-    val addr = request.ip
-    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
+    Globals.antiSpam.detectRegistrationSpam(request, name = name, email = email) map {
+        isSpamReason =>
+      AntiSpam.throwForbiddenIfSpam(isSpamReason, "DwE5KJU3")
 
-    val loginAttempt = GuestLoginAttempt(
-      ip = addr,
-      date = new ju.Date,
-      name = name,
-      email = email,
-      guestCookie = request.theBrowserIdData.idCookie)
+      // why? we already have request.siteId & .dao
+      val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
 
-    val guestUser = Globals.siteDao(tenantId).loginAsGuest(loginAttempt)
+      val loginAttempt = GuestLoginAttempt(
+        ip = request.ip,
+        date = new ju.Date,
+        name = name,
+        email = email,
+        guestCookie = request.theBrowserIdData.idCookie)
 
-    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(guestUser)
+      val guestUser = Globals.siteDao(tenantId).loginAsGuest(loginAttempt)
 
-    // Could include a <a href=last-page>Okay</a> link, see the
-    // Logout dialog below. Only needed if javascript disabled though,
-    // otherwise a javascript welcome dialog is shown instead.
-    Ok.withCookies(sidAndXsrfCookies: _*)
+      val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(guestUser)
+
+      // Could include a <a href=last-page>Okay</a> link, see the
+      // Logout dialog below. Only needed if javascript disabled though,
+      // otherwise a javascript welcome dialog is shown instead.
+      Ok.withCookies(sidAndXsrfCookies: _*)
+    }
   }
 
 }

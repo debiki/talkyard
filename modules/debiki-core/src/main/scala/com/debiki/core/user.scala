@@ -382,6 +382,11 @@ case class User(
   def isSuspendedAt(when: ju.Date) = User.isSuspendedAt(when, suspendedTill = suspendedTill)
 
   def theUsername = username getOrDie "DwE4GKS2"
+
+  def prettyUsernameFullName = username match {
+    case Some(un) => s"$un ($displayName)"
+    case None => s"($displayName)"
+  }
 }
 
 

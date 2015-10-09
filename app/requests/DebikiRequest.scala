@@ -40,6 +40,7 @@ abstract class DebikiRequest[A] {
 
   def tenantId = dao.siteId
   def siteId = dao.siteId
+  def domain = request.domain
 
   def siteSettings = dao.loadWholeSiteSettings()
 
@@ -58,8 +59,9 @@ abstract class DebikiRequest[A] {
   def anyRoleId = user.flatMap(_.anyRoleId)
   def theRoleId = anyRoleId getOrElse throwForbidden("DwE86Wb7", "Not authenticated")
 
-  def isAuthenticated = user.map(_.isAuthenticated) == Some(true)
-  def isApprovedOrStaff = user.map(_.isApprovedOrStaff) == Some(true)
+  def isAuthenticated = user.exists(_.isAuthenticated)
+  def isApprovedOrStaff = user.exists(_.isApprovedOrStaff)
+  def isStaff = user.exists(_.isStaff)
 
   /**
    * The display name of the user making the request. Throws 403 Forbidden

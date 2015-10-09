@@ -79,6 +79,11 @@ object ApiActions {
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
 
+  def AsyncPostJsonAction(rateLimits: RateLimits, maxLength: Int, allowUnapproved: Boolean = false)(
+        f: JsonPostRequest => Future[Result]) =
+  PlainApiAction(rateLimits, allowUnapproved = allowUnapproved).async(
+    BodyParsers.parse.json(maxLength = maxLength))(f)
+
   def PostJsonAction(rateLimits: RateLimits, maxLength: Int, allowUnapproved: Boolean = false)(
         f: JsonPostRequest => Result) =
     PlainApiAction(rateLimits, allowUnapproved = allowUnapproved)(

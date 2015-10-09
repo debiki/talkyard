@@ -24,10 +24,12 @@ import com.debiki.core.PageParts.MaxTitleLength
 import debiki._
 import debiki.DebikiHttp._
 import debiki.ReactJson.JsStringOrNull
+import debiki.antispam.AntiSpam.throwForbiddenIfSpam
 import play.api._
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
 import requests._
+import scala.concurrent.ExecutionContext.Implicits.global
 import Utils.OkSafeJson
 
 
@@ -37,7 +39,7 @@ import Utils.OkSafeJson
 object PageTitleSettingsController extends mvc.Controller {
 
 
-  def editTitleSaveSettings = PostJsonAction(RateLimits.EditPost, maxLength = 2000) {
+  def editTitleSaveSettings = AsyncPostJsonAction(RateLimits.EditPost, maxLength = 2000) {
         request: JsonPostRequest =>
 
     val pageId = (request.body \ "pageId").as[PageId]
@@ -95,57 +97,63 @@ object PageTitleSettingsController extends mvc.Controller {
     // but the page will still be in an okay state afterwards.
 
     // Update page title.
-    request.dao.editPost(pageId = pageId, postId = PageParts.TitleId,
-      editorId = request.theUser.id, request.theBrowserIdData, newTitle)
+    val newTextAndHtml = TextAndHtml(newTitle, isTitle = true)
 
-    // Load old section page id before changing it.
-    val oldSectionPageId: Option[PageId] = oldMeta.categoryId map request.dao.loadTheSectionPageId
+    Globals.antiSpam.detectPostSpam(request, pageId, newTextAndHtml) map { isSpamReason =>
+      throwForbiddenIfSpam(isSpamReason, "DwE6JG20")
 
-    // Update page settings.
-    val newMeta = oldMeta.copy(
-      pageRole = anyNewRole.getOrElse(oldMeta.pageRole),
-      categoryId = anyNewCategoryId.orElse(oldMeta.categoryId),
-      version = oldMeta.version + 1)
-    request.dao.readWriteTransaction { transaction =>  // COULD wrap everything in this transaction
-                                                        // and move it to PagesDao?
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
-    }
+      request.dao.editPost(pageId = pageId, postId = PageParts.TitleId,
+        editorId = request.theUser.id, request.theBrowserIdData, newTextAndHtml)
 
-    // Update URL path (folder, slug, show/hide page id).
-    // The last thing we do, update the url path, so it cannot happen that we change the
-    // url path, but then afterwards something else fails so we reply error — that would
-    // be bad because the browser wouldn't know if it should update its url path or not.
-    var newPath: Option[PagePath] = None
-    if (anyFolder.orElse(anySlug).orElse(anyShowId).isDefined) {
-      try {
-        newPath = Some(
-          request.dao.moveRenamePage(
-            pageId, newFolder = anyFolder, newSlug = anySlug, showId = anyShowId))
+      // Load old section page id before changing it.
+      val oldSectionPageId: Option[PageId] = oldMeta.categoryId map request.dao.loadTheSectionPageId
+
+      // Update page settings.
+      val newMeta = oldMeta.copy(
+        pageRole = anyNewRole.getOrElse(oldMeta.pageRole),
+        categoryId = anyNewCategoryId.orElse(oldMeta.categoryId),
+        version = oldMeta.version + 1)
+      request.dao.readWriteTransaction { transaction =>  // COULD wrap everything in this transaction
+                                                          // and move it to PagesDao?
+        transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       }
-      catch {
-        case ex: DbDao.PageNotFoundException =>
-          throwNotFound("DwE34FK81", "The page was deleted just now")
-        case DbDao.PathClashException(existingPagePath, newPagePath) =>
-          throwForbidden(
-            "DwE4FKEU5", o"""Cannot move page to ${existingPagePath.value}. There is
-              already another page there. Please move that page elsewhere, first""")
+
+      // Update URL path (folder, slug, show/hide page id).
+      // The last thing we do, update the url path, so it cannot happen that we change the
+      // url path, but then afterwards something else fails so we reply error — that would
+      // be bad because the browser wouldn't know if it should update its url path or not.
+      var newPath: Option[PagePath] = None
+      if (anyFolder.orElse(anySlug).orElse(anyShowId).isDefined) {
+        try {
+          newPath = Some(
+            request.dao.moveRenamePage(
+              pageId, newFolder = anyFolder, newSlug = anySlug, showId = anyShowId))
+        }
+        catch {
+          case ex: DbDao.PageNotFoundException =>
+            throwNotFound("DwE34FK81", "The page was deleted just now")
+          case DbDao.PathClashException(existingPagePath, newPagePath) =>
+            throwForbidden(
+              "DwE4FKEU5", o"""Cannot move page to ${existingPagePath.value}. There is
+                already another page there. Please move that page elsewhere, first""")
+        }
       }
+
+      // Refresh cache, plus any forum page if this page is a forum topic.
+      // (Forum pages cache category JSON and a latest topics list, includes titles.)
+      val newSectionPageId = newMeta.categoryId map request.dao.loadTheSectionPageId
+      val idsToRefresh = (pageId :: oldSectionPageId.toList ::: newSectionPageId.toList).distinct
+      idsToRefresh.foreach(request.dao.refreshPageInAnyCache)
+
+      val (_, newAncestorsJson) = ReactJson.makeForumIdAndAncestorsJson(newMeta, request.dao)
+
+      // The browser will update the title and the url path in the address bar.
+      OkSafeJson(Json.obj(
+        "newTitlePost" -> ReactJson.postToJson2(postId = PageParts.TitleId, pageId = pageId,
+            request.dao, includeUnapproved = true),
+        "newAncestorsRootFirst" -> newAncestorsJson,
+        "newUrlPath" -> JsStringOrNull(newPath.map(_.value))))
     }
-
-    // Refresh cache, plus any forum page if this page is a forum topic.
-    // (Forum pages cache category JSON and a latest topics list, includes titles.)
-    val newSectionPageId = newMeta.categoryId map request.dao.loadTheSectionPageId
-    val idsToRefresh = (pageId :: oldSectionPageId.toList ::: newSectionPageId.toList).distinct
-    idsToRefresh.foreach(request.dao.refreshPageInAnyCache)
-
-    val (_, newAncestorsJson) = ReactJson.makeForumIdAndAncestorsJson(newMeta, request.dao)
-
-    // The browser will update the title and the url path in the address bar.
-    OkSafeJson(Json.obj(
-      "newTitlePost" -> ReactJson.postToJson2(postId = PageParts.TitleId, pageId = pageId,
-          request.dao, includeUnapproved = true),
-      "newAncestorsRootFirst" -> newAncestorsJson,
-      "newUrlPath" -> JsStringOrNull(newPath.map(_.value))))
   }
 
 }

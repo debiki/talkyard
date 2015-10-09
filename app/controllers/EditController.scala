@@ -23,6 +23,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import debiki.onebox.Onebox
+import debiki.antispam.AntiSpam.throwForbiddenIfSpam
 import play.api._
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
@@ -61,7 +62,7 @@ object EditController extends mvc.Controller {
 
   /** Edits posts.
     */
-  def edit = PostJsonAction(RateLimits.EditPost, maxLength = MaxPostSize) {
+  def edit = AsyncPostJsonAction(RateLimits.EditPost, maxLength = MaxPostSize) {
         request: JsonPostRequest =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postId = (request.body \ "postId").as[PostId]
@@ -75,11 +76,20 @@ object EditController extends mvc.Controller {
 
     _throwIfTooMuchData(newText, request)
 
-    request.dao.editPost(pageId = pageId, postId = postId, editorId = request.theUser.id,
-      request.theBrowserIdData, newText)
+    val newTextAndHtml = TextAndHtml(newText, isTitle = false,
+      allowClassIdDataAttrs = postId == PageParts.BodyId)
+      // When follow links? Previously:
+      // followLinks = postToEdit.createdByUser(page.parts).isStaff && editor.isStaff
 
-    OkSafeJson(ReactJson.postToJson2(postId = postId, pageId = pageId,
-      request.dao, includeUnapproved = true))
+    Globals.antiSpam.detectPostSpam(request, pageId, newTextAndHtml) map { isSpamReason =>
+      throwForbiddenIfSpam(isSpamReason, "DwE6PYU4")
+
+      request.dao.editPost(pageId = pageId, postId = postId, editorId = request.theUser.id,
+        request.theBrowserIdData, newTextAndHtml)
+
+      OkSafeJson(ReactJson.postToJson2(postId = postId, pageId = pageId,
+        request.dao, includeUnapproved = true))
+    }
   }
 
 

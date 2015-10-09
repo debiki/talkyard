@@ -17,16 +17,18 @@
 
 package controllers
 
-import actions.ApiActions.{PostJsonAction, StaffPostJsonAction}
+import actions.ApiActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import controllers.Utils._
 import debiki._
 import debiki.DebikiHttp._
 import debiki.ReactJson.JsLongOrNull
+import debiki.antispam.AntiSpam.throwForbiddenIfSpam
 import java.{util => ju}
 import play.api._
 import play.api.libs.json.Json
-import Utils._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
 /** Creates pages, toggles is-done, deletes them.
@@ -34,7 +36,7 @@ import Utils._
 object PageController extends mvc.Controller {
 
 
-  def createPage = PostJsonAction(RateLimits.CreateTopic, maxLength = 20 * 1000) { request =>
+  def createPage = AsyncPostJsonAction(RateLimits.CreateTopic, maxLength = 20 * 1000) { request =>
     import request.body
 
     val anyCategoryId = (body \ "categoryId").asOpt[CategoryId]
@@ -48,11 +50,21 @@ object PageController extends mvc.Controller {
     val bodyText = (body \ "pageBody").as[String]
     val showId = (body \ "showId").asOpt[Boolean].getOrElse(true)
 
-    val pagePath = request.dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,
-      anySlug, titleText, bodyText, showId, authorId = request.theUserId,
-      request.theBrowserIdData)
+    val bodyTextAndHtml = TextAndHtml(bodyText, isTitle = false,
+      allowClassIdDataAttrs = true, followLinks = !pageRole.isWidelyEditable)
 
-    OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))
+    val titleTextAndHtml = TextAndHtml(titleText, isTitle = true)
+
+    Globals.antiSpam.detectNewPageSpam(request, titleTextAndHtml, bodyTextAndHtml) map {
+        isSpamReason =>
+      throwForbiddenIfSpam(isSpamReason, "DwE4CKB9")
+
+      val pagePath = request.dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,
+        anySlug, titleTextAndHtml, bodyTextAndHtml, showId, authorId = request.theUserId,
+        request.theBrowserIdData)
+
+      OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))
+    }
   }
 
 

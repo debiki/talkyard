@@ -18,19 +18,16 @@
 package controllers
 
 import actions.ApiActions._
-import actions.SafeActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.Utils.{ OkSafeJson, isOkayEmailAddress }
 import debiki._
 import debiki.DebikiHttp._
-import debiki.dao.SiteDao
-import java.{util => ju}
-import play.api._
+import debiki.antispam.AntiSpam.throwForbiddenIfSpam
 import play.api.libs.json._
-import play.api.mvc.{Action => _, _}
-import play.api.mvc.BodyParsers.parse.empty
+import play.api.mvc.Controller
 import requests._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
 /** Creates new empty sites, for forums, blogs or embedded comments.
@@ -38,7 +35,7 @@ import requests._
   * Each new empty site remembers an admin email address. When the site creator later
   * logs in with that email address, s/he becomes admin for the site.
   */
-object CreateSiteController extends mvc.Controller {
+object CreateSiteController extends Controller {
 
   private val log = play.api.Logger
 
@@ -53,7 +50,7 @@ object CreateSiteController extends mvc.Controller {
   }
 
 
-  def createSite = PostJsonAction(RateLimits.CreateSite, maxLength = 200) { request =>
+  def createSite = AsyncPostJsonAction(RateLimits.CreateSite, maxLength = 200) { request =>
     throwIfMayNotCreateSite(request)
 
     val acceptTermsAndPrivacy = (request.body \ "acceptTermsAndPrivacy").as[Boolean]
@@ -93,26 +90,31 @@ object CreateSiteController extends mvc.Controller {
     if (anyPricePlan.exists(_.length > 50))
       throwForbidden("DwE7KEP36", "Bad price plan: Too long")
 
-    val hostname = s"$localHostname.${Globals.baseDomainNoPort}"
+    Globals.antiSpam.detectRegistrationSpam(request, name = localHostname,
+        email = emailAddress) map { isSpamReason =>
+      throwForbiddenIfSpam(isSpamReason, "DwE4KG28")
 
-    val newSite: Site =
-      try {
-        request.dao.createSite(
-          name = localHostname, hostname = hostname, embeddingSiteUrl = anyEmbeddingSiteAddress,
-          creatorEmailAddress = emailAddress,
-          creatorId = request.user.map(_.id) getOrElse UnknownUserId,
-          browserIdData = request.theBrowserIdData, pricePlan = anyPricePlan,
-          isTestSiteOkayToDelete = isTestSiteOkayToDelete)
-      }
-      catch {
-        case _: DbDao.SiteAlreadyExistsException =>
-          throwForbidden("DwE039K2", "A site with that name has already been created")
-        case _: DbDao.TooManySitesCreatedException =>
-          throwForbidden("DwE7IJ08", "You have created too many sites already, sorry.")
-      }
+      val hostname = s"$localHostname.${Globals.baseDomainNoPort}"
 
-    OkSafeJson(
-      Json.obj("newSiteOrigin" -> Globals.originOf(hostname)))
+      val newSite: Site =
+        try {
+          request.dao.createSite(
+            name = localHostname, hostname = hostname, embeddingSiteUrl = anyEmbeddingSiteAddress,
+            creatorEmailAddress = emailAddress,
+            creatorId = request.user.map(_.id) getOrElse UnknownUserId,
+            browserIdData = request.theBrowserIdData, pricePlan = anyPricePlan,
+            isTestSiteOkayToDelete = isTestSiteOkayToDelete)
+        }
+        catch {
+          case _: DbDao.SiteAlreadyExistsException =>
+            throwForbidden("DwE039K2", "A site with that name has already been created")
+          case _: DbDao.TooManySitesCreatedException =>
+            throwForbidden("DwE7IJ08", "You have created too many sites already, sorry.")
+        }
+
+      OkSafeJson(
+        Json.obj("newSiteOrigin" -> Globals.originOf(hostname)))
+    }
   }
 
 

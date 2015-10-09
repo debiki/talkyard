@@ -142,7 +142,7 @@ object RateLimiter {
 
     // Use <= not < so we count the current request too.
     // COULD consider `isNewUser`.
-    val errorMessage =
+    var errorMessage =
       if (rateLimits.maxPerDay <= numRequestsLastDay)
         o"""You (or someone else) have ${rateLimits.what}. Please try again tomorrow. [DwE42KJ2]"""
       else if (rateLimits.maxPerFifteenMinutes <= numRequestsLast15Minutes)
@@ -153,6 +153,14 @@ object RateLimiter {
            fifteen seconds. [DwE35BG8]"""
       else
         return
+
+    if (Globals.securityComplaintsEmailAddress.isDefined)
+      errorMessage += "\n\n" + o"""
+        If you feel this message is in error, you can email us and tell us what you
+        attempted to do, and include the error message shown above.
+        Then we can try to change the security settings so that they will work for you.""" +
+        s"\n\nEmail: ${Globals.securityComplaintsEmailAddress.get}"
+
 
     play.api.Logger.debug(s"Rate limiting ${classNameOf(rateLimits)} for key: $key [DwM429RLMT]")
     throwTooManyRequests(errorMessage)

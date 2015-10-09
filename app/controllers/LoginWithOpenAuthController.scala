@@ -17,7 +17,7 @@
 
 package controllers
 
-import actions.ApiActions.PostJsonAction
+import actions.ApiActions.AsyncPostJsonAction
 import actions.SafeActions.ExceptionAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -27,6 +27,7 @@ import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.impl.providers.oauth2._
 import com.mohiva.play.silhouette.impl.providers._
 import controllers.Utils.OkSafeJson
+import debiki.antispam.AntiSpam
 import debiki.{JsFalse, JsTrue}
 import debiki.DebikiHttp._
 import debiki.Globals
@@ -41,6 +42,7 @@ import play.api.Play
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import requests.JsonPostRequest
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 
@@ -358,7 +360,7 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  def handleCreateUserDialog = PostJsonAction(RateLimits.CreateUser, maxLength = 1000,
+  def handleCreateUserDialog = AsyncPostJsonAction(RateLimits.CreateUser, maxLength = 1000,
         allowUnapproved = true) { request: JsonPostRequest =>
     val body = request.body
 
@@ -396,43 +398,48 @@ object LoginWithOpenAuthController extends Controller {
         None
     }
 
-    val becomeOwner = LoginController.shallBecomeOwner(request, email)
+    Globals.antiSpam.detectRegistrationSpam(request, name = username, email = email) map {
+        isSpamReason =>
+      AntiSpam.throwForbiddenIfSpam(isSpamReason, "DwE2KP89")
 
-    val dao = daoFor(request.request)
-    val userData =
-      NewOauthUserData.create(name = fullName, username = username, email = email,
-          emailVerifiedAt = emailVerifiedAt, identityData = oauthDetails,
-          isAdmin = becomeOwner, isOwner = becomeOwner) match {
-        case Good(data) => data
-        case Bad(errorMessage) =>
-          throwUnprocessableEntity("DwE7BD08", s"$errorMessage, please try again.")
-      }
+      val becomeOwner = LoginController.shallBecomeOwner(request, email)
 
-    try {
-      val loginGrant = dao.createIdentityUserAndLogin(userData)
-      if (emailVerifiedAt.isDefined) {
-        createCookiesAndFinishLogin(request.request, loginGrant.user)
-      }
-      else {
-        LoginWithPasswordController.sendEmailAddressVerificationEmail(
-          loginGrant.user, anyReturnToUrl, request.host, request.dao)
-        OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsFalse))
-      }
-    }
-    catch {
-      case DbDao.DuplicateUsername =>
-        throwForbidden(
-            "DwE6D3G8", "Username already taken, please try again with another username")
-      case DbDao.DuplicateUserEmail =>
-        if (emailVerifiedAt.isDefined) {
-          // The user has been authenticated, so it's okay to tell him/her about the email address.
-          throwForbidden(
-            "DwE4BME8", "You already have an account with that email address")
+      val dao = daoFor(request.request)
+      val userData =
+        NewOauthUserData.create(name = fullName, username = username, email = email,
+            emailVerifiedAt = emailVerifiedAt, identityData = oauthDetails,
+            isAdmin = becomeOwner, isOwner = becomeOwner) match {
+          case Good(data) => data
+          case Bad(errorMessage) =>
+            throwUnprocessableEntity("DwE7BD08", s"$errorMessage, please try again.")
         }
-        // Don't indicate that there is already an account with this email.
-        LoginWithPasswordController.sendYouAlreadyHaveAnAccountWithThatAddressEmail(
-          request.dao, email, siteHostname = request.host, siteId = request.siteId)
-        OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsFalse))
+
+      try {
+        val loginGrant = dao.createIdentityUserAndLogin(userData)
+        if (emailVerifiedAt.isDefined) {
+          createCookiesAndFinishLogin(request.request, loginGrant.user)
+        }
+        else {
+          LoginWithPasswordController.sendEmailAddressVerificationEmail(
+            loginGrant.user, anyReturnToUrl, request.host, request.dao)
+          OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsFalse))
+        }
+      }
+      catch {
+        case DbDao.DuplicateUsername =>
+          throwForbidden(
+              "DwE6D3G8", "Username already taken, please try again with another username")
+        case DbDao.DuplicateUserEmail =>
+          if (emailVerifiedAt.isDefined) {
+            // The user has been authenticated, so it's okay to tell him/her about the email address.
+            throwForbidden(
+              "DwE4BME8", "You already have an account with that email address")
+          }
+          // Don't indicate that there is already an account with this email.
+          LoginWithPasswordController.sendYouAlreadyHaveAnAccountWithThatAddressEmail(
+            request.dao, email, siteHostname = request.host, siteId = request.siteId)
+          OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsFalse))
+      }
     }
   }
 
