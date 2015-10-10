@@ -178,6 +178,10 @@ export var TitleEditor = createComponent({
       selectCategoryInput = r.p({}, 'Loading categories...');
     }
 
+    var customHtmlPageOption = user.isAdmin
+        ? r.option({ value: PageRole.HomePage }, 'Custom HTML page')
+        : null;
+
     var selectPageRoleInput = isForumOrAbout ? null :
       Input({ type: 'select', label: 'Page Type', ref: 'pageRoleInput', title: 'Page type',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10', defaultValue: pageRole },
@@ -187,7 +191,8 @@ export var TitleEditor = createComponent({
         r.option({ value: PageRole.ToDo }, 'Todo'),
         // r.option({ value: PageRole.WikiPage }, 'Wiki'), -- if 1d layout is default?
         r.option({ value: PageRole.MindMap }, 'Wiki Mind Map'),
-        r.option({ value: PageRole.Discussion }, 'Other'));
+        r.option({ value: PageRole.Discussion }, 'Other'),
+        customHtmlPageOption);
 
     var editForumIntroButton;
     var hideShowIntroButton;
