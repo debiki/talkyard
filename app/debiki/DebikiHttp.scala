@@ -103,7 +103,7 @@ object DebikiHttp {
   def throwTemporaryRedirect(url: String) =
     throw ResultException(R.Redirect(url))
 
-  /** Sets a Cache-Control max-age = 1 week, so that permanent redirects can be undone.
+  /** Sets a Cache-Control max-age = 1 week, so that permanent redirects can be undone. [7KEW2Z]
     * Otherwise browsers might cache them forever.
     */
   def throwPermanentRedirect(url: String) =

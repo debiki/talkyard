@@ -137,7 +137,10 @@ object PageActions {
           } else if (!fixPath) {
             f(request.sidStatus, request.xsrfOk, request.browserId, None, dao, request.underlying)
           } else {
-            Results.MovedPermanently(correct.value)
+            //Results.MovedPermanently(correct.value)  -- NO browsers might cache forever. [7KEW2Z]
+            // Later: Could set cache-control 1 day or 1 week? So won't be totally forever.
+            // And perhaps add a checkbox "[x] Redirect permanently (cache-control 1 week)
+            Results.SeeOther(correct.value)
           }
         case None => f(request.sidStatus, request.xsrfOk, request.browserId, None,
           dao, request.underlying)
