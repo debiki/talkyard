@@ -72,7 +72,7 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
       try findAndUpdateOneOutOfDatePage()
       catch {
         case throwable: Throwable =>
-          p.Logger.error("Error rendering one out-of-date page [DwE4KFW2]", throwable)
+          p.Logger.error("Error rendering one out-of-date page [DwE6GUK02]", throwable)
       }
       finally {
         context.system.scheduler.scheduleOnce(333 millis, self, RegenerateStaleHtml)
@@ -95,6 +95,15 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
 
 
   private def rerenderContentHtmlUpdateCache(sitePageId: SitePageId) {
+    try doRerenderContentHtmlUpdateCache(sitePageId)
+    catch {
+      case ex: Exception =>
+        p.Logger.error(s"Error rerendering page $sitePageId [DwE2WKP4]", ex)
+    }
+  }
+
+
+  private def doRerenderContentHtmlUpdateCache(sitePageId: SitePageId) {
     // COULD add Metrics that times this.
     p.Logger.debug(s"Background rendering ${sitePageId.toPrettyString} [DwM7KGE2]")
     val dao = daoFactory.newSiteDao(sitePageId.siteId)

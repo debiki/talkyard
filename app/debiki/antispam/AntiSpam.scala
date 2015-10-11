@@ -67,6 +67,8 @@ object NoApiKeyException extends QuickException
   * Todo:
   *  Could send only new users' posts to Akistmet
   *  Read: https://meta.discourse.org/t/some-ideas-for-spam-control/10393/4
+  *  SECURITY SHOULD Periodically test if we're being blocked by the domain block lists or Akismet,
+  *  and, if so, log a warning, so we'll know that the spam checks don't work.
   *
   * More to test / use:
   * http://blogspam.net/faq/
@@ -424,12 +426,26 @@ class AntiSpam {
       try {
         // COULD do this asynchronously instead, or use Scala's blocking { ... } ?
         val addresses = java.net.InetAddress.getAllByName(query)
-        if (addresses.nonEmpty)
+        if (addresses.isEmpty) {
+          // Weird, an exception should have been thrown? Whatever.
+        }
+        else if (addresses.length == 1 && addresses.head.getHostAddress == "127.0.0.1") {
+          // The *DNS lookup* was blocked, so we don't know if the address is blocked or not.
+          // At least uribl.com uses 127.0.0.1 to indicate that it blocked the lookup.
+          // It blocks public DNS servers because of excessive queries. This happens if you
+          // use Google's DNS servers (ip 8.8.8.8). Then anything.multi.uribl.com resolves
+          // to 127.0.0.1 always.
+          // For more details, see e.g.: http://uribl.com/refused.shtml
+          // and this thread;
+          //   http://vamsoft.com/forum/topic/205/surbl-uriblcom-blacklisting-almost-everything
+        }
+        else {
           return successful(Some(o"""$blockListName thinks links to this domain are spam:
              '$domain'. And you have typed a link to that domain. You could 1) remove the link,
              or 2) change it to plain text and insert spaces in the domain name — then
              it won't be a real link. [DwE5GKF2]
              """))
+        }
       }
       catch {
         case ex: UnknownHostException =>
