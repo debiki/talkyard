@@ -26,6 +26,8 @@ import Prelude._
 
 case class PageDao(override val id: PageId, transaction: SiteTransaction) extends Page {
 
+  def sitePageId = SitePageId(transaction.siteId, id)
+
   var _meta: Option[PageMeta] = null
   var _path: Option[PagePath] = null
 
@@ -43,11 +45,13 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction) extend
   }
 
 
-  override def path: PagePath = {
+  override def thePath = path.getOrDie("DwE6KP2", s"No path to page $sitePageId")
+
+  override def path: Option[PagePath] = {
     if (_path eq null) {
       _path = transaction.loadPagePath(id)
     }
-    _path getOrElse throwPageNotFound()
+    _path
   }
 
 

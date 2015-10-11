@@ -221,7 +221,7 @@ object ReactJson {
       "showForumCategories" -> JsBooleanOrNull(showForumCategories),
       "ancestorsRootFirst" -> ancestorsJsonRootFirst,
       "pageRole" -> JsNumber(page.role.toInt),
-      "pagePath" -> JsString(page.path.value),
+      "pagePath" -> JsString(page.thePath.value),
       "pinOrder" -> JsNumberOrNull(page.meta.pinOrder),
       "pinWhere" -> JsNumberOrNull(page.meta.pinWhere.map(_.toInt)),
       "pageAnsweredAtMs" -> dateOrNull(page.meta.answeredAt),
