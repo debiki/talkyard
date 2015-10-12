@@ -16,8 +16,11 @@
   bottom: 0
   width: 100%
   height: 300px
-  background: hsl(0, 0%, 70%)
+  background: hsl(0, 0%, 89%)
   z-index: 1030
+
+  .btn-default
+    border-color: hsl(0, 0%, 70%); // not 80% because background not white but light gray
 
   .resizable-t
     height: 15px;
@@ -46,6 +49,8 @@
       position: absolute
       top: 20px;
       width: 100%;
+      padding: 6px;
+      font-size: 14px;
 
     .editor-wrapper
       position: absolute
@@ -57,9 +62,11 @@
       .editor
         width: 100%
         height: 100%
+        font-size: 13px;
+        padding: 6px;
 
     .title-input + .editor-wrapper
-        top: 50px // make space for title input
+        top: 60px // make space for title input
 
     .preview
       height: 100%
@@ -86,3 +93,5 @@
     bottom: 25px;
     button
       margin-right: 5px;
+
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

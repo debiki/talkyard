@@ -38,6 +38,7 @@ enum PageRole {
   ToDo = 13,
   MindMap = 11,
   Discussion = 12,
+  Critique = 16, // [plugin]
 }
 
 

@@ -119,6 +119,24 @@ a, a:link { color: hsl(211, 88%, 35%);  }
 a:visited { color: hsl(211, 30%, 40%); }
 
 
+/* Make placeholder text darker == more readable. Do not combine this placeholde stuff to
+ * a single group — then they would all be ignored. */
+::-webkit-input-placeholder { /* WebKit, Blink, Edge */
+  color: hsl(0, 0%, 45%);
+}
+:-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+  color: hsl(0, 0%, 45%);
+  opacity: 1;
+}
+::-moz-placeholder { /* Mozilla Firefox 19+ */
+  color: hsl(0, 0%, 45%);
+  opacity:  1;
+}
+:-ms-input-placeholder { /* Internet Explorer 10-11 */
+  color: hsl(0, 0%, 45%);
+}
+
+
 footer, .footer,
 #topbar {
   background: hsl(211, 31%, 31.5%);
@@ -266,13 +284,6 @@ jQuery UI theme, but ... not right now. */
 
 .nav > :first-child {
   margin-left: 0;
-}
-
-input:focus, textarea:focus {
-  /* Change border from inset to solid, and hue from 206 to 208,
-  and remove Chrome's built outline in orange */
-  border: 1px solid hsl(208, 100%, 78%);
-  outline: 1px solid hsl(208, 100%, 78%);
 }
 
 input, textarea {

@@ -103,7 +103,7 @@ export var Editor = createComponent({
     }
     var placeholder = $(this.refs.placeholder.getDOMNode());
     var editor = $(this.refs.editor.getDOMNode());
-    editor.css('border-top', '8px solid #888');
+    editor.css('border-top', '8px solid hsl(0, 0%, 67%)');
     editor.resizable({
       direction: ['top'],
       resize: function() {
@@ -298,23 +298,50 @@ export var Editor = createComponent({
   render: function() {
     var titleInput;
     var state = this.state;
+    var titlePlaceholder;
+    var youCanUse = "You can use Markdown and HTML.";
+    var textareaPlaceholder = "Type here. " + youCanUse;
     if (this.state.newForumPageRole) {
       titleInput =
-          r.input({ className: 'title-input', type: 'text', ref: 'titleInput',
-              key: this.state.newForumPageRole, defaultValue: 'Topic title' });
+          r.input({ className: 'title-input form-control', type: 'text', ref: 'titleInput',
+              key: this.state.newForumPageRole,
+              placeholder: "What is this about, in one brief sentence?" });
     }
 
     var doingWhatInfo;
     var editingPostId = this.state.editingPostId;
     var replyToPostIds = this.state.replyToPostIds;
     var isChatComment = replyToPostIds.length === 1 && replyToPostIds[0] === NoPostId;
+    var isChatReply = replyToPostIds.indexOf(NoPostId) !== -1 && !isChatComment;
     if (_.isNumber(editingPostId)) {
       doingWhatInfo =
         r.div({},
-          'Editing ', r.a({ href: '#post-' + editingPostId }, 'post ' + editingPostId + ':'));
+          'Edit ', r.a({ href: '#post-' + editingPostId }, 'post ' + editingPostId + ':'));
     }
     else if (this.state.newForumPageRole) {
-      doingWhatInfo = r.div({}, 'New topic title and text:');
+      var what = "Create new topic";
+      switch (this.state.newForumPageRole) {
+        case PageRole.HomePage: what = "Create a custom HTML page (add your own <h1> title)"; break;
+        case PageRole.WebPage: what = "Create an info page"; break;
+        case PageRole.Code: what = "Create a source code page"; break;
+        case PageRole.SpecialContent: die('DwE5KPVW2'); break;
+        case PageRole.EmbeddedComments: die('DwE2WCCP8'); break;
+        case PageRole.Blog: die('DwE2WQB9'); break;
+        case PageRole.Forum: die('DwE5JKF9'); break;
+        case PageRole.About: die('DwE1WTFW8'); break;
+        case PageRole.Question: what = "Ask a question"; break;
+        case PageRole.Problem: what = "Report a problem"; break;
+        case PageRole.Idea: what = "Suggest an idea"; break;
+        case PageRole.ToDo: what = "Create a todo"; break;
+        case PageRole.MindMap: what = "Create a mind map page"; break;
+        case PageRole.Discussion: break; // use default
+        case PageRole.Critique: // [plugin]
+          what = "Ask for critique";
+          textareaPlaceholder = "Here, enter a link to your work, and tell people " +
+              "what you want feedback about. \n" + youCanUse;
+          break;
+      }
+      doingWhatInfo = r.div({}, what + ":");
     }
     else if (replyToPostIds.length === 0) {
       doingWhatInfo =
@@ -322,18 +349,23 @@ export var Editor = createComponent({
     }
     else if (isChatComment) {
       doingWhatInfo =
-        r.div({}, "New comment:");
+        r.div({}, "New chat comment:");
+    }
+    else if (_.isEqual([BodyId], replyToPostIds) && isCritiquePage()) { // [plugin]
+      doingWhatInfo =
+        r.div({}, "Your critique:");
     }
     else if (replyToPostIds.length > 0) {
       doingWhatInfo =
         r.div({},
-          'Replying to ',
-          replyToPostIds.map((postId, index) => {
+          isChatReply ? 'Chat reply to ' : 'Reply to ',
+          _.filter(replyToPostIds, (id) => id !== NoPostId).map((postId, index) => {
             var anyAnd = index > 0 ? ' and ' : '';
+            var whichPost = postId === 1 ? 'the Original Post' : 'post ' + postId;
             return (
               r.span({ key: postId },
                 anyAnd,
-                r.a({ href: '#post-' + postId }, 'post ' + postId)));
+                r.a({ href: '#post-' + postId }, whichPost)));
           }),
           ':');
     }
@@ -365,6 +397,10 @@ export var Editor = createComponent({
       maxHeight: screen.height / 2.5
     };
 
+    var textarea =
+        r.textarea({ className: 'editor form-control', ref: 'textarea', value: this.state.text,
+            onChange: this.onTextEdited, placeholder: textareaPlaceholder });
+
     return (
       r.div({ style: styles },
         r.div({ id: 'debiki-editor-placeholder', ref: 'placeholder' }),
@@ -375,8 +411,7 @@ export var Editor = createComponent({
                 doingWhatInfo,
                 titleInput,
                 r.div({ className: 'editor-wrapper' },
-                  r.textarea({ className: 'editor', ref: 'textarea', value: this.state.text,
-                      onChange: this.onTextEdited })))),
+                  textarea))),
             r.div({ className: 'preview-area' },
               r.div({}, titleInput ? 'Preview: (title excluded)' : 'Preview:'),
               r.div({ className: 'preview',
@@ -386,6 +421,11 @@ export var Editor = createComponent({
               Button({ onClick: this.onCancelClick }, 'Cancel'))))));
   }
 });
+
+
+function isCritiquePage(): boolean {  // [plugin]
+  return ReactStore.allData().pageRole === PageRole.Critique;
+}
 
 
 var newCategoryPlaceholderText =

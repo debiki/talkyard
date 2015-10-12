@@ -177,6 +177,7 @@ var CategoriesAndTopics = createComponent({
         name: 'All Categories',  // [i18n]
         id: this.props.categoryId, // the forum root category id
         isForumItself: true,
+        newTopicTypes: [],
       };
     }
     return activeCategory;
@@ -270,7 +271,7 @@ var CategoriesAndTopics = createComponent({
   render: function() {
     var props: Store = this.props;
     var user = props.user;
-    var activeCategory = this.getActiveCategory();
+    var activeCategory: Category = this.getActiveCategory();
     if (!activeCategory) {
       // The user has typed a non-existing category slug in the URL. Or she has just created
       // a category, opened a page and then clicked Back in the browser. Then this page
@@ -346,7 +347,7 @@ var CategoriesAndTopics = createComponent({
 
     var createTopicBtn;
     if (activeRoute.name !== 'ForumRouteCategories') {
-      createTopicBtn  = Button({ onClick: this.createTopic }, 'Create Topic');
+      createTopicBtn = Button({ onClick: this.createTopic }, createTopicBtnTitle(activeCategory));
     }
 
     var createCategoryBtn;
@@ -798,6 +799,34 @@ function makeTitle(topic: Topic) {
         ? "This has been done or fixed"
         : "This is something to do or to fix";
     title = r.span({ title: tooltip }, r.span({ className: iconClass }, title));
+  }
+  return title;
+}
+
+
+function createTopicBtnTitle(category: Category) {
+  var title = "Create Topic";
+  if (_.isEqual([PageRole.Idea], category.newTopicTypes)) {
+    title = "Submit an Idea";
+  }
+  else if (_.isEqual([PageRole.Question], category.newTopicTypes)) {
+    title = "Ask a Question";
+  }
+  else if (_.isEqual([PageRole.Problem], category.newTopicTypes)) {
+    title = "Report a Problem";
+  }
+  else if (_.isEqual([PageRole.Critique], category.newTopicTypes)) {
+    title = "Ask for Critique"; // [plugin]
+  }
+  else if (areWebPages(category.newTopicTypes)) {
+    title = "Create Page";
+  }
+  function areWebPages(topicTypes: PageRole[]): boolean {
+    return isWebPage(topicTypes[0]) && (
+        topicTypes.length === 1 || (topicTypes.length === 2 && isWebPage(topicTypes[1])));
+  }
+  function isWebPage(pageType: PageRole): boolean {
+    return pageType === PageRole.HomePage || pageType === PageRole.WebPage;
   }
   return title;
 }

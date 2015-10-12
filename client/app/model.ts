@@ -109,7 +109,7 @@ interface Category {
   id: number;
   name: string;
   slug: string;
-  newTopicTypes: number[];
+  newTopicTypes: PageRole[];
   position?: number;
   description: string;
   recentTopics?: Topic[];

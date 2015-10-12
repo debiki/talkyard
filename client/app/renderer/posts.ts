@@ -1095,6 +1095,16 @@ var PostActions = createComponent({
     debiki.internal.$showActionDialog('PinTree').call(event.target, event);
   }, */
 
+  makeReplyBtnTitle: function(post: Post) {
+    if (post.postId !== BodyId)
+      return "Reply";
+
+    switch (this.props.store.pageRole) {
+      case PageRole.Critique: return "Give Critique"; // [plugin]
+      default: return "Reply";
+    }
+  },
+
   render: function() {
     var post = this.props.post;
     var store: Store = this.props.store;
@@ -1140,7 +1150,8 @@ var PostActions = createComponent({
     var replyButton = null;
     if (!deletedOrCollapsed) {
       replyButton =
-          r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick }, 'Reply');
+          r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick },
+            this.makeReplyBtnTitle(post));
     }
 
     // Show a close button for unanswered questions and pending to-dos, and a reopen

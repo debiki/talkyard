@@ -302,6 +302,9 @@ object PageRole {
   case object WikiPage extends PageRole
   */
 
+  case object Critique extends PageRole(16, staffOnly = false) // [plugin]
+
+
   def fromInt(value: Int): Option[PageRole] = Some(value match {
     case HomePage.IntValue => HomePage
     case WebPage.IntValue => WebPage
@@ -317,6 +320,7 @@ object PageRole {
     case ToDo.IntValue => ToDo
     case MindMap.IntValue => MindMap
     case Discussion.IntValue => Discussion
+    case Critique.IntValue => Critique
     //case WikiMainPage.IntValue => WikiMainPage
     //case WikiPage.IntValue => WikiPage
     case _ => return None

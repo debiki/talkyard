@@ -150,7 +150,8 @@ var EditCategoryDialog = createClassAndFactory({
         { value: PageRole.Question, label: 'Question' },
         { value: PageRole.Problem, label: 'Problem' },
         { value: PageRole.Idea, label: 'Idea' },
-        { value: PageRole.Discussion, label: 'Discussion' }];
+        { value: PageRole.Discussion, label: 'Discussion' },
+        { value: PageRole.Critique, label: 'Critique' }]; // [plugin]
 
     var topicTypesInput =
       r.div({ className: 'form-group' },
