@@ -172,4 +172,15 @@ Javascript and Java:
     Apache License 2.0
     https://code.google.com/p/google-diff-match-patch/
 
+Unknown licenses, seemingly okay to use:
+
+  - function hashStringToNumber  // [4KFBW2]
+    from here: http://stackoverflow.com/a/7616484/694469
+    which copied it from here:
+      http://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
+    (that's a blog post that essentially asks the whole Internet to use the short string has function)
+    I emailed and asked: info@werxltd.com
+
+
+
 

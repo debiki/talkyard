@@ -49,3 +49,12 @@ enum PostType {
   CommunityWiki = 12,
 }
 
+
+// Determines which write-post guidelines will be shown in the editor.
+enum WritingWhat {
+  NewPage = 1,
+  ReplyToOriginalPost = 2,
+  ReplyToNotOriginalPost = 3,
+  ChatComment = 4,
+}
+

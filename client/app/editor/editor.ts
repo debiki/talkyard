@@ -71,6 +71,7 @@ export var Editor = createComponent({
       replyToPostIds: [],
       newForumTopicCategoryId: null,
       newForumPageRole: null,
+      guidelines: null,
     };
   },
 
@@ -103,7 +104,7 @@ export var Editor = createComponent({
     }
     var placeholder = $(this.refs.placeholder.getDOMNode());
     var editor = $(this.refs.editor.getDOMNode());
-    editor.css('border-top', '8px solid hsl(0, 0%, 67%)');
+    editor.css('border-top', '8px solid hsl(0, 0%, 74%)');
     editor.resizable({
       direction: ['top'],
       resize: function() {
@@ -137,6 +138,10 @@ export var Editor = createComponent({
     if (!postIds.length) {
       this.closeEditor();
     }
+    var writingWhat = WritingWhat.ReplyToNotOriginalPost;
+    if (_.isEqual([BodyId], postIds)) writingWhat = WritingWhat.ReplyToOriginalPost;
+    else if (_.isEqual([NoPostId], postIds)) writingWhat = WritingWhat.ChatComment;
+    this.loadGuidelines(writingWhat);
   },
 
   editPost: function(postId: number) {
@@ -164,6 +169,7 @@ export var Editor = createComponent({
       newForumPageRole: role,
       text: text
     });
+    this.loadGuidelines(WritingWhat.NewPage, categoryId, role);
     this.updatePreview();
   },
 
@@ -192,6 +198,53 @@ export var Editor = createComponent({
       return true;
     }
     return false;
+  },
+
+  loadGuidelines: function(writingWhat: WritingWhat, categoryId?: number, pageRole?: PageRole) {
+    var theCategoryId = categoryId || ReactStore.allData().categoryId;
+    var thePageRole = pageRole || ReactStore.allData().pageRole;
+    var currentGuidelines = this.state.guidelines;
+    if (currentGuidelines &&
+        currentGuidelines.categoryId === theCategoryId &&
+        currentGuidelines.pageRole === thePageRole &&
+        currentGuidelines.writingWhat === writingWhat)
+      return;
+
+    // Currently there are no drafts, only guidelines.
+    Server.loadDraftAndGuidelines(writingWhat, theCategoryId, thePageRole, guidelinesSafeHtml => {
+      var guidelinesHash = hashStringToNumber(guidelinesSafeHtml);
+      var hiddenGuidelinesHashes = getFromLocalStorage('dwHiddenGuidelinesHashes') || {};
+      var isHidden = hiddenGuidelinesHashes[guidelinesHash];
+      this.setState({
+        guidelines: {
+          writingWhat: writingWhat,
+          categoryId: theCategoryId,
+          pageRole: thePageRole,
+          safeHtml: guidelinesSafeHtml,
+          hidden: isHidden,
+        }
+      });
+    });
+  },
+
+  // Remembers that these guidelines have been hidden, by storing a hash of the text in localStorage.
+  // So, if the guidelines get changed, they'll be shown again (good). COULD delete old hashes if
+  // we end up storing > 100? hashes?
+  hideGuideline: function() {
+    var guidelines = this.state.guidelines;
+    guidelines.hidden = true;
+    this.setState(guidelines);
+    var hash = hashStringToNumber(guidelines.safeHtml);
+    var hiddenGuidelinesHashes = getFromLocalStorage('dwHiddenGuidelinesHashes') || {};
+    hiddenGuidelinesHashes[hash] = true;
+    putInLocalStorage('dwHiddenGuidelinesHashes', hiddenGuidelinesHashes);
+  },
+
+  showGuideline: function() {
+    var guidelines = this.state.guidelines;
+    guidelines.hidden = false;
+    this.setState(guidelines);
+    // Leave hidden on page reload? I.e. don't update localStorage.
   },
 
   onTextEdited: function(event) {
@@ -280,6 +333,7 @@ export var Editor = createComponent({
       text: '',
       draft: _.isNumber(this.state.editingPostId) ? '' : this.state.text,
       safePreviewHtml: '',
+      guidelines: null,
     });
     // Remove any is-replying highlights.
     if (d.i.isInEmbeddedEditor) {
@@ -298,6 +352,25 @@ export var Editor = createComponent({
   render: function() {
     var titleInput;
     var state = this.state;
+
+    var guidelines = state.guidelines;
+    var guidelinesElem;
+    var showGuidelinesBtn;
+    if (guidelines && guidelines.safeHtml) {
+      if (guidelines.hidden) {
+        showGuidelinesBtn =
+          r.a({ className: 'icon-info-circled', onClick: this.showGuideline });
+      }
+      else {
+        guidelinesElem =
+          r.div({ className: 'dw-editor-guidelines-wrap' },
+            r.div({ className: 'dw-editor-guidelines clearfix' },
+              r.div({ className: 'dw-editor-guidelines-text',
+                dangerouslySetInnerHTML: { __html: this.state.guidelines.safeHtml }}),
+              r.a({ className: 'icon-cancel dw-hide', onClick: this.hideGuideline }, "Hide")));
+      }
+    }
+
     var titlePlaceholder;
     var youCanUse = "You can use Markdown and HTML.";
     var textareaPlaceholder = "Type here. " + youCanUse;
@@ -315,7 +388,7 @@ export var Editor = createComponent({
     var isChatReply = replyToPostIds.indexOf(NoPostId) !== -1 && !isChatComment;
     if (_.isNumber(editingPostId)) {
       doingWhatInfo =
-        r.div({},
+        r.span({},
           'Edit ', r.a({ href: '#post-' + editingPostId }, 'post ' + editingPostId + ':'));
     }
     else if (this.state.newForumPageRole) {
@@ -341,23 +414,20 @@ export var Editor = createComponent({
               "what you want feedback about. \n" + youCanUse;
           break;
       }
-      doingWhatInfo = r.div({}, what + ":");
+      doingWhatInfo = what + ":";
     }
     else if (replyToPostIds.length === 0) {
-      doingWhatInfo =
-        r.div({}, 'Please select one or more posts to reply to.');
+      doingWhatInfo = 'Please select one or more posts to reply to.';
     }
     else if (isChatComment) {
-      doingWhatInfo =
-        r.div({}, "New chat comment:");
+      doingWhatInfo = "New chat comment:";
     }
     else if (_.isEqual([BodyId], replyToPostIds) && isCritiquePage()) { // [plugin]
-      doingWhatInfo =
-        r.div({}, "Your critique:");
+      doingWhatInfo = "Your critique:";
     }
     else if (replyToPostIds.length > 0) {
       doingWhatInfo =
-        r.div({},
+        r.span({},
           isChatReply ? 'Chat reply to ' : 'Reply to ',
           _.filter(replyToPostIds, (id) => id !== NoPostId).map((postId, index) => {
             var anyAnd = index > 0 ? ' and ' : '';
@@ -405,10 +475,12 @@ export var Editor = createComponent({
       r.div({ style: styles },
         r.div({ id: 'debiki-editor-placeholder', ref: 'placeholder' }),
         r.div({ id: 'debiki-editor-controller', ref: 'editor', style: maxHeightCss },
+          guidelinesElem,
           r.div({ id: 'editor-after-borders' },
             r.div({ className: 'editor-area' },
               r.div({ className: 'editor-area-after-borders' },
-                doingWhatInfo,
+                r.div({ className: 'dw-doing-what' },
+                  doingWhatInfo, showGuidelinesBtn),
                 titleInput,
                 r.div({ className: 'editor-wrapper' },
                   textarea))),

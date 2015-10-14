@@ -25,6 +25,7 @@ import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import scala.collection.{mutable, immutable}
+import PostsDao._
 
 
 /** Loads and saves pages and page parts (e.g. posts and patches).
@@ -133,7 +134,9 @@ trait PostsDao {
   }
 
 
-  def editPost(pageId: PageId, postId: PostId, editorId: UserId, browserIdData: BrowserIdData,
+  /** Edits the post, if authorized to edit it.
+    */
+  def editPostIfAuth(pageId: PageId, postId: PostId, editorId: UserId, browserIdData: BrowserIdData,
         newTextAndHtml: TextAndHtml) {
 
     if (newTextAndHtml.safeHtml.trim.isEmpty)
@@ -156,10 +159,7 @@ trait PostsDao {
         throwNotFound("DwE30HY21", s"User not found, id: '$editorId'"))
 
       // For now: (add back edit suggestions later. And should perhaps use PermsOnPage.)
-      val editsOwnPost = editorId == postToEdit.createdById
-      val mayEditWiki = editor.isAuthenticated && postToEdit.tyype == PostType.CommunityWiki
-      val mayEdit = editsOwnPost || editor.isStaff || mayEditWiki
-      if (!mayEdit)
+      if (!userMayEdit(editor, postToEdit))
         throwForbidden("DwE8KF32", "You may not edit that post")
 
       //val appliedDirectly = true // for now, add back edit suggestions later
@@ -656,6 +656,17 @@ trait PostsDao {
     // COULD split e.g. num_like_votes into ..._total and ..._unique? And update here.
   }
 
+}
+
+
+
+object PostsDao {
+
+  def userMayEdit(user: User, post: Post): Boolean = {
+    val editsOwnPost = user.id == post.createdById
+    val mayEditWiki = user.isAuthenticated && post.tyype == PostType.CommunityWiki
+    editsOwnPost || user.isStaff || mayEditWiki
+  }
 }
 
 

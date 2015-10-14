@@ -355,6 +355,24 @@ object PageStatus {
 
 
 
+sealed abstract class WriteWhat(protected val IntValue: Int) { def toInt = IntValue }
+object WriteWhat {
+  case object OriginalPost extends WriteWhat(1)
+  case object ReplyToOriginalPost extends WriteWhat(2)
+  case object Reply extends WriteWhat(3)
+  case object ChatComment extends WriteWhat(4)
+
+  def fromInt(value: Int): Option[WriteWhat] = Some(value match {
+    case OriginalPost.IntValue => OriginalPost
+    case ReplyToOriginalPost.IntValue => ReplyToOriginalPost
+    case Reply.IntValue => Reply
+    case ChatComment.IntValue => ChatComment
+    case _ => return None
+  })
+}
+
+
+
 sealed abstract class PinPageWhere { def toInt: Int }
 
 object PinPageWhere {

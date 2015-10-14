@@ -30,7 +30,7 @@ import requests._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-/** Handles reply form submissions. Lazily creates pages for embedded discussions
+/** Saves replies. Lazily creates pages for embedded discussions
   * — such pages aren't created until the very first reply is posted.
   */
 object ReplyController extends mvc.Controller {

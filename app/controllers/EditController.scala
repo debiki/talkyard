@@ -22,6 +22,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
+import debiki.ReactJson.JsStringOrNull
 import debiki.onebox.Onebox
 import debiki.antispam.AntiSpam.throwForbiddenIfSpam
 import play.api._
@@ -32,15 +33,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import Utils.{OkSafeJson, parseIntOrThrowBadReq}
 
 
-/** Edits pages.
-  *
- * SECURITY BUG I think it's possible to use edit GET/POST requests
- * to access and *read* hidden pages. I don't think I do any access control
- * when sending the current markup source back to the browser? Only when
- * actually saving something ...?
- *  -- I'm doing it *sometimes* when loading PermsOnPage via
- *  PageActions.PageReqAction?
- */
+/** Edits pages and posts.
+  */
 object EditController extends mvc.Controller {
 
   val EmptyPostErrorMessage =
@@ -49,12 +43,46 @@ object EditController extends mvc.Controller {
         and staff members can do this."""
 
 
+  def loadDraftAndGuidelines(writingWhat: String, categoryId: String, pageRole: String) =
+        GetAction { request =>
+
+    val writeWhat = writingWhat.toIntOption.flatMap(WriteWhat.fromInt) getOrElse throwBadArgument(
+      "DwE4P6CK0", "writingWhat")
+
+    val categoryIdInt = categoryId.toIntOption getOrElse throwBadArgument(
+      "DwE5PFKQ2", "categoryId")
+
+    val thePageRole = pageRole.toIntOption.flatMap(PageRole.fromInt) getOrElse throwBadArgument(
+      "DwE6PYK8", "pageRole")
+
+    val guidelinesSafeHtml = writeWhat match {
+      case WriteWhat.ChatComment =>
+        Some(ChatCommentGuidelines)
+      case WriteWhat.Reply =>
+        Some(ReplyGuidelines)
+      case WriteWhat.ReplyToOriginalPost =>
+        if (thePageRole == PageRole.Critique) Some(GiveCritiqueGuidelines) // [plugin]
+        else Some(ReplyGuidelines)
+      case WriteWhat.OriginalPost =>
+        if (thePageRole == PageRole.Critique) None // Some(AskForCritiqueGuidelines) // [plugin]
+        else None // Some(OriginalPostGuidelines)
+    }
+
+    OkSafeJson(Json.obj(
+      "guidelinesSafeHtml" -> JsStringOrNull(guidelinesSafeHtml)))
+  }
+
+
   /** Sends back a post's current CommonMark source to the browser.
     */
   def loadCurrentText(pageId: String, postId: String) = GetAction { request =>
     val postIdAsInt = parseIntOrThrowBadReq(postId, "DwE1Hu80")
     val post = request.dao.loadPost(pageId, postId.toInt) getOrElse
       throwNotFound("DwE7SKE3", "Post not found")
+
+    if (!debiki.dao.PostsDao.userMayEdit(request.theUser, post))
+      throwForbidden("DwE8FKY0", "Not your post")
+
     val json = Json.obj("currentText" -> post.currentSource)
     OkSafeJson(json)
   }
@@ -84,7 +112,7 @@ object EditController extends mvc.Controller {
     Globals.antiSpam.detectPostSpam(request, pageId, newTextAndHtml) map { isSpamReason =>
       throwForbiddenIfSpam(isSpamReason, "DwE6PYU4")
 
-      request.dao.editPost(pageId = pageId, postId = postId, editorId = request.theUser.id,
+      request.dao.editPostIfAuth(pageId = pageId, postId = postId, editorId = request.theUser.id,
         request.theBrowserIdData, newTextAndHtml)
 
       OkSafeJson(ReactJson.postToJson2(postId = postId, pageId = pageId,
@@ -147,5 +175,42 @@ object EditController extends mvc.Controller {
     }
   }
 
+
+  val ReplyGuidelines = i"""
+    |<p>Be kind to the others.
+    |<p>Criticism is welcome — and criticize ideas, not people.
+    |"""
+
+  val ChatCommentGuidelines = i"""
+    |<p>You're writing a chat comment (or status update).
+    |
+    |<p>If you intended to reply to the Original Post (at the top of the page),
+    |then click Cancel below, and instead click the reply button just below the Original Post.
+    |
+    |<p>Be kind to the others.
+    |"""
+
+  val GiveCritiqueGuidelines = /* [plugin] */ i"""
+    |<p>You give critique in order to help the poster to improve his/her work:
+    |<ul>
+    |<li>Tell what you think won't work and should be improved, perhaps removed.
+    |<li>Try to suggest improvements.
+    |<li>Be friendly and polite.
+    |<li>Mention things you like.
+    |</ul>
+    |"""
+
+  val AskForCritiqueGuidelines = /* [plugin] */ i"""
+    |"""
+
+  // This advice actually feels mostly annoying to me: (so currently not in use)
+  val OriginalPostGuidelines = i"""
+    |<p>In order for more people to reply to you:
+    |<ul>
+    |<li>Try to come up with a good topic title, so others will understand what the topic is about
+    |  and read it.
+    |<li>Including good search words might help others find your topic.
+    |</ul>
+    |"""
 }
 

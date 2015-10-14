@@ -25,6 +25,30 @@
   .resizable-t
     height: 15px;
 
+  .dw-editor-guidelines-wrap
+    position: absolute;
+    bottom: 100%;
+
+  .dw-editor-guidelines
+    background-color: hsl(49, 70%, 93%);
+    border: 1px solid hsl(211, 0%, 88%);
+    box-shadow: 4px 4px 6px hsl(0, 0%, 64%);
+    position: relative;
+    left: 13px;
+    padding: 18px 18px 8px;
+    min-width: 300px;
+    max-width: 550px;
+    @media (max-width: 500px)
+      max-width: 400px;
+    @media (max-width: 400px)
+      max-width: 300px;
+
+    .dw-hide
+      padding: 0 15px 8px;
+      color: hsl(211, 70%, 45%);
+      float: right;
+
+
   #editor-after-borders
     position: absolute;
     top: 0;
@@ -35,7 +59,7 @@
   .editor-area
     width: 50%
     position: absolute
-    top: 17px
+    top: 12px
     bottom: 70px
 
     .editor-area-after-borders
@@ -45,16 +69,34 @@
       bottom: 0;
       left: 0;
 
+    .dw-doing-what
+      position: relative;
+
+    .icon-info-circled
+      color: white;
+      text-shadow: 0 0 3px black;
+      font-size: 20px;
+      padding-left: 7px;
+      padding-left: 2px;
+      position: absolute;
+      top: -5px;
+      padding-left: 5px;
+      &:hover
+        text-decoration: none;
+        outline: 1px solid hsl(211, 50%, 70%);
+        background-color: hsl(211, 50%, 85%);
+
+
     .title-input
       position: absolute
-      top: 20px;
+      top: 25px;
       width: 100%;
       padding: 6px;
       font-size: 14px;
 
     .editor-wrapper
       position: absolute
-      top: 20px
+      top: 25px
       right: 0;
       bottom: 10px
       left: 0
@@ -66,7 +108,7 @@
         padding: 6px;
 
     .title-input + .editor-wrapper
-        top: 60px // make space for title input
+        top: 64px // make space for title input
 
     .preview
       height: 100%
@@ -75,13 +117,13 @@
   .preview-area
     width: 50%
     position: absolute
-    top: 18px
+    top: 12px
     right: 0
     bottom: 25px
 
     .preview
       position: absolute;
-      top: 20px;
+      top: 26px;
       left: 0;
       right: 0;
       bottom: 0;

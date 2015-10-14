@@ -20,6 +20,7 @@ package com.debiki.core
 import java.{util => ju}
 import java.{security => js}
 import org.apache.commons.codec.{binary => acb}
+import scala.util.Try
 import scala.util.matching.Regex
 
 
@@ -492,6 +493,9 @@ object Prelude {
       val kept = underlying.takeRight(underlying.length - 1 - dropIx)
       kept
     }
+
+    def toIntOption: Option[Int] =
+      Try(underlying.toInt).toOption
 
     def orIfEmpty[A >: String](other: => A): A = {
       if (underlying nonEmpty) underlying

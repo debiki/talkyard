@@ -448,6 +448,18 @@ export function listUsernames(prefix: string, doneCallback: (usernames: string[]
 }
 
 
+// Currently doesn't load any draft.
+// Later: add reply-to-post-unique-id, to load the correct draft?
+//
+export function loadDraftAndGuidelines(writingWhat: WritingWhat, categoryId: number,
+      pageRole: PageRole, success: (guidelinesSafeHtml: string) => void) {
+  get('/-/load-draft-and-guidelines?writingWhat=' + writingWhat +
+      '&categoryId=' + categoryId + '&pageRole=' + pageRole, (response) => {
+    success(response.guidelinesSafeHtml);
+  });
+}
+
+
 export function loadCurrentPostText(postId: number, doneCallback: (text: string) => void) {
   $.get(origin + '/-/edit?pageId='+ d.i.pageId + '&postId='+ postId)
     .done((response: any) => {

@@ -102,7 +102,7 @@ object PageTitleSettingsController extends mvc.Controller {
     Globals.antiSpam.detectPostSpam(request, pageId, newTextAndHtml) map { isSpamReason =>
       throwForbiddenIfSpam(isSpamReason, "DwE6JG20")
 
-      request.dao.editPost(pageId = pageId, postId = PageParts.TitleId,
+      request.dao.editPostIfAuth(pageId = pageId, postId = PageParts.TitleId,
         editorId = request.theUser.id, request.theBrowserIdData, newTextAndHtml)
 
       // Load old section page id before changing it.
