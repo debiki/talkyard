@@ -75,6 +75,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     override def createBindings(): js.Bindings = null
   }
 
+  @volatile private var firstCreateEngineError: Option[Throwable] = None
+
   // Evaluating zxcvbn.min.js (a Javascript password strength check library) takes almost
   // a minute in dev mode. So enable server side password strength checks in prod mode only.
   // COULD run auto test suite on prod build too so server side pwd strength checks gets tested.
@@ -118,7 +120,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     catch {
       case throwable: Throwable =>
         if (isVeryFirstEngine) {
-          logger.error("Error creating the very first Javascript engine: [DwE4KEPF8]", throwable)
+          logger.error("Error creating the very first Javascript engine: [DwE6KG25Z]", throwable)
+          firstCreateEngineError = Some(throwable)
           javascriptEngines.putLast(BrokenEngine)
           die("DwE5KEF50", "Broken server side Javascript, this won't work")
         }
@@ -252,7 +255,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
     if (engine eq BrokenEngine) {
       javascriptEngines.addFirst(engine)
-      throwInternalError("DwE5KGF8", "Could not create Javascript engine; cannot render page.")
+      die("DwE5KGF8", "Could not create Javascript engine; cannot render page",
+        firstCreateEngineError getOrDie "DwE4KEW20")
     }
 
     try fn(engine.asInstanceOf[js.Invocable])
