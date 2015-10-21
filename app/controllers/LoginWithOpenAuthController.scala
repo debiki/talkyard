@@ -63,6 +63,7 @@ object LoginWithOpenAuthController extends Controller {
   private val ReturnToSiteCookieName = "dwCoReturnToSite"
   private val ReturnToSiteXsrfTokenCookieName = "dwCoReturnToSiteXsrfToken"
   private val IsInLoginWindowCookieName = "dwCoIsInLoginWindow"
+  private val IsInLoginPopupCookieName = "dwCoIsInLoginPopup"
   private val MayCreateUserCookieName = "dwCoMayCreateUser"
 
   private val LoginOriginConfValName = "debiki.loginOrigin"
@@ -107,6 +108,12 @@ object LoginWithOpenAuthController extends Controller {
       futureResult = futureResult map { result =>
         result.withCookies(
           SecureCookie(name = ReturnToUrlCookieName, value = returnToUrl, httpOnly = false))
+      }
+    }
+    if (request.rawQueryString.contains("isInLoginPopup")) {
+      futureResult = futureResult map { result =>
+        result.withCookies(
+          SecureCookie(name = IsInLoginPopupCookieName, value = "true", httpOnly = false))
       }
     }
     if (request.rawQueryString.contains("mayNotCreateUser")) {
@@ -297,6 +304,7 @@ object LoginWithOpenAuthController extends Controller {
         OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsTrue))
       }
       else {
+        val isInLoginPopup = request.cookies.get(IsInLoginPopupCookieName).nonEmpty
         def loginPopupCallback =
           Ok(views.html.login.loginPopupCallback(user.displayName).body) as HTML
 
@@ -306,6 +314,9 @@ object LoginWithOpenAuthController extends Controller {
                 LoginWithPasswordController.RedirectFromVerificationEmailOnly)) {
               // We are to redirect only from new account email address verification
               // emails, not from here.
+              loginPopupCallback
+            }
+            else if (isInLoginPopup) {
               loginPopupCallback
             }
             else {

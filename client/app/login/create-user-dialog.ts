@@ -172,7 +172,11 @@ export var CreateUserDialogContent = createClassAndFactory({
     }
     else if (this.props.anyReturnToUrl && !debiki.internal.isInLoginPopup &&
         this.props.anyReturnToUrl.search('_RedirFromVerifEmailOnly_') === -1) {
-      window.location.assign(this.props.anyReturnToUrl);
+      var url = this.props.anyReturnToUrl.replace(/__dwHash__/, '#');
+      window.location.assign(url);
+      // In case the location didn't change, reload the page, otherwise user specific things
+      // won't appear.
+      window.location.reload();
     }
     else if (!window['debiki2']) {
       // COULD remove — this cannot hapen any longer, loading the same script bundle

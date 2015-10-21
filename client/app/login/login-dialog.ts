@@ -83,10 +83,13 @@ var LoginDialog = createClassAndFactory({
 
   open: function(loginReason: string, anyReturnToUrl: string, preventClose: boolean) {
     this.clearLoginRelatedCookies();
+    if (!anyReturnToUrl) {
+      anyReturnToUrl = window.location.toString();
+    }
     if (d.i.isInIframe) {
       // UNTESTED after port to React
       var url = d.i.serverOrigin + '/-/login-popup?mode=' + loginReason +
-          '&returnToUrl=' + anyReturnToUrl;
+          '&isInLoginPopup&returnToUrl=' + anyReturnToUrl;
       d.i.createLoginPopup(url)
     }
     else {
@@ -264,10 +267,12 @@ var OpenAuthButton = createClassAndFactory({
     // creation of  new users from here.
     // (This parameter tells the server to set a certain cookie. Setting it here
     // instead has no effect, don't know why.)
-    var mayNotCreateUser = props.loginReason === 'LoginToAdministrate' ? '&mayNotCreateUser' : '';
+    var mayNotCreateUser = props.loginReason === 'LoginToAdministrate' ? 'mayNotCreateUser&' : '';
     var url = d.i.serverOrigin +
         '/-/login-openauth/' + props.provider.toLowerCase() +
-        '?returnToUrl=' + (props.anyReturnToUrl || '') + mayNotCreateUser;
+        '?' + mayNotCreateUser +
+        (d.i.isInLoginWindow ? '' : 'isInLoginPopup&') +
+        'returnToUrl=' + (props.anyReturnToUrl || '');
     if (d.i.isInLoginWindow) {
       // Let the server know we're in a login window, so it can choose to reply with
       // complete HTML pages to show in the popup window.

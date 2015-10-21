@@ -28,6 +28,9 @@ d.i.createLoginPopup = function(anyUrl) {
   var coordinates = popupManager.getCenteredCoords(width, height);
   var windowName = 'LoginPopup';
 
+  // For now. Fixes # in return-to-url.
+  var anyUrl = anyUrl.replace(/#/, '__dwHash__');
+
   // Here is described how to configure the popup window:
   // http://svn.openid.net/repos/specifications/user_interface/1.0/trunk
   //    /openid-user-interface-extension-1_0.html
