@@ -89,7 +89,7 @@ interface Post {
 
 
 interface User {
-  userId: string; // it's a number in fact I think
+  userId: number;
   isLoggedIn?: boolean;
   isAdmin?: boolean;
   isModerator?: boolean;
@@ -102,6 +102,15 @@ interface User {
   postIdsAutoReadLongAgo: number[];
   postIdsAutoReadNow: number[];
   marksByPostId: { [postId: number]: any };
+  pageHelpMessage?: HelpMessage;
+  closedHelpMessages?: { [id: string]: number };  // id --> closed version of message
+}
+
+
+interface HelpMessage {
+  id: string;
+  version: number;
+  content: any;
 }
 
 

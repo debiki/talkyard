@@ -84,7 +84,11 @@ export var ForumScrollBehavior = {
 
 
 var ForumComponent = React.createClass({
-  mixins: [debiki2.StoreListenerMixin],
+  mixins: [debiki2.StoreListenerMixin, RouterStateMixin],
+
+  getInitialState: function() {
+    return debiki2.ReactStore.allData();
+  },
 
   onChange: function() {
     this.setState(debiki2.ReactStore.allData());
@@ -92,14 +96,82 @@ var ForumComponent = React.createClass({
     this.setState({ topicsInStoreMightBeOld: true });
   },
 
+  getActiveCategory: function() {
+    var activeCategory: any;
+    var activeCategorySlug = this.getParams().categorySlug;
+    if (activeCategorySlug) {
+      // Don't know why, but sometimes after having edited or created a category and
+      // then transitioned to its edited/new slug, then getParams().categorySlug
+      // still points to the old previous slug. Therefore, if we didn't find
+      // activeCategorySlug, try this.state.newCategorySlug instead.
+      activeCategory = _.find(this.state.categories, (category: Category) => {
+        return category.slug === activeCategorySlug;
+      });
+      if (!activeCategory) {
+        activeCategory = _.find(this.state.categories, (category: Category) => {
+          return category.slug === this.state.newCategorySlug;
+        });
+      }
+    }
+    if (!activeCategory) {
+      activeCategory = {
+        name: 'All Categories',  // [i18n]
+        id: this.state.categoryId, // the forum root category id
+        isForumItself: true,
+        newTopicTypes: [],
+      };
+    }
+    return activeCategory;
+  },
+
+  makeHelpMessage: function(category: Category) {
+    var store: Store = this.state;
+    var user: User = store.user;
+    if (!_.isEqual(category.newTopicTypes, [PageRole.Critique])) // [plugin] ...
+      return null;
+
+    if (!user.isAuthenticated)
+      return { id: '3KEW21', version: 1, content: r.span({},
+          r.p({},
+            "Click ", r.b({}, "Log In"), " (to the right just above)."),
+          r.p({},
+            "Why log in? Because we need your email, so we can notify you when you " +
+            "receive critique — and to notify you, if you give critique, " +
+            "and someone asks for clarifications.")) };
+
+    // if too-few-topics then
+    return { id: '4KBP2', version: 1, content: r.span({},
+        r.p({}, "You can click ", r.b({}, "Ask for Critique"), " (to the right just below)."),
+        r.p({}, "(Normally, you would need to first help others and gather credits, " +
+          "before you can ask for critique yourself. But right now there are few " +
+          "open topics here, so you can ask directly instead.)")) };
+
+    // enough credits:
+    // return { id: '8KPU01', version: 1, content: r.span({}, "Click Ask for Critique") };
+
+    // return { id: '4KGU0', version: 1, content:
+    //   Select a topic that you'd like to critique:
+    //    (You need credits, before you can ask for critique yourself — and you get credits, by
+    //    critiquing to others.)
+    // }
+  },
+
   render: function() {
+    var activeCategory = this.getActiveCategory();
+    var helpMessage = this.makeHelpMessage(activeCategory);
+    helpMessage = helpMessage
+        ? debiki2.help.HelpMessageBox({ message: helpMessage })
+        : null;
+
+    var childProps = _.assign({}, this.state, { activeCategory: activeCategory });
     return (
       r.div({ className: 'container dw-forum' },
         debiki2.reactelements.TopBar({}),
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
         r.div({ className: 'dw-page' }),
-        ForumIntroText(this.state || this.props),
-        CategoriesAndTopics(this.state || this.props)));
+        ForumIntroText(this.state),
+        helpMessage,
+        CategoriesAndTopics(childProps)));
   }
 });
 
@@ -153,34 +225,6 @@ var CategoriesAndTopics = createComponent({
       nextRouteName = 'ForumRouteLatest';
     }
     this.transitionTo(nextRouteName, { categorySlug: newCategorySlug }, this.getQuery());
-  },
-
-  getActiveCategory: function() {
-    var activeCategory: any;
-    var activeCategorySlug = this.getParams().categorySlug;
-    if (activeCategorySlug) {
-      // Don't know why, but sometimes after having edited or created a category and
-      // then transitioned to its edited/new slug, then getParams().categorySlug
-      // still points to the old previous slug. Therefore, if we didn't find
-      // activeCategorySlug, try this.state.newCategorySlug instead.
-      activeCategory = _.find(this.props.categories, (category: Category) => {
-        return category.slug === activeCategorySlug;
-      });
-      if (!activeCategory) {
-        activeCategory = _.find(this.props.categories, (category: Category) => {
-          return category.slug === this.state.newCategorySlug;
-        });
-      }
-    }
-    if (!activeCategory) {
-      activeCategory = {
-        name: 'All Categories',  // [i18n]
-        id: this.props.categoryId, // the forum root category id
-        isForumItself: true,
-        newTopicTypes: [],
-      };
-    }
-    return activeCategory;
   },
 
   findTheUncategorizedCategory: function() {
@@ -240,7 +284,7 @@ var CategoriesAndTopics = createComponent({
   }, */
 
   editCategory: function() {
-    debiki2.forum['getEditCategoryDialog']().open(this.getActiveCategory().id);
+    debiki2.forum['getEditCategoryDialog']().open(this.props.activeCategory.id);
   },
 
   createCategory: function() {
@@ -250,7 +294,7 @@ var CategoriesAndTopics = createComponent({
   createTopic: function() {
     var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
     d.i.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
-      var category: Category = this.getActiveCategory();
+      var category: Category = this.props.activeCategory;
       if (category.isForumItself) {
         category = this.findTheUncategorizedCategory();
         dieIf(!category, "No Uncategorized category [DwE5GKY8]");
@@ -271,7 +315,7 @@ var CategoriesAndTopics = createComponent({
   render: function() {
     var props: Store = this.props;
     var user = props.user;
-    var activeCategory: Category = this.getActiveCategory();
+    var activeCategory: Category = this.props.activeCategory;
     if (!activeCategory) {
       // The user has typed a non-existing category slug in the URL. Or she has just created
       // a category, opened a page and then clicked Back in the browser. Then this page

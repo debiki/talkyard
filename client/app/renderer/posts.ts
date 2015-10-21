@@ -17,8 +17,11 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../prelude.ts" />
+/// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../dialogs.ts" />
+/// <reference path="../help/help.ts" />
 /// <reference path="../editor/title-editor.ts" />
 /// <reference path="../react-elements/topbar.ts" />
 /// <reference path="../page-dialogs/wikify-dialog.ts" />
@@ -114,35 +117,111 @@ var TitleBodyComments = createComponent({
         renderedComponent = this.render();   <-- render is null, in Nashorn only, not in browser
   */
 
+  makeHelpMessage: function() {
+    var store: Store = this.props;
+    var user: User = store.user;
+    var bodyPost = store.allPosts[BodyId];
+
+    if (store.pageAnsweredAtMs)
+      return null; // or?: "This is a question with an accepted answer. You can click the (x) to
+                  // go directly to the accepted answer.
+
+    if (store.pagePlannedAtMs)
+      return null; // or?: "This is in progress or has been planned. The [ ] icon is
+                   // a todo list checkbox item that hasn't been checked yet
+
+    if (store.pageDoneAtMs)
+      return null; // or?: "Then thing(s) described on this page has been done. That's the
+                   // reason the [x] icon is shonw in front of the title.
+
+    if (store.pageClosedAtMs) {
+      if (store.pageRole === PageRole.Critique) {  // [plugin]
+        return { id: 'Z4KDPU2', version: 1, content: r.span({},
+            "This topic has been closed. People won't get " +
+            "any additional credits for posting more critique here.") };
+      }
+      else {
+        return null;
+      }
+    }
+
+    if (store.pageLockedAtMs)
+      return null; // or ...
+
+    if (store.pageFrozenAtMs)
+      return null; // or ...
+
+    if (store.pageRole === PageRole.Critique) {  // [plugin]
+      if (!user.isAuthenticated) {
+        // Could explain: here someone has asked for critique. X people have answered,
+        // see the Replies section below. And there are Y chat comments or status updates.
+        return null;
+      }
+      else {
+        var isPageAuthor = bodyPost.authorIdInt === user.userId;
+        if (isPageAuthor) {
+          if (store.numPostsRepliesSection) {
+            return { id: '5GUF2', version: 1, content: r.span({},
+                "You have been given critique — see the Replies section below.") };
+          }
+          else {
+            return { id: '0SE2W', version: 1, content: r.div({},
+                r.p({}, "Now you have asked for critique. You'll be notified via email later " +
+                  "when you get critique."),
+                r.p({}, "All done for now — unless you want " +
+                  "to proofread and edit your text below, to make sure it asks for " +
+                  "the right things and is easy to understand. " +
+                  "If so, click the edit icon (", r.span({ className: 'icon-edit' }),
+                  ") just below your post, to edit your text.")) };
+          }
+        }
+        else {
+          return { id: '7GYM21', version: 1, content: r.span({},
+            "Click ", r.b({}, "Give Critique"), " below, to critique this — then you'll " +
+            "get credits, which you can use to ask for critique yourself.") };
+        }
+      }
+    }
+
+    return null;
+  },
+
   render: function() {
     var categories;
-    if (this.props.ancestorsRootFirst.length) {
+    var props: Store = this.props;
+    var user: User = props.user;
+    if (props.ancestorsRootFirst.length) {
       categories =
         r.ol({ className: 'parent-forums-list' },
-          this.props.ancestorsRootFirst.map((ancestor: Ancestor) => {
+          props.ancestorsRootFirst.map((ancestor: Ancestor) => {
             return r.li({ key: ancestor.categoryId }, r.a({ href: ancestor.path }, ancestor.title));
           }));
     }
 
+    var anyHelpMessage = this.makeHelpMessage();
+    anyHelpMessage = anyHelpMessage
+        ? debiki2.help.HelpMessageBox({ message: anyHelpMessage })
+        : null;
+
     var anyAboutCategoryClass;
     var anyAboutCategoryTitle;
-    if (this.props.pageRole === PageRole.About) {
+    if (props.pageRole === PageRole.About) {
       anyAboutCategoryClass = 'dw-about-category';
       anyAboutCategoryTitle =
           r.h2({ className: 'dw-about-cat-ttl-prfx' }, "About category:")
     }
 
     var anyTitle = null;
-    var pageRole: PageRole = this.props.pageRole;
+    var pageRole: PageRole = props.pageRole;
     if (pageRole === PageRole.HomePage || pageRole === PageRole.EmbeddedComments ||
-        this.props.rootPostId !== BodyPostId) {
+        props.rootPostId !== BodyPostId) {
       // Show no title for the homepage — it should have its own custom HTML with
       // a title and other things.
       // Embedded comment pages have no title, only comments.
       // And show no title if we're showing a comment not the article as the root post.
     }
     else {
-      anyTitle = Title(this.props);
+      anyTitle = Title(props);
     }
 
     var anyPostHeader = null;
@@ -151,27 +230,28 @@ var TitleBodyComments = createComponent({
         pageRole === PageRole.About || // pageRole === PageRole.WikiMainPage ||
         pageRole === PageRole.SpecialContent || pageRole === PageRole.Blog ||
         pageRole === PageRole.EmbeddedComments ||
-        this.props.rootPostId !== BodyPostId) {
+        props.rootPostId !== BodyPostId) {
       // Show no author name or social links for these generic pages.
       // And show nothing if we're showing a comment not the article as the root post.
     }
     else {
-      var post = this.props.allPosts[this.props.rootPostId];
+      var post = props.allPosts[props.rootPostId];
       anyPostHeader = PostHeader({ post: post });
-      anySocialLinks = SocialLinks({ socialLinksHtml: this.props.socialLinksHtml });
+      anySocialLinks = SocialLinks({ socialLinksHtml: props.socialLinksHtml });
     }
 
-    var embeddedClass = this.props.isInEmbeddedCommentsIframe ? ' dw-embedded' : '';
+    var embeddedClass = props.isInEmbeddedCommentsIframe ? ' dw-embedded' : '';
 
     return (
       r.div({ className: anyAboutCategoryClass },
         categories,
+        anyHelpMessage,
         anyAboutCategoryTitle,
         r.div({ className: 'debiki dw-debate dw-page' + embeddedClass },
           anyTitle,
           anyPostHeader,
           anySocialLinks,
-          RootPostAndComments(this.props))));
+          RootPostAndComments(props))));
   },
 });
 
@@ -699,7 +779,7 @@ var Post = createComponent({
     }
     else {
       if (!post.isApproved) {
-        var the = post.authorId === user.userId ? 'Your' : 'The';
+        var the = post.authorIdInt === user.userId ? 'Your' : 'The';
         pendingApprovalElem = r.div({ className: 'dw-p-pending-mod',
             onClick: this.onUncollapseClick }, the, ' comment below is pending approval.');
       }

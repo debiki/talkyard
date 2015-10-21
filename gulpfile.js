@@ -43,7 +43,7 @@ var nightwatch = require('gulp-nightwatch');
 var exec = require('child_process').exec;
 
 var watchAndLiveForever = false;
-
+var currentDirectorySlash = __dirname + '/';
 
 
 var copyrightAndLicenseBanner =
@@ -314,10 +314,11 @@ gulp.task('minify-scripts', ['concat-debiki-scripts'], function() {
 
 
 gulp.task('compile-stylus', function () {
-
   var stylusOpts = {
     linenos: true,
-    // Could include:  use: [nib()]
+    import: [
+      currentDirectorySlash + 'client/app/style-mixins.styl',
+      currentDirectorySlash + 'client/app/style-variables.styl'],
   };
 
   var minifyOpts = {

@@ -201,6 +201,11 @@ ReactDispatcher.register(function(payload) {
       store.siteStatus = action.newStatus;
       break;
 
+    case ReactActions.actionTypes.ShowHelpAgain:
+      putInLocalStorage('closedHelpMessages',  {});
+      store.user.closedHelpMessages = {};
+      break;
+
     default:
       console.warn('Unknown action: ' + JSON.stringify(action));
       return true;
@@ -696,6 +701,7 @@ function sortPostIdsInPlace(postIds: number[], allPosts) {
 function addLocalStorageData(user: User) {
   user.postIdsAutoReadLongAgo = sidebar.UnreadCommentsTracker.getPostIdsAutoReadLongAgo();
   user.marksByPostId = {}; // not implemented: loadMarksFromLocalStorage();
+  user.closedHelpMessages = getFromLocalStorage('closedHelpMessages') || {};
 }
 
 
