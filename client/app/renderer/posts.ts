@@ -168,11 +168,11 @@ var TitleBodyComments = createComponent({
             return { id: '0SE2W', version: 1, content: r.div({},
                 r.p({}, "Now you have asked for critique. You'll be notified via email later " +
                   "when you get critique."),
-                r.p({}, "All done for now — unless you want " +
-                  "to proofread and edit your text below, to make sure it asks for " +
-                  "the right things and is easy to understand. " +
-                  "If so, click the edit icon (", r.span({ className: 'icon-edit' }),
-                  ") just below your post, to edit your text.")) };
+                r.p({},
+                  "If you want to proofread and edit your text below, to make sure it asks for " +
+                  "the right things and is easy to understand, then, to edit it, " +
+                  "click the edit icon (", r.span({ className: 'icon-edit' }),
+                  ") just below your post.")) };
           }
         }
         else {

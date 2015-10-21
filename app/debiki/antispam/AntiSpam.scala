@@ -315,7 +315,7 @@ class AntiSpam {
     // StopForumSpam doesn't support ipv6.
     // See: https://www.stopforumspam.com/forum/viewtopic.php?id=6392
     val anyIpParam =
-      if (request.ip.startsWith("[")) ""
+      if (request.ip.startsWith("[") || request.ip.contains(":")) ""
       else  "&ip=" + encode(request.ip)
     val encodedEmail = encode(email)
     // StopForumSpam has a self signed https cert, and Java then dies with a

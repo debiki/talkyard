@@ -212,6 +212,8 @@ export var TopBar = createComponent({
             MenuItem({ onSelect: ReactActions.showHelpMessagesAgain }, "Unhide Help Messages"),
             // Links in dropdown MenuItem:s no longer work after I upgraded react-bootstrap,
             // so add onClick. Try to remove ... later? Year 2016?
+            MenuItem({ onSelect: () => window.location.assign('/about') },
+              r.a({ href: '/about' }, 'About this site')),
             MenuItem({ onSelect: () => window.location.assign('/-/terms-of-use') },
               r.a({ href: '/-/terms-of-use' }, 'Terms and Privacy')));
 
