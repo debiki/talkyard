@@ -18,9 +18,10 @@
 package views
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
+import debiki.Notifier
 import debiki.dao.SiteDao
 import java.{util => ju}
-import Prelude._
 import scala.xml.{NodeSeq, Text}
 
 
@@ -66,8 +67,10 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
 
 
   def render(notfs: Seq[Notification]): NodeSeq = {
+    require(notfs.nonEmpty, "DwE7KYG3")
     // WOULD load page stuff inside the transaction, if I had an infinite amount of time.
     val pageStuffById = siteDao.loadPageStuff(pageIdsFor(notfs))
+    var maxNotificationLength = Notifier.MaxEmailBodyLength / notfs.length
     siteDao.readOnlyTransaction { transaction =>
       var result = Nil: NodeSeq
       for (notf <- notfs) {
@@ -75,7 +78,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
           case newPostNotf: Notification.NewPost =>
             val pageTitle =
               pageStuffById.get(newPostNotf.pageId).map(_.title) getOrElse "(Page with no title)"
-            renderNewPostNotf(newPostNotf, pageTitle, transaction)
+            renderNewPostNotf(newPostNotf, pageTitle, maxNotificationLength, transaction)
         })
       }
       result
@@ -84,7 +87,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
 
 
   private def renderNewPostNotf(notf: Notification.NewPost, pageTitle: String,
-        transaction: SiteTransaction): NodeSeq = {
+        maxNotificationLength: Int, transaction: SiteTransaction): NodeSeq = {
     val pageMeta = transaction.loadPageMeta(notf.pageId) getOrElse {
       return Nil
     }
@@ -109,7 +112,8 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     // I'm a bit worried that there's any bug that results in XSS attacks,
     // which would then target the user's email account (!).
     //val (html, _) = HtmlPageSerializer._markupTextOf(post, origin)
-    val html = Text(markupSource)
+    val ellipsis = (markupSource.length > maxNotificationLength) ? "..." | ""
+    val html = Text(markupSource.take(maxNotificationLength) + ellipsis)
 
     val (whatHappened, inPostWrittenBy) = notf.notfType match {
       case Notification.NewPostNotfType.Mention =>

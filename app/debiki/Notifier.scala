@@ -26,10 +26,14 @@ import java.{util => ju}
 import play.api.libs.concurrent._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
+import Notifier._
 
 
 
 object Notifier {
+
+  val MaxNotificationsPerEmail = 5
+  val MaxEmailBodyLength = 3000
 
   /**
    * Starts a single notifier actor.
@@ -43,7 +47,7 @@ object Notifier {
     val actorRef = actorSystem.actorOf(Props(
       new Notifier(systemDao, siteDaoFactory)),
       name = s"NotifierActor-$testInstanceCounter")
-    actorSystem.scheduler.schedule(0 seconds, 20 seconds, actorRef, "SendNotfs")
+    actorSystem.scheduler.schedule(10 seconds, 20 seconds, actorRef, "SendNotfs")
     testInstanceCounter += 1
     actorRef
   }
@@ -73,7 +77,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
 
 
   def receive = {
-    case "SendNotfs" =>
+    case "SendNotfs" if Globals.isInitialized =>
       // COULD use ninjaEdit ninja edit timeout/delay setting here instead (that is, num minutes
       // one is allowed to edit a post directly after having posted it, without the edits appearing
       // in the version history. Usually a few minutes. Google for "Discourse ninja edit")
@@ -148,7 +152,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       return Some(problem)
     }
 
-    constructAndSendEmail(siteDao, site, user, notfs)
+    constructAndSendEmail(siteDao, site, user, notfs.take(MaxNotificationsPerEmail))
     None
   }
 
@@ -188,21 +192,31 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     if (contents isEmpty)
       return None
 
+    val site = dao.loadSite()
+    val anyPrettyHostname = site.canonicalHost.map(_.hostname)
+    val anyPrettyOrigin = site.canonicalHost.map(Globals.schemeColonSlashSlash + _.hostname)
+    val name = anyPrettyHostname getOrElse site.name
+    val origin = anyPrettyOrigin getOrElse Globals.siteByIdOrigin(dao.siteId)
+
     // If this is an embedded discussion, there is no Debiki canonical host address to use.
     // So use the site-by-id origin, e.g. https://site-123.debiki.com, which always works.
     val unsubscriptionUrl =
-      s"${Globals.siteByIdOrigin(dao.siteId)}/?unsubscribe&email-id=${email.id}"
+      s"$origin/?unsubscribe&emailId=${email.id}"
 
     val htmlContent =
       <div>
         <p>Dear {user.displayName},</p>
-        { contents }
+        {contents}
         <p>
           Kind regards,<br/>
-          <a href={ Globals.scheme + "://www.debiki.com" }>Debiki</a>
+          <a href={origin}>{name}</a>
         </p>
-        <p style='font-size: 80%; opacity: 0.65; margin-top: 2em;'>
+        <p style='font-size: 85%; opacity: 0.68; margin-top: 2em;'>
           <a href={unsubscriptionUrl}>Unsubscribe</a>
+        </p>
+        <p style='font-size: 85%; opacity: 0.68;'>
+          Powered by <a href={Globals.scheme + "://www.effectivediscussions.org"}>
+            EffectiveDiscussions</a>
         </p>
       </div>.toString
 

@@ -43,7 +43,8 @@ import Utils.{OkHtml}
  */
 object UnsubscriptionController extends mvc.Controller {
 
-  val EmailIdParam = "email-id"
+  val OldEmailIdParam = "email-id" // <-- ok remove year 2016
+  val EmailIdParam = "emailId"
   val DoWhatParam = "do"
 
   val Unsub = ""
@@ -53,7 +54,8 @@ object UnsubscriptionController extends mvc.Controller {
 
 
   def emailId(implicit request: mvc.RequestHeader): String =
-    request.queryString.get(EmailIdParam).map(_.head).getOrElse(
+    request.queryString.get(EmailIdParam).orElse(
+      request.queryString.get(OldEmailIdParam)).map(_.head).getOrElse(
       throwBadReq("DwE03kI21", "No email id specified"))
 
   def doWhat(implicit request: mvc.RequestHeader): String =

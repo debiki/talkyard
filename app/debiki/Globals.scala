@@ -124,6 +124,7 @@ class Globals {
   def secure = state.secure
 
   def scheme = state.scheme
+  def schemeColonSlashSlash = state.scheme + "://"
 
 
   def port = state.port

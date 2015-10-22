@@ -204,12 +204,6 @@ export var LoginDialogContent = createClassAndFactory({
             "to this part of the site. Please login below, as someone with access.")
         : null;
 
-    var andDoWhat = "";
-    switch (loginReason) {
-      case 'LoginToComment': andDoWhat = ", to post a comment,"; break;
-      case 'LoginToCreateTopic': andDoWhat = ", to create a topic,"; break;
-    }
-
     var createAccountButton;
     if (loginReason !== 'LoginAsAdmin' && loginReason !== 'LoginToAdministrate') { // both really used? Can I remove one?
       createAccountButton =
@@ -242,7 +236,7 @@ export var LoginDialogContent = createClassAndFactory({
           " and the ", r.a({ href: '/-/privacy-policy' }, "Privacy Policy")),
 
         r.p({ id: 'dw-lgi-or-login-using' },
-          "Login" + andDoWhat + " using your account (if any) at:"),
+          "Login via:"), // using your account (if any) at:"),
         r.div({ id: 'dw-lgi-other-sites' },
           OpenAuthButton(makeOauthProps('icon-google-plus', 'Google')),
           OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook')),
@@ -250,7 +244,7 @@ export var LoginDialogContent = createClassAndFactory({
           OpenAuthButton(makeOauthProps('icon-github', 'GitHub'))),
           // OpenID doesn't work right now, skip for now:  icon-yahoo Yahoo!
 
-        r.p({ id: 'dw-lgi-or-login-using' }, "Or, alternatively:"),
+        r.p({ id: 'dw-lgi-or-login-using' }, "Or instead:"),
 
         ButtonGroup({ vertical: true },
           createAccountButton,

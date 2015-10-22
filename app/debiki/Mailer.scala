@@ -219,7 +219,13 @@ class Mailer(
     siteDao.updateSentEmail(emailSent)
     e2eTestEmails.get(email.sentTo) match {
       case Some(promise: Promise[Email]) =>
-        promise.success(email)
+        if (promise.isCompleted) {
+          p.Logger.debug("Promise already completed, why? [DwM2PK3] Any email: " +
+            promise.future.value.get.toOption)
+        }
+        else {
+          promise.success(email)
+        }
       case None =>
         SECURITY // DoS attack: don't remember infinitely many addresses in prod mode
         e2eTestEmails.put(email.sentTo, Promise.successful(email))
