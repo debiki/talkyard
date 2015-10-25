@@ -20,26 +20,17 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-/**
- * Loads Remarkable CommonMark renderer.
- */
-d.i.loadEditorDependencies = (function() {
+d.i.loadEditorEtceteraScripts = (function() {
   var loadStatus;
   return function() {
     if (loadStatus)
       return loadStatus;
+
     loadStatus = $.Deferred();
-    var loadCodeMirror = false; // !Modernizr.touch;
     var assetsPrefix = d.i.assetsUrlPathStart;
     yepnope({
-      /* CodeMirror currently not in use, and files removed.
-      test: loadCodeMirror,
-      yep: [
-        assetsPrefix + 'codemirror-3-13-custom.css',
-        assetsPrefix + 'codemirror-3-13-custom.' + d.i.minMaxJs],
-        */
       both: [
-        assetsPrefix + 'markdown-it.' + d.i.minMaxJs],
+        assetsPrefix + 'editor-etcetera.' + d.i.minMaxJs],
       complete: function() {
         loadStatus.resolve();
       }

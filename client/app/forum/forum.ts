@@ -284,11 +284,19 @@ var CategoriesAndTopics = createComponent({
   }, */
 
   editCategory: function() {
-    debiki2.forum['getEditCategoryDialog']().open(this.props.activeCategory.id);
+    debiki2.forum['getEditCategoryDialog'](dialog => {
+      if (this.isMounted()) {
+        dialog.open(this.props.activeCategory.id);
+      }
+    });
   },
 
   createCategory: function() {
-    debiki2.forum['getEditCategoryDialog']().open();
+    debiki2.forum['getEditCategoryDialog'](dialog => {
+      if (this.isMounted()) {
+        dialog.open();
+      }
+    });
   },
 
   createTopic: function() {

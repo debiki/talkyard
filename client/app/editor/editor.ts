@@ -36,28 +36,37 @@ var $: any = window['jQuery'];
 var NoPostId = -1; // also in reply.js
 
 
-function ensureEditorCreated() {
-  if (!theEditor) {
-    theEditor = React.render(Editor({}), utils.makeMountNode());
+function ensureEditorCreated(success) {
+  if (theEditor) {
+    success();
+  }
+  else {
+    d.i.loadEditorEtceteraScripts().done(() => {
+      theEditor = React.render(Editor({}), utils.makeMountNode());
+      success();
+    });
   }
 }
 
 
 export function toggleWriteReplyToPost(postId: number, anyPostType?: number) {
-  ensureEditorCreated();
-  theEditor.toggleWriteReplyToPost(postId, anyPostType);
+  ensureEditorCreated(() => {
+    theEditor.toggleWriteReplyToPost(postId, anyPostType);
+  });
 }
 
 
 export function openEditorToEditPost(postId: number) {
-  ensureEditorCreated();
-  theEditor.editPost(postId);
+  ensureEditorCreated(() => {
+    theEditor.editPost(postId);
+  });
 }
 
 
 export function editNewForumPage(categoryId: number, role: PageRole) {
-  ensureEditorCreated();
-  theEditor.editNewForumPage(categoryId, role);
+  ensureEditorCreated(() => {
+    theEditor.editNewForumPage(categoryId, role);
+  });
 }
 
 
@@ -212,6 +221,10 @@ export var Editor = createComponent({
 
     // Currently there are no drafts, only guidelines.
     Server.loadDraftAndGuidelines(writingWhat, theCategoryId, thePageRole, guidelinesSafeHtml => {
+      if (!guidelinesSafeHtml) {
+        this.setState({ guidelines: null });
+        return;
+      }
       var guidelinesHash = hashStringToNumber(guidelinesSafeHtml);
       var hiddenGuidelinesHashes = getFromLocalStorage('dwHiddenGuidelinesHashes') || {};
       var isHidden = hiddenGuidelinesHashes[guidelinesHash];
@@ -255,19 +268,18 @@ export var Editor = createComponent({
   },
 
   updatePreview: function() {
-    d.i.loadEditorDependencies().done(() => {
-      if (!this.isMounted())
-        return;
-      // (COULD verify is mounted and still edits same post/thing, or not needed?)
-      var isEditingBody = this.state.editingPostId === d.i.BodyId;
-      var sanitizerOpts = {
-        allowClassAndIdAttr: isEditingBody,
-        allowDataAttr: isEditingBody
-      };
-      var htmlText = d.i.markdownToSafeHtml(this.state.text, window.location.host, sanitizerOpts);
-      this.setState({
-        safePreviewHtml: htmlText
-      });
+    if (!this.isMounted())
+      return;
+
+    // (COULD verify still edits same post/thing, or not needed?)
+    var isEditingBody = this.state.editingPostId === d.i.BodyId;
+    var sanitizerOpts = {
+      allowClassAndIdAttr: isEditingBody,
+      allowDataAttr: isEditingBody
+    };
+    var htmlText = d.i.markdownToSafeHtml(this.state.text, window.location.host, sanitizerOpts);
+    this.setState({
+      safePreviewHtml: htmlText
     });
   },
 

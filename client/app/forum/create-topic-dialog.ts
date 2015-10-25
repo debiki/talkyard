@@ -36,8 +36,6 @@ var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-var ReactSelect = reactCreateFactory(window['Select']); // react-select
-var ReactCSSTransitionGroup = reactCreateFactory(React.addons.CSSTransitionGroup);
 
 var createTopicDialog;
 
