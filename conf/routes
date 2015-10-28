@@ -126,6 +126,9 @@ GET   /-/onebox                 controllers.EditController.onebox(url)
 POST  /-/change-post-type       controllers.EditController.changePostType
 POST  /-/delete-post            controllers.EditController.deletePost
 
+POST  /-/upload-public-file     controllers.UploadsController.uploadPublicFile
+GET   /-/uploads/public/*relativePath controllers.UploadsController.servePublicFile(relativePath)
+
 POST  /-/pin-at-position        controllers.PinController.pinAtPosition
 POST  /-/pin-page               controllers.PinController.pinPage
 POST  /-/unpin-page             controllers.PinController.unpinPage

@@ -73,6 +73,7 @@ abstract class SiteDao
   with PageStuffDao
   with RenderedPageHtmlDao
   with PostsDao
+  with UploadsDao
   with UserDao
   with AuditDao {
 

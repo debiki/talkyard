@@ -79,12 +79,14 @@ object EmbeddedTopicsController extends mvc.Controller {
     // magic character in Debiki's URLs (it terminates any id part of the url).
     // Using mixed case should be fine (i.e. not base 36) because people cannot remember
     // 16 chars anyway so they need to copy paste anyway.
+    die("DwE2MFW8", "Use SHA-256 instead, SHA-1 is a little bit deprecated.")
     val base64 = hashSha1Base64UrlSafe(urlNoScheme)
     val withoutDashAndUnderscore =
       if (base64.exists(ch => ch == '-' || ch == '_'))
         base64.filterNot(ch => ch == '-' || ch == '_' || ch == '=')
       else
         base64
+    die("DwE6MFW2", "Might as well take 20 chars instead of 16?")
     val id = withoutDashAndUnderscore take 16
     id
   }

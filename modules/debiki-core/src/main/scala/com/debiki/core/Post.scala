@@ -286,6 +286,14 @@ case class Post(
     }
   }
 
+  /** Renders the current markup just in order to let the caller find <a href=...> links
+    * and other links.
+    */
+  def currentHtmlSanitizedToFindLinks(commonMarkRenderer: CommonMarkRenderer): String = {
+    if (id == PageParts.TitleId) ""
+    else commonMarkRenderer.renderAndSanitizeCommonMark(currentSource,
+      allowClassIdDataAttrs = false, followLinks = false)
+  }
 
   def numEditsToReview = currentVersion - approvedVersion.getOrElse(0)
 

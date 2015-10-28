@@ -41,6 +41,7 @@ object AuditLogEntryType {
   case object NewPost extends AuditLogEntryType
   case object EditPost extends AuditLogEntryType
   case object ChangePostType extends AuditLogEntryType
+  case object UploadFile extends AuditLogEntryType
 }
 
 
@@ -56,6 +57,9 @@ case class AuditLogEntry(
   pageRole: Option[PageRole] = None,
   uniquePostId: Option[UniquePostId] = None,
   postNr: Option[PostId] = None,
+  uploadHashPathSuffix: Option[String] = None,
+  uploadFileName: Option[String] = None,
+  sizeBytes: Option[Int] = None,
   targetUniquePostId: Option[UniquePostId] = None,
   targetSiteId: Option[SiteId] = None,
   targetPageId: Option[PageId] = None,
@@ -65,6 +69,10 @@ case class AuditLogEntry(
   require(pageRole.isEmpty || pageId.isDefined, "DwE4PFKW7")
   require(postNr.isEmpty || pageId.isDefined, "DwE3574FK2")
   require(postNr.isDefined == uniquePostId.isDefined, "DwE2WKEFW8")
+  // COULD check uploaded file hash-path-suffix regex, see UploadsDao in debiki-server.
+  require(!uploadHashPathSuffix.exists(_.trim.isEmpty), "DwE0PMF2")
+  require(!uploadFileName.exists(_.trim.isEmpty), "DwE7UPM1")
+  require(!sizeBytes.exists(_ < 0), "DwE7UMF4")
   require(targetPostNr.isDefined == targetUniquePostId.isDefined, "DwE4QU38")
   require(targetPostNr.isEmpty || targetUserId.isDefined, "DwE5PFK2")
 }

@@ -66,6 +66,7 @@ trait SiteTransaction {
   def insertPost(newPost: Post)
   def updatePost(newPost: Post)
 
+
   def loadActionsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[PostAction]
   def loadActionsDoneToPost(pageId: PageId, postId: PostId): immutable.Seq[PostAction]
 
@@ -106,6 +107,17 @@ trait SiteTransaction {
   def insertPagePath(pagePath: PagePath)
 
   def currentTime: ju.Date
+
+
+  /** Remembers that a file has been uploaded and where it's located. */
+  def insertUploadedFileMeta(uploadRef: UploadRef, sizeBytes: Int)
+  def deleteUploadedFileMeta(uploadRef: UploadRef)
+
+  /** Remembers that an uploaded file is referenced from this post. */
+  def insertUploadedFileReference(postId: UniquePostId, uploadRef: UploadRef, addedById: UserId)
+  def deleteUploadedFileReference(postId: UniquePostId, uploadRef: UploadRef): Boolean
+  def loadUploadedFileReferences(postId: UniquePostId): Set[UploadRef]
+
 
   def insertInvite(invite: Invite)
   def updateInvite(invite: Invite): Boolean

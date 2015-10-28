@@ -49,6 +49,12 @@ Javascript and CSS:
     Copyright (c) 2013 chord.luo@gmail.com
     MIT license
 
+  - dropzone.js
+    ./bower_components/dropzone/
+    https://github.com/enyo/dropzone/
+    Copyright (c) 2012 Matias Meno <m@tias.me>
+    MIT License
+
   - EventEmitter2
     ./bower_components/eventemitter2/
     Copyright (c) 2013 hij1nx
@@ -133,6 +139,12 @@ Javascript and CSS:
     Different fonts copyrighted by different people.
     Various licenses.
     http://fontello.com/
+
+  - pretty-bytes
+    client/app/utils/utils.ts
+    Copyright (c) Sindre Sorhus
+    MIT license
+    https://github.com/sindresorhus/pretty-bytes
 
   - React.js
     Copyright 2013-2014, Facebook, Inc.

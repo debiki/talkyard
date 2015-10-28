@@ -27,6 +27,7 @@ import debiki.DebikiHttp._
 import debiki.RateLimits.NoRateLimits
 import java.{util => ju}
 import play.api._
+import play.api.libs.Files.TemporaryFile
 import play.{api => p}
 import play.api.mvc._
 import requests._
@@ -96,6 +97,12 @@ object ApiActions {
   def AdminPostJsonAction(maxLength: Int)(f: JsonPostRequest => Result) =
     PlainApiActionAdminOnly(
       BodyParsers.parse.json(maxLength = maxLength))(f)
+
+
+  def PostFilesAction(rateLimits: RateLimits, maxLength: Int, allowUnapproved: Boolean = false)(
+        f: ApiRequest[Either[p.mvc.MaxSizeExceeded, MultipartFormData[TemporaryFile]]] => Result) =
+    PlainApiAction(rateLimits, allowUnapproved = allowUnapproved)(
+        BodyParsers.parse.maxLength(maxLength, BodyParsers.parse.multipartFormData))(f)
 
 
   private def PlainApiAction(rateLimits: RateLimits, allowUnapproved: Boolean = false) =

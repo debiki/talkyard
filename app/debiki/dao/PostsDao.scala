@@ -24,6 +24,7 @@ import controllers.EditController
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
+import play.{api => p}
 import scala.collection.{mutable, immutable}
 import PostsDao._
 
@@ -106,6 +107,8 @@ trait PostsDao {
         numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible + numNewOrigPostReplies,
         version = oldMeta.version + 1)
 
+      val uploadRefs = UploadsDao.findUploadRefsInPost(newPost)
+
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
@@ -122,6 +125,9 @@ trait PostsDao {
 
       transaction.insertPost(newPost)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = isApproved)
+      uploadRefs foreach { uploadRef =>
+        transaction.insertUploadedFileReference(newPost.uniqueId, uploadRef, authorId)
+      }
       insertAuditLogEntry(auditLogEntry, transaction)
 
       val notifications = NotificationGenerator(transaction).generateForNewPost(page, newPost)
@@ -209,6 +215,15 @@ trait PostsDao {
           Some(category.copy(description = Some(newDescription)))
         }
 
+      // Use findUploadRefsInPost (not ...InText) so we'll find refs both in the hereafter
+      // 1) approved version of the post, and 2) the current possibly unapproved version.
+      // Because if any of the approved or the current version links to an uploaded file,
+      // we should keep the file.
+      val currentUploadRefs = UploadsDao.findUploadRefsInPost(editedPost)
+      val oldUploadRefs = transaction.loadUploadedFileReferences(postToEdit.uniqueId)
+      val uploadRefsAdded = currentUploadRefs -- oldUploadRefs
+      val uploadRefsRemoved = oldUploadRefs -- currentUploadRefs
+
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
@@ -222,6 +237,18 @@ trait PostsDao {
         targetUserId = Some(postToEdit.createdById))
 
       transaction.updatePost(editedPost)
+
+      uploadRefsAdded foreach { hashPathSuffix =>
+        transaction.insertUploadedFileReference(postToEdit.uniqueId, hashPathSuffix, editorId)
+      }
+      uploadRefsRemoved foreach { hashPathSuffix =>
+        val gone = transaction.deleteUploadedFileReference(postToEdit.uniqueId, hashPathSuffix)
+        if (!gone) {
+          p.Logger.warn(o"""Didn't delete this uploaded file ref: $hashPathSuffix, post id:
+            ${postToEdit.uniqueId} [DwE7UMF2]""")
+        }
+      }
+
       insertAuditLogEntry(auditLogEntry, transaction)
       anyEditedCategory.foreach(transaction.updateCategoryMarkSectionPageStale)
 

@@ -81,6 +81,9 @@ export var Editor = createComponent({
       newForumTopicCategoryId: null,
       newForumPageRole: null,
       guidelines: null,
+      isUploadingFile: false,
+      fileUploadProgress: 0,
+      uploadFileXhr: null,
     };
   },
 
@@ -91,6 +94,7 @@ export var Editor = createComponent({
   componentDidMount: function() {
     this.startMentionsParser();
     this.makeEditorResizable();
+    this.createDropFileTarget();
   },
 
   startMentionsParser: function() {
@@ -120,6 +124,114 @@ export var Editor = createComponent({
         placeholder.height(editor.height());
       }
     });
+  },
+
+  createDropFileTarget: function() {
+    var thisComponent = this;
+    this.setState({
+      dropzone: new window['Dropzone'](this.refs.textarea.getDOMNode(), {
+        url: '/-/upload-public-file',
+        uploadMultiple: false, // only one at a time, so we know which checksum is for which file
+        maxFilesize: ReactStore.allData().maxUploadSizeBytes * 1.0 / 1000 / 1000, // megabytes
+        clickable: false, // a click instead positions the cursor in the textarea
+        init: function() {
+          this.on('sending', (file, xhr, formData) => {
+            xhr.setRequestHeader('X-XSRF-TOKEN', $.cookie('XSRF-TOKEN'));
+            thisComponent.showUploadProgress(0);
+            thisComponent.setState({ uploadFileXhr: xhr });
+          });
+          this.on('error', (file, errorMessage, xhr) => {
+            thisComponent.setState({ uploadFileXhr: null });
+            if (xhr) {
+              pagedialogs.getServerErrorDialog().open("Error uploading file: ", xhr);
+            }
+            else {
+              die("Error uploading file: " + errorMessage + " [DwE5JKW2]");
+            }
+          });
+          this.on('uploadprogress', (file, percent, bytesSent) => {
+            thisComponent.showUploadProgress(percent);
+          });
+          this.on('complete', thisComponent.hideUploadProgress);
+          this.on('canceled', thisComponent.hideUploadProgress);
+          this.on('success', (file, relativePath) => {
+            dieIf(!_.isString(relativePath), 'DwE06MF22');
+            var linkHtml = thisComponent.makeUploadLink(file, relativePath);
+            thisComponent.setState({
+              text: thisComponent.state.text + '\n' + linkHtml,
+            });
+            // Scroll down so people will see the new line we just appended.
+            scrollToBottom(thisComponent.refs.textarea.getDOMNode());
+            thisComponent.updatePreview(function() {
+              // This happens to early, not sure why. So wait for a while.
+              setTimeout(function() {
+                scrollToBottom(thisComponent.refs.preview.getDOMNode());
+              }, 800);
+            });
+          });
+        }
+      })
+    });
+  },
+
+  cancelUpload: function() {
+    if (this.state.uploadFileXhr) {
+      this.state.uploadFileXhr.abort();
+    }
+    else {
+      console.warn("Cannot cancel upload: No this.state.uploadFileXhr [DwE8UMW2]");
+    }
+  },
+
+  showUploadProgress: function(percent) {
+    if (percent === 0) {
+      pagedialogs.getProgressBarDialog().open("Uploading...", this.cancelUpload);
+    }
+    else {
+      pagedialogs.getProgressBarDialog().setDonePercent(percent);
+    }
+    this.setState({
+      isUploadingFile: true,
+      fileUploadProgress: percent,
+    });
+  },
+
+  hideUploadProgress: function() {
+    pagedialogs.getProgressBarDialog().close();
+    this.setState({
+      uploadFileXhr: null,
+      isUploadingFile: false,
+      fileUploadProgress: 0,
+    });
+  },
+
+  makeUploadLink: function(file, relativePath) {
+    // The relative path is like 'a/b/c...zwq.suffix' = safe, and we got it from the server.
+    dieIf(!relativePath.match(/^[0-9a-z/\.]+$/), 'DwE8PUMW2');
+
+    var parts = relativePath.split('.');
+    var suffix = parts.length > 1 ? _.last(parts) : '';
+
+    // (SVG doesn't work in old browsers, fine.)
+    var isImage = suffix === 'png' || suffix === 'jpg' || suffix === 'gif' ||
+        suffix === 'bmp' || suffix === 'tif' || suffix === 'svg';
+
+    // Only .mp4 is supported by all browsers.
+    var isVideo = suffix === 'mp4' || suffix === 'ogg' || suffix === 'webm';
+
+    var url = '/-/uploads/public/' + relativePath;
+
+    var link;
+    if (isImage) {
+      link = '<img src="' + url + '"></img>';
+    }
+    else if (isVideo) {
+      link = '<video width="490" height="400" controls src="' + url + '"></video>';
+    }
+    else {
+      link = '<a href="' + url + '">' + file.name + '</a> (' + prettyBytes(file.size) + ')';
+    }
+    return link;
   },
 
   toggleWriteReplyToPost: function(postId: number, anyPostType?: number) {
@@ -267,7 +379,7 @@ export var Editor = createComponent({
     this.updatePreview();
   },
 
-  updatePreview: function() {
+  updatePreview: function(anyCallback) {
     if (!this.isMounted())
       return;
 
@@ -280,7 +392,7 @@ export var Editor = createComponent({
     var htmlText = d.i.markdownToSafeHtml(this.state.text, window.location.host, sanitizerOpts);
     this.setState({
       safePreviewHtml: htmlText
-    });
+    }, anyCallback);
   },
 
   onCancelClick: function() {
@@ -498,7 +610,7 @@ export var Editor = createComponent({
                   textarea))),
             r.div({ className: 'preview-area' },
               r.div({}, titleInput ? 'Preview: (title excluded)' : 'Preview:'),
-              r.div({ className: 'preview',
+              r.div({ className: 'preview', ref: 'preview',
                   dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
             r.div({ className: 'submit-cancel-btns' },
               Button({ onClick: this.onSaveClick }, saveButtonTitle),

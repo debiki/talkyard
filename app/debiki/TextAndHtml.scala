@@ -137,6 +137,8 @@ object TextAndHtml {
 
 
   def findLinks(html: String): immutable.Seq[String] = {
+    SECURITY; SHOULD // find all src=... links too, e.g. <img src=...>, not just <a href=...>.
+                    // And thereafter, could use TextAndHtml in UploadsDao.findUploadRefsInText ?
     TESTS_MISSING
     import org.jsoup.Jsoup
     import org.jsoup.nodes.Element

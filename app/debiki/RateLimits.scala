@@ -356,6 +356,16 @@ object RateLimits {
   }
 
 
+  object UploadFile extends RateLimits {
+    val key = "UpFs"
+    val what = "uploaded too many files"
+    def maxPerFifteenSeconds = 4
+    def maxPerFifteenMinutes = 24
+    def maxPerDay = 34
+    def maxPerDayNewUser = Unlimited
+  }
+
+
   object FullTextSearch extends RateLimits {
     val key = "FTS"
     val what = "searched too much"

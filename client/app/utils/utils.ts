@@ -50,6 +50,34 @@ export function hashStringToNumber(string: string): number {  // [4KFBW2]
 }
 
 
+/**
+ * Copyright (c) Sindre Sorhus
+ * License: MIT
+ * https://github.com/sindresorhus/pretty-bytes
+ */
+export function prettyBytes(num: number): string {
+  var neg = num < 0;
+  var units = ['B', 'kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  if (neg) {
+    num = -num;
+  }
+  if (num < 1) {
+    return (neg ? '-' : '') + num + ' B';
+  }
+  var exponent: number = Math.min(Math.floor(Math.log(num) / Math.log(1000)), units.length - 1);
+
+  // This results in """error TS2362: The left-hand side of an arithmetic operation must be
+  // of type 'any', 'number' or an enum type."""
+  //var rounded: number = (num / Math.pow(1000, exponent)).toFixed(2) * 1;
+  // Instead:
+  var tmp: any = (num / Math.pow(1000, exponent)).toFixed(2);
+  var rounded = tmp * 1;
+
+  var unit = units[exponent];
+  return (neg ? '-' : '') + rounded + ' ' + unit;
+};
+
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------
