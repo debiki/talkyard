@@ -236,6 +236,7 @@ object ReactJson {
       "numPostsRepliesSection" -> numPostsRepliesSection,
       "numPostsChatSection" -> numPostsChatSection,
       "numPostsExclTitle" -> numPostsExclTitle,
+      "maxUploadSizeBytes" -> debiki.dao.UploadsDao.maxUploadSizeBytes,
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
       "categories" -> categoriesJson(page, dao),
       "topics" -> JsArray(anyLatestTopics),

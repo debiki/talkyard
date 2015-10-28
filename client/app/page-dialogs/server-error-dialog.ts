@@ -61,6 +61,7 @@ var ServerErrorDialog = createComponent({
     return {
       isOpen: false,
       error: null,  // COULD rename to serverError
+      dialogMessagePrefix: '',
       clientErrorMessage: null,
     };
   },
@@ -69,14 +70,20 @@ var ServerErrorDialog = createComponent({
     this.setState({
       isOpen: true,
       error: null,
+      dialogMessagePrefix: '',
       clientErrorMessage: errorMessage,
     });
   },
 
-  open: function(error: any) {
+  open: function(dialogMessagePrefix?: any, error?: any) {
+    if (!error) {
+      error = dialogMessagePrefix;
+      dialogMessagePrefix = '';
+    }
     this.setState({
       isOpen: true,
       error: error,
+      dialogMessagePrefix: dialogMessagePrefix,
       clientErrorMessage: null
     });
   },
@@ -108,8 +115,8 @@ var ServerErrorDialog = createComponent({
       // Is the status message included on the first line? If so, remove it, because we'll
       // shown it in the dialog title.
       message = error.responseText;
-      var matches = message ? message.match(/\d\d\d [a-zA-Z ]+\n(.*)/) : null;
-      if (matches && matches.length === 2) {
+      var matches = message ? message.match(/\d\d\d [a-zA-Z ]+\n+((.|[\r\n])*)/) : null;
+      if (matches && matches.length >= 2) {
         message = matches[1];
       }
       else if (/^\s*<!DOCTYPE html>/.test(message)) {
@@ -134,6 +141,8 @@ var ServerErrorDialog = createComponent({
             "Details: " + JSON.stringify(error);
       }
     }
+
+    message = this.state.dialogMessagePrefix + message;
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'dw-server-error',

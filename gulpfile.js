@@ -107,21 +107,13 @@ var debikiJavascriptFiles = [
       'bower_components/eventemitter2/lib/eventemitter2.js',
       'bower_components/react-bootstrap/react-bootstrap.js',
       'bower_components/react-router/build/umd/ReactRouter.js',
-      'bower_components/Caret.js/dist/jquery.caret.js',
-      'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
       'bower_components/nicescroll/jquery.nicescroll.js',
-      'bower_components/classnames/index.js', // needed by react-select
-      'bower_components/react-input-autosize/dist/react-input-autosize.min.js', // needed by react-select
-      'bower_components/react-select/dist/react-select.min.js',
       'node_modules/jquery-resizable/resizable.js',
       'client/third-party/bootstrap/dropdown.js',
-      'client/third-party/diff_match_patch.js',
       'client/third-party/gifffer/gifffer.js',
-      'client/third-party/html-css-sanitizer-bundle.js',
       'client/third-party/jquery-cookie.js',
       'client/third-party/jquery-scrollable.js', //
       'client/third-party/jquery.browser.js', //
-      'client/third-party/non-angular-slugify.js',
       'client/third-party/popuplib.js',
       'target/client/app/actions/edit/edit.js',
       'target/client/app/actions/vote.js',
@@ -150,6 +142,18 @@ var debikiJavascriptFiles = [
       'target/client/all-typescript.js',
       'target/client/app/startup.js'];
 
+
+var editorEtceteraScripts = [
+      'bower_components/markdown-it/dist/markdown-it.js',
+      'bower_components/Caret.js/dist/jquery.caret.js',
+      'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
+      'bower_components/classnames/index.js', // needed by react-select
+      'bower_components/react-input-autosize/dist/react-input-autosize.min.js', // needed by react-select
+      'bower_components/react-select/dist/react-select.min.js',
+      'bower_components/dropzone/dist/dropzone.js',
+      'client/third-party/diff_match_patch.js',
+      'client/third-party/html-css-sanitizer-bundle.js',
+      'client/third-party/non-angular-slugify.js'];
 
 
 // For both touch devices and desktops.
@@ -267,6 +271,7 @@ function makeConcatDebikiScriptsStream() {
 
   return es.merge(
       makeConcatStream('combined-debiki.js', debikiJavascriptFiles),
+      makeConcatStream('editor-etcetera.js', editorEtceteraScripts),
       makeConcatStream('embedded-comments.js', debikiEmbeddedCommentsFiles),
       gulp.src('bower_components/zxcvbn/zxcvbn.js').pipe(gulp.dest('public/res/')));
 };

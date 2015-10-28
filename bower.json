@@ -11,6 +11,7 @@
   ],
   "dependencies": {
     "bootstrap": "=v3.1.1",
+    "dropzone": "=4.2.0",
     "eventemitter2": "=0.4.14",
     "jquery": "=2.1.4",
     "jquery.atwho": "=0.5.2",

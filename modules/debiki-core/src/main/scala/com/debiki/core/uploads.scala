@@ -1,5 +1,5 @@
-@**
- * Copyright (C) 2015 Kaj Magnus Lindberg
+/**
+ * Copyright (c) 2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -13,14 +13,18 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *@
+ */
 
-@(mode: String, serverAddress: String, returnToUrl: String)
 
-@popupMain(serverAddress) {
-  <!-- views/login/loginPopup.scala.html -->
-  <script>
-    debiki2.startRemainingReactRoots();
-    debiki2.login.getLoginDialog().open('@mode', '@returnToUrl', true @*preventClose*@ );
-  </script>
-}
+package com.debiki.core
+
+
+/** An uploaded file is located at the baseUrlHostAndPath + hashPathSuffix,
+  * e.g.  some-cdn.com/some/path/x/y/zwq...abc.jpg
+  * where xyzwq...abc (note: no slashes) is the file's hash (sha-256, base32, truncated
+  * to 33 chars). 'x/y/zwq...abc' is the file's "hash path" — because it's a hash, with
+  * slashes inserted so that it's a path — this avoids us placing all files in the exact
+  * same directory. Some file system don't want super many files in just one directory.
+  */
+case class UploadRef(baseUrl: String, hashPathSuffix: String)
+

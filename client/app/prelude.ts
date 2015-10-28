@@ -44,6 +44,13 @@ export function dieIf(condition: boolean, errorMessage: string) {
   }
 };
 
+
+export function scrollToBottom(node) {
+  dieIf(!node, 'DwE9FMW2');
+  node.scrollTop = node.scrollHeight;
+}
+
+
 //------------------------------------------------------------------------------
 }
 //------------------------------------------------------------------------------

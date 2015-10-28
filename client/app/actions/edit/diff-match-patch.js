@@ -22,6 +22,11 @@
 // Find the google-diff-match-patch API documented here:
 //   https://code.google.com/p/google-diff-match-patch/wiki/API
 
+
+// Currently not in use, and broken, because diff_match_patch is nowadays not loaded
+// until later when/if needed.
+return;
+
 var d = { i: debiki.internal, u: debiki.v0.util };
 var bug = d.u.die2;
 

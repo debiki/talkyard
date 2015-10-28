@@ -1,4 +1,4 @@
-@**
+/**
  * Copyright (C) 2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
@@ -13,14 +13,16 @@
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *@
+ */
 
-@(mode: String, serverAddress: String, returnToUrl: String)
+import play.api.libs.json.JsValue
 
-@popupMain(serverAddress) {
-  <!-- views/login/loginPopup.scala.html -->
-  <script>
-    debiki2.startRemainingReactRoots();
-    debiki2.login.getLoginDialog().open('@mode', '@returnToUrl', true @*preventClose*@ );
-  </script>
+
+package object controllers {
+
+  // Move it to here soon ...
+  def OkSafeJson(json: JsValue) =
+    Utils.OkSafeJson(json)
+
 }
+

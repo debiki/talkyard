@@ -53,7 +53,7 @@ var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 var loginDialog;
 
 
-export function getLoginDialog() {
+export function getLoginDialog() {   // also called from Scala template
   if (!loginDialog) {
     loginDialog = React.render(LoginDialog(), utils.makeMountNode());
   }

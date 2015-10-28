@@ -192,6 +192,7 @@ interface Store {
   numPostsRepliesSection: number;
   numPostsChatSection: number;
   numPostsExclTitle: number;
+  maxUploadSizeBytes: number;
   isInEmbeddedCommentsIframe: boolean;
   categories: Category[];
   newCategoryId: string; // would like to remove. Later, when everything is one SPA and there's just one router available from everywhere. Then I can transition directly to the new category without this variable.

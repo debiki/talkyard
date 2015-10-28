@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/fade-in-on-click.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
@@ -38,20 +39,23 @@ var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-var ReactSelect = reactCreateFactory(window['Select']); // react-select
+var ReactSelect; // lazy loaded
 
 var DefaultPosition = 50;
 
 var editCategoryDialog;
 
-export function getEditCategoryDialog() {
-  if (!editCategoryDialog) {
-    function makeMountNode() {
-      return $('<div>').appendTo('body')[0];
-    }
-    editCategoryDialog = React.render(EditCategoryDialog(), makeMountNode());
+export function getEditCategoryDialog(success: (dialog) => void) {
+  if (editCategoryDialog) {
+    success(editCategoryDialog);
   }
-  return editCategoryDialog;
+  else {
+    d.i.loadEditorEtceteraScripts().done(() => {
+      ReactSelect = reactCreateFactory(window['Select']); // react-select
+      editCategoryDialog = React.render(EditCategoryDialog(), debiki2.utils.makeMountNode());
+      success(editCategoryDialog);
+    });
+  }
 }
 
 

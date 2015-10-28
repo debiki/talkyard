@@ -162,6 +162,8 @@ trait PagesDao {
       htmlSanitized = bodyHtmlSanitized,
       approvedById = Some(approvedById))
 
+    val uploadPaths = UploadsDao.findUploadRefsInPost(bodyPost)
+
     val (pinOrder: Option[Int], pinWhere: Option[PinPageWhere]) =
       if (pageRole == PageRole.AboutCategory) (Some(3), Some(PinPageWhere.InCategory))
       else (None, None)
@@ -183,6 +185,9 @@ trait PagesDao {
     transaction.insertPagePath(pagePath)
     transaction.insertPost(titlePost)
     transaction.insertPost(bodyPost)
+    uploadPaths foreach { hashPathSuffix =>
+      transaction.insertUploadedFileReference(bodyPost.uniqueId, hashPathSuffix, authorId)
+    }
     insertAuditLogEntry(auditLogEntry, transaction)
 
     // Don't start rendering html for this page in the background. [5KWC58]
