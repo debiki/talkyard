@@ -136,7 +136,7 @@ var TitleBodyComments = createComponent({
 
     if (store.pageClosedAtMs) {
       if (store.pageRole === PageRole.Critique) {  // [plugin]
-        return { id: 'Z4KDPU2', version: 1, content: r.span({},
+        return { id: 'EdH4KDPU2', version: 1, content: r.span({},
             "This topic has been closed. People won't get " +
             "any additional credits for posting more critique here.") };
       }
@@ -161,11 +161,11 @@ var TitleBodyComments = createComponent({
         var isPageAuthor = bodyPost.authorIdInt === user.userId;
         if (isPageAuthor) {
           if (store.numPostsRepliesSection) {
-            return { id: '5GUF2', version: 1, content: r.span({},
+            return { id: 'EdH5GUF2', version: 1, content: r.span({},
                 "You have been given critique — see the Replies section below.") };
           }
           else {
-            return { id: '0SE2W', version: 1, content: r.div({},
+            return { id: 'EdH0SE2W', version: 1, content: r.div({},
                 r.p({}, "Now you have asked for critique. You'll be notified via email later " +
                   "when you get critique."),
                 r.p({},
@@ -176,7 +176,7 @@ var TitleBodyComments = createComponent({
           }
         }
         else {
-          return { id: '7GYM21', version: 1, content: r.span({},
+          return { id: 'EdH7YM21', version: 1, content: r.span({},
             "Click ", r.b({}, "Give Critique"), " below, to critique this — then you'll " +
             "get credits, which you can use to ask for critique yourself.") };
         }

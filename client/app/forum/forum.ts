@@ -131,7 +131,7 @@ var ForumComponent = React.createClass({
       return null;
 
     if (!user.isAuthenticated)
-      return { id: '3KEW21', version: 1, content: r.span({},
+      return { id: 'EdHKEW21', version: 1, content: r.span({},
           r.p({},
             "Click ", r.b({}, "Log In"), " (to the right just above)."),
           r.p({},
@@ -140,16 +140,16 @@ var ForumComponent = React.createClass({
             "and someone asks for clarifications.")) };
 
     // if too-few-topics then
-    return { id: '4KBP2', version: 1, content: r.span({},
+    return { id: 'EdH4KBP2', version: 1, content: r.span({},
         r.p({}, "You can click ", r.b({}, "Ask for Critique"), " (to the right just below)."),
         r.p({}, "(Normally, you would need to first help others and gather credits, " +
           "before you can ask for critique yourself. But right now there are few " +
           "open topics here, so you can ask directly instead.)")) };
 
     // enough credits:
-    // return { id: '8KPU01', version: 1, content: r.span({}, "Click Ask for Critique") };
+    // return { id: 'EdH8PU01', version: 1, content: r.span({}, "Click Ask for Critique") };
 
-    // return { id: '4KGU0', version: 1, content:
+    // return { id: 'EdH4KGU0', version: 1, content:
     //   Select a topic that you'd like to critique:
     //    (You need credits, before you can ask for critique yourself — and you get credits, by
     //    critiquing to others.)

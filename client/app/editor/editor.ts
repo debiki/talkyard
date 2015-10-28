@@ -496,9 +496,6 @@ export var Editor = createComponent({
       }
     }
 
-    var titlePlaceholder;
-    var youCanUse = "You can use Markdown and HTML.";
-    var textareaPlaceholder = "Type here. " + youCanUse;
     if (this.state.newForumPageRole) {
       titleInput =
           r.input({ className: 'title-input form-control', type: 'text', ref: 'titleInput',
@@ -533,11 +530,7 @@ export var Editor = createComponent({
         case PageRole.ToDo: what = "Create a todo"; break;
         case PageRole.MindMap: what = "Create a mind map page"; break;
         case PageRole.Discussion: break; // use default
-        case PageRole.Critique: // [plugin]
-          what = "Ask for critique";
-          textareaPlaceholder = "Here, enter a link to your work, and tell people " +
-              "what you want feedback about. \n" + youCanUse;
-          break;
+        case PageRole.Critique: what = "Ask for critique"; break; // [plugin]
       }
       doingWhatInfo = what + ":";
     }
@@ -594,7 +587,13 @@ export var Editor = createComponent({
 
     var textarea =
         r.textarea({ className: 'editor form-control', ref: 'textarea', value: this.state.text,
-            onChange: this.onTextEdited, placeholder: textareaPlaceholder });
+            onChange: this.onTextEdited,
+            placeholder: "Type here. You can use Markdown and HTML. " +
+                "Drag and drop to paste images." });
+
+    var previewHelp =
+        r.div({ className: 'dw-preview-help' },
+          help.HelpMessageBox({ message: previewHelpMessage }));
 
     return (
       r.div({ style: styles },
@@ -611,6 +610,7 @@ export var Editor = createComponent({
                   textarea))),
             r.div({ className: 'preview-area' },
               r.div({}, titleInput ? 'Preview: (title excluded)' : 'Preview:'),
+              previewHelp,
               r.div({ className: 'preview', ref: 'preview',
                   dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
             r.div({ className: 'submit-cancel-btns' },
@@ -623,6 +623,15 @@ export var Editor = createComponent({
 function isCritiquePage(): boolean {  // [plugin]
   return ReactStore.allData().pageRole === PageRole.Critique;
 }
+
+
+var previewHelpMessage = {
+  id: 'EdH7MF24',
+  version: 1,
+  content:
+      r.span({}, "Here you can preview how your post will look.",
+        r.br(), "You cannot type here.")
+};
 
 
 var newCategoryPlaceholderText =

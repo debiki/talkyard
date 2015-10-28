@@ -64,7 +64,7 @@ object EditController extends mvc.Controller {
         if (thePageRole == PageRole.Critique) Some(GiveCritiqueGuidelines) // [plugin]
         else Some(ReplyGuidelines)
       case WriteWhat.OriginalPost =>
-        if (thePageRole == PageRole.Critique) None // Some(AskForCritiqueGuidelines) // [plugin]
+        if (thePageRole == PageRole.Critique) Some(AskForCritiqueGuidelines) // [plugin]
         else None // Some(OriginalPostGuidelines)
     }
 
@@ -201,6 +201,10 @@ object EditController extends mvc.Controller {
     |"""
 
   val AskForCritiqueGuidelines = /* [plugin] */ i"""
+    |<p>Type a title in the topmost filed below.
+    |<p>Below the title, add a link to your work, or upload an image (drag and drop it).
+    |And tell people what you want feedback about.
+    |<p>This is a public forum — anyone is welcome to help you.</p>
     |"""
 
   // This advice actually feels mostly annoying to me: (so currently not in use)
