@@ -558,11 +558,14 @@ span.dw-p-e-by
 
 
 // The Stupid Lightbox enlarges images in posts on click, so indicate that they're clickable.
-.dw-p-bd img.stupid-lightbox-enlargeable:hover {
+.dw-p-bd img.stupid-lightbox-enlargeable:hover
   outline: 2px solid hsl(210, 100%, 83%);
   cursor: pointer;
+  cursor: zoom-in; // better, if supported
   box-shadow: hsl(210, 70%, 60%) 2px 2px 13px !important;
-}
+
+.stupid-lightbox-wrap
+  cursor: zoom-out;
 
 
 // SVG

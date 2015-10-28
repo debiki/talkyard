@@ -110,7 +110,7 @@ trait SiteTransaction {
 
 
   /** Remembers that a file has been uploaded and where it's located. */
-  def insertUploadedFileMeta(uploadRef: UploadRef, sizeBytes: Int)
+  def insertUploadedFileMeta(uploadRef: UploadRef, sizeBytes: Int, dimensions: Option[(Int, Int)])
   def deleteUploadedFileMeta(uploadRef: UploadRef)
 
   /** Remembers that an uploaded file is referenced from this post. */

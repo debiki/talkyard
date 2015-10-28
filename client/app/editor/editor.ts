@@ -207,14 +207,15 @@ export var Editor = createComponent({
 
   makeUploadLink: function(file, relativePath) {
     // The relative path is like 'a/b/c...zwq.suffix' = safe, and we got it from the server.
-    dieIf(!relativePath.match(/^[0-9a-z/\.]+$/), 'DwE8PUMW2');
+    dieIf(!relativePath.match(/^[0-9a-z/\.]+$/),
+        "Bad image relative path: " + relativePath + " [DwE8PUMW2]");
 
     var parts = relativePath.split('.');
     var suffix = parts.length > 1 ? _.last(parts) : '';
 
-    // (SVG doesn't work in old browsers, fine.)
+    // (SVG doesn't work in old browsers, fine. tif doesn't work for me.)
     var isImage = suffix === 'png' || suffix === 'jpg' || suffix === 'gif' ||
-        suffix === 'bmp' || suffix === 'tif' || suffix === 'svg';
+        suffix === 'mpo' || suffix === 'bmp' || suffix === 'svg';
 
     // Only .mp4 is supported by all browsers.
     var isVideo = suffix === 'mp4' || suffix === 'ogg' || suffix === 'webm';

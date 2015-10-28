@@ -17,13 +17,16 @@
 
 package debiki.dao
 
+import java.awt.Image
+import java.awt.image.BufferedImage
+
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.google.{common => guava}
 import debiki.DebikiHttp._
 import java.{io => jio}
 import java.nio.{file => jf}
-import debiki.ReactRenderer
+import debiki.{ImageUtils, ReactRenderer}
 import org.jsoup.Jsoup
 import play.{api => p}
 import play.api.Play
@@ -51,29 +54,61 @@ trait UploadsDao {
       "DwE5KFY9", "File uploads disabled, config value missing: " +
         LocalhostUploadsDirConfigValueName)
 
-    val anySuffix = uploadedFileName.dropWhile(_ != '.')
-    if (anySuffix.length > MaxSuffixLength)
+    // (Convert to lowercase, don't want e.g. both .JPG and .jpg.)
+    val uploadedDotSuffix = uploadedFileName.dropWhile(_ != '.').toLowerCase
+    if (uploadedDotSuffix.length > MaxSuffixLength)
       throwBadRequest("DwE2FUP5", o"""File has too long suffix: '$uploadedFileName'
         (max $MaxSuffixLength chars)""")
 
-    // (It's okay to truncate the hash, see e.g.:
-    // http://crypto.stackexchange.com/questions/9435/is-truncating-a-sha512-hash-to-the-first-160-bits-as-secure-as-using-sha1 )
-    val hashCode = guava.io.Files.hash(tempFile, guava.hash.Hashing.sha256)
-    val hashString = base32lowercaseEncoder.encode(hashCode.asBytes) take HashLength
+    val origFileSize = tempFile.length
+    if (origFileSize >= maxUploadSizeBytes)
+      throwForbidden("DwE5YFK2", s"File too large, more than $origFileSize bytes")
 
-    val hashPathSuffix =
-      s"${hashString.head}/${hashString.charAt(1)}/${hashString drop 2}$anySuffix"
+    var tempCompressedFile: Option[jio.File] = None
+    var dimensions: Option[(Int, Int)] = None
 
-    val destinationFile = new java.io.File(s"$publicUploadsDir$hashPathSuffix")
-    destinationFile.getParentFile.mkdirs()
+    val (optimizedFile, optimizedDotSuffix) =
+      if (!ImageUtils.isProcessableImageSuffix(uploadedDotSuffix)) {
+        (tempFile, uploadedDotSuffix)
+      }
+      else {
+        val image: BufferedImage = javax.imageio.ImageIO.read(tempFile)
+        if (image eq null) {
+          p.Logger.warn(o"""Cannot process $uploadedFileName with ImageIO —
+              remove its suffix from image format suffixes list? [DwE7MUF4]""")
+          (tempFile, uploadedDotSuffix)
+        }
+        else {
+          dimensions = Some((image.getWidth, image.getHeight))
+          if (ImageUtils.canCompress(uploadedDotSuffix)) {
+            tempCompressedFile = Some(new jio.File(tempFile.toPath + ".compressed.jpg"))
+            ImageUtils.convertToCompressedJpeg(image, tempCompressedFile.get)
+            (tempCompressedFile.get, ".jpg")
+          }
+          else {
+            (tempFile, uploadedDotSuffix)
+          }
+        }
+      }
 
     val sizeBytes = {
-      val sizeAsLong = tempFile.length
+      val sizeAsLong = optimizedFile.length
       if (sizeAsLong >= maxUploadSizeBytes) {
-        throwForbidden("DwE5YFK2", s"File too large, more than $maxUploadSizeBytes bytes")
+        throwForbidden("DwE5YFK2", s"Optimized file too large, more than $maxUploadSizeBytes bytes")
       }
       sizeAsLong.toInt
     }
+
+    // (It's okay to truncate the hash, see e.g.:
+    // http://crypto.stackexchange.com/questions/9435/is-truncating-a-sha512-hash-to-the-first-160-bits-as-secure-as-using-sha1 )
+    val hashCode = guava.io.Files.hash(optimizedFile, guava.hash.Hashing.sha256)
+    val hashString = base32lowercaseEncoder.encode(hashCode.asBytes) take HashLength
+
+    val hashPathSuffix =
+      s"${hashString.head}/${hashString.charAt(1)}/${hashString drop 2}$optimizedDotSuffix"
+
+    val destinationFile = new java.io.File(s"$publicUploadsDir$hashPathSuffix")
+    destinationFile.getParentFile.mkdirs()
 
     // Remember this new file and who uploaded it.
     // (Do this before moving the it into the uploads directory, in case the server
@@ -83,7 +118,7 @@ trait UploadsDao {
     readWriteTransaction { transaction =>
       // The file will be accessible on localhost, it hasn't yet been moved to e.g. any CDN.
       val uploadRef = UploadRef(localhostUploadsBaseUrl, hashPathSuffix)
-      transaction.insertUploadedFileMeta(uploadRef, sizeBytes)
+      transaction.insertUploadedFileMeta(uploadRef, sizeBytes, dimensions)
       insertAuditLogEntry(AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
@@ -98,15 +133,18 @@ trait UploadsDao {
 
     // (Don't do this inside the transaction above, because then the file might be moved
     // in place, but the transaction might fail —> metadata never created.)
-    try jf.Files.move(tempFile.toPath, destinationFile.toPath)
+    try jf.Files.move(optimizedFile.toPath, destinationFile.toPath)
     catch {
       case _: jf.FileAlreadyExistsException =>
         // Fine. Same name -> same hash -> same content.
       case ex: Exception =>
-        p.Logger.error(o"""Error moving file into place, name: $uploadedFileName, temp file path:
-          ${tempFile.getPath}, destination: ${destinationFile.getPath} [DwE8MF2]""", ex)
+        p.Logger.error(o"""Error moving file into place, name: $uploadedFileName, file path:
+          ${optimizedFile.getPath}, destination: ${destinationFile.getPath} [DwE8MF2]""", ex)
         throw ex
     }
+
+    // COULD wrap in try...finally, so will be deleted for sure.
+    tempCompressedFile.foreach(_.delete)
 
     hashPathSuffix
   }
@@ -132,7 +170,7 @@ object UploadsDao {
   val LocalhostUploadsDirConfigValueName = "debiki.uploads.localhostDir"
 
   val maxUploadSizeBytes = Play.configuration.getInt("debiki.uploads.maxKiloBytes").map(_ * 1000)
-    .getOrElse(2*1000*1000)
+    .getOrElse(3*1000*1000)
 
   val anyUploadsDir = {
     val value = Play.configuration.getString(LocalhostUploadsDirConfigValueName)
