@@ -91,6 +91,7 @@ trait UploadsDao {
         }
       }
 
+    val mimeType = java.nio.file.Files.probeContentType(optimizedFile.toPath.toAbsolutePath)
     val sizeBytes = {
       val sizeAsLong = optimizedFile.length
       if (sizeAsLong >= maxUploadSizeBytes) {
@@ -118,7 +119,7 @@ trait UploadsDao {
     readWriteTransaction { transaction =>
       // The file will be accessible on localhost, it hasn't yet been moved to e.g. any CDN.
       val uploadRef = UploadRef(localhostUploadsBaseUrl, hashPathSuffix)
-      transaction.insertUploadedFileMeta(uploadRef, sizeBytes, dimensions)
+      transaction.insertUploadedFileMeta(uploadRef, sizeBytes, mimeType, dimensions)
       insertAuditLogEntry(AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,

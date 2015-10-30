@@ -129,7 +129,9 @@ export var Editor = createComponent({
   createDropFileTarget: function() {
     var thisComponent = this;
     this.setState({
-      dropzone: new window['Dropzone'](this.refs.textarea.getDOMNode(), {
+      // Let the whole editor be a drop zone, so it's easy to hit, because if dropping outside, the browser
+      // opens the dropped file in the current window (then the editor content is lost).
+      dropzone: new window['Dropzone'](this.getDOMNode(), {
         url: '/-/upload-public-file',
         uploadMultiple: false, // only one at a time, so we know which checksum is for which file
         maxFilesize: ReactStore.allData().maxUploadSizeBytes * 1.0 / 1000 / 1000, // megabytes
