@@ -131,6 +131,21 @@ object EditController extends mvc.Controller {
   }
 
 
+  def loadPostRevisions(postId: String, revisionNr: String) = GetAction { request =>
+    val postIdInt = postId.toIntOption getOrElse throwBadRequest("DwE8FKP", "Bad post id")
+    val revisionNrInt =
+      if (revisionNr == "LastRevision") PostRevision.LastRevisionMagicNr
+      else revisionNr.toIntOption getOrElse throwBadRequest("EdE8UFMW2", "Bad revision nr")
+    val revisionsRecentFirst =
+      request.dao.loadSomeRevisionsRecentFirst(postIdInt, revisionNrInt, atLeast = 5)
+    val revisionsJson = revisionsRecentFirst map { revision =>
+      val isStaffOrComposer = request.isStaff || request.theUserId == revision.composedById
+      ReactJson.postRevisionToJson(revision, maySeeHidden = isStaffOrComposer)
+    }
+    OkSafeJson(JsArray(revisionsJson))
+  }
+
+
   def changePostType = PostJsonAction(RateLimits.EditPost, maxLength = 100) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postNr = (request.body \ "postNr").as[PostId]

@@ -25,7 +25,7 @@ import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import play.{api => p}
-import scala.collection.{mutable, immutable}
+import scala.collection.mutable
 import PostsDao._
 
 
@@ -176,7 +176,25 @@ trait PostsDao {
         lastEditedById = Some(editorId))
 
       val approverId = if (editor.isStaff) editor.id else SystemUserId
-      val nextVersion = postToEdit.currentVersion + 1
+
+      val anyLastRevision = loadLastRevisionWithSource(postToEdit.uniqueId, transaction)
+      BUG // this is the wrong start time — it's when the prev rev was saved, not when we
+          // started editing again!
+      val ninjaEditStart = anyLastRevision.map(_.composedAt).getOrElse(postToEdit.createdAt)
+      val ninjaEditEndMs = ninjaEditStart.getTime + NinjaEditWindowMs
+      val isInNinjaEditWindow = transaction.currentTime.getTime < ninjaEditEndMs
+      BUG // If lastEditedById.isEmpty, then compare createdById instead
+      val isSameAuthor = postToEdit.lastEditedById.map(_ == editorId) != Some(false)
+      val isNinjaEdit = isInNinjaEditWindow && isSameAuthor
+
+      val (newRevision: Option[PostRevision], newRevisionNr, newPrevRevNr) =
+        if (isNinjaEdit) {
+          (None, postToEdit.currentRevision, postToEdit.previousRevisionNr)
+        }
+        else {
+          val revision = PostRevision.createFor(postToEdit, previousRevision = anyLastRevision)
+          (Some(revision), postToEdit.currentRevision + 1, Some(postToEdit.currentRevision))
+        }
 
       // COULD send current version from browser to server, reject edits if != oldPost.currentVersion
       // to stop the lost update problem.
@@ -190,9 +208,10 @@ trait PostsDao {
         approvedHtmlSanitized = Some(newTextAndHtml.safeHtml),
         approvedAt = Some(transaction.currentTime),
         approvedById = Some(approverId),
-        approvedVersion = Some(nextVersion),
+        approvedRevision = Some(newRevisionNr),
         currentSourcePatch = None,
-        currentVersion = nextVersion)
+        currentRevision = newRevisionNr,
+        previousRevisionNr = newPrevRevNr)
 
       if (editorId != editedPost.createdById) {
         editedPost = editedPost.copy(numDistinctEditors = 2)  // for now
@@ -237,6 +256,7 @@ trait PostsDao {
         targetUserId = Some(postToEdit.createdById))
 
       transaction.updatePost(editedPost)
+      newRevision.foreach(transaction.insertPostRevision)
 
       uploadRefsAdded foreach { hashPathSuffix =>
         transaction.insertUploadedFileReference(postToEdit.uniqueId, hashPathSuffix, editorId)
@@ -275,6 +295,69 @@ trait PostsDao {
     }
 
     refreshPageInAnyCache(pageId)
+  }
+
+
+  def loadSomeRevisionsRecentFirst(postId: UniquePostId, revisionNr: Int, atLeast: Int)
+        : Seq[PostRevision] = {
+    val revisionsRecentFirst = mutable.ArrayStack[PostRevision]()
+    readOnlyTransaction { transaction =>
+      loadSomeRevisionsWithSourceImpl(postId, revisionNr, revisionsRecentFirst,
+        atLeast, transaction)
+      if (revisionNr == PostRevision.LastRevisionMagicNr) {
+        val postNow = transaction.loadThePost(postId)
+        val currentRevision = PostRevision.createFor(postNow, revisionsRecentFirst.headOption)
+          .copy(fullSource = Some(postNow.currentSource))
+        revisionsRecentFirst.push(currentRevision)
+      }
+    }
+    revisionsRecentFirst.toSeq
+  }
+
+
+  private def loadLastRevisionWithSource(postId: UniquePostId, transaction: SiteTransaction)
+        : Option[PostRevision] = {
+    val revisionsRecentFirst = mutable.ArrayStack[PostRevision]()
+    loadSomeRevisionsWithSourceImpl(postId, PostRevision.LastRevisionMagicNr,
+      revisionsRecentFirst, atLeast = 1, transaction)
+    revisionsRecentFirst.headOption
+  }
+
+
+  private def loadSomeRevisionsWithSourceImpl(postId: UniquePostId, revisionNr: Int,
+        revisionsRecentFirst: mutable.ArrayStack[PostRevision], atLeast: Int,
+        transaction: SiteTransaction) {
+    transaction.loadPostRevision(postId, revisionNr) foreach { revision =>
+      loadRevisionsFillInSource(revision, revisionsRecentFirst, atLeast, transaction)
+    }
+  }
+
+
+  private def loadRevisionsFillInSource(revision: PostRevision,
+        revisionsRecentFirstWithSource: mutable.ArrayStack[PostRevision],
+        atLeast: Int, transaction: SiteTransaction) {
+    if (revision.fullSource.isDefined && (atLeast <= 1 || revision.previousNr.isEmpty)) {
+      revisionsRecentFirstWithSource.push(revision)
+      return
+    }
+
+    val previousRevisionNr = revision.previousNr.getOrDie(
+      "DwE08SKF3", o"""In site $siteId, post ${revision.postId} revision ${revision.revisionNr}
+          has neither full source nor any previous revision nr""")
+
+    val previousRevision =
+      transaction.loadPostRevision(revision.postId, previousRevisionNr).getOrDie(
+        "DwE5GLK2", o"""In site $siteId, post ${revision.postId} revision $previousRevisionNr
+            is missing""")
+
+    loadRevisionsFillInSource(previousRevision, revisionsRecentFirstWithSource,
+      atLeast - 1, transaction)
+
+    val prevRevWithSource = revisionsRecentFirstWithSource.headOption getOrDie "DwE85UF2"
+    val revisionWithSource =
+      if (revision.fullSource.isDefined) revision
+      else revision.copyAndPatchSourceFrom(prevRevWithSource)
+    revisionsRecentFirstWithSource.push(revisionWithSource)
   }
 
 
@@ -454,14 +537,14 @@ trait PostsDao {
       if (postBefore.isCurrentVersionApproved)
         throwForbidden("DwE4GYUR2", "Post already approved")
 
-      // If this version is being approved by a human, then it's safe.
-      val safeVersion =
-        if (approverId != SystemUserId) Some(postBefore.currentVersion)
-        else postBefore.safeVersion
+      // If this revision is being approved by a human, then it's safe.
+      val safeRevision =
+        if (approverId != SystemUserId) Some(postBefore.currentRevision)
+        else postBefore.safeRevision
 
       val postAfter = postBefore.copy(
-        safeVersion = safeVersion,
-        approvedVersion = Some(postBefore.currentVersion),
+        safeRevision = safeRevision,
+        approvedRevision = Some(postBefore.currentRevision),
         approvedAt = Some(transaction.currentTime),
         approvedById = Some(approverId),
         approvedSource = Some(postBefore.currentSource),
@@ -470,7 +553,7 @@ trait PostsDao {
       transaction.updatePost(postAfter)
 
       val isApprovingPageBody = postId == PageParts.BodyId
-      val isApprovingNewPost = postBefore.approvedVersion.isEmpty
+      val isApprovingNewPost = postBefore.approvedRevision.isEmpty
 
       var newMeta = pageMeta.copy(version = pageMeta.version + 1)
       // Bump page and update reply counts if a new post was approved and became visible,
@@ -688,6 +771,8 @@ trait PostsDao {
 
 
 object PostsDao {
+
+  val NinjaEditWindowMs = 5 * 60 * 1000 // five minutes.
 
   def userMayEdit(user: User, post: Post): Boolean = {
     val editsOwnPost = user.id == post.createdById

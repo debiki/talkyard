@@ -535,6 +535,12 @@ export function savePageTitleAndSettings(newTitle: string, settings: any, succes
 }
 
 
+export function loadLatestPostRevisions(postId: number,
+    success: (revisions: PostRevision[]) => void) {
+  get('/-/load-post-revisions?postId=' + postId + '&revisionNr=LastRevision', success);
+}
+
+
 export function pinPage(pinWhere: PinPageWhere, pinOrder: number, success: () => void) {
   postJsonSuccess('/-/pin-page', success, {
     pageId: d.i.pageId,

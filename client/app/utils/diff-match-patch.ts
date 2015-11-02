@@ -1,9 +1,5 @@
-/* Diffs two texts. Returns the changes, in HTML, with <del> and <ins>.
- *
- * - Copyright (C) 2012-2013 Kaj Magnus Lindberg
- *
- * - Parts Copyright Google Inc.  Search for "Copyright" in this file
- *   to find Google's code. (It's licensed under the Apache 2 license.)
+/*
+ * Copyright (C) 2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,31 +15,59 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Find the google-diff-match-patch API documented here:
-//   https://code.google.com/p/google-diff-match-patch/wiki/API
+/// <reference path="../../typedefs/jquery/jquery.d.ts" />
+/// <reference path="../plain-old-javascript.d.ts" />
 
-
-// Currently not in use, and broken, because diff_match_patch is nowadays not loaded
-// until later when/if needed.
-return;
+//------------------------------------------------------------------------------
+   module debiki2.utils {
+//------------------------------------------------------------------------------
 
 var d = { i: debiki.internal, u: debiki.v0.util };
-var bug = d.u.die2;
 
-d.i.diffMatchPatch = new diff_match_patch();
-d.i.diffMatchPatch.Diff_Timeout = 1;  // seconds
-d.i.diffMatchPatch.Match_Distance = 100 * 1000;  // for now
-d.i.diffMatchPatch.maxMatchLength = d.i.diffMatchPatch.Match_MaxBits;
-d.i.diffMatchPatch.Diff_EditCost = 9;
+var diffMatchPatch;
+
+// For now: [7UMFK2] (later, upgrade modules/definitely-typed — so includes diff-match-patch)
+var diff_match_patch;
+var DIFF_INSERT;
+var DIFF_DELETE;
+var DIFF_EQUAL;
 
 
-d.i.makeHtmlDiff = function(oldText, newText){
-  var diff, htmlString;
-  diff = d.i.diffMatchPatch.diff_main(oldText, newText);
+export function getDiffMatchPatch() {
+  dieIf(!diffMatchPatch, 'DwE7UMF4');
+  return diffMatchPatch;
+}
+
+
+export function loadDiffMatchPatch(fn) {
+  if (diffMatchPatch) {
+    fn(diffMatchPatch);
+  }
+  else {
+    d.i.loadEditorEtceteraScripts().done(() => {
+      // For now: (see [7UMFK2] above)
+      diff_match_patch = window['diff_match_patch'];
+      DIFF_INSERT = window['DIFF_INSERT'];
+      DIFF_DELETE = window['DIFF_DELETE'];
+      DIFF_EQUAL = window['DIFF_EQUAL'];
+
+      diffMatchPatch = new diff_match_patch();
+      diffMatchPatch.Diff_Timeout = 1;  // seconds
+      diffMatchPatch.Match_Distance = 100 * 1000;  // for now
+      diffMatchPatch.maxMatchLength = diffMatchPatch.Match_MaxBits;
+      diffMatchPatch.Diff_EditCost = 9;
+      fn(diffMatchPatch);
+    });
+  }
+}
+
+
+export function makeHtmlDiff(oldText: String, newText: string): string {
+  var diff = getDiffMatchPatch().diff_main(oldText, newText);
   // Could use: `diff_cleanupSemantic diff` instead, but that sometimes
   // result in the diff algorithm sometimes replacing too much old text.
-  d.i.diffMatchPatch.diff_cleanupEfficiency(diff);
-  htmlString = d.i.prettyHtmlFor(diff);
+  getDiffMatchPatch().diff_cleanupEfficiency(diff);
+  var htmlString = prettyHtmlFor(diff);
   return htmlString;
 };
 
@@ -72,7 +96,7 @@ d.i.makeHtmlDiff = function(oldText, newText){
  *     See the License for the specific language governing permissions and
  *     limitations under the License.
  */
-d.i.prettyHtmlFor = function(diffs){
+function prettyHtmlFor(diffs){
   // (Converted from LiveScript, therefore looks a bit funny.)
   var html, x, i, pattern_amp, pattern_lt, pattern_gt, pattern_para, i$, to$, op, data, text;
   html = [];
@@ -105,4 +129,7 @@ d.i.prettyHtmlFor = function(diffs){
 };
 
 
-// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list
+//------------------------------------------------------------------------------
+   }
+//------------------------------------------------------------------------------
+// vim: fdm=marker et ts=2 sw=2 tw=0 list

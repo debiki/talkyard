@@ -411,6 +411,23 @@ object ReactJson {
   }
 
 
+  def postRevisionToJson(revision: PostRevision, maySeeHidden: Boolean): JsValue = {
+    val source =
+      if (revision.isHidden && !maySeeHidden) JsNull
+      else JsString(revision.fullSource.getOrDie("DwE7GUY2"))
+    Json.obj(
+      "revisionNr" -> revision.revisionNr,
+      "previousNr" -> JsNumberOrNull(revision.previousNr),
+      "fullSource" -> source,
+      "composedAtMs" -> revision.composedAt,
+      "composedById" -> revision.composedById,
+      "approvedAtMs" -> JsDateMsOrNull(revision.approvedAt),
+      "approvedById" -> JsNumberOrNull(revision.approvedById),
+      "hiddenAtMs" -> JsDateMsOrNull(revision.hiddenAt),
+      "hiddenById" -> JsNumberOrNull(revision.hiddenById))
+  }
+
+
   /** Creates a dummy root post, needed when rendering React elements. */
   def embeddedCommentsDummyRootPost(topLevelComments: immutable.Seq[Post]) = Json.obj(
     "postId" -> JsNumber(PageParts.BodyId),
@@ -652,6 +669,12 @@ object ReactJson {
 
   def JsLongOrNull(value: Option[Long]) =
     value.map(JsNumber(_)).getOrElse(JsNull)
+
+  def JsDateMs(value: ju.Date) =
+    JsNumber(value.getTime)
+
+  def JsDateMsOrNull(value: Option[ju.Date]) =
+    value.map(JsDateMs).getOrElse(JsNull)
 
   def DateEpochOrNull(value: Option[ju.Date]) =
     value.map(date => JsNumber(date.getTime)).getOrElse(JsNull)

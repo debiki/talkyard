@@ -88,6 +88,19 @@ interface Post {
 }
 
 
+interface PostRevision {
+  revisionNr: number;
+  previousNr?: number;
+  fullSource?: string;
+  composedAtMs: number;
+  composedById: number;
+  approvedAtMs?: number;
+  approvedById?: number;
+  hiddenAtMs?: number;
+  hiddenById?: number;
+}
+
+
 interface User {
   userId: number;
   isLoggedIn?: boolean;

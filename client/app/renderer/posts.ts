@@ -23,6 +23,7 @@
 /// <reference path="../dialogs.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../editor/title-editor.ts" />
+/// <reference path="../edit-history/edit-history-dialog.ts" />
 /// <reference path="../react-elements/topbar.ts" />
 /// <reference path="../page-dialogs/wikify-dialog.ts" />
 /// <reference path="../page-dialogs/delete-post-dialog.ts" />
@@ -921,6 +922,10 @@ var PostHeader = createComponent({
     event.stopPropagation();
   },
 
+  showEditHistory: function() {
+    debiki2.edithistory.getEditHistoryDialog().open(this.props.post.uniqueId);
+  },
+
   render: function() {
     var post: Post = this.props.post;
     if (!post)
@@ -941,6 +946,7 @@ var PostHeader = createComponent({
     var user: User = this.props.user;
     var linkFn = this.props.abbreviate ? 'span' : 'a';
 
+    // Username link: Some dupl code, see edit-history-dialog.ts. [88MYU2]
     var authorUrl = '/-/users/#/id/' + post.authorId;
     var namePart1;
     var namePart2;
@@ -974,7 +980,7 @@ var PostHeader = createComponent({
       var editedAt = timeAgo(post.lastApprovedEditAt);
       var byVariousPeople = post.numEditors > 1 ? ' by various people' : null;
       editInfo =
-        r.span({}, ', edited ', editedAt, byVariousPeople);
+        r.a({ onClick: this.showEditHistory }, ', edited ', editedAt, byVariousPeople);
     }
 
     var anyPin;
