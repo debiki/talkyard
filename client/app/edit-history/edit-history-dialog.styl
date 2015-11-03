@@ -1,10 +1,25 @@
 
 .dw-edit-history
   width: auto;
-  max-width: calc(100vw - 80px);
+  ins
+    font-weight: bold;
 
-  .ed-revision:not(:last-of-type)
-    margin-bottom: 2em;
+  .dw-help
+    margin-bottom: 1em;
+
+  .ed-load-more-revs
+    display: block;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin: 2.3em auto 0;
+
+  max-width: calc(100vw - 80px);
+  @media (min-width: 1480px)
+    max-width: 1400px;
+
+  .ed-revision
+    &:not(:last-of-type)
+      margin-bottom: 2em;
 
     .dw-p-by
       margin: 0;
@@ -14,7 +29,7 @@
       border-radius: 3px;
 
   .modal-body
-    max-height: calc(100vh - 220px);
+    max-height: calc(100vh - 190px);
     overflow-y: scroll;
 
 

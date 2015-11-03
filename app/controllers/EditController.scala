@@ -136,11 +136,11 @@ object EditController extends mvc.Controller {
     val revisionNrInt =
       if (revisionNr == "LastRevision") PostRevision.LastRevisionMagicNr
       else revisionNr.toIntOption getOrElse throwBadRequest("EdE8UFMW2", "Bad revision nr")
-    val revisionsRecentFirst =
+    val (revisionsRecentFirst, usersById) =
       request.dao.loadSomeRevisionsRecentFirst(postIdInt, revisionNrInt, atLeast = 5)
     val revisionsJson = revisionsRecentFirst map { revision =>
       val isStaffOrComposer = request.isStaff || request.theUserId == revision.composedById
-      ReactJson.postRevisionToJson(revision, maySeeHidden = isStaffOrComposer)
+      ReactJson.postRevisionToJson(revision, usersById, maySeeHidden = isStaffOrComposer)
     }
     OkSafeJson(JsArray(revisionsJson))
   }

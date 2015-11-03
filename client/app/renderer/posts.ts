@@ -980,7 +980,11 @@ var PostHeader = createComponent({
       var editedAt = timeAgo(post.lastApprovedEditAt);
       var byVariousPeople = post.numEditors > 1 ? ' by various people' : null;
       editInfo =
-        r.a({ onClick: this.showEditHistory }, ', edited ', editedAt, byVariousPeople);
+          r.span({},
+            ', ',
+            r.span({ onClick: this.showEditHistory, className: 'dw-p-show-hist' },
+              'edited ', editedAt),
+            byVariousPeople);
     }
 
     var anyPin;

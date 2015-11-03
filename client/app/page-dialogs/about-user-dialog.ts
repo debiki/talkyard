@@ -60,8 +60,13 @@ var AboutUserDialog = createComponent({
   },
 
   open: function(post: Post) {
-    this.setState({ isOpen: true, post: post, blocks: {} });
+    this.setState({ isOpen: true, user: null, post: post, blocks: {} });
     this.loadUser(post.authorId);
+  },
+
+  openForUser: function(user: BriefUser) {
+    // Some code below thinks this is a CompleteUser but a BriefUser is all that's needed.
+    this.setState({ isOpen: true, user: user, post: null, blocks: {} });
   },
 
   close: function() {
@@ -76,6 +81,10 @@ var AboutUserDialog = createComponent({
   loadUser: function(userId: number) {
     Server.loadCompleteUser(userId, (user: CompleteUser) => {
       if (!this.isMounted()) return;
+      if (!this.state.post) {
+        this.setState({ user: user });
+        return;
+      }
       Server.loadAuthorBlockedInfo(this.state.post.uniqueId, (blocks: Blocks) => {
         if (!this.isMounted()) return;
         // These two are only included in the response for staff.
@@ -191,11 +200,11 @@ var AboutGuest = createComponent({
     var guest: Guest = this.props.user;
     var loggedInUser: User = this.props.loggedInUser;
     var blocks: Blocks = this.props.blocks;
-    var postId = this.props.post.uniqueId;
+    var postId = this.props.post ? this.props.post.uniqueId : null;
 
     var blockButton;
     var blockModal;
-    if (loggedInUser.isAdmin) {
+    if (loggedInUser.isAdmin && postId) {
       if (blocks.isBlocked) {
         blockButton =
           Button({ title: 'Let this guest post comments again', onClick: this.unblockGuest },
@@ -226,6 +235,10 @@ var AboutGuest = createComponent({
           // 'Reason: ' + reason);
     }
 
+    var anyCannotBeContactedMessage = guest.isEmailUnknown
+        ? r.p({}, "Email address unknown — this guest won't be notified about replies.")
+        : null;
+
     return (
       r.div({ className: 'clearfix' },
         blockModal,
@@ -235,6 +248,7 @@ var AboutGuest = createComponent({
         r.p({},
           'Name: ' + guest.fullName, r.br(),
           'This is a guest user. He or she could in fact be just anyone.'),
+        anyCannotBeContactedMessage,
         blockedInfo));
   }
 });

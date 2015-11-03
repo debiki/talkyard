@@ -299,8 +299,9 @@ trait PostsDao {
 
 
   def loadSomeRevisionsRecentFirst(postId: UniquePostId, revisionNr: Int, atLeast: Int)
-        : Seq[PostRevision] = {
+        : (Seq[PostRevision], Map[UserId, User]) = {
     val revisionsRecentFirst = mutable.ArrayStack[PostRevision]()
+    var usersById: Map[UserId, User] = null
     readOnlyTransaction { transaction =>
       loadSomeRevisionsWithSourceImpl(postId, revisionNr, revisionsRecentFirst,
         atLeast, transaction)
@@ -310,8 +311,15 @@ trait PostsDao {
           .copy(fullSource = Some(postNow.currentSource))
         revisionsRecentFirst.push(currentRevision)
       }
+      val userIds = mutable.HashSet[UserId]()
+      revisionsRecentFirst foreach { revision =>
+        userIds add revision.composedById
+        revision.approvedById foreach userIds.add
+        revision.hiddenById foreach userIds.add
+      }
+      usersById = transaction.loadUsersAsMap(userIds)
     }
-    revisionsRecentFirst.toSeq
+    (revisionsRecentFirst.toSeq, usersById)
   }
 
 
