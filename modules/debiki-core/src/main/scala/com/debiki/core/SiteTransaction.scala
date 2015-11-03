@@ -66,6 +66,10 @@ trait SiteTransaction {
   def insertPost(newPost: Post)
   def updatePost(newPost: Post)
 
+  def loadLastPostRevision(postId: UniquePostId): Option[PostRevision]
+  def loadPostRevision(postId: UniquePostId, revisionNr: Int): Option[PostRevision]
+  def insertPostRevision(revision: PostRevision)
+  def updatePostRevision(revision: PostRevision)
 
   def loadActionsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[PostAction]
   def loadActionsDoneToPost(pageId: PageId, postId: PostId): immutable.Seq[PostAction]

@@ -118,7 +118,6 @@ var debikiJavascriptFiles = [
       'target/client/app/actions/edit/edit.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
-      'target/client/app/actions/edit/diff-match-patch.js',
       'target/client/app/iframe.js',
       'target/client/app/utils/jquery-find.js',
       'target/client/app/posts/layout.js',

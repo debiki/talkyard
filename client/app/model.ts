@@ -88,12 +88,25 @@ interface Post {
 }
 
 
+interface PostRevision {
+  revisionNr: number;
+  previousNr?: number;
+  fullSource?: string;
+  composedAtMs: number;
+  composedBy: BriefUser;
+  approvedAtMs?: number;
+  approvedBy?: BriefUser;
+  hiddenAtMs?: number;
+  hiddenBy?: BriefUser;
+}
+
+
 interface User {
-  userId: number;
+  userId: number;  // change to `id`
   isLoggedIn?: boolean;
   isAdmin?: boolean;
   isModerator?: boolean;
-  isAuthenticated?: boolean;
+  isAuthenticated?: boolean;  // change to !isGuest?
   username?: string;
   fullName?: string;
   rolePageSettings: any;
@@ -249,6 +262,18 @@ interface Guest {
   email: string;
   country: string;
   url: string;
+  isEmailUnknown?: boolean;
+}
+
+
+interface BriefUser {
+  id: number;
+  fullName: string;
+  username?: string;
+  isAdmin?: boolean;
+  isModerator?: boolean;
+  isGuest?: boolean;  // = !isAuthenticated
+  isEmailUnknown?: boolean;
 }
 
 

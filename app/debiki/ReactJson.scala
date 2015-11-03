@@ -411,6 +411,27 @@ object ReactJson {
   }
 
 
+  def postRevisionToJson(revision: PostRevision, usersById: Map[UserId, User],
+        maySeeHidden: Boolean): JsValue = {
+    val source =
+      if (revision.isHidden && !maySeeHidden) JsNull
+      else JsString(revision.fullSource.getOrDie("DwE7GUY2"))
+    val composer = usersById.get(revision.composedById)
+    val approver = revision.approvedById.flatMap(usersById.get)
+    val hider = revision.hiddenById.flatMap(usersById.get)
+    Json.obj(
+      "revisionNr" -> revision.revisionNr,
+      "previousNr" -> JsNumberOrNull(revision.previousNr),
+      "fullSource" -> source,
+      "composedAtMs" -> revision.composedAt,
+      "composedBy" -> JsUserObjOrNull(composer),
+      "approvedAtMs" -> JsDateMsOrNull(revision.approvedAt),
+      "approvedBy" -> JsUserObjOrNull(approver),
+      "hiddenAtMs" -> JsDateMsOrNull(revision.hiddenAt),
+      "hiddenBy" -> JsUserObjOrNull(hider))
+  }
+
+
   /** Creates a dummy root post, needed when rendering React elements. */
   def embeddedCommentsDummyRootPost(topLevelComments: immutable.Seq[Post]) = Json.obj(
     "postId" -> JsNumber(PageParts.BodyId),
@@ -641,17 +662,50 @@ object ReactJson {
   }
 
 
+  def JsUserObjOrNull(user: Option[User]): JsValue =
+    user.map(JsUserObj).getOrElse(JsNull)
+
+  def JsUserObj(user: User): JsObject = {
+    var json = Json.obj(
+      "id" -> JsNumber(user.id),
+      "username" -> JsStringOrNull(user.username),
+      "fullName" -> JsString(user.displayName))
+    if (user.isGuest) {
+      json += "isGuest" -> JsTrue
+    }
+    else {
+      require(user.isAuthenticated, "EdE8GPY4")
+      json += "isAuthenticated" -> JsTrue  // COULD remove this, client side, use !isGuest instead
+    }
+    if (user.email.isEmpty) {
+      json += "isEmailUnknown" -> JsTrue
+    }
+    if (user.isAdmin) {
+      json += "isAdmin" -> JsTrue
+    }
+    if (user.isModerator) {
+      json += "isModerator" -> JsTrue
+    }
+    json
+  }
+
   def JsStringOrNull(value: Option[String]) =
-    value.map(JsString(_)).getOrElse(JsNull)
+    value.map(JsString).getOrElse(JsNull)
 
   def JsBooleanOrNull(value: Option[Boolean]) =
-    value.map(JsBoolean(_)).getOrElse(JsNull)
+    value.map(JsBoolean).getOrElse(JsNull)
 
   def JsNumberOrNull(value: Option[Int]) =
     value.map(JsNumber(_)).getOrElse(JsNull)
 
   def JsLongOrNull(value: Option[Long]) =
     value.map(JsNumber(_)).getOrElse(JsNull)
+
+  def JsDateMs(value: ju.Date) =
+    JsNumber(value.getTime)
+
+  def JsDateMsOrNull(value: Option[ju.Date]) =
+    value.map(JsDateMs).getOrElse(JsNull)
 
   def DateEpochOrNull(value: Option[ju.Date]) =
     value.map(date => JsNumber(date.getTime)).getOrElse(JsNull)

@@ -141,14 +141,15 @@ case class Post(
   lastApprovedEditAt: Option[ju.Date],
   lastApprovedEditById: Option[UserId],
   numDistinctEditors: Int,
-  safeVersion: Option[Int],
+  safeRevision: Option[Int],
   approvedSource: Option[String],
   approvedHtmlSanitized: Option[String],
   approvedAt: Option[ju.Date],
   approvedById: Option[UserId],
-  approvedVersion: Option[Int],
+  approvedRevision: Option[Int],
   currentSourcePatch: Option[String],
-  currentVersion: Int,
+  currentRevision: Int,
+  previousRevisionNr: Option[Int],
   collapsedStatus: CollapsedStatus,
   collapsedAt: Option[ju.Date],
   collapsedById: Option[UserId],
@@ -190,9 +191,9 @@ case class Post(
   //require(updatedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE6KPw2)
   require(approvedAt.map(_.getTime >= createdAt.getTime) != Some(false), "DwE8KGEI2")
 
-  require(approvedVersion.isEmpty == approvedAt.isEmpty, "DwE4KHI7")
-  require(approvedVersion.isEmpty == approvedById.isEmpty, "DwE2KI65")
-  require(approvedVersion.isEmpty == approvedSource.isEmpty, "DwE7YFv2")
+  require(approvedRevision.isEmpty == approvedAt.isEmpty, "DwE4KHI7")
+  require(approvedRevision.isEmpty == approvedById.isEmpty, "DwE2KI65")
+  require(approvedRevision.isEmpty == approvedSource.isEmpty, "DwE7YFv2")
   require(approvedHtmlSanitized.isEmpty || approvedSource.isDefined, "DwE0IEW1")
 
   require(approvedSource.map(_.trim.length) != Some(0), "DwE1JY83")
@@ -200,12 +201,17 @@ case class Post(
   require(approvedSource.isDefined || currentSourcePatch.isDefined, "DwE3KI59")
   require(currentSourcePatch.map(_.trim.length) != Some(0), "DwE2bNW5")
 
-  require(approvedVersion.isEmpty || (
-    (currentVersion == approvedVersion.get) == currentSourcePatch.isEmpty), "DwE7IEP0")
+  // If the current version of the post has been approved, then one doesn't need to
+  // apply any patch to get from the approved version to the current version (since they
+  // are the same).
+  require(approvedRevision.isEmpty || (
+    (currentRevision == approvedRevision.get) == currentSourcePatch.isEmpty), "DwE7IEP0")
 
-  require(approvedVersion.map(_ <= currentVersion) != Some(false), "DwE6KJ0")
-  require(safeVersion.isEmpty || (
-    approvedVersion.isDefined && safeVersion.get <= approvedVersion.get), "DwE2EF4")
+  require(approvedRevision.map(_ <= currentRevision) != Some(false), "DwE6KJ0")
+  require(safeRevision.isEmpty || (
+    approvedRevision.isDefined && safeRevision.get <= approvedRevision.get), "DwE2EF4")
+
+  require(!previousRevisionNr.exists(_ >= currentRevision), "DwE7UYG3")
 
   require(0 <= collapsedStatus.underlying && collapsedStatus.underlying <= AllBits &&
     collapsedStatus.underlying != SuccessorsBit)
@@ -249,8 +255,8 @@ case class Post(
   def isFlat = tyype == PostType.Flat
   def isHidden = hiddenAt.isDefined
   def isDeleted = deletedStatus.isDeleted
-  def isSomeVersionApproved = approvedVersion.isDefined
-  def isCurrentVersionApproved = approvedVersion == Some(currentVersion)
+  def isSomeVersionApproved = approvedRevision.isDefined
+  def isCurrentVersionApproved = approvedRevision == Some(currentRevision)
   def isVisible = isSomeVersionApproved && !isHidden && !isDeleted
   def isWiki = tyype.isWiki
 
@@ -295,7 +301,7 @@ case class Post(
       allowClassIdDataAttrs = false, followLinks = false)
   }
 
-  def numEditsToReview = currentVersion - approvedVersion.getOrElse(0)
+  def numEditsToReview = currentRevision - approvedRevision.getOrElse(0)
 
   def numFlags = numPendingFlags + numHandledFlags
 
@@ -524,14 +530,15 @@ object Post {
       lastApprovedEditAt = None,
       lastApprovedEditById = None,
       numDistinctEditors = 1,
-      safeVersion = safeVersion,
+      safeRevision = safeVersion,
       approvedSource = if (approvedById.isDefined) Some(source) else None,
       approvedHtmlSanitized = if (approvedById.isDefined) Some(htmlSanitized) else None,
       approvedAt = if (approvedById.isDefined) Some(createdAt) else None,
       approvedById = approvedById,
-      approvedVersion = if (approvedById.isDefined) Some(FirstVersion) else None,
+      approvedRevision = if (approvedById.isDefined) Some(FirstVersion) else None,
       currentSourcePatch = currentSourcePatch,
-      currentVersion = FirstVersion,
+      currentRevision = FirstVersion,
+      previousRevisionNr = None,
       collapsedStatus = parent.map(_.newChildCollapsedStatus) getOrElse CollapsedStatus.Open,
       collapsedAt = parentsChildrenCollapsedAt,
       collapsedById = parentsChildrenColllapsedById,

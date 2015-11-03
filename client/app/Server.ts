@@ -535,6 +535,20 @@ export function savePageTitleAndSettings(newTitle: string, settings: any, succes
 }
 
 
+export function loadLatestPostRevisions(postId: number,
+    success: (revisions: PostRevision[]) => void) {
+  get('/-/load-post-revisions?postId=' + postId + '&revisionNr=LastRevision', success);
+}
+
+
+/** Loads revision revisionNr and some older revisions.
+  */
+export function loadMorePostRevisions(postId: number, revisionNr: number,
+    success: (revisions: PostRevision[]) => void) {
+  get('/-/load-post-revisions?postId=' + postId + '&revisionNr=' + revisionNr, success);
+}
+
+
 export function pinPage(pinWhere: PinPageWhere, pinOrder: number, success: () => void) {
   postJsonSuccess('/-/pin-page', success, {
     pageId: d.i.pageId,

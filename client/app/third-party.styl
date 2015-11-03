@@ -39,6 +39,12 @@
   width: auto
 
 
+// Make a new modal hide all older modals, by setting backdrop z-index to the same as
+// the z-index for the modal dialog and content (rather than using 1040 which results in
+// older modals still being in the foreground because their content z-index is 1050).
+.modal-backdrop
+  z-index: 1050;
+
 .dropdown-menu > li
   margin: 15px 0 10px 0;
 
