@@ -168,32 +168,48 @@ trait PostsDao {
       if (!userMayEdit(editor, postToEdit))
         throwForbidden("DwE8KF32", "You may not edit that post")
 
-      //val appliedDirectly = true // for now, add back edit suggestions later
-      //val approvedDirectly = true // later: && editor.isWellBehavedUser
-
-      var editedPost = postToEdit.copy(
-        lastEditedAt = Some(transaction.currentTime),
-        lastEditedById = Some(editorId))
-
       val approverId = if (editor.isStaff) editor.id else SystemUserId
 
-      val anyLastRevision = loadLastRevisionWithSource(postToEdit.uniqueId, transaction)
-      BUG // this is the wrong start time — it's when the prev rev was saved, not when we
-          // started editing again!
-      val ninjaEditStart = anyLastRevision.map(_.composedAt).getOrElse(postToEdit.createdAt)
-      val ninjaEditEndMs = ninjaEditStart.getTime + NinjaEditWindowMs
-      val isInNinjaEditWindow = transaction.currentTime.getTime < ninjaEditEndMs
-      BUG // If lastEditedById.isEmpty, then compare createdById instead
-      val isSameAuthor = postToEdit.lastEditedById.map(_ == editorId) != Some(false)
-      val isNinjaEdit = isInNinjaEditWindow && isSameAuthor
+      // COULD don't allow sbd else to edit until 3 mins after last edit by sbd else?
+      // so won't create too many revs quickly because 2 edits.
+      BUG // COULD compare version number: kills the lost update bug.
 
-      val (newRevision: Option[PostRevision], newRevisionNr, newPrevRevNr) =
+      val isInNinjaEditWindow = {
+        val ninjaWindowMs = ninjaEditWindowMsFor(page.role)
+        val ninjaEditEndMs = postToEdit.currentRevStaredAt.getTime + ninjaWindowMs
+        transaction.currentTime.getTime < ninjaEditEndMs
+      }
+
+      // If we've saved an old revision already, and there hasn't been any more discussion
+      // in this sub thread since then — then don't save a new revision. It's rather
+      // uninteresting to track changes, when no discussion is happening.
+      // (We avoid saving unneeded revisions, to save disk.)
+      val anyLastRevision = loadLastRevisionWithSource(postToEdit.uniqueId, transaction)
+      def oldRevisionSavedAndNothingHappened = anyLastRevision match {
+        case None => false
+        case Some(oldRevision) =>
+          val successors = page.parts.successorsOf(postId)
+          val anyNewComment = successors.exists(
+            _.createdAt.getTime >= oldRevision.composedAt.getTime)
+          !anyNewComment
+      }
+
+      val isNinjaEdit = {
+        val sameAuthor = postToEdit.currentRevisionById == editorId
+        val ninjaHardEndMs = postToEdit.currentRevStaredAt.getTime + HardMaxNinjaEditWindowMs
+        val isInHardWindow = transaction.currentTime.getTime < ninjaHardEndMs
+        sameAuthor && isInHardWindow && (isInNinjaEditWindow || oldRevisionSavedAndNothingHappened)
+      }
+
+      val (newRevision: Option[PostRevision], newStartedAt, newRevisionNr, newPrevRevNr) =
         if (isNinjaEdit) {
-          (None, postToEdit.currentRevision, postToEdit.previousRevisionNr)
+          (None, postToEdit.currentRevStaredAt, postToEdit.currentRevisionNr,
+            postToEdit.previousRevisionNr)
         }
         else {
           val revision = PostRevision.createFor(postToEdit, previousRevision = anyLastRevision)
-          (Some(revision), postToEdit.currentRevision + 1, Some(postToEdit.currentRevision))
+          (Some(revision), transaction.currentTime, postToEdit.currentRevisionNr + 1,
+            Some(postToEdit.currentRevisionNr))
         }
 
       // COULD send current version from browser to server, reject edits if != oldPost.currentVersion
@@ -201,17 +217,20 @@ trait PostsDao {
 
       // Later, if post not approved directly: currentSourcePatch = makePatch(from, to)
 
-      editedPost = editedPost.copy(
+      var editedPost = postToEdit.copy(
+        currentRevStaredAt = newStartedAt,
+        currentRevLastEditedAt = Some(transaction.currentTime),
+        currentRevisionById = editorId,
+        currentSourcePatch = None,
+        currentRevisionNr = newRevisionNr,
+        previousRevisionNr = newPrevRevNr,
         lastApprovedEditAt = Some(transaction.currentTime),
         lastApprovedEditById = Some(editorId),
         approvedSource = Some(newTextAndHtml.text),
         approvedHtmlSanitized = Some(newTextAndHtml.safeHtml),
         approvedAt = Some(transaction.currentTime),
         approvedById = Some(approverId),
-        approvedRevision = Some(newRevisionNr),
-        currentSourcePatch = None,
-        currentRevision = newRevisionNr,
-        previousRevisionNr = newPrevRevNr)
+        approvedRevisionNr = Some(newRevisionNr))
 
       if (editorId != editedPost.createdById) {
         editedPost = editedPost.copy(numDistinctEditors = 2)  // for now
@@ -546,13 +565,13 @@ trait PostsDao {
         throwForbidden("DwE4GYUR2", "Post already approved")
 
       // If this revision is being approved by a human, then it's safe.
-      val safeRevision =
-        if (approverId != SystemUserId) Some(postBefore.currentRevision)
-        else postBefore.safeRevision
+      val safeRevisionNr =
+        if (approverId != SystemUserId) Some(postBefore.currentRevisionNr)
+        else postBefore.safeRevisionNr
 
       val postAfter = postBefore.copy(
-        safeRevision = safeRevision,
-        approvedRevision = Some(postBefore.currentRevision),
+        safeRevisionNr = safeRevisionNr,
+        approvedRevisionNr = Some(postBefore.currentRevisionNr),
         approvedAt = Some(transaction.currentTime),
         approvedById = Some(approverId),
         approvedSource = Some(postBefore.currentSource),
@@ -561,7 +580,7 @@ trait PostsDao {
       transaction.updatePost(postAfter)
 
       val isApprovingPageBody = postId == PageParts.BodyId
-      val isApprovingNewPost = postBefore.approvedRevision.isEmpty
+      val isApprovingNewPost = postBefore.approvedRevisionNr.isEmpty
 
       var newMeta = pageMeta.copy(version = pageMeta.version + 1)
       // Bump page and update reply counts if a new post was approved and became visible,
@@ -687,7 +706,7 @@ trait PostsDao {
       val flags = transaction.loadFlagsFor(posts.map(_.pagePostId))
       val userIds = mutable.HashSet[UserId]()
       userIds ++= posts.map(_.createdById)
-      userIds ++= posts.flatMap(_.lastEditedById)
+      userIds ++= posts.map(_.currentRevisionById)
       userIds ++= flags.map(_.flaggerId)
       val users = transaction.loadUsers(userIds.toSeq)
       ThingsToReview(posts, pageMetas, users, flags)
@@ -780,7 +799,23 @@ trait PostsDao {
 
 object PostsDao {
 
-  val NinjaEditWindowMs = 5 * 60 * 1000 // five minutes.
+  private val SixMinutesMs = 6 * 60 * 1000
+  private val OneHourMs = SixMinutesMs * 10
+  private val OneDayMs = OneHourMs * 24
+
+  val HardMaxNinjaEditWindowMs = OneDayMs
+
+  /** For non-discussion pages, uses a long ninja edit window.
+    */
+  def ninjaEditWindowMsFor(pageRole: PageRole): Int = pageRole match {
+    case PageRole.HomePage => OneHourMs
+    case PageRole.WebPage => OneHourMs
+    case PageRole.Code => OneHourMs
+    case PageRole.SpecialContent => OneHourMs
+    case PageRole.Blog => OneHourMs
+    case PageRole.Forum => OneHourMs
+    case _ => SixMinutesMs
+  }
 
   def userMayEdit(user: User, post: Post): Boolean = {
     val editsOwnPost = user.id == post.createdById

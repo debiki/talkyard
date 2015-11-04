@@ -80,6 +80,8 @@ package object core {
 
   val KajMagnusSiteId = "3" // for now
 
+  val FirstRevisionNr = PostRevision.FirstRevisionNr
+
   case class SitePageVersion(siteVersion: SiteVersion, pageVersion: PageVersion)
 
   /** If the up-to-date data hash and the cached hash, or the app version, are different,

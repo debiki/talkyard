@@ -364,6 +364,12 @@ object ReactJson {
     val author = post.createdByUser(people)
     val postType: Option[Int] = if (post.tyype == PostType.Normal) None else Some(post.tyype.toInt)
 
+    // For now, ignore ninja edits of the very first revision, because otherwise if
+    // clicking to view the edit history, it'll be empty.
+    val lastApprovedEditAtNoNinja =
+      if (post.approvedRevisionNr == Some(FirstRevisionNr)) None
+      else post.lastApprovedEditAt
+
     var fields = Vector(
       "uniqueId" -> JsNumber(post.uniqueId),
       "postId" -> JsNumber(post.id),
@@ -375,7 +381,7 @@ object ReactJson {
       "authorFullName" -> JsString(author.displayName),
       "authorUsername" -> JsStringOrNull(author.username),
       "createdAt" -> date(post.createdAt),
-      "lastApprovedEditAt" -> dateOrNull(post.lastApprovedEditAt),
+      "lastApprovedEditAt" -> dateOrNull(lastApprovedEditAtNoNinja),
       "numEditors" -> JsNumber(post.numDistinctEditors),
       "numLikeVotes" -> JsNumber(post.numLikeVotes),
       "numWrongVotes" -> JsNumber(post.numWrongVotes),

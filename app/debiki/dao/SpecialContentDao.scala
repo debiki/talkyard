@@ -150,20 +150,21 @@ trait SpecialContentDao {
     if (oldPost.currentSource == newSource)
       return
 
-    val nextVersion = oldPost.currentRevision + 1
+    // For now, just keep updating the current revision.
+    val nextRevisionNr = oldPost.currentRevisionNr
 
     val editedPost = oldPost.copy(
-      lastEditedAt = Some(transaction.currentTime),
-      lastEditedById = Some(editorId),
+      currentRevLastEditedAt = Some(transaction.currentTime),
+      currentRevisionById = editorId,
+      currentSourcePatch = None,
+      currentRevisionNr = nextRevisionNr,
       lastApprovedEditAt = Some(transaction.currentTime),
       lastApprovedEditById = Some(editorId),
       approvedSource = Some(newSource),
       approvedHtmlSanitized = Some(htmlSanitized),
       approvedAt = Some(transaction.currentTime),
       approvedById = Some(editorId),
-      approvedRevision = Some(nextVersion),
-      currentSourcePatch = None,
-      currentRevision = nextVersion)
+      approvedRevisionNr = Some(nextRevisionNr))
 
     transaction.updatePost(editedPost)
   }

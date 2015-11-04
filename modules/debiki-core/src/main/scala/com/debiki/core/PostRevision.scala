@@ -87,7 +87,7 @@ object PostRevision {
     // (COULD count num actual revision from last fullSource.isDefined revision instead,
     // that would be more exact, because some revisions might have been reverted so
     // `% SaveFullSourceInterval` might be wrong.)
-    if (previousRevision.isEmpty || (post.currentRevision % SaveFullSourceInterval) == 0) {
+    if (previousRevision.isEmpty || (post.currentRevisionNr % SaveFullSourceInterval) == 0) {
       anySource = Some(post.currentSource)
     }
     else {
@@ -108,13 +108,13 @@ object PostRevision {
 
     PostRevision(
       postId = post.uniqueId,
-      revisionNr = post.currentRevision,
+      revisionNr = post.currentRevisionNr,
       previousNr = post.previousRevisionNr,
       sourcePatch = anyPatch,
       fullSource = anySource,
       title = None,
-      composedAt = post.lastEditedAt.getOrElse(post.createdAt),
-      composedById = post.lastEditedById.getOrElse(post.createdById),
+      composedAt = post.currentRevStaredAt,
+      composedById = post.currentRevisionById,
       approvedAt = approvedAt,
       approvedById = approvedById)
   }
