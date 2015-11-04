@@ -25,7 +25,7 @@ import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
 import play.{api => p}
-import scala.collection.mutable
+import scala.collection.{mutable, immutable}
 import PostsDao._
 
 
@@ -180,18 +180,23 @@ trait PostsDao {
         transaction.currentTime.getTime < ninjaEditEndMs
       }
 
-      // If we've saved an old revision already, and there hasn't been any more discussion
-      // in this sub thread since then — then don't save a new revision. It's rather
-      // uninteresting to track changes, when no discussion is happening.
+      // If we've saved an old revision already, and 1) there hasn't been any more discussion
+      // in this sub thread since the current revision was started, and 2) the current revision
+      // hasn't been flagged, — then don't save a new revision. It's rather uninteresting
+      // to track changes, when no discussion is happening.
       // (We avoid saving unneeded revisions, to save disk.)
       val anyLastRevision = loadLastRevisionWithSource(postToEdit.uniqueId, transaction)
       def oldRevisionSavedAndNothingHappened = anyLastRevision match {
         case None => false
-        case Some(oldRevision) =>
+        case Some(_) =>
+          // COULD: instead of comparing timestamps, flags and replies could explicitly clarify
+          // which revision of postToEdit they concern.
+          val currentRevStartMs = postToEdit.currentRevStaredAt.getTime
+          val flags = transaction.loadFlagsFor(immutable.Seq(PagePostId(pageId, postId)))
+          val anyNewFlag = flags.exists(_.flaggedAt.getTime > currentRevStartMs)
           val successors = page.parts.successorsOf(postId)
-          val anyNewComment = successors.exists(
-            _.createdAt.getTime >= oldRevision.composedAt.getTime)
-          !anyNewComment
+          val anyNewComment = successors.exists(_.createdAt.getTime > currentRevStartMs)
+        !anyNewComment && !anyNewFlag
       }
 
       val isNinjaEdit = {

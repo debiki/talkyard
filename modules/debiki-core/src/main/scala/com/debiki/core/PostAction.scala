@@ -64,12 +64,14 @@ abstract class PostAction {
 
 
 object PostAction {
-  def apply(uniqueId: UniquePostId, pageId: PageId, postId: PostId, doerId: UserId, actionType: PostActionType)
+  def apply(uniqueId: UniquePostId, pageId: PageId, postId: PostId, doerId: UserId,
+        doneAt: ju.Date, actionType: PostActionType)
         : PostAction = actionType match {
     case voteType: PostVoteType =>
       PostVote(uniqueId, pageId, postId, voterId = doerId, voteType = voteType)
     case flagType: PostFlagType =>
-      PostFlag(uniqueId, pageId, postId, flaggerId = doerId, flagType = flagType)
+      PostFlag(uniqueId, pageId, postId, flaggedAt = doneAt, flaggerId = doerId,
+        flagType = flagType)
     case x =>
       die("DwE7GPK2", s"Bad action type: '$actionType'")
   }
@@ -91,6 +93,7 @@ case class PostFlag(
   uniqueId: UniquePostId,
   pageId: PageId,
   postId: PostId,
+  flaggedAt: ju.Date,
   flaggerId: UserId,
   flagType: PostFlagType) extends PostAction {
   def actionType = flagType

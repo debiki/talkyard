@@ -56,23 +56,26 @@ var EditHistoryDialog = createClassAndFactory({
       isOpen: false,
       isLoading: false,
       postId: null,
-      revisions: null,
+      revisionsRecentFirst: null,
     };
   },
 
   open: function(postId: number) {
-    this.setState({ isOpen: true, isLoading: true });
+    this.setState({
+      isOpen: true,
+      isLoading: true,
+      postId: postId,
+      revisionsRecentFirst: null,
+    });
     utils.loadDiffMatchPatch(() => {
       if (!this.isMounted()) return;
-      if (this.state.postId === postId && this.state.revisionsRecentFirst) {
-        this.setState({ isLoading: false });
-        return;
-      }
-
-      this.setState({ isLoading: true, postId: postId });
+      // (Reload revisions, even if we've loaded them already — perhaps the post was just edited.)
       Server.loadLatestPostRevisions(postId, (revisions) => {
         if (!this.isMounted()) return;
-        this.setState({ isLoading: false, revisionsRecentFirst: revisions });
+        this.setState({
+          isLoading: false,
+          revisionsRecentFirst: revisions,
+        });
       });
     });
   },
