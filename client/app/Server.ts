@@ -73,6 +73,24 @@ function get(uri: string, success: (response) => void) {
 }
 
 
+var loadEditorScriptsStatus;
+
+export function loadEditorEtceteraScripts() {
+  if (loadEditorScriptsStatus)
+    return loadEditorScriptsStatus;
+
+  loadEditorScriptsStatus = $.Deferred();
+  var assetsPrefix = d.i.assetsUrlPathStart;
+  window['yepnope']({
+    both: [assetsPrefix + 'editor-etcetera.' + d.i.minMaxJs],
+    complete: () => {
+      loadEditorScriptsStatus.resolve();
+    }
+  })
+  return loadEditorScriptsStatus;
+}
+
+
 export function createSite(emailAddress: string, localHostname: string,
     anyEmbeddingSiteAddress: string, pricePlan: string, doneCallback: (string) => void) {
   var e2eTestPassword = (window.location.search.match(/e2eTestPassword=([^&#]+)/) || [])[1];
@@ -460,16 +478,12 @@ export function loadDraftAndGuidelines(writingWhat: WritingWhat, categoryId: num
 }
 
 
-export function loadCurrentPostText(postId: number, doneCallback: (text: string) => void) {
-  $.get(origin + '/-/edit?pageId='+ d.i.pageId + '&postId='+ postId)
-    .done((response: any) => {
-      // COULD also load info about whether the user may apply and approve the edits.
-      doneCallback(response.currentText);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading current post text: ' + JSON.stringify([x, y, z]));
-      doneCallback(null);
-    });
+export function loadCurrentPostText(postId: number,
+      doneCallback: (text: string, postUid: number, revisionNr: number) => void) {
+  get(origin + '/-/edit?pageId='+ d.i.pageId + '&postId='+ postId, (response: any) => {
+    // COULD also load info about whether the user may apply and approve the edits.
+    doneCallback(response.currentText, response.postUid, response.currentRevisionNr);
+  });
 }
 
 
@@ -507,9 +521,9 @@ export function saveEdits(postId: number, text: string, doneCallback: () => void
       postId: postId,
       text: text
     },
-    success: (response) => {
+    success: (editedPost) => {
       doneCallback();
-      d.i.handleEditResult(response);
+      ReactActions.handleEditResult(editedPost);
     }
   });
 }

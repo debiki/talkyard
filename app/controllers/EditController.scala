@@ -83,8 +83,10 @@ object EditController extends mvc.Controller {
     if (!debiki.dao.PostsDao.userMayEdit(request.theUser, post))
       throwForbidden("DwE8FKY0", "Not your post")
 
-    val json = Json.obj("currentText" -> post.currentSource)
-    OkSafeJson(json)
+    OkSafeJson(Json.obj(
+      "postUid" -> post.uniqueId,
+      "currentText" -> post.currentSource,
+      "currentRevisionNr" -> post.currentRevisionNr))
   }
 
 

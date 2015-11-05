@@ -23,6 +23,8 @@
    module debiki2.ReactActions {
 //------------------------------------------------------------------------------
 
+var d = { i: debiki.internal };
+
 
 export var actionTypes = {
   Login: 'Login',
@@ -196,6 +198,30 @@ export function showForumIntro(visible: boolean) {
 }
 
 
+export function editPostWithNr(postNr: number) {
+  var anyReturnToUrl = d.i.makeReturnToPostUrlForVerifEmail(postNr);
+  d.i.loginIfNeeded('LoginToEdit', anyReturnToUrl, () => {
+    if (d.i.isInEmbeddedCommentsIframe) {
+      sendToEditorIframe(['editorEditPost', postNr]);
+    }
+    else {
+      // Right now, we don't need to use the Store for this.
+      debiki2.editor.openEditorToEditPost(postNr);
+    }
+  });
+}
+
+
+export function handleEditResult(editedPost) {
+  if (d.i.isInEmbeddedEditor) {
+    sendToCommentsIframe(['handleEditResult', editedPost]);
+  }
+  else {
+    debiki2.ReactActions.updatePost(editedPost);
+  }
+}
+
+
 export function setPostHidden(postNr: number, hide: boolean, success?: () => void) {
   Server.hidePostInPage(postNr, hide, (postAfter) => {
     if (success) success();
@@ -364,6 +390,16 @@ export function showHelpMessagesAgain() {
     actionType: actionTypes.ShowHelpAgain,
   });
 }
+
+
+function sendToEditorIframe(message) {
+  // Send the message to the embedding page; it'll forward it to the appropriate iframe.
+  window.parent.postMessage(JSON.stringify(message), '*');
+}
+
+// An alias, for better readability.
+var sendToCommentsIframe = sendToEditorIframe;
+
 
 //------------------------------------------------------------------------------
    }

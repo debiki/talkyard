@@ -1104,7 +1104,7 @@ var PostBody = createComponent({
 
 var NoCommentsPageActions = createComponent({
   onEditClick: function(event) {
-    debiki.internal.$showEditForm.call(event.target, event);
+    debiki2.ReactActions.editPostWithNr(this.props.post.postId);
   },
   render: function() {
     var user: User = this.props.user;
@@ -1140,7 +1140,7 @@ var PostActions = createComponent({
     debiki2.ReactActions.togglePageClosed();
   },
   onEditClick: function(event) {
-    debiki.internal.$showEditForm.call(event.target, event);
+    debiki2.ReactActions.editPostWithNr(this.props.post.postId);
   },
   onLinkClick: function() {
     var hash = '#post-' + this.props.post.postId;

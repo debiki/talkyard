@@ -72,11 +72,11 @@ function onMessage(event) {
     case 'editorEditPost':
       // Sent from an embedded comments page to the embedded editor.
       var postId = eventData;
-      d.i.openEditorToEditPost(postId);
+      debiki2.ReactActions.editPostWithNr(postId);
       break;
     case 'handleEditResult':
       // This is sent from the embedded editor back to an embedded comments page.
-      d.i.handleEditResult(eventData);
+      ReactActions.handleEditResult(eventData);
       break;
   }
 };

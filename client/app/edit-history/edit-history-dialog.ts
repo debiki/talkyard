@@ -119,14 +119,14 @@ var EditHistoryDialog = createClassAndFactory({
         var thisRevision = revisionsRecentFirst[i];
         var prevRevision = revisionsRecentFirst[i + 1];
         revisionElems.push(
-            PostRevisionRow({ isCurrent: i === 0, thisRevision: thisRevision,
-                prevRevision: prevRevision }));
+            PostRevisionRow({ isCurrent: i === 0, key: thisRevision.revisionNr,
+                thisRevision: thisRevision, prevRevision: prevRevision }));
         if (i === revisionsRecentFirst.length - 2) {
           // Are there more revisions server side? Then add a load-more button.
           if (prevRevision.revisionNr > 1) {
             revisionElems.push(
                 Button({ onClick: this.loadMoreRevisions, className: 'ed-load-more-revs',
-                    disabled: this.state.isLoadingMore },
+                    disabled: this.state.isLoadingMore, key: 'LoadMoreBtn' },
                   this.state.isLoadingMore ? "Loading more revisions..." : "Load more"));
           }
         }

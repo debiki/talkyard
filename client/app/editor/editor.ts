@@ -41,7 +41,7 @@ function ensureEditorCreated(success) {
     success();
   }
   else {
-    d.i.loadEditorEtceteraScripts().done(() => {
+    Server.loadEditorEtceteraScripts().done(() => {
       theEditor = React.render(Editor({}), utils.makeMountNode());
       success();
     });
@@ -271,11 +271,13 @@ export var Editor = createComponent({
   editPost: function(postId: number) {
     if (this.alertBadState())
       return;
-    Server.loadCurrentPostText(postId, (text: string) => {
+    Server.loadCurrentPostText(postId, (text: string, postUid: number, revisionNr: number) => {
       this.showEditor();
       this.setState({
         anyPostType: null,
         editingPostId: postId,
+        editingPostUid: postUid,
+        editingPostRevisionNr: revisionNr,
         text: text
       });
       this.updatePreview();
@@ -476,6 +478,11 @@ export var Editor = createComponent({
     this.setState({ text: null, draft: null });
   },
 
+  showEditHistory: function() {
+    dieIf(!this.state.editingPostId || !this.state.editingPostUid, 'EdE5UGMY2');
+    debiki2.edithistory.getEditHistoryDialog().open(this.state.editingPostUid);
+  },
+
   render: function() {
     var titleInput;
     var state = this.state;
@@ -576,6 +583,13 @@ export var Editor = createComponent({
       saveButtonTitle = 'Create topic';
     }
 
+    var anyViewHistoryButton;
+    if (this.state.editingPostRevisionNr !== 1) {
+      anyViewHistoryButton =
+          r.a({ onClick: this.showEditHistory, className: 'view-edit-history' },
+            "View old edits");
+    }
+
     // If not visible, don't remove the editor, just hide it, so we won't have
     // to unrigister the mentions parser (that would be boring).
     var styles = {
@@ -617,7 +631,8 @@ export var Editor = createComponent({
                   dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
             r.div({ className: 'submit-cancel-btns' },
               Button({ onClick: this.onSaveClick }, saveButtonTitle),
-              Button({ onClick: this.onCancelClick }, 'Cancel'))))));
+              Button({ onClick: this.onCancelClick }, 'Cancel'),
+              anyViewHistoryButton)))));
   }
 });
 
