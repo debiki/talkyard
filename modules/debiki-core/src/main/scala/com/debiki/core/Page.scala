@@ -214,11 +214,14 @@ case class PageMeta(
   require(doneAt.isEmpty || plannedAt.get.getTime <= doneAt.get.getTime, "DwE6K8PY2")
   // A topic that has been fixed or solved, should be in the closed state.
   require((doneAt.isEmpty && answeredAt.isEmpty) || closedAt.isDefined, "DwE4KEF7")
+  // A locked or frozen topic, should be closed too.
+  require((lockedAt.isEmpty && frozenAt.isEmpty) || closedAt.isDefined, "DwE6UMP3")
   require(answeredAt.isEmpty == answerPostUniqueId.isEmpty, "DwE2PYU5")
   if (numChildPages < 0)
     play.api.Logger.warn(s"Negative child page count, parent: $pageId [DwE8KPEF0]")
 
   def isPinned = pinOrder.isDefined
+  def isClosed = closedAt.isDefined
 
   def status: PageStatus =
     if (publishedAt.isDefined) PageStatus.Published

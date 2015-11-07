@@ -36,6 +36,7 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction) extend
   override def siteId = transaction.siteId
 
   def version = meta.version
+  def isClosed = meta.isClosed
 
   override def meta: PageMeta = {
     if (_meta eq null) {

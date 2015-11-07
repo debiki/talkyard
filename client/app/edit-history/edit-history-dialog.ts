@@ -157,6 +157,7 @@ var PostRevisionRow = createComponent({
     */
     var revisionNrText = this.props.isCurrent ?
       "Latest changes" : "Changes in revision " + thisRevision.revisionNr;
+      // BUG latest changes timestamp = wrong, too old (start of cur rev, not end?)
     return r.div({ className: 'ed-revision' },
       r.p({}, revisionNrText + ", composed by ", composedBy,
           ' ' + moment(thisRevision.composedAtMs).fromNow(), anyApprovedBy, ':'),

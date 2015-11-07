@@ -152,14 +152,15 @@ trait SpecialContentDao {
 
     // For now, just keep updating the current revision.
     val nextRevisionNr = oldPost.currentRevisionNr
+    val forNowEditorId = oldPost.createdById // later, create revisions & use: editorId
 
     val editedPost = oldPost.copy(
       currentRevLastEditedAt = Some(transaction.currentTime),
-      currentRevisionById = editorId,
+      currentRevisionById = forNowEditorId,
       currentSourcePatch = None,
       currentRevisionNr = nextRevisionNr,
       lastApprovedEditAt = Some(transaction.currentTime),
-      lastApprovedEditById = Some(editorId),
+      lastApprovedEditById = Some(forNowEditorId),
       approvedSource = Some(newSource),
       approvedHtmlSanitized = Some(htmlSanitized),
       approvedAt = Some(transaction.currentTime),

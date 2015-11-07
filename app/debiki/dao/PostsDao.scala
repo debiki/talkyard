@@ -68,7 +68,7 @@ trait PostsDao {
           }
           anyParent
         }
-      if (anyParent.map(_.deletedStatus.isDeleted) == Some(true))
+      if (anyParent.exists(_.deletedStatus.isDeleted))
         throwForbidden(
           "The parent post has been deleted; cannot reply to a deleted post", "DwE5KDE7")
 
@@ -100,7 +100,7 @@ trait PostsDao {
       val numNewOrigPostReplies = (isApproved && newPost.isOrigPostReply) ? 1 | 0
       val oldMeta = page.meta
       val newMeta = oldMeta.copy(
-        bumpedAt = Some(transaction.currentTime),
+        bumpedAt = page.isClosed ? oldMeta.bumpedAt | Some(transaction.currentTime),
         lastReplyAt = Some(transaction.currentTime),
         numRepliesVisible = page.parts.numRepliesVisible + (isApproved ? 1 | 0),
         numRepliesTotal = page.parts.numRepliesTotal + 1,
@@ -311,7 +311,7 @@ trait PostsDao {
       // Bump the page, if the article / original post was edited.
       // (This is how Discourse works and people seems to like it. However,
       // COULD add a don't-bump option for minor edits.)
-      if (postId == PageParts.BodyId && editedPost.isCurrentVersionApproved) {
+      if (postId == PageParts.BodyId && editedPost.isCurrentVersionApproved && !page.isClosed) {
         newMeta = newMeta.copy(bumpedAt = Some(transaction.currentTime))
         makesSectionPageHtmlStale = true
       }

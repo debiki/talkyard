@@ -459,6 +459,7 @@ export var Editor = createComponent({
       editingPostId: null,
       newForumTopicCategoryId: null,
       newForumPageRole: null,
+      editingPostRevisionNr: null,
       text: '',
       draft: _.isNumber(this.state.editingPostId) ? '' : this.state.text,
       safePreviewHtml: '',
@@ -512,11 +513,12 @@ export var Editor = createComponent({
               placeholder: "What is this about, in one brief sentence?" });
     }
 
-    var doingWhatInfo;
     var editingPostId = this.state.editingPostId;
     var replyToPostIds = this.state.replyToPostIds;
     var isChatComment = replyToPostIds.length === 1 && replyToPostIds[0] === NoPostId;
     var isChatReply = replyToPostIds.indexOf(NoPostId) !== -1 && !isChatComment;
+
+    var doingWhatInfo;
     if (_.isNumber(editingPostId)) {
       doingWhatInfo =
         r.span({},
@@ -576,7 +578,10 @@ export var Editor = createComponent({
         saveButtonTitle = "Post comment";
       }
       else {
-        saveButtonTitle = "Post reply";
+        switch (ReactStore.allData().pageRole) {
+          case PageRole.Critique: saveButtonTitle = "Submit critique"; break; // [plugin]
+          default: saveButtonTitle = "Post reply";
+        }
       }
     }
     else if (this.state.newForumPageRole) {
@@ -584,7 +589,7 @@ export var Editor = createComponent({
     }
 
     var anyViewHistoryButton;
-    if (this.state.editingPostRevisionNr !== 1) {
+    if (this.state.editingPostRevisionNr && this.state.editingPostRevisionNr !== 1) {
       anyViewHistoryButton =
           r.a({ onClick: this.showEditHistory, className: 'view-edit-history' },
             "View old edits");

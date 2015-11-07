@@ -136,13 +136,16 @@ var TitleBodyComments = createComponent({
                    // reason the [x] icon is shonw in front of the title.
 
     if (store.pageClosedAtMs) {
+      var closedIcon = r.span({ className: 'icon-cancel-circled-empty' });
       if (store.pageRole === PageRole.Critique) {  // [plugin]
         return { id: 'EdH4KDPU2', version: 1, content: r.span({},
-            "This topic has been closed. People won't get " +
-            "any additional credits for posting more critique here.") };
+            "This topic has been ", closedIcon, " closed. People won't get any additional " +
+            "credits for posting more critique here.") };
       }
       else {
-        return null;
+        return { id: 'EdH7UMPW', version: 1, content: r.div({},
+            "This topic has been ", closedIcon, " closed. You can still post comments, " +
+            "but that won't make this topic bump to the top of the latest-topics list.") };
       }
     }
 

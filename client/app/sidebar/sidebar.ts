@@ -38,6 +38,7 @@ var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 var TopBarHegiht = 44; // [KP43WV3]
+var SidebarNumCommentsLimit = 5 + 1;  // 5 + page body
 
 export var Sidebar = createComponent({
   mixins: [debiki2.StoreListenerMixin],
@@ -49,7 +50,10 @@ export var Sidebar = createComponent({
     var showSidebar = false;
     if (!store.horizontalLayout && localStorage) {
       var setting = localStorage.getItem('debikiShowSidebar');
-      if (!setting || setting === 'true') {
+      if (store.numPosts <= SidebarNumCommentsLimit) {
+        // Sidebar not needed — navigating only this few comments with not sidebar, is okay.
+      }
+      else if (!setting || setting === 'true') {
         showSidebar = true;
         $('html').addClass('dw-sidebar-open');
       }

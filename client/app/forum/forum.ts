@@ -689,21 +689,20 @@ var TopicRow = createComponent({
       activityTitle += '\nEdited on ' + dateTimeFix(topic.bumpedEpoch);
     }
 
-    var anyPinIcon = topic.pinWhere ? 'icon-pin' : undefined;
+    var anyPinIconClass = topic.pinWhere ? 'icon-pin' : undefined;
     var showExcerpt = topic.pinWhere === PinPageWhere.Globally ||
         (topic.pinWhere && topic.categoryId === this.props.activeCategory.id);
     var excerptIfPinned = showExcerpt
         ? r.p({ className: 'dw-p-excerpt' }, topic.excerpt, r.a({ href: topic.url }, 'read more'))
         : null;
 
-    var title = makeTitle(topic);
 
     var categoryName = category ? category.name : '';
     var activityAgo = timeAgo(topic.bumpedEpoch || topic.createdEpoch);
     return (
       r.tr({},
         r.td({ className: 'dw-tpc-title' },
-          r.a({ href: topic.url, className: anyPinIcon }, title),
+          makeTitle(topic, anyPinIconClass),
           excerptIfPinned),
         r.td({}, categoryName),
         r.td({ className: 'num dw-tpc-replies' }, topic.numPosts - 1),
@@ -769,11 +768,10 @@ var CategoryRow = createComponent({
     var category: Category = this.props.category;
     var recentTopicRows = category.recentTopics.map((topic: Topic) => {
       var pinIconClass = topic.pinWhere ? ' icon-pin' : '';
-      var title = makeTitle(topic);
       return (
         r.tr({ key: topic.pageId },
           r.td({},
-            r.a({ className: 'topic-title' + pinIconClass, href: topic.url }, title),
+            makeTitle(topic, 'topic-title' + pinIconClass),
             r.span({ className: 'topic-details' },
               ' – ' + topic.numPosts + ' posts, ',
               timeAgo(topic.bumpedEpoch || topic.createdEpoch)))));
@@ -798,12 +796,12 @@ var CategoryRow = createComponent({
 
 
 
-function makeTitle(topic: Topic) {
+function makeTitle(topic: Topic, className: string) {
   var title = topic.title;
   if (topic.closedAtMs && !isDone(topic) && !isAnswered(topic)) {
     var tooltip = makePageClosedTooltipText(topic.pageRole);
     var closedIcon = r.span({ className: 'icon-cancel-circled-empty' });
-    title = r.span({ title: tooltip }, closedIcon, title);
+    title = r.span({}, closedIcon, title);
   }
   else if (topic.pageRole === PageRole.Question) {
     var tooltip = makeQuestionTooltipText(topic.answeredAtMs);
@@ -821,7 +819,7 @@ function makeTitle(topic: Topic) {
       if (topic.numOrigPostReplies > 1) tooltip += "answers";
       else tooltip += "answer";
     }
-    title = r.span({ title: tooltip }, questionIcon, answerCount, answerIcon, title);
+    title = r.span({}, questionIcon, answerCount, answerIcon, title);
   }
   else if (topic.pageRole === PageRole.Problem || topic.pageRole === PageRole.Idea) {
     // (Some dupl code, see [5KEFEW2] in posts.ts.
@@ -843,16 +841,17 @@ function makeTitle(topic: Topic) {
           : "This has been done";
       iconClass = 'icon-check';
     }
-    title = r.span({ title: tooltip }, r.span({ className: iconClass }, title));
+    title = r.span({}, r.span({ className: iconClass }, title));
   }
   else if (topic.pageRole === PageRole.ToDo) {
     var iconClass = topic.doneAtMs ? 'icon-check' : 'icon-check-empty';
     var tooltip = topic.doneAtMs
         ? "This has been done or fixed"
         : "This is something to do or to fix";
-    title = r.span({ title: tooltip }, r.span({ className: iconClass }, title));
+    title = r.span({}, r.span({ className: iconClass }, title));
   }
-  return title;
+  return (
+      r.a({ href: topic.url, title: tooltip, className: className }, title));
 }
 
 

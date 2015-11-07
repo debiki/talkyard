@@ -52,7 +52,7 @@ export function getServerErrorDialog() {
 
 export function showAndThrowClientSideError(errorMessage: string) {
   getServerErrorDialog().openForBrowserError(errorMessage);
-  throw Error(errorMessage);
+  throw new Error(errorMessage);
 }
 
 
