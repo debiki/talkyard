@@ -99,15 +99,20 @@
     &:last-child
       padding-left: 0
 
+  // -- skip this -- now I've added avatars and removed the post header background, which
+  //   makes the line added below look terribly ugly.
   // Add an extra border above not-the-first sibling thread,
   // so it's easier to see where they start and end (since I don't
   // always indent).
   // But don't do this for the depth-1 threads since they're placed
   // in obvious columns anyway.
+  /*
   .dw-t:not(.dw-depth-0) > .dw-single-and-multireplies > .dw-res > li:not(:first-child):not(:last-child)
     > .dw-t > .dw-p > .dw-p-hd,
     > .dw-p > .dw-p-hd
       border-top: 3px solid hsl(0, 0%, 70%)
+  // -- /skip this --
+    */
 
   // Max indentation depth
   //----------------------

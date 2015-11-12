@@ -25,8 +25,8 @@
 
     img
       border-radius: 50%;
-      width: 50px;
-      height: 50px;
+      width: 48px;
+      height: 48px;
 
     &.esAvtr-ltr  // avatar with a letter, no image uploaded
       padding-left: 5px;
@@ -37,22 +37,21 @@
       color: white;
       border-radius: 50%;
       // The letter avatars look so large (because they're a bulb of color?),
-      // make them a tiny bit smaller:
-      width: 47px;
-      height: 47px;
+      // so make them a few pixels smaller:
+      width: 46px;
+      height: 46px;
 
     &.edAvtr-manyLetters
       padding: 10px 0 0 4px;
       font-size: 21px;
 
     &.esAvtr-gst
-      background: hsl(0, 0%, 95%);
-      color: hsl(0, 0%, 55%);
+      background: hsl(0, 0%, 71%);
 
   // w-avtr = "with avatar"
   .ed-w-avtr > .dw-p,
   .ed-w-avtr > .dw-single-and-multireplies
-    margin-left: 60px;
+    margin-left: 56px;
 
   // Without this, the avatars won't align vertically with the post header, because of
   // some line-height.
@@ -61,6 +60,28 @@
       top: 15px;
     & > .dw-res > li:first-child .edAvtr
       top: 10px;
+
+.esAvtr-sys
+  background-color: hsl(0, 0%, 54%);
+
+.dw-p-hd .edAvtr
+  width: 25px;
+  height: 25px;
+  margin-right: 7px;
+  position: relative;
+  top: -5px;
+  left: -2px;
+  &.esAvtr-ltr
+    padding: 6px 0 0 1px;
+    font-size: 15px;
+    font-weight: bold; // small low contrast font, otherwise hard to read
+  &.edAvtr-manyLetters
+    padding: 5px 0 0 3px;
+    font-size: 14px;
+
+  img
+    width: 25px;
+    height: 25px;
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 list

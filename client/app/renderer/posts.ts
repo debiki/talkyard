@@ -681,17 +681,15 @@ var Thread = createComponent({
         !this.props.abbreviate;
 
     var showAvatar = !renderCollapsed && this.props.depth === 1 && !this.props.is2dTreeColumn;
-    var anyAvatar = showAvatar
-        ? Avatar({
-          // For now: — later, replace authorUsername etc with a { id, username, fullName } object?
-          user: {
-            id: post.authorId,
-            username: post.authorUsername,
-            fullName: post.authorFullName,
-            avatarUrl: post.authorAvatarUrl,
-          }
-        })
-        : null;
+    var anyAvatar = !showAvatar ? null : Avatar({
+      // For now: — later, replace authorUsername etc with a { id, username, fullName } object?
+      user: {
+        id: post.authorId,
+        username: post.authorUsername,
+        fullName: post.authorFullName,
+        avatarUrl: post.authorAvatarUrl,
+      }
+    });
     var avatarClass = showAvatar ? ' ed-w-avtr' : '';
 
     var postProps = _.clone(this.props);
@@ -759,10 +757,28 @@ var Avatar = createComponent({
     if (user.id > 0) {
       // Always use the same color for the same user (unless the color palette gets changed).
       var colorIndex = user.id % NumAvatarColors;
-      color = 'hsl(' + AvatarColorHueDistance * colorIndex + ', 58%, 74%)';
+      var hue = AvatarColorHueDistance * colorIndex;
+      var saturation = 58;
+      var lightness = 78;
+      if (this.props.darker) {
+        lightness -= 4;
+        // Reduce saturation too, or the color becomes too strong (since darker = more color here).
+        saturation -= 3;
+      }
+      if (50 <= hue && hue <= 80) {
+        // These colors (yellow, green) are hard to discern. Make them stronger.
+        lightness -= 10;
+        saturation -= 4;
+      }
+      else if (40 <= hue && hue <= 185) {
+        // A bit hard to discern.
+        lightness -= 5;
+        saturation -= 2;
+      }
+      color = 'hsl(' + hue + ', ' + saturation + '%, ' + lightness + '%)';
     }
     else if (user.id === SystemUserId) {
-      color = 'hsl(0, 0%, 80%)';
+      isGuestClass = ' esAvtr-sys';
     }
     else {
       // Give all guest users the same boring gray color.
@@ -1062,6 +1078,18 @@ var PostHeader = createComponent({
     var user: User = this.props.user;
     var linkFn = this.props.abbreviate ? 'span' : 'a';
 
+    var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
+    var anyAvatar = !showAvatar ? null : Avatar({
+      darker: true, // because it's small, hard to read small text on a bright background
+      // For now: — later, replace authorUsername etc with a { id, username, fullName } object?
+      user: {
+        id: post.authorId,
+        username: post.authorUsername,
+        fullName: post.authorFullName,
+        avatarUrl: post.authorAvatarUrl,
+      }
+    });
+
     // Username link: Some dupl code, see edit-history-dialog.ts. [88MYU2]
     var authorUrl = '/-/users/#/id/' + post.authorId;
     var namePart1;
@@ -1168,14 +1196,15 @@ var PostHeader = createComponent({
     return (
         r.div({ className: 'dw-p-hd' + isBodyPostClass },
           anyPin,
-          toggleCollapsedButton,
           postId,
           anyMark,
+          anyAvatar,
           by,
           r[linkFn](userLinkProps, namePart1, namePart2),
           timeAgo(post.createdAt),
           editInfo,
-          inReplyTo));
+          inReplyTo,
+          toggleCollapsedButton));
   }
 });
 
