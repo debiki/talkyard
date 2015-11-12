@@ -402,6 +402,28 @@ trait UserDao {
   }
 
 
+  def setUserAvatar(userId: UserId, tinyAvatar: Option[UploadRef], smallAvatar: Option[UploadRef],
+        mediumAvatar: Option[UploadRef], browserIdData: BrowserIdData) {
+    require(smallAvatar.isDefined == tinyAvatar.isDefined, "EsE9PYM2")
+    require(smallAvatar.isDefined == mediumAvatar.isDefined, "EsE8YFM2")
+    readWriteTransaction { transaction =>
+      val userBefore = transaction.loadTheCompleteUser(userId)
+      val userAfter = userBefore.copy(
+        tinyAvatar = tinyAvatar,
+        smallAvatar = smallAvatar,
+        mediumAvatar = mediumAvatar)
+      transaction.updateCompleteUser(userAfter)
+      userBefore.tinyAvatar.foreach(transaction.updateUploadedFileReferenceCount)
+      userBefore.smallAvatar.foreach(transaction.updateUploadedFileReferenceCount)
+      userBefore.mediumAvatar.foreach(transaction.updateUploadedFileReferenceCount)
+      userAfter.tinyAvatar.foreach(transaction.updateUploadedFileReferenceCount)
+      userAfter.smallAvatar.foreach(transaction.updateUploadedFileReferenceCount)
+      userAfter.mediumAvatar.foreach(transaction.updateUploadedFileReferenceCount)
+      transaction.markPagesWithUserAvatarAsStale(userId)
+    }
+  }
+
+
   def configRole(userId: RoleId,
         emailNotfPrefs: Option[EmailNotfPrefs] = None, isAdmin: Option[Boolean] = None,
         isOwner: Option[Boolean] = None) {

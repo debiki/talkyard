@@ -128,6 +128,7 @@ var UserPageComponent = React.createClass({
     var childProps = {
       loggedInUser: this.state.loggedInUser,
       user: this.state.user,
+      reloadUser: this.loadCompleteUser,
       activeRouteName: this.getRoutes()[2].name,
       transitionTo: this.transitionToRouteName
     };
@@ -177,6 +178,58 @@ var UserBar = createComponent({
 
 
 var UserInfo = createComponent({
+  componentDidMount: function() {
+    Server.loadEditorEtceteraScripts().then(this.createUploadAvatarButton);
+  },
+
+  selectAndUploadAvatar: function() {
+    $(this.refs.chooseAvatarInput.getDOMNode()).click();
+  },
+
+  createUploadAvatarButton: function() {
+    var inputElem = this.refs.chooseAvatarInput.getDOMNode();
+    var FileAPI = window['FileAPI'];
+    FileAPI.event.on(inputElem, 'change', (evt) => {
+      var files = FileAPI.getFiles(evt);
+      if (!files.length)
+        return; // file dialog cancelled?
+
+      // Perhaps there's some better way to test if the file is ok than using filter(). Oh well.
+      FileAPI.filterFiles(files, (file, info) => {
+        if( /^image/.test(file.type) ){
+          var largeEnough = info.width >= 100 && info.height >= 100;
+          dieIf(!largeEnough, "Image too small: should be at least 100 x 100 [EsE8PYM21]");
+        }
+        else {
+          die("Not an image [EsE5GPU3]");
+        }
+        return true;
+      }, (files, rejected) => {
+        dieIf(files.length !== 1, 'DwE5UPM2');
+        // We can skip any upload progress bar I think. Small files, around 20k, done in no time.
+        FileAPI.upload({
+          url: '/-/upload-avatar',
+          headers: { 'X-XSRF-TOKEN': window['$'].cookie('XSRF-TOKEN') },
+          files: { images: files },
+          imageOriginal: false,
+          imageTransform: {
+            'tiny': { width: 25, height: 25, type: 'image/jpeg', quality: 0.95 },
+            'small': { width: 48, height: 48, type: 'image/jpeg', quality: 0.95 },
+            'medium': { maxWidth: 350, maxHeight: 350, type: 'image/jpeg', quality: 0.8 },
+          },
+          complete: (error, xhr) => {
+            if (error) {
+              pagedialogs.getServerErrorDialog().open(xhr);
+            }
+            else {
+              this.props.reloadUser();
+            }
+          },
+        });
+      });
+    });
+  },
+
   render: function() {
     var user = this.props.user;
     var suspendedInfo;
@@ -203,11 +256,25 @@ var UserInfo = createComponent({
       isGuestInfo = r.span({ className: 'dw-is-what' }, isGuestInfo);
     }
 
+    var uploadAvatarBtnText = user.mediumAvatarUrl ? "Change photo" : "Upload photo";
+    var avatarMissingClass = user.mediumAvatarUrl ? '' : ' esMedAvtr-missing';
+
     return (
       r.div({ className: 'user-info' },
-        r.h1({}, user.username),
-        r.h2({}, user.fullName, isGuestInfo),
-        suspendedInfo));
+        r.div({ className: 'user-info-col' },
+          r.div({ className: 'esMedAvtr' + avatarMissingClass },
+            r.img({ src: user.mediumAvatarUrl }),
+            // File inputs are ugly, so we hide the file input (size 0 x 0) and activate
+            // it by clicking a beautiful button instead:
+            Button({ id: 'e2eChooseAvatarInput', className: 'esMedAvtr_uplBtn',
+                onClick: this.selectAndUploadAvatar }, uploadAvatarBtnText),
+            r.input({ name: 'files', type: 'file', multiple: false,
+               ref: 'chooseAvatarInput', style: { width: 0, height: 0 }}))),
+        r.div({ className: 'user-info-col' },
+          r.div({ style: { display: 'table-cell' }},
+            r.h1({}, user.username),
+            r.h2({}, user.fullName, isGuestInfo),
+            suspendedInfo))));
   }
 });
 
@@ -215,7 +282,6 @@ var UserInfo = createComponent({
 var UserNav = createComponent({
   render: function() {
     var messages = null;
-    // if (this.props.)
     return (
       r.div({ className: 'dw-user-nav' },
         Nav({ bsStyle: 'pills', activeKey: this.props.activeRouteName,

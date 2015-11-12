@@ -35,7 +35,8 @@ case class PageStuff(
   title: String,
   bodyExcerptIfPinned: Option[String],
   authorDisplayName: String,
-  authorUserId: UserId)
+  authorUserId: UserId,
+  authorAvatarUrl: Option[String])
 
 
 
@@ -103,7 +104,10 @@ trait PageStuffDao {
         title = anyTitle.flatMap(_.approvedSource) getOrElse "(No title)",
         bodyExcerptIfPinned = anyExcerpt,
         authorDisplayName = anyAuthor.map(_.displayName) getOrElse "(Author absent, DwE7SKF2)",
-        authorUserId = pageMeta.authorId)
+        authorUserId = pageMeta.authorId,
+        // When listing pages, we show many users: creator, last reply, etc. and many pages,
+        // so we'll use the tiny avatar image. Should I rename to tinyAuthorAvatarUrl?
+        authorAvatarUrl = anyAuthor.flatMap(_.tinyAvatar.map(_.url)))
 
       stuffById += pageMeta.pageId -> summary
     }

@@ -150,6 +150,7 @@ var editorEtceteraScripts = [
       'bower_components/react-input-autosize/dist/react-input-autosize.min.js', // needed by react-select
       'bower_components/react-select/dist/react-select.min.js',
       'bower_components/dropzone/dist/dropzone.js',
+      'bower_components/fileapi/dist/FileAPI.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/html-css-sanitizer-bundle.js',
       'client/third-party/non-angular-slugify.js'];
@@ -258,9 +259,12 @@ gulp.task('concat-debiki-scripts', ['wrap-javascript', 'compile-typescript'], fu
 
 
 function makeConcatDebikiScriptsStream() {
-  function makeConcatStream(outputFileName, filesToConcat) {
-    return gulp.src(filesToConcat)
-        .pipe(newer('public/res/' + outputFileName))
+  function makeConcatStream(outputFileName, filesToConcat, checkIfNewer) {
+    var stream = gulp.src(filesToConcat);
+    if (checkIfNewer) {
+      stream = stream.pipe(newer('public/res/' + outputFileName));
+    }
+    return stream
         .pipe(header(nextFileLine))
         .pipe(concat(outputFileName))
         .pipe(header(thisIsAConcatenationMessage))
@@ -269,7 +273,7 @@ function makeConcatDebikiScriptsStream() {
   }
 
   return es.merge(
-      makeConcatStream('combined-debiki.js', debikiJavascriptFiles),
+      makeConcatStream('combined-debiki.js', debikiJavascriptFiles, 'DoCheckNewer'),
       makeConcatStream('editor-etcetera.js', editorEtceteraScripts),
       makeConcatStream('embedded-comments.js', debikiEmbeddedCommentsFiles),
       gulp.src('bower_components/zxcvbn/zxcvbn.js').pipe(gulp.dest('public/res/')));

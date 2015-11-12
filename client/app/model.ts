@@ -61,6 +61,7 @@ interface Post {
   authorIdInt: number;
   authorFullName: string;
   authorUsername: string;
+  authorAvatarUrl?: string;
   authorSuspendedTill?: any;
   createdAt: string;
   lastApprovedEditAt: string;
@@ -109,6 +110,7 @@ interface User {
   isAuthenticated?: boolean;  // change to !isGuest?
   username?: string;
   fullName?: string;
+  avatarUrl?: string;
   rolePageSettings: any;
   votes: any;
   unapprovedPosts: any;
@@ -146,6 +148,8 @@ interface Topic {
   title: string;
   url: string;
   categoryId: number;
+  authorId: number;
+  authorAvatarUrl?: string;
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   excerpt?: string;
@@ -274,6 +278,7 @@ interface BriefUser {
   isModerator?: boolean;
   isGuest?: boolean;  // = !isAuthenticated
   isEmailUnknown?: boolean;
+  avatarUrl?: string;
 }
 
 
@@ -286,6 +291,8 @@ interface CompleteUser {
   emailForEveryNewPost: boolean;
   country: string;
   url: string;
+  avatarUrl?: string;
+  mediumAvatarUrl?: string;
   isAdmin: boolean;
   isModerator: boolean;
   isApproved: boolean;

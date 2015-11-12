@@ -129,6 +129,8 @@ POST  /-/delete-post            controllers.EditController.deletePost
 GET   /-/load-post-revisions    controllers.EditController.loadPostRevisions(postId, revisionNr)
 
 POST  /-/upload-public-file     controllers.UploadsController.uploadPublicFile
+POST  /-/upload-avatar          controllers.UploadsController.uploadAvatar
+POST  /-/remove-avatar          controllers.UploadsController.removeAvatar
 GET   /-/uploads/public/*relativePath controllers.UploadsController.servePublicFile(relativePath)
 
 POST  /-/pin-at-position        controllers.PinController.pinAtPosition

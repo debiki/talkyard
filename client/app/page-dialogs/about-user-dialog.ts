@@ -64,6 +64,11 @@ var AboutUserDialog = createComponent({
     this.loadUser(post.authorId);
   },
 
+  openForUserId: function(userId: number) {
+    this.setState({ isOpen: true, user: null, post: null, blocks: {} });
+    this.loadUser(userId);
+  },
+
   openForUser: function(user: BriefUser) {
     // Some code below thinks this is a CompleteUser but a BriefUser is all that's needed.
     this.setState({ isOpen: true, user: user, post: null, blocks: {} });

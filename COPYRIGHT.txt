@@ -60,6 +60,18 @@ Javascript and CSS:
     Copyright (c) 2013 hij1nx
     MIT license
 
+  - FileAPI
+    bower_components/fileapi/dist/FileAPI.js
+    Copyright (C) 2012 FileAPI authors: Konstantin Lebedev, Demidov Vladimir.
+    BSD license
+    https://github.com/mailru/FileAPI
+
+  - Fontello
+    ./modules/fontello/
+    Different fonts copyrighted by different people.
+    Various licenses.
+    http://fontello.com/
+
   - Gifffer
     ./client/third-party/gifffer/
     Copyright (c) 2014 Krasimir Tsonev
@@ -134,12 +146,6 @@ Javascript and CSS:
     Copyright (c) 2011 InuYaksa
     MIT license
 
-  - Fontello
-    ./modules/fontello/
-    Different fonts copyrighted by different people.
-    Various licenses.
-    http://fontello.com/
-
   - pretty-bytes
     client/app/utils/utils.ts
     Copyright (c) Sindre Sorhus
@@ -195,4 +201,4 @@ Unknown licenses, seemingly okay to use:
 
 
 
-
+vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

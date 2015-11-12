@@ -1,0 +1,66 @@
+
+.esTinyAvtr
+  width: 25px;
+  &:hover
+    background: hsl(210, 100%, 90%);
+    outline: 3px solid hsl(210, 100%, 90%);
+  img
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    cursor: pointer;
+
+
+@media (max-width: $minShowAvatarWidth - 1)
+  .edAvtr
+    display: none;
+
+@media (min-width: $minShowAvatarWidth)
+  .edAvtr // avatar
+    float: left;
+    position: absolute;
+    left: -1px;
+    width: 48px;
+    height: 48px;
+
+    img
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+
+    &.esAvtr-ltr  // avatar with a letter, no image uploaded
+      padding-left: 5px;
+      letter-spacing: 0.1ex;
+      padding: 7px 0 0 2px;
+      text-align: center;
+      font-size: 25px;
+      color: white;
+      border-radius: 50%;
+      // The letter avatars look so large (because they're a bulb of color?),
+      // make them a tiny bit smaller:
+      width: 47px;
+      height: 47px;
+
+    &.edAvtr-manyLetters
+      padding: 10px 0 0 4px;
+      font-size: 21px;
+
+    &.esAvtr-gst
+      background: hsl(0, 0%, 95%);
+      color: hsl(0, 0%, 55%);
+
+  // w-avtr = "with avatar"
+  .ed-w-avtr > .dw-p,
+  .ed-w-avtr > .dw-single-and-multireplies
+    margin-left: 60px;
+
+  // Without this, the avatars won't align vertically with the post header, because of
+  // some line-height.
+  .dw-chat
+    .edAvtr
+      top: 15px;
+    & > .dw-res > li:first-child .edAvtr
+      top: 10px;
+
+
+// vim: fdm=marker et ts=2 sw=2 tw=0 list

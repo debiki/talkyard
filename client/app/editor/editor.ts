@@ -156,9 +156,9 @@ export var Editor = createComponent({
           });
           this.on('complete', thisComponent.hideUploadProgress);
           this.on('canceled', thisComponent.hideUploadProgress);
-          this.on('success', (file, relativePath) => {
-            dieIf(!_.isString(relativePath), 'DwE06MF22');
-            var linkHtml = thisComponent.makeUploadLink(file, relativePath);
+          this.on('success', (file, url) => {
+            dieIf(!_.isString(url), 'DwE06MF22');
+            var linkHtml = thisComponent.makeUploadLink(file, url);
             thisComponent.setState({
               text: thisComponent.state.text + '\n' + linkHtml,
             });
@@ -207,12 +207,13 @@ export var Editor = createComponent({
     });
   },
 
-  makeUploadLink: function(file, relativePath) {
-    // The relative path is like 'a/b/c...zwq.suffix' = safe, and we got it from the server.
-    dieIf(!relativePath.match(/^[0-9a-z/\.]+$/),
-        "Bad image relative path: " + relativePath + " [DwE8PUMW2]");
+  makeUploadLink: function(file, url) {
+    // The relative path is like '/-/uploads/public/a/b/c...zwq.suffix' = safe,
+    // and we got it from the server.
+    dieIf(!url.match(/^[0-9a-z/\.-]+$/),
+        "Bad image relative path: " + url + " [DwE8PUMW2]");
 
-    var parts = relativePath.split('.');
+    var parts = url.split('.');
     var suffix = parts.length > 1 ? _.last(parts) : '';
 
     // (SVG doesn't work in old browsers, fine. tif doesn't work for me.)
@@ -221,8 +222,6 @@ export var Editor = createComponent({
 
     // Only .mp4 is supported by all browsers.
     var isVideo = suffix === 'mp4' || suffix === 'ogg' || suffix === 'webm';
-
-    var url = '/-/uploads/public/' + relativePath;
 
     var link;
     if (isImage) {

@@ -19,6 +19,7 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.DebikiHttp._
 import java.awt.image.BufferedImage
 import java.{io => jio}
 import javax.imageio.{IIOImage, ImageWriteParam, ImageWriter, ImageIO}
@@ -99,5 +100,29 @@ object ImageUtils {
         }
       }
     }
+  }
+
+
+  val MimeTypeJpeg = "image/jpeg"
+
+  def throwUnlessJpegWithSideBetween(file: jio.File, minSide: Int, maxSide: Int) {
+    val mimeType = java.nio.file.Files.probeContentType(file.toPath.toAbsolutePath)
+    if (mimeType != MimeTypeJpeg)
+      throwForbidden("DwE2YUF0", s"Not a jpeg image")
+
+    val image: BufferedImage = javax.imageio.ImageIO.read(file)
+    val (width, height) = (image.getWidth, image.getHeight)
+
+    if (width < minSide)
+      throwForbidden("DwE8FMEF2", s"Image too small: width is $width, min is: $minSide")
+
+    if (height < minSide)
+      throwForbidden("DwE8FMEF2", s"Image too small: height is $height, min is: $minSide")
+
+    if (width > maxSide)
+      throwForbidden("DwE8FMEF2", s"Image too wide: width is $width, max is: $maxSide")
+
+    if (height > maxSide)
+      throwForbidden("DwE8FMEF2", s"Image too tall: height is $height, max is: $maxSide")
   }
 }

@@ -23,15 +23,13 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.User.{isGuestId, MinUsernameLength}
 import debiki._
-import debiki.ReactJson.{DateEpochOrNull, JsStringOrNull, JsBooleanOrNull, JsNumberOrNull, JsLongOrNull}
+import debiki.ReactJson._
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
 import requests.{PageRequest, DebikiRequest}
 import scala.util.Try
-import Utils.OkSafeJson
-import Utils.ValidationImplicits._
 import DebikiHttp.{throwForbidden, throwNotImplemented, throwNotFound, throwBadReq}
 
 
@@ -99,6 +97,8 @@ object UserController extends mvc.Controller {
       "isModerator" -> user.isModerator,
       "country" -> user.country,
       "url" -> user.website,
+      "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),
+      "mediumAvatarUrl" -> JsUploadUrlOrNull(user.mediumAvatar),
       "suspendedTillEpoch" -> DateEpochOrNull(user.suspendedTill))
 
     if (callerIsStaff || callerIsUserHerself) {

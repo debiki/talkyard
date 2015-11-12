@@ -587,11 +587,12 @@ var ForumTopicListComponent = React.createClass({
         r.table({ id: 'dw-topic-list' },
           r.thead({},
             r.tr({},
-              r.th({}, 'Topic'),
-              r.th({}, 'Category'),
-              r.th({ className: 'num dw-tpc-replies' }, 'Replies'),
-              r.th({ className: 'num' }, 'Activity'),
-              r.th({ className: 'num' }, 'Feelings'))),
+              r.th({}, "Topic"),
+              r.th({}, "Category"),
+              r.th({}, "Users"),
+              r.th({ className: 'num dw-tpc-replies' }, "Replies"),
+              r.th({ className: 'num' }, "Activity"),
+              r.th({ className: 'num' }, "Feelings"))),
           r.tbody({},
             topics)),
         loadMoreTopicsBtn));
@@ -696,15 +697,22 @@ var TopicRow = createComponent({
         ? r.p({ className: 'dw-p-excerpt' }, topic.excerpt, r.a({ href: topic.url }, 'read more'))
         : null;
 
-
     var categoryName = category ? category.name : '';
     var activityAgo = timeAgo(topic.bumpedEpoch || topic.createdEpoch);
+
+    // Later: add last poster, most frequent poster, etc, but for now:
+    var userAvatars = !topic.authorAvatarUrl ? null :
+      r.div({ className: 'esTinyAvtr', title: "Original Poster",
+          onClick: () => pagedialogs.getAboutUserDialog().openForUserId(topic.authorId) },
+        r.img({ src: topic.authorAvatarUrl }));
+
     return (
       r.tr({},
         r.td({ className: 'dw-tpc-title' },
           makeTitle(topic, anyPinIconClass),
           excerptIfPinned),
         r.td({}, categoryName),
+        r.td({}, userAvatars),
         r.td({ className: 'num dw-tpc-replies' }, topic.numPosts - 1),
         r.td({ className: 'num dw-tpc-activity', title: activityTitle }, activityAgo),
         r.td({ className: 'num dw-tpc-feelings' }, feelings)));

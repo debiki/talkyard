@@ -40,6 +40,7 @@ module boo {
 };
 //------------------------------------------------------------------------------
 
+var SystemUserId = -1; // also ... elsewhere?
 var NoPostId = -1; // also in editor.ts
 var MaxGuestId = -2; // place where?
 function isGuest(user: CompleteUser) {
@@ -63,6 +64,7 @@ var YellowStarMark = 2;
 var FirstStarMark = 2;
 var BlueStarMark = 3;
 var LastStarMark = 3;
+
 
 function isServerSide() {
   // Don't change this to a static variable, because it'd be initialized rather late,
@@ -678,6 +680,20 @@ var Thread = createComponent({
         // and rendered in a flat list.
         !this.props.abbreviate;
 
+    var showAvatar = !renderCollapsed && this.props.depth === 1 && !this.props.is2dTreeColumn;
+    var anyAvatar = showAvatar
+        ? Avatar({
+          // For now: — later, replace authorUsername etc with a { id, username, fullName } object?
+          user: {
+            id: post.authorId,
+            username: post.authorUsername,
+            fullName: post.authorFullName,
+            avatarUrl: post.authorAvatarUrl,
+          }
+        })
+        : null;
+    var avatarClass = showAvatar ? ' ed-w-avtr' : '';
+
     var postProps = _.clone(this.props);
     postProps.post = post;
     postProps.index = this.props.index;
@@ -698,14 +714,111 @@ var Thread = createComponent({
 
     return (
       baseElem({ className: 'dw-t' + depthClass + indentationDepthClass + multireplyClass +
-          is2dColumnClass + collapsedClass },
+          is2dColumnClass + collapsedClass + avatarClass },
         arrows,
+        anyAvatar,
         Post(postProps),
         actions,
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
             children))));
   },
+});
+
+
+var NumAvatarColors = 10;
+var AvatarColorHueDistance = 360 / NumAvatarColors;
+var textAvatarsTaken = {}; // for now [95MFU2]
+var textAvatarsByUserId = {}; // for now [95MFU2]
+
+
+var Avatar = createComponent({
+  makeTextAvatar: function() {
+    var user: BriefUser = this.props.user;
+    var result = textAvatarsByUserId[user.id];
+    if (result)
+      return result;
+
+    var color;
+    var firstLetterInName;
+    var anyQuestionMark = '';
+    var isGuestClass = '';
+    var manyLettersClass = '';
+
+    if (user.username) {
+      firstLetterInName = user.username[0].toUpperCase();
+    }
+    else if (user.fullName) {
+      firstLetterInName = user.fullName[0].toUpperCase();
+      anyQuestionMark = '?';
+    }
+    else {
+      debiki2.die("Name missing: " + JSON.stringify(user) + " [EdE7UMYP3]");
+    }
+
+    if (user.id > 0) {
+      // Always use the same color for the same user (unless the color palette gets changed).
+      var colorIndex = user.id % NumAvatarColors;
+      color = 'hsl(' + AvatarColorHueDistance * colorIndex + ', 58%, 74%)';
+    }
+    else if (user.id === SystemUserId) {
+      color = 'hsl(0, 0%, 80%)';
+    }
+    else {
+      // Give all guest users the same boring gray color.
+      isGuestClass = ' esAvtr-gst';
+    }
+
+    // Append a number to make the letters unique on this page.
+    // Possibly different numbers on different pages, for the same user.
+    var number = 1;
+    var text = firstLetterInName + anyQuestionMark;
+    var letterColor = text + colorIndex;
+    var textTaken = textAvatarsTaken[letterColor];
+    while (textTaken) {
+      number += 1;
+      if (number >= 10) {
+        text = firstLetterInName + '?';
+        break;
+      }
+      text = firstLetterInName + number + anyQuestionMark;
+      textTaken = textAvatarsTaken[letterColor];
+    }
+
+    if (text.length > 1) {
+      manyLettersClass = ' edAvtr-manyLetters';
+    }
+
+    result = {
+      text: text,
+      classes: ' esAvtr-ltr' + manyLettersClass + isGuestClass,
+      color: color,
+    };
+
+    textAvatarsTaken[letterColor] = true;
+    textAvatarsByUserId[user.id] = result;
+    return result;
+  },
+
+  render: function() {
+    var user: BriefUser = this.props.user;
+    var extraClasses = '';
+    var content;
+    var styles;
+    if (user.avatarUrl) {
+      content = r.img({ src: user.avatarUrl });
+    }
+    else {
+      var lettersClassesColor = this.makeTextAvatar();
+      extraClasses = lettersClassesColor.classes;
+      content = lettersClassesColor.text;
+      if (lettersClassesColor.color) {
+        styles = { backgroundColor: lettersClassesColor.color };
+      }
+    }
+    return (
+      r.div({ className: 'edAvtr' + extraClasses, style: styles }, content));
+  }
 });
 
 
@@ -1519,6 +1632,9 @@ function renderTitleBodyComments() {
   if (!root)
     return;
 
+  textAvatarsTaken = {}; // for now [95MFU2]
+  textAvatarsByUserId = {};
+
   var store: Store = debiki2.ReactStore.allData();
   if (store.pageRole === PageRole.Forum) {
     var router = ReactRouter.create({
@@ -1536,6 +1652,9 @@ function renderTitleBodyComments() {
 
 
 function renderTitleBodyCommentsToString() {
+  textAvatarsTaken = {}; // for now [95MFU2]
+  textAvatarsByUserId = {};
+
   // Comment in the next line to skip React server side and debug in browser only.
   //return '<p class="dw-page" data-reactid=".123" data-react-checksum="123">react_skipped</p>'
   var store: Store = debiki2.ReactStore.allData();

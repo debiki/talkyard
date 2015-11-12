@@ -71,6 +71,7 @@ object ReactJson {
           "userId" -> JsNumber(user.id),
           "username" -> JsStringOrNull(user.username),
           "fullName" -> JsString(user.displayName),
+          "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),
           "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
           "isAuthenticated" -> JsBoolean(user.isAuthenticated))
     }
@@ -380,6 +381,7 @@ object ReactJson {
       "authorIdInt" -> JsNumber(post.createdById),  // Rename to authorId when it's been converted to int (the line above)
       "authorFullName" -> JsString(author.displayName),
       "authorUsername" -> JsStringOrNull(author.username),
+      "authorAvatarUrl" -> JsUploadUrlOrNull(author.smallAvatar),
       "createdAt" -> date(post.createdAt),
       "lastApprovedEditAt" -> dateOrNull(lastApprovedEditAtNoNinja),
       "numEditors" -> JsNumber(post.numDistinctEditors),
@@ -480,6 +482,7 @@ object ReactJson {
       "userId" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.username),
       "fullName" -> JsString(user.displayName),
+      "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),
       "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
       "isAuthenticated" -> JsBoolean(user.isAuthenticated),
       "permsOnPage" -> permsOnPageJson(permsOnPage),
@@ -694,6 +697,9 @@ object ReactJson {
     }
     json
   }
+
+  def JsUploadUrlOrNull(uploadRef: Option[UploadRef]): JsValue =
+    uploadRef.map(ref => JsString(ref.url)) getOrElse JsNull
 
   def JsStringOrNull(value: Option[String]) =
     value.map(JsString).getOrElse(JsNull)

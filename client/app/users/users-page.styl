@@ -1,6 +1,6 @@
 
 .dw-user-bar
-  padding: 4px 4px 0;
+  padding: 15px;
   margin: 20px 0;
   background: #b3cce6;
 
@@ -14,7 +14,12 @@
 
 .user-info
   float: left;
-  margin: 5px 5px 15px 30px;
+  display: table-row;
+  .user-info-col
+    display: table-cell;
+    vertical-align: top;
+    padding-right: 15px;
+
   h1, h2
     font-size: 26px;
     margin: 0;
@@ -22,7 +27,7 @@
 
   h2
     font-size: 18px;
-    margin: 5px 0 8px;
+    margin: 12px 0 8px;
     .dw-is-what
       font-family: sans-serif;
       font-size: 80%;
@@ -31,6 +36,8 @@
   display: table-cell;
   vertical-align: top;
   width: 200px;
+  li
+    float: none;
 
 .dw-user-content
   display: table-cell;
@@ -42,3 +49,31 @@
   td, th
     &:not(:last-child)
       padding-right: 20px;
+
+
+.esMedAvtr // medium sized avatar
+  position: relative;
+  $maxWidth = 200px;
+  max-width: $maxWidth;
+  min-height: 180px; // if no photo uploaded
+  &:hover
+    .esMedAvtr_uplBtn
+        visibility: visible;
+  img
+    border-radius: 10px;
+    max-width: $maxWidth;
+    max-height: 250px;
+
+.esMedAvtr_uplBtn  // upload button
+  position: absolute;
+  visibility: hidden;
+  bottom: 10px;
+  // Place in the middle:
+  left: 50%;
+  transform: translateX(-50%);
+
+
+.esMedAvtr-missing  // no avatar uploaded, it's misssing
+  border: 1px solid gray;
+  .esMedAvtr_uplBtn
+    visibility: visible;

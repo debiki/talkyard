@@ -353,6 +353,8 @@ case class User(
   passwordHash: Option[String] = None,
   country: String = "",
   website: String = "",
+  tinyAvatar: Option[UploadRef] = None,
+  smallAvatar: Option[UploadRef] = None,
   isApproved: Option[Boolean],
   suspendedTill: Option[ju.Date],
   isAdmin: Boolean = false,
@@ -371,6 +373,8 @@ case class User(
     username.isDefined &&
     guestCookie.isEmpty), "DwE0AUTH6U82")
   require(!isEmailLocalPartHidden(email), "DwE6kJ23")
+  require(!isGuest || tinyAvatar.isEmpty, "EdE7YGM2")
+  require(tinyAvatar.isDefined == smallAvatar.isDefined, "EdE5YPU2")
 
   def isAuthenticated = isRoleId(id)
   def isApprovedOrStaff = isApproved == Some(true) || isStaff
@@ -406,6 +410,9 @@ case class CompleteUser(
   passwordHash: Option[String] = None,
   country: String = "",
   website: String = "",
+  tinyAvatar: Option[UploadRef] = None,
+  smallAvatar: Option[UploadRef] = None,
+  mediumAvatar: Option[UploadRef] = None,
   isOwner: Boolean = false,
   isAdmin: Boolean = false,
   isModerator: Boolean = false,
@@ -427,6 +434,8 @@ case class CompleteUser(
   require(suspendedById.map(_ >= LowestNonGuestId) != Some(false), "DwE7K2WF5")
   require(!isGuest, "DwE0GUEST223")
   require(!isEmailLocalPartHidden(emailAddress), "DwE2WFE1")
+  require(tinyAvatar.isDefined == smallAvatar.isDefined &&
+    smallAvatar.isDefined == mediumAvatar.isDefined, "EdE8UMW2")
 
   def isStaff = isAdmin || isModerator
   def isApprovedOrStaff = approvedAt == Some(true) || isStaff

@@ -79,6 +79,14 @@ export function loadEditorEtceteraScripts() {
   if (loadEditorScriptsStatus)
     return loadEditorScriptsStatus;
 
+  // Now we'll load FileAPI, and according to the docs it needs to know where it
+  // can find its implementation details files (Flash and Html5 stuff depending on
+  // browser html5 support). However, works anyway, without any staticPath. Hmm.
+  window['FileAPI'] = {
+    staticPath: '/-/tfEF357cw/', // later: '/-/res/', — but first actually place the files here
+    debug: debiki.isDev,
+  };
+
   loadEditorScriptsStatus = $.Deferred();
   var assetsPrefix = d.i.assetsUrlPathStart;
   window['yepnope']({

@@ -26,5 +26,9 @@ package com.debiki.core
   * slashes inserted so that it's a path — this avoids us placing all files in the exact
   * same directory. Some file system don't want super many files in just one directory.
   */
-case class UploadRef(baseUrl: String, hashPathSuffix: String)
+case class UploadRef(baseUrl: String, hashPathSuffix: String) {
+
+  def url = baseUrl + hashPathSuffix
+
+}
 

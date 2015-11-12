@@ -48,7 +48,7 @@ trait UploadsDao {
     * single directory).
     */
   def addUploadedFile(uploadedFileName: String, tempFile: jio.File, uploadedById: UserId,
-        browserIdData: BrowserIdData): String = {
+        browserIdData: BrowserIdData): UploadRef = {
 
     val publicUploadsDir = anyPublicUploadsDir getOrElse throwForbidden(
       "DwE5KFY9", "File uploads disabled, config value missing: " +
@@ -115,7 +115,7 @@ trait UploadsDao {
     // (Do this before moving the it into the uploads directory, in case the server
     // crashes. We don't want any files with missing metadata in the uploads directory
     // — but it's okay with metadata for which the actual files are missing: we can just
-    // delete the metadata entries later.)
+    // delete the metadata entries later. [9YMU2Y])
     readWriteTransaction { transaction =>
       // The file will be accessible on localhost, it hasn't yet been moved to e.g. any CDN.
       val uploadRef = UploadRef(localhostUploadsBaseUrl, hashPathSuffix)
@@ -147,7 +147,7 @@ trait UploadsDao {
     // COULD wrap in try...finally, so will be deleted for sure.
     tempCompressedFile.foreach(_.delete)
 
-    hashPathSuffix
+    UploadRef(localhostUploadsBaseUrl, hashPathSuffix)
   }
 
 }
@@ -172,6 +172,10 @@ object UploadsDao {
 
   val maxUploadSizeBytes = Play.configuration.getInt("debiki.uploads.maxKiloBytes").map(_ * 1000)
     .getOrElse(3*1000*1000)
+
+  val MaxAvatarTinySizeBytes = 1*1000
+  val MaxAvatarSmallSizeBytes = 5*1000
+  val MaxAvatarMediumSizeBytes = 100*1000
 
   val anyUploadsDir = {
     val value = Play.configuration.getString(LocalhostUploadsDirConfigValueName)

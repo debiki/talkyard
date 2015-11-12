@@ -21,18 +21,20 @@ import actions.ApiActions._
 import actions.SafeActions.ExceptionAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.google.{common => guava}
 import debiki._
 import debiki.DebikiHttp._
+import debiki.dao.UploadsDao._
 import java.{io => jio}
 import play.api._
-import play.api.libs.json.JsString
-import debiki.dao.UploadsDao._
+import play.api.libs.json.{Json, JsString}
 
 
 /** Uploads files and serves uploaded files.
   */
 object UploadsController extends mvc.Controller {
+
+  val MaxAvatarUploadSizeBytes =
+    MaxAvatarTinySizeBytes + MaxAvatarSmallSizeBytes + MaxAvatarMediumSizeBytes
 
 
   def uploadPublicFile = PostFilesAction(RateLimits.UploadFile, maxLength = maxUploadSizeBytes) {
@@ -57,20 +59,113 @@ object UploadsController extends mvc.Controller {
         data
     }
 
+    val numFilesUploaded = multipartFormData.files.length
+    if (numFilesUploaded != 1)
+      throwBadRequest("EdE6KPW2", s"Upload exactly one file please — I got $numFilesUploaded files")
+
     val files = multipartFormData.files.filter(_.key == "file")
     if (files.length != 1)
-      throwBadRequest("DwE6KPW2", s"Upload exactly one file please — I got ${files.length} files")
+      throwBadRequest("EdE7UYMF3", s"Use the key name 'file' please")
 
     val file = files.head
 
-    val relativePath = request.dao.addUploadedFile(
+    val uploadRef = request.dao.addUploadedFile(
       file.filename, file.ref.file, request.theUserId, request.theBrowserIdData)
 
     // Delete the temporary file.
     file.ref.clean()
 
     // Don't use OkSafeJson here because Dropzone doesn't understand the safe-JSON prefix.
-    Ok(JsString(relativePath)) as JSON
+    Ok(JsString(uploadRef.url)) as JSON
+  }
+
+
+  def removeAvatar = PostJsonAction(RateLimits.UploadFile, maxLength = 200) { request =>
+    request.dao.setUserAvatar(request.theUserId, tinyAvatar = None, smallAvatar = None,
+      mediumAvatar = None, request.theBrowserIdData)
+    Ok
+  }
+
+
+  /** (Theoretically it's possible that the user uploads 3 completely different images,
+    * for the tiny, small and medium avatars. Oh well.)
+    */
+  def uploadAvatar = PostFilesAction(RateLimits.UploadFile, maxLength = MaxAvatarUploadSizeBytes) {
+        request =>
+
+    if (!request.theUser.isAuthenticated)
+      throwForbidden("EdE8YWM2", o"""Only authenticated users (but not guests) may upload avatars.
+        Please login via for example Google or Facebook, or create a password account""")
+
+    val multipartFormData = request.body match {
+      case Left(maxExceeded: mvc.MaxSizeExceeded) =>
+        throwForbidden("EdE0FY24", o"""Avatar image request too large: I got ${maxExceeded.length}
+          bytes, but you may send at most $MaxAvatarUploadSizeBytes bytes""")
+      case Right(data) =>
+        data
+    }
+
+    val numFilesUploaded = multipartFormData.files.length
+    if (numFilesUploaded != 3)
+      throwBadRequest("EdE35UY0", o"""Upload three images please: a tiny, a small and a medium
+        sized avatar image — instead I got $numFilesUploaded files""")
+
+    val tinyFile = multipartFormData.files.find(_.key == "images[tiny]") getOrElse {
+      throwBadRequest("EdE8GYF2", o"""Upload a tiny size avatar image please""")
+    }
+
+    val smallFile = multipartFormData.files.find(_.key == "images[small]") getOrElse {
+      throwBadRequest("EdE4YF21", o"""Upload a small size avatar image please""")
+    }
+
+    val mediumFile = multipartFormData.files.find(_.key == "images[medium]") getOrElse {
+      throwBadRequest("EdE8YUF2", o"""Upload a medium size avatar image please""")
+    }
+
+    def throwIfTooLarge(whichFile: String, file: jio.File, maxBytes: Int) {
+      val length = file.length
+      if (length > maxBytes)
+        throwForbidden("DwE7YMF2", s"The $whichFile is too large: $length bytes, max is: $maxBytes")
+    }
+
+    throwIfTooLarge("tiny avatar image", smallFile.ref.file, MaxAvatarTinySizeBytes)
+    throwIfTooLarge("small avatar image", smallFile.ref.file, MaxAvatarSmallSizeBytes)
+    throwIfTooLarge("medium avatar image", mediumFile.ref.file, MaxAvatarMediumSizeBytes)
+
+    ImageUtils.throwUnlessJpegWithSideBetween(tinyFile.ref.file, 20, 35)
+    ImageUtils.throwUnlessJpegWithSideBetween(smallFile.ref.file, 40, 60)
+    ImageUtils.throwUnlessJpegWithSideBetween(mediumFile.ref.file, 200, 800)
+
+    // First add metadata entries for the files and move them in place.
+    // Then, if there were no errors, update the user so that it starts using the new
+    // images. — If the server dies, we'll save image file metadata and the files,
+    // but they won't be used. Then, after a while, some background thread deletes them
+    // (since they're unused) — deleting them is not yet implemented though [9YMU2Y].
+
+    val tinyAvatarRef = request.dao.addUploadedFile(
+      tinyFile.filename, tinyFile.ref.file, request.theUserId, request.theBrowserIdData)
+
+    val smallAvatarRef = request.dao.addUploadedFile(
+      smallFile.filename, smallFile.ref.file, request.theUserId, request.theBrowserIdData)
+
+    val mediumAvatarRef = request.dao.addUploadedFile(
+      mediumFile.filename, mediumFile.ref.file, request.theUserId, request.theBrowserIdData)
+
+    // Delete the temporary files.
+    tinyFile.ref.clean()
+    smallFile.ref.clean()
+    mediumFile.ref.clean()
+
+    // Now the images are in place in the uploads dir, and we've created metadata entries.
+    // We just need to link the user to the images:
+    request.dao.setUserAvatar(request.theUserId, tinyAvatar = Some(tinyAvatarRef),
+      smallAvatar = Some(smallAvatarRef), mediumAvatar = Some(mediumAvatarRef),
+      request.theBrowserIdData)
+
+    // Use OkSafeJson?
+    Ok(Json.obj(
+      "avatarUrl" -> JsString(smallAvatarRef.url),
+      "mediumAvatarUrl" -> JsString(mediumAvatarRef.url))) as JSON
   }
 
 

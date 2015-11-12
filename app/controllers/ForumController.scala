@@ -243,6 +243,8 @@ object ForumController extends mvc.Controller {
       "numUnwanteds" -> topic.meta.numUnwanteds,
       "numOrigPostLikes" -> topic.meta.numOrigPostLikeVotes,
       "numOrigPostReplies" -> topic.meta.numOrigPostRepliesVisible,
+      "authorId" -> JsNumber(topic.meta.authorId),
+      "authorAvatarUrl" -> JsStringOrNull(topicStuff.authorAvatarUrl),
       "createdEpoch" -> date(topic.meta.createdAt),
       "bumpedEpoch" -> dateOrNull(topic.meta.bumpedAt),
       "lastReplyEpoch" -> dateOrNull(topic.meta.lastReplyAt),

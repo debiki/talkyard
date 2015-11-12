@@ -13,6 +13,7 @@
     "bootstrap": "=v3.1.1",
     "dropzone": "=4.2.0",
     "eventemitter2": "=0.4.14",
+    "fileapi": "=2.0.17",
     "jquery": "=2.1.4",
     "jquery.atwho": "=0.5.2",
     "keymaster": "=1.6.3",

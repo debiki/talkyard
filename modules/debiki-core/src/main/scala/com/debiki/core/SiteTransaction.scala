@@ -101,6 +101,7 @@ trait SiteTransaction {
   def insertPageMetaMarkSectionPageStale(newMeta: PageMeta)
   def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean)
 
+  def markPagesWithUserAvatarAsStale(userId: UserId)
   def markSectionPageContentHtmlAsStale(categoryId: CategoryId)
   def loadCachedPageContentHtml(pageId: PageId): Option[(String, CachedPageVersion)]
   // (Could move this one to a transactionless Dao interface?)
@@ -117,6 +118,11 @@ trait SiteTransaction {
   def insertUploadedFileMeta(uploadRef: UploadRef, sizeBytes: Int, mimeType: String,
         dimensions: Option[(Int, Int)])
   def deleteUploadedFileMeta(uploadRef: UploadRef)
+
+  /** Uploaded files are referenced via 1) URLs in posts (e.g. `<a href=...> <img src=...>`)
+    * and 2) from users, if a file is someone's avatar image.
+    */
+  def updateUploadedFileReferenceCount(uploadRef: UploadRef)
 
   /** Remembers that an uploaded file is referenced from this post. */
   def insertUploadedFileReference(postId: UniquePostId, uploadRef: UploadRef, addedById: UserId)
