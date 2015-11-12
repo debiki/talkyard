@@ -29,27 +29,32 @@ import play.{api => p}
 
 object ImageUtils {
 
-  /** 1.0 is max. */
-  val JpgCompressionQuality = 0.75f
-
   // For now only!
   private val Mutex = new Object
 
 
-  def isProcessableImageSuffix(suffix: String): Boolean = {
-    // Skip SVG, cannot do anything with svg server side anyway?
-    // Skip tif & tiff, ImageIO.read() returns null.
-    val s = suffix.dropWhile(_ == '.')
-    s == "jpg" || s == "png" || s == "gif" || s == "bmp" || s == "mpo"
-  }
+  /** Estimates the image size. Assumes 65k colors, seems to work okay when combined
+    * with jpgCompressionQualityForSizeBytes(the-size) just below.
+    */
+  def imageSizeBytes(image: BufferedImage) =
+    image.getWidth * image.getHeight * 2 // * 2 means 2 bytes per pixel = 65536 = 65k colors
 
 
-  def canCompress(suffix: String): Boolean = {
-    // Which formats?
-    // .gif might be animated, would be destroyed if converted?
-    // .mpo is a 3d image, would be destroyed too I suppose.
-    val s = suffix.dropWhile(_ == '.')
-    s == "png" || s == "bmp"
+  /** Compresses large files more.
+    */
+  def jpgCompressionQualityForSizeBytes(sizeBytes: Int): Float = {
+    // Don't know how much sense these numbers make.
+    val Kilobytes = 1000
+    if (sizeBytes > 7000 * Kilobytes) 0.30f
+    else if (sizeBytes > 5000 * Kilobytes) 0.35f
+    else if (sizeBytes > 4000 * Kilobytes) 0.40f
+    else if (sizeBytes > 3000 * Kilobytes) 0.50f
+    else if (sizeBytes > 2100 * Kilobytes) 0.60f
+    else if (sizeBytes > 1500 * Kilobytes) 0.70f
+    else if (sizeBytes > 1000 * Kilobytes) 0.75f
+    else if (sizeBytes > 600 * Kilobytes) 0.80f
+    else if (sizeBytes > 400 * Kilobytes) 0.85f
+    else 0.90f
   }
 
 
@@ -80,7 +85,8 @@ object ImageUtils {
 
         // I think that without explicit mode, the compression quality will be ignored.
         params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT)
-        params.setCompressionQuality(JpgCompressionQuality)
+        val approxSizeBytes = imageSizeBytes(image)
+        params.setCompressionQuality(jpgCompressionQualityForSizeBytes(approxSizeBytes))
 
         val outputStream = new FileImageOutputStream(destination)
         writer.setOutput(outputStream)

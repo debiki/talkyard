@@ -54,11 +54,7 @@ trait UploadsDao {
       "DwE5KFY9", "File uploads disabled, config value missing: " +
         LocalhostUploadsDirConfigValueName)
 
-    // (Convert to lowercase, don't want e.g. both .JPG and .jpg.)
-    val uploadedDotSuffix = uploadedFileName.dropWhile(_ != '.').toLowerCase
-    if (uploadedDotSuffix.length > MaxSuffixLength)
-      throwBadRequest("DwE2FUP5", o"""File has too long suffix: '$uploadedFileName'
-        (max $MaxSuffixLength chars)""")
+    val uploadedDotSuffix = '.' + checkAndGetFileSuffix(uploadedFileName)
 
     val origFileSize = tempFile.length
     if (origFileSize >= maxUploadSizeBytes)
@@ -67,29 +63,32 @@ trait UploadsDao {
     var tempCompressedFile: Option[jio.File] = None
     var dimensions: Option[(Int, Int)] = None
 
-    val (optimizedFile, optimizedDotSuffix) =
-      if (!ImageUtils.isProcessableImageSuffix(uploadedDotSuffix)) {
-        (tempFile, uploadedDotSuffix)
-      }
-      else {
-        val image: BufferedImage = javax.imageio.ImageIO.read(tempFile)
-        if (image eq null) {
-          p.Logger.warn(o"""Cannot process $uploadedFileName with ImageIO —
-              remove its suffix from image format suffixes list? [DwE7MUF4]""")
-          (tempFile, uploadedDotSuffix)
+    // Try to convert the file to an image and then compress it. If this works and if
+    // the compressed file is smaller, then use it instead.
+    val (optimizedFile, optimizedDotSuffix) = {
+      val anyImage: Option[BufferedImage] =
+        try Option(javax.imageio.ImageIO.read(tempFile))
+        catch {
+          case _: jio.IOException =>
+            None // not an image, fine
         }
-        else {
+      anyImage match {
+        case None =>
+          (tempFile, uploadedDotSuffix)
+        case Some(image) =>
           dimensions = Some((image.getWidth, image.getHeight))
-          if (ImageUtils.canCompress(uploadedDotSuffix)) {
-            tempCompressedFile = Some(new jio.File(tempFile.toPath + ".compressed.jpg"))
-            ImageUtils.convertToCompressedJpeg(image, tempCompressedFile.get)
+          tempCompressedFile = Some(new jio.File(tempFile.toPath + ".compressed.jpg"))
+          ImageUtils.convertToCompressedJpeg(image, tempCompressedFile.get)
+          if (tempCompressedFile.get.length < tempFile.length) {
             (tempCompressedFile.get, ".jpg")
           }
           else {
+            tempCompressedFile.get.delete()
+            tempCompressedFile = None
             (tempFile, uploadedDotSuffix)
           }
-        }
       }
+    }
 
     val mimeType = java.nio.file.Files.probeContentType(optimizedFile.toPath.toAbsolutePath)
     val sizeBytes = {
@@ -266,6 +265,39 @@ object UploadsDao {
     val approvedRefs = post.approvedHtmlSanitized.map(findUploadRefsInText) getOrElse Set.empty
     val currentRefs = findUploadRefsInText(post.currentHtmlSanitizedToFindLinks(ReactRenderer))
     approvedRefs ++ currentRefs
+  }
+
+
+  def checkAndGetFileSuffix(fileName: String): String = {
+    // For now, require exactly 1 dot. Later: don't store the suffix at all?
+    // Instead, derive it based on the mime type. Could use Apache Tika.
+    // See: http://stackoverflow.com/questions/13650372/
+    //        how-to-determine-appropriate-file-extension-from-mime-type-in-java
+    // the answer: MimeTypes.getDefaultMimeTypes().forName("image/jpeg").getExtension()
+    // and: need include xml file from Tika jar, it has all mime definitions.
+
+    if (fileName.contains(".tar.")) throwForbidden(
+      "DwE8PMU2", o"""Please change the suffix from e.g. ".tar.gz" to ".tgz", because only the "
+      characters after the very last dot are used as the suffix""")
+
+    if (fileName.count(_ == '.') > 1) throwForbidden(
+      "DwE2FPYU0", o"""The file name should have exactly one dot, otherwise I don't know where
+           the file suffix starts""")
+
+    if (!fileName.exists(_ == '.'))
+      throwForbidden("DwE6UPM5", "The file has no suffix")
+
+    // (Convert to lowercase, don't want e.g. both .JPG and .jpg.)
+    val suffix = fileName.takeRightWhile(_ != '.').toLowerCase
+
+    if (suffix.length > MaxSuffixLength)
+      throwBadRequest("DwE7F3P5", o"""File has too long suffix: '$fileName'
+        (max $MaxSuffixLength chars)""")
+
+    if (suffix.isEmpty)
+      throwForbidden("DwE2WUMF", "Empty file suffix, nothing after the dot in the file name")
+
+    suffix
   }
 
 }
