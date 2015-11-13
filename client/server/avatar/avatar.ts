@@ -1,0 +1,1 @@
+../../app/avatar/avatar.ts

@@ -149,6 +149,8 @@ interface Topic {
   url: string;
   categoryId: number;
   authorId: number;
+  authorUsername?: number;
+  authorFullName?: number;
   authorAvatarUrl?: string;
   pinOrder?: number;
   pinWhere?: PinPageWhere;

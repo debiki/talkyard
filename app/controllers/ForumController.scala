@@ -244,6 +244,8 @@ object ForumController extends mvc.Controller {
       "numOrigPostLikes" -> topic.meta.numOrigPostLikeVotes,
       "numOrigPostReplies" -> topic.meta.numOrigPostRepliesVisible,
       "authorId" -> JsNumber(topic.meta.authorId),
+      "authorUsername" -> JsStringOrNull(topicStuff.authorUsername),
+      "authorFullName" -> JsStringOrNull(topicStuff.authorFullName),
       "authorAvatarUrl" -> JsStringOrNull(topicStuff.authorAvatarUrl),
       "createdEpoch" -> date(topic.meta.createdAt),
       "bumpedEpoch" -> dateOrNull(topic.meta.bumpedAt),

@@ -40,7 +40,6 @@ module boo {
 };
 //------------------------------------------------------------------------------
 
-var SystemUserId = -1; // also ... elsewhere?
 var NoPostId = -1; // also in editor.ts
 var MaxGuestId = -2; // place where?
 function isGuest(user: CompleteUser) {
@@ -704,7 +703,7 @@ var Thread = createComponent({
         !this.props.abbreviate;
 
     var showAvatar = !renderCollapsed && this.props.depth === 1 && !this.props.is2dTreeColumn;
-    var anyAvatar = !showAvatar ? null : Avatar({
+    var anyAvatar = !showAvatar ? null : debiki2.avatar.Avatar({
       // For now: — later, replace authorUsername etc with a { id, username, fullName } object?
       user: {
         id: post.authorId,
@@ -744,119 +743,6 @@ var Thread = createComponent({
           r.ol({ className: 'dw-res dw-singlereplies' },
             children))));
   },
-});
-
-
-var NumAvatarColors = 10;
-var AvatarColorHueDistance = 360 / NumAvatarColors;
-var textAvatarsTaken = {}; // for now [95MFU2]
-var textAvatarsByUserId = {}; // for now [95MFU2]
-
-
-var Avatar = createComponent({
-  makeTextAvatar: function() {
-    var user: BriefUser = this.props.user;
-    var result = textAvatarsByUserId[user.id];
-    if (result)
-      return result;
-
-    var color;
-    var firstLetterInName;
-    var isGuestClass = '';
-    var manyLettersClass = '';
-
-    if (user.username) {
-      firstLetterInName = user.username[0].toUpperCase();
-    }
-    else if (user.fullName) {
-      firstLetterInName = user.fullName[0].toUpperCase();
-    }
-    else {
-      debiki2.die("Name missing: " + JSON.stringify(user) + " [EdE7UMYP3]");
-    }
-
-    if (user.id > 0) {
-      // Always use the same color for the same user (unless the color palette gets changed).
-      var colorIndex = user.id % NumAvatarColors;
-      var hue = AvatarColorHueDistance * colorIndex;
-      var saturation = 58;
-      var lightness = 76;
-      if (this.props.darker) {
-        lightness -= 4;
-        // Reduce saturation too, or the color becomes too strong (since darker = more color here).
-        saturation -= 3;
-      }
-      if (50 <= hue && hue <= 80) {
-        // These colors (yellow, green) are hard to discern. Make them stronger.
-        lightness -= 10;
-        saturation -= 4;
-      }
-      else if (40 <= hue && hue <= 185) {
-        // A bit hard to discern.
-        lightness -= 5;
-        saturation -= 2;
-      }
-      color = 'hsl(' + hue + ', ' + saturation + '%, ' + lightness + '%)';
-    }
-    else if (user.id === SystemUserId) {
-      isGuestClass = ' esAvtr-sys';
-    }
-    else {
-      // Give all guest users the same boring gray color.
-      isGuestClass = ' esAvtr-gst';
-    }
-
-    // Append a number to make the letters unique on this page.
-    // Possibly different numbers on different pages, for the same user.
-    var number = 1;
-    var text = firstLetterInName;
-    var textAndColor = text + colorIndex;
-    var alreadyInUse = textAvatarsTaken[textAndColor];
-    while (alreadyInUse) {
-      number += 1;
-      if (number >= 10) {
-        text = firstLetterInName + '?';
-        break;
-      }
-      text = firstLetterInName + number;
-      textAndColor = text + colorIndex;
-      alreadyInUse = textAvatarsTaken[textAndColor];
-    }
-
-    if (text.length > 1) {
-      manyLettersClass = ' edAvtr-manyLetters';
-    }
-
-    result = {
-      text: text,
-      classes: ' esAvtr-ltr' + manyLettersClass + isGuestClass,
-      color: color,
-    };
-
-    textAvatarsTaken[textAndColor] = true;
-    textAvatarsByUserId[user.id] = result;
-    return result;
-  },
-
-  render: function() {
-    var user: BriefUser = this.props.user;
-    var extraClasses = '';
-    var content;
-    var styles;
-    if (user.avatarUrl) {
-      content = r.img({ src: user.avatarUrl });
-    }
-    else {
-      var lettersClassesColor = this.makeTextAvatar();
-      extraClasses = lettersClassesColor.classes;
-      content = lettersClassesColor.text;
-      if (lettersClassesColor.color) {
-        styles = { backgroundColor: lettersClassesColor.color };
-      }
-    }
-    return (
-      r.div({ className: 'edAvtr' + extraClasses, style: styles }, content));
-  }
 });
 
 
@@ -1101,8 +987,8 @@ var PostHeader = createComponent({
     var linkFn = this.props.abbreviate ? 'span' : 'a';
 
     var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
-    var anyAvatar = !showAvatar ? null : Avatar({
-      darker: true, // because it's small, hard to read small text on a bright background
+    var anyAvatar = !showAvatar ? null : debiki2.avatar.Avatar({
+      tiny: true,
       // For now: — later, replace authorUsername etc with a { id, username, fullName } object?
       user: {
         id: post.authorId,
@@ -1683,8 +1569,7 @@ function renderTitleBodyComments() {
   if (!root)
     return;
 
-  textAvatarsTaken = {}; // for now [95MFU2]
-  textAvatarsByUserId = {};
+  debiki2.avatar.resetAvatars();
 
   var store: Store = debiki2.ReactStore.allData();
   if (store.pageRole === PageRole.Forum) {
@@ -1703,8 +1588,7 @@ function renderTitleBodyComments() {
 
 
 function renderTitleBodyCommentsToString() {
-  textAvatarsTaken = {}; // for now [95MFU2]
-  textAvatarsByUserId = {};
+  debiki2.avatar.resetAvatars();
 
   // Comment in the next line to skip React server side and debug in browser only.
   //return '<p class="dw-page" data-reactid=".123" data-react-checksum="123">react_skipped</p>'

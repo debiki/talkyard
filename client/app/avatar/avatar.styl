@@ -1,0 +1,113 @@
+/*
+ * Copyright (C) 2015 Kaj Magnus Lindberg
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+@media (max-width: $minShowAvatarWidth - 1)
+  .edAvtr
+    display: none;
+
+@media (min-width: $minShowAvatarWidth)
+  .edAvtr // avatar
+    float: left;
+    position: absolute;
+    left: -1px;
+    width: 48px;
+    height: 48px;
+
+    img
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+
+  .esAvtr-ltr  // avatar with a letter, no image uploaded
+    padding-left: 5px;
+    letter-spacing: 0.1ex;
+    padding: 6px 0 0 2px;
+    text-align: center;
+    font-size: 25px;
+    color: white;
+    border-radius: 50%;
+    // The letter avatars look so large (because they're a bulb of color?),
+    // so make them a few pixels smaller:
+    width: 46px;
+    height: 46px;
+
+  .edAvtr-manyLetters
+    padding: 10px 0 0 4px;
+    font-size: 21px;
+
+  .esAvtr-gst
+    background: hsl(0, 0%, 92%);
+    color: hsl(0, 0%, 57%);
+
+  // w-avtr = "with avatar"
+  .ed-w-avtr > .dw-p,
+  .ed-w-avtr > .dw-single-and-multireplies
+    margin-left: 56px;
+
+  // Without this, the avatars won't align vertically with the post header, because of
+  // some line-height.
+  .dw-chat
+    .edAvtr
+      top: 15px;
+    & > .dw-res > li:first-child .edAvtr
+      top: 10px;
+
+.esAvtr-sys
+  background-color: hsl(0, 0%, 54%);
+
+.dw-p-hd .esAvtr-tny
+  top: -5px;
+  left: -2px;
+
+.esAvtr-tny
+  position: relative;
+  width: 25px;
+  height: 25px;
+  margin-right: 7px;
+  &.esAvtr-ltr
+    padding: 6px 0 0 1px;
+    font-size: 15px;
+    font-weight: bold; // small low contrast font, otherwise hard to read
+  &.edAvtr-manyLetters
+    width: 31px; // now it's an eclipse, why not
+    padding: 5px 0 0 1px;
+    font-size: 14px;
+  &.esAvtr-gst
+    color: hsl(0, 0%, 50%); // smaller font -> increase contrast
+
+  img
+    width: 25px;
+    height: 25px;
+
+  &:hover
+    //background: hsl(210, 100%, 90%);
+    //outline: 3px solid hsl(210, 100%, 90%);
+    opacity: 0.6;
+    cursor: pointer;
+  img
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    cursor: pointer;
+
+.dw-forum .esAvtr-tny
+  padding: 3px 0 0 2px; // why needed? oh well
+
+
+
+// vim: fdm=marker et ts=2 sw=2 tw=0 list

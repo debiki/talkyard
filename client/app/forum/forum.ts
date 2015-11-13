@@ -701,10 +701,15 @@ var TopicRow = createComponent({
     var activityAgo = timeAgo(topic.bumpedEpoch || topic.createdEpoch);
 
     // Later: add last poster, most frequent poster, etc, but for now:
-    var userAvatars = !topic.authorAvatarUrl ? null :
-      r.div({ className: 'esTinyAvtr', title: "Original Poster",
-          onClick: () => pagedialogs.getAboutUserDialog().openForUserId(topic.authorId) },
-        r.img({ src: topic.authorAvatarUrl }));
+    var userAvatars = avatar.Avatar({
+      tiny: true,
+      user: {
+        id: topic.authorId,
+        username: topic.authorUsername,
+        fullName: topic.authorFullName,
+        avatarUrl: topic.authorAvatarUrl,
+      }
+    });
 
     return (
       r.tr({},
