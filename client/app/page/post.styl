@@ -31,7 +31,7 @@
     &.esAvtr-ltr  // avatar with a letter, no image uploaded
       padding-left: 5px;
       letter-spacing: 0.1ex;
-      padding: 7px 0 0 2px;
+      padding: 6px 0 0 2px;
       text-align: center;
       font-size: 25px;
       color: white;
@@ -46,7 +46,8 @@
       font-size: 21px;
 
     &.esAvtr-gst
-      background: hsl(0, 0%, 71%);
+      background: hsl(0, 0%, 92%);
+      color: hsl(0, 0%, 57%);
 
   // w-avtr = "with avatar"
   .ed-w-avtr > .dw-p,
@@ -76,8 +77,11 @@
     font-size: 15px;
     font-weight: bold; // small low contrast font, otherwise hard to read
   &.edAvtr-manyLetters
-    padding: 5px 0 0 3px;
+    width: 31px; // now it's an eclipse, why not
+    padding: 5px 0 0 1px;
     font-size: 14px;
+  &.esAvtr-gst
+    color: hsl(0, 0%, 50%); // smaller font -> increase contrast
 
   img
     width: 25px;

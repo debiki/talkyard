@@ -762,7 +762,6 @@ var Avatar = createComponent({
 
     var color;
     var firstLetterInName;
-    var anyQuestionMark = '';
     var isGuestClass = '';
     var manyLettersClass = '';
 
@@ -771,7 +770,6 @@ var Avatar = createComponent({
     }
     else if (user.fullName) {
       firstLetterInName = user.fullName[0].toUpperCase();
-      anyQuestionMark = '?';
     }
     else {
       debiki2.die("Name missing: " + JSON.stringify(user) + " [EdE7UMYP3]");
@@ -782,7 +780,7 @@ var Avatar = createComponent({
       var colorIndex = user.id % NumAvatarColors;
       var hue = AvatarColorHueDistance * colorIndex;
       var saturation = 58;
-      var lightness = 78;
+      var lightness = 76;
       if (this.props.darker) {
         lightness -= 4;
         // Reduce saturation too, or the color becomes too strong (since darker = more color here).
@@ -811,17 +809,18 @@ var Avatar = createComponent({
     // Append a number to make the letters unique on this page.
     // Possibly different numbers on different pages, for the same user.
     var number = 1;
-    var text = firstLetterInName + anyQuestionMark;
-    var letterColor = text + colorIndex;
-    var textTaken = textAvatarsTaken[letterColor];
-    while (textTaken) {
+    var text = firstLetterInName;
+    var textAndColor = text + colorIndex;
+    var alreadyInUse = textAvatarsTaken[textAndColor];
+    while (alreadyInUse) {
       number += 1;
       if (number >= 10) {
         text = firstLetterInName + '?';
         break;
       }
-      text = firstLetterInName + number + anyQuestionMark;
-      textTaken = textAvatarsTaken[letterColor];
+      text = firstLetterInName + number;
+      textAndColor = text + colorIndex;
+      alreadyInUse = textAvatarsTaken[textAndColor];
     }
 
     if (text.length > 1) {
@@ -834,7 +833,7 @@ var Avatar = createComponent({
       color: color,
     };
 
-    textAvatarsTaken[letterColor] = true;
+    textAvatarsTaken[textAndColor] = true;
     textAvatarsByUserId[user.id] = result;
     return result;
   },
