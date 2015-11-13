@@ -56,9 +56,11 @@ trait UploadsDao {
 
     val uploadedDotSuffix = '.' + checkAndGetFileSuffix(uploadedFileName)
 
-    val origFileSize = tempFile.length
-    if (origFileSize >= maxUploadSizeBytes)
-      throwForbidden("DwE5YFK2", s"File too large, more than $origFileSize bytes")
+    val origMimeType = java.nio.file.Files.probeContentType(tempFile.toPath.toAbsolutePath)
+    val origSize = tempFile.length
+    if (origSize >= maxUploadSizeBytes)
+      throwForbidden("DwE5YFK2", s"File too large, more than $origSize bytes")
+
 
     var tempCompressedFile: Option[jio.File] = None
     var dimensions: Option[(Int, Int)] = None
@@ -77,15 +79,23 @@ trait UploadsDao {
           (tempFile, uploadedDotSuffix)
         case Some(image) =>
           dimensions = Some((image.getWidth, image.getHeight))
-          tempCompressedFile = Some(new jio.File(tempFile.toPath + ".compressed.jpg"))
-          ImageUtils.convertToCompressedJpeg(image, tempCompressedFile.get)
-          if (tempCompressedFile.get.length < tempFile.length) {
-            (tempCompressedFile.get, ".jpg")
+          if (origMimeType == ImageUtils.MimeTypeJpeg && origSize < MaxSkipImageCompressionBytes) {
+            // Don't compress, so small already.
+            (tempFile, ".jpg")
           }
           else {
-            tempCompressedFile.get.delete()
-            tempCompressedFile = None
-            (tempFile, uploadedDotSuffix)
+            tempCompressedFile = Some(new jio.File(tempFile.toPath + ".compressed.jpg"))
+            ImageUtils.convertToCompressedJpeg(image, tempCompressedFile.get)
+            val compressedSize = tempCompressedFile.get.length
+            val tempFileSize = tempFile.length
+            if (compressedSize < tempFileSize) {
+              (tempCompressedFile.get, ".jpg")
+            }
+            else {
+              tempCompressedFile.get.delete()
+              tempCompressedFile = None
+              (tempFile, uploadedDotSuffix)
+            }
           }
       }
     }
@@ -172,9 +182,11 @@ object UploadsDao {
   val maxUploadSizeBytes = Play.configuration.getInt("debiki.uploads.maxKiloBytes").map(_ * 1000)
     .getOrElse(3*1000*1000)
 
-  val MaxAvatarTinySizeBytes = 1*1000
+  val MaxAvatarTinySizeBytes = 2*1000
   val MaxAvatarSmallSizeBytes = 5*1000
   val MaxAvatarMediumSizeBytes = 100*1000
+
+  val MaxSkipImageCompressionBytes = 5 * 1000
 
   val anyUploadsDir = {
     val value = Play.configuration.getString(LocalhostUploadsDirConfigValueName)

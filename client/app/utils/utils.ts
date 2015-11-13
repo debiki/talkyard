@@ -26,12 +26,17 @@ var d: any = { i: debiki.internal, u: debiki.v0.util };
 
 
 export function putInLocalStorage(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
+  localStorage.setItem(key, JSON.stringify(value));
 }
 
 export function getFromLocalStorage(key) {
-    var value = localStorage.getItem(key);
-    return value && JSON.parse(value);
+  var value = localStorage.getItem(key);
+  return value && JSON.parse(value);
+}
+
+// There's a server side version (in ../../server/) that throws a helpful error.
+export function removeFromLocalStorage(key) {
+  localStorage.removeItem(key);
 }
 
 // From here: http://stackoverflow.com/a/7616484/694469

@@ -74,11 +74,7 @@ export var HelpMessageBox = createComponent({
   },
 
   hideThisHelp: function() {
-    var closedHelpMessages = debiki2.getFromLocalStorage('closedHelpMessages') || {};
-    var message: HelpMessage = this.props.message;
-    closedHelpMessages[message.id] = message.version;
-    debiki2.putInLocalStorage('closedHelpMessages', closedHelpMessages);
-    this.setState({ hidden: true });
+    ReactActions.hideHelpMessages(this.props.message);
     /* This dialog feels annoying! I'd better just replace this help box with
        a show-help-again help box, in a different color? Rather than poppuing up a dialog.
     if (!localStorage.getItem('hasShownShowHelpAgainHelp')) {
@@ -91,8 +87,9 @@ export var HelpMessageBox = createComponent({
     if (this.state.hidden)
       return null;
 
+    var largeClass = this.props.large ? ' dwHelp-large' : '';
     return (
-      r.div({ className: 'dw-help' },
+      r.div({ className: 'dw-help' + largeClass },
         r.div({ className: 'dw-help-text' },
           this.props.message.content),
         r.a({ className: 'icon-cancel dw-hide', onClick: this.hideThisHelp }, "Hide")));

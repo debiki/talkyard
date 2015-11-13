@@ -414,8 +414,19 @@ var SocialLinks = createComponent({
 
 
 var RootPostAndComments = createComponent({
+  getInitialState: function() {
+    return { showClickReplyInstead: debiki2.getFromLocalStorage('showClickReplyInsteadTips') };
+  },
+
   onChatReplyClick: function() {
-    debiki.internal.showReplyFormForFlatChat();
+    if (this.state.showClickReplyInstead) {
+      // We've shown the Click-Reply-instead tips already, so now do open the chat comment editor.
+      debiki.internal.showReplyFormForFlatChat();
+    }
+    else {
+      this.setState({ showClickReplyInstead: true });
+      debiki2.putInLocalStorage('showClickReplyInsteadTips', true);
+    }
   },
 
   render: function() {
@@ -526,6 +537,17 @@ var RootPostAndComments = createComponent({
           Thread(threadProps)));
     });
 
+    var anyClickReplyInsteadHelpMessage;
+    if (this.state.showClickReplyInstead) {
+      anyClickReplyInsteadHelpMessage =
+          r.div({},
+            debiki2.help.HelpMessageBox({ large: true, message: { id: 'EsH5UGPM2', version: 1,
+              content: r.span({},
+                r.b({}, "If you want to reply to someone"), ", then instead click ",
+                r.span({ className: 'icon-reply', style: { margin: '0 1ex' }}, "Reply"),
+                " just below his/her post.") }}));
+    }
+
     return (
       r.div({ className: threadClass },
         body,
@@ -544,6 +566,7 @@ var RootPostAndComments = createComponent({
             r.ol({ className: 'dw-res dw-singlereplies' },
               flatComments))),
 
+        anyClickReplyInsteadHelpMessage,
         r.div({ className: 'dw-chat-as' },
           r.a({ className: 'dw-a dw-a-reply icon-comment-empty', onClick: this.onChatReplyClick,
               title: "Add a chat comment if you want to talk lightly and casually " +

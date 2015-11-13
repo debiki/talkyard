@@ -4,12 +4,15 @@
 //------------------------------------------------------------------------------
 
 export function putInLocalStorage(key, value) {
-  die('putInLocalStorage called server side [DwE902D3]');
+  throw new Error('putInLocalStorage called server side [DwE902D3]');
 }
 
-export function getFromLocalStorage(key) {
-  die('getFromLocalStorage called server side [DwE2fwk3K]');
-  return '';
+export function getFromLocalStorage(key): string {
+  return null;
+}
+
+export function removeFromLocalStorage(key) {
+  throw new Error('removeFromLocalStorage called server side [DwE8PUMK2]');
 }
 
 //------------------------------------------------------------------------------

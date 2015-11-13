@@ -201,8 +201,15 @@ ReactDispatcher.register(function(payload) {
       store.siteStatus = action.newStatus;
       break;
 
+    case ReactActions.actionTypes.HideHelpMessage:
+      dieIf(!store.user, 'EsE8UGM5');
+      store.user.closedHelpMessages[action.message.id] = action.message.version;
+      putInLocalStorage('closedHelpMessages', store.user.closedHelpMessages);
+      break;
+
     case ReactActions.actionTypes.ShowHelpAgain:
       putInLocalStorage('closedHelpMessages',  {});
+      localStorage.removeItem('showClickReplyInsteadTips');
       store.user.closedHelpMessages = {};
       break;
 

@@ -199,12 +199,12 @@ object EditController extends mvc.Controller {
     |"""
 
   val ChatCommentGuidelines = i"""
-    |<p>You're writing a chat comment (or status update).
-    |
-    |<p>If you intended to reply to the Original Post (at the top of the page),
-    |then click Cancel below, and instead click the reply button just below the Original Post.
-    |
-    |<p>Be kind to the others.
+    |<p>In a chat comment, you can for example:</p>
+    |<ul>
+    |<li>Ask the Original Poster for clarifications.</li>
+    |<li>Talk lightly and causally about this topic.</li>
+    |<li>Post a topic status update.</li>
+    |</ul>
     |"""
 
   val GiveCritiqueGuidelines = /* [plugin] */ i"""

@@ -54,7 +54,8 @@ object ImageUtils {
     else if (sizeBytes > 1000 * Kilobytes) 0.75f
     else if (sizeBytes > 600 * Kilobytes) 0.80f
     else if (sizeBytes > 400 * Kilobytes) 0.85f
-    else 0.90f
+    else if (sizeBytes > 40 * Kilobytes) 0.90f
+    else 0.95f
   }
 
 

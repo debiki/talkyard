@@ -63,6 +63,8 @@
   .dw-a-close,
   .dw-a-reopen
     margin-left: 10px;
+  .dw-a
+    top: 0; // undo [8MUFW2] below
 
 .DW.DW .dw-ar-t > .dw-p-as > .dw-a-reply
   font-weight: bold;
@@ -94,10 +96,13 @@
   float: right;
 
 .DW .dw-t > .dw-p-as .dw-a
-  padding: 12px 9px 10px 9px;  //  12px high ?? what, who cares?
+  padding: 12px 9px 10px 9px;
   background: #fff;
   color: hsl(210, 0%, 55%);
   border: none;
+  // Looks better if placed closer the post: (don't remove padding-top, then hard to touch-click)
+  position: relative;
+  top: -5px;  // [8MUFW2]
 
   &.dw-a-solve,
   &.dw-a-unsolve

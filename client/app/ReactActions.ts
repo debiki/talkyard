@@ -51,6 +51,7 @@ export var actionTypes = {
   ShowPost: 'ShowPost',
   SetHorizontalLayout: 'SetHorizontalLayout',
   ChangeSiteStatus: 'ChangeSiteStatus',
+  HideHelpMessage: 'HideHelpMessage',
   ShowHelpAgain: 'ShowHelpAgain',
 }
 
@@ -381,6 +382,14 @@ export function changeSiteStatus(newStatus: string) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.ChangeSiteStatus,
     newStatus: newStatus
+  });
+}
+
+
+export function hideHelpMessages(message) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.HideHelpMessage,
+    message: message,
   });
 }
 

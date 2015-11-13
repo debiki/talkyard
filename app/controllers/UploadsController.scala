@@ -128,7 +128,7 @@ object UploadsController extends mvc.Controller {
         throwForbidden("DwE7YMF2", s"The $whichFile is too large: $length bytes, max is: $maxBytes")
     }
 
-    throwIfTooLarge("tiny avatar image", smallFile.ref.file, MaxAvatarTinySizeBytes)
+    throwIfTooLarge("tiny avatar image", tinyFile.ref.file, MaxAvatarTinySizeBytes)
     throwIfTooLarge("small avatar image", smallFile.ref.file, MaxAvatarSmallSizeBytes)
     throwIfTooLarge("medium avatar image", mediumFile.ref.file, MaxAvatarMediumSizeBytes)
 
