@@ -31,10 +31,15 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
+var Modal = reactCreateFactory(ReactBootstrap.Modal);
+var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
+var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
+var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
+var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+
 var theEditor: any;
 var $: any = window['jQuery'];
 var NoPostId = -1; // also in reply.js
-
 
 function ensureEditorCreated(success) {
   if (theEditor) {
@@ -95,6 +100,18 @@ export var Editor = createComponent({
     this.startMentionsParser();
     this.makeEditorResizable();
     this.createDropFileTarget();
+    this.perhapsShowGuidelineModal();
+    // Don't scroll the main discussion area, when scrolling inside the editor.
+    /* Oops this breaks scrolling in the editor and preview.
+    $(this.refs.editor.getDOMNode()).on('scroll touchmove mousewheel', function(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    }); */
+  },
+
+  componentDidUpdate: function() {
+    this.perhapsShowGuidelineModal();
   },
 
   startMentionsParser: function() {
@@ -117,7 +134,7 @@ export var Editor = createComponent({
     }
     var placeholder = $(this.refs.placeholder.getDOMNode());
     var editor = $(this.refs.editor.getDOMNode());
-    editor.css('border-top', '8px solid hsl(0, 0%, 74%)');
+    // We also add class 'resizable' a bit below [7UGM27] because sometimes React removes it.
     editor.resizable({
       direction: ['top'],
       resize: function() {
@@ -135,7 +152,7 @@ export var Editor = createComponent({
         url: '/-/upload-public-file',
         uploadMultiple: false, // only one at a time, so we know which checksum is for which file
         maxFilesize: ReactStore.allData().maxUploadSizeBytes * 1.0 / 1000 / 1000, // megabytes
-        clickable: false, // a click instead positions the cursor in the textarea
+        clickable: '.esUploadBtn',
         init: function() {
           this.on('sending', (file, xhr, formData) => {
             xhr.setRequestHeader('X-XSRF-TOKEN', $.cookie('XSRF-TOKEN'));
@@ -359,21 +376,38 @@ export var Editor = createComponent({
   // Remembers that these guidelines have been hidden, by storing a hash of the text in localStorage.
   // So, if the guidelines get changed, they'll be shown again (good). COULD delete old hashes if
   // we end up storing > 100? hashes?
-  hideGuideline: function() {
+  hideGuidelines: function() {
     var guidelines = this.state.guidelines;
     guidelines.hidden = true;
-    this.setState(guidelines);
+    this.setState({
+      guidelines: guidelines,
+      showGuidelinesInModal: false,
+    });
     var hash = hashStringToNumber(guidelines.safeHtml);
     var hiddenGuidelinesHashes = getFromLocalStorage('dwHiddenGuidelinesHashes') || {};
     hiddenGuidelinesHashes[hash] = true;
     putInLocalStorage('dwHiddenGuidelinesHashes', hiddenGuidelinesHashes);
   },
 
-  showGuideline: function() {
+  showGuidelines: function() {
     var guidelines = this.state.guidelines;
     guidelines.hidden = false;
-    this.setState(guidelines);
+    this.setState({ guidelines: guidelines });
     // Leave hidden on page reload? I.e. don't update localStorage.
+  },
+
+  // If we're showing some guidelines, but they're not visible on screen, then show them
+  // in a modal dialog instead — guidelines are supposedly fairly important.
+  perhapsShowGuidelineModal: function() {
+    if (!this.refs.guidelines)
+      return;
+
+    // If the guidelines are visible, we don't need no modal.
+    var rect = this.refs.guidelines.getDOMNode().getBoundingClientRect();
+    if (rect.top >= 0)
+      return;
+
+    this.setState({ showGuidelinesInModal: true });
   },
 
   onTextEdited: function(event) {
@@ -444,6 +478,17 @@ export var Editor = createComponent({
     });
   },
 
+  togglePreview: function() {
+    this.setState({
+      showOnlyPreview: !this.state.showOnlyPreview,
+      showMinimized: false,
+    });
+  },
+
+  toggleMinimized: function() {
+    this.setState({ showMinimized: !this.state.showMinimized });
+  },
+
   showEditor: function() {
     this.setState({ visible: true });
     if (d.i.isInEmbeddedEditor) {
@@ -493,23 +538,29 @@ export var Editor = createComponent({
     if (guidelines && guidelines.safeHtml) {
       if (guidelines.hidden) {
         showGuidelinesBtn =
-          r.a({ className: 'icon-info-circled', onClick: this.showGuideline });
+          r.a({ className: 'icon-info-circled', onClick: this.showGuidelines });
+      }
+      else if (this.state.showGuidelinesInModal) {
+        // Skip the post-it style guidelines just below.
       }
       else {
         guidelinesElem =
-          r.div({ className: 'dw-editor-guidelines-wrap' },
+          r.div({ className: 'dw-editor-guidelines-wrap', ref: 'guidelines' },
             r.div({ className: 'dw-editor-guidelines clearfix' },
               r.div({ className: 'dw-editor-guidelines-text',
                 dangerouslySetInnerHTML: { __html: this.state.guidelines.safeHtml }}),
-              r.a({ className: 'icon-cancel dw-hide', onClick: this.hideGuideline }, "Hide")));
+              r.a({ className: 'icon-cancel dw-hide', onClick: this.hideGuidelines }, "Hide")));
       }
     }
+
+    var guidelinesModal = GuidelinesModal({ guidelines: guidelines,
+        isOpen: this.state.showGuidelinesInModal, close: this.hideGuidelines });
 
     if (this.state.newForumPageRole) {
       titleInput =
           r.input({ className: 'title-input form-control', type: 'text', ref: 'titleInput',
               key: this.state.newForumPageRole,
-              placeholder: "What is this about, in one brief sentence?" });
+              placeholder: "Type a title — what is this about, in one brief sentence?" });
     }
 
     var editingPostId = this.state.editingPostId;
@@ -605,6 +656,14 @@ export var Editor = createComponent({
       maxHeight: screen.height / 2.5
     };
 
+    var anyTextareaInstructions;
+    if (this.state.newForumPageRole === PageRole.Critique) {  // [plugin]
+      anyTextareaInstructions =
+          r.div({ className: 'editor-instructions' },
+              "Add a link to your work, or upload an image. " +
+              "And tell people what you want feedback about:");
+    }
+
     var textarea =
         r.textarea({ className: 'editor form-control', ref: 'textarea', value: this.state.text,
             onChange: this.onTextEdited,
@@ -615,28 +674,59 @@ export var Editor = createComponent({
         r.div({ className: 'dw-preview-help' },
           help.HelpMessageBox({ message: previewHelpMessage }));
 
+    // (The $.resizable plugin needs class 'resizable' here. [7UGM27])
+    var editorClasses = d.i.isInEmbeddedEditor ? '' : 'editor-box-shadow resizable';
+    editorClasses += this.state.showMinimized ? ' editor-minimized' : '';
+
+    var editorStyles = this.state.showOnlyPreview ? { display: 'none' } : null;
+    var previewStyles = this.state.showOnlyPreview ? { display: 'block' } : null;
+
     return (
       r.div({ style: styles },
+        guidelinesModal,
         r.div({ id: 'debiki-editor-placeholder', ref: 'placeholder' }),
-        r.div({ id: 'debiki-editor-controller', ref: 'editor', style: maxHeightCss },
+        r.div({ id: 'debiki-editor-controller', ref: 'editor', style: maxHeightCss,
+            className: editorClasses },
           guidelinesElem,
           r.div({ id: 'editor-after-borders' },
-            r.div({ className: 'editor-area' },
+            r.div({ className: 'editor-area', style: editorStyles },
               r.div({ className: 'editor-area-after-borders' },
                 r.div({ className: 'dw-doing-what' },
                   doingWhatInfo, showGuidelinesBtn),
                 titleInput,
-                r.div({ className: 'editor-wrapper' },
-                  textarea))),
-            r.div({ className: 'preview-area' },
+                anyTextareaInstructions,
+                textarea)),
+            r.div({ className: 'preview-area', style: previewStyles },
               r.div({}, titleInput ? 'Preview: (title excluded)' : 'Preview:'),
               previewHelp,
               r.div({ className: 'preview', ref: 'preview',
                   dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
             r.div({ className: 'submit-cancel-btns' },
-              Button({ onClick: this.onSaveClick }, saveButtonTitle),
+              Button({ onClick: this.onSaveClick, bsStyle: 'primary' }, saveButtonTitle),
               Button({ onClick: this.onCancelClick }, 'Cancel'),
+              Button({ className: 'esUploadBtn icon-upload' }, 'Upload'),
+              // These buttons are hidden via CSS if the window is wide.
+              Button({ onClick: this.toggleMinimized, id: 'esMinimizeBtn',
+                  bsStyle: (this.state.showMinimized ? 'primary' : undefined) },
+                this.state.showMinimized ? 'Show editor again' : 'Minimize'),
+              Button({ onClick: this.togglePreview, id: 'esPreviewBtn' },
+                this.state.showOnlyPreview ? 'Edit' : 'Preview'),
               anyViewHistoryButton)))));
+  }
+});
+
+
+var GuidelinesModal = createClassAndFactory({
+  render: function () {
+    var body = !this.props.isOpen ? null :
+      r.div({ className: 'dw-editor-guidelines-text',
+        dangerouslySetInnerHTML: { __html: this.props.guidelines.safeHtml }});
+    return (
+      Modal({ show: this.props.isOpen, onHide: this.props.close,
+          dialogClassName: 'es-guidelines-modal' },
+        // ModalHeader({}, ModalTitle({}, "Guidelines")),
+        ModalBody({}, body),
+        ModalFooter({}, Button({ onClick: this.props.close }, "Okay"))));
   }
 });
 

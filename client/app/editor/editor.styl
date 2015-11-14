@@ -1,4 +1,6 @@
 
+$spaceForButtons = 45px;
+$showPreviewMinWidth = 800px;
 
 .dw-embedded-editor
   #debiki-editor-controller
@@ -19,11 +21,31 @@
   background: hsl(0, 0%, 89%)
   z-index: 1030
 
+  &.editor-box-shadow
+    box-shadow: 0px -6px 24px 10px hsl(0, 0%, 50%);
+
+  @media (max-width: $showPreviewMinWidth)
+    top: 0;
+    height: 100% !important;
+
+    &.editor-minimized
+      top: initial;
+      height: 47px !important;
+
+      .editor-area,
+      .preview-area,
+      button
+        display: none !important;
+
+      #esMinimizeBtn
+        display: block !important;
+
   .btn-default
     border-color: hsl(0, 0%, 70%); // not 80% because background not white but light gray
 
   .resizable-t
-    height: 15px;
+    height: 18px;
+    top: -8px;
 
   .dw-editor-guidelines-wrap
     position: absolute;
@@ -48,10 +70,9 @@
       color: hsl(211, 70%, 45%);
       float: right;
 
-
   #editor-after-borders
     position: absolute;
-    top: 0;
+    top: 4px;
     right: 15px;
     bottom: 0;
     left: 15px;
@@ -60,7 +81,7 @@
     width: 50%
     position: absolute
     top: 12px
-    bottom: 70px
+    bottom: $spaceForButtons;
 
     .editor-area-after-borders
       position: absolute;
@@ -68,9 +89,12 @@
       right: 10px;
       bottom: 0;
       left: 0;
+      display: flex;
+      flex-direction: column;
 
     .dw-doing-what
       position: relative;
+      margin-bottom: 4px;
 
     .icon-info-circled
       color: white;
@@ -86,40 +110,32 @@
         outline: 1px solid hsl(211, 50%, 70%);
         background-color: hsl(211, 50%, 85%);
 
-
     .title-input
-      position: absolute
-      top: 25px;
       width: 100%;
       padding: 6px;
       font-size: 14px;
 
-    .editor-wrapper
-      position: absolute
-      top: 25px
-      right: 0;
-      bottom: 10px
-      left: 0
+    .editor-instructions
+      margin: 14px 0 5px;
 
-      .editor
-        width: 100%
-        height: 100%
-        font-size: 13px;
-        padding: 6px;
-
-    .title-input + .editor-wrapper
-        top: 64px // make space for title input
-
-    .preview
-      height: 100%
+    .editor
       width: 100%
+      height: 100%
+      font-size: 13px;
+      padding: 6px;
+
+    @media (max-width: $showPreviewMinWidth)
+      width: 100%;
+      .editor-area-after-borders
+        right: 0;
 
   .preview-area
+
     width: 50%
     position: absolute
     top: 12px
     right: 0
-    bottom: 25px
+    bottom: 5px
 
     .dw-preview-help
       position: absolute;
@@ -134,14 +150,34 @@
       left: 0;
       right: 0;
       bottom: 0;
+      padding: 0 2px 0 3px;
       background: white
       overflow: auto
 
+    @media (max-width: $showPreviewMinWidth)
+      display: none;
+      width: 100%;
+      bottom: $spaceForButtons;
+
+    @media (min-width: $showPreviewMinWidth + 1)
+      // In case JS has adden display: none, and via CSS we've hidden the Show-preview button,
+      // then we need to ensure the preview is indeed visible again now when the win width is wider:
+      display: block !important;
+
   .submit-cancel-btns
+    width: 100%;
     position: absolute;
-    bottom: 25px;
+    bottom: 6px;
     button
       margin-right: 5px;
+    #esPreviewBtn,
+    #esMinimizeBtn
+      float: right;
+      margin: 0 0 0 5px;
+    @media (min-width: $showPreviewMinWidth + 1)
+      #esPreviewBtn,
+      #esMinimizeBtn
+        display: none;
 
   .view-edit-history
     margin-left: 1em;

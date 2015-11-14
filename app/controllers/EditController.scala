@@ -218,9 +218,6 @@ object EditController extends mvc.Controller {
     |"""
 
   val AskForCritiqueGuidelines = /* [plugin] */ i"""
-    |<p>Type a title in the topmost filed below.
-    |<p>Below the title, add a link to your work, or upload an image (drag and drop it).
-    |And tell people what you want feedback about.
     |<p>This is a public forum — anyone is welcome to help you.</p>
     |"""
 
