@@ -126,11 +126,14 @@ object PageMeta {
   * @param updatedAt
   * @param publishedAt
   * @param bumpedAt
+  * @param lastReplyAt
+  * @param lastReplyById Set to None if there's no reply.
   * @param categoryId
   * @param embeddingPageUrl The canonical URL to the page, useful when linking to the page.
   *            Currently only needed and used for embedded comments, and then it
   *            is the URL of the embedding page.
   * @param authorId
+  * @param frequentPosterIds: Most frequent poster listed first. Author & last-reply-by excluded.
   * @param numLikes
   * @param numWrongs
   * @param numBurys
@@ -156,9 +159,11 @@ case class PageMeta(
   publishedAt: Option[ju.Date] = None,
   bumpedAt: Option[ju.Date] = None,
   lastReplyAt: Option[ju.Date] = None,
+  lastReplyById: Option[UserId] = None,
   categoryId: Option[CategoryId] = None,
   embeddingPageUrl: Option[String],
   authorId: UserId,
+  frequentPosterIds: Seq[UserId] = Nil,
   pinOrder: Option[Int] = None,
   pinWhere: Option[PinPageWhere] = None,
   numLikes: Int = 0,
@@ -182,6 +187,11 @@ case class PageMeta(
   // unwantedAt: Option[ju.Date] = None, -- when enough core members voted Unwanted
   // deletedAt: Option[ju.Date] = None,
   numChildPages: Int = 0) { // <-- DoLater: remove, replace with category table
+
+  require(lastReplyAt.isDefined == lastReplyById.isDefined, "DwE5JGY1")
+  // If there are no replies, then there are no frequent posters.
+  require(lastReplyById.isDefined || frequentPosterIds.isEmpty, "DwE7UMF2")
+  require(frequentPosterIds.length <= 3, "DwE6UMW3") // for now — change if needed
 
   require(version > 0, "DwE6KFU2")
   require(pageRole != PageRole.AboutCategory || categoryId.isDefined, "DwE5PKI8")

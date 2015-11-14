@@ -98,10 +98,19 @@ trait PostsDao {
         approvedById = Some(approverId))
 
       val numNewOrigPostReplies = (isApproved && newPost.isOrigPostReply) ? 1 | 0
+      val newFrequentPosterIds: Seq[UserId] =
+        if (isApproved)
+          PageParts.findFrequentPosters(newPost +: page.parts.allPosts,
+            ignoreIds = Set(page.meta.authorId, authorId))
+        else
+          page.meta.frequentPosterIds
+
       val oldMeta = page.meta
       val newMeta = oldMeta.copy(
         bumpedAt = page.isClosed ? oldMeta.bumpedAt | Some(transaction.currentTime),
-        lastReplyAt = Some(transaction.currentTime),
+        lastReplyAt = isApproved ? Option(transaction.currentTime) | oldMeta.lastReplyAt,
+        lastReplyById = isApproved ? Option(authorId) | oldMeta.lastReplyById,
+        frequentPosterIds = newFrequentPosterIds,
         numRepliesVisible = page.parts.numRepliesVisible + (isApproved ? 1 | 0),
         numRepliesTotal = page.parts.numRepliesTotal + 1,
         numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible + numNewOrigPostReplies,

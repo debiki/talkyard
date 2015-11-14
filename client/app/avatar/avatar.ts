@@ -155,8 +155,13 @@ export var Avatar = createComponent({
         styles = { backgroundColor: lettersClassesColor.color };
       }
     }
+    var title = user.username || user.fullName;
+    if (this.props.title) {
+      title += ' — ' + this.props.title;
+    }
     return (
-      r.div({ className: 'edAvtr' + extraClasses, style: styles, onClick: this.onClick }, content));
+      r.div({ className: 'edAvtr' + extraClasses, style: styles, onClick: this.onClick,
+          title: title }, content));
   }
 });
 

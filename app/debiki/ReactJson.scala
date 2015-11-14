@@ -432,11 +432,11 @@ object ReactJson {
       "previousNr" -> JsNumberOrNull(revision.previousNr),
       "fullSource" -> source,
       "composedAtMs" -> revision.composedAt,
-      "composedBy" -> JsUserObjOrNull(composer),
+      "composedBy" -> JsUserOrNull(composer),
       "approvedAtMs" -> JsDateMsOrNull(revision.approvedAt),
-      "approvedBy" -> JsUserObjOrNull(approver),
+      "approvedBy" -> JsUserOrNull(approver),
       "hiddenAtMs" -> JsDateMsOrNull(revision.hiddenAt),
-      "hiddenBy" -> JsUserObjOrNull(hider))
+      "hiddenBy" -> JsUserOrNull(hider))
   }
 
 
@@ -671,10 +671,10 @@ object ReactJson {
   }
 
 
-  def JsUserObjOrNull(user: Option[User]): JsValue =
-    user.map(JsUserObj).getOrElse(JsNull)
+  def JsUserOrNull(user: Option[User]): JsValue =
+    user.map(JsUser).getOrElse(JsNull)
 
-  def JsUserObj(user: User): JsObject = {
+  def JsUser(user: User): JsObject = {
     var json = Json.obj(
       "id" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.username),

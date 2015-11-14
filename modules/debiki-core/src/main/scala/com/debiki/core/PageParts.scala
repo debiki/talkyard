@@ -54,6 +54,21 @@ object PageParts {
 
   def isReply(postId: PostId) = postId >= FirstReplyId
 
+
+  /** Finds the 0 to 3 most frequent posters.
+    * Would: If two users have both posted X posts, then, among them, pick the most recent poster?
+    */
+  def findFrequentPosters(posts: Seq[Post], ignoreIds: Set[UserId]): Seq[UserId] = {
+    val numPostsByUserId = mutable.HashMap[UserId, Int]().withDefaultValue(0)
+    for (post <- posts if !ignoreIds.contains(post.createdById)) {
+      val numPosts = numPostsByUserId(post.createdById)
+      numPostsByUserId(post.createdById) = numPosts + 1
+    }
+    val userIdsAndNumPostsSortedDesc =
+      numPostsByUserId.toSeq.sortBy(userIdAndNumPosts => userIdAndNumPosts._2)
+    userIdsAndNumPostsSortedDesc.take(3).map(_._1)
+  }
+
 }
 
 

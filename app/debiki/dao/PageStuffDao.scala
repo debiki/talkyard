@@ -23,22 +23,29 @@ import com.debiki.core.PageParts.{TitleId, BodyId}
 import debiki.ReactJson.{htmlToTextWithNewlines, ToTextResult}
 import debiki._
 import java.{util => ju}
+import scala.collection.mutable
 import CachingDao.{CacheKey, CacheValue}
 import org.jsoup.Jsoup
 
 
 /** Page stuff, e.g. title, body excerpt (for pinned topics), author name.
+  * We might not load all stuff inside a transaction, so sometimes some data might
+  * suddenly have vanished — that's why e.g. the author is an Option[User].
   */
 case class PageStuff(
   pageId: PageId,
   pageRole: PageRole,
   title: String,
   bodyExcerptIfPinned: Option[String],
+  author: Option[User],
+  // author* below are deprecated.
   authorDisplayName: String,
   authorUserId: UserId,
   authorUsername: Option[String],
   authorFullName: Option[String],
-  authorAvatarUrl: Option[String])
+  authorAvatarUrl: Option[String],
+  lastReplyer: Option[User],
+  frequentPosters: Seq[User])
 
 
 
@@ -80,7 +87,19 @@ trait PageStuffDao {
       }
       pagePostIds
     })
-    val usersById = transaction.loadUsersAsMap(pageMetasById.values.map(_.authorId))
+
+    val userIdsToLoad = {
+      val pageMetas = pageMetasById.values
+      val ids = mutable.Set[UserId]()
+      ids ++= pageMetas.map(_.authorId)
+      ids ++= pageMetas.flatMap(_.lastReplyById)
+      pageMetas foreach { meta =>
+        ids ++= meta.frequentPosterIds
+      }
+      ids
+    }
+
+    val usersById = transaction.loadUsersAsMap(userIdsToLoad.toSeq)
 
     for (pageMeta <- pageMetasById.values) {
       val pageId = pageMeta.pageId
@@ -105,13 +124,16 @@ trait PageStuffDao {
         pageMeta.pageRole,
         title = anyTitle.flatMap(_.approvedSource) getOrElse "(No title)",
         bodyExcerptIfPinned = anyExcerpt,
+        author = anyAuthor,
         authorDisplayName = anyAuthor.map(_.displayName) getOrElse "(Author absent, DwE7SKF2)",
         authorUserId = pageMeta.authorId,
         authorUsername = anyAuthor.flatMap(_.username),
         authorFullName = anyAuthor.map(_.fullName),
         // When listing pages, we show many users: creator, last reply, etc. and many pages,
         // so we'll use the tiny avatar image. Should I rename to tinyAuthorAvatarUrl?
-        authorAvatarUrl = anyAuthor.flatMap(_.tinyAvatar.map(_.url)))
+        authorAvatarUrl = anyAuthor.flatMap(_.tinyAvatar.map(_.url)),
+        lastReplyer = pageMeta.lastReplyById.flatMap(usersById.get),
+        frequentPosters = pageMeta.frequentPosterIds.flatMap(usersById.get))
 
       stuffById += pageMeta.pageId -> summary
     }

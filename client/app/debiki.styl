@@ -133,6 +133,7 @@
   font-size: 11px
   color: hsl(0, 0%, 8%);
   line-height: 15px // or test w 120%
+  background-color: white
 
 .dw-p.dw-zd  // folded comment
   margin-bottom: 25px;
@@ -148,7 +149,7 @@
 
 // Place debug-reading-progress outline above the .dw-p.
 .dw-p-hd
-  z-index: 1;
+  z-index: 2; // > the body, so avatar circle won't be cut off when highlighting body background
   position: relative;
 
 

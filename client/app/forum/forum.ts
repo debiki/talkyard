@@ -700,16 +700,18 @@ var TopicRow = createComponent({
     var categoryName = category ? category.name : '';
     var activityAgo = timeAgo(topic.bumpedEpoch || topic.createdEpoch);
 
-    // Later: add last poster, most frequent poster, etc, but for now:
-    var userAvatars = avatar.Avatar({
-      tiny: true,
-      user: {
-        id: topic.authorId,
-        username: topic.authorUsername,
-        fullName: topic.authorFullName,
-        avatarUrl: topic.authorAvatarUrl,
-      }
-    });
+    // Avatars: Original Poster, some frequent posters, most recent poster.
+    var userAvatars = [
+        avatar.Avatar({ key: 'OP', tiny: true, user: topic.author, title: "created the topic" })];
+    for (var i = 0; i < topic.frequentPosters.length; ++i) {
+      var poster = topic.frequentPosters[i];
+      userAvatars.push(avatar.Avatar({ key: poster.id, tiny: true, user: poster,
+            title: "frequent poster" }));
+    }
+    if (topic.lastReplyer) {
+      userAvatars.push(avatar.Avatar({ key: 'MR', tiny: true, user: topic.lastReplyer,
+            title: "most recent poster" }));
+    }
 
     return (
       r.tr({},
