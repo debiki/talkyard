@@ -87,12 +87,18 @@ export var HelpMessageBox = createComponent({
     if (this.state.hidden)
       return null;
 
+    // If there are more help dialogs afterwards, show a comment icon instead to give
+    // the impression that we're talking with the computer. Only when no more help awaits,
+    // show the close (well "cancel") icon.
+    var okayIcon = this.props.message.moreHelpAwaits ? 'icon-comment' : 'icon-cancel';
+
     var largeClass = this.props.large ? ' dwHelp-large' : '';
     return (
-      r.div({ className: 'dw-help' + largeClass },
+      r.div({ className: this.props.className + ' dw-help' + largeClass },
         r.div({ className: 'dw-help-text' },
           this.props.message.content),
-        r.a({ className: 'icon-cancel dw-hide', onClick: this.hideThisHelp }, "Hide")));
+        r.a({ className: okayIcon + ' dw-hide', onClick: this.hideThisHelp },
+          this.props.message.okayText || "Hide")));
   }
 });
 

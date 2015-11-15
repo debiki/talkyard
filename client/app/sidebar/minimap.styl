@@ -133,6 +133,7 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
     clear: both;
     background: bgcolor;
     padding: 13px 8px 0 0;
+    position: relative;
 
     // Click-drag scrolls, but if it sometimes instead selects text (because few comments,
     // nothing to scroll) then that's rather confusing.
@@ -203,5 +204,31 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
       opacity: 0.1;
       max-height: 0px;
 
+.es-editor-help-one,
+.es-editor-help-two,
+.es-editor-help-three,
+.es-editor-help-four
+  position: absolute;
+  z-index: 1;
+  box-shadow: 6px 6px 8px #777;
+  left: 25px;
+  max-width: 380px !important;
+  font-size: 105%;
+  .dw-help-text
+    padding: 1ex 1ex 0;
+  .icon-comment:before
+    opacity: 0.67;
+    margin-right: 7px;
+  .dw-hide
+    padding: 10px 10px 7px 20px;
+
+.es-editor-help-one
+  top: 60px;
+.es-editor-help-two
+  top: 75px;
+.es-editor-help-three
+  top: 95px;
+.es-editor-help-four
+  top: 110px;
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

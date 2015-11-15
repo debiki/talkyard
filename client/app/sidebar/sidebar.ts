@@ -586,6 +586,26 @@ export var Sidebar = createComponent({
           MenuItem({ eventKey: 'showStarred' }, 'Starred'));
     }
 
+    // Show four help messages: first no. 1, then 2, 3, 4, one at a time, which clarify
+    // how the sidebar recent-comments list works.
+    var helpMessageBoxOne =
+        help.HelpMessageBox({ className: 'es-editor-help-one', message: helpMessageOne });
+    var helpMessageBoxTwo;
+    var helpMessageBoxTree;
+    var helpMessageBoxFour;
+    if (isHelpMessageClosed(this.state.store, helpMessageOne)) {
+      helpMessageBoxTwo =
+          help.HelpMessageBox({ className: 'es-editor-help-two', message: helpMessageTwo });
+    }
+    if (isHelpMessageClosed(this.state.store, helpMessageTwo)) {
+      helpMessageBoxTree =
+          help.HelpMessageBox({ className: 'es-editor-help-three', message: helpMessageThree });
+    }
+    if (isHelpMessageClosed(this.state.store, helpMessageThree)) {
+      helpMessageBoxFour =
+          help.HelpMessageBox({ className: 'es-editor-help-four', message: helpMessageFour });
+    }
+
     return (
       r.div({ className: 'dw-sidebar-z-index' },
       r.div({ id: 'dw-minimap-holder', className: 'dw-sidebar-is-open' },
@@ -595,6 +615,10 @@ export var Sidebar = createComponent({
         ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar, ref: 'openButton' }),
         tabButtons,
         r.div({ className: 'dw-comments' },
+          helpMessageBoxOne,
+          helpMessageBoxTwo,
+          helpMessageBoxTree,
+          helpMessageBoxFour,
           r.div({ ref: 'commentsViewport' },
             r.div({ ref: 'commentsScrollable' },
               r.h3({}, title),
@@ -606,9 +630,53 @@ export var Sidebar = createComponent({
 });
 
 
+// COULD move to ... help.ts?
+function isHelpMessageClosed(store, message) {
+  var closedVersion = store.user.closedHelpMessages[message.id];
+  return closedVersion && closedVersion === message.version;
+}
+
+
+var helpMessageOne = {
+  id: 'EsH2QMUW1',
+  version: 1,
+  content: r.span({}, "This is a list of ", r.b({}, "the most recent comments"), "."),
+  okayText: "I understand",
+  moreHelpAwaits: true,
+};
+
+var helpMessageTwo = {
+  id: 'EsH5GPMU2',
+  version: 1,
+  content: r.span({}, "Don't try to read them here — only the first words are shown."),
+  okayText: "I won't",
+  moreHelpAwaits: true,
+};
+
+var helpMessageThree = {
+  id: 'EsH7UGY2',
+  version: 1,
+  content: r.span({}, "Click a comment here, and it'll be focused in the main view, " +
+      "to the left — read it there instead."),
+  okayText: "Yes",
+  moreHelpAwaits: true,
+};
+
+var helpMessageFour = {
+  id: 'EsH6GJYu8',
+  version: 1,
+  content: r.span({}, "So although the comments to the left are sorted by best-first, " +
+      "you can easily find the most recent comments."),
+  okayText: "Seems useful :-) Now, enough about that.",
+  moreHelpAwaits: false,
+};
+
+
 function isPageWithSidebar(pageRole: PageRole): boolean {
   return pageRole === PageRole.About ||
-      pageRole === PageRole.Question || pageRole === PageRole.ToDo ||
+      pageRole === PageRole.Question || pageRole === PageRole.Problem ||
+      pageRole === PageRole.Idea || pageRole === PageRole.ToDo ||
+      pageRole === PageRole.Critique || // [plugin]
       pageRole === PageRole.MindMap || pageRole === PageRole.Discussion ||
       pageRole === PageRole.WebPage || pageRole === PageRole.EmbeddedComments;
 }
