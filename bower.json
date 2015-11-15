@@ -20,7 +20,7 @@
     "lodash": "=2.4.2",
     "markdown-it": "=4.2.2",
     "moment": "=2.8.4",
-    "nicescroll": "=3.5.6",
+    "nicescroll": "=3.6.0",
     "react": "=0.13.3",
     "react-bootstrap": "=0.24.2",
     "react-router": "=0.13.3",

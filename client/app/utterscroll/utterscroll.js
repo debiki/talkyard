@@ -100,6 +100,9 @@ debiki.Utterscroll = (function(options) {
    * missed, and, if so, starts scrolling.
    */
   function checkIfMissedMousedown(event) {
+    if (!enabled)
+      return;
+
     if (lastButtons === 0 && event.buttons === 1 && !mousedownNoticed) {
       // There was a mousedown that we never noticed, because of some browser
       // bug/issue probably related to <iframe>s. So fake a click and perhaps

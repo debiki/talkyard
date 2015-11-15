@@ -40,6 +40,10 @@ var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 var TopBarHegiht = 44; // [KP43WV3]
 var SidebarNumCommentsLimit = 5 + 1;  // 5 + page body
 
+var lastMouseDownMs = null;
+var lastNiceScrollMs = null;
+
+
 export var Sidebar = createComponent({
   mixins: [debiki2.StoreListenerMixin],
 
@@ -157,18 +161,44 @@ export var Sidebar = createComponent({
     if (!this.state.showSidebar)
       return;
 
-    this.getCommentsViewport()['niceScroll']('#dw-sidebar-comments-scrollable', {
+    var scrollableElem = this.refs.commentsScrollable.getDOMNode();
+    var $viewport = this.getCommentsViewport();
+    var niceScroll = $viewport['niceScroll'](scrollableElem, {
       cursorwidth: '12px',
       cursorcolor: '#aaa',
       cursorborderradius: 0,
       bouncescroll: false,
-      mousescrollstep: 100, // default is only 40. 140 is too fast, skips posts in FF.
-      // Make the mouse scrollwheel *not* scroll the the main window instead of
-      // the comments viewport.
-      preservenativescrolling: false,
-      // After having scrolled to the top or to the bottom, don't start scrolling
-      // the main window instead.
-      nativeparentscrolling: false
+      // This enables dragscroll with the mouse, and disables the scroll wheel (unless 2d layout)
+      // — the wheel will scroll the whole window instead; having it scroll the sidebar is very
+      // confusing, because people then think the whole-window-scrolling is broken; they didn't
+      // notice they placed the mouse in the sidebar. — So let them scroll by touch-scrolling,
+      // or mouse-dragging the scrollbar, or dragscrolling with the mouse.
+      // (2D layout however, then one usually dragscrolls instead of using the wheel, so then
+      // it's ok to let the wheel scroll the sidebar instead.)
+      touchbehavior: true,
+      preventmultitouchscrolling: false,
+      enablemousewheel: this.state.store.horizontalLayout,
+      mousescrollstep: 100, // for 2d layout. Default is only 40. 140 = too fast: skips posts in FF.
+    });
+
+    // We want to know if we scrolled or clicked something. Therefore:
+    // (without updating this.state and triggering a rerendering)
+    // Doesn't work, never triggered:
+    //niceScroll.scrollstart((event) => {
+    //  niceScrollStartMs = Date.now();
+    //  niceScrollEndMs = null;
+    //})
+    // Also doesn't work: *always* trigggered, even for a pure click:
+    //niceScroll.scrollend((event) => {
+    //  niceScrollEndMs = Date.now();
+    //});
+    // Instead:
+    $viewport.on('scroll', (event) => {
+      lastNiceScrollMs = Date.now();
+    });
+    // React onMouseDown also doesn't work, so instead:
+    $viewport.on('mousedown', (event) => {
+      lastMouseDownMs = Date.now();
     });
   },
 
@@ -392,7 +422,16 @@ export var Sidebar = createComponent({
     return mark === BlueStarMark || mark === YellowStarMark;
   },
 
-  focusPost: function(post: Post, index: number) {
+  onPostClick: function(post: Post) {
+    if (lastMouseDownMs && lastNiceScrollMs && lastNiceScrollMs > lastMouseDownMs) {
+      // Not a real click — we just scrolled the recent comments list.
+    }
+    else {
+      this.focusPost(post);
+    }
+  },
+
+  focusPost: function(post: Post) {
     this.setState({
       currentPostId: post.postId
     });
@@ -513,7 +552,10 @@ export var Sidebar = createComponent({
     var commentsElems = comments.map((post, index) => {
       var postProps: any = _.clone(store);
       postProps.post = post;
-      postProps.onClick = (event) => this.focusPost(post, index),
+      // onMouseDown/Capture doesn't work, even with niceScroll removed, no idea why:
+      // postProps.onMouseDown = (event) => { lastMouseDownMs = Date.now(); },
+      // postProps.onMouseDownCapture =
+      postProps.onClick = (event) => this.onPostClick(post),
       postProps.abbreviate = abbreviateHowMuch;
       if (post.postId === this.state.currentPostId) {
         postProps.className = 'dw-current-post';
@@ -553,11 +595,11 @@ export var Sidebar = createComponent({
         ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar, ref: 'openButton' }),
         tabButtons,
         r.div({ className: 'dw-comments' },
-          r.div({ id: 'dw-sidebar-comments-viewport', ref: 'commentsViewport' },
-            r.div({ id: 'dw-sidebar-comments-scrollable' },
+          r.div({ ref: 'commentsViewport' },
+            r.div({ ref: 'commentsScrollable' },
               r.h3({}, title),
               tipsOrExtraConfig,
-              r.div({ className: 'dw-recent-comments' },
+              r.div({},
                 ReactCSSTransitionGroup({ transitionName: 'comment', key: this.state.commentsType },
                   commentsElems))))))));
   }

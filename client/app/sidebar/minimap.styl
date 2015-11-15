@@ -133,6 +133,16 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
     clear: both;
     background: bgcolor;
     padding: 13px 8px 0 0;
+
+    // Click-drag scrolls, but if it sometimes instead selects text (because few comments,
+    // nothing to scroll) then that's rather confusing.
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
     @media (max-height: 500px)
       padding-top: 7px;
 
