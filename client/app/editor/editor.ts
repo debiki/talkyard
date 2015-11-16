@@ -110,8 +110,18 @@ export var Editor = createComponent({
     }); */
   },
 
-  componentDidUpdate: function() {
+  componentDidUpdate: function(prevProps, prevState) {
     this.perhapsShowGuidelineModal();
+  },
+
+  focusInputFields: function() {
+    var elemToFocus = findDOMNode(this.refs.titleInput);
+    if (!elemToFocus) {
+      elemToFocus = findDOMNode(this.refs.textarea);
+    }
+    if (elemToFocus) {
+      elemToFocus.focus();
+    }
   },
 
   startMentionsParser: function() {
@@ -494,6 +504,12 @@ export var Editor = createComponent({
     if (d.i.isInEmbeddedEditor) {
       window.parent.postMessage(JSON.stringify(['showEditor', {}]), '*');
     }
+    // After rerender, focus the input fields:
+    setTimeout(() => {
+      if (this.isMounted()) {
+        this.focusInputFields();
+      }
+    }, 1);
   },
 
   closeEditor: function() {
@@ -559,7 +575,7 @@ export var Editor = createComponent({
     if (this.state.newForumPageRole) {
       titleInput =
           r.input({ className: 'title-input form-control', type: 'text', ref: 'titleInput',
-              key: this.state.newForumPageRole,
+              key: this.state.newForumPageRole, tabIndex: 1,
               placeholder: "Type a title — what is this about, in one brief sentence?" });
     }
 
@@ -628,9 +644,9 @@ export var Editor = createComponent({
         saveButtonTitle = "Post comment";
       }
       else {
-        switch (ReactStore.allData().pageRole) {
-          case PageRole.Critique: saveButtonTitle = "Submit critique"; break; // [plugin]
-          default: saveButtonTitle = "Post reply";
+        saveButtonTitle = "Post reply";
+        if (_.isEqual([BodyId], replyToPostIds) && isCritiquePage()) { // [plugin]
+          saveButtonTitle = "Submit critique";
         }
       }
     }
@@ -641,7 +657,7 @@ export var Editor = createComponent({
     var anyViewHistoryButton;
     if (this.state.editingPostRevisionNr && this.state.editingPostRevisionNr !== 1) {
       anyViewHistoryButton =
-          r.a({ onClick: this.showEditHistory, className: 'view-edit-history' },
+          r.a({ onClick: this.showEditHistory, className: 'view-edit-history', tabIndex: 1 },
             "View old edits");
     }
 
@@ -666,7 +682,7 @@ export var Editor = createComponent({
 
     var textarea =
         r.textarea({ className: 'editor form-control', ref: 'textarea', value: this.state.text,
-            onChange: this.onTextEdited,
+            onChange: this.onTextEdited, tabIndex: 1,
             placeholder: "Type here. You can use Markdown and HTML. " +
                 "Drag and drop to paste images." });
 
@@ -702,14 +718,15 @@ export var Editor = createComponent({
               r.div({ className: 'preview', ref: 'preview',
                   dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
             r.div({ className: 'submit-cancel-btns' },
-              Button({ onClick: this.onSaveClick, bsStyle: 'primary' }, saveButtonTitle),
-              Button({ onClick: this.onCancelClick }, 'Cancel'),
-              Button({ className: 'esUploadBtn icon-upload' }, 'Upload'),
-              // These buttons are hidden via CSS if the window is wide.
+              Button({ onClick: this.onSaveClick, bsStyle: 'primary', tabIndex: 1 }, saveButtonTitle),
+              Button({ onClick: this.onCancelClick, tabIndex: 1 }, 'Cancel'),
+              Button({ className: 'esUploadBtn icon-upload', tabIndex: 1 }, 'Upload'),
+              // These two buttons are hidden via CSS if the window is wide. Higher tabIndex
+              // because float right.
               Button({ onClick: this.toggleMinimized, id: 'esMinimizeBtn',
-                  bsStyle: (this.state.showMinimized ? 'primary' : undefined) },
+                  bsStyle: (this.state.showMinimized ? 'primary' : undefined), tabIndex: 3 },
                 this.state.showMinimized ? 'Show editor again' : 'Minimize'),
-              Button({ onClick: this.togglePreview, id: 'esPreviewBtn' },
+              Button({ onClick: this.togglePreview, id: 'esPreviewBtn', tabIndex: 2 },
                 this.state.showOnlyPreview ? 'Edit' : 'Preview'),
               anyViewHistoryButton)))));
   }

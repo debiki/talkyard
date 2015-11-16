@@ -51,6 +51,10 @@ export function scrollToBottom(node) {
 }
 
 
+export var findDOMNode = window['React'].findDOMNode;
+dieIf(!findDOMNode, 'EsE6UMGY2');
+
+
 //------------------------------------------------------------------------------
 }
 //------------------------------------------------------------------------------

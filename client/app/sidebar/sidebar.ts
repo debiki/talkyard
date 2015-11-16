@@ -606,6 +606,10 @@ export var Sidebar = createComponent({
           help.HelpMessageBox({ className: 'es-editor-help-four', message: helpMessageFour });
     }
 
+    // Dim the comments list until all help messages have been closed.
+    var dimCommentsStyle = isHelpMessageClosed(this.state.store, helpMessageFour) ?
+        null : { opacity: '0.6' };
+
     return (
       r.div({ className: 'dw-sidebar-z-index' },
       r.div({ id: 'dw-minimap-holder', className: 'dw-sidebar-is-open' },
@@ -619,7 +623,7 @@ export var Sidebar = createComponent({
           helpMessageBoxTwo,
           helpMessageBoxTree,
           helpMessageBoxFour,
-          r.div({ ref: 'commentsViewport' },
+          r.div({ ref: 'commentsViewport', style: dimCommentsStyle },
             r.div({ ref: 'commentsScrollable' },
               r.h3({}, title),
               tipsOrExtraConfig,
@@ -640,7 +644,7 @@ function isHelpMessageClosed(store, message) {
 var helpMessageOne = {
   id: 'EsH2QMUW1',
   version: 1,
-  content: r.span({}, "This is a list of ", r.b({}, "the most recent comments"), "."),
+  content: r.span({}, "This is a list of ", r.b({}, "the most recent comments"), " on this page."),
   okayText: "I understand",
   moreHelpAwaits: true,
 };
@@ -667,7 +671,7 @@ var helpMessageFour = {
   version: 1,
   content: r.span({}, "So although the comments to the left are sorted by best-first, " +
       "you can easily find the most recent comments."),
-  okayText: "Seems useful :-) Now, enough about that.",
+  okayText: "Wow! That is useful :-)",
   moreHelpAwaits: false,
 };
 

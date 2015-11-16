@@ -679,6 +679,9 @@ object ReactJson {
       "id" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.username),
       "fullName" -> JsString(user.displayName))
+    user.tinyAvatar foreach { uploadRef =>
+      json += "avatarUrl" -> JsString(uploadRef.url)
+    }
     if (user.isGuest) {
       json += "isGuest" -> JsTrue
     }

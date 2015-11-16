@@ -421,6 +421,11 @@ trait UserDao {
       userAfter.mediumAvatar.foreach(transaction.updateUploadedFileReferenceCount)
       transaction.markPagesWithUserAvatarAsStale(userId)
     }
+    // Clear the PageStuff cache (by clearing the whole in-mem cache), because
+    // PageStuff includes avatar urls.
+    // COULD have above markPagesWithUserAvatarAsStale() return a page id list and
+    // uncache only those pages.
+    emptyCache()
   }
 
 

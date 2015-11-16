@@ -399,7 +399,8 @@ var CategoriesAndTopics = createComponent({
 
     var createTopicBtn;
     if (activeRoute.name !== 'ForumRouteCategories') {
-      createTopicBtn = Button({ onClick: this.createTopic }, createTopicBtnTitle(activeCategory));
+      createTopicBtn = Button({ onClick: this.createTopic, bsStyle: 'primary' },
+        createTopicBtnTitle(activeCategory));
     }
 
     var createCategoryBtn;
