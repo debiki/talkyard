@@ -1,0 +1,57 @@
+// Helpful styles when building a site.
+
+
+// Collapse/open in CSS
+//-----------------------------------
+/*
+Use with this HTML: (don't change the elem order)
+
+<input class="open-collapsed" type="checkbox" id="open-collapsed-9403">
+<label for="open-collapsed-9403"><a>+ Show more...</a><a>– Hide again</a></label>
+<p class="collapsed">
+This text hidden, shown on click…<br>
+More text ...<br>
+More text ...<br>
+</p>
+
+*/
+
+input.open-collapsed
+  display: none;
+
+  + label
+    // Inline it, so won't occupy any space, if there's only a show-more button (no close-button)
+    // and it gets clicked and therefore hidden.
+    display: inline;
+
+    a:last-child
+      display: none;
+    a:first-child
+      // In case there is no close-again button — then the :first-child is also the :last-child, and
+      // it would be hidden unless:
+      display: block;
+
+    + .collapsed
+      display: none;
+      -webkit-animation: collapsed-fadein 1.7s;
+      -ms-animation: collapsed-fadein 1.7s;
+      animation: collapsed-fadein 1.7s;
+
+  &:checked
+    + label
+      a:last-child,
+      + .collapsed
+        display: block;
+
+      // Place this last, so if there's no close button, the open button will vanish once clicked.
+      a:first-child
+        display: none;
+
+
+@keyframes collapsed-fadein
+  from { opacity: 0; }
+  to   { opacity: 1; }
+
+
+
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list
