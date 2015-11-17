@@ -87,14 +87,22 @@ var UserPageComponent = React.createClass({
 
   getInitialState: function() {
     return {
-      loggedInUser: debiki2.ReactStore.getUser()
+      loggedInUser: debiki2.ReactStore.getUser(),
+      user: null,
     };
   },
 
   onChange: function() {
+    if (this.state.loggedInUser === debiki2.ReactStore.getUser())
+      return;
+
+    // Also reload the user we're showing, because now we might/might-no-longer have access
+    // to data about him/her.
     this.setState({
-      loggedInUser: debiki2.ReactStore.getUser()
+      loggedInUser: debiki2.ReactStore.getUser(),
+      user: null,
     });
+    this.loadCompleteUser();
   },
 
   componentWillMount: function(nextProps) {

@@ -251,7 +251,6 @@ trait UserDao {
     require(user.email.nonEmpty, "DwE3KEF7")
     require(user.emailVerifiedAt.nonEmpty, "DwE5KGE2")
     require(user.isAuthenticated, "DwE4KEF8")
-    require(user.isApprovedOrStaff, "DwE4KEG20")
     readWriteTransaction { transaction =>
       val identityId = transaction.nextIdentityId
       val identity = OpenAuthIdentity(id = identityId, userId = user.id, oauthDetails)

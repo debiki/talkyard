@@ -250,9 +250,14 @@ object LoginWithOpenAuthController extends Controller {
           // Let's check if the user already exists, and if so, create an OpenAuth identity
           // and connect it to the user.
           // Details: The user might exist, although no identity was found, if the user
-          // has already signed up as an email + password user, or accepted an invitation
+          // has already 1) signed up as an email + password user, or 2) accepted an invitation
           // (when the user clicks the invitation link in the invite email, a user entry
-          // is created automatically, without the user having to login).
+          // is created automatically, without the user having to login). Or 3) signed up
+          // via e.g. a Twitter account and specified a Google email address like
+          // user@whatever.com (but not gmail.com) and then later attempts to log in
+          // via this Google email address instead of via Twitter.
+          // Or perhaps 4) signed up via a Facebook account that uses a Google address
+          // like user@whatever.com (but not gmail.com).
           oauthDetails.email.flatMap(dao.loadUserByEmailOrUsername) match {
             case Some(user) =>
               if (providerHasVerifiedEmail(oauthDetails)) {
@@ -260,12 +265,40 @@ object LoginWithOpenAuthController extends Controller {
                 createCookiesAndFinishLogin(request, loginGrant.user)
               }
               else {
-                throwForbidden("DwE7KGE32", o"""A user with the same email address as
-                  the user you're trying to login as, already exists. Please login as
-                  that user in the way you usually login, but not via ${oauthDetails.providerId}.
-                  (The reason we don't currently let you login via ${oauthDetails.providerId}
-                  is that we don't know if ${oauthDetails.providerId} has verified that
-                  the mail address is really yours.)""")
+                // There is no reliable way of knowing that the current user is really
+                // the same one as the old user in the database? We don't know if the
+                // OpenAuth provider has verified the email address.
+                // What we can do, is to:
+                // A) instruct the user to 1) login as the user in the database
+                // (say, via Twitter, in case 3 above). And then 2) click
+                // an Add-OpenAuth/OpenID-account button, and then login again in the
+                // way s/he attempted to do right now. Then, since the user is logged
+                // in at both providers (e.g. both Twitter and Google, in case 3 above)
+                // we can safely connect this new OpenAuth identity to the user account
+                // already in the database. This is how StackOverflow does it.
+                //  See: http://stackoverflow.com/questions/6487418/
+                //                  how-to-handle-multiple-openids-for-the-same-user
+                // Or B) Perhaps we can ask the user to login as the Twitter user directly?
+                // From here, when already logged in with the oauthDetails.
+                // (Instead of first logging in via Google then Twitter).
+                // Or C) Or we could just send an email address verification email?
+                // But then we'd reveal the existense of the Twitter account. And what if
+                // the user clicks the confirmation link in the email account without really
+                // understanding what s/he is doing? I think A) is safer.
+                // Anyway, for now, simply:
+                throwForbidden("DwE7KGE32", o"""You already have an account with the
+                  email address that [the user you're trying to login as now] has. Please
+                  don't login with that email address and ${oauthDetails.providerId} —
+                  instead login using your original login method, e.g. ${
+                    someProvidersExcept(oauthDetails.providerId)}, or something else?
+                  Or username and password? — I hope you remember which one.""" +
+                  "\n\n" +
+                  o"""The reason I do not currently let you login via this email and
+                  ${oauthDetails.providerId} is that I don't know if ${oauthDetails.providerId}
+                  has verified that the email address is really yours — because if it is not,
+                  then you would get access to someone elses account (namely the person with
+                  that email address).""" +
+                  "\n\n")
                 // If the user does *not* own the email address, s/he would be able to
                 // impersonate another user, when his/her new account gets associated with
                 // the old one just because they have the same email address.
@@ -283,6 +316,11 @@ object LoginWithOpenAuthController extends Controller {
 
     result.discardingCookies(DiscardingSecureCookie(MayCreateUserCookieName))
   }
+
+
+  private def someProvidersExcept(providerId: String) =
+    Seq(GoogleProvider.ID, FacebookProvider.ID, TwitterProvider.ID, GitHubProvider.ID)
+      .filterNot(_ equalsIgnoreCase providerId).mkString(", ")
 
 
   private def providerHasVerifiedEmail(oauthDetails: OpenAuthDetails) = {

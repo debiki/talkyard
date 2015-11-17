@@ -194,19 +194,20 @@ export var CreateUserDialogContent = createClassAndFactory({
   render: function() {
     var props = this.props;
     var state = this.state;
+    var hasEmailAddressAlready = props.email && props.email.length;
 
     var fullNameInput =
         Input({ type: 'text', label: "Your name: (the long version)", ref: 'fullNameInput',
             id: 'e2eFullName', defaultValue: props.name, onChange: this.updateUserData });
 
-    var anyEmailHelp = props.providerId ?
+    var anyEmailHelp = props.providerId && hasEmailAddressAlready ?
         "Your email has been verified by " + props.providerId + "." : null;
 
     var emailInput =
         Input({ type: 'text', label: "Email: (will be kept private)", ref: 'emailInput',
             id: 'e2eEmail',
             // If email already provided by e.g. Google, don't let the user change it.
-            disabled: props.email && props.email.length, defaultValue: props.email,
+            disabled: hasEmailAddressAlready, defaultValue: props.email,
             help: anyEmailHelp, onChange: this.updateUserData });
 
     var usernameInput =

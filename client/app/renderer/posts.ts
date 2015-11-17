@@ -541,7 +541,7 @@ var RootPostAndComments = createComponent({
       anyClickReplyInsteadHelpMessage =
           r.div({},
             debiki2.help.HelpMessageBox({ large: true, message: { id: 'EsH5UGPM2', version: 1,
-              content: r.span({},
+              okayText: "Yes, okay", content: r.span({},
                 r.b({}, "If you want to reply to someone"), ", then instead click ",
                 r.span({ className: 'icon-reply', style: { margin: '0 1ex' }}, "Reply"),
                 " just below his/her post.") }}));
