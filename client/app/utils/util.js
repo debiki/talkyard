@@ -46,8 +46,7 @@ d.u.isoDateToMillis = function(dateStr) {
 
 
 // `then' and `now' can be Date:s or milliseconds.
-// Consider using: https://github.com/rmm5t/jquery-timeago.git, supports i18n.
-d.u.prettyTimeBetween = function(then, now) {  // i18n
+debiki.prettyDuration = function(then, now) {  // i18n
   var thenMillis = then.getTime ? then.getTime() : then;
   var nowMillis = now.getTime ? now.getTime() : now;
   var diff = nowMillis - thenMillis;
@@ -56,12 +55,13 @@ d.u.prettyTimeBetween = function(then, now) {  // i18n
   var hour = second * 3600;
   var day = hour * 24;
   var week = day * 7;
-  var month = day * 31 * 30 / 2;  // integer
   var year = day * 365;
+  var month = year / 12;
   // I prefer `30 hours ago' to `1 day ago', but `2 days ago' to `50 hours ago'.
   if (diff > 2 * year) return trunc(diff / year) +" years ago";
   if (diff > 2 * month) return trunc(diff / month) +" months ago";
-  if (diff > 2 * week) return trunc(diff / week) +" weeks ago";
+  // Skip weeks, because prettyLetterDuration() skips weeks.
+  // if (diff > 2 * week) return trunc(diff / week) +" weeks ago";
   if (diff > 2 * day) return trunc(diff / day) +" days ago";
   if (diff > 2 * hour) return trunc(diff / hour) +" hours ago";
   if (diff > 2 * minute) return trunc(diff / minute) +" minutes ago";
@@ -69,6 +69,30 @@ d.u.prettyTimeBetween = function(then, now) {  // i18n
   if (diff > 2 * second) return trunc(diff / second) +" seconds ago";
   if (diff > 1 * second) return "1 second ago";
   return "0 seconds ago";
+};
+
+
+debiki.prettyLetterDuration = function(then, now) {  // i18n
+  var thenMillis = then.getTime ? then.getTime() : then;
+  var nowMillis = now.getTime ? now.getTime() : now;
+  var diff = nowMillis - thenMillis;
+  var second = 1000;
+  var minute = second * 60;
+  var hour = second * 3600;
+  var day = hour * 24;
+  var week = day * 7;
+  var year = day * 365;
+  var month = year / 12;
+  // I prefer `30 hours ago' to `1 day ago', but `2 days ago' to `50 hours ago'.
+  if (diff > 2 * year) return trunc(diff / year) + "y";
+  if (diff > 2 * month) return trunc(diff / month) + "m";
+  // Skip "w" (weeks), it makes me confused.
+  // Discourse also doesn't use "w".
+  // skip: if (diff > 2 * week) return trunc(diff / week) + "w";
+  if (diff > 2 * day) return trunc(diff / day) + "d";
+  if (diff > 2 * hour) return trunc(diff / hour) + "h";
+  if (diff > 2 * minute) return trunc(diff / minute) + "m";
+  return trunc(diff / second) + "s";
 };
 
 

@@ -59,19 +59,52 @@ function timeAgo(isoDate: string) {
 }
 
 /**
+ * Like timeAgo(isoDate) but results in just "5h" instead of "5 hours ago".
+ * That is, uses only one single letter, instead of many words.
+ */
+function prettyLetterTimeAgo(isoDate: string) {
+  return r.span({ className: 'dw-ago-ltr' }, isoDate);
+}
+
+
+/**
+ * Replaces ISO8601 timestamps with "5 hours ago" or just "5h".
+ *
+ * Before when I was using moment.js: (no longer do, it's rather large)
  * Takes 25-30ms for 80 unprocessed comments on my computer, and 2ms for 160
  * that have been processed already.
  */
 function processTimeAgo(selector?: string) {
   selector = selector || '';
+  // First handle all long version timestamps (don't end with -ltr ("letter")).
+  // Result: e.g. "5 hours ago"
   $(selector + ' .dw-ago').each(function() {
     var $this = $(this);
-    if ($this.attr('title'))
-      return; // already converted to "x ago" format
+    if ($this.attr('title')) {
+      // Already converted to "x ago" format
+      return;
+    }
     var isoDate = $this.text();
     var timeAgoString = moment(isoDate).fromNow();
     $this.text(timeAgoString);
     $this.attr('title', isoDate);
+  });
+
+  // Then handle all one-letter timestamps (end with -ltr ("letter")).
+  // Result: e.g. "5h" (instead of "5 hours ago").
+  $(selector + ' .dw-ago-ltr').each(function() {
+    var $this = $(this);
+    if ($this.attr('title')) {
+      // Already converted to "x<letter>" format
+      return;
+    }
+    var isoDate = $this.text();
+    var then = new Date(isoDate);
+    var now = Date.now();
+    var durationLetter = debiki.prettyLetterDuration(then, now);
+    var durationWords = debiki.prettyDuration(then, now);
+    $this.text(durationLetter);
+    $this.attr('title', durationWords + ": " + isoDate);
   });
 }
 

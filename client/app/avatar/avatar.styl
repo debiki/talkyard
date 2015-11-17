@@ -33,6 +33,14 @@
   .edAvtr
     display: none;
 
+
+.esAvtr-ltr  // avatar with a letter, no image uploaded
+  text-align: center;
+
+.edAvtr-manyLetters
+  letter-spacing: 0.1ex;
+
+
 @media (min-width: $minShowAvatarWidth)
   .edAvtr // avatar
     float: left;
@@ -46,7 +54,6 @@
       height: 48px;
 
   .esAvtr-ltr  // avatar with a letter, no image uploaded
-    text-align: center;
     font-size: 25px;
     // The letter avatars look so large (because they're a bulb of color?),
     // so make them a few pixels smaller:
@@ -55,7 +62,6 @@
     line-height: 46px;
 
   .edAvtr-manyLetters
-    letter-spacing: 0.1ex;
     font-size: 21px;
 
   .esAvtr-gst
@@ -104,12 +110,17 @@
     height: 25px;
     cursor: pointer;
 
-.dw-forum .esAvtr-tny
-  margin-right: 4px;
-  vertical-align: middle;
-  // Oh well
-  display: inline-block;
-  float: none;
+.dw-forum
+  .esAvtr-gst // dupl code 3 lines:
+    background: hsl(0, 0%, 92%);
+    color: hsl(0, 0%, 57%);
+    font-weight: normal;
+  .esAvtr-tny
+    margin: 0 0 0 4px;
+    vertical-align: middle;
+    // Oh well
+    display: inline-block;
+    float: none;
 
 
 

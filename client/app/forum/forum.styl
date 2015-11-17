@@ -151,6 +151,22 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
     text-align: center
     min-width: 55px
 
+  .edAvtr
+    // On small screens, show fewer frequent posters.
+    @media (max-width: 980px)
+      &:nth-child(4)
+        display: none
+    @media (max-width: 870px)
+      &:nth-child(3)
+        display: none
+    @media (max-width: 800px)
+      &:nth-child(2)
+        display: none
+    // Tiny screen, show only Original Poster.
+    @media (max-width: 700px)
+      &:nth-child(5)
+        display: none
+
   tbody
     tr
       border-top: 1px solid hsl(0, 0%, 89%);
@@ -318,9 +334,14 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
   margin-bottom: 10px;
 }
 
-.forum-table .topic-table-excerpt .topic-details {
+.forum-table .topic-table-excerpt .topic-details
   font-size: 12px;
-}
+  margin-left: 1.9ex;
+  .icon-comment-empty
+    margin-right: 1.1ex;
+    position: relative;
+    top: -1px;
+
 
 
 /* --- Forum topic list --- */

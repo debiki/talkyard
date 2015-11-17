@@ -483,6 +483,10 @@ var ForumTopicListComponent = React.createClass({
     this.loadTopics(nextProps, false);
   },
 
+  componentDidUpdate: function() {
+    processTimeAgo();
+  },
+
   onLoadMoreTopicsClick: function(event) {
     this.loadTopics(this.props, true);
     event.preventDefault();
@@ -699,7 +703,7 @@ var TopicRow = createComponent({
         : null;
 
     var categoryName = category ? category.name : '';
-    var activityAgo = timeAgo(topic.bumpedEpoch || topic.createdEpoch);
+    var activityAgo = prettyLetterTimeAgo(topic.bumpedEpoch || topic.createdEpoch);
 
     // Avatars: Original Poster, some frequent posters, most recent poster.
     var userAvatars = [
@@ -740,6 +744,10 @@ var ForumCategoriesComponent = React.createClass({
 
   componentWillReceiveProps: function(nextProps) {
     this.loadCategories(nextProps);
+  },
+
+  componentDidUpdate: function() {
+    processTimeAgo();
   },
 
   loadCategories: function(props) {
@@ -784,13 +792,15 @@ var CategoryRow = createComponent({
     var category: Category = this.props.category;
     var recentTopicRows = category.recentTopics.map((topic: Topic) => {
       var pinIconClass = topic.pinWhere ? ' icon-pin' : '';
+      var numReplies = topic.numPosts - 1;
       return (
         r.tr({ key: topic.pageId },
           r.td({},
             makeTitle(topic, 'topic-title' + pinIconClass),
             r.span({ className: 'topic-details' },
-              ' – ' + topic.numPosts + ' posts, ',
-              timeAgo(topic.bumpedEpoch || topic.createdEpoch)))));
+              r.span({ title: numReplies + " replies" },
+                numReplies, r.span({ className: 'icon-comment-empty' })),
+              prettyLetterTimeAgo(topic.bumpedEpoch || topic.createdEpoch)))));
     });
 
     var description = category.isTheUncategorizedCategory
