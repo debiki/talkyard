@@ -23,7 +23,6 @@
   <p>Unsubscribe from email notifications of replies to your commenets?</p>
   <div>
   <input type='submit' value='Yes, unsubscribe'>
-  <input type='button' value='No, and close page' onclick='closeWindow()'>
   </div>
   </form>
 }
@@ -32,10 +31,9 @@
 @unsubDoneInfo = {
   <p>You have been unsubscribed.
   </p>
-  <button onclick='closeWindow()'>Thanks, and close page</button>
   <br>
   <br>
-  <p>If you want to prevent resubscriptions, you can do that,
+  <p>If you want to prevent resubscriptions during the next months, you can do that,
     <a href='@nextPage'>here.</a> That is, you'd prevent yourself and other people from subscribing
     to email notifications again, using your email address.
   </p>
@@ -46,14 +44,10 @@
   <form accept-charset='UTF-8' method='post'>
   <p>Prevent resubscriptions?</p>
   <p>Do you want to prevent yourself and everyone else from
-    subscribing to email notifications, using your email address?
-    Currently this cannot be undone.@* but you can still subscribe again, with
-    the current email address, if youy login via e.g. Gmail
-    or Facebook (but not via guest login). *@
+    subscribing to email notifications, using your email address, during the next months?
   </p>
   <div>
   <input type='submit' value='Prevent resubscriptions'>
-  <input type='button' value='Close page' onclick='closeWindow()'>
   </div>
   </form>
 }
@@ -76,14 +70,6 @@
 p { max-width: 30em; }
 input { min-width: 11em; }
 </style>
-<script>
-@* https://stackoverflow.com/questions/2032640/
-      problem-with-window-close-and-chrome  *@
-function closeWindow() {
-  window.open('', '_self', ''); @* otherwise won't work in Chrome *@
-  window.close();
-}
-</script>
 </head>
 <body>
   @doWhat match {

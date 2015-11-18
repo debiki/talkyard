@@ -1008,17 +1008,7 @@ var PostHeader = createComponent({
     }
     else if (post.authorFullName) {
       namePart1 = r.span({ className: 'dw-fullname' }, post.authorFullName);
-      namePart2 =
-          r.span({ className: 'dw-lg-t-spl' }, '?'); // {if (user.email isEmpty) "??" else "?"
-        /* Could add back tooltip:
-          '<b>??</b> means that the user has not logged in,'+
-          ' so <i>anyone</i> can pretend to be this user&nbsp;(!),'+
-          ' and not specified any email address.'
-
-          '<b>?</b> means that the user has not logged in,'+
-          ' so <i>anyone</i> can pretend to be this user&nbsp;(!),'+
-          ' but has specified an email address.'
-        */
+      namePart2 = r.span({ className: 'dw-lg-t-spl' }, post.authorEmailUnknown ? '??' : '?');
     }
     else if (post.authorUsername) {
       namePart1 = r.span({ className: 'dw-username' }, post.authorUsername);

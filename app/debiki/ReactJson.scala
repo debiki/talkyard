@@ -407,6 +407,7 @@ object ReactJson {
       "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml))
 
     if (post.isHidden) fields :+= "isPostHidden" -> JsTrue
+    if (author.email.isEmpty) fields :+= "authorEmailUnknown" -> JsTrue
 
     if (author.isSuspendedAt(currentTime)) {
       author.suspendedTill match {

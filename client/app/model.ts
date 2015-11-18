@@ -57,11 +57,13 @@ interface Post {
   parentId: number;
   multireplyPostIds: number[];
   postType?: PostType;
+  // these author* are deprecated, should add an author: {...} object instead.
   authorId: string; // COULD change to int and then rename authorIdInt below to authorId.
   authorIdInt: number;
   authorFullName: string;
   authorUsername: string;
   authorAvatarUrl?: string;
+  authorEmailUnknown?: boolean;
   authorSuspendedTill?: any;
   createdAt: string;
   lastApprovedEditAt: string;
