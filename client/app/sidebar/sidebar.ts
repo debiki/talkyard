@@ -19,6 +19,7 @@
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
+/// <reference path="../help/help.ts" />
 /// <reference path="minimap.ts" />
 /// <reference path="unread-comments-tracker.ts" />
 
@@ -593,21 +594,21 @@ export var Sidebar = createComponent({
     var helpMessageBoxTwo;
     var helpMessageBoxTree;
     var helpMessageBoxFour;
-    if (isHelpMessageClosed(this.state.store, helpMessageOne)) {
+    if (help.isHelpMessageClosed(this.state.store, helpMessageOne)) {
       helpMessageBoxTwo =
           help.HelpMessageBox({ className: 'es-editor-help-two', message: helpMessageTwo });
     }
-    if (isHelpMessageClosed(this.state.store, helpMessageTwo)) {
+    if (help.isHelpMessageClosed(this.state.store, helpMessageTwo)) {
       helpMessageBoxTree =
           help.HelpMessageBox({ className: 'es-editor-help-three', message: helpMessageThree });
     }
-    if (isHelpMessageClosed(this.state.store, helpMessageThree)) {
+    if (help.isHelpMessageClosed(this.state.store, helpMessageThree)) {
       helpMessageBoxFour =
           help.HelpMessageBox({ className: 'es-editor-help-four', message: helpMessageFour });
     }
 
     // Dim the comments list until all help messages have been closed.
-    var dimCommentsStyle = isHelpMessageClosed(this.state.store, helpMessageFour) ?
+    var dimCommentsStyle = help.isHelpMessageClosed(this.state.store, helpMessageFour) ?
         null : { opacity: '0.6' };
 
     return (
@@ -632,13 +633,6 @@ export var Sidebar = createComponent({
                   commentsElems))))))));
   }
 });
-
-
-// COULD move to ... help.ts?
-function isHelpMessageClosed(store, message) {
-  var closedVersion = store.user.closedHelpMessages[message.id];
-  return closedVersion && closedVersion === message.version;
-}
 
 
 var helpMessageOne = {

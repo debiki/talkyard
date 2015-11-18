@@ -27,6 +27,7 @@
 /// <reference path="../react-elements/topbar.ts" />
 /// <reference path="../page-dialogs/wikify-dialog.ts" />
 /// <reference path="../page-dialogs/delete-post-dialog.ts" />
+/// <reference path="../help/help.ts" />
 /// <reference path="../model.ts" />
 
 // Wrapping in a module causes an ArrayIndexOutOfBoundsException: null error, see:
@@ -414,17 +415,17 @@ var SocialLinks = createComponent({
 
 var RootPostAndComments = createComponent({
   getInitialState: function() {
-    return { showClickReplyInstead: debiki2.getFromLocalStorage('showClickReplyInsteadTips') };
+    return { showClickReplyInstead: false };
   },
 
   onChatReplyClick: function() {
-    if (this.state.showClickReplyInstead) {
-      // We've shown the Click-Reply-instead tips already, so now do open the chat comment editor.
+    // Unless shown alraedy, or read already, show a tips about clicking "Reply" instead.
+    var hasReadClickReplyTips = debiki2.help.isHelpMessageClosed(this.props, clickReplyInsteadHelpMessage);
+    if (hasReadClickReplyTips || this.state.showClickReplyInstead) {
       debiki.internal.showReplyFormForFlatChat();
     }
     else {
       this.setState({ showClickReplyInstead: true });
-      debiki2.putInLocalStorage('showClickReplyInsteadTips', true);
     }
   },
 
@@ -536,16 +537,9 @@ var RootPostAndComments = createComponent({
           Thread(threadProps)));
     });
 
-    var anyClickReplyInsteadHelpMessage;
-    if (this.state.showClickReplyInstead) {
-      anyClickReplyInsteadHelpMessage =
-          r.div({},
-            debiki2.help.HelpMessageBox({ large: true, message: { id: 'EsH5UGPM2', version: 1,
-              okayText: "Yes, okay", content: r.span({},
-                r.b({}, "If you want to reply to someone"), ", then instead click ",
-                r.span({ className: 'icon-reply', style: { margin: '0 1ex' }}, "Reply"),
-                " just below his/her post.") }}));
-    }
+    var anyClickReplyInsteadHelpMessage = this.state.showClickReplyInstead
+        ? debiki2.help.HelpMessageBox({ large: true, message: clickReplyInsteadHelpMessage })
+        : null;
 
     return (
       r.div({ className: threadClass },
@@ -577,6 +571,17 @@ var RootPostAndComments = createComponent({
         r.div({ id: 'dw-the-end', style: { clear: 'both' } })));
   },
 });
+
+
+var clickReplyInsteadHelpMessage = {
+  id: 'EsH5UGPM2',
+  version: 1,
+  okayText: "Okay",
+  content: r.span({},
+    r.b({}, "If you want to reply to someone"), ", then instead click ",
+    r.span({ className: 'icon-reply', style: { margin: '0 1ex' }}, "Reply"),
+    " just below his/her post.")
+};
 
 
 var SquashedThreads = createComponent({

@@ -209,7 +209,6 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.ShowHelpAgain:
       putInLocalStorage('closedHelpMessages',  {});
-      localStorage.removeItem('showClickReplyInsteadTips');
       store.user.closedHelpMessages = {};
       break;
 

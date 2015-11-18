@@ -50,6 +50,11 @@ export function getHowToShowHelpAgainDialog() {
   return howToShowHelpAgainDialog;
 } */
 
+export function isHelpMessageClosed(store, message) {
+  var closedVersion = store.user.closedHelpMessages[message.id];
+  return closedVersion && closedVersion === message.version;
+}
+
 
 export var HelpMessageBox = createComponent({
   mixins: [StoreListenerMixin],
@@ -65,9 +70,10 @@ export var HelpMessageBox = createComponent({
   computeState: function() {
     var message: HelpMessage = this.props.message;
     var user: User = ReactStore.allData().user;
-    if (!user)
-      return { hidden: false };
-
+    if (!ReactStore.allData().userSpecificDataAdded) {
+      // Don't want search engines to index help text.
+      return { hidden: true };
+    }
     var closedMessages: { [id: string]: number } = user.closedHelpMessages || {};
     var thisMessClosedVersion = closedMessages[message.id];
     return { hidden: thisMessClosedVersion === message.version };
@@ -94,7 +100,7 @@ export var HelpMessageBox = createComponent({
 
     var largeClass = this.props.large ? ' dwHelp-large' : '';
     return (
-      r.div({ className: this.props.className + ' dw-help' + largeClass },
+      r.div({ className: (this.props.className || '') + ' dw-help' + largeClass },
         r.div({ className: 'dw-help-text' },
           this.props.message.content),
         r.a({ className: okayIcon + ' dw-hide', onClick: this.hideThisHelp },
