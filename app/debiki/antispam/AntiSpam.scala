@@ -50,11 +50,15 @@ object NoApiKeyException extends QuickException
 
 
 
-/** Currently uses Akismet and Spamhaus and uribl and StopForumSpam. Could break out
-  * the various services to different classes — but not right now, first find out
+/** Currently uses Google Safe Browsing API and Akismet and Spamhaus and uribl and StopForumSpam.
+  * Could break out the various services to different classes — but not right now, first find out
   * these spam checks seem to work or not.
+  * Or break out to plugins.  [plugin]
   *
   * Test like so:
+  * - Google Safe Browsing: Post a link to http://malware.tes ting.google.test/testing/malware/
+  *    (without the space in "testing")
+  *   see: https://groups.google.com/forum/#!topic/google-safe-browsing-api/_jiN19nWwC8
   * - Akismet: Post a title or page or comment with: '--viagra-test-123--' anywhere
   * - Spamhaus: Link to 'dbltest.com', see:
   * - uribl: Link to 'test.uribl.com' or 2.0.0.127, see: http://uribl.com/about.shtml
@@ -125,14 +129,14 @@ class AntiSpam {
   private val UserAgent = "Debiki/0.00.00 | Built-In/0.00.00"
   private val ContentType = "application/x-www-form-urlencoded"
 
-  private val apiKeyIsValidPromise: Promise[Boolean] = Promise()
+  private val akismetKeyIsValidPromise: Promise[Boolean] = Promise()
 
   private def encode(text: String) = jn.URLEncoder.encode(text, "UTF-8")
 
   // One key only, for now. Later on, one per site? + 1 global for non-commercial
   // low traffic newly created sites? + 1 global for commercial low traffic sites?
   // (and one per site for high traffic sites)
-  private val anyApiKey: Option[String] = p.Play.configuration.getString("debiki.akismetApiKey")
+  private val anyAkismetKey: Option[String] = p.Play.configuration.getString("debiki.akismetApiKey")
 
   val AkismetAlwaysSpamName = "viagra-test-123"
 
@@ -152,6 +156,9 @@ class AntiSpam {
     val Tweet = "tweet" // twitter messages
   }
 
+  val GoogleApiKeyName = "efdi.security.googleApiKey"
+  val anyGoogleApiKey = p.Play.configuration.getString(GoogleApiKeyName)
+
 
   def start() {
     verifyAkismetApiKey()
@@ -159,13 +166,13 @@ class AntiSpam {
 
 
   private def verifyAkismetApiKey() {
-    if (anyApiKey.isEmpty) {
-      apiKeyIsValidPromise.failure(NoApiKeyException)
+    if (anyAkismetKey.isEmpty) {
+      akismetKeyIsValidPromise.failure(NoApiKeyException)
       return
     }
 
     // apparently port number not okay, -> invalid, and http://localhost -> invalid, too.
-    val postData = "key=" + encode(anyApiKey.get) +
+    val postData = "key=" + encode(anyAkismetKey.get) +
       "&blog=" + encode("http://localhost")
 
     // Without (some of) these headers, Akismet says the api key is invalid.
@@ -186,7 +193,7 @@ class AntiSpam {
       else {
         p.Logger.info(s"Akismet key is valid [DwM2KWS4]")
       }
-      apiKeyIsValidPromise.success(isValid)
+      akismetKeyIsValidPromise.success(isValid)
     }
   }
 
@@ -211,7 +218,7 @@ class AntiSpam {
     throwForbiddenIfLooksSpammy(request, bodyTextAndHtml)
 
     val allTextAndHtml = titleTextAndHtml append bodyTextAndHtml
-    val domainFutures = checkDomainBlockLists(allTextAndHtml)
+    val urlsAndDomainsFutures = checkUrlsAndDomains(allTextAndHtml)
     // COULD postpone the Akismet check until after the domain check has been done? [5KGUF2]
 
     // Don't send the whole text, because of privacy issues. Send the links only.
@@ -220,7 +227,7 @@ class AntiSpam {
       text = Some(allTextAndHtml.safeHtml))//htmlLinksOnePerLine))
     val akismetFuture = checkViaAkismet(payload)
 
-    aggregateResults(domainFutures :+ akismetFuture, request, Some(allTextAndHtml))
+    aggregateResults(urlsAndDomainsFutures :+ akismetFuture, request, Some(allTextAndHtml))
   }
 
 
@@ -234,7 +241,7 @@ class AntiSpam {
 
     throwForbiddenIfLooksSpammy(request, textAndHtml)
 
-    val domainFutures = checkDomainBlockLists(textAndHtml)
+    val urlsAndDomainsFutures = checkUrlsAndDomains(textAndHtml)
     // COULD postpone the Akismet check until after the domain check has been done? [5KGUF2]
     // So won't have to pay for Akismet requests, if the site is commercial.
     // Currently the Spamhaus test happens synchronously already though.
@@ -245,7 +252,7 @@ class AntiSpam {
       text = Some(textAndHtml.safeHtml))//htmlLinksOnePerLine))
     val akismetFuture = checkViaAkismet(payload)
 
-    aggregateResults(domainFutures :+ akismetFuture, request, Some(textAndHtml))
+    aggregateResults(urlsAndDomainsFutures :+ akismetFuture, request, Some(textAndHtml))
   }
 
 
@@ -386,6 +393,109 @@ class AntiSpam {
   }
 
 
+  def checkUrlsAndDomains(textAndHtml: TextAndHtml): Seq[Future[Option[String]]] =
+    checkUrlsViaGoogleSafeBrowsingApi(textAndHtml) +:
+      checkDomainBlockLists(textAndHtml)
+
+
+  def checkUrlsViaGoogleSafeBrowsingApi(textAndHtml: TextAndHtml): Future[Option[String]] = {
+    // API: https://developers.google.com/safe-browsing/lookup_guide#HTTPPOSTRequest
+    val apiKey = anyGoogleApiKey getOrElse {
+      return Future.successful(None)
+    }
+
+    // ".*" tells the url validator to consider all domains valid, even if it doesn't
+    // recognize the top level domain.
+    import org.apache.commons.validator.routines.{UrlValidator, RegexValidator}
+    val urlValidator = new UrlValidator(new RegexValidator(".*"), UrlValidator.ALLOW_2_SLASHES)
+    val validUrls = textAndHtml.links.filter(urlValidator.isValid)
+    if (validUrls.isEmpty)
+      return Future.successful(None)
+
+    val SafeBrowsingApiEndpoint = "https://sb-ssl.google.com/safebrowsing/api/lookup"
+    val clientName = "EffectiveDiscussions"
+    val protocolVersion = "3.1"
+    val applicationVersion = debiki.Globals.applicationVersion // COULD use version in build.sbt?
+
+    val requestBody = validUrls.length + "\n" + validUrls.mkString("\n")
+    val url = SafeBrowsingApiEndpoint +
+      s"?client=$clientName" +
+      s"&key=$apiKey" +
+      s"&appver=$applicationVersion" +
+      s"&pver=$protocolVersion"
+
+    val NoEvilUrlsStatusCode = 204
+    val AtLeastOneEvilUrlStatusCode = 200
+    val SafeUrlVerdict = "ok"
+
+    val request: WSRequest =
+      WS.url(url).withHeaders(
+        play.api.http.HeaderNames.CONTENT_LENGTH -> requestBody.length.toString)
+
+    request.post(requestBody) map { response: WSResponse =>
+      response.status match {
+        case NoEvilUrlsStatusCode =>
+          None
+        case 400 =>
+          p.Logger.warn("I sent a malformed Google Safe Browsing API request")
+          None
+        case 401 =>
+          p.Logger.warn(o"""Google Safe Browsing API key is not authorized, i.e. the key in
+              this config value is invalid: $GoogleApiKeyName""")
+          None
+        case 503 =>
+          // Google is broken, *or* we're sending too many requests and are being throttled.
+          // I think a userIp url param can be included and then Google will throttle per
+          // browser ip. But we already do per ip rate limiting.
+          p.Logger.warn("Google Safe Browsing API is broken or throttles us")
+          None
+        case AtLeastOneEvilUrlStatusCode =>
+          val urlsAndVerdicts: Seq[(String, String)] =
+            validUrls.zip(response.body.split("\n").toSeq)
+          val evilUrlsAndVerdics = urlsAndVerdicts filter { linkAndResult =>
+            linkAndResult._2 != SafeUrlVerdict
+          }
+          // Google says we shall include the "read more" and "provided by Google"
+          // and "perhaps all this is wrong" texts below, see:
+          // https://developers.google.com/safe-browsing/lookup_guide#AcceptableUsage
+          // However, we're sending this message back to the person who *posted*
+          // the evil urls — and s/he likely knows already what s/he is doing?
+          // Still, a friendly message makes sense, because in some rare cases a good
+          // site might have been compromised and the link poster has good intentions.
+          val prettyEvilStuff = evilUrlsAndVerdics.map(urlAndVerdict => {
+            // This results in e.g.:  "malware: http://evil.kingdom/malware"
+            urlAndVerdict._2 + ": " + urlAndVerdict._1
+          }).mkString("\n")
+          Some(i"""
+            |
+            |${evilUrlsAndVerdics.length} possibly evil URLs found:
+            |-----------------------------
+            |
+            |$prettyEvilStuff
+            |
+            |The above URLs might be pishing pages, or might harm your computer (any "malware:" rows
+            |above), or might contain harmful programs (any "unwanted:" rows above).
+            |
+            |Read more here:
+            |http://www.antiphishing.org/ — for phishing warnings
+            |http://www.stopbadware.org/ — for malware warnings
+            |https://www.google.com/about/company/unwanted-software-policy.html
+            |                           — for unwanted software warnings
+            |
+            |This advisory was provided by Google.
+            |See: http://code.google.com/apis/safebrowsing/safebrowsing_faq.html#whyAdvisory
+            |
+            |Google works to provide the most accurate and up-to-date phishing, malware,
+            |and unwanted software information. However, Google cannot guarantee that
+            |its information is comprehensive and error-free: some risky sites
+            |may not be identified, and some safe sites may be identified in error.
+            |
+            |""")
+      }
+    }
+  }
+
+
   def checkDomainBlockLists(textAndHtml: TextAndHtml): Seq[Future[Option[String]]] = {
     /* WHY
     scala> java.net.InetAddress.getAllByName("dbltest.com.dbl.spamhaus.org");  <-- fails the frist time
@@ -457,10 +567,11 @@ class AntiSpam {
 
 
   def checkViaAkismet(requestBody: String): Future[Option[String]] = {
+    return successful(None)
     val promise = Promise[Boolean]()
-    apiKeyIsValidPromise.future onComplete {
+    akismetKeyIsValidPromise.future onComplete {
       case Success(true) =>
-        sendCheckIsSpamRequest(apiKey = anyApiKey.get, payload = requestBody, promise)
+        sendCheckIsSpamRequest(apiKey = anyAkismetKey.get, payload = requestBody, promise)
       /*
       case Success(false) =>
         promise.failure(ApiKeyInvalidException) ? Or just ignore the spam check, for now
@@ -507,7 +618,7 @@ class AntiSpam {
       pageId: Option[PageId] = None, text: Option[String] = None, anyName: Option[String] = None,
       anyEmail: Option[String] = None): String = {
 
-    if (anyApiKey.isEmpty)
+    if (anyAkismetKey.isEmpty)
       return "No Akismet API key configured [DwM4GLU8]"
 
     val body = new StringBuilder()

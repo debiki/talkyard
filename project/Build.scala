@@ -46,6 +46,7 @@ object ApplicationBuild extends Build {
     // PostgreSQL 9.2 drivers are also not in the Maven repos (as of May 2013).
     "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
     "org.apache.commons" % "commons-email" % "1.3.3",
+    "commons-validator" % "commons-validator" % "1.4.1",
     "com.google.guava" % "guava" % "13.0.1",
     "org.owasp.encoder" % "encoder" % "1.1.1",
     "org.jsoup" % "jsoup" % "1.8.2",
