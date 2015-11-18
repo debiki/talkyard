@@ -351,7 +351,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   private val RenderAndSanitizeCommonMark = i"""
     |var md;
     |try {
-    |  md = markdownit({ html: true });
+    |  md = markdownit({ html: true, linkify: true, breaks: true });
     |  md.use(debiki.internal.MentionsMarkdownItPlugin());
     |  md.use(debiki.internal.oneboxMarkdownItPlugin);
     |}

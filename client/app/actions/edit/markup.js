@@ -44,7 +44,7 @@ function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
   var htmlTextUnsafe = converter.makeHtml(markdownSrc, hostAndPort);
    */
 
-  var md = window.markdownit({ html: true, linkify: true });
+  var md = window.markdownit({ html: true, linkify: true, breaks: true });
   md.use(d.i.MentionsMarkdownItPlugin());
   md.use(d.i.oneboxMarkdownItPlugin);
   var htmlTextUnsafe = md.render(commonmarkSource);
