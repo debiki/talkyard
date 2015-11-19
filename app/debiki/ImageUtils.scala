@@ -27,6 +27,29 @@ import javax.imageio.stream.FileImageOutputStream
 import play.{api => p}
 
 
+/** COULD instead compress client side. And only verify server side that compression level > X
+  * has been used? Hmm, I think, compress first client side, so can upload small file.
+  * Then compress server side too, just in case hasn't already been done client side.
+  * Read:
+  *
+  * resize img, make loook good:
+  * http://stackoverflow.com/questions/2303690/resizing-an-image-in-an-html5-canvas
+  * http://stackoverflow.com/questions/18922880/html5-canvas-resize-downscale-image-high-quality?rq=1
+  *
+  * check compression level: (just compare width*height*pixels with actual size)
+  * http://stackoverflow.com/questions/14757270/java-reading-compression-ratio-of-an-jpeg-gif
+  *
+  * resize:
+  * http://stackoverflow.com/questions/15558202/how-to-resize-image-in-java
+  * http://stackoverflow.com/questions/3967731/how-to-improve-the-performance-of-g-drawimage-method-for-resizing-images
+  * https://today.java.net/pub/a/today/2007/04/03/perils-of-image-getscaledinstance.html
+  *
+  * http://odyniec.net/projects/imgareaselect/
+  * http://rubaxa.github.io/jquery.fileapi/
+  * https://github.com/mailru/FileAPI/network
+  * http://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
+  * https://scotch.io/tutorials/use-the-html5-file-api-to-work-with-files-locally-in-the-browser
+  */
 object ImageUtils {
 
   // For now only!
