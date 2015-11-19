@@ -479,6 +479,12 @@ export function listUsernames(prefix: string, doneCallback: (usernames: string[]
 //
 export function loadDraftAndGuidelines(writingWhat: WritingWhat, categoryId: number,
       pageRole: PageRole, success: (guidelinesSafeHtml: string) => void) {
+  if (!categoryId) {
+    // For now just cancel. There's no draft to load, and there're no guidelines, since
+    // we got no category id.
+    success(null);
+    return;
+  }
   get('/-/load-draft-and-guidelines?writingWhat=' + writingWhat +
       '&categoryId=' + categoryId + '&pageRole=' + pageRole, (response) => {
     success(response.guidelinesSafeHtml);
