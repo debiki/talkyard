@@ -195,7 +195,8 @@ object PagePath {
   }
 
 
-  private val MaxSlugLength = 50
+  // Discourse allows at least 100 chars.
+  val MaxSlugLength = 100
 
   private val SlugRegex = """[a-z0-9][a-z0-9-]*[a-z0-9]""".r
 

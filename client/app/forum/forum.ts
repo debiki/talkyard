@@ -48,6 +48,7 @@ var RouteHandler = reactCreateFactory(ReactRouter.RouteHandler);
 var RouterNavigationMixin = ReactRouter.Navigation;
 var RouterStateMixin = ReactRouter.State;
 
+var MaxWaitingForCritique = 10; // for now only [plugin]
 
 /** Keep in sync with app/controllers/ForumController.NumTopicsToList. */
 var NumNewTopicsPerRequest = 40;
@@ -139,6 +140,14 @@ var ForumComponent = React.createClass({
             "receive critique — and to notify you, if you give critique, " +
             "and someone asks for clarifications.")) };
 
+    // For now only.  [85SKW32]
+    if (this.state.numWaitingForCritique >= MaxWaitingForCritique) //  [plugin]
+      return { id: 'Es5GUPM2', version: 1, alwaysShow: true, isWarning: true, content: r.span({},
+        r.p({}, r.b({}, "You cannot currently ask for critique"),
+          " — too many topics waiting for critique already."),
+        r.p({}, "Check back later. Or send an email to me, kaj.magnus.lindberg at gmail dot com, " +
+          "and tell me to notify you when you can ask for critique again.")) };
+
     // if too-few-topics then
     return { id: 'EdH4KBP2', version: 1, content: r.span({},
         r.p({}, "You can click ", r.b({}, "Ask for Critique"), " (to the right just below)."),
@@ -163,7 +172,15 @@ var ForumComponent = React.createClass({
         ? debiki2.help.HelpMessageBox({ message: helpMessage })
         : null;
 
-    var childProps = _.assign({}, this.state, { activeCategory: activeCategory });
+    var childProps = _.assign({}, this.state, {
+      activeCategory: activeCategory,
+      numWaitingForCritique: this.state.numWaitingForCritique,  // for now only [plugin]
+      setNumWaitingForCritique: (numWaiting) => {               // for now only [plugin]
+        if (this.state.numWaitingForCritique !== numWaiting)
+          this.setState({ numWaitingForCritique: numWaiting });
+      },
+    });
+
     return (
       r.div({ className: 'container dw-forum' },
         debiki2.reactelements.TopBar({}),
@@ -399,6 +416,7 @@ var CategoriesAndTopics = createComponent({
 
     var createTopicBtn;
     if (activeRoute.name !== 'ForumRouteCategories') {
+     if (this.props.numWaitingForCritique < MaxWaitingForCritique)  // for now only [plugin]
       createTopicBtn = Button({ onClick: this.createTopic, bsStyle: 'primary' },
         createTopicBtnTitle(activeCategory));
     }
@@ -498,6 +516,8 @@ var ForumTopicListComponent = React.createClass({
         this.props.activeRoute.name !== nextProps.activeRoute.name ||
         this.props.topicFilter !== nextProps.topicFilter;
 
+    this.countTopicsWaitingForCritique(); // for now only
+
     // Avoid loading the same topics many times:
     // - On page load, componentDidMount() and componentWillReceiveProps() both loads topics.
     // - When we're refreshing the page because of Flux events, don't load the same topics again.
@@ -532,7 +552,20 @@ var ForumTopicListComponent = React.createClass({
         topics: topics,
         showLoadMoreButton: newlyLoadedTopics.length >= NumNewTopicsPerRequest
       });
+      this.countTopicsWaitingForCritique(topics); // for now only
     });
+  },
+
+  countTopicsWaitingForCritique: function(topics) { // for now only  [plugin]
+    topics = topics || this.state.topics
+    var numWaitingForCritique = 0;
+    if (_.isEqual(this.props.activeCategory.newTopicTypes, [PageRole.Critique])) {
+      var waitingTopics = _.filter(topics, (topic: Topic) =>
+        !topic.closedAtMs && topic.pageRole === PageRole.Critique);
+      numWaitingForCritique = waitingTopics.length;
+      console.log(numWaitingForCritique + " topics waiting for critique. [EsM8PMU21]");
+    }
+    this.props.setNumWaitingForCritique(numWaitingForCritique);
   },
 
   getOrderOffset: function() {

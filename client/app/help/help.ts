@@ -90,21 +90,26 @@ export var HelpMessageBox = createComponent({
   },
 
   render: function() {
-    if (this.state.hidden)
+    if (this.state.hidden && !this.props.message.alwaysShow)
       return null;
 
     // If there are more help dialogs afterwards, show a comment icon instead to give
     // the impression that we're talking with the computer. Only when no more help awaits,
     // show the close (well "cancel") icon.
     var okayIcon = this.props.message.moreHelpAwaits ? 'icon-comment' : 'icon-cancel';
+    var okayButton = this.props.message.alwaysShow
+        ? null
+        : r.a({ className: okayIcon + ' dw-hide', onClick: this.hideThisHelp },
+            this.props.message.okayText || "Hide");
 
     var largeClass = this.props.large ? ' dwHelp-large' : '';
+    var warningClass = this.props.message.isWarning ? ' esHelp-warning' : '';
+    var classes = (this.props.className || '') + ' dw-help' + largeClass + warningClass;
     return (
-      r.div({ className: (this.props.className || '') + ' dw-help' + largeClass },
+      r.div({ className: classes },
         r.div({ className: 'dw-help-text' },
           this.props.message.content),
-        r.a({ className: okayIcon + ' dw-hide', onClick: this.hideThisHelp },
-          this.props.message.okayText || "Hide")));
+        okayButton));
   }
 });
 

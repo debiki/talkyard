@@ -82,14 +82,27 @@ trait PagesDao {
     // Authorize and determine approver user id. For now:
     val author = transaction.loadUser(authorId) getOrElse throwForbidden("DwE9GK32", "User gone")
 
-    val pageSlug = anySlug match {
+    // Don't allow more than ... 10 topics with no critique? For now only.
+    if (pageRole == PageRole.Critique) { // [plugin] [85SKW32]
+      anyCategoryId foreach { categoryId =>
+        val pages = listPagesInCategory(categoryId, includeDescendants = true,
+          PageQuery(PageOrderOffset.Any, PageFilter.ShowWaiting), limit = 20)
+        // Client side, the limit is 10. Let's allow a few more topics in case people start
+        // writing before the limit is reached but submit afterwards.
+        if (pages.length >= 10 + 5)  // for now only
+          throwForbidden("DwE8GUM2", o"""Too many topics waiting for critique,
+            you cannot submit more topics at this time, sorry. Check back later.""")
+      }
+    }
+
+    val pageSlug = (anySlug match {
       case Some(slug) =>
         if (!author.isStaff)
           throwForbidden("DwE4KFW87", "Only staff may specify page slug")
         slug
       case None =>
         siteDbDao.commonMarkRenderer.slugifyTitle(titleSource)
-    }
+    }).take(PagePath.MaxSlugLength).dropRightWhile(_ == '-').dropWhile(_ == '-')
 
     val approvedById =
       if (author.isStaff) {
