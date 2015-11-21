@@ -240,6 +240,7 @@ var UserInfo = createComponent({
 
   render: function() {
     var user = this.props.user;
+    var loggedInUser = this.props.loggedInUser;
     var suspendedInfo;
     if (user.suspendedAtEpoch) {
       var whatAndUntilWhen = user.suspendedTillEpoch === 'Forever'
@@ -267,17 +268,22 @@ var UserInfo = createComponent({
     var uploadAvatarBtnText = user.mediumAvatarUrl ? "Change photo" : "Upload photo";
     var avatarMissingClass = user.mediumAvatarUrl ? '' : ' esMedAvtr-missing';
 
+    var anyUploadPhotoBtn = (loggedInUser.userId === user.id || isStaff(loggedInUser))
+      ? r.div({},
+          // File inputs are ugly, so we hide the file input (size 0 x 0) and activate
+          // it by clicking a beautiful button instead:
+          Button({ id: 'e2eChooseAvatarInput', className: 'esMedAvtr_uplBtn',
+              onClick: this.selectAndUploadAvatar }, uploadAvatarBtnText),
+          r.input({ name: 'files', type: 'file', multiple: false,
+             ref: 'chooseAvatarInput', style: { width: 0, height: 0 }}))
+      : null;
+
     return (
       r.div({ className: 'user-info' },
         r.div({ className: 'user-info-col' },
           r.div({ className: 'esMedAvtr' + avatarMissingClass },
             r.img({ src: user.mediumAvatarUrl }),
-            // File inputs are ugly, so we hide the file input (size 0 x 0) and activate
-            // it by clicking a beautiful button instead:
-            Button({ id: 'e2eChooseAvatarInput', className: 'esMedAvtr_uplBtn',
-                onClick: this.selectAndUploadAvatar }, uploadAvatarBtnText),
-            r.input({ name: 'files', type: 'file', multiple: false,
-               ref: 'chooseAvatarInput', style: { width: 0, height: 0 }}))),
+            anyUploadPhotoBtn)),
         r.div({ className: 'user-info-col' },
           r.div({ style: { display: 'table-cell' }},
             r.h1({}, user.username),
