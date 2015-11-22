@@ -60,6 +60,7 @@ trait SiteTransaction {
 
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
   def loadPosts(pagePostIds: Iterable[PagePostId]): immutable.Seq[Post]
+  def loadPostsBy(authorId: UserId, limit: Int): immutable.Seq[Post]
   def loadPostsToReview(): immutable.Seq[Post]
 
   def nextPostId(): UniquePostId
@@ -176,6 +177,12 @@ trait SiteTransaction {
   def loadRolePageSettings(roleId: RoleId, pageId: PageId): Option[RolePageSettings]
   def loadRolePageSettingsOrDefault(roleId: RoleId, pageId: PageId) =
         loadRolePageSettings(roleId, pageId) getOrElse RolePageSettings.Default
+
+  def nextReviewTaskId(): ReviewTaskId
+  def upsertReviewTask(reviewTask: ReviewTask)
+  def loadPendingReviewTask(byUserId: UserId, postId: PostId): Option[ReviewTask]
+  def loadReviewTask(id: ReviewTaskId): Option[ReviewTask]
+  def loadReviewTasks(olderOrEqualTo: ju.Date, limit: Int): Seq[ReviewTask]
 
   def saveDeleteNotifications(notifications: Notifications)
 

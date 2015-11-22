@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2014-2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -44,6 +44,14 @@ trait PostsDao {
         postType: PostType, authorId: UserId, browserIdData: BrowserIdData): PostId = {
     if (textAndHtml.safeHtml.trim.isEmpty)
       throwBadReq("DwE6KEF2", "Empty reply")
+
+    // Later: create 1 post of type multireply, with no text, per replied-to post,
+    // and one post for the actual text and resulting location of this post.
+    // Disabling for now, so I won't have to parse dw2_posts.multireply and convert
+    // to many rows.
+    if (replyToPostIds.size > 1)
+      throwNotImplemented("EsE7GKX2", o"""Please reply to one single person only.
+        Multireplies temporarily disabled, sorry""")
 
     val postId = readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
@@ -118,6 +126,30 @@ trait PostsDao {
 
       val uploadRefs = UploadsDao.findUploadRefsInPost(newPost)
 
+      val reviewTaskReasons = mutable.ArrayBuffer[ReviewReason]()
+      if (!author.isStaff) {
+        val recentPostsByAuthor = transaction.loadPostsBy(authorId,
+          limit = Settings.NumFirstUserPostsToReview)
+        if (recentPostsByAuthor.length < Settings.NumFirstUserPostsToReview) {
+          reviewTaskReasons.append(ReviewReason.FirstOrEarlyPost)
+        }
+        if (page.isClosed) {
+          // The topic won't be bumped, so no one might see this post, so staff should have a look.
+          reviewTaskReasons.append(ReviewReason.NoBumpPost)
+        }
+      }
+
+      val reviewTask: Option[ReviewTask] =
+        if (reviewTaskReasons.isEmpty) None
+        else Some(ReviewTask(
+          id = transaction.nextReviewTaskId(),
+          doneById = author.id,
+          reasons = reviewTaskReasons.to[immutable.Seq],
+          alreadyApproved = isApproved,
+          createdAt = transaction.currentTime,
+          postId = Some(newPost.uniqueId),
+          revisionNr = Some(newPost.currentRevisionNr)))
+
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
@@ -138,6 +170,7 @@ trait PostsDao {
         transaction.insertUploadedFileReference(newPost.uniqueId, uploadRef, authorId)
       }
       insertAuditLogEntry(auditLogEntry, transaction)
+      reviewTask.foreach(transaction.upsertReviewTask)
 
       val notifications = NotificationGenerator(transaction).generateForNewPost(page, newPost)
       transaction.saveDeleteNotifications(notifications)
@@ -276,6 +309,33 @@ trait PostsDao {
       val uploadRefsAdded = currentUploadRefs -- oldUploadRefs
       val uploadRefsRemoved = oldUploadRefs -- currentUploadRefs
 
+      val postRecentlyCreated = transaction.currentTime.getTime - postToEdit.createdAt.getTime <=
+          Settings.PostRecentlyCreatedLimitMs
+
+      val reviewTask: Option[ReviewTask] =
+        if (postRecentlyCreated || editor.isStaff) {
+          // Need not review a recently created post: it's new and the edits likely
+          // happened before other people read it, so they'll notice any weird things
+          // later when they read it, and can flag it. This is not totally safe,
+          // but better than forcing the staff to review all edits? (They'd just
+          // get bored and stop reviewing.)
+          None
+        }
+        else {
+          val oldTask = transaction.loadPendingReviewTask(editorId, postId)
+          val newOrUpdatedTask = ReviewTask(
+            id = oldTask.map(_.id).getOrElse(transaction.nextReviewTaskId()),
+            doneById = editorId,
+            reasons = immutable.Seq(
+              if (postId == PageParts.TitleId) ReviewReason.TitleEdited
+              else ReviewReason.PostEdited),
+            alreadyApproved = true, // for now
+            createdAt = transaction.currentTime,
+            postId = Some(editedPost.uniqueId),
+            revisionNr = Some(editedPost.currentRevisionNr)).mergeWithAny(oldTask)
+          Some(newOrUpdatedTask)
+        }
+
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
@@ -304,6 +364,7 @@ trait PostsDao {
 
       insertAuditLogEntry(auditLogEntry, transaction)
       anyEditedCategory.foreach(transaction.updateCategoryMarkSectionPageStale)
+      reviewTask.foreach(transaction.upsertReviewTask)
 
       if (!postToEdit.isSomeVersionApproved && editedPost.isSomeVersionApproved) {
         unimplemented("Updating visible post counts when post approved via an edit", "DwE5WE28")
@@ -543,6 +604,8 @@ trait PostsDao {
             if (successor.deletedStatus.areAncestorsDeleted) None
             else Some(successor.copyWithNewStatus(
               transaction.currentTime, userId, ancestorsDeleted = true))
+          case x =>
+            die("DwE8FMU3", "PostAction not implemented: " + x)
         }
 
         anyUpdatedSuccessor foreach { updatedSuccessor =>

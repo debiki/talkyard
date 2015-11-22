@@ -162,3 +162,17 @@ case class Settings(settingsChain: SettingsChain) {
 }
 
 
+object Settings {
+
+  /** I read somewhere on Discourse's forum that very few people edit their posts 5 hours
+    * after they've been created. So 5 hours will result in very few edits to review
+    * — and hopefully catch all/most malicious edits.
+    */
+  val PostRecentlyCreatedLimitMs = 5 * 3600 * 1000
+
+  /** The first few posts by a new user are enqueued for review (because spammers
+    * likely post spam directly or almost directly).
+    */
+  val NumFirstUserPostsToReview = 2
+
+}
