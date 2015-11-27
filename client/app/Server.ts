@@ -178,6 +178,16 @@ export function saveSpecialContent(specialContent: SpecialContent, success: () =
 }
 
 
+export function loadReviewTasks(success: (tasks: ReviewTask[]) => void) {
+  get('/-/load-review-tasks', success);
+}
+
+
+export function completeReviewTask(id: number, revisionNr: number, success: () => void) {
+  postJsonSuccess('/-/complete-review-task', success, { taskId: id, revisionNr: revisionNr });
+}
+
+
 export function loadRecentPosts(doneCallback: (posts: PostToModerate[]) => void) {
   $.get(origin + '/-/list-recent-posts')
     .done(response => {

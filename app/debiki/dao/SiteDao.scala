@@ -75,6 +75,7 @@ abstract class SiteDao
   with PostsDao
   with UploadsDao
   with UserDao
+  with ReviewsDao
   with AuditDao {
 
   def siteDbDao: SiteDbDao

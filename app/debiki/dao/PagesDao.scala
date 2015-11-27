@@ -24,12 +24,17 @@ import com.debiki.core.User.SystemUserId
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
+import scala.collection.{immutable, mutable}
 
 
 /** Loads and saves pages and page parts (e.g. posts and patches).
   *
   * (There's also a class PageDao (with no 's' in the name) that focuses on
   * one specific single page.)
+  *
+  * SECURITY SHOULD either continue creating review tasks for new users, until they've been
+  * reviewed and we know the user is safe. Or block the user from posting more comments,
+  * until his/her first ones have been reviewed.
   */
 trait PagesDao {
   self: SiteDao =>
@@ -184,6 +189,26 @@ trait PagesDao {
       pinOrder = pinOrder, pinWhere = pinWhere,
       categoryId = anyCategoryId, url = None, publishDirectly = true)
 
+    val reviewTask: Option[ReviewTask] =
+      if (author.isStaff) None
+      else {
+        val reviewTaskReasons = mutable.ArrayBuffer[ReviewReason]()
+        val recentPostsByAuthor = transaction.loadPostsBy(authorId, includeTitles = false,
+          limit = Settings.NumFirstUserPostsToReview)
+        if (recentPostsByAuthor.length < Settings.NumFirstUserPostsToReview) {
+          reviewTaskReasons.append(ReviewReason.IsByNewUser, ReviewReason.NewPost)
+        }
+        if (reviewTaskReasons.isEmpty) None
+        else Some(ReviewTask(
+          id = transaction.nextReviewTaskId(),
+          reasons = reviewTaskReasons.to[immutable.Seq],
+          causedById = authorId,
+          createdAt = transaction.currentTime,
+          createdAtRevNr = Some(bodyPost.currentRevisionNr),
+          postId = Some(bodyPost.uniqueId),
+          postNr = Some(bodyPost.nr)))
+      }
+
     val auditLogEntry = AuditLogEntry(
       siteId = siteId,
       id = AuditLogEntry.UnassignedId,
@@ -201,6 +226,7 @@ trait PagesDao {
     uploadPaths foreach { hashPathSuffix =>
       transaction.insertUploadedFileReference(bodyPost.uniqueId, hashPathSuffix, authorId)
     }
+    reviewTask.foreach(transaction.upsertReviewTask)
     insertAuditLogEntry(auditLogEntry, transaction)
 
     // Don't start rendering html for this page in the background. [5KWC58]

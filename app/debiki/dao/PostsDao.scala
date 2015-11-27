@@ -126,29 +126,28 @@ trait PostsDao {
 
       val uploadRefs = UploadsDao.findUploadRefsInPost(newPost)
 
-      val reviewTaskReasons = mutable.ArrayBuffer[ReviewReason]()
-      if (!author.isStaff) {
-        val recentPostsByAuthor = transaction.loadPostsBy(authorId,
+      val reviewTask: Option[ReviewTask] = if (author.isStaff) None else {
+        val reviewTaskReasons = mutable.ArrayBuffer[ReviewReason]()
+        val recentPostsByAuthor = transaction.loadPostsBy(authorId, includeTitles = false,
           limit = Settings.NumFirstUserPostsToReview)
         if (recentPostsByAuthor.length < Settings.NumFirstUserPostsToReview) {
-          reviewTaskReasons.append(ReviewReason.FirstOrEarlyPost)
+          reviewTaskReasons.append(ReviewReason.IsByNewUser, ReviewReason.NewPost)
         }
         if (page.isClosed) {
-          // The topic won't be bumped, so no one might see this post, so staff should have a look.
+          // The topic won't be bumped, so no one might see this post, so staff should review it.
+          // Could skip this if the user is trusted.
           reviewTaskReasons.append(ReviewReason.NoBumpPost)
         }
-      }
-
-      val reviewTask: Option[ReviewTask] =
         if (reviewTaskReasons.isEmpty) None
         else Some(ReviewTask(
           id = transaction.nextReviewTaskId(),
-          doneById = author.id,
           reasons = reviewTaskReasons.to[immutable.Seq],
-          alreadyApproved = isApproved,
+          causedById = authorId,
           createdAt = transaction.currentTime,
+          createdAtRevNr = Some(newPost.currentRevisionNr),
           postId = Some(newPost.uniqueId),
-          revisionNr = Some(newPost.currentRevisionNr)))
+          postNr = Some(newPost.nr)))
+      }
 
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
@@ -319,21 +318,14 @@ trait PostsDao {
           // later when they read it, and can flag it. This is not totally safe,
           // but better than forcing the staff to review all edits? (They'd just
           // get bored and stop reviewing.)
+          // The way to do this in a really safe manner: Create a invisible inactive post-edited
+          // review task, which gets activated & shown after x hours if too few people have read
+          // the post. But if many has seen the post, the review task instead gets deleted.
           None
         }
         else {
-          val oldTask = transaction.loadPendingReviewTask(editorId, postId)
-          val newOrUpdatedTask = ReviewTask(
-            id = oldTask.map(_.id).getOrElse(transaction.nextReviewTaskId()),
-            doneById = editorId,
-            reasons = immutable.Seq(
-              if (postId == PageParts.TitleId) ReviewReason.TitleEdited
-              else ReviewReason.PostEdited),
-            alreadyApproved = true, // for now
-            createdAt = transaction.currentTime,
-            postId = Some(editedPost.uniqueId),
-            revisionNr = Some(editedPost.currentRevisionNr)).mergeWithAny(oldTask)
-          Some(newOrUpdatedTask)
+          Some(makeReviewTask(editorId, editedPost, immutable.Seq(ReviewReason.LateEdit),
+            transaction))
         }
 
       val auditLogEntry = AuditLogEntry(
@@ -575,6 +567,8 @@ trait PostsDao {
           postBefore.copyWithNewStatus(transaction.currentTime, userId, treeDeleted = true)
       }
 
+      SHOULD // delete any review tasks.
+
       transaction.updatePost(postAfter)
 
       // Update any indirectly affected posts, e.g. subsequent comments in the same
@@ -655,6 +649,8 @@ trait PostsDao {
         approvedHtmlSanitized = Some(postBefore.currentHtmlSanitized(
           siteDbDao.commonMarkRenderer, pageMeta.pageRole)))
       transaction.updatePost(postAfter)
+
+      SHOULD // delete any review tasks.
 
       val isApprovingPageBody = postId == PageParts.BodyId
       val isApprovingNewPost = postBefore.approvedRevisionNr.isEmpty
@@ -796,8 +792,11 @@ trait PostsDao {
       val postBefore = transaction.loadThePost(pageId, postId)
       // SHOULD if >= 2 pending flags, then hide post until reviewed? And unhide, if flags cleared.
       val postAfter = postBefore.copy(numPendingFlags = postBefore.numPendingFlags + 1)
+      val reviewTask = makeReviewTask(flaggerId, postAfter,
+        immutable.Seq(ReviewReason.PostFlagged), transaction)
       transaction.insertFlag(postBefore.uniqueId, pageId, postId, flagType, flaggerId)
       transaction.updatePost(postAfter)
+      transaction.upsertReviewTask(reviewTask)
       // Need not update page version: flags aren't shown (except perhaps for staff users).
     }
     refreshPageInAnyCache(pageId)
@@ -825,6 +824,22 @@ trait PostsDao {
 
   def loadPost(pageId: PageId, postId: PostId): Option[Post] =
     readOnlyTransaction(_.loadPost(pageId, postId))
+
+
+  def makeReviewTask(causedById: UserId, post: Post, reasons: immutable.Seq[ReviewReason],
+        transaction: SiteTransaction): ReviewTask = {
+    val oldReviewTask = transaction.loadPendingPostReviewTask(post.uniqueId,
+      causedById = causedById)
+    val newTask = ReviewTask(
+      id = oldReviewTask.map(_.id).getOrElse(transaction.nextReviewTaskId()),
+      reasons = reasons,
+      causedById = causedById,
+      createdAt = transaction.currentTime,
+      createdAtRevNr = Some(post.currentRevisionNr),
+      postId = Some(post.uniqueId),
+      postNr = Some(post.nr))
+    newTask.mergeWithAny(oldReviewTask)
+  }
 
 
   private def updateVoteCounts(pageId: PageId, postId: PostId, transaction: SiteTransaction) {

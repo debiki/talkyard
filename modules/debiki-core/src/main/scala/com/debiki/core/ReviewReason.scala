@@ -26,39 +26,58 @@ import scala.collection.mutable.ArrayBuffer
 
 /** There might be many reasons to review something, so the review reason is a 2**x integer
   * so that many reasons can be combined in one single Long and stored in one single
-  * database field. Example: NewPost —> not reviewed —> edited = NewPost.toInt & PostEdited.toInt
+  * database field. Examples:
+  *   NewPost —> not reviewed —> edited = NewPost.toInt & PostEdited.toInt
   */
-sealed abstract class ReviewReason(IntVal: Int) { def toInt = IntVal }
+sealed abstract class ReviewReason(val IntVal: Int, val isOnPage: Boolean = true) {
+  def toInt = IntVal
+}
+
 object ReviewReason {
 
   // DON'T FORGET to update fromLong(..) below if adding/commenting-in a reason.
 
-  case object NewPost extends ReviewReason(1)
-  /** The first post by a new user, or first few posts, should be reviewed. */
-  case object FirstOrEarlyPost extends ReviewReason(1 << 2)
+  /** Always review stuff done by a mild / moderate threat level user. */
+  case object IsByThreatUser extends ReviewReason(1 << 0)
+
+  /** The first/first-few posts by a new user should be reviewed. */
+  case object IsByNewUser extends ReviewReason(1 << 1)
+
+  // << 2 and << 3 reserved for other user types. Perhaps IsByGuest?
+
+  case object NewPost extends ReviewReason(1 << 4)
+
   /** Closed forum topics aren't bumped, so no one might notice the new reply — review needed. */
-  case object NoBumpPost extends ReviewReason(1 << 4)
+  case object NoBumpPost extends ReviewReason(1 << 5)
 
-  case object PostEdited extends ReviewReason(1 << 10)
-  case object TitleEdited extends ReviewReason(1 << 11)
-  case object PostFlagged extends ReviewReason(1 << 12)
-  case object PostUnpopular extends ReviewReason(1 << 13)
+  case object Edit extends ReviewReason(1 << 6)
 
-  case object UserNewAvatar extends ReviewReason(1 << 20)
-  case object UserNameEdited extends ReviewReason(1 << 21)
-  case object UserAboutTextEdited extends ReviewReason(1 << 22)
+  /** Edited long after creation — perhaps user added spam links, hopes no one will notice? */
+  case object LateEdit extends ReviewReason(1 << 7)
+
+  case object PostFlagged extends ReviewReason(1 << 8)
+
+  /** If a post gets Unwanted votes or many Bury or Wrong, but few Likes. */
+  case object PostUnpopular extends ReviewReason(1 << 9)
+
+  case object UserCreated extends ReviewReason(1 << 20, isOnPage = false)
+  case object UserNewAvatar extends ReviewReason(1 << 21, isOnPage = false)
+  case object UserNameEdited extends ReviewReason(1 << 22, isOnPage = false)
+  case object UserAboutTextEdited extends ReviewReason(1 << 23, isOnPage = false)
 
 
   def fromLong(value: Long): immutable.Seq[ReviewReason] = {
     TESTS_MISSING // Convert -1 to reasons and check resulting seq length, and convert 0.
     val reasons = ArrayBuffer[ReviewReason]()
+    if ((value & IsByThreatUser.toInt) != 0) reasons.append(IsByThreatUser)
+    if ((value & IsByNewUser.toInt) != 0) reasons.append(IsByNewUser)
     if ((value & NewPost.toInt) != 0) reasons.append(NewPost)
-    if ((value & FirstOrEarlyPost.toInt) != 0) reasons.append(FirstOrEarlyPost)
     if ((value & NoBumpPost.toInt) != 0) reasons.append(NoBumpPost)
-    if ((value & PostEdited.toInt) != 0) reasons.append(PostEdited)
-    if ((value & TitleEdited.toInt) != 0) reasons.append(TitleEdited)
+    if ((value & Edit.toInt) != 0) reasons.append(Edit)
+    if ((value & LateEdit.toInt) != 0) reasons.append(LateEdit)
     if ((value & PostFlagged.toInt) != 0) reasons.append(PostFlagged)
     if ((value & PostUnpopular.toInt) != 0) reasons.append(PostUnpopular)
+    if ((value & UserCreated.toInt) != 0) reasons.append(UserCreated)
     if ((value & UserNewAvatar.toInt) != 0) reasons.append(UserNewAvatar)
     if ((value & UserNameEdited.toInt) != 0) reasons.append(UserNameEdited)
     if ((value & UserAboutTextEdited.toInt) != 0) reasons.append(UserAboutTextEdited)

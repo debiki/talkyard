@@ -43,6 +43,23 @@ interface PostToModerate {
 }
 
 
+interface ReviewTask {
+  id: number;
+  //causedBy: BriefUser;
+  reasonsLong: number;
+  createdAtMs: number;
+  moreReasonsAtMs?: number;
+  completedAtMs?: number;
+  completedBy?: BriefUser;
+  invalidatedAtMs?: number;
+  //resolution?: ?;
+  user?: BriefUser;
+  pageId?: string;
+  pageTitle?: string;
+  post?: any;
+}
+
+
 interface Flag {
   flaggerId: number;
   flaggerDisplayName: string;

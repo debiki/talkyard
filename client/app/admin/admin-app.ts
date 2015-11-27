@@ -21,6 +21,7 @@
 /// <reference path="../Server.ts" />
 /// <reference path="settings.ts" />
 /// <reference path="review.ts" />
+/// <reference path="review-all.ts" />
 /// <reference path="review-posts.ts" />
 /// <reference path="users.ts" />
 /// <reference path="users-one.ts" />
@@ -56,7 +57,7 @@ export function routes() {
   return Route({ path: '/', handler: AdminAppComponent },
     Redirect({ from: '/', to: defaultRouteName }),
     Redirect({ from: '/users', to: 'users-active' }),
-    Redirect({ from: '/review', to: 'review-posts' }),
+    Redirect({ from: '/review', to: 'review-all' }),
     Route({ name: 'settings', path: 'settings', handler: SettingsPanelComponent }),
     Route({ name: 'users', path: 'users', handler: UsersTabComponent },
       Route({ name: 'users-active', path: 'active', handler: ActiveUsersPanelComponent }),
@@ -67,6 +68,8 @@ export function routes() {
       Route({ name: 'users-one', path: 'id/:userId', handler: AdminUserPageComponent })),
     Route({ name: 'customize', path: 'customize', handler: CustomizePanelComponent }),
     Route({ name: 'review', path: 'review', handler: ReviewPanelComponent },
+      Route({ name: 'review-all', path: 'all', handler: ReviewAllPanelComponent }),
+      // Remove later:
       Route({ name: 'review-posts', path: 'posts', handler: ReviewPostsPanelComponent })));
 }
 

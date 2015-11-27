@@ -248,6 +248,8 @@ case class Post(
   require(numUnwantedVotes >= 0, "DwE4GKY2")
   require(numTimesRead >= 0, "DwE2ZfMI3")
 
+  def nr = id  // uniqueId will be renamed to id later
+
   def isReply = PageParts.isReply(id)
   def isTitle = id == PageParts.TitleId
   def isOrigPost = id == PageParts.BodyId

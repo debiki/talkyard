@@ -20,7 +20,7 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ForumController
-import debiki.dao.{PageStuff, SiteDao, PageDao}
+import debiki.dao.{ReviewStuff, PageStuff, SiteDao, PageDao}
 import debiki.DebikiHttp.throwNotFound
 import java.{util => ju}
 import play.api.libs.json._
@@ -589,6 +589,41 @@ object ReactJson {
       json += "isTheUncategorizedCategory" -> JsBoolean(true)
     }
     json
+  }
+
+
+  def reviewStufToJson(stuff: ReviewStuff, usersById: Map[UserId, User]): JsValue = {
+    val anyPost = stuff.post match {
+      case None => JsNull
+      case Some(post) =>
+        Json.obj(
+          "pageId" -> post.pageId,
+          "nr" -> post.id,
+          "uniqueId" -> post.uniqueId,
+          "createdBy" -> JsUserOrNull(usersById.get(post.createdById)),
+          "currentSource" -> post.currentSource,
+          "currRevNr" -> post.currentRevisionNr,
+          "currRevComposedBy" -> JsUserOrNull(usersById.get(post.currentRevisionById)),
+          "approvedSource" -> JsStringOrNull(post.approvedSource),
+          "approvedHtmlSanitized" -> JsStringOrNull(post.approvedHtmlSanitized),
+          "approvedRevNr" -> JsNumberOrNull(post.approvedRevisionNr),
+          "approvedRevComposedById" -> JsNull, // post.lastApprovedEditById ? ... hmm, see below
+          "approvedRevApprovedById" -> JsNull) // -> post.aprvdRevAprvdById?? ... hmm no,
+                                                // better: post.lastApporvedRevision.approvedById
+    }
+    Json.obj(
+      "id" -> stuff.id,
+      "reasonsLong" -> ReviewReason.toLong(stuff.reasons),
+      "createdAtMs" -> stuff.createdAt.getTime,
+      "moreReasonsAtMs" -> JsDateMsOrNull(stuff.moreReasonsAt),
+      "completedAtMs" -> JsDateMsOrNull(stuff.completedAt),
+      "completedBy" -> JsUserOrNull(stuff.completedBy),
+      "invalidatedAt" -> JsDateMsOrNull(stuff.invalidatedAt),
+      "resolution" -> JsNumberOrNull(stuff.resolution),
+      "user" -> JsUserOrNull(stuff.user),
+      "pageId" -> JsStringOrNull(stuff.pageId),
+      "pageTitle" -> JsStringOrNull(stuff.pageTitle),
+      "post" -> anyPost)
   }
 
 

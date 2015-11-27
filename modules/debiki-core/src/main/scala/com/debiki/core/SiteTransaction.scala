@@ -60,8 +60,16 @@ trait SiteTransaction {
 
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
   def loadPosts(pagePostIds: Iterable[PagePostId]): immutable.Seq[Post]
-  def loadPostsBy(authorId: UserId, limit: Int): immutable.Seq[Post]
+  def loadPostsByUniqueId(postIds: Iterable[UniquePostId]): immutable.Map[UniquePostId, Post]
+  def loadPostsBy(authorId: UserId, includeTitles: Boolean, limit: Int): immutable.Seq[Post]
   def loadPostsToReview(): immutable.Seq[Post]
+
+  def loadTitlesPreferApproved(pageIds: Iterable[PageId]): Map[PageId, String] = {
+    val titlePosts = loadPosts(pageIds.map(PagePostId(_, PageParts.TitleId)))
+    Map(titlePosts.map(post => {
+      post.pageId -> post.approvedSource.getOrElse(post.currentSource)
+    }): _*)
+  }
 
   def nextPostId(): UniquePostId
   def insertPost(newPost: Post)
@@ -180,9 +188,9 @@ trait SiteTransaction {
 
   def nextReviewTaskId(): ReviewTaskId
   def upsertReviewTask(reviewTask: ReviewTask)
-  def loadPendingReviewTask(byUserId: UserId, postId: PostId): Option[ReviewTask]
   def loadReviewTask(id: ReviewTaskId): Option[ReviewTask]
   def loadReviewTasks(olderOrEqualTo: ju.Date, limit: Int): Seq[ReviewTask]
+  def loadPendingPostReviewTask(postId: PostId, causedById: UserId): Option[ReviewTask]
 
   def saveDeleteNotifications(notifications: Notifications)
 

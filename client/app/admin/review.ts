@@ -20,6 +20,7 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="review-all.ts" />
 /// <reference path="review-posts.ts" />
 
 //------------------------------------------------------------------------------

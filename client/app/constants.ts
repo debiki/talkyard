@@ -58,3 +58,30 @@ enum WritingWhat {
   ChatComment = 4,
 }
 
+
+/** The review reasons are a 64 bit bitflag. See this Scala file for their meanings:
+  *   modules/debiki-core/src/main/scala/com/debiki/core/ReviewReason.scala
+  */
+var ReviewReasons = {
+  isByThreatUser: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 0),
+  isByNewUser: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 1),
+  newPost: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 4),
+  noBumpPost: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 5),
+  edit: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 6),
+  lateEdit: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 7),
+  postFlagged: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 8),
+  postUnpopular: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 9),
+  userCreated: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 20),
+  userNewAvatar: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 21),
+  userNameEdited: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 22),
+  userAboutTextEdited: (reviewTask: ReviewTask) => reviewTask.reasonsLong & (1 << 23),
+};
+
+function isReviewPostTask(reviewTask: ReviewTask): boolean {
+  // See above. <<0 .. <<3 are for user types. <<4 ..<<19 are for review-post stuff.
+  // And <<20 and up are for users. Later: uploads? groups? categories?
+  return (1 << 4) <= reviewTask.reasonsLong && reviewTask.reasonsLong < (1 << 20);
+}
+
+
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

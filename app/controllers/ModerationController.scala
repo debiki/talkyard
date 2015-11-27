@@ -22,7 +22,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.Utils._
 import debiki.DebikiHttp._
-import debiki.ThingsToReview
+import debiki.{ReactJson, ThingsToReview}
 import java.{util => ju}
 import play.api._
 import play.api.libs.json._
@@ -44,6 +44,21 @@ object ModerationController extends mvc.Controller {
 
   val ActionCountLimit = 100
   val PostTextLengthLimit = 500
+
+
+  def loadReviewTasks = StaffGetAction { request =>
+    val (reviewStuff, usersById) = request.dao.loadReviewStuff(olderOrEqualTo = new ju.Date,
+      limit = 100)
+    OkSafeJson(JsArray(reviewStuff.map(ReactJson.reviewStufToJson(_, usersById))))
+  }
+
+
+  def completeReviewTask = StaffPostJsonAction(maxLength = 100) { request =>
+    val taskId = (request.body \ "taskId").as[ReviewTaskId]
+    val anyRevNr = (request.body \ "revisionNr").asOpt[Int]
+    request.dao.completeReviewTask(taskId, completedById = request.theUserId, anyRevNr = anyRevNr)
+    Ok
+  }
 
 
   def approve = StaffPostJsonAction(maxLength = 5000) { request =>
