@@ -58,7 +58,8 @@ object CreateSiteController extends Controller {
     val localHostname = (request.body \ "localHostname").as[String]
     val anyEmbeddingSiteAddress = (request.body \ "embeddingSiteAddress").asOpt[String]
     val anyPricePlan = (request.body \ "pricePlan").asOpt[String]
-    val isTestSiteOkayToDelete = (request.body \ "testSiteOkDelete").asOpt[Boolean] == Some(true)
+    val isTestSiteOkayToDelete = (request.body \ "testSiteOkDelete").asOpt[Boolean].contains(true)
+    val okE2ePassword = hasOkE2eTestPassword(request.request)
 
     if (!acceptTermsAndPrivacy)
       throwForbidden("DwE877FW2", "You need to accept the terms of use and privacy policy")
@@ -103,7 +104,7 @@ object CreateSiteController extends Controller {
             creatorEmailAddress = emailAddress,
             creatorId = request.user.map(_.id) getOrElse UnknownUserId,
             browserIdData = request.theBrowserIdData, pricePlan = anyPricePlan,
-            isTestSiteOkayToDelete = isTestSiteOkayToDelete)
+            isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = okE2ePassword)
         }
         catch {
           case _: DbDao.SiteAlreadyExistsException =>

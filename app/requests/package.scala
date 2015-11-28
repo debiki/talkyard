@@ -64,8 +64,7 @@ package object requests {
       }
 
     if (Play.isProd) {
-      val password = request.queryString.get("e2eTestPassword").flatMap(_.headOption).orElse(
-          request.cookies.get("dwCoE2eTestPassword").map(_.value)) getOrElse {
+      val password = getE2eTestPassword(request) getOrElse {
         throwForbidden(
           "DwE6KJf2", "Fake ip specified, but no e2e test password cookie — required in prod mode")
       }
@@ -83,4 +82,23 @@ package object requests {
     fakeIp
   }
 
+
+  def getE2eTestPassword(request: play.api.mvc.Request[_]): Option[String] =
+    request.queryString.get("e2eTestPassword").flatMap(_.headOption).orElse(
+      request.cookies.get("dwCoE2eTestPassword").map(_.value)).orElse( // dwXxx obsolete. esXxx now
+      request.cookies.get("esCoE2eTestPassword").map(_.value))
+
+
+  def hasOkE2eTestPassword(request: play.api.mvc.Request[_]): Boolean = {
+    getE2eTestPassword(request) match {
+      case None => false
+      case Some(password) =>
+        val correctPassword = debiki.Globals.e2eTestPassword getOrElse throwForbidden(
+          "EsE5GUM2", "There's an e2e test password in the request, but not in any config file")
+        if (password != correctPassword) {
+          throwForbidden("EsE2FWK4", "The e2e test password in the request is wrong")
+        }
+        true
+    }
+  }
 }

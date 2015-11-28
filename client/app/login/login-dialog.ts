@@ -192,6 +192,7 @@ export var LoginDialogContent = createClassAndFactory({
 
     var makeOauthProps = (iconClass: string, provider: string) => {
       return {
+        id: 'e2eLogin' + provider,
         iconClass: iconClass,
         provider: provider,
         loginReason: loginReason,
@@ -281,7 +282,8 @@ var OpenAuthButton = createClassAndFactory({
   },
   render: function() {
     return (
-      Button({ className: this.props.iconClass, onClick: this.onClick }, this.props.provider ));
+      Button({ id: this.props.id, className: this.props.iconClass, onClick: this.onClick },
+        this.props.provider ));
   }
 });
 

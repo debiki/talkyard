@@ -15,8 +15,10 @@
     "jquery-resizable": "=1.0.3"
   },
   "devDependencies": {
+    "chalk": "^1.1.1",
     "del": "^2.0.2",
     "event-stream": "^3.1.1",
+    "fs": "0.0.2",
     "gulp": "^3.6.0",
     "gulp-concat": "^2.2.0",
     "gulp-gzip": "^1.2.0",
@@ -31,6 +33,7 @@
     "gulp-uglify": "^0.2.1",
     "gulp-watch": "^0.5.3",
     "gulp-wrap": "^0.3.0",
+    "minimist": "^1.2.0",
     "react-typescript-definitions": "0.0.6",
     "request": "^2.64.0"
   }

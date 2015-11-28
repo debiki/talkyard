@@ -111,7 +111,7 @@ abstract class SiteDao
   def createSite(name: String, hostname: String,
         embeddingSiteUrl: Option[String], pricePlan: Option[String],
         creatorEmailAddress: String, creatorId: UserId, browserIdData: BrowserIdData,
-        isTestSiteOkayToDelete: Boolean) : Site = {
+        isTestSiteOkayToDelete: Boolean, skipMaxSitesCheck: Boolean) : Site = {
 
     dieIf(hostname contains ":", "DwE3KWFE7")
     val quotaLimitMegabytes = p.Play.configuration.getInt("debiki.newSite.quotaLimitMegabytes")
@@ -120,7 +120,7 @@ abstract class SiteDao
       val site = transaction.createSite(name = name, hostname = hostname,
         embeddingSiteUrl, creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
         pricePlan = pricePlan, quotaLimitMegabytes = quotaLimitMegabytes,
-        isTestSiteOkayToDelete = isTestSiteOkayToDelete)
+        isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = skipMaxSitesCheck)
 
       insertAuditLogEntry(AuditLogEntry(
         siteId = this.siteId,

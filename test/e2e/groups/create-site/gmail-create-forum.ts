@@ -1,7 +1,13 @@
 var tests = {
-  '@tags': ['CreateSite', 'Password'],
-  'create new forum, password user': function(b) {
+  '@tags': ['CreateSite', 'Gmail'],
+  'create new forum, Gmail user': function(b) {
+    // TODO dedupl
+
     var globals = b.globals;
+    if (!globals.gmailEmailAddress) {
+      b.end();
+      return;
+    }
 
     var testId = globals.generateTestId();
     var localHostname = globals.testLocalHostnamePrefix + 'create-site-' + testId;
@@ -10,9 +16,9 @@ var tests = {
     var forumTitle = "The Created Forum";
 
     var fullName = 'E2E Test ' + testId;
-    var email = globals.testEmailAddressPrefix + testId + '@example.com';
-    var username = 'e2e_test__' + testId;
-    var password = 'pub5KFV2FY8C';
+    var email = globals.gmailEmailAddress;
+    var username = 'e2e_test__gmailuser';
+    var password = globals.gmailPassword;
 
     // Use different ips or the server will complain that we've created too many sites.
     function randomIpPart() { return '.' + Math.floor(Math.random() * 256); }
@@ -31,37 +37,30 @@ var tests = {
       b.assert.equal(origin, actualOrigin);
     });
 
+    b.waitUntilEnabled('#e2eLogin');
     b.click('#e2eLogin');
-    b.waitAndClick('#e2eCreateNewAccount');
-    b.waitAndSetValue('#e2eFullName', fullName);
+    b.waitAndClick('#e2eLoginGoogle');
+
+    // In Google's login popup window:
+    b.swithToOtherWindow();
+    b.waitAndSetValue('#Email', email);
+    b.click('#next');
+    b.waitAndSetValue('#Passwd', password);
+    b.click('#signIn');
+    b.waitUntilEnabled('#submit_approve_access');
+    b.click('#submit_approve_access');
+    b.switchBackToFirstWindow();
+
     b.waitAndSetValue('#e2eUsername', username);
-    b.waitAndSetValue('#e2eEmail', email);
-    b.waitAndSetValue('#e2ePassword', password);
-    b.pause(900); // Submit not yet enabled. COULD make waitAndClick wait until enabled.
     b.waitAndClick('#e2eSubmit');
-    b.waitForElementVisible('#e2eNeedVerifyEmailDialog');
 
-    b.get(origin + '/-/last-e2e-test-email?sentTo=' + email, (response) => {
-      var responseObj = JSON.parse(response.body);
-      var regexString = originRegexEscaped + '\\/[^"]+';
-      var matches = responseObj.bodyHtmlText.match(new RegExp(regexString));
-      if (!matches) {
-        b.assert.fail(responseObj.bodyHtmlText, regexString,
-          'No next-page-link regex match in email');
-      }
-      else {
-        b.url(matches[0]);
-      }
-    });
-
-    b.waitAndClick('#e2eContinue');
     b.waitAndClick('#e2eCreateForum');
     b.setValue('input[type="text"]', forumTitle);
     b.click('#e2eDoCreateForum');
     b.waitForElementVisible('.dw-p-ttl');
     b.assert.containsText('.dw-p-ttl', forumTitle);
     b.endOrPause();
-  },
+  }
 };
 
 export = tests;
