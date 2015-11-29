@@ -292,15 +292,24 @@ object UploadsDao {
       "DwE8PMU2", o"""Please change the suffix from e.g. ".tar.gz" to ".tgz", because only the "
       characters after the very last dot are used as the suffix""")
 
+    // (Convert to lowercase, don't want e.g. both .JPG and .jpg.)
+    val suffix = fileName.takeRightWhile(_ != '.').toLowerCase
+
+    // Common image file formats:
+    // (https://www.library.cornell.edu/preservation/tutorial/presentation/table7-1.html)
+    if ("tif tiff gif jpeg jpg jif jfif jp2 jpx j2k j2c fpx pcd png pdf".contains(suffix))
+      return suffix
+
+    // Common movie file formats: (https://en.wikipedia.org/wiki/Video_file_format)
+    if ("webm mkv ogv ogg gifv mp4 m4v".contains(suffix))
+      return suffix
+
     if (fileName.count(_ == '.') > 1) throwForbidden(
       "DwE2FPYU0", o"""The file name should have exactly one dot, otherwise I don't know where
            the file suffix starts""")
 
     if (!fileName.exists(_ == '.'))
       throwForbidden("DwE6UPM5", "The file has no suffix")
-
-    // (Convert to lowercase, don't want e.g. both .JPG and .jpg.)
-    val suffix = fileName.takeRightWhile(_ != '.').toLowerCase
 
     if (suffix.length > MaxSuffixLength)
       throwBadRequest("DwE7F3P5", o"""File has too long suffix: '$fileName'

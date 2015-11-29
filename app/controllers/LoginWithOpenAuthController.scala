@@ -286,18 +286,22 @@ object LoginWithOpenAuthController extends Controller {
                 // the user clicks the confirmation link in the email account without really
                 // understanding what s/he is doing? I think A) is safer.
                 // Anyway, for now, simply:
-                throwForbidden("DwE7KGE32", o"""You already have an account with the
-                  email address that [the user you're trying to login as now] has. Please
-                  don't login with that email address and ${oauthDetails.providerId} —
+                // (Use "user" for the provider's account, and "account" for the account in
+                // this server)
+                val emailAddress = oauthDetails.email.getOrDie("EsE2FPK8")
+                throwForbidden("DwE7KGE32", "\n"+o"""You already have an account with email address
+                  $emailAddress, and your ${oauthDetails.providerId} user has the same
+                  email address. Since you already have an account here, please don't login via
+                  ${oauthDetails.providerId} —
                   instead login using your original login method, e.g. ${
-                    someProvidersExcept(oauthDetails.providerId)}, or something else?
-                  Or username and password? — I hope you remember which one.""" +
+                    someProvidersExcept(oauthDetails.providerId)},
+                  or username and password. — I hope you remember which one.""" +
                   "\n\n" +
-                  o"""The reason I do not currently let you login via this email and
-                  ${oauthDetails.providerId} is that I don't know if ${oauthDetails.providerId}
+                  o"""The reason I do not currently let you login via the
+                  ${oauthDetails.providerId} user with email $emailAddress
+                  is that I don't know if ${oauthDetails.providerId}
                   has verified that the email address is really yours — because if it is not,
-                  then you would get access to someone elses account (namely the person with
-                  that email address).""" +
+                  then you would get access to someone else's account, if I did let you login.""" +
                   "\n\n")
                 // If the user does *not* own the email address, s/he would be able to
                 // impersonate another user, when his/her new account gets associated with
