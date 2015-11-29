@@ -1,17 +1,20 @@
 // Create colors.
 var chalk = require('chalk');
 var errorColor = chalk.bold.yellow.bgRed;
+var warningColor = chalk.bold.red;
 var unusualColor = chalk.black.bgGreen;
+function logError(message) { console.log(errorColor(message)); }
+function logWarning(message) { console.log(warningColor(message)); }
 
 // Analyze arguments.
 var args;
 try {
-  // This'll work if we're being called from gulp-nightwatch — then [2] is a json obj string
+  // This'll work if we're called from gulp-nightwatch — then [2] is a json obj string
   // with all arguments.
   args = JSON.parse(process.argv[2]);
 }
 catch (error) {
-  // We're probably running Nightwatch directly (not via gulp-nightwatch), so:
+  // We're probably running Nightwatch directly (not via gulp-nightwatch), then:
   args = require('minimist')(process.argv.slice(2));
 }
 
@@ -24,36 +27,49 @@ var mainSiteOrigin = scheme + '://' + host;
 var newSiteDomain = args.newSiteDomain || host;
 
 // Setup secret settings.
-var gmailEmailAddress;
+var gmailEmail;
 var gmailPassword;
+var facebookAdminPassword;
+var facebookAdminEmail;
+var facebookUserPassword;
+var facebookUserEmail;
 var secretsPath = args.secretsPath;
 if (secretsPath) {
   var fs = require('fs');
   var content = fs.readFileSync(secretsPath, { encoding: 'utf8' });
   try {
     var json = JSON.parse(content);
-    gmailEmailAddress = json.gmailEmailAddress;
+    gmailEmail = json.gmailEmail;
     gmailPassword = json.gmailPassword;
+    facebookAdminPassword = json.facebookAdminPassword;
+    facebookAdminEmail = json.facebookAdminEmail;
+    facebookUserPassword = json.facebookUserPassword;
+    facebookUserEmail = json.facebookUserEmail;
     if (!e2eTestPassword) e2eTestPassword = json.e2eTestPassword;
-    if (!gmailEmailAddress) console.warn("No gmailEmailAddress in " + secretsPath);
-    if (!gmailPassword) console.warn("No gmailPassword in " + secretsPath);
+    if (!gmailEmail) logWarning("No gmailEmail in " + secretsPath);
+    if (!gmailPassword) logWarning("No gmailPassword in " + secretsPath);
+    if (!facebookAdminPassword) logWarning("No facebookAdminPassword in " + secretsPath);
+    if (!facebookAdminEmail) logWarning("No facebookAdminEmail in " + secretsPath);
+    if (!facebookUserPassword) logWarning("No facebookUserPassword in " + secretsPath);
+    if (!facebookUserEmail) logWarning("No facebookUserEmail in " + secretsPath);
   }
   catch (error) {
-    console.error(errorColor("Error parsing secret file: " + error));
-    console.error(errorColor("No secrets loaded :-( Tests that require Gmail will be skipped."));
+    logError("Error parsing secret file: " + error);
+    logError("No secrets loaded. At least all OpenAuth tests will be skipped.");
   }
 }
 
 console.log("==================================================");
-console.log("------ Test settings:");
-console.log('host: ' + args.host);
-console.log('secure: ' + args.secure);
+console.log("~~~~~~ Test settings:");
+console.log("host: " + host);
+console.log("secure: " + secure);
 console.log('derived origin: ' + mainSiteOrigin);
-console.log("------ Secrets:");
-console.log('e2eTestPassword: ' + (e2eTestPassword ? 'specified' : 'not specified'));
-console.log("gmailEmailAddress: " + gmailEmailAddress);
-console.log("gmailPassword: " + (gmailPassword ? "(specified)" : "undefined"));
-console.log("------ Extra magic:");
+console.log("~~~~~~ Secrets:");
+console.log("e2eTestPassword: " + (e2eTestPassword ? "(yes)" : "undefined"));
+console.log("gmailEmail: " + gmailEmail);
+console.log("facebookAdminEmail: " + facebookAdminEmail);
+console.log("facebookUserEmail: " + facebookUserEmail);
+console.log("~~~~~~ Extra magic:");
 if (args.pauseForeverAfterTest) {
   console.log("You said " + unusualColor("--pauseForeverAfterTest") +
       ", so I will pause forever after the first test.");
@@ -76,8 +92,12 @@ var self = module.exports = {
 
   testLocalHostnamePrefix: 'e2e-test--',
   testEmailAddressPrefix: 'e2e-test--',
-  gmailEmailAddress: gmailEmailAddress,
+  gmailEmail: gmailEmail,
   gmailPassword: gmailPassword,
+  facebookAdminPassword: facebookAdminPassword,
+  facebookAdminEmail: facebookAdminEmail,
+  facebookUserPassword: facebookUserPassword,
+  facebookUserEmail: facebookUserEmail,
 
   mainSiteHost: host,
   mainSiteOrigin: mainSiteOrigin,

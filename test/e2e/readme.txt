@@ -12,5 +12,7 @@ To debug in node.js:
     npm install -g node-inspector  # do once only
 
     gulp compile-e2e-scripts
-    node-debug nightwatch-github-repo/bin/runner.js -c test/e2e/nightwatch.conf.js --secretsPath ../conf/e2e-secrets.json --env firefox --tag Gmail
+    node-debug ./scripts/nightwatch-runner.js -c test/e2e/nightwatch.conf.js --secretsPath ../conf/e2e-secrets.json --env firefox --tag Gmail
+
+where `nightwatch-runner.js` is a softlink to `a-nightwatch-github-repo-clone/bin/runner.js`.
 

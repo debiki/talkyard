@@ -1,10 +1,10 @@
 var tests = {
-  '@tags': ['CreateSite', 'Gmail'],
-  'create new forum, Gmail user': function(b) {
+  '@tags': ['CreateSite', 'Facebook'],
+  'create new site with a forum, Facebook user': function(b) {
     // TODO dedupl
 
     var globals = b.globals;
-    if (!globals.gmailEmail) {
+    if (!globals.facebookAdminEmail) {
       b.end();
       return;
     }
@@ -16,9 +16,9 @@ var tests = {
     var forumTitle = "The Created Forum";
 
     var fullName = 'E2E Test ' + testId;
-    var email = globals.gmailEmail;
-    var username = 'e2e_test__gmailuser';
-    var password = globals.gmailPassword;
+    var email = globals.facebookAdminEmail;
+    var username = 'e2e_test__fbadmin';
+    var password = globals.facebookAdminPassword;
 
     // Use different ips or the server will complain that we've created too many sites.
     function randomIpPart() { return '.' + Math.floor(Math.random() * 256); }
@@ -39,16 +39,18 @@ var tests = {
 
     b.waitUntilEnabled('#e2eLogin');
     b.click('#e2eLogin');
-    b.waitAndClick('#e2eLoginGoogle');
+    b.waitAndClick('#e2eLoginFacebook');
 
-    // In Google's login popup window:
+    // In Facebook's login popup window:
     b.swithToOtherWindow();
-    b.waitAndSetValue('#Email', email);
-    b.click('#next');
-    b.waitAndSetValue('#Passwd', password); // argh! Prints the password on the console. See: https://github.com/nightwatchjs/nightwatch/issues/758 "Don't print passwords: can I tell setValue() to be silent? ..."
-    b.click('#signIn');
-    b.waitUntilEnabled('#submit_approve_access');
-    b.click('#submit_approve_access');
+    b.waitAndSetValue('#email', email);
+    b.waitAndSetValue('#pass', password); // argh! Prints the password on the console. See: https://github.com/nightwatchjs/nightwatch/issues/758 "Don't print passwords: can I tell setValue() to be silent? ..."
+    b.perform(() => { console.log("SATANERR"); });
+    b.click('input[type=submit]');
+    // Facebook somehow auto accepts the confirmation dialog, perhaps because
+    // I'm using a Facebook API test user. So need not do this:
+    //b.waitForElementVisible('[name=__CONFIRM__]');
+    //b.click('[name=__CONFIRM__]');
     b.switchBackToFirstWindow();
 
     b.waitAndSetValue('#e2eUsername', username);
