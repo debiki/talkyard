@@ -64,6 +64,7 @@ object ForumController extends mvc.Controller {
   def saveCategory = StaffPostJsonAction(maxLength = 1000) { request =>
     val body = request.body
     val sectionPageId = (body \ "sectionPageId").as[PageId]
+    val hideInForum = (body \ "hideInForum").asOpt[Boolean].getOrElse(false)
     val newTopicTypeInts = (body \ "newTopicTypes").as[List[Int]]
     val newTopicTypes = newTopicTypeInts map { typeInt =>
       PageRole.fromInt(typeInt) getOrElse throwBadReq(
@@ -77,7 +78,8 @@ object ForumController extends mvc.Controller {
       name = (body \ "name").as[String],
       slug = (body \ "slug").as[String],
       position = (body \ "position").as[Int],
-      newTopicTypes = newTopicTypes)
+      newTopicTypes = newTopicTypes,
+      hideInForum = hideInForum)
 
     var resultJson: JsObject = null
 
@@ -92,7 +94,8 @@ object ForumController extends mvc.Controller {
     }
 
     OkSafeJson(Json.obj(
-      "allCategories" -> ReactJson.categoriesJson(category.sectionPageId, request.dao),
+      "allCategories" -> ReactJson.categoriesJson(category.sectionPageId,
+        includeHiddenInForum = true, request.dao),
       "newCategoryId" -> category.id,
       "newCategorySlug" -> category.slug))
   }
@@ -103,7 +106,7 @@ object ForumController extends mvc.Controller {
       "DwE4KG08", "Bat category id")
     val pageQuery: PageQuery = parseThePageQuery(request)
     val topics = listTopicsInclPinned(categoryIdInt, pageQuery, request.dao,
-      includeDescendantCategories = true)
+      includeDescendantCategories = true, includeHiddenInForum = request.isStaff)
     val pageStuffById = request.dao.loadPageStuff(topics.map(_.pageId))
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
     val json = Json.obj("topics" -> topicsJson)
@@ -112,7 +115,8 @@ object ForumController extends mvc.Controller {
 
 
   def listCategories(forumId: PageId) = GetAction { request =>
-    val categories = request.dao.listSectionCategories(forumId)
+    val categories = request.dao.listSectionCategories(forumId,
+      includeHiddenInForum = request.isStaff)
     val json = JsArray(categories.map({ category =>
       categoryToJson(category, recentTopics = Nil, pageStuffById = Map.empty)
     }))
@@ -121,7 +125,8 @@ object ForumController extends mvc.Controller {
 
 
   def listCategoriesAndTopics(forumId: PageId) = GetAction { request =>
-    val categories = request.dao.listSectionCategories(forumId)
+    val categories = request.dao.listSectionCategories(forumId,
+      includeHiddenInForum = request.isStaff)
 
     val recentTopicsByCategoryId =
       mutable.Map[CategoryId, Seq[PagePathAndMeta]]()
@@ -131,7 +136,7 @@ object ForumController extends mvc.Controller {
 
     for (category <- categories) {
       val recentTopics = listTopicsInclPinned(category.id, pageQuery, request.dao,
-        includeDescendantCategories = true, limit = 6)
+        includeDescendantCategories = true, includeHiddenInForum = request.isStaff, limit = 6)
       recentTopicsByCategoryId(category.id) = recentTopics
       pageIds.append(recentTopics.map(_.pageId): _*)
     }
@@ -148,16 +153,18 @@ object ForumController extends mvc.Controller {
 
 
   def listTopicsInclPinned(categoryId: CategoryId, pageQuery: PageQuery, dao: debiki.dao.SiteDao,
-        includeDescendantCategories: Boolean, limit: Int = NumTopicsToList)
+        includeDescendantCategories: Boolean, includeHiddenInForum: Boolean,
+        limit: Int = NumTopicsToList)
         : Seq[PagePathAndMeta] = {
     val topics: Seq[PagePathAndMeta] = dao.listPagesInCategory(
-      categoryId, includeDescendantCategories, pageQuery, limit)
+      categoryId, includeDescendantCategories, includeHiddenInForum = includeHiddenInForum,
+      pageQuery, limit)
 
     // If sorting by bump time, sort pinned topics first. Otherwise, don't.
     val topicsInclPinned = pageQuery.orderOffset match {
       case orderOffset: PageOrderOffset.ByBumpTime if orderOffset.offset.isEmpty =>
         val pinnedTopics = dao.listPagesInCategory(
-          categoryId, includeDescendantCategories,
+          categoryId, includeDescendantCategories, includeHiddenInForum = includeHiddenInForum,
           PageQuery(PageOrderOffset.ByPinOrderLoadOnlyPinned, pageQuery.pageFilter), limit)
         val notPinned = topics.filterNot(topic => pinnedTopics.exists(_.id == topic.id))
         val topicsSorted = (pinnedTopics ++ notPinned) sortBy { topic =>

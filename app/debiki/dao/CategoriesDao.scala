@@ -38,10 +38,11 @@ trait CategoriesDao {
     * Sorts by Category.position (which doesn't make much sense if there are sub categories).
     * Excludes the root of the category tree.
     */
-  def listSectionCategories(pageId: PageId): Seq[Category] = {
+  def listSectionCategories(pageId: PageId, includeHiddenInForum: Boolean): Seq[Category] = {
     loadRootCategory(pageId) match {
       case Some(rootCategory) =>
-        listCategoriesInTree(rootCategory.id, includeRoot = false).sortBy(_.position)
+        listCategoriesInTree(rootCategory.id, includeRoot = false,
+          includeHiddenInForum = includeHiddenInForum).sortBy(_.position)
       case None =>
         Nil
     }
@@ -50,20 +51,24 @@ trait CategoriesDao {
 
   /** List categories with categoryId as their immediate parent.
     */
-  def listChildCategories(categoryId: CategoryId): immutable.Seq[Category] = {
+  def listChildCategories(categoryId: CategoryId, includeHiddenInForum: Boolean)
+        : immutable.Seq[Category] = {
     val categoriesByParentId = loadBuildRememberCategoryMaps()._2
     val children = categoriesByParentId.getOrElse(categoryId, {
       return Nil
     })
+    unimplementedIf(!includeHiddenInForum, "!incl hidden in forum [EsE4KPKM2]")
     children.to[immutable.Seq]
   }
 
 
   /** List all categories in the sub tree with categoryId as root.
     */
-  def listCategoriesInTree(categoryId: CategoryId, includeRoot: Boolean): Seq[Category] = {
+  def listCategoriesInTree(categoryId: CategoryId, includeRoot: Boolean,
+        includeHiddenInForum: Boolean): Seq[Category] = {
     val categories = ArrayBuffer[Category]()
-    appendCategoriesInTree(categoryId, includeRoot, categories)
+    appendCategoriesInTree(categoryId, includeRoot, includeHiddenInForum = includeHiddenInForum,
+      categories)
     categories.to[immutable.Seq]
   }
 
@@ -79,12 +84,15 @@ trait CategoriesDao {
   /** Lists pages placed in categoryId, optionally including its descendant categories.
     */
   def listPagesInCategory(categoryId: CategoryId, includeDescendants: Boolean,
-        pageQuery: PageQuery, limit: Int): Seq[PagePathAndMeta] = {
+        includeHiddenInForum: Boolean, pageQuery: PageQuery, limit: Int): Seq[PagePathAndMeta] = {
     val categoryIds =
       if (includeDescendants)
-        listCategoriesInTree(categoryId, includeRoot = true).map(_.id)
-      else
+        listCategoriesInTree(categoryId, includeRoot = true,
+          includeHiddenInForum = includeHiddenInForum).map(_.id)
+      else {
+        unimplementedIf(!includeHiddenInForum, "!incl hidden in forum [EsE2PGJ4]")
         Seq(categoryId)
+      }
     listPagesInCategories(categoryIds, pageQuery, limit)
   }
 
@@ -132,7 +140,7 @@ trait CategoriesDao {
 
 
   private def appendCategoriesInTree(rootCategoryId: CategoryId, includeRoot: Boolean,
-        categoryList: ArrayBuffer[Category]) {
+      includeHiddenInForum: Boolean, categoryList: ArrayBuffer[Category]) {
     if (categoryList.exists(_.id == rootCategoryId)) {
       // COULD log cycle error
       return
@@ -141,6 +149,9 @@ trait CategoriesDao {
     val startCategory = categoriesById.getOrElse(rootCategoryId, {
       return
     })
+    if (startCategory.hideInForum && !includeHiddenInForum) {
+      return
+    }
     if (includeRoot) {
       categoryList.append(startCategory)
     }
@@ -148,7 +159,8 @@ trait CategoriesDao {
       return
     })
     for (childCategory <- childCategories) {
-      appendCategoriesInTree(childCategory.id, includeRoot = true, categoryList)
+      appendCategoriesInTree(childCategory.id, includeRoot = true,
+        includeHiddenInForum = includeHiddenInForum, categoryList)
     }
   }
 
@@ -181,12 +193,13 @@ trait CategoriesDao {
         "DwE5FRA2", s"Category not found, id: $categoryId"))
       // Currently cannot change parent category because then topic counts will be wrong.
       // Could just remove all counts, who cares anyway
-      require(oldCategory.parentId == Some(editCategoryData.parentId), "DwE903SW2")
+      require(oldCategory.parentId.contains(editCategoryData.parentId), "DwE903SW2")
       val editedCategory = oldCategory.copy(
         name = editCategoryData.name,
         slug = editCategoryData.slug,
         position = editCategoryData.position,
         newTopicTypes = editCategoryData.newTopicTypes,
+        hideInForum = editCategoryData.hideInForum,
         updatedAt = transaction.currentTime)
       transaction.updateCategoryMarkSectionPageStale(editedCategory)
       (oldCategory, editedCategory)

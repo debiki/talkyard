@@ -84,6 +84,7 @@ var EditCategoryDialog = createClassAndFactory({
           slug: category.slug,
           newTopicTypes: category.newTopicTypes,
           position: category.position,
+          hideInForum: category.hideInForum,
         });
       });
     }
@@ -93,6 +94,7 @@ var EditCategoryDialog = createClassAndFactory({
         slug: '',
         newTopicTypes: [PageRole.Discussion],
         position: DefaultPosition,
+        hideInForum: false,
       });
     }
   },
@@ -128,6 +130,10 @@ var EditCategoryDialog = createClassAndFactory({
     this.setState({ newTopicTypes: topicTypes });
   },
 
+  toggleHideInForum: function() {
+    this.setState({ hideInForum: !this.state.hideInForum });
+  },
+
   save: function() {
     this.setState({ isSaving: true });
     var category = {
@@ -138,6 +144,7 @@ var EditCategoryDialog = createClassAndFactory({
       slug: this.state.slug,
       position: this.state.position || DefaultPosition,
       newTopicTypes: this.state.newTopicTypes,
+      hideInForum: this.state.hideInForum,
     };
     ReactActions.saveCategory(category, this.close, () => {
       this.setState({ isSaving: false });
@@ -177,12 +184,23 @@ var EditCategoryDialog = createClassAndFactory({
     if (this.state.position !== DefaultPosition) {
       sortPositionText += " (" + this.state.position + ")";
     }
-    var positionnput =
+    var positionInput =
         utils.FadeInOnClick({ clickToShowText: sortPositionText },
           Input({ type: 'number', label: "Position",
             value: this.state.position || '', onChange: this.onPositionChanged,
             help: "Categories with lower positions are listed first. Default: " +
                 DefaultPosition }));
+
+    var hideInForumTitle = "Hide in forum (" + (this.state.hideInForum ?  "yes)" : "no)");
+    var hideInForumInput =
+        utils.FadeInOnClick({ clickToShowText: hideInForumTitle },
+            Input({ type: 'checkbox', label: "Hide in forum",
+              checked: this.state.hideInForum, onChange: this.toggleHideInForum,
+              help: "Hides this category and all topics herein, in the forum topic lists — " +
+                  "only staff will see them. However, when accessed directly, the pages " +
+                  "will be visible. This is useful for pages like a homepage or about-this-" +
+                  "website page, which you might not want people to see in the forum. " +
+                  "Default: false" }));
 
     var body = this.state.isLoading
         ? r.div({}, "Loading...")
@@ -190,7 +208,8 @@ var EditCategoryDialog = createClassAndFactory({
             nameInput,
             topicTypesInput,
             slugInput,
-            positionnput);
+            positionInput,
+            hideInForumInput);
 
     var saveButtonTitle = this.state.isCreating ? "Create Category" : "Save Edits";
     var dialogTitle = this.state.isCreating ? saveButtonTitle : "Edit Category";

@@ -61,6 +61,7 @@ trait ForumDao {
         position = 1,
         description = None,
         newTopicTypes = Nil,
+        hideInForum = false,
         createdAt = transaction.currentTime,
         updatedAt = transaction.currentTime))
 
@@ -74,6 +75,7 @@ trait ForumDao {
         position = UncategorizedPosition,
         description = Some(Category.UncategorizedDescription),
         newTopicTypes = immutable.Seq(PageRole.Discussion),
+        hideInForum = false,
         createdAt = transaction.currentTime,
         updatedAt = transaction.currentTime))
 

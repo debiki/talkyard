@@ -156,6 +156,7 @@ interface Category {
   position?: number;
   description: string;
   recentTopics?: Topic[];
+  hideInForum?: boolean;
   isTheUncategorizedCategory?: boolean;
   isForumItself?: boolean;
 }
