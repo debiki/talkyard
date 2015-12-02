@@ -150,6 +150,8 @@ POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 #POST  /-/load-threads-and-trees controllers.LoadPagePartsController.loadThreadsAndTrees
 GET   /-/list-pages             controllers.ListController.listPages
 
+POST  /-/import-site            controllers.ImportExportController.importSiteJson
+
 POST /-/log-browser-error       controllers.DebugTestController.logBrowserError
 GET  /-/metrics                 controllers.DebugTestController.showMetrics
 GET  /-/ping-exception-action   controllers.DebugTestController.pingExceptionAction

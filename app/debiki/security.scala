@@ -135,9 +135,10 @@ object DebikiSecurity {
             // are very old) and then it's a good thing that a new valid
             // token be created here. (?)
 
+            val theProblem = xsrfCookieValOpt.isDefined ? "Bad XSRF token" | "No XSRF cookie"
             throw ResultException(ForbiddenResult(
               "DwE35k3kU9", i"""
-              |Security issue: Bad XSRF token. Please try again:
+              |Security issue: $theProblem. Please try again:
               |  - Click any button you just clicked, again.
               |  - Or reload the page.
               |  - Or return to the previous page and reload it.

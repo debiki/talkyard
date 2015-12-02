@@ -1,3 +1,7 @@
+var _ = require('lodash');
+var request = require('request');
+var Promise = require('es6-promise').Promise;
+
 // Create colors.
 var chalk = require('chalk');
 var errorColor = chalk.bold.yellow.bgRed;
@@ -59,6 +63,42 @@ if (secretsPath) {
   }
 }
 
+// Create cookies and xsrf token.
+// (Don't use request's own cookie handling, it doesn't work for me.)
+var xsrfTokenAndCookiesPromise = new Promise(function(resolve, reject) {
+  request(mainSiteOrigin, function(error, response, body) {
+    if (error) {
+      logWarning("\nError getting cookies from " + mainSiteOrigin +
+          ", POST requests from Node.js will fail [EsE2FKE3]: " + error.message);
+      reject("Get-cookies request failed");
+      return;
+    }
+    var cookieString = '';
+    var xsrfToken = '';
+    var cookies = response.headers['set-cookie'];
+    _.each(cookies, function(cookie) {
+      // A Set-Cookie header value looks like so: "name=value; options"
+      var nameValueStr = cookie.split(';')[0];
+      var nameAndValue = nameValueStr.split('=');
+      var name = nameAndValue[0];
+      var value = nameAndValue[1];
+      cookieString += nameValueStr + '; ';
+      if (name == 'XSRF-TOKEN') {
+        xsrfToken = value;
+      }
+    });
+    if (!xsrfToken) {
+      logWarning("\nGot no xsrf token from " + mainSiteOrigin +
+          ", POST requests from Node.js will fail [EsE8GLK2]");
+      reject("Get-cookies request returned no xsrf token cookie")
+    }
+    else {
+      resolve([xsrfToken, cookieString]);
+    }
+  });
+});
+
+
 console.log("==================================================");
 console.log("~~~~~~ Test settings:");
 console.log("host: " + host);
@@ -101,6 +141,8 @@ var self = module.exports = {
 
   mainSiteHost: host,
   mainSiteOrigin: mainSiteOrigin,
+
+  xsrfTokenAndCookiesPromise: xsrfTokenAndCookiesPromise,
 
   makeSiteOrigin: function(localHostname) {
     return scheme + '://' + localHostname + '.' + newSiteDomain;
