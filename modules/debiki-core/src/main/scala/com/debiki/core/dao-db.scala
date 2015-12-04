@@ -620,15 +620,30 @@ object DbDao {
   }
 
   /** So we know which algorithm was used when hashing a password. */
-  private val ScryptPrefix = "scrypt:"
+  val ScryptPrefix = "scrypt:"
+
+  /** Automatic test might use cleartext passwords. */
+  val CleartextPrefix = "cleartext:"
 
   // This could be moved to debiki-server, so the dao won't have this
   // dependency on the password hashing algorithm? Just have the dao module load the
   // password hash, but don't actually check the hash inside the dao.
   def checkPassword(plainTextPassword: String, hash: String) = {
-    dieIf(!hash.startsWith(ScryptPrefix), "DwEKE36", s"Unknown password algorithm: '$hash'")
-    val hashNoPrefix = hash.drop(ScryptPrefix.length)
-    SCryptUtil.check(plainTextPassword, hashNoPrefix)
+    if (hash.startsWith(ScryptPrefix)) {
+      val hashNoPrefix = hash.drop(ScryptPrefix.length)
+      SCryptUtil.check(plainTextPassword, hashNoPrefix)
+    }
+    else if (hash.startsWith(CleartextPrefix)) {
+      val cleartext = hash.drop(CleartextPrefix.length)
+      plainTextPassword == cleartext
+    }
+    else if (!hash.contains(':')) {
+      die("EsE2PUY8", s"No password algorithm prefix in password hash")
+    }
+    else {
+      val prefix = hash.takeWhile(_ != ':')
+      die("EsE4PKUY1", s"Unknown password algorithm: '$prefix'")
+    }
   }
 
 

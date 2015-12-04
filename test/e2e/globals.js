@@ -9,6 +9,7 @@ var warningColor = chalk.bold.red;
 var unusualColor = chalk.black.bgGreen;
 function logError(message) { console.log(errorColor(message)); }
 function logWarning(message) { console.log(warningColor(message)); }
+function logUnusualMessage(message) { console.log(unusualColor(message)); }
 
 // Analyze arguments.
 var args;
@@ -29,6 +30,8 @@ var host = args.host || (secure ? 'localhost:9443' : 'localhost:9000');
 var scheme = secure ? 'https' : 'http';
 var mainSiteOrigin = scheme + '://' + host;
 var newSiteDomain = args.newSiteDomain || host;
+var noTimeout = args.nt || args.noTimeout;
+var pauseForeverAfterTest = args.pa || args.pauseForeverAfterTest;
 
 // Setup secret settings.
 var gmailEmail;
@@ -88,7 +91,7 @@ var xsrfTokenAndCookiesPromise = new Promise(function(resolve, reject) {
       }
     });
     if (!xsrfToken) {
-      logWarning("\nGot no xsrf token from " + mainSiteOrigin +
+      logError("\nGot no xsrf token from " + mainSiteOrigin +
           ", POST requests from Node.js will fail [EsE8GLK2]");
       reject("Get-cookies request returned no xsrf token cookie")
     }
@@ -110,21 +113,29 @@ console.log("gmailEmail: " + gmailEmail);
 console.log("facebookAdminEmail: " + facebookAdminEmail);
 console.log("facebookUserEmail: " + facebookUserEmail);
 console.log("~~~~~~ Extra magic:");
-if (args.pauseForeverAfterTest) {
+if (pauseForeverAfterTest) {
   console.log("You said " + unusualColor("--pauseForeverAfterTest") +
       ", so I will pause forever after the first test.");
+}
+if (noTimeout) {
+  console.log("You said " + unusualColor("--noTimeout") +
+      ", so I might wait forever for something in the browser.");
 }
 console.log("==================================================");
 
 
 var self = module.exports = {
 
-  pauseForeverAfterTest: args.pauseForeverAfterTest,
+  pauseForeverAfterTest: pauseForeverAfterTest,
+  logError: logError,
+  logWarning: logWarning,
+  logUnusualMessage: logUnusualMessage,
   unusualColor: unusualColor,
 
-  waitForConditionTimeout: 995000,
+  waitForConditionTimeout: noTimeout ? 1000*3600*24*365*100 : 2500,
 
   e2eTestPassword: e2eTestPassword,
+  e2eTestPasswordUrlParam: 'e2eTestPassword=' + e2eTestPassword,
 
   generateTestId: function() {
     return (new Date()).getTime().toString().slice(3, 10);

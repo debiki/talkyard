@@ -14,7 +14,9 @@ util.inherits(Post, events.EventEmitter);
 
 Post.prototype.command = function(url, data, options, success, anyErrorCallback) {
   var self = this;
-  console.log('POST ' + url + '  [EsM5JMMK2]');
+  var globals = self.api.globals;
+  var logError = globals.logError;
+  console.log('POST ' + url + ' ...  [EsM5JMMK2]');
 
   if (_.isFunction(options)) {
     if (anyErrorCallback)
@@ -29,7 +31,7 @@ Post.prototype.command = function(url, data, options, success, anyErrorCallback)
   if (!_.isObject(data))
     throw new Error("Give me an object please; only json supported right now [EsE4GMKW2]");
 
-  self.api.globals.xsrfTokenAndCookiesPromise.then(function(xsrfTokenAndCookieString) {
+  globals.xsrfTokenAndCookiesPromise.then(function(xsrfTokenAndCookieString) {
     headers['X-XSRF-TOKEN'] = xsrfTokenAndCookieString[0];
     headers['Cookie'] = xsrfTokenAndCookieString[1];
     var params = {
@@ -43,7 +45,7 @@ Post.prototype.command = function(url, data, options, success, anyErrorCallback)
           anyErrorCallback(error);
         }
         else {
-          console.error('HTTP POST error [EsE5GKU0]: ' + error.message +
+          logError('HTTP POST error [EsE5GKU0]: ' + error.message +
               '\nThe request: POST ' + url +
                 // These two are always undefined it seems:
               '\nThe response: ' + JSON.stringify(response) +
@@ -52,20 +54,34 @@ Post.prototype.command = function(url, data, options, success, anyErrorCallback)
       }
       else {
         if (response.statusCode >= 500 && response.statusCode < 600) {
-          console.error('HTTP POST request resulted in an internal server error, status ' +
-              response.statusCode + ' [EsE5FKU3]: ' +
+          logError(
+              'HTTP POST request resulted in an internal server error [EsE5FKU3]: ' +
+              '\ntatus code: ' + response.statusCode +
               '\nThe request: POST ' + url +
               '\n---- The response body: --------------------------------------------------' +
               '\n' + response.body +
               '\n--------------------------------------------------------------------------');
         }
+        else if (response.statusCode >= 400 && response.statusCode < 500) {
+          logError(
+              'HTTP POST request rejected [EsE40FK2]: ' +
+              '\nStatus code: ' + response.statusCode +
+              '\nThe request: POST ' + url +
+              '\n---- The response body: --------------------------------------------------' +
+              '\n' + response.body +
+              '\n--------------------------------------------------------------------------');
+        }
+
+        console.log('POST ' + url + ' ==> status ' + response.statusCode);
+        if (response.statusCode !== 200) {
+          self.api.assert.fail(response.statusCode, 200, "Request failed: POST " + url, "=");
+        }
         else {
-          console.log('POST ' + url + ' ==> status ' + response.statusCode);
-          success(response);
+          success(response, body);
         }
       }
 
-      self.emit('complete'); // or emit sth else on error?
+      self.emit('complete');
     });
   });
 };

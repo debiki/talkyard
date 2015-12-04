@@ -10,28 +10,44 @@ function Get() {}
 util.inherits(Get, events.EventEmitter);
 
 Get.prototype.command = function(url, success, anyErrorCallback) {
-  console.log('GET ' + url + '  [DwM7UYK4]');
+  console.log('GET ' + url + ' ... [DwM7UYK4]');
+
+  var globals = this.api.globals;
+  var logError = globals.logError;
+
   request.get(url, function(error, response, body) {
     if (error) {
       if (anyErrorCallback) {
         anyErrorCallback(error);
       }
       else {
-        console.error('HTTP GET request error [DwE4KGYF2]: ' + JSON.stringify(error) +
-          '\nThe request: GET ' + url +
-          // These two are always undefined it seems:
-          '\nThe response: ' + JSON.stringify(response) +
-          '\nThe response body: ' + body);
+        logError(
+            'HTTP GET request error [DwE4KGYF2]: ' + JSON.stringify(error) +
+            '\nThe request: GET ' + url +
+            // These two are always undefined it seems:
+            '\nThe response: ' + JSON.stringify(response) +
+            '\nThe response body: ' + body);
       }
     }
     else {
       if (response.statusCode >= 500 && response.statusCode < 600) {
-        console.error('HTTP GET request resulted in an internal server error, status ' +
-                response.statusCode + ' [DwE7P2U2]: ' +
-          '\nThe request: GET ' + url +
-          '\n---- The response body: --------------------------------------------------' +
-          '\n' + response.body +
-          '\n--------------------------------------------------------------------------');
+        logError(
+            'HTTP GET request resulted in an internal server error [DwE7P2U2]: ' +
+            '\nStatus code: ' + response.statusCode +
+            '\nThe request: GET ' + url +
+            '\n---- The response body: --------------------------------------------------' +
+            '\n' + response.body +
+            '\n--------------------------------------------------------------------------');
+      }
+      else if (response.statusCode >= 400 && response.statusCode < 500) {
+        logError(
+            'HTTP GET request rejected [EsE5KGM2]: ' +
+            '\nStatus code: ' + response.statusCode +
+            '\nThe request: GET ' + url +
+            '\n---- The response body: --------------------------------------------------' +
+            '\n' + response.body +
+            '\n--------------------------------------------------------------------------');
+
       }
       else {
         console.log('GET ' + url + ' ==> status ' + response.statusCode);

@@ -186,6 +186,25 @@ object DebikiSecurity {
           100 computers and access to the scrypt hash.""")
   }
 
+
+  /** Cleartext password allowed in tests only. Cleartext passwords must start with 'public'
+    * so whenever one sees a cleartext password, one knows that it is
+    * really intended to be public, for tests only (or, if not 'public...', it shouldn't be there).
+    */
+  def throwIfBadPassword(passwordHash: String, isTest: Boolean) {
+    val array = passwordHash.split(":")
+    if (array.length != 2)
+      throwIllegalArgument("EsE2YPU5", "Bad password hash: no prefix")
+    val prefix = array(0)
+    val hash = array(1)
+
+    if (prefix == DbDao.CleartextPrefix && !hash.startsWith("public"))
+      throwIllegalArgument("EsE2YPU5",
+        "Cleartext password does not start with 'public'")
+
+    if (!isTest && prefix != DbDao.ScryptPrefix)
+      throwIllegalArgument("EsE5YMP2", "Password type not allowed: " + prefix.dropRight(1))
+  }
 }
 
 
