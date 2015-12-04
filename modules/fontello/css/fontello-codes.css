@@ -73,6 +73,12 @@
 .icon-check-empty:before { content: '\e841'; } /* '' */
 .icon-idea:before { content: '\e842'; } /* '' */
 .icon-location:before { content: '\e843'; } /* '' */
+.icon-smile:before { content: '\e844'; } /* '' */
+.icon-frown:before { content: '\e845'; } /* '' */
+.icon-github-circled:before { content: '\e846'; } /* '' */
+.icon-history:before { content: '\e847'; } /* '' */
+.icon-meh:before { content: '\e848'; } /* '' */
+.icon-flash:before { content: '\e849'; } /* '' */
 .icon-facebook:before { content: '\f09a'; } /* '' */
 .icon-google-plus:before { content: '\f0d5'; } /* '' */
 .icon-linkedin:before { content: '\f0e1'; } /* '' */

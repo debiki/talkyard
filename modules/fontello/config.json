@@ -277,6 +277,18 @@
       "src": "fontawesome"
     },
     {
+      "uid": "d4816c0845aa43767213d45574b3b145",
+      "css": "history",
+      "code": 59463,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "3212f42c65d41ed91cb435d0490e29ed",
+      "css": "flash",
+      "code": 59465,
+      "src": "fontawesome"
+    },
+    {
       "uid": "dd6c6b221a1088ff8a9b9cd32d0b3dd5",
       "css": "check",
       "code": 59456,
@@ -325,6 +337,24 @@
       "src": "fontawesome"
     },
     {
+      "uid": "d862a10e1448589215be19702f98f2c1",
+      "css": "smile",
+      "code": 59460,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "06ddc67d609c477cd5524a7238d7850d",
+      "css": "frown",
+      "code": 59461,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "2c5055a9c9723725f49f0593a08535af",
+      "css": "meh",
+      "code": 59464,
+      "src": "fontawesome"
+    },
+    {
       "uid": "44a0e2660ac966cdfaa04deb6aac51df",
       "css": "shield",
       "code": 59420,
@@ -346,6 +376,12 @@
       "uid": "8e04c98c8f5ca0a035776e3001ad2638",
       "css": "facebook",
       "code": 61594,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "0f6a2573a7b6df911ed199bb63717e27",
+      "css": "github-circled",
+      "code": 59462,
       "src": "fontawesome"
     },
     {
