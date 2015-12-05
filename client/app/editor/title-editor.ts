@@ -194,26 +194,16 @@ export var TitleEditor = createComponent({
         r.option({ value: PageRole.Discussion }, 'Other'),
         customHtmlPageOption);
 
-    var editForumIntroButton;
-    var hideShowIntroButton;
+    var addBackForumIntroButton;
     if (this.props.pageRole === PageRole.Forum) {
       var introPost = this.props.allPosts[BodyId];
       var hasIntro = introPost && introPost.sanitizedHtml && !introPost.isPostHidden;
-      if (hasIntro) {
-        editForumIntroButton =
-            r.a({ className: 'icon-edit', onClick: () => editor.openEditorToEditPost(BodyId) },
-              "Edit intro text");
-        hideShowIntroButton =
-            r.a({ className: 'icon-eye-off',
-                onClick: () => ReactActions.setPostHidden(BodyId, true) },
-              "Hide intro");
-      }
-      else {
-        hideShowIntroButton =
-            r.a({ className: 'icon-eye', onClick: () => {
+      if (!hasIntro) {
+        addBackForumIntroButton =
+            r.a({ className: 'icon-plus', onClick: () => {
               ReactActions.setPostHidden(BodyId, false);
-              debiki2['ReactActions'].showForumIntro(true);
-            }}, "Show forum intro (just below)");
+              debiki2.ReactActions.showForumIntro(true);
+            }}, "Add back forum intro below");
       }
     }
 
@@ -222,7 +212,7 @@ export var TitleEditor = createComponent({
       : r.div({ className: 'dw-save-btns-etc' },
           Button({ onClick: this.save }, 'Save'),
           Button({ onClick: this.props.closeEditor }, 'Cancel'),
-          showAdvancedButton, editForumIntroButton, hideShowIntroButton);
+          showAdvancedButton, addBackForumIntroButton);
 
     return (
       r.div({ className: 'dw-p-ttl-e' },

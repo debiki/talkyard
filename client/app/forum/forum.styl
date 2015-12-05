@@ -16,23 +16,27 @@
  */
 
 
-.dw-forum-intro
+.esForumIntro
   clearfix()
-  margin-top: 1em;
+  margin-top: 0.8em;
   max-width: 100ex;
   p
     margin-bottom: 0.8em;
 
-.dw-forum-intro-close
+.esForumIntro_edit,
+.esForumIntro_close
   display: block;
-  padding: 4px 0 8px;
+  padding: 2px 5px 8px 0;
   position: relative;
   left: -3px;
   color: hsl(211, 50%, 50%);
   float: left; // else underline appears although mouse far away
   font-size: 93%;
 
-.dw-hide-forum-intro .dw-forum-intro
+.esForumIntro_edit
+  padding-left: 7px;
+
+.dw-hide-forum-intro .esForumIntro
   display: none;
 
 .dw-forum > .dw-help

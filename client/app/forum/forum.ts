@@ -196,14 +196,21 @@ var ForumComponent = React.createClass({
 
 var ForumIntroText = createComponent({
   render: function() {
+    var user: User = this.props.user;
     var introPost = this.props.allPosts[BodyId];
     if (!introPost || introPost.isPostHidden)
       return null;
 
-    return r.div({ className: 'dw-forum-intro' },
+    var anyEditIntroBtn = user.isAdmin
+        ? r.a({ className: 'esForumIntro_edit icon-edit', onClick: openEditIntroDialog }, "Edit")
+        : null;
+
+    return r.div({ className: 'esForumIntro' },
       r.div({ dangerouslySetInnerHTML: { __html: introPost.sanitizedHtml }}),
-      r.a({ className: 'icon-cancel dw-forum-intro-close',
-          onClick: () => ReactActions.showForumIntro(false) }, "Hide intro"));
+      r.div({ className: 'esForumIntro_btns' },
+        r.a({ className: 'esForumIntro_close icon-cancel',
+            onClick: () => ReactActions.showForumIntro(false) }, "Hide")),
+        anyEditIntroBtn);
   }
 });
 

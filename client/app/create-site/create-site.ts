@@ -127,8 +127,8 @@ var CreateSimpleSiteComponent = React.createClass({
     return (
       r.div({},
         r.h1({}, 'Create Site'),
-        r.form({ onSubmit: this.handleSubmit },
-          Input({ type: 'text', label: 'Email', id: 'e2eEmail',
+        r.form({ className: 'esCreateSite', onSubmit: this.handleSubmit },
+          Input({ type: 'text', label: 'Email', id: 'e2eEmail', className: 'esCreateSite_email',
               placeholder: 'your-email@example.com',
               help: 'Your email address, which you will use to login and ' +
                 'administrate the site.', ref: 'emailAddress' }),
