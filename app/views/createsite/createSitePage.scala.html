@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.SiteTpi)
+@(isTest: Boolean, tpi: debiki.SiteTpi)
 
 
 <!DOCTYPE html>
@@ -32,6 +32,11 @@
 <!-- createSitePage.scala.html -->
 
 <div class="container" style="padding-top:30px">
+  @if(isTest) {
+    <div class="esTestSiteWarning alert-danger icon-warning">
+      You're creating a test site, it will be <b>deleted</b> later
+    </div>
+  }
   <div id="dw-react-create-site"></div>
 </div>
 

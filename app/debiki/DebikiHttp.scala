@@ -42,8 +42,8 @@ object DebikiHttp {
   // (The www.debiki.se homepage is 20 kb, and homepage.css 80 kb,
   // but it includes Twitter Bootstrap.)
 
-  val MaxPostSize = 400 * 1000
-  val MaxPostSizeForAuUsers = 40 * 1000
+  val MaxPostSize = 100 * 1000
+  val MaxPostSizeForAuUsers = 30 * 1000
   val MaxPostSizeForUnauUsers = 10 * 1000
   val MaxDetailsSize =  20 * 1000
 

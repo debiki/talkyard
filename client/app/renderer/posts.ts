@@ -197,7 +197,8 @@ var TitleBodyComments = createComponent({
     var props: Store = this.props;
     var user: User = props.user;
     if (props.ancestorsRootFirst.length) {
-      categories =
+      var hide = _.some(props.ancestorsRootFirst, a => a.hideInForum);
+      categories = hide ? null :
         r.ol({ className: 'parent-forums-list' },
           props.ancestorsRootFirst.map((ancestor: Ancestor) => {
             return r.li({ key: ancestor.categoryId }, r.a({ href: ancestor.path }, ancestor.title));

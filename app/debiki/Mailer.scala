@@ -156,7 +156,8 @@ class Mailer(
     // I often use @example.com, or simply @ex.com, when posting test comments
     // — don't send those emails, to keep down the bounce rate.
     if (broken || emailToSend.sentTo.endsWith("example.com") ||
-        emailToSend.sentTo.endsWith("ex.com")) {
+        emailToSend.sentTo.endsWith("ex.com") ||
+        emailToSend.sentTo.endsWith("x.c")) {
       fakeSendAndRememberForE2eTests(emailToSend, tenantDao)
       return
     }

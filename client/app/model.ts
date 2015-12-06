@@ -260,6 +260,7 @@ interface Ancestor {
   categoryId: number;
   title: string;
   path: string;
+  hideInForum?: boolean;
 }
 
 

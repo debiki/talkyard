@@ -133,12 +133,7 @@ var ForumComponent = React.createClass({
 
     if (!user.isAuthenticated)
       return { id: 'EdHKEW21', version: 1, content: r.span({},
-          r.p({},
-            "Click ", r.b({}, "Log In"), " (to the right just above)."),
-          r.p({},
-            "Why log in? Because we need your email, so we can notify you when you " +
-            "receive critique — and to notify you, if you give critique, " +
-            "and someone asks for clarifications.")) };
+          r.p({}, "Click ", r.b({}, "Log In"), ", to the right just above.")) };
 
     // For now only.  [85SKW32]
     if (this.state.numWaitingForCritique >= MaxWaitingForCritique) //  [plugin]

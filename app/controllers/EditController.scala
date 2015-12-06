@@ -199,16 +199,17 @@ object EditController extends mvc.Controller {
     |"""
 
   val ChatCommentGuidelines = i"""
-    |<p>In a chat comment, you can for example:</p>
+    |<p>In a chat comment, you can:</p>
     |<ul>
-    |<li>Ask the Original Poster for clarifications.</li>
     |<li>Talk lightly and causally about this topic.</li>
+    |<li>Ask the Original Poster for clarifications.</li>
     |<li>Post a topic status update.</li>
     |</ul>
     |"""
 
   val GiveCritiqueGuidelines = /* [plugin] */ i"""
-    |<p>You give critique in order to help the poster to improve his/her work:
+    |<p>This is a public forum — anyone can read your critique.
+    |You give critique to help the poster improve his/her work:
     |<ul>
     |<li>Tell what you think won't work and should be improved, perhaps removed.
     |<li>Try to suggest improvements.

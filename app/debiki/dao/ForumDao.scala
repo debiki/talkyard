@@ -93,7 +93,7 @@ trait ForumDao {
   private val UncategorizedPosition = 1000
 
   private val ForumBodySanitized = i"""
-    |<p>Replace this text (click <i>Edit</i> below) with an introduction to this forum,
+    |<p>Replace this text with an introduction to this forum,
     |so people know what it is about. Include a link back to your main website, if any.
     |</p>
     """

@@ -132,7 +132,8 @@ var self = module.exports = {
   logUnusualMessage: logUnusualMessage,
   unusualColor: unusualColor,
 
-  waitForConditionTimeout: noTimeout ? 1000*3600*24*365*100 : 2500,
+  // (2.5 seconds is too short, because of spam test requests sent to external services.)
+  waitForConditionTimeout: noTimeout ? 1000*3600*24*365*100 : 5000,
 
   e2eTestPassword: e2eTestPassword,
   e2eTestPasswordUrlParam: 'e2eTestPassword=' + e2eTestPassword,

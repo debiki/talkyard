@@ -301,7 +301,8 @@ object ReactJson {
     Json.obj(
       "categoryId" -> category.id,
       "title" -> name,
-      "path" -> path)
+      "path" -> path,
+      "hideInForum" -> category.hideInForum)
   }
 
 

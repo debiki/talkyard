@@ -1,7 +1,7 @@
 Debiki Server
 =============================
 
-Debiki (now I've renamed it to EffectiveDiscussions though) is an open source
+Debiki (now I've renamed it to EffectiveDiscussions though) is a
 combined forum and question & answers platform.  Read more, and see it live, at
 http://www.effectivediscussions.org/.
 
@@ -118,7 +118,7 @@ Contributing
 -----------------------------
 
 If you'd like to contribute, read more
-[at the end of this page](http://www.effectivediscussions.com/-81n25/source-code) about contributing.
+[at the end of this page](http://www.effectivediscussions.org/-81n25/source-code) about contributing.
 
 In the future, I suppose there will be a Contributor License Agreement (CLA), similar to
 [Google's CLA](https://developers.google.com/open-source/cla/individual) — you'd open
@@ -174,7 +174,7 @@ https://github.com/debiki/debiki-server-old
 License
 -----------------------------
 
-Currently AGPL — please let me know if you want me to change to GPL, contact info here: http://www.effectivediscussions.com/about/
+Currently AGPL — please let me know if you want me to change to GPL, contact info here: http://www.effectivediscussions.org/about/
 
 
     Copyright (C) 2010-2015  Kaj Magnus Lindberg

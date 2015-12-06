@@ -28,6 +28,7 @@ import play.api.libs.json._
 import play.api.mvc.Controller
 import requests._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.Try
 
 
 /** Creates new empty sites, for forums, blogs or embedded comments.
@@ -44,9 +45,10 @@ object CreateSiteController extends Controller {
   // But reserve 'test--' (see if statement further below) and these prefixes:
   private val TestSitePrefixes = Seq("smoke-test-", "smoketest-", "delete-", "e2e-")
 
-  def start = GetAction { request =>
+  def showPage(isTest: String) = GetAction { request =>
+    val isTestBool = Try(isTest.toBoolean).toOption getOrElse throwBadArgument("EsE5JUM2", "isTest")
     throwIfMayNotCreateSite(request)
-    Ok(views.html.createsite.createSitePage(SiteTpi(request)).body) as HTML
+    Ok(views.html.createsite.createSitePage(isTestBool, SiteTpi(request)).body) as HTML
   }
 
 

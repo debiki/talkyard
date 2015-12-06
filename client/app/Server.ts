@@ -106,6 +106,8 @@ export function createSite(emailAddress: string, localHostname: string,
   if (e2eTestPassword) {
     url += '?e2eTestPassword=' + e2eTestPassword;
   }
+  var isTestSite = window.location.search.indexOf('testSiteOkDelete=true') !== -1 ||
+    window.location.pathname === '/-/create-test-site';
   postJson(url, {
     data: {
       acceptTermsAndPrivacy: true,
@@ -113,7 +115,7 @@ export function createSite(emailAddress: string, localHostname: string,
       localHostname: localHostname,
       embeddingSiteAddress: anyEmbeddingSiteAddress,
       pricePlan: pricePlan,
-      testSiteOkDelete: window.location.search.indexOf('testSiteOkDelete=true') !== -1,
+      testSiteOkDelete: isTestSite,
     },
     success: (response) => {
       doneCallback(response.newSiteOrigin);
