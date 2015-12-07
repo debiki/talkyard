@@ -64,7 +64,7 @@ class Globals {
   def mostMetrics: MostMetrics = state.mostMetrics
 
 
-  val applicationVersion = "0.00.04"  // later, read from some build config file
+  val applicationVersion = "0.00.05"  // later, read from some build config file
 
   val applicationSecret =
     Play.configuration.getString("play.crypto.secret").getOrDie(

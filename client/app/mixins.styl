@@ -7,5 +7,41 @@ clearfix()
   &:after
     clear both
 
+// Old clearfix list: (could start using the above clearfix() instead)
+// Makes the root post wrap its (floating) children, don't know if
+// needed for other horizontal threads.
+.dw-t.dw-hz > .dw-p:after,
+  // Wraps any floating reply or rate form (Debiki's or some other framework's,
+  // e.g. WordPress' reply form). Unless the .dw-t wraps it, PNG arrow hiders
+  // won't hide PNG arrows correctly (because the .dw-t and thus the arrow
+  // hiders wouldn't be tall enough, if it didn't wrap floating children).
+.dw-t:after,
+  // Its children, .dw-p-bd-blk:s, float left.
+.dw-p-bd:after,
+  // Comment actions
+.dw-p-as:after
+  // Copied from jquery-ui-1.8.16.custom.css.
+  content: "."
+  display: block
+  height: 0
+  clear: both
+  visibility: hidden
+
+
+.dw-mirror
+  -webkit-transform: scale(-1, 1)
+  -moz-transform: scale(-1, 1)
+  -ms-transform: scale(-1, 1)
+  -o-transform: scale(-1, 1)
+  transform: scale(-1, 1)
+
+
+// Inverted icons (changes e.g. a black disc with a white question mark to a black circle,
+// filled with white and a black question mark). This supposedly does *not* work in IE9,
+// in IE9 I suppose the icon will just disappear (color: white). So be it.
+.dw-icon-inverted
+  text-shadow: -1px -1px 0 #333, 1px -1px 0 #333, -1px 1px 0 #333, 1px 1px 0 #333;
+  color: white;
+
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

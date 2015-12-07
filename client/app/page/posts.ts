@@ -254,7 +254,7 @@ var TitleBodyComments = createComponent({
         categories,
         anyHelpMessage,
         anyAboutCategoryTitle,
-        r.div({ className: 'debiki dw-debate dw-page' + embeddedClass },
+        r.div({ className: 'debiki dw-page' + embeddedClass },
           anyTitle,
           anyPostHeader,
           anySocialLinks,

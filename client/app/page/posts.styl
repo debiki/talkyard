@@ -1,5 +1,5 @@
 /*!
- * Copyright (C) 2010-2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2010-2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,54 +15,40 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Styles specific to Debiki's Play Framework application.
 
+.dw-p
+  background-color: white
+  position: relative;
 
+.DW.DW .dw-p-hd.dw-highlight-off,
+.dw-p-hd,
+.dw-p.dw-zd  // folded comment
+  padding: 0 0 0 3px;
+  font-size: 11px
+  color: hsl(0, 0%, 8%);
+  line-height: 15px // or test w 120%
+  background-color: white
 
-// Standard tags
-//===========================
+.dw-p.dw-zd  // folded comment
+  margin-bottom: 25px;
+  cursor: pointer;
 
+.DW.DW .dw-p-bd.dw-highlight-off,
+.dw-p-bd,
+.dw-p-diff // COULD place -bd on -diff too, remove this -diff row?
+  padding: 12px 1px 0 3px // 3px aligns w .dw-p-hd (also padded left 3px)
+  position: relative
+  background-color: white
+  min-width: 5em
 
-// ------ Standard elems
-
-ins
-  text-decoration: none
-  background: #9f9
-
-del
-  text-decoration: line-through
-  background: #ffd0d0
-
-// Use larger font when editing page title.
-.dw-pri .dw-p-ttl > .dw-f-e textarea
-  font-size: 26px
-
-.dw-ar-p
-  padding-bottom: 0.8em
-
-
-
-// Page rendering
-//===========================
-
-
-// Page title
-//---------------------------
-
-
-#dw-t-0    // the page title post has id 0
-  // Don't float title, or body will appear to the right of the title,
-  // rather than below it.
-  // There're no SVG arrows that can be cropped, see above, [8DbF3].
-  float: none
-  // Left align the title.
-  margin-left: 0
-
+// Place debug-reading-progress outline above the .dw-p.
+.dw-p-hd
+  z-index: 2; // > the body, so avatar circle won't be cut off when highlighting body background
+  position: relative;
 
 
 // Cropped and resized posts
-//---------------------------
-
+//===========================
 
 .dw-p.dw-x
   cursor: pointer;
@@ -119,7 +105,7 @@ del
 
 
 // Unwanted posts
-//---------------------------
+//===========================
 
 // Dim the post and draw a X over it, darker if there are many Unwanted votes.
 .dw-p.dw-unwanted
@@ -167,8 +153,8 @@ del
     background-size: 100% calc(100% - 20px), auto;
 
 
-// Comments
-//---------------------------
+// Comments (both replies and chat comments)
+//===========================
 
 // Show the whole article (or <pre>s with very long lines
 // might be cropped).
@@ -435,8 +421,7 @@ span.dw-p-e-by
   padding-right: 3px
 
 // Cancel .dw-p-bd-blk max width for code pages.
-[data-page_role='Code'] .dw-hz > .dw-p > .dw-p-bd > .dw-p-bd-blk,
-[data-page_role='Code'] .dw-hz > .dw-p > .dw-f-e > .dw-e-tabs > .dw-e-tab > .dw-p-bd-blk,
+[data-page_role='Code'] .dw-hz > .dw-p > .dw-p-bd > .dw-p-bd-blk
   max-width: none
 
 // Cancel Twitter Bootsrap wrapping of <pre>
@@ -476,9 +461,52 @@ span.dw-p-e-by
     margin-top: -6px
 
 
-// Post info
-//---------------------------
+// Chat comments
+//===========================
 
+.DW.DW .dw-chat
+  .dw-t
+    padding-top: 7px;
+    border-bottom: 1px solid #eee;
+
+  .dw-p-hd
+    background-color: white;
+    border: none;
+
+  .dw-p-hd,
+  .dw-fullname
+    color: hsl(0, 0%, 40%);
+
+  .dw-p-by,
+  .dw-p-e-by
+    color: hsl(255, 0%, 24%);
+
+  .dw-p-as
+    margin-bottom: 0;
+
+  .dw-a.dw-a-votes
+    padding-bottom: 4px !important;
+
+  .dw-mrrs
+    display: inline !important;
+
+.dw-chat-as
+  padding-top: 12px;
+
+  .dw-a-reply
+    float: left;
+    color: hsl(0, 0%, 15%);
+    // background-color: see action-links.styl
+    padding: 10px 16px 10px 12px;
+    font-size: 100%;
+
+    &:hover
+      color: black;
+      background-color: hsl(0, 0%, 90%);
+
+
+// Post info
+//===========================
 
 .dw-p-pending-mod
   margin-bottom: 5px
@@ -491,24 +519,17 @@ span.dw-p-e-by
   // so better hide here. COULD use another stylesheet if javascript disabled.
   display: none
 
-//.dw-p-flgs-top,
-//.dw-p-rs-top
-
 .dw-p-hd .dw-p-by-me,
   font-weight: bold
   color: #151515
 
-.dw-p-flgs-all,
 .dw-p-r-all
   display: none // shown on .dw-p-hd click
 
-.dw-flgs,
-.dw-flgs li,
 .dw-rs,
 .dw-rs li
   display: inline
 
-.dw-flgs li,
 .dw-rs li
   margin-left: 0.5ex
 
@@ -525,100 +546,82 @@ span.dw-p-e-by
     opacity: 0.76
 
 
-
-// Dragsorting
+// Marks
 //===========================
 
-// A <div> with this class is appended to an element that's being dragsorted,
-// so it's totally obvious what is being dragsorted.
-.dw-dragsort-shadow
-  position: absolute
-  width: 100%
-  height: 100%
-  z-index: 10
-  background: hsl(0, 0%, 50%)
-  top: 0
-  opacity: 0.3
-
-  // When dragsorting pinned posts:
-  &.dw-dragsort-pin-vt
-    // There's some whitespace below where the actions are shown. Looks better if
-    // the shadow doesn't cover all that whitespace, but instead extends a bit above
-    // the tree.
-    top: -20px
-
-
-
-// Miscellaneous
-//===========================
-
-
-.dw-mirror
-  -webkit-transform: scale(-1, 1)
-  -moz-transform: scale(-1, 1)
-  -ms-transform: scale(-1, 1)
-  -o-transform: scale(-1, 1)
-  transform: scale(-1, 1)
-
-
-// The Stupid Lightbox enlarges images in posts on click, so indicate that they're clickable.
-.dw-p-bd img.stupid-lightbox-enlargeable:hover
-  outline: 2px solid hsl(210, 100%, 83%);
+.dw-p-mark-click
+  padding: 7px 0px 7px 5px;
   cursor: pointer;
-  cursor: zoom-in; // better, if supported
-  box-shadow: hsl(210, 70%, 60%) 2px 2px 13px !important;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 
-.stupid-lightbox-wrap
-  cursor: zoom-out;
+  &:hover
+    outline: 2px solid hsl(210, 100%, 77%);
+    background: hsl(210, 100%, 97%);
+
+html.touch .dw-p-mark-click
+  padding: 9px 5px 9px 5px;
+
+  &:hover
+    outline: none;
+    background: none;
+
+.dw-p-mark
+  width: 10px;
+  height: 10px;
+  display: inline-block;
+  position: relative;
+  top: 1px;
+  margin: 0 8px 0 0;
+  background: transparent;
+  color: hsl(0, 0%, 72%);
+  font-size: 13px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
+.dw-p-unread .dw-p-mark
+  color: hsl(0, 0%, 33%);
+
+.dw-p-mark-read .dw-p-mark
+  color: hsl(0, 0%, 50%);
+
+.dw-p-mark-blue-star .dw-p-mark
+  color: hsl(210, 100%, 50%);
+
+.dw-p-mark-yellow-star .dw-p-mark
+  padding: 0 2px 0 1px;
+  font-size: 11px;
+  text-shadow: -1px -1px 1px red, 1px -1px 1px red, -1px 1px 1px red, 1px 1px 1px red;
+  color: yellow;
 
 
-// SVG
+// Highlighted posts
 //===========================
 
+.DW .dw-highlight-on
+  &.dw-p-hd
+    background-color: hsl(211, 100%, 76%);
+  &.dw-p-bd
+    background-color: hsl(211, 100%, 86%);
+    // Place background above action buttons.
+    z-index: 1;
 
-#dw-t-root
-  overflow: hidden // hides the excessively wide <svg> elems, see above
+.dw-highlight-off
+  // (Color reset higher up in this file, see .dw-highlight-off.
+  -webkit-transition: background-color 4s;
+  -moz-transition: background-color 4s;
+  -o-transition: background-color 4s;
+  -ms-transition: background-color 4s;
+  transition: background-color 4s;
 
-.dw-flip-hz
-  -moz-transform: scaleX(-1)
-  -o-transform: scaleX(-1)
-  -webkit-transform: scaleX(-1)
-  transform: scaleX(-1)
-  filter: FlipH
-  -ms-filter: "FlipH"
-
-
-
-
-// Things to move to app/views/themesbuiltin/default20121009/-somewhere-
-//===========================
-
-.dw-about-category
-
-  .dw-about-cat-ttl-prfx
-    margin-top: 45px !important  // why did I add 'important' to h2?
-    margin-bottom: 10px;
-    font-style: italic
-    clear: both; // if there's a float-left help box above
-
-  .dw-p-ttl
-    margin-top: 0
-
-#forum-search
-  float: right
-  z-index: 1
-  position: relative
-
-#forum-search input[type='text']
-  width: 180px
-
-#forum-search input[type='text']:focus
-  width: 320px
-
-//.search-result-page-title
-
-.search-result-post-text a
-  color: black !important
+.dw-p.dw-highlighted-multireply-hover
+  outline: hsl(211, 100%, 77%) solid 5px; // duplicated style [FK209EIZ]
 
 
 

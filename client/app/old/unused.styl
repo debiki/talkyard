@@ -1,0 +1,40 @@
+/*
+// SVG
+//===========================
+
+
+#dw-t-root
+  overflow: hidden // hides the excessively wide <svg> elems, see above
+
+.dw-flip-hz
+  -moz-transform: scaleX(-1)
+  -o-transform: scaleX(-1)
+  -webkit-transform: scaleX(-1)
+  transform: scaleX(-1)
+  filter: FlipH
+  -ms-filter: "FlipH"
+
+
+
+// Dragsorting
+//===========================
+
+// A <div> with this class is appended to an element that's being dragsorted,
+// so it's totally obvious what is being dragsorted.
+.dw-dragsort-shadow
+  position: absolute
+  width: 100%
+  height: 100%
+  z-index: 10
+  background: hsl(0, 0%, 50%)
+  top: 0
+  opacity: 0.3
+
+  // When dragsorting pinned posts:
+  &.dw-dragsort-pin-vt
+    // There's some whitespace below where the actions are shown. Looks better if
+    // the shadow doesn't cover all that whitespace, but instead extends a bit above
+    // the tree.
+    top: -20px
+
+*/

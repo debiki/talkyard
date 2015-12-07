@@ -1,0 +1,46 @@
+.dw-page
+  // A child, the root thread .dw-depth-0, floats left.
+  clearfix()
+
+  position: relative
+
+  a
+    cursor: pointer
+
+
+.dw-ar-p
+  padding-bottom: 0.8em
+
+
+// Page title
+#dw-t-0    // the page title post has id 0
+  // Don't float title, or body will appear to the right of the title,
+  // rather than below it.
+  // There're no SVG arrows that can be cropped, see above, [8DbF3].
+  float: none
+  // Left align the title.
+  margin-left: 0
+
+
+.dw-chat-title
+  font-size: 17px;
+  color: hsl(0, 0%, 23%);
+  padding: 9px 0 9px 9px;
+  margin: 33px 0 12px;
+  border: 1px solid hsl(0, 0%, 67%);  // same as .dw-cmts-tlbr [6KGPY32]
+  border-left: none;
+  border-right: none;
+  background-color: hsl(210, 0%, 96.4%);  // same as .dw-cmts-tlbr [6KGPY32]
+
+
+.dw-about-category
+
+  .dw-about-cat-ttl-prfx
+    margin-top: 45px !important  // why did I add 'important' to h2?
+    margin-bottom: 10px;
+    font-style: italic
+    clear: both; // if there's a float-left help box above
+
+  .dw-p-ttl
+    margin-top: 0
+
