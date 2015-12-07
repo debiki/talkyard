@@ -29,7 +29,7 @@
   padding: 2px 5px 8px 0;
   position: relative;
   left: -3px;
-  color: hsl(211, 50%, 50%);
+  color: hsl($uiHue, 50%, 50%);
   float: left; // else underline appears although mouse far away
   font-size: 95%;
   &:before
@@ -188,8 +188,8 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
           padding: 3px 6px 5px 0; // makes it easier to click
           &:hover
             text-decoration: none;
-            background: hsl(210, 100%, 97%);
-            outline: 1px solid hsl(209, 100%, 92%);
+            background: hsl($uiHue, 100%, 97%);
+            outline: 1px solid hsl($uiHue, 100%, 92%);
 
         &:not(.dw-tpc-title)
           white-space: nowrap;
@@ -252,7 +252,7 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
           max-width: 650px;
           font-size: 100%;
           a
-            color: hsl(210, 100%, 40%);
+            color: hsl($uiHue, 100%, 40%);
             margin-left: 6px;
 
 .load-more
@@ -401,7 +401,7 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
 }
 
 .topic-list .topic-title {
-  font-family: open sans, sans-serif;
+  font-family: $uiFont;
   margin: 20px 0 5px;
 }
 

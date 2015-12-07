@@ -65,7 +65,7 @@
   font-style: italic;
   letter-spacing: 0.22ex;
   background: #fff;
-  color: hsl(211, 20%, 50%);
+  color: hsl($uiHue, 20%, 50%);
 
 .dw-ts-squashed
   .dw-x-show
@@ -77,8 +77,8 @@
     float: left;
     color: hsl(0, 0%, 53%);
     &:hover
-      background-color: hsl(210, 100%, 97%);
-      color: hsl(210, 100%, 33%);
+      background-color: hsl($uiHue, 100%, 97%);
+      color: hsl($uiHue, 100%, 33%);
       text-decoration: none;
 
   &.dw-2dcol > .dw-x-show
@@ -218,11 +218,11 @@ h1.dw-p-ttl
   // The done/not-done checkbox, if it's clickable (it is for staff and topic author).
   .dw-clickable[class^=icon-]
     &:before
-      color: hsl(210, 51%, 45%);
+      color: hsl($uiHue, 51%, 45%);
       text-decoration: none;
     &:hover:before
-      outline: 2px solid hsl(210, 100%, 90%);
-      background-color: hsl(210, 100%, 96%);
+      outline: 2px solid hsl($uiHue, 100%, 90%);
+      background-color: hsl($uiHue, 100%, 96%);
       cursor: pointer;
 
   .dw-forum-intro-show
@@ -231,9 +231,8 @@ h1.dw-p-ttl
     position: relative;
     top: -1px;
     font-size: 93%;
-    color: hsl(211, 0%, 55%);
     // text-shadow doesn't work in IE9 though, and we don't support it.
-    text-shadow: 0px 0px 5px #666;
+    text-shadow: 0 0 5px #666;
     color: white;
 
   .dw-a-edit
@@ -346,7 +345,7 @@ span.dw-p-e-by
 .dw-a-clps.icon-right-open
   padding: 0 5px;
   font-size: 11px;
-  color: hsl(210, 0%, 68%);
+  color: hsl($uiHue, 0%, 68%);
   cursor: pointer;
   // COULD start using Stylus + Nib?
   -webkit-touch-callout: none;
@@ -361,8 +360,8 @@ span.dw-p-e-by
   padding-top: 1px;
 
 .dw-a-clps:hover
-  background: hsl(210, 100%, 99%);
-  outline: 2px solid hsl(209, 100%, 86%);
+  background: hsl($uiHue, 100%, 99%);
+  outline: 2px solid hsl($uiHue, 100%, 86%);
 
 .dw-2dcol.dw-zd > .dw-p .dw-a-clps
   float: none;
@@ -479,7 +478,7 @@ span.dw-p-e-by
 
   .dw-p-by,
   .dw-p-e-by
-    color: hsl(255, 0%, 24%);
+    color: hsl(0, 0%, 24%);
 
   .dw-p-as
     margin-bottom: 0;
@@ -559,8 +558,8 @@ span.dw-p-e-by
   user-select: none;
 
   &:hover
-    outline: 2px solid hsl(210, 100%, 77%);
-    background: hsl(210, 100%, 97%);
+    outline: 2px solid hsl($uiHue, 100%, 77%);
+    background: hsl($uiHue, 100%, 97%);
 
 html.touch .dw-p-mark-click
   padding: 9px 5px 9px 5px;
@@ -592,7 +591,7 @@ html.touch .dw-p-mark-click
   color: hsl(0, 0%, 50%);
 
 .dw-p-mark-blue-star .dw-p-mark
-  color: hsl(210, 100%, 50%);
+  color: hsl($uiHue, 100%, 50%);
 
 .dw-p-mark-yellow-star .dw-p-mark
   padding: 0 2px 0 1px;
@@ -606,9 +605,9 @@ html.touch .dw-p-mark-click
 
 .DW .dw-highlight-on
   &.dw-p-hd
-    background-color: hsl(211, 100%, 76%);
+    background-color: hsl($uiHue, 100%, 76%);
   &.dw-p-bd
-    background-color: hsl(211, 100%, 86%);
+    background-color: hsl($uiHue, 100%, 86%);
     // Place background above action buttons.
     z-index: 1;
 
@@ -621,7 +620,7 @@ html.touch .dw-p-mark-click
   transition: background-color 4s;
 
 .dw-p.dw-highlighted-multireply-hover
-  outline: hsl(211, 100%, 77%) solid 5px; // duplicated style [FK209EIZ]
+  outline: hsl($uiHue, 100%, 77%) solid 5px;
 
 
 

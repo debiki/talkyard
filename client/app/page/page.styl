@@ -27,10 +27,10 @@
   color: hsl(0, 0%, 23%);
   padding: 9px 0 9px 9px;
   margin: 33px 0 12px;
-  border: 1px solid hsl(0, 0%, 67%);  // same as .dw-cmts-tlbr [6KGPY32]
+  border: $pageSectionBorder;
   border-left: none;
   border-right: none;
-  background-color: hsl(210, 0%, 96.4%);  // same as .dw-cmts-tlbr [6KGPY32]
+  background-color: $pageSectionBackground;
 
 
 .dw-about-category
@@ -43,4 +43,16 @@
 
   .dw-p-ttl
     margin-top: 0
+
+
+// Code pages and templates
+//==============================
+
+.dw-page[data-page_role=Code] > h1
+  margin-bottom: 0
+  font-size: 20px
+
+.dw-page[data-page_role=Code] > h1
+.dw-page[data-page_role=Code] p
+  font-family: monospace
 

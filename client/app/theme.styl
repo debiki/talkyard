@@ -9,7 +9,7 @@ body,
 p, /* override Twitter Bootstrap */
 body,
 .dw-depth-1 blockquote p { /* override Bootstrap */
-  font: 13px open sans, sans-serif;
+  font: 13px $uiFont;
 }
 
 article {
@@ -17,9 +17,7 @@ article {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  /* For now, always use Open Sans, so people that setup a forum get one that looks
-     like the demo forum. Later on, make the styles more configurabe. */
-  font-family: open sans, sans-serif;
+  font-family: $uiFont;
   font-weight: bold;
   line-height: 1em;
   margin-top: 30px;
@@ -124,9 +122,12 @@ del
 a { text-decoration: none; }
 a:hover, a:active { text-decoration:underline; }
 
-a, a:link { color: hsl(211, 88%, 35%);  }
+a,
+a:link
+  color: hsl($uiHue, 83%, 45%);
 
-a:visited { color: hsl(211, 30%, 40%); }
+a:visited
+  color: hsl($uiHue, 90%, 35%);
 
 
 /* Make placeholder text darker == more readable. Do not combine this placeholde stuff to
@@ -149,7 +150,7 @@ a:visited { color: hsl(211, 30%, 40%); }
 
 footer, .footer,
 #topbar {
-  background: hsl(211, 31%, 31.5%);
+  background: hsl($uiHue, 31%, 31.5%);
 }
 
 #topbar > .container {
@@ -288,7 +289,7 @@ jQuery UI theme, but ... not right now. */
 .nav-pills > li.active > a:hover,
 .nav-pills > li.active > a:focus,
 .nav > .active {
-  background-color: hsl(210, 50%, 50%);
+  background-color: hsl($uiHue, 50%, 50%);
   color: white;
 }
 
@@ -311,9 +312,9 @@ input, textarea {
 ============================== */
 
 .Select-item {
-  background-color: hsl(210, 63%, 97%);
-  border: 1px solid hsl(210, 61%, 87%);
-  color: hsl(210, 80%, 35%);
+  background-color: hsl($uiHue, 63%, 97%);
+  border: 1px solid hsl($uiHue, 61%, 87%);
+  color: hsl($uiHue, 80%, 35%);
 }
 
 .Select-control {
@@ -321,8 +322,8 @@ input, textarea {
 }
 
 .Select-option.is-focused {
-  background-color: hsl(210, 80%, 97%);
-  color: hsl(210, 80%, 28%);
+  background-color: hsl($uiHue, 80%, 97%);
+  color: hsl($uiHue, 80%, 28%);
 }
 
 
