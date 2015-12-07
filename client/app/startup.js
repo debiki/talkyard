@@ -311,7 +311,7 @@ d.i.startEmbeddedEditor = function() {
 Gifffer();
 
 // Show large images on click.
-StupidLightbox.start('.dw-p-bd', ':not(.giffferated)');
+StupidLightbox.start('.dw-p-bd', ':not(.giffferated, .no-lightbox)');
 
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

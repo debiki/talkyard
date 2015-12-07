@@ -119,15 +119,18 @@ del
   background: #ffd0d0
 
 
-a { text-decoration: none; }
-a:hover, a:active { text-decoration:underline; }
+a
+  cursor: pointer
+  text-decoration: none;
+  &:hover,
+  &:active
+    text-decoration:underline;
 
-a,
-a:link
   color: hsl($uiHue, 83%, 45%);
-
-a:visited
-  color: hsl($uiHue, 90%, 35%);
+  &:link
+    color: hsl($uiHue, 83%, 45%);
+  &:visited
+    color: hsl($uiHue, 90%, 35%);
 
 
 /* Make placeholder text darker == more readable. Do not combine this placeholde stuff to
