@@ -101,14 +101,14 @@ export var SignUpAsAdmin = createComponent({
           r.h1({}, 'Welcome'),
           r.p({}, 'You have successfully started the server.'),
           r.p({}, 'Now, please sign up using the email address you specified in the ' +
-            'configuration file. ', instructions),
+            'configuration file: ', instructions),
           r.br(),
           loginBtn)
       : r.div({},
           r.h1({}, 'Site Created'),
-          r.p({}, 'Your site has been created.'),
-          r.p({}, 'Now, please sign up using the email address you specified previously. ',
-            startOfTheEmailAddress, instructions),
+          r.p({}, 'This is your new site.'),
+          r.p({}, 'Please sign up using the email address you specified previously: ',
+            /* startOfTheEmailAddress, */ instructions),
           r.br(),
           loginBtn)
 

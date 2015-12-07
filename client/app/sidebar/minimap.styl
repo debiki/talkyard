@@ -149,7 +149,7 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
 
     h3
       font-weight: bold;
-      font-family: open sans, sans-serif;
+      font-family: $uiFont;
       font-size: 13px;
       margin: 0 0 7px 4px;
 
@@ -161,7 +161,7 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
       margin: 2px;
       2px solid #eee;
       &.dw-current-post
-        border: 4px solid hsl(210, 100%, 67%);
+        border: 4px solid hsl($uiHue, 100%, 67%);
         margin: 0;
 
     .dw-p .dw-mark-click
@@ -173,13 +173,13 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
       padding: 2px 1px 3px 3px;
 
     .dw-p:hover
-      outline: 2px solid hsl(210, 45%, 74%);
+      outline: 2px solid hsl($uiHue, 45%, 74%);
 
       .dw-p-hd
-        background-color: hsl(210, 39%, 84%);
+        background-color: hsl($uiHue, 39%, 84%);
 
       .dw-p-bd
-        background-color: hsl(210, 100%, 96%);
+        background-color: hsl($uiHue, 100%, 96%);
 
 
     .comment-enter,

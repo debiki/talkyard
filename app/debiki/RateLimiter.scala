@@ -144,13 +144,14 @@ object RateLimiter {
     // COULD consider `isNewUser`.
     var errorMessage =
       if (rateLimits.maxPerDay <= numRequestsLastDay)
-        o"""You (or someone else) have ${rateLimits.what}. Please try again tomorrow. [DwE42KJ2]"""
+        o"""You (or someone else) have ${rateLimits.what} too many times today.
+           Please try again tomorrow. [DwE42KJ2]"""
       else if (rateLimits.maxPerFifteenMinutes <= numRequestsLast15Minutes)
-        o"""You (or someone else) have ${rateLimits.what}. Please try again after
+        o"""You (or someone else) have ${rateLimits.what} too many times. Please try again after
            fifteen minutes. [DwE8IJF4]"""
       else if (rateLimits.maxPerFifteenSeconds <= numRequestsLast15Seconds)
-        o"""You (or someone else) have ${rateLimits.what}. Please try again after
-           fifteen seconds. [DwE35BG8]"""
+        o"""You (or someone else) have ${rateLimits.what} quickly too many times. Please try
+           again after fifteen seconds. [DwE35BG8]"""
       else
         return
 

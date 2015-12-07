@@ -77,7 +77,7 @@
 .dw-chat-as .dw-a-reply
   background-color: #f2f2f2;
   &:hover
-    background: hsl(210, 40%, 90%) !important;
+    background: hsl($uiHue, 40%, 90%) !important;
 
 .dw-a
   text-decoration: none !important
@@ -98,7 +98,7 @@
 .DW .dw-t > .dw-p-as .dw-a
   padding: 12px 9px 10px 9px;
   background: #fff;
-  color: hsl(210, 0%, 55%);
+  color: hsl($uiHue, 0%, 55%);
   border: none;
   // Looks better if placed closer the post: (don't remove padding-top, then hard to touch-click)
   position: relative;
@@ -169,9 +169,9 @@
 
   &:hover:not(.dw-a-votes),
   &.dw-a-votes:hover:after
-    color: hsl(210, 100%, 25%);
-    background: hsl(210, 100%, 98%);
-    outline: 1px solid hsl(210, 100%, 92%);
+    color: hsl($uiHue, 100%, 25%);
+    background: hsl($uiHue, 100%, 98%);
+    outline: 1px solid hsl($uiHue, 100%, 92%);
     text-decoration: none;
 
   &:hover:before,
@@ -252,11 +252,6 @@ html:not(.dw-is-staff) .dw-a-bury
   background: white
 
 
-.dw-a-color-primary
-  color: hsl(210, 51%, 45%) !important // the color for most common actions
-  //                                     (should be a Stylus/LESS variable)
-
-
 .DW .dw-t > .dw-as > .dw-a-edit-suggs,
 .DW .dw-t > .dw-as > .dw-a-collapse-suggs,
 .DW .dw-t > .dw-as > .dw-a-delete-suggs
@@ -273,7 +268,7 @@ html:not(.dw-is-staff) .dw-a-bury
 
   .dw-a-reply
     color: white !important
-    background: hsl(210, 51%, 45%) !important
+    background: hsl($uiHue, 51%, 45%) !important
     border-radius: 5px
     outline: 3px solid white; // whitespace between background and any post outline
     padding: 2px 4px 3px 1px

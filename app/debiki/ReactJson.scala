@@ -126,7 +126,7 @@ object ReactJson {
     dao.loadSiteStatus() match {
       case SiteStatus.OwnerCreationPending(adminEmail) =>
         var obfuscatedEmail = adminEmail.takeWhile(_ != '@')
-        obfuscatedEmail = obfuscatedEmail.dropRight(3).take(4)
+        obfuscatedEmail = "" //obfuscatedEmail.dropRight(3).take(4) -- remove obfuscatedEmail?
         s"AdminCreationPending:$obfuscatedEmail"
       case x => x.toString
     }
