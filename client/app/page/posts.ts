@@ -603,7 +603,7 @@ var SquashedThreads = createComponent({
     var depthClass = ' dw-depth-' + this.props.depth;
     var indentationDepthClass = ' dw-id' + this.props.indentationDepth;
     var is2dColumnClass = this.props.is2dTreeColumn ? ' dw-2dcol' : '';
-    var postIdDebug = debiki.debug ? postIdDebug ='  #' + post.postId : '';
+    var postIdDebug = debiki.debug ? '  #' + post.postId : '';
 
     return (
       baseElem({ className: 'dw-t dw-ts-squashed' + depthClass + indentationDepthClass +
@@ -700,7 +700,7 @@ var Thread = createComponent({
 
     var actions = isCollapsed(post)
       ? null
-      : actions = PostActions({ store: this.props, post: post,
+      : PostActions({ store: this.props, post: post,
           onClick: this.onAnyActionClick });
 
     var renderCollapsed = (post.isTreeCollapsed || post.isPostCollapsed) &&
@@ -723,7 +723,7 @@ var Thread = createComponent({
     var postProps = _.clone(this.props);
     postProps.post = post;
     postProps.index = this.props.index;
-    postProps.onMouseEnter = this.onPostMouseEnter;
+    //postProps.onMouseEnter = this.onPostMouseEnter; -- but there's no onPostMouseEnter?
     postProps.ref = 'post';
     postProps.renderCollapsed = renderCollapsed;
 
