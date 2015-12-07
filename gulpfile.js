@@ -325,8 +325,8 @@ gulp.task('compile-stylus', function () {
   var stylusOpts = {
     linenos: true,
     import: [
-      currentDirectorySlash + 'client/app/style-mixins.styl',
-      currentDirectorySlash + 'client/app/style-variables.styl'],
+      currentDirectorySlash + 'client/app/mixins.styl',
+      currentDirectorySlash + 'client/app/variables.styl'],
   };
 
   var minifyOpts = {
