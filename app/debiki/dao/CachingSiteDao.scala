@@ -67,6 +67,17 @@ class CachingSiteDao(val siteDbDao: SerializingSiteDbDao, val dbDaoFactory: DbDa
   }
 
 
+  override def refreshPageInAnyCache(pageId: PageId) {
+    firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
+  }
+
+
+  override def emptyCache() {
+    siteDbDao.bumpSiteVersion()
+    emptyCache(siteId)
+  }
+
+
   override def updateSite(changedSite: Site) = {
     super.updateSite(changedSite)
     uncacheSiteStatus()

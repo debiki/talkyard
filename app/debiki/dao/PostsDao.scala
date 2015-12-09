@@ -921,14 +921,8 @@ object PostsDao {
 trait CachingPostsDao extends PagesDao {
   self: CachingSiteDao =>
 
-  override def refreshPageInAnyCache(pageId: PageId) {
-    firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
-  }
-
-  override def emptyCache() {
-    siteDbDao.bumpSiteVersion()
-    emptyCache(siteId)
-  }
+  // We cache all html already, that might be enough actually. For now, don't cache posts too.
+  // So I've removed all cache-posts code from here.
 
 }
 
