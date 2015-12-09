@@ -141,14 +141,6 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
     }
   },
 
-  clearBackList: function() {
-    this.setState({
-      visitedPosts: [],
-      currentVisitedPostIndex: -1,
-      hideIfTotallyBack: true,
-    });
-  },
-
   // Only invokable via the 'F' key — I rarely go forwards, and a button makes the UI to cluttered.
   goForward: function() {
     if (!this.canPerhapsGoForward()) return;
@@ -178,18 +170,15 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
       return null;
 
     var backHelp = "Scroll back to your previous position on this page";
-    var clearHelp = "Clear all scroll-back history on this page";
 
     var scrollBackButton =
-          Button({ className: 'dw-scrollback', onClick: this.goBack, title: backHelp },
+          Button({ className: 'dw-scrollback dw-goto', onClick: this.goBack, title: backHelp },
               r.span({ className: 'icon-down-dir' },
                 r.span({ style: { fontWeight: 'bold' }}, "B"), "ack (" +
                     this.state.currentVisitedPostIndex + ")"));
-    var clearScrollBackButton =
-          Button({ className: 'dw-clear-scroll', onClick: this.clearBackList, title: clearHelp },
-              r.span({ className: ' icon-cancel-circled' }));
+
     return (
-      r.span({}, clearScrollBackButton, scrollBackButton));
+      r.span({}, scrollBackButton));
   }
 });
 

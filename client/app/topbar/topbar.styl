@@ -15,11 +15,60 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-$topbarButtonPaddingTop = 3px
-$topbarBorderButtonPaddingTop = $topbarButtonPaddingTop - 1px;
+$topbarButtonPaddingTop = 7px
 
+html:not(.dw-react-started)
+  #dw-topbar-btns
+    visibility: hidden;  // display:none not good, because then other elems too close
 
-#dw-react-topbar
+// New:
+.esTopBar
+  clearfix()
+
+  .caret
+    display: none;
+
+  .esAvtrName
+    margin-left: 6px;
+
+  .dw-menu
+    .icon-menu
+      font-size: 130%;
+      color: hsl(0, 0%, 50%);
+
+  .dw-login.dw-login.dw-login // oh well
+    padding-top: 3px;
+    padding-bottom: 4px;
+    top: 1px;
+    position: relative;
+    font-weight: bold;
+    color: #fff;
+
+.esAvtrName
+  display: inline-block;
+
+  .btn
+    padding-left: 3px !important;  // !important because of bat styles below in this file
+
+  // Should remove weird styles from edAvtr. Oh well.
+  .edAvtr
+    float: none;
+    position: static;
+    left: 0;
+    display: inline-block;
+    vertical-align: middle;
+    img
+      height: 25px;
+      &:hover
+        opacity: 1;
+
+  .esAvtrName_name
+    color: #666;
+    letter-spacing: 0.2px;
+    vertical-align: middle;
+
+// Old:
+.esTopBar
   z-index: 1;
   min-height: 51px; // avoids height changes when filled with contents
 
@@ -41,51 +90,27 @@ $topbarBorderButtonPaddingTop = $topbarButtonPaddingTop - 1px;
         width: 500px;
 
   .btn
-    &.dw-scrollback,
-    &.dw-clear-scroll,
+    &.dw-goto,
     &.dw-login,
-    &.dw-logout,
     &.dw-admin,
     &.dw-a-tools
-      background: hsl($uiHue, 51%, 50%);
       font-size: 1em;
-      color: white;
-      padding: $topbarButtonPaddingTop 8px 4px 5px;
       a
-        color: white;
+        color: #555;
 
-    &.dw-goto,
-    &.dw-scrollback,
-    &.dw-clear-scroll
-      height: 17px;
       box-sizing: content-box;
       color: hsl(0, 0%, 23%);
-      background: white;
-      border: 1px solid hsl(0, 0%, 70%);
-      border-radius: 0;
+      border: none;
+      padding: $topbarButtonPaddingTop 8px 7px 8px;
 
-      padding: $topbarBorderButtonPaddingTop 8px 3px 8px;
       &.dw-scrollback
         padding-left: 2px;
 
       &:hover
         color: hsl($uiHue, 100%, 20%);
-        border-color: hsl($uiHue, 100%, 60%);
         background: hsl($uiHue, 100%, 94%);
 
-    &.dw-goto
-      margin: 0;
-      min-width: 37px;
-      &:first-child
-        margin-left: 0;
-      &:not(:first-child)
-        border-left: none;
-
-    &.dw-clear-scroll
-      border-right: none;
-      padding-right: 12px;
-      padding-left: 12px;
-      margin-left: 14px;
+      min-width: 40px;
 
     &.dw-scrollback .icon-down-dir:before
       font-size: 16px;
@@ -106,12 +131,11 @@ $topbarBorderButtonPaddingTop = $topbarButtonPaddingTop - 1px;
   .dw-goto-btns
     float: left;
 
-  #dw-topbar-btns
+  .dw-topbar-btns
     float: right;
     margin-top: 15px;
 
     .btn
-      margin-left: 10px;
       border-radius: 0;
       border: none;
 
@@ -127,9 +151,6 @@ $topbarBorderButtonPaddingTop = $topbarButtonPaddingTop - 1px;
       .icon-settings:before
         position: relative;
         top: 1px;
-
-      &.dw-logout
-        padding-left: 8px;
 
       &.dw-search,
       &.dw-menu
@@ -174,12 +195,16 @@ $topbarBorderButtonPaddingTop = $topbarButtonPaddingTop - 1px;
   background: white;
   box-shadow: 0 2px 4px gray;
 
-  #dw-react-topbar
+  .esTopBar
     min-height: auto;
 
-    margin: 7px 0;
-    @media (max-height: 450px)
-      margin: 5px 0;
+    margin: 4px 0;
+    @media (max-height: 550px)
+      margin: 2px 0;
+    @media (max-height: 420px)
+      margin: 1px 0;
+    @media (max-height: 220px)
+      margin: 0;
 
     .dw-topbar-title
       @media (max-width: 610px)
@@ -189,28 +214,25 @@ $topbarBorderButtonPaddingTop = $topbarButtonPaddingTop - 1px;
       font-size: 18px;
 
     .btn
-      font-size: 12px;
+      font-size: 13px;
 
-    // Make buttons easier to click on small screens.
+    /* Make buttons easier to click on small screens.
     .dw-scrollback,
-    .dw-clear-scroll,
     .dw-login,
-    .dw-logout,
     .dw-admin,
     .dw-a-tools
-      padding-top: $topbarButtonPaddingTop + 1px;
+      padding-top: $topbarButtonPaddingTop;
 
     .dw-goto,
-    .dw-scrollback,
-    .dw-clear-scroll
-      padding-top: $topbarBorderButtonPaddingTop + 1px;
+    .dw-scrollback
+      padding-top: $topbarButtonPaddingTop;
+      */
 
-    #dw-topbar-btns
+    .dw-topbar-btns
       margin-top: 0;
 
     .dropdown-toggle
-      max-height: 24px;
-      padding-top: 4px;
-
+      padding-top: 3px;
+      padding-bottom: 3px;
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

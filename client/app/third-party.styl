@@ -53,6 +53,10 @@
   width: auto
 
 
+.btn-primary
+  background-color: hsl($uiHue, 67%, 54%);
+  border-color: hsl($uiHue, 67%, 54%);
+
 // Make a new modal hide all older modals, by setting backdrop z-index to the same as
 // the z-index for the modal dialog and content (rather than using 1040 which results in
 // older modals still being in the foreground because their content z-index is 1050).
@@ -60,7 +64,13 @@
   z-index: 1050;
 
 .dropdown-menu > li
-  margin: 15px 0 10px 0;
+  margin: 0 5px;
+  &:first-child
+    margin-top: 3px;
+  &:last-child
+    margin-bottom: 7px;
+  a
+    padding: 10px 20px;
 
 html.touch .dropdown-menu > li
   margin: 20px 0 15px 0;

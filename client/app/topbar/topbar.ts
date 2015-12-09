@@ -21,7 +21,7 @@
 /// <reference path="../page-tools/page-tools.ts" />
 /// <reference path="../utils/page-scroll-mixin.ts" />
 /// <reference path="../post-navigation/posts-trail.ts" />
-/// <reference path="name-login-btns.ts" />
+/// <reference path="../avatar/avatar.ts" />
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 
 //------------------------------------------------------------------------------
@@ -180,19 +180,22 @@ export var TopBar = createComponent({
           goToTop, goToReplies, goToChat, goToEnd, debiki2.postnavigation.PostNavigation());
     }
 
-    var loggedInAs = !user.isLoggedIn ? null :
-        r.a({ className: 'dw-name', onClick: this.goToUserPage }, user.username || user.fullName);
+    var avatarAndName =
+        r.span({},
+          avatar.Avatar({ user: user, tiny: true, ignoreClicks: true }),
+          r.span({ className: 'esAvtrName_name' }, user.username || user.fullName));
 
-    var loginButton = user.isLoggedIn ? null : 
-        Button({ className: 'dw-login', onClick: this.onLoginClick },
+    var avatarNameDropdown = !user.isLoggedIn ? null :
+        DropdownButton({ title: avatarAndName, className: 'esAvtrName', pullRight: true },
+          MenuItem({ onSelect: this.goToUserPage }, "View Profile"),
+          MenuItem({ onSelect: this.onLogoutClick }, "Log Out"));
+
+    var loginButton = user.isLoggedIn ? null :
+        Button({ className: 'dw-login btn-primary', onClick: this.onLoginClick },
             r.span({ className: 'icon-user' }, 'Log In'));
 
-    var logoutButton = !user.isLoggedIn ? null : 
-        Button({ className: 'dw-logout', onClick: this.onLogoutClick }, 'Log Out');
-
-    var adminButton = !isStaff(user) ? null :
-        Button({ className: 'dw-admin', onClick: this.goToAdminPage },
-          r.a({ className: 'icon-settings' }, 'Admin'));
+    var adminMenuItem = !isStaff(user) ? null :
+        MenuItem({ onSelect: this.goToAdminPage }, r.span({ className: 'icon-settings' }, "Admin"));
 
     // (Is it ok to call another React component from here? I.e. the page tools dialog.)
     var toolsButton = !isStaff(user) || pagetools.getPageToolsDialog().isEmpty() ? null :
@@ -206,16 +209,14 @@ export var TopBar = createComponent({
             r.span({ className: 'icon-search' }));
     */
 
-    var menuButton =
+    var menuDropdown =
         DropdownButton({ title: r.span({ className: 'icon-menu' }), pullRight: true,
               className: 'dw-menu' },
-            MenuItem({ onSelect: ReactActions.showHelpMessagesAgain }, "Unhide Help Messages"),
-            // Links in dropdown MenuItem:s no longer work after I upgraded react-bootstrap,
-            // so add onClick. Try to remove ... later? Year 2016?
-            MenuItem({ onSelect: () => window.location.assign('/about') },
-              r.a({ href: '/about' }, 'About this site')),
-            MenuItem({ onSelect: () => window.location.assign('/-/terms-of-use') },
-              r.a({ href: '/-/terms-of-use' }, 'Terms and Privacy')));
+          adminMenuItem,
+          MenuItem({ onSelect: ReactActions.showHelpMessagesAgain },
+              r.span({ className: 'icon-help' }, "Unhide Help Messages")),
+          MenuItem({ onSelect: () => location.assign('/about') }, "About this site"),
+          MenuItem({ onSelect: () => location.assign('/-/terms-of-use') }, "Terms and Privacy"));
 
     var searchForm = !this.state.showSearchForm ? null :
         SearchForm({ onClose: this.closeSearchForm });
@@ -229,15 +230,13 @@ export var TopBar = createComponent({
     }
 
     var topbar =
-      r.div({ id: 'dw-react-topbar', className: 'clearfix' },
-        r.div({ id: 'dw-topbar-btns' },
-          loggedInAs,
+      r.div({ className: 'esTopBar' },
+        r.div({ className: 'dw-topbar-btns' },
           loginButton,
-          logoutButton,
-          adminButton,
           toolsButton,
           searchButton,
-          menuButton),
+          menuDropdown,
+          avatarNameDropdown),
         searchForm,
         pageTitle,
         goToButtons);

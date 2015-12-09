@@ -21,12 +21,6 @@
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../dialogs.ts" />
-/// <reference path="../help/help.ts" />
-/// <reference path="../editor/title-editor.ts" />
-/// <reference path="../edit-history/edit-history-dialog.ts" />
-/// <reference path="../react-elements/topbar.ts" />
-/// <reference path="../page-dialogs/wikify-dialog.ts" />
-/// <reference path="../page-dialogs/delete-post-dialog.ts" />
 /// <reference path="../model.ts" />
 
 //------------------------------------------------------------------------------
@@ -49,8 +43,7 @@ export function resetAvatars() {
 
 export var Avatar = createComponent({
   onClick: function() {
-    //r.div({ className: 'esTinyAvtr', title: "Original Poster",
-     //   onClick: () => pagedialogs.getAboutUserDialog().openForUserId(topic.authorId) },
+    if (!this.props.ignoreClicks)
      pagedialogs.getAboutUserDialog().openForUserId(this.props.user.id);
   },
 
