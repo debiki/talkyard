@@ -563,10 +563,9 @@ var RootPostAndComments = createComponent({
         anyClickReplyInsteadHelpMessage,
         r.div({ className: 'dw-chat-as' },
           r.a({ className: 'dw-a dw-a-reply icon-comment-empty', onClick: this.onChatReplyClick,
-              title: "Add a chat comment if you want to talk lightly and casually " +
-                "with others about this topic.\nHowever, if you want to reply to the " +
-                "Original Post (at the top of the page), then instead click Reply just below " +
-                "that post." },
+              title: "In a chat comment you can talk lightly and casually about this topic," +
+                " or post a status update. — However, to reply to someone, " +
+                "instead click Reply just below his or her post." },
             " Add chat comment")),
 
         r.div({ id: 'dw-the-end', style: { clear: 'both' } })));

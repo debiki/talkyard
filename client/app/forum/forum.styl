@@ -141,7 +141,7 @@
 html.js:not(.dw-react-started) #dw-topic-list tbody
   display: none;
 
-#dw-topic-list
+.dw-topic-list
   width: 100%
 
   $paddingLeft = 8px
@@ -273,6 +273,8 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
   padding-left: 0; // needed for FF, not Chrome. Weird
   @media (max-width: 600px)
     margin-top: 30px;  // don't overlap with #dw-react-topbar contents
+  a
+    color: #444;
 
 .parent-forums-list li {
   margin: 0;

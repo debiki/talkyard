@@ -8,6 +8,20 @@
     cursor: pointer
 
 
+// The Original Post
+//==============================
+
+.dw-about-category
+  .dw-about-cat-ttl-prfx
+    margin-top: 45px !important  // why did I add 'important' to h2?
+    margin-bottom: 10px;
+    font-style: italic
+    clear: both; // if there's a float-left help box above
+
+  .dw-p-ttl
+    margin-top: 0
+
+
 .dw-ar-p
   padding-bottom: 0.8em
 
@@ -22,6 +36,9 @@
   margin-left: 0
 
 
+// The chat comments section
+//==============================
+
 .dw-chat-title
   font-size: 17px;
   color: hsl(0, 0%, 23%);
@@ -32,17 +49,18 @@
   border-right: none;
   background-color: $pageSectionBackground;
 
+.dw-chat-as
+  padding-top: 18px;
 
-.dw-about-category
-
-  .dw-about-cat-ttl-prfx
-    margin-top: 45px !important  // why did I add 'important' to h2?
-    margin-bottom: 10px;
-    font-style: italic
-    clear: both; // if there's a float-left help box above
-
-  .dw-p-ttl
-    margin-top: 0
+  .dw-a-reply
+    float: left;
+    color: hsl($uiHue, 0%, 40%);
+    background-color: transparent;
+    font-size: 100%;
+    &:hover
+      color: hsl($uiHue, 84%, 23%);
+      background-color: hsl($uiHue, 80%, 95%);
+      padding-right: 7px;
 
 
 // Code pages and templates

@@ -634,7 +634,7 @@ var ForumTopicListComponent = React.createClass({
 
     return (
       r.div({},
-        r.table({ id: 'dw-topic-list' },
+        r.table({ className: 'dw-topic-list' },
           r.thead({},
             r.tr({},
               r.th({}, "Topic"),
