@@ -411,14 +411,37 @@ trait UserDao {
         tinyAvatar = tinyAvatar,
         smallAvatar = smallAvatar,
         mediumAvatar = mediumAvatar)
+
+      val hasNewAvatar =
+        userBefore.tinyAvatar != userAfter.tinyAvatar ||
+          userBefore.smallAvatar != userAfter.smallAvatar ||
+          userBefore.mediumAvatar != userAfter.mediumAvatar
+
+      val relevantRefs =
+        if (!hasNewAvatar) Set.empty
+        else
+          userBefore.tinyAvatar.toSet ++ userBefore.smallAvatar.toSet ++
+            userBefore.mediumAvatar.toSet ++ userAfter.tinyAvatar.toSet ++
+            userAfter.smallAvatar.toSet ++ userAfter.mediumAvatar.toSet
+      val refsInUseBefore = transaction.filterUploadRefsInUse(relevantRefs)
+
       transaction.updateCompleteUser(userAfter)
-      userBefore.tinyAvatar.foreach(transaction.updateUploadedFileReferenceCount)
-      userBefore.smallAvatar.foreach(transaction.updateUploadedFileReferenceCount)
-      userBefore.mediumAvatar.foreach(transaction.updateUploadedFileReferenceCount)
-      userAfter.tinyAvatar.foreach(transaction.updateUploadedFileReferenceCount)
-      userAfter.smallAvatar.foreach(transaction.updateUploadedFileReferenceCount)
-      userAfter.mediumAvatar.foreach(transaction.updateUploadedFileReferenceCount)
-      transaction.markPagesWithUserAvatarAsStale(userId)
+
+      if (hasNewAvatar) {
+        val refsInUseAfter = transaction.filterUploadRefsInUse(relevantRefs)
+        val refsAdded = refsInUseAfter -- refsInUseBefore
+        val refsRemoved = refsInUseBefore -- refsInUseAfter
+        refsAdded.foreach(transaction.updateUploadQuotaUse(_, wasAdded = true))
+        refsRemoved.foreach(transaction.updateUploadQuotaUse(_, wasAdded = false))
+
+        userBefore.tinyAvatar.foreach(transaction.updateUploadedFileReferenceCount)
+        userBefore.smallAvatar.foreach(transaction.updateUploadedFileReferenceCount)
+        userBefore.mediumAvatar.foreach(transaction.updateUploadedFileReferenceCount)
+        userAfter.tinyAvatar.foreach(transaction.updateUploadedFileReferenceCount)
+        userAfter.smallAvatar.foreach(transaction.updateUploadedFileReferenceCount)
+        userAfter.mediumAvatar.foreach(transaction.updateUploadedFileReferenceCount)
+        transaction.markPagesWithUserAvatarAsStale(userId)
+      }
     }
     refreshUserInAnyCache(userId)
     // Clear the PageStuff cache (by clearing the whole in-mem cache), because

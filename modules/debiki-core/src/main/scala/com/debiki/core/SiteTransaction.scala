@@ -138,6 +138,13 @@ trait SiteTransaction {
   def insertUploadedFileReference(postId: UniquePostId, uploadRef: UploadRef, addedById: UserId)
   def deleteUploadedFileReference(postId: UniquePostId, uploadRef: UploadRef): Boolean
   def loadUploadedFileReferences(postId: UniquePostId): Set[UploadRef]
+  def loadSiteIdsUsingUpload(ref: UploadRef): Set[SiteId]
+
+  /** Returns the refs currently in use, e.g. as user avatar images or
+    * images / attachments inserted into posts.
+    */
+  def filterUploadRefsInUse(uploadRefs: Iterable[UploadRef]): Set[UploadRef]
+  def updateUploadQuotaUse(uploadRef: UploadRef, wasAdded: Boolean)
 
 
   def insertInvite(invite: Invite)

@@ -36,8 +36,12 @@ case class ResourceUse(
    numPages: Int = 0,
    numPosts: Int = 0,
    numPostTextBytes: Long = 0,
+   numPostRevisions: Int = 0,
+   numPostRevisionBytes: Long = 0,
    numPostsRead: Long = 0,
    numActions: Int = 0,
+   numUploads: Int = 0,
+   numUploadBytes: Long = 0,
    numNotfs: Int = 0,
    numEmailsSent: Int = 0) {
 
@@ -51,8 +55,12 @@ case class ResourceUse(
      numPages: $numPages,
      numPosts: $numPosts,
      numPostTextBytes: $numPostTextBytes,
+     numPostRevisions: $numPostRevisions,
+     numPostRevisionBytes: $numPostRevisionBytes,
      numPostsRead: $numPostsRead,
      numActions: $numActions,
+     numUploads: $numUploads,
+     numUploadBytes: $numUploadBytes,
      numNotfs: $numNotfs,
      numEmailsSent: $numEmailsSent)"""
 
@@ -67,8 +75,12 @@ case class ResourceUse(
     numPages          * 2000 * 3 +  // ??
     numPosts          * 2000 * 3 * 2 +  // ??, plus *2 for the full text search index
     numPostTextBytes  * 3 + // *3 because of the full text search index. I'm just guessing
+    numPostRevisions  * 2000 * 3 +  // ??
+    numPostRevisionBytes +
     numPostsRead      *  500 * 3 +  // ??
     numActions        *  500 * 3 +
+    numUploads        * 1000 * 3 +  // ??
+    numUploadBytes +
     numNotfs          * 2000 * 3 +  // ??
     numEmailsSent     * 2000 * 3
 

@@ -19,16 +19,16 @@
 package com.debiki.core
 
 
-/** An uploaded file is located at the baseUrlHostAndPath + hashPathSuffix,
+/** An uploaded file is located at the baseUrlHostAndPath + hashPath,
   * e.g.  some-cdn.com/some/path/x/y/zwq...abc.jpg
   * where xyzwq...abc (note: no slashes) is the file's hash (sha-256, base32, truncated
   * to 33 chars). 'x/y/zwq...abc' is the file's "hash path" — because it's a hash, with
   * slashes inserted so that it's a path — this avoids us placing all files in the exact
   * same directory. Some file system don't want super many files in just one directory.
   */
-case class UploadRef(baseUrl: String, hashPathSuffix: String) {
+case class UploadRef(baseUrl: String, hashPath: String) {
 
-  def url = baseUrl + hashPathSuffix
+  def url = baseUrl + hashPath
 
 }
 
