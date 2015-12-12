@@ -58,9 +58,16 @@ object Utils extends Results with http.ContentTypes {
 
 
   /** Gatling doesn't understand this prefix */
-  private val safeJsonPrefix =
-    if (Play.configuration.getBoolean("debiki.addSafeJsonPrefix") == Some(false)) ""
-    else ")]}',\n"
+  private val safeJsonPrefix = {
+    val safePrefix = ")]}',\n"
+    Play.maybeApplication match {
+      case Some(app) =>
+        if (app.configuration.getBoolean("debiki.addSafeJsonPrefix").contains(false)) ""
+        else safePrefix
+      case None =>
+        safePrefix
+    }
+  }
 
 
   /**

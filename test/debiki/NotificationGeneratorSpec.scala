@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2014 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,7 +19,6 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.core.RawPostAction.{copyCreatePost, copyApprovePost}
 import debiki.dao.SiteDao
 import org.scalatest._
 import org.scalatest.mock.MockitoSugar
@@ -27,7 +26,7 @@ import org.mockito.Mockito._
 import java.{util => ju}
 
 
-
+/*
 class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with MockitoSugar {
 
   val siteId = "siteId"
@@ -372,4 +371,4 @@ class NotificationGeneratorSpec extends RichFreeSpec with MustMatchers with Mock
     }
   }
 
-}
+}*/

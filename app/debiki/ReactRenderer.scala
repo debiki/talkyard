@@ -77,6 +77,9 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
   @volatile private var firstCreateEngineError: Option[Throwable] = None
 
+  private lazy val isTest = Play.isTest
+
+
   // Evaluating zxcvbn.min.js (a Javascript password strength check library) takes almost
   // a minute in dev mode. So enable server side password strength checks in prod mode only.
   // COULD run auto test suite on prod build too so server side pwd strength checks gets tested.
@@ -97,6 +100,9 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     */
   def startCreatingRenderEngines() {
     dieIf(!javascriptEngines.isEmpty, "DwE50KFE2")
+    // Remember if is-test, because the stuff in the Future might not be able to
+    // use Play.isTest because the test suite might have exited then and removed the Play app.
+    isTest
     Future {
       val numEngines =
         if (Play.isProd) Runtime.getRuntime.availableProcessors
@@ -113,13 +119,21 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   }
 
 
-  private def createOneMoreJavascriptEngine(isVeryFirstEngine: Boolean = false): Unit = {
+  private def createOneMoreJavascriptEngine(isVeryFirstEngine: Boolean = false) {
     val engine = try {
       makeJavascriptEngine()
     }
     catch {
       case throwable: Throwable =>
-        if (isVeryFirstEngine) {
+        if (Play.maybeApplication.isEmpty || throwable.isInstanceOf[Globals.NoStateError]) {
+          if (isTest) {
+            logger.info("Server gone, tests done? Cancelling script engine creation. [EsM6MK4]")
+          }
+          else {
+            logger.error("Error creating Javascript engine: No server [EsE6JY22]", throwable)
+          }
+        }
+        else if (isVeryFirstEngine) {
           logger.error("Error creating the very first Javascript engine: [DwE6KG25Z]", throwable)
           firstCreateEngineError = Some(throwable)
           javascriptEngines.putLast(BrokenEngine)
@@ -130,8 +144,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
           // Use error code DwEDEADLOCK which DeadlockDetector also does.
           logger.error(o"""Error creating additional Javascript engine, ignoring it,
               DEADLOCK RISK: [DwEDEADLOCKR0]""", throwable)
-          return
         }
+        return
     }
     javascriptEngines.putLast(engine)
   }

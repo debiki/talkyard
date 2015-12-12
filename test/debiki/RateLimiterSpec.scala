@@ -29,7 +29,7 @@ import java.{util => ju}
 
 
 
-class RateLimiterSpec extends RichFreeSpec with MustMatchers with MockitoSugar
+class RateLimiterSpec extends FreeSpec with MustMatchers with MockitoSugar
     with OneAppPerSuite {
 
   import RateLimits.Unlimited
@@ -37,7 +37,7 @@ class RateLimiterSpec extends RichFreeSpec with MustMatchers with MockitoSugar
 
   var nextIp = 0
 
-  def mockRequest(now: UnixTime, ip: String = null, roleId: String = null, siteId: SiteId = null)
+  def mockRequest(now: UnixTime, ip: String = null, roleId: UserId = 0, siteId: SiteId = null)
         : DebikiRequest[Unit] = {
     val requestMock = mock[DebikiRequest[Unit]]
     // `now` might be small, close to 0, so add a few months.
@@ -47,7 +47,7 @@ class RateLimiterSpec extends RichFreeSpec with MustMatchers with MockitoSugar
         s"0.0.0.$nextIp"
       }
     val anyUser =
-      if (roleId eq null) None
+      if (roleId == 0) None
       else Some(mockUser(roleId = roleId))
     val theSiteId = if (siteId ne null) siteId else "site_id"
     when(requestMock.ctime).thenReturn(new ju.Date(now * 1000 + fourMonthsSeconds*1000))
@@ -281,8 +281,8 @@ class RateLimiterSpec extends RichFreeSpec with MustMatchers with MockitoSugar
 
       "many users can use the same IP a lot" in {
         val ip = "9.8.7.6"
-        val roleIdA = "role_A"
-        val roleIdB = "role_B"
+        val roleIdA = 11
+        val roleIdB = 22
         val limits = makeLimits(maxPerFifteenSeconds = 3)
 
         RateLimiter.rateLimit(limits, mockRequest(now = 0, ip = ip))
@@ -308,7 +308,7 @@ class RateLimiterSpec extends RichFreeSpec with MustMatchers with MockitoSugar
       }
 
       "a user can run out of quota from different IPs" in {
-        val roleId = "roleId"
+        val roleId = 69462
         val limits = makeLimits(maxPerFifteenSeconds = 3)
 
         RateLimiter.rateLimit(limits, mockRequest(now = 1, ip = "193.0.0.1", roleId = roleId))
@@ -321,7 +321,7 @@ class RateLimiterSpec extends RichFreeSpec with MustMatchers with MockitoSugar
       }
 
       "users with the same id but different sites don't share quota" in {
-        val roleId = "roleId"
+        val roleId = 11
         val siteIdA = "siteA"
         val siteIdB = "siteB"
         val limits = makeLimits(maxPerFifteenSeconds = 1)

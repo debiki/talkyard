@@ -23,6 +23,7 @@ import com.codahale.metrics
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
+import debiki.Globals.NoStateError
 import debiki.antispam.AntiSpam
 import debiki.dao._
 import debiki.dao.migrations.ScalaBasedMigrations
@@ -36,7 +37,12 @@ import scala.concurrent.Await
 import scala.util.matching.Regex
 
 
-object Globals extends Globals
+object Globals extends Globals {
+
+  class NoStateError extends AssertionError(
+    "No Globals.State created, please call onServerStartup() [DwE5NOS0]")
+
+}
 
 
 
@@ -53,7 +59,7 @@ class Globals {
 
   private def state: State = {
     if (_state eq null) {
-      die("DwE4KF03", "No Globals.State created, please call onServerStartup()")
+      throw new NoStateError()
     }
     _state
   }

@@ -21,7 +21,6 @@ package com.debiki.core
 
 import org.scalatest._
 import java.{util => ju}
-import com.debiki.core.RawPostAction._
 
 
 class PagePathTest extends FreeSpec with MustMatchers {

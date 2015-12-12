@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2013 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,9 +19,8 @@ package com.debiki.core
 
 import org.scalatest._
 import java.{util => ju}
-import com.debiki.core.RawPostAction._
 
-
+/*
 class PinnedPositionCalcerSpec extends FreeSpec with ShouldMatchers {
 
   val PostSkeleton = PostTestValues.postSkeleton
@@ -141,6 +140,6 @@ class PinnedPositionCalcerSpec extends FreeSpec with ShouldMatchers {
       calcer.effectivePositionOf(postB) shouldBe Some(1)
     }
   }
-}
+}*/
 
 

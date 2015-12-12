@@ -23,6 +23,7 @@ import org.scalatest._
 import EmbeddedTopicsController._
 
 
+@Ignore
 class EmbeddedTopicsControllerSpec extends FreeSpec with ShouldMatchers {
 
 
