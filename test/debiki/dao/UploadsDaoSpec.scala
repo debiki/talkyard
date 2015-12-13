@@ -21,6 +21,7 @@ import java.io.RandomAccessFile
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.DebikiHttp.ResultException
 import debiki.{TextAndHtml, Globals}
 import org.scalatest._
 import org.scalatestplus.play.OneAppPerSuite
@@ -356,7 +357,7 @@ class UploadsDaoAppSpec extends FreeSpec with MustMatchers with OneAppPerSuite {
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtmlSite1,
         showId = true, authorId = user.id, browserIdData = browserIdData)
 
-      val pagePath2 = dao2.createPage(PageRole.Discussion, PageStatus.Published,
+      dao2.createPage(PageRole.Discussion, PageStatus.Published,
         anyCategoryId = None, anyFolder = None, anySlug = None,
         titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtmlSite2,
         showId = true, authorId = user2.id, browserIdData = browserIdData)
@@ -369,18 +370,53 @@ class UploadsDaoAppSpec extends FreeSpec with MustMatchers with OneAppPerSuite {
       resourceUsage.numUploads mustBe 2
       resourceUsage.numUploadBytes mustBe (sharedFileSize + site2FileSize)
 
-      info("edit site 2 page: remove links, remaining quota freed, site 2 only")
+      info("edit site 1 page: remove links, remaining quota freed, site 1 only")
 
-      dao2.editPostIfAuth(pagePath2.thePageId, PageParts.BodyId, editorId = user2.id,
+      dao.editPostIfAuth(pagePath1.thePageId, PageParts.BodyId, editorId = user.id,
         browserIdData, TextAndHtml("empty", isTitle = false))
 
-      resourceUsage = dao.loadResourceUsage()
-      resourceUsage.numUploads mustBe 2
-      resourceUsage.numUploadBytes mustBe (sharedFileSize + site1FileSize)
-
       resourceUsage = dao2.loadResourceUsage()
+      resourceUsage.numUploads mustBe 2
+      resourceUsage.numUploadBytes mustBe (sharedFileSize + site2FileSize)
+
+      resourceUsage = dao.loadResourceUsage()
       resourceUsage.numUploads mustBe 0
       resourceUsage.numUploadBytes mustBe 0
+    }
+
+
+    "prevent people from uploading too many large files" in {
+      val fileOne = makeRandomFile("file-one", ".jpg", UploadsDao.MaxBytesPerDayMember / 3)
+      val fileTwo = makeRandomFile("file-two", ".jpg", UploadsDao.MaxBytesPerDayMember / 3)
+      val fileThree = makeRandomFile("file-three", ".jpg", UploadsDao.MaxBytesPerDayMember / 2)
+      val fileTiny = makeRandomFile("file-tiny", ".jpg", 130)
+
+      val dao = Globals.siteDao(Site.FirstSiteId)
+      var resourceUsage: ResourceUse = null
+
+      info("create user")
+      val magic = "7MPFKU23"
+      val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
+        name = s"User $magic", username = s"user_$magic", email = s"user-$magic@x.c",
+        password = magic, isAdmin = false, isOwner = false).get)
+
+      info("upload files, as long as haven't uploaded too much")
+      dao.addUploadedFile(fileOne.name, fileOne.file, user.id, browserIdData)
+      dao.addUploadedFile(fileTwo.name, fileTwo.file, user.id, browserIdData)
+
+      // The audit log is used to detect too-many-big-files-uploaded. Not the quota system.
+      resourceUsage = dao.loadResourceUsage()
+      resourceUsage.numUploads mustBe 0
+      resourceUsage.numUploadBytes mustBe 0
+
+      info("not be allowed to upload too much data")
+      val exception = intercept[ResultException] {
+        dao.addUploadedFile(fileThree.name, fileThree.file, user.id, browserIdData)
+      }
+      exception.statusCode mustBe play.api.http.Status.REQUEST_ENTITY_TOO_LARGE
+
+      info("but may upload one more file, if it's small enough")
+      dao.addUploadedFile(fileTiny.name, fileTiny.file, user.id, browserIdData)
     }
   }
 

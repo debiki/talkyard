@@ -110,6 +110,8 @@ trait UploadsDao {
       sizeAsLong.toInt
     }
 
+    throwIfUploadedTooMuchRecently(uploadedById, sizeBytes = sizeBytes)
+
     val hashPathSuffix = makeHashPath(optimizedFile, optimizedDotSuffix)
     val destinationFile = new java.io.File(s"$publicUploadsDir$hashPathSuffix")
     destinationFile.getParentFile.mkdirs()
@@ -153,6 +155,57 @@ trait UploadsDao {
     UploadRef(localhostUploadsBaseUrl, hashPathSuffix)
   }
 
+
+  private def throwIfUploadedTooMuchRecently(uploaderId: UserId, sizeBytes: Int) {
+    readOnlyTransaction { transaction =>
+      val user = transaction.loadUser(uploaderId) getOrElse throwForbidden(
+        "EsE7KMW2", "Strangely enough, your user account just disappeared")
+
+      // God mode.
+      if (user.isAdmin)
+        return
+
+      val nowMs = transaction.currentTime.getTime
+      val entries = transaction.loadAuditLogEntriesRecentFirst(userId = uploaderId,
+        tyype = AuditLogEntryType.UploadFile, limit = MaxUploadsLastWeek)
+
+      // Check if the user has uploaded more than MaxUploadsLastWeek uploads the last 7 days
+      // — that'd feel fishy.
+      if (entries.length >= MaxUploadsLastWeek) {
+        entries.lastOption foreach { oldest =>
+          val timeAgoMs = nowMs - oldest.doneAt.getTime
+          if (timeAgoMs < OneWeekInMillis)
+            throwTooManyRequests(
+              "Sorry but you've uploaded too many files the last 7 days [EsE5GM2]")
+        }
+      }
+
+      var bytesUploadedLastWeek = sizeBytes
+      var bytesUploadedLastDay = sizeBytes
+
+      entries foreach { entry =>
+        val doneAtMs = entry.doneAt.getTime
+        if (nowMs - doneAtMs < OneDayInMillis) {
+          bytesUploadedLastDay += entry.sizeBytes getOrElse 0
+        }
+        if (nowMs - doneAtMs < OneWeekInMillis) {
+          bytesUploadedLastWeek += entry.sizeBytes getOrElse 0
+        }
+      }
+
+      // For now: (COULD make configurable in the admin section)
+      val maxBytesWeek = user.isStaff ? MaxBytesPerWeekStaff | MaxBytesPerWeekMember
+      val maxBytesDay = user.isStaff ? MaxBytesPerDayStaff | MaxBytesPerDayMember
+
+      def throwIfTooMuch(actual: Int, max: Int, lastWhat: String) {
+        if (actual > max)
+          throwEntityTooLarge("EsE4MPK02", o"""Sorry but you've uploaded too much stuff the
+              last $lastWhat. You can upload at most ${(max - actual) / 1000} more kilobytes""")
+      }
+      throwIfTooMuch(bytesUploadedLastWeek, maxBytesWeek, "7 days")
+      throwIfTooMuch(bytesUploadedLastDay, maxBytesDay, "24 hours")
+    }
+  }
 }
 
 
@@ -168,6 +221,14 @@ object UploadsDao {
     * Don't change this — that would invalidate all hashes in the database.
     */
   val HashLength = 33
+
+  // Later: make configurable in the admin section. But there should be some fix upper limits?
+  val MaxBytesPerDayMember = 8*Megabytes
+  val MaxBytesPerDayStaff = 999*Megabytes
+  val MaxBytesPerWeekMember = 20*Megabytes
+  val MaxBytesPerWeekStaff = 999*Megabytes
+
+  val MaxUploadsLastWeek = 700
 
   val MaxAvatarTinySizeBytes = 2*1000
   val MaxAvatarSmallSizeBytes = 5*1000

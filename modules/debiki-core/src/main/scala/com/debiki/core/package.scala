@@ -72,6 +72,11 @@ package object core {
   val HomepageUrlPath = "/"
 
   val MillisPerDay: Long = 24 * 3600 * 1000
+  val OneDayInMillis: Long = MillisPerDay
+  val OneWeekInMillis: Long = 7 * MillisPerDay
+
+  val Megabyte = 1000 * 1000
+  val Megabytes = Megabyte
 
   def FirstSiteId = Site.FirstSiteId
   def SystemUserId = User.SystemUserId

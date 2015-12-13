@@ -104,6 +104,8 @@ object DebikiHttp {
   case class ResultException(result: Result) extends QuickException {
     override def toString = s"Status ${result.header.status}: ${result.body}"
 
+    def statusCode = result.header.status
+
     // ScalaTest prints the stack trace but not the exception message. However this is
     // a QuickException — it has no stack trace. Let's create a helpful fake stack trace
     // that shows the exception message, so one knows what happened.
@@ -114,7 +116,7 @@ object DebikiHttp {
           new String(byteArray.map(_.toChar))
         }
       val bodyString = Await.result(futureRequestBodyString, Duration.fromNanos(1000*1000*1000))
-      val message = s"ResultException, status ${result.header.status} [EsM0FST0]:\n$bodyString"
+      val message = s"ResultException, status $statusCode [EsM0FST0]:\n$bodyString"
       setStackTrace(Array(new StackTraceElement(message, "", "", 0)))
     }
   }

@@ -205,6 +205,8 @@ trait SiteTransaction {
   def nextAuditLogEntryId: AuditLogEntryId
   def insertAuditLogEntry(entry: AuditLogEntry)
   def loadCreatePostAuditLogEntry(postId: UniquePostId): Option[AuditLogEntry]
+  def loadAuditLogEntriesRecentFirst(userId: UserId, tyype: AuditLogEntryType, limit: Int)
+        : immutable.Seq[AuditLogEntry]
 
   def loadBlocks(ip: String, browserIdCookie: String): immutable.Seq[Block]
   def insertBlock(block: Block)
