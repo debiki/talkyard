@@ -33,6 +33,8 @@ import play.api.libs.json.{Json, JsString}
   */
 object UploadsController extends mvc.Controller {
 
+  import Globals.{maxUploadSizeBytes, anyPublicUploadsDir, LocalhostUploadsDirConfigValueName}
+
   val MaxAvatarUploadSizeBytes =
     MaxAvatarTinySizeBytes + MaxAvatarSmallSizeBytes + MaxAvatarMediumSizeBytes
 

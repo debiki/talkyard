@@ -94,6 +94,8 @@ case class PagePath(  // COULD move to debate.scala.  Rename to RequestPath?
 
   def siteId = tenantId
 
+  def thePageId = pageId getOrDie "EsE6JMY3"
+
   def value: String =
     if (showId) {
       val id = pageId.getOrElse(assErr( //Break out GuidLookup so cannot happen?

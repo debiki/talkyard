@@ -21,6 +21,7 @@ import akka.actor.{Actor, Props, ActorRef, ActorSystem}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{Globals, ReactJson, ReactRenderer}
+import debiki.Globals.{testsDoneServerGone, wasTest}
 import play.{api => p}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -72,10 +73,16 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
       try findAndUpdateOneOutOfDatePage()
       catch {
         case throwable: Throwable =>
-          p.Logger.error("Error rendering one out-of-date page [DwE6GUK02]", throwable)
+          if (!wasTest)
+            p.Logger.error("Error rendering one out-of-date page [DwE6GUK02]", throwable)
       }
       finally {
-        context.system.scheduler.scheduleOnce(333 millis, self, RegenerateStaleHtml)
+        if (testsDoneServerGone) {
+          p.Logger.debug("Tests done, server gone. Stopping background rendering pages. [EsM5KG3]")
+        }
+        else {
+          context.system.scheduler.scheduleOnce(333 millis, self, RegenerateStaleHtml)
+        }
       }
   }
 

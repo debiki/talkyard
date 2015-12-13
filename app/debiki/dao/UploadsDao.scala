@@ -17,14 +17,13 @@
 
 package debiki.dao
 
-import java.awt.Image
-import java.awt.image.BufferedImage
-
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.google.{common => guava}
 import debiki.DebikiHttp._
+import debiki.Globals
 import java.{io => jio}
+import java.awt.image.BufferedImage
 import java.nio.{file => jf}
 import debiki.{ImageUtils, ReactRenderer}
 import org.jsoup.Jsoup
@@ -50,7 +49,9 @@ trait UploadsDao {
   def addUploadedFile(uploadedFileName: String, tempFile: jio.File, uploadedById: UserId,
         browserIdData: BrowserIdData): UploadRef = {
 
-    val publicUploadsDir = anyPublicUploadsDir getOrElse throwForbidden(
+    import Globals.{LocalhostUploadsDirConfigValueName, maxUploadSizeBytes, localhostUploadsBaseUrl}
+
+    val publicUploadsDir = Globals.anyPublicUploadsDir getOrElse throwForbidden(
       "DwE5KFY9", "File uploads disabled, config value missing: " +
         LocalhostUploadsDirConfigValueName)
 
@@ -109,14 +110,7 @@ trait UploadsDao {
       sizeAsLong.toInt
     }
 
-    // (It's okay to truncate the hash, see e.g.:
-    // http://crypto.stackexchange.com/questions/9435/is-truncating-a-sha512-hash-to-the-first-160-bits-as-secure-as-using-sha1 )
-    val hashCode = guava.io.Files.hash(optimizedFile, guava.hash.Hashing.sha256)
-    val hashString = base32lowercaseEncoder.encode(hashCode.asBytes) take HashLength
-
-    val hashPathSuffix =
-      s"${hashString.head}/${hashString.charAt(1)}/${hashString drop 2}$optimizedDotSuffix"
-
+    val hashPathSuffix = makeHashPath(optimizedFile, optimizedDotSuffix)
     val destinationFile = new java.io.File(s"$publicUploadsDir$hashPathSuffix")
     destinationFile.getParentFile.mkdirs()
 
@@ -164,8 +158,6 @@ trait UploadsDao {
 
 object UploadsDao {
 
-  import play.api.Play.current
-
   val MaxSuffixLength = 12
 
   val base32lowercaseEncoder = guava.io.BaseEncoding.base32().lowerCase()
@@ -177,43 +169,55 @@ object UploadsDao {
     */
   val HashLength = 33
 
-  val LocalhostUploadsDirConfigValueName = "debiki.uploads.localhostDir"
-
-  val maxUploadSizeBytes = Play.configuration.getInt("debiki.uploads.maxKiloBytes").map(_ * 1000)
-    .getOrElse(3*1000*1000)
-
   val MaxAvatarTinySizeBytes = 2*1000
   val MaxAvatarSmallSizeBytes = 5*1000
   val MaxAvatarMediumSizeBytes = 100*1000
 
   val MaxSkipImageCompressionBytes = 5 * 1000
 
-  val anyUploadsDir = {
-    val value = Play.configuration.getString(LocalhostUploadsDirConfigValueName)
-    val pathWithSlash = if (value.exists(_.endsWith("/"))) value else value.map(_ + "/")
-    pathWithSlash match {
-      case None =>
-        p.Logger.warn( s"""Config value $LocalhostUploadsDirConfigValueName missing;
-          file uploads disabled. [DwE74W2]""")
-        None
-      case Some(path) =>
-        // SECURITY COULD test more dangerous dirs. Or whitelist instead?
-        if (path == "/" || path.startsWith("/etc/") || path.startsWith("/bin/")) {
-          p.Logger.warn(s"""Config value $LocalhostUploadsDirConfigValueName specifies
-            a dangerous path: $path — file uploads disabled. [DwE0GM2]""")
-          None
-        }
-        else {
-          pathWithSlash
-        }
-    }
+
+  // Later: Delete this in July 2016? And:
+  // - delete all old images that use this regex in the database
+  //   (that's ok, not many people use this right now).
+  // - remove this regex from the psql function `is_valid_hash_path(varchar)`
+  // - optionally, recalculate disk quotas (since files deleted)
+  val OldHashPathSuffixRegex = """^[a-z0-9]/[a-z0-9]/[a-z0-9]+\.[a-z0-9]+$""".r
+
+  val HashPathSuffixRegex = """^[0-9][0-9]?/[a-z0-9]/[a-z0-9]{2}/[a-z0-9]+\.[a-z0-9]+$""".r
+
+  private val Log4 = math.log(4)
+
+
+  def makeHashPath(file: jio.File, dotSuffix: String): String = {
+    // (It's okay to truncate the hash, see e.g.:
+    // http://crypto.stackexchange.com/questions/9435/is-truncating-a-sha512-hash-to-the-first-160-bits-as-secure-as-using-sha1 )
+    val hashCode = guava.io.Files.hash(file, guava.hash.Hashing.sha256)
+    val hashString = base32lowercaseEncoder.encode(hashCode.asBytes) take HashLength
+    makeHashPath(file.length().toInt, hashString, dotSuffix)
   }
 
-  val anyPublicUploadsDir = anyUploadsDir.map(_ + "public/")
 
-  val localhostUploadsBaseUrl = controllers.routes.UploadsController.servePublicFile("").url
+  /** The hash path starts with floor(log4(size-in-bytes / 1000)), i.e. 0 for < 4k files,
+    * 1 for < 16k files, 2 for < 64k, 3 for < 256k, 4 for <= 1M, 5 < 4M, 6 < 16M, .. 9 <= 1G.
+    * This lets us easily backup small files often, and large files infrequently. E.g.
+    * backup directories with < 1M files hourly, but larger files only daily?
+    * Or keep large files on other types of disks?
+    */
+  def makeHashPath(sizeBytes: Int, hash: String, dotSuffix: String): String = {
+    val sizeDigit = sizeKiloBase4(sizeBytes)
+    val (hash0, hash1, hash2, theRest) = (hash.head, hash.charAt(1), hash.charAt(2), hash.drop(3))
+    s"$sizeDigit/$hash0/$hash1$hash2/$theRest$dotSuffix"
+  }
 
-  val HashPathSuffixRegex = """^[a-z0-9]/[a-z0-9]/[a-z0-9]+\.[a-z0-9]+$""".r
+
+  /** Returns floor(log4(size-in-bytes / 1000)), and 0 if you give it 0.
+    */
+  def sizeKiloBase4(sizeBytes: Int): Int = {
+    require(sizeBytes >= 0, "EsE7YUG2")
+    if (sizeBytes < 4000) return 0
+    val fourKiloBlocks = sizeBytes / 1000
+    (math.log(fourKiloBlocks) / Log4).toInt
+  }
 
 
   def findUploadRefsInText(html: String): Set[UploadRef] = {
@@ -251,9 +255,11 @@ object UploadsDao {
               return
           }
         }
+      import Globals.localhostUploadsBaseUrl
       if (urlPath startsWith localhostUploadsBaseUrl) {
         val hashPathSuffix = urlPath drop localhostUploadsBaseUrl.length
-        if (HashPathSuffixRegex matches hashPathSuffix) {
+        if (OldHashPathSuffixRegex.matches(hashPathSuffix) ||
+            HashPathSuffixRegex.matches(hashPathSuffix)) {
           // Don't add any hostname, because files stored locally are accessible from any hostname
           // that maps to this server — only the file content hash matters.
           references.append(UploadRef(localhostUploadsBaseUrl, hashPathSuffix))

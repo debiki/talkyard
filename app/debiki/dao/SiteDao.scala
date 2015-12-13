@@ -145,6 +145,12 @@ abstract class SiteDao
     }
   }
 
+  def loadResourceUsage(): ResourceUse = {
+    readWriteTransaction { transaction =>
+      transaction.loadResourceUsage()
+    }
+  }
+
 
   // ----- Full text search
 

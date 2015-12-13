@@ -42,6 +42,8 @@ object Globals extends Globals {
   class NoStateError extends AssertionError(
     "No Globals.State created, please call onServerStartup() [DwE5NOS0]")
 
+  val LocalhostUploadsDirConfigValueName = "debiki.uploads.localhostDir"
+
 }
 
 
@@ -52,6 +54,12 @@ object Globals extends Globals {
   * It's a class, so it can be tweaked during unit testing.
   */
 class Globals {
+
+  /** Can be accessed also after the test is done and Play.maybeApplication is None.
+    */
+  lazy val wasTest = Play.isTest
+
+  def testsDoneServerGone = Play.isTest && (!isInitialized || Play.maybeApplication.isEmpty)
 
   def isInitialized = _state ne null
 
@@ -70,19 +78,16 @@ class Globals {
   def mostMetrics: MostMetrics = state.mostMetrics
 
 
-  val applicationVersion = "0.00.05"  // later, read from some build config file
+  def applicationVersion = state.applicationVersion
 
-  val applicationSecret =
-    Play.configuration.getString("play.crypto.secret").getOrDie(
-      "Config value 'play.crypto.secret' missing [DwE75FX0]")
+  def applicationSecret = state.applicationSecret
 
 
   /** Lets people do weird things, namely fake their ip address (&fakeIp=... url param)
     * in order to create many e2e test sites — also in prod mode, for smoke tests.
     * The e2e test sites will have ids like 'test__...' so that they can be deleted safely.
     */
-  val e2eTestPassword: Option[String] =
-    Play.configuration.getString("debiki.e2eTestPassword")
+  def e2eTestPassword: Option[String] = state.e2eTestPassword
 
 
   def systemDao = state.systemDao
@@ -104,8 +109,7 @@ class Globals {
 
   def antiSpam: AntiSpam = state.antiSpam
 
-  val securityComplaintsEmailAddress = Play.configuration.getString(
-    "debiki.securityComplaintsEmailAddress")
+  def securityComplaintsEmailAddress = state.securityComplaintsEmailAddress
 
 
   /** Either exactly all sites uses HTTPS, or all of them use HTTP.
@@ -174,7 +178,14 @@ class Globals {
     s"$scheme://$SiteByIdHostnamePrefix$siteId.$baseDomainWithPort"
 
 
+  def maxUploadSizeBytes = state.maxUploadSizeBytes
+  def anyUploadsDir = state.anyUploadsDir
+  def anyPublicUploadsDir = state.anyPublicUploadsDir
+  val localhostUploadsBaseUrl = controllers.routes.UploadsController.servePublicFile("").url
+
+
   def onServerStartup(app: p.Application) {
+    wasTest // initialise it now
     if (_state ne null)
       throw new jl.IllegalStateException(o"""Server already running, was it not properly
         shut down last time? Please hit CTRL+C to kill it. [DwE83KJ9]""")
@@ -238,11 +249,24 @@ class Globals {
 
     def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory)
 
+    if (Play.isTest && Play.configuration.getBoolean("isTestShallEmptyDatabase").contains(true)) {
+      systemDao.emptyDatabase()
+    }
+
     private def fastStartSkipSearch =
       Play.configuration.getBoolean("crazyFastStartSkipSearch") getOrElse false
 
     private def anyFullTextSearchDbPath =
       Play.configuration.getString("fullTextSearchDb.dataPath")
+
+    val applicationVersion = "0.00.06"  // later, read from some build config file
+
+    val applicationSecret =
+      Play.configuration.getString("play.crypto.secret").getOrDie(
+        "Config value 'play.crypto.secret' missing [DwE75FX0]")
+
+    val e2eTestPassword: Option[String] =
+      Play.configuration.getString("debiki.e2eTestPassword")
 
     val secure = Play.configuration.getBoolean("debiki.secure") getOrElse {
       p.Logger.info("Config value 'debiki.secure' missing; defaulting to true. [DwM3KEF2]")
@@ -305,6 +329,36 @@ class Globals {
       //  ${boneDataSource.getJdbcUrl} as user ${boneDataSource.getUsername}.""")
       db
     }
+
+    val maxUploadSizeBytes = Play.configuration.getInt("debiki.uploads.maxKiloBytes").map(_ * 1000)
+      .getOrElse(3*1000*1000)
+
+    val anyUploadsDir = {
+      import Globals.LocalhostUploadsDirConfigValueName
+      val value = Play.configuration.getString(LocalhostUploadsDirConfigValueName)
+      val pathSlash = if (value.exists(_.endsWith("/"))) value else value.map(_ + "/")
+      pathSlash match {
+        case None =>
+          p.Logger.warn(o"""Config value $LocalhostUploadsDirConfigValueName missing;
+              file uploads disabled. [DwE74W2]""")
+          None
+        case Some(path) =>
+          // SECURITY COULD test more dangerous dirs. Or whitelist instead?
+          if (path == "/" || path.startsWith("/etc/") || path.startsWith("/bin/")) {
+            p.Logger.warn(o"""Config value $LocalhostUploadsDirConfigValueName specifies
+                a dangerous path: $path — file uploads disabled. [DwE0GM2]""")
+            None
+          }
+          else {
+            pathSlash
+          }
+      }
+    }
+
+    val anyPublicUploadsDir = anyUploadsDir.map(_ + "public/")
+
+    val securityComplaintsEmailAddress = Play.configuration.getString(
+      "debiki.securityComplaintsEmailAddress")
   }
 
 }

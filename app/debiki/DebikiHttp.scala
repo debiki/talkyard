@@ -23,11 +23,14 @@ import debiki.dao.SystemDao
 import debiki.Globals.originOf
 import java.{net => jn}
 import play.api._
+import play.api.libs.iteratee.Iteratee
 import play.{api => p}
 import play.api.http.ContentTypes._
 import play.api.mvc.{Action => _, _}
 import play.api.Play.current
 import requests.DebikiRequest
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import xml.{NodeSeq}
 
 
@@ -98,7 +101,23 @@ object DebikiHttp {
    * Thrown on error, caught in Global.onError, which returns the wrapped
    * result to the browser.
    */
-  case class ResultException(result: Result) extends QuickException
+  case class ResultException(result: Result) extends QuickException {
+    override def toString = s"Status ${result.header.status}: ${result.body}"
+
+    // ScalaTest prints the stack trace but not the exception message. However this is
+    // a QuickException — it has no stack trace. Let's create a helpful fake stack trace
+    // that shows the exception message, so one knows what happened.
+    if (Play.isTest) {
+      import scala.concurrent.ExecutionContext.Implicits.global
+      val futureRequestBodyString =
+        Iteratee.flatten(result.body |>> Iteratee.consume[Array[Byte]]()).run.map { byteArray =>
+          new String(byteArray.map(_.toChar))
+        }
+      val bodyString = Await.result(futureRequestBodyString, Duration.fromNanos(1000*1000*1000))
+      val message = s"ResultException, status ${result.header.status} [EsM0FST0]:\n$bodyString"
+      setStackTrace(Array(new StackTraceElement(message, "", "", 0)))
+    }
+  }
 
   def throwTemporaryRedirect(url: String) =
     throw ResultException(R.Redirect(url))

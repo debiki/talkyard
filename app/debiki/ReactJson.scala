@@ -242,7 +242,7 @@ object ReactJson {
       "numPostsRepliesSection" -> numPostsRepliesSection,
       "numPostsChatSection" -> numPostsChatSection,
       "numPostsExclTitle" -> numPostsExclTitle,
-      "maxUploadSizeBytes" -> debiki.dao.UploadsDao.maxUploadSizeBytes,
+      "maxUploadSizeBytes" -> Globals.maxUploadSizeBytes,
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
       "categories" -> categoriesJson(page,
         // For now, filter out hidden-in-forum client side if !isStaff.

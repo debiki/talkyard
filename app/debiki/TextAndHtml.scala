@@ -55,6 +55,8 @@ sealed trait TextAndHtml {
   }
 
   def append(moreTextAndHtml: TextAndHtml): TextAndHtml
+  def append(text: String): TextAndHtml
+
 }
 
 
@@ -67,7 +69,14 @@ object TextAndHtml {
     val links: immutable.Seq[String],
     val linkDomains: immutable.Seq[String],
     val linkAddresses: immutable.Seq[String],
-    val isTitle: Boolean) extends TextAndHtml {
+    val isTitle: Boolean,
+    val followLinks: Boolean,
+    val allowClassIdDataAttrs: Boolean) extends TextAndHtml {
+
+    def append(text: String): TextAndHtml = {
+      append(TextAndHtml(text, isTitle = isTitle, followLinks = followLinks,
+        allowClassIdDataAttrs = allowClassIdDataAttrs))
+    }
 
     def append(moreTextAndHtml: TextAndHtml): TextAndHtml = {
       val more = moreTextAndHtml.asInstanceOf[TextAndHtmlImpl]
@@ -77,7 +86,9 @@ object TextAndHtml {
         (links.toSet ++ more.links.toSet).to[immutable.Seq],
         (linkDomains.toSet ++ more.linkDomains.toSet).to[immutable.Seq],
         (linkAddresses.toSet ++ more.linkAddresses.toSet).to[immutable.Seq],
-        isTitle = isTitle && more.isTitle)
+        isTitle = isTitle && more.isTitle,
+        followLinks = followLinks,
+        allowClassIdDataAttrs = allowClassIdDataAttrs)
     }
   }
 
@@ -96,7 +107,8 @@ object TextAndHtml {
     if (isTitle) {
       val safeHtml = commonMarkRenderer.sanitizeHtml(text)
       new TextAndHtmlImpl(text, safeHtml, links = Nil, linkDomains = Nil,
-        linkAddresses = Nil, isTitle = true)
+        linkAddresses = Nil, isTitle = true, followLinks = followLinks,
+        allowClassIdDataAttrs = allowClassIdDataAttrs)
     }
     else {
       val safeHtml = commonMarkRenderer.renderAndSanitizeCommonMark(
@@ -131,7 +143,8 @@ object TextAndHtml {
         }
       }
       new TextAndHtmlImpl(text, safeHtml, links = links, linkDomains = linkDomains,
-        linkAddresses = linkAddresses, isTitle = true)
+        linkAddresses = linkAddresses, isTitle = true, followLinks = followLinks,
+        allowClassIdDataAttrs = allowClassIdDataAttrs)
     }
   }
 

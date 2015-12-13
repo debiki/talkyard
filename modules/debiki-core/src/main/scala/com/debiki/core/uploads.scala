@@ -32,3 +32,6 @@ case class UploadRef(baseUrl: String, hashPath: String) {
 
 }
 
+
+case class UploadInfo(sizeBytes: Int, mimeType: String, numReferences: Int)
+

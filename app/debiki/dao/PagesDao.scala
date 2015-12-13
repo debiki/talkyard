@@ -136,8 +136,9 @@ trait PagesDao {
     }
     else {
       anyCategoryId match {
-        case None if !author.isStaff =>
-          throwForbidden("DwE8GKE4", "No category specified")
+        case None =>
+          if (!author.isStaff)
+            throwForbidden("DwE8GKE4", "No category specified")
         case Some(categoryId) =>
           val category = transaction.loadCategory(categoryId) getOrElse throwNotFound(
             "DwE4KGP8", s"Category not found, id: $categoryId")

@@ -73,6 +73,7 @@ package object core {
 
   val MillisPerDay: Long = 24 * 3600 * 1000
 
+  def FirstSiteId = Site.FirstSiteId
   def SystemUserId = User.SystemUserId
   def SystemUserFullName = User.SystemUserFullName
   def SystemUserUsername = User.SystemUserUsername

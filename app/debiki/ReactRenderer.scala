@@ -77,8 +77,6 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
   @volatile private var firstCreateEngineError: Option[Throwable] = None
 
-  private lazy val isTest = Play.isTest
-
 
   // Evaluating zxcvbn.min.js (a Javascript password strength check library) takes almost
   // a minute in dev mode. So enable server side password strength checks in prod mode only.
@@ -100,9 +98,6 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     */
   def startCreatingRenderEngines() {
     dieIf(!javascriptEngines.isEmpty, "DwE50KFE2")
-    // Remember if is-test, because the stuff in the Future might not be able to
-    // use Play.isTest because the test suite might have exited then and removed the Play app.
-    isTest
     Future {
       val numEngines =
         if (Play.isProd) Runtime.getRuntime.availableProcessors
@@ -126,8 +121,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     catch {
       case throwable: Throwable =>
         if (Play.maybeApplication.isEmpty || throwable.isInstanceOf[Globals.NoStateError]) {
-          if (isTest) {
-            logger.info("Server gone, tests done? Cancelling script engine creation. [EsM6MK4]")
+          if (Globals.wasTest) {
+            logger.debug("Server gone, tests done? Cancelling script engine creation. [EsM6MK4]")
           }
           else {
             logger.error("Error creating Javascript engine: No server [EsE6JY22]", throwable)
