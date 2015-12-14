@@ -37,6 +37,7 @@ case class BrowserLocation(
 sealed abstract class AuditLogEntryType
 object AuditLogEntryType {
   case object CreateSite extends AuditLogEntryType
+  case object ThisSiteCreated extends AuditLogEntryType
   case object NewPage extends AuditLogEntryType
   case object NewPost extends AuditLogEntryType
   case object EditPost extends AuditLogEntryType
@@ -61,7 +62,7 @@ case class AuditLogEntry(
   uploadFileName: Option[String] = None,
   sizeBytes: Option[Int] = None,
   targetUniquePostId: Option[UniquePostId] = None,
-  targetSiteId: Option[SiteId] = None,
+  targetSiteId: Option[SiteId] = None, // ought to rename to otherSiteId, rename db column too
   targetPageId: Option[PageId] = None,
   targetPostNr: Option[PostId] = None,
   targetUserId: Option[UserId] = None) {

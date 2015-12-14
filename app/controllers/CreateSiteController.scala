@@ -79,17 +79,9 @@ object CreateSiteController extends Controller {
     if (localHostname.contains("--") && !isTestSiteOkayToDelete)
       throwForbidden("DwE5JKP3", "Please choose another hostname; it must not contain: --")
 
-    /* Don't force people to choose a price plan directly. Instead just show a link to the pricing
-    page, but let them start use their site for free for a while. Not until later, when
-    they are fairly sure that they to continue using their site, do they need to read
-    details about pricing.
-    if (anyPricePlan.isEmpty)
-      throwForbidden("DwE7KJEP8", "No price plan")
-    */
-
+    // Price plan not required, but if specified, it shouldn't be "weird".
     if (anyPricePlan.exists(_.trim.isEmpty))
       throwForbidden("DwE4KEWW5", "Bad price plan: Empty string")
-
     if (anyPricePlan.exists(_.length > 50))
       throwForbidden("DwE7KEP36", "Bad price plan: Too long")
 

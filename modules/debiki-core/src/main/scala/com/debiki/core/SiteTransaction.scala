@@ -28,6 +28,8 @@ trait SiteTransaction {
   def rollback()
   def siteId: SiteId
 
+  def setSiteId(id: SiteId)
+
   def deferConstraints()
 
   /** Throws SiteAlreadyExistsException if the site already exists.
@@ -38,6 +40,11 @@ trait SiteTransaction {
     creatorIp: String, creatorEmailAddress: String, pricePlan: Option[String],
     quotaLimitMegabytes: Option[Int], isTestSiteOkayToDelete: Boolean,
     skipMaxSitesCheck: Boolean): Site
+
+  def insertSiteHost(host: SiteHost)
+
+  // Try to remove, use sth more generic like insertUser()? or insertGuest() instead?
+  def createUnknownUser()
 
   def addSiteHost(host: SiteHost)
   def loadSiteVersion(): Int

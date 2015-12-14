@@ -76,7 +76,8 @@ abstract class SiteDao
   with UploadsDao
   with UserDao
   with ReviewsDao
-  with AuditDao {
+  with AuditDao
+  with CreateSiteDao {
 
   def siteDbDao: SiteDbDao
   def dbDao2: DbDao2
@@ -107,34 +108,6 @@ abstract class SiteDao
 
   def loadSiteStatus(): SiteStatus =
     siteDbDao.loadSiteStatus()
-
-  def createSite(name: String, hostname: String,
-        embeddingSiteUrl: Option[String], pricePlan: Option[String],
-        creatorEmailAddress: String, creatorId: UserId, browserIdData: BrowserIdData,
-        isTestSiteOkayToDelete: Boolean, skipMaxSitesCheck: Boolean) : Site = {
-
-    dieIf(hostname contains ":", "DwE3KWFE7")
-    val quotaLimitMegabytes = p.Play.configuration.getInt("debiki.newSite.quotaLimitMegabytes")
-
-    readWriteTransaction { transaction =>
-      val site = transaction.createSite(name = name, hostname = hostname,
-        embeddingSiteUrl, creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
-        pricePlan = pricePlan, quotaLimitMegabytes = quotaLimitMegabytes,
-        isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = skipMaxSitesCheck)
-
-      insertAuditLogEntry(AuditLogEntry(
-        siteId = this.siteId,
-        id = AuditLogEntry.UnassignedId,
-        didWhat = AuditLogEntryType.CreateSite,
-        doerId = creatorId,
-        doneAt = transaction.currentTime,
-        browserIdData = browserIdData,
-        browserLocation = None,
-        targetSiteId = Some(site.id)), transaction)
-
-      site
-    }
-  }
 
   def updateSite(changedSite: Site) =
     siteDbDao.updateSite(changedSite)

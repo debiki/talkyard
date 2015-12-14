@@ -38,6 +38,20 @@ case class Category(
   frozenAt: Option[ju.Date] = None,
   deletedAt: Option[ju.Date] = None) {
 
+  import Category._
+
+  require(slug.nonEmpty, "EsE6MPFK2")
+  require(slug.length <= MaxSlugLength, "EsE4ZXW2")
+  require(name.nonEmpty, "EsE8GKP6")
+  require(name.length <= MaxNameLength, "EsE2KPE8")
+  require(!description.exists(_.isEmpty), "EsE2KPU7")
+  require(!description.exists(_.length > MaxDescriptionLength), "EsE2PFU4")
+  require(newTopicTypes.size <= MaxTopicTypes, "EsE7MJKF2")
+  require(updatedAt.getTime >= createdAt.getTime, "EsE8UF9")
+  require(!lockedAt.exists(_.getTime < createdAt.getTime), "EsE5MPK2")
+  require(!frozenAt.exists(_.getTime < createdAt.getTime), "EsE2KPU4c")
+  require(!deletedAt.exists(_.getTime < createdAt.getTime), "EsE7GUM4")
+
   def isRoot = parentId.isEmpty
   def isTheUncategorizedCategory = description.contains(Category.UncategorizedDescription)
   def isLocked = lockedAt.isDefined
@@ -48,6 +62,10 @@ case class Category(
 
 
 object Category {
+  val MaxNameLength = 50
+  val MaxSlugLength = 50
+  val MaxDescriptionLength = 1000
+  val MaxTopicTypes = 20
   val DescriptionExcerptLength = 280
   val UncategorizedDescription = "__uncategorized__"
 }

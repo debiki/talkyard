@@ -71,7 +71,7 @@ object ForumController extends mvc.Controller {
         "DwE7KUP3", s"Bad new topic type int: $typeInt")
     }
 
-    val creteEditCategoryData = CreateEditCategoryData(
+    val categoryData = CreateEditCategoryData(
       anyId = (body \ "categoryId").asOpt[CategoryId],
       sectionPageId = sectionPageId,
       parentId = (body \ "parentCategoryId").as[CategoryId],
@@ -81,15 +81,30 @@ object ForumController extends mvc.Controller {
       newTopicTypes = newTopicTypes,
       hideInForum = hideInForum)
 
-    var resultJson: JsObject = null
+    import Category._
 
-    val category = creteEditCategoryData.anyId match {
+    if (categoryData.name.isEmpty)
+      throwBadRequest("EsE5JGKU1", s"Please type a category name")
+
+    if (categoryData.name.length > MaxNameLength)
+      throwBadRequest("EsE8RSUY0", s"Too long category name: '${categoryData.name}'")
+
+    if (categoryData.slug.isEmpty)
+      throwBadRequest("EsE4PKL6", s"Please type a category slug")
+
+    if (categoryData.slug.length > MaxSlugLength)
+      throwBadRequest("EsE9MFU4", s"Too long category slug: '${categoryData.slug}'")
+
+    if (categoryData.newTopicTypes.size > MaxTopicTypes)
+      throwBadRequest("EsE1GKU6", s"Too many topic types")
+
+    val category = categoryData.anyId match {
       case Some(categoryId) =>
-        request.dao.editCategory(creteEditCategoryData, editorId = request.theUserId,
+        request.dao.editCategory(categoryData, editorId = request.theUserId,
           request.theBrowserIdData)
       case None =>
         val (category, _) = request.dao.createCategory(
-          creteEditCategoryData, creatorId = request.theUserId, request.theBrowserIdData)
+          categoryData, creatorId = request.theUserId, request.theBrowserIdData)
         category
     }
 
