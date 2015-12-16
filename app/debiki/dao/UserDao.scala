@@ -376,16 +376,16 @@ trait UserDao {
 
 
   def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats] =
-    siteDbDao.loadUserInfoAndStats(userId)
+    readOnlyTransaction(_.loadUserInfoAndStats(userId))
 
 
   def listUserActions(userId: UserId): Seq[UserActionInfo] =
-    siteDbDao.listUserActions(userId)
+    readOnlyTransaction(_.listUserActions(userId))
 
 
   def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage =
     // Currently this results in no database request; there's nothing to cache.
-    siteDbDao.loadPermsOnPage(reqInfo)
+    readOnlyTransaction(_.loadPermsOnPage(reqInfo))
 
 
   def loadPermsOnPage(request: ApiRequest[_], pageId: PageId): PermsOnPage = {
@@ -393,12 +393,12 @@ trait UserDao {
     val pagePath = lookupPagePath(pageId) getOrElse throwNotFound(
       "DwE74BK0", s"No page path found to page id: $pageId")
 
-    siteDbDao.loadPermsOnPage(PermsOnPageQuery(
+    readOnlyTransaction(_.loadPermsOnPage(PermsOnPageQuery(
       tenantId = request.tenantId,
       ip = request.ip,
       user = request.user,
       pagePath = pagePath,
-      pageMeta = pageMeta))
+      pageMeta = pageMeta)))
   }
 
 
@@ -485,34 +485,33 @@ trait UserDao {
 
 
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs) = {
-    siteDbDao.configIdtySimple(ctime = ctime,
-      emailAddr = emailAddr, emailNotfPrefs = emailNotfPrefs)
-    // COULD refresh guest in cache: new email prefs --> perhaps show "??" not "?" after name.
-  }
-
-
-  def listUsers(): Seq[User] = {
-    readOnlyTransaction { transaction =>
-      transaction.loadUsers()
+    readWriteTransaction { transaction =>
+      transaction.configIdtySimple(ctime = ctime,
+        emailAddr = emailAddr, emailNotfPrefs = emailNotfPrefs)
+      // COULD refresh guest in cache: new email prefs --> perhaps show "??" not "?" after name.
     }
   }
 
 
+  def listUsers(): Seq[User] =
+    readOnlyTransaction(_.loadUsers())
+
+
   def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername] =
-    siteDbDao.listUsernames(pageId = pageId, prefix = prefix)
+    readOnlyTransaction(_.listUsernames(pageId = pageId, prefix = prefix))
 
 
   def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId] =
-    siteDbDao.loadUserIdsWatchingPage(pageId)
+    readOnlyTransaction(_.loadUserIdsWatchingPage(pageId))
 
 
   def loadRolePageSettings(roleId: RoleId, pageId: PageId): RolePageSettings =
-    siteDbDao.loadRolePageSettings(roleId = roleId, pageId = pageId) getOrElse
+    readOnlyTransaction(_.loadRolePageSettings(roleId = roleId, pageId = pageId)) getOrElse
       RolePageSettings.Default
 
 
   def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings) =
-    siteDbDao.saveRolePageSettings(roleId = roleId, pageId = pageId, settings)
+    readWriteTransaction(_.saveRolePageSettings(roleId = roleId, pageId = pageId, settings))
 
 
   def saveRolePreferences(preferences: UserPreferences) = {

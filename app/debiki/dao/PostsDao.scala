@@ -647,7 +647,7 @@ trait PostsDao {
         approvedById = Some(approverId),
         approvedSource = Some(postBefore.currentSource),
         approvedHtmlSanitized = Some(postBefore.currentHtmlSanitized(
-          siteDbDao.commonMarkRenderer, pageMeta.pageRole)))
+          commonmarkRenderer, pageMeta.pageRole)))
       transaction.updatePost(postAfter)
 
       SHOULD // delete any review tasks.
@@ -819,7 +819,7 @@ trait PostsDao {
 
 
   def loadPostsReadStats(pageId: PageId): PostsReadStats =
-    siteDbDao.loadPostsReadStats(pageId)
+    readOnlyTransaction(_.loadPostsReadStats(pageId))
 
 
   def loadPost(pageId: PageId, postNr: PostNr): Option[Post] =

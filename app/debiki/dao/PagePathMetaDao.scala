@@ -36,31 +36,31 @@ trait PagePathMetaDao {
   def moveRenamePage(pageId: PageId, newFolder: Option[String] = None,
         showId: Option[Boolean] = None, newSlug: Option[String] = None)
         : PagePath =
-    siteDbDao.moveRenamePage(pageId = pageId, newFolder = newFolder,
-      showId = showId, newSlug = newSlug)
+    readWriteTransaction(_.moveRenamePage(pageId = pageId, newFolder = newFolder,
+      showId = showId, newSlug = newSlug))
 
 
   def checkPagePath(pathToCheck: PagePath): Option[PagePath] =
-    siteDbDao.checkPagePath(pathToCheck)
+    readOnlyTransaction(_.checkPagePath(pathToCheck))
 
 
   def lookupPagePath(pageId: PageId): Option[PagePath] =
-    siteDbDao.lookupPagePath(pageId = pageId)
+    readOnlyTransaction(_.loadPagePath(pageId))
 
 
   def lookupPagePathAndRedirects(pageId: PageId): List[PagePath] =
-    siteDbDao.lookupPagePathAndRedirects(pageId)
+    readOnlyTransaction(_.lookupPagePathAndRedirects(pageId))
 
 
   def loadPageMeta(pageId: PageId): Option[PageMeta] =
-    siteDbDao.loadPageMeta(pageId)
+    readOnlyTransaction(_.loadPageMeta(pageId))
 
 
   // COULD override and use the page meta cache, but currently only called
   // by the moderation page, so not needed right now.
   def loadPageMetasAsMap(pageIds: Seq[PageId], anySiteId: Option[SiteId] = None)
         : Map[PageId, PageMeta] =
-    siteDbDao.loadPageMetasAsMap(pageIds, anySiteId)
+    readOnlyTransaction(_.loadPageMetasAsMap(pageIds, anySiteId))
 
 
   def loadPageMetaAndPath(pageId: PageId): Option[PagePathAndMeta] = {

@@ -115,7 +115,7 @@ trait PagesDao {
           throwForbidden("DwE4KFW87", "Only staff may specify page slug")
         slug
       case None =>
-        siteDbDao.commonMarkRenderer.slugifyTitle(titleSource)
+        commonmarkRenderer.slugifyTitle(titleSource)
     }).take(PagePath.MaxSlugLength).dropRightWhile(_ == '-').dropWhile(_ == '-')
 
     val approvedById =

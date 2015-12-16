@@ -17,8 +17,11 @@
 
 package com.debiki.core
 
+import com.debiki.core.Prelude._
 import java.net.InetAddress
 import java.{util => ju}
+import com.debiki.core.EmailNotfPrefs._
+
 import scala.collection.immutable
 
 
@@ -41,7 +44,14 @@ trait SiteTransaction {
     quotaLimitMegabytes: Option[Int], isTestSiteOkayToDelete: Boolean,
     skipMaxSitesCheck: Boolean): Site
 
+  def loadTenant(): Site
+
   def insertSiteHost(host: SiteHost)
+
+  def loadSiteStatus(): SiteStatus
+  def bumpSiteVersion()
+  def updateSite(changedSite: Site)
+
 
   // Try to remove, use sth more generic like insertUser()? or insertGuest() instead?
   def createUnknownUser()
@@ -49,11 +59,17 @@ trait SiteTransaction {
   def addSiteHost(host: SiteHost)
   def loadSiteVersion(): Int
 
+  def saveSetting(target: SettingsTarget, setting: SettingNameValue[_])
+  /** Loads settings for all listed targets, returns settings in the same order.
+    */
   def loadSettings(targets: Seq[SettingsTarget]): Seq[RawSettings]
+  def loadSiteSettings(): RawSettings =
+    loadSettings(Vector(SettingsTarget.WholeSite)).headOption.getOrDie("DwE5fl09")
 
   def loadResourceUsage(): ResourceUse
 
   def loadCategory(categoryId: CategoryId): Option[Category]
+  def loadCategoryMap(): Map[CategoryId, Category]
   def nextCategoryId(): Int
   def insertCategoryMarkSectionPageStale(category: Category)
   def updateCategoryMarkSectionPageStale(category: Category)
@@ -100,6 +116,7 @@ trait SiteTransaction {
         readFromIp: String)
 
   def loadPostsReadStats(pageId: PageId, postNr: Option[PostNr]): PostsReadStats
+  def loadPostsReadStats(pageId: PageId): PostsReadStats
 
 
   def loadFlagsFor(pagePostNrs: immutable.Seq[PagePostNr]): immutable.Seq[PostFlag]
@@ -110,6 +127,8 @@ trait SiteTransaction {
 
   def loadAllPageMetas(): immutable.Seq[PageMeta]
   def loadPageMeta(pageId: PageId): Option[PageMeta]
+  def loadPageMetasAsMap(pageIds: Seq[PageId], anySiteId: Option[SiteId] = None)
+  : Map[PageId, PageMeta]
   def loadThePageMeta(pageId: PageId): PageMeta =
     loadPageMeta(pageId).getOrElse(throw PageNotFoundException(pageId))
 
@@ -125,8 +144,25 @@ trait SiteTransaction {
   def saveCachedPageContentHtmlPerhapsBreakTransaction(
     pageId: PageId, version: CachedPageVersion, html: String): Boolean
 
-  def loadPagePath(pageId: PageId): Option[PagePath]
+
   def insertPagePath(pagePath: PagePath)
+  def loadPagePath(pageId: PageId): Option[PagePath]
+  def checkPagePath(pathToCheck: PagePath): Option[PagePath]  // rename? check? load? what?
+  /**
+    * Loads all PagePaths that map to pageId. The canonical path is placed first
+    * and the tail consists only of any redirection paths.
+    */
+  def lookupPagePathAndRedirects(pageId: PageId): List[PagePath]
+  def listPagePaths(pageRanges: PathRanges, include: List[PageStatus],
+    orderOffset: PageOrderOffset, limit: Int): Seq[PagePathAndMeta]
+
+  def loadPagesInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery, limit: Int)
+  : Seq[PagePathAndMeta]
+
+  def moveRenamePage(pageId: PageId,
+    newFolder: Option[String] = None, showId: Option[Boolean] = None,
+    newSlug: Option[String] = None): PagePath
+
 
   def currentTime: ju.Date
 
@@ -168,6 +204,7 @@ trait SiteTransaction {
 
   def tryLogin(loginAttempt: LoginAttempt): LoginGrant
   def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
+  def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
   def loadCompleteUser(userId: UserId): Option[CompleteUser]
 
@@ -197,12 +234,26 @@ trait SiteTransaction {
     onlyApproved: Boolean = false,
     onlyPendingApproval: Boolean = false): immutable.Seq[CompleteUser]
 
+  /** Loads users watching the specified page, any parent categories or forums,
+    * and people watching everything on the whole site.
+    */
   def loadUserIdsWatchingPage(pageId: PageId): Seq[UserId]
 
   def loadRolePageSettings(roleId: RoleId, pageId: PageId): Option[RolePageSettings]
   def loadRolePageSettingsOrDefault(roleId: RoleId, pageId: PageId) =
         loadRolePageSettings(roleId, pageId) getOrElse RolePageSettings.Default
 
+  def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats]
+  def loadUserStats(userId: UserId): UserStats
+  def listUserActions(userId: UserId): Seq[UserActionInfo]
+  def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage
+  def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername]
+
+  def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings)
+
+  def saveUnsentEmail(email: Email): Unit
+  def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification])
+  def updateSentEmail(email: Email): Unit
   def loadEmailById(emailId: String): Option[Email]
 
   def nextReviewTaskId(): ReviewTaskId
@@ -212,6 +263,9 @@ trait SiteTransaction {
   def loadPendingPostReviewTask(postId: UniquePostId, causedById: UserId): Option[ReviewTask]
 
   def saveDeleteNotifications(notifications: Notifications)
+  def updateNotificationSkipEmail(notifications: Seq[Notification])
+  def loadNotificationsForRole(roleId: RoleId): Seq[Notification]
+
 
   def nextAuditLogEntryId: AuditLogEntryId
   def insertAuditLogEntry(entry: AuditLogEntry)

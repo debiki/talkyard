@@ -77,7 +77,7 @@ trait CategoriesDao {
     */
   private def listPagesInCategories(categoryIds: Seq[CategoryId], pageQuery: PageQuery, limit: Int)
         : Seq[PagePathAndMeta] = {
-    siteDbDao.loadPagesInCategories(categoryIds, pageQuery, limit)
+    readOnlyTransaction(_.loadPagesInCategories(categoryIds, pageQuery, limit))
   }
 
 
@@ -171,7 +171,7 @@ trait CategoriesDao {
       return (categoriesById, categoriesByParentId)
 
     categoriesByParentId = mutable.HashMap[CategoryId, ArrayBuffer[Category]]()
-    categoriesById = siteDbDao.loadCategoryMap()
+    categoriesById = loadCategoryMap()
 
     for ((categoryId, category) <- categoriesById; parentId <- category.parentId) {
       val siblings = categoriesByParentId.getOrElseUpdate(parentId, ArrayBuffer[Category]())
@@ -182,7 +182,7 @@ trait CategoriesDao {
   }
 
   protected def loadCategoryMap() =
-    siteDbDao.loadCategoryMap()
+    readOnlyTransaction(_.loadCategoryMap())
 
 
   def editCategory(editCategoryData: CreateEditCategoryData,
@@ -224,11 +224,11 @@ trait CategoriesDao {
   def createCategory(newCategoryData: CreateEditCategoryData, creatorId: UserId,
         browserIdData: BrowserIdData): (Category, PagePath) = {
 
-    val bodyHtmlSanitized = siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(
+    val bodyHtmlSanitized = commonmarkRenderer.renderAndSanitizeCommonMark(
       CategoryDescriptionSource, allowClassIdDataAttrs = false, followLinks = true)
 
     val titleSource = s"About the ${newCategoryData.name} category"
-    val titleHtmlSanitized = siteDbDao.commonMarkRenderer.sanitizeHtml(titleSource)
+    val titleHtmlSanitized = commonmarkRenderer.sanitizeHtml(titleSource)
 
     val result = readWriteTransaction { transaction =>
       val categoryId = transaction.nextCategoryId()

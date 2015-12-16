@@ -41,9 +41,7 @@ object SiteDaoFactory {
     private val _dbDaoFactory = dbDaoFactory
 
     def newSiteDao(siteId: SiteId): SiteDao = {
-      val siteDbDao = _dbDaoFactory.newSiteDbDao(siteId)
-      val serializingDbDao = new SerializingSiteDbDao(siteDbDao)
-      new NonCachingSiteDao(serializingDbDao, _dbDaoFactory)
+      new NonCachingSiteDao(siteId, _dbDaoFactory)
     }
   }
 
@@ -79,9 +77,9 @@ abstract class SiteDao
   with AuditDao
   with CreateSiteDao {
 
-  @deprecated("Now", "use the transaction instead") // remove and remove this too: [5GKEPMW2]
-  def siteDbDao: SiteDbDao
   def dbDao2: DbDao2
+
+  def commonmarkRenderer = ReactRenderer
 
   def readWriteTransaction[R](fn: SiteTransaction => R, allowOverQuota: Boolean = false): R =
     dbDao2.readWriteSiteTransaction(siteId, allowOverQuota) { fn(_) }
@@ -100,18 +98,18 @@ abstract class SiteDao
 
   // ----- Tenant
 
-  def siteId = siteDbDao.siteId
+  def siteId: SiteId
 
-  def loadSite(): Site = siteDbDao.loadTenant()
+  def loadSite(): Site = readOnlyTransaction(_.loadTenant())
 
   @deprecated("use loadSite() instead", "now")
-  def loadTenant(): Site = siteDbDao.loadTenant()
+  def loadTenant(): Site = loadSite()
 
   def loadSiteStatus(): SiteStatus =
-    siteDbDao.loadSiteStatus()
+    readOnlyTransaction(_.loadSiteStatus())
 
   def updateSite(changedSite: Site) =
-    siteDbDao.updateSite(changedSite)
+    readWriteTransaction(_.updateSite(changedSite))
 
   def addTenantHost(host: SiteHost) = {
     readWriteTransaction { transaction =>
@@ -129,7 +127,14 @@ abstract class SiteDao
   // ----- Full text search
 
   def fullTextSearch(phrase: String, anyRootPageId: Option[PageId]): Future[FullTextSearchResult] =
-    siteDbDao.fullTextSearch(phrase, anyRootPageId)
+    ??? // siteDbDao.fullTextSearch(phrase, anyRootPageId)
+
+  /** Unindexes everything on some pages. Intended for test suites only.
+    * Returns the number of *posts* that were unindexed.
+    */
+  def debugUnindexPosts(pageAndPostIds: PagePostNr*): Unit = {
+    ???
+  }
 
 
   // ----- List stuff
@@ -139,31 +144,31 @@ abstract class SiteDao
         include: List[PageStatus],
         orderOffset: PageOrderOffset,
         limit: Int): Seq[PagePathAndMeta] =
-    siteDbDao.listPagePaths(pageRanges, include, orderOffset, limit)
+    readOnlyTransaction(_.listPagePaths(pageRanges, include, orderOffset, limit))
 
 
   // ----- Notifications
 
   def saveDeleteNotifications(notifications: Notifications) =
-    siteDbDao.saveDeleteNotifications(notifications)
+    readWriteTransaction(_.saveDeleteNotifications(notifications))
 
   def loadNotificationsForRole(roleId: RoleId): Seq[Notification] =
-    siteDbDao.loadNotificationsForRole(roleId)
+    readOnlyTransaction(_.loadNotificationsForRole(roleId))
 
   def updateNotificationSkipEmail(notifications: Seq[Notification]): Unit =
-    siteDbDao.updateNotificationSkipEmail(notifications)
+    readWriteTransaction(_.updateNotificationSkipEmail(notifications))
 
 
   // ----- Emails
 
   def saveUnsentEmail(email: Email): Unit =
-    siteDbDao.saveUnsentEmail(email)
+    readWriteTransaction(_.saveUnsentEmail(email))
 
   def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification]): Unit =
-    siteDbDao.saveUnsentEmailConnectToNotfs(email, notfs)
+    readWriteTransaction(_.saveUnsentEmailConnectToNotfs(email, notfs))
 
   def updateSentEmail(email: Email): Unit =
-    siteDbDao.updateSentEmail(email)
+    readWriteTransaction(_.updateSentEmail(email))
 
   def loadEmailById(emailId: String): Option[Email] =
     readOnlyTransaction(_.loadEmailById(emailId))
@@ -172,6 +177,6 @@ abstract class SiteDao
 
 
 
-class NonCachingSiteDao(val siteDbDao: SiteDbDao, val dbDaoFactory: DbDaoFactory) extends SiteDao {
+class NonCachingSiteDao(val siteId: SiteId, val dbDaoFactory: DbDaoFactory) extends SiteDao {
   def dbDao2 = dbDaoFactory.newDbDao2()
 }

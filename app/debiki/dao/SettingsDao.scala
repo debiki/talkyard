@@ -48,7 +48,7 @@ trait SettingsDao {
     val pageAndAncestorIds = List(pageId) // :: loadCategoriesRootLast(pageId)
     val treeTargets = pageAndAncestorIds.map(SettingsTarget.PageTree)
     val allTargets = treeTargets ++ Vector(SettingsTarget.WholeSite)
-    val rawSettingsMaps = siteDbDao.loadSettings(allTargets)
+    val rawSettingsMaps = readOnlyTransaction(_.loadSettings(allTargets))
     Settings(SettingsChain(rawSettingsMaps))
   }
 
@@ -60,13 +60,13 @@ trait SettingsDao {
     val pageAndAncestorIds = List(pageId) //:: loadCategoriesRootLast(pageId)
     val treeTargets = pageAndAncestorIds.map(SettingsTarget.PageTree)
     val allTargets = Vector(pageTarget) ++ treeTargets ++ Vector(SettingsTarget.WholeSite)
-    val rawSettingsMaps = siteDbDao.loadSettings(allTargets)
+    val rawSettingsMaps = readOnlyTransaction(_.loadSettings(allTargets))
     Settings(SettingsChain(rawSettingsMaps))
   }
 
 
   def saveSetting(target: SettingsTarget, name: String, value: Any) {
-    siteDbDao.saveSetting(target, name -> value)
+    readWriteTransaction(_.saveSetting(target, name -> value))
   }
 }
 

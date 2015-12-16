@@ -94,7 +94,7 @@ trait SpecialContentDao {
     val pageId = s"$rootPageId$contentId"
 
     val approvedHtmlSanitized =
-      siteDbDao.commonMarkRenderer.renderAndSanitizeCommonMark(newSource,
+      commonmarkRenderer.renderAndSanitizeCommonMark(newSource,
         allowClassIdDataAttrs = false, followLinks = false)
 
     readWriteTransaction { transaction =>

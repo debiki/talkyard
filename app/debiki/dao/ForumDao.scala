@@ -33,7 +33,7 @@ trait ForumDao {
 
   def createForum(title: String, folder: String, creatorId: UserId,
         browserIdData: BrowserIdData): PagePath = {
-    val titleHtmlSanitized = siteDbDao.commonMarkRenderer.sanitizeHtml(title)
+    val titleHtmlSanitized = commonmarkRenderer.sanitizeHtml(title)
     readWriteTransaction { transaction =>
 
       // The forum page points to the root category, which points back.

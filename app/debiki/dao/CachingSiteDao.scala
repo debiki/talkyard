@@ -30,15 +30,13 @@ class CachingSiteDaoFactory(private val _dbDaoFactory: DbDaoFactory)
   extends SiteDaoFactory {
 
   def newSiteDao(siteId: SiteId): SiteDao = {
-    val dbDao = _dbDaoFactory.newSiteDbDao(siteId)
-    val serializingDbDao = new SerializingSiteDbDao(dbDao)
-    new CachingSiteDao(serializingDbDao, _dbDaoFactory)
+    new CachingSiteDao(siteId, _dbDaoFactory)
   }
 
 }
 
 
-class CachingSiteDao(val siteDbDao: SerializingSiteDbDao, val dbDaoFactory: DbDaoFactory)
+class CachingSiteDao(val siteId: SiteId, val dbDaoFactory: DbDaoFactory)
   extends SiteDao
   with CachingDao
   with CachingAssetBundleDao
@@ -73,7 +71,7 @@ class CachingSiteDao(val siteDbDao: SerializingSiteDbDao, val dbDaoFactory: DbDa
 
 
   override def emptyCache() {
-    siteDbDao.bumpSiteVersion()
+    readWriteTransaction(_.bumpSiteVersion())
     emptyCache(siteId)
   }
 

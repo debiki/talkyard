@@ -233,7 +233,7 @@ class Globals {
     val mostMetrics = new MostMetrics(metricRegistry)
 
     val dbDaoFactory = new RdbDaoFactory(
-      makeDataSource(), ScalaBasedMigrations, Akka.system, debiki.ReactRenderer,
+      makeDataSource(), ScalaBasedMigrations, Akka.system,
       anyFullTextSearchDbPath, Play.isTest, fastStartSkipSearch = fastStartSkipSearch)
 
     val siteDaoFactory = new CachingSiteDaoFactory(dbDaoFactory)
