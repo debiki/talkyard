@@ -346,6 +346,8 @@ class UploadsDaoAppSpec extends FreeSpec with MustMatchers with OneAppPerSuite {
 
       info("create page, site 1 and 2, link files, now quota used")
 
+      // COULD speed up by writing html, not commonmark, and passing a noop CommonmarRenderer
+      // to TextAndHtml (see its function signature).
       val titleTextAndHtml = TextAndHtml("Planets", isTitle = true)
       val bodyTextAndHtmlSite1 = TextAndHtml(
         s"[Shared](${sharedFile.ref.url}), [site-one](${site1File.ref.url})", isTitle = false)

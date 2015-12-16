@@ -112,5 +112,8 @@ package object core {
       s"site: $siteVersion, page: $pageVersion | app: $appVersion, hash: $dataHash"
   }
 
+  def ifThenSome[A](condition: Boolean, value: A) =
+    if (condition) Some(value) else None
+
 }
 

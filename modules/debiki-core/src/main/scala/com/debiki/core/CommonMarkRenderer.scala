@@ -27,4 +27,15 @@ trait CommonMarkRenderer {
 
   def slugifyTitle(title: String): String
 
+
+  def renderSanitizeCommonMarkReturnSource(source: String, allowClassIdDataAttrs: Boolean,
+        followLinks: Boolean): CommonMarkSourceAndHtml = {
+    val html = renderAndSanitizeCommonMark(source, allowClassIdDataAttrs = allowClassIdDataAttrs,
+      followLinks = followLinks)
+    CommonMarkSourceAndHtml(source, html)
+  }
 }
+
+
+case class CommonMarkSourceAndHtml(source: String, html: String)
+

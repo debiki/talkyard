@@ -161,10 +161,12 @@ trait SiteTransaction {
 
   def nextIdentityId: IdentityId
   def insertIdentity(Identity: Identity)
+  def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)]
 
   def nextAuthenticatedUserId: UserId
   def insertAuthenticatedUser(user: CompleteUser)
 
+  def tryLogin(loginAttempt: LoginAttempt): LoginGrant
   def loginAsGuest(loginAttempt: GuestLoginAttempt): GuestLoginResult
 
   def loadCompleteUser(userId: UserId): Option[CompleteUser]
@@ -200,6 +202,8 @@ trait SiteTransaction {
   def loadRolePageSettings(roleId: RoleId, pageId: PageId): Option[RolePageSettings]
   def loadRolePageSettingsOrDefault(roleId: RoleId, pageId: PageId) =
         loadRolePageSettings(roleId, pageId) getOrElse RolePageSettings.Default
+
+  def loadEmailById(emailId: String): Option[Email]
 
   def nextReviewTaskId(): ReviewTaskId
   def upsertReviewTask(reviewTask: ReviewTask)

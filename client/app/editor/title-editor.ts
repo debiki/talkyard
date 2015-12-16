@@ -203,7 +203,7 @@ export var TitleEditor = createComponent({
             r.a({ className: 'icon-plus', onClick: () => {
               ReactActions.setPostHidden(BodyId, false);
               debiki2.ReactActions.showForumIntro(true);
-            }}, "Add back forum intro below");
+            }}, "Add forum intro text");
       }
     }
 

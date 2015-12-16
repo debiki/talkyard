@@ -31,7 +31,6 @@ import play.api.mvc.{Action => _, _}
 import requests.DebikiRequest
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
-import Utils.OkSafeJson
 import Utils.ValidationImplicits._
 import DebikiHttp.{throwBadReq, throwBadRequest, throwNotFound}
 

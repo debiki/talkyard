@@ -294,11 +294,13 @@ trait UserDao {
 
 
   def tryLogin(loginAttempt: LoginAttempt): LoginGrant = {
-    val loginGrant = siteDbDao.tryLogin(loginAttempt)
-    if (loginGrant.user.isSuspendedAt(loginAttempt.date)) {
-      // (This is being rate limited, all post requests are.)
-      val user = loadCompleteUser(loginGrant.user.id) getOrElse throwForbidden(
-        "DwE05KW2", "User gone")
+    readWriteTransaction { transaction =>
+      val loginGrant = transaction.tryLogin(loginAttempt)
+      if (!loginGrant.user.isSuspendedAt(loginAttempt.date))
+        return loginGrant
+
+      val user = transaction.loadCompleteUser(loginGrant.user.id) getOrElse throwForbidden(
+        "DwE05KW2", "User not found, id: " + loginGrant.user.id)
       // Still suspended?
       if (user.suspendedAt.isDefined) {
         val forHowLong = user.suspendedTill match {
@@ -308,8 +310,8 @@ trait UserDao {
         throwForbidden("DwE403SP0", o"""Account suspended $forHowLong,
             reason: ${user.suspendedReason getOrElse "?"}""")
       }
+      loginGrant
     }
-    loginGrant
   }
 
 
@@ -334,13 +336,19 @@ trait UserDao {
   }
 
 
-  def loadUser(userId: UserId): Option[User] =
-    siteDbDao.loadUser(userId)
+  def loadUser(userId: UserId): Option[User] = {
+    readOnlyTransaction { transaction =>
+      transaction.loadUser(userId)
+    }
+  }
 
 
-  def loadUserByEmailOrUsername(emailOrUsername: String): Option[User] =
-    // Don't need to cache this? Only called when logging in.
-    siteDbDao.loadUserByEmailOrUsername(emailOrUsername)
+  def loadUserByEmailOrUsername(emailOrUsername: String): Option[User] = {
+    readOnlyTransaction { transaction =>
+      // Don't need to cache this? Only called when logging in.
+      transaction.loadUserByEmailOrUsername(emailOrUsername)
+    }
+  }
 
 
   def loadUserAndAnyIdentity(userId: UserId): Option[(Option[Identity], User)] = {
@@ -358,10 +366,13 @@ trait UserDao {
   }
 
 
-  private def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)] =
+  private def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)] = {
     // Don't cache this, because this function is rarely called
     // — currently only when creating new website.
-    siteDbDao.loadIdtyDetailsAndUser(userId)
+    readOnlyTransaction { transaction =>
+      transaction.loadIdtyDetailsAndUser(userId)
+    }
+  }
 
 
   def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats] =

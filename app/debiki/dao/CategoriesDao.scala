@@ -237,12 +237,14 @@ trait CategoriesDao {
 
       val (aboutPagePath, _) = createPageImpl(
         PageRole.AboutCategory, PageStatus.Published, anyCategoryId = Some(categoryId),
-        anyFolder = None, anySlug = Some("about-" + newCategoryData.slug),
+        anyFolder = None, anySlug = Some("about-" + newCategoryData.slug), showId = true,
         titleSource = titleSource,
         titleHtmlSanitized = titleHtmlSanitized,
         bodySource = CategoryDescriptionSource,
         bodyHtmlSanitized = bodyHtmlSanitized,
-        showId = true, authorId = creatorId, browserIdData, transaction)
+        pinOrder = Some(ForumDao.AboutCategoryTopicPinOrder),
+        pinWhere = Some(PinPageWhere.InCategory),
+        authorId = creatorId, browserIdData, transaction)
 
       // COULD create audit log entry
       (category, aboutPagePath)

@@ -95,17 +95,6 @@ abstract class SiteDbDao {
   def updateSite(changedSite: Site)
 
 
-  // ----- Login
-
-  /**
-   * Assigns ids to the login request, saves it, finds or creates a user
-   * for the specified Identity, and returns everything with ids filled in.
-   * Also, if the Identity does not already exist in the db, assigns it an ID
-   * and saves it.
-   */
-  def tryLogin(loginAttempt: LoginAttempt): LoginGrant
-
-
   // ----- New pages, page meta
 
   def nextPageId(): PageId
@@ -177,15 +166,6 @@ abstract class SiteDbDao {
 
   // ----- Users and permissions
 
-  def loadUser(userId: UserId): Option[User]
-
-  def loadUserByEmailOrUsername(emailOrUsername: String): Option[User]
-
-  /**
-   * Also loads details like OpenID local identifier, endpoint and version info.
-   */
-  def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)]
-
   def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats]
 
   def loadUserStats(userId: UserId): UserStats
@@ -222,8 +202,6 @@ abstract class SiteDbDao {
   def saveUnsentEmailConnectToNotfs(email: Email, notfs: Seq[Notification])
 
   def updateSentEmail(email: Email): Unit
-
-  def loadEmailById(emailId: String): Option[Email]
 
 
   // ----- User configuration
@@ -328,13 +306,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
   }
 
 
-  // ----- Login, logout
-
-  def tryLogin(loginAttempt: LoginAttempt): LoginGrant = {
-    _spi.tryLogin(loginAttempt)
-  }
-
-
   // ----- Pages
 
   def nextPageId(): PageId = {
@@ -421,18 +392,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
 
   // ----- Users and permissions
 
-  def loadUser(userId: UserId): Option[User] = {
-    _spi.loadUser(userId)
-  }
-
-  def loadUserByEmailOrUsername(emailOrUsername: String): Option[User] = {
-    _spi.loadUserByEmailOrUsername(emailOrUsername)
-  }
-
-  def loadIdtyDetailsAndUser(userId: UserId): Option[(Identity, User)] = {
-    _spi.loadIdtyDetailsAndUser(userId)
-  }
-
   def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats] = {
     _spi.loadUserInfoAndStats(userId)
   }
@@ -506,10 +465,6 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
     serialize {
       _spi.updateSentEmail(email)
     }
-  }
-
-  def loadEmailById(emailId: String): Option[Email] = {
-    _spi.loadEmailById(emailId)
   }
 
 

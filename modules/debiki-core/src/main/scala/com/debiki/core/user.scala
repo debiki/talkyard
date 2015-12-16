@@ -377,8 +377,9 @@ case class User(
   require(tinyAvatar.isDefined == smallAvatar.isDefined, "EdE5YPU2")
 
   def isAuthenticated = isRoleId(id)
-  def isApprovedOrStaff = isApproved == Some(true) || isStaff
-  def isStaff = isAdmin || isModerator
+  def isApprovedOrStaff = isApproved.contains(true) || isStaff
+  def isSystemUser = id == SystemUserId
+  def isStaff = isAdmin || isModerator || isSystemUser
 
   def isGuest = User.isGuestId(id)
   def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None

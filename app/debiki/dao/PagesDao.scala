@@ -61,11 +61,11 @@ trait PagesDao {
 
     readWriteTransaction { transaction =>
       val (pagePath, bodyPost) = createPageImpl(pageRole, pageStatus, anyCategoryId,
-        anyFolder = anyFolder, anySlug = anySlug,
+        anyFolder = anyFolder, anySlug = anySlug, showId = showId,
         titleSource = titleTextAndHtml.text, titleHtmlSanitized = titleTextAndHtml.safeHtml,
         bodySource = bodyTextAndHtml.text, bodyHtmlSanitized = bodyTextAndHtml.safeHtml,
-        showId = showId, authorId = authorId, browserIdData,
-        transaction)
+        pinOrder = None, pinWhere = None, authorId = authorId,
+        browserIdData, transaction)
 
       val notifications = NotificationGenerator(transaction)
         .generateForNewPost(PageDao(pagePath.pageId getOrDie "DwE5KWI2", transaction), bodyPost)
@@ -78,14 +78,22 @@ trait PagesDao {
 
 
   def createPageImpl(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
-        anyFolder: Option[String], anySlug: Option[String],
+        anyFolder: Option[String], anySlug: Option[String], showId: Boolean,
         titleSource: String, titleHtmlSanitized: String,
         bodySource: String, bodyHtmlSanitized: String,
-        showId: Boolean, authorId: UserId, browserIdData: BrowserIdData,
-        transaction: SiteTransaction): (PagePath, Post) = {
+        pinOrder: Option[Int], pinWhere: Option[PinPageWhere],
+        authorId: UserId, browserIdData: BrowserIdData,
+        transaction: SiteTransaction, hidePageBody: Boolean = false): (PagePath, Post) = {
+
+    require(!anyFolder.exists(_.isEmpty), "EsE6JGKE3")
+    // (Empty slug ok though, e.g. homepage.)
+    require(!titleSource.isEmpty && !titleHtmlSanitized.isEmpty, "EsE7MGK24")
+    require(!bodySource.isEmpty && !bodyHtmlSanitized.isEmpty, "EsE1WKUQ5")
+    require(pinOrder.isDefined == pinWhere.isDefined, "Ese5MJK2")
 
     // Authorize and determine approver user id. For now:
-    val author = transaction.loadUser(authorId) getOrElse throwForbidden("DwE9GK32", "User gone")
+    val author = transaction.loadUser(authorId) getOrElse throwForbidden(
+      "DwE9GK32", s"User not found, id: $authorId")
 
     // Don't allow more than ... 10 topics with no critique? For now only.
     if (pageRole == PageRole.Critique) { // [plugin] [85SKW32]
@@ -156,6 +164,7 @@ trait PagesDao {
 
     val folder = anyFolder getOrElse "/"
     val pageId = transaction.nextPageId()
+    val siteId = transaction.siteId // [5GKEPMW2] remove this row later
     val pagePath = PagePath(siteId, folder = folder, pageId = Some(pageId),
       showId = showId, pageSlug = pageSlug)
 
@@ -181,12 +190,12 @@ trait PagesDao {
       source = bodySource,
       htmlSanitized = bodyHtmlSanitized,
       approvedById = Some(approvedById))
+      .copy(
+        hiddenAt = ifThenSome(hidePageBody, transaction.currentTime),
+        hiddenById = ifThenSome(hidePageBody, authorId))
 
     val uploadPaths = UploadsDao.findUploadRefsInPost(bodyPost)
 
-    val (pinOrder: Option[Int], pinWhere: Option[PinPageWhere]) =
-      if (pageRole == PageRole.AboutCategory) (Some(3), Some(PinPageWhere.InCategory))
-      else (None, None)
     val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.currentTime,
       pinOrder = pinOrder, pinWhere = pinWhere,
       categoryId = anyCategoryId, url = None, publishDirectly = true)

@@ -23,7 +23,7 @@ import debiki._
 import java.{util => ju}
 import play.{api => p}
 import play.api.Play.current
-import scala.concurrent.Future
+import CreateSiteDao._
 
 
 
@@ -65,6 +65,8 @@ trait CreateSiteDao {
       createSystemUser(transaction)
       transaction.createUnknownUser()
 
+      createAboutPage(browserIdData, transaction)
+
       insertAuditLogEntry(AuditLogEntry(
         siteId = newSite.id,
         id = AuditLogEntry.UnassignedId,
@@ -94,6 +96,33 @@ trait CreateSiteDao {
       emailVerifiedAt = None))
   }
 
+
+  private def createAboutPage(browserIdData: BrowserIdData, transaction: SiteTransaction) {
+    createPageImpl(
+      PageRole.WebPage, PageStatus.Published, anyCategoryId = None,
+      anyFolder = None, anySlug = Some("about"), showId = false,
+      titleSource = AboutPageTitle,
+      titleHtmlSanitized = AboutPageTitle,
+      bodySource = aboutPage.source,
+      bodyHtmlSanitized = aboutPage.html,
+      pinOrder = None,
+      pinWhere = None,
+      authorId = SystemUserId,
+      browserIdData,
+      transaction)
+  }
+
 }
 
 
+object CreateSiteDao {
+
+  val AboutPageTitle = "About"
+
+  lazy val aboutPage = ReactRenderer.renderSanitizeCommonMarkReturnSource(i"""
+    |Replace this text with information about this forum (click <span class="icon-menu"></span> below and then **Edit**). For example: What is it about? What's your vision? Why are you doing this? Who are the admins and moderators?
+    |
+    |You can contact us via email: ...@... — but please use the forum primarily.
+    """, allowClassIdDataAttrs = true, followLinks = true)
+
+}

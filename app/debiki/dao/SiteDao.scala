@@ -79,6 +79,7 @@ abstract class SiteDao
   with AuditDao
   with CreateSiteDao {
 
+  @deprecated("Now", "use the transaction instead") // remove and remove this too: [5GKEPMW2]
   def siteDbDao: SiteDbDao
   def dbDao2: DbDao2
 
@@ -165,7 +166,7 @@ abstract class SiteDao
     siteDbDao.updateSentEmail(email)
 
   def loadEmailById(emailId: String): Option[Email] =
-    siteDbDao.loadEmailById(emailId)
+    readOnlyTransaction(_.loadEmailById(emailId))
 
 }
 
