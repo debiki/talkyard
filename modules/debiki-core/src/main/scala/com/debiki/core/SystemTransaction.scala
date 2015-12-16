@@ -24,13 +24,47 @@ trait SystemTransaction {
   def commit()
   def rollback()
 
-  def loadSites(): immutable.Seq[Site]
+  def applyEvolutions()
+
+  // ----- Sites
+
   def siteTransaction(siteId: SiteId): SiteTransaction
+
+  def loadSites(): immutable.Seq[Site]
+  // COULD rename to loadWebsitesByIds
+  def loadTenants(tenantIds: Seq[SiteId]): Seq[Site]
+
+  def loadSite(siteId: SiteId): Option[Site] =
+    loadTenants(Seq(siteId)).headOption
+
+  def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup]
 
   def insertSiteHost(tenantId: String, host: SiteHost)
 
+  // ----- Users
+
+  def loadUser(siteId: SiteId, userId: UserId): Option[User]
+
+  // ----- Notifications
+
+  def loadNotificationsToMailOut(delayInMinutes: Int, numToLoad: Int)
+  : Map[SiteId, Seq[Notification]]
+
+  // ----- Pages
+
   def loadCachedPageVersion(sitePageId: SitePageId): Option[(CachedPageVersion, SitePageVersion)]
   def loadPageIdsToRerender(limit: Int): Seq[PageIdToRerender]
+
+  // ----- Testing
+
+  // These dangerous functions COULD be moved to a separate artifact,
+  // debiki-core-test (?), that only SBT % "test" configs depend on.
+  // So one cannot possibly call `emptyDatabase()` when Play.isProd.
+
+  /** Deletes all data from the database. For example, for a RDBMS,
+    * would delete all rows from all tables. (Except for some "static" data.)
+    */
+  def emptyDatabase()
 
 }
 

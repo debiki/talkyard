@@ -76,9 +76,20 @@ class DbDao2(val dbDaoFactory: DbDaoFactory) {
   }
 
 
-  /*
-  def readWriteSystemTransaction(fn: (SystemTransaction) => Unit) {
+  def readWriteSystemTransaction[R](fn: (SystemTransaction) => R): R = {
+    val transaction = dbDaoFactory.newSystemTransaction(readOnly = false)
+    var committed = false
+    try {
+      val result = fn(transaction)
+      transaction.commit()
+      committed = true
+      result
+    }
+    finally {
+      if (!committed) {
+        transaction.rollback()
+      }
+    }
   }
-  */
 
 }

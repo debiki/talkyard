@@ -21,6 +21,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
+import play.api.Play.current
 import CachingDao.{CacheKeyAnySite, CacheValueIgnoreVersion}
 
 
@@ -33,33 +34,36 @@ import CachingDao.{CacheKeyAnySite, CacheValueIgnoreVersion}
  */
 class SystemDao(private val dbDaoFactory: DbDaoFactory) {
 
-  @deprecated("use readOnlyTransaction() instead", "now")
-  protected val systemDbDao = dbDaoFactory.systemDbDao
-
   def dbDao2 = dbDaoFactory.newDbDao2()
-
-  def applyEvolutions() {
-    systemDbDao.applyEvolutions()
-  }
-
-  def loadUser(siteId: SiteId, userId: UserId) =
-    systemDbDao.loadUser(siteId, userId)
 
   protected def readOnlyTransaction[R](fn: SystemTransaction => R): R =
     dbDao2.readOnlySystemTransaction(fn)
+
+  protected def readWriteTransaction[R](fn: SystemTransaction => R): R =
+    dbDao2.readWriteSystemTransaction(fn)
+
+
+  def applyEvolutions() {
+    readWriteTransaction(_.applyEvolutions())
+  }
+
+  def loadUser(siteId: SiteId, userId: UserId) = {
+    readOnlyTransaction(_.loadUser(siteId, userId))
+  }
+
 
   // ----- Websites (a.k.a. tenants)
 
   // COULD rename to loadWebsitesByIds
   def loadTenants(tenantIds: Seq[SiteId]): Seq[Site] =
-    systemDbDao.loadTenants(tenantIds)
+    readOnlyTransaction(_.loadTenants(tenantIds))
 
   def loadSite(siteId: SiteId): Option[Site] =
-    systemDbDao.loadTenants(Seq(siteId)).headOption
+    readOnlyTransaction(_.loadTenants(Seq(siteId)).headOption)
 
   def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup] = {
-    dieIf(hostname contains ":", "DwE5KYUU7")
-    systemDbDao.lookupCanonicalHost(hostname)
+    require(!hostname.contains(":"), "EsE5KYUU7")
+    readOnlyTransaction(_.lookupCanonicalHost(hostname))
   }
 
 
@@ -67,7 +71,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory) {
 
   def loadNotificationsToMailOut(delayInMinutes: Int, numToLoad: Int)
         : Map[SiteId, Seq[Notification]] =
-    systemDbDao.loadNotificationsToMailOut(delayInMinutes, numToLoad)
+    readOnlyTransaction(_.loadNotificationsToMailOut(delayInMinutes, numToLoad))
 
 
   def loadCachedPageVersion(sitePageId: SitePageId)
@@ -87,7 +91,10 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory) {
   // ----- Testing
 
   def emptyDatabase() {
-    systemDbDao.emptyDatabase()
+    readWriteTransaction { transaction =>
+      dieIf(!play.api.Play.isTest, "EsE500EDB0")
+      emptyDatabase()
+    }
   }
 
 }

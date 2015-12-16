@@ -35,14 +35,16 @@ class DbDaoSpec(
     ??? // daoFactory.newSiteDbDao(siteId)
 
 
-  def systemDao = daoFactory.systemDbDao
+  def systemDao = ??? //daoFactory.systemDbDao
 
 
   override def beforeAll() {
+    ??? /*
     systemDao.emptyDatabase()
     if (emptySearchEngineDatabase) {
       daoFactory.debugDeleteRecreateSearchEngineIndexes()
     }
+    */
   }
 
 }

@@ -25,23 +25,10 @@ import EmailNotfPrefs.EmailNotfPrefs
 import Prelude._
 
 
-// SECURITY Todo: Only pass data to Dao via model class instances! (?)
-// Never directly e.g. in a String.
-// Let each model class validate itself, e.g. check that each String
-// conforms to the required format (e.g. [a-z0-9_]+ for page ids).
-// Search for "String" in this file -- no match must be found!
-// Could actually add a build pipe step that searches this file for String
-// and fails the build shoud any String be found?
-// (Unless you use model classes, and only model classes, when passing
-// data to/from the Dao, then eventually you will forget to validate
-// and sanitaze input. That'd be an eventually inconsistent solution :-/ .)
-
-
 /** Constructs database DAO:s, implemented by service providers,
-  * (currently only debiki-dao-pgsql, for Postgres) and used by debiki-server.
+  * (currently only debiki-dao-rdb, for Postgres) and used by debiki-server.
   */
 abstract class DbDaoFactory {
-  def systemDbDao: SystemDbDao
 
   def migrations: ScalaBasedDatabaseMigrations
   def shutdown()
@@ -51,6 +38,7 @@ abstract class DbDaoFactory {
 
   protected[core] def newSiteTransaction(siteId: SiteId, readOnly: Boolean,
     mustBeSerializable: Boolean): SiteTransaction
+
   protected[core] def newSystemTransaction(readOnly: Boolean): SystemTransaction
 
   /** Helpful for search engine database tests. */
@@ -61,57 +49,6 @@ abstract class DbDaoFactory {
 
   /** Helpful when writing unit test: waits until ElasticSearch is done indexing stuff. */
   def debugRefreshSearchEngineIndexer() {}
-
-}
-
-
-@deprecated("Use SystemTransaction instead", "Now")
-abstract class SystemDbDao {
-
-  def applyEvolutions()
-
-  def close()  // remove? move to DbDaoFactory in some manner?
-
-  def loadUser(siteId: SiteId, userId: UserId): Option[User]
-
-
-  // ----- Websites (a.k.a. tenants)
-
-  // COULD rename to loadWebsitesByIds
-  def loadTenants(tenantIds: Seq[SiteId]): Seq[Site]
-
-  def loadSite(siteId: SiteId): Option[Site] =
-    loadTenants(Seq(siteId)).headOption
-
-  def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup]
-
-
-  // ----- Notifications
-
-  def loadNotificationsToMailOut(delayInMinutes: Int, numToLoad: Int)
-        : Map[SiteId, Seq[Notification]]
-
-
-  // ----- Misc
-
-  def checkRepoVersion(): Option[String]
-
-  /** Used as salt when hashing e.g. email and IP, before the hash
-   *  is included in HTML. */
-  def secretSalt(): String
-
-
-  // ----- Testing
-
-  // These dangerous functions COULD be moved to a separate artifact,
-  // debiki-core-test (?), that only SBT % "test" configs depend on.
-  // So one cannot possibly call `emptyDatabase()` when Play.isProd.
-
-  /**
-   * Deletes all data from the database. For example, for a RDBMS,
-   * would delete all rows from all tables.
-   */
-  def emptyDatabase()
 
 }
 
@@ -141,14 +78,14 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
     }
   }
 
-}*/
+}
 
 
 object SerializingSiteDbDao {
 
   private val perSiteMutexes = new ju.concurrent.ConcurrentHashMap[SiteId, AnyRef]()
 
-}
+}*/
 
 
 
