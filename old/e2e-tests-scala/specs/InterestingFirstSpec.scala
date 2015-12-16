@@ -18,7 +18,7 @@
 package test.e2e.specs
 
 import com.debiki.core._
-import com.debiki.core.PageParts.NoId
+import com.debiki.core.PageParts.NoNr
 import com.debiki.core.Prelude._
 import com.debiki.core.PageRole
 import com.debiki.core.{PostActionPayload => PAP}
@@ -78,10 +78,10 @@ abstract class InterestingFirstSpecConstructor(val iframe: Boolean)
   val GuestName4 = "Guest4"
   val GuestName5 = "Guest5"
 
-  var post2: PostId = 0
-  var post3: PostId = 0
-  var post4: PostId = 0
-  var post5: PostId = 0
+  var post2: PostNr = 0
+  var post3: PostNr = 0
+  var post4: PostNr = 0
+  var post5: PostNr = 0
 
 
   "Interesting comments are shown first:" - {
@@ -104,7 +104,7 @@ abstract class InterestingFirstSpecConstructor(val iframe: Boolean)
     }
 
     "find posts sorted by time: #2, #3, #4, #5" in {
-      checkSortOrder(PageParts.BodyId, Seq(post2, post3, post4, post5))
+      checkSortOrder(PageParts.BodyNr, Seq(post2, post3, post4, post5))
     }
 
     "like post #3" in {
@@ -115,7 +115,7 @@ abstract class InterestingFirstSpecConstructor(val iframe: Boolean)
 
     "find post #3 first" in {
       reloadPageAndFakeNewIp()
-      checkSortOrder(PageParts.BodyId, Seq(post3, post2, post4, post5))
+      checkSortOrder(PageParts.BodyNr, Seq(post3, post2, post4, post5))
     }
 
     "like post #4 as another user" in {
@@ -125,7 +125,7 @@ abstract class InterestingFirstSpecConstructor(val iframe: Boolean)
 
     "find post #4 first, then #3" in {
       reloadPageWaitForLoginLinks()
-      checkSortOrder(PageParts.BodyId, Seq(post4, post3, post2, post5))
+      checkSortOrder(PageParts.BodyNr, Seq(post4, post3, post2, post5))
     }
 
     "like post #4 as yet another user" in {
@@ -144,7 +144,7 @@ abstract class InterestingFirstSpecConstructor(val iframe: Boolean)
 
     "find post in this order: #5, #4, #3, #2" in {
       reloadPageWaitForLoginLinks()
-      checkSortOrder(PageParts.BodyId, Seq(post5, post4, post3, post2))
+      checkSortOrder(PageParts.BodyNr, Seq(post5, post4, post3, post2))
     }
   }
 

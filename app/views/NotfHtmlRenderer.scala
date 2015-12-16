@@ -56,12 +56,12 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
       case Some(url) =>
         // Include both topic and comment id, because it's possible to embed
         // many different discussions (topics) on the same page.
-        Some(s"$url#debiki-topic-${pageMeta.pageId}-comment-${notf.postId}")
+        Some(s"$url#debiki-topic-${pageMeta.pageId}-comment-${notf.postNr}")
       case None =>
         // The page is hosted by Debiki so its url uniquely identifies the topic.
         anyOrigin map { origin =>
           val pageUrl = s"$origin/-${notf.pageId}"
-          s"$pageUrl#post-${notf.postId}"
+          s"$pageUrl#post-${notf.postNr}"
         }
     }
 
@@ -92,7 +92,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     val pageMeta = transaction.loadPageMeta(notf.pageId) getOrElse {
       return Nil
     }
-    val post = transaction.loadPost(pageId = notf.pageId, postId = notf.postId) getOrElse {
+    val post = transaction.loadPost(pageId = notf.pageId, postNr = notf.postNr) getOrElse {
       return Nil
     }
     val markupSource = post.approvedSource getOrElse {
@@ -122,7 +122,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
       case Notification.NewPostNotfType.DirectReply =>
         ("You have a reply", "written by")
       case Notification.NewPostNotfType.NewPost =>
-        if (notf.postId == PageParts.BodyId)
+        if (notf.postNr == PageParts.BodyNr)
           ("A new topic has been started", "by")
         else
           ("A new comment has been posted", "by")

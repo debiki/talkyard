@@ -273,7 +273,7 @@ trait PagesDao {
   }
 
 
-  def ifAuthAcceptAnswer(pageId: PageId, postUniqueId: PostId, userId: UserId,
+  def ifAuthAcceptAnswer(pageId: PageId, postUniqueId: UniquePostId, userId: UserId,
         browserIdData: BrowserIdData): Option[ju.Date] = {
     val answeredAt = readWriteTransaction { transaction =>
       val user = transaction.loadTheUser(userId)

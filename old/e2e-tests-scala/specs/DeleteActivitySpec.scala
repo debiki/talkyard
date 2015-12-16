@@ -74,10 +74,10 @@ abstract class DeleteActivitySpecConstructor(iframe: Boolean)
 
   def testPageUrl: String
 
-  var postId_ad1 = PageParts.NoId
-  var postId_ad2 = PageParts.NoId
-  var postId_ad3 = PageParts.NoId
-  var postId_ad4 = PageParts.NoId
+  var postId_ad1 = PageParts.NoNr
+  var postId_ad2 = PageParts.NoNr
+  var postId_ad3 = PageParts.NoNr
+  var postId_ad4 = PageParts.NoNr
 
 
   "Comments and comment trees can be deleted:" - {

@@ -71,8 +71,8 @@ abstract class VoteSpecConstructor(val iframe: Boolean)
 
   def randomId() = nextRandomString() take 5
 
-  var post1: PostId = 0
-  var post2: PostId = 0
+  var post1: PostNr = 0
+  var post2: PostNr = 0
 
   class VoteCountsAndStates(
     var voteCountsPost1: VoteCounts = VoteCounts(0, 0, 0),

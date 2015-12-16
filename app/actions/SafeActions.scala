@@ -201,7 +201,7 @@ object SafeActions {
             s"Page '${ex.pageId}' not found [DwE404WU5]"))
         case ex: PostNotFoundException =>
           Future.successful(Results.NotFound(
-            s"Post ${ex.postId} on page '${ex.pageId}' not found [DwE404GP3]"))
+            s"Post ${ex.postNr} on page '${ex.pageId}' not found [DwE404GP3]"))
         case ex: EmailAddressChangedException =>
           Future.successful(Results.Forbidden(
             "The email address related to this request has been changed. Access denied"))

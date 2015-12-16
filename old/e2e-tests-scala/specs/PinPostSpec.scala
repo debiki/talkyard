@@ -49,13 +49,13 @@ class PinPostSpec extends DebikiBrowserSpec
 
   val guestUserName = s"Activity-Anon-${nextRandomString() take 5}"
 
-  var postId_gu1 = PageParts.NoId
-  var postId_gm2 = PageParts.NoId
-  var postId_ad3 = PageParts.NoId
-  var postId_ad4 = PageParts.NoId
-  var postId_ad5 = PageParts.NoId
-  var postId_ad6 = PageParts.NoId
-  var postId_ad7 = PageParts.NoId
+  var postId_gu1 = PageParts.NoNr
+  var postId_gm2 = PageParts.NoNr
+  var postId_ad3 = PageParts.NoNr
+  var postId_ad4 = PageParts.NoNr
+  var postId_ad5 = PageParts.NoNr
+  var postId_ad6 = PageParts.NoNr
+  var postId_ad7 = PageParts.NoNr
 
 
   def allPostIds = List(

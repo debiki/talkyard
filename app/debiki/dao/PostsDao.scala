@@ -40,8 +40,8 @@ trait PostsDao {
   self: SiteDao =>
 
 
-  def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostIds: Set[PostId],
-        postType: PostType, authorId: UserId, browserIdData: BrowserIdData): PostId = {
+  def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
+        postType: PostType, authorId: UserId, browserIdData: BrowserIdData): PostNr = {
     if (textAndHtml.safeHtml.trim.isEmpty)
       throwBadReq("DwE6KEF2", "Empty reply")
 
@@ -49,17 +49,17 @@ trait PostsDao {
     // and one post for the actual text and resulting location of this post.
     // Disabling for now, so I won't have to parse dw2_posts.multireply and convert
     // to many rows.
-    if (replyToPostIds.size > 1)
+    if (replyToPostNrs.size > 1)
       throwNotImplemented("EsE7GKX2", o"""Please reply to one single person only.
         Multireplies temporarily disabled, sorry""")
 
-    val postId = readWriteTransaction { transaction =>
+    val postNr = readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val uniqueId = transaction.nextPostId()
-      val postId = page.parts.highestReplyId.map(_ + 1) getOrElse PageParts.FirstReplyId
-      val commonAncestorId = page.parts.findCommonAncestorId(replyToPostIds.toSeq)
+      val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
+      val commonAncestorId = page.parts.findCommonAncestorNr(replyToPostNrs.toSeq)
       val anyParent =
-        if (commonAncestorId == PageParts.NoId) {
+        if (commonAncestorId == PageParts.NoNr) {
           // Flat chat comments might not reply to anyone in particular.
           // On embedded comments pages, there's no Original Post, so top level comments
           // have no parent post.
@@ -95,9 +95,9 @@ trait PostsDao {
         siteId = siteId,
         uniqueId = uniqueId,
         pageId = pageId,
-        postId = postId,
+        postNr = postNr,
         parent = anyParent,
-        multireplyPostIds = (replyToPostIds.size > 1) ? replyToPostIds | Set.empty,
+        multireplyPostNrs = (replyToPostNrs.size > 1) ? replyToPostNrs | Set.empty,
         postType = postType,
         createdAt = transaction.currentTime,
         createdById = authorId,
@@ -158,9 +158,9 @@ trait PostsDao {
         browserIdData = browserIdData,
         pageId = Some(pageId),
         uniquePostId = Some(newPost.uniqueId),
-        postNr = Some(newPost.id),
+        postNr = Some(newPost.nr),
         targetUniquePostId = anyParent.map(_.uniqueId),
-        targetPostNr = anyParent.map(_.id),
+        targetPostNr = anyParent.map(_.nr),
         targetUserId = anyParent.map(_.createdById))
 
       transaction.insertPost(newPost)
@@ -173,17 +173,17 @@ trait PostsDao {
 
       val notifications = NotificationGenerator(transaction).generateForNewPost(page, newPost)
       transaction.saveDeleteNotifications(notifications)
-      postId
+      postNr
     }
 
     refreshPageInAnyCache(pageId)
-    postId
+    postNr
   }
 
 
   /** Edits the post, if authorized to edit it.
     */
-  def editPostIfAuth(pageId: PageId, postId: PostId, editorId: UserId, browserIdData: BrowserIdData,
+  def editPostIfAuth(pageId: PageId, postNr: PostNr, editorId: UserId, browserIdData: BrowserIdData,
         newTextAndHtml: TextAndHtml) {
 
     if (newTextAndHtml.safeHtml.trim.isEmpty)
@@ -191,9 +191,9 @@ trait PostsDao {
 
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
-      val postToEdit = page.parts.post(postId) getOrElse {
+      val postToEdit = page.parts.post(postNr) getOrElse {
         page.meta // this throws page-not-fount if the page doesn't exist
-        throwNotFound("DwE404GKF2", s"Post not found, id: '$postId'")
+        throwNotFound("DwE404GKF2", s"Post not found, id: '$postNr'")
       }
 
       if (postToEdit.isDeleted)
@@ -233,9 +233,9 @@ trait PostsDao {
           // COULD: instead of comparing timestamps, flags and replies could explicitly clarify
           // which revision of postToEdit they concern.
           val currentRevStartMs = postToEdit.currentRevStaredAt.getTime
-          val flags = transaction.loadFlagsFor(immutable.Seq(PagePostId(pageId, postId)))
+          val flags = transaction.loadFlagsFor(immutable.Seq(PagePostNr(pageId, postNr)))
           val anyNewFlag = flags.exists(_.flaggedAt.getTime > currentRevStartMs)
-          val successors = page.parts.successorsOf(postId)
+          val successors = page.parts.successorsOf(postNr)
           val anyNewComment = successors.exists(_.createdAt.getTime > currentRevStartMs)
         !anyNewComment && !anyNewFlag
       }
@@ -337,7 +337,7 @@ trait PostsDao {
         browserIdData = browserIdData,
         pageId = Some(pageId),
         uniquePostId = Some(postToEdit.uniqueId),
-        postNr = Some(postId),
+        postNr = Some(postNr),
         targetUserId = Some(postToEdit.createdById))
 
       transaction.updatePost(editedPost)
@@ -373,7 +373,7 @@ trait PostsDao {
       // Bump the page, if the article / original post was edited.
       // (This is how Discourse works and people seems to like it. However,
       // COULD add a don't-bump option for minor edits.)
-      if (postId == PageParts.BodyId && editedPost.isCurrentVersionApproved && !page.isClosed) {
+      if (postNr == PageParts.BodyNr && editedPost.isCurrentVersionApproved && !page.isClosed) {
         newMeta = newMeta.copy(bumpedAt = Some(transaction.currentTime))
         makesSectionPageHtmlStale = true
       }
@@ -455,7 +455,7 @@ trait PostsDao {
   }
 
 
-  def changePostType(pageId: PageId, postNr: PostId, newType: PostType,
+  def changePostType(pageId: PageId, postNr: PostNr, newType: PostType,
         changerId: UserId, browserIdData: BrowserIdData) {
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
@@ -512,12 +512,12 @@ trait PostsDao {
   }
 
 
-  def changePostStatus(postId: PostId, pageId: PageId, action: PostStatusAction, userId: UserId) {
+  def changePostStatus(postNr: PostNr, pageId: PageId, action: PostStatusAction, userId: UserId) {
     import com.debiki.core.{PostStatusAction => PSA}
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
 
-      val postBefore = page.parts.thePost(postId)
+      val postBefore = page.parts.thePost(postNr)
       val user = transaction.loadUser(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
 
       // Authorization.
@@ -573,7 +573,7 @@ trait PostsDao {
 
       // Update any indirectly affected posts, e.g. subsequent comments in the same
       // thread that are being deleted recursively.
-      for (successor <- page.parts.successorsOf(postId)) {
+      for (successor <- page.parts.successorsOf(postNr)) {
         val anyUpdatedSuccessor: Option[Post] = action match {
           case PSA.CloseTree =>
             if (successor.closedStatus.areAncestorsClosed) None
@@ -627,11 +627,11 @@ trait PostsDao {
   }
 
 
-  def approvePost(pageId: PageId, postId: PostId, approverId: UserId) {
+  def approvePost(pageId: PageId, postNr: PostNr, approverId: UserId) {
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val pageMeta = page.meta
-      val postBefore = page.parts.thePost(postId)
+      val postBefore = page.parts.thePost(postNr)
       if (postBefore.isCurrentVersionApproved)
         throwForbidden("DwE4GYUR2", "Post already approved")
 
@@ -652,7 +652,7 @@ trait PostsDao {
 
       SHOULD // delete any review tasks.
 
-      val isApprovingPageBody = postId == PageParts.BodyId
+      val isApprovingPageBody = postNr == PageParts.BodyNr
       val isApprovingNewPost = postBefore.approvedRevisionNr.isEmpty
 
       var newMeta = pageMeta.copy(version = pageMeta.version + 1)
@@ -689,17 +689,17 @@ trait PostsDao {
   }
 
 
-  def deletePost(pageId: PageId, postId: PostId, deletedById: UserId,
+  def deletePost(pageId: PageId, postNr: PostNr, deletedById: UserId,
         browserIdData: BrowserIdData) {
-    changePostStatus(pageId = pageId, postId = postId,
+    changePostStatus(pageId = pageId, postNr = postNr,
       action = PostStatusAction.DeletePost(clearFlags = false), userId = deletedById)
   }
 
 
-  def deleteVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId) {
+  def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId) {
     readWriteTransaction { transaction =>
-      transaction.deleteVote(pageId, postId, voteType, voterId = voterId)
-      updateVoteCounts(pageId, postId = postId, transaction)
+      transaction.deleteVote(pageId, postNr, voteType, voterId = voterId)
+      updateVoteCounts(pageId, postNr = postNr, transaction)
       /* FRAUD SHOULD delete by cookie too, like I did before:
       var numRowsDeleted = 0
       if ((userIdData.anyGuestId.isDefined && userIdData.userId != UnknownUser.Id) ||
@@ -719,11 +719,11 @@ trait PostsDao {
   }
 
 
-  def ifAuthAddVote(pageId: PageId, postId: PostId, voteType: PostVoteType,
-        voterId: UserId, voterIp: String, postIdsRead: Set[PostId]) {
+  def ifAuthAddVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType,
+        voterId: UserId, voterIp: String, postNrsRead: Set[PostNr]) {
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
-      val post = page.parts.thePost(postId)
+      val post = page.parts.thePost(postNr)
       val voter = transaction.loadTheUser(voterId)
 
       if (voteType == PostVoteType.Bury && !voter.isStaff)
@@ -738,7 +738,7 @@ trait PostsDao {
       }
 
       try {
-        transaction.insertVote(post.uniqueId, pageId, postId, voteType, voterId = voterId)
+        transaction.insertVote(post.uniqueId, pageId, postNr, voteType, voterId = voterId)
       }
       catch {
         case DbDao.DuplicateVoteException =>
@@ -751,8 +751,8 @@ trait PostsDao {
           // Upvoting a post shouldn't affect its ancestors, because they're on the
           // path to the interesting post so they are a bit useful/interesting. However
           // do mark all earlier siblings as read since they weren't upvoted (this time).
-          val ancestorIds = page.parts.ancestorsOf(postId).map(_.id)
-          postIdsRead -- ancestorIds.toSet
+          val ancestorIds = page.parts.ancestorsOf(postNr).map(_.nr)
+          postNrsRead -- ancestorIds.toSet
         }
         else {
           // The post got a non-like vote: wrong, bury or unwanted.
@@ -760,7 +760,7 @@ trait PostsDao {
           // being marked as read, because a post *not* being downvoted shouldn't
           // give that post worse rating. (Remember that the rating of a post is
           // roughly the number of Like votes / num-times-it's-been-read.)
-          Set(postId)
+          Set(postNr)
         }
 
       transaction.updatePostsReadStats(pageId, postsToMarkAsRead, readById = voterId,
@@ -787,14 +787,14 @@ trait PostsDao {
   }
 
 
-  def flagPost(pageId: PageId, postId: PostId, flagType: PostFlagType, flaggerId: UserId) {
+  def flagPost(pageId: PageId, postNr: PostNr, flagType: PostFlagType, flaggerId: UserId) {
     readWriteTransaction { transaction =>
-      val postBefore = transaction.loadThePost(pageId, postId)
+      val postBefore = transaction.loadThePost(pageId, postNr)
       // SHOULD if >= 2 pending flags, then hide post until reviewed? And unhide, if flags cleared.
       val postAfter = postBefore.copy(numPendingFlags = postBefore.numPendingFlags + 1)
       val reviewTask = makeReviewTask(flaggerId, postAfter,
         immutable.Seq(ReviewReason.PostFlagged), transaction)
-      transaction.insertFlag(postBefore.uniqueId, pageId, postId, flagType, flaggerId)
+      transaction.insertFlag(postBefore.uniqueId, pageId, postNr, flagType, flaggerId)
       transaction.updatePost(postAfter)
       transaction.upsertReviewTask(reviewTask)
       // Need not update page version: flags aren't shown (except perhaps for staff users).
@@ -803,14 +803,14 @@ trait PostsDao {
   }
 
 
-  def clearFlags(pageId: PageId, postId: PostId, clearedById: UserId): Unit = {
+  def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId): Unit = {
     readWriteTransaction { transaction =>
-      val postBefore = transaction.loadThePost(pageId, postId)
+      val postBefore = transaction.loadThePost(pageId, postNr)
       val postAfter = postBefore.copy(
         numPendingFlags = 0,
         numHandledFlags = postBefore.numHandledFlags + postBefore.numPendingFlags)
       transaction.updatePost(postAfter)
-      transaction.clearFlags(pageId, postId, clearedById = clearedById)
+      transaction.clearFlags(pageId, postNr, clearedById = clearedById)
       // Need not update page version: flags aren't shown (except perhaps for staff users).
     }
     // In case the post gets unhidden now when flags gone:
@@ -822,8 +822,8 @@ trait PostsDao {
     siteDbDao.loadPostsReadStats(pageId)
 
 
-  def loadPost(pageId: PageId, postId: PostId): Option[Post] =
-    readOnlyTransaction(_.loadPost(pageId, postId))
+  def loadPost(pageId: PageId, postNr: PostNr): Option[Post] =
+    readOnlyTransaction(_.loadPost(pageId, postNr))
 
 
   def makeReviewTask(causedById: UserId, post: Post, reasons: immutable.Seq[ReviewReason],
@@ -842,15 +842,15 @@ trait PostsDao {
   }
 
 
-  private def updateVoteCounts(pageId: PageId, postId: PostId, transaction: SiteTransaction) {
-    val post = transaction.loadThePost(pageId, postId = postId)
+  private def updateVoteCounts(pageId: PageId, postNr: PostNr, transaction: SiteTransaction) {
+    val post = transaction.loadThePost(pageId, postNr = postNr)
     updateVoteCounts(post, transaction)
   }
 
 
   private def updateVoteCounts(post: Post, transaction: SiteTransaction) {
-    val actions = transaction.loadActionsDoneToPost(post.pageId, postId = post.id)
-    val readStats = transaction.loadPostsReadStats(post.pageId, Some(post.id))
+    val actions = transaction.loadActionsDoneToPost(post.pageId, postNr = post.nr)
+    val readStats = transaction.loadPostsReadStats(post.pageId, Some(post.nr))
     val postAfter = post.copyWithUpdatedVoteAndReadCounts(actions, readStats)
 
     val numNewLikes = postAfter.numLikeVotes - post.numLikeVotes

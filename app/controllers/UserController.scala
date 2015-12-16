@@ -204,7 +204,7 @@ object UserController extends mvc.Controller {
 
 
   def blockGuest = StaffPostJsonAction(maxLength = 100) { request =>
-    val postId = (request.body \ "postId").as[PostId]
+    val postId = (request.body \ "postId").as[UniquePostId]
     val numDays = (request.body \ "numDays").as[Int]
     request.dao.blockGuest(postId, numDays = numDays, blockerId = request.theUserId)
     Ok
@@ -212,7 +212,7 @@ object UserController extends mvc.Controller {
 
 
   def unblockGuest = StaffPostJsonAction(maxLength = 100) { request =>
-    val postId = (request.body \ "postId").as[PostId]
+    val postId = (request.body \ "postId").as[UniquePostId]
     request.dao.unblockGuest(postId, unblockerId = request.theUserId)
     Ok
   }
@@ -439,7 +439,7 @@ object UserController extends mvc.Controller {
     Json.obj(
       "pageUrl" -> s"/-${actionInfo.pageId}", // redirects to the page
       "pageTitle" -> JsString(actionInfo.pageTitle),
-      "postId" -> JsNumber(actionInfo.postId),
+      "postId" -> JsNumber(actionInfo.postNr),
       "actionId" -> JsNumber(actionInfo.actionId),
       "actingUserId" -> JsNumber(actionInfo.actingUserId),
       "actingUserDisplayName" -> JsString(actionInfo.actingUserDisplayName),
@@ -447,8 +447,8 @@ object UserController extends mvc.Controller {
       "targetUserDisplayName" -> JsString(actionInfo.targetUserDisplayName),
       "createdAtEpoch" -> JsNumber(actionInfo.createdAt.getTime),
       "excerpt" -> JsString(actionInfo.postExcerpt),
-      "repliedToPostId" -> actionInfo.repliedToPostId.map(JsNumber(_)),
-      "editedPostId" -> actionInfo.editedPostId.map(JsNumber(_)),
+      "repliedToPostId" -> actionInfo.repliedToPostNr.map(JsNumber(_)),
+      "editedPostId" -> actionInfo.editedPostNr.map(JsNumber(_)),
       "approved" -> JsBoolean(actionInfo.approved),
       "deleted" -> JsBoolean(actionInfo.deleted),
       "pinned" -> JsBoolean(actionInfo.pinned),

@@ -76,8 +76,8 @@ object EditController extends mvc.Controller {
   /** Sends back a post's current CommonMark source to the browser.
     */
   def loadCurrentText(pageId: String, postId: String) = GetAction { request =>
-    val postIdAsInt = parseIntOrThrowBadReq(postId, "DwE1Hu80")
-    val post = request.dao.loadPost(pageId, postId.toInt) getOrElse
+    val postNrAsInt = parseIntOrThrowBadReq(postId, "DwE1Hu80")
+    val post = request.dao.loadPost(pageId, postNrAsInt) getOrElse
       throwNotFound("DwE7SKE3", "Post not found")
 
     if (!debiki.dao.PostsDao.userMayEdit(request.theUser, post))
@@ -95,10 +95,10 @@ object EditController extends mvc.Controller {
   def edit = AsyncPostJsonAction(RateLimits.EditPost, maxLength = MaxPostSize) {
         request: JsonPostRequest =>
     val pageId = (request.body \ "pageId").as[PageId]
-    val postId = (request.body \ "postId").as[PostId]
+    val postNr = (request.body \ "postId").as[PostNr]
     val newText = (request.body \ "text").as[String]
 
-    if (postId == PageParts.TitleId)
+    if (postNr == PageParts.TitleNr)
       throwForbidden("DwE5KEWF4", "Edit the title via /-/edit-title-save-settings instead")
 
     if (newText.isEmpty)
@@ -107,17 +107,17 @@ object EditController extends mvc.Controller {
     _throwIfTooMuchData(newText, request)
 
     val newTextAndHtml = TextAndHtml(newText, isTitle = false,
-      allowClassIdDataAttrs = postId == PageParts.BodyId)
+      allowClassIdDataAttrs = postNr == PageParts.BodyNr)
       // When follow links? Previously:
       // followLinks = postToEdit.createdByUser(page.parts).isStaff && editor.isStaff
 
     Globals.antiSpam.detectPostSpam(request, pageId, newTextAndHtml) map { isSpamReason =>
       throwForbiddenIfSpam(isSpamReason, "DwE6PYU4")
 
-      request.dao.editPostIfAuth(pageId = pageId, postId = postId, editorId = request.theUser.id,
+      request.dao.editPostIfAuth(pageId = pageId, postNr = postNr, editorId = request.theUser.id,
         request.theBrowserIdData, newTextAndHtml)
 
-      OkSafeJson(ReactJson.postToJson2(postId = postId, pageId = pageId,
+      OkSafeJson(ReactJson.postToJson2(postNr = postNr, pageId = pageId,
         request.dao, includeUnapproved = true))
     }
   }
@@ -150,7 +150,7 @@ object EditController extends mvc.Controller {
 
   def changePostType = PostJsonAction(RateLimits.EditPost, maxLength = 100) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
-    val postNr = (request.body \ "postNr").as[PostId]
+    val postNr = (request.body \ "postNr").as[PostNr]
     val newTypeInt = (request.body \ "newType").as[Int]
     val newType = PostType.fromInt(newTypeInt) getOrElse throwBadArgument("DwE4EWL3", "newType")
 
@@ -162,7 +162,7 @@ object EditController extends mvc.Controller {
 
   def deletePost = PostJsonAction(RateLimits.DeletePost, maxLength = 5000) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
-    val postNr = (request.body \ "postNr").as[PostId]
+    val postNr = (request.body \ "postNr").as[PostNr]
     val repliesToo = (request.body \ "repliesToo").as[Boolean]
 
     val action =
@@ -171,7 +171,7 @@ object EditController extends mvc.Controller {
 
     request.dao.changePostStatus(postNr, pageId = pageId, action, userId = request.theUserId)
 
-    OkSafeJson(ReactJson.postToJson2(postId = postNr, pageId = pageId, // COULD: don't include post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
+    OkSafeJson(ReactJson.postToJson2(postNr = postNr, pageId = pageId, // COULD: don't include post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
       request.dao, includeUnapproved = request.theUser.isStaff))
   }
 

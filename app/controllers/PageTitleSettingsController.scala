@@ -102,7 +102,7 @@ object PageTitleSettingsController extends mvc.Controller {
     Globals.antiSpam.detectPostSpam(request, pageId, newTextAndHtml) map { isSpamReason =>
       throwForbiddenIfSpam(isSpamReason, "DwE6JG20")
 
-      request.dao.editPostIfAuth(pageId = pageId, postId = PageParts.TitleId,
+      request.dao.editPostIfAuth(pageId = pageId, postNr = PageParts.TitleNr,
         editorId = request.theUser.id, request.theBrowserIdData, newTextAndHtml)
 
       // Load old section page id before changing it.
@@ -149,7 +149,7 @@ object PageTitleSettingsController extends mvc.Controller {
 
       // The browser will update the title and the url path in the address bar.
       OkSafeJson(Json.obj(
-        "newTitlePost" -> ReactJson.postToJson2(postId = PageParts.TitleId, pageId = pageId,
+        "newTitlePost" -> ReactJson.postToJson2(postNr = PageParts.TitleNr, pageId = pageId,
             request.dao, includeUnapproved = true),
         "newAncestorsRootFirst" -> newAncestorsJson,
         "newUrlPath" -> JsStringOrNull(newPath.map(_.value))))

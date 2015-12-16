@@ -31,11 +31,11 @@ case class UserPostVotes(
 
 object UserPostVotes {
 
-  def makeMap(votes: imm.Seq[PostVote]): Map[PostId, UserPostVotes] = {
+  def makeMap(votes: imm.Seq[PostVote]): Map[PostNr, UserPostVotes] = {
     if (votes.isEmpty)
       return Map.empty
     val theFirstVote = votes.head
-    val voteBitsByPostId = mut.HashMap[PostId, Int]()
+    val voteBitsByPostNr = mut.HashMap[PostNr, Int]()
     for (vote <- votes) {
       require(vote.voterId == theFirstVote.voterId, "DwE0PKF3")
       require(vote.pageId == theFirstVote.pageId, "DwE6PUB4")
@@ -45,12 +45,12 @@ object UserPostVotes {
         case PostVoteType.Bury => 4
         case PostVoteType.Unwanted => 8
       }
-      var voteBits = voteBitsByPostId.getOrElseUpdate(vote.postId, 0)
+      var voteBits = voteBitsByPostNr.getOrElseUpdate(vote.postNr, 0)
       voteBits |= bits
       assert(voteBits <= 15)
-      voteBitsByPostId.put(vote.postId, voteBits)
+      voteBitsByPostNr.put(vote.postNr, voteBits)
     }
-    val postIdsAndVotes = voteBitsByPostId.toVector map { case (key: PostId, voteBits: Int) =>
+    val postNrsAndVotes = voteBitsByPostNr.toVector map { case (key: PostNr, voteBits: Int) =>
       val votes = UserPostVotes(
         votedLike = (voteBits & 1) == 1,
         votedWrong = (voteBits & 2) == 2,
@@ -58,7 +58,7 @@ object UserPostVotes {
         votedUnwanted = (voteBits & 8) == 8)
       (key, votes)
     }
-    Map(postIdsAndVotes: _*)
+    Map(postNrsAndVotes: _*)
   }
 
 }

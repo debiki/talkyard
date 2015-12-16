@@ -113,7 +113,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       createdAt = newPost.createdAt,
       uniquePostId = newPost.uniqueId,
       pageId = newPost.pageId,
-      postId = newPost.id,
+      postNr = newPost.nr,
       byUserId = newPost.createdById,
       toUserId = user.id)
   }
@@ -138,7 +138,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       notfsToDelete += NotificationToDelete.MentionToDelete(
         siteId = transaction.siteId,
         pageId = newPost.pageId,
-        postId = oldPost.id,
+        postNr = oldPost.nr,
         toUserId = user.id)
     }
 

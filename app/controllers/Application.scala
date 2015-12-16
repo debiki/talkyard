@@ -52,7 +52,7 @@ object Application extends mvc.Controller {
   def flag = PostJsonAction(RateLimits.FlagPost, maxLength = 2000) { request =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
-    val postId = (body \ "postId").as[PostId]
+    val postNr = (body \ "postId").as[PostNr]
     val typeStr = (body \ "type").as[String]
     val reason = (body \ "reason").as[String]
 
@@ -67,10 +67,10 @@ object Application extends mvc.Controller {
     // COULD save `reason` somewhere, but where? Where does Discourse save it?
     // SHOULD generate notification
 
-    request.dao.flagPost(pageId = pageId, postId = postId, flagType,
+    request.dao.flagPost(pageId = pageId, postNr = postNr, flagType,
       flaggerId = request.theUser.id)
 
-    val json = ReactJson.postToJson2(postId = postId, pageId = pageId, dao = request.dao)
+    val json = ReactJson.postToJson2(postNr = postNr, pageId = pageId, dao = request.dao)
     OkSafeJson(json)
   }
 

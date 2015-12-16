@@ -198,9 +198,9 @@ trait UserDao {
   }
 
 
-  def unblockGuest(postId: PostId, unblockerId: UserId) {
+  def unblockGuest(postNr: PostNr, unblockerId: UserId) {
     readWriteTransaction { transaction =>
-      val auditLogEntry: AuditLogEntry = transaction.loadCreatePostAuditLogEntry(postId) getOrElse {
+      val auditLogEntry: AuditLogEntry = transaction.loadCreatePostAuditLogEntry(postNr) getOrElse {
         throwForbidden("DwE5FK83", "Cannot unblock guest: No audit log entry, IP unknown")
       }
       transaction.unblockIp(auditLogEntry.browserIdData.inetAddress)

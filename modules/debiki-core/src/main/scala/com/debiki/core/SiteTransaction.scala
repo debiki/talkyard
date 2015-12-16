@@ -62,18 +62,18 @@ trait SiteTransaction {
   def loadThePost(uniquePostId: UniquePostId): Post =
     loadPost(uniquePostId).getOrElse(throw PostNotFoundByIdException(uniquePostId))
 
-  def loadPost(pageId: PageId, postId: PostId): Option[Post]
-  def loadThePost(pageId: PageId, postId: PostId): Post =
-    loadPost(pageId, postId).getOrElse(throw PostNotFoundException(pageId, postId))
+  def loadPost(pageId: PageId, postNr: PostNr): Option[Post]
+  def loadThePost(pageId: PageId, postNr: PostNr): Post =
+    loadPost(pageId, postNr).getOrElse(throw PostNotFoundException(pageId, postNr))
 
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
-  def loadPosts(pagePostIds: Iterable[PagePostId]): immutable.Seq[Post]
+  def loadPosts(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]
   def loadPostsByUniqueId(postIds: Iterable[UniquePostId]): immutable.Map[UniquePostId, Post]
   def loadPostsBy(authorId: UserId, includeTitles: Boolean, limit: Int): immutable.Seq[Post]
   def loadPostsToReview(): immutable.Seq[Post]
 
   def loadTitlesPreferApproved(pageIds: Iterable[PageId]): Map[PageId, String] = {
-    val titlePosts = loadPosts(pageIds.map(PagePostId(_, PageParts.TitleId)))
+    val titlePosts = loadPosts(pageIds.map(PagePostNr(_, PageParts.TitleNr)))
     Map(titlePosts.map(post => {
       post.pageId -> post.approvedSource.getOrElse(post.currentSource)
     }): _*)
@@ -89,22 +89,22 @@ trait SiteTransaction {
   def updatePostRevision(revision: PostRevision)
 
   def loadActionsByUserOnPage(userId: UserId, pageId: PageId): immutable.Seq[PostAction]
-  def loadActionsDoneToPost(pageId: PageId, postId: PostId): immutable.Seq[PostAction]
+  def loadActionsDoneToPost(pageId: PageId, postNr: PostNr): immutable.Seq[PostAction]
 
-  def deleteVote(pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId): Boolean
-  def insertVote(uniquePostId: UniquePostId, pageId: PageId, postId: PostId, voteType: PostVoteType, voterId: UserId)
+  def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId): Boolean
+  def insertVote(uniquePostId: UniquePostId, pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId)
 
   /** Remembers that the specified posts have been read by a certain user.
     */
-  def updatePostsReadStats(pageId: PageId, postIdsRead: Set[PostId], readById: UserId,
+  def updatePostsReadStats(pageId: PageId, postNrsRead: Set[PostNr], readById: UserId,
         readFromIp: String)
 
-  def loadPostsReadStats(pageId: PageId, postId: Option[PostId]): PostsReadStats
+  def loadPostsReadStats(pageId: PageId, postNr: Option[PostNr]): PostsReadStats
 
 
-  def loadFlagsFor(pagePostIds: immutable.Seq[PagePostId]): immutable.Seq[PostFlag]
-  def insertFlag(uniquePostId: UniquePostId, pageId: PageId, postId: PostId, flagType: PostFlagType, flaggerId: UserId)
-  def clearFlags(pageId: PageId, postId: PostId, clearedById: UserId)
+  def loadFlagsFor(pagePostNrs: immutable.Seq[PagePostNr]): immutable.Seq[PostFlag]
+  def insertFlag(uniquePostId: UniquePostId, pageId: PageId, postNr: PostNr, flagType: PostFlagType, flaggerId: UserId)
+  def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId)
 
   def nextPageId(): PageId
 
@@ -209,7 +209,7 @@ trait SiteTransaction {
   def upsertReviewTask(reviewTask: ReviewTask)
   def loadReviewTask(id: ReviewTaskId): Option[ReviewTask]
   def loadReviewTasks(olderOrEqualTo: ju.Date, limit: Int): Seq[ReviewTask]
-  def loadPendingPostReviewTask(postId: PostId, causedById: UserId): Option[ReviewTask]
+  def loadPendingPostReviewTask(postId: UniquePostId, causedById: UserId): Option[ReviewTask]
 
   def saveDeleteNotifications(notifications: Notifications)
 
@@ -228,6 +228,6 @@ trait SiteTransaction {
 
 case class UserNotFoundException(userId: UserId) extends QuickException
 case class PageNotFoundException(pageId: PageId) extends QuickException
-case class PostNotFoundException(pageId: PageId, postId: PostId) extends QuickException
+case class PostNotFoundException(pageId: PageId, postNr: PostNr) extends QuickException
 case class PostNotFoundByIdException(postId: UniquePostId) extends QuickException
 

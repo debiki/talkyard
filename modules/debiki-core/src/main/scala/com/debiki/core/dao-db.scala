@@ -216,7 +216,7 @@ abstract class SiteDbDao {
   /** Unindexes everything on some pages. Intended for test suites only.
     * Returns the number of *posts* that were unindexed.
     */
-  def debugUnindexPosts(pageAndPostIds: PagePostId*)
+  def debugUnindexPosts(pageAndPostIds: PagePostNr*)
 
 }
 
@@ -485,7 +485,7 @@ class SerializingSiteDbDao(private val _spi: SiteDbDao)
     _spi.fullTextSearch(phrase, anyRootPageId)
   }
 
-  def debugUnindexPosts(pageAndPostIds: PagePostId*) {
+  def debugUnindexPosts(pageAndPostIds: PagePostNr*) {
     serialize {
       _spi.debugUnindexPosts(pageAndPostIds: _*)
     }

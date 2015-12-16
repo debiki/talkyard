@@ -22,11 +22,10 @@ package object core {
 
   type ActionId = Int
 
-  // TODO rename to PostId, but first rename PostId to PostNr.
+  // TODO rename to PostId.
   type UniquePostId = Int
 
-  // TODO rename to PostNr.
-  type PostId = Int
+  type PostNr = Int
 
   type PageId = String
 
@@ -59,9 +58,9 @@ package object core {
     * will be included in the resulting page. If None, then all top level posts are
     * included (and their successors), that is, all posts with no parent posts.
     */
-  type AnyPageRoot = Option[PostId]
+  type AnyPageRoot = Option[PostNr]
 
-  val DefaultPageRoot = Some(PageParts.BodyId)
+  val DefaultPageRoot = Some(PageParts.BodyNr)
 
   type SettingNameValue[A] = (String, A)
 

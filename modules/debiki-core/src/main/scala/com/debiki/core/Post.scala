@@ -127,10 +127,9 @@ case class Post(
   // TODO rename to 'id', but first rename 'id' to 'nr'.
   uniqueId: UniquePostId,
   pageId: PageId,
-  // TODO rename to 'nr'.
-  id: PostId,
-  parentId: Option[PostId],
-  multireplyPostIds: immutable.Set[PostId],
+  nr: PostNr,
+  parentNr: Option[PostNr],
+  multireplyPostNrs: immutable.Set[PostNr],
   tyype: PostType,
   createdAt: ju.Date,
   createdById: UserId,
@@ -172,10 +171,10 @@ case class Post(
   numTimesRead: Int) {
 
   require(uniqueId >= 1, "DwE4WEKQ8")
-  require(parentId != Some(id), "DwE5BK4")
-  require(!multireplyPostIds.contains(id), "DwE4kWW2")
-  require(multireplyPostIds.size != 1, "DwE2KFE7") // size 1 = does not reply to many people
-  require(multireplyPostIds.isEmpty || parentId.isDefined || isFlat, "DwE5GKF2")
+  require(parentNr != Some(nr), "DwE5BK4")
+  require(!multireplyPostNrs.contains(nr), "DwE4kWW2")
+  require(multireplyPostNrs.size != 1, "DwE2KFE7") // size 1 = does not reply to many people
+  require(multireplyPostNrs.isEmpty || parentNr.isDefined || isFlat, "DwE5GKF2")
 
   require(currentRevStaredAt.getTime >= createdAt.getTime, "DwE8UFYM5")
   require(!currentRevLastEditedAt.exists(_.getTime < currentRevStaredAt.getTime), "DwE7KEF3")
@@ -248,13 +247,11 @@ case class Post(
   require(numUnwantedVotes >= 0, "DwE4GKY2")
   require(numTimesRead >= 0, "DwE2ZfMI3")
 
-  def nr = id  // uniqueId will be renamed to id later
-
-  def isReply = PageParts.isReply(id)
-  def isTitle = id == PageParts.TitleId
-  def isOrigPost = id == PageParts.BodyId
-  def isOrigPostReply = PageParts.isReply(id) && parentId == Some(PageParts.BodyId)
-  def isMultireply = multireplyPostIds.nonEmpty
+  def isReply = PageParts.isReply(nr)
+  def isTitle = nr == PageParts.TitleNr
+  def isOrigPost = nr == PageParts.BodyNr
+  def isOrigPostReply = PageParts.isReply(nr) && parentNr == Some(PageParts.BodyNr)
+  def isMultireply = multireplyPostNrs.nonEmpty
   def isFlat = tyype == PostType.Flat
   def isHidden = hiddenAt.isDefined
   def isDeleted = deletedStatus.isDeleted
@@ -263,8 +260,8 @@ case class Post(
   def isVisible = isSomeVersionApproved && !isHidden && !isDeleted
   def isWiki = tyype.isWiki
 
-  def pagePostId = PagePostId(pageId, id)
-  def hasAnId = id >= PageParts.LowestPostId
+  def pagePostId = PagePostNr(pageId, nr)
+  def hasAnId = nr >= PageParts.LowestPostNr
 
   def newChildCollapsedStatus = new CollapsedStatus(
     if ((collapsedStatus.underlying & (SuccessorsBit | AncestorsBit)) != 0) AncestorsBit else 0)
@@ -284,11 +281,11 @@ case class Post(
   }
 
   def currentHtmlSanitized(commonMarkRenderer: CommonMarkRenderer, pageRole: PageRole): String = {
-    if (id == PageParts.TitleId) {
+    if (nr == PageParts.TitleNr) {
       commonMarkRenderer.sanitizeHtml(currentSource)
     }
     else {
-      val isBody = id == PageParts.BodyId
+      val isBody = nr == PageParts.BodyNr
       val followLinks = isBody && !pageRole.isWidelyEditable
       commonMarkRenderer.renderAndSanitizeCommonMark(currentSource,
         allowClassIdDataAttrs = isBody, followLinks = followLinks)
@@ -299,7 +296,7 @@ case class Post(
     * and other links.
     */
   def currentHtmlSanitizedToFindLinks(commonMarkRenderer: CommonMarkRenderer): String = {
-    if (id == PageParts.TitleId) ""
+    if (nr == PageParts.TitleNr) ""
     else commonMarkRenderer.renderAndSanitizeCommonMark(currentSource,
       allowClassIdDataAttrs = false, followLinks = false)
   }
@@ -327,10 +324,10 @@ case class Post(
 
 
   def parent(pageParts: PageParts): Option[Post] =
-    parentId.flatMap(pageParts.post)
+    parentNr.flatMap(pageParts.post)
 
   def children(pageParts: PageParts): Seq[Post] =
-    pageParts.childrenBestFirstOf(id)
+    pageParts.childrenBestFirstOf(nr)
 
 
   /** Setting any flag to true means that status will change to true. Leaving it
@@ -458,7 +455,7 @@ case class Post(
           }
       }
     }
-    val numTimesRead = readStats.readCountFor(id)
+    val numTimesRead = readStats.readCountFor(nr)
     copy(
       numLikeVotes = numLikeVotes,
       numWrongVotes = numWrongVotes,
@@ -471,16 +468,16 @@ case class Post(
 
 
 object Post {
-  
+
   val FirstVersion = 1
 
   def create(
         siteId: SiteId,
         uniqueId: UniquePostId,
         pageId: PageId,
-        postId: PostId,
+        postNr: PostNr,
         parent: Option[Post],
-        multireplyPostIds: Set[PostId],
+        multireplyPostNrs: Set[PostNr],
         postType: PostType,
         createdAt: ju.Date,
         createdById: UserId,
@@ -488,7 +485,7 @@ object Post {
         htmlSanitized: String,
         approvedById: Option[UserId]): Post = {
 
-    require(multireplyPostIds.isEmpty || parent.isDefined || postType == PostType.Flat, "DwE4KFK28")
+    require(multireplyPostNrs.isEmpty || parent.isDefined || postType == PostType.Flat, "DwE4KFK28")
 
     val currentSourcePatch: Option[String] =
       if (approvedById.isDefined) None
@@ -522,9 +519,9 @@ object Post {
       siteId = siteId,
       uniqueId = uniqueId,
       pageId = pageId,
-      id = postId,
-      parentId = parent.map(_.id),
-      multireplyPostIds = multireplyPostIds,
+      nr = postNr,
+      parentNr = parent.map(_.nr),
+      multireplyPostNrs = multireplyPostNrs,
       tyype = postType,
       createdAt = createdAt,
       createdById = createdById,
@@ -574,8 +571,8 @@ object Post {
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId]): Post =
-    create(siteId, uniqueId, pageId = pageId, postId = PageParts.TitleId, parent = None,
-      multireplyPostIds = Set.empty, postType = PostType.Normal,
+    create(siteId, uniqueId, pageId = pageId, postNr = PageParts.TitleNr, parent = None,
+      multireplyPostNrs = Set.empty, postType = PostType.Normal,
       createdAt = createdAt, createdById = createdById,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 
@@ -588,8 +585,8 @@ object Post {
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId]): Post =
-    create(siteId, uniqueId, pageId = pageId, postId = PageParts.BodyId, parent = None,
-      multireplyPostIds = Set.empty, postType = PostType.Normal,
+    create(siteId, uniqueId, pageId = pageId, postNr = PageParts.BodyNr, parent = None,
+      multireplyPostNrs = Set.empty, postType = PostType.Normal,
       createdAt = createdAt, createdById = createdById,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 
@@ -631,16 +628,16 @@ object Post {
     // multireply that it replies to.
     // COULD place interesting multireplies first, if they're not constrained by
     // one being a reply to another.
-    if (postA.multireplyPostIds.nonEmpty && postB.multireplyPostIds.nonEmpty) {
+    if (postA.multireplyPostNrs.nonEmpty && postB.multireplyPostNrs.nonEmpty) {
       if (postA.createdAt.getTime < postB.createdAt.getTime)
         return true
       if (postA.createdAt.getTime > postB.createdAt.getTime)
         return false
     }
-    else if (postA.multireplyPostIds.nonEmpty) {
+    else if (postA.multireplyPostNrs.nonEmpty) {
       return false
     }
-    else if (postB.multireplyPostIds.nonEmpty) {
+    else if (postB.multireplyPostNrs.nonEmpty) {
       return true
     }
 

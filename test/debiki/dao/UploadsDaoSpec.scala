@@ -238,7 +238,7 @@ class UploadsDaoAppSpec extends FreeSpec with MustMatchers with OneAppPerSuite {
 
       info("edit page: add second file, more quota used")
       val newTextAndHtml = bodyTextAndHtml.append(s"\n[The moon](${moonImage.ref.url})")
-      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyId, editorId = user.id,
+      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, editorId = user.id,
         browserIdData, newTextAndHtml)
 
       resourceUsage = dao.loadResourceUsage()
@@ -246,7 +246,7 @@ class UploadsDaoAppSpec extends FreeSpec with MustMatchers with OneAppPerSuite {
       resourceUsage.numUploadBytes mustBe (1040 + 2050)
 
       info("edit page: remove second file, quota freed")
-      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyId, editorId = user.id,
+      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, editorId = user.id,
         browserIdData, bodyTextAndHtml)
 
       resourceUsage = dao.loadResourceUsage()
@@ -254,7 +254,7 @@ class UploadsDaoAppSpec extends FreeSpec with MustMatchers with OneAppPerSuite {
       resourceUsage.numUploadBytes mustBe 1040
 
       info("edit page: remove the first file, remaining quota freed")
-      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyId, editorId = user.id,
+      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, editorId = user.id,
         browserIdData, TextAndHtml("empty", isTitle = false))
 
       resourceUsage = dao.loadResourceUsage()
@@ -293,7 +293,7 @@ class UploadsDaoAppSpec extends FreeSpec with MustMatchers with OneAppPerSuite {
       resourceUsage.numUploadBytes mustBe 1060
 
       info("edit page: remove link, quota freed")
-      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyId, editorId = user.id,
+      dao.editPostIfAuth(pagePath.thePageId, PageParts.BodyNr, editorId = user.id,
         browserIdData, TextAndHtml("empty", isTitle = false))
 
       resourceUsage = dao.loadResourceUsage()
@@ -374,7 +374,7 @@ class UploadsDaoAppSpec extends FreeSpec with MustMatchers with OneAppPerSuite {
 
       info("edit site 1 page: remove links, remaining quota freed, site 1 only")
 
-      dao.editPostIfAuth(pagePath1.thePageId, PageParts.BodyId, editorId = user.id,
+      dao.editPostIfAuth(pagePath1.thePageId, PageParts.BodyNr, editorId = user.id,
         browserIdData, TextAndHtml("empty", isTitle = false))
 
       resourceUsage = dao2.loadResourceUsage()

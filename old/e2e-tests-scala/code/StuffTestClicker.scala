@@ -19,7 +19,7 @@ package test.e2e.code
 
 import com.debiki.core.PageRole
 import com.debiki.core.Prelude._
-import com.debiki.core.{ActionId, PostId}
+import com.debiki.core.{ActionId, PostNr}
 import org.openqa.selenium.Keys
 import org.openqa.selenium.interactions.Actions
 import StuffTestClicker.currentFakeIpNr
@@ -281,7 +281,7 @@ trait StuffTestClicker extends DebikiSelectors {
   }
 
 
-  def clickShowMoreActions(postId: PostId) {
+  def clickShowMoreActions(postId: PostNr) {
     showActionLinks(postId)
     val moreLink = findActionLink_!(postId, "dw-a-more")
     scrollIntoView(moreLink)
@@ -299,7 +299,7 @@ trait StuffTestClicker extends DebikiSelectors {
   }
 
 
-  def isPostDeleted(postId: PostId): Boolean = {
+  def isPostDeleted(postId: PostNr): Boolean = {
     find(cssSelector(s"#post-$postId.dw-p-dl")).nonEmpty
   }
 

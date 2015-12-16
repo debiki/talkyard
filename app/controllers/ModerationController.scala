@@ -63,8 +63,8 @@ object ModerationController extends mvc.Controller {
 
   def approve = StaffPostJsonAction(maxLength = 5000) { request =>
     SECURITY ; COULD // restrict approval of edits of any homepage or about page to admins only.
-    val PagePostId(pageId, postId) = parseBody(request)
-    request.dao.approvePost(pageId, postId = postId, approverId = request.theUserId)
+    val PagePostNr(pageId, postNr) = parseBody(request)
+    request.dao.approvePost(pageId, postNr = postNr, approverId = request.theUserId)
     Ok
   }
 
@@ -75,15 +75,15 @@ object ModerationController extends mvc.Controller {
 
 
   def hideFlaggedPostSendPm = StaffPostJsonAction(maxLength = 5000) { request =>
-    val PagePostId(pageId, postId) = parseBody(request)
+    val PagePostNr(pageId, postNr) = parseBody(request)
     ??? // request.dao.hidePostClearFlag(pageId, postId = postId, hiddenById = request.theUserId)
     Ok
   }
 
 
   def deletePost = StaffPostJsonAction(maxLength = 5000) { request =>
-    val PagePostId(pageId, postId) = parseBody(request)
-    request.dao.deletePost(pageId, postId = postId, deletedById = request.theUserId,
+    val PagePostNr(pageId, postNr) = parseBody(request)
+    request.dao.deletePost(pageId, postNr = postNr, deletedById = request.theUserId,
         request.theBrowserIdData)
     Ok
   }
@@ -92,31 +92,31 @@ object ModerationController extends mvc.Controller {
   def deleteFlaggedPost = StaffPostJsonAction(maxLength = 5000) { request =>
     // COULD add a specific method deleteFlaggedPost, that also ... marks the flags as accepted?
     // Like Discourse does it. For now:
-    val PagePostId(pageId, postId) = parseBody(request)
-    request.dao.deletePost(pageId, postId = postId, deletedById = request.theUserId,
+    val PagePostNr(pageId, postNr) = parseBody(request)
+    request.dao.deletePost(pageId, postNr = postNr, deletedById = request.theUserId,
         request.theBrowserIdData)
     Ok
   }
 
 
   def clearFlags = StaffPostJsonAction(maxLength = 5000) { request =>
-    val PagePostId(pageId, postId) = parseBody(request)
-    request.dao.clearFlags(pageId, postId = postId, clearedById = request.theUserId)
+    val PagePostNr(pageId, postNr) = parseBody(request)
+    request.dao.clearFlags(pageId, postNr = postNr, clearedById = request.theUserId)
     Ok
   }
 
 
   def rejectEdits = StaffPostJsonAction(maxLength = 5000) { request =>
-    val PagePostId(pageId, postId) = parseBody(request)
+    val PagePostNr(pageId, postNr) = parseBody(request)
     ??? // request.dao.rejectEdits(pageId, postId = postId, rejectedById = request.theUserId)
     Ok
   }
 
 
-  private def parseBody(request: JsonPostRequest): PagePostId = {
+  private def parseBody(request: JsonPostRequest): PagePostNr = {
     val pageId = (request.body \ "pageId").as[PageId]
-    val postId = (request.body \ "postId").as[PostId]
-    PagePostId(pageId, postId)
+    val postNr = (request.body \ "postId").as[PostNr]
+    PagePostNr(pageId, postNr)
   }
 
 
@@ -136,11 +136,11 @@ object ModerationController extends mvc.Controller {
   private def makeJsonSinglePost(post: Post, thingsToReview: ThingsToReview): JsValue = {
     //val pageMeta = thingsToReview.thePage(post.pageId)
     val author = thingsToReview.theUser(post.createdById)
-    val flags = thingsToReview.theFlagsFor(post.id)
+    val flags = thingsToReview.theFlagsFor(post.nr)
 
     val pageName = "SHOULD load page name"
     var data = immutable.HashMap[String, JsValue](
-      "id" -> JsNumber(post.id),
+      "id" -> JsNumber(post.nr),
       "pageId" -> JsString(post.pageId),
       "pageName" -> JsString(pageName),
       "type" -> JsString("Post"),

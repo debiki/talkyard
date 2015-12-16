@@ -155,7 +155,7 @@ trait StuffCreator {
 
 
   private def createCodePage(siteId: String, folder: String, slug: String, text: String) {
-    val body = RawPostAction.copyCreatePost(postTemplate, id = PageParts.BodyId, text = text)
+    val body = RawPostAction.copyCreatePost(postTemplate, id = PageParts.BodyNr, text = text)
     val pagePath = PagePath(
       firstSiteId, folder, pageId = None, showId = false, pageSlug = slug)
     val page = PageParts(guid = "?", rawActions = body::Nil)

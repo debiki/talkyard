@@ -33,8 +33,8 @@ trait TestVoter {
   case class VoteStates(like: Boolean, wrong: Boolean, offTopic: Boolean)
 
 
-  def countVotes(postId: PostId): VoteCounts = {
-    def count(postId: PostId, voteCountClass: String): Int = {
+  def countVotes(postId: PostNr): VoteCounts = {
+    def count(postId: PostNr, voteCountClass: String): Int = {
       val anyVoteCount = find(cssSelector(s"#post-$postId .dw-p-hd .$voteCountClass"))
       anyVoteCount match {
         case None => 0
@@ -50,7 +50,7 @@ trait TestVoter {
   }
 
 
-  def checkVoteStates(postId: PostId): VoteStates = {
+  def checkVoteStates(postId: PostNr): VoteStates = {
     def checkState(voteTypeClass: String): Boolean = {
       val myVote = find(cssSelector(s"#dw-t-$postId > .dw-p-as .$voteTypeClass.dw-my-vote"))
       myVote.isDefined
@@ -62,7 +62,7 @@ trait TestVoter {
   }
 
 
-  def likePost(postId: PostId) {
+  def likePost(postId: PostNr) {
     // Wait until the server has replied and the Like vote has been highlighted.
     toggleVote(postId, PAP.VoteLike) // could verify that this actually toggles the vote on
     eventually {
@@ -73,7 +73,7 @@ trait TestVoter {
   }
 
 
-  def toggleVote(postId: PostId, voteType: PAP.Vote) {
+  def toggleVote(postId: PostNr, voteType: PAP.Vote) {
     showActionLinks(postId)
     if (voteType == PAP.VoteOffTopic)
       clickShowMoreActions(postId)
@@ -106,10 +106,10 @@ trait TestVoter {
     * Example: (verifies post 3 is first followed by no. 4)
     *   checkSortOrder(PageParts.BodyId, Seq(3, 4, NoId, NoId))
     */
-  def checkSortOrder(parentPostId: PostId, correctSortOrder: Seq[PostId]) {
+  def checkSortOrder(parentPostId: PostNr, correctSortOrder: Seq[PostNr]) {
     val correctOrder = correctSortOrder.map(postId => s"post-$postId").toVector
     val replyElems = {
-      if (parentPostId == PageParts.BodyId) {
+      if (parentPostId == PageParts.BodyNr) {
         findAll(cssSelector(".dw-depth-0 > .dw-res > li > .dw-t > .dw-p")).toVector
       }
       else {
@@ -118,7 +118,7 @@ trait TestVoter {
     }
     val actualIds = replyElems.map(_.attribute("id") getOrDie "DwE8G0D33")
     for ((correctId, actualId) <- correctOrder.zip(actualIds)) {
-      if (correctId == s"post-${PageParts.NoId}") {
+      if (correctId == s"post-${PageParts.NoNr}") {
         // Ignore, any id ok.
       }
       else {

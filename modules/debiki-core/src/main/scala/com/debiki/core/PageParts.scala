@@ -28,31 +28,22 @@ object PageParts {
 
 
   // Letting the page body / original post be number 1 is compatible with Discourse.
-  val TitleId = 0
-  val BodyId = 1  // (could rename to OrigPostId)
-  val FirstReplyId = 2
+  val TitleNr = 0
+  val BodyNr = 1  // (could rename to OrigPostId)
+  val FirstReplyNr = 2
 
-  val LowestPostId = TitleId
-  assert(LowestPostId == 0)
+  val LowestPostNr = TitleNr
+  assert(LowestPostNr == 0)
 
-  val NoId = -1
-
-  // These are used when new comments or actions are submitted to the server.
-  // When they're submitted, their ids are unknown (the server has not yet
-  // assigned them any id).
-  val UnassignedId = -1001
-  val UnassignedId2 = -1002
-  val UnassignedId3 = -1003
-  val UnassignedId4 = -1004
-  def isActionIdUnknown(id: ActionId) = id <= UnassignedId
+  val NoNr = -1
 
   val MaxTitleLength = 150
 
-  def isArticleOrConfigPostId(id: ActionId) =
-    id == PageParts.BodyId || id == PageParts.TitleId
+  def isArticleOrConfigPostNr(nr: PostNr) =
+    nr == PageParts.BodyNr || nr == PageParts.TitleNr
 
 
-  def isReply(postId: PostId) = postId >= FirstReplyId
+  def isReply(postNr: PostNr) = postNr >= FirstReplyNr
 
 
   /** Finds the 0 to 3 most frequent posters.
@@ -83,47 +74,47 @@ object PageParts {
   */
 abstract class PageParts extends People {
 
-  private lazy val postsById: collection.Map[PostId, Post] = {
-    val postsMap = mutable.HashMap[PostId, Post]()
+  private lazy val postsByNr: collection.Map[PostNr, Post] = {
+    val postsMap = mutable.HashMap[PostNr, Post]()
     for (post <- allPosts) {
-      postsMap.put(post.id, post)
+      postsMap.put(post.nr, post)
     }
     postsMap
   }
 
-  private lazy val childrenBestFirstByParentId: collection.Map[PostId, immutable.Seq[Post]] = {
+  private lazy val childrenBestFirstByParentNr: collection.Map[PostNr, immutable.Seq[Post]] = {
     // COULD find out how to specify the capacity?
-    val childMap = mutable.HashMap[PostId, Vector[Post]]()
+    val childMap = mutable.HashMap[PostNr, Vector[Post]]()
     for (post <- allPosts) {
-      val parentIdOrNoId = post.parentId getOrElse PageParts.NoId
-      var siblings = childMap.getOrElse(parentIdOrNoId, Vector[Post]())
+      val parentNrOrNoNr = post.parentNr getOrElse PageParts.NoNr
+      var siblings = childMap.getOrElse(parentNrOrNoNr, Vector[Post]())
       siblings = siblings :+ post
-      childMap.put(parentIdOrNoId, siblings)
+      childMap.put(parentNrOrNoNr, siblings)
     }
     childMap.mapValues(Post.sortPostsBestFirst)
   }
 
-  def highestReplyId: Option[PostId] = {
+  def highestReplyNr: Option[PostNr] = {
     if (allPosts.isEmpty)
       return None
-    val maxPostId = allPosts.map(_.id).max
-    if (PageParts.isArticleOrConfigPostId(maxPostId)) None
-    else Some(maxPostId)
+    val maxNr = allPosts.map(_.nr).max
+    if (PageParts.isArticleOrConfigPostNr(maxNr)) None
+    else Some(maxNr)
   }
 
   def pageId: PageId
-  def titlePost: Option[Post] = post(PageParts.TitleId)
+  def titlePost: Option[Post] = post(PageParts.TitleNr)
 
   def topLevelComments: immutable.Seq[Post] =
-    childrenBestFirstByParentId.getOrElse(PageParts.NoId, Nil) filterNot { post =>
-      PageParts.isArticleOrConfigPostId(post.id)
+    childrenBestFirstByParentNr.getOrElse(PageParts.NoNr, Nil) filterNot { post =>
+      PageParts.isArticleOrConfigPostNr(post.nr)
     }
 
   def allPosts: Seq[Post]
 
-  def post(postId: PostId): Option[Post] = postsById.get(postId)
-  def post(postId: Option[PostId]): Option[Post] = postId.flatMap(postsById.get)
-  def thePost(postId: PostId): Post = post(postId) getOrDie "DwE9PKG3"
+  def post(postNr: PostNr): Option[Post] = postsByNr.get(postNr)
+  def post(postNr: Option[PostNr]): Option[Post] = postNr.flatMap(postsByNr.get)
+  def thePost(postNr: PostNr): Post = post(postNr) getOrDie "DwE9PKG3"
 
 
   def numRepliesTotal = allPosts.count(_.isReply)
@@ -142,20 +133,20 @@ abstract class PageParts extends People {
   /** Returns the index of `post` among its siblings, the first sibling is no 0.
     * Also tells if there are any non-deleted trees afterwards.
     */
-  def siblingIndexOf(post: Post): (Int, Boolean) = post.parentId match {
+  def siblingIndexOf(post: Post): (Int, Boolean) = post.parentNr match {
     case None => (0, false)
-    case Some(parentId) =>
-      val siblings = childrenBestFirstOf(parentId)
+    case Some(parentNr) =>
+      val siblings = childrenBestFirstOf(parentNr)
       var index = 0
       var result = -1
       while (index < siblings.length) {
         val sibling = siblings(index)
-        if (sibling.id == post.id) {
+        if (sibling.nr == post.nr) {
           dieIf(result != -1, "DwE4JPU7")
           result = index
         }
         else if (result != -1) {
-          if (!sibling.isDeleted || hasNonDeletedSuccessor(sibling.id))
+          if (!sibling.isDeleted || hasNonDeletedSuccessor(sibling.nr))
             return (result, true)
         }
         index += 1
@@ -164,49 +155,49 @@ abstract class PageParts extends People {
   }
 
 
-  def childrenBestFirstOf(postId: PostId): immutable.Seq[Post] =
-    childrenBestFirstByParentId.getOrElse(postId, Nil)
+  def childrenBestFirstOf(postNr: PostNr): immutable.Seq[Post] =
+    childrenBestFirstByParentNr.getOrElse(postNr, Nil)
 
 
-  def successorsOf(postId: PostId): immutable.Seq[Post] = {
-    val pending = ArrayBuffer[Post](childrenBestFirstByParentId.getOrElse(postId, Nil): _*)
+  def successorsOf(postNr: PostNr): immutable.Seq[Post] = {
+    val pending = ArrayBuffer[Post](childrenBestFirstByParentNr.getOrElse(postNr, Nil): _*)
     val successors = ArrayBuffer[Post]()
     while (pending.nonEmpty) {
       val next = pending.remove(0)
-      if (successors.find(_.id == next.id).nonEmpty) {
-        die("DwE9FKW3", s"Cycle detected on page '$pageId'; it includes post '${next.id}'")
+      if (successors.find(_.nr == next.nr).nonEmpty) {
+        die("DwE9FKW3", s"Cycle detected on page '$pageId'; it includes post '${next.nr}'")
       }
       successors.append(next)
-      pending.append(childrenBestFirstOf(next.id): _*)
+      pending.append(childrenBestFirstOf(next.nr): _*)
     }
     successors.toVector
   }
 
 
-  def hasNonDeletedSuccessor(postId: PostId): Boolean = {
+  def hasNonDeletedSuccessor(postNr: PostNr): Boolean = {
     // COULD optimize this, bad O(?) complexity when called on each node, like
     // ReactJson.pageToJsonImpl does — O(n*n)? Could start at the leaves and work up instead
     // and cache the result -> O(n).
-    childrenBestFirstOf(postId) exists { child =>
-      !child.deletedStatus.isDeleted || hasNonDeletedSuccessor(child.id)
+    childrenBestFirstOf(postNr) exists { child =>
+      !child.deletedStatus.isDeleted || hasNonDeletedSuccessor(child.nr)
     }
   }
 
 
-  def parentOf(postId: PostId): Option[Post] =
-    thePost(postId).parentId.map(id => thePost(id))
+  def parentOf(postNr: PostNr): Option[Post] =
+    thePost(postNr).parentNr.map(id => thePost(id))
 
 
-  def depthOf(postId: PostId): Int =
-    ancestorsOf(postId).length
+  def depthOf(postNr: PostNr): Int =
+    ancestorsOf(postNr).length
 
 
   /** Ancestors, starting with postId's parent. */
-  def ancestorsOf(postId: PostId): List[Post] = {
+  def ancestorsOf(postNr: PostNr): List[Post] = {
     var ancestors: List[Post] = Nil
-    var curPost: Option[Post] = Some(thePost(postId))
+    var curPost: Option[Post] = Some(thePost(postNr))
     while ({
-      curPost = parentOf(curPost.get.id)
+      curPost = parentOf(curPost.get.nr)
       curPost.nonEmpty
     }) {
       ancestors ::= curPost.get
@@ -215,31 +206,31 @@ abstract class PageParts extends People {
   }
 
 
-  def findCommonAncestorId(postIds: Seq[PostId]): PostId = {
+  def findCommonAncestorNr(postNrs: Seq[PostNr]): PostNr = {
     TESTS_MISSING // COULD check for cycles?
-    if (postIds.isEmpty || postIds.contains(PageParts.NoId))
-      return PageParts.NoId
+    if (postNrs.isEmpty || postNrs.contains(PageParts.NoNr))
+      return PageParts.NoNr
 
-    val firstPost = thePost(postIds.head)
-    var commonAncestorIds: Seq[PostId] = firstPost.id :: ancestorsOf(firstPost.id).map(_.id)
-    for (nextPostId <- postIds.tail) {
-      val nextPost = thePost(nextPostId)
-      var ancestorIds = nextPost.id :: ancestorsOf(nextPost.id).map(_.id)
+    val firstPost = thePost(postNrs.head)
+    var commonAncestorNrs: Seq[PostNr] = firstPost.nr :: ancestorsOf(firstPost.nr).map(_.nr)
+    for (nextPostNr <- postNrs.tail) {
+      val nextPost = thePost(nextPostNr)
+      var ancestorNrs = nextPost.nr :: ancestorsOf(nextPost.nr).map(_.nr)
       var commonAncestorFound = false
-      while (ancestorIds.nonEmpty && !commonAncestorFound) {
-        val nextAncestorId = ancestorIds.head
-        if (commonAncestorIds.contains(nextAncestorId)) {
-          commonAncestorIds = commonAncestorIds.dropWhile(_ != nextAncestorId)
+      while (ancestorNrs.nonEmpty && !commonAncestorFound) {
+        val nextAncestorNr = ancestorNrs.head
+        if (commonAncestorNrs.contains(nextAncestorNr)) {
+          commonAncestorNrs = commonAncestorNrs.dropWhile(_ != nextAncestorNr)
           commonAncestorFound = true
         }
         else {
-          ancestorIds = ancestorIds.tail
+          ancestorNrs = ancestorNrs.tail
         }
       }
-      if (ancestorIds.isEmpty)
-        return NoId
+      if (ancestorNrs.isEmpty)
+        return NoNr
     }
-    commonAncestorIds.head
+    commonAncestorNrs.head
   }
 
 }

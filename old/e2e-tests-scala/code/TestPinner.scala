@@ -17,7 +17,7 @@
 
 package test.e2e.code
 
-import com.debiki.core.PostId
+import com.debiki.core.PostNr
 import com.debiki.core.Prelude._
 import org.scalatest.time.{Seconds, Span}
 
@@ -29,7 +29,7 @@ trait TestPinner {
   self: DebikiBrowserSpec with StuffTestClicker =>
 
 
-  def pinCommentViaMenu(postId: PostId, position: Int) {
+  def pinCommentViaMenu(postId: PostNr, position: Int) {
     clickPinAction(postId)
     eventually {
       click on cssSelector("#dw-f-pin-pos [name='position']")
@@ -39,7 +39,7 @@ trait TestPinner {
   }
 
 
-  private def clickPinAction(postId: PostId) {
+  private def clickPinAction(postId: PostNr) {
     clickShowMoreActions(postId)
     val pinActions = findAll(cssSelector(".dw-a-pin"))
     val anyVisiblePinAction = pinActions.filter(_.isDisplayed).toSeq.headOption

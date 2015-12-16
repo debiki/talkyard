@@ -17,7 +17,7 @@
 
 package test.e2e.specs
 
-import com.debiki.core.PostId
+import com.debiki.core.PostNr
 import com.debiki.core.FlagType
 import com.debiki.core.Prelude._
 import com.debiki.core.PageRole
@@ -49,13 +49,13 @@ class ModerationSpec extends DebikiBrowserSpec
 
   val guestUserName = s"Mod-Test-Anon-${nextRandomString() take 5}"
 
-  var postId_gu2 = PageParts.NoId
-  var postId_gu3 = PageParts.NoId
-  var postId_gu4 = PageParts.NoId
-  var postId_gu5 = PageParts.NoId
-  var postId_gu6 = PageParts.NoId
-  var postId_gu7 = PageParts.NoId
-  var postId_ad8 = PageParts.NoId
+  var postId_gu2 = PageParts.NoNr
+  var postId_gu3 = PageParts.NoNr
+  var postId_gu4 = PageParts.NoNr
+  var postId_gu5 = PageParts.NoNr
+  var postId_gu6 = PageParts.NoNr
+  var postId_gu7 = PageParts.NoNr
+  var postId_ad8 = PageParts.NoNr
 
   def allPostIds = List(
     postId_gu2, postId_gu3, postId_gu4, postId_gu5, postId_gu6, postId_gu7,

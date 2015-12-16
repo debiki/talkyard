@@ -66,7 +66,7 @@ case class AssetBundleLoader(bundleNameNoSuffix: String,  bundleSuffix: String, 
 
   private def loadBundleFromDatabase(): DatabaseBundleData = {
 
-    val assetsPost = dao.loadPost(SiteCssPageId, PageParts.BodyId) getOrElse {
+    val assetsPost = dao.loadPost(SiteCssPageId, PageParts.BodyNr) getOrElse {
       return DatabaseBundleData("", Nil, Nil, Nil)
     }
 

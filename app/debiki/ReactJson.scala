@@ -83,7 +83,7 @@ object ReactJson {
   def pageToJson(
         pageId: PageId,
         dao: SiteDao,
-        anyPageRoot: Option[PostId] = None,
+        anyPageRoot: Option[PostNr] = None,
         anyPageQuery: Option[PageQuery] = None): (String, CachedPageVersion) = {
     dao.readOnlyTransaction(
       pageToJsonImpl(pageId, dao, _, anyPageRoot, anyPageQuery))
@@ -114,7 +114,7 @@ object ReactJson {
       "categories" -> JsArray(),
       "topics" -> JsArray(),
       "user" -> NoUserSpecificData,
-      "rootPostId" -> JsNumber(PageParts.BodyId),
+      "rootPostId" -> JsNumber(PageParts.BodyNr),
       "allPosts" -> JsObject(Nil),
       "topLevelCommentIdsSorted" -> JsArray(),
       "horizontalLayout" -> JsBoolean(false),
@@ -136,7 +136,7 @@ object ReactJson {
         pageId: PageId,
         dao: SiteDao,
         transaction: SiteTransaction,
-        anyPageRoot: Option[PostId],
+        anyPageRoot: Option[PostNr],
         anyPageQuery: Option[PageQuery]): (String, CachedPageVersion) = {
 
     val socialLinksHtml = dao.loadWholeSiteSettings().socialLinksHtml.valueAsString
@@ -150,7 +150,7 @@ object ReactJson {
 
     var allPostsJson = pageParts.allPosts filter { post =>
       !post.deletedStatus.isDeleted || (
-        post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.id))
+        post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.nr))
     } map { post: Post =>
       numPosts += 1
       if (post.tyype == PostType.Flat)
@@ -168,20 +168,20 @@ object ReactJson {
           //   http://mail.openjdk.java.net/pipermail/nashorn-dev/2015-March/004284.html
           // COULD remove this workaround when upgraded to JDK 8u60, will be released August 2015)
           // Also remove in in ReactRenderer and debikiScripts.scala.html, see [64KEWF2].
-      ("_" + post.id.toString) -> postToJsonImpl(post, page, transaction.currentTime)
+      ("_" + post.nr.toString) -> postToJsonImpl(post, page, transaction.currentTime)
     }
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
     if (page.role == PageRole.EmbeddedComments) {
       allPostsJson +:=
-        PageParts.BodyId.toString ->
+        PageParts.BodyNr.toString ->
           embeddedCommentsDummyRootPost(pageParts.topLevelComments)
     }
 
     val topLevelComments = pageParts.topLevelComments
     val topLevelCommentIdsSorted =
-      Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.id))
+      Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))
 
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
       makeForumIdAndAncestorsJson(page.meta, dao)
@@ -251,7 +251,7 @@ object ReactJson {
          includeHiddenInForum = true, dao),
       "topics" -> JsArray(anyLatestTopics),
       "user" -> NoUserSpecificData,
-      "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyId)),
+      "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
       "allPosts" -> JsObject(allPostsJson),
       "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
       "horizontalLayout" -> JsBoolean(horizontalLayout),
@@ -306,12 +306,12 @@ object ReactJson {
   }
 
 
-  def postToJson2(postId: PostId, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false)
+  def postToJson2(postNr: PostNr, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false)
         : JsObject = {
     dao.readOnlyTransaction { transaction =>
-      // COULD optimize: don't load the whole page, load only postId and the author and last editor.
+      // COULD optimize: don't load the whole page, load only postNr and the author and last editor.
       val page = PageDao(pageId, transaction)
-      postToJsonImpl(page.parts.thePost(postId), page, transaction.currentTime,
+      postToJsonImpl(page.parts.thePost(postNr), page, transaction.currentTime,
         includeUnapproved = includeUnapproved)
     }
   }
@@ -330,7 +330,7 @@ object ReactJson {
       else
         (post.approvedHtmlSanitized, post.approvedAt.isDefined)
 
-    val depth = page.parts.depthOf(post.id)
+    val depth = page.parts.depthOf(post.nr)
 
     // Find out if we should summarize post, or squash it and its subsequent siblings.
     // This is simple but a bit too stupid? COULD come up with a better algorithm (better
@@ -347,7 +347,7 @@ object ReactJson {
         val squashTime = siblingIndex > SquashSiblingIndexLimit / math.max(depth, 1)
         // Don't squash a single comment with no replies – summarize it instead.
         val squash = squashTime && (hasNonDeletedSuccessorSiblingTrees ||
-          page.parts.hasNonDeletedSuccessor(post.id))
+          page.parts.hasNonDeletedSuccessor(post.nr))
         var summarize = !squash && (squashTime || siblingIndex > SummarizeSiblingIndexLimit ||
           depth >= SummarizeAllDepthLimit)
         val summary: JsValue =
@@ -371,7 +371,7 @@ object ReactJson {
         (summarize, summary, squash)
       }
 
-    val childrenSorted = page.parts.childrenBestFirstOf(post.id)
+    val childrenSorted = page.parts.childrenBestFirstOf(post.nr)
     val author = post.createdByUser(people)
     val postType: Option[Int] = if (post.tyype == PostType.Normal) None else Some(post.tyype.toInt)
 
@@ -383,9 +383,9 @@ object ReactJson {
 
     var fields = Vector(
       "uniqueId" -> JsNumber(post.uniqueId),
-      "postId" -> JsNumber(post.id),
-      "parentId" -> post.parentId.map(JsNumber(_)).getOrElse(JsNull),
-      "multireplyPostIds" -> JsArray(post.multireplyPostIds.toSeq.map(JsNumber(_))),
+      "postId" -> JsNumber(post.nr),
+      "parentId" -> post.parentNr.map(JsNumber(_)).getOrElse(JsNull),
+      "multireplyPostIds" -> JsArray(post.multireplyPostNrs.toSeq.map(JsNumber(_))),
       "postType" -> JsNumberOrNull(postType),
       "authorId" -> JsString(post.createdById.toString),  // COULD remove, but be careful when converting to int client side
       "authorIdInt" -> JsNumber(post.createdById),  // Rename to authorId when it's been converted to int (the line above)
@@ -413,7 +413,7 @@ object ReactJson {
       "isApproved" -> JsBoolean(isApproved),
       "pinnedPosition" -> post.pinnedPosition.map(JsNumber(_)).getOrElse(JsNull),
       "likeScore" -> JsNumber(decimal(post.likeScore)),
-      "childIdsSorted" -> JsArray(childrenSorted.map(reply => JsNumber(reply.id))),
+      "childIdsSorted" -> JsArray(childrenSorted.map(reply => JsNumber(reply.nr))),
       "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml))
 
     if (post.isHidden) fields :+= "isPostHidden" -> JsTrue
@@ -453,9 +453,9 @@ object ReactJson {
 
   /** Creates a dummy root post, needed when rendering React elements. */
   def embeddedCommentsDummyRootPost(topLevelComments: immutable.Seq[Post]) = Json.obj(
-    "postId" -> JsNumber(PageParts.BodyId),
+    "postId" -> JsNumber(PageParts.BodyNr),
     "childIdsSorted" ->
-      JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.id))))
+      JsArray(Post.sortPostsBestFirst(topLevelComments).map(reply => JsNumber(reply.nr))))
 
 
   val NoUserSpecificData = Json.obj(
@@ -532,13 +532,13 @@ object ReactJson {
     val actions = transaction.loadActionsByUserOnPage(userId, pageId)
     val votes = actions.filter(_.isInstanceOf[PostVote]).asInstanceOf[immutable.Seq[PostVote]]
     val userVotesMap = UserPostVotes.makeMap(votes)
-    val votesByPostId = userVotesMap map { case (postId, votes) =>
+    val votesByPostId = userVotesMap map { case (postNr, votes) =>
       var voteStrs = Vector[String]()
       if (votes.votedLike) voteStrs = voteStrs :+ "VoteLike"
       if (votes.votedWrong) voteStrs = voteStrs :+ "VoteWrong"
       if (votes.votedBury) voteStrs = voteStrs :+ "VoteBury"
       if (votes.votedUnwanted) voteStrs = voteStrs :+ "VoteUnwanted"
-      postId.toString -> Json.toJson(voteStrs)
+      postNr.toString -> Json.toJson(voteStrs)
     }
     JsObject(votesByPostId.toSeq)
   }
@@ -610,7 +610,7 @@ object ReactJson {
       case Some(post) =>
         Json.obj(
           "pageId" -> post.pageId,
-          "nr" -> post.id,
+          "nr" -> post.nr,
           "uniqueId" -> post.uniqueId,
           "createdBy" -> JsUserOrNull(usersById.get(post.createdById)),
           "currentSource" -> post.currentSource,

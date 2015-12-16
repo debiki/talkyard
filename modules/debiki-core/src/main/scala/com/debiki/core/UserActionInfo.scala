@@ -21,7 +21,7 @@ import java.{util => ju}
 
 
 /**
-  * @param repliedToPostId If defined, means this action represents a reply to a post.
+  * @param repliedToPostNr If defined, means this action represents a reply to a post.
   * @param votedLike If true, this action represents a Like vote of some post.
   * @param votedWrong
   * @param votedBury
@@ -31,7 +31,7 @@ case class UserActionInfo(
   pageId: String,
   pageTitle: String,
   pageRole: PageRole,
-  postId: PostId,
+  postNr: PostNr,
   postExcerpt: String,
   actionId: ActionId,
   actingUserId: UserId,
@@ -40,8 +40,8 @@ case class UserActionInfo(
   targetUserDisplayName: String,
   createdAt: ju.Date,
   createdNewPage: Boolean,
-  repliedToPostId: Option[PostId],
-  editedPostId: Option[PostId],
+  repliedToPostNr: Option[PostNr],
+  editedPostNr: Option[PostNr],
   approved: Boolean,
   deleted: Boolean,
   pinned: Boolean,

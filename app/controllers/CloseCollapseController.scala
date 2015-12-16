@@ -60,11 +60,11 @@ object CloseCollapseController extends mvc.Controller {
       throwForbidden("DwE95Xf2", "Insufficient permissions to change post or thread status")
 
     val pageId = (apiReq.body \ "pageId").as[PageId]
-    val postId = (apiReq.body \ "postNr").as[PostId]
+    val postNr = (apiReq.body \ "postNr").as[PostNr]
 
-    apiReq.dao.changePostStatus(postId, pageId = pageId, action, userId = apiReq.theUserId)
+    apiReq.dao.changePostStatus(postNr, pageId = pageId, action, userId = apiReq.theUserId)
 
-    OkSafeJson(ReactJson.postToJson2(postId = postId, pageId = pageId, // COULD stop including post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
+    OkSafeJson(ReactJson.postToJson2(postNr = postNr, pageId = pageId, // COULD stop including post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
       apiReq.dao, includeUnapproved = true))
   }
 

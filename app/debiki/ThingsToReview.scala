@@ -29,13 +29,13 @@ case class ThingsToReview(
   people: Seq[User],
   flags: immutable.Seq[PostFlag]) {
 
-  private val postsById: Map[PostId, Post] = Map(posts.map(post => post.id -> post): _*)
+  private val postsByNr: Map[PostNr, Post] = Map(posts.map(post => post.nr -> post): _*)
   private val pagesById: Map[PageId, PageMeta] = Map(pageMetas.map(meta => meta.pageId -> meta): _*)
   private val peopleById: Map[UserId, User] = Map(people.map(user => user.id -> user): _*)
-  private val flagsByPostId: Map[PostId, immutable.Seq[PostFlag]] = flags.groupBy(_.postId)
+  private val flagsByPostNr: Map[PostNr, immutable.Seq[PostFlag]] = flags.groupBy(_.postNr)
 
-  def thePost(id: PostId): Post = postsById.get(id) getOrDie "DwE8F0Be2"
+  def thePost(id: PostNr): Post = postsByNr.get(id) getOrDie "DwE8F0Be2"
   def thePage(id: PageId): PageMeta = pagesById.get(id) getOrDie "DwE6PKJ5"
   def theUser(id: UserId): User = peopleById.get(id) getOrDie "DwE2dKG8"
-  def theFlagsFor(id: PostId): immutable.Seq[PostFlag] = flagsByPostId.getOrElse(id, Nil)
+  def theFlagsFor(id: PostNr): immutable.Seq[PostFlag] = flagsByPostNr.getOrElse(id, Nil)
 }

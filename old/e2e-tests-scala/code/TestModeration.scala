@@ -17,7 +17,7 @@
 
 package test.e2e.specs
 
-import com.debiki.core.{PostId, PageId}
+import com.debiki.core.{PostNr, PageId}
 import test.e2e.code._
 
 
@@ -37,7 +37,7 @@ trait TestModeration {
 
 
   // For the admin dashboard. Should be moved to a page object?
-  def checkCommentStatus(pageId: PageId, postId: PostId, commentStatusText: String,
+  def checkCommentStatus(pageId: PageId, postId: PostNr, commentStatusText: String,
         numSuggestions: Int = -1) {
     val commentLink = find(cssSelector(s"a[href='/-$pageId#post-$postId']")).
       getOrElse(fail(s"Comment `$postId' not listed"))
@@ -62,52 +62,52 @@ trait TestModeration {
   }
 
 
-  def findApproveNewPostLink(pageId: String, postId: PostId) =
+  def findApproveNewPostLink(pageId: String, postId: PostNr) =
     findPostInlineSomething(pageId, postId, cssClass = "approve-new-post")
 
-  def clickApproveNewPost(pageId: String, postId: PostId) =
+  def clickApproveNewPost(pageId: String, postId: PostNr) =
     click on findApproveNewPostLink(pageId, postId).getOrElse(fail(
       s"Approve new post link missing, page id: $pageId, post id: $postId"))
 
-  def findPostApprovedMessage(pageId: String, postId: PostId) =
+  def findPostApprovedMessage(pageId: String, postId: PostNr) =
     findPostInlineSomething(pageId, postId, cssClass = "inline-message", text = "Approved.")
 
 
-  def findDeleteNewPostLink(pageId: String, postId: PostId) =
+  def findDeleteNewPostLink(pageId: String, postId: PostNr) =
     findPostInlineSomething(pageId, postId, cssClass = "delete-new-post")
 
-  def clickDeleteNewPost(pageId: String, postId: PostId) =
+  def clickDeleteNewPost(pageId: String, postId: PostNr) =
     click on findDeleteNewPostLink(pageId, postId).getOrElse(fail(
       s"Delete new post link missing, page id: $pageId, post id: $postId"))
 
-  def findDeleteFlaggedPostLink(pageId: String, postId: PostId) =
+  def findDeleteFlaggedPostLink(pageId: String, postId: PostNr) =
     findPostInlineSomething(pageId, postId, cssClass = "delete-flagged-post")
 
-  def clickDeleteFlaggedPost(pageId: String, postId: PostId) =
+  def clickDeleteFlaggedPost(pageId: String, postId: PostNr) =
     click on findDeleteFlaggedPostLink(pageId, postId).getOrElse(fail(
       s"Delete flagged post link missing, page id: $pageId, post id: $postId"))
 
-  def findPostDeletedMessage(pageId: String, postId: PostId) =
+  def findPostDeletedMessage(pageId: String, postId: PostNr) =
     findPostInlineSomething(pageId, postId, cssClass = "inline-message", text = "Deleted.")
 
 
-  def findClearFlagsLink(pageId: String, postId: PostId) =
+  def findClearFlagsLink(pageId: String, postId: PostNr) =
     findPostInlineSomething(pageId, postId, cssClass = "clear-flags")
 
-  def clickClearFlags(pageId: String, postId: PostId) =
+  def clickClearFlags(pageId: String, postId: PostNr) =
     click on findClearFlagsLink(pageId, postId).getOrElse(fail(
       s"Clear flags link missing, page id: $pageId, post id: $postId"))
 
-  def findFlagsClearedMessage(pageId: String, postId: PostId) =
+  def findFlagsClearedMessage(pageId: String, postId: PostNr) =
     findPostInlineSomething(pageId, postId, cssClass = "inline-message", text = "Flags cleared.")
 
 
-  def findImprovementSuggestionsLink(pageId: PageId, postId: PostId) =
+  def findImprovementSuggestionsLink(pageId: PageId, postId: PostNr) =
     findPostInlineSomething(pageId, postId, "suggestions-link")
 
 
   private def findPostInlineSomething(
-        pageId: String, postId: PostId, cssClass: String, text: String = null) = {
+        pageId: String, postId: PostNr, cssClass: String, text: String = null) = {
     val query = findPostElemXpath(pageId, postId) +
       s"//*[contains(concat(' ', @class, ' '), ' $cssClass ')]"
     var anyElem = find(xpath(query))
@@ -116,13 +116,13 @@ trait TestModeration {
   }
 
 
-  def findAnyInlineButton(pageId: String, postId: PostId) = {
+  def findAnyInlineButton(pageId: String, postId: PostNr) = {
     val query = findPostElemXpath(pageId, postId) + "//button"
     findAll(xpath(query)).filter(_.isDisplayed).toList.headOption
   }
 
 
-  private def findPostElemXpath(pageId: String, postId: PostId) = {
+  private def findPostElemXpath(pageId: String, postId: PostNr) = {
     // Find the link to the comment
     s"//a[@href='/-$pageId#post-$postId' and " +
       "contains(concat(' ', @class, ' '), ' action-description ')]" +

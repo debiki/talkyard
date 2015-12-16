@@ -57,14 +57,14 @@ case class AuditLogEntry(
   pageId: Option[PageId] = None,
   pageRole: Option[PageRole] = None,
   uniquePostId: Option[UniquePostId] = None,
-  postNr: Option[PostId] = None,
+  postNr: Option[PostNr] = None,
   uploadHashPathSuffix: Option[String] = None,
   uploadFileName: Option[String] = None,
   sizeBytes: Option[Int] = None,
   targetUniquePostId: Option[UniquePostId] = None,
   targetSiteId: Option[SiteId] = None, // ought to rename to otherSiteId, rename db column too
   targetPageId: Option[PageId] = None,
-  targetPostNr: Option[PostId] = None,
+  targetPostNr: Option[PostNr] = None,
   targetUserId: Option[UserId] = None) {
 
   require(pageRole.isEmpty || pageId.isDefined, "DwE4PFKW7")

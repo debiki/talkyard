@@ -54,7 +54,7 @@ object Notification {
     createdAt: ju.Date,
     uniquePostId: UniquePostId,
     pageId: PageId,
-    postId: PostId,
+    postNr: PostNr,
     byUserId: UserId,
     toUserId: UserId,
     emailId: Option[EmailId] = None,
@@ -99,13 +99,13 @@ object NotificationToDelete {
   case class MentionToDelete(
     siteId: SiteId,
     pageId: PageId,
-    postId: PostId,
+    postNr: PostNr,
     toUserId: UserId) extends NotificationToDelete
 
   case class NewPostToDelete(
     siteId: SiteId,
     pageId: PageId,
-    postId: PostId) extends NotificationToDelete
+    postNr: PostNr) extends NotificationToDelete
 
 }
 

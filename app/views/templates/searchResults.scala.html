@@ -18,6 +18,8 @@
 @(tpi: debiki.SiteTpi, anySectionId: Option[String], searchPhrase: String,
   searchResult: com.debiki.core.FullTextSearchResult)
 
+@* reimplement in React instead, right? Broken anyway, uses old postId, not postNr.
+
 @import com.debiki.core._
 
 
@@ -30,7 +32,7 @@
 }
 
 
-@* Add later:   , by { hit.post.user_!.displayName }:</em>   *@
+@* Add later:   , by { hit.post.user_!.displayName }:</em>   * @
 
 @searchResultsHtml = @{
   if (searchResult.isEmpty) <p>I found nothing.</p>
@@ -82,3 +84,4 @@
   </div>
 }
 
+*@

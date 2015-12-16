@@ -53,7 +53,7 @@ case class ReviewTask(
   userId: Option[UserId] = None,
   pageId: Option[PageId] = None,
   postId: Option[UniquePostId] = None,
-  postNr: Option[PostId] = None) {
+  postNr: Option[PostNr] = None) {
 
   require(reasons.nonEmpty, "EsE3FK21")
   require(!moreReasonsAt.exists(_.getTime < createdAt.getTime), "EsE7UGYP2")

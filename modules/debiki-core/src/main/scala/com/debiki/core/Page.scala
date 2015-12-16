@@ -432,7 +432,7 @@ object PageFilter {
 }
 
 
-case class PagePostId(pageId: PageId, postId: PostId) {
-  def toList: List[AnyRef] = List(pageId, postId.asInstanceOf[AnyRef])
+case class PagePostNr(pageId: PageId, postNr: PostNr) {
+  def toList: List[AnyRef] = List(pageId, postNr.asInstanceOf[AnyRef])
 }
 

@@ -28,7 +28,7 @@ import PostRevision._
   *  applied edit suggestions written by *other* people.
   */
 case class PostRevision(
-  postId: PostId,
+  postId: UniquePostId,
   revisionNr: Int,
   previousNr: Option[Int],
   sourcePatch: Option[String],

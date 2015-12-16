@@ -44,12 +44,12 @@ object VoteController extends mvc.Controller {
   def handleVotes = PostJsonAction(RateLimits.RatePost, maxLength = 500) { request: JsonPostRequest =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
-    val postId = (body \ "postId").as[PostId]
+    val postNr = (body \ "postId").as[PostNr]
     val voteStr = (body \ "vote").as[String]
     val actionStr = (body \ "action").as[String]
-    val postIdsReadSeq = (body \ "postIdsRead").asOpt[immutable.Seq[PostId]]
+    val postNrsReadSeq = (body \ "postIdsRead").asOpt[immutable.Seq[PostNr]]
 
-    val postIdsRead = postIdsReadSeq.getOrElse(Nil).toSet
+    val postNrsRead = postNrsReadSeq.getOrElse(Nil).toSet
 
     val delete: Boolean = actionStr match {
       case "CreateVote" => false
@@ -59,13 +59,13 @@ object VoteController extends mvc.Controller {
 
     // Check for bad requests
     if (delete) {
-      if (postIdsReadSeq.isDefined)
+      if (postNrsReadSeq.isDefined)
         throwBadReq("DwE30Df5", "postIdsReadSeq specified when deleting a vote")
     }
     else {
-      if (postIdsReadSeq.map(_.length) != Some(postIdsRead.size))
+      if (postNrsReadSeq.map(_.length) != Some(postNrsRead.size))
         throwBadReq("DwE942F0", "Duplicate ids in postIdsRead")
-      if (!postIdsRead.contains(postId))
+      if (!postNrsRead.contains(postNr))
         throwBadReq("DwE46F82", "postId not part of postIdsRead")
     }
 
@@ -78,14 +78,14 @@ object VoteController extends mvc.Controller {
     }
 
     if (delete) {
-      request.dao.deleteVote(pageId, postId, voteType, voterId = request.theUser.id)
+      request.dao.deleteVote(pageId, postNr, voteType, voterId = request.theUser.id)
     }
     else {
-      request.dao.ifAuthAddVote(pageId, postId, voteType,
-        voterId = request.theUser.id, voterIp = request.ip, postIdsRead)
+      request.dao.ifAuthAddVote(pageId, postNr, voteType,
+        voterId = request.theUser.id, voterIp = request.ip, postNrsRead)
     }
 
-    val json = ReactJson.postToJson2(postId = postId, pageId = pageId, request.dao,
+    val json = ReactJson.postToJson2(postNr = postNr, pageId = pageId, request.dao,
       includeUnapproved = false)
     OkSafeJson(json)
   }

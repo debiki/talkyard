@@ -57,7 +57,7 @@ trait SpecialContentDao {
 
   def loadSpecialContentPage(pageId: PageId, replaceNamesApplyMarkup: Boolean): Option[Content] = {
     readOnlyTransaction { transaction =>
-      transaction.loadPost(pageId, PageParts.BodyId) map { bodyPost =>
+      transaction.loadPost(pageId, PageParts.BodyNr) map { bodyPost =>
         // Return None so the caller fallbacks to the default content, if we are
         // to use the default content.
         if (bodyPost.currentSource == SpecialContentPages.UseDefaultContentMark)
@@ -111,7 +111,7 @@ trait SpecialContentDao {
           throwForbidden("Dw7GBR8", s"$theRootPage is not a section")
       }
 
-      transaction.loadPost(pageId, PageParts.BodyId) match {
+      transaction.loadPost(pageId, PageParts.BodyNr) match {
         case None =>
           createSpecialContentPage(pageId, authorId = editorId, newSource,
             htmlSanitized = approvedHtmlSanitized, transaction)

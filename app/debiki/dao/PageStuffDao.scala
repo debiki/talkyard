@@ -19,7 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.core.PageParts.{TitleId, BodyId}
+import com.debiki.core.PageParts.{TitleNr, BodyNr}
 import debiki.ReactJson.{htmlToTextWithNewlines, ToTextResult}
 import debiki._
 import java.{util => ju}
@@ -80,10 +80,10 @@ trait PageStuffDao {
     // Load titles for all pages, and bodies for pinned topics
     // (because in forum topic lists, we show excerpts of pinned topics).
     val titlesAndBodies = transaction.loadPosts(pageIds flatMap { pageId =>
-      var pagePostIds = Seq(PagePostId(pageId, TitleId))
+      var pagePostIds = Seq(PagePostNr(pageId, TitleNr))
       val pageMeta = pageMetasById.get(pageId)
       if (pageMeta.exists(_.isPinned)) {
-        pagePostIds :+= PagePostId(pageId, BodyId)
+        pagePostIds :+= PagePostNr(pageId, BodyNr)
       }
       pagePostIds
     })
@@ -103,8 +103,8 @@ trait PageStuffDao {
 
     for (pageMeta <- pageMetasById.values) {
       val pageId = pageMeta.pageId
-      val anyBody = titlesAndBodies.find(post => post.pageId == pageId && post.id == BodyId)
-      val anyTitle = titlesAndBodies.find(post => post.pageId == pageId && post.id == TitleId)
+      val anyBody = titlesAndBodies.find(post => post.pageId == pageId && post.nr == BodyNr)
+      val anyTitle = titlesAndBodies.find(post => post.pageId == pageId && post.nr == TitleNr)
       val anyAuthor = usersById.get(pageMeta.authorId)
 
       // The text in the first paragraph, but at most ExcerptLength chars.

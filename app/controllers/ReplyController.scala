@@ -41,7 +41,7 @@ object ReplyController extends mvc.Controller {
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
     val anyPageUrl = (body \ "pageUrl").asOpt[String]
-    val replyToPostIds = (body \ "postIds").as[Set[PostId]]
+    val replyToPostNrs = (body \ "postIds").as[Set[PostNr]]
     val text = (body \ "text").as[String].trim
     val wherePerhapsEmpty = (body \ "where").asOpt[String]
     val whereOpt = if (wherePerhapsEmpty == Some("")) None else wherePerhapsEmpty
@@ -67,10 +67,10 @@ object ReplyController extends mvc.Controller {
     Globals.antiSpam.detectPostSpam(request, pageId, textAndHtml) map { isSpamReason =>
       throwForbiddenIfSpam(isSpamReason, "DwE5JGY0")
 
-      val postId = pageReq.dao.insertReply(textAndHtml, pageId = pageId, replyToPostIds, postType,
+      val postId = pageReq.dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs, postType,
         authorId = pageReq.theUser.id, pageReq.theBrowserIdData)
 
-      val json = ReactJson.postToJson2(postId = postId, pageId = pageId, pageReq.dao,
+      val json = ReactJson.postToJson2(postNr = postId, pageId = pageId, pageReq.dao,
         includeUnapproved = true)
       OkSafeJson(json)
     }

@@ -69,17 +69,17 @@ class EditActivitySpec extends DebikiBrowserSpec
 
   val guestUserName = s"Activity-Anon-${nextRandomString() take 5}"
 
-  var postId_gu1 = PageParts.NoId
-  var postId_gu2 = PageParts.NoId
-  var postId_gu3 = PageParts.NoId
-  var postId_gm1 = PageParts.NoId
-  var postId_gm2 = PageParts.NoId
-  var postId_gm3 = PageParts.NoId
-  var postId_ad1 = PageParts.NoId
-  var postId_ad2 = PageParts.NoId
-  var postId_ad3 = PageParts.NoId
-  var postId_ad4 = PageParts.NoId
-  var postId_ad5 = PageParts.NoId
+  var postId_gu1 = PageParts.NoNr
+  var postId_gu2 = PageParts.NoNr
+  var postId_gu3 = PageParts.NoNr
+  var postId_gm1 = PageParts.NoNr
+  var postId_gm2 = PageParts.NoNr
+  var postId_gm3 = PageParts.NoNr
+  var postId_ad1 = PageParts.NoNr
+  var postId_ad2 = PageParts.NoNr
+  var postId_ad3 = PageParts.NoNr
+  var postId_ad4 = PageParts.NoNr
+  var postId_ad5 = PageParts.NoNr
 
   def allPostIds = List(
     postId_gu1, postId_gu2, postId_gu3,

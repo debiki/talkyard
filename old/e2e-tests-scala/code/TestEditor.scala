@@ -17,7 +17,7 @@
 
 package test.e2e.code
 
-import com.debiki.core.{ActionId, PostId}
+import com.debiki.core.{ActionId, PostNr}
 import com.debiki.core.Prelude._
 import org.scalatest.time.{Seconds, Span}
 import org.openqa.selenium.Keys
@@ -149,7 +149,7 @@ trait TestEditor extends org.scalatest.concurrent.PatienceConfiguration {
   }
 
 
-  private def setTextInEditor(newText: String, postId: PostId) {
+  private def setTextInEditor(newText: String, postId: PostNr) {
     // First try with any CodeMirror editor saved as
     //    debiki.internal.debugCodeMirrorEditor
     // but only if CodeMirror is open, or we might accidentally use some *old* instance.

@@ -17,7 +17,7 @@
 
 package test.e2e.code
 
-import com.debiki.core.PostId
+import com.debiki.core.PostNr
 import com.debiki.core.FlagType.FlagType
 import com.debiki.core.Prelude._
 import org.scalatest.time.{Seconds, Span}
@@ -29,7 +29,7 @@ trait TestFlagger {
   self: DebikiBrowserSpec with StuffTestClicker =>
 
 
-  def flagPost(postId: PostId, flagType: FlagType) {
+  def flagPost(postId: PostNr, flagType: FlagType) {
     clickFlagAction(postId)
     eventually {
       click on cssSelector("label[for^='dw-fi-flgs-spam'] > span")
@@ -49,7 +49,7 @@ trait TestFlagger {
   }
 
 
-  private def clickFlagAction(postId: PostId) {
+  private def clickFlagAction(postId: PostNr) {
     clickShowMoreActions(postId)
     val pinActions = findAll(cssSelector(".dw-a-flag"))
     val anyVisiblePinAction = pinActions.filter(_.isDisplayed).toSeq.headOption
