@@ -45,8 +45,7 @@ var tests = {
     b.swithToOtherWindow();
     b.waitAndSetValue('#email', email);
     b.waitAndSetValue('#pass', password); // argh! Prints the password on the console. See: https://github.com/nightwatchjs/nightwatch/issues/758 "Don't print passwords: can I tell setValue() to be silent? ..."
-    b.perform(() => { console.log("SATANERR"); });
-    b.click('input[type=submit]');
+    b.waitAndClick('input[type=submit]');
     // Facebook somehow auto accepts the confirmation dialog, perhaps because
     // I'm using a Facebook API test user. So need not do this:
     //b.waitForElementVisible('[name=__CONFIRM__]');

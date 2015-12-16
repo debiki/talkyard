@@ -93,7 +93,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory) {
   def emptyDatabase() {
     readWriteTransaction { transaction =>
       dieIf(!play.api.Play.isTest, "EsE500EDB0")
-      emptyDatabase()
+      transaction.emptyDatabase()
     }
   }
 

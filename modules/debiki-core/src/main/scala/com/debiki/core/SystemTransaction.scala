@@ -24,6 +24,8 @@ trait SystemTransaction {
   def commit()
   def rollback()
 
+  /** If test mode, deletes and recreates the database, if there's a validation error.
+    */
   def applyEvolutions()
 
   // ----- Sites
@@ -56,10 +58,6 @@ trait SystemTransaction {
   def loadPageIdsToRerender(limit: Int): Seq[PageIdToRerender]
 
   // ----- Testing
-
-  // These dangerous functions COULD be moved to a separate artifact,
-  // debiki-core-test (?), that only SBT % "test" configs depend on.
-  // So one cannot possibly call `emptyDatabase()` when Play.isProd.
 
   /** Deletes all data from the database. For example, for a RDBMS,
     * would delete all rows from all tables. (Except for some "static" data.)
