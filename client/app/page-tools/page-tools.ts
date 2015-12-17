@@ -108,7 +108,7 @@ var PageToolsDialog = createComponent({
 
 
 function canPinPage(store: Store) {
-  return store.categoryId;
+  return store.categoryId && store.pageRole !== PageRole.Forum;
 }
 
 

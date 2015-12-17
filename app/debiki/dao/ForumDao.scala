@@ -155,27 +155,26 @@ object ForumDao {
 
 
   lazy val introText = renderCommonMark(i"""
-    |Replace this text with an introduction to this forum, so people will know what it is about. You can link back to your main website, if any.
+    |Edit this to tell people what this community is about. Consider linking back to your main website, if any.
     """)
 
 
-  val WelcomeTopicTitle = "Welcome to this forum"
+  val WelcomeTopicTitle = "Welcome to this community"
 
   lazy val welcomeTopic = renderCommonMark(i"""
-    |This first paragraph is shown to everyone, on the forum homepage. Edit it to briefly clarify what this community is about.
+    |This first paragraph is shown to everyone, on the forum homepage. Edit it to briefly clarify what this community is about. You can edit the topic title too.
     |
     |Here, below the first paragraph, add details like:
     |- Who is this community for?
     |- What can they do or find here?
-    |- Add links to additional info, e.g. [the about page](/about), any FAQ or any main website of yours.
-    |
+    |- Link to additional info, for example:  [the about page](/about); any FAQ; any main website of yours.
     |""")
 
 
   val AdminQuickStartGuideTitle = "READ ME FIRST: Admin Quick Start Guide"
 
   lazy val adminQuickStartGuide = renderCommonMark(i"""
-    |As an admin, you can configure this forum and website. Go to the admin area by clicking <span class="icon-menu"></span> to the upper right, then click **Admin**.
+    |As an admin, you can configure this forum and website. Go to the admin area by clicking <span class="icon-menu"></span> to the upper right, then click **Admin**. (The admin area is a bit unfinished right now.)
     |
     |Required settings
     |------------------
@@ -193,37 +192,34 @@ object ForumDao {
     |Customize colors and logo
     |------------------
     |
-    |See the admin area, the **Customize** section. However, your customizations might break in the future, because this functionality is a bit experimental right now. Also, you need to know some CSS and/or a bit HTML, right now, unfortunately.
+    |In the admin area, the **Customize** section, you can customize colors, add a logo and a top navigation bar. However, your customizations might break in the future, because this functionality is a bit experimental right now. Also, you need to know some CSS and/or a bit HTML, right now, unfortunately.
     |
-    |Clarify what this forum is about
+    |Clarify what this community is about
     |------------------
     |
-    |Edit the forum intro text (just below the forum title). And the _Welcome to this forum_ topic.
-    |
-    |Edit [the about page](/about): tell people what this forum and website is about. Link to your main website, if any.
+    |Edit the community intro text (just below the forum title). And edit the _Welcome to this community_ topic. And [the about page](/about).
     |
     |Create categories
     |------------------
     |
-    |On the forum homepage, click **Categories**, then **Create Category**. Edit the about-this-category topic that you'll find in each category you create.
+    |On the homepage, click **Categories**, then **Create Category**. Edit the about-this-category topic that you'll find in each category you create. Don't create too many categories (if you do, they might look rather empty).
     |
     |Build your community
     |------------------
     |
     |Building a community is hard. Before launching:
     |
-    | - Make sure people will understand what this forum is about — see the _Clarify what the site is about_ sections above.
+    | - Make sure people will understand what this community is about — see the _Clarify what the site is about_ section above.
     | - Create some interesting topics, so people won't find an empty forum.
     | - Commit to visiting your forum regularly and participating in the discussions.
+    | - Tell a few people to have a look at this new community. Ask them if they understand its purpose. Edit and improve the welcome topic or intro text, until everything is clear.
     |
-    |Then you can start promoting your forum. Start by telling a few people about it, and ask them if they understand the purpose of the forum. Rewrite the welcome topic or intro text, if needed.
-    |
-    |Later, when those you ask do seem to understand, link to your forum "everywhere" and tell people about it. You can invite people via email: click your name in the upper right, then click **Invite**.
+    |Then start promoting your community: link to it "everywhere" and tell people about it. You can invite people via email: click your name in the upper right, then click **View Profile**, then **Invite**.
     |
     |Need help?
     |------------------
     |
-    |For help, go to EffectiveDiscussion's [support forum](http://www.effectivediscussions.org/forum/#/latest/support).
+    |For help, go to EffectiveDiscussion's [support forum](http://www.effectivediscussions.org/forum/#/latest/support). Over there, there's an _Ideas_ category too, and you're welcome to make suggestions.
     |""")
 
 

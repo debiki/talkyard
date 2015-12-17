@@ -97,7 +97,11 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     * classloader here?
     */
   def startCreatingRenderEngines() {
-    dieIf(!javascriptEngines.isEmpty, "DwE50KFE2")
+    if (!javascriptEngines.isEmpty) {
+      dieIf(!Play.isTest, "DwE50KFE2")
+      // We've restarted the server as part of the tests? but this object lingers? Fine.
+      return
+    }
     Future {
       val numEngines =
         if (Play.isProd) Runtime.getRuntime.availableProcessors

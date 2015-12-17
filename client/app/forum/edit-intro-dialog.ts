@@ -88,7 +88,8 @@ var EditIntroDialog = createClassAndFactory({
         r.div({},
           r.p({}, "The forum intro text helps people understand the purpose of the forum. " +
               "They can hide it by clicking ",
-              r.span({ className: 'icon-cancel' }, "Hide"), " when they have read it."),
+              r.span({ className: 'icon-cancel' }, "Hide"), " when they have read it. " +
+              " — Now, what do you want to do?"),
           editIntroTextButton,
           removeIntroButton);
 

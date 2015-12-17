@@ -73,8 +73,16 @@ p {
   line-height: normal;
 }
 
-li { margin-left: 2.9em;  margin-bottom: 0.6em; }
+li
+  margin-left: 2.2em;
+  margin-bottom: 0.6em;
+
+li > ul,
+li > ol
+  margin-top: 0.6em;
+
 ul, ol {
+  padding: 0;
   margin: 0;
   -webkit-padding-start: 0;
   -webkit-margin-after: 0;
@@ -402,3 +410,4 @@ body > .container {
     padding: 0 6px;
   }
 }
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

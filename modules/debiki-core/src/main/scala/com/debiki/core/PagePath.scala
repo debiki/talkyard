@@ -310,6 +310,17 @@ object PagePath {
     val (pageId, showId) =
       if (pageIdStr isEmpty) (None, false)
       else (Some(pageIdStr), true)
+
+    // Needs to refactor this. I'm just duplicating the tests in the constructor.
+    if (pageSlug.intersect(_BadPunctSlug).nonEmpty)
+      return Parsed.Bad("Bad characters in page slug")
+
+    if (pageSlug.length > MaxSlugLength)
+      return Parsed.Bad("Slug too long")
+
+    if (folder.intersect(_BadPunctFolder).nonEmpty)
+      return Parsed.Bad("Bad characters in page folder")
+
     val pagePath = PagePath(tenantId = tenantId, folder = folder,
       pageId = pageId, showId = showId, pageSlug = pageSlug)
     Parsed.Good(pagePath)

@@ -174,6 +174,44 @@ class PagePathTest extends FreeSpec with MustMatchers {
       // Currently that results in "/doudle-slash/" I think.
       pending
     }
+
+    s"reject bad slugs" - {
+      def testRejectsBad(slug: String, errorMessagePrefix: String) {
+        val result = PagePath.fromUrlPath("siteId", slug)
+        result match {
+          case PagePath.Parsed.Bad(message) =>
+            message must startWith(errorMessagePrefix)
+          case x =>
+            fail("Page slug not rejected: " + slug)
+        }
+      }
+
+      "too long slug" in {
+        val tooLongSlug = "z" * PagePath.MaxSlugLength + "1234567890"
+        testRejectsBad(s"/$tooLongSlug", "Slug too long")
+      }
+
+      s"bad characters in slug" in {
+        val errorMessagePrefix = "Bad characters in page slug"
+        for (folder <- Seq("", "/folder", "/fol/de/rs")) {
+          testRejectsBad(s"$folder/zzz:", errorMessagePrefix)
+          testRejectsBad(s"$folder/zzz)", errorMessagePrefix)
+          testRejectsBad(s"$folder/zzz:)", errorMessagePrefix)
+          testRejectsBad(s"$folder/:", errorMessagePrefix)
+        }
+      }
+
+      s"bad characters in folder" in {
+        val errorMessagePrefix = "Bad characters in page folder"
+        testRejectsBad(s"/zzz:zzz/", errorMessagePrefix)
+        testRejectsBad(s"/zzz)zzz/", errorMessagePrefix)
+        testRejectsBad(s"/zzz:)/", errorMessagePrefix)
+        testRejectsBad(s"/:)zzz/", errorMessagePrefix)
+        testRejectsBad(s"/abc/zzz:)zzz/", errorMessagePrefix)
+        testRejectsBad(s"/abc/zzz:)zzz/slug", errorMessagePrefix)
+        testRejectsBad(s"/abc/zzz:)zzz/slug-someid", errorMessagePrefix)
+      }
+    }
   }
 
 }
