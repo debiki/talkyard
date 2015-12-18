@@ -84,14 +84,28 @@ case class NotificationGenerator(transaction: SiteTransaction) {
   }
 
 
-  private def makeNewPostNotf(notfType: Notification.NewPostNotfType, newPost: Post, user: User) {
-    if (sentToUserIds.contains(user.id))
+  /** Private messages are sent to all toUserIds, but not to any user mentioned in the
+    * message.
+    */
+  def generateForMessage(sender: User, pageBody: Post, toUserIds: Set[UserId])
+        : Notifications = {
+    unimplementedIf(pageBody.approvedById.isEmpty, "Unapproved private message? [EsE7MKB3]")
+    toUserIds foreach { userId =>
+      val user = transaction.loadUser(userId) getOrDie "EsE5GUK2"
+      makeNewPostNotf(Notification.NewPostNotfType.Message, pageBody, user)
+    }
+    generatedNotifications
+  }
+
+
+  private def makeNewPostNotf(notfType: Notification.NewPostNotfType, newPost: Post, toUser: User) {
+    if (sentToUserIds.contains(toUser.id))
       return
 
-    if (user.isGuest) {
-      if (user.emailNotfPrefs == EmailNotfPrefs.DontReceive ||
-          user.emailNotfPrefs == EmailNotfPrefs.ForbiddenForever ||
-          user.email.isEmpty) {
+    if (toUser.isGuest) {
+      if (toUser.emailNotfPrefs == EmailNotfPrefs.DontReceive ||
+          toUser.emailNotfPrefs == EmailNotfPrefs.ForbiddenForever ||
+          toUser.email.isEmpty) {
         return
       }
     }
@@ -100,13 +114,13 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       // (But later on we might or might not send any email about the notifications,
       // depending on the user's preferences.)
       val settings: RolePageSettings = transaction.loadRolePageSettingsOrDefault(
-        user.id, newPost.pageId)
+        toUser.id, newPost.pageId)
       if (settings.notfLevel == PageNotfLevel.Muted) {
         return
       }
     }
 
-    sentToUserIds += user.id
+    sentToUserIds += toUser.id
     notfsToCreate += Notification.NewPost(
       notfType,
       siteId = transaction.siteId,
@@ -115,7 +129,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       pageId = newPost.pageId,
       postNr = newPost.nr,
       byUserId = newPost.createdById,
-      toUserId = user.id)
+      toUserId = toUser.id)
   }
 
 

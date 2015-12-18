@@ -80,9 +80,7 @@ class UploadsDaoSpec extends FreeSpec with MustMatchers {
 }
 
 
-class UploadsDaoAppSpec extends FreeSpec with MustMatchers with OneAppPerSuite {
-
-  val browserIdData = BrowserIdData("1.2.3.4", idCookie = "dummy_id_cookie", fingerprint = 334455)
+class UploadsDaoAppSpec extends DaoAppSuite {
 
   case class FileNameRef(name: String, file: jio.File, ref: UploadRef)
 
@@ -97,10 +95,6 @@ class UploadsDaoAppSpec extends FreeSpec with MustMatchers with OneAppPerSuite {
 
   val tempFileDir = "target/tmp"
   new jio.File(s"$tempFileDir/dummy").getParentFile.mkdirs()
-
-
-  implicit override lazy val app = FakeApplication(
-    additionalConfiguration = Map("isTestShallEmptyDatabase" -> "true"))
 
 
   "The app and UploadsDao can" - {

@@ -621,6 +621,13 @@ export function saveReply(postIds: number[], text: string, anyPostType: number,
 }
 
 
+export function sendMessage(title: string, text: string, userIds: number[],
+    success: (pageId: string) => void) {
+  postJsonSuccess('/-/send-private-message', success,
+      { title: title, text: text, userIds: userIds });
+}
+
+
 export function flagPost(postId: string, flagType: string, reason: string, success: () => void) {
   postJsonSuccess('/-/flag', success, {
     pageId: d.i.pageId,

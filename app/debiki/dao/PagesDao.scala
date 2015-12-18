@@ -77,7 +77,25 @@ trait PagesDao {
   }
 
 
-  def createPageImpl(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
+  /** Returns (PagePath, body-post)
+    */
+  def createPageImpl2(pageRole: PageRole,
+        title: TextAndHtml, body: TextAndHtml,
+        pageStatus: PageStatus = PageStatus.Published,
+        anyCategoryId: Option[CategoryId] = None,
+        anyFolder: Option[String] = None, anySlug: Option[String] = None, showId: Boolean = true,
+        pinOrder: Option[Int] = None, pinWhere: Option[PinPageWhere] = None,
+        authorId: UserId, browserIdData: BrowserIdData,
+        transaction: SiteTransaction): (PagePath, Post) =
+    createPageImpl(pageRole, pageStatus, anyCategoryId = anyCategoryId,
+      anyFolder = anyFolder, anySlug = anySlug, showId = showId,
+      titleSource = title.text, titleHtmlSanitized = title.safeHtml,
+      bodySource = body.text, bodyHtmlSanitized = body.safeHtml,
+      pinOrder = pinOrder, pinWhere = pinWhere,
+      authorId = authorId, browserIdData = browserIdData, transaction = transaction)
+
+
+    def createPageImpl(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
         anyFolder: Option[String], anySlug: Option[String], showId: Boolean,
         titleSource: String, titleHtmlSanitized: String,
         bodySource: String, bodyHtmlSanitized: String,
@@ -145,9 +163,10 @@ trait PagesDao {
     else {
       anyCategoryId match {
         case None =>
-          if (!author.isStaff)
+          if (!author.isStaff && pageRole != PageRole.Message)
             throwForbidden("DwE8GKE4", "No category specified")
         case Some(categoryId) =>
+          dieIf(pageRole == PageRole.Message, "EsE85FMU2") // remove later if/when needed
           val category = transaction.loadCategory(categoryId) getOrElse throwNotFound(
             "DwE4KGP8", s"Category not found, id: $categoryId")
           if (category.isRoot)

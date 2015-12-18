@@ -298,7 +298,7 @@ ReactStore.getPageRole = function(): PageRole {
 }
 
 
-ReactStore.getUser = function() {
+ReactStore.getUser = function(): User {
   return store.user;
 };
 

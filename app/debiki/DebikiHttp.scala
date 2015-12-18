@@ -137,6 +137,9 @@ object DebikiHttp {
 
   def throwBadRequest(errCode: String, message: String = "") = throwBadReq(errCode, message)
 
+  def throwBadRequestIf(condition: Boolean, errCode: String, message: String = "") =
+    if (condition) throwBadRequest(errCode, message)
+
   def throwBadReq(errCode: String, message: String = "") =
     throw ResultException(BadReqResult(errCode, message))
 
@@ -166,6 +169,9 @@ object DebikiHttp {
 
   def throwNotFound(errCode: String, message: String = "") =
     throw ResultException(NotFoundResult(errCode, message))
+
+  def throwEntityTooLargeIf(condition: Boolean, errCode: String, message: String) =
+    if (condition) throwEntityTooLarge(errCode, message)
 
   def throwEntityTooLarge(errCode: String, message: String) =
     throw ResultException(EntityTooLargeResult(errCode, message))

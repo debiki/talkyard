@@ -43,8 +43,14 @@ export function resetAvatars() {
 
 export var Avatar = createComponent({
   onClick: function() {
-    if (!this.props.ignoreClicks)
-     pagedialogs.getAboutUserDialog().openForUserId(this.props.user.id);
+    if (this.props.ignoreClicks) {
+    }
+    else if (this.props.clickOpensUserProfilePage) {
+      ReactActions.openUserProfile(this.props.user.id);
+    }
+    else {
+      pagedialogs.getAboutUserDialog().openForUserId(this.props.user.id);
+    }
   },
 
   makeTextAvatar: function() {
@@ -137,7 +143,10 @@ export var Avatar = createComponent({
     var extraClasses = this.props.tiny ? ' esAvtr-tny' : '';
     var content;
     var styles;
-    if (user.avatarUrl) {
+    if (this.props.large && user['mediumAvatarUrl']) {
+      content = r.img({ src: user['mediumAvatarUrl'] });
+    }
+    else if (user.avatarUrl) {
       content = r.img({ src: user.avatarUrl });
     }
     else {

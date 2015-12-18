@@ -315,6 +315,9 @@ object PageRole {
   case object WikiPage extends PageRole
   */
 
+  /** Direct messages between two users, or a group of users. */
+  case object Message extends PageRole(17, staffOnly = false)
+
   case object Critique extends PageRole(16, staffOnly = false) // [plugin]
 
 
@@ -333,6 +336,7 @@ object PageRole {
     case ToDo.IntValue => ToDo
     case MindMap.IntValue => MindMap
     case Discussion.IntValue => Discussion
+    case Message.IntValue => Message
     case Critique.IntValue => Critique
     //case WikiMainPage.IntValue => WikiMainPage
     //case WikiPage.IntValue => WikiPage

@@ -99,6 +99,9 @@ trait SiteTransaction {
   def insertPost(newPost: Post)
   def updatePost(newPost: Post)
 
+  def insertMessageMember(pageId: PageId, userId: UserId, addedById: UserId)
+  def loadMessageMembers(pageId: PageId): Set[UserId]
+
   def loadLastPostRevision(postId: UniquePostId): Option[PostRevision]
   def loadPostRevision(postId: UniquePostId, revisionNr: Int): Option[PostRevision]
   def insertPostRevision(revision: PostRevision)
