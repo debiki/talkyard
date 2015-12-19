@@ -547,7 +547,7 @@ var RootPostAndComments = createComponent({
         body,
         solvedBy,
         PostActions({ store: this.props, post: rootPost }),
-        debiki2.reactelements.CommentsToolbar(),
+        debiki2.page.Metabar(),
         anyHorizontalArrowToChildren,
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
