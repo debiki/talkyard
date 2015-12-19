@@ -94,7 +94,9 @@ object EmbeddedTopicsController extends mvc.Controller {
 
   def showTopic = GetAction { request =>
     val pageRequest = makePageRequest(request)
-    ViewPageController.viewPostImpl(pageRequest)
+    ???
+    // Cannod do this any more because I moved the auth stuff to higher up in the call stack:
+    // ViewPageController.ifAuthDoRenderPage(pageRequest)
   }
 
 

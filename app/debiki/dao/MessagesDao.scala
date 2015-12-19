@@ -52,5 +52,10 @@ trait MessagesDao {
     }
   }
 
+
+  def loadMessageMembers(pageId: PageId): Set[UserId] = {
+    readOnlyTransaction(_.loadMessageMembers(pageId))
+  }
+
 }
 

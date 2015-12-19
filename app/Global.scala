@@ -17,6 +17,7 @@
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import controllers.{UnsubscriptionController, ListController, ViewPageController, Application}
 import debiki._
 import play.api._
 import play.api.mvc._
@@ -119,12 +120,11 @@ object Global extends WithFilters(new HtmlJsCssGzipFilter()) with GlobalSettings
       throwBadReq("DwE0k32", "No `"+ mainFun +"` value specified"))
 
     // Route based on the query string. -- try to remove this
-    import controllers._
     val GET = "GET"
     val POST = "POST"
     val action = (mainFun, request.method) match {
       case ("view", GET) =>
-        ViewPageController.viewPost(pagePath)
+        ViewPageController.renderPage()
       case ("list-pages", GET) =>
         ListController.listPages(pagePath, DebikiHttp.ContentType.Html)
       case ("list-pages.json", GET) =>
@@ -137,7 +137,7 @@ object Global extends WithFilters(new HtmlJsCssGzipFilter()) with GlobalSettings
         UnsubscriptionController.handleForm(tenantId)
       case (_, GET) =>
         // CSS and JS are served via asset bundles, so they can be cached forever.
-        ViewPageController.viewPost(pagePath)
+        ViewPageController.renderPage()
       case (_, _) =>
         Application.methodNotAllowed()
     }

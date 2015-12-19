@@ -459,7 +459,6 @@ object ReactJson {
 
 
   val NoUserSpecificData = Json.obj(
-    "permsOnPage" -> JsObject(Nil),
     "rolePageSettings" -> JsObject(Nil),
     "votes" -> JsObject(Nil),
     "unapprovedPosts" -> JsObject(Nil),
@@ -473,12 +472,12 @@ object ReactJson {
       return None
     }
     pageRequest.dao.readOnlyTransaction { transaction =>
-      userDataJsonImpl(user, pageRequest.thePageId, pageRequest.permsOnPage, transaction)
+      userDataJsonImpl(user, pageRequest.thePageId, transaction)
     }
   }
 
 
-  private def userDataJsonImpl(user: User, pageId: PageId, permsOnPage: PermsOnPage,
+  private def userDataJsonImpl(user: User, pageId: PageId,
         transaction: SiteTransaction): Option[JsObject] = {
     val rolePageSettings = user.anyRoleId map { roleId =>
       val anySettings = transaction.loadRolePageSettings(roleId = roleId, pageId = pageId)
@@ -496,29 +495,12 @@ object ReactJson {
       "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),
       "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
       "isAuthenticated" -> JsBoolean(user.isAuthenticated),
-      "permsOnPage" -> permsOnPageJson(permsOnPage),
       "rolePageSettings" -> rolePageSettings,
       "votes" -> votesJson(user.id, pageId, transaction),
       "unapprovedPosts" -> unapprovedPostsJson(user.id, pageId, transaction),
       "postIdsAutoReadLongAgo" -> JsArray(Nil),
       "postIdsAutoReadNow" -> JsArray(Nil),
       "marksByPostId" -> JsObject(Nil)))
-  }
-
-
-  private def permsOnPageJson(perms: PermsOnPage): JsObject = {
-    Json.obj(
-      "accessPage" -> JsBoolean(perms.accessPage),
-      "createPage" -> JsBoolean(perms.createPage),
-      "moveRenamePage" -> JsBoolean(perms.moveRenamePage),
-      "hidePageIdInUrl" -> JsBoolean(perms.hidePageIdInUrl),
-      "editPageTemplate" -> JsBoolean(perms.editPageTemplate),
-      "editPage" -> JsBoolean(perms.editPage),
-      "editAnyReply" -> JsBoolean(perms.editAnyReply),
-      "editGuestReply" -> JsBoolean(perms.editUnauReply),
-      "collapseThings" -> JsBoolean(perms.collapseThings),
-      "deleteAnyReply" -> JsBoolean(perms.deleteAnyReply),
-      "pinReplies" -> JsBoolean(perms.pinReplies))
   }
 
 
