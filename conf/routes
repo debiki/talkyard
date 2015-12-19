@@ -102,6 +102,9 @@ POST  /-/block-guest            controllers.UserController.blockGuest
 POST  /-/unblock-guest          controllers.UserController.unblockGuest
 GET   /-/load-author-blocks     controllers.UserController.loadAuthorBlocks(postId)
 
+GET   /-/unsubscribe            controllers.UnsubscriptionController.showForm()
+POST  /-/unsubscribe            controllers.UnsubscriptionController.handleForm()
+
 GET   /-/list-invites           controllers.InviteController.listInvites(sentById)
 POST  /-/send-invite            controllers.InviteController.sendInvite
 GET   /-/accept-invite/:key     controllers.InviteController.acceptInvite(key)
@@ -151,7 +154,7 @@ POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 #POST  /-/load-posts             controllers.LoadPagePartsController.loadPosts
 #POST  /-/load-replies           controllers.LoadPagePartsController.loadReplies
 #POST  /-/load-threads-and-trees controllers.LoadPagePartsController.loadThreadsAndTrees
-GET   /-/list-pages             controllers.ListController.listPages
+#GET   /-/list-pages             controllers.ListController.listPages
 
 POST  /-/import-site            controllers.ImportExportController.importSiteJson
 
@@ -173,3 +176,6 @@ GET   /-/debiki-embedded-comments.js   controllers.Assets.at(path = "/public/res
 GET   /-/debiki-embedded-comments.css  controllers.Assets.at(path = "/public/res", file = "debiki-embedded-comments.css")
 GET   /-/*file                  controllers.Application.assetAt(path = "/public", file)
 GET   /favicon.ico              controllers.Assets.at(path = "/public/img", file = "debiki-favicon.ico")
+
+GET   /*path                    controllers.ViewPageController.renderPage(path)
+GET   /                         controllers.ViewPageController.renderPage(path = "")

@@ -18,22 +18,16 @@
 package controllers
 
 import actions.ApiActions._
-import actions.PageActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.core.User.SystemUserId
 import debiki._
-import java.{util => ju, io => jio}
+import java.{util => ju}
 import debiki.dao.SiteDao
 import play.api._
 import play.api.Play.current
 import play.api.mvc.{Action => _, _}
-import play.api.libs.json.Json.toJson
-import play.api.libs.json._
 import requests._
 import DebikiHttp._
-import Utils.ValidationImplicits._
-import Utils.{OkHtml, OkXml}
 
 
 
@@ -51,12 +45,17 @@ object ViewPageController extends mvc.Controller {
     "__html_encoded_user_specific_data_json__"
 
 
-  def renderPage = GetActionAllowUnapproved { request =>
+  def renderPage(path: String) = GetActionAllowUnapproved { request =>
     renderPageImpl(request)
   }
 
 
   private def renderPageImpl(request: GetRequest): Result = {
+    // For now, historic reasons. Remove some weeks after /-/unsubscribe has been deployed.
+    if (request.queryString.contains("unsubscribe")) {
+      return UnsubscriptionController.showFormImpl(request.request)
+    }
+
     val specifiedPagePath = PagePath.fromUrlPath(request.siteId, request.request.path) match {
       case PagePath.Parsed.Good(path) => path
       case PagePath.Parsed.Bad(error) => throwBadRequest("DwE0kI3E4", error)

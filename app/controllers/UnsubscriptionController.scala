@@ -53,16 +53,16 @@ object UnsubscriptionController extends mvc.Controller {
   val ResubPrevented = "resub-prevented"
 
 
-  def emailId(implicit request: mvc.RequestHeader): String =
+  private def emailId(request: mvc.RequestHeader): String =
     request.queryString.get(EmailIdParam).orElse(
       request.queryString.get(OldEmailIdParam)).map(_.head).getOrElse(
       throwBadReq("DwE03kI21", "No email id specified"))
 
-  def doWhat(implicit request: mvc.RequestHeader): String =
+  private def doWhat(request: mvc.RequestHeader): String =
      request.queryString.get(DoWhatParam).map(_.head).getOrElse(Unsub)
 
-  def nextPage(implicit request: mvc.RequestHeader) =
-    "?unsubscribe&email-id="+ emailId +"&do="+ (doWhat match {
+  private def nextPage(request: mvc.RequestHeader) =
+    "/-/unsubscribe&emailId="+ emailId(request) +"&do="+ (doWhat(request) match {
       case Unsub => UnsubDone
       case UnsubDone => PreventResub
       case PreventResub => ResubPrevented
@@ -71,19 +71,24 @@ object UnsubscriptionController extends mvc.Controller {
     })
 
 
-  def showForm(tenantId: String) = ExceptionAction(empty) { implicit request =>
-    Ok(views.html.unsubscribePage(emailId, doWhat, nextPage))
+  def showForm() = ExceptionAction(empty) { request =>
+    showFormImpl(request)
   }
 
 
-  def handleForm(tenantId: String) =
-        ExceptionAction(parse.urlFormEncoded(maxLength = 200)) {
-        implicit request =>
+  def showFormImpl(implicit request: Request[Unit]) = {
+    Ok(views.html.unsubscribePage(emailId(request), doWhat(request), nextPage(request)))
+  }
+
+
+  def handleForm() = ExceptionAction(parse.urlFormEncoded(maxLength = 200)) { implicit request =>
+    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, debiki.Globals.systemDao)
+
     SECURITY // SHOULD rate limit and check email type.
 
     // Login.
     val loginAttempt = EmailLoginAttempt(
-       ip = realOrFakeIpOf(request), date = new ju.Date, emailId = emailId)
+       ip = realOrFakeIpOf(request), date = new ju.Date, emailId = emailId(request))
 
     val dao = Globals.siteDao(tenantId)
 
@@ -98,7 +103,7 @@ object UnsubscriptionController extends mvc.Controller {
     val idtyEmailId: IdentityEmailId = identity.getOrDie("DwE4YPF8").asInstanceOf[IdentityEmailId]
 
     // Find out what to do.
-    val emailNotfPrefs: EmailNotfPrefs.Value = doWhat match {
+    val emailNotfPrefs: EmailNotfPrefs.Value = doWhat(request) match {
       case Unsub => EmailNotfPrefs.DontReceive
       case PreventResub => EmailNotfPrefs.ForbiddenForever
       case x => assErr("DwE82WM91")
@@ -117,7 +122,7 @@ object UnsubscriptionController extends mvc.Controller {
     }
 
     // Tell user what happened.
-    SeeOther(nextPage)
+    SeeOther(nextPage(request))
   }
 
 }

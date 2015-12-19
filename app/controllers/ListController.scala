@@ -18,7 +18,6 @@
 package controllers
 
 import actions.ApiActions._
-import actions.PageActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.Utils._
@@ -44,6 +43,7 @@ object ListController extends mvc.Controller {
   val PostTextLengthLimit = 500
 
 
+  /*
   def listPages = StaffGetAction { implicit request =>
     val pathRanges = Utils.parsePathRanges("/", request.queryString)
     listPagesImpl(pathRanges, DebikiHttp.ContentType.Json)
@@ -89,7 +89,7 @@ object ListController extends mvc.Controller {
       case DebikiHttp.ContentType.Json =>
         OkSafeJson(toJson(Map("pages" -> pathsAndDetails.map(jsonForPathAndMeta(_)))))
     }
-  }
+  } */
 
 
   /*
@@ -130,7 +130,7 @@ object ListController extends mvc.Controller {
         // For rendering e.g. newest blog articles list via Javascrpit.
         OkSafeJson(pageTitlesAndBodiesJson)
     }
-  }*/
+  }
 
 
   // COULD move to other file, e.g. DebikiJson.scala?
@@ -160,6 +160,6 @@ object ListController extends mvc.Controller {
     "id" -> JsString(pagePath.pageId.get),
     "folder" -> JsString(pagePath.folder),
     "path" -> JsString(pagePath.value))
-
+*/
 }
 

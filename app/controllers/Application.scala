@@ -18,11 +18,9 @@
 package controllers
 
 import actions.ApiActions._
-import actions.PageActions._
 import actions.SafeActions.ExceptionAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.Utils.OkSafeJson
 import debiki._
 import java.{util => ju, io => jio}
 import play.api._
@@ -30,12 +28,9 @@ import play.api.libs.MimeTypes
 import play.api.libs.iteratee.Enumerator
 import play.api.mvc.{Action => _, _}
 import play.api.Play.current
-import requests.PageRequest
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import DebikiHttp._
-import Utils.ValidationImplicits._
-import Utils.{OkHtml, OkXml}
 
 
 
@@ -85,7 +80,7 @@ object Application extends mvc.Controller {
    * However: &limit and &partial | &full haven't been implemented.
    *
    * `limit` may be at most 10.
-   */
+   * /
   def feed(pathIn: PagePath) = PageGetAction(pathIn, pageMustExist = false) {
         pageReq =>
 
@@ -136,7 +131,7 @@ object Application extends mvc.Controller {
 
     OkXml(feedXml, "application/atom+xml")
     */
-  }
+  } */
 
 
   def assetAt(path: String, file: String) = ExceptionAction.async { implicit request =>
