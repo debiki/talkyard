@@ -95,6 +95,7 @@ export var Editor = createComponent({
       newForumTopicCategoryId: null,
       newForumPageRole: null,
       guidelines: null,
+      backdropOpacity: 0,
       isUploadingFile: false,
       fileUploadProgress: 0,
       uploadFileXhr: null,
@@ -342,6 +343,21 @@ export var Editor = createComponent({
       messageToUserIds: [userId],
       text: '',
     });
+    this.showAndFadeOutBackdrop();
+  },
+
+  showAndFadeOutBackdrop: function() {
+    this.setState({ backdropOpacity: 0.83 });
+    var fadeBackdrop = () => {
+      if (!this.isMounted()) return;
+      var opacity = this.state.backdropOpacity;
+      var nextOpacity = opacity < 0.01 ? 0 : opacity - 0.009;
+      this.setState({ backdropOpacity: nextOpacity });
+      if (nextOpacity) {
+        setTimeout(fadeBackdrop, 16);
+      }
+    };
+    setTimeout(fadeBackdrop, 1400);
   },
 
   alertBadState: function(wantsToDoWhat = null) {
@@ -560,6 +576,7 @@ export var Editor = createComponent({
       draft: _.isNumber(this.state.editingPostId) ? '' : this.state.text,
       safePreviewHtml: '',
       guidelines: null,
+      backdropOpacity: 0,
     });
     // Remove any is-replying highlights.
     if (d.i.isInEmbeddedEditor) {
@@ -607,6 +624,12 @@ export var Editor = createComponent({
 
     var guidelinesModal = GuidelinesModal({ guidelines: guidelines,
         isOpen: this.state.showGuidelinesInModal, close: this.hideGuidelines });
+
+    // Sometimes it's hard to notice that the editor opens. But by making everything very dark,
+    // except for the editor, people will see it for sure. We'll make everything dark only for
+    // a short while.
+    var anyBackdrop = this.state.backdropOpacity < 0.01 ? null :
+        r.div({ className: 'esEdtr_backdrop', style: { opacity: this.state.backdropOpacity }});
 
     if (this.state.newForumPageRole || this.state.messageToUserIds.length) {
       titleInput =
@@ -743,6 +766,7 @@ export var Editor = createComponent({
     return (
       r.div({ style: styles },
         guidelinesModal,
+        anyBackdrop,
         r.div({ id: 'debiki-editor-placeholder', ref: 'placeholder' }),
         r.div({ id: 'debiki-editor-controller', ref: 'editor', style: maxHeightCss,
             className: editorClasses },

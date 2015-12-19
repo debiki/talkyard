@@ -9,8 +9,19 @@ $showPreviewMinWidth = 800px;
     display: none
 
 
+.esEdtr_backdrop
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: black; // but js sets opacity.
+  pointer-events: none;
+
+
 #debiki-editor-placeholder
   height: 300px
+
 
 #debiki-editor-controller
   position: fixed !important; // !important so jQuery.resizable() won't overwrite
