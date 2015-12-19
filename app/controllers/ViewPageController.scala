@@ -127,7 +127,6 @@ object ViewPageController extends mvc.Controller {
       pageExists = true,
       pagePath = correctPagePath,
       pageMeta = Some(pageMeta),
-      permsOnPage = null, //xxx
       dao = dao,
       request = request.request)
 
@@ -205,7 +204,6 @@ object ViewPageController extends mvc.Controller {
       pageExists = false,
       pagePath = pagePath,
       pageMeta = newTopicMeta,
-      permsOnPage = PermsOnPage.Wiki, // for now
       dao = request.dao,
       request = request.request)
   }

@@ -79,18 +79,6 @@ object PageRequest {
     if (pageExists && anyPageMeta.isEmpty)
       throwNotFound("DwE56Jb0", s"No page meta found, page id: ${pagePath.pageId.get}")
 
-    // Dupl code, see PageActions.CheckPathAction
-    val permsReq = PermsOnPageQuery(
-      tenantId = apiRequest.tenantId,
-      ip = apiRequest.ip,
-      user = apiRequest.user,
-      pagePath = okPath,
-      pageMeta = anyPageMeta)
-
-    val permsOnPage = apiRequest.dao.loadPermsOnPage(permsReq)
-    if (!permsOnPage.accessPage)
-      throwForbidden("DwE72XIKW2", "You are not allowed to access that page.")
-
     new PageRequest[A](
       sid = apiRequest.sid,
       xsrfToken = apiRequest.xsrfToken,
@@ -99,7 +87,6 @@ object PageRequest {
       pageExists = pageExists,
       pagePath = okPath,
       pageMeta = anyPageMeta,
-      permsOnPage = permsOnPage,
       dao = apiRequest.dao,
       request = apiRequest.request)
   }
@@ -141,7 +128,6 @@ class PageRequest[A](
   /** If the requested page does not exist, pagePath.pageId is empty. */
   val pagePath: PagePath,
   val pageMeta: Option[PageMeta],
-  val permsOnPage: PermsOnPage,
   val dao: SiteDao,
   val request: Request[A]) extends DebikiRequest[A] {
 
@@ -239,10 +225,9 @@ class DummyPageRequest[A](
   pageExists: Boolean,
   pagePath: PagePath,
   pageMeta: PageMeta,
-  permsOnPage: PermsOnPage,
   dao: SiteDao,
   request: Request[A]) extends PageRequest[A](
     sid, xsrfToken, browserId, user, pageExists,  pagePath, Some(pageMeta),
-    permsOnPage, dao, request) {
+    dao, request) {
 
 }

@@ -249,7 +249,6 @@ trait SiteTransaction {
   def loadUserInfoAndStats(userId: UserId): Option[UserInfoAndStats]
   def loadUserStats(userId: UserId): UserStats
   def listUserActions(userId: UserId): Seq[UserActionInfo]
-  def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage
   def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername]
 
   def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings)

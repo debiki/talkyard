@@ -383,11 +383,6 @@ trait UserDao {
     readOnlyTransaction(_.listUserActions(userId))
 
 
-  def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage =
-    // Currently this results in no database request; there's nothing to cache.
-    readOnlyTransaction(_.loadPermsOnPage(reqInfo))
-
-
   def verifyEmail(userId: UserId, verifiedAt: ju.Date) {
     readWriteTransaction { transaction =>
       var user = transaction.loadTheCompleteUser(userId)
