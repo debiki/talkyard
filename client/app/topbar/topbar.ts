@@ -172,7 +172,8 @@ export var TopBar = createComponent({
       var goToTop = Button({ className: 'dw-goto', onClick: this.goToTop, title: topHelp }, "Top");
       var goToReplies = Button({ className: 'dw-goto', onClick: this.goToReplies,
             title: repliesHelp }, "Replies (" + store.numPostsRepliesSection + ")");
-      var goToChat = Button({ className: 'dw-goto', onClick: this.goToChat,
+      var goToChat = !hasChatSection(store.pageRole) ? null :
+          Button({ className: 'dw-goto', onClick: this.goToChat,
             title: chatHelp }, "Chat (" + store.numPostsChatSection + ")");
       var goToEnd = Button({ className: 'dw-goto', onClick: this.goToEnd, title: endHelp }, "End");
 

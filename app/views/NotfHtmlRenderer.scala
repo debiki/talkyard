@@ -73,7 +73,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     var maxNotificationLength = Notifier.MaxEmailBodyLength / notfs.length
     siteDao.readOnlyTransaction { transaction =>
       // Later: do support reply-via-email.
-      var result: NodeSeq = <p>(You cannot reply to a reply by replying to this email.)</p>
+      var result: NodeSeq = <p>(If you want to reply, follow the links below — but don't reply to this email.)</p>
       for (notf <- notfs) {
         result ++= (notf match {
           case newPostNotf: Notification.NewPost =>
@@ -117,6 +117,8 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     val html = Text(markupSource.take(maxNotificationLength) + ellipsis)
 
     val (whatHappened, inPostWrittenBy) = notf.notfType match {
+      case Notification.NewPostNotfType.Message =>
+        ("You have been sent a personal message", "from")
       case Notification.NewPostNotfType.Mention =>
         ("You have been mentioned", "in a post written by")
       case Notification.NewPostNotfType.DirectReply =>

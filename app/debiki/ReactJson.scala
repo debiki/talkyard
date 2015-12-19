@@ -206,6 +206,9 @@ object ReactJson {
         Nil
       }
 
+    val messageMemberIds = transaction.loadMessageMembers(pageId)
+    val messageMembers = messageMemberIds.toSeq.flatMap(transaction.loadUser)
+
     val siteStatusString = loadSiteStatusString(dao)
     val siteSettings = dao.loadWholeSiteSettings()
     val pageSettings = dao.loadSinglePageSettings(pageId)
@@ -222,6 +225,7 @@ object ReactJson {
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
       "pageId" -> pageId,
+      "messageMembers" -> JsArray(messageMembers.map(JsUser)),
       "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "forumId" -> JsStringOrNull(anyForumId),
       "showForumCategories" -> JsBooleanOrNull(showForumCategories),

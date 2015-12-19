@@ -97,6 +97,21 @@ export var Metabar = createComponent({
       ? MetabarDetails(store)
       : null;
 
+    var anyExtraMeta;
+    if (store.pageRole === PageRole.Message) {
+      var memberList = store.messageMembers.map((user) => {
+        return (
+            r.div({ className: 'esMetabar_msgMmbr', key: user.id },
+              avatar.Avatar({ user: user, tiny: true }),
+              r.span({ className: 'esMetabar_msgMmbr_username' }, user.username)));
+      });
+      anyExtraMeta =
+          r.div({ className: 'esMetabar_extra' },
+            r.div({ className: 'icon-mail' }, "Message"),
+            r.div({ className: 'esMetabar_msgMmbrs' },
+              memberList));
+    }
+
     var result;
     if (store.isInEmbeddedCommentsIframe) {
       // There's not root post with a reply button, so add a reply button.
@@ -114,15 +129,17 @@ export var Metabar = createComponent({
               r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick },
                 'Reply'),
               adminLink)),
-          r.div({ className: 'dw-cmts-tlbr' },
+          r.div({ className: 'dw-cmts-tlbr esMetabar' },
             summaryElem,
-            detailsElem));
+            detailsElem,
+            anyExtraMeta));
     }
     else {
       result =
-        r.div({ className: 'dw-cmts-tlbr', id: 'dw-cmts-tlbr' },
+        r.div({ className: 'dw-cmts-tlbr esMetabar', id: 'dw-cmts-tlbr' },
           summaryElem,
-          detailsElem);
+          detailsElem,
+          anyExtraMeta);
     }
 
     return result;

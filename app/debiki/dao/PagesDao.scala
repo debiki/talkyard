@@ -393,7 +393,7 @@ trait PagesDao {
     val newClosedAt = readWriteTransaction { transaction =>
       val user = transaction.loadTheUser(userId)
       val oldMeta = transaction.loadThePageMeta(pageId)
-      if (oldMeta.pageRole.isSection || oldMeta.pageRole == PageRole.AboutCategory)
+      if (!oldMeta.pageRole.canClose)
         throwBadRequest("DwE4PKF7", s"Cannot close pages of type ${oldMeta.pageRole}")
 
       if (!user.isStaff && user.id != oldMeta.authorId)

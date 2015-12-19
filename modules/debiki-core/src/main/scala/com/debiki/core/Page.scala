@@ -252,6 +252,8 @@ sealed abstract class PageRole(protected val IntValue: Int, val staffOnly: Boole
   /** Should use nofollow links if many people can edit a page. */
   def isWidelyEditable: Boolean = true
 
+  def canClose = !isSection
+
   def toInt = IntValue
 
 }
@@ -316,7 +318,9 @@ object PageRole {
   */
 
   /** Direct messages between two users, or a group of users. */
-  case object Message extends PageRole(17, staffOnly = false)
+  case object Message extends PageRole(17, staffOnly = false) {
+    override def canClose = false // lock them instead
+  }
 
   case object Critique extends PageRole(16, staffOnly = false) // [plugin]
 

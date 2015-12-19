@@ -669,7 +669,7 @@ export var Editor = createComponent({
         case PageRole.ToDo: what = "Create a todo"; break;
         case PageRole.MindMap: what = "Create a mind map page"; break;
         case PageRole.Discussion: break; // use default
-        case PageRole.PrivateMessage: die('EsE2KFE78'); break;
+        case PageRole.Message: die('EsE2KFE78'); break;
         case PageRole.Critique: what = "Ask for critique"; break; // [plugin]
       }
       doingWhatInfo = what + ":";

@@ -38,7 +38,7 @@ enum PageRole {
   ToDo = 13,
   MindMap = 11,
   Discussion = 12,
-  PrivateMessage = 17,
+  Message = 17,
   Critique = 16, // [plugin]
 }
 
@@ -84,5 +84,14 @@ function isReviewPostTask(reviewTask: ReviewTask): boolean {
   return (1 << 4) <= reviewTask.reasonsLong && reviewTask.reasonsLong < (1 << 20);
 }
 
+function hasChatSection(pageRole: PageRole) {
+  // On message pages, replies are flat already, so an additional flat section makes no sense.
+  return pageRole !== PageRole.Message;
+}
+
+function canClose(pageRole: PageRole) {
+  // Lock messages instead so no new replies can be added.
+  return pageRole !== PageRole.Message;
+}
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

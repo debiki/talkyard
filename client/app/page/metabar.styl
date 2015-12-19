@@ -15,8 +15,35 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+$paddingLeft = 10px;
 
-.dw-cmts-tlbr
+.esMetabar_extra
+  border-top: 1px solid #ababab;
+  padding: 11px 7px 12px $paddingLeft;
+  .icon-mail
+    margin-bottom: 13px;
+    &:before
+      font-size: 105%;
+      color: hsl(0, 0%, 30%);
+      margin-right: 5px;
+
+.esMetabar_msgMmbrs
+  clearfix();
+
+.esMetabar_msgMmbr
+  float: left;
+  white-space: nowrap;
+  margin-right: 1.2em;
+  .edAvtr
+    float: none;
+    display: inline-block;
+    margin-right: 5px;
+    vertical-align: middle;
+
+.esMetabar_msgMmbr_username
+  vertical-align: middle;
+
+.esMetabar
 
   margin: 25px 0 17px
   border: $pageSectionBorder;
@@ -30,7 +57,7 @@
     position: relative; // so dw-cmts-tlbr-open height: 100% works
 
     .dw-cmts-tlbr-summary
-      padding: 7px 55px 7px 10px; // COULD extract variable, 50px [KP409f]
+      padding: 7px 55px 7px $paddingLeft; // COULD extract variable, 50px [KP409f]
 
       & > li
         display: inline-block;
@@ -71,7 +98,7 @@
 
 
 .DW.dw-vt .dw-cmts-tlbr
-  margin-bottom: 45px
+  margin-bottom: 45px  // but want only 10? if dw-flat
 
 
 

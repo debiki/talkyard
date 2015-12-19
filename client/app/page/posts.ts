@@ -383,6 +383,10 @@ var Title = createComponent({
         icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
             title: iconTooltip });
       }
+      else if (store.pageRole === PageRole.Message) {
+        icon = r.span({ className: 'icon-mail' });
+        tooltip = "Personal message";
+      }
       switch (this.props.pinWhere) {
         case PinPageWhere.Globally: tooltip += "Pinned globally."; break;
         case PinPageWhere.InCategory: tooltip += "Pinned in this category."; break;
@@ -488,21 +492,31 @@ var RootPostAndComments = createComponent({
           debiki2.renderer.drawHorizontalArrowFromRootPost(rootPost);
     }
 
+    var repliesAreFlat = false;
     var childIds = pageRole === PageRole.EmbeddedComments ?
         this.props.topLevelCommentIdsSorted : rootPost.childIdsSorted;
+
+    // On message pages, most likely max a few people talk — then threads make no sense.
+    if (store.pageRole === PageRole.Message) {
+      repliesAreFlat = true;
+      childIds = _.values(store.allPosts).map((post: Post) => post.postId);
+    }
 
     var isSquashing = false;
 
     var threadedChildren = childIds.map((childId, childIndex) => {
+      if (childId === BodyId || childId === TitleId)
+        return null;
       var child = allPosts[childId];
       if (!child)
         return null; // deleted
       if (isSquashing && child.squash)
         return null;
-      if (child.postType === PostType.Flat)
+      if (child.postType === PostType.Flat)  // could rename Flat to Comment?
         return null;
       isSquashing = false;
       var threadProps = _.clone(this.props);
+      if (repliesAreFlat) threadProps.isFlat = true;
       threadProps.elemType = 'div';
       threadProps.postId = childId;
       threadProps.index = childIndex;
@@ -522,11 +536,14 @@ var RootPostAndComments = createComponent({
       }
     });
 
+    var hasChat = hasChatSection(store.pageRole);
+
     var flatComments = [];
-    _.each(store.allPosts, (child: Post, childId) => {
+    if (hasChat) _.each(store.allPosts, (child: Post, childId) => {
       if (!child || child.postType !== PostType.Flat)
         return null;
       var threadProps = _.clone(this.props);
+      threadProps.isFlat = true;
       threadProps.elemType = 'div';
       threadProps.postId = childId;
       // The index is used for drawing arrows but here there'll be no arrows.
@@ -538,9 +555,29 @@ var RootPostAndComments = createComponent({
           Thread(threadProps)));
     });
 
-    var anyClickReplyInsteadHelpMessage = this.state.showClickReplyInstead
-        ? debiki2.help.HelpMessageBox({ large: true, message: clickReplyInsteadHelpMessage })
-        : null;
+    var chatSection;
+    if (hasChat) {
+      var anyClickReplyInsteadHelpMessage = this.state.showClickReplyInstead
+          ? debiki2.help.HelpMessageBox({ large: true, message: clickReplyInsteadHelpMessage })
+          : null;
+      var chatSection =
+        r.div({},
+          r.div({ className: 'dw-chat-title', id: 'dw-chat' },
+            store.numPostsChatSection + " chat comments"),
+          r.div({ className: 'dw-vt' },
+            r.div({ className: 'dw-chat dw-single-and-multireplies' },
+                r.ol({ className: 'dw-res dw-singlereplies' },
+                  flatComments))),
+          anyClickReplyInsteadHelpMessage,
+          r.div({ className: 'dw-chat-as' },
+            r.a({ className: 'dw-a dw-a-reply icon-comment-empty', onClick: this.onChatReplyClick,
+                title: "In a chat comment you can talk lightly and casually about this topic," +
+                  " or post a status update. — However, to reply to someone, " +
+                  "instead click Reply just below his or her post." },
+              " Add chat comment")));
+    }
+
+    var flatRepliesClass = repliesAreFlat ? ' dw-chat' : ''; // rename dw-chat... to dw-flat?
 
     return (
       r.div({ className: threadClass },
@@ -549,25 +586,12 @@ var RootPostAndComments = createComponent({
         PostActions({ store: this.props, post: rootPost }),
         debiki2.page.Metabar(),
         anyHorizontalArrowToChildren,
-        r.div({ className: 'dw-single-and-multireplies' },
+        // try to remove the dw-single-and-multireplies div + the dw-singlereplies class,
+        // they're no longer needed.
+        r.div({ className: 'dw-single-and-multireplies' + flatRepliesClass },
           r.ol({ className: 'dw-res dw-singlereplies' },
             threadedChildren)),
-
-        r.div({ className: 'dw-chat-title', id: 'dw-chat' },
-          store.numPostsChatSection + " chat comments"),
-        r.div({ className: 'dw-vt' },
-          r.div({ className: 'dw-chat dw-single-and-multireplies' },
-            r.ol({ className: 'dw-res dw-singlereplies' },
-              flatComments))),
-
-        anyClickReplyInsteadHelpMessage,
-        r.div({ className: 'dw-chat-as' },
-          r.a({ className: 'dw-a dw-a-reply icon-comment-empty', onClick: this.onChatReplyClick,
-              title: "In a chat comment you can talk lightly and casually about this topic," +
-                " or post a status update. — However, to reply to someone, " +
-                "instead click Reply just below his or her post." },
-            " Add chat comment")),
-
+        chatSection,
         r.div({ id: 'dw-the-end', style: { clear: 'both' } })));
   },
 });
@@ -625,7 +649,8 @@ var Thread = createComponent({
   },
 
   render: function() {
-    var allPosts: { [postId: number]: Post; } = this.props.allPosts;
+    var store: Store = this.props;
+    var allPosts: { [postId: number]: Post; } = store.allPosts;
     var post: Post = allPosts[this.props.postId];
     if (!post) {
       // This tree has been deleted.
@@ -634,7 +659,7 @@ var Thread = createComponent({
 
     var parentPost = allPosts[post.parentId];
     var deeper = this.props.depth + 1;
-    var isFlat = post.postType === PostType.Flat;
+    var isFlat = this.props.isFlat;
 
     // Draw arrows, but not to multireplies, because we don't know if they reply to `post`
     // or to other posts deeper in the thread.
@@ -798,7 +823,7 @@ var Post = createComponent({
     var clickToExpand;
     var clickCover;
     var extraClasses = this.props.className || '';
-    var isFlat = post.postType === PostType.Flat;
+    var isFlat = this.props.isFlat;
 
     if (post.isTreeDeleted || post.isPostDeleted) {
       var what = post.isTreeDeleted ? 'Thread' : 'Comment';
@@ -1083,7 +1108,7 @@ var PostHeader = createComponent({
 
     var is2dColumn = this.props.horizontalLayout && this.props.depth === 1;
     var collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
-    var isFlat = post.postType === PostType.Flat;
+    var isFlat = this.props.isFlat;
     var toggleCollapsedButton =
         is2dColumn || this.props.abbreviate || post.isTreeCollapsed || isPageBody || isFlat
           ? null
@@ -1181,6 +1206,7 @@ var PostActions = createComponent({
     debiki2.ReactActions.unacceptAnswer();
   },
   onReplyClick: function(event) {
+    // (Don't check this.props...isFlat here — use postType instead.)
     var newPostType = this.props.post.postType === PostType.Flat ? PostType.Flat : PostType.Normal;
     debiki.internal.$showReplyForm.call(event.target, event, newPostType);
   },
@@ -1247,6 +1273,7 @@ var PostActions = createComponent({
     var post = this.props.post;
     var store: Store = this.props.store;
     var isQuestion = store.pageRole === PageRole.Question;
+    var isFlat = this.props.store.isFlat; // hmm isFlat shouldn't be placed in store, oh well
     // (Some dupl code, see Title above and isDone() and isAnswered() in forum.ts [4KEPW2]
     var isAnswered = isQuestion && store.pageAnsweredAtMs;
     var isDone = store.pageDoneAtMs && (store.pageRole === PageRole.Problem ||
@@ -1297,7 +1324,7 @@ var PostActions = createComponent({
     // answered/fixed, the way to reopen it is to click the answered/fixed icon, to
     // mark it as not-answered/not-fixed again.)
     var closeReopenButton;
-    var canCloseOrReopen = !isDone && !isAnswered && store.pageRole !== PageRole.About;
+    var canCloseOrReopen = !isDone && !isAnswered && canClose(store.pageRole);
     if (isPageBody && canCloseOrReopen && isStaffOrOwnPost) {
       var closeReopenTitle = "Reopen";
       var closeReopenIcon = 'icon-circle-empty';
@@ -1364,7 +1391,7 @@ var PostActions = createComponent({
             title: 'Click if you think this post is wrong, for example, factual errors, ' +
                 " or because you disagree.", onClick: this.onWrongClick }, 'Wrong');
       var buryVoteButton =
-        post.postType === PostType.Flat
+        isFlat
             ? null // cannot change sort order or collapse flat comments
             : r.a({ className: 'dw-a dw-a-bury icon-bury' + myBuryVote,
               title: "Click if you think it's better that people spend their time " +
@@ -1480,7 +1507,7 @@ var PostActions = createComponent({
           'Delete'));
     }
 
-    if (isStaff(user) && post.postType !== PostType.Flat) {
+    if (isStaff(user) && !isFlat) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-users', onClick: this.onWikifyClick, key: 'wf' },
           isWikiPost(post) ? 'Un-Wikify' : 'Wikify'));
