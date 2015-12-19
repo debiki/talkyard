@@ -21,6 +21,7 @@
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="commonmark.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.editor {
@@ -476,7 +477,7 @@ export var Editor = createComponent({
       allowClassAndIdAttr: isEditingBody,
       allowDataAttr: isEditingBody
     };
-    var htmlText = d.i.markdownToSafeHtml(this.state.text, window.location.host, sanitizerOpts);
+    var htmlText = markdownToSafeHtml(this.state.text, window.location.host, sanitizerOpts);
     this.setState({
       safePreviewHtml: htmlText
     }, anyCallback);

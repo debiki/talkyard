@@ -126,7 +126,6 @@ var debikiJavascriptFiles = [
       'target/client/app/login/login-popup.js',
       'target/client/app/editor/mentions-markdown-it-plugin.js',
       'target/client/app/editor/onebox-markdown-it-plugin.js',
-      'target/client/app/actions/edit/markup.js',
       //'target/client/app/posts/monitor-reading-progress-unused.js',
       'target/client/app/posts/resize.js',
       'target/client/app/utils/scroll-into-view.js',

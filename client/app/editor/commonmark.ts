@@ -1,5 +1,5 @@
 /* Markdown conversion and sanitization functions.
- * Copyright (C) 2012-2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2012-2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -16,18 +16,19 @@
  */
 
 
-(function() {
+//------------------------------------------------------------------------------
+   module debiki2.editor {
+//------------------------------------------------------------------------------
 
 var d = { i: debiki.internal, u: debiki.v0.util };
-var $ = d.i.$;
 
 
 // Converts markdown to sanitized html.
-d.i.markdownToSafeHtml = function(markdownSrc, hostAndPort, sanitizerOptions) {
+export function markdownToSafeHtml(markdownSrc, hostAndPort?, sanitizerOptions?) {
   var htmlTextUnsafe = markdownToUnsafeHtml(markdownSrc, hostAndPort);
-  var htmlTextSafe = d.i.sanitizeHtml(htmlTextUnsafe, sanitizerOptions);
+  var htmlTextSafe = sanitizeHtml(htmlTextUnsafe, sanitizerOptions);
   return htmlTextSafe;
-};
+}
 
 
 function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
@@ -44,12 +45,12 @@ function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
   var htmlTextUnsafe = converter.makeHtml(markdownSrc, hostAndPort);
    */
 
-  var md = window.markdownit({ html: true, linkify: true, breaks: true });
+  var md = window['markdownit']({ html: true, linkify: true, breaks: true });
   md.use(d.i.MentionsMarkdownItPlugin());
   md.use(d.i.oneboxMarkdownItPlugin);
   var htmlTextUnsafe = md.render(commonmarkSource);
   return htmlTextUnsafe;
-};
+}
 
 
 /**
@@ -58,22 +59,14 @@ function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
  * options.allowClassAndIdAttr = true/false
  * options.allowDataAttribs = true/false
  */
-d.i.sanitizeHtml = function(htmlTextUnsafe, options) {
+export function sanitizeHtml(htmlTextUnsafe, options) {
   options = options || {};
   var htmlTextSafe = d.i.googleCajaSanitizeHtml(
       htmlTextUnsafe, options.allowClassAndIdAttr, options.allowDataAttr);
   return htmlTextSafe;
-};
+}
 
-
-d.i.sanitizerOptsForPost = function($post) {
-  return {
-    allowClassAndIdAttr: $post.dwIsArticlePost(),
-    allowDataAttr: $post.dwIsArticlePost()
-  };
-};
-
-
-})();
-
-// vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
+//------------------------------------------------------------------------------
+   }
+//------------------------------------------------------------------------------
+// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

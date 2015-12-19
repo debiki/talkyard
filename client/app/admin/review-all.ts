@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../editor/commonmark.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 
@@ -165,7 +166,7 @@ var ReviewTask = createComponent({
       // Or use React's shouldComponentUpdate().
       safeHtml = safeHtmlByMarkdownSource[post.currentSource];
       if (!safeHtml) {
-        safeHtml = d.i.markdownToSafeHtml(post.currentSource);
+        safeHtml = editor.markdownToSafeHtml(post.currentSource);
         safeHtmlByMarkdownSource[post.currentSource] = safeHtml;
       }
     }
