@@ -214,6 +214,7 @@ interface Store {
   guestLoginAllowed: boolean;
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
+  messageMembers: BriefUser[];
   pageId: string;
   categoryId?: number;
   ancestorsRootFirst?: Ancestor[];

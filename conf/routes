@@ -131,6 +131,8 @@ POST  /-/delete-post            controllers.EditController.deletePost
 
 GET   /-/load-post-revisions    controllers.EditController.loadPostRevisions(postId, revisionNr)
 
+POST  /-/send-private-message   controllers.PrivateMessageController.sendMessage
+
 POST  /-/upload-public-file     controllers.UploadsController.uploadPublicFile
 POST  /-/upload-avatar          controllers.UploadsController.uploadAvatar
 POST  /-/remove-avatar          controllers.UploadsController.removeAvatar

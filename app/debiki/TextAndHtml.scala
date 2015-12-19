@@ -149,6 +149,21 @@ object TextAndHtml {
   }
 
 
+  /** Creates an instance with both the source and the rendered html set to {@code text}.
+    * This is useful in test suites, because they'll run a lot faster when they won't
+    * have to wait for the commonmark renderer to be created.
+    */
+  def test(text: String, isTitle: Boolean): TextAndHtml = {
+    dieIf(!Globals.wasTest, "EsE7GPM2")
+    new TextAndHtmlImpl(text, text, links = Nil, linkDomains = Nil,
+      linkAddresses = Nil, isTitle = isTitle, followLinks = false,
+      allowClassIdDataAttrs = false)
+  }
+
+  def testTitle(text: String) = test(text, isTitle = true)
+  def testBody(text: String) = test(text, isTitle = false)
+
+
   def findLinks(html: String): immutable.Seq[String] = {
     SECURITY; SHOULD // find all src=... links too, e.g. <img src=...>, not just <a href=...>.
                     // And thereafter, could use TextAndHtml in UploadsDao.findUploadRefsInText ?

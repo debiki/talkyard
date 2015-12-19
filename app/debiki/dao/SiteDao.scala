@@ -73,6 +73,7 @@ abstract class SiteDao
   with PostsDao
   with UploadsDao
   with UserDao
+  with MessagesDao
   with ReviewsDao
   with AuditDao
   with CreateSiteDao {

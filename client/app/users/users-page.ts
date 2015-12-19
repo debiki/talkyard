@@ -59,6 +59,17 @@ export function routes() {
 
 
 var UsersHomeComponent = React.createClass({
+  mixins: [RouterStateMixin],
+
+  componentDidMount: function() {
+    if (_.isString(this.getQuery().writeMessage)) {
+      var toUserId = parseInt(this.getParams().userId);
+      var myUserId = ReactStore.getUser().userId;
+      dieIf(toUserId === myUserId, 'EsE7UMKW2');
+      editor.openToWriteMessage(toUserId);
+    }
+  },
+
   render: function() {
     return (
       r.div({ className: 'container' },

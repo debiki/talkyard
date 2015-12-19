@@ -118,7 +118,7 @@ var AboutUserDialog = createComponent({
   },
 
   viewUserProfile: function() {
-    window.location.assign('/-/users/#/id/' + this.state.user.id);
+    ReactActions.openUserProfile(this.state.user.id);
   },
 
   render: function () {
@@ -150,15 +150,19 @@ var AboutUserDialog = createComponent({
     }
 
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close },
+      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esUsrDlg' },
         ModalHeader({}, ModalTitle({}, title)),
-        ModalBody({}, content,
-        ModalFooter({}, Button({ onClick: this.close }, 'Close')))));
+        ModalBody({}, content),
+        ModalFooter({}, Button({ onClick: this.close }, 'Close'))));
   }
 });
 
 
 var AboutUser = createComponent({
+  sendMessage: function() {
+    ReactActions.writeMessage(this.props.user.id);
+  },
+
   render: function() {
     var user: CompleteUser = this.props.user;
 
@@ -173,10 +177,12 @@ var AboutUser = createComponent({
     return (
       r.div({},
         r.div({ className: 'dw-about-user-actions' },
-          Button({ onClick: this.props.viewUserProfile }, 'View Profile')),
-        r.p({},
-          'Username: ' + user.username, r.br(),
-          'Name: ' + user.fullName, r.br(),
+          Button({ onClick: this.props.viewUserProfile }, 'View Profile'),
+          Button({ onClick: this.sendMessage }, 'Send Message')),
+        avatar.Avatar({ user: user, large: true, clickOpensUserProfilePage: true }),
+        r.div({},
+          r.b({}, user.username), r.br(),
+          user.fullName, r.br(),
           isStaffInfo)));
   }
 });

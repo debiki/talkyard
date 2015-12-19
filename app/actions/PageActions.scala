@@ -76,18 +76,6 @@ object PageActions {
     if (pageExists && anyPageMeta.isEmpty)
       throwNotFound("DwE2WEb8", s"No page meta found, page id: ${pagePath.pageId.get}")
 
-    // Load permissions.
-    val permsReq = PermsOnPageQuery(
-      tenantId = siteId,
-      ip = realOrFakeIpOf(request),
-      user = anyUser,
-      pagePath = pagePath,
-      pageMeta = anyPageMeta)
-
-    val permsOnPage = dao.loadPermsOnPage(permsReq)
-    if (!permsOnPage.accessPage)
-      throwForbidden("DwE403DNI0", "You are not allowed to access that page.")
-
     // Construct the actual request.
     val pageReq = new PageRequest[A](
       sid = sidStatus,
@@ -97,7 +85,6 @@ object PageActions {
       pageExists = pageExists,
       pagePath = pagePath,
       pageMeta = anyPageMeta,
-      permsOnPage = permsOnPage,
       dao = dao,
       request = request)
 

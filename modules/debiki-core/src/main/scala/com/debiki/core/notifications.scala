@@ -37,6 +37,7 @@ object Notifications {
 sealed abstract class Notification {
   def siteId: SiteId
   def createdAt: ju.Date
+  def tyype: Notification.NewPostNotfType
   def toUserId: UserId
   def emailId: Option[EmailId]
   def emailStatus: Notification.EmailStatus
@@ -59,13 +60,25 @@ object Notification {
     toUserId: UserId,
     emailId: Option[EmailId] = None,
     emailStatus: EmailStatus = EmailStatus.Undecided,
-    seenAt: Option[ju.Date] = None) extends Notification
+    seenAt: Option[ju.Date] = None) extends Notification {
+    override def tyype = notfType
+  }
 
-  sealed abstract class NewPostNotfType
+  // Later: Make top level class, rename to NotificationType.
+  sealed abstract class NewPostNotfType(val IntValue: Int) { def toInt = IntValue }
   object NewPostNotfType {
-    case object Mention extends NewPostNotfType
-    case object DirectReply extends NewPostNotfType
-    case object NewPost extends NewPostNotfType
+    case object DirectReply extends NewPostNotfType(1)
+    case object Mention extends NewPostNotfType(2)
+    case object Message extends NewPostNotfType(3)
+    case object NewPost extends NewPostNotfType(4)
+
+    def fromInt(value: Int): Option[NewPostNotfType] = Some(value match {
+      case DirectReply.IntValue => DirectReply
+      case Mention.IntValue => Mention
+      case Message.IntValue => Message
+      case NewPost.IntValue => NewPost
+      case _ => return None
+    })
   }
 
   /*

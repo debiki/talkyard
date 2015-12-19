@@ -50,6 +50,8 @@ object ReplyController extends mvc.Controller {
 
     // Construct a request that concerns the specified page. Create the page
     // lazily if it's supposed to be a discussion embedded on a static HTML page.
+    SECURITY ; COULD // avoid revealing that a page exists: forPageThatExists below might throw
+    // a unique NotFound for example.  [7C2KF24]
     val pageReq = PageRequest.forPageThatExists(request, pageId = pageId) match {
       case Some(req) => req
       case None =>

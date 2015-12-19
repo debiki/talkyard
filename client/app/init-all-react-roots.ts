@@ -18,7 +18,7 @@
 /// <reference path="../typedefs/react/react.d.ts" />
 /// <reference path="sidebar/sidebar.ts" />
 /// <reference path="editor/editor.ts" />
-/// <reference path="react-elements/comments-toolbar.ts" />
+/// <reference path="page/metabar.ts" />
 /// <reference path="react-elements/name-login-btns.ts" />
 /// <reference path="users/users-page.ts" />
 /// <reference path="page-dialogs/wikify-dialog.ts" />
@@ -45,9 +45,9 @@ export function startRemainingReactRoots() {
 
   createSidebar();
 
-  var commentsToolbarElem = document.getElementById('dw-comments-toolbar');
-  if (commentsToolbarElem)
-    React.render(debiki2.reactelements.CommentsToolbar({}), commentsToolbarElem);
+  var metabarElem = document.getElementById('dw-comments-toolbar');
+  if (metabarElem)
+    React.render(debiki2.page.Metabar({}), metabarElem);
 
   var userPageElem = document.getElementById('dw-react-user-page');
   if (userPageElem) {

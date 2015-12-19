@@ -59,6 +59,7 @@ abstract class DebikiRequest[A] {
   def anyRoleId = user.flatMap(_.anyRoleId)
   def theRoleId = anyRoleId getOrElse throwForbidden("DwE86Wb7", "Not authenticated")
 
+  def isGuest = user.exists(_.isGuest)
   def isAuthenticated = user.exists(_.isAuthenticated)
   def isApprovedOrStaff = user.exists(_.isApprovedOrStaff)
   def isStaff = user.exists(_.isStaff)

@@ -279,6 +279,8 @@ object UserController extends mvc.Controller {
 
 
   def loadMyPageData(pageId: PageId) = GetAction { request =>
+    SECURITY ; COULD // avoid revealing that a page exists: forPageThatExists below might throw
+    // a unique NotFound for example.  [7C2KF24]
     val myPageData = PageRequest.forPageThatExists(request, pageId) match {
       case None =>
         // Might be an embedded comment page, not yet created because no comments posted.

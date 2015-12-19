@@ -53,7 +53,7 @@ export var actionTypes = {
   ChangeSiteStatus: 'ChangeSiteStatus',
   HideHelpMessage: 'HideHelpMessage',
   ShowHelpAgain: 'ShowHelpAgain',
-}
+};
 
 
 export function login() {
@@ -398,6 +398,17 @@ export function showHelpMessagesAgain() {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.ShowHelpAgain,
   });
+}
+
+
+export function openUserProfile(userId: any) {
+  window.location.assign('/-/users/#/id/' + userId);
+}
+
+
+export function writeMessage(userId: any) {
+  // For now, until I've enabled react-router everywhere and won't have to reload the page.
+  location.assign('/-/users/#/id/' + userId + '?writeMessage');
 }
 
 

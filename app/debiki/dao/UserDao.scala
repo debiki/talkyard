@@ -383,25 +383,6 @@ trait UserDao {
     readOnlyTransaction(_.listUserActions(userId))
 
 
-  def loadPermsOnPage(reqInfo: PermsOnPageQuery): PermsOnPage =
-    // Currently this results in no database request; there's nothing to cache.
-    readOnlyTransaction(_.loadPermsOnPage(reqInfo))
-
-
-  def loadPermsOnPage(request: ApiRequest[_], pageId: PageId): PermsOnPage = {
-    val pageMeta = loadPageMeta(pageId)
-    val pagePath = lookupPagePath(pageId) getOrElse throwNotFound(
-      "DwE74BK0", s"No page path found to page id: $pageId")
-
-    readOnlyTransaction(_.loadPermsOnPage(PermsOnPageQuery(
-      tenantId = request.tenantId,
-      ip = request.ip,
-      user = request.user,
-      pagePath = pagePath,
-      pageMeta = pageMeta)))
-  }
-
-
   def verifyEmail(userId: UserId, verifiedAt: ju.Date) {
     readWriteTransaction { transaction =>
       var user = transaction.loadTheCompleteUser(userId)

@@ -74,6 +74,12 @@ export function editNewForumPage(categoryId: number, role: PageRole) {
   });
 }
 
+export function openToWriteMessage(userId: number) {
+  ensureEditorCreated(() => {
+    theEditor.openToWriteMessage(userId);
+  });
+}
+
 
 export var Editor = createComponent({
   getInitialState: function() {
@@ -83,9 +89,13 @@ export var Editor = createComponent({
       draft: '',
       safePreviewHtml: '',
       replyToPostIds: [],
+      editingPostId: null,
+      editingPostUid: null,
+      messageToUserIds: [],
       newForumTopicCategoryId: null,
       newForumPageRole: null,
       guidelines: null,
+      backdropOpacity: 0,
       isUploadingFile: false,
       fileUploadProgress: 0,
       uploadFileXhr: null,
@@ -325,9 +335,38 @@ export var Editor = createComponent({
     this.updatePreview();
   },
 
+  openToWriteMessage: function(userId: number) {
+    if (this.alertBadState())
+      return;
+    this.showEditor();
+    this.setState({
+      messageToUserIds: [userId],
+      text: '',
+    });
+    this.showAndFadeOutBackdrop();
+  },
+
+  showAndFadeOutBackdrop: function() {
+    this.setState({ backdropOpacity: 0.83 });
+    var fadeBackdrop = () => {
+      if (!this.isMounted()) return;
+      var opacity = this.state.backdropOpacity;
+      var nextOpacity = opacity < 0.01 ? 0 : opacity - 0.009;
+      this.setState({ backdropOpacity: nextOpacity });
+      if (nextOpacity) {
+        setTimeout(fadeBackdrop, 16);
+      }
+    };
+    setTimeout(fadeBackdrop, 1400);
+  },
+
   alertBadState: function(wantsToDoWhat = null) {
     if (wantsToDoWhat !== 'WriteReply' && this.state.replyToPostIds.length > 0) {
       alert('Please first finish writing your post');
+      return true;
+    }
+    if (this.state.messageToUserIds.length) {
+      alert('Please first finish writing your message');
       return true;
     }
     if (_.isNumber(this.state.editingPostId)) {
@@ -427,7 +466,7 @@ export var Editor = createComponent({
     this.updatePreview();
   },
 
-  updatePreview: function(anyCallback) {
+  updatePreview: function(anyCallback?) {
     if (!this.isMounted())
       return;
 
@@ -453,6 +492,9 @@ export var Editor = createComponent({
     }
     else if (_.isNumber(this.state.editingPostId)) {
       this.saveEdits();
+    }
+    else if (this.state.messageToUserIds.length) {
+      this.sendPrivateMessage();
     }
     else {
       this.saveNewPost();
@@ -488,6 +530,14 @@ export var Editor = createComponent({
     });
   },
 
+  sendPrivateMessage: function() {
+    var title = $(this.refs.titleInput.getDOMNode()).val();
+    Server.sendMessage(title, this.state.text, this.state.messageToUserIds, (pageId: string) => {
+      this.clearText();
+      window.location.assign('/-' + pageId);
+    });
+  },
+
   togglePreview: function() {
     this.setState({
       showOnlyPreview: !this.state.showOnlyPreview,
@@ -517,6 +567,8 @@ export var Editor = createComponent({
       visible: false,
       replyToPostIds: [],
       editingPostId: null,
+      editingPostUid: null,
+      messageToUserIds: [],
       newForumTopicCategoryId: null,
       newForumPageRole: null,
       editingPostRevisionNr: null,
@@ -524,6 +576,7 @@ export var Editor = createComponent({
       draft: _.isNumber(this.state.editingPostId) ? '' : this.state.text,
       safePreviewHtml: '',
       guidelines: null,
+      backdropOpacity: 0,
     });
     // Remove any is-replying highlights.
     if (d.i.isInEmbeddedEditor) {
@@ -572,10 +625,16 @@ export var Editor = createComponent({
     var guidelinesModal = GuidelinesModal({ guidelines: guidelines,
         isOpen: this.state.showGuidelinesInModal, close: this.hideGuidelines });
 
-    if (this.state.newForumPageRole) {
+    // Sometimes it's hard to notice that the editor opens. But by making everything very dark,
+    // except for the editor, people will see it for sure. We'll make everything dark only for
+    // a short while.
+    var anyBackdrop = this.state.backdropOpacity < 0.01 ? null :
+        r.div({ className: 'esEdtr_backdrop', style: { opacity: this.state.backdropOpacity }});
+
+    if (this.state.newForumPageRole || this.state.messageToUserIds.length) {
       titleInput =
           r.input({ className: 'title-input form-control', type: 'text', ref: 'titleInput',
-              key: this.state.newForumPageRole, tabIndex: 1,
+              tabIndex: 1,
               placeholder: "Type a title — what is this about, in one brief sentence?" });
     }
 
@@ -589,6 +648,9 @@ export var Editor = createComponent({
       doingWhatInfo =
         r.span({},
           'Edit ', r.a({ href: '#post-' + editingPostId }, 'post ' + editingPostId + ':'));
+    }
+    else if (this.state.messageToUserIds.length) {
+      doingWhatInfo = "Your message:";
     }
     else if (this.state.newForumPageRole) {
       var what = "Create new topic";
@@ -607,6 +669,7 @@ export var Editor = createComponent({
         case PageRole.ToDo: what = "Create a todo"; break;
         case PageRole.MindMap: what = "Create a mind map page"; break;
         case PageRole.Discussion: break; // use default
+        case PageRole.Message: die('EsE2KFE78'); break;
         case PageRole.Critique: what = "Ask for critique"; break; // [plugin]
       }
       doingWhatInfo = what + ":";
@@ -649,6 +712,9 @@ export var Editor = createComponent({
           saveButtonTitle = "Submit critique";
         }
       }
+    }
+    else if (this.state.messageToUserIds.length) {
+      saveButtonTitle = "Send message";
     }
     else if (this.state.newForumPageRole) {
       saveButtonTitle = 'Create topic';
@@ -700,6 +766,7 @@ export var Editor = createComponent({
     return (
       r.div({ style: styles },
         guidelinesModal,
+        anyBackdrop,
         r.div({ id: 'debiki-editor-placeholder', ref: 'placeholder' }),
         r.div({ id: 'debiki-editor-controller', ref: 'editor', style: maxHeightCss,
             className: editorClasses },

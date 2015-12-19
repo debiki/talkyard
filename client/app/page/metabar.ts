@@ -17,10 +17,10 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../ReactStore.ts" />
-/// <reference path="name-login-btns.ts" />
+/// <reference path="../react-elements/name-login-btns.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.reactelements {
+   module debiki2.page {
 //------------------------------------------------------------------------------
 
 var d = { i: debiki.internal, u: debiki.v0.util };
@@ -32,7 +32,11 @@ var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 
-export var CommentsToolbar = createComponent({
+/**
+ * Shows meta information about the page: created by, when, num replies,
+ * message members (if is a private message page), summarize replies button, etc.
+ */
+export var Metabar = createComponent({
   getInitialState: function() {
     return {
       store: debiki2.ReactStore.allData(),
@@ -79,7 +83,7 @@ export var CommentsToolbar = createComponent({
           r.span({ className: (ui.showDetails ? 'icon-up-open' : 'icon-down-open') }))
 
     var nameLoginBtns = store.isInEmbeddedCommentsIframe ?
-        r.li({}, NameLoginBtns({})) : null;
+        r.li({}, reactelements.NameLoginBtns({})) : null;
 
     var summaryElem =
       r.div({ className: 'dw-cmts-tlbr-head' },
@@ -90,8 +94,23 @@ export var CommentsToolbar = createComponent({
           toggleDetailsBtn);
 
     var detailsElem = ui.showDetails
-      ? CommentsToolbarDetails(store)
+      ? MetabarDetails(store)
       : null;
+
+    var anyExtraMeta;
+    if (store.pageRole === PageRole.Message) {
+      var memberList = store.messageMembers.map((user) => {
+        return (
+            r.div({ className: 'esMetabar_msgMmbr', key: user.id },
+              avatar.Avatar({ user: user, tiny: true }),
+              r.span({ className: 'esMetabar_msgMmbr_username' }, user.username)));
+      });
+      anyExtraMeta =
+          r.div({ className: 'esMetabar_extra' },
+            r.div({ className: 'icon-mail' }, "Message"),
+            r.div({ className: 'esMetabar_msgMmbrs' },
+              memberList));
+    }
 
     var result;
     if (store.isInEmbeddedCommentsIframe) {
@@ -110,15 +129,17 @@ export var CommentsToolbar = createComponent({
               r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick },
                 'Reply'),
               adminLink)),
-          r.div({ className: 'dw-cmts-tlbr' },
+          r.div({ className: 'dw-cmts-tlbr esMetabar' },
             summaryElem,
-            detailsElem));
+            detailsElem,
+            anyExtraMeta));
     }
     else {
       result =
-        r.div({ className: 'dw-cmts-tlbr', id: 'dw-cmts-tlbr' },
+        r.div({ className: 'dw-cmts-tlbr esMetabar', id: 'dw-cmts-tlbr' },
           summaryElem,
-          detailsElem);
+          detailsElem,
+          anyExtraMeta);
     }
 
     return result;
@@ -126,7 +147,7 @@ export var CommentsToolbar = createComponent({
 });
 
 
-var CommentsToolbarDetails = createComponent({
+var MetabarDetails = createComponent({
   getInitialState: function() {
     return { numRepliesSummarized: null };
   },
@@ -164,12 +185,10 @@ var CommentsToolbarDetails = createComponent({
         r.div({ className: 'dw-tlbr-sctn' },
           Button({ onClick: this.summarizeReplies }, "Summarize Replies"), doneSummarizing);
 
-    var result =
+    return (
       r.div({ className: 'dw-cmts-tlbr-details' },
           notificationsElem,
-          summarizeButton);
-
-    return result;
+          summarizeButton));
   }
 });
 

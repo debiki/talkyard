@@ -115,6 +115,8 @@ abstract class PageParts extends People {
   def post(postNr: PostNr): Option[Post] = postsByNr.get(postNr)
   def post(postNr: Option[PostNr]): Option[Post] = postNr.flatMap(postsByNr.get)
   def thePost(postNr: PostNr): Post = post(postNr) getOrDie "DwE9PKG3"
+  def theBody = thePost(BodyNr)
+  def theTitle = thePost(TitleNr)
 
 
   def numRepliesTotal = allPosts.count(_.isReply)
