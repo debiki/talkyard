@@ -65,6 +65,12 @@ object LoginWithOpenAuthController extends Controller {
   private val IsInLoginWindowCookieName = "dwCoIsInLoginWindow"
   private val IsInLoginPopupCookieName = "dwCoIsInLoginPopup"
   private val MayCreateUserCookieName = "dwCoMayCreateUser"
+  private val OauthStateCookieName = "dwCoOAuth2State"
+
+  private val CookiesToDiscardAfterLogin: Seq[DiscardingCookie] = Seq(
+    ReturnToUrlCookieName, ReturnToSiteCookieName, ReturnToSiteXsrfTokenCookieName,
+    IsInLoginWindowCookieName, IsInLoginPopupCookieName, MayCreateUserCookieName,
+    OauthStateCookieName).map(DiscardingSecureCookie)
 
   private val LoginOriginConfValName = "debiki.loginOrigin"
   private var configErrorMessage: Option[String] = None
@@ -188,11 +194,7 @@ object LoginWithOpenAuthController extends Controller {
       // Someone has two browser tabs open? And in one tab s/he attempts to login at one site,
       // and in another tab at the site at anyLoginDomain? Weird.
       return Future.successful(
-        Forbidden("Parallel logins not supported [DwE07G32]")
-          .discardingCookies(
-            DiscardingSecureCookie(ReturnToSiteCookieName),
-            DiscardingSecureCookie(ReturnToSiteXsrfTokenCookieName),
-            DiscardingSecureCookie(ReturnToUrlCookieName)))
+        Forbidden("Parallel logins not supported [DwE07G32]"))
     }
 
     val oauthDetails = OpenAuthDetails(
@@ -235,7 +237,7 @@ object LoginWithOpenAuthController extends Controller {
       ip = request.remoteAddress, date = new ju.Date, oauthDetails)
 
     val mayCreateNewUserCookie = request.cookies.get(MayCreateUserCookieName)
-    val mayCreateNewUser = mayCreateNewUserCookie.map(_.value) != Some("false")
+    val mayCreateNewUser = !mayCreateNewUserCookie.map(_.value).contains("false")
 
     val dao = daoFor(request)
 
@@ -318,7 +320,7 @@ object LoginWithOpenAuthController extends Controller {
           }
       }
 
-    result.discardingCookies(DiscardingSecureCookie(MayCreateUserCookieName))
+    result.discardingCookies(CookiesToDiscardAfterLogin: _*)
   }
 
 
@@ -371,7 +373,6 @@ object LoginWithOpenAuthController extends Controller {
         }
       }
     response.withCookies(sidAndXsrfCookies: _*)
-      .discardingCookies(DiscardingSecureCookie(ReturnToUrlCookieName))
   }
 
 
@@ -467,7 +468,7 @@ object LoginWithOpenAuthController extends Controller {
             throwUnprocessableEntity("DwE7BD08", s"$errorMessage, please try again.")
         }
 
-      try {
+      val result = try {
         val loginGrant = dao.createIdentityUserAndLogin(userData)
         if (emailVerifiedAt.isDefined) {
           createCookiesAndFinishLogin(request.request, loginGrant.user)
@@ -493,6 +494,7 @@ object LoginWithOpenAuthController extends Controller {
             request.dao, email, siteHostname = request.host, siteId = request.siteId)
           OkSafeJson(Json.obj("emailVerifiedAndLoggedIn" -> JsFalse))
       }
+      result.discardingCookies(CookiesToDiscardAfterLogin: _*)
     }
   }
 
@@ -554,7 +556,7 @@ object LoginWithOpenAuthController extends Controller {
 
   private val Oauth2StateProvider = new sii.providers.oauth2.state.CookieStateProvider(
     sii.providers.oauth2.state.CookieStateSettings(
-      cookieName = "dwCoOAuth2State", secureCookie = Globals.secure),
+      cookieName = OauthStateCookieName, secureCookie = Globals.secure),
     new sii.util.SecureRandomIDGenerator(),
     sia.util.Clock())
 
