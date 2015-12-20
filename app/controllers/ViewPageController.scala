@@ -45,7 +45,7 @@ object ViewPageController extends mvc.Controller {
     "__html_encoded_user_specific_data_json__"
 
 
-  def renderPage(path: String) = GetActionAllowUnapproved { request =>
+  def renderPage(path: String) = GetActionAllowAnyone { request =>
     renderPageImpl(request)
   }
 

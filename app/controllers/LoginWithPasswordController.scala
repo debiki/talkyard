@@ -47,7 +47,7 @@ object LoginWithPasswordController extends mvc.Controller {
 
 
   def login = JsonOrFormDataPostAction(RateLimits.Login, maxBytes = 1000,
-        allowUnapproved = true) { request =>
+        allowAnyone = true) { request =>
     val email = request.body.getOrThrowBadReq("email")
     val password = request.body.getOrThrowBadReq("password")
     val anyReturnToUrl = request.body.getFirst("returnToUrl")
@@ -94,7 +94,7 @@ object LoginWithPasswordController extends mvc.Controller {
 
 
   def handleCreateUserDialog = AsyncPostJsonAction(RateLimits.CreateUser, maxLength = 1000,
-        allowUnapproved = true) { request: JsonPostRequest =>
+        allowAnyone = true) { request: JsonPostRequest =>
     val body = request.body
     val fullName = (body \ "fullName").as[String]
     val emailAddress = (body \ "email").as[String]
@@ -187,7 +187,7 @@ object LoginWithPasswordController extends mvc.Controller {
 
 
   def confirmEmailAddressAndLogin(confirmationEmailId: String, returnToUrl: String) =
-        GetActionRateLimited(RateLimits.ConfirmEmailAddress, allowUnapproved = true) { request =>
+        GetActionRateLimited(RateLimits.ConfirmEmailAddress, allowAnyone = true) { request =>
 
     val userId = finishEmailAddressVerification(confirmationEmailId, request)
     val user = request.dao.loadUser(userId) getOrElse {

@@ -41,14 +41,14 @@ object ResetPasswordController extends mvc.Controller {
   }
 
 
-  def showResetPasswordPage = GetActionAllowUnapproved { request =>
+  def showResetPasswordPage = GetActionAllowAnyone { request =>
     Ok(views.html.resetpassword.specifyEmailAddress(
       SiteTpi(request), xsrfToken = request.xsrfToken.value))
   }
 
 
   def handleResetPasswordForm = JsonOrFormDataPostAction(RateLimits.ResetPassword,
-        maxBytes = 200, allowUnapproved = true) { request =>
+        maxBytes = 200, allowAnyone = true) { request =>
     val emailOrUsername = request.body.getOrThrowBadReq("email") // WOULD rename 'email' param
     val anyUser = request.dao.loadUserByEmailOrUsername(emailOrUsername)
     val isEmailAddress = emailOrUsername contains "@"
@@ -117,12 +117,12 @@ object ResetPasswordController extends mvc.Controller {
   }
 
 
-  def showEmailSentPage(isEmailAddress: String) = GetActionAllowUnapproved { request =>
+  def showEmailSentPage(isEmailAddress: String) = GetActionAllowAnyone { request =>
     Ok(views.html.resetpassword.emailSent(SiteTpi(request), isEmailAddress == "true"))
   }
 
 
-  def showChooseNewPasswordPage(resetPasswordEmailId: String) = GetActionAllowUnapproved {
+  def showChooseNewPasswordPage(resetPasswordEmailId: String) = GetActionAllowAnyone {
         request =>
     SECURITY // COULD check email type: ResetPassword or InvitePassword. SHOULD rate limit.
     val loginGrant = loginByEmailOrThrow(resetPasswordEmailId, request)
@@ -135,7 +135,7 @@ object ResetPasswordController extends mvc.Controller {
 
   def handleNewPasswordForm(anyResetPasswordEmailId: String) =
         JsonOrFormDataPostAction(RateLimits.ChangePassword, maxBytes = 200,
-          allowUnapproved = true) { request =>
+          allowAnyone = true) { request =>
     val newPassword = request.body.getOrThrowBadReq("newPassword")
 
     val loginGrant = loginByEmailOrThrow(anyResetPasswordEmailId, request)

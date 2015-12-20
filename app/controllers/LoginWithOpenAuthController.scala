@@ -415,7 +415,7 @@ object LoginWithOpenAuthController extends Controller {
 
 
   def handleCreateUserDialog = AsyncPostJsonAction(RateLimits.CreateUser, maxLength = 1000,
-        allowUnapproved = true) { request: JsonPostRequest =>
+        allowAnyone = true) { request: JsonPostRequest =>
     val body = request.body
 
     val fullName = (body \ "fullName").as[String]

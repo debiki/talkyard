@@ -37,8 +37,6 @@ import scala.util.{Failure, Success}
 
 
 /** Play Framework Actions for requests to Debiki's HTTP API.
-  *
-  * Use PageRequest instead iff the request concerns one specific page only.
   */
 object ApiActions {
 
@@ -53,12 +51,12 @@ object ApiActions {
   def GetAction(f: GetRequest => Result) =
     PlainApiAction(NoRateLimits)(BodyParsers.parse.empty)(f)
 
-  def GetActionAllowUnapproved(f: GetRequest => Result) =
-    PlainApiAction(NoRateLimits, allowUnapproved = true)(BodyParsers.parse.empty)(f)
+  def GetActionAllowAnyone(f: GetRequest => Result) =
+    PlainApiAction(NoRateLimits, allowAnyone = true)(BodyParsers.parse.empty)(f)
 
-  def GetActionRateLimited(rateLimits: RateLimits, allowUnapproved: Boolean = false)(
+  def GetActionRateLimited(rateLimits: RateLimits, allowAnyone: Boolean = false)(
         f: GetRequest => Result) =
-    PlainApiAction(rateLimits, allowUnapproved = allowUnapproved)(BodyParsers.parse.empty)(f)
+    PlainApiAction(rateLimits, allowAnyone = allowAnyone)(BodyParsers.parse.empty)(f)
 
   def StaffGetAction(f: GetRequest => Result) =
     PlainApiActionStaffOnly(BodyParsers.parse.empty)(f)
@@ -68,26 +66,26 @@ object ApiActions {
 
 
   def JsonOrFormDataPostAction
-        (rateLimits: RateLimits, maxBytes: Int, allowUnapproved: Boolean = false)
+        (rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)
         (f: ApiRequest[JsonOrFormDataBody] => Result) =
-    PlainApiAction(rateLimits, allowUnapproved = allowUnapproved)(
+    PlainApiAction(rateLimits, allowAnyone = allowAnyone)(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
   def AsyncJsonOrFormDataPostAction
-        (rateLimits: RateLimits, maxBytes: Int, allowUnapproved: Boolean = false)
+        (rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)
         (f: ApiRequest[JsonOrFormDataBody] => Future[Result]): mvc.Action[JsonOrFormDataBody] =
-    PlainApiAction(rateLimits, allowUnapproved = allowUnapproved).async(
+    PlainApiAction(rateLimits, allowAnyone = allowAnyone).async(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
 
-  def AsyncPostJsonAction(rateLimits: RateLimits, maxLength: Int, allowUnapproved: Boolean = false)(
+  def AsyncPostJsonAction(rateLimits: RateLimits, maxLength: Int, allowAnyone: Boolean = false)(
         f: JsonPostRequest => Future[Result]) =
-  PlainApiAction(rateLimits, allowUnapproved = allowUnapproved).async(
+  PlainApiAction(rateLimits, allowAnyone = allowAnyone).async(
     BodyParsers.parse.json(maxLength = maxLength))(f)
 
-  def PostJsonAction(rateLimits: RateLimits, maxLength: Int, allowUnapproved: Boolean = false)(
+  def PostJsonAction(rateLimits: RateLimits, maxLength: Int, allowAnyone: Boolean = false)(
         f: JsonPostRequest => Result) =
-    PlainApiAction(rateLimits, allowUnapproved = allowUnapproved)(
+    PlainApiAction(rateLimits, allowAnyone = allowAnyone)(
       BodyParsers.parse.json(maxLength = maxLength))(f)
 
   def StaffPostJsonAction(maxLength: Int)(f: JsonPostRequest => Result) =
@@ -99,14 +97,14 @@ object ApiActions {
       BodyParsers.parse.json(maxLength = maxLength))(f)
 
 
-  def PostFilesAction(rateLimits: RateLimits, maxLength: Int, allowUnapproved: Boolean = false)(
+  def PostFilesAction(rateLimits: RateLimits, maxLength: Int, allowAnyone: Boolean = false)(
         f: ApiRequest[Either[p.mvc.MaxSizeExceeded, MultipartFormData[TemporaryFile]]] => Result) =
-    PlainApiAction(rateLimits, allowUnapproved = allowUnapproved)(
+    PlainApiAction(rateLimits, allowAnyone = allowAnyone)(
         BodyParsers.parse.maxLength(maxLength, BodyParsers.parse.multipartFormData))(f)
 
 
-  private def PlainApiAction(rateLimits: RateLimits, allowUnapproved: Boolean = false) =
-    PlainApiActionImpl(rateLimits, adminOnly = false, staffOnly = false, allowUnapproved)
+  private def PlainApiAction(rateLimits: RateLimits, allowAnyone: Boolean = false) =
+    PlainApiActionImpl(rateLimits, adminOnly = false, staffOnly = false, allowAnyone)
 
   private def PlainApiActionStaffOnly =
     PlainApiActionImpl(NoRateLimits, adminOnly = false, staffOnly = true)
@@ -116,7 +114,7 @@ object ApiActions {
 
 
   private def PlainApiActionImpl(rateLimits: RateLimits, adminOnly: Boolean, staffOnly: Boolean,
-        allowUnapproved: Boolean = false) =
+        allowAnyone: Boolean = false) =
       new ActionBuilder[ApiRequest] {
 
     override def composeAction[A](action: Action[A]) = {
@@ -138,7 +136,7 @@ object ApiActions {
 
       var anyUser = Utils.loadUserOrThrow(request.sidStatus, dao)
       var logoutBecauseSuspended = false
-      if (anyUser.map(_.isSuspendedAt(new ju.Date)) == Some(true)) {
+      if (anyUser.exists(_.isSuspendedAt(new ju.Date))) {
         anyUser = None
         logoutBecauseSuspended = true
       }
@@ -149,10 +147,12 @@ object ApiActions {
       if (adminOnly && !anyUser.exists(_.isAdmin))
         throwForbidden("DwE1GfK7", "Please login as admin")
 
-      if (!allowUnapproved) {
+      if (!allowAnyone) {
         val siteSettings = dao.loadWholeSiteSettings()
         if (!anyUser.exists(_.isApprovedOrStaff) && siteSettings.userMustBeApproved.asBoolean)
           throwForbidden("DwE4HKG5", "Not approved")
+        if (!anyUser.exists(_.isAuthenticated) && siteSettings.userMustBeAuthenticated.asBoolean)
+          throwForbidden("DwE6JGY2", "Not authenticated")
       }
 
       val apiRequest = ApiRequest[A](
