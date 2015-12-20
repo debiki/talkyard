@@ -122,7 +122,7 @@ function registerEventHandlersFireLoginOut() {
  * Protection" section, and:
  *   http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/ ))
  */
-function configureAjaxRequests() {
+function tellJQueryAjaxToStripSafeJsonPrefix() {
   $.ajaxSetup({
     // There're questions at StackOverflow asking why `cache: false`
     // doesn't work with IE8. Does it not? I've not yet tested.
@@ -161,9 +161,6 @@ d.i.refreshFormXsrfTokens = function() {
  * first step is done, the user should conceive the page as mostly loaded.)
  */
 function renderDiscussionPage() {
-
-  configureAjaxRequests();
-
   var $posts = $('.debiki .dw-p:not(.dw-p-ttl)');
 
   (d.u.workAroundAndroidZoomBug || function() {})($);
@@ -278,7 +275,6 @@ d.i.renderEmptyPage = function() {
   // dashbar depends on login/logout events, and it's shown even if there's no
   // root post — e.g. on blog list pages, which list child pages only but no
   // main title or article.)
-  configureAjaxRequests();
   debiki2.utils.onMouseDetected(d.i.initUtterscrollAndTips);
   debiki2.ReactStore.initialize();
   debiki2.startRemainingReactRoots();
@@ -302,10 +298,11 @@ d.i.startDiscussionPage = function() {
 
 
 d.i.startEmbeddedEditor = function() {
-  configureAjaxRequests();
   console.warn("The editor is lazily created nowadays [DwE4KGF0]");
 };
 
+
+tellJQueryAjaxToStripSafeJsonPrefix();
 
 // Replace gifs with static images that won't play until clicked.
 Gifffer();

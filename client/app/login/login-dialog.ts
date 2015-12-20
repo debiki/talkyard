@@ -108,11 +108,13 @@ var LoginDialog = createClassAndFactory({
    * Clears login related cookies so e.g. any lingering return-to-url won't cause troubles.
    */
   clearLoginRelatedCookies: function() {
-    $['cookie']('dwCoReturnToUrl', null)
-    $['cookie']('dwCoReturnToSite', null)
-    $['cookie']('dwCoReturnToSiteXsrfToken', null)
-    $['cookie']('dwCoIsInLoginWindow', null)
-    $['cookie']('dwCoMayCreateUser', null)
+    $['cookie']('dwCoReturnToUrl', null);
+    $['cookie']('dwCoReturnToSite', null);
+    $['cookie']('dwCoReturnToSiteXsrfToken', null);
+    $['cookie']('dwCoIsInLoginWindow', null);
+    $['cookie']('dwCoIsInLoginPopup', null);
+    $['cookie']('dwCoMayCreateUser', null);
+    $['cookie']('dwCoOAuth2State', null);
   },
 
   close: function() {
