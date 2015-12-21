@@ -67,7 +67,7 @@ export var NameLoginBtns = createComponent({
     var loginBtnElem = null;
     if (!user.isLoggedIn) {
       loginBtnElem =
-          r.span({ className: 'dw-a-login', onClick: this.onLoginClick, id: this.props.id },
+          r.span({ className: 'dw-a-login btn-primary', onClick: this.onLoginClick, id: this.props.id },
               this.props.title || 'Login');
     }
 

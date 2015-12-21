@@ -26,6 +26,24 @@
     border-top: none;
 
 
+
+// React-select
+//===========================
+
+.Select-item
+  background-color: hsl($uiHue, 63%, 97%);
+  border: 1px solid hsl($uiHue, 61%, 87%);
+  color: hsl($uiHue, 80%, 35%);
+
+.Select-control
+  border-color: hsl(0, 0%, 90%) hsl(0, 0%, 83%) hsl(0, 0%, 80%);
+
+.Select-option.is-focused
+  background-color: hsl($uiHue, 80%, 97%);
+  color: hsl($uiHue, 80%, 28%);
+
+
+
 // The Stupid Lightbox
 //===========================
 
@@ -40,8 +58,12 @@
   cursor: zoom-out;
 
 
+
 // Twitter Bootstrap
 //===========================
+
+// (Perhaps build own Bootstrap version and change the styles there? But Bootstrap uses LESS
+// not Stylus — would lead to dupl variables?)
 
 // Cancel .icon 14px width — I'm using Fontello's icons, instead of Twitter's.
 // There are some other icon styles that Bootstrap applies and that could be
@@ -53,9 +75,34 @@
   width: auto
 
 
-.btn-primary
+.btn-primary,
+.btn-primary:visited,
+.nav-pills > li.active > a,
+.nav-pills > li.active > a:hover,
+.nav-pills > li.active > a:focus,
+.nav > .active
   background-color: hsl($uiHue, 67%, 52%);
   border-color: hsl($uiHue, 67%, 52%);
+  color: white;
+
+.btn:focus,
+.btn:active:focus,
+.btn.active:focus
+  outline-color: hsl($uiHue, 99%, 65%);
+
+
+.nav > :first-child
+  margin-left: 0;
+
+input, textarea {
+  /* Disable annoyingly slow Twitter Bootstrap transitions.
+  Alternatively, change from 0.2s to 0.05s. */
+  -webkit-transition: none;
+  -moz-transition: none;
+  -ms-transition: none;
+  -o-transition: none;
+  transition: none;
+}
 
 // Make a new modal hide all older modals, by setting backdrop z-index to the same as
 // the z-index for the modal dialog and content (rather than using 1040 which results in
@@ -76,11 +123,6 @@ html.touch .dropdown-menu > li
   margin: 20px 0 15px 0;
   &:first-child
     margin-top: 13px;
-
-.btn:focus,
-.btn:active:focus,
-.btn.active:focus
-  outline-color: hsl($uiHue, 99%, 65%); // else wrong hue
 
 
 // From http://twitter.github.com/bootstrap/assets/css/bootstrap.css,
@@ -166,7 +208,6 @@ html.touch .dropdown-menu > li
   // Otherwise Chrome makes it very thin, when outside browser window,
   // so the tip arrow gets offset incorrectly:
   width: 500px
-
 
 
 // vim: fdm=marker et ts=2 sw=2 tw=100 fo=tcqwn list

@@ -33,7 +33,7 @@ var Input = reactCreateFactory(ReactBootstrap.Input);
 // zxcvbn's strongest level is 4.
 var MinPasswordStrength = 4;
 
-var HalfACenturyInSeconds = 50*365*24*3600;
+var TenYearsInSeconds = 10*365*24*3600;
 
 
 export var NewPasswordInput = createClassAndFactory({
@@ -43,6 +43,7 @@ export var NewPasswordInput = createClassAndFactory({
       passwordWeakReason: 'too short',
       passwordCrackTimeText: 'instant',
       passwordStrength: 0,
+      showErrors: false,
     };
   },
 
@@ -85,13 +86,14 @@ export var NewPasswordInput = createClassAndFactory({
     // Don't blindly trust zxcvbn — do some basic tests of our own as well.
     var problem = null;
     if (password.length < 8) {
-      problem = 'too short, should be at least 8 characters';
+      problem = 'Too short. Should be at least 8 characters';
     }
     else if (!password.match(/[0-9!@#$%^&*()_+`=;:{}[\]\\]+/)) {
-      problem = 'no digit or special character';
+      problem = 'Please include a digit or special character';
     }
-    else if (passwordStrength.score < 4 || passwordStrength.crack_time < HalfACenturyInSeconds) {
-      problem = 'too weak';
+    else if (passwordStrength.score < MinPasswordStrength ||
+        passwordStrength.crack_time < TenYearsInSeconds) {
+      problem = 'Too weak';
     }
     this.setState({
       passwordWeakReason: problem,
@@ -103,18 +105,21 @@ export var NewPasswordInput = createClassAndFactory({
 
   render: function() {
     var passwordWarning;
-    if (this.state.passwordWeakReason) {
+    var tooWeakReason = this.state.passwordWeakReason;
+    if (tooWeakReason && this.state.showErrors) {
       // 100 computers in the message below? Well, zxcvbn assumes 10ms per guess and 100 cores.
       // My scrypt settings are more like 100-200 ms per guess. So, say 100 ms,
       // and 1 000 cores = 100 computers  -->  can use zxcvbn's default crack time.
-      passwordWarning = r.span({ style: { color: 'red' }}, r.span({},
-          "Bad password: " + this.state.passwordWeakReason,
+      passwordWarning = r.span({},
+          r.b({ style: { color: 'red' }}, tooWeakReason),
           r.br(), "Crack time: " + this.state.passwordCrackTimeText +
-          ", with 100 computers and the scrypt hash"));
+          ", with 100 computers and the scrypt hash");
     }
     return (
-      Input({ type: 'password', label: "Password:", name: 'newPassword', ref: 'passwordInput',
-          id: 'e2ePassword', onChange: this.checkPasswordStrength, help: passwordWarning }));
+      r.div({ className: 'form-group' + (passwordWarning ? ' has-error' : '') },
+        Input({ type: 'password', label: "Password:", name: 'newPassword', ref: 'passwordInput',
+            id: 'e2ePassword', onChange: this.checkPasswordStrength, help: passwordWarning,
+            onFocus: () => this.setState({ showErrors: true} )})));
   }
 });
 

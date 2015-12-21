@@ -100,19 +100,11 @@ var ChooseSiteTypeComponent = React.createClass({
 
 var CreateSimpleSiteComponent = React.createClass({
   getInitialState: function() {
-    return { showErrors: false };
+    return { okayStatuses: { email: false, hostname: false, terms: false } };
   },
 
   handleSubmit: function(event) {
     event.preventDefault();
-    var anyError =
-        !this.refs.terms.areTermsAccepted() ||
-        this.refs.localHostname.findAnyError();
-        // COULD test email addr too
-    if (anyError) {
-      this.setState({ showErrors: true });
-      return;
-    }
     Server.createSite(
         this.refs.emailAddress.getValue(),
         this.refs.localHostname.getValue(),
@@ -123,26 +115,33 @@ var CreateSimpleSiteComponent = React.createClass({
         });
   },
 
+  reportOkay: function(what, isOk) {
+    var okayStatuses = this.state.okayStatuses;
+    okayStatuses[what] = isOk;
+    this.setState({ okayStatuses: okayStatuses });
+  },
+
   render: function() {
+    var disableSubmit = _.contains(_.values(this.state.okayStatuses), false);
     return (
       r.div({},
         r.h1({}, 'Create Site'),
         r.form({ className: 'esCreateSite', onSubmit: this.handleSubmit },
-          Input({ type: 'text', label: 'Email', id: 'e2eEmail', className: 'esCreateSite_email',
+          Input({ type: 'text', label: 'Email:', id: 'e2eEmail', className: 'esCreateSite_email',
               placeholder: 'your-email@example.com',
               help: 'Your email address, which you will use to login and ' +
-                'administrate the site.', ref: 'emailAddress' }),
+                'administrate the site.', ref: 'emailAddress',
+              onChange: () => this.reportOkay('email', true) }),
 
-          LocalHostnameInput({ label: 'Site Address', placeholder: 'your-site-name',
-              help: 'The address of your new site. (You can map a custom domain name ' +
-                'to your site later, on the site settings pages, so your site would be ' +
-                'reachable via e.g. www.your-domain.com. I have not yet implemented ' +
-                'this though.)',
-              ref: 'localHostname', showErrors: this.state.showErrors }),
+          LocalHostnameInput({ label: 'Site Address:', placeholder: 'your-site-name',
+              help: 'The address of your new site. (Want a custom domain name? Later.)',
+              ref: 'localHostname',
+              reportOkay: (isOk) => this.reportOkay('hostname', isOk) }),
 
-          AcceptTerms({ ref: 'terms' }),
+          AcceptTerms({ reportOkay: (isOk) => this.reportOkay('terms', isOk) }),
 
-          ButtonInput({ type: 'submit', value: 'Create Site', bsStyle: 'primary' }))));
+          ButtonInput({ type: 'submit', value: 'Create Site', bsStyle: 'primary',
+              disabled: disableSubmit }))));
   }
 });
 
@@ -186,7 +185,7 @@ var CreateEmbeddedSiteComponent = React.createClass({
       r.div({},
         r.h1({}, 'Create Embedded Site'),
         r.form({ onSubmit: this.handleSubmit },
-          Input({ type: 'text', label: 'Email', placeholder: 'your-email@example.com',
+          Input({ type: 'text', label: 'Email:', placeholder: 'your-email@example.com',
               help: 'Your email address, which you will use to login and moderate comments.',
               ref: 'emailAddress' }),
 
@@ -194,8 +193,7 @@ var CreateEmbeddedSiteComponent = React.createClass({
               onChange: this.updateDebikiAddress }),
 
           LocalHostnameInput({ label: 'Debiki Address', ref: 'localHostname',
-              help: 'This is where you login to moderate embedded comments.',
-              showErrors: this.state.showErrors }),
+              help: 'This is where you login to moderate embedded comments.' }),
 
           AcceptTerms({ ref: 'terms' }),
 
@@ -236,8 +234,8 @@ export var EmbeddingAddressInput = createClassAndFactory({
 
 
 var AcceptTerms = createClassAndFactory({
-  areTermsAccepted: function() {
-    return this.refs.checkbox.getChecked();
+  onChange: function(e) {
+    this.props.reportOkay(this.refs.checkbox.getChecked());
   },
 
   render: function() {
@@ -249,7 +247,8 @@ var AcceptTerms = createClassAndFactory({
           r.a({ href: '/-/privacy-policy', target: '_blank' }, 'Privacy Policy'));
 
     return (
-      Input({ type: 'checkbox', label: label, ref: 'checkbox', id: 'e2eAcceptTerms' }));
+      Input({ type: 'checkbox', label: label, ref: 'checkbox', id: 'e2eAcceptTerms',
+          onChange: this.onChange }));
   }
 });
 
@@ -277,13 +276,22 @@ var LocalHostnameInput = createClassAndFactory({
 
   onChange: function(event) {
     this.setState({ value: event.target.value });
+    var anyError = this.findAnyError(event.target.value);
+    this.props.reportOkay(!anyError);
   },
 
-  findAnyError: function() {
-    if (this.state.value.length < 6)
+  showErrors: function() {
+    this.setState({ showErrors: true });
+  },
+
+  findAnyError: function(value?: string) {
+    if (_.isUndefined(value)) {
+      value = this.state.value;
+    }
+    if (value.length < 6)
       return 'The name should be at least six characters long.';
 
-    if (!/^[a-z][a-z0-9-]*[a-z0-9]$/.test(this.state.value))
+    if (!/^[a-z][a-z0-9-]*[a-z0-9]$/.test(value))
       return 'Please use only lowercase letters a-z and 0-9, e.g. "my-new-website"';
 
     return null;
@@ -291,15 +299,13 @@ var LocalHostnameInput = createClassAndFactory({
 
   render: function() {
     var value = this.state.value;
-
     var anyError;
-    if (this.props.showErrors) {
+    if (this.state.showErrors) {
       var anyError = this.findAnyError();
       if (anyError) {
-        anyError = Panel({ header: 'Bad address', bsStyle: 'danger' }, anyError );
+        anyError = r.b({ style: { color: 'red' }}, "Error: " + anyError);
       }
     }
-
     return (
       r.div({ className: 'form-group' + (anyError ? ' has-error' : '') },
         r.label({ htmlFor: 'dwLocalHostname' }, this.props.label),
@@ -307,7 +313,7 @@ var LocalHostnameInput = createClassAndFactory({
         r.kbd({}, location.protocol + '//'),
         r.input({ type: 'text', id: 'dwLocalHostname', className: 'form-control',
             placeholder: this.props.placeholder, ref: 'input', onChange: this.onChange,
-            value: value }),
+            value: value, onBlur: this.showErrors }),
         r.kbd({}, '.' + debiki.baseDomain),
         r.p({ className: 'help-block' }, this.props.help),
         anyError));

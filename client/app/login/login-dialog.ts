@@ -175,20 +175,22 @@ export var LoginDialogContent = createClassAndFactory({
       if (closeAll === 'CloseAllLoginDialogs') {
         this.props.close();
       }
-    }
+    };
 
     var childDialogProps = _.clone(this.props);
     childDialogProps.closeDialog = closeChildDialog;
     childDialogProps.createPasswordUser = true;
 
-    var createChildDialog = (title, contentFactory) => {
+    var createChildDialog = (title, contentFactory, className?) => {
+      var header = title ? ModalHeader({ closeButton: true }, ModalTitle({}, title)) : null;
       return (
-        Modal({ show: this.props.childDialog === contentFactory, onHide: closeChildDialog },
-          ModalHeader({ closeButton: true }, ModalTitle({}, title)),
+        Modal({ show: this.props.childDialog === contentFactory, onHide: closeChildDialog,
+            dialogClassName: className },
+          header,
           ModalBody({}, contentFactory(childDialogProps))));
-    }
+    };
 
-    var createUserDialog = createChildDialog("Create Password Account", CreateUserDialogContent);
+    var createUserDialog = createChildDialog(null, CreateUserDialogContent, 'esCreateUserDlg');
     var passwordLoginDialog = createChildDialog("Login with Password", PasswordLoginDialogContent);
     var guestLoginDialog = createChildDialog("Login as Guest", GuestLoginDialogContent);
 

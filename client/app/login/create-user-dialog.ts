@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../utils/react-utils.ts" />
+/// <reference path="../utils/PatternInput.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 
@@ -30,14 +31,12 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
-var ButtonGroup = reactCreateFactory(ReactBootstrap.ButtonGroup);
-var Input = reactCreateFactory(ReactBootstrap.Input);
-var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+var PatternInput = utils.PatternInput;
 
 
 var createUserDialog;
@@ -111,7 +110,8 @@ var CreateUserDialog = createClassAndFactory({
     childProps.anyReturnToUrl = this.state.anyReturnToUrl;
     childProps.closeDialog = this.close;
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close, keyboard: false },
+      Modal({ show: this.state.isOpen, onHide: this.close, keyboard: false,
+          dialogClassName: 'esCreateUserDlg' },
         ModalHeader({}, ModalTitle({}, "Create User")),
         ModalBody({}, CreateUserDialogContent(childProps))));
   }
@@ -121,30 +121,32 @@ var CreateUserDialog = createClassAndFactory({
 export var CreateUserDialogContent = createClassAndFactory({
   getInitialState: function() {
     return {
-      passwordOk: !this.props.createPasswordUser,
-      userData: { fullName: '', email: '', username: '' },
+      okayStatuses: {
+        fullName: this.props.name && this.props.name.length,
+        email: this.props.providerId && this.props.email && this.props.email.length,
+        username: false,
+        password: !this.props.createPasswordUser,
+      },
+      userData: {
+        fullName: this.props.name,
+        email: this.props.email,
+        username: ''
+      },
     };
   },
 
-  setPasswordOk: function(passwordOk: boolean) {
-    this.setState({
-      passwordOk: passwordOk
-    });
-  },
+  updateValueOk: function(what, value, isOk) {
+    var data = this.state.userData;
+    var okayStatuses = this.state.okayStatuses;
+    data[what] = value;
+    okayStatuses[what] = isOk;
+    this.setState({ userData: data, okayStatuses: okayStatuses });
 
-  updateUserData: function() {
-    this.setState({
-      userData: {
-        fullName: this.refs.fullNameInput.getValue(),
-        email: this.props.emailAddress || this.refs.emailInput.getValue(),
-        username: this.refs.usernameInput.getValue(),
-      }
-    });
     // Check strength again since e.g. fullName might now be (or no longer be)
     // part of the password. But not until we've rerendered everything and sent new
     // props to the password input.
-    if (this.refs.passwordInput) {
-      setTimeout(this.refs.passwordInput.checkPasswordStrength, 1);
+    if (what !== 'password' && this.refs.password) {
+      setTimeout(this.refs.password.checkPasswordStrength, 1);
     }
   },
 
@@ -156,7 +158,7 @@ export var CreateUserDialogContent = createClassAndFactory({
       Server.createOauthUser(data, this.handleCreateUserResponse);
     }
     else if (this.props.createPasswordUser) {
-      data.password = this.refs.passwordInput.getValue();
+      data.password = this.refs.password.getValue();
       Server.createPasswordUser(data, this.handleCreateUserResponse);
     }
     else {
@@ -197,37 +199,48 @@ export var CreateUserDialogContent = createClassAndFactory({
     var hasEmailAddressAlready = props.email && props.email.length;
 
     var fullNameInput =
-        Input({ type: 'text', label: "Your name: (the long version)", ref: 'fullNameInput',
-            id: 'e2eFullName', defaultValue: props.name, onChange: this.updateUserData });
+        PatternInput({ label: "Your name: (the long version)", ref: 'fullName',
+            id: 'e2eFullName', defaultValue: props.name, minLength: 1,
+            onChange: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
 
-    var anyEmailHelp = props.providerId && hasEmailAddressAlready ?
+    var emailHelp = props.providerId && hasEmailAddressAlready ?
         "Your email has been verified by " + props.providerId + "." : null;
 
     var emailInput =
-        Input({ type: 'text', label: "Email: (will be kept private)", ref: 'emailInput',
-            id: 'e2eEmail',
-            // If email already provided by e.g. Google, don't let the user change it.
-            disabled: hasEmailAddressAlready, defaultValue: props.email,
-            help: anyEmailHelp, onChange: this.updateUserData });
+        PatternInput({ label: "Email: (will be kept private)", ref: 'email', id: 'e2eEmail',
+          regex: /^.+@[^\.]+\...+/, message: "Email required",
+          notRegex: /@.*@/, notMessage: "Don't include two @",
+          onChange: (value, isOk) => this.updateValueOk('email', value, isOk),
+          // If email already provided by e.g. Google, don't let the user change it.
+          disabled: hasEmailAddressAlready, defaultValue: props.email,
+          help: emailHelp });
 
     var usernameInput =
-        Input({ type: 'text', label: "Username:", ref: 'usernameInput', id: 'e2eUsername',
-            onChange: this.updateUserData, help: r.span({},
-              "Your ", r.code({}, "@username"), " must be unique, short, no spaces.") });
+        PatternInput({ label: "Username:", ref: 'username', id: 'e2eUsername',
+          minLength: 3, maxLength: 20,
+          notRegex: / /, notMessage: "No spaces please",
+          notRegexTwo: /-/, notMessageTwo: "No hypens (-) please",
+          notRegexThree: /@/, notMessageThree: "Don't include the @",
+          notRegexFour: /[^a-zA-Z0-9_]/,
+          notMessageFour: "Only letters a-z A-Z and 0-9 and _",
+          onChange: (value, isOk) => this.updateValueOk('username', value, isOk),
+          help: r.span({}, "Your ", r.code({}, "@username"), ", keep it short") });
 
     var passwordInput = props.createPasswordUser
-        ? NewPasswordInput({ newPasswordData: state.userData, setPasswordOk: this.setPasswordOk,
-              ref: 'passwordInput' })
+        ? NewPasswordInput({ newPasswordData: state.userData, ref: 'password',
+              setPasswordOk: (isOk) => this.updateValueOk('password', 'dummy', isOk) })
         : null;
 
+    var disableSubmit = _.contains(_.values(this.state.okayStatuses), false);
+
     return (
-      r.form({},
+      r.form({ className: 'esCreateUser' },
         fullNameInput,
         emailInput,
         usernameInput,
         passwordInput,
-        Button({ onClick: this.doCreateUser, disabled: !state.passwordOk, id: 'e2eSubmit' },
-          "Create User"),
+        Button({ onClick: this.doCreateUser, disabled: disableSubmit, id: 'e2eSubmit',
+            className: 'btn-primary' }, "Create User"),
         Button({ onClick: props.closeDialog, id: 'e2eCancel' }, "Cancel")));
   }
 });

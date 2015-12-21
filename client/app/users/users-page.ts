@@ -154,6 +154,8 @@ var UserPageComponent = React.createClass({
 
     return (
       r.div({},
+        r.div({ className: 'alert alert-warning', style: { maxWidth: 500 }},
+          r.b({ style: { color: '#252525' }}, "We will make this page look and work better.")),
         UserBar(childProps),
         r.div({ style: { display: 'table', width: '100%' }},
           r.div({ style: { display: 'table-row' }},

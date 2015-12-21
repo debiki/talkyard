@@ -185,6 +185,7 @@ export var CreateSomethingHere = createComponent({
         r.p({}, message),
         r.div({ className: 'do-what-options' },
           Button({ active: createWhat === PageRole.Forum, id: 'e2eCreateForum',
+              bsStyle: 'primary', disabled: anyCreateForumPanel || anyCreateEmbeddedCommentsPanel,
               onClick: () => this.setState({ createWhat: PageRole.Forum })},
               'Create a Forum'),
           anyCreateEmbeddedCommentsButton),
@@ -220,7 +221,7 @@ export var CreateForumPanel = createComponent({
         Input({ type: 'text', label: 'Forum name:', placeholder: 'Enter forum name here',
             ref: 'forumName', onChange: this.handleChange }),
         Button({ onClick: this.createForum, disabled: !this.state.forumName.length,
-            id: 'e2eDoCreateForum' }, 'Create Forum')));
+            id: 'e2eDoCreateForum', bsStyle: 'primary' }, 'Create Forum')));
   }
 });
 

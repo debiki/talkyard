@@ -168,10 +168,12 @@ object ForumDao {
     |- Who is this community for?
     |- What can they do or find here?
     |- Link to additional info, for example:  [the about page](/about); any FAQ; any main website of yours.
+    |
+    |To edit this, click <span class="icon-menu"></span> just below and then <b class="icon-edit">Edit</b>.
     |""")
 
 
-  val AdminQuickStartGuideTitle = "READ ME FIRST: Admin Quick Start Guide"
+  val AdminQuickStartGuideTitle = "Read first: Admin Quick Start Guide"
 
   lazy val adminQuickStartGuide = renderCommonMark(i"""
     |As an admin, you can configure this forum and website. Go to the admin area by clicking <span class="icon-menu"></span> to the upper right, then click **Admin**. (The admin area is a bit unfinished right now.)
