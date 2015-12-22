@@ -117,13 +117,13 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     val html = Text(markupSource.take(maxNotificationLength) + ellipsis)
 
     val (whatHappened, inPostWrittenBy) = notf.notfType match {
-      case Notification.NewPostNotfType.Message =>
+      case NotificationType.Message =>
         ("You have been sent a personal message", "from")
-      case Notification.NewPostNotfType.Mention =>
+      case NotificationType.Mention =>
         ("You have been mentioned", "in a post written by")
-      case Notification.NewPostNotfType.DirectReply =>
+      case NotificationType.DirectReply =>
         ("You have a reply", "written by")
-      case Notification.NewPostNotfType.NewPost =>
+      case NotificationType.NewPost =>
         if (notf.postNr == PageParts.BodyNr)
           ("A new topic has been started", "by")
         else

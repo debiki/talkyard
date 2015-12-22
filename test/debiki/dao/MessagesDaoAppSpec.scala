@@ -59,7 +59,7 @@ class MessagesDaoAppSpec extends DaoAppSuite {
         userTwoNotfs.length mustBe 1
         val notf = userTwoNotfs.head
         notf.toUserId mustBe userTwo.id
-        notf.tyype mustBe Notification.NewPostNotfType.Message
+        notf.tyype mustBe Notification.NotificationType.Message
         notf match {
           case newPotsNotf: Notification.NewPost =>
             newPotsNotf.byUserId mustBe userOne.id

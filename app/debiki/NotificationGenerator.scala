@@ -55,7 +55,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       if approverId != parentPost.createdById // the approver has already read newPost
       parentUser <- transaction.loadUser(parentPost.createdById)
     } {
-      makeNewPostNotf(Notification.NewPostNotfType.DirectReply, newPost, parentUser)
+      makeNewPostNotf(NotificationType.DirectReply, newPost, parentUser)
     }
 
     // Mentions
@@ -68,7 +68,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       // to keep it so it'll catch bugs.
       if user.id != newPost.createdById  // poster mentions him/herself?
     } {
-      makeNewPostNotf(Notification.NewPostNotfType.Mention, newPost, user)
+      makeNewPostNotf(NotificationType.Mention, newPost, user)
     }
 
     // People watching this topic or category
@@ -77,7 +77,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       if userId != newPost.createdById
       user <- transaction.loadUser(userId)
     } {
-      makeNewPostNotf(Notification.NewPostNotfType.NewPost, newPost, user)
+      makeNewPostNotf(NotificationType.NewPost, newPost, user)
     }
 
     generatedNotifications
@@ -92,13 +92,13 @@ case class NotificationGenerator(transaction: SiteTransaction) {
     unimplementedIf(pageBody.approvedById.isEmpty, "Unapproved private message? [EsE7MKB3]")
     toUserIds foreach { userId =>
       val user = transaction.loadUser(userId) getOrDie "EsE5GUK2"
-      makeNewPostNotf(Notification.NewPostNotfType.Message, pageBody, user)
+      makeNewPostNotf(NotificationType.Message, pageBody, user)
     }
     generatedNotifications
   }
 
 
-  private def makeNewPostNotf(notfType: Notification.NewPostNotfType, newPost: Post, toUser: User) {
+  private def makeNewPostNotf(notfType: NotificationType, newPost: Post, toUser: User) {
     if (sentToUserIds.contains(toUser.id))
       return
 
@@ -158,7 +158,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
 
     // Create mentions.
     for (user <- mentionsCreatedForUsers) {
-      makeNewPostNotf(Notification.NewPostNotfType.Mention, newPost, user)
+      makeNewPostNotf(NotificationType.Mention, newPost, user)
     }
 
     generatedNotifications
