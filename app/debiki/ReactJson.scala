@@ -22,9 +22,9 @@ import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.dao.{ReviewStuff, PageStuff, SiteDao, PageDao}
 import debiki.DebikiHttp.throwNotFound
+import io.efdi.server.http.PageRequest
 import java.{util => ju}
 import play.api.libs.json._
-import requests.PageRequest
 import scala.collection.immutable
 import scala.math.BigDecimal.decimal
 

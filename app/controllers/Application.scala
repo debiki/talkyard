@@ -17,11 +17,10 @@
 
 package controllers
 
-import actions.ApiActions._
-import actions.SafeActions.ExceptionAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
+import io.efdi.server.http._
 import java.{util => ju, io => jio}
 import play.api._
 import play.api.libs.MimeTypes

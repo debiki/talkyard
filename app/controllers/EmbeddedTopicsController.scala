@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2013 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,18 +17,17 @@
 
 package controllers
 
-import actions.ApiActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
+import io.efdi.server.http._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
-import requests.{PageGetRequest, PageRequest, GetRequest}
 
 
-/** Resets the password of a PasswordIdentity, in case the user forgot it.
+/** Shows embedded comments.
   */
 object EmbeddedTopicsController extends mvc.Controller {
 
@@ -108,6 +107,7 @@ object EmbeddedTopicsController extends mvc.Controller {
 
 
   private def makePageRequest(request: GetRequest): PageGetRequest = {
+    ??? /*
     import controllers.Utils.ValidationImplicits._
     val topicId = request.queryString.getNoneAsEmpty("topicId")
     val topicUrl = request.queryString.getNoneAsEmpty("topicUrl")
@@ -137,6 +137,7 @@ object EmbeddedTopicsController extends mvc.Controller {
       ViewPageController.makeEmptyPageRequest(request, pageId = theId, showId = true,
         pageRole = PageRole.EmbeddedComments)
     }
+    */
   }
 
 

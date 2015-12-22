@@ -17,24 +17,19 @@
 
 package controllers
 
-import actions.ApiActions.JsonOrFormDataPostAction
-import actions.ApiActions.AsyncPostJsonAction
-import actions.ApiActions.GetActionRateLimited
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.Utils.isOkayEmailAddress
-import controllers.Utils.OkSafeJson
 import debiki._
 import debiki.antispam.AntiSpam
 import debiki.dao.SiteDao
 import debiki.DebikiHttp._
+import io.efdi.server.http._
 import java.{util => ju}
 import org.scalactic.{Good, Bad}
 import play.api._
 import play.api.mvc.{Action => _, _}
 import play.api.libs.json.{Json, JsBoolean}
-import requests.ApiRequest
-import requests.JsonPostRequest
 import scala.concurrent.ExecutionContext.Implicits.global
 
 

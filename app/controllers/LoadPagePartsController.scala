@@ -17,9 +17,8 @@
 
 package controllers
 
-import actions.ApiActions._
 import com.debiki.core._
-import controllers.Utils.OkSafeJson
+import io.efdi.server.http._
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}

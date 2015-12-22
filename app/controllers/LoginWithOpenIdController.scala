@@ -17,12 +17,12 @@
 /*
 package controllers
 
-import actions.PageActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.EmailNotfPrefs.EmailNotfPrefs
 import debiki._
 import debiki.DebikiHttp._
+import io.efdi.server.http._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
@@ -30,7 +30,6 @@ import play.api.data._
 import play.api.data.Forms._
 import play.api.libs.concurrent._
 import play.api.libs.{openid => oid}
-import requests.realOrFakeIpOf
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}

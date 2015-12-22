@@ -17,16 +17,14 @@
 
 package controllers
 
-import actions.ApiActions._
-import actions.ApiActions.JsonOrFormDataPostAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
+import io.efdi.server.http._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.{Action => _, _}
-import requests.ApiRequest
 
 
 /** Resets the password of a PasswordIdentity, in case the user forgot it.

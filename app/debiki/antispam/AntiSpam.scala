@@ -17,18 +17,17 @@
 
 package debiki.antispam
 
-import java.net.UnknownHostException
-
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import java.{net => jn}
 import debiki.TextAndHtml
 import debiki.DebikiHttp.throwForbidden
+import io.efdi.server.http.DebikiRequest
+import java.{net => jn}
+import java.net.UnknownHostException
 import play.{api => p}
 import play.api.Play.current
 import play.api.libs.ws._
 import play.api.libs.json.Json
-import requests.DebikiRequest
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
 import scala.concurrent.Future.successful

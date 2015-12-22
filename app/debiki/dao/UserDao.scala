@@ -17,13 +17,11 @@
 
 package debiki.dao
 
-import actions.SafeActions.SessionRequest
 import com.debiki.core._
 import debiki.DebikiHttp.{throwNotFound, throwForbidden}
-import java.net.InetAddress
+import io.efdi.server.http.SessionRequest
 import java.{util => ju}
 import debiki.DebikiSecurity
-import requests.ApiRequest
 import scala.collection.immutable
 import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs

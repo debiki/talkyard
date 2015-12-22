@@ -17,16 +17,14 @@
 
 package controllers
 
-import actions.ApiActions.PostJsonAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.Utils.OkSafeJson
 import debiki._
 import debiki.DebikiHttp._
+import io.efdi.server.http._
 import java.{util => ju}
 import play.api._
 import play.api.libs.json._
-import requests.JsonPostRequest
 
 
 /** Closes and collapses trees and posts.

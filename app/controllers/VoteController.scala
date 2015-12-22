@@ -17,16 +17,14 @@
 
 package controllers
 
-import actions.ApiActions.PostJsonAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import collection.immutable
 import debiki._
 import debiki.DebikiHttp._
+import io.efdi.server.http._
 import play.api._
 import play.api.libs.json._
-import requests.{PageRequest, JsonPostRequest}
-import Utils.OkSafeJson
 
 
 /** Handles votes, e.g. "I like this comment" or "this comment is faulty" votes.

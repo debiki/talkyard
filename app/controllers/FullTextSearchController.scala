@@ -17,13 +17,12 @@
 
 package controllers
 
-import actions.ApiActions._
 import com.debiki.core._
 import debiki.RateLimits
+import io.efdi.server.http._
 import java.{util => ju}
 import play.api._
 import play.api.mvc.Result
-import requests._
 import scala.concurrent.Future
 import Prelude._
 

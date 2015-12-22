@@ -21,11 +21,12 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.{SiteAssetBundlesController, routes}
 import debiki.dao._
+import io.efdi.server.http.DebikiRequest
+import io.efdi.server.http.PageRequest
 import java.{util => ju}
 import play.{api => p}
 import play.api.Play.current
 import play.api.libs.json._
-import requests.{DebikiRequest, PageRequest}
 import SiteAssetBundlesController.{AssetBundleNameRegex, assetBundleFileName}
 
 

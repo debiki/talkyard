@@ -19,12 +19,12 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import io.efdi.server.http.DebikiRequest
 import org.scalatest._
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import org.mockito.Mockito._
 import play.api.http.Status.TOO_MANY_REQUEST
-import requests.DebikiRequest
 import java.{util => ju}
 
 

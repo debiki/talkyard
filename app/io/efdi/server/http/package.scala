@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2013-2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,30 +15,62 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package actions
+package io.efdi.server
 
-import actions.SafeActions.{SessionAction, SessionRequest}
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.LoginController
-import controllers.Utils
 import debiki._
 import debiki.DebikiHttp._
 import debiki.RateLimits.NoRateLimits
 import java.{util => ju}
+import debiki.dao.SiteDao
 import play.api._
 import play.api.libs.Files.TemporaryFile
+import play.api.libs.json.JsValue
 import play.{api => p}
 import play.api.mvc._
-import requests._
+import play.api.Play.current
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success}
 
 
-/** Play Framework Actions for requests to Debiki's HTTP API.
-  */
-object ApiActions {
+package object http {
+
+  import io.efdi.server.http.PlainApiActions._
+
+
+  case class SessionRequest[A](
+    sidStatus: SidStatus,
+    xsrfOk: XsrfOk,
+    browserId: Option[BrowserId],
+    underlying: Request[A]) extends WrappedRequest(underlying)
+
+  type SessionRequestNoBody = SessionRequest[Unit]
+
+  case class ApiRequest[A](
+    sid: SidStatus,
+    xsrfToken: XsrfOk,
+    browserId: Option[BrowserId],
+    user: Option[User],
+    dao: SiteDao,
+    request: Request[A]) extends DebikiRequest[A] {
+  }
+
+  /** A request with no post data. */
+  type GetRequest = ApiRequest[Unit]
+
+  type PageGetRequest = PageRequest[Unit]
+
+  /** A request with form data.
+    * @deprecated Use ApiRequest[JsonOrFormDataBody] instead — no, use JsonPostRequest.
+    */
+  type FormDataPostRequest = ApiRequest[Map[String, Seq[String]]]
+
+  type JsonPostRequest = ApiRequest[JsValue]
+
+
+  val SessionAction = SafeActions.SessionAction
+  val SessionActionNoCookies = SafeActions.SessionActionNoCookies
+  val ExceptionAction = SafeActions.ExceptionAction
 
 
   def AsyncGetAction(f: GetRequest => Future[Result]): mvc.Action[Unit] =
@@ -103,92 +135,56 @@ object ApiActions {
         BodyParsers.parse.maxLength(maxLength, BodyParsers.parse.multipartFormData))(f)
 
 
-  private def PlainApiAction(rateLimits: RateLimits, allowAnyone: Boolean = false) =
-    PlainApiActionImpl(rateLimits, adminOnly = false, staffOnly = false, allowAnyone)
 
-  private def PlainApiActionStaffOnly =
-    PlainApiActionImpl(NoRateLimits, adminOnly = false, staffOnly = true)
+  /** The real ip address of the client, unless a fakeIp url param or dwCoFakeIp cookie specified
+    * In prod mode, an e2e test password cookie is required.
+    *
+    * (If 'fakeIp' is specified, actions.SafeActions.scala copies the value to
+    * the dwCoFakeIp cookie.)
+    */
+  def realOrFakeIpOf(request: play.api.mvc.Request[_]): String = {
+    val fakeIp = request.queryString.get("fakeIp").flatMap(_.headOption).orElse(
+      request.cookies.get("dwCoFakeIp").map(_.value))  getOrElse {
+      return request.remoteAddress
+    }
 
-  private val PlainApiActionAdminOnly =
-    PlainApiActionImpl(NoRateLimits, adminOnly = true, staffOnly = false)
-
-
-  private def PlainApiActionImpl(rateLimits: RateLimits, adminOnly: Boolean, staffOnly: Boolean,
-        allowAnyone: Boolean = false) =
-      new ActionBuilder[ApiRequest] {
-
-    override def composeAction[A](action: Action[A]) = {
-      SessionAction.async(action.parser) { request: Request[A] =>
-        action(request)
+    if (Play.isProd) {
+      val password = getE2eTestPassword(request) getOrElse {
+        throwForbidden(
+          "DwE6KJf2", "Fake ip specified, but no e2e test password cookie — required in prod mode")
+      }
+      val correctPassword = debiki.Globals.e2eTestPassword getOrElse {
+        throwForbidden(
+          "DwE7KUF2", "Fake ips not allowed, because no e2e test password has been configured")
+      }
+      if (password != correctPassword) {
+        throwForbidden(
+          "DwE2YUF2", "Fake ip forbidden: Wrong e2e test password")
       }
     }
 
-    override def invokeBlock[A](
-        genericRequest: Request[A], block: ApiRequest[A] => Future[Result]) = {
+    // Dev or test mode, or correct password, so:
+    fakeIp
+  }
 
-      // We've wrapped PlainApiActionImpl in a SessionAction which only provides SessionRequest:s.
-      val request = genericRequest.asInstanceOf[SessionRequest[A]]
 
-      val siteId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
+  def getE2eTestPassword(request: play.api.mvc.Request[_]): Option[String] =
+    request.queryString.get("e2eTestPassword").flatMap(_.headOption).orElse(
+      request.cookies.get("dwCoE2eTestPassword").map(_.value)).orElse( // dwXxx obsolete. esXxx now
+      request.cookies.get("esCoE2eTestPassword").map(_.value))
 
-      val dao = Globals.siteDao(siteId = siteId)
-      dao.perhapsBlockGuest(request)
 
-      var anyUser = Utils.loadUserOrThrow(request.sidStatus, dao)
-      var logoutBecauseSuspended = false
-      if (anyUser.exists(_.isSuspendedAt(new ju.Date))) {
-        anyUser = None
-        logoutBecauseSuspended = true
-      }
-
-      if (staffOnly && !anyUser.exists(_.isStaff))
-        throwForbidden("DwE7BSW3", "Please login as admin or moderator")
-
-      if (adminOnly && !anyUser.exists(_.isAdmin))
-        throwForbidden("DwE1GfK7", "Please login as admin")
-
-      if (!allowAnyone) {
-        val siteSettings = dao.loadWholeSiteSettings()
-        if (!anyUser.exists(_.isApprovedOrStaff) && siteSettings.userMustBeApproved.asBoolean)
-          throwForbidden("DwE4HKG5", "Not approved")
-        if (!anyUser.exists(_.isAuthenticated) && siteSettings.userMustBeAuthenticated.asBoolean)
-          throwForbidden("DwE6JGY2", "Not authenticated")
-      }
-
-      val apiRequest = ApiRequest[A](
-        request.sidStatus, request.xsrfOk, request.browserId, anyUser, dao, request)
-
-      RateLimiter.rateLimit(rateLimits, apiRequest)
-
-      // COULD use markers instead for site id and ip, and perhaps uri too? Dupl code [5KWC28]
-      val requestUriAndIp = s"site $siteId, ip ${apiRequest.ip}: ${apiRequest.uri}"
-      p.Logger.debug(s"API request started [DwM6L8], " + requestUriAndIp)
-
-      val timer = Globals.metricRegistry.timer(request.path)
-      val timerContext = timer.time()
-      var result = try {
-        block(apiRequest)
-      }
-      finally {
-        timerContext.stop()
-      }
-
-      result onComplete {
-        case Success(r) =>
-          p.Logger.debug(
-            s"API request ended, status ${r.header.status} [DwM9Z2], $requestUriAndIp")
-        case Failure(exception) =>
-          p.Logger.debug(
-            s"API request exception: ${classNameOf(exception)} [DwE4P7], $requestUriAndIp")
-      }
-
-      if (logoutBecauseSuspended) {
-        // We won't get here if e.g. a 403 Forbidden exception was thrown because 'user' was
-        // set to None. How solve that?
-        result = result.map(_.discardingCookies(LoginController.DiscardingSessionCookie))
-      }
-      result
+  def hasOkE2eTestPassword(request: play.api.mvc.Request[_]): Boolean = {
+    getE2eTestPassword(request) match {
+      case None => false
+      case Some(password) =>
+        val correctPassword = debiki.Globals.e2eTestPassword getOrElse throwForbidden(
+          "EsE5GUM2", "There's an e2e test password in the request, but not in any config file")
+        if (password != correctPassword) {
+          throwForbidden("EsE2FWK4", "The e2e test password in the request is wrong")
+        }
+        true
     }
   }
-}
 
+}

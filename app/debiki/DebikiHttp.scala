@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.SystemDao
 import debiki.Globals.originOf
+import io.efdi.server.http.DebikiRequest
 import java.{net => jn}
 import play.api._
 import play.api.libs.iteratee.Iteratee
@@ -28,7 +29,6 @@ import play.{api => p}
 import play.api.http.ContentTypes._
 import play.api.mvc.{Action => _, _}
 import play.api.Play.current
-import requests.DebikiRequest
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import xml.{NodeSeq}

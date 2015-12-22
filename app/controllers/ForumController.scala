@@ -17,18 +17,17 @@
 
 package controllers
 
-import actions.ApiActions.{GetAction, StaffGetAction, StaffPostJsonAction}
 import debiki.dao.PageStuff
 import collection.mutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.ReactJson._
+import io.efdi.server.http._
 import java.{util => ju}
 import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
-import requests.DebikiRequest
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
 import Utils.ValidationImplicits._

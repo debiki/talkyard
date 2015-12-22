@@ -17,15 +17,13 @@
 
 package controllers
 
-import actions.ApiActions.{AdminGetAction, AdminPostJsonAction}
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
+import io.efdi.server.http._
 import play.api._
 import play.api.libs.json._
-import requests.{GetRequest, JsonPostRequest}
-import Utils.OkSafeJson
 
 
 /** Loads and saves settings, for the whole website, site sections,

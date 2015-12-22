@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2012-2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package actions
+package io.efdi.server.http
 
 import com.debiki.core._
 import com.debiki.core.DbDao.EmailAddressChangedException
@@ -25,11 +25,10 @@ import controllers.Utils
 import debiki._
 import debiki.DebikiHttp._
 import java.{util => ju}
-import play.api._
 import play.{api => p}
 import play.api.Play.current
 import play.api.mvc._
-import requests._
+import play.api.{Logger, Play}
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -40,15 +39,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * Also understand Debiki's internal throwBadReq etcetera functions.
  */
 object SafeActions {
-
-
-  case class SessionRequest[A](
-    sidStatus: SidStatus,
-    xsrfOk: XsrfOk,
-    browserId: Option[BrowserId],
-    underlying: Request[A]) extends WrappedRequest(underlying)
-
-  type SessionRequestNoBody = SessionRequest[Unit]
 
 
   /**
@@ -251,4 +241,3 @@ object SafeActions {
       |""")
   }
 }
-

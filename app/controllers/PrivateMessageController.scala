@@ -17,17 +17,15 @@
 
 package controllers
 
-import actions.ApiActions.AsyncPostJsonAction
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.Utils.OkSafeJson
 import debiki._
 import debiki.DebikiHttp._
 import debiki.antispam.AntiSpam.throwForbiddenIfSpam
+import io.efdi.server.http._
 import play.api._
 import play.api.mvc.{Action => _, _}
 import play.api.libs.json.{JsString, Json}
-import requests._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 

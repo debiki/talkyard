@@ -17,18 +17,17 @@
 
 package controllers
 
-import actions.ApiActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.Utils._
 import debiki.DebikiHttp._
 import debiki.{ReactJson, ThingsToReview}
+import io.efdi.server.http._
 import java.{util => ju}
 import play.api._
 import play.api.libs.json._
 import play.api.libs.json.Json.toJson
 import play.api.mvc.{Action => _, _}
-import requests._
 import scala.collection.{mutable, immutable}
 
 

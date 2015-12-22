@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012-2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2012-2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,16 +17,15 @@
 
 package controllers
 
-import actions.ApiActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
+import io.efdi.server.http._
 import java.{util => ju}
 import debiki.dao.SiteDao
 import play.api._
 import play.api.Play.current
 import play.api.mvc.{Action => _, _}
-import requests._
 import DebikiHttp._
 
 
@@ -195,7 +194,7 @@ object ViewPageController extends mvc.Controller {
       categoryId = None,
       publishDirectly = true)
 
-    new requests.DummyPageRequest(
+    new DummyPageRequest(
       sid = request.sid,
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,

@@ -17,16 +17,15 @@
 
 package controllers
 
-import actions.SafeActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import java.{util => ju}
 import debiki.DebikiHttp._
+import io.efdi.server.http._
+import java.{util => ju}
 import play.api._
 import play.api.mvc._
 import play.api.mvc.BodyParsers.parse.empty
 import play.api.Play.current
-import requests._
 
 
 /** Logs in and out.

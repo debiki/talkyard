@@ -17,16 +17,15 @@
 
 package controllers
 
-import actions.ApiActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.Utils.{ OkSafeJson, isOkayEmailAddress }
 import debiki._
 import debiki.DebikiHttp._
 import debiki.antispam.AntiSpam.throwForbiddenIfSpam
+import io.efdi.server.http._
 import play.api.libs.json._
 import play.api.mvc.Controller
-import requests._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Try
 

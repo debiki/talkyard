@@ -17,10 +17,10 @@
 
 package controllers
 
-import actions.ApiActions._
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
+import io.efdi.server.http._
 import play.api.mvc
 import DebikiHttp._
 

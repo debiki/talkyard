@@ -20,13 +20,12 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
+import io.efdi.server.http.{JsonOrFormDataBody, realOrFakeIpOf}
 import java.{util => ju, io => jio}
 import play.{api => p}
 import play.api.mvc.Cookie
 import play.api.{Play, Logger}
 import play.api.Play.current
-import requests.JsonOrFormDataBody
-import requests.realOrFakeIpOf
 import scala.util.Try
 import scala.xml.{Text, Node, NodeSeq}
 import DebikiSecurity._

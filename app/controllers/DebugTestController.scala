@@ -19,13 +19,12 @@ package controllers
 
 import java.lang.management.ManagementFactory
 
-import actions.SafeActions.{ExceptionAction, SessionAction}
-import actions.ApiActions.{GetAction, PostJsonAction, AdminGetAction}
 import akka.pattern.ask
 import com.debiki.core.Email
 import com.debiki.core.Prelude._
 import debiki.{RateLimits, Globals}
 import debiki.DebikiHttp._
+import io.efdi.server.http._
 import java.{util => ju, io => jio}
 import play.api._
 import play.api.libs.json._
@@ -103,7 +102,7 @@ object DebugTestController extends mvc.Controller {
 
   /** For performance tests. */
   def pingSessionAction = SessionAction(empty) {
-    request: actions.SafeActions.SessionRequestNoBody =>
+    request: SessionRequestNoBody =>
       Ok("session-action-pong")
   }
 

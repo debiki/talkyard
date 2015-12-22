@@ -23,12 +23,12 @@ import com.debiki.core.Prelude._
 import debiki._
 import debiki.DebikiHttp._
 import debiki.dao.SiteDao
+import io.efdi.server.http._
 import java.{util => ju, lang => jl}
 import play.api._
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action => _, _}
 import play.api.Play.current
-import requests._
 
 
 object Utils extends Results with http.ContentTypes {
@@ -158,9 +158,6 @@ object Utils extends Results with http.ContentTypes {
     implicit def queryStringToValueGetter(
         queryString: Map[String, Seq[String]]) =
       new FormInpReader(queryString)
-
-    implicit def pageReqToFormInpReader(pageReq: PagePostRequest) =
-      new FormInpReader(pageReq.request.body)
 
     implicit def seqToSeqChecker[A](seq: Seq[A]) =
       new SeqChecker[A](seq)
