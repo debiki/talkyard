@@ -15,13 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package debiki
+package io.efdi.server.notf
 
-import collection.{mutable, immutable}
-import com.debiki.core._
 import com.debiki.core.Prelude._
+import com.debiki.core._
+import io.efdi.server.notf.NotificationGenerator._
 import java.{util => ju}
-import NotificationGenerator._
+import scala.collection.{immutable, mutable}
 
 
 /** Finds out what notifications to send when e.g. a new post is created.

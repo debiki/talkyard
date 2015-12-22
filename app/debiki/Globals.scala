@@ -27,6 +27,7 @@ import debiki.Globals.NoStateError
 import debiki.antispam.AntiSpam
 import debiki.dao._
 import debiki.dao.migrations.ScalaBasedMigrations
+import io.efdi.server.notf.Notifier
 import java.{lang => jl, util => ju}
 import play.{api => p}
 import play.api.libs.concurrent.Akka
