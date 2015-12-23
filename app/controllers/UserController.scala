@@ -283,7 +283,7 @@ object UserController extends mvc.Controller {
       case None =>
         // Might be an embedded comment page, not yet created because no comments posted.
         // Or we might be in the signup-to-become-owner step, when creating a new site.
-        ReactJson.userNoPageToJson(request.user)
+        ReactJson.userNoPageToJson(request)
       case Some(request) =>
         ReactJson.userDataJson(request) getOrElse ReactJson.NoUserSpecificData
     }

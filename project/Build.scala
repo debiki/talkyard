@@ -105,6 +105,12 @@ object ApplicationBuild extends Build {
     unmanagedClasspath in Compile <+= (baseDirectory) map { bd =>
       Attributed.blank(bd / "target/scala-2.10/compiledjs-classes")
     },
+
+    // ScalaTest full stack traces:
+    testOptions in Test += Tests.Argument("-oF"),
+    // Disable:
+    // sbt> test -- -oS
+
     listJarsTask)
 
   // This is supposedly needed when using ScalaTest instead of Specs2,

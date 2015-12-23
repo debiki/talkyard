@@ -31,6 +31,7 @@ case class ReviewStuff(
   id: ReviewTaskId,
   reasons: immutable.Seq[ReviewReason],
   createdAt: ju.Date,
+  causedBy: User,
   moreReasonsAt: Option[ju.Date],
   completedAt: Option[ju.Date],
   completedBy: Option[User],
@@ -101,6 +102,7 @@ trait ReviewsDao {
         ReviewStuff(
           id = task.id,
           reasons = task.reasons,
+          causedBy = usersById.get(task.causedById) getOrDie "EsE4GUP2",
           createdAt = task.createdAt,
           moreReasonsAt = task.moreReasonsAt,
           completedAt = task.completedAt,

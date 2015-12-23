@@ -33,6 +33,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
   private var notfsToCreate = mutable.ArrayBuffer[Notification]()
   private var notfsToDelete = mutable.ArrayBuffer[NotificationToDelete]()
   private var sentToUserIds = new mutable.HashSet[UserId]()
+  private var nextNotfId: Option[NotificationId] = None
 
   private def generatedNotifications =
     Notifications(
@@ -124,6 +125,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
     notfsToCreate += Notification.NewPost(
       notfType,
       siteId = transaction.siteId,
+      id = bumpAndGetNextNotfId(),
       createdAt = newPost.createdAt,
       uniquePostId = newPost.uniqueId,
       pageId = newPost.pageId,
@@ -164,13 +166,21 @@ case class NotificationGenerator(transaction: SiteTransaction) {
     generatedNotifications
   }
 
-
   /*
   private def generateForVote(likeVote: RawPostAction[PAP.Vote]) {
     // Delete this notf if deleting the vote, see [953kGF21X].
-    // Note: Need to fix NotificationsSiteDaoMixin.connectNotificationToEmail so it
-    // includes action_type and _sub_id in the where clause.
   } */
+
+
+  private def bumpAndGetNextNotfId(): NotificationId = {
+    nextNotfId match {
+      case None =>
+        nextNotfId = Some(transaction.nextNotificationId())
+      case Some(id) =>
+        nextNotfId = Some(id + 1)
+    }
+    nextNotfId getOrDie "EsE5GUY2"
+  }
 
 }
 

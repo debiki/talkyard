@@ -114,6 +114,11 @@ export var TopBar = createComponent({
     window.location.assign(d.i.serverOrigin + '/-/admin/');
   },
 
+  goToReviewPage: function() {
+    sessionStorage.setItem('returnToUrl', window.location.toString());
+    window.location.assign(d.i.serverOrigin + '/-/admin/#/review/all');
+  },
+
   showTools: function() {
     pagetools.getPageToolsDialog().open();
   },
@@ -150,6 +155,10 @@ export var TopBar = createComponent({
     $('#dw-the-end')['dwScrollIntoView']({ marginTop: 60, marginBottom: 30 });
   },
 
+  viewOlderNotfs: function() {
+    ReactActions.goToUsersNotifications(this.state.store.user.userId);
+  },
+
   render: function() {
     var store: Store = this.state.store;
     var user: User = store.user;
@@ -159,6 +168,8 @@ export var TopBar = createComponent({
     // If not logged in, never show it — there's no reason for new users to login on the homepage.
     if (pageRole === PageRole.HomePage && (!this.state.fixed || !user || !user.isLoggedIn))
       return r.span({});
+
+    // ------- Top, Replies, Bottom, Back buttons
 
     var goToButtons;
     if (this.state.fixed && pageRole !== PageRole.HomePage && pageRole !== PageRole.Forum) {
@@ -181,46 +192,79 @@ export var TopBar = createComponent({
           goToTop, goToReplies, goToChat, goToEnd, debiki2.postnavigation.PostNavigation());
     }
 
-    var avatarAndName =
+    // ------- Avatar & username dropdown, + notf icons
+
+    var talkToMeNotfs = makeNotfIcon('toMe', user.numTalkToMeNotfs);
+    var talkToOthersNotfs = makeNotfIcon('toOthers', user.numTalkToOthersNotfs);
+    var otherNotfs = makeNotfIcon('other', user.numOtherNotfs);
+    var anyDivider = user.notifications.length ? MenuItem({ divider: true }) : null;
+    var notfsElems = user.notifications.map(notf => Notification({ notification: notf }));
+    if (user.thereAreMoreUnseenNotfs) {
+      notfsElems.push(
+          MenuItem({ onSelect: this.viewOlderNotfs }, "View more notifications..."));
+    }
+    var avatarNameAndNotfs =
         r.span({},
           avatar.Avatar({ user: user, tiny: true, ignoreClicks: true }),
-          r.span({ className: 'esAvtrName_name' }, user.username || user.fullName));
-
+          r.span({ className: 'esAvtrName_name' }, user.username || user.fullName),
+          talkToMeNotfs,
+          talkToOthersNotfs,
+          otherNotfs);
     var avatarNameDropdown = !user.isLoggedIn ? null :
-        DropdownButton({ title: avatarAndName, className: 'esAvtrName', pullRight: true },
+        DropdownButton({ title: avatarNameAndNotfs, className: 'esAvtrName', pullRight: true,
+            noCaret: true },
           MenuItem({ onSelect: this.goToUserPage }, "View Profile"),
-          MenuItem({ onSelect: this.onLogoutClick }, "Log Out"));
+          MenuItem({ onSelect: this.onLogoutClick }, "Log Out"),
+          anyDivider,
+          notfsElems);
+
+    // ------- Login button
 
     var loginButton = user.isLoggedIn ? null :
         Button({ className: 'dw-login btn-primary', onClick: this.onLoginClick },
             r.span({ className: 'icon-user' }, 'Log In'));
 
-    var adminMenuItem = !isStaff(user) ? null :
-        MenuItem({ onSelect: this.goToAdminPage }, r.span({ className: 'icon-settings' }, "Admin"));
+    // ------- Tools button
 
     // (Is it ok to call another React component from here? I.e. the page tools dialog.)
     var toolsButton = !isStaff(user) || pagetools.getPageToolsDialog().isEmpty() ? null :
         Button({ className: 'dw-a-tools', onClick: this.showTools },
           r.a({ className: 'icon-wrench' }, 'Tools'));
 
-    var searchButton =
-        null;
-    /* Hide for now, search broken, after I rewrote from dw1_posts to dw2_posts.
-        Button({ className: 'dw-search', onClick: this.onSearchClick },
-            r.span({ className: 'icon-search' }));
-    */
+    // ------- Hamburger dropdown, + review task icons
 
+    var urgentReviewTasks = makeNotfIcon('reviewUrgent', user.numUrgentReviewTasks);
+    var otherReviewTasks = makeNotfIcon('reviewOther', user.numOtherReviewTasks);
+    var menuTitle = r.span({ className: 'icon-menu' }, urgentReviewTasks, otherReviewTasks);
+    var adminMenuItem = !isStaff(user) ? null :
+        MenuItem({ onSelect: this.goToAdminPage },
+          r.span({ className: 'icon-settings' }, "Admin"));
+    var reviewMenuItem = !urgentReviewTasks && !otherReviewTasks ? null :
+        MenuItem({ onSelect: this.goToReviewPage },
+          "Review", urgentReviewTasks, otherReviewTasks);
     var menuDropdown =
-        DropdownButton({ title: r.span({ className: 'icon-menu' }), pullRight: true,
-              className: 'dw-menu' },
+        DropdownButton({ title: menuTitle, className: 'dw-menu esMenu', pullRight: true,
+            noCaret: true },
           adminMenuItem,
+          reviewMenuItem,
           MenuItem({ onSelect: ReactActions.showHelpMessagesAgain },
               r.span({ className: 'icon-help' }, "Unhide Help Messages")),
           MenuItem({ onSelect: () => location.assign('/about') }, "About this site"),
           MenuItem({ onSelect: () => location.assign('/-/terms-of-use') }, "Terms and Privacy"));
 
+    // ------- Search button
+
+    var searchButton =
+        null;
+    /* Hide for now, search broken, after I rewrote from dw1_posts to dw2_posts.
+     Button({ className: 'dw-search', onClick: this.onSearchClick },
+     r.span({ className: 'icon-search' }));
+     */
+
     var searchForm = !this.state.showSearchForm ? null :
         SearchForm({ onClose: this.closeSearchForm });
+
+    // ------- Title
 
     var pageTitle;
     if (pageRole === PageRole.Forum) {
@@ -229,6 +273,8 @@ export var TopBar = createComponent({
       pageTitle =
           r.div({ className: 'dw-topbar-title' }, Title(titleProps));
     }
+
+    // ------- The result
 
     var topbar =
       r.div({ className: 'esTopBar' },
@@ -258,6 +304,45 @@ export var TopBar = createComponent({
         r.div({ className: fixItClass },
           r.div({ className: containerClass },
             topbar))));
+  }
+});
+
+
+function makeNotfIcon(type: string, number: number) {
+  if (!number) return null;
+  var numMax99 = Math.min(99, number);
+  var wideClass = number >= 10 ? ' esNotfIcon-wide' : '';
+  return r.div({ className: 'esNotfIcon esNotfIcon-' + type + wideClass}, numMax99);
+}
+
+
+var Notification = createComponent({
+  goToIt: function() {
+    var notf: Notification = this.props.notification;
+    if (notf.pageId && notf.postNr) {
+      ReactActions.openPagePostNr(notf.pageId, notf.postNr);
+    }
+    else {
+      die("Unknown notification type [EsE5GUKW2]")
+    }
+  },
+
+  render: function() {
+    var notf: Notification = this.props.notification;
+    var byUser = notf.byUser;
+    var byName = byUser.username || byUser.fullName;
+    var textContent = '';
+    var iconClass = '';
+    switch (notf.type) {
+      case NotificationType.DirectReply: iconClass = 'icon-reply'; break;
+      case NotificationType.Mention: textContent = '@'; break;
+      case NotificationType.Message: iconClass = 'icon-mail-empty'; break;
+      case NotificationType.NewPost: iconClass = 'icon-comment-empty'; break;
+      default: die("Unknown notification type [EsE4GUF2]")
+    }
+    return (
+      MenuItem({ onSelect: this.goToIt },
+        r.span({ className: iconClass }, textContent), byName + ", " + notf.pageTitle));
   }
 });
 

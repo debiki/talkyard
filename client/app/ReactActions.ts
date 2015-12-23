@@ -406,8 +406,18 @@ export function showHelpMessagesAgain() {
 }
 
 
+export function openPagePostNr(pageId: string, postNr: number) {
+  window.location.assign('/-' + pageId + '#post-' + postNr);
+}
+
+
 export function openUserProfile(userId: any) {
   window.location.assign('/-/users/#/id/' + userId);
+}
+
+
+export function goToUsersNotifications(userId: any) {
+  window.location.assign('/-/users/#/id/notifications' + userId);
 }
 
 

@@ -60,6 +60,15 @@ enum WritingWhat {
 }
 
 
+enum NotificationType {
+  DirectReply = 1,
+  Mention = 2,
+  // Quote = 3,
+  Message = 4,
+  NewPost = 5,
+}
+
+
 /** The review reasons are a 64 bit bitflag. See this Scala file for their meanings:
   *   modules/debiki-core/src/main/scala/com/debiki/core/ReviewReason.scala
   */

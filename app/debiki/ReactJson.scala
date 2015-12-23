@@ -22,10 +22,11 @@ import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.dao.{ReviewStuff, PageStuff, SiteDao, PageDao}
 import debiki.DebikiHttp.throwNotFound
-import io.efdi.server.http.PageRequest
+import io.efdi.server.http.{DebikiRequest, PageRequest}
 import java.{util => ju}
 import play.api.libs.json._
 import scala.collection.immutable
+import scala.collection.mutable.ArrayBuffer
 import scala.math.BigDecimal.decimal
 
 
@@ -57,26 +58,6 @@ object ReactJson {
     */
   val SummarizePostLengthLimit =
     PostSummaryLength + 80 // one line is roughly 80 chars
-
-
-  def userNoPageToJson(anyUser: Option[User]): JsObject = {
-    // Warning: some dupl code, see `userDataJson()` below.
-    val userData = anyUser match {
-      case None => JsObject(Nil)
-      case Some(user) =>
-        Json.obj(
-          "isLoggedIn" -> JsBoolean(true),
-          "isAdmin" -> JsBoolean(user.isAdmin),
-          "isModerator" -> JsBoolean(user.isModerator),
-          "userId" -> JsNumber(user.id),
-          "username" -> JsStringOrNull(user.username),
-          "fullName" -> JsString(user.displayName),
-          "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),
-          "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
-          "isAuthenticated" -> JsBoolean(user.isAuthenticated))
-    }
-    userData
-  }
 
 
 
@@ -464,6 +445,7 @@ object ReactJson {
 
   val NoUserSpecificData = Json.obj(
     "rolePageSettings" -> JsObject(Nil),
+    "notifications" -> JsArray(),
     "votes" -> JsObject(Nil),
     "unapprovedPosts" -> JsObject(Nil),
     "postIdsAutoReadLongAgo" -> JsArray(Nil),
@@ -476,41 +458,132 @@ object ReactJson {
       return None
     }
     pageRequest.dao.readOnlyTransaction { transaction =>
-      userDataJsonImpl(user, pageRequest.thePageId, transaction)
+      Some(userDataJsonImpl(user, pageRequest.pageId, transaction))
     }
   }
 
 
-  private def userDataJsonImpl(user: User, pageId: PageId,
-        transaction: SiteTransaction): Option[JsObject] = {
-    val rolePageSettings = user.anyRoleId map { roleId =>
-      val anySettings = transaction.loadRolePageSettings(roleId = roleId, pageId = pageId)
-      rolePageSettingsToJson(anySettings getOrElse RolePageSettings.Default)
-    } getOrElse JsNull
+  def userNoPageToJson(request: DebikiRequest[_]): JsObject = {
+    val user = request.user getOrElse {
+      return JsObject(Nil)
+    }
+    request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, _))
+  }
 
-    // Warning: some dupl code, see `userNoPageToJson()` above.
-    Some(Json.obj(
-      "isLoggedIn" -> JsBoolean(true),
-      "isAdmin" -> JsBoolean(user.isAdmin),
-      "isModerator" -> JsBoolean(user.isModerator),
+
+  private def userDataJsonImpl(user: User, anyPageId: Option[PageId],
+        transaction: SiteTransaction): JsObject = {
+
+    val reviewTasksAndCounts =
+      if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
+      else ReviewTaskCounts(0, 0)
+
+    val notfsAndCounts = loadNotificationss(user, transaction)
+
+    val (rolePageSettings, anyVotes, anyUnapprovedPosts) =
+      anyPageId map { pageId =>
+        val rolePageSettings = user.anyRoleId.map({ roleId =>
+          val anySettings = transaction.loadRolePageSettings(roleId = roleId, pageId = pageId)
+          rolePageSettingsToJson(anySettings getOrElse RolePageSettings.Default)
+        }) getOrElse JsNull
+        (rolePageSettings,
+          votesJson(user.id, pageId, transaction),
+          unapprovedPostsJson(user.id, pageId, transaction))
+      } getOrElse (JsNull, JsNull, JsNull)
+
+    Json.obj(
       "userId" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.username),
       "fullName" -> JsString(user.displayName),
+      "isLoggedIn" -> JsBoolean(true),
+      "isAdmin" -> JsBoolean(user.isAdmin),
+      "isModerator" -> JsBoolean(user.isModerator),
       "avatarUrl" -> JsUploadUrlOrNull(user.smallAvatar),
       "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
       "isAuthenticated" -> JsBoolean(user.isAuthenticated),
       "rolePageSettings" -> rolePageSettings,
-      "votes" -> votesJson(user.id, pageId, transaction),
-      "unapprovedPosts" -> unapprovedPostsJson(user.id, pageId, transaction),
+
+      "numUrgentReviewTasks" -> reviewTasksAndCounts.numUrgent,
+      "numOtherReviewTasks" -> reviewTasksAndCounts.numOther,
+
+      "numTalkToMeNotfs" -> notfsAndCounts.numTalkToMe,
+      "numTalkToOthersNotfs" -> notfsAndCounts.numTalkToOthers,
+      "numOtherNotfs" -> notfsAndCounts.numOther,
+      "thereAreMoreUnseenNotfs" -> notfsAndCounts.thereAreMoreUnseen,
+      "notifications" -> notfsAndCounts.notfsJson,
+
+      "votes" -> anyVotes,
+      "unapprovedPosts" -> anyUnapprovedPosts,
       "postIdsAutoReadLongAgo" -> JsArray(Nil),
       "postIdsAutoReadNow" -> JsArray(Nil),
-      "marksByPostId" -> JsObject(Nil)))
+      "marksByPostId" -> JsObject(Nil))
   }
 
 
   private def rolePageSettingsToJson(settings: RolePageSettings): JsObject = {
     Json.obj(
       "notfLevel" -> JsString(settings.notfLevel.toString))
+  }
+
+
+  case class NotfsAndCounts(
+    numTalkToMe: Int,
+    numTalkToOthers: Int,
+    numOther: Int,
+    thereAreMoreUnseen: Boolean,
+    notfsJson: JsArray)
+
+
+  private def loadNotificationss(user: User, transaction: SiteTransaction): NotfsAndCounts = {
+    val notfs = transaction.loadNotificationsForRole(user.id, limit = 30, unseenFirst = true)
+
+    val pageIds = ArrayBuffer[PageId]()
+    val userIds = ArrayBuffer[UserId]()
+    var numTalkToMe = 0
+    var numTalkToOthers = 0
+    var numOther = 0
+
+    notfs.foreach {
+      case notf: Notification.NewPost =>
+        pageIds.append(notf.pageId)
+        userIds.append(notf.byUserId)
+        import NotificationType._
+        notf.tyype match {
+          case DirectReply | Mention | Message =>
+            numTalkToMe += 1
+          case NewPost =>
+            numTalkToOthers += 1
+        }
+      case _ => ()
+    }
+
+    // Unseen notfs are sorted first, so if the last one is unseen, there might be more unseen.
+    val thereAreMoreUnseen = notfs.lastOption.exists(_.seenAt.isEmpty)
+
+    val pageTitlesById = transaction.loadTitlesPreferApproved(pageIds)
+    val usersById = transaction.loadUsersAsMap(userIds)
+
+    NotfsAndCounts(
+      numTalkToMe = numTalkToMe,
+      numTalkToOthers = numTalkToOthers,
+      numOther = numOther,
+      thereAreMoreUnseen = thereAreMoreUnseen,
+      notfsJson = JsArray(notfs.map(makeNotificationsJson(_, pageTitlesById, usersById))))
+  }
+
+
+  private def makeNotificationsJson(notf: Notification, pageTitlesById: Map[PageId, String],
+        usersById: Map[UserId, User]): JsObject = {
+    notf match {
+      case notf: Notification.NewPost =>
+        Json.obj(
+          "type" -> notf.tyype.toInt,
+          "pageId" -> notf.pageId,
+          "pageTitle" -> JsStringOrNull(pageTitlesById.get(notf.pageId)),
+          "postNr" -> notf.postNr,
+          "byUser" -> JsUserOrNull(usersById.get(notf.byUserId)),
+          "seen" -> notf.seenAt.nonEmpty)
+    }
   }
 
 

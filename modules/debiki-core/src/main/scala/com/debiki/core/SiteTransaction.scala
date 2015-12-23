@@ -262,11 +262,13 @@ trait SiteTransaction {
   def upsertReviewTask(reviewTask: ReviewTask)
   def loadReviewTask(id: ReviewTaskId): Option[ReviewTask]
   def loadReviewTasks(olderOrEqualTo: ju.Date, limit: Int): Seq[ReviewTask]
+  def loadReviewTaskCounts(isAdmin: Boolean): ReviewTaskCounts
   def loadPendingPostReviewTask(postId: UniquePostId, causedById: UserId): Option[ReviewTask]
 
+  def nextNotificationId(): NotificationId
   def saveDeleteNotifications(notifications: Notifications)
   def updateNotificationSkipEmail(notifications: Seq[Notification])
-  def loadNotificationsForRole(roleId: RoleId): Seq[Notification]
+  def loadNotificationsForRole(roleId: RoleId, limit: Int, unseenFirst: Boolean): Seq[Notification]
 
 
   def nextAuditLogEntryId: AuditLogEntryId

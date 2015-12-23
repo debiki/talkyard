@@ -43,6 +43,8 @@ package object core {
 
   type RoleId = UserId
 
+  type NotificationId = Int
+
   type ReviewTaskId = Int
 
   /** Email identities are strings, all others are numbers but converted to strings. */

@@ -54,12 +54,15 @@ class MessagesDaoAppSpec extends DaoAppSuite {
         memberIds must contain(userOne.id)
         memberIds must contain(userTwo.id)
 
-        transaction.loadNotificationsForRole(userOne.id) mustBe empty
-        val userTwoNotfs = transaction.loadNotificationsForRole(userTwo.id)
+        transaction.loadNotificationsForRole(
+          userOne.id, limit = 99, unseenFirst = true) mustBe empty
+
+        val userTwoNotfs = transaction.loadNotificationsForRole(
+          userTwo.id, limit = 99, unseenFirst = true)
         userTwoNotfs.length mustBe 1
         val notf = userTwoNotfs.head
         notf.toUserId mustBe userTwo.id
-        notf.tyype mustBe Notification.NotificationType.Message
+        notf.tyype mustBe NotificationType.Message
         notf match {
           case newPotsNotf: Notification.NewPost =>
             newPotsNotf.byUserId mustBe userOne.id

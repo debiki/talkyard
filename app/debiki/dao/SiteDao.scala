@@ -153,8 +153,9 @@ abstract class SiteDao
   def saveDeleteNotifications(notifications: Notifications) =
     readWriteTransaction(_.saveDeleteNotifications(notifications))
 
-  def loadNotificationsForRole(roleId: RoleId): Seq[Notification] =
-    readOnlyTransaction(_.loadNotificationsForRole(roleId))
+  def loadNotificationsForRole(roleId: RoleId, limit: Int, unseenFirst: Boolean)
+        : Seq[Notification] =
+    readOnlyTransaction(_.loadNotificationsForRole(roleId, limit, unseenFirst))
 
   def updateNotificationSkipEmail(notifications: Seq[Notification]): Unit =
     readWriteTransaction(_.updateNotificationSkipEmail(notifications))

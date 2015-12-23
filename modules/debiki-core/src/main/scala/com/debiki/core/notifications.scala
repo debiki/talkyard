@@ -40,8 +40,9 @@ sealed abstract class NotificationType(val IntValue: Int) { def toInt = IntValue
 object NotificationType {
   case object DirectReply extends NotificationType(1)
   case object Mention extends NotificationType(2)
-  case object Message extends NotificationType(3)
-  case object NewPost extends NotificationType(4)
+  // Quote 3
+  case object Message extends NotificationType(4)
+  case object NewPost extends NotificationType(5)
 
   def fromInt(value: Int): Option[NotificationType] = Some(value match {
     case DirectReply.IntValue => DirectReply
@@ -56,6 +57,7 @@ object NotificationType {
 
 sealed abstract class Notification {
   def siteId: SiteId
+  def id: NotificationId
   def createdAt: ju.Date
   def tyype: NotificationType
   def toUserId: UserId
@@ -72,6 +74,7 @@ object Notification {
   case class NewPost(
     notfType: NotificationType,
     siteId: SiteId,
+    id: NotificationId,
     createdAt: ju.Date,
     uniquePostId: UniquePostId,
     pageId: PageId,
