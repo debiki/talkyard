@@ -109,10 +109,7 @@ var UserPageComponent = React.createClass({
 
     // Also reload the user we're showing, because now we might/might-no-longer have access
     // to data about him/her.
-    this.setState({
-      loggedInUser: debiki2.ReactStore.getUser(),
-      user: null,
-    });
+    this.setState({ loggedInUser: debiki2.ReactStore.getUser(), });
     this.loadCompleteUser();
   },
 
@@ -121,9 +118,6 @@ var UserPageComponent = React.createClass({
   },
 
   componentWillReceiveProps: function(nextProps) {
-    this.setState({
-      user: null
-    });
     this.loadCompleteUser();
   },
 
@@ -134,9 +128,10 @@ var UserPageComponent = React.createClass({
   loadCompleteUser: function() {
     var params = this.getParams();
     Server.loadCompleteUser(params.userId, (user) => {
-      this.setState({
-        user: user
-      });
+      this.setState({ user: user });
+    }, () => {
+      // Error. We might not be allowed to see this user, so null it even if it was shown before.
+      this.setState({ user: null });
     });
   },
 
@@ -206,6 +201,9 @@ var UserInfo = createComponent({
   },
 
   createUploadAvatarButton: function() {
+    if (!this.refs.chooseAvatarInput)
+      return;
+
     var inputElem = this.refs.chooseAvatarInput.getDOMNode();
     var FileAPI = window['FileAPI'];
     FileAPI.event.on(inputElem, 'change', (evt) => {

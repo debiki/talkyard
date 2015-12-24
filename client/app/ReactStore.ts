@@ -46,6 +46,7 @@ export var ReactStore = new EventEmitter2();
 var store: Store = debiki.reactPageStore;
 
 store.postsToUpdate = {};
+if (!store.user) store.user = makeEmptyUser();
 
 
 ReactDispatcher.register(function(payload) {
@@ -62,24 +63,7 @@ ReactDispatcher.register(function(payload) {
 
       $('html').removeClass('dw-is-admin, dw-is-staff, dw-is-authenticated');
 
-      store.user = {
-        userId: undefined,
-        permsOnPage: {},
-        rolePageSettings: {},
-        numUrgentReviewTasks: 0,
-        numOtherReviewTasks: 0,
-        reviewTasks: [],
-        numTalkToMeNotfs: 0,
-        numTalkToOthersNotfs: 0,
-        numOtherNotfs: 0,
-        thereAreMoreUnseenNotfs: false,
-        notifications: [],
-        votes: {},
-        unapprovedPosts: {},
-        postIdsAutoReadLongAgo: [],
-        postIdsAutoReadNow: [],
-        marksByPostId: {},
-      };
+      store.user = makeEmptyUser();
       break;
 
     case ReactActions.actionTypes.NewUserAccountCreated:
@@ -705,6 +689,27 @@ function sortPostIdsInPlace(postIds: number[], allPosts) {
     else
       return +1;
   });
+}
+
+
+function makeEmptyUser(): User {
+  return {
+    rolePageSettings: {},
+
+    numUrgentReviewTasks: 0,
+    numOtherReviewTasks: 0,
+
+    numTalkToMeNotfs: 0,
+    numTalkToOthersNotfs: 0,
+    numOtherNotfs: 0,
+    thereAreMoreUnseenNotfs: false,
+    notifications: [],
+    votes: {},
+    unapprovedPosts: {},
+    postIdsAutoReadLongAgo: [],
+    postIdsAutoReadNow: [],
+    marksByPostId: {},
+  };
 }
 
 

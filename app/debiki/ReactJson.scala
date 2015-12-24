@@ -463,9 +463,9 @@ object ReactJson {
   }
 
 
-  def userNoPageToJson(request: DebikiRequest[_]): JsObject = {
+  def userNoPageToJson(request: DebikiRequest[_]): JsValue = {
     val user = request.user getOrElse {
-      return JsObject(Nil)
+      return JsNull
     }
     request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, _))
   }

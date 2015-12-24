@@ -16,6 +16,7 @@
  */
 
 /// <reference path="constants.ts" />
+/// <reference path="rules.ts" />
 
 var TitleId = 0;
 var BodyPostId = 1;

@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
+/// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
 
 //------------------------------------------------------------------------------
@@ -31,10 +32,10 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var Input = reactCreateFactory(ReactBootstrap.Input);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalTrigger = reactCreateFactory(ReactBootstrap.ModalTrigger);
-var RouterState = window['ReactRouter'].State;
-var RouterNavigation = window['ReactRouter'].Navigation;
-import UserPreferences = debiki2.users.UserPreferences;
+var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
+var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
+var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 
 export var UserInvitesComponent = React.createClass({
@@ -53,10 +54,15 @@ export var UserInvitesComponent = React.createClass({
   },
 
   loadInvites: function(userId: number) {
+    var loggedInUser: User = this.props.loggedInUser;
+    var maySeeInvites = loggedInUser.userId === userId || isStaff(loggedInUser);
+    if (!maySeeInvites)
+      return;
+
     Server.loadInvitesSentBy(userId, (invites) => {
-      this.setState({
-        invites: invites
-      });
+      this.setState({ invites: invites });
+    }, (errorMessage) => {
+      this.setState({ errorMessage: errorMessage });
     });
   },
 
@@ -69,25 +75,38 @@ export var UserInvitesComponent = React.createClass({
   },
 
   render: function() {
-    if (!this.state.invites)
-      return r.p({}, 'Loading...');
-
     var user: CompleteUser = this.props.user;
     var loggedInUser: User = this.props.loggedInUser;
 
+    if (isGuest(loggedInUser))
+      return r.p({}, "You are logge in as a guest. They may not see invites.");
+
+    if (!isMember(loggedInUser))
+      return r.p({}, "You are not logge in.");
+
+    if (this.state.errorMessage)
+      return r.p({}, this.state.errorMessage);
+
+    if (!this.state.invites)
+      return r.p({}, 'Loading...');
+
     var inviteButton;
+    var mayInvite = maySendInvites(user);
     var introText = r.p({}, 'Here you can invite people to join this site. ' + (
         this.state.invites.length
             ? 'Invites that you have already sent are listed below.'
             : 'You have not invited anyone yet.'));
-    if (user.id === loggedInUser.userId) {
+    if (user.id === loggedInUser.userId && mayInvite.yes) {
       inviteButton =
-        ModalTrigger({ modal: InviteDialog({ addInvite: this.addInvite }) },
-          Button({}, 'Send an Invite'));
+          Button({ onClick: () => openInviteSomeoneDialog(this.addInvite) }, 'Send an Invite');
     }
     else {
       introText = "Here you can see any invites sent by " + user.username + ".";
-      if (!this.state.invites.length) {
+      if (mayInvite.no) {
+        introText += " He or she may not send any invites though, because: " +
+            mayInvite.reason;
+      }
+      else if (!this.state.invites.length) {
         introText += " He or she has not invited anyone yet.";
       }
       introText = r.p({}, introText);
@@ -147,12 +166,34 @@ var InviteRow = createComponent({
 });
 
 
+var inviteSomeoneDialog;
+
+function openInviteSomeoneDialog(addInvite) {
+  if (!inviteSomeoneDialog) {
+    inviteSomeoneDialog = React.render(InviteDialog(), utils.makeMountNode());
+  }
+  inviteSomeoneDialog.open(addInvite);
+}
+
+
 var InviteDialog = createComponent({
+  getInitialState: function() {
+    return { isOpen: false };
+  },
+
+  open: function(addInvite) {
+    this.setState({ isOpen: true, addInvite: addInvite });
+  },
+
+  close: function() {
+    this.setState({ isOpen: false });
+  },
+
   sendInvite: function() {
     var emailAddress = this.refs.emailInput.getValue();
     Server.sendInvite(emailAddress, (invite: Invite) => {
-      this.props.addInvite(invite);
-      this.props.onRequestHide();
+      this.state.addInvite(invite);
+      this.close();
     });
   },
 
@@ -160,18 +201,15 @@ var InviteDialog = createComponent({
     var props = $.extend({}, this.props);
     props.title = 'Send an Invite';
     return (
-      Modal(props,
-        r.div({ className: 'modal-body' },
+      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esUsrDlg' },
+        ModalBody({},
           r.p({}, "We'll send your friend a brief email, and he or she then clicks a link " +
-                "to join immediately, no login required."),
+              "to join immediately, no login required."),
           Input({ type: 'email', label: 'Email Address', placeholder: 'Enter email',
               ref: 'emailInput' })),
-
-        r.div({ className: 'modal-footer' },
-          Button({ onClick: this.sendInvite },
-              'Send Invite'),
-          Button({ onClick: this.props.onRequestHide },
-              'Cancel'))));
+        ModalFooter({},
+          Button({ onClick: this.sendInvite }, 'Send Invite'),
+          Button({ onClick: this.close }, 'Cancel'))));
   }
 });
 

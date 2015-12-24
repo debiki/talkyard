@@ -44,15 +44,6 @@ module boo {
 var NoPostId = -1; // also in editor.ts
 var MaxGuestId = -2; // place where?
 
-function isGuest(user) {
-  // (Should rename userId to id.)
-  return user.id <= MaxGuestId ||  // if is a CompleteUser
-      user.userId <= MaxGuestId; // in case it's a User or BriefUser
-}
-
-function isStaff(user: User) {
-  return user.isAdmin || user.isModerator;
-}
 
 var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
