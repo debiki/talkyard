@@ -18,12 +18,21 @@
 
 .dw-main-nav
   margin: 50px auto 0;
+  a
+    font-weight: bold;
+    color: hsl(0, 0%, 29%);
 
 .dw-sub-nav
-  background: hsl($uiHue, 50%, 80%);
+  background: $subNavBackgroundColor;
   padding: 8px 8px 0;
+  &.nav-stacked
+    padding: 0;
+  a
+    color: $subNavColor;
+    &:hover
+      background: $subNavHoverBackgroundColor;
 
-.dw-sub-nav.nav-pills .active a
+.dw-sub-nav .active a
   &:focus
     color: hsl($uiHue, 56%, 35%);
     background: white;

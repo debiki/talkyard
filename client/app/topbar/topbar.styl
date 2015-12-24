@@ -67,19 +67,31 @@ html:not(.dw-react-started)
       &:hover
         opacity: 1;
 
+  .esAvtrName_you,
   .esAvtrName_name
     color: #666;
     letter-spacing: 0.2px;
     vertical-align: middle;
     font-size: 13.5px;
 
+  // Replace the user's perhaps long username with "You" if screen too narrow.
+  .esAvtrName_you
+    display: none;
+  @media (max-width: 640px)
+    .esAvtrName_name
+      display: none;
+    .esAvtrName_you
+      display: inline-block;
+  @media (max-width: 480px)
+    .esAvtrName_you
+      display: none;
 
 .esNotfIcon
   display: inline-block;
   width: 21px;
   height: 21px;
   line-height: 20px;
-  margin-left: 4px;
+  margin-left: 3px;
   border-radius: 50%;
   color: white;
   font-size: 15px;
@@ -93,6 +105,13 @@ html:not(.dw-react-started)
   top: 2px;
 .esMenu .esNotfIcon
   top: -1px;
+  &:first-child
+    margin-left: 1px;
+  &:last-child
+    margin-right: 3px;
+
+.esAvtrName_name + .esNotfIcon
+  margin-left: 6px;
 
 .esNotfIcon-toMe
   background: hsl($uiHue, 100%, 44%)

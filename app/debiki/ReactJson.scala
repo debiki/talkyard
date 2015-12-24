@@ -577,6 +577,7 @@ object ReactJson {
     notf match {
       case notf: Notification.NewPost =>
         Json.obj(
+          "id" -> notf.id,
           "type" -> notf.tyype.toInt,
           "pageId" -> notf.pageId,
           "pageTitle" -> JsStringOrNull(pageTitlesById.get(notf.pageId)),

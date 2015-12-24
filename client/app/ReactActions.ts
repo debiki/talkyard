@@ -417,7 +417,7 @@ export function openUserProfile(userId: any) {
 
 
 export function goToUsersNotifications(userId: any) {
-  window.location.assign('/-/users/#/id/notifications' + userId);
+  window.location.assign('/-/users/#/id/' + userId + '/notifications');
 }
 
 

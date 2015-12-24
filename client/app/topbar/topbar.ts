@@ -198,23 +198,25 @@ export var TopBar = createComponent({
     var talkToOthersNotfs = makeNotfIcon('toOthers', user.numTalkToOthersNotfs);
     var otherNotfs = makeNotfIcon('other', user.numOtherNotfs);
     var anyDivider = user.notifications.length ? MenuItem({ divider: true }) : null;
-    var notfsElems = user.notifications.map(notf => Notification({ notification: notf }));
+    var notfsElems = user.notifications.map(notf =>
+        Notification({ key: notf.id, notification: notf }));
     if (user.thereAreMoreUnseenNotfs) {
       notfsElems.push(
-          MenuItem({ onSelect: this.viewOlderNotfs }, "View more notifications..."));
+          MenuItem({ key: 'More', onSelect: this.viewOlderNotfs }, "View more notifications..."));
     }
     var avatarNameAndNotfs =
         r.span({},
           avatar.Avatar({ user: user, tiny: true, ignoreClicks: true }),
           r.span({ className: 'esAvtrName_name' }, user.username || user.fullName),
+          r.span({ className: 'esAvtrName_you' }, "You"), // if screen too narrow
           talkToMeNotfs,
           talkToOthersNotfs,
           otherNotfs);
     var avatarNameDropdown = !user.isLoggedIn ? null :
         DropdownButton({ title: avatarNameAndNotfs, className: 'esAvtrName', pullRight: true,
             noCaret: true },
-          MenuItem({ onSelect: this.goToUserPage }, "View Profile"),
-          MenuItem({ onSelect: this.onLogoutClick }, "Log Out"),
+          MenuItem({ onSelect: this.goToUserPage }, "View your profile"),
+          MenuItem({ onSelect: this.onLogoutClick }, "Log out"),
           anyDivider,
           notfsElems);
 
@@ -241,14 +243,14 @@ export var TopBar = createComponent({
           r.span({ className: 'icon-settings' }, "Admin"));
     var reviewMenuItem = !urgentReviewTasks && !otherReviewTasks ? null :
         MenuItem({ onSelect: this.goToReviewPage },
-          "Review", urgentReviewTasks, otherReviewTasks);
+          "Needs review ", urgentReviewTasks, otherReviewTasks);
     var menuDropdown =
         DropdownButton({ title: menuTitle, className: 'dw-menu esMenu', pullRight: true,
             noCaret: true },
           adminMenuItem,
           reviewMenuItem,
           MenuItem({ onSelect: ReactActions.showHelpMessagesAgain },
-              r.span({ className: 'icon-help' }, "Unhide Help Messages")),
+              r.span({ className: 'icon-help' }, "Unhide help messages")),
           MenuItem({ onSelect: () => location.assign('/about') }, "About this site"),
           MenuItem({ onSelect: () => location.assign('/-/terms-of-use') }, "Terms and Privacy"));
 

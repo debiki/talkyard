@@ -152,6 +152,7 @@ interface User {
 
 
 interface Notification {
+  id: number;
   type: NotificationType;
   seen: boolean;
   byUser?: BriefUser;
