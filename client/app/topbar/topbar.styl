@@ -44,6 +44,11 @@ html:not(.dw-react-started)
     font-weight: bold;
     color: #fff;
 
+// Avoid flash-of-login-button when already logged in.
+html:not(.dw-react-started)
+  .dw-topbar-btns
+    visibility: hidden;
+
 .esAvtrName
   display: inline-block;
 

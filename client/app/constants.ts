@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+var ReactStartedClass = 'dw-react-started';
+
 var BodyId = 1;
 
 enum PinPageWhere {
