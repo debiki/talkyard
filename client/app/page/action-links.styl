@@ -72,11 +72,7 @@
   padding: 8px 17px 8px 13px !important;
   top: 4px;
   position: relative;
-
-.DW.DW .dw-ar-t > .dw-p-as > .dw-a-reply
   background-color: #f2f2f2;
-  &:hover
-    background: hsl($uiHue, 40%, 90%) !important;
 
 .dw-a
   text-decoration: none !important
@@ -140,15 +136,16 @@
   &.dw-a-votes
     padding-left: 0;
     padding-right: 1px;
+    padding-bottom: 0;
     &:after
-      font-size: 22px;
-      border-left: 1px solid hsl(0, 0, 64%);
+      font-size: 24px;
+      //border-left: 1px solid hsl(0, 0, 64%); — not needed? looks better without
       margin-left: 0;
-      padding: 2px 14px 1px 10px;
+      padding: 2px 14px 1px 11px;
       position: relative;
       top: -3px;
     &.dw-my-vote:after
-      font-size: 24px;
+      font-size: 26px;
       top: -4px;
       padding-top: 0;
 
@@ -210,8 +207,16 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
       padding-right: 12px; // ... so reduce padding-right instead
 
 // Avoid float drop (the reply button is to the very left)
-.DW.DW.DW .dw-p-as .dw-a-reply
-  padding-left: 0;
+.DW.DW .dw-p-as .dw-a-reply
+  font-weight: bold;
+  background: hsl(207, 0%, 95%);
+  color: hsl(0, 0%, 15%);
+  padding: 10px 12px 10px 8px;
+  margin-left: 6px;
+  top: -3px;
+  position: relative;
+  &:before
+    opacity: 0.63; // or icon too not-opaque
 
 // Later on, give Bury access to all regular member who has been introduced to how it works.
 html:not(.dw-is-staff) .dw-a-bury
@@ -272,13 +277,8 @@ html:not(.dw-is-staff) .dw-a-bury
 
   .dw-a-reply
     color: white !important
-    background: hsl($uiHue, 51%, 45%) !important
-    border-radius: 5px
+    background: hsl($uiHue, 52%, 45%) !important
     outline: 3px solid white; // whitespace between background and any post outline
-    padding: 2px 4px 3px 1px
-    position: relative
-    top: -2px
-    left: 3px
 
 .dw-embedded .dw-depth-0.dw-t
   float: none;
