@@ -155,6 +155,7 @@ interface User {
 interface Notification {
   id: number;
   type: NotificationType;
+  createdAtMs: number;
   seen: boolean;
   byUser?: BriefUser;
   pageId?: string;

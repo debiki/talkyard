@@ -301,6 +301,18 @@ object UserController extends mvc.Controller {
   }
 
 
+  def loadNotifications(userId: String, upToWhenMs: String) = GetAction { request =>
+    val userIdInt = userId.toIntOrThrow("EsE5GYK2", "Bad userId")
+    val upToWhenMsLong = upToWhenMs.toLongOrThrow("EsE2FUY7", "Bad upToWhenMs")
+    val upToWhenDate = new ju.Date(upToWhenMsLong)
+    val notfsAndCounts = request.dao.readOnlyTransaction { transaction =>
+      ReactJson.loadNotifications(userIdInt, transaction, unseenFirst = false, limit = 100,
+        upToWhen = None) // later: Some(upToWhenDate), and change to limit = 50 above?
+    }
+    OkSafeJson(notfsAndCounts.notfsJson)
+  }
+
+
   def savePageNotfLevel = PostJsonAction(RateLimits.ConfigUser, maxLength = 500) { request =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]

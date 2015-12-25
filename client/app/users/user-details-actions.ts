@@ -18,6 +18,9 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
 
+/* Is this broken user-summary component useful? Start using later again?
+
+
 //------------------------------------------------------------------------------
    module debiki2.users {
 //------------------------------------------------------------------------------
@@ -176,3 +179,4 @@ var SingleAction = createComponent({
    }
 //------------------------------------------------------------------------------
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list
+*/

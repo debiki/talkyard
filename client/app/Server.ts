@@ -389,6 +389,13 @@ export function loadUserActions(userId,
 }
 
 
+export function loadNotifications(userId: number, upToWhenMs: number,
+      success: (notfs: Notification[]) => void, error: () => void) {
+  var query = '?userId=' + userId + '&upToWhenMs=' + upToWhenMs;
+  get(origin + '/-/load-notifications' + query, success, error);
+}
+
+
 export function loadUserPreferences(userId,
       callback: (info: debiki2.users.UserPreferences) => void) {
   $.get(origin + '/-/load-user-preferences?userId=' + userId)

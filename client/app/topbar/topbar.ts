@@ -22,6 +22,7 @@
 /// <reference path="../utils/page-scroll-mixin.ts" />
 /// <reference path="../post-navigation/posts-trail.ts" />
 /// <reference path="../avatar/avatar.ts" />
+/// <reference path="../notification/Notification.ts" />
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 
 //------------------------------------------------------------------------------
@@ -172,7 +173,8 @@ export var TopBar = createComponent({
     // ------- Top, Replies, Bottom, Back buttons
 
     var goToButtons;
-    if (this.state.fixed && pageRole !== PageRole.HomePage && pageRole !== PageRole.Forum) {
+    if (this.state.fixed && pageRole && pageRole !== PageRole.HomePage &&
+        pageRole !== PageRole.Forum) {
       var topHelp = "Go to the top of the page. Shortcut: 1 (on the keyboard)";
       var repliesHelp = "Go to the replies section. There are " + store.numPostsRepliesSection +
         " replies. Shortcut: 2"
@@ -199,7 +201,8 @@ export var TopBar = createComponent({
     var otherNotfs = makeNotfIcon('other', user.numOtherNotfs);
     var anyDivider = user.notifications.length ? MenuItem({ divider: true }) : null;
     var notfsElems = user.notifications.map(notf =>
-        Notification({ key: notf.id, notification: notf }));
+        MenuItem({ key: notf.id, onSelect: () => ReactActions.openNotificationSource(notf) },
+          notification.Notification({ notification: notf })));
     if (user.thereAreMoreUnseenNotfs) {
       notfsElems.push(
           MenuItem({ key: 'More', onSelect: this.viewOlderNotfs }, "View more notifications..."));
@@ -316,37 +319,6 @@ function makeNotfIcon(type: string, number: number) {
   var wideClass = number >= 10 ? ' esNotfIcon-wide' : '';
   return r.div({ className: 'esNotfIcon esNotfIcon-' + type + wideClass}, numMax99);
 }
-
-
-var Notification = createComponent({
-  goToIt: function() {
-    var notf: Notification = this.props.notification;
-    if (notf.pageId && notf.postNr) {
-      ReactActions.openPagePostNr(notf.pageId, notf.postNr);
-    }
-    else {
-      die("Unknown notification type [EsE5GUKW2]")
-    }
-  },
-
-  render: function() {
-    var notf: Notification = this.props.notification;
-    var byUser = notf.byUser;
-    var byName = byUser.username || byUser.fullName;
-    var textContent = '';
-    var iconClass = '';
-    switch (notf.type) {
-      case NotificationType.DirectReply: iconClass = 'icon-reply'; break;
-      case NotificationType.Mention: textContent = '@'; break;
-      case NotificationType.Message: iconClass = 'icon-mail-empty'; break;
-      case NotificationType.NewPost: iconClass = 'icon-comment-empty'; break;
-      default: die("Unknown notification type [EsE4GUF2]")
-    }
-    return (
-      MenuItem({ onSelect: this.goToIt },
-        r.span({ className: iconClass }, textContent), byName + ", " + notf.pageTitle));
-  }
-});
 
 
 var SearchForm = createComponent({

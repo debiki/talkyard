@@ -478,7 +478,7 @@ object ReactJson {
       if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
       else ReviewTaskCounts(0, 0)
 
-    val notfsAndCounts = loadNotificationss(user, transaction)
+    val notfsAndCounts = loadNotifications(user.id, transaction, unseenFirst = true, limit = 30)
 
     val (rolePageSettings, anyVotes, anyUnapprovedPosts) =
       anyPageId map { pageId =>
@@ -534,8 +534,9 @@ object ReactJson {
     notfsJson: JsArray)
 
 
-  private def loadNotificationss(user: User, transaction: SiteTransaction): NotfsAndCounts = {
-    val notfs = transaction.loadNotificationsForRole(user.id, limit = 30, unseenFirst = true)
+  def loadNotifications(userId: UserId, transaction: SiteTransaction, unseenFirst: Boolean,
+        limit: Int, upToWhen: Option[ju.Date] = None): NotfsAndCounts = {
+    val notfs = transaction.loadNotificationsForRole(userId, limit, unseenFirst, upToWhen)
 
     val pageIds = ArrayBuffer[PageId]()
     val userIds = ArrayBuffer[UserId]()
@@ -579,6 +580,7 @@ object ReactJson {
         Json.obj(
           "id" -> notf.id,
           "type" -> notf.tyype.toInt,
+          "createdAtMs" -> notf.createdAt.getTime,
           "pageId" -> notf.pageId,
           "pageTitle" -> JsStringOrNull(pageTitlesById.get(notf.pageId)),
           "postNr" -> notf.postNr,

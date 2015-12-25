@@ -45,8 +45,10 @@ export function routes() {
   return Route({ path: '/', handler: UsersHomeComponent },
     DefaultRoute({ handler: DefaultComponent }),
     NotFoundRoute({ handler: NotFoundComponent }),
+    Redirect({ from: '/id/:userId', to: 'user-all' }),
+    Redirect({ from: '/id/:userId/', to: 'user-all' }),
     Route({ path: '/id/:userId', handler: UserPageComponent },
-      DefaultRoute({ handler: debiki2.users.UserDetailsAndActionsComponent }),
+      //DefaultRoute({ handler: debiki2.users.UserDetailsAndActionsComponent }),
       Route({ name: 'user-all', path: 'all', handler: UserAllComponent }),
       Route({ name: 'user-topics', path: 'topics', handler: UserTopicsComponent }),
       Route({ name: 'user-posts', path: 'posts', handler: UserPostsComponent }),
@@ -367,15 +369,6 @@ var UserLikesReceivedComponent = React.createClass({
       r.p({}, 'UserLikesReceived'));
   }
 });
-
-
-var UserNotificationsComponent = React.createClass({
-  render: function() {
-    return (
-      r.p({}, 'UserNotifications'));
-  }
-});
-
 
 
 //------------------------------------------------------------------------------

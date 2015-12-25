@@ -31,11 +31,21 @@ import play.{api => p}
 import play.api.mvc._
 import play.api.Play.current
 import scala.concurrent.Future
+import scala.util.Try
 
 
 package object http {
 
   import io.efdi.server.http.PlainApiActions._
+
+
+  implicit class RichString2(value: String) {
+    def toIntOrThrow(errorCode: String, errorMessage: String) =
+      value.toIntOption getOrElse throwBadRequest(errorCode, errorMessage)
+
+    def toLongOrThrow(errorCode: String, errorMessage: String) =
+      Try(value.toLong).toOption getOrElse throwBadRequest(errorCode, errorMessage)
+  }
 
 
   case class SessionRequest[A](
