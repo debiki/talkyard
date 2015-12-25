@@ -59,6 +59,25 @@
 
 
 
+// Fontello
+//===========================
+
+// Dummy icon that makes a character behave a bit like a Fontello icon.
+.icon-char
+  font-style: normal;
+  font-weight: normal;
+  speak: none;
+  display: inline-block;
+  text-decoration: inherit;
+  width: 1em;
+  margin-right: .2em;
+  text-align: center;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1em;
+  margin-left: .2em;
+
+
 // Twitter Bootstrap
 //===========================
 
@@ -85,6 +104,20 @@
   border-color: hsl($uiHue, 67%, 52%);
   color: white;
 
+// ...but in a nav with background, use stronger color:
+.dw-sub-nav
+  .btn-primary,
+  .btn-primary:visited,
+  &.nav-stacked .nav-pills > li.active > a,
+  &.nav-stacked .nav-pills > li.active > a:hover,
+  &.nav-stacked .nav-pills > li.active > a:focus
+    color: white !important;
+    background: hsl(207, 90%, 50%);
+    font-weight: bold;
+
+.nav-pills > li > a
+  border-radius: 0;
+
 .btn:focus,
 .btn:active:focus,
 .btn.active:focus
@@ -93,6 +126,9 @@
 
 .nav > :first-child
   margin-left: 0;
+
+.nav-stacked li
+  margin-left: 0 !important; // why Bootstrap sets 2px?
 
 input, textarea {
   /* Disable annoyingly slow Twitter Bootstrap transitions.

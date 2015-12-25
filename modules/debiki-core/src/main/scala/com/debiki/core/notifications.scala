@@ -34,13 +34,35 @@ object Notifications {
 }
 
 
+
+sealed abstract class NotificationType(val IntValue: Int) { def toInt = IntValue }
+
+object NotificationType {
+  case object DirectReply extends NotificationType(1)
+  case object Mention extends NotificationType(2)
+  // Quote 3
+  case object Message extends NotificationType(4)
+  case object NewPost extends NotificationType(5)
+
+  def fromInt(value: Int): Option[NotificationType] = Some(value match {
+    case DirectReply.IntValue => DirectReply
+    case Mention.IntValue => Mention
+    case Message.IntValue => Message
+    case NewPost.IntValue => NewPost
+    case _ => return None
+  })
+}
+
+
+
 sealed abstract class Notification {
   def siteId: SiteId
+  def id: NotificationId
   def createdAt: ju.Date
-  def tyype: Notification.NewPostNotfType
+  def tyype: NotificationType
   def toUserId: UserId
   def emailId: Option[EmailId]
-  def emailStatus: Notification.EmailStatus
+  def emailStatus: NotfEmailStatus
   def seenAt: Option[ju.Date]
 }
 
@@ -50,8 +72,9 @@ object Notification {
   /** A reply, @mention, or new post in a topic you're watching.
     */
   case class NewPost(
-    notfType: NewPostNotfType,
+    notfType: NotificationType,
     siteId: SiteId,
+    id: NotificationId,
     createdAt: ju.Date,
     uniquePostId: UniquePostId,
     pageId: PageId,
@@ -59,26 +82,9 @@ object Notification {
     byUserId: UserId,
     toUserId: UserId,
     emailId: Option[EmailId] = None,
-    emailStatus: EmailStatus = EmailStatus.Undecided,
+    emailStatus: NotfEmailStatus = NotfEmailStatus.Undecided,
     seenAt: Option[ju.Date] = None) extends Notification {
     override def tyype = notfType
-  }
-
-  // Later: Make top level class, rename to NotificationType.
-  sealed abstract class NewPostNotfType(val IntValue: Int) { def toInt = IntValue }
-  object NewPostNotfType {
-    case object DirectReply extends NewPostNotfType(1)
-    case object Mention extends NewPostNotfType(2)
-    case object Message extends NewPostNotfType(3)
-    case object NewPost extends NewPostNotfType(4)
-
-    def fromInt(value: Int): Option[NewPostNotfType] = Some(value match {
-      case DirectReply.IntValue => DirectReply
-      case Mention.IntValue => Mention
-      case Message.IntValue => Message
-      case NewPost.IntValue => NewPost
-      case _ => return None
-    })
   }
 
   /*
@@ -88,24 +94,11 @@ object Notification {
   case class LikeVote extends Notification
   case class WrongVote extends Notification
   case class OffTopicVote extends Notification */
-
-  sealed abstract class EmailStatus
-  object EmailStatus {
-
-    /** This notification has not yet been processed; we have yet to decide if to send an email. */
-    case object Undecided extends EmailStatus
-
-    /** Email created, will soon be sent, or has already been sent. */
-    case object Created extends EmailStatus
-
-    /** We've decided to not send any email for this notification. */
-    case object Skipped extends EmailStatus
-  }
 }
 
 
-sealed abstract class NotificationToDelete
 
+sealed abstract class NotificationToDelete
 
 object NotificationToDelete {
 
@@ -121,6 +114,21 @@ object NotificationToDelete {
     postNr: PostNr) extends NotificationToDelete
 
 }
+
+
+sealed abstract class NotfEmailStatus
+object NotfEmailStatus {
+
+  /** This notification has not yet been processed; we have yet to decide if to send an email. */
+  case object Undecided extends NotfEmailStatus
+
+  /** Email created, will soon be sent, or has already been sent. */
+  case object Created extends NotfEmailStatus
+
+  /** We've decided to not send any email for this notification. */
+  case object Skipped extends NotfEmailStatus
+}
+
 
 
 sealed abstract class PageNotfLevel

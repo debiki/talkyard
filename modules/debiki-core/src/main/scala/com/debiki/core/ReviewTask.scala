@@ -22,6 +22,9 @@ import java.{util => ju}
 import scala.collection.immutable
 
 
+case class ReviewTaskCounts(numUrgent: Int, numOther: Int)
+
+
 /** Means that something should be reviewed, e.g. a post or a user should be reviewed.
   *
   * @param causedById A user that did something possibly harmful and therefore what s/he did

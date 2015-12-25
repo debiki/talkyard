@@ -218,7 +218,7 @@ function renderDiscussionPage() {
         "'checksum was invalid' warning above (in dev builds) [DwM5KJG4]");
   }
 
-  $('html').addClass('dw-react-started');
+  $('html').addClass(ReactStartedClass);
   setTimeout(runNextStep, 60);
 
 
@@ -280,6 +280,7 @@ d.i.renderEmptyPage = function() {
   debiki2.startRemainingReactRoots();
   debiki2.ReactStore.activateUserSpecificData();
   fireLoginOrLogout();
+  $('html').addClass(ReactStartedClass);
   debiki2.utils.startDetectingMouse();
 };
 

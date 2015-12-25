@@ -20,8 +20,9 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp.{throwNotFound, throwForbidden}
+import io.efdi.server.notf.NotificationGenerator
 import java.{util => ju}
-import debiki.{NotificationGenerator, TextAndHtml}
+import debiki.TextAndHtml
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{mutable, immutable}

@@ -100,6 +100,7 @@ object Invite {
 }
 
 
+// Rename to NewMemberData?
 sealed abstract class NewUserData {
   def name: String
   def username: String
@@ -396,6 +397,7 @@ case class User(
 }
 
 
+// Rename to CompleteMember?
 case class CompleteUser(
   id: UserId,
   fullName: String,

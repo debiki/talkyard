@@ -406,8 +406,28 @@ export function showHelpMessagesAgain() {
 }
 
 
+export function openNotificationSource(notf: Notification) {
+  if (notf.pageId && notf.postNr) {
+    ReactActions.openPagePostNr(notf.pageId, notf.postNr);
+  }
+  else {
+    die("Unknown notification type [EsE5GUKW2]")
+  }
+}
+
+
+export function openPagePostNr(pageId: string, postNr: number) {
+  window.location.assign('/-' + pageId + '#post-' + postNr);
+}
+
+
 export function openUserProfile(userId: any) {
   window.location.assign('/-/users/#/id/' + userId);
+}
+
+
+export function goToUsersNotifications(userId: any) {
+  window.location.assign('/-/users/#/id/' + userId + '/notifications');
 }
 
 

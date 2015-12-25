@@ -2,8 +2,10 @@ Debiki Server
 =============================
 
 Debiki (now I've renamed it to EffectiveDiscussions though) is a
-combined forum and question & answers platform.  Read more, and see it live, at
-http://www.effectivediscussions.org/.
+combined forum and question & answers platform.
+
+See it live: http://www.effectivediscussions.org/forum/#/latest/  
+Read about it: http://www.effectivediscussions.org/
 
 Debiki is under development and there is currently no stable version or simple
 installation instructions.
@@ -12,7 +14,7 @@ installation instructions.
 Getting Started
 -----------------------------
 
-*Warning:* I suggest that you don't try to get started, right now, because I
+*Warning:* I suggest that you contact me before you try to get started, right now, because I
 haven't tested these getting-started instructions the last 6 months or so, so
 they might no longer work.  Anyway, the instructions:
 
@@ -169,6 +171,14 @@ In January 2015 I squashed all old 4300+ commits into one single commit,
 because in the past I did some mistakes, so it feels better to start over again
 from commit number 1. The old commit history is available here:
 https://github.com/debiki/debiki-server-old
+
+
+Credits
+-----------------------------
+
+I sometimes copy ideas from [Discourse](http://www.discourse.org/), and look at
+its database structure, HTTP requests, and avatar pixel width. Discourse is
+forum software.
 
 
 License

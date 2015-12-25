@@ -15,7 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+var ReactStartedClass = 'dw-react-started';
+
 var BodyId = 1;
+
+var SystemUserId = -1;
+var MinMemberId = SystemUserId;
+
 
 enum PinPageWhere {
   InCategory = 1,
@@ -60,6 +66,15 @@ enum WritingWhat {
 }
 
 
+enum NotificationType {
+  DirectReply = 1,
+  Mention = 2,
+  // Quote = 3,
+  Message = 4,
+  NewPost = 5,
+}
+
+
 /** The review reasons are a 64 bit bitflag. See this Scala file for their meanings:
   *   modules/debiki-core/src/main/scala/com/debiki/core/ReviewReason.scala
   */
@@ -82,16 +97,6 @@ function isReviewPostTask(reviewTask: ReviewTask): boolean {
   // See above. <<0 .. <<3 are for user types. <<4 ..<<19 are for review-post stuff.
   // And <<20 and up are for users. Later: uploads? groups? categories?
   return (1 << 4) <= reviewTask.reasonsLong && reviewTask.reasonsLong < (1 << 20);
-}
-
-function hasChatSection(pageRole: PageRole) {
-  // On message pages, replies are flat already, so an additional flat section makes no sense.
-  return pageRole !== PageRole.Message;
-}
-
-function canClose(pageRole: PageRole) {
-  // Lock messages instead so no new replies can be added.
-  return pageRole !== PageRole.Message;
 }
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

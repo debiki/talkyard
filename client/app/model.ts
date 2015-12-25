@@ -16,6 +16,7 @@
  */
 
 /// <reference path="constants.ts" />
+/// <reference path="rules.ts" />
 
 var TitleId = 0;
 var BodyPostId = 1;
@@ -122,7 +123,7 @@ interface PostRevision {
 
 
 interface User {
-  userId: number;  // change to `id`
+  userId?: number;  // change to `id`
   isLoggedIn?: boolean;
   isAdmin?: boolean;
   isModerator?: boolean;
@@ -131,6 +132,16 @@ interface User {
   fullName?: string;
   avatarUrl?: string;
   rolePageSettings: any;
+
+  numUrgentReviewTasks: number;
+  numOtherReviewTasks: number;
+
+  numTalkToMeNotfs: number;
+  numTalkToOthersNotfs: number;
+  numOtherNotfs: number;
+  thereAreMoreUnseenNotfs: boolean;
+  notifications: Notification[];
+
   votes: any;
   unapprovedPosts: any;
   postIdsAutoReadLongAgo: number[];
@@ -138,6 +149,18 @@ interface User {
   marksByPostId: { [postId: number]: any };
   pageHelpMessage?: HelpMessage;
   closedHelpMessages?: { [id: string]: number };  // id --> closed version of message
+}
+
+
+interface Notification {
+  id: number;
+  type: NotificationType;
+  createdAtMs: number;
+  seen: boolean;
+  byUser?: BriefUser;
+  pageId?: string;
+  pageTitle?: string;
+  postNr?: number;
 }
 
 

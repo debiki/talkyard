@@ -23,7 +23,9 @@ import com.debiki.core.PageParts.MaxTitleLength
 import com.debiki.core.User.SystemUserId
 import debiki._
 import debiki.DebikiHttp._
+import io.efdi.server.notf.NotificationGenerator
 import java.{util => ju}
+
 import scala.collection.{immutable, mutable}
 
 

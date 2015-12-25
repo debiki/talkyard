@@ -122,7 +122,6 @@ var AboutUserDialog = createComponent({
   },
 
   render: function () {
-    var title;
     var content;
 
     if (this.state.isOpen) {
@@ -141,17 +140,14 @@ var AboutUserDialog = createComponent({
       }
       else if (isGuest(user)) {
         content = AboutGuest(childProps);
-        title = 'About Guest';
       }
       else {
         content = AboutUser(childProps);
-        title = 'About User';
       }
     }
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esUsrDlg' },
-        ModalHeader({}, ModalTitle({}, title)),
         ModalBody({}, content),
         ModalFooter({}, Button({ onClick: this.close }, 'Close'))));
   }
@@ -173,12 +169,13 @@ var AboutUser = createComponent({
     if (user.isAdmin) {
       isStaffInfo = 'Is administrator.';
     }
-
+    var sendMessageButton = isGuest(user) ?
+        null : Button({ onClick: this.sendMessage, bsStyle: 'primary' }, 'Send Message');
     return (
       r.div({},
         r.div({ className: 'dw-about-user-actions' },
-          Button({ onClick: this.props.viewUserProfile }, 'View Profile'),
-          Button({ onClick: this.sendMessage }, 'Send Message')),
+          sendMessageButton,
+          Button({ onClick: this.props.viewUserProfile }, 'View Profile')),
         avatar.Avatar({ user: user, large: true, clickOpensUserProfilePage: true }),
         r.div({},
           r.b({}, user.username), r.br(),

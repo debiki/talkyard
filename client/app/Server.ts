@@ -63,12 +63,13 @@ function postJsonSuccess(urlPath, success: (response: any) => void, data: any, e
 }
 
 
-function get(uri: string, success: (response) => void) {
+function get(uri: string, success: (response) => void, error?: () => void) {
   $.get(origin + uri)
     .done(success)
     .fail((jqXhr: any, textStatus: string, errorThrown: string) => {
       console.error('Error calling ' + uri + ': ' + JSON.stringify(jqXhr));
       pagedialogs.getServerErrorDialog().open(jqXhr);
+      !error || error();
     });
 }
 
@@ -271,15 +272,11 @@ export function logout(success: () => void) {
 }
 
 
-export function loadCompleteUser(userId: number,
-        doneCallback: (user: CompleteUser) => void) {
-  $.get(origin + '/-/load-complete-user?userId=' + userId)
-    .done(response => {
-      doneCallback(response.user);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading user: ' + JSON.stringify([x, y, z]));
-    });
+export function loadCompleteUser(userId: number, doneCallback: (user: CompleteUser) => void,
+        error?: () => void) {
+  get(origin + '/-/load-complete-user?userId=' + userId, (response) => {
+    doneCallback(response.user);
+  }, error);
 }
 
 
@@ -300,13 +297,15 @@ export function sendInvite(toEmailAddress: string, success: (invite: Invite) => 
 }
 
 
-export function loadInvitesSentBy(userId: number, doneCallback: (invites: Invite[]) => void) {
+export function loadInvitesSentBy(userId: number, success: (invites: Invite[]) => void,
+        error: (message: string) => void) {
   $.get(origin + '/-/list-invites?sentById=' + userId)
     .done(response => {
-      doneCallback(response);
+      success(response);
     })
     .fail((x, y, z) => {
       console.error('Error loading invites: ' + JSON.stringify([x, y, z]));
+      error(x.responseText);
     });
 }
 
@@ -387,6 +386,13 @@ export function loadUserActions(userId,
       console.error('Error loading user actions: ' + JSON.stringify([x, y, z]));
       callback(null);
     });
+}
+
+
+export function loadNotifications(userId: number, upToWhenMs: number,
+      success: (notfs: Notification[]) => void, error: () => void) {
+  var query = '?userId=' + userId + '&upToWhenMs=' + upToWhenMs;
+  get(origin + '/-/load-notifications' + query, success, error);
 }
 
 

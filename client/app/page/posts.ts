@@ -43,12 +43,7 @@ module boo {
 
 var NoPostId = -1; // also in editor.ts
 var MaxGuestId = -2; // place where?
-function isGuest(user: CompleteUser) {
-  return user.id <= MaxGuestId;
-}
-function isStaff(user: User) {
-  return user.isAdmin || user.isModerator;
-}
+
 
 var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
@@ -1199,6 +1194,11 @@ var NoCommentsPageActions = createComponent({
 
 
 var PostActions = createComponent({
+  loginIfNeededThen: function(loginToWhat, callback) {
+    var postNr = this.props.post.postNr;
+    debiki.internal.loginIfNeeded(
+        loginToWhat, debiki.internal.makeReturnToPostUrlForVerifEmail(postNr), callback);
+  },
   onAcceptAnswerClick: function() {
     debiki2.ReactActions.acceptAnswer(this.props.post.uniqueId);
   },
@@ -1222,22 +1222,32 @@ var PostActions = createComponent({
     window.prompt('To copy a link to this post, press Ctrl+C then Enter', url);
   },
   onLikeClick: function(event) {
-    debiki.internal.$toggleVote('VoteLike').call(event.target, event);
+    this.loginIfNeededThen('LoginToVote', () => {
+      debiki.internal.$toggleVote('VoteLike').call(event.target, event);
+    });
   },
   onWrongClick: function(event) {
-    debiki.internal.$toggleVote('VoteWrong').call(event.target, event);
+    this.loginIfNeededThen('LoginToVote', () => {
+      debiki.internal.$toggleVote('VoteWrong').call(event.target, event);
+    });
   },
   onBuryClick: function(event) {
-    debiki.internal.$toggleVote('VoteBury').call(event.target, event);
+    this.loginIfNeededThen('LoginToVote', () => {
+      debiki.internal.$toggleVote('VoteBury').call(event.target, event);
+    });
   },
   onUnwantedClick: function(event) {
-    debiki.internal.$toggleVote('VoteUnwanted').call(event.target, event);
+    this.loginIfNeededThen('LoginToVote', () => {
+      debiki.internal.$toggleVote('VoteUnwanted').call(event.target, event);
+    });
   },
   onEditSuggestionsClick: function(event) {
     debiki.internal.$showEditsDialog.call(event.target, event);
   },
   onFlagClick: function(event) {
-    debiki2.getFlagDialog().open(this.props.post.postId);
+    this.loginIfNeededThen('LoginToFlag', () => {
+      debiki2.getFlagDialog().open(this.props.post.postId);
+    });
   },
   onDeleteClick: function(event) {
     debiki2.pagedialogs.getDeletePostDialog().open(this.props.post);
@@ -1396,7 +1406,7 @@ var PostActions = createComponent({
             : r.a({ className: 'dw-a dw-a-bury icon-bury' + myBuryVote,
               title: "Click if you think it's better that people spend their time " +
                   "reading other things instead.", onClick: this.onBuryClick }, 'Bury');
-      var unwantedVoteButton =
+      var unwantedVoteButton = isGuest(user) ? null :
           r.a({ className: 'dw-a dw-a-unwanted icon-cancel' + myUnwantedVote,
               title: "Click if you do not want this comment on this site.",
                   onClick: this.onUnwantedClick }, "Unwanted");

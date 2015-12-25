@@ -94,7 +94,7 @@ object PageRequest {
 
   /** Returns None if the page doesn't exist.
     */
-  def forPageThatExists[A](apiRequest: DebikiRequest[A], pageId: String): Option[PageRequest[A]] = {
+  def forPageThatExists[A](apiRequest: DebikiRequest[A], pageId: PageId): Option[PageRequest[A]] = {
     // COULD try to remove either `lookupPagePath` on the next line, or
     // remove `checkPagePath` in PageRequest.apply(..) above.
     apiRequest.dao.lookupPagePath(pageId) match {
@@ -140,14 +140,14 @@ class PageRequest[A](
   }
 
 
-  def pageId: Option[String] = pagePath.pageId
+  def pageId: Option[PageId] = pagePath.pageId
   def theSitePageId = SitePageId(siteId, thePageId)
 
   /**
    * Throws 404 Not Found if id unknown. The page id is known if it
    * was specified in the request, *or* if the page exists.
    */
-  def thePageId : String = pagePath.pageId getOrElse
+  def thePageId : PageId = pagePath.pageId getOrElse
     throwNotFound("DwE93kD4", "Page does not exist: "+ pagePath.value)
 
 

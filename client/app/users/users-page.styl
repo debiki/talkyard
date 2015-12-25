@@ -2,7 +2,7 @@
 .dw-user-bar
   padding: 15px;
   margin: 20px 0;
-  background: #b3cce6;
+  background: hsl($uiHue, 0%, 91%);
 
   nav.dw-sub-nav
     padding: 0; // no idea why React-Bootstrap adds .dw-sub-nav twice, on the 'nav' too
@@ -18,7 +18,7 @@
   .user-info-col
     display: table-cell;
     vertical-align: top;
-    padding-right: 15px;
+    padding-right: 30px;
 
   h1, h2
     font-size: 26px;
@@ -50,10 +50,19 @@
     &:not(:last-child)
       padding-right: 20px;
 
+.esNotfs
+  .esNotf
+    color: hsl($uiHue, 80%, 38%);
+  li
+    list-style: none;
+    padding: 8px 0;
+  li:hover
+    background: hsl($uiHue, 90%, 97%);
+    cursor: pointer;
 
 .esMedAvtr // medium sized avatar
   position: relative;
-  $maxWidth = 200px;
+  $maxWidth = 180px;
   min-width: 170px;
   max-width: $maxWidth;
   min-height: 170px; // if no photo uploaded
@@ -61,9 +70,8 @@
     .esMedAvtr_uplBtn
         visibility: visible;
   img
-    border-radius: 10px;
     max-width: $maxWidth;
-    max-height: 250px;
+    max-height: 200px;
 
 .esMedAvtr_uplBtn  // upload button
   position: absolute;

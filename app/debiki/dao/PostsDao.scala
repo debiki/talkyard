@@ -23,6 +23,7 @@ import com.debiki.core.User.SystemUserId
 import controllers.EditController
 import debiki._
 import debiki.DebikiHttp._
+import io.efdi.server.notf.NotificationGenerator
 import java.{util => ju}
 import play.{api => p}
 import scala.collection.{mutable, immutable}

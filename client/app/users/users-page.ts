@@ -45,8 +45,10 @@ export function routes() {
   return Route({ path: '/', handler: UsersHomeComponent },
     DefaultRoute({ handler: DefaultComponent }),
     NotFoundRoute({ handler: NotFoundComponent }),
+    Redirect({ from: '/id/:userId', to: 'user-all' }),
+    Redirect({ from: '/id/:userId/', to: 'user-all' }),
     Route({ path: '/id/:userId', handler: UserPageComponent },
-      DefaultRoute({ handler: debiki2.users.UserDetailsAndActionsComponent }),
+      //DefaultRoute({ handler: debiki2.users.UserDetailsAndActionsComponent }),
       Route({ name: 'user-all', path: 'all', handler: UserAllComponent }),
       Route({ name: 'user-topics', path: 'topics', handler: UserTopicsComponent }),
       Route({ name: 'user-posts', path: 'posts', handler: UserPostsComponent }),
@@ -109,10 +111,7 @@ var UserPageComponent = React.createClass({
 
     // Also reload the user we're showing, because now we might/might-no-longer have access
     // to data about him/her.
-    this.setState({
-      loggedInUser: debiki2.ReactStore.getUser(),
-      user: null,
-    });
+    this.setState({ loggedInUser: debiki2.ReactStore.getUser(), });
     this.loadCompleteUser();
   },
 
@@ -121,9 +120,6 @@ var UserPageComponent = React.createClass({
   },
 
   componentWillReceiveProps: function(nextProps) {
-    this.setState({
-      user: null
-    });
     this.loadCompleteUser();
   },
 
@@ -134,9 +130,10 @@ var UserPageComponent = React.createClass({
   loadCompleteUser: function() {
     var params = this.getParams();
     Server.loadCompleteUser(params.userId, (user) => {
-      this.setState({
-        user: user
-      });
+      this.setState({ user: user });
+    }, () => {
+      // Error. We might not be allowed to see this user, so null it even if it was shown before.
+      this.setState({ user: null });
     });
   },
 
@@ -154,8 +151,6 @@ var UserPageComponent = React.createClass({
 
     return (
       r.div({},
-        r.div({ className: 'alert alert-warning', style: { maxWidth: 500 }},
-          r.b({ style: { color: '#252525' }}, "We will make this page look and work better.")),
         UserBar(childProps),
         r.div({ style: { display: 'table', width: '100%' }},
           r.div({ style: { display: 'table-row' }},
@@ -208,6 +203,9 @@ var UserInfo = createComponent({
   },
 
   createUploadAvatarButton: function() {
+    if (!this.refs.chooseAvatarInput)
+      return;
+
     var inputElem = this.refs.chooseAvatarInput.getDOMNode();
     var FileAPI = window['FileAPI'];
     FileAPI.event.on(inputElem, 'change', (evt) => {
@@ -371,15 +369,6 @@ var UserLikesReceivedComponent = React.createClass({
       r.p({}, 'UserLikesReceived'));
   }
 });
-
-
-var UserNotificationsComponent = React.createClass({
-  render: function() {
-    return (
-      r.p({}, 'UserNotifications'));
-  }
-});
-
 
 
 //------------------------------------------------------------------------------
