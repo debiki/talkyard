@@ -99,8 +99,9 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
   padding: 0 0 0 11px;
   @media (max-width: 510px)
     padding-left 7px;
-  bgcolor = #eee;
+  bgcolor = white;
   background: bgcolor;
+  border-left: 8px solid #eee;
 
   &.dw-sidebar-fixed
     position: fixed;
@@ -132,7 +133,7 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
   .dw-comments
     clear: both;
     background: bgcolor;
-    padding: 13px 8px 0 0;
+    padding: 10px 8px 0 0;
     position: relative;
 
     // Click-drag scrolls, but if it sometimes instead selects text (because few comments,
@@ -151,18 +152,33 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
       font-weight: bold;
       font-family: $uiFont;
       font-size: 13px;
-      margin: 0 0 7px 4px;
+      margin: 0 0 10px 4px;
 
     p
       margin-top: 8px;
 
     .dw-p
+
       cursor: pointer;
-      margin: 2px;
-      2px solid #eee;
+      margin: 0;
+      border-top: 1px solid #eee;
+      padding: 4px 0 1;
+
+      &:hover
+        .dw-p-hd,
+        .dw-p-bd
+          background-color: hsl($uiHue, 100%, 97%);
+
       &.dw-current-post
-        border: 4px solid hsl($uiHue, 100%, 67%);
-        margin: 0;
+        .dw-p-hd,
+        .dw-p-bd
+          background-color: hsl($uiHue, 100%, 92%);
+        .dw-p-by
+          color: hsl(0, 0%, 22%);
+        .dw-fullname,
+        .dw-p-hd,
+        .dw-p-bd-blk
+          color: hsl(0, 0%, 15%); // makes it darker, since background darker
 
     .dw-p .dw-mark-click
       margin-left: -3px;
@@ -171,15 +187,6 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
       max-height: 130px;
       overflow: hidden;
       padding: 2px 1px 3px 3px;
-
-    .dw-p:hover
-      outline: 2px solid hsl($uiHue, 45%, 74%);
-
-      .dw-p-hd
-        background-color: hsl($uiHue, 39%, 84%);
-
-      .dw-p-bd
-        background-color: hsl($uiHue, 100%, 96%);
 
 
     .comment-enter,

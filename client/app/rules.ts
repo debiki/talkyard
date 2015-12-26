@@ -45,6 +45,21 @@ function canClose(pageRole: PageRole) {
   return pageRole !== PageRole.Message;
 }
 
+function isPageWithSidebar(pageRole: PageRole): boolean {
+  return pageRole === PageRole.About ||
+      pageRole === PageRole.Question || pageRole === PageRole.Problem ||
+      pageRole === PageRole.Idea || pageRole === PageRole.ToDo ||
+      pageRole === PageRole.Critique || // [plugin]
+      pageRole === PageRole.MindMap || pageRole === PageRole.Discussion ||
+      pageRole === PageRole.WebPage || pageRole === PageRole.EmbeddedComments;
+}
+
+function isPageWithWatchbar(pageRole: PageRole): boolean {
+  return isPageWithSidebar(pageRole);
+}
+
+
+
 function maySendInvites(user: User | CompleteUser): MayMayNot {
   // Currently only admins may send invites.
   if (!user.isAdmin) return mayMayNot(false, "is not admin");

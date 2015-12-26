@@ -38,6 +38,7 @@ var Button = reactCreateFactory(ReactBootstrap.Button);
 var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
+var FixedTopDist = 8;
 
 export var TopBar = createComponent({
   mixins: [debiki2.StoreListenerMixin, debiki2.utils.PageScrollMixin],
@@ -65,6 +66,7 @@ export var TopBar = createComponent({
     this.setState({
       initialOffsetTop: rect.top + window.pageYOffset,
       initialHeight: rect.bottom - rect.top,
+      fixed: rect.top < -FixedTopDist,
     });
   },
 
@@ -84,7 +86,7 @@ export var TopBar = createComponent({
   onScroll: function(event) {
     var node = this.getDOMNode();
     if (!this.state.fixed) {
-      if (node.getBoundingClientRect().top < -8) {
+      if (node.getBoundingClientRect().top < -FixedTopDist) {
         this.setState({ fixed: true });
       }
     }
