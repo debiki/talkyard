@@ -55,7 +55,7 @@ function isPageWithSidebar(pageRole: PageRole): boolean {
 }
 
 function isPageWithWatchbar(pageRole: PageRole): boolean {
-  return isPageWithSidebar(pageRole);
+  return isPageWithSidebar(pageRole) || pageRole === PageRole.Forum;
 }
 
 

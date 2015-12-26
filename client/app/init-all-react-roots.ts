@@ -17,6 +17,7 @@
 
 /// <reference path="../typedefs/react/react.d.ts" />
 /// <reference path="sidebar/sidebar.ts" />
+/// <reference path="watchbar/watchbar.ts" />
 /// <reference path="editor/editor.ts" />
 /// <reference path="page/metabar.ts" />
 /// <reference path="react-elements/name-login-btns.ts" />
@@ -44,6 +45,7 @@ export function startRemainingReactRoots() {
     React.render(debiki2.nopage.NonExistingPage({}), nonExistingPageElem);
 
   createSidebar();
+  watchbar.createWatchbar();
 
   var metabarElem = document.getElementById('dw-comments-toolbar');
   if (metabarElem)
