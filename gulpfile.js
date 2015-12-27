@@ -127,7 +127,6 @@ var debikiJavascriptFiles = [
       'target/client/app/editor/onebox-markdown-it-plugin.js',
       //'target/client/app/posts/monitor-reading-progress-unused.js',
       'target/client/app/posts/resize.js',
-      'target/client/app/utils/scroll-into-view.js',
       'target/client/app/utils/show-and-highlight.js',
       'target/client/app/utils/show-location-in-nav.js',
       //'target/client/app/posts/unread-unused.js',

@@ -20,6 +20,7 @@
 /// <reference path="../login/login-dialog.ts" />
 /// <reference path="../page-tools/page-tools.ts" />
 /// <reference path="../utils/page-scroll-mixin.ts" />
+/// <reference path="../utils/scroll-into-view.ts" />
 /// <reference path="../post-navigation/posts-trail.ts" />
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../notification/Notification.ts" />
@@ -151,22 +152,23 @@ export var TopBar = createComponent({
 
   goToTop: function() {
     debiki2.postnavigation.addVisitedPosition();
-    $('.dw-page')['dwScrollIntoView']();
+    utils.scrollIntoViewInPageColumn($('.dw-page'), { marginTop: 30, marginBottom: 9999 });
   },
 
   goToReplies: function() {
     debiki2.postnavigation.addVisitedPosition();
-    $('.dw-depth-0 > .dw-p-as')['dwScrollIntoView']({ marginTop: 48, marginBottom: 9999 });
+    utils.scrollIntoViewInPageColumn(
+        $('.dw-depth-0 > .dw-p-as'), { marginTop: 60, marginBottom: 9999 });
   },
 
   goToChat: function() {
     debiki2.postnavigation.addVisitedPosition();
-    $('#dw-chat')['dwScrollIntoView']({ marginTop: 60, marginBottom: 9999 });
+    utils.scrollIntoViewInPageColumn($('#dw-chat'), { marginTop: 60, marginBottom: 9999 });
   },
 
   goToEnd: function() {
     debiki2.postnavigation.addVisitedPosition();
-    $('#dw-the-end')['dwScrollIntoView']({ marginTop: 60, marginBottom: 30 });
+    utils.scrollIntoViewInPageColumn($('#dw-the-end'), { marginTop: 60, marginBottom: 30 });
   },
 
   viewOlderNotfs: function() {
