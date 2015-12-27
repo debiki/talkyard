@@ -159,6 +159,8 @@ export var Sidebar = createComponent({
   },
 
   createAnyScrollbars: function() {
+    return;
+
     if (!this.state.showSidebar)
       return;
 
@@ -242,6 +244,7 @@ export var Sidebar = createComponent({
   },
 
   updateSizeAndPosition1d: function(event) {
+    return;
     // This function is run frequently, each frame when scrolling. Profiling has
     // shown it's been worth optimizing it a bit, see `nextState` below, and
     // the $(elems) that I've cached in `this`.
@@ -323,18 +326,19 @@ export var Sidebar = createComponent({
   },
 
   toggleSidebarOpen: function() {
-    this.setSidebarOpen(!this.state.showSidebar);
+    ReactActions.setPagebarOpen(this.props.store.isPagebarOpen);
   },
 
   openSidebar: function() {
-    this.setSidebarOpen(true);
+    ReactActions.setPagebarOpen(true);
   },
 
   closeSidebar: function() {
-    this.setSidebarOpen(false);
+    ReactActions.setPagebarOpen(false);
   },
 
   setSidebarOpen: function(showSidebar) {
+    return;//xxx
     this.setState({ showSidebar: showSidebar });
     if (showSidebar) {
       $('html').addClass('dw-sidebar-open')

@@ -31,8 +31,7 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactCSSTransitionGroup = reactCreateFactory(React.addons.CSSTransitionGroup);
 var ReactBootstrap: any = window['ReactBootstrap'];
-var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
-var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
+var Button = reactCreateFactory(ReactBootstrap.Button);
 
 var watchbar;
 
@@ -79,25 +78,7 @@ export var Watchbar = createComponent({
   },
 
   toggleSidebarOpen: function() {
-    this.setOpen(!this.state.showWatchbar);
-  },
-
-  openSidebar: function() {
-    this.setOpen(true);
-  },
-
-  closeSidebar: function() {
-    this.setOpen(false);
-  },
-
-  setOpen: function(showWatchbar) {
-    this.setState({ showWatchbar: showWatchbar });
-    if (showWatchbar) {
-      $('html').addClass('dw-sidebar-open')
-    }
-    else {
-      $('html').removeClass('dw-sidebar-open');
-    }
+    ReactActions.togglePagebarOpen();
   },
 
   render: function() {
@@ -112,6 +93,8 @@ export var Watchbar = createComponent({
 
     return (
       r.div({ className: 'esWatchbar', ref: 'watchbar' },
+        Button({ className: 'esCloseWatchbarBtn', onClick: ReactActions.closeWatchbar },
+            r.span({ className: 'icon-left-open' })),
         r.div({ className: 'esWatchbar_topics' },
           r.h3({}, 'Forum topics'),
           r.ul({},

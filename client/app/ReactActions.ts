@@ -375,6 +375,28 @@ function anyAnchorPostId(): number {
 }
 
 
+export function openPagebar() { setPagebarOpen(true); }
+export function closePagebar() { setPagebarOpen(false); }
+
+export function togglePagebarOpen() {
+  $('html').toggleClass('es-pagebar-open');
+}
+
+export function setPagebarOpen(open: boolean) {
+  if (open) $('html').addClass('es-pagebar-open');
+  else $('html').removeClass('es-pagebar-open');
+}
+
+
+export function openWatchbar() { setWatchbarOpen(true); }
+export function closeWatchbar() { setWatchbarOpen(false); }
+
+export function setWatchbarOpen(open: boolean) {
+  if (open) $('html').addClass('es-watchbar-open');
+  else $('html').removeClass('es-watchbar-open');
+}
+
+
 export function setHorizontalLayout(enabled: boolean) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.SetHorizontalLayout,

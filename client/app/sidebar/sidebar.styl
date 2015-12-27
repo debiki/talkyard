@@ -15,18 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Without this, sometimes durin React.render(), the sidebar contents is visible
-// at a weird location, resulting in weird page dimensions when calculating minimap size.
 #dw-any-sidebar
-  position: absolute;
-  top: 0;
-  right 0;
-  bottom 0;
-  left 0;
+  z-index: 1010;
+  position: relative;
 
-html.dw-hz .dw-sidebar-z-index
+.dw-sidebar-z-index
   z-index: 1015;
-  position: absolute;
+  position: fixed;
 
 #dw-comment-counts
   float: right;
@@ -86,28 +81,13 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
 
 
 #dw-sidebar
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 30%;
-  @media (max-width: 710px)
-    width: 33%;
-  @media (max-width: 510px)
-    width: 35%;
+
   z-index: 1001; // not above dialogs, but above resize-columns handle (1000)
   padding: 0 0 0 11px;
   @media (max-width: 510px)
     padding-left 7px;
   bgcolor = white;
   background: bgcolor;
-  border-left: 8px solid #eee;
-
-  &.dw-sidebar-fixed
-    position: fixed;
-    top: 0;
-    right: 0;
-    bottom: 0;
 
   .btn
     float: left
@@ -135,6 +115,9 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
     background: bgcolor;
     padding: 10px 8px 0 0;
     position: relative;
+
+    overflow-y: scroll;
+    max-height: calc(100vh - 54px);
 
     // Click-drag scrolls, but if it sometimes instead selects text (because few comments,
     // nothing to scroll) then that's rather confusing.

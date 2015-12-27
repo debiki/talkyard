@@ -87,11 +87,11 @@ var PageWithState = createComponent({
 
 var Page = createComponent({
   render: function() {
-    return (
+    return (r.div({},
+      debiki2.reactelements.TopBar({}),
       r.div({ className: 'container' },
-        debiki2.reactelements.TopBar({}),
         r.article({},
-          TitleBodyComments(this.props))));
+          TitleBodyComments(this.props)))));
   }
 });
 

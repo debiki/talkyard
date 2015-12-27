@@ -10,17 +10,48 @@
 
 // Columns
 //==============================
-/*
-.esVerticalBars
-  flexbox()
 
-.esVerticalBar
-  flex: 1;
-  */
+body
+  overflow: hidden;
 
-//dwPosts
-//esWatchbarColumn
-//dw-any-sidebar
+#esPageColumn
+  top: 0;
+  bottom: 0;
+  left: 14vw;
+  right: 25vw;
+  position: fixed;
+  overflow-y: scroll;
+  overflow-x: visible;
+  .container
+    width: 51vw;
+
+#esWatchbarColumn
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 14vw;
+  z-index: 1010;
+
+#esThisbarColumn
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 25vw;
+  z-index: 1010;
+
+html:not(.es-pagebar-open)
+  #esThisbarColumn
+    display: none;
+  #esPageColumn
+    right: 0;
+
+html:not(.es-watchbar-open)
+  #esWatchbarColumn
+    display: none;
+  #esPageColumn
+    left: 0;
 
 
 // The Original Post

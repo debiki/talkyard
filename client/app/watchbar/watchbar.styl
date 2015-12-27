@@ -1,21 +1,16 @@
 $watchbarHue = 0;
 
 .esWatchbar
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
+  height: 100vh;
   background: white;
-  width: 16.1%;
-  z-index: 1000;
   background: hsl($watchbarHue, 0%, 97%);
-  border-right: 8px solid #eee;
-  padding: 26px 17px 10px 10px
-  overflow: hidden;
+  background: hsl(0, 0%, 13%);
+  padding: 10px 17px 10px 10px
 
   h3,
   li span
-    color: hsl(0, 0%, 47%);
+    color: hsl(0, 0%, 57%);
+
     white-space: nowrap;
     text-overflow: ellipsis;
     max-width: 100%;
@@ -33,5 +28,17 @@ $watchbarHue = 0;
     padding: 0.2rem 0;
     cursor: pointer;
     &:hover
-      background: hsl($watchbarHue, 60%, 14%);
+      background: hsl($watchbarHue, 60%, 18%);
+
+.esCloseWatchbarBtn
+  float: right;
+  position: relative;
+  right: -14px;
+  color: #aaa;
+  background: none;
+  border: none;
+  border-radius: 0;
+  &:hover
+    background: hsl($watchbarHue, 60%, 18%);
+    color: hsl(0, 0%, 70%);
 

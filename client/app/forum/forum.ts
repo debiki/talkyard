@@ -176,14 +176,14 @@ var ForumComponent = React.createClass({
       },
     });
 
-    return (
+    return (r.div({},
+      debiki2.reactelements.TopBar({}),
       r.div({ className: 'container dw-forum' },
-        debiki2.reactelements.TopBar({}),
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
         r.div({ className: 'dw-page' }),
         ForumIntroText(this.state),
         helpMessage,
-        CategoriesAndTopics(childProps)));
+        CategoriesAndTopics(childProps))));
   }
 });
 

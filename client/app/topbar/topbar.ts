@@ -62,9 +62,10 @@ export var TopBar = createComponent({
     keymaster('2', this.goToReplies);
     keymaster('3', this.goToChat);
     keymaster('4', this.goToEnd);
-    var rect = this.getDOMNode().getBoundingClientRect();
+    var rect = this.getThisRect();
+    var pageTop = this.getPageTop();
     this.setState({
-      initialOffsetTop: rect.top + window.pageYOffset,
+      initialOffsetTop: rect.top - pageTop,
       initialHeight: rect.bottom - rect.top,
       fixed: rect.top < -FixedTopDist,
     });
@@ -77,6 +78,14 @@ export var TopBar = createComponent({
     keymaster.unbind('4', 'all');
   },
 
+  getPageTop: function() {
+    return document.getElementById('esPageScrollable').getBoundingClientRect().top;
+  },
+
+  getThisRect: function() {
+    return this.refs.perhapsFixedElem.getDOMNode().getBoundingClientRect();
+  },
+
   onChange: function() {
     this.setState({
       store: debiki2.ReactStore.allData()
@@ -84,16 +93,18 @@ export var TopBar = createComponent({
   },
 
   onScroll: function(event) {
-    var node = this.getDOMNode();
+    var thisTop = this.getThisRect().top;
+    var pageTop = this.getPageTop();
+    this.setState({ translateY: -pageTop - this.state.initialOffsetTop });
     if (!this.state.fixed) {
-      if (node.getBoundingClientRect().top < -FixedTopDist) {
+      if (thisTop < -FixedTopDist) {
         this.setState({ fixed: true });
       }
     }
     else {
       // Add +X otherwise sometimes the fixed state won't vanish although back at top of page.
-      if (window.pageYOffset < this.state.initialOffsetTop + 5) {
-        this.setState({ fixed: false });
+      if ((thisTop - pageTop) < (this.state.initialOffsetTop + 5)) {
+        this.setState({ fixed: false, translateY: 0 });
       }
     }
   },
@@ -281,6 +292,17 @@ export var TopBar = createComponent({
           r.div({ className: 'dw-topbar-title' }, Title(titleProps));
     }
 
+    // ------- Watchbar and Pagebar buttons
+
+    var openPagebarButton = !isPageWithSidebar(pageRole) ? null :
+        Button({ className: 'esOpenPagebarBtn', onClick: ReactActions.openPagebar },
+            r.span({ className: 'icon-left-open' }));
+
+    var openWatchbarButton = !isPageWithWatchbar(pageRole) ? null :
+        Button({ className: 'esOpenWatchbarBtn', onClick: ReactActions.openWatchbar },
+            r.span({ className: 'icon-right-open' }));
+
+
     // ------- The result
 
     var topbar =
@@ -296,20 +318,22 @@ export var TopBar = createComponent({
         goToButtons);
 
     var placeholder;
-    var fixItClass;
-    var containerClass;
+    var fixItClass = '';
+    var styles = {};
     if (this.state.fixed) {
       // The placeholder prevents the page height from suddenly changing when the
       // topbar becomes fixed and thus is removed from the flow.
-      placeholder = r.div({ style: { height: this.state.initialHeight }});
-      fixItClass = 'dw-fixed-topbar-wrap';
-      containerClass = 'container';
+      //placeholder = r.div({ style: { height: this.state.initialHeight }});
+      fixItClass = ' dw-fixed-topbar-wrap';
+      styles = { top: this.state.translateY };//transform: 'translateY(' + this.state.translateY + ')' };
     }
     return (
       r.div({},
         placeholder,
-        r.div({ className: fixItClass },
-          r.div({ className: containerClass },
+        r.div({ className: 'esTopbarWrap' + fixItClass, ref: 'perhapsFixedElem', style: styles },
+          openWatchbarButton,
+          openPagebarButton,
+          r.div({ className: 'container' },
             topbar))));
   }
 });
