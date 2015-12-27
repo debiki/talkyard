@@ -48,7 +48,6 @@ export var Watchbar = createComponent({
     var store = debiki2.ReactStore.allData();
     return {
       store: store,
-      showWatchbar: !store.horizontalLayout && isPageWithWatchbar(store.pageRole),
     };
   },
 
@@ -57,28 +56,19 @@ export var Watchbar = createComponent({
   },
 
   componentDidMount: function() {
-    this.createAnyScrollbars();
-  },
-
-  componentWillUpdate: function(nextProps, nextState) {
-    if (!isPageWithWatchbar(this.state.store.pageRole))
-      return;
-
-    if (this.state.showWatchbar && !nextState.showWatchbar) {
-      die('EsE4WKE2');
+    if (isPageWithWatchbar(this.state.store.pageRole)) {
+      keymaster('w', this.toggleWatchbarOpen);
     }
   },
 
-  componentDidUpdate: function() {
+  componentWillUnmount: function() {
+    if (isPageWithWatchbar(this.state.store.pageRole)) {
+      keymaster.unbind('w', 'all');
+    }
   },
 
-  createAnyScrollbars: function() {
-    if (!this.state.showWatchbar)
-      return;
-  },
-
-  toggleSidebarOpen: function() {
-    ReactActions.togglePagebarOpen();
+  toggleWatchbarOpen: function() {
+    ReactActions.toggleWatchbarOpen();
   },
 
   render: function() {
@@ -87,10 +77,7 @@ export var Watchbar = createComponent({
     if (!isPageWithWatchbar(store.pageRole))
       return null;
 
-    if (!this.state.showWatchbar) {
-      return null; // or toggle-open button
-    }
-
+    // For now, hardcoded stuff:
     return (
       r.div({ className: 'esWatchbar', ref: 'watchbar' },
         Button({ className: 'esCloseWatchbarBtn', onClick: ReactActions.closeWatchbar },

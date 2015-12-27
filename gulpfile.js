@@ -107,7 +107,6 @@ var debikiJavascriptFiles = [
       'bower_components/eventemitter2/lib/eventemitter2.js',
       'bower_components/react-bootstrap/react-bootstrap.js',
       'bower_components/react-router/build/umd/ReactRouter.js',
-      'bower_components/nicescroll/jquery.nicescroll.js',
       'node_modules/jquery-resizable/resizable.js',
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/gifffer/gifffer.js',

@@ -391,6 +391,10 @@ export function setPagebarOpen(open: boolean) {
 export function openWatchbar() { setWatchbarOpen(true); }
 export function closeWatchbar() { setWatchbarOpen(false); }
 
+export function toggleWatchbarOpen() {
+  $('html').toggleClass('es-watchbar-open');
+}
+
 export function setWatchbarOpen(open: boolean) {
   if (open) $('html').addClass('es-watchbar-open');
   else $('html').removeClass('es-watchbar-open');

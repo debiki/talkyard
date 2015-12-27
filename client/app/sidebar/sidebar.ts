@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2014-2015 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -21,7 +21,7 @@
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="minimap.ts" />
-/// <reference path="unread-comments-tracker.ts" />
+//xx <reference path="unread-comments-tracker.ts" />
 
 // Staying at the bottom: http://blog.vjeux.com/2013/javascript/scroll-position-with-react.html
 
@@ -38,11 +38,7 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
-var TopBarHegiht = 44; // [KP43WV3]
 var SidebarNumCommentsLimit = 5 + 1;  // 5 + page body
-
-var lastMouseDownMs = null;
-var lastNiceScrollMs = null;
 
 
 export var Sidebar = createComponent({
@@ -52,6 +48,9 @@ export var Sidebar = createComponent({
     var store = debiki2.ReactStore.allData();
     // Show sidebar by default, in 1D layout, otherwise people will never notice
     // that it exists.
+
+    // Move this elsewhere? To where?
+    /*
     var showSidebar = false;
     if (!store.horizontalLayout && localStorage) {
       var setting = localStorage.getItem('debikiShowSidebar');
@@ -63,9 +62,13 @@ export var Sidebar = createComponent({
         $('html').addClass('dw-sidebar-open');
       }
     }
+
+    and:
+     localStorage.setItem('debikiShowSidebar', this.state.showSidebar ? 'true' : 'false');
+    */
+
     return {
       store: store,
-      showSidebar: showSidebar,
       commentsType: 'Recent',
       // showPerhapsUnread: false,
     };
@@ -74,7 +77,6 @@ export var Sidebar = createComponent({
   onChange: function() {
     this.setState({
       store: debiki2.ReactStore.allData(),
-      showSidebar: this.state.showSidebar,
     });
   },
 
@@ -105,115 +107,23 @@ export var Sidebar = createComponent({
   }, */
 
   componentDidMount: function() {
-    // COULD find a safer way to do this? Breaks if CSS class renamed / HTML
-    // structure changed.
-    this.commentSection = $('.dw-cmts-tlbr + .dw-single-and-multireplies');
-    this.sidebar = $(this.refs.sidebar ? this.refs.sidebar.getDOMNode() : null);
-    this.openButton = $(this.refs.openButton ? this.refs.openButton.getDOMNode() : null);
-
-    if (!isPageWithSidebar(this.state.store.pageRole))
-      return;
-
-    window.addEventListener('scroll', this.updateSizeAndPosition, false);
-    debiki.v0.util.addZoomOrResizeListener(this.updateSizeAndPosition);
-    this.updateSizeAndPosition();
-    keymaster('s', this.toggleSidebarOpen);
-    this.createAnyScrollbars();
+    if (isPageWithSidebar(this.state.store.pageRole)) {
+      keymaster('s', this.toggleSidebarOpen);
+    }
   },
 
   componentWillUnmount: function() {
-    if (!isPageWithSidebar(this.state.store.pageRole))
-      return;
-
-    window.removeEventListener('scroll', this.updateSizeAndPosition, false);
-    debiki.v0.util.removeZoomOrResizeListener(this.updateSizeAndPosition);
-    keymaster.unbind('s', 'all');
-  },
-
-  componentWillUpdate: function(nextProps, nextState) {
-    if (!isPageWithSidebar(this.state.store.pageRole))
-      return;
-
-    if (this.state.showSidebar && !nextState.showSidebar) {
-      this.getCommentsViewport()['getNiceScroll']().remove();
+    if (isPageWithSidebar(this.state.store.pageRole)) {
+      keymaster.unbind('s', 'all');
     }
   },
 
   componentDidUpdate: function() {
-    this.sidebar = $(this.refs.sidebar ? this.refs.sidebar.getDOMNode() : null);
-    this.openButton = $(this.refs.openButton ? this.refs.openButton.getDOMNode() : null);
-
-    if (!isPageWithSidebar(this.state.store.pageRole))
-      return;
-
-    this.updateSizeAndPosition();
-    this.createAnyScrollbars();
-
-    if (!this.state.store.horizontalLayout && localStorage) {
-      localStorage.setItem('debikiShowSidebar', this.state.showSidebar ? 'true' : 'false');
-    }
-  },
-
-  getCommentsViewport: function() {
-    return $(this.refs.commentsViewport.getDOMNode());
-  },
-
-  createAnyScrollbars: function() {
-    return;
-
-    if (!this.state.showSidebar)
-      return;
-
-    var scrollableElem = this.refs.commentsScrollable.getDOMNode();
-    var $viewport = this.getCommentsViewport();
-    var niceScroll = $viewport['niceScroll'](scrollableElem, {
-      cursorwidth: '12px',
-      cursorcolor: '#aaa',
-      cursorborderradius: 0,
-      bouncescroll: false,
-      // This enables dragscroll with the mouse, and disables the scroll wheel (unless 2d layout)
-      // — the wheel will scroll the whole window instead; having it scroll the sidebar is very
-      // confusing, because people then think the whole-window-scrolling is broken; they didn't
-      // notice they placed the mouse in the sidebar. — So let them scroll by touch-scrolling,
-      // or mouse-dragging the scrollbar, or dragscrolling with the mouse.
-      // (2D layout however, then one usually dragscrolls instead of using the wheel, so then
-      // it's ok to let the wheel scroll the sidebar instead.)
-      touchbehavior: true,
-      preventmultitouchscrolling: false,
-      enablemousewheel: this.state.store.horizontalLayout,
-      mousescrollstep: 100, // for 2d layout. Default is only 40. 140 = too fast: skips posts in FF.
-    });
-
-    // We want to know if we scrolled or clicked something. Therefore:
-    // (without updating this.state and triggering a rerendering)
-    // Doesn't work, never triggered:
-    //niceScroll.scrollstart((event) => {
-    //  niceScrollStartMs = Date.now();
-    //  niceScrollEndMs = null;
-    //})
-    // Also doesn't work: *always* trigggered, even for a pure click:
-    //niceScroll.scrollend((event) => {
-    //  niceScrollEndMs = Date.now();
-    //});
-    // Instead:
-    $viewport.on('scroll', (event) => {
-      lastNiceScrollMs = Date.now();
-    });
-    // React onMouseDown also doesn't work, so instead:
-    $viewport.on('mousedown', (event) => {
-      lastMouseDownMs = Date.now();
-    });
-  },
-
-  updateSizeAndPosition: function(event) {
-    if (this.state.store.horizontalLayout) {
-      this.updateSizeAndPosition2d(event);
-    } else {
-      this.updateSizeAndPosition1d(event);
-    }
+    // if is-2d then: this.updateSizeAndPosition2d(event);
   },
 
   updateSizeAndPosition2d: function(event) {
+    /* Try to remove. Or does this do sth useful for the minimap? Test if it's broken, to find out.
     var win = debiki.window;
     var nextState = '' + win.width() + ',' + win.height() + ':' + (event ? event.type : null);
     if (this.lastState === nextState && event && event.type === 'scroll') {
@@ -240,93 +150,11 @@ export var Sidebar = createComponent({
     }
     else {
       padding.remove();
-    }
-  },
-
-  updateSizeAndPosition1d: function(event) {
-    return;
-    // This function is run frequently, each frame when scrolling. Profiling has
-    // shown it's been worth optimizing it a bit, see `nextState` below, and
-    // the $(elems) that I've cached in `this`.
-
-    var sidebar = this.sidebar;
-    var openButton = this.openButton;
-    var win = debiki.window;
-    var commentSection = this.commentSection;
-    var commentSectionBounds = this.commentSection[0].getBoundingClientRect();
-    var commentSectionHeight = win.height() - commentSectionBounds.top;
-
-    var nextState = '' + win.width() + ',' + win.height() + ':';
-    if (commentSectionBounds.top <= TopBarHegiht) {
-      nextState += 'below:' + this.state.showSidebar;
-      if (nextState === this.lastState) {
-        return;
-      }
-
-      // We've scrolled down; let the sidebar span from top to bottom.
-      sidebar.css('top', TopBarHegiht);
-      sidebar.css('position', 'fixed');
-      if (this.state.showSidebar) {
-        sidebar.addClass('dw-sidebar-fixed');
-        sidebar.height(win.height());
-        openButton.css('position', 'relative');
-      }
-      else {
-        sidebar.height(0);
-        openButton.css('position', 'absolute');
-      }
-    }
-    else {
-      nextState += 'above:' + (this.state.showSidebar ? commentSectionHeight : -1);
-      if (nextState === this.lastState) {
-        return;
-      }
-
-      // (Use `offset({ top: ... })` not `css('top', ...)` because `css` for some
-      // weird reason places the elem 30 extra pixels down.)
-
-      // We're reading the article. Let the sidebar stay down together with
-      // the comments, so it won't occlude the article. COULD skip this if
-      // the browser window is very wide and we can safely show the whole sidebar
-      // at the right edge, without occluding the article.
-      sidebar.removeClass('dw-sidebar-fixed');
-      sidebar.css('position', 'absolute');
-      sidebar.offset({ top: win.scrollTop() + commentSectionBounds.top, left: undefined });
-      if (this.state.showSidebar) {
-        sidebar.height(commentSectionHeight);
-        openButton.css('position', 'relative');
-      } else {
-        sidebar.height(0);
-        openButton.css('position', 'absolute');
-      }
-    }
-
-    this.lastState = nextState;
-    this.updateCommentsScrollbar();
-
-    if (this.state.showSidebar) {
-      var sidebarLeft = sidebar[0].getBoundingClientRect().left;
-      var space = win.width() < 830 ? 13 : 30;
-      var commentsMaxWidth = sidebarLeft - space - commentSectionBounds.left;
-      commentSection.css('max-width', commentsMaxWidth);
-    }
-    else {
-      commentSection.css('max-width', '');
-    }
-  },
-
-  updateCommentsScrollbar: function() {
-    if (this.state.showSidebar) {
-      var commentsViewport = this.getCommentsViewport();
-      var bounds = commentsViewport[0].getBoundingClientRect();
-      var height = debiki.window.height() - bounds.top;
-      commentsViewport.height(height);
-      commentsViewport['getNiceScroll']().resize();
-    }
+    } */
   },
 
   toggleSidebarOpen: function() {
-    ReactActions.setPagebarOpen(this.props.store.isPagebarOpen);
+    ReactActions.togglePagebarOpen();
   },
 
   openSidebar: function() {
@@ -335,17 +163,6 @@ export var Sidebar = createComponent({
 
   closeSidebar: function() {
     ReactActions.setPagebarOpen(false);
-  },
-
-  setSidebarOpen: function(showSidebar) {
-    return;//xxx
-    this.setState({ showSidebar: showSidebar });
-    if (showSidebar) {
-      $('html').addClass('dw-sidebar-open')
-    }
-    else {
-      $('html').removeClass('dw-sidebar-open');
-    }
   },
 
   findComments: function() {
@@ -392,7 +209,7 @@ export var Sidebar = createComponent({
         }
       }
       */
-    }
+    };
 
     var rootPost = store.allPosts[store.rootPostId];
     addRecursively(rootPost.childIdsSorted);
@@ -428,12 +245,7 @@ export var Sidebar = createComponent({
   },
 
   onPostClick: function(post: Post) {
-    if (lastMouseDownMs && lastNiceScrollMs && lastNiceScrollMs > lastMouseDownMs) {
-      // Not a real click — we just scrolled the recent comments list.
-    }
-    else {
-      this.focusPost(post);
-    }
+    this.focusPost(post);
   },
 
   focusPost: function(post: Post) {
@@ -445,40 +257,11 @@ export var Sidebar = createComponent({
 
   render: function() {
     var store: Store = this.state.store;
-
     if (!isPageWithSidebar(store.pageRole))
       return null;
 
     var minimapProps = $.extend({ ref: 'minimap' }, store);
     var commentsFound = this.findComments();
-
-    // If sidebar hidden, show only minimap (if 2d layout) and toggle sidebar button.
-    if (!this.state.showSidebar) {
-      var unreadAndNewCounts = commentsFound.unread.length === 0 ? null :
-        r.div({ id: 'dw-comment-counts' },
-          commentsFound.unread.length + ' unread');
-          // later:
-          // r.br({}),
-          // commentsFound.new.length + ' new');
-      if (store.horizontalLayout) {
-        return (
-          r.div({ className: 'dw-sidebar-z-index' },
-            r.div({ id: 'dw-minimap-holder', style: { width: '100%' }},
-              r.div({ className: 'dw-upper-right-corner' },
-                MiniMap(minimapProps),
-                r.div({ id: 'dw-toggle-sidebar-and-comment-counts', ref: 'openButton' },
-                  ToggleSidebarButton({ isSidebarOpen: false, onClick: this.openSidebar }),
-                  unreadAndNewCounts)))));
-      }
-      else {
-        return (
-          r.div({},
-            r.div({ id: 'dw-sidebar', className: sidebarClasses, ref: 'sidebar' },
-              r.div({ id: 'dw-toggle-sidebar-and-comment-counts', ref: 'openButton' },
-                ToggleSidebarButton({ isSidebarOpen: false, onClick: this.openSidebar }),
-                unreadAndNewCounts))));
-      }
-    }
 
     var sidebarClasses = '';
     if (store.horizontalLayout) {
@@ -557,10 +340,7 @@ export var Sidebar = createComponent({
     var commentsElems = comments.map((post, index) => {
       var postProps: any = _.clone(store);
       postProps.post = post;
-      // onMouseDown/Capture doesn't work, even with niceScroll removed, no idea why:
-      // postProps.onMouseDown = (event) => { lastMouseDownMs = Date.now(); },
-      // postProps.onMouseDownCapture =
-      postProps.onClick = (event) => this.onPostClick(post),
+      postProps.onClick = (event) => this.onPostClick(post);
       postProps.abbreviate = abbreviateHowMuch;
       if (post.postId === this.state.currentPostId) {
         postProps.className = 'dw-current-post';
@@ -621,14 +401,14 @@ export var Sidebar = createComponent({
         r.div({ className: 'dw-upper-right-corner' },
           MiniMap(minimapProps))),
       r.div({ id: 'dw-sidebar', className: sidebarClasses, ref: 'sidebar' },
-        ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar, ref: 'openButton' }),
+        ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar }),
         tabButtons,
         r.div({ className: 'dw-comments' },
           helpMessageBoxOne,
           helpMessageBoxTwo,
           helpMessageBoxTree,
           helpMessageBoxFour,
-          r.div({ ref: 'commentsViewport', style: dimCommentsStyle },
+          r.div({ style: dimCommentsStyle },
             r.div({ ref: 'commentsScrollable' },
               r.h3({}, title),
               tipsOrExtraConfig,

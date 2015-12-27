@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// There's probably some cruft here that can be removed. Previously, the sidebar
+// was *a lot* more complicated and I might not have cleaned up all old styles.
+
 #dw-any-sidebar
   z-index: 1010;
   position: relative;
@@ -72,7 +75,6 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
 
 
 .dw-hz #dw-sidebar
-  box-shadow: -2px 0 5px hsl(0, 0%, 20%);
   background: white;
   padding: 0 0 0 11px;
 
@@ -117,16 +119,7 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
     position: relative;
 
     overflow-y: scroll;
-    max-height: calc(100vh - 54px);
-
-    // Click-drag scrolls, but if it sometimes instead selects text (because few comments,
-    // nothing to scroll) then that's rather confusing.
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
+    max-height: calc(100vh - 54px);  // For now.  54 leaves space for the Recent & Starred tabs
 
     @media (max-height: 500px)
       padding-top: 7px;
