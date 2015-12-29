@@ -3,7 +3,7 @@
 
 if [ -z "`docker images | egrep 'debiki-dev-gulp\s+v0\s+'`" ]; then
   echo 'Building debiki-dev-gulp image...'
-  docker build -t debiki-dev-gulp:v0 scripts/docker/debiki-dev-gulp/
+  docker build -t debiki-dev-gulp:v0 docker/debiki-dev-gulp/
   echo '... Done building debiki-dev-gulp image.'
   sleep 1
   echo ''
