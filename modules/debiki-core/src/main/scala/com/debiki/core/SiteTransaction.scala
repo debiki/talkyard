@@ -220,7 +220,7 @@ trait SiteTransaction {
   def loadUser(userId: UserId): Option[User]
   def loadTheUser(userId: UserId) = loadUser(userId).getOrElse(throw UserNotFoundException(userId))
 
-  def loadUsers(userIds: Seq[UserId]): immutable.Seq[User]
+  def loadUsers(userIds: Iterable[UserId]): immutable.Seq[User]
   def loadTheUsers(userIds: UserId*): immutable.Seq[User] = {
     val usersById = loadUsersAsMap(userIds)
     userIds.to[immutable.Seq] map { id =>

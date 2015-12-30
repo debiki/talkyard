@@ -24,6 +24,7 @@ import controllers.EditController
 import debiki._
 import debiki.DebikiHttp._
 import io.efdi.server.notf.NotificationGenerator
+import io.efdi.server.pubsub
 import java.{util => ju}
 import play.{api => p}
 import scala.collection.{mutable, immutable}
@@ -54,7 +55,7 @@ trait PostsDao {
       throwNotImplemented("EsE7GKX2", o"""Please reply to one single person only.
         Multireplies temporarily disabled, sorry""")
 
-    val postNr = readWriteTransaction { transaction =>
+    val (postNr, pageMemberIds) = readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val uniqueId = transaction.nextPostId()
       val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
@@ -172,10 +173,20 @@ trait PostsDao {
       insertAuditLogEntry(auditLogEntry, transaction)
       reviewTask.foreach(transaction.upsertReviewTask)
 
+      // generate json? load all page members?
+      // send the post + json back to the caller?
+      // & publish [pubsub]
+      val pageMemberIds = transaction.loadMessageMembers(pageId)
+
       val notifications = NotificationGenerator(transaction).generateForNewPost(page, newPost)
       transaction.saveDeleteNotifications(notifications)
-      postNr
+
+      (postNr, pageMemberIds)
     }
+
+    pubSub.publish(
+      // for now, send null:
+      pubsub.NewPostMessage(siteId, pageMemberIds, pageId, play.api.libs.json.JsNull))
 
     refreshPageInAnyCache(pageId)
     postNr

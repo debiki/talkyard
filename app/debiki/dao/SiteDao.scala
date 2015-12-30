@@ -150,6 +150,8 @@ abstract class SiteDao
 
   // ----- Notifications
 
+  def pubSub = Globals.pubSub
+
   def saveDeleteNotifications(notifications: Notifications) =
     readWriteTransaction(_.saveDeleteNotifications(notifications))
 
