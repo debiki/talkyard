@@ -30,7 +30,7 @@ trait MessagesDao {
 
   def sendMessage(title: TextAndHtml, body: TextAndHtml, toUserIds: Set[UserId],
         sentById: UserId, browserIdData: BrowserIdData): PagePath = {
-    val pagePath = readWriteTransaction { transaction =>
+    val (pagePath, notfs) = readWriteTransaction { transaction =>
       val sender = transaction.loadTheUser(sentById)
 
       val (pagePath, bodyPost) = createPageImpl2(PageRole.Message, title, body,
@@ -45,11 +45,11 @@ trait MessagesDao {
         sender, bodyPost, toUserIds)
 
       transaction.saveDeleteNotifications(notifications)
-      pagePath
+      (pagePath, notifications)
     }
 
     pubSub.publish(
-      pubsub.NewPageMessage(siteId, toUserIds, pagePath.thePageId, PageRole.Message))
+      pubsub.NewPageMessage(siteId, toUserIds, pagePath.thePageId, PageRole.Message, notfs))
 
     pagePath
   }

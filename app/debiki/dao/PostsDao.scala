@@ -55,7 +55,7 @@ trait PostsDao {
       throwNotImplemented("EsE7GKX2", o"""Please reply to one single person only.
         Multireplies temporarily disabled, sorry""")
 
-    val (postNr, pageMemberIds) = readWriteTransaction { transaction =>
+    val (postNr, pageMemberIds, notifications) = readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val uniqueId = transaction.nextPostId()
       val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
@@ -181,12 +181,12 @@ trait PostsDao {
       val notifications = NotificationGenerator(transaction).generateForNewPost(page, newPost)
       transaction.saveDeleteNotifications(notifications)
 
-      (postNr, pageMemberIds)
+      (postNr, pageMemberIds, notifications)
     }
 
     pubSub.publish(
       // for now, send null:
-      pubsub.NewPostMessage(siteId, pageMemberIds, pageId, play.api.libs.json.JsNull))
+      pubsub.NewPostMessage(siteId, pageMemberIds, pageId, play.api.libs.json.JsNull, notifications))
 
     refreshPageInAnyCache(pageId)
     postNr

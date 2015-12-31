@@ -94,7 +94,7 @@ object Prelude {
    * (remove spaces around *) and add test cases and fix security issues.
    */
   def UNTESTED = ()  // If the code might not work, e.g. has never been run.
-  def SECURITY = ()  // General security issue, should be fixed before release.
+  def SECURITY = ()  // Some security issue, not necessarily very important
   def XSRF_! = ()  // Cross site request forgery issue (or bug risk).
   def XSS_! = ()  // Cross site scripting.
   def BUG = ()  // Need not be a terribly important bug.
@@ -102,6 +102,7 @@ object Prelude {
   def SHOULD = ()  // Fix before release, unless short of time, or too boring.
   def COULD = ()  // Could do this, but it's not that important.
   def TESTS_MISSING = ()  // Could add test cases for this code
+  def COULD_OPTIMIZE = ()
 
   def throwNoSuchElem(errorCode: String, message: => String) =
     throw new NoSuchElementException(s"$message [error $errorCode]")

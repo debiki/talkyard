@@ -73,7 +73,7 @@ export var NewPasswordInput = createClassAndFactory({
     var data = this.props.newPasswordData;
     var password = this.getValue();
     var forbiddenWords = [data.email, data.username, 'debiki'];
-    var allNameParts = data.fullName.split(/\s+/);
+    var allNameParts = (data.fullName || '').split(/\s+/);
     forbiddenWords = forbiddenWords.concat(allNameParts);
     var passwordStrength = window['zxcvbn'](password, forbiddenWords);
 

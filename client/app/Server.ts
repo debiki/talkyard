@@ -31,6 +31,10 @@ var $: JQueryStatic = d.i.$;
 var origin = d.i.serverOrigin;
 
 
+interface OngoingRequest {
+  abort(message?: string);
+}
+
 interface RequestData {
   data: any;
   success: (response: any) => void;
@@ -63,14 +67,37 @@ function postJsonSuccess(urlPath, success: (response: any) => void, data: any, e
 }
 
 
-function get(uri: string, success: (response) => void, error?: () => void) {
-  $.get(origin + uri)
-    .done(success)
-    .fail((jqXhr: any, textStatus: string, errorThrown: string) => {
+function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void,
+      error?: () => void): OngoingRequest {
+  var dataType;
+  var headers;
+  if (_.isFunction(options)) {
+    error = <any> success;
+    success = <any> options;
+  }
+  else {
+    dataType = options.dataType;
+    headers = options.headers;
+  }
+
+  var xhr = $.ajax({
+    url: origin + uri,
+    type: 'GET',
+    dataType: dataType,
+    headers: headers,
+    success: function(response, dummy, xhr) {
+      success(response, xhr);
+    },
+    error: function(jqXhr: any, textStatus: string, errorThrown: string) {
       console.error('Error calling ' + uri + ': ' + JSON.stringify(jqXhr));
       pagedialogs.getServerErrorDialog().open(jqXhr);
       !error || error();
-    });
+    },
+  });
+
+  return {
+    abort: function(message?: string) { xhr.abort(message); }
+  }
 }
 
 
@@ -704,6 +731,49 @@ export function cyclePageDone(success: (newPlannedAndDoneAt: any) => void) {
 
 export function togglePageClosed(success: (closedAtMs: number) => void) {
   postJsonSuccess('/-/toggle-page-closed', success, { pageId: d.i.pageId });
+}
+
+
+var longPollingState = {
+  ongoingRequest: null,
+  lastModified: null,
+  lastEtag: null,
+};
+
+
+export function sendLongPollingRequest(userId: number, success: (event: any) => void,
+      error: () => void) {
+  dieIf(longPollingState.ongoingRequest, "Already long-polling the server [EsE7KYUX2]");
+  var options: any = { dataType: 'json' };
+  if (longPollingState.lastEtag) {
+    options.headers = {
+      'If-Modified-Since': longPollingState.lastModified,
+      'If-None-Match': longPollingState.lastEtag,
+    };
+  }
+  longPollingState.ongoingRequest =
+      get('/-/pubsub/subscribe/' + userId, options, (response, xhr) => {
+        longPollingState.ongoingRequest = null;
+        longPollingState.lastModified = xhr.getResponseHeader('Last-Modified');
+        longPollingState.lastEtag = xhr.getResponseHeader('Etag');
+        success(response);
+      }, () => {
+        longPollingState.ongoingRequest = null;
+        error();
+      });
+}
+
+
+export function isLongPollingServerNow(): boolean {
+  return !!longPollingState.ongoingRequest;
+}
+
+
+export function cancelAnyLongPollingRequest() {
+  if (longPollingState.ongoingRequest) {
+    longPollingState.ongoingRequest.abort("Intentionally cancelled [EsM2UZKW4]");
+    longPollingState.ongoingRequest = null;
+  }
 }
 
 

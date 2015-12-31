@@ -64,6 +64,7 @@ ReactDispatcher.register(function(payload) {
       $('html').removeClass('dw-is-admin, dw-is-staff, dw-is-authenticated');
 
       store.user = makeEmptyUser();
+      debiki2.pubsub.subscribeToServerEventsAsUser(store.user);
       break;
 
     case ReactActions.actionTypes.NewUserAccountCreated:
@@ -204,6 +205,26 @@ ReactDispatcher.register(function(payload) {
       store.user.closedHelpMessages = {};
       break;
 
+    case ReactActions.actionTypes.AddNotifications:
+      var oldNotfs = store.user.notifications;
+      for (var i = 0; i < action.notifications.length; ++i) {
+        var newNotf = action.notifications[i];
+        if (_.every(oldNotfs, n => n.id !== newNotf.id)) {
+          // Modifying state directly, oh well [redux]
+          store.user.notifications.unshift(newNotf);
+          if (isTalkToMeNotification(newNotf)) {
+            store.user.numTalkToMeNotfs += 1;
+          }
+          else if (isTalkToOthersNotification(newNotf)) {
+            store.user.numTalkToOthersNotfs += 1;
+          }
+          else {
+            store.user.numOtherNotfs += 1;
+          }
+        }
+      }
+      break;
+
     default:
       console.warn('Unknown action: ' + JSON.stringify(action));
       return true;
@@ -265,6 +286,8 @@ ReactStore.activateUserSpecificData = function(anyUser) {
   _.each(store.user.unapprovedPosts, (post: Post) => {
     updatePost(post);
   });
+
+  debiki2.pubsub.subscribeToServerEventsAsUser(newUser);
 
   store.quickUpdate = false;
   this.emitChange();

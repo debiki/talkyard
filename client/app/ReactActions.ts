@@ -53,6 +53,7 @@ export var actionTypes = {
   ChangeSiteStatus: 'ChangeSiteStatus',
   HideHelpMessage: 'HideHelpMessage',
   ShowHelpAgain: 'ShowHelpAgain',
+  AddNotifications: 'AddNotifications',
 };
 
 
@@ -402,6 +403,14 @@ export function hideHelpMessages(message) {
 export function showHelpMessagesAgain() {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.ShowHelpAgain,
+  });
+}
+
+
+export function addNotifications(notfs: Notification[]) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.AddNotifications,
+    notifications: notfs,
   });
 }
 

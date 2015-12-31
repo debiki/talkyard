@@ -17,22 +17,25 @@
 
 package io.efdi.server.pubsub
 
+import akka.actor._
 import com.debiki.core.Prelude._
 import com.debiki.core._
-import debiki.Globals
-import java.{util => ju}
+import debiki.{ReactJson, Globals}
 import play.api.libs.json.{JsNull, JsValue}
 import play.{api => p}
+import play.api.libs.json.Json
 import play.api.libs.ws.{WSResponse, WS}
 import play.api.Play.current
-import scala.collection.immutable
+import scala.collection.{mutable, immutable}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 
 sealed trait Message {
   def siteId: SiteId
   def toUserIds: Set[UserId]
   def toJson: JsValue
+  def notifications: Notifications
 }
 
 
@@ -40,7 +43,8 @@ case class NewPageMessage(
   siteId: SiteId,
   toUserIds: immutable.Set[UserId],
   pageId: PageId,
-  pageRole: PageRole) extends Message {
+  pageRole: PageRole,
+  notifications: Notifications) extends Message {
 
   def toJson = JsNull
 }
@@ -50,34 +54,99 @@ case class NewPostMessage(
   siteId: SiteId,
   toUserIds: immutable.Set[UserId],
   pageId: PageId,
-  postJson: JsValue) extends Message {
+  postJson: JsValue,
+  notifications: Notifications) extends Message {
 
   def toJson = JsNull
 }
+
+
+object PubSub {
+
+  // Not thread safe; only needed in integration tests.
+  var testInstanceCounter = 1
+
+
+  /** Starts a PubSub actor (only one is needed in the whole app).
+    */
+  def startNewActor(actorSystem: ActorSystem): PubSubApi = {
+    val actorRef = actorSystem.actorOf(Props(
+      new PubSub()), name = s"PubSub-$testInstanceCounter")
+    testInstanceCounter += 1
+    new PubSubApi(actorRef)
+  }
+
+}
+
+
+
+class PubSubApi(private val actorRef: ActorRef) {
+  def onUserSubscribed(siteId: SiteId, userId: UserId) {
+    actorRef ! UserSubscribed(SiteUserId(siteId, userId))
+  }
+
+  def publish(message: Message) {
+    actorRef ! PublishMessage(message)
+  }
+}
+
+private case class PublishMessage(message: Message)
+private case class UserSubscribed(siteUserId: SiteUserId)
 
 
 
 /** Publishes events to browsers via e.g. long polling or WebSocket. Reqiures nginx and nchan.
   * Assumes an nginx-nchan publish endpoint is available at: 127.0.0.1:80/-/pubsub/publish/
   * (and nginx should have been configured to allow access from localhost only).
+  *
+  * Later:? Poll nchan each minute? to find out which users have disconnected?
+  * ((Could add an nchan feature that tells the appserver about this, push not poll?))
   */
-class PubSub {
+class PubSub extends Actor {
 
-  def onUserSubscribed(siteId: SiteId, userId: UserId) {
-    // Later: remember which users are connected right now, and publish messages to them only.
-    // Poll nchan each minute? to find out which users have disconnected?
-    // ((Could add an nchan feature that tells the appserver about this, push not poll?))
+  /** Tells when subscriber site-user-id subscribed. Sorted by insertion order.
+    * We'll push messages only to users who have subscribed (i.e. are online and have
+    * connected to the server via e.g. WebSocket).
+    */
+  private val subscribers = mutable.LinkedHashMap[SiteUserId, When]()
+
+
+  def receive = {
+    case UserSubscribed(siteUserId) =>
+      subscribers.put(siteUserId, now)
+      println("Subscribed: " + siteUserId)
+    case PublishMessage(message: Message) =>
+      println("Publishing: " + message)
+      publish(message)
   }
 
+
   def publish(message: Message) {
-    SHOULD // only publish to connected users, see onUserConnected above.
+    SHOULD // only publish to connected users
 
     val siteDao = Globals.siteDao(message.siteId)
     val site = siteDao.loadSite()
     val canonicalHost = site.canonicalHost.getOrDie(
       "EsE7UKFW2", s"Site lacks canonical host: $site")
 
-    // Currently nchan doesn't support publising to many channels with one single request.
+    message.notifications.toCreate foreach { notf =>
+      COULD_OPTIMIZE // later: do only 1 call to siteDao, for all notfs.
+      val notfsJson = siteDao.readOnlyTransaction { transaction =>
+        ReactJson.notificationsToJson(Seq(notf), transaction).notfsJson
+      }
+      WS.url(s"http://localhost/-/pubsub/publish/${notf.toUserId}")
+        .withVirtualHost(canonicalHost.hostname)
+        .post(Json.obj(
+          "type" -> "notifications",
+          "data" -> notfsJson).toString)
+        .map(handlePublishResponse)
+        .recover({
+          case ex: Exception =>
+            p.Logger.warn(s"Error publishing to browsers [EsE0KPU31]", ex)
+        })
+    }
+
+    // Currently nchan doesn't support publishing to many channels with one single request.
     // (See the Channel Multiplexing section here: https://nchan.slact.net/
     // it says: "Publishing to multiple channels from one location is not supported")
     COULD // create an issue about supporting that? What about each post data text line = a channel,
@@ -95,9 +164,10 @@ class PubSub {
   }
 
   def handlePublishResponse(response: WSResponse) {
-    if (response.status != 200) {
+    if (response.status < 200 || 299 < response.status) {
       p.Logger.warn(o"""Bad nchan status code after sending publish request [EsE9UKJ2]:
-        ${response.status} ${response.statusText} — see the nginx error log for details?""")
+        ${response.status} ${response.statusText} — see the nginx error log for details?
+        Response body: '${response.body}""")
     }
   }
 }

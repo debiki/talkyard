@@ -537,7 +537,12 @@ object ReactJson {
   def loadNotifications(userId: UserId, transaction: SiteTransaction, unseenFirst: Boolean,
         limit: Int, upToWhen: Option[ju.Date] = None): NotfsAndCounts = {
     val notfs = transaction.loadNotificationsForRole(userId, limit, unseenFirst, upToWhen)
+    notificationsToJson(notfs, transaction)
+  }
 
+
+  def notificationsToJson(notfs: Seq[Notification], transaction: SiteTransaction)
+        : NotfsAndCounts = {
     val pageIds = ArrayBuffer[PageId]()
     val userIds = ArrayBuffer[UserId]()
     var numTalkToMe = 0
