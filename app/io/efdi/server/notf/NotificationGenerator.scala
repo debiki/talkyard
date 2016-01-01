@@ -91,8 +91,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
   def generateForMessage(sender: User, pageBody: Post, toUserIds: Set[UserId])
         : Notifications = {
     unimplementedIf(pageBody.approvedById.isEmpty, "Unapproved private message? [EsE7MKB3]")
-    toUserIds foreach { userId =>
-      val user = transaction.loadUser(userId) getOrDie "EsE5GUK2"
+    transaction.loadUsers(toUserIds) foreach { user =>
       makeNewPostNotf(NotificationType.Message, pageBody, user)
     }
     generatedNotifications

@@ -4,7 +4,7 @@ version=v0
 
 function create_new_dev_database_container {
   docker run \
-    --name debiki-dev-database-container \
+    --name debiki-dev-database-container2 \
     -p 5432:5432 \
     debiki-dev-database-data:$version \
     /usr/lib/postgresql/9.3/bin/postgres -D /var/lib/postgresql/9.3/main -c config_file=/etc/postgresql/9.3/main/postgresql.conf
@@ -18,20 +18,20 @@ if [ -z "$any_row" ]; then
 fi
 
 # Attach to, or create, a database container:
-any_row=`docker ps | grep debiki-dev-database-container`
+any_row=`docker ps | grep debiki-dev-database-container2`
 if [ -n "$any_row" ]; then
   echo 'Attaching to debiki-dev-database-container...'
-  docker attach debiki-dev-database-container
+  docker attach debiki-dev-database-container2
   exit
 fi
-any_row=`docker ps -a | grep debiki-dev-database-container`
+any_row=`docker ps -a | grep debiki-dev-database-container2`
 if [ -n "$any_row" ]; then
-  echo 'Starting and attaching to debiki-dev-database-container...'
-  docker start debiki-dev-database-container
-  docker attach debiki-dev-database-container
+  echo 'Starting and attaching to debiki-dev-database-container2...'
+  docker start debiki-dev-database-container2
+  docker attach debiki-dev-database-container2
   exit
 fi
-echo 'Creating new debiki-dev-database-container...'
+echo 'Creating new debiki-dev-database-container2...'
 create_new_dev_database_container
 
 

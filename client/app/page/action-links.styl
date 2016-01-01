@@ -67,12 +67,13 @@
     top: 0; // undo [8MUFW2] below
 
 .DW.DW .dw-ar-t > .dw-p-as > .dw-a-reply
-  font-weight: bold;
-  color: hsl(0, 0%, 15%);
   padding: 8px 17px 8px 13px !important;
   top: 4px;
-  position: relative;
-  background-color: #f2f2f2;
+  color: white;
+  background-color: hsl($uiHue, 80%, 54%);
+  &:hover
+    color: white;
+    background-color: hsl($uiHue, 80%, 62%);
 
 .dw-a
   text-decoration: none !important
@@ -211,9 +212,9 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
   font-weight: bold;
   background: hsl(207, 0%, 95%);
   color: hsl(0, 0%, 15%);
-  padding: 10px 12px 10px 8px;
+  padding: 9px 12px 9px 8px;
   margin-left: 6px;
-  top: -3px;
+  top: -2px;
   position: relative;
   &:before
     opacity: 0.63; // or icon too not-opaque

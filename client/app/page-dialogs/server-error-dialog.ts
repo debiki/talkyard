@@ -135,7 +135,7 @@ var ServerErrorDialog = createComponent({
         // than the-real-name.domain.com, which would result in a cross origin request error.
         title = 'Error: Server not reachable';
         message = "Has the server stopped? Or did you just get disconnected " +
-            "from the Internet? Or are you using the wrong hostname, " +
+            "from the Internet? Or is the hostname or port number wrong, " +
             "cross-origin request blocked? [DwE4KEF2]\n" +
             "\n" +
             "Details: " + JSON.stringify(error);

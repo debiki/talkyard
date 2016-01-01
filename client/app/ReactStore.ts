@@ -64,6 +64,7 @@ ReactDispatcher.register(function(payload) {
       $('html').removeClass('dw-is-admin, dw-is-staff, dw-is-authenticated');
 
       store.user = makeEmptyUser();
+      debiki2.pubsub.subscribeToServerEventsAsUser(store.user);
       break;
 
     case ReactActions.actionTypes.NewUserAccountCreated:
@@ -204,6 +205,14 @@ ReactDispatcher.register(function(payload) {
       store.user.closedHelpMessages = {};
       break;
 
+    case ReactActions.actionTypes.AddNotifications:
+      addNotifications(action.notifications);
+      break;
+
+    case ReactActions.actionTypes.MarkAnyNotificationAsSeen:
+      markAnyNotificationssAsSeen(action.postNr);
+      break;
+
     default:
       console.warn('Unknown action: ' + JSON.stringify(action));
       return true;
@@ -265,6 +274,8 @@ ReactStore.activateUserSpecificData = function(anyUser) {
   _.each(store.user.unapprovedPosts, (post: Post) => {
     updatePost(post);
   });
+
+  debiki2.pubsub.subscribeToServerEventsAsUser(newUser);
 
   store.quickUpdate = false;
   this.emitChange();
@@ -689,6 +700,50 @@ function sortPostIdsInPlace(postIds: number[], allPosts) {
     else
       return +1;
   });
+}
+
+
+function addNotifications(newNotfs: Notification[]) {
+  var oldNotfs = store.user.notifications;
+  for (var i = 0; i < newNotfs.length; ++i) {
+    var newNotf = newNotfs[i];
+    if (_.every(oldNotfs, n => n.id !== newNotf.id)) {
+      // Modifying state directly, oh well [redux]
+      store.user.notifications.unshift(newNotf);
+      updateNotificationCounts(newNotf, true);
+    }
+  }
+}
+
+
+function markAnyNotificationssAsSeen(postNr) {
+  var notfs: Notification[] = store.user.notifications;
+  _.each(notfs, (notf: Notification) => {
+    if (notf.pageId === store.pageId && notf.postNr === postNr) {
+      // Modifying state directly, oh well [redux]
+      if (!notf.seen) {
+        notf.seen = true;
+        updateNotificationCounts(notf, false);
+        // Simpler to call the server from here:
+        Server.markNotificationAsSeen(notf.id);
+      }
+    }
+  });
+}
+
+
+function updateNotificationCounts(notf: Notification, add: boolean) {
+  // Modifying state directly, oh well [redux]
+  var delta = add ? +1 : -1;
+  if (isTalkToMeNotification(notf)) {
+    store.user.numTalkToMeNotfs += delta;
+  }
+  else if (isTalkToOthersNotification(notf)) {
+    store.user.numTalkToOthersNotfs += delta;
+  }
+  else {
+    store.user.numOtherNotfs += delta;
+  }
 }
 
 

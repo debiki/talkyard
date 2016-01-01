@@ -33,6 +33,7 @@ export var Notification = createComponent({
     var textContent = '';
     var iconClass = '';
     var toMeClass = ' esNotf-toMe';
+    var seenClass = notf.seen ? ' esNotf-seen' : '';
     switch (notf.type) {
       case NotificationType.DirectReply: iconClass = 'icon-reply'; break;
       case NotificationType.Mention: iconClass = 'icon-char'; textContent = '@'; break;
@@ -47,7 +48,7 @@ export var Notification = createComponent({
       verboseClass = ' esNotf-vrbs';
     }
     return (
-      r.span({ className: ' esNotf' + verboseClass + toMeClass },
+      r.span({ className: ' esNotf' + verboseClass + toMeClass + seenClass },
         r.span({ className: iconClass }, textContent),
         r.span({ className: 'esNotf_by' }, byName), ": ",
         r.span({ className: 'esNotf_page' }, notf.pageTitle),
