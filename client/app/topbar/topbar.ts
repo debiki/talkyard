@@ -201,7 +201,8 @@ export var TopBar = createComponent({
     var otherNotfs = makeNotfIcon('other', user.numOtherNotfs);
     var anyDivider = user.notifications.length ? MenuItem({ divider: true }) : null;
     var notfsElems = user.notifications.map(notf =>
-        MenuItem({ key: notf.id, onSelect: () => ReactActions.openNotificationSource(notf) },
+        MenuItem({ key: notf.id, onSelect: () => ReactActions.openNotificationSource(notf),
+            className: notf.seen ? '' : 'esNotf-unseen' },
           notification.Notification({ notification: notf })));
     if (user.thereAreMoreUnseenNotfs) {
       notfsElems.push(

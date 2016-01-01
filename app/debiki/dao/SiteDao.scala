@@ -162,6 +162,9 @@ abstract class SiteDao
   def updateNotificationSkipEmail(notifications: Seq[Notification]): Unit =
     readWriteTransaction(_.updateNotificationSkipEmail(notifications))
 
+  def markNotificationAsSeen(userId: UserId, notfId: NotificationId): Unit =
+    readWriteTransaction(_.markNotfAsSeenSkipEmail(userId, notfId))
+
 
   // ----- Emails
 

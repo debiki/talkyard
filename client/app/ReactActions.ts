@@ -54,6 +54,7 @@ export var actionTypes = {
   HideHelpMessage: 'HideHelpMessage',
   ShowHelpAgain: 'ShowHelpAgain',
   AddNotifications: 'AddNotifications',
+  MarkAnyNotificationAsSeen: 'MarkAnyNotificationAsSeen',
 };
 
 
@@ -349,22 +350,23 @@ export function loadAndShowPost(postId: number, showChildrenToo?: boolean, callb
  * and including X have been loaded. Then scrolls to X.
  */
 export function loadAndScrollToAnyUrlAnchorPost() {
-  var anchorPostId = anyAnchorPostId();
-  if (!anchorPostId) {
+  var anchorPostNr = anyAnchorPostNr();
+  if (!anchorPostNr) {
     // No #post-X in the URL.
     return;
   }
-  var $post = debiki.internal.findPost$(anchorPostId);
+  var $post = debiki.internal.findPost$(anchorPostNr);
   if (!$post.length) {
-    loadAndShowPost(anchorPostId);
+    loadAndShowPost(anchorPostNr, undefined, () => markAnyNotificationAsSeen(anchorPostNr));
   }
   else {
     debiki.internal.showAndHighlightPost($post);
+    markAnyNotificationAsSeen(anchorPostNr);
   }
-};
+}
 
 
-function anyAnchorPostId(): number {
+function anyAnchorPostNr(): number {
   // AngularJS (I think it is) somehow inserts a '/' at the start of the hash. I'd
   // guess it's Angular's router that messes with the hash. I don't want the '/' but
   // don't know how to get rid of it, so simply ignore it.
@@ -411,6 +413,15 @@ export function addNotifications(notfs: Notification[]) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.AddNotifications,
     notifications: notfs,
+  });
+}
+
+
+function markAnyNotificationAsSeen(postNr: number) {
+  // The store will tell the server that any notf has been seen.
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.MarkAnyNotificationAsSeen,
+    postNr: postNr,
   });
 }
 

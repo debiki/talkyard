@@ -268,6 +268,7 @@ trait SiteTransaction {
   def nextNotificationId(): NotificationId
   def saveDeleteNotifications(notifications: Notifications)
   def updateNotificationSkipEmail(notifications: Seq[Notification])
+  def markNotfAsSeenSkipEmail(userId: UserId, notfId: NotificationId)
   def loadNotificationsForRole(roleId: RoleId, limit: Int, unseenFirst: Boolean,
     upToWhen: Option[ju.Date] = None): Seq[Notification]
 

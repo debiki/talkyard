@@ -38,6 +38,13 @@
     [class*= icon-]
       background: hsl($uiHue, 85%, 47%);
 
+  // But remove colors if the notf has been seen already
+  &.esNotf-seen
+    [class^=icon-],
+    [class*= icon-]
+      background: hsl(0, 0%, 73%);
+
+
 .esNotf_page
   font-style: italic;
 

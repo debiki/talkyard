@@ -116,17 +116,26 @@ object NotificationToDelete {
 }
 
 
-sealed abstract class NotfEmailStatus
+sealed abstract class NotfEmailStatus(val IntValue: Int ) { def toInt = IntValue }
 object NotfEmailStatus {
 
   /** This notification has not yet been processed; we have yet to decide if to send an email. */
-  case object Undecided extends NotfEmailStatus
+  case object Undecided extends NotfEmailStatus(1)
+
+  /** We've decided to not send any email for this notf (perhaps the user has seen it already) */
+  case object Skipped extends NotfEmailStatus(2)
 
   /** Email created, will soon be sent, or has already been sent. */
-  case object Created extends NotfEmailStatus
+  case object Created extends NotfEmailStatus(3)
 
-  /** We've decided to not send any email for this notification. */
-  case object Skipped extends NotfEmailStatus
+  // 4 = email sent? Not in use, right now.
+
+  def fromInt(value: Int): Option[NotfEmailStatus] = Some(value match {
+    case Undecided.IntValue => Undecided
+    case Created.IntValue => Created
+    case Skipped.IntValue => Skipped
+    case _ => return None
+  })
 }
 
 

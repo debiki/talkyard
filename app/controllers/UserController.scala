@@ -313,6 +313,13 @@ object UserController extends mvc.Controller {
   }
 
 
+  def markNotificationAsSeen() = PostJsonAction(RateLimits.MarkNotfAsSeen, 200) { request =>
+    val notfId = (request.body \ "notfId").as[NotificationId]
+    request.dao.markNotificationAsSeen(request.theUserId, notfId)
+    Ok
+  }
+
+
   def savePageNotfLevel = PostJsonAction(RateLimits.ConfigUser, maxLength = 500) { request =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]

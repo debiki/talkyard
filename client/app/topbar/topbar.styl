@@ -49,6 +49,14 @@ html:not(.dw-react-started)
     [class*= icon-]
       font-size: 13px;
 
+  .esNotf-unseen a
+    background: hsl($uiHue, 100%, 95.5%);
+    color: hsl($uiHue, 90%, 20%);
+    margin-bottom: 2px;
+    &:hover
+      background: hsl(207,100%,90%);
+
+
 // Avoid flash-of-login-button when already logged in.
 html:not(.dw-react-started)
   .dw-topbar-btns

@@ -274,6 +274,16 @@ object RateLimits {
   }
 
 
+  object MarkNotfAsSeen extends RateLimits {
+    val key = "NnSn"
+    val what = "marked too many notifications as seen"
+    def maxPerFifteenSeconds = 30
+    def maxPerFifteenMinutes = 60 * 5
+    def maxPerDay = Unlimited
+    def maxPerDayNewUser = Unlimited
+  }
+
+
   /** Discourse:
     * max likes per day 50
     * Maximum number of likes per user per day.

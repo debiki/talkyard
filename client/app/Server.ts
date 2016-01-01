@@ -59,6 +59,12 @@ function postJson(urlPath: string, requestData: RequestData) {
 
 
 function postJsonSuccess(urlPath, success: (response: any) => void, data: any, error?) {
+  // Make postJsonSuccess(..., error, data) work:
+  if (!data || _.isFunction(data)) {
+    var tmp = data;
+    data = error;
+    error = tmp;
+  }
   postJson(urlPath, {
     data: data,
     success: success,
@@ -74,8 +80,10 @@ function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void
   if (_.isFunction(options)) {
     error = <any> success;
     success = <any> options;
+    options = {};
   }
   else {
+    if (!options) options = {};
     dataType = options.dataType;
     headers = options.headers;
   }
@@ -90,7 +98,9 @@ function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void
     },
     error: function(jqXhr: any, textStatus: string, errorThrown: string) {
       console.error('Error calling ' + uri + ': ' + JSON.stringify(jqXhr));
-      pagedialogs.getServerErrorDialog().open(jqXhr);
+      if (!options.suppressErrorDialog) {
+        pagedialogs.getServerErrorDialog().open(jqXhr);
+      }
       !error || error();
     },
   });
@@ -423,6 +433,11 @@ export function loadNotifications(userId: number, upToWhenMs: number,
 }
 
 
+export function markNotificationAsSeen(notfId: number, success?: () => void, error?: () => void) {
+  postJsonSuccess('/-/mark-notf-as-seen', success, error, { notfId: notfId });
+}
+
+
 export function loadUserPreferences(userId,
       callback: (info: debiki2.users.UserPreferences) => void) {
   $.get(origin + '/-/load-user-preferences?userId=' + userId)
@@ -741,10 +756,18 @@ var longPollingState = {
 };
 
 
+/**
+ * Built for talking with Nginx and nchan, see: https://github.com/slact/nchan#long-polling
+ */
 export function sendLongPollingRequest(userId: number, success: (event: any) => void,
       error: () => void) {
   dieIf(longPollingState.ongoingRequest, "Already long-polling the server [EsE7KYUX2]");
-  var options: any = { dataType: 'json' };
+  var options: any = {
+    dataType: 'json',
+    // Firefox always calls the error callback if a long polling request is ongoing when
+    // navigating away / closing the tab. So the dialog would be visible for 0.1 confusing seconds.
+    suppressErrorDialog: true,
+  };
   if (longPollingState.lastEtag) {
     options.headers = {
       'If-Modified-Since': longPollingState.lastModified,

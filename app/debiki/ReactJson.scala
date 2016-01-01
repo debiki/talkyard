@@ -554,7 +554,7 @@ object ReactJson {
         pageIds.append(notf.pageId)
         userIds.append(notf.byUserId)
         import NotificationType._
-        notf.tyype match {
+        if (notf.seenAt.isEmpty) notf.tyype match {
           case DirectReply | Mention | Message =>
             numTalkToMe += 1
           case NewPost =>
