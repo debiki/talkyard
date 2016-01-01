@@ -112,6 +112,53 @@ html:not(.es-watchbar-open)
       padding-right: 7px;
 
 
+// Footer
+//==============================
+
+// Make the footer stick to the bottom.
+// See: http://philipwalton.github.io/solved-by-flexbox/demos/sticky-footer/
+#esPageScrollable
+  display: flex;
+  flex-direction: column;
+  height: 100%; // supposedly avoid some IE 10-11 min-height bug
+#dwPosts
+  flex: 1 0 auto;
+// This avoids some other bug that shrinks these to 0,
+// see: https://github.com/philipwalton/flexbugs#1-minimum-content-sizing-of-flex-items-not-honored
+#topbar,
+footer
+  flex: none;
+.footer
+  margin-top: 0;
+
+
+footer, .footer
+  text-align: center;
+  font-size: 12px;
+  color: #ddd;
+  bottom:0;
+  position: relative;
+  clear: both;
+
+footer
+  margin-top: 4em;
+
+.footer
+  padding: 3.7em 0 3em;
+
+footer p
+  color: #ddd;
+  line-height: 8px;
+
+.footer a, .footer a:visited
+  color: #ddd;
+  text-decoration: underline;
+
+.footer p small
+  font-size: 10px;
+  color: #ddd;
+
+
 // Code pages and templates
 //==============================
 
