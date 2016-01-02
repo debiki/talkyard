@@ -764,6 +764,8 @@ function makeEmptyUser(): User {
     postIdsAutoReadLongAgo: [],
     postIdsAutoReadNow: [],
     marksByPostId: {},
+
+    closedHelpMessages: {},
   };
 }
 

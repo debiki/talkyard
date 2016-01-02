@@ -63,9 +63,6 @@ var thisIsAConcatenationMessage =
   ' * than the AGPL. Files are separated by a "======" line.\n' +
   ' */\n';
 
-var nextFileLine =
-  '\n\n//=== Next file: ===============================================================\n\n';
-
 
 // What about using a CDN for jQuery + Modernizr + React? Perhaps, but:
 // - jQuery + Modernizr + React is only 33K + 5K + 49K in addition to 160K
@@ -167,6 +164,14 @@ var debikiEmbeddedCommentsFiles = [
       'client/embedded-comments/parent-footer.js'];  // not ^target/client/...
 
 
+var nextFileTemplate =
+    '\n\n' +
+    '//=====================================================================================\n\n' +
+    '// Next file: <%= file.path %>\n' +
+    '//=====================================================================================\n\n' +
+    '<%= contents %>\n';
+
+
 gulp.task('wrap-javascript', function () {
   // Prevent Javascript variables from polluting the global scope.
   return gulp.src('client/**/*.js')
@@ -188,6 +193,7 @@ function compileServerSideTypescript() {
         'client/server/**/*.ts',
         'client/shared/plain-old-javascript.d.ts',
         'client/typedefs/**/*.ts'])
+    .pipe(wrap(nextFileTemplate))
     .pipe(typeScript(serverSideTypescriptProject));
 
   if (watchAndLiveForever) {
@@ -206,7 +212,8 @@ function compileServerSideTypescript() {
         'client/third-party/html-css-sanitizer-bundle.js',
         'client/third-party/non-angular-slugify.js',
         'client/app/editor/mentions-markdown-it-plugin.js',
-        'client/app/editor/onebox-markdown-it-plugin.js']);
+        'client/app/editor/onebox-markdown-it-plugin.js'])
+      .pipe(wrap(nextFileTemplate));
 
   return es.merge(typescriptStream, javascriptStream)
       .pipe(concat('renderer.js'))
@@ -230,6 +237,7 @@ function compileClientSideTypescript() {
         'client/app/**/*.ts',
         'client/shared/plain-old-javascript.d.ts',
         'client/typedefs/**/*.ts'])
+    .pipe(wrap(nextFileTemplate))
     .pipe(typeScript(clientSideTypescriptProject));
 
   if (watchAndLiveForever) {
@@ -263,7 +271,7 @@ function makeConcatDebikiScriptsStream() {
       stream = stream.pipe(newer('public/res/' + outputFileName));
     }
     return stream
-        .pipe(header(nextFileLine))
+        .pipe(wrap(nextFileTemplate))
         .pipe(concat(outputFileName))
         .pipe(header(thisIsAConcatenationMessage))
         .pipe(header(copyrightAndLicenseBanner))

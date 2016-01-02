@@ -450,7 +450,8 @@ object ReactJson {
     "unapprovedPosts" -> JsObject(Nil),
     "postIdsAutoReadLongAgo" -> JsArray(Nil),
     "postIdsAutoReadNow" -> JsArray(Nil),
-    "marksByPostId" -> JsObject(Nil))
+    "marksByPostId" -> JsObject(Nil),
+    "closedHelpMessages" -> JsObject(Nil))
 
 
   def userDataJson(pageRequest: PageRequest[_]): Option[JsObject] = {
@@ -516,7 +517,9 @@ object ReactJson {
       "unapprovedPosts" -> anyUnapprovedPosts,
       "postIdsAutoReadLongAgo" -> JsArray(Nil),
       "postIdsAutoReadNow" -> JsArray(Nil),
-      "marksByPostId" -> JsObject(Nil))
+      "marksByPostId" -> JsObject(Nil),
+
+      "closedHelpMessages" -> JsObject(Nil))
   }
 
 

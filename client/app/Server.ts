@@ -311,7 +311,7 @@ export function logout(success: () => void) {
 
 export function loadCompleteUser(userId: number, doneCallback: (user: CompleteUser) => void,
         error?: () => void) {
-  get(origin + '/-/load-complete-user?userId=' + userId, (response) => {
+  get('/-/load-complete-user?userId=' + userId, (response) => {
     doneCallback(response.user);
   }, error);
 }
@@ -429,7 +429,7 @@ export function loadUserActions(userId,
 export function loadNotifications(userId: number, upToWhenMs: number,
       success: (notfs: Notification[]) => void, error: () => void) {
   var query = '?userId=' + userId + '&upToWhenMs=' + upToWhenMs;
-  get(origin + '/-/load-notifications' + query, success, error);
+  get('/-/load-notifications' + query, success, error);
 }
 
 
@@ -554,7 +554,7 @@ export function loadDraftAndGuidelines(writingWhat: WritingWhat, categoryId: num
 
 export function loadCurrentPostText(postId: number,
       doneCallback: (text: string, postUid: number, revisionNr: number) => void) {
-  get(origin + '/-/edit?pageId='+ d.i.pageId + '&postId='+ postId, (response: any) => {
+  get('/-/edit?pageId='+ d.i.pageId + '&postId='+ postId, (response: any) => {
     // COULD also load info about whether the user may apply and approve the edits.
     doneCallback(response.currentText, response.postUid, response.currentRevisionNr);
   });

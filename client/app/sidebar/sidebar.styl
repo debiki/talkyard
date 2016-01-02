@@ -24,7 +24,7 @@
 
 .dw-sidebar-z-index
   z-index: 1015;
-  position: fixed;
+  position: relative;
 
 #dw-comment-counts
   float: right;
@@ -86,6 +86,7 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
 
   z-index: 1001; // not above dialogs, but above resize-columns handle (1000)
   padding: 0 0 0 11px;
+  height: 100vh;
   @media (max-width: 510px)
     padding-left 7px;
   bgcolor = white;
@@ -119,6 +120,7 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
     position: relative;
 
     overflow-y: scroll;
+    height: 100%; // or position:absolute help boxes truncated
     max-height: calc(100vh - 54px);  // For now.  54 leaves space for the Recent & Starred tabs
 
     @media (max-height: 500px)

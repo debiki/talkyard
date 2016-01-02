@@ -32,6 +32,7 @@
   @Html(tpi.anyGoogleUniversalAnalyticsScript)
 </head>
 <body>
+<!-- wrapper.scala.html -->
 <div id="esPageColumn">
 <div id="esPageScrollable">
 @Html(tpi.siteSettings.headerHtml.valueAsString)
@@ -40,13 +41,13 @@
 
 @Html(tpi.siteSettings.footerHtml.valueAsString)
 
-@tpi.debikiScriptsEndOfBody
-@Html(tpi.siteSettings.headScriptsHtml.valueAsString)
-@Html(tpi.siteSettings.endOfBodyHtml.valueAsString)
-
 </div>
 </div>
 <div id="esWatchbarColumn"></div>
 <div id="esThisbarColumn"><div id="dw-any-sidebar"></div></div>
+
+@tpi.debikiScriptsEndOfBody
+@Html(tpi.siteSettings.headScriptsHtml.valueAsString)
+@Html(tpi.siteSettings.endOfBodyHtml.valueAsString)
 </body>
 </html>

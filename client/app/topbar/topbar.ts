@@ -84,7 +84,7 @@ export var TopBar = createComponent({
   },
 
   getThisRect: function() {
-    return this.refs.perhapsFixedElem.getDOMNode().getBoundingClientRect();
+    return this.getDOMNode().getBoundingClientRect();
   },
 
   onChange: function() {
@@ -94,17 +94,17 @@ export var TopBar = createComponent({
   },
 
   onScroll: function(event) {
-    var thisTop = this.getThisRect().top;
     var pageTop = this.getPageTop();
-    this.setState({ translateY: -pageTop - this.state.initialOffsetTop });
+    var newTop = -pageTop - this.state.initialOffsetTop;
+    this.setState({ translateY: newTop });
     if (!this.state.fixed) {
-      if (thisTop < -FixedTopDist) {
+      if (-pageTop > this.state.initialOffsetTop + FixedTopDist) {
         this.setState({ fixed: true });
       }
     }
     else {
       // Add +X otherwise sometimes the fixed state won't vanish although back at top of page.
-      if ((thisTop - pageTop) < (this.state.initialOffsetTop + 5)) {
+      if (-pageTop < this.state.initialOffsetTop + 5) {
         this.setState({ fixed: false, translateY: 0 });
       }
     }
@@ -183,7 +183,7 @@ export var TopBar = createComponent({
     // Don't show all these buttons on a homepage / landing page, until after has scrolled down.
     // If not logged in, never show it — there's no reason for new users to login on the homepage.
     if (pageRole === PageRole.HomePage && (!this.state.fixed || !user || !user.isLoggedIn))
-      return r.span({});
+      return r.div();
 
     // ------- Top, Replies, Bottom, Back buttons
 
@@ -320,24 +320,18 @@ export var TopBar = createComponent({
         pageTitle,
         goToButtons);
 
-    var placeholder;
     var fixItClass = '';
     var styles = {};
     if (this.state.fixed) {
-      // The placeholder prevents the page height from suddenly changing when the
-      // topbar becomes fixed and thus is removed from the flow.
-      //placeholder = r.div({ style: { height: this.state.initialHeight }});
       fixItClass = ' dw-fixed-topbar-wrap';
-      styles = { top: this.state.translateY };//transform: 'translateY(' + this.state.translateY + ')' };
+      styles = { top: this.state.translateY }
     }
     return (
-      r.div({},
-        placeholder,
-        r.div({ className: 'esTopbarWrap' + fixItClass, ref: 'perhapsFixedElem', style: styles },
+        r.div({ className: 'esTopbarWrap' + fixItClass, style: styles },
           openWatchbarButton,
           openPagebarButton,
           r.div({ className: 'container' },
-            topbar))));
+            topbar)));
   }
 });
 

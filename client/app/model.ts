@@ -148,7 +148,7 @@ interface User {
   postIdsAutoReadNow: number[];
   marksByPostId: { [postId: number]: any };
   pageHelpMessage?: HelpMessage;
-  closedHelpMessages?: { [id: string]: number };  // id --> closed version of message
+  closedHelpMessages: { [id: string]: number };  // id --> closed version of message
 }
 
 
