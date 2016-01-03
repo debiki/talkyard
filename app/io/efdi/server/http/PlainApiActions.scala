@@ -71,10 +71,10 @@ private[http] object PlainApiActions {
 
     override def invokeBlock[A](request: Request[A], block: ApiRequest[A] => Future[Result]) = {
 
-      val siteId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
+      val site = DebikiHttp.lookupSiteOrThrow(request, Globals.systemDao)
 
       val (actualSidStatus, xsrfOk, newCookies) =
-        DebikiSecurity.checkSidAndXsrfToken(request, siteId, maySetCookies = true)
+        DebikiSecurity.checkSidAndXsrfToken(request, site.id, maySetCookies = true)
 
       // Ignore and delete any broken session id cookie.
       val (mendedSidStatus, deleteSidCookie) =
@@ -90,7 +90,7 @@ private[http] object PlainApiActions {
       // any AsyncResult(future-result-that-might-be-a-failure) here.
       val resultOldCookies: Future[Result] =
         try {
-          runBlockIfAuthOk(request, siteId, mendedSidStatus, xsrfOk, anyBrowserId, block)
+          runBlockIfAuthOk(request, site, mendedSidStatus, xsrfOk, anyBrowserId, block)
         }
         catch {
           case e: Utils.LoginNotFoundException =>
@@ -125,9 +125,9 @@ private[http] object PlainApiActions {
     }
 
 
-    def runBlockIfAuthOk[A](request: Request[A], siteId: SiteId, sidStatus: SidStatus,
+    def runBlockIfAuthOk[A](request: Request[A], site: SiteIdHostname, sidStatus: SidStatus,
           xsrfOk: XsrfOk, browserId: Option[BrowserId], block: ApiRequest[A] => Future[Result]) = {
-      val dao = Globals.siteDao(siteId = siteId)
+      val dao = Globals.siteDao(site.id)
       dao.perhapsBlockGuest(request, sidStatus, browserId)
 
       var anyUser = Utils.loadUserOrThrow(sidStatus, dao)
@@ -152,12 +152,12 @@ private[http] object PlainApiActions {
       }
 
       val apiRequest = ApiRequest[A](
-        sidStatus, xsrfOk, browserId, anyUser, dao, request)
+        site, sidStatus, xsrfOk, browserId, anyUser, dao, request)
 
       RateLimiter.rateLimit(rateLimits, apiRequest)
 
       // COULD use markers instead for site id and ip, and perhaps uri too? Dupl code [5KWC28]
-      val requestUriAndIp = s"site $siteId, ip ${apiRequest.ip}: ${apiRequest.uri}"
+      val requestUriAndIp = s"site $site, ip ${apiRequest.ip}: ${apiRequest.uri}"
       p.Logger.debug(s"API request started [DwM6L8], " + requestUriAndIp)
 
       val timer = Globals.metricRegistry.timer(request.path)

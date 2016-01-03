@@ -172,7 +172,7 @@ class Globals {
 
   /** If a hostname matches this pattern, the site id can be extracted directly from the url.
     */
-  def siteByIdHostnameRegex = state.siteByIdHostnameRegex
+  def siteByIdHostnameRegex: Regex = state.siteByIdHostnameRegex
 
   def SiteByIdHostnamePrefix = "site-"
 

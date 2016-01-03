@@ -81,7 +81,7 @@ object UnsubscriptionController extends mvc.Controller {
 
 
   def handleForm() = ExceptionAction(parse.urlFormEncoded(maxLength = 200)) { implicit request =>
-    val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, debiki.Globals.systemDao)
+    val site = DebikiHttp.lookupSiteOrThrow(request, debiki.Globals.systemDao)
 
     SECURITY // SHOULD rate limit and check email type.
 
@@ -89,7 +89,7 @@ object UnsubscriptionController extends mvc.Controller {
     val loginAttempt = EmailLoginAttempt(
        ip = realOrFakeIpOf(request), date = new ju.Date, emailId = emailId(request))
 
-    val dao = Globals.siteDao(tenantId)
+    val dao = Globals.siteDao(site.id)
 
     val loginGrant =
       try dao.tryLogin(loginAttempt)

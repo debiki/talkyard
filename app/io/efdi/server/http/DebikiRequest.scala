@@ -30,6 +30,7 @@ import play.api.mvc.{Action => _, _}
  */
 abstract class DebikiRequest[A] {
 
+  def siteIdAndCanonicalHostname: SiteIdHostname
   def sid: SidStatus
   def xsrfToken: XsrfOk
   def browserId: Option[BrowserId]
@@ -37,8 +38,12 @@ abstract class DebikiRequest[A] {
   def dao: SiteDao
   def request: Request[A]
 
+  require(siteIdAndCanonicalHostname.id == dao.siteId, "EsE76YW2")
+  require(user.map(_.id) == sid.userId, "EsE7PUUY2")
+
   def tenantId = dao.siteId
   def siteId = dao.siteId
+  def canonicalHostname = siteIdAndCanonicalHostname.hostname
   def domain = request.domain
 
   def siteSettings = dao.loadWholeSiteSettings()
@@ -86,6 +91,8 @@ abstract class DebikiRequest[A] {
 
   def host = request.host
   def hostname = request.host.span(_ != ':')._1
+
+  def colonPort = request.host.dropWhile(_ != ':')
 
   def uri = request.uri
 

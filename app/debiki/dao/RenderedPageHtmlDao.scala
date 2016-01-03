@@ -24,6 +24,7 @@ import debiki._
 import debiki.DebikiHttp._
 import io.efdi.server.http.PageRequest
 import play.{api => p}
+import play.api.Play.current
 import CachingDao._
 import CachingRenderedPageHtmlDao._
 
@@ -109,15 +110,29 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
-    var useCache = pageReq.pageExists
-    useCache &= pageReq.pageRoot == Some(PageParts.BodyNr)
-    useCache &= !pageReq.debugStats
-    useCache &= !pageReq.bypassCache
+    var useMemCache = pageReq.pageExists
+    useMemCache &= pageReq.pageRoot.contains(PageParts.BodyNr)
+    useMemCache &= !pageReq.debugStats
+    useMemCache &= !pageReq.bypassCache
+    if (p.Play.isProd) {
+      // The request.host will be included in the generated html, and if it doesn't match
+      // the correct hostname + port then don't cache the html, because if e.g. the port is
+      // wrong, WebSocket or cookie domains will be wrong, thing's won't work, later
+      // when loading the page via the correct hostname + port (because wrong host in cache).
+      // (Reasons for "wrong" hostname & port include: testing on localhost, or calling the Play
+      // app directly via its own port and cURL, rather than accessing via Nginx port 80/443.)
+      useMemCache &= pageReq.host == pageReq.canonicalHostname + Globals.colonPort
+    }
+    else {
+      // Caching different hostname is ok, but caching the wrong port is annoying because
+      // then Nginx+Nchan work and I have to restart the Play server to empty the cache.
+      useMemCache &= pageReq.colonPort == Globals.colonPort
+    }
 
     // When paginating forum topics in a non-Javascript client, we cannot use the cache.
-    useCache &= ForumController.parsePageQuery(pageReq).isEmpty
+    useMemCache &= ForumController.parsePageQuery(pageReq).isEmpty
 
-    if (!useCache)
+    if (!useMemCache)
       return super.renderPage(pageReq)
 
     val key = renderedPageKey(pageReq.theSitePageId)

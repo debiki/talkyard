@@ -118,6 +118,7 @@ object ViewPageController extends mvc.Controller {
     }
 
     val pageRequest = new PageRequest[Unit](
+      request.siteIdAndCanonicalHostname,
       sid = request.sid,
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,
@@ -195,6 +196,7 @@ object ViewPageController extends mvc.Controller {
       publishDirectly = true)
 
     new DummyPageRequest(
+      request.siteIdAndCanonicalHostname,
       sid = request.sid,
       xsrfToken = request.xsrfToken,
       browserId = request.browserId,

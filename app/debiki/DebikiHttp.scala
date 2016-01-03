@@ -20,18 +20,15 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.SystemDao
-import debiki.Globals.originOf
 import io.efdi.server.http.DebikiRequest
 import java.{net => jn}
 import play.api._
 import play.api.libs.iteratee.Iteratee
 import play.{api => p}
-import play.api.http.ContentTypes._
 import play.api.mvc.{Action => _, _}
 import play.api.Play.current
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import xml.{NodeSeq}
 
 
 /**
@@ -220,8 +217,8 @@ object DebikiHttp {
 
 
   def daoFor(request: Request[_]) = {
-    val siteId = lookupTenantIdOrThrow(originOf(request), debiki.Globals.systemDao)
-    debiki.Globals.siteDao(siteId)
+    val site = lookupSiteOrThrow(originOf(request), debiki.Globals.systemDao)
+    debiki.Globals.siteDao(site.id)
   }
 
 
@@ -234,51 +231,51 @@ object DebikiHttp {
     * them via site id, we don't need to ask the side admin to come up with any
     * site address.
     */
-  def lookupTenantIdOrThrow(request: DebikiRequest[_], systemDao: SystemDao): String =
-    lookupTenantIdOrThrow(request.request, systemDao)
-
-  def lookupTenantIdOrThrow(request: RequestHeader, systemDao: SystemDao): String = {
-    lookupTenantIdOrThrow(request.secure, request.host, request.uri, systemDao)
+  def lookupSiteOrThrow(request: RequestHeader, systemDao: SystemDao): SiteIdHostname = {
+    lookupSiteOrThrow(request.secure, request.host, request.uri, systemDao)
   }
 
-  def lookupTenantIdOrThrow(url: String, systemDao: SystemDao): String = {
+  def lookupSiteOrThrow(url: String, systemDao: SystemDao): SiteIdHostname = {
     val (scheme, separatorHostPathQuery) = url.span(_ != ':')
     val secure = scheme == "https"
     val (host, pathAndQuery) =
       separatorHostPathQuery.drop(3).span(_ != '/') // drop(3) drops "://"
-    lookupTenantIdOrThrow(secure, host = host, pathAndQuery, systemDao)
+    lookupSiteOrThrow(secure, host = host, pathAndQuery, systemDao)
   }
 
-  def lookupTenantIdOrThrow(secure: Boolean, host: String, pathAndQuery: String,
-        systemDao: SystemDao): SiteId = {
+  def lookupSiteOrThrow(secure: Boolean, host: String, pathAndQuery: String,
+        systemDao: SystemDao): SiteIdHostname = {
 
     // Play supports one HTTP and one HTTPS port only, so it makes little sense
     // to include any port number when looking up a site.
     val hostname = if (host contains ':') host.span(_ != ':')._1 else host
+    def firstSiteIdAndHostname =
+      SiteIdHostname(id = Site.FirstSiteId, hostname = Globals.firstSiteHostname.get)
 
-    if (Some(hostname) == Globals.firstSiteHostname)
-      return Site.FirstSiteId
+    if (Globals.firstSiteHostname.contains(hostname))
+      return firstSiteIdAndHostname
 
+    // If the hostname is like "site-123.example.com" then we'll just lookup id 123.
     hostname match {
       case debiki.Globals.siteByIdHostnameRegex(siteId) =>
         systemDao.loadSite(siteId) match {
           case None =>
             throwNotFound("DwE72SF6", s"No site with id `$siteId'")
           case Some(site) =>
-            if (site.hosts.find(_.role == SiteHost.RoleCanonical).isDefined)
-              Logger.warn("Should <link rel='canonical'> to the canonical address [DwE1U80]")
+            COULD // link to canonical host if (site.hosts.exists(_.role == SiteHost.RoleCanonical))
+            return site.idAndCanonicalHostname
         }
-        return siteId
       case _ =>
     }
 
+    // Id unknown so we'll lookup the hostname instead.
     systemDao.lookupCanonicalHost(hostname) match {
       case Some(result) =>
         if (result.thisHost == result.canonicalHost)
-          result.siteId
+          result.siteIdAndCanonicalHostname
         else result.thisHost.role match {
           case SiteHost.RoleDuplicate =>
-            result.siteId
+            result.siteIdAndCanonicalHostname
           case SiteHost.RoleRedirect =>
             throwPermanentRedirect(Globals.originOf(result.canonicalHost.hostname) + pathAndQuery)
           case SiteHost.RoleLink =>
@@ -290,7 +287,7 @@ object DebikiHttp {
         if (Site.Ipv4AnyPortRegex.matches(hostname)) {
           // Make it possible to access the server before any domain has been connected
           // to it and when we still don't know its ip, just after installation.
-          return Site.FirstSiteId
+          return firstSiteIdAndHostname
         }
         throwNotFound("DwE0NSS0", "There is no site with that hostname")
     }

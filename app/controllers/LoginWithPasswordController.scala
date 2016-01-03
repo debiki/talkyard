@@ -47,8 +47,8 @@ object LoginWithPasswordController extends mvc.Controller {
     val password = request.body.getOrThrowBadReq("password")
     val anyReturnToUrl = request.body.getFirst("returnToUrl")
 
-    val siteId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
-    val dao = Globals.siteDao(siteId)
+    val site = DebikiHttp.lookupSiteOrThrow(request.request, Globals.systemDao)
+    val dao = Globals.siteDao(site.id)
 
     val cookies = doLogin(request, dao, email, password)
 

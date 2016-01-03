@@ -80,6 +80,7 @@ object PageRequest {
       throwNotFound("DwE56Jb0", s"No page meta found, page id: ${pagePath.pageId.get}")
 
     new PageRequest[A](
+      apiRequest.siteIdAndCanonicalHostname,
       sid = apiRequest.sid,
       xsrfToken = apiRequest.xsrfToken,
       browserId = apiRequest.browserId,
@@ -118,6 +119,7 @@ object PageRequest {
   * "pageParts".
   */
 class PageRequest[A](
+  val siteIdAndCanonicalHostname: SiteIdHostname,
   val sid: SidStatus,
   val xsrfToken: XsrfOk,
   val browserId: Option[BrowserId],
@@ -218,6 +220,7 @@ class PageRequest[A](
   * when showing comments for an URL for which no page has yet been created.
   */
 class DummyPageRequest[A](
+  siteIdAndCanonicalHostname: SiteIdHostname,
   sid: SidStatus,
   xsrfToken: XsrfOk,
   browserId: Option[BrowserId],
@@ -227,7 +230,7 @@ class DummyPageRequest[A](
   pageMeta: PageMeta,
   dao: SiteDao,
   request: Request[A]) extends PageRequest[A](
-    sid, xsrfToken, browserId, user, pageExists,  pagePath, Some(pageMeta),
-    dao, request) {
+    siteIdAndCanonicalHostname, sid, xsrfToken, browserId, user, pageExists,
+    pagePath, Some(pageMeta), dao, request) {
 
 }

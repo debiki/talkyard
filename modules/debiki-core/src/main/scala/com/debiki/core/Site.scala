@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2011-2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2011-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,8 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 package com.debiki.core
+
+import Prelude._
 
 
 object Site {
@@ -30,6 +31,12 @@ object Site {
   val Ipv4AnyPortRegex = """(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(:\d+)?""".r
 
 }
+
+
+/**
+  * @param hostname — doesn't include any port number.
+  */
+case class SiteIdHostname(id: SiteId, hostname: String)
 
 
 
@@ -57,7 +64,10 @@ case class Site(
   //require((0 /: hosts)(_ + (if (_.isCanonical) 1 else 0)) <= 1)
 
   def canonicalHost: Option[SiteHost] = hosts.find(_.role == SiteHost.RoleCanonical)
-  def theCanonicalHost = canonicalHost.get
+  def theCanonicalHost = canonicalHost getOrDie "EsE7YKF2"
+
+  def idAndCanonicalHostname =
+    SiteIdHostname(id, canonicalHost.getOrDie("EsE2GUY5").hostname)
 }
 
 
@@ -84,7 +94,11 @@ case class SiteHost(
 case class CanonicalHostLookup(
   siteId: SiteId,
   thisHost: SiteHost,
-  canonicalHost: SiteHost)
+  canonicalHost: SiteHost) {
+
+  def siteIdAndCanonicalHostname =
+    SiteIdHostname(siteId, canonicalHost.hostname)
+}
 
 
 abstract class NewSiteData {

@@ -49,6 +49,7 @@ package object http {
 
 
   case class ApiRequest[A](
+    siteIdAndCanonicalHostname: SiteIdHostname,
     sid: SidStatus,
     xsrfToken: XsrfOk,
     browserId: Option[BrowserId],
