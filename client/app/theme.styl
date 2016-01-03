@@ -165,7 +165,8 @@ footer, .footer,
 }
 
 #topbar > .container {
-  padding: 13px 0 12px;
+  padding-top: 13px;
+  padding-bottom: 12px;
   line-height: 100%;
   font-size: 12px;
   color: hsl(0, 0%, 94%);
@@ -288,13 +289,6 @@ html:not(.dw-admin-page):.mouse .container {
   width: 940px;
 }
 
-body { padding: 0 !important; } /* cancel Bootstrap's 20px padding */
-#topbar > .container,
-body > .container {
-  padding-left: 15px;
-  padding-right: 15px;
-}
-
 #topbar > .container { display: table; }
 
 #topbar > .container > * {
@@ -304,33 +298,4 @@ body > .container {
 
 #topbar > .container nav { text-align: right; }
 
-
-/* Container width */
-@media (max-width: 1110px) {
-  .container {
-    width: 100%;
-  }
-}
-@media (min-width: 1110px) {
-  .container {
-    width: 1110px;
-  }
-}
-
-/* Container padding */
-@media (max-width: 801px) {
-  .container {
-    padding: 0 12px;
-  }
-}
-@media (max-width: 651px) {
-  .container {
-    padding: 0 8px;
-  }
-}
-@media (max-width: 581px) {
-  .container {
-    padding: 0 6px;
-  }
-}
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

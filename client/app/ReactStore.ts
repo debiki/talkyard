@@ -184,6 +184,10 @@ ReactDispatcher.register(function(payload) {
       showPost(action.postId, action.showChildrenToo);
       break;
 
+    case ReactActions.actionTypes.SetWatchbarOpen:
+      store.isWatchbarOpen = action.open;
+      break;
+
     case ReactActions.actionTypes.SetHorizontalLayout:
       store.horizontalLayout = action.enabled;
       // Now all gifs will be recreated since the page is rerendered.

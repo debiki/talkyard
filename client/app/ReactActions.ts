@@ -49,6 +49,7 @@ export var actionTypes = {
   CollapseTree: 'CollapseTree',
   UncollapsePost: 'UncollapsePost',
   ShowPost: 'ShowPost',
+  SetWatchbarOpen: 'SetWatchbarOpen',
   SetHorizontalLayout: 'SetHorizontalLayout',
   ChangeSiteStatus: 'ChangeSiteStatus',
   HideHelpMessage: 'HideHelpMessage',
@@ -382,7 +383,7 @@ export function openPagebar() { setPagebarOpen(true); }
 export function closePagebar() { setPagebarOpen(false); }
 
 export function togglePagebarOpen() {
-  $('html').toggleClass('es-pagebar-open');
+  setPagebarOpen(!$('html').is('.es-pagebar-open'));
 }
 
 export function setPagebarOpen(open: boolean) {
@@ -395,12 +396,16 @@ export function openWatchbar() { setWatchbarOpen(true); }
 export function closeWatchbar() { setWatchbarOpen(false); }
 
 export function toggleWatchbarOpen() {
-  $('html').toggleClass('es-watchbar-open');
+  setWatchbarOpen(!$('html').is('.es-watchbar-open'));
 }
 
 export function setWatchbarOpen(open: boolean) {
   if (open) $('html').addClass('es-watchbar-open');
   else $('html').removeClass('es-watchbar-open');
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.SetWatchbarOpen,
+    open: open,
+  });
 }
 
 

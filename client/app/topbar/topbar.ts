@@ -64,7 +64,7 @@ export var TopBar = createComponent({
     keymaster('3', this.goToChat);
     keymaster('4', this.goToEnd);
     var rect = this.getThisRect();
-    var pageTop = this.getPageTop();
+    var pageTop = this.getPageRect().top;
     this.setState({
       initialOffsetTop: rect.top - pageTop,
       initialHeight: rect.bottom - rect.top,
@@ -79,8 +79,8 @@ export var TopBar = createComponent({
     keymaster.unbind('4', 'all');
   },
 
-  getPageTop: function() {
-    return document.getElementById('esPageScrollable').getBoundingClientRect().top;
+  getPageRect: function() {
+    return document.getElementById('esPageScrollable').getBoundingClientRect();
   },
 
   getThisRect: function() {
@@ -91,21 +91,31 @@ export var TopBar = createComponent({
     this.setState({
       store: debiki2.ReactStore.allData()
     });
+    // If the watchbar was opened or closed, we need to rerender with new left: offset.
+    this.onScroll();
   },
 
-  onScroll: function(event) {
-    var pageTop = this.getPageTop();
+  onScroll: function() {
+    var pageRect = this.getPageRect();
+    var pageLeft = pageRect.left;
+    if (this.state.store.isWatchbarOpen) {
+      pageLeft -= 230; // dupl value, in css too [7GYK42]
+    }
+    var pageTop = pageRect.top;
     var newTop = -pageTop - this.state.initialOffsetTop;
-    this.setState({ translateY: newTop });
+    this.setState({ top: newTop, left: -pageLeft });
     if (!this.state.fixed) {
-      if (-pageTop > this.state.initialOffsetTop + FixedTopDist) {
+      if (-pageTop > this.state.initialOffsetTop + FixedTopDist || pageLeft < -40) {
         this.setState({ fixed: true });
       }
+    }
+    else if (pageLeft < -20) {
+      // We've scrolled fairly much to the right, so stay fixed.
     }
     else {
       // Add +X otherwise sometimes the fixed state won't vanish although back at top of page.
       if (-pageTop < this.state.initialOffsetTop + 5) {
-        this.setState({ fixed: false, translateY: 0 });
+        this.setState({ fixed: false, top: 0, left: 0 });
       }
     }
   },
@@ -324,7 +334,7 @@ export var TopBar = createComponent({
     var styles = {};
     if (this.state.fixed) {
       fixItClass = ' dw-fixed-topbar-wrap';
-      styles = { top: this.state.translateY }
+      styles = { top: this.state.top, left: this.state.left }
     }
     return (
         r.div({ className: 'esTopbarWrap' + fixItClass, style: styles },

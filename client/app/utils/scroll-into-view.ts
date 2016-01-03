@@ -37,8 +37,13 @@ export function scrollIntoViewInPageColumn(what, options?) {
 
 
 d.i.elemIsVisible = function(elem) {
-  var coords = d.i.calcScrollIntoViewCoords(
-      elem, { marginTop: 0, marginBottom: 0, marginLeft: 0, marginRight: 0 });
+  var coords = d.i.calcScrollIntoViewCoords(elem, {
+    marginTop: 0,
+    marginBottom: 0,
+    marginLeft: 0,
+    marginRight: 0 ,
+    parent: $('#esPageColumn'), // (could make configurable, probably not needed though)
+  });
   return !coords.needsToScroll;
 };
 

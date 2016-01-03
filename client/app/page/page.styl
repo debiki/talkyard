@@ -11,13 +11,15 @@
 // Columns
 //==============================
 
+$watchbarWidth = 230px  // dupl value, in css too [7GYK42]
+
 body
   overflow: hidden;
 
 #esPageColumn
   top: 0;
   bottom: 0;
-  left: 14vw;
+  left: $watchbarWidth;
   right: 25vw;
   position: fixed;
   // Native scrollbars look different in different browsers. Use js scrollbars instead?
@@ -25,15 +27,13 @@ body
   // or http://jscrollpane.kelvinluck.com/index.html
   overflow-y: scroll;
   overflow-x: visible;
-  .container
-    width: 51vw;
 
 #esWatchbarColumn
   position: fixed;
   top: 0;
   left: 0;
   bottom: 0;
-  width: 14vw;
+  width: $watchbarWidth;
   z-index: 1010;
 
 #esThisbarColumn
@@ -55,6 +55,47 @@ html:not(.es-watchbar-open)
     display: none;
   #esPageColumn
     left: 0;
+
+
+// Page width & padding
+//==============================
+
+#esPageColumn
+  .container
+    width: 100%;
+    max-width: 1100px;
+
+#topbar > .container,
+#dwPosts > div > .container,
+#dwPosts > div > .esTopbarWrap > .container
+  padding-left: 20px;
+  padding-right: 20px;
+
+html.es-watchbar-open
+  #topbar > .container,
+  #dwPosts > div > .container,
+  #dwPosts > div > .esTopbarWrap > .container
+    padding-left: 25px;
+
+html.es-pagebar-open
+  #topbar > .container,
+  #dwPosts > div > .container,
+  #dwPosts > div > .esTopbarWrap > .container
+    padding-right: 20px;
+
+/*
+#esPageColumn[max-width='801px']
+  .container
+    padding: 0 12px;
+
+#esPageColumn[max-width='651px']
+  .container
+    padding: 0 8px;
+
+#esPageColumn[max-width='581px']
+  .container
+    padding: 0 6px;
+*/
 
 
 // The Original Post

@@ -270,6 +270,7 @@ interface Store {
   rootPostId: number;
   allPosts: { [postId: number]: Post };
   topLevelCommentIdsSorted: number[];
+  isWatchbarOpen: boolean;
   horizontalLayout: boolean;
   is2dTreeDefault: boolean;
   socialLinksHtml: string;
