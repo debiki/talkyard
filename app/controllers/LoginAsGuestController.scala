@@ -58,9 +58,6 @@ object LoginAsGuestController extends mvc.Controller {
         isSpamReason =>
       AntiSpam.throwForbiddenIfSpam(isSpamReason, "DwE5KJU3")
 
-      // why? we already have request.siteId & .dao
-      val tenantId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
-
       val loginAttempt = GuestLoginAttempt(
         ip = request.ip,
         date = new ju.Date,
@@ -68,9 +65,9 @@ object LoginAsGuestController extends mvc.Controller {
         email = email,
         guestCookie = request.theBrowserIdData.idCookie)
 
-      val guestUser = Globals.siteDao(tenantId).loginAsGuest(loginAttempt)
+      val guestUser = request.dao.loginAsGuest(loginAttempt)
 
-      val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(guestUser)
+      val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(request.siteId, guestUser)
 
       // Could include a <a href=last-page>Okay</a> link, see the
       // Logout dialog below. Only needed if javascript disabled though,

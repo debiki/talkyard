@@ -48,14 +48,6 @@ package object http {
   }
 
 
-  case class SessionRequest[A](
-    sidStatus: SidStatus,
-    xsrfOk: XsrfOk,
-    browserId: Option[BrowserId],
-    underlying: Request[A]) extends WrappedRequest(underlying)
-
-  type SessionRequestNoBody = SessionRequest[Unit]
-
   case class ApiRequest[A](
     sid: SidStatus,
     xsrfToken: XsrfOk,
@@ -78,8 +70,6 @@ package object http {
   type JsonPostRequest = ApiRequest[JsValue]
 
 
-  val SessionAction = SafeActions.SessionAction
-  val SessionActionNoCookies = SafeActions.SessionActionNoCookies
   val ExceptionAction = SafeActions.ExceptionAction
 
 

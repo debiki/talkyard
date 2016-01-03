@@ -46,13 +46,13 @@ object DebikiSecurity {
    * (No cookies should be set if the response might be cached by a proxy
    * server.)
    */
-  def checkSidAndXsrfToken(request: play.api.mvc.Request[_],
+  def checkSidAndXsrfToken(request: play.api.mvc.Request[_], siteId: SiteId,
         maySetCookies: Boolean)
         : (SidStatus, XsrfOk, List[Cookie]) = {
 
     val sidCookieValOpt = urlDecodeCookie(Sid.CookieName, request)
     val sidStatus: SidStatus =
-      sidCookieValOpt.map(Sid.check(_)) getOrElse SidAbsent
+      sidCookieValOpt.map(Sid.check(siteId, _)) getOrElse SidAbsent
 
     // On GET requests, simply accept the value of the xsrf cookie.
     // (On POST requests, however, we check the xsrf form input value)
@@ -240,10 +240,10 @@ object Xsrf {
       (new ju.Date).getTime +"."+ nextRandomString().take(10))
 
 
-  def newSidAndXsrf(user: User): (SidOk, XsrfOk, List[Cookie]) = {
+  def newSidAndXsrf(siteId: SiteId, user: User): (SidOk, XsrfOk, List[Cookie]) = {
     // Note that the xsrf token is created using the non-base64 encoded
     // cookie value.
-    val sidOk = Sid.create(user)
+    val sidOk = Sid.create(siteId, user)
     val xsrfOk = create()
     val sidCookie = urlEncodeCookie(Sid.CookieName, sidOk.value)
     val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value)
@@ -304,12 +304,12 @@ object Sid {
   private val _sidMaxMillis = 2 * 31 * 24 * 3600 * 1000  // two months
   //private val _sidExpireAgeSecs = 5 * 365 * 24 * 3600  // five years
 
-  def check(value: String): SidStatus = {
+  def check(siteId: SiteId, value: String): SidStatus = {
     // Example value: 88-F7sAzB0yaaX.1312629782081.1c3n0fgykm  - no, obsolete
     if (value.length <= sidHashLength) return SidBadFormat
     val (hash, dotUseridNameDateRandom) = value splitAt sidHashLength
     val realHash = hashSha1Base64UrlSafe(
-      s"$secretSalt$dotUseridNameDateRandom") take sidHashLength
+      s"$secretSalt.$siteId$dotUseridNameDateRandom") take sidHashLength
     if (hash != realHash) return SidBadHash
     dotUseridNameDateRandom.drop(1).split('.') match {
       case Array(userIdString, nameNoDots, dateStr, randVal) =>
@@ -320,7 +320,7 @@ object Sid {
           }
         val ageMillis = (new ju.Date).getTime - dateStr.toLong
         val displayName = nameNoDots.replaceAll("_", ".")
-        //if (ageMillis > _sidMaxMillis)
+        SECURITY //if (ageMillis > _sidMaxMillis)  SHOULD expire the sid
         //  return SidExpired(ageMillis - _sidMaxMillis)
         SidOk(
           value = value,
@@ -334,7 +334,7 @@ object Sid {
   /**
    * Creates and returns a new SID.
    */
-  def create(user: User): SidOk = {
+  def create(siteId: SiteId, user: User): SidOk = {
     // For now, create a SID value and *parse* it to get a SidOk.
     // This is stupid and inefficient.
     val nameNoDots = user.displayName.replaceAllLiterally(".", "_")
@@ -344,11 +344,13 @@ object Sid {
          nameNoDots +"."+
          (new ju.Date).getTime +"."+
          (nextRandomString() take 10)
+    // If the site id wasn't included in the hash, then an admin from site A would
+    // be able to login as admin at site B (if they have the same user id and username).
     val saltedHash = hashSha1Base64UrlSafe(
-      s"$secretSalt.$useridNameDateRandom") take sidHashLength
-    val value = saltedHash +"."+ useridNameDateRandom
+      s"$secretSalt.$siteId.$useridNameDateRandom") take sidHashLength
+    val value = s"$saltedHash.$useridNameDateRandom"
 
-    check(value).asInstanceOf[SidOk]
+    check(siteId, value).asInstanceOf[SidOk]
   }
 
 }

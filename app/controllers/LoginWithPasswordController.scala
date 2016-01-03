@@ -83,7 +83,7 @@ object LoginWithPasswordController extends mvc.Controller {
             verification link; please click it.""")
       }
 
-    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(loginGrant.user)
+    val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(request.siteId, loginGrant.user)
     sidAndXsrfCookies
   }
 
@@ -190,7 +190,7 @@ object LoginWithPasswordController extends mvc.Controller {
     }
 
     // Log the user in.
-    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(user)
+    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(request.siteId, user)
     val newSessionCookies = sidAndXsrfCookies
 
     val anyReturnToUrl: Option[String] = if (returnToUrl.nonEmpty) Some(returnToUrl) else None

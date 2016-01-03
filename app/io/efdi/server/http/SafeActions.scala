@@ -41,92 +41,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object SafeActions {
 
 
-  /**
-   * Checks the SID and XSRF token.
-   *
-   * Throws Forbidden if this is a POST request with no valid XSRF token.
-   * Creates a new XSRF token cookie, if there is none, or if it's invalid.
-   *
-   * Throws Forbidden, and deletes the SID cookie, if any SID login id
-   * doesn't map to any login entry.
-   * The SidStatusRequest.sidStatus passed to the action is either SidAbsent or a SidOk.
-   */
-  val SessionAction = SessionActionMaybeCookies(maySetCookies = true)
-
-
-  /** No cookies, so JS and CSS can be cached by servers.
-    */
-  val SessionActionNoCookies = SessionActionMaybeCookies(maySetCookies = false)
-
-
-  def SessionActionMaybeCookies(maySetCookies: Boolean) = new ActionBuilder[SessionRequest] {
-
-    override def composeAction[A](action: Action[A]) = {
-      ExceptionAction.async(action.parser) { request: Request[A] =>
-        action(request)
-      }
-    }
-
-    override def invokeBlock[A](
-        request: Request[A], block: SessionRequest[A] => Future[Result]) = {
-
-      val (sidStatusReal, xsrfOk, newCookies) =
-        DebikiSecurity.checkSidAndXsrfToken(request, maySetCookies = maySetCookies)
-
-      // Ignore and delete any broken session id cookie.
-      var sidStatusFixed = sidStatusReal
-      var deleteSidCookie = false
-      if (!sidStatusReal.isOk) {
-        sidStatusFixed = SidAbsent
-        deleteSidCookie = maySetCookies
-      }
-
-      val (anyBrowserId, moreNewCookies) =
-        BrowserId.checkBrowserId(request, maySetCookies = maySetCookies)
-
-      // Parts of `block` might be executed asynchronously. However any LoginNotFoundException
-      // should happen before the async parts, because access control should be done
-      // before any async computations are started. So I don't try to recover
-      // any AsyncResult(future-result-that-might-be-a-failure) here.
-      val resultOldCookies: Future[Result] =
-        try {
-          block(SessionRequest(sidStatusFixed, xsrfOk, anyBrowserId, request))
-        }
-        catch {
-          case e: Utils.LoginNotFoundException =>
-            // This might happen if I manually deleted stuff from the
-            // database during development, or if the server has fallbacked
-            // to a standby database.
-            throw ResultException(InternalErrorResult(
-              "DwE034ZQ3", "Internal error, please try again, sorry. "+
-                "(A certain login id has become invalid. You now have "+
-                "a new id, but you will probably need to login again.)")
-              .discardingCookies(DiscardingSecureCookie(Sid.CookieName)))
-        }
-
-      val resultOkSid =
-        if (newCookies.isEmpty && moreNewCookies.isEmpty && !deleteSidCookie) {
-          resultOldCookies
-        }
-        else {
-          assert(maySetCookies)
-          resultOldCookies map { result =>
-            var resultWithCookies = result
-              .withCookies((newCookies ::: moreNewCookies): _*)
-              .withHeaders(MakeInternetExplorerSaveIframeCookiesHeader)
-            if (deleteSidCookie) {
-              resultWithCookies =
-                resultWithCookies.discardingCookies(DiscardingSecureCookie(Sid.CookieName))
-            }
-            resultWithCookies
-          }
-        }
-
-      resultOkSid
-    }
-  }
-
-
   /** IE9 blocks cookies in iframes unless the site in the iframe clarifies its
     * in a P3P header (Platform for Privacy Preferences). (But Debiki's embedded comments
     * needs to work in iframes.) See:
@@ -143,7 +57,7 @@ object SafeActions {
     * that makes IE9 happy. Write it as a single word, so IE doesn't think that e.g.
     * "is" or "not" actually means something.
     */
-  private def MakeInternetExplorerSaveIframeCookiesHeader =
+  def MakeInternetExplorerSaveIframeCookiesHeader =  // should move to PlainApiActions
     "P3P" -> """CP="This_is_not_a_privacy_policy""""
 
 

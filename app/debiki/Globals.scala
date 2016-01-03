@@ -287,13 +287,12 @@ class Globals {
         // Instead, duplicate its implementation here:
         sys.props.get("testserver.port").map(_.toInt) getOrElse 19001
       }
-      else if (Play.isDev) {
-        sys.props.get(s"$scheme.port").map(_.toInt) getOrElse 9000
-      }
       else {
-        Play.configuration.getInt("debiki.port") getOrElse {
-          if (secure) 443
-          else 80
+        Play.configuration.getInt("debiki.port") orElse
+          sys.props.get(s"$scheme.port").map(_.toInt) getOrElse {
+            if (Play.isDev) 9000
+            else if (secure) 443
+            else 80
         }
       }
     }

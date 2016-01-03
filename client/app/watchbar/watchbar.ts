@@ -36,8 +36,9 @@ var Button = reactCreateFactory(ReactBootstrap.Button);
 var watchbar;
 
 export function createWatchbar() {
-  if (watchbar) return;
-  watchbar = React.render(Watchbar(), document.getElementById('esWatchbarColumn'));
+  var elem = document.getElementById('esWatchbarColumn');
+  if (watchbar || !elem) return;
+  watchbar = React.render(Watchbar(), elem);
 }
 
 

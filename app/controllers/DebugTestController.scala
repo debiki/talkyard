@@ -101,9 +101,8 @@ object DebugTestController extends mvc.Controller {
 
 
   /** For performance tests. */
-  def pingSessionAction = SessionAction(empty) {
-    request: SessionRequestNoBody =>
-      Ok("session-action-pong")
+  def pingApiAction = GetAction { request =>
+    Ok("session-action-pong")
   }
 
 

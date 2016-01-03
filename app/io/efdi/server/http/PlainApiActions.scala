@@ -48,28 +48,89 @@ private[http] object PlainApiActions {
     PlainApiActionImpl(NoRateLimits, adminOnly = true, staffOnly = false)
 
 
+
+
+  /** Checks the session id and xsrf token and looks up the user rate limits the endpoint.
+    *
+    * Throws Forbidden if this is a POST request with no valid xsrf token.
+    * Creates a new xsrf token cookie, if there is none, or if it's invalid.
+    *
+    * Throws Forbidden, and deletes the session id cookie, if any login id
+    * doesn't map to any login entry.
+    * The SidStatusRequest.sidStatus passed to the action is either SidAbsent or a SidOk.
+    */
   def PlainApiActionImpl(rateLimits: RateLimits, adminOnly: Boolean,
         staffOnly: Boolean, allowAnyone: Boolean = false) =
       new ActionBuilder[ApiRequest] {
 
     override def composeAction[A](action: Action[A]) = {
-      SessionAction.async(action.parser) { request: Request[A] =>
+      ExceptionAction.async(action.parser) { request: Request[A] =>
         action(request)
       }
     }
 
-    override def invokeBlock[A](
-        genericRequest: Request[A], block: ApiRequest[A] => Future[Result]) = {
-
-      // We've wrapped PlainApiActionImpl in a SessionAction which only provides SessionRequest:s.
-      val request = genericRequest.asInstanceOf[SessionRequest[A]]
+    override def invokeBlock[A](request: Request[A], block: ApiRequest[A] => Future[Result]) = {
 
       val siteId = DebikiHttp.lookupTenantIdOrThrow(request, Globals.systemDao)
 
-      val dao = Globals.siteDao(siteId = siteId)
-      dao.perhapsBlockGuest(request)
+      val (actualSidStatus, xsrfOk, newCookies) =
+        DebikiSecurity.checkSidAndXsrfToken(request, siteId, maySetCookies = true)
 
-      var anyUser = Utils.loadUserOrThrow(request.sidStatus, dao)
+      // Ignore and delete any broken session id cookie.
+      val (mendedSidStatus, deleteSidCookie) =
+        if (actualSidStatus.isOk) (actualSidStatus, false)
+        else (SidAbsent, true)
+
+      val (anyBrowserId, moreNewCookies) =
+        BrowserId.checkBrowserId(request, maySetCookies = true)
+
+      // Parts of `block` might be executed asynchronously. However any LoginNotFoundException
+      // should happen before the async parts, because access control should be done
+      // before any async computations are started. So I don't try to recover
+      // any AsyncResult(future-result-that-might-be-a-failure) here.
+      val resultOldCookies: Future[Result] =
+        try {
+          runBlockIfAuthOk(request, siteId, mendedSidStatus, xsrfOk, anyBrowserId, block)
+        }
+        catch {
+          case e: Utils.LoginNotFoundException =>
+            // This might happen if I manually deleted stuff from the
+            // database during development, or if the server has fallbacked
+            // to a standby database.
+            throw ResultException(InternalErrorResult(
+              "DwE034ZQ3", o"""Internal error, please try again, sorry. For example,
+               reload the page.\n(A certain login id has become invalid. I just gave you
+               a new id, and you will probably need to login again.)""")
+              .discardingCookies(DiscardingSecureCookie(Sid.CookieName)))
+        }
+
+      val resultOkSid =
+        if (newCookies.isEmpty && moreNewCookies.isEmpty && !deleteSidCookie) {
+          resultOldCookies
+        }
+        else {
+          resultOldCookies map { result =>
+            var resultWithCookies = result
+              .withCookies((newCookies ::: moreNewCookies): _*)
+              .withHeaders(SafeActions.MakeInternetExplorerSaveIframeCookiesHeader)
+            if (deleteSidCookie) {
+              resultWithCookies =
+                resultWithCookies.discardingCookies(DiscardingSecureCookie(Sid.CookieName))
+            }
+            resultWithCookies
+          }
+        }
+
+      resultOkSid
+    }
+
+
+    def runBlockIfAuthOk[A](request: Request[A], siteId: SiteId, sidStatus: SidStatus,
+          xsrfOk: XsrfOk, browserId: Option[BrowserId], block: ApiRequest[A] => Future[Result]) = {
+      val dao = Globals.siteDao(siteId = siteId)
+      dao.perhapsBlockGuest(request, sidStatus, browserId)
+
+      var anyUser = Utils.loadUserOrThrow(sidStatus, dao)
       var logoutBecauseSuspended = false
       if (anyUser.exists(_.isSuspendedAt(new ju.Date))) {
         anyUser = None
@@ -91,7 +152,7 @@ private[http] object PlainApiActions {
       }
 
       val apiRequest = ApiRequest[A](
-        request.sidStatus, request.xsrfOk, request.browserId, anyUser, dao, request)
+        sidStatus, xsrfOk, browserId, anyUser, dao, request)
 
       RateLimiter.rateLimit(rateLimits, apiRequest)
 

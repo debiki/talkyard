@@ -19,9 +19,8 @@ package debiki.dao
 
 import com.debiki.core._
 import debiki.DebikiHttp.{throwNotFound, throwForbidden}
-import io.efdi.server.http.SessionRequest
 import java.{util => ju}
-import debiki.DebikiSecurity
+import debiki.{BrowserId, SidStatus, DebikiSecurity}
 import scala.collection.immutable
 import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs
@@ -515,28 +514,29 @@ trait UserDao {
   }
 
 
-  def perhapsBlockGuest(request: SessionRequest[_]) {
-    if (request.underlying.method == "GET")
+  def perhapsBlockGuest(request: play.api.mvc.Request[_], sidStatus: SidStatus,
+        browserId: Option[BrowserId]) {
+    if (request.method == "GET")
       return
 
     // Authenticated users are ignored here. Suspend them instead.
-    if (request.sidStatus.userId.map(User.isRoleId) == Some(true))
+    if (sidStatus.userId.map(User.isRoleId) == Some(true))
       return
 
     // Ignore not-logged-in people, unless they attempt to login as guests.
-    if (request.sidStatus.userId.isEmpty) {
+    if (sidStatus.userId.isEmpty) {
       val guestLoginPath = controllers.routes.LoginAsGuestController.loginGuest().url
       if (!request.path.contains(guestLoginPath))
         return
     }
 
-    if (request.browserId.isEmpty)
+    if (browserId.isEmpty)
       throwForbidden("DwE403NBI0", "No browser id cookie")
 
     // COULD cache blocks, but not really needed since this is for post requests only.
     val blocks = loadBlocks(
       ip = request.remoteAddress,
-      browserIdCookie = request.browserId.get.cookieValue)
+      browserIdCookie = browserId.get.cookieValue)
 
     val nowMillis = System.currentTimeMillis
     for (block <- blocks) {

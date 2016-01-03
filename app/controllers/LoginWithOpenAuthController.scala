@@ -241,7 +241,7 @@ object LoginWithOpenAuthController extends Controller {
     val result =
       try {
         val loginGrant = dao.tryLogin(loginAttempt)
-        createCookiesAndFinishLogin(request, loginGrant.user)
+        createCookiesAndFinishLogin(request, dao.siteId, loginGrant.user)
       }
       catch {
         case ex: DbDao.IdentityNotFoundException =>
@@ -260,7 +260,7 @@ object LoginWithOpenAuthController extends Controller {
             case Some(user) =>
               if (providerHasVerifiedEmail(oauthDetails)) {
                 val loginGrant = dao.createIdentityConnectToUserAndLogin(user, oauthDetails)
-                createCookiesAndFinishLogin(request, loginGrant.user)
+                createCookiesAndFinishLogin(request, dao.siteId, loginGrant.user)
               }
               else {
                 // There is no reliable way of knowing that the current user is really
@@ -333,8 +333,9 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  private def createCookiesAndFinishLogin(request: Request[_], user: User): Result = {
-    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(user)
+  private def createCookiesAndFinishLogin(request: Request[_], siteId: SiteId, user: User)
+        : Result = {
+    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(siteId, user)
 
     val response =
       if (isAjax(request)) {
@@ -467,7 +468,7 @@ object LoginWithOpenAuthController extends Controller {
       val result = try {
         val loginGrant = dao.createIdentityUserAndLogin(userData)
         if (emailVerifiedAt.isDefined) {
-          createCookiesAndFinishLogin(request.request, loginGrant.user)
+          createCookiesAndFinishLogin(request.request, request.siteId, loginGrant.user)
         }
         else {
           LoginWithPasswordController.sendEmailAddressVerificationEmail(

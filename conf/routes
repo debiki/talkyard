@@ -165,7 +165,7 @@ POST  /-/import-site            controllers.ImportExportController.importSiteJso
 POST /-/log-browser-error       controllers.DebugTestController.logBrowserError
 GET  /-/metrics                 controllers.DebugTestController.showMetrics
 GET  /-/ping-exception-action   controllers.DebugTestController.pingExceptionAction
-GET  /-/ping-session-action     controllers.DebugTestController.pingSessionAction
+GET  /-/ping-session-action     controllers.DebugTestController.pingApiAction
 GET  /-/origin                  controllers.DebugTestController.origin
 GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
 GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(sentTo)
