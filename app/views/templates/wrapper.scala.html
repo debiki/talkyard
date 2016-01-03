@@ -32,12 +32,20 @@
   @Html(tpi.anyGoogleUniversalAnalyticsScript)
 </head>
 <body>
-<div id="dw-any-sidebar"></div>
+<!-- wrapper.scala.html -->
+<div id="esPageColumn">
+<div id="esPageScrollable">
 @Html(tpi.siteSettings.headerHtml.valueAsString)
 
 @content
 
 @Html(tpi.siteSettings.footerHtml.valueAsString)
+
+</div>
+</div>
+<div id="esWatchbarColumn"></div>
+<div id="esThisbarColumn"><div id="dw-any-sidebar"></div></div>
+
 @tpi.debikiScriptsEndOfBody
 @Html(tpi.siteSettings.headScriptsHtml.valueAsString)
 @Html(tpi.siteSettings.endOfBodyHtml.valueAsString)

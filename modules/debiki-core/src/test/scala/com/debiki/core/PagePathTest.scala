@@ -198,6 +198,7 @@ class PagePathTest extends FreeSpec with MustMatchers {
           testRejectsBad(s"$folder/zzz)", errorMessagePrefix)
           testRejectsBad(s"$folder/zzz:)", errorMessagePrefix)
           testRejectsBad(s"$folder/:", errorMessagePrefix)
+          testRejectsBad(s"$folder/.zzz", "Page slug starts with dot")
         }
       }
 

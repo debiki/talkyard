@@ -64,6 +64,7 @@ ReactDispatcher.register(function(payload) {
       $('html').removeClass('dw-is-admin, dw-is-staff, dw-is-authenticated');
 
       store.user = makeEmptyUser();
+      debiki2.pubsub.subscribeToServerEventsAsUser(store.user);
       break;
 
     case ReactActions.actionTypes.NewUserAccountCreated:
@@ -183,6 +184,10 @@ ReactDispatcher.register(function(payload) {
       showPost(action.postId, action.showChildrenToo);
       break;
 
+    case ReactActions.actionTypes.SetWatchbarOpen:
+      store.isWatchbarOpen = action.open;
+      break;
+
     case ReactActions.actionTypes.SetHorizontalLayout:
       store.horizontalLayout = action.enabled;
       // Now all gifs will be recreated since the page is rerendered.
@@ -202,6 +207,14 @@ ReactDispatcher.register(function(payload) {
     case ReactActions.actionTypes.ShowHelpAgain:
       putInLocalStorage('closedHelpMessages',  {});
       store.user.closedHelpMessages = {};
+      break;
+
+    case ReactActions.actionTypes.AddNotifications:
+      addNotifications(action.notifications);
+      break;
+
+    case ReactActions.actionTypes.MarkAnyNotificationAsSeen:
+      markAnyNotificationssAsSeen(action.postNr);
       break;
 
     default:
@@ -265,6 +278,8 @@ ReactStore.activateUserSpecificData = function(anyUser) {
   _.each(store.user.unapprovedPosts, (post: Post) => {
     updatePost(post);
   });
+
+  debiki2.pubsub.subscribeToServerEventsAsUser(newUser);
 
   store.quickUpdate = false;
   this.emitChange();
@@ -692,6 +707,50 @@ function sortPostIdsInPlace(postIds: number[], allPosts) {
 }
 
 
+function addNotifications(newNotfs: Notification[]) {
+  var oldNotfs = store.user.notifications;
+  for (var i = 0; i < newNotfs.length; ++i) {
+    var newNotf = newNotfs[i];
+    if (_.every(oldNotfs, n => n.id !== newNotf.id)) {
+      // Modifying state directly, oh well [redux]
+      store.user.notifications.unshift(newNotf);
+      updateNotificationCounts(newNotf, true);
+    }
+  }
+}
+
+
+function markAnyNotificationssAsSeen(postNr) {
+  var notfs: Notification[] = store.user.notifications;
+  _.each(notfs, (notf: Notification) => {
+    if (notf.pageId === store.pageId && notf.postNr === postNr) {
+      // Modifying state directly, oh well [redux]
+      if (!notf.seen) {
+        notf.seen = true;
+        updateNotificationCounts(notf, false);
+        // Simpler to call the server from here:
+        Server.markNotificationAsSeen(notf.id);
+      }
+    }
+  });
+}
+
+
+function updateNotificationCounts(notf: Notification, add: boolean) {
+  // Modifying state directly, oh well [redux]
+  var delta = add ? +1 : -1;
+  if (isTalkToMeNotification(notf)) {
+    store.user.numTalkToMeNotfs += delta;
+  }
+  else if (isTalkToOthersNotification(notf)) {
+    store.user.numTalkToOthersNotfs += delta;
+  }
+  else {
+    store.user.numOtherNotfs += delta;
+  }
+}
+
+
 function makeEmptyUser(): User {
   return {
     rolePageSettings: {},
@@ -709,6 +768,8 @@ function makeEmptyUser(): User {
     postIdsAutoReadLongAgo: [],
     postIdsAutoReadNow: [],
     marksByPostId: {},
+
+    closedHelpMessages: {},
   };
 }
 

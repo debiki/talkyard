@@ -21,6 +21,10 @@ html:not(.dw-react-started)
   #dw-topbar-btns
     visibility: hidden;  // display:none not good, because then other elems too close
 
+.esTopbarWrap
+  position: relative;
+  z-index: 3;
+
 // New:
 .esTopBar
   clearfix()
@@ -30,6 +34,8 @@ html:not(.dw-react-started)
 
   .esAvtrName
     margin-left: 6px;
+    .btn
+      padding-right: 0;
 
   .dw-menu
     .icon-menu
@@ -48,6 +54,36 @@ html:not(.dw-react-started)
     [class^=icon-],
     [class*= icon-]
       font-size: 13px;
+
+  .esNotf-unseen a
+    background: hsl($uiHue, 100%, 95.5%);
+    color: hsl($uiHue, 90%, 20%);
+    margin-bottom: 2px;
+    &:hover
+      background: hsl(207,100%,90%);
+
+
+.esOpenPagebarBtn,
+.esOpenWatchbarBtn
+  border: none;
+  position: relative;
+  top: 5px;
+  padding: 12px 12px;
+  z-index: 1;
+
+.esOpenPagebarBtn
+  float: right;
+html.es-pagebar-open
+  .esOpenPagebarBtn
+    display: none;
+
+
+.esOpenWatchbarBtn
+  float: left;
+html.es-watchbar-open
+  .esOpenWatchbarBtn
+    display: none;
+
 
 // Avoid flash-of-login-button when already logged in.
 html:not(.dw-react-started)
@@ -251,18 +287,15 @@ html:not(.dw-react-started)
   position: absolute; bottom: 0px; right: 0px;
 
 
-// The fixed topbar height should be a little bit less than 44, see sidebar/sidebar.ts [KP43WV3].
 .dw-fixed-topbar-wrap
-  position: fixed;
-  width: 100%;
-  left: 0;
-  top: 0;
+  position: relative;
   z-index: 1010;
   background: white;
-  box-shadow: 0 2px 4px gray;
+  box-shadow: 0 14px 20px white;
 
   .esTopBar
     min-height: auto;
+    margin: 4px 0;
 
     margin: 4px 0;
     @media (max-height: 550px)

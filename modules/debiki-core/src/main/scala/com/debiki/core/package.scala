@@ -70,6 +70,14 @@ package object core {
   type UnixTime = Int    // don't use, I always forget if it's seconds or millis
   type UnixMillis = Long // this is millis :-)
 
+  /** I'll use this instead of whatever-date-time-stuff-there-is. */
+  class When(val unixMillis: UnixMillis) extends AnyVal {
+    def toJavaData = new java.util.Date(unixMillis)
+    def toUnixMillis = unixMillis
+  }
+
+  def now = new When(System.currentTimeMillis())
+
   val HomepageUrlPath = "/"
 
   val MillisPerDay: Long = 24 * 3600 * 1000
@@ -91,6 +99,7 @@ package object core {
 
   val FirstRevisionNr = PostRevision.FirstRevisionNr
 
+  case class SiteUserId(siteId: SiteId, userId: UserId)
   case class SitePageVersion(siteVersion: SiteVersion, pageVersion: PageVersion)
 
   /** If the up-to-date data hash and the cached hash, or the app version, are different,

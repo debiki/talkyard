@@ -87,11 +87,11 @@ var PageWithState = createComponent({
 
 var Page = createComponent({
   render: function() {
-    return (
+    return (r.div({},
+      debiki2.reactelements.TopBar({}),
       r.div({ className: 'container' },
-        debiki2.reactelements.TopBar({}),
         r.article({},
-          TitleBodyComments(this.props))));
+          TitleBodyComments(this.props)))));
   }
 });
 
@@ -133,7 +133,7 @@ var TitleBodyComments = createComponent({
                    // reason the [x] icon is shonw in front of the title.
 
     if (store.pageClosedAtMs) {
-      var closedIcon = r.span({ className: 'icon-cancel-circled-empty' });
+      var closedIcon = r.span({ className: 'icon-block' });
       if (store.pageRole === PageRole.Critique) {  // [plugin]
         return { id: 'EdH4KDPU2', version: 1, content: r.span({},
             "This topic has been ", closedIcon, " closed. People won't get any additional " +
@@ -319,7 +319,7 @@ var Title = createComponent({
       var icon;
       // (Some dupl code, see PostActions below and isDone() and isAnswered() in forum.ts [4KEPW2]
       if (store.pageClosedAtMs && !store.pageDoneAtMs && !store.pageAnsweredAtMs) {
-        icon = r.span({ className: 'icon-cancel-circled-empty' });
+        icon = r.span({ className: 'icon-block' });
         tooltip = makePageClosedTooltipText(store.pageRole) + '\n';
       }
       else if (store.pageRole === PageRole.Question) {

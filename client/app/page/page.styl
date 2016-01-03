@@ -8,6 +8,96 @@
     cursor: pointer
 
 
+// Columns
+//==============================
+
+$watchbarWidth = 230px  // dupl value, in css too [7GYK42]
+
+body
+  overflow: hidden;
+
+#esPageColumn
+  top: 0;
+  bottom: 0;
+  left: $watchbarWidth;
+  right: 25vw;
+  position: fixed;
+  // Native scrollbars look different in different browsers. Use js scrollbars instead?
+  // E.g.: http://stackoverflow.com/a/25480648/694469
+  // or http://jscrollpane.kelvinluck.com/index.html
+  overflow-y: scroll;
+  overflow-x: visible;
+
+#esWatchbarColumn
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: $watchbarWidth;
+  z-index: 1010;
+
+#esThisbarColumn
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 25vw;
+  z-index: 1010;
+
+html:not(.es-pagebar-open)
+  #esThisbarColumn
+    display: none;
+  #esPageColumn
+    right: 0;
+
+html:not(.es-watchbar-open)
+  #esWatchbarColumn
+    display: none;
+  #esPageColumn
+    left: 0;
+
+
+// Page width & padding
+//==============================
+
+#esPageColumn
+  .container
+    width: 100%;
+    max-width: 1100px;
+
+#topbar > .container,
+#dwPosts > div > .container,
+#dwPosts > div > .esTopbarWrap > .container
+  padding-left: 20px;
+  padding-right: 20px;
+
+html.es-watchbar-open
+  #topbar > .container,
+  #dwPosts > div > .container,
+  #dwPosts > div > .esTopbarWrap > .container
+    padding-left: 25px;
+
+html.es-pagebar-open
+  #topbar > .container,
+  #dwPosts > div > .container,
+  #dwPosts > div > .esTopbarWrap > .container
+    padding-right: 20px;
+
+/*
+#esPageColumn[max-width='801px']
+  .container
+    padding: 0 12px;
+
+#esPageColumn[max-width='651px']
+  .container
+    padding: 0 8px;
+
+#esPageColumn[max-width='581px']
+  .container
+    padding: 0 6px;
+*/
+
+
 // The Original Post
 //==============================
 
@@ -61,6 +151,53 @@
       color: hsl($uiHue, 84%, 23%);
       background-color: hsl($uiHue, 80%, 95%);
       padding-right: 7px;
+
+
+// Footer
+//==============================
+
+// Make the footer stick to the bottom.
+// See: http://philipwalton.github.io/solved-by-flexbox/demos/sticky-footer/
+#esPageScrollable
+  display: flex;
+  flex-direction: column;
+  height: 100%; // supposedly avoid some IE 10-11 min-height bug
+#dwPosts
+  flex: 1 0 auto;
+// This avoids some other bug that shrinks these to 0,
+// see: https://github.com/philipwalton/flexbugs#1-minimum-content-sizing-of-flex-items-not-honored
+#topbar,
+footer
+  flex: none;
+.footer
+  margin-top: 0;
+
+
+footer, .footer
+  text-align: center;
+  font-size: 12px;
+  color: #ddd;
+  bottom:0;
+  position: relative;
+  clear: both;
+
+footer
+  margin-top: 4em;
+
+.footer
+  padding: 3.7em 0 3em;
+
+footer p
+  color: #ddd;
+  line-height: 8px;
+
+.footer a, .footer a:visited
+  color: #ddd;
+  text-decoration: underline;
+
+.footer p small
+  font-size: 10px;
+  color: #ddd;
 
 
 // Code pages and templates

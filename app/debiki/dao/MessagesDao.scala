@@ -19,13 +19,9 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.DebikiHttp.{throwNotFound, throwForbidden}
 import io.efdi.server.notf.NotificationGenerator
-import java.{util => ju}
+import io.efdi.server.pubsub
 import debiki.TextAndHtml
-
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.{mutable, immutable}
 
 
 trait MessagesDao {
@@ -34,7 +30,7 @@ trait MessagesDao {
 
   def sendMessage(title: TextAndHtml, body: TextAndHtml, toUserIds: Set[UserId],
         sentById: UserId, browserIdData: BrowserIdData): PagePath = {
-    readWriteTransaction { transaction =>
+    val (pagePath, notfs) = readWriteTransaction { transaction =>
       val sender = transaction.loadTheUser(sentById)
 
       val (pagePath, bodyPost) = createPageImpl2(PageRole.Message, title, body,
@@ -49,8 +45,13 @@ trait MessagesDao {
         sender, bodyPost, toUserIds)
 
       transaction.saveDeleteNotifications(notifications)
-      pagePath
+      (pagePath, notifications)
     }
+
+    pubSub.publish(
+      pubsub.NewPageMessage(siteId, toUserIds, pagePath.thePageId, PageRole.Message, notfs))
+
+    pagePath
   }
 
 

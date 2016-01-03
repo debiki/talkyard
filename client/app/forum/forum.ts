@@ -176,14 +176,14 @@ var ForumComponent = React.createClass({
       },
     });
 
-    return (
+    return (r.div({},
+      debiki2.reactelements.TopBar({}),
       r.div({ className: 'container dw-forum' },
-        debiki2.reactelements.TopBar({}),
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
         r.div({ className: 'dw-page' }),
         ForumIntroText(this.state),
         helpMessage,
-        CategoriesAndTopics(childProps)));
+        CategoriesAndTopics(childProps))));
   }
 });
 
@@ -871,7 +871,7 @@ function makeTitle(topic: Topic, className: string) {
   var title = topic.title;
   if (topic.closedAtMs && !isDone(topic) && !isAnswered(topic)) {
     var tooltip = makePageClosedTooltipText(topic.pageRole);
-    var closedIcon = r.span({ className: 'icon-cancel-circled-empty' });
+    var closedIcon = r.span({ className: 'icon-block' });
     title = r.span({}, closedIcon, title);
   }
   else if (topic.pageRole === PageRole.Question) {

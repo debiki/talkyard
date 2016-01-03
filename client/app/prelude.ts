@@ -38,11 +38,11 @@ export function die(errorMessage: string) {
   }
 }
 
-export function dieIf(condition: boolean, errorMessage: string) {
+export function dieIf(condition, errorMessage: string) {
   if (condition) {
     die(errorMessage);
   }
-};
+}
 
 
 export function scrollToBottom(node) {

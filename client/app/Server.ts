@@ -31,6 +31,10 @@ var $: JQueryStatic = d.i.$;
 var origin = d.i.serverOrigin;
 
 
+interface OngoingRequest {
+  abort(message?: string);
+}
+
 interface RequestData {
   data: any;
   success: (response: any) => void;
@@ -55,6 +59,12 @@ function postJson(urlPath: string, requestData: RequestData) {
 
 
 function postJsonSuccess(urlPath, success: (response: any) => void, data: any, error?) {
+  // Make postJsonSuccess(..., error, data) work:
+  if (!data || _.isFunction(data)) {
+    var tmp = data;
+    data = error;
+    error = tmp;
+  }
   postJson(urlPath, {
     data: data,
     success: success,
@@ -63,14 +73,41 @@ function postJsonSuccess(urlPath, success: (response: any) => void, data: any, e
 }
 
 
-function get(uri: string, success: (response) => void, error?: () => void) {
-  $.get(origin + uri)
-    .done(success)
-    .fail((jqXhr: any, textStatus: string, errorThrown: string) => {
+function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void,
+      error?: () => void): OngoingRequest {
+  var dataType;
+  var headers;
+  if (_.isFunction(options)) {
+    error = <any> success;
+    success = <any> options;
+    options = {};
+  }
+  else {
+    if (!options) options = {};
+    dataType = options.dataType;
+    headers = options.headers;
+  }
+
+  var xhr = $.ajax({
+    url: origin + uri,
+    type: 'GET',
+    dataType: dataType,
+    headers: headers,
+    success: function(response, dummy, xhr) {
+      success(response, xhr);
+    },
+    error: function(jqXhr: any, textStatus: string, errorThrown: string) {
       console.error('Error calling ' + uri + ': ' + JSON.stringify(jqXhr));
-      pagedialogs.getServerErrorDialog().open(jqXhr);
+      if (!options.suppressErrorDialog) {
+        pagedialogs.getServerErrorDialog().open(jqXhr);
+      }
       !error || error();
-    });
+    },
+  });
+
+  return {
+    abort: function(message?: string) { xhr.abort(message); }
+  }
 }
 
 
@@ -274,7 +311,7 @@ export function logout(success: () => void) {
 
 export function loadCompleteUser(userId: number, doneCallback: (user: CompleteUser) => void,
         error?: () => void) {
-  get(origin + '/-/load-complete-user?userId=' + userId, (response) => {
+  get('/-/load-complete-user?userId=' + userId, (response) => {
     doneCallback(response.user);
   }, error);
 }
@@ -392,7 +429,12 @@ export function loadUserActions(userId,
 export function loadNotifications(userId: number, upToWhenMs: number,
       success: (notfs: Notification[]) => void, error: () => void) {
   var query = '?userId=' + userId + '&upToWhenMs=' + upToWhenMs;
-  get(origin + '/-/load-notifications' + query, success, error);
+  get('/-/load-notifications' + query, success, error);
+}
+
+
+export function markNotificationAsSeen(notfId: number, success?: () => void, error?: () => void) {
+  postJsonSuccess('/-/mark-notf-as-seen', success, error, { notfId: notfId });
 }
 
 
@@ -512,7 +554,7 @@ export function loadDraftAndGuidelines(writingWhat: WritingWhat, categoryId: num
 
 export function loadCurrentPostText(postId: number,
       doneCallback: (text: string, postUid: number, revisionNr: number) => void) {
-  get(origin + '/-/edit?pageId='+ d.i.pageId + '&postId='+ postId, (response: any) => {
+  get('/-/edit?pageId='+ d.i.pageId + '&postId='+ postId, (response: any) => {
     // COULD also load info about whether the user may apply and approve the edits.
     doneCallback(response.currentText, response.postUid, response.currentRevisionNr);
   });
@@ -704,6 +746,57 @@ export function cyclePageDone(success: (newPlannedAndDoneAt: any) => void) {
 
 export function togglePageClosed(success: (closedAtMs: number) => void) {
   postJsonSuccess('/-/toggle-page-closed', success, { pageId: d.i.pageId });
+}
+
+
+var longPollingState = {
+  ongoingRequest: null,
+  lastModified: null,
+  lastEtag: null,
+};
+
+
+/**
+ * Built for talking with Nginx and nchan, see: https://github.com/slact/nchan#long-polling
+ */
+export function sendLongPollingRequest(userId: number, success: (event: any) => void,
+      error: () => void) {
+  dieIf(longPollingState.ongoingRequest, "Already long-polling the server [EsE7KYUX2]");
+  var options: any = {
+    dataType: 'json',
+    // Firefox always calls the error callback if a long polling request is ongoing when
+    // navigating away / closing the tab. So the dialog would be visible for 0.1 confusing seconds.
+    suppressErrorDialog: true,
+  };
+  if (longPollingState.lastEtag) {
+    options.headers = {
+      'If-Modified-Since': longPollingState.lastModified,
+      'If-None-Match': longPollingState.lastEtag,
+    };
+  }
+  longPollingState.ongoingRequest =
+      get('/-/pubsub/subscribe/' + userId, options, (response, xhr) => {
+        longPollingState.ongoingRequest = null;
+        longPollingState.lastModified = xhr.getResponseHeader('Last-Modified');
+        longPollingState.lastEtag = xhr.getResponseHeader('Etag');
+        success(response);
+      }, () => {
+        longPollingState.ongoingRequest = null;
+        error();
+      });
+}
+
+
+export function isLongPollingServerNow(): boolean {
+  return !!longPollingState.ongoingRequest;
+}
+
+
+export function cancelAnyLongPollingRequest() {
+  if (longPollingState.ongoingRequest) {
+    longPollingState.ongoingRequest.abort("Intentionally cancelled [EsM2UZKW4]");
+    longPollingState.ongoingRequest = null;
+  }
 }
 
 

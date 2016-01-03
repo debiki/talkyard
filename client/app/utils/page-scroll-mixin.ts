@@ -27,13 +27,13 @@ var r = React.DOM;
 
 export var PageScrollMixin = {
   componentDidMount: function() {
-    window.addEventListener('scroll', this.__onScroll, false);
+    document.getElementById('esPageColumn').addEventListener('scroll', this.__onScroll, false);
     this.checkIsScrollingHandle = setInterval(this.__checkIsScrolling, 100);
     this.isScrolling = false;
     this.lastScrollTime = 0;
   },
   componentWillUnmount: function() {
-    window.removeEventListener('scroll', this.__onScroll, false);
+    document.getElementById('esPageColumn').removeEventListener('scroll', this.__onScroll, false);
     clearInterval(this.checkIsScrollingHandle);
   },
   __checkIsScrolling: function() {

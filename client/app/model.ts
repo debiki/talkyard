@@ -148,7 +148,7 @@ interface User {
   postIdsAutoReadNow: number[];
   marksByPostId: { [postId: number]: any };
   pageHelpMessage?: HelpMessage;
-  closedHelpMessages?: { [id: string]: number };  // id --> closed version of message
+  closedHelpMessages: { [id: string]: number };  // id --> closed version of message
 }
 
 
@@ -270,6 +270,7 @@ interface Store {
   rootPostId: number;
   allPosts: { [postId: number]: Post };
   topLevelCommentIdsSorted: number[];
+  isWatchbarOpen: boolean;
   horizontalLayout: boolean;
   is2dTreeDefault: boolean;
   socialLinksHtml: string;

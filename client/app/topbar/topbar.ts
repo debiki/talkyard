@@ -20,6 +20,7 @@
 /// <reference path="../login/login-dialog.ts" />
 /// <reference path="../page-tools/page-tools.ts" />
 /// <reference path="../utils/page-scroll-mixin.ts" />
+/// <reference path="../utils/scroll-into-view.ts" />
 /// <reference path="../post-navigation/posts-trail.ts" />
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../notification/Notification.ts" />
@@ -38,6 +39,7 @@ var Button = reactCreateFactory(ReactBootstrap.Button);
 var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
+var FixedTopDist = 8;
 
 export var TopBar = createComponent({
   mixins: [debiki2.StoreListenerMixin, debiki2.utils.PageScrollMixin],
@@ -61,10 +63,12 @@ export var TopBar = createComponent({
     keymaster('2', this.goToReplies);
     keymaster('3', this.goToChat);
     keymaster('4', this.goToEnd);
-    var rect = this.getDOMNode().getBoundingClientRect();
+    var rect = this.getThisRect();
+    var pageTop = this.getPageRect().top;
     this.setState({
-      initialOffsetTop: rect.top + window.pageYOffset,
+      initialOffsetTop: rect.top - pageTop,
       initialHeight: rect.bottom - rect.top,
+      fixed: rect.top < -FixedTopDist,
     });
   },
 
@@ -75,23 +79,43 @@ export var TopBar = createComponent({
     keymaster.unbind('4', 'all');
   },
 
+  getPageRect: function() {
+    return document.getElementById('esPageScrollable').getBoundingClientRect();
+  },
+
+  getThisRect: function() {
+    return this.getDOMNode().getBoundingClientRect();
+  },
+
   onChange: function() {
     this.setState({
       store: debiki2.ReactStore.allData()
     });
+    // If the watchbar was opened or closed, we need to rerender with new left: offset.
+    this.onScroll();
   },
 
-  onScroll: function(event) {
-    var node = this.getDOMNode();
+  onScroll: function() {
+    var pageRect = this.getPageRect();
+    var pageLeft = pageRect.left;
+    if (this.state.store.isWatchbarOpen) {
+      pageLeft -= 230; // dupl value, in css too [7GYK42]
+    }
+    var pageTop = pageRect.top;
+    var newTop = -pageTop - this.state.initialOffsetTop;
+    this.setState({ top: newTop, left: -pageLeft });
     if (!this.state.fixed) {
-      if (node.getBoundingClientRect().top < -8) {
+      if (-pageTop > this.state.initialOffsetTop + FixedTopDist || pageLeft < -40) {
         this.setState({ fixed: true });
       }
     }
+    else if (pageLeft < -20) {
+      // We've scrolled fairly much to the right, so stay fixed.
+    }
     else {
       // Add +X otherwise sometimes the fixed state won't vanish although back at top of page.
-      if (window.pageYOffset < this.state.initialOffsetTop + 5) {
-        this.setState({ fixed: false });
+      if (-pageTop < this.state.initialOffsetTop + 5) {
+        this.setState({ fixed: false, top: 0, left: 0 });
       }
     }
   },
@@ -138,22 +162,23 @@ export var TopBar = createComponent({
 
   goToTop: function() {
     debiki2.postnavigation.addVisitedPosition();
-    $('.dw-page')['dwScrollIntoView']();
+    utils.scrollIntoViewInPageColumn($('.dw-page'), { marginTop: 30, marginBottom: 9999 });
   },
 
   goToReplies: function() {
     debiki2.postnavigation.addVisitedPosition();
-    $('.dw-depth-0 > .dw-p-as')['dwScrollIntoView']({ marginTop: 48, marginBottom: 9999 });
+    utils.scrollIntoViewInPageColumn(
+        $('.dw-depth-0 > .dw-p-as'), { marginTop: 60, marginBottom: 9999 });
   },
 
   goToChat: function() {
     debiki2.postnavigation.addVisitedPosition();
-    $('#dw-chat')['dwScrollIntoView']({ marginTop: 60, marginBottom: 9999 });
+    utils.scrollIntoViewInPageColumn($('#dw-chat'), { marginTop: 60, marginBottom: 9999 });
   },
 
   goToEnd: function() {
     debiki2.postnavigation.addVisitedPosition();
-    $('#dw-the-end')['dwScrollIntoView']({ marginTop: 60, marginBottom: 30 });
+    utils.scrollIntoViewInPageColumn($('#dw-the-end'), { marginTop: 60, marginBottom: 30 });
   },
 
   viewOlderNotfs: function() {
@@ -168,7 +193,7 @@ export var TopBar = createComponent({
     // Don't show all these buttons on a homepage / landing page, until after has scrolled down.
     // If not logged in, never show it — there's no reason for new users to login on the homepage.
     if (pageRole === PageRole.HomePage && (!this.state.fixed || !user || !user.isLoggedIn))
-      return r.span({});
+      return r.div();
 
     // ------- Top, Replies, Bottom, Back buttons
 
@@ -201,7 +226,8 @@ export var TopBar = createComponent({
     var otherNotfs = makeNotfIcon('other', user.numOtherNotfs);
     var anyDivider = user.notifications.length ? MenuItem({ divider: true }) : null;
     var notfsElems = user.notifications.map(notf =>
-        MenuItem({ key: notf.id, onSelect: () => ReactActions.openNotificationSource(notf) },
+        MenuItem({ key: notf.id, onSelect: () => ReactActions.openNotificationSource(notf),
+            className: notf.seen ? '' : 'esNotf-unseen' },
           notification.Notification({ notification: notf })));
     if (user.thereAreMoreUnseenNotfs) {
       notfsElems.push(
@@ -279,6 +305,17 @@ export var TopBar = createComponent({
           r.div({ className: 'dw-topbar-title' }, Title(titleProps));
     }
 
+    // ------- Watchbar and Pagebar buttons
+
+    var openPagebarButton = !isPageWithSidebar(pageRole) ? null :
+        Button({ className: 'esOpenPagebarBtn', onClick: ReactActions.openPagebar },
+            r.span({ className: 'icon-left-open' }));
+
+    var openWatchbarButton = !isPageWithWatchbar(pageRole) ? null :
+        Button({ className: 'esOpenWatchbarBtn', onClick: ReactActions.openWatchbar },
+            r.span({ className: 'icon-right-open' }));
+
+
     // ------- The result
 
     var topbar =
@@ -293,22 +330,18 @@ export var TopBar = createComponent({
         pageTitle,
         goToButtons);
 
-    var placeholder;
-    var fixItClass;
-    var containerClass;
+    var fixItClass = '';
+    var styles = {};
     if (this.state.fixed) {
-      // The placeholder prevents the page height from suddenly changing when the
-      // topbar becomes fixed and thus is removed from the flow.
-      placeholder = r.div({ style: { height: this.state.initialHeight }});
-      fixItClass = 'dw-fixed-topbar-wrap';
-      containerClass = 'container';
+      fixItClass = ' dw-fixed-topbar-wrap';
+      styles = { top: this.state.top, left: this.state.left }
     }
     return (
-      r.div({},
-        placeholder,
-        r.div({ className: fixItClass },
-          r.div({ className: containerClass },
-            topbar))));
+        r.div({ className: 'esTopbarWrap' + fixItClass, style: styles },
+          openWatchbarButton,
+          openPagebarButton,
+          r.div({ className: 'container' },
+            topbar)));
   }
 });
 

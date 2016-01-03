@@ -104,6 +104,16 @@ private[http] object PlainApiActions {
       var result = try {
         block(apiRequest)
       }
+      catch {
+        case ex: ResultException =>
+          // This is fine, probably just a 403 Forbidden exception or 404 Not Found, whatever.
+          p.Logger.debug(
+            s"API request result exception [EsE4K2J2]: $ex, $requestUriAndIp")
+          throw ex
+        case ex: Exception =>
+          p.Logger.warn(s"API request unexpected exception [EsE4JYU0], $requestUriAndIp", ex)
+          throw ex
+      }
       finally {
         timerContext.stop()
       }

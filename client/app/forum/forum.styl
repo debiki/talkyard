@@ -220,7 +220,7 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
 
         .icon-idea:before,
         .icon-attention-circled:before, // problems
-        .icon-cancel-circled-empty:before, // closed topics
+        .icon-block:before, // closed topics
         .icon-ok-circled-empty:before, // solved questions
         .icon-check:before  // fixed todos
           color: hsl(0, 0%, 40%);
@@ -274,6 +274,11 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
   font-size: 14px;
   margin: -25px 0 0; // place inside the #dw-react-topbar, or too much whitespace above title
   padding-left: 0; // needed for FF, not Chrome. Weird
+
+  z-index: 5; // else below topbar, not clickable
+  position: relative;
+  float: left; // otherwise would cover the topbar buttons, steal clicks
+
   @media (max-width: 600px)
     margin-top: 30px;  // don't overlap with #dw-react-topbar contents
   a
@@ -322,7 +327,7 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
       opacity: 0.85;
 
     .icon-help-circled:before,
-    .icon-cancel-circled-empty:before
+    .icon-block:before
       opacity: 0.8;
 
 

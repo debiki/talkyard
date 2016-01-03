@@ -19,15 +19,19 @@
 // Would have been member functions, had it been possible to amend the React
 // state tree with functions.
 
+
+// Tells if a user may do something, and why s/he may do that, or why not.
 interface MayMayNot {
   value: boolean;
-  yes: boolean;    // = may do it
-  no: boolean;     // = may not
+  do_: boolean;   // true = may do it, use like so: if (may.do_) ...
+  not: boolean;   // true = may not, use like so:   if (may.not) ...
+  yes: boolean;   // true = may do it  -- try to remove?
+  no: boolean;    // true = may not    -- try to remove?
   reason?: string;
 }
 
 function mayMayNot(may: boolean, reason: string): MayMayNot {
-  return { value: may, yes: may, no: !may, reason: reason };
+  return { value: may, do_: may, not: !may, yes: may, no: !may, reason: reason };
 }
 
 function mayIndeed() {
@@ -44,6 +48,21 @@ function canClose(pageRole: PageRole) {
   // Lock messages instead so no new replies can be added.
   return pageRole !== PageRole.Message;
 }
+
+function isPageWithSidebar(pageRole: PageRole): boolean {
+  return pageRole === PageRole.About ||
+      pageRole === PageRole.Question || pageRole === PageRole.Problem ||
+      pageRole === PageRole.Idea || pageRole === PageRole.ToDo ||
+      pageRole === PageRole.Critique || // [plugin]
+      pageRole === PageRole.MindMap || pageRole === PageRole.Discussion ||
+      pageRole === PageRole.WebPage || pageRole === PageRole.EmbeddedComments;
+}
+
+function isPageWithWatchbar(pageRole: PageRole): boolean {
+  return isPageWithSidebar(pageRole) || pageRole === PageRole.Forum;
+}
+
+
 
 function maySendInvites(user: User | CompleteUser): MayMayNot {
   // Currently only admins may send invites.
@@ -69,5 +88,17 @@ function isMember(user: User | CompleteUser): boolean {
 function isStaff(user: User) {
   return user.isAdmin || user.isModerator;
 }
+
+
+function isTalkToMeNotification(notf: Notification): boolean {
+  return notf.type === NotificationType.DirectReply ||
+          notf.type === NotificationType.Mention ||
+          notf.type === NotificationType.Message;
+}
+
+function isTalkToOthersNotification(notf: Notification): boolean {
+  return notf.type === NotificationType.NewPost;
+}
+
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list
