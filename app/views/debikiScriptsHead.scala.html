@@ -51,7 +51,8 @@ occurrence of the magic string with user specific data. *@
 *@
 <script>
 @* This <html> class helps us avoid flashes-of-whatever. (Moderinzr won't run until later.) *@
-document.documentElement.className += ' js';
+var docElem = document.documentElement;
+docElem.className += ' js';
 
   @* See https://stackoverflow.com/a/1912522/694469. The <div> isn't added to the document
    so no <script> would be executed. — But yes it would indeed?
@@ -98,7 +99,17 @@ document.documentElement.className += ' js';
   var hideIntro = localStorage.getItem('hideForumIntro')
   __reactStore.hideForumIntro = hideIntro && hideIntro !== 'false';
   if (__reactStore.hideForumIntro) {
-    document.documentElement.className += ' dw-hide-forum-intro';
+    docElem.className += ' dw-hide-forum-intro';
+  }
+
+  if (location.search.search('&watchbar') !== -1) {
+    docElem.className += ' es-watchbar-open';
+    __reactStore.isWatchbarOpen = true;
+  }
+
+  if (location.search.search('&pagebar') !== -1) {
+    docElem.className += ' es-pagebar-open';
+    __reactStore.isPagebarOpen = true;
   }
 
   var debiki = {
