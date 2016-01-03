@@ -47,6 +47,10 @@ export var TitleEditor = createComponent({
   componentDidMount: function() {
     if (!this.props.forumId)
       return;
+    Server.loadEditorEtceteraScripts().done(() => {
+      if (!this.isMounted()) return;
+      this.setState({ editorScriptsLoaded: true });
+    });
     debiki2.Server.loadForumCategories(this.props.forumId, (categories: Category[]) => {
       if (!this.isMounted())
         return;
@@ -119,6 +123,11 @@ export var TitleEditor = createComponent({
     var titlePost: Post = this.props.allPosts[TitleId];
     var titleText = titlePost.sanitizedHtml; // for now. TODO only allow plain text?
     var user = this.props.user;
+
+    if (!this.state.editorScriptsLoaded) {
+      // The title is not shown, so show some whitespace to avoid the page jumping upwards.
+      return r.div({ style: { height: 80 }});
+    }
 
     var complicatedStuff;
     if (this.state.showComplicated) {

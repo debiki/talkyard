@@ -268,3 +268,5 @@ function debikiSlugify(s) {
    return s.replace(/[-\s]+/g, "-");
 }
 
+window.debikiSlugify = debikiSlugify;
+
