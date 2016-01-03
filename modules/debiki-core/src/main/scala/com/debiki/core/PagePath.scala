@@ -318,6 +318,9 @@ object PagePath {
     if (pageSlug.length > MaxSlugLength)
       return Parsed.Bad("Slug too long")
 
+    if (pageSlug startsWith ".")
+      return Parsed.Bad("Page slug starts with dot")
+
     if (folder.intersect(_BadPunctFolder).nonEmpty)
       return Parsed.Bad("Bad characters in page folder")
 
