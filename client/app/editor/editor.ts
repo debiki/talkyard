@@ -145,6 +145,8 @@ export var Editor = createComponent({
           Server.listUsernames(prefix, callback);
         }
       }
+    }).on('inserted.atwho', (event, flag, query) => {
+      this.onTextEdited(event);
     });
   },
 

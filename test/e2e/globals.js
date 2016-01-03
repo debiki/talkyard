@@ -26,7 +26,7 @@ catch (error) {
 // Setup settings.
 var e2eTestPassword = args.password;
 var secure = args.secure;
-var host = args.host || (secure ? 'localhost:9443' : 'localhost:9000');
+var host = args.host || 'localhost';
 var scheme = secure ? 'https' : 'http';
 var mainSiteOrigin = scheme + '://' + host;
 var newSiteDomain = args.newSiteDomain || host;

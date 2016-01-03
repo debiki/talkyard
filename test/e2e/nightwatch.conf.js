@@ -10,6 +10,8 @@ module.exports = {
   "selenium": {
     "start_process": true,
     "server_path": "downloads/selenium-server-standalone.jar",
+    "host" : "127.0.0.1",
+    "port" : 4444,
     "log_path": "target/e2e-tests/",
     "cli_args": {
       "webdriver.chrome.driver": "downloads/chromedriver",
