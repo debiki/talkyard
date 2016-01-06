@@ -185,6 +185,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.SetWatchbarOpen:
+      putInLocalStorage('isWatchbarOpen', action.open);
       store.isWatchbarOpen = action.open;
       break;
 
@@ -293,16 +294,22 @@ ReactStore.allData = function() {
 
 ReactStore.isGuestLoginAllowed = function() {
   return store.guestLoginAllowed || false;
-}
+};
 
 ReactStore.getPageId = function() {
   return store.pageId;
-}
+};
 
 
 ReactStore.getPageRole = function(): PageRole {
   return store.pageRole;
-}
+};
+
+
+ReactStore.getPageTitle = function(): string {
+  var titlePost = store.allPosts[TitleId];
+  return titlePost ? titlePost.sanitizedHtml : "(no title)";
+};
 
 
 ReactStore.getUser = function(): User {
@@ -782,6 +789,18 @@ function addLocalStorageData(user: User) {
   user.postIdsAutoReadLongAgo = sidebar.UnreadCommentsTracker.getPostIdsAutoReadLongAgo();
   user.marksByPostId = {}; // not implemented: loadMarksFromLocalStorage();
   user.closedHelpMessages = getFromLocalStorage('closedHelpMessages') || {};
+
+  // For now:
+  // The watchbar: Recent topics.
+  var recentTopics: WatchbarTopic[] = getFromLocalStorage('recentTopics') || [];
+  // Add the current page, if absent, and if it's not a direct-message or chat-channel.
+  var shallListInRecentTopics = isWatchbarRecentTopicsPageRole(ReactStore.getPageRole());
+  if (shallListInRecentTopics && _.every(recentTopics, topic => topic.pageId !== store.pageId)) {
+    recentTopics.unshift({ pageId: store.pageId, title: ReactStore.getPageTitle() });
+    putInLocalStorage('recentTopics', recentTopics);
+  }
+  user.watchbarTopics = user.watchbarTopics || <WatchbarTopics> {};
+  user.watchbarTopics.recentTopics = recentTopics;
 }
 
 

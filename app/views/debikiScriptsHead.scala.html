@@ -102,12 +102,14 @@ docElem.className += ' js';
     docElem.className += ' dw-hide-forum-intro';
   }
 
-  if (location.search.search('&watchbar') !== -1) {
+  if (localStorage.getItem('isWatchbarOpen') === 'true' ||
+      location.search.search('&watchbar') !== -1) {
     docElem.className += ' es-watchbar-open';
     __reactStore.isWatchbarOpen = true;
   }
 
-  if (location.search.search('&pagebar') !== -1) {
+  if (localStorage.getItem('isPagebarOpen') === 'true' ||
+      location.search.search('&pagebar') !== -1) {
     docElem.className += ' es-pagebar-open';
     __reactStore.isPagebarOpen = true;
   }

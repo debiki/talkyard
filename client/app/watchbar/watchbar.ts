@@ -78,13 +78,33 @@ export var Watchbar = createComponent({
     if (!isPageWithWatchbar(store.pageRole))
       return null;
 
+    function makeMakeTopicElemFn(className: string) {
+      return function(topic: WatchbarTopic) {
+        var isCurrentTopicClass = topic.pageId === store.pageId ? ' esWatchbar_topic-current' : '';
+        return (
+            r.li({ key: topic.pageId, className: className + isCurrentTopicClass,
+                onClick: () => ReactActions.openPage(topic.pageId) },
+              r.span({}, topic.title)));
+      }
+    }
+
+    var watchbarTopics = store.user.watchbarTopics;
+    var recentTopics = [];
+    if (watchbarTopics) {
+      recentTopics = watchbarTopics.recentTopics.map(makeMakeTopicElemFn('esWatchbar_topic-forum'));
+    }
+
     // For now, hardcoded stuff:
     return (
       r.div({ className: 'esWatchbar', ref: 'watchbar' },
         Button({ className: 'esCloseWatchbarBtn', onClick: ReactActions.closeWatchbar },
             r.span({ className: 'icon-left-open' })),
         r.div({ className: 'esWatchbar_topics' },
-          r.h3({}, 'Forum topics'),
+          r.h3({}, 'Recent topics'),
+          r.ul({},
+            recentTopics)),
+        r.div({ className: 'esWatchbar_topics' },
+          r.h3({}, 'Watched topics'),
           r.ul({},
             r.li({ className: 'esWatchbar_topic-forum' }, r.span({}, "User rank should be a little more forgiving and give more insight")),
             r.li({ className: 'esWatchbar_topic-forum' }, r.span({}, "What are Discourse’s main competitors and what are their relative pros and cons?")),

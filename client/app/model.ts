@@ -18,6 +18,24 @@
 /// <reference path="constants.ts" />
 /// <reference path="rules.ts" />
 
+type PageId = string;
+type PostId = number;
+type PostNr = number;
+type PageVersion = number;
+type CategoryId = number;
+type SiteId = String;
+type SiteVersion = number;
+type LoginId = String;
+type UserId = number;
+type RoleId = UserId;
+type NotificationId = number;
+type ReviewTaskId = number;
+type IdentityId = String;
+type IpAddress = String;
+type EmailId = String;
+type AuditLogEntryId = number;
+
+
 var TitleId = 0;
 var BodyPostId = 1;
 
@@ -142,6 +160,8 @@ interface User {
   thereAreMoreUnseenNotfs: boolean;
   notifications: Notification[];
 
+  watchbarTopics?: WatchbarTopics;
+
   votes: any;
   unapprovedPosts: any;
   postIdsAutoReadLongAgo: number[];
@@ -228,6 +248,17 @@ interface OrderOffset {  // COULD rename to TopicQuery? (because includes filter
   time?: number;
   numLikes?: number;
   topicFilter?: string;
+}
+
+
+interface WatchbarTopic {
+  pageId: PageId;
+  title: string;
+}
+
+
+interface WatchbarTopics {
+  recentTopics: WatchbarTopic[];
 }
 
 

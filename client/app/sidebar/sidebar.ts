@@ -69,7 +69,7 @@ export var Sidebar = createComponent({
 
     return {
       store: store,
-      commentsType: 'Recent',
+      commentsType: isPageWithComments(store.pageRole) ? 'Recent' : 'Users',
       // showPerhapsUnread: false,
     };
   },
@@ -105,6 +105,12 @@ export var Sidebar = createComponent({
       showPerhapsUnread: !this.state.showPerhapsUnread
     });
   }, */
+
+  showUsers: function() {
+    this.setState({
+      commentsType: 'Users'
+    });
+  },
 
   componentDidMount: function() {
     if (isPageWithSidebar(this.state.store.pageRole)) {
@@ -261,20 +267,22 @@ export var Sidebar = createComponent({
       return null;
 
     var minimapProps = $.extend({ ref: 'minimap' }, store);
-    var commentsFound = this.findComments();
+    var commentsFound = isPageWithComments(store.pageRole) ? this.findComments() : null;
 
     var sidebarClasses = '';
     if (store.horizontalLayout) {
       sidebarClasses += ' dw-sidebar-fixed';
     }
 
-    //var unreadBtnTitle = 'Unread (' + commentsFound.unread.length + ')';
-    var starredBtnTitle = 'Starred (' + commentsFound.starred.length + ')';
+    //var unreadBtnTitle = commentsFound ? 'Unread (' + commentsFound.unread.length + ')' : null;
+    var starredBtnTitle = commentsFound ? 'Starred (' + commentsFound.starred.length + ')' : null;
+    var usersBtnTitle = "Users (?/?)";
 
     var title;
     var unreadClass = '';
     var recentClass = '';
     var starredClass = '';
+    var usersClass = '';
     var comments: Post[];
     switch (this.state.commentsType) {
       case 'Recent':
@@ -296,6 +304,18 @@ export var Sidebar = createComponent({
             'Starred Comments: (click to show)' : 'No starred comments.';
         starredClass = ' active';
         comments = commentsFound.starred;
+        break;
+      case 'Users':
+        var inThisWhat = "in this topic";
+        if (store.pageRole === PageRole.Forum) {
+          inThisWhat = "in this forum";
+          // if is-category: "in this category"
+          //  — or another set of buttons for forum / category ?
+        }
+        title = "Users " + inThisWhat;
+        usersClass = ' active';
+        // users = ... load from server ...
+        comments = [];
         break;
       default:
         console.error('[DwE4PM091]');
@@ -334,6 +354,12 @@ export var Sidebar = createComponent({
             'Let the computer try to determine when you have read a comment.'),
           tips);
     }*/
+    if (this.state.commentsType === 'Users') {
+      tipsOrExtraConfig =
+          r.p({}, "Here will be shown a list of all users in this topic / category / forum. " +
+            "Those who are online will be listed first, with a green is-online-icon. " +
+            "X/Y above means X users are online out of Y users in this topic / category / forum.");
+    }
 
     var smallScreen = Math.min(debiki.window.width(), debiki.window.height()) < 500;
     var abbreviateHowMuch = smallScreen ? 'Much' : 'ABit';
@@ -350,25 +376,47 @@ export var Sidebar = createComponent({
           Post(postProps)));
     });
 
+    var wide = ($(window).width() > 1000);
+    var recentButton;
+    var starredButton;
+    var unreadButton;
+    if (commentsFound) {
+      if (wide) {
+        recentButton =
+            r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent },
+              'Recent');
+        //unreadButton =
+        // r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread },
+        //   unreadBtnTitle);
+        starredButton =
+            r.button({ className: 'btn btn-default' + starredClass, onClick: this.showStarred },
+              starredBtnTitle);
+      }
+      else {
+        recentButton = MenuItem({ eventKey: 'showRecent' }, 'Recent');
+        //unreadButton = MenuItem({ eventKey: 'showUnread' }, 'Unread'),
+        starredButton = MenuItem({ eventKey: 'showStarred' }, starredBtnTitle);
+      }
+    }
+
     var tabButtons;
-    if ($(window).width() > 800 && $(window).height() > 600) {
+    if (wide) {
       tabButtons =
         r.div({},
-          /*
-          r.button({ className: 'btn btn-default' + unreadClass, onClick: this.showUnread },
-              unreadBtnTitle), */
-          r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent },
-              'Recent'),
-          r.button({ className: 'btn btn-default' + starredClass, onClick: this.showStarred },
-              starredBtnTitle));
+          recentButton,
+          unreadButton,
+          starredButton,
+          r.button({ className: 'btn btn-default' + usersClass, onClick: this.showUsers },
+              usersBtnTitle));
     }
     else {
       tabButtons =
         DropdownButton({ title: this.state.commentsType, key: 'showRecent', pullRight: true,
             onSelect: (key) => { this[key](); } },
-          // MenuItem({ eventKey: 'showUnread' }, 'Unread'),
-          MenuItem({ eventKey: 'showRecent' }, 'Recent'),
-          MenuItem({ eventKey: 'showStarred' }, 'Starred'));
+          recentButton,
+          unreadButton,
+          starredButton,
+          MenuItem({ eventKey: 'showUsers' }, usersBtnTitle));
     }
 
     // Show four help messages: first no. 1, then 2, 3, 4, one at a time, which clarify
@@ -452,16 +500,6 @@ var helpMessageFour = {
   okayText: "Wow! That is useful :-)",
   moreHelpAwaits: false,
 };
-
-
-function isPageWithSidebar(pageRole: PageRole): boolean {
-  return pageRole === PageRole.About ||
-      pageRole === PageRole.Question || pageRole === PageRole.Problem ||
-      pageRole === PageRole.Idea || pageRole === PageRole.ToDo ||
-      pageRole === PageRole.Critique || // [plugin]
-      pageRole === PageRole.MindMap || pageRole === PageRole.Discussion ||
-      pageRole === PageRole.WebPage || pageRole === PageRole.EmbeddedComments;
-}
 
 
 var ToggleSidebarButton = createComponent({

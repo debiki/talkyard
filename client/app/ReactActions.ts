@@ -387,6 +387,8 @@ export function togglePagebarOpen() {
 }
 
 export function setPagebarOpen(open: boolean) {
+  putInLocalStorage('isPagebarOpen', open); // move to ReactStore if I dispatch an action
+                                            // (for consistency with setWatchbarOpen).
   if (open) $('html').addClass('es-pagebar-open');
   else $('html').removeClass('es-pagebar-open');
 }
@@ -464,6 +466,11 @@ export function openNotificationSource(notf: Notification) {
   else {
     die("Unknown notification type [EsE5GUKW2]")
   }
+}
+
+
+export function openPage(pageId: string) {
+  window.location.assign('/-' + pageId);
 }
 
 

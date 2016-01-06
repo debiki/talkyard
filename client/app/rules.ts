@@ -49,19 +49,43 @@ function canClose(pageRole: PageRole) {
   return pageRole !== PageRole.Message;
 }
 
+function isPageWithComments(pageRole: PageRole): boolean {
+  return isPageWithSidebar(pageRole) && !isSection(pageRole) && pageRole !== PageRole.HomePage;
+}
+
+function isSection(pageRole: PageRole): boolean {
+  return pageRole === PageRole.Forum || pageRole === PageRole.Blog;
+}
+
 function isPageWithSidebar(pageRole: PageRole): boolean {
-  return pageRole === PageRole.About ||
-      pageRole === PageRole.Question || pageRole === PageRole.Problem ||
-      pageRole === PageRole.Idea || pageRole === PageRole.ToDo ||
-      pageRole === PageRole.Critique || // [plugin]
-      pageRole === PageRole.MindMap || pageRole === PageRole.Discussion ||
-      pageRole === PageRole.WebPage || pageRole === PageRole.EmbeddedComments;
+  return pageRole !== PageRole.Message && pageRole !== PageRole.SpecialContent;
 }
 
 function isPageWithWatchbar(pageRole: PageRole): boolean {
-  return isPageWithSidebar(pageRole) || pageRole === PageRole.Forum;
+  return true; // hmm remove this fn then, now
 }
 
+function isWatchbarRecentTopicsPageRole(pageRole: PageRole): boolean {
+  switch (pageRole) {
+    case PageRole.Message:
+    case PageRole.EmbeddedComments:
+    case PageRole.Blog:
+    case PageRole.Forum:
+    case PageRole.HomePage:
+    case PageRole.Code:
+    case PageRole.SpecialContent:
+      return false;
+    default:
+      return true;
+  }
+}
+
+function userGetWatchbarTopicIds(user: User): PageId[] {
+  var watchbarTopics: WatchbarTopics = user.watchbarTopics;
+  if (!watchbarTopics) return [];
+  // For now: Concat with something so as to not return the original array.
+  return watchbarTopics.recentTopics.map(t => t.pageId).concat([]);
+}
 
 
 function maySendInvites(user: User | CompleteUser): MayMayNot {
