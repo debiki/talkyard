@@ -50,7 +50,10 @@ function canClose(pageRole: PageRole) {
 }
 
 function isPageWithComments(pageRole: PageRole): boolean {
-  return isPageWithSidebar(pageRole) && !isSection(pageRole) && pageRole !== PageRole.HomePage;
+  return pageRole && !isSection(pageRole) &&
+      pageRole !== PageRole.Message &&
+      pageRole !== PageRole.SpecialContent &&
+      pageRole !== PageRole.HomePage;
 }
 
 function isSection(pageRole: PageRole): boolean {
@@ -58,7 +61,7 @@ function isSection(pageRole: PageRole): boolean {
 }
 
 function isPageWithSidebar(pageRole: PageRole): boolean {
-  return pageRole !== PageRole.Message && pageRole !== PageRole.SpecialContent;
+  return true; // hmm remove this fn then, now
 }
 
 function isPageWithWatchbar(pageRole: PageRole): boolean {
@@ -76,7 +79,7 @@ function isWatchbarRecentTopicsPageRole(pageRole: PageRole): boolean {
     case PageRole.SpecialContent:
       return false;
     default:
-      return true;
+      return !!pageRole;
   }
 }
 
@@ -95,7 +98,11 @@ function maySendInvites(user: User | CompleteUser): MayMayNot {
 }
 
 
-function isGuest(user) {
+function user_isMember(user: CompleteUser | BriefUser): boolean {
+  return user.id > MaxGuestId;
+}
+
+function isGuest(user) {  // later: rename to user_isGuest
   // (Should rename userId to id.)
   return user.id <= MaxGuestId ||  // if is a CompleteUser
       user.userId <= MaxGuestId; // in case it's a User or BriefUser

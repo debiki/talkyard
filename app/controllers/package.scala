@@ -20,7 +20,7 @@ import play.api.libs.json.JsValue
 
 package object controllers {
 
-  // Move it to here soon ...
+  // Move it to here soon ... No, move it to io.efdi.server.http package?
   def OkSafeJson(json: JsValue) =
     Utils.OkSafeJson(json)
 

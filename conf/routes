@@ -40,6 +40,7 @@ GET   /-/api/logout             controllers.LoginController.logout
 POST  /-/api/logout             controllers.LoginController.logout
 
 GET   /-/pubsub/authorize-subscriber/:userId  io.efdi.server.pubsub.SubscriberController.authorizeSubscriber(userId)
+GET   /-/subscribe-to-user-presence-events    io.efdi.server.pubsub.SubscriberController.subscribeToUsersPresence
 
 GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic
 GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor

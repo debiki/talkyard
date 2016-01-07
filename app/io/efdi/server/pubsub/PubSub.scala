@@ -18,6 +18,8 @@
 package io.efdi.server.pubsub
 
 import akka.actor._
+import akka.pattern.ask
+import akka.util.Timeout
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.{ReactJson, Globals}
@@ -26,8 +28,10 @@ import play.{api => p}
 import play.api.libs.json.Json
 import play.api.libs.ws.{WSResponse, WS}
 import play.api.Play.current
+import scala.collection.mutable.ArrayBuffer
 import scala.collection.{mutable, immutable}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration._
 
 
@@ -81,17 +85,30 @@ object PubSub {
 
 
 class PubSubApi(private val actorRef: ActorRef) {
-  def onUserSubscribed(siteId: SiteId, userId: UserId) {
-    actorRef ! UserSubscribed(SiteUserId(siteId, userId))
+
+  private val timeout = 19999 second
+
+
+  def onUserSubscribed(siteId: SiteId, user: User) {
+    actorRef ! UserSubscribed(siteId, user)
   }
+
 
   def publish(message: Message) {
     actorRef ! PublishMessage(message)
   }
+
+
+  def listOnlineUsers(): Future[immutable.Seq[User]] = {
+    val response: Future[Any] = (actorRef ? ListOnlineUsers)(timeout)
+    response.map(_.asInstanceOf[immutable.Seq[User]])
+  }
 }
 
+
 private case class PublishMessage(message: Message)
-private case class UserSubscribed(siteUserId: SiteUserId)
+private case class UserSubscribed(siteId: SiteId, user: User)
+private case object ListOnlineUsers
 
 
 
@@ -108,16 +125,20 @@ class PubSub extends Actor {
     * We'll push messages only to users who have subscribed (i.e. are online and have
     * connected to the server via e.g. WebSocket).
     */
-  private val subscribers = mutable.LinkedHashMap[SiteUserId, When]()
+  private val subscribers = mutable.LinkedHashMap[SiteUserId, UserAndWhen]()
+
+  private class UserAndWhen(val user: User, val when: When)
 
 
   def receive = {
-    case UserSubscribed(siteUserId) =>
-      subscribers.put(siteUserId, now)
-      println("Subscribed: " + siteUserId)
+    case UserSubscribed(siteId, user) =>
+      subscribers.put(SiteUserId(siteId, user.id), new UserAndWhen(user, now))
+      println(s"Subscribed: site $siteId, user $user")
     case PublishMessage(message: Message) =>
       println("Publishing: " + message)
       publish(message)
+    case ListOnlineUsers =>
+      sender ! listUsersOnline()
   }
 
 
@@ -163,6 +184,7 @@ class PubSub extends Actor {
     }
   }
 
+
   def handlePublishResponse(response: WSResponse) {
     if (response.status < 200 || 299 < response.status) {
       p.Logger.warn(o"""Bad nchan status code after sending publish request [EsE9UKJ2]:
@@ -170,4 +192,10 @@ class PubSub extends Actor {
         Response body: '${response.body}""")
     }
   }
+
+
+  def listUsersOnline(): immutable.Seq[User] = {
+    subscribers.values.map(_.user).to[immutable.Seq]
+  }
+
 }

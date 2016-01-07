@@ -1023,7 +1023,7 @@ var PostHeader = createComponent({
       }
     });
 
-    // Username link: Some dupl code, see edit-history-dialog.ts. [88MYU2]
+    // Username link: Some dupl code, see edit-history-dialog.ts & sidebar.ts [88MYU2]
     var authorUrl = '/-/users/#/id/' + post.authorId;
     var namePart1;
     var namePart2;

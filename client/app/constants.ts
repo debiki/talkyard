@@ -22,6 +22,9 @@ var BodyId = 1;
 var SystemUserId = -1;
 var MinMemberId = SystemUserId;
 
+var MaxGuestId = -2;
+var UnknownUserId = -3;
+
 
 enum PinPageWhere {
   InCategory = 1,
@@ -63,6 +66,12 @@ enum WritingWhat {
   ReplyToOriginalPost = 2,
   ReplyToNotOriginalPost = 3,
   ChatComment = 4,
+}
+
+
+enum Presence {
+  Active = 1,
+  Away = 2,
 }
 
 

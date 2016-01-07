@@ -129,6 +129,8 @@ abstract class PageParts extends People {
   }
 
 
+  def usersById: Map[UserId, User]
+
   def theUser(userId: UserId): User
 
 

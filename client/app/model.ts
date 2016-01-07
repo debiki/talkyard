@@ -141,6 +141,7 @@ interface PostRevision {
 
 
 interface User {
+  id?: number;
   userId?: number;  // change to `id`
   isLoggedIn?: boolean;
   isAdmin?: boolean;
@@ -299,12 +300,16 @@ interface Store {
   userSpecificDataAdded?: boolean;
   newUserAccountCreated?: boolean;
   rootPostId: number;
+  usersByIdBrief: { [userId: number]: BriefUser };
   allPosts: { [postId: number]: Post };
   topLevelCommentIdsSorted: number[];
   isWatchbarOpen: boolean;
+  isContextbarOpen: boolean;
   horizontalLayout: boolean;
   is2dTreeDefault: boolean;
   socialLinksHtml: string;
+
+  onlineUsers: BriefUser[];
 
   // If quickUpdate is true only posts in postsToUpdate will be updated.
   quickUpdate: boolean;
@@ -362,6 +367,7 @@ interface BriefUser {
   isGuest?: boolean;  // = !isAuthenticated
   isEmailUnknown?: boolean;
   avatarUrl?: string;
+  presence?: Presence;
 }
 
 

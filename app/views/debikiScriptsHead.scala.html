@@ -108,10 +108,10 @@ docElem.className += ' js';
     __reactStore.isWatchbarOpen = true;
   }
 
-  if (localStorage.getItem('isPagebarOpen') === 'true' ||
-      location.search.search('&pagebar') !== -1) {
+  if (localStorage.getItem('isContextbarOpen') === 'true' ||
+      location.search.search('&contextbar') !== -1) {
     docElem.className += ' es-pagebar-open';
-    __reactStore.isPagebarOpen = true;
+    __reactStore.isContextbarOpen = true;
   }
 
   var debiki = {

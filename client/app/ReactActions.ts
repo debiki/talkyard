@@ -50,12 +50,14 @@ export var actionTypes = {
   UncollapsePost: 'UncollapsePost',
   ShowPost: 'ShowPost',
   SetWatchbarOpen: 'SetWatchbarOpen',
+  SetContextbarOpen: 'SetContextbarOpen',
   SetHorizontalLayout: 'SetHorizontalLayout',
   ChangeSiteStatus: 'ChangeSiteStatus',
   HideHelpMessage: 'HideHelpMessage',
   ShowHelpAgain: 'ShowHelpAgain',
   AddNotifications: 'AddNotifications',
   MarkAnyNotificationAsSeen: 'MarkAnyNotificationAsSeen',
+  UpdateOnlineUsersLists: 'UpdateOnlineUsersLists',
 };
 
 
@@ -387,10 +389,12 @@ export function togglePagebarOpen() {
 }
 
 export function setPagebarOpen(open: boolean) {
-  putInLocalStorage('isPagebarOpen', open); // move to ReactStore if I dispatch an action
-                                            // (for consistency with setWatchbarOpen).
   if (open) $('html').addClass('es-pagebar-open');
   else $('html').removeClass('es-pagebar-open');
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.SetContextbarOpen,
+    open: open,
+  });
 }
 
 
@@ -446,6 +450,14 @@ export function addNotifications(notfs: Notification[]) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.AddNotifications,
     notifications: notfs,
+  });
+}
+
+
+export function updateOnlineUsersLists(onlineUsers: BriefUser[]) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.UpdateOnlineUsersLists,
+    onlineUsers: onlineUsers,
   });
 }
 

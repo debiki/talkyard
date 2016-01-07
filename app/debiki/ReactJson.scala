@@ -25,7 +25,7 @@ import debiki.DebikiHttp.throwNotFound
 import io.efdi.server.http.{DebikiRequest, PageRequest}
 import java.{util => ju}
 import play.api.libs.json._
-import scala.collection.immutable
+import scala.collection.{mutable, immutable}
 import scala.collection.mutable.ArrayBuffer
 import scala.math.BigDecimal.decimal
 
@@ -152,6 +152,10 @@ object ReactJson {
       ("_" + post.nr.toString) -> postToJsonImpl(post, page, transaction.currentTime)
     }
 
+    val usersByIdJson = JsObject(page.parts.usersById map { idAndUser =>
+      idAndUser._1.toString -> JsUser(idAndUser._2)
+    })
+
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
     if (page.role == PageRole.EmbeddedComments) {
@@ -237,6 +241,7 @@ object ReactJson {
       "topics" -> JsArray(anyLatestTopics),
       "user" -> NoUserSpecificData,
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
+      "usersByIdBrief" -> usersByIdJson,
       "allPosts" -> JsObject(allPostsJson),
       "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
       "horizontalLayout" -> JsBoolean(horizontalLayout),
@@ -493,7 +498,8 @@ object ReactJson {
       } getOrElse (JsNull, JsNull, JsNull)
 
     Json.obj(
-      "userId" -> JsNumber(user.id),
+      "id" -> JsNumber(user.id),
+      "userId" -> JsNumber(user.id), // try to remove, use 'id' instead
       "username" -> JsStringOrNull(user.username),
       "fullName" -> JsString(user.displayName),
       "isLoggedIn" -> JsBoolean(true),

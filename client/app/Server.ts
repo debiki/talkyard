@@ -800,6 +800,14 @@ export function cancelAnyLongPollingRequest() {
 }
 
 
+export function subscribeToUserPresenceEvents() {
+  get('/-/subscribe-to-user-presence-events', (onlineUsers: BriefUser[]) => {
+    _.each(onlineUsers, (user: BriefUser) => user.presence = Presence.Active);
+    ReactActions.updateOnlineUsersLists(onlineUsers);
+  });
+}
+
+
 export function logBrowserError(errorMessage: string) {
   postJsonSuccess('/-/log-browser-error', () => {}, errorMessage);
 }

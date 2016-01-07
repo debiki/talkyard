@@ -189,6 +189,11 @@ ReactDispatcher.register(function(payload) {
       store.isWatchbarOpen = action.open;
       break;
 
+    case ReactActions.actionTypes.SetContextbarOpen:
+      putInLocalStorage('isContextbarOpen', action.open);
+      store.isContextbarOpen = action.open;
+      break;
+
     case ReactActions.actionTypes.SetHorizontalLayout:
       store.horizontalLayout = action.enabled;
       // Now all gifs will be recreated since the page is rerendered.
@@ -216,6 +221,14 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.MarkAnyNotificationAsSeen:
       markAnyNotificationssAsSeen(action.postNr);
+      break;
+
+    case ReactActions.actionTypes.UpdateOnlineUsersLists:
+      store.onlineUsers = action.onlineUsers;
+      // Overwrite any old user objects with no presence info and perhaps stale other data.
+      _.each(action.onlineUsers, (user: BriefUser) => {
+        store.usersByIdBrief[user.id] = user;
+      });
       break;
 
     default:
@@ -290,6 +303,24 @@ ReactStore.activateUserSpecificData = function(anyUser) {
 ReactStore.allData = function() {
   return store;
 };
+
+
+export function store_getOnlineUsersWholeSite(store: Store): BriefUser[] {
+  return _.values(store.usersByIdBrief).filter(u => {
+    return _.some(store.onlineUsers, ou => ou.id === u.id);
+  });
+}
+
+
+export function store_getUsersOnThisPage(store: Store): BriefUser[] {
+  var users: BriefUser[] = [];
+  _.each(store.allPosts, (post: Post) => {
+    if (_.every(users, u => u.id !== post.authorIdInt)) {
+      users.push(store.usersByIdBrief[post.authorIdInt]);
+    }
+  });
+  return users;
+}
 
 
 ReactStore.isGuestLoginAllowed = function() {

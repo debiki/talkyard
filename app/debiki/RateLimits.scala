@@ -125,6 +125,16 @@ object RateLimits {
   }
 
 
+  object ExpensiveGetRequest extends RateLimits {
+    val key = "ExRq"
+    val what = "sent too many complicated HTTP GET requests"
+    def maxPerFifteenSeconds = 30
+    def maxPerFifteenMinutes = 60 * 10
+    def maxPerDay = Unlimited
+    def maxPerDayNewUser = Unlimited
+  }
+
+
   object CreateSite extends RateLimits {
     val key = "CrSt"
     val what = "created too many sites"

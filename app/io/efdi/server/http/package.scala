@@ -36,6 +36,10 @@ import scala.util.Try
 
 package object http {
 
+  def OkSafeJson(json: JsValue) =
+    _root_.controllers.Utils.OkSafeJson(json)
+
+
   import io.efdi.server.http.PlainApiActions._
 
 

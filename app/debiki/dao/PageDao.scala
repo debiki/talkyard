@@ -87,6 +87,11 @@ case class PagePartsDao(override val pageId: PageId, transaction: SiteTransactio
     _allPosts
   }
 
+  def usersById: Map[UserId, User] = {
+    loadUsersOnPage()
+    _usersById
+  }
+
   def loadUsersOnPage() {
     if (_usersById eq null) {
       _usersById = transaction.loadUsersOnPageAsMap2(pageId)
