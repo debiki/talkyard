@@ -309,7 +309,8 @@ interface Store {
   is2dTreeDefault: boolean;
   socialLinksHtml: string;
 
-  onlineUsers: BriefUser[];
+  numOnlineStrangers?: number;
+  onlineUsers?: BriefUser[];
 
   // If quickUpdate is true only posts in postsToUpdate will be updated.
   quickUpdate: boolean;

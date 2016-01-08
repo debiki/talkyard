@@ -55,6 +55,7 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.Login:
       ReactStore.activateUserSpecificData(action.user);
+      debiki2.pubsub.subscribeToServerEventsAsUser(action.user);
       break;
 
     case ReactActions.actionTypes.Logout:
@@ -224,6 +225,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.UpdateOnlineUsersLists:
+      store.numOnlineStrangers = action.numOnlineStrangers;
       store.onlineUsers = action.onlineUsers;
       // Overwrite any old user objects with no presence info and perhaps stale other data.
       _.each(action.onlineUsers, (user: BriefUser) => {

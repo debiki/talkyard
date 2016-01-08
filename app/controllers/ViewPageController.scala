@@ -117,6 +117,9 @@ object ViewPageController extends mvc.Controller {
       return Results.SeeOther(correctPagePath.value)
     }
 
+    if (request.user.isEmpty && request.browserId.isDefined)
+      Globals.strangerCounter.tellStrangerSeen(request.siteId, request.theBrowserIdData)
+
     val pageRequest = new PageRequest[Unit](
       request.siteIdAndCanonicalHostname,
       sid = request.sid,

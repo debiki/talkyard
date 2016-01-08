@@ -454,9 +454,10 @@ export function addNotifications(notfs: Notification[]) {
 }
 
 
-export function updateOnlineUsersLists(onlineUsers: BriefUser[]) {
+export function updateOnlineUsersLists(numOnlineStrangers: number, onlineUsers: BriefUser[]) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.UpdateOnlineUsersLists,
+    numOnlineStrangers: numOnlineStrangers,
     onlineUsers: onlineUsers,
   });
 }

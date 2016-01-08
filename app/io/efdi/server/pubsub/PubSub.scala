@@ -19,7 +19,6 @@ package io.efdi.server.pubsub
 
 import akka.actor._
 import akka.pattern.ask
-import akka.util.Timeout
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.{ReactJson, Globals}
@@ -28,7 +27,6 @@ import play.{api => p}
 import play.api.libs.json.Json
 import play.api.libs.ws.{WSResponse, WS}
 import play.api.Play.current
-import scala.collection.mutable.ArrayBuffer
 import scala.collection.{mutable, immutable}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -75,7 +73,7 @@ object PubSub {
     */
   def startNewActor(actorSystem: ActorSystem): PubSubApi = {
     val actorRef = actorSystem.actorOf(Props(
-      new PubSub()), name = s"PubSub-$testInstanceCounter")
+      new PubSubActor()), name = s"PubSub-$testInstanceCounter")
     testInstanceCounter += 1
     new PubSubApi(actorRef)
   }
@@ -86,7 +84,7 @@ object PubSub {
 
 class PubSubApi(private val actorRef: ActorRef) {
 
-  private val timeout = 19999 second
+  private val timeout = 10 seconds
 
 
   def onUserSubscribed(siteId: SiteId, user: User) {
@@ -99,8 +97,8 @@ class PubSubApi(private val actorRef: ActorRef) {
   }
 
 
-  def listOnlineUsers(): Future[immutable.Seq[User]] = {
-    val response: Future[Any] = (actorRef ? ListOnlineUsers)(timeout)
+  def listOnlineUsers(siteId: SiteId): Future[immutable.Seq[User]] = {
+    val response: Future[Any] = (actorRef ? ListOnlineUsers(siteId))(timeout)
     response.map(_.asInstanceOf[immutable.Seq[User]])
   }
 }
@@ -108,7 +106,7 @@ class PubSubApi(private val actorRef: ActorRef) {
 
 private case class PublishMessage(message: Message)
 private case class UserSubscribed(siteId: SiteId, user: User)
-private case object ListOnlineUsers
+private case class ListOnlineUsers(siteId: SiteId)
 
 
 
@@ -119,30 +117,36 @@ private case object ListOnlineUsers
   * Later:? Poll nchan each minute? to find out which users have disconnected?
   * ((Could add an nchan feature that tells the appserver about this, push not poll?))
   */
-class PubSub extends Actor {
+class PubSubActor extends Actor {
 
-  /** Tells when subscriber site-user-id subscribed. Sorted by insertion order.
+  /** Tells when subscriber subscribed. Subscribers are sorted by subscription (= insertion) order.
     * We'll push messages only to users who have subscribed (i.e. are online and have
     * connected to the server via e.g. WebSocket).
     */
-  private val subscribers = mutable.LinkedHashMap[SiteUserId, UserAndWhen]()
+  private val subscribersBySite =
+    mutable.HashMap[SiteId, mutable.LinkedHashMap[UserId, UserAndWhen]]()
 
   private class UserAndWhen(val user: User, val when: When)
+
+  private def perSiteSubscribers(siteId: SiteId) =
+    subscribersBySite.getOrElseUpdate(siteId, mutable.LinkedHashMap[UserId, UserAndWhen]())
 
 
   def receive = {
     case UserSubscribed(siteId, user) =>
-      subscribers.put(SiteUserId(siteId, user.id), new UserAndWhen(user, now))
+      perSiteSubscribers(siteId).put(user.id, new UserAndWhen(user, now))
       println(s"Subscribed: site $siteId, user $user")
     case PublishMessage(message: Message) =>
       println("Publishing: " + message)
       publish(message)
-    case ListOnlineUsers =>
-      sender ! listUsersOnline()
+    case ListOnlineUsers(siteId) =>
+      sender ! listUsersOnline(siteId)
+    // SHOULD [onlinelist] case DeleteInactiveSubscriptions =>
+    //  ask Nchan if browser gone & delete subscription.
   }
 
 
-  def publish(message: Message) {
+  private def publish(message: Message) {
     SHOULD // only publish to connected users
 
     val siteDao = Globals.siteDao(message.siteId)
@@ -185,7 +189,7 @@ class PubSub extends Actor {
   }
 
 
-  def handlePublishResponse(response: WSResponse) {
+  private def handlePublishResponse(response: WSResponse) {
     if (response.status < 200 || 299 < response.status) {
       p.Logger.warn(o"""Bad nchan status code after sending publish request [EsE9UKJ2]:
         ${response.status} ${response.statusText} — see the nginx error log for details?
@@ -194,8 +198,8 @@ class PubSub extends Actor {
   }
 
 
-  def listUsersOnline(): immutable.Seq[User] = {
-    subscribers.values.map(_.user).to[immutable.Seq]
+  private def listUsersOnline(siteId: SiteId): immutable.Seq[User] = {
+    perSiteSubscribers(siteId).values.map(_.user).to[immutable.Seq]
   }
 
 }

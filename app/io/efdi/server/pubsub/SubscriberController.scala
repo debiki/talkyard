@@ -80,9 +80,15 @@ object SubscriberController extends mvc.Controller {
   def subscribeToUsersPresence() = AsyncGetActionRateLimited(RateLimits.ExpensiveGetRequest) {
         request =>
     // Later: Don't just list users, do subscribe to user-status-active / user-away / ... too.
-    Globals.pubSub.listOnlineUsers() map { users =>
+    for {
+      users <- Globals.pubSub.listOnlineUsers(request.siteId)
+      numStrangers <- Globals.strangerCounter.countStrangers(request.siteId)
+    }
+    yield {
       OkSafeJson(
-        JsArray(users.map(JsUser)))
+        Json.obj(
+          "numOnlineStrangers" -> numStrangers,
+          "onlineUsers" -> JsArray(users.map(JsUser))))
     }
   }
 

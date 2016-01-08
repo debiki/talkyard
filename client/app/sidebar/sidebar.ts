@@ -289,7 +289,7 @@ export var Sidebar = createComponent({
     }
 
     var users: BriefUser[];
-    var listUsersOnPage = store.pageId && !isSection(store.pageRole);
+    var listUsersOnPage = page_isDiscussion(store.pageRole);
     if (listUsersOnPage) {
       users = store_getUsersOnThisPage(store);
     }
@@ -343,15 +343,21 @@ export var Sidebar = createComponent({
         listItems = makeCommentsContent(commentsFound.starred, this.state.currentPostId, store);
         break;
       case 'Users':
-        var inThisWhat = "in this topic";
+        var title;
+        var numOnlineStrangers = store.numOnlineStrangers;
         if (store.pageRole === PageRole.Forum) {
-          inThisWhat = "online in this forum";
-          // if is-category: "in this category"
-          //  — or another set of buttons for forum / category ?
+          title = "Users online in this forum:";
         }
-        title = "Users " + inThisWhat + ":";
+        else if (!listUsersOnPage) {
+          title = "Users online:";
+        }
+        else {
+          title = "Users in this topic:";
+          // Don't show num online strangers, when listing post authors for the current topic only.
+          numOnlineStrangers = 0;
+        }
         usersClass = ' active';
-        listItems = makeUsersContent(users, store.user.id);
+        listItems = makeUsersContent(users, store.user.id, numOnlineStrangers);
         break;
       default:
         console.error('[DwE4PM091]');
@@ -500,7 +506,7 @@ function makeCommentsContent(comments: Post[], currentPostId: PostId, store: Sto
 }
 
 
-function makeUsersContent(users: BriefUser[], myId: UserId) {
+function makeUsersContent(users: BriefUser[], myId: UserId, numOnlineStrangers: number) {
   // List the current user first, then online users, then others.
   // COULD: list alphabetically, so one can scan and find one's friends by name easily
   users.sort((a, b) => {
@@ -512,16 +518,34 @@ function makeUsersContent(users: BriefUser[], myId: UserId) {
     }
     return a.presence === Presence.Active ? -1 : +1;
   });
-  return users.map(user => {
+  var currentUserIsStranger = true;
+  var listItems = users.map(user => {
     var thatsYou = user.id === myId ?
         r.span({ className: 'esPresence_thatsYou' }, " — that's you") : null;
+    currentUserIsStranger = currentUserIsStranger && user.id !== myId;
     var presenceClass = user.presence === Presence.Active ? 'active' : 'away';
+    var presenceTitle = user.presence === Presence.Active ? 'Active' : 'Away';
     return (
         r.div({ className: 'esPresence esPresence-' + presenceClass },
           avatar.AvatarAndName({ user: user }),
           thatsYou,
-          r.span({ className: 'esPresence_icon', title: 'Active' })));
+          r.span({ className: 'esPresence_icon', title: presenceTitle })));
   });
+
+  if (numOnlineStrangers) {
+    var numOtherStrangers = numOnlineStrangers - (currentUserIsStranger ? 1 : 0);
+    var plus = listItems.length ? '+ ' : '';
+    var youAnd = currentUserIsStranger ? "You, and " : '';
+    var people = numOtherStrangers === 1 ? " person" : " people";
+    var have = numOtherStrangers === 1 ? "has" : "have";
+    var strangers = numOtherStrangers === 0 && currentUserIsStranger
+      ? (listItems.length ? "you" : "Only you, it seems")
+      : youAnd + numOtherStrangers + people + " who " + have + " not logged in";
+    listItems.push(
+        r.div({ className: 'esPresence esPresence-strangers' }, plus + strangers));
+  }
+
+  return listItems;
 }
 
 

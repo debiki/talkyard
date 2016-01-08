@@ -49,11 +49,14 @@ function canClose(pageRole: PageRole) {
   return pageRole !== PageRole.Message;
 }
 
-function isPageWithComments(pageRole: PageRole): boolean {
+function page_isDiscussion(pageRole: PageRole): boolean {
   return pageRole && !isSection(pageRole) &&
-      pageRole !== PageRole.Message &&
       pageRole !== PageRole.SpecialContent &&
       pageRole !== PageRole.HomePage;
+}
+
+function isPageWithComments(pageRole: PageRole): boolean {
+  return page_isDiscussion(pageRole) && pageRole !== PageRole.Message;
 }
 
 function isSection(pageRole: PageRole): boolean {

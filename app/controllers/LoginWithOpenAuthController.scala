@@ -369,6 +369,8 @@ object LoginWithOpenAuthController extends Controller {
             loginPopupCallback
         }
       }
+
+    // SHOULD: Globals.strangerCounter.tellStrangerLoggedIn(siteId, request.theBrowserIdData) [onlinelist]
     response.withCookies(sidAndXsrfCookies: _*)
   }
 

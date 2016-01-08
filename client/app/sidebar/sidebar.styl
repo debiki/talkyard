@@ -86,9 +86,9 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
   position: relative;
   margin: 0;
   padding: 4px 0 9px 8px;
-  cursor: pointer;
-  &:hover
+  &:hover:not(.esPresence-strangers)
     background: hsl(207, 100%, 94%);
+    cursor: pointer;
     .esAvtrName_username,
     .esAvtrName_fullName
       color: hsl(207, 100%, 14%);
@@ -117,6 +117,10 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
 
 .esPresence_thatsYou
   vertical-align: middle;
+
+.esPresence-strangers
+  margin-top: 13px;
+  font-style: italic;
 
 
 #dw-sidebar

@@ -801,9 +801,10 @@ export function cancelAnyLongPollingRequest() {
 
 
 export function subscribeToUserPresenceEvents() {
-  get('/-/subscribe-to-user-presence-events', (onlineUsers: BriefUser[]) => {
+  get('/-/subscribe-to-user-presence-events', (response) => {
+    var onlineUsers: BriefUser[] = response.onlineUsers;
     _.each(onlineUsers, (user: BriefUser) => user.presence = Presence.Active);
-    ReactActions.updateOnlineUsersLists(onlineUsers);
+    ReactActions.updateOnlineUsersLists(response.numOnlineStrangers, onlineUsers);
   });
 }
 

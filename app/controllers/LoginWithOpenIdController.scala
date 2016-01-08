@@ -228,6 +228,7 @@ object LoginWithOpenIdController extends mvc.Controller {
         Redirect(url)
     }
 
+    // SHOULD: Globals.strangerCounter.tellStrangerLoggedIn(request.siteId, request.theBrowserIdData) [onlinelist]
     result.withCookies(userConfigCookie::sidAndXsrfCookies: _*)
   }
 
