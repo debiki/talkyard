@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../topbar/topbar.ts" />
 /// <reference path="user-details-actions.ts" />
 
 //------------------------------------------------------------------------------
