@@ -97,13 +97,14 @@ trait PagesDao {
       authorId = authorId, browserIdData = browserIdData, transaction = transaction)
 
 
-    def createPageImpl(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
-        anyFolder: Option[String], anySlug: Option[String], showId: Boolean,
-        titleSource: String, titleHtmlSanitized: String,
-        bodySource: String, bodyHtmlSanitized: String,
-        pinOrder: Option[Int], pinWhere: Option[PinPageWhere],
-        authorId: UserId, browserIdData: BrowserIdData,
-        transaction: SiteTransaction, hidePageBody: Boolean = false): (PagePath, Post) = {
+  def createPageImpl(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
+      anyFolder: Option[String], anySlug: Option[String], showId: Boolean,
+      titleSource: String, titleHtmlSanitized: String,
+      bodySource: String, bodyHtmlSanitized: String,
+      pinOrder: Option[Int], pinWhere: Option[PinPageWhere],
+      authorId: UserId, browserIdData: BrowserIdData,
+      transaction: SiteTransaction, hidePageBody: Boolean = false,
+      bodyPostType: PostType = PostType.Normal): (PagePath, Post) = {
 
     require(!anyFolder.exists(_.isEmpty), "EsE6JGKE3")
     // (Empty slug ok though, e.g. homepage.)
@@ -210,6 +211,7 @@ trait PagesDao {
       createdById = authorId,
       source = bodySource,
       htmlSanitized = bodyHtmlSanitized,
+      postType = bodyPostType,
       approvedById = Some(approvedById))
       .copy(
         hiddenAt = ifThenSome(hidePageBody, transaction.currentTime),

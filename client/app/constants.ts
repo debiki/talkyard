@@ -17,6 +17,8 @@
 
 var ReactStartedClass = 'dw-react-started';
 
+var EmptyPageId = "0";
+
 var BodyId = 1;
 
 var SystemUserId = -1;

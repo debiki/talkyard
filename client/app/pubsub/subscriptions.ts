@@ -38,7 +38,7 @@ export function subscribeToServerEventsAsUser(user?: User, doNothingIfAlreadyPol
     // Continue polling. Todo: specify params so won't get the very first event always only
     subscribeToServerEventsAsUser(user);
 
-    switch (event.type) {
+    if (event) switch (event.type) {
       case "notifications":
         ReactActions.addNotifications(event.data);
         break;

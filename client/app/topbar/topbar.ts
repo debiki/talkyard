@@ -17,10 +17,12 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../ReactStore.ts" />
+/// <reference path="../links.ts" />
 /// <reference path="../login/login-dialog.ts" />
 /// <reference path="../page-tools/page-tools.ts" />
 /// <reference path="../utils/page-scroll-mixin.ts" />
 /// <reference path="../utils/scroll-into-view.ts" />
+/// <reference path="../utils/MenuItemLink.ts" />
 /// <reference path="../post-navigation/posts-trail.ts" />
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../notification/Notification.ts" />
@@ -38,6 +40,7 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
+var MenuItemLink = utils.MenuItemLink;
 
 var FixedTopDist = 8;
 
@@ -130,20 +133,6 @@ export var TopBar = createComponent({
     debiki2.Server.logout(debiki2.ReactActions.logout);
   },
 
-  goToUserPage: function() {
-    goToUserPage(this.state.store.user.userId);
-  },
-
-  goToAdminPage: function() {
-    sessionStorage.setItem('returnToUrl', window.location.toString());
-    window.location.assign(d.i.serverOrigin + '/-/admin/');
-  },
-
-  goToReviewPage: function() {
-    sessionStorage.setItem('returnToUrl', window.location.toString());
-    window.location.assign(d.i.serverOrigin + '/-/admin/#/review/all');
-  },
-
   showTools: function() {
     pagetools.getPageToolsDialog().open();
   },
@@ -225,8 +214,8 @@ export var TopBar = createComponent({
     var talkToOthersNotfs = makeNotfIcon('toOthers', user.numTalkToOthersNotfs);
     var otherNotfs = makeNotfIcon('other', user.numOtherNotfs);
     var anyDivider = user.notifications.length ? MenuItem({ divider: true }) : null;
-    var notfsElems = user.notifications.map(notf =>
-        MenuItem({ key: notf.id, onSelect: () => ReactActions.openNotificationSource(notf),
+    var notfsElems = user.notifications.map((notf: Notification) =>
+        MenuItemLink({ key: notf.id, href: linkToNotificationSource(notf),
             className: notf.seen ? '' : 'esNotf-unseen' },
           notification.Notification({ notification: notf })));
     if (user.thereAreMoreUnseenNotfs) {
@@ -244,7 +233,7 @@ export var TopBar = createComponent({
     var avatarNameDropdown = !user.isLoggedIn ? null :
         DropdownButton({ title: avatarNameAndNotfs, className: 'esAvtrName', pullRight: true,
             noCaret: true },
-          MenuItem({ onSelect: this.goToUserPage }, "View your profile"),
+          MenuItemLink({ href: linkToCurrentUserProfilePage(store) }, "View your profile"),
           MenuItem({ onSelect: this.onLogoutClick }, "Log out"),
           anyDivider,
           notfsElems);
@@ -268,10 +257,10 @@ export var TopBar = createComponent({
     var otherReviewTasks = makeNotfIcon('reviewOther', user.numOtherReviewTasks);
     var menuTitle = r.span({ className: 'icon-menu' }, urgentReviewTasks, otherReviewTasks);
     var adminMenuItem = !isStaff(user) ? null :
-        MenuItem({ onSelect: this.goToAdminPage },
+        MenuItemLink({ href: linkToAdminPage() },
           r.span({ className: 'icon-settings' }, "Admin"));
     var reviewMenuItem = !urgentReviewTasks && !otherReviewTasks ? null :
-        MenuItem({ onSelect: this.goToReviewPage },
+        MenuItemLink({ href: linkToReviewPage() },
           "Needs review ", urgentReviewTasks, otherReviewTasks);
     var menuDropdown =
         DropdownButton({ title: menuTitle, className: 'dw-menu esMenu', pullRight: true,
@@ -280,8 +269,8 @@ export var TopBar = createComponent({
           reviewMenuItem,
           MenuItem({ onSelect: ReactActions.showHelpMessagesAgain },
               r.span({ className: 'icon-help' }, "Unhide help messages")),
-          MenuItem({ onSelect: () => location.assign('/about') }, "About this site"),
-          MenuItem({ onSelect: () => location.assign('/-/terms-of-use') }, "Terms and Privacy"));
+          MenuItemLink({ href: '/about' }, "About this site"),
+          MenuItemLink({ href: '/-/terms-of-use' }, "Terms and Privacy"));
 
     // ------- Search button
 

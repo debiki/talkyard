@@ -249,7 +249,8 @@ ReactDispatcher.register(function(payload) {
 
 ReactStore.initialize = function() {
   findAnyAcceptedAnswerPostNr();
-}
+  store.usersByIdBrief = store.usersByIdBrief || {};
+};
 
 
 function findAnyAcceptedAnswerPostNr() {
@@ -827,8 +828,9 @@ function addLocalStorageData(user: User) {
   // The watchbar: Recent topics.
   var recentTopics: WatchbarTopic[] = getFromLocalStorage('recentTopics') || [];
   // Add the current page, if absent, and if it's not a direct-message or chat-channel.
-  var shallListInRecentTopics = isWatchbarRecentTopicsPageRole(ReactStore.getPageRole());
-  if (shallListInRecentTopics && _.every(recentTopics, topic => topic.pageId !== store.pageId)) {
+  var shallList = store.pageId && store.pageId !== EmptyPageId &&
+      pageRole_shallListInRecentTopics(ReactStore.getPageRole());
+  if (shallList && _.every(recentTopics, topic => topic.pageId !== store.pageId)) {
     recentTopics.unshift({ pageId: store.pageId, title: ReactStore.getPageTitle() });
     putInLocalStorage('recentTopics', recentTopics);
   }

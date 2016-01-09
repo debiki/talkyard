@@ -161,6 +161,7 @@ var AboutUser = createComponent({
 
   render: function() {
     var user: CompleteUser = this.props.user;
+    var isCurrentUser = user.id === this.props.loggedInUser.id;
 
     var isStaffInfo = null;
     if (user.isModerator) {
@@ -169,7 +170,7 @@ var AboutUser = createComponent({
     if (user.isAdmin) {
       isStaffInfo = 'Is administrator.';
     }
-    var sendMessageButton = isGuest(user) ?
+    var sendMessageButton = isGuest(user) || user.id === SystemUserId || isCurrentUser ?
         null : Button({ onClick: this.sendMessage, bsStyle: 'primary' }, 'Send Message');
     return (
       r.div({},

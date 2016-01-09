@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../links.ts" />
 /// <reference path="../notification/Notification.ts" />
 /// <reference path="../Server.ts" />
 
@@ -73,8 +74,9 @@ export var UserNotificationsComponent = React.createClass({
     var toWho = isMe ? "you" : this.props.user.username;
 
     var notfsElems = this.state.notfs.map((notf: Notification) =>
-        r.li({ key: notf.id, onClick: () => ReactActions.openNotificationSource(notf) },
-          notification.Notification({ notification: notf, verbose: true })));
+        r.li({ key: notf.id },
+          r.a({ href: linkToNotificationSource(notf) },
+            notification.Notification({ notification: notf, verbose: true }))));
 
     return (
       r.div({},

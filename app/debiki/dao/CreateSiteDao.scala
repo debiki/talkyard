@@ -109,7 +109,8 @@ trait CreateSiteDao {
       pinWhere = None,
       authorId = SystemUserId,
       browserIdData,
-      transaction)
+      transaction,
+      bodyPostType = PostType.StaffWiki)
   }
 
 }

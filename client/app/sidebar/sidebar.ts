@@ -579,7 +579,7 @@ var helpMessageFour = {
   version: 1,
   content: r.span({}, "So although the comments to the left are sorted by best-first, " +
       "you can easily find the most recent comments."),
-  okayText: "Wow! That is useful :-)",
+  okayText: "Good to know",
   moreHelpAwaits: false,
 };
 

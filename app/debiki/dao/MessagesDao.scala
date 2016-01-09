@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import io.efdi.server.notf.NotificationGenerator
 import io.efdi.server.pubsub
+import debiki.DebikiHttp.throwForbidden
 import debiki.TextAndHtml
 
 
@@ -30,6 +31,16 @@ trait MessagesDao {
 
   def sendMessage(title: TextAndHtml, body: TextAndHtml, toUserIds: Set[UserId],
         sentById: UserId, browserIdData: BrowserIdData): PagePath = {
+
+    if (toUserIds.contains(SystemUserId))
+      throwForbidden("EsE2WUY0", "Cannot send messages to the System user")
+
+    if (toUserIds.exists(_ <= MaxGuestId))
+      throwForbidden("EsE6UPY2", "Cannot send messages to guests")
+
+    if (sentById <= MaxGuestId)
+      throwForbidden("EsE5JGKU9", "Guests cannot send messages")
+
     val (pagePath, notfs) = readWriteTransaction { transaction =>
       val sender = transaction.loadTheUser(sentById)
 

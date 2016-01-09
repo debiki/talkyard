@@ -71,9 +71,9 @@ function isPageWithWatchbar(pageRole: PageRole): boolean {
   return true; // hmm remove this fn then, now
 }
 
-function isWatchbarRecentTopicsPageRole(pageRole: PageRole): boolean {
+function pageRole_shallListInRecentTopics(pageRole: PageRole): boolean {
   switch (pageRole) {
-    case PageRole.Message:
+    case PageRole.Message: // shown in the Direct Messages watchbar section instead
     case PageRole.EmbeddedComments:
     case PageRole.Blog:
     case PageRole.Forum:

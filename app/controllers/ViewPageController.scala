@@ -94,7 +94,7 @@ object ViewPageController extends mvc.Controller {
       // Show a create-something-here page (see TemplateRenderer).
       return doRenderPage(
         makeEmptyPageRequest(
-          request, pageId = "0", showId = false, pageRole = PageRole.WebPage))
+          request, pageId = EmptyPageId, showId = false, pageRole = PageRole.WebPage))
     }
 
     val pageMeta = correctPagePath.pageId.flatMap(dao.loadPageMeta) getOrElse {

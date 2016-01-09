@@ -79,6 +79,7 @@ package object core {
   def now = new When(System.currentTimeMillis())
 
   val HomepageUrlPath = "/"
+  val EmptyPageId = "0"
 
   val MillisPerDay: Long = 24 * 3600 * 1000
   val OneDayInMillis: Long = MillisPerDay
@@ -94,6 +95,8 @@ package object core {
   def UnknownUserId = User.UnknownUserId
   def UnknownUserName = User.UnknownUserName
   def UnknownUserGuestCookie = User.UnknownUserGuestCookie
+  def MaxGuestId = User.MaxGuestId
+  def LowestNonGuestId = User.LowestNonGuestId
 
   val KajMagnusSiteId = "3" // for now
 

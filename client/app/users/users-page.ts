@@ -74,7 +74,7 @@ var UsersHomeComponent = React.createClass({
 
   render: function() {
     return (
-      r.div({ className: 'container' },
+      r.div({},
         debiki2.reactelements.TopBar({}),
         RouteHandler({})));
   }
@@ -150,7 +150,7 @@ var UserPageComponent = React.createClass({
     };
 
     return (
-      r.div({},
+      r.div({ className: 'container' },
         UserBar(childProps),
         r.div({ style: { display: 'table', width: '100%' }},
           r.div({ style: { display: 'table-row' }},

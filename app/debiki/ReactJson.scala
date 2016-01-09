@@ -96,6 +96,7 @@ object ReactJson {
       "topics" -> JsArray(),
       "user" -> NoUserSpecificData,
       "rootPostId" -> JsNumber(PageParts.BodyNr),
+      "usersByIdBrief" -> JsObject(Nil),
       "allPosts" -> JsObject(Nil),
       "topLevelCommentIdsSorted" -> JsArray(),
       "horizontalLayout" -> JsBoolean(false),
