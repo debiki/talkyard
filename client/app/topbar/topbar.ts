@@ -190,7 +190,7 @@ export var TopBar = createComponent({
         pageRole !== PageRole.Forum) {
       var topHelp = "Go to the top of the page. Shortcut: 1 (on the keyboard)";
       var repliesHelp = "Go to the replies section. There are " + store.numPostsRepliesSection +
-        " replies. Shortcut: 2"
+        " replies. Shortcut: 2";
       var chatHelp = "Go to the chat section. There are " + store.numPostsChatSection +
         " comments. Shortcut: 3";
       var endHelp = "Go to the bottom of the page. Shortcut: 4";
@@ -364,7 +364,7 @@ var SearchForm = createComponent({
               method: 'post', acceptCharset: 'UTF-8', action: '/-/search/site',
               onSubmit: this.search },
             r.input({ type: 'hidden', ref: 'xsrfToken', name: 'dw-fi-xsrf' }),
-            r.input({ type: 'text', tabindex: '1', placeholder: 'Text to search for',
+            r.input({ type: 'text', tabIndex: '1', placeholder: 'Text to search for',
                 ref: 'input', className: 'input-medium search-query', name: 'searchPhrase' }))));
   }
 });

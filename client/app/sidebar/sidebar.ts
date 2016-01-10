@@ -326,7 +326,8 @@ export var Sidebar = createComponent({
         title = commentsFound.recent.length ?
             'Recent Comments: (click to show)' : 'No comments.';
         recentClass = ' active';
-        listItems = makeCommentsContent(commentsFound.recent, this.state.currentPostId, store);
+        listItems = makeCommentsContent(commentsFound.recent, this.state.currentPostId, store,
+            this.onPostClick);
         break;
       /*
       case 'Unread':
@@ -340,7 +341,8 @@ export var Sidebar = createComponent({
         title = commentsFound.starred.length ?
             'Starred Comments: (click to show)' : 'No starred comments.';
         starredClass = ' active';
-        listItems = makeCommentsContent(commentsFound.starred, this.state.currentPostId, store);
+        listItems = makeCommentsContent(commentsFound.starred, this.state.currentPostId, store,
+            this.onPostClick);
         break;
       case 'Users':
         var title;
@@ -442,27 +444,30 @@ export var Sidebar = createComponent({
 
     // Show four help messages: first no. 1, then 2, 3, 4, one at a time, which clarify
     // how the sidebar recent-comments list works.
-    var helpMessageBoxOne =
-        help.HelpMessageBox({ className: 'es-editor-help-one', message: helpMessageOne });
+    var helpMessageBoxOne;
     var helpMessageBoxTwo;
     var helpMessageBoxTree;
     var helpMessageBoxFour;
-    if (help.isHelpMessageClosed(this.state.store, helpMessageOne)) {
-      helpMessageBoxTwo =
-          help.HelpMessageBox({ className: 'es-editor-help-two', message: helpMessageTwo });
+    var dimCommentsStyle: { opacity: string; };
+    if (this.state.commentsType === 'Recent') {
+      helpMessageBoxOne =
+          help.HelpMessageBox({ className: 'es-editor-help-one', message: helpMessageOne });
+      if (help.isHelpMessageClosed(this.state.store, helpMessageOne)) {
+        helpMessageBoxTwo =
+            help.HelpMessageBox({ className: 'es-editor-help-two', message: helpMessageTwo });
+      }
+      if (help.isHelpMessageClosed(this.state.store, helpMessageTwo)) {
+        helpMessageBoxTree =
+            help.HelpMessageBox({ className: 'es-editor-help-three', message: helpMessageThree });
+      }
+      if (help.isHelpMessageClosed(this.state.store, helpMessageThree)) {
+        helpMessageBoxFour =
+            help.HelpMessageBox({ className: 'es-editor-help-four', message: helpMessageFour });
+      }
+      // Dim the comments list until all help messages have been closed.
+      var dimCommentsStyle = help.isHelpMessageClosed(this.state.store, helpMessageFour) ?
+          null : { opacity: '0.6' };
     }
-    if (help.isHelpMessageClosed(this.state.store, helpMessageTwo)) {
-      helpMessageBoxTree =
-          help.HelpMessageBox({ className: 'es-editor-help-three', message: helpMessageThree });
-    }
-    if (help.isHelpMessageClosed(this.state.store, helpMessageThree)) {
-      helpMessageBoxFour =
-          help.HelpMessageBox({ className: 'es-editor-help-four', message: helpMessageFour });
-    }
-
-    // Dim the comments list until all help messages have been closed.
-    var dimCommentsStyle = help.isHelpMessageClosed(this.state.store, helpMessageFour) ?
-        null : { opacity: '0.6' };
 
     return (
       r.div({ className: 'dw-sidebar-z-index' },
@@ -488,13 +493,13 @@ export var Sidebar = createComponent({
 });
 
 
-function makeCommentsContent(comments: Post[], currentPostId: PostId, store: Store) {
+function makeCommentsContent(comments: Post[], currentPostId: PostId, store: Store, onPostClick) {
   var smallScreen = Math.min(debiki.window.width(), debiki.window.height()) < 500;
   var abbreviateHowMuch = smallScreen ? 'Much' : 'ABit';
-  return comments.map((post, index) => {
+  return comments.map((post: Post, index) => {
     var postProps: any = _.clone(store);
     postProps.post = post;
-    postProps.onClick = (event) => this.onPostClick(post);
+    postProps.onClick = (event) => onPostClick(post);
     postProps.abbreviate = abbreviateHowMuch;
     if (post.postId === currentPostId) {
       postProps.className = 'dw-current-post';
@@ -519,14 +524,14 @@ function makeUsersContent(users: BriefUser[], myId: UserId, numOnlineStrangers: 
     return a.presence === Presence.Active ? -1 : +1;
   });
   var currentUserIsStranger = true;
-  var listItems = users.map(user => {
+  var listItems = users.map((user: BriefUser) => {
     var thatsYou = user.id === myId ?
         r.span({ className: 'esPresence_thatsYou' }, " — that's you") : null;
     currentUserIsStranger = currentUserIsStranger && user.id !== myId;
     var presenceClass = user.presence === Presence.Active ? 'active' : 'away';
     var presenceTitle = user.presence === Presence.Active ? 'Active' : 'Away';
     return (
-        r.div({ className: 'esPresence esPresence-' + presenceClass },
+        r.div({ key: user.id, className: 'esPresence esPresence-' + presenceClass },
           avatar.AvatarAndName({ user: user }),
           thatsYou,
           r.span({ className: 'esPresence_icon', title: presenceTitle })));
@@ -542,7 +547,7 @@ function makeUsersContent(users: BriefUser[], myId: UserId, numOnlineStrangers: 
       ? (listItems.length ? "you" : "Only you, it seems")
       : youAnd + numOtherStrangers + people + " who " + have + " not logged in";
     listItems.push(
-        r.div({ className: 'esPresence esPresence-strangers' }, plus + strangers));
+        r.div({ key: 'strngrs', className: 'esPresence esPresence-strangers' }, plus + strangers));
   }
 
   return listItems;

@@ -44,7 +44,7 @@ export var MenuItemLink = createComponent({
     // Copy react-bootstrap's MenuItem html.
     return (
         r.li({ role: 'presentation' },
-          r.a({ role: 'button', href: href, tabindex: this.props.tabindex || -1,
+          r.a({ role: 'button', href: href, tabIndex: this.props.tabindex || -1,
               onClick: rememberReturnToUrl },
             this.props.children)));
   }
