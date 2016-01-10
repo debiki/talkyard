@@ -56,7 +56,7 @@ package object http {
     siteIdAndCanonicalHostname: SiteIdHostname,
     sid: SidStatus,
     xsrfToken: XsrfOk,
-    browserId: Option[BrowserId],
+    browserId: BrowserId,
     user: Option[User],
     dao: SiteDao,
     request: Request[A]) extends DebikiRequest[A] {
@@ -80,6 +80,9 @@ package object http {
 
   def AsyncGetAction(f: GetRequest => Future[Result]): mvc.Action[Unit] =
     PlainApiAction(NoRateLimits).async(BodyParsers.parse.empty)(f)
+
+  def AsyncGetActionAllowAnyone(f: GetRequest => Future[Result]): mvc.Action[Unit] =
+    PlainApiAction(NoRateLimits, allowAnyone = true).async(BodyParsers.parse.empty)(f)
 
   def AsyncGetActionRateLimited(rateLimits: RateLimits)(f: GetRequest => Future[Result])
         : mvc.Action[Unit] =

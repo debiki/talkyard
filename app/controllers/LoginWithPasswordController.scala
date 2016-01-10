@@ -83,7 +83,7 @@ object LoginWithPasswordController extends mvc.Controller {
             verification link; please click it.""")
       }
 
-    // SHOULD: Globals.strangerCounter.tellStrangerLoggedIn(request.siteId, request.theBrowserIdData) [onlinelist]
+    Globals.strangerCounter.strangerLoggedIn(request.siteId, request.theBrowserIdData)
     val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(request.siteId, loginGrant.user)
     sidAndXsrfCookies
   }

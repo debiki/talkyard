@@ -39,26 +39,20 @@ object BrowserId {
 
 
   /** Extracts the browser id cookie from the request, or creates it if absent.
-    * @param maySetCookies Set to false for JS and CSS so replies can be cached by servers.
     */
-  def checkBrowserId(request: Request[_], maySetCookies: Boolean)
-        : (Option[BrowserId], List[Cookie]) = {
-
+  def checkBrowserId(request: Request[_]): (BrowserId, List[Cookie]) = {
     val anyBrowserIdCookieValue = request.cookies.get(CookieName).map(_.value)
-
     if (anyBrowserIdCookieValue.isDefined)
-      return (Some(BrowserId(anyBrowserIdCookieValue.get, false)), Nil)
-
-    if (!maySetCookies)
-      return (None, Nil)
-
-    createNewCookie()
+      (BrowserId(anyBrowserIdCookieValue.get, isNew = false), Nil)
+    else
+      createNewCookie()
   }
 
 
-  private def createNewCookie(): (Option[BrowserId], List[Cookie]) = {
+  private def createNewCookie(): (BrowserId, List[Cookie]) = {
     val unixTimeSeconds = (new ju.Date).getTime / 1000
-    val randomString = nextRandomString() take 7
+    // Let's separate the timestamp from the random stuff by adding an a-z letter.
+    val randomString = nextRandomAzLetter() + nextRandomString() take 7
 
     // SECURITY COULD prevent evil programs from submitting fake browser id cookies:
     //val hash = hashSha1Base64UrlSafe(s"$unixTimeSeconds$randomString") take 13
@@ -71,7 +65,7 @@ object BrowserId {
       maxAgeSeconds = Some(3600 * 24 * 365 * 20),
       httpOnly = true)
 
-    (Some(BrowserId(cookieValue, isNew = true)), newCookie :: Nil)
+    (BrowserId(cookieValue, isNew = true), newCookie :: Nil)
   }
 
 }

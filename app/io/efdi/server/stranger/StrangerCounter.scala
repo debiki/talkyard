@@ -39,6 +39,7 @@ object StrangerCounter {
     val actorRef = actorSystem.actorOf(Props(
       new StrangerCounterActor()), name = s"StrangerCounter-$testInstanceCounter")
     testInstanceCounter += 1
+    actorSystem.scheduler.schedule(10 seconds, 20 seconds, actorRef, DeleteOldStrangers)
     new StrangerCounterApi(actorRef)
   }
 
@@ -56,6 +57,11 @@ class StrangerCounterApi(private val actorRef: ActorRef) {
   }
 
 
+  def strangerLoggedIn(siteId: SiteId, browserIdData: BrowserIdData) {
+    actorRef ! StrangerLoggedIn(siteId, browserIdData)
+  }
+
+
   def countStrangers(siteId: SiteId): Future[Int] = {
     val response: Future[Any] = (actorRef ? CountStrangers(siteId))(timeout)
     response.map(_.asInstanceOf[Int])
@@ -64,7 +70,9 @@ class StrangerCounterApi(private val actorRef: ActorRef) {
 
 
 private case class StrangerSeen(siteId: SiteId, browserIdData: BrowserIdData)
+private case class StrangerLoggedIn(siteId: SiteId, browserIdData: BrowserIdData)
 private case class CountStrangers(siteId: SiteId)
+private case object DeleteOldStrangers
 
 
 
@@ -72,36 +80,60 @@ private case class CountStrangers(siteId: SiteId)
   */
 class StrangerCounterActor extends Actor {
 
+  val TenMinutesInMillis = 10 * OneMinuteInMillis
 
   // Could consider browser id cookie too (instead of just ip), but then take care
   // to avoid DoS attacks if someone generates 9^99 unique ids and requests.
-  private val strangersBySite =
+  private val lastSeenByBrowserBySite =
     mutable.HashMap[SiteId, mutable.LinkedHashMap[IpAddress, When]]()
+
+  def getLastSeenByBrowser(siteId: SiteId) =
+    lastSeenByBrowserBySite.getOrElseUpdate(siteId,
+      // Use a LinkedHashMap because iteration order = insertion order.
+      mutable.LinkedHashMap[IpAddress, When]())
 
 
   def receive = {
     case StrangerSeen(siteId, browserIdData) =>
       addStranger(siteId, browserIdData)
+    case StrangerLoggedIn(siteId, browserIdData) =>
+      removeStranger(siteId, browserIdData)
     case CountStrangers(siteId) =>
       sender ! countStrangers(siteId)
-    // SHOULD [onlinelist] case DeleteOldStrangers =>
+    case DeleteOldStrangers =>
+      deleteOldStrangers()
   }
 
 
-  def addStranger(siteId: SiteId, browserIdData: BrowserIdData) {
-    val lastSeenByBrowser = strangersBySite.getOrElseUpdate(siteId,
-      mutable.LinkedHashMap[IpAddress, When]())
-
-    lastSeenByBrowser.put(browserIdData.ip, now)
+  private def addStranger(siteId: SiteId, browserIdData: BrowserIdData) {
+    val lastSeenByBrowser = getLastSeenByBrowser(siteId)
+    // Remove and add back this ip, so it'll appear last during iteration.
+    lastSeenByBrowser.remove(browserIdData.ip)
+    lastSeenByBrowser.put(browserIdData.ip, When.now())
   }
 
 
-  def countStrangers(siteId: SiteId): Int = {
-    val lastSeenByBrowser = strangersBySite.get(siteId) getOrElse {
+  private def removeStranger(siteId: SiteId, browserIdData: BrowserIdData) {
+    val lastSeenByBrowser = getLastSeenByBrowser(siteId)
+    lastSeenByBrowser.remove(browserIdData.ip)
+  }
+
+
+  private def countStrangers(siteId: SiteId): Int = {
+    val lastSeenByBrowser = lastSeenByBrowserBySite.getOrElse(siteId, {
       return 0
-    }
-    // SHOULD [onlinelist] deleteOldStrangers(lastSeenByBrowser)
+    })
     lastSeenByBrowser.size
   }
 
+
+  private def deleteOldStrangers() {
+    val now = When.now()
+    for (lastSeenByBrowser <- lastSeenByBrowserBySite.values) {
+      // LinkedHashMap iteration order = insertion order, so we'll find all old entries directly.
+      lastSeenByBrowser.iterator dropWhile { case (ip, lastSeenAt) =>
+        now.millisSince(lastSeenAt) > TenMinutesInMillis
+      }
+    }
+  }
 }

@@ -95,6 +95,11 @@ export function newUserAccountCreated() {
 
 
 export function logout() {
+  Server.logout(logoutClientSideOnly);
+}
+
+
+export function logoutClientSideOnly() {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.Logout
   });

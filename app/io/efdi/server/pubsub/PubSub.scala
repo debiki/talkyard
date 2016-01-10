@@ -74,6 +74,7 @@ object PubSub {
   def startNewActor(actorSystem: ActorSystem): PubSubApi = {
     val actorRef = actorSystem.actorOf(Props(
       new PubSubActor()), name = s"PubSub-$testInstanceCounter")
+    actorSystem.scheduler.schedule(60 seconds, 10 seconds, actorRef, DeleteInactiveSubscriptions)
     testInstanceCounter += 1
     new PubSubApi(actorRef)
   }
@@ -92,6 +93,11 @@ class PubSubApi(private val actorRef: ActorRef) {
   }
 
 
+  def unsubscribeUser(siteId: SiteId, user: User) {
+    actorRef ! UnsubscribeUser(siteId, user)
+  }
+
+
   def publish(message: Message) {
     actorRef ! PublishMessage(message)
   }
@@ -106,8 +112,9 @@ class PubSubApi(private val actorRef: ActorRef) {
 
 private case class PublishMessage(message: Message)
 private case class UserSubscribed(siteId: SiteId, user: User)
+private case class UnsubscribeUser(siteId: SiteId, user: User)
 private case class ListOnlineUsers(siteId: SiteId)
-
+private case object DeleteInactiveSubscriptions
 
 
 /** Publishes events to browsers via e.g. long polling or WebSocket. Reqiures nginx and nchan.
@@ -119,7 +126,7 @@ private case class ListOnlineUsers(siteId: SiteId)
   */
 class PubSubActor extends Actor {
 
-  /** Tells when subscriber subscribed. Subscribers are sorted by subscription (= insertion) order.
+  /** Tells when subscriber subscribed. Subscribers are sorted by perhaps-inactive first.
     * We'll push messages only to users who have subscribed (i.e. are online and have
     * connected to the server via e.g. WebSocket).
     */
@@ -129,20 +136,38 @@ class PubSubActor extends Actor {
   private class UserAndWhen(val user: User, val when: When)
 
   private def perSiteSubscribers(siteId: SiteId) =
+    // Use a LinkedHashMap because sort order = insertion order.
     subscribersBySite.getOrElseUpdate(siteId, mutable.LinkedHashMap[UserId, UserAndWhen]())
+
+  // Could check what is Nchan's long-polling inactive timeout, if any?
+  private val DeleteAfterInactiveMillis = 10 * OneMinuteInMillis
 
 
   def receive = {
     case UserSubscribed(siteId, user) =>
-      perSiteSubscribers(siteId).put(user.id, new UserAndWhen(user, now))
-      println(s"Subscribed: site $siteId, user $user")
+      subscribeUser(siteId, user)
+    case UnsubscribeUser(siteId, user) =>
+      unsubscribeUser(siteId, user)
     case PublishMessage(message: Message) =>
-      println("Publishing: " + message)
       publish(message)
     case ListOnlineUsers(siteId) =>
       sender ! listUsersOnline(siteId)
-    // SHOULD [onlinelist] case DeleteInactiveSubscriptions =>
-    //  ask Nchan if browser gone & delete subscription.
+    case DeleteInactiveSubscriptions =>
+      deleteInactiveSubscriptions()
+  }
+
+
+  private def subscribeUser(siteId: SiteId, user: User) {
+    val userAndWhenMap = perSiteSubscribers(siteId)
+    // Remove and reinsert, so inactive users will be the first ones found when iterating.
+    userAndWhenMap.remove(user.id)
+    userAndWhenMap.put(user.id, new UserAndWhen(user, When.now()))
+  }
+
+
+  private def unsubscribeUser(siteId: SiteId, user: User) {
+    // COULD tell Nchan about this too
+    perSiteSubscribers(siteId).remove(user.id)
   }
 
 
@@ -200,6 +225,17 @@ class PubSubActor extends Actor {
 
   private def listUsersOnline(siteId: SiteId): immutable.Seq[User] = {
     perSiteSubscribers(siteId).values.map(_.user).to[immutable.Seq]
+  }
+
+
+  private def deleteInactiveSubscriptions() {
+    val now = When.now()
+    for ((siteId, userAndWhenMap) <- subscribersBySite) {
+      // LinkedHashMap sort order = perhaps-inactive first.
+      userAndWhenMap.iterator.dropWhile { case (userId, userAndWhen) =>
+        now.millisSince(userAndWhen.when) > DeleteAfterInactiveMillis
+      }
+    }
   }
 
 }

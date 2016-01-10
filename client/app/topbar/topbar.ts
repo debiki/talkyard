@@ -129,8 +129,7 @@ export var TopBar = createComponent({
   },
 
   onLogoutClick: function() {
-    // COULD let ReactActions call Server instead.
-    debiki2.Server.logout(debiki2.ReactActions.logout);
+    debiki2.ReactActions.logout();
   },
 
   showTools: function() {

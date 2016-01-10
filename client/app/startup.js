@@ -63,8 +63,8 @@ function handleLoginInOtherBrowserTab() {
       }
     }
     else {
-      // We've logged out in another browser tab.
-      debiki2.ReactActions.logout();
+      // We've logged out in another browser tab. The server should already know about this.
+      debiki2.ReactActions.logoutClientSideOnly();
     }
   }
   else if (sessionId) {

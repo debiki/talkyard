@@ -20,7 +20,7 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.dao.SystemDao
-import io.efdi.server.http.DebikiRequest
+import io.efdi.server.http.{GetRequest, DebikiRequest}
 import java.{net => jn}
 import play.api._
 import play.api.libs.iteratee.Iteratee
@@ -211,9 +211,11 @@ object DebikiHttp {
   // ----- Tenant ID lookup
 
 
-  def originOf(request: Request[_]) = {
+  def originOf(request: GetRequest) =
+    Globals.originOf(request.underlying)
+
+  def originOf(request: Request[_]) =
     Globals.originOf(request)
-  }
 
 
   def daoFor(request: Request[_]) = {

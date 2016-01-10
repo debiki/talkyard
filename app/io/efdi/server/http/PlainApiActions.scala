@@ -81,8 +81,7 @@ private[http] object PlainApiActions {
         if (actualSidStatus.isOk) (actualSidStatus, false)
         else (SidAbsent, true)
 
-      val (anyBrowserId, moreNewCookies) =
-        BrowserId.checkBrowserId(request, maySetCookies = true)
+      val (browserId, moreNewCookies) = BrowserId.checkBrowserId(request)
 
       // Parts of `block` might be executed asynchronously. However any LoginNotFoundException
       // should happen before the async parts, because access control should be done
@@ -90,7 +89,7 @@ private[http] object PlainApiActions {
       // any AsyncResult(future-result-that-might-be-a-failure) here.
       val resultOldCookies: Future[Result] =
         try {
-          runBlockIfAuthOk(request, site, mendedSidStatus, xsrfOk, anyBrowserId, block)
+          runBlockIfAuthOk(request, site, mendedSidStatus, xsrfOk, browserId, block)
         }
         catch {
           case e: Utils.LoginNotFoundException =>
@@ -126,7 +125,7 @@ private[http] object PlainApiActions {
 
 
     def runBlockIfAuthOk[A](request: Request[A], site: SiteIdHostname, sidStatus: SidStatus,
-          xsrfOk: XsrfOk, browserId: Option[BrowserId], block: ApiRequest[A] => Future[Result]) = {
+          xsrfOk: XsrfOk, browserId: BrowserId, block: ApiRequest[A] => Future[Result]) = {
       val dao = Globals.siteDao(site.id)
       dao.perhapsBlockGuest(request, sidStatus, browserId)
 

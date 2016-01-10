@@ -74,14 +74,19 @@ package object core {
   class When(val unixMillis: UnixMillis) extends AnyVal {
     def toJavaData = new java.util.Date(unixMillis)
     def toUnixMillis = unixMillis
+    def millisSince(other: When) = unixMillis - other.unixMillis
   }
 
-  def now = new When(System.currentTimeMillis())
+  object When {
+    def now() = new When(System.currentTimeMillis())
+  }
 
   val HomepageUrlPath = "/"
   val EmptyPageId = "0"
 
-  val MillisPerDay: Long = 24 * 3600 * 1000
+  val OneMinuteInMillis: Long = 60 * 1000
+  val OneHourInMillis: Long = 3600 * 1000
+  val MillisPerDay: Long = 24 * OneHourInMillis
   val OneDayInMillis: Long = MillisPerDay
   val OneWeekInMillis: Long = 7 * MillisPerDay
 
