@@ -25,10 +25,8 @@ import com.mohiva.play.silhouette.impl.providers.oauth1.TwitterProvider
 import com.mohiva.play.silhouette.impl.providers.oauth2._
 import com.mohiva.play.silhouette.impl.providers._
 import debiki.antispam.AntiSpam
-import debiki.{JsFalse, JsTrue}
+import debiki._
 import debiki.DebikiHttp._
-import debiki.Globals
-import debiki.RateLimits
 import io.efdi.server.http._
 import java.{util => ju}
 import org.scalactic.{Good, Bad}
@@ -96,12 +94,12 @@ object LoginWithOpenAuthController extends Controller {
 
 
   def startAuthentication(provider: String, returnToUrl: String) =
-        ExceptionAction.async(empty) { request =>
+        AsyncGetActionAllowAnyone { request =>
     startAuthenticationImpl(provider, returnToUrl, request)
   }
 
 
-  def startAuthenticationImpl(provider: String, returnToUrl: String, request: Request[Unit]) = {
+  def startAuthenticationImpl(provider: String, returnToUrl: String, request: GetRequest) = {
     configErrorMessage foreach { message =>
       throwInternalError("DwE5WKU3", message)
     }
@@ -128,7 +126,7 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  def finishAuthentication(provider: String) = ExceptionAction.async(empty) { request =>
+  def finishAuthentication(provider: String) = AsyncGetActionAllowAnyone { request =>
     authenticate(provider, request)
   }
 
@@ -139,27 +137,27 @@ object LoginWithOpenAuthController extends Controller {
     *   https://github.com/mohiva/play-silhouette-seed/blob/master/
     *                     app/controllers/SocialAuthController.scala#L32
     */
-  private def authenticate(providerName: String, request: Request[Unit]): Future[Result] = {
+  private def authenticate(providerName: String, request: GetRequest): Future[Result] = {
 
     if (anyLoginOrigin.map(_ == originOf(request)) == Some(false)) {
       // OAuth providers have been configured to send authentication data to another
       // origin (namely anyLoginOrigin.get); we need to redirect to that origin
       // and login from there.
-      return loginViaLoginOrigin(providerName, request)
+      return loginViaLoginOrigin(providerName, request.underlying)
     }
     val provider: SocialProvider with CommonSocialProfileBuilder = providerName match {
       case FacebookProvider.ID =>
-        facebookProvider(request)
+        facebookProvider(request.underlying)
       case GoogleProvider.ID =>
-        googleProvider(request)
+        googleProvider(request.underlying)
       case TwitterProvider.ID =>
-        twitterProvider(request)
+        twitterProvider(request.underlying)
       case GitHubProvider.ID =>
-        githubProvider(request)
+        githubProvider(request.underlying)
       case x =>
         return Future.successful(Results.Forbidden(s"Bad provider: `$providerName' [DwE2F0D6]"))
     }
-    provider.authenticate()(request) flatMap {
+    provider.authenticate()(request.underlying) flatMap {
       case Left(result) =>
         Future.successful(result)
       case Right(authInfo) =>
@@ -174,7 +172,7 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  private def handleAuthenticationData(request: Request[Unit], profile: CommonSocialProfile)
+  private def handleAuthenticationData(request: GetRequest, profile: CommonSocialProfile)
         : Future[Result] = {
     p.Logger.debug(s"OAuth data received at ${originOf(request)}: $profile")
 
@@ -219,7 +217,7 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  private def login(request: Request[_], oauthDetailsCacheKey: Option[String] = None,
+  private def login(request: GetRequest, oauthDetailsCacheKey: Option[String] = None,
         anyOauthDetails: Option[OpenAuthDetails] = None): Result = {
 
     def cacheKey = oauthDetailsCacheKey.getOrDie("DwE90RW215")
@@ -230,12 +228,12 @@ object LoginWithOpenAuthController extends Controller {
       })
 
     val loginAttempt = OpenAuthLoginAttempt(
-      ip = request.remoteAddress, date = new ju.Date, oauthDetails)
+      ip = request.ip, date = new ju.Date, oauthDetails)
 
     val mayCreateNewUserCookie = request.cookies.get(MayCreateUserCookieName)
     val mayCreateNewUser = !mayCreateNewUserCookie.map(_.value).contains("false")
 
-    val dao = daoFor(request)
+    val dao = request.dao
 
     // COULD let tryLogin() return a LoginResult and use pattern matching, not exceptions.
     val result =
@@ -333,12 +331,12 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  private def createCookiesAndFinishLogin(request: Request[_], siteId: SiteId, user: User)
+  private def createCookiesAndFinishLogin(request: DebikiRequest[_], siteId: SiteId, user: User)
         : Result = {
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(siteId, user)
 
     val response =
-      if (isAjax(request)) {
+      if (isAjax(request.underlying)) {
         // We've shown but closed an OAuth provider login popup, and now we're
         // handling a create-user Ajax request from a certain showCreateUserDialog()
         // Javascript dialog. It already knows about any pending redirects.
@@ -369,11 +367,12 @@ object LoginWithOpenAuthController extends Controller {
             loginPopupCallback
         }
       }
+
     response.withCookies(sidAndXsrfCookies: _*)
   }
 
 
-  private def showCreateUserDialog(request: Request[_], oauthDetails: OpenAuthDetails): Result = {
+  private def showCreateUserDialog(request: GetRequest, oauthDetails: OpenAuthDetails): Result = {
     val cacheKey = nextRandomString()
     play.api.cache.Cache.set(cacheKey, oauthDetails)
     val anyIsInLoginWindowCookieValue = request.cookies.get(IsInLoginWindowCookieName).map(_.value)
@@ -455,7 +454,7 @@ object LoginWithOpenAuthController extends Controller {
 
       val becomeOwner = LoginController.shallBecomeOwner(request, email)
 
-      val dao = daoFor(request.request)
+      val dao = request.dao
       val userData =
         NewOauthUserData.create(name = fullName, username = username, email = email,
             emailVerifiedAt = emailVerifiedAt, identityData = oauthDetails,
@@ -468,7 +467,7 @@ object LoginWithOpenAuthController extends Controller {
       val result = try {
         val loginGrant = dao.createIdentityUserAndLogin(userData)
         if (emailVerifiedAt.isDefined) {
-          createCookiesAndFinishLogin(request.request, request.siteId, loginGrant.user)
+          createCookiesAndFinishLogin(request, request.siteId, loginGrant.user)
         }
         else {
           LoginWithPasswordController.sendEmailAddressVerificationEmail(
@@ -517,7 +516,7 @@ object LoginWithOpenAuthController extends Controller {
     * OAuth 1 and 2 providers supposedly have been configured to use.
     */
   def loginThenReturnToOriginalSite(provider: String, returnToOrigin: String, xsrfToken: String)
-        = ExceptionAction.async(empty) { request =>
+        = AsyncGetActionAllowAnyone { request =>
     // The actual redirection back to the returnToOrigin happens in handleAuthenticationData()
     // — it checks the value of the return-to-origin cookie.
     if (anyLoginOrigin.map(_ == originOf(request)) != Some(true))
@@ -533,8 +532,8 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  def continueAtOriginalSite(oauthDetailsCacheKey: String, xsrfToken: String) = ExceptionAction(empty) {
-        request =>
+  def continueAtOriginalSite(oauthDetailsCacheKey: String, xsrfToken: String) =
+        GetActionAllowAnyone { request =>
     val anyXsrfTokenInSession = request.cookies.get(ReturnToSiteXsrfTokenCookieName)
     anyXsrfTokenInSession match {
       case Some(xsrfCookie) =>

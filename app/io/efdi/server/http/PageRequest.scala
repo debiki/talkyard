@@ -122,7 +122,7 @@ class PageRequest[A](
   val siteIdAndCanonicalHostname: SiteIdHostname,
   val sid: SidStatus,
   val xsrfToken: XsrfOk,
-  val browserId: Option[BrowserId],
+  val browserId: BrowserId,
   val user: Option[User],
   val pageExists: Boolean,
   /** Ids of groups to which the requester belongs. */
@@ -223,7 +223,7 @@ class DummyPageRequest[A](
   siteIdAndCanonicalHostname: SiteIdHostname,
   sid: SidStatus,
   xsrfToken: XsrfOk,
-  browserId: Option[BrowserId],
+  browserId: BrowserId,
   user: Option[User],
   pageExists: Boolean,
   pagePath: PagePath,

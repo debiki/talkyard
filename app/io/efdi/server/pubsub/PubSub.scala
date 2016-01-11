@@ -18,6 +18,7 @@
 package io.efdi.server.pubsub
 
 import akka.actor._
+import akka.pattern.ask
 import com.debiki.core.Prelude._
 import com.debiki.core._
 import debiki.{ReactJson, Globals}
@@ -28,7 +29,9 @@ import play.api.libs.ws.{WSResponse, WS}
 import play.api.Play.current
 import scala.collection.{mutable, immutable}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration._
+import ReactJson.JsUser
 
 
 sealed trait Message {
@@ -69,11 +72,12 @@ object PubSub {
 
   /** Starts a PubSub actor (only one is needed in the whole app).
     */
-  def startNewActor(actorSystem: ActorSystem): PubSubApi = {
+  def startNewActor(actorSystem: ActorSystem): (PubSubApi, StrangerCounterApi) = {
     val actorRef = actorSystem.actorOf(Props(
-      new PubSub()), name = s"PubSub-$testInstanceCounter")
+      new PubSubActor()), name = s"PubSub-$testInstanceCounter")
+    actorSystem.scheduler.schedule(60 seconds, 10 seconds, actorRef, DeleteInactiveSubscriptions)
     testInstanceCounter += 1
-    new PubSubApi(actorRef)
+    (new PubSubApi(actorRef), new StrangerCounterApi(actorRef))
   }
 
 }
@@ -81,17 +85,45 @@ object PubSub {
 
 
 class PubSubApi(private val actorRef: ActorRef) {
-  def onUserSubscribed(siteId: SiteId, userId: UserId) {
-    actorRef ! UserSubscribed(SiteUserId(siteId, userId))
+
+  private val timeout = 10 seconds
+
+  def onUserSubscribed(siteId: SiteId, user: User, browserIdData: BrowserIdData) {
+    actorRef ! UserSubscribed(siteId, user, browserIdData)
+  }
+
+  def unsubscribeUser(siteId: SiteId, user: User, browserIdData: BrowserIdData) {
+    actorRef ! UnsubscribeUser(siteId, user, browserIdData)
   }
 
   def publish(message: Message) {
     actorRef ! PublishMessage(message)
   }
+
+  def listOnlineUsers(siteId: SiteId): Future[(immutable.Seq[User], Int)] = {
+    val response: Future[Any] = (actorRef ? ListOnlineUsers(siteId))(timeout)
+    response.map(_.asInstanceOf[(immutable.Seq[User], Int)])
+  }
 }
 
+
+class StrangerCounterApi(private val actorRef: ActorRef) {
+
+  private val timeout = 10 seconds
+
+  def tellStrangerSeen(siteId: SiteId, browserIdData: BrowserIdData) {
+    actorRef ! StrangerSeen(siteId, browserIdData)
+  }
+}
+
+
 private case class PublishMessage(message: Message)
-private case class UserSubscribed(siteUserId: SiteUserId)
+private case class UserSubscribed(siteId: SiteId, user: User, browserIdData: BrowserIdData)
+private case class UnsubscribeUser(siteId: SiteId, user: User, browserIdData: BrowserIdData)
+private case class ListOnlineUsers(siteId: SiteId)
+private case object DeleteInactiveSubscriptions
+
+private case class StrangerSeen(siteId: SiteId, browserIdData: BrowserIdData)
 
 
 
@@ -102,28 +134,86 @@ private case class UserSubscribed(siteUserId: SiteUserId)
   * Later:? Poll nchan each minute? to find out which users have disconnected?
   * ((Could add an nchan feature that tells the appserver about this, push not poll?))
   */
-class PubSub extends Actor {
+class PubSubActor extends Actor {
 
-  /** Tells when subscriber site-user-id subscribed. Sorted by insertion order.
+  /** Tells when subscriber subscribed. Subscribers are sorted by perhaps-inactive first.
     * We'll push messages only to users who have subscribed (i.e. are online and have
     * connected to the server via e.g. WebSocket).
     */
-  private val subscribers = mutable.LinkedHashMap[SiteUserId, When]()
+  private val subscribersBySite =
+    mutable.HashMap[SiteId, mutable.LinkedHashMap[UserId, UserAndWhen]]()
+
+  private class UserAndWhen(val user: User, val when: When)
+
+  private def perSiteSubscribers(siteId: SiteId) =
+    // Use a LinkedHashMap because sort order = insertion order.
+    subscribersBySite.getOrElseUpdate(siteId, mutable.LinkedHashMap[UserId, UserAndWhen]())
+
+  // Could check what is Nchan's long-polling inactive timeout, if any?
+  private val DeleteAfterInactiveMillis = 10 * OneMinuteInMillis
+
+  private val strangerCounter = new io.efdi.server.stranger.StrangerCounter()
 
 
   def receive = {
-    case UserSubscribed(siteUserId) =>
-      subscribers.put(siteUserId, now)
-      println("Subscribed: " + siteUserId)
+    case UserSubscribed(siteId, user, browserIdData) =>
+      strangerCounter.removeStranger(siteId, browserIdData)
+      publishUserPresence(siteId, user, Presence.Active)
+      subscribeUser(siteId, user)
+    case UnsubscribeUser(siteId, user, browserIdData) =>
+      // Don't bump the stranger counter, it's fairly likely that the user left for real?
+      // Also, increasing it gives everyone the impression that the server knows the user
+      // didn't really leave, but rather says, reading, but logged out.
+      unsubscribeUser(siteId, user)
+      publishUserPresence(siteId, user, Presence.Away)
     case PublishMessage(message: Message) =>
-      println("Publishing: " + message)
-      publish(message)
+      publishPostAndNotfs(message)
+    case ListOnlineUsers(siteId) =>
+      sender ! listUsersOnline(siteId)
+    case DeleteInactiveSubscriptions =>
+      deleteInactiveSubscriptions()
+      strangerCounter.deleteOldStrangers()
+    case StrangerSeen(siteId, browserIdData) =>
+      strangerCounter.addStranger(siteId, browserIdData)
   }
 
 
-  def publish(message: Message) {
+  private def subscribeUser(siteId: SiteId, user: User) {
+    val userAndWhenMap = perSiteSubscribers(siteId)
+    // Remove and reinsert, so inactive users will be the first ones found when iterating.
+    userAndWhenMap.remove(user.id)
+    userAndWhenMap.put(user.id, new UserAndWhen(user, When.now()))
+  }
+
+
+  private def unsubscribeUser(siteId: SiteId, user: User) {
+    // COULD tell Nchan about this too
+    perSiteSubscribers(siteId).remove(user.id)
+  }
+
+
+  private def publishUserPresence(siteId: SiteId, user: User, presence: Presence) {
+    // dupl code [7UKY74]
+    val siteDao = Globals.siteDao(siteId)
+    val site = siteDao.loadSite()
+    val canonicalHost = site.canonicalHost.getOrDie(
+      "EsE2WUV43", s"Site lacks canonical host: $site")
+
+    val userAndWhenById = perSiteSubscribers(siteId)
+    if (userAndWhenById.contains(user.id))
+      return
+
+    val userIds = userAndWhenById.values.map(_.user.id).toSet
+    sendPublishRequest(canonicalHost.hostname, userIds, "presence", Json.obj(
+      "user" -> JsUser(user, Some(presence)),
+      "numOnlineStrangers" -> strangerCounter.countStrangers(siteId)))
+  }
+
+
+  private def publishPostAndNotfs(message: Message) {
     SHOULD // only publish to connected users
 
+    // dupl code [7UKY74]
     val siteDao = Globals.siteDao(message.siteId)
     val site = siteDao.loadSite()
     val canonicalHost = site.canonicalHost.getOrDie(
@@ -134,40 +224,64 @@ class PubSub extends Actor {
       val notfsJson = siteDao.readOnlyTransaction { transaction =>
         ReactJson.notificationsToJson(Seq(notf), transaction).notfsJson
       }
-      WS.url(s"http://localhost/-/pubsub/publish/${notf.toUserId}")
-        .withVirtualHost(canonicalHost.hostname)
-        .post(Json.obj(
-          "type" -> "notifications",
-          "data" -> notfsJson).toString)
+      sendPublishRequest(canonicalHost.hostname, Set(notf.toUserId), "notifications", notfsJson)
+    }
+
+    // Later: publish message.toJson too, to all message.toUserIds.
+  }
+
+
+  private def sendPublishRequest(hostname: String, toUserIds: Set[UserId], tyype: String,
+        json: JsValue) {
+    // Currently nchan doesn't support publishing to many channels with one single request.
+    // (See the Channel Multiplexing section here: https://nchan.slact.net/
+    // it says: "Publishing to multiple channels from one location is not supported")
+    COULD // create an issue about supporting that? What about each post data text line = a channel,
+    // and a blank line separates channels from the message that will be sent to all these channels?
+    toUserIds foreach { userId =>
+      WS.url(s"http://localhost/-/pubsub/publish/$userId")
+        .withVirtualHost(hostname)
+        .post(Json.obj("type" -> tyype, "data" -> json).toString)
         .map(handlePublishResponse)
         .recover({
           case ex: Exception =>
             p.Logger.warn(s"Error publishing to browsers [EsE0KPU31]", ex)
         })
     }
-
-    // Currently nchan doesn't support publishing to many channels with one single request.
-    // (See the Channel Multiplexing section here: https://nchan.slact.net/
-    // it says: "Publishing to multiple channels from one location is not supported")
-    COULD // create an issue about supporting that? What about each post data text line = a channel,
-    // and a blank line separates channels from the message that will be sent to all these channels?
-    message.toUserIds foreach { userId =>
-      WS.url(s"http://localhost/-/pubsub/publish/$userId")
-        .withVirtualHost(canonicalHost.hostname)
-        .post(message.toJson)
-        .map(handlePublishResponse)
-        .recover({
-          case ex: Exception =>
-            p.Logger.warn(s"Error publishing to browsers [EsE5JYUW2]", ex)
-        })
-    }
   }
 
-  def handlePublishResponse(response: WSResponse) {
+
+  private def handlePublishResponse(response: WSResponse) {
     if (response.status < 200 || 299 < response.status) {
       p.Logger.warn(o"""Bad nchan status code after sending publish request [EsE9UKJ2]:
         ${response.status} ${response.statusText} — see the nginx error log for details?
         Response body: '${response.body}""")
     }
   }
+
+
+  private def listUsersOnline(siteId: SiteId): (immutable.Seq[User], Int) = {
+    val onlineUsers = perSiteSubscribers(siteId).values.map(_.user).to[immutable.Seq]
+    val numStrangers = strangerCounter.countStrangers(siteId)
+    (onlineUsers, numStrangers)
+  }
+
+
+  private def deleteInactiveSubscriptions() {
+    val now = When.now()
+    for ((siteId, userAndWhenMap) <- subscribersBySite) {
+      // LinkedHashMap sort order = perhaps-inactive first.
+      // COULD implement `removeWhile` [removewhile]
+      while (true) {
+        val ((userId, userAndWhen)) = userAndWhenMap.headOption getOrElse {
+          return
+        }
+        if (now.millisSince(userAndWhen.when) < DeleteAfterInactiveMillis)
+          return
+
+        userAndWhenMap.remove(userId)
+      }
+    }
+  }
+
 }

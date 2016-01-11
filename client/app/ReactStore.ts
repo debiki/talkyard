@@ -42,19 +42,25 @@ export var ReactStore = new EventEmitter2();
 // First, initialize the store with page specific data only, nothing user specific,
 // because the server serves cached HTML with no user specific data. Later on,
 // we'll insert user specific data into the store, and re-render. See
-// ReactStore.activateUserSpecificData().
+// ReactStore.activateMyself().
 var store: Store = debiki.reactPageStore;
 
 store.postsToUpdate = {};
-if (!store.user) store.user = makeEmptyUser();
+
+if (store.user && !store.me) store.me = store.user; // try to remove
+if (!store.me) {
+  store.me = makeStranger();
+}
+store.user = store.me; // try to remove
 
 
 ReactDispatcher.register(function(payload) {
   var action = payload.action;
   switch (action.actionType) {
 
-    case ReactActions.actionTypes.Login:
-      ReactStore.activateUserSpecificData(action.user);
+    case ReactActions.actionTypes.NewMyself:
+      ReactStore.activateMyself(action.user);
+      theStore_addOnlineUser(me_toBriefUser(action.user));
       break;
 
     case ReactActions.actionTypes.Logout:
@@ -63,8 +69,11 @@ ReactDispatcher.register(function(payload) {
 
       $('html').removeClass('dw-is-admin, dw-is-staff, dw-is-authenticated');
 
-      store.user = makeEmptyUser();
-      debiki2.pubsub.subscribeToServerEventsAsUser(store.user);
+      theStore_removeOnlineUser(store.me.id);
+      store.numOnlineStrangers += 1;
+      store.me = makeStranger();
+      store.user = store.me; // try to remove
+      debiki2.pubsub.subscribeToServerEvents();
       break;
 
     case ReactActions.actionTypes.NewUserAccountCreated:
@@ -89,7 +98,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.SetPageNotfLevel:
-      store.user.rolePageSettings.notfLevel = action.newLevel;
+      store.me.rolePageSettings.notfLevel = action.newLevel;
       break;
 
     case ReactActions.actionTypes.AcceptAnswer:
@@ -189,6 +198,11 @@ ReactDispatcher.register(function(payload) {
       store.isWatchbarOpen = action.open;
       break;
 
+    case ReactActions.actionTypes.SetContextbarOpen:
+      putInLocalStorage('isContextbarOpen', action.open);
+      store.isContextbarOpen = action.open;
+      break;
+
     case ReactActions.actionTypes.SetHorizontalLayout:
       store.horizontalLayout = action.enabled;
       // Now all gifs will be recreated since the page is rerendered.
@@ -200,14 +214,14 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.HideHelpMessage:
-      dieIf(!store.user, 'EsE8UGM5');
-      store.user.closedHelpMessages[action.message.id] = action.message.version;
-      putInLocalStorage('closedHelpMessages', store.user.closedHelpMessages);
+      dieIf(!store.me, 'EsE8UGM5');
+      store.me.closedHelpMessages[action.message.id] = action.message.version;
+      putInLocalStorage('closedHelpMessages', store.me.closedHelpMessages);
       break;
 
     case ReactActions.actionTypes.ShowHelpAgain:
       putInLocalStorage('closedHelpMessages',  {});
-      store.user.closedHelpMessages = {};
+      store.me.closedHelpMessages = {};
       break;
 
     case ReactActions.actionTypes.AddNotifications:
@@ -216,6 +230,33 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.MarkAnyNotificationAsSeen:
       markAnyNotificationssAsSeen(action.postNr);
+      break;
+
+    case ReactActions.actionTypes.UpdateUserPresence:
+      // Updating state in-place, oh well.
+      store.numOnlineStrangers = action.numOnlineStrangers;
+      var user: BriefUser = action.user;
+      store.usersByIdBrief[user.id] = user;
+      if (store.onlineUsers) {
+        if (user.presence === Presence.Active) {
+          if (_.every(store.onlineUsers, u => u.id !== user.id)) {
+            store.onlineUsers.push(user);
+          }
+        }
+        else {
+          _.remove(store.onlineUsers, u => u.id === user.id);
+        }
+      }
+      break;
+
+    case ReactActions.actionTypes.UpdateOnlineUsersLists:
+      _.forEach(store.usersByIdBrief, (u: BriefUser) => u.presence = undefined);
+      store.numOnlineStrangers = action.numOnlineStrangers;
+      store.onlineUsers = action.onlineUsers;
+      // Overwrite any old user objects with no presence info and perhaps stale other data.
+      _.each(action.onlineUsers, (user: BriefUser) => {
+        store.usersByIdBrief[user.id] = user;
+      });
       break;
 
     default:
@@ -234,7 +275,8 @@ ReactDispatcher.register(function(payload) {
 
 ReactStore.initialize = function() {
   findAnyAcceptedAnswerPostNr();
-}
+  store.usersByIdBrief = store.usersByIdBrief || {};
+};
 
 
 function findAnyAcceptedAnswerPostNr() {
@@ -250,38 +292,39 @@ function findAnyAcceptedAnswerPostNr() {
 
 
 // COULD change this to an action instead
-ReactStore.activateUserSpecificData = function(anyUser) {
+ReactStore.activateMyself = function(anyNewMe: Myself) {
   store.userSpecificDataAdded = true;
   store.now = new Date().getTime();
 
-  var newUser = anyUser || debiki.reactUserStore;
-  if (!newUser) {
+  var newMe = anyNewMe || debiki.reactUserStore;
+  if (!newMe) {
     // For now only. Later on, this data should be kept server side instead?
-    addLocalStorageData(store.user);
+    addLocalStorageData(store.me);
+    debiki2.pubsub.subscribeToServerEvents();
     this.emitChange();
     return;
   }
 
-  if (newUser.isAdmin) {
+  if (newMe.isAdmin) {
     $('html').addClass('dw-is-admin, dw-is-staff');
   }
-  if (newUser.isModerator) {
+  if (newMe.isModerator) {
     $('html').addClass('dw-is-staff');
   }
-  if (newUser.isAuthenticated) {
+  if (newMe.isAuthenticated) {
     $('html').addClass('dw-is-authenticated');
   }
 
-  store.user = newUser;
-  addLocalStorageData(store.user);
+  store.user = newMe; // try to remove
+  store.me = newMe;
+  addLocalStorageData(store.me);
 
   // Show the user's own unapproved posts, or all, for admins.
-  _.each(store.user.unapprovedPosts, (post: Post) => {
+  _.each(store.me.unapprovedPosts, (post: Post) => {
     updatePost(post);
   });
 
-  debiki2.pubsub.subscribeToServerEventsAsUser(newUser);
-
+  debiki2.pubsub.subscribeToServerEvents();
   store.quickUpdate = false;
   this.emitChange();
 };
@@ -290,6 +333,59 @@ ReactStore.activateUserSpecificData = function(anyUser) {
 ReactStore.allData = function() {
   return store;
 };
+
+
+function me_toBriefUser(me: Myself): BriefUser {
+  return {
+    id: me.id,
+    fullName: me.fullName,
+    username: me.username,
+    isAdmin: me.isAdmin,
+    isModerator: me.isModerator,
+    isGuest: me.id && me.id <= MaxGuestId,
+    isEmailUnknown: undefined, // ?
+    avatarUrl: me.avatarUrl,
+    presence: Presence.Active,
+  }
+}
+
+
+function theStore_removeOnlineUser(userId: UserId) {
+  if (store.onlineUsers) {
+    _.remove(store.onlineUsers, u => u.id === userId);
+  }
+  var user = store.usersByIdBrief[userId];
+  if (user) {
+    user.presence = Presence.Away;
+  }
+}
+
+
+function theStore_addOnlineUser(user: BriefUser) {
+  store.usersByIdBrief[user.id] = user;
+  if (store.onlineUsers) {
+    if (_.every(store.onlineUsers, u => u.id !== user.id)) {
+      store.onlineUsers.push(user);
+    }
+  }
+}
+
+export function store_getOnlineUsersWholeSite(store: Store): BriefUser[] {
+  return _.values(store.usersByIdBrief).filter(u => {
+    return _.some(store.onlineUsers, ou => ou.id === u.id);
+  });
+}
+
+
+export function store_getUsersOnThisPage(store: Store): BriefUser[] {
+  var users: BriefUser[] = [];
+  _.each(store.allPosts, (post: Post) => {
+    if (_.every(users, u => u.id !== post.authorIdInt)) {
+      users.push(store.usersByIdBrief[post.authorIdInt]);
+    }
+  });
+  return users;
+}
 
 
 ReactStore.isGuestLoginAllowed = function() {
@@ -312,8 +408,8 @@ ReactStore.getPageTitle = function(): string {
 };
 
 
-ReactStore.getUser = function(): User {
-  return store.user;
+ReactStore.getUser = function(): Myself {
+  return store.me;
 };
 
 
@@ -416,10 +512,10 @@ function updatePost(post: Post, isCollapsing?: boolean) {
 function voteOnPost(action) {
   var post: Post = action.post;
 
-  var votes = store.user.votes[post.postId];
+  var votes = store.me.votes[post.postId];
   if (!votes) {
     votes = [];
-    store.user.votes[post.postId] = votes;
+    store.me.votes[post.postId] = votes;
   }
 
   if (action.doWhat === 'CreateVote') {
@@ -434,15 +530,15 @@ function voteOnPost(action) {
 
 
 function markPostAsRead(postId: number, manually: boolean) {
-  var currentMark = store.user.marksByPostId[postId];
+  var currentMark = store.me.marksByPostId[postId];
   if (currentMark) {
     // All marks already mean that the post has been read. Do nothing.
   }
   else if (manually) {
-    store.user.marksByPostId[postId] = ManualReadMark;
+    store.me.marksByPostId[postId] = ManualReadMark;
   }
   else {
-    store.user.postIdsAutoReadNow.push(postId);
+    store.me.postIdsAutoReadNow.push(postId);
   }
   rememberPostsToQuickUpdate(postId);
 }
@@ -451,7 +547,7 @@ function markPostAsRead(postId: number, manually: boolean) {
 var lastPostIdMarkCycled = null;
 
 function cycleToNextMark(postId: number) {
-  var currentMark = store.user.marksByPostId[postId];
+  var currentMark = store.me.marksByPostId[postId];
   var nextMark;
   // The first time when clicking the star icon, try to star the post,
   // rather than marking it as read or unread. However, when the user
@@ -486,7 +582,7 @@ function cycleToNextMark(postId: number) {
     }
   }
   lastPostIdMarkCycled = postId;
-  store.user.marksByPostId[postId] = nextMark;
+  store.me.marksByPostId[postId] = nextMark;
 
   rememberPostsToQuickUpdate(postId);
 }
@@ -715,12 +811,12 @@ function sortPostIdsInPlace(postIds: number[], allPosts) {
 
 
 function addNotifications(newNotfs: Notification[]) {
-  var oldNotfs = store.user.notifications;
+  var oldNotfs = store.me.notifications;
   for (var i = 0; i < newNotfs.length; ++i) {
     var newNotf = newNotfs[i];
     if (_.every(oldNotfs, n => n.id !== newNotf.id)) {
       // Modifying state directly, oh well [redux]
-      store.user.notifications.unshift(newNotf);
+      store.me.notifications.unshift(newNotf);
       updateNotificationCounts(newNotf, true);
     }
   }
@@ -728,7 +824,7 @@ function addNotifications(newNotfs: Notification[]) {
 
 
 function markAnyNotificationssAsSeen(postNr) {
-  var notfs: Notification[] = store.user.notifications;
+  var notfs: Notification[] = store.me.notifications;
   _.each(notfs, (notf: Notification) => {
     if (notf.pageId === store.pageId && notf.postNr === postNr) {
       // Modifying state directly, oh well [redux]
@@ -747,18 +843,18 @@ function updateNotificationCounts(notf: Notification, add: boolean) {
   // Modifying state directly, oh well [redux]
   var delta = add ? +1 : -1;
   if (isTalkToMeNotification(notf)) {
-    store.user.numTalkToMeNotfs += delta;
+    store.me.numTalkToMeNotfs += delta;
   }
   else if (isTalkToOthersNotification(notf)) {
-    store.user.numTalkToOthersNotfs += delta;
+    store.me.numTalkToOthersNotfs += delta;
   }
   else {
-    store.user.numOtherNotfs += delta;
+    store.me.numOtherNotfs += delta;
   }
 }
 
 
-function makeEmptyUser(): User {
+function makeStranger(): Myself {
   return {
     rolePageSettings: {},
 
@@ -777,6 +873,7 @@ function makeEmptyUser(): User {
     marksByPostId: {},
 
     closedHelpMessages: {},
+    presence: Presence.Active,
   };
 }
 
@@ -785,22 +882,23 @@ function makeEmptyUser(): User {
  * This data should be stored server side, but right now I'm prototyping only and
  * storing it client side only.
  */
-function addLocalStorageData(user: User) {
-  user.postIdsAutoReadLongAgo = sidebar.UnreadCommentsTracker.getPostIdsAutoReadLongAgo();
-  user.marksByPostId = {}; // not implemented: loadMarksFromLocalStorage();
-  user.closedHelpMessages = getFromLocalStorage('closedHelpMessages') || {};
+function addLocalStorageData(me: Myself) {
+  me.postIdsAutoReadLongAgo = sidebar.UnreadCommentsTracker.getPostIdsAutoReadLongAgo();
+  me.marksByPostId = {}; // not implemented: loadMarksFromLocalStorage();
+  me.closedHelpMessages = getFromLocalStorage('closedHelpMessages') || {};
 
   // For now:
   // The watchbar: Recent topics.
   var recentTopics: WatchbarTopic[] = getFromLocalStorage('recentTopics') || [];
   // Add the current page, if absent, and if it's not a direct-message or chat-channel.
-  var shallListInRecentTopics = isWatchbarRecentTopicsPageRole(ReactStore.getPageRole());
-  if (shallListInRecentTopics && _.every(recentTopics, topic => topic.pageId !== store.pageId)) {
+  var shallList = store.pageId && store.pageId !== EmptyPageId &&
+      pageRole_shallListInRecentTopics(ReactStore.getPageRole());
+  if (shallList && _.every(recentTopics, topic => topic.pageId !== store.pageId)) {
     recentTopics.unshift({ pageId: store.pageId, title: ReactStore.getPageTitle() });
     putInLocalStorage('recentTopics', recentTopics);
   }
-  user.watchbarTopics = user.watchbarTopics || <WatchbarTopics> {};
-  user.watchbarTopics.recentTopics = recentTopics;
+  me.watchbarTopics = me.watchbarTopics || <WatchbarTopics> {};
+  me.watchbarTopics.recentTopics = recentTopics;
 }
 
 

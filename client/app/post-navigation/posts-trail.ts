@@ -57,8 +57,8 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
       }
     }
     visitedPosts.push({
-      windowLeft: $(window).scrollLeft(),
-      windowTop: $(window).scrollTop(),
+      windowLeft: $('#esPageColumn').scrollLeft(),
+      windowTop: $('#esPageColumn').scrollTop(),
       postId: currentPostId
     });
     visitedPosts.push({ postId: nextPostId });
@@ -92,7 +92,6 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
     addVisitedPosition = this.addVisitedPosition;
     keymaster('b', this.goBack);
     keymaster('f', this.goForward);
-    window.addEventListener('scroll', this.hideIfCloseToTop, false);
   },
 
   componentWillUnmount: function() {
@@ -101,7 +100,6 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
     addVisitedPosition = _.noop;
     keymaster.unbind('b', 'all');
     keymaster.unbind('f', 'all');
-    window.removeEventListener('scroll', this.hideIfCloseToTop, false);
   },
 
   goBack: function() {
@@ -120,12 +118,13 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
         }
       }, 600);
     }
+    var pageColumn = $('#esPageColumn');
     if (typeof backPost.windowLeft !== 'undefined' && (
-        backPost.windowLeft !== $(window).scrollLeft() ||
-        backPost.windowTop !== $(window).scrollTop())) {
+        backPost.windowLeft !== pageColumn.scrollLeft() ||
+        backPost.windowTop !== pageColumn.scrollTop())) {
       // Restore the original window top and left coordinates, so the Back button
       // really moves back to the original position.
-      var htmlBody = $('html, body').animate({
+      var htmlBody = pageColumn.animate({
         'scrollTop': backPost.windowTop,
         'scrollLeft': backPost.windowLeft
       }, 'slow', 'swing');
@@ -149,7 +148,7 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
       ReactActions.loadAndShowPost(forwPost.postId);
     }
     else if (forwPost.windowTop) {
-      $('html, body').animate({
+      $('#esPageColumn').animate({
         'scrollTop': forwPost.windowTop,
         'scrollLeft': forwPost.windowLeft
       }, 'slow', 'swing');

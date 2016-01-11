@@ -161,8 +161,10 @@ var EditCategoryDialog = createClassAndFactory({
         { value: PageRole.Question, label: 'Question' },
         { value: PageRole.Problem, label: 'Problem' },
         { value: PageRole.Idea, label: 'Idea' },
-        { value: PageRole.Discussion, label: 'Discussion' },
-        { value: PageRole.Critique, label: 'Critique' }]; // [plugin]
+        { value: PageRole.Discussion, label: 'Discussion' }];
+    if (debiki.siteId === '85') {
+      topicTypes.push({ value: PageRole.Critique, label: 'Critique' }); // [plugin]
+    }
 
     var topicTypesInput =
       r.div({ className: 'form-group' },
@@ -191,10 +193,10 @@ var EditCategoryDialog = createClassAndFactory({
             help: "Categories with lower positions are listed first. Default: " +
                 DefaultPosition }));
 
-    var hideInForumTitle = "Hide in forum (" + (this.state.hideInForum ?  "yes)" : "no)");
+    var hideInForumTitle = "Unlisted (" + (this.state.hideInForum ?  "yes)" : "no)");
     var hideInForumInput =
         utils.FadeInOnClick({ clickToShowText: hideInForumTitle },
-            Input({ type: 'checkbox', label: "Hide in forum",
+            Input({ type: 'checkbox', label: "Unlisted",
               checked: this.state.hideInForum, onChange: this.toggleHideInForum,
               help: "Hides this category and all topics herein, in the forum topic lists — " +
                   "only staff will see them. However, when accessed directly, the pages " +

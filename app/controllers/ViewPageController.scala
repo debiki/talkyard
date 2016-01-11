@@ -94,7 +94,7 @@ object ViewPageController extends mvc.Controller {
       // Show a create-something-here page (see TemplateRenderer).
       return doRenderPage(
         makeEmptyPageRequest(
-          request, pageId = "0", showId = false, pageRole = PageRole.WebPage))
+          request, pageId = EmptyPageId, showId = false, pageRole = PageRole.WebPage))
     }
 
     val pageMeta = correctPagePath.pageId.flatMap(dao.loadPageMeta) getOrElse {
@@ -116,6 +116,9 @@ object ViewPageController extends mvc.Controller {
       // in the admin area.
       return Results.SeeOther(correctPagePath.value)
     }
+
+    if (request.user.isEmpty)
+      Globals.strangerCounter.tellStrangerSeen(request.siteId, request.theBrowserIdData)
 
     val pageRequest = new PageRequest[Unit](
       request.siteIdAndCanonicalHostname,

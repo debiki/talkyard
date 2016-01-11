@@ -82,6 +82,51 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
     background: white;
 
 
+.esPresence
+  position: relative;
+  margin: 0;
+  padding: 4px 0 9px 8px;
+  &:hover:not(.esPresence-strangers)
+    background: hsl(207, 100%, 94%);
+    cursor: pointer;
+    .esAvtrName_username,
+    .esAvtrName_fullName
+      color: hsl(207, 100%, 14%);
+  .esAvtrName
+    display: inline;
+
+.esPresence_icon
+  display: inline-block;
+  position: absolute;
+  right: 9px;
+  width: 10px;
+  height: 10px;
+  top: 11px;
+  border: 1px solid hsl(0, 0%, 45%);
+  border-radius: 50%;
+
+.esPresence-active
+  .esPresence_icon
+    $activeColor = hsl(120, 60%, 67%);
+    background: $activeColor
+    border: 1px solid $activeColor;
+
+  .esAvtrName_username,
+  .esAvtrName_fullName
+    font-weight: bold;
+
+.esPresence_thatsYou
+  vertical-align: middle;
+
+.esAvtrName_isGuest
+  vertical-align: middle;
+  margin-left: 4px;
+
+.esPresence-strangers
+  margin-top: 13px;
+  font-style: italic;
+
+
 #dw-sidebar
 
   z-index: 1001; // not above dialogs, but above resize-columns handle (1000)

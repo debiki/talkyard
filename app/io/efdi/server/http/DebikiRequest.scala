@@ -33,10 +33,12 @@ abstract class DebikiRequest[A] {
   def siteIdAndCanonicalHostname: SiteIdHostname
   def sid: SidStatus
   def xsrfToken: XsrfOk
-  def browserId: Option[BrowserId]
+  def browserId: BrowserId
   def user: Option[User]
   def dao: SiteDao
   def request: Request[A]
+
+  def underlying = request
 
   require(siteIdAndCanonicalHostname.id == dao.siteId, "EsE76YW2")
   require(user.map(_.id) == sid.userId, "EsE7PUUY2")
@@ -48,11 +50,10 @@ abstract class DebikiRequest[A] {
 
   def siteSettings = dao.loadWholeSiteSettings()
 
-  def theBrowserIdData = BrowserIdData(ip = ip,
-    idCookie = browserId.getOrElse(throwForbidden("DwE4WKU7", "No browser id cookie")).cookieValue,
+  def theBrowserIdData = BrowserIdData(ip = ip, idCookie = browserId.cookieValue,
     fingerprint = 0) // skip for now
 
-  def browserIdIsNew = browserId.map(_.isNew) == Some(true)
+  def browserIdIsNew = browserId.isNew
 
   def theUser = user_!
   def theUserId = theUser.id
@@ -103,6 +104,8 @@ abstract class DebikiRequest[A] {
   def body = request.body
 
   def headers = request.headers
+
+  def cookies = request.cookies
 
   def isAjax = DebikiHttp.isAjax(request)
 

@@ -25,22 +25,27 @@
 /**
  * Deletes any old event subscription and creates a new for this page and user.
  */
-export function subscribeToServerEventsAsUser(user?: User, doNothingIfAlreadyPolling?) {
+export function subscribeToServerEvents(doNothingIfAlreadyPolling?) {
   if (Server.isLongPollingServerNow() && doNothingIfAlreadyPolling)
     return;
 
   Server.cancelAnyLongPollingRequest();
+
+  var user = ReactStore.getUser();
   if (!user || !user.userId)
     return;
 
   Server.sendLongPollingRequest(user.userId, event => {
     console.debug("Server event: " + JSON.stringify(event));
     // Continue polling. Todo: specify params so won't get the very first event always only
-    subscribeToServerEventsAsUser(user);
+    subscribeToServerEvents();
 
-    switch (event.type) {
+    if (event) switch (event.type) {
       case "notifications":
         ReactActions.addNotifications(event.data);
+        break;
+      case "presence":
+        ReactActions.updateUserPresence(event.data.user, event.data.numOnlineStrangers);
         break;
       default:
         die("Unknown event type [EsE7YKF4]: " + event.type +
@@ -52,7 +57,7 @@ export function subscribeToServerEventsAsUser(user?: User, doNothingIfAlreadyPol
     // BUG this might result in many parallel subscription attempts. Avoid that.
     // And use exponential backoff.
     setTimeout(() => {
-      subscribeToServerEventsAsUser(user, true);
+      subscribeToServerEvents(true);
     }, 5*1000);
   });
 }

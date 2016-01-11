@@ -140,7 +140,8 @@ interface PostRevision {
 }
 
 
-interface User {
+interface Myself {
+  id?: number;
   userId?: number;  // change to `id`
   isLoggedIn?: boolean;
   isAdmin?: boolean;
@@ -295,16 +296,22 @@ interface Store {
   categories: Category[];
   newCategoryId: string; // would like to remove. Later, when everything is one SPA and there's just one router available from everywhere. Then I can transition directly to the new category without this variable.
   newCategorySlug: string; // would like to remove
-  user: User;
+  user: Myself; // try to remove, use 'me' instead:
+  me: Myself;
   userSpecificDataAdded?: boolean;
   newUserAccountCreated?: boolean;
   rootPostId: number;
+  usersByIdBrief: { [userId: number]: BriefUser };
   allPosts: { [postId: number]: Post };
   topLevelCommentIdsSorted: number[];
   isWatchbarOpen: boolean;
+  isContextbarOpen: boolean;
   horizontalLayout: boolean;
   is2dTreeDefault: boolean;
   socialLinksHtml: string;
+
+  numOnlineStrangers?: number;
+  onlineUsers?: BriefUser[];
 
   // If quickUpdate is true only posts in postsToUpdate will be updated.
   quickUpdate: boolean;
@@ -362,6 +369,7 @@ interface BriefUser {
   isGuest?: boolean;  // = !isAuthenticated
   isEmailUnknown?: boolean;
   avatarUrl?: string;
+  presence?: Presence;
 }
 
 

@@ -25,7 +25,7 @@ import debiki.DebikiHttp.throwNotFound
 import io.efdi.server.http.{DebikiRequest, PageRequest}
 import java.{util => ju}
 import play.api.libs.json._
-import scala.collection.immutable
+import scala.collection.{mutable, immutable}
 import scala.collection.mutable.ArrayBuffer
 import scala.math.BigDecimal.decimal
 
@@ -94,8 +94,9 @@ object ReactJson {
       "isInEmbeddedCommentsIframe" -> JsBoolean(false),
       "categories" -> JsArray(),
       "topics" -> JsArray(),
-      "user" -> NoUserSpecificData,
+      "me" -> NoUserSpecificData,
       "rootPostId" -> JsNumber(PageParts.BodyNr),
+      "usersByIdBrief" -> JsObject(Nil),
       "allPosts" -> JsObject(Nil),
       "topLevelCommentIdsSorted" -> JsArray(),
       "horizontalLayout" -> JsBoolean(false),
@@ -151,6 +152,10 @@ object ReactJson {
           // Also remove in in ReactRenderer and debikiScripts.scala.html, see [64KEWF2].
       ("_" + post.nr.toString) -> postToJsonImpl(post, page, transaction.currentTime)
     }
+
+    val usersByIdJson = JsObject(page.parts.usersById map { idAndUser =>
+      idAndUser._1.toString -> JsUser(idAndUser._2)
+    })
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
@@ -235,8 +240,9 @@ object ReactJson {
         // them into the react-flux-redux state tree.
          includeHiddenInForum = true, dao),
       "topics" -> JsArray(anyLatestTopics),
-      "user" -> NoUserSpecificData,
+      "me" -> NoUserSpecificData,
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
+      "usersByIdBrief" -> usersByIdJson,
       "allPosts" -> JsObject(allPostsJson),
       "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
       "horizontalLayout" -> JsBoolean(horizontalLayout),
@@ -493,7 +499,8 @@ object ReactJson {
       } getOrElse (JsNull, JsNull, JsNull)
 
     Json.obj(
-      "userId" -> JsNumber(user.id),
+      "id" -> JsNumber(user.id),
+      "userId" -> JsNumber(user.id), // try to remove, use 'id' instead
       "username" -> JsStringOrNull(user.username),
       "fullName" -> JsString(user.displayName),
       "isLoggedIn" -> JsBoolean(true),
@@ -792,7 +799,9 @@ object ReactJson {
   def JsUserOrNull(user: Option[User]): JsValue =
     user.map(JsUser).getOrElse(JsNull)
 
-  def JsUser(user: User): JsObject = {
+  def JsUser(user: User): JsObject = JsUser(user, None)
+
+  def JsUser(user: User, anyPresence: Option[Presence]): JsObject = {
     var json = Json.obj(
       "id" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.username),
@@ -815,6 +824,9 @@ object ReactJson {
     }
     if (user.isModerator) {
       json += "isModerator" -> JsTrue
+    }
+    anyPresence foreach { presence =>
+      json += "presence" -> JsNumber(presence.toInt)
     }
     json
   }

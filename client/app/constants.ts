@@ -17,10 +17,15 @@
 
 var ReactStartedClass = 'dw-react-started';
 
+var EmptyPageId = "0";
+
 var BodyId = 1;
 
 var SystemUserId = -1;
 var MinMemberId = SystemUserId;
+
+var MaxGuestId = -2;
+var UnknownUserId = -3;
 
 
 enum PinPageWhere {
@@ -63,6 +68,12 @@ enum WritingWhat {
   ReplyToOriginalPost = 2,
   ReplyToNotOriginalPost = 3,
   ChatComment = 4,
+}
+
+
+enum Presence {
+  Active = 1,
+  Away = 2,
 }
 
 

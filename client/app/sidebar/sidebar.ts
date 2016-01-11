@@ -20,6 +20,7 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../help/help.ts" />
+/// <reference path="../avatar/AvatarAndName.ts" />
 /// <reference path="minimap.ts" />
 //xx <reference path="unread-comments-tracker.ts" />
 
@@ -69,15 +70,21 @@ export var Sidebar = createComponent({
 
     return {
       store: store,
+      lastLoadedOnlineUsersAsId: null,
       commentsType: isPageWithComments(store.pageRole) ? 'Recent' : 'Users',
       // showPerhapsUnread: false,
     };
   },
 
   onChange: function() {
+    var newStore: Store = debiki2.ReactStore.allData();
     this.setState({
-      store: debiki2.ReactStore.allData(),
+      store: newStore,
     });
+    if (newStore.isContextbarOpen && newStore.me.id &&
+        newStore.me.id !== this.state.lastLoadedOnlineUsersAsId) {
+      this.loadOnlineUsers();
+    }
   },
 
   showRecent: function() {
@@ -113,8 +120,12 @@ export var Sidebar = createComponent({
   },
 
   componentDidMount: function() {
-    if (isPageWithSidebar(this.state.store.pageRole)) {
+    var store: Store = this.state.store;
+    if (isPageWithSidebar(store.pageRole)) {
       keymaster('s', this.toggleSidebarOpen);
+      if (store.isContextbarOpen && this.state.lastLoadedOnlineUsersAsId !== store.me.id) {
+        this.loadOnlineUsers();
+      }
     }
   },
 
@@ -126,6 +137,11 @@ export var Sidebar = createComponent({
 
   componentDidUpdate: function() {
     // if is-2d then: this.updateSizeAndPosition2d(event);
+  },
+
+  loadOnlineUsers: function() {
+    this.setState({ lastLoadedOnlineUsersAsId: this.state.store.me.id });
+    Server.loadOnlineUsers();
   },
 
   updateSizeAndPosition2d: function(event) {
@@ -274,22 +290,46 @@ export var Sidebar = createComponent({
       sidebarClasses += ' dw-sidebar-fixed';
     }
 
+    var users: BriefUser[];
+    var listUsersOnPage = page_isDiscussion(store.pageRole);
+    if (listUsersOnPage) {
+      users = store_getUsersOnThisPage(store);
+    }
+    else {
+      users = store_getOnlineUsersWholeSite(store);
+    }
+
+    var numOnline = 0;
+    var iAmHere = false;
+    _.each(users, u => {
+      numOnline += u.presence === Presence.Active ? 1 : 0;
+      iAmHere = iAmHere || u.id === store.me.id;
+    });
+
+    // If the current user is the only active user, write "you" instead of "1"
+    // because it'd be so boring to see "1" online user and click the Users tab only
+    // to find out that it's oneself. (Also, skip spaces around '/' if number not "you")
+    var numOnlineTextSlash = numOnline === 1 && iAmHere ? "you / " : numOnline + "/";
+
     //var unreadBtnTitle = commentsFound ? 'Unread (' + commentsFound.unread.length + ')' : null;
     var starredBtnTitle = commentsFound ? 'Starred (' + commentsFound.starred.length + ')' : null;
-    var usersBtnTitle = "Users (?/?)";
+    var usersBtnTitle = listUsersOnPage
+        ? "Users (" + numOnlineTextSlash + users.length + ")"
+        : "Users (" + numOnline + ")";
 
     var title;
     var unreadClass = '';
     var recentClass = '';
     var starredClass = '';
     var usersClass = '';
-    var comments: Post[];
+    var listItems;
     switch (this.state.commentsType) {
       case 'Recent':
         title = commentsFound.recent.length ?
             'Recent Comments: (click to show)' : 'No comments.';
         recentClass = ' active';
-        comments = commentsFound.recent;
+        listItems = makeCommentsContent(commentsFound.recent, this.state.currentPostId, store,
+            this.onPostClick);
         break;
       /*
       case 'Unread':
@@ -303,19 +343,25 @@ export var Sidebar = createComponent({
         title = commentsFound.starred.length ?
             'Starred Comments: (click to show)' : 'No starred comments.';
         starredClass = ' active';
-        comments = commentsFound.starred;
+        listItems = makeCommentsContent(commentsFound.starred, this.state.currentPostId, store,
+            this.onPostClick);
         break;
       case 'Users':
-        var inThisWhat = "in this topic";
+        var title;
+        var numOnlineStrangers = store.numOnlineStrangers;
         if (store.pageRole === PageRole.Forum) {
-          inThisWhat = "in this forum";
-          // if is-category: "in this category"
-          //  — or another set of buttons for forum / category ?
+          title = "Users online in this forum:";
         }
-        title = "Users " + inThisWhat;
+        else if (!listUsersOnPage) {
+          title = "Users online:";
+        }
+        else {
+          title = "Users in this topic:";
+          // Don't show num online strangers, when listing post authors for the current topic only.
+          numOnlineStrangers = 0;
+        }
         usersClass = ' active';
-        // users = ... load from server ...
-        comments = [];
+        listItems = makeUsersContent(users, store.me.id, numOnlineStrangers);
         break;
       default:
         console.error('[DwE4PM091]');
@@ -354,27 +400,6 @@ export var Sidebar = createComponent({
             'Let the computer try to determine when you have read a comment.'),
           tips);
     }*/
-    if (this.state.commentsType === 'Users') {
-      tipsOrExtraConfig =
-          r.p({}, "Here will be shown a list of all users in this topic / category / forum. " +
-            "Those who are online will be listed first, with a green is-online-icon. " +
-            "X/Y above means X users are online out of Y users in this topic / category / forum.");
-    }
-
-    var smallScreen = Math.min(debiki.window.width(), debiki.window.height()) < 500;
-    var abbreviateHowMuch = smallScreen ? 'Much' : 'ABit';
-    var commentsElems = comments.map((post, index) => {
-      var postProps: any = _.clone(store);
-      postProps.post = post;
-      postProps.onClick = (event) => this.onPostClick(post);
-      postProps.abbreviate = abbreviateHowMuch;
-      if (post.postId === this.state.currentPostId) {
-        postProps.className = 'dw-current-post';
-      }
-      return (
-        r.div({ key: post.postId },
-          Post(postProps)));
-    });
 
     var wide = ($(window).width() > 1000);
     var recentButton;
@@ -421,27 +446,30 @@ export var Sidebar = createComponent({
 
     // Show four help messages: first no. 1, then 2, 3, 4, one at a time, which clarify
     // how the sidebar recent-comments list works.
-    var helpMessageBoxOne =
-        help.HelpMessageBox({ className: 'es-editor-help-one', message: helpMessageOne });
+    var helpMessageBoxOne;
     var helpMessageBoxTwo;
     var helpMessageBoxTree;
     var helpMessageBoxFour;
-    if (help.isHelpMessageClosed(this.state.store, helpMessageOne)) {
-      helpMessageBoxTwo =
-          help.HelpMessageBox({ className: 'es-editor-help-two', message: helpMessageTwo });
+    var dimCommentsStyle: { opacity: string; };
+    if (this.state.commentsType === 'Recent') {
+      helpMessageBoxOne =
+          help.HelpMessageBox({ className: 'es-editor-help-one', message: helpMessageOne });
+      if (help.isHelpMessageClosed(this.state.store, helpMessageOne)) {
+        helpMessageBoxTwo =
+            help.HelpMessageBox({ className: 'es-editor-help-two', message: helpMessageTwo });
+      }
+      if (help.isHelpMessageClosed(this.state.store, helpMessageTwo)) {
+        helpMessageBoxTree =
+            help.HelpMessageBox({ className: 'es-editor-help-three', message: helpMessageThree });
+      }
+      if (help.isHelpMessageClosed(this.state.store, helpMessageThree)) {
+        helpMessageBoxFour =
+            help.HelpMessageBox({ className: 'es-editor-help-four', message: helpMessageFour });
+      }
+      // Dim the comments list until all help messages have been closed.
+      var dimCommentsStyle = help.isHelpMessageClosed(this.state.store, helpMessageFour) ?
+          null : { opacity: '0.6' };
     }
-    if (help.isHelpMessageClosed(this.state.store, helpMessageTwo)) {
-      helpMessageBoxTree =
-          help.HelpMessageBox({ className: 'es-editor-help-three', message: helpMessageThree });
-    }
-    if (help.isHelpMessageClosed(this.state.store, helpMessageThree)) {
-      helpMessageBoxFour =
-          help.HelpMessageBox({ className: 'es-editor-help-four', message: helpMessageFour });
-    }
-
-    // Dim the comments list until all help messages have been closed.
-    var dimCommentsStyle = help.isHelpMessageClosed(this.state.store, helpMessageFour) ?
-        null : { opacity: '0.6' };
 
     return (
       r.div({ className: 'dw-sidebar-z-index' },
@@ -451,7 +479,7 @@ export var Sidebar = createComponent({
       r.div({ id: 'dw-sidebar', className: sidebarClasses, ref: 'sidebar' },
         ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar }),
         tabButtons,
-        r.div({ className: 'dw-comments' },
+        r.div({ className: 'dw-comments esCtxbar_list' },
           helpMessageBoxOne,
           helpMessageBoxTwo,
           helpMessageBoxTree,
@@ -462,9 +490,71 @@ export var Sidebar = createComponent({
               tipsOrExtraConfig,
               r.div({},
                 ReactCSSTransitionGroup({ transitionName: 'comment', key: this.state.commentsType },
-                  commentsElems))))))));
+                  listItems))))))));
   }
 });
+
+
+function makeCommentsContent(comments: Post[], currentPostId: PostId, store: Store, onPostClick) {
+  var smallScreen = Math.min(debiki.window.width(), debiki.window.height()) < 500;
+  var abbreviateHowMuch = smallScreen ? 'Much' : 'ABit';
+  return comments.map((post: Post, index) => {
+    var postProps: any = _.clone(store);
+    postProps.post = post;
+    postProps.onClick = (event) => onPostClick(post);
+    postProps.abbreviate = abbreviateHowMuch;
+    if (post.postId === currentPostId) {
+      postProps.className = 'dw-current-post';
+    }
+    return (
+        r.div({ key: post.postId },
+            Post(postProps)));
+  });
+}
+
+
+function makeUsersContent(users: BriefUser[], myId: UserId, numOnlineStrangers: number) {
+  // List the current user first, then online users, then others.
+  // COULD: list alphabetically, so one can scan and find one's friends by name easily
+  users.sort((a, b) => {
+    if (a.id === myId) return -1;
+    if (b.id === myId) return +1;
+    if (a.presence === b.presence) {
+      if (user_isMember(a) === user_isMember(b)) return 0;
+      return user_isMember(a) ? -1 : +1;
+    }
+    return a.presence === Presence.Active ? -1 : +1;
+  });
+  var currentUserIsStranger = true;
+  var listItems = users.map((user: BriefUser) => {
+    var thatsYou = user.id === myId ?
+        r.span({ className: 'esPresence_thatsYou' }, " — that's you") : null;
+    currentUserIsStranger = currentUserIsStranger && user.id !== myId;
+    var presenceClass = user.presence === Presence.Active ? 'active' : 'away';
+    var presenceTitle = user.presence === Presence.Active ? 'Active' : 'Away';
+    return (
+        r.div({ key: user.id, className: 'esPresence esPresence-' + presenceClass,
+            onClick: () => pagedialogs.getAboutUserDialog().openForUserId(user.id) },
+          avatar.AvatarAndName({ user: user, ignoreClicks: true }),
+          thatsYou,
+          r.span({ className: 'esPresence_icon', title: presenceTitle })));
+  });
+
+  if (numOnlineStrangers) {
+    var numOtherStrangers = numOnlineStrangers - (currentUserIsStranger ? 1 : 0);
+    var plus = listItems.length ? '+ ' : '';
+    var youAnd = currentUserIsStranger ? "You, and " : '';
+    var people = numOtherStrangers === 1 ? " person" : " people";
+    var have = numOtherStrangers === 1 ? "has" : "have";
+    var strangers = numOtherStrangers === 0 && currentUserIsStranger
+      ? (listItems.length ? "you" : "Only you, it seems")
+      : youAnd + numOtherStrangers + people + " who " + have + " not logged in";
+    listItems.push(
+        r.div({ key: 'strngrs', className: 'esPresence esPresence-strangers' }, plus + strangers));
+  }
+
+  return listItems;
+}
 
 
 var helpMessageOne = {
@@ -497,7 +587,7 @@ var helpMessageFour = {
   version: 1,
   content: r.span({}, "So although the comments to the left are sorted by best-first, " +
       "you can easily find the most recent comments."),
-  okayText: "Wow! That is useful :-)",
+  okayText: "Good to know",
   moreHelpAwaits: false,
 };
 

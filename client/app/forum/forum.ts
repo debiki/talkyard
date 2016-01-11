@@ -127,11 +127,11 @@ var ForumComponent = React.createClass({
 
   makeHelpMessage: function(category: Category) {
     var store: Store = this.state;
-    var user: User = store.user;
+    var me: Myself = store.me;
     if (!_.isEqual(category.newTopicTypes, [PageRole.Critique])) // [plugin] ...
       return null;
 
-    if (!user.isAuthenticated)
+    if (!me.isAuthenticated)
       return { id: 'EdHKEW21', version: 1, content: r.span({},
           r.p({}, "Click ", r.b({}, "Log In"), ", to the right just above.")) };
 
@@ -191,7 +191,7 @@ var ForumComponent = React.createClass({
 
 var ForumIntroText = createComponent({
   render: function() {
-    var user: User = this.props.user;
+    var user: Myself = this.props.user;
     var introPost = this.props.allPosts[BodyId];
     if (!introPost || introPost.isPostHidden)
       return null;
@@ -341,7 +341,7 @@ var CategoriesAndTopics = createComponent({
 
   render: function() {
     var props: Store = this.props;
-    var user = props.user;
+    var me = props.me;
     var activeCategory: Category = this.props.activeCategory;
     if (!activeCategory) {
       // The user has typed a non-existing category slug in the URL. Or she has just created
@@ -355,7 +355,7 @@ var CategoriesAndTopics = createComponent({
 
     var categoryMenuItems = [];
     _.each(props.categories, (category: Category) => {
-      if (!category.hideInForum || isStaff(user)) {
+      if (!category.hideInForum || isStaff(me)) {
         categoryMenuItems.push(
             MenuItem({ eventKey: category.slug, key: category.id }, category.name));
       }
@@ -427,12 +427,12 @@ var CategoriesAndTopics = createComponent({
     }
 
     var createCategoryBtn;
-    if (activeRoute.name === 'ForumRouteCategories' && user.isAdmin) {
+    if (activeRoute.name === 'ForumRouteCategories' && me.isAdmin) {
       createCategoryBtn = Button({ onClick: this.createCategory }, 'Create Category');
     }
 
     var editCategoryBtn;
-    if (!activeCategory.isForumItself && user.isAdmin) {
+    if (!activeCategory.isForumItself && me.isAdmin) {
       editCategoryBtn = Button({ onClick: this.editCategory }, 'Edit Category');
     }
 

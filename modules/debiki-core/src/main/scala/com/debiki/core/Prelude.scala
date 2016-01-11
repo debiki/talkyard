@@ -335,6 +335,8 @@ object Prelude {
   // Is thread safe.
   private val _random = new java.security.SecureRandom();
 
+  def nextRandomAzLetter(): Char = ('a' + _random.nextInt(26)).toChar
+
 
   /** This 130 bits string will be almost 26 chars, since each char in a 32 chars
     * alphabet has 5 bits (but we use 36 chars here).

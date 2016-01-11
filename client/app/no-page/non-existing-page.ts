@@ -57,13 +57,13 @@ export var NonExistingPage = createComponent({
 
   render: function() {
     var store: Store = this.state.store;
-    var user: User = store.user;
+    var me: Myself = store.me;
     var siteStatus = store.siteStatus;
     var adminPendingMatch = siteStatus.match(/AdminCreationPending:(.*)/);
-    if (adminPendingMatch && !user.isLoggedIn && !store.newUserAccountCreated) {
+    if (adminPendingMatch && !me.isLoggedIn && !store.newUserAccountCreated) {
       return SignUpAsAdmin({ obfuscatedAminEmail: adminPendingMatch[1] });
     }
-    else if (user.isAdmin) {
+    else if (me.isAdmin) {
       if (siteStatus === 'IsEmbeddedSite') {
         return EmbeddedCommentsLinks(this.state.store);
       }

@@ -200,7 +200,7 @@ export var TitleEditor = createComponent({
         r.option({ value: PageRole.ToDo }, 'Todo'),
         // r.option({ value: PageRole.WikiPage }, 'Wiki'), -- if 1d layout is default?
         r.option({ value: PageRole.MindMap }, 'Wiki Mind Map'),
-        r.option({ value: PageRole.Discussion }, 'Other'),
+        r.option({ value: PageRole.Discussion }, 'Discussion'),
         customHtmlPageOption);
 
     var addBackForumIntroButton;

@@ -17,10 +17,12 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../ReactStore.ts" />
+/// <reference path="../links.ts" />
 /// <reference path="../login/login-dialog.ts" />
 /// <reference path="../page-tools/page-tools.ts" />
 /// <reference path="../utils/page-scroll-mixin.ts" />
 /// <reference path="../utils/scroll-into-view.ts" />
+/// <reference path="../utils/MenuItemLink.ts" />
 /// <reference path="../post-navigation/posts-trail.ts" />
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../notification/Notification.ts" />
@@ -38,6 +40,7 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
+var MenuItemLink = utils.MenuItemLink;
 
 var FixedTopDist = 8;
 
@@ -126,22 +129,7 @@ export var TopBar = createComponent({
   },
 
   onLogoutClick: function() {
-    // COULD let ReactActions call Server instead.
-    debiki2.Server.logout(debiki2.ReactActions.logout);
-  },
-
-  goToUserPage: function() {
-    goToUserPage(this.state.store.user.userId);
-  },
-
-  goToAdminPage: function() {
-    sessionStorage.setItem('returnToUrl', window.location.toString());
-    window.location.assign(d.i.serverOrigin + '/-/admin/');
-  },
-
-  goToReviewPage: function() {
-    sessionStorage.setItem('returnToUrl', window.location.toString());
-    window.location.assign(d.i.serverOrigin + '/-/admin/#/review/all');
+    debiki2.ReactActions.logout();
   },
 
   showTools: function() {
@@ -187,12 +175,12 @@ export var TopBar = createComponent({
 
   render: function() {
     var store: Store = this.state.store;
-    var user: User = store.user;
+    var me: Myself = store.me;
     var pageRole = store.pageRole;
 
     // Don't show all these buttons on a homepage / landing page, until after has scrolled down.
     // If not logged in, never show it — there's no reason for new users to login on the homepage.
-    if (pageRole === PageRole.HomePage && (!this.state.fixed || !user || !user.isLoggedIn))
+    if (pageRole === PageRole.HomePage && (!this.state.fixed || !me || !me.isLoggedIn))
       return r.div();
 
     // ------- Top, Replies, Bottom, Back buttons
@@ -202,7 +190,7 @@ export var TopBar = createComponent({
         pageRole !== PageRole.Forum) {
       var topHelp = "Go to the top of the page. Shortcut: 1 (on the keyboard)";
       var repliesHelp = "Go to the replies section. There are " + store.numPostsRepliesSection +
-        " replies. Shortcut: 2"
+        " replies. Shortcut: 2";
       var chatHelp = "Go to the chat section. There are " + store.numPostsChatSection +
         " comments. Shortcut: 3";
       var endHelp = "Go to the bottom of the page. Shortcut: 4";
@@ -221,57 +209,57 @@ export var TopBar = createComponent({
 
     // ------- Avatar & username dropdown, + notf icons
 
-    var talkToMeNotfs = makeNotfIcon('toMe', user.numTalkToMeNotfs);
-    var talkToOthersNotfs = makeNotfIcon('toOthers', user.numTalkToOthersNotfs);
-    var otherNotfs = makeNotfIcon('other', user.numOtherNotfs);
-    var anyDivider = user.notifications.length ? MenuItem({ divider: true }) : null;
-    var notfsElems = user.notifications.map(notf =>
-        MenuItem({ key: notf.id, onSelect: () => ReactActions.openNotificationSource(notf),
+    var talkToMeNotfs = makeNotfIcon('toMe', me.numTalkToMeNotfs);
+    var talkToOthersNotfs = makeNotfIcon('toOthers', me.numTalkToOthersNotfs);
+    var otherNotfs = makeNotfIcon('other', me.numOtherNotfs);
+    var anyDivider = me.notifications.length ? MenuItem({ divider: true }) : null;
+    var notfsElems = me.notifications.map((notf: Notification) =>
+        MenuItemLink({ key: notf.id, href: linkToNotificationSource(notf),
             className: notf.seen ? '' : 'esNotf-unseen' },
           notification.Notification({ notification: notf })));
-    if (user.thereAreMoreUnseenNotfs) {
+    if (me.thereAreMoreUnseenNotfs) {
       notfsElems.push(
           MenuItem({ key: 'More', onSelect: this.viewOlderNotfs }, "View more notifications..."));
     }
     var avatarNameAndNotfs =
         r.span({},
-          avatar.Avatar({ user: user, tiny: true, ignoreClicks: true }),
-          r.span({ className: 'esAvtrName_name' }, user.username || user.fullName),
+          avatar.Avatar({ user: me, tiny: true, ignoreClicks: true }),
+          r.span({ className: 'esAvtrName_name' }, me.username || me.fullName),
           r.span({ className: 'esAvtrName_you' }, "You"), // if screen too narrow
           talkToMeNotfs,
           talkToOthersNotfs,
           otherNotfs);
-    var avatarNameDropdown = !user.isLoggedIn ? null :
+    var avatarNameDropdown = !me.isLoggedIn ? null :
         DropdownButton({ title: avatarNameAndNotfs, className: 'esAvtrName', pullRight: true,
             noCaret: true },
-          MenuItem({ onSelect: this.goToUserPage }, "View your profile"),
+          MenuItemLink({ href: linkToMyProfilePage(store) }, "View your profile"),
           MenuItem({ onSelect: this.onLogoutClick }, "Log out"),
           anyDivider,
           notfsElems);
 
     // ------- Login button
 
-    var loginButton = user.isLoggedIn ? null :
+    var loginButton = me.isLoggedIn ? null :
         Button({ className: 'dw-login btn-primary', onClick: this.onLoginClick },
             r.span({ className: 'icon-user' }, 'Log In'));
 
     // ------- Tools button
 
     // (Is it ok to call another React component from here? I.e. the page tools dialog.)
-    var toolsButton = !isStaff(user) || pagetools.getPageToolsDialog().isEmpty() ? null :
+    var toolsButton = !isStaff(me) || pagetools.getPageToolsDialog().isEmpty() ? null :
         Button({ className: 'dw-a-tools', onClick: this.showTools },
           r.a({ className: 'icon-wrench' }, 'Tools'));
 
     // ------- Hamburger dropdown, + review task icons
 
-    var urgentReviewTasks = makeNotfIcon('reviewUrgent', user.numUrgentReviewTasks);
-    var otherReviewTasks = makeNotfIcon('reviewOther', user.numOtherReviewTasks);
+    var urgentReviewTasks = makeNotfIcon('reviewUrgent', me.numUrgentReviewTasks);
+    var otherReviewTasks = makeNotfIcon('reviewOther', me.numOtherReviewTasks);
     var menuTitle = r.span({ className: 'icon-menu' }, urgentReviewTasks, otherReviewTasks);
-    var adminMenuItem = !isStaff(user) ? null :
-        MenuItem({ onSelect: this.goToAdminPage },
+    var adminMenuItem = !isStaff(me) ? null :
+        MenuItemLink({ href: linkToAdminPage() },
           r.span({ className: 'icon-settings' }, "Admin"));
     var reviewMenuItem = !urgentReviewTasks && !otherReviewTasks ? null :
-        MenuItem({ onSelect: this.goToReviewPage },
+        MenuItemLink({ href: linkToReviewPage() },
           "Needs review ", urgentReviewTasks, otherReviewTasks);
     var menuDropdown =
         DropdownButton({ title: menuTitle, className: 'dw-menu esMenu', pullRight: true,
@@ -280,8 +268,8 @@ export var TopBar = createComponent({
           reviewMenuItem,
           MenuItem({ onSelect: ReactActions.showHelpMessagesAgain },
               r.span({ className: 'icon-help' }, "Unhide help messages")),
-          MenuItem({ onSelect: () => location.assign('/about') }, "About this site"),
-          MenuItem({ onSelect: () => location.assign('/-/terms-of-use') }, "Terms and Privacy"));
+          MenuItemLink({ href: '/about' }, "About this site"),
+          MenuItemLink({ href: '/-/terms-of-use' }, "Terms and Privacy"));
 
     // ------- Search button
 
@@ -376,7 +364,7 @@ var SearchForm = createComponent({
               method: 'post', acceptCharset: 'UTF-8', action: '/-/search/site',
               onSubmit: this.search },
             r.input({ type: 'hidden', ref: 'xsrfToken', name: 'dw-fi-xsrf' }),
-            r.input({ type: 'text', tabindex: '1', placeholder: 'Text to search for',
+            r.input({ type: 'text', tabIndex: '1', placeholder: 'Text to search for',
                 ref: 'input', className: 'input-medium search-query', name: 'searchPhrase' }))));
   }
 });

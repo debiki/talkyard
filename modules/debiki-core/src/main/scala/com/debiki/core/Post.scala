@@ -584,9 +584,10 @@ object Post {
         createdById: UserId,
         source: String,
         htmlSanitized: String,
-        approvedById: Option[UserId]): Post =
+        approvedById: Option[UserId],
+        postType: PostType = PostType.Normal): Post =
     create(siteId, uniqueId, pageId = pageId, postNr = PageParts.BodyNr, parent = None,
-      multireplyPostNrs = Set.empty, postType = PostType.Normal,
+      multireplyPostNrs = Set.empty, postType,
       createdAt = createdAt, createdById = createdById,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 

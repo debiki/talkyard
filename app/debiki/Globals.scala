@@ -29,7 +29,7 @@ import debiki.dao._
 import debiki.dao.migrations.ScalaBasedMigrations
 import io.efdi.server.notf.Notifier
 import java.{lang => jl, util => ju}
-import io.efdi.server.pubsub.{PubSubApi, PubSub}
+import io.efdi.server.pubsub.{PubSubApi, PubSub, StrangerCounterApi}
 import play.{api => p}
 import play.api.libs.concurrent.Akka
 import play.api.Play
@@ -186,6 +186,7 @@ class Globals {
   val localhostUploadsBaseUrl = controllers.routes.UploadsController.servePublicFile("").url
 
   def pubSub: PubSubApi = state.pubSub
+  def strangerCounter: StrangerCounterApi = state.strangerCounter
 
 
   def onServerStartup(app: p.Application) {
@@ -246,7 +247,7 @@ class Globals {
 
     val notifierActorRef = Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory)
 
-    val pubSub = PubSub.startNewActor(Akka.system)
+    val (pubSub, strangerCounter) = PubSub.startNewActor(Akka.system)
 
     val renderContentActorRef = RenderContentService.startNewActor(Akka.system, siteDaoFactory)
 

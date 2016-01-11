@@ -17,17 +17,15 @@
 
 package io.efdi.server.pubsub
 
-import java.{io => jio}
-
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
 import debiki._
-import debiki.dao.UploadsDao._
+import debiki.ReactJson.JsUser
 import io.efdi.server.http._
 import play.api._
-import play.api.libs.json.{JsString, Json}
-import play.api.mvc.BodyParsers
+import play.api.libs.json.{JsArray, JsString, Json}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 
 /** Authorizes and subscribes a user to pubsub messages.
@@ -74,8 +72,19 @@ object SubscriberController extends mvc.Controller {
     // browser cannot specify the wrong host url param and in that way subscribe with the same
     // user id but at a different site.
 
-    Globals.pubSub.onUserSubscribed(request.siteId, userIdInt)
+    Globals.pubSub.onUserSubscribed(request.siteId, request.theUser, request.theBrowserIdData)
     Ok
+  }
+
+
+  def loadOnlineUsers() = AsyncGetActionRateLimited(RateLimits.ExpensiveGetRequest) {
+        request =>
+    Globals.pubSub.listOnlineUsers(request.siteId) map { case (onlineUsers, numStrangers) =>
+      OkSafeJson(
+        Json.obj(
+          "numOnlineStrangers" -> numStrangers,
+          "onlineUsers" -> JsArray(onlineUsers.map(JsUser))))
+    }
   }
 
 

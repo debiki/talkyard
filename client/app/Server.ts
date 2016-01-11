@@ -382,7 +382,7 @@ export function savePageNoftLevel(newNotfLevel) {
 }
 
 
-export function loadMyPageData(callback: (user: any) => void) {
+export function loadMyself(callback: (user: any) => void) {
   $.get(origin + '/-/load-my-page-data?pageId=' + debiki2.ReactStore.getPageId())
     .done((user: any) => {
       callback(user);
@@ -797,6 +797,15 @@ export function cancelAnyLongPollingRequest() {
     longPollingState.ongoingRequest.abort("Intentionally cancelled [EsM2UZKW4]");
     longPollingState.ongoingRequest = null;
   }
+}
+
+
+export function loadOnlineUsers() {
+  get('/-/load-online-users', (response) => {
+    var onlineUsers: BriefUser[] = response.onlineUsers;
+    _.each(onlineUsers, (user: BriefUser) => user.presence = Presence.Active);
+    ReactActions.updateOnlineUsersLists(response.numOnlineStrangers, onlineUsers);
+  });
 }
 
 

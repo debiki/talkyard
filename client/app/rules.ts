@@ -49,8 +49,14 @@ function canClose(pageRole: PageRole) {
   return pageRole !== PageRole.Message;
 }
 
+function page_isDiscussion(pageRole: PageRole): boolean {
+  return pageRole && !isSection(pageRole) &&
+      pageRole !== PageRole.SpecialContent &&
+      pageRole !== PageRole.HomePage;
+}
+
 function isPageWithComments(pageRole: PageRole): boolean {
-  return isPageWithSidebar(pageRole) && !isSection(pageRole) && pageRole !== PageRole.HomePage;
+  return page_isDiscussion(pageRole) && pageRole !== PageRole.Message;
 }
 
 function isSection(pageRole: PageRole): boolean {
@@ -58,16 +64,16 @@ function isSection(pageRole: PageRole): boolean {
 }
 
 function isPageWithSidebar(pageRole: PageRole): boolean {
-  return pageRole !== PageRole.Message && pageRole !== PageRole.SpecialContent;
+  return true; // hmm remove this fn then, now
 }
 
 function isPageWithWatchbar(pageRole: PageRole): boolean {
   return true; // hmm remove this fn then, now
 }
 
-function isWatchbarRecentTopicsPageRole(pageRole: PageRole): boolean {
+function pageRole_shallListInRecentTopics(pageRole: PageRole): boolean {
   switch (pageRole) {
-    case PageRole.Message:
+    case PageRole.Message: // shown in the Direct Messages watchbar section instead
     case PageRole.EmbeddedComments:
     case PageRole.Blog:
     case PageRole.Forum:
@@ -76,11 +82,11 @@ function isWatchbarRecentTopicsPageRole(pageRole: PageRole): boolean {
     case PageRole.SpecialContent:
       return false;
     default:
-      return true;
+      return !!pageRole;
   }
 }
 
-function userGetWatchbarTopicIds(user: User): PageId[] {
+function userGetWatchbarTopicIds(user: Myself): PageId[] {
   var watchbarTopics: WatchbarTopics = user.watchbarTopics;
   if (!watchbarTopics) return [];
   // For now: Concat with something so as to not return the original array.
@@ -88,20 +94,24 @@ function userGetWatchbarTopicIds(user: User): PageId[] {
 }
 
 
-function maySendInvites(user: User | CompleteUser): MayMayNot {
+function maySendInvites(user: Myself | CompleteUser): MayMayNot {
   // Currently only admins may send invites.
   if (!user.isAdmin) return mayMayNot(false, "is not admin");
   return mayIndeed();
 }
 
 
-function isGuest(user) {
+function user_isMember(user: CompleteUser | BriefUser): boolean {
+  return user.id > MaxGuestId;
+}
+
+function isGuest(user) {  // later: rename to user_isGuest
   // (Should rename userId to id.)
   return user.id <= MaxGuestId ||  // if is a CompleteUser
       user.userId <= MaxGuestId; // in case it's a User or BriefUser
 }
 
-function isMember(user: User | CompleteUser): boolean {
+function isMember(user: Myself | CompleteUser): boolean {
   if (!user) return false;
   var id = user['id'] || user['userId'];
   var member = id >= MinMemberId;
@@ -109,7 +119,7 @@ function isMember(user: User | CompleteUser): boolean {
   return member;
 }
 
-function isStaff(user: User) {
+function isStaff(user: Myself) {
   return user.isAdmin || user.isModerator;
 }
 

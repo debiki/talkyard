@@ -515,7 +515,7 @@ trait UserDao {
 
 
   def perhapsBlockGuest(request: play.api.mvc.Request[_], sidStatus: SidStatus,
-        browserId: Option[BrowserId]) {
+        browserId: BrowserId) {
     if (request.method == "GET")
       return
 
@@ -530,13 +530,11 @@ trait UserDao {
         return
     }
 
-    if (browserId.isEmpty)
-      throwForbidden("DwE403NBI0", "No browser id cookie")
-
     // COULD cache blocks, but not really needed since this is for post requests only.
     val blocks = loadBlocks(
       ip = request.remoteAddress,
-      browserIdCookie = browserId.get.cookieValue)
+      // COULD pass None not ""?
+      browserIdCookie = if (browserId.isNew) "-" else browserId.cookieValue)
 
     val nowMillis = System.currentTimeMillis
     for (block <- blocks) {

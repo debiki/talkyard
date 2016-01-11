@@ -117,7 +117,7 @@ var TitleBodyComments = createComponent({
 
   makeHelpMessage: function() {
     var store: Store = this.props;
-    var user: User = store.user;
+    var me: Myself = store.me;
     var bodyPost = store.allPosts[BodyId];
 
     if (store.pageAnsweredAtMs)
@@ -153,13 +153,13 @@ var TitleBodyComments = createComponent({
       return null; // or ...
 
     if (store.pageRole === PageRole.Critique) {  // [plugin]
-      if (!user.isAuthenticated) {
+      if (!me.isAuthenticated) {
         // Could explain: here someone has asked for critique. X people have answered,
         // see the Replies section below. And there are Y chat comments or status updates.
         return null;
       }
       else {
-        var isPageAuthor = bodyPost.authorIdInt === user.userId;
+        var isPageAuthor = bodyPost.authorIdInt === me.userId;
         if (isPageAuthor) {
           if (store.numPostsRepliesSection) {
             return { id: 'EdH5GUF2', version: 1, content: r.span({},
@@ -190,7 +190,7 @@ var TitleBodyComments = createComponent({
   render: function() {
     var categories;
     var props: Store = this.props;
-    var user: User = props.user;
+    var me: Myself = props.me;
     if (props.ancestorsRootFirst.length) {
       var hide = _.some(props.ancestorsRootFirst, a => a.hideInForum);
       categories = hide ? null :
@@ -366,15 +366,15 @@ var Title = createComponent({
               ? "Click to change status to not-yet-done"
               : "Click to mark as done";
         }
-        if (!isStaff(store.user)) iconTooltip = null;
-        var clickableClass = isStaff(store.user) ? ' dw-clickable' : '';
-        var onClick = isStaff(store.user) ? this.cycleIsDone : null;
+        if (!isStaff(store.me)) iconTooltip = null;
+        var clickableClass = isStaff(store.me) ? ' dw-clickable' : '';
+        var onClick = isStaff(store.me) ? this.cycleIsDone : null;
         icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
             title: iconTooltip });
       }
       else if (store.pageRole === PageRole.ToDo) {
-        var clickableClass = isStaff(store.user) ? ' dw-clickable' : '';
-        var onClick = isStaff(store.user) ? this.cycleIsDone : null;
+        var clickableClass = isStaff(store.me) ? ' dw-clickable' : '';
+        var onClick = isStaff(store.me) ? this.cycleIsDone : null;
         icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
             title: iconTooltip });
       }
@@ -807,7 +807,7 @@ var Post = createComponent({
 
   render: function() {
     var post: Post = this.props.post;
-    var user: User = this.props.user;
+    var user: Myself = this.props.user;
     if (!post)
       return r.p({}, '(Post missing [DwE4UPK7])');
 
@@ -1008,7 +1008,7 @@ var PostHeader = createComponent({
       return r.span({ className: 'dw-a-clps icon-up-open', onClick: this.onCollapseClick });
     }
 
-    var user: User = this.props.user;
+    var user: Myself = this.props.user;
     var linkFn = this.props.abbreviate ? 'span' : 'a';
 
     var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
@@ -1023,7 +1023,7 @@ var PostHeader = createComponent({
       }
     });
 
-    // Username link: Some dupl code, see edit-history-dialog.ts. [88MYU2]
+    // Username link: Some dupl code, see edit-history-dialog.ts & sidebar.ts [88MYU2]
     var authorUrl = '/-/users/#/id/' + post.authorId;
     var namePart1;
     var namePart2;
@@ -1175,7 +1175,7 @@ var NoCommentsPageActions = createComponent({
     debiki2.ReactActions.editPostWithNr(this.props.post.postId);
   },
   render: function() {
-    var user: User = this.props.user;
+    var user: Myself = this.props.user;
     var post: Post = this.props.post;
 
     if (!post.isApproved && !post.sanitizedHtml)
@@ -1292,11 +1292,11 @@ var PostActions = createComponent({
     if (!post.isApproved) // what?:  && !post.text)
       return null;
 
-    var user: User = store.user;
-    var isOwnPost = post.authorIdInt === user.userId;
+    var me: Myself = store.me;
+    var isOwnPost = post.authorIdInt === me.userId;
     var isPageBody = post.postId === BodyPostId;
-    var votes = user.votes[post.postId] || [];
-    var isStaffOrOwnPost: boolean = isStaff(user) || isOwnPost;
+    var votes = me.votes[post.postId] || [];
+    var isStaffOrOwnPost: boolean = isStaff(me) || isOwnPost;
 
     var deletedOrCollapsed =
       post.isPostDeleted || post.isTreeDeleted || post.isPostCollapsed || post.isTreeCollapsed;
@@ -1376,7 +1376,7 @@ var PostActions = createComponent({
     // Bury votes aren't downvotes or bad in any way, so don't show them, except for
     // staff, so they can detect misuse.
     var numBurysText;
-    if (isStaff(user) && post.numBuryVotes) {
+    if (isStaff(me) && post.numBuryVotes) {
       numBurysText = r.a({ className: 'dw-a dw-vote-count' },
           post.numBuryVotes === 1 ? "1 Bury" : post.numBuryVotes + " Burys");
     }
@@ -1406,7 +1406,7 @@ var PostActions = createComponent({
             : r.a({ className: 'dw-a dw-a-bury icon-bury' + myBuryVote,
               title: "Click if you think it's better that people spend their time " +
                   "reading other things instead.", onClick: this.onBuryClick }, 'Bury');
-      var unwantedVoteButton = isGuest(user) ? null :
+      var unwantedVoteButton = isGuest(me) ? null :
           r.a({ className: 'dw-a dw-a-unwanted icon-cancel' + myUnwantedVote,
               title: "Click if you do not want this comment on this site.",
                   onClick: this.onUnwantedClick }, "Unwanted");
@@ -1435,8 +1435,8 @@ var PostActions = createComponent({
     var moreLinks = [];
 
     if (!isOwnPost) {
-      var mayEdit = isStaff(user) || (
-          user.isAuthenticated && post.postType === PostType.CommunityWiki);
+      var mayEdit = isStaff(me) || (
+          me.isAuthenticated && post.postType === PostType.CommunityWiki);
       if (mayEdit) {
         moreLinks.push(
           r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick, key: 'ed' },
@@ -1511,13 +1511,13 @@ var PostActions = createComponent({
    // r.a({ className:'dw-a dw-a-collapse-suggs icon-collapse-post dw-a-pending-review',
    // r.a({ className: 'dw-a dw-a-collapse-suggs icon-collapse-tree dw-a-pending-review',
 
-    if (!isPageBody && isStaff(user)) {
+    if (!isPageBody && isStaff(me)) {
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-delete icon-trash', onClick: this.onDeleteClick, key: 'dl' },
           'Delete'));
     }
 
-    if (isStaff(user) && !isFlat) {
+    if (isStaff(me) && !isFlat) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-users', onClick: this.onWikifyClick, key: 'wf' },
           isWikiPost(post) ? 'Un-Wikify' : 'Wikify'));

@@ -27,7 +27,7 @@ var d = { i: debiki.internal };
 
 
 export var actionTypes = {
-  Login: 'Login',
+  NewMyself: 'NewMyself',
   Logout: 'Logout',
   NewUserAccountCreated: 'NewUserAccountCreated',
   CreateEditForumCategory: 'CreateEditForumCategory',
@@ -50,16 +50,19 @@ export var actionTypes = {
   UncollapsePost: 'UncollapsePost',
   ShowPost: 'ShowPost',
   SetWatchbarOpen: 'SetWatchbarOpen',
+  SetContextbarOpen: 'SetContextbarOpen',
   SetHorizontalLayout: 'SetHorizontalLayout',
   ChangeSiteStatus: 'ChangeSiteStatus',
   HideHelpMessage: 'HideHelpMessage',
   ShowHelpAgain: 'ShowHelpAgain',
   AddNotifications: 'AddNotifications',
   MarkAnyNotificationAsSeen: 'MarkAnyNotificationAsSeen',
+  UpdateOnlineUsersLists: 'UpdateOnlineUsersLists',
+  UpdateUserPresence: 'UpdateUserPresence',
 };
 
 
-export function login() {
+export function loadMyself() {
   // The server has set new XSRF (and SID) cookie, and we need to
   // ensure old legacy <form> XSRF <input>:s are synced with the new cookie. But 1) the
   // $.ajaxSetup complete() handler that does tnis (in debiki.js) won't
@@ -76,9 +79,9 @@ export function login() {
   // tab, and we don't want to break it by deleting cookies. Instead login temp cookies are
   // deleted by the server.)
 
-  Server.loadMyPageData((user) => {
+  Server.loadMyself((user) => {
     ReactDispatcher.handleViewAction({
-      actionType: actionTypes.Login,
+      actionType: actionTypes.NewMyself,
       user: user
     });
   });
@@ -93,6 +96,11 @@ export function newUserAccountCreated() {
 
 
 export function logout() {
+  Server.logout(logoutClientSideOnly);
+}
+
+
+export function logoutClientSideOnly() {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.Logout
   });
@@ -387,10 +395,12 @@ export function togglePagebarOpen() {
 }
 
 export function setPagebarOpen(open: boolean) {
-  putInLocalStorage('isPagebarOpen', open); // move to ReactStore if I dispatch an action
-                                            // (for consistency with setWatchbarOpen).
   if (open) $('html').addClass('es-pagebar-open');
   else $('html').removeClass('es-pagebar-open');
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.SetContextbarOpen,
+    open: open,
+  });
 }
 
 
@@ -446,6 +456,23 @@ export function addNotifications(notfs: Notification[]) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.AddNotifications,
     notifications: notfs,
+  });
+}
+
+
+export function updateUserPresence(user: BriefUser, numOnlineStrangers: number) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.UpdateUserPresence,
+    user: user,
+    numOnlineStrangers: numOnlineStrangers,
+  });
+}
+
+export function updateOnlineUsersLists(numOnlineStrangers: number, onlineUsers: BriefUser[]) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.UpdateOnlineUsersLists,
+    numOnlineStrangers: numOnlineStrangers,
+    onlineUsers: onlineUsers,
   });
 }
 

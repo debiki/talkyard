@@ -34,6 +34,13 @@ abstract class People {
 }
 
 
+sealed abstract class Presence(val IntVal: Int) { def toInt = IntVal }
+object Presence {
+  case object Active extends Presence(1)
+  case object Away extends Presence(2)
+}
+
+
 /** An invite to the user with the specified emailAddress to join the site.
   * S/he gets an email and clicks a link to join.
   */

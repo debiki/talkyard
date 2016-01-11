@@ -50,9 +50,13 @@ object LoginController extends mvc.Controller {
   }
 
 
-  /** Clears login related cookies and OpenID and OpenAuth stuff.
+  /** Clears login related cookies and OpenID and OpenAuth stuff, unsubscribes
+    * from any event channel.
     */
-  def logout = mvc.Action(parse.empty) { request =>
+  def logout = GetActionAllowAnyone { request =>
+    request.user foreach { user =>
+      request.dao.pubSub.unsubscribeUser(request.siteId, user, request.theBrowserIdData)
+    }
     // Keep the xsrf cookie, so login dialog works:
     Ok.discardingCookies(DiscardingSessionCookie)
   }

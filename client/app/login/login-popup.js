@@ -80,7 +80,7 @@ d.i.createLoginPopup = function(anyUrl) {
       // (Find queryString example at the end of this file.)
 
       // Warning: Somewhat dupl code, compare w initLoginSimple.
-      debiki2.ReactActions.login();
+      debiki2.ReactActions.loadMyself();
       d.i.continueAnySubmission();
       return;
     }

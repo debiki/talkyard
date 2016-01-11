@@ -77,6 +77,17 @@ class PreludeTest extends Specification {
     }
   }
 
+  "nextRandomAzLetter" should {
+    "be between 'a' and 'z'" >> {
+      for (i <- 1 to 50) {
+        val letter = nextRandomAzLetter()
+        (letter - 'a') must be_>=(0)
+        ('z' - letter) must be_>=(0)
+      }
+      ok
+    }
+  }
+
   "nextRandomPageId" should {
     "be at least 5 chars and contain no vowels but `uy'" >> {
       for (i <- 1 to 50) {
