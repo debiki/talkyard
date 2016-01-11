@@ -44,8 +44,8 @@ export function subscribeToServerEvents(doNothingIfAlreadyPolling?) {
       case "notifications":
         ReactActions.addNotifications(event.data);
         break;
-      case "updateUser":
-        ReactActions.updateUser(event.data);
+      case "presence":
+        ReactActions.updateUserPresence(event.data.user, event.data.numOnlineStrangers);
         break;
       default:
         die("Unknown event type [EsE7YKF4]: " + event.type +

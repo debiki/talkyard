@@ -72,23 +72,18 @@ object SubscriberController extends mvc.Controller {
     // browser cannot specify the wrong host url param and in that way subscribe with the same
     // user id but at a different site.
 
-    Globals.pubSub.onUserSubscribed(request.siteId, request.theUser)
+    Globals.pubSub.onUserSubscribed(request.siteId, request.theUser, request.theBrowserIdData)
     Ok
   }
 
 
-  def subscribeToUsersPresence() = AsyncGetActionRateLimited(RateLimits.ExpensiveGetRequest) {
+  def loadOnlineUsers() = AsyncGetActionRateLimited(RateLimits.ExpensiveGetRequest) {
         request =>
-    // Later: Don't just list users, do subscribe to user-status-active / user-away / ... too.
-    for {
-      users <- Globals.pubSub.listOnlineUsers(request.siteId)
-      numStrangers <- Globals.strangerCounter.countStrangers(request.siteId)
-    }
-    yield {
+    Globals.pubSub.listOnlineUsers(request.siteId) map { case (onlineUsers, numStrangers) =>
       OkSafeJson(
         Json.obj(
           "numOnlineStrangers" -> numStrangers,
-          "onlineUsers" -> JsArray(users.map(JsUser))))
+          "onlineUsers" -> JsArray(onlineUsers.map(JsUser))))
     }
   }
 

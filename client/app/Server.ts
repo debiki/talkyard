@@ -801,7 +801,7 @@ export function cancelAnyLongPollingRequest() {
 
 
 export function loadOnlineUsers() {
-  get('/-/subscribe-to-user-presence-events', (response) => {
+  get('/-/load-online-users', (response) => {
     var onlineUsers: BriefUser[] = response.onlineUsers;
     _.each(onlineUsers, (user: BriefUser) => user.presence = Presence.Active);
     ReactActions.updateOnlineUsersLists(response.numOnlineStrangers, onlineUsers);

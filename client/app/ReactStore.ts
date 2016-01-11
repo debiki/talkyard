@@ -70,6 +70,7 @@ ReactDispatcher.register(function(payload) {
       $('html').removeClass('dw-is-admin, dw-is-staff, dw-is-authenticated');
 
       theStore_removeOnlineUser(store.me.id);
+      store.numOnlineStrangers += 1;
       store.me = makeStranger();
       store.user = store.me; // try to remove
       debiki2.pubsub.subscribeToServerEvents();
@@ -233,6 +234,7 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.UpdateUserPresence:
       // Updating state in-place, oh well.
+      store.numOnlineStrangers = action.numOnlineStrangers;
       var user: BriefUser = action.user;
       store.usersByIdBrief[user.id] = user;
       if (store.onlineUsers) {

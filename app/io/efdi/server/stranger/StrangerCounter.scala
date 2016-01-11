@@ -17,68 +17,11 @@
 
 package io.efdi.server.stranger
 
-import akka.actor._
-import akka.pattern.ask
 import com.debiki.core._
 import scala.collection.mutable
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.concurrent.duration._
 
 
-
-object StrangerCounter {
-
-  // Not thread safe; only needed in integration tests.
-  var testInstanceCounter = 1
-
-
-  /** Starts a StrangerCounterActor (only one is needed in the whole app).
-    */
-  def startNewActor(actorSystem: ActorSystem): StrangerCounterApi = {
-    val actorRef = actorSystem.actorOf(Props(
-      new StrangerCounterActor()), name = s"StrangerCounter-$testInstanceCounter")
-    testInstanceCounter += 1
-    actorSystem.scheduler.schedule(10 seconds, 20 seconds, actorRef, DeleteOldStrangers)
-    new StrangerCounterApi(actorRef)
-  }
-
-}
-
-
-
-class StrangerCounterApi(private val actorRef: ActorRef) {
-
-  private val timeout = 10 seconds
-
-
-  def tellStrangerSeen(siteId: SiteId, browserIdData: BrowserIdData) {
-    actorRef ! StrangerSeen(siteId, browserIdData)
-  }
-
-
-  def strangerLoggedIn(siteId: SiteId, browserIdData: BrowserIdData) {
-    actorRef ! StrangerLoggedIn(siteId, browserIdData)
-  }
-
-
-  def countStrangers(siteId: SiteId): Future[Int] = {
-    val response: Future[Any] = (actorRef ? CountStrangers(siteId))(timeout)
-    response.map(_.asInstanceOf[Int])
-  }
-}
-
-
-private case class StrangerSeen(siteId: SiteId, browserIdData: BrowserIdData)
-private case class StrangerLoggedIn(siteId: SiteId, browserIdData: BrowserIdData)
-private case class CountStrangers(siteId: SiteId)
-private case object DeleteOldStrangers
-
-
-
-/** Counts how many not-logged-in users have viewed any page the latest ten minutes.
-  */
-class StrangerCounterActor extends Actor {
+class StrangerCounter {
 
   val TenMinutesInMillis = 10 * OneMinuteInMillis
 
@@ -93,19 +36,7 @@ class StrangerCounterActor extends Actor {
       mutable.LinkedHashMap[IpAddress, When]())
 
 
-  def receive = {
-    case StrangerSeen(siteId, browserIdData) =>
-      addStranger(siteId, browserIdData)
-    case StrangerLoggedIn(siteId, browserIdData) =>
-      removeStranger(siteId, browserIdData)
-    case CountStrangers(siteId) =>
-      sender ! countStrangers(siteId)
-    case DeleteOldStrangers =>
-      deleteOldStrangers()
-  }
-
-
-  private def addStranger(siteId: SiteId, browserIdData: BrowserIdData) {
+  def addStranger(siteId: SiteId, browserIdData: BrowserIdData) {
     val lastSeenByBrowser = getLastSeenByBrowser(siteId)
     // Remove and add back this ip, so it'll appear last during iteration.
     lastSeenByBrowser.remove(browserIdData.ip)
@@ -113,13 +44,13 @@ class StrangerCounterActor extends Actor {
   }
 
 
-  private def removeStranger(siteId: SiteId, browserIdData: BrowserIdData) {
+  def removeStranger(siteId: SiteId, browserIdData: BrowserIdData) {
     val lastSeenByBrowser = getLastSeenByBrowser(siteId)
     lastSeenByBrowser.remove(browserIdData.ip)
   }
 
 
-  private def countStrangers(siteId: SiteId): Int = {
+  def countStrangers(siteId: SiteId): Int = {
     val lastSeenByBrowser = lastSeenByBrowserBySite.getOrElse(siteId, {
       return 0
     })
@@ -127,7 +58,7 @@ class StrangerCounterActor extends Actor {
   }
 
 
-  private def deleteOldStrangers() {
+  def deleteOldStrangers() {
     val now = When.now()
     for (lastSeenByBrowser <- lastSeenByBrowserBySite.values) {
       // LinkedHashMap iteration order = insertion order, so we'll find all old entries directly.

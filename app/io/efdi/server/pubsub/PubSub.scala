@@ -72,12 +72,12 @@ object PubSub {
 
   /** Starts a PubSub actor (only one is needed in the whole app).
     */
-  def startNewActor(actorSystem: ActorSystem): PubSubApi = {
+  def startNewActor(actorSystem: ActorSystem): (PubSubApi, StrangerCounterApi) = {
     val actorRef = actorSystem.actorOf(Props(
       new PubSubActor()), name = s"PubSub-$testInstanceCounter")
     actorSystem.scheduler.schedule(60 seconds, 10 seconds, actorRef, DeleteInactiveSubscriptions)
     testInstanceCounter += 1
-    new PubSubApi(actorRef)
+    (new PubSubApi(actorRef), new StrangerCounterApi(actorRef))
   }
 
 }
@@ -88,34 +88,43 @@ class PubSubApi(private val actorRef: ActorRef) {
 
   private val timeout = 10 seconds
 
-
-  def onUserSubscribed(siteId: SiteId, user: User) {
-    actorRef ! UserSubscribed(siteId, user)
+  def onUserSubscribed(siteId: SiteId, user: User, browserIdData: BrowserIdData) {
+    actorRef ! UserSubscribed(siteId, user, browserIdData)
   }
 
-
-  def unsubscribeUser(siteId: SiteId, user: User) {
-    actorRef ! UnsubscribeUser(siteId, user)
+  def unsubscribeUser(siteId: SiteId, user: User, browserIdData: BrowserIdData) {
+    actorRef ! UnsubscribeUser(siteId, user, browserIdData)
   }
-
 
   def publish(message: Message) {
     actorRef ! PublishMessage(message)
   }
 
-
-  def listOnlineUsers(siteId: SiteId): Future[immutable.Seq[User]] = {
+  def listOnlineUsers(siteId: SiteId): Future[(immutable.Seq[User], Int)] = {
     val response: Future[Any] = (actorRef ? ListOnlineUsers(siteId))(timeout)
-    response.map(_.asInstanceOf[immutable.Seq[User]])
+    response.map(_.asInstanceOf[(immutable.Seq[User], Int)])
+  }
+}
+
+
+class StrangerCounterApi(private val actorRef: ActorRef) {
+
+  private val timeout = 10 seconds
+
+  def tellStrangerSeen(siteId: SiteId, browserIdData: BrowserIdData) {
+    actorRef ! StrangerSeen(siteId, browserIdData)
   }
 }
 
 
 private case class PublishMessage(message: Message)
-private case class UserSubscribed(siteId: SiteId, user: User)
-private case class UnsubscribeUser(siteId: SiteId, user: User)
+private case class UserSubscribed(siteId: SiteId, user: User, browserIdData: BrowserIdData)
+private case class UnsubscribeUser(siteId: SiteId, user: User, browserIdData: BrowserIdData)
 private case class ListOnlineUsers(siteId: SiteId)
 private case object DeleteInactiveSubscriptions
+
+private case class StrangerSeen(siteId: SiteId, browserIdData: BrowserIdData)
+
 
 
 /** Publishes events to browsers via e.g. long polling or WebSocket. Reqiures nginx and nchan.
@@ -143,12 +152,18 @@ class PubSubActor extends Actor {
   // Could check what is Nchan's long-polling inactive timeout, if any?
   private val DeleteAfterInactiveMillis = 10 * OneMinuteInMillis
 
+  private val strangerCounter = new io.efdi.server.stranger.StrangerCounter()
+
 
   def receive = {
-    case UserSubscribed(siteId, user) =>
+    case UserSubscribed(siteId, user, browserIdData) =>
+      strangerCounter.removeStranger(siteId, browserIdData)
       publishUserPresence(siteId, user, Presence.Active)
       subscribeUser(siteId, user)
-    case UnsubscribeUser(siteId, user) =>
+    case UnsubscribeUser(siteId, user, browserIdData) =>
+      // Don't bump the stranger counter, it's fairly likely that the user left for real?
+      // Also, increasing it gives everyone the impression that the server knows the user
+      // didn't really leave, but rather says, reading, but logged out.
       unsubscribeUser(siteId, user)
       publishUserPresence(siteId, user, Presence.Away)
     case PublishMessage(message: Message) =>
@@ -157,6 +172,9 @@ class PubSubActor extends Actor {
       sender ! listUsersOnline(siteId)
     case DeleteInactiveSubscriptions =>
       deleteInactiveSubscriptions()
+      strangerCounter.deleteOldStrangers()
+    case StrangerSeen(siteId, browserIdData) =>
+      strangerCounter.addStranger(siteId, browserIdData)
   }
 
 
@@ -186,7 +204,9 @@ class PubSubActor extends Actor {
       return
 
     val userIds = userAndWhenById.values.map(_.user.id).toSet
-    sendPublishRequest(canonicalHost.hostname, userIds, "updateUser", JsUser(user, Some(presence)))
+    sendPublishRequest(canonicalHost.hostname, userIds, "presence", Json.obj(
+      "user" -> JsUser(user, Some(presence)),
+      "numOnlineStrangers" -> strangerCounter.countStrangers(siteId)))
   }
 
 
@@ -240,8 +260,10 @@ class PubSubActor extends Actor {
   }
 
 
-  private def listUsersOnline(siteId: SiteId): immutable.Seq[User] = {
-    perSiteSubscribers(siteId).values.map(_.user).to[immutable.Seq]
+  private def listUsersOnline(siteId: SiteId): (immutable.Seq[User], Int) = {
+    val onlineUsers = perSiteSubscribers(siteId).values.map(_.user).to[immutable.Seq]
+    val numStrangers = strangerCounter.countStrangers(siteId)
+    (onlineUsers, numStrangers)
   }
 
 

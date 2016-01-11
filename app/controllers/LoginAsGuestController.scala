@@ -69,8 +69,6 @@ object LoginAsGuestController extends mvc.Controller {
 
       val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(request.siteId, guestUser)
 
-      Globals.strangerCounter.strangerLoggedIn(request.siteId, request.theBrowserIdData)
-
       // Could include a <a href=last-page>Okay</a> link, see the
       // Logout dialog below. Only needed if javascript disabled though,
       // otherwise a javascript welcome dialog is shown instead.

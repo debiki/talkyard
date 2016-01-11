@@ -368,7 +368,6 @@ object LoginWithOpenAuthController extends Controller {
         }
       }
 
-    Globals.strangerCounter.strangerLoggedIn(siteId, request.theBrowserIdData)
     response.withCookies(sidAndXsrfCookies: _*)
   }
 

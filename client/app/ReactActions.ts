@@ -460,10 +460,11 @@ export function addNotifications(notfs: Notification[]) {
 }
 
 
-export function updateUser(user: BriefUser) {
+export function updateUserPresence(user: BriefUser, numOnlineStrangers: number) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.UpdateUserPresence,
     user: user,
+    numOnlineStrangers: numOnlineStrangers,
   });
 }
 

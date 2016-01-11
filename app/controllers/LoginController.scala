@@ -55,7 +55,7 @@ object LoginController extends mvc.Controller {
     */
   def logout = GetActionAllowAnyone { request =>
     request.user foreach { user =>
-      request.dao.pubSub.unsubscribeUser(request.siteId, user)
+      request.dao.pubSub.unsubscribeUser(request.siteId, user, request.theBrowserIdData)
     }
     // Keep the xsrf cookie, so login dialog works:
     Ok.discardingCookies(DiscardingSessionCookie)
