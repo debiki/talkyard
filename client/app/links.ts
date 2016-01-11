@@ -37,8 +37,8 @@ export function linkToUserProfilePage(userId: UserId): string {
   return '/-/users/#/id/' + userId;
 }
 
-export function linkToCurrentUserProfilePage(store: Store): string {
-  return '/-/users/#/id/' + store.user.id;
+export function linkToMyProfilePage(store: Store): string {
+  return '/-/users/#/id/' + store.me.id;
 }
 
 

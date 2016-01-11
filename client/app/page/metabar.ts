@@ -71,11 +71,11 @@ export var Metabar = createComponent({
   render: function() {
     var store: Store = this.state.store;
     var ui = this.state.ui;
-    var user: User = store.user;
+    var me: Myself = store.me;
 
-    var notfLevelElem = user.isAuthenticated && !ui.showDetails
+    var notfLevelElem = me.isAuthenticated && !ui.showDetails
       ? r.span({ className: 'dw-page-notf-level', onClick: this.onToggleDetailsClick },
-          'Notifications: ' + user.rolePageSettings.notfLevel)
+          'Notifications: ' + me.rolePageSettings.notfLevel)
       : null;
 
     var toggleDetailsBtn =
@@ -117,7 +117,7 @@ export var Metabar = createComponent({
       // There's not root post with a reply button, so add a reply button.
       // And an admin button, if is admin.
       var adminLink;
-      if (user.isAdmin) {
+      if (me.isAdmin) {
         adminLink =
           r.a({ className: 'dw-a dw-a-reply', href: d.i.serverOrigin + '/-/admin/#/moderation',
               target: '_blank' }, 'Administrate');

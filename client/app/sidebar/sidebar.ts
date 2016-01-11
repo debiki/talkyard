@@ -77,11 +77,12 @@ export var Sidebar = createComponent({
   },
 
   onChange: function() {
-    var newStore = debiki2.ReactStore.allData();
+    var newStore: Store = debiki2.ReactStore.allData();
     this.setState({
       store: newStore,
     });
-    if (newStore.isContextbarOpen && this.state.lastLoadedOnlineUsersAsId !== newStore.user.id) {
+    if (newStore.isContextbarOpen && newStore.me.id &&
+        newStore.me.id !== this.state.lastLoadedOnlineUsersAsId) {
       this.loadOnlineUsers();
     }
   },
@@ -122,7 +123,7 @@ export var Sidebar = createComponent({
     var store: Store = this.state.store;
     if (isPageWithSidebar(store.pageRole)) {
       keymaster('s', this.toggleSidebarOpen);
-      if (store.isContextbarOpen && this.state.lastLoadedOnlineUsersAsId !== store.user.id) {
+      if (store.isContextbarOpen && this.state.lastLoadedOnlineUsersAsId !== store.me.id) {
         this.loadOnlineUsers();
       }
     }
@@ -139,7 +140,7 @@ export var Sidebar = createComponent({
   },
 
   loadOnlineUsers: function() {
-    this.setState({ lastLoadedOnlineUsersAsId: this.state.store.user.id });
+    this.setState({ lastLoadedOnlineUsersAsId: this.state.store.me.id });
     Server.loadOnlineUsers();
   },
 
@@ -302,7 +303,7 @@ export var Sidebar = createComponent({
     var iAmHere = false;
     _.each(users, u => {
       numOnline += u.presence === Presence.Active ? 1 : 0;
-      iAmHere = iAmHere || u.id === store.user.id;
+      iAmHere = iAmHere || u.id === store.me.id;
     });
 
     // If the current user is the only active user, write "you" instead of "1"
@@ -360,7 +361,7 @@ export var Sidebar = createComponent({
           numOnlineStrangers = 0;
         }
         usersClass = ' active';
-        listItems = makeUsersContent(users, store.user.id, numOnlineStrangers);
+        listItems = makeUsersContent(users, store.me.id, numOnlineStrangers);
         break;
       default:
         console.error('[DwE4PM091]');
@@ -532,8 +533,9 @@ function makeUsersContent(users: BriefUser[], myId: UserId, numOnlineStrangers: 
     var presenceClass = user.presence === Presence.Active ? 'active' : 'away';
     var presenceTitle = user.presence === Presence.Active ? 'Active' : 'Away';
     return (
-        r.div({ key: user.id, className: 'esPresence esPresence-' + presenceClass },
-          avatar.AvatarAndName({ user: user }),
+        r.div({ key: user.id, className: 'esPresence esPresence-' + presenceClass,
+            onClick: () => pagedialogs.getAboutUserDialog().openForUserId(user.id) },
+          avatar.AvatarAndName({ user: user, ignoreClicks: true }),
           thatsYou,
           r.span({ className: 'esPresence_icon', title: presenceTitle })));
   });

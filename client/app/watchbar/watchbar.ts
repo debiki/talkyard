@@ -88,7 +88,7 @@ export var Watchbar = createComponent({
       }
     }
 
-    var watchbarTopics = store.user.watchbarTopics;
+    var watchbarTopics = store.me.watchbarTopics;
     var recentTopics = [];
     if (watchbarTopics) {
       recentTopics = watchbarTopics.recentTopics.map(makeMakeTopicElemFn('esWatchbar_topic-forum'));

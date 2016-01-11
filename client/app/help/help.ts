@@ -69,12 +69,12 @@ export var HelpMessageBox = createComponent({
 
   computeState: function() {
     var message: HelpMessage = this.props.message;
-    var user: User = ReactStore.allData().user;
+    var me: Myself = ReactStore.allData().me;
     if (!ReactStore.allData().userSpecificDataAdded) {
       // Don't want search engines to index help text.
       return { hidden: true };
     }
-    var closedMessages: { [id: string]: number } = user.closedHelpMessages || {};
+    var closedMessages: { [id: string]: number } = me.closedHelpMessages || {};
     var thisMessClosedVersion = closedMessages[message.id];
     return { hidden: thisMessClosedVersion === message.version };
   },

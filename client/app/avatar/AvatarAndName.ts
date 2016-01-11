@@ -25,10 +25,6 @@
 
 
 export var AvatarAndName = createComponent({
-  openAboutUserDialog: function() {
-    debiki2.pagedialogs.getAboutUserDialog().openForUserId(this.props.user.id);
-  },
-
   render: function () {
     var user: BriefUser = this.props.user;
     var avatar = this.props.hideAvatar ?
@@ -51,8 +47,10 @@ export var AvatarAndName = createComponent({
     else {
       namePart1 = r.span({ className: 'esAvtrName' }, '(Unknown author)');
     }
+    var onClick = this.props.ignoreClicks ?
+        null : () => debiki2.pagedialogs.getAboutUserDialog().openForUserId(user.id);
     return (
-        r.div({ className: 'esAvtrName', onClick: this.openAboutUserDialog },
+        r.div({ className: 'esAvtrName', onClick: onClick },
           avatar, namePart1, namePart2));
   }
 });

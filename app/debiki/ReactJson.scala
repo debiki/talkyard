@@ -94,7 +94,7 @@ object ReactJson {
       "isInEmbeddedCommentsIframe" -> JsBoolean(false),
       "categories" -> JsArray(),
       "topics" -> JsArray(),
-      "user" -> NoUserSpecificData,
+      "me" -> NoUserSpecificData,
       "rootPostId" -> JsNumber(PageParts.BodyNr),
       "usersByIdBrief" -> JsObject(Nil),
       "allPosts" -> JsObject(Nil),
@@ -240,7 +240,7 @@ object ReactJson {
         // them into the react-flux-redux state tree.
          includeHiddenInForum = true, dao),
       "topics" -> JsArray(anyLatestTopics),
-      "user" -> NoUserSpecificData,
+      "me" -> NoUserSpecificData,
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
       "usersByIdBrief" -> usersByIdJson,
       "allPosts" -> JsObject(allPostsJson),

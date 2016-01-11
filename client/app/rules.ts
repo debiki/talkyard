@@ -86,7 +86,7 @@ function pageRole_shallListInRecentTopics(pageRole: PageRole): boolean {
   }
 }
 
-function userGetWatchbarTopicIds(user: User): PageId[] {
+function userGetWatchbarTopicIds(user: Myself): PageId[] {
   var watchbarTopics: WatchbarTopics = user.watchbarTopics;
   if (!watchbarTopics) return [];
   // For now: Concat with something so as to not return the original array.
@@ -94,7 +94,7 @@ function userGetWatchbarTopicIds(user: User): PageId[] {
 }
 
 
-function maySendInvites(user: User | CompleteUser): MayMayNot {
+function maySendInvites(user: Myself | CompleteUser): MayMayNot {
   // Currently only admins may send invites.
   if (!user.isAdmin) return mayMayNot(false, "is not admin");
   return mayIndeed();
@@ -111,7 +111,7 @@ function isGuest(user) {  // later: rename to user_isGuest
       user.userId <= MaxGuestId; // in case it's a User or BriefUser
 }
 
-function isMember(user: User | CompleteUser): boolean {
+function isMember(user: Myself | CompleteUser): boolean {
   if (!user) return false;
   var id = user['id'] || user['userId'];
   var member = id >= MinMemberId;
@@ -119,7 +119,7 @@ function isMember(user: User | CompleteUser): boolean {
   return member;
 }
 
-function isStaff(user: User) {
+function isStaff(user: Myself) {
   return user.isAdmin || user.isModerator;
 }
 

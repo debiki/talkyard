@@ -207,7 +207,7 @@ var AboutGuest = createComponent({
 
   render: function() {
     var guest: Guest = this.props.user;
-    var loggedInUser: User = this.props.loggedInUser;
+    var loggedInUser: Myself = this.props.loggedInUser;
     var blocks: Blocks = this.props.blocks;
     var postId = this.props.post ? this.props.post.uniqueId : null;
 

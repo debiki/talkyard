@@ -54,7 +54,7 @@ export var UserInvitesComponent = React.createClass({
   },
 
   loadInvites: function(userId: number) {
-    var loggedInUser: User = this.props.loggedInUser;
+    var loggedInUser: Myself = this.props.loggedInUser;
     var maySeeInvites = loggedInUser.userId === userId || isStaff(loggedInUser);
     if (!maySeeInvites)
       return;
@@ -76,7 +76,7 @@ export var UserInvitesComponent = React.createClass({
 
   render: function() {
     var user: CompleteUser = this.props.user;
-    var loggedInUser: User = this.props.loggedInUser;
+    var loggedInUser: Myself = this.props.loggedInUser;
 
     if (isGuest(loggedInUser))
       return r.p({}, "You are logge in as a guest. They may not see invites.");

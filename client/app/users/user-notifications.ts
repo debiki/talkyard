@@ -44,9 +44,9 @@ export var UserNotificationsComponent = React.createClass({
   },
 
   componentWillReceiveProps: function(nextProps) {
-    var loggedInUser: User = this.props.loggedInUser;
+    var loggedInUser: Myself = this.props.loggedInUser;
     var user: CompleteUser = this.props.user;
-    var nextLoggedInUser: User = nextProps.loggedInUser;
+    var nextLoggedInUser: Myself = nextProps.loggedInUser;
     var nextUser: CompleteUser = nextProps.user;
     if (loggedInUser.userId !== nextLoggedInUser.userId ||
         user.id !== nextUser.id) {
