@@ -27,7 +27,7 @@ var d = { i: debiki.internal };
 
 
 export var actionTypes = {
-  Login: 'Login',
+  NewMyself: 'NewMyself',
   Logout: 'Logout',
   NewUserAccountCreated: 'NewUserAccountCreated',
   CreateEditForumCategory: 'CreateEditForumCategory',
@@ -58,10 +58,11 @@ export var actionTypes = {
   AddNotifications: 'AddNotifications',
   MarkAnyNotificationAsSeen: 'MarkAnyNotificationAsSeen',
   UpdateOnlineUsersLists: 'UpdateOnlineUsersLists',
+  UpdateUserPresence: 'UpdateUserPresence',
 };
 
 
-export function login() {
+export function loadMyself() {
   // The server has set new XSRF (and SID) cookie, and we need to
   // ensure old legacy <form> XSRF <input>:s are synced with the new cookie. But 1) the
   // $.ajaxSetup complete() handler that does tnis (in debiki.js) won't
@@ -78,9 +79,9 @@ export function login() {
   // tab, and we don't want to break it by deleting cookies. Instead login temp cookies are
   // deleted by the server.)
 
-  Server.loadMyPageData((user) => {
+  Server.loadMyself((user) => {
     ReactDispatcher.handleViewAction({
-      actionType: actionTypes.Login,
+      actionType: actionTypes.NewMyself,
       user: user
     });
   });
@@ -458,6 +459,13 @@ export function addNotifications(notfs: Notification[]) {
   });
 }
 
+
+export function updateUser(user: BriefUser) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.UpdateUserPresence,
+    user: user,
+  });
+}
 
 export function updateOnlineUsersLists(numOnlineStrangers: number, onlineUsers: BriefUser[]) {
   ReactDispatcher.handleViewAction({

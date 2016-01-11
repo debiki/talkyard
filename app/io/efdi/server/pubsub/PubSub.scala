@@ -31,6 +31,7 @@ import scala.collection.{mutable, immutable}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import ReactJson.JsUser
 
 
 sealed trait Message {
@@ -145,11 +146,13 @@ class PubSubActor extends Actor {
 
   def receive = {
     case UserSubscribed(siteId, user) =>
+      publishUserPresence(siteId, user, Presence.Active)
       subscribeUser(siteId, user)
     case UnsubscribeUser(siteId, user) =>
       unsubscribeUser(siteId, user)
+      publishUserPresence(siteId, user, Presence.Away)
     case PublishMessage(message: Message) =>
-      publish(message)
+      publishPostAndNotfs(message)
     case ListOnlineUsers(siteId) =>
       sender ! listUsersOnline(siteId)
     case DeleteInactiveSubscriptions =>
@@ -171,9 +174,26 @@ class PubSubActor extends Actor {
   }
 
 
-  private def publish(message: Message) {
+  private def publishUserPresence(siteId: SiteId, user: User, presence: Presence) {
+    // dupl code [7UKY74]
+    val siteDao = Globals.siteDao(siteId)
+    val site = siteDao.loadSite()
+    val canonicalHost = site.canonicalHost.getOrDie(
+      "EsE2WUV43", s"Site lacks canonical host: $site")
+
+    val userAndWhenById = perSiteSubscribers(siteId)
+    if (userAndWhenById.contains(user.id))
+      return
+
+    val userIds = userAndWhenById.values.map(_.user.id).toSet
+    sendPublishRequest(canonicalHost.hostname, userIds, "updateUser", JsUser(user, Some(presence)))
+  }
+
+
+  private def publishPostAndNotfs(message: Message) {
     SHOULD // only publish to connected users
 
+    // dupl code [7UKY74]
     val siteDao = Globals.siteDao(message.siteId)
     val site = siteDao.loadSite()
     val canonicalHost = site.canonicalHost.getOrDie(
@@ -184,31 +204,28 @@ class PubSubActor extends Actor {
       val notfsJson = siteDao.readOnlyTransaction { transaction =>
         ReactJson.notificationsToJson(Seq(notf), transaction).notfsJson
       }
-      WS.url(s"http://localhost/-/pubsub/publish/${notf.toUserId}")
-        .withVirtualHost(canonicalHost.hostname)
-        .post(Json.obj(
-          "type" -> "notifications",
-          "data" -> notfsJson).toString)
-        .map(handlePublishResponse)
-        .recover({
-          case ex: Exception =>
-            p.Logger.warn(s"Error publishing to browsers [EsE0KPU31]", ex)
-        })
+      sendPublishRequest(canonicalHost.hostname, Set(notf.toUserId), "notifications", notfsJson)
     }
 
+    // Later: publish message.toJson too, to all message.toUserIds.
+  }
+
+
+  private def sendPublishRequest(hostname: String, toUserIds: Set[UserId], tyype: String,
+        json: JsValue) {
     // Currently nchan doesn't support publishing to many channels with one single request.
     // (See the Channel Multiplexing section here: https://nchan.slact.net/
     // it says: "Publishing to multiple channels from one location is not supported")
     COULD // create an issue about supporting that? What about each post data text line = a channel,
     // and a blank line separates channels from the message that will be sent to all these channels?
-    message.toUserIds foreach { userId =>
+    toUserIds foreach { userId =>
       WS.url(s"http://localhost/-/pubsub/publish/$userId")
-        .withVirtualHost(canonicalHost.hostname)
-        .post(message.toJson)
+        .withVirtualHost(hostname)
+        .post(Json.obj("type" -> tyype, "data" -> json).toString)
         .map(handlePublishResponse)
         .recover({
           case ex: Exception =>
-            p.Logger.warn(s"Error publishing to browsers [EsE5JYUW2]", ex)
+            p.Logger.warn(s"Error publishing to browsers [EsE0KPU31]", ex)
         })
     }
   }
@@ -232,8 +249,15 @@ class PubSubActor extends Actor {
     val now = When.now()
     for ((siteId, userAndWhenMap) <- subscribersBySite) {
       // LinkedHashMap sort order = perhaps-inactive first.
-      userAndWhenMap.iterator.dropWhile { case (userId, userAndWhen) =>
-        now.millisSince(userAndWhen.when) > DeleteAfterInactiveMillis
+      // COULD implement `removeWhile` [removewhile]
+      while (true) {
+        val ((userId, userAndWhen)) = userAndWhenMap.headOption getOrElse {
+          return
+        }
+        if (now.millisSince(userAndWhen.when) < DeleteAfterInactiveMillis)
+          return
+
+        userAndWhenMap.remove(userId)
       }
     }
   }

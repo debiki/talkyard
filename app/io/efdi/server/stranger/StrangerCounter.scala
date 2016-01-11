@@ -131,8 +131,15 @@ class StrangerCounterActor extends Actor {
     val now = When.now()
     for (lastSeenByBrowser <- lastSeenByBrowserBySite.values) {
       // LinkedHashMap iteration order = insertion order, so we'll find all old entries directly.
-      lastSeenByBrowser.iterator dropWhile { case (ip, lastSeenAt) =>
-        now.millisSince(lastSeenAt) > TenMinutesInMillis
+      // COULD implement `removeWhile` [removewhile]
+      while (true) {
+        val ((ip, lastSeenAt)) = lastSeenByBrowser.headOption getOrElse {
+          return
+        }
+        if (now.millisSince(lastSeenAt) < TenMinutesInMillis)
+          return
+
+        lastSeenByBrowser.remove(ip)
       }
     }
   }

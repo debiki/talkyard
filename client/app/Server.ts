@@ -382,7 +382,7 @@ export function savePageNoftLevel(newNotfLevel) {
 }
 
 
-export function loadMyPageData(callback: (user: any) => void) {
+export function loadMyself(callback: (user: any) => void) {
   $.get(origin + '/-/load-my-page-data?pageId=' + debiki2.ReactStore.getPageId())
     .done((user: any) => {
       callback(user);
@@ -800,7 +800,7 @@ export function cancelAnyLongPollingRequest() {
 }
 
 
-export function subscribeToUserPresenceEvents() {
+export function loadOnlineUsers() {
   get('/-/subscribe-to-user-presence-events', (response) => {
     var onlineUsers: BriefUser[] = response.onlineUsers;
     _.each(onlineUsers, (user: BriefUser) => user.presence = Presence.Active);

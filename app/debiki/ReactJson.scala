@@ -799,7 +799,9 @@ object ReactJson {
   def JsUserOrNull(user: Option[User]): JsValue =
     user.map(JsUser).getOrElse(JsNull)
 
-  def JsUser(user: User): JsObject = {
+  def JsUser(user: User): JsObject = JsUser(user, None)
+
+  def JsUser(user: User, anyPresence: Option[Presence]): JsObject = {
     var json = Json.obj(
       "id" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.username),
@@ -822,6 +824,9 @@ object ReactJson {
     }
     if (user.isModerator) {
       json += "isModerator" -> JsTrue
+    }
+    anyPresence foreach { presence =>
+      json += "presence" -> JsNumber(presence.toInt)
     }
     json
   }

@@ -53,9 +53,9 @@ ReactDispatcher.register(function(payload) {
   var action = payload.action;
   switch (action.actionType) {
 
-    case ReactActions.actionTypes.Login:
-      ReactStore.activateUserSpecificData(action.user);
-      debiki2.pubsub.subscribeToServerEventsAsUser(action.user);
+    case ReactActions.actionTypes.NewMyself:
+      ReactStore.activateMyself(action.user);
+      theStore_addOnlineUser(myself_toBriefUser(action.user));
       break;
 
     case ReactActions.actionTypes.Logout:
@@ -64,8 +64,9 @@ ReactDispatcher.register(function(payload) {
 
       $('html').removeClass('dw-is-admin, dw-is-staff, dw-is-authenticated');
 
+      theStore_removeOnlineUser(store.user.id);
       store.user = makeEmptyUser();
-      debiki2.pubsub.subscribeToServerEventsAsUser(store.user);
+      debiki2.pubsub.subscribeToServerEvents();
       break;
 
     case ReactActions.actionTypes.NewUserAccountCreated:
@@ -224,7 +225,24 @@ ReactDispatcher.register(function(payload) {
       markAnyNotificationssAsSeen(action.postNr);
       break;
 
+    case ReactActions.actionTypes.UpdateUserPresence:
+      // Updating state in-place, oh well.
+      var user: BriefUser = action.user;
+      store.usersByIdBrief[user.id] = user;
+      if (store.onlineUsers) {
+        if (user.presence === Presence.Active) {
+          if (_.every(store.onlineUsers, u => u.id !== user.id)) {
+            store.onlineUsers.push(user);
+          }
+        }
+        else {
+          _.remove(store.onlineUsers, u => u.id === user.id);
+        }
+      }
+      break;
+
     case ReactActions.actionTypes.UpdateOnlineUsersLists:
+      _.forEach(store.usersByIdBrief, (u: BriefUser) => u.presence = undefined);
       store.numOnlineStrangers = action.numOnlineStrangers;
       store.onlineUsers = action.onlineUsers;
       // Overwrite any old user objects with no presence info and perhaps stale other data.
@@ -266,7 +284,7 @@ function findAnyAcceptedAnswerPostNr() {
 
 
 // COULD change this to an action instead
-ReactStore.activateUserSpecificData = function(anyUser) {
+ReactStore.activateMyself = function(anyUser) {
   store.userSpecificDataAdded = true;
   store.now = new Date().getTime();
 
@@ -274,6 +292,7 @@ ReactStore.activateUserSpecificData = function(anyUser) {
   if (!newUser) {
     // For now only. Later on, this data should be kept server side instead?
     addLocalStorageData(store.user);
+    debiki2.pubsub.subscribeToServerEvents();
     this.emitChange();
     return;
   }
@@ -296,8 +315,7 @@ ReactStore.activateUserSpecificData = function(anyUser) {
     updatePost(post);
   });
 
-  debiki2.pubsub.subscribeToServerEventsAsUser(newUser);
-
+  debiki2.pubsub.subscribeToServerEvents();
   store.quickUpdate = false;
   this.emitChange();
 };
@@ -307,6 +325,36 @@ ReactStore.allData = function() {
   return store;
 };
 
+
+function myself_toBriefUser(myself: User): BriefUser {
+  return {
+    id: myself.id,
+    fullName: myself.fullName,
+    username: myself.username,
+    isAdmin: myself.isAdmin,
+    isModerator: myself.isModerator,
+    isGuest: myself.id && myself.id <= MaxGuestId,
+    isEmailUnknown: undefined, // ?
+    avatarUrl: myself.avatarUrl,
+    presence: Presence.Active,
+  }
+}
+
+
+function theStore_removeOnlineUser(userId: UserId) {
+  if (store.onlineUsers) {
+    _.remove(store.onlineUsers, u => u.id === store.user.id);
+  }
+}
+
+function theStore_addOnlineUser(user: BriefUser) {
+  store.usersByIdBrief[user.id] = user;
+  if (store.onlineUsers) {
+    if (_.every(store.onlineUsers, u => u.id !== user.id)) {
+      store.onlineUsers.push(user);
+    }
+  }
+}
 
 export function store_getOnlineUsersWholeSite(store: Store): BriefUser[] {
   return _.values(store.usersByIdBrief).filter(u => {
@@ -811,6 +859,7 @@ function makeEmptyUser(): User {
     marksByPostId: {},
 
     closedHelpMessages: {},
+    presence: Presence.Active,
   };
 }
 

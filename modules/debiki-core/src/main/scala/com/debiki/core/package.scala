@@ -79,6 +79,7 @@ package object core {
 
   object When {
     def now() = new When(System.currentTimeMillis())
+    def fromDate(date: java.util.Date) = new When(date.getTime)
   }
 
   val HomepageUrlPath = "/"

@@ -59,7 +59,7 @@ function handleLoginInOtherBrowserTab() {
       var newUserIdString = parts[1];
       if (currentUser.userId !== parseInt(newUserIdString)) {
         // We've logged in as another user in another browser tab.
-        debiki2.ReactActions.login();
+        debiki2.ReactActions.loadMyself();
       }
     }
     else {
@@ -69,7 +69,7 @@ function handleLoginInOtherBrowserTab() {
   }
   else if (sessionId) {
     // We've logged in in another browser tab.
-    debiki2.ReactActions.login();
+    debiki2.ReactActions.loadMyself();
   }
 }
 
@@ -201,7 +201,7 @@ function renderDiscussionPage() {
   var timeAfterTimeAgo = performance.now();
 
   debiki2.ReactStore.initialize();
-  debiki2.ReactStore.activateUserSpecificData();
+  debiki2.ReactStore.activateMyself();
   var timeAfterUserData = performance.now();
 
   debiki2.startRemainingReactRoots();
@@ -278,7 +278,7 @@ d.i.renderEmptyPage = function() {
   debiki2.utils.onMouseDetected(d.i.initUtterscrollAndTips);
   debiki2.ReactStore.initialize();
   debiki2.startRemainingReactRoots();
-  debiki2.ReactStore.activateUserSpecificData();
+  debiki2.ReactStore.activateMyself();
   fireLoginOrLogout();
   $('html').addClass(ReactStartedClass);
   debiki2.utils.startDetectingMouse();

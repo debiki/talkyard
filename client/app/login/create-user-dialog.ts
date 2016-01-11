@@ -270,12 +270,11 @@ function continueOnMainPageAfterHavingCreatedUser() {
     d2 = debiki2;
   }
 
-  // We should be on some kind of a discussion page, so trigger the login action so it'll
-  // update. (Perhaps rename ReactActions.login() to .loggedIn() or something like that?)
-  d2.ReactActions.login()
+  // We should be on some kind of a discussion page, so load any current-user specific data.
+  d2.ReactActions.loadMyself();
 
   // This continues e.g. whatever the user attempted to do before she was asked to login
-  // and create a user.
+  // and create a user.  — Hmm, should this wait until after loadMyself is done?
   debikiInternal.continueAnySubmission();
 
   if (d.i.isInLoginPopup) {

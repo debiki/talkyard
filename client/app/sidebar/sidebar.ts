@@ -70,6 +70,7 @@ export var Sidebar = createComponent({
 
     return {
       store: store,
+      lastLoadedOnlineUsersAsId: null,
       commentsType: isPageWithComments(store.pageRole) ? 'Recent' : 'Users',
       // showPerhapsUnread: false,
     };
@@ -80,8 +81,8 @@ export var Sidebar = createComponent({
     this.setState({
       store: newStore,
     });
-    if (newStore.isContextbarOpen && !this.state.hasSubscribedToPresenceEvents) {
-      this.subscribeToPresenceEvents();
+    if (newStore.isContextbarOpen && this.state.lastLoadedOnlineUsersAsId !== newStore.user.id) {
+      this.loadOnlineUsers();
     }
   },
 
@@ -121,8 +122,8 @@ export var Sidebar = createComponent({
     var store: Store = this.state.store;
     if (isPageWithSidebar(store.pageRole)) {
       keymaster('s', this.toggleSidebarOpen);
-      if (store.isContextbarOpen) {
-        this.subscribeToPresenceEvents();
+      if (store.isContextbarOpen && this.state.lastLoadedOnlineUsersAsId !== store.user.id) {
+        this.loadOnlineUsers();
       }
     }
   },
@@ -137,9 +138,9 @@ export var Sidebar = createComponent({
     // if is-2d then: this.updateSizeAndPosition2d(event);
   },
 
-  subscribeToPresenceEvents: function() {
-    this.setState({ hasSubscribedToPresenceEvents: true });
-    Server.subscribeToUserPresenceEvents();
+  loadOnlineUsers: function() {
+    this.setState({ lastLoadedOnlineUsersAsId: this.state.store.user.id });
+    Server.loadOnlineUsers();
   },
 
   updateSizeAndPosition2d: function(event) {

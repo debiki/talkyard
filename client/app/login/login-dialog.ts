@@ -382,7 +382,7 @@ function continueAfterLogin(anyReturnToUrl: string) {
   }
   else {
     // We're on a normal page (but not in a login popup window for an embedded comments page).
-    debiki2.ReactActions.login();
+    debiki2.ReactActions.loadMyself();
     // Continue with whatever caused the login to happen.
     // Old comment, perhaps obsolete:
     //   If the login happens because the user submits a reply,
