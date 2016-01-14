@@ -299,7 +299,7 @@ export var TopBar = createComponent({
         Button({ className: 'esOpenPagebarBtn', onClick: ReactActions.openPagebar },
             r.span({ className: 'icon-left-open' }));
 
-    var openWatchbarButton = !isPageWithWatchbar(pageRole) ? null :
+    var openWatchbarButton =
         Button({ className: 'esOpenWatchbarBtn', onClick: ReactActions.openWatchbar },
             r.span({ className: 'icon-right-open' }));
 

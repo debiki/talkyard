@@ -282,7 +282,7 @@ var Title = createComponent({
 
   render: function() {
     var store: Store = this.props;
-    var user = this.props.user;
+    var me: Myself = store.me;
     var titlePost = this.props.allPosts[TitleId];
     if (!titlePost)
       return null;
@@ -302,7 +302,7 @@ var Title = createComponent({
     }
 
     var anyEditTitleBtn;
-    if (!this.props.hideButtons && (isStaff(user) || user.userId === titlePost.authorId)) {
+    if (!this.props.hideButtons && (isStaff(me) || me.userId === titlePost.authorId)) {
       anyEditTitleBtn =
         r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.editTitle });
     }
@@ -366,15 +366,15 @@ var Title = createComponent({
               ? "Click to change status to not-yet-done"
               : "Click to mark as done";
         }
-        if (!isStaff(store.me)) iconTooltip = null;
-        var clickableClass = isStaff(store.me) ? ' dw-clickable' : '';
-        var onClick = isStaff(store.me) ? this.cycleIsDone : null;
+        if (!isStaff(me)) iconTooltip = null;
+        var clickableClass = isStaff(me) ? ' dw-clickable' : '';
+        var onClick = isStaff(me) ? this.cycleIsDone : null;
         icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
             title: iconTooltip });
       }
       else if (store.pageRole === PageRole.ToDo) {
-        var clickableClass = isStaff(store.me) ? ' dw-clickable' : '';
-        var onClick = isStaff(store.me) ? this.cycleIsDone : null;
+        var clickableClass = isStaff(me) ? ' dw-clickable' : '';
+        var onClick = isStaff(me) ? this.cycleIsDone : null;
         icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
             title: iconTooltip });
       }
@@ -385,7 +385,7 @@ var Title = createComponent({
       switch (this.props.pinWhere) {
         case PinPageWhere.Globally: tooltip += "Pinned globally."; break;
         case PinPageWhere.InCategory: tooltip += "Pinned in this category."; break;
-        default: ;
+        default:
       }
       contents =
           r.div({ className: 'dw-p-bd' },
@@ -432,7 +432,7 @@ var RootPostAndComments = createComponent({
   render: function() {
     var store: Store = this.props;
     var allPosts: { [postId: number]: Post; } = this.props.allPosts;
-    var user = this.props.user;
+    var me = store.me;
     var rootPost = allPosts[this.props.rootPostId];
     if (!rootPost)
       return r.p({}, '(Root post missing, id: ' + this.props.rootPostId +
@@ -470,7 +470,7 @@ var RootPostAndComments = createComponent({
       return (
         r.div({ className: threadClass },
           body,
-          NoCommentsPageActions({ post: rootPost, user: user })));
+          NoCommentsPageActions({ post: rootPost, me: me })));
     }
 
     var solvedBy;
@@ -807,7 +807,7 @@ var Post = createComponent({
 
   render: function() {
     var post: Post = this.props.post;
-    var user: Myself = this.props.user;
+    var me: Myself = this.props.me;
     if (!post)
       return r.p({}, '(Post missing [DwE4UPK7])');
 
@@ -845,7 +845,7 @@ var Post = createComponent({
     }
     else {
       if (!post.isApproved) {
-        var the = post.authorIdInt === user.userId ? 'Your' : 'The';
+        var the = post.authorIdInt === me.userId ? 'Your' : 'The';
         pendingApprovalElem = r.div({ className: 'dw-p-pending-mod',
             onClick: this.onUncollapseClick }, the, ' comment below is pending approval.');
       }
@@ -885,7 +885,7 @@ var Post = createComponent({
       replyReceivers = ReplyReceivers({ post: post, allPosts: this.props.allPosts });
     }
 
-    var mark = user.marksByPostId[post.postId];
+    var mark = me.marksByPostId[post.postId];
     switch (mark) {
       case YellowStarMark: extraClasses += ' dw-p-mark-yellow-star'; break;
       case BlueStarMark: extraClasses += ' dw-p-mark-blue-star'; break;
@@ -894,8 +894,8 @@ var Post = createComponent({
         // Don't add the below class before user specific data has been activated, otherwise
         // all posts would show a big black unread mark on page load, which looks weird.
         if (this.props.userSpecificDataAdded) {
-          var autoRead = user.postIdsAutoReadLongAgo.indexOf(post.postId) !== -1;
-          autoRead = autoRead || user.postIdsAutoReadNow.indexOf(post.postId) !== -1;
+          var autoRead = me.postIdsAutoReadLongAgo.indexOf(post.postId) !== -1;
+          autoRead = autoRead || me.postIdsAutoReadNow.indexOf(post.postId) !== -1;
           if (!autoRead) {
             extraClasses += ' dw-p-unread';
           }
@@ -1008,7 +1008,7 @@ var PostHeader = createComponent({
       return r.span({ className: 'dw-a-clps icon-up-open', onClick: this.onCollapseClick });
     }
 
-    var user: Myself = this.props.user;
+    var me: Myself = this.props.me;
     var linkFn = this.props.abbreviate ? 'span' : 'a';
 
     var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
@@ -1175,14 +1175,14 @@ var NoCommentsPageActions = createComponent({
     debiki2.ReactActions.editPostWithNr(this.props.post.postId);
   },
   render: function() {
-    var user: Myself = this.props.user;
+    var me: Myself = this.props.me;
     var post: Post = this.props.post;
 
     if (!post.isApproved && !post.sanitizedHtml)
       return null;
 
     var actions;
-    if (user.isAdmin) {
+    if (me.isAdmin) {
       actions =
           r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit');
     }

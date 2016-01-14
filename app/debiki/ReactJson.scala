@@ -452,6 +452,7 @@ object ReactJson {
   val NoUserSpecificData = Json.obj(
     "rolePageSettings" -> JsObject(Nil),
     "notifications" -> JsArray(),
+    "watchbar" -> EmptyWatchbar,
     "votes" -> JsObject(Nil),
     "unapprovedPosts" -> JsObject(Nil),
     "postIdsAutoReadLongAgo" -> JsArray(Nil),
@@ -460,12 +461,21 @@ object ReactJson {
     "closedHelpMessages" -> JsObject(Nil))
 
 
+  // Ought to rename this function (i.e. userDataJson) because it really should come as a
+  // surprise that it updates the watchbar! But to what? Or reanme the class too? Or break out?
   def userDataJson(pageRequest: PageRequest[_]): Option[JsObject] = {
     val user = pageRequest.user getOrElse {
       return None
     }
+
+    var watchbar: BareWatchbar = pageRequest.dao.loadWatchbar(user.id)
+    if (pageRequest.pageExists) {
+      watchbar = watchbar.addRecentTopic(WatchbarTopic(pageRequest.thePageId, unread = false))
+      pageRequest.dao.saveWatchbar(user.id, watchbar)
+    }
+    val watchbarWithTitles = pageRequest.dao.fillInWatchbarTitlesEtc(watchbar)
     pageRequest.dao.readOnlyTransaction { transaction =>
-      Some(userDataJsonImpl(user, pageRequest.pageId, transaction))
+      Some(userDataJsonImpl(user, pageRequest.pageId, watchbarWithTitles, transaction))
     }
   }
 
@@ -474,12 +484,14 @@ object ReactJson {
     val user = request.user getOrElse {
       return JsNull
     }
-    request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, _))
+    val watchbar = request.dao.loadWatchbar(user.id)
+    val watchbarWithTitles = request.dao.fillInWatchbarTitlesEtc(watchbar)
+    request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles, _))
   }
 
 
   private def userDataJsonImpl(user: User, anyPageId: Option[PageId],
-        transaction: SiteTransaction): JsObject = {
+        watchbar: WatchbarWithTitles, transaction: SiteTransaction): JsObject = {
 
     val reviewTasksAndCounts =
       if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
@@ -519,6 +531,8 @@ object ReactJson {
       "numOtherNotfs" -> notfsAndCounts.numOther,
       "thereAreMoreUnseenNotfs" -> notfsAndCounts.thereAreMoreUnseen,
       "notifications" -> notfsAndCounts.notfsJson,
+
+      "watchbar" -> watchbar.toJsonWithTitles,
 
       "votes" -> anyVotes,
       "unapprovedPosts" -> anyUnapprovedPosts,
@@ -794,6 +808,13 @@ object ReactJson {
     }
     excerpt
   }
+
+
+  def EmptyWatchbar = Json.obj(
+    WatchbarSection.RecentTopics.toInt.toString -> JsArray(Nil),
+    WatchbarSection.Notifications.toInt.toString -> JsArray(Nil),
+    WatchbarSection.ChatChannels.toInt.toString -> JsArray(Nil),
+    WatchbarSection.DirectMessages.toInt.toString -> JsArray(Nil))
 
 
   def JsUserOrNull(user: Option[User]): JsValue =

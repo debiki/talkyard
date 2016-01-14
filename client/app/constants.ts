@@ -49,6 +49,8 @@ enum PageRole {
   ToDo = 13,
   MindMap = 11,
   Discussion = 12,
+  OpenChat = 18,
+  PrivateChat = 19,
   Message = 17,
   Critique = 16, // [plugin]
 }
@@ -83,6 +85,14 @@ enum NotificationType {
   // Quote = 3,
   Message = 4,
   NewPost = 5,
+}
+
+
+enum WatchbarSection {
+  RecentTopics = 1,
+  Notifications = 2,
+  ChatChannels = 3,
+  DirectMessages = 4,
 }
 
 

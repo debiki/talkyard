@@ -24,6 +24,11 @@
 //------------------------------------------------------------------------------
 
 
+export function linkToPageId(pageId: PageId): string {
+  return '/-' + pageId;
+}
+
+
 export function linkToAdminPage(): string {
   return '/-/admin/';
 }

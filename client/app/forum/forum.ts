@@ -191,7 +191,7 @@ var ForumComponent = React.createClass({
 
 var ForumIntroText = createComponent({
   render: function() {
-    var user: Myself = this.props.user;
+    var user: Myself = this.props.me;
     var introPost = this.props.allPosts[BodyId];
     if (!introPost || introPost.isPostHidden)
       return null;
@@ -614,7 +614,7 @@ var ForumTopicListComponent = React.createClass({
       var category = _.find(this.props.categories, (category: Category) => {
         return category.id === topic.categoryId;
       });
-      if (!category.hideInForum || isStaff(this.props.user)) {
+      if (!category.hideInForum || isStaff(this.props.me)) {
         topics.push(TopicRow({
           topic: topic, categories: this.props.categories,
           activeCategory: this.props.activeCategory, now: this.props.now,

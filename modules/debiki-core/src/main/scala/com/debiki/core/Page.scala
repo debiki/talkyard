@@ -309,13 +309,11 @@ object PageRole {
   /** For discussions (non-questions) or announcements or blog posts, for example.  */
   case object Discussion extends PageRole(12, staffOnly = false)
 
-  /*
-  case object WikiMainPage extends PageRole {
-    override def isSection = true
-  }
+  /** Any forum member with access to the page can join. */
+  case object OpenChat extends PageRole(18)
 
-  case object WikiPage extends PageRole
-  */
+  /** Users added explicitly. Topic not shown in forum unless already member. */
+  case object PrivateChat extends PageRole(19)
 
   /** Direct messages between two users, or a group of users. */
   case object Message extends PageRole(17, staffOnly = false) {
@@ -341,6 +339,8 @@ object PageRole {
     case MindMap.IntValue => MindMap
     case Discussion.IntValue => Discussion
     case Message.IntValue => Message
+    case OpenChat.IntValue => OpenChat
+    case PrivateChat.IntValue => PrivateChat
     case Critique.IntValue => Critique
     //case WikiMainPage.IntValue => WikiMainPage
     //case WikiPage.IntValue => WikiPage

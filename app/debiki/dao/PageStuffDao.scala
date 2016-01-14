@@ -45,7 +45,9 @@ case class PageStuff(
   authorFullName: Option[String],
   authorAvatarUrl: Option[String],
   lastReplyer: Option[User],
-  frequentPosters: Seq[User])
+  frequentPosters: Seq[User]) extends PageTitleRole {
+  def role = pageRole
+}
 
 
 

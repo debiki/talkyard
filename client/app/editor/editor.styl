@@ -18,6 +18,18 @@ $showPreviewMinWidth = 800px;
   background: black; // but js sets opacity.
   pointer-events: none;
 
+.esEdtr_titleEtc
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+
+  @media (max-width: 700px)
+    // Now don't list all stuff side by side, instead, one per row.
+    flex-direction: column;
+
+.esEdtr_titleEtc_title
+  flex: 1;
+
 
 #debiki-editor-placeholder
   height: 300px

@@ -22,6 +22,7 @@
 /// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="commonmark.ts" />
+/// <reference path="editor-utils.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.editor {
@@ -32,6 +33,8 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
+var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
+var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
@@ -83,8 +86,11 @@ export function openToWriteMessage(userId: number) {
 
 
 export var Editor = createComponent({
+  mixins: [debiki2.StoreListenerMixin],
+
   getInitialState: function() {
     return {
+      store: debiki2.ReactStore.allData(),
       visible: false,
       text: '',
       draft: '',
@@ -101,6 +107,10 @@ export var Editor = createComponent({
       fileUploadProgress: 0,
       uploadFileXhr: null,
     };
+  },
+
+  onChange: function() {
+    this.setState({ store: debiki2.ReactStore.allData() });
   },
 
   componentWillMount: function() {
@@ -485,6 +495,11 @@ export var Editor = createComponent({
     }, anyCallback);
   },
 
+  changeNewForumPageRole: function (event) {
+    var newPageRole: PageRole = parseInt(event.target.value);
+    this.setState({ newForumPageRole: newPageRole });
+  },
+
   onCancelClick: function() {
     this.closeEditor();
   },
@@ -601,8 +616,9 @@ export var Editor = createComponent({
   },
 
   render: function() {
-    var titleInput;
     var state = this.state;
+    var store: Store = state.store;
+    var me: Myself = store.me;
 
     var guidelines = state.guidelines;
     var guidelinesElem;
@@ -634,11 +650,27 @@ export var Editor = createComponent({
     var anyBackdrop = this.state.backdropOpacity < 0.01 ? null :
         r.div({ className: 'esEdtr_backdrop', style: { opacity: this.state.backdropOpacity }});
 
+    var titleInput;
+    var pageRoleDropdown;
+    var categoriesDropdown;
     if (this.state.newForumPageRole || this.state.messageToUserIds.length) {
       titleInput =
-          r.input({ className: 'title-input form-control', type: 'text', ref: 'titleInput',
+          r.input({ className: 'title-input esEdtr_titleEtc_title form-control',
+                  type: 'text', ref: 'titleInput',
               tabIndex: 1,
               placeholder: "Type a title — what is this about, in one brief sentence?" });
+
+      /* Later:
+      categoriesDropdown =
+          DropdownButton({ title: 'activeCategory.name',
+              className: 'esEdtr_titleEtc_category', onSelect: this.changeCategory },
+            MenuItem({ eventKey: 'zzz', key: 'zzz' }, 'category.name')); */
+
+      if (isStaff(me)) {
+        pageRoleDropdown = PageRoleInput({ me: me, value: this.state.newForumPageRole,
+            onChange: this.changeNewForumPageRole,
+            title: 'Page type', className: 'esEdtr_titleEtc_pageRole' });
+      }
     }
 
     var editingPostId = this.state.editingPostId;
@@ -779,7 +811,12 @@ export var Editor = createComponent({
               r.div({ className: 'editor-area-after-borders' },
                 r.div({ className: 'dw-doing-what' },
                   doingWhatInfo, showGuidelinesBtn),
-                titleInput,
+                r.div({ className: 'esEdtr_titleEtc' },
+                  // COULD use https://github.com/marcj/css-element-queries here so that
+                  // this will wrap to many lines also when screen wide but the editor is narrow.
+                  titleInput,
+                  categoriesDropdown,
+                  pageRoleDropdown),
                 anyTextareaInstructions,
                 textarea)),
             r.div({ className: 'preview-area', style: previewStyles },

@@ -29,8 +29,17 @@ export function putInLocalStorage(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+export function putInSessionStorage(key, value) {
+  sessionStorage.setItem(key, JSON.stringify(value));
+}
+
 export function getFromLocalStorage(key) {
   var value = localStorage.getItem(key);
+  return value && JSON.parse(value);
+}
+
+export function getFromSessionStorage(key) {
+  var value = sessionStorage.getItem(key);
   return value && JSON.parse(value);
 }
 

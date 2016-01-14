@@ -74,6 +74,7 @@ abstract class SiteDao
   with UploadsDao
   with UserDao
   with MessagesDao
+  with WatchbarDao
   with ReviewsDao
   with AuditDao
   with CreateSiteDao {

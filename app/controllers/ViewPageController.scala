@@ -44,12 +44,12 @@ object ViewPageController extends mvc.Controller {
     "__html_encoded_user_specific_data_json__"
 
 
-  def renderPage(path: String) = GetActionAllowAnyone { request =>
-    renderPageImpl(request)
+  def viewPage(path: String) = GetActionAllowAnyone { request =>
+    viewPageImpl(request)
   }
 
 
-  private def renderPageImpl(request: GetRequest): Result = {
+  private def viewPageImpl(request: GetRequest): Result = {
     // For now, historic reasons. Remove some weeks after /-/unsubscribe has been deployed.
     if (request.queryString.contains("unsubscribe")) {
       return UnsubscriptionController.showFormImpl(request.request)

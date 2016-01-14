@@ -48,7 +48,8 @@ class CachingSiteDao(val siteId: SiteId, val dbDaoFactory: DbDaoFactory)
   with CachingPageStuffDao
   with CachingPostsDao
   with CachingRenderedPageHtmlDao
-  with CachingUserDao {
+  with CachingUserDao
+  with CachingWatchbarDao {
 
   def dbDao2 = dbDaoFactory.newDbDao2()
 

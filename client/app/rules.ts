@@ -67,10 +67,6 @@ function isPageWithSidebar(pageRole: PageRole): boolean {
   return true; // hmm remove this fn then, now
 }
 
-function isPageWithWatchbar(pageRole: PageRole): boolean {
-  return true; // hmm remove this fn then, now
-}
-
 function pageRole_shallListInRecentTopics(pageRole: PageRole): boolean {
   switch (pageRole) {
     case PageRole.Message: // shown in the Direct Messages watchbar section instead
@@ -85,6 +81,12 @@ function pageRole_shallListInRecentTopics(pageRole: PageRole): boolean {
       return !!pageRole;
   }
 }
+
+
+function me_isStranger(me: Myself): boolean {
+  return !me.id;
+}
+
 
 function userGetWatchbarTopicIds(user: Myself): PageId[] {
   var watchbarTopics: WatchbarTopics = user.watchbarTopics;

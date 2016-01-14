@@ -57,15 +57,11 @@ export var Watchbar = createComponent({
   },
 
   componentDidMount: function() {
-    if (isPageWithWatchbar(this.state.store.pageRole)) {
-      keymaster('w', this.toggleWatchbarOpen);
-    }
+    keymaster('w', this.toggleWatchbarOpen);
   },
 
   componentWillUnmount: function() {
-    if (isPageWithWatchbar(this.state.store.pageRole)) {
-      keymaster.unbind('w', 'all');
-    }
+    keymaster.unbind('w', 'all');
   },
 
   toggleWatchbarOpen: function() {
@@ -75,58 +71,78 @@ export var Watchbar = createComponent({
   render: function() {
     var store: Store = this.state.store;
 
-    if (!isPageWithWatchbar(store.pageRole))
-      return null;
+    var recentTopicsAndNotfs = RecentTopicsAndNotfs({ store: store });
+    var chatChannels = ChatChannels({ store: store });
+    var directMessages = DirectMessages({ store: store });
 
-    function makeMakeTopicElemFn(className: string) {
-      return function(topic: WatchbarTopic) {
-        var isCurrentTopicClass = topic.pageId === store.pageId ? ' esWatchbar_topic-current' : '';
-        return (
-            r.li({ key: topic.pageId, className: className + isCurrentTopicClass,
-                onClick: () => ReactActions.openPage(topic.pageId) },
-              r.span({}, topic.title)));
-      }
-    }
-
-    var watchbarTopics = store.me.watchbarTopics;
-    var recentTopics = [];
-    if (watchbarTopics) {
-      recentTopics = watchbarTopics.recentTopics.map(makeMakeTopicElemFn('esWatchbar_topic-forum'));
-    }
-
-    // For now, hardcoded stuff:
     return (
-      r.div({ className: 'esWatchbar', ref: 'watchbar' },
-        Button({ className: 'esCloseWatchbarBtn', onClick: ReactActions.closeWatchbar },
+        r.div({ className: 'esWatchbar', ref: 'watchbar' },
+          Button({ className: 'esCloseWatchbarBtn', onClick: ReactActions.closeWatchbar },
             r.span({ className: 'icon-left-open' })),
-        r.div({ className: 'esWatchbar_topics' },
-          r.h3({}, 'Recent topics'),
-          r.ul({},
-            recentTopics)),
-        r.div({ className: 'esWatchbar_topics' },
-          r.h3({}, 'Watched topics'),
-          r.ul({},
-            r.li({ className: 'esWatchbar_topic-forum' }, r.span({}, "User rank should be a little more forgiving and give more insight")),
-            r.li({ className: 'esWatchbar_topic-forum' }, r.span({}, "What are Discourse’s main competitors and what are their relative pros and cons?")),
-            r.li({ className: 'esWatchbar_topic-forum' }, r.span({}, "Ability to block or mute another user")))),
-        r.div({ className: 'esWatchbar_chatChannels' },
-          r.h3({}, 'Chat channels'),
-          r.ul({},
-            r.li({ className: 'esWatchbar_topic-channel' }, r.span({}, "usability-testing")),
-            r.li({ className: 'esWatchbar_topic-channel' }, r.span({}, "whatever-is-this")),
-            r.li({ className: 'esWatchbar_topic-channel' }, r.span({}, "alerts")),
-            r.li({ className: 'esWatchbar_topic-channel' }, r.span({}, "devops")),
-            r.li({ className: 'esWatchbar_topic-channel' }, r.span({}, "the-weird-bad-problem")),
-            r.li({ className: 'esWatchbar_topic-channel' }, r.span({}, "px-dev")))),
-        r.div({ className: 'esWatchbar_messages' },
-          r.h3({}, 'Direct messages'),
-          r.ul({},
-            r.li({ className: 'esWatchbar_topic-message' }, r.span({}, "Luke Skywalker")),
-            r.li({ className: 'esWatchbar_topic-message' }, r.span({}, "Erik, Mario, Brynolf")),
-            r.li({ className: 'esWatchbar_topic-message' }, r.span({}, "Erik Whatevername"))))));
+        recentTopicsAndNotfs,
+        chatChannels,
+        directMessages));
   }
 });
 
+
+var RecentTopicsAndNotfs = createComponent({
+  render: function() {
+    var store: Store = this.props.store;
+    var topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.RecentTopics];
+    var topicElems = topics.map((topic: WatchbarTopic) =>
+        SingleTopic({ topic: topic, flavor: 'recent', isCurrent: topic.pageId === store.pageId }));
+    return (
+        r.div({ className: 'esWatchbar_topics' },
+          r.h3({}, 'Recent Topics'),
+          r.ul({},
+            topicElems)));
+  }
+});
+
+
+var ChatChannels = createComponent({
+  render: function() {
+    var store: Store = this.props.store;
+    var topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.ChatChannels];
+    var topicElems = topics.map((topic: WatchbarTopic) =>
+      SingleTopic({ topic: topic, flavor: 'chat', isCurrent: topic.pageId === store.pageId }));
+    return (
+      r.div({ className: 'esWatchbar_topics' },
+        r.h3({}, 'Chat Channels'),
+        r.ul({},
+          topicElems)));
+  }
+});
+
+
+var DirectMessages = createComponent({
+  render: function() {
+    var store: Store = this.props.store;
+    var topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.DirectMessages];
+    var topicElems = topics.map((topic: WatchbarTopic) =>
+      SingleTopic({ topic: topic, flavor: 'direct', isCurrent: topic.pageId === store.pageId }));
+    return (
+      r.div({ className: 'esWatchbar_topics' },
+        r.h3({}, 'Direct Messages'),
+        r.ul({},
+          topicElems)));
+  }
+});
+
+
+var SingleTopic = createComponent({
+  render: function() {
+    var topic: WatchbarTopic = this.props.topic;
+    var flavor: string = this.props.flavor;
+    var isCurrentTopicClass = this.props.isCurrent ? ' esWatchbar_topic-current' : '';
+    var url = topic.url || linkToPageId(topic.pageId);
+    return (
+        r.li({ className: 'esWatchbar_topic-' + flavor + isCurrentTopicClass },
+          r.a({ href: url },
+            r.span({}, topic.title || url))));
+  }
+});
 
 //------------------------------------------------------------------------------
    }

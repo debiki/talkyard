@@ -162,6 +162,7 @@ interface Myself {
   notifications: Notification[];
 
   watchbarTopics?: WatchbarTopics;
+  watchbar: Watchbar;
 
   votes: any;
   unapprovedPosts: any;
@@ -252,9 +253,22 @@ interface OrderOffset {  // COULD rename to TopicQuery? (because includes filter
 }
 
 
+// Ought to use real field names instead of numbers. Later.
+interface Watchbar {
+  1: WatchbarTopic[]; // WatchbarSection.RecentTopics
+  2: WatchbarTopic[]; // WatchbarSection.Notifications
+  3: WatchbarTopic[]; // WatchbarSection.ChatChannels
+  4: WatchbarTopic[]; // WatchbarSection.DirectMessages
+}
+
+
 interface WatchbarTopic {
   pageId: PageId;
   title: string;
+  url?: string;
+  unread?: boolean;
+  notfsToMe?: number;
+  notfsToMany?: number;
 }
 
 

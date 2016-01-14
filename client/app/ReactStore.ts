@@ -872,6 +872,8 @@ function makeStranger(): Myself {
     postIdsAutoReadNow: [],
     marksByPostId: {},
 
+    watchbar: loadWatchbarFromSessionStorage(),
+
     closedHelpMessages: {},
     presence: Presence.Active,
   };
@@ -887,18 +889,36 @@ function addLocalStorageData(me: Myself) {
   me.marksByPostId = {}; // not implemented: loadMarksFromLocalStorage();
   me.closedHelpMessages = getFromLocalStorage('closedHelpMessages') || {};
 
-  // For now:
   // The watchbar: Recent topics.
-  var recentTopics: WatchbarTopic[] = getFromLocalStorage('recentTopics') || [];
-  // Add the current page, if absent, and if it's not a direct-message or chat-channel.
-  var shallList = store.pageId && store.pageId !== EmptyPageId &&
-      pageRole_shallListInRecentTopics(ReactStore.getPageRole());
-  if (shallList && _.every(recentTopics, topic => topic.pageId !== store.pageId)) {
-    recentTopics.unshift({ pageId: store.pageId, title: ReactStore.getPageTitle() });
-    putInLocalStorage('recentTopics', recentTopics);
+  if (me_isStranger(me)) {
+    me.watchbar = loadWatchbarFromSessionStorage();
+    var recentTopics = me.watchbar[WatchbarSection.RecentTopics];
+    if (shallAddCurrentPageToSessionStorageWatchbar(recentTopics)) {
+      recentTopics.unshift({
+        pageId: store.pageId,
+        url: location.pathname,
+        title: ReactStore.getPageTitle(),
+      });
+      putInSessionStorage('watchbar', me.watchbar);
+    }
   }
-  me.watchbarTopics = me.watchbarTopics || <WatchbarTopics> {};
-  me.watchbarTopics.recentTopics = recentTopics;
+}
+
+
+function loadWatchbarFromSessionStorage(): Watchbar {
+  // For privacy reasons, don't use localStorage?
+  return getFromSessionStorage('watchbar') || { 1: [], 2: [], 3: [], 4: [], };
+}
+
+
+function shallAddCurrentPageToSessionStorageWatchbar(recentTopics: WatchbarTopic[]): boolean {
+  if (!store.pageId || store.pageId === EmptyPageId)
+    return false;
+
+  if (!pageRole_shallListInRecentTopics(store.pageRole))
+    return false;
+
+  return _.every(recentTopics, (topic: WatchbarTopic) => topic.pageId !== store.pageId);
 }
 
 
