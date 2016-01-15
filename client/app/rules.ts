@@ -49,6 +49,10 @@ function canClose(pageRole: PageRole) {
   return pageRole !== PageRole.Message;
 }
 
+function page_isChat(pageRole: PageRole): boolean {
+  return pageRole === PageRole.OpenChat || pageRole === PageRole.PrivateChat;
+}
+
 function page_isDiscussion(pageRole: PageRole): boolean {
   return pageRole && !isSection(pageRole) &&
       pageRole !== PageRole.SpecialContent &&
@@ -134,6 +138,26 @@ function isTalkToMeNotification(notf: Notification): boolean {
 
 function isTalkToOthersNotification(notf: Notification): boolean {
   return notf.type === NotificationType.NewPost;
+}
+
+
+
+function isCollapsed(post) {
+  return post.isTreeCollapsed || post.isPostCollapsed;
+}
+
+
+function isDeleted(post) {
+  return !post || post.isTreeDeleted || post.isPostDeleted;
+}
+
+
+function isWikiPost(postOrPostType: any) {
+  var type;
+  if (postOrPostType) {
+    type = postOrPostType.postType || postOrPostType;
+  }
+  return type === PostType.StaffWiki || type === PostType.CommunityWiki;
 }
 
 

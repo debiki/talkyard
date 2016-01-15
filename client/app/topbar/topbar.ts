@@ -290,7 +290,7 @@ export var TopBar = createComponent({
       var titleProps: any = _.clone(store);
       titleProps.hideButtons = this.state.fixed;
       pageTitle =
-          r.div({ className: 'dw-topbar-title' }, Title(titleProps));
+          r.div({ className: 'dw-topbar-title' }, page.Title(titleProps));
     }
 
     // ------- Watchbar and Pagebar buttons

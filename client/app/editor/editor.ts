@@ -43,7 +43,6 @@ var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 
 var theEditor: any;
 var $: any = window['jQuery'];
-var NoPostId = -1; // also in reply.js
 
 function ensureEditorCreated(success) {
   if (theEditor) {

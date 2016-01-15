@@ -19,12 +19,11 @@
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
+/// <reference path="../page/discussion.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
 /// <reference path="minimap.ts" />
 //xx <reference path="unread-comments-tracker.ts" />
-
-// Staying at the bottom: http://blog.vjeux.com/2013/javascript/scroll-position-with-react.html
 
 //------------------------------------------------------------------------------
    module debiki2.sidebar {
@@ -508,7 +507,7 @@ function makeCommentsContent(comments: Post[], currentPostId: PostId, store: Sto
     }
     return (
         r.div({ key: post.postId },
-            Post(postProps)));
+            page.Post(postProps)));
   });
 }
 

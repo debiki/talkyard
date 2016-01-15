@@ -1,1 +1,0 @@
-../../app/page/posts.ts

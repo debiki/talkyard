@@ -24,7 +24,7 @@
 /// <reference path="../topbar/topbar.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../ServerApi.ts" />
-/// <reference path="../model.ts" />
+/// <reference path="../page/discussion.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.forum {
@@ -870,12 +870,12 @@ var CategoryRow = createComponent({
 function makeTitle(topic: Topic, className: string) {
   var title = topic.title;
   if (topic.closedAtMs && !isDone(topic) && !isAnswered(topic)) {
-    var tooltip = makePageClosedTooltipText(topic.pageRole);
+    var tooltip = page.makePageClosedTooltipText(topic.pageRole);
     var closedIcon = r.span({ className: 'icon-block' });
     title = r.span({}, closedIcon, title);
   }
   else if (topic.pageRole === PageRole.Question) {
-    var tooltip = makeQuestionTooltipText(topic.answeredAtMs);
+    var tooltip = page.makeQuestionTooltipText(topic.answeredAtMs);
     var questionIconClass = topic.answeredAtMs ? 'icon-ok-circled-empty' : 'icon-help-circled';
     var questionIcon = r.span({ className: questionIconClass });
     var answerIcon;

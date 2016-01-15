@@ -20,12 +20,20 @@ var ReactStartedClass = 'dw-react-started';
 var EmptyPageId = "0";
 
 var BodyId = 1;
+var NoPostId = -1;  // dupl in reply.js
 
 var SystemUserId = -1;
 var MinMemberId = SystemUserId;
 
 var MaxGuestId = -2;
 var UnknownUserId = -3;
+
+
+var ManualReadMark = 1;
+var YellowStarMark = 2;
+var FirstStarMark = 2;
+var BlueStarMark = 3;
+var LastStarMark = 3;
 
 
 enum PinPageWhere {

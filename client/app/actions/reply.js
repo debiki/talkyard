@@ -18,7 +18,7 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
-var NoPostId = -1; // also in editor.ts and posts.ts
+var NoPostId = -1; // also in constants.ts
 
 
 d.i.$showReplyForm = function(event, anyPostType) {
