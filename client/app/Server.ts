@@ -669,6 +669,20 @@ export function saveReply(postIds: number[], text: string, anyPostType: number,
 }
 
 
+export function insertChatMessage(text: string, success: () => void) {
+  postJson('/-/chat', {
+    data: {
+      pageId: d.i.pageId,
+      text: text
+    },
+    success: (response) => {
+      success();
+      d.i.handleReplyResult(response);
+    }
+  });
+}
+
+
 export function sendMessage(title: string, text: string, userIds: number[],
     success: (pageId: string) => void) {
   postJsonSuccess('/-/send-private-message', success,

@@ -194,7 +194,7 @@ case class Post(
   require(approvedRevisionNr.isEmpty == approvedAt.isEmpty, "DwE4KHI7")
   require(approvedRevisionNr.isEmpty == approvedById.isEmpty, "DwE2KI65")
   require(approvedRevisionNr.isEmpty == approvedSource.isEmpty, "DwE7YFv2")
-  require(approvedHtmlSanitized.isEmpty || approvedSource.isDefined, "DwE0IEW1")
+  require(approvedHtmlSanitized.isEmpty || approvedSource.isDefined, "DwE0IEW1") //?why not == .isEmpty
 
   require(approvedSource.map(_.trim.length) != Some(0), "DwE1JY83")
   require(approvedHtmlSanitized.map(_.trim.length) != Some(0), "DwE6BH5")
@@ -211,6 +211,7 @@ case class Post(
   require(safeRevisionNr.isEmpty || (
     approvedRevisionNr.isDefined && safeRevisionNr.get <= approvedRevisionNr.get), "DwE2EF4")
 
+  require(previousRevisionNr.isEmpty || currentRevisionNr > FirstRevisionNr, "EsE7JYR3")
   require(!previousRevisionNr.exists(_ >= currentRevisionNr), "DwE7UYG3")
 
   require(0 <= collapsedStatus.underlying && collapsedStatus.underlying <= AllBits &&

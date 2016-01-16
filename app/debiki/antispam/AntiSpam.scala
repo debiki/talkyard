@@ -235,8 +235,8 @@ class AntiSpam {
     * find out if it's spam or not, e.g. because Akismet is offline or if
     * the API key has expired.
     */
-  def detectPostSpam(request: DebikiRequest[_], pageId: PageId, textAndHtml: TextAndHtml)
-        : Future[Option[String]] = {
+  def detectPostSpam(request: DebikiRequest[_], pageId: PageId, textAndHtml: TextAndHtml,
+        quickButLessSafe: Boolean = false): Future[Option[String]] = {
 
     throwForbiddenIfLooksSpammy(request, textAndHtml)
 
@@ -247,9 +247,13 @@ class AntiSpam {
 
     // Don't send the whole text, because of privacy issues. Send the links only.
     // Or yes do that?  dupl question [7KECW2]
-    val payload = makeAkismetRequestBody(AkismetSpamType.ForumPost, request,
-      text = Some(textAndHtml.safeHtml))//htmlLinksOnePerLine))
-    val akismetFuture = checkViaAkismet(payload)
+    val akismetFuture =
+      if (quickButLessSafe) Future.successful(None)
+      else {
+        val payload = makeAkismetRequestBody(AkismetSpamType.ForumPost, request,
+          text = Some(textAndHtml.safeHtml))//htmlLinksOnePerLine))
+        checkViaAkismet(payload)
+      }
 
     aggregateResults(urlsAndDomainsFutures :+ akismetFuture, request, Some(textAndHtml))
   }

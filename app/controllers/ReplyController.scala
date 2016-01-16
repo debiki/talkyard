@@ -77,6 +77,38 @@ object ReplyController extends mvc.Controller {
   }
 
 
+  def handleChatMessage = AsyncPostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
+        request =>
+    val body = request.body
+    val pageId = (body \ "pageId").as[PageId]
+    val text = (body \ "text").as[String].trim
+
+    SECURITY ; COULD // avoid revealing that a page exists: forPageThatExists below might throw
+    // a unique NotFound for example.  [7C2KF24]
+    val pageReq = PageRequest.forPageThatExists(request, pageId = pageId) match {
+        case Some(req) => req
+        case None =>
+          throwNotImplemented("EsE2UYK7", "Creating embedded chat channel")
+      }
+
+    if (text.isEmpty)
+      throwBadReq("EsE0WQCB", "Empty chat message")
+
+    val textAndHtml = TextAndHtml(text, isTitle = false)
+    Globals.antiSpam.detectPostSpam(request, pageId, textAndHtml, quickButLessSafe = true) map {
+        isSpamReason =>
+      throwForbiddenIfSpam(isSpamReason, "EsE4J7U27")
+
+      val postId = pageReq.dao.insertChatMessage(textAndHtml, pageId = pageId,
+        authorId = pageReq.theUser.id, pageReq.theBrowserIdData)
+
+      val json = ReactJson.postToJson2(postNr = postId, pageId = pageId, pageReq.dao,
+        includeUnapproved = true)
+      OkSafeJson(json)
+    }
+  }
+
+
   /*
   private def tryCreateEmbeddedCommentsPage(
         request: DebikiRequest[_], pageId: PageId, anyPageUrl: Option[String]): Option[Page] = {

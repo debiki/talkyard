@@ -94,6 +94,10 @@ abstract class PageParts extends People {
     childMap.mapValues(Post.sortPostsBestFirst)
   }
 
+  def lastPostButNotOrigPost: Option[Post] =
+    post(highestReplyNr)
+
+  // Could rename to highestPostNrButNotOrigPost? Because includes chat comments & messages too.
   def highestReplyNr: Option[PostNr] = {
     if (allPosts.isEmpty)
       return None

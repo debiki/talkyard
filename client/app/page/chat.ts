@@ -196,7 +196,7 @@ var ChatMessageEditor = createComponent({
 
   postChatMessage: function() {
     this.setState({ isSaving: true });
-    Server.saveReply([NoPostId], this.state.text, PostType.Flat, () => {
+    Server.insertChatMessage(this.state.text, () => {
       if (!this.isMounted()) return;
       this.setState({ text: '', isSaving: false, rows: DefaultEditorRows });
       this.refs.textarea.getDOMNode().focus();
