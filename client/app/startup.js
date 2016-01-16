@@ -287,7 +287,7 @@ d.i.renderEmptyPage = function() {
 
 d.i.startDiscussionPage = function() {
   $(function() {
-    if ($('.dw-page').length) {
+    if (debiki.getPageId()) {
       renderDiscussionPage();
     }
     else {

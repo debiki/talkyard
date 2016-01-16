@@ -80,10 +80,9 @@ var PageWithState = createComponent({
 var Page = createComponent({
   render: function() {
     var store: Store = this.props;
-    var content = page_isChat(store.pageRole) ?
-        debiki2.page.ChatComments(this.props) : debiki2.page.TitleBodyComments(this.props);
-    return (r.div({},
-      debiki2.reactelements.TopBar({}),
+    var content = page_isChatChannel(store.pageRole) ?
+        debiki2.page.ChatMessages(this.props) : debiki2.page.TitleBodyComments(this.props);
+    return (r.div({ className: 'esPage' },
       r.div({ className: 'container' },
         r.article({},
           content))));

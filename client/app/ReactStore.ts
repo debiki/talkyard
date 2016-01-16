@@ -402,7 +402,7 @@ ReactStore.getPageRole = function(): PageRole {
 };
 
 
-ReactStore.getPageTitle = function(): string {
+ReactStore.getPageTitle = function(): string { // dupl code [5GYK2]
   var titlePost = store.allPosts[TitleId];
   return titlePost ? titlePost.sanitizedHtml : "(no title)";
 };

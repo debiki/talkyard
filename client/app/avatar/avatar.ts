@@ -162,7 +162,7 @@ export var Avatar = createComponent({
       title += ' — ' + this.props.title;
     }
     return (
-      r.div({ className: 'edAvtr' + extraClasses, style: styles, onClick: this.onClick,
+      r.span({ className: 'edAvtr' + extraClasses, style: styles, onClick: this.onClick,
           title: title }, content));
   }
 });

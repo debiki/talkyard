@@ -18,7 +18,11 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../react-elements/name-login-btns.ts" />
-// xx reference path="posts.ts" />
+/// <reference path="../Server.ts" />
+/// <reference path="../utils/utils.ts" />
+/// <reference path="../avatar/avatar.ts" />
+/// <reference path="../avatar/AvatarAndName.ts" />
+/// <reference path="discussion.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.page {
@@ -32,18 +36,187 @@ var Button = reactCreateFactory(ReactBootstrap.Button);
 var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
+var EditorBecomeFixedDist = 10;
+var DefaultEditorRows = 2;
 
-export var ChatComments = createComponent({
-   render: function() {
-      var title = 'chat tittle';//Title(this.props); // later: only if not scrolled down too far
-      var theLastComments = '';
-      var newCommentInput = '';
-      return (
-        r.div({ className: 'esChatPage_height100' },
-          title,
-          theLastComments,
-          newCommentInput));
-   }
+
+export var ChatMessages = createComponent({
+  render: function() {
+     return (
+       r.div({ className: 'esChatPage dw-page' },
+         TitleAndLastChatMessages(this.props),
+         ChatMessageEditor(this.props)));
+  }
+});
+
+
+
+var TitleAndLastChatMessages = createComponent({
+  getInitialState: function() {
+    return {};
+  },
+
+  componentDidMount: function() {
+    this.scrollDown();
+    this.setState({ hasScrolledDown: true });
+  },
+
+  componentWillUpdate: function() {
+    // Scroll down, if comment added, & we're at the bottom already.
+    var pageColumnRect = document.getElementById('esPageColumn').getBoundingClientRect();
+    this.shallScrollDown = pageColumnRect.bottom <= $(window).height();
+  },
+
+  componentDidUpdate: function() {
+    if (this.shallScrollDown) {
+      this.scrollDown();
+    }
+  },
+
+  scrollDown: function() {
+    var pageColumn = document.getElementById('esPageColumn');
+    pageColumn.scrollTop = pageColumn.scrollHeight;
+  },
+
+  render: function () {
+    var store: Store = this.props;
+    var title = Title(store); // later: only if not scrolled down too far
+
+    var originalPost = store.allPosts[store.rootPostId];
+    var origPostAuthor = store.usersByIdBrief[originalPost.authorIdInt];
+    var origPostHeader = PostHeader({ store: store, post: originalPost });
+    var origPostBody = PostBody({ store: store, post: originalPost });
+
+    var messages = [];
+    _.each(store.allPosts, (post: Post) => {
+      if (post.postId === TitleId || post.postId === BodyId) {
+        // We show the title & body elsewhere.
+        return;
+      }
+      messages.push(
+        ChatMessage({ store: store, post: post }));
+    });
+
+    var thisIsTheWhat =
+        r.p({},
+          "This is the " + ReactStore.getPageTitle() + " chat channel, created by ",
+          avatar.AvatarAndName({ user: origPostAuthor, hideAvatar: true }),
+          ", ", timeExact(originalPost.createdAt));
+
+    var perhapsHidden;
+    if (!this.state.hasScrolledDown) {
+      // Avoid flash of earlier messages before scrolling to end.
+      perhapsHidden = { display: 'none' };
+    }
+
+    return (
+      r.div({ className: 'esLastChatMsgs', style: perhapsHidden },
+        title,
+        r.div({ className: 'esChatChnl_about'},
+          thisIsTheWhat,
+          r.div({}, "Purpose:"),
+          origPostBody),
+        messages,
+        r.div({ id: 'dw-the-end' })));
+  }
+});
+
+
+
+var ChatMessage = createComponent({
+  render: function () {
+    var store: Store = this.props.store;
+    var post: Post = this.props.post;
+    var author: BriefUser = store.usersByIdBrief[post.authorId];
+    return (
+      r.div({ className: 'esChatMsg' },
+        avatar.Avatar({ user: author }),
+        PostHeader({ store: store, post: post, isFlat: true, exactTime: true }),
+        PostBody({ store: store, post: post })));
+  }
+});
+
+
+
+var ChatMessageEditor = createComponent({
+  mixins: [debiki2.utils.PageScrollMixin],
+
+  getInitialState: function() {
+    return {
+      text: '',
+      replyToPostIds: [],
+      editingPostId: null,
+      editingPostUid: null,
+      rows: DefaultEditorRows,
+    };
+  },
+
+  componentDidMount: function() {
+    // Currently we always scroll to the bottom, when opening a chat channel.
+    // Later: setState fixed: true, if going back to a chat channel when one has scrolled up.
+  },
+
+  onScroll: function() {
+    var pageBottom = $('#dwPosts')[0].getBoundingClientRect().bottom;
+    var scrollableBottom = $(window).height(); // getBoundingPageRect().bottom;
+    //var winHeight = $(window).height();
+    var myNewBottom = pageBottom - scrollableBottom;
+    this.setState({ bottom: myNewBottom });
+    if (!this.state.fixed) {
+      if (pageBottom > scrollableBottom + EditorBecomeFixedDist) {
+        this.setState({ fixed: true });
+      }
+    }
+    else {
+      // Add +X otherwise sometimes the fixed state won't vanish although back at top of page.
+      if (pageBottom - scrollableBottom <= +2) {
+        this.setState({ fixed: false, bottom: 0 });
+      }
+    }
+  },
+
+  onTextEdited: function(event) {
+    // numLines won't work with wrapped lines, oh well, fix some other day.
+    var numLines = event.target.value.split(/\r\n|\r|\n/).length;
+    this.setState({
+      text: event.target.value,
+      rows: Math.max(DefaultEditorRows, Math.min(8, numLines)),
+    });
+  },
+
+  onKeyPress: function(event) {
+    if (event.charCode === 13 && !event.shiftKey && !event.ctrlKey) {
+      // Enter or Return without Shift or Ctrl down means "post chat message".
+      var isNotEmpty = /\S/.test(this.state.text);
+      if (isNotEmpty) {
+        this.postChatMessage();
+      }
+    }
+  },
+
+  postChatMessage: function() {
+    this.setState({ isSaving: true });
+    Server.saveReply([NoPostId], this.state.text, PostType.Flat, () => {
+      if (!this.isMounted()) return;
+      this.setState({ text: '', isSaving: false, rows: DefaultEditorRows });
+      this.refs.textarea.getDOMNode().focus();
+    });
+  },
+
+  render: function () {
+    var offsetBottomStyle;
+    if (this.state.fixed) {
+      offsetBottomStyle = { bottom: this.state.bottom };
+    }
+    return (
+      r.div({ className: 'esChatMsgEdtr', style: offsetBottomStyle },
+        r.textarea({ className: 'esChatMsgEdtr_textarea', ref: 'textarea',
+            value: this.state.text, onChange: this.onTextEdited,
+            onKeyPress: this.onKeyPress,
+            placeholder: "Type here. You can use Markdown and HTML.",
+            disabled: this.state.isSaving,
+            rows: this.state.rows })));
+  }
 });
 
 

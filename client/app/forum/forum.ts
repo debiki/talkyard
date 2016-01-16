@@ -21,7 +21,6 @@
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../editor/editor.ts" />
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
-/// <reference path="../topbar/topbar.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../ServerApi.ts" />
 /// <reference path="../page/discussion.ts" />
@@ -176,14 +175,13 @@ var ForumComponent = React.createClass({
       },
     });
 
-    return (r.div({},
-      debiki2.reactelements.TopBar({}),
+    return (
       r.div({ className: 'container dw-forum' },
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
         r.div({ className: 'dw-page' }),
         ForumIntroText(this.state),
         helpMessage,
-        CategoriesAndTopics(childProps))));
+        CategoriesAndTopics(childProps)));
   }
 });
 
@@ -893,7 +891,7 @@ function makeTitle(topic: Topic, className: string) {
     title = r.span({}, questionIcon, answerCount, answerIcon, title);
   }
   else if (topic.pageRole === PageRole.Problem || topic.pageRole === PageRole.Idea) {
-    // (Some dupl code, see [5KEFEW2] in posts.ts.
+    // (Some dupl code, see [5KEFEW2] in discussion.ts.
     if (!topic.plannedAtMs) {
       tooltip = topic.pageRole === PageRole.Problem
           ? "This is a new problem"
@@ -920,6 +918,14 @@ function makeTitle(topic: Topic, className: string) {
         ? "This has been done or fixed"
         : "This is something to do or to fix";
     title = r.span({}, r.span({ className: iconClass }, title));
+  }
+  else if (topic.pageRole === PageRole.OpenChat) {
+    var tooltip = "This is a chat channel";
+    title = r.span({}, '# ', title);
+  }
+  else if (topic.pageRole === PageRole.PrivateChat) {
+    var tooltip = "This is a private chat channel";
+    title = r.span({}, r.span({ className: 'icon-lock' }), title);
   }
   return (
       r.a({ href: topic.url, title: tooltip, className: className }, title));

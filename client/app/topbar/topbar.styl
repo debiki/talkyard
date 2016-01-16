@@ -167,11 +167,17 @@ html:not(.dw-react-started)
   background: hsl(0, 100%, 75%);
 
 
+.esTopBar,
+#theTopbar
+  position: relative;
+  z-index: 5;
+
+html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders the topbar itself)
+  #theTopbar
+    min-height: 52px; // avoids height changes when filled with contents
+
 // Old:
 .esTopBar
-  z-index: 1;
-  min-height: 51px; // avoids height changes when filled with contents
-
   .dw-topbar-title
     float: left; // needed if window narrow
     .dw-t, .dw-p, .dw-p-bd, .dw-p-bd-blk

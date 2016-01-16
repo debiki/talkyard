@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -89,8 +89,12 @@ export function prettyBytes(num: number): string {
 
   var unit = units[exponent];
   return (neg ? '-' : '') + rounded + ' ' + unit;
-};
+}
 
+
+export function getBoundingPageRect(): ClientRect {
+  return document.getElementById('esPageScrollable').getBoundingClientRect();
+}
 
 //------------------------------------------------------------------------------
    }

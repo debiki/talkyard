@@ -70,7 +70,8 @@ export var Sidebar = createComponent({
     return {
       store: store,
       lastLoadedOnlineUsersAsId: null,
-      commentsType: isPageWithComments(store.pageRole) ? 'Recent' : 'Users',
+      commentsType: isPageWithComments(store.pageRole) && !page_isChatChannel(store.pageRole) ?
+          'Recent' : 'Users',
       // showPerhapsUnread: false,
     };
   },
@@ -283,6 +284,7 @@ export var Sidebar = createComponent({
 
     var minimapProps = $.extend({ ref: 'minimap' }, store);
     var commentsFound = isPageWithComments(store.pageRole) ? this.findComments() : null;
+    var isChat = page_isChatChannel(store.pageRole);
 
     var sidebarClasses = '';
     if (store.horizontalLayout) {
@@ -355,7 +357,7 @@ export var Sidebar = createComponent({
           title = "Users online:";
         }
         else {
-          title = "Users in this topic:";
+          title = "Users in this " + (isChat ? "chat: " : "topic:");
           // Don't show num online strangers, when listing post authors for the current topic only.
           numOnlineStrangers = 0;
         }
@@ -406,7 +408,7 @@ export var Sidebar = createComponent({
     var unreadButton;
     if (commentsFound) {
       if (wide) {
-        recentButton =
+        recentButton = isChat ? null :
             r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent },
               'Recent');
         //unreadButton =
@@ -417,7 +419,7 @@ export var Sidebar = createComponent({
               starredBtnTitle);
       }
       else {
-        recentButton = MenuItem({ eventKey: 'showRecent' }, 'Recent');
+        recentButton = isChat ? null : MenuItem({ eventKey: 'showRecent' }, 'Recent');
         //unreadButton = MenuItem({ eventKey: 'showUnread' }, 'Unread'),
         starredButton = MenuItem({ eventKey: 'showStarred' }, starredBtnTitle);
       }

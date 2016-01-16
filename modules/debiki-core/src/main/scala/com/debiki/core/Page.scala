@@ -249,6 +249,8 @@ sealed abstract class PageRole(protected val IntValue: Int, val staffOnly: Boole
     */
   def isSection: Boolean = false
 
+  def isChat: Boolean = false
+
   /** Should use nofollow links if many people can edit a page. */
   def isWidelyEditable: Boolean = true
 
@@ -310,10 +312,10 @@ object PageRole {
   case object Discussion extends PageRole(12, staffOnly = false)
 
   /** Any forum member with access to the page can join. */
-  case object OpenChat extends PageRole(18)
+  case object OpenChat extends PageRole(18, staffOnly = false) { override def isChat = true }
 
   /** Users added explicitly. Topic not shown in forum unless already member. */
-  case object PrivateChat extends PageRole(19)
+  case object PrivateChat extends PageRole(19, staffOnly = false) { override def isChat = true }
 
   /** Direct messages between two users, or a group of users. */
   case object Message extends PageRole(17, staffOnly = false) {

@@ -310,6 +310,14 @@ export var Title = createComponent({
         icon = r.span({ className: 'icon-mail' });
         tooltip = "Personal message";
       }
+      else if (store.pageRole === PageRole.OpenChat) {
+        icon = '#';
+        tooltip = "# means Chat Channel";
+      }
+      else if (store.pageRole === PageRole.PrivateChat) {
+        icon = r.span({ className: 'icon-lock' });
+        tooltip = "This is a private chat channel";
+      }
       switch (this.props.pinWhere) {
         case PinPageWhere.Globally: tooltip += "Pinned globally."; break;
         case PinPageWhere.InCategory: tooltip += "Pinned in this category."; break;
@@ -903,7 +911,7 @@ var ReplyReceivers = createComponent({
 
 
 
-var PostHeader = createComponent({
+export var PostHeader = createComponent({
   onUserClick: function(event) {
     debiki2.pagedialogs.getAboutUserDialog().open(this.props.post);
     event.preventDefault();
@@ -951,7 +959,7 @@ var PostHeader = createComponent({
       }
     });
 
-    // Username link: Some dupl code, see edit-history-dialog.ts & sidebar.ts [88MYU2]
+    // Username link: Some dupl code, see edit-history-dialog.ts & avatar.ts [88MYU2]
     var authorUrl = '/-/users/#/id/' + post.authorId;
     var namePart1;
     var namePart2;
@@ -1052,7 +1060,7 @@ var PostHeader = createComponent({
           anyAvatar,
           by,
           r[linkFn](userLinkProps, namePart1, namePart2),
-          timeAgo(post.createdAt),
+          this.props.exactTime ? timeExact(post.createdAt) : timeAgo(post.createdAt),
           editInfo,
           inReplyTo,
           toggleCollapsedButton));
@@ -1060,7 +1068,7 @@ var PostHeader = createComponent({
 });
 
 
-var PostBody = createComponent({
+export var PostBody = createComponent({
   render: function() {
     var post: Post = this.props.post;
     if (post.summarize) {
