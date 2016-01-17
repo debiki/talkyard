@@ -218,6 +218,16 @@ object RateLimits {
   }
 
 
+  object JoinSomething extends RateLimits {
+    val key = "JoSt"
+    val what = "joined"
+    def maxPerFifteenSeconds = 5
+    def maxPerFifteenMinutes = 15 * 3
+    def maxPerDay = 24 * 10
+    def maxPerDayNewUser = Unlimited
+  }
+
+
   /** Discourse does this, as of February 2015:
     *
     * rate limit create topic: 15

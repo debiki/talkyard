@@ -81,7 +81,7 @@ var LoginDialog = createClassAndFactory({
     }
   },
 
-  open: function(loginReason: string, anyReturnToUrl: string, preventClose: boolean) {
+  open: function(loginReason: LoginReason | string, anyReturnToUrl: string, preventClose: boolean) {
     this.clearLoginRelatedCookies();
     if (!anyReturnToUrl) {
       anyReturnToUrl = window.location.toString();
@@ -225,6 +225,7 @@ export var LoginDialogContent = createClassAndFactory({
     var loginAsGuestButton;
     if (loginReason !== 'LoginBecomeAdmin' && loginReason !== 'LoginAsAdmin' &&
         loginReason !== 'LoginToAdministrate' && loginReason !== 'LoginToAuthenticate' &&
+        loginReason !== LoginReason.LoginToChat &&
         debiki2.ReactStore.isGuestLoginAllowed()) {
       loginAsGuestButton =
           Button({ onClick: openChildDialog(GuestLoginDialogContent) }, "Login as Guest");

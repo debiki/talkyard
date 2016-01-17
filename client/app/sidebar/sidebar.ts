@@ -292,8 +292,12 @@ export var Sidebar = createComponent({
     }
 
     var users: BriefUser[];
-    var listUsersOnPage = page_isDiscussion(store.pageRole);
-    if (listUsersOnPage) {
+    var listMembers = isChat;
+    var listUsersOnPage = !listMembers && page_isDiscussion(store.pageRole);
+    if (listMembers) {
+      users = store.messageMembers;
+    }
+    else if (listUsersOnPage) {
       users = store_getUsersOnThisPage(store);
     }
     else {
@@ -314,7 +318,7 @@ export var Sidebar = createComponent({
 
     //var unreadBtnTitle = commentsFound ? 'Unread (' + commentsFound.unread.length + ')' : null;
     var starredBtnTitle = commentsFound ? 'Starred (' + commentsFound.starred.length + ')' : null;
-    var usersBtnTitle = listUsersOnPage
+    var usersBtnTitle = listMembers || listUsersOnPage
         ? "Users (" + numOnlineTextSlash + users.length + ")"
         : "Users (" + numOnline + ")";
 
@@ -353,7 +357,7 @@ export var Sidebar = createComponent({
         if (store.pageRole === PageRole.Forum) {
           title = "Users online in this forum:";
         }
-        else if (!listUsersOnPage) {
+        else if (!listMembers && !listUsersOnPage) {
           title = "Users online:";
         }
         else {

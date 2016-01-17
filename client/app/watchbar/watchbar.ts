@@ -89,9 +89,19 @@ export var Watchbar = createComponent({
 var RecentTopicsAndNotfs = createComponent({
   render: function() {
     var store: Store = this.props.store;
-    var topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.RecentTopics];
-    var topicElems = topics.map((topic: WatchbarTopic) =>
+    var watchbar: Watchbar = store.me.watchbar;
+    var recentTopics: WatchbarTopic[] = watchbar[WatchbarSection.RecentTopics];
+    var chatChannels: WatchbarTopic[] = watchbar[WatchbarSection.ChatChannels];
+    var directMessages: WatchbarTopic[] = watchbar[WatchbarSection.DirectMessages];
+    var topicElems = [];
+    _.each(recentTopics, (topic: WatchbarTopic) => {
+      // If the topic is listed in the Chat Channels or Direct Messages section, skip it
+      // here in the recent-topics list.
+      if (_.some(chatChannels, c => c.pageId === topic.pageId)) return;
+      if (_.some(directMessages, m => m.pageId === topic.pageId)) return;
+      topicElems.push(
         SingleTopic({ topic: topic, flavor: 'recent', isCurrent: topic.pageId === store.pageId }));
+    });
     return (
         r.div({ className: 'esWatchbar_topics' },
           r.h3({}, 'Recent Topics'),

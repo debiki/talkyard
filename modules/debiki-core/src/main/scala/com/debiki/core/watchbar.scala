@@ -84,12 +84,11 @@ case class WatchbarWithTitles(
 
 
   def toJsonWithTitles: JsValue = {
-    import WatchbarTopic.topicWritesNoTitles
     Json.obj(
       "1" -> recentTopics.map(topicToJsonWithTitleEtc),
-      "2" -> Nil,
-      "3" -> Nil,
-      "4" -> Nil)
+      "2" -> notifications.map(topicToJsonWithTitleEtc),
+      "3" -> chatChannels.map(topicToJsonWithTitleEtc),
+      "4" -> directMessages.map(topicToJsonWithTitleEtc))
   }
 
 
@@ -129,6 +128,11 @@ case class BareWatchbar(
     else copy(recentTopics = topic +: recentTopics)
   }
 
+  def addChatChannel(topic: WatchbarTopic): BareWatchbar = {
+    if (chatChannels.exists(_.pageId == topic.pageId)) this
+    else copy(chatChannels = topic +: chatChannels)
+  }
+
   def markPageAsSeen(pageId: PageId): Unit = {
     ???
   }
@@ -151,6 +155,13 @@ case class BareWatchbar(
 object BareWatchbar {
 
   val empty = BareWatchbar(Nil, Nil, Nil, Nil)
+
+  def withChatChannelAndDirectMessageIds(channelIds: immutable.Seq[PageId],
+        messageIds: immutable.Seq[PageId]) =
+    BareWatchbar(Nil, Nil,
+      chatChannels = channelIds.map(WatchbarTopic(_, unread = false)),
+      directMessages = messageIds.map(WatchbarTopic(_, unread = false)))
+
 
   /** The json looks like interface WatchbarTopic in model.ts, for example:
     *

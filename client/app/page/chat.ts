@@ -22,6 +22,7 @@
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
+/// <reference path="../login/login.ts" />
 /// <reference path="discussion.ts" />
 
 //------------------------------------------------------------------------------
@@ -42,10 +43,15 @@ var DefaultEditorRows = 2;
 
 export var ChatMessages = createComponent({
   render: function() {
-     return (
-       r.div({ className: 'esChatPage dw-page' },
-         TitleAndLastChatMessages(this.props),
-         ChatMessageEditor(this.props)));
+    var store: Store = this.props;
+    var isChatMember = _.some(store.messageMembers, (m: BriefUser) => m.id === store.me.id);
+    var editorOrJoinButton = isChatMember ?
+        ChatMessageEditor(this.props) : JoinChatButton(this.props);
+    return (
+      r.div({ className: 'esChatPage dw-page' },
+        TitleAndLastChatMessages(this.props),
+        FixedAtBottom(this.props,
+          editorOrJoinButton)));
   }
 });
 
@@ -138,17 +144,11 @@ var ChatMessage = createComponent({
 
 
 
-var ChatMessageEditor = createComponent({
+var FixedAtBottom = createComponent({
   mixins: [debiki2.utils.PageScrollMixin],
 
   getInitialState: function() {
-    return {
-      text: '',
-      replyToPostIds: [],
-      editingPostId: null,
-      editingPostUid: null,
-      rows: DefaultEditorRows,
-    };
+    return {};
   },
 
   componentDidMount: function() {
@@ -158,8 +158,7 @@ var ChatMessageEditor = createComponent({
 
   onScroll: function() {
     var pageBottom = $('#dwPosts')[0].getBoundingClientRect().bottom;
-    var scrollableBottom = $(window).height(); // getBoundingPageRect().bottom;
-    //var winHeight = $(window).height();
+    var scrollableBottom = $(window).height();
     var myNewBottom = pageBottom - scrollableBottom;
     this.setState({ bottom: myNewBottom });
     if (!this.state.fixed) {
@@ -173,6 +172,45 @@ var ChatMessageEditor = createComponent({
         this.setState({ fixed: false, bottom: 0 });
       }
     }
+  },
+
+  render: function () {
+    var offsetBottomStyle;
+    if (this.state.fixed) {
+      offsetBottomStyle = { bottom: this.state.bottom };
+    }
+    return (
+      r.div({ className: 'esFixAtBottom', style: offsetBottomStyle },
+        this.props.children));
+  }
+});
+
+
+
+var JoinChatButton = createComponent({
+  joinChannel: function() {
+    login.loginIfNeededAndThen(LoginReason.LoginToChat, '#theJonChatBtn', Server.joinChatChannel);
+  },
+
+  render: function() {
+    return (
+      r.div({ className: 'esJoinChat' },
+        Button({ id: 'theJonChatBtn', className: 'esJoinChat_btn',
+            onClick: this.joinChannel, bsStyle: 'primary' },
+          "Join this chat")));
+  }
+});
+
+
+
+var ChatMessageEditor = createComponent({
+  getInitialState: function() {
+    return {
+      text: '',
+      editingPostId: null,
+      editingPostUid: null,
+      rows: DefaultEditorRows,
+    };
   },
 
   onTextEdited: function(event) {
@@ -204,21 +242,16 @@ var ChatMessageEditor = createComponent({
   },
 
   render: function () {
-    var offsetBottomStyle;
-    if (this.state.fixed) {
-      offsetBottomStyle = { bottom: this.state.bottom };
-    }
     return (
-      r.div({ className: 'esChatMsgEdtr', style: offsetBottomStyle },
+      r.div({ className: 'esChatMsgEdtr' },
         r.textarea({ className: 'esChatMsgEdtr_textarea', ref: 'textarea',
-            value: this.state.text, onChange: this.onTextEdited,
-            onKeyPress: this.onKeyPress,
-            placeholder: "Type here. You can use Markdown and HTML.",
-            disabled: this.state.isSaving,
-            rows: this.state.rows })));
+          value: this.state.text, onChange: this.onTextEdited,
+          onKeyPress: this.onKeyPress,
+          placeholder: "Type here. You can use Markdown and HTML.",
+          disabled: this.state.isSaving,
+          rows: this.state.rows })));
   }
 });
-
 
 // Staying at the bottom: http://blog.vjeux.com/2013/javascript/scroll-position-with-react.html
 

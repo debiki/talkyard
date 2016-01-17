@@ -23,6 +23,7 @@ import com.debiki.core.PageParts.MaxTitleLength
 import com.debiki.core.User.SystemUserId
 import debiki._
 import debiki.DebikiHttp._
+import io.efdi.server.http.throwIndistinguishableNotFound
 import io.efdi.server.notf.NotificationGenerator
 import java.{util => ju}
 
@@ -414,6 +415,44 @@ trait PagesDao {
     }
     refreshPageInAnyCache(pageId)
     newClosedAt
+  }
+
+
+  def joinPageIfAuth(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
+        : Option[BareWatchbar] = {
+    if (User.isGuestId(userId))
+      throwForbidden("EsE3GBS5", "Guest users cannot join topics or chat channels")
+
+    val pageMeta = readWriteTransaction { transaction =>
+      val pageMeta = transaction.loadPageMeta(pageId) getOrElse
+        throwIndistinguishableNotFound("4GYX7")
+
+      // Private chat channels are joined via user-to-user-invites only.
+      if (pageMeta.pageRole == PageRole.PrivateChat)
+        throwIndistinguishableNotFound("50PU3")
+
+      SECURITY // if user may not see the page, then throwIndistinguishableNotFound() [7C2KF24]
+      if (pageMeta.pageRole != PageRole.OpenChat)
+        throwForbidden("EsE6YPK2", "Cannot join pages of type " + pageMeta.pageRole)
+
+      transaction.insertMessageMember(pageId, userId = userId, addedById = userId)
+      pageMeta
+    }
+
+    // todo: push new member notf to browsers
+
+    // The page JSON includes a list of all page members, so:
+    refreshPageInAnyCache(pageId)
+
+    if (pageMeta.pageRole.isChat) {
+      // Race condition, if the same user e.g. also leaves the page right now.
+      // Fairly harmless though, since humans are single threaded.
+      var watchbar: BareWatchbar = loadWatchbar(userId)
+      watchbar = watchbar.addChatChannel(WatchbarTopic(pageId, unread = false))
+      saveWatchbar(userId, watchbar)
+      Some(watchbar)
+    }
+    else None
   }
 }
 

@@ -193,6 +193,10 @@ ReactDispatcher.register(function(payload) {
       showPost(action.postId, action.showChildrenToo);
       break;
 
+    case ReactActions.actionTypes.SetWatchbar:
+      store.me.watchbar = action.watchbar;
+      break;
+
     case ReactActions.actionTypes.SetWatchbarOpen:
       putInLocalStorage('isWatchbarOpen', action.open);
       store.isWatchbarOpen = action.open;
@@ -230,6 +234,10 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.MarkAnyNotificationAsSeen:
       markAnyNotificationssAsSeen(action.postNr);
+      break;
+
+    case ReactActions.actionTypes.AddMeAsPageMember:
+      userList_add(store.messageMembers, me_toBriefUser(store.me));
       break;
 
     case ReactActions.actionTypes.UpdateUserPresence:
@@ -361,12 +369,18 @@ function theStore_removeOnlineUser(userId: UserId) {
 }
 
 
+function userList_add(users: BriefUser[], newUser: BriefUser) {
+  dieIf(!users, 'EsE7YKWF2');
+  if (_.every(users, u => u.id !== newUser.id)) {
+    users.push(newUser);
+  }
+}
+
+
 function theStore_addOnlineUser(user: BriefUser) {
   store.usersByIdBrief[user.id] = user;
   if (store.onlineUsers) {
-    if (_.every(store.onlineUsers, u => u.id !== user.id)) {
-      store.onlineUsers.push(user);
-    }
+    userList_add(store.onlineUsers, user);
   }
 }
 

@@ -213,26 +213,23 @@ trait PostsDao {
       val page = PageDao(pageId, transaction)
       val pageMemberIds = transaction.loadMessageMembers(pageId)
       if (!pageMemberIds.contains(authorId))
-        () // SECURITY: SHOULD: throwForbidden("EsE4UGY7", "You are not a member of this chat channel")
-           // once I've added the Join button
+        throwForbidden("EsE4UGY7", "You are not a member of this chat channel")
 
-      // Try to append to the last message, instead of creating a new one, so we'll save disk
-      // and render a little bit faster.
+      // Try to append to the last message, instead of creating a new one. That looks
+      // better in the browser (fewer avatars & sent-by info), + we'll save disk and
+      // render a little bit faster.
       val anyLastMessage = page.parts.lastPostButNotOrigPost
       val anyLastMessageSameUserRecently = anyLastMessage filter { post =>
         post.createdById == authorId &&
           transaction.currentTime.getTime - post.createdAt.getTime < LastChatMessageRecentMs
       }
-      anyLastMessageSameUserRecently match {
+      val (postNr, notfs) = anyLastMessageSameUserRecently match {
         case Some(lastMessage) =>
-          val (postNr, notfs) =
-            appendChatMessageToLastMessage(lastMessage, textAndHtml, authorId, transaction)
-          (postNr, pageMemberIds, notfs)
+          appendChatMessageToLastMessage(lastMessage, textAndHtml, authorId, transaction)
         case None =>
-          val (newPostNr, notfs) =
-            createNewChatMessage(page, textAndHtml, authorId, browserIdData, transaction)
-          (newPostNr, pageMemberIds, notfs)
+          createNewChatMessage(page, textAndHtml, authorId, browserIdData, transaction)
       }
+      (postNr, pageMemberIds, notfs)
     }
 
     pubSub.publish(

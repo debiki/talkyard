@@ -18,6 +18,7 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import CachingDao.{CacheKey, CacheValueIgnoreVersion}
 
 
@@ -30,12 +31,19 @@ import CachingDao.{CacheKey, CacheValueIgnoreVersion}
 trait WatchbarDao {
   self: SiteDao =>
 
-  def loadWatchbar(userId: UserId) = BareWatchbar.empty
+  def loadWatchbar(userId: UserId) = {
+    readOnlyTransaction { transaction =>
+      val chatChannelIds = transaction.loadPageIdsUserIsMemberOf(
+        userId, Set(PageRole.OpenChat, PageRole.PrivateChat))
+      val directMessageIds = transaction.loadPageIdsUserIsMemberOf(userId, Set(PageRole.Message))
+      BareWatchbar.withChatChannelAndDirectMessageIds(chatChannelIds, directMessageIds)
+    }
+  }
 
   def saveWatchbar(userId: UserId, watchbar: Watchbar) {}
 
   def fillInWatchbarTitlesEtc(watchbar: BareWatchbar): WatchbarWithTitles =
-    ???
+    die("EsE4GYKF2", "CachingWatchbarDao method should be called instead")
 
 }
 
@@ -58,7 +66,8 @@ trait CachingWatchbarDao extends WatchbarDao {
   override def loadWatchbar(userId: UserId): BareWatchbar = {
     lookupInCache[BareWatchbar](
       key(userId),
-      ignoreSiteCacheVersion = true) getOrElse BareWatchbar.empty
+      orCacheAndReturn = Some(super.loadWatchbar(userId)),
+      ignoreSiteCacheVersion = true) getOrDie "EsE4UYKF5"
   }
 
 

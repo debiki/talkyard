@@ -155,14 +155,6 @@ object ViewPageController extends mvc.Controller {
   }
 
 
-  /** Use this if page not found, or the page is private and we don't want strangers
-    * to find out that it exists. [7C2KF24]
-    */
-  def throwIndistinguishableNotFound() = {
-    throwNotFound("EsE404", "Page not found")
-  }
-
-
   private def doRenderPage(pageReq: PageGetRequest) = {
     var pageHtml = pageReq.dao.renderPage(pageReq)
     val anyUserSpecificDataJson = ReactJson.userDataJson(pageReq)

@@ -74,10 +74,7 @@ function isPageWithSidebar(pageRole: PageRole): boolean {
 
 function pageRole_shallListInRecentTopics(pageRole: PageRole): boolean {
   switch (pageRole) {
-    case PageRole.Message: // shown in the Direct Messages watchbar section instead
     case PageRole.EmbeddedComments:
-    case PageRole.Blog:
-    case PageRole.Forum:
     case PageRole.HomePage:
     case PageRole.Code:
     case PageRole.SpecialContent:

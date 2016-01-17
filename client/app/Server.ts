@@ -683,6 +683,14 @@ export function insertChatMessage(text: string, success: () => void) {
 }
 
 
+export function joinChatChannel() {
+  postJsonSuccess('/-/join-page', (newWatchbar) => {
+    ReactActions.setWatchbar(newWatchbar);
+    ReactActions.addMeAsPageMember();
+  }, { pageId: d.i.pageId });
+}
+
+
 export function sendMessage(title: string, text: string, userIds: number[],
     success: (pageId: string) => void) {
   postJsonSuccess('/-/send-private-message', success,

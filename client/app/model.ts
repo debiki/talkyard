@@ -283,7 +283,7 @@ interface Store {
   guestLoginAllowed: boolean;
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
-  messageMembers: BriefUser[];
+  messageMembers: BriefUser[]; // rename to pageMembers?
   pageId: string;
   categoryId?: number;
   ancestorsRootFirst?: Ancestor[];

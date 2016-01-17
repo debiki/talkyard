@@ -49,6 +49,7 @@ export var actionTypes = {
   CollapseTree: 'CollapseTree',
   UncollapsePost: 'UncollapsePost',
   ShowPost: 'ShowPost',
+  SetWatchbar: 'SetWatchbar',
   SetWatchbarOpen: 'SetWatchbarOpen',
   SetContextbarOpen: 'SetContextbarOpen',
   SetHorizontalLayout: 'SetHorizontalLayout',
@@ -57,6 +58,7 @@ export var actionTypes = {
   ShowHelpAgain: 'ShowHelpAgain',
   AddNotifications: 'AddNotifications',
   MarkAnyNotificationAsSeen: 'MarkAnyNotificationAsSeen',
+  AddMeAsPageMember: 'AddMeAsPageMember',
   UpdateOnlineUsersLists: 'UpdateOnlineUsersLists',
   UpdateUserPresence: 'UpdateUserPresence',
 };
@@ -421,6 +423,14 @@ export function setWatchbarOpen(open: boolean) {
 }
 
 
+export function setWatchbar(watchbar: Watchbar) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.SetWatchbar,
+    watchbar: watchbar,
+  });
+}
+
+
 export function setHorizontalLayout(enabled: boolean) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.SetHorizontalLayout,
@@ -456,6 +466,13 @@ export function addNotifications(notfs: Notification[]) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.AddNotifications,
     notifications: notfs,
+  });
+}
+
+
+export function addMeAsPageMember() {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.AddMeAsPageMember,
   });
 }
 

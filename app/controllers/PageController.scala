@@ -102,4 +102,15 @@ object PageController extends mvc.Controller {
     OkSafeJson(JsLongOrNull(closedAt.map(_.getTime)))
   }
 
+
+  def joinPage = PostJsonAction(RateLimits.JoinSomething, maxLength = 100) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    request.dao.joinPageIfAuth(pageId, userId = request.theUserId, request.theBrowserIdData) match {
+      case Some(newWatchbar) =>
+        val watchbarWithTitles = request.dao.fillInWatchbarTitlesEtc(newWatchbar)
+        Ok(watchbarWithTitles.toJsonWithTitles)
+      case None => Ok
+    }
+  }
+
 }

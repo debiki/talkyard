@@ -211,6 +211,7 @@ object ReactJson {
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
       "pageId" -> pageId,
+      // Page members join/leave infrequently, so seems better to cache than to lookup each request.
       "messageMembers" -> JsArray(messageMembers.map(JsUser)),
       "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "forumId" -> JsStringOrNull(anyForumId),

@@ -126,6 +126,7 @@ POST  /-/cycle-page-done        controllers.PageController.cyclePageDone
 POST  /-/toggle-page-closed     controllers.PageController.togglePageClosed
 POST  /-/accept-answer          controllers.PageController.acceptAnswer
 POST  /-/unaccept-answer        controllers.PageController.unacceptAnswer
+POST  /-/join-page              controllers.PageController.joinPage
 POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/chat                   controllers.ReplyController.handleChatMessage
 POST  /-/vote                   controllers.VoteController.handleVotes

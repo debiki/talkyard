@@ -99,8 +99,11 @@ trait SiteTransaction {
   def insertPost(newPost: Post)
   def updatePost(newPost: Post)
 
+  // Rename to insert/loadPageMemberIds? [rename]
   def insertMessageMember(pageId: PageId, userId: UserId, addedById: UserId)
   def loadMessageMembers(pageId: PageId): Set[UserId]
+  // Returns recently active pages first.
+  def loadPageIdsUserIsMemberOf(userId: UserId, onlyPageRoles: Set[PageRole]): immutable.Seq[PageId]
 
   def loadLastPostRevision(postId: UniquePostId): Option[PostRevision]
   def loadPostRevision(postId: UniquePostId, revisionNr: Int): Option[PostRevision]

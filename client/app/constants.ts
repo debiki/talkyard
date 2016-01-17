@@ -36,6 +36,11 @@ var BlueStarMark = 3;
 var LastStarMark = 3;
 
 
+enum LoginReason {
+  LoginToChat = 10,
+}
+
+
 enum PinPageWhere {
   InCategory = 1,
   Globally = 3,
