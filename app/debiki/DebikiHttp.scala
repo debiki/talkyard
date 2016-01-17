@@ -252,7 +252,9 @@ object DebikiHttp {
     // to include any port number when looking up a site.
     val hostname = if (host contains ':') host.span(_ != ':')._1 else host
     def firstSiteIdAndHostname =
-      SiteIdHostname(id = Site.FirstSiteId, hostname = Globals.firstSiteHostname.get)
+      SiteIdHostname(Site.FirstSiteId, hostname = Globals.firstSiteHostname getOrElse {
+        throwForbidden("EsE5UYK2", "No first site hostname configured (debiki.hostname)")
+      })
 
     if (Globals.firstSiteHostname.contains(hostname))
       return firstSiteIdAndHostname
