@@ -19,13 +19,12 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.core.User.SystemUserId
 import controllers.EditController
 import debiki._
 import debiki.DebikiHttp._
 import io.efdi.server.notf.NotificationGenerator
-import io.efdi.server.pubsub
-import java.{util => ju}
+import io.efdi.server.pubsub.StorePatchMessage
+import play.api.libs.json.JsValue
 import play.{api => p}
 import scala.collection.{mutable, immutable}
 import PostsDao._
@@ -190,9 +189,7 @@ trait PostsDao {
       (postNr, pageMemberIds, notifications)
     }
 
-    pubSub.publish(
-      // for now, send null:
-      pubsub.NewPostMessage(siteId, pageMemberIds, pageId, play.api.libs.json.JsNull, notifications))
+    pubSub.publish(StorePatchMessage(siteId, pageId, play.api.libs.json.JsNull, notifications))
 
     refreshPageInAnyCache(pageId)
     postNr
@@ -204,7 +201,7 @@ trait PostsDao {
     * of creating a new different chat message.
     */
   def insertChatMessage(textAndHtml: TextAndHtml, pageId: PageId,
-        authorId: UserId, browserIdData: BrowserIdData): PostNr = {
+        authorId: UserId, browserIdData: BrowserIdData, dao: SiteDao): JsValue = {
 
     if (textAndHtml.safeHtml.trim.isEmpty)
       throwBadReq("DwE2U3K8", "Empty chat message")
@@ -225,19 +222,20 @@ trait PostsDao {
       }
       val (postNr, notfs) = anyLastMessageSameUserRecently match {
         case Some(lastMessage) =>
-          appendChatMessageToLastMessage(lastMessage, textAndHtml, authorId, transaction)
+          appendToLastChatMessage(lastMessage, textAndHtml, authorId, browserIdData, transaction)
         case None =>
           createNewChatMessage(page, textAndHtml, authorId, browserIdData, transaction)
       }
       (postNr, pageMemberIds, notfs)
     }
 
-    pubSub.publish(
-      // for now, send null:
-      pubsub.NewPostMessage(siteId, pageMemberIds, pageId, play.api.libs.json.JsNull, notifications))
-
     refreshPageInAnyCache(pageId)
-    postNr
+
+    val postJson = ReactJson.postToJson2(postNr, pageId = pageId, dao, includeUnapproved = true)
+    val storePatchJson = ReactJson.makeStorePatch(posts = Seq(postJson))
+    pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications))
+
+    storePatchJson
   }
 
 
@@ -317,8 +315,8 @@ trait PostsDao {
   }
 
 
-  def appendChatMessageToLastMessage(lastPost: Post, textAndHtml: TextAndHtml, authorId: UserId,
-    transaction: SiteTransaction): (PostNr, Notifications) = {
+  def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml, authorId: UserId,
+    browserIdData: BrowserIdData, transaction: SiteTransaction): (PostNr, Notifications) = {
 
     // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
 
@@ -339,6 +337,8 @@ trait PostsDao {
 
     transaction.updatePost(editedPost)
     saveDeleteUploadRefs(lastPost, editedPost = editedPost, authorId, transaction)
+
+    // COULD create audit log entry that shows that this ip appended to the chat message.
 
     val notfs = NotificationGenerator(transaction).generateForEdits(lastPost, editedPost)
     transaction.saveDeleteNotifications(notfs)

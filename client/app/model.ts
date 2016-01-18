@@ -455,4 +455,13 @@ interface Block {
 }
 
 
+/**
+ * Describes how to update parts of the store. Can be e.g. a new chat message and the author.
+ */
+interface StorePatch {
+  posts?: Post[];
+  usersBrief?: BriefUser[];
+}
+
+
 // vim: et ts=2 sw=2 tw=0 fo=r list

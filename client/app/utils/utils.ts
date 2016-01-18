@@ -92,8 +92,13 @@ export function prettyBytes(num: number): string {
 }
 
 
-export function getBoundingPageRect(): ClientRect {
+export function getPageScrollableRect(): ClientRect {
   return document.getElementById('esPageScrollable').getBoundingClientRect();
+}
+
+
+export function getPageRect(): ClientRect {
+  return document.getElementById('dwPosts').getBoundingClientRect();
 }
 
 //------------------------------------------------------------------------------

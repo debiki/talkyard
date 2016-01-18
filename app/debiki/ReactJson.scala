@@ -818,6 +818,13 @@ object ReactJson {
     WatchbarSection.DirectMessages.toInt.toString -> JsArray(Nil))
 
 
+  def makeStorePatch(posts: Seq[JsObject] = Nil, users: Seq[JsObject] = Nil): JsValue = {
+    Json.obj(
+      "users" -> users,
+      "posts" -> posts)
+  }
+
+
   def JsUserOrNull(user: Option[User]): JsValue =
     user.map(JsUser).getOrElse(JsNull)
 

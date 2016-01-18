@@ -36,15 +36,14 @@ import ReactJson.JsUser
 
 sealed trait Message {
   def siteId: SiteId
-  def toUserIds: Set[UserId]
   def toJson: JsValue
   def notifications: Notifications
 }
 
 
+// Remove? Use StorePatchMessage instead?
 case class NewPageMessage(
   siteId: SiteId,
-  toUserIds: immutable.Set[UserId],
   pageId: PageId,
   pageRole: PageRole,
   notifications: Notifications) extends Message {
@@ -53,11 +52,10 @@ case class NewPageMessage(
 }
 
 
-case class NewPostMessage(
+case class StorePatchMessage(
   siteId: SiteId,
-  toUserIds: immutable.Set[UserId],
-  pageId: PageId,
-  postJson: JsValue,
+  toUsersViewingPage: PageId,
+  json: JsValue,
   notifications: Notifications) extends Message {
 
   def toJson = JsNull
@@ -167,7 +165,7 @@ class PubSubActor extends Actor {
       unsubscribeUser(siteId, user)
       publishUserPresence(siteId, user, Presence.Away)
     case PublishMessage(message: Message) =>
-      publishPostAndNotfs(message)
+      publishStuffAndNotfs(message)
     case ListOnlineUsers(siteId) =>
       sender ! listUsersOnline(siteId)
     case DeleteInactiveSubscriptions =>
@@ -210,15 +208,14 @@ class PubSubActor extends Actor {
   }
 
 
-  private def publishPostAndNotfs(message: Message) {
-    SHOULD // only publish to connected users
-
+  private def publishStuffAndNotfs(message: Message) {
     // dupl code [7UKY74]
     val siteDao = Globals.siteDao(message.siteId)
     val site = siteDao.loadSite()
     val canonicalHost = site.canonicalHost.getOrDie(
       "EsE7UKFW2", s"Site lacks canonical host: $site")
 
+    SHOULD // only publish notfs to connected users
     message.notifications.toCreate foreach { notf =>
       COULD_OPTIMIZE // later: do only 1 call to siteDao, for all notfs.
       val notfsJson = siteDao.readOnlyTransaction { transaction =>
@@ -227,11 +224,24 @@ class PubSubActor extends Actor {
       sendPublishRequest(canonicalHost.hostname, Set(notf.toUserId), "notifications", notfsJson)
     }
 
-    // Later: publish message.toJson too, to all message.toUserIds.
+    message match {
+      case patchMessage: StorePatchMessage =>
+        val userIds = userViewingPage(patchMessage.siteId, pageId = patchMessage.toUsersViewingPage)
+        sendPublishRequest(canonicalHost.hostname, userIds, "storePatch", patchMessage.json)
+      case x =>
+        unimplemented(s"Publishing ${classNameOf(x)} [EsE4GPYU2]")
+    }
   }
 
 
-  private def sendPublishRequest(hostname: String, toUserIds: Set[UserId], tyype: String,
+  private def userViewingPage(siteId: SiteId, pageId: PageId): Iterable[UserId] = {
+    // For now, publ to ... everyone. Crazy. Just testing.
+    SHOULD // only publish to connected users who views / recently-viewed-&-listens-to pageId.
+    perSiteSubscribers(siteId).keySet
+  }
+
+
+  private def sendPublishRequest(hostname: String, toUserIds: Iterable[UserId], tyype: String,
         json: JsValue) {
     // Currently nchan doesn't support publishing to many channels with one single request.
     // (See the Channel Multiplexing section here: https://nchan.slact.net/

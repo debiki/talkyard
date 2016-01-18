@@ -240,6 +240,10 @@ ReactDispatcher.register(function(payload) {
       userList_add(store.messageMembers, me_toBriefUser(store.me));
       break;
 
+    case ReactActions.actionTypes.PatchTheStore:
+      patchTheStore(action.storePatch);
+      break;
+
     case ReactActions.actionTypes.UpdateUserPresence:
       // Updating state in-place, oh well.
       store.numOnlineStrangers = action.numOnlineStrangers;
@@ -664,8 +668,8 @@ function collapseTree(post: Post) {
 }
 
 
-function showPost(postId: number, showChildrenToo?: boolean) {
-  var post = store.allPosts[postId];
+function showPost(postNr: PostNr, showChildrenToo?: boolean) {
+  var post = store.allPosts[postNr];
   if (showChildrenToo) {
     uncollapsePostAndChildren(post);
   }
@@ -675,7 +679,7 @@ function showPost(postId: number, showChildrenToo?: boolean) {
     post = store.allPosts[post.parentId];
   }
   setTimeout(() => {
-    debiki.internal.showAndHighlightPost($('#post-' + postId));
+    debiki.internal.showAndHighlightPost($('#post-' + postNr));
     processTimeAgo();
   }, 1);
 }
@@ -865,6 +869,17 @@ function updateNotificationCounts(notf: Notification, add: boolean) {
   else {
     store.me.numOtherNotfs += delta;
   }
+}
+
+
+function patchTheStore(storePatch: StorePatch) {
+  _.each(storePatch.usersBrief || [], (user: BriefUser) => {
+    // BUG this'll overwrite the user's precense. So it should be externalized? (Not a user field)
+    store.usersByIdBrief[user.id] = user;
+  });
+  _.each(storePatch.posts || [], (post: Post) => {
+    store.allPosts[post.postId] = post;
+  });
 }
 
 

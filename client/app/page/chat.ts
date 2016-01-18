@@ -20,6 +20,7 @@
 /// <reference path="../react-elements/name-login-btns.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../utils/utils.ts" />
+/// <reference path="../utils/window-zoom-resize-mixin.ts" />
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
 /// <reference path="../login/login.ts" />
@@ -37,20 +38,31 @@ var Button = reactCreateFactory(ReactBootstrap.Button);
 var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
-var EditorBecomeFixedDist = 10;
+var EditorBecomeFixedDist = 5;
 var DefaultEditorRows = 2;
 
 
 export var ChatMessages = createComponent({
+  componentDidUpdate: function() {
+    // We should call onScroll() if a new message gets inserted below the current scroll pos.
+    // Simply call it always, instead.
+    this.refs.fixedAtBottom.onScroll();
+  },
+
+  scrollDown: function() {
+    this.refs.titleAndMessages.scrollDown();
+  },
+
   render: function() {
     var store: Store = this.props;
     var isChatMember = _.some(store.messageMembers, (m: BriefUser) => m.id === store.me.id);
-    var editorOrJoinButton = isChatMember ?
-        ChatMessageEditor(this.props) : JoinChatButton(this.props);
+    var editorOrJoinButton = isChatMember
+        ? ChatMessageEditor({ store: this.props, scrollDownToViewNewMessage: this.scrollDown })
+        : JoinChatButton({ store: this.props, isChatMember: isChatMember });
     return (
       r.div({ className: 'esChatPage dw-page' },
-        TitleAndLastChatMessages(this.props),
-        FixedAtBottom(this.props,
+        TitleAndLastChatMessages({ store: this.props, ref: 'titleAndMessages' }),
+        FixedAtBottom({ ref: 'fixedAtBottom' },
           editorOrJoinButton)));
   }
 });
@@ -69,8 +81,9 @@ var TitleAndLastChatMessages = createComponent({
 
   componentWillUpdate: function() {
     // Scroll down, if comment added, & we're at the bottom already.
-    var pageColumnRect = document.getElementById('esPageColumn').getBoundingClientRect();
-    this.shallScrollDown = pageColumnRect.bottom <= $(window).height();
+    var pageColumnRect = getPageRect();
+    // Add +2 because sometimes .bottom is 0.1 more than the-win-height, for some weird reason.
+    this.shallScrollDown = pageColumnRect.bottom <= $(window).height() + 2;
   },
 
   componentDidUpdate: function() {
@@ -85,7 +98,7 @@ var TitleAndLastChatMessages = createComponent({
   },
 
   render: function () {
-    var store: Store = this.props;
+    var store: Store = this.props.store;
     var title = Title(store); // later: only if not scrolled down too far
 
     var originalPost = store.allPosts[store.rootPostId];
@@ -145,10 +158,10 @@ var ChatMessage = createComponent({
 
 
 var FixedAtBottom = createComponent({
-  mixins: [debiki2.utils.PageScrollMixin],
+  mixins: [utils.PageScrollMixin, utils.WindowZoomResizeMixin],
 
   getInitialState: function() {
-    return {};
+    return { fixed: false, bottom: 0 };
   },
 
   componentDidMount: function() {
@@ -156,8 +169,12 @@ var FixedAtBottom = createComponent({
     // Later: setState fixed: true, if going back to a chat channel when one has scrolled up.
   },
 
+  onWindowZoomOrResize: function() {
+    this.onScroll();
+  },
+
   onScroll: function() {
-    var pageBottom = $('#dwPosts')[0].getBoundingClientRect().bottom;
+    var pageBottom = getPageRect().bottom;
     var scrollableBottom = $(window).height();
     var myNewBottom = pageBottom - scrollableBottom;
     this.setState({ bottom: myNewBottom });
@@ -189,7 +206,15 @@ var FixedAtBottom = createComponent({
 
 var JoinChatButton = createComponent({
   joinChannel: function() {
-    login.loginIfNeededAndThen(LoginReason.LoginToChat, '#theJonChatBtn', Server.joinChatChannel);
+    login.loginIfNeededAndThen(LoginReason.LoginToChat, '#theJonChatBtn', () => {
+      if (this.props.isChatMember) {
+        // Now after having logged in, we know that this user is a channel member already.
+        // Need do nothing.
+      }
+      else {
+        Server.joinChatChannel();
+      }
+    });
   },
 
   render: function() {
@@ -238,6 +263,7 @@ var ChatMessageEditor = createComponent({
       if (!this.isMounted()) return;
       this.setState({ text: '', isSaving: false, rows: DefaultEditorRows });
       this.refs.textarea.getDOMNode().focus();
+      this.props.scrollDownToViewNewMessage();
     });
   },
 

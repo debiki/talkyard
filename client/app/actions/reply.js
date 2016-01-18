@@ -100,6 +100,7 @@ d.i.clearIsReplyingMarks = function() {
 };
 
 
+// Try to remove. Rename to handlePagePatch?
 d.i.handleReplyResult = function(data) {
   if (d.i.isInEmbeddedEditor) {
     // Send a message to the embedding page, which will forward it to
@@ -113,7 +114,7 @@ d.i.handleReplyResult = function(data) {
 };
 
 
-function doHandleReplyResult(newPost) {
+function doHandleReplyResult(data) {
   // On iPhone 5, some unknown error happens inside ReactStore.emitChange, invoked
   // via `updatePost(newPost)` below. Therefore, schedule show-and-highlight directly here.
   // (No idea what happens — everything seems to work fine, except that no code below
@@ -122,11 +123,20 @@ function doHandleReplyResult(newPost) {
   // and the one after emitChange after `switch (action.actionType)` in ReactStore was
   // the first one that was never displayed.)
   setTimeout(function() {
-    debiki2.ReactActions.loadAndShowPost(newPost.postId);
+    var postNrToFocus = data.postNrToFocus ||
+        data.postNr; // try to remove
+    debiki2.ReactActions.loadAndShowPost(postNrToFocus);
   }, 1);
 
-  debiki2.ReactActions.updatePost(newPost);
-};
+  if (_.isNumber(data.postId)) {
+    // It's a post. Try to remove this.
+    debiki2.ReactActions.updatePost(data);
+  }
+  else {
+    // It's a StorePatch.
+    debiki2.ReactActions.patchTheStore(data);
+  }
+}
 
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

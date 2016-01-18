@@ -41,6 +41,9 @@ export function subscribeToServerEvents(doNothingIfAlreadyPolling?) {
     subscribeToServerEvents();
 
     if (event) switch (event.type) {
+      case "storePatch":
+        ReactActions.patchTheStore(event.data);
+        break;
       case "notifications":
         ReactActions.addNotifications(event.data);
         break;

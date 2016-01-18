@@ -15,8 +15,12 @@ export function removeFromLocalStorage(key) {
   throw new Error('removeFromLocalStorage called server side [DwE8PUMK2]');
 }
 
-export function getBoundingPageRect(): ClientRect {
-  throw new Error('getBoundingPageRect called server side [DwE2YPK03]');
+export function getPageScrollableRect(): ClientRect {
+  throw new Error('getPageScrollableRect called server side [DwE2YPK03]');
+}
+
+export function getPageRect(): ClientRect {
+  throw new Error('getPageRect called server side [DwE7UYKW2]');
 }
 
 //------------------------------------------------------------------------------

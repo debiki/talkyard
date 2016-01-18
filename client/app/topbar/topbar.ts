@@ -68,7 +68,7 @@ export var TopBar = createComponent({
     keymaster('3', this.goToChat);
     keymaster('4', this.goToEnd);
     var rect = this.getThisRect();
-    var pageTop = getBoundingPageRect().top;
+    var pageTop = getPageScrollableRect().top;
     this.setState({
       initialOffsetTop: rect.top - pageTop,
       fixed: rect.top < -FixedTopDist,
@@ -95,7 +95,7 @@ export var TopBar = createComponent({
   },
 
   onScroll: function() {
-    var pageRect = getBoundingPageRect();
+    var pageRect = getPageScrollableRect();
     var pageLeft = pageRect.left;
     if (this.state.store.isWatchbarOpen) {
       pageLeft -= 230; // dupl value, in css too [7GYK42]

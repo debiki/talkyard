@@ -61,6 +61,7 @@ export var actionTypes = {
   AddMeAsPageMember: 'AddMeAsPageMember',
   UpdateOnlineUsersLists: 'UpdateOnlineUsersLists',
   UpdateUserPresence: 'UpdateUserPresence',
+  PatchTheStore: 'PatchTheStore',
 };
 
 
@@ -263,6 +264,7 @@ export function deletePost(postNr: number, repliesToo: boolean, success: () => v
 }
 
 
+// try to remove, use patchTheStore() instead
 export function updatePost(post) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.UpdatePost,
@@ -342,11 +344,11 @@ export function uncollapsePost(post) {
 }
 
 
-export function loadAndShowPost(postId: number, showChildrenToo?: boolean, callback?) {
+export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean, callback?) {
   // Currently all posts are included in the store already; need load nothing.
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.ShowPost,
-    postId: postId,
+    postId: postNr,
     showChildrenToo: showChildrenToo,
   });
   if (callback) {
@@ -499,6 +501,14 @@ function markAnyNotificationAsSeen(postNr: number) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.MarkAnyNotificationAsSeen,
     postNr: postNr,
+  });
+}
+
+
+export function patchTheStore(storePatch: StorePatch) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.PatchTheStore,
+    storePatch: storePatch,
   });
 }
 

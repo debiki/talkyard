@@ -86,10 +86,10 @@ object ReplyController extends mvc.Controller {
     SECURITY ; COULD // avoid revealing that a page exists: forPageThatExists below might throw
     // a unique NotFound for example.  [7C2KF24]
     val pageReq = PageRequest.forPageThatExists(request, pageId = pageId) match {
-        case Some(req) => req
-        case None =>
-          throwNotImplemented("EsE2UYK7", "Creating embedded chat channel")
-      }
+      case Some(req) => req
+      case None =>
+        throwNotImplemented("EsE2UYK7", "Creating embedded chat channel")
+    }
 
     if (text.isEmpty)
       throwBadReq("EsE0WQCB", "Empty chat message")
@@ -99,12 +99,10 @@ object ReplyController extends mvc.Controller {
         isSpamReason =>
       throwForbiddenIfSpam(isSpamReason, "EsE4J7U27")
 
-      val postId = pageReq.dao.insertChatMessage(textAndHtml, pageId = pageId,
-        authorId = pageReq.theUser.id, pageReq.theBrowserIdData)
+      val storePatchJson = pageReq.dao.insertChatMessage(textAndHtml, pageId = pageId,
+        authorId = pageReq.theUser.id, pageReq.theBrowserIdData, pageReq.dao)
 
-      val json = ReactJson.postToJson2(postNr = postId, pageId = pageId, pageReq.dao,
-        includeUnapproved = true)
-      OkSafeJson(json)
+      OkSafeJson(storePatchJson)
     }
   }
 

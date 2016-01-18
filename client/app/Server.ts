@@ -676,8 +676,8 @@ export function insertChatMessage(text: string, success: () => void) {
       text: text
     },
     success: (response) => {
-      success();
       d.i.handleReplyResult(response);
+      success();
     }
   });
 }
