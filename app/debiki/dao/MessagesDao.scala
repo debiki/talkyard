@@ -61,7 +61,7 @@ trait MessagesDao {
 
     pubSub.publish(
       // pagePath.thePageId is pointless (since the page is new) — send the forum page id instead?
-      pubsub.NewPageMessage(siteId, pagePath.thePageId, PageRole.Message, notfs))
+      pubsub.NewPageMessage(siteId, pagePath.thePageId, PageRole.Message, notfs), byId = sentById)
 
     pagePath
   }

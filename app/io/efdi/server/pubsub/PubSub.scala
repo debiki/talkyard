@@ -95,8 +95,9 @@ class PubSubApi(private val actorRef: ActorRef) {
     actorRef ! UnsubscribeUser(siteId, user, browserIdData)
   }
 
-  def publish(message: Message) {
-    actorRef ! PublishMessage(message)
+  /** Assumes user byId knows about this already; won't publish to him/her. */
+  def publish(message: Message, byId: UserId) {
+    actorRef ! PublishMessage(message, byId)
   }
 
   def listOnlineUsers(siteId: SiteId): Future[(immutable.Seq[User], Int)] = {
@@ -116,7 +117,7 @@ class StrangerCounterApi(private val actorRef: ActorRef) {
 }
 
 
-private case class PublishMessage(message: Message)
+private case class PublishMessage(message: Message, byId: UserId)
 private case class UserSubscribed(siteId: SiteId, user: User, browserIdData: BrowserIdData)
 private case class UnsubscribeUser(siteId: SiteId, user: User, browserIdData: BrowserIdData)
 private case class ListOnlineUsers(siteId: SiteId)
@@ -169,8 +170,8 @@ class PubSubActor extends Actor {
       // didn't really leave, but rather says, reading, but logged out.
       unsubscribeUser(siteId, user)
       publishUserPresence(siteId, user, Presence.Away)
-    case PublishMessage(message: Message) =>
-      publishStorePatchAndNotfs(message)
+    case PublishMessage(message: Message, byId: UserId) =>
+      publishStorePatchAndNotfs(message, byId)
     case ListOnlineUsers(siteId) =>
       sender ! listUsersOnline(siteId)
     case DeleteInactiveSubscriptions =>
@@ -206,23 +207,26 @@ class PubSubActor extends Actor {
     if (userAndWhenById.contains(user.id))
       return
 
-    val userIds = userAndWhenById.values.map(_.user.id).toSet
-    sendPublishRequest(canonicalHost.hostname, userIds, "presence", Json.obj(
+    val toUserIds = userAndWhenById.values.map(_.user.id).toSet - user.id
+    sendPublishRequest(canonicalHost.hostname, toUserIds, "presence", Json.obj(
       "user" -> JsUser(user),
       "presence" -> presence.toInt,
       "numOnlineStrangers" -> strangerCounter.countStrangers(siteId)))
   }
 
 
-  private def publishStorePatchAndNotfs(message: Message) {
+  private def publishStorePatchAndNotfs(message: Message, byId: UserId) {
     // dupl code [7UKY74]
     val siteDao = Globals.siteDao(message.siteId)
     val site = siteDao.loadSite()
     val canonicalHost = site.canonicalHost.getOrDie(
       "EsE7UKFW2", s"Site lacks canonical host: $site")
 
-    SHOULD // only publish notfs to connected users
-    message.notifications.toCreate foreach { notf =>
+    COULD // publish notifications.toDelete too (e.g. an accidental mention that gets edited out).
+    val notfsReceiverIsOnline = message.notifications.toCreate filter { notf =>
+      isUserOnline(message.siteId, notf.toUserId)
+    }
+    notfsReceiverIsOnline foreach { notf =>
       COULD_OPTIMIZE // later: do only 1 call to siteDao, for all notfs.
       val notfsJson = siteDao.readOnlyTransaction { transaction =>
         ReactJson.notificationsToJson(Seq(notf), transaction).notfsJson
@@ -233,6 +237,7 @@ class PubSubActor extends Actor {
     message match {
       case patchMessage: StorePatchMessage =>
         val userIds = userViewingPage(patchMessage.siteId, pageId = patchMessage.toUsersViewingPage)
+          .filter(_ != byId)
         sendPublishRequest(canonicalHost.hostname, userIds, "storePatch", patchMessage.json)
       case x =>
         unimplemented(s"Publishing ${classNameOf(x)} [EsE4GPYU2]")
@@ -274,6 +279,10 @@ class PubSubActor extends Actor {
         Response body: '${response.body}""")
     }
   }
+
+
+  private def isUserOnline(siteId: SiteId, userId: UserId): Boolean =
+    perSiteSubscribers(siteId).contains(userId)
 
 
   private def listUsersOnline(siteId: SiteId): (immutable.Seq[User], Int) = {

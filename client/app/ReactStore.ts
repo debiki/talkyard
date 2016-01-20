@@ -38,6 +38,9 @@ var ChangeEvent = 'ChangeEvent';
 
 export var ReactStore = new EventEmitter2();
 
+// Avoid a harmless "possible EventEmitter memory leak detected" warning.
+ReactStore.setMaxListeners(20);
+
 
 // First, initialize the store with page specific data only, nothing user specific,
 // because the server serves cached HTML with no user specific data. Later on,
@@ -524,7 +527,13 @@ function updatePost(post: Post, isCollapsing?: boolean) {
 
   rememberPostsToQuickUpdate(post.postId);
   stopGifsPlayOnClick();
-  setTimeout(processTimeAgo);
+  setTimeout(() => {
+    processTimeAgo();
+    if (!oldVersion && post.authorIdInt === store.me.id) {
+      // Show the user his/her new post.
+      ReactActions.loadAndShowPost(post.postId);
+    }
+  }, 1);
 }
 
 
@@ -687,20 +696,20 @@ function showPost(postNr: PostNr, showChildrenToo?: boolean) {
 
 
 function uncollapsePostAndChildren(post: Post) {
-  uncollapseOne(post)
+  uncollapseOne(post);
   // Also uncollapse children and grandchildren so one won't have to Click-to-show... all the time.
   for (var i = 0; i < Math.min(post.childIdsSorted.length, 5); ++i) {
     var childId = post.childIdsSorted[i];
     var child = store.allPosts[childId];
     if (!child)
       continue;
-    uncollapseOne(child)
+    uncollapseOne(child);
     for (var i2 = 0; i2 < Math.min(child.childIdsSorted.length, 3); ++i2) {
       var grandchildId = child.childIdsSorted[i2];
       var grandchild = store.allPosts[grandchildId];
       if (!grandchild)
         continue;
-      uncollapseOne(grandchild)
+      uncollapseOne(grandchild);
     }
   }
   setTimeout(processTimeAgo);
@@ -708,6 +717,8 @@ function uncollapsePostAndChildren(post: Post) {
 
 
 function uncollapseOne(post: Post) {
+  if (!post.isTreeCollapsed && !post.isPostCollapsed && !post.summarize && !post.squash)
+    return;
   var p2 = clonePost(post.postId);
   p2.isTreeCollapsed = false;
   p2.isPostCollapsed = false;
@@ -874,11 +885,28 @@ function updateNotificationCounts(notf: Notification, add: boolean) {
 
 
 function patchTheStore(storePatch: StorePatch) {
+  if (storePatch.appVersion !== store.appVersion) {
+    // COULD show dialog, like Discourse does: (just once)
+    //   The server has been updated. Reload the page please?
+    //   [Reload this page now]  [No, not now]
+    // For now though:
+    return;
+  }
+
+  var storePatchPageVersion = storePatch.pageVersionsByPageId[store.pageId];
+  if (storePatchPageVersion <= store.pageVersion) {
+    // The store includes these changes already.
+    // COULD rename .usersBrief to .authorsBrief so it's apparent that they're related
+    // to the posts, and that it's ok to ignore them if the posts are too old.
+    return;
+  }
+
   _.each(storePatch.usersBrief || [], (user: BriefUser) => {
     store.usersByIdBrief[user.id] = user;
   });
-  _.each(storePatch.posts || [], (post: Post) => {
-    store.allPosts[post.postId] = post;
+  var posts = storePatch.postsByPageId[store.pageId];
+  _.each(posts || [], (post: Post) => {
+    updatePost(post);
   });
 }
 

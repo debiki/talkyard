@@ -187,7 +187,8 @@ trait PostsDao {
     refreshPageInAnyCache(pageId)
 
     val storePatchJson = ReactJson.makeStorePatch(newPost, author, this)
-    pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications))
+    pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
+      byId = author.id)
 
     storePatchJson
   }
@@ -232,7 +233,8 @@ trait PostsDao {
     refreshPageInAnyCache(pageId)
 
     val storePatchJson = ReactJson.makeStorePatch(post, author, this)
-    pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications))
+    pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
+      byId = author.id)
 
     storePatchJson
   }

@@ -115,19 +115,6 @@ d.i.handleReplyResult = function(data) {
 
 
 function doHandleReplyResult(data) {
-  // On iPhone 5, some unknown error happens inside ReactStore.emitChange, invoked
-  // via `updatePost(newPost)` below. Therefore, schedule show-and-highlight directly here.
-  // (No idea what happens — everything seems to work fine, except that no code below
-  // `updatePost(newPost)` gets invoked here. iPhone logs no info about the error at all;
-  // I know it happens in emitChange only because I added lots of console.error messages,
-  // and the one after emitChange after `switch (action.actionType)` in ReactStore was
-  // the first one that was never displayed.)
-  setTimeout(function() {
-    var postNrToFocus = data.postNrToFocus ||
-        data.postNr; // try to remove
-    debiki2.ReactActions.loadAndShowPost(postNrToFocus);
-  }, 1);
-
   if (_.isNumber(data.postId)) {
     // It's a post. Try to remove this.
     debiki2.ReactActions.updatePost(data);

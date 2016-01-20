@@ -278,6 +278,8 @@ interface WatchbarTopics {
 
 
 interface Store {
+  appVersion: string;
+  pageVersion: PageVersion;
   now: number;
   siteStatus: string;
   guestLoginAllowed: boolean;
@@ -459,7 +461,11 @@ interface Block {
  * Describes how to update parts of the store. Can be e.g. a new chat message and the author.
  */
 interface StorePatch {
-  posts?: Post[];
+  appVersion: string;
+  pageVersionsByPageId?: { [pageId: string]: PageVersion };
+  postsByPageId?: { [pageId: string]: Post[] };
+  // rename to postAuthorsBrief? So one sees they can be ignored if the posts are
+  // ignored (because the page version is too old).
   usersBrief?: BriefUser[];
 }
 

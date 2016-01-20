@@ -95,6 +95,7 @@ package object core {
   val Megabytes = Megabyte
 
   def FirstSiteId = Site.FirstSiteId
+  val NoUserId = 0
   def SystemUserId = User.SystemUserId
   def SystemUserFullName = User.SystemUserFullName
   def SystemUserUsername = User.SystemUserUsername

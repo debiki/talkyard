@@ -79,6 +79,7 @@ object ReactJson {
     val siteStatusString = loadSiteStatusString(pageReq.dao)
     val siteSettings = pageReq.dao.loadWholeSiteSettings()
     Json.obj(
+      "appVersion" -> Globals.applicationVersion,
       "now" -> JsNumber((new ju.Date).getTime),
       "siteStatus" -> JsString(siteStatusString),
       "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed && pageReq.siteId == KajMagnusSiteId),
@@ -206,6 +207,8 @@ object ReactJson {
       else None
 
     val jsonObj = Json.obj(
+      "appVersion" -> Globals.applicationVersion,
+      "pageVersion" -> page.meta.version,
       "siteStatus" -> JsString(siteStatusString),
       "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed && transaction.siteId == KajMagnusSiteId),
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
@@ -299,12 +302,17 @@ object ReactJson {
 
 
   def postToJson2(postNr: PostNr, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false)
-        : JsObject = {
+      : JsObject =
+    postToJson(postNr, pageId, dao, includeUnapproved)._1
+
+  def postToJson(postNr: PostNr, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false)
+        : (JsObject, PageVersion) = {
     dao.readOnlyTransaction { transaction =>
       // COULD optimize: don't load the whole page, load only postNr and the author and last editor.
       val page = PageDao(pageId, transaction)
-      postToJsonImpl(page.parts.thePost(postNr), page, transaction.currentTime,
+      val json = postToJsonImpl(page.parts.thePost(postNr), page, transaction.currentTime,
         includeUnapproved = includeUnapproved)
+      (json, page.version)
     }
   }
 
@@ -820,16 +828,22 @@ object ReactJson {
 
   def makeStorePatch(post: Post, author: User, dao: SiteDao): JsValue = {
     require(post.createdById == author.id, "EsE5PKY2")
-    val postJson = ReactJson.postToJson2(
+    val (postJson, pageVersion) = ReactJson.postToJson(
       post.nr, pageId = post.pageId, dao, includeUnapproved = true)
-    makeStorePatch(posts = Seq(postJson), users = Seq(JsUser(author)))
+    makeStorePatch(PageIdVersion(post.pageId, pageVersion),
+      posts = Seq(postJson), users = Seq(JsUser(author)))
+
   }
 
 
-  def makeStorePatch(posts: Seq[JsObject] = Nil, users: Seq[JsObject] = Nil): JsValue = {
+  def makeStorePatch(pageIdVersion: PageIdVersion, posts: Seq[JsObject] = Nil,
+        users: Seq[JsObject] = Nil): JsValue = {
+    require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
     Json.obj(
+      "appVersion" -> Globals.applicationVersion,
+      "pageVersionsByPageId" -> Json.obj(pageIdVersion.pageId -> pageIdVersion.version),
       "usersBrief" -> users,
-      "posts" -> posts)
+      "postsByPageId" -> Json.obj(pageIdVersion.pageId -> posts))
   }
 
 
