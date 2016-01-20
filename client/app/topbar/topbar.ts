@@ -292,7 +292,7 @@ export var TopBar = createComponent({
 
     // ------- Watchbar and Pagebar buttons
 
-    var openPagebarButton = !isPageWithSidebar(pageRole) ? null :
+    var openContextbarButton =
         Button({ className: 'esOpenPagebarBtn', onClick: ReactActions.openPagebar },
             r.span({ className: 'icon-left-open' }));
 
@@ -324,7 +324,7 @@ export var TopBar = createComponent({
     return (
         r.div({ className: 'esTopbarWrap' + fixItClass, style: styles },
           openWatchbarButton,
-          openPagebarButton,
+          openContextbarButton,
           r.div({ className: 'container' },
             topbar)));
   }

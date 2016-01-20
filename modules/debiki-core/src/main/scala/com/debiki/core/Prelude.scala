@@ -20,6 +20,7 @@ package com.debiki.core
 import java.{util => ju}
 import java.{security => js}
 import org.apache.commons.codec.{binary => acb}
+import scala.collection.mutable
 import scala.util.Try
 import scala.util.matching.Regex
 
@@ -612,6 +613,27 @@ object Prelude {
     private val TrimLeftRegex = """^\s*""".r
     private val CollapseSpacesRegex = """\s\s*""".r
   }
+
+
+  implicit class RichLinkedHashMap[A, B](val underlying: mutable.LinkedHashMap[A, B])
+      extends AnyVal {
+
+    def removeWhile(predicate: ((A, B)) => Boolean) {
+      val keysToRemove = underlying.iterator.takeWhile(predicate).map(_._1)
+      keysToRemove.foreach(underlying.remove)
+    }
+
+    def removeWhileValue(predicate: (B) => Boolean) {
+      val keysToRemove = underlying.iterator.takeWhile(entry => predicate(entry._2)).map(_._1)
+      keysToRemove.foreach(underlying.remove)
+    }
+
+    def removeWhileKey(predicate: (A) => Boolean) {
+      val keysToRemove = underlying.keysIterator.takeWhile(predicate)
+      keysToRemove.foreach(underlying.remove)
+    }
+  }
+
 }
 
 

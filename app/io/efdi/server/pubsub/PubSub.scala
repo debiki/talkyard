@@ -32,6 +32,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import ReactJson.JsUser
+import PubSubActor._
 
 
 sealed trait Message {
@@ -124,6 +125,12 @@ private case object DeleteInactiveSubscriptions
 private case class StrangerSeen(siteId: SiteId, browserIdData: BrowserIdData)
 
 
+object PubSubActor {
+
+  private class UserAndWhen(val user: User, val when: When)
+
+}
+
 
 /** Publishes events to browsers via e.g. long polling or WebSocket. Reqiures nginx and nchan.
   * Assumes an nginx-nchan publish endpoint is available at: 127.0.0.1:80/-/pubsub/publish/
@@ -140,8 +147,6 @@ class PubSubActor extends Actor {
     */
   private val subscribersBySite =
     mutable.HashMap[SiteId, mutable.LinkedHashMap[UserId, UserAndWhen]]()
-
-  private class UserAndWhen(val user: User, val when: When)
 
   private def perSiteSubscribers(siteId: SiteId) =
     // Use a LinkedHashMap because sort order = insertion order.
@@ -165,7 +170,7 @@ class PubSubActor extends Actor {
       unsubscribeUser(siteId, user)
       publishUserPresence(siteId, user, Presence.Away)
     case PublishMessage(message: Message) =>
-      publishStuffAndNotfs(message)
+      publishStorePatchAndNotfs(message)
     case ListOnlineUsers(siteId) =>
       sender ! listUsersOnline(siteId)
     case DeleteInactiveSubscriptions =>
@@ -203,12 +208,13 @@ class PubSubActor extends Actor {
 
     val userIds = userAndWhenById.values.map(_.user.id).toSet
     sendPublishRequest(canonicalHost.hostname, userIds, "presence", Json.obj(
-      "user" -> JsUser(user, Some(presence)),
+      "user" -> JsUser(user),
+      "presence" -> presence.toInt,
       "numOnlineStrangers" -> strangerCounter.countStrangers(siteId)))
   }
 
 
-  private def publishStuffAndNotfs(message: Message) {
+  private def publishStorePatchAndNotfs(message: Message) {
     // dupl code [7UKY74]
     val siteDao = Globals.siteDao(message.siteId)
     val site = siteDao.loadSite()
@@ -281,15 +287,8 @@ class PubSubActor extends Actor {
     val now = When.now()
     for ((siteId, userAndWhenMap) <- subscribersBySite) {
       // LinkedHashMap sort order = perhaps-inactive first.
-      // COULD implement `removeWhile` [removewhile]
-      while (true) {
-        val ((userId, userAndWhen)) = userAndWhenMap.headOption getOrElse {
-          return
-        }
-        if (now.millisSince(userAndWhen.when) < DeleteAfterInactiveMillis)
-          return
-
-        userAndWhenMap.remove(userId)
+      userAndWhenMap removeWhileValue { userAndWhen =>
+        now.millisSince(userAndWhen.when) > DeleteAfterInactiveMillis
       }
     }
   }

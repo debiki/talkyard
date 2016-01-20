@@ -479,10 +479,12 @@ export function addMeAsPageMember() {
 }
 
 
-export function updateUserPresence(user: BriefUser, numOnlineStrangers: number) {
+export function updateUserPresence(user: BriefUser, presence: Presence,
+      numOnlineStrangers: number) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.UpdateUserPresence,
     user: user,
+    presence: presence,
     numOnlineStrangers: numOnlineStrangers,
   });
 }

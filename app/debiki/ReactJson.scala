@@ -818,9 +818,17 @@ object ReactJson {
     WatchbarSection.DirectMessages.toInt.toString -> JsArray(Nil))
 
 
+  def makeStorePatch(post: Post, author: User, dao: SiteDao): JsValue = {
+    require(post.createdById == author.id, "EsE5PKY2")
+    val postJson = ReactJson.postToJson2(
+      post.nr, pageId = post.pageId, dao, includeUnapproved = true)
+    makeStorePatch(posts = Seq(postJson), users = Seq(JsUser(author)))
+  }
+
+
   def makeStorePatch(posts: Seq[JsObject] = Nil, users: Seq[JsObject] = Nil): JsValue = {
     Json.obj(
-      "users" -> users,
+      "usersBrief" -> users,
       "posts" -> posts)
   }
 
@@ -828,9 +836,7 @@ object ReactJson {
   def JsUserOrNull(user: Option[User]): JsValue =
     user.map(JsUser).getOrElse(JsNull)
 
-  def JsUser(user: User): JsObject = JsUser(user, None)
-
-  def JsUser(user: User, anyPresence: Option[Presence]): JsObject = {
+  def JsUser(user: User): JsObject = {
     var json = Json.obj(
       "id" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.username),
@@ -853,9 +859,6 @@ object ReactJson {
     }
     if (user.isModerator) {
       json += "isModerator" -> JsTrue
-    }
-    anyPresence foreach { presence =>
-      json += "presence" -> JsNumber(presence.toInt)
     }
     json
   }

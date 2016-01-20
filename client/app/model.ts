@@ -326,6 +326,7 @@ interface Store {
 
   numOnlineStrangers?: number;
   onlineUsers?: BriefUser[];
+  onlineUsersById?: { [userId: number]: BriefUser };
 
   // If quickUpdate is true only posts in postsToUpdate will be updated.
   quickUpdate: boolean;
@@ -383,7 +384,6 @@ interface BriefUser {
   isGuest?: boolean;  // = !isAuthenticated
   isEmailUnknown?: boolean;
   avatarUrl?: string;
-  presence?: Presence;
 }
 
 

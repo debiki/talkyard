@@ -55,6 +55,10 @@ export var findDOMNode = window['React'].findDOMNode;
 dieIf(!findDOMNode, 'EsE6UMGY2');
 
 
+export function toId(x: number | { id: number }): number {
+  return _.isNumber(x) ? x : x['id'];
+}
+
 //------------------------------------------------------------------------------
 }
 //------------------------------------------------------------------------------

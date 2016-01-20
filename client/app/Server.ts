@@ -662,8 +662,8 @@ export function saveReply(postIds: number[], text: string, anyPostType: number,
       text: text
     },
     success: (response) => {
-      success();
       d.i.handleReplyResult(response);
+      success();
     }
   });
 }
@@ -824,9 +824,7 @@ export function cancelAnyLongPollingRequest() {
 
 export function loadOnlineUsers() {
   get('/-/load-online-users', (response) => {
-    var onlineUsers: BriefUser[] = response.onlineUsers;
-    _.each(onlineUsers, (user: BriefUser) => user.presence = Presence.Active);
-    ReactActions.updateOnlineUsersLists(response.numOnlineStrangers, onlineUsers);
+    ReactActions.updateOnlineUsersLists(response.numOnlineStrangers, response.onlineUsers);
   });
 }
 

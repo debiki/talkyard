@@ -245,29 +245,21 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.UpdateUserPresence:
-      // Updating state in-place, oh well.
       store.numOnlineStrangers = action.numOnlineStrangers;
-      var user: BriefUser = action.user;
-      store.usersByIdBrief[user.id] = user;
-      if (store.onlineUsers) {
-        if (user.presence === Presence.Active) {
-          if (_.every(store.onlineUsers, u => u.id !== user.id)) {
-            store.onlineUsers.push(user);
-          }
-        }
-        else {
-          _.remove(store.onlineUsers, u => u.id === user.id);
-        }
+      if (action.presence === Presence.Active) {
+        theStore_addOnlineUser(action.user);
+      }
+      else {
+        theStore_removeOnlineUser(action.user);
       }
       break;
 
     case ReactActions.actionTypes.UpdateOnlineUsersLists:
-      _.forEach(store.usersByIdBrief, (u: BriefUser) => u.presence = undefined);
       store.numOnlineStrangers = action.numOnlineStrangers;
       store.onlineUsers = action.onlineUsers;
-      // Overwrite any old user objects with no presence info and perhaps stale other data.
+      store.onlineUsersById = {};
       _.each(action.onlineUsers, (user: BriefUser) => {
-        store.usersByIdBrief[user.id] = user;
+        store.onlineUsersById[user.id] = user;
       });
       break;
 
@@ -357,18 +349,29 @@ function me_toBriefUser(me: Myself): BriefUser {
     isGuest: me.id && me.id <= MaxGuestId,
     isEmailUnknown: undefined, // ?
     avatarUrl: me.avatarUrl,
-    presence: Presence.Active,
   }
 }
 
 
-function theStore_removeOnlineUser(userId: UserId) {
+function theStore_addOnlineUser(user: BriefUser) {
+  // Updating state in-place, oh well.
   if (store.onlineUsers) {
-    _.remove(store.onlineUsers, u => u.id === userId);
+    userList_add(store.onlineUsers, user);
   }
-  var user = store.usersByIdBrief[userId];
-  if (user) {
-    user.presence = Presence.Away;
+  if (store.onlineUsersById) {
+    store.onlineUsersById[user.id] = user;
+  }
+}
+
+
+function theStore_removeOnlineUser(userId: UserId | BriefUser) {
+  var id: UserId = toId(userId);
+  // Updating state in-place, oh well.
+  if (store.onlineUsers) {
+    userList_remove(store.onlineUsers, id);
+  }
+  if (store.onlineUsersById) {
+    delete store.onlineUsersById[id];
   }
 }
 
@@ -381,17 +384,13 @@ function userList_add(users: BriefUser[], newUser: BriefUser) {
 }
 
 
-function theStore_addOnlineUser(user: BriefUser) {
-  store.usersByIdBrief[user.id] = user;
-  if (store.onlineUsers) {
-    userList_add(store.onlineUsers, user);
-  }
+function userList_remove(users: BriefUser[], userId: UserId) {
+  _.remove(users, u => u.id === userId);
 }
 
-export function store_getOnlineUsersWholeSite(store: Store): BriefUser[] {
-  return _.values(store.usersByIdBrief).filter(u => {
-    return _.some(store.onlineUsers, ou => ou.id === u.id);
-  });
+
+export function store_isUserOnline(store: Store, userId: UserId): boolean {
+  return store.onlineUsersById && !!store.onlineUsersById[userId];
 }
 
 
@@ -399,7 +398,9 @@ export function store_getUsersOnThisPage(store: Store): BriefUser[] {
   var users: BriefUser[] = [];
   _.each(store.allPosts, (post: Post) => {
     if (_.every(users, u => u.id !== post.authorIdInt)) {
-      users.push(store.usersByIdBrief[post.authorIdInt]);
+      var user = store.usersByIdBrief[post.authorIdInt];
+      dieIf(!user, "Author missing, post id " + post.uniqueId + " [EsE4UGY2]");
+      users.push(user);
     }
   });
   return users;
@@ -874,7 +875,6 @@ function updateNotificationCounts(notf: Notification, add: boolean) {
 
 function patchTheStore(storePatch: StorePatch) {
   _.each(storePatch.usersBrief || [], (user: BriefUser) => {
-    // BUG this'll overwrite the user's precense. So it should be externalized? (Not a user field)
     store.usersByIdBrief[user.id] = user;
   });
   _.each(storePatch.posts || [], (post: Post) => {

@@ -45,7 +45,7 @@ trait PostsDao {
 
 
   def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
-        postType: PostType, authorId: UserId, browserIdData: BrowserIdData): PostNr = {
+        postType: PostType, authorId: UserId, browserIdData: BrowserIdData): JsValue = {
 
     // Note: Fairly similar to createNewChatMessage() just below. [4UYKF21]
 
@@ -60,7 +60,7 @@ trait PostsDao {
       throwNotImplemented("EsE7GKX2", o"""Please reply to one single person only.
         Multireplies temporarily disabled, sorry""")
 
-    val (postNr, pageMemberIds, notifications) = readWriteTransaction { transaction =>
+    val (newPost, author, notifications) = readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val uniqueId = transaction.nextPostId()
       val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
@@ -178,21 +178,18 @@ trait PostsDao {
       insertAuditLogEntry(auditLogEntry, transaction)
       reviewTask.foreach(transaction.upsertReviewTask)
 
-      // generate json? load all page members?
-      // send the post + json back to the caller?
-      // & publish [pubsub]
-      val pageMemberIds = transaction.loadMessageMembers(pageId)
-
       val notifications = NotificationGenerator(transaction).generateForNewPost(page, newPost)
       transaction.saveDeleteNotifications(notifications)
 
-      (postNr, pageMemberIds, notifications)
+      (newPost, author, notifications)
     }
 
-    pubSub.publish(StorePatchMessage(siteId, pageId, play.api.libs.json.JsNull, notifications))
-
     refreshPageInAnyCache(pageId)
-    postNr
+
+    val storePatchJson = ReactJson.makeStorePatch(newPost, author, this)
+    pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications))
+
+    storePatchJson
   }
 
 
@@ -206,11 +203,14 @@ trait PostsDao {
     if (textAndHtml.safeHtml.trim.isEmpty)
       throwBadReq("DwE2U3K8", "Empty chat message")
 
-    val (postNr, pageMemberIds, notifications) = readWriteTransaction { transaction =>
+    val (post, author, notifications) = readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val pageMemberIds = transaction.loadMessageMembers(pageId)
       if (!pageMemberIds.contains(authorId))
         throwForbidden("EsE4UGY7", "You are not a member of this chat channel")
+
+      val author = transaction.loadUser(authorId) getOrElse
+        throwNotFound("DwE8YK32", "Author not found")
 
       // Try to append to the last message, instead of creating a new one. That looks
       // better in the browser (fewer avatars & sent-by info), + we'll save disk and
@@ -226,13 +226,12 @@ trait PostsDao {
         case None =>
           createNewChatMessage(page, textAndHtml, authorId, browserIdData, transaction)
       }
-      (postNr, pageMemberIds, notfs)
+      (postNr, author, notfs)
     }
 
     refreshPageInAnyCache(pageId)
 
-    val postJson = ReactJson.postToJson2(postNr, pageId = pageId, dao, includeUnapproved = true)
-    val storePatchJson = ReactJson.makeStorePatch(posts = Seq(postJson))
+    val storePatchJson = ReactJson.makeStorePatch(post, author, this)
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications))
 
     storePatchJson
@@ -241,7 +240,7 @@ trait PostsDao {
 
   def createNewChatMessage(page: PageDao, textAndHtml: TextAndHtml, authorId: UserId,
         browserIdData: BrowserIdData, transaction: SiteTransaction)
-        : (PostNr, Notifications) = {
+        : (Post, Notifications) = {
 
     // Note: Farily similar to insertReply() a bit above. [4UYKF21]
 
@@ -311,12 +310,12 @@ trait PostsDao {
     val notfs = NotificationGenerator(transaction).generateForNewPost(page, newPost)
     transaction.saveDeleteNotifications(notfs)
 
-    (postNr, notfs)
+    (newPost, notfs)
   }
 
 
   def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml, authorId: UserId,
-    browserIdData: BrowserIdData, transaction: SiteTransaction): (PostNr, Notifications) = {
+    browserIdData: BrowserIdData, transaction: SiteTransaction): (Post, Notifications) = {
 
     // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
 
@@ -343,7 +342,7 @@ trait PostsDao {
     val notfs = NotificationGenerator(transaction).generateForEdits(lastPost, editedPost)
     transaction.saveDeleteNotifications(notfs)
 
-    (lastPost.nr, notfs)
+    (editedPost, notfs)
   }
 
 

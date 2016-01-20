@@ -121,18 +121,14 @@ export var Sidebar = createComponent({
 
   componentDidMount: function() {
     var store: Store = this.state.store;
-    if (isPageWithSidebar(store.pageRole)) {
-      keymaster('s', this.toggleSidebarOpen);
-      if (store.isContextbarOpen && this.state.lastLoadedOnlineUsersAsId !== store.me.id) {
-        this.loadOnlineUsers();
-      }
+    keymaster('s', this.toggleSidebarOpen);
+    if (store.isContextbarOpen && this.state.lastLoadedOnlineUsersAsId !== store.me.id) {
+      this.loadOnlineUsers();
     }
   },
 
   componentWillUnmount: function() {
-    if (isPageWithSidebar(this.state.store.pageRole)) {
-      keymaster.unbind('s', 'all');
-    }
+    keymaster.unbind('s', 'all');
   },
 
   componentDidUpdate: function() {
@@ -279,8 +275,6 @@ export var Sidebar = createComponent({
 
   render: function() {
     var store: Store = this.state.store;
-    if (!isPageWithSidebar(store.pageRole))
-      return null;
 
     var minimapProps = $.extend({ ref: 'minimap' }, store);
     var commentsFound = isPageWithComments(store.pageRole) ? this.findComments() : null;
@@ -301,14 +295,14 @@ export var Sidebar = createComponent({
       users = store_getUsersOnThisPage(store);
     }
     else {
-      users = store_getOnlineUsersWholeSite(store);
+      users = store.onlineUsers || [];
     }
 
     var numOnline = 0;
     var iAmHere = false;
-    _.each(users, u => {
-      numOnline += u.presence === Presence.Active ? 1 : 0;
-      iAmHere = iAmHere || u.id === store.me.id;
+    _.each(users, (user: BriefUser) => {
+      numOnline += store_isUserOnline(store, user.id) ? 1 : 0;
+      iAmHere = iAmHere || user.id === store.me.id;
     });
 
     // If the current user is the only active user, write "you" instead of "1"
@@ -366,7 +360,7 @@ export var Sidebar = createComponent({
           numOnlineStrangers = 0;
         }
         usersClass = ' active';
-        listItems = makeUsersContent(users, store.me.id, numOnlineStrangers);
+        listItems = makeUsersContent(store, users, store.me.id, numOnlineStrangers);
         break;
       default:
         console.error('[DwE4PM091]');
@@ -518,25 +512,27 @@ function makeCommentsContent(comments: Post[], currentPostId: PostId, store: Sto
 }
 
 
-function makeUsersContent(users: BriefUser[], myId: UserId, numOnlineStrangers: number) {
+function makeUsersContent(store: Store, users: BriefUser[], myId: UserId,
+      numOnlineStrangers: number) {
   // List the current user first, then online users, then others.
   // COULD: list alphabetically, so one can scan and find one's friends by name easily
   users.sort((a, b) => {
     if (a.id === myId) return -1;
     if (b.id === myId) return +1;
-    if (a.presence === b.presence) {
+    if (store_isUserOnline(store, a.id) === store_isUserOnline(store, b.id)) {
       if (user_isMember(a) === user_isMember(b)) return 0;
       return user_isMember(a) ? -1 : +1;
     }
-    return a.presence === Presence.Active ? -1 : +1;
+    return store_isUserOnline(store, a.id) ? -1 : +1;
   });
   var currentUserIsStranger = true;
   var listItems = users.map((user: BriefUser) => {
     var thatsYou = user.id === myId ?
         r.span({ className: 'esPresence_thatsYou' }, " — that's you") : null;
     currentUserIsStranger = currentUserIsStranger && user.id !== myId;
-    var presenceClass = user.presence === Presence.Active ? 'active' : 'away';
-    var presenceTitle = user.presence === Presence.Active ? 'Active' : 'Away';
+    var isUserOnline = store_isUserOnline(store, user.id);
+    var presenceClass = isUserOnline ? 'active' : 'away';
+    var presenceTitle = isUserOnline ? 'Active' : 'Away';
     return (
         r.div({ key: user.id, className: 'esPresence esPresence-' + presenceClass,
             onClick: () => pagedialogs.getAboutUserDialog().openForUserId(user.id) },

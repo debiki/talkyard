@@ -104,7 +104,7 @@ var RecentTopicsAndNotfs = createComponent({
     });
     return (
         r.div({ className: 'esWatchbar_topics' },
-          r.h3({}, 'Recent Topics'),
+          r.h3({}, 'Recent'),
           r.ul({},
             topicElems)));
   }
@@ -119,7 +119,7 @@ var ChatChannels = createComponent({
       SingleTopic({ topic: topic, flavor: 'chat', isCurrent: topic.pageId === store.pageId }));
     return (
       r.div({ className: 'esWatchbar_topics' },
-        r.h3({}, 'Chat Channels'),
+        r.h3({}, 'Joined Channels'),
         r.ul({},
           topicElems)));
   }
