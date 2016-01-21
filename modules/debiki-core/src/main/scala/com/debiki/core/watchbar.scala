@@ -19,6 +19,7 @@ package com.debiki.core
 
 import play.api.libs.json._
 import scala.collection.immutable
+import BareWatchbar.MaxRecentTopics
 
 
 sealed abstract class WatchbarSection(val IntVal: Int) { def toInt = IntVal }
@@ -60,14 +61,14 @@ object WatchbarTopic {
 
 /** Immutable.
   */
-trait Watchbar {
+sealed trait Watchbar {
 
   def recentTopics: immutable.Seq[WatchbarTopic]
   def notifications: immutable.Seq[WatchbarTopic]
   def chatChannels: immutable.Seq[WatchbarTopic]
   def directMessages: immutable.Seq[WatchbarTopic]
 
-  def watchedPageIds: Set[PageId] = {
+  lazy val watchedPageIds: Set[PageId] = {
     (recentTopics.map(_.pageId) ++ notifications.map(_.pageId) ++
       chatChannels.map(_.pageId) ++ directMessages.map(_.pageId)).toSet
   }
@@ -123,22 +124,41 @@ case class BareWatchbar(
     recentTopics, notifications, chatChannels, directMessages, titlesEtcById)
 
 
-  def addRecentTopic(topic: WatchbarTopic): BareWatchbar = {
-    if (recentTopics.exists(_.pageId == topic.pageId)) this
-    else copy(recentTopics = topic +: recentTopics)
+  def addRecentTopicMarkSeen(pageId: PageId): BareWatchbar = {
+    val newWatchbar =
+      if (recentTopics.exists(_.pageId == pageId)) this
+      else copy(recentTopics =
+        (WatchbarTopic(pageId, unread = false) +: recentTopics).take(MaxRecentTopics))
+    // The page might be in the notfs list or chat channels etc too, so always do:
+    newWatchbar.markPageAsSeen(pageId)
   }
 
-  def addChatChannel(topic: WatchbarTopic): BareWatchbar = {
-    if (chatChannels.exists(_.pageId == topic.pageId)) this
-    else copy(chatChannels = topic +: chatChannels)
+  def addChatChannelMarkSeen(pageId: PageId): BareWatchbar = {
+    if (chatChannels.exists(_.pageId == pageId)) {
+      markPageAsSeen(pageId)
+    }
+    else {
+      copy(chatChannels = WatchbarTopic(pageId, unread = false) +: chatChannels)
+    }
   }
 
-  def markPageAsSeen(pageId: PageId): Unit = {
-    ???
+  def markPageAsSeen(pageId: PageId): BareWatchbar = {
+    markSeenUnseen(pageId, seen = true)
   }
 
-  def markPageAsUnread(pageId: PageId) {
-    ???
+  def markPageAsUnread(pageId: PageId): BareWatchbar = {
+    markSeenUnseen(pageId, seen = false)
+  }
+
+  private def markSeenUnseen(pageId: PageId, seen: Boolean): BareWatchbar = {
+    def mark(topic: WatchbarTopic) =
+      if (topic.pageId == pageId) topic.copy(unread = !seen)
+      else topic
+    BareWatchbar(
+      recentTopics = recentTopics.map(mark),
+      notifications = notifications.map(mark),
+      chatChannels = chatChannels.map(mark),
+      directMessages = directMessages.map(mark))
   }
 
   def toJsonNoTitles: JsValue = {
@@ -153,6 +173,8 @@ case class BareWatchbar(
 
 
 object BareWatchbar {
+
+  val MaxRecentTopics = 7
 
   val empty = BareWatchbar(Nil, Nil, Nil, Nil)
 

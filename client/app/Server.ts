@@ -771,6 +771,11 @@ export function togglePageClosed(success: (closedAtMs: number) => void) {
 }
 
 
+export function markCurrentPageAsSeen() {
+  postJsonSuccess('/-/mark-as-seen?pageId=' + d.i.pageId, () => {}, {});
+}
+
+
 var longPollingState = {
   ongoingRequest: null,
   lastModified: null,

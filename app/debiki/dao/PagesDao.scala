@@ -448,8 +448,10 @@ trait PagesDao {
       // Race condition, if the same user e.g. also leaves the page right now.
       // Fairly harmless though, since humans are single threaded.
       var watchbar: BareWatchbar = loadWatchbar(userId)
-      watchbar = watchbar.addChatChannel(WatchbarTopic(pageId, unread = false))
+      watchbar = watchbar.addChatChannelMarkSeen(pageId)
       saveWatchbar(userId, watchbar)
+      // Another race condition.
+      pubSub.userWatchesPages(siteId, userId, watchbar.watchedPageIds)
       Some(watchbar)
     }
     else None

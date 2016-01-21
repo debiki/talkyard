@@ -479,8 +479,12 @@ object ReactJson {
 
     var watchbar: BareWatchbar = pageRequest.dao.loadWatchbar(user.id)
     if (pageRequest.pageExists) {
-      watchbar = watchbar.addRecentTopic(WatchbarTopic(pageRequest.thePageId, unread = false))
+      // (See comment above about ought-to-rename this whole function / stuff.)
+      BUG // Fairly harmless race condition: If the user opens two pages roughly at once.
+      watchbar = watchbar.addRecentTopicMarkSeen(pageRequest.thePageId)
       pageRequest.dao.saveWatchbar(user.id, watchbar)
+      // Another race condition.
+      pageRequest.dao.pubSub.userWatchesPages(pageRequest.siteId, user.id, watchbar.watchedPageIds)
     }
     val watchbarWithTitles = pageRequest.dao.fillInWatchbarTitlesEtc(watchbar)
     pageRequest.dao.readOnlyTransaction { transaction =>

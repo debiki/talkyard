@@ -184,5 +184,6 @@ GET   /-/debiki-embedded-comments.css  controllers.Assets.at(path = "/public/res
 GET   /-/*file                  controllers.Application.assetAt(path = "/public", file)
 GET   /favicon.ico              controllers.Assets.at(path = "/public/img", file = "debiki-favicon.ico")
 
+POST  /-/mark-as-seen           controllers.ViewPageController.markPageAsSeen(pageId)
 GET   /*path                    controllers.ViewPageController.viewPage(path)
 GET   /                         controllers.ViewPageController.viewPage(path = "")

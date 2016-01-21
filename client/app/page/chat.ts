@@ -113,7 +113,7 @@ var TitleAndLastChatMessages = createComponent({
         return;
       }
       messages.push(
-        ChatMessage({ store: store, post: post }));
+        ChatMessage({ key: post.uniqueId, store: store, post: post }));
     });
 
     var thisIsTheWhat =

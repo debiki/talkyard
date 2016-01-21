@@ -19,6 +19,7 @@ package controllers
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.RateLimits.NoRateLimits
 import debiki._
 import io.efdi.server.http._
 import java.{util => ju}
@@ -46,6 +47,14 @@ object ViewPageController extends mvc.Controller {
 
   def viewPage(path: String) = GetActionAllowAnyone { request =>
     viewPageImpl(request)
+  }
+
+
+  def markPageAsSeen(pageId: PageId) = PostJsonAction(NoRateLimits, maxLength = 2) { request =>
+    val watchbar = request.dao.loadWatchbar(request.theUserId)
+    val newWatchbar = watchbar.markPageAsSeen(pageId)
+    request.dao.saveWatchbar(request.theUserId, newWatchbar)
+    Ok
   }
 
 
@@ -118,7 +127,7 @@ object ViewPageController extends mvc.Controller {
     }
 
     if (request.user.isEmpty)
-      Globals.strangerCounter.tellStrangerSeen(request.siteId, request.theBrowserIdData)
+      Globals.strangerCounter.strangerSeen(request.siteId, request.theBrowserIdData)
 
     val pageRequest = new PageRequest[Unit](
       request.siteIdAndCanonicalHostname,

@@ -339,6 +339,10 @@ trait PostsDao {
     transaction.updatePost(editedPost)
     saveDeleteUploadRefs(lastPost, editedPost = editedPost, authorId, transaction)
 
+    val oldMeta = transaction.loadThePageMeta(lastPost.pageId)
+    val newMeta = oldMeta.copy(version = oldMeta.version + 1)
+    transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+
     // COULD create audit log entry that shows that this ip appended to the chat message.
 
     val notfs = NotificationGenerator(transaction).generateForEdits(lastPost, editedPost)

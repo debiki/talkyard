@@ -100,7 +100,8 @@ var RecentTopicsAndNotfs = createComponent({
       if (_.some(chatChannels, c => c.pageId === topic.pageId)) return;
       if (_.some(directMessages, m => m.pageId === topic.pageId)) return;
       topicElems.push(
-        SingleTopic({ topic: topic, flavor: 'recent', isCurrent: topic.pageId === store.pageId }));
+        SingleTopic({ key: topic.pageId, topic: topic, flavor: 'recent',
+            isCurrent: topic.pageId === store.pageId }));
     });
     return (
         r.div({ className: 'esWatchbar_topics' },
@@ -116,7 +117,8 @@ var ChatChannels = createComponent({
     var store: Store = this.props.store;
     var topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.ChatChannels];
     var topicElems = topics.map((topic: WatchbarTopic) =>
-      SingleTopic({ topic: topic, flavor: 'chat', isCurrent: topic.pageId === store.pageId }));
+      SingleTopic({ key: topic.pageId, topic: topic, flavor: 'chat',
+          isCurrent: topic.pageId === store.pageId }));
     return (
       r.div({ className: 'esWatchbar_topics' },
         r.h3({}, 'Joined Channels'),
@@ -131,7 +133,8 @@ var DirectMessages = createComponent({
     var store: Store = this.props.store;
     var topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.DirectMessages];
     var topicElems = topics.map((topic: WatchbarTopic) =>
-      SingleTopic({ topic: topic, flavor: 'direct', isCurrent: topic.pageId === store.pageId }));
+      SingleTopic({ key: topic.pageId, topic: topic, flavor: 'direct',
+          isCurrent: topic.pageId === store.pageId }));
     return (
       r.div({ className: 'esWatchbar_topics' },
         r.h3({}, 'Direct Messages'),
@@ -146,9 +149,10 @@ var SingleTopic = createComponent({
     var topic: WatchbarTopic = this.props.topic;
     var flavor: string = this.props.flavor;
     var isCurrentTopicClass = this.props.isCurrent ? ' esWatchbar_topic-current' : '';
+    var unreadClass = topic.unread ? ' esWatchbar_topic-unread' : '';
     var url = topic.url || linkToPageId(topic.pageId);
     return (
-        r.li({ className: 'esWatchbar_topic-' + flavor + isCurrentTopicClass },
+        r.li({ className: 'esWatchbar_topic-' + flavor + isCurrentTopicClass + unreadClass },
           r.a({ href: url },
             r.span({}, topic.title || url))));
   }

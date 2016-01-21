@@ -95,6 +95,10 @@ class PubSubApi(private val actorRef: ActorRef) {
     actorRef ! UnsubscribeUser(siteId, user, browserIdData)
   }
 
+  def userWatchesPages(siteId: SiteId, userId: UserId, pageIds: Set[PageId]) {
+    actorRef ! UserWatchesPages(siteId, userId, pageIds)
+  }
+
   /** Assumes user byId knows about this already; won't publish to him/her. */
   def publish(message: Message, byId: UserId) {
     actorRef ! PublishMessage(message, byId)
@@ -111,13 +115,14 @@ class StrangerCounterApi(private val actorRef: ActorRef) {
 
   private val timeout = 10 seconds
 
-  def tellStrangerSeen(siteId: SiteId, browserIdData: BrowserIdData) {
+  def strangerSeen(siteId: SiteId, browserIdData: BrowserIdData) {
     actorRef ! StrangerSeen(siteId, browserIdData)
   }
 }
 
 
 private case class PublishMessage(message: Message, byId: UserId)
+private case class UserWatchesPages(siteId: SiteId, userId: UserId, pageIds: Set[PageId])
 private case class UserSubscribed(siteId: SiteId, user: User, browserIdData: BrowserIdData)
 private case class UnsubscribeUser(siteId: SiteId, user: User, browserIdData: BrowserIdData)
 private case class ListOnlineUsers(siteId: SiteId)
@@ -128,7 +133,7 @@ private case class StrangerSeen(siteId: SiteId, browserIdData: BrowserIdData)
 
 object PubSubActor {
 
-  private class UserAndWhen(val user: User, val when: When)
+  private class UserWhenPages(val user: User, val when: When, var watchingPageIds: Set[PageId])
 
 }
 
@@ -147,11 +152,17 @@ class PubSubActor extends Actor {
     * connected to the server via e.g. WebSocket).
     */
   private val subscribersBySite =
-    mutable.HashMap[SiteId, mutable.LinkedHashMap[UserId, UserAndWhen]]()
+    mutable.HashMap[SiteId, mutable.LinkedHashMap[UserId, UserWhenPages]]()
+
+  private val watcherIdsByPageSiteId =
+    mutable.HashMap[SiteId, mutable.HashMap[PageId, mutable.Set[UserId]]]()
 
   private def perSiteSubscribers(siteId: SiteId) =
     // Use a LinkedHashMap because sort order = insertion order.
-    subscribersBySite.getOrElseUpdate(siteId, mutable.LinkedHashMap[UserId, UserAndWhen]())
+    subscribersBySite.getOrElseUpdate(siteId, mutable.LinkedHashMap[UserId, UserWhenPages]())
+
+  private def perSiteWatchers(siteId: SiteId) =
+    watcherIdsByPageSiteId.getOrElseUpdate(siteId, mutable.HashMap[PageId, mutable.Set[UserId]]())
 
   // Could check what is Nchan's long-polling inactive timeout, if any?
   private val DeleteAfterInactiveMillis = 10 * OneMinuteInMillis
@@ -160,6 +171,8 @@ class PubSubActor extends Actor {
 
 
   def receive = {
+    case UserWatchesPages(siteId, userId, pageIds) =>
+      updateWatchedPages(siteId, userId, pageIds)
     case UserSubscribed(siteId, user, browserIdData) =>
       strangerCounter.removeStranger(siteId, browserIdData)
       publishUserPresence(siteId, user, Presence.Active)
@@ -185,14 +198,16 @@ class PubSubActor extends Actor {
   private def subscribeUser(siteId: SiteId, user: User) {
     val userAndWhenMap = perSiteSubscribers(siteId)
     // Remove and reinsert, so inactive users will be the first ones found when iterating.
-    userAndWhenMap.remove(user.id)
-    userAndWhenMap.put(user.id, new UserAndWhen(user, When.now()))
+    val anyOld = userAndWhenMap.remove(user.id)
+    userAndWhenMap.put(user.id, new UserWhenPages(
+      user, When.now(), anyOld.map(_.watchingPageIds) getOrElse Set.empty))
   }
 
 
   private def unsubscribeUser(siteId: SiteId, user: User) {
     // COULD tell Nchan about this too
     perSiteSubscribers(siteId).remove(user.id)
+    updateWatchedPages(siteId, user.id, Set.empty)
   }
 
 
@@ -236,8 +251,9 @@ class PubSubActor extends Actor {
 
     message match {
       case patchMessage: StorePatchMessage =>
-        val userIds = userViewingPage(patchMessage.siteId, pageId = patchMessage.toUsersViewingPage)
-          .filter(_ != byId)
+        val userIds = usersWatchingPage(
+          patchMessage.siteId, pageId = patchMessage.toUsersViewingPage).filter(_ != byId)
+        userIds.foreach(siteDao.markPageAsUnreadInWatchbar(_, patchMessage.toUsersViewingPage))
         sendPublishRequest(canonicalHost.hostname, userIds, "storePatch", patchMessage.json)
       case x =>
         unimplemented(s"Publishing ${classNameOf(x)} [EsE4GPYU2]")
@@ -245,10 +261,29 @@ class PubSubActor extends Actor {
   }
 
 
-  private def userViewingPage(siteId: SiteId, pageId: PageId): Iterable[UserId] = {
-    // For now, publ to ... everyone. Crazy. Just testing.
-    SHOULD // only publish to connected users who views / recently-viewed-&-listens-to pageId.
-    perSiteSubscribers(siteId).keySet
+  private def updateWatchedPages(siteId: SiteId, userId: UserId, pageIds: Set[PageId]) {
+    val watcherIdsByPageId = perSiteWatchers(siteId)
+    val oldPageIds =
+      perSiteSubscribers(siteId).get(userId).map(_.watchingPageIds) getOrElse Set.empty
+    val idsAdded = pageIds -- oldPageIds
+    val idsRemoved = oldPageIds -- pageIds
+    idsRemoved foreach { pageId =>
+      val watcherIds = watcherIdsByPageId.getOrElse(pageId, mutable.Set.empty)
+      watcherIds.remove(userId)
+      if (watcherIds.isEmpty) {
+        watcherIdsByPageId.remove(pageId)
+      }
+    }
+    idsAdded foreach { pageId =>
+      val watcherIds = watcherIdsByPageId.getOrElseUpdate(pageId, mutable.Set.empty)
+      watcherIds.add(userId)
+    }
+  }
+
+
+  private def usersWatchingPage(siteId: SiteId, pageId: PageId): Iterable[UserId] = {
+    val watcherIdsByPageId = perSiteWatchers(siteId)
+    watcherIdsByPageId.getOrElse(pageId, Nil)
   }
 
 

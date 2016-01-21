@@ -10,7 +10,7 @@ $watchbarHue = $uiHue; // or 0 (red) looks ok too;
   a
     display: inline-block;
     width: 100%; // or nothing happens when clicks right part of hover-highlighted <li>
-    padding: 3px 0 1px 5px;
+    padding: 3px 0 1px 3px;
 
   h3,
   li span
@@ -26,11 +26,11 @@ $watchbarHue = $uiHue; // or 0 (red) looks ok too;
   h3
     text-transform: uppercase;
     font-size: 1.4rem;
-    margin: 2rem 0 0.5rem;
+    margin: 2rem 0 0.2rem;
 
   li
     list-style: none;
-    margin: 0;
+    margin: 0 0 2px;
     cursor: pointer;
     &:hover
       background: hsl($watchbarHue, 70%, 22%);
@@ -41,6 +41,13 @@ $watchbarHue = $uiHue; // or 0 (red) looks ok too;
       background: hsl($uiHue, 70%, 33%);
       span
         color: white;
+
+    &.esWatchbar_topic-unread
+      span
+        color: hsl(0, 0%, 87%);
+        font-weight: bold;
+        text-shadow: 0.7px 0 0 hsl(0, 0%, 87%);
+        letter-spacing: 0.4px;
 
 .esCloseWatchbarBtn
   float: right;

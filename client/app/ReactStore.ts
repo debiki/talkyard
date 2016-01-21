@@ -197,6 +197,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.SetWatchbar:
+      watchbar_copyUnreadStatusFromTo(store.me.watchbar, action.watchbar);
       store.me.watchbar = action.watchbar;
       break;
 
@@ -325,6 +326,8 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   store.user = newMe; // try to remove
   store.me = newMe;
   addLocalStorageData(store.me);
+
+  watchbar_markAsRead(store.me.watchbar, store.pageId);
 
   // Show the user's own unapproved posts, or all, for admins.
   _.each(store.me.unapprovedPosts, (post: Post) => {
@@ -893,13 +896,22 @@ function patchTheStore(storePatch: StorePatch) {
     return;
   }
 
+  // Highligt pages with new posts, in the watchbar.
+  _.each(storePatch.postsByPageId, (posts: Post[], pageId: PageId) => {
+    if (pageId !== store.pageId) {
+      watchbar_markAsUnread(store.me.watchbar, pageId);
+    }
+  });
+
+  // Update the current page.
   var storePatchPageVersion = storePatch.pageVersionsByPageId[store.pageId];
-  if (storePatchPageVersion <= store.pageVersion) {
+  if (!storePatchPageVersion || storePatchPageVersion <= store.pageVersion) {
     // The store includes these changes already.
     // COULD rename .usersBrief to .authorsBrief so it's apparent that they're related
     // to the posts, and that it's ok to ignore them if the posts are too old.
     return;
   }
+  store.pageVersion = storePatchPageVersion;
 
   _.each(storePatch.usersBrief || [], (user: BriefUser) => {
     store.usersByIdBrief[user.id] = user;
@@ -907,6 +919,51 @@ function patchTheStore(storePatch: StorePatch) {
   var posts = storePatch.postsByPageId[store.pageId];
   _.each(posts || [], (post: Post) => {
     updatePost(post);
+  });
+
+  // The server should have marked this page as unread because of these new events.
+  // But we're looking at the page right now — so tell the server that the user has seen it.
+  // (The server doesn't know exactly which page we're looking at — perhaps we have many
+  // browser tabs open, for example.)
+  // COULD wait with marking it as seen until the user shows s/he is still here.
+  Server.markCurrentPageAsSeen();
+}
+
+
+function watchbar_markAsUnread(watchbar: Watchbar, pageId: PageId) {
+  watchbar_markReadUnread(watchbar, pageId, false);
+}
+
+
+function watchbar_markAsRead(watchbar: Watchbar, pageId: PageId) {
+  watchbar_markReadUnread(watchbar, pageId, true);
+}
+
+
+function watchbar_markReadUnread(watchbar: Watchbar, pageId: PageId, read: boolean) {
+  watchbar_foreachTopic(watchbar, watchbarTopic => {
+    if (watchbarTopic.pageId === pageId) {
+      watchbarTopic.unread = !read;
+    }
+  })
+}
+
+
+function watchbar_foreachTopic(watchbar: Watchbar, fn: (topic: WatchbarTopic) => void) {
+  _.each(watchbar[WatchbarSection.RecentTopics], fn);
+  _.each(watchbar[WatchbarSection.Notifications], fn);
+  _.each(watchbar[WatchbarSection.ChatChannels], fn);
+  _.each(watchbar[WatchbarSection.DirectMessages], fn);
+}
+
+
+function watchbar_copyUnreadStatusFromTo(old: Watchbar, newWatchbar: Watchbar) {
+  watchbar_foreachTopic(newWatchbar, (newTopic: WatchbarTopic) => {
+    watchbar_foreachTopic(old, (oldTopic: WatchbarTopic) => {
+      if (oldTopic.pageId === newTopic.pageId) {
+        newTopic.unread = oldTopic.unread;
+      }
+    });
   });
 }
 
@@ -964,7 +1021,9 @@ function addLocalStorageData(me: Myself) {
 
 function loadWatchbarFromSessionStorage(): Watchbar {
   // For privacy reasons, don't use localStorage?
-  return getFromSessionStorage('watchbar') || { 1: [], 2: [], 3: [], 4: [], };
+  var watchbar = getFromSessionStorage('watchbar') || { 1: [], 2: [], 3: [], 4: [], };
+  watchbar_markAsRead(watchbar, store.pageId);
+  return watchbar;
 }
 
 

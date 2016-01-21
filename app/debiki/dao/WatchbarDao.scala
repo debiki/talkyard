@@ -42,6 +42,9 @@ trait WatchbarDao {
 
   def saveWatchbar(userId: UserId, watchbar: Watchbar) {}
 
+  def markPageAsUnreadInWatchbar(userId: UserId, pageId: PageId): Unit =
+    die("EsE5JKF21", "CachingWatchbarDao method should be called instead")
+
   def fillInWatchbarTitlesEtc(watchbar: BareWatchbar): WatchbarWithTitles =
     die("EsE4GYKF2", "CachingWatchbarDao method should be called instead")
 
@@ -51,6 +54,9 @@ trait WatchbarDao {
 
 /** Stores in-memory each member's watchbar. Lost on server restart. Later: use Redis?
   * So won't vanish when the server restarts.
+  *
+  * BUG race conditions, if e.g. saveWatchbar & markPageAsUnreadInWatchbar called at the
+  * same time. Could perhaps solve by creating a Watchbar actor that serializes access?
   */
 trait CachingWatchbarDao extends WatchbarDao {
   self: CachingSiteDao with CachingPageStuffDao =>
@@ -68,6 +74,13 @@ trait CachingWatchbarDao extends WatchbarDao {
       key(userId),
       orCacheAndReturn = Some(super.loadWatchbar(userId)),
       ignoreSiteCacheVersion = true) getOrDie "EsE4UYKF5"
+  }
+
+
+  override def markPageAsUnreadInWatchbar(userId: UserId, pageId: PageId) {
+    val watchbar = loadWatchbar(userId)
+    val newWatchbar = watchbar.markPageAsUnread(pageId)
+    saveWatchbar(userId, newWatchbar)
   }
 
 
