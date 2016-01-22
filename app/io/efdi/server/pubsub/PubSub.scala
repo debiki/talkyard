@@ -265,16 +265,16 @@ class PubSubActor extends Actor {
     val watcherIdsByPageId = perSiteWatchers(siteId)
     val oldPageIds =
       perSiteSubscribers(siteId).get(userId).map(_.watchingPageIds) getOrElse Set.empty
-    val idsAdded = pageIds -- oldPageIds
-    val idsRemoved = oldPageIds -- pageIds
-    idsRemoved foreach { pageId =>
+    val pageIdsAdded = pageIds -- oldPageIds
+    val pageIdsRemoved = oldPageIds -- pageIds
+    pageIdsRemoved foreach { pageId =>
       val watcherIds = watcherIdsByPageId.getOrElse(pageId, mutable.Set.empty)
       watcherIds.remove(userId)
       if (watcherIds.isEmpty) {
         watcherIdsByPageId.remove(pageId)
       }
     }
-    idsAdded foreach { pageId =>
+    pageIdsAdded foreach { pageId =>
       val watcherIds = watcherIdsByPageId.getOrElseUpdate(pageId, mutable.Set.empty)
       watcherIds.add(userId)
     }
@@ -329,10 +329,14 @@ class PubSubActor extends Actor {
 
   private def deleteInactiveSubscriptions() {
     val now = When.now()
-    for ((siteId, userAndWhenMap) <- subscribersBySite) {
+    for ((siteId, userWhenPagesMap) <- subscribersBySite) {
       // LinkedHashMap sort order = perhaps-inactive first.
-      userAndWhenMap removeWhileValue { userAndWhen =>
-        now.millisSince(userAndWhen.when) > DeleteAfterInactiveMillis
+      userWhenPagesMap removeWhileValue { userWhenPages =>
+        if (now.millisSince(userWhenPages.when) < DeleteAfterInactiveMillis) false
+        else {
+          updateWatchedPages(siteId, userWhenPages.user.id, Set.empty)
+          true
+        }
       }
     }
   }
