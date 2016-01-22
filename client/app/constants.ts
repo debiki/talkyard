@@ -20,12 +20,25 @@ var ReactStartedClass = 'dw-react-started';
 var EmptyPageId = "0";
 
 var BodyId = 1;
+var NoPostId = -1;  // dupl in reply.js
 
 var SystemUserId = -1;
 var MinMemberId = SystemUserId;
 
 var MaxGuestId = -2;
 var UnknownUserId = -3;
+
+
+var ManualReadMark = 1;
+var YellowStarMark = 2;
+var FirstStarMark = 2;
+var BlueStarMark = 3;
+var LastStarMark = 3;
+
+
+enum LoginReason {
+  LoginToChat = 10,
+}
 
 
 enum PinPageWhere {
@@ -49,6 +62,8 @@ enum PageRole {
   ToDo = 13,
   MindMap = 11,
   Discussion = 12,
+  OpenChat = 18,
+  PrivateChat = 19,
   Message = 17,
   Critique = 16, // [plugin]
 }
@@ -83,6 +98,14 @@ enum NotificationType {
   // Quote = 3,
   Message = 4,
   NewPost = 5,
+}
+
+
+enum WatchbarSection {
+  RecentTopics = 1,
+  Notifications = 2,
+  ChatChannels = 3,
+  DirectMessages = 4,
 }
 
 

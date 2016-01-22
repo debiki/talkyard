@@ -19,12 +19,11 @@
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
+/// <reference path="../page/discussion.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
 /// <reference path="minimap.ts" />
 //xx <reference path="unread-comments-tracker.ts" />
-
-// Staying at the bottom: http://blog.vjeux.com/2013/javascript/scroll-position-with-react.html
 
 //------------------------------------------------------------------------------
    module debiki2.sidebar {
@@ -71,7 +70,8 @@ export var Sidebar = createComponent({
     return {
       store: store,
       lastLoadedOnlineUsersAsId: null,
-      commentsType: isPageWithComments(store.pageRole) ? 'Recent' : 'Users',
+      commentsType: isPageWithComments(store.pageRole) && !page_isChatChannel(store.pageRole) ?
+          'Recent' : 'Users',
       // showPerhapsUnread: false,
     };
   },
@@ -121,18 +121,14 @@ export var Sidebar = createComponent({
 
   componentDidMount: function() {
     var store: Store = this.state.store;
-    if (isPageWithSidebar(store.pageRole)) {
-      keymaster('s', this.toggleSidebarOpen);
-      if (store.isContextbarOpen && this.state.lastLoadedOnlineUsersAsId !== store.me.id) {
-        this.loadOnlineUsers();
-      }
+    keymaster('s', this.toggleSidebarOpen);
+    if (store.isContextbarOpen && this.state.lastLoadedOnlineUsersAsId !== store.me.id) {
+      this.loadOnlineUsers();
     }
   },
 
   componentWillUnmount: function() {
-    if (isPageWithSidebar(this.state.store.pageRole)) {
-      keymaster.unbind('s', 'all');
-    }
+    keymaster.unbind('s', 'all');
   },
 
   componentDidUpdate: function() {
@@ -279,11 +275,10 @@ export var Sidebar = createComponent({
 
   render: function() {
     var store: Store = this.state.store;
-    if (!isPageWithSidebar(store.pageRole))
-      return null;
 
     var minimapProps = $.extend({ ref: 'minimap' }, store);
     var commentsFound = isPageWithComments(store.pageRole) ? this.findComments() : null;
+    var isChat = page_isChatChannel(store.pageRole);
 
     var sidebarClasses = '';
     if (store.horizontalLayout) {
@@ -291,19 +286,23 @@ export var Sidebar = createComponent({
     }
 
     var users: BriefUser[];
-    var listUsersOnPage = page_isDiscussion(store.pageRole);
-    if (listUsersOnPage) {
+    var listMembers = isChat;
+    var listUsersOnPage = !listMembers && page_isDiscussion(store.pageRole);
+    if (listMembers) {
+      users = store.messageMembers;
+    }
+    else if (listUsersOnPage) {
       users = store_getUsersOnThisPage(store);
     }
     else {
-      users = store_getOnlineUsersWholeSite(store);
+      users = store.onlineUsers || [];
     }
 
     var numOnline = 0;
     var iAmHere = false;
-    _.each(users, u => {
-      numOnline += u.presence === Presence.Active ? 1 : 0;
-      iAmHere = iAmHere || u.id === store.me.id;
+    _.each(users, (user: BriefUser) => {
+      numOnline += store_isUserOnline(store, user.id) ? 1 : 0;
+      iAmHere = iAmHere || user.id === store.me.id;
     });
 
     // If the current user is the only active user, write "you" instead of "1"
@@ -313,7 +312,7 @@ export var Sidebar = createComponent({
 
     //var unreadBtnTitle = commentsFound ? 'Unread (' + commentsFound.unread.length + ')' : null;
     var starredBtnTitle = commentsFound ? 'Starred (' + commentsFound.starred.length + ')' : null;
-    var usersBtnTitle = listUsersOnPage
+    var usersBtnTitle = listMembers || listUsersOnPage
         ? "Users (" + numOnlineTextSlash + users.length + ")"
         : "Users (" + numOnline + ")";
 
@@ -352,16 +351,16 @@ export var Sidebar = createComponent({
         if (store.pageRole === PageRole.Forum) {
           title = "Users online in this forum:";
         }
-        else if (!listUsersOnPage) {
+        else if (!listMembers && !listUsersOnPage) {
           title = "Users online:";
         }
         else {
-          title = "Users in this topic:";
+          title = "Users in this " + (isChat ? "chat: " : "topic:");
           // Don't show num online strangers, when listing post authors for the current topic only.
           numOnlineStrangers = 0;
         }
         usersClass = ' active';
-        listItems = makeUsersContent(users, store.me.id, numOnlineStrangers);
+        listItems = makeUsersContent(store, users, store.me.id, numOnlineStrangers);
         break;
       default:
         console.error('[DwE4PM091]');
@@ -407,7 +406,7 @@ export var Sidebar = createComponent({
     var unreadButton;
     if (commentsFound) {
       if (wide) {
-        recentButton =
+        recentButton = isChat ? null :
             r.button({ className: 'btn btn-default' + recentClass, onClick: this.showRecent },
               'Recent');
         //unreadButton =
@@ -418,7 +417,7 @@ export var Sidebar = createComponent({
               starredBtnTitle);
       }
       else {
-        recentButton = MenuItem({ eventKey: 'showRecent' }, 'Recent');
+        recentButton = isChat ? null : MenuItem({ eventKey: 'showRecent' }, 'Recent');
         //unreadButton = MenuItem({ eventKey: 'showUnread' }, 'Unread'),
         starredButton = MenuItem({ eventKey: 'showStarred' }, starredBtnTitle);
       }
@@ -508,30 +507,32 @@ function makeCommentsContent(comments: Post[], currentPostId: PostId, store: Sto
     }
     return (
         r.div({ key: post.postId },
-            Post(postProps)));
+            page.Post(postProps)));
   });
 }
 
 
-function makeUsersContent(users: BriefUser[], myId: UserId, numOnlineStrangers: number) {
+function makeUsersContent(store: Store, users: BriefUser[], myId: UserId,
+      numOnlineStrangers: number) {
   // List the current user first, then online users, then others.
   // COULD: list alphabetically, so one can scan and find one's friends by name easily
   users.sort((a, b) => {
     if (a.id === myId) return -1;
     if (b.id === myId) return +1;
-    if (a.presence === b.presence) {
+    if (store_isUserOnline(store, a.id) === store_isUserOnline(store, b.id)) {
       if (user_isMember(a) === user_isMember(b)) return 0;
       return user_isMember(a) ? -1 : +1;
     }
-    return a.presence === Presence.Active ? -1 : +1;
+    return store_isUserOnline(store, a.id) ? -1 : +1;
   });
   var currentUserIsStranger = true;
   var listItems = users.map((user: BriefUser) => {
     var thatsYou = user.id === myId ?
         r.span({ className: 'esPresence_thatsYou' }, " — that's you") : null;
     currentUserIsStranger = currentUserIsStranger && user.id !== myId;
-    var presenceClass = user.presence === Presence.Active ? 'active' : 'away';
-    var presenceTitle = user.presence === Presence.Active ? 'Active' : 'Away';
+    var isUserOnline = store_isUserOnline(store, user.id);
+    var presenceClass = isUserOnline ? 'active' : 'away';
+    var presenceTitle = isUserOnline ? 'Active' : 'Away';
     return (
         r.div({ key: user.id, className: 'esPresence esPresence-' + presenceClass,
             onClick: () => pagedialogs.getAboutUserDialog().openForUserId(user.id) },

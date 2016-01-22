@@ -50,7 +50,7 @@ export var AvatarAndName = createComponent({
     var onClick = this.props.ignoreClicks ?
         null : () => debiki2.pagedialogs.getAboutUserDialog().openForUserId(user.id);
     return (
-        r.div({ className: 'esAvtrName', onClick: onClick },
+        r.span({ className: 'esAvtrName', onClick: onClick },
           avatar, namePart1, namePart2));
   }
 });

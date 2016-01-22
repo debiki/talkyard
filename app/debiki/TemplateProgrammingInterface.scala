@@ -81,7 +81,11 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
   def cachedVersionString = ""
 
   /** Classes for the <html> tag. */
-  def debikiHtmlTagClasses = "DW dw-pri "
+  def debikiHtmlTagClasses = {
+    val chatClass = if (anyCurrentPageRole.exists(_.isChat)) " es-chat " else ""
+    val forumClass = if (anyCurrentPageRole.contains(PageRole.Forum)) " es-forum " else ""
+    "DW dw-pri " + chatClass + forumClass
+  }
 
 
   def xsrfToken: String = debikiRequest.xsrfToken.value

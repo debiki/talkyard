@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015 Kaj Magnus Lindberg
+ * Copyright (c) 2014-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -29,92 +29,20 @@
 /// <reference path="../page-dialogs/delete-post-dialog.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="chat.ts" />
 
-// Wrapping in a module causes an ArrayIndexOutOfBoundsException: null error, see:
-//  http://stackoverflow.com/questions/26189940/java-8-nashorn-arrayindexoutofboundsexception
-// The bug has supposedly been fixed in Java 8u40. Once I'm using that version,
-// remove `var exports = {};` from app/debiki/ReactRenderer.scala.
 //------------------------------------------------------------------------------
-  // module debiki2.renderer {
-module boo {
-    export var buu = 'vovvar';
-};
+   module debiki2.page {
 //------------------------------------------------------------------------------
-
-var NoPostId = -1; // also in editor.ts
-var MaxGuestId = -2; // place where?
-
 
 var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
-var ReactRouter = window['ReactRouter'];
-var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var OverlayTrigger = reactCreateFactory(ReactBootstrap.OverlayTrigger);
-var Tooltip = reactCreateFactory(ReactBootstrap.Tooltip);
-
-var ManualReadMark = 1;
-var YellowStarMark = 2;
-var FirstStarMark = 2;
-var BlueStarMark = 3;
-var LastStarMark = 3;
 
 
-function isServerSide() {
-  // Don't change this to a static variable, because it'd be initialized rather late,
-  // so some code would believe we were running client side.
-  return !!window['java'];
-}
 
-
-var PageWithState = createComponent({
-  mixins: [debiki2.StoreListenerMixin],
-
-  getInitialState: function() {
-    return debiki2.ReactStore.allData();
-  },
-
-  onChange: function() {
-    this.setState(debiki2.ReactStore.allData());
-  },
-
-  render: function() {
-    return Page(this.state);
-  }
-});
-
-
-var Page = createComponent({
-  render: function() {
-    return (r.div({},
-      debiki2.reactelements.TopBar({}),
-      r.div({ className: 'container' },
-        r.article({},
-          TitleBodyComments(this.props)))));
-  }
-});
-
-
-var TitleBodyComments = createComponent({
-  //getInitialState: function() {
-    //return null; //debiki2.ReactStore.allData();
-  //},
-  /* any `getInitialState` causes a Nashorn error in react-with-addons.js, here:
-  _renderValidatedComponent: ReactPerf.measure(
-    'ReactCompositeComponent',
-    '_renderValidatedComponent',
-    function() {
-      var renderedComponent;
-      var previousContext = ReactContext.current;
-      ReactContext.current = this._processChildContext(
-        this._currentElement._context
-      );
-      ReactCurrentOwner.current = this;
-      try {
-        renderedComponent = this.render();   <-- render is null, in Nashorn only, not in browser
-  */
-
+export var TitleBodyComments = createComponent({
   makeHelpMessage: function() {
     var store: Store = this.props;
     var me: Myself = store.me;
@@ -258,7 +186,7 @@ var TitleBodyComments = createComponent({
 });
 
 
-var Title = createComponent({
+export var Title = createComponent({
   getInitialState: function() {
     return { isEditing: false };
   },
@@ -282,7 +210,7 @@ var Title = createComponent({
 
   render: function() {
     var store: Store = this.props;
-    var user = this.props.user;
+    var me: Myself = store.me;
     var titlePost = this.props.allPosts[TitleId];
     if (!titlePost)
       return null;
@@ -302,7 +230,7 @@ var Title = createComponent({
     }
 
     var anyEditTitleBtn;
-    if (!this.props.hideButtons && (isStaff(user) || user.userId === titlePost.authorId)) {
+    if (!this.props.hideButtons && (isStaff(me) || me.userId === titlePost.authorId)) {
       anyEditTitleBtn =
         r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.editTitle });
     }
@@ -366,15 +294,15 @@ var Title = createComponent({
               ? "Click to change status to not-yet-done"
               : "Click to mark as done";
         }
-        if (!isStaff(store.me)) iconTooltip = null;
-        var clickableClass = isStaff(store.me) ? ' dw-clickable' : '';
-        var onClick = isStaff(store.me) ? this.cycleIsDone : null;
+        if (!isStaff(me)) iconTooltip = null;
+        var clickableClass = isStaff(me) ? ' dw-clickable' : '';
+        var onClick = isStaff(me) ? this.cycleIsDone : null;
         icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
             title: iconTooltip });
       }
       else if (store.pageRole === PageRole.ToDo) {
-        var clickableClass = isStaff(store.me) ? ' dw-clickable' : '';
-        var onClick = isStaff(store.me) ? this.cycleIsDone : null;
+        var clickableClass = isStaff(me) ? ' dw-clickable' : '';
+        var onClick = isStaff(me) ? this.cycleIsDone : null;
         icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
             title: iconTooltip });
       }
@@ -382,10 +310,18 @@ var Title = createComponent({
         icon = r.span({ className: 'icon-mail' });
         tooltip = "Personal message";
       }
+      else if (store.pageRole === PageRole.OpenChat) {
+        icon = '#';
+        tooltip = "# means Chat Channel";
+      }
+      else if (store.pageRole === PageRole.PrivateChat) {
+        icon = r.span({ className: 'icon-lock' });
+        tooltip = "This is a private chat channel";
+      }
       switch (this.props.pinWhere) {
         case PinPageWhere.Globally: tooltip += "Pinned globally."; break;
         case PinPageWhere.InCategory: tooltip += "Pinned in this category."; break;
-        default: ;
+        default:
       }
       contents =
           r.div({ className: 'dw-p-bd' },
@@ -432,7 +368,7 @@ var RootPostAndComments = createComponent({
   render: function() {
     var store: Store = this.props;
     var allPosts: { [postId: number]: Post; } = this.props.allPosts;
-    var user = this.props.user;
+    var me = store.me;
     var rootPost = allPosts[this.props.rootPostId];
     if (!rootPost)
       return r.p({}, '(Root post missing, id: ' + this.props.rootPostId +
@@ -470,7 +406,7 @@ var RootPostAndComments = createComponent({
       return (
         r.div({ className: threadClass },
           body,
-          NoCommentsPageActions({ post: rootPost, user: user })));
+          NoCommentsPageActions({ post: rootPost, me: me })));
     }
 
     var solvedBy;
@@ -771,7 +707,7 @@ var Thread = createComponent({
 });
 
 
-var Post = createComponent({
+export var Post = createComponent({
   onUncollapseClick: function(event) {
     debiki2.ReactActions.uncollapsePost(this.props.post);
   },
@@ -807,7 +743,7 @@ var Post = createComponent({
 
   render: function() {
     var post: Post = this.props.post;
-    var user: Myself = this.props.user;
+    var me: Myself = this.props.me;
     if (!post)
       return r.p({}, '(Post missing [DwE4UPK7])');
 
@@ -845,7 +781,7 @@ var Post = createComponent({
     }
     else {
       if (!post.isApproved) {
-        var the = post.authorIdInt === user.userId ? 'Your' : 'The';
+        var the = post.authorIdInt === me.userId ? 'Your' : 'The';
         pendingApprovalElem = r.div({ className: 'dw-p-pending-mod',
             onClick: this.onUncollapseClick }, the, ' comment below is pending approval.');
       }
@@ -885,7 +821,7 @@ var Post = createComponent({
       replyReceivers = ReplyReceivers({ post: post, allPosts: this.props.allPosts });
     }
 
-    var mark = user.marksByPostId[post.postId];
+    var mark = me.marksByPostId[post.postId];
     switch (mark) {
       case YellowStarMark: extraClasses += ' dw-p-mark-yellow-star'; break;
       case BlueStarMark: extraClasses += ' dw-p-mark-blue-star'; break;
@@ -894,8 +830,8 @@ var Post = createComponent({
         // Don't add the below class before user specific data has been activated, otherwise
         // all posts would show a big black unread mark on page load, which looks weird.
         if (this.props.userSpecificDataAdded) {
-          var autoRead = user.postIdsAutoReadLongAgo.indexOf(post.postId) !== -1;
-          autoRead = autoRead || user.postIdsAutoReadNow.indexOf(post.postId) !== -1;
+          var autoRead = me.postIdsAutoReadLongAgo.indexOf(post.postId) !== -1;
+          autoRead = autoRead || me.postIdsAutoReadNow.indexOf(post.postId) !== -1;
           if (!autoRead) {
             extraClasses += ' dw-p-unread';
           }
@@ -975,7 +911,7 @@ var ReplyReceivers = createComponent({
 
 
 
-var PostHeader = createComponent({
+export var PostHeader = createComponent({
   onUserClick: function(event) {
     debiki2.pagedialogs.getAboutUserDialog().open(this.props.post);
     event.preventDefault();
@@ -1008,7 +944,7 @@ var PostHeader = createComponent({
       return r.span({ className: 'dw-a-clps icon-up-open', onClick: this.onCollapseClick });
     }
 
-    var user: Myself = this.props.user;
+    var me: Myself = this.props.me;
     var linkFn = this.props.abbreviate ? 'span' : 'a';
 
     var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
@@ -1023,7 +959,7 @@ var PostHeader = createComponent({
       }
     });
 
-    // Username link: Some dupl code, see edit-history-dialog.ts & sidebar.ts [88MYU2]
+    // Username link: Some dupl code, see edit-history-dialog.ts & avatar.ts [88MYU2]
     var authorUrl = '/-/users/#/id/' + post.authorId;
     var namePart1;
     var namePart2;
@@ -1067,7 +1003,7 @@ var PostHeader = createComponent({
         postId = r.span({ className: 'dw-p-link' }, '#' + post.postId);
       }
 
-      /* COULD: Later on, move the star to the right? Or to the action list? And 
+      /* COULD: Later on, move the star to the right? Or to the action list? And
          to indicate that the computer has been read, paint a 3px border to the
          left of the header. And to indicate that the human has marked it as read,
          set the header's bg color to white.
@@ -1124,7 +1060,7 @@ var PostHeader = createComponent({
           anyAvatar,
           by,
           r[linkFn](userLinkProps, namePart1, namePart2),
-          timeAgo(post.createdAt),
+          this.props.exactTime ? timeExact(post.createdAt) : timeAgo(post.createdAt),
           editInfo,
           inReplyTo,
           toggleCollapsedButton));
@@ -1132,7 +1068,7 @@ var PostHeader = createComponent({
 });
 
 
-var PostBody = createComponent({
+export var PostBody = createComponent({
   render: function() {
     var post: Post = this.props.post;
     if (post.summarize) {
@@ -1175,14 +1111,14 @@ var NoCommentsPageActions = createComponent({
     debiki2.ReactActions.editPostWithNr(this.props.post.postId);
   },
   render: function() {
-    var user: Myself = this.props.user;
+    var me: Myself = this.props.me;
     var post: Post = this.props.post;
 
     if (!post.isApproved && !post.sanitizedHtml)
       return null;
 
     var actions;
-    if (user.isAdmin) {
+    if (me.isAdmin) {
       actions =
           r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit');
     }
@@ -1554,32 +1490,9 @@ function horizontalCss(horizontal) {
 }
 
 
-function isCollapsed(post) {
-  return post.isTreeCollapsed || post.isPostCollapsed;
-}
 
-
-function isDeleted(post) {
-  return !post || post.isTreeDeleted || post.isPostDeleted;
-}
-
-
-function isWikiPost(postOrPostType: any) {
-  var type;
-  if (postOrPostType) {
-    type = postOrPostType.postType || postOrPostType;
-  }
-  return type === PostType.StaffWiki || type === PostType.CommunityWiki;
-}
-
-
-function authorIsGuest(post) {
-  // Guest ids currently start with '-'.
-  return post.authorId && post.authorId.length >= 1 && post.authorId[0] === '-';
-}
-
-
-function makePageClosedTooltipText(pageRole: PageRole) {
+// Could move elsewhere? Where?
+export function makePageClosedTooltipText(pageRole: PageRole) {
   switch (pageRole) {
     case PageRole.Question:
       return "This question has been closed without any accepted answer.";
@@ -1591,58 +1504,13 @@ function makePageClosedTooltipText(pageRole: PageRole) {
 }
 
 
-function makeQuestionTooltipText(isAnswered) {
+// Could move elsewhere? Where?
+export function makeQuestionTooltipText(isAnswered) {
   return isAnswered ? "This is a solved question" : "This is an unsolved question";
 }
 
 
-function renderTitleBodyComments() {
-  var root = document.getElementById('dwPosts');
-  if (!root)
-    return;
-
-  debiki2.avatar.resetAvatars();
-
-  var store: Store = debiki2.ReactStore.allData();
-  if (store.pageRole === PageRole.Forum) {
-    var router = ReactRouter.create({
-      routes: debiki2.forum.buildForumRoutes(),
-      scrollBehavior: debiki2.forum.ForumScrollBehavior,
-    });
-    router.run(function(handler) {
-      React.render(React.createElement(handler, store), root);
-    });
-  }
-  else {
-    React.render(PageWithState(), root);
-  }
-}
-
-
-function renderTitleBodyCommentsToString() {
-  debiki2.avatar.resetAvatars();
-
-  // Comment in the next line to skip React server side and debug in browser only.
-  //return '<p class="dw-page" data-reactid=".123" data-react-checksum="123">react_skipped</p>'
-  var store: Store = debiki2.ReactStore.allData();
-  if (store.pageRole === PageRole.Forum) {
-    var routes = debiki2.forum.buildForumRoutes();
-    var result;
-    // In the future, when using the HTML5 history API to update the URL when navigating
-    // inside the forum, we can use `store.pagePath` below. But for now, when using
-    // the hash fragment, start at #/latest/ (the default route) always:
-    var pagePath = '/latest/';
-    ReactRouter.run(routes, pagePath, function(handler) {
-      result = React.renderToString(React.createElement(handler, store));
-    });
-    return result;
-  }
-  else {
-    return React.renderToString(Page(store));
-  }
-}
-
 //------------------------------------------------------------------------------
-
+   }
 //------------------------------------------------------------------------------
 // vim: fdm=marker et ts=2 sw=2 tw=0 list

@@ -76,7 +76,6 @@ var UsersHomeComponent = React.createClass({
   render: function() {
     return (
       r.div({},
-        debiki2.reactelements.TopBar({}),
         RouteHandler({})));
   }
 });

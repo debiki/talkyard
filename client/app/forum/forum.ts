@@ -21,10 +21,9 @@
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../editor/editor.ts" />
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
-/// <reference path="../topbar/topbar.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../ServerApi.ts" />
-/// <reference path="../model.ts" />
+/// <reference path="../page/discussion.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.forum {
@@ -176,14 +175,13 @@ var ForumComponent = React.createClass({
       },
     });
 
-    return (r.div({},
-      debiki2.reactelements.TopBar({}),
+    return (
       r.div({ className: 'container dw-forum' },
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
         r.div({ className: 'dw-page' }),
         ForumIntroText(this.state),
         helpMessage,
-        CategoriesAndTopics(childProps))));
+        CategoriesAndTopics(childProps)));
   }
 });
 
@@ -191,7 +189,7 @@ var ForumComponent = React.createClass({
 
 var ForumIntroText = createComponent({
   render: function() {
-    var user: Myself = this.props.user;
+    var user: Myself = this.props.me;
     var introPost = this.props.allPosts[BodyId];
     if (!introPost || introPost.isPostHidden)
       return null;
@@ -614,7 +612,7 @@ var ForumTopicListComponent = React.createClass({
       var category = _.find(this.props.categories, (category: Category) => {
         return category.id === topic.categoryId;
       });
-      if (!category.hideInForum || isStaff(this.props.user)) {
+      if (!category.hideInForum || isStaff(this.props.me)) {
         topics.push(TopicRow({
           topic: topic, categories: this.props.categories,
           activeCategory: this.props.activeCategory, now: this.props.now,
@@ -870,12 +868,12 @@ var CategoryRow = createComponent({
 function makeTitle(topic: Topic, className: string) {
   var title = topic.title;
   if (topic.closedAtMs && !isDone(topic) && !isAnswered(topic)) {
-    var tooltip = makePageClosedTooltipText(topic.pageRole);
+    var tooltip = page.makePageClosedTooltipText(topic.pageRole);
     var closedIcon = r.span({ className: 'icon-block' });
     title = r.span({}, closedIcon, title);
   }
   else if (topic.pageRole === PageRole.Question) {
-    var tooltip = makeQuestionTooltipText(topic.answeredAtMs);
+    var tooltip = page.makeQuestionTooltipText(topic.answeredAtMs);
     var questionIconClass = topic.answeredAtMs ? 'icon-ok-circled-empty' : 'icon-help-circled';
     var questionIcon = r.span({ className: questionIconClass });
     var answerIcon;
@@ -893,7 +891,7 @@ function makeTitle(topic: Topic, className: string) {
     title = r.span({}, questionIcon, answerCount, answerIcon, title);
   }
   else if (topic.pageRole === PageRole.Problem || topic.pageRole === PageRole.Idea) {
-    // (Some dupl code, see [5KEFEW2] in posts.ts.
+    // (Some dupl code, see [5KEFEW2] in discussion.ts.
     if (!topic.plannedAtMs) {
       tooltip = topic.pageRole === PageRole.Problem
           ? "This is a new problem"
@@ -920,6 +918,14 @@ function makeTitle(topic: Topic, className: string) {
         ? "This has been done or fixed"
         : "This is something to do or to fix";
     title = r.span({}, r.span({ className: iconClass }, title));
+  }
+  else if (topic.pageRole === PageRole.OpenChat) {
+    var tooltip = "This is a chat channel";
+    title = r.span({}, '# ', title);
+  }
+  else if (topic.pageRole === PageRole.PrivateChat) {
+    var tooltip = "This is a private chat channel";
+    title = r.span({}, r.span({ className: 'icon-lock' }), title);
   }
   return (
       r.a({ href: topic.url, title: tooltip, className: className }, title));

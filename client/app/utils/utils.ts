@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -29,8 +29,17 @@ export function putInLocalStorage(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+export function putInSessionStorage(key, value) {
+  sessionStorage.setItem(key, JSON.stringify(value));
+}
+
 export function getFromLocalStorage(key) {
   var value = localStorage.getItem(key);
+  return value && JSON.parse(value);
+}
+
+export function getFromSessionStorage(key) {
+  var value = sessionStorage.getItem(key);
   return value && JSON.parse(value);
 }
 
@@ -80,8 +89,17 @@ export function prettyBytes(num: number): string {
 
   var unit = units[exponent];
   return (neg ? '-' : '') + rounded + ' ' + unit;
-};
+}
 
+
+export function getPageScrollableRect(): ClientRect {
+  return document.getElementById('esPageScrollable').getBoundingClientRect();
+}
+
+
+export function getPageRect(): ClientRect {
+  return document.getElementById('dwPosts').getBoundingClientRect();
+}
 
 //------------------------------------------------------------------------------
    }

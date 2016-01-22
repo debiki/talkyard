@@ -79,6 +79,7 @@ object ReactJson {
     val siteStatusString = loadSiteStatusString(pageReq.dao)
     val siteSettings = pageReq.dao.loadWholeSiteSettings()
     Json.obj(
+      "appVersion" -> Globals.applicationVersion,
       "now" -> JsNumber((new ju.Date).getTime),
       "siteStatus" -> JsString(siteStatusString),
       "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed && pageReq.siteId == KajMagnusSiteId),
@@ -206,11 +207,14 @@ object ReactJson {
       else None
 
     val jsonObj = Json.obj(
+      "appVersion" -> Globals.applicationVersion,
+      "pageVersion" -> page.meta.version,
       "siteStatus" -> JsString(siteStatusString),
       "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed && transaction.siteId == KajMagnusSiteId),
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
       "pageId" -> pageId,
+      // Page members join/leave infrequently, so seems better to cache than to lookup each request.
       "messageMembers" -> JsArray(messageMembers.map(JsUser)),
       "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "forumId" -> JsStringOrNull(anyForumId),
@@ -298,12 +302,17 @@ object ReactJson {
 
 
   def postToJson2(postNr: PostNr, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false)
-        : JsObject = {
+      : JsObject =
+    postToJson(postNr, pageId, dao, includeUnapproved)._1
+
+  def postToJson(postNr: PostNr, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false)
+        : (JsObject, PageVersion) = {
     dao.readOnlyTransaction { transaction =>
       // COULD optimize: don't load the whole page, load only postNr and the author and last editor.
       val page = PageDao(pageId, transaction)
-      postToJsonImpl(page.parts.thePost(postNr), page, transaction.currentTime,
+      val json = postToJsonImpl(page.parts.thePost(postNr), page, transaction.currentTime,
         includeUnapproved = includeUnapproved)
+      (json, page.version)
     }
   }
 
@@ -452,6 +461,7 @@ object ReactJson {
   val NoUserSpecificData = Json.obj(
     "rolePageSettings" -> JsObject(Nil),
     "notifications" -> JsArray(),
+    "watchbar" -> EmptyWatchbar,
     "votes" -> JsObject(Nil),
     "unapprovedPosts" -> JsObject(Nil),
     "postIdsAutoReadLongAgo" -> JsArray(Nil),
@@ -460,12 +470,25 @@ object ReactJson {
     "closedHelpMessages" -> JsObject(Nil))
 
 
+  // Ought to rename this function (i.e. userDataJson) because it really should come as a
+  // surprise that it updates the watchbar! But to what? Or reanme the class too? Or break out?
   def userDataJson(pageRequest: PageRequest[_]): Option[JsObject] = {
     val user = pageRequest.user getOrElse {
       return None
     }
+
+    var watchbar: BareWatchbar = pageRequest.dao.loadWatchbar(user.id)
+    if (pageRequest.pageExists) {
+      // (See comment above about ought-to-rename this whole function / stuff.)
+      BUG // Fairly harmless race condition: If the user opens two pages roughly at once.
+      watchbar = watchbar.addRecentTopicMarkSeen(pageRequest.thePageId)
+      pageRequest.dao.saveWatchbar(user.id, watchbar)
+      // Another race condition.
+      pageRequest.dao.pubSub.userWatchesPages(pageRequest.siteId, user.id, watchbar.watchedPageIds)
+    }
+    val watchbarWithTitles = pageRequest.dao.fillInWatchbarTitlesEtc(watchbar)
     pageRequest.dao.readOnlyTransaction { transaction =>
-      Some(userDataJsonImpl(user, pageRequest.pageId, transaction))
+      Some(userDataJsonImpl(user, pageRequest.pageId, watchbarWithTitles, transaction))
     }
   }
 
@@ -474,12 +497,14 @@ object ReactJson {
     val user = request.user getOrElse {
       return JsNull
     }
-    request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, _))
+    val watchbar = request.dao.loadWatchbar(user.id)
+    val watchbarWithTitles = request.dao.fillInWatchbarTitlesEtc(watchbar)
+    request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles, _))
   }
 
 
   private def userDataJsonImpl(user: User, anyPageId: Option[PageId],
-        transaction: SiteTransaction): JsObject = {
+        watchbar: WatchbarWithTitles, transaction: SiteTransaction): JsObject = {
 
     val reviewTasksAndCounts =
       if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
@@ -519,6 +544,8 @@ object ReactJson {
       "numOtherNotfs" -> notfsAndCounts.numOther,
       "thereAreMoreUnseenNotfs" -> notfsAndCounts.thereAreMoreUnseen,
       "notifications" -> notfsAndCounts.notfsJson,
+
+      "watchbar" -> watchbar.toJsonWithTitles,
 
       "votes" -> anyVotes,
       "unapprovedPosts" -> anyUnapprovedPosts,
@@ -796,12 +823,38 @@ object ReactJson {
   }
 
 
+  def EmptyWatchbar = Json.obj(
+    WatchbarSection.RecentTopics.toInt.toString -> JsArray(Nil),
+    WatchbarSection.Notifications.toInt.toString -> JsArray(Nil),
+    WatchbarSection.ChatChannels.toInt.toString -> JsArray(Nil),
+    WatchbarSection.DirectMessages.toInt.toString -> JsArray(Nil))
+
+
+  def makeStorePatch(post: Post, author: User, dao: SiteDao): JsValue = {
+    require(post.createdById == author.id, "EsE5PKY2")
+    val (postJson, pageVersion) = ReactJson.postToJson(
+      post.nr, pageId = post.pageId, dao, includeUnapproved = true)
+    makeStorePatch(PageIdVersion(post.pageId, pageVersion),
+      posts = Seq(postJson), users = Seq(JsUser(author)))
+
+  }
+
+
+  def makeStorePatch(pageIdVersion: PageIdVersion, posts: Seq[JsObject] = Nil,
+        users: Seq[JsObject] = Nil): JsValue = {
+    require(posts.isEmpty || users.nonEmpty, "Posts but no authors [EsE4YK7W2]")
+    Json.obj(
+      "appVersion" -> Globals.applicationVersion,
+      "pageVersionsByPageId" -> Json.obj(pageIdVersion.pageId -> pageIdVersion.version),
+      "usersBrief" -> users,
+      "postsByPageId" -> Json.obj(pageIdVersion.pageId -> posts))
+  }
+
+
   def JsUserOrNull(user: Option[User]): JsValue =
     user.map(JsUser).getOrElse(JsNull)
 
-  def JsUser(user: User): JsObject = JsUser(user, None)
-
-  def JsUser(user: User, anyPresence: Option[Presence]): JsObject = {
+  def JsUser(user: User): JsObject = {
     var json = Json.obj(
       "id" -> JsNumber(user.id),
       "username" -> JsStringOrNull(user.username),
@@ -824,9 +877,6 @@ object ReactJson {
     }
     if (user.isModerator) {
       json += "isModerator" -> JsTrue
-    }
-    anyPresence foreach { presence =>
-      json += "presence" -> JsNumber(presence.toInt)
     }
     json
   }

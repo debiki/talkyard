@@ -32,19 +32,19 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import ReactJson.JsUser
+import PubSubActor._
 
 
 sealed trait Message {
   def siteId: SiteId
-  def toUserIds: Set[UserId]
   def toJson: JsValue
   def notifications: Notifications
 }
 
 
+// Remove? Use StorePatchMessage instead?
 case class NewPageMessage(
   siteId: SiteId,
-  toUserIds: immutable.Set[UserId],
   pageId: PageId,
   pageRole: PageRole,
   notifications: Notifications) extends Message {
@@ -53,11 +53,10 @@ case class NewPageMessage(
 }
 
 
-case class NewPostMessage(
+case class StorePatchMessage(
   siteId: SiteId,
-  toUserIds: immutable.Set[UserId],
-  pageId: PageId,
-  postJson: JsValue,
+  toUsersViewingPage: PageId,
+  json: JsValue,
   notifications: Notifications) extends Message {
 
   def toJson = JsNull
@@ -96,8 +95,13 @@ class PubSubApi(private val actorRef: ActorRef) {
     actorRef ! UnsubscribeUser(siteId, user, browserIdData)
   }
 
-  def publish(message: Message) {
-    actorRef ! PublishMessage(message)
+  def userWatchesPages(siteId: SiteId, userId: UserId, pageIds: Set[PageId]) {
+    actorRef ! UserWatchesPages(siteId, userId, pageIds)
+  }
+
+  /** Assumes user byId knows about this already; won't publish to him/her. */
+  def publish(message: Message, byId: UserId) {
+    actorRef ! PublishMessage(message, byId)
   }
 
   def listOnlineUsers(siteId: SiteId): Future[(immutable.Seq[User], Int)] = {
@@ -111,13 +115,14 @@ class StrangerCounterApi(private val actorRef: ActorRef) {
 
   private val timeout = 10 seconds
 
-  def tellStrangerSeen(siteId: SiteId, browserIdData: BrowserIdData) {
+  def strangerSeen(siteId: SiteId, browserIdData: BrowserIdData) {
     actorRef ! StrangerSeen(siteId, browserIdData)
   }
 }
 
 
-private case class PublishMessage(message: Message)
+private case class PublishMessage(message: Message, byId: UserId)
+private case class UserWatchesPages(siteId: SiteId, userId: UserId, pageIds: Set[PageId])
 private case class UserSubscribed(siteId: SiteId, user: User, browserIdData: BrowserIdData)
 private case class UnsubscribeUser(siteId: SiteId, user: User, browserIdData: BrowserIdData)
 private case class ListOnlineUsers(siteId: SiteId)
@@ -125,6 +130,12 @@ private case object DeleteInactiveSubscriptions
 
 private case class StrangerSeen(siteId: SiteId, browserIdData: BrowserIdData)
 
+
+object PubSubActor {
+
+  private class UserWhenPages(val user: User, val when: When, var watchingPageIds: Set[PageId])
+
+}
 
 
 /** Publishes events to browsers via e.g. long polling or WebSocket. Reqiures nginx and nchan.
@@ -141,13 +152,17 @@ class PubSubActor extends Actor {
     * connected to the server via e.g. WebSocket).
     */
   private val subscribersBySite =
-    mutable.HashMap[SiteId, mutable.LinkedHashMap[UserId, UserAndWhen]]()
+    mutable.HashMap[SiteId, mutable.LinkedHashMap[UserId, UserWhenPages]]()
 
-  private class UserAndWhen(val user: User, val when: When)
+  private val watcherIdsByPageSiteId =
+    mutable.HashMap[SiteId, mutable.HashMap[PageId, mutable.Set[UserId]]]()
 
   private def perSiteSubscribers(siteId: SiteId) =
     // Use a LinkedHashMap because sort order = insertion order.
-    subscribersBySite.getOrElseUpdate(siteId, mutable.LinkedHashMap[UserId, UserAndWhen]())
+    subscribersBySite.getOrElseUpdate(siteId, mutable.LinkedHashMap[UserId, UserWhenPages]())
+
+  private def perSiteWatchers(siteId: SiteId) =
+    watcherIdsByPageSiteId.getOrElseUpdate(siteId, mutable.HashMap[PageId, mutable.Set[UserId]]())
 
   // Could check what is Nchan's long-polling inactive timeout, if any?
   private val DeleteAfterInactiveMillis = 10 * OneMinuteInMillis
@@ -156,6 +171,8 @@ class PubSubActor extends Actor {
 
 
   def receive = {
+    case UserWatchesPages(siteId, userId, pageIds) =>
+      updateWatchedPages(siteId, userId, pageIds)
     case UserSubscribed(siteId, user, browserIdData) =>
       strangerCounter.removeStranger(siteId, browserIdData)
       publishUserPresence(siteId, user, Presence.Active)
@@ -166,8 +183,8 @@ class PubSubActor extends Actor {
       // didn't really leave, but rather says, reading, but logged out.
       unsubscribeUser(siteId, user)
       publishUserPresence(siteId, user, Presence.Away)
-    case PublishMessage(message: Message) =>
-      publishPostAndNotfs(message)
+    case PublishMessage(message: Message, byId: UserId) =>
+      publishStorePatchAndNotfs(message, byId)
     case ListOnlineUsers(siteId) =>
       sender ! listUsersOnline(siteId)
     case DeleteInactiveSubscriptions =>
@@ -181,14 +198,16 @@ class PubSubActor extends Actor {
   private def subscribeUser(siteId: SiteId, user: User) {
     val userAndWhenMap = perSiteSubscribers(siteId)
     // Remove and reinsert, so inactive users will be the first ones found when iterating.
-    userAndWhenMap.remove(user.id)
-    userAndWhenMap.put(user.id, new UserAndWhen(user, When.now()))
+    val anyOld = userAndWhenMap.remove(user.id)
+    userAndWhenMap.put(user.id, new UserWhenPages(
+      user, When.now(), anyOld.map(_.watchingPageIds) getOrElse Set.empty))
   }
 
 
   private def unsubscribeUser(siteId: SiteId, user: User) {
     // COULD tell Nchan about this too
     perSiteSubscribers(siteId).remove(user.id)
+    updateWatchedPages(siteId, user.id, Set.empty)
   }
 
 
@@ -203,23 +222,26 @@ class PubSubActor extends Actor {
     if (userAndWhenById.contains(user.id))
       return
 
-    val userIds = userAndWhenById.values.map(_.user.id).toSet
-    sendPublishRequest(canonicalHost.hostname, userIds, "presence", Json.obj(
-      "user" -> JsUser(user, Some(presence)),
+    val toUserIds = userAndWhenById.values.map(_.user.id).toSet - user.id
+    sendPublishRequest(canonicalHost.hostname, toUserIds, "presence", Json.obj(
+      "user" -> JsUser(user),
+      "presence" -> presence.toInt,
       "numOnlineStrangers" -> strangerCounter.countStrangers(siteId)))
   }
 
 
-  private def publishPostAndNotfs(message: Message) {
-    SHOULD // only publish to connected users
-
+  private def publishStorePatchAndNotfs(message: Message, byId: UserId) {
     // dupl code [7UKY74]
     val siteDao = Globals.siteDao(message.siteId)
     val site = siteDao.loadSite()
     val canonicalHost = site.canonicalHost.getOrDie(
       "EsE7UKFW2", s"Site lacks canonical host: $site")
 
-    message.notifications.toCreate foreach { notf =>
+    COULD // publish notifications.toDelete too (e.g. an accidental mention that gets edited out).
+    val notfsReceiverIsOnline = message.notifications.toCreate filter { notf =>
+      isUserOnline(message.siteId, notf.toUserId)
+    }
+    notfsReceiverIsOnline foreach { notf =>
       COULD_OPTIMIZE // later: do only 1 call to siteDao, for all notfs.
       val notfsJson = siteDao.readOnlyTransaction { transaction =>
         ReactJson.notificationsToJson(Seq(notf), transaction).notfsJson
@@ -227,11 +249,45 @@ class PubSubActor extends Actor {
       sendPublishRequest(canonicalHost.hostname, Set(notf.toUserId), "notifications", notfsJson)
     }
 
-    // Later: publish message.toJson too, to all message.toUserIds.
+    message match {
+      case patchMessage: StorePatchMessage =>
+        val userIds = usersWatchingPage(
+          patchMessage.siteId, pageId = patchMessage.toUsersViewingPage).filter(_ != byId)
+        userIds.foreach(siteDao.markPageAsUnreadInWatchbar(_, patchMessage.toUsersViewingPage))
+        sendPublishRequest(canonicalHost.hostname, userIds, "storePatch", patchMessage.json)
+      case x =>
+        unimplemented(s"Publishing ${classNameOf(x)} [EsE4GPYU2]")
+    }
   }
 
 
-  private def sendPublishRequest(hostname: String, toUserIds: Set[UserId], tyype: String,
+  private def updateWatchedPages(siteId: SiteId, userId: UserId, pageIds: Set[PageId]) {
+    val watcherIdsByPageId = perSiteWatchers(siteId)
+    val oldPageIds =
+      perSiteSubscribers(siteId).get(userId).map(_.watchingPageIds) getOrElse Set.empty
+    val pageIdsAdded = pageIds -- oldPageIds
+    val pageIdsRemoved = oldPageIds -- pageIds
+    pageIdsRemoved foreach { pageId =>
+      val watcherIds = watcherIdsByPageId.getOrElse(pageId, mutable.Set.empty)
+      watcherIds.remove(userId)
+      if (watcherIds.isEmpty) {
+        watcherIdsByPageId.remove(pageId)
+      }
+    }
+    pageIdsAdded foreach { pageId =>
+      val watcherIds = watcherIdsByPageId.getOrElseUpdate(pageId, mutable.Set.empty)
+      watcherIds.add(userId)
+    }
+  }
+
+
+  private def usersWatchingPage(siteId: SiteId, pageId: PageId): Iterable[UserId] = {
+    val watcherIdsByPageId = perSiteWatchers(siteId)
+    watcherIdsByPageId.getOrElse(pageId, Nil)
+  }
+
+
+  private def sendPublishRequest(hostname: String, toUserIds: Iterable[UserId], tyype: String,
         json: JsValue) {
     // Currently nchan doesn't support publishing to many channels with one single request.
     // (See the Channel Multiplexing section here: https://nchan.slact.net/
@@ -260,6 +316,10 @@ class PubSubActor extends Actor {
   }
 
 
+  private def isUserOnline(siteId: SiteId, userId: UserId): Boolean =
+    perSiteSubscribers(siteId).contains(userId)
+
+
   private def listUsersOnline(siteId: SiteId): (immutable.Seq[User], Int) = {
     val onlineUsers = perSiteSubscribers(siteId).values.map(_.user).to[immutable.Seq]
     val numStrangers = strangerCounter.countStrangers(siteId)
@@ -269,17 +329,14 @@ class PubSubActor extends Actor {
 
   private def deleteInactiveSubscriptions() {
     val now = When.now()
-    for ((siteId, userAndWhenMap) <- subscribersBySite) {
+    for ((siteId, userWhenPagesMap) <- subscribersBySite) {
       // LinkedHashMap sort order = perhaps-inactive first.
-      // COULD implement `removeWhile` [removewhile]
-      while (true) {
-        val ((userId, userAndWhen)) = userAndWhenMap.headOption getOrElse {
-          return
+      userWhenPagesMap removeWhileValue { userWhenPages =>
+        if (now.millisSince(userWhenPages.when) < DeleteAfterInactiveMillis) false
+        else {
+          updateWatchedPages(siteId, userWhenPages.user.id, Set.empty)
+          true
         }
-        if (now.millisSince(userAndWhen.when) < DeleteAfterInactiveMillis)
-          return
-
-        userAndWhenMap.remove(userId)
       }
     }
   }

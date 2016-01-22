@@ -474,6 +474,10 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     |  },
     |  getUser: function() {
     |    return initialStateJson.user;
+    |  },
+    |  getPageTitle: function() { // dupl code [5GYK2]
+    |    var titlePost = initialStateJson.allPosts[TitleId];
+    |    return titlePost ? titlePost.sanitizedHtml : "(no title)";
     |  }
     |};
     |

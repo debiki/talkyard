@@ -18,7 +18,7 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
-var NoPostId = -1; // also in editor.ts and posts.ts
+var NoPostId = -1; // also in constants.ts
 
 
 d.i.$showReplyForm = function(event, anyPostType) {
@@ -100,6 +100,7 @@ d.i.clearIsReplyingMarks = function() {
 };
 
 
+// Try to remove. Rename to handlePagePatch?
 d.i.handleReplyResult = function(data) {
   if (d.i.isInEmbeddedEditor) {
     // Send a message to the embedding page, which will forward it to
@@ -113,20 +114,16 @@ d.i.handleReplyResult = function(data) {
 };
 
 
-function doHandleReplyResult(newPost) {
-  // On iPhone 5, some unknown error happens inside ReactStore.emitChange, invoked
-  // via `updatePost(newPost)` below. Therefore, schedule show-and-highlight directly here.
-  // (No idea what happens — everything seems to work fine, except that no code below
-  // `updatePost(newPost)` gets invoked here. iPhone logs no info about the error at all;
-  // I know it happens in emitChange only because I added lots of console.error messages,
-  // and the one after emitChange after `switch (action.actionType)` in ReactStore was
-  // the first one that was never displayed.)
-  setTimeout(function() {
-    debiki2.ReactActions.loadAndShowPost(newPost.postId);
-  }, 1);
-
-  debiki2.ReactActions.updatePost(newPost);
-};
+function doHandleReplyResult(data) {
+  if (_.isNumber(data.postId)) {
+    // It's a post. Try to remove this.
+    debiki2.ReactActions.updatePost(data);
+  }
+  else {
+    // It's a StorePatch.
+    debiki2.ReactActions.patchTheStore(data);
+  }
+}
 
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

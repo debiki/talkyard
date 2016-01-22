@@ -38,6 +38,9 @@ var ChangeEvent = 'ChangeEvent';
 
 export var ReactStore = new EventEmitter2();
 
+// Avoid a harmless "possible EventEmitter memory leak detected" warning.
+ReactStore.setMaxListeners(20);
+
 
 // First, initialize the store with page specific data only, nothing user specific,
 // because the server serves cached HTML with no user specific data. Later on,
@@ -193,6 +196,11 @@ ReactDispatcher.register(function(payload) {
       showPost(action.postId, action.showChildrenToo);
       break;
 
+    case ReactActions.actionTypes.SetWatchbar:
+      watchbar_copyUnreadStatusFromTo(store.me.watchbar, action.watchbar);
+      store.me.watchbar = action.watchbar;
+      break;
+
     case ReactActions.actionTypes.SetWatchbarOpen:
       putInLocalStorage('isWatchbarOpen', action.open);
       store.isWatchbarOpen = action.open;
@@ -232,30 +240,30 @@ ReactDispatcher.register(function(payload) {
       markAnyNotificationssAsSeen(action.postNr);
       break;
 
+    case ReactActions.actionTypes.AddMeAsPageMember:
+      userList_add(store.messageMembers, me_toBriefUser(store.me));
+      break;
+
+    case ReactActions.actionTypes.PatchTheStore:
+      patchTheStore(action.storePatch);
+      break;
+
     case ReactActions.actionTypes.UpdateUserPresence:
-      // Updating state in-place, oh well.
       store.numOnlineStrangers = action.numOnlineStrangers;
-      var user: BriefUser = action.user;
-      store.usersByIdBrief[user.id] = user;
-      if (store.onlineUsers) {
-        if (user.presence === Presence.Active) {
-          if (_.every(store.onlineUsers, u => u.id !== user.id)) {
-            store.onlineUsers.push(user);
-          }
-        }
-        else {
-          _.remove(store.onlineUsers, u => u.id === user.id);
-        }
+      if (action.presence === Presence.Active) {
+        theStore_addOnlineUser(action.user);
+      }
+      else {
+        theStore_removeOnlineUser(action.user);
       }
       break;
 
     case ReactActions.actionTypes.UpdateOnlineUsersLists:
-      _.forEach(store.usersByIdBrief, (u: BriefUser) => u.presence = undefined);
       store.numOnlineStrangers = action.numOnlineStrangers;
       store.onlineUsers = action.onlineUsers;
-      // Overwrite any old user objects with no presence info and perhaps stale other data.
+      store.onlineUsersById = {};
       _.each(action.onlineUsers, (user: BriefUser) => {
-        store.usersByIdBrief[user.id] = user;
+        store.onlineUsersById[user.id] = user;
       });
       break;
 
@@ -319,6 +327,8 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   store.me = newMe;
   addLocalStorageData(store.me);
 
+  watchbar_markAsRead(store.me.watchbar, store.pageId);
+
   // Show the user's own unapproved posts, or all, for admins.
   _.each(store.me.unapprovedPosts, (post: Post) => {
     updatePost(post);
@@ -345,35 +355,48 @@ function me_toBriefUser(me: Myself): BriefUser {
     isGuest: me.id && me.id <= MaxGuestId,
     isEmailUnknown: undefined, // ?
     avatarUrl: me.avatarUrl,
-    presence: Presence.Active,
-  }
-}
-
-
-function theStore_removeOnlineUser(userId: UserId) {
-  if (store.onlineUsers) {
-    _.remove(store.onlineUsers, u => u.id === userId);
-  }
-  var user = store.usersByIdBrief[userId];
-  if (user) {
-    user.presence = Presence.Away;
   }
 }
 
 
 function theStore_addOnlineUser(user: BriefUser) {
-  store.usersByIdBrief[user.id] = user;
+  // Updating state in-place, oh well.
   if (store.onlineUsers) {
-    if (_.every(store.onlineUsers, u => u.id !== user.id)) {
-      store.onlineUsers.push(user);
-    }
+    userList_add(store.onlineUsers, user);
+  }
+  if (store.onlineUsersById) {
+    store.onlineUsersById[user.id] = user;
   }
 }
 
-export function store_getOnlineUsersWholeSite(store: Store): BriefUser[] {
-  return _.values(store.usersByIdBrief).filter(u => {
-    return _.some(store.onlineUsers, ou => ou.id === u.id);
-  });
+
+function theStore_removeOnlineUser(userId: UserId | BriefUser) {
+  var id: UserId = toId(userId);
+  // Updating state in-place, oh well.
+  if (store.onlineUsers) {
+    userList_remove(store.onlineUsers, id);
+  }
+  if (store.onlineUsersById) {
+    delete store.onlineUsersById[id];
+  }
+}
+
+
+function userList_add(users: BriefUser[], newUser: BriefUser) {
+  dieIf(!users, 'EsE7YKWF2');
+  if (_.every(users, u => u.id !== newUser.id)) {
+    users.push(newUser);
+  }
+}
+
+
+function userList_remove(users: BriefUser[], userId: UserId) {
+  _.remove(users, u => u.id === userId);
+}
+
+
+export function store_isUserOnline(store: Store, userId: UserId): boolean {
+  return store.onlineUsersById && !!store.onlineUsersById[userId];
 }
 
 
@@ -381,7 +404,9 @@ export function store_getUsersOnThisPage(store: Store): BriefUser[] {
   var users: BriefUser[] = [];
   _.each(store.allPosts, (post: Post) => {
     if (_.every(users, u => u.id !== post.authorIdInt)) {
-      users.push(store.usersByIdBrief[post.authorIdInt]);
+      var user = store.usersByIdBrief[post.authorIdInt];
+      dieIf(!user, "Author missing, post id " + post.uniqueId + " [EsE4UGY2]");
+      users.push(user);
     }
   });
   return users;
@@ -402,7 +427,7 @@ ReactStore.getPageRole = function(): PageRole {
 };
 
 
-ReactStore.getPageTitle = function(): string {
+ReactStore.getPageTitle = function(): string { // dupl code [5GYK2]
   var titlePost = store.allPosts[TitleId];
   return titlePost ? titlePost.sanitizedHtml : "(no title)";
 };
@@ -505,7 +530,13 @@ function updatePost(post: Post, isCollapsing?: boolean) {
 
   rememberPostsToQuickUpdate(post.postId);
   stopGifsPlayOnClick();
-  setTimeout(processTimeAgo);
+  setTimeout(() => {
+    processTimeAgo();
+    if (!oldVersion && post.authorIdInt === store.me.id) {
+      // Show the user his/her new post.
+      ReactActions.loadAndShowPost(post.postId);
+    }
+  }, 1);
 }
 
 
@@ -650,8 +681,8 @@ function collapseTree(post: Post) {
 }
 
 
-function showPost(postId: number, showChildrenToo?: boolean) {
-  var post = store.allPosts[postId];
+function showPost(postNr: PostNr, showChildrenToo?: boolean) {
+  var post = store.allPosts[postNr];
   if (showChildrenToo) {
     uncollapsePostAndChildren(post);
   }
@@ -661,27 +692,27 @@ function showPost(postId: number, showChildrenToo?: boolean) {
     post = store.allPosts[post.parentId];
   }
   setTimeout(() => {
-    debiki.internal.showAndHighlightPost($('#post-' + postId));
+    debiki.internal.showAndHighlightPost($('#post-' + postNr));
     processTimeAgo();
   }, 1);
 }
 
 
 function uncollapsePostAndChildren(post: Post) {
-  uncollapseOne(post)
+  uncollapseOne(post);
   // Also uncollapse children and grandchildren so one won't have to Click-to-show... all the time.
   for (var i = 0; i < Math.min(post.childIdsSorted.length, 5); ++i) {
     var childId = post.childIdsSorted[i];
     var child = store.allPosts[childId];
     if (!child)
       continue;
-    uncollapseOne(child)
+    uncollapseOne(child);
     for (var i2 = 0; i2 < Math.min(child.childIdsSorted.length, 3); ++i2) {
       var grandchildId = child.childIdsSorted[i2];
       var grandchild = store.allPosts[grandchildId];
       if (!grandchild)
         continue;
-      uncollapseOne(grandchild)
+      uncollapseOne(grandchild);
     }
   }
   setTimeout(processTimeAgo);
@@ -689,6 +720,8 @@ function uncollapsePostAndChildren(post: Post) {
 
 
 function uncollapseOne(post: Post) {
+  if (!post.isTreeCollapsed && !post.isPostCollapsed && !post.summarize && !post.squash)
+    return;
   var p2 = clonePost(post.postId);
   p2.isTreeCollapsed = false;
   p2.isPostCollapsed = false;
@@ -854,6 +887,87 @@ function updateNotificationCounts(notf: Notification, add: boolean) {
 }
 
 
+function patchTheStore(storePatch: StorePatch) {
+  if (storePatch.appVersion !== store.appVersion) {
+    // COULD show dialog, like Discourse does: (just once)
+    //   The server has been updated. Reload the page please?
+    //   [Reload this page now]  [No, not now]
+    // For now though:
+    return;
+  }
+
+  // Highligt pages with new posts, in the watchbar.
+  _.each(storePatch.postsByPageId, (posts: Post[], pageId: PageId) => {
+    if (pageId !== store.pageId) {
+      watchbar_markAsUnread(store.me.watchbar, pageId);
+    }
+  });
+
+  // Update the current page.
+  var storePatchPageVersion = storePatch.pageVersionsByPageId[store.pageId];
+  if (!storePatchPageVersion || storePatchPageVersion <= store.pageVersion) {
+    // The store includes these changes already.
+    // COULD rename .usersBrief to .authorsBrief so it's apparent that they're related
+    // to the posts, and that it's ok to ignore them if the posts are too old.
+    return;
+  }
+  store.pageVersion = storePatchPageVersion;
+
+  _.each(storePatch.usersBrief || [], (user: BriefUser) => {
+    store.usersByIdBrief[user.id] = user;
+  });
+  var posts = storePatch.postsByPageId[store.pageId];
+  _.each(posts || [], (post: Post) => {
+    updatePost(post);
+  });
+
+  // The server should have marked this page as unread because of these new events.
+  // But we're looking at the page right now — so tell the server that the user has seen it.
+  // (The server doesn't know exactly which page we're looking at — perhaps we have many
+  // browser tabs open, for example.)
+  // COULD wait with marking it as seen until the user shows s/he is still here.
+  Server.markCurrentPageAsSeen();
+}
+
+
+function watchbar_markAsUnread(watchbar: Watchbar, pageId: PageId) {
+  watchbar_markReadUnread(watchbar, pageId, false);
+}
+
+
+function watchbar_markAsRead(watchbar: Watchbar, pageId: PageId) {
+  watchbar_markReadUnread(watchbar, pageId, true);
+}
+
+
+function watchbar_markReadUnread(watchbar: Watchbar, pageId: PageId, read: boolean) {
+  watchbar_foreachTopic(watchbar, watchbarTopic => {
+    if (watchbarTopic.pageId === pageId) {
+      watchbarTopic.unread = !read;
+    }
+  })
+}
+
+
+function watchbar_foreachTopic(watchbar: Watchbar, fn: (topic: WatchbarTopic) => void) {
+  _.each(watchbar[WatchbarSection.RecentTopics], fn);
+  _.each(watchbar[WatchbarSection.Notifications], fn);
+  _.each(watchbar[WatchbarSection.ChatChannels], fn);
+  _.each(watchbar[WatchbarSection.DirectMessages], fn);
+}
+
+
+function watchbar_copyUnreadStatusFromTo(old: Watchbar, newWatchbar: Watchbar) {
+  watchbar_foreachTopic(newWatchbar, (newTopic: WatchbarTopic) => {
+    watchbar_foreachTopic(old, (oldTopic: WatchbarTopic) => {
+      if (oldTopic.pageId === newTopic.pageId) {
+        newTopic.unread = oldTopic.unread;
+      }
+    });
+  });
+}
+
+
 function makeStranger(): Myself {
   return {
     rolePageSettings: {},
@@ -872,6 +986,8 @@ function makeStranger(): Myself {
     postIdsAutoReadNow: [],
     marksByPostId: {},
 
+    watchbar: loadWatchbarFromSessionStorage(),
+
     closedHelpMessages: {},
     presence: Presence.Active,
   };
@@ -887,18 +1003,38 @@ function addLocalStorageData(me: Myself) {
   me.marksByPostId = {}; // not implemented: loadMarksFromLocalStorage();
   me.closedHelpMessages = getFromLocalStorage('closedHelpMessages') || {};
 
-  // For now:
   // The watchbar: Recent topics.
-  var recentTopics: WatchbarTopic[] = getFromLocalStorage('recentTopics') || [];
-  // Add the current page, if absent, and if it's not a direct-message or chat-channel.
-  var shallList = store.pageId && store.pageId !== EmptyPageId &&
-      pageRole_shallListInRecentTopics(ReactStore.getPageRole());
-  if (shallList && _.every(recentTopics, topic => topic.pageId !== store.pageId)) {
-    recentTopics.unshift({ pageId: store.pageId, title: ReactStore.getPageTitle() });
-    putInLocalStorage('recentTopics', recentTopics);
+  if (me_isStranger(me)) {
+    me.watchbar = loadWatchbarFromSessionStorage();
+    var recentTopics = me.watchbar[WatchbarSection.RecentTopics];
+    if (shallAddCurrentPageToSessionStorageWatchbar(recentTopics)) {
+      recentTopics.unshift({
+        pageId: store.pageId,
+        url: location.pathname,
+        title: ReactStore.getPageTitle(),
+      });
+      putInSessionStorage('watchbar', me.watchbar);
+    }
   }
-  me.watchbarTopics = me.watchbarTopics || <WatchbarTopics> {};
-  me.watchbarTopics.recentTopics = recentTopics;
+}
+
+
+function loadWatchbarFromSessionStorage(): Watchbar {
+  // For privacy reasons, don't use localStorage?
+  var watchbar = getFromSessionStorage('watchbar') || { 1: [], 2: [], 3: [], 4: [], };
+  watchbar_markAsRead(watchbar, store.pageId);
+  return watchbar;
+}
+
+
+function shallAddCurrentPageToSessionStorageWatchbar(recentTopics: WatchbarTopic[]): boolean {
+  if (!store.pageId || store.pageId === EmptyPageId)
+    return false;
+
+  if (!pageRole_shallListInRecentTopics(store.pageRole))
+    return false;
+
+  return _.every(recentTopics, (topic: WatchbarTopic) => topic.pageId !== store.pageId);
 }
 
 

@@ -126,7 +126,9 @@ POST  /-/cycle-page-done        controllers.PageController.cyclePageDone
 POST  /-/toggle-page-closed     controllers.PageController.togglePageClosed
 POST  /-/accept-answer          controllers.PageController.acceptAnswer
 POST  /-/unaccept-answer        controllers.PageController.unacceptAnswer
+POST  /-/join-page              controllers.PageController.joinPage
 POST  /-/reply                  controllers.ReplyController.handleReply
+POST  /-/chat                   controllers.ReplyController.handleChatMessage
 POST  /-/vote                   controllers.VoteController.handleVotes
 POST  /-/flag                   controllers.Application.flag
 GET   /-/load-draft-and-guidelines controllers.EditController.loadDraftAndGuidelines(writingWhat, categoryId, pageRole)
@@ -182,5 +184,6 @@ GET   /-/debiki-embedded-comments.css  controllers.Assets.at(path = "/public/res
 GET   /-/*file                  controllers.Application.assetAt(path = "/public", file)
 GET   /favicon.ico              controllers.Assets.at(path = "/public/img", file = "debiki-favicon.ico")
 
-GET   /*path                    controllers.ViewPageController.renderPage(path)
-GET   /                         controllers.ViewPageController.renderPage(path = "")
+POST  /-/mark-as-seen           controllers.ViewPageController.markPageAsSeen(pageId)
+GET   /*path                    controllers.ViewPageController.viewPage(path)
+GET   /                         controllers.ViewPageController.viewPage(path = "")

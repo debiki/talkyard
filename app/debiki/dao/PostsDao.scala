@@ -19,13 +19,12 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.core.User.SystemUserId
 import controllers.EditController
 import debiki._
 import debiki.DebikiHttp._
 import io.efdi.server.notf.NotificationGenerator
-import io.efdi.server.pubsub
-import java.{util => ju}
+import io.efdi.server.pubsub.StorePatchMessage
+import play.api.libs.json.JsValue
 import play.{api => p}
 import scala.collection.{mutable, immutable}
 import PostsDao._
@@ -41,9 +40,15 @@ import PostsDao._
 trait PostsDao {
   self: SiteDao =>
 
+  // 3 minutes
+  val LastChatMessageRecentMs = 3 * 60 * 1000
+
 
   def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
-        postType: PostType, authorId: UserId, browserIdData: BrowserIdData): PostNr = {
+        postType: PostType, authorId: UserId, browserIdData: BrowserIdData): JsValue = {
+
+    // Note: Fairly similar to createNewChatMessage() just below. [4UYKF21]
+
     if (textAndHtml.safeHtml.trim.isEmpty)
       throwBadReq("DwE6KEF2", "Empty reply")
 
@@ -55,7 +60,7 @@ trait PostsDao {
       throwNotImplemented("EsE7GKX2", o"""Please reply to one single person only.
         Multireplies temporarily disabled, sorry""")
 
-    val (postNr, pageMemberIds, notifications) = readWriteTransaction { transaction =>
+    val (newPost, author, notifications) = readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val uniqueId = transaction.nextPostId()
       val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
@@ -173,23 +178,177 @@ trait PostsDao {
       insertAuditLogEntry(auditLogEntry, transaction)
       reviewTask.foreach(transaction.upsertReviewTask)
 
-      // generate json? load all page members?
-      // send the post + json back to the caller?
-      // & publish [pubsub]
-      val pageMemberIds = transaction.loadMessageMembers(pageId)
-
       val notifications = NotificationGenerator(transaction).generateForNewPost(page, newPost)
       transaction.saveDeleteNotifications(notifications)
 
-      (postNr, pageMemberIds, notifications)
+      (newPost, author, notifications)
     }
 
-    pubSub.publish(
-      // for now, send null:
-      pubsub.NewPostMessage(siteId, pageMemberIds, pageId, play.api.libs.json.JsNull, notifications))
+    refreshPageInAnyCache(pageId)
+
+    val storePatchJson = ReactJson.makeStorePatch(newPost, author, this)
+    pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
+      byId = author.id)
+
+    storePatchJson
+  }
+
+
+  /** If the chat message author just posted another chat message, just above, no other
+    * messages in between — then we'll append this new message to the old one, instead
+    * of creating a new different chat message.
+    */
+  def insertChatMessage(textAndHtml: TextAndHtml, pageId: PageId,
+        authorId: UserId, browserIdData: BrowserIdData, dao: SiteDao): JsValue = {
+
+    if (textAndHtml.safeHtml.trim.isEmpty)
+      throwBadReq("DwE2U3K8", "Empty chat message")
+
+    val (post, author, notifications) = readWriteTransaction { transaction =>
+      val page = PageDao(pageId, transaction)
+      val pageMemberIds = transaction.loadMessageMembers(pageId)
+      if (!pageMemberIds.contains(authorId))
+        throwForbidden("EsE4UGY7", "You are not a member of this chat channel")
+
+      val author = transaction.loadUser(authorId) getOrElse
+        throwNotFound("DwE8YK32", "Author not found")
+
+      // Try to append to the last message, instead of creating a new one. That looks
+      // better in the browser (fewer avatars & sent-by info), + we'll save disk and
+      // render a little bit faster.
+      val anyLastMessage = page.parts.lastPostButNotOrigPost
+      val anyLastMessageSameUserRecently = anyLastMessage filter { post =>
+        post.createdById == authorId &&
+          transaction.currentTime.getTime - post.createdAt.getTime < LastChatMessageRecentMs
+      }
+      val (postNr, notfs) = anyLastMessageSameUserRecently match {
+        case Some(lastMessage) =>
+          appendToLastChatMessage(lastMessage, textAndHtml, authorId, browserIdData, transaction)
+        case None =>
+          createNewChatMessage(page, textAndHtml, authorId, browserIdData, transaction)
+      }
+      (postNr, author, notfs)
+    }
 
     refreshPageInAnyCache(pageId)
-    postNr
+
+    val storePatchJson = ReactJson.makeStorePatch(post, author, this)
+    pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
+      byId = author.id)
+
+    storePatchJson
+  }
+
+
+  def createNewChatMessage(page: PageDao, textAndHtml: TextAndHtml, authorId: UserId,
+        browserIdData: BrowserIdData, transaction: SiteTransaction)
+        : (Post, Notifications) = {
+
+    // Note: Farily similar to insertReply() a bit above. [4UYKF21]
+
+    val uniqueId = transaction.nextPostId()
+    val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
+
+    // This is better than some database foreign key error.
+    transaction.loadUser(authorId) getOrElse throwNotFound("EsE2YG8", "Bad user")
+
+    val newPost = Post.create(
+      siteId = siteId,
+      uniqueId = uniqueId,
+      pageId = page.id,
+      postNr = postNr,
+      parent = None,
+      multireplyPostNrs = Set.empty,
+      postType = PostType.Flat,
+      createdAt = transaction.currentTime,
+      createdById = authorId,
+      source = textAndHtml.text,
+      htmlSanitized = textAndHtml.safeHtml,
+      approvedById = Some(SystemUserId))
+
+    // COULD find the most recent posters in the last 100 messages only, because is chat.
+    val newFrequentPosterIds: Seq[UserId] =
+      PageParts.findFrequentPosters(newPost +: page.parts.allPosts,
+        ignoreIds = Set(page.meta.authorId, authorId))
+
+    val oldMeta = page.meta
+    val newMeta = oldMeta.copy(
+      bumpedAt = page.isClosed ? oldMeta.bumpedAt | Some(transaction.currentTime),
+      lastReplyAt = Some(transaction.currentTime),
+      lastReplyById = Some(authorId),
+      frequentPosterIds = newFrequentPosterIds,
+      version = oldMeta.version + 1)
+
+    val uploadRefs = UploadsDao.findUploadRefsInPost(newPost)
+
+    SECURITY // COULD: if is new chat user, create review task to look at his/her first
+    // chat messages, but only the first few.
+
+    val auditLogEntry = AuditLogEntry(
+      siteId = siteId,
+      id = AuditLogEntry.UnassignedId,
+      didWhat = AuditLogEntryType.NewChatMessage,
+      doerId = authorId,
+      doneAt = transaction.currentTime,
+      browserIdData = browserIdData,
+      pageId = Some(page.id),
+      uniquePostId = Some(newPost.uniqueId),
+      postNr = Some(newPost.nr),
+      targetUniquePostId = None,
+      targetPostNr = None,
+      targetUserId = None)
+
+    transaction.insertPost(newPost)
+    transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+    uploadRefs foreach { uploadRef =>
+      transaction.insertUploadedFileReference(newPost.uniqueId, uploadRef, authorId)
+    }
+    insertAuditLogEntry(auditLogEntry, transaction)
+
+    // generate json? load all page members?
+    // send the post + json back to the caller?
+    // & publish [pubsub]
+
+    val notfs = NotificationGenerator(transaction).generateForNewPost(page, newPost)
+    transaction.saveDeleteNotifications(notfs)
+
+    (newPost, notfs)
+  }
+
+
+  def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml, authorId: UserId,
+    browserIdData: BrowserIdData, transaction: SiteTransaction): (Post, Notifications) = {
+
+    // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
+
+    require(lastPost.currentRevisionById == authorId, "EsE5JKU0")
+    require(lastPost.currentSourcePatch.isEmpty, "EsE7YGKU2")
+    require(lastPost.currentRevisionNr == FirstRevisionNr, "EsE2FWY2")
+    require(lastPost.lastApprovedEditAt.isEmpty, "EsE2ZXF5")
+    require(lastPost.approvedById.contains(SystemUserId), "EsE4GBF3")
+    require(lastPost.approvedRevisionNr.contains(FirstRevisionNr), "EsE4PKW1")
+    require(lastPost.deletedAt.isEmpty, "EsE2GKY8")
+
+    val newText = lastPost.approvedSource.getOrDie("EsE5GYKF2") + "\n\n\n" + textAndHtml.text
+    val newHtml = lastPost.approvedHtmlSanitized.getOrDie("EsE2PU8") + "\n\n" + textAndHtml.safeHtml
+
+    val editedPost = lastPost.copy(
+      approvedSource = Some(newText),
+      approvedHtmlSanitized = Some(newHtml))
+
+    transaction.updatePost(editedPost)
+    saveDeleteUploadRefs(lastPost, editedPost = editedPost, authorId, transaction)
+
+    val oldMeta = transaction.loadThePageMeta(lastPost.pageId)
+    val newMeta = oldMeta.copy(version = oldMeta.version + 1)
+    transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
+
+    // COULD create audit log entry that shows that this ip appended to the chat message.
+
+    val notfs = NotificationGenerator(transaction).generateForEdits(lastPost, editedPost)
+    transaction.saveDeleteNotifications(notfs)
+
+    (editedPost, notfs)
   }
 
 
@@ -197,6 +356,8 @@ trait PostsDao {
     */
   def editPostIfAuth(pageId: PageId, postNr: PostNr, editorId: UserId, browserIdData: BrowserIdData,
         newTextAndHtml: TextAndHtml) {
+
+    // Note: Farily similar to appendChatMessageToLastMessage() just above. [2GLK572]
 
     if (newTextAndHtml.safeHtml.trim.isEmpty)
       throwBadReq("DwE4KEL7", EditController.EmptyPostErrorMessage)
@@ -311,15 +472,6 @@ trait PostsDao {
           Some(category.copy(description = Some(newDescription)))
         }
 
-      // Use findUploadRefsInPost (not ...InText) so we'll find refs both in the hereafter
-      // 1) approved version of the post, and 2) the current possibly unapproved version.
-      // Because if any of the approved or the current version links to an uploaded file,
-      // we should keep the file.
-      val currentUploadRefs = UploadsDao.findUploadRefsInPost(editedPost)
-      val oldUploadRefs = transaction.loadUploadedFileReferences(postToEdit.uniqueId)
-      val uploadRefsAdded = currentUploadRefs -- oldUploadRefs
-      val uploadRefsRemoved = oldUploadRefs -- currentUploadRefs
-
       val postRecentlyCreated = transaction.currentTime.getTime - postToEdit.createdAt.getTime <=
           Settings.PostRecentlyCreatedLimitMs
 
@@ -354,17 +506,7 @@ trait PostsDao {
 
       transaction.updatePost(editedPost)
       newRevision.foreach(transaction.insertPostRevision)
-
-      uploadRefsAdded foreach { hashPathSuffix =>
-        transaction.insertUploadedFileReference(postToEdit.uniqueId, hashPathSuffix, editorId)
-      }
-      uploadRefsRemoved foreach { hashPathSuffix =>
-        val gone = transaction.deleteUploadedFileReference(postToEdit.uniqueId, hashPathSuffix)
-        if (!gone) {
-          p.Logger.warn(o"""Didn't delete this uploaded file ref: $hashPathSuffix, post id:
-            ${postToEdit.uniqueId} [DwE7UMF2]""")
-        }
-      }
+      saveDeleteUploadRefs(postToEdit, editedPost = editedPost, editorId, transaction)
 
       insertAuditLogEntry(auditLogEntry, transaction)
       anyEditedCategory.foreach(transaction.updateCategoryMarkSectionPageStale)
@@ -393,6 +535,31 @@ trait PostsDao {
     }
 
     refreshPageInAnyCache(pageId)
+  }
+
+
+  private def saveDeleteUploadRefs(postToEdit: Post, editedPost: Post, editorId: UserId,
+        transaction: SiteTransaction) {
+    // Use findUploadRefsInPost (not ...InText) so we'll find refs both in the hereafter
+    // 1) approved version of the post, and 2) the current possibly unapproved version.
+    // Because if any of the approved or the current version links to an uploaded file,
+    // we should keep the file.
+    val currentUploadRefs = UploadsDao.findUploadRefsInPost(editedPost)
+    val oldUploadRefs = transaction.loadUploadedFileReferences(postToEdit.uniqueId)
+    val uploadRefsAdded = currentUploadRefs -- oldUploadRefs
+    val uploadRefsRemoved = oldUploadRefs -- currentUploadRefs
+
+    uploadRefsAdded foreach { hashPathSuffix =>
+      transaction.insertUploadedFileReference(postToEdit.uniqueId, hashPathSuffix, editorId)
+    }
+
+    uploadRefsRemoved foreach { hashPathSuffix =>
+      val gone = transaction.deleteUploadedFileReference(postToEdit.uniqueId, hashPathSuffix)
+      if (!gone) {
+        p.Logger.warn(o"""Didn't delete this uploaded file ref: $hashPathSuffix, post id:
+            ${postToEdit.uniqueId} [DwE7UMF2]""")
+      }
+    }
   }
 
 

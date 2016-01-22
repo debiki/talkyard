@@ -95,6 +95,7 @@ package object core {
   val Megabytes = Megabyte
 
   def FirstSiteId = Site.FirstSiteId
+  val NoUserId = 0
   def SystemUserId = User.SystemUserId
   def SystemUserFullName = User.SystemUserFullName
   def SystemUserUsername = User.SystemUserUsername
@@ -110,6 +111,11 @@ package object core {
 
   case class SiteUserId(siteId: SiteId, userId: UserId)
   case class SitePageVersion(siteVersion: SiteVersion, pageVersion: PageVersion)
+
+  trait PageTitleRole {
+    def title: String
+    def role: PageRole
+  }
 
   /** If the up-to-date data hash and the cached hash, or the app version, are different,
     * the page should be re-rendered. Sometimes however, the hash is not available,

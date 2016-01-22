@@ -61,6 +61,11 @@ function getAddressVerificationEmailSentDialog() {
 
 
 debiki.internal.makeReturnToPostUrlForVerifEmail = function(postId) {
+  return debiki.internal.makeReturnToPageHashForVerifEmail('#post-' + postId);
+};
+
+
+debiki.internal.makeReturnToPageHashForVerifEmail = function(hash) {
   // The magic '__Redir...' string tells the server to use the return-to-URL only if it
   // needs to send an email address verification email (it'd include the return
   // to URL on a welcome page show via a link in the email).
@@ -69,10 +74,12 @@ debiki.internal.makeReturnToPostUrlForVerifEmail = function(postId) {
   // `d.i.iframeBaseUrl` is for embedded comments in an <iframe>: it's the URL of
   // the embedding parent page.
   var pageUrl = d.i.iframeBaseUrl ? d.i.iframeBaseUrl : window.location.toString();
-  return '_RedirFromVerifEmailOnly_' +
-    pageUrl.replace(/#.*/, '') +
-    '__dwHash__' +
-    'post-' + postId;
+  var returnToUrl = '_RedirFromVerifEmailOnly_' + pageUrl.replace(/#.*/, '');
+  if (hash) {
+    hash = hash.replace(/^#/, '');
+    returnToUrl += '__dwHash__' + hash;
+  }
+  return returnToUrl;
 };
 
 

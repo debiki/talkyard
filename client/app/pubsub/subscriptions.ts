@@ -40,12 +40,20 @@ export function subscribeToServerEvents(doNothingIfAlreadyPolling?) {
     // Continue polling. Todo: specify params so won't get the very first event always only
     subscribeToServerEvents();
 
-    if (event) switch (event.type) {
+    if (!event) return; // request probably cancelled
+    dieIf(!event.type, 'EsE2WCX59');
+    dieIf(!event.data, 'EsE4YKP02');
+
+    switch (event.type) {
+      case "storePatch":
+        ReactActions.patchTheStore(event.data);
+        break;
       case "notifications":
         ReactActions.addNotifications(event.data);
         break;
       case "presence":
-        ReactActions.updateUserPresence(event.data.user, event.data.numOnlineStrangers);
+        ReactActions.updateUserPresence(
+          event.data.user, event.data.presence, event.data.numOnlineStrangers);
         break;
       default:
         die("Unknown event type [EsE7YKF4]: " + event.type +

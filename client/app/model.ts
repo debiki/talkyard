@@ -162,6 +162,7 @@ interface Myself {
   notifications: Notification[];
 
   watchbarTopics?: WatchbarTopics;
+  watchbar: Watchbar;
 
   votes: any;
   unapprovedPosts: any;
@@ -252,9 +253,22 @@ interface OrderOffset {  // COULD rename to TopicQuery? (because includes filter
 }
 
 
+// Ought to use real field names instead of numbers. Later.
+interface Watchbar {
+  1: WatchbarTopic[]; // WatchbarSection.RecentTopics
+  2: WatchbarTopic[]; // WatchbarSection.Notifications
+  3: WatchbarTopic[]; // WatchbarSection.ChatChannels
+  4: WatchbarTopic[]; // WatchbarSection.DirectMessages
+}
+
+
 interface WatchbarTopic {
   pageId: PageId;
   title: string;
+  url?: string;
+  unread?: boolean;
+  notfsToMe?: number;
+  notfsToMany?: number;
 }
 
 
@@ -264,12 +278,14 @@ interface WatchbarTopics {
 
 
 interface Store {
+  appVersion: string;
+  pageVersion: PageVersion;
   now: number;
   siteStatus: string;
   guestLoginAllowed: boolean;
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
-  messageMembers: BriefUser[];
+  messageMembers: BriefUser[]; // rename to pageMembers?
   pageId: string;
   categoryId?: number;
   ancestorsRootFirst?: Ancestor[];
@@ -312,6 +328,7 @@ interface Store {
 
   numOnlineStrangers?: number;
   onlineUsers?: BriefUser[];
+  onlineUsersById?: { [userId: number]: BriefUser };
 
   // If quickUpdate is true only posts in postsToUpdate will be updated.
   quickUpdate: boolean;
@@ -369,7 +386,6 @@ interface BriefUser {
   isGuest?: boolean;  // = !isAuthenticated
   isEmailUnknown?: boolean;
   avatarUrl?: string;
-  presence?: Presence;
 }
 
 
@@ -438,6 +454,19 @@ interface Block {
   blockedById: number;
   blockedAtMs: number;
   blockedTillMs?: number;
+}
+
+
+/**
+ * Describes how to update parts of the store. Can be e.g. a new chat message and the author.
+ */
+interface StorePatch {
+  appVersion: string;
+  pageVersionsByPageId?: { [pageId: string]: PageVersion };
+  postsByPageId?: { [pageId: string]: Post[] };
+  // rename to postAuthorsBrief? So one sees they can be ignored if the posts are
+  // ignored (because the page version is too old).
+  usersBrief?: BriefUser[];
 }
 
 

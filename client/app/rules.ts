@@ -41,12 +41,17 @@ function mayIndeed() {
 
 function hasChatSection(pageRole: PageRole) {
   // On message pages, replies are flat already, so an additional flat section makes no sense.
-  return pageRole !== PageRole.Message;
+  // Chat channels don't have any chat comments section (the whole page is nothing but chat msgs).
+  return pageRole !== PageRole.Message && !page_isChatChannel(pageRole);
 }
 
 function canClose(pageRole: PageRole) {
   // Lock messages instead so no new replies can be added.
   return pageRole !== PageRole.Message;
+}
+
+function page_isChatChannel(pageRole: PageRole): boolean {
+  return pageRole === PageRole.OpenChat || pageRole === PageRole.PrivateChat;
 }
 
 function page_isDiscussion(pageRole: PageRole): boolean {
@@ -67,16 +72,9 @@ function isPageWithSidebar(pageRole: PageRole): boolean {
   return true; // hmm remove this fn then, now
 }
 
-function isPageWithWatchbar(pageRole: PageRole): boolean {
-  return true; // hmm remove this fn then, now
-}
-
 function pageRole_shallListInRecentTopics(pageRole: PageRole): boolean {
   switch (pageRole) {
-    case PageRole.Message: // shown in the Direct Messages watchbar section instead
     case PageRole.EmbeddedComments:
-    case PageRole.Blog:
-    case PageRole.Forum:
     case PageRole.HomePage:
     case PageRole.Code:
     case PageRole.SpecialContent:
@@ -85,6 +83,12 @@ function pageRole_shallListInRecentTopics(pageRole: PageRole): boolean {
       return !!pageRole;
   }
 }
+
+
+function me_isStranger(me: Myself): boolean {
+  return !me.id;
+}
+
 
 function userGetWatchbarTopicIds(user: Myself): PageId[] {
   var watchbarTopics: WatchbarTopics = user.watchbarTopics;
@@ -132,6 +136,26 @@ function isTalkToMeNotification(notf: Notification): boolean {
 
 function isTalkToOthersNotification(notf: Notification): boolean {
   return notf.type === NotificationType.NewPost;
+}
+
+
+
+function isCollapsed(post) {
+  return post.isTreeCollapsed || post.isPostCollapsed;
+}
+
+
+function isDeleted(post) {
+  return !post || post.isTreeDeleted || post.isPostDeleted;
+}
+
+
+function isWikiPost(postOrPostType: any) {
+  var type;
+  if (postOrPostType) {
+    type = postOrPostType.postType || postOrPostType;
+  }
+  return type === PostType.StaffWiki || type === PostType.CommunityWiki;
 }
 
 

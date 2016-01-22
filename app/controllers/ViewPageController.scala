@@ -19,6 +19,7 @@ package controllers
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.RateLimits.NoRateLimits
 import debiki._
 import io.efdi.server.http._
 import java.{util => ju}
@@ -44,12 +45,20 @@ object ViewPageController extends mvc.Controller {
     "__html_encoded_user_specific_data_json__"
 
 
-  def renderPage(path: String) = GetActionAllowAnyone { request =>
-    renderPageImpl(request)
+  def viewPage(path: String) = GetActionAllowAnyone { request =>
+    viewPageImpl(request)
   }
 
 
-  private def renderPageImpl(request: GetRequest): Result = {
+  def markPageAsSeen(pageId: PageId) = PostJsonAction(NoRateLimits, maxLength = 2) { request =>
+    val watchbar = request.dao.loadWatchbar(request.theUserId)
+    val newWatchbar = watchbar.markPageAsSeen(pageId)
+    request.dao.saveWatchbar(request.theUserId, newWatchbar)
+    Ok
+  }
+
+
+  private def viewPageImpl(request: GetRequest): Result = {
     // For now, historic reasons. Remove some weeks after /-/unsubscribe has been deployed.
     if (request.queryString.contains("unsubscribe")) {
       return UnsubscriptionController.showFormImpl(request.request)
@@ -118,7 +127,7 @@ object ViewPageController extends mvc.Controller {
     }
 
     if (request.user.isEmpty)
-      Globals.strangerCounter.tellStrangerSeen(request.siteId, request.theBrowserIdData)
+      Globals.strangerCounter.strangerSeen(request.siteId, request.theBrowserIdData)
 
     val pageRequest = new PageRequest[Unit](
       request.siteIdAndCanonicalHostname,
@@ -152,14 +161,6 @@ object ViewPageController extends mvc.Controller {
     }
 
     true
-  }
-
-
-  /** Use this if page not found, or the page is private and we don't want strangers
-    * to find out that it exists. [7C2KF24]
-    */
-  def throwIndistinguishableNotFound() = {
-    throwNotFound("EsE404", "Page not found")
   }
 
 

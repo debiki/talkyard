@@ -74,6 +74,7 @@ abstract class SiteDao
   with UploadsDao
   with UserDao
   with MessagesDao
+  with WatchbarDao
   with ReviewsDao
   with AuditDao
   with CreateSiteDao {
@@ -151,6 +152,7 @@ abstract class SiteDao
   // ----- Notifications
 
   def pubSub = Globals.pubSub
+  def strangerCounter = Globals.strangerCounter
 
   def saveDeleteNotifications(notifications: Notifications) =
     readWriteTransaction(_.saveDeleteNotifications(notifications))

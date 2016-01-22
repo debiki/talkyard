@@ -23,6 +23,7 @@
 /// <reference path="../utils/page-scroll-mixin.ts" />
 /// <reference path="../utils/scroll-into-view.ts" />
 /// <reference path="../utils/MenuItemLink.ts" />
+/// <reference path="../utils/utils.ts" />
 /// <reference path="../post-navigation/posts-trail.ts" />
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../notification/Notification.ts" />
@@ -67,10 +68,9 @@ export var TopBar = createComponent({
     keymaster('3', this.goToChat);
     keymaster('4', this.goToEnd);
     var rect = this.getThisRect();
-    var pageTop = this.getPageRect().top;
+    var pageTop = getPageScrollableRect().top;
     this.setState({
       initialOffsetTop: rect.top - pageTop,
-      initialHeight: rect.bottom - rect.top,
       fixed: rect.top < -FixedTopDist,
     });
   },
@@ -80,10 +80,6 @@ export var TopBar = createComponent({
     keymaster.unbind('2', 'all');
     keymaster.unbind('3', 'all');
     keymaster.unbind('4', 'all');
-  },
-
-  getPageRect: function() {
-    return document.getElementById('esPageScrollable').getBoundingClientRect();
   },
 
   getThisRect: function() {
@@ -99,7 +95,7 @@ export var TopBar = createComponent({
   },
 
   onScroll: function() {
-    var pageRect = this.getPageRect();
+    var pageRect = getPageScrollableRect();
     var pageLeft = pageRect.left;
     if (this.state.store.isWatchbarOpen) {
       pageLeft -= 230; // dupl value, in css too [7GYK42]
@@ -196,7 +192,8 @@ export var TopBar = createComponent({
       var endHelp = "Go to the bottom of the page. Shortcut: 4";
 
       var goToTop = Button({ className: 'dw-goto', onClick: this.goToTop, title: topHelp }, "Top");
-      var goToReplies = Button({ className: 'dw-goto', onClick: this.goToReplies,
+      var goToReplies = page_isChatChannel(store.pageRole) ? null :
+          Button({ className: 'dw-goto', onClick: this.goToReplies,
             title: repliesHelp }, "Replies (" + store.numPostsRepliesSection + ")");
       var goToChat = !hasChatSection(store.pageRole) ? null :
           Button({ className: 'dw-goto', onClick: this.goToChat,
@@ -290,16 +287,16 @@ export var TopBar = createComponent({
       var titleProps: any = _.clone(store);
       titleProps.hideButtons = this.state.fixed;
       pageTitle =
-          r.div({ className: 'dw-topbar-title' }, Title(titleProps));
+          r.div({ className: 'dw-topbar-title' }, page.Title(titleProps));
     }
 
     // ------- Watchbar and Pagebar buttons
 
-    var openPagebarButton = !isPageWithSidebar(pageRole) ? null :
+    var openContextbarButton =
         Button({ className: 'esOpenPagebarBtn', onClick: ReactActions.openPagebar },
             r.span({ className: 'icon-left-open' }));
 
-    var openWatchbarButton = !isPageWithWatchbar(pageRole) ? null :
+    var openWatchbarButton =
         Button({ className: 'esOpenWatchbarBtn', onClick: ReactActions.openWatchbar },
             r.span({ className: 'icon-right-open' }));
 
@@ -327,7 +324,7 @@ export var TopBar = createComponent({
     return (
         r.div({ className: 'esTopbarWrap' + fixItClass, style: styles },
           openWatchbarButton,
-          openPagebarButton,
+          openContextbarButton,
           r.div({ className: 'container' },
             topbar)));
   }

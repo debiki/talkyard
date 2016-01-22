@@ -1,0 +1,97 @@
+
+
+html.es-chat
+  #theChatVspace
+    flex: 1;
+
+  #dwPosts
+    flex: none;
+
+  &:not(.dw-react-started) #dwPosts
+    visibility: hidden; // avoids flash of not-yet-scrolled-to-bottom message list
+
+  .esPage > .container
+    margin-left: 0;
+    // try to remove !important: need to change #dwPosts to class in page.styl.
+    padding-left: 35px !important;
+
+
+.esChatChnl_about
+  margin: 10px 0 30px;
+  padding-left: 3px; // aligns vertically — posts & stuff have padding-left: 3px
+
+  .dw-p-bd
+    padding: 0;
+
+  .esAvtrName_username,
+  .esAvtrName_fullName
+    vertical-align: baseline;
+    font-weight: bold;
+
+  .esAvtrName:hover
+    text-decoration: underline;
+    cursor: pointer;
+
+
+.esChatMsg
+  margin-bottom: 8px;
+
+  .dw-p-hd .dw-p-by
+    color: #444;
+    text-shadow: 1px 0 0 #444; // makes it even bolder
+    letter-spacing: 0.7px; // or text-shadow --> the letters get too close to each other
+
+  .dw-p-bd
+    padding-top: 2px;
+    p
+      margin-bottom: 0.6em;
+      &:last-child
+        margin-bottom: 0;
+
+  .dw-p-hd,
+  .dw-p-bd
+    margin-left: 50px; // leaves space for the avatar
+
+  .esAvtr-ltr,
+  .edAvtr img
+    width: 36px;
+    height: 36px;
+  .esAvtr-ltr
+    line-height: 36px;
+    font-size: 20px;
+
+
+.esFixAtBottom
+  position: relative;
+  z-index: 1111;
+
+
+.esJoinChat
+.esChatMsgEdtr
+  width: calc(100% + 10px);
+  position: relative;
+  left: -5px;
+
+
+.esJoinChat
+  background: hsl(0,0%,97%);
+  padding: 20px 0;
+  text-align: center;
+  z-index: 3;
+
+.esJoinChat_btn
+  padding: 7px 18px;
+  font-weight: bold;
+  background: hsl(207, 82%, 52%);
+  border-radius: 2px;
+
+
+.esChatMsgEdtr
+  margin-top: 15px;
+  padding-bottom: 15px;
+  background: white;
+
+.esChatMsgEdtr_textarea
+  width: 100%;
+  border-radius: 4px;
+

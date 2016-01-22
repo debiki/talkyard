@@ -44,6 +44,10 @@ export function startRemainingReactRoots() {
   if (nonExistingPageElem)
     React.render(debiki2.nopage.NonExistingPage({}), nonExistingPageElem);
 
+  var topbarElem = document.getElementById('theTopbar');
+  if (topbarElem)
+    React.render(debiki2.reactelements.TopBar({}), topbarElem);
+
   createSidebar();
   watchbar.createWatchbar();
 

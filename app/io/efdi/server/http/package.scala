@@ -195,4 +195,15 @@ package object http {
     }
   }
 
+
+  /** Use this if page not found, or the page is private and we don't want strangers
+    * to find out that it exists. [7C2KF24]
+    */
+  def throwIndistinguishableNotFound(devModeErrCode: String = "") = {
+    val suffix =
+      if (Play.isDev && devModeErrCode.nonEmpty) s"-$devModeErrCode"
+      else ""
+    throwNotFound("EsE404" + suffix, "Page not found")
+  }
+
 }

@@ -662,10 +662,32 @@ export function saveReply(postIds: number[], text: string, anyPostType: number,
       text: text
     },
     success: (response) => {
-      success();
       d.i.handleReplyResult(response);
+      success();
     }
   });
+}
+
+
+export function insertChatMessage(text: string, success: () => void) {
+  postJson('/-/chat', {
+    data: {
+      pageId: d.i.pageId,
+      text: text
+    },
+    success: (response) => {
+      d.i.handleReplyResult(response);
+      success();
+    }
+  });
+}
+
+
+export function joinChatChannel() {
+  postJsonSuccess('/-/join-page', (newWatchbar) => {
+    ReactActions.setWatchbar(newWatchbar);
+    ReactActions.addMeAsPageMember();
+  }, { pageId: d.i.pageId });
 }
 
 
@@ -749,6 +771,11 @@ export function togglePageClosed(success: (closedAtMs: number) => void) {
 }
 
 
+export function markCurrentPageAsSeen() {
+  postJsonSuccess('/-/mark-as-seen?pageId=' + d.i.pageId, () => {}, {});
+}
+
+
 var longPollingState = {
   ongoingRequest: null,
   lastModified: null,
@@ -802,9 +829,7 @@ export function cancelAnyLongPollingRequest() {
 
 export function loadOnlineUsers() {
   get('/-/load-online-users', (response) => {
-    var onlineUsers: BriefUser[] = response.onlineUsers;
-    _.each(onlineUsers, (user: BriefUser) => user.presence = Presence.Active);
-    ReactActions.updateOnlineUsersLists(response.numOnlineStrangers, onlineUsers);
+    ReactActions.updateOnlineUsersLists(response.numOnlineStrangers, response.onlineUsers);
   });
 }
 

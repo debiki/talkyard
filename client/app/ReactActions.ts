@@ -49,6 +49,7 @@ export var actionTypes = {
   CollapseTree: 'CollapseTree',
   UncollapsePost: 'UncollapsePost',
   ShowPost: 'ShowPost',
+  SetWatchbar: 'SetWatchbar',
   SetWatchbarOpen: 'SetWatchbarOpen',
   SetContextbarOpen: 'SetContextbarOpen',
   SetHorizontalLayout: 'SetHorizontalLayout',
@@ -57,8 +58,10 @@ export var actionTypes = {
   ShowHelpAgain: 'ShowHelpAgain',
   AddNotifications: 'AddNotifications',
   MarkAnyNotificationAsSeen: 'MarkAnyNotificationAsSeen',
+  AddMeAsPageMember: 'AddMeAsPageMember',
   UpdateOnlineUsersLists: 'UpdateOnlineUsersLists',
   UpdateUserPresence: 'UpdateUserPresence',
+  PatchTheStore: 'PatchTheStore',
 };
 
 
@@ -261,6 +264,7 @@ export function deletePost(postNr: number, repliesToo: boolean, success: () => v
 }
 
 
+// try to remove, use patchTheStore() instead
 export function updatePost(post) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.UpdatePost,
@@ -340,11 +344,11 @@ export function uncollapsePost(post) {
 }
 
 
-export function loadAndShowPost(postId: number, showChildrenToo?: boolean, callback?) {
+export function loadAndShowPost(postNr: PostNr, showChildrenToo?: boolean, callback?) {
   // Currently all posts are included in the store already; need load nothing.
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.ShowPost,
-    postId: postId,
+    postId: postNr,
     showChildrenToo: showChildrenToo,
   });
   if (callback) {
@@ -421,6 +425,14 @@ export function setWatchbarOpen(open: boolean) {
 }
 
 
+export function setWatchbar(watchbar: Watchbar) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.SetWatchbar,
+    watchbar: watchbar,
+  });
+}
+
+
 export function setHorizontalLayout(enabled: boolean) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.SetHorizontalLayout,
@@ -460,10 +472,19 @@ export function addNotifications(notfs: Notification[]) {
 }
 
 
-export function updateUserPresence(user: BriefUser, numOnlineStrangers: number) {
+export function addMeAsPageMember() {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.AddMeAsPageMember,
+  });
+}
+
+
+export function updateUserPresence(user: BriefUser, presence: Presence,
+      numOnlineStrangers: number) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.UpdateUserPresence,
     user: user,
+    presence: presence,
     numOnlineStrangers: numOnlineStrangers,
   });
 }
@@ -482,6 +503,14 @@ function markAnyNotificationAsSeen(postNr: number) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.MarkAnyNotificationAsSeen,
     postNr: postNr,
+  });
+}
+
+
+export function patchTheStore(storePatch: StorePatch) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.PatchTheStore,
+    storePatch: storePatch,
   });
 }
 

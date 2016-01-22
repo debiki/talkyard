@@ -66,6 +66,10 @@ function prettyLetterTimeAgo(isoDate: string) {
   return r.span({ className: 'dw-ago-ltr' }, isoDate);
 }
 
+function timeExact(isoDate: string) {
+  return r.span({ className: 'esTimeExact' }, isoDate);
+}
+
 
 /**
  * Replaces ISO8601 timestamps with "5 hours ago" or just "5h".
@@ -105,6 +109,24 @@ function processTimeAgo(selector?: string) {
     var durationWords = debiki.prettyDuration(then, now);
     $this.text(durationLetter);
     $this.attr('title', durationWords + ": " + isoDate);
+  });
+
+  // & all exact timestamps (end with -exact).
+  // Result: e.g. "Yesterday 12:59 am", or, if today, only "13:59".
+  $(selector + ' .esTimeExact').each(function() {
+    var $this = $(this);
+    if ($this.attr('title')) {
+      // Already converted to "HH:MI" format
+      return;
+    }
+    var isoDate = $this.text();
+    var when = moment(isoDate);
+    var includeDay = when.isBefore(moment().startOf('day'));
+    // getTimezoneOffset() returns -60 (not +60) for UTC+1. Weird. So use subtract(..).
+    //when = when.subtract((new Date()).getTimezoneOffset(), 'minutes'); -- Oops not needed.
+    var dayHourMinute = includeDay ? when.calendar() : when.format('LT');
+    $this.text(dayHourMinute);
+    $this.attr('title', isoDate);
   });
 }
 

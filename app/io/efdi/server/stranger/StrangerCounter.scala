@@ -18,6 +18,7 @@
 package io.efdi.server.stranger
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
 import scala.collection.mutable
 
 
@@ -62,15 +63,8 @@ class StrangerCounter {
     val now = When.now()
     for (lastSeenByBrowser <- lastSeenByBrowserBySite.values) {
       // LinkedHashMap iteration order = insertion order, so we'll find all old entries directly.
-      // COULD implement `removeWhile` [removewhile]
-      while (true) {
-        val ((ip, lastSeenAt)) = lastSeenByBrowser.headOption getOrElse {
-          return
-        }
-        if (now.millisSince(lastSeenAt) < TenMinutesInMillis)
-          return
-
-        lastSeenByBrowser.remove(ip)
+      lastSeenByBrowser removeWhileValue { lastSeenAt =>
+        now.millisSince(lastSeenAt) > TenMinutesInMillis
       }
     }
   }
