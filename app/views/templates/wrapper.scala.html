@@ -36,8 +36,8 @@
 <div id="esPageColumn">
 <div id="esPageScrollable">
 @Html(tpi.siteSettings.headerHtml.valueAsString)
-<div id="theTopbar" class="esTopBar"></div>
 @if(tpi.anyCurrentPageRole.exists(_.isChat)) {
+  <div id="theTopbar" class="esTopBar"></div>
   <div id="theChatVspace"></div>
 }
 

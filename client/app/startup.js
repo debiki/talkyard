@@ -302,6 +302,9 @@ d.i.startEmbeddedEditor = function() {
   console.warn("The editor is lazily created nowadays [DwE4KGF0]");
 };
 
+if (location.pathname.search(ApiUrlPathPrefix) !== 0) {
+  sessionStorage.setItem('returnToSiteUrl', window.location.toString());
+}
 
 tellJQueryAjaxToStripSafeJsonPrefix();
 

@@ -69,6 +69,7 @@ html:not(.es-watchbar-open)
 #dwPosts > .container,
 #dwPosts > div > .container,
 .esTopbarWrap > .container,
+.esAdminArea > .container,
 #dwPosts > div > .esTopbarWrap > .container  // try to remove
   padding-left: 20px;
   padding-right: 20px;
@@ -78,6 +79,7 @@ html.es-watchbar-open
   #dwPosts > .container,
   #dwPosts > div > .container,
   .esTopbarWrap > .container,
+  .esAdminArea > .container,
   #dwPosts > div > .esTopbarWrap > .container  // try to remove
     padding-left: 25px;
 
@@ -163,6 +165,7 @@ html.es-watchbar-open
   display: flex;
   flex-direction: column;
   height: 100%; // supposedly avoid some IE 10-11 min-height bug
+#dw-react-user-page,
 #dwPosts
   flex: 1 0 auto;
 // This avoids some other bug that shrinks these to 0,

@@ -16,15 +16,6 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../ReactStore.ts" />
-/// <reference path="../login/login-dialog.ts" />
-/// <reference path="../page-tools/page-tools.ts" />
-/// <reference path="../utils/page-scroll-mixin.ts" />
-/// <reference path="../utils/scroll-into-view.ts" />
-/// <reference path="../post-navigation/posts-trail.ts" />
-/// <reference path="../avatar/avatar.ts" />
-/// <reference path="../notification/Notification.ts" />
-/// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.utils {
@@ -33,19 +24,13 @@
 var r = React.DOM;
 
 
+// COULD change to a pure function instead.
 export var MenuItemLink = createComponent({
   render: function() {
-    var href: string = this.props.href;
-
-    var rememberReturnToUrl = href && href.search('/-/admin') === -1
-        ? null
-        : () => { sessionStorage.setItem('returnToUrl', window.location.toString()); };
-
     // Copy react-bootstrap's MenuItem html.
     return (
         r.li({ role: 'presentation' },
-          r.a({ role: 'button', href: href, tabIndex: this.props.tabindex || -1,
-              onClick: rememberReturnToUrl },
+          r.a({ role: 'button', href: this.props.href, tabIndex: this.props.tabindex || -1 },
             this.props.children)));
   }
 });

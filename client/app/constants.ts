@@ -133,4 +133,7 @@ function isReviewPostTask(reviewTask: ReviewTask): boolean {
   return (1 << 4) <= reviewTask.reasonsLong && reviewTask.reasonsLong < (1 << 20);
 }
 
+
+var ApiUrlPathPrefix = '/-/';
+
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

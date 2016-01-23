@@ -173,6 +173,7 @@ export var TopBar = createComponent({
     var store: Store = this.state.store;
     var me: Myself = store.me;
     var pageRole = store.pageRole;
+    var isChat = page_isChatChannel(store.pageRole);
 
     // Don't show all these buttons on a homepage / landing page, until after has scrolled down.
     // If not logged in, never show it — there's no reason for new users to login on the homepage.
@@ -191,8 +192,9 @@ export var TopBar = createComponent({
         " comments. Shortcut: 3";
       var endHelp = "Go to the bottom of the page. Shortcut: 4";
 
-      var goToTop = Button({ className: 'dw-goto', onClick: this.goToTop, title: topHelp }, "Top");
-      var goToReplies = page_isChatChannel(store.pageRole) ? null :
+      var goToTop = isChat ? null :
+          Button({ className: 'dw-goto', onClick: this.goToTop, title: topHelp }, "Top");
+      var goToReplies = isChat ? null :
           Button({ className: 'dw-goto', onClick: this.goToReplies,
             title: repliesHelp }, "Replies (" + store.numPostsRepliesSection + ")");
       var goToChat = !hasChatSection(store.pageRole) ? null :
@@ -308,6 +310,19 @@ export var TopBar = createComponent({
           r.div({ className: 'dw-topbar-title' }, page.Title(titleProps));
     }
 
+    // ------- Custom title & Back to site button
+
+    var customTitle;
+    if (this.props.customTitle) {
+      customTitle = r.h1({ className: 'esTopbar_custom_title' }, this.props.customTitle);
+    }
+
+    var backToSiteButton;
+    if (this.props.showBackToSite) {
+      backToSiteButton = r.a({ className: 'esTopbar_custom_backToSite btn btn-default icon-reply',
+          onClick: goBackToSite }, "Back to site");
+    }
+
     // ------- Watchbar and Pagebar buttons
 
     var openContextbarButton =
@@ -321,8 +336,10 @@ export var TopBar = createComponent({
 
     // ------- The result
 
+    var extraMarginClass = this.props.extraMargin ? ' esTopbar-extraMargin' : '';
+
     var topbar =
-      r.div({ className: 'esTopBar' },
+      r.div({ className: 'esTopBar' + extraMarginClass },
         r.div({ className: 'dw-topbar-btns' },
           loginButton,
           toolsButton,
@@ -330,6 +347,9 @@ export var TopBar = createComponent({
           menuDropdown,
           avatarNameDropdown),
         searchForm,
+        r.div({ className: 'esTopbar_custom' },
+          customTitle,
+          backToSiteButton),
         pageTitle,
         goToButtons);
 

@@ -85,6 +85,34 @@ html.es-watchbar-open
     display: none;
 
 
+.esTopbar_custom
+  margin-top: 12px;
+  display: inline-block;
+
+.esTopbar_custom_title
+  margin: 0;
+  padding: 0;
+  display: inline-block;
+  vertical-align: bottom;
+  font-size: 24px;
+  letter-spacing: 0.2px;
+  word-spacing: 0.4px;
+
+.esTopbar_custom_backToSite
+  vertical-align: bottom;
+  margin-left: 15px;
+  position: relative;
+  top: 4px;
+  font-size: 13px;
+  padding: 6px 11px 6px 8px;
+  &.icon-reply:before
+    margin-right: 4px;
+
+.dw-fixed-topbar-wrap
+  .esTopbar_custom
+    margin-top: 0;
+
+
 // Avoid flash-of-login-button when already logged in.
 html:not(.dw-react-started)
   .dw-topbar-btns
@@ -303,13 +331,15 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
     min-height: auto;
     margin: 4px 0;
 
-    margin: 4px 0;
     @media (max-height: 550px)
       margin: 2px 0;
     @media (max-height: 420px)
       margin: 1px 0;
     @media (max-height: 220px)
       margin: 0;
+
+    &.esTopbar-extraMargin
+      margin: 8px 0 12px;
 
     .dw-topbar-title
       @media (max-width: 610px)

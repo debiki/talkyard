@@ -84,6 +84,7 @@ var Page = createComponent({
         debiki2.page.ChatMessages(this.props) : debiki2.page.TitleBodyComments(this.props);
     return (
       r.div({ className: 'esPage' },
+        page_isChatChannel(store.pageRole) ? null : debiki2.reactelements.TopBar({}),
         r.div({ className: 'container' },
           r.article({},
             content))));

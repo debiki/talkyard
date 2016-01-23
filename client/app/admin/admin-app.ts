@@ -118,13 +118,9 @@ var AdminAppComponent = React.createClass({
         NavItem({ eventKey: 'customize' }, 'Customize') : null;
 
     return (
-      r.div({},
-         r.div({ id: 'debiki-dashbar' },
-          r.div({ className: 'debiki-dashbar-logo' }, r.img({ src: '/-/img/logo-128x120.png' })),
-          r.a({ onClick: debiki2.admin.goBackToSite }, "Return to site")),
-        debiki2.reactelements.TopBar({}),
+      r.div({ className: 'esAdminArea' },
+        reactelements.TopBar({ customTitle: "Admin Area", showBackToSite: true, extraMargin: true }),
         r.div({ className: 'container' },
-        r.h1({}, "Admin Area"),
         Nav({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect,
             className: 'dw-main-nav' },
           settings,

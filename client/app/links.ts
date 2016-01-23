@@ -57,6 +57,17 @@ export function linkToNotificationSource(notf: Notification): string {
 }
 
 
+/**
+ * Navigates back to the page that the user viewed before s/he entered the admin or
+ * about-user area, or to the homepage ('/') if there's no previous page.
+ */
+export function goBackToSite() {
+  // Hmm, could inline this instead. Was more complicated in the past, when using
+  // an URL param instead of sessionStorage.
+  var previousUrl = sessionStorage.getItem('returnToSiteUrl') || '/';
+  window.location.replace(previousUrl);
+}
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

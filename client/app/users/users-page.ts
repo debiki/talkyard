@@ -76,6 +76,7 @@ var UsersHomeComponent = React.createClass({
   render: function() {
     return (
       r.div({},
+        reactelements.TopBar({ customTitle: "About User", showBackToSite: true, extraMargin: true }),
         RouteHandler({})));
   }
 });
