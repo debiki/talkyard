@@ -223,7 +223,9 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.HideHelpMessage:
       dieIf(!store.me, 'EsE8UGM5');
-      store.me.closedHelpMessages[action.message.id] = action.message.version;
+      var messageId = action.message ? action.message.id : action.messageId;
+      var version = action.message ? action.message.version : 1;
+      store.me.closedHelpMessages[messageId] = version;
       putInLocalStorage('closedHelpMessages', store.me.closedHelpMessages);
       break;
 

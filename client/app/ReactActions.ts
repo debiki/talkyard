@@ -449,6 +449,14 @@ export function changeSiteStatus(newStatus: string) {
 }
 
 
+export function hideHelpMessageWithId(messageId: string) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.HideHelpMessage,
+    messageId: messageId,
+  });
+}
+
+
 export function hideHelpMessages(message) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.HideHelpMessage,

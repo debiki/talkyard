@@ -27,6 +27,7 @@
 /// <reference path="../topbar/topbar.ts" />
 /// <reference path="../page-dialogs/wikify-dialog.ts" />
 /// <reference path="../page-dialogs/delete-post-dialog.ts" />
+/// <reference path="../page-dialogs/see-wrench-dialog.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="chat.ts" />
@@ -1204,6 +1205,10 @@ var PostActions = createComponent({
   onPinClick: function(event) {
     debiki.internal.$showActionDialog('PinTree').call(event.target, event);
   }, */
+  onSeeWrenchClick: function(event) {
+    ReactActions.hideHelpMessageWithId('seeWrench');
+    debiki2.pagedialogs.openSeeWrenchDialog();
+  },
 
   makeReplyBtnTitle: function(post: Post) {
     if (post.postId !== BodyId)
@@ -1457,6 +1462,12 @@ var PostActions = createComponent({
       moreLinks.push(
         r.a({ className: 'dw-a icon-users', onClick: this.onWikifyClick, key: 'wf' },
           isWikiPost(post) ? 'Un-Wikify' : 'Wikify'));
+    }
+
+    if (isPageBody && isStaff(me) && !help.isHelpMessageClosedAnyVersion(store, 'seeWrench')) {
+      moreLinks.push(
+        r.a({ className: 'dw-a icon-help-circled', onClick: this.onSeeWrenchClick, key: 'sw' },
+          'Pin topic, move posts, etc'));
     }
 
     var moreDropdown =

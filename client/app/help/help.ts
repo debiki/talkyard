@@ -50,6 +50,11 @@ export function getHowToShowHelpAgainDialog() {
   return howToShowHelpAgainDialog;
 } */
 
+
+export function isHelpMessageClosedAnyVersion(store, messageId: string) {
+  return !!store.user.closedHelpMessages[messageId];
+}
+
 export function isHelpMessageClosed(store, message) {
   var closedVersion = store.user.closedHelpMessages[message.id];
   return closedVersion && closedVersion === message.version;
