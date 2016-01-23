@@ -20,6 +20,7 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="editor-utils.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.titleeditor {
@@ -41,19 +42,18 @@ export var TitleEditor = createComponent({
       showComplicated: false,
       isSaving: false,
       categories: null,
+      pageRole: this.props.pageRole,
     };
   },
 
   componentDidMount: function() {
-    if (!this.props.forumId)
-      return;
+    var store: Store = this.props;
     Server.loadEditorEtceteraScripts().done(() => {
       if (!this.isMounted()) return;
       this.setState({ editorScriptsLoaded: true });
     });
-    debiki2.Server.loadForumCategories(this.props.forumId, (categories: Category[]) => {
-      if (!this.isMounted())
-        return;
+    if (store.forumId) Server.loadForumCategories(store.forumId, (categories: Category[]) => {
+      if (!this.isMounted()) return;
       this.setState({ categories: categories });
     });
   },
@@ -79,6 +79,10 @@ export var TitleEditor = createComponent({
     var editedTitle = event.target.value;
     var slugMatchingTitle = window['debikiSlugify'](editedTitle);
     this.setState({ slug: slugMatchingTitle });
+  },
+
+  onPageRoleChanged: function(event) {
+    this.setState({ pageRole: parseInt(event.target.value) });
   },
 
   onFolderChanged: function(event) {
@@ -107,7 +111,7 @@ export var TitleEditor = createComponent({
     var pageRoleInput = this.refs.pageRoleInput;
     var settings: any = {
       categoryId: categoryInput ? parseInt(categoryInput.getValue()) : null,
-      pageRole: pageRoleInput ? parseInt(pageRoleInput.getValue()) : null,
+      pageRole: this.state.pageRole,
       folder: addFolderSlashes(this.state.folder),
       slug: this.state.slug,
       showId: this.state.showId
@@ -119,10 +123,12 @@ export var TitleEditor = createComponent({
   },
 
   render: function() {
+    var store: Store = this.props;
     var pageRole: PageRole = this.props.pageRole;
     var titlePost: Post = this.props.allPosts[TitleId];
     var titleText = titlePost.sanitizedHtml; // for now. TODO only allow plain text?
     var user = this.props.user;
+    var isForumOrAbout = pageRole === PageRole.Forum || pageRole === PageRole.About;
 
     if (!this.state.editorScriptsLoaded) {
       // The title is not shown, so show some whitespace to avoid the page jumping upwards.
@@ -140,13 +146,13 @@ export var TitleEditor = createComponent({
       complicatedStuff =
         r.div({},
           r.div({ className: 'dw-compl-stuff form-horizontal', key: 'compl-stuff-key' },
-            /* Use page role = mind map instead, and let everything in a forum/category be a forum topic?
-            Input({ label: 'Layout', type: 'select', ref: 'layoutInput', className: 'dw-i-layout',
-              labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10' },
-              r.option({ value: 'DefaultLayout' }, 'Default Layout'),
-              r.option({ value: 'OneColumnLayout' }, 'One Column'),
-              r.option({ value: '2DTreeLayout' }, '2D Tree')),
-            */
+            isForumOrAbout ? null :
+              editor.PageRoleInput({ me: store.me, value: this.state.pageRole,
+                label: "Page type", labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
+                onChange: this.onPageRoleChanged,
+                title: 'Page type', className: 'esEdtr_titleEtc_pageRole',
+                help: "Makes the page behave differently. For example, pages of type Question " +
+                  "can be marked as solved. And a To-Do as doing and done." }),
             Input({ label: 'Slug', type: 'text', ref: 'slugInput', className: 'dw-i-slug',
                 labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
                 value: this.state.slug, onChange: this.onSlugChanged }),
@@ -167,7 +173,6 @@ export var TitleEditor = createComponent({
         : r.a({ className: 'dw-toggle-compl-stuff icon-settings',
             onClick: this.showComplicated }, 'Advanced');
 
-    var isForumOrAbout = pageRole === PageRole.Forum || pageRole === PageRole.About;
     var selectCategoryInput;
     if (isForumOrAbout) {
       // About-category pages cannot be moved to other categories.
@@ -190,18 +195,6 @@ export var TitleEditor = createComponent({
     var customHtmlPageOption = user.isAdmin
         ? r.option({ value: PageRole.HomePage }, 'Custom HTML page')
         : null;
-
-    var selectPageRoleInput = isForumOrAbout ? null :
-      Input({ type: 'select', label: 'Page Type', ref: 'pageRoleInput', title: 'Page type',
-            labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10', defaultValue: pageRole },
-        r.option({ value: PageRole.Question }, 'Question'),
-        r.option({ value: PageRole.Problem }, 'Problem'),
-        r.option({ value: PageRole.Idea }, 'Idea'),
-        r.option({ value: PageRole.ToDo }, 'Todo'),
-        // r.option({ value: PageRole.WikiPage }, 'Wiki'), -- if 1d layout is default?
-        r.option({ value: PageRole.MindMap }, 'Wiki Mind Map'),
-        r.option({ value: PageRole.Discussion }, 'Discussion'),
-        customHtmlPageOption);
 
     var addBackForumIntroButton;
     if (this.props.pageRole === PageRole.Forum) {
@@ -228,8 +221,7 @@ export var TitleEditor = createComponent({
         Input({ type: 'text', ref: 'titleInput', className: 'dw-i-title',
             defaultValue: titleText, onChange: this.onTitleChanged }),
         r.div({ className: 'dw-page-category-role form-horizontal' },
-          selectCategoryInput,
-          selectPageRoleInput),
+          selectCategoryInput),
         ReactCSSTransitionGroup({ transitionName: 'compl-stuff', transitionAppear: true },
           complicatedStuff),
         saveCancel));

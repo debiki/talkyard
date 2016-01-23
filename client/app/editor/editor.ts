@@ -500,8 +500,7 @@ export var Editor = createComponent({
   },
 
   changeNewForumPageRole: function (event) {
-    var newPageRole: PageRole = parseInt(event.target.value);
-    this.setState({ newForumPageRole: newPageRole });
+    this.setState({ newForumPageRole: parseInt(event.target.value) });
   },
 
   onCancelClick: function() {

@@ -287,6 +287,7 @@ interface Store {
   userMustBeApproved: boolean;
   messageMembers: BriefUser[]; // rename to pageMembers?
   pageId: string;
+  forumId?: string;
   categoryId?: number;
   ancestorsRootFirst?: Ancestor[];
   hideForumIntro?: boolean;

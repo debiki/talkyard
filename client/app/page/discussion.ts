@@ -1348,7 +1348,7 @@ var PostActions = createComponent({
                   onClick: this.onUnwantedClick }, "Unwanted");
 
       otherVotesDropdown = post.postId === BodyPostId ? null :
-          r.span({ className: 'dropdown navbar-right' },
+          r.span({ className: 'dropdown navbar-right', title: "More votes..." },
             r.a({ className: 'dw-a dw-a-votes' + myOtherVotes, 'data-toggle': 'dropdown' }, ''),
             r.div({ className: 'dropdown-menu dropdown-menu-right dw-p-as-votes' },
                 wrongVoteButton, buryVoteButton, unwantedVoteButton));
@@ -1461,7 +1461,7 @@ var PostActions = createComponent({
 
     var moreDropdown =
       r.span({ className: 'dropdown navbar-right' },
-        r.a({ className: 'dw-a dw-a-more icon-menu', 'data-toggle': 'dropdown' }),
+        r.a({ className: 'dw-a dw-a-more icon-menu', 'data-toggle': 'dropdown', title: "More..." }),
         r.div({ className: 'dropdown-menu dropdown-menu-right dw-p-as-more' },
           moreLinks));
 

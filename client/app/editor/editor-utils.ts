@@ -35,10 +35,12 @@ export var PageRoleInput = createComponent({
   render: function() {
     var me: Myself = this.props.me;
 
+    var divider;
     var openChatOption;
     var privateChatOption;
     var customHtmlPageOption;
     if (me.isAdmin) {
+      divider = r.option({ disabled: true }, "");
       openChatOption = r.option({ value: PageRole.OpenChat }, 'Open chat');
       privateChatOption = r.option({ value: PageRole.PrivateChat }, 'Private chat');
       customHtmlPageOption = r.option({ value: PageRole.HomePage }, 'Custom HTML page');
@@ -55,16 +57,17 @@ export var PageRoleInput = createComponent({
           defaultValue: this.props.defaultValue,
           onChange: this.props.onChange,
         },
+        r.option({ value: PageRole.Discussion }, 'Discussion'),
         r.option({ value: PageRole.Question }, 'Question'),
         r.option({ value: PageRole.Problem }, 'Problem'),
         r.option({ value: PageRole.Idea }, 'Idea'),
         r.option({ value: PageRole.ToDo }, 'Todo'),
         // r.option({ value: PageRole.WikiPage }, 'Wiki'), -- if 1d layout is default?
         r.option({ value: PageRole.MindMap }, 'Wiki Mind Map'),
-        r.option({ value: PageRole.Discussion }, 'Discussion'),
+        divider,
+        customHtmlPageOption,
         openChatOption,
-        privateChatOption,
-        customHtmlPageOption));
+        privateChatOption));
   }
 });
 
