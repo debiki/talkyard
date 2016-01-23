@@ -117,6 +117,7 @@ export var Editor = createComponent({
   },
 
   componentDidMount: function() {
+    this.$columns = $('#esPageColumn, #esWatchbarColumn, #dw-sidebar .dw-comments');
     this.startMentionsParser();
     this.makeEditorResizable();
     this.createDropFileTarget();
@@ -164,15 +165,19 @@ export var Editor = createComponent({
       // The iframe is resizable instead.
       return;
     }
-    var placeholder = $(this.refs.placeholder.getDOMNode());
-    var editor = $(this.refs.editor.getDOMNode());
     // We also add class 'resizable' a bit below [7UGM27] because sometimes React removes it.
-    editor.resizable({
+    $(this.refs.editor.getDOMNode()).resizable({
       direction: ['top'],
-      resize: function() {
-        placeholder.height(editor.height());
-      }
+      resize: this.makeSpaceAtBottomForEditor,
     });
+  },
+
+  makeSpaceAtBottomForEditor: function() {
+    this.$columns.css('bottom', $(this.refs.editor.getDOMNode()).height());
+  },
+
+  returnSpaceAtBottomForEditor: function() {
+    this.$columns.css('bottom', 0);
   },
 
   createDropFileTarget: function() {
@@ -567,6 +572,7 @@ export var Editor = createComponent({
   },
 
   showEditor: function() {
+    this.makeSpaceAtBottomForEditor();
     this.setState({ visible: true });
     if (d.i.isInEmbeddedEditor) {
       window.parent.postMessage(JSON.stringify(['showEditor', {}]), '*');
@@ -580,6 +586,7 @@ export var Editor = createComponent({
   },
 
   closeEditor: function() {
+    this.returnSpaceAtBottomForEditor();
     this.setState({
       visible: false,
       replyToPostIds: [],
@@ -801,7 +808,6 @@ export var Editor = createComponent({
       r.div({ style: styles },
         guidelinesModal,
         anyBackdrop,
-        r.div({ id: 'debiki-editor-placeholder', ref: 'placeholder' }),
         r.div({ id: 'debiki-editor-controller', ref: 'editor', style: maxHeightCss,
             className: editorClasses },
           guidelinesElem,

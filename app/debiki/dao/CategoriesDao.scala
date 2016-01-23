@@ -128,6 +128,11 @@ trait CategoriesDao {
   def loadTheSectionPageId(categoryId: CategoryId): PageId =
     loadRootCategory(categoryId).map(_.sectionPageId) getOrDie "DwE804K2"
 
+  def loadSectionPageIdsAsSeq(): Seq[PageId] = {
+    loadBuildRememberCategoryMaps()
+    categoriesById.values.filter(_.parentId.isEmpty).map(_.sectionPageId).toSeq
+  }
+
 
   private def loadRootCategory(pageId: PageId): Option[Category] = {
     val categoriesById = loadBuildRememberCategoryMaps()._1

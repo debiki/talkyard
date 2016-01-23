@@ -130,7 +130,9 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
 #dw-sidebar
 
   z-index: 1001; // not above dialogs, but above resize-columns handle (1000)
-  padding: 0 0 0 11px;
+  $paddingLeft = 11px;
+  padding: 0 0 0 $paddingLeft;
+  width: 100%;
   height: 100vh;
   @media (max-width: 510px)
     padding-left 7px;
@@ -161,12 +163,14 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
   .dw-comments
     clear: both;
     background: bgcolor;
-    padding: 10px 8px 0 0;
-    position: relative;
+    padding: 10px 8px 6px 0;
 
+    position: absolute;
+    left: $paddingLeft;
+    right: 0;
+    top: 54px;  // For now.  54 leaves space for the Recent & Starred tabs
+    bottom: 0;
     overflow-y: scroll;
-    height: 100%; // or position:absolute help boxes truncated
-    max-height: calc(100vh - 54px);  // For now.  54 leaves space for the Recent & Starred tabs
 
     @media (max-height: 500px)
       padding-top: 7px;

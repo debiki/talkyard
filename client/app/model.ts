@@ -322,6 +322,7 @@ interface Store {
   topLevelCommentIdsSorted: number[];
   isWatchbarOpen: boolean;
   isContextbarOpen: boolean;
+  siteSections: SiteSection[];
   horizontalLayout: boolean;
   is2dTreeDefault: boolean;
   socialLinksHtml: string;
@@ -341,6 +342,14 @@ interface Ancestor {
   title: string;
   path: string;
   hideInForum?: boolean;
+}
+
+
+interface SiteSection {
+  pageId: PageId;
+  path: string;
+  pageRole: PageRole;
+  name: string;
 }
 
 

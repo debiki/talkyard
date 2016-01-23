@@ -258,11 +258,29 @@ export var TopBar = createComponent({
     var reviewMenuItem = !urgentReviewTasks && !otherReviewTasks ? null :
         MenuItemLink({ href: linkToReviewPage() },
           "Needs review ", urgentReviewTasks, otherReviewTasks);
+
+    var quickLinks = [];
+    _.each(store.siteSections, (section: SiteSection) => {
+      dieIf(section.pageRole !== PageRole.Forum, 'EsE5JTK20');
+      // COULD if > 1 section, then add tabs, one for each section.
+      var url;
+      url = section.path + '#/latest/';
+      quickLinks.push(MenuItemLink({ key: url, href: url }, "Latest"));
+      url = section.path + '#/top/';
+      quickLinks.push(MenuItemLink({ key: url, href: url }, "Top"));
+      url = section.path + '#/categories/';
+      quickLinks.push(MenuItemLink({ key: url, href: url }, "Categories"));
+      quickLinks.push(MenuItem({ key: section.pageId, divider: true }));
+    });
+
     var menuDropdown =
         DropdownButton({ title: menuTitle, className: 'dw-menu esMenu', pullRight: true,
             noCaret: true },
           adminMenuItem,
           reviewMenuItem,
+          (adminMenuItem || reviewMenuItem) && quickLinks.length ?
+              MenuItem({ divider: true }) : null,
+          quickLinks,
           MenuItem({ onSelect: ReactActions.showHelpMessagesAgain },
               r.span({ className: 'icon-help' }, "Unhide help messages")),
           MenuItemLink({ href: '/about' }, "About this site"),

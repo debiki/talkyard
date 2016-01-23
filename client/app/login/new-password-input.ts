@@ -91,12 +91,12 @@ export var NewPasswordInput = createClassAndFactory({
     else if (!password.match(/[0-9!@#$%^&*()_+`=;:{}[\]\\]+/)) {
       problem = 'Please include a digit or special character';
     }
-    else if (passwordStrength.score < MinPasswordStrength ||
-        passwordStrength.crack_time < TenYearsInSeconds) {
+    else if (passwordStrength.score < MinPasswordStrength) {
       problem = 'Too weak';
     }
     this.setState({
       passwordWeakReason: problem,
+      passwordCrackTime: passwordStrength.crack_time,
       passwordCrackTimeText: passwordStrength.crack_time_display,
       passwordStrength: passwordStrength.score,
     });
@@ -105,20 +105,24 @@ export var NewPasswordInput = createClassAndFactory({
 
   render: function() {
     var passwordWarning;
+    var passwordHelp;
     var tooWeakReason = this.state.passwordWeakReason;
-    if (tooWeakReason && this.state.showErrors) {
+    if (this.state.showErrors) {
+      if (tooWeakReason) {
+        passwordWarning = r.b({ style: { color: 'red' } }, tooWeakReason);
+      }
       // 100 computers in the message below? Well, zxcvbn assumes 10ms per guess and 100 cores.
       // My scrypt settings are more like 100-200 ms per guess. So, say 100 ms,
       // and 1 000 cores = 100 computers  -->  can use zxcvbn's default crack time.
-      passwordWarning = r.span({},
-          r.b({ style: { color: 'red' }}, tooWeakReason),
+      passwordHelp = r.span({},
+          passwordWarning,
           r.br(), "Crack time: " + this.state.passwordCrackTimeText +
           ", with 100 computers and the scrypt hash");
     }
     return (
       r.div({ className: 'form-group' + (passwordWarning ? ' has-error' : '') },
         Input({ type: 'password', label: "Password:", name: 'newPassword', ref: 'passwordInput',
-            id: 'e2ePassword', onChange: this.checkPasswordStrength, help: passwordWarning,
+            id: 'e2ePassword', onChange: this.checkPasswordStrength, help: passwordHelp,
             onFocus: () => this.setState({ showErrors: true} )})));
   }
 });

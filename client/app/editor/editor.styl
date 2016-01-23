@@ -5,8 +5,6 @@ $showPreviewMinWidth = 800px;
 .dw-embedded-editor
   #debiki-editor-controller
     height: 100% !important
-  #debiki-editor-placeholder
-    display: none
 
 
 .esEdtr_backdrop
@@ -31,16 +29,13 @@ $showPreviewMinWidth = 800px;
   flex: 1;
 
 
-#debiki-editor-placeholder
-  height: 300px
-
 
 #debiki-editor-controller
   position: fixed !important; // !important so jQuery.resizable() won't overwrite
   top: initial;
   bottom: 0
   width: 100%
-  height: 300px
+  height: 300px;
   background: hsl(0, 0%, 89%)
   z-index: 1030
 

@@ -100,6 +100,7 @@ object ReactJson {
       "usersByIdBrief" -> JsObject(Nil),
       "allPosts" -> JsObject(Nil),
       "topLevelCommentIdsSorted" -> JsArray(),
+      "siteSections" -> JsArray(),
       "horizontalLayout" -> JsBoolean(false),
       "socialLinksHtml" -> JsNull)
   }
@@ -249,6 +250,7 @@ object ReactJson {
       "usersByIdBrief" -> usersByIdJson,
       "allPosts" -> JsObject(allPostsJson),
       "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
+      "siteSections" -> makeSiteSectionsJson(dao),
       "horizontalLayout" -> JsBoolean(horizontalLayout),
       "is2dTreeDefault" -> JsBoolean(is2dTreeDefault),
       "socialLinksHtml" -> JsString(socialLinksHtml))
@@ -282,6 +284,23 @@ object ReactJson {
         val jsonRootFirst = categoriesRootFirst.map(makeForumOrCategoryJson(forumPath, _))
         (Some(forumPageId), jsonRootFirst)
     }
+  }
+
+
+  def makeSiteSectionsJson(dao: SiteDao): JsValue = {
+    val sectionPageIds = dao.loadSectionPageIdsAsSeq()
+    val jsonObjs = for {
+      pageId <- sectionPageIds
+      // (We're not in a transaction, the page might be gone [transaction])
+      metaAndPath <- dao.loadPageMetaAndPath(pageId)
+    } yield {
+      Json.obj(
+        "pageId" -> metaAndPath.pageId,
+        "path" -> metaAndPath.path.value,
+        "pageRole" -> metaAndPath.pageRole.toInt,
+        "name" -> "(?? [EsU2UWY0]")
+    }
+    JsArray(jsonObjs)
   }
 
 

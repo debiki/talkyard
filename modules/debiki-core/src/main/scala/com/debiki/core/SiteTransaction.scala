@@ -138,6 +138,9 @@ trait SiteTransaction {
   def loadThePageMeta(pageId: PageId): PageMeta =
     loadPageMeta(pageId).getOrElse(throw PageNotFoundException(pageId))
 
+  /** Loads meta for all forums, blog and wiki main pages. */
+  //def loadPageMetaForAllSections(): Seq[PageMeta]
+
   def loadPageMetas(pageIds: Seq[PageId]): immutable.Seq[PageMeta]
   def loadPageMetasAsMap(pageIds: Iterable[PageId]): Map[PageId, PageMeta]
   def insertPageMetaMarkSectionPageStale(newMeta: PageMeta)
