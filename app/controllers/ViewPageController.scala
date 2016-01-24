@@ -21,12 +21,16 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.RateLimits.NoRateLimits
 import debiki._
+import debiki.ReactJson.JsUser
 import io.efdi.server.http._
 import java.{util => ju}
 import debiki.dao.SiteDao
 import play.api._
 import play.api.Play.current
 import play.api.mvc.{Action => _, _}
+import play.api.libs.json._
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 import DebikiHttp._
 
 
@@ -41,11 +45,11 @@ import DebikiHttp._
 object ViewPageController extends mvc.Controller {
 
 
-  val HtmlEncodedUserSpecificDataJsonMagicString =
-    "__html_encoded_user_specific_data_json__"
+  val HtmlEncodedVolatileJsonMagicString =
+    "__html_encoded_volatile_json__"
 
 
-  def viewPage(path: String) = GetActionAllowAnyone { request =>
+  def viewPage(path: String) = AsyncGetActionAllowAnyone { request =>
     viewPageImpl(request)
   }
 
@@ -58,10 +62,10 @@ object ViewPageController extends mvc.Controller {
   }
 
 
-  private def viewPageImpl(request: GetRequest): Result = {
+  private def viewPageImpl(request: GetRequest): Future[Result] = {
     // For now, historic reasons. Remove some weeks after /-/unsubscribe has been deployed.
     if (request.queryString.contains("unsubscribe")) {
-      return UnsubscriptionController.showFormImpl(request.request)
+      return Future.successful(UnsubscriptionController.showFormImpl(request.request))
     }
 
     val specifiedPagePath = PagePath.fromUrlPath(request.siteId, request.request.path) match {
@@ -76,10 +80,10 @@ object ViewPageController extends mvc.Controller {
       siteSettings.userMustBeApproved.asBoolean
 
     if (authenticationRequired && !request.isAuthenticated) {
-      return Ok(views.html.login.loginPopup(
+      return Future.successful(Ok(views.html.login.loginPopup(
         mode = "LoginToAuthenticate",
         serverAddress = s"//${request.host}",
-        returnToUrl = request.uri)) as HTML
+        returnToUrl = request.uri)) as HTML)
     }
 
     if (siteSettings.userMustBeApproved.asBoolean && !request.isApprovedOrStaff) {
@@ -123,7 +127,7 @@ object ViewPageController extends mvc.Controller {
       // Later: Could set cache-control 1 day or 1 week? So won't be totally forever.
       // And perhaps add a checkbox "[x] Redirect permanently (cache-control 1 week)
       // in the admin area.
-      return Results.SeeOther(correctPagePath.value)
+      return Future.successful(Results.SeeOther(correctPagePath.value))
     }
 
     if (request.user.isEmpty)
@@ -164,21 +168,28 @@ object ViewPageController extends mvc.Controller {
   }
 
 
-  private def doRenderPage(pageReq: PageGetRequest) = {
-    var pageHtml = pageReq.dao.renderPage(pageReq)
-    val anyUserSpecificDataJson = ReactJson.userDataJson(pageReq)
+  private def doRenderPage(request: PageGetRequest): Future[Result] = {
+    var pageHtml = request.dao.renderPage(request)
+    for {
+      (usersOnline, numStrangers) <- request.dao.pubSub.listOnlineUsers(request.dao.siteId)
+    } yield {
+      val usersJson = usersOnline.map(user => JsUser(user))
+      val anyUserSpecificDataJson = ReactJson.userDataJson(request)
+      val volatileJson = Json.obj(
+        "usersOnline" -> usersJson,
+        "numStrangersOnline" -> numStrangers,
+        "me" -> anyUserSpecificDataJson.getOrElse(JsNull).asInstanceOf[JsValue])
 
-    // Insert user specific data into the HTML.
-    // The Scala templates take care to place the <script type="application/json">
-    // tag with the magic-string-that-we'll-replace-with-user-specific-data before
-    // user editable HTML for comments and the page title and body.
-    anyUserSpecificDataJson foreach { json =>
-      val htmlEncodedJson = org.owasp.encoder.Encode.forHtmlContent(json.toString)
+      // Insert volatile and user specific data into the HTML.
+      // The Scala templates take care to place the <script type="application/json">
+      // tag with the magic-string-that-we'll-replace-with-user-specific-data before
+      // user editable HTML for comments and the page title and body.
+      val htmlEncodedJson = org.owasp.encoder.Encode.forHtmlContent(volatileJson.toString)
       pageHtml = org.apache.commons.lang3.StringUtils.replaceOnce(
-        pageHtml, HtmlEncodedUserSpecificDataJsonMagicString, htmlEncodedJson)
-    }
+          pageHtml, HtmlEncodedVolatileJsonMagicString, htmlEncodedJson)
 
-    Ok(pageHtml) as HTML
+      Ok(pageHtml) as HTML
+    }
   }
 
 

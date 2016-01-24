@@ -277,6 +277,13 @@ interface WatchbarTopics {
 }
 
 
+interface VolatileDataFromServer {
+  usersOnline: BriefUser[];
+  numStrangersOnline: number;
+  me?: Myself;
+}
+
+
 interface Store {
   appVersion: string;
   pageVersion: PageVersion;

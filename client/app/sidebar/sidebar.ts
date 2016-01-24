@@ -137,7 +137,8 @@ export var Sidebar = createComponent({
 
   loadOnlineUsers: function() {
     this.setState({ lastLoadedOnlineUsersAsId: this.state.store.me.id });
-    Server.loadOnlineUsers();
+    // Skip for now, because now I'm including all online users are included in the page html.
+    //Server.loadOnlineUsers();
   },
 
   updateSizeAndPosition2d: function(event) {

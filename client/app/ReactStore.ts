@@ -46,7 +46,8 @@ ReactStore.setMaxListeners(20);
 // because the server serves cached HTML with no user specific data. Later on,
 // we'll insert user specific data into the store, and re-render. See
 // ReactStore.activateMyself().
-var store: Store = debiki.reactPageStore;
+var store: Store = debiki.pageDataFromServer;
+window['theStore'] = store; // simplifies inspection in Dev Tools
 
 store.postsToUpdate = {};
 
@@ -261,12 +262,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.UpdateOnlineUsersLists:
-      store.numOnlineStrangers = action.numOnlineStrangers;
-      store.onlineUsers = action.onlineUsers;
-      store.onlineUsersById = {};
-      _.each(action.onlineUsers, (user: BriefUser) => {
-        store.onlineUsersById[user.id] = user;
-      });
+      theStore_setOnlineUsers(action.numOnlineStrangers, action.onlineUsers);
       break;
 
     default:
@@ -301,12 +297,24 @@ function findAnyAcceptedAnswerPostNr() {
 }
 
 
-// COULD change this to an action instead
+var volatileDataActivated = false;
+
+ReactStore.activateVolatileData = function() {
+  dieIf(volatileDataActivated, 'EsE4PFY03');
+  volatileDataActivated = true;
+  var data: VolatileDataFromServer = debiki.volatileDataFromServer;
+  theStore_setOnlineUsers(data.numStrangersOnline, data.usersOnline);
+  ReactStore.activateMyself(data.me);
+  store.quickUpdate = false;
+  this.emitChange();
+};
+
+
 ReactStore.activateMyself = function(anyNewMe: Myself) {
   store.userSpecificDataAdded = true;
   store.now = new Date().getTime();
 
-  var newMe = anyNewMe || debiki.reactUserStore;
+  var newMe = anyNewMe;
   if (!newMe) {
     // For now only. Later on, this data should be kept server side instead?
     addLocalStorageData(store.me);
@@ -338,7 +346,6 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
 
   debiki2.pubsub.subscribeToServerEvents();
   store.quickUpdate = false;
-  this.emitChange();
 };
 
 
@@ -358,6 +365,16 @@ function me_toBriefUser(me: Myself): BriefUser {
     isEmailUnknown: undefined, // ?
     avatarUrl: me.avatarUrl,
   }
+}
+
+
+function theStore_setOnlineUsers(numStrangersOnline: number, usersOnline: BriefUser[]) {
+  store.numOnlineStrangers = numStrangersOnline;
+  store.onlineUsers = usersOnline;
+  store.onlineUsersById = {};
+  _.each(usersOnline, (user: BriefUser) => {
+    store.onlineUsersById[user.id] = user;
+  });
 }
 
 

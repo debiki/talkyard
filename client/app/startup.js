@@ -201,7 +201,7 @@ function renderDiscussionPage() {
   var timeAfterTimeAgo = performance.now();
 
   debiki2.ReactStore.initialize();
-  debiki2.ReactStore.activateMyself();
+  debiki2.ReactStore.activateVolatileData();
   var timeAfterUserData = performance.now();
 
   debiki2.startRemainingReactRoots();
@@ -278,7 +278,7 @@ d.i.renderEmptyPage = function() {
   debiki2.utils.onMouseDetected(d.i.initUtterscrollAndTips);
   debiki2.ReactStore.initialize();
   debiki2.startRemainingReactRoots();
-  debiki2.ReactStore.activateMyself();
+  debiki2.ReactStore.activateVolatileData();
   fireLoginOrLogout();
   $('html').addClass(ReactStartedClass);
   debiki2.utils.startDetectingMouse();

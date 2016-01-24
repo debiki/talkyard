@@ -33,8 +33,8 @@
   <link rel="stylesheet" href="@asset(s"combined-debiki.$minMaxCss")"/>
   <script>
     var debiki = {
-      reactPageStore: {},
-      reactUserStore: {},
+      pageDataFromServer: {},
+      volatileDataFromServer: {},
       internal: {
         isInLoginWindow: true,
         isInLoginPopup: window.opener && window.opener.debiki,
