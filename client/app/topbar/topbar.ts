@@ -323,11 +323,49 @@ export var TopBar = createComponent({
           onClick: goBackToSite }, "Back to site");
     }
 
-    // ------- Watchbar and Pagebar buttons
+    // ------- Open Contextbar button
+
+    var usersHere = store_getUsersHere(store);
+
+    // We'll show "X users online", to encourage people to open and learn about the contextbar.
+    // They'll more likely to do that, if they see a message that means "other people here too,
+    // check them out".
+    var contextbarTipsDetailed;
+    var contextbarTipsBrief;
+    if (!usersHere) {
+      // Data not yet loaded from server.
+    }
+    else if (usersHere.areTopicContributors) {
+      // Don't show any num-users tip for normal forum topics like this, because non-chat
+      // discussions happen slowly, perhaps one comment per user per day. Doesn't matter
+      // which people are online exactly now. — Instead, when opening the sidebar,
+      // we'll show a list of the most recent comments (rather than onlne topic contributors).
+      // COULD show click-to-see-recent-comments tips, if the user doesn't seem to know about that.
+    }
+    else if (usersHere.onlyMeOnline) {
+      var who = usersHere.areChatChannelMembers ? "other chat members" : "others";
+      contextbarTipsDetailed = "No " + who + " online";
+      contextbarTipsBrief = "0";
+    }
+    else {
+      var numOthers = usersHere.numOnline - (usersHere.iAmHere ? 1 : 0);
+      var other = usersHere.iAmHere ? " other" : '';
+      var userType = usersHere.areChatChannelMembers ? " chat member" : " user";
+      var pluralis = numOthers === 1 ? '' : 's';
+      contextbarTipsDetailed = numOthers + other + userType + pluralis + " online";
+      contextbarTipsBrief = '' + numOthers;
+    }
+    var contextbarTips = !contextbarTipsDetailed ? null :
+        r.span({ className: 'esOpenCtxbarBtn_numOnline'},
+          r.span({ className: 'detailed' }, contextbarTipsDetailed),
+          r.span({ className: 'brief' }, contextbarTipsBrief));
 
     var openContextbarButton =
-        Button({ className: 'esOpenPagebarBtn', onClick: ReactActions.openPagebar },
-            r.span({ className: 'icon-left-open' }));
+        Button({ className: 'esOpenPagebarBtn', onClick: ReactActions.openPagebar,
+            title: contextbarTipsDetailed },
+          contextbarTips, r.span({ className: 'icon-left-open' }));
+
+    // ------- Open Watchbar button
 
     var openWatchbarButton =
         Button({ className: 'esOpenWatchbarBtn', onClick: ReactActions.openWatchbar },

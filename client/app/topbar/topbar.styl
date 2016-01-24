@@ -28,6 +28,15 @@ html:not(.dw-react-started)
 // New:
 .esTopBar
   clearfix()
+  pointer-events: none;
+  background: none !important; // IE11
+
+  .dw-topbar-btns,
+  .esTopbar_custom,
+  .dw-topbar-title,
+  .esOpenPagebarBtn,
+  .esOpenWatchbarBtn
+    pointer-events: auto;
 
   .caret
     display: none;
@@ -68,14 +77,58 @@ html:not(.dw-react-started)
   border: none;
   position: relative;
   top: 5px;
-  padding: 12px 12px;
+  margin-top: 6px;
+  padding: 12px 12px 12px 9px;
   z-index: 1;
+.dw-fixed-topbar-wrap
+  .esOpenPagebarBtn,
+  .esOpenWatchbarBtn
+    top: 0;
+    margin-top: 0;
+    padding-top: 9px;
 
 .esOpenPagebarBtn
   float: right;
 html.es-pagebar-open
   .esOpenPagebarBtn
     display: none;
+
+.esOpenCtxbarBtn_numOnline
+  font-style: italic;
+  margin: 0 1ex 0 5px;
+  display: inline-block;
+  white-space: initial;
+  vertical-align: top;
+  text-align: right;
+  height: 0; // so won't push stuff below down (overflow: visible anyway)
+  position: relative;
+  top: -1px;
+  .brief
+    display: none;
+  @media (max-width: 1540px)
+    max-width: 50px;
+  @media (max-width: 1320px)
+    top: 0;
+    margin-right: 3px;
+    .brief
+      display: inline;
+    .detailed
+      display: none;
+  @media (max-width: 600px)
+    display: none;
+html.es-watchbar-open
+  .esOpenCtxbarBtn_numOnline
+    @media (max-width: 1800px)
+      max-width: 50px;
+    @media (max-width: 1540px)
+      top: 0;
+      margin-right: 3px;
+      .brief
+        display: inline;
+      .detailed
+        display: none;
+    @media (max-width: 800px)
+      display: none;
 
 
 .esOpenWatchbarBtn

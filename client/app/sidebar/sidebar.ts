@@ -285,36 +285,18 @@ export var Sidebar = createComponent({
       sidebarClasses += ' dw-sidebar-fixed';
     }
 
-    var users: BriefUser[];
-    var listMembers = isChat;
-    var listUsersOnPage = !listMembers && page_isDiscussion(store.pageRole);
-    if (listMembers) {
-      users = store.messageMembers;
-    }
-    else if (listUsersOnPage) {
-      users = store_getUsersOnThisPage(store);
-    }
-    else {
-      users = store.onlineUsers || [];
-    }
-
-    var numOnline = 0;
-    var iAmHere = false;
-    _.each(users, (user: BriefUser) => {
-      numOnline += store_isUserOnline(store, user.id) ? 1 : 0;
-      iAmHere = iAmHere || user.id === store.me.id;
-    });
+    var usersHere = store_getUsersHere(store);
 
     // If the current user is the only active user, write "you" instead of "1"
     // because it'd be so boring to see "1" online user and click the Users tab only
     // to find out that it's oneself. (Also, skip spaces around '/' if number not "you")
-    var numOnlineTextSlash = numOnline === 1 && iAmHere ? "you / " : numOnline + "/";
+    var numOnlineTextSlash = usersHere.onlyMeOnline ? "you / " : usersHere.numOnline + "/";
 
     //var unreadBtnTitle = commentsFound ? 'Unread (' + commentsFound.unread.length + ')' : null;
     var starredBtnTitle = commentsFound ? 'Starred (' + commentsFound.starred.length + ')' : null;
-    var usersBtnTitle = listMembers || listUsersOnPage
-        ? "Users (" + numOnlineTextSlash + users.length + ")"
-        : "Users (" + numOnline + ")";
+    var usersBtnTitle = usersHere.areChatChannelMembers || usersHere.areTopicContributors
+        ? "Users (" + numOnlineTextSlash + usersHere.users.length + ")"
+        : "Users (" + usersHere.numOnline + ")";
 
     var title;
     var unreadClass = '';
@@ -351,7 +333,7 @@ export var Sidebar = createComponent({
         if (store.pageRole === PageRole.Forum) {
           title = "Users online in this forum:";
         }
-        else if (!listMembers && !listUsersOnPage) {
+        else if (!usersHere.areChatChannelMembers && !usersHere.areTopicContributors) {
           title = "Users online:";
         }
         else {
@@ -360,7 +342,7 @@ export var Sidebar = createComponent({
           numOnlineStrangers = 0;
         }
         usersClass = ' active';
-        listItems = makeUsersContent(store, users, store.me.id, numOnlineStrangers);
+        listItems = makeUsersContent(store, usersHere.users, store.me.id, numOnlineStrangers);
         break;
       default:
         console.error('[DwE4PM091]');

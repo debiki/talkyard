@@ -425,6 +425,16 @@ interface CompleteUser {
 }
 
 
+interface UsersHere {
+  users: BriefUser[];
+  areChatChannelMembers: boolean;
+  areTopicContributors: boolean;
+  numOnline: number;
+  iAmHere: boolean;
+  onlyMeOnline: boolean;
+}
+
+
 interface Invite {
   invitedEmailAddress: string;
   invitedById: number;

@@ -415,6 +415,37 @@ export function store_getUsersOnThisPage(store: Store): BriefUser[] {
 }
 
 
+export function store_getUsersHere(store: Store): UsersHere {
+  var isChat = page_isChatChannel(store.pageRole);
+  var users: BriefUser[];
+  var listMembers = isChat;
+  var listUsersOnPage = !listMembers && page_isDiscussion(store.pageRole);
+  if (listMembers) {
+    users = store.messageMembers;
+  }
+  else if (listUsersOnPage) {
+    users = store_getUsersOnThisPage(store);
+  }
+  else {
+    users = store.onlineUsers || [];
+  }
+  var numOnline = 0;
+  var iAmHere = false;
+  _.each(users, (user: BriefUser) => {
+    numOnline += store_isUserOnline(store, user.id) ? 1 : 0;
+    iAmHere = iAmHere || user.id === store.me.id;
+  });
+  return {
+    users: users,
+    areChatChannelMembers: listMembers,
+    areTopicContributors: listUsersOnPage,
+    numOnline: numOnline,
+    iAmHere: iAmHere,
+    onlyMeOnline: iAmHere && numOnline === 1,
+  };
+}
+
+
 ReactStore.isGuestLoginAllowed = function() {
   return store.guestLoginAllowed || false;
 };
