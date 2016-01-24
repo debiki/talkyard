@@ -49,8 +49,9 @@ object SettingsController extends mvc.Controller {
     val pageId = (body \ "pageId").asOpt[PageId]
     val tyype = (body \ "type").as[String]
     val name = (body \ "name").as[String]
+    val newValueJson = (body \ "newValue").get
 
-    val newValue: Any = (body \ "newValue").get match {
+    val newValue: Option[Any] = if (newValueJson == JsNull) None else Some(newValueJson match {
       case JsBoolean(value) =>
         value
       case JsNumber(value: BigDecimal) =>
@@ -61,7 +62,7 @@ object SettingsController extends mvc.Controller {
         value
       case x =>
         throwBadReq("DwE47XS0", s"Bad new value: `$x'")
-    }
+    })
 
     val section = tyype match {
       case "WholeSite" =>
@@ -77,7 +78,8 @@ object SettingsController extends mvc.Controller {
     if (section == SettingsTarget.WholeSite && name == "EmbeddingSiteUrl") {
       // Temporary special case, until I've moved the embedding site url from
       // DW1.TENANT.EMBEDDING_SITE_URL to a normal setting in DW1_SETTINGS.
-      val newValueAsString = newValue.asInstanceOf[String]
+      val newValueAsString = newValue.getOrElse(throwForbidden(
+          "EsE4YKP21", "Cannot clear embedded site URL")).asInstanceOf[String]
       val changedSite = request.dao.loadSite().copy(embeddingSiteUrl = Some(newValueAsString))
       request.dao.updateSite(changedSite)
     }

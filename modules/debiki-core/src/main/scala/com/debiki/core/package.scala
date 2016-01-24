@@ -64,7 +64,7 @@ package object core {
 
   val DefaultPageRoot = Some(PageParts.BodyNr)
 
-  type SettingNameValue[A] = (String, A)
+  type SettingNameValue[A] = (String, Option[A])
 
   /** Change this to a Long before year 2038. /KajMagnus, Jan 2015 */
   type UnixTime = Int    // don't use, I always forget if it's seconds or millis

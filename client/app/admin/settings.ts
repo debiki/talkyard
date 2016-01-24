@@ -48,7 +48,7 @@ export var SaveSettingMixin = {
       this.setState(newState);
     });
   },
-}
+};
 
 
 
@@ -60,18 +60,21 @@ export var Setting = createComponent({
   },
 
   isTextSetting: function() {
-    return typeof this.savedValue() === 'string';
+    return _.isString(this.props.setting.defaultValue);
   },
 
   isBoolSetting: function() {
-    return typeof this.savedValue() === 'boolean';
+    return _.isBoolean(this.props.setting.defaultValue);
   },
 
   savedValue: function() {
+    // A bit weird logic below? Oh well.
     var setting: SettingFromServer<any> = this.props.setting;
-    var savedValue =
-      _.isUndefined(setting.anyAssignedValue) ? setting.defaultValue : setting.anyAssignedValue;
-    return savedValue;
+    if (this.props.placeholder && _.isUndefined(setting.anyAssignedValue))
+      return undefined;
+    else
+      return _.isUndefined(setting.anyAssignedValue) ?
+          setting.defaultValue : setting.anyAssignedValue;
   },
 
   onEdit: function(event) {
@@ -89,7 +92,7 @@ export var Setting = createComponent({
 
   resetValue: function() {
     this.setState({
-      editedValue: this.props.setting.defaultValue
+      editedValue: this.props.placeholder ? null : this.props.setting.defaultValue
     });
   },
 
@@ -105,7 +108,7 @@ export var Setting = createComponent({
     if (isTextSetting) {
       var inputType = this.props.multiline ? 'textarea' : 'input';
       editableValue = r[inputType]({ type: 'text', className: 'form-control',
-          id: id, value: editedValue, onChange: this.onEdit });
+          id: id, value: editedValue, onChange: this.onEdit, placeholder: this.props.placeholder });
     }
     else if (isBoolSetting) {
       editableValue =
@@ -119,7 +122,7 @@ export var Setting = createComponent({
 
     var saveResetBtns;
     var valueChanged = editedValue !== this.savedValue();
-    var hasDefaultValue = editedValue === setting.defaultValue;
+    var hasDefaultValue = isNullOrUndefined(editedValue) || editedValue === setting.defaultValue;
     if (valueChanged) {
       saveResetBtns =
         r.div({ className: 'col-sm-3' },
@@ -133,9 +136,10 @@ export var Setting = createComponent({
     }
 
     var boolClass = isBoolSetting ? ' bool-setting' : '';
-    var defaultValue = isBoolSetting
+    var defaultValue = this.props.placeholder ? null : (
+      isBoolSetting
         ? r.span({}, ' Default value: ', r.samp({}, setting.defaultValue ? 'true' : 'false'))
-        : r.span({}, ' Default value: "', r.samp({}, setting.defaultValue), '"');
+        : r.span({}, ' Default value: "', r.samp({}, setting.defaultValue), '"'));
 
     return (
       r.div({ className: 'fourm-group row'},

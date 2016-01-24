@@ -46,7 +46,7 @@ object ViewPageController extends mvc.Controller {
 
 
   val HtmlEncodedVolatileJsonMagicString =
-    "__html_encoded_volatile_json__"
+    "\"__html_encoded_volatile_json__\""
 
 
   def viewPage(path: String) = AsyncGetActionAllowAnyone { request =>

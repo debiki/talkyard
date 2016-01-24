@@ -35,7 +35,7 @@
 this tag is placed before #thePageJson below, so if e.g. a comment contains
 the below magic string then that won't matter because we replace only the very first
 occurrence of the magic string with volatile + user specific data. *@
-@controllers.ViewPageController.HtmlEncodedVolatileJsonMagicString
+@Html(controllers.ViewPageController.HtmlEncodedVolatileJsonMagicString)
 </script>
 
 <script id="thePageJson" type="application/json">

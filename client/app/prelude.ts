@@ -59,6 +59,16 @@ export function toId(x: number | { id: number }): number {
   return _.isNumber(x) ? x : x['id'];
 }
 
+
+export function isDefined(x): boolean {
+  return !isNullOrUndefined(x);
+}
+
+
+export function isNullOrUndefined(x): boolean {
+  return _.isNull(x) || _.isUndefined(x);
+}
+
 //------------------------------------------------------------------------------
 }
 //------------------------------------------------------------------------------

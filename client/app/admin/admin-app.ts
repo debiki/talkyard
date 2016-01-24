@@ -177,16 +177,19 @@ var SettingsPanelComponent = React.createClass({
         Setting({ setting: settings.companyFullName, onSave: saveSetting,
           label: 'company_full_name', help: r.span({}, "The full name of the company " +
               "or organization that runs this site. Used in legal documents " +
-              "like the ", termsOfUseLink, " page.") }),
+              "like the ", termsOfUseLink, " page."),
+          placeholder: "Unnamed Company Full Name" }),
 
         Setting({ setting: settings.companyShortName, onSave: saveSetting,
           label: 'company_short_name', help: r.span({}, "The short name of the company " +
               "or organization that runs this site. Used in legal documents " +
-              "like the ", termsOfUseLink, " page.") }),
+              "like the ", termsOfUseLink, " page."),
+          placeholder: "Unnamed Company" }),
 
         Setting({ setting: settings.companyDomain, onSave: saveSetting,
           label: 'company_domain', help: r.span({}, "The domain name owned by the company " +
-              "that runs this site. Used in legal documents like the ", termsOfUseLink, ".") }),
+              "that runs this site. Used in legal documents like the ", termsOfUseLink, "."),
+          placeholder: "www.example.com" }),
 
         SpecialContent({ contentId: '_tou_content_license',
             label: 'Terms of Use: Content License',

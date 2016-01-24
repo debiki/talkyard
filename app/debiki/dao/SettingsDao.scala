@@ -65,7 +65,7 @@ trait SettingsDao {
   }
 
 
-  def saveSetting(target: SettingsTarget, name: String, value: Any) {
+  def saveSetting(target: SettingsTarget, name: String, value: Option[Any]) {
     readWriteTransaction(_.saveSetting(target, name -> value))
   }
 }
@@ -100,7 +100,7 @@ trait CachingSettingsDao extends SettingsDao {
   }
 
 
-  override def saveSetting(target: SettingsTarget, name: String, value: Any) {
+  override def saveSetting(target: SettingsTarget, name: String, value: Option[Any]) {
     super.saveSetting(target, name, value)
     emptyCache(siteId)
   }

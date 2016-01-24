@@ -84,8 +84,8 @@ case class SettingsChain(rawSettings: Seq[RawSettings]) {
 
 case class Settings(settingsChain: SettingsChain) {
 
-  val title = derive("title", "(no title)")
-  val description = derive("description", "(no description)")
+  val title = derive("title", "")
+  val description = derive("description", "")
 
   val userMustBeAuthenticated = derive("userMustBeAuthenticated", false)
   val userMustBeApproved = derive("userMustBeApproved", false)
