@@ -559,6 +559,15 @@ export var Editor = createComponent({
     });
   },
 
+  cycleMaxHorizBack: function() {
+    // Cycle from 1) normal to 2) maximized & tiled vertically, to 3) maximized & tiled horizontally
+    // and then back to normal.
+    this.setState({
+      showMaximized: !this.state.showMaximized || !this.state.splitHorizontally,
+      splitHorizontally: this.state.showMaximized && !this.state.splitHorizontally,
+    });
+  },
+
   togglePreview: function() {
     this.setState({
       showOnlyPreview: !this.state.showOnlyPreview,
@@ -567,7 +576,13 @@ export var Editor = createComponent({
   },
 
   toggleMinimized: function() {
-    this.setState({ showMinimized: !this.state.showMinimized });
+    var nextShowMini = !this.state.showMinimized;
+    this.setState({ showMinimized: nextShowMini });
+    if (nextShowMini) {
+      // Wait until after new size has taken effect.
+      setTimeout(this.makeSpaceAtBottomForEditor);
+    }
+    // Else: the editor covers 100% anyway.
   },
 
   showEditor: function() {
@@ -799,9 +814,15 @@ export var Editor = createComponent({
     // (The $.resizable plugin needs class 'resizable' here. [7UGM27])
     var editorClasses = d.i.isInEmbeddedEditor ? '' : 'editor-box-shadow resizable';
     editorClasses += this.state.showMinimized ? ' editor-minimized' : '';
+    editorClasses += this.state.showMaximized ? ' editor-maximized' : '';
+    editorClasses += this.state.splitHorizontally ? ' editor-split-hz' : '';
 
     var editorStyles = this.state.showOnlyPreview ? { display: 'none' } : null;
     var previewStyles = this.state.showOnlyPreview ? { display: 'block' } : null;
+
+    var maximizeAndHorizSplitBtnTitle =
+        !this.state.showMaximized ? "Maximize" : (
+          this.state.splitHorizontally ? "Back to normal" : "Tile horizontally");
 
     return (
       r.div({ style: styles },
@@ -832,6 +853,8 @@ export var Editor = createComponent({
               Button({ onClick: this.onSaveClick, bsStyle: 'primary', tabIndex: 1 }, saveButtonTitle),
               Button({ onClick: this.onCancelClick, tabIndex: 1 }, 'Cancel'),
               Button({ className: 'esUploadBtn icon-upload', tabIndex: 1 }, 'Upload'),
+              Button({ onClick: this.cycleMaxHorizBack, className: 'esEdtr_cycleMaxHzBtn',
+                  tabIndex: 4 }, maximizeAndHorizSplitBtnTitle),
               // These two buttons are hidden via CSS if the window is wide. Higher tabIndex
               // because float right.
               Button({ onClick: this.toggleMinimized, id: 'esMinimizeBtn',

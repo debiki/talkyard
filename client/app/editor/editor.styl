@@ -1,6 +1,6 @@
 
 $spaceForButtons = 45px;
-$showPreviewMinWidth = 800px;
+$showPreviewMinWidth = 900px;
 
 .dw-embedded-editor
   #debiki-editor-controller
@@ -42,9 +42,26 @@ $showPreviewMinWidth = 800px;
   &.editor-box-shadow
     box-shadow: 0px -6px 24px 10px hsl(0, 0%, 50%);
 
+  &.editor-maximized
+    height: 100% !important;
+
+  @media (min-width: $showPreviewMinWidth + 1)
+    &.editor-split-hz
+      .editor-area
+        width: 100%;
+        bottom: calc(65% + 10px);
+      .preview-area
+        width: 100%;
+        position: absolute
+        top: 35%;
+        bottom: $spaceForButtons + 3px;
+
   @media (max-width: $showPreviewMinWidth)
     top: 0;
     height: 100% !important;
+
+    .esEdtr_cycleMaxHzBtn
+      display: none;
 
     &.editor-minimized
       top: initial;
@@ -118,8 +135,6 @@ $showPreviewMinWidth = 800px;
       color: white;
       text-shadow: 0 0 3px black;
       font-size: 20px;
-      padding-left: 7px;
-      padding-left: 2px;
       position: absolute;
       top: -5px;
       padding-left: 5px;
@@ -178,17 +193,22 @@ $showPreviewMinWidth = 800px;
       width: 100%;
       bottom: $spaceForButtons;
 
+  .editor-area,
+  .preview-area
     @media (min-width: $showPreviewMinWidth + 1)
       // In case JS has adden display: none, and via CSS we've hidden the Show-preview button,
       // then we need to ensure the preview is indeed visible again now when the win width is wider:
       display: block !important;
 
   .submit-cancel-btns
-    width: 100%;
+    width: calc(50% - 10px);
+    @media (max-width: $showPreviewMinWidth)
+      width: 100%;
     position: absolute;
     bottom: 6px;
     button
       margin-right: 5px;
+    .esEdtr_cycleMaxHzBtn,
     #esPreviewBtn,
     #esMinimizeBtn
       float: right;
