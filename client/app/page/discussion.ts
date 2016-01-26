@@ -117,17 +117,7 @@ export var TitleBodyComments = createComponent({
   },
 
   render: function() {
-    var categories;
     var props: Store = this.props;
-    var me: Myself = props.me;
-    if (props.ancestorsRootFirst.length) {
-      var hide = _.some(props.ancestorsRootFirst, a => a.hideInForum);
-      categories = hide ? null :
-        r.ol({ className: 'parent-forums-list' },
-          props.ancestorsRootFirst.map((ancestor: Ancestor) => {
-            return r.li({ key: ancestor.categoryId }, r.a({ href: ancestor.path }, ancestor.title));
-          }));
-    }
 
     var anyHelpMessage = this.makeHelpMessage();
     anyHelpMessage = anyHelpMessage
@@ -175,7 +165,6 @@ export var TitleBodyComments = createComponent({
 
     return (
       r.div({ className: anyAboutCategoryClass },
-        categories,
         anyHelpMessage,
         anyAboutCategoryTitle,
         r.div({ className: 'debiki dw-page' + embeddedClass },

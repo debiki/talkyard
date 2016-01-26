@@ -54,6 +54,8 @@ export var TopBar = createComponent({
       showSearchForm: false,
       fixed: false,
       initialOffsetTop: -1,
+      enableGotoTopBtn: false,
+      enableGotoEndBtn: true,
     };
   },
 
@@ -117,6 +119,14 @@ export var TopBar = createComponent({
         this.setState({ fixed: false, top: 0, left: 0 });
       }
     }
+    var calcCoords = utils.calcScrollIntoViewCoordsInPageColumn;
+    this.setState({
+      // We cannot scroll above the title anyway, so as long as the upper .dw-page is visible,
+      // disable the go-to-page-top button. Also, the upper parts of the page is just whitespace,
+      // so ignore it, set marginTop -X.
+      enableGotoTopBtn: calcCoords($('.dw-page'), { marginTop: -10, height: 0 }).needsToScroll,
+      enableGotoEndBtn: calcCoords($('#dw-the-end')).needsToScroll,
+    });
   },
 
   onLoginClick: function() {
@@ -180,6 +190,21 @@ export var TopBar = createComponent({
     if (pageRole === PageRole.HomePage && (!this.state.fixed || !me || !me.isLoggedIn))
       return r.div();
 
+    // ------- Forum --> Category --> Sub Category
+
+    var ancestorCategories;
+    if (store.ancestorsRootFirst.length) {
+      var hide = isSection(pageRole) || _.some(store.ancestorsRootFirst, a => a.hideInForum);
+      ancestorCategories = hide ? null :
+        r.ol({ className: 'esTopbar_ancestors' },
+          store.ancestorsRootFirst.map((ancestor: Ancestor) => {
+            return (
+                r.li({ key: ancestor.categoryId },
+                  r.a({ className: 'esTopbar_ancestors_link dw-goto btn', href: ancestor.path },
+                    ancestor.title)));
+          }));
+    }
+
     // ------- Top, Replies, Bottom, Back buttons
 
     var goToButtons;
@@ -193,14 +218,16 @@ export var TopBar = createComponent({
       var endHelp = "Go to the bottom of the page. Shortcut: 4";
 
       var goToTop = isChat ? null :
-          Button({ className: 'dw-goto', onClick: this.goToTop, title: topHelp }, "Top");
+          Button({ className: 'dw-goto', onClick: this.goToTop, title: topHelp,
+              disabled: !this.state.enableGotoTopBtn }, "Top");
       var goToReplies = isChat ? null :
           Button({ className: 'dw-goto', onClick: this.goToReplies,
             title: repliesHelp }, "Replies (" + store.numPostsRepliesSection + ")");
       var goToChat = !hasChatSection(store.pageRole) ? null :
           Button({ className: 'dw-goto', onClick: this.goToChat,
             title: chatHelp }, "Chat (" + store.numPostsChatSection + ")");
-      var goToEnd = Button({ className: 'dw-goto', onClick: this.goToEnd, title: endHelp }, "End");
+      var goToEnd = Button({ className: 'dw-goto', onClick: this.goToEnd, title: endHelp,
+          disabled: !this.state.enableGotoEndBtn }, "End");
 
       goToButtons = r.span({ className: 'dw-goto-btns' },
           goToTop, goToReplies, goToChat, goToEnd, debiki2.postnavigation.PostNavigation());
@@ -319,7 +346,7 @@ export var TopBar = createComponent({
 
     var backToSiteButton;
     if (this.props.showBackToSite) {
-      backToSiteButton = r.a({ className: 'esTopbar_custom_backToSite btn btn-default icon-reply',
+      backToSiteButton = r.a({ className: 'esTopbar_custom_backToSite btn icon-reply',
           onClick: goBackToSite }, "Back to site");
     }
 
@@ -389,6 +416,7 @@ export var TopBar = createComponent({
           customTitle,
           backToSiteButton),
         pageTitle,
+        ancestorCategories,
         goToButtons);
 
     var fixItClass = '';

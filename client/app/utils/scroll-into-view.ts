@@ -23,10 +23,32 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-export function scrollIntoViewInPageColumn(what, options?) {
+export function calcScrollIntoViewCoordsInPageColumn(what, options?) {
+  // Warning: dupl code, see [5GUKF24] below.
   if (!_.isNumber(what.length)) {
     what = $(what);
   }
+  if (!what.length)
+    return { needsToScroll: false };
+
+  if (!options) {
+    options = {};
+  }
+  debiki2.dieIf(options.parent, 'EsE5GKF23');
+  options.parent = $('#esPageColumn');
+
+  return d.i.calcScrollIntoViewCoords(what, options);
+}
+
+
+export function scrollIntoViewInPageColumn(what, options?) {
+  // Warning: dupl code, see [5GUKF24] above.
+  if (!_.isNumber(what.length)) {
+    what = $(what);
+  }
+  if (!what.length)
+    return;
+
   if (!options) {
     options = {};
   }
@@ -66,6 +88,11 @@ d.i.calcScrollIntoViewCoords = function(elem, options) {
     left: elemRect.left - marginLeft,
     right: elemRect.right + marginRight,
   };
+
+  // One can override the height, in case cares about showing only the upper part of the thing.
+  if (_.isNumber(options.height)) {
+    marginRect.bottom = marginRect.top + options.height + marginBottom;
+  }
 
   var parentScrollTop = options.parent.scrollTop();
   var desiredParentTop = parentScrollTop;

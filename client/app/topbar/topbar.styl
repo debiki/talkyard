@@ -32,6 +32,7 @@ html:not(.dw-react-started)
   background: none !important; // IE11
 
   .dw-topbar-btns,
+  .esTopbar_ancestors,
   .dw-goto-btns,
   .esTopbar_custom,
   .dw-topbar-title,
@@ -138,6 +139,28 @@ html.es-watchbar-open
   .esOpenWatchbarBtn
     display: none;
 
+.esTopbar_ancestors
+  float: left;
+  font-size: 15px;
+  padding-top: 4px;
+  > li
+    margin: 0;
+    list-style-type: none;
+    display: inline-block;
+    &::after
+      content: " → ";
+      color: #666;
+      font-size: 19px;
+      vertical-align: middle;
+    > a
+      color: #444;
+      padding: $topbarButtonPaddingTop 8px 7px 8px;
+      border: none;
+      background: none;
+    &:first-child > .btn
+      padding-left: 5px;
+      left: -5px;
+      position: relative;
 
 .esTopbar_custom
   margin-top: 12px;
@@ -291,6 +314,7 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
       box-sizing: content-box;
       color: hsl(0, 0%, 23%);
       border: none;
+      background: none;
       padding: $topbarButtonPaddingTop 8px 7px 8px;
 
       &.dw-scrollback
@@ -321,9 +345,12 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
   .dw-goto-btns
     float: left;
 
+  .esTopbar_ancestors,
+  .dw-topbar-btns
+    margin-top: 15px;
+
   .dw-topbar-btns
     float: right;
-    margin-top: 15px;
 
     .btn
       border-radius: 0;
@@ -417,8 +444,10 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
       padding-top: $topbarButtonPaddingTop;
       */
 
+    .esTopbar_ancestors,
     .dw-topbar-btns
       margin-top: 0;
+      padding-top: 0;
 
     .dropdown-toggle
       padding-top: 3px;

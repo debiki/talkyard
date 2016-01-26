@@ -2,7 +2,10 @@
    module debiki2.utils {
 //------------------------------------------------------------------------------
 
-export function scrollIntoViewInPageColumn(what, options?) {
+export function calcScrollIntoViewCoordsInPageColumn(...whatever): any {
+}
+
+export function scrollIntoViewInPageColumn(...whatever) {
 }
 
 //------------------------------------------------------------------------------
