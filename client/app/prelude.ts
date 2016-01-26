@@ -60,6 +60,11 @@ export function toId(x: number | { id: number }): number {
 }
 
 
+export function nonEmpty(x): boolean {
+  return !_.isEmpty(x);
+}
+
+
 export function isDefined(x): boolean {
   return !isNullOrUndefined(x);
 }

@@ -193,7 +193,7 @@ export var TopBar = createComponent({
     // ------- Forum --> Category --> Sub Category
 
     var ancestorCategories;
-    if (store.ancestorsRootFirst.length) {
+    if (nonEmpty(store.ancestorsRootFirst)) {
       var hide = isSection(pageRole) || _.some(store.ancestorsRootFirst, a => a.hideInForum);
       ancestorCategories = hide ? null :
         r.ol({ className: 'esTopbar_ancestors' },

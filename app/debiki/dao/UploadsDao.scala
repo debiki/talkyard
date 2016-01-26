@@ -22,9 +22,10 @@ import com.debiki.core.Prelude._
 import com.google.{common => guava}
 import debiki.DebikiHttp._
 import debiki.Globals
-import java.{io => jio}
+import java.{io => jio, util => ju}
 import java.awt.image.BufferedImage
 import java.nio.{file => jf}
+import java.nio.file.{attribute => jfa}
 import debiki.{ImageUtils, ReactRenderer}
 import org.jsoup.Jsoup
 import play.{api => p}
@@ -139,7 +140,18 @@ trait UploadsDao {
 
     // (Don't do this inside the transaction above, because then the file might be moved
     // in place, but the transaction might fail —> metadata never created.)
-    try jf.Files.move(optimizedFile.toPath, destinationFile.toPath)
+    try {
+      // Let Nginx read this file so it can be served directly from the file system.
+      val anyoneMayRead = new ju.HashSet[jfa.PosixFilePermission]()
+      anyoneMayRead.add(jfa.PosixFilePermission.OWNER_READ)
+      anyoneMayRead.add(jfa.PosixFilePermission.GROUP_READ)
+      anyoneMayRead.add(jfa.PosixFilePermission.OTHERS_READ)
+      java.nio.file.Files.setPosixFilePermissions(optimizedFile.toPath, anyoneMayRead)
+      // Prevent people from accidentally modifying the file contents.
+      optimizedFile.setReadOnly()
+      // The last thing we do:
+      jf.Files.move(optimizedFile.toPath, destinationFile.toPath)
+    }
     catch {
       case _: jf.FileAlreadyExistsException =>
         // Fine. Same name -> same hash -> same content.
