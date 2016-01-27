@@ -222,7 +222,9 @@ export var TitleEditor = createComponent({
             defaultValue: titleText, onChange: this.onTitleChanged }),
         r.div({ className: 'dw-page-category-role form-horizontal' },
           selectCategoryInput),
-        ReactCSSTransitionGroup({ transitionName: 'compl-stuff', transitionAppear: true },
+        ReactCSSTransitionGroup({ transitionName: 'compl-stuff',
+            transitionAppear: true, transitionAppearTimeout: 600,
+            transitionEnterTimeout: 600, transitionLeaveTimeout: 500 },
           complicatedStuff),
         saveCancel));
   }

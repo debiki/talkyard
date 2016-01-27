@@ -44,7 +44,7 @@ var editHistoryDialog;
 
 export function getEditHistoryDialog() {
   if (!editHistoryDialog) {
-    editHistoryDialog = React.render(EditHistoryDialog(), utils.makeMountNode());
+    editHistoryDialog = ReactDOM.render(EditHistoryDialog(), utils.makeMountNode());
   }
   return editHistoryDialog;
 }

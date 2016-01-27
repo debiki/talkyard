@@ -45,7 +45,7 @@ var addressVerificationEmailSentDialog;
 
 function getCreateUserDialogs() {
   if (!createUserDialog) {
-    createUserDialog = React.render(CreateUserDialog(), utils.makeMountNode());
+    createUserDialog = ReactDOM.render(CreateUserDialog(), utils.makeMountNode());
   }
   return createUserDialog;
 }
@@ -54,7 +54,7 @@ function getCreateUserDialogs() {
 function getAddressVerificationEmailSentDialog() {
   if (!addressVerificationEmailSentDialog) {
     addressVerificationEmailSentDialog =
-        React.render(AddressVerificationEmailSentDialog(), utils.makeMountNode());
+        ReactDOM.render(AddressVerificationEmailSentDialog(), utils.makeMountNode());
   }
   return addressVerificationEmailSentDialog;
 }

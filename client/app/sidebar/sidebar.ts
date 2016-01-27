@@ -471,7 +471,10 @@ export var Sidebar = createComponent({
               r.h3({}, title),
               tipsOrExtraConfig,
               r.div({},
-                ReactCSSTransitionGroup({ transitionName: 'comment', key: this.state.commentsType },
+                ReactCSSTransitionGroup({ transitionName: 'comment', key: this.state.commentsType,
+                    // Is 600 correct? Haven't checked, could do later
+                    transitionAppearTimeout: 600, transitionEnterTimeout: 600,
+                    transitionLeaveTimeout: 600 },
                   listItems))))))));
   }
 });

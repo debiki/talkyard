@@ -55,7 +55,7 @@ var loginDialog;
 
 export function getLoginDialog() {   // also called from Scala template
   if (!loginDialog) {
-    loginDialog = React.render(LoginDialog(), utils.makeMountNode());
+    loginDialog = ReactDOM.render(LoginDialog(), utils.makeMountNode());
   }
   return loginDialog;
 }

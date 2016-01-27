@@ -170,7 +170,7 @@ var inviteSomeoneDialog;
 
 function openInviteSomeoneDialog(addInvite) {
   if (!inviteSomeoneDialog) {
-    inviteSomeoneDialog = React.render(InviteDialog(), utils.makeMountNode());
+    inviteSomeoneDialog = ReactDOM.render(InviteDialog(), utils.makeMountNode());
   }
   inviteSomeoneDialog.open(addInvite);
 }

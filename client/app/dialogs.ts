@@ -43,7 +43,7 @@ var flagDialog;
 
 export function getFlagDialog() {
   if (!flagDialog) {
-    flagDialog = React.render(FlagDialog(), utils.makeMountNode());
+    flagDialog = ReactDOM.render(FlagDialog(), utils.makeMountNode());
   }
   return flagDialog;
 }

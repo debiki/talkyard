@@ -45,7 +45,7 @@ var howToShowHelpAgainDialog;
 
 export function getHowToShowHelpAgainDialog() {
   if (!howToShowHelpAgainDialog) {
-    howToShowHelpAgainDialog = React.render(HowToShowHelpAgainDialog(), utils.makeMountNode());
+    howToShowHelpAgainDialog = ReactDOM.render(HowToShowHelpAgainDialog(), utils.makeMountNode());
   }
   return howToShowHelpAgainDialog;
 } */

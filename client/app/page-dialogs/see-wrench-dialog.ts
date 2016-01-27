@@ -42,7 +42,7 @@ var seeWrenchDialog;
 
 export function openSeeWrenchDialog() {
   if (!seeWrenchDialog) {
-    seeWrenchDialog = React.render(SeeWrenchDialog(), utils.makeMountNode());
+    seeWrenchDialog = ReactDOM.render(SeeWrenchDialog(), utils.makeMountNode());
   }
   seeWrenchDialog.open();
 }

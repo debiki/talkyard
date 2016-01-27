@@ -29,7 +29,6 @@ var keymaster: Keymaster = window['keymaster'];
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
-var ReactCSSTransitionGroup = reactCreateFactory(React.addons.CSSTransitionGroup);
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 
@@ -38,7 +37,7 @@ var watchbar;
 export function createWatchbar() {
   var elem = document.getElementById('esWatchbarColumn');
   if (watchbar || !elem) return;
-  watchbar = React.render(Watchbar(), elem);
+  watchbar = ReactDOM.render(Watchbar(), elem);
 }
 
 

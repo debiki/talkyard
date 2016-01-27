@@ -44,7 +44,7 @@ var serverErrorDialog;
 
 export function getServerErrorDialog() {
   if (!serverErrorDialog) {
-    serverErrorDialog = React.render(ServerErrorDialog(), utils.makeMountNode());
+    serverErrorDialog = ReactDOM.render(ServerErrorDialog(), utils.makeMountNode());
   }
   return serverErrorDialog;
 }

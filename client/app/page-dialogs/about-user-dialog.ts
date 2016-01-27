@@ -43,7 +43,7 @@ var aboutUserDialog;
 
 export function getAboutUserDialog() {
   if (!aboutUserDialog) {
-    aboutUserDialog = React.render(AboutUserDialog(), utils.makeMountNode());
+    aboutUserDialog = ReactDOM.render(AboutUserDialog(), utils.makeMountNode());
   }
   return aboutUserDialog;
 }

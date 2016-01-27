@@ -262,7 +262,7 @@ var ChatMessageEditor = createComponent({
     Server.insertChatMessage(this.state.text, () => {
       if (!this.isMounted()) return;
       this.setState({ text: '', isSaving: false, rows: DefaultEditorRows });
-      this.refs.textarea.getDOMNode().focus();
+      this.refs.textarea.focus();
       this.props.scrollDownToViewNewMessage();
     });
   },

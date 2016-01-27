@@ -46,7 +46,10 @@ export var FadeInOnClick = createClassAndFactory({
 
     return (
       r.div({ id: this.props.id, className: this.props.className },
-        ReactCSSTransitionGroup({ transitionName: 'compl-stuff', transitionAppear: true },
+        ReactCSSTransitionGroup({ transitionName: 'compl-stuff', transitionAppear: true,
+            // Is 600 correct? Haven't checked, could do later
+            transitionAppearTimeout: 600, transitionEnterTimeout: 600,
+            transitionLeaveTimeout: 500 },
           contents),
         clickToShowButton));
   }

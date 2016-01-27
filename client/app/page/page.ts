@@ -47,17 +47,12 @@ var MaxGuestId = -2; // place where?
 
 
 var React = window['React']; // TypeScript file doesn't work
+var ReactDOM = window['ReactDOM'];
+var ReactDOMServer = window['ReactDOMServer'];
 var r = React.DOM;
 var ReactRouter = window['ReactRouter'];
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-
-
-function isServerSide() {
-  // Don't change this to a static variable, because it'd be initialized rather late,
-  // so some code would believe we were running client side.
-  return !!window['java'];
-}
 
 
 var PageWithState = createComponent({
@@ -106,11 +101,11 @@ function renderTitleBodyComments() {
       scrollBehavior: debiki2.forum.ForumScrollBehavior,
     });
     router.run(function(handler) {
-      React.render(React.createElement(handler, store), root);
+      ReactDOM.render(React.createElement(handler, store), root);
     });
   }
   else {
-    React.render(PageWithState(), root);
+    ReactDOM.render(PageWithState(), root);
   }
 }
 
@@ -129,12 +124,12 @@ function renderTitleBodyCommentsToString() {
     // the hash fragment, start at #/latest/ (the default route) always:
     var pagePath = '/latest/';
     ReactRouter.run(routes, pagePath, function(handler) {
-      result = React.renderToString(React.createElement(handler, store));
+      result = ReactDOMServer.renderToString(React.createElement(handler, store));
     });
     return result;
   }
   else {
-    return React.renderToString(Page(store));
+    return ReactDOMServer.renderToString(Page(store));
   }
 }
 

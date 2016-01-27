@@ -78,8 +78,9 @@ var thisIsAConcatenationMessage =
 // - Plus I read in comments in some blog that some countries actually sometimes
 //   block Google's CDN.
 var debikiJavascriptFiles = [
-      // Place React first so we can replace it at index 0 with the optimized min.js version.
+      // Place React first so we can replace it at index 0 & 1 with the optimized min.js versions.
       'bower_components/react/react-with-addons.js',
+      'bower_components/react/react-dom.js',
       // About Modernizr:
       // Concerning when/how to use a CDN for Modernizr, see:
       // http://www.modernizr.com/news/modernizr-and-cdns
@@ -205,6 +206,7 @@ function compileServerSideTypescript() {
   var javascriptStream = gulp.src([
         // Don't need any React addons server side (e.g. CSS transitions or performance measurements).
         'bower_components/react/react.min.js',
+        'bower_components/react/react-dom-server.min.js',
         'bower_components/react-bootstrap/react-bootstrap.js',
         'bower_components/react-router/build/umd/ReactRouter.js',
         'bower_components/markdown-it/dist/markdown-it.js',
@@ -312,6 +314,7 @@ function makeConcatAllScriptsStream() {
 gulp.task('insert-prod-scripts', function() {
   // This script isn't just a minified script — it contains lots of optimizations.
   debikiJavascriptFiles[0] = 'bower_components/react/react-with-addons.min.js';
+  debikiJavascriptFiles[1] = 'bower_components/react/react-dom.min.js';
 });
 
 

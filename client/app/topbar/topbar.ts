@@ -85,7 +85,7 @@ export var TopBar = createComponent({
   },
 
   getThisRect: function() {
-    return this.getDOMNode().getBoundingClientRect();
+    return ReactDOM.findDOMNode(this).getBoundingClientRect();
   },
 
   onChange: function() {
@@ -446,7 +446,7 @@ function makeNotfIcon(type: string, number: number) {
 var SearchForm = createComponent({
   componentDidMount: function() {
     keymaster('escape', this.props.onClose);
-    $(this.refs.input.getDOMNode()).focus();
+    $(this.refs.input).focus();
   },
 
   componentWillUnmount: function() {
@@ -454,8 +454,8 @@ var SearchForm = createComponent({
   },
 
   search: function() {
-    $(this.refs.xsrfToken.getDOMNode()).val($['cookie']('XSRF-TOKEN'));
-    $(this.refs.form.getDOMNode()).submit();
+    $(this.refs.xsrfToken).val($['cookie']('XSRF-TOKEN'));
+    $(this.refs.form).submit();
   },
 
   render: function() {

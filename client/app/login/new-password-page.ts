@@ -36,7 +36,7 @@ var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 export function renderNewPasswordPage(secretKey: string) {
   var data = window['newPasswordData'];
   data.xsrfToken = $['cookie']('XSRF-TOKEN');
-  React.render(NewPasswordPage(data),
+  ReactDOM.render(NewPasswordPage(data),
       document.getElementById('dw-react-new-password'));
 }
 

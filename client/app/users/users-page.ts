@@ -200,14 +200,14 @@ var UserInfo = createComponent({
   },
 
   selectAndUploadAvatar: function() {
-    $(this.refs.chooseAvatarInput.getDOMNode()).click();
+    $(this.refs.chooseAvatarInput).click();
   },
 
   createUploadAvatarButton: function() {
     if (!this.refs.chooseAvatarInput)
       return;
 
-    var inputElem = this.refs.chooseAvatarInput.getDOMNode();
+    var inputElem = this.refs.chooseAvatarInput;
     var FileAPI = window['FileAPI'];
     FileAPI.event.on(inputElem, 'change', (evt) => {
       var files = FileAPI.getFiles(evt);

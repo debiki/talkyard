@@ -50,7 +50,7 @@ function ensureEditorCreated(success) {
   }
   else {
     Server.loadEditorEtceteraScripts().done(() => {
-      theEditor = React.render(Editor({}), utils.makeMountNode());
+      theEditor = ReactDOM.render(Editor({}), utils.makeMountNode());
       success();
     });
   }
@@ -124,7 +124,7 @@ export var Editor = createComponent({
     this.perhapsShowGuidelineModal();
     // Don't scroll the main discussion area, when scrolling inside the editor.
     /* Oops this breaks scrolling in the editor and preview.
-    $(this.refs.editor.getDOMNode()).on('scroll touchmove mousewheel', function(event) {
+    $(this.refs.editor).on('scroll touchmove mousewheel', function(event) {
       event.preventDefault();
       event.stopPropagation();
       return false;
@@ -146,7 +146,7 @@ export var Editor = createComponent({
   },
 
   startMentionsParser: function() {
-    $(this.refs.textarea.getDOMNode()).atwho({
+    $(this.refs.textarea).atwho({
       at: "@",
       search_key: 'username',
       tpl: "<li data-value='${atwho-at}${username}'>${username} (${fullName})</li>",
@@ -166,14 +166,14 @@ export var Editor = createComponent({
       return;
     }
     // We also add class 'resizable' a bit below [7UGM27] because sometimes React removes it.
-    $(this.refs.editor.getDOMNode()).resizable({
+    $(this.refs.editor).resizable({
       direction: ['top'],
       resize: this.makeSpaceAtBottomForEditor,
     });
   },
 
   makeSpaceAtBottomForEditor: function() {
-    this.$columns.css('bottom', $(this.refs.editor.getDOMNode()).height());
+    this.$columns.css('bottom', $(this.refs.editor).height());
   },
 
   returnSpaceAtBottomForEditor: function() {
@@ -185,7 +185,7 @@ export var Editor = createComponent({
     this.setState({
       // Let the whole editor be a drop zone, so it's easy to hit, because if dropping outside, the browser
       // opens the dropped file in the current window (then the editor content is lost).
-      dropzone: new window['Dropzone'](this.getDOMNode(), {
+      dropzone: new window['Dropzone'](ReactDOM.findDOMNode(this), {
         url: '/-/upload-public-file',
         uploadMultiple: false, // only one at a time, so we know which checksum is for which file
         maxFilesize: ReactStore.allData().maxUploadSizeBytes * 1.0 / 1000 / 1000, // megabytes
@@ -217,11 +217,11 @@ export var Editor = createComponent({
               text: thisComponent.state.text + '\n' + linkHtml,
             });
             // Scroll down so people will see the new line we just appended.
-            scrollToBottom(thisComponent.refs.textarea.getDOMNode());
+            scrollToBottom(thisComponent.refs.textarea);
             thisComponent.updatePreview(function() {
               // This happens to early, not sure why. So wait for a while.
               setTimeout(function() {
-                scrollToBottom(thisComponent.refs.preview.getDOMNode());
+                scrollToBottom(thisComponent.refs.preview);
               }, 800);
             });
           });
@@ -469,7 +469,7 @@ export var Editor = createComponent({
       return;
 
     // If the guidelines are visible, we don't need no modal.
-    var rect = this.refs.guidelines.getDOMNode().getBoundingClientRect();
+    var rect = this.refs.guidelines.getBoundingClientRect();
     if (rect.top >= 0)
       return;
 
@@ -537,7 +537,7 @@ export var Editor = createComponent({
   },
 
   saveNewForumPage: function() {
-    var title = $(this.refs.titleInput.getDOMNode()).val();
+    var title = $(this.refs.titleInput).val();
     var data = {
       categoryId: this.state.newForumTopicCategoryId,
       pageRole: this.state.newForumPageRole,
@@ -552,7 +552,7 @@ export var Editor = createComponent({
   },
 
   sendPrivateMessage: function() {
-    var title = $(this.refs.titleInput.getDOMNode()).val();
+    var title = $(this.refs.titleInput).val();
     Server.sendMessage(title, this.state.text, this.state.messageToUserIds, (pageId: string) => {
       this.clearText();
       window.location.assign('/-' + pageId);

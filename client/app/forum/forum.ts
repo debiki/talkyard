@@ -533,7 +533,7 @@ var ForumTopicListComponent = React.createClass({
     orderOffset.topicFilter = nextProps.topicFilter;
     if (isNewView) {
       this.setState({
-        minHeight: $(this.getDOMNode()).height(),
+        minHeight: $(ReactDOM.findDOMNode(this)).height(),
         topics: null,
         showLoadMoreButton: false
       });

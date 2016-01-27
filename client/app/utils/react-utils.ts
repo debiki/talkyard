@@ -17,9 +17,11 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../prelude.ts" />
 
 
 var reactCreateFactory = React['createFactory'];
+var isServerSide = debiki2.isServerSide;
 
 
 function createComponent(componentDefinition) { // oops should obviously be named createFactory
