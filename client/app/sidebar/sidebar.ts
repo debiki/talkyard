@@ -419,7 +419,7 @@ export var Sidebar = createComponent({
     else {
       tabButtons =
         DropdownButton({ title: this.state.commentsType, key: 'showRecent', pullRight: true,
-            onSelect: (key) => { this[key](); } },
+            onSelect: (event, key) => { this[key](); }, id: '2wu4bg7' },
           recentButton,
           unreadButton,
           starredButton,

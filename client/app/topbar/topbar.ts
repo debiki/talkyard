@@ -257,7 +257,7 @@ export var TopBar = createComponent({
           otherNotfs);
     var avatarNameDropdown = !me.isLoggedIn ? null :
         DropdownButton({ title: avatarNameAndNotfs, className: 'esAvtrName', pullRight: true,
-            noCaret: true },
+            noCaret: true, id: '2k5f39' },
           MenuItemLink({ href: linkToMyProfilePage(store) }, "View your profile"),
           MenuItem({ onSelect: this.onLogoutClick }, "Log out"),
           anyDivider,
@@ -304,7 +304,7 @@ export var TopBar = createComponent({
 
     var menuDropdown =
         DropdownButton({ title: menuTitle, className: 'dw-menu esMenu', pullRight: true,
-            noCaret: true },
+            noCaret: true, id: '9uk4j2' },
           adminMenuItem,
           reviewMenuItem,
           (adminMenuItem || reviewMenuItem) && quickLinks.length ?

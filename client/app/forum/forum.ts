@@ -237,7 +237,8 @@ var CategoriesAndTopics = createComponent({
     }
   },
 
-  switchCategory: function(newCategorySlug) {
+  onSwitchCategory: function(event, newCategorySlug) {
+    event.preventDefault();
     var routes = this.getRoutes();
     var nextRouteName = routes[routes.length - 1].name;
     if (nextRouteName === 'ForumRouteCategories' || nextRouteName === 'ForumRouteDefault') {
@@ -252,7 +253,8 @@ var CategoriesAndTopics = createComponent({
     });
   },
 
-  switchSortOrder: function(newRouteName: string) {
+  onSwitchSortOrder: function(event, newRouteName: string) {
+    event.preventDefault();
     this.transitionTo(newRouteName, this.getParams(), this.getQuery());
   },
 
@@ -284,7 +286,7 @@ var CategoriesAndTopics = createComponent({
   },
 
   /* If using a filter dropdown + full search text field like GitHub does:
-  activateFilter: function(filterKey: string) {
+  onActivateFilter: function(event, filterKey: string) {
     this.setState({
       searchFilterKey: filterKey,
       searchText: this.searchTextForFilter(filterKey),
@@ -365,7 +367,7 @@ var CategoriesAndTopics = createComponent({
 
     var categoriesDropdown =
         r.div({ className: 'dw-main-category-dropdown' },
-        DropdownButton({ title: activeCategory.name, onSelect: this.switchCategory },
+        DropdownButton({ title: activeCategory.name, onSelect: this.onSwitchCategory, id: '4p59' },
           categoryMenuItems));
 
     var activeRoute = this.getRoutes()[this.getRoutes().length - 1];
@@ -375,7 +377,8 @@ var CategoriesAndTopics = createComponent({
     if (this.state.compact) {
       latestTopCategories =
         r.div({ className: 'dw-sort-order' },
-          DropdownButton({ title: this.getSortOrderName(), onSelect: this.switchSortOrder },
+          DropdownButton({ title: this.getSortOrderName(), onSelect: this.onSwitchSortOrder,
+              id: '6wkp3p5' },
             MenuItem({ eventKey: 'ForumRouteLatest' }, this.getSortOrderName('ForumRouteLatest')),
             MenuItem({ eventKey: 'ForumRouteTop' }, this.getSortOrderName('ForumRouteTop')),
             MenuItem({ eventKey: 'ForumRouteCategories' },
@@ -408,7 +411,7 @@ var CategoriesAndTopics = createComponent({
       return props;
     }
     var topicsFilterButton =
-        DropdownButton({ title: "Filter", onSelect: this.activateFilter },
+        DropdownButton({ title: "Filter", onSelect: this.onActivateFilter, id: ... },
           MenuItem(makeFilterItemProps('ShowAll'), "Show everything"),
           MenuItem(makeFilterItemProps('ShowWaiting'), "Show waiting"));
     var topicFilter =

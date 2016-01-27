@@ -152,7 +152,7 @@ var MetabarDetails = createComponent({
     return { numRepliesSummarized: null };
   },
 
-  onNewNotfLevel: function(newLevel) {
+  onNewNotfLevel: function(event, newLevel) {
     ReactActions.setPageNoftLevel(newLevel);
   },
 
@@ -168,7 +168,7 @@ var MetabarDetails = createComponent({
     var userAuthenticated = user && user.isAuthenticated;
 
     var notificationsElem = userAuthenticated
-        ? DropdownButton({ title: user.rolePageSettings.notfLevel,
+        ? DropdownButton({ title: user.rolePageSettings.notfLevel, id: '7bw3gz5',
               className: 'dw-notf-level', onSelect: this.onNewNotfLevel },
             MenuItem({ eventKey: 'Watching' }, 'Watching'),
             MenuItem({ eventKey: 'Tracking' }, 'Tracking'),

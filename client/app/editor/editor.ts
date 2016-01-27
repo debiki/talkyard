@@ -33,7 +33,6 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
-var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
@@ -682,7 +681,7 @@ export var Editor = createComponent({
 
       /* Later:
       categoriesDropdown =
-          DropdownButton({ title: 'activeCategory.name',
+          CategoryInput({ ..., title: 'activeCategory.name',
               className: 'esEdtr_titleEtc_category', onSelect: this.changeCategory },
             MenuItem({ eventKey: 'zzz', key: 'zzz' }, 'category.name')); */
 
