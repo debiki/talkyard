@@ -255,6 +255,22 @@ object PagePath {
    * - (server)/fold/ers/page-name (here, the pageId is not shown in the path).
    */
   def fromUrlPath(tenantId: String, path: String): PagePath.Parsed = {
+    // For now, quick hack to match all forum paths. Later, compare with in-mem cached forum paths.
+    var adjustedPath = path
+    // If a forum is located at /:
+    if (path == "/categories" || path.startsWith("/latest/") || path.startsWith("/top/")) {
+      adjustedPath = "/"
+    }
+    // If a forum is located at /forum/:  (but exclude /forum/-pageid/slug paths)
+    else if (path.startsWith("/forum/") && !path.startsWith("/forum/-")) {
+      adjustedPath = "/forum/"
+    }
+    fromUrlPathImpl(tenantId, adjustedPath)
+  }
+
+
+  private def fromUrlPathImpl(tenantId: String, path: String): PagePath.Parsed = {
+
     if (path.isEmpty)
       return Parsed.Bad("URL path is empty")
 

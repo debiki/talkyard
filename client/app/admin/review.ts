@@ -34,34 +34,37 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Nav = reactCreateFactory(ReactBootstrap.Nav);
 var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
 
-var ReactRouter = window['ReactRouter'];
-var RouteHandler = reactCreateFactory(ReactRouter.RouteHandler);
-var RouterNavigationMixin = ReactRouter.Navigation;
-var RouterStateMixin = ReactRouter.State;
 
+export var ReviewPanelComponent = React.createClass(<any> {
+  contextTypes: {
+    router: React.PropTypes.object.isRequired
+  },
 
-export var ReviewPanelComponent = React.createClass({
-  mixins: [RouterNavigationMixin, RouterStateMixin],
-
+  /* Old: (remove later, when I've decided I'll remove review-posts.ts — right now it's
+          only commented out here)
   getInitialState: function() {
     return {
-      activeRoute: this.getRoutes()[2].name
+      activeRoute: this.props.routes[2].path,
     };
   },
 
-  handleSelect: function(newRoute) {
-    this.setState({ activeRoute: newRoute });
-    this.transitionTo(newRoute);
-  },
+  handleSelect: function(newPath) {
+    this.setState({ activeRoute: newPath });
+    this.transitionTo(newPath);
+    this.context.router.push('/-/admin/review/' + newPath);
+  }, */
 
   render: function() {
+    return this.props.children;
+    /* old:
     return (
         r.div({},
             Nav({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect,
                 className: 'dw-sub-nav' },
               NavItem({ eventKey: 'review-posts' }, 'Posts')),
             r.div({ className: 'dw-admin-panel' },
-              RouteHandler({}))));
+              this.props.children)));
+    */
   }
 });
 

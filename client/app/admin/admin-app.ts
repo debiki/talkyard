@@ -45,53 +45,54 @@ var Button = reactCreateFactory(ReactBootstrap.Button);
 var ReactRouter = window['ReactRouter'];
 var Route = reactCreateFactory(ReactRouter.Route);
 var Redirect = reactCreateFactory(ReactRouter.Redirect);
-var DefaultRoute = reactCreateFactory(ReactRouter.DefaultRoute);
-var NotFoundRoute = reactCreateFactory(ReactRouter.NotFoundRoute);
-var RouteHandler = reactCreateFactory(ReactRouter.RouteHandler);
-var RouterNavigationMixin = ReactRouter.Navigation;
-var RouterStateMixin = ReactRouter.State;
 
+
+var AdminRoot = '/-/admin/';
 
 export function routes() {
-  // Later on, when there's a Dashboard tab, could use that one as the default instead.
-  var defaultRouteName = debiki2.ReactStore.getUser().isAdmin ? 'settings' : 'review';
-  return Route({ path: '/', handler: AdminAppComponent },
-    Redirect({ from: '/', to: defaultRouteName }),
-    Redirect({ from: '/users', to: 'users-active' }),
-    Redirect({ from: '/review', to: 'review-all' }),
-    Route({ name: 'settings', path: 'settings', handler: SettingsPanelComponent }),
-    Route({ name: 'users', path: 'users', handler: UsersTabComponent },
-      Route({ name: 'users-active', path: 'active', handler: ActiveUsersPanelComponent }),
-      Route({ name: 'users-new', path: 'new', handler: NewUsersPanelComponent }),
-      Route({ name: 'users-staff', path: 'staff', handler: NotYetImplementedComponent }),
-      Route({ name: 'users-suspended', path: 'suspended', handler: NotYetImplementedComponent }),
-      Route({ name: 'users-threats', path: 'threads', handler: NotYetImplementedComponent }),
-      Route({ name: 'users-one', path: 'id/:userId', handler: AdminUserPageComponent })),
-    Route({ name: 'customize', path: 'customize', handler: CustomizePanelComponent }),
-    Route({ name: 'review', path: 'review', handler: ReviewPanelComponent },
-      Route({ name: 'review-all', path: 'all', handler: ReviewAllPanelComponent }),
-      // Remove later:
-      Route({ name: 'review-posts', path: 'posts', handler: ReviewPostsPanelComponent })));
+  return [
+    Redirect({ key: 'redir', from: AdminRoot, to: AdminRoot + 'settings' }), // later: --> /dashboard
+    Route({ key: 'routes', path: AdminRoot, component: AdminAppComponent },
+      Redirect({ from: 'users', to: AdminRoot + 'users/active' }),
+      Redirect({ from: 'review', to: AdminRoot + 'review/all' }),
+      Route({ path: 'settings', component: SettingsPanelComponent }),
+      Route({ path: 'users', component: UsersTabComponent },
+        Route({ path: 'active', component: ActiveUsersPanelComponent }),
+        Route({ path: 'new', component: NewUsersPanelComponent }),
+        Route({ path: 'staff', component: NotYetImplementedComponent }),
+        Route({ path: 'suspended', component: NotYetImplementedComponent }),
+        Route({ path: 'threads', component: NotYetImplementedComponent }),
+        Route({ path: 'id/:userId', component: AdminUserPageComponent })),
+      Route({ path: 'customize', component: CustomizePanelComponent }),
+      Route({ path: 'review', component: ReviewPanelComponent },
+        Route({ path: 'all', component: ReviewAllPanelComponent }),
+        // Remove later:
+        Route({ path: 'posts', component: ReviewPostsPanelComponent })))];
 }
 
 
 
-var NotYetImplementedComponent = React.createClass({
+var NotYetImplementedComponent = React.createClass(<any> {
+  displayName: 'NotYetImplementedComponent',
   render: function() {
     return (
-      r.p({}, 'Not yet implemented.'));
+      r.p({}, 'Not yet implemented. [EsM4GPY72]'));
   }
 });
 
 
 
-var AdminAppComponent = React.createClass({
-  mixins: [RouterNavigationMixin, RouterStateMixin, debiki2.StoreListenerMixin],
+var AdminAppComponent = React.createClass(<any> {
+  mixins: [debiki2.StoreListenerMixin],
+
+  contextTypes: {
+    router: React.PropTypes.object.isRequired
+  },
 
   getInitialState: function() {
     return {
       loggedInUser: debiki2.ReactStore.getUser(),
-      activeRoute: this.getRoutes()[1].name
+      activeRoute: this.props.routes[1].path,  // try to remove?
     };
   },
 
@@ -103,7 +104,7 @@ var AdminAppComponent = React.createClass({
 
   handleSelect: function(newRoute) {
     this.setState({ activeRoute: newRoute });
-    this.transitionTo(newRoute);
+    this.context.router.push(AdminRoot + newRoute);
   },
 
   render: function() {
@@ -127,13 +128,13 @@ var AdminAppComponent = React.createClass({
           NavItem({ eventKey: 'users' }, 'Users'),
           customize,
           NavItem({ eventKey: 'review' }, 'Review')),
-        RouteHandler({ loggedInUser: this.state.loggedInUser }))));
+        React.cloneElement(this.props.children, { loggedInUser: this.state.loggedInUser }))));
   }
 });
 
 
 
-var SettingsPanelComponent = React.createClass({
+var SettingsPanelComponent = React.createClass(<any> {
   mixins: [SaveSettingMixin],
 
   componentDidMount: function() {
@@ -211,7 +212,7 @@ var SettingsPanelComponent = React.createClass({
 
 
 
-var CustomizePanelComponent = React.createClass({
+var CustomizePanelComponent = React.createClass(<any> {
   mixins: [SaveSettingMixin],
 
   componentDidMount: function() {

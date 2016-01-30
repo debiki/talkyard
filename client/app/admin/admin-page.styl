@@ -17,16 +17,14 @@
 
 
 .dw-main-nav
-  margin: 50px auto 0;
+  margin: 30px auto 12px;
   a
     font-weight: bold;
     color: hsl(0, 0%, 29%);
 
 .dw-sub-nav
   background: $subNavBackgroundColor;
-  padding: 8px 8px 0;
-  &.nav-stacked
-    padding: 0;
+  padding: 0;
   a
     color: $subNavColor;
     &:hover
@@ -36,6 +34,10 @@
   &:focus
     color: hsl($uiHue, 56%, 35%);
     background: white;
+
+.esAdminArea
+  .dw-sub-nav
+    margin-top: 14px;
 
 .dw-admin-panel
   margin-top: 10px;

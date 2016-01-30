@@ -50,9 +50,10 @@ var React = window['React']; // TypeScript file doesn't work
 var ReactDOM = window['ReactDOM'];
 var ReactDOMServer = window['ReactDOMServer'];
 var r = React.DOM;
-var ReactRouter = window['ReactRouter'];
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
+var ReactRouter = window['ReactRouter'];
+var Router = reactCreateFactory(ReactRouter.Router);
 
 
 var PageWithState = createComponent({
@@ -96,13 +97,9 @@ function renderTitleBodyComments() {
 
   var store: Store = debiki2.ReactStore.allData();
   if (store.pageRole === PageRole.Forum) {
-    var router = ReactRouter.create({
-      routes: debiki2.forum.buildForumRoutes(),
-      scrollBehavior: debiki2.forum.ForumScrollBehavior,
-    });
-    router.run(function(handler) {
-      ReactDOM.render(React.createElement(handler, store), root);
-    });
+    // scrollBehavior: debiki2.forum.ForumScrollBehavior,
+    ReactDOM.render(
+        Router({ history: ReactRouter.browserHistory }, debiki2.forum.buildForumRoutes()), root);
   }
   else {
     ReactDOM.render(PageWithState(), root);
@@ -115,18 +112,16 @@ function renderTitleBodyCommentsToString() {
 
   // Comment in the next line to skip React server side and debug in browser only.
   //return '<p class="dw-page" data-reactid=".123" data-react-checksum="123">react_skipped</p>'
+
   var store: Store = debiki2.ReactStore.allData();
   if (store.pageRole === PageRole.Forum) {
     var routes = debiki2.forum.buildForumRoutes();
-    var result;
     // In the future, when using the HTML5 history API to update the URL when navigating
-    // inside the forum, we can use `store.pagePath` below. But for now, when using
-    // the hash fragment, start at #/latest/ (the default route) always:
-    var pagePath = '/latest/';
-    ReactRouter.run(routes, pagePath, function(handler) {
-      result = ReactDOMServer.renderToString(React.createElement(handler, store));
-    });
-    return result;
+    // inside the forum, we can use `store.pagePath` below. But for now:
+    var store: Store = debiki2.ReactStore.allData();
+    var pagePath = store.pagePath + 'latest';
+    return ReactDOMServer.renderToString(
+        Router({ history: ReactRouter.createMemoryHistory(pagePath) }, routes));
   }
   else {
     return ReactDOMServer.renderToString(Page(store));

@@ -101,6 +101,9 @@ body
 
 .btn-primary,
 .btn-primary:visited,
+.nav-pills > li > a.active,
+.nav-pills > li > a.active:hover,
+.nav-pills > li > a.active:focus,
 .nav-pills > li.active > a,
 .nav-pills > li.active > a:hover,
 .nav-pills > li.active > a:focus,
@@ -117,7 +120,7 @@ body
   &.nav-stacked .nav-pills > li.active > a:hover,
   &.nav-stacked .nav-pills > li.active > a:focus
     color: white !important;
-    background: hsl(207, 90%, 50%);
+    background: hsl($uiHue, 90%, 50%);
     font-weight: bold;
 
 .nav-pills > li > a
@@ -132,8 +135,15 @@ body
 .nav > :first-child
   margin-left: 0;
 
+.nav:not(.nav-stacked) > li
+  margin-bottom: 0;
+
 .nav-stacked li
   margin-left: 0 !important; // why Bootstrap sets 2px?
+
+.nav > li > a
+  padding-top: 8px;
+  padding-bottom: 8px;
 
 input, textarea {
   /* Disable annoyingly slow Twitter Bootstrap transitions.

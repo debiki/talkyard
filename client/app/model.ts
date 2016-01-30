@@ -296,6 +296,7 @@ interface Store {
   pageId: string;
   forumId?: string;
   categoryId?: number;
+  showForumCategories?: boolean;
   ancestorsRootFirst?: Ancestor[];
   hideForumIntro?: boolean;
   pageRole: PageRole;

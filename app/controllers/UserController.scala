@@ -261,7 +261,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  def viewUserPage() = GetAction { request =>
+  def viewUserPage(whatever: String) = GetAction { request =>
     val htmlStr = views.html.templates.users(SiteTpi(request)).body
     Ok(htmlStr) as HTML
   }

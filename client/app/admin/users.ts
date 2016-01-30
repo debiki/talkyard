@@ -34,29 +34,15 @@ var Button = reactCreateFactory(ReactBootstrap.Button);
 var Nav = reactCreateFactory(ReactBootstrap.Nav);
 var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
 
-var ReactRouter = window['ReactRouter'];
-var RouteHandler = reactCreateFactory(ReactRouter.RouteHandler);
-var RouterNavigationMixin = ReactRouter.Navigation;
-var RouterStateMixin = ReactRouter.State;
 
-
-export var UsersTabComponent = React.createClass({
-  mixins: [RouterNavigationMixin, RouterStateMixin],
-
+export var UsersTabComponent = React.createClass(<any> {
   getInitialState: function() {
-    return {
-      activeRoute: this.getRoutes()[2].name
-    };
-  },
-
-  handleSelect: function(newRoute) {
-    this.setState({ activeRoute: newRoute });
-    this.transitionTo(newRoute);
+    return {};
   },
 
   sendInvites: function() {
     var user = debiki2.ReactStore.getUser();
-    window.location.assign('/-/users/#/id/' + user.userId + '/invites');
+    window.location.assign(linkToInvitesFromUser(user.userId));
   },
 
   render: function() {
@@ -64,12 +50,16 @@ export var UsersTabComponent = React.createClass({
       r.div({},
         r.div({ className: 'dw-sub-nav' },
           r.div({ className: 'pull-right' },
+            // Later: Change this to a tab that lists all invites sent by all users.
+            // And in that tab, include a Send Invites button.
             Button({ onClick: this.sendInvites }, 'Send Invites')),
-          Nav({ bsStyle: 'pills', activeKey: this.state.activeRoute, onSelect: this.handleSelect },
-            NavItem({ eventKey: 'users-active' }, 'Active'),
-            NavItem({ eventKey: 'users-new' }, 'New Waiting'))),
+          Nav({ bsStyle: 'pills' },
+            r.li({}, Link({ to: '/-/admin/users/active', activeClassName: 'active' }, "Active")),
+            r.li({}, Link({ to: '/-/admin/users/new', activeClassName: 'active' }, "New Waiting")))),
+            // with react-router-bootstrap, sth like:
+            //   NavItem({ eventKey: 'users-new' }, 'New Waiting'))),   ?
         r.div({ className: 'dw-admin-panel' },
-          RouteHandler({ loggedInUser: this.props.loggedInUser }))));
+          React.cloneElement(this.props.children, { loggedInUser: this.props.loggedInUser }))));
   }
 });
 

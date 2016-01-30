@@ -1,6 +1,6 @@
 /**
  * Build file for client scripts and styles.
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2014-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -104,7 +104,7 @@ var debikiJavascriptFiles = [
       'bower_components/moment/min/moment.min.js',
       'bower_components/eventemitter2/lib/eventemitter2.js',
       'bower_components/react-bootstrap/react-bootstrap.js',
-      'bower_components/react-router/build/umd/ReactRouter.js',
+      'bower_components/react-router/index.js',
       'node_modules/jquery-resizable/resizable.js',
       'client/third-party/bootstrap/dropdown.js',
       'client/third-party/gifffer/gifffer.js',
@@ -208,7 +208,7 @@ function compileServerSideTypescript() {
         'bower_components/react/react.min.js',
         'bower_components/react/react-dom-server.min.js',
         'bower_components/react-bootstrap/react-bootstrap.js',
-        'bower_components/react-router/build/umd/ReactRouter.js',
+        'bower_components/react-router/index.js',
         'bower_components/markdown-it/dist/markdown-it.js',
         'bower_components/lodash/dist/lodash.js',
         'client/third-party/html-css-sanitizer-bundle.js',

@@ -24,6 +24,10 @@
    module debiki2 {
 //------------------------------------------------------------------------------
 
+var reactCreateFactory = React['createFactory'];
+export var Link = reactCreateFactory(ReactRouter.Link);
+
+
 export function die(errorMessage: string) {
   var dialogs: any = debiki2['pagedialogs'];
   setTimeout(() => {

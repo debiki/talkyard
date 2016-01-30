@@ -34,16 +34,20 @@ export function linkToAdminPage(): string {
 }
 
 export function linkToReviewPage(): string {
-  return '/-/admin/#/review/all';
+  return '/-/admin/review/all';
 }
 
 
 export function linkToUserProfilePage(userId: UserId): string {
-  return '/-/users/#/id/' + userId;
+  return '/-/users/id/' + userId;
+}
+
+export function linkToInvitesFromUser(userId: UserId): string {
+  return linkToUserProfilePage(userId) + '/invites';
 }
 
 export function linkToMyProfilePage(store: Store): string {
-  return '/-/users/#/id/' + store.me.id;
+  return '/-/users/id/' + store.me.id;
 }
 
 
