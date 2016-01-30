@@ -213,9 +213,13 @@ export var Title = createComponent({
     if (!this.props.hideButtons && store.pageRole === PageRole.Forum && store.hideForumIntro) {
       var introPost = store.allPosts[BodyId];
       if (introPost && !introPost.isPostHidden) {
-        anyShowForumInroBtn =
-          r.a({ className: 'icon-info-circled dw-forum-intro-show',
-              onClick: () => debiki2['ReactActions'].showForumIntro(true) });
+        // Don't show button too early — doing that would make server side and client side
+        // React generated html differ.
+        if (store.userSpecificDataAdded) {
+          anyShowForumInroBtn =
+              r.a({ className: 'icon-info-circled dw-forum-intro-show',
+                  onClick: () => debiki2['ReactActions'].showForumIntro(true) });
+        }
       }
     }
 

@@ -362,6 +362,11 @@ export var TopBar = createComponent({
     if (!usersHere) {
       // Data not yet loaded from server.
     }
+    else if (!store.userSpecificDataAdded) {
+      // Don't render any "X online" now because that'd make the server side html
+      // different from the html React generates client side to verify that the server's
+      // html is up-to-date.
+    }
     else if (usersHere.areTopicContributors) {
       // Don't show any num-users tip for normal forum topics like this, because non-chat
       // discussions happen slowly, perhaps one comment per user per day. Doesn't matter
