@@ -12,6 +12,7 @@
   z-index: 2000;
   background-color: black;
   opacity: 0.75;
+  animation: stupid-lightbox-overlay-fadein 0.8s;
 }
 
 .stupid-lightbox-wrap {
@@ -42,6 +43,19 @@
   -webkit-transform: translateY(-50%) translateX(-50%);
   -ms-transform: translateY(-50%) translateX(-50%);
   transform: translateY(-50%) translateX(-50%);
+
+  animation: stupid-lightbox-image-fadein 0.8s;
+}
+
+/* Without these fade-in animations, people sometimes think the image is on
+ * a new web page on its own, and click the browser's Back button. */
+@keyframes stupid-lightbox-image-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes stupid-lightbox-overlay-fadein {
+  from { opacity: 0; }
+  to   { opacity: 0.75; }
 }
 
 /* vim: set fdm=marker et ts=2 sw=2 tw=0 fo=r list :*/

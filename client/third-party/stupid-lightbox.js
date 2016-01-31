@@ -21,6 +21,7 @@ function createLightbox() {
   $overlay = $($.parseHTML('<div class="stupid-lightbox-overlay">'));
   $image = $($.parseHTML(
       '<div class="stupid-lightbox-wrap">' +
+        '<div class="stupid-lightbox-close"></div>' +
         '<img src="' + this.src + '" class="stupid-lightbox-image">' +
       '</div>'));
   $overlay.appendTo(document.body);

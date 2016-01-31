@@ -57,6 +57,29 @@
 .stupid-lightbox-wrap
   cursor: zoom-out;
 
+.stupid-lightbox-close
+  position: absolute;
+  right: 0;
+  color: white;
+  font-size: 8vh;
+  cursor: pointer;
+  background: #333; // eles not visible on white image
+  z-index: 1;
+  line-height: 0.95;
+  padding-bottom: 3px;
+  &:before
+    content: '\e836'; // = icon-cancel, an  x
+    font-family: "fontello";
+    font-style: normal;
+    font-weight: normal;
+    speak: none;
+    display: inline-block;
+    text-decoration: none;
+    width: 1em;
+    text-align: center;
+    font-variant: normal;
+    text-transform: none;
+    line-height: 1em;
 
 
 // Fontello
