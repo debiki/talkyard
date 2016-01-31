@@ -180,11 +180,15 @@ var ShowAndEditPreferences = createComponent({
               defaultValue: user.email, disabled: true }),
           r.p({ className: 'help-block' }, 'Not shown publicly.')),
 
+        // Later: Verify is really an URL
         r.div({ className: 'form-group' },
           r.label({ htmlFor: 'url' }, 'URL'),
           r.input({ className: 'form-control', id: 'url',
               defaultValue: user.url }),
           r.p({ className: 'help-block' }, 'Any website or page of yours.')),
+
+        // Later: + About me
+        // Later: + Location
 
         r.div({ className: 'form-group' },
           r.div({ className: 'checkbox' },

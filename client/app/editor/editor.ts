@@ -211,9 +211,14 @@ export var Editor = createComponent({
           this.on('canceled', thisComponent.hideUploadProgress);
           this.on('success', (file, url) => {
             dieIf(!_.isString(url), 'DwE06MF22');
+            dieIf(!_.isString(thisComponent.state.text), 'EsE5FYZ2');
             var linkHtml = thisComponent.makeUploadLink(file, url);
+            var perhapsNewline = thisComponent.state.text.endsWith('\n') ? '' : '\n';
             thisComponent.setState({
-              text: thisComponent.state.text + '\n' + linkHtml,
+              text: thisComponent.state.text + perhapsNewline + '\n' +
+                // (There's a sanitizer for this — for everything in the editor.)
+                "<!-- Uploaded file name:  " + file.name + "  -->\n" +
+                linkHtml,
             });
             // Scroll down so people will see the new line we just appended.
             scrollToBottom(thisComponent.refs.textarea);
@@ -309,7 +314,7 @@ export var Editor = createComponent({
     this.setState({
       anyPostType: postType,
       replyToPostIds: postIds,
-      text: this.state.text ? this.state.text : this.state.draft
+      text: this.state.text || this.state.draft || '',
     });
     if (!postIds.length) {
       this.closeEditor();
@@ -340,7 +345,7 @@ export var Editor = createComponent({
     if (this.alertBadState())
       return;
     this.showEditor();
-    var text = this.state.text || this.state.draft;
+    var text = this.state.text || this.state.draft || '';
     this.setState({
       anyPostType: null,
       newForumTopicCategoryId: categoryId,

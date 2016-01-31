@@ -196,6 +196,10 @@ var UserBar = createComponent({
 
 
 var UserInfo = createComponent({
+  getInitialState: function() {
+    return {};
+  },
+
   componentDidMount: function() {
     Server.loadEditorEtceteraScripts().then(this.createUploadAvatarButton);
   },
@@ -227,7 +231,6 @@ var UserInfo = createComponent({
         return true;
       }, (files, rejected) => {
         dieIf(files.length !== 1, 'DwE5UPM2');
-        // We can skip any upload progress bar I think. Small files, around 20k, done in no time.
         FileAPI.upload({
           url: '/-/upload-avatar',
           headers: { 'X-XSRF-TOKEN': window['$'].cookie('XSRF-TOKEN') },
@@ -238,13 +241,33 @@ var UserInfo = createComponent({
             'small': { width: 48, height: 48, type: 'image/jpeg', quality: 0.95 },
             'medium': { maxWidth: 350, maxHeight: 350, type: 'image/jpeg', quality: 0.8 },
           },
-          complete: (error, xhr) => {
-            if (error) {
-              pagedialogs.getServerErrorDialog().open(xhr);
+          // This is per file.
+          fileprogress: (event, file, xhr, options) => {
+            if (!this.state.isUploadingProfilePic) {
+              this.setState({ isUploadingProfilePic: true });
+              pagedialogs.getProgressBarDialog().open("Uploading...", () => {
+                this.setState({ uploadCancelled: true });
+                xhr.abort("Intentionally cancelled [EsM2FL54]");
+              });
             }
             else {
-              this.props.reloadUser();
+              var percent = event.loaded / event.total * 100;
+              pagedialogs.getProgressBarDialog().setDonePercent(percent);
             }
+          },
+          // This is when all files have been uploaded — but we're uploading just one.
+          complete: (error, xhr) => {
+            if (error && !this.state.uploadCancelled) {
+              pagedialogs.getServerErrorDialog().open(xhr);
+            }
+            // Reload in any case — perhaps the error happened after the whole image had been
+            // uploaded already.
+            this.props.reloadUser();
+            pagedialogs.getProgressBarDialog().close();
+            this.setState({
+              isUploadingProfilePic: false,
+              uploadCancelled: false
+            });
           },
         });
       });
