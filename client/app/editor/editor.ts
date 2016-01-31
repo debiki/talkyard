@@ -788,7 +788,7 @@ export var Editor = createComponent({
     };
 
     // Make space for the soft keyboard on touch devices.
-    var maxHeightCss = !Modernizr.touch || debiki2.utils.isMouseDetected ? undefined : {
+    var maxHeightCss = !Modernizr.touchevents || debiki2.utils.isMouseDetected ? undefined : {
       maxHeight: screen.height / 2.5
     };
 

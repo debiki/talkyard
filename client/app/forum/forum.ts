@@ -139,7 +139,7 @@ var ForumComponent = React.createClass(<any> {
     return activeCategory;
   },
 
-  makeHelpMessage: function(category: Category) {
+  makeHelpMessage: function(category: Category): any {
     var store: Store = this.state;
     var me: Myself = store.me;
     if (!_.isEqual(category.newTopicTypes, [PageRole.Critique])) // [plugin] ...
@@ -493,7 +493,7 @@ var ForumButtons = createComponent({
 
 
 var ForumTopicListComponent = React.createClass(<any> {
-  getInitialState: function() {
+  getInitialState: function(): any {
     // The server has included in the Flux store a list of the most recent topics, and we
     // can use that lis when rendering the topic list server side, or for the first time
     // in the browser (but not after that, because then new topics might have appeared).
@@ -565,10 +565,10 @@ var ForumTopicListComponent = React.createClass(<any> {
       if (!this.isMounted())
         return;
 
-      var topics = isNewView ? [] : (this.state.topics || []);
+      var topics: any = isNewView ? [] : (this.state.topics || []);
       topics = topics.concat(newlyLoadedTopics);
       // `topics` includes at least the last old topic twice.
-      topics = _.uniq(topics, 'pageId');
+      topics = _.uniqBy(topics, 'pageId');
       this.setState({
         minHeight: null,
         isLoading: false,

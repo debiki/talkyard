@@ -154,7 +154,7 @@ jQuery.fn.dwScrollIntoView = function(options) {
     }, duration, 'swing').queue(function(next) {
       // On my Android phone, `animate` sometimes won't scroll
       // all the way to the desired offset, therefore:
-      if (Modernizr.touch && !debiki2.utils.isMouseDetected) {
+      if (Modernizr.touchevents && !debiki2.utils.isMouseDetected) {
         helpMobileScroll(coords.desiredParentLeft, coords.desiredParentTop);
       }
       next();

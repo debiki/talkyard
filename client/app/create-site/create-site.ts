@@ -120,7 +120,7 @@ var CreateWebsiteComponent = React.createClass(<any> {
   },
 
   render: function() {
-    var disableSubmit = _.contains(_.values(this.state.okayStatuses), false);
+    var disableSubmit = _.includes(_.values(this.state.okayStatuses), false);
     return (
       r.div({},
         r.h1({}, 'Create Site'),

@@ -1041,7 +1041,6 @@ function makeStranger(): Myself {
     watchbar: loadWatchbarFromSessionStorage(),
 
     closedHelpMessages: {},
-    presence: Presence.Active,
   };
 }
 

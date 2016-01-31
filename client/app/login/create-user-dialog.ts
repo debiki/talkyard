@@ -238,7 +238,7 @@ export var CreateUserDialogContent = createClassAndFactory({
               setPasswordOk: (isOk) => this.updateValueOk('password', 'dummy', isOk) })
         : null;
 
-    var disableSubmit = _.contains(_.values(this.state.okayStatuses), false);
+    var disableSubmit = _.includes(_.values(this.state.okayStatuses), false);
 
     return (
       r.form({ className: 'esCreateUser' },

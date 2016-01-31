@@ -48,7 +48,7 @@ export var SpecialContent = createComponent({
     });
   },
 
-  savedText: function(anyContent: SpecialContent) {
+  savedText: function(anyContent?: SpecialContent) {
     var content: SpecialContent = anyContent || this.state.content;
     return content.anyCustomText || content.defaultText;
   },
