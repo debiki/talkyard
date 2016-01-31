@@ -92,7 +92,7 @@ export var Setting = createComponent({
 
   resetValue: function() {
     this.setState({
-      editedValue: this.props.placeholder ? null : this.props.setting.defaultValue
+      editedValue: this.props.placeholder ? '' : this.props.setting.defaultValue
     });
   },
 
@@ -126,7 +126,8 @@ export var Setting = createComponent({
     if (valueChanged) {
       saveResetBtns =
         r.div({ className: 'col-sm-3' },
-          Button({ onClick: () => this.props.onSave(setting, this.state.editedValue) }, 'Save'),
+          Button({ onClick: () => this.props.onSave(setting, this.state.editedValue),
+              bsStyle: 'primary' }, "Save"),
           Button({ onClick: this.cancelEdits }, 'Cancel'));
     }
     else if (!valueChanged && !hasDefaultValue) {

@@ -155,9 +155,9 @@ var SettingsPanelComponent = React.createClass(<any> {
     return (
       r.div({},
         Setting({ setting: settings.userMustBeAuthenticated, onSave: saveSetting, label: 'Login required',
-          help: 'Require authentication to read content. (Users must then login' +
-            'with password or via e.g. Google or Facebook, but anonymous ' +
-            'access is disabled.)' }),
+          help: r.span({}, "Require authentication to read content. Users must then login " +
+            "with password or via ", r.i({}, "for example "), "Google or Facebook, but anonymous " +
+            "access is disabled.)") }),
 
         Setting({ setting: settings.userMustBeApproved, onSave: saveSetting, label: 'Approve users',
           help: 'Staff must approve all new user accounts before they are allowed to access the site.' }),
@@ -179,13 +179,13 @@ var SettingsPanelComponent = React.createClass(<any> {
           label: 'company_full_name', help: r.span({}, "The full name of the company " +
               "or organization that runs this site. Used in legal documents " +
               "like the ", termsOfUseLink, " page."),
-          placeholder: "Unnamed Company Full Name" }),
+          placeholder: "Company Full Name" }),
 
         Setting({ setting: settings.companyShortName, onSave: saveSetting,
           label: 'company_short_name', help: r.span({}, "The short name of the company " +
               "or organization that runs this site. Used in legal documents " +
               "like the ", termsOfUseLink, " page."),
-          placeholder: "Unnamed Company" }),
+          placeholder: "Short Name" }),
 
         Setting({ setting: settings.companyDomain, onSave: saveSetting,
           label: 'company_domain', help: r.span({}, "The domain name owned by the company " +
@@ -234,30 +234,40 @@ var CustomizePanelComponent = React.createClass(<any> {
           label: 'Show Forum Categories', help: "Shall a forum main page list " +
             "all forum categories, instead of the latest topics?" }),
 
+        /* A tester checked this without any idea about what it does.
+          Remove for now, perhaps later show in some Advanced section?
         Setting({ setting: settings.horizontalComments, onSave: saveSetting,
           label: '2D Tree Layout', help: "Shall comments be laid out in a two " +
             "dimensional tree? By default, they're shown in a single column instead." }),
+         */
 
         Setting({ setting: settings.headerHtml, onSave: saveSetting, label: 'Header HTML',
-          multiline: true, help: 'Any header, will be shown at the top of the page.' }),
+          multiline: true, help: "Any header, will be shown at the top of the page. " +
+            "Currently you need to know HTML and CSS to be able to use this, unfortunately.",
+          placeholder: "<div class=\"...\">...</div>"}),
 
         Setting({ setting: settings.footerHtml, onSave: saveSetting, label: 'Footer HTML',
-          multiline: true, help: 'Any footer, shown at the bottom of the page.' }),
+          multiline: true, help: "Any footer, shown at the bottom of the page.",
+          placeholder: "<footer class=\"...\">...</footer>"}),
 
         Setting({ setting: settings.headStylesHtml, onSave: saveSetting, label: 'Styles HTML',
           multiline: true, help: 'Stylesheet link tags that will be inserted after ' +
-              'other stylesheet tags in the <head> tag.' }),
+              "other stylesheet tags in the <head> tag.",
+          placeholder: "<link rel=\"stylesheet\" href=\"...\"/>" }),
 
         Setting({ setting: settings.headScriptsHtml, onSave: saveSetting, label: 'Scripts HTML',
           multiline: true, help: 'Script tags that will be inserted after other ' +
-              'scripts in the <head> tag.' }),
+              "scripts in the <head> tag.",
+          placeholder: "<script>...</script>" }),
 
         Setting({ setting: settings.endOfBodyHtml, onSave: saveSetting, label: '</body> HTML',
           multiline: true, help: 'Tags that will be inserted just before ' +
               'the end of the <body> tag.' }),
 
-        Setting({ setting: settings.socialLinksHtml, onSave: saveSetting,
-          label: 'Social links HTML', multiline: true,
+        // Skip for now; don't want to clarify for people how this works. Needs a <script> too :-P
+        // But enable on www.effectivediscussions.org — it already uses this.
+        !IsEffectiveDiscussionsDotOrg ? null : Setting({ setting: settings.socialLinksHtml,
+          onSave: saveSetting, label: "Social links HTML", multiline: true,
           help: "Google+, Facebook, Twitter like and share buttons. Don't forget " +
               "to include a script too, e.g. in the <i>Scripts HTML</i> config value. " +
               "— Perhaps I'll remove this config value in the future, so you might " +
@@ -265,7 +275,8 @@ var CustomizePanelComponent = React.createClass(<any> {
 
         SpecialContent({ contentId: '_stylesheet', label: 'Stylesheet',
             help: "CSS for this site. CSS means Cascading Style Sheets and " +
-                "you use it to describe the look and formatting of this site." })));
+                "you use it to describe the look and formatting of this site.",
+            placeholder: ".selector { color: something }" })));
   }
 });
 

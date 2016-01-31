@@ -1388,9 +1388,6 @@ var PostActions = createComponent({
         r.a({ className: 'dw-a dw-a-pin icon-pin', onClick: this.onPinClick, key: 'pn' }, 'Pin'));
     */
 
-    // Enable some hard-to-use features for me only right now.
-    var isKajMagnusSite = debiki.siteId === '3';
-
     /* Suggestions code removed, I'll rewrite and add back later.
     if (post.numPendingEditSuggestions > 0)
       suggestionsNew.push(

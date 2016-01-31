@@ -30,8 +30,9 @@ var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Input = reactCreateFactory(ReactBootstrap.Input);
 
-// zxcvbn's strongest level is 4.
-var MinPasswordStrength = 4;
+// zxcvbn's strongest level is 4, but that makes people confused: they are often
+// unable to come up with strong password.
+var MinPasswordStrength = 3;
 
 var TenYearsInSeconds = 10*365*24*3600;
 
@@ -105,17 +106,22 @@ export var NewPasswordInput = createClassAndFactory({
 
   render: function() {
     var passwordWarning;
+    var makeItStrongerSuggestion;
     var passwordHelp;
     var tooWeakReason = this.state.passwordWeakReason;
     if (this.state.showErrors) {
       if (tooWeakReason) {
         passwordWarning = r.b({ style: { color: 'red' } }, tooWeakReason);
       }
+      else if (this.state.passwordCrackTime < TenYearsInSeconds) {
+        makeItStrongerSuggestion =
+            r.b({}, "Fairly weak. Consider making it longer, or more random.");
+      }
       // 100 computers in the message below? Well, zxcvbn assumes 10ms per guess and 100 cores.
       // My scrypt settings are more like 100-200 ms per guess. So, say 100 ms,
       // and 1 000 cores = 100 computers  -->  can use zxcvbn's default crack time.
       passwordHelp = r.span({},
-          passwordWarning,
+          passwordWarning, makeItStrongerSuggestion,
           r.br(), "Crack time: " + this.state.passwordCrackTimeText +
           ", with 100 computers and the scrypt hash");
     }

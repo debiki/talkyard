@@ -136,4 +136,7 @@ function isReviewPostTask(reviewTask: ReviewTask): boolean {
 
 var ApiUrlPathPrefix = '/-/';
 
+// Enable some hard-to-use features for me only right now.
+var IsEffectiveDiscussionsDotOrg = debiki.siteId === '3';
+
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

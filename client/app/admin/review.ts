@@ -55,7 +55,11 @@ export var ReviewPanelComponent = React.createClass(<any> {
   }, */
 
   render: function() {
-    return this.props.children;
+    return (
+      this.props.children.length
+          ? this.props.children
+          : r.p({ style: { marginTop: '2em' }}, "Nothing to review."));
+
     /* old:
     return (
         r.div({},

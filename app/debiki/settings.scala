@@ -101,7 +101,7 @@ case class Settings(settingsChain: SettingsChain) {
   val footerHtml = derive("footerHtml", "")
 
   val socialLinksHtml = derive("socialLinksHtml", "")
-  val logoUrlOrHtml = derive("logoUrlOrHtml", """<span>Home</span>""")
+  val logoUrlOrHtml = derive("logoUrlOrHtml", "")
 
   val companyDomain = derive("companyDomain", "www.example.com")
   val companyFullName = derive("companyFullName", "Unnamed Company Full Name")

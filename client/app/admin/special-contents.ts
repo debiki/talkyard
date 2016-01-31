@@ -78,7 +78,7 @@ export var SpecialContent = createComponent({
     if (textChanged) {
       saveResetBtns =
         r.div({},
-          Button({ onClick: this.saveEdits }, 'Save'),
+          Button({ onClick: this.saveEdits, bsStyle: 'primary' }, "Save"),
           Button({ onClick: this.cancelEdits }, 'Cancel'));
     }
     else if (!textChanged && !hasDefaultText) {
@@ -95,7 +95,7 @@ export var SpecialContent = createComponent({
           r.p({}, this.props.help),
           r.textarea({ className: 'form-control special-content-' + content.contentId,
               id: content.rootPageId + content.contentId, value: editedText,
-              onChange: this.onEdit }),
+              onChange: this.onEdit, placeholder: this.props.placeholder }),
           saveResetBtns)));
   }
 });

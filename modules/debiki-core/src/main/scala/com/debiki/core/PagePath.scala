@@ -258,7 +258,7 @@ object PagePath {
     // For now, quick hack to match all forum paths. Later, compare with in-mem cached forum paths.
     var adjustedPath = path
     // If a forum is located at /:
-    if (path == "/categories" || path.startsWith("/latest/") || path.startsWith("/top/")) {
+    if (path == "/categories" || path.startsWith("/latest") || path.startsWith("/top")) {
       adjustedPath = "/"
     }
     // If a forum is located at /forum/:  (but exclude /forum/-pageid/slug paths)
