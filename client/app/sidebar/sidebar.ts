@@ -419,7 +419,7 @@ export var Sidebar = createComponent({
     else {
       tabButtons =
         DropdownButton({ title: this.state.commentsType, key: 'showRecent', pullRight: true,
-            onSelect: (key) => { this[key](); } },
+            onSelect: (event, key) => { this[key](); }, id: '2wu4bg7' },
           recentButton,
           unreadButton,
           starredButton,
@@ -471,7 +471,10 @@ export var Sidebar = createComponent({
               r.h3({}, title),
               tipsOrExtraConfig,
               r.div({},
-                ReactCSSTransitionGroup({ transitionName: 'comment', key: this.state.commentsType },
+                ReactCSSTransitionGroup({ transitionName: 'comment', key: this.state.commentsType,
+                    // Is 600 correct? Haven't checked, could do later
+                    transitionAppearTimeout: 600, transitionEnterTimeout: 600,
+                    transitionLeaveTimeout: 600 },
                   listItems))))))));
   }
 });

@@ -35,11 +35,11 @@ object AdminController extends mvc.Controller {
 
 
   def redirectToAdminPage() = GetAction { request =>
-    Redirect(routes.AdminController.viewAdminPage().url)
+    Redirect(routes.AdminController.viewAdminPage("").url)
   }
 
 
-  def viewAdminPage() = GetAction { apiReq =>
+  def viewAdminPage(whatever: String) = GetAction { apiReq =>
     if (!apiReq.user.exists(_.isStaff)) {
       Ok(views.html.login.loginPopup(
         mode = "LoginToAdministrate",

@@ -43,7 +43,7 @@ var pageToolsDialog;
 
 export function getPageToolsDialog() {
   if (!pageToolsDialog) {
-    pageToolsDialog = React.render(PageToolsDialog(), utils.makeMountNode());
+    pageToolsDialog = ReactDOM.render(PageToolsDialog(), utils.makeMountNode());
   }
   return pageToolsDialog;
 }

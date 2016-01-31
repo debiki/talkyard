@@ -33,7 +33,7 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 
 
-export var ReviewAllPanelComponent = React.createClass({
+export var ReviewAllPanelComponent = React.createClass(<any> {
   mixins: [SaveSettingMixin],
 
   componentDidMount: function() {

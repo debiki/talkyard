@@ -41,7 +41,7 @@ var createTopicDialog;
 
 export function getCreateTopicDialog() {
   if (!createTopicDialog) {
-    createTopicDialog = React.render(CreateTopicDialog(), utils.makeMountNode());
+    createTopicDialog = ReactDOM.render(CreateTopicDialog(), utils.makeMountNode());
   }
   return createTopicDialog;
 }

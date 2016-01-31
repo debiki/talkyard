@@ -58,12 +58,17 @@ GET   /-/reset-password/email-sent       controllers.ResetPasswordController.sho
 GET   /-/reset-password/choose-password/:resetPasswordEmailId  controllers.ResetPasswordController.showChooseNewPasswordPage(resetPasswordEmailId)
 POST  /-/reset-password/choose-password/:resetPasswordEmailId  controllers.ResetPasswordController.handleNewPasswordForm(resetPasswordEmailId)
 
-GET   /-/create-site            controllers.CreateSiteController.showPage(isTest = "false")
-GET   /-/create-test-site       controllers.CreateSiteController.showPage(isTest = "true")
+GET   /-/create-site                        controllers.CreateSiteController.showPage(isTest = "false")
+GET   /-/create-site/website                controllers.CreateSiteController.showPage(isTest = "false")
+GET   /-/create-site/embedded-comments      controllers.CreateSiteController.showPage(isTest = "false")
+GET   /-/create-test-site                   controllers.CreateSiteController.showPage(isTest = "true")
+GET   /-/create-test-site/website           controllers.CreateSiteController.showPage(isTest = "true")
+GET   /-/create-test-site/embedded-comments controllers.CreateSiteController.showPage(isTest = "true")
 POST  /-/create-site            controllers.CreateSiteController.createSite
 
 GET   /-/admin                  controllers.AdminController.redirectToAdminPage
-GET   /-/admin/                 controllers.AdminController.viewAdminPage
+GET   /-/admin/                 controllers.AdminController.viewAdminPage(whatever = "")
+GET   /-/admin/*whatever        controllers.AdminController.viewAdminPage(whatever)
 
 GET   /-/load-site-settings     controllers.SettingsController.loadSiteSettings
 GET   /-/load-section-settings  controllers.SettingsController.loadSectionSettings(rootPageId)
@@ -86,7 +91,8 @@ POST  /-/clear-flags            controllers.ModerationController.clearFlags
 POST  /-/reject-edits           controllers.ModerationController.rejectEdits
 GET   /-/list-recent-posts      controllers.ModerationController.listRecentPosts
 
-GET   /-/users/                 controllers.UserController.viewUserPage
+GET   /-/users/                 controllers.UserController.viewUserPage(whatever = "")
+GET   /-/users/*whatever        controllers.UserController.viewUserPage(whatever)
 GET   /-/load-my-page-data      controllers.UserController.loadMyPageData(pageId)
 GET   /-/list-user-actions      controllers.UserController.listUserActions(userId)
 GET   /-/load-notifications     controllers.UserController.loadNotifications(userId, upToWhenMs)

@@ -42,7 +42,7 @@ var wikifyDialog;
 
 export function getWikifyDialog() {
   if (!wikifyDialog) {
-    wikifyDialog = React.render(WikifyDialog(), utils.makeMountNode());
+    wikifyDialog = ReactDOM.render(WikifyDialog(), utils.makeMountNode());
   }
   return wikifyDialog;
 }

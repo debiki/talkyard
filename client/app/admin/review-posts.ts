@@ -32,9 +32,7 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 
 
-export var ReviewPostsPanelComponent = React.createClass({
-  mixins: [SaveSettingMixin],
-
+export var ReviewPostsPanelComponent = React.createClass(<any> {
   componentDidMount: function() {
     Server.loadRecentPosts(posts => {
       this.setState({ posts: posts });

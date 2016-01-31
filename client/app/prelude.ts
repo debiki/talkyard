@@ -24,6 +24,10 @@
    module debiki2 {
 //------------------------------------------------------------------------------
 
+var reactCreateFactory = React['createFactory'];
+export var Link = reactCreateFactory(ReactRouter.Link);
+
+
 export function die(errorMessage: string) {
   var dialogs: any = debiki2['pagedialogs'];
   setTimeout(() => {
@@ -51,8 +55,18 @@ export function scrollToBottom(node) {
 }
 
 
-export var findDOMNode = window['React'].findDOMNode;
-dieIf(!findDOMNode, 'EsE6UMGY2');
+export function isServerSide(): boolean {
+  return !!window['ReactDOMServer'];
+}
+
+
+export function isClientSide(): boolean {
+  return !isServerSide();
+}
+
+
+export var findDOMNode = isServerSide() ? null : window['ReactDOM'].findDOMNode;
+dieIf(isClientSide() && !findDOMNode, 'EsE6UMGY2');
 
 
 export function toId(x: number | { id: number }): number {

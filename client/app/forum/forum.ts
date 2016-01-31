@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2015-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -40,33 +40,45 @@ var Input = reactCreateFactory(ReactBootstrap.Input);
 
 var ReactRouter = window['ReactRouter'];
 var Route = reactCreateFactory(ReactRouter.Route);
+var IndexRoute = reactCreateFactory(ReactRouter.IndexRoute);
 var Redirect = reactCreateFactory(ReactRouter.Redirect);
-var DefaultRoute = reactCreateFactory(ReactRouter.DefaultRoute);
-var NotFoundRoute = reactCreateFactory(ReactRouter.NotFoundRoute);
-var RouteHandler = reactCreateFactory(ReactRouter.RouteHandler);
-var RouterNavigationMixin = ReactRouter.Navigation;
-var RouterStateMixin = ReactRouter.State;
+var Link = reactCreateFactory(ReactRouter.Link);
 
 var MaxWaitingForCritique = 10; // for now only [plugin]
 
 /** Keep in sync with app/controllers/ForumController.NumTopicsToList. */
 var NumNewTopicsPerRequest = 40;
 
-export function buildForumRoutes() {
-  var defaultPath =
-      debiki2.ReactStore.allData().showForumCategories ? '/categories' : '/latest/';
+// The route with path 'latest' or 'top' or 'categories'.
+var SortOrderRouteIndex = 1;
 
-  return (
-    Route({ name: 'ForumRoute', path: '/', handler: ForumComponent },
-      Redirect({ from: '/', to: defaultPath }),
-      Redirect({ from: '/latest', to: '/latest/' }),
-      Redirect({ from: '/categories/', to: '/categories' }),
-      Route({ name: 'ForumRouteLatest', path: 'latest/:categorySlug?',
-          handler: ForumTopicListComponent }),
-      Route({ name: 'ForumRouteTop', path: 'top/:categorySlug?',
-          handler: ForumTopicListComponent }),
-      Route({ name: 'ForumRouteCategories', path: 'categories',
-          handler: ForumCategoriesComponent })));
+var RoutePathLatest = 'latest';
+var RoutePathTop = 'top';
+var RoutePathCategories = 'categories';
+
+var FilterShowAll = 'ShowAll';
+var FilterShowWaiting = 'ShowWaiting';
+
+
+export function buildForumRoutes() {
+  var store: Store = ReactStore.allData();
+  var rootSlash = store.pagePath;
+  var rootNoSlash = rootSlash.substr(0, rootSlash.length - 1);
+  var defaultPath = rootSlash + (store.showForumCategories ? RoutePathCategories : RoutePathLatest);
+
+  return [
+    Redirect({ key: 'redirA', from: rootSlash, to: defaultPath }),
+    Redirect({ key: 'redirB', from: rootNoSlash, to: defaultPath }),
+    Route({ key: 'theRoutes', path: rootSlash, component: ForumComponent },
+      Redirect({ from: RoutePathLatest + '/', to: rootSlash + RoutePathLatest }),
+      Redirect({ from: RoutePathCategories + '/', to: rootSlash + RoutePathCategories }),
+      Route({ path: RoutePathLatest, component: ForumTopicListComponent },
+        IndexRoute({ component: ForumTopicListComponent }),
+        Route({ path: ':categorySlug', component: ForumTopicListComponent })),
+      Route({ path: RoutePathTop, component: ForumTopicListComponent },
+        IndexRoute({ component: ForumTopicListComponent }),
+        Route({ path: ':categorySlug', component: ForumTopicListComponent })),
+      Route({ path: RoutePathCategories, component: ForumCategoriesComponent }))];
 }
 
 
@@ -83,8 +95,8 @@ export var ForumScrollBehavior = {
 };
 
 
-var ForumComponent = React.createClass({
-  mixins: [debiki2.StoreListenerMixin, RouterStateMixin],
+var ForumComponent = React.createClass(<any> {
+  mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
     return debiki2.ReactStore.allData();
@@ -98,18 +110,21 @@ var ForumComponent = React.createClass({
 
   getActiveCategory: function() {
     var activeCategory: any;
-    var activeCategorySlug = this.getParams().categorySlug;
+    var activeCategorySlug = this.props.params.categorySlug;
     if (activeCategorySlug) {
+      // (( Old comment, for react-router 0.13, now I use 2.0:
       // Don't know why, but sometimes after having edited or created a category and
       // then transitioned to its edited/new slug, then getParams().categorySlug
       // still points to the old previous slug. Therefore, if we didn't find
-      // activeCategorySlug, try this.state.newCategorySlug instead.
+      // activeCategorySlug, try this.state.newCategorySlug instead. ))
       activeCategory = _.find(this.state.categories, (category: Category) => {
         return category.slug === activeCategorySlug;
       });
       if (!activeCategory) {
         activeCategory = _.find(this.state.categories, (category: Category) => {
-          return category.slug === this.state.newCategorySlug;
+          var match = category.slug === this.state.newCategorySlug;
+          console.warn("Weird this.state.categories code is needed [EsE5GUKS2]");
+          return match;
         });
       }
     }
@@ -143,15 +158,15 @@ var ForumComponent = React.createClass({
           "and tell me to notify you when you can ask for critique again.")) };
 
     // if too-few-topics then
-    return { id: 'EdH4KBP2', version: 1, content: r.span({},
+    return { id: 'EdH4KBP2', version: 1, content: r.span({},  // [plugin]
         r.p({}, "You can click ", r.b({}, "Ask for Critique"), " (to the right just below)."),
         r.p({}, "(Normally, you would need to first help others and gather credits, " +
           "before you can ask for critique yourself. But right now there are few " +
           "open topics here, so you can ask directly instead.)")) };
 
-    // enough credits:
+    // enough credits: [plugin]:
     // return { id: 'EdH8PU01', version: 1, content: r.span({}, "Click Ask for Critique") };
-
+    // else:
     // return { id: 'EdH4KGU0', version: 1, content:
     //   Select a topic that you'd like to critique:
     //    (You need credits, before you can ask for critique yourself — and you get credits, by
@@ -167,6 +182,8 @@ var ForumComponent = React.createClass({
         : null;
 
     var childProps = _.assign({}, this.state, {
+      route: this.props.route,
+      location: this.props.location,
       activeCategory: activeCategory,
       numWaitingForCritique: this.state.numWaitingForCritique,  // for now only [plugin]
       setNumWaitingForCritique: (numWaiting) => {               // for now only [plugin]
@@ -175,15 +192,25 @@ var ForumComponent = React.createClass({
       },
     });
 
+    // Should I use named components instead of manually passing all route stuff to ForumButtons?
+    // https://github.com/rackt/react-router/blob/v2.0.0-rc5/docs/API.md#named-components
+    var forumButtonProps = _.assign({}, childProps, {
+      route: this.props.route,
+      routes: this.props.routes,
+      location: this.props.location,
+      params: this.props.params,
+    });
+
     return (
-      r.div({},
+     r.div({},
       debiki2.reactelements.TopBar({}),
       r.div({ className: 'container dw-forum' },
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
         r.div({ className: 'dw-page' }),
         ForumIntroText(this.state),
         helpMessage,
-        CategoriesAndTopics(childProps))));
+        ForumButtons(forumButtonProps),
+        React.cloneElement(this.props.children, childProps))));
   }
 });
 
@@ -211,8 +238,12 @@ var ForumIntroText = createComponent({
 
 
 
-var CategoriesAndTopics = createComponent({
-  mixins: [RouterNavigationMixin, RouterStateMixin, utils.WindowZoomResizeMixin],
+var ForumButtons = createComponent({
+  mixins: [utils.WindowZoomResizeMixin],
+
+  contextTypes: {
+    router: React.PropTypes.object.isRequired
+  },
 
   getInitialState: function() {
     return {
@@ -233,17 +264,23 @@ var CategoriesAndTopics = createComponent({
     var newCatSlug = nextProps.newCategorySlug;
     if (newCatSlug && newCatSlug !== this.state.newCategorySlug) {
       this.setState({ newCategorySlug: newCatSlug });
-      this.transitionTo('ForumRouteLatest', { categorySlug: newCatSlug }, this.getQuery());
+      this.context.router.push({
+        pathname: this.props.pagePath + RoutePathLatest + '/' + newCatSlug,
+        query: this.props.location.query,
+      });
     }
   },
 
-  switchCategory: function(newCategorySlug) {
-    var routes = this.getRoutes();
-    var nextRouteName = routes[routes.length - 1].name;
-    if (nextRouteName === 'ForumRouteCategories' || nextRouteName === 'ForumRouteDefault') {
-      nextRouteName = 'ForumRouteLatest';
-    }
-    this.transitionTo(nextRouteName, { categorySlug: newCategorySlug }, this.getQuery());
+  onSwitchCategory: function(event, newCategorySlug) {
+    event.preventDefault();
+    dieIf(this.props.routes.length < 2, 'EsE6YPKU2');
+    var currentPath = this.props.routes[SortOrderRouteIndex].path;
+    var nextPath = currentPath === RoutePathCategories ? RoutePathLatest : currentPath;
+    var slashSlug = newCategorySlug ? '/' + newCategorySlug : '';
+    this.context.router.push({
+      pathname: this.props.pagePath + nextPath + slashSlug,
+      query: this.props.location.query,
+    });
   },
 
   findTheUncategorizedCategory: function() {
@@ -252,39 +289,39 @@ var CategoriesAndTopics = createComponent({
     });
   },
 
-  switchSortOrder: function(newRouteName: string) {
-    this.transitionTo(newRouteName, this.getParams(), this.getQuery());
+  onSwitchSortOrder: function(event, newPath: string) {
+    event.preventDefault();
+    this.context.router.push({
+      pathname: this.props.pagePath + newPath + this.slashCategorySlug(),
+      query: this.props.location.query,
+    });
   },
 
-  getSortOrderName: function(routeName?: string) {
-    if (!routeName) {
-      routeName = this.getCurrentRouteName();
+  getSortOrderName: function(sortOrderRoutePath?: string) {
+    if (!sortOrderRoutePath) {
+      sortOrderRoutePath = this.props.routes[SortOrderRouteIndex].path;
     }
-    switch (routeName) {
-      case 'ForumRouteLatest': return "Latest";
-      case 'ForumRouteTop': return "Top";
-      case 'ForumRouteCategories': return "Categories";
+    switch (sortOrderRoutePath) {
+      case RoutePathLatest: return "Latest";
+      case RoutePathTop: return "Top";
+      case RoutePathCategories: return "Categories";
     }
-    console.error("Unknown route [DwE5KFIW2]");
-  },
-
-  getCurrentRouteName: function() {
-    return _.last(this.getRoutes())['name'];
+    die("Unknown route: " + sortOrderRoutePath + " [DwE5KFIW2]");
   },
 
   setTopicFilter: function(event) {
-    var newQuery = _.clone(this.getQuery());
-    if (event.target.value === 'ShowAll') {
+    var newQuery = _.clone(this.props.location.query);
+    if (event.target.value === FilterShowAll) {
       delete newQuery.filter;
     }
     else {
       newQuery.filter = event.target.value;
     }
-    this.replaceWith(this.getCurrentRouteName(), this.getParams(), newQuery);
+    this.context.router.push({ pathname: this.props.location.pathname, query: newQuery });
   },
 
   /* If using a filter dropdown + full search text field like GitHub does:
-  activateFilter: function(filterKey: string) {
+  onActivateFilter: function(event, filterKey: string) {
     this.setState({
       searchFilterKey: filterKey,
       searchText: this.searchTextForFilter(filterKey),
@@ -293,8 +330,8 @@ var CategoriesAndTopics = createComponent({
 
   searchTextForFilter: function(filterKey: string) {
     switch (filterKey) {
-      case 'ShowAll': return '';
-      case 'ShowWaiting': return 'is:open is:question-or-todo';
+      case FilterShowAll: return '';
+      case FilterShowWaiting: return 'is:open is:question-or-todo';
     }
   },
 
@@ -339,6 +376,10 @@ var CategoriesAndTopics = createComponent({
     });
   },
 
+  slashCategorySlug: function() {
+    return this.props.params.categorySlug ? '/' + this.props.params.categorySlug : '';
+  },
+
   render: function() {
     var props: Store = this.props;
     var me = props.me;
@@ -348,9 +389,8 @@ var CategoriesAndTopics = createComponent({
       // a category, opened a page and then clicked Back in the browser. Then this page
       // reloads, and the browser then uses cached HTML including JSON in which the new
       // category does not yet exist. Let's try to reload the category list page:
-      console.log("Category not found, navigating to forum index page [DwM5KPE2]");
-      location.assign(location.pathname); // works right now when using hash fragment routing [hashrouting]
-      return null;
+      return r.p({},
+        "Category not found. Did you just create it? Then reload the page please. [EsE04PK27]");
     }
 
     var categoryMenuItems = [];
@@ -365,38 +405,40 @@ var CategoriesAndTopics = createComponent({
 
     var categoriesDropdown =
         r.div({ className: 'dw-main-category-dropdown' },
-        DropdownButton({ title: activeCategory.name, onSelect: this.switchCategory },
+        DropdownButton({ title: activeCategory.name, onSelect: this.onSwitchCategory, id: '4p59' },
           categoryMenuItems));
-
-    var activeRoute = this.getRoutes()[this.getRoutes().length - 1];
 
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
     var latestTopCategories;
     if (this.state.compact) {
       latestTopCategories =
         r.div({ className: 'dw-sort-order' },
-          DropdownButton({ title: this.getSortOrderName(), onSelect: this.switchSortOrder },
-            MenuItem({ eventKey: 'ForumRouteLatest' }, this.getSortOrderName('ForumRouteLatest')),
-            MenuItem({ eventKey: 'ForumRouteTop' }, this.getSortOrderName('ForumRouteTop')),
-            MenuItem({ eventKey: 'ForumRouteCategories' },
-              this.getSortOrderName('ForumRouteCategories'))));
+          DropdownButton({ title: this.getSortOrderName(), onSelect: this.onSwitchSortOrder,
+              id: '6wkp3p5' },
+            MenuItem({ eventKey: RoutePathLatest }, this.getSortOrderName(RoutePathLatest)),
+            MenuItem({ eventKey: RoutePathTop }, this.getSortOrderName(RoutePathTop)),
+            MenuItem({ eventKey: RoutePathCategories }, this.getSortOrderName(RoutePathCategories))));
     }
     else {
+      var slashSlug = this.slashCategorySlug();
+      var makeCategoryLink = (where, text) => Link({
+          to: this.props.pagePath + where, query: this.props.location.query,
+          className: 'btn btn-default', activeClassName: 'active' }, text);
       latestTopCategories =
           r.ul({ className: 'nav nav-pills dw-sort-order' },
-            NavButton({ routeName: 'ForumRouteLatest' }, 'Latest'),
-            NavButton({ routeName: 'ForumRouteTop' }, 'Top'),
-            NavButton({ routeName: 'ForumRouteCategories' }, 'Categories'));
+            makeCategoryLink(RoutePathLatest + slashSlug, 'Latest'),
+            makeCategoryLink(RoutePathTop + slashSlug, 'Top'),
+            makeCategoryLink(RoutePathCategories, 'Categories'));
     }
 
     // The filter topics select.
-    var topicFilterValue = this.getQuery().filter || 'ShowAll';
+    var topicFilterValue = this.props.location.query.filter || FilterShowAll;
     var topicFilterInput =
         r.div({ className: 'dw-filter' },
           Input({ type: 'select', ref: 'topicFilterInput', onChange: this.setTopicFilter,
               value: topicFilterValue },
-            r.option({ value: 'ShowAll' }, "Show all"),
-            r.option({ value: 'ShowWaiting' }, "Show waiting")));
+            r.option({ value: FilterShowAll }, "Show all"),
+            r.option({ value: FilterShowWaiting }, "Show waiting")));
                                                       // or "Questions and todos"?
 
     /* A filter dropdown and search box instead of the <select> above:
@@ -408,9 +450,9 @@ var CategoriesAndTopics = createComponent({
       return props;
     }
     var topicsFilterButton =
-        DropdownButton({ title: "Filter", onSelect: this.activateFilter },
-          MenuItem(makeFilterItemProps('ShowAll'), "Show everything"),
-          MenuItem(makeFilterItemProps('ShowWaiting'), "Show waiting"));
+        DropdownButton({ title: "Filter", onSelect: this.onActivateFilter, id: ... },
+          MenuItem(makeFilterItemProps(FilterShowAll), "Show everything"),
+          MenuItem(makeFilterItemProps(FilterShowWaiting), "Show waiting"));
     var topicFilter =
         r.div({ className: 'dw-filter' },
           Input({ type: 'text', buttonBefore: topicsFilterButton, value: this.state.searchText,
@@ -418,16 +460,17 @@ var CategoriesAndTopics = createComponent({
               // ElasticSearch disabled server side, and is:* not supported anyway.
               disabled: true, title: "Not completely implemented" }));
     */
+    var sortOrderRoutePath = this.props.routes[SortOrderRouteIndex].path;
 
     var createTopicBtn;
-    if (activeRoute.name !== 'ForumRouteCategories') {
+    if (sortOrderRoutePath !== RoutePathCategories) {
      if (this.props.numWaitingForCritique < MaxWaitingForCritique)  // for now only [plugin]
       createTopicBtn = Button({ onClick: this.createTopic, bsStyle: 'primary' },
         createTopicBtnTitle(activeCategory));
     }
 
     var createCategoryBtn;
-    if (activeRoute.name === 'ForumRouteCategories' && me.isAdmin) {
+    if (sortOrderRoutePath === RoutePathCategories && me.isAdmin) {
       createCategoryBtn = Button({ onClick: this.createCategory }, 'Create Category');
     }
 
@@ -436,44 +479,20 @@ var CategoriesAndTopics = createComponent({
       editCategoryBtn = Button({ onClick: this.editCategory }, 'Edit Category');
     }
 
-    var viewProps = _.extend({}, this.props, {
-      activeCategory: activeCategory,
-      activeRoute: activeRoute,
-      topicFilter: topicFilterValue,
-    });
-
     return (
-      r.div({},
         r.div({ className: 'dw-forum-actionbar clearfix' },
           categoriesDropdown,
           latestTopCategories,
           topicFilterInput,
           createTopicBtn,
           createCategoryBtn,
-          editCategoryBtn),
-        RouteHandler(viewProps)));
+          editCategoryBtn));
   }
 });
 
 
 
-var NavButton = createComponent({
-  mixins: [RouterNavigationMixin, RouterStateMixin],
-  onClick: function() {
-    this.transitionTo(this.props.routeName, this.getParams(), this.getQuery());
-  },
-  render: function() {
-    var isActive = this.isActive(this.props.routeName);
-    var classes = isActive ? 'active' : '';
-    return Button({ className: classes, onClick: this.onClick }, this.props.children);
-  }
-});
-
-
-
-var ForumTopicListComponent = React.createClass({
-  mixins: [RouterStateMixin],
-
+var ForumTopicListComponent = React.createClass(<any> {
   getInitialState: function() {
     // The server has included in the Flux store a list of the most recent topics, and we
     // can use that lis when rendering the topic list server side, or for the first time
@@ -490,9 +509,9 @@ var ForumTopicListComponent = React.createClass({
   },
 
   isAllLatestTopicsView: function() {
-    return this.getRoutes().length === 2 &&
-        this.getRoutes()[1].name === 'ForumRouteLatest' &&
-        !this.getParams().categorySlug;
+    dieIf(this.props.routes.length < 2, 'EsE5YPFK23');
+    return this.props.routes[SortOrderRouteIndex].path === RoutePathLatest &&
+        !this.props.params.categorySlug;
   },
 
   componentDidMount: function() {
@@ -517,9 +536,8 @@ var ForumTopicListComponent = React.createClass({
 
   loadTopics: function(nextProps, loadMore) {
     var isNewView =
-        this.props.activeCategory.id !== nextProps.activeCategory.id ||
-        this.props.activeRoute.name !== nextProps.activeRoute.name ||
-        this.props.topicFilter !== nextProps.topicFilter;
+      this.props.location.pathname !== nextProps.location.pathname ||
+      this.props.location.search !== nextProps.location.search;
 
     this.countTopicsWaitingForCritique(); // for now only
 
@@ -529,11 +547,11 @@ var ForumTopicListComponent = React.createClass({
     if (!isNewView && !loadMore && (this.state.topics || this.state.isLoading))
       return;
 
-    var orderOffset: OrderOffset = this.getOrderOffset();
-    orderOffset.topicFilter = nextProps.topicFilter;
+    var orderOffset: OrderOffset = this.getOrderOffset(nextProps);
+    orderOffset.topicFilter = nextProps.location.query.filter;
     if (isNewView) {
       this.setState({
-        minHeight: $(this.getDOMNode()).height(),
+        minHeight: $(ReactDOM.findDOMNode(this)).height(),
         topics: null,
         showLoadMoreButton: false
       });
@@ -561,8 +579,8 @@ var ForumTopicListComponent = React.createClass({
     });
   },
 
-  countTopicsWaitingForCritique: function(topics) { // for now only  [plugin]
-    topics = topics || this.state.topics
+  countTopicsWaitingForCritique: function(topics?) { // for now only  [plugin]
+    topics = topics || this.state.topics;
     var numWaitingForCritique = 0;
     if (_.isEqual(this.props.activeCategory.newTopicTypes, [PageRole.Critique])) {
       var waitingTopics = _.filter(topics, (topic: Topic) =>
@@ -573,7 +591,8 @@ var ForumTopicListComponent = React.createClass({
     this.props.setNumWaitingForCritique(numWaitingForCritique);
   },
 
-  getOrderOffset: function() {
+  getOrderOffset: function(nextProps?) {
+    var props = nextProps || this.props;
     var anyTimeOffset: number;
     var anyLikesOffset: number;
     var anyLastTopic: any = _.last(this.state.topics);
@@ -583,7 +602,7 @@ var ForumTopicListComponent = React.createClass({
       anyLikesOffset = anyLastTopic.numLikes;
     }
     var orderOffset: OrderOffset = { sortOrder: -1 };
-    if (this.isActive('ForumRouteTop')) {
+    if (props.routes[SortOrderRouteIndex].path === RoutePathTop) {
       orderOffset.sortOrder = TopicSortOrder.LikesAndBumpTime;
       orderOffset.time = anyTimeOffset;
       orderOffset.numLikes = anyLikesOffset;
@@ -778,13 +797,17 @@ var TopicRow = createComponent({
 
 
 
-var ForumCategoriesComponent = React.createClass({
+var ForumCategoriesComponent = React.createClass(<any> {
   getInitialState: function() {
     return {};
   },
 
   componentDidMount: function() {
     this.loadCategories(this.props);
+  },
+
+  componentWillUnmount: function(nextProps) {
+    this.ignoreServerResponse = true;
   },
 
   componentWillReceiveProps: function(nextProps) {
@@ -796,10 +819,9 @@ var ForumCategoriesComponent = React.createClass({
   },
 
   loadCategories: function(props) {
-    debiki2.Server.loadForumCategoriesTopics(this.props.pageId, props.topicFilter,
+    debiki2.Server.loadForumCategoriesTopics(this.props.pageId, props.location.query.filter,
         (categories: Category[]) => {
-      if (!this.isMounted())
-        return;
+      if (this.ignoreServerResponse) return;
       this.setState({ categories: categories });
     });
   },
@@ -809,7 +831,7 @@ var ForumCategoriesComponent = React.createClass({
       return r.p({}, 'Loading...');
 
     var categoryRows = this.state.categories.map((category: Category) => {
-      return CategoryRow({ category: category, key: category.id });
+      return CategoryRow({ location: this.props.location, category: category, key: category.id });
     });
 
     return (
@@ -826,11 +848,15 @@ var ForumCategoriesComponent = React.createClass({
 
 
 var CategoryRow = createComponent({
-  mixins: [RouterNavigationMixin, RouterStateMixin],
+  contextTypes: {
+    router: React.PropTypes.object.isRequired
+  },
 
   onCategoryClick: function() {
-    var newParams = { categorySlug: this.props.category.slug };
-    this.transitionTo('ForumRouteLatest', newParams, this.getQuery());
+    this.context.router.push({
+      pathname: this.props.pagePath + RoutePathLatest + '/' + this.props.category.slug,
+      query: this.props.location.query,
+    });
   },
 
   render: function() {

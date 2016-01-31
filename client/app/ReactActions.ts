@@ -534,28 +534,28 @@ export function openNotificationSource(notf: Notification) {
 
 
 export function openPage(pageId: string) {
-  window.location.assign('/-' + pageId);
+  window.location.assign(linkToPageId(pageId));
 }
 
 
 export function openPagePostNr(pageId: string, postNr: number) {
-  window.location.assign('/-' + pageId + '#post-' + postNr);
+  window.location.assign(linkToPageId(pageId) + '#post-' + postNr);
 }
 
 
 export function openUserProfile(userId: any) {
-  window.location.assign('/-/users/#/id/' + userId);
+  window.location.assign(linkToUserProfilePage(userId));
 }
 
 
 export function goToUsersNotifications(userId: any) {
-  window.location.assign('/-/users/#/id/' + userId + '/notifications');
+  window.location.assign(linkToUserProfilePage(userId) + '/notifications');
 }
 
 
 export function writeMessage(userId: any) {
   // For now, until I've enabled react-router everywhere and won't have to reload the page.
-  location.assign('/-/users/#/id/' + userId + '?writeMessage');
+  location.assign(linkToUserProfilePage(userId) + '#writeMessage');
 }
 
 

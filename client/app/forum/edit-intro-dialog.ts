@@ -40,7 +40,7 @@ var editIntroDialog;
 
 export function openEditIntroDialog() {
   if (!editIntroDialog) {
-    editIntroDialog = React.render(EditIntroDialog(), utils.makeMountNode());
+    editIntroDialog = ReactDOM.render(EditIntroDialog(), utils.makeMountNode());
   }
   editIntroDialog.open();
 }

@@ -60,7 +60,7 @@ export var MiniMap = createComponent({
     if (!this.refs.canvas)
       return;
 
-    var canvasContext = this.refs.canvas.getDOMNode().getContext('2d');
+    var canvasContext = this.refs.canvas.getContext('2d');
     this.canvasContext = canvasContext;
     this.numPostsDrawn = this.props.numPosts;
 
@@ -108,12 +108,12 @@ export var MiniMap = createComponent({
     // Don't show minimap and open-sidebar-button directly when loading page, only
     // after scrolling a bit.
     if (this.shallShowMinimap()) {
-      $(this.refs.canvas.getDOMNode()).show();
+      $(this.refs.canvas).show();
     }
     // Don't show the minimap when one has scrolled back to the upper left corner,
     // because it would occlude stuff in the top nav bar.
     else if (!this.isScrollingInViewport) {
-      $(this.refs.canvas.getDOMNode()).hide();
+      $(this.refs.canvas).hide();
     }
   },
 
@@ -149,7 +149,7 @@ export var MiniMap = createComponent({
       return;
 
     event.preventDefault();
-    var canvasOffset = $(this.refs.canvas.getDOMNode()).offset();
+    var canvasOffset = $(this.refs.canvas).offset();
     var docPosClickedX = (event.pageX - canvasOffset.left) / this.width * $document.width();
     var docPosClickedY = (event.pageY - canvasOffset.top) / this.height * $document.height();
     var newDocCornerX = docPosClickedX - $window.width() / 2;

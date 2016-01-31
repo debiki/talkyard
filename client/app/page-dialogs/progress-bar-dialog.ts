@@ -42,7 +42,7 @@ var progressBarDialog;
 
 export function getProgressBarDialog() {
   if (!progressBarDialog) {
-    progressBarDialog = React.render(ProgressBarDialog(), utils.makeMountNode());
+    progressBarDialog = ReactDOM.render(ProgressBarDialog(), utils.makeMountNode());
   }
   return progressBarDialog;
 }

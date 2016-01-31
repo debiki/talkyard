@@ -85,7 +85,7 @@ export var TopBar = createComponent({
   },
 
   getThisRect: function() {
-    return this.getDOMNode().getBoundingClientRect();
+    return ReactDOM.findDOMNode(this).getBoundingClientRect();
   },
 
   onChange: function() {
@@ -257,7 +257,7 @@ export var TopBar = createComponent({
           otherNotfs);
     var avatarNameDropdown = !me.isLoggedIn ? null :
         DropdownButton({ title: avatarNameAndNotfs, className: 'esAvtrName', pullRight: true,
-            noCaret: true },
+            noCaret: true, id: '2k5f39' },
           MenuItemLink({ href: linkToMyProfilePage(store) }, "View your profile"),
           MenuItem({ onSelect: this.onLogoutClick }, "Log out"),
           anyDivider,
@@ -304,7 +304,7 @@ export var TopBar = createComponent({
 
     var menuDropdown =
         DropdownButton({ title: menuTitle, className: 'dw-menu esMenu', pullRight: true,
-            noCaret: true },
+            noCaret: true, id: '9uk4j2' },
           adminMenuItem,
           reviewMenuItem,
           (adminMenuItem || reviewMenuItem) && quickLinks.length ?
@@ -361,6 +361,11 @@ export var TopBar = createComponent({
     var contextbarTipsBrief;
     if (!usersHere) {
       // Data not yet loaded from server.
+    }
+    else if (!store.userSpecificDataAdded) {
+      // Don't render any "X online" now because that'd make the server side html
+      // different from the html React generates client side to verify that the server's
+      // html is up-to-date.
     }
     else if (usersHere.areTopicContributors) {
       // Don't show any num-users tip for normal forum topics like this, because non-chat
@@ -446,7 +451,7 @@ function makeNotfIcon(type: string, number: number) {
 var SearchForm = createComponent({
   componentDidMount: function() {
     keymaster('escape', this.props.onClose);
-    $(this.refs.input.getDOMNode()).focus();
+    $(this.refs.input).focus();
   },
 
   componentWillUnmount: function() {
@@ -454,8 +459,8 @@ var SearchForm = createComponent({
   },
 
   search: function() {
-    $(this.refs.xsrfToken.getDOMNode()).val($['cookie']('XSRF-TOKEN'));
-    $(this.refs.form.getDOMNode()).submit();
+    $(this.refs.xsrfToken).val($['cookie']('XSRF-TOKEN'));
+    $(this.refs.form).submit();
   },
 
   render: function() {

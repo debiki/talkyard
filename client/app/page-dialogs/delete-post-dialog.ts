@@ -44,7 +44,7 @@ var deletePostDialog;
 
 export function getDeletePostDialog() {
   if (!deletePostDialog) {
-    deletePostDialog = React.render(DeletePostDialog(), utils.makeMountNode());
+    deletePostDialog = ReactDOM.render(DeletePostDialog(), utils.makeMountNode());
   }
   return deletePostDialog;
 }

@@ -35,7 +35,6 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
-var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 var EditorBecomeFixedDist = 5;
@@ -262,7 +261,7 @@ var ChatMessageEditor = createComponent({
     Server.insertChatMessage(this.state.text, () => {
       if (!this.isMounted()) return;
       this.setState({ text: '', isSaving: false, rows: DefaultEditorRows });
-      this.refs.textarea.getDOMNode().focus();
+      this.refs.textarea.focus();
       this.props.scrollDownToViewNewMessage();
     });
   },

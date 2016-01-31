@@ -30,43 +30,43 @@
 //------------------------------------------------------------------------------
 
 var ReactRouter = window['ReactRouter'];
+var Router = reactCreateFactory(ReactRouter.Router);
 
 
 export function startRemainingReactRoots() {
   var adminAppElem = document.getElementById('dw-react-admin-app');
-  if (adminAppElem) {
-    ReactRouter.run(debiki2.admin.routes(), (HandlerComponent) => {
-      React.render(React.createElement(HandlerComponent, {}), adminAppElem);
-    });
-  }
+  if (adminAppElem)
+    ReactDOM.render(
+        Router({ history: ReactRouter.browserHistory }, admin.routes()), adminAppElem);
 
   var nonExistingPageElem = document.getElementById('dw-non-existing-page');
   if (nonExistingPageElem)
-    React.render(debiki2.nopage.NonExistingPage({}), nonExistingPageElem);
+    ReactDOM.render(
+        nopage.NonExistingPage({}), nonExistingPageElem);
 
   var topbarElem = document.getElementById('theTopbar');
   if (topbarElem)
-    React.render(debiki2.reactelements.TopBar({}), topbarElem);
+    ReactDOM.render(
+        reactelements.TopBar({}), topbarElem);
 
   createSidebar();
   watchbar.createWatchbar();
 
   var metabarElem = document.getElementById('dw-comments-toolbar');
   if (metabarElem)
-    React.render(debiki2.page.Metabar({}), metabarElem);
+    ReactDOM.render(
+        page.Metabar({}), metabarElem);
 
   var userPageElem = document.getElementById('dw-react-user-page');
   if (userPageElem) {
-    ReactRouter.run(debiki2.users.routes(), (HandlerComponent) => {
-      React.render(React.createElement(HandlerComponent, {}), userPageElem);
-    });
+    ReactDOM.render(
+        Router({ history: ReactRouter.browserHistory }, users.routes()), userPageElem);
   }
 
   var createSiteElem = document.getElementById('dw-react-create-site');
   if (createSiteElem) {
-    ReactRouter.run(debiki2.createsite.routes(), (HandlerComponent) => {
-      React.render(React.createElement(HandlerComponent, {}), createSiteElem);
-    });
+    ReactDOM.render(
+        Router({ history: ReactRouter.browserHistory }, createsite.routes()), createSiteElem);
   }
 }
 
@@ -74,7 +74,8 @@ export function startRemainingReactRoots() {
 export function createSidebar() {
   var sidebarElem = document.getElementById('dw-any-sidebar');
   if (sidebarElem)
-    React.render(debiki2.sidebar.Sidebar({}), sidebarElem);
+    ReactDOM.render(
+        sidebar.Sidebar({}), sidebarElem);
 }
 
 

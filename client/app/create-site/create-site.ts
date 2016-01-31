@@ -37,47 +37,43 @@ var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 
 var ReactRouter = window['ReactRouter'];
 var Route = reactCreateFactory(ReactRouter.Route);
+var IndexRoute = reactCreateFactory(ReactRouter.IndexRoute);
 var Redirect = reactCreateFactory(ReactRouter.Redirect);
-var DefaultRoute = reactCreateFactory(ReactRouter.DefaultRoute);
-var NotFoundRoute = reactCreateFactory(ReactRouter.NotFoundRoute);
-var RouteHandler = reactCreateFactory(ReactRouter.RouteHandler);
-var RouterNavigationMixin = ReactRouter.Navigation;
-var RouterStateMixin = ReactRouter.State;
 
 
 
 export function routes() {
-  return Route({ path: '/', handler: CreateSiteComponent },
-    /* Later, if one should choose between a site and embedded comments:
-    DefaultRoute({ handler: ChooseSiteTypeComponent }),
-    Route({ name: 'create-simple-site', path: 'create-simple-site', handler: CreateSimpleSiteComponent }),
-    */
-    DefaultRoute({ handler: CreateSimpleSiteComponent }),
-    Route({ name: 'create-embedded-comments', path: 'create-embedded-comments',
-      handler: CreateEmbeddedSiteComponent }));
+  return [
+    Redirect({ key: 'redir', from: '/-/create-site/', to: '/-/create-site' }),
+    Route({ key: 'routes', path: '/-/create-site', component: CreateSomethingComponent },
+      /* Later, if one should choose between a site and embedded comments:
+      IndexRoute({ handler: ChooseSiteTypeComponent }),
+      Route({ path: 'website', handler: CreateWebsiteComponent }),
+      */
+      IndexRoute({ component: CreateWebsiteComponent }),
+      Route({ path: 'embedded-comments', component: CreateEmbeddedSiteComponent }))];
 }
 
 
 
-var CreateSiteComponent = React.createClass({
-  mixins: [RouterStateMixin],
+var CreateSomethingComponent = React.createClass({
+  displayName: 'CreateSiteComponent',
 
   getInitialState: function() {
     return {
-      pricePlan: this.getQuery().pricePlan
+      pricePlan: this.props.location.query.pricePlan
     };
   },
 
   render: function() {
-    return RouteHandler({ pricePlan: this.state.pricePlan });
+    return (
+      React.cloneElement(this.props.children, { pricePlan: this.state.pricePlan }));
   }
 });
 
 
 /* Later, if I make embedded comments work again:
 var ChooseSiteTypeComponent = React.createClass({
-  mixins: [RouterNavigationMixin],
-
   goToCreateSimpleSite: function() {
     this.transitionTo('create-simple-site');
   },
@@ -98,7 +94,9 @@ var ChooseSiteTypeComponent = React.createClass({
 
 
 
-var CreateSimpleSiteComponent = React.createClass({
+var CreateWebsiteComponent = React.createClass(<any> {
+  displayName: 'CreateSimpleSiteComponent',
+
   getInitialState: function() {
     return { okayStatuses: { email: false, hostname: false, terms: false } };
   },
@@ -148,7 +146,9 @@ var CreateSimpleSiteComponent = React.createClass({
 
 
 // Currently not in use; embedded comments disabled & broken right now.
-var CreateEmbeddedSiteComponent = React.createClass({
+var CreateEmbeddedSiteComponent = React.createClass(<any> {
+  displayName: 'CreateEmbeddedSiteComponent',
+
   getInitialState: function() {
     return { showErrors: false };
   },
@@ -336,6 +336,8 @@ function deriveLocalHostname(embeddingSiteAddress) {
   debikiAddress = debikiAddress.replace(/^www\./, '');
   // Replace '.' and other weird chars with '-'.
   debikiAddress = debikiAddress.replace(/[^a-z0-9]/g, '-');
+  // Replace '----....' with a single '-'.
+  debikiAddress = debikiAddress.replace(/-+/g, '-');
   return debikiAddress;
 }
 

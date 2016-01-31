@@ -34,39 +34,34 @@ var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
 
 var ReactRouter = window['ReactRouter'];
 var Route = reactCreateFactory(ReactRouter.Route);
+var IndexRoute = reactCreateFactory(ReactRouter.IndexRoute);
 var Redirect = reactCreateFactory(ReactRouter.Redirect);
 var DefaultRoute = reactCreateFactory(ReactRouter.DefaultRoute);
-var NotFoundRoute = reactCreateFactory(ReactRouter.NotFoundRoute);
-var RouteHandler = reactCreateFactory(ReactRouter.RouteHandler);
-var RouterNavigationMixin = ReactRouter.Navigation;
-var RouterStateMixin = ReactRouter.State;
 
 
 export function routes() {
-  return Route({ path: '/', handler: UsersHomeComponent },
-    DefaultRoute({ handler: DefaultComponent }),
-    NotFoundRoute({ handler: NotFoundComponent }),
-    Redirect({ from: '/id/:userId', to: 'user-all' }),
-    Redirect({ from: '/id/:userId/', to: 'user-all' }),
-    Route({ path: '/id/:userId', handler: UserPageComponent },
-      //DefaultRoute({ handler: debiki2.users.UserDetailsAndActionsComponent }),
-      Route({ name: 'user-all', path: 'all', handler: UserAllComponent }),
-      Route({ name: 'user-topics', path: 'topics', handler: UserTopicsComponent }),
-      Route({ name: 'user-posts', path: 'posts', handler: UserPostsComponent }),
-      Route({ name: 'user-likes-given', path: 'likes-given', handler: UserLikesGivenComponent }),
-      Route({ name: 'user-likes-received', path: 'likes-received', handler: UserLikesReceivedComponent }),
-      Route({ name: 'user-notifications', path: 'notifications', handler: UserNotificationsComponent }),
-      Route({ name: 'user-preferences', path: 'preferences', handler: debiki2.users.UserPreferencesComponent }),
-      Route({ name: 'user-invites', path: 'invites', handler: debiki2.users.UserInvitesComponent })));
+  return (
+    Route({ path: '/-/users/', component: UsersHomeComponent },
+      IndexRoute({ component: DefaultComponent }),
+      Redirect({ from: 'id/:userId', to: 'id/:userId/all' }),
+      Redirect({ from: 'id/:userId/', to: 'id/:userId/all' }),
+      Route({ path: 'id/:userId', component: UserPageComponent },
+        Route({ path: 'all', component: UserAllComponent }),
+        Route({ path: 'topics', component: UserTopicsComponent }),
+        Route({ path: 'posts', component: UserPostsComponent }),
+        Route({ path: 'likes-given', component: UserLikesGivenComponent }),
+        Route({ path: 'likes-received', component: UserLikesReceivedComponent }),
+        Route({ path: 'notifications', component: UserNotificationsComponent }),
+        Route({ path: 'preferences', component: debiki2.users.UserPreferencesComponent }),
+        Route({ path: 'invites', component: debiki2.users.UserInvitesComponent }))));
 }
 
 
-var UsersHomeComponent = React.createClass({
-  mixins: [RouterStateMixin],
 
+var UsersHomeComponent = React.createClass(<any> {
   componentDidMount: function() {
-    if (_.isString(this.getQuery().writeMessage)) {
-      var toUserId = parseInt(this.getParams().userId);
+    if (window.location.hash.indexOf('#writeMessage') !== -1) {
+      var toUserId = parseInt(this.props.params.userId);
       var myUserId = ReactStore.getUser().userId;
       dieIf(toUserId === myUserId, 'EsE7UMKW2');
       editor.openToWriteMessage(toUserId);
@@ -77,27 +72,24 @@ var UsersHomeComponent = React.createClass({
     return (
       r.div({},
         reactelements.TopBar({ customTitle: "About User", showBackToSite: true, extraMargin: true }),
-        RouteHandler({})));
+        this.props.children));
   }
 });
 
 
-var DefaultComponent = React.createClass({
+var DefaultComponent = React.createClass(<any> {
   render: function() {
     return r.div({}, 'Unexpected URL [DwE7E1W31]');
   }
 });
 
 
-var NotFoundComponent = React.createClass({
-  render: function() {
-    return r.h1({}, 'Not found [DwE8YK4P5]');
-  }
-});
+var UserPageComponent = React.createClass(<any> {
+  mixins: [debiki2.StoreListenerMixin],
 
-
-var UserPageComponent = React.createClass({
-  mixins: [RouterStateMixin, RouterNavigationMixin, debiki2.StoreListenerMixin],
+  contextTypes: {
+    router: React.PropTypes.object.isRequired
+  },
 
   getInitialState: function() {
     return {
@@ -116,23 +108,30 @@ var UserPageComponent = React.createClass({
     this.loadCompleteUser();
   },
 
-  componentWillMount: function(nextProps) {
+  componentDidMount: function() {
     this.loadCompleteUser();
   },
 
-  componentWillReceiveProps: function(nextProps) {
-    this.loadCompleteUser();
+  componentDidUpdate: function(prevProps) {
+    if (this.props.location.pathname !== prevProps.location.pathname) {
+      this.loadCompleteUser();
+    }
+  },
+
+  componentWillUnmount: function() {
+    this.ignoreServerResponse = true;
   },
 
   transitionToRouteName: function(routeName) {
-    this.transitionTo(routeName, { userId: this.getParams().userId });
+    this.context.router.push('/-/users/id/' + this.props.params.userId + '/' + routeName);
   },
 
   loadCompleteUser: function() {
-    var params = this.getParams();
-    Server.loadCompleteUser(params.userId, (user) => {
+    Server.loadCompleteUser(this.props.params.userId, (user) => {
+      if (this.ignoreServerResponse) return;
       this.setState({ user: user });
     }, () => {
+      if (this.ignoreServerResponse) return;
       // Error. We might not be allowed to see this user, so null it even if it was shown before.
       this.setState({ user: null });
     });
@@ -142,11 +141,12 @@ var UserPageComponent = React.createClass({
     if (!this.state.user || !this.state.loggedInUser)
       return r.p({}, 'Loading...');
 
+    dieIf(!this.props.routes || !this.props.routes[2] || !this.props.routes[2].path, 'EsE5GKUW2');
     var childProps = {
       loggedInUser: this.state.loggedInUser,
       user: this.state.user,
       reloadUser: this.loadCompleteUser,
-      activeRouteName: this.getRoutes()[2].name,
+      activeRouteName: this.props.routes[2].path,
       transitionTo: this.transitionToRouteName
     };
 
@@ -156,7 +156,8 @@ var UserPageComponent = React.createClass({
         r.div({ style: { display: 'table', width: '100%' }},
           r.div({ style: { display: 'table-row' }},
             UserNav(childProps),
-            UserContent(childProps)))));
+            r.div({ className: 'dw-user-content' },
+              React.cloneElement(this.props.children, childProps))))));
   }
 });
 
@@ -172,9 +173,9 @@ var UserBar = createComponent({
     var invitesNavItem = null;
     var preferencesNavItem = null;
     if (showPrivateStuff) {
-      preferencesNavItem = NavItem({ eventKey: 'user-preferences' }, 'Preferences');
+      preferencesNavItem = NavItem({ eventKey: 'preferences' }, 'Preferences');
       if (!isGuest(user)) {
-        invitesNavItem = NavItem({ eventKey: 'user-invites' }, 'Invites');
+        invitesNavItem = NavItem({ eventKey: 'invites' }, 'Invites');
       }
     }
 
@@ -200,14 +201,14 @@ var UserInfo = createComponent({
   },
 
   selectAndUploadAvatar: function() {
-    $(this.refs.chooseAvatarInput.getDOMNode()).click();
+    $(this.refs.chooseAvatarInput).click();
   },
 
   createUploadAvatarButton: function() {
     if (!this.refs.chooseAvatarInput)
       return;
 
-    var inputElem = this.refs.chooseAvatarInput.getDOMNode();
+    var inputElem = this.refs.chooseAvatarInput;
     var FileAPI = window['FileAPI'];
     FileAPI.event.on(inputElem, 'change', (evt) => {
       var files = FileAPI.getFiles(evt);
@@ -312,27 +313,19 @@ var UserNav = createComponent({
       r.div({ className: 'dw-user-nav' },
         Nav({ bsStyle: 'pills', activeKey: this.props.activeRouteName,
             onSelect: this.props.transitionTo, className: 'dw-sub-nav nav-stacked' },
-          NavItem({ eventKey: 'user-all' }, 'All'),
-          NavItem({ eventKey: 'user-topics' }, 'Topics'),
-          NavItem({ eventKey: 'user-posts' }, 'Posts'),
-          NavItem({ eventKey: 'user-likes-given' }, 'Likes Given'),
-          NavItem({ eventKey: 'user-likes-received' }, 'Likes Received'),
-          NavItem({ eventKey: 'user-notifications' }, 'Notifications'),
+          NavItem({ eventKey: 'all' }, 'All'),
+          NavItem({ eventKey: 'topics' }, 'Topics'),
+          NavItem({ eventKey: 'posts' }, 'Posts'),
+          NavItem({ eventKey: 'likes-given' }, 'Likes Given'),
+          NavItem({ eventKey: 'likes-received' }, 'Likes Received'),
+          NavItem({ eventKey: 'notifications' }, 'Notifications'),
           messages)));
   }
 });
 
 
-var UserContent = createComponent({
-  render: function() {
-    return (
-      r.div({ className: 'dw-user-content' },
-        RouteHandler(this.props)));
-  }
-});
 
-
-var UserAllComponent = React.createClass({
+var UserAllComponent = React.createClass(<any> {
   render: function() {
     return (
       r.p({}, 'UserAll'));
@@ -340,7 +333,7 @@ var UserAllComponent = React.createClass({
 });
 
 
-var UserTopicsComponent = React.createClass({
+var UserTopicsComponent = React.createClass(<any> {
   render: function() {
     return (
       r.p({}, 'UserTopics'));
@@ -348,7 +341,7 @@ var UserTopicsComponent = React.createClass({
 });
 
 
-var UserPostsComponent = React.createClass({
+var UserPostsComponent = React.createClass(<any> {
   render: function() {
     return (
       r.p({}, 'UserPosts'));
@@ -356,7 +349,7 @@ var UserPostsComponent = React.createClass({
 });
 
 
-var UserLikesGivenComponent = React.createClass({
+var UserLikesGivenComponent = React.createClass(<any> {
   render: function() {
     return (
       r.p({}, 'UserLikesGiven'));
@@ -364,7 +357,7 @@ var UserLikesGivenComponent = React.createClass({
 });
 
 
-var UserLikesReceivedComponent = React.createClass({
+var UserLikesReceivedComponent = React.createClass(<any> {
   render: function() {
     return (
       r.p({}, 'UserLikesReceived'));
