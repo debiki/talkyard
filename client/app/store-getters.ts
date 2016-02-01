@@ -45,6 +45,13 @@ export function me_toBriefUser(me: Myself): BriefUser {
 }
 
 
+export function store_authorOf(store: Store, post: Post): BriefUser {
+  var user = store.usersByIdBrief[post.authorIdInt];
+  dieIf(!user, "Author " + post.authorIdInt + " missing on page " + store.pageId + " [EsE5GK92]");
+  return user;
+}
+
+
 export function store_isUserOnline(store: Store, userId: UserId): boolean {
   return store.onlineUsersById && !!store.onlineUsersById[userId];
 }

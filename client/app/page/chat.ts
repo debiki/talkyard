@@ -102,7 +102,9 @@ var TitleAndLastChatMessages = createComponent({
 
     var originalPost = store.allPosts[store.rootPostId];
     var origPostAuthor = store.usersByIdBrief[originalPost.authorIdInt];
-    var origPostHeader = PostHeader({ store: store, post: originalPost });
+    var headerProps: any = _.clone(store);
+    headerProps.post = originalPost;
+    var origPostHeader = PostHeader(headerProps); // { store: _, post: _ } would be better?
     var origPostBody = PostBody({ store: store, post: originalPost });
 
     var messages = [];
@@ -146,10 +148,14 @@ var ChatMessage = createComponent({
     var store: Store = this.props.store;
     var post: Post = this.props.post;
     var author: BriefUser = store.usersByIdBrief[post.authorId];
+    var headerProps: any = _.clone(store);
+    headerProps.post = post;
+    headerProps.isFlat = true;
+    headerProps.exactTime = true;
     return (
       r.div({ className: 'esChatMsg' },
         avatar.Avatar({ user: author }),
-        PostHeader({ store: store, post: post, isFlat: true, exactTime: true }),
+        PostHeader(headerProps), // { store: _, post: _, ... } would be better?
         PostBody({ store: store, post: post })));
   }
 });

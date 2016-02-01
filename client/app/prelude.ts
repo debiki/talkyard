@@ -69,8 +69,11 @@ export var findDOMNode = isServerSide() ? null : window['ReactDOM'].findDOMNode;
 dieIf(isClientSide() && !findDOMNode, 'EsE6UMGY2');
 
 
-export function toId(x: number | { id: number }): number {
-  return _.isNumber(x) ? x : x['id'];
+export function toId(x: number | { id: number } | { uniqueId: number }): number {
+  if (_.isNumber(x)) return <number> x;
+  var nr = x['id'];
+  if (_.isNumber(nr)) return <number> nr;
+  return x['uniqueId'];
 }
 
 

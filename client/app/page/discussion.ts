@@ -117,7 +117,7 @@ export var TitleBodyComments = createComponent({
   },
 
   render: function() {
-    var props: Store = this.props;
+    var store: Store = this.props;
 
     var anyHelpMessage = this.makeHelpMessage();
     anyHelpMessage = anyHelpMessage
@@ -126,23 +126,23 @@ export var TitleBodyComments = createComponent({
 
     var anyAboutCategoryClass;
     var anyAboutCategoryTitle;
-    if (props.pageRole === PageRole.About) {
+    if (store.pageRole === PageRole.About) {
       anyAboutCategoryClass = 'dw-about-category';
       anyAboutCategoryTitle =
           r.h2({ className: 'dw-about-cat-ttl-prfx' }, "About category:")
     }
 
     var anyTitle = null;
-    var pageRole: PageRole = props.pageRole;
+    var pageRole: PageRole = store.pageRole;
     if (pageRole === PageRole.HomePage || pageRole === PageRole.EmbeddedComments ||
-        props.rootPostId !== BodyPostId) {
+        store.rootPostId !== BodyPostId) {
       // Show no title for the homepage — it should have its own custom HTML with
       // a title and other things.
       // Embedded comment pages have no title, only comments.
       // And show no title if we're showing a comment not the article as the root post.
     }
     else {
-      anyTitle = Title(props);
+      anyTitle = Title(store);
     }
 
     var anyPostHeader = null;
@@ -151,17 +151,19 @@ export var TitleBodyComments = createComponent({
         pageRole === PageRole.About || // pageRole === PageRole.WikiMainPage ||
         pageRole === PageRole.SpecialContent || pageRole === PageRole.Blog ||
         pageRole === PageRole.EmbeddedComments ||
-        props.rootPostId !== BodyPostId) {
+        store.rootPostId !== BodyPostId) {
       // Show no author name or social links for these generic pages.
       // And show nothing if we're showing a comment not the article as the root post.
     }
     else {
-      var post = props.allPosts[props.rootPostId];
-      anyPostHeader = PostHeader({ post: post });
-      anySocialLinks = SocialLinks({ socialLinksHtml: props.socialLinksHtml });
+      var post = store.allPosts[store.rootPostId];
+      var headerProps: any = _.clone(store);
+      headerProps.post = post;
+      anyPostHeader = PostHeader(headerProps);
+      anySocialLinks = SocialLinks({ socialLinksHtml: store.socialLinksHtml });
     }
 
-    var embeddedClass = props.isInEmbeddedCommentsIframe ? ' dw-embedded' : '';
+    var embeddedClass = store.isInEmbeddedCommentsIframe ? ' dw-embedded' : '';
 
     return (
       r.div({ className: anyAboutCategoryClass },
@@ -171,7 +173,7 @@ export var TitleBodyComments = createComponent({
           anyTitle,
           anyPostHeader,
           anySocialLinks,
-          RootPostAndComments(props))));
+          RootPostAndComments(store))));
   },
 });
 
@@ -658,15 +660,7 @@ var Thread = createComponent({
         !this.props.abbreviate;
 
     var showAvatar = !renderCollapsed && this.props.depth === 1 && !this.props.is2dTreeColumn;
-    var anyAvatar = !showAvatar ? null : debiki2.avatar.Avatar({
-      // For now: — later, replace authorUsername etc with a { id, username, fullName } object?
-      user: {
-        id: post.authorId,
-        username: post.authorUsername,
-        fullName: post.authorFullName,
-        avatarUrl: post.authorAvatarUrl,
-      }
-    });
+    var anyAvatar = !showAvatar ? null : avatar.Avatar({ user: store_authorOf(store, post) });
     var avatarClass = showAvatar ? ' ed-w-avtr' : '';
 
     var postProps = _.clone(this.props);
@@ -736,6 +730,7 @@ export var Post = createComponent({
   },
 
   render: function() {
+    var store: Store = this.props;
     var post: Post = this.props.post;
     var me: Myself = this.props.me;
     if (!post)
@@ -812,7 +807,7 @@ export var Post = createComponent({
     var replyReceivers;
     if (!this.props.abbreviate && !isFlat && (
           this.props.index > 0 || post.multireplyPostIds.length)) {
-      replyReceivers = ReplyReceivers({ post: post, allPosts: this.props.allPosts });
+      replyReceivers = ReplyReceivers({ store: store, post: post });
     }
 
     var mark = me.marksByPostId[post.postId];
@@ -868,6 +863,7 @@ export var Post = createComponent({
 
 var ReplyReceivers = createComponent({
   render: function() {
+    var store: Store = this.props.store;
     var multireplyClass = ' dw-mrrs'; // mrrs = multi reply receivers
     var thisPost: Post = this.props.post;
     var repliedToPostIds = thisPost.multireplyPostIds;
@@ -883,14 +879,15 @@ var ReplyReceivers = createComponent({
         // button in the chat section, and then replies to someone too.
         continue;
       }
-      var post = this.props.allPosts[repliedToId];
+      var post = store.allPosts[repliedToId];
       if (!post) {
         receivers.push(r.i({ key: repliedToId }, 'Unknown [DwE4KFYW2]'));
         continue;
       }
+      var author = store_authorOf(store, post);
       var link =
         r.a({ href: '#post-' + post.postId, className: 'dw-rr', key: post.postId },
-          post.authorUsername || post.authorFullName);
+          author.username || author.fullName);
       if (receivers.length) {
         link = r.span({ key: post.postId }, ' and', link);
       }
@@ -922,6 +919,7 @@ export var PostHeader = createComponent({
   },
 
   render: function() {
+    var store: Store = this.props;
     var post: Post = this.props.post;
     if (!post)
       return r.p({}, '(Post missing [DwE7IKW2])');
@@ -941,32 +939,24 @@ export var PostHeader = createComponent({
     var me: Myself = this.props.me;
     var linkFn = this.props.abbreviate ? 'span' : 'a';
 
+    var author: BriefUser = store_authorOf(store, post);
     var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
-    var anyAvatar = !showAvatar ? null : debiki2.avatar.Avatar({
-      tiny: true,
-      // For now: — later, replace authorUsername etc with a { id, username, fullName } object?
-      user: {
-        id: post.authorId,
-        username: post.authorUsername,
-        fullName: post.authorFullName,
-        avatarUrl: post.authorAvatarUrl,
-      }
-    });
+    var anyAvatar = !showAvatar ? null : avatar.Avatar({ tiny: true, user: author });
 
     // Username link: Some dupl code, see edit-history-dialog.ts & avatar.ts [88MYU2]
     var authorUrl = '/-/users/#/id/' + post.authorId;
     var namePart1;
     var namePart2;
-    if (post.authorFullName && post.authorUsername) {
-      namePart1 = r.span({ className: 'dw-username' }, post.authorUsername);
-      namePart2 = r.span({ className: 'dw-fullname' }, ' (' + post.authorFullName + ')');
+    if (author.fullName && author.username) {
+      namePart1 = r.span({ className: 'dw-username' }, author.username);
+      namePart2 = r.span({ className: 'dw-fullname' }, ' (' + author.fullName + ')');
     }
-    else if (post.authorFullName) {
-      namePart1 = r.span({ className: 'dw-fullname' }, post.authorFullName);
-      namePart2 = r.span({ className: 'dw-lg-t-spl' }, post.authorEmailUnknown ? '??' : '?');
+    else if (author.fullName) {
+      namePart1 = r.span({ className: 'dw-fullname' }, author.fullName);
+      namePart2 = r.span({ className: 'dw-lg-t-spl' }, author.isEmailUnknown ? '??' : '?');
     }
-    else if (post.authorUsername) {
-      namePart1 = r.span({ className: 'dw-username' }, post.authorUsername);
+    else if (author.username) {
+      namePart1 = r.span({ className: 'dw-username' }, author.username);
     }
     else {
       namePart1 = r.span({}, '(Unknown author)');
@@ -1016,7 +1006,7 @@ export var PostHeader = createComponent({
     var isPageBody = post.postId === BodyPostId;
     var by = isPageBody ? 'By ' : '';
     var isBodyPostClass = isPageBody ? ' dw-ar-p-hd' : '';
-    var suspendedClass = post.authorSuspendedTill ? ' dw-suspended' : '';
+    var suspendedClass = ''; // post.authorSuspendedTill ? ' dw-suspended' : ''; // see below
 
     var userLinkProps: any = {
       className: 'dw-p-by' + suspendedClass,
@@ -1024,12 +1014,13 @@ export var PostHeader = createComponent({
       href: authorUrl
     };
 
+    /* Disable because the server doesn't rerender the page when the user is activated again.
     if (post.authorSuspendedTill === 'Forever') {
       userLinkProps.title = 'User banned';
     }
     else if (post.authorSuspendedTill) {
       userLinkProps.title = 'User suspended until ' + dateTimeFix(post.authorSuspendedTill);
-    }
+    } */
 
     var is2dColumn = this.props.horizontalLayout && this.props.depth === 1;
     var collapseIcon = is2dColumn ? 'icon-left-open' : 'icon-up-open';
@@ -1043,7 +1034,7 @@ export var PostHeader = createComponent({
     // rather than above the header — that looks better.
     var inReplyTo;
     if (!this.props.abbreviate && isFlat && (post.parentId || post.multireplyPostIds.length)) {
-      inReplyTo = ReplyReceivers({ post: post, allPosts: this.props.allPosts, comma: true });
+      inReplyTo = ReplyReceivers({ store: store, post: post, comma: true });
     }
 
     return (

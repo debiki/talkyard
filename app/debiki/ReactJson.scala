@@ -402,9 +402,6 @@ object ReactJson {
       "postType" -> JsNumberOrNull(postType),
       "authorId" -> JsString(post.createdById.toString),  // COULD remove, but be careful when converting to int client side
       "authorIdInt" -> JsNumber(post.createdById),  // Rename to authorId when it's been converted to int (the line above)
-      "authorFullName" -> JsString(author.displayName),
-      "authorUsername" -> JsStringOrNull(author.username),
-      "authorAvatarUrl" -> JsUploadUrlOrNull(author.smallAvatar),
       "createdAt" -> date(post.createdAt),
       "lastApprovedEditAt" -> dateOrNull(lastApprovedEditAtNoNinja),
       "numEditors" -> JsNumber(post.numDistinctEditors),
@@ -431,13 +428,6 @@ object ReactJson {
 
     if (post.isHidden) fields :+= "isPostHidden" -> JsTrue
     if (author.email.isEmpty) fields :+= "authorEmailUnknown" -> JsTrue
-
-    if (author.isSuspendedAt(currentTime)) {
-      author.suspendedTill match {
-        case None => fields :+= "authorSuspendedTill" -> JsString("Forever")
-        case Some(date) => fields :+= "authorSuspendedTill" -> JsNumber(date.getTime)
-      }
-    }
 
     JsObject(fields)
   }
