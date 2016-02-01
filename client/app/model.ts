@@ -332,8 +332,7 @@ interface Store {
   socialLinksHtml: string;
 
   numOnlineStrangers?: number;
-  onlineUsers?: BriefUser[];
-  onlineUsersById?: { [userId: number]: BriefUser };
+  userIdsOnline?: { [userId: number]: boolean }; // this is a set; all values are true
 
   // If quickUpdate is true only posts in postsToUpdate will be updated.
   quickUpdate: boolean;

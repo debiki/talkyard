@@ -76,7 +76,7 @@ ReactDispatcher.register(function(payload) {
 
       $('html').removeClass('dw-is-admin, dw-is-staff, dw-is-authenticated');
 
-      theStore_removeOnlineUser(store.me.id);
+      if (store.userIdsOnline) delete store.userIdsOnline[store.me.id];
       store.numOnlineStrangers += 1;
       store.me = makeStranger();
       store.user = store.me; // try to remove
@@ -360,55 +360,44 @@ ReactStore.allData = function() {
 
 function theStore_setOnlineUsers(numStrangersOnline: number, usersOnline: BriefUser[]) {
   store.numOnlineStrangers = numStrangersOnline;
-  store.onlineUsers = usersOnline;
-  store.onlineUsersById = {};
-  _.each(usersOnline, (user: BriefUser) => {
-    store.onlineUsersById[user.id] = user;
-  });
+  store.userIdsOnline = {};
+  _.each(usersOnline, theStore_addOnlineUser);
 }
 
 
 function theStore_addOnlineUser(user: BriefUser) {
   // Updating state in-place, oh well.
-  if (store.onlineUsers) {
-    userList_add(store.onlineUsers, user);
+  if (store.userIdsOnline) {
+    store.userIdsOnline[user.id] = true;
   }
-  if (store.onlineUsersById) {
-    store.onlineUsersById[user.id] = user;
-  }
+  // In case any user has e.g. changed his/her name or avatar, use the newer version:
+  store.usersByIdBrief[user.id] = user;
 }
 
 
-function theStore_removeOnlineUser(userId: UserId | BriefUser) {
-  var id: UserId = toId(userId);
+function theStore_removeOnlineUser(user: BriefUser) {
   // Updating state in-place, oh well.
-  if (store.onlineUsers) {
-    userList_remove(store.onlineUsers, id);
+  if (store.userIdsOnline) {
+    delete store.userIdsOnline[user.id];
   }
-  if (store.onlineUsersById) {
-    delete store.onlineUsersById[id];
-  }
-}
-
-
-function userList_add(users: BriefUser[], newUser: BriefUser) {
-  dieIf(!users, 'EsE7YKWF2');
-  if (_.every(users, u => u.id !== newUser.id)) {
-    users.push(newUser);
-  }
+  // In case any user has e.g. changed his/her name or avatar, use the newer version:
+  store.usersByIdBrief[user.id] = user;
 }
 
 
 function userIdList_add(userIds: UserId[], newUserId: UserId) {
   dieIf(!userIds, 'EsE7YKWF53');
-  if (_.every(userIds, id => id !== newUserId)) {
+  dieIf(!newUserId, 'EsE2WKG0');
+  if (!_.includes(userIds, newUserId)) {
     userIds.push(newUserId);
   }
 }
 
 
-function userList_remove(users: BriefUser[], userId: UserId) {
-  _.remove(users, u => u.id === userId);
+function userIdList_remove(userIds: UserId[], userId: UserId) {
+  dieIf(!userIds, 'EsE5PKW0');
+  dieIf(!userId, 'EsE2GK50');
+  _.remove(userIds, id => id === userId);
 }
 
 

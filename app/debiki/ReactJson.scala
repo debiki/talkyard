@@ -301,11 +301,12 @@ object ReactJson {
   /** Returns the URL path, category id and title for a forum or category.
     */
   private def makeForumOrCategoryJson(forumPath: PagePath, category: Category): JsObject = {
+    val forumPathSlash = forumPath.value.endsWith("/") ? forumPath.value | forumPath.value + "/"
     val (name, path) =
       if (category.isRoot)
-        ("Forum", s"${forumPath.value}#/latest/")   // [i18n]
+        ("Forum", s"${forumPathSlash}latest")   // [i18n]
       else
-        (category.name, s"${forumPath.value}#/latest/${category.slug}")
+        (category.name, s"${forumPathSlash}latest/${category.slug}")
     Json.obj(
       "categoryId" -> category.id,
       "title" -> name,

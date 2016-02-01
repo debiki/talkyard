@@ -53,7 +53,7 @@ export function store_authorOf(store: Store, post: Post): BriefUser {
 
 
 export function store_isUserOnline(store: Store, userId: UserId): boolean {
-  return store.onlineUsersById && !!store.onlineUsersById[userId];
+  return store.userIdsOnline && store.userIdsOnline[userId];
 }
 
 
@@ -79,6 +79,18 @@ export function store_getUsersOnThisPage(store: Store): BriefUser[] {
 }
 
 
+export function store_getUsersOnline(store: Store): BriefUser[] {
+  var users = [];
+  _.forOwn(store.userIdsOnline, (alwaysTrue, userId) => {
+    dieIf(!alwaysTrue, 'EsE7YKW2');
+    var user = store.usersByIdBrief[userId];
+    logErrorIf(!user, 'EsE5JYK02');
+    if (user) users.push(user);
+  });
+  return users;
+}
+
+
 export function store_getUsersHere(store: Store): UsersHere {
   var isChat = page_isChatChannel(store.pageRole);
   var users: BriefUser[];
@@ -91,7 +103,7 @@ export function store_getUsersHere(store: Store): UsersHere {
     users = store_getUsersOnThisPage(store);
   }
   else {
-    users = store.onlineUsers || [];
+    users = store_getUsersOnline(store);
   }
   var numOnline = 0;
   var iAmHere = false;

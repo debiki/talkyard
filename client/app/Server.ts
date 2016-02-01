@@ -97,8 +97,11 @@ function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void
       success(response, xhr);
     },
     error: function(jqXhr: any, textStatus: string, errorThrown: string) {
-      console.error('Error calling ' + uri + ': ' + JSON.stringify(jqXhr));
-      if (!options.suppressErrorDialog) {
+      if (options.suppressErrorDialog) {
+        console.log('As expected, error when calling ' + uri + ': ' + JSON.stringify(jqXhr));
+      }
+      else {
+        console.error('Error calling ' + uri + ': ' + JSON.stringify(jqXhr));
         pagedialogs.getServerErrorDialog().open(jqXhr);
       }
       !error || error();

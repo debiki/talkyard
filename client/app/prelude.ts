@@ -30,6 +30,7 @@ export var Link = reactCreateFactory(ReactRouter.Link);
 
 export function die(errorMessage: string) {
   var dialogs: any = debiki2['pagedialogs'];
+  // I don't remember why I added setTimeout() but there was a good reason.
   setTimeout(() => {
     debiki2['Server'].logBrowserError(errorMessage);
   });
@@ -45,6 +46,21 @@ export function die(errorMessage: string) {
 export function dieIf(condition, errorMessage: string) {
   if (condition) {
     die(errorMessage);
+  }
+}
+
+
+export function logError(errorMessage: string) {
+  // Why setTimeout()? I don't remember, see above in die(errorMessage).
+  setTimeout(() => {
+    debiki2['Server'].logBrowserError(errorMessage);
+  });
+}
+
+
+export function logErrorIf(condition, errorMessage: string) {
+  if (condition) {
+    logError(errorMessage);
   }
 }
 
