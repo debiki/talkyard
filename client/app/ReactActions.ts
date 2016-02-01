@@ -555,7 +555,7 @@ export function goToUsersNotifications(userId: any) {
 
 export function writeMessage(userId: any) {
   // For now, until I've enabled react-router everywhere and won't have to reload the page.
-  location.assign(linkToUserProfilePage(userId) + '#writeMessage');
+  location.assign(linkToUserProfilePage(userId) + '/activity#writeMessage');
 }
 
 

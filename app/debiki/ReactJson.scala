@@ -144,7 +144,16 @@ object ReactJson {
       post.nr.toString -> postToJsonImpl(post, page, transaction.currentTime)
     }
 
-    val usersByIdJson = JsObject(page.parts.usersById map { idAndUser =>
+    val usersById = mutable.HashMap[UserId, User](page.parts.usersById.toSeq: _*)
+
+    // Topic members (e.g. chat channel members) join/leave infrequently, so better cache them
+    // than to lookup them each request.
+    val pageMemberIds = transaction.loadMessageMembers(pageId)
+    val missingMemberIds = pageMemberIds filterNot usersById.contains
+    val missingMembers = transaction.loadUsers(missingMemberIds)
+    usersById ++= missingMembers.map(member => member.id -> member)
+
+    val usersByIdJson = JsObject(usersById map { idAndUser =>
       idAndUser._1.toString -> JsUser(idAndUser._2)
     })
 
@@ -183,9 +192,6 @@ object ReactJson {
         Nil
       }
 
-    val messageMemberIds = transaction.loadMessageMembers(pageId)
-    val messageMembers = messageMemberIds.toSeq.flatMap(transaction.loadUser)
-
     val siteStatusString = loadSiteStatusString(dao)
     val siteSettings = dao.loadWholeSiteSettings()
     val pageSettings = dao.loadSinglePageSettings(pageId)
@@ -204,8 +210,7 @@ object ReactJson {
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
       "pageId" -> pageId,
-      // Page members join/leave infrequently, so seems better to cache than to lookup each request.
-      "messageMembers" -> JsArray(messageMembers.map(JsUser)),
+      "pageMemberIds" -> pageMemberIds,
       "categoryId" -> JsNumberOrNull(page.meta.categoryId),
       "forumId" -> JsStringOrNull(anyForumId),
       "showForumCategories" -> JsBooleanOrNull(showForumCategories),
@@ -386,7 +391,7 @@ object ReactJson {
     // For now, ignore ninja edits of the very first revision, because otherwise if
     // clicking to view the edit history, it'll be empty.
     val lastApprovedEditAtNoNinja =
-      if (post.approvedRevisionNr == Some(FirstRevisionNr)) None
+      if (post.approvedRevisionNr.contains(FirstRevisionNr)) None
       else post.lastApprovedEditAt
 
     var fields = Vector(

@@ -352,7 +352,10 @@ export var TopBar = createComponent({
 
     // ------- Open Contextbar button
 
-    var usersHere = store_getUsersHere(store);
+    // If server side, don't render any "X online" because that'd make the server side html
+    // different from the html React generates client side to verify that the server's
+    // html is up-to-date.
+    var usersHere = store.userSpecificDataAdded ? store_getUsersHere(store) : null;
 
     // We'll show "X users online", to encourage people to open and learn about the contextbar.
     // They'll more likely to do that, if they see a message that means "other people here too,
@@ -360,12 +363,7 @@ export var TopBar = createComponent({
     var contextbarTipsDetailed;
     var contextbarTipsBrief;
     if (!usersHere) {
-      // Data not yet loaded from server.
-    }
-    else if (!store.userSpecificDataAdded) {
-      // Don't render any "X online" now because that'd make the server side html
-      // different from the html React generates client side to verify that the server's
-      // html is up-to-date.
+      // Server side — skip this. Or own data not yet activated – wait until later.
     }
     else if (usersHere.areTopicContributors) {
       // Don't show any num-users tip for normal forum topics like this, because non-chat

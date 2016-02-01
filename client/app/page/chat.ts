@@ -54,7 +54,7 @@ export var ChatMessages = createComponent({
 
   render: function() {
     var store: Store = this.props;
-    var isChatMember = _.some(store.messageMembers, (m: BriefUser) => m.id === store.me.id);
+    var isChatMember = _.some(store.pageMemberIds, id => id === store.me.id);
     var editorOrJoinButton = isChatMember
         ? ChatMessageEditor({ store: this.props, scrollDownToViewNewMessage: this.scrollDown })
         : JoinChatButton({ store: this.props, isChatMember: isChatMember });

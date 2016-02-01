@@ -834,7 +834,7 @@ export function loadOnlineUsers() {
 }
 
 
-export function logBrowserError(errorMessage: string) {
+export function logBrowserError(errorMessage: string) {  // rename to logError
   postJsonSuccess('/-/log-browser-error', () => {}, errorMessage);
 }
 

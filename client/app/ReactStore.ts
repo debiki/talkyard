@@ -17,6 +17,7 @@
 
 /// <reference path="ReactDispatcher.ts" />
 /// <reference path="ReactActions.ts" />
+/// <reference path="store-getters.ts" />
 /// <reference path="prelude.ts" />
 /// <reference path="utils/utils.ts" />
 /// <reference path="../typedefs/lodash/lodash.d.ts" />
@@ -246,7 +247,8 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.AddMeAsPageMember:
-      userList_add(store.messageMembers, me_toBriefUser(store.me));
+      dieIf(!store.usersByIdBrief[store.me.id], 'EsE5PU81');
+      userIdList_add(store.pageMemberIds, store.me.id);
       break;
 
     case ReactActions.actionTypes.PatchTheStore:
@@ -356,20 +358,6 @@ ReactStore.allData = function() {
 };
 
 
-function me_toBriefUser(me: Myself): BriefUser {
-  return {
-    id: me.id,
-    fullName: me.fullName,
-    username: me.username,
-    isAdmin: me.isAdmin,
-    isModerator: me.isModerator,
-    isGuest: me.id && me.id <= MaxGuestId,
-    isEmailUnknown: undefined, // ?
-    avatarUrl: me.avatarUrl,
-  }
-}
-
-
 function theStore_setOnlineUsers(numStrangersOnline: number, usersOnline: BriefUser[]) {
   store.numOnlineStrangers = numStrangersOnline;
   store.onlineUsers = usersOnline;
@@ -411,57 +399,16 @@ function userList_add(users: BriefUser[], newUser: BriefUser) {
 }
 
 
+function userIdList_add(userIds: UserId[], newUserId: UserId) {
+  dieIf(!userIds, 'EsE7YKWF53');
+  if (_.every(userIds, id => id !== newUserId)) {
+    userIds.push(newUserId);
+  }
+}
+
+
 function userList_remove(users: BriefUser[], userId: UserId) {
   _.remove(users, u => u.id === userId);
-}
-
-
-export function store_isUserOnline(store: Store, userId: UserId): boolean {
-  return store.onlineUsersById && !!store.onlineUsersById[userId];
-}
-
-
-export function store_getUsersOnThisPage(store: Store): BriefUser[] {
-  var users: BriefUser[] = [];
-  _.each(store.allPosts, (post: Post) => {
-    if (_.every(users, u => u.id !== post.authorIdInt)) {
-      var user = store.usersByIdBrief[post.authorIdInt];
-      dieIf(!user, "Author missing, post id " + post.uniqueId + " [EsE4UGY2]");
-      users.push(user);
-    }
-  });
-  return users;
-}
-
-
-export function store_getUsersHere(store: Store): UsersHere {
-  var isChat = page_isChatChannel(store.pageRole);
-  var users: BriefUser[];
-  var listMembers = isChat;
-  var listUsersOnPage = !listMembers && page_isDiscussion(store.pageRole);
-  if (listMembers) {
-    users = store.messageMembers;
-  }
-  else if (listUsersOnPage) {
-    users = store_getUsersOnThisPage(store);
-  }
-  else {
-    users = store.onlineUsers || [];
-  }
-  var numOnline = 0;
-  var iAmHere = false;
-  _.each(users, (user: BriefUser) => {
-    numOnline += store_isUserOnline(store, user.id) ? 1 : 0;
-    iAmHere = iAmHere || user.id === store.me.id;
-  });
-  return {
-    users: users,
-    areChatChannelMembers: listMembers,
-    areTopicContributors: listUsersOnPage,
-    numOnline: numOnline,
-    iAmHere: iAmHere,
-    onlyMeOnline: iAmHere && numOnline === 1,
-  };
 }
 
 

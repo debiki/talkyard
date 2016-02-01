@@ -292,7 +292,7 @@ interface Store {
   guestLoginAllowed: boolean;
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
-  messageMembers: BriefUser[]; // rename to pageMembers?
+  pageMemberIds: UserId[];
   pageId: string;
   forumId?: string;
   categoryId?: number;
@@ -323,7 +323,7 @@ interface Store {
   newCategorySlug: string; // would like to remove
   user: Myself; // try to remove, use 'me' instead:
   me: Myself;
-  userSpecificDataAdded?: boolean;
+  userSpecificDataAdded?: boolean; // is always false, server side
   newUserAccountCreated?: boolean;
   rootPostId: number;
   usersByIdBrief: { [userId: number]: BriefUser };

@@ -1,6 +1,11 @@
-// Not needed when rendering server side.
 
-declare module debiki2 {
-  var Server: any;
+module debiki2 {
+
+  export var Server: any = {
+    logBrowserError: function(errorMessage: string) {  // rename to logError
+      console.error(errorMessage);
+    }
+  };
+
 }
 

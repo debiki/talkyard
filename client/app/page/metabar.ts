@@ -99,7 +99,8 @@ export var Metabar = createComponent({
 
     var anyExtraMeta;
     if (store.pageRole === PageRole.Message) {
-      var memberList = store.messageMembers.map((user) => {
+      var members = store_getPageMembersList(store);
+      var memberList = members.map((user) => {
         return (
             r.div({ className: 'esMetabar_msgMmbr', key: user.id },
               avatar.Avatar({ user: user, tiny: true }),
