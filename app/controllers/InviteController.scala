@@ -48,6 +48,9 @@ object InviteController extends mvc.Controller {
         request =>
     val toEmailAddress = (request.body \ "toEmailAddress").as[String]
 
+    if (!isValidNonLocalEmailAddress(toEmailAddress))
+      throwForbidden("DwE47YK2", "Bad email address")
+
     // Right now there are no trust levels, so allow only admins to send invites.
     if (!request.theUser.isAdmin)
       throwForbidden("DwE403INA0", "Currently only admins may send invites")
@@ -56,12 +59,12 @@ object InviteController extends mvc.Controller {
     request.dao.readOnlyTransaction { transaction =>
       val alreadyExistingUser = transaction.loadUserByEmailOrUsername(toEmailAddress)
       if (alreadyExistingUser.nonEmpty)
-        throwForbidden("DwE403IUAM0", "The person you want to invite has already joined this site")
+        throwForbidden("DwE403IUAM0", "That person has joined this site already")
 
       val invites = transaction.loadInvites(createdById = request.theUserId)
       for (invite <- invites if invite.emailAddress == toEmailAddress) {
-        if (invite.invalidatedAt.nonEmpty || invite.deletedAt.nonEmpty)
-          throwForbidden("Dw403IAAC0", "You have sent an invitation to him or her already")
+        if (invite.invalidatedAt.isEmpty && invite.deletedAt.isEmpty)
+          throwForbidden("Dw403IAAC0", "You have invited him or her already")
       }
     }
 
@@ -86,18 +89,21 @@ object InviteController extends mvc.Controller {
 
 
   def acceptInvite(secretKey: String) = GetAction { request =>
-    val (newUser, invite) = request.dao.acceptInviteCreateUser(secretKey)
+    val (newUser, invite, alreadyAccepted) = request.dao.acceptInviteCreateUser(secretKey)
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(request.siteId, newUser.briefUser)
     val newSessionCookies = sidAndXsrfCookies
 
-    val welcomeEmail = makeWelcomeSetPasswordEmail(newUser, request.host)
-    request.dao.saveUnsentEmail(welcomeEmail) // COULD (should?) mark as sent, how?
-    debiki.Globals.sendEmail(welcomeEmail, request.siteId)
+    if (!alreadyAccepted) {
+      // Could try to ensure this happens also if the server crashes here? [retry-after-crash]
+      val welcomeEmail = makeWelcomeSetPasswordEmail(newUser, request.host)
+      request.dao.saveUnsentEmail(welcomeEmail) // COULD (should?) mark as sent, how?
+      debiki.Globals.sendEmail(welcomeEmail, request.siteId)
 
-    val inviter = request.dao.loadUser(invite.createdById) getOrDie "DwE4KDEP0"
-    val inviteAcceptedEmail = makeYourInviteWasAcceptedEmail(request.host, newUser, inviter)
-    debiki.Globals.sendEmail(inviteAcceptedEmail, request.siteId)
-    // COULD create a notification instead / too.
+      val inviter = request.dao.loadUser(invite.createdById) getOrDie "DwE4KDEP0"
+      val inviteAcceptedEmail = makeYourInviteWasAcceptedEmail(request.host, newUser, inviter)
+      debiki.Globals.sendEmail(inviteAcceptedEmail, request.siteId)
+      // COULD create a notification instead / too.
+    }
 
     Redirect("/").withCookies(newSessionCookies: _*)
   }

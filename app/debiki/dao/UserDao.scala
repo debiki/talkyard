@@ -38,7 +38,9 @@ trait UserDao {
   }
 
 
-  def acceptInviteCreateUser(secretKey: String): (CompleteUser, Invite) = {
+  /** Returns: (CompleteUser, Invite, hasBeenAcceptedAlready: Boolean)
+    */
+  def acceptInviteCreateUser(secretKey: String): (CompleteUser, Invite, Boolean) = {
     readWriteTransaction { transaction =>
       var invite = transaction.loadInvite(secretKey) getOrElse throwForbidden(
         "DwE6FKQ2", "Bad invite key")
@@ -49,7 +51,7 @@ trait UserDao {
         // again via the invitation link. In Discourse, this timeout is configurable.
         if (millisAgo < 24 * 3600 * 1000) {
           val user = loadCompleteUser(invite.userId getOrDie "DwE6FKEW2") getOrDie "DwE8KES2"
-          return (user, invite)
+          return (user, invite, true)
         }
 
         throwForbidden("DwE0FKW2", "You have joined the site already, but this link has expired")
@@ -74,7 +76,7 @@ trait UserDao {
       // COULD loop and append 1, 2, 3, ... until there's no username clash.
       transaction.insertAuthenticatedUser(newUser)
       transaction.updateInvite(invite)
-      (newUser, invite)
+      (newUser, invite, false)
     }
   }
 

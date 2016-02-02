@@ -19,7 +19,6 @@ package controllers
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.Utils.isOkayEmailAddress
 import debiki._
 import debiki.antispam.AntiSpam
 import debiki.dao.SiteDao
@@ -98,7 +97,7 @@ object LoginWithPasswordController extends mvc.Controller {
       throwBadReq("DwE85FX1", "Password missing")
     val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
 
-    if (!isOkayEmailAddress(emailAddress))
+    if (!isValidNonLocalEmailAddress(emailAddress))
       throwUnprocessableEntity("DwE80KFP2", "Bad email address")
 
     Globals.antiSpam.detectRegistrationSpam(request, name = username, email = emailAddress) map {

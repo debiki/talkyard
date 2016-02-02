@@ -19,7 +19,6 @@ package controllers
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.Utils.{ OkSafeJson, isOkayEmailAddress }
 import debiki._
 import debiki.DebikiHttp._
 import debiki.antispam.AntiSpam.throwForbiddenIfSpam
@@ -68,7 +67,7 @@ object CreateSiteController extends Controller {
     if (!isOkaySiteName(localHostname))
       throwForbidden("DwE5YU70", "Bad site name")
 
-    if (!isOkayEmailAddress(emailAddress))
+    if (!isValidNonLocalEmailAddress(emailAddress))
       throwForbidden("DwE8FKJ4", "Bad email address")
 
     // Test sites have a certain prefix, so I know it's okay to delete them.

@@ -17,6 +17,8 @@
 
 package com.debiki
 
+import org.apache.commons.validator.routines.EmailValidator
+
 
 package object core {
 
@@ -139,6 +141,10 @@ package object core {
 
   def ifThenSome[A](condition: Boolean, value: A) =
     if (condition) Some(value) else None
+
+
+  def isValidNonLocalEmailAddress(address: String): Boolean =
+    EmailValidator.getInstance(/* allowLocal = */ false).isValid(address)
 
 }
 

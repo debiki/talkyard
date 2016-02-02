@@ -12,6 +12,7 @@ libraryDependencies ++= Seq(
   "org.scalactic" %% "scalactic" % "2.2.1",
   "com.google.guava" % "guava" % "10.0.1",
   "commons-codec" % "commons-codec" % "1.5",
+  "commons-validator" % "commons-validator" % "1.5.0",
   "nu.validator.htmlparser" % "htmlparser" % "1.2.1",
   "com.typesafe.play" %% "play" % "2.3.1", // for parsing JSON, unfortunately brings in all other Play stuff
   //"com.typesafe.play" %% "play-json" % "2.4.6",
