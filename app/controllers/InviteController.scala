@@ -88,7 +88,7 @@ object InviteController extends mvc.Controller {
   }
 
 
-  def acceptInvite(secretKey: String) = GetAction { request =>
+  def acceptInvite(secretKey: String) = GetActionAllowAnyone { request =>
     val (newUser, invite, alreadyAccepted) = request.dao.acceptInviteCreateUser(secretKey)
     val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(request.siteId, newUser.briefUser)
     val newSessionCookies = sidAndXsrfCookies

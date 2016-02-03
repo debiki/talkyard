@@ -143,11 +143,16 @@ private[http] object PlainApiActions {
         throwForbidden("DwE1GfK7", "Please login as admin")
 
       if (!allowAnyone) {
+        // ViewPageController has allow-anyone = true.
+        def goToHomepageOrIfXhrThen(block: => Unit) {
+          if (DebikiHttp.isAjax(request)) block
+          else throwTemporaryRedirect("/")
+        }
         val siteSettings = dao.loadWholeSiteSettings()
         if (!anyUser.exists(_.isApprovedOrStaff) && siteSettings.userMustBeApproved.asBoolean)
-          throwForbidden("DwE4HKG5", "Not approved")
+          goToHomepageOrIfXhrThen(throwForbidden("DwE4HKG5", "Not approved"))
         if (!anyUser.exists(_.isAuthenticated) && siteSettings.userMustBeAuthenticated.asBoolean)
-          throwForbidden("DwE6JGY2", "Not authenticated")
+          goToHomepageOrIfXhrThen(throwForbidden("DwE6JGY2", "Not authenticated"))
       }
 
       val apiRequest = ApiRequest[A](

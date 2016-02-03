@@ -175,6 +175,7 @@ var ForumComponent = React.createClass(<any> {
   },
 
   render: function() {
+    var store: Store = this.state;
     var activeCategory = this.getActiveCategory();
     var helpMessage = this.makeHelpMessage(activeCategory);
     helpMessage = helpMessage
@@ -182,6 +183,7 @@ var ForumComponent = React.createClass(<any> {
         : null;
 
     var childProps = _.assign({}, this.state, {
+      store: store,
       route: this.props.route,
       location: this.props.location,
       activeCategory: activeCategory,
@@ -831,7 +833,8 @@ var ForumCategoriesComponent = React.createClass(<any> {
       return r.p({}, 'Loading...');
 
     var categoryRows = this.state.categories.map((category: Category) => {
-      return CategoryRow({ location: this.props.location, category: category, key: category.id });
+      return CategoryRow({ pagePath: this.props.store.pagePath, location: this.props.location,
+          category: category, key: category.id });
     });
 
     return (
@@ -848,17 +851,6 @@ var ForumCategoriesComponent = React.createClass(<any> {
 
 
 var CategoryRow = createComponent({
-  contextTypes: {
-    router: React.PropTypes.object.isRequired
-  },
-
-  onCategoryClick: function() {
-    this.context.router.push({
-      pathname: this.props.pagePath + RoutePathLatest + '/' + this.props.category.slug,
-      query: this.props.location.query,
-    });
-  },
-
   render: function() {
     var category: Category = this.props.category;
     var recentTopicRows = category.recentTopics.map((topic: Topic) => {
@@ -882,7 +874,9 @@ var CategoryRow = createComponent({
       r.tr({},
         r.td({ className: 'forum-info' },
           r.div({ className: 'forum-title-wrap' },
-            r.a({ className: 'forum-title', onClick: this.onCategoryClick }, category.name)),
+            Link({ to: this.props.pagePath + RoutePathLatest + '/' + this.props.category.slug,
+                query: this.props.location.query, className: 'forum-title' },
+              category.name)),
           description),
         r.td({},
           r.table({ className: 'topic-table-excerpt table table-condensed' },
