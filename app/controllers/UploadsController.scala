@@ -66,7 +66,7 @@ object UploadsController extends mvc.Controller {
 
     val files = multipartFormData.files.filter(_.key == "file")
     if (files.length != 1)
-      throwBadRequest("EdE7UYMF3", s"Use the key name 'file' please")
+      throwBadRequest("EdE7UYMF3", s"Use the multipart form data key name 'file' please")
 
     val file = files.head
 

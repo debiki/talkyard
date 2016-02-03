@@ -84,16 +84,22 @@ object ImageUtils {
 
   /** Makes images smaller so they won't waste disk space.
     * Based on: http://stackoverflow.com/a/26319958/694469
-    *
-    * Might not work with transparent images? See:
-    * http://stackoverflow.com/a/1545417/694469
-    * fix like so: (sets background to white)
-    * bufferedImage.createGraphics().drawImage(image, 0, 0, width, height, Color.WHITE, null);
     */
-  def convertToCompressedJpeg(image: BufferedImage, destination: jio.File) {
+  def convertToCompressedJpeg(imagePerhapsAlpha: BufferedImage, destination: jio.File) {
     var writer: ImageWriter = null
     if (destination.exists)
       die("DwE6MPF2", "Destination image file already exists: " + destination.toPath.toString)
+
+    // Remove alpha channel, because jpg doesn't support transparency, but png images might include
+    // transparency. Then when encoding to jpg, the alpha channel gets used instead of the blue
+    // channel, so all blue disappears, which gives the impression that the image turned red.
+    // See: http://stackoverflow.com/questions/17755036/imgscalr-with-background-red
+    // and: http://stackoverflow.com/a/1545417/694469
+    val imageRgb = new BufferedImage(imagePerhapsAlpha.getWidth, imagePerhapsAlpha.getHeight,
+      BufferedImage.TYPE_INT_RGB)
+    val done = imageRgb.getGraphics.drawImage(imagePerhapsAlpha, 0, 0, null)
+    if (!done) play.api.Logger.warn(o"""Not done removing alpha, will the image be broken?
+      Destination: ${destination.toPath.toString}""")
 
     // Apparently (see http://info.michael-simons.eu/2012/01/25/the-dangers-of-javas-imageio/ )
     // the image classes open temporary files which they might not close fast enough,
@@ -109,12 +115,12 @@ object ImageUtils {
 
         // I think that without explicit mode, the compression quality will be ignored.
         params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT)
-        val approxSizeBytes = imageSizeBytes(image)
+        val approxSizeBytes = imageSizeBytes(imageRgb)
         params.setCompressionQuality(jpgCompressionQualityForSizeBytes(approxSizeBytes))
 
         val outputStream = new FileImageOutputStream(destination)
         writer.setOutput(outputStream)
-        val ioImage = new IIOImage(image, null, null)
+        val ioImage = new IIOImage(imageRgb, null, null)
         writer.write(null, ioImage, params)
       }
       catch {
@@ -138,21 +144,21 @@ object ImageUtils {
   def throwUnlessJpegWithSideBetween(file: jio.File, minSide: Int, maxSide: Int) {
     val mimeType = java.nio.file.Files.probeContentType(file.toPath.toAbsolutePath)
     if (mimeType != MimeTypeJpeg)
-      throwForbidden("DwE2YUF0", s"Not a jpeg image")
+      throwBadRequest("DwE2YUF0", s"Not a jpeg image")
 
     val image: BufferedImage = javax.imageio.ImageIO.read(file)
     val (width, height) = (image.getWidth, image.getHeight)
 
     if (width < minSide)
-      throwForbidden("DwE8FMEF2", s"Image too small: width is $width, min is: $minSide")
+      throwBadRequest("DwE8FMEF2", s"Image too small: width is $width, min is: $minSide")
 
     if (height < minSide)
-      throwForbidden("DwE8FMEF2", s"Image too small: height is $height, min is: $minSide")
+      throwBadRequest("DwE8FMEF2", s"Image too small: height is $height, min is: $minSide")
 
     if (width > maxSide)
-      throwForbidden("DwE8FMEF2", s"Image too wide: width is $width, max is: $maxSide")
+      throwBadRequest("DwE8FMEF2", s"Image too wide: width is $width, max is: $maxSide")
 
     if (height > maxSide)
-      throwForbidden("DwE8FMEF2", s"Image too tall: height is $height, max is: $maxSide")
+      throwBadRequest("DwE8FMEF2", s"Image too tall: height is $height, max is: $maxSide")
   }
 }
