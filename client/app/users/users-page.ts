@@ -231,7 +231,7 @@ var UserInfo = createComponent({
         return true;
       }, (files, rejected) => {
         dieIf(files.length !== 1, 'DwE5UPM2');
-        FileAPI.upload({
+        FileAPI.upload({   // a bit dupl code [2UK503]
           url: '/-/upload-avatar',
           headers: { 'X-XSRF-TOKEN': window['$'].cookie('XSRF-TOKEN') },
           files: { images: files },
@@ -310,7 +310,7 @@ var UserInfo = createComponent({
           // it by clicking a beautiful button instead:
           Button({ id: 'e2eChooseAvatarInput', className: 'esMedAvtr_uplBtn',
               onClick: this.selectAndUploadAvatar }, uploadAvatarBtnText),
-          r.input({ name: 'files', type: 'file', multiple: false,
+          r.input({ name: 'files', type: 'file', multiple: false, // dupl code [2UK503]
              ref: 'chooseAvatarInput', style: { width: 0, height: 0 }}))
       : null;
 

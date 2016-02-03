@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2015-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -39,6 +39,7 @@ var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+var FileAPI = null;
 
 var theEditor: any;
 var $: any = window['jQuery'];
@@ -49,6 +50,7 @@ function ensureEditorCreated(success) {
   }
   else {
     Server.loadEditorEtceteraScripts().done(() => {
+      FileAPI = window['FileAPI'];
       theEditor = ReactDOM.render(Editor({}), utils.makeMountNode());
       success();
     });
@@ -119,7 +121,7 @@ export var Editor = createComponent({
     this.$columns = $('#esPageColumn, #esWatchbarColumn, #dw-sidebar .dw-comments');
     this.startMentionsParser();
     this.makeEditorResizable();
-    this.createDropFileTarget();
+    this.initUploadFileStuff();
     this.perhapsShowGuidelineModal();
     // Don't scroll the main discussion area, when scrolling inside the editor.
     /* Oops this breaks scrolling in the editor and preview.
@@ -179,58 +181,102 @@ export var Editor = createComponent({
     this.$columns.css('bottom', 0);
   },
 
-  createDropFileTarget: function() {
-    var thisComponent = this;
-    this.setState({
-      // Let the whole editor be a drop zone, so it's easy to hit, because if dropping outside, the browser
-      // opens the dropped file in the current window (then the editor content is lost).
-      dropzone: new window['Dropzone'](ReactDOM.findDOMNode(this), {
-        url: '/-/upload-public-file',
-        uploadMultiple: false, // only one at a time, so we know which checksum is for which file
-        maxFilesize: ReactStore.allData().maxUploadSizeBytes * 1.0 / 1000 / 1000, // megabytes
-        clickable: '.esUploadBtn',
-        init: function() {
-          this.on('sending', (file, xhr, formData) => {
-            xhr.setRequestHeader('X-XSRF-TOKEN', $.cookie('XSRF-TOKEN'));
-            thisComponent.showUploadProgress(0);
-            thisComponent.setState({ uploadFileXhr: xhr });
-          });
-          this.on('error', (file, errorMessage, xhr) => {
-            thisComponent.setState({ uploadFileXhr: null });
-            if (xhr) {
-              pagedialogs.getServerErrorDialog().open("Error uploading file: ", xhr);
-            }
-            else {
-              die("Error uploading file: " + errorMessage + " [DwE5JKW2]");
-            }
-          });
-          this.on('uploadprogress', (file, percent, bytesSent) => {
-            thisComponent.showUploadProgress(percent);
-          });
-          this.on('complete', thisComponent.hideUploadProgress);
-          this.on('canceled', thisComponent.hideUploadProgress);
-          this.on('success', (file, url) => {
-            dieIf(!_.isString(url), 'DwE06MF22');
-            dieIf(!_.isString(thisComponent.state.text), 'EsE5FYZ2');
-            var linkHtml = thisComponent.makeUploadLink(file, url);
-            var perhapsNewline = thisComponent.state.text.endsWith('\n') ? '' : '\n';
-            thisComponent.setState({
-              text: thisComponent.state.text + perhapsNewline + '\n' +
-                // (There's a sanitizer for this — for everything in the editor.)
-                "<!-- Uploaded file name:  " + file.name + "  -->\n" +
-                linkHtml,
-            });
-            // Scroll down so people will see the new line we just appended.
-            scrollToBottom(thisComponent.refs.textarea);
-            thisComponent.updatePreview(function() {
-              // This happens to early, not sure why. So wait for a while.
-              setTimeout(function() {
-                scrollToBottom(thisComponent.refs.preview);
-              }, 800);
-            });
+  selectAndUploadFile: function() {
+    $(this.refs.uploadFileInput).click();
+  },
+
+  // We never un-initialize this, instead we reuse the same editor instance always once created.
+  initUploadFileStuff: function() {
+    if (!this.refs.uploadFileInput)
+      return;
+
+    // Some browsers open a dropped file in the current browser tab, if one misses the
+    // drop target with a few pixels. Prevent that. See: http://stackoverflow.com/questions/9544977/using-jquery-on-for-drop-events-when-uploading-files-from-the-desktop#comment20423424_9545050
+    $(document).on('dragover', event => {
+      event.preventDefault();
+      event.stopPropagation();
+    }).on('drop', event => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+
+    FileAPI.event.on(document, 'drop', (event: Event) => {
+      event.preventDefault();
+      if (!this.state.visible) return;
+      FileAPI.getDropFiles(event, (files: File[]) => {
+        if (files.length > 1) {
+          // This'll log a warning server side, I think I want that (want to know how
+          // often this happens)
+          die("Sorry but currently you can upload only one file at a time [EsM5JYW2]");
+        }
+        this.uploadFiles(files);
+      });
+    });
+
+    var inputElem = this.refs.uploadFileInput;
+    FileAPI.event.on(inputElem, 'change', (event) => {
+      var files = FileAPI.getFiles(event);
+      this.uploadFiles(files);
+    });
+  },
+
+  uploadFiles: function(files: File[]) {
+    if (!files.length)
+      return;
+
+    dieIf(files.length != 1, 'EsE5GPY82');
+    FileAPI.upload({   // a bit dupl code [2UK503]
+      url: '/-/upload-public-file',
+      headers: { 'X-XSRF-TOKEN': window['$'].cookie('XSRF-TOKEN') },
+      files: { file: files },
+      // This is per file.
+      fileprogress: (event, file, xhr, options) => {
+        if (!this.state.isUploadingFile) {
+          this.setState({ isUploadingFile: true });
+          pagedialogs.getProgressBarDialog().open("Uploading...", () => {
+            this.setState({ uploadCancelled: true });
+            xhr.abort("Intentionally cancelled [EsM3GU05]");
           });
         }
-      })
+        else {
+          var percent = event.loaded / event.total * 100;
+          pagedialogs.getProgressBarDialog().setDonePercent(percent);
+        }
+      },
+      // This is when all files have been uploaded — but we're uploading just one.
+      complete: (error, xhr) => {
+        pagedialogs.getProgressBarDialog().close();
+        this.setState({
+          isUploadingFile: false,
+          uploadCancelled: false
+        });
+        if (error) {
+          if (!this.state.uploadCancelled) {
+            pagedialogs.getServerErrorDialog().open(xhr);
+          }
+          return;
+        }
+        var fileUrlPath = JSON.parse(xhr.response);
+        dieIf(!_.isString(fileUrlPath), 'DwE06MF22');
+        dieIf(!_.isString(this.state.text), 'EsE5FYZ2');
+        var file = xhr.files[0];
+        var linkHtml = this.makeUploadLink(file, fileUrlPath);
+        var perhapsNewline = this.state.text.endsWith('\n') ? '' : '\n';
+        this.setState({
+          text: this.state.text + perhapsNewline + '\n' +
+            // (There's a sanitizer for this — for everything in the editor.)
+          "<!-- Uploaded file name:  " + file.name + "  -->\n" +
+          linkHtml,
+        });
+        // Scroll down so people will see the new line we just appended.
+        scrollToBottom(this.refs.textarea);
+        this.updatePreview(() => {
+          // This happens to early, not sure why. So wait for a while.
+          setTimeout(() => {
+            scrollToBottom(this.refs.preview);
+          }, 800);
+        });
+      },
     });
   },
 
@@ -856,7 +902,10 @@ export var Editor = createComponent({
             r.div({ className: 'submit-cancel-btns' },
               Button({ onClick: this.onSaveClick, bsStyle: 'primary', tabIndex: 1 }, saveButtonTitle),
               Button({ onClick: this.onCancelClick, tabIndex: 1 }, 'Cancel'),
-              Button({ className: 'esUploadBtn icon-upload', tabIndex: 1 }, 'Upload'),
+              Button({ className: 'esUploadBtn icon-upload', tabIndex: 1,
+                  onClick: this.selectAndUploadFile }, "Upload"),
+              r.input({ name: 'files', type: 'file', multiple: false, // dupl code [2UK503]
+                ref: 'uploadFileInput', style: { width: 0, height: 0 }}),
               Button({ onClick: this.cycleMaxHorizBack, className: 'esEdtr_cycleMaxHzBtn',
                   tabIndex: 4 }, maximizeAndHorizSplitBtnTitle),
               // These two buttons are hidden via CSS if the window is wide. Higher tabIndex

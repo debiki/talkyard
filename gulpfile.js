@@ -145,7 +145,6 @@ var editorEtceteraScripts = [
       'bower_components/classnames/index.js', // needed by react-select
       'bower_components/react-input-autosize/dist/react-input-autosize.min.js', // needed by react-select
       'bower_components/react-select/dist/react-select.min.js',
-      'bower_components/dropzone/dist/dropzone.js',
       'bower_components/fileapi/dist/FileAPI.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/html-css-sanitizer-bundle.js',
