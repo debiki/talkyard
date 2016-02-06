@@ -1,0 +1,42 @@
+
+.esCssPopup
+  position: fixed;
+  z-index: 1;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+  transition: opacity 500ms ease-in-out;
+  visibility: hidden;
+  opacity: 0;
+
+.esCssPopup:target
+  visibility: visible;
+  opacity: 1;
+
+.esCssPopup_box
+  margin: 20vh auto;
+  padding: 40px 20px 30px;
+  background: hsl(0, 0%, 97%);
+  border-radius: 5px;
+  position: relative;
+  transition: all 3s ease-in-out, margin 1ms;
+  min-width: 250px;
+  max-width: 600px;
+
+.esCssPopup_closeBackground
+  cursor: default;
+  position: fixed;
+  top: 0; bottom: 0; left: 0; right: 0;
+
+.esCssPopup_closeButton
+  position: absolute;
+  top: 20px;
+  right: 25px;
+  font-size: 30px;
+  font-weight: bold;
+  text-decoration: none !important;
+  &:before
+    content: '×';
+
