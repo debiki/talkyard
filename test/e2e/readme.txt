@@ -1,3 +1,7 @@
+See client/test/e2e/readme.txt instead. Uses webdriver.io not Nightwatch.
+
+Here are old instructions for Nightwatch.js:
+
 Run the tests e.g. like so: (the e2e Gulp task starts Nightwatch.js)
 
     gulp e2e --env firefox
