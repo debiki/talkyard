@@ -410,13 +410,15 @@ gulp.task('release', ['insert-prod-scripts', 'minify-scripts', 'compile-stylus']
 
 
 // ---- Tests -------------------------------------------------------------
-
+/* Currently I'm using plain Javascript instead for e2e tests,
+and I ported to Webdriver.io instead, so all this is no longer needed
+— but perhaps later, if I'll start using Typescript for e2e tests too, again
 
 gulp.task('start-server', function() {
   /* Later:  (for now, start manually)
   exec('scripts/start-e2e-test-server.sh', ...);
   exec('scripts/start-e2e-test-database.sh', ...);
-  */
+  *  /
 });
 
 
@@ -437,7 +439,7 @@ gulp.task('stop-selenium', function() {
 
 gulp.task('clean-e2e', function () {
   return del([
-    'target/e2e-tests/**/*']);
+    'target/e2e-tests/**   /*']);
 });
 
 
@@ -453,8 +455,8 @@ var e2eTestsTypescriptProject = typeScript.createProject({
 
 gulp.task('compile-e2e-scripts', function() {
   var stream = gulp.src([
-        'test/e2e/**/*.ts',
-        'client/typedefs/**/*.ts'])
+        'test/e2e/**   /*.ts',
+        'client/typedefs/**    /*.ts'])
     .pipe(typeScript(e2eTestsTypescriptProject));
   if (watchAndLiveForever) {
     stream.on('error', function() {
@@ -480,6 +482,7 @@ gulp.task('e2e', ['start-server', 'stop-selenium', 'clean-e2e', 'compile-e2e-scr
       cliArgs: [args],
     }));
 });
+*/
 
 
 

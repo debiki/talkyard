@@ -228,7 +228,7 @@ export var Title = createComponent({
     var anyEditTitleBtn;
     if (!this.props.hideButtons && (isStaff(me) || me.userId === titlePost.authorId)) {
       anyEditTitleBtn =
-        r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.editTitle });
+        r.a({ className: 'dw-a dw-a-edit icon-edit', id: 'e2eEditTitle', onClick: this.editTitle });
     }
 
     var contents;

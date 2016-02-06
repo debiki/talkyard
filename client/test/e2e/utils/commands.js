@@ -1,6 +1,7 @@
+var assert = require('assert');
 var logMessage = require('./log-and-die').logMessage;
 
- browser.addCommand('waitAndSetValue', function(selector, value) {
+browser.addCommand('waitAndSetValue', function(selector, value) {
   browser.waitForVisible(selector);
   browser.waitForEnabled(selector);
   browser.setValue(selector, value);
@@ -10,6 +11,11 @@ var logMessage = require('./log-and-die').logMessage;
 browser.addCommand('waitAndClick', function(selector) {
   browser.waitForVisible(selector);
   browser.waitForEnabled(selector);
+  if (!selector.startsWith('#')) {
+    var elems = browser.elements(selector);
+    assert.equal(elems.length, 1666, "Too many elems to click: " + elems.length +
+        " elems matches selector: " + selector + " [EsE5JKP82]");
+  }
   browser.click(selector);
 });
 
@@ -55,5 +61,41 @@ browser.addCommand('switchBackToFirstTabOrWindow', function(url) {
     logWarning("Which tab is the first one? Switching to [0]. All tab ids: " + JSON.stringify(ids));
   }
   browser.switchTab(ids[0]);
+});
+
+
+var currentUrl = '';
+
+browser.addCommand('rememberCurrentUrl', function() {
+  // Weird, url() returns:
+  // {"state":"success","sessionId":"..","hCode":...,"value":"http://server/path","class":"org.openqa.selenium.remote.Response","status":0}
+  // is that a bug?
+  currentUrl = browser.url().value;
+});
+
+browser.addCommand('waitForNewUrl', function() {
+  assert(currentUrl, "Please call browser.rememberCurrentUrl() first [EsE7JYK24]");
+  /* This doesn't work, results in "TypeError: promise.then is not a function":
+  browser.waitUntil(function() {
+    return currentUrl !== browser.url();
+  });
+  instead, for now: */
+  while (currentUrl === browser.url().value) {
+    browser.pause(250);
+  }
+});
+
+
+browser.addCommand('waitAndAssertVisibleTextMatches', function(selector, regex) {
+  var text = browser.waitAndGetVisibleText(selector);
+  assert(regex.test(text), "'Elem selected by " + selector + "' didn't match " + regex.toString() +
+      ", actual text: '" + text + "'");
+});
+
+
+browser.addCommand('assertTextMatches', function(selector, regex) {
+  var text = browser.getText(selector);
+  assert(regex.test(text), "'Elem selected by " + selector + "' didn't match " + regex.toString() +
+      ", actual text: '" + text + "'");
 });
 

@@ -900,12 +900,14 @@ export var Editor = createComponent({
               r.div({ className: 'preview', ref: 'preview',
                   dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
             r.div({ className: 'submit-cancel-btns' },
-              Button({ onClick: this.onSaveClick, bsStyle: 'primary', tabIndex: 1 }, saveButtonTitle),
-              Button({ onClick: this.onCancelClick, tabIndex: 1 }, 'Cancel'),
+              Button({ onClick: this.onSaveClick, bsStyle: 'primary', tabIndex: 1,
+                  className: 'e2eSaveBtn' }, saveButtonTitle),
+              Button({ onClick: this.onCancelClick, tabIndex: 1,
+                  className: 'e2eCancelBtn' }, "Cancel"),
               Button({ className: 'esUploadBtn icon-upload', tabIndex: 1,
                   onClick: this.selectAndUploadFile }, "Upload"),
               r.input({ name: 'files', type: 'file', multiple: false, // dupl code [2UK503]
-                ref: 'uploadFileInput', style: { width: 0, height: 0 }}),
+                ref: 'uploadFileInput', style: { width: 0, height: 0, float: 'left' }}),
               Button({ onClick: this.cycleMaxHorizBack, className: 'esEdtr_cycleMaxHzBtn',
                   tabIndex: 4 }, maximizeAndHorizSplitBtnTitle),
               // These two buttons are hidden via CSS if the window is wide. Higher tabIndex

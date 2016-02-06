@@ -212,13 +212,13 @@ export var TitleEditor = createComponent({
     var saveCancel = this.state.isSaving
       ? r.div({}, 'Saving...')
       : r.div({ className: 'dw-save-btns-etc' },
-          Button({ onClick: this.save }, 'Save'),
-          Button({ onClick: this.props.closeEditor }, 'Cancel'),
+          Button({ onClick: this.save, bsStyle: 'primary', className: 'e2eSaveBtn' }, 'Save'),
+          Button({ onClick: this.props.closeEditor, className: 'e2eCancelBtn' }, 'Cancel'),
           showAdvancedButton, addBackForumIntroButton);
 
     return (
       r.div({ className: 'dw-p-ttl-e' },
-        Input({ type: 'text', ref: 'titleInput', className: 'dw-i-title',
+        Input({ type: 'text', ref: 'titleInput', className: 'dw-i-title', id: 'e2eTitleInput',
             defaultValue: titleText, onChange: this.onTitleChanged }),
         r.div({ className: 'dw-page-category-role form-horizontal' },
           selectCategoryInput),

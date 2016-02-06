@@ -37,6 +37,23 @@ describe('/-/create-site  @createsite', function() {
     browser.goTo(link);
     browser.waitAndClick('#e2eContinue');
     pages.createSomething.createForum("Password Forum Title");
+
+    // Done with create site stuff. But let's test a little bit more, so we know the forum can
+    // actually be used, once it's been created: Edit forum title and post a topic.
+    // --- Edit title.  (Later: break out this as a page object)
+    browser.click('#e2eEditTitle');
+    browser.waitAndSetValue('#e2eTitleInput', "Pwd Frm Edtd");
+    browser.click('.e2eSaveBtn');
+    browser.waitAndAssertVisibleTextMatches('h1.dw-p-ttl', /Pwd Frm Edtd/);
+    // --- Post a topic.  (Later: break out this as a page object)
+    browser.click('#e2eCreateSth');
+    browser.waitAndSetValue('.esEdtr_titleEtc_title', "New tpc ttl");
+    browser.setValue('textarea', "New tpc txt");
+    browser.rememberCurrentUrl();
+    browser.click('.e2eSaveBtn');
+    browser.waitForNewUrl();
+    browser.assertTextMatches('h1', /New tpc ttl/);
+    browser.assertTextMatches('#post-1', /New tpc txt/);
   });
 
   it('can create a new site as a Gmail user  @login @gmail', function() {
