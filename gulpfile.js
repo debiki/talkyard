@@ -106,7 +106,6 @@ var debikiJavascriptFiles = [
       'bower_components/react-bootstrap/react-bootstrap.js',
       'bower_components/react-router/index.js',
       'node_modules/jquery-resizable/resizable.js',
-      'client/third-party/bootstrap/dropdown.js',
       'client/third-party/gifffer/gifffer.js',
       'client/third-party/jquery-cookie.js',
       'client/third-party/jquery-scrollable.js', //
