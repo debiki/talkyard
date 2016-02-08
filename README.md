@@ -18,6 +18,12 @@ Getting Started
 haven't tested these getting-started instructions the last 6 months or so, so
 they might no longer work.  Anyway, the instructions:
 
+These instructions should work on Ubuntu 14.04 or Linux Mint. If you use some other
+operating system, I suggest you use a Vagrant virtual machine. Here you'll find Vagrant:
+https://www.vagrantup.com/, and you can create a virtual machine like so (once you've
+installed Vagrant): `vagrant init phusion/ubuntu-14.04-amd64` and then, in Vagrantfile,
+uncomment the line with `config.vm.network "forwarded_port", guest: 80, host: 8080`. Then run the
+commands `vagrant up` and `vagrant ssh` and then continue below: (inside the virtual machine)
 
 You'll need to install Docker (see below), clone a Git repo, and run some scripts.
 
@@ -25,27 +31,35 @@ You'll need to install Docker (see below), clone a Git repo, and run some script
 
     `git clone https://github.com/debiki/debiki-site-seed.git`
 
-2. In the cloned repo: `git submodule update --init --recursive`  
-    (This clones this project (`debiki-server`) to a subdirectory `server/` in `debiki-site-seed`.)
+2. Then:
 
-3. Create a branch and fetch the latest changes in the `debiki-server` module:
+    cd debiki-site-seed
+    # Clone this project (`debiki-server`) to a subdirectory `server/` in `debiki-site-seed`:
+    git submodule update --init
+    # Checkout a branch, fetch the latest version, and clone submodules:
+    cd server/
+    git checkout master
+    git pull origin master
+    git submodule update --init
 
-        cd server
-        git checkout master
-        git pull origin master
-
-4. Install [Docker](https://www.docker.com/).
+4. Install [Docker](https://www.docker.com/). (If you're using Vagrant, it seems you'll
+    need to follow the _"Note: If your company is behind a filtering proxy"_ instructions
+    on https://docs.docker.com/linux/step_one/ )
 
 5. Create a Docker database container and import some contents. In `server/`:
 
-        ./docker-create-dev-database.sh `pwd`/../db-dumps/tiny-forum/
+        sudo docker/create-dev-database.sh --empty-database
+
+        # or: sudo docker/create-dev-database.sh `pwd`/../db-dumps/tiny-forum/
 
 
-6. Start the database, Gulp and the server. In three separate shells, in `server/`:
+6. Start the database, Gulp, Nginx and debiki-server. In four separate shells, in `server/`:
+    (hmm perhaps docker-compose would make sense?)
 
-        ./docker-start-dev-database.sh
-        ./docker-start-dev-gulp.sh
-        ./docker-start-dev-server.sh
+        sudo docker/start-dev-database.sh
+        sudo docker/start-dev-gulp.sh
+        sudo docker/start-dev-nginx.sh
+        sudo docker/start-dev-server.sh
 
 7. The -dev-gulp Docker container prints a message about what to do
    next, namely running both npm and Gulp `install`, and then `gulp watch`.

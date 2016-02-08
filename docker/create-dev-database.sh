@@ -37,7 +37,7 @@ fi
 any_row=`docker images | grep debiki-dev-database-empty | grep $version`
 if [ -z "$any_row" ]; then
   echo 'Building debiki-dev-database image...'
-  docker build -t debiki-dev-database-empty:$version scripts/docker/debiki-dev-database/
+  docker build -t debiki-dev-database-empty:$version docker/debiki-dev-database/
 fi
 
 # But delete any old image with a dump already imported -- we're going to

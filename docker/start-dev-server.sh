@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function build_dev_server_image {
-  docker build -t debiki-dev-server:v0 scripts/docker/debiki-dev-server/
+  docker build -t debiki-dev-server:v0 docker/debiki-dev-server/
 }
 
 function run_and_remove_dev_server_container {
@@ -13,7 +13,7 @@ function run_and_remove_dev_server_container {
     -p 5005:5005 \
     -p 9000:9000 \
     -p 9999:9999 \
-    --link debiki-dev-database-container:database \
+    --link debiki-dev-database-container2:database \
     -v ~/.ivy2/:/root/.ivy2/ \
     -v ~/.sbt/:/root/.sbt/ \
     -v="`pwd`/../:/opt/debiki/" \
