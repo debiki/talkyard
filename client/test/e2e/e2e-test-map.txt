@@ -1,0 +1,188 @@
+All End-to-End tests and where to find them
+============================================
+
+E2e tests take long to run. Therefore, to save time, a single e2e test sometimes tests
+many things. But then it's hard to give it a name that describes everything it does. Instead
+here you'll find a map of all things that are e2e tested, and in which files. A single file
+might be listed at many places in the tree, if it tests different things.
+
+(ABC123) means see-elsewhere-in-this-file = search for ABC123 in this file.
+[ABC123] = search all files everywhere
+
+
+create site & forum:  create-site.test.js
+
+create account -
+  password:  create-site.test.js
+  google:  create-site.test.js
+  facebook:  create-site.test.js
+  github:
+  twitter:
+
+login -
+  guest:
+  password:
+  forgot password:
+  providers -
+    google:
+    facebook:
+    github:
+    twitter:
+  password user logs in via -
+    gmail:
+    facebook:
+    github:
+    twitter:
+  via invite email -  (7JK2)
+    recent, fine:
+    too old, denied:
+
+different users -
+  switch user:
+  see one's own unapproved comments:
+
+profile page -
+  upload photo:  (8PK2)
+  edit full name:
+  change username:
+  change password:
+  create password:
+  list & click notfs:
+  suspend:
+
+invites -
+  view:
+  send:
+  accept:
+  expires:
+  can login via:  (7JK2)
+
+emails -
+  send invite:
+  accept invite:
+  new reply:
+  mention:
+  watching:
+
+getting started guide -
+  guide present:
+  edit site title, description, company_:
+  edit forum title:  (7UC2)
+  edit forum intro text:
+  edit welcome topic:
+  edit about page:
+  create category:
+  create topic: (7UC2)
+  send invite:
+
+forum -
+  edit title:  (7UC2)
+  change intro text:  (5KC2)
+  list categories, show all/waiting:
+  latest, top, show all/waiting -
+    all categories:
+    one category:
+  live updates:  (4FE2)
+
+forum intro text -  (5KC2)
+  edit, remove, add back:
+  hide, show:
+
+categories -
+  create:
+  edit name, slug, topic types, position:
+  unlist:
+
+topics -
+  go back to forum:
+  create topic -
+    no category:  create-site.test.js, part of create-with-password-account (7UC2)
+    some category:
+  edit -
+    edit title:
+    change category:
+    change type:
+    change url:
+  pin -
+    globally:
+    in category:
+  close:
+  answer question:
+  implement idea:
+  fix to-do:
+  report:
+
+discussion -
+  users on page:
+  recent comments:
+  reply:
+  two users, replies:
+  build tree:
+    A
+      A1
+        A11
+         A111
+         A112  - check indentation depth
+        A12  - check indentation depth
+      A2
+        A21  - check indentation depth
+        A22  - check indentation depth
+    B
+      B1
+      B2
+      B3  -- check indentation depth
+  live updates:  (4FE2)
+
+post -
+  votes -
+    cast all types:
+    like -> sort order:
+    wrong -> warning:
+    bury -> sort order:
+    unwanted -> karma:
+  delete:
+  flag:   — also see (6JS3)
+  view author -
+    profile shown:
+    ban guest:
+    send message:
+
+chat -
+  create channel:
+  two users chat:   (4FE2)
+  shows last 50 messages:
+
+uploads -
+  upload profile pic:  (8PK2)
+  upload jpg, png:
+  upload video:
+  upload pdf, tar.gz:
+
+recent comments:
+
+users online -
+  forum:
+    I go on/off:
+    other on/off:
+  discussion:
+    I go on/off:
+    other on/off:
+  chat:
+    I go on/off:
+    other on/off:
+
+watchbar -
+  recent list:
+  chat list:
+  page highlighted:
+
+live updates -  (4FE2)
+  forum latest topic list:
+  discussion:
+  chat:
+
+admin -
+  delete flagged:   — also see (6JS3)
+  clear flag:   — also see (6JS3)
+  ... lots of stuff ...
+
