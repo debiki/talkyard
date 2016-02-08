@@ -18,8 +18,10 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../prelude.ts" />
+/// <reference path="../store-getters.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
+/// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../dialogs.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../editor/title-editor.ts" />
@@ -40,6 +42,26 @@ var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
 var ReactBootstrap: any = window['ReactBootstrap'];
+var DropdownModal = utils.DropdownModal;
+
+var moreVotesDropdownModal;
+var moreDialog;
+
+
+export function openMoreVotesDropdown(post: Post, votesButton) {
+  if (!moreVotesDropdownModal) {
+    moreVotesDropdownModal = ReactDOM.render(MoreVotesDropdownModal(), utils.makeMountNode());
+  }
+  moreVotesDropdownModal.openForAt(post, votesButton);
+}
+
+
+export function openMoreDropdown(store, post, moreButton) {
+  if (!moreDialog) {
+    moreDialog = ReactDOM.render(MoreDropdownModal(), utils.makeMountNode());
+  }
+  moreDialog.openForAt(store, post, moreButton);
+}
 
 
 export var NoCommentsPageActions = createComponent({
@@ -66,11 +88,6 @@ export var NoCommentsPageActions = createComponent({
 
 
 export var PostActions = createComponent({
-  loginIfNeededThen: function(loginToWhat, callback) {
-    var postNr = this.props.post.postNr;
-    debiki.internal.loginIfNeeded(
-        loginToWhat, debiki.internal.makeReturnToPostUrlForVerifEmail(postNr), callback);
-  },
   onAcceptAnswerClick: function() {
     debiki2.ReactActions.acceptAnswer(this.props.post.uniqueId);
   },
@@ -94,55 +111,13 @@ export var PostActions = createComponent({
     window.prompt('To copy a link to this post, press Ctrl+C then Enter', url);
   },
   onLikeClick: function(event) {
-    this.loginIfNeededThen('LoginToVote', () => {
-      debiki.internal.$toggleVote('VoteLike').call(event.target, event);
-    });
-  },
-  onWrongClick: function(event) {
-    this.loginIfNeededThen('LoginToVote', () => {
-      debiki.internal.$toggleVote('VoteWrong').call(event.target, event);
-    });
-  },
-  onBuryClick: function(event) {
-    this.loginIfNeededThen('LoginToVote', () => {
-      debiki.internal.$toggleVote('VoteBury').call(event.target, event);
-    });
-  },
-  onUnwantedClick: function(event) {
-    this.loginIfNeededThen('LoginToVote', () => {
-      debiki.internal.$toggleVote('VoteUnwanted').call(event.target, event);
+    loginIfNeededThen('LoginToVote', this.props.post.postNr, () => {
+      var toggleOn = !me_hasVoted(this.props.store.me, this.props.post.postId, 'VoteLike');
+      debiki.internal.toggleVote(this.props.post.postId, 'VoteLike', toggleOn);
     });
   },
   onEditSuggestionsClick: function(event) {
     debiki.internal.$showEditsDialog.call(event.target, event);
-  },
-  onFlagClick: function(event) {
-    this.loginIfNeededThen('LoginToFlag', () => {
-      debiki2.getFlagDialog().open(this.props.post.postId);
-    });
-  },
-  onDeleteClick: function(event) {
-    debiki2.pagedialogs.getDeletePostDialog().open(this.props.post);
-  },
-  onWikifyClick: function(event) {
-    debiki2.pagedialogs.getWikifyDialog().open(this.props.post);
-  },
-  /*
-  onCollapsePostClick: function(event) {
-    debiki.internal.$showActionDialog('CollapsePost').call(event.target, event);
-  },
-  onCollapseTreeClick: function(event) {
-    debiki.internal.$showActionDialog('CollapseTree').call(event.target, event);
-  },
-  onCloseTreeClick: function(event) {
-    debiki.internal.$showActionDialog('CloseTree').call(event.target, event);
-  },
-  onPinClick: function(event) {
-    debiki.internal.$showActionDialog('PinTree').call(event.target, event);
-  }, */
-  onSeeWrenchClick: function(event) {
-    ReactActions.hideHelpMessageWithId('seeWrench');
-    debiki2.pagedialogs.openSeeWrenchDialog();
   },
 
   makeReplyBtnTitle: function(post: Post) {
@@ -153,6 +128,14 @@ export var PostActions = createComponent({
       case PageRole.Critique: return "Give Critique"; // [plugin]
       default: return "Reply";
     }
+  },
+
+  openMoreVotesDropdown: function(event) {
+    openMoreVotesDropdown(this.props.post, event.target);
+  },
+
+  openMoreDropdown: function(event) {
+    openMoreDropdown(this.props.store, this.props.post, event.target);
   },
 
   render: function() {
@@ -272,26 +255,10 @@ export var PostActions = createComponent({
       var myUnwantedVote = votes.indexOf('VoteUnwanted') !== -1 ? ' dw-my-vote' : '';
       var myOtherVotes = myWrongVote || myBuryVote || myUnwantedVote ? ' dw-my-vote' : '';
 
-      var wrongVoteButton =
-          r.a({ className: 'dw-a dw-a-wrong icon-warning' + myWrongVote,
-            title: 'Click if you think this post is wrong, for example, factual errors, ' +
-                " or because you disagree.", onClick: this.onWrongClick }, 'Wrong');
-      var buryVoteButton =
-        isFlat
-            ? null // cannot change sort order or collapse flat comments
-            : r.a({ className: 'dw-a dw-a-bury icon-bury' + myBuryVote,
-              title: "Click if you think it's better that people spend their time " +
-                  "reading other things instead.", onClick: this.onBuryClick }, 'Bury');
-      var unwantedVoteButton = isGuest(me) ? null :
-          r.a({ className: 'dw-a dw-a-unwanted icon-cancel' + myUnwantedVote,
-              title: "Click if you do not want this comment on this site.",
-                  onClick: this.onUnwantedClick }, "Unwanted");
-
       otherVotesDropdown = post.postId === BodyPostId ? null :
-          r.span({ className: 'dropdown navbar-right', title: "More votes..." },
-            r.a({ className: 'dw-a dw-a-votes' + myOtherVotes, 'data-toggle': 'dropdown' }, ''),
-            r.div({ className: 'dropdown-menu dropdown-menu-right dw-p-as-votes' },
-                wrongVoteButton, buryVoteButton, unwantedVoteButton));
+          r.span({ className: 'dropdown navbar-right', title: "More votes...",
+              onClick: this.openMoreVotesDropdown },
+            r.a({ className: 'dw-a dw-a-votes' + myOtherVotes }, ''));
 
       likeVoteButton =
           r.a({ className: 'dw-a dw-a-like icon-heart' + myLikeVote,
@@ -308,105 +275,9 @@ export var PostActions = createComponent({
         : r.a({ className: 'dw-a dw-a-link icon-link', title: "Link to this post",
               onClick: this.onLinkClick });
 
-    var moreLinks = [];
-
-    if (!isOwnPost) {
-      var mayEdit = isStaff(me) || (
-          me.isAuthenticated && post.postType === PostType.CommunityWiki);
-      if (mayEdit) {
-        moreLinks.push(
-          r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick, key: 'ed' },
-            'Edit'));
-      }
-    }
-
-    moreLinks.push(
-        r.a({ className: 'dw-a dw-a-flag icon-flag', onClick: this.onFlagClick, key: 'rp' },
-          'Report'));
-
-    /* Doesn't work right now, after Post2 rewrite
-    if (user.isAdmin && !isPageBody)
-      moreLinks.push(
-        r.a({ className: 'dw-a dw-a-pin icon-pin', onClick: this.onPinClick, key: 'pn' }, 'Pin'));
-    */
-
-    /* Suggestions code removed, I'll rewrite and add back later.
-    if (post.numPendingEditSuggestions > 0)
-      suggestionsNew.push(
-          r.a({ className: 'dw-a dw-a-edit-suggs icon-edit dw-a-pending-review',
-           title: 'View edit suggestions', onClick: this.onEditSuggestionsClick },
-            '×', post.numPendingEditSuggestions));
-    */
-
-    /*  Find some better way to do this. And also, don't show so many buttons below More.
-    if (!post.isTreeCollapsed && !isPageBody && user.isAdmin && isKajMagnusSite)
-      moreLinks.push(
-        r.a({ className: 'dw-a dw-a-collapse-tree icon-collapse',
-            onClick: this.onCollapseTreeClick, key: 'ct' }, 'Collapse tree'));
-
-    if (!post.isPostCollapsed && !isPageBody && user.isAdmin && isKajMagnusSite)
-      moreLinks.push(
-        r.a({ className: 'dw-a dw-a-collapse-post icon-collapse',
-            onClick: this.onCollapsePostClick, key: 'cp' }, 'Collapse post'));
-
-    if (post.isTreeCollapsed && user.isAdmin)
-      moreLinks.push(
-        r.a({ className: 'dw-a dw-a-uncollapse-tree', key: 'ut' }, 'Uncollapse tree'));
-
-    if (post.isPostCollapsed && user.isAdmin)
-      moreLinks.push(
-        r.a({ className: 'dw-a dw-a-uncollapse-post', key: 'up' }, 'Uncollapse post'));
-    */
-
-    // ----- Close links
-
-    /* Doesn't work any longer, not after Post2 rewrite.
-    if (post.isTreeClosed && user.isAdmin) {
-      moreLinks.push(
-        r.a({ className: 'dw-a dw-a-reopen-tree', key: 'ro' }, 'Reopen'));
-    }
-    else if (!isPageBody && user.isAdmin) {
-      moreLinks.push(
-        r.a({ className: 'dw-a dw-a-close-tree icon-archive',
-            onClick: this.onCloseTreeClick, key: 'cl' }, 'Close'));
-    }
-    */
-
-    // ----- Move links
-
-    // ? <a class="dw-a dw-a-move">Move</a>
-
-    // ----- Delete links
-
-   // remove classes:
-   // r.a({ className: 'dw-a dw-a-delete-suggs icon-delete-tree dw-a-pending-review',
-   // r.a({ className: 'dw-a dw-a-delete-suggs icon-delete-post dw-a-pending-review',
-   // r.a({ className:'dw-a dw-a-collapse-suggs icon-collapse-post dw-a-pending-review',
-   // r.a({ className: 'dw-a dw-a-collapse-suggs icon-collapse-tree dw-a-pending-review',
-
-    if (!isPageBody && isStaff(me)) {
-      moreLinks.push(
-        r.a({ className: 'dw-a dw-a-delete icon-trash', onClick: this.onDeleteClick, key: 'dl' },
-          'Delete'));
-    }
-
-    if (isStaff(me) && !isFlat) {
-      moreLinks.push(
-        r.a({ className: 'dw-a icon-users', onClick: this.onWikifyClick, key: 'wf' },
-          isWikiPost(post) ? 'Un-Wikify' : 'Wikify'));
-    }
-
-    if (isPageBody && isStaff(me) && !help.isHelpMessageClosedAnyVersion(store, 'seeWrench')) {
-      moreLinks.push(
-        r.a({ className: 'dw-a icon-help-circled', onClick: this.onSeeWrenchClick, key: 'sw' },
-          'Pin topic, move posts, etc'));
-    }
-
     var moreDropdown =
-      r.span({ className: 'dropdown navbar-right' },
-        r.a({ className: 'dw-a dw-a-more icon-menu', 'data-toggle': 'dropdown', title: "More..." }),
-        r.div({ className: 'dropdown-menu dropdown-menu-right dw-p-as-more' },
-          moreLinks));
+      r.span({ className: 'dropdown navbar-right', onClick: this.openMoreDropdown },
+        r.a({ className: 'dw-a dw-a-more icon-menu', title: "More..." }));
 
     return (
       r.div({ className: 'dw-p-as dw-as', onClick: this.props.onClick },
@@ -427,6 +298,284 @@ export var PostActions = createComponent({
   }
 });
 
+
+var MoreVotesDropdownModal = createComponent({
+  mixins: [StoreListenerMixin],
+
+  getInitialState: function () {
+    return {
+      isOpen: false,
+      store: debiki2.ReactStore.allData(),
+    };
+  },
+
+  onChange: function() {
+    this.setState({ store: debiki2.ReactStore.allData() });
+  },
+
+  openForAt: function(post: Post, at) {
+    var rect = at.getBoundingClientRect();
+    this.setState({
+      isOpen: true,
+      post: post,
+      atX: rect.right,
+      atY: rect.bottom,
+    });
+  },
+
+  closeSoon: function() {
+    setTimeout(this.close, 330);
+  },
+
+  close: function() {
+    this.setState({ isOpen: false });
+  },
+
+  hasVoted: function(what): boolean {
+    return me_hasVoted(this.state.store.me, this.state.post.postId, what);
+  },
+
+  onWrongClick: function(event) {
+    loginIfNeededThen('LoginToVote', this.state.post.postNr, () => {
+      debiki.internal.toggleVote(this.state.post.postId, 'VoteWrong', !this.hasVoted('VoteWrong'));
+      this.closeSoon();
+    });
+  },
+  onBuryClick: function(event) {
+    loginIfNeededThen('LoginToVote', this.state.post.postNr, () => {
+      debiki.internal.toggleVote(this.state.post.postId, 'VoteBury', !this.hasVoted('VoteBury'));
+      this.closeSoon();
+    });
+  },
+  onUnwantedClick: function(event) {
+    loginIfNeededThen('LoginToVote', this.state.post.postNr, () => {
+      debiki.internal.toggleVote(this.state.post.postId, 'VoteUnwanted', !this.hasVoted('VoteUnwanted'));
+      this.closeSoon();
+    });
+  },
+
+  makeVoteButtons: function() {
+    var store = this.state.store;
+    var isFlat = store.isFlat; // hmm shouldn't place in the store object, oh well
+    var me: Myself = store.me;
+    var votes = me.votes[this.state.post.postId] || [];
+
+    var myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : '';
+    var myBuryVote = votes.indexOf('VoteBury') !== -1 ? ' dw-my-vote' : '';
+    var myUnwantedVote = votes.indexOf('VoteUnwanted') !== -1 ? ' dw-my-vote' : '';
+
+    var wrongVoteButton =
+      r.a({ className: 'dw-a dw-a-wrong icon-warning' + myWrongVote,
+        title: 'Click if you think this post is wrong, for example, factual errors, ' +
+        " or because you disagree.", onClick: this.onWrongClick }, 'Wrong');
+    var buryVoteButton =
+      isFlat
+        ? null // cannot change sort order or collapse flat comments, Bury vote is pointless
+        : r.a({ className: 'dw-a dw-a-bury icon-bury' + myBuryVote,
+        title: "Click if you think it's better that people spend their time " +
+        "reading other things instead.", onClick: this.onBuryClick }, 'Bury');
+    var unwantedVoteButton = isGuest(me) ? null :
+      r.a({ className: 'dw-a dw-a-unwanted icon-cancel' + myUnwantedVote,
+        title: "Click if you do not want this comment on this site.",
+        onClick: this.onUnwantedClick }, "Unwanted");
+
+    return [wrongVoteButton, buryVoteButton, unwantedVoteButton];
+  },
+
+  render: function() {
+    var state = this.state;
+    var content = state.isOpen ? this.makeVoteButtons() : null;
+    return (
+      DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY },
+        content));
+  }
+});
+
+
+var MoreDropdownModal = createComponent({
+  getInitialState: function () {
+    return {
+      isOpen: false,
+    };
+  },
+
+  openForAt: function(store, post, at) {
+    var rect = at.getBoundingClientRect();
+    this.setState({
+      isOpen: true,
+      store: store,
+      post: post,
+      atX: rect.right,
+      atY: rect.bottom,
+    });
+  },
+
+  close: function() {
+    this.setState({ isOpen: false });
+  },
+
+  onEditClick: function(event) {
+    debiki2.ReactActions.editPostWithNr(this.state.post.postId);
+    this.close();
+  },
+  onFlagClick: function(event) {
+    loginIfNeededThen('LoginToFlag', this.state.post.postNr, () => {
+      debiki2.getFlagDialog().open(this.state.post.postId);
+    });
+    this.close();
+  },
+  onDeleteClick: function(event) {
+    debiki2.pagedialogs.getDeletePostDialog().open(this.state.post);
+    this.close();
+  },
+  onWikifyClick: function(event) {
+    debiki2.pagedialogs.getWikifyDialog().open(this.state.post);
+    this.close();
+  },
+  /*
+  onCollapsePostClick: function(event) {
+    debiki.internal.$showActionDialog('CollapsePost').call(event.target, event);
+    this.close();
+  },
+  onCollapseTreeClick: function(event) {
+    debiki.internal.$showActionDialog('CollapseTree').call(event.target, event);
+    this.close();
+  },
+  onCloseTreeClick: function(event) {
+    debiki.internal.$showActionDialog('CloseTree').call(event.target, event);
+    this.close();
+  },
+  onPinClick: function(event) {
+    debiki.internal.$showActionDialog('PinTree').call(event.target, event);
+    this.close();
+  }, */
+  onSeeWrenchClick: function(event) {
+    ReactActions.hideHelpMessageWithId('seeWrench');
+    debiki2.pagedialogs.openSeeWrenchDialog();
+    this.close();
+  },
+
+  makeButtons: function() {
+    var store = this.state.store;
+    var isFlat = store.isFlat; // hmm shouldn't place in the store object, oh well
+    var me: Myself = store.me;
+    var post: Post = this.state.post;
+    var isPageBody = post.postId === BodyPostId;
+
+    var moreLinks = [];
+    var isOwnPost = post.authorIdInt === me.userId;
+
+    if (!isOwnPost) {
+      var mayEdit = isStaff(me) || (
+        me.isAuthenticated && post.postType === PostType.CommunityWiki);
+      if (mayEdit) {
+        moreLinks.push(
+          r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick, key: 'ed' },
+            'Edit'));
+      }
+    }
+
+    moreLinks.push(
+      r.a({ className: 'dw-a dw-a-flag icon-flag', onClick: this.onFlagClick, key: 'rp' },
+        'Report'));
+
+    /* Doesn't work right now, after Post2 rewrite
+     if (user.isAdmin && !isPageBody)
+     moreLinks.push(
+     r.a({ className: 'dw-a dw-a-pin icon-pin', onClick: this.onPinClick, key: 'pn' }, 'Pin'));
+     */
+
+    /* Suggestions code removed, I'll rewrite and add back later.
+     if (post.numPendingEditSuggestions > 0)
+     suggestionsNew.push(
+     r.a({ className: 'dw-a dw-a-edit-suggs icon-edit dw-a-pending-review',
+     title: 'View edit suggestions', onClick: this.onEditSuggestionsClick },
+     '×', post.numPendingEditSuggestions));
+     */
+
+    /*  Find some better way to do this. And also, don't show so many buttons below More.
+     if (!post.isTreeCollapsed && !isPageBody && user.isAdmin && isKajMagnusSite)
+     moreLinks.push(
+     r.a({ className: 'dw-a dw-a-collapse-tree icon-collapse',
+     onClick: this.onCollapseTreeClick, key: 'ct' }, 'Collapse tree'));
+
+     if (!post.isPostCollapsed && !isPageBody && user.isAdmin && isKajMagnusSite)
+     moreLinks.push(
+     r.a({ className: 'dw-a dw-a-collapse-post icon-collapse',
+     onClick: this.onCollapsePostClick, key: 'cp' }, 'Collapse post'));
+
+     if (post.isTreeCollapsed && user.isAdmin)
+     moreLinks.push(
+     r.a({ className: 'dw-a dw-a-uncollapse-tree', key: 'ut' }, 'Uncollapse tree'));
+
+     if (post.isPostCollapsed && user.isAdmin)
+     moreLinks.push(
+     r.a({ className: 'dw-a dw-a-uncollapse-post', key: 'up' }, 'Uncollapse post'));
+     */
+
+    // ----- Close links
+
+    /* Doesn't work any longer, not after Post2 rewrite.
+     if (post.isTreeClosed && user.isAdmin) {
+     moreLinks.push(
+     r.a({ className: 'dw-a dw-a-reopen-tree', key: 'ro' }, 'Reopen'));
+     }
+     else if (!isPageBody && user.isAdmin) {
+     moreLinks.push(
+     r.a({ className: 'dw-a dw-a-close-tree icon-archive',
+     onClick: this.onCloseTreeClick, key: 'cl' }, 'Close'));
+     }
+     */
+
+    // ----- Move links
+
+    // ? <a class="dw-a dw-a-move">Move</a>
+
+    // ----- Delete links
+
+    // remove classes:
+    // r.a({ className: 'dw-a dw-a-delete-suggs icon-delete-tree dw-a-pending-review',
+    // r.a({ className: 'dw-a dw-a-delete-suggs icon-delete-post dw-a-pending-review',
+    // r.a({ className:'dw-a dw-a-collapse-suggs icon-collapse-post dw-a-pending-review',
+    // r.a({ className: 'dw-a dw-a-collapse-suggs icon-collapse-tree dw-a-pending-review',
+
+    if (!isPageBody && isStaff(me)) {
+      moreLinks.push(
+        r.a({ className: 'dw-a dw-a-delete icon-trash', onClick: this.onDeleteClick, key: 'dl' },
+          'Delete'));
+    }
+
+    // Wikified posts no longer looks good, because of the avatar icon to the left.
+    // Only the orig post looks ok, therefore: `isPageBody &&`.
+    if (isPageBody && isStaff(me) && !isFlat) {
+      moreLinks.push(
+        r.a({ className: 'dw-a icon-users', onClick: this.onWikifyClick, key: 'wf' },
+          isWikiPost(post) ? 'Un-Wikify' : 'Wikify'));
+    }
+
+    if (isPageBody && isStaff(me) && !help.isHelpMessageClosedAnyVersion(store, 'seeWrench')) {
+      moreLinks.push(
+        r.a({ className: 'dw-a icon-help-circled', onClick: this.onSeeWrenchClick, key: 'sw' },
+          'Pin topic, move posts, etc'));
+    }
+
+    return moreLinks;
+  },
+
+  render: function() {
+    var state = this.state;
+    var content = state.isOpen ? this.makeButtons() : null;
+    return (
+      DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY },
+        content));
+  }
+});
+
+
+function loginIfNeededThen(loginToWhat, postNr: PostNr, callback) {
+  debiki.internal.loginIfNeeded(
+    loginToWhat, debiki.internal.makeReturnToPostUrlForVerifEmail(postNr), callback);
+}
 
 //------------------------------------------------------------------------------
    }

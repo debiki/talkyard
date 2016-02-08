@@ -19,21 +19,11 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var $ = d.i.$;
 
 
-d.i.$toggleVote = function(voteType) {
-  return function(event) {
-    toggleVoteImpl($(this), voteType);
-    return false;
-  };
-};
-
-
-function toggleVoteImpl(voteBtn, voteType) {
-  var thread = voteBtn.closest('.dw-t');
-  var post = thread.children('.dw-p');
-  var postId = post.dwPostId();
+d.i.toggleVote = function(postId, voteType, toggleOn) {
+  var post = $('#post-' + postId);
   var action;
   var postIdsRead = undefined;
-  if (voteBtn.is('.dw-my-vote')) {
+  if (!toggleOn) {
     action = 'DeleteVote';
   }
   else {

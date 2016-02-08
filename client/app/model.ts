@@ -322,7 +322,7 @@ interface Store {
   newUserAccountCreated?: boolean;
   rootPostId: number;
   usersByIdBrief: { [userId: number]: BriefUser };
-  allPosts: { [postId: number]: Post };
+  allPosts: { [postNr: number]: Post };
   topLevelCommentIdsSorted: number[];
   isWatchbarOpen: boolean;
   isContextbarOpen: boolean;

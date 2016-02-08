@@ -454,6 +454,7 @@ case class Post(
             case PostVoteType.Unwanted =>
               numUnwantedVotes += 1
           }
+        case _ => ()  // e.g. a flag. Skip.
       }
     }
     val numTimesRead = readStats.readCountFor(nr)
