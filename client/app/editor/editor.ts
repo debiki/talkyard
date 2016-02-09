@@ -19,6 +19,7 @@
 /// <reference path="../../typedefs/modernizr/modernizr.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../utils/react-utils.ts" />
+/// <reference path="../utils/PageUnloadAlerter.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="commonmark.ts" />
@@ -39,10 +40,14 @@ var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+var PageUnloadAlerter = utils.PageUnloadAlerter;
 var FileAPI = null;
 
 var theEditor: any;
 var $: any = window['jQuery'];
+var WritingSomethingWarningKey = 'WritingSth';
+var WritingSomethingWarning = "You were writing something?";
+
 
 function ensureEditorCreated(success) {
   if (theEditor) {
@@ -527,6 +532,8 @@ export var Editor = createComponent({
   },
 
   onTextEdited: function(event) {
+    PageUnloadAlerter.addReplaceWarning(
+        WritingSomethingWarningKey, WritingSomethingWarning);
     this.setState({
       text: event.target.value
     });
@@ -650,6 +657,7 @@ export var Editor = createComponent({
   },
 
   closeEditor: function() {
+    PageUnloadAlerter.removeWarning(WritingSomethingWarningKey);
     this.returnSpaceAtBottomForEditor();
     this.setState({
       visible: false,
@@ -851,6 +859,15 @@ export var Editor = createComponent({
               "And tell people what you want feedback about:");
     }
 
+    var textareaButtons =
+        r.div({ className: 'esEdtr_txtBtns' },
+          r.button({ onClick: this.selectAndUploadFile, title: "Upload a file or image",
+              className: 'esEdtr_txtBtn' },
+            r.span({ className: 'icon-upload' })),
+          r.input({ name: 'files', type: 'file', multiple: false, // dupl code [2UK503]
+            ref: 'uploadFileInput', style: { width: 0, height: 0, float: 'left' }}),
+          r.i({ style: { marginLeft: '1ex', color: '#777' }}, " (More buttons here later...)"));
+
     var textarea =
         r.textarea({ className: 'editor form-control', ref: 'textarea', value: this.state.text,
             onChange: this.onTextEdited, tabIndex: 1,
@@ -893,6 +910,7 @@ export var Editor = createComponent({
                   categoriesDropdown,
                   pageRoleDropdown),
                 anyTextareaInstructions,
+                textareaButtons,
                 textarea)),
             r.div({ className: 'preview-area', style: previewStyles },
               r.div({}, titleInput ? 'Preview: (title excluded)' : 'Preview:'),
@@ -904,10 +922,6 @@ export var Editor = createComponent({
                   className: 'e2eSaveBtn' }, saveButtonTitle),
               Button({ onClick: this.onCancelClick, tabIndex: 1,
                   className: 'e2eCancelBtn' }, "Cancel"),
-              Button({ className: 'esUploadBtn icon-upload', tabIndex: 1,
-                  onClick: this.selectAndUploadFile }, "Upload"),
-              r.input({ name: 'files', type: 'file', multiple: false, // dupl code [2UK503]
-                ref: 'uploadFileInput', style: { width: 0, height: 0, float: 'left' }}),
               Button({ onClick: this.cycleMaxHorizBack, className: 'esEdtr_cycleMaxHzBtn',
                   tabIndex: 4 }, maximizeAndHorizSplitBtnTitle),
               // These two buttons are hidden via CSS if the window is wide. Higher tabIndex

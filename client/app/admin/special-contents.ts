@@ -19,6 +19,7 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../utils/PageUnloadAlerter.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
@@ -29,6 +30,7 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
+var PageUnloadAlerter = utils.PageUnloadAlerter;
 
 
 export var SpecialContent = createComponent({
@@ -45,6 +47,7 @@ export var SpecialContent = createComponent({
     var content = $.extend({}, this.state.content, { anyCustomText: this.state.editedText });
     Server.saveSpecialContent(content, () => {
       this.setState({ content: content });
+      this.cancelForgotToSaveWarning();
     });
   },
 
@@ -55,14 +58,30 @@ export var SpecialContent = createComponent({
 
   cancelEdits: function() {
     this.setState({ editedText: this.savedText() });
+    this.cancelForgotToSaveWarning();
   },
 
   resetText: function() {
     this.setState({ editedText: this.state.content.defaultText });
+    this.warnIfForgettingToSave();
   },
 
   onEdit: function(event) {
     this.setState({ editedText: event.target.value });
+    if (event.target.value !== this.savedText()) {
+      this.warnIfForgettingToSave();
+    }
+    else {
+      this.cancelForgotToSaveWarning();
+    }
+  },
+
+  warnIfForgettingToSave: function() {
+    PageUnloadAlerter.addReplaceWarning('SpC-' + this.props.contentId, "You have unsaved edits");
+  },
+
+  cancelForgotToSaveWarning: function() {
+    PageUnloadAlerter.removeWarning('SpC-' + this.props.contentId);
   },
 
   render: function() {

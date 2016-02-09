@@ -292,12 +292,13 @@ export var TopBar = createComponent({
     _.each(store.siteSections, (section: SiteSection) => {
       dieIf(section.pageRole !== PageRole.Forum, 'EsE5JTK20');
       // COULD if > 1 section, then add tabs, one for each section.
+      var pathSlash = section.path + (_.last(section.path) === '/' ? '' : '/');
       var url;
-      url = section.path + '#/latest/';
+      url = pathSlash + 'latest/';
       quickLinks.push(MenuItemLink({ key: url, href: url }, "Latest"));
-      url = section.path + '#/top/';
+      url = pathSlash + 'top/';
       quickLinks.push(MenuItemLink({ key: url, href: url }, "Top"));
-      url = section.path + '#/categories/';
+      url = pathSlash + 'categories/';
       quickLinks.push(MenuItemLink({ key: url, href: url }, "Categories"));
       quickLinks.push(MenuItem({ key: section.pageId, divider: true }));
     });

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,6 +20,7 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../links.ts" />
 /// <reference path="review-posts.ts" />
 
 //------------------------------------------------------------------------------
@@ -176,7 +177,7 @@ var UserRow = createComponent({
     return (
       r.tr({},
         r.td({},
-          r.a({ href: '/-/admin/#/users/id/' + user.id }, usernameElem, fullNameElem)),
+          Link({ to: linkToUserInAdminArea(user.id) }, usernameElem, fullNameElem)),
 
         r.td({},
           user.email),

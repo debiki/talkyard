@@ -20,14 +20,31 @@ $showPreviewMinWidth = 900px;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
+  margin-bottom: 6px;
 
   @media (max-width: 700px)
     // Now don't list all stuff side by side, instead, one per row.
     flex-direction: column;
 
+  .form-group
+    margin-bottom: 0;
+
 .esEdtr_titleEtc_title
   flex: 1;
 
+.esEdtr_txtBtns
+  background: white;
+  margin-bottom: 1px;
+
+.esEdtr_txtBtn
+  border: none;
+  background: white;
+  padding: 4px 8px;
+  color: hsl(0, 0%, 50%);
+  font-size: 15px;
+  &:hover
+    background: hsl($uiHue, 100%, 94%);
+    color: hsl(0, 0%, 12%);
 
 
 #debiki-editor-controller
@@ -156,6 +173,9 @@ $showPreviewMinWidth = 900px;
       height: 100%
       font-size: 13px;
       padding: 6px;
+      border: none;
+      &:focus
+        box-shadow: 0 1px 3px 2px hsl($uiHue, 100%, 79%);
 
     @media (max-width: $showPreviewMinWidth)
       width: 100%;

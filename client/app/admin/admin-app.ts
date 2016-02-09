@@ -20,6 +20,7 @@
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../topbar/topbar.ts" />
+/// <reference path="../utils/PageUnloadAlerter.ts" />
 /// <reference path="settings.ts" />
 /// <reference path="review.ts" />
 /// <reference path="review-all.ts" />
@@ -45,6 +46,7 @@ var Button = reactCreateFactory(ReactBootstrap.Button);
 var ReactRouter = window['ReactRouter'];
 var Route = reactCreateFactory(ReactRouter.Route);
 var Redirect = reactCreateFactory(ReactRouter.Redirect);
+var PageUnloadAlerter = utils.PageUnloadAlerter;
 
 
 var AdminRoot = '/-/admin/';
@@ -135,7 +137,7 @@ var AdminAppComponent = React.createClass(<any> {
 
 
 var SettingsPanelComponent = React.createClass(<any> {
-  mixins: [SaveSettingMixin],
+  mixins: [SaveSettingMixin, PageUnloadAlerter.AlertIfLeavingRouteMixin],
 
   componentDidMount: function() {
     Server.loadSettings('WholeSite', null, settings => {
@@ -213,7 +215,7 @@ var SettingsPanelComponent = React.createClass(<any> {
 
 
 var CustomizePanelComponent = React.createClass(<any> {
-  mixins: [SaveSettingMixin],
+  mixins: [SaveSettingMixin, PageUnloadAlerter.AlertIfLeavingRouteMixin],
 
   componentDidMount: function() {
     Server.loadSettings('WholeSite', null, settings => {

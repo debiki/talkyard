@@ -167,7 +167,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
 
   /** The initial data in the React-Flux model, a.k.a. store. */
   def reactStoreSafeJsonString: String =
-    json getOrElse Json.obj("user" -> ReactJson.userNoPageToJson(debikiRequest)).toString()
+    json getOrElse ReactJson.adminAreaOrUserProfileJson(debikiRequest).toString()
 
 }
 

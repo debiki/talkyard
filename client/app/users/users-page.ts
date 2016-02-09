@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../topbar/topbar.ts" />
+/// <reference path="../links.ts" />
 /// <reference path="user-details-actions.ts" />
 
 //------------------------------------------------------------------------------
@@ -180,7 +181,7 @@ var UserBar = createComponent({
     }
 
     var adminButton = isStaff(loggedInUser)
-        ? r.li({}, r.a({ href: '/-/admin/#/users/id/' + user.id }, 'Admin'))
+        ? r.li({}, r.a({ href: linkToUserInAdminArea(user.id) }, 'Admin'))
         : null;
 
     return (

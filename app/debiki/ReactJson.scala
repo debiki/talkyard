@@ -260,6 +260,22 @@ object ReactJson {
   }
 
 
+  def adminAreaOrUserProfileJson(request: DebikiRequest[_]): JsObject = {
+    val dao = request.dao
+    val siteStatusString = loadSiteStatusString(dao)
+    val siteSettings = dao.loadWholeSiteSettings()
+    Json.obj(
+      "appVersion" -> Globals.applicationVersion,
+      "siteStatus" -> JsString(siteStatusString),
+      "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed && dao.siteId == KajMagnusSiteId),
+      "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
+      "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
+      "me" -> userNoPageToJson(request),
+      "maxUploadSizeBytes" -> Globals.maxUploadSizeBytes,
+      "siteSections" -> makeSiteSectionsJson(dao))
+  }
+
+
   /** Returns (any-forum-id, json-for-ancestor-forum-and-categories-forum-first).
     */
   def makeForumIdAndAncestorsJson(pageMeta: PageMeta, dao: SiteDao)

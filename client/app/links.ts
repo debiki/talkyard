@@ -33,6 +33,10 @@ export function linkToAdminPage(): string {
   return '/-/admin/';
 }
 
+export function linkToUserInAdminArea(userId: UserId): string {
+  return '/-/admin/users/id/' + userId;
+}
+
 export function linkToReviewPage(): string {
   return '/-/admin/review/all';
 }

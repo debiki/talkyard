@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.utils {

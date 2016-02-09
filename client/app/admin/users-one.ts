@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../links.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
@@ -27,8 +28,10 @@ var reactCreateFactory = React['createFactory'];
 
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
-var ModalTrigger = reactCreateFactory(ReactBootstrap.ModalTrigger);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
+var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
+var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 var Input = reactCreateFactory(ReactBootstrap.Input);
 
 var ReactRouter = window['ReactRouter'];
@@ -37,7 +40,9 @@ var RouterState = ReactRouter.State;
 
 
 export var AdminUserPageComponent = React.createClass(<any> {
-  mixins: [RouterState, RouterNavigation],
+  contextTypes: {
+    router: React.PropTypes.object.isRequired
+  },
 
   getInitialState: function() {
     return {
@@ -55,7 +60,7 @@ export var AdminUserPageComponent = React.createClass(<any> {
 
   loadCompleteUser: function() {
     this.setState({ user: null });
-    var params = this.getParams();
+    var params = this.props.params;
     Server.loadCompleteUser(params.userId, (user) => {
       if (!this.isMounted()) return;
       this.setState({
@@ -65,7 +70,7 @@ export var AdminUserPageComponent = React.createClass(<any> {
   },
 
   publicProfileLink: function() {
-    return '/-/users/#/id/' + this.state.user.id;
+    return linkToUserProfilePage(this.state.user.id);
   },
 
   toggleIsAdmin: function() {
@@ -120,8 +125,8 @@ export var AdminUserPageComponent = React.createClass(<any> {
     }
     else {
       suspendButton =
-          ModalTrigger({ modal: SuspendDialog({ user: user, reloadUser: this.loadCompleteUser }) },
-            Button({}, 'Suspend'));
+          Button({ onClick: () => openSuspendUserDialog(user, this.loadCompleteUser) },
+            "Suspend");
     }
 
     var toggleAdminButton;
@@ -150,7 +155,29 @@ export var AdminUserPageComponent = React.createClass(<any> {
 });
 
 
+var suspendUserDialog;
+
+function openSuspendUserDialog(user: BriefUser, refreshCallback) {
+  if (!suspendUserDialog) {
+    suspendUserDialog = ReactDOM.render(SuspendDialog(), utils.makeMountNode());
+  }
+  suspendUserDialog.open(user, refreshCallback);
+}
+
+
 var SuspendDialog = createComponent({
+  getInitialState: function() {
+    return { isOpen: false };
+  },
+
+  open: function(user: BriefUser, refreshCallback) {
+    this.setState({ isOpen: true, user: user, refreshCallback: refreshCallback })
+  },
+
+  close: function() {
+    this.setState({ isOpen: false });
+  },
+
   doSuspend: function() {
     var numDays = parseInt(this.refs.daysInput.getValue());
     if (isNaN(numDays)) {
@@ -166,26 +193,25 @@ var SuspendDialog = createComponent({
       alert("At most 255 characters please");
       return;
     }
-    Server.suspendUser(this.props.user.id, numDays, reason, () => {
-      this.props.onRequestHide();
-      this.props.reloadUser();
+    Server.suspendUser(this.state.user.id, numDays, reason, () => {
+      this.close();
+      this.state.refreshCallback();
     });
   },
 
   render: function() {
-    var props = $.extend({ title: 'Suspend User' }, this.props);
     return (
-      Modal(props,
-        r.div({ className: 'modal-body' },
+      Modal({ show: this.state.isOpen, onHide: this.close },
+        ModalTitle({}, "Suspend User"),
+        ModalBody({},
           Input({ type: 'number', label: 'Suspend for how many days?', ref: 'daysInput' }),
           Input({ type: 'text', label: 'Why suspend this user?',
               help: "This will be visible to everyone, " +
               "on the user's public profile, and shown to the user when s/he tries to login. " +
               "Keep it short.", ref: 'reasonInput' })),
-
-        r.div({ className: 'modal-footer' },
+        ModalFooter({},
           Button({ onClick: this.doSuspend }, 'Suspend'),
-          Button({ onClick: this.props.onRequestHide }, 'Cancel'))));
+          Button({ onClick: this.close }, 'Cancel'))));
   }
 });
 

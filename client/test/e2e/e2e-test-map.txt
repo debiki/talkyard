@@ -89,7 +89,10 @@ forum intro text -  (5KC2)
   hide, show:
 
 categories -
-  create:
+  create -
+    custom name, default everything:
+    custom name, custom everything:
+  edit about topic:
   edit name, slug, topic types, position:
   unlist:
 
@@ -180,6 +183,21 @@ live updates -  (4FE2)
   forum latest topic list:
   discussion:
   chat:
+
+links -
+  forum category:
+  forum topic in category view:
+  forum topic in topics view:
+  forum avatar:
+  hamburger:
+  profile:
+  contextbar -
+    recent comment:
+    user:
+  profile -
+    notification:
+    to admin:
+  back to site:
 
 admin -
   delete flagged:   — also see (6JS3)

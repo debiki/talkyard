@@ -19,6 +19,7 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../utils/PageUnloadAlerter.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
@@ -29,6 +30,7 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
+var PageUnloadAlerter = utils.PageUnloadAlerter;
 
 
 /**
@@ -82,18 +84,41 @@ export var Setting = createComponent({
     this.setState({
       editedValue: newValue
     });
+    if (newValue !== this.savedValue()) {
+      this.warnIfForgettingToSave();
+    }
+    else {
+      this.cancelForgotToSaveWarning();
+    }
+  },
+
+  saveEdits: function() {
+    this.props.onSave(this.props.setting, this.state.editedValue);
+    // (COULD add onSave callback and remove the unload warning only if the save request succeeds.)
+    this.cancelForgotToSaveWarning();
   },
 
   cancelEdits: function() {
     this.setState({
       editedValue: this.savedValue()
     });
+    this.cancelForgotToSaveWarning();
   },
 
   resetValue: function() {
     this.setState({
       editedValue: this.props.placeholder ? '' : this.props.setting.defaultValue
     });
+    this.warnIfForgettingToSave();
+  },
+
+  warnIfForgettingToSave: function() {
+    PageUnloadAlerter.addReplaceWarning(
+        'Setting-' + this.props.setting.name, "You have unsaved changes");
+  },
+
+  cancelForgotToSaveWarning: function() {
+    PageUnloadAlerter.removeWarning('Setting-' + this.props.setting.name);
   },
 
   render: function() {
@@ -126,8 +151,7 @@ export var Setting = createComponent({
     if (valueChanged) {
       saveResetBtns =
         r.div({ className: 'col-sm-3' },
-          Button({ onClick: () => this.props.onSave(setting, this.state.editedValue),
-              bsStyle: 'primary' }, "Save"),
+          Button({ onClick: this.saveEdits, bsStyle: 'primary' }, "Save"),
           Button({ onClick: this.cancelEdits }, 'Cancel'));
     }
     else if (!valueChanged && !hasDefaultValue) {
