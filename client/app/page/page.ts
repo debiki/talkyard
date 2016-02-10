@@ -119,9 +119,9 @@ function renderTitleBodyCommentsToString() {
     // In the future, when using the HTML5 history API to update the URL when navigating
     // inside the forum, we can use `store.pagePath` below. But for now:
     var store: Store = debiki2.ReactStore.allData();
-    var pagePath = store.pagePath + 'latest';
+    var path = store.pagePath.value + 'latest';
     return ReactDOMServer.renderToString(
-        Router({ history: ReactRouter.createMemoryHistory(pagePath) }, routes));
+        Router({ history: ReactRouter.createMemoryHistory(path) }, routes));
   }
   else {
     return ReactDOMServer.renderToString(Page(store));

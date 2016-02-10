@@ -87,7 +87,7 @@ object ReactJson {
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
       "pageId" -> pageReq.thePageId,
       "pageRole" -> JsNumber(pageReq.thePageRole.toInt),
-      "pagePath" -> JsString(pageReq.pagePath.value),
+      "pagePath" -> JsPagePath(pageReq.pagePath),
       "numPosts" -> JsNumber(0),
       "numPostsRepliesSection" -> JsNumber(0),
       "numPostsChatSection" -> JsNumber(0),
@@ -216,7 +216,7 @@ object ReactJson {
       "showForumCategories" -> JsBooleanOrNull(showForumCategories),
       "ancestorsRootFirst" -> ancestorsJsonRootFirst,
       "pageRole" -> JsNumber(page.role.toInt),
-      "pagePath" -> JsString(page.thePath.value),
+      "pagePath" -> JsPagePath(page.thePath),
       "pinOrder" -> JsNumberOrNull(page.meta.pinOrder),
       "pinWhere" -> JsNumberOrNull(page.meta.pinWhere.map(_.toInt)),
       "pageAnsweredAtMs" -> dateOrNull(page.meta.answeredAt),
@@ -900,6 +900,13 @@ object ReactJson {
     }
     json
   }
+
+  def JsPagePath(pagePath: PagePath): JsValue =
+    Json.obj(
+      "value" -> pagePath.value,
+      "folder" -> pagePath.folder,
+      "showId" -> pagePath.showId,
+      "slug" -> pagePath.pageSlug)
 
   def JsUploadUrlOrNull(uploadRef: Option[UploadRef]): JsValue =
     uploadRef.map(ref => JsString(ref.url)) getOrElse JsNull

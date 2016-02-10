@@ -123,7 +123,6 @@ body
 
 
 .btn-primary,
-.btn-primary:visited,
 .nav-pills > li > a.active,
 .nav-pills > li > a.active:hover,
 .nav-pills > li > a.active:focus,
@@ -134,11 +133,12 @@ body
   background-color: hsl($uiHue, 67%, 52%);
   border-color: hsl($uiHue, 67%, 52%);
   color: white;
+  &:visited
+    color: white;
 
 // ...but in a nav with background, use stronger color:
 .dw-sub-nav
   .btn-primary,
-  .btn-primary:visited,
   &.nav-stacked .nav-pills > li.active > a,
   &.nav-stacked .nav-pills > li.active > a:hover,
   &.nav-stacked .nav-pills > li.active > a:focus

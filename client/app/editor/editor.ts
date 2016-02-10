@@ -581,15 +581,13 @@ export var Editor = createComponent({
 
   saveEdits: function() {
     Server.saveEdits(this.state.editingPostId, this.state.text, () => {
-      this.clearText();
-      this.closeEditor();
+      this.clearTextAndClose();
     });
   },
 
   saveNewPost: function() {
     Server.saveReply(this.state.replyToPostIds, this.state.text, this.state.anyPostType, () => {
-      this.clearText();
-      this.closeEditor();
+      this.clearTextAndClose();
     });
   },
 
@@ -603,7 +601,7 @@ export var Editor = createComponent({
       pageBody: this.state.text
     };
     Server.createPage(data, (newPageId: string) => {
-      this.clearText();
+      this.clearTextAndClose();
       window.location.assign('/-' + newPageId);
     });
   },
@@ -611,7 +609,7 @@ export var Editor = createComponent({
   sendPrivateMessage: function() {
     var title = $(this.refs.titleInput).val();
     Server.sendMessage(title, this.state.text, this.state.messageToUserIds, (pageId: string) => {
-      this.clearText();
+      this.clearTextAndClose();
       window.location.assign('/-' + pageId);
     });
   },
@@ -684,8 +682,9 @@ export var Editor = createComponent({
     }
   },
 
-  clearText: function() {
+  clearTextAndClose: function() {
     this.setState({ text: null, draft: null });
+    this.closeEditor();
   },
 
   showEditHistory: function() {

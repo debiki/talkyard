@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -59,17 +59,20 @@ export var TitleEditor = createComponent({
   },
 
   showComplicated: function() {
+    var store: Store = this.props;
+    var pagePath: PagePath = store.pagePath;
     this.setState({
       showComplicated: true,
-      folder: getCurrentUrlPathFolder(),
-      slug: getCurrentSlug(),
-      showId: isIdShownInUrl(),
+      folder: pagePath.folder,
+      slug: pagePath.slug,
+      showId: pagePath.showId,
     });
   },
 
   onTitleChanged: function(event) {
+    var store: Store = this.props;
     var idWillBeInUrlPath = this.refs.showIdInput ?
-        this.refs.showIdInput.getChecked() : isIdShownInUrl();
+        this.refs.showIdInput.getChecked() : store.pagePath.showId; // isIdShownInUrl();
     if (!idWillBeInUrlPath) {
       // Then don't automatically change the slug to match the title, because links are more fragile
       // when no id included in the url, and might break if we change the slug. Also, the slug is likely
@@ -231,49 +234,12 @@ export var TitleEditor = createComponent({
 });
 
 
-function getCurrentSlug() {
-  // Only id, no slug?
-  if (/\/-[a-zA-Z0-9_]+$/.test(location.pathname))
-    return '';
-  var matches = location.pathname.match(/\/[^/]*$/);
-  if (!matches) {
-    console.warn('Cannot find slug in path: ' + location.pathname + ' [DwE6KEF2]');
-    return '';
-  }
-  var slashAndLastPathSegment = matches[0];
-  var lastPathSegment = slashAndLastPathSegment.substr(1);
-  return lastPathSegment;
-}
-
-
-function getCurrentUrlPathFolder() {
-  // First find folder, if id (and perhaps slug) shown. Any id is always prefixed by '/-'.
-  // E.g. '/some/folder/-pageid' or '/folder/-pageid/slug'.
-  var matches = location.pathname.match(/^(.*\/)-[^/].*$/);
-  if (matches)
-    return matches[1];
-
-  // If there's no id, but perhaps a slug, e.g. '/some/folder/' or '/folder/slug'.
-  matches = location.pathname.match(/^(.*\/)[^/]*$/)
-  if (matches)
-    return matches[1];
-
-  console.warn('Cannot find folder in path: ' + location.pathname + ' [DwE3KEF5]');
-  return '/';
-}
-
-
 function addFolderSlashes(folder) {
   if (folder || folder === '') {
     if (folder[folder.length - 1] !== '/') folder = folder + '/';
     if (folder[0] !== '/') folder = '/' + folder;
   }
   return folder;
-}
-
-
-function isIdShownInUrl() {
-  return /\/-[a-zA-Z0-9_]+/.test(location.pathname);
 }
 
 //------------------------------------------------------------------------------

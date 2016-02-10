@@ -62,7 +62,7 @@ var FilterShowWaiting = 'ShowWaiting';
 
 export function buildForumRoutes() {
   var store: Store = ReactStore.allData();
-  var rootSlash = store.pagePath;
+  var rootSlash = store.pagePath.value;
   var rootNoSlash = rootSlash.substr(0, rootSlash.length - 1);
   var defaultPath = rootSlash + (store.showForumCategories ? RoutePathCategories : RoutePathLatest);
 
@@ -267,7 +267,7 @@ var ForumButtons = createComponent({
     if (newCatSlug && newCatSlug !== this.state.newCategorySlug) {
       this.setState({ newCategorySlug: newCatSlug });
       this.context.router.push({
-        pathname: this.props.pagePath + RoutePathLatest + '/' + newCatSlug,
+        pathname: this.props.pagePath.value + RoutePathLatest + '/' + newCatSlug,
         query: this.props.location.query,
       });
     }
@@ -280,7 +280,7 @@ var ForumButtons = createComponent({
     var nextPath = currentPath === RoutePathCategories ? RoutePathLatest : currentPath;
     var slashSlug = newCategorySlug ? '/' + newCategorySlug : '';
     this.context.router.push({
-      pathname: this.props.pagePath + nextPath + slashSlug,
+      pathname: this.props.pagePath.value + nextPath + slashSlug,
       query: this.props.location.query,
     });
   },
@@ -294,7 +294,7 @@ var ForumButtons = createComponent({
   onSwitchSortOrder: function(event, newPath: string) {
     event.preventDefault();
     this.context.router.push({
-      pathname: this.props.pagePath + newPath + this.slashCategorySlug(),
+      pathname: this.props.pagePath.value + newPath + this.slashCategorySlug(),
       query: this.props.location.query,
     });
   },
@@ -424,7 +424,7 @@ var ForumButtons = createComponent({
     else {
       var slashSlug = this.slashCategorySlug();
       var makeCategoryLink = (where, text) => Link({
-          to: this.props.pagePath + where, query: this.props.location.query,
+          to: this.props.pagePath.value + where, query: this.props.location.query,
           className: 'btn btn-default', activeClassName: 'active' }, text);
       latestTopCategories =
           r.ul({ className: 'nav nav-pills dw-sort-order' },
@@ -874,7 +874,7 @@ var CategoryRow = createComponent({
       r.tr({},
         r.td({ className: 'forum-info' },
           r.div({ className: 'forum-title-wrap' },
-            Link({ to: this.props.pagePath + RoutePathLatest + '/' + this.props.category.slug,
+            Link({ to: this.props.pagePath.value + RoutePathLatest + '/' + this.props.category.slug,
                 query: this.props.location.query, className: 'forum-title' },
               category.name)),
           description),

@@ -204,7 +204,7 @@ object ForumDao {
     |Create categories
     |------------------
     |
-    |On the homepage, click **Categories**, then **Create Category**. Edit the about-this-category topic that you'll find in each category you create. Don't create too many categories (if you do, they might look rather empty).
+    |On [the forum main page](/), click **Categories**, then **Create Category**. Edit the about-this-category topic that you'll find in each category you create. Don't create too many categories (if you do, they might look rather empty).
     |
     |Build your community
     |------------------
@@ -221,7 +221,7 @@ object ForumDao {
     |Need help?
     |------------------
     |
-    |For help, go to EffectiveDiscussion's [support forum](http://www.effectivediscussions.org/forum/#/latest/support). Over there, there's an _Ideas_ category too, and you're welcome to make suggestions.
+    |For help, go to EffectiveDiscussion's [support forum](http://www.effectivediscussions.org/forum/latest/support). Over there, there's an _Ideas_ category too, and you're welcome to make suggestions.
     |""")
 
 

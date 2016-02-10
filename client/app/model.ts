@@ -295,7 +295,7 @@ interface Store {
   ancestorsRootFirst?: Ancestor[];
   hideForumIntro?: boolean;
   pageRole: PageRole;
-  pagePath: string;
+  pagePath: PagePath;
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   pageAnsweredAtMs?: number;
@@ -337,6 +337,14 @@ interface Store {
   // If quickUpdate is true only posts in postsToUpdate will be updated.
   quickUpdate: boolean;
   postsToUpdate: { [postId: number]: boolean };
+}
+
+
+interface PagePath {
+  value: string;
+  folder: string;
+  showId: boolean;
+  slug: string;
 }
 
 

@@ -70,13 +70,9 @@ export var Setting = createComponent({
   },
 
   savedValue: function() {
-    // A bit weird logic below? Oh well.
     var setting: SettingFromServer<any> = this.props.setting;
-    if (this.props.placeholder && _.isUndefined(setting.anyAssignedValue))
-      return undefined;
-    else
-      return _.isUndefined(setting.anyAssignedValue) ?
-          setting.defaultValue : setting.anyAssignedValue;
+    return _.isUndefined(setting.anyAssignedValue) ?
+        setting.defaultValue : setting.anyAssignedValue;
   },
 
   onEdit: function(event) {
@@ -114,7 +110,8 @@ export var Setting = createComponent({
 
   warnIfForgettingToSave: function() {
     PageUnloadAlerter.addReplaceWarning(
-        'Setting-' + this.props.setting.name, "You have unsaved changes");
+        'Setting-' + this.props.setting.name, "You have unsaved changes. " +
+          "Click Cancel or Don't Reload below to keep your changes and continue editing.");
   },
 
   cancelForgotToSaveWarning: function() {
@@ -132,8 +129,11 @@ export var Setting = createComponent({
     var editableValue;
     if (isTextSetting) {
       var inputType = this.props.multiline ? 'textarea' : 'input';
-      editableValue = r[inputType]({ type: 'text', className: 'form-control',
-          id: id, value: editedValue, onChange: this.onEdit, placeholder: this.props.placeholder });
+      var editedValueOrEmpty = !this.props.placeholder
+          ? editedValue
+          : (editedValue === setting.defaultValue ? '' : editedValue);
+      editableValue = r[inputType]({ type: 'text', className: 'form-control', id: id,
+          value: editedValueOrEmpty, onChange: this.onEdit, placeholder: this.props.placeholder });
     }
     else if (isBoolSetting) {
       editableValue =
