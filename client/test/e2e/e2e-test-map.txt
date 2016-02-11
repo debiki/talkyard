@@ -9,6 +9,8 @@ might be listed at many places in the tree, if it tests different things.
 (ABC123) means see-elsewhere-in-this-file = search for ABC123 in this file.
 [ABC123] = search all files everywhere
 
+Run all tests in different resolutions? Desktop, laptop, tablet, mobile.
+
 
 create site & forum:  create-site.test.js
 

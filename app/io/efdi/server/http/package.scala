@@ -196,6 +196,25 @@ package object http {
   }
 
 
+  def getForbiddenPassword(request: DebikiRequest[_]): Option[String] =
+    request.queryString.get("forbiddenPassword").flatMap(_.headOption).orElse(
+      request.cookies.get("esCoForbiddenPassword").map(_.value))
+
+
+  def hasOkForbiddenPassword(request: DebikiRequest[_]): Boolean = {
+    getForbiddenPassword(request) match {
+      case None => false
+      case Some(password) =>
+        val correctPassword = debiki.Globals.forbiddenPassword getOrElse throwForbidden(
+          "EsE48YC2", "There's a forbidden-password in the request, but not in any config file")
+        if (password != correctPassword) {
+          throwForbidden("EsE7UKF2", "The forbidden-password in the request is wrong")
+        }
+        true
+    }
+  }
+
+
   /** Use this if page not found, or the page is private and we don't want strangers
     * to find out that it exists. [7C2KF24]
     */
@@ -205,5 +224,7 @@ package object http {
       else ""
     throwNotFound("EsE404" + suffix, "Page not found")
   }
+
+  def throwForbidden2 = DebikiHttp.throwForbidden _
 
 }

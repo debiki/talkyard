@@ -71,6 +71,15 @@ export function scrollToBottom(node) {
 }
 
 
+export function anyE2eTestPassword() {
+  return (window.location.search.match(/e2eTestPassword=([^&#]+)/) || [])[1];
+}
+
+export function anyForbiddenPassword() {
+  return (window.location.search.match(/forbiddenPassword=([^&#]+)/) || [])[1];
+}
+
+
 export function isServerSide(): boolean {
   return !!window['ReactDOMServer'];
 }

@@ -47,8 +47,23 @@
 .dw-forum > .dw-help
   margin-bottom: 7px;
 
+
 // Action bar
 //===========================
+
+
+.esForum_catsDrop
+  color: hsl(0, 0%, 8%) !important;
+  $bgColor = hsl(0,0%,91%);
+  border-radius: 0;
+  background: $bgColor;
+  border-color: $bgColor;
+  .caret
+    transform: rotate(-90deg) scale(1.2,1.8);
+    margin-left: 3px;
+    position: relative;
+    color: #333 !important;
+
 
 .dw-forum-actionbar
   clear: both
@@ -62,9 +77,9 @@
   li
     margin-left: 0
 
-  .dw-main-category-dropdown
+  .dw-main-category-dropdown  // old name, use .esForum_catsDrop instead now
     float: left
-    margin: marginTop 15px 0 0
+    margin: marginTop 11px 0 0
     @media (max-width: 801px)
       margin-right: 8px
     @media (max-width: 651px)
@@ -88,8 +103,12 @@
       border: none;
       box-shadow: none;
       color: black;
+      border-radius: 0;
+      &:hover:not(.active)
+        background: hsl(207, 90%, 91%);
       &.active
         color: white;
+        cursor: default;
 
       min-width: 70px;
       margin-top: marginTop

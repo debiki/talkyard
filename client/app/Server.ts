@@ -43,8 +43,9 @@ interface RequestData {
 
 
 function postJson(urlPath: string, requestData: RequestData) {
+  var url = appendE2eAndForbiddenPassword(origin + urlPath);
   d.u.postJson({
-    url: origin + urlPath,
+    url: url,
     data: requestData.data,
     success: requestData.success,
     error: (jqXhr: any, textStatus: string, errorThrown: string) => {
@@ -114,6 +115,19 @@ function get(uri: string, options, success?: (response, xhr?: JQueryXHR) => void
 }
 
 
+function appendE2eAndForbiddenPassword(url: string) {
+  var newUrl = url;
+  var e2eTestPassword = anyE2eTestPassword();
+  var forbiddenPassword = anyForbiddenPassword();
+  if (e2eTestPassword || forbiddenPassword) {
+    if (newUrl.indexOf('?') === -1) newUrl += '?';
+    if (e2eTestPassword) newUrl += '&e2eTestPassword=' + e2eTestPassword;
+    if (forbiddenPassword) newUrl += '&forbiddenPassword=' + forbiddenPassword;
+  }
+  return newUrl;
+}
+
+
 var loadEditorScriptsStatus;
 
 export function loadEditorEtceteraScripts() {
@@ -142,11 +156,7 @@ export function loadEditorEtceteraScripts() {
 
 export function createSite(emailAddress: string, localHostname: string,
     anyEmbeddingSiteAddress: string, pricePlan: string, doneCallback: (string) => void) {
-  var e2eTestPassword = (window.location.search.match(/e2eTestPassword=([^&#]+)/) || [])[1];
   var url = '/-/create-site';
-  if (e2eTestPassword) {
-    url += '?e2eTestPassword=' + e2eTestPassword;
-  }
   var isTestSite = window.location.search.indexOf('testSiteOkDelete=true') !== -1 ||
     window.location.pathname === '/-/create-test-site';
   postJson(url, {

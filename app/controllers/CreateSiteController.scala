@@ -43,6 +43,9 @@ object CreateSiteController extends Controller {
   // But reserve 'test--' (see if statement further below) and these prefixes:
   private val TestSitePrefixes = Seq("smoke-test-", "smoketest-", "delete-", "e2e-")
 
+  // Don't allow names like x2345.example.com — x2345 is shorter than 6 chars (x23456 is ok though).
+  private val MinLocalHostnameLength = 6
+
   def showPage(isTest: String) = GetAction { request =>
     val isTestBool = Try(isTest.toBoolean).toOption getOrElse throwBadArgument("EsE5JUM2", "isTest")
     throwIfMayNotCreateSite(request)
@@ -66,6 +69,10 @@ object CreateSiteController extends Controller {
 
     if (!isOkaySiteName(localHostname))
       throwForbidden("DwE5YU70", "Bad site name")
+
+    if (localHostname.length < MinLocalHostnameLength && !hasOkForbiddenPassword(request))
+      // This "cannot" happen — JS makes this impossible. So need not be a user friendly message.
+      throwForbidden("DwE2JYK8", "The local hostname should be at least six chars")
 
     if (!isValidNonLocalEmailAddress(emailAddress))
       throwForbidden("DwE8FKJ4", "Bad email address")
@@ -118,7 +125,7 @@ object CreateSiteController extends Controller {
     OkWebsiteNameRegex matches name
   }
 
-  private val OkWebsiteNameRegex = """[a-z][a-z0-9\-]{4,38}[a-z0-9]""".r
+  private val OkWebsiteNameRegex = """[a-z][a-z0-9\-]{0,38}[a-z0-9]""".r
 
 
   private def throwIfMayNotCreateSite(request: DebikiRequest[_]) {

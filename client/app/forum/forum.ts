@@ -407,7 +407,8 @@ var ForumButtons = createComponent({
 
     var categoriesDropdown =
         r.div({ className: 'dw-main-category-dropdown' },
-        DropdownButton({ title: activeCategory.name, onSelect: this.onSwitchCategory, id: '4p59' },
+        DropdownButton({ title: activeCategory.name, onSelect: this.onSwitchCategory, id: '4p59',
+            className: 'esForum_catsDrop'},
           categoryMenuItems));
 
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.

@@ -19,7 +19,9 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import controllers.CreateSiteController
 import debiki._
+import io.efdi.server.http.throwForbidden2
 import java.{util => ju}
 import play.{api => p}
 import play.api.Play.current
@@ -37,6 +39,9 @@ trait CreateSiteDao {
         embeddingSiteUrl: Option[String], pricePlan: Option[String],
         creatorEmailAddress: String, creatorId: UserId, browserIdData: BrowserIdData,
         isTestSiteOkayToDelete: Boolean, skipMaxSitesCheck: Boolean) : Site = {
+
+    if (!CreateSiteController.isOkaySiteName(name))
+      throwForbidden2("DwE7UKF2", "Bad site name")
 
     dieIf(hostname contains ":", "DwE3KWFE7")
     val quotaLimitMegabytes = p.Play.configuration.getInt("debiki.newSite.quotaLimitMegabytes")

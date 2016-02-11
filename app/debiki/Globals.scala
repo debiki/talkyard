@@ -91,6 +91,11 @@ class Globals {
     */
   def e2eTestPassword: Option[String] = state.e2eTestPassword
 
+  /** Lets people do some forbidden things, like creating a site with a too short
+    * local hostname.
+    */
+  def forbiddenPassword: Option[String] = state.forbiddenPassword
+
 
   def systemDao = state.systemDao
 
@@ -266,7 +271,7 @@ class Globals {
     private def anyFullTextSearchDbPath =
       Play.configuration.getString("fullTextSearchDb.dataPath")
 
-    val applicationVersion = "0.00.17"  // later, read from some build config file
+    val applicationVersion = "0.00.19"  // later, read from some build config file
 
     val applicationSecret =
       Play.configuration.getString("play.crypto.secret").getOrDie(
@@ -274,6 +279,9 @@ class Globals {
 
     val e2eTestPassword: Option[String] =
       Play.configuration.getString("debiki.e2eTestPassword")
+
+    val forbiddenPassword: Option[String] =
+      Play.configuration.getString("debiki.forbiddenPassword")
 
     val secure = Play.configuration.getBoolean("debiki.secure") getOrElse {
       p.Logger.info("Config value 'debiki.secure' missing; defaulting to true. [DwM3KEF2]")

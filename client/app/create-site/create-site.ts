@@ -291,8 +291,11 @@ var LocalHostnameInput = createClassAndFactory({
     if (_.isUndefined(value)) {
       value = this.state.value;
     }
-    if (value.length < 6)
+    if (value.length < 6 && !anyForbiddenPassword())
       return 'The name should be at least six characters long.';
+
+    if (value.length < 2)
+      return 'Too short name'; // a server side regex requires >= 2 chars
 
     if (!/^[a-z][a-z0-9-]*[a-z0-9]$/.test(value))
       return 'Please use only lowercase letters a-z and 0-9, e.g. "my-new-website"';
