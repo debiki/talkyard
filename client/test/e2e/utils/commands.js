@@ -13,7 +13,7 @@ browser.addCommand('waitAndClick', function(selector) {
   browser.waitForEnabled(selector);
   if (!selector.startsWith('#')) {
     var elems = browser.elements(selector);
-    assert.equal(elems.length, 1666, "Too many elems to click: " + elems.length +
+    assert.equal(elems.value.length, 1, "Too many elems to click: " + elems.value.length +
         " elems matches selector: " + selector + " [EsE5JKP82]");
   }
   browser.click(selector);

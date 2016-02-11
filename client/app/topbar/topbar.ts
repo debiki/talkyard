@@ -294,11 +294,11 @@ export var TopBar = createComponent({
       // COULD if > 1 section, then add tabs, one for each section.
       var pathSlash = section.path + (_.last(section.path) === '/' ? '' : '/');
       var url;
-      url = pathSlash + 'latest/';
+      url = pathSlash + forum.RoutePathLatest;
       quickLinks.push(MenuItemLink({ key: url, href: url }, "Latest"));
-      url = pathSlash + 'top/';
+      url = pathSlash + forum.RoutePathTop;
       quickLinks.push(MenuItemLink({ key: url, href: url }, "Top"));
-      url = pathSlash + 'categories/';
+      url = pathSlash + forum.RoutePathCategories;
       quickLinks.push(MenuItemLink({ key: url, href: url }, "Categories"));
       quickLinks.push(MenuItem({ key: section.pageId, divider: true }));
     });
@@ -313,8 +313,8 @@ export var TopBar = createComponent({
           quickLinks,
           MenuItem({ onSelect: ReactActions.showHelpMessagesAgain },
               r.span({ className: 'icon-help' }, "Unhide help messages")),
-          MenuItemLink({ href: '/about' }, "About this site"),
-          MenuItemLink({ href: '/-/terms-of-use' }, "Terms and Privacy"));
+          MenuItemLink({ href: linkToAboutPage() }, "About this site"),
+          MenuItemLink({ href: linkToTermsOfUse() }, "Terms and Privacy"));
 
     // ------- Search button
 

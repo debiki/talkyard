@@ -52,9 +52,9 @@ var NumNewTopicsPerRequest = 40;
 // The route with path 'latest' or 'top' or 'categories'.
 var SortOrderRouteIndex = 1;
 
-var RoutePathLatest = 'latest';
-var RoutePathTop = 'top';
-var RoutePathCategories = 'categories';
+export var RoutePathLatest = 'latest';
+export var RoutePathTop = 'top';
+export var RoutePathCategories = 'categories';
 
 var FilterShowAll = 'ShowAll';
 var FilterShowWaiting = 'ShowWaiting';

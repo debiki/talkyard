@@ -65,6 +65,15 @@ export function linkToNotificationSource(notf: Notification): string {
 }
 
 
+export function linkToTermsOfUse(): string {
+  return '/-/terms-of-use';
+}
+
+export function linkToAboutPage(): string {
+  return '/about';
+}
+
+
 /**
  * Navigates back to the page that the user viewed before s/he entered the admin or
  * about-user area, or to the homepage ('/') if there's no previous page.
