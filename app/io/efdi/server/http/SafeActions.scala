@@ -84,10 +84,14 @@ object SafeActions {
           request.host.matches("^localhost(:[0-9]+)?$".r)
         if (!insecureOk)
           return Future.successful(Results.InternalServerError(o"""I think this is a
-              HTTP request, but I'm configured to be secure, that is,
-              all requests should be HTTPS. Please have a look at your Nginx configuration,
-              or whatever front end HTTP server you're using — does it send the
-              'X-Forwarded-Proto' header? Append '?insecure' to the URL if you want
+              HTTP request, but I, the Play Framework app, am configured to be secure, that is,
+              all requests should be HTTPS. You can:
+              ${"\n"} - Change from http:// to https:// in the URL, and update the Nginx
+              configuration accordingly.
+              ${"\n"} - If you use https:// already, then have a look at the Nginx configuration
+              — does Nginx send the 'X-Forwarded-Proto' header?
+              ${"\n"} - Or set debiki.secure=false in the Play Framework application config file.
+              ${"\n\n"}You can also append '?insecure' to the URL if you want
               to proceed nevertheless — this works from localhost only. [DwE8KNW2]"""))
       }
       var futureResult = try {

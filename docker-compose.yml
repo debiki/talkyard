@@ -1,0 +1,36 @@
+version: '2'
+services:
+  nginx:
+    build: docker/dev-nginx/
+    command: nginx
+    ports:
+      - '80:80'
+      - '443:443'
+    depends_on:
+      - play
+
+  play:
+    build: docker/dev-play/
+    stdin_open: true  # otherwise Play exits
+    volumes:
+      - ../:/opt/debiki/
+      - ~/.ivy2/:/root/.ivy2/
+      - ~/.sbt/:/root/.sbt/
+    ports:
+      - '9000:9000' # Play's HTTP listen port.
+      - '9999:9999' # Java debugger port
+      - '3333:3333' # JMX
+    links:
+      - db:database
+
+  db:
+    image: postgres:9.3
+    ports:
+      - '5432:5432'
+
+  gulp:
+    build: docker/dev-gulp/
+    volumes:
+      - ../:/opt/debiki/
+    command: gulp watch
+
