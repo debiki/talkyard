@@ -18,48 +18,37 @@ Getting Started
 haven't tested these getting-started instructions the last 6 months or so, so
 they might no longer work.  Anyway, the instructions:
 
-These instructions should work on Ubuntu 14.04 or Linux Mint. If you use some other
-operating system, I suggest you use a Vagrant virtual machine. Here you'll find Vagrant:
-https://www.vagrantup.com/, and you can create a virtual machine like so (once you've
-installed Vagrant): `vagrant init phusion/ubuntu-14.04-amd64` and then, in Vagrantfile,
-uncomment the line with `config.vm.network "forwarded_port", guest: 80, host: 8080`. Then run the
-commands `vagrant up` and `vagrant ssh` and then continue below: (inside the virtual machine)
+1. Install Docker-Compose, version 1.6.0+: https://docs.docker.com/compose/install/ (this might take a while).
 
-You'll need to install Docker (see below), clone a Git repo, and run some scripts.
+    Tips:
 
-1. Clone another project, [debiki-site-seed](https://github.com/debiki/debiki-site-seed). In that project, this project is a submodule.
+    1) If you want to do everything in a Vagrant virtual machine, 
+    you can use this one: `vagrant init phusion/ubuntu-14.04-amd64` (you can run Docker in it).
+    And it seems you'll need to follow the _"Note: If your company is behind a filtering proxy"_ instructions
+    on https://docs.docker.com/linux/step_one/
+
+    2) On Linux the docker-compose installation instructions tell you to cURL and save docker-compose to `/usr/local/bin/docker-compose`, but that results in a permission-denied error. You can instead:<br>
+   `sudo sh -c 'curl -L https://github.com/docker/compose/... > /usr/local/bin/docker-compose'` )
+
+2. Clone another project, [debiki-site-seed](https://github.com/debiki/debiki-site-seed). In that project, this project is a submodule.
 
     `git clone https://github.com/debiki/debiki-site-seed.git`
-
-2. Then:
-
     cd debiki-site-seed
-    # Clone this project (`debiki-server`) to a subdirectory `server/` in `debiki-site-seed`:
+
+3. Then fetch this project (debiki-server) to a subdirectory `server/`:
+
     git submodule update --init
-    # Checkout a branch, fetch the latest version, and clone submodules:
     cd server/
+    
+4. Fetch the latest master branch version and fetch submodules:
+    
     git checkout master
     git pull origin master
     git submodule update --init
 
-4. Install [Docker](https://www.docker.com/). (If you're using Vagrant, it seems you'll
-    need to follow the _"Note: If your company is behind a filtering proxy"_ instructions
-    on https://docs.docker.com/linux/step_one/ )
+5. Start everything: (this will take a while, the first time: some Docker images will be downloaded and built)
 
-5. Create a Docker database container and import some contents. In `server/`:
-
-        sudo docker/create-dev-database.sh --empty-database
-
-        # or: sudo docker/create-dev-database.sh `pwd`/../db-dumps/tiny-forum/
-
-
-6. Start the database, Gulp, Nginx and debiki-server. In four separate shells, in `server/`:
-    (hmm perhaps docker-compose would make sense?)
-
-        sudo docker/start-dev-database.sh
-        sudo docker/start-dev-gulp.sh
-        sudo docker/start-dev-nginx.sh
-        sudo docker/start-dev-server.sh
+    docker-compose up
 
 7. The -dev-gulp Docker container prints a message about what to do
    next, namely running both npm and Gulp `install`, and then `gulp watch`.

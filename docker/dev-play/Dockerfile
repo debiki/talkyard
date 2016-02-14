@@ -19,6 +19,8 @@ VOLUME ["/root/.ivy2", "/root/.sbt"]
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333
 
+RUN mkdir -p /opt/debiki/uploads/
+
 WORKDIR /opt/debiki/server/
 
 CMD ["/opt/typesafe-activator/activator", \
@@ -29,7 +31,7 @@ CMD ["/opt/typesafe-activator/activator", \
   "-Dcom.sun.management.jmxremote.authenticate=false", \
   "-Dhttp.port=9000", \
   "-Dhttps.port=9443", \
-  "-Dconfig.file=../conf/debiki.conf", \
+  "-Dconfig.file=../conf/dev-test-localhost.conf", \
   "-DcrazyFastStartSkipSearch=true", \
   "run"]
 
