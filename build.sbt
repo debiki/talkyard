@@ -1,2 +1,2 @@
-net.virtualvoid.sbt.graph.Plugin.graphSettings
+net.virtualvoid.sbt.graph.DependencyGraphSettings.graphSettings
 

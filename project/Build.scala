@@ -40,11 +40,13 @@ object ApplicationBuild extends Build {
   val appDependencies = Seq(
     play.Play.autoImport.cache,
     play.Play.autoImport.filters,
-    // Authentication.
+    // OpenAuth and OpenID etc Authentication.
     "com.mohiva" %% "play-silhouette" % "3.0.4",
-    // There's a PostgreSQL 903 build number too but it's not in the Maven repos.
-    // PostgreSQL 9.2 drivers are also not in the Maven repos (as of May 2013).
-    "postgresql" % "postgresql" % "9.1-901-1.jdbc4",
+    // PostgreSQL JDBC client driver
+    // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
+    "org.postgresql" % "postgresql" % "9.3-1104-jdbc41",
+    // HikariCP — "A solid high-performance JDBC connection pool at last"
+    "com.zaxxer" % "HikariCP" % "2.4.3",
     "org.apache.commons" % "commons-email" % "1.3.3",
     "com.google.guava" % "guava" % "13.0.1",
     "org.owasp.encoder" % "encoder" % "1.1.1",
@@ -63,14 +65,7 @@ object ApplicationBuild extends Build {
     "com.google.code.findbugs" % "jsr305" % "1.3.9" % "provided",
     "org.mockito" % "mockito-all" % "1.9.0" % "test", // I use Mockito with Specs2...
     "org.scalatest" %% "scalatest" % "2.2.4" % "test", // but prefer ScalaTest
-    "org.scalatestplus" %% "play" % "1.4.0-M4" % "test",
-    // Use a recent Selenium driver, otherwise it won't work with the version of Firefox,
-    // that your OS has probably upgraded to some days/months ago.
-    // See: http://stackoverflow.com/a/13049150/694469
-    // And see: https://groups.google.com/d/msg/play-framework/EmP9v10fH9Q/dz4k_qXlpFQJ
-    // (I also got the """org.openqa.selenium.firefox.NotConnectedException: Unable
-    // to connect to host 127.0.0.1 on port 7055 """ error.)
-    "org.seleniumhq.selenium" % "selenium-java" % "2.35.0" % "test")
+    "org.scalatestplus" %% "play" % "1.4.0-M4" % "test")
 
 
   val main = Project(appName, file(".")).enablePlugins(play.PlayScala)

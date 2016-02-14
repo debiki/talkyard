@@ -39,4 +39,4 @@ addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.6.0")
 
 // Dependency tree, https://github.com/jrudolph/sbt-dependency-graph
 // ---------------------------------------------------------------
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.4")
+addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.8.2")

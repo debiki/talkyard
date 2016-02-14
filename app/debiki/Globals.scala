@@ -23,6 +23,7 @@ import com.codahale.metrics
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
+import com.zaxxer.hikari.HikariDataSource
 import debiki.Globals.NoStateError
 import debiki.antispam.AntiSpam
 import debiki.dao._
@@ -218,6 +219,7 @@ class Globals {
       return
 
     p.Logger.info("Shutting down, gracefully...")
+    state.dataSource.close()
     // Shutdown the notifier before the mailer, so no notifications are lost
     // because there was no mailer that could send them.
     shutdownActorAndWait(state.notifierActorRef)
@@ -242,8 +244,10 @@ class Globals {
     val metricRegistry = new metrics.MetricRegistry()
     val mostMetrics = new MostMetrics(metricRegistry)
 
+    val dataSource = Debiki.getPostgresHikariDataSource()
+
     val dbDaoFactory = new RdbDaoFactory(
-      makeDataSource(), ScalaBasedMigrations, Akka.system,
+      new Rdb(dataSource), ScalaBasedMigrations, Akka.system,
       anyFullTextSearchDbPath, Play.isTest, fastStartSkipSearch = fastStartSkipSearch)
 
     val siteDaoFactory = new CachingSiteDaoFactory(dbDaoFactory)
@@ -330,19 +334,6 @@ class Globals {
     // if the cert was issued for *.example.com.
     val siteByIdHostnameRegex: Regex =
       s"""^$SiteByIdHostnamePrefix(.*)\\.$baseDomainNoPort$$""".r
-
-    private def makeDataSource() = {
-      //val dataSourceName = if (Play.isTest) "test" else "default"
-      //val dataSource = p.db.DB.getDataSource(dataSourceName)
-      val dataSource = Debiki.getPostgreSqlDataSource()
-      val db = new Rdb(dataSource)
-
-      // Log which database we've connected to.
-      //val boneDataSource = dataSource.asInstanceOf[com.jolbox.bonecp.BoneCPDataSource]
-      //p.Logger.info(o"""Connected to database:
-      //  ${boneDataSource.getJdbcUrl} as user ${boneDataSource.getUsername}.""")
-      db
-    }
 
     val maxUploadSizeBytes = Play.configuration.getInt("debiki.uploads.maxKiloBytes").map(_ * 1000)
       .getOrElse(3*1000*1000)

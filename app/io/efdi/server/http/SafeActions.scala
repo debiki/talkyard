@@ -117,6 +117,8 @@ object SafeActions {
           Future.successful(result)
         case ex: play.api.libs.json.JsResultException =>
           Future.successful(Results.BadRequest(s"Bad JSON: $ex [DwE70KX3]"))
+        case ex: java.sql.SQLTransientConnectionException =>
+          Future.successful(databaseGoneError(request, ex))
         case ex: RuntimeException =>
           Future.successful(internalError(request, ex, "DwE500REX"))
         case ex: Exception =>
@@ -128,6 +130,8 @@ object SafeActions {
         case DebikiHttp.ResultException(result) => result
         case ex: play.api.libs.json.JsResultException =>
           Results.BadRequest(s"Bad JSON: $ex [error DwE6PK30]")
+        case ex: java.sql.SQLTransientConnectionException =>
+          databaseGoneError(request, ex)
         case ex: RuntimeException =>
           internalError(request, ex, "DwE500REXA")
         case ex: Exception =>
@@ -155,6 +159,28 @@ object SafeActions {
       |
       |Something went wrong: [$errorCode]
       |
+      |${getStackTrace(throwable)}
+      |""")
+  }
+
+  private def databaseGoneError(request: Request[_], throwable: Throwable) = {
+    val scheme = if (request.secure) "https://" else "http://"
+    val url = request.method + " " + scheme + request.host + request.uri
+    p.Logger.error(s"Replying database-not-reachable error to: $url [EsE500DBNR]", throwable)
+    val dockerTips =
+      if (Play.isDev) i"""
+        |If you use Docker-Compose: run 'docker-compose ps' to see if the database container is running.
+        |If it is, then check logs:  docker-compose logs
+        |Otherwise, you can start it:  docker-compose start db
+        |"""
+      else
+        ""
+    Results.InternalServerError(i"""500 Internal Server Error
+      |
+      |Database not reachable [EsE500DBNR]
+      |
+      |Has the database stopped or is there a network problem?
+      |$dockerTips
       |${getStackTrace(throwable)}
       |""")
   }
