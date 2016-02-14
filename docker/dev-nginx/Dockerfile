@@ -48,5 +48,6 @@ RUN \
 
 WORKDIR /etc/nginx/
 
+COPY 502.html   /opt/nginx/html/502.html
 COPY nginx.conf /etc/nginx/nginx.conf
 

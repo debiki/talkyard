@@ -94,6 +94,9 @@ object DebikiHttp {
     R.InternalServerError(
       "500 Internal Server Error\n"+ message +" [error "+ errCode +"]")
 
+  def InternalErrorResult2(message: String): Result =
+    R.InternalServerError("500 Internal Server Error\n"+ message)
+
   /**
    * Thrown on error, caught in Global.onError, which returns the wrapped
    * result to the browser.

@@ -9,7 +9,7 @@ scalaVersion := "2.11.7"
 resolvers += "Scala-Tools Maven2 Repository" at "http://scala-tools.org/repo-releases"
 
 libraryDependencies ++= Seq(
-  "org.scalactic" %% "scalactic" % "2.2.1",
+  "org.scalactic" %% "scalactic" % "2.2.6",
   "com.google.guava" % "guava" % "10.0.1",
   "commons-codec" % "commons-codec" % "1.5",
   "commons-validator" % "commons-validator" % "1.5.0",

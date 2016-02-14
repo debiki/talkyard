@@ -28,7 +28,7 @@ import play.api.Play.current
 object Debiki {
 
 
-  def getPostgresHikariDataSource(): HikariDataSource = {
+  def createPostgresHikariDataSource(): HikariDataSource = {
 
     def configStr(path: String) =
       Play.configuration.getString(path) getOrElse
@@ -54,7 +54,7 @@ object Debiki {
     val server = configStr("debiki.postgresql.server")
     val port = configStr("debiki.postgresql.port").toInt
 
-    play.Logger.info(s"""Connecting to database: $server:$port/$database as user $user""")
+    play.Logger.info(s"Connecting to database: $server:$port/$database as user $user")
 
     // Weird now with Hikari I can no longer call setReadOnly or setTransactionIsolation. [5JKF2]
     val config = new HikariConfig()
@@ -65,12 +65,29 @@ object Debiki {
     config.addDataSourceProperty("portNumber", port)
     config.addDataSourceProperty("databaseName", database)
 
+    val WaitForConnectionMillis = 4000
+    val TooSlowQuerySeconds = 5 // very long in the context of a web app
+
     // Feels safest. They write "rarely necessary ... only applies if autoCommit is disabled"
     // but autocommit *is* disabled.
     config.setIsolateInternalQueries(true)
     config.setAutoCommit(false)
-    config.setConnectionTimeout(3*1000)
-    config.setValidationTimeout(2*1000) // must be less than the connection timeout
+    config.setConnectionTimeout(WaitForConnectionMillis)
+    // The validation timeout must be less than the connection timeout.
+    config.setValidationTimeout(WaitForConnectionMillis - 1000)
+
+    // Set these to a little bit more than Hikari's connection timeout, so by default
+    // Hikari will complain rather than the driver (Hikari works better I guess).
+    // "How long to wait for establishment of a database connection", in seconds.
+    config.addDataSourceProperty("loginTimeout", TooSlowQuerySeconds)
+    // "The timeout value used for socket connect operations"
+    // "If connecting ... takes longer than this value, the connection is broken." Seconds.
+    // config.addDataSourceProperty("connectTimeout", _) --> Property connectTimeout does not exist
+    //                              on target class org.postgresql.ds.PGSimpleDataSource
+    // "If reading from the server takes longer than this value, the connection is closed".
+    // "can be used as both a brute force global query timeout and a method of detecting
+    // network problems". Seconds.
+    config.addDataSourceProperty("socketTimeout", TooSlowQuerySeconds)
 
     //config.setReadOnly(true) — then Flyway can no longer migrate.
     config.setTransactionIsolation("TRANSACTION_SERIALIZABLE")
@@ -93,7 +110,15 @@ object Debiki {
 
     // Slow loggin: Configure in PostgreSQL instead.
 
-    val dataSource = new HikariDataSource(config)
+    val dataSource =
+      try new HikariDataSource(config)
+      catch {
+        case ex: Exception =>
+          p.Logger.error(s"Error connecting to database, for ${config.getPoolName} [EsE7JK4]", ex)
+          throw ex
+      }
+
+    p.Logger.info("Connected to database. [EsM2KP40]")
 
     // Currently I'm sometimes using > 1 connection per http request (will fix later),
     // so in order to avoid out-of-connection deadlocks, set a large pool size.

@@ -29,7 +29,7 @@ import play.api._
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
 import scala.concurrent.ExecutionContext.Implicits.global
-import Utils.{OkSafeJson, parseIntOrThrowBadReq}
+import Utils.{parseIntOrThrowBadReq}
 
 
 /** Edits pages and posts.

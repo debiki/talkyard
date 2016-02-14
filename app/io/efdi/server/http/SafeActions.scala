@@ -78,12 +78,13 @@ object SafeActions {
   object ExceptionAction extends ActionBuilder[Request] {
 
     def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] = {
-      if (Globals.secure && !request.secure) {
-        // Reject this request, unless an 'insecure' param is set and we're on localhost.
-        val insecureOk = request.queryString.get("insecure").nonEmpty &&
-          request.host.matches("^localhost(:[0-9]+)?$".r)
-        if (!insecureOk)
-          return Future.successful(Results.InternalServerError(o"""I think this is a
+      var futureResult = try {
+        if (Globals.secure && !request.secure) {
+          // Reject this request, unless an 'insecure' param is set and we're on localhost.
+          val insecureOk = request.queryString.get("insecure").nonEmpty &&
+            request.host.matches("^localhost(:[0-9]+)?$".r)
+          if (!insecureOk)
+            return Future.successful(Results.InternalServerError(o"""I think this is a
               HTTP request, but I, the Play Framework app, am configured to be secure, that is,
               all requests should be HTTPS. You can:
               ${"\n"} - Change from http:// to https:// in the URL, and update the Nginx
@@ -93,8 +94,7 @@ object SafeActions {
               ${"\n"} - Or set debiki.secure=false in the Play Framework application config file.
               ${"\n\n"}You can also append '?insecure' to the URL if you want
               to proceed nevertheless — this works from localhost only. [DwE8KNW2]"""))
-      }
-      var futureResult = try {
+        }
         block(request)
       }
       catch {
@@ -117,8 +117,12 @@ object SafeActions {
           Future.successful(result)
         case ex: play.api.libs.json.JsResultException =>
           Future.successful(Results.BadRequest(s"Bad JSON: $ex [DwE70KX3]"))
+        case Globals.StillConnectingException =>
+          Future.successful(ImStartingError)
+        case ex: Globals.DatabasePoolInitializationException =>
+          Future.successful(databaseGoneError(request, ex, startingUp = true))
         case ex: java.sql.SQLTransientConnectionException =>
-          Future.successful(databaseGoneError(request, ex))
+          Future.successful(databaseGoneError(request, ex, startingUp = false))
         case ex: RuntimeException =>
           Future.successful(internalError(request, ex, "DwE500REX"))
         case ex: Exception =>
@@ -130,8 +134,12 @@ object SafeActions {
         case DebikiHttp.ResultException(result) => result
         case ex: play.api.libs.json.JsResultException =>
           Results.BadRequest(s"Bad JSON: $ex [error DwE6PK30]")
+        case Globals.StillConnectingException =>
+          ImStartingError
+        case ex: Globals.DatabasePoolInitializationException =>
+          databaseGoneError(request, ex, startingUp = true)
         case ex: java.sql.SQLTransientConnectionException =>
-          databaseGoneError(request, ex)
+          databaseGoneError(request, ex, startingUp = false)
         case ex: RuntimeException =>
           internalError(request, ex, "DwE500REXA")
         case ex: Exception =>
@@ -163,23 +171,35 @@ object SafeActions {
       |""")
   }
 
-  private def databaseGoneError(request: Request[_], throwable: Throwable) = {
+  private val ImStartingError = {
+    Results.InternalServerError(i"""500 Internal Server Error
+      |
+      |I'm starting. Please wait a few seconds, then reload this page.
+      |""")
+  }
+
+  private def databaseGoneError(request: Request[_], throwable: Throwable, startingUp: Boolean) = {
     val scheme = if (request.secure) "https://" else "http://"
     val url = request.method + " " + scheme + request.host + request.uri
-    p.Logger.error(s"Replying database-not-reachable error to: $url [EsE500DBNR]", throwable)
+    val (errorMessage, errorCode, orQueryTooLong) =
+      if (startingUp)
+        ("Play Framework is trying to start, but cannot connect to the database", "EsE500DBNR", "")
+      else
+        ("Database no longer reachable", "EsE500DBG", "Or did a query take too long?")
+    p.Logger.error(s"Replying database-not-reachable error to: $url [$errorCode]", throwable)
     val dockerTips =
       if (Play.isDev) i"""
         |If you use Docker-Compose: run 'docker-compose ps' to see if the database container is running.
-        |If it is, then check logs:  docker-compose logs
-        |Otherwise, you can start it:  docker-compose start db
+        |If not running, start it:  'docker-compose start db'
+        |If running, then check logs:  'docker-compose logs'
         |"""
       else
         ""
     Results.InternalServerError(i"""500 Internal Server Error
       |
-      |Database not reachable [EsE500DBNR]
+      |$errorMessage [$errorCode]
       |
-      |Has the database stopped or is there a network problem?
+      |Has the database stopped or is there a network problem? $orQueryTooLong
       |$dockerTips
       |${getStackTrace(throwable)}
       |""")

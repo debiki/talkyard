@@ -31,19 +31,26 @@ import debiki.dao.migrations.ScalaBasedMigrations
 import io.efdi.server.notf.Notifier
 import java.{lang => jl, util => ju}
 import io.efdi.server.pubsub.{PubSubApi, PubSub, StrangerCounterApi}
+import org.scalactic._
 import play.{api => p}
 import play.api.libs.concurrent.Akka
 import play.api.Play
 import play.api.Play.current
 import scala.concurrent.duration._
-import scala.concurrent.Await
+import scala.concurrent.{Future, Await, TimeoutException}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.matching.Regex
+import Globals._
 
 
 object Globals extends Globals {
 
   class NoStateError extends AssertionError(
     "No Globals.State created, please call onServerStartup() [DwE5NOS0]")
+
+  object StillConnectingException extends QuickException
+
+  class DatabasePoolInitializationException(cause: Exception) extends RuntimeException(cause)
 
   val LocalhostUploadsDirConfigValueName = "debiki.uploads.localhostDir"
 
@@ -66,13 +73,17 @@ class Globals {
 
   def isInitialized = _state ne null
 
-  private var _state: State = null
+  @volatile private var _state: State Or Option[Exception] = null
 
   private def state: State = {
     if (_state eq null) {
       throw new NoStateError()
     }
-    _state
+    _state match {
+      case Good(state) => state
+      case Bad(anyException) =>
+        throw anyException getOrElse StillConnectingException
+    }
   }
 
 
@@ -196,6 +207,7 @@ class Globals {
 
 
   def onServerStartup(app: p.Application) {
+    p.Logger.info("Starting... [EsM200HI]")
     wasTest // initialise it now
     if (_state ne null)
       throw new jl.IllegalStateException(o"""Server already running, was it not properly
@@ -204,12 +216,43 @@ class Globals {
     p.Logger.info("Search disabled, see debiki-dao-rdb [DwM4KEWKB2]")
     DeadlockDetector.ensureStarted()
 
-    _state = new State
+    _state = Bad(None)
 
-    // The render engines might be needed by some Java evolutions applied below.
-    debiki.ReactRenderer.startCreatingRenderEngines()
+    // Let the server start, whilst we try to connect to services like the database and Redis.
+    // If we're unable to connect to a service, then we'll set _state to a
+    // developer / operations-team friendly error message about the service being
+    // inaccessible, and some tips about how troubleshoot this and how to start it.
+    val createStateFuture = Future {
+      while (_state.isBad) {
+        p.Logger.info("Connecting to services... [EsM200CTS]")
+        try {
+          val dataSource = Debiki.createPostgresHikariDataSource()
+          _state = Good(new State(dataSource))
+        }
+        catch {
+          case ex: com.zaxxer.hikari.pool.HikariPool.PoolInitializationException =>
+            _state = Bad(Some(new DatabasePoolInitializationException(ex)))
+          case ex: Exception =>
+            p.Logger.error("Unknown state creation error [EsE4GY67]", ex)
+            _state = Bad(Some(ex))
+        }
+      }
 
-    state.systemDao.applyEvolutions()
+      // The render engines might be needed by some Java (Scala) evolutions.
+      debiki.ReactRenderer.startCreatingRenderEngines()
+      state.systemDao.applyEvolutions()
+    }
+
+    try {
+      Await.ready(createStateFuture, 2 seconds)
+      p.Logger.info("Started. [EsM200RDY]")
+    }
+    catch {
+      case _: TimeoutException =>
+        // We'll show a message in any browser that the server is starting, please wait
+        // — that's better than a blank page? In case this takes long.
+        p.Logger.info("Still connecting to other services, starting anyway. [EsM200CRZY]")
+    }
   }
 
 
@@ -218,7 +261,7 @@ class Globals {
     if (_state eq null)
       return
 
-    p.Logger.info("Shutting down, gracefully...")
+    p.Logger.info("Shutting down... [EsM200BYE]")
     state.dataSource.close()
     // Shutdown the notifier before the mailer, so no notifications are lost
     // because there was no mailer that could send them.
@@ -237,14 +280,12 @@ class Globals {
   }
 
 
-  private class State {
+  private class State(val dataSource: HikariDataSource) {
 
     val ShutdownTimeout = 30 seconds
 
     val metricRegistry = new metrics.MetricRegistry()
     val mostMetrics = new MostMetrics(metricRegistry)
-
-    val dataSource = Debiki.getPostgresHikariDataSource()
 
     val dbDaoFactory = new RdbDaoFactory(
       new Rdb(dataSource), ScalaBasedMigrations, Akka.system,

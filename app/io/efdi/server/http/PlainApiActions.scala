@@ -96,10 +96,11 @@ private[http] object PlainApiActions {
             // This might happen if I manually deleted stuff from the
             // database during development, or if the server has fallbacked
             // to a standby database.
-            throw ResultException(InternalErrorResult(
-              "DwE034ZQ3", o"""Internal error, please try again, sorry. For example,
-               reload the page.\n(A certain login id has become invalid. I just gave you
-               a new id, and you will probably need to login again.)""")
+            throw ResultException(InternalErrorResult2(i"""
+              |Internal error, please try again. For example, reload the page. [DwE034ZQ3]
+              |
+              |Details: A certain login id has become invalid. I just gave you a new id,
+              |but you will probably need to login again.""")
               .discardingCookies(DiscardingSecureCookie(Sid.CookieName)))
         }
 
