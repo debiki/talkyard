@@ -174,10 +174,13 @@ object SafeActions {
   private val ImStartingError = {
     Results.InternalServerError(i"""500 Internal Server Error
       |
-      |I'm starting. Please wait a few seconds, then reload this page.
+      |Play Framework is starting. Please wait a few seconds, then reload this page.
       |""")
   }
 
+  // COULD recursively inspect throwable.cause() and show how to import a dump
+  // or create an empty database, if the underlying error reason is:
+  //    org.postgresql.util.PSQLException: FATAL: role "debiki_dev" does not exist
   private def databaseGoneError(request: Request[_], throwable: Throwable, startingUp: Boolean) = {
     val scheme = if (request.secure) "https://" else "http://"
     val url = request.method + " " + scheme + request.host + request.uri
@@ -192,6 +195,7 @@ object SafeActions {
         |If you use Docker-Compose: run 'docker-compose ps' to see if the database container is running.
         |If not running, start it:  'docker-compose start db'
         |If running, then check logs:  'docker-compose logs'
+        |Or login with Bash:  'docker exec -it server_db_1 bash'
         |"""
       else
         ""

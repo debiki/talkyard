@@ -14,8 +14,9 @@ services:
     stdin_open: true  # otherwise Play exits
     volumes:
       - ../:/opt/debiki/
-      - ~/.ivy2/:/root/.ivy2/
-      - ~/.sbt/:/root/.sbt/
+      # Without this it takes forever to start because sbt would always download all dependencies.
+      - ~/.ivy2/:/home/owner/.ivy2/
+      - ~/.sbt/:/home/owner/.sbt/
     ports:
       - '9000:9000' # Play's HTTP listen port.
       - '9999:9999' # Java debugger port

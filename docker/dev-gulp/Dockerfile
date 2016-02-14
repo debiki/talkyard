@@ -11,5 +11,5 @@ RUN  chmod ugo+x          /opt/install-and-watch.sh
 
 WORKDIR /opt/debiki/server/
 
-CMD /opt/install-and-watch.sh
+CMD ["npm install && bower install && gulp watch"]
 
