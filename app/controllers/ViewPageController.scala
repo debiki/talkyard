@@ -63,6 +63,8 @@ object ViewPageController extends mvc.Controller {
 
 
   private def viewPageImpl(request: GetRequest): Future[Result] = {
+    dieIfAssetsMissingIfDevTest()
+
     // For now, historic reasons. Remove some weeks after /-/unsubscribe has been deployed.
     if (request.queryString.contains("unsubscribe")) {
       return Future.successful(UnsubscriptionController.showFormImpl(request.request))

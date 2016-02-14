@@ -17,12 +17,8 @@
 
 package com.debiki.core
 
-import com.debiki.core._
 import com.debiki.core.Prelude._
-import com.debiki.core.User.SystemUserId
 import java.{util => ju}
-import scala.collection.immutable
-import PostStatusBits._
 
 
 

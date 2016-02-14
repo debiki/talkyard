@@ -32,6 +32,14 @@ class QuickException extends Exception {
 }
 
 
+class QuickMessageException(val message: String)
+  extends QuickException {
+
+  override def getMessage = message
+
+}
+
+
 class DebikiException(val errorCode: String, val details: String)
   extends QuickException {
 

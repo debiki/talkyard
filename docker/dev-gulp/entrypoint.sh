@@ -16,10 +16,10 @@ if [ $? -eq 1 ] ; then
 fi
 
 if [ -z "$*" ] ; then
-  echo 'No command specified. What do you want to do? Try "gulp build"?'
+  echo 'No command specified. What do you want to do? Try "gulp"?'
   echo 'The whole docker-compose command would then be:'
-  echo '  docker-compose run gulp gulp build'
-  echo '— here, the first "gulp" is the container name, the second is the "gulp build" command.'
+  echo '  docker-compose run --rm gulp gulp'
+  echo '(the first "gulp" is the container name, the second is the gulp build command).'
 else
   su -c "$*" owner
 fi

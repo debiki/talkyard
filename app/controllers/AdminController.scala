@@ -40,6 +40,8 @@ object AdminController extends mvc.Controller {
 
 
   def viewAdminPage(whatever: String) = GetAction { apiReq =>
+    dieIfAssetsMissingIfDevTest()
+
     if (!apiReq.user.exists(_.isStaff)) {
       Ok(views.html.login.loginPopup(
         mode = "LoginToAdministrate",

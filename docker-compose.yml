@@ -32,5 +32,4 @@ services:
     build: docker/dev-gulp/
     volumes:
       - ../:/opt/debiki/
-    command: gulp watch
 
