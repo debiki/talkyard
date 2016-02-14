@@ -1,23 +1,36 @@
 #!/bin/bash
 
+container='server_db_1'
 
-echo 'The most recent dumps:'
+if [ "$#" -ne 1 ]; then
+  echo "Error: I didn't get exactly one parameter"
+  echo "Usage: docker/drop-database-import-latest.sh path/to/directory"
+  exit 1
+fi
+
+echo "The most recent dumps in $1 are:"
 echo "`ls -hlt $1 | head -n5`"
+echo
 
 latest_dump=`ls -t $1 | head -n1`
 
-read -r -p "Shall I import $latest_dump? It'll probably drop any existing database. [y/N]" response
+read -r -p "Shall I import $latest_dump into container $container? [Y/n]" response
 response=${response,,}    # tolower
-if [[ $response =~ ^(yes|y)$ ]] ; then
-  echo "Okay:"
-else
+if [[ $response =~ ^(no|n)$ ]] ; then
   echo "I'll do nothing then, bye."
   exit 0
 fi
 
-psql="psql -h localhost postgres postgres"
+docker inspect -f '{{.State.Running}}' $container >> /dev/null
+if [ $? -ne 0 ]; then
+  echo "Error: The database Docker container $container is not running."
+  echo "You can start it:"
+  echo "  docker-compose start db"
+  exit 1
+fi
 
-echo "Dropping and importing: $latest_dump..."
+psql="docker exec -i $container psql postgres postgres"
+
 zcat $1/$latest_dump | $psql
 
 echo '... Done importing.'
@@ -26,7 +39,7 @@ echo '... Done importing.'
 # files expect that name.
 any_prod_row=`$psql -c '\l' | grep debiki_prod`
 if [ -n "$any_prod_row" ]; then
-  read -r -p "Rename debiki_prod to debiki_dev, and drop any currend debiki_dev? [Y/n]" response
+  read -r -p "Shall I rename debiki_prod to debiki_dev, and drop any current debiki_dev? [Y/n]" response
   response=${response,,}    # tolower
   if [[ $response =~ ^(no|n)$ ]] ; then
     echo "I won't rename it then. Bye."
@@ -39,3 +52,5 @@ if [ -n "$any_prod_row" ]; then
   $psql -c 'alter user debiki_prod rename to debiki_dev;'
 fi
 
+echo "Done. If the Play server isn't running, you can start it now:"
+echo "  docker-compose start play"

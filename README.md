@@ -20,55 +20,34 @@ they might no longer work.  Anyway, the instructions:
 
 1. Install Docker-Compose, version 1.6.0+: https://docs.docker.com/compose/install/ (this might take a while).
 
-    Tips:
-
-    1) If you want to do everything in a Vagrant virtual machine, 
+    Tips: 1) If you want to do everything in a Vagrant virtual machine, 
     you can use this one: `vagrant init phusion/ubuntu-14.04-amd64` (you can run Docker in it).
     And it seems you'll need to follow the _"Note: If your company is behind a filtering proxy"_ instructions
-    on https://docs.docker.com/linux/step_one/
-
-    2) On Linux the docker-compose installation instructions tell you to cURL and save docker-compose to `/usr/local/bin/docker-compose`, but that results in a permission-denied error. You can instead:<br>
+    on https://docs.docker.com/linux/step_one/. 2) On Linux the docker-compose installation instructions tell you to cURL and save docker-compose to `/usr/local/bin/docker-compose`, but that results in a permission-denied error. You can instead:<br>
    `sudo sh -c 'curl -L https://github.com/docker/compose/... > /usr/local/bin/docker-compose'` )
 
 2. Clone another project, [debiki-site-seed](https://github.com/debiki/debiki-site-seed). In that project, this project is a submodule.
 
-    `git clone https://github.com/debiki/debiki-site-seed.git`
-    cd debiki-site-seed
+        git clone https://github.com/debiki/debiki-site-seed.git
+        cd debiki-site-seed
 
-3. Then fetch this project (debiki-server) to a subdirectory `server/`:
+3. Then fetch this project (debiki-server) to a subdirectory `server/`, checkout the master branch and fetch submodules:
 
-    git submodule update --init
-    cd server/
-    
-4. Fetch the latest master branch version and fetch submodules:
-    
-    git checkout master
-    git pull origin master
-    git submodule update --init
+        git submodule update --init
+        cd server/
+        git checkout master
+        git submodule update --init
 
-5. Start everything: (this will take a while, the first time: some Docker images will be downloaded and built)
+4. Start everything: (this will take a while, the first time: some Docker images will be downloaded and built)
 
-    docker-compose up
+        docker-compose up
 
-7. The -dev-gulp Docker container prints a message about what to do
-   next, namely running both npm and Gulp `install`, and then `gulp watch`.
+5. Create an empty database, or import a dump. Do one of:
 
-8. The -dev-server container tells you what to do next, namely starting Play
-   Framework and the server. Note that you need to run `gulp watch` first (the
-   previous step).
+        docker/drop-database-create-empty.sh
+        docker/drop-database-import-latest.sh ../db-dumps/tiny-forum/
 
-9. Once a green message "Server started ..." appears in the -dev-server
-   container's shell, open your browser, go to http://localhost:9000/ and
-   http://localhost:9000/-/admin/. It'll take a while before the pages load;
-   some Scala files are being compiled.
-
-10. Login as `admin@example.com`, password `password`.
-
-
-A little problem: If you save two TypeScript/JavaScript files at the same time,
-sometimes Gulp picks up the changes in only one of the files. What I do then,
-once I've understood what has happened, is that I stop and restart `gulp
-watch`.
+All dumps in `../db-dumps/` have admin user `admin@example.com`, password `public`.
 
 
 Running tests
@@ -102,7 +81,7 @@ and download Chrome Driver too.
 
 ### Performance tests
 
-Append to `/etc/security/limits.conf`:
+Append to `/etc/security/limits.conf` ... hmm but now with Docker-Compose, which container?
 
     your_login_name hard nofile 65535
     your_login_name soft nofile 65535
@@ -112,11 +91,8 @@ Technology
 -----------------------------
 
 Client: React.js, TypeScript, Bower, Gulp.
-
-Server: Scala and Play Framework. We render HTML server side by running
-React.js in Java 8's Nashorn Javascript engine.
-
-Databases: PostgreSQL and ElasticSearch.
+Server: Scala and Play Framework. Nginx and Nchan. React.js in Java 8's Nashorn Javascript engine.
+Databases: PostgreSQL, ElasticSearch, Redis (soon).
 
 
 Contributing
@@ -144,13 +120,9 @@ This project looks like so:
      | +...
      |
      +-app/            <-- Scala code — a Play Framework 2 app
-     | +-controllers/
-     | +-debiki/
-     | +-views/        <-- HTML (well, Play's Scala templates)
      |
      +-modules/
      | +-debiki-dao-rdb/    <-- A database access object (DAO), for PostgreSQL
-     | +-debiki-tck-dao/    <-- Test suite for Database Access Object:s
      | +-debiki-core/       <-- Code shared by the DAO and by the ./app/ code
      | |
      | ...Third party modules
@@ -158,14 +130,12 @@ This project looks like so:
      +-public/     <-- Some images and libs, plus JS and CSS that Gulp
      |                 has bundled and minified from the client/ dir above.
      |
+     +-docker/     <-- Dockerfiles for all docker-compose containers
+     |
      +-scripts/    <-- Utiity scripts
      |
      +-conf/       <-- Default config files that assume everything
-       |               is installed on localohost
-       |
-       +-local/    <-- A softlink to a supposed parent Git repo (namely debiki-site-seed) with
-                       website specific config files, which override the
-                       default config files.
+                       is installed on localohost, and dev mode
 
 Old Code
 -----------------------------
@@ -190,7 +160,7 @@ License
 Currently AGPL — please let me know if you want me to change to GPL, contact info here: http://www.effectivediscussions.org/about/
 
 
-    Copyright (C) 2010-2015  Kaj Magnus Lindberg
+    Copyright (c) 2010-2016  Kaj Magnus Lindberg
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
@@ -206,4 +176,4 @@ Currently AGPL — please let me know if you want me to change to GPL, contact i
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-vim: list
+vim: list et ts=2 sw=2 tw=0 fo=r

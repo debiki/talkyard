@@ -1,15 +1,23 @@
 #!/bin/bash
 
-read -r -p "This drops debiki_dev, and debiki_test, from Postgres localhost:5432, okay? [y/N] " response
+container='server_db_1'
+
+docker inspect -f '{{.State.Running}}' $container >> /dev/null
+if [ $? -ne 0 ]; then
+  echo "Error: The database Docker container $container is not running."
+  echo "You can start it:"
+  echo "  docker-compose start db"
+  exit 1
+fi
+
+read -r -p "This drops debiki_dev, and debiki_test, from Docker database container $container, okay? [Y/n] " response
 response=${response,,}    # tolower
-if [[ $response =~ ^(yes|y)$ ]] ; then
-  echo "Okay:"
-else
+if [[ $response =~ ^(no|n)$ ]] ; then
   echo "Oh well, I'll do nothing, bye."
   exit 0
 fi
 
-psql="psql -h localhost postgres postgres"
+psql="docker exec -i $container psql postgres postgres"
 
 echo 'Dropping dev and test databases...'
 
