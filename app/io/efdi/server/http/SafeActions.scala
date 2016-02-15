@@ -178,34 +178,57 @@ object SafeActions {
       |""")
   }
 
-  // COULD recursively inspect throwable.cause() and show how to import a dump
-  // or create an empty database, if the underlying error reason is:
-  //    org.postgresql.util.PSQLException: FATAL: role "debiki_dev" does not exist
+
   private def databaseGoneError(request: Request[_], throwable: Throwable, startingUp: Boolean) = {
     val scheme = if (request.secure) "https://" else "http://"
     val url = request.method + " " + scheme + request.host + request.uri
+    var rootCause = throwable
+    var loopLimit = 99
+    while ((rootCause.getCause ne null) && loopLimit > 0) {
+      rootCause = rootCause.getCause
+      loopLimit -= 1
+    }
+    val roleMissing = isRoleNotFoundException(rootCause)
     val (errorMessage, errorCode, orQueryTooLong) =
-      if (startingUp)
-        ("Play Framework is trying to start, but cannot connect to the database", "EsE500DBNR", "")
-      else
-        ("Database no longer reachable", "EsE500DBG", "Or did a query take too long?")
+      if (roleMissing) {
+        if (startingUp)
+          ("Play Framework is trying to start, but the database user is missing", "EsE500DBUM", "")
+        else
+          ("The database user has suddenly disappeared", "EsE500DBUD", "")
+      }
+      else {
+        if (startingUp)
+          ("Play Framework is trying to start, but cannot connect to the database", "EsE500DBNR", "")
+        else
+          ("Database no longer reachable", "EsE500DBG", "Or did a query take too long?")
+      }
     p.Logger.error(s"Replying database-not-reachable error to: $url [$errorCode]", throwable)
-    val dockerTips =
-      if (Play.isDev) i"""
+    val (hasItStoppedPerhaps, fixProblemTips) =
+      if (!Play.isDev) ("", "")
+      else if (roleMissing) ("", i"""If you use Docker-Compose: You can create the database user like so:
+        |  - 'docker/drop-database-create-empty.sh', or
+        |  - 'docker/drop-database-import-latest.sh ../db-dumps/tiny-forum'
+        |""")
+      else (s"\nHas the database stopped or is there a network problem? $orQueryTooLong", i"""
         |If you use Docker-Compose: run 'docker-compose ps' to see if the database container is running.
         |If not running, start it:  'docker-compose start db'
         |If running, then check logs:  'docker-compose logs'
         |Or login with Bash:  'docker exec -it server_db_1 bash'
-        |"""
-      else
-        ""
+        |""")
     Results.InternalServerError(i"""500 Internal Server Error
       |
       |$errorMessage [$errorCode]
-      |
-      |Has the database stopped or is there a network problem? $orQueryTooLong
-      |$dockerTips
+      |$hasItStoppedPerhaps
+      |$fixProblemTips
       |${getStackTrace(throwable)}
       |""")
   }
+
+  // Move to a database package? io.efdi.server.db?
+  def isRoleNotFoundException(throwable: Throwable) =
+    throwable.isInstanceOf[org.postgresql.util.PSQLException] &&
+      RoleMissingRexec.matches(throwable.getMessage)
+
+  private val RoleMissingRexec = ".* role .+ does not exist.*".r
+
 }

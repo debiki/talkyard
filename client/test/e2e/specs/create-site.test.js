@@ -56,6 +56,9 @@ describe('/-/create-site  @createsite', function() {
     browser.assertTextMatches('#post-1', /New tpc txt/);
   });
 
+  if (settings.skip3rdPartyDependentTests)
+    return;
+
   it('can create a new site as a Gmail user  @login @gmail', function() {
     var data = createPasswordTestData();
     data.email = settings.gmailEmail;

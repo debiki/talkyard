@@ -8,6 +8,9 @@ var settings = {
   host: 'localhost',
   testLocalHostnamePrefix: 'e2e-test--',
   testEmailAddressPrefix: 'e2e-test--',
+  // Try the default dev-test-localhost.conf passwords, if nothing else specified:
+  e2eTestPassword: 'public',
+  forbiddenPassword: 'public',
 };
 
 /*
@@ -18,8 +21,10 @@ interface settings {
   mainSiteOrigin: string;
   newSiteDomain: string;
   e2eTestPassword: string;
+  forbiddenPassword: string;
   testLocalHostnamePrefix: string;
   testEmailAddressPrefix: string;
+  skip3rdPartyDependentTests: boolean;
   gmailEmail: string;
   gmailPassword: string;
   facebookAdminPassword: string;
@@ -39,6 +44,7 @@ settings.scheme = settings.secure ? 'https' : 'http';
 settings.mainSiteOrigin = settings.scheme + '://' + settings.host;
 settings.newSiteDomain = settings.newSiteDomain || settings.host;
 settings.waitforTimeout = args.noTimeout || args.nt ? 99999999 : 10*1000;
+if (settings.skip3) settings.skip3rdPartyDependentTests = true;
 
 if (settings.password) {
   settings.e2eTestPassword = settings.password;
@@ -55,14 +61,14 @@ if (secretsPath) {
   try {
     var secrets = JSON.parse(fileText);
     settings = _.extend({}, secrets, settings); // command line stuff overrides file
-    if (!settings.e2eTestPassword) logWarning(
-        "No password command line option or e2eTestPassword in " + secretsPath);
-    if (!settings.gmailEmail) logWarning("No gmailEmail in " + secretsPath);
-    if (!settings.gmailPassword) logWarning("No gmailPassword in " + secretsPath);
-    if (!settings.facebookAdminPassword) logWarning("No facebookAdminPassword in " + secretsPath);
-    if (!settings.facebookAdminEmail) logWarning("No facebookAdminEmail in " + secretsPath);
-    if (!settings.facebookUserPassword) logWarning("No facebookUserPassword in " + secretsPath);
-    if (!settings.facebookUserEmail) logWarning("No facebookUserEmail in " + secretsPath);
+    if (!settings.skip3rdPartyDependentTests) {
+      if (!settings.gmailEmail) logWarning("No gmailEmail in " + secretsPath);
+      if (!settings.gmailPassword) logWarning("No gmailPassword in " + secretsPath);
+      if (!settings.facebookAdminPassword) logWarning("No facebookAdminPassword in " + secretsPath);
+      if (!settings.facebookAdminEmail) logWarning("No facebookAdminEmail in " + secretsPath);
+      if (!settings.facebookUserPassword) logWarning("No facebookUserPassword in " + secretsPath);
+      if (!settings.facebookUserEmail) logWarning("No facebookUserEmail in " + secretsPath);
+    }
   }
   catch (error) {
     die("Error parsing secret file: " + error);
