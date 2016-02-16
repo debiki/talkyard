@@ -14,40 +14,49 @@ installation instructions.
 Getting Started
 -----------------------------
 
-*Warning:* I suggest that you contact me before you try to get started, right now, because I
-haven't tested these getting-started instructions the last 6 months or so, so
-they might no longer work.  Anyway, the instructions:
+This not so very tested. You might run into problems.
 
-1. Install Docker-Compose, version 1.6.0+: https://docs.docker.com/compose/install/ (this might take a while).
+#### Before you start
 
-    Tips: 1) If you want to do everything in a Vagrant virtual machine, 
-    you can use this one: `vagrant init phusion/ubuntu-14.04-amd64` (you can run Docker in it).
-    And it seems you'll need to follow the _"Note: If your company is behind a filtering proxy"_ instructions
-    on https://docs.docker.com/linux/step_one/. 2) On Linux the docker-compose installation instructions tell you to cURL and save docker-compose to `/usr/local/bin/docker-compose`, but that results in a permission-denied error. You can instead:<br>
-   `sudo sh -c 'curl -L https://github.com/docker/compose/... > /usr/local/bin/docker-compose'` )
+Install Docker-Compose, version 1.6.0+: https://docs.docker.com/compose/install/
 
-2. Clone another project, [debiki-site-seed](https://github.com/debiki/debiki-site-seed). In that project, this project is a submodule.
+#### Two tips
+
+Two tips about Vagrant and Linux (just ignore, if you're not familiar with Vagrant or Linux):
+
+- If you want to run the server in a Vagrant virtual machine, you can use this one: `vagrant init phusion/ubuntu-14.04-amd64` — it supports Docker, but you still need to install Docker-Compose (inside the vm). And it seems you'll need to follow the _"Note: If your company is behind a filtering proxy"_ instructions on https://docs.docker.com/linux/step_one/.
+
+- On Linux the docker-compose installation instructions tell you to cURL and save docker-compose to `/usr/local/bin/docker-compose`, but that results in a permission-denied error. You can instead:<br>
+   `sudo sh -c 'curl -L https://github.com/docker/compose/... > /usr/local/bin/docker-compose'`
+
+#### The instructions
+
+Now, let's get started for real:
+
+1. Clone **another** project, [debiki-site-seed](https://github.com/debiki/debiki-site-seed). In that project, this project is a submodule.
 
         git clone https://github.com/debiki/debiki-site-seed.git
         cd debiki-site-seed
 
-3. Then fetch this project (debiki-server) to a subdirectory `server/`, checkout the master branch and fetch submodules:
+1. Then fetch this project (debiki-server) to a subdirectory `server/`, checkout the master branch and fetch submodules:
 
         git submodule update --init
         cd server/
         git checkout master
         git submodule update --init
 
-4. Start everything: (this will take a while, the first time: some Docker images will be downloaded and built)
+1. Start everything: (this will take a while, the first time: some Docker images will be downloaded and built)
 
         docker-compose up
 
-5. Create an empty database, or import a dump. Do one of:
+1. Create an empty database, or import a dump. Do one of:
 
         docker/drop-database-create-empty.sh
         docker/drop-database-import-latest.sh ../db-dumps/tiny-forum/
 
-All dumps in `../db-dumps/` have admin user `admin@example.com`, password `public`.
+1. Point your browser to http://localhost/
+
+    If you imported a dump from `../db-dumps`: You can login via email/password `admin`/`public`.
 
 
 Running tests
@@ -75,8 +84,7 @@ Then restart Network Manager:
 
 Wait half a minute, then this should work: `ping whatever.localhost`.
 
-2) Download Selenium to ./downloads/  (todo: explain in more details. See http://nightwatchjs.org )
-and download Chrome Driver too.
+Continue here: <client/test/e2e/readme.md>
 
 
 ### Performance tests
@@ -90,7 +98,7 @@ Append to `/etc/security/limits.conf` ... hmm but now with Docker-Compose, which
 Technology
 -----------------------------
 
-Client: React.js, TypeScript, Bower, Gulp.
+Client: React.js, TypeScript. Gulp. Webdriver.io.
 Server: Scala and Play Framework. Nginx and Nchan. React.js in Java 8's Nashorn Javascript engine.
 Databases: PostgreSQL, ElasticSearch, Redis (soon).
 
