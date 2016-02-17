@@ -35,7 +35,9 @@
 <!-- wrapper.scala.html -->
 <div id="esPageColumn">
 <div id="esPageScrollable">
+<div class="esPageHeader">
 @Html(tpi.siteSettings.headerHtml.valueAsString)
+</div>
 @if(tpi.anyCurrentPageRole.exists(_.isChat)) {
   <div id="theTopbar" class="esTopBar"></div>
   <div id="theChatVspace"></div>

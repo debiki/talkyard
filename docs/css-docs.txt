@@ -151,16 +151,11 @@ might change in the future.
 .debiki-show-unless-lte-ie7
 .debiki-show-unless-lte-ie8
 
-.debiki-0-mark-current-site-section
-  If you place this class on the site main <nav>, then Debiki adds
-  the class 'debiki-0-current-site-section' to [the nav link
-  to the site section the user is currently visiting].
-
-.debiki-0-current-site-section
-  Indicates which <nav> link points to the section the user
-  is currently visiting. Placed by Debiki.
+.esActiveHeaderLink
+  Added to the longest link in the header html that matches the current URL
+  (matches = the current URL starts with the link, longes = the longest a.href)
   You could style it, so people knows where they are, e.g. like so:
-    nav a.debiki-0-current-site-section {
+    .esActiveHeaderLink {
       font-weight: bold;
       font-size: 105%;
     }

@@ -372,19 +372,16 @@ export var TopBar = createComponent({
       // which people are online exactly now. — Instead, when opening the sidebar,
       // we'll show a list of the most recent comments (rather than onlne topic contributors).
       // COULD show click-to-see-recent-comments tips, if the user doesn't seem to know about that.
-    }
-    else if (usersHere.onlyMeOnline) {
-      var who = usersHere.areChatChannelMembers ? "other chat members" : "others";
-      contextbarTipsDetailed = "No " + who + " online";
-      contextbarTipsBrief = "0";
+      // For now, show this dummy text, because otherwise people get confused when the
+      // "X users online" text disappears:
+      contextbarTipsDetailed = "? new posts";
+      contextbarTipsBrief = r.span({}, '0', r.span({ className: 'icon-comment-empty' }));
     }
     else {
       var numOthers = usersHere.numOnline - (usersHere.iAmHere ? 1 : 0);
-      var other = usersHere.iAmHere ? " other" : '';
-      var userType = usersHere.areChatChannelMembers ? " chat member" : " user";
-      var pluralis = numOthers === 1 ? '' : 's';
-      contextbarTipsDetailed = numOthers + other + userType + pluralis + " online";
-      contextbarTipsBrief = '' + numOthers;
+      var inThisWhat = usersHere.areChatChannelMembers ? "chat"  : "forum";
+      contextbarTipsDetailed = numOthers + " online in this " + inThisWhat;
+      contextbarTipsBrief = r.span({}, '' + numOthers, r.span({ className: 'icon-user' }));
     }
     var contextbarTips = !contextbarTipsDetailed ? null :
         r.span({ className: 'esOpenCtxbarBtn_numOnline'},

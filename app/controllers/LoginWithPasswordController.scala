@@ -90,9 +90,9 @@ object LoginWithPasswordController extends mvc.Controller {
   def handleCreateUserDialog = AsyncPostJsonAction(RateLimits.CreateUser, maxLength = 1000,
         allowAnyone = true) { request: JsonPostRequest =>
     val body = request.body
-    val fullName = (body \ "fullName").as[String]
-    val emailAddress = (body \ "email").as[String]
-    val username = (body \ "username").as[String]
+    val fullName = (body \ "fullName").as[String].trim
+    val emailAddress = (body \ "email").as[String].trim
+    val username = (body \ "username").as[String].trim
     val password = (body \ "password").asOpt[String] getOrElse
       throwBadReq("DwE85FX1", "Password missing")
     val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]

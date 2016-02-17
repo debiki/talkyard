@@ -165,8 +165,6 @@ function renderDiscussionPage() {
 
   (d.u.workAroundAndroidZoomBug || function() {})($);
 
-  d.i.showCurLocationInSiteNav();
-
   // Do this before rendering the page.
   d.i.layout = d.i.chooseLayout();
   d.i.layoutThreads();
@@ -305,6 +303,9 @@ d.i.startEmbeddedEditor = function() {
 if (location.pathname.search(ApiUrlPathPrefix) !== 0) {
   sessionStorage.setItem('returnToSiteUrl', window.location.toString());
 }
+
+// Later, when there's a single router for everything, bind this to router events instead:
+debiki2.utils.highlightActiveLinkInHeader();
 
 tellJQueryAjaxToStripSafeJsonPrefix();
 

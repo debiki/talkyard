@@ -49,6 +49,10 @@ export var PatternInput = createClassAndFactory({
   },
 
   findAnyError: function(value: string) {
+    var lengthError = this.checkLength(value);
+    if (this.props.testLengthFirst && lengthError)
+      return lengthError;
+
     if (this.props.regex && !this.props.regex.test(value))
       return this.props.message;
 
@@ -73,6 +77,13 @@ export var PatternInput = createClassAndFactory({
     if (this.props.notRegexFour && this.props.notRegexFour.test(value))
       return this.props.notMessageFour;
 
+    if (lengthError)
+      return lengthError;
+
+    return null;
+  },
+
+  checkLength: function(value: string) {
     if (this.props.minLength && value.length < this.props.minLength)
       return 'Should be at least ' + this.props.minLength + ' characters';
 

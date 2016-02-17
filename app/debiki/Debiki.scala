@@ -65,7 +65,7 @@ object Debiki {
     config.addDataSourceProperty("portNumber", port)
     config.addDataSourceProperty("databaseName", database)
 
-    val WaitForConnectionMillis = 4000
+    val WaitForConnectionMillis = 3000
     val TooSlowQuerySeconds = 5 // very long in the context of a web app
 
     // Feels safest. They write "rarely necessary ... only applies if autoCommit is disabled"

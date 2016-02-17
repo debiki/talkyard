@@ -104,7 +104,7 @@ var RecentTopicsAndNotfs = createComponent({
     });
     return (
         r.div({ className: 'esWatchbar_topics' },
-          r.h3({}, 'Recent'),
+          r.h3({}, "Recent Topics"),
           r.ul({},
             topicElems)));
   }
@@ -115,12 +115,14 @@ var ChatChannels = createComponent({
   render: function() {
     var store: Store = this.props.store;
     var topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.ChatChannels];
+    if (_.isEmpty(topics))
+      return null;
     var topicElems = topics.map((topic: WatchbarTopic) =>
       SingleTopic({ key: topic.pageId, topic: topic, flavor: 'chat',
           isCurrent: topic.pageId === store.pageId }));
     return (
       r.div({ className: 'esWatchbar_topics' },
-        r.h3({}, 'Joined Channels'),
+        r.h3({}, "Joined Channels"),
         r.ul({},
           topicElems)));
   }
@@ -131,12 +133,14 @@ var DirectMessages = createComponent({
   render: function() {
     var store: Store = this.props.store;
     var topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.DirectMessages];
+    if (_.isEmpty(topics))
+      return null;
     var topicElems = topics.map((topic: WatchbarTopic) =>
       SingleTopic({ key: topic.pageId, topic: topic, flavor: 'direct',
           isCurrent: topic.pageId === store.pageId }));
     return (
       r.div({ className: 'esWatchbar_topics' },
-        r.h3({}, 'Direct Messages'),
+        r.h3({}, "Direct Messages"),
         r.ul({},
           topicElems)));
   }

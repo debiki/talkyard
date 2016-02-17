@@ -125,7 +125,6 @@ var debikiJavascriptFiles = [
       //'target/client/app/posts/monitor-reading-progress-unused.js',
       'target/client/app/posts/resize.js',
       'target/client/app/utils/show-and-highlight.js',
-      'target/client/app/utils/show-location-in-nav.js',
       //'target/client/app/posts/unread-unused.js',
       'target/client/app/utils/util.js',
       'target/client/app/utils/util-browser.js',

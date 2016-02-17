@@ -61,6 +61,7 @@ object SiteTpi {
   * when rendering e.g. blog and forum pages.
   */
 class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[String]) {
+  def request = debikiRequest // rename to request, later
 
   def siteId  = debikiRequest.siteId
   def siteSettings = debikiRequest.siteSettings
@@ -71,7 +72,10 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
   def isAuthenticated = debikiRequest.user.map(_.isAuthenticated) == Some(true)
   def userDisplayName = debikiRequest.user.map(_.displayName) getOrElse ""
 
-  def debikiMeta = xml.Unparsed(views.html.debikiMeta().body)
+  def debikiMeta = {
+    val title = siteSettings.title.asString // COULD use page title instead, unless homepage
+    xml.Unparsed(views.html.debikiMeta(title = title).body)
+  }
 
   def anyCurrentPageId: Option[PageId] = None
   def anyCurrentPageRole: Option[PageRole] = None

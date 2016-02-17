@@ -208,6 +208,7 @@ export var CreateUserDialogContent = createClassAndFactory({
     var fullNameInput =
         PatternInput({ label: "Your name: (the long version)", ref: 'fullName',
             id: 'e2eFullName', defaultValue: props.name, minLength: 1,
+            notRegex: /^\s+$/, notMessage: "Not just spaces please",
             onChange: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
 
     var emailHelp = props.providerId && hasEmailAddressAlready ?
