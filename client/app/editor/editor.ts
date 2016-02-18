@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/modernizr/modernizr.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../util/stupid-dialog.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/PageUnloadAlerter.ts" />
 /// <reference path="../model.ts" />
@@ -47,6 +48,8 @@ var theEditor: any;
 var $: any = window['jQuery'];
 var WritingSomethingWarningKey = 'WritingSth';
 var WritingSomethingWarning = "You were writing something?";
+
+var getErrorDialog = util.makeStupidDialogGetter();
 
 
 function ensureEditorCreated(success) {
@@ -537,10 +540,6 @@ export var Editor = createComponent({
     this.updatePreview();
   },
 
-  showTitleErrors: function() {
-    this.setState({ showTitleErrors: true });
-  },
-
   isTitleOk: function() {
     // For now
     var title = this.state.title ? this.state.title.trim() : null;
@@ -552,14 +551,7 @@ export var Editor = createComponent({
     PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, WritingSomethingWarning);
     var newText = event.target.value;
     this.setState({ text: newText });
-    if (!newText) {
-      this.setState({ showTextErrors: true });
-    }
     this.updatePreview();
-  },
-
-  showTextErrors: function() {
-    this.setState({ showTextErrors: true });
   },
 
   isTextOk: function() {
@@ -609,18 +601,21 @@ export var Editor = createComponent({
   },
 
   saveEdits: function() {
+    this.throwIfBadTitleOrText(null, "Please don't delete all text. Write something.");
     Server.saveEdits(this.state.editingPostId, this.state.text, () => {
       this.clearTextAndClose();
     });
   },
 
   saveNewPost: function() {
+    this.throwIfBadTitleOrText(null, "Please write something.");
     Server.saveReply(this.state.replyToPostIds, this.state.text, this.state.anyPostType, () => {
       this.clearTextAndClose();
     });
   },
 
   saveNewForumPage: function() {
+    this.throwIfBadTitleOrText("Please write a topic title.", "Please write something.");
     var data = {
       categoryId: this.state.newForumTopicCategoryId,
       pageRole: this.state.newForumPageRole,
@@ -635,11 +630,29 @@ export var Editor = createComponent({
   },
 
   sendPrivateMessage: function() {
+    this.throwIfBadTitleOrText("Please write a message title.", "Please write a message.");
     var state = this.state;
     Server.sendMessage(state.title, state.text, state.messageToUserIds, (pageId: string) => {
       this.clearTextAndClose();
       window.location.assign('/-' + pageId);
     });
+  },
+
+  throwIfBadTitleOrText: function(titleErrorMessage, textErrorMessage) {
+    var errors = '';
+    if (titleErrorMessage && isBlank(this.state.title)) {
+      errors += titleErrorMessage;
+      this.setState({ showTitleErrors: true });
+    }
+    if (textErrorMessage && isBlank(this.state.text)) {
+      if (errors) errors += ' ';
+      errors += textErrorMessage;
+      this.setState({ showTextErrors: true });
+    }
+    if (errors) {
+      getErrorDialog().open({ body: errors });
+      throw 'Bad title or text. Not saving this to the server. [EsM7KCW]';
+    }
   },
 
   cycleMaxHorizBack: function() {
@@ -766,7 +779,6 @@ export var Editor = createComponent({
       titleInput =
           r.input({ className: 'title-input esEdtr_titleEtc_title form-control' + titleErrorClass,
               type: 'text', ref: 'titleInput', tabIndex: 1, onChange: this.onTitleEdited,
-              onBlur: this.showTitleErrors,
               placeholder: "Type a title — what is this about, in one brief sentence?" });
 
       /* Later:
@@ -903,8 +915,7 @@ export var Editor = createComponent({
     var textarea =
         r.textarea({ className: 'editor form-control esEdtr_textarea' +  textErrorClass,
             ref: 'textarea', value: this.state.text,
-            onFocus: this.showTitleErrors, onChange: this.onTextEdited, tabIndex: 1,
-            onBlur: this.showTextErrors,
+            onChange: this.onTextEdited, tabIndex: 1,
             placeholder: "Type here. You can use Markdown and HTML. " +
                 "Drag and drop to paste images." });
 
@@ -953,8 +964,7 @@ export var Editor = createComponent({
                   dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
             r.div({ className: 'submit-cancel-btns' },
               Button({ onClick: this.onSaveClick, bsStyle: 'primary', tabIndex: 1,
-                  className: 'e2eSaveBtn',
-                  disabled: !this.state.text || (titleInput && !this.state.title) },
+                  className: 'e2eSaveBtn' },
                 saveButtonTitle),
               Button({ onClick: this.onCancelClick, tabIndex: 1,
                   className: 'e2eCancelBtn' }, "Cancel"),

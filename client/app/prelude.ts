@@ -102,6 +102,11 @@ export function toId(x: number | { id: number } | { uniqueId: number }): number 
 }
 
 
+export function isBlank(x): boolean {
+  return _.isEmpty(x) || !x.trim();
+}
+
+
 export function nonEmpty(x): boolean {
   return !_.isEmpty(x);
 }

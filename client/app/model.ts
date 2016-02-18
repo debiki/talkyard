@@ -35,6 +35,13 @@ type IpAddress = String;
 type EmailId = String;
 type AuditLogEntryId = number;
 
+type HttpRequest = XMLHttpRequest
+
+// Send back IgnoreThisError to the caller from an error callback, and the caller won't
+// continue with its default error handling — it'll ignore the error.
+// Send back undefined or anything else to the caller, and the error will be considered.
+type ErrorPolicy = number | void;
+var IgnoreThisError = -112233;
 
 var TitleId = 0;
 var BodyPostId = 1;

@@ -158,7 +158,10 @@ case class NotificationGenerator(transaction: SiteTransaction) {
     }
 
     // Create mentions.
-    for (user <- mentionsCreatedForUsers) {
+    for {
+      user <- mentionsCreatedForUsers
+      if user.id != newPost.createdById
+    } {
       makeNewPostNotf(NotificationType.Mention, newPost, user)
     }
 

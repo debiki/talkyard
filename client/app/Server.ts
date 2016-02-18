@@ -36,7 +36,6 @@ enum HttpStatusCode {
 
 var BadNameOrPasswordErrorCode = 'EsE403BPWD';
 
-export var IgnoreThisError = -112233;
 
 interface OngoingRequest {
   abort(message?: string);
