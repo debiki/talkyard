@@ -531,13 +531,42 @@ export var Editor = createComponent({
     this.setState({ showGuidelinesInModal: true });
   },
 
-  onTextEdited: function(event) {
-    PageUnloadAlerter.addReplaceWarning(
-        WritingSomethingWarningKey, WritingSomethingWarning);
-    this.setState({
-      text: event.target.value
-    });
+  onTitleEdited: function(event) {
+    PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, WritingSomethingWarning);
+    this.setState({ title: event.target.value });
     this.updatePreview();
+  },
+
+  showTitleErrors: function() {
+    this.setState({ showTitleErrors: true });
+  },
+
+  isTitleOk: function() {
+    // For now
+    var title = this.state.title ? this.state.title.trim() : null;
+    if (!title) return false;
+    return true;
+  },
+
+  onTextEdited: function(event) {
+    PageUnloadAlerter.addReplaceWarning(WritingSomethingWarningKey, WritingSomethingWarning);
+    var newText = event.target.value;
+    this.setState({ text: newText });
+    if (!newText) {
+      this.setState({ showTextErrors: true });
+    }
+    this.updatePreview();
+  },
+
+  showTextErrors: function() {
+    this.setState({ showTextErrors: true });
+  },
+
+  isTextOk: function() {
+    // For now
+    var text = this.state.text ? this.state.text.trim() : null;
+    if (!text) return false;
+    return true;
   },
 
   updatePreview: function(anyCallback?) {
@@ -592,12 +621,11 @@ export var Editor = createComponent({
   },
 
   saveNewForumPage: function() {
-    var title = $(this.refs.titleInput).val();
     var data = {
       categoryId: this.state.newForumTopicCategoryId,
       pageRole: this.state.newForumPageRole,
       pageStatus: 'Published',
-      pageTitle: title,
+      pageTitle: this.state.title,
       pageBody: this.state.text
     };
     Server.createPage(data, (newPageId: string) => {
@@ -607,8 +635,8 @@ export var Editor = createComponent({
   },
 
   sendPrivateMessage: function() {
-    var title = $(this.refs.titleInput).val();
-    Server.sendMessage(title, this.state.text, this.state.messageToUserIds, (pageId: string) => {
+    var state = this.state;
+    Server.sendMessage(state.title, state.text, state.messageToUserIds, (pageId: string) => {
       this.clearTextAndClose();
       window.location.assign('/-' + pageId);
     });
@@ -667,6 +695,9 @@ export var Editor = createComponent({
       newForumPageRole: null,
       editingPostRevisionNr: null,
       text: '',
+      title: '',
+      showTitleErrors: false,
+      showTextErrors: false,
       draft: _.isNumber(this.state.editingPostId) ? '' : this.state.text,
       safePreviewHtml: '',
       guidelines: null,
@@ -731,10 +762,11 @@ export var Editor = createComponent({
     var pageRoleDropdown;
     var categoriesDropdown;
     if (this.state.newForumPageRole || this.state.messageToUserIds.length) {
+      var titleErrorClass = this.state.showTitleErrors && !this.isTitleOk() ? ' esError' : '';
       titleInput =
-          r.input({ className: 'title-input esEdtr_titleEtc_title form-control',
-                  type: 'text', ref: 'titleInput',
-              tabIndex: 1,
+          r.input({ className: 'title-input esEdtr_titleEtc_title form-control' + titleErrorClass,
+              type: 'text', ref: 'titleInput', tabIndex: 1, onChange: this.onTitleEdited,
+              onBlur: this.showTitleErrors,
               placeholder: "Type a title — what is this about, in one brief sentence?" });
 
       /* Later:
@@ -867,9 +899,12 @@ export var Editor = createComponent({
             ref: 'uploadFileInput', style: { width: 0, height: 0, float: 'left' }}),
           r.i({ style: { marginLeft: '1ex', color: '#777' }}, " (More buttons here later...)"));
 
+    var textErrorClass = this.state.showTextErrors && !this.isTextOk() ? ' esError' : '';
     var textarea =
-        r.textarea({ className: 'editor form-control', ref: 'textarea', value: this.state.text,
-            onChange: this.onTextEdited, tabIndex: 1,
+        r.textarea({ className: 'editor form-control esEdtr_textarea' +  textErrorClass,
+            ref: 'textarea', value: this.state.text,
+            onFocus: this.showTitleErrors, onChange: this.onTextEdited, tabIndex: 1,
+            onBlur: this.showTextErrors,
             placeholder: "Type here. You can use Markdown and HTML. " +
                 "Drag and drop to paste images." });
 
@@ -918,7 +953,9 @@ export var Editor = createComponent({
                   dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
             r.div({ className: 'submit-cancel-btns' },
               Button({ onClick: this.onSaveClick, bsStyle: 'primary', tabIndex: 1,
-                  className: 'e2eSaveBtn' }, saveButtonTitle),
+                  className: 'e2eSaveBtn',
+                  disabled: !this.state.text || (titleInput && !this.state.title) },
+                saveButtonTitle),
               Button({ onClick: this.onCancelClick, tabIndex: 1,
                   className: 'e2eCancelBtn' }, "Cancel"),
               Button({ onClick: this.cycleMaxHorizBack, className: 'esEdtr_cycleMaxHzBtn',

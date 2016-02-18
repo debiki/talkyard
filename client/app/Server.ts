@@ -30,6 +30,13 @@ var $: JQueryStatic = d.i.$;
 // In embedded comments <iframes>, we cannot use relative paths.
 var origin = d.i.serverOrigin;
 
+enum HttpStatusCode {
+  Forbidden = 403,
+}
+
+var BadNameOrPasswordErrorCode = 'EsE403BPWD';
+
+export var IgnoreThisError = -112233;
 
 interface OngoingRequest {
   abort(message?: string);
@@ -38,7 +45,7 @@ interface OngoingRequest {
 interface RequestData {
   data: any;
   success: (response: any) => void;
-  error?: (jqXhr: any, textStatus?: string, errorThrown?: string) => void;
+  error?: (jqXhr: any, textStatus?: string, errorThrown?: string) => any;
 }
 
 
@@ -49,16 +56,19 @@ function postJson(urlPath: string, requestData: RequestData) {
     data: requestData.data,
     success: requestData.success,
     error: (jqXhr: any, textStatus: string, errorThrown: string) => {
+      if (requestData.error) {
+        var perhapsIgnoreError = requestData.error(jqXhr, textStatus, errorThrown);
+        if (perhapsIgnoreError === IgnoreThisError)
+          return;
+      }
       console.error('Error calling ' + urlPath + ': ' + JSON.stringify(jqXhr));
       pagedialogs.getServerErrorDialog().open(jqXhr);
-      if (requestData.error) {
-        requestData.error(jqXhr, textStatus, errorThrown);
-      }
     }
   });
 }
 
 
+/** Return Server.IgnoreThisError from error(..) to suppress a log message and error dialog. */
 function postJsonSuccess(urlPath, success: (response: any) => void, data: any, error?) {
   // Make postJsonSuccess(..., error, data) work:
   if (!data || _.isFunction(data)) {
@@ -301,8 +311,15 @@ export function createPasswordUser(data, success: (response) => void) {
 }
 
 
-export function loginWithPassword(emailOrUsername: string, password: string, success: () => void) {
-  postJsonSuccess('/-/login-password', success, {
+export function loginWithPassword(emailOrUsername: string, password: string, success: () => void,
+    denied: () => void) {
+  function onError(jqXhr: any, textStatus?: string, errorThrown?: string) {
+    if (jqXhr.responseText.indexOf(BadNameOrPasswordErrorCode) !== -1) {
+      denied();
+      return IgnoreThisError;
+    }
+  }
+  postJsonSuccess('/-/login-password', success, onError, {
     email: emailOrUsername,
     password: password,
   });

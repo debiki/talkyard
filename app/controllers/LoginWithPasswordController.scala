@@ -68,7 +68,8 @@ object LoginWithPasswordController extends mvc.Controller {
       email = email,
       password = password)
 
-    def deny() = throwForbidden("DwE403GJk9", "Bad username or password")
+    // The browser checks for 'EsE403BPWD' so don't change it.
+    def deny() = throwForbidden("EsE403BPWD", "Bad username or password")
 
     // WOULD have `tryLogin` return a LoginResult and stop using exceptions!
     val loginGrant: LoginGrant =

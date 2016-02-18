@@ -333,23 +333,44 @@ var GuestLoginDialogContent = createClassAndFactory({
 
 
 var PasswordLoginDialogContent = createClassAndFactory({
+  getInitialState: function() {
+    return {};
+  },
+
   doLogin: function() {
     var emailOrUsername = this.refs.whoInput.getValue();
     var password = this.refs.passwordInput.getValue();
     Server.loginWithPassword(emailOrUsername, password, () => {
       continueAfterLogin(this.props.anyReturnToUrl);
+    }, () => {
+      this.setState({ badPassword: true, hideBadPasswordMessage: false });
+      this.refs.passwordInput.getInputDOMNode().focus();
     });
   },
+
+  clearError: function() {
+    if (this.state.badPassword) {
+      this.setState({ hideBadPasswordMessage: true });
+    }
+  },
+
   render: function() {
+    var hideClass = this.state.hideBadPasswordMessage ? ' esHidden' : '';
+    var badPasswordMessage = !this.state.badPassword ? null :
+        r.div({ className: 'esLoginDlg_badPwd' + hideClass },
+          r.b({}, "Wrong username or password"));
+
     return (
       r.form({},
-        Input({ type: 'text', label: "Email or username:", ref: 'whoInput' }),
-        Input({ type: 'password', label: "Password:", ref: 'passwordInput' }),
+        Input({ type: 'text', label: "Email or username:", ref: 'whoInput', onChange: this.clearError }),
+        Input({ type: 'password', label: "Password:", ref: 'passwordInput', onChange: this.clearError }),
+        badPasswordMessage,
         Button({ onClick: this.doLogin }, "Login" + inOrderTo(this.props.loginReason)),
         Button({ onClick: this.props.closeDialog }, "Cancel"),
         r.br(),
         r.a({ href: debiki.internal.serverOrigin + '/-/reset-password/specify-email',
-            target: '_blank', className: 'dw-reset-pswd' },
+            target: '_blank', className: 'dw-reset-pswd',
+            style: { marginTop: '1ex', display: 'inline-block' }},
           "Did you forget your password?")));
   }
 });

@@ -20,17 +20,22 @@ $showPreviewMinWidth = 900px;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  margin-bottom: 6px;
+  margin-bottom: 17px;
 
   @media (max-width: 700px)
     // Now don't list all stuff side by side, instead, one per row.
     flex-direction: column;
 
-  .form-group
-    margin-bottom: 0;
-
 .esEdtr_titleEtc_title
   flex: 1;
+
+.esEdtr_titleEtc_title,
+.esEdtr_textarea
+  &.esError
+    outline: 1px solid red;
+    outline-offset: 0; // else 2px in Chrome at least, if :focus. Why?
+    box-shadow: none !important; // both outline & shadow = ugly
+    border-radius: 0; // both rectangular outline & border radius = ugly
 
 .esEdtr_txtBtns
   background: white;

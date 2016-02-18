@@ -114,6 +114,8 @@ export var NewPasswordInput = createClassAndFactory({
         passwordWarning = r.b({ style: { color: 'red' } }, tooWeakReason);
       }
       else if (this.state.passwordStrength < BadPasswordStrength) {
+        // Unfortunately it seems we cannot force people to choose strong passwords,
+        // seems they'll just feel annoyed and quit. So this tips will have to do.
         makeItStrongerSuggestion = r.b({ style: { color: 'hsl(25, 100%, 45%)' } },
             "Fairly weak. Consider making it longer, or more random.");
       }
