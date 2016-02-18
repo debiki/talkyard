@@ -327,7 +327,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
         logger.error(message + " [EsE7JKV2]")
         throw new DebikiException("EsE7JKV3", message)
       }
-      val rendererScript = scala.io.Source.fromInputStream(javascriptStream).mkString
+      val rendererScript = scala.io.Source.fromInputStream(
+        javascriptStream)(scala.io.Codec.UTF8).mkString
       scriptBuilder.append(rendererScript)
     }
     finally {
