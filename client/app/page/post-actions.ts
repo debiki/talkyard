@@ -573,7 +573,7 @@ var MoreDropdownModal = createComponent({
 
 
 function loginIfNeededThen(loginToWhat, postNr: PostNr, callback) {
-  debiki.internal.loginIfNeeded(
+  login.loginIfNeeded(
     loginToWhat, debiki.internal.makeReturnToPostUrlForVerifEmail(postNr), callback);
 }
 

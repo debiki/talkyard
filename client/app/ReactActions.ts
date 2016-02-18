@@ -220,7 +220,7 @@ export function showForumIntro(visible: boolean) {
 
 export function editPostWithNr(postNr: number) {
   var anyReturnToUrl = d.i.makeReturnToPostUrlForVerifEmail(postNr);
-  d.i.loginIfNeeded('LoginToEdit', anyReturnToUrl, () => {
+  login.loginIfNeeded('LoginToEdit', anyReturnToUrl, () => {
     if (d.i.isInEmbeddedCommentsIframe) {
       sendToEditorIframe(['editorEditPost', postNr]);
     }

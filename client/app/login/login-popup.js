@@ -78,15 +78,12 @@ d.i.createLoginPopup = function(anyUrl) {
     } else {
       // Login OK.
       // (Find queryString example at the end of this file.)
-
-      // Warning: Somewhat dupl code, compare w initLoginSimple.
-      debiki2.ReactActions.loadMyself();
-      d.i.continueAnySubmission();
+      debiki2.login.continueAfterLogin();
       return;
     }
 
-    d.i.showLoginFailed(errorMsg);
-  }
+    alert('Login failed: ' + errorMsg); // should use fancy dialog
+  };
 
   // COULD dim the main win, open a modal dialog: "Waiting for you to log in",
   // and a Cancel button, which closes the popup window.

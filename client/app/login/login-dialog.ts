@@ -52,6 +52,26 @@ var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 
 var loginDialog;
 
+// From before React.js.
+var anyContinueAfterLoginCallback = null;
+
+
+export function loginIfNeeded(loginReason: LoginReason | string, anyReturnToUrl?: string,
+      success?: () => void) {
+  dieIf(!success, 'EsE5YKP2');
+  if (debiki2.ReactStore.getUser().isLoggedIn) {
+    success();
+  }
+  else {
+    getLoginDialog().open(loginReason, anyReturnToUrl, success);
+  }
+}
+
+
+export function continueAfterLogin() {
+  continueAfterLoginImpl();
+}
+
 
 export function getLoginDialog() {   // also called from Scala template
   if (!loginDialog) {
@@ -74,6 +94,9 @@ var LoginDialog = createClassAndFactory({
   onChange: function() {
     var loggedInUser = debiki2.ReactStore.allData().me;
     if (loggedInUser) {
+      // Might have just logged in in another tab. Then cancel any login happening in this tab.
+      // Or, if we logged in in this tab, just close the dialog.
+      anyContinueAfterLoginCallback = null;
       this.setState({
         isOpen: false,
         childDialog: null
@@ -81,7 +104,8 @@ var LoginDialog = createClassAndFactory({
     }
   },
 
-  open: function(loginReason: LoginReason | string, anyReturnToUrl: string, preventClose: boolean) {
+  open: function(loginReason: LoginReason | string, anyReturnToUrl?: string, callback?: () => void,
+        preventClose?: boolean) {
     this.clearLoginRelatedCookies();
     if (!anyReturnToUrl) {
       anyReturnToUrl = window.location.toString();
@@ -93,6 +117,7 @@ var LoginDialog = createClassAndFactory({
       d.i.createLoginPopup(url)
     }
     else {
+      anyContinueAfterLoginCallback = callback;
       this.setState({
         isOpen: true,
         loginReason: loginReason,
@@ -118,6 +143,7 @@ var LoginDialog = createClassAndFactory({
   },
 
   close: function() {
+    anyContinueAfterLoginCallback = null;
     this.setState({
       isOpen: false,
       loginReason: null,
@@ -317,7 +343,7 @@ var GuestLoginDialogContent = createClassAndFactory({
     var name = this.refs.nameInput.getValue();
     var email = this.refs.emailInput.getValue();
     Server.loginAsGuest(name, email, () => {
-      continueAfterLogin(this.props.anyReturnToUrl);
+      continueAfterLoginImpl(this.props.anyReturnToUrl);
     });
   },
   render: function() {
@@ -341,7 +367,7 @@ var PasswordLoginDialogContent = createClassAndFactory({
     var emailOrUsername = this.refs.whoInput.getValue();
     var password = this.refs.passwordInput.getValue();
     Server.loginWithPassword(emailOrUsername, password, () => {
-      continueAfterLogin(this.props.anyReturnToUrl);
+      continueAfterLoginImpl(this.props.anyReturnToUrl);
     }, () => {
       this.setState({ badPassword: true, hideBadPasswordMessage: false });
       this.refs.passwordInput.getInputDOMNode().focus();
@@ -389,7 +415,7 @@ function inOrderTo(loginReason: string): string {
 }
 
 
-function continueAfterLogin(anyReturnToUrl: string) {
+function continueAfterLoginImpl(anyReturnToUrl?: string) {
   if (debiki.internal.isInLoginWindow) {
     // We're in an admin section login page, or an embedded comments page login popup window.
     if (anyReturnToUrl && anyReturnToUrl.indexOf('_RedirFromVerifEmailOnly_') === -1) {
@@ -405,6 +431,9 @@ function continueAfterLogin(anyReturnToUrl: string) {
   else {
     // We're on a normal page (but not in a login popup window for an embedded comments page).
     debiki2.ReactActions.loadMyself();
+    // COULD: Hmm, should I delay anyContinueAfterLoginCallback below
+    // until after loadMyself is done?
+
     // Continue with whatever caused the login to happen.
     // Old comment, perhaps obsolete:
     //   If the login happens because the user submits a reply,
@@ -415,8 +444,8 @@ function continueAfterLogin(anyReturnToUrl: string) {
     //   But the viewport will still be dimmed, because the welcome
     //   dialog is modal. So don't continueAnySubmission until
     //   the user has closed the response dialog.
-    if (debiki.internal.continueAnySubmission) {
-      debiki.internal.continueAnySubmission();
+    if (anyContinueAfterLoginCallback) {
+      anyContinueAfterLoginCallback();
     }
     // The login dialogs close themselves when the login event is fired (above).
   }

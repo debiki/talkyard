@@ -211,7 +211,7 @@ var FixedAtBottom = createComponent({
 
 var JoinChatButton = createComponent({
   joinChannel: function() {
-    login.loginIfNeededAndThen(LoginReason.LoginToChat, '#theJonChatBtn', () => {
+    login.loginIfNeededReturnToHash(LoginReason.LoginToChat, '#theJonChatBtn', () => {
       if (this.props.isChatMember) {
         // Now after having logged in, we know that this user is a channel member already.
         // Need do nothing.

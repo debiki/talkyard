@@ -21,6 +21,7 @@
   <!-- views/login/loginPopup.scala.html -->
   <script>
     debiki2.startRemainingReactRoots();
-    debiki2.login.getLoginDialog().open('@mode', '@returnToUrl', true @*preventClose*@ );
+    debiki2.login.getLoginDialog().open('@mode', '@returnToUrl', null @* callback *@,
+        true @*preventClose*@ );
   </script>
 }

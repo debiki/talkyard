@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../utils/react-utils.ts" />
+/// <reference path="login-dialog.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.login {
@@ -28,11 +29,11 @@
   * Logs in and calls success(). Or, if verification email needed, then afterwards returns to
   * this page + the url hash, and the user should then click the button (or whatever) again.
   */
-export function loginIfNeededAndThen(
+export function loginIfNeededReturnToHash(
       // Later: convert all string login reason to enum values.
       loginReason: LoginReason | string, hash: string, success: () => void) {
   var returnToUrl = debiki.internal.makeReturnToPageHashForVerifEmail(hash);
-  debiki.internal.loginIfNeeded(loginReason, returnToUrl, success);
+  loginIfNeeded(loginReason, returnToUrl, success);
 }
 
 

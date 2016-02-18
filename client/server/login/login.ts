@@ -1,6 +1,6 @@
 module debiki2.login {
 
-  export function loginIfNeededAndThen(loginReason: LoginReason | string, hash: string, success: () => void) {
+  export function loginIfNeededReturnToHash(loginReason: LoginReason | string, hash: string, success: () => void) {
   }
 
 }

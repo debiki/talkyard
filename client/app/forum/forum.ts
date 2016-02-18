@@ -20,6 +20,7 @@
 /// <reference path="../prelude.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../editor/editor.ts" />
+/// <reference path="../login/login-dialog.ts" />
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../ServerApi.ts" />
@@ -359,7 +360,7 @@ var ForumButtons = createComponent({
 
   createTopic: function() {
     var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
-    d.i.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
+    login.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       var category: Category = this.props.activeCategory;
       if (category.isForumItself) {
         category = this.findTheUncategorizedCategory();

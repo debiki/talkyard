@@ -62,7 +62,7 @@ function showReplyFormImpl($this, anyPostType) {
   }
 
   var anyReturnToUrl = d.i.makeReturnToPostUrlForVerifEmail(postId);
-  d.i.loginIfNeeded('LoginToComment', anyReturnToUrl, function() {
+  debiki2.login.loginIfNeeded('LoginToComment', anyReturnToUrl, function() {
     // Toggle highlighting first, because it'll be cleared later if the
     // editor is closed, and then we don't want to toggle it afterwards.
     toggleReplyButtonHighlighting(replyAction);
