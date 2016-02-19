@@ -123,6 +123,7 @@ body
 
 
 .btn-primary,
+.btn-primary:link,
 .nav-pills > li > a.active,
 .nav-pills > li > a.active:hover,
 .nav-pills > li > a.active:focus,
@@ -130,8 +131,9 @@ body
 .nav-pills > li.active > a:hover,
 .nav-pills > li.active > a:focus,
 .nav > .active
-  background-color: hsl($uiHue, 67%, 52%);
-  border-color: hsl($uiHue, 67%, 52%);
+  border-radius: 0;
+  background-color: hsl($uiHue, 69%, 53%);
+  border-color: hsl($uiHue, 69%, 53%);
   color: white;
   &:visited
     color: white;
@@ -142,9 +144,19 @@ body
   &.nav-stacked .nav-pills > li.active > a,
   &.nav-stacked .nav-pills > li.active > a:hover,
   &.nav-stacked .nav-pills > li.active > a:focus
+    border-radius: 0;
     color: white !important;
     background: hsl($uiHue, 90%, 50%);
     font-weight: bold;
+
+// Make buttons darker on hover.
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary.active,
+.open .dropdown-toggle.btn-primary
+  background-color: hsl($uiHue, 69%, 40%);
+  border-color: hsl($uiHue, 69%, 40%);
 
 .nav-pills > li > a
   border-radius: 0;

@@ -35,6 +35,7 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
+var Input = reactCreateFactory(ReactBootstrap.Input);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
@@ -577,7 +578,11 @@ export var Editor = createComponent({
     }, anyCallback);
   },
 
-  changeNewForumPageRole: function (event) {
+  changeCategory: function(event) {
+    this.setState({ newForumTopicCategoryId: parseInt(event.target.value) });
+  },
+
+  changeNewForumPageRole: function(event) {
     this.setState({ newForumPageRole: parseInt(event.target.value) });
   },
 
@@ -781,11 +786,10 @@ export var Editor = createComponent({
               type: 'text', ref: 'titleInput', tabIndex: 1, onChange: this.onTitleEdited,
               placeholder: "Type a title — what is this about, in one brief sentence?" });
 
-      /* Later:
       categoriesDropdown =
-          CategoryInput({ ..., title: 'activeCategory.name',
-              className: 'esEdtr_titleEtc_category', onSelect: this.changeCategory },
-            MenuItem({ eventKey: 'zzz', key: 'zzz' }, 'category.name')); */
+          SelectCategoryInput({ className: 'esEdtr_titleEtc_category',
+              categories: this.state.store.categories, onChange: this.changeCategory,
+              categoryId: this.state.newForumTopicCategoryId });
 
       if (isStaff(me)) {
         pageRoleDropdown = PageRoleInput({ me: me, value: this.state.newForumPageRole,
@@ -1000,6 +1004,23 @@ var GuidelinesModal = createClassAndFactory({
 function isCritiquePage(): boolean {  // [plugin]
   return ReactStore.allData().pageRole === PageRole.Critique;
 }
+
+
+var SelectCategoryInput = createClassAndFactory({
+  render: function () {
+    var categoryOptions = this.props.categories.map((category: Category) => {
+      return r.option({ value: category.id, key: category.id }, category.name);
+    });
+
+    return (
+      Input({
+          type: 'select', label: this.props.label, title: this.props.title,
+          labelClassName: this.props.labelClassName,
+          wrapperClassName: this.props.wrapperClassName,
+          value: this.props.categoryId, onChange: this.props.onChange },
+        categoryOptions));
+  }
+});
 
 
 var previewHelpMessage = {

@@ -233,11 +233,11 @@ object ReactJson {
       "numPostsExclTitle" -> numPostsExclTitle,
       "maxUploadSizeBytes" -> Globals.maxUploadSizeBytes,
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
-      "categories" -> categoriesJson(page,
+      "categories" -> anyForumId.map(categoriesJson(_,
         // For now, filter out hidden-in-forum client side if !isStaff.
         // [redux] Rewrite later by loading all catetgories if isStaff, and adding
         // them into the react-flux-redux state tree.
-         includeHiddenInForum = true, dao),
+         includeHiddenInForum = true, dao)),
       "topics" -> JsArray(anyLatestTopics),
       "me" -> NoUserSpecificData,
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
@@ -687,15 +687,6 @@ object ReactJson {
 
     json
     */
-  }
-
-
-  private def categoriesJson(page: PageDao, includeHiddenInForum: Boolean, dao: SiteDao)
-        : JsArray = {
-    if (page.role != PageRole.Forum)
-      return JsArray(Nil)
-
-    categoriesJson(page.id, includeHiddenInForum, dao)
   }
 
 

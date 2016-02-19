@@ -41,7 +41,6 @@ export var TitleEditor = createComponent({
     return {
       showComplicated: false,
       isSaving: false,
-      categories: null,
       pageRole: this.props.pageRole,
     };
   },
@@ -51,10 +50,6 @@ export var TitleEditor = createComponent({
     Server.loadEditorEtceteraScripts().done(() => {
       if (!this.isMounted()) return;
       this.setState({ editorScriptsLoaded: true });
-    });
-    if (store.forumId) Server.loadForumCategories(store.forumId, (categories: Category[]) => {
-      if (!this.isMounted()) return;
-      this.setState({ categories: categories });
     });
   },
 
@@ -180,19 +175,16 @@ export var TitleEditor = createComponent({
     if (isForumOrAbout) {
       // About-category pages cannot be moved to other categories.
     }
-    else if (this.props.forumId && this.state.categories) {
-      var categoryOptions = this.state.categories.map((category: Category) => {
+    else if (this.props.forumId) {
+      var categoryOptions = this.props.categories.map((category: Category) => {
         return r.option({ value: category.id, key: category.id }, category.name);
       });
 
-      var selectCategoryInput =
+      selectCategoryInput =
         Input({ type: 'select', label: 'Category', ref: 'categoryInput', title: 'Category',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
             defaultValue: this.props.categoryId },
           categoryOptions);
-    }
-    else if (this.props.forumId) {
-      selectCategoryInput = r.p({}, 'Loading categories...');
     }
 
     var customHtmlPageOption = user.isAdmin
