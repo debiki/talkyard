@@ -152,10 +152,11 @@ export var PostActions = createComponent({
       return null;
 
     var me: Myself = store.me;
-    var isOwnPost = post.authorIdInt === me.userId;
+    var isOwnPost = me.userId === post.authorIdInt;
+    var isOwnPage = me.userId === store.allPosts[BodyId].authorIdInt;
     var isPageBody = post.postId === BodyPostId;
     var votes = me.votes[post.postId] || [];
-    var isStaffOrOwnPost: boolean = isStaff(me) || isOwnPost;
+    var isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
 
     var deletedOrCollapsed =
       post.isPostDeleted || post.isTreeDeleted || post.isPostCollapsed || post.isTreeCollapsed;
@@ -166,18 +167,18 @@ export var PostActions = createComponent({
       return r.div({ className: 'dw-p-as dw-as' });
 
     var acceptAnswerButton;
-    if (isStaffOrOwnPost && isQuestion && !store.pageAnsweredAtMs && !store.pageClosedAtMs &&
+    if (isStaffOrOwnPage && isQuestion && !store.pageAnsweredAtMs && !store.pageClosedAtMs &&
         !isPageBody) {
       acceptAnswerButton = r.a({ className: 'dw-a dw-a-solve icon-ok-circled-empty',
           onClick: this.onAcceptAnswerClick, title: "Accept this as the answer to the " +
               "question or problem" }, "Solution?");
     }
     else if (isQuestion && post.uniqueId === store.pageAnswerPostUniqueId) {
-      var solutionTooltip = isStaffOrOwnPost
+      var solutionTooltip = isStaffOrOwnPage
           ? "Click to un-accept this answer"
           : "This post has been accepted as the answer";
       acceptAnswerButton = r.a({ className: 'dw-a dw-a-unsolve icon-ok-circled',
-          onClick: isStaffOrOwnPost ? this.onUnacceptAnswerClick : null, title: solutionTooltip },
+          onClick: isStaffOrOwnPage ? this.onUnacceptAnswerClick : null, title: solutionTooltip },
         "Solution");
     }
 
@@ -194,7 +195,7 @@ export var PostActions = createComponent({
     // mark it as not-answered/not-fixed again.)
     var closeReopenButton;
     var canCloseOrReopen = !isDone && !isAnswered && canClose(store.pageRole);
-    if (isPageBody && canCloseOrReopen && isStaffOrOwnPost) {
+    if (isPageBody && canCloseOrReopen && isStaffOrOwnPage) {
       var closeReopenTitle = "Reopen";
       var closeReopenIcon = 'icon-circle-empty';
       var closeReopenTooltip;
@@ -203,7 +204,7 @@ export var PostActions = createComponent({
         closeReopenIcon = 'icon-cancel-circled';
         switch (store.pageRole) {
           case PageRole.Question:
-            if (isOwnPost)
+            if (isOwnPage)
               closeReopenTooltip = "Close this question if you don't need an answer any more.";
             else
               closeReopenTooltip = "Close this question if it doesn't need an answer, e.g. if " +

@@ -112,9 +112,16 @@ topics -
     globally:
     in category:
   close:
-  answer question:
+  problems -
+  questions -
+    answer own:
+    cannot answer others:
+    click-scroll to answer:
+    clear answer:
   implement idea:
-  fix to-do:
+    cycle planned/done/pending:
+  to-do:
+    cycle done/pending:
   report:
 
 discussion -
