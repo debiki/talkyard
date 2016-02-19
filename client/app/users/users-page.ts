@@ -164,9 +164,14 @@ var UserPageComponent = React.createClass(<any> {
 
 
 var UserBar = createComponent({
+  sendMessage: function() {
+    editor.openToWriteMessage(this.props.user.id);
+  },
+
   render: function() {
     var loggedInUser = this.props.loggedInUser;
     var user = this.props.user;
+    var isMe = loggedInUser.userId === user.id;
 
     var showPrivateStuff = isStaff(loggedInUser) || (
         loggedInUser.isAuthenticated && loggedInUser.userId === user.id);
@@ -184,11 +189,16 @@ var UserBar = createComponent({
         ? r.li({}, r.a({ href: linkToUserInAdminArea(user.id) }, 'Admin'))
         : null;
 
+    var sendMessageButton = loggedInUser.isAuthenticated && !isMe
+        ? Button({ onClick: this.sendMessage, bsStyle: 'primary' }, "Send Message")
+        : null;
+
     return (
       r.div({ className: 'dw-user-bar clearfix' },
         UserInfo(this.props),
         Nav({ bsStyle: 'pills', activeKey: this.props.activeRouteName,
             onSelect: this.props.transitionTo, className: 'dw-sub-nav' },
+          sendMessageButton,
           adminButton,
           invitesNavItem,
           preferencesNavItem)));
@@ -198,7 +208,9 @@ var UserBar = createComponent({
 
 var UserInfo = createComponent({
   getInitialState: function() {
-    return {};
+    return {
+      isUploadingProfilePic: false,
+    };
   },
 
   componentDidMount: function() {
@@ -288,6 +300,7 @@ var UserInfo = createComponent({
           'Reason: ' + user.suspendedReason);
     }
 
+    var isMe = loggedInUser.userId === user.id;
     var isGuestInfo = null;
     if (isGuest(user)) {
       isGuestInfo = ' — a guest user, could be anyone';
@@ -302,10 +315,13 @@ var UserInfo = createComponent({
       isGuestInfo = r.span({ className: 'dw-is-what' }, isGuestInfo);
     }
 
+    var thatIsYou = !isMe ? null :
+      r.span({ className: 'esProfile_isYou' }, "(you)");
+
     var uploadAvatarBtnText = user.mediumAvatarUrl ? "Change photo" : "Upload photo";
     var avatarMissingClass = user.mediumAvatarUrl ? '' : ' esMedAvtr-missing';
 
-    var anyUploadPhotoBtn = (loggedInUser.userId === user.id || isStaff(loggedInUser))
+    var anyUploadPhotoBtn = (isMe || isStaff(loggedInUser))
       ? r.div({},
           // File inputs are ugly, so we hide the file input (size 0 x 0) and activate
           // it by clicking a beautiful button instead:
@@ -323,7 +339,7 @@ var UserInfo = createComponent({
             anyUploadPhotoBtn)),
         r.div({ className: 'user-info-col' },
           r.div({ style: { display: 'table-cell' }},
-            r.h1({}, user.username),
+            r.h1({}, user.username, thatIsYou),
             r.h2({}, user.fullName, isGuestInfo),
             suspendedInfo))));
   }
