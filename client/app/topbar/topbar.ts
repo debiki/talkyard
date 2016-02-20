@@ -67,7 +67,7 @@ export var TopBar = createComponent({
   componentDidMount: function() {
     keymaster('1', this.goToTop);
     keymaster('2', this.goToReplies);
-    keymaster('3', this.goToChat);
+    // keymaster('3', this.goToChat);   disable chat comments for now [8KB42]
     keymaster('4', this.goToEnd);
     var rect = this.getThisRect();
     var pageTop = getPageScrollableRect().top;
@@ -165,10 +165,11 @@ export var TopBar = createComponent({
         $('.dw-depth-0 > .dw-p-as'), { marginTop: 60, marginBottom: 9999 });
   },
 
-  goToChat: function() {
+  /*
+  goToChat: function() {  Chat comments disabled for now [8KB42]
     debiki2.postnavigation.addVisitedPosition();
     utils.scrollIntoViewInPageColumn($('#dw-chat'), { marginTop: 60, marginBottom: 9999 });
-  },
+  }, */
 
   goToEnd: function() {
     debiki2.postnavigation.addVisitedPosition();
@@ -213,8 +214,10 @@ export var TopBar = createComponent({
       var topHelp = "Go to the top of the page. Shortcut: 1 (on the keyboard)";
       var repliesHelp = "Go to the replies section. There are " + store.numPostsRepliesSection +
         " replies. Shortcut: 2";
+      /* Chat comments disabled for now [8KB42]
       var chatHelp = "Go to the chat section. There are " + store.numPostsChatSection +
         " comments. Shortcut: 3";
+        */
       var endHelp = "Go to the bottom of the page. Shortcut: 4";
 
       var goToTop = isChat ? null :
@@ -223,9 +226,11 @@ export var TopBar = createComponent({
       var goToReplies = isChat ? null :
           Button({ className: 'dw-goto', onClick: this.goToReplies,
             title: repliesHelp }, "Replies (" + store.numPostsRepliesSection + ")");
+      var goToChat = null; /*  disable chat comments for now  [8KB42]
       var goToChat = !hasChatSection(store.pageRole) ? null :
           Button({ className: 'dw-goto', onClick: this.goToChat,
             title: chatHelp }, "Chat (" + store.numPostsChatSection + ")");
+            */
       var goToEnd = Button({ className: 'dw-goto', onClick: this.goToEnd, title: endHelp,
           disabled: !this.state.enableGotoEndBtn }, "End");
 

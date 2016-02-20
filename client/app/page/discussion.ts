@@ -464,7 +464,9 @@ var RootPostAndComments = createComponent({
       }
     });
 
-    var hasChat = hasChatSection(store.pageRole);
+    // Disable chat comments for now, they make people confused, and  [8KB42]
+    // it'd be hard & take long to make them simpler to understand.
+    var hasChat = false; // hasChatSection(store.pageRole);
 
     var flatComments = [];
     if (hasChat) _.each(store.allPosts, (child: Post, childId) => {
