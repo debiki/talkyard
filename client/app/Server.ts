@@ -300,13 +300,15 @@ function doSomethingWithPost(post: PostToModerate, actionUrl: string, success: (
 }
 
 
-export function createOauthUser(data, success: (response) => void) {
-  postJsonSuccess('/-/login-oauth-create-user', success, data);
+export function createOauthUser(data, success: (response) => void,
+      error: (failedRequest: HttpRequest) => ErrorPolicy) {
+  postJsonSuccess('/-/login-oauth-create-user', success, error, data);
 }
 
 
-export function createPasswordUser(data, success: (response) => void) {
-  postJsonSuccess('/-/login-password-create-user', success, data);
+export function createPasswordUser(data, success: (response) => void,
+      error: (failedRequest: HttpRequest) => ErrorPolicy) {
+  postJsonSuccess('/-/login-password-create-user', success, error, data);
 }
 
 

@@ -61,6 +61,13 @@ export function makeStupidDialogGetter() {
 }
 
 
+var getDefaultStupidDialog = makeStupidDialogGetter();
+
+export function openDefaultStupidDialog(stuff: StupidDialogStuff) {
+  getDefaultStupidDialog().open(stuff);
+}
+
+
 export var StupidDialog = createComponent({
   getInitialState: function () {
     return { isOpen: false };

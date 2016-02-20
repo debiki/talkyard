@@ -42,6 +42,7 @@ var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
 var TabbedArea = reactCreateFactory(ReactBootstrap.TabbedArea);
 var TabPane = reactCreateFactory(ReactBootstrap.TabPane);
 var Button = reactCreateFactory(ReactBootstrap.Button);
+var Alert = reactCreateFactory(ReactBootstrap.Alert);
 
 var ReactRouter = window['ReactRouter'];
 var Route = reactCreateFactory(ReactRouter.Route);
@@ -61,6 +62,7 @@ export function routes() {
       Route({ path: 'users', component: UsersTabComponent },
         Route({ path: 'active', component: ActiveUsersPanelComponent }),
         Route({ path: 'new', component: NewUsersPanelComponent }),
+        Route({ path: 'invited', component: InvitedUsersPanelComponent }),
         Route({ path: 'staff', component: NotYetImplementedComponent }),
         Route({ path: 'suspended', component: NotYetImplementedComponent }),
         Route({ path: 'threads', component: NotYetImplementedComponent }),
@@ -232,6 +234,10 @@ var CustomizePanelComponent = React.createClass(<any> {
 
     return (
       r.div({},
+        Alert({ bsStyle: 'info' },
+          r.p({}, r.b({}, "Ignore everything below,"), " if you don't know HTML and CSS."),
+          r.p({}, "We'll try to build something for you that's easier to use, later.")),
+
         Setting({ setting: settings.showForumCategories, onSave: saveSetting,
           label: 'Show Forum Categories', help: "Shall a forum main page list " +
             "all forum categories, instead of the latest topics?" }),

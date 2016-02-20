@@ -54,6 +54,9 @@ export var ReviewAllPanelComponent = React.createClass(<any> {
       return ReviewTask({ reviewTask: reviewTask, now: now, key: reviewTask.id });
     });
 
+    if (!elems.length)
+      return r.p({ className: 'esAdminSectionIntro' }, "Nothing to review.");
+
     return (
       r.div({},
         elems));

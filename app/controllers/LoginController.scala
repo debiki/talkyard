@@ -86,7 +86,8 @@ object LoginController extends mvc.Controller {
         ownerEmailInDatabase
 
     if (emailAddress != ownerEmail)
-      throwForbidden("DwE403H5", "Wrong email address")
+      // Error code used client side; don't change.
+      throwForbidden("_EsE403WEA_", "Wrong email address")
 
     true
   }

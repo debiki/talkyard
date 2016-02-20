@@ -19,6 +19,8 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/PatternInput.ts" />
+/// <reference path="../util/EmailInput.ts" />
+/// <reference path="../util/stupid-dialog.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 
@@ -37,6 +39,7 @@ var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 var PatternInput = utils.PatternInput;
+var EmailInput = util.EmailInput;
 
 
 var createUserDialog;
@@ -157,16 +160,21 @@ export var CreateUserDialogContent = createClassAndFactory({
     }
   },
 
+  setEmailOk: function(value, isOk) {
+    this.updateValueOk('email', value, isOk)
+    this.setState({ wrongEmailAddress: false });
+  },
+
   doCreateUser: function() {
     var data: any = this.state.userData;
     data.returnToUrl = this.props.anyReturnToUrl;
     if (this.props.authDataCacheKey) {
       data.authDataCacheKey = this.props.authDataCacheKey;
-      Server.createOauthUser(data, this.handleCreateUserResponse);
+      Server.createOauthUser(data, this.handleCreateUserResponse, this.handleErrorResponse);
     }
     else if (this.props.createPasswordUser) {
       data.password = this.refs.password.getValue();
-      Server.createPasswordUser(data, this.handleCreateUserResponse);
+      Server.createPasswordUser(data, this.handleCreateUserResponse, this.handleErrorResponse);
     }
     else {
       console.error('DwE7KFEW2');
@@ -200,6 +208,17 @@ export var CreateUserDialogContent = createClassAndFactory({
     }
   },
 
+  handleErrorResponse: function(failedRequest: HttpRequest) {
+    if (hasErrorCode(failedRequest, '_EsE403WEA_')) {
+      this.setState({ wrongEmailAddress: true });
+      util.openDefaultStupidDialog({
+        body: "Wrong email address. Please use the email address you " +
+            "specified on the Create Site page.",
+      });
+      return IgnoreThisError;
+    }
+  },
+
   render: function() {
     var props = this.props;
     var state = this.state;
@@ -215,13 +234,12 @@ export var CreateUserDialogContent = createClassAndFactory({
         "Your email has been verified by " + props.providerId + "." : null;
 
     var emailInput =
-        PatternInput({ label: "Email: (will be kept private)", ref: 'email', id: 'e2eEmail',
-          regex: /^.+@[^\.]+\...+/, message: "Email required",
-          notRegex: /@.*@/, notMessage: "Don't include two @",
-          onChange: (value, isOk) => this.updateValueOk('email', value, isOk),
+        EmailInput({ label: "Email: (will be kept private)", ref: 'email', id: 'e2eEmail',
+          onChangeValueOk: (value, isOk) => this.setEmailOk(value, isOk),
           // If email already provided by e.g. Google, don't let the user change it.
           disabled: hasEmailAddressAlready, defaultValue: props.email,
-          help: emailHelp });
+          help: emailHelp, error: !this.state.wrongEmailAddress ? null :
+              "Use the email address you specified on the Create Site page" });
 
     var usernameInput =
         PatternInput({ label: "Username:", ref: 'username', id: 'e2eUsername',

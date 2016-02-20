@@ -80,7 +80,7 @@ export var PatternInput = createClassAndFactory({
     if (lengthError)
       return lengthError;
 
-    return null;
+    return this.props.error;
   },
 
   checkLength: function(value: string) {
@@ -95,7 +95,7 @@ export var PatternInput = createClassAndFactory({
 
   render: function() {
     var anyError;
-    if (this.state.showErrors) {
+    if (this.state.showErrors || this.props.error) {
       var anyError = this.findAnyError(this.state.value);
       if (anyError) {
         anyError = r.b({ style: { color: 'red' }}, anyError);

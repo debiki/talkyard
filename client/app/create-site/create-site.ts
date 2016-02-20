@@ -19,6 +19,7 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../util/EmailInput.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.createsite {
@@ -34,6 +35,7 @@ var ButtonGroup = reactCreateFactory(ReactBootstrap.ButtonGroup);
 var Panel = reactCreateFactory(ReactBootstrap.Panel);
 var Input = reactCreateFactory(ReactBootstrap.Input);
 var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
+var EmailInput = util.EmailInput;
 
 var ReactRouter = window['ReactRouter'];
 var Route = reactCreateFactory(ReactRouter.Route);
@@ -128,13 +130,13 @@ var CreateWebsiteComponent = React.createClass(<any> {
       r.div({},
         r.h1({}, 'Create Site'),
         r.form({ className: 'esCreateSite', onSubmit: this.handleSubmit },
-          Input({ type: 'text', label: 'Email:', id: 'e2eEmail', className: 'esCreateSite_email',
+          EmailInput({ label: 'Email:', id: 'e2eEmail', className: 'esCreateSite_email',
               placeholder: 'your-email@example.com',
               help: 'Your email address, which you will use to login and ' +
                 'administrate the site.', ref: 'emailAddress',
-              onChange: () => this.reportOkay('email', true) }),
+              onChangeValueOk: (value, isOk) => this.reportOkay('email', isOk) }),
 
-          LocalHostnameInput({ label: 'Site Address:', placeholder: 'your-site-name',
+          LocalHostnameInput({ label: 'Site Address:', placeholder: 'your-forum-name',
               help: 'The address of your new site. (Want a custom domain name? Later.)',
               ref: 'localHostname',
               reportOkay: (isOk) => this.reportOkay('hostname', isOk) }),
@@ -278,7 +280,7 @@ var LocalHostnameInput = createClassAndFactory({
   },
 
   onChange: function(event) {
-    this.setState({ value: event.target.value });
+    this.setState({ value: event.target.value.toLowerCase() });
     var anyError = this.findAnyError(event.target.value);
     this.props.reportOkay(!anyError);
   },
@@ -291,14 +293,27 @@ var LocalHostnameInput = createClassAndFactory({
     if (_.isUndefined(value)) {
       value = this.state.value;
     }
+
+    if (/\./.test(value))
+      return "No dots please";
+
+    if (/\s/.test(value))
+      return "No spaces please";
+
+    if (/^[0-9].*/.test(value))
+      return "Don't start with a digit";
+
+    if (!/^[a-z0-9-]*$/.test(value))
+      return "Use only letters a-z and 0-9, e.g. 'my-new-website'";
+
+    if (/.*-$/.test(value))
+      return "Don't end with a dash (-)";
+
     if (value.length < 6 && !anyForbiddenPassword())
-      return 'The name should be at least six characters long.';
+      return "Type at least six characters";
 
     if (value.length < 2)
-      return 'Too short name'; // a server side regex requires >= 2 chars
-
-    if (!/^[a-z][a-z0-9-]*[a-z0-9]$/.test(value))
-      return 'Please use only lowercase letters a-z and 0-9, e.g. "my-new-website"';
+      return 'Too short'; // a server side regex requires >= 2 chars
 
     return null;
   },
@@ -309,7 +324,7 @@ var LocalHostnameInput = createClassAndFactory({
     if (this.state.showErrors) {
       var anyError = this.findAnyError();
       if (anyError) {
-        anyError = r.b({ style: { color: 'red' }}, "Error: " + anyError);
+        anyError = r.b({ style: { color: 'red' }}, anyError);
       }
     }
     return (
@@ -319,7 +334,7 @@ var LocalHostnameInput = createClassAndFactory({
         r.kbd({}, location.protocol + '//'),
         r.input({ type: 'text', id: 'dwLocalHostname', className: 'form-control',
             placeholder: this.props.placeholder, ref: 'input', onChange: this.onChange,
-            value: value, onBlur: this.showErrors }),
+            value: value, onFocus: this.showErrors }),
         r.kbd({}, '.' + debiki.baseDomain),
         r.p({ className: 'help-block' }, this.props.help),
         anyError));

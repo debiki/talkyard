@@ -41,22 +41,14 @@ export var UsersTabComponent = React.createClass(<any> {
     return {};
   },
 
-  sendInvites: function() {
-    var user = debiki2.ReactStore.getUser();
-    window.location.assign(linkToInvitesFromUser(user.userId));
-  },
-
   render: function() {
     return (
       r.div({},
         r.div({ className: 'dw-sub-nav' },
-          r.div({ className: 'pull-right' },
-            // Later: Change this to a tab that lists all invites sent by all users.
-            // And in that tab, include a Send Invites button.
-            Button({ onClick: this.sendInvites }, 'Send Invites')),
           Nav({ bsStyle: 'pills' },
             r.li({}, Link({ to: '/-/admin/users/active', activeClassName: 'active' }, "Active")),
-            r.li({}, Link({ to: '/-/admin/users/new', activeClassName: 'active' }, "New Waiting")))),
+            r.li({}, Link({ to: '/-/admin/users/new', activeClassName: 'active' }, "Waiting")),
+            r.li({}, Link({ to: '/-/admin/users/invited', activeClassName: 'active' }, "Invite")))),
             // with react-router-bootstrap, sth like:
             //   NavItem({ eventKey: 'users-new' }, 'New Waiting'))),   ?
         r.div({ className: 'dw-admin-panel' },
@@ -67,14 +59,35 @@ export var UsersTabComponent = React.createClass(<any> {
 
 export var ActiveUsersPanelComponent = React.createClass({
   render: function() {
-    return UserList({ whichUsers: 'ActiveUsers' });
+    return UserList({ whichUsers: 'ActiveUsers', intro: r.p({},
+      "Active user accounts: (This just means that the ", r.i({}, "account "),
+      "is active — it does not mean that the users has been here recently.)") });
   }
 });
 
 
 export var NewUsersPanelComponent = React.createClass({
   render: function() {
-    return UserList({ whichUsers: 'NewUsers' });
+    return UserList({ whichUsers: 'NewUsers', intro: r.p({},
+        "Users who have signed up to join this site, and are waiting for you to approve them:") });
+  }
+});
+
+
+export var InvitedUsersPanelComponent = React.createClass({
+  sendInvites: function() {
+    var user = debiki2.ReactStore.getUser();
+    window.location.assign(linkToInvitesFromUser(user.userId));
+  },
+
+  render: function() {
+    return (
+      r.div({},
+        r.div({ className: 'esAdminSectionIntro' }, r.p({},
+          "Users who have been invited to this site:", r.br(),
+          "(This list is not yet implemented.)")),
+        r.div({ style: { height: '1ex' }}),
+        Button({ onClick: this.sendInvites }, 'Send Invites')));
   }
 });
 
@@ -101,7 +114,8 @@ var UserList = createComponent({
         ? r.th({}, 'Actions')
         : null;
 
-    return (
+    return (r.div({},
+      r.div({ className: 'esAdminSectionIntro' }, this.props.intro),
       r.div({ className: 'dw-users-to-review' },
         r.table({ className: 'table' },
           r.thead({},
@@ -113,7 +127,7 @@ var UserList = createComponent({
               r.th({}, 'URL'),
               r.th({}, 'Created At'))),
           r.tbody({},
-            userRows))));
+            userRows)))));
   }
 });
 

@@ -304,7 +304,7 @@ export var Sidebar = createComponent({
     var recentClass = '';
     var starredClass = '';
     var usersClass = '';
-    var listItems;
+    var listItems: any[];
     switch (this.state.commentsType) {
       case 'Recent':
         title = commentsFound.recent.length ?
@@ -433,7 +433,7 @@ export var Sidebar = createComponent({
     var helpMessageBoxTree;
     var helpMessageBoxFour;
     var dimCommentsStyle: { opacity: string; };
-    if (this.state.commentsType === 'Recent') {
+    if (this.state.commentsType === 'Recent' && listItems.length >= 6) {
       helpMessageBoxOne =
           help.HelpMessageBox({ className: 'es-editor-help-one', message: helpMessageOne });
       if (help.isHelpMessageClosed(this.state.store, helpMessageOne)) {
