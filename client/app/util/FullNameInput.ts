@@ -25,8 +25,11 @@
 
 var r = React.DOM;
 
+// Allow '-'. '@' is checked elsewhere.
+var BadSymbolsRegex = /[!$%^&*()+|~=`{}\[\]:";<>?,.\/#]/;
 
-export var EmailInput = createClassAndFactory({
+
+export var FullNameInput = createClassAndFactory({
   getValue: function() {
     return this.refs.patternInput.getValue();
   },
@@ -39,11 +42,11 @@ export var EmailInput = createClassAndFactory({
     return (
       utils.PatternInput({ label: this.props.label, ref: 'patternInput', id: this.props.id,
         className: this.props.className, placeholder: this.props.placeholder,
-        required: this.props.required,
         help: this.props.help,
-        regex: /.+/, message: "Email required",
-        notRegex: /\s/, notMessage: "No spaces please",
-        regexTwo: /^[^@]+@[^-@\.]+\.[^@]+[^-@\.]$/, messageTwo: "Not a valid email address",
+        regex: /.+/, message: "Name required",
+        notRegex: /^\s+$/, notMessage: "Not just spaces please",
+        notRegexTwo: /@/, notMessageTwo: "No @ please",
+        notRegexThree: BadSymbolsRegex, notMessageThree: "No weird characters please",
         error: this.props.error,
         onChange: this.props.onChangeValueOk, disabled: this.props.disabled,
         defaultValue: this.props.defaultValue }));

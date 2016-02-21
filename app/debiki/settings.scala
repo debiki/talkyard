@@ -89,6 +89,7 @@ case class Settings(settingsChain: SettingsChain) {
 
   val userMustBeAuthenticated = derive("userMustBeAuthenticated", false)
   val userMustBeApproved = derive("userMustBeApproved", false)
+  val allowGuestLogin = derive("allowGuestLogin", false)
 
   val showForumCategories = derive("showForumCategories", false)
   val horizontalComments = derive("horizontalComments", false)
@@ -109,7 +110,10 @@ case class Settings(settingsChain: SettingsChain) {
 
   val googleUniversalAnalyticsTrackingId = derive("googleUniversalAnalyticsTrackingId", "")
 
-  def guestLoginAllowed =
+  val showComplicatedStuff = derive("showComplicatedStuff", false)
+
+  def isGuestLoginAllowed =
+    allowGuestLogin.asBoolean &&
     !userMustBeAuthenticated.asBoolean &&
     !userMustBeApproved.asBoolean
 
@@ -122,6 +126,7 @@ case class Settings(settingsChain: SettingsChain) {
     Json.obj(
       "userMustBeAuthenticated" -> jsonFor(userMustBeAuthenticated),
       "userMustBeApproved" -> jsonFor(userMustBeApproved),
+      "allowGuestLogin" -> jsonFor(allowGuestLogin),
       "title" -> jsonFor(title),
       "description" -> jsonFor(description),
       "headStylesHtml" -> jsonFor(headStylesHtml),
@@ -136,7 +141,8 @@ case class Settings(settingsChain: SettingsChain) {
       "companyDomain" -> jsonFor(companyDomain),
       "companyFullName" -> jsonFor(companyFullName),
       "companyShortName" -> jsonFor(companyShortName),
-      "googleUniversalAnalyticsTrackingId" -> jsonFor(googleUniversalAnalyticsTrackingId))
+      "googleUniversalAnalyticsTrackingId" -> jsonFor(googleUniversalAnalyticsTrackingId),
+      "showComplicatedStuff" -> jsonFor(showComplicatedStuff))
 
 
   private def jsonFor(setting: AnySetting): JsObject = {

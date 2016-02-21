@@ -34,16 +34,23 @@ var Input = reactCreateFactory(ReactBootstrap.Input);
 export var PageRoleInput = createComponent({
   render: function() {
     var me: Myself = this.props.me;
+    var complicated = this.props.complicated;
+
+    var wikiMindMap = complicated ? r.option({ value: PageRole.MindMap }, "Wiki Mind Map") : null;
 
     var divider;
     var openChatOption;
     var privateChatOption;
     var customHtmlPageOption;
     if (me.isAdmin) {
-      divider = r.option({ disabled: true }, "");
-      openChatOption = r.option({ value: PageRole.OpenChat }, 'Open chat');
-      privateChatOption = r.option({ value: PageRole.PrivateChat }, 'Private chat');
-      customHtmlPageOption = r.option({ value: PageRole.HomePage }, 'Custom HTML page');
+      openChatOption = r.option({ value: PageRole.OpenChat }, "Chat room");
+      // Not yet implemented:
+      // privateChatOption = r.option({ value: PageRole.PrivateChat }, "Private chat");
+
+      if (complicated) {
+        divider = r.option({ disabled: true }, "");
+        customHtmlPageOption = r.option({ value: PageRole.HomePage }, "Custom HTML page");
+      }
     }
 
     return (
@@ -63,7 +70,7 @@ export var PageRoleInput = createComponent({
         r.option({ value: PageRole.Idea }, 'Idea'),
         r.option({ value: PageRole.ToDo }, 'Todo'),
         // r.option({ value: PageRole.WikiPage }, 'Wiki'), -- if 1d layout is default?
-        r.option({ value: PageRole.MindMap }, 'Wiki Mind Map'),
+        wikiMindMap,
         divider,
         customHtmlPageOption,
         openChatOption,

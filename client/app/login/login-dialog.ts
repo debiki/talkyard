@@ -18,6 +18,8 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../utils/react-utils.ts" />
+/// <reference path="../util/FullNameInput.ts" />
+/// <reference path="../util/EmailInput.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="create-user-dialog.ts" />
@@ -39,6 +41,8 @@ var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+var FullNameInput = util.FullNameInput;
+var EmailInput = util.EmailInput;
 
 /* All login reasons?
   'LoginBecomeAdmin'
@@ -339,6 +343,20 @@ function submitOpenIdLoginForm(openidIdentifier)
 
 
 var GuestLoginDialogContent = createClassAndFactory({
+  getInitialState: function() {
+    return {
+      okayStatuses: {
+        fullName: false,  // because: required
+        email: true  // because: not required
+      },
+    };
+  },
+
+  updateValueOk: function(what, value, isOk) {
+    this.state.okayStatuses[what] = isOk; // updating in place, oh well
+    this.setState(this.state);
+  },
+
   doLogin: function() {
     var name = this.refs.nameInput.getValue();
     var email = this.refs.emailInput.getValue();
@@ -346,13 +364,18 @@ var GuestLoginDialogContent = createClassAndFactory({
       continueAfterLoginImpl(this.props.anyReturnToUrl);
     });
   },
+
   render: function() {
+    var disableSubmit = _.includes(_.values(this.state.okayStatuses), false);
     return (
       r.form({},
-        Input({ type: 'text', label: "Your name:", ref: 'nameInput', id: 'e2eName' }),
-        Input({ type: 'text', label: "Email: (optional, not shown)", ref: 'emailInput',
-            help: "If you want to be notified about replies to your comments." }),
-        Button({ onClick: this.doLogin }, "Login" + inOrderTo(this.props.loginReason)),
+        FullNameInput({ type: 'text', label: "Your name:", ref: 'nameInput', id: 'e2eName',
+            onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) }),
+        EmailInput({ label: "Email: (optional, not shown)", ref: 'emailInput', required: false,
+            help: "If you want to be notified about replies to your comments.",
+            onChangeValueOk: (value, isOk) => this.updateValueOk('email', value, isOk) }),
+        Button({ onClick: this.doLogin, disabled: disableSubmit },
+          "Login" + inOrderTo(this.props.loginReason)),
         Button({ onClick: this.props.closeDialog }, "Cancel")));
   }
 });

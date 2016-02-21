@@ -65,6 +65,7 @@ var UsersHomeComponent = React.createClass(<any> {
       var toUserId = parseInt(this.props.params.userId);
       var myUserId = ReactStore.getUser().userId;
       dieIf(toUserId === myUserId, 'EsE7UMKW2');
+      dieIf(userId_isGuest(toUserId), 'EsE6JKY20');
       editor.openToWriteMessage(toUserId);
     }
   },
@@ -189,7 +190,7 @@ var UserBar = createComponent({
         ? r.li({}, r.a({ href: linkToUserInAdminArea(user.id) }, 'Admin'))
         : null;
 
-    var sendMessageButton = loggedInUser.isAuthenticated && !isMe
+    var sendMessageButton = loggedInUser.isAuthenticated && !isMe && !user_isGuest(user)
         ? Button({ onClick: this.sendMessage, bsStyle: 'primary' }, "Send Message")
         : null;
 

@@ -109,10 +109,18 @@ function user_isMember(user: CompleteUser | BriefUser): boolean {
   return user.id > MaxGuestId;
 }
 
-function isGuest(user) {  // later: rename to user_isGuest
+function isGuest(user) {  // try to remove
+  return user_isGuest(user);
+}
+
+function user_isGuest(user) {
   // (Should rename userId to id.)
   return user.id <= MaxGuestId ||  // if is a CompleteUser
       user.userId <= MaxGuestId; // in case it's a User or BriefUser
+}
+
+function userId_isGuest(userId) {
+  return userId <= MaxGuestId;  // if is a CompleteUser
 }
 
 function isMember(user: Myself | CompleteUser): boolean {

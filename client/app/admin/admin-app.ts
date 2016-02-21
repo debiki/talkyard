@@ -202,7 +202,7 @@ var SettingsPanelComponent = React.createClass(<any> {
                 "the contents of the website. This text will be inserted into " +
                 "the Content License section of your ", termsOfUseLink, " page. " +
                 "By default, content is licensed under a Creative Commonts license " +
-                "(see below) so you can just leave this as is.") })));
+                "(see below) so you can just leave this as is.") }),
 
         /* Hide this. It's a bad idea to allow each site to use its own jurisdiction?
         SpecialContent({ contentId: '_tou_jurisdiction',
@@ -211,6 +211,15 @@ var SettingsPanelComponent = React.createClass(<any> {
                 "and where any legal issues should be resolved. This text is inserted " +
                 "into the Jurisdiction section of your ", termsOfUseLink, " page.") })));
         */
+
+        Setting({ setting: settings.showComplicatedStuff, onSave: saveSetting, label: "Complicated",
+          help: "Enables some currently not-well-tested or hard-to-use features " +
+          "like Wiki MindMaps and custom HTML pages." }),
+
+        Setting({ setting: settings.allowGuestLogin, onSave: saveSetting, label: "Allow guest login",
+          help: "Lets people post comments and create topics, without specifying any " +
+          "email address. They wouldn't be notified about replies, and " +
+          "you cannot contact them."})));
   }
 });
 

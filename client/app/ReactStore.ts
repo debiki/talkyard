@@ -402,7 +402,7 @@ function userIdList_remove(userIds: UserId[], userId: UserId) {
 
 
 ReactStore.isGuestLoginAllowed = function() {
-  return store.guestLoginAllowed || false;
+  return store.settings.allowGuestLogin || false;
 };
 
 ReactStore.getPageId = function() {

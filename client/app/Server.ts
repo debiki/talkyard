@@ -541,15 +541,11 @@ export function loadForumCategoriesTopics(forumPageId: string, topicFilter: stri
 
 export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
       doneCallback: (topics: Topic[]) => void) {
-  var url = origin + '/-/list-topics?categoryId=' + categoryId + '&' +
+  var url = '/-/list-topics?categoryId=' + categoryId + '&' +
       ServerApi.makeForumTopicsQueryParams(orderOffset);
-  $.get(url)
-    .done((response: any) => {
-      doneCallback(response.topics);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading topics: ' + JSON.stringify([x, y, z]));
-    });
+  get(url, (response: any) => {
+    doneCallback(response.topics);
+  });
 }
 
 

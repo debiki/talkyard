@@ -141,6 +141,23 @@ export var TitleEditor = createComponent({
       var url = location.protocol + '//' + location.host +
           addFolderSlashes(this.state.folder) + dashId + slashSlug;
 
+      var anyUrlEditor = !store.settings.showComplicatedStuff ? null :
+        r.div({ className: 'esTtlEdtr_urlSettings' },
+          r.p({}, r.b({}, "Ignore this "), "unless you understand URL addresses."),
+          Input({ label: 'Page slug', type: 'text', ref: 'slugInput', className: 'dw-i-slug',
+            labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
+            value: this.state.slug, onChange: this.onSlugChanged,
+            help: "The name of this page in the URL."}),
+          Input({ label: 'Folder', type: 'text', ref: 'folderInput', className: 'dw-i-folder',
+            labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
+            value: this.state.folder, onChange: this.onFolderChanged,
+            help: "Any /url/path/segments/ to this page." }),
+          Input({ label: 'Show page ID in URL', type: 'checkbox', ref: 'showIdInput',
+            wrapperClassName: 'col-xs-offset-2 col-xs-10',
+            className: 'dw-i-showid', checked: this.state.showId,
+            onChange: this.onShowIdChanged }),
+          r.p({}, "The page URL will be: ", r.kbd({}, url)));
+
       complicatedStuff =
         r.div({},
           r.div({ className: 'dw-compl-stuff form-horizontal', key: 'compl-stuff-key' },
@@ -148,20 +165,11 @@ export var TitleEditor = createComponent({
               editor.PageRoleInput({ me: store.me, value: this.state.pageRole,
                 label: "Page type", labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
                 onChange: this.onPageRoleChanged,
+                complicated: store.settings.showComplicatedStuff,
                 title: 'Page type', className: 'esEdtr_titleEtc_pageRole',
                 help: "Makes the page behave differently. For example, pages of type Question " +
                   "can be marked as solved. And a To-Do as doing and done." }),
-            Input({ label: 'Slug', type: 'text', ref: 'slugInput', className: 'dw-i-slug',
-                labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
-                value: this.state.slug, onChange: this.onSlugChanged }),
-            Input({ label: 'Folder', type: 'text', ref: 'folderInput', className: 'dw-i-folder',
-                labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
-                value: this.state.folder, onChange: this.onFolderChanged }),
-            Input({ label: 'Show page ID in URL', type: 'checkbox', ref: 'showIdInput',
-                wrapperClassName: 'col-xs-offset-2 col-xs-10',
-                className: 'dw-i-showid', checked: this.state.showId,
-                onChange: this.onShowIdChanged })),
-          r.p({}, "The page URL will be: ", r.kbd({}, url)));
+            anyUrlEditor));
     }
 
     // Once the complicated stuff has been shown, one cannot hide it, except by cancelling

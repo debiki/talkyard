@@ -82,9 +82,11 @@ object ReactJson {
       "appVersion" -> Globals.applicationVersion,
       "now" -> JsNumber((new ju.Date).getTime),
       "siteStatus" -> JsString(siteStatusString),
-      "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed && pageReq.siteId == KajMagnusSiteId),
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
+      "settings" -> Json.obj(
+        "allowGuestLogin" -> JsBoolean(siteSettings.isGuestLoginAllowed),
+        "showComplicatedStuff" -> JsBoolean(siteSettings.showComplicatedStuff.asBoolean)),
       "pageId" -> pageReq.thePageId,
       "pageRole" -> JsNumber(pageReq.thePageRole.toInt),
       "pagePath" -> JsPagePath(pageReq.pagePath),
@@ -206,9 +208,12 @@ object ReactJson {
       "appVersion" -> Globals.applicationVersion,
       "pageVersion" -> page.meta.version,
       "siteStatus" -> JsString(siteStatusString),
-      "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed && transaction.siteId == KajMagnusSiteId),
+      // Later: move these two userMustBe... to settings {} too.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
+      "settings" -> Json.obj(
+        "allowGuestLogin" -> JsBoolean(siteSettings.isGuestLoginAllowed),
+        "showComplicatedStuff" -> JsBoolean(siteSettings.showComplicatedStuff.asBoolean)),
       "pageId" -> pageId,
       "pageMemberIds" -> pageMemberIds,
       "categoryId" -> JsNumberOrNull(page.meta.categoryId),
@@ -267,9 +272,11 @@ object ReactJson {
     Json.obj(
       "appVersion" -> Globals.applicationVersion,
       "siteStatus" -> JsString(siteStatusString),
-      "guestLoginAllowed" -> JsBoolean(siteSettings.guestLoginAllowed && dao.siteId == KajMagnusSiteId),
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
+      "settings" -> Json.obj(
+        "allowGuestLogin" -> JsBoolean(siteSettings.isGuestLoginAllowed),
+        "showComplicatedStuff" -> JsBoolean(siteSettings.showComplicatedStuff.asBoolean)),
       "me" -> userNoPageToJson(request),
       "maxUploadSizeBytes" -> Globals.maxUploadSizeBytes,
       "siteSections" -> makeSiteSectionsJson(dao))

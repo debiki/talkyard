@@ -786,13 +786,15 @@ export var Editor = createComponent({
               type: 'text', ref: 'titleInput', tabIndex: 1, onChange: this.onTitleEdited,
               placeholder: "Type a title — what is this about, in one brief sentence?" });
 
-      categoriesDropdown =
+      if (this.state.newForumPageRole)
+        categoriesDropdown =
           SelectCategoryInput({ className: 'esEdtr_titleEtc_category',
               categories: this.state.store.categories, onChange: this.changeCategory,
               categoryId: this.state.newForumTopicCategoryId });
 
       if (isStaff(me)) {
         pageRoleDropdown = PageRoleInput({ me: me, value: this.state.newForumPageRole,
+            complicated: store.settings.showComplicatedStuff,
             onChange: this.changeNewForumPageRole,
             title: 'Page type', className: 'esEdtr_titleEtc_pageRole' });
       }

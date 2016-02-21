@@ -291,9 +291,9 @@ interface Store {
   pageVersion: PageVersion;
   now: number;
   siteStatus: string;
-  guestLoginAllowed: boolean;
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
+  settings: SiteSettings;
   pageMemberIds: UserId[];
   pageId: string;
   forumId?: string;
@@ -344,6 +344,12 @@ interface Store {
   // If quickUpdate is true only posts in postsToUpdate will be updated.
   quickUpdate: boolean;
   postsToUpdate: { [postId: number]: boolean };
+}
+
+
+interface SiteSettings {
+  allowGuestLogin: boolean;
+  showComplicatedStuff: boolean;
 }
 
 

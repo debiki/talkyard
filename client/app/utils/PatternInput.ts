@@ -53,6 +53,9 @@ export var PatternInput = createClassAndFactory({
   },
 
   findPatternError: function(value) {
+    if (this.props.required === false && _.isEmpty(value))
+      return null;
+
     var lengthError = this.checkLength(value);
     if (this.props.testLengthFirst && lengthError)
       return lengthError;

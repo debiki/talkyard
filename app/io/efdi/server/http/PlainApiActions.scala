@@ -145,15 +145,22 @@ private[http] object PlainApiActions {
 
       if (!allowAnyone) {
         // ViewPageController has allow-anyone = true.
+        val isXhr = DebikiHttp.isAjax(request)
         def goToHomepageOrIfXhrThen(block: => Unit) {
-          if (DebikiHttp.isAjax(request)) block
+          if (isXhr) block
           else throwTemporaryRedirect("/")
         }
         val siteSettings = dao.loadWholeSiteSettings()
+
         if (!anyUser.exists(_.isApprovedOrStaff) && siteSettings.userMustBeApproved.asBoolean)
           goToHomepageOrIfXhrThen(throwForbidden("DwE4HKG5", "Not approved"))
+
         if (!anyUser.exists(_.isAuthenticated) && siteSettings.userMustBeAuthenticated.asBoolean)
           goToHomepageOrIfXhrThen(throwForbidden("DwE6JGY2", "Not authenticated"))
+
+        if (anyUser.exists(_.isGuest) && !siteSettings.isGuestLoginAllowed && isXhr)
+          throwForbidden("DwE7JYK4", o"""Guest access has been disabled, but you're logged in
+            as a guest. Please sign up with an email account instead""")
       }
 
       val apiRequest = ApiRequest[A](

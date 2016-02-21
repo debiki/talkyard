@@ -19,6 +19,7 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/PatternInput.ts" />
+/// <reference path="../util/FullNameInput.ts" />
 /// <reference path="../util/EmailInput.ts" />
 /// <reference path="../util/stupid-dialog.ts" />
 /// <reference path="../ReactStore.ts" />
@@ -39,6 +40,7 @@ var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 var PatternInput = utils.PatternInput;
+var FullNameInput = util.FullNameInput;
 var EmailInput = util.EmailInput;
 
 
@@ -225,10 +227,9 @@ export var CreateUserDialogContent = createClassAndFactory({
     var hasEmailAddressAlready = props.email && props.email.length;
 
     var fullNameInput =
-        PatternInput({ label: "Your name: (the long version)", ref: 'fullName',
+        FullNameInput({ label: "Your name: (the long version)", ref: 'fullName',
             id: 'e2eFullName', defaultValue: props.name, minLength: 1,
-            notRegex: /^\s+$/, notMessage: "Not just spaces please",
-            onChange: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
+            onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
 
     var emailHelp = props.providerId && hasEmailAddressAlready ?
         "Your email has been verified by " + props.providerId + "." : null;
