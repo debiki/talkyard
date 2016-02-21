@@ -360,8 +360,9 @@ export function listCompleteUsers(whichUsers,
 }
 
 
-export function sendInvite(toEmailAddress: string, success: (invite: Invite) => void) {
-  postJsonSuccess('/-/send-invite', success, { toEmailAddress: toEmailAddress });
+export function sendInvite(toEmailAddress: string, success: (invite: Invite) => void,
+      error: (failedRequest: HttpRequest) => ErrorPolicy) {
+  postJsonSuccess('/-/send-invite', success, error, { toEmailAddress: toEmailAddress });
 }
 
 

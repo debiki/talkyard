@@ -31,13 +31,18 @@ export var EmailInput = createClassAndFactory({
     return this.refs.patternInput.getValue();
   },
 
+  findPatternError: function(value) {
+    return this.refs.patternInput.findPatternError(value);
+  },
+
   render: function() {
     return (
       utils.PatternInput({ label: this.props.label, ref: 'patternInput', id: this.props.id,
         className: this.props.className, placeholder: this.props.placeholder,
         help: this.props.help,
-        regex: /^.+@[^\.]+\...+/, message: "Email required",
-        notRegex: /@.*@/, notMessage: "Don't include two @",
+        regex: /.+/, message: "Email required",
+        notRegex: /\s/, notMessage: "No spaces please",
+        regexTwo: /^.+@[^\.]+\...+/, messageTwo: "Not a valid email address",
         error: this.props.error,
         onChange: this.props.onChangeValueOk, disabled: this.props.disabled,
         defaultValue: this.props.defaultValue }));

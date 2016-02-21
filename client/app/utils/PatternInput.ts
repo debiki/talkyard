@@ -49,6 +49,10 @@ export var PatternInput = createClassAndFactory({
   },
 
   findAnyError: function(value: string) {
+    return this.findPatternError(value) || this.props.error;
+  },
+
+  findPatternError: function(value) {
     var lengthError = this.checkLength(value);
     if (this.props.testLengthFirst && lengthError)
       return lengthError;
@@ -80,7 +84,7 @@ export var PatternInput = createClassAndFactory({
     if (lengthError)
       return lengthError;
 
-    return this.props.error;
+    return null;
   },
 
   checkLength: function(value: string) {

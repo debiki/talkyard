@@ -19,6 +19,7 @@
 /// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../util/EmailInput.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.users {
@@ -36,6 +37,7 @@ var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
+var EmailInput = util.EmailInput;
 
 
 export var UserInvitesComponent = React.createClass({
@@ -182,11 +184,16 @@ var InviteDialog = createComponent({
   },
 
   open: function(addInvite) {
-    this.setState({ isOpen: true, addInvite: addInvite });
+    this.setState({ isOpen: true, addInvite: addInvite, maySubmit: false, error: null });
   },
 
   close: function() {
     this.setState({ isOpen: false });
+  },
+
+  onEmailChanged: function(value, ok) {
+    // `ok` is false if this.state.error, so ignore it.
+    this.setState({ error: null, maySubmit: !this.refs.emailInput.findPatternError(value) });
   },
 
   sendInvite: function() {
@@ -194,6 +201,18 @@ var InviteDialog = createComponent({
     Server.sendInvite(emailAddress, (invite: Invite) => {
       this.state.addInvite(invite);
       this.close();
+    }, (failedRequest: HttpRequest) => {
+      if (hasErrorCode(failedRequest, '_EsE403IUAM_')) {
+        this.setState({ error: "He or she has joined this site already" });
+      }
+      else if (hasErrorCode(failedRequest, '_EsE403IAAC0_')) {
+        this.setState({ error: "You have invited him or her already" });
+      }
+      else {
+        return undefined;
+      }
+      this.setState({ maySubmit: false });
+      return IgnoreThisError;
     });
   },
 
@@ -205,10 +224,10 @@ var InviteDialog = createComponent({
         ModalBody({},
           r.p({}, "We'll send your friend a brief email, and he or she then clicks a link " +
               "to join immediately, no login required."),
-          Input({ type: 'email', label: 'Email Address', placeholder: 'Enter email',
-              ref: 'emailInput' })),
+          EmailInput({ label: 'Email Address', placeholder: 'Enter email',
+              ref: 'emailInput', error: this.state.error, onChangeValueOk: this.onEmailChanged })),
         ModalFooter({},
-          Button({ onClick: this.sendInvite }, 'Send Invite'),
+          Button({ onClick: this.sendInvite, disabled: !this.state.maySubmit }, 'Send Invite'),
           Button({ onClick: this.close }, 'Cancel'))));
   }
 });

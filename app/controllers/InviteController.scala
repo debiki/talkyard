@@ -46,7 +46,7 @@ object InviteController extends mvc.Controller {
 
   def sendInvite = PostJsonAction(RateLimits.SendInvite, maxLength = 200) {
         request =>
-    val toEmailAddress = (request.body \ "toEmailAddress").as[String]
+    val toEmailAddress = (request.body \ "toEmailAddress").as[String].trim
 
     if (!isValidNonLocalEmailAddress(toEmailAddress))
       throwForbidden("DwE47YK2", "Bad email address")
@@ -59,12 +59,12 @@ object InviteController extends mvc.Controller {
     request.dao.readOnlyTransaction { transaction =>
       val alreadyExistingUser = transaction.loadUserByEmailOrUsername(toEmailAddress)
       if (alreadyExistingUser.nonEmpty)
-        throwForbidden("DwE403IUAM0", "That person has joined this site already")
+        throwForbidden("_EsE403IUAM_", "That person has joined this site already")
 
       val invites = transaction.loadInvites(createdById = request.theUserId)
       for (invite <- invites if invite.emailAddress == toEmailAddress) {
         if (invite.invalidatedAt.isEmpty && invite.deletedAt.isEmpty)
-          throwForbidden("Dw403IAAC0", "You have invited him or her already")
+          throwForbidden("_EsE403IAAC0_", "You have invited him or her already")
       }
     }
 
