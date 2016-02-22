@@ -41,7 +41,10 @@ login -
 
 different users -
   switch user:
-  see one's own unapproved comments:
+  unapproved comments -
+    see own, not others:
+    staff sees all:
+    staff can approve:  (2WY0)
 
 profile page -
   upload photo:  (8PK2)
@@ -101,8 +104,10 @@ categories -
 topics -
   go back to forum:
   create topic -
-    no category:  create-site.test.js, part of create-with-password-account (7UC2)
-    some category:
+    in no category:  create-site.test.js, part of create-with-password-account (7UC2)
+    in a category:
+    change category:
+    change topic type:
   edit -
     edit title:
     change category:
@@ -123,6 +128,13 @@ topics -
   to-do:
     cycle done/pending:
   report:
+
+editor -
+  maximize editor:
+  preview:
+  upload things:  (7KFC2)
+  other buttons -
+    ...
 
 discussion -
   users on page:
@@ -148,10 +160,10 @@ discussion -
 post -
   votes -
     cast all types:
-    like -> sort order:
-    wrong -> warning:
-    bury -> sort order:
-    unwanted -> karma:
+    like –> sort order:
+    wrong –> warning:
+    bury –> sort order:
+    unwanted –> karma:
   delete:
   flag:   — also see (6JS3)
   view author -
@@ -164,7 +176,7 @@ chat -
   two users chat:   (4FE2)
   shows last 50 messages:
 
-uploads -
+uploads -  (7KFC2)
   upload profile pic:  (8PK2)
   upload jpg, png:
   upload video:
@@ -182,6 +194,7 @@ users online -
   chat:
     I go on/off:
     other on/off:
+  unchanged after server restart:
 
 watchbar -
   recent list:
@@ -211,5 +224,6 @@ links -
 admin -
   delete flagged:   — also see (6JS3)
   clear flag:   — also see (6JS3)
+  approve stuff:  (2WY0)
   ... lots of stuff ...
 

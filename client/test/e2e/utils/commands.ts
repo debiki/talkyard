@@ -1,5 +1,13 @@
-var assert = require('assert');
-var logMessage = require('./log-and-die').logMessage;
+/// <reference path="../../../../modules/definitely-typed/lodash/lodash.d.ts"/>
+/// <reference path="../../../../modules/definitely-typed/node/node.d.ts"/>
+
+import assert = require('assert');
+import logMessageModule = require('./log-and-die');
+var logMessage = logMessageModule.logMessage;
+var logWarning = logMessageModule.logWarning;
+
+declare var browser: any;
+
 
 browser.addCommand('waitAndSetValue', function(selector, value) {
   browser.waitForVisible(selector);
@@ -34,7 +42,7 @@ browser.addCommand('origin', function(selector, value) {
 });
 
 
-browser.addCommand('goTo', function(url) {
+browser.addCommand('go', function(url) {
   logMessage("Go: " + url);
   browser.url(url);
 });

@@ -133,14 +133,15 @@ object ImportExportController extends mvc.Controller {
 
 
   def readSite(jsObject: JsObject): Site = {
+    val localHostname = readString(jsObject, "localHostname")
     Site(
       id = readString(jsObject, "id"),
-      name = readString(jsObject, "name"),
+      name = localHostname,
       creatorIp = "0.0.0.0",
       creatorEmailAddress = readString(jsObject, "creatorEmailAddress"),
       embeddingSiteUrl = None,
       hosts = List(
-        SiteHost(readString(jsObject, "hostname"), SiteHost.RoleCanonical)))
+        SiteHost(localHostname, SiteHost.RoleCanonical)))
   }
 
 

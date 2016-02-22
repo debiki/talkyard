@@ -41,7 +41,7 @@ trait CreateSiteDao {
         isTestSiteOkayToDelete: Boolean, skipMaxSitesCheck: Boolean) : Site = {
 
     if (!CreateSiteController.isOkaySiteName(name))
-      throwForbidden2("DwE7UKF2", "Bad site name")
+      throwForbidden2("DwE7UKF2", s"Bad site name: '$name'")
 
     dieIf(hostname contains ":", "DwE3KWFE7")
     val quotaLimitMegabytes = p.Play.configuration.getInt("debiki.newSite.quotaLimitMegabytes")

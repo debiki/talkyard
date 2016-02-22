@@ -1,10 +1,14 @@
-var _ = require('lodash');
-var minimist = require('minimist');
-var logAndDie = require('./log-and-die.js');
+/// <reference path="../../../../modules/definitely-typed/lodash/lodash.d.ts"/>
+/// <reference path="../../../../modules/definitely-typed/node/node.d.ts"/>
+/// <reference path="../../../../modules/definitely-typed/minimist/minimist.d.ts"/>
+
+import _ = require('lodash');
+import minimist = require('minimist');
+import logAndDie = require('./log-and-die');
 var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 var logWarning = logAndDie.logWarning, logMessage = logAndDie.logMessage;
 
-var settings = {
+var settings: any = {
   host: 'localhost',
   testLocalHostnamePrefix: 'e2e-test--',
   testEmailAddressPrefix: 'e2e-test--',
@@ -37,7 +41,7 @@ interface settings {
 
 // ---- Analyze arguments
 
-var args = minimist(process.argv.slice(2));
+var args: any = minimist(process.argv.slice(2));
 _.extend(settings, args);
 
 settings.scheme = settings.secure ? 'https' : 'http';
@@ -99,4 +103,4 @@ console.log("==================================================");
 */
 
 
-module.exports = settings;
+export = settings;

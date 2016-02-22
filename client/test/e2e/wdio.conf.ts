@@ -1,15 +1,17 @@
-var _ = require('lodash');
-var settings = require('./utils/settings.js');
-var server = require('./utils/server.js');
+/// <reference path="../../../modules/definitely-typed/lodash/lodash.d.ts"/>
+
+import _ = require('lodash');
+import settings = require('./utils/settings');
+import server = require('./utils/server');
 
 server.initOrDie();
 
-var specs = ['client/test/e2e/specs/**/*.js'];
+var specs = ['target/e2e-tests/specs/**/*.js'];
 if (settings.only) {
-  specs = ['client/test/e2e/specs/**/*' + settings.only + '*.js'];
+  specs = ['target/e2e-tests/specs/**/*' + settings.only + '*.js'];
 }
 
-exports.config = {
+var api = { config: {
 
   // ==================
   // Specify Test Files
@@ -177,4 +179,6 @@ exports.config = {
   // possible to defer the end of the process using a promise.
   // onComplete: function(exitCode) {
   // }
-};
+}};
+
+export = api;

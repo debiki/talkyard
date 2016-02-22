@@ -1,11 +1,16 @@
-var _ = require('lodash');
-var assert = require('assert');
-var logAndDie = require('./log-and-die.js');
+/// <reference path="../../../../modules/definitely-typed/lodash/lodash.d.ts"/>
+/// <reference path="../../../../modules/definitely-typed/node/node.d.ts"/>
+
+import _ = require('lodash');
+import assert = require('assert');
+import logAndDie = require('./log-and-die');
 var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 var logMessage = logAndDie.logMessage;
 
+declare var browser: any;
 
-var pages = {
+
+var pages: any = {
   createSite: {},
   createSomething: {},
   loginDialog: {},
@@ -94,5 +99,5 @@ pages.loginDialog.loginWithFacebook = function(data) {
 };
 
 
-module.exports = pages;
+export = pages;
 

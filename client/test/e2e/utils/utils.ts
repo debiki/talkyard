@@ -1,5 +1,8 @@
-var assert = require('assert');
-var settings = require('./settings.js');
+/// <reference path="../../../../modules/definitely-typed/lodash/lodash.d.ts"/>
+/// <reference path="../../../../modules/definitely-typed/node/node.d.ts"/>
+
+import assert = require('assert');
+import settings = require('./settings');
 
 function regexEscapeSlashes(origin) {
   return origin.replace(/\//g, '\\/');
@@ -41,4 +44,4 @@ var utils = {
 };
 
 
-module.exports = utils;
+export = utils;

@@ -1,17 +1,24 @@
 // This file sends requests to the server we're testing. Doesn't start any server.
 
-var _ = require('lodash');
-var assert = require('assert');
-var syncRequest = require('sync-request');
-var logAndDie = require('./log-and-die.js');
-var settings = require('./settings.js');
+/// <reference path="../test-types.ts"/>
+/// <reference path="../../../../modules/definitely-typed/lodash/lodash.d.ts"/>
+/// <reference path="../../../../modules/definitely-typed/node/node.d.ts"/>
+
+import _ = require('lodash');
+import assert = require('assert');
+import settings = require('./settings');
+import logAndDie = require('./log-and-die');
 var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 var logMessage = logAndDie.logMessage;
+
+// Didn't find any Typescript defs.
+declare function require(path: string): any;
+var syncRequest = require('sync-request');
 
 var xsrfTokenAndCookies;
 
 
-function initOrDie(mainSiteOrigin, e2eTestPassword) {
+function initOrDie() {
   var response = syncRequest('GET', settings.mainSiteOrigin);
   dieIf(response.statusCode !== 200,
       "Error getting xsrf token and cookies from " + settings.mainSiteOrigin + " [EsE2FKE3]",
@@ -79,21 +86,27 @@ function getOrDie(url) {
 
 
 function showResponse(response) {
+  var bodyString = response.body;
+  if (!_.isString(bodyString)) {
+    bodyString = response.getBody('utf8');
+  }
   return (
       "Response status code: " + response.statusCode + " (should have been 200)\n" +
-      showResponseBodyJson(response.body));
+      showResponseBodyJson(bodyString));
 }
 
 
 function showResponseBodyJson(body) {
+  var text = body;
+  if (!_.isString(text)) text = JSON.stringify(text);
   return (
   "Response body: ———————————————————————————————————————————————————————————————————\n" +
-  JSON.stringify(body) +
+  text +
   "\n——————————————————————————————————————————————————————————————————————————————————\n");
 }
 
 
-function importSiteData(siteData) {
+function importSiteData(siteData: SiteData) {
   var url = settings.mainSiteOrigin + '/-/import-site';
   var body = postOrDie(url, siteData).bodyJson();
   dieIf(!body.site || !body.site.id, "No site.id in import-site response [EsE7UGK2]",
@@ -102,13 +115,13 @@ function importSiteData(siteData) {
 }
 
 
-function getLastEmailSenTo(email) {
+function getLastEmailSenTo(email: string) {
   var response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email);
   return JSON.parse(response.body); // { subject, bodyTextHtml }
 }
 
 
-module.exports = {
+export = {
   initOrDie: initOrDie,
   importSiteData: importSiteData,
   getLastEmailSenTo: getLastEmailSenTo,

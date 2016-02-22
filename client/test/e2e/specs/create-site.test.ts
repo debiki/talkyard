@@ -1,11 +1,18 @@
-var assert = require('assert');
-var server = require('../utils/server');
-var utils = require('../utils/utils');
-var pages = require('../utils/pages');
-var settings = require('../utils/settings');
-var logAndDie = require('../utils/log-and-die');
+/// <reference path="../../../../modules/definitely-typed/lodash/lodash.d.ts"/>
+/// <reference path="../../../../modules/definitely-typed/node/node.d.ts"/>
+/// <reference path="../../../../modules/definitely-typed/mocha/mocha.d.ts"/>
+
+import assert = require('assert');
+import server = require('../utils/server');
+import utils = require('../utils/utils');
+import pages = require('../utils/pages');
+import settings = require('../utils/settings');
+import logAndDie = require('../utils/log-and-die');
 var logUnusual = logAndDie.logUnusual, die = logAndDie.die, dieIf = logAndDie.dieIf;
 var logMessage = logAndDie.logMessage;
+
+declare var browser: any;
+
 
 describe('/-/create-site  @createsite', function() {
 
@@ -27,14 +34,14 @@ describe('/-/create-site  @createsite', function() {
 
   it('can create a new site as a Password user  @login @password', function() {
     var data = createPasswordTestData();
-    browser.goTo(utils.makeCreateSiteWithFakeIpUrl());
+    browser.go(utils.makeCreateSiteWithFakeIpUrl());
     pages.createSite.fillInFieldsAndSubmit(data);
     browser.click('#e2eLogin');
     pages.loginDialog.createPasswordAccount(data);
     var email = server.getLastEmailSenTo(data.email);
     var link = utils.findFirstLinkToUrlIn(
         data.origin + '/-/login-password-confirm-email', email.bodyHtmlText);
-    browser.goTo(link);
+    browser.go(link);
     browser.waitAndClick('#e2eContinue');
     pages.createSomething.createForum("Password Forum Title");
 
@@ -63,7 +70,7 @@ describe('/-/create-site  @createsite', function() {
     var data = createPasswordTestData();
     data.email = settings.gmailEmail;
     data.password = settings.gmailPassword;
-    browser.goTo(utils.makeCreateSiteWithFakeIpUrl());
+    browser.go(utils.makeCreateSiteWithFakeIpUrl());
     pages.createSite.fillInFieldsAndSubmit(data);
     browser.click('#e2eLogin');
     pages.loginDialog.createGmailAccount(data);
@@ -74,7 +81,7 @@ describe('/-/create-site  @createsite', function() {
     var data = createPasswordTestData();
     data.email = settings.facebookAdminEmail;
     data.password = settings.facebookAdminPassword;
-    browser.goTo(utils.makeCreateSiteWithFakeIpUrl());
+    browser.go(utils.makeCreateSiteWithFakeIpUrl());
     pages.createSite.fillInFieldsAndSubmit(data);
     browser.click('#e2eLogin');
     pages.loginDialog.createFacebookAccount(data);

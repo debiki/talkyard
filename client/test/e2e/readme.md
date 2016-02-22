@@ -15,15 +15,16 @@ Run tests like so:
 
 2. In another shell, run the test code:
 
-        scripts/wdio client/test/e2e/wdio.conf.js --skip3rdPartyDependentTests
-        scripts/wdio client/test/e2e/wdio.conf.js --skip3  # shorthand for the above
+        gulp prepare-e2e # transpiles Typescript
+        scripts/wdio target/e2e/wdio.conf.js --skip3rdPartyDependentTests
+        scripts/wdio target/e2e/wdio.conf.js --skip3  # shorthand for the line above
 
         # Or if you have configured Google and Facebook etc OpenAuth test accounts:
-        scripts/wdio client/test/e2e/wdio.conf.js --secretsPath ../conf/e2e-secrets.json
+        scripts/wdio target/e2e/wdio.conf.js --secretsPath ../conf/e2e-secrets.json
 
     You can run only tests that match a tag: ("@oneTag" is sent to `mochaOpts.grep`)
 
-        scripts/wdio client/test/e2e/wdio.conf.js --skip3 --grep "@oneTag"
+        scripts/wdio target/e2e/wdio.conf.js --skip3 --grep "@oneTag"
 
 To debug in node.js: (this **does not work** though, because Webdriver.io forks many processes
 somehow and they all try to debug-listen on the debug port --> address-already-in-use error.
@@ -32,7 +33,7 @@ to use node-debug + webdriver.io)
 
     npm install -g node-inspector  # do once only
 
-    node-debug scripts/wdio client/test/e2e/wdio.conf.js --skip3
+    node-debug scripts/wdio target/e2e/wdio.conf.js --skip3
 
 
 Webdriver.io is used because:
