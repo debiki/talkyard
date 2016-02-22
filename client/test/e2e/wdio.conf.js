@@ -4,6 +4,10 @@ var server = require('./utils/server.js');
 
 server.initOrDie();
 
+var specs = ['client/test/e2e/specs/**/*.js'];
+if (settings.only) {
+  specs = ['client/test/e2e/specs/**/*' + settings.only + '*.js'];
+}
 
 exports.config = {
 
@@ -15,9 +19,7 @@ exports.config = {
   // NPM script (see https://docs.npmjs.com/cli/run-script) then the current working
   // directory is where your package.json resides, so `wdio` will be called from there.
 
-  specs: [
-    'client/test/e2e/specs/**/*.js',
-  ],
+  specs: specs,
   exclude: [
     // 'path/to/excluded/files'
   ],

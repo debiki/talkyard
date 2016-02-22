@@ -95,7 +95,7 @@ browser.addCommand('waitAndAssertVisibleTextMatches', function(selector, regex) 
 
 browser.addCommand('assertTextMatches', function(selector, regex) {
   var text = browser.getText(selector);
-  assert(regex.test(text), "'Elem selected by " + selector + "' didn't match " + regex.toString() +
+  assert(regex.test(text), "Elem selected by '" + selector + "' didn't match " + regex.toString() +
       ", actual text: '" + text + "'");
 });
 

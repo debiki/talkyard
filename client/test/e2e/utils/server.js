@@ -50,7 +50,13 @@ function postOrDie(url, data) {
 
   dieIf(response.statusCode !== 200, "POST request failed to " + url + " [EsE5GPK02]",
       showResponse(response));
-  return response;
+  return {
+    statusCode: response.statusCode,
+    headers: response.headers,
+    bodyJson: function() {
+      return JSON.parse(response.getBody('utf8'));
+    }
+  };
 }
 
 
@@ -89,7 +95,7 @@ function showResponseBodyJson(body) {
 
 function importSiteData(siteData) {
   var url = settings.mainSiteOrigin + '/-/import-site';
-  var body = postOrDie(url, siteData).body;
+  var body = postOrDie(url, siteData).bodyJson();
   dieIf(!body.site || !body.site.id, "No site.id in import-site response [EsE7UGK2]",
       showResponseBodyJson(body));
   return body.site;

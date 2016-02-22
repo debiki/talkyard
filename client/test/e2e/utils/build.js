@@ -1,4 +1,9 @@
-var testData = {
+var _ = require('lodash');
+var assert = require('assert');
+var settings = require('./settings.js');
+
+
+var baseData = {
   site: {
     id: 'zzgg',
     name: 'zzwwqq4' + Date.now(),
@@ -57,21 +62,12 @@ var testData = {
   }],
 };
 
-var tests = {
-  '@tags': ['Import'],
-  'test import': function(b) {
-    var globals = b.globals;
 
-    b.import(testData, (site) => {
-      console.log("Site: " + JSON.stringify(site));
-      b.url(site.siteIdOrigin);
-    });
-
-    // Better: give the text block an #e2e... id.
-    b.expect.element('body').text.to.contain('login as admin to create something');
-    b.endOrPause();
-  },
+var api = {
+  emptyForumOnlyOwner: function() {
+    return _.cloneDeep(baseData);
+  }
 };
 
-export = tests;
-// vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list
+
+module.exports = api;
