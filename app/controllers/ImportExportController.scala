@@ -24,6 +24,7 @@ import debiki.JsonUtils._
 import debiki._
 import io.efdi.server.http._
 import java.{util => ju}
+import org.scalactic._
 import play.api._
 import play.api.libs.json._
 import play.api.mvc.{Action => _}
@@ -60,24 +61,31 @@ object ImportExportController extends mvc.Controller {
     val newSite = doImportSite(siteData, request)
 
     Ok(Json.obj(
-      "site" -> Json.obj(
-        "id" -> newSite.id,
-        "siteIdOrigin" -> Globals.siteByIdOrigin(newSite.id)))) as JSON
+      "id" -> newSite.id,
+      "siteIdOrigin" -> Globals.siteByIdOrigin(newSite.id))) as JSON
   }
 
 
   private case class ImportSiteData(
     site: Site,
-    users: Seq[CompleteUser])
+    users: Seq[CompleteUser],
+    pages: Seq[PageMeta],
+    pagePaths: Seq[PagePathWithId],
+    categories: Seq[Category],
+    posts: Seq[Post])
 
 
   private def parseSiteJson(request: JsonPostRequest, isE2eTest: Boolean): ImportSiteData = {
     val bodyJson = request.body
 
-    val (siteJson, usersJson) =
+    val (siteMetaJson, membersJson, pagesJson, pathsJson, categoriesJson, postsJson) =
       try {
-        (readJsObject(bodyJson, "site"),
-          readJsArray(bodyJson, "users"))
+        (readJsObject(bodyJson, "meta"),
+          readJsArray(bodyJson, "members"),
+          readJsArray(bodyJson, "pages"),
+          readJsArray(bodyJson, "pagePaths"),
+          readJsArray(bodyJson, "categories"),
+          readJsArray(bodyJson, "posts"))
       }
       catch {
         case ex: IllegalArgumentException =>
@@ -85,23 +93,48 @@ object ImportExportController extends mvc.Controller {
       }
 
     val siteToSave =
-      try readSite(siteJson)
+      try readSiteMeta(siteMetaJson)
       catch {
         case ex: IllegalArgumentException =>
           throwBadRequest("EsE6UJM2", s"Invalid 'site' object json: ${ex.getMessage}")
       }
 
-    val users: Seq[CompleteUser] = usersJson.value.zipWithIndex map { case (json, index) =>
-      readUserOrError(json, isE2eTest) match {
-        case Left(errorMessage) =>
+    val users: Seq[CompleteUser] = membersJson.value.zipWithIndex map { case (json, index) =>
+      readMemberOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
           throwBadReq(
-            "EsE5KPMW2", s"Invalid user json at index $index in the 'users' list: $errorMessage")
-        case Right(user) =>
-          user
-      }
+            "EsE0GY72", s"""Invalid user json at index $index in the 'users' list: $errorMessage,
+                json: $json"""))
     }
 
-    ImportSiteData(siteToSave, users)
+    val pages: Seq[PageMeta] = pagesJson.value.zipWithIndex map { case (json, index) =>
+      readPageOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
+        throwBadReq(
+          "EsE2GKB0", o"""Invalid page json at index $index in the 'pages' list: $errorMessage
+              json: $json"""))
+    }
+
+    val paths: Seq[PagePathWithId] = pathsJson.value.zipWithIndex map { case (json, index) =>
+      readPagePathOrBad(json, isE2eTest).getOrIfBad(error =>
+        throwBadReq(
+          "Ese55GP1", o"""Invalid page path json at index $index in the 'pagePaths' list: $error,
+              json: $json"""))
+    }
+
+    val categories: Seq[Category] = categoriesJson.value.zipWithIndex map { case (json, index) =>
+      readCategoryOrBad(json, isE2eTest).getOrIfBad(error =>
+        throwBadReq(
+          "EsE5PYK2", o"""Invalid category json at index $index in the 'categories' list: $error,
+              json: $json"""))
+    }
+
+    val posts: Seq[Post] = postsJson.value.zipWithIndex map { case (json, index) =>
+      readPostOrBad(json, isE2eTest).getOrIfBad(error =>
+        throwBadReq(
+          "EsE4KGU0", o"""Invalid post json at index $index in the 'posts' list: $error,
+              json: $json"""))
+    }
+
+    ImportSiteData(siteToSave, users, pages, paths, categories, posts)
   }
 
 
@@ -122,9 +155,28 @@ object ImportExportController extends mvc.Controller {
 
     val newDao = Globals.siteDao(site.id)
     newDao.readWriteTransaction { transaction =>
+      // We might import a forum or a forum category, and then the categories reference the
+      // forum page, and the forum page references to the root category.
+      transaction.deferConstraints()
+
       siteData.users foreach { user =>
         val newId = transaction.nextAuthenticatedUserId
         transaction.insertAuthenticatedUser(user.copy(id = newId))
+      }
+      siteData.pages foreach { pageMeta =>
+        //val newId = transaction.nextPageId()
+        transaction.insertPageMetaMarkSectionPageStale(pageMeta)
+      }
+      siteData.pagePaths foreach { path =>
+        transaction.insertPagePath(path)
+      }
+      siteData.categories foreach { categoryMeta =>
+        //val newId = transaction.nextCategoryId()
+        transaction.insertCategoryMarkSectionPageStale(categoryMeta)
+      }
+      siteData.posts foreach { post =>
+        //val newId = transaction.nextPostId()
+        transaction.insertPost(post)
       }
     }
 
@@ -132,10 +184,10 @@ object ImportExportController extends mvc.Controller {
   }
 
 
-  def readSite(jsObject: JsObject): Site = {
+  def readSiteMeta(jsObject: JsObject): Site = {
     val localHostname = readString(jsObject, "localHostname")
     Site(
-      id = readString(jsObject, "id"),
+      id = "?",
       name = localHostname,
       creatorIp = "0.0.0.0",
       creatorEmailAddress = readString(jsObject, "creatorEmailAddress"),
@@ -145,26 +197,26 @@ object ImportExportController extends mvc.Controller {
   }
 
 
-  def readUserOrError(jsValue: JsValue, isE2eTest: Boolean): Either[String, CompleteUser] = {
+  def readMemberOrBad(jsValue: JsValue, isE2eTest: Boolean): CompleteUser Or ErrorMessage = {
     val jsObj = jsValue match {
       case x: JsObject => x
       case bad =>
-        return Left(s"Not a json object, but a: " + classNameOf(bad))
+        return Bad(s"Not a json object, but a: " + classNameOf(bad))
     }
 
     val id = try readInt(jsObj, "id") catch {
       case ex: IllegalArgumentException =>
-        return Left(s"Invalid user id: " + ex.getMessage)
+        return Bad(s"Invalid user id: " + ex.getMessage)
     }
     val username = try readString(jsObj, "username") catch {
       case ex: IllegalArgumentException =>
-        return Left(s"Invalid username: " + ex.getMessage)
+        return Bad(s"Invalid username: " + ex.getMessage)
     }
 
     try {
       val passwordHash = readOptString(jsObj, "passwordHash")
       passwordHash.foreach(DebikiSecurity.throwIfBadPassword(_, isE2eTest))
-      Right(CompleteUser(
+      Good(CompleteUser(
         id = id,
         username = username,
         fullName = readString(jsObj, "fullName"),
@@ -192,7 +244,206 @@ object ImportExportController extends mvc.Controller {
     }
     catch {
       case ex: IllegalArgumentException =>
-        Left(s"Bad json for user id $id, username '$username': ${ex.getMessage}")
+        Bad(s"Bad json for user id $id, username '$username': ${ex.getMessage}")
+    }
+  }
+
+
+  def readPageOrBad(jsValue: JsValue, isE2eTest: Boolean): PageMeta Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Not a json object, but a: " + classNameOf(bad))
+    }
+
+    val id = try readString(jsObj, "id") catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Invalid page id: " + ex.getMessage)
+    }
+
+    try {
+      Good(PageMeta(
+        pageId = id,
+        pageRole = PageRole.fromInt(readInt(jsObj, "role")).getOrThrowBadJson("role"),
+        version = readInt(jsObj, "version"),
+        createdAt = readDateMs(jsObj, "createdAtMs"),
+        updatedAt = readDateMs(jsObj, "updatedAtMs"),
+        publishedAt = None,
+        bumpedAt = None,
+        lastReplyAt = None,
+        lastReplyById = None,
+        categoryId = readOptInt(jsObj, "categoryId"),
+        embeddingPageUrl = None,
+        authorId = readInt(jsObj, "authorId")
+        /* Later:
+        frequentPosterIds = Nil,
+        pinOrder = None,
+        pinWhere = None,
+        numLikes: Int = 0,
+        numWrongs: Int = 0,
+        numBurys: Int = 0,
+        numUnwanteds: Int = 0,
+        numRepliesVisible: Int = 0,
+        numRepliesTotal: Int = 0,
+        numOrigPostLikeVotes: Int = 0,
+        numOrigPostWrongVotes: Int = 0,
+        numOrigPostBuryVotes: Int = 0,
+        numOrigPostUnwantedVotes: Int = 0,
+        numOrigPostRepliesVisible: Int = 0,
+        answeredAt: Option[ju.Date] = None,
+        answerPostUniqueId: Option[UniquePostId] = None,
+        plannedAt: Option[ju.Date] = None,
+        doneAt: Option[ju.Date] = None,
+        closedAt: Option[ju.Date] = None,
+        lockedAt: Option[ju.Date] = None,
+        frozenAt: Option[ju.Date] = None,
+        // unwantedAt: Option[ju.Date] = None,
+        // deletedAt: Option[ju.Date] = None,
+        numChildPages: Int = 0  <-- DoLater: remove, replace with category table
+        */
+      ))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for page id '$id': ${ex.getMessage}")
+    }
+  }
+
+
+  def readPagePathOrBad(jsValue: JsValue, isE2eTest: Boolean): PagePathWithId Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Not a json object, but a: " + classNameOf(bad))
+    }
+
+    try {
+      Good(PagePathWithId(
+        folder = readString(jsObj, "folder"),
+        pageId = readString(jsObj, "pageId"),
+        showId = readBoolean(jsObj, "showId"),
+        slug = readString(jsObj, "slug")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad page path json: ${ex.getMessage}")
+    }
+  }
+
+
+  def readCategoryOrBad(jsValue: JsValue, isE2eTest: Boolean): Category Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Not a json object, but a: " + classNameOf(bad))
+    }
+
+    val id = try readInt(jsObj, "id") catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Invalid category id: " + ex.getMessage)
+    }
+
+    try {
+      Good(Category(
+        id = id,
+        sectionPageId = readString(jsObj, "sectionPageId"),
+        parentId = readOptInt(jsObj, "parentId"),
+        name = readString(jsObj, "name"),
+        slug = readString(jsObj, "slug"),
+        position = readOptInt(jsObj, "position") getOrElse Category.DefaultPosition,
+        description = readOptString(jsObj, "description"),
+        newTopicTypes = Nil, // fix later
+        hideInForum = readBoolean(jsObj, "hideInForum"),
+        createdAt = readDateMs(jsObj, "createdAtMs"),
+        updatedAt = readDateMs(jsObj, "updatedAtMs"),
+        lockedAt = readOptDateMs(jsObj, "lockedAtMs"),
+        frozenAt = readOptDateMs(jsObj, "frozenAtMs")))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for page id '$id': ${ex.getMessage}")
+    }
+  }
+
+
+  def readPostOrBad(jsValue: JsValue, isE2eTest: Boolean): Post Or ErrorMessage = {
+    val jsObj = jsValue match {
+      case x: JsObject => x
+      case bad =>
+        return Bad(s"Not a json object, but a: " + classNameOf(bad))
+    }
+
+    val id = try readInt(jsObj, "id") catch {
+      case ex: IllegalArgumentException =>
+        return Bad(s"Invalid post id: " + ex.getMessage)
+    }
+
+    val postTypeDefaultNormal =
+      PostType.fromInt(readOptInt(jsObj, "type").getOrElse(PostType.Normal.toInt))
+          .getOrThrowBadJson("type")
+
+    val deletedStatusDefaultOpen =
+      new DeletedStatus(readOptInt(jsObj, "deletedStatus").getOrElse(
+        DeletedStatus.NotDeleted.underlying))
+
+    val closedStatusDefaultOpen =
+      new ClosedStatus(readOptInt(jsObj, "closedStatus").getOrElse(
+        ClosedStatus.Open.underlying))
+
+    val collapsedStatusDefaultOpen =
+      new CollapsedStatus(readOptInt(jsObj, "collapsedStatus").getOrElse(
+        CollapsedStatus.Open.underlying))
+
+    try {
+      Good(Post(
+        uniqueId = readInt(jsObj, "id"),
+        pageId = readString(jsObj, "pageId"),
+        nr = readInt(jsObj, "nr"),
+        parentNr = readOptInt(jsObj, "parentNr"),
+        multireplyPostNrs = Set.empty, // later
+        tyype = postTypeDefaultNormal,
+        createdAt = readDateMs(jsObj, "createdAtMs"),
+        createdById = readInt(jsObj, "createdById"),
+        currentRevisionById = readInt(jsObj, "currRevById"),
+        currentRevStaredAt = readDateMs(jsObj, "currRevStartedAtMs"),
+        currentRevLastEditedAt = readOptDateMs(jsObj, "currRevLastEditedAtMs"),
+        currentSourcePatch = readOptString(jsObj, "currRevSourcePatch"),
+        currentRevisionNr = readInt(jsObj, "currRevNr"),
+        previousRevisionNr = readOptInt(jsObj, "prevRevNr"),
+        lastApprovedEditAt = readOptDateMs(jsObj, "lastApprovedEditAtMs"),
+        lastApprovedEditById = readOptInt(jsObj, "lastApprovedEditById"),
+        numDistinctEditors = readInt(jsObj, "numDistinctEditors"),
+        safeRevisionNr = readOptInt(jsObj, "safeRevNr"),
+        approvedSource = readOptString(jsObj, "approvedSource"),
+        approvedHtmlSanitized = readOptString(jsObj, "approvedHtmlSanitized"),
+        approvedAt = readOptDateMs(jsObj, "approvedAtMs"),
+        approvedById = readOptInt(jsObj, "approvedById"),
+        approvedRevisionNr = readOptInt(jsObj, "approvedRevNr"),
+        collapsedStatus = collapsedStatusDefaultOpen,
+        collapsedAt = readOptDateMs(jsObj, "collapsedAtMs"),
+        collapsedById = readOptInt(jsObj, "collapsedById"),
+        closedStatus = closedStatusDefaultOpen,
+        closedAt = readOptDateMs(jsObj, "closedAtMs"),
+        closedById = readOptInt(jsObj, "closedById"),
+        hiddenAt = readOptDateMs(jsObj, "hiddenAtMs"),
+        hiddenById = readOptInt(jsObj, "hiddenById"),
+        //hiddenReason: ?
+        deletedStatus = deletedStatusDefaultOpen,
+        deletedAt = readOptDateMs(jsObj, "deletedAtMs"),
+        deletedById = readOptInt(jsObj, "deletedById"),
+        pinnedPosition = readOptInt(jsObj, "pinnedPosition"),
+        numPendingFlags = readOptInt(jsObj, "numPendingFlags").getOrElse(0),
+        numHandledFlags = readOptInt(jsObj, "numHandledFlags").getOrElse(0),
+        numPendingEditSuggestions = readOptInt(jsObj, "numEditSuggestions").getOrElse(0),
+        numLikeVotes = readOptInt(jsObj, "numLikeVotes").getOrElse(0),
+        numWrongVotes = readOptInt(jsObj, "numWrongVotes").getOrElse(0)  ,
+        numBuryVotes = readOptInt(jsObj, "numBuryVotes").getOrElse(0),
+        numUnwantedVotes = readOptInt(jsObj, "numUnwantedVotes").getOrElse(0)  ,
+        numTimesRead = readOptInt(jsObj, "numTimesRead").getOrElse(0)))
+    }
+    catch {
+      case ex: IllegalArgumentException =>
+        Bad(s"Bad json for post id '$id': ${ex.getMessage}")
     }
   }
 
@@ -221,6 +472,12 @@ object ImportExportController extends mvc.Controller {
 
     val file = files.head
   } */
+
+
+  implicit class GetOrThrowBadJson[A](val underlying: Option[A]) {
+    def getOrThrowBadJson(field: String): A =
+      underlying.getOrElse(throw new ju.NoSuchElementException(s"Field missing: '$field'"))
+  }
 
 }
 

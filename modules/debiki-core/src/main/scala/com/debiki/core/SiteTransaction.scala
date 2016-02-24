@@ -154,7 +154,11 @@ trait SiteTransaction {
     pageId: PageId, version: CachedPageVersion, html: String): Boolean
 
 
-  def insertPagePath(pagePath: PagePath)
+  def insertPagePath(pagePath: PagePath): Unit
+  def insertPagePath(pagePath: PagePathWithId): Unit =
+    insertPagePath(PagePath(tenantId = this.siteId, folder = pagePath.folder,
+      pageId = Some(pagePath.pageId), showId = pagePath.showId, pageSlug = pagePath.slug))
+
   def loadPagePath(pageId: PageId): Option[PagePath]
   def checkPagePath(pathToCheck: PagePath): Option[PagePath]  // rename? check? load? what?
   /**

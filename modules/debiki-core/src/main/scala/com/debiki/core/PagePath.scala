@@ -22,6 +22,19 @@ import Prelude._
 import PagePath._
 
 
+case class PagePathWithId(  // better than PagePath? Has no site id, and always a page id
+  folder: String,
+  pageId: PageId,
+  showId: Boolean,
+  slug: String)
+
+case class PagePathNoId(  // better than PagePath? Has no site id, and never a page id
+  folder: String,
+  showId: Boolean,
+  slug: String)
+
+
+
 /**
  * Identifies a page, by id or by path, and knows the path
  * component in the URL to the page.

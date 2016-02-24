@@ -68,6 +68,7 @@ object Category {
   val MaxTopicTypes = 20
   val DescriptionExcerptLength = 280
   val UncategorizedDescription = "__uncategorized__"
+  val DefaultPosition = 50 // also in Typescript [7KBYW2]
 }
 
 

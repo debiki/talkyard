@@ -106,18 +106,18 @@ function showResponseBodyJson(body) {
 }
 
 
-function importSiteData(siteData: SiteData) {
+function importSiteData(siteData: SiteData): IdAddress {
   var url = settings.mainSiteOrigin + '/-/import-site';
-  var body = postOrDie(url, siteData).bodyJson();
-  dieIf(!body.site || !body.site.id, "No site.id in import-site response [EsE7UGK2]",
-      showResponseBodyJson(body));
-  return body.site;
+  var ids = postOrDie(url, siteData).bodyJson();
+  dieIf(!ids.id, "No site id in import-site response [EsE7UGK2]",
+      showResponseBodyJson(ids));
+  return ids;
 }
 
 
-function getLastEmailSenTo(email: string) {
+function getLastEmailSenTo(email: string): EmailSubjectBody {
   var response = getOrDie(settings.mainSiteOrigin + '/-/last-e2e-test-email?sentTo=' + email);
-  return JSON.parse(response.body); // { subject, bodyTextHtml }
+  return JSON.parse(response.body);
 }
 
 

@@ -195,7 +195,6 @@ trait PagesDao {
     val bodyUniqueId = titleUniqueId + 1
 
     val titlePost = Post.createTitle(
-      siteId = siteId,
       uniqueId = titleUniqueId,
       pageId = pageId,
       createdAt = transaction.currentTime,
@@ -205,7 +204,6 @@ trait PagesDao {
       approvedById = Some(approvedById))
 
     val bodyPost = Post.createBody(
-      siteId = siteId,
       uniqueId = bodyUniqueId,
       pageId = pageId,
       createdAt = transaction.currentTime,

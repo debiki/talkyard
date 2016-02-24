@@ -18,6 +18,7 @@
 package com.debiki
 
 import org.apache.commons.validator.routines.EmailValidator
+import org.scalactic.Or
 
 
 package object core {
@@ -145,6 +146,11 @@ package object core {
 
   def isValidNonLocalEmailAddress(address: String): Boolean =
     EmailValidator.getInstance(/* allowLocal = */ false).isValid(address)
+
+
+  implicit class GetOrBadMap[G, B](val underlying: Or[G, B]) {
+    def getOrIfBad(fn: B => Nothing): G = underlying.badMap(fn).get
+  }
 
 }
 

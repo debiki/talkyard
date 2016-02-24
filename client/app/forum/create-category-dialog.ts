@@ -41,7 +41,7 @@ var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 var ReactSelect; // lazy loaded
 
-var DefaultPosition = 50;
+var DefaultPosition = 50; // also in Scala [7KBYW2]
 
 var editCategoryDialog;
 
@@ -126,7 +126,7 @@ var EditCategoryDialog = createClassAndFactory({
   },
 
   onTopicTypesChange: function(topicTypesText: string, selectedOptions) {
-    var topicTypes = selectedOptions.map(x => x.value);
+    var topicTypes = selectedOptions.map((x: any) => x.value);
     this.setState({ newTopicTypes: topicTypes });
   },
 

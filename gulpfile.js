@@ -413,7 +413,10 @@ gulp.task('clean-e2e', function () {
 });
 
 gulp.task('compile-e2e-scripts', function() {
-  var stream = gulp.src(['client/test/e2e/**/*ts'])
+  var stream = gulp.src([
+        'client/app/constants.ts',
+        'client/app/model.ts',
+        'client/test/e2e/**/*ts'])
       .pipe(typeScript({
         declarationFiles: true,
         module: 'commonjs',

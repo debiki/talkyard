@@ -101,7 +101,7 @@ trait ForumDao {
       parentId = Some(rootCategoryId),
       name = "Staff",
       slug = "staff",
-      position = 60, // 50 is the default? Break out constant?
+      position = Category.DefaultPosition + 10,
       description = Some("Private category for staff discussions"),
       newTopicTypes = immutable.Seq(PageRole.Discussion),
       hideInForum = false,
@@ -138,8 +138,8 @@ trait ForumDao {
   }
 
 
-  private val RootCategoryName = "(Root Category)"
-  private val RootCategorySlug = "(root-category)"
+  private val RootCategoryName = "(Root Category)"  // In Typescript test code too [7UKPX5]
+  private val RootCategorySlug = "(root-category)"  //
 
   private val UncategorizedName = "Uncategorized"
   private val UncategorizedSlug = "uncategorized"

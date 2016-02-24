@@ -123,7 +123,6 @@ object PostType {
   * they can notify moderators if posts are being flagged and hidden inappropriately.
   */
 case class Post(
-  siteId: SiteId,
   // TODO rename to 'id', but first rename 'id' to 'nr'.
   uniqueId: UniquePostId,
   pageId: PageId,
@@ -474,7 +473,6 @@ object Post {
   val FirstVersion = 1
 
   def create(
-        siteId: SiteId,
         uniqueId: UniquePostId,
         pageId: PageId,
         postNr: PostNr,
@@ -518,7 +516,6 @@ object Post {
     }
 
     Post(
-      siteId = siteId,
       uniqueId = uniqueId,
       pageId = pageId,
       nr = postNr,
@@ -565,7 +562,6 @@ object Post {
   }
 
   def createTitle(
-        siteId: SiteId,
         uniqueId: UniquePostId,
         pageId: PageId,
         createdAt: ju.Date,
@@ -573,13 +569,12 @@ object Post {
         source: String,
         htmlSanitized: String,
         approvedById: Option[UserId]): Post =
-    create(siteId, uniqueId, pageId = pageId, postNr = PageParts.TitleNr, parent = None,
+    create(uniqueId, pageId = pageId, postNr = PageParts.TitleNr, parent = None,
       multireplyPostNrs = Set.empty, postType = PostType.Normal,
       createdAt = createdAt, createdById = createdById,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)
 
   def createBody(
-        siteId: SiteId,
         uniqueId: UniquePostId,
         pageId: PageId,
         createdAt: ju.Date,
@@ -588,7 +583,7 @@ object Post {
         htmlSanitized: String,
         approvedById: Option[UserId],
         postType: PostType = PostType.Normal): Post =
-    create(siteId, uniqueId, pageId = pageId, postNr = PageParts.BodyNr, parent = None,
+    create(uniqueId, pageId = pageId, postNr = PageParts.BodyNr, parent = None,
       multireplyPostNrs = Set.empty, postType,
       createdAt = createdAt, createdById = createdById,
       source = source, htmlSanitized = htmlSanitized, approvedById = approvedById)

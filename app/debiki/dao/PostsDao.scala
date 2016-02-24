@@ -99,7 +99,6 @@ trait PostsDao {
         }
 
       val newPost = Post.create(
-        siteId = siteId,
         uniqueId = uniqueId,
         pageId = pageId,
         postNr = postNr,
@@ -253,7 +252,6 @@ trait PostsDao {
     transaction.loadUser(authorId) getOrElse throwNotFound("EsE2YG8", "Bad user")
 
     val newPost = Post.create(
-      siteId = siteId,
       uniqueId = uniqueId,
       pageId = page.id,
       postNr = postNr,

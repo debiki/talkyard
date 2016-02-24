@@ -17,27 +17,6 @@ var settings: any = {
   forbiddenPassword: 'public',
 };
 
-/*
-interface settings {
-  secure: boolean;
-  host: string;
-  scheme: string;
-  mainSiteOrigin: string;
-  newSiteDomain: string;
-  e2eTestPassword: string;
-  forbiddenPassword: string;
-  testLocalHostnamePrefix: string;
-  testEmailAddressPrefix: string;
-  skip3rdPartyDependentTests: boolean;
-  gmailEmail: string;
-  gmailPassword: string;
-  facebookAdminPassword: string;
-  facebookAdminEmail: string;
-  facebookUserPassword: string;
-  facebookUserEmail: string;
-}
-*/
-
 
 // ---- Analyze arguments
 
@@ -78,6 +57,9 @@ if (secretsPath) {
     die("Error parsing secret file: " + error);
   }
 }
+else if (!settings.skip3rdPartyDependentTests) {
+  die("Neither --secretsPath nor --skip3rdPartyDependentTests specified [EsE5G5P8]");
+}
 
 /*
 console.log("==================================================");
@@ -103,4 +85,4 @@ console.log("==================================================");
 */
 
 
-export = settings;
+export = <TestSettings> settings;

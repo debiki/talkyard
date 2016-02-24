@@ -6,9 +6,9 @@ import server = require('./utils/server');
 
 server.initOrDie();
 
-var specs = ['target/e2e-tests/specs/**/*.js'];
+var specs = ['target/e2e/specs/**/*.js'];
 if (settings.only) {
-  specs = ['target/e2e-tests/specs/**/*' + settings.only + '*.js'];
+  specs = ['target/e2e/specs/**/*' + settings.only + '*.js'];
 }
 
 var api = { config: {
@@ -114,7 +114,7 @@ var api = { config: {
   mochaOpts: {
     ui: 'bdd',
     timeout: settings.waitforTimeout,
-    grep: settings.grep || settings.g,
+    grep: settings.grep
   },
 
 

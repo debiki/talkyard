@@ -131,7 +131,6 @@ trait SpecialContentDao {
     val uniqueId = transaction.nextPostId()
 
     val bodyPost = Post.createBody(
-      siteId = siteId,
       uniqueId = uniqueId,
       pageId = pageId,
       createdAt = transaction.currentTime,
