@@ -8,14 +8,16 @@ cd /opt/debiki/server
 # Create user 'owner' with the same id as the person who runs docker, so that file
 # 'gulp build' creates will be owned by that person (otherwise they'll be owned by root
 # on the host machine. Which makes them invisible & unusable, on the host machine).
+# But skip this if we're root already (perhaps we're root in a virtual machine).
+file_owner_id=`ls -adn | cut -f 3 -d " "`
 id -u owner >> /dev/null 2>&1
-if [ $? -eq 1 ] ; then
+if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
   # $? -eq 1 means that the last command failed, that is, user 'owner' not yet created.
   # So create it:
   # (--home-dir needs to be specified, because `npm install` and `bower install` write to
   #   cache dirs in the home dir.
   # `ls -adn | cut -f 3 -d ' '` finds the user id of the above-mentioned directory owner. )
-  useradd --home-dir /opt/debiki/server/.docker-dev-gulp-home --uid `ls -adn | cut -f 3 -d " "` owner
+  useradd --home-dir /opt/debiki/server/.docker-dev-gulp-home --uid $file_owner_id owner
 fi
 
 if [ -z "$*" ] ; then
@@ -27,12 +29,19 @@ if [ -z "$*" ] ; then
 fi
 
 echo Running the Gulp CMD:
-set -x
 
 # Without exec, Docker wouldn't be able to stop the container normally.
 # See: https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/#entrypoint
 # """uses the exec Bash command so final running application becomes container’s PID 1"""
 # — they use 'gosu' instead of 'su':  exec gosu postgres "$@"
 # but for me 'su' works fine.
-exec su -c "$*" owner
+if [ $file_owner_id -ne 0 ] ; then
+  # Use user owner, which has the same user id as the file owner on the Docker host.
+  set -x
+  exec su -c "$*" owner
+else
+  # We're root (user id 0), both on the Docker host and here in the container.
+  set -x
+  exec "$*"
+fi
 

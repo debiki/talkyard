@@ -1,5 +1,11 @@
 #!/bin/bash
 
+docker ps >> /dev/null
+if [ $? -eq 1 ] ; then
+  echo "If the Docker daemon *is* running — then you can try with 'sudo'?"
+  exit 1
+fi
+
 container='server_db_1'
 
 if [ "$#" -ne 1 ]; then
