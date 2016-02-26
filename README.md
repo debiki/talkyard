@@ -49,14 +49,22 @@ Now, let's get started for real:
 
         docker-compose up
 
-1. Create an empty database, or import a dump. Do one of:
+1. Create an empty database:
 
         docker/drop-database-create-empty.sh
-        docker/drop-database-import-latest.sh ../db-dumps/tiny-forum/
 
-1. Point your browser to http://localhost/
+1. Specify your email address in the config file:
 
-    If you imported a dump from `../db-dumps`: You can login via email/password `admin`/`public`.
+        vi ../conf-local/dev-test-localhost.conf
+        # edit this config value:
+        # debiki.becomeOwnerEmailAddress=""  # replace with your email address
+
+1. Restart Play Framework so the config values will be reloaded:
+
+        docker-compose restart play
+
+1. Point your browser to http://localhost/ and follow the instructions (namely to sign up
+   with the email address you just specified).
 
 
 Running tests
@@ -125,7 +133,7 @@ This project looks like so:
      +-client/         <-- Javascript, CSS, React.js components
      | +-app/          <-- Client side code
      | +-server/       <-- React.js components rendered server side
-     | +...
+     | +-test/         <-- End-to-end tests and Javascript unit tests
      |
      +-app/            <-- Scala code — a Play Framework 2 app
      |
@@ -140,7 +148,7 @@ This project looks like so:
      |
      +-docker/     <-- Dockerfiles for all docker-compose containers
      |
-     +-scripts/    <-- Utiity scripts
+     +-scripts/    <-- Utility scripts
      |
      +-conf/       <-- Default config files that assume everything
                        is installed on localohost, and dev mode

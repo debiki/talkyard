@@ -94,6 +94,30 @@ interface TestCategory {  // try to merge with Category in model.ts?
 }
 
 
+interface NewPage {
+  id: PageId;
+  role: PageRole;
+  categoryId?: CategoryId;
+  authorId: UserId;
+  createdAtMs?: number;
+  updatedAtMs?: number;
+  numChildPages?: number;
+  numRepliesVisible?: number;
+  numRepliesToReview?: number;
+  numRepliesTotal?: number;
+  numLikes?: number;
+  numWrongs?: number;
+  numBuryVotes?: number;
+  numUnwantedVotes?: number;
+  numOpLikeVotes?: number;
+  numOpWrongVotes?: number;
+  numOpBuryVotes?: number;
+  numOpUnwantedVotes?: number;
+  numOpRepliesVisible?: number;
+  version?: number;
+}
+
+
 interface Page {
   id: string;
   role: PageRole;
@@ -105,21 +129,21 @@ interface Page {
   publishedAtMs?: number;
   bumpedAtMs?: number;
   lastReplyAtMs?: number;
-  numChildPages: number;
-  numRepliesVisible: number;
-  numRepliesToReview: number;
-  numRepliesTotal: number;
+  numChildPages?: number;
+  numRepliesVisible?: number;
+  numRepliesToReview?: number;
+  numRepliesTotal?: number;
   pinOrder?: number;
   pinWhere?: number;
-  numLikes: number;
-  numWrongs: number;
-  numBuryVotes: number;
-  numUnwantedVotes: number;
-  numOpLikeVotes: number;
-  numOpWrongVotes: number;
-  numOpBuryVotes: number;
-  numOpUnwantedVotes: number;
-  numOpRepliesVisible: number;
+  numLikes?: number;
+  numWrongs?: number;
+  numBuryVotes?: number;
+  numUnwantedVotes?: number;
+  numOpLikeVotes?: number;
+  numOpWrongVotes?: number;
+  numOpBuryVotes?: number;
+  numOpUnwantedVotes?: number;
+  numOpRepliesVisible?: number;
   answeredAtMs?: number;
   answerPostId?: number;
   doneAtMs?: number;
@@ -148,12 +172,12 @@ interface PagePathWithId {
 
 
 interface NewTestPost {
-  id: number;
+  id?: number;
   page: Page;
   nr: number;
   parentNr?: number;
   approvedSource: string;
-  approvedHtmlSanitized: string;
+  approvedHtmlSanitized?: string;
 }
 
 

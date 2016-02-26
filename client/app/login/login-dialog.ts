@@ -243,7 +243,7 @@ export var LoginDialogContent = createClassAndFactory({
     if (loginReason !== 'LoginAsAdmin' && loginReason !== 'LoginToAdministrate') { // both really used? Can I remove one?
       createAccountButton =
           Button({ onClick: openChildDialog(CreateUserDialogContent),
-              id: 'e2eCreateNewAccount' }, "Create New Account");
+              id: 'e2eCreateNewAccount' }, "Create Password Account");
     }
 
     var loginWithPasswordButton;

@@ -81,6 +81,7 @@ object ReactJson {
     Json.obj(
       "appVersion" -> Globals.applicationVersion,
       "now" -> JsNumber((new ju.Date).getTime),
+      "siteId" -> JsString(pageReq.siteId),
       "siteStatus" -> JsString(siteStatusString),
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
@@ -111,9 +112,11 @@ object ReactJson {
   def loadSiteStatusString(dao: SiteDao): String =
     dao.loadSiteStatus() match {
       case SiteStatus.OwnerCreationPending(adminEmail) =>
-        var obfuscatedEmail = adminEmail.takeWhile(_ != '@')
-        obfuscatedEmail = "" //obfuscatedEmail.dropRight(3).take(4) -- remove obfuscatedEmail?
-        s"AdminCreationPending:$obfuscatedEmail"
+        if (dao.siteId != FirstSiteId) "AdminCreationPending"
+        else {
+          if (Globals.becomeFirstSiteOwnerEmail.exists(_.nonEmpty)) "AdminCreationPending"
+          else "FirstSiteAdminPendingButNoEmailSpecified"
+        }
       case x => x.toString
     }
 
@@ -207,6 +210,7 @@ object ReactJson {
     val jsonObj = Json.obj(
       "appVersion" -> Globals.applicationVersion,
       "pageVersion" -> page.meta.version,
+      "siteId" -> JsString(dao.siteId),
       "siteStatus" -> JsString(siteStatusString),
       // Later: move these two userMustBe... to settings {} too.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
@@ -271,6 +275,7 @@ object ReactJson {
     val siteSettings = dao.loadWholeSiteSettings()
     Json.obj(
       "appVersion" -> Globals.applicationVersion,
+      "siteId" -> JsString(dao.siteId),
       "siteStatus" -> JsString(siteStatusString),
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),

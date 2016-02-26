@@ -163,8 +163,7 @@ export var CreateUserDialogContent = createClassAndFactory({
   },
 
   setEmailOk: function(value, isOk) {
-    this.updateValueOk('email', value, isOk)
-    this.setState({ wrongEmailAddress: false });
+    this.updateValueOk('email', value, isOk);
   },
 
   doCreateUser: function() {
@@ -212,10 +211,10 @@ export var CreateUserDialogContent = createClassAndFactory({
 
   handleErrorResponse: function(failedRequest: HttpRequest) {
     if (hasErrorCode(failedRequest, '_EsE403WEA_')) {
-      this.setState({ wrongEmailAddress: true });
+      this.setState({ theWrongEmailAddress: this.state.userData.email });
+      var where = debiki.siteId === FirstSiteId ? "in the config file" : "on the Create Site page";
       util.openDefaultStupidDialog({
-        body: "Wrong email address. Please use the email address you " +
-            "specified on the Create Site page.",
+        body: "Wrong email address. Please use the email address you specified " + where + '.',
       });
       return IgnoreThisError;
     }
@@ -238,9 +237,11 @@ export var CreateUserDialogContent = createClassAndFactory({
         EmailInput({ label: "Email: (will be kept private)", ref: 'email', id: 'e2eEmail',
           onChangeValueOk: (value, isOk) => this.setEmailOk(value, isOk),
           // If email already provided by e.g. Google, don't let the user change it.
-          disabled: hasEmailAddressAlready, defaultValue: props.email,
-          help: emailHelp, error: !this.state.wrongEmailAddress ? null :
-              "Use the email address you specified on the Create Site page" });
+          disabled: hasEmailAddressAlready, defaultValue: props.email, help: emailHelp,
+          error: this.state.userData.email !== this.state.theWrongEmailAddress ?
+              null : "Use the email address you specified " +
+                        (debiki.siteId === FirstSiteId ?
+                            "in the config file." : "on the Create Site page.") });
 
     var usernameInput =
         PatternInput({ label: "Username:", ref: 'username', id: 'e2eUsername',

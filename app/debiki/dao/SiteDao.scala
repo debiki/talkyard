@@ -102,7 +102,17 @@ abstract class SiteDao
 
   def siteId: SiteId
 
-  def loadSite(): Site = readOnlyTransaction(_.loadTenant())
+  def loadSite(): Site = {
+    var site = readOnlyTransaction(_.loadTenant())
+    if (siteId == FirstSiteId && site.canonicalHost.isEmpty) {
+      // No hostname specified in the database. Fallback to the config file.
+      val hostname = Globals.firstSiteHostname.getOrDie(
+        "EsE5GKU2", s"No ${Globals.FirstSiteHostnameConfigValue} specified")
+      val canonicalHost = SiteHost(hostname, SiteHost.RoleCanonical)
+      site = site.copy(hosts = canonicalHost :: site.hosts)
+    }
+    site
+  }
 
   @deprecated("use loadSite() instead", "now")
   def loadTenant(): Site = loadSite()

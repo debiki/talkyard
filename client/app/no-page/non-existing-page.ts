@@ -59,9 +59,10 @@ export var NonExistingPage = createComponent({
     var store: Store = this.state.store;
     var me: Myself = store.me;
     var siteStatus = store.siteStatus;
-    var adminPendingMatch = siteStatus.match(/AdminCreationPending:(.*)/);
+    var adminPendingMatch = siteStatus === 'AdminCreationPending' ||
+        siteStatus === 'FirstSiteAdminPendingButNoEmailSpecified';
     if (adminPendingMatch && !me.isLoggedIn && !store.newUserAccountCreated) {
-      return SignUpAsAdmin({ obfuscatedAminEmail: adminPendingMatch[1] });
+      return SignUpAsAdmin(this.state.store);
     }
     else if (me.isAdmin) {
       if (siteStatus === 'IsEmbeddedSite') {
@@ -89,19 +90,27 @@ export var SignUpAsAdmin = createComponent({
 
     var instructions = [
         'Click the button below, then click ',
-        r.b({}, 'Create New Account'),
+        r.b({}, 'Create Password Account'),
         ', or login with e.g. Google, if you specified a Gmail email address.'];
+
+    var anyEmailProblem = this.props.siteStatus === 'FirstSiteAdminPendingButNoEmailSpecified'
+      ? r.p({ style: { color: 'hsl(0, 100%, 45%)', fontWeight: 'bold' }},
+          "But you haven't specified any ", r.code({}, 'becomeOwnerEmailAddress'),
+          " value in the config file — please edit it and do so, then restart Play Framework")
+      : null;
 
     var loginBtn =
         reactelements.NameLoginBtns({ title: 'Sign Up as Admin', purpose: 'LoginBecomeAdmin',
-            id: 'e2eLogin' });
+            id: 'e2eLogin', disabled: !!anyEmailProblem });
 
     var contents = debiki.siteId === debiki.FirstSiteId
       ? r.div({},
           r.h1({}, 'Welcome'),
           r.p({}, 'You have successfully started the server.'),
-          r.p({}, 'Now, please sign up using the email address you specified in the ' +
-            'configuration file: ', instructions),
+          r.p({}, 'Next, sign up using the email address you specified in the ' +
+            "configuration file in the ", r.code({}, 'becomeOwnerEmailAddress'), " field: ",
+            instructions),
+          anyEmailProblem,
           r.br(),
           loginBtn)
       : r.div({},
@@ -168,7 +177,7 @@ export var CreateSomethingHere = createComponent({
     // if s/he wanted to create an embedded comments site, and s/he didn't.
     var message;
     var anyCreateEmbeddedCommentsButton;
-    if (debiki.siteId === debiki.FirstSiteId) {
+    if (false) { // if (debiki.siteId === debiki.FirstSiteId) { // embedded comments broken now
       anyCreateEmbeddedCommentsButton =
           Button({ active: createWhat === PageRole.EmbeddedComments,
               onClick: () => this.setState({ createWhat: 'EmbeddedComments' })},

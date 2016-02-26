@@ -63,10 +63,13 @@ export var NameLoginBtns = createComponent({
               r.a({ className: 'dw-u-name', onClick: this.goToUserPage }, user.fullName));
     }
 
+    var disabled = this.props.disabled ? 'disabled' : '';
+
     var loginBtnElem = null;
     if (!user.isLoggedIn) {
       loginBtnElem =
-          r.span({ className: 'dw-a-login btn-primary', onClick: this.onLoginClick, id: this.props.id },
+          r.span({ className: 'dw-a-login btn btn-primary ' + disabled,
+            onClick: disabled ? null : this.onLoginClick, id: this.props.id },
               this.props.title || 'Login');
     }
 

@@ -18,15 +18,8 @@ declare var browser: any;
 
 describe('all links', function() {
 
-  it('import test', function() {
-    var site: SiteData = make.emptySiteOwnedByOwen();
-    site.meta.localHostname = 'import-test-' + Date.now();
-    var idAddress = server.importSiteData(site);
-    browser.go(idAddress.siteIdOrigin);
-    browser.assertTextMatches('body', /login as admin to create something/);
-  });
 
-  it('create site with everything', function() {
+  it('create site with all links', function() {
     var site: SiteData = make.emptySiteOwnedByOwen();
     site.meta.localHostname = 'all-links-' + Date.now();
 
@@ -37,29 +30,32 @@ describe('all links', function() {
     site.guests.push(make.guestGreta());
     site.guests.push(make.guestGunnar());
 
-    site.pagePaths.push({ folder: '/', pageId: 'fmp', showId: false, slug: '' });
     // later?: site.pagePaths.push(make.path('/', 'fmp'));
 
     var rootCategoryId = 1;
 
-    var forumPage = make.forumMainPage('fmp');
-    forumPage.categoryId = rootCategoryId;
+    var forumPage = make.page({
+      id: 'fmp',
+      role: <PageRole> 7,  // [commonjs] PageRole.Forum
+      categoryId: rootCategoryId,
+      authorId: -1,    // [commonjs] SystemUserId
+    });
     site.pages.push(forumPage);
 
+    site.pagePaths.push({ folder: '/', pageId: forumPage.id, showId: false, slug: '' });
+
     site.posts.push(make.post({
-      id: 101,
       page: forumPage,
       nr: 0,
-      approvedSource: 'Forum Body',
-      approvedHtmlSanitized: 'Forum Body',
+      approvedSource: "Forum Title",
+      approvedHtmlSanitized: "Forum Title",
     }));
 
     site.posts.push(make.post({
-      id: 102,
       page: forumPage,
       nr: 1,
-      approvedSource: 'Forum Title',
-      approvedHtmlSanitized: 'Forum Title',
+      approvedSource: "Forum intro text.",
+      approvedHtmlSanitized: "<p>Forum intro text.</p>",
     }));
 
     var rootCategory = make.rootCategoryWithIdFor(rootCategoryId, forumPage);
@@ -83,13 +79,67 @@ describe('all links', function() {
     whateverCategory.slug = "whatever";
     site.categories.push(whateverCategory);
 
-    var idAddress = server.importSiteData(site);
 
+    var whateverTopic = make.page({
+      id: 'whateverTopic',
+      role: <PageRole> 12,  // [commonjs] PageRole.Discussion
+      categoryId: whateverCategory.id,
+      authorId: -1,    // [commonjs] SystemUserId
+    });
+    site.pages.push(whateverTopic);
+
+    site.pagePaths.push({ folder: '/', pageId: whateverTopic.id, showId: true,
+        slug: 'whatever-topic-title' });
+
+    function addPost(data: NewTestPost) {
+      site.posts.push(make.post(data));
+    }
+    addPost({ page: whateverTopic, nr: 0, approvedSource: "Whatever Topic Title", });  // title
+    addPost({ page: whateverTopic, nr: 1, approvedSource: "Whatever topic text.", });  // body
+    addPost({ page: whateverTopic, nr: 11, parentNr: 1, approvedSource: "Reply 11.", });
+    addPost({ page: whateverTopic, nr: 111, parentNr: 11, approvedSource: "Reply 111." });
+    addPost({ page: whateverTopic, nr: 12, parentNr: 1, approvedSource: "Reply 12.", });
+    addPost({ page: whateverTopic, nr: 13, parentNr: 1, approvedSource: "Reply 13.", });
+    addPost({ page: whateverTopic, nr: 14, parentNr: 1, approvedSource: "Reply 14.", });
+
+
+    var questionTopic = make.page({
+      id: 'questionTopic',
+      role: <PageRole> 10,  // [commonjs] PageRole.Question
+      categoryId: whateverCategory.id,
+      authorId: -1,    // [commonjs] SystemUserId
+      answerPostId
+    });
+    site.pages.push(questionTopic);
+
+    site.pagePaths.push({ folder: '/', pageId: questionTopic.id, showId: true,
+      slug: 'question-topic-title' });
+
+    addPost({ page: questionTopic, nr: 0, approvedSource: "Question?", });  // title
+    addPost({ page: questionTopic, nr: 1, approvedSource: "Can this or what where why or no?", });
+    addPost({ page: questionTopic, nr: 11, parentNr: 1, approvedSource: "Answer 11.", });
+    addPost({ page: questionTopic, nr: 111, parentNr: 11, approvedSource: "Comment 111." });
+    addPost({ page: questionTopic, nr: 12, parentNr: 1, approvedSource: "Answer 12.", });
+    addPost({ page: questionTopic, nr: 13, parentNr: 1, approvedSource: "Answer 13.", });
+    addPost({ page: questionTopic, nr: 14, parentNr: 1, approvedSource: "Answer 14.", });
+
+
+    var idAddress = server.importSiteData(site);
     browser.go(idAddress.siteIdOrigin);
     // browser.assertTextMatches('body', /login as admin to create something/);
 
-    browser.pause();
+    browser.debug();
   });
 
+  describe("click all stuff on the forum page", function() {
+    it("as a stranger", function() {
+    });
+    it("as a guest", function() {
+    });
+    it("as a member", function() {
+    });
+    it("as staff", function() {
+    });
+  });
 });
 

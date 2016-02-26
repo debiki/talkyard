@@ -20,6 +20,7 @@ package controllers
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
+import debiki.Globals
 import io.efdi.server.http._
 import java.{util => ju}
 import play.api._
@@ -31,8 +32,6 @@ import play.api.Play.current
 /** Logs in and out.
   */
 object LoginController extends mvc.Controller {
-
-  val BecomeOwnerEmailConfigValue = "debiki.becomeOwnerEmailAddress"
 
   val DiscardingSessionCookie = DiscardingSecureCookie("dwCoSid")
 
@@ -76,9 +75,9 @@ object LoginController extends mvc.Controller {
 
     val ownerEmail =
       if (request.siteId == Site.FirstSiteId)
-        Play.configuration.getString(BecomeOwnerEmailConfigValue) getOrElse {
+        Globals.becomeFirstSiteOwnerEmail getOrElse {
           val errorCode = "DwE8PY25"
-          val errorMessage = s"Config value '$BecomeOwnerEmailConfigValue' missing"
+          val errorMessage = s"Config value '${Globals.BecomeOwnerEmailConfigValue}' missing"
           Logger.error(s"$errorMessage [$errorCode]")
           throwInternalError(errorCode, errorMessage)
         }

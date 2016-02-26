@@ -54,6 +54,9 @@ object Globals extends Globals {
 
   val LocalhostUploadsDirConfigValueName = "debiki.uploads.localhostDir"
 
+  val FirstSiteHostnameConfigValue = "debiki.hostname"
+  val BecomeOwnerEmailConfigValue = "debiki.becomeOwnerEmailAddress"
+
 }
 
 
@@ -179,6 +182,7 @@ class Globals {
 
 
   def firstSiteHostname = state.firstSiteHostname
+  def becomeFirstSiteOwnerEmail = state.becomeFirstSiteOwnerEmail
 
   /** New sites may be created only from this hostname. */
   def anyCreateSiteHostname = state.anyCreateSiteHostname
@@ -362,10 +366,12 @@ class Globals {
 
 
     /** The hostname of the site created by default when setting up a new server. */
-    val firstSiteHostname = Play.configuration.getString("debiki.hostname")
+    val firstSiteHostname = Play.configuration.getString(FirstSiteHostnameConfigValue)
 
     if (firstSiteHostname.exists(_ contains ':'))
       p.Logger.error("Config value debiki.hostname contains ':' [DwE4KUWF7]")
+
+    val becomeFirstSiteOwnerEmail = Play.configuration.getString(BecomeOwnerEmailConfigValue)
 
     val anyCreateSiteHostname = Play.configuration.getString("debiki.createSiteHostname")
 

@@ -9,6 +9,12 @@ import assert = require('assert');
 var DefaultCreatedAtMs = 1449198824000;
 var SystemUserId = -1;
 
+var nextPostId = 101;
+function getAndBumpNextPostId() {
+  nextPostId += 1;
+  return nextPostId - 1;
+}
+
 var emptySite: SiteData = {
   meta: {
     id: null,
@@ -139,28 +145,28 @@ var make = {
     };
   },
 
-  forumMainPage: function(id: PageId): Page {
+  page: function(values: NewPage): Page {
     return {
-      id: id,
-      role: <PageRole> 7, // .Forum,  [commonjs] problem
-      categoryId: undefined,
-      authorId: SystemUserId,
-      createdAtMs:  DefaultCreatedAtMs,
-      updatedAtMs: DefaultCreatedAtMs,
-      numChildPages: 0,
-      numRepliesVisible: 0,
-      numRepliesToReview: 0,
-      numRepliesTotal: 0,
-      numLikes: 0,
-      numWrongs: 0,
-      numBuryVotes: 0,
-      numUnwantedVotes: 0,
-      numOpLikeVotes: 0,
-      numOpWrongVotes: 0,
-      numOpBuryVotes: 0,
-      numOpUnwantedVotes: 0,
-      numOpRepliesVisible: 0,
-      version: 1,
+      id: values.id,
+      role: values.role,
+      categoryId: values.categoryId,
+      authorId: values.authorId,
+      createdAtMs: values.createdAtMs || DefaultCreatedAtMs,
+      updatedAtMs: values.updatedAtMs || DefaultCreatedAtMs,
+      numChildPages: values.numChildPages,
+      numRepliesVisible: values.numRepliesVisible,
+      numRepliesToReview: values.numRepliesToReview,
+      numRepliesTotal: values.numRepliesTotal,
+      numLikes: values.numLikes,
+      numWrongs: values.numWrongs,
+      numBuryVotes: values.numBuryVotes,
+      numUnwantedVotes: values.numUnwantedVotes,
+      numOpLikeVotes: values.numOpLikeVotes,
+      numOpWrongVotes: values.numOpWrongVotes,
+      numOpBuryVotes: values.numOpBuryVotes,
+      numOpUnwantedVotes: values.numOpUnwantedVotes,
+      numOpRepliesVisible: values.numOpRepliesVisible,
+      version: values.version || 1,
     }
   },
 
@@ -198,8 +204,14 @@ var make = {
   }, */
 
   post: function(values: NewTestPost): TestPost {
+    var approvedHtmlSanitized = values.approvedHtmlSanitized;
+    if (!approvedHtmlSanitized) {
+      // Unless it's the title, wrap in <p>.
+      approvedHtmlSanitized = values.nr === 0 ?
+          values.approvedSource : `<p>${values.approvedSource}</p>`;
+    }
     return {
-      id: values.id,
+      id: values.id || getAndBumpNextPostId(),
       pageId: values.page.id,
       nr: values.nr,
       parentNr: values.parentNr,
@@ -216,7 +228,7 @@ var make = {
       lastEditSuggestionAtMs: undefined,
       safeRevNr: undefined,
       approvedSource: values.approvedSource,
-      approvedHtmlSanitized: values.approvedHtmlSanitized,
+      approvedHtmlSanitized: approvedHtmlSanitized,
       approvedAtMs: values.page.createdAtMs,
       approvedById: -1, // [commonjs]
       approvedRevNr: 1,

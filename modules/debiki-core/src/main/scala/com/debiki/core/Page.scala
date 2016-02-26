@@ -143,6 +143,7 @@ object PageMeta {
   * @param numRepliesTotal Counts all replies, also deleted, hidden and not-yet-approved replies.
   * @param answeredAt For questions: when a reply was accepted as the answer to the question.
   * @param answerPostUniqueId The id of the post that answers this question.
+  // [befrel] @param answerPostNr
   * @param plannedAt When a problem/idea/todo got planned to be fixed/done.
   * @param doneAt When a problem/idea/todo was done, e.g. when bug fixed or idea implemented.
   * @param closedAt When the topic was closed, e.g. if a question was off-topic or idea rejected.

@@ -39,9 +39,18 @@ export var PatternInput = createClassAndFactory({
   },
 
   onChange: function(event) {
-    this.setState({ value: event.target.value });
     var anyError = this.findAnyError(event.target.value);
+    this.setState({ value: event.target.value, hasError: !!anyError });
     this.props.onChange(event.target.value, !anyError);
+  },
+
+  componentDidUpdate: function() {
+    var hasError = !!this.findAnyError(this.state.value);
+    if (hasError !== this.state.hasError) {
+      this.setState({ hasError: hasError });
+      // We got new props (perhaps this.props.error?) and now we're okay or broken, instead.
+      this.props.onChange(this.state.value, !hasError);
+    }
   },
 
   showErrors: function() {

@@ -139,6 +139,12 @@ object ImportExportController extends mvc.Controller {
 
 
   def doImportSite(siteData: ImportSiteData, request: JsonPostRequest): Site = {
+    for (page <- siteData.pages) {
+      val path = siteData.pagePaths.find(_.pageId == page.pageId)
+      throwBadRequestIf(path.isEmpty, "EsE5GKY2", o"""No PagePath included for page id
+          '${page.pageId}'""")
+    }
+
     // COULD do this in the same transaction as the one below — then, would need a function
     // `transaction.continueWithSiteId(zzz)`?
     val siteToSave = siteData.site
