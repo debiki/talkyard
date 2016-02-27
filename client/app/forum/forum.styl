@@ -55,9 +55,8 @@
 .esForum_catsDrop
   color: hsl(0, 0%, 8%) !important;
   $bgColor = hsl(0,0%,91%);
-  border-radius: 0;
+  border: none !important;
   background: $bgColor;
-  border-color: $bgColor;
   .caret
     transform: rotate(-90deg) scale(1.2,1.8);
     margin-left: 3px;
@@ -87,7 +86,8 @@
 
     .dropdown-toggle
       margin 0
-      padding: 5px 12px 5px 15px
+      padding-left: 13px;
+      padding-right: 10px;
 
     a
       cursor: pointer
@@ -119,16 +119,17 @@
         padding-left: 12px;
         padding-right: 12px;
 
-  .dw-filter
+  .btn-default
+    border: 1px solid #ccc;
+
+  .esForum_filterBtn
     float: left;
-    max-width: 300px;
     margin-left: 10px;
     @media (max-width: 801px)
       margin-left: 8px
     @media (max-width: 651px)
       margin-left: 5px
 
-  .dw-filter select,
   button
     // Why do I need to -2 for the Create Topic button to align with
     // the category buttons and Latest and Top buttons to the left?

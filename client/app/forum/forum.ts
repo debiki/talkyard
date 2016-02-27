@@ -22,6 +22,8 @@
 /// <reference path="../editor/editor.ts" />
 /// <reference path="../login/login-dialog.ts" />
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
+/// <reference path="../utils/DropdownModal.ts" />
+/// <reference path="../util/ExplainingDropdown.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../ServerApi.ts" />
 /// <reference path="../page/discussion.ts" />
@@ -36,6 +38,9 @@ var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
+var DropdownModal = utils.DropdownModal;
+var ExplainingListItem = util.ExplainingListItem;
+type ExplainingTitleText = util.ExplainingTitleText;
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 var Input = reactCreateFactory(ReactBootstrap.Input);
 
@@ -251,6 +256,9 @@ var ForumButtons = createComponent({
   getInitialState: function() {
     return {
       compact: false,
+      isTopicFilterDropdownOpen: false,
+      topicFilterX: -1,
+      topicFilterY: -1,
     };
   },
 
@@ -312,15 +320,26 @@ var ForumButtons = createComponent({
     die("Unknown route: " + sortOrderRoutePath + " [DwE5KFIW2]");
   },
 
-  setTopicFilter: function(event) {
+  setTopicFilter: function(entry: ExplainingTitleText) {
     var newQuery = _.clone(this.props.location.query);
-    if (event.target.value === FilterShowAll) {
+    if (entry.key === FilterShowAll) {
       delete newQuery.filter;
     }
     else {
-      newQuery.filter = event.target.value;
+      newQuery.filter = entry.eventKey;
     }
+    this.closeTopicFilterDropdown();
     this.context.router.push({ pathname: this.props.location.pathname, query: newQuery });
+  },
+
+  openTopicFilterDropdown: function() {
+    var rect = ReactDOM.findDOMNode(this.refs.topicFilterButton).getBoundingClientRect();
+    this.setState({ isTopicFilterDropdownOpen: true, topicFilterX: rect.left,
+        topicFilterY: rect.bottom });
+  },
+
+  closeTopicFilterDropdown: function() {
+    this.setState({ isTopicFilterDropdownOpen: false });
   },
 
   /* If using a filter dropdown + full search text field like GitHub does:
@@ -384,6 +403,7 @@ var ForumButtons = createComponent({
   },
 
   render: function() {
+    var state = this.state;
     var props: Store = this.props;
     var me = props.me;
     var activeCategory: Category = this.props.activeCategory;
@@ -414,7 +434,7 @@ var ForumButtons = createComponent({
 
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
     var latestTopCategories;
-    if (this.state.compact) {
+    if (state.compact) {
       latestTopCategories =
         r.div({ className: 'dw-sort-order' },
           DropdownButton({ title: this.getSortOrderName(), onSelect: this.onSwitchSortOrder,
@@ -427,7 +447,7 @@ var ForumButtons = createComponent({
       var slashSlug = this.slashCategorySlug();
       var makeCategoryLink = (where, text) => Link({
           to: this.props.pagePath.value + where, query: this.props.location.query,
-          className: 'btn btn-default', activeClassName: 'active' }, text);
+          className: 'btn', activeClassName: 'active' }, text);
       latestTopCategories =
           r.ul({ className: 'nav nav-pills dw-sort-order' },
             makeCategoryLink(RoutePathLatest + slashSlug, 'Latest'),
@@ -437,13 +457,34 @@ var ForumButtons = createComponent({
 
     // The filter topics select.
     var topicFilterValue = this.props.location.query.filter || FilterShowAll;
-    var topicFilterInput =
-        r.div({ className: 'dw-filter' },
-          Input({ type: 'select', ref: 'topicFilterInput', onChange: this.setTopicFilter,
-              value: topicFilterValue },
-            r.option({ value: FilterShowAll }, "Show all"),
-            r.option({ value: FilterShowWaiting }, "Show waiting")));
-                                                      // or "Questions and todos"?
+    function makeTopicFilterText(filter) {
+      switch (filter) {
+        case FilterShowAll: return "Show all";
+        case FilterShowWaiting: return "Show waiting";
+      }
+      die('EsE4JK85');
+    }
+
+    var topicFilterButton =
+      Button({ onClick: this.openTopicFilterDropdown,
+          className: 'esForum_filterBtn', ref: 'topicFilterButton' },
+        makeTopicFilterText(topicFilterValue) + ' ', r.span({ className: 'caret' }));
+
+    var topicFilterDropdownModal =
+      DropdownModal({ show: state.isTopicFilterDropdownOpen, pullLeft: true,
+          onHide: this.closeTopicFilterDropdown, atX: state.topicFilterX,
+          atY: state.topicFilterY },
+        r.ul({},
+          ExplainingListItem({ onSelect: this.setTopicFilter,
+              activeEventKey: topicFilterValue, eventKey: FilterShowAll,
+              title: makeTopicFilterText(FilterShowAll),
+              text: "Shows all forum topics" }),
+          ExplainingListItem({ onSelect: this.setTopicFilter,
+              activeEventKey: topicFilterValue, eventKey: FilterShowWaiting,
+              title: makeTopicFilterText(FilterShowWaiting),
+              text: r.span({},
+                "Shows only questions ", r.b({}, r.i({}, "waiting")), " for an answer, " +
+                "plus ideas and problems not yet handled" ) })));
 
     /* A filter dropdown and search box instead of the <select> above:
     var makeFilterItemProps = (key: string) => {
@@ -487,7 +528,8 @@ var ForumButtons = createComponent({
         r.div({ className: 'dw-forum-actionbar clearfix' },
           categoriesDropdown,
           latestTopCategories,
-          topicFilterInput,
+          topicFilterButton,
+          topicFilterDropdownModal,
           createTopicBtn,
           createCategoryBtn,
           editCategoryBtn));

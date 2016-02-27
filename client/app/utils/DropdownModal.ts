@@ -29,7 +29,10 @@ var $: JQueryStatic = debiki.internal.$;
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 
-
+/**
+ * Places a dropdown at (this.props.atX, this.props.atY) and tries to fit it inside the
+ * current viewport. Dims everything outside the dropdown just a little bit.
+ */
 export var DropdownModal = createComponent({
   getInitialState: function () {
     return {};
@@ -39,11 +42,17 @@ export var DropdownModal = createComponent({
     if (!this.props.show) return;
     var rect = this.refs.content.getBoundingClientRect();
     if (rect.bottom > $(window).height()) {
-      this.fitInWindow();
+      this.fitInWindowVertically();
+    }
+    if (rect.right > $(window).width()) {
+      this.moveLeftwardsSoFitsInWindow();
+    }
+    else if (rect.left < 0) {
+      $(this.refs.content).css('left', 0);
     }
   },
 
-  fitInWindow: function() {
+  fitInWindowVertically: function() {
     var winHeight = $(window).height();
     var $content = $(this.refs.content);
     if ($content.outerHeight() > winHeight - 5) {
@@ -54,11 +63,26 @@ export var DropdownModal = createComponent({
     }
   },
 
+  moveLeftwardsSoFitsInWindow: function() {
+    var winWidth = $(window).width();
+    var $content = $(this.refs.content);
+    if ($content.outerWidth() > winWidth) {
+      // Better show the left side, that's where any titles and texts start.
+      $content.css('left', 0);
+    }
+    else {
+      $content.css('left', winWidth - $content.outerWidth());
+    }
+  },
+
   render: function() {
     var content;
     if (this.props.show) {
+      var left = this.props.pullLeft ? this.props.atX : undefined;
+      var right = this.props.pullLeft ? undefined : 'calc(100% - ' + this.props.atX + 'px)';
       var styles = {
-        right: 'calc(100% - ' + this.props.atX + 'px)',
+        left: left,
+        right: right,
         top: this.props.atY,
       };
       content =
