@@ -394,10 +394,10 @@ gulp.task('watch', ['default'], function() {
   gulp.watch(['client/**/*.ts', '!client/test/**/*.ts'] ,['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
   gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
-  gulp.watch('client/test/e2e/**/*.ts', ['prepare-e2e']).on('change', logChangeFn('TypeScript test files'));
+  gulp.watch('client/test/e2e/**/*.ts', ['build-e2e']).on('change', logChangeFn('TypeScript test files'));
 });
 
-gulp.task('default', ['compile-concat-scripts', 'compile-stylus'], function () {
+gulp.task('default', ['compile-concat-scripts', 'compile-stylus', 'build-e2e'], function () {
 });
 
 
@@ -436,7 +436,7 @@ gulp.task('compile-e2e-scripts', function() {
 
 // Compiles TypeScript code in test/e2e/ and places it in target/e2e/transpiled/,
 //
-gulp.task('prepare-e2e', ['clean-e2e', 'compile-e2e-scripts'], function() {
+gulp.task('build-e2e', ['clean-e2e', 'compile-e2e-scripts'], function() {
 });
 
 

@@ -34,6 +34,10 @@ export var FullNameInput = createClassAndFactory({
     return this.refs.patternInput.getValue();
   },
 
+  focus: function() {
+    this.refs.patternInput.focus();
+  },
+
   findPatternError: function(value) {
     return this.refs.patternInput.findPatternError(value);
   },
@@ -42,7 +46,7 @@ export var FullNameInput = createClassAndFactory({
     return (
       utils.PatternInput({ label: this.props.label, ref: 'patternInput', id: this.props.id,
         className: this.props.className, placeholder: this.props.placeholder,
-        help: this.props.help,
+        help: this.props.help, tabIndex: this.props.tabIndex,
         regex: /.+/, message: "Name required",
         notRegex: /^\s+$/, notMessage: "Not just spaces please",
         notRegexTwo: /@/, notMessageTwo: "No @ please",

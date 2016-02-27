@@ -108,7 +108,7 @@ describe('all links', function() {
       role: <PageRole> 10,  // [commonjs] PageRole.Question
       categoryId: whateverCategory.id,
       authorId: -1,    // [commonjs] SystemUserId
-      answerPostId
+      // answerPostId
     });
     site.pages.push(questionTopic);
 

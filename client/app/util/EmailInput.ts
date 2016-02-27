@@ -31,6 +31,10 @@ export var EmailInput = createClassAndFactory({
     return this.refs.patternInput.getValue();
   },
 
+  focus: function() {
+    this.refs.patternInput.focus();
+  },
+
   findPatternError: function(value) {
     return this.refs.patternInput.findPatternError(value);
   },
@@ -40,7 +44,7 @@ export var EmailInput = createClassAndFactory({
       utils.PatternInput({ label: this.props.label, ref: 'patternInput', id: this.props.id,
         className: this.props.className, placeholder: this.props.placeholder,
         required: this.props.required,
-        help: this.props.help,
+        help: this.props.help, tabIndex: this.props.tabIndex,
         regex: /.+/, message: "Email required",
         notRegex: /\s/, notMessage: "No spaces please",
         regexTwo: /^[^@]+@[^-@\.]+\.[^@]+[^-@\.]$/, messageTwo: "Not a valid email address",

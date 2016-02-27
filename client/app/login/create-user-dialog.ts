@@ -121,9 +121,12 @@ var CreateUserDialog = createClassAndFactory({
     var childProps = _.clone(this.state.userData);
     childProps.anyReturnToUrl = this.state.anyReturnToUrl;
     childProps.closeDialog = this.close;
+    childProps.ref = 'content';
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, keyboard: false,
-          dialogClassName: 'esCreateUserDlg' },
+          dialogClassName: 'esCreateUserDlg',
+          // This has no effect. Why not.
+          onEntered: this.refs.content.focusFirstInput },
         ModalHeader({}, ModalTitle({}, "Create User")),
         ModalBody({}, CreateUserDialogContent(childProps))));
   }
@@ -145,6 +148,15 @@ export var CreateUserDialogContent = createClassAndFactory({
         username: ''
       },
     };
+  },
+
+  componentDidMount: function() {
+    // Since onEntered above doesn't work, I'll do this instead.
+    setTimeout(this.focusFirstInput, 500);
+  },
+
+  focusFirstInput: function() {
+    this.refs.fullName.focus();
   },
 
   updateValueOk: function(what, value, isOk) {
@@ -227,7 +239,7 @@ export var CreateUserDialogContent = createClassAndFactory({
 
     var fullNameInput =
         FullNameInput({ label: "Your name: (the long version)", ref: 'fullName',
-            id: 'e2eFullName', defaultValue: props.name, minLength: 1,
+            id: 'e2eFullName', defaultValue: props.name, minLength: 1, tabIndex: 1,
             onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
 
     var emailHelp = props.providerId && hasEmailAddressAlready ?
@@ -235,7 +247,7 @@ export var CreateUserDialogContent = createClassAndFactory({
 
     var emailInput =
         EmailInput({ label: "Email: (will be kept private)", ref: 'email', id: 'e2eEmail',
-          onChangeValueOk: (value, isOk) => this.setEmailOk(value, isOk),
+          onChangeValueOk: (value, isOk) => this.setEmailOk(value, isOk), tabIndex: 2,
           // If email already provided by e.g. Google, don't let the user change it.
           disabled: hasEmailAddressAlready, defaultValue: props.email, help: emailHelp,
           error: this.state.userData.email !== this.state.theWrongEmailAddress ?
@@ -244,7 +256,7 @@ export var CreateUserDialogContent = createClassAndFactory({
                             "in the config file." : "on the Create Site page.") });
 
     var usernameInput =
-        PatternInput({ label: "Username:", ref: 'username', id: 'e2eUsername',
+        PatternInput({ label: "Username:", ref: 'username', id: 'e2eUsername', tabIndex: 2,
           minLength: 3, maxLength: 20,
           notRegex: / /, notMessage: "No spaces please",
           notRegexTwo: /-/, notMessageTwo: "No hypens (-) please",
@@ -255,7 +267,7 @@ export var CreateUserDialogContent = createClassAndFactory({
           help: r.span({}, "Your ", r.code({}, "@username"), ", keep it short") });
 
     var passwordInput = props.createPasswordUser
-        ? NewPasswordInput({ newPasswordData: state.userData, ref: 'password',
+        ? NewPasswordInput({ newPasswordData: state.userData, ref: 'password', tabIndex: 2,
               setPasswordOk: (isOk) => this.updateValueOk('password', 'dummy', isOk) })
         : null;
 
@@ -268,8 +280,8 @@ export var CreateUserDialogContent = createClassAndFactory({
         usernameInput,
         passwordInput,
         Button({ onClick: this.doCreateUser, disabled: disableSubmit, id: 'e2eSubmit',
-            className: 'btn-primary' }, "Create User"),
-        Button({ onClick: props.closeDialog, id: 'e2eCancel' }, "Cancel")));
+            className: 'btn-primary', tabIndex: 2 }, "Create User"),
+        Button({ onClick: props.closeDialog, id: 'e2eCancel', tabIndex: 2 }, "Cancel")));
   }
 });
 

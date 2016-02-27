@@ -34,7 +34,6 @@ var Input = reactCreateFactory(ReactBootstrap.Input);
 // unable to come up with strong password.
 var MinPasswordStrength = 2;
 var BadPasswordStrength = 3;
-var TenYearsInSeconds = 10*365*24*3600;
 
 
 export var NewPasswordInput = createClassAndFactory({
@@ -59,6 +58,7 @@ export var NewPasswordInput = createClassAndFactory({
       complete: () => {
         // Check the password afterwards, in case a fast e2e test has already filled it in.
         this.setState({ zxcvbnLoaded: true }, this.checkPasswordStrength);
+        dieIf(!window['zxcvbn'], "Error loading the password strength script zxcvbn [EsE7YKW2]");
       }
     });
   },
@@ -78,10 +78,12 @@ export var NewPasswordInput = createClassAndFactory({
     forbiddenWords = forbiddenWords.concat(allNameParts);
     var passwordStrength = window['zxcvbn'](password, forbiddenWords);
 
+    var crackTimeSecs = passwordStrength.crack_times_seconds.offline_fast_hashing_1e10_per_second;
+    var crackTimeText = passwordStrength.crack_times_display.offline_fast_hashing_1e10_per_second;
+
     console.debug(
         'Password entropy: ' + passwordStrength.entropy +
-        ', crack_time: ' + passwordStrength.crack_time +
-        ' = ' + passwordStrength.crack_time_display +
+        ', offline fast crack time: ' + crackTimeSecs + ' = ' + crackTimeText +
         ', score: ' + passwordStrength.score);
 
     // Don't blindly trust zxcvbn — do some basic tests of our own as well.
@@ -97,8 +99,8 @@ export var NewPasswordInput = createClassAndFactory({
     }
     this.setState({
       passwordWeakReason: problem,
-      passwordCrackTime: passwordStrength.crack_time,
-      passwordCrackTimeText: passwordStrength.crack_time_display,
+      passwordCrackTime: crackTimeSecs,
+      passwordCrackTimeText: crackTimeText,
       passwordStrength: passwordStrength.score,
     });
     this.props.setPasswordOk(!problem);
@@ -113,28 +115,26 @@ export var NewPasswordInput = createClassAndFactory({
       if (tooWeakReason) {
         passwordWarning = r.b({ style: { color: 'red' } }, tooWeakReason);
       }
-      else if (this.state.passwordStrength < BadPasswordStrength) {
+      else if (this.state.passwordStrength <= BadPasswordStrength) {
         // Unfortunately it seems we cannot force people to choose strong passwords,
         // seems they'll just feel annoyed and quit. So this tips will have to do.
         makeItStrongerSuggestion = r.b({ style: { color: 'hsl(25, 100%, 45%)' } },
             "Fairly weak. Consider making it longer, or more random.");
       }
-      else if (this.state.passwordCrackTime < TenYearsInSeconds) {
-        makeItStrongerSuggestion =
-            r.b({}, "Consider making it longer, or more random.");
-      }
       // 100 computers in the message below? Well, zxcvbn assumes 10ms per guess and 100 cores.
       // My scrypt settings are more like 100-200 ms per guess. So, say 100 ms,
       // and 1 000 cores = 100 computers  -->  can use zxcvbn's default crack time.
       passwordHelp = r.span({},
-          passwordWarning, makeItStrongerSuggestion,
-          r.br(), "Crack time: " + this.state.passwordCrackTimeText +
-          ", with 100 computers and the scrypt hash");
+          passwordWarning, makeItStrongerSuggestion);
+          /*  this might be just confusing:
+          r.br(), "Offline crack time: " + this.state.passwordCrackTimeText +
+          ", with 1e10 attempts per second"); */
     }
     return (
       r.div({ className: 'form-group' + (passwordWarning ? ' has-error' : '') },
         Input({ type: 'password', label: "Password:", name: 'newPassword', ref: 'passwordInput',
             id: 'e2ePassword', onChange: this.checkPasswordStrength, help: passwordHelp,
+            tabIndex: this.props.tabIndex,
             onFocus: () => this.setState({ showErrors: true} )})));
   }
 });

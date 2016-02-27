@@ -34,6 +34,10 @@ export var PatternInput = createClassAndFactory({
     };
   },
 
+  focus: function() {
+    this.refs.theInput.focus();
+  },
+
   getValue: function() {
     return this.state.value;
   },
@@ -121,8 +125,9 @@ export var PatternInput = createClassAndFactory({
       r.div({ className: 'form-group' + (anyError ? ' has-error' : '') },
         r.label({ htmlFor: this.props.id }, this.props.label),
         r.br(),
-        r.input({ type: 'text', id: this.props.id, className: 'form-control',
+        r.input({ type: 'text', id: this.props.id, className: 'form-control', ref: 'theInput',
             placeholder: this.props.placeholder, onChange: this.onChange,
+            tabIndex: this.props.tabIndex,
             disabled: this.props.disabled, value: this.state.value, onFocus: this.showErrors }),
         r.p({ className: 'help-block' }, this.props.help),
         anyError));

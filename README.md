@@ -24,7 +24,8 @@ Install Docker-Compose, version 1.6.0+: https://docs.docker.com/compose/install/
 
 Two tips about Vagrant and Linux (just ignore, if you're not familiar with Vagrant or Linux):
 
-- If you want to run the server in a Vagrant virtual machine, you can use this one: `vagrant init phusion/ubuntu-14.04-amd64` — it supports Docker, but you still need to install Docker-Compose (inside the vm). And it seems you'll need to follow the _"Note: If your company is behind a filtering proxy"_ instructions on https://docs.docker.com/linux/step_one/.
+- As of now, don't use Vagrant because then I think you cannot run any end-to-end tests (or at least it would be complicated).
+  <!-- If you want to run the server in a Vagrant virtual machine, you can use this one: `vagrant init phusion/ubuntu-14.04-amd64` — it supports Docker, but you still need to install Docker-Compose (inside the vm). And it seems you'll need to follow the _"Note: If your company is behind a filtering proxy"_ instructions on https://docs.docker.com/linux/step_one/. -->
 
 - On Linux the docker-compose installation instructions tell you to cURL and save docker-compose to `/usr/local/bin/docker-compose`, but that results in a permission-denied error. You can instead:<br>
    `sudo sh -c 'curl -L https://github.com/docker/compose/... > /usr/local/bin/docker-compose'`
@@ -63,12 +64,23 @@ Now, let's get started for real:
 
         docker-compose restart play
 
-1. Point your browser to http://localhost/ and follow the instructions (namely to sign up
-   with the email address you just specified).
+1. Point your browser to http://localhost/ and follow the instructions, namely to sign up
+   as admin, with the email address you just specified. Create a password account —
+   Gmail login won't work because you haven't configured any OpenAuth credentials.
+
+   However when you're asked to confirm your email address by clicking a link in an email
+   that was sent to you — in fact the email couldn't be sent, because you haven't configured
+   any email server.
+
+   Instead look in the Play log file: `docker-compose logs play`. There you'll find
+   the email — it's written to the log files, in development mode. Copy the
+   confirmation link from the `<a href=...>` and paste it in the browser's address bar.
 
 
 Running tests
 -----------------------------
+
+See [this end-to-end tests readme](client/test/e2e/readme.md).
 
 This might work on Linux (and Mac?) only. Some things you'd need to do:
 
