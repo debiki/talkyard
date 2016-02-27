@@ -164,9 +164,17 @@ var LoginDialog = createClassAndFactory({
     var state = this.state;
     var fade = state.childDialog ? ' dw-modal-fade' : '';
 
-    var title = state.loginReason === 'LoginToAuthenticate'
-        ? "Authentication required to access this site"
-        : "Who are you?";
+    var title;
+    switch (state.loginReason) {
+      case 'LoginToAuthenticate':
+        title = "Authentication required to access this site";
+        break;
+      case LoginReason.LoginToLike:
+        title = "Login to Like that post";
+        break;
+      default:
+        title = "Who are you?";
+    }
 
     var content = LoginDialogContent({ loginReason: state.loginReason,
         anyReturnToUrl: state.anyReturnToUrl, setChildDialog: this.setChildDialog,
@@ -258,7 +266,8 @@ export var LoginDialogContent = createClassAndFactory({
         loginReason !== LoginReason.LoginToChat &&
         debiki2.ReactStore.isGuestLoginAllowed()) {
       loginAsGuestButton =
-          Button({ onClick: openChildDialog(GuestLoginDialogContent) }, "Login as Guest");
+          Button({ onClick: openChildDialog(GuestLoginDialogContent),
+              className: 'esLoginDlg_guestBtn' }, "Login as Guest");
     }
 
     return (

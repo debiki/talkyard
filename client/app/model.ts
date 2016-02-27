@@ -148,7 +148,7 @@ interface Myself {
   isLoggedIn?: boolean;
   isAdmin?: boolean;
   isModerator?: boolean;
-  isAuthenticated?: boolean;  // change to !isGuest?
+  isAuthenticated?: boolean;  // change to !isGuest? — no, there are strangers too.
   username?: string;
   fullName?: string;
   avatarUrl?: string;

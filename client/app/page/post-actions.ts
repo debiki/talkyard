@@ -111,7 +111,7 @@ export var PostActions = createComponent({
     window.prompt('To copy a link to this post, press Ctrl+C then Enter', url);
   },
   onLikeClick: function(event) {
-    loginIfNeededThen('LoginToVote', this.props.post.postNr, () => {
+    loginIfNeededThen(LoginReason.LoginToLike, this.props.post.postNr, () => {
       var toggleOn = !me_hasVoted(this.props.store.me, this.props.post.postId, 'VoteLike');
       debiki.internal.toggleVote(this.props.post.postId, 'VoteLike', toggleOn);
     });
@@ -153,7 +153,7 @@ export var PostActions = createComponent({
 
     var me: Myself = store.me;
     var isOwnPost = me.userId === post.authorIdInt;
-    var isOwnPage = me.userId === store.allPosts[BodyId].authorIdInt;
+    var isOwnPage = store_thisIsMyPage(store);
     var isPageBody = post.postId === BodyPostId;
     var votes = me.votes[post.postId] || [];
     var isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
@@ -256,7 +256,7 @@ export var PostActions = createComponent({
       var myUnwantedVote = votes.indexOf('VoteUnwanted') !== -1 ? ' dw-my-vote' : '';
       var myOtherVotes = myWrongVote || myBuryVote || myUnwantedVote ? ' dw-my-vote' : '';
 
-      otherVotesDropdown = post.postId === BodyPostId ? null :
+      otherVotesDropdown = post.postId === BodyPostId || !me_isAuthenticated(me) ? null :
           r.span({ className: 'dropdown navbar-right', title: "More votes...",
               onClick: this.openMoreVotesDropdown },
             r.a({ className: 'dw-a dw-a-votes' + myOtherVotes }, ''));
@@ -360,6 +360,8 @@ var MoreVotesDropdownModal = createComponent({
     var isFlat = store.isFlat; // hmm shouldn't place in the store object, oh well
     var me: Myself = store.me;
     var votes = me.votes[this.state.post.postId] || [];
+    var isOwnPage = store_thisIsMyPage(store);
+    var isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
 
     var myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : '';
     var myBuryVote = votes.indexOf('VoteBury') !== -1 ? ' dw-my-vote' : '';
@@ -375,7 +377,7 @@ var MoreVotesDropdownModal = createComponent({
         : r.a({ className: 'dw-a dw-a-bury icon-bury' + myBuryVote,
         title: "Click if you think it's better that people spend their time " +
         "reading other things instead.", onClick: this.onBuryClick }, 'Bury');
-    var unwantedVoteButton = isGuest(me) ? null :
+    var unwantedVoteButton = isGuest(me) || !isStaffOrOwnPage ? null :
       r.a({ className: 'dw-a dw-a-unwanted icon-cancel' + myUnwantedVote,
         title: "Click if you do not want this comment on this site.",
         onClick: this.onUnwantedClick }, "Unwanted");

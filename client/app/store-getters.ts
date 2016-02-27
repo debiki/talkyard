@@ -16,6 +16,7 @@
  */
 
 /// <reference path="prelude.ts" />
+/// <reference path="me-getters.ts" />
 /// <reference path="utils/utils.ts" />
 /// <reference path="../typedefs/lodash/lodash.d.ts" />
 
@@ -31,23 +32,12 @@
 //------------------------------------------------------------------------------
 
 
-export function me_toBriefUser(me: Myself): BriefUser {
-  return {
-    id: me.id,
-    fullName: me.fullName,
-    username: me.username,
-    isAdmin: me.isAdmin,
-    isModerator: me.isModerator,
-    isGuest: me.id && me.id <= MaxGuestId,
-    isEmailUnknown: undefined, // ?
-    avatarUrl: me.avatarUrl,
-  }
+export function store_thisIsMyPage(store: Store): boolean {
+  var pageBody = store.allPosts[BodyId];
+  dieIf(!pageBody, 'EsE5YKF2');
+  return store.me.userId === pageBody.authorIdInt;
 }
 
-export function me_hasVoted(me: Myself, postId: PostId, what: string): boolean {
-  var votes = me.votes[postId] || [];
-  return votes.indexOf(what) !== -1;
-}
 
 export function store_authorOf(store: Store, post: Post): BriefUser {
   var user = store.usersByIdBrief[post.authorIdInt];

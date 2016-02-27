@@ -58,6 +58,13 @@ export var TitleBodyComments = createComponent({
     var me: Myself = store.me;
     var bodyPost = store.allPosts[BodyId];
 
+    // If this page was closed prematurely, show "... has been closed ..." instead of
+    // e.g. "... is waiting for an answer..."
+    if (store.pageClosedAtMs && !store.pageDoneAtMs && !store.pageAnsweredAtMs)
+      return { id: 'EdH7UMPW', version: 1, content: r.div({},
+          "This topic has been ", closedIcon, " closed. You can still post comments, " +
+          "but that won't make this topic bump to the top of the latest-topics list.") };
+
     /*
     if (store.pageLockedAtMs)
       ...
@@ -156,11 +163,6 @@ export var TitleBodyComments = createComponent({
         }
       }
     }
-
-    if (store.pageClosedAtMs)
-      return { id: 'EdH7UMPW', version: 1, content: r.div({},
-          "This topic has been ", closedIcon, " closed. You can still post comments, " +
-          "but that won't make this topic bump to the top of the latest-topics list.") };
 
     return null;
   },

@@ -105,10 +105,11 @@
       color: black;
       border-radius: 0;
       &:hover:not(.active)
-        background: hsl(207, 90%, 91%);
+        background: hsl($uiNavHue, $uiNavSaturation + 20, 89%);
       &.active
         color: white;
         cursor: default;
+        background: hsl($uiNavHue, $uiNavSaturation, 53%);
 
       min-width: 70px;
       margin-top: marginTop
@@ -135,6 +136,7 @@
 
   button
     float: right
+    border: none;
 
   button:not(.btn-primary):not(.active),
   span

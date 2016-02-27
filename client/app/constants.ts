@@ -39,6 +39,7 @@ var LastStarMark = 3;
 
 enum LoginReason {
   LoginToChat = 10,
+  LoginToLike = 11,
 }
 
 
