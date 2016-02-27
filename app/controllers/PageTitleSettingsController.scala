@@ -107,10 +107,52 @@ object PageTitleSettingsController extends mvc.Controller {
       val oldSectionPageId: Option[PageId] = oldMeta.categoryId map request.dao.loadTheSectionPageId
 
       // Update page settings.
+      // --- Could break out a function: PageMeta.changeRole(..) ----------------------
+      var newClosedAt = oldMeta.closedAt
+      val (newAnsweredAt, newAnswerPostUniqueId) =
+        anyNewRole match {
+          case Some(PageRole.Question) => (oldMeta.answeredAt, oldMeta.answerPostUniqueId)
+          case _ =>
+            if (oldMeta.answeredAt.isDefined) {
+              // Reopen it since changing type.
+              newClosedAt = None
+            }
+            (None, None)
+        }
+      val newPlannedAt =
+        anyNewRole match {
+          case Some(PageRole.Problem) | Some(PageRole.Idea) => oldMeta.plannedAt
+          case Some(PageRole.ToDo) =>
+            // To-Do:s are always either planned or done.
+            oldMeta.plannedAt orElse Some(When.now().toJavaData)
+          case _ =>
+            if (oldMeta.plannedAt.isDefined) {
+              // Reopen it since changing type.
+              newClosedAt = None
+            }
+            None
+        }
+      val newDoneAt =
+        anyNewRole match {
+          case Some(PageRole.Problem) | Some(PageRole.Idea) | Some(PageRole.ToDo) => oldMeta.doneAt
+          case _ =>
+            if (oldMeta.doneAt.isDefined) {
+              // Reopen it since changing type.
+              newClosedAt = None
+            }
+            None
+        }
       val newMeta = oldMeta.copy(
         pageRole = anyNewRole.getOrElse(oldMeta.pageRole),
+        answeredAt = newAnsweredAt,
+        answerPostUniqueId = newAnswerPostUniqueId,
+        plannedAt = newPlannedAt,
+        doneAt = newDoneAt,
+        closedAt = newClosedAt,
         categoryId = anyNewCategoryId.orElse(oldMeta.categoryId),
         version = oldMeta.version + 1)
+      // --- /END could break out a function: PageMeta.changeRole(..) ----------------------
+
       request.dao.readWriteTransaction { transaction =>  // COULD wrap everything in this transaction
                                                           // and move it to PagesDao?
         transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)

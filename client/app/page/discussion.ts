@@ -42,6 +42,14 @@ var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
 var ReactBootstrap: any = window['ReactBootstrap'];
 
+var closedIcon = r.span({ className: 'icon-block' });
+var questionIcon = r.span({ className: 'icon-help-circled' });
+var problemIcon = r.span({ className: 'icon-attention-circled' });
+var solvedIcon = r.span({ className: 'icon-ok-circled-empty' });
+var todoIcon = r.span({ className: 'icon-check-empty' });
+var ideaIcon = r.span({ className: 'icon-idea' });
+var plannedIcon = r.span({ className: 'icon-check-empty' });
+var doneIcon = r.span({ className: 'icon-check' });
 
 
 export var TitleBodyComments = createComponent({
@@ -50,39 +58,74 @@ export var TitleBodyComments = createComponent({
     var me: Myself = store.me;
     var bodyPost = store.allPosts[BodyId];
 
-    if (store.pageAnsweredAtMs)
-      return null; // or?: "This is a question with an accepted answer. You can click the (x) to
-                  // go directly to the accepted answer.
+    /*
+    if (store.pageLockedAtMs)
+      ...
 
-    if (store.pagePlannedAtMs)
-      return null; // or?: "This is in progress or has been planned. The [ ] icon is
-                   // a todo list checkbox item that hasn't been checked yet
+    if (store.pageFrozenAtMs)
+      ...
+    */
 
-    if (store.pageDoneAtMs)
-      return null; // or?: "Then thing(s) described on this page has been done. That's the
-                   // reason the [x] icon is shonw in front of the title.
-
-    if (store.pageClosedAtMs) {
-      var closedIcon = r.span({ className: 'icon-block' });
-      if (store.pageRole === PageRole.Critique) {  // [plugin]
-        return { id: 'EdH4KDPU2', version: 1, content: r.span({},
-            "This topic has been ", closedIcon, " closed. People won't get any additional " +
-            "credits for posting more critique here.") };
+    if (store.pageRole === PageRole.Question) {
+      if (store.pageAnsweredAtMs) {
+        return { id: 'EsH5JV8', version: 1, content: r.div({},
+            "This is a question and it has been ", solvedIcon, " answered.") };
       }
       else {
-        return { id: 'EdH7UMPW', version: 1, content: r.div({},
-            "This topic has been ", closedIcon, " closed. You can still post comments, " +
-            "but that won't make this topic bump to the top of the latest-topics list.") };
+        return { id: 'EsH2YK03', version: 1, content: r.div({},
+            "This is a ", questionIcon, " question, waiting for an ", solvedIcon, " answer.") };
       }
     }
 
-    if (store.pageLockedAtMs)
-      return null; // or ...
+    if (store.pageRole === PageRole.Problem) {
+      if (store.pageDoneAtMs) {
+        return { id: 'EsH5GKU0', version: 1, content: r.div({},
+            "This is a problem and it has been ", doneIcon, " solved.") };
+      }
+      else if (store.pagePlannedAtMs) {
+        return { id: 'EsH2PK40', version: 1, content: r.div({},
+            "This is a problem. Someone is ", plannedIcon, " fixing it, but it's not yet ",
+            doneIcon, " done.") };
+      }
+      else {
+        return { id: 'EsH1WKG5', version: 1, content: r.div({},
+            "This is a ", problemIcon, " problem. It's not yet ", doneIcon, " solved.") };
+      }
+    }
 
-    if (store.pageFrozenAtMs)
-      return null; // or ...
+    if (store.pageRole === PageRole.Idea) {
+      if (store.pageDoneAtMs) {
+        return { id: 'EsH9PK0', version: 1, content: r.div({},
+            "This is an idea that has been ", doneIcon, " implemented.") };
+      }
+      else if (store.pagePlannedAtMs) {
+        return { id: 'EsH44TK2', version: 1, content: r.div({},
+            "This idea has been ", plannedIcon, " planned, or is in progress. " +
+            "But it's not yet ", doneIcon, " done.") };
+      }
+      else {
+        return { id: 'EsH4GY6Z', version: 1, content: r.div({},
+            "This is an ", ideaIcon, " idea, not yet ", plannedIcon, " planned, not yet ",
+            doneIcon, " done.") };
+      }
+    }
 
+    if (store.pageRole === PageRole.ToDo) {
+      if (store.pageDoneAtMs) {
+        return { id: 'EsH22PKU', version: 1, content: r.div({},
+          "This is a todo; it's been ", doneIcon, " done.") };
+      }
+      else {
+        return { id: 'EsH3WY42', version: 1, content: r.div({},
+          "This is a ", plannedIcon, " todo task, not yet ", doneIcon, " done.") };
+      }
+    }
     if (store.pageRole === PageRole.Critique) {  // [plugin]
+      if (store.pageClosedAtMs) {
+        return { id: 'EdH4KDPU2', version: 1, content: r.span({},
+          "This topic has been ", closedIcon, " closed. People won't get any additional " +
+          "credits for posting more critique here.") };
+      }
       if (!me.isAuthenticated) {
         // Could explain: here someone has asked for critique. X people have answered,
         // see the Replies section below. And there are Y chat comments or status updates.
@@ -113,6 +156,11 @@ export var TitleBodyComments = createComponent({
         }
       }
     }
+
+    if (store.pageClosedAtMs)
+      return { id: 'EdH7UMPW', version: 1, content: r.div({},
+          "This topic has been ", closedIcon, " closed. You can still post comments, " +
+          "but that won't make this topic bump to the top of the latest-topics list.") };
 
     return null;
   },
