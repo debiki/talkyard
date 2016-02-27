@@ -281,7 +281,7 @@ function makeConcatDebikiScriptsStream() {
       makeConcatStream('combined-debiki.js', debikiJavascriptFiles, 'DoCheckNewer'),
       makeConcatStream('editor-etcetera.js', editorEtceteraScripts),
       makeConcatStream('embedded-comments.js', debikiEmbeddedCommentsFiles),
-      gulp.src('bower_components/zxcvbn/zxcvbn.js').pipe(gulp.dest('public/res/')));
+      gulp.src('node_modules/zxcvbn/dist/zxcvbn.js').pipe(gulp.dest('public/res/')));
 };
 
 

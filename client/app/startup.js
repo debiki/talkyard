@@ -315,5 +315,9 @@ Gifffer();
 // Show large images on click.
 StupidLightbox.start('.dw-p-bd', ':not(.giffferated, .no-lightbox)');
 
+debiki2.dieIf(location.port && debiki.internal.serverOrigin.indexOf(':' + location.port) === -1,
+    "Wrong port or origin? The server thinks its origin is " + debiki.internal.serverOrigin +
+    " and it'll use that address when sending POST requests and loading scripts. " +
+    "But you're accessing the server via " + location.host + ". [EsE7YGK2]");
 
 // vim: fdm=marker et ts=2 sw=2 fo=tcqwn list

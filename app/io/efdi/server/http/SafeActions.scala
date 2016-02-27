@@ -192,7 +192,8 @@ object SafeActions {
     val (errorMessage, errorCode, orQueryTooLong) =
       if (roleMissing) {
         if (startingUp)
-          ("Play Framework is trying to start, but the database user is missing", "EsE500DBUM", "")
+          ("Play Framework is trying to start, but it seems no database user has been created",
+              "EsE500DBUM", "")
         else
           ("The database user has suddenly disappeared", "EsE500DBUD", "")
       }
@@ -206,8 +207,7 @@ object SafeActions {
     val (hasItStoppedPerhaps, fixProblemTips) =
       if (!Play.isDev) ("", "")
       else if (roleMissing) ("", i"""If you use Docker-Compose: You can create the database user like so:
-        |  - 'docker/drop-database-create-empty.sh', or
-        |  - 'docker/drop-database-import-latest.sh ../db-dumps/tiny-forum'
+        |  'docker/drop-database-create-empty.sh'
         |""")
       else (s"\nHas the database stopped or is there a network problem? $orQueryTooLong", i"""
         |If you use Docker-Compose: run 'docker-compose ps' to see if the database container is running.

@@ -12,7 +12,8 @@
     "node": "~0.6.10 || 0.8 || 0.9"
   },
   "dependencies": {
-    "jquery-resizable": "=1.0.3"
+    "jquery-resizable": "=1.0.3",
+    "zxcvbn": "=4.2.0"
   },
   "devDependencies": {
     "chalk": "^1.1.1",

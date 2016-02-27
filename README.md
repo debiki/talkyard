@@ -47,7 +47,7 @@ Now, let's get started for real:
 
 1. Start everything: (this will take a while, the first time: some Docker images will be downloaded and built)
 
-        docker-compose up
+        docker-compose up   # use 'sudo' if needed
 
 1. Create an empty database:
 
@@ -57,7 +57,7 @@ Now, let's get started for real:
 
         vi ../conf-local/dev-test-localhost.conf
         # edit this config value:
-        # debiki.becomeOwnerEmailAddress=""  # replace with your email address
+        # debiki.becomeOwnerEmailAddress=""  # fill in your email address
 
 1. Restart Play Framework so the config values will be reloaded:
 
