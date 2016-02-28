@@ -106,7 +106,6 @@ export var TitleEditor = createComponent({
 
   getSettings: function() {
     var categoryInput = this.refs.categoryInput;
-    var pageRoleInput = this.refs.pageRoleInput;
     var settings: any = {
       categoryId: categoryInput ? parseInt(categoryInput.getValue()) : null,
       pageRole: this.state.pageRole,

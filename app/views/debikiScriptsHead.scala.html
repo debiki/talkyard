@@ -84,14 +84,15 @@ docElem.className += ' js';
     docElem.className += ' dw-hide-forum-intro';
   }
 
+  var __isInfoPage = !__reactStore.pageRole || __reactStore.pageRole <= 2;
   if (localStorage.getItem('isWatchbarOpen') !== 'false' &&
-      location.search.search('&hideWatchbar') === -1) {
+      location.search.search('&hideWatchbar') === -1 && !__isInfoPage) {
     docElem.className += ' es-watchbar-open';
     __reactStore.isWatchbarOpen = true;
   }
 
   if (localStorage.getItem('isContextbarOpen') !== 'false' &&
-      location.search.search('&hideContextbar') === -1) {
+      location.search.search('&hideContextbar') === -1 && !__isInfoPage) {
     docElem.className += ' es-pagebar-open';
     __reactStore.isContextbarOpen = true;
   }

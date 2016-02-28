@@ -41,9 +41,11 @@ export var PageRoleInput = createComponent({
     var divider;
     var openChatOption;
     var privateChatOption;
+    var webPageOption;
     var customHtmlPageOption;
     if (me.isAdmin) {
       openChatOption = r.option({ value: PageRole.OpenChat }, "Chat room");
+      webPageOption = r.option({ value: PageRole.WebPage }, "Info web page");
       // Not yet implemented:
       // privateChatOption = r.option({ value: PageRole.PrivateChat }, "Private chat");
 
@@ -72,6 +74,7 @@ export var PageRoleInput = createComponent({
         // r.option({ value: PageRole.WikiPage }, 'Wiki'), -- if 1d layout is default?
         wikiMindMap,
         divider,
+        webPageOption,
         customHtmlPageOption,
         openChatOption,
         privateChatOption));
