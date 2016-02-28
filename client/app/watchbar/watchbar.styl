@@ -8,13 +8,13 @@ $watchbarHue = $uiHue; // or 0 (red) looks ok too;
   padding: 10px 17px 10px 10px
   overflow-y: auto;
 
-  a
+  .esWatchbar_topic_link
     display: inline-block;
     width: 100%; // or nothing happens when clicks right part of hover-highlighted <li>
     padding: 3px 0 1px 3px;
 
   h3,
-  li span
+  .esWatchbar_topic_title
     color: hsl(0, 0%, 57%);
 
     white-space: nowrap;
@@ -28,23 +28,26 @@ $watchbarHue = $uiHue; // or 0 (red) looks ok too;
     text-transform: uppercase;
     font-size: 1.4rem;
     margin: 2rem 0 0.2rem;
+    cursor: default;
 
-  li
+  .esWatchbar_li
     list-style: none;
     margin: 0 0 2px;
     cursor: pointer;
-    &:hover
+    &.esWatchbar_topic-none
+      cursor: default;
+    &:not(.esWatchbar_topic-none):hover
       background: hsl($watchbarHue, 70%, 22%);
-      span
+      .esWatchbar_topic_title
         color: hsl(0, 0%, 80%);
 
     &.esWatchbar_topic-current
       background: hsl($uiHue, 70%, 33%);
-      span
+      .esWatchbar_topic_title
         color: white;
 
     &.esWatchbar_topic-unread
-      span
+      .esWatchbar_topic_title
         color: hsl(0, 0%, 87%);
         font-weight: bold;
         text-shadow: 0.7px 0 0 hsl(0, 0%, 87%);

@@ -11,9 +11,9 @@ It'd been great if we could just have added a `127.0.0.1  *.localhost` entry to 
 But wildcard `/etc/hosts` entries are not allowed. Instead, we can ...
 
 
-#### Linux (and Mac?)
+#### Linux
 
-Use dnsmasq, see http://serverfault.com/a/118589/44112
+Use dnsmasq (see http://serverfault.com/a/118589/44112 ).
 
 *On Linux Mint (and Ubuntu?)*, Network Manager already runs its own instance of
 dnsmasq. You can make `*.localhost` work like so: (do this only once)
@@ -26,4 +26,19 @@ Then restart Network Manager:
 
 Wait half a minute, then this should work: `ping whatever.localhost`.
 
+
+#### Mac
+
+Use dnsmasq (see http://serverfault.com/a/118589/44112 ).
+
+I don't have a Mac, but this supposedly works:
+
+    sudo port install dnsmasq
+
+    vi /opt/local/etc/dnsmasq.conf # edit it, ...
+    # ... add the following line: (without the #)
+    # address=/localhost.com/127.0.0.1
+
+    # then:
+    sudo port load dnsmasq
 

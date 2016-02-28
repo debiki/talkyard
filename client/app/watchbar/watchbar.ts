@@ -115,14 +115,18 @@ var ChatChannels = createComponent({
   render: function() {
     var store: Store = this.props.store;
     var topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.ChatChannels];
-    if (_.isEmpty(topics))
-      return null;
-    var topicElems = topics.map((topic: WatchbarTopic) =>
-      SingleTopic({ key: topic.pageId, topic: topic, flavor: 'chat',
-          isCurrent: topic.pageId === store.pageId }));
+    var topicElems;
+    if (_.isEmpty(topics)) {
+      topicElems = NoTopics();
+    }
+    else {
+      topicElems = topics.map((topic: WatchbarTopic) =>
+          SingleTopic({ key: topic.pageId, topic: topic, flavor: 'chat',
+              isCurrent: topic.pageId === store.pageId }));
+    }
     return (
       r.div({ className: 'esWatchbar_topics' },
-        r.h3({}, "Joined Channels"),
+        r.h3({}, "Joined Chats"),
         r.ul({},
           topicElems)));
   }
@@ -133,11 +137,15 @@ var DirectMessages = createComponent({
   render: function() {
     var store: Store = this.props.store;
     var topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.DirectMessages];
-    if (_.isEmpty(topics))
-      return null;
-    var topicElems = topics.map((topic: WatchbarTopic) =>
-      SingleTopic({ key: topic.pageId, topic: topic, flavor: 'direct',
-          isCurrent: topic.pageId === store.pageId }));
+    var topicElems;
+    if (_.isEmpty(topics)) {
+      topicElems = NoTopics();
+    }
+    else {
+      topicElems = topics.map((topic: WatchbarTopic) =>
+          SingleTopic({ key: topic.pageId, topic: topic, flavor: 'direct',
+            isCurrent: topic.pageId === store.pageId }));
+    }
     return (
       r.div({ className: 'esWatchbar_topics' },
         r.h3({}, "Direct Messages"),
@@ -154,12 +162,22 @@ var SingleTopic = createComponent({
     var isCurrentTopicClass = this.props.isCurrent ? ' esWatchbar_topic-current' : '';
     var unreadClass = topic.unread ? ' esWatchbar_topic-unread' : '';
     var url = topic.url || linkToPageId(topic.pageId);
+    var moreClasses = isCurrentTopicClass + unreadClass;
     return (
-        r.li({ className: 'esWatchbar_topic-' + flavor + isCurrentTopicClass + unreadClass },
-          r.a({ href: url },
-            r.span({}, topic.title || url))));
+        r.li({ className: 'esWatchbar_li esWatchbar_topic-' + flavor + moreClasses },
+          r.a({ className: 'esWatchbar_topic_link', href: url },
+            r.span({ className: 'esWatchbar_topic_title' }, topic.title || url))));
   }
 });
+
+
+var NoTopics = function() {
+  return (
+    r.li({ className: 'esWatchbar_li esWatchbar_topic-none' },
+      r.span({ className: 'esWatchbar_topic_link' },
+        r.i({ className: 'esWatchbar_topic_title' }, "None" ))));
+};
+
 
 //------------------------------------------------------------------------------
    }

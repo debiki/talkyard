@@ -3,6 +3,7 @@
 
 import assert = require('assert');
 import logMessageModule = require('./log-and-die');
+import settings = require('./settings');
 var logMessage = logMessageModule.logMessage;
 var logWarning = logMessageModule.logWarning;
 
@@ -82,7 +83,7 @@ browser.addCommand('rememberCurrentUrl', function() {
 });
 
 browser.addCommand('waitForNewUrl', function() {
-  assert(currentUrl, "Please call browser.rememberCurrentUrl() first [EsE7JYK24]");
+  assert(!!currentUrl, "Please call browser.rememberCurrentUrl() first [EsE7JYK24]");
   /* This doesn't work, results in "TypeError: promise.then is not a function":
   browser.waitUntil(function() {
     return currentUrl !== browser.url();
@@ -107,3 +108,9 @@ browser.addCommand('assertTextMatches', function(selector, regex) {
       ", actual text: '" + text + "'");
 });
 
+
+browser.addCommand('perhapsDebug', function(selector, regex) {
+  if (settings.debugAfterwards) {
+    browser.debug();
+  }
+});

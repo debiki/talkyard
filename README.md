@@ -4,7 +4,7 @@ Debiki Server
 Debiki (now I've renamed it to EffectiveDiscussions though) is a
 combined forum and question & answers platform.
 
-See it live: http://www.effectivediscussions.org/forum/#/latest/  
+See it live: http://www.effectivediscussions.org/forum/latest
 Read about it: http://www.effectivediscussions.org/
 
 Debiki is under development and there is currently no stable version or simple
@@ -82,9 +82,8 @@ Tests
 
 #### End-to-end tests
 
-See [End-to-end tests Readme](./docs/e2e-tests-readme.md)
-
-And, if you want to test in a browser other than Chrome, see:[Making *.localhost addresses work](./docs/wildcard-dot-localhost.md).
+See the [End-to-end tests Readme](./docs/e2e-tests-readme.md)
+And, if you want to test in a browser other than Chrome, see [Making *.localhost addresses work](./docs/wildcard-dot-localhost.md).
 
 
 #### Security tests

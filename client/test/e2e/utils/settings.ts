@@ -26,7 +26,10 @@ _.extend(settings, args);
 settings.scheme = settings.secure ? 'https' : 'http';
 settings.mainSiteOrigin = settings.scheme + '://' + settings.host;
 settings.newSiteDomain = settings.newSiteDomain || settings.host;
-settings.waitforTimeout = args.noTimeout || args.nt ? 99999999 : 10*1000;
+
+settings.debugAfterwards = args.debugAfterwards || args.da;
+settings.waitforTimeout = settings.debugAfterwards || args.noTimeout || args.nt ? 2147483647 : 10*1000;
+
 if (settings.skip3) settings.skip3rdPartyDependentTests = true;
 
 if (settings.password) {

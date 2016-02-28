@@ -84,14 +84,14 @@ docElem.className += ' js';
     docElem.className += ' dw-hide-forum-intro';
   }
 
-  if (localStorage.getItem('isWatchbarOpen') === 'true' ||
-      location.search.search('&watchbar') !== -1) {
+  if (localStorage.getItem('isWatchbarOpen') !== 'false' &&
+      location.search.search('&hideWatchbar') === -1) {
     docElem.className += ' es-watchbar-open';
     __reactStore.isWatchbarOpen = true;
   }
 
-  if (localStorage.getItem('isContextbarOpen') === 'true' ||
-      location.search.search('&contextbar') !== -1) {
+  if (localStorage.getItem('isContextbarOpen') !== 'false' &&
+      location.search.search('&hideContextbar') === -1) {
     docElem.className += ' es-pagebar-open';
     __reactStore.isContextbarOpen = true;
   }

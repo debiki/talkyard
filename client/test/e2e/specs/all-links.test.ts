@@ -128,7 +128,7 @@ describe('all links', function() {
     browser.go(idAddress.siteIdOrigin);
     // browser.assertTextMatches('body', /login as admin to create something/);
 
-    browser.debug();
+    browser.perhapsDebug();
   });
 
   describe("click all stuff on the forum page", function() {
