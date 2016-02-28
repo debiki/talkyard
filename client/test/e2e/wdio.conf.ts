@@ -40,7 +40,11 @@ var api = { config: {
   // https://docs.saucelabs.com/reference/platforms-configurator
 
   capabilities: [{
-    browserName: 'firefox'
+    browserName: 'chrome',
+    // For Firefox to work, you need to make http://wildcard.localhost addresses work
+    // (where 'wildcard' can be anything).
+    // See: <../../../docs/wildcard-dot-localhost.md>.
+    // browserName: 'firefox'
   }],
 
 

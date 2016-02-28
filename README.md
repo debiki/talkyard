@@ -77,37 +77,27 @@ Now, let's get started for real:
    confirmation link from the `<a href=...>` and paste it in the browser's address bar.
 
 
-Running tests
+Tests
 -----------------------------
 
-See [this end-to-end tests readme](client/test/e2e/readme.md).
+#### End-to-end tests
 
-This might work on Linux (and Mac?) only. Some things you'd need to do:
+See [End-to-end tests Readme](./docs/e2e-tests-readme.md)
 
-### End to end tests
-
-1) If testing with a browser other than Chrome,
-you need to add a `127.0.0.1  *.localhost` entry to `/etc/hosts`,
-so that the end-to-end tests will be able to generate and resolve their own
-local hostnames with random ids, e.g.  `e2e-test-site-random_id.localhost`. But
-wildcard `/etc/hosts` entries are not allowed. Instead use dnsmasq, see
-http://serverfault.com/a/118589/44112
-
-*On Linux Mint (and Ubuntu?)*, Network Manager already runs its own instance of
-dnsmasq. You can make `*.localhost` work like so: (do this only once)
-
-    sudo sh -c 'echo "address=/localhost/127.0.0.1" >> /etc/NetworkManager/dnsmasq.d/wildcard.localhost.conf'
-
-Then restart Network Manager:
-
-    sudo service network-manager restart
-
-Wait half a minute, then this should work: `ping whatever.localhost`.
-
-Continue here: <client/test/e2e/readme.md>
+And, if you want to test in a browser other than Chrome, see:[Making *.localhost addresses work](./docs/wildcard-dot-localhost.md).
 
 
-### Performance tests
+#### Security tests
+
+... Soon ...
+
+
+#### Unit tests
+
+... Soon ...
+
+
+#### Performance tests
 
 Append to `/etc/security/limits.conf` ... hmm but now with Docker-Compose, which container?
 
