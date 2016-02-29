@@ -170,7 +170,7 @@ var LoginDialog = createClassAndFactory({
         title = "Authentication required to access this site";
         break;
       case LoginReason.LoginToLike:
-        title = "Login to Like that post";
+        title = "Login to Like this post";
         break;
       default:
         title = "Who are you?";

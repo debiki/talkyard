@@ -78,6 +78,8 @@ docElem.className += ' js';
 
   var __reactStore = JSON.parse(unencodeHtmlContent(document.getElementById('thePageJson').text));
 
+  docElem.className += ' ' + (__reactStore.pageHtmlTagCssClasses || '');
+
   var hideIntro = localStorage.getItem('hideForumIntro');
   __reactStore.hideForumIntro = hideIntro && hideIntro !== 'false';
   if (__reactStore.hideForumIntro) {

@@ -50,6 +50,7 @@ object PageTitleSettingsController extends mvc.Controller {
     }
     val anySlug = (request.body \ "slug").asOpt[String].map(_.trim)
     val anyShowId = (request.body \ "showId").asOpt[Boolean]
+    val anyHtmlTagCssClasses = (request.body \ "htmlTagCssClasses").asOpt[String]
 
     val anyNewRole: Option[PageRole] = anyNewRoleInt map { newRoleInt =>
       PageRole.fromInt(newRoleInt) getOrElse throwBadArgument("DwE4GU8", "pageRole")
@@ -84,6 +85,9 @@ object PageTitleSettingsController extends mvc.Controller {
 
     if (newTitle.length > MaxTitleLength)
       throwBadReq("DwE5kEF2", s"Title too long, max length is $MaxTitleLength")
+
+    if (anyHtmlTagCssClasses.exists(!HtmlUtils.OkCssClassRegex.matches(_)))
+      throwBadReq("DwE5kEF2", s"Bad CSS class, doesn't match: ${HtmlUtils.OkCssClassRegexText}")
 
     // Race condition below: First title committed, then page settings. If the server crashes in
     // between, only the title will be changed — that's fairly okay I think; ignore for now.
@@ -150,6 +154,7 @@ object PageTitleSettingsController extends mvc.Controller {
         doneAt = newDoneAt,
         closedAt = newClosedAt,
         categoryId = anyNewCategoryId.orElse(oldMeta.categoryId),
+        htmlTagCssClasses = anyHtmlTagCssClasses.getOrElse(oldMeta.htmlTagCssClasses),
         version = oldMeta.version + 1)
       // --- /END could break out a function: PageMeta.changeRole(..) ----------------------
 

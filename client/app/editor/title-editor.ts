@@ -61,6 +61,7 @@ export var TitleEditor = createComponent({
       folder: pagePath.folder,
       slug: pagePath.slug,
       showId: pagePath.showId,
+      htmlTagCssClasses: store.pageHtmlTagCssClasses || '',
     });
   },
 
@@ -111,7 +112,8 @@ export var TitleEditor = createComponent({
       pageRole: this.state.pageRole,
       folder: addFolderSlashes(this.state.folder),
       slug: this.state.slug,
-      showId: this.state.showId
+      showId: this.state.showId,
+      htmlTagCssClasses: this.state.htmlTagCssClasses,
     };
     if (this.refs.layoutInput) {
       settings.layout = this.refs.layoutInput.getValue();
@@ -140,9 +142,9 @@ export var TitleEditor = createComponent({
       var url = location.protocol + '//' + location.host +
           addFolderSlashes(this.state.folder) + dashId + slashSlug;
 
-      var anyUrlEditor = !store.settings.showComplicatedStuff ? null :
+      var anyUrlAndCssClassEditor = !store.settings.showComplicatedStuff ? null :
         r.div({ className: 'esTtlEdtr_urlSettings' },
-          r.p({}, r.b({}, "Ignore this "), "unless you understand URL addresses."),
+          r.p({}, r.b({}, "Ignore this "), "— unless you understand URL addresses and CSS."),
           Input({ label: 'Page slug', type: 'text', ref: 'slugInput', className: 'dw-i-slug',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
             value: this.state.slug, onChange: this.onSlugChanged,
@@ -155,7 +157,13 @@ export var TitleEditor = createComponent({
             wrapperClassName: 'col-xs-offset-2 col-xs-10',
             className: 'dw-i-showid', checked: this.state.showId,
             onChange: this.onShowIdChanged }),
-          r.p({}, "The page URL will be: ", r.kbd({}, url)));
+          r.p({}, "The page URL will be: ", r.kbd({}, url)),
+          Input({ label: 'CSS class', type: 'text', className: 'theCssClassInput',
+            labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-offset-2 col-xs-10',
+            value: this.state.htmlTagCssClasses,
+            onChange: (event) => this.setState({ htmlTagCssClasses: event.target.value }),
+            help: r.span({}, "A space plus the text you type here will be appended to the ",
+                r.kbd({}, '<html class="...">'), " attribute.") }));
 
       complicatedStuff =
         r.div({},
@@ -167,8 +175,8 @@ export var TitleEditor = createComponent({
                 complicated: store.settings.showComplicatedStuff,
                 title: 'Page type', className: 'esEdtr_titleEtc_pageRole',
                 help: "Makes the page behave differently. For example, pages of type Question " +
-                  "can be marked as solved. And a To-Do as doing and done." }),
-            anyUrlEditor));
+                  "can be marked as solved, and Idea pages can be New, Planned or Implemented." }),
+            anyUrlAndCssClassEditor));
     }
 
     // Once the complicated stuff has been shown, one cannot hide it, except by cancelling

@@ -38,6 +38,7 @@
 var EventEmitter2: any = window['EventEmitter2'];
 
 var ChangeEvent = 'ChangeEvent';
+var $html = $('html');
 
 export var ReactStore = new EventEmitter2();
 
@@ -74,7 +75,7 @@ ReactDispatcher.register(function(payload) {
       if (store.userMustBeAuthenticated !== false || store.userMustBeApproved !== false)
         location.reload();
 
-      $('html').removeClass('dw-is-admin, dw-is-staff, dw-is-authenticated');
+      $html.removeClass('dw-is-admin, dw-is-staff, dw-is-authenticated');
 
       if (store.userIdsOnline) delete store.userIdsOnline[store.me.id];
       store.numOnlineStrangers += 1;
@@ -132,6 +133,11 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.EditTitleAndSettings:
+      if (action.htmlTagCssClasses) {
+        $html.removeClass(store.pageHtmlTagCssClasses);
+        $html.addClass(action.htmlTagCssClasses);
+        store.pageHtmlTagCssClasses = action.htmlTagCssClasses;
+      }
       store.ancestorsRootFirst = action.newAncestorsRootFirst;
       var parent: Ancestor = <Ancestor> _.last(action.newAncestorsRootFirst);
       store.categoryId = parent ? parent.categoryId : null;
@@ -144,12 +150,12 @@ ReactDispatcher.register(function(payload) {
         // Rerender the page with the new layout.
         store.quickUpdate = false;
         if (is2dTree) {
-          $('html').removeClass('dw-vt').addClass('dw-hz');
+          $html.removeClass('dw-vt').addClass('dw-hz');
           debiki.internal.layoutThreads();
           debiki2.utils.onMouseDetected(debiki.internal.initUtterscrollAndTips);
         }
         else {
-          $('html').removeClass('dw-hz').addClass('dw-vt');
+          $html.removeClass('dw-hz').addClass('dw-vt');
           $('.dw-t.dw-depth-1').css('width', 'auto'); // 2d columns had a certain width
         }
         debiki2.removeSidebar();
@@ -160,8 +166,8 @@ ReactDispatcher.register(function(payload) {
     case ReactActions.actionTypes.ShowForumIntro:
       store.hideForumIntro = !action.visible;
       localStorage.setItem('hideForumIntro', action.visible ? 'false' : 'true');
-      if (store.hideForumIntro) $('html').addClass('dw-hide-forum-intro');
-      else $('html').removeClass('dw-hide-forum-intro');
+      if (store.hideForumIntro) $html.addClass('dw-hide-forum-intro');
+      else $html.removeClass('dw-hide-forum-intro');
       break;
 
     case ReactActions.actionTypes.UpdatePost:
@@ -328,13 +334,13 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   }
 
   if (newMe.isAdmin) {
-    $('html').addClass('dw-is-admin, dw-is-staff');
+    $html.addClass('dw-is-admin, dw-is-staff');
   }
   if (newMe.isModerator) {
-    $('html').addClass('dw-is-staff');
+    $html.addClass('dw-is-staff');
   }
   if (newMe.isAuthenticated) {
-    $('html').addClass('dw-is-authenticated');
+    $html.addClass('dw-is-authenticated');
   }
 
   store.user = newMe; // try to remove

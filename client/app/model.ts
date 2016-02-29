@@ -303,6 +303,7 @@ interface Store {
   hideForumIntro?: boolean;
   pageRole: PageRole;
   pagePath: PagePath;
+  pageHtmlTagCssClasses?: string;
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   pageAnsweredAtMs?: number;

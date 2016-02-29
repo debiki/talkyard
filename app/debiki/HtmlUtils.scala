@@ -25,10 +25,12 @@ import _root_.scala.xml.{NodeSeq, Node, Elem, Text, XML, Attribute}
 import Prelude._
 
 
-// try to delete
-object HtmlForms {
+object HtmlUtils {
 
-  val XsrfInpName = "dw-fi-xsrf"
+  val XsrfTokenInputName = "dw-fi-xsrf"
+
+  val OkCssClassRegexText = "[ a-zA-Z0-9_-]+"
+  val OkCssClassRegex = OkCssClassRegexText.r
 
 }
 

@@ -205,6 +205,7 @@ export function editTitleAndSettings(newTitle: string, settings: any, success: (
       newTitlePost: response.newTitlePost,
       newAncestorsRootFirst: response.newAncestorsRootFirst,
       newPageRole: settings.pageRole,
+      htmlTagCssClasses: settings.htmlTagCssClasses,
     });
   }, error);
 }

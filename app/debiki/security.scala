@@ -97,11 +97,11 @@ object DebikiSecurity {
         var xsrfToken = request.headers.get(AngularJsXsrfHeaderName) orElse {
           if (request.body.isInstanceOf[Map[String, Seq[String]]]) {
             val params = request.body.asInstanceOf[Map[String, Seq[String]]]
-            params.get(debiki.HtmlForms.XsrfInpName).map(_.head)
+            params.get(debiki.HtmlUtils.XsrfTokenInputName).map(_.head)
           }
           else if (request.body.isInstanceOf[JsonOrFormDataBody]) {
             val body = request.body.asInstanceOf[JsonOrFormDataBody]
-            body.getFirst(debiki.HtmlForms.XsrfInpName)
+            body.getFirst(debiki.HtmlUtils.XsrfTokenInputName)
           }
           else {
             None

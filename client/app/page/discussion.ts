@@ -445,7 +445,7 @@ var RootPostAndComments = createComponent({
       body =
         r.div({ className: postClass, id: postIdAttr },
           r.div({ className: postBodyClass },
-            r.div({ className: 'dw-p-bd-blk',
+            r.div({ className: 'dw-p-bd-blk esOrigPost',
               dangerouslySetInnerHTML: { __html: sanitizedHtml }})));
     }
 

@@ -187,6 +187,7 @@ case class PageMeta(
   frozenAt: Option[ju.Date] = None,
   // unwantedAt: Option[ju.Date] = None, -- when enough core members voted Unwanted
   // deletedAt: Option[ju.Date] = None,
+  htmlTagCssClasses: String = "",
   numChildPages: Int = 0) { // <-- DoLater: remove, replace with category table
 
   require(lastReplyAt.isDefined == lastReplyById.isDefined, "DwE5JGY1")
