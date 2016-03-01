@@ -50,7 +50,7 @@ enum PinPageWhere {
 
 
 enum PageRole {
-  HomePage = 1,
+  CustomHtmlPage = 1,
   WebPage = 2,  // rename to Info?
   Code = 3,
   SpecialContent = 4,

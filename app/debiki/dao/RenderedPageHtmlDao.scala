@@ -58,10 +58,6 @@ trait RenderedPageHtmlDao {
       val tpi = new TemplateProgrammingInterface(pageRequest, currentJson, currentVersion,
         cachedHtml, cachedVersion)
       val result: String = pageRequest.thePageRole match {
-        case PageRole.HomePage =>
-          views.html.templates.homepage(tpi).body  // try to delete
-        case PageRole.Blog =>
-          views.html.templates.blog(tpi).body  // try to delete
         case PageRole.EmbeddedComments =>
           views.html.templates.embeddedComments(tpi).body
         case _ =>

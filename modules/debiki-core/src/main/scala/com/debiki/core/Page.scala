@@ -265,7 +265,7 @@ sealed abstract class PageRole(protected val IntValue: Int, val staffOnly: Boole
 
 object PageRole {
 
-  case object HomePage extends PageRole(1) {
+  case object CustomHtmlPage extends PageRole(1) {
     override def isWidelyEditable = false
   }
 
@@ -329,7 +329,7 @@ object PageRole {
 
 
   def fromInt(value: Int): Option[PageRole] = Some(value match {
-    case HomePage.IntValue => HomePage
+    case CustomHtmlPage.IntValue => CustomHtmlPage
     case WebPage.IntValue => WebPage
     case Code.IntValue => Code
     case SpecialContent.IntValue => SpecialContent

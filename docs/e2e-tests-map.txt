@@ -227,3 +227,8 @@ admin -
   approve stuff:  (2WY0)
   ... lots of stuff ...
 
+restart server -
+  verify still logged in:
+  can post comment:
+  complicated setting still enabled:
+

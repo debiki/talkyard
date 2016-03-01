@@ -80,17 +80,18 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
   def anyCurrentPageId: Option[PageId] = None
   def anyCurrentPageRole: Option[PageRole] = None
   def anyCurrentPagePath: Option[PagePath] = None
+  def anyCurrentPageMeta: Option[PageMeta] = None
 
   def currentVersionString = ""
   def cachedVersionString = ""
 
-  /** Classes for the <html> tag. */
-  def debikiHtmlTagClasses = {
-    val chatClass = if (anyCurrentPageRole.exists(_.isChat)) " es-chat " else ""
-    val forumClass = if (anyCurrentPageRole.contains(PageRole.Forum)) " es-forum " else ""
-    "DW dw-pri " + chatClass + forumClass
-  }
 
+  def debikiHtmlTagClasses = {
+    val chatClass = if (anyCurrentPageRole.exists(_.isChat)) "es-chat " else ""
+    val forumClass = if (anyCurrentPageRole.contains(PageRole.Forum)) "es-forum " else ""
+    val customClass = anyCurrentPageMeta.map(_.htmlTagCssClasses + " ") getOrElse ""
+    "DW dw-pri " + chatClass + forumClass + customClass
+  }
 
   def xsrfToken: String = debikiRequest.xsrfToken.value
 
@@ -189,6 +190,7 @@ class TemplateProgrammingInterface(
   override def anyCurrentPageId = Some(pageReq.thePageId)
   override def anyCurrentPageRole = Some(pageReq.thePageRole)
   override def anyCurrentPagePath = Some(pageReq.pagePath)
+  override def anyCurrentPageMeta = pageReq.pageMeta
 
   override def currentVersionString = jsonVersion.computerString
   override def cachedVersionString = cachedVersion.computerString

@@ -1077,7 +1077,7 @@ object PostsDao {
   /** For non-discussion pages, uses a long ninja edit window.
     */
   def ninjaEditWindowMsFor(pageRole: PageRole): Int = pageRole match {
-    case PageRole.HomePage => OneHourMs
+    case PageRole.CustomHtmlPage => OneHourMs
     case PageRole.WebPage => OneHourMs
     case PageRole.Code => OneHourMs
     case PageRole.SpecialContent => OneHourMs

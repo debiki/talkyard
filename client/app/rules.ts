@@ -57,7 +57,7 @@ function page_isChatChannel(pageRole: PageRole): boolean {
 function page_isDiscussion(pageRole: PageRole): boolean {
   return pageRole && !isSection(pageRole) &&
       pageRole !== PageRole.SpecialContent &&
-      pageRole !== PageRole.HomePage;
+      pageRole !== PageRole.CustomHtmlPage;
 }
 
 function isPageWithComments(pageRole: PageRole): boolean {
@@ -75,7 +75,7 @@ function isPageWithSidebar(pageRole: PageRole): boolean {
 function pageRole_shallListInRecentTopics(pageRole: PageRole): boolean {
   switch (pageRole) {
     case PageRole.EmbeddedComments:
-    case PageRole.HomePage:
+    case PageRole.CustomHtmlPage:
     case PageRole.Code:
     case PageRole.SpecialContent:
       return false;

@@ -1020,7 +1020,7 @@ function createTopicBtnTitle(category: Category) {
         topicTypes.length === 1 || (topicTypes.length === 2 && isWebPage(topicTypes[1])));
   }
   function isWebPage(pageType: PageRole): boolean {
-    return pageType === PageRole.HomePage || pageType === PageRole.WebPage;
+    return pageType === PageRole.CustomHtmlPage || pageType === PageRole.WebPage;
   }
   return title;
 }

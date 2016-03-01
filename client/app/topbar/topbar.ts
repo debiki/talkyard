@@ -188,7 +188,7 @@ export var TopBar = createComponent({
 
     // Don't show all these buttons on a homepage / landing page, until after has scrolled down.
     // If not logged in, never show it — there's no reason for new users to login on the homepage.
-    if (pageRole === PageRole.HomePage && (!this.state.fixed || !me || !me.isLoggedIn))
+    if (pageRole === PageRole.CustomHtmlPage && (!this.state.fixed || !me || !me.isLoggedIn))
       return r.div();
 
     // ------- Forum --> Category --> Sub Category
@@ -209,7 +209,7 @@ export var TopBar = createComponent({
     // ------- Top, Replies, Bottom, Back buttons
 
     var goToButtons;
-    if (this.state.fixed && pageRole && pageRole !== PageRole.HomePage &&
+    if (this.state.fixed && pageRole && pageRole !== PageRole.CustomHtmlPage &&
         pageRole !== PageRole.Forum) {
       var topHelp = "Go to the top of the page. Shortcut: 1 (on the keyboard)";
       var repliesHelp = "Go to the replies section. There are " + store.numPostsRepliesSection +

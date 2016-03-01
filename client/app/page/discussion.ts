@@ -185,7 +185,7 @@ export var TitleBodyComments = createComponent({
 
     var anyTitle = null;
     var pageRole: PageRole = store.pageRole;
-    if (pageRole === PageRole.HomePage || pageRole === PageRole.EmbeddedComments ||
+    if (pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.EmbeddedComments ||
         store.rootPostId !== BodyPostId) {
       // Show no title for the homepage — it should have its own custom HTML with
       // a title and other things.
@@ -198,7 +198,7 @@ export var TitleBodyComments = createComponent({
 
     var anyPostHeader = null;
     var anySocialLinks = null;
-    if (pageRole === PageRole.HomePage || pageRole === PageRole.Forum ||
+    if (pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.Forum ||
         pageRole === PageRole.About || // pageRole === PageRole.WikiMainPage ||
         pageRole === PageRole.SpecialContent || pageRole === PageRole.Blog ||
         pageRole === PageRole.EmbeddedComments ||
@@ -432,7 +432,7 @@ var RootPostAndComments = createComponent({
       postBodyClass += ' dw-ar-p-bd';
     }
 
-    var showComments = pageRole !== PageRole.HomePage && pageRole !== PageRole.Forum &&
+    var showComments = pageRole !== PageRole.CustomHtmlPage && pageRole !== PageRole.Forum &&
         pageRole !== PageRole.Blog &&
         pageRole !== PageRole.SpecialContent; // && pageRole !== PageRole.WikiMainPage
 

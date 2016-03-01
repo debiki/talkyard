@@ -4,7 +4,7 @@ Debiki Server
 Debiki (now I've renamed it to EffectiveDiscussions though) is a
 combined forum and question & answers platform.
 
-See it live: http://www.effectivediscussions.org/forum/latest
+See it live: http://www.effectivediscussions.org/forum/latest<br>
 Read about it: http://www.effectivediscussions.org/
 
 Debiki is under development and there is currently no stable version or simple
@@ -56,7 +56,7 @@ Now, let's get started for real:
 
 1. Specify your email address in the config file:
 
-        vi ../conf-local/dev-test-localhost.conf
+        vi ../conf/dev-test-localhost.conf
         # edit this config value:
         # debiki.becomeOwnerEmailAddress=""  # fill in your email address
 

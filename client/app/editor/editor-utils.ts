@@ -51,7 +51,7 @@ export var PageRoleInput = createComponent({
 
       if (complicated) {
         divider = r.option({ disabled: true }, "");
-        customHtmlPageOption = r.option({ value: PageRole.HomePage }, "Custom HTML page");
+        customHtmlPageOption = r.option({ value: PageRole.CustomHtmlPage }, "Custom HTML page");
       }
     }
 

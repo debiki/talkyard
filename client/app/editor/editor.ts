@@ -817,7 +817,7 @@ export var Editor = createComponent({
     else if (this.state.newForumPageRole) {
       var what = "Create new topic";
       switch (this.state.newForumPageRole) {
-        case PageRole.HomePage: what = "Create a custom HTML page (add your own <h1> title)"; break;
+        case PageRole.CustomHtmlPage: what = "Create a custom HTML page (add your own <h1> title)"; break;
         case PageRole.WebPage: what = "Create an info page"; break;
         case PageRole.Code: what = "Create a source code page"; break;
         case PageRole.SpecialContent: die('DwE5KPVW2'); break;

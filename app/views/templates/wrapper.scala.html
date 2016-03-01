@@ -15,12 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(tpi: debiki.SiteTpi, isHomepage: Boolean = false)(content: Html)
-
-@homepage = @{ if (isHomepage) " homepage" else "" }
+@(tpi: debiki.SiteTpi)(content: Html)
 
 <!DOCTYPE html>
-<html class="@tpi.debikiHtmlTagClasses@homepage">
+<html class="@tpi.debikiHtmlTagClasses">
 <head>
   @tpi.debikiMeta
   @tpi.debikiStyles

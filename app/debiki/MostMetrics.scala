@@ -48,7 +48,7 @@ class MostMetrics(override val metricRegistry: MetricRegistry)
 
   private val renderForumTimer = metrics.timer("renderForum")
   private val renderBlogTimer = metrics.timer("renderBlog")
-  private val renderHomepageTimer = metrics.timer("renderHomepage")
+  private val renderCustomHtmlPageTimer = metrics.timer("renderCustomHtmlPage")
   private val renderCodePageTimer = metrics.timer("renderCodePage")
   private val renderEmbeddedCommentsTimer = metrics.timer("renderEmbeddedComments")
   private val renderCommentsPageTimer = metrics.timer("renderCommentsPage")
@@ -57,7 +57,7 @@ class MostMetrics(override val metricRegistry: MetricRegistry)
   def getRenderPageTimer(anyPageRole: Option[PageRole]) = anyPageRole match {
     case Some(PageRole.Forum) => renderForumTimer
     case Some(PageRole.Blog) => renderBlogTimer
-    case Some(PageRole.HomePage) => renderHomepageTimer
+    case Some(PageRole.CustomHtmlPage) => renderCustomHtmlPageTimer
     case Some(PageRole.Code) => renderCodePageTimer
     case Some(PageRole.EmbeddedComments) => renderEmbeddedCommentsTimer
     case Some(_) => renderCommentsPageTimer

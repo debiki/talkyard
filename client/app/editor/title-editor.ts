@@ -159,7 +159,7 @@ export var TitleEditor = createComponent({
             onChange: this.onShowIdChanged }),
           r.p({}, "The page URL will be: ", r.kbd({}, url)),
           Input({ label: 'CSS class', type: 'text', className: 'theCssClassInput',
-            labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-offset-2 col-xs-10',
+            labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
             value: this.state.htmlTagCssClasses,
             onChange: (event) => this.setState({ htmlTagCssClasses: event.target.value }),
             help: r.span({}, "A space plus the text you type here will be appended to the ",
@@ -203,7 +203,7 @@ export var TitleEditor = createComponent({
     }
 
     var customHtmlPageOption = user.isAdmin
-        ? r.option({ value: PageRole.HomePage }, 'Custom HTML page')
+        ? r.option({ value: PageRole.CustomHtmlPage }, 'Custom HTML page')
         : null;
 
     var addBackForumIntroButton;
