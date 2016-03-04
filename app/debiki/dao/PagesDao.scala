@@ -226,9 +226,10 @@ trait PagesDao {
       if (author.isStaff) None
       else {
         val reviewTaskReasons = mutable.ArrayBuffer[ReviewReason]()
-        val recentPostsByAuthor = transaction.loadPostsBy(authorId, includeTitles = false,
-          limit = Settings.NumFirstUserPostsToReview)
-        if (recentPostsByAuthor.length < Settings.NumFirstUserPostsToReview) {
+        val firstPostsByAuthor = transaction.loadPostsBy(authorId, includeTitles = false,
+          includeChatMessages = false, limit = Settings.NumFirstUserPostsToReview,
+          OrderBy.OldestFirst)
+        if (firstPostsByAuthor.length < Settings.NumFirstUserPostsToReview) {
           reviewTaskReasons.append(ReviewReason.IsByNewUser, ReviewReason.NewPost)
         }
         if (reviewTaskReasons.isEmpty) None

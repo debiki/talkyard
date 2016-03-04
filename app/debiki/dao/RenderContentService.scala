@@ -20,7 +20,7 @@ package debiki.dao
 import akka.actor.{Actor, Props, ActorRef, ActorSystem}
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{Globals, ReactJson, ReactRenderer}
+import debiki.{DatabaseUtils, Globals, ReactJson, ReactRenderer}
 import debiki.Globals.{testsDoneServerGone, wasTest}
 import play.{api => p}
 import scala.concurrent.duration._
@@ -58,20 +58,27 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
     case sitePageId: SitePageId =>
       // The page has been modified, or accessed and was out-of-date. [4KGJW2]
       // There might be many threads and servers that re-render this page.
-      if (isStillOutOfDate(sitePageId)) {
-        try rerenderContentHtmlUpdateCache(sitePageId)
-        catch {
-          case throwable: Throwable =>
-            p.Logger.error("Error rendering one got-message-about page [DwE5KGP0]", throwable)
+      try {
+        if (isStillOutOfDate(sitePageId)) {
+          rerenderContentHtmlUpdateCache(sitePageId)
+        }
+        else {
+          p.Logger.debug(o"""Page ${sitePageId.pageId} site ${sitePageId.siteId}
+             is up-to-date, ignoring re-render message. [DwE4KPL8]""")
         }
       }
-      else {
-        p.Logger.debug(o"""Page ${sitePageId.pageId} site ${sitePageId.siteId}
-             is up-to-date, ignoring re-render message. [DwE4KPL8]""")
+      catch {
+        case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
+          p.Logger.warn(o"""Cannot render a got-message-about page,
+               database connection closed [DwE4YKF2]""")
+        case throwable: Throwable =>
+          p.Logger.error("Error rendering one got-message-about page [DwE5KGP0]", throwable)
       }
     case RegenerateStaleHtml =>
       try findAndUpdateOneOutOfDatePage()
       catch {
+        case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
+          p.Logger.warn("Cannot render out-of-date page, database connection closed [DwE8GK7W]")
         case throwable: Throwable =>
           if (!wasTest)
             p.Logger.error("Error rendering one out-of-date page [DwE6GUK02]", throwable)
@@ -104,6 +111,8 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
   private def rerenderContentHtmlUpdateCache(sitePageId: SitePageId) {
     try doRerenderContentHtmlUpdateCache(sitePageId)
     catch {
+      case ex: java.sql.SQLException if DatabaseUtils.isConnectionClosed(ex) =>
+        p.Logger.warn("Cannot render page, database connection closed [DwE5YJK1]")
       case ex: Exception =>
         p.Logger.error(s"Error rerendering page $sitePageId [DwE2WKP4]", ex)
     }

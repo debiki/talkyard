@@ -95,6 +95,12 @@ abstract class SiteDao
 
   // Later on I'll cache always, then these two will be implemented directy here.
   def refreshPageInAnyCache(pageId: PageId) {}
+
+  def refreshPagesInAnyCache(pageIds: Set[PageId]) {
+    // Hmm can this be optimized? If using Redis, yes? By batching many changes in just 1 request?
+    pageIds.foreach(refreshPageInAnyCache)
+  }
+
   def emptyCache() {}
 
 

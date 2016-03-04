@@ -23,6 +23,8 @@ package com.debiki.core
  */
 class QuickException extends Exception {
 
+  override def getMessage = "QuickException"
+
   // Fill in no stack trace. Calculating the stack trace is very expensive,
   // and this is a control flow exception rather than an error condition.
   // (Well, actually, the end user might have made an error, but that's
@@ -43,7 +45,7 @@ class QuickMessageException(val message: String)
 class DebikiException(val errorCode: String, val details: String)
   extends QuickException {
 
-  override def getMessage = s"$details [error $errorCode]"
+  override def getMessage = s"$details [$errorCode]"
 
 }
 

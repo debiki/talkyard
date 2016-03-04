@@ -34,6 +34,7 @@ case class AnySetting(
   def asBoolean: Boolean = value == "T" || value == true
   def valueAsString: String = "" + value
   def asString: String = "" + value
+  def asInt: Int = Integer.parseInt(asString)
 }
 
 
@@ -81,7 +82,8 @@ case class SettingsChain(rawSettings: Seq[RawSettings]) {
 }
 
 
-
+// Hmm I think I'll change from a table with setting name & value columns,
+// to a type safe table with one column per setting.
 case class Settings(settingsChain: SettingsChain) {
 
   val title = derive("title", "")
@@ -112,13 +114,17 @@ case class Settings(settingsChain: SettingsChain) {
 
   val showComplicatedStuff = derive("showComplicatedStuff", false)
 
+  val numFirstPostsAllow = derive("allowNumFirstPosts", 0)
+  val numFirstPostsApprove = derive("approveNumFirstPosts", 0)
+  val numFirstPostsNotify = derive("notifyNumFirstPosts", 1)
+
   def isGuestLoginAllowed =
     allowGuestLogin.asBoolean &&
     !userMustBeAuthenticated.asBoolean &&
     !userMustBeApproved.asBoolean
 
 
-  private def derive(settingName: String, default: Any) =
+  private def derive(settingName: String, default: Any): AnySetting =
     settingsChain.deriveSetting(settingName, default)
 
 

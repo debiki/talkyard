@@ -28,6 +28,10 @@ import scala.collection.mutable.ArrayBuffer
   * so that many reasons can be combined in one single Long and stored in one single
   * database field. Examples:
   *   NewPost —> not reviewed —> edited = NewPost.toInt & PostEdited.toInt
+  *   (i.e. a new post --> review reason New Post.
+  *    then someone edits it --> review reason PostEdited, too.
+  *    So now there are two reasons to review it (but only one review task, so
+  *    the staff will just review the post once).)
   */
 sealed abstract class ReviewReason(val IntVal: Int, val isOnPage: Boolean = true) {
   def toInt = IntVal

@@ -31,7 +31,9 @@ sealed abstract class SettingsTarget
 
 object SettingsTarget {
   case object WholeSite extends SettingsTarget
-  case class PageTree(rootPageId: PageId) extends SettingsTarget
+  @deprecated("now", "now subforums were moved to a categories table instead")
+  case class PageTree(rootPageId: PageId) extends SettingsTarget // replace w/ Category(categoryId)?
+  @deprecated("now", "better store in type safe column in dw1_pages instead?")
   case class SinglePage(id: PageId) extends SettingsTarget
 }
 

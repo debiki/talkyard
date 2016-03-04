@@ -87,8 +87,11 @@ object PostType {
   /** A normal post, e.g. a forum topic or reply or blog post, whatever. */
   case object Normal extends PostType(1)
 
-  /** A comment in the flat chat below the threaded discussion section. */
+  /** A comment in the flat section below the threaded discussion section. */
   case object Flat extends PostType(2)
+
+  /** A chat message in a chat room. */
+  case object ChatMessage extends PostType(3)
 
   /** Any staff member can edit this post. No author name shown. */
   case object StaffWiki extends PostType(11) {
@@ -108,6 +111,7 @@ object PostType {
   def fromInt(value: Int): Option[PostType] = Some(value match {
     case Normal.IntValue => Normal
     case Flat.IntValue => Flat
+    case ChatMessage.IntValue => ChatMessage
     case StaffWiki.IntValue => StaffWiki
     case CommunityWiki.IntValue => CommunityWiki
     case _ => return None

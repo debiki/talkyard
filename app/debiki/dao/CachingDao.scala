@@ -141,10 +141,17 @@ object CachingDao {
 trait CachingDao extends CacheEvents {
   self: { def siteId: SiteId } =>
 
+  private var _thisSitesCacheVersionNow: Option[Long] = None
+
 
   /** Remembers the current site's cache version, so we don't need to look it up in the cache.
     */
-  private lazy val thisSitesCacheVersionNow = lookupSiteCacheVersion(this.siteId)
+  private def thisSitesCacheVersionNow = {
+    if (_thisSitesCacheVersionNow.isEmpty) {
+      _thisSitesCacheVersionNow = Some(lookupSiteCacheVersion(this.siteId))
+    }
+    _thisSitesCacheVersionNow.getOrDie("EsE8PYK42")
+  }
 
 
   private def time[A](anyCacheMetric: CacheMetric)(block: Function[Meter, A]): A = {
@@ -265,6 +272,7 @@ trait CachingDao extends CacheEvents {
     elem.setEternal(true) // see comments in `cacheElem()` above.
     elem.setTimeToLive(0) //
     ehcache.put(elem)
+    _thisSitesCacheVersionNow = None
   }
 
 

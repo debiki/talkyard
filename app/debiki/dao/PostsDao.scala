@@ -30,6 +30,9 @@ import scala.collection.{mutable, immutable}
 import PostsDao._
 
 
+case class InsertPostResult(storePatchJson: JsValue, post: Post)
+
+
 /** Loads and saves pages and page parts (e.g. posts and patches).
   *
   * (There's also a class PageDao (with no 's' in the name) that focuses on
@@ -43,9 +46,11 @@ trait PostsDao {
   // 3 minutes
   val LastChatMessageRecentMs = 3 * 60 * 1000
 
+  val MaxNumFirstPosts = 10
+
 
   def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
-        postType: PostType, authorId: UserId, browserIdData: BrowserIdData): JsValue = {
+        postType: PostType, authorId: UserId, browserIdData: BrowserIdData): InsertPostResult = {
 
     // Note: Fairly similar to createNewChatMessage() just below. [4UYKF21]
 
@@ -62,6 +67,9 @@ trait PostsDao {
 
     val (newPost, author, notifications) = readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
+      if (page.role.isChat)
+        throwForbidden("EsE50WG4", s"Page '${page.id}' is a chat page; cannot post normal replies")
+
       val uniqueId = transaction.nextPostId()
       val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
       val commonAncestorId = page.parts.findCommonAncestorNr(replyToPostNrs.toSeq)
@@ -87,16 +95,18 @@ trait PostsDao {
         throwForbidden(
           "The parent post has been deleted; cannot reply to a deleted post", "DwE5KDE7")
 
-      // SHOULD authorize. For now, no restrictions.
-      val isApproved = true // for now
       val author = transaction.loadUser(authorId) getOrElse throwNotFound("DwE404UF3", "Bad user")
+
+      val (reviewReasons: Seq[ReviewReason], shallApprove) =
+        throwForbiddenOrFindReviewReasons(page, author, transaction)
+
       val approverId =
         if (author.isStaff) {
-          author.id
+          dieIf(!shallApprove, "EsE5903")
+          Some(author.id)
         }
-        else {
-          SystemUserId
-        }
+        else if (shallApprove) Some(SystemUserId)
+        else None
 
       val newPost = Post.create(
         uniqueId = uniqueId,
@@ -109,11 +119,11 @@ trait PostsDao {
         createdById = authorId,
         source = textAndHtml.text,
         htmlSanitized = textAndHtml.safeHtml,
-        approvedById = Some(approverId))
+        approvedById = approverId)
 
-      val numNewOrigPostReplies = (isApproved && newPost.isOrigPostReply) ? 1 | 0
+      val numNewOrigPostReplies = (shallApprove && newPost.isOrigPostReply) ? 1 | 0
       val newFrequentPosterIds: Seq[UserId] =
-        if (isApproved)
+        if (shallApprove)
           PageParts.findFrequentPosters(newPost +: page.parts.allPosts,
             ignoreIds = Set(page.meta.authorId, authorId))
         else
@@ -122,38 +132,15 @@ trait PostsDao {
       val oldMeta = page.meta
       val newMeta = oldMeta.copy(
         bumpedAt = page.isClosed ? oldMeta.bumpedAt | Some(transaction.currentTime),
-        lastReplyAt = isApproved ? Option(transaction.currentTime) | oldMeta.lastReplyAt,
-        lastReplyById = isApproved ? Option(authorId) | oldMeta.lastReplyById,
+        lastReplyAt = shallApprove ? Option(transaction.currentTime) | oldMeta.lastReplyAt,
+        lastReplyById = shallApprove ? Option(authorId) | oldMeta.lastReplyById,
         frequentPosterIds = newFrequentPosterIds,
-        numRepliesVisible = page.parts.numRepliesVisible + (isApproved ? 1 | 0),
+        numRepliesVisible = page.parts.numRepliesVisible + (shallApprove ? 1 | 0),
         numRepliesTotal = page.parts.numRepliesTotal + 1,
         numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible + numNewOrigPostReplies,
         version = oldMeta.version + 1)
 
       val uploadRefs = UploadsDao.findUploadRefsInPost(newPost)
-
-      val reviewTask: Option[ReviewTask] = if (author.isStaff) None else {
-        val reviewTaskReasons = mutable.ArrayBuffer[ReviewReason]()
-        val recentPostsByAuthor = transaction.loadPostsBy(authorId, includeTitles = false,
-          limit = Settings.NumFirstUserPostsToReview)
-        if (recentPostsByAuthor.length < Settings.NumFirstUserPostsToReview) {
-          reviewTaskReasons.append(ReviewReason.IsByNewUser, ReviewReason.NewPost)
-        }
-        if (page.isClosed) {
-          // The topic won't be bumped, so no one might see this post, so staff should review it.
-          // Could skip this if the user is trusted.
-          reviewTaskReasons.append(ReviewReason.NoBumpPost)
-        }
-        if (reviewTaskReasons.isEmpty) None
-        else Some(ReviewTask(
-          id = transaction.nextReviewTaskId(),
-          reasons = reviewTaskReasons.to[immutable.Seq],
-          causedById = authorId,
-          createdAt = transaction.currentTime,
-          createdAtRevNr = Some(newPost.currentRevisionNr),
-          postId = Some(newPost.uniqueId),
-          postNr = Some(newPost.nr)))
-      }
 
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
@@ -169,13 +156,23 @@ trait PostsDao {
         targetPostNr = anyParent.map(_.nr),
         targetUserId = anyParent.map(_.createdById))
 
+      val anyReviewTask = if (reviewReasons.isEmpty) None
+      else Some(ReviewTask(
+        id = transaction.nextReviewTaskId(),
+        reasons = reviewReasons.to[immutable.Seq],
+        causedById = author.id,
+        createdAt = transaction.currentTime,
+        createdAtRevNr = Some(newPost.currentRevisionNr),
+        postId = Some(newPost.uniqueId),
+        postNr = Some(newPost.nr)))
+
       transaction.insertPost(newPost)
-      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = isApproved)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = shallApprove)
       uploadRefs foreach { uploadRef =>
         transaction.insertUploadedFileReference(newPost.uniqueId, uploadRef, authorId)
       }
       insertAuditLogEntry(auditLogEntry, transaction)
-      reviewTask.foreach(transaction.upsertReviewTask)
+      anyReviewTask.foreach(transaction.upsertReviewTask)
 
       val notifications = NotificationGenerator(transaction).generateForNewPost(page, newPost)
       transaction.saveDeleteNotifications(notifications)
@@ -189,7 +186,49 @@ trait PostsDao {
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
       byId = author.id)
 
-    storePatchJson
+    InsertPostResult(storePatchJson, newPost)
+  }
+
+
+  def throwForbiddenOrFindReviewReasons(page: PageDao, author: User, transaction: SiteTransaction)
+        : (Seq[ReviewReason], Boolean) = {
+    if (author.isStaff)
+      return (Nil, true)
+
+    val settings = loadFirstPostSettings()
+    val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numToAllow)
+    val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numToApprove)
+    val numFirstToNotify = math.min(MaxNumFirstPosts, settings.numToNotify)
+
+    val reviewReasons = mutable.ArrayBuffer[ReviewReason]()
+    var autoApprove = true
+
+    if ((numFirstToAllow > 0 && numFirstToApprove > 0) || numFirstToNotify > 0) {
+      val firstPosts = transaction.loadPostsBy(author.id, includeTitles = false,
+        includeChatMessages = false, limit = MaxNumFirstPosts, OrderBy.OldestFirst)
+
+      val numApproved = firstPosts.count(_.isSomeVersionApproved)
+      val numFirst = firstPosts.length
+      if (numApproved < numFirstToApprove) {
+        // This user is still under evaluation (is s/he a spammer or not?).
+        autoApprove = false
+        if (numFirst >= numFirstToAllow)
+          throwForbidden("_EsE6YKF2_", o"""You cannot post more posts until a moderator has
+              approved your first posts""")
+      }
+
+      if (numFirst < math.min(MaxNumFirstPosts, numFirstToApprove + numFirstToNotify)) {
+        reviewReasons.append(ReviewReason.IsByNewUser, ReviewReason.NewPost)
+      }
+    }
+
+    if (page.isClosed) {
+      // The topic won't be bumped, so no one might see this post, so staff should review it.
+      // Could skip this if the user is trusted.
+      reviewReasons.append(ReviewReason.NoBumpPost)
+    }
+
+    (reviewReasons, autoApprove)
   }
 
 
@@ -198,7 +237,7 @@ trait PostsDao {
     * of creating a new different chat message.
     */
   def insertChatMessage(textAndHtml: TextAndHtml, pageId: PageId,
-        authorId: UserId, browserIdData: BrowserIdData, dao: SiteDao): JsValue = {
+        authorId: UserId, browserIdData: BrowserIdData): InsertPostResult = {
 
     if (textAndHtml.safeHtml.trim.isEmpty)
       throwBadReq("DwE2U3K8", "Empty chat message")
@@ -235,11 +274,11 @@ trait PostsDao {
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
       byId = author.id)
 
-    storePatchJson
+    InsertPostResult(storePatchJson, post)
   }
 
 
-  def createNewChatMessage(page: PageDao, textAndHtml: TextAndHtml, authorId: UserId,
+  private def createNewChatMessage(page: PageDao, textAndHtml: TextAndHtml, authorId: UserId,
         browserIdData: BrowserIdData, transaction: SiteTransaction)
         : (Post, Notifications) = {
 
@@ -247,6 +286,8 @@ trait PostsDao {
 
     val uniqueId = transaction.nextPostId()
     val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
+    if (!page.role.isChat)
+      throwForbidden("EsE6JU04", s"Page '${page.id}' is not a chat page")
 
     // This is better than some database foreign key error.
     transaction.loadUser(authorId) getOrElse throwNotFound("EsE2YG8", "Bad user")
@@ -257,7 +298,7 @@ trait PostsDao {
       postNr = postNr,
       parent = None,
       multireplyPostNrs = Set.empty,
-      postType = PostType.Flat,
+      postType = PostType.ChatMessage,
       createdAt = transaction.currentTime,
       createdById = authorId,
       source = textAndHtml.text,
@@ -314,10 +355,14 @@ trait PostsDao {
   }
 
 
-  def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml, authorId: UserId,
+  private def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml, authorId: UserId,
     browserIdData: BrowserIdData, transaction: SiteTransaction): (Post, Notifications) = {
 
     // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
+
+    if (lastPost.tyype != PostType.ChatMessage)
+      throwForbidden("EsE6YUW2", o"""Cannot append more chat text; post id ${lastPost.uniqueId}
+          is not a chat message""")
 
     require(lastPost.currentRevisionById == authorId, "EsE5JKU0")
     require(lastPost.currentSourcePatch.isEmpty, "EsE7YGKU2")
@@ -805,6 +850,7 @@ trait PostsDao {
 
 
   def approvePost(pageId: PageId, postNr: PostNr, approverId: UserId) {
+    var pageIdsToRefresh = Set[PageId](pageId)
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val pageMeta = page.meta
@@ -812,22 +858,31 @@ trait PostsDao {
       if (postBefore.isCurrentVersionApproved)
         throwForbidden("DwE4GYUR2", "Post already approved")
 
-      // If this revision is being approved by a human, then it's safe.
-      val safeRevisionNr =
-        if (approverId != SystemUserId) Some(postBefore.currentRevisionNr)
-        else postBefore.safeRevisionNr
+      val approver = transaction.loadTheUser(approverId)
 
+      // For now. Later, let core members approve posts too.
+      if (!approver.isStaff)
+        throwForbidden("EsE5GYK02", "You're not staff so you cannot approve posts")
+
+      // ------ The post
+
+      // Later: update lastApprovedEditAt, lastApprovedEditById and numDistinctEditors too,
+      // or remove them.
       val postAfter = postBefore.copy(
-        safeRevisionNr = safeRevisionNr,
+        safeRevisionNr =
+          approver.isHuman ? Option(postBefore.currentRevisionNr) | postBefore.safeRevisionNr,
         approvedRevisionNr = Some(postBefore.currentRevisionNr),
         approvedAt = Some(transaction.currentTime),
         approvedById = Some(approverId),
         approvedSource = Some(postBefore.currentSource),
         approvedHtmlSanitized = Some(postBefore.currentHtmlSanitized(
-          commonmarkRenderer, pageMeta.pageRole)))
+          commonmarkRenderer, pageMeta.pageRole)),
+        currentSourcePatch = None)
       transaction.updatePost(postAfter)
 
       SHOULD // delete any review tasks.
+
+      // ------ The page
 
       val isApprovingPageBody = postNr == PageParts.BodyNr
       val isApprovingNewPost = postBefore.approvedRevisionNr.isEmpty
@@ -837,20 +892,24 @@ trait PostsDao {
       // or if the original post was edited.
       var makesSectionPageHtmlStale = false
       if (isApprovingNewPost || isApprovingPageBody) {
-        val (numNewReplies, numNewOrigPostReplies, newLastReplyAt) =
+        val (numNewReplies, numNewOrigPostReplies, newLastReplyAt, newLastReplyById) =
           if (isApprovingNewPost && postAfter.isReply)
-            (1, postAfter.isOrigPostReply ? 1 | 0, Some(transaction.currentTime))
+            (1, postAfter.isOrigPostReply ? 1 | 0,
+                                Some(transaction.currentTime), Some(postAfter.createdById))
           else
-            (0, 0, pageMeta.lastReplyAt)
+            (0, 0, pageMeta.lastReplyAt, pageMeta.lastReplyById)
 
         newMeta = newMeta.copy(
           numRepliesVisible = pageMeta.numRepliesVisible + numNewReplies,
           numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewOrigPostReplies,
           lastReplyAt = newLastReplyAt,
-          bumpedAt = Some(transaction.currentTime))
+          lastReplyById = newLastReplyById,
+          bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(transaction.currentTime))
         makesSectionPageHtmlStale = true
       }
       transaction.updatePageMeta(newMeta, oldMeta = pageMeta, makesSectionPageHtmlStale)
+
+      // ------ Notifications
 
       val notifications =
         if (isApprovingNewPost) {
@@ -860,9 +919,76 @@ trait PostsDao {
           NotificationGenerator(transaction).generateForEdits(postBefore, postAfter)
         }
       transaction.saveDeleteNotifications(notifications)
+
+      // ------ Cascade approval?
+
+      // If we will now have approved all the required first posts (numFirstToApprove below),
+      // then auto-approve all remaining first posts, because now we trust the post author
+      // that much.
+      val settings = loadFirstPostSettings()
+      val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numToAllow)
+      val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numToApprove)
+      if (numFirstToAllow > 0 && numFirstToApprove > 0) {
+        val firstPosts = transaction.loadPostsBy(postBefore.createdById, includeTitles = false,
+          includeChatMessages = false, limit = MaxNumFirstPosts, OrderBy.OldestFirst)
+        // BUG approvedById will be changed to not-a-human after an edit (that gets auto-approved).
+        val numApprovedByHuman = firstPosts.count(_.approvedById.exists(User.isHumanMember))
+        val shallApproveRemainingFirstPosts = numApprovedByHuman >= numFirstToApprove
+        if (shallApproveRemainingFirstPosts) {
+          val unapprovedFirstPosts = firstPosts.filter(!_.isSomeVersionApproved)
+          pageIdsToRefresh ++= unapprovedFirstPosts.map(
+            autoApprovePendingEarlyPost(_, transaction))
+        }
+      }
     }
 
-    refreshPageInAnyCache(pageId)
+    refreshPagesInAnyCache(pageIdsToRefresh)
+  }
+
+
+  def autoApprovePendingEarlyPost(post: Post, transaction: SiteTransaction): PageId = {
+    dieIf(post.isSomeVersionApproved, "EsE6YKP2")
+
+    val page = PageDao(post.pageId, transaction)
+    val pageMeta = page.meta
+
+    // ----- The post
+
+    // Don't need to update lastApprovedEditAt, because this post has been invisible until now.
+    // Don't set safeRevisionNr, because this approval hasn't been reviewed by a human.
+    val postAfter = post.copy(
+      approvedRevisionNr = Some(post.currentRevisionNr),
+      approvedAt = Some(transaction.currentTime),
+      approvedById = Some(SystemUserId),
+      approvedSource = Some(post.currentSource),
+      approvedHtmlSanitized = Some(post.currentHtmlSanitized(
+        commonmarkRenderer, pageMeta.pageRole)),
+      currentSourcePatch = None)
+    transaction.updatePost(postAfter)
+
+    // ----- Review tasks
+
+    // Don't think there're any review tasks to delete . They should have been
+    // generated only for the num-first-posts-to-approve posts, and they should have been
+    // handled already. We want to keep any review tasks created for num-first-posts-to-notify.
+
+    // ----- The page
+
+    // We're making an unapproved post visible, so the page will change.
+    val numNewOpReplies = postAfter.isOrigPostReply ? 1 | 0
+    val newMeta = pageMeta.copy(
+      numRepliesVisible = pageMeta.numRepliesVisible + 1,
+      numOrigPostRepliesVisible = pageMeta.numOrigPostRepliesVisible + numNewOpReplies,
+      lastReplyAt = Some(transaction.currentTime),
+      bumpedAt = pageMeta.isClosed ? pageMeta.bumpedAt | Some(transaction.currentTime),
+      version = pageMeta.version + 1)
+
+    transaction.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
+
+    val notfs = NotificationGenerator(transaction).generateForNewPost(page, postAfter)
+    transaction.saveDeleteNotifications(notfs)
+
+    page.id
   }
 
 

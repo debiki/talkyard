@@ -232,6 +232,9 @@ case class NameAndUsername(fullName: String, username: String)
 
 case object User {
 
+  /** The only other member is the System user. But it's a computer. */
+  val LowestHumanMemberId = 1
+
   /** Used when things are inserted or updated automatically in the database. */
   val SystemUserId = -1
   val SystemUserUsername = "system"
@@ -267,6 +270,8 @@ case object User {
 
   def isRoleId(userId: UserId) =
     !isGuestId(userId)
+
+  def isHumanMember(userId: UserId) = userId >= LowestHumanMemberId
 
   def isOkayUserId(id: UserId) =
     id >= LowestAuthenticatedUserId ||
@@ -388,6 +393,7 @@ case class User(
   def isApprovedOrStaff = isApproved.contains(true) || isStaff
   def isSystemUser = id == SystemUserId
   def isStaff = isAdmin || isModerator || isSystemUser
+  def isHuman = id >= LowestHumanMemberId
 
   def isGuest = User.isGuestId(id)
   def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None

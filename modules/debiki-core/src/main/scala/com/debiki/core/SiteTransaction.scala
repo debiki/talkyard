@@ -85,7 +85,8 @@ trait SiteTransaction {
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
   def loadPosts(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]
   def loadPostsByUniqueId(postIds: Iterable[UniquePostId]): immutable.Map[UniquePostId, Post]
-  def loadPostsBy(authorId: UserId, includeTitles: Boolean, limit: Int): immutable.Seq[Post]
+  def loadPostsBy(authorId: UserId, includeTitles: Boolean, includeChatMessages: Boolean,
+        limit: Int, orderBy: OrderBy): immutable.Seq[Post]
   def loadPostsToReview(): immutable.Seq[Post]
 
   def loadTitlesPreferApproved(pageIds: Iterable[PageId]): Map[PageId, String] = {
@@ -273,6 +274,7 @@ trait SiteTransaction {
   def loadReviewTask(id: ReviewTaskId): Option[ReviewTask]
   def loadReviewTasks(olderOrEqualTo: ju.Date, limit: Int): Seq[ReviewTask]
   def loadReviewTaskCounts(isAdmin: Boolean): ReviewTaskCounts
+  def loadPendingPostReviewTask(postId: UniquePostId): Option[ReviewTask]
   def loadPendingPostReviewTask(postId: UniquePostId, causedById: UserId): Option[ReviewTask]
 
   def nextNotificationId(): NotificationId

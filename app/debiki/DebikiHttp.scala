@@ -103,6 +103,7 @@ object DebikiHttp {
    */
   case class ResultException(result: Result) extends QuickException {
     override def toString = s"Status ${result.header.status}: $bodyToString"
+    override def getMessage = toString
 
     def statusCode = result.header.status
 

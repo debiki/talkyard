@@ -85,6 +85,13 @@ package object core {
     def fromDate(date: java.util.Date) = new When(date.getTime)
   }
 
+  sealed trait OrderBy
+
+  object OrderBy {
+    object OldestFirst extends OrderBy
+    object MostRecentFirst extends OrderBy
+  }
+
   val HomepageUrlPath = "/"
   val EmptyPageId = "0"
 
@@ -107,6 +114,7 @@ package object core {
   def UnknownUserGuestCookie = User.UnknownUserGuestCookie
   def MaxGuestId = User.MaxGuestId
   def LowestNonGuestId = User.LowestNonGuestId
+  def LowestHumanMemberId = User.LowestHumanMemberId
 
   val KajMagnusSiteId = "3" // for now
 

@@ -34,9 +34,10 @@ case class ReviewTaskCounts(numUrgent: Int, numOther: Int)
   * @param completedById The staff user that had a look at this review task and e.g. deleted
   *   a spam comment, or dismissed the review task if the comment was ok.
   * @param invalidatedAt If there is e.g. a review task about a comment, but the comment gets
-  *   deleted, then the review task becomes invalid. Perhaps just delete the review task too? Hmm.
-  *   StackExchange has an invalidated_at field.
-  * @param userId A user who e.g. changed his/her avatar and his/her profile should therefore
+  *   deleted, then the review task becomes invalid. Perhaps just delete the review task instead?
+  *   Hmm. StackExchange has an invalidated_at field. Aha, could be useful if the comment gets
+  *   undeleted — then we want the review task back again.
+  * @param userId A user who e.g. changed his/her avatar and his/her profile, and therefore should
   *   be reviewed.
   * @param pageId A new page that should be reviewed.
   * @param postId A post that should be reviewed, it might be spam for example.

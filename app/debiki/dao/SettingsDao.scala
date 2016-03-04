@@ -35,6 +35,16 @@ trait SettingsDao {
     }
   }
 
+  class FirstPostSettings(val numToAllow: Int, val numToApprove: Int, val numToNotify: Int)
+
+  def loadFirstPostSettings(): FirstPostSettings = {
+    val settings = loadWholeSiteSettings()
+    new FirstPostSettings(
+      numToAllow = settings.numFirstPostsAllow.asInt,
+      numToApprove = settings.numFirstPostsApprove.asInt,
+      numToNotify = settings.numFirstPostsNotify.asInt)
+  }
+
 
   def loadWholeSiteSettings(transaction: SiteTransaction): Settings = {
     val rawSettingsMaps = transaction.loadSettings(Vector(SettingsTarget.WholeSite))

@@ -18,18 +18,33 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.Prelude._
+import debiki.TextAndHtml
 import org.scalatest._
 import org.scalatestplus.play.OneAppPerSuite
 import java.{util => ju, io => jio}
 import play.api.test.FakeApplication
 
 
-class DaoAppSuite extends FreeSpec with MustMatchers with OneAppPerSuite {
+class DaoAppSuite(disableScripts: Boolean = false)
+  extends FreeSpec with MustMatchers with OneAppPerSuite {
 
   implicit override lazy val app = FakeApplication(
-    additionalConfiguration = Map("isTestShallEmptyDatabase" -> "true"))
+    additionalConfiguration = Map(
+      "isTestShallEmptyDatabase" -> "true",
+      "isTestDisableScripts" -> (disableScripts ? "true" | "false")))
 
   def browserIdData = BrowserIdData("1.2.3.4", idCookie = "dummy_id_cookie", fingerprint = 334455)
+
+
+  /** Its name will be "Admin $password", username "admin_$password" and email
+    * "admin-$password@x.co",
+    */
+  def createPasswordAdmin(password: String, dao: SiteDao): User = {
+    dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
+      name = s"Admin $password", username = s"admin_$password", email = s"admin-$password@x.co",
+      password = password, isAdmin = true, isOwner = false).get)
+  }
 
 
   /** Its name will be "User $password", username "user_$password" and email "user-$password@x.c",
@@ -38,6 +53,16 @@ class DaoAppSuite extends FreeSpec with MustMatchers with OneAppPerSuite {
     dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = s"User $password", username = s"user_$password", email = s"user-$password@x.c",
       password = password, isAdmin = false, isOwner = false).get)
+  }
+
+
+  def createPage(pageRole: PageRole, titleTextAndHtml: TextAndHtml,
+        bodyTextAndHtml: TextAndHtml, authorId: UserId, browserIdData: BrowserIdData,
+        dao: SiteDao): PageId = {
+    dao.createPage(pageRole, PageStatus.Published, anyCategoryId = None,
+      anyFolder = Some("/"), anySlug = Some(""),
+      titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
+      showId = true, authorId = authorId, browserIdData = browserIdData).thePageId
   }
 
 }

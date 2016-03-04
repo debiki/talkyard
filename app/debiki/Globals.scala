@@ -74,6 +74,8 @@ class Globals {
 
   def testsDoneServerGone = Play.isTest && (!isInitialized || Play.maybeApplication.isEmpty)
 
+  def isTestDisableScripts = state.isTestDisableScripts
+
   def isInitialized = _state ne null
 
   @volatile private var _state: State Or Option[Exception] = null
@@ -244,11 +246,10 @@ class Globals {
 
       // The render engines might be needed by some Java (Scala) evolutions.
       debiki.ReactRenderer.startCreatingRenderEngines()
-      state.systemDao.applyEvolutions()
     }
 
     try {
-      Await.ready(createStateFuture, 2 seconds)
+      Await.ready(createStateFuture, (Play.isTest ? 99 | 5) seconds)
       p.Logger.info("Started. [EsM200RDY]")
     }
     catch {
@@ -257,6 +258,10 @@ class Globals {
         // — that's better than a blank page? In case this takes long.
         p.Logger.info("Still connecting to other services, starting anyway. [EsM200CRZY]")
     }
+
+    // Don't do evolutions asynchronically — perhaps the server would then try to write to the
+    // database too early. Also the test suite would break, if this-done-async took rather long.
+    state.systemDao.applyEvolutions()
   }
 
 
@@ -287,6 +292,15 @@ class Globals {
   private class State(val dataSource: HikariDataSource) {
 
     val ShutdownTimeout = 30 seconds
+
+    val isTestDisableScripts = {
+      val disable =
+        Play.isTest && Play.configuration.getBoolean("isTestDisableScripts").getOrElse(false)
+      if (disable) {
+        p.Logger.info("Is test with scripts disabled. [EsM4GY82]")
+      }
+      disable
+    }
 
     val metricRegistry = new metrics.MetricRegistry()
     val mostMetrics = new MostMetrics(metricRegistry)

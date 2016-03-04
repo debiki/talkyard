@@ -97,6 +97,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     * classloader here?
     */
   def startCreatingRenderEngines() {
+    if (Globals.isTestDisableScripts)
+      return
     if (!javascriptEngines.isEmpty) {
       dieIf(!Play.isTest, "DwE50KFE2")
       // We've restarted the server as part of the tests? but this object lingers? Fine.
@@ -151,6 +153,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
 
   def renderPage(initialStateJson: String): Option[String] = {
+    if (Globals.isTestDisableScripts)
+      return Some("Scripts disabled [EsM6YKW2]")
     withJavascriptEngine(engine => {
       val timeBefore = (new ju.Date).getTime
 
@@ -173,6 +177,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
   override def renderAndSanitizeCommonMark(commonMarkSource: String,
         allowClassIdDataAttrs: Boolean, followLinks: Boolean): String = {
+    if (Globals.isTestDisableScripts)
+      return "Scripts disabled [EsM5GY52]"
     val oneboxRenderer = new InstantOneboxRendererForNashorn
     val resultNoOneboxes = withJavascriptEngine(engine => {
       // The onebox renderer needs a Javascript engine to sanitize html (via Caja JsHtmlSanitizer)
@@ -197,6 +203,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
 
   def sanitizeHtmlReuseEngine(text: String, javascriptEngine: Option[js.Invocable]): String = {
+    if (Globals.isTestDisableScripts)
+      return "Scripts disabled [EsM44GY0]"
     def sanitizeWith(engine: js.Invocable): String = {
       val safeHtml = engine.invokeFunction("sanitizeHtml", text)
       safeHtml.asInstanceOf[String]
@@ -213,6 +221,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
 
   override def slugifyTitle(title: String): String = {
+    if (Globals.isTestDisableScripts)
+      return "Scripts disabled [EsM2WXP4]"
     withJavascriptEngine(engine => {
       val slug = engine.invokeFunction("debikiSlugify", title)
       slug.asInstanceOf[String]
@@ -244,6 +254,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
 
   private def withJavascriptEngine[R](fn: (js.Invocable) => R): R = {
+    dieIf(Globals.isTestDisableScripts, "EsE4YUGw")
+
     def threadId = Thread.currentThread.getId
     def threadName = Thread.currentThread.getName
 

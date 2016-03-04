@@ -18,6 +18,8 @@ This not so very tested. You might run into problems.
 
 #### Before you start
 
+You'll need some GB memory; 4GB might be enough, not sure. And you need a somewhat fast internet connection — you'll be downloading like 0.5 (?) GB Docker images (in total).
+
 Install Docker-Compose, version 1.6.0+: https://docs.docker.com/compose/install/
 
 #### Two tips
