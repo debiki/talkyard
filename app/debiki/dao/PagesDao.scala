@@ -133,23 +133,23 @@ trait PagesDao {
 
     val pageSlug = (anySlug match {
       case Some(slug) =>
-        if (!author.isStaff)
+        if (!author.isStaff && slug.nonEmpty)
           throwForbidden("DwE4KFW87", "Only staff may specify page slug")
         slug
       case None =>
         commonmarkRenderer.slugifyTitle(titleSource)
     }).take(PagePath.MaxSlugLength).dropRightWhile(_ == '-').dropWhile(_ == '-')
 
+    val (reviewReasons: Seq[ReviewReason], shallApprove) =
+      throwOrFindReviewNewPageReasons(author, transaction)
+
     val approvedById =
       if (author.isStaff) {
-        author.id
+        dieIf(!shallApprove, "EsE2UPU70")
+        Some(author.id)
       }
-      else {
-        // The System user currently approves new forum topics.
-        // SECURITY COULD analyze the author's trust level and past actions, and
-        // based on that, approve, reject or review later.
-        SystemUserId
-      }
+      else if (shallApprove) Some(SystemUserId)
+      else None
 
     if (!author.isStaff && pageRole.staffOnly)
       throwForbidden("DwE5KEPY2", s"Forbidden page type: $pageRole")
@@ -165,12 +165,7 @@ trait PagesDao {
       }
     }
     else {
-      anyCategoryId match {
-        case None =>
-          if (!author.isStaff && pageRole != PageRole.Message)
-            throwForbidden("DwE8GKE4", "No category specified")
-        case Some(categoryId) =>
-          dieIf(pageRole == PageRole.Message, "EsE85FMU2") // remove later if/when needed
+      anyCategoryId foreach { categoryId =>
           val category = transaction.loadCategory(categoryId) getOrElse throwNotFound(
             "DwE4KGP8", s"Category not found, id: $categoryId")
           if (category.isRoot)
@@ -201,7 +196,7 @@ trait PagesDao {
       createdById = authorId,
       source = titleSource,
       htmlSanitized = titleHtmlSanitized,
-      approvedById = Some(approvedById))
+      approvedById = approvedById)
 
     val bodyPost = Post.createBody(
       uniqueId = bodyUniqueId,
@@ -211,37 +206,28 @@ trait PagesDao {
       source = bodySource,
       htmlSanitized = bodyHtmlSanitized,
       postType = bodyPostType,
-      approvedById = Some(approvedById))
+      approvedById = approvedById)
       .copy(
         hiddenAt = ifThenSome(hidePageBody, transaction.currentTime),
         hiddenById = ifThenSome(hidePageBody, authorId))
 
     val uploadPaths = UploadsDao.findUploadRefsInPost(bodyPost)
 
+    SECURITY ; SHOULD // set publishDirectly = false, if !shallApprove — but this requires
+    // changes elsewhere too, fix later.
     val pageMeta = PageMeta.forNewPage(pageId, pageRole, authorId, transaction.currentTime,
       pinOrder = pinOrder, pinWhere = pinWhere,
       categoryId = anyCategoryId, url = None, publishDirectly = true)
 
-    val reviewTask: Option[ReviewTask] =
-      if (author.isStaff) None
-      else {
-        val reviewTaskReasons = mutable.ArrayBuffer[ReviewReason]()
-        val firstPostsByAuthor = transaction.loadPostsBy(authorId, includeTitles = false,
-          includeChatMessages = false, limit = Settings.NumFirstUserPostsToReview,
-          OrderBy.OldestFirst)
-        if (firstPostsByAuthor.length < Settings.NumFirstUserPostsToReview) {
-          reviewTaskReasons.append(ReviewReason.IsByNewUser, ReviewReason.NewPost)
-        }
-        if (reviewTaskReasons.isEmpty) None
-        else Some(ReviewTask(
-          id = transaction.nextReviewTaskId(),
-          reasons = reviewTaskReasons.to[immutable.Seq],
-          causedById = authorId,
-          createdAt = transaction.currentTime,
-          createdAtRevNr = Some(bodyPost.currentRevisionNr),
-          postId = Some(bodyPost.uniqueId),
-          postNr = Some(bodyPost.nr)))
-      }
+    val reviewTask = if (reviewReasons.isEmpty) None
+    else Some(ReviewTask(
+      id = transaction.nextReviewTaskId(),
+      reasons = reviewReasons.to[immutable.Seq],
+      causedById = author.id,
+      createdAt = transaction.currentTime,
+      createdAtRevNr = Some(bodyPost.currentRevisionNr),
+      postId = Some(bodyPost.uniqueId),
+      postNr = Some(bodyPost.nr)))
 
     val auditLogEntry = AuditLogEntry(
       siteId = siteId,
@@ -270,6 +256,12 @@ trait PagesDao {
     // the page twice, both in the request thread and in a background thread.)
 
     (pagePath, bodyPost)
+  }
+
+
+  def throwOrFindReviewNewPageReasons(author: User, transaction: SiteTransaction)
+        : (Seq[ReviewReason], Boolean) = {
+    throwOrFindReviewReasonsImpl(author, page = None, transaction)
   }
 
 

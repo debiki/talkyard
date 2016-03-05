@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import debiki.DebikiHttp.ResultException
 import debiki.{Globals, TextAndHtml}
 import org.scalatest.{BeforeAndAfterAll, MustMatchers, FreeSpec}
+import debiki.Settings._
 
 
 class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true) {
@@ -100,9 +101,9 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true) {
 
     new nestedPostsSuite {
       override def beforeAll {
-        dao.saveSetting(SettingsTarget.WholeSite, "allowNumFirstPosts", Some(1))
-        dao.saveSetting(SettingsTarget.WholeSite, "approveNumFirstPosts", Some(1))
-        dao.saveSetting(SettingsTarget.WholeSite, "notifyNumFirstPosts", Some(0))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToAllowSettingName, Some(1))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToApproveSettingName, Some(1))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToReviewSettingName, Some(0))
       }
 
       "PostsDao will, with approve = 1 and allow = undef, 1, 2" - {
@@ -125,7 +126,7 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true) {
           }.getMessage must include("_EsE6YKF2_")
 
           info("accept one more when allow = 2")
-          dao.saveSetting(SettingsTarget.WholeSite, "allowNumFirstPosts", Some(2))
+          dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToAllowSettingName, Some(2))
           val secondReply = reply(member.id, "reply_863439_d")
           secondReply.isSomeVersionApproved mustBe false
 
@@ -153,14 +154,14 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true) {
           checkNoReviewTask(thirdReply)
 
           info("allow, if approve bumped to 3 (2 + 1 approved by admin & system = 3 in total)")
-          dao.saveSetting(SettingsTarget.WholeSite, "approveNumFirstPosts", Some(3))
+          dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToApproveSettingName, Some(3))
           val fourthReply = reply(member.id, "reply_863439_g")
           fourthReply.approvedById mustBe Some(SystemUserId)
           checkNoReviewTask(fourthReply)
 
           info("allow but not approve, if Approve & Approve bumped to 5")
-          dao.saveSetting(SettingsTarget.WholeSite, "allowNumFirstPosts", Some(5))
-          dao.saveSetting(SettingsTarget.WholeSite, "approveNumFirstPosts", Some(5))
+          dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToAllowSettingName, Some(5))
+          dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToApproveSettingName, Some(5))
           val fifthReply = reply(member.id, "reply_863439_h")
           fifthReply.isSomeVersionApproved mustBe false
           checkReviewTaskGenerated(fifthReply)
@@ -175,9 +176,9 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true) {
 
     new nestedPostsSuite {
       override def beforeAll {
-        dao.saveSetting(SettingsTarget.WholeSite, "allowNumFirstPosts", Some("5"))
-        dao.saveSetting(SettingsTarget.WholeSite, "approveNumFirstPosts", Some("3"))
-        dao.saveSetting(SettingsTarget.WholeSite, "notifyNumFirstPosts", Some(0))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToAllowSettingName, Some("5"))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToApproveSettingName, Some("3"))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToReviewSettingName, Some(0))
       }
 
       "PostsDao will, with allow = 4, approve = 2:" - {
@@ -257,8 +258,8 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true) {
           checkNoReviewTask(seventhReply)
 
           info("still allow, after Approve & Allow disabled")
-          dao.saveSetting(SettingsTarget.WholeSite, "approveNumFirstPosts", Some(0))
-          dao.saveSetting(SettingsTarget.WholeSite, "allowNumFirstPosts", Some(0))
+          dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToAllowSettingName, Some(0))
+          dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToApproveSettingName, Some(0))
           val eightReply = reply(member.id, "reply_77025_k")
           checkNoReviewTask(eightReply)
         }
@@ -267,9 +268,9 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true) {
 
     new nestedPostsSuite {
       override def beforeAll {
-        dao.saveSetting(SettingsTarget.WholeSite, "allowNumFirstPosts", Some("0"))
-        dao.saveSetting(SettingsTarget.WholeSite, "approveNumFirstPosts", Some("0"))
-        dao.saveSetting(SettingsTarget.WholeSite, "notifyNumFirstPosts", Some("2"))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToAllowSettingName, Some("0"))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToApproveSettingName, Some("0"))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToReviewSettingName, Some("2"))
       }
 
       "PostsDao will, with allow = 0, approve = 0, notify = 2:" - {
@@ -302,9 +303,9 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true) {
 
     new nestedPostsSuite {
       override def beforeAll {
-        dao.saveSetting(SettingsTarget.WholeSite, "allowNumFirstPosts", Some("3"))
-        dao.saveSetting(SettingsTarget.WholeSite, "approveNumFirstPosts", Some("1"))
-        dao.saveSetting(SettingsTarget.WholeSite, "notifyNumFirstPosts", Some("1"))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToAllowSettingName, Some("3"))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToApproveSettingName, Some("1"))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToReviewSettingName, Some("1"))
       }
 
       "PostsDao can combine Allow and Notify" - {
@@ -348,9 +349,9 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true) {
 
     new nestedPostsSuite {
       override def beforeAll {
-        dao.saveSetting(SettingsTarget.WholeSite, "allowNumFirstPosts", Some("2"))
-        dao.saveSetting(SettingsTarget.WholeSite, "approveNumFirstPosts", Some("1"))
-        dao.saveSetting(SettingsTarget.WholeSite, "notifyNumFirstPosts", Some("1"))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToAllowSettingName, Some("2"))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToApproveSettingName, Some("1"))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToReviewSettingName, Some("1"))
       }
 
       "PostsDao" - {
@@ -402,6 +403,33 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true) {
           val fourthReply = reply(member.id, "reply_740331_e")
           fourthReply.approvedById mustBe Some(SystemUserId)
           checkNoReviewTask(fourthReply)
+        }
+      }
+    },
+
+    new nestedPostsSuite {
+      override def beforeAll {
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToAllowSettingName, Some("2"))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToApproveSettingName, Some("1"))
+        dao.saveSetting(SettingsTarget.WholeSite, NumFirstPostsToReviewSettingName, Some("1"))
+      }
+
+      "PagesDao" - {
+        "lets staff approve and review a user's firts pages too, not just replies" in {
+          val member = createPasswordUser(s"mem_4ZM2", dao)
+
+          info("create Allow = 2 pages, pending approval since Approve > 0")
+          val first = createPage(PageRole.Discussion, TextAndHtml.testTitle("Member Page 4ZM2"),
+            TextAndHtml.testBody("Page body 4ZM2."), member.id, browserIdData, dao)
+
+          val second = createPage(PageRole.Discussion, TextAndHtml.testTitle("Member Page 4ZM2 b"),
+            TextAndHtml.testBody("Page body 4ZM2 b."), member.id, browserIdData, dao)
+
+          info("rejct page 3")
+          intercept[ResultException] {
+            createPage(PageRole.Discussion, TextAndHtml.testTitle("Member Page 4ZM2 c"),
+                TextAndHtml.testBody("Page body 4ZM2 c."), member.id, browserIdData, dao)
+          }.getMessage must include("_EsE6YKF2_")
         }
       }
     })

@@ -49,6 +49,8 @@ object ReviewReason {
 
   // << 2 and << 3 reserved for other user types. Perhaps IsByGuest?
 
+  /** We don't need any NewPage reason, because if the ReviewTask post nr is BodyId,
+    * then we know it's for a new page. */
   case object NewPost extends ReviewReason(1 << 4)
 
   /** Closed forum topics aren't bumped, so no one might notice the new reply — review needed. */

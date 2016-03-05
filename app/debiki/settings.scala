@@ -20,6 +20,7 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import play.api.libs.json._
+import Settings._
 
 
 
@@ -114,9 +115,9 @@ case class Settings(settingsChain: SettingsChain) {
 
   val showComplicatedStuff = derive("showComplicatedStuff", false)
 
-  val numFirstPostsAllow = derive("allowNumFirstPosts", 0)
-  val numFirstPostsApprove = derive("approveNumFirstPosts", 0)
-  val numFirstPostsNotify = derive("notifyNumFirstPosts", 1)
+  val numFirstPostsToAllow = derive(NumFirstPostsToAllowSettingName, 0)
+  val numFirstPostsToApprove = derive(NumFirstPostsToApproveSettingName, 0)
+  val numFirstPostsToReview = derive(NumFirstPostsToReviewSettingName, 1)
 
   def isGuestLoginAllowed =
     allowGuestLogin.asBoolean &&
@@ -182,9 +183,7 @@ object Settings {
     */
   val PostRecentlyCreatedLimitMs = 5 * 3600 * 1000
 
-  /** The first few posts by a new user are enqueued for review (because spammers
-    * likely post spam directly or almost directly).
-    */
-  val NumFirstUserPostsToReview = 2
-
+  val NumFirstPostsToAllowSettingName = "numFirstPostsToAllow"
+  val NumFirstPostsToApproveSettingName = "numFirstPostsToApprove"
+  val NumFirstPostsToReviewSettingName = "numFirstPostsToReview"
 }

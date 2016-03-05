@@ -68,9 +68,6 @@ object Debiki {
     val WaitForConnectionMillis = 3000
     val TooSlowQuerySeconds = 5 // very long in the context of a web app
 
-    // Feels safest. They write "rarely necessary ... only applies if autoCommit is disabled"
-    // but autocommit *is* disabled.
-    config.setIsolateInternalQueries(true)
     config.setAutoCommit(false)
     config.setConnectionTimeout(WaitForConnectionMillis)
     // The validation timeout must be less than the connection timeout.

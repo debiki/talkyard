@@ -98,7 +98,7 @@ trait PostsDao {
       val author = transaction.loadUser(authorId) getOrElse throwNotFound("DwE404UF3", "Bad user")
 
       val (reviewReasons: Seq[ReviewReason], shallApprove) =
-        throwForbiddenOrFindReviewReasons(page, author, transaction)
+        throwOrFindReviewPostReasons(page, author, transaction)
 
       val approverId =
         if (author.isStaff) {
@@ -190,10 +190,19 @@ trait PostsDao {
   }
 
 
-  def throwForbiddenOrFindReviewReasons(page: PageDao, author: User, transaction: SiteTransaction)
+  def throwOrFindReviewPostReasons(page: PageDao, author: User, transaction: SiteTransaction)
         : (Seq[ReviewReason], Boolean) = {
+    throwOrFindReviewReasonsImpl(author, Some(page), transaction)
+  }
+
+
+  def throwOrFindReviewReasonsImpl(author: User, page: Option[PageDao],
+        transaction: SiteTransaction): (Seq[ReviewReason], Boolean) = {
     if (author.isStaff)
       return (Nil, true)
+
+    // SECURITY COULD analyze the author's trust level and past actions, and
+    // based on that, approve, reject or review later.
 
     val settings = loadFirstPostSettings()
     val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numToAllow)
@@ -222,7 +231,7 @@ trait PostsDao {
       }
     }
 
-    if (page.isClosed) {
+    if (page.exists(_.isClosed)) {
       // The topic won't be bumped, so no one might see this post, so staff should review it.
       // Could skip this if the user is trusted.
       reviewReasons.append(ReviewReason.NoBumpPost)

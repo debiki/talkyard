@@ -40,9 +40,9 @@ trait SettingsDao {
   def loadFirstPostSettings(): FirstPostSettings = {
     val settings = loadWholeSiteSettings()
     new FirstPostSettings(
-      numToAllow = settings.numFirstPostsAllow.asInt,
-      numToApprove = settings.numFirstPostsApprove.asInt,
-      numToNotify = settings.numFirstPostsNotify.asInt)
+      numToAllow = settings.numFirstPostsToAllow.asInt,
+      numToApprove = settings.numFirstPostsToApprove.asInt,
+      numToNotify = settings.numFirstPostsToReview.asInt)
   }
 
 

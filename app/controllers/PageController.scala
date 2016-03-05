@@ -59,6 +59,13 @@ object PageController extends mvc.Controller {
         isSpamReason =>
       throwForbiddenIfSpam(isSpamReason, "DwE4CKB9")
 
+      // COULD make the Dao transaction like, and run this inside the transaction. [transaction]
+      // Non-staff users shouldn't be able to create anything outside the forum section(s)
+      // — except for private messages.
+      if (!request.theUser.isStaff && anyCategoryId.isEmpty && pageRole != PageRole.Message) {
+        throwForbidden("DwE8GKE4", "No category specified")
+      }
+
       val pagePath = request.dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,
         anySlug, titleTextAndHtml, bodyTextAndHtml, showId, authorId = request.theUserId,
         request.theBrowserIdData)

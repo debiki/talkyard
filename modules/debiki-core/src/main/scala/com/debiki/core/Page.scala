@@ -320,7 +320,8 @@ object PageRole {
   case object PrivateChat extends PageRole(19, staffOnly = false) { override def isChat = true }
 
   /** Direct messages between two users, or a group of users. */
-  // Rename to MessageTopic? So won't be confused with ChatMessage:s in ChatChannel:s? [rename]
+  // Rename to MessageTopic? or DirectMessages? So won't be confused with
+  // ChatMessage:s in ChatChannel:s? [rename]
   case object Message extends PageRole(17, staffOnly = false) {
     override def canClose = false // lock them instead
   }

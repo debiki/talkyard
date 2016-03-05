@@ -222,7 +222,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
   override def slugifyTitle(title: String): String = {
     if (Globals.isTestDisableScripts)
-      return "Scripts disabled [EsM2WXP4]"
+      return "scripts-disabled-EsM28WXP45"
     withJavascriptEngine(engine => {
       val slug = engine.invokeFunction("debikiSlugify", title)
       slug.asInstanceOf[String]
