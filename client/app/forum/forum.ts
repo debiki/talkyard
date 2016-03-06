@@ -77,6 +77,7 @@ export function buildForumRoutes() {
     Redirect({ key: 'redirB', from: rootNoSlash, to: defaultPath }),
     Route({ key: 'theRoutes', path: rootSlash, component: ForumComponent },
       Redirect({ from: RoutePathLatest + '/', to: rootSlash + RoutePathLatest }),
+      Redirect({ from: RoutePathTop + '/', to: rootSlash + RoutePathTop }),
       Redirect({ from: RoutePathCategories + '/', to: rootSlash + RoutePathCategories }),
       Route({ path: RoutePathLatest, component: ForumTopicListComponent },
         IndexRoute({ component: ForumTopicListComponent }),
@@ -135,8 +136,10 @@ var ForumComponent = React.createClass(<any> {
       }
     }
     if (!activeCategory) {
+      var name = this.props.routes[SortOrderRouteIndex].path === RoutePathCategories ?
+          "Select category" : "All categories";
       activeCategory = {
-        name: 'All Categories',  // [i18n]
+        name: name,
         id: this.state.categoryId, // the forum root category id
         isForumItself: true,
         newTopicTypes: [],
@@ -269,19 +272,6 @@ var ForumButtons = createComponent({
     }
   },
 
-  componentWillReceiveProps: function(nextProps) {
-    // If we just created a new category, transition to the latest topics view for
-    // that category.
-    var newCatSlug = nextProps.newCategorySlug;
-    if (newCatSlug && newCatSlug !== this.state.newCategorySlug) {
-      this.setState({ newCategorySlug: newCatSlug });
-      this.context.router.push({
-        pathname: this.props.pagePath.value + RoutePathLatest + '/' + newCatSlug,
-        query: this.props.location.query,
-      });
-    }
-  },
-
   onSwitchCategory: function(event, newCategorySlug) {
     event.preventDefault();
     dieIf(this.props.routes.length < 2, 'EsE6YPKU2');
@@ -315,9 +305,8 @@ var ForumButtons = createComponent({
     switch (sortOrderRoutePath) {
       case RoutePathLatest: return "Latest";
       case RoutePathTop: return "Top";
-      case RoutePathCategories: return "Categories";
+      default: return null;
     }
-    die("Unknown route: " + sortOrderRoutePath + " [DwE5KFIW2]");
   },
 
   setTopicFilter: function(entry: ExplainingTitleText) {
@@ -416,6 +405,17 @@ var ForumButtons = createComponent({
         "Category not found. Did you just create it? Then reload the page please. [EsE04PK27]");
     }
 
+    var isShowingCategoryTree = this.props.routes[SortOrderRouteIndex].path === RoutePathCategories;
+
+    var makeCategoryLink = (where, text, extraClass?) => Link({
+      to: this.props.pagePath.value + where, query: this.props.location.query,
+      className: 'btn esForum_catsNav_btn ' + (extraClass || ''),
+      activeClassName: 'active' }, text);
+
+    var showCategoryTreeButton =
+      makeCategoryLink(RoutePathCategories,
+          r.span({}, "Categories", r.span({ className: 'caret' })), 'esForum_catsTreeBtn');
+
     var categoryMenuItems = [];
     _.each(props.categories, (category: Category) => {
       if (!category.hideInForum || isStaff(me)) {
@@ -426,33 +426,33 @@ var ForumButtons = createComponent({
     categoryMenuItems.unshift(
       MenuItem({ eventKey: null, key: -1 }, 'All Categories'));
 
+    var catsDropActiveClass = isShowingCategoryTree ? '' : ' active';
+
     var categoriesDropdown =
         r.div({ className: 'dw-main-category-dropdown' },
         DropdownButton({ title: activeCategory.name, onSelect: this.onSwitchCategory, id: '4p59',
-            className: 'esForum_catsDrop'},
+            className: 'esForum_catsNav_btn esForum_catsDrop' + catsDropActiveClass},
           categoryMenuItems));
 
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
     var latestTopCategories;
-    if (state.compact) {
+    if (isShowingCategoryTree) {
+      // Then hide the sort topics buttons.
+    }
+    else if (state.compact) {
       latestTopCategories =
-        r.div({ className: 'dw-sort-order' },
+        r.div({ className: 'dw-sort-order esForum_catsNav_btn' },
           DropdownButton({ title: this.getSortOrderName(), onSelect: this.onSwitchSortOrder,
               id: '6wkp3p5' },
             MenuItem({ eventKey: RoutePathLatest }, this.getSortOrderName(RoutePathLatest)),
-            MenuItem({ eventKey: RoutePathTop }, this.getSortOrderName(RoutePathTop)),
-            MenuItem({ eventKey: RoutePathCategories }, this.getSortOrderName(RoutePathCategories))));
+            MenuItem({ eventKey: RoutePathTop }, this.getSortOrderName(RoutePathTop))));
     }
     else {
       var slashSlug = this.slashCategorySlug();
-      var makeCategoryLink = (where, text) => Link({
-          to: this.props.pagePath.value + where, query: this.props.location.query,
-          className: 'btn', activeClassName: 'active' }, text);
       latestTopCategories =
-          r.ul({ className: 'nav nav-pills dw-sort-order' },
+          r.ul({ className: 'nav nav-pills dw-sort-order esForum_catsNav_sort' },
             makeCategoryLink(RoutePathLatest + slashSlug, 'Latest'),
-            makeCategoryLink(RoutePathTop + slashSlug, 'Top'),
-            makeCategoryLink(RoutePathCategories, 'Categories'));
+            makeCategoryLink(RoutePathTop + slashSlug, 'Top'));
     }
 
     // The filter topics select.
@@ -467,7 +467,7 @@ var ForumButtons = createComponent({
 
     var topicFilterButton =
       Button({ onClick: this.openTopicFilterDropdown,
-          className: 'esForum_filterBtn', ref: 'topicFilterButton' },
+          className: 'esForum_filterBtn esForum_catsNav_btn', ref: 'topicFilterButton' },
         makeTopicFilterText(topicFilterValue) + ' ', r.span({ className: 'caret' }));
 
     var topicFilterDropdownModal =
@@ -516,7 +516,8 @@ var ForumButtons = createComponent({
 
     var createCategoryBtn;
     if (sortOrderRoutePath === RoutePathCategories && me.isAdmin) {
-      createCategoryBtn = Button({ onClick: this.createCategory }, 'Create Category');
+      createCategoryBtn = Button({ onClick: this.createCategory, bsStyle: 'primary' },
+        'Create Category');
     }
 
     var editCategoryBtn;
@@ -526,10 +527,12 @@ var ForumButtons = createComponent({
 
     return (
         r.div({ className: 'dw-forum-actionbar clearfix' },
-          categoriesDropdown,
-          latestTopCategories,
-          topicFilterButton,
-          topicFilterDropdownModal,
+          r.div({ className: 'esForum_catsNav' },
+            showCategoryTreeButton,
+            categoriesDropdown,
+            latestTopCategories,
+            topicFilterButton,
+            topicFilterDropdownModal),
           createTopicBtn,
           createCategoryBtn,
           editCategoryBtn));
@@ -877,7 +880,7 @@ var ForumCategoriesComponent = React.createClass(<any> {
       return r.p({}, 'Loading...');
 
     var categoryRows = this.state.categories.map((category: Category) => {
-      return CategoryRow({ pagePath: this.props.store.pagePath, location: this.props.location,
+      return CategoryRow({ store: this.props.store, location: this.props.location,
           category: category, key: category.id });
     });
 
@@ -895,7 +898,16 @@ var ForumCategoriesComponent = React.createClass(<any> {
 
 
 var CategoryRow = createComponent({
+  componentDidMount: function() {
+    var store: Store = this.props.store;
+    // If this is a newly created category, scroll it into view.
+    if (this.props.category.slug === store.newCategorySlug) {
+      utils.scrollIntoViewInPageColumn(ReactDOM.findDOMNode(this));
+    }
+  },
+
   render: function() {
+    var store: Store = this.props.store;
     var category: Category = this.props.category;
     var recentTopicRows = category.recentTopics.map((topic: Topic) => {
       var pinIconClass = topic.pinWhere ? ' icon-pin' : '';
@@ -914,15 +926,19 @@ var CategoryRow = createComponent({
         ? null
         : r.p({ className: 'forum-description' }, category.description);
 
+    // This will briefly highlight a newly created category.
+    var isNewClass = this.props.category.slug === store.newCategorySlug ?
+      ' esForum_cats_cat-new' : '';
+
     return (
-      r.tr({},
-        r.td({ className: 'forum-info' },
+      r.tr({ className: 'esForum_cats_cat' + isNewClass },
+        r.td({ className: 'forum-info' }, // [rename] to esForum_cats_cat_meta
           r.div({ className: 'forum-title-wrap' },
-            Link({ to: this.props.pagePath.value + RoutePathLatest + '/' + this.props.category.slug,
+            Link({ to: store.pagePath.value + RoutePathLatest + '/' + this.props.category.slug,
                 query: this.props.location.query, className: 'forum-title' },
               category.name)),
           description),
-        r.td({},
+        r.td({},  // class to esForum_cats_cat_topics?
           r.table({ className: 'topic-table-excerpt table table-condensed' },
             r.tbody({},
               recentTopicRows)))));

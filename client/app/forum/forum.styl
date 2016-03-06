@@ -16,6 +16,8 @@
  */
 
 
+$forumNavBtnGroupLeft = 14px;
+
 .esForumIntro
   clearfix()
   margin: 0.4em 0;
@@ -51,24 +53,80 @@
 // Action bar
 //===========================
 
+// Fix this long error prone list later.
+.dw-sort-order .btn,
+.esForum_catsTreeBtn,
+.dw-main-category-dropdown .btn,
+.esForum_filterBtn
+  font-size: 15px;
+
+.esForum_catsNav
+  margin-top: 20px;
+  .btn
+    background: hsl(0, 0%, 92%);
+    padding: 6px 10px !important;
+    &:hover
+      background: hsl(0, 0%, 81%);
+  .esForum_catsNav_btn:not(:first-child)
+    margin: 0 0 0 3px;
+
+.esForum_catsNav_sort
+  margin-left: $forumNavBtnGroupLeft;
+  .btn
+    background: none;
+    margin-left: 0 !important;
+
+.esForum_catsTreeBtn
+  float: left;
+  color: #222 !important;
+  background: none;
+  box-shadow: none;
+  border: none;
+  margin-left: 0 !important;
+  .caret
+    transform: rotate(-90deg) scale(1.15,1.6);
+    margin-left: 4px;
+  &.active
+    .caret
+      display: none
+    cursor: default;
+    font-weight: bold;
+    background: none !important;
+    box-shadow: none;
+    color: #222;
+    padding-left: 0;
+    margin-right: 4px;
+  &:not(.active)
+    padding-right: 6px !important;
 
 .esForum_catsDrop
   color: hsl(0, 0%, 8%) !important;
   $bgColor = hsl(0,0%,91%);
   border: none !important;
   background: $bgColor;
+  //--
+  background: none;
+  &.active
+    font-weight: bold;
+    box-shadow: none;
+    margin-left: 2px !important;
   .caret
     transform: rotate(-90deg) scale(1.2,1.8);
     margin-left: 3px;
     position: relative;
     color: #333 !important;
+    //--
+    transform: scale(1.1, 1.1);
+    margin-left: 2px;
 
+
+.DW.DW.DW .esForum_filterBtn
+  border: none;
+  margin-left: $forumNavBtnGroupLeft;
 
 .dw-forum-actionbar
   clear: both
-  padding 0 0 25px
-
-  marginTop = 20px
+  padding 0 0 14px;
 
   .form-group
     margin-bottom: 0;
@@ -78,22 +136,17 @@
 
   .dw-main-category-dropdown  // old name, use .esForum_catsDrop instead now
     float: left
-    margin: marginTop 11px 0 0
-    @media (max-width: 801px)
-      margin-right: 8px
-    @media (max-width: 651px)
-      margin-right: 5px
-
     .dropdown-toggle
       margin 0
       padding-left: 13px;
       padding-right: 10px;
-
     a
       cursor: pointer
 
   .dw-sort-order
     float: left
+    .btn
+      border: none;
 
   .nav
     float: left
@@ -111,8 +164,7 @@
         cursor: default;
         background: hsl($uiNavHue, $uiNavSaturation, 53%);
 
-      min-width: 70px;
-      margin-top: marginTop
+      min-width: 60px;
       padding-left: 15px;
       padding-right: 15px;
       @media (max-width: 801px)
@@ -131,9 +183,7 @@
       margin-left: 5px
 
   button
-    // Why do I need to -2 for the Create Topic button to align with
-    // the category buttons and Latest and Top buttons to the left?
-    margin: (marginTop - 2) 0 0 0
+    margin: 0;
 
   button
     float: right
@@ -296,7 +346,23 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
   cursor: pointer
 
 
-/* --- Forum list --- */
+// Categories tree
+//===========================
+
+.esForum_cats_cat-new
+  animation: esFadeIn 2.5s 0s;
+  animation-timing-function: ease-out;
+  animation-timing-function: ease-out-quad;
+
+
+@keyframes esFadeIn
+  from
+    opacity: 0.1;
+    background: hsl($uiHue, 100%, 70%);
+  to
+    opacity: 1;
+    background: hsl($uiHue, 0%, 100%);
+
 
 .forum-table
   th
