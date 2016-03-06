@@ -86,6 +86,12 @@ interface ReviewTask {
 }
 
 
+enum ReviewAction {
+  Accept = 1,
+  DeletePostOrPage = 2,
+}
+
+
 interface Flag {
   flaggerId: number;
   flaggerDisplayName: string;

@@ -65,6 +65,10 @@ export var Setting = createComponent({
     return _.isString(this.props.setting.defaultValue);
   },
 
+  isNumberSetting: function() {
+    return _.isNumber(this.props.setting.defaultValue);
+  },
+
   isBoolSetting: function() {
     return _.isBoolean(this.props.setting.defaultValue);
   },
@@ -76,7 +80,11 @@ export var Setting = createComponent({
   },
 
   onEdit: function(event) {
-    var newValue = this.isTextSetting() ? event.target.value : event.target.checked;
+    var newValue;
+    if (this.isTextSetting()) newValue = event.target.value;
+    else if (this.isNumberSetting()) newValue = parseInt(event.target.value);
+    else if (this.isBoolSetting()) newValue = event.target.checked;
+    else die('EsE5GYKW2');
     this.setState({
       editedValue: newValue
     });
@@ -124,6 +132,7 @@ export var Setting = createComponent({
     var editedValue = this.state.editedValue;
 
     var isTextSetting = this.isTextSetting();
+    var isNumberSetting = this.isNumberSetting();
     var isBoolSetting = this.isBoolSetting();
 
     var editableValue;
@@ -135,14 +144,21 @@ export var Setting = createComponent({
       editableValue = r[inputType]({ type: 'text', className: 'form-control', id: id,
           value: editedValueOrEmpty, onChange: this.onEdit, placeholder: this.props.placeholder });
     }
+    else if (isNumberSetting) {
+      editableValue = r.input({ type: 'number', className: 'form-control', id: id,
+          value: this.state.editedValue, onChange: this.onEdit,
+          placeholder: this.props.placeholder });
+    }
     else if (isBoolSetting) {
       editableValue =
         r.div({ className: 'checkbox' },
           r.input({ type: 'checkbox', id: id, checked: editedValue, onChange: this.onEdit }));
     }
     else {
-      console.error('Unkonwn setting type [DwE5XE30]');
-      return r.p({}, 'Unkonwn setting type.');
+      // Don't die() — that would let a buggy plugin make the whole page unusable?
+      var message = "Unkonwn setting type. Setting name: '" + setting.name + "' [DwE5XE30]";
+      console.error(message);
+      return r.p({}, message);
     }
 
     var saveResetBtns;

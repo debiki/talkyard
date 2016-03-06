@@ -23,6 +23,9 @@ import debiki._
 import debiki.dao.CachingDao.CacheKey
 
 
+class FirstPostSettings(val numToAllow: Int, val numToApprove: Int, val numToNotify: Int)
+
+
 /** Loads and saves settings for the whole website, a section of the website (e.g.
   * a forum or a blog) and individual pages.
   */
@@ -34,8 +37,6 @@ trait SettingsDao {
       loadWholeSiteSettings(transaction)
     }
   }
-
-  class FirstPostSettings(val numToAllow: Int, val numToApprove: Int, val numToNotify: Int)
 
   def loadFirstPostSettings(): FirstPostSettings = {
     val settings = loadWholeSiteSettings()

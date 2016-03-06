@@ -48,7 +48,8 @@ trait ReviewsDao {
   self: SiteDao =>
 
 
-  def completeReviewTask(taskId: ReviewTaskId, completedById: UserId, anyRevNr: Option[Int]) {
+  def completeReviewTask(taskId: ReviewTaskId, completedById: UserId, anyRevNr: Option[Int],
+        action: ReviewAction, browserIdData: BrowserIdData) {
     readWriteTransaction { transaction =>
       val task = transaction.loadReviewTask(taskId) getOrElse {
         throwNotFound("EsE8YM42", s"Review task not found, id $taskId")
@@ -60,6 +61,26 @@ trait ReviewsDao {
         completedById = Some(completedById), completedAtRevNr = anyRevNr,
         resolution = Some(100)) // for now
       transaction.upsertReviewTask(completedTask)
+
+      dieIf(task.postNr.isEmpty, "Only posts can be reviewed right now [EsE7YGK29]")
+
+      task.postNr foreach { postNr =>
+        val post = transaction.loadPost(task.postId getOrDie "EsE5YGK02") getOrElse {
+          // Deleted? Ignore it then.
+          return
+        }
+        action match {
+          case ReviewAction.Accept =>
+            if (!post.isCurrentVersionApproved) {
+              approvePostImpl(post.pageId, post.nr, approverId = completedById, transaction)
+            }
+          case ReviewAction.DeletePostOrPage =>
+            // Later: if nr = BodyId, & not approved, then delete the whole page
+            // (no one has seen it anyway).
+            deletePostImpl(post.pageId, postNr = post.nr, deletedById = completedById,
+              browserIdData, transaction)
+        }
+      }
     }
   }
 

@@ -744,8 +744,14 @@ trait PostsDao {
 
 
   def changePostStatus(postNr: PostNr, pageId: PageId, action: PostStatusAction, userId: UserId) {
+    readWriteTransaction(changePostStatusImpl(postNr, pageId = pageId, action, userId = userId, _))
+  }
+
+
+  def changePostStatusImpl(postNr: PostNr, pageId: PageId, action: PostStatusAction,
+        userId: UserId, transaction: SiteTransaction) {
     import com.debiki.core.{PostStatusAction => PSA}
-    readWriteTransaction { transaction =>
+
       val page = PageDao(pageId, transaction)
 
       val postBefore = page.parts.thePost(postNr)
@@ -852,15 +858,21 @@ trait PostsDao {
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale)
 
       // In the future: if is a forum topic, and we're restoring the OP, then bump the topic.
-    }
+
 
     refreshPageInAnyCache(pageId)
   }
 
 
   def approvePost(pageId: PageId, postNr: PostNr, approverId: UserId) {
+    readWriteTransaction(approvePostImpl(pageId, postNr, approverId = approverId, _))
+  }
+
+
+  def approvePostImpl(pageId: PageId, postNr: PostNr, approverId: UserId,
+        transaction: SiteTransaction) {
     var pageIdsToRefresh = Set[PageId](pageId)
-    readWriteTransaction { transaction =>
+
       val page = PageDao(pageId, transaction)
       val pageMeta = page.meta
       val postBefore = page.parts.thePost(postNr)
@@ -949,7 +961,7 @@ trait PostsDao {
             autoApprovePendingEarlyPost(_, transaction))
         }
       }
-    }
+
 
     refreshPagesInAnyCache(pageIdsToRefresh)
   }
@@ -1003,8 +1015,16 @@ trait PostsDao {
 
   def deletePost(pageId: PageId, postNr: PostNr, deletedById: UserId,
         browserIdData: BrowserIdData) {
-    changePostStatus(pageId = pageId, postNr = postNr,
-      action = PostStatusAction.DeletePost(clearFlags = false), userId = deletedById)
+    readWriteTransaction(deletePostImpl(
+      pageId, postNr = postNr, deletedById = deletedById, browserIdData, _))
+  }
+
+
+  def deletePostImpl(pageId: PageId, postNr: PostNr, deletedById: UserId,
+        browserIdData: BrowserIdData, transaction: SiteTransaction) {
+    changePostStatusImpl(pageId = pageId, postNr = postNr,
+      action = PostStatusAction.DeletePost(clearFlags = false), userId = deletedById,
+      transaction = transaction)
   }
 
 

@@ -55,8 +55,9 @@ object SettingsController extends mvc.Controller {
       case JsBoolean(value) =>
         value
       case JsNumber(value: BigDecimal) =>
-        if (value.isValidDouble) value.toDouble
+        if (value.isValidInt) value.toInt
         else if (value.isValidLong) value.toLong
+        else if (value.isDecimalDouble) value.toDouble
         else throwBadReq("DwE2GKS6", s"Bad new number: $value")
       case JsString(value) =>
         value

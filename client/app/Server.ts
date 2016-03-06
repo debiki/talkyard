@@ -245,8 +245,13 @@ export function loadReviewTasks(success: (tasks: ReviewTask[]) => void) {
 }
 
 
-export function completeReviewTask(id: number, revisionNr: number, success: () => void) {
-  postJsonSuccess('/-/complete-review-task', success, { taskId: id, revisionNr: revisionNr });
+export function completeReviewTask(id: number, revisionNr: number, action: ReviewAction,
+      success: () => void) {
+  postJsonSuccess('/-/complete-review-task', success, {
+    taskId: id,
+    revisionNr: revisionNr,
+    action: action,
+  });
 }
 
 

@@ -24,6 +24,18 @@ import scala.collection.immutable
 
 case class ReviewTaskCounts(numUrgent: Int, numOther: Int)
 
+sealed abstract class ReviewAction(val IntVal: Int) { def toInt = IntVal }
+object ReviewAction {
+  case object Accept extends ReviewAction(1)
+  case object DeletePostOrPage extends ReviewAction(2)
+
+  def fromInt(value: Int): Option[ReviewAction] = Some(value match {
+    case ReviewAction.Accept.IntVal => ReviewAction.Accept
+    case ReviewAction.DeletePostOrPage.IntVal => ReviewAction.DeletePostOrPage
+    case _ => return None
+  })
+}
+
 
 /** Means that something should be reviewed, e.g. a post or a user should be reviewed.
   *

@@ -20,8 +20,8 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import play.api.libs.json._
+import scala.util.Try
 import Settings._
-
 
 
 case class AnySetting(
@@ -35,7 +35,12 @@ case class AnySetting(
   def asBoolean: Boolean = value == "T" || value == true
   def valueAsString: String = "" + value
   def asString: String = "" + value
-  def asInt: Int = Integer.parseInt(asString)
+  def asInt: Int = {
+    Try(value.asInstanceOf[Long]).toOption.map(_.toInt) orElse
+      Try(value.asInstanceOf[Double]).toOption.map(_.toInt) getOrElse {
+        asString.takeWhile(_ != '.').toIntOption getOrElse 0
+      }
+  }
 }
 
 
@@ -136,6 +141,9 @@ case class Settings(settingsChain: SettingsChain) {
       "allowGuestLogin" -> jsonFor(allowGuestLogin),
       "title" -> jsonFor(title),
       "description" -> jsonFor(description),
+      "numFirstPostsToReview" -> jsonFor(numFirstPostsToReview),
+      "numFirstPostsToApprove" -> jsonFor(numFirstPostsToApprove),
+      "numFirstPostsToAllow" -> jsonFor(numFirstPostsToAllow),
       "headStylesHtml" -> jsonFor(headStylesHtml),
       "headScriptsHtml" -> jsonFor(headScriptsHtml),
       "endOfBodyHtml" -> jsonFor(endOfBodyHtml),
@@ -167,7 +175,7 @@ case class Settings(settingsChain: SettingsChain) {
     case x: String => JsString(x)
     case x: Int => JsNumber(x)
     case x: Long => JsNumber(x)
-    case x: Float => JsNumber(x)
+    case x: Float => JsNumber(x.toDouble)
     case x: Double => JsNumber(x)
     case x: Boolean => JsBoolean(x)
   }

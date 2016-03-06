@@ -39,8 +39,7 @@ class SiteCreatorSpec extends Specification {
     }
 
     "reject too short and too long names" >> {
-      isOkaySiteName("bad") must beFalse
-      isOkaySiteName("a2345") must beFalse
+      isOkaySiteName("x") must beFalse
       isOkaySiteName("a23456") must beTrue
       isOkaySiteName(
         "a123456789-123456789-123456789-123456789-123456789") must beFalse

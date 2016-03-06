@@ -114,10 +114,10 @@ class Globals {
   def forbiddenPassword: Option[String] = state.forbiddenPassword
 
 
-  def systemDao = state.systemDao
+  def systemDao = state.systemDao  // [rename] to newSystemDao()?
 
 
-  def siteDao(siteId: SiteId): SiteDao =
+  def siteDao(siteId: SiteId): SiteDao =  // [rename] to newSiteDao?
     state.siteDaoFactory.newSiteDao(siteId)
 
 
@@ -322,7 +322,7 @@ class Globals {
     val antiSpam = new AntiSpam()
     antiSpam.start()
 
-    def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory)
+    def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory) // [rename] to newSystemDao()?
 
     if (Play.isTest && Play.configuration.getBoolean("isTestShallEmptyDatabase").contains(true)) {
       systemDao.emptyDatabase()

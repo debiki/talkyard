@@ -817,8 +817,14 @@ export var Post = createComponent({
       extraClasses += ' dw-zd clearfix';
     }
     else if (!post.isApproved && !post.sanitizedHtml) {
-      headerElem = r.div({ className: 'dw-p-hd' }, 'Hidden comment pending approval, posted ',
-            timeAgo(post.createdAt), '.');
+      // (Dupl code, for anyAvatar [503KP25])
+      var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
+      var author: BriefUser = store_authorOf(store, post);
+      var anyAvatar = !showAvatar ? null : avatar.Avatar({ tiny: true, user: author });
+      headerElem =
+          r.div({ className: 'dw-p-hd' },
+            anyAvatar,
+            'Hidden comment pending approval, posted ', timeAgo(post.createdAt), '.');
       extraClasses += ' dw-p-unapproved';
     }
     else {
@@ -992,6 +998,7 @@ export var PostHeader = createComponent({
     var me: Myself = this.props.me;
     var linkFn = this.props.abbreviate ? 'span' : 'a';
 
+    // (Dupl code, for anyAvatar [503KP25])
     var author: BriefUser = store_authorOf(store, post);
     var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
     var anyAvatar = !showAvatar ? null : avatar.Avatar({ tiny: true, user: author });

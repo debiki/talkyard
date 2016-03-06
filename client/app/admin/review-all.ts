@@ -78,6 +78,14 @@ var ReviewTask = createComponent({
     var what = "The post below ";
     var whys = [];
 
+    var post = this.props.reviewTask.post;
+    if (!post.approvedRevNr) {
+      what += "is hidden, waiting for approval, and ";
+    }
+    else if (post.approvedRevNr !== post.currRevNr) {
+      what += "has edits waiting for approval, and ";
+    }
+
     var who;
     if (ReviewReasons.isByNewUser(reviewTask)) {
       who = "a new user";
@@ -127,9 +135,9 @@ var ReviewTask = createComponent({
     window.open(url, '_blank');
   },
 
-  completeReviewTask: function() {
+  completeReviewTask: function(action: ReviewAction) {
     var revisionNr = (this.props.reviewTask.post || {}).currRevNr;
-    Server.completeReviewTask(this.props.reviewTask.id, revisionNr, () => {
+    Server.completeReviewTask(this.props.reviewTask.id, revisionNr, action, () => {
       this.setState({ completed: true });
     });
   },
@@ -144,20 +152,27 @@ var ReviewTask = createComponent({
 
     var post = reviewTask.post;
 
-    var openPostButton = Button({ onClick: this.openPostInNewTab }, "Open in new tab");
+    var openPostButton = Button({ onClick: this.openPostInNewTab }, "View page");
 
     // For now:
-    var doneButton;
+    var complete = (action) => {
+      return () => this.completeReviewTask(action);
+    };
+    var acceptButton;
+    var rejectButton;
     if (this.state.completed || reviewTask.completedAtMs) {
-      doneButton = r.span({}, " Has been reviewed already.");
+      acceptButton = r.span({}, " Has been reviewed already.");
     }
     else if (reviewTask.invalidatedAtMs) {
       // Hmm could improve on this somehow.
-      doneButton = r.span({}, "Invalidated, perhaps the post was deleted?");
+      acceptButton = r.span({}, " Invalidated, perhaps the post was deleted?");
     }
     else {
-      doneButton = Button({ onClick: this.completeReviewTask }, "I'm done reviewing it");
+      var acceptText = post.approvedRevNr !== post.currRevNr ? "Approve" : "Looks fine";
+      acceptButton = Button({ onClick: complete(ReviewAction.Accept) }, acceptText);
+      rejectButton = Button({ onClick: complete(ReviewAction.DeletePostOrPage) }, "Delete");
     }
+
 
     var safeHtml;
     if (0 && post.currRevNr === post.approvedRevNr) {
@@ -191,7 +206,8 @@ var ReviewTask = createComponent({
             r.div({ dangerouslySetInnerHTML: { __html: safeHtml }}))),
         r.div({ className: 'esReviewTask_btns' },
           openPostButton,
-          doneButton)));
+          acceptButton,
+          rejectButton)));
 
     /* Later, something like?:
 

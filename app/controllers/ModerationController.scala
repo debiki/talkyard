@@ -55,7 +55,10 @@ object ModerationController extends mvc.Controller {
   def completeReviewTask = StaffPostJsonAction(maxLength = 100) { request =>
     val taskId = (request.body \ "taskId").as[ReviewTaskId]
     val anyRevNr = (request.body \ "revisionNr").asOpt[Int]
-    request.dao.completeReviewTask(taskId, completedById = request.theUserId, anyRevNr = anyRevNr)
+    val actionInt = (request.body \ "action").as[Int]
+    val action = ReviewAction.fromInt(actionInt) getOrElse throwBadArgument("EsE5GYK2", "action")
+    request.dao.completeReviewTask(taskId, completedById = request.theUserId, anyRevNr = anyRevNr,
+      action, request.theBrowserIdData)
     Ok
   }
 

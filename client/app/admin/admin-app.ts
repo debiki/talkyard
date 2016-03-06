@@ -174,6 +174,23 @@ var SettingsPanelComponent = React.createClass(<any> {
           label: 'Description', help: 'A one sentence description of the website. ' +
               'Will be used in the meta description tag.' }),
 
+        Setting({ setting: settings.numFirstPostsToReview, onSave: saveSetting,
+          label: "Num first posts to review",
+          help: "How many of a new member's first posts the staff will be notified about " +
+              "so they can review them. The posts will become visible directly, before " +
+              "they've been reviewed. " }),
+
+        Setting({ setting: settings.numFirstPostsToApprove, onSave: saveSetting,
+          label: "Num first posts to approve",
+          help: "How many of a new member's first posts need to be approved by staff, " +
+              "before they'll be shown. By default they'll be hidden, until approved. " +
+              "Set to 0 to disable." }),
+
+        Setting({ setting: settings.numFirstPostsToAllow, onSave: saveSetting,
+          label: "Num first posts to allow",
+          help: "How many posts a new member may post, before s/he has to wait until the " +
+          "very first ones has been approved by staff." }),
+
         Setting({ setting: settings.googleUniversalAnalyticsTrackingId,
           onSave: saveSetting, label: 'Google Universal Analytics tracking ID',
           help: r.span({}, 'Any Google Universal Analytics tracking ID, e.g. ',
