@@ -353,7 +353,7 @@ export var TopBar = createComponent({
     var backToSiteButton;
     if (this.props.showBackToSite) {
       backToSiteButton = r.a({ className: 'esTopbar_custom_backToSite btn icon-reply',
-          onClick: goBackToSite }, "Back to site");
+          onClick: goBackToSite }, "Back to forum");
     }
 
     // ------- Open Contextbar button

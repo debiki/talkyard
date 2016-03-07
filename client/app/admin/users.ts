@@ -76,8 +76,14 @@ export var NewUsersPanelComponent = React.createClass({
 
 export var InvitedUsersPanelComponent = React.createClass({
   sendInvites: function() {
-    var user = debiki2.ReactStore.getUser();
-    window.location.assign(linkToInvitesFromUser(user.userId));
+    // Don't: (moving away from the Admin Area is confusing, usability testing shows)
+    // var user = debiki2.ReactStore.getUser();
+    // window.location.assign(linkToInvitesFromUser(user.userId));
+    // Instead open the dialo here directly:
+    users.openInviteSomeoneDialog((invite) => {
+      // Later: add the invite to the list. But for now:
+      util.openDefaultStupidDialog({ body: "Done. I'll send him/her an email." })
+    });
   },
 
   render: function() {

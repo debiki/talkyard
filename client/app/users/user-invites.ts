@@ -170,7 +170,7 @@ var InviteRow = createComponent({
 
 var inviteSomeoneDialog;
 
-function openInviteSomeoneDialog(addInvite) {
+export function openInviteSomeoneDialog(addInvite) {
   if (!inviteSomeoneDialog) {
     inviteSomeoneDialog = ReactDOM.render(InviteDialog(), utils.makeMountNode());
   }
@@ -178,7 +178,7 @@ function openInviteSomeoneDialog(addInvite) {
 }
 
 
-var InviteDialog = createComponent({
+var InviteDialog = createComponent({  // COULD break out to separate debiki2.invite module
   getInitialState: function() {
     return { isOpen: false };
   },

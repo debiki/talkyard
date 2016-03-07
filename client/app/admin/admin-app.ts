@@ -229,14 +229,14 @@ var SettingsPanelComponent = React.createClass(<any> {
                 "into the Jurisdiction section of your ", termsOfUseLink, " page.") })));
         */
 
-        Setting({ setting: settings.showComplicatedStuff, onSave: saveSetting, label: "Complicated",
-          help: "Enables some currently not-well-tested or hard-to-use features " +
+        Setting({ setting: settings.showComplicatedStuff, onSave: saveSetting, label: "Experimental",
+          help: "Enables some currently not-well-tested features " +
           "like Wiki MindMaps and custom HTML pages." }),
 
         Setting({ setting: settings.allowGuestLogin, onSave: saveSetting, label: "Allow guest login",
           help: "Lets people post comments and create topics, without specifying any " +
           "email address. They wouldn't be notified about replies, and " +
-          "you cannot contact them."})));
+          "you cannot contact them. Not recommended."})));
   }
 });
 
