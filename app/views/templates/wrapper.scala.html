@@ -24,7 +24,7 @@
   @tpi.debikiStyles
 
   @tpi.stylesheetBundle("styles.css")
-  @Html(tpi.siteSettings.headStylesHtml.valueAsString)
+  @Html(tpi.siteSettings.headStylesHtml)
 
   @tpi.debikiScriptsInHead
   @Html(tpi.anyGoogleUniversalAnalyticsScript)
@@ -34,7 +34,7 @@
 <div id="esPageColumn">
 <div id="esPageScrollable">
 <div class="esPageHeader">
-@Html(tpi.siteSettings.headerHtml.valueAsString)
+@Html(tpi.siteSettings.headerHtml)
 </div>
 @if(tpi.anyCurrentPageRole.exists(_.isChat)) {
   <div id="theTopbar" class="esTopBar"></div>
@@ -44,7 +44,7 @@
 @content
 
 @if(!tpi.anyCurrentPageRole.exists(_.isChat)) {
-  @Html(tpi.siteSettings.footerHtml.valueAsString)
+  @Html(tpi.siteSettings.footerHtml)
 }
 
 </div>
@@ -53,7 +53,7 @@
 <div id="esThisbarColumn"><div id="dw-any-sidebar"></div></div>
 
 @tpi.debikiScriptsEndOfBody
-@Html(tpi.siteSettings.headScriptsHtml.valueAsString)
-@Html(tpi.siteSettings.endOfBodyHtml.valueAsString)
+@Html(tpi.siteSettings.headScriptsHtml)
+@Html(tpi.siteSettings.endOfBodyHtml)
 </body>
 </html>

@@ -520,4 +520,38 @@ interface StorePatch {
 }
 
 
+interface Settings {
+  title: string;
+  description: string;
+
+  userMustBeAuthenticated: boolean;
+  userMustBeApproved: boolean;
+  allowGuestLogin: boolean;
+
+  numFirstPostsToAllow: number;
+  numFirstPostsToApprove: number;
+  numFirstPostsToReview: number;
+
+  showForumCategories: boolean;
+  horizontalComments: boolean;
+
+  headStylesHtml: string;
+  headScriptsHtml: string;
+  endOfBodyHtml: string;
+
+  headerHtml: string;
+  footerHtml: string;
+
+  socialLinksHtml: string;
+  logoUrlOrHtml: string;
+
+  companyDomain: string;
+  companyFullName: string;
+  companyShortName: string;
+
+  googleUniversalAnalyticsTrackingId: string;
+
+  showComplicatedStuff: boolean;
+}
+
 // vim: et ts=2 sw=2 tw=0 fo=r list

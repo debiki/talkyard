@@ -23,61 +23,27 @@ import debiki._
 import debiki.dao.CachingDao.CacheKey
 
 
-class FirstPostSettings(val numToAllow: Int, val numToApprove: Int, val numToNotify: Int)
-
-
 /** Loads and saves settings for the whole website, a section of the website (e.g.
   * a forum or a blog) and individual pages.
   */
 trait SettingsDao {
   self: SiteDao =>
 
-  def loadWholeSiteSettings(): Settings = {
+  def loadWholeSiteSettings(): EffectiveSettings = {
     readOnlyTransaction { transaction =>
       loadWholeSiteSettings(transaction)
     }
   }
 
-  def loadFirstPostSettings(): FirstPostSettings = {
-    val settings = loadWholeSiteSettings()
-    new FirstPostSettings(
-      numToAllow = settings.numFirstPostsToAllow.asInt,
-      numToApprove = settings.numFirstPostsToApprove.asInt,
-      numToNotify = settings.numFirstPostsToReview.asInt)
+
+  def loadWholeSiteSettings(transaction: SiteTransaction): EffectiveSettings = {
+    val editedSettings = transaction.loadSiteSettings()
+    EffectiveSettings(editedSettings.toVector, AllSettings.Default)
   }
 
 
-  def loadWholeSiteSettings(transaction: SiteTransaction): Settings = {
-    val rawSettingsMaps = transaction.loadSettings(Vector(SettingsTarget.WholeSite))
-    Settings(SettingsChain(rawSettingsMaps))
-  }
-
-
-  def loadPageTreeSettings(pageId: PageId): Settings = {
-    // Categories now in separate table, loadCategoriesRootLast(pageId) is gone.
-    // Currently there are no category settings. Fix later when/if needed.
-    val pageAndAncestorIds = List(pageId) // :: loadCategoriesRootLast(pageId)
-    val treeTargets = pageAndAncestorIds.map(SettingsTarget.PageTree)
-    val allTargets = treeTargets ++ Vector(SettingsTarget.WholeSite)
-    val rawSettingsMaps = readOnlyTransaction(_.loadSettings(allTargets))
-    Settings(SettingsChain(rawSettingsMaps))
-  }
-
-
-  def loadSinglePageSettings(pageId: PageId): Settings = {
-    val pageTarget = SettingsTarget.SinglePage(pageId)
-    // Categories now in separate table, loadCategoriesRootLast(pageId) is gone.
-    // Currently there are no category settings. Fix later when/if needed.
-    val pageAndAncestorIds = List(pageId) //:: loadCategoriesRootLast(pageId)
-    val treeTargets = pageAndAncestorIds.map(SettingsTarget.PageTree)
-    val allTargets = Vector(pageTarget) ++ treeTargets ++ Vector(SettingsTarget.WholeSite)
-    val rawSettingsMaps = readOnlyTransaction(_.loadSettings(allTargets))
-    Settings(SettingsChain(rawSettingsMaps))
-  }
-
-
-  def saveSetting(target: SettingsTarget, name: String, value: Option[Any]) {
-    readWriteTransaction(_.saveSetting(target, name -> value))
+  def saveSiteSettings(settings: SettingsToSave) {
+    readWriteTransaction(_.upsertSiteSettings(settings))
   }
 }
 
@@ -87,39 +53,24 @@ trait CachingSettingsDao extends SettingsDao {
   self: CachingSiteDao =>
 
 
-  override def loadWholeSiteSettings(): Settings = {
+  override def loadWholeSiteSettings(): EffectiveSettings = {
     lookupInCache(
       siteSettingsKey,
       orCacheAndReturn =
         Some(super.loadWholeSiteSettings())) getOrDie "DwE52WK8"
   }
 
-
-  override def loadPageTreeSettings(pageId: PageId): Settings = {
-    lookupInCache(
-      pageTreeSettingsKey(pageId),
-      orCacheAndReturn =
-        Some(super.loadPageTreeSettings(pageId))) getOrDie "DwE77GY3"
-  }
-
-
-  override def loadSinglePageSettings(pageId: PageId): Settings = {
-    lookupInCache(
-      singlePageSettingsKey(pageId),
-      orCacheAndReturn =
-        Some(super.loadSinglePageSettings(pageId))) getOrDie "DwE3WCS0"
-  }
-
-
-  override def saveSetting(target: SettingsTarget, name: String, value: Option[Any]) {
-    super.saveSetting(target, name, value)
+  override def saveSiteSettings(settings: SettingsToSave) {
+    readWriteTransaction(_.upsertSiteSettings(settings))
     emptyCache(siteId)
   }
 
 
   private def siteSettingsKey = CacheKey(siteId, "SiteSettingsKey")
+  /* Later?
   private def pageTreeSettingsKey(rootId: PageId) = CacheKey(siteId, s"$rootId|PgTrStngsKey")
   private def singlePageSettingsKey(pageId: PageId) = CacheKey(siteId, s"$pageId|SnglPgStngsKey")
+  */
 
 }
 

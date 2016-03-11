@@ -17,7 +17,6 @@
 
 package com.debiki.core
 
-import com.debiki.core.Prelude._
 import java.net.InetAddress
 import java.{util => ju}
 import com.debiki.core.EmailNotfPrefs._
@@ -25,7 +24,6 @@ import com.debiki.core.EmailNotfPrefs._
 import scala.collection.immutable
 
 
-// SHOULD/COULD convert old method implementations to start using transactions.
 trait SiteTransaction {
   def commit()
   def rollback()
@@ -59,12 +57,8 @@ trait SiteTransaction {
   def addSiteHost(host: SiteHost)
   def loadSiteVersion(): Int
 
-  def saveSetting(target: SettingsTarget, setting: SettingNameValue[_])
-  /** Loads settings for all listed targets, returns settings in the same order.
-    */
-  def loadSettings(targets: Seq[SettingsTarget]): Seq[RawSettings]
-  def loadSiteSettings(): RawSettings =
-    loadSettings(Vector(SettingsTarget.WholeSite)).headOption.getOrDie("DwE5fl09")
+  def loadSiteSettings(): Option[EditedSettings]
+  def upsertSiteSettings(settings: SettingsToSave)
 
   def loadResourceUsage(): ResourceUse
 

@@ -255,9 +255,11 @@ export var CreateEmbeddedCommentsPanel = createComponent({
       name: 'EmbeddingSiteUrl',
       newValue: this.refs.embeddingAddress.getValue(),
     };
+    die("Unimplemented [EsE4KUPKFW2]"); // the old complicated settings stuff is now gone
+    /*
     Server.saveSetting(setting, () => {
       ReactActions.changeSiteStatus('IsEmbeddedSite');
-    });
+    }); */
   },
 
   render: function() {

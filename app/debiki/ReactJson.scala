@@ -83,11 +83,11 @@ object ReactJson {
       "now" -> JsNumber((new ju.Date).getTime),
       "siteId" -> JsString(pageReq.siteId),
       "siteStatus" -> JsString(siteStatusString),
-      "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
-      "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
+      "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
+      "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> Json.obj(
         "allowGuestLogin" -> JsBoolean(siteSettings.isGuestLoginAllowed),
-        "showComplicatedStuff" -> JsBoolean(siteSettings.showComplicatedStuff.asBoolean)),
+        "showComplicatedStuff" -> JsBoolean(siteSettings.showComplicatedStuff)),
       "pageId" -> pageReq.thePageId,
       "pageRole" -> JsNumber(pageReq.thePageRole.toInt),
       "pagePath" -> JsPagePath(pageReq.pagePath),
@@ -128,7 +128,7 @@ object ReactJson {
         anyPageRoot: Option[PostNr],
         anyPageQuery: Option[PageQuery]): (String, CachedPageVersion) = {
 
-    val socialLinksHtml = dao.loadWholeSiteSettings().socialLinksHtml.valueAsString
+    val socialLinksHtml = dao.loadWholeSiteSettings().socialLinksHtml
     val page = PageDao(pageId, transaction)
     val pageParts = page.parts
     pageParts.loadAllPosts()
@@ -199,12 +199,11 @@ object ReactJson {
 
     val siteStatusString = loadSiteStatusString(dao)
     val siteSettings = dao.loadWholeSiteSettings()
-    val pageSettings = dao.loadSinglePageSettings(pageId)
-    val horizontalLayout = page.role == PageRole.MindMap ||
-      pageSettings.horizontalComments.valueAsBoolean
-    val is2dTreeDefault = pageSettings.horizontalComments.valueAsBoolean
+    //val pageSettings = dao.loadSinglePageSettings(pageId)
+    val horizontalLayout = page.role == PageRole.MindMap // || pageSettings.horizontalComments
+    val is2dTreeDefault = false // pageSettings.horizontalComments
     val showForumCategories =
-      if (page.role == PageRole.Forum) Some(siteSettings.showForumCategories.asBoolean)
+      if (page.role == PageRole.Forum) Some(siteSettings.showForumCategories)
       else None
 
     val jsonObj = Json.obj(
@@ -213,11 +212,11 @@ object ReactJson {
       "siteId" -> JsString(dao.siteId),
       "siteStatus" -> JsString(siteStatusString),
       // Later: move these two userMustBe... to settings {} too.
-      "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
-      "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
+      "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
+      "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> Json.obj(
         "allowGuestLogin" -> JsBoolean(siteSettings.isGuestLoginAllowed),
-        "showComplicatedStuff" -> JsBoolean(siteSettings.showComplicatedStuff.asBoolean)),
+        "showComplicatedStuff" -> JsBoolean(siteSettings.showComplicatedStuff)),
       "pageId" -> pageId,
       "pageMemberIds" -> pageMemberIds,
       "categoryId" -> JsNumberOrNull(page.meta.categoryId),
@@ -278,11 +277,11 @@ object ReactJson {
       "appVersion" -> Globals.applicationVersion,
       "siteId" -> JsString(dao.siteId),
       "siteStatus" -> JsString(siteStatusString),
-      "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated.asBoolean),
-      "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved.asBoolean),
+      "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
+      "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> Json.obj(
         "allowGuestLogin" -> JsBoolean(siteSettings.isGuestLoginAllowed),
-        "showComplicatedStuff" -> JsBoolean(siteSettings.showComplicatedStuff.asBoolean)),
+        "showComplicatedStuff" -> JsBoolean(siteSettings.showComplicatedStuff)),
       "me" -> userNoPageToJson(request),
       "maxUploadSizeBytes" -> Globals.maxUploadSizeBytes,
       "siteSections" -> makeSiteSectionsJson(dao))

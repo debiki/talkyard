@@ -171,7 +171,7 @@ trait SpecialContentDao {
 
 
   private def doReplaceNamesApplyMarkup(source: String, transaction: SiteTransaction): String = {
-    val shortName = self.loadWholeSiteSettings(transaction).companyShortName.value.toString
+    val shortName = self.loadWholeSiteSettings(transaction).companyShortName
     var text = source.replaceAllLiterally("%{company_short_name}", shortName)
     val nodeSeq = ReactRenderer.renderAndSanitizeCommonMark(
       text, allowClassIdDataAttrs = false, followLinks = false)

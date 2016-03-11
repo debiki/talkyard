@@ -152,10 +152,10 @@ private[http] object PlainApiActions {
         }
         val siteSettings = dao.loadWholeSiteSettings()
 
-        if (!anyUser.exists(_.isApprovedOrStaff) && siteSettings.userMustBeApproved.asBoolean)
+        if (!anyUser.exists(_.isApprovedOrStaff) && siteSettings.userMustBeApproved)
           goToHomepageOrIfXhrThen(throwForbidden("DwE4HKG5", "Not approved"))
 
-        if (!anyUser.exists(_.isAuthenticated) && siteSettings.userMustBeAuthenticated.asBoolean)
+        if (!anyUser.exists(_.isAuthenticated) && siteSettings.userMustBeAuthenticated)
           goToHomepageOrIfXhrThen(throwForbidden("DwE6JGY2", "Not authenticated"))
 
         if (anyUser.exists(_.isGuest) && !siteSettings.isGuestLoginAllowed && isXhr)

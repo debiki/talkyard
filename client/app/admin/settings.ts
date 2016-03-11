@@ -36,8 +36,9 @@ var PageUnloadAlerter = utils.PageUnloadAlerter;
 /**
  * Requires that `this.state` is a map of all settings that can be saved.
  */
-export var SaveSettingMixin = {
+export var SaveSettingMixin = {  ///xx
   saveSetting: function(setting, editedValue) {
+    die('strnseintrs'); /*
     var settingToSave: Setting = {
       type: 'WholeSite',
       name: setting.name,
@@ -49,12 +50,13 @@ export var SaveSettingMixin = {
       newState[setting.name].anyAssignedValue = editedValue;
       this.setState(newState);
     });
+    */
   },
 };
 
 
 
-export var Setting = createComponent({
+export var Setting = createComponent({  //xx
   componentWillMount: function() {
     this.setState({
       editedValue: this.savedValue()

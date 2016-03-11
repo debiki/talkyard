@@ -78,8 +78,8 @@ object ViewPageController extends mvc.Controller {
 
     val dao = request.dao
     val siteSettings = dao.loadWholeSiteSettings()
-    val authenticationRequired = siteSettings.userMustBeAuthenticated.asBoolean ||
-      siteSettings.userMustBeApproved.asBoolean
+    val authenticationRequired = siteSettings.userMustBeAuthenticated ||
+      siteSettings.userMustBeApproved
 
     if (authenticationRequired && !request.isAuthenticated) {
       return Future.successful(Ok(views.html.login.loginPopup(
@@ -88,7 +88,7 @@ object ViewPageController extends mvc.Controller {
         returnToUrl = request.uri)) as HTML)
     }
 
-    if (siteSettings.userMustBeApproved.asBoolean && !request.isApprovedOrStaff) {
+    if (siteSettings.userMustBeApproved && !request.isApprovedOrStaff) {
       val message = request.theUser.isApproved match {
         case None =>
           o"""Your account has not yet been approved. Please wait until

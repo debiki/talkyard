@@ -117,13 +117,24 @@ export function nonEmpty(x): boolean {
 }
 
 
-export function isDefined(x): boolean {
+export function isDefined2(x): boolean {
+  return !_.isUndefined(x);
+}
+
+
+// Ooops bad name, shouldn't include null
+export function isDefined(x): boolean {  // rename to isNotNullOrUndefined(x)
   return !isNullOrUndefined(x);
 }
 
 
 export function isNullOrUndefined(x): boolean {
   return _.isNull(x) || _.isUndefined(x);
+}
+
+
+export function firstDefinedOf(x, y, z?) {
+  return _.isUndefined(x) ? firstDefinedOf(y, z) : x;
 }
 
 //------------------------------------------------------------------------------

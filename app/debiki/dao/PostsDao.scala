@@ -18,6 +18,7 @@
 package debiki.dao
 
 import com.debiki.core._
+import com.debiki.core.EditedSettings.MaxNumFirstPosts
 import com.debiki.core.Prelude._
 import controllers.EditController
 import debiki._
@@ -45,8 +46,6 @@ trait PostsDao {
 
   // 3 minutes
   val LastChatMessageRecentMs = 3 * 60 * 1000
-
-  val MaxNumFirstPosts = 10
 
 
   def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
@@ -204,10 +203,10 @@ trait PostsDao {
     // SECURITY COULD analyze the author's trust level and past actions, and
     // based on that, approve, reject or review later.
 
-    val settings = loadFirstPostSettings()
-    val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numToAllow)
-    val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numToApprove)
-    val numFirstToNotify = math.min(MaxNumFirstPosts, settings.numToNotify)
+    val settings = loadWholeSiteSettings(transaction)
+    val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numFirstPostsToAllow)
+    val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
+    val numFirstToNotify = math.min(MaxNumFirstPosts, settings.numFirstPostsToReview)
 
     val reviewReasons = mutable.ArrayBuffer[ReviewReason]()
     var autoApprove = true
@@ -525,7 +524,7 @@ trait PostsDao {
         }
 
       val postRecentlyCreated = transaction.currentTime.getTime - postToEdit.createdAt.getTime <=
-          Settings.PostRecentlyCreatedLimitMs
+          AllSettings.PostRecentlyCreatedLimitMs
 
       val reviewTask: Option[ReviewTask] =
         if (postRecentlyCreated || editor.isStaff) {
@@ -946,9 +945,9 @@ trait PostsDao {
       // If we will now have approved all the required first posts (numFirstToApprove below),
       // then auto-approve all remaining first posts, because now we trust the post author
       // that much.
-      val settings = loadFirstPostSettings()
-      val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numToAllow)
-      val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numToApprove)
+      val settings = loadWholeSiteSettings(transaction)
+      val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numFirstPostsToAllow)
+      val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
       if (numFirstToAllow > 0 && numFirstToApprove > 0) {
         val firstPosts = transaction.loadPostsBy(postBefore.createdById, includeTitles = false,
           includeChatMessages = false, limit = MaxNumFirstPosts, OrderBy.OldestFirst)

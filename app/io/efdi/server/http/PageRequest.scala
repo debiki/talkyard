@@ -184,9 +184,9 @@ class PageRequest[A](
     "DwE3ES58", s"No page meta found, page id: $pageId")
 
 
-  lazy val thePageSettings: Settings = {
-    if (pageExists) {
-      dao.loadSinglePageSettings(thePageId)
+  lazy val thePageSettings: EffectiveSettings = {
+    if (false) { // pageExists) {
+      ??? // dao.loadSinglePageSettings(thePageId)
     }
     /* Now when using categories instead of category pages, should I load settings
        for the categories somehow? Currently there are none though, so just skip this.

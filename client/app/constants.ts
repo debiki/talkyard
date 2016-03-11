@@ -36,6 +36,9 @@ var FirstStarMark = 2;
 var BlueStarMark = 3;
 var LastStarMark = 3;
 
+// Sync with Scala [6KG2W57]
+var MaxNumFirstPosts = 10;
+
 
 enum LoginReason {
   LoginToChat = 10,

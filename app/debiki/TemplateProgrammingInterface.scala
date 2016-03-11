@@ -73,8 +73,8 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
   def userDisplayName = debikiRequest.user.map(_.displayName) getOrElse ""
 
   def debikiMeta = {
-    val title = siteSettings.title.asString // COULD use page title instead, unless homepage
-    xml.Unparsed(views.html.debikiMeta(title = title).body)
+    val siteTitle = siteSettings.title // COULD use page title instead, unless homepage
+    xml.Unparsed(views.html.debikiMeta(title = siteTitle).body)
   }
 
   def anyCurrentPageId: Option[PageId] = None
@@ -130,7 +130,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
 
 
   def anyGoogleUniversalAnalyticsScript = {
-    val trackingId = debikiRequest.siteSettings.googleUniversalAnalyticsTrackingId.value.toString
+    val trackingId = debikiRequest.siteSettings.googleUniversalAnalyticsTrackingId
     if (trackingId.nonEmpty) views.html.googleAnalytics(trackingId).body
     else ""
   }
@@ -196,8 +196,7 @@ class TemplateProgrammingInterface(
   override def cachedVersionString = cachedVersion.computerString
 
   private val horizontalComments =
-    pageReq.thePageRole == PageRole.MindMap ||
-    pageReq.thePageSettings.horizontalComments.valueAsBoolean
+    pageReq.thePageRole == PageRole.MindMap || pageReq.thePageSettings.horizontalComments
 
 
   override def debikiHtmlTagClasses =

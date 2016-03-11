@@ -45,7 +45,9 @@ export var PatternInput = createClassAndFactory({
   onChange: function(event) {
     var anyError = this.findAnyError(event.target.value);
     this.setState({ value: event.target.value, hasError: !!anyError });
-    this.props.onChange(event.target.value, !anyError);
+    if (this.props.onChange) {
+      this.props.onChange(event.target.value, !anyError);
+    }
   },
 
   componentDidUpdate: function() {
@@ -53,7 +55,9 @@ export var PatternInput = createClassAndFactory({
     if (hasError !== this.state.hasError) {
       this.setState({ hasError: hasError });
       // We got new props (perhaps this.props.error?) and now we're okay or broken, instead.
-      this.props.onChange(this.state.value, !hasError);
+      if (this.props.onChange) {
+        this.props.onChange(this.state.value, !hasError);
+      }
     }
   },
 

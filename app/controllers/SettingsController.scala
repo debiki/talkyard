@@ -33,61 +33,25 @@ object SettingsController extends mvc.Controller {
 
 
   def loadSiteSettings = AdminGetAction { request: GetRequest =>
+    loadSiteSettingsImpl(request)
+  }
+
+
+  private def loadSiteSettingsImpl(request: DebikiRequest[_]) = {
     val settings = request.dao.loadWholeSiteSettings()
-    OkSafeJson(settings.toJson)
+    val editedSettings = settings.editedSettingsChain.headOption getOrElse EditedSettings.empty
+    // What's the default, if settings from parent categories have been inherited? Therefore:
+    dieIf(settings.editedSettingsChain.length > 1, "EsE4GJKU0", "not tested")
+    OkSafeJson(Json.obj(
+      "effectiveSettings" -> settings.toJson,
+      "defaultSettings" -> settings.default.toJson))
   }
 
 
-  def loadSectionSettings(rootPageId: PageId) = AdminGetAction { request: GetRequest =>
-    val settings = request.dao.loadPageTreeSettings(rootPageId)
-    OkSafeJson(settings.toJson)
-  }
-
-
-  def saveSetting = AdminPostJsonAction(maxLength = 5000) { request: JsonPostRequest =>
-    val body = request.body
-    val pageId = (body \ "pageId").asOpt[PageId]
-    val tyype = (body \ "type").as[String]
-    val name = (body \ "name").as[String]
-    val newValueJson = (body \ "newValue").get
-
-    val newValue: Option[Any] = if (newValueJson == JsNull) None else Some(newValueJson match {
-      case JsBoolean(value) =>
-        value
-      case JsNumber(value: BigDecimal) =>
-        if (value.isValidInt) value.toInt
-        else if (value.isValidLong) value.toLong
-        else if (value.isDecimalDouble) value.toDouble
-        else throwBadReq("DwE2GKS6", s"Bad new number: $value")
-      case JsString(value) =>
-        value
-      case x =>
-        throwBadReq("DwE47XS0", s"Bad new value: `$x'")
-    })
-
-    val section = tyype match {
-      case "WholeSite" =>
-        SettingsTarget.WholeSite
-      case "PageTree" =>
-        SettingsTarget.PageTree(pageId getOrElse throwBadReq("DwE44GE0", "No page id specified"))
-      case "SinglePage" =>
-        SettingsTarget.SinglePage(pageId getOrElse throwBadReq("DwE55XU1", "No page id specified"))
-      case x =>
-        throwBadReq("DwE48UFk9", s"Bad section type: `$x'")
-    }
-
-    if (section == SettingsTarget.WholeSite && name == "EmbeddingSiteUrl") {
-      // Temporary special case, until I've moved the embedding site url from
-      // DW1.TENANT.EMBEDDING_SITE_URL to a normal setting in DW1_SETTINGS.
-      val newValueAsString = newValue.getOrElse(throwForbidden(
-          "EsE4YKP21", "Cannot clear embedded site URL")).asInstanceOf[String]
-      val changedSite = request.dao.loadSite().copy(embeddingSiteUrl = Some(newValueAsString))
-      request.dao.updateSite(changedSite)
-    }
-    else {
-      request.dao.saveSetting(section, name, newValue)
-    }
-    Ok
+  def saveSiteSettings = AdminPostJsonAction(maxLength = 10*1000) { request: JsonPostRequest =>
+    val settingsToSave = debiki.Settings2.settingsToSaveFromJson(request.body)
+    request.dao.saveSiteSettings(settingsToSave)
+    loadSiteSettingsImpl(request)
   }
 
 }

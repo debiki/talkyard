@@ -20,6 +20,43 @@
   p
     font-style: italic;
 
+.esAdmin_settings,
+.esAdmin_customize
+  padding-bottom: 40px;
+  .form-group
+    margin-top: 8px;
+    margin-bottom: 0;
+  .control-label
+    padding-top: 17px; // 7 -> 17 because of padding-top below [930KPU12]
+
+.esAdmin_settings_setting-unsaved
+  background: hsl(60, 95%, 77%);  // yellow background
+
+.esAdmin_settings_setting
+  padding-top: 10px;  // so there'll be some yellow background also above unsaved fileds [930KPU12]
+  &.disabled
+    label
+      opacity: 0.6;
+.esAdmin_settings_setting_btn
+  position: relative;
+  left: 4px;
+  margin-bottom: 8px;
+
+.esAdmin_savebar
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px;
+  background: hsl(0, 0%, 97%);
+  box-shadow: 0 0 25px 10px hsl(0, 0%, 34%);
+  // Center the buttons:
+  text-align: center;
+  .container
+    display: inline-block;
+    .btn
+      margin-right: 10px;
+
 .dw-main-nav
   margin: 30px auto 12px;
   a

@@ -6,9 +6,9 @@
 
 @(tpi: debiki.SiteTpi)
 
-@companyDomain = @{ tpi.companyDomain.value }
-@companyFullName = @{ tpi.companyFullName.value }
-@companyShortName = @{ tpi.companyShortName.value }
+@companyDomain = @{ tpi.companyDomain }
+@companyFullName = @{ tpi.companyFullName }
+@companyShortName = @{ tpi.companyShortName }
 @privacyUrl = @{ routes.LegalController.viewPrivacyPolicyPage.url }
 @faqUrl = @{ "/-/there-is-not-yet-any-FAQ-page--sorry" }
 

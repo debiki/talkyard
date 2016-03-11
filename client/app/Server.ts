@@ -184,31 +184,19 @@ export function createSite(emailAddress: string, localHostname: string,
 }
 
 
-export function loadSettings(type: string, pageId: string, doneCallback: (any) => void) {
-  var url;
-  if (type === 'WholeSite') {
-    url = '/-/load-site-settings';
-  }
-  else if (type === 'PageTree') {
-    url = '/-/load-section-settings?rootPageId=' + pageId;
-  }
-  else {
-    console.error('Unsupported settings target type: ' + type + ' [DwE5H245]');
-    doneCallback(null);
-  }
-  $.get(origin + url)
-    .done((settings: any) => {
-      doneCallback(settings);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading settings: ' + JSON.stringify([x, y, z]));
-      doneCallback(null);
-    });
+interface LoadSettingsResult {
+  effectiveSettings: Settings
+  defaultSettings: Settings;
 }
 
 
-export function saveSetting(setting: Setting, success: () => void) {
-  postJsonSuccess('/-/save-setting', success, setting);
+export function loadSiteSettings(success: (s: LoadSettingsResult) => void) {
+  get('/-/load-site-settings', {}, success);
+}
+
+
+export function saveSiteSettings(settings: Settings, success: (s: LoadSettingsResult) => void) {
+  postJsonSuccess('/-/save-site-settings', success, settings);
 }
 
 
