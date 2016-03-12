@@ -158,13 +158,13 @@ export function loadEditorEtceteraScripts() {
     complete: () => {
       loadEditorScriptsStatus.resolve();
     }
-  })
+  });
   return loadEditorScriptsStatus;
 }
 
 
 export function createSite(emailAddress: string, localHostname: string,
-    anyEmbeddingSiteAddress: string, pricePlan: string, doneCallback: (string) => void) {
+    anyEmbeddingSiteAddress: string, organizationName: string, doneCallback: (string) => void) {
   var url = '/-/create-site';
   var isTestSite = window.location.search.indexOf('testSiteOkDelete=true') !== -1 ||
     window.location.pathname === '/-/create-test-site';
@@ -174,7 +174,7 @@ export function createSite(emailAddress: string, localHostname: string,
       emailAddress: emailAddress,
       localHostname: localHostname,
       embeddingSiteAddress: anyEmbeddingSiteAddress,
-      pricePlan: pricePlan,
+      organizationName: organizationName,
       testSiteOkDelete: isTestSite,
     },
     success: (response) => {

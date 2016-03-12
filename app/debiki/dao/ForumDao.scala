@@ -176,25 +176,29 @@ object ForumDao {
   val AdminQuickStartGuideTitle = "Read first: Admin Quick Start Guide"
 
   lazy val adminQuickStartGuide = renderCommonMark(i"""
-    |As an admin, you can configure this forum and website. Go to the admin area by clicking <span class="icon-menu"></span> to the upper right, then click **Admin**. (The admin area is a bit unfinished right now.)
+    |As an admin, you can edit forum settings, define what this forum is about, and invite people.
     |
-    |Required settings
+    |Edit settings
     |------------------
     |
-    |In the admin area, fill in settings: the website title and description, and the `company_...` settings.
+    |Go to the admin area by clicking <span class="icon-menu"></span> to the upper right, then click **Admin**. (The admin area is a bit unfinished right now.)
     |
-    |Private or public?
-    |------------------
+    |Have a look at the settings, in case there's something you'd like to change. For example:
     |
-    |In the admin area, you can make the forum private, by changing these settings:
+    |#### Copyright
+    |
+    |By default, people who copy material from the forum, must give credit to the authors, and indicate if they have modified it. Also, they must in turn allow others to copy and edit their modified material. This is [Creative Commons' CC BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/).
+    |
+    |#### Private or public?
+    |
+    |You can make the forum private, by changing these settings:
     |
     |- Login required
     |- Approve users
     |
-    |Customize colors and logo
-    |------------------
+    |#### Customize colors and logo
     |
-    |In the admin area, the **Customize** section, you can customize colors, add a logo and a top navigation bar. However, your customizations might break in the future, because this functionality is a bit experimental right now. Also, you need to know some CSS and/or a bit HTML, right now, unfortunately.
+    |In the **Customize** section, you can customize colors, add a logo and a top navigation bar. **However**, your customizations might break in the future, because this functionality is a bit experimental right now. Also, right now you need to know some CSS and HTML, unfortunately.
     |
     |Clarify what this community is about
     |------------------

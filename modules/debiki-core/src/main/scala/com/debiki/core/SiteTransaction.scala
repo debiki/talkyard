@@ -38,7 +38,7 @@ trait SiteTransaction {
     * (from the same IP or email address).
     */
   def createSite(name: String, hostname: String, embeddingSiteUrl: Option[String],
-    creatorIp: String, creatorEmailAddress: String, pricePlan: Option[String],
+    creatorIp: String, creatorEmailAddress: String,
     quotaLimitMegabytes: Option[Int], isTestSiteOkayToDelete: Boolean,
     skipMaxSitesCheck: Boolean): Site
 

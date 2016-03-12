@@ -160,5 +160,10 @@ package object core {
     def getOrIfBad(fn: B => Nothing): G = underlying.badMap(fn).get
   }
 
+
+  implicit class RichString3(underlying: String) {
+    def isTrimmedNonEmpty = underlying.trim == underlying && underlying.nonEmpty
+  }
+
 }
 

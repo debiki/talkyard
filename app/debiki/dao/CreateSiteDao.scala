@@ -36,7 +36,7 @@ trait CreateSiteDao {
   self: SiteDao =>
 
   def createSite(name: String, hostname: String,
-        embeddingSiteUrl: Option[String], pricePlan: Option[String],
+        embeddingSiteUrl: Option[String], organizationName: String,
         creatorEmailAddress: String, creatorId: UserId, browserIdData: BrowserIdData,
         isTestSiteOkayToDelete: Boolean, skipMaxSitesCheck: Boolean) : Site = {
 
@@ -49,7 +49,7 @@ trait CreateSiteDao {
     readWriteTransaction { transaction =>
       val newSite = transaction.createSite(name = name, hostname = hostname,
         embeddingSiteUrl, creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
-        pricePlan = pricePlan, quotaLimitMegabytes = quotaLimitMegabytes,
+        quotaLimitMegabytes = quotaLimitMegabytes,
         isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = skipMaxSitesCheck)
 
       insertAuditLogEntry(AuditLogEntry(
@@ -63,6 +63,9 @@ trait CreateSiteDao {
         targetSiteId = Some(newSite.id)), transaction)
 
       transaction.setSiteId(newSite.id)
+
+      transaction.upsertSiteSettings(
+        SettingsToSave(companyFullName = Some(Some(organizationName))))
 
       val newSiteHost = SiteHost(hostname, SiteHost.RoleCanonical)
       transaction.insertSiteHost(newSiteHost)

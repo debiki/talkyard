@@ -6,9 +6,15 @@
 
 @(tpi: debiki.SiteTpi)
 
+@import com.debiki.core.Prelude._
+
 @companyDomain = @{ tpi.companyDomain }
 @companyFullName = @{ tpi.companyFullName }
-@companyShortName = @{ tpi.companyShortName }
+@companyAbbreviation = @{
+  if (tpi.companyShortName.isEmpty) ""
+  else s"""("${tpi.companyShortName}")"""
+}
+@companyShortName = @{ tpi.companyShortName orIfEmpty tpi.companyFullName }
 @privacyUrl = @{ routes.LegalController.viewPrivacyPolicyPage.url }
 @faqUrl = @{ "/-/there-is-not-yet-any-FAQ-page--sorry" }
 
@@ -24,7 +30,7 @@
 <br><br>
 
 <p>
-  The following terms and conditions govern all use of the @companyDomain website and all content, services and products available at or through the website, including, but not limited to, @companyDomain Forum Software, @companyDomain Support Forums and the @companyDomain Hosting service (“Hosting”), any sites and forums and embedded comments and anything that you create via the Hosting Service, (taken together, the Website). The Website is owned and operated by @companyFullName (“@companyShortName”). The Website is offered subject to your acceptance without modification of all of the terms and conditions contained herein and all other operating rules, policies (including, without limitation, @companyDomain’s <a href="@privacyUrl">Privacy Policy</a> and <a href="@faqUrl">Community Guidelines</a>) and procedures that may be published from time to time on this Site by @companyShortName (collectively, the “Agreement”).
+  The following terms and conditions govern all use of the @companyDomain website and all content, services and products available at or through the website, including, but not limited to, @companyDomain Forum Software, @companyDomain Support Forums and the @companyDomain Hosting service (“Hosting”), any sites and forums and embedded comments and anything that you create via the Hosting Service, (taken together, the Website). The Website is owned and operated by @companyFullName @companyAbbreviation. The Website is offered subject to your acceptance without modification of all of the terms and conditions contained herein and all other operating rules, policies (including, without limitation, @companyDomain’s <a href="@privacyUrl">Privacy Policy</a> and <a href="@faqUrl">Community Guidelines</a>) and procedures that may be published from time to time on this Site by @companyShortName (collectively, the “Agreement”).
 </p>
 
 <p>

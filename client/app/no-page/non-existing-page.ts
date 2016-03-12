@@ -162,7 +162,7 @@ export var EmbeddedCommentsLinks = createComponent({
 export var CreateSomethingHere = createComponent({
   getInitialState: function() {
     return {
-      createWhat: undefined,
+      createWhat: PageRole.Forum, // later: undefined — if there'll be Blog and Wiki too? [8GYK34]
     };
   },
   render: function() {
@@ -191,6 +191,8 @@ export var CreateSomethingHere = createComponent({
     return (
       r.div({},
         r.h1({}, 'Welcome to Your Site'),
+        r.p({}, "Let's create a forum:"),
+        /* Add this back later if there'll be Blog and Wiki options too [8GYK34]
         r.p({}, message),
         r.div({ className: 'do-what-options' },
           Button({ active: createWhat === PageRole.Forum, id: 'e2eCreateForum',
@@ -198,6 +200,7 @@ export var CreateSomethingHere = createComponent({
               onClick: () => this.setState({ createWhat: PageRole.Forum })},
               'Create a Forum'),
           anyCreateEmbeddedCommentsButton),
+          */
         anyCreateForumPanel,
         anyCreateEmbeddedCommentsPanel));
   }

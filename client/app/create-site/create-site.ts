@@ -20,6 +20,7 @@
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../util/EmailInput.ts" />
+/// <reference path="../utils/PatternInput.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.createsite {
@@ -36,6 +37,7 @@ var Panel = reactCreateFactory(ReactBootstrap.Panel);
 var Input = reactCreateFactory(ReactBootstrap.Input);
 var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 var EmailInput = util.EmailInput;
+var PatternInput = utils.PatternInput;
 
 var ReactRouter = window['ReactRouter'];
 var Route = reactCreateFactory(ReactRouter.Route);
@@ -103,7 +105,33 @@ var CreateWebsiteComponent = React.createClass(<any> {
   displayName: 'CreateSimpleSiteComponent',
 
   getInitialState: function() {
-    return { okayStatuses: { email: false, hostname: false, terms: false } };
+    return {
+      okayStatuses: {
+        email: false,
+        email2: false,
+        hostname: false,
+        orgName: false,
+        terms: false,
+      },
+      email: '',
+      email2: null,
+      showEmail2: false,
+    };
+  },
+
+  componentDidUpdate: function(prevProps, prevState) {
+    if (this.state.showEmail2 && !prevState.showEmail2) {
+      this.refs.emailAddress2.focus();
+    }
+    if (this.state.showHostname && !prevState.showHostname) {
+      this.refs.localHostname.focus();
+    }
+    if (this.state.showOrgName && !prevState.showOrgName) {
+      this.refs.organizationName.focus();
+    }
+    if (this.state.showSubmit && !prevState.showSubmit) {
+      this.refs.acceptTerms.focus();
+    }
   },
 
   handleSubmit: function(event) {
@@ -112,7 +140,7 @@ var CreateWebsiteComponent = React.createClass(<any> {
         this.refs.emailAddress.getValue(),
         this.refs.localHostname.getValue(),
         null,
-        this.props.pricePlan,
+        this.refs.organizationName.getValue(),
         (newSiteOrigin) => {
           window.location.assign(newSiteOrigin);
         });
@@ -125,26 +153,72 @@ var CreateWebsiteComponent = React.createClass(<any> {
   },
 
   render: function() {
-    var disableSubmit = _.includes(_.values(this.state.okayStatuses), false);
+    var state = this.state;
+    var okayStatuses = state.okayStatuses;
+    var disableSubmit = _.includes(_.values(okayStatuses), false);
+    var emailTypedOkTwice = okayStatuses.email && this.state.email === this.state.email2;
     return (
       r.div({},
-        r.h1({}, 'Create Site'),
+        r.h1({}, 'Create Forum'),
         r.form({ className: 'esCreateSite', onSubmit: this.handleSubmit },
           EmailInput({ label: 'Email:', id: 'e2eEmail', className: 'esCreateSite_email',
               placeholder: 'your-email@example.com',
               help: 'Your email address, which you will use to login and ' +
                 'administrate the site.', ref: 'emailAddress',
-              onChangeValueOk: (value, isOk) => this.reportOkay('email', isOk) }),
+              onChangeValueOk: (value, isOk) => {
+                this.setState({ email: value });
+                this.reportOkay('email', isOk)
+              } }),
+
+          // onFocus, not onClick, so the next field will appear directly when one tabs
+          // away from the previous field. (onFocus apparently works with mouse & touch too)
+          Button({ onFocus: () => this.setState({ showEmail2: true }), bsStyle: 'primary',
+              style: { display: okayStatuses.email && !state.showEmail2 ? 'block' : 'none' }},
+            "Next"),
+
+          PatternInput({ label: 'Verify email:', id: 'e2eEmail2', className: 'esCreateSite_email',
+            style: { display: state.showEmail2 ? 'block' : 'none' },
+            placeholder: 'your-email@example.com',
+            error: !emailTypedOkTwice,
+            help: 'Please type your email again.', ref: 'emailAddress2',
+            onChangeValueOk: (value, isOk) => {
+              this.setState({ email2: value });
+              this.reportOkay('email2', isOk && value === this.state.email)
+            } }),
+
+          Button({ onFocus: () => this.setState({ showHostname: true }), bsStyle: 'primary',
+              style: { display: emailTypedOkTwice && !state.showHostname ? 'block' : 'none' }},
+            "Next"),
 
           LocalHostnameInput({ label: 'Site Address:', placeholder: 'your-forum-name',
+              style: { display: state.showHostname ? 'block' : 'none' },
               help: 'The address of your new site. (Want a custom domain name? Later.)',
               ref: 'localHostname',
-              reportOkay: (isOk) => this.reportOkay('hostname', isOk) }),
+              onChangeValueOk: (isOk) => this.reportOkay('hostname', isOk) }),
 
-          AcceptTerms({ reportOkay: (isOk) => this.reportOkay('terms', isOk) }),
+          Button({ onFocus: () => this.setState({ showOrgName: true }), bsStyle: 'primary',
+              style: { display: okayStatuses.hostname && !state.showOrgName ? 'block' : 'none' }},
+            "Next"),
 
-          ButtonInput({ type: 'submit', value: 'Create Site', bsStyle: 'primary',
-              disabled: disableSubmit }))));
+          PatternInput({ label: "Organization name:", placeholder: "Your Organization Name",
+              style: { display: state.showOrgName ? 'block' : 'none' },
+              help: "The name of your organization, if any. Otherwise, you " +
+                "can use your own name. Will be used in your Terms of Use " +
+                "and Privacy Policy documents.",
+              ref: 'organizationName',
+              regex: /\S/, message: "Name required",
+              onChangeValueOk: (value, isOk) => this.reportOkay('orgName', isOk) }),
+
+          Button({ onFocus: () => this.setState({ showSubmit: true }), bsStyle: 'primary',
+              style: { display: okayStatuses.orgName && !state.showSubmit ? 'block' : 'none' }},
+            "Next"),
+
+          r.div({ style: { display: state.showSubmit ? 'block' : 'none' }},
+            AcceptTerms({ reportOkay: (isOk) => this.reportOkay('terms', isOk),
+                ref: 'acceptTerms' }),
+
+            ButtonInput({ type: 'submit', value: 'Create Site', bsStyle: 'primary',
+                disabled: disableSubmit })))));
   }
 });
 
@@ -169,14 +243,15 @@ var CreateEmbeddedSiteComponent = React.createClass(<any> {
       this.setState({ showErrors: true });
       return;
     }
+    die("unimpl [EsE5YKUFQ32]"); /*
     Server.createSite(
         this.refs.emailAddress.getValue(),
         this.refs.localHostname.getValue(),
         this.refs.embeddingSiteAddress.getValue(),
-        this.props.pricePlan,
+         ??? organizationName.getValue(),  ?? this field is missing
         (newSiteOrigin) => {
           window.location.assign(newSiteOrigin);
-        });
+        }); */
   },
 
   updateDebikiAddress: function() {
@@ -243,6 +318,10 @@ var AcceptTerms = createClassAndFactory({
     this.props.reportOkay(this.refs.checkbox.getChecked());
   },
 
+  focus: function() {
+    this.refs.checkbox.focus();
+  },
+
   render: function() {
     var label =
       r.span({},
@@ -279,10 +358,14 @@ var LocalHostnameInput = createClassAndFactory({
     return this.state.value;
   },
 
+  focus: function() {
+    this.refs.input.focus();
+  },
+
   onChange: function(event) {
     this.setState({ value: event.target.value.toLowerCase() });
     var anyError = this.findAnyError(event.target.value);
-    this.props.reportOkay(!anyError);
+    this.props.onChangeValueOk(!anyError);
   },
 
   showErrors: function() {
@@ -328,7 +411,7 @@ var LocalHostnameInput = createClassAndFactory({
       }
     }
     return (
-      r.div({ className: 'form-group' + (anyError ? ' has-error' : '') },
+      r.div({ className: 'form-group' + (anyError ? ' has-error' : ''), style: this.props.style },
         r.label({ htmlFor: 'dwLocalHostname' }, this.props.label),
         r.br(),
         r.kbd({}, location.protocol + '//'),

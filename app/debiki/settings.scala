@@ -102,9 +102,9 @@ object AllSettings {
     val horizontalComments = false
     val socialLinksHtml = ""
     val logoUrlOrHtml = ""
-    val companyDomain = "www.example.com"
-    val companyFullName = "Unnamed Company Full Name"
-    val companyShortName = "Unnamed Company"
+    val companyDomain = ""
+    val companyFullName = ""
+    val companyShortName = ""
     val googleUniversalAnalyticsTrackingId = ""
     val showComplicatedStuff = false
     val htmlTagCssClasses = ""

@@ -152,7 +152,7 @@ object ImportExportController extends mvc.Controller {
       siteToSave.name,
       siteToSave.canonicalHost.getOrDie("EsE2FUPFY7").hostname,
       embeddingSiteUrl = siteToSave.embeddingSiteUrl,
-      pricePlan = None,
+      organizationName = "Dummy organization name [EsM8YKWP3]",  // fix later
       creatorEmailAddress = siteToSave.creatorEmailAddress,
       creatorId = SystemUserId,
       browserIdData = request.theBrowserIdData,

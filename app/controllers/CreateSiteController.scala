@@ -60,7 +60,7 @@ object CreateSiteController extends Controller {
     val emailAddress = (request.body \ "emailAddress").as[String]
     val localHostname = (request.body \ "localHostname").as[String]
     val anyEmbeddingSiteAddress = (request.body \ "embeddingSiteAddress").asOpt[String]
-    val anyPricePlan = (request.body \ "pricePlan").asOpt[String]
+    val organizationName = (request.body \ "organizationName").as[String].trim
     val isTestSiteOkayToDelete = (request.body \ "testSiteOkDelete").asOpt[Boolean].contains(true)
     val okE2ePassword = hasOkE2eTestPassword(request.request)
 
@@ -84,11 +84,10 @@ object CreateSiteController extends Controller {
     if (localHostname.contains("--") && !isTestSiteOkayToDelete)
       throwForbidden("DwE5JKP3", "Please choose another hostname; it must not contain: --")
 
-    // Price plan not required, but if specified, it shouldn't be "weird".
-    if (anyPricePlan.exists(_.trim.isEmpty))
-      throwForbidden("DwE4KEWW5", "Bad price plan: Empty string")
-    if (anyPricePlan.exists(_.length > 50))
-      throwForbidden("DwE7KEP36", "Bad price plan: Too long")
+    if (organizationName.isEmpty)
+      throwForbidden("DwE4KEWW5", "No organization name specified")
+    if (organizationName.length > 100)
+      throwForbidden("DwE7KEP36", "Too long organization name: more than 100 characters")
 
     Globals.antiSpam.detectRegistrationSpam(request, name = localHostname,
         email = emailAddress) map { isSpamReason =>
@@ -102,7 +101,7 @@ object CreateSiteController extends Controller {
             name = localHostname, hostname = hostname, embeddingSiteUrl = anyEmbeddingSiteAddress,
             creatorEmailAddress = emailAddress,
             creatorId = request.user.map(_.id) getOrElse UnknownUserId,
-            browserIdData = request.theBrowserIdData, pricePlan = anyPricePlan,
+            browserIdData = request.theBrowserIdData, organizationName = organizationName,
             isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = okE2ePassword)
         }
         catch {

@@ -386,26 +386,28 @@ var LegalSettingsComponent = React.createClass(<any> {
 
     return (
       r.div({},
-        Setting2(props, { type: 'text', label: "company_full_name",
-          help: r.span({}, "The full name of the company " +
-            "or organization that runs this site. Used in legal documents " +
-            "like the ", termsOfUseLink, " page."),
+        Setting2(props, { type: 'text', label: "Organization name",
+          help: r.span({}, "The full name of the company or organization that runs this site. " +
+            "Used on your ", termsOfUseLink, " page. You can use your " +
+            "own name if there is no organization."),
+          canReset: false,
           getter: (s: Settings) => s.companyFullName,
           update: (newSettings: Settings, target) => {
             newSettings.companyFullName = target.value;
           }
         }),
 
-        Setting2(props, { type: 'text', label: "company_short_name",
-          help: r.span({}, "The short name of the company " +
-            "or organization that runs this site. Used in legal documents " +
-            "like the ", termsOfUseLink, " page."),
+        Setting2(props, { type: 'text', label: "Organization name, short",
+          help: r.span({}, "An optional short name of the company or organization that " +
+            "runs this site — can make your Terms of Use easier to read, if the complete name " +
+            "is rather long."),
           getter: (s: Settings) => s.companyShortName,
           update: (newSettings: Settings, target) => {
             newSettings.companyShortName = target.value;
           }
         }),
 
+        /* This setting isn't needed? Remove?  [3PU85J7]
         Setting2(props, { type: 'text', label: "company_domain",
           help: r.span({}, "The domain name owned by the company " +
             "that runs this site. Used in legal documents like the ", termsOfUseLink, "."),
@@ -413,7 +415,7 @@ var LegalSettingsComponent = React.createClass(<any> {
           update: (newSettings: Settings, target) => {
             newSettings.companyDomain = target.value;
           }
-        }),
+        }), */
 
         SpecialContent({ contentId: '_tou_content_license',
             label: 'Terms of Use: Content License',
@@ -553,48 +555,48 @@ var CustomizePanelComponent = React.createClass(<any> {
 
 
 
-function Setting2(panelProps, settingProps) {
+function Setting2(panelProps, props) {
   var editedSettings = panelProps.editedSettings;
   var currentSettings = panelProps.currentSettings;
   var defaultSettings = panelProps.defaultSettings;
 
-  var editedValue = settingProps.getter(editedSettings);
-  var currentValue = settingProps.getter(currentSettings);
+  var editedValue = props.getter(editedSettings);
+  var currentValue = props.getter(currentSettings);
 
-  dieIf(settingProps.onChange, 'EsE3GUK02');
-  dieIf(!settingProps.update, 'EsE22PYK5');
-  dieIf(settingProps.value, 'EsE6JY2F4');
+  dieIf(props.onChange, 'EsE3GUK02');
+  dieIf(!props.update, 'EsE22PYK5');
+  dieIf(props.value, 'EsE6JY2F4');
 
   var valueOf = (getter: (s: Settings) => any) =>
     firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
-  settingProps.value = firstDefinedOf(editedValue, currentValue);
-  settingProps.wrapperClassName = 'col-sm-9 esAdmin_settings_setting';
+  props.value = firstDefinedOf(editedValue, currentValue);
+  props.wrapperClassName = 'col-sm-9 esAdmin_settings_setting';
   if (isDefined2(editedValue)) {
-    settingProps.wrapperClassName += ' esAdmin_settings_setting-unsaved'
+    props.wrapperClassName += ' esAdmin_settings_setting-unsaved'
   }
-  if (settingProps.disabled) {
-    settingProps.wrapperClassName += ' disabled';
+  if (props.disabled) {
+    props.wrapperClassName += ' disabled';
   }
-  if (settingProps.type === 'checkbox') {
+  if (props.type === 'checkbox') {
     // No separate label, so indent.
-    settingProps.wrapperClassName += ' col-xs-offset-3 esAdmin_settings_setting-checkbox';
-    settingProps.checked = settingProps.value;
-    delete settingProps.value;
+    props.wrapperClassName += ' col-xs-offset-3 esAdmin_settings_setting-checkbox';
+    props.checked = props.value;
+    delete props.value;
   }
   else {
-    settingProps.labelClassName = 'col-sm-3';
+    props.labelClassName = 'col-sm-3';
   }
-  settingProps.onChange = (event) => {
+  props.onChange = (event) => {
     var newSettings = _.clone(editedSettings);
-    settingProps.update(newSettings, event.target);
+    props.update(newSettings, event.target);
     panelProps.removeUnchangedSettings(newSettings);
     panelProps.setEditedSettings(newSettings);
   };
 
   // ----- Reset and undo buttons
 
-  var field = settingProps.type === 'checkbox' ? 'checked' : 'value';
+  var field = props.type === 'checkbox' ? 'checked' : 'value';
   var event = { target: {} };
 
   var undoChangesButton;
@@ -602,24 +604,24 @@ function Setting2(panelProps, settingProps) {
     undoChangesButton = Button({ className: 'col-xs-offset-3 esAdmin_settings_setting_btn',
       onClick: () => {
         event.target[field] = currentValue;
-        settingProps.onChange(event);
+        props.onChange(event);
       }}, "Undo changes");
   }
 
   // Show the Reset button only if there's no Undo button — both at the same time looks confusing.
   var resetToDefaultButton;
-  var defaultValue = settingProps.getter(defaultSettings);
-  if (!undoChangesButton && valueOf(settingProps.getter) !== defaultValue) {
+  var defaultValue = props.getter(defaultSettings);
+  if (!undoChangesButton && valueOf(props.getter) !== defaultValue && props.canReset !== false) {
     resetToDefaultButton = Button({ className: 'col-xs-offset-3 esAdmin_settings_setting_btn',
       onClick: () => {
         event.target[field] = defaultValue;
-        settingProps.onChange(event);
+        props.onChange(event);
       }}, "Reset to default");
   }
 
   return (
     r.div({},
-      Input(settingProps),
+      Input(props),
       resetToDefaultButton,
       undoChangesButton));
 }

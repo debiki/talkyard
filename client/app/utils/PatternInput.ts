@@ -45,8 +45,9 @@ export var PatternInput = createClassAndFactory({
   onChange: function(event) {
     var anyError = this.findAnyError(event.target.value);
     this.setState({ value: event.target.value, hasError: !!anyError });
-    if (this.props.onChange) {
-      this.props.onChange(event.target.value, !anyError);
+    var onChangeValuOk = this.props.onChangeValueOk || this.props.onChange;
+    if (onChangeValuOk) {
+      onChangeValuOk(event.target.value, !anyError);
     }
   },
 
@@ -55,8 +56,9 @@ export var PatternInput = createClassAndFactory({
     if (hasError !== this.state.hasError) {
       this.setState({ hasError: hasError });
       // We got new props (perhaps this.props.error?) and now we're okay or broken, instead.
-      if (this.props.onChange) {
-        this.props.onChange(this.state.value, !hasError);
+      var onChangeValuOk = this.props.onChangeValueOk || this.props.onChange;
+      if (onChangeValuOk) {
+        onChangeValuOk(this.state.value, !hasError);
       }
     }
   },
@@ -121,17 +123,17 @@ export var PatternInput = createClassAndFactory({
     var anyError;
     if (this.state.showErrors || this.props.error) {
       var anyError = this.findAnyError(this.state.value);
-      if (anyError) {
+      if (anyError && _.isString(anyError)) {
         anyError = r.b({ style: { color: 'red' }}, anyError);
       }
     }
     return (
-      r.div({ className: 'form-group' + (anyError ? ' has-error' : '') },
+      r.div({ className: 'form-group' + (anyError ? ' has-error' : ''), style: this.props.style },
         r.label({ htmlFor: this.props.id }, this.props.label),
         r.br(),
         r.input({ type: 'text', id: this.props.id, className: 'form-control', ref: 'theInput',
             placeholder: this.props.placeholder, onChange: this.onChange,
-            tabIndex: this.props.tabIndex,
+            tabIndex: this.props.tabIndex, onBlur: this.props.onBlur,
             disabled: this.props.disabled, value: this.state.value, onFocus: this.showErrors }),
         r.p({ className: 'help-block' }, this.props.help),
         anyError));

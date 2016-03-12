@@ -123,7 +123,11 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
 
   def hostname = debikiRequest.host
 
-  def companyDomain = debikiRequest.siteSettings.companyDomain
+  def companyDomain = {
+    debikiRequest.canonicalHostname
+    // was: debikiRequest.siteSettings.companyDomain
+    // — but why did I make it configurable? No idea. Remove that setting? [3PU85J7]
+  }
   def companyFullName = debikiRequest.siteSettings.companyFullName
   def companyShortName = debikiRequest.siteSettings.companyShortName
 

@@ -43,13 +43,14 @@ export var EmailInput = createClassAndFactory({
     return (
       utils.PatternInput({ label: this.props.label, ref: 'patternInput', id: this.props.id,
         className: this.props.className, placeholder: this.props.placeholder,
-        required: this.props.required,
+        required: this.props.required, style: this.props.style,
         help: this.props.help, tabIndex: this.props.tabIndex,
         regex: /.+/, message: "Email required",
         notRegex: /\s/, notMessage: "No spaces please",
         regexTwo: /^[^@]+@[^-@\.]+\.[^@]+[^-@\.]$/, messageTwo: "Not a valid email address",
         error: this.props.error,
         onChange: this.props.onChangeValueOk, disabled: this.props.disabled,
+        onBlur: this.props.onBlur,
         defaultValue: this.props.defaultValue }));
   }
 });

@@ -55,7 +55,7 @@ export var ReviewAllPanelComponent = React.createClass(<any> {
     });
 
     if (!elems.length)
-      return r.p({ className: 'esAdminSectionIntro' }, "No comments or replies review.");
+      return r.p({ className: 'esAdminSectionIntro' }, "No comments or replies to review.");
 
     return (
       r.div({},
