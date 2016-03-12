@@ -28,6 +28,11 @@ var reactCreateFactory = React['createFactory'];
 export var Link = reactCreateFactory(ReactRouter.Link);
 
 
+declare var reactRouterActiveComponent: any;
+
+export var NavLink = reactCreateFactory(reactRouterActiveComponent('li'));
+
+
 export function die(errorMessage: string) {
   var dialogs: any = debiki2['pagedialogs'];
   // I don't remember why I added setTimeout() but there was a good reason.

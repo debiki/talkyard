@@ -105,6 +105,7 @@ var debikiJavascriptFiles = [
       'bower_components/eventemitter2/lib/eventemitter2.js',
       'bower_components/react-bootstrap/react-bootstrap.js',
       'bower_components/react-router/index.js',
+      'bower_components/react-router-active-component/index.js',
       'node_modules/jquery-resizable/resizable.js',
       'client/third-party/gifffer/gifffer.js',
       'client/third-party/jquery-cookie.js',

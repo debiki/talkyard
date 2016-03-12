@@ -61,7 +61,13 @@ export function routes() {
     Route({ key: 'routes', path: AdminRoot, component: AdminAppComponent },
       Redirect({ from: 'users', to: AdminRoot + 'users/active' }),
       Redirect({ from: 'review', to: AdminRoot + 'review/all' }),
-      Route({ path: 'settings', component: SettingsPanelComponent }),
+      Redirect({ from: 'settings', to: AdminRoot + 'settings/legal' }),
+      Route({ path: 'settings', component: SettingsPanelComponent },
+        Route({ path: 'legal', component: LegalSettingsComponent }),
+        Route({ path: 'login', component: LoginSettingsComponent }),
+        Route({ path: 'moderation', component: ModerationSettingsComponent }),
+        Route({ path: 'analytics', component: AnalyticsSettingsComponent }),
+        Route({ path: 'experimental', component: ExperimentalSettingsComponent })),
       Route({ path: 'users', component: UsersTabComponent },
         Route({ path: 'active', component: ActiveUsersPanelComponent }),
         Route({ path: 'new', component: NewUsersPanelComponent }),
@@ -224,10 +230,26 @@ var SettingsPanelComponent = React.createClass(<any> {
     if (!props.currentSettings)
       return r.p({}, 'Loading...');
 
+    return (
+      r.div({},
+        r.ul({ className: 'esAdmin_settings_nav col-sm-2 nav nav-pills nav-stacked' },
+          NavLink({ to: AdminRoot + 'settings/legal' }, "Legal"),
+          NavLink({ to: AdminRoot + 'settings/login' }, "Login"),
+          NavLink({ to: AdminRoot + 'settings/moderation'  }, "Moderation"),
+          NavLink({ to: AdminRoot + 'settings/analytics' }, "Analytics"),
+          NavLink({ to: AdminRoot + 'settings/experimental' }, "Experimental")),
+        r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
+          React.cloneElement(this.props.children, this.props))));
+  }
+});
+
+
+
+var LoginSettingsComponent = React.createClass(<any> {
+  render: function() {
+    var props = this.props;
     var currentSettings: Settings = props.currentSettings;
     var editedSettings: Settings = props.editedSettings;
-    var termsOfUseLink = r.a({ href: '/-/terms-of-use', target: '_blank' },
-        'Terms of Use');
 
     var valueOf = (getter: (s: Settings) => any) =>
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
@@ -236,7 +258,7 @@ var SettingsPanelComponent = React.createClass(<any> {
       !valueOf(s => s.userMustBeApproved) && !valueOf(s => s.userMustBeAuthenticated);
 
     return (
-      r.div({ className: 'form-horizontal esAdmin_settings' },
+      r.div({},
         Setting2(props, { type: 'checkbox', label: 'Login required',
           help: r.span({}, "Require authentication to read content. Users must then login " +
             "with password or via ", r.i({}, "for example "), "Google or Facebook, but " +
@@ -270,8 +292,23 @@ var SettingsPanelComponent = React.createClass(<any> {
           update: (newSettings: Settings, target) => {
             newSettings.allowGuestLogin = target.checked;
           }
-        }),
+        })));
+  }
+});
 
+
+
+var ModerationSettingsComponent = React.createClass(<any> {
+  render: function() {
+    var props = this.props;
+    var currentSettings: Settings = props.currentSettings;
+    var editedSettings: Settings = props.editedSettings;
+
+    var valueOf = (getter: (s: Settings) => any) =>
+      firstDefinedOf(getter(editedSettings), getter(currentSettings));
+
+    return (
+      r.div({},
         Setting2(props, { type: 'number', label: "Num first posts to review",
           help: "How many of a new member's first posts the staff will be notified about " +
             "so they can review them. The posts will become visible directly, before " +
@@ -288,7 +325,7 @@ var SettingsPanelComponent = React.createClass(<any> {
 
         Setting2(props, { type: 'number', label: "Num first posts to approve",
           help: "How many of a new member's first posts need to be approved by staff, " +
-            "before they'll be shown. By default they'll be hidden, until approved. " +
+            "before they'll be shown. They'll be hidden, until approved. " +
             "Set to 0 to disable. Max is 10.",
           getter: (s: Settings) => s.numFirstPostsToApprove,
           update: (newSettings: Settings, target) => {
@@ -304,8 +341,8 @@ var SettingsPanelComponent = React.createClass(<any> {
         }),
 
         Setting2(props, { type: 'number', label: "Num first posts to allow",
-          help: "How many posts a new member may post, before s/he has to wait until the " +
-              "very first ones has been approved by staff.",
+          help: "How many posts a new member may post, before s/he has to wait with " +
+              "posting anything more, until the first posts have been approved by staff.",
           getter: (s: Settings) => s.numFirstPostsToAllow,
           update: (newSettings: Settings, target) => {
             var num = parseInt(target.value);
@@ -317,8 +354,17 @@ var SettingsPanelComponent = React.createClass(<any> {
               newSettings.numFirstPostsToApprove = num;
             }
           },
-        }),
+        })));
+  }
+});
 
+
+
+var AnalyticsSettingsComponent = React.createClass(<any> {
+  render: function() {
+    var props = this.props;
+    return (
+      r.div({},
         Setting2(props, { type: 'text', label: "Google Universal Analytics tracking ID",
           help: r.span({}, "Any Google Universal Analytics tracking ID, e.g. ",
             r.samp({}, "UA-12345678-9"), ", see http://google.com/analytics."),
@@ -326,8 +372,20 @@ var SettingsPanelComponent = React.createClass(<any> {
           update: (newSettings: Settings, target) => {
             newSettings.googleUniversalAnalyticsTrackingId = target.value;
           }
-        }),
+        })));
+  }
+});
 
+
+
+var LegalSettingsComponent = React.createClass(<any> {
+  render: function() {
+    var props = this.props;
+    var termsOfUseLink = r.a({ href: '/-/terms-of-use', target: '_blank' },
+      'Terms of Use');
+
+    return (
+      r.div({},
         Setting2(props, { type: 'text', label: "company_full_name",
           help: r.span({}, "The full name of the company " +
             "or organization that runs this site. Used in legal documents " +
@@ -363,8 +421,7 @@ var SettingsPanelComponent = React.createClass(<any> {
                 "the contents of the website. This text will be inserted into " +
                 "the Content License section of your ", termsOfUseLink, " page. " +
                 "By default, content is licensed under a Creative Commonts license " +
-                "(see below) so you can just leave this as is.") }),
-
+                "(see below) so you can just leave this as is.") })));
         /* Hide this. It's a bad idea to allow each site to use its own jurisdiction?
         SpecialContent({ contentId: '_tou_jurisdiction',
             label: 'Terms of Use: Jurisdiction',
@@ -372,7 +429,16 @@ var SettingsPanelComponent = React.createClass(<any> {
                 "and where any legal issues should be resolved. This text is inserted " +
                 "into the Jurisdiction section of your ", termsOfUseLink, " page.") })));
        */
+  }
+});
 
+
+
+var ExperimentalSettingsComponent = React.createClass(<any> {
+  render: function() {
+    var props = this.props;
+    return (
+      r.div({},
         Setting2(props, { type: 'checkbox', label: "Experimental",
           help: "Enables some currently not-well-tested features " +
           "like Wiki MindMaps and custom HTML pages.",
@@ -503,7 +569,7 @@ function Setting2(panelProps, settingProps) {
     firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
   settingProps.value = firstDefinedOf(editedValue, currentValue);
-  settingProps.wrapperClassName = 'col-sm-7 esAdmin_settings_setting';
+  settingProps.wrapperClassName = 'col-sm-9 esAdmin_settings_setting';
   if (isDefined2(editedValue)) {
     settingProps.wrapperClassName += ' esAdmin_settings_setting-unsaved'
   }
@@ -512,12 +578,12 @@ function Setting2(panelProps, settingProps) {
   }
   if (settingProps.type === 'checkbox') {
     // No separate label, so indent.
-    settingProps.wrapperClassName += ' col-xs-offset-2 esAdmin_settings_setting-checkbox';
+    settingProps.wrapperClassName += ' col-xs-offset-3 esAdmin_settings_setting-checkbox';
     settingProps.checked = settingProps.value;
     delete settingProps.value;
   }
   else {
-    settingProps.labelClassName = 'col-sm-2';
+    settingProps.labelClassName = 'col-sm-3';
   }
   settingProps.onChange = (event) => {
     var newSettings = _.clone(editedSettings);
@@ -533,7 +599,7 @@ function Setting2(panelProps, settingProps) {
 
   var undoChangesButton;
   if (isDefined2(editedValue)) {
-    undoChangesButton = Button({ className: 'col-xs-offset-2 esAdmin_settings_setting_btn',
+    undoChangesButton = Button({ className: 'col-xs-offset-3 esAdmin_settings_setting_btn',
       onClick: () => {
         event.target[field] = currentValue;
         settingProps.onChange(event);
@@ -544,7 +610,7 @@ function Setting2(panelProps, settingProps) {
   var resetToDefaultButton;
   var defaultValue = settingProps.getter(defaultSettings);
   if (!undoChangesButton && valueOf(settingProps.getter) !== defaultValue) {
-    resetToDefaultButton = Button({ className: 'col-xs-offset-2 esAdmin_settings_setting_btn',
+    resetToDefaultButton = Button({ className: 'col-xs-offset-3 esAdmin_settings_setting_btn',
       onClick: () => {
         event.target[field] = defaultValue;
         settingProps.onChange(event);
