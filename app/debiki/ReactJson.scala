@@ -226,6 +226,8 @@ object ReactJson {
       "pageRole" -> JsNumber(page.role.toInt),
       "pagePath" -> JsPagePath(page.thePath),
       "pageHtmlTagCssClasses" -> JsString(page.meta.htmlTagCssClasses),
+      "pageHtmlHeadTitle" -> JsString(page.meta.htmlHeadTitle),
+      "pageHtmlHeadDescription" -> JsString(page.meta.htmlHeadDescription),
       "pinOrder" -> JsNumberOrNull(page.meta.pinOrder),
       "pinWhere" -> JsNumberOrNull(page.meta.pinWhere.map(_.toInt)),
       "pageAnsweredAtMs" -> dateOrNull(page.meta.answeredAt),

@@ -62,6 +62,8 @@ export var TitleEditor = createComponent({
       slug: pagePath.slug,
       showId: pagePath.showId,
       htmlTagCssClasses: store.pageHtmlTagCssClasses || '',
+      htmlHeadTitle: store.pageHtmlHeadTitle,
+      htmlHeadDescription: store.pageHtmlHeadDescription,
     });
   },
 
@@ -114,6 +116,8 @@ export var TitleEditor = createComponent({
       slug: this.state.slug,
       showId: this.state.showId,
       htmlTagCssClasses: this.state.htmlTagCssClasses,
+      htmlHeadTitle: this.state.htmlHeadTitle,
+      htmlHeadDescription: this.state.htmlHeadDescription,
     };
     if (this.refs.layoutInput) {
       settings.layout = this.refs.layoutInput.getValue();
@@ -142,6 +146,22 @@ export var TitleEditor = createComponent({
       var url = location.protocol + '//' + location.host +
           addFolderSlashes(this.state.folder) + dashId + slashSlug;
 
+      var anyMetaTitleAndDescription = pageRole !== PageRole.Forum ? null :
+        r.div({ className: 'esTtlEdtr_metaTags' },
+          Input({ label: "SEO title", type: 'text',
+            labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
+            value: this.state.htmlHeadTitle,
+            onChange: (event) => this.setState({ htmlHeadTitle: event.target.value }),
+            help: "Optional custom title for Search Engine Optimization (SEO). Will be inserted " +
+              "into the <html><head><title> tag."}),
+          Input({ label: "SERP description", type: 'textarea',
+            labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
+            value: this.state.htmlHeadDescription,
+            onChange: (event) => this.setState({ htmlHeadDescription: event.target.value }),
+            help: "Optional description, for Search Engine Result Pages (SERP). Will be inserted " +
+                "into the <html><head><meta name='description' content='...'> attribute." }));
+
+
       var anyUrlAndCssClassEditor = !store.settings.showComplicatedStuff ? null :
         r.div({ className: 'esTtlEdtr_urlSettings' },
           r.p({}, r.b({}, "Ignore this "), "— unless you understand URL addresses and CSS."),
@@ -168,6 +188,7 @@ export var TitleEditor = createComponent({
       complicatedStuff =
         r.div({},
           r.div({ className: 'dw-compl-stuff form-horizontal', key: 'compl-stuff-key' },
+            anyMetaTitleAndDescription,
             isForumOrAbout ? null :
               editor.PageRoleInput({ me: store.me, value: this.state.pageRole,
                 label: "Page type", labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',

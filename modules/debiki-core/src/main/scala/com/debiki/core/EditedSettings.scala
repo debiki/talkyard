@@ -23,8 +23,6 @@ import EditedSettings._
   * Because only edited settings need to be saved to the database.
   */
 case class EditedSettings(
-  title: Option[String],
-  description: Option[String],
   userMustBeAuthenticated: Option[Boolean],
   userMustBeApproved: Option[Boolean],
   allowGuestLogin: Option[Boolean],
@@ -44,7 +42,8 @@ case class EditedSettings(
   companyFullName: Option[String],
   companyShortName: Option[String],
   googleUniversalAnalyticsTrackingId: Option[String],
-  showComplicatedStuff: Option[Boolean]) {
+  showComplicatedStuff: Option[Boolean],
+  htmlTagCssClasses: Option[String]) {
 
   numFirstPostsToAllow foreach { num =>
     require(num >= 0 && num <= MaxNumFirstPosts, "EsE4GUK20")
@@ -69,28 +68,27 @@ object EditedSettings {
   val MaxNumFirstPosts = 10
 
   val empty = EditedSettings(
-    showForumCategories = None,
-    logoUrlOrHtml = None,
     userMustBeAuthenticated = None,
-    showComplicatedStuff = None,
-    headerHtml = None,
-    companyFullName = None,
-    socialLinksHtml = None,
-    description = None,
-    headScriptsHtml = None,
-    allowGuestLogin = None,
-    companyDomain = None,
-    headStylesHtml = None,
-    horizontalComments = None,
-    title = None,
-    googleUniversalAnalyticsTrackingId = None,
-    numFirstPostsToApprove = None,
-    companyShortName = None,
-    footerHtml = None,
-    numFirstPostsToReview = None,
-    endOfBodyHtml = None,
     userMustBeApproved = None,
-    numFirstPostsToAllow = None)
+    allowGuestLogin = None,
+    numFirstPostsToReview = None,
+    numFirstPostsToApprove = None,
+    numFirstPostsToAllow = None,
+    headStylesHtml = None,
+    headScriptsHtml = None,
+    endOfBodyHtml = None,
+    headerHtml = None,
+    footerHtml = None,
+    showForumCategories = None,
+    horizontalComments = None,
+    socialLinksHtml = None,
+    logoUrlOrHtml = None,
+    companyDomain = None,
+    companyFullName = None,
+    companyShortName = None,
+    googleUniversalAnalyticsTrackingId = None,
+    showComplicatedStuff = None,
+    htmlTagCssClasses = None)
 
 }
 
@@ -102,8 +100,6 @@ object EditedSettings {
   * settingsToSave.title.get.get.
   */
 case class SettingsToSave(
-  title: Option[Option[String]],
-  description: Option[Option[String]],
   userMustBeAuthenticated: Option[Option[Boolean]],
   userMustBeApproved: Option[Option[Boolean]],
   allowGuestLogin: Option[Option[Boolean]],
@@ -123,6 +119,7 @@ case class SettingsToSave(
   companyFullName: Option[Option[String]],
   companyShortName: Option[Option[String]],
   googleUniversalAnalyticsTrackingId: Option[Option[String]],
-  showComplicatedStuff: Option[Option[Boolean]])
+  showComplicatedStuff: Option[Option[Boolean]],
+  htmlTagCssClasses: Option[Option[String]])
 
 

@@ -149,6 +149,8 @@ object PageMeta {
   * @param closedAt When the topic was closed, e.g. if a question was off-topic or idea rejected.
   * @param lockedAt When locked so no new replies can be added.
   * @param frozenAt When frozen, so cannot be changed in any way at all (not even edits).
+  * @param htmlHeadTitle Text for the html <title>...</title> tag.
+  * @param htmlHeadDescription Text for the html <description content"..."> tag.
   * @param numChildPages
   */
 case class PageMeta(
@@ -187,7 +189,9 @@ case class PageMeta(
   frozenAt: Option[ju.Date] = None,
   // unwantedAt: Option[ju.Date] = None, -- when enough core members voted Unwanted
   // deletedAt: Option[ju.Date] = None,
-  htmlTagCssClasses: String = "",
+  htmlTagCssClasses: String = "",  // try to move to EditedSettings, so will be inherited
+  htmlHeadTitle: String = "",
+  htmlHeadDescription: String = "",
   numChildPages: Int = 0) { // <-- DoLater: remove, replace with category table
 
   require(lastReplyAt.isDefined == lastReplyById.isDefined, "DwE5JGY1")

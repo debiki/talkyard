@@ -272,23 +272,6 @@ var SettingsPanelComponent = React.createClass(<any> {
           }
         }),
 
-        Setting2(props, { type: 'text', label: "Title",
-          help: "The site title, will be used in the <html> title tag and elsewhere.",
-          getter: (s: Settings) => s.title,
-          update: (newSettings: Settings, target) => {
-            newSettings.title = target.value;
-          }
-        }),
-
-        Setting2(props, { type: 'text', label: "Description",
-          help: "A one sentence description of the website. " +
-              "Will be used in the <html> meta description tag.",
-          getter: (s: Settings) => s.description,
-          update: (newSettings: Settings, target) => {
-            newSettings.description = target.value;
-          }
-        }),
-
         Setting2(props, { type: 'number', label: "Num first posts to review",
           help: "How many of a new member's first posts the staff will be notified about " +
             "so they can review them. The posts will become visible directly, before " +

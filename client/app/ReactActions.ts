@@ -206,6 +206,8 @@ export function editTitleAndSettings(newTitle: string, settings: any, success: (
       newAncestorsRootFirst: response.newAncestorsRootFirst,
       newPageRole: settings.pageRole,
       htmlTagCssClasses: settings.htmlTagCssClasses,
+      htmlHeadTitle: settings.htmlHeadTitle,
+      htmlHeadDescription: settings.htmlHeadDescription,
     });
   }, error);
 }

@@ -73,8 +73,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
   def userDisplayName = debikiRequest.user.map(_.displayName) getOrElse ""
 
   def debikiMeta = {
-    val siteTitle = siteSettings.title // COULD use page title instead, unless homepage
-    xml.Unparsed(views.html.debikiMeta(title = siteTitle).body)
+    xml.Unparsed(views.html.debikiMeta(anyCurrentPageMeta).body)
   }
 
   def anyCurrentPageId: Option[PageId] = None

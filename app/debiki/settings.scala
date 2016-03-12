@@ -29,8 +29,6 @@ import debiki.DebikiHttp.throwBadRequest
 trait AllSettings {
   self =>
 
-  def title: String
-  def description: String
   def userMustBeAuthenticated: Boolean
   def userMustBeApproved: Boolean
   def allowGuestLogin: Boolean
@@ -51,12 +49,11 @@ trait AllSettings {
   def companyShortName: String
   def googleUniversalAnalyticsTrackingId: String
   def showComplicatedStuff: Boolean
+  def htmlTagCssClasses: String
 
   def toJson = Settings2.settingsToJson(toEditedSettings)
 
   def toEditedSettings = EditedSettings(
-    title = Some(self.title),
-    description = Some(self.description),
     userMustBeAuthenticated = Some(self.userMustBeAuthenticated),
     userMustBeApproved = Some(self.userMustBeApproved),
     allowGuestLogin = Some(self.allowGuestLogin),
@@ -76,7 +73,8 @@ trait AllSettings {
     companyFullName = Some(self.companyFullName),
     companyShortName = Some(self.companyShortName),
     googleUniversalAnalyticsTrackingId = Some(self.googleUniversalAnalyticsTrackingId),
-    showComplicatedStuff = Some(self.showComplicatedStuff))
+    showComplicatedStuff = Some(self.showComplicatedStuff),
+    htmlTagCssClasses = Some(self.htmlTagCssClasses))
 }
 
 
@@ -89,8 +87,6 @@ object AllSettings {
   val PostRecentlyCreatedLimitMs = 5 * 3600 * 1000
 
   val Default = new AllSettings {
-    val title = ""
-    val description = ""
     val userMustBeAuthenticated = false
     val userMustBeApproved = false
     val allowGuestLogin = false
@@ -111,6 +107,7 @@ object AllSettings {
     val companyShortName = "Unnamed Company"
     val googleUniversalAnalyticsTrackingId = ""
     val showComplicatedStuff = false
+    val htmlTagCssClasses = ""
   }
 }
 
@@ -129,8 +126,6 @@ case class EffectiveSettings(
     None
   }
 
-  def title: String = firstInChain(_.title) getOrElse default.title
-  def description: String = firstInChain(_.description) getOrElse default.description
   def userMustBeAuthenticated: Boolean = firstInChain(_.userMustBeAuthenticated) getOrElse default.userMustBeAuthenticated
   def userMustBeApproved: Boolean = firstInChain(_.userMustBeApproved) getOrElse default.userMustBeApproved
   def allowGuestLogin: Boolean = firstInChain(_.allowGuestLogin) getOrElse default.allowGuestLogin
@@ -151,6 +146,7 @@ case class EffectiveSettings(
   def companyShortName: String = firstInChain(_.companyShortName) getOrElse default.companyShortName
   def googleUniversalAnalyticsTrackingId: String = firstInChain(_.googleUniversalAnalyticsTrackingId) getOrElse default.googleUniversalAnalyticsTrackingId
   def showComplicatedStuff: Boolean = firstInChain(_.showComplicatedStuff) getOrElse default.showComplicatedStuff
+  def htmlTagCssClasses: String = firstInChain(_.htmlTagCssClasses) getOrElse default.htmlTagCssClasses
 
   def isGuestLoginAllowed =
     allowGuestLogin && !userMustBeAuthenticated && !userMustBeApproved
@@ -163,8 +159,6 @@ object Settings2 {
   def settingsToJson(editedSettings2: EditedSettings) = {
     val s = editedSettings2
     Json.obj(
-      "title" -> JsStringOrNull(s.title),
-      "description" -> JsStringOrNull(s.description),
       "userMustBeAuthenticated" -> JsBooleanOrNull(s.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBooleanOrNull(s.userMustBeApproved),
       "allowGuestLogin" -> JsBooleanOrNull(s.allowGuestLogin),
@@ -184,15 +178,14 @@ object Settings2 {
       "companyFullName" -> JsStringOrNull(s.companyFullName),
       "companyShortName" -> JsStringOrNull(s.companyShortName),
       "googleUniversalAnalyticsTrackingId" -> JsStringOrNull(s.googleUniversalAnalyticsTrackingId),
-      "showComplicatedStuff" -> JsBooleanOrNull(s.showComplicatedStuff))
+      "showComplicatedStuff" -> JsBooleanOrNull(s.showComplicatedStuff),
+      "htmlTagCssClasses" -> JsStringOrNull(s.htmlTagCssClasses))
   }
 
 
   def d = AllSettings.Default
 
   def settingsToSaveFromJson(json: JsValue) = new SettingsToSave(
-    title = anyString(json, "title", d.title),
-    description = anyString(json, "description", d.description),
     userMustBeAuthenticated = anyBool(json, "userMustBeAuthenticated", d.userMustBeAuthenticated),
     userMustBeApproved = anyBool(json, "userMustBeApproved", d.userMustBeApproved),
     allowGuestLogin = anyBool(json, "allowGuestLogin", d.allowGuestLogin),
@@ -213,7 +206,8 @@ object Settings2 {
     companyShortName = anyString(json, "companyShortName", d.companyShortName),
     googleUniversalAnalyticsTrackingId =
       anyString(json, "googleUniversalAnalyticsTrackingId", d.googleUniversalAnalyticsTrackingId),
-    showComplicatedStuff = anyBool(json, "showComplicatedStuff", d.showComplicatedStuff))
+    showComplicatedStuff = anyBool(json, "showComplicatedStuff", d.showComplicatedStuff),
+    htmlTagCssClasses = anyString(json, "htmlTagCssClasses", d.htmlTagCssClasses))
 
 
   private def anyString(json: JsValue, field: String, default: String): Option[Option[String]] =

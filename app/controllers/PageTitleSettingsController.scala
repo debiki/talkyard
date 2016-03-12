@@ -32,7 +32,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 
 /** Edits the page title and changes settings like forum category, URL path,
-  * which layout to use.
+  * which layout to use, <html><head><title> and description.
   */
 object PageTitleSettingsController extends mvc.Controller {
 
@@ -48,9 +48,11 @@ object PageTitleSettingsController extends mvc.Controller {
     val anyFolder = (request.body \ "folder").asOpt[String] map { folder =>
       if (folder.trim.isEmpty) "/" else folder.trim
     }
-    val anySlug = (request.body \ "slug").asOpt[String].map(_.trim)
+    val anySlug = (request.body \ "slug").asOptStringTrimmed
     val anyShowId = (request.body \ "showId").asOpt[Boolean]
-    val anyHtmlTagCssClasses = (request.body \ "htmlTagCssClasses").asOpt[String]
+    val anyHtmlTagCssClasses = (request.body \ "htmlTagCssClasses").asOptStringTrimmed
+    val anyHtmlHeadTitle = (request.body \ "htmlHeadTitle").asOptStringTrimmed
+    val anyHtmlHeadDescription = (request.body \ "htmlHeadDescription").asOptStringTrimmed
 
     val anyNewRole: Option[PageRole] = anyNewRoleInt map { newRoleInt =>
       PageRole.fromInt(newRoleInt) getOrElse throwBadArgument("DwE4GU8", "pageRole")
@@ -84,7 +86,7 @@ object PageTitleSettingsController extends mvc.Controller {
       throwBadReq("DwE6KEF21", "Bad slug, must be like: 'some-page-slug'")
 
     if (newTitle.length > MaxTitleLength)
-      throwBadReq("DwE5kEF2", s"Title too long, max length is $MaxTitleLength")
+      throwBadReq("DwE8KYU2", s"Title too long, max length is $MaxTitleLength")
 
     if (anyHtmlTagCssClasses.exists(!HtmlUtils.OkCssClassRegex.matches(_)))
       throwBadReq("DwE5kEF2", s"Bad CSS class, doesn't match: ${HtmlUtils.OkCssClassRegexText}")
@@ -155,6 +157,8 @@ object PageTitleSettingsController extends mvc.Controller {
         closedAt = newClosedAt,
         categoryId = anyNewCategoryId.orElse(oldMeta.categoryId),
         htmlTagCssClasses = anyHtmlTagCssClasses.getOrElse(oldMeta.htmlTagCssClasses),
+        htmlHeadTitle = anyHtmlHeadTitle.getOrElse(oldMeta.htmlHeadTitle),
+        htmlHeadDescription = anyHtmlHeadDescription.getOrElse(oldMeta.htmlHeadDescription),
         version = oldMeta.version + 1)
       // --- /END could break out a function: PageMeta.changeRole(..) ----------------------
 

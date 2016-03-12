@@ -29,7 +29,7 @@ object HtmlUtils {
 
   val XsrfTokenInputName = "dw-fi-xsrf"
 
-  val OkCssClassRegexText = "[ a-zA-Z0-9_-]+"
+  val OkCssClassRegexText = "[ a-zA-Z0-9_-]*"
   val OkCssClassRegex = OkCssClassRegexText.r
 
 }

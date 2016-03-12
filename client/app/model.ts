@@ -310,6 +310,8 @@ interface Store {
   pageRole: PageRole;
   pagePath: PagePath;
   pageHtmlTagCssClasses?: string;
+  pageHtmlHeadTitle?: string;
+  pageHtmlHeadDescription?: string;
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   pageAnsweredAtMs?: number;
@@ -521,9 +523,6 @@ interface StorePatch {
 
 
 interface Settings {
-  title: string;
-  description: string;
-
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
   allowGuestLogin: boolean;

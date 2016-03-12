@@ -26,7 +26,7 @@ import java.{util => ju}
 import debiki.dao.SiteDao
 import play.api._
 import play.api.libs.Files.TemporaryFile
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsLookupResult, JsValue}
 import play.{api => p}
 import play.api.mvc._
 import play.api.Play.current
@@ -49,6 +49,16 @@ package object http {
 
     def toLongOrThrow(errorCode: String, errorMessage: String) =
       Try(value.toLong).toOption getOrElse throwBadRequest(errorCode, errorMessage)
+  }
+
+
+  implicit class RichJsLookupResult(val underlying: JsLookupResult) {
+    def asOptStringTrimmed = underlying.asOpt[String].map(_.trim)
+
+    def asOptStringNoneIfBlank = underlying.asOpt[String].map(_.trim) match {
+      case Some("") => None
+      case x => x
+    }
   }
 
 

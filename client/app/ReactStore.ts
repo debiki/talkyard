@@ -138,6 +138,9 @@ ReactDispatcher.register(function(payload) {
         $html.addClass(action.htmlTagCssClasses);
         store.pageHtmlTagCssClasses = action.htmlTagCssClasses;
       }
+      store.pageHtmlHeadTitle = firstDefinedOf(action.htmlHeadTitle, store.pageHtmlHeadTitle);
+      store.pageHtmlHeadDescription =
+        firstDefinedOf(action.htmlHeadDescription, store.pageHtmlHeadDescription);
       store.ancestorsRootFirst = action.newAncestorsRootFirst;
       var parent: Ancestor = <Ancestor> _.last(action.newAncestorsRootFirst);
       store.categoryId = parent ? parent.categoryId : null;

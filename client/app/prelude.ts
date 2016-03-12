@@ -134,7 +134,7 @@ export function isNullOrUndefined(x): boolean {
 
 
 export function firstDefinedOf(x, y, z?) {
-  return _.isUndefined(x) ? firstDefinedOf(y, z) : x;
+  return !_.isUndefined(x) ? x : (!_.isUndefined(y) ? y : z);
 }
 
 //------------------------------------------------------------------------------
