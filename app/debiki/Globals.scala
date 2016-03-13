@@ -104,7 +104,7 @@ class Globals {
 
   /** Lets people do weird things, namely fake their ip address (&fakeIp=... url param)
     * in order to create many e2e test sites — also in prod mode, for smoke tests.
-    * The e2e test sites will have ids like 'test__...' so that they can be deleted safely.
+    * The e2e test sites will have ids like {{{test__...}}} so that they can be deleted safely.
     */
   def e2eTestPassword: Option[String] = state.e2eTestPassword
 
@@ -233,7 +233,15 @@ class Globals {
         p.Logger.info("Connecting to services... [EsM200CTS]")
         try {
           val dataSource = Debiki.createPostgresHikariDataSource()
-          _state = Good(new State(dataSource))
+          val newState = new State(dataSource)
+          // Apply evolutions before we make the state available in _state, so nothing can
+          // access the database (via _state) before all evolutions have completed.
+          newState.systemDao.applyEvolutions()
+          if (Play.isTest &&
+              Play.configuration.getBoolean("isTestShallEmptyDatabase").contains(true)) {
+            newState.systemDao.emptyDatabase()
+          }
+          _state = Good(newState)
         }
         catch {
           case ex: com.zaxxer.hikari.pool.HikariPool.PoolInitializationException =>
@@ -245,6 +253,8 @@ class Globals {
       }
 
       // The render engines might be needed by some Java (Scala) evolutions.
+      // Let's create them in this parallel thread rather than blocking the whole server.
+      // (Takes 2? 5? seconds.)
       debiki.ReactRenderer.startCreatingRenderEngines()
     }
 
@@ -258,10 +268,6 @@ class Globals {
         // — that's better than a blank page? In case this takes long.
         p.Logger.info("Still connecting to other services, starting anyway. [EsM200CRZY]")
     }
-
-    // Don't do evolutions asynchronically — perhaps the server would then try to write to the
-    // database too early. Also the test suite would break, if this-done-async took rather long.
-    state.systemDao.applyEvolutions()
   }
 
 
@@ -323,10 +329,6 @@ class Globals {
     antiSpam.start()
 
     def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory) // [rename] to newSystemDao()?
-
-    if (Play.isTest && Play.configuration.getBoolean("isTestShallEmptyDatabase").contains(true)) {
-      systemDao.emptyDatabase()
-    }
 
     private def fastStartSkipSearch =
       Play.configuration.getBoolean("crazyFastStartSkipSearch") getOrElse false

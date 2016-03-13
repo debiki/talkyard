@@ -319,7 +319,7 @@ class UploadsDaoAppSpec extends DaoAppSuite {
 
       info("create site 2")
       val site2 = dao.createSite("Site Two", hostname = "site-two",
-        embeddingSiteUrl = None, pricePlan = None,
+        embeddingSiteUrl = None, organizationName = "Test Org Name",
         creatorEmailAddress = "t@x.c", creatorId = user.id, browserIdData: BrowserIdData,
         isTestSiteOkayToDelete = false, skipMaxSitesCheck = true)
 

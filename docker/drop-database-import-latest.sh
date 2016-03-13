@@ -41,6 +41,13 @@ zcat $1/$latest_dump | $psql
 
 echo '... Done importing.'
 
+echo 'Creating (or recreating) debiki_test...'
+$psql -c 'drop database if exists debiki_test;'
+$psql -c 'drop user if exists debiki_test;'
+$psql -c 'create user debiki_test;'
+$psql -c 'create database debiki_test owner debiki_test;'
+echo '... Done recreating debiki_test.'
+
 # If we happened to import a prod database, rename it to debiki_dev; the config
 # files expect that name.
 any_prod_row=`$psql -c '\l' | grep debiki_prod`
