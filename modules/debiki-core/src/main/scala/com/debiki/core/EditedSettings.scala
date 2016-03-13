@@ -18,6 +18,36 @@
 package com.debiki.core
 
 import EditedSettings._
+import Prelude.unimplemented
+
+
+sealed abstract class ContribAgreement(protected val IntVal: Int) { def toInt = IntVal }
+object ContribAgreement {
+  case object UseOnThisSiteOnly extends ContribAgreement(1)
+  case object MitAndCcBy3And4 extends ContribAgreement(2)
+
+  def fromInt(value: Int): Option[ContribAgreement] = Some(value match {
+    case UseOnThisSiteOnly.IntVal => UseOnThisSiteOnly
+    case MitAndCcBy3And4.IntVal => MitAndCcBy3And4
+    case _ => return None
+  })
+}
+
+
+sealed abstract class ContentLicense(protected val IntVal: Int) { def toInt = IntVal }
+object ContentLicense {
+  case object AllRightsReserved extends ContentLicense(1)
+  case object CcBySa4 extends ContentLicense(2)
+  case object CcByNcSa4 extends ContentLicense(3)
+
+  def fromInt(value: Int): Option[ContentLicense] = Some(value match {
+    case AllRightsReserved.IntVal => AllRightsReserved
+    case CcBySa4.IntVal => CcBySa4
+    case CcByNcSa4.IntVal => CcByNcSa4
+    case _ => return None
+  })
+}
+
 
 /** Contains only settings that have been edited — they are Some(value), others are None.
   * Because only edited settings need to be saved to the database.
@@ -38,9 +68,11 @@ case class EditedSettings(
   horizontalComments: Option[Boolean],
   socialLinksHtml: Option[String],
   logoUrlOrHtml: Option[String],
-  companyDomain: Option[String],
-  companyFullName: Option[String],
-  companyShortName: Option[String],
+  orgDomain: Option[String],
+  orgFullName: Option[String],
+  orgShortName: Option[String],
+  contribAgreement: Option[ContribAgreement],
+  contentLicense: Option[ContentLicense],
   googleUniversalAnalyticsTrackingId: Option[String],
   showComplicatedStuff: Option[Boolean],
   htmlTagCssClasses: Option[String]) {
@@ -83,9 +115,11 @@ object EditedSettings {
     horizontalComments = None,
     socialLinksHtml = None,
     logoUrlOrHtml = None,
-    companyDomain = None,
-    companyFullName = None,
-    companyShortName = None,
+    orgDomain = None,
+    orgFullName = None,
+    orgShortName = None,
+    contribAgreement = None,
+    contentLicense = None,
     googleUniversalAnalyticsTrackingId = None,
     showComplicatedStuff = None,
     htmlTagCssClasses = None)
@@ -115,11 +149,24 @@ case class SettingsToSave(
   horizontalComments: Option[Option[Boolean]] = None,
   socialLinksHtml: Option[Option[String]] = None,
   logoUrlOrHtml: Option[Option[String]] = None,
-  companyDomain: Option[Option[String]] = None,
-  companyFullName: Option[Option[String]] = None,
-  companyShortName: Option[Option[String]] = None,
+  orgDomain: Option[Option[String]] = None,
+  orgFullName: Option[Option[String]] = None,
+  orgShortName: Option[Option[String]] = None,
+  contribAgreement: Option[Option[ContribAgreement]] = None,
+  contentLicense: Option[Option[ContentLicense]] = None,
   googleUniversalAnalyticsTrackingId: Option[Option[String]] = None,
   showComplicatedStuff: Option[Option[Boolean]] = None,
-  htmlTagCssClasses: Option[Option[String]] = None)
+  htmlTagCssClasses: Option[Option[String]] = None) {
+
+  if (contribAgreement.contains(Some(ContribAgreement.UseOnThisSiteOnly)) &&
+      contentLicense.isDefined) {
+    require(contentLicense.get.contains(ContentLicense.AllRightsReserved), "EsE5YKF2")
+  }
+
+  // For now, disable license-to-us-for-use-on-this-site-only, see [6UK2F4X] in admin-app.ts(?).
+  if (contribAgreement.contains(Some(ContribAgreement.UseOnThisSiteOnly))) {
+    unimplemented("UseOnThisSiteOnly not yet supported because of tricky legal stuff [EsE4YKW21]")
+  }
+}
 
 

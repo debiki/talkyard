@@ -319,7 +319,8 @@ var AcceptTerms = createClassAndFactory({
   },
 
   focus: function() {
-    this.refs.checkbox.focus();
+    // Apparently Input has no focus() method, so:
+    $(ReactDOM.findDOMNode(this)).find('input').focus();
   },
 
   render: function() {

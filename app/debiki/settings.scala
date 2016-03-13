@@ -44,9 +44,11 @@ trait AllSettings {
   def horizontalComments: Boolean
   def socialLinksHtml: String
   def logoUrlOrHtml: String
-  def companyDomain: String
-  def companyFullName: String
-  def companyShortName: String
+  def orgDomain: String
+  def orgFullName: String
+  def orgShortName: String
+  def contribAgreement: ContribAgreement
+  def contentLicense: ContentLicense
   def googleUniversalAnalyticsTrackingId: String
   def showComplicatedStuff: Boolean
   def htmlTagCssClasses: String
@@ -69,9 +71,11 @@ trait AllSettings {
     horizontalComments = Some(self.horizontalComments),
     socialLinksHtml = Some(self.socialLinksHtml),
     logoUrlOrHtml = Some(self.logoUrlOrHtml),
-    companyDomain = Some(self.companyDomain),
-    companyFullName = Some(self.companyFullName),
-    companyShortName = Some(self.companyShortName),
+    orgDomain = Some(self.orgDomain),
+    orgFullName = Some(self.orgFullName),
+    orgShortName = Some(self.orgShortName),
+    contribAgreement = Some(self.contribAgreement),
+    contentLicense = Some(self.contentLicense),
     googleUniversalAnalyticsTrackingId = Some(self.googleUniversalAnalyticsTrackingId),
     showComplicatedStuff = Some(self.showComplicatedStuff),
     htmlTagCssClasses = Some(self.htmlTagCssClasses))
@@ -102,9 +106,11 @@ object AllSettings {
     val horizontalComments = false
     val socialLinksHtml = ""
     val logoUrlOrHtml = ""
-    val companyDomain = ""
-    val companyFullName = ""
-    val companyShortName = ""
+    val orgDomain = ""
+    val orgFullName = ""
+    val orgShortName = ""
+    var contribAgreement = ContribAgreement.MitAndCcBy3And4
+    var contentLicense = ContentLicense.CcBySa4
     val googleUniversalAnalyticsTrackingId = ""
     val showComplicatedStuff = false
     val htmlTagCssClasses = ""
@@ -141,15 +147,23 @@ case class EffectiveSettings(
   def horizontalComments: Boolean = firstInChain(_.horizontalComments) getOrElse default.horizontalComments
   def socialLinksHtml: String = firstInChain(_.socialLinksHtml) getOrElse default.socialLinksHtml
   def logoUrlOrHtml: String = firstInChain(_.logoUrlOrHtml) getOrElse default.logoUrlOrHtml
-  def companyDomain: String = firstInChain(_.companyDomain) getOrElse default.companyDomain
-  def companyFullName: String = firstInChain(_.companyFullName) getOrElse default.companyFullName
-  def companyShortName: String = firstInChain(_.companyShortName) getOrElse default.companyShortName
+  def orgDomain: String = firstInChain(_.orgDomain) getOrElse default.orgDomain
+  def orgFullName: String = firstInChain(_.orgFullName) getOrElse default.orgFullName
+  def orgShortName: String = firstInChain(_.orgShortName) getOrElse default.orgShortName
+  def contribAgreement: ContribAgreement = firstInChain(_.contribAgreement) getOrElse default.contribAgreement
+  def contentLicense: ContentLicense = firstInChain(_.contentLicense) getOrElse default.contentLicense
   def googleUniversalAnalyticsTrackingId: String = firstInChain(_.googleUniversalAnalyticsTrackingId) getOrElse default.googleUniversalAnalyticsTrackingId
   def showComplicatedStuff: Boolean = firstInChain(_.showComplicatedStuff) getOrElse default.showComplicatedStuff
   def htmlTagCssClasses: String = firstInChain(_.htmlTagCssClasses) getOrElse default.htmlTagCssClasses
 
   def isGuestLoginAllowed =
     allowGuestLogin && !userMustBeAuthenticated && !userMustBeApproved
+
+  /** Finds any invalid setting value, or invalid settings configurations. */
+  def findAnyError: Option[String] = {
+    // Hmm ...
+    None
+  }
 
 }
 
@@ -174,9 +188,11 @@ object Settings2 {
       "horizontalComments" -> JsBooleanOrNull(s.horizontalComments),
       "socialLinksHtml" -> JsStringOrNull(s.socialLinksHtml),
       "logoUrlOrHtml" -> JsStringOrNull(s.logoUrlOrHtml),
-      "companyDomain" -> JsStringOrNull(s.companyDomain),
-      "companyFullName" -> JsStringOrNull(s.companyFullName),
-      "companyShortName" -> JsStringOrNull(s.companyShortName),
+      "companyDomain" -> JsStringOrNull(s.orgDomain),
+      "companyFullName" -> JsStringOrNull(s.orgFullName),
+      "companyShortName" -> JsStringOrNull(s.orgShortName),
+      "contribAgreement" -> JsNumberOrNull(s.contribAgreement.map(_.toInt)),
+      "contentLicense" -> JsNumberOrNull(s.contentLicense.map(_.toInt)),
       "googleUniversalAnalyticsTrackingId" -> JsStringOrNull(s.googleUniversalAnalyticsTrackingId),
       "showComplicatedStuff" -> JsBooleanOrNull(s.showComplicatedStuff),
       "htmlTagCssClasses" -> JsStringOrNull(s.htmlTagCssClasses))
@@ -201,9 +217,14 @@ object Settings2 {
     horizontalComments = anyBool(json, "horizontalComments", d.horizontalComments),
     socialLinksHtml = anyString(json, "socialLinksHtml", d.socialLinksHtml),
     logoUrlOrHtml = anyString(json, "logoUrlOrHtml", d.logoUrlOrHtml),
-    companyDomain = anyString(json, "companyDomain", d.companyDomain),
-    companyFullName = anyString(json, "companyFullName", d.companyFullName),
-    companyShortName = anyString(json, "companyShortName", d.companyShortName),
+    orgDomain = anyString(json, "companyDomain", d.orgDomain),
+    orgFullName = anyString(json, "companyFullName", d.orgFullName),
+    orgShortName = anyString(json, "companyShortName", d.orgShortName),
+    contribAgreement = anyInt(json, "contribAgreement", d.contribAgreement.toInt).map(_.map(
+      ContribAgreement.fromInt(_) getOrElse throwBadRequest(
+        "EsE5YK28", "Invalid contributors agreement"))),
+    contentLicense = anyInt(json, "contentLicense", d.contentLicense.toInt).map(_.map(
+      ContentLicense.fromInt(_) getOrElse throwBadRequest("EsE5YK28", "Invalid content license"))),
     googleUniversalAnalyticsTrackingId =
       anyString(json, "googleUniversalAnalyticsTrackingId", d.googleUniversalAnalyticsTrackingId),
     showComplicatedStuff = anyBool(json, "showComplicatedStuff", d.showComplicatedStuff),

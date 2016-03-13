@@ -522,6 +522,17 @@ interface StorePatch {
 }
 
 
+enum ContribAgreement {
+  ThisSiteOnly = 1,
+  MitAndCcBy3And4 = 2,
+}
+
+enum ContentLicense {
+  AllRightsReserved = 1,
+  CcBySa4 = 2,
+  CcByNcSa4 = 3,
+}
+
 interface Settings {
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
@@ -547,6 +558,8 @@ interface Settings {
   companyDomain: string;
   companyFullName: string;
   companyShortName: string;
+  contribAgreement: ContribAgreement;
+  contentLicense: ContentLicense;
 
   googleUniversalAnalyticsTrackingId: string;
 

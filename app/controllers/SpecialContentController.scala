@@ -32,13 +32,14 @@ import Utils.{OkSafeJson}
 /** Edits special content pages, e.g. a page with a content-license text that
   * is automatically included on the terms-of-use page.
   */
+@deprecated("now?", "come up with something better instead?")
 object SpecialContentController extends mvc.Controller {
 
 
   /** If the special content has not yet been edited, returns a default text (depending
     * on the page id). For example, if the forum owner hasn't edited the content license
     * special-content text, then a default content license is returned if you request
-    * the contentId = "_tou_content_license" special content.
+    * the contentId = "_tou_content_license" special content (but now year 2016 I just removed it).
     */
   def loadContent(rootPageId: PageId, contentId: PageId) = GetAction { request: GetRequest =>
     if (!request.theUser.isAdmin)

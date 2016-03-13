@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
 import debiki.dao.CachingDao.CacheKey
+import io.efdi.server.http.throwForbidden2
 
 
 /** Loads and saves settings for the whole website, a section of the website (e.g.
@@ -42,8 +43,15 @@ trait SettingsDao {
   }
 
 
-  def saveSiteSettings(settings: SettingsToSave) {
-    readWriteTransaction(_.upsertSiteSettings(settings))
+  def saveSiteSettings(settingsToSave: SettingsToSave) {
+    readWriteTransaction { transaction =>
+      transaction.upsertSiteSettings(settingsToSave)
+      val newSettings = loadWholeSiteSettings(transaction)
+      newSettings.findAnyError foreach { error =>
+        // This'll rollback the transaction.
+        throwForbidden2("EsE40GY28", s"Bad settings: $error")
+      }
+    }
   }
 }
 

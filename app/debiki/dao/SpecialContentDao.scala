@@ -37,24 +37,6 @@ trait SpecialContentDao {
   self: SiteDao =>
 
 
-  object specialContentPages {
-
-    def termsOfUseContentLicense: String = {
-      val content = loadSpecialContentPage(
-        TermsOfUseContentLicenseId, replaceNamesApplyMarkup = true) getOrElse
-          TermsOfUseContentLicense
-      content.text
-    }
-
-    def termsOfUseJurisdiction: String = {
-      val content = loadSpecialContentPage(
-        TermsOfUseJurisdictionId, replaceNamesApplyMarkup = true) getOrElse
-          TermsOfUseJurisdiction
-      content.text
-    }
-  }
-
-
   def loadSpecialContentPage(pageId: PageId, replaceNamesApplyMarkup: Boolean): Option[Content] = {
     readOnlyTransaction { transaction =>
       transaction.loadPost(pageId, PageParts.BodyNr) map { bodyPost =>
@@ -171,7 +153,7 @@ trait SpecialContentDao {
 
 
   private def doReplaceNamesApplyMarkup(source: String, transaction: SiteTransaction): String = {
-    val shortName = self.loadWholeSiteSettings(transaction).companyShortName
+    val shortName = self.loadWholeSiteSettings(transaction).orgShortName
     var text = source.replaceAllLiterally("%{company_short_name}", shortName)
     val nodeSeq = ReactRenderer.renderAndSanitizeCommonMark(
       text, allowClassIdDataAttrs = false, followLinks = false)
@@ -220,8 +202,7 @@ trait CachingSpecialContentDao extends SpecialContentDao {
 
 
   private def affectsWholeSite(pageId: PageId) =
-    pageId != SpecialContentPages.TermsOfUseContentLicenseId &&
-      pageId != SpecialContentPages.TermsOfUseJurisdictionId
+    true // currently always
 
 }
 

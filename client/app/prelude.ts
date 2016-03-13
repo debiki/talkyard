@@ -30,7 +30,7 @@ export var Link = reactCreateFactory(ReactRouter.Link);
 
 declare var reactRouterActiveComponent: any;
 
-export var NavLink = isClientSide() ?
+export var NavLink: any = isClientSide() ?
   reactCreateFactory(reactRouterActiveComponent('li')) : () => die('EsE6UKYW2');
 
 

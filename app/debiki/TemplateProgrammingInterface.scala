@@ -128,8 +128,8 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
     // was: debikiRequest.siteSettings.companyDomain
     // — but why did I make it configurable? No idea. Remove that setting? [3PU85J7]
   }
-  def companyFullName = debikiRequest.siteSettings.companyFullName
-  def companyShortName = debikiRequest.siteSettings.companyShortName
+  def companyFullName = debikiRequest.siteSettings.orgFullName
+  def companyShortName = debikiRequest.siteSettings.orgShortName
 
 
   def anyGoogleUniversalAnalyticsScript = {
@@ -137,9 +137,6 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
     if (trackingId.nonEmpty) views.html.googleAnalytics(trackingId).body
     else ""
   }
-
-
-  def specialContentPages = debikiRequest.dao.specialContentPages
 
 
   def stylesheetBundle(bundleName: String): xml.NodeSeq = {

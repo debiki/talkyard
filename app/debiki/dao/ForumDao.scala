@@ -176,7 +176,7 @@ object ForumDao {
   val AdminQuickStartGuideTitle = "Read first: Admin Quick Start Guide"
 
   lazy val adminQuickStartGuide = renderCommonMark(i"""
-    |As an admin, you can edit forum settings, define what this forum is about, and invite people.
+    |As an admin, you can edit forum settings, define what this community is about, and invite people.
     |
     |Edit settings
     |------------------
@@ -187,14 +187,11 @@ object ForumDao {
     |
     |#### Copyright
     |
-    |By default, people who copy material from the forum, must give credit to the authors, and indicate if they have modified it. Also, they must in turn allow others to copy and edit their modified material. This is [Creative Commons' CC BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/).
+    |By default, people may copy material from the forum, and they must then give credit to the authors, and indicate if they have modified it. They must also in turn allow others to copy and edit their modified material. This is [Creative Commons' CC BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/). — All this is a bit configurable, in the **Legal** settings section.
     |
     |#### Private or public?
     |
-    |You can make the forum private, by changing these settings:
-    |
-    |- Login required
-    |- Approve users
+    |You can make the forum private, by enabling these: _Login required_ and _Approve users_, in the **Login** settings section.
     |
     |#### Customize colors and logo
     |

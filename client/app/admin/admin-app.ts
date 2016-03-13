@@ -381,8 +381,17 @@ var AnalyticsSettingsComponent = React.createClass(<any> {
 var LegalSettingsComponent = React.createClass(<any> {
   render: function() {
     var props = this.props;
+    var currentSettings: Settings = props.currentSettings;
+    var editedSettings: Settings = props.editedSettings;
+
+    var valueOf = (getter: (s: Settings) => any) =>
+      firstDefinedOf(getter(editedSettings), getter(currentSettings));
+
     var termsOfUseLink = r.a({ href: '/-/terms-of-use', target: '_blank' },
       'Terms of Use');
+
+    var userContentTermsLink = r.a({ href: '/-/terms-of-use#3', target: '_blank' },
+      "section about user contributions on your Terms of Use");
 
     return (
       r.div({},
@@ -417,20 +426,45 @@ var LegalSettingsComponent = React.createClass(<any> {
           }
         }), */
 
-        SpecialContent({ contentId: '_tou_content_license',
-            label: 'Terms of Use: Content License',
-            help: r.span({}, "Please clarify under which license other people may reuse " +
-                "the contents of the website. This text will be inserted into " +
-                "the Content License section of your ", termsOfUseLink, " page. " +
-                "By default, content is licensed under a Creative Commonts license " +
-                "(see below) so you can just leave this as is.") })));
-        /* Hide this. It's a bad idea to allow each site to use its own jurisdiction?
-        SpecialContent({ contentId: '_tou_jurisdiction',
-            label: 'Terms of Use: Jurisdiction',
-            help: r.span({}, "Please clarify which country's laws you want to abide by, " +
-                "and where any legal issues should be resolved. This text is inserted " +
-                "into the Jurisdiction section of your ", termsOfUseLink, " page.") })));
-       */
+        Setting2(props, { type: 'select', label: "Contributors agreement",
+          help: r.span({}, "Which rights should people grant to you on material they create " +
+              "and post to this community? (This setting affects your ", userContentTermsLink,
+            " page.)"),
+          getter: (s: Settings) => s.contribAgreement,
+          update: (newSettings: Settings, target) => {
+            newSettings.contribAgreement = parseInt(target.value);
+            if (newSettings.contribAgreement === ContribAgreement.ThisSiteOnly) {
+              newSettings.contentLicense = ContentLicense.AllRightsReserved;
+            }
+          }}, [
+          /* Disable for now, because problematic if people change to MIT & CC-BY later and also
+             change the Content License from All Rights Reserved to some CC-BY license. [6UK2F4X]
+          r.option({ key: 1, value: ContribAgreement.ThisSiteOnly },
+            "They should let us use it on this website only"),
+           */
+          r.option({ key: 2, value: ContribAgreement.MitAndCcBy3And4 },
+            "Tri license under MIT, CC-BY 3.0 and 4.0"),
+        ]),
+
+        Setting2(props, { type: 'select', label: "Content license",
+          help: r.span({},
+            "Under which ",
+            r.a({ href: 'https://creativecommons.org/licenses/', target: '_blank' },
+                "Creative Commons license"),
+            " is the content in this community available? (This setting affects your ",
+            userContentTermsLink, " page.)"),
+          disabled: valueOf(s => s.contribAgreement) === ContribAgreement.ThisSiteOnly,
+          getter: (s: Settings) => s.contentLicense,
+          update: (newSettings: Settings, target) => {
+            newSettings.contentLicense = parseInt(target.value);
+          }}, [
+          r.option({ key: 1, value: ContentLicense.AllRightsReserved },
+            "None. All Rights Reserved"),
+          r.option({ key: 2, value: ContentLicense.CcBySa4 },
+            "Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)"),
+          r.option({ key: 3, value: ContentLicense.CcByNcSa4 },
+            "Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)"),
+        ])));
   }
 });
 
@@ -555,7 +589,7 @@ var CustomizePanelComponent = React.createClass(<any> {
 
 
 
-function Setting2(panelProps, props) {
+function Setting2(panelProps, props, anyChildren?) {
   var editedSettings = panelProps.editedSettings;
   var currentSettings = panelProps.currentSettings;
   var defaultSettings = panelProps.defaultSettings;
@@ -602,7 +636,7 @@ function Setting2(panelProps, props) {
   var undoChangesButton;
   if (isDefined2(editedValue)) {
     undoChangesButton = Button({ className: 'col-xs-offset-3 esAdmin_settings_setting_btn',
-      onClick: () => {
+      disabled: props.disabled, onClick: () => {
         event.target[field] = currentValue;
         props.onChange(event);
       }}, "Undo changes");
@@ -613,7 +647,7 @@ function Setting2(panelProps, props) {
   var defaultValue = props.getter(defaultSettings);
   if (!undoChangesButton && valueOf(props.getter) !== defaultValue && props.canReset !== false) {
     resetToDefaultButton = Button({ className: 'col-xs-offset-3 esAdmin_settings_setting_btn',
-      onClick: () => {
+      disabled: props.disabled, onClick: () => {
         event.target[field] = defaultValue;
         props.onChange(event);
       }}, "Reset to default");
@@ -621,7 +655,7 @@ function Setting2(panelProps, props) {
 
   return (
     r.div({},
-      Input(props),
+      Input(props, anyChildren),
       resetToDefaultButton,
       undoChangesButton));
 }

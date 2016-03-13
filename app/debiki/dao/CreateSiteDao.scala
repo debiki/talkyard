@@ -64,8 +64,8 @@ trait CreateSiteDao {
 
       transaction.setSiteId(newSite.id)
 
-      transaction.upsertSiteSettings(
-        SettingsToSave(companyFullName = Some(Some(organizationName))))
+      transaction.upsertSiteSettings(SettingsToSave(
+        orgFullName = Some(Some(organizationName))))
 
       val newSiteHost = SiteHost(hostname, SiteHost.RoleCanonical)
       transaction.insertSiteHost(newSiteHost)
