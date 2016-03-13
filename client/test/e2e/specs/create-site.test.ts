@@ -24,7 +24,7 @@ describe('/-/create-site  @createsite', function() {
       localHostname: localHostname,
       origin: utils.makeSiteOrigin(localHostname),
       originRegexEscaped: utils.makeSiteOriginRegexEscaped(localHostname),
-
+      orgName: "E2E Org Name",
       fullName: 'E2E Test ' + testId,
       email: settings.testEmailAddressPrefix + testId + '@example.com',
       username: 'e2e_test__' + testId,
@@ -85,7 +85,7 @@ describe('/-/create-site  @createsite', function() {
     pages.createSite.fillInFieldsAndSubmit(data);
     browser.click('#e2eLogin');
     pages.loginDialog.createFacebookAccount(data);
-    pages.createSomething.createForum("Gmail Forum Title");
+    pages.createSomething.createForum("Facebook Forum Title");
   });
 
   /*

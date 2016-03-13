@@ -190,8 +190,8 @@ export var CreateSomethingHere = createComponent({
 
     return (
       r.div({},
-        r.h1({}, 'Welcome to Your Site'),
-        r.p({}, "Let's create a forum:"),
+        r.h1({}, "Welcome"),
+        r.p({}, "There's nothing here right now. Let's create a forum:"),
         /* Add this back later if there'll be Blog and Wiki options too [8GYK34]
         r.p({}, message),
         r.div({ className: 'do-what-options' },

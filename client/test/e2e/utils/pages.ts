@@ -20,7 +20,13 @@ var pages: any = {
 
 pages.createSite.fillInFieldsAndSubmit = function(data) {
   browser.waitAndSetValue('#e2eEmail', data.email);
+  browser.click('#e2eNext1');
+  browser.waitAndSetValue('#e2eEmail2', data.email);
+  browser.click('#e2eNext2');
   browser.setValue('#dwLocalHostname', data.localHostname);
+  browser.click('#e2eNext3');
+  browser.setValue('#e2eOrgName', data.localHostname);
+  browser.click('#e2eNext4');
   browser.click('#e2eAcceptTerms');
   browser.click('input[type=submit]');
   browser.waitForVisible('#e2eLogin');
@@ -29,9 +35,11 @@ pages.createSite.fillInFieldsAndSubmit = function(data) {
 
 
 pages.createSomething.createForum = function(forumTitle) {
-  browser.waitAndClick('#e2eCreateForum');
-  browser.setValue('input[type="text"]', forumTitle);
-  browser.click('#e2eDoCreateForum');
+  // Button gone, I'll add it back if there'll be Blog & Wiki too.
+  // browser.waitAndClick('#e2eCreateForum');
+  browser.pause(200); // [e2erace] otherwise it won't find the next input, in the create-site @facebook test
+  browser.waitAndSetValue('input[type="text"]', forumTitle);
+  browser.waitAndClick('#e2eDoCreateForum');
   var actualTitle = browser.waitAndGetVisibleText('h1.dw-p-ttl');
   assert.equal(actualTitle, forumTitle);
 };
@@ -63,7 +71,7 @@ pages.loginDialog.loginWithGmail = function(data) {
   // In Google's login popup window:
   browser.swithToOtherTabOrWindow();
   browser.waitAndSetValue('#Email', data.email);
-  browser.click('#next');
+  // browser.click('#next'); -- Oops now it's gone
   browser.waitAndSetValue('#Passwd', data.password);
   browser.click('#signIn');
   browser.waitForEnabled('#submit_approve_access');
@@ -89,7 +97,10 @@ pages.loginDialog.loginWithFacebook = function(data) {
   browser.swithToOtherTabOrWindow();
   browser.waitAndSetValue('#email', data.email);
   browser.waitAndSetValue('#pass', data.password);
-  browser.waitAndClick('input[type=submit]');
+
+  // Facebook recently changed from <input> to <button>. So just find anything with type=submit.
+  browser.waitAndClick('[type=submit]');
+
   // Facebook somehow auto accepts the confirmation dialog, perhaps because
   // I'm using a Facebook API test user. So need not do this:
   //b.waitForVisible('[name=__CONFIRM__]');

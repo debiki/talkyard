@@ -53,7 +53,7 @@ object CreateSiteController extends Controller {
   }
 
 
-  def createSite = AsyncPostJsonAction(RateLimits.CreateSite, maxLength = 200) { request =>
+  def createSite = AsyncPostJsonAction(RateLimits.CreateSite, maxLength = 500) { request =>
     throwIfMayNotCreateSite(request)
 
     val acceptTermsAndPrivacy = (request.body \ "acceptTermsAndPrivacy").as[Boolean]

@@ -173,7 +173,8 @@ var CreateWebsiteComponent = React.createClass(<any> {
           // onFocus, not onClick, so the next field will appear directly when one tabs
           // away from the previous field. (onFocus apparently works with mouse & touch too)
           Button({ onFocus: () => this.setState({ showEmail2: true }), bsStyle: 'primary',
-              style: { display: okayStatuses.email && !state.showEmail2 ? 'block' : 'none' }},
+              style: { display: okayStatuses.email && !state.showEmail2 ? 'block' : 'none' },
+              id: 'e2eNext1' },
             "Next"),
 
           PatternInput({ label: 'Verify email:', id: 'e2eEmail2', className: 'esCreateSite_email',
@@ -187,7 +188,8 @@ var CreateWebsiteComponent = React.createClass(<any> {
             } }),
 
           Button({ onFocus: () => this.setState({ showHostname: true }), bsStyle: 'primary',
-              style: { display: emailTypedOkTwice && !state.showHostname ? 'block' : 'none' }},
+              style: { display: emailTypedOkTwice && !state.showHostname ? 'block' : 'none' },
+              id: 'e2eNext2' },
             "Next"),
 
           LocalHostnameInput({ label: 'Site Address:', placeholder: 'your-forum-name',
@@ -197,7 +199,8 @@ var CreateWebsiteComponent = React.createClass(<any> {
               onChangeValueOk: (isOk) => this.reportOkay('hostname', isOk) }),
 
           Button({ onFocus: () => this.setState({ showOrgName: true }), bsStyle: 'primary',
-              style: { display: okayStatuses.hostname && !state.showOrgName ? 'block' : 'none' }},
+              style: { display: okayStatuses.hostname && !state.showOrgName ? 'block' : 'none' },
+              id: 'e2eNext3' },
             "Next"),
 
           PatternInput({ label: "Organization name:", placeholder: "Your Organization Name",
@@ -205,12 +208,13 @@ var CreateWebsiteComponent = React.createClass(<any> {
               help: "The name of your organization, if any. Otherwise, you " +
                 "can use your own name. Will be used in your Terms of Use " +
                 "and Privacy Policy documents.",
-              ref: 'organizationName',
+              ref: 'organizationName', id: 'e2eOrgName',
               regex: /\S/, message: "Name required",
               onChangeValueOk: (value, isOk) => this.reportOkay('orgName', isOk) }),
 
           Button({ onFocus: () => this.setState({ showSubmit: true }), bsStyle: 'primary',
-              style: { display: okayStatuses.orgName && !state.showSubmit ? 'block' : 'none' }},
+              style: { display: okayStatuses.orgName && !state.showSubmit ? 'block' : 'none' },
+              id: 'e2eNext4' },
             "Next"),
 
           r.div({ style: { display: state.showSubmit ? 'block' : 'none' }},
