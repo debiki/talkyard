@@ -180,6 +180,10 @@ var LoginDialog = createClassAndFactory({
         anyReturnToUrl: state.anyReturnToUrl, setChildDialog: this.setChildDialog,
         childDialog: state.childDialog, close: this.close, isLoggedIn: state.isLoggedIn });
 
+    var modalHeader = state.loginReason === LoginReason.BecomeAdmin
+      ? null // then there's an instruction text, that's enough
+      : ModalHeader({ closeButton: !state.preventClose }, ModalTitle({}, title));
+
     var modalFooter = state.preventClose ? ModalFooter({}) :
         ModalFooter({}, Button({ onClick: this.close }, 'Cancel'));
 
@@ -187,7 +191,7 @@ var LoginDialog = createClassAndFactory({
       Modal({ show: state.isOpen, onHide: this.close, dialogClassName: 'dw-login-modal' + fade,
           keyboard: !state.childDialog && !state.preventClose,
           backdrop: state.preventClose ? 'static' : true },
-        ModalHeader({ closeButton: !state.preventClose }, ModalTitle({}, title)),
+        modalHeader,
         ModalBody({}, content),
         modalFooter));
   }
@@ -242,6 +246,17 @@ export var LoginDialogContent = createClassAndFactory({
       };
     };
 
+    var becomeAdminInstructions = loginReason === LoginReason.BecomeAdmin
+      ? r.div({ className: 'esLoginDlg_becomeAdminInstr' },
+          r.p({},
+            "Click ", r.span({ className: 'esLoginDlg_becomeAdminInstr_btnEx'},
+                "Create Password Account"), " below,", r.br(),
+            "and type the email address you specified previously."),
+          r.p({},
+            "Or click ", r.span({ className: 'esLoginDlg_becomeAdminInstr_btnEx' }, "Google"),
+            " if you specified a Gmail address:"))
+      : null;
+
     var loggedInAlreadyInfo = this.props.isLoggedIn
         ? r.p({}, "You are logged in already, but you don't have access " +
             "to this part of the site. Please login below, as someone with access.")
@@ -255,13 +270,13 @@ export var LoginDialogContent = createClassAndFactory({
     }
 
     var loginWithPasswordButton;
-    if (loginReason !== 'LoginBecomeAdmin') {
+    if (loginReason !== LoginReason.BecomeAdmin) {
       loginWithPasswordButton =
           Button({ onClick: openChildDialog(PasswordLoginDialogContent) }, "Login with Password");
     }
 
     var loginAsGuestButton;
-    if (loginReason !== 'LoginBecomeAdmin' && loginReason !== 'LoginAsAdmin' &&
+    if (loginReason !== LoginReason.BecomeAdmin && loginReason !== 'LoginAsAdmin' &&
         loginReason !== 'LoginToAdministrate' && loginReason !== 'LoginToAuthenticate' &&
         loginReason !== LoginReason.LoginToChat &&
         debiki2.ReactStore.isGuestLoginAllowed()) {
@@ -270,18 +285,22 @@ export var LoginDialogContent = createClassAndFactory({
               className: 'esLoginDlg_guestBtn' }, "Login as Guest");
     }
 
+    var termsAndPrivacy = loginReason === LoginReason.BecomeAdmin
+      ? null // the owner doesn't need to agree to his/her own terms of use
+      : r.p({ id: 'dw-lgi-tos' },
+          "By logging in, you agree to our ", r.a({ href: "/-/terms-of-use" }, "Terms of Use"),
+          " and ", r.a({ href: '/-/privacy-policy' }, "Privacy Policy"));
+
     return (
       r.div({ className: 'dw-login-dialog' },
         createUserDialog,
         passwordLoginDialog,
         guestLoginDialog,
         loggedInAlreadyInfo,
-        r.p({ id: 'dw-lgi-tos' },
-          "By logging in, you agree to the ", r.a({ href: "/-/terms-of-use" }, "Terms of Use"),
-          " and the ", r.a({ href: '/-/privacy-policy' }, "Privacy Policy")),
-
+        becomeAdminInstructions,
+        termsAndPrivacy,
         r.p({ id: 'dw-lgi-or-login-using' },
-          "Login via:"), // using your account (if any) at:"),
+          "Login via:"),
         r.div({ id: 'dw-lgi-other-sites' },
           OpenAuthButton(makeOauthProps('icon-google-plus', 'Google')),
           OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook')),

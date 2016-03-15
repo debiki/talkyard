@@ -158,11 +158,18 @@ $forumNavBtnGroupLeft = 14px;
       color: black;
       border-radius: 0;
       &:hover:not(.active)
-        background: hsl($uiNavHue, $uiNavSaturation + 20, 89%);
+        //background: hsl($uiNavHue, $uiNavSaturation + 20, 89%);
+        background: hsl($uiHue, 100%, 92%);
+        color: hsl($uiHue, 100%, 22%);
+        text-decoration: underline;
       &.active
-        color: white;
+        //color: white;
         cursor: default;
-        background: hsl($uiNavHue, $uiNavSaturation, 53%);
+        //background: hsl($uiNavHue, $uiNavSaturation, 53%);
+        color: #222;
+        font-weight: bold;
+        background: none;
+        text-decoration: underline;
 
       min-width: 60px;
       padding-left: 15px;

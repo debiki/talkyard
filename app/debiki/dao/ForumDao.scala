@@ -173,7 +173,7 @@ object ForumDao {
     |""")
 
 
-  val AdminQuickStartGuideTitle = "Read first: Admin Quick Start Guide"
+  val AdminQuickStartGuideTitle = "READ FIRST: Admin Quick Start Guide"
 
   lazy val adminQuickStartGuide = renderCommonMark(i"""
     |As an admin, you can edit forum settings, define what this community is about, and invite people.

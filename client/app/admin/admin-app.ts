@@ -433,13 +433,13 @@ var LegalSettingsComponent = React.createClass(<any> {
           getter: (s: Settings) => s.contribAgreement,
           update: (newSettings: Settings, target) => {
             newSettings.contribAgreement = parseInt(target.value);
-            if (newSettings.contribAgreement === ContribAgreement.ThisSiteOnly) {
+            if (newSettings.contribAgreement === ContribAgreement.UseOnThisSiteOnly) {
               newSettings.contentLicense = ContentLicense.AllRightsReserved;
             }
           }}, [
           /* Disable for now, because problematic if people change to MIT & CC-BY later and also
              change the Content License from All Rights Reserved to some CC-BY license. [6UK2F4X]
-          r.option({ key: 1, value: ContribAgreement.ThisSiteOnly },
+          r.option({ key: 1, value: ContribAgreement.UseOnThisSiteOnly },
             "They should let us use it on this website only"),
            Can add other ContribAgreement.* types later too. But for now, only:
            */
@@ -454,7 +454,7 @@ var LegalSettingsComponent = React.createClass(<any> {
                 "Creative Commons license"),
             " is the content in this community available? (This setting affects your ",
             userContentTermsLink, " page.)"),
-          disabled: valueOf(s => s.contribAgreement) === ContribAgreement.ThisSiteOnly,
+          disabled: valueOf(s => s.contribAgreement) === ContribAgreement.UseOnThisSiteOnly,
           getter: (s: Settings) => s.contentLicense,
           update: (newSettings: Settings, target) => {
             newSettings.contentLicense = parseInt(target.value);

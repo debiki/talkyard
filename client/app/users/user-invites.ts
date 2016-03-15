@@ -134,7 +134,7 @@ export var UserInvitesComponent = React.createClass({
             r.tr({},
               r.th({}, 'Invited User'),
               r.th({}, 'Invitation Accepted'),
-              r.th({}, 'Invitation Created At'))),
+              r.th({}, 'Invitation Created'))),
             // Later on: Seen, Topics Viewed, Posts Read, Read Time, Days Visited, Trust Level, Threat Level
           r.tbody({},
             inviteRows))));

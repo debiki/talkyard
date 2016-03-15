@@ -43,6 +43,7 @@ var MaxNumFirstPosts = 10;
 enum LoginReason {
   LoginToChat = 10,
   LoginToLike = 11,
+  BecomeAdmin = 12,
 }
 
 

@@ -88,11 +88,6 @@ export var SignUpAsAdmin = createComponent({
         r.span({}, 'That is, ', r.samp({}, this.props.obfuscatedAminEmail + '...@...'));
     }
 
-    var instructions = [
-        'Click the button below, then click ',
-        r.b({}, 'Create Password Account'),
-        ', or login with e.g. Google, if you specified a Gmail email address.'];
-
     var anyEmailProblem = this.props.siteStatus === 'FirstSiteAdminPendingButNoEmailSpecified'
       ? r.p({ style: { color: 'hsl(0, 100%, 45%)', fontWeight: 'bold' }},
           "But you haven't specified any ", r.code({}, 'becomeOwnerEmailAddress'),
@@ -100,28 +95,23 @@ export var SignUpAsAdmin = createComponent({
       : null;
 
     var loginBtn =
-        reactelements.NameLoginBtns({ title: 'Sign Up as Admin', purpose: 'LoginBecomeAdmin',
+        reactelements.NameLoginBtns({ title: "Continue", purpose: LoginReason.BecomeAdmin,
             id: 'e2eLogin', disabled: !!anyEmailProblem });
 
-    var contents = debiki.siteId === debiki.FirstSiteId
+    return debiki.siteId === debiki.FirstSiteId
       ? r.div({},
           r.h1({}, 'Welcome'),
           r.p({}, 'You have successfully started the server.'),
           r.p({}, 'Next, sign up using the email address you specified in the ' +
-            "configuration file in the ", r.code({}, 'becomeOwnerEmailAddress'), " field: ",
-            instructions),
+            "configuration file in the ", r.code({}, 'becomeOwnerEmailAddress'), " field."),
           anyEmailProblem,
           r.br(),
           loginBtn)
       : r.div({},
-          r.h1({}, 'Site Created'),
-          r.p({}, 'This is your new site.'),
-          r.p({}, 'Please sign up using the email address you specified previously: ',
-            /* startOfTheEmailAddress, */ instructions),
+          r.h1({}, 'Welcome'),
+          r.p({}, 'This is your new website.'),
           r.br(),
-          loginBtn)
-
-    return contents;
+          loginBtn);
   }
 });
 
@@ -190,8 +180,8 @@ export var CreateSomethingHere = createComponent({
 
     return (
       r.div({},
-        r.h1({}, "Welcome"),
-        r.p({}, "There's nothing here right now. Let's create a forum:"),
+        r.h1({}, "Forum name"),
+        r.p({}, "What shall the forum be named? (You can rename it later.)"),
         /* Add this back later if there'll be Blog and Wiki options too [8GYK34]
         r.p({}, message),
         r.div({ className: 'do-what-options' },
