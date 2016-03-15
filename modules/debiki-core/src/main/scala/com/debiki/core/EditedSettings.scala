@@ -23,12 +23,16 @@ import Prelude.unimplemented
 
 sealed abstract class ContribAgreement(protected val IntVal: Int) { def toInt = IntVal }
 object ContribAgreement {
-  case object UseOnThisSiteOnly extends ContribAgreement(1)
-  case object MitAndCcBy3And4 extends ContribAgreement(2)
+  case object CcBy3And4 extends ContribAgreement(10)
+  case object CcBySa3And4 extends ContribAgreement(40)
+  case object CcByNcSa3And4 extends ContribAgreement(70)
+  case object UseOnThisSiteOnly extends ContribAgreement(100)
 
   def fromInt(value: Int): Option[ContribAgreement] = Some(value match {
+    case CcBy3And4.IntVal => CcBy3And4
+    case CcBySa3And4.IntVal => CcBySa3And4
+    case CcByNcSa3And4.IntVal => CcByNcSa3And4
     case UseOnThisSiteOnly.IntVal => UseOnThisSiteOnly
-    case MitAndCcBy3And4.IntVal => MitAndCcBy3And4
     case _ => return None
   })
 }
@@ -36,14 +40,16 @@ object ContribAgreement {
 
 sealed abstract class ContentLicense(protected val IntVal: Int) { def toInt = IntVal }
 object ContentLicense {
-  case object AllRightsReserved extends ContentLicense(1)
-  case object CcBySa4 extends ContentLicense(2)
-  case object CcByNcSa4 extends ContentLicense(3)
+  case object CcBy4 extends ContentLicense(10)
+  case object CcBySa4 extends ContentLicense(40)
+  case object CcByNcSa4 extends ContentLicense(70)
+  case object AllRightsReserved extends ContentLicense(100)
 
   def fromInt(value: Int): Option[ContentLicense] = Some(value match {
-    case AllRightsReserved.IntVal => AllRightsReserved
+    case CcBy4.IntVal => CcBy4
     case CcBySa4.IntVal => CcBySa4
     case CcByNcSa4.IntVal => CcByNcSa4
+    case AllRightsReserved.IntVal => AllRightsReserved
     case _ => return None
   })
 }

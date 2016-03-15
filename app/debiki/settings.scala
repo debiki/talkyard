@@ -109,7 +109,7 @@ object AllSettings {
     val orgDomain = ""
     val orgFullName = ""
     val orgShortName = ""
-    var contribAgreement = ContribAgreement.MitAndCcBy3And4
+    var contribAgreement = ContribAgreement.CcBy3And4
     var contentLicense = ContentLicense.CcBySa4
     val googleUniversalAnalyticsTrackingId = ""
     val showComplicatedStuff = false

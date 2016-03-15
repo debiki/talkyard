@@ -22,7 +22,7 @@
 @privacyUrl = @{ routes.LegalController.viewPrivacyPolicyPage.url }
 @faqUrl = @{ "/-/there-is-not-yet-any-FAQ-page--sorry" }
 
-@agreesToMitAndCcBy = @{ tpi.siteSettings.contribAgreement == ContribAgreement.MitAndCcBy3And4 }
+@agreesToCcBy = @{ tpi.siteSettings.contribAgreement == ContribAgreement.CcBy3And4 }
 
 @views.html.templates.wrapper(tpi) {
 <div class="container" style="margin-top: 50px">
@@ -79,14 +79,14 @@ https://meta.discourse.org/tos
 */}
 <h3>Contributor Agreement</h3>
 
-@if(agreesToMitAndCcBy) {
+@if(agreesToCcBy) {
 <p>
 You agree that all Content that You contribute to @companyShortName is perpetually and irrevocably tri licensed to @companyShortName under a <a rel="license" href="https://creativecommons.org/licenses/by/3.0/">Creative Commons Attribution 3.0 Unported License</a> and a <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a> and <a href="http://opensource.org/licenses/MIT">the MIT license</a>.
 </p>
 }
 
 <p>
-You grant @companyShortName the perpetual and irrevocable right and license to use, copy, cache, publish, display, distribute, modify, create derivative works and store such Content @if(agreesToMitAndCcBy) { and to allow others to do so } in any medium now known or hereinafter developed even if such Content has been contributed and subsequently removed by You.
+You grant @companyShortName the perpetual and irrevocable right and license to use, copy, cache, publish, display, distribute, modify, create derivative works and store such Content @if(agreesToCcBy) { and to allow others to do so } in any medium now known or hereinafter developed even if such Content has been contributed and subsequently removed by You.
 </p>
 <p>
 <small>(This text based on https://stackexchange.com/legal, section 3 Subscriber Content. To-do note: SHOULD somehow add "... in order to provide the Services" — but then need to define Services)</small>
@@ -94,9 +94,10 @@ You grant @companyShortName the perpetual and irrevocable right and license to u
 
 <h3>User Content License</h3>
 
-@if(tpi.siteSettings.contentLicense == ContentLicense.AllRightsReserved) {
-  <p>User contributions are All Rights Reserved. You may <i>not</i> copy and repost
-  contents from this community elsewhere.</p>
+@if(tpi.siteSettings.contentLicense == ContentLicense.CcBy4) {
+  <p>
+  User contributions are licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
+  </p>
 }
 @if(tpi.siteSettings.contentLicense == ContentLicense.CcBySa4) {
   <p>
@@ -107,6 +108,10 @@ You grant @companyShortName the perpetual and irrevocable right and license to u
   <p>
   User contributions are licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
   </p>
+}
+@if(tpi.siteSettings.contentLicense == ContentLicense.AllRightsReserved) {
+  <p>User contributions are All Rights Reserved. You may <i>not</i> copy and repost
+  contents from this community elsewhere.</p>
 }
 
 <p>

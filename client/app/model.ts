@@ -523,14 +523,17 @@ interface StorePatch {
 
 
 enum ContribAgreement {
-  ThisSiteOnly = 1,
-  MitAndCcBy3And4 = 2,
+  CcBy3And4 = 10,
+  CcBySa3And4 = 40,
+  CcByNcSa3And4 = 70,
+  UseOnThisSiteOnly = 100
 }
 
 enum ContentLicense {
-  AllRightsReserved = 1,
-  CcBySa4 = 2,
-  CcByNcSa4 = 3,
+  CcBy4 = 10,
+  CcBySa4 = 40,
+  CcByNcSa4 = 70,
+  AllRightsReserved = 100
 }
 
 interface Settings {

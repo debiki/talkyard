@@ -441,9 +441,10 @@ var LegalSettingsComponent = React.createClass(<any> {
              change the Content License from All Rights Reserved to some CC-BY license. [6UK2F4X]
           r.option({ key: 1, value: ContribAgreement.ThisSiteOnly },
             "They should let us use it on this website only"),
+           Can add other ContribAgreement.* types later too. But for now, only:
            */
-          r.option({ key: 2, value: ContribAgreement.MitAndCcBy3And4 },
-            "Tri license under MIT, CC-BY 3.0 and 4.0"),
+          r.option({ key: 2, value: ContribAgreement.CcBy3And4 },
+            "Dual license under CC-BY 3.0 and 4.0"),
         ]),
 
         Setting2(props, { type: 'select', label: "Content license",
@@ -458,12 +459,14 @@ var LegalSettingsComponent = React.createClass(<any> {
           update: (newSettings: Settings, target) => {
             newSettings.contentLicense = parseInt(target.value);
           }}, [
-          r.option({ key: 1, value: ContentLicense.AllRightsReserved },
-            "None. All Rights Reserved"),
+          r.option({ key: 1, value: ContentLicense.CcBy4 },
+            "Attribution 4.0 International (CC BY 4.0)"),
           r.option({ key: 2, value: ContentLicense.CcBySa4 },
             "Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)"),
           r.option({ key: 3, value: ContentLicense.CcByNcSa4 },
             "Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)"),
+          r.option({ key: 4, value: ContentLicense.AllRightsReserved },
+            "None. All Rights Reserved"),
         ])));
   }
 });
@@ -504,6 +507,8 @@ var CustomizePanelComponent = React.createClass(<any> {
           r.p({}, r.b({}, "Ignore everything below,"), " if you don't know HTML and CSS."),
           r.p({}, "We'll try to build something for you that's easier to use, later.")),
 
+        /* People seem to not understand what this one does, so better reomve it.
+            Make it an in-the-forum setting instead?
         Setting2(props, { type: 'checkbox', label: "Show Forum Categories",
           help: "Shall a forum main page list " +
             "all forum categories, instead of the latest topics?",
@@ -511,7 +516,7 @@ var CustomizePanelComponent = React.createClass(<any> {
           update: (newSettings: Settings, target) => {
             newSettings.showForumCategories = target.checked;
           }
-        }),
+        }), */
         /* A tester checked this without any idea about what it does.
           Remove for now, perhaps later show in some Advanced section?
         Setting({ setting: settings.horizontalComments, onSave: saveSetting,
