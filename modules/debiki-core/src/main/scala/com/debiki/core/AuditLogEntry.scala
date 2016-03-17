@@ -51,6 +51,7 @@ case class AuditLogEntry(
   doneAt: ju.Date,
   browserIdData: BrowserIdData,
   browserLocation: Option[BrowserLocation] = None,
+  emailAddress: Option[String] = None,
   pageId: Option[PageId] = None,
   pageRole: Option[PageRole] = None,
   uniquePostId: Option[UniquePostId] = None,
@@ -64,6 +65,7 @@ case class AuditLogEntry(
   targetPostNr: Option[PostNr] = None,
   targetUserId: Option[UserId] = None) {
 
+  emailAddress.foreach(Validation.requireOkEmail(_, "EsE5YJK2"))
   require(pageRole.isEmpty || pageId.isDefined, "DwE4PFKW7")
   require(postNr.isEmpty || pageId.isDefined, "DwE3574FK2")
   require(postNr.isDefined == uniquePostId.isDefined, "DwE2WKEFW8")

@@ -58,6 +58,7 @@ trait CreateSiteDao {
         didWhat = AuditLogEntryType.CreateSite,
         doerId = creatorId,
         doneAt = transaction.currentTime,
+        emailAddress = Some(creatorEmailAddress),
         browserIdData = browserIdData,
         browserLocation = None,
         targetSiteId = Some(newSite.id)), transaction)
@@ -81,6 +82,7 @@ trait CreateSiteDao {
         didWhat = AuditLogEntryType.ThisSiteCreated,
         doerId = SystemUserId, // no admin account yet created
         doneAt = transaction.currentTime,
+        emailAddress = Some(creatorEmailAddress),
         browserIdData = browserIdData,
         browserLocation = None,
         targetSiteId = Some(this.siteId)), transaction)

@@ -47,6 +47,12 @@ object Validation {
     Good(email)
   }
 
+  def requireOkEmail(email: String, errorCode: String) {
+    checkEmail(email) badMap { errorMessage =>
+      Prelude.throwIllegalArgument(errorCode, s"Bad email: $errorMessage")
+    }
+  }
+
 
   /** Allows only usernames like '123_some_username', 3 - 20 chars.
     */
