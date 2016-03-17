@@ -161,15 +161,17 @@ package object http {
     * the dwCoFakeIp cookie.)
     */
   def realOrFakeIpOf(request: play.api.mvc.Request[_]): String = {
-    val fakeIp = request.queryString.get("fakeIp").flatMap(_.headOption).orElse(
+    val fakeIpQueryParam = request.queryString.get("fakeIp").flatMap(_.headOption)
+    val fakeIp = fakeIpQueryParam.orElse(
       request.cookies.get("dwCoFakeIp").map(_.value))  getOrElse {
       return request.remoteAddress
     }
 
     if (Play.isProd) {
+      def where = fakeIpQueryParam.isDefined ? "in query param" | "in cookie"
       val password = getE2eTestPassword(request) getOrElse {
         throwForbidden(
-          "DwE6KJf2", "Fake ip specified, but no e2e test password cookie — required in prod mode")
+          "DwE6KJf2", s"Fake ip specified $where, but no e2e test password — required in prod mode")
       }
       val correctPassword = debiki.Globals.e2eTestPassword getOrElse {
         throwForbidden(

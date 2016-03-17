@@ -72,7 +72,12 @@ object DebikiHttp {
     R.Unauthorized("401 Unauthorized\n"+ message +" [error "+ errCode +"]")
 
   def ForbiddenResult(errCode: String, message: String): Result =
-    R.Forbidden("403 Forbidden\n"+ message +" [error "+ errCode +"]")
+    R.Forbidden("403 Forbidden\n"+ message +" [error "+ errCode +"]").withHeaders(
+      "X-Error-Code" -> errCode)
+    /* Doesn't work, the Som(reason) is ignored: (could fix later in Play 2.5 when Iterates = gone)
+    Result(
+      ResponseHeader(404, Map.empty, Some(s"Forbidden!!zz $errCode")),
+      Enumerator(wString.transform(s"403 Forbidden bdy\n $message [$errCode]"))) */
 
   def NotImplementedResult(errorCode: String, message: String): Result =
     R.NotImplemented(s"501 Not Implemented\n$message [$errorCode]")

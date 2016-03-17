@@ -75,6 +75,7 @@ class Globals {
   def testsDoneServerGone = Play.isTest && (!isInitialized || Play.maybeApplication.isEmpty)
 
   def isTestDisableScripts = state.isTestDisableScripts
+  def isTestDisableBackgroundJobs = state.isTestDisableBackgroundJobs
 
   def isInitialized = _state ne null
 
@@ -256,6 +257,11 @@ class Globals {
       // Let's create them in this parallel thread rather than blocking the whole server.
       // (Takes 2? 5? seconds.)
       debiki.ReactRenderer.startCreatingRenderEngines()
+
+      if (!isTestDisableBackgroundJobs) {
+        Akka.system.scheduler.scheduleOnce(
+          5 seconds, state.renderContentActorRef, RenderContentService.RegenerateStaleHtml)
+      }
     }
 
     try {
@@ -304,6 +310,15 @@ class Globals {
         Play.isTest && Play.configuration.getBoolean("isTestDisableScripts").getOrElse(false)
       if (disable) {
         p.Logger.info("Is test with scripts disabled. [EsM4GY82]")
+      }
+      disable
+    }
+
+    val isTestDisableBackgroundJobs = {
+      val disable =
+        Play.isTest && Play.configuration.getBoolean("isTestDisableBackgroundJobs").getOrElse(false)
+      if (disable) {
+        p.Logger.info("Is test with background jobs disabled. [EsM6JY0K2]")
       }
       disable
     }

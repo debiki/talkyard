@@ -20,10 +20,10 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import java.{util => ju}
-import play.{api => p}
 import play.api.Play.current
+import scala.collection.mutable
 import scala.concurrent.Future
+import SiteDao._
 
 
 
@@ -83,8 +83,21 @@ abstract class SiteDao
 
   def commonmarkRenderer = ReactRenderer
 
-  def readWriteTransaction[R](fn: SiteTransaction => R, allowOverQuota: Boolean = false): R =
-    dbDao2.readWriteSiteTransaction(siteId, allowOverQuota) { fn(_) }
+  def readWriteTransaction[R](fn: SiteTransaction => R, allowOverQuota: Boolean = false): R = {
+    // Serialize writes per site. This avoids all? transaction rollbacks because of
+    // serialization errors in Postgres (e.g. if 2 people post 2 comments at the same time).
+    // Later: Send a message to a per-site actor instead which handles all writes for that site,
+    // one at a time. Wait for a reply for at most ... 1? 5? (Right now we might block
+    // forever though, bad bad bad.)
+    SECURITY // this makes a DoS attack possible? By posting comments all the time, one can make
+    // all threads block, waiting for the per-site lock. There's rate limiting stuff though
+    // so doing this takes some effort.
+    synchronizeOnSiteId(siteId) {
+      dbDao2.readWriteSiteTransaction(siteId, allowOverQuota) {
+        fn(_)
+      }
+    }
+  }
 
   def readOnlyTransaction[R](fn: SiteTransaction => R): R =
     dbDao2.readOnlySiteTransaction(siteId, mustBeSerializable = true) { fn(_) }
@@ -204,4 +217,19 @@ abstract class SiteDao
 
 class NonCachingSiteDao(val siteId: SiteId, val dbDaoFactory: DbDaoFactory) extends SiteDao {
   def dbDao2 = dbDaoFactory.newDbDao2()
+}
+
+
+
+object SiteDao {
+
+  private val locksBySiteId = mutable.HashMap[SiteId, Object]()
+
+  def synchronizeOnSiteId[R](siteId: SiteId)(block: => R): R = {
+    val lock = locksBySiteId.getOrElseUpdate(siteId, new Object)
+    lock.synchronized {
+      block
+    }
+  }
+
 }

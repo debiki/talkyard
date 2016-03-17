@@ -23,7 +23,7 @@ import debiki.{Globals, TextAndHtml}
 import org.scalatest.{BeforeAndAfterAll, MustMatchers, FreeSpec}
 
 
-class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true) {
+class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgroundJobs = true) {
 
   var nameCounter = 0
 

@@ -26,13 +26,14 @@ import java.{util => ju, io => jio}
 import play.api.test.FakeApplication
 
 
-class DaoAppSuite(disableScripts: Boolean = false)
+class DaoAppSuite(disableScripts: Boolean = false, disableBackgroundJobs: Boolean = false)
   extends FreeSpec with MustMatchers with OneAppPerSuite {
 
   implicit override lazy val app = FakeApplication(
     additionalConfiguration = Map(
       "isTestShallEmptyDatabase" -> "true",
-      "isTestDisableScripts" -> (disableScripts ? "true" | "false")))
+      "isTestDisableScripts" -> (disableScripts ? "true" | "false"),
+      "isTestDisableBackgroundJobs" -> (disableBackgroundJobs ? "true" | "false")))
 
   def browserIdData = BrowserIdData("1.2.3.4", idCookie = "dummy_id_cookie", fingerprint = 334455)
 

@@ -36,11 +36,9 @@ object RenderContentService {
   /** PERFORMANCE COULD create one thread/actor per processor instead.
     */
   def startNewActor(actorSystem: ActorSystem, daoFactory: SiteDaoFactory): ActorRef = {
-    val actorRef = actorSystem.actorOf(
+    actorSystem.actorOf(
       Props(new RenderContentActor(daoFactory)),
       name = s"RenderContentActor")
-    actorSystem.scheduler.scheduleOnce(5 seconds, actorRef, RegenerateStaleHtml)
-    actorRef
   }
 
   object RegenerateStaleHtml

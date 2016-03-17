@@ -153,6 +153,13 @@ object SafeActions {
           result.withCookies(SecureCookie("dwCoFakeIp", fakeIp))
         }
       }
+      val anyNewE2eTestPassword = request.queryString.get("e2eTestPassword").flatMap(_.headOption)
+      anyNewE2eTestPassword foreach { password =>
+        futureResult = futureResult map { result =>
+          result.withCookies(SecureCookie("esCoE2eTestPassword", password,
+            maxAgeSeconds = Some(600)))
+        }
+      }
       futureResult
     }
   }
