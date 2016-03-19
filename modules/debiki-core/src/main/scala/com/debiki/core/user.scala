@@ -272,6 +272,7 @@ case object User {
   def isRoleId(userId: UserId) =
     !isGuestId(userId)
 
+  def isMember(userId: UserId) = userId >= LowestMemberId
   def isHumanMember(userId: UserId) = userId >= LowestHumanMemberId
 
   def isOkayUserId(id: UserId) =

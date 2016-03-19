@@ -107,7 +107,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       val userIdsBySiteId: Map[String, List[SiteId]] =
         notfsBySiteId.mapValues(_.map(_.recipientUserId))
       val usersBySiteAndId: Map[(SiteId, UserId), User] = loadUsers(userIdsBySiteId) */
-      val anyUser = siteDao.loadMember(userId)
+      val anyUser = siteDao.loadUser(userId)
 
       // Send email, or remember why we didn't and don't try again.
       val anyProblem = trySendToSingleUser(userId, anyUser, userNotfs, siteDao)
@@ -122,7 +122,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
   /** Tries to send an email with one or many notifications to a single user.
     * Returns any issue that prevented the email from being sent.
     */
-  private def trySendToSingleUser(userId: UserId, anyUser: Option[Member],
+  private def trySendToSingleUser(userId: UserId, anyUser: Option[User],
         notfs: Seq[Notification], siteDao: SiteDao): Option[String] = {
 
     def logWarning(message: String) =
@@ -158,7 +158,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
 
 
   private def constructAndSendEmail(siteDao: SiteDao, site: Site,
-        user: Member, userNotfs: Seq[Notification]) {
+        user: User, userNotfs: Seq[Notification]) {
     // Save the email in the db, before sending it, so even if the server
     // crashes it'll always be found, should the receiver attempt to
     // unsubscribe. (But if you first send it, then save it, the server
@@ -167,7 +167,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     val anyOrigin = originOf(site)
 
     val email = constructEmail(siteDao, anyOrigin, user, userNotfs) getOrElse {
-      logger.debug(o"""Not sending any email to ${user.theUsername} because the page
+      logger.debug(o"""Not sending any email to ${user.usernameOrGuestName} because the page
         or the comment is gone or not approved or something like that.""")
       return
     }
@@ -201,7 +201,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     // If this is an embedded discussion, there is no Debiki canonical host address to use.
     // So use the site-by-id origin, e.g. https://site-123.debiki.com, which always works.
     val unsubscriptionUrl =
-      s"$origin/?unsubscribe&emailId=${email.id}"
+      origin + controllers.routes.UnsubscriptionController.showForm(email.id).url
 
     val htmlContent =
       <div>

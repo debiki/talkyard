@@ -52,14 +52,17 @@ object UnsubscriptionController extends mvc.Controller {
   val ResubPrevented = "resub-prevented"
 
 
+  // oh so complicated, do something else
   private def emailId(request: mvc.RequestHeader): String =
     request.queryString.get(EmailIdParam).orElse(
       request.queryString.get(OldEmailIdParam)).map(_.head).getOrElse(
       throwBadReq("DwE03kI21", "No email id specified"))
 
+  // oh so complicated, do something else
   private def doWhat(request: mvc.RequestHeader): String =
      request.queryString.get(DoWhatParam).map(_.head).getOrElse(Unsub)
 
+  // oh so complicated, do something else
   private def nextPage(request: mvc.RequestHeader) =
     "/-/unsubscribe&emailId="+ emailId(request) +"&do="+ (doWhat(request) match {
       case Unsub => UnsubDone
@@ -70,37 +73,20 @@ object UnsubscriptionController extends mvc.Controller {
     })
 
 
-  def showForm() = ExceptionAction(empty) { request =>
-    showFormImpl(request)
+  def showForm(emailId: EmailId) = ExceptionAction(empty) { request =>
+    Ok(views.html.unsubscribePage(emailId, doWhat(request), nextPage(request)))
   }
 
 
-  def showFormImpl(implicit request: Request[Unit]) = {
-    Ok(views.html.unsubscribePage(emailId(request), doWhat(request), nextPage(request)))
-  }
-
-
-  def handleForm() = ExceptionAction(parse.urlFormEncoded(maxLength = 200)) { implicit request =>
+  def handleForm(emailId: EmailId) = ExceptionAction(parse.urlFormEncoded(maxLength = 200)) {
+        request =>
     val site = DebikiHttp.lookupSiteOrThrow(request, debiki.Globals.systemDao)
 
     SECURITY // SHOULD rate limit and check email type.
 
-    // Login.
-    val loginAttempt = EmailLoginAttempt(
-       ip = realOrFakeIpOf(request), date = new ju.Date, emailId = emailId(request))
-
     val dao = Globals.siteDao(site.id)
-
-    val loginGrant =
-      try dao.tryLogin(loginAttempt)
-      catch {
-        case ex: DbDao.EmailNotFoundException =>
-          throwForbidden("DwE530KI37", "Email not found")
-      }
-
-    ??? /*
-    import loginGrant.{identity, user}
-    val idtyEmailId: IdentityEmailId = identity.getOrDie("DwE4YPF8").asInstanceOf[IdentityEmailId]
+    val email = dao.loadEmailById(emailId) getOrElse throwForbidden(
+      "EsE8YJ93Q", "Email not found")
 
     // Find out what to do.
     val emailNotfPrefs: EmailNotfPrefs.Value = doWhat(request) match {
@@ -109,21 +95,21 @@ object UnsubscriptionController extends mvc.Controller {
       case x => assErr("DwE82WM91")
     }
 
-    // Do it.
-    if (user.isAuthenticated) {
-      dao.configRole(
-        userId = user.id, emailNotfPrefs = Some(emailNotfPrefs))
+    if (email.toUserId.exists(User.isMember)) {
+      dao.configRole(userId = email.toUserId.get, emailNotfPrefs = Some(emailNotfPrefs))
     }
     else {
-      val emailAddr = idtyEmailId.emailSent.get.sentTo
       dao.configIdtySimple(
-         ctime = new ju.Date(), emailAddr = emailAddr,
+         ctime = new ju.Date(), emailAddr = email.sentTo,
          emailNotfPrefs = emailNotfPrefs)
     }
 
-    // Tell user what happened.
-    SeeOther(nextPage(request))
-    */
+    SeeOther(routes.UnsubscriptionController.showHasBeenUnsubscribed().url)
+  }
+
+
+  def showHasBeenUnsubscribed() = ExceptionAction(empty) { request =>
+    Ok(views.html.unsubscribe.youHaveBeenUnsubscribed().body) as HTML
   }
 
 }

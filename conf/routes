@@ -111,8 +111,9 @@ POST  /-/block-guest            controllers.UserController.blockGuest
 POST  /-/unblock-guest          controllers.UserController.unblockGuest
 GET   /-/load-author-blocks     controllers.UserController.loadAuthorBlocks(postId)
 
-GET   /-/unsubscribe            controllers.UnsubscriptionController.showForm()
-POST  /-/unsubscribe            controllers.UnsubscriptionController.handleForm()
+GET   /-/unsubscribe            controllers.UnsubscriptionController.showForm(emailId)
+POST  /-/unsubscribe            controllers.UnsubscriptionController.handleForm(emailId)
+GET   /-/unsubscribed           controllers.UnsubscriptionController.showHasBeenUnsubscribed()
 
 GET   /-/list-invites           controllers.InviteController.listInvites(sentById)
 POST  /-/send-invite            controllers.InviteController.sendInvite

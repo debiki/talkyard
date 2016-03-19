@@ -65,11 +65,6 @@ object ViewPageController extends mvc.Controller {
   private def viewPageImpl(request: GetRequest): Future[Result] = {
     dieIfAssetsMissingIfDevTest()
 
-    // For now, historic reasons. Remove some weeks after /-/unsubscribe has been deployed.
-    if (request.queryString.contains("unsubscribe")) {
-      return Future.successful(UnsubscriptionController.showFormImpl(request.request))
-    }
-
     val specifiedPagePath = PagePath.fromUrlPath(request.siteId, request.request.path) match {
       case PagePath.Parsed.Good(path) => path
       case PagePath.Parsed.Bad(error) => throwBadRequest("DwE0kI3E4", error)
