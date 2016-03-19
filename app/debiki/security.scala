@@ -268,17 +268,7 @@ case object SidBadHash extends SidStatus
 case class SidOk(
   value: String,
   ageInMillis: Long,
-  override val userId: Option[UserId],
-
-  /**
-   * Remembering the display name saves 1 database rondtrip every time
-   * a page is rendered, because `Logged in as <name>' info is shown.
-   *
-   * (Were the display name not included in the SID cookie, one would have
-   * to look it up in the database.)
-   */
-  override val displayName: Option[String])
-  extends SidStatus {
+  override val userId: Option[UserId]) extends SidStatus {
 
   override def isOk = true
 
@@ -307,26 +297,24 @@ object Sid {
   def check(siteId: SiteId, value: String): SidStatus = {
     // Example value: 88-F7sAzB0yaaX.1312629782081.1c3n0fgykm  - no, obsolete
     if (value.length <= sidHashLength) return SidBadFormat
-    val (hash, dotUseridNameDateRandom) = value splitAt sidHashLength
+    val (hash, dotUseridDateRandom) = value splitAt sidHashLength
     val realHash = hashSha1Base64UrlSafe(
-      s"$secretSalt.$siteId$dotUseridNameDateRandom") take sidHashLength
+      s"$secretSalt.$siteId$dotUseridDateRandom") take sidHashLength
     if (hash != realHash) return SidBadHash
-    dotUseridNameDateRandom.drop(1).split('.') match {
-      case Array(userIdString, nameNoDots, dateStr, randVal) =>
+    dotUseridDateRandom.drop(1).split('.') match {
+      case Array(userIdString, dateStr, randVal) =>
         val userId: Option[UserId] =
           if (userIdString.isEmpty) None
           else Try(userIdString.toInt).toOption orElse {
             return SidBadFormat
           }
         val ageMillis = (new ju.Date).getTime - dateStr.toLong
-        val displayName = nameNoDots.replaceAll("_", ".")
         SECURITY //if (ageMillis > _sidMaxMillis)  SHOULD expire the sid
         //  return SidExpired(ageMillis - _sidMaxMillis)
         SidOk(
           value = value,
           ageInMillis = ageMillis,
-          userId = userId,
-          displayName = if (displayName isEmpty) None else Some(displayName))
+          userId = userId)
       case _ => SidBadFormat
     }
   }
@@ -337,19 +325,16 @@ object Sid {
   def create(siteId: SiteId, user: User): SidOk = {
     // For now, create a SID value and *parse* it to get a SidOk.
     // This is stupid and inefficient.
-    // Later: remove name from SID
-    val nameNoDots = user.usernameOrGuestName.replaceAllLiterally(".", "_")
     val uid = "" // for now
-    val useridNameDateRandom =
+    val useridDateRandom =
          user.id +"."+
-         nameNoDots +"."+
          (new ju.Date).getTime +"."+
          (nextRandomString() take 10)
     // If the site id wasn't included in the hash, then an admin from site A would
     // be able to login as admin at site B (if they have the same user id and username).
     val saltedHash = hashSha1Base64UrlSafe(
-      s"$secretSalt.$siteId.$useridNameDateRandom") take sidHashLength
-    val value = s"$saltedHash.$useridNameDateRandom"
+      s"$secretSalt.$siteId.$useridDateRandom") take sidHashLength
+    val value = s"$saltedHash.$useridDateRandom"
 
     check(siteId, value).asInstanceOf[SidOk]
   }
