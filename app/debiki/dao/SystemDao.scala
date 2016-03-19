@@ -47,10 +47,6 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory) {
     readWriteTransaction(_.applyEvolutions())
   }
 
-  def loadUser(siteId: SiteId, userId: UserId) = {
-    readOnlyTransaction(_.loadUser(siteId, userId))
-  }
-
 
   // ----- Websites (a.k.a. tenants)
 

@@ -414,7 +414,6 @@ interface Guest {
   fullName: string;
   email: string;
   country: string;
-  url: string;
   isEmailUnknown?: boolean;
 }
 

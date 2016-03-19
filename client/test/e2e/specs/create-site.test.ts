@@ -61,6 +61,7 @@ describe('/-/create-site  @createsite', function() {
     browser.waitForNewUrl();
     browser.assertTextMatches('h1', /New tpc ttl/);
     browser.assertTextMatches('#post-1', /New tpc txt/);
+    browser.perhapsDebug();
   });
 
   if (settings.skip3rdPartyDependentTests)
@@ -75,6 +76,7 @@ describe('/-/create-site  @createsite', function() {
     browser.click('#e2eLogin');
     pages.loginDialog.createGmailAccount(data);
     pages.createSomething.createForum("Gmail Forum Title");
+    browser.perhapsDebug();
   });
 
   it('can create a new site as a Facebook user  @login @facebook', function() {
@@ -86,6 +88,7 @@ describe('/-/create-site  @createsite', function() {
     browser.click('#e2eLogin');
     pages.loginDialog.createFacebookAccount(data);
     pages.createSomething.createForum("Facebook Forum Title");
+    browser.perhapsDebug();
   });
 
   /*

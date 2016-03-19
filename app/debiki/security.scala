@@ -176,7 +176,7 @@ object DebikiSecurity {
 
 
   def throwErrorIfPasswordTooWeak(
-        password: String, username: String, fullName: String, email: String) {
+        password: String, username: String, fullName: Option[String], email: String) {
     val passwordStrength = ReactRenderer.calcPasswordStrength(
       password = password, username = username, fullName = fullName, email = email)
     if (!passwordStrength.isStrongEnough)
@@ -337,7 +337,8 @@ object Sid {
   def create(siteId: SiteId, user: User): SidOk = {
     // For now, create a SID value and *parse* it to get a SidOk.
     // This is stupid and inefficient.
-    val nameNoDots = user.displayName.replaceAllLiterally(".", "_")
+    // Later: remove name from SID
+    val nameNoDots = user.usernameOrGuestName.replaceAllLiterally(".", "_")
     val uid = "" // for now
     val useridNameDateRandom =
          user.id +"."+

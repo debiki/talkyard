@@ -57,7 +57,7 @@ object InviteController extends mvc.Controller {
 
     // Is toEmailAddress already a member or already invited?
     request.dao.readOnlyTransaction { transaction =>
-      val alreadyExistingUser = transaction.loadUserByEmailOrUsername(toEmailAddress)
+      val alreadyExistingUser = transaction.loadMemberByEmailOrUsername(toEmailAddress)
       if (alreadyExistingUser.nonEmpty)
         throwForbidden("_EsE403IUAM_", "That person has joined this site already")
 
@@ -74,7 +74,7 @@ object InviteController extends mvc.Controller {
       createdById = request.theUserId,
       createdAt = new ju.Date)
 
-    val email = makeInvitationEmail(invite, request.theUser, request.host)
+    val email = makeInvitationEmail(invite, request.theMember, request.host)
     debiki.Globals.sendEmail(email, request.siteId)
     try {
       request.dao.insertInvite(invite)
@@ -136,13 +136,10 @@ object InviteController extends mvc.Controller {
   }
 
 
-  private def makeInvitationEmail(invite: Invite, inviter: User, siteHostname: String): Email = {
-    var inviterName = inviter.username getOrDie "DwE4KFW0"
-    if (inviter.displayName.nonEmpty) {
-      inviterName += " (" + inviter.displayName + ")"
-    }
+  private def makeInvitationEmail(invite: Invite, inviter: Member, siteHostname: String): Email = {
     val emailBody = views.html.invite.inviteEmail(
-      inviterName = inviterName, siteHostname = siteHostname, secretKey = invite.secretKey).body
+      inviterName = inviter.usernameParensFullName,
+      siteHostname = siteHostname, secretKey = invite.secretKey).body
     Email(
       EmailType.Invite,
       sendTo = invite.emailAddress,

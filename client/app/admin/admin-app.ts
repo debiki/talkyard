@@ -78,9 +78,7 @@ export function routes() {
         Route({ path: 'id/:userId', component: AdminUserPageComponent })),
       Route({ path: 'customize', component: CustomizePanelComponent }),
       Route({ path: 'review', component: ReviewPanelComponent },
-        Route({ path: 'all', component: ReviewAllPanelComponent }),
-        // Remove later:
-        Route({ path: 'posts', component: ReviewPostsPanelComponent })))];
+        Route({ path: 'all', component: ReviewAllPanelComponent })))];
 }
 
 

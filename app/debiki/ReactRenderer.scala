@@ -230,7 +230,8 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
   }
 
 
-  def calcPasswordStrength(password: String, username: String, fullName: String, email: String)
+  def calcPasswordStrength(password: String, username: String, fullName: Option[String],
+        email: String)
         : PasswordStrength = {
     if (!passwordStrengthCheckEnabled) {
       return PasswordStrength(entropyBits = 0, crackTimeSeconds = 0,
@@ -239,7 +240,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
     withJavascriptEngine(engine => {
       val resultAsAny = engine.invokeFunction(
-        "checkPasswordStrength", password, username, fullName, email)
+        "checkPasswordStrength", password, username, fullName.getOrElse(""), email)
       val resultString = resultAsAny.asInstanceOf[String]
       val parts = resultString.split('|')
       dieIf(parts.length != 4, "DwE4KEJ72")

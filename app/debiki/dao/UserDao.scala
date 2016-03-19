@@ -57,7 +57,7 @@ trait UserDao {
         throwForbidden("DwE0FKW2", "You have joined the site already, but this link has expired")
       }
 
-      if (transaction.loadUserByEmailOrUsername(invite.emailAddress).isDefined)
+      if (transaction.loadMemberByEmailOrUsername(invite.emailAddress).isDefined)
         throwForbidden("DwE8KFG4", o"""You have joined this site already, so this
              join-site invitation link does nothing. Thanks for clicking it anyway""")
 
@@ -245,7 +245,7 @@ trait UserDao {
     * Then we want to create a Gmail OpenAuth identity and connect it to the user
     * in the database.
     */
-  def createIdentityConnectToUserAndLogin(user: User, oauthDetails: OpenAuthDetails)
+  def createIdentityConnectToUserAndLogin(user: Member, oauthDetails: OpenAuthDetails)
         : LoginGrant = {
     require(user.email.nonEmpty, "DwE3KEF7")
     require(user.emailVerifiedAt.nonEmpty, "DwE5KGE2")
@@ -259,7 +259,7 @@ trait UserDao {
   }
 
 
-  def createPasswordUserCheckPasswordStrong(userData: NewPasswordUserData): User = {
+  def createPasswordUserCheckPasswordStrong(userData: NewPasswordUserData): Member = {
     DebikiSecurity.throwErrorIfPasswordTooWeak(
       password = userData.password, username = userData.username,
       fullName = userData.name, email = userData.email)
@@ -335,6 +335,12 @@ trait UserDao {
   }
 
 
+  def loadMember(userId: UserId): Option[Member] = {
+    require(userId >= User.LowestMemberId, "EsE7YKF2")
+    loadUser(userId).map(_.asInstanceOf[Member])
+  }
+
+
   def loadUser(userId: UserId): Option[User] = {
     readOnlyTransaction { transaction =>
       transaction.loadUser(userId)
@@ -342,10 +348,10 @@ trait UserDao {
   }
 
 
-  def loadUserByEmailOrUsername(emailOrUsername: String): Option[User] = {
+  def loadMemberByEmailOrUsername(emailOrUsername: String): Option[Member] = {
     readOnlyTransaction { transaction =>
       // Don't need to cache this? Only called when logging in.
-      transaction.loadUserByEmailOrUsername(emailOrUsername)
+      transaction.loadMemberByEmailOrUsername(emailOrUsername)
     }
   }
 
@@ -498,6 +504,18 @@ trait UserDao {
     // BUG: the lost update bug.
     readWriteTransaction { transaction =>
       var user = transaction.loadTheCompleteUser(preferences.userId)
+
+      // For now, don't allow people to change their username. In the future, changing
+      // it should be alloowed, but only very infrequently? Or only the very first few days.
+      if (user.username != preferences.username)
+        throwForbidden("DwE44ELK9", "Must not modify one's username")
+
+      // For now, don't allow the user to change his/her email. I haven't
+      // implemented any related security checks, e.g. verifying with the old address
+      // that this is okay, or sending an address confirmation email to the new address.
+      if (user.emailAddress != preferences.emailAddress)
+        throwForbidden("DwE44ELK9", "Must not modify one's email")
+
       user = user.copyWithNewPreferences(preferences)
       transaction.updateCompleteUser(user)
     }
@@ -505,11 +523,11 @@ trait UserDao {
   }
 
 
-  def saveGuest(guestId: UserId, name: String, url: String): Unit = {
+  def saveGuest(guestId: UserId, name: String) {
     // BUG: the lost update bug.
     readWriteTransaction { transaction =>
-      var guest = transaction.loadTheUser(guestId)
-      guest = guest.copy(displayName = name, website = url)
+      var guest = transaction.loadTheGuest(guestId)
+      guest = guest.copy(guestName = name)
       transaction.updateGuest(guest)
     }
     refreshUserInAnyCache(guestId)
@@ -566,7 +584,7 @@ trait CachingUserDao extends UserDao {
   }
 
 
-  override def createPasswordUserCheckPasswordStrong(userData: NewPasswordUserData): User = {
+  override def createPasswordUserCheckPasswordStrong(userData: NewPasswordUserData): Member = {
     val user = super.createPasswordUserCheckPasswordStrong(userData)
     fireUserCreated(user)
     user

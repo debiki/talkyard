@@ -70,7 +70,6 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
   def isOwner = debikiRequest.user.map(_.isOwner) == Some(true)
   def isAdmin = debikiRequest.user.map(_.isAdmin) == Some(true)
   def isAuthenticated = debikiRequest.user.map(_.isAuthenticated) == Some(true)
-  def userDisplayName = debikiRequest.user.map(_.displayName) getOrElse ""
 
   def debikiMeta = {
     xml.Unparsed(views.html.debikiMeta(anyCurrentPageMeta).body)

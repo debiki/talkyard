@@ -254,7 +254,7 @@ object LoginWithOpenAuthController extends Controller {
           // via this Google email address instead of via Twitter.
           // Or perhaps 4) signed up via a Facebook account that uses a Google address
           // like user@whatever.com (but not gmail.com).
-          oauthDetails.email.flatMap(dao.loadUserByEmailOrUsername) match {
+          oauthDetails.email.flatMap(dao.loadMemberByEmailOrUsername) match {
             case Some(user) =>
               if (providerHasVerifiedEmail(oauthDetails)) {
                 val loginGrant = dao.createIdentityConnectToUserAndLogin(user, oauthDetails)
@@ -345,7 +345,7 @@ object LoginWithOpenAuthController extends Controller {
       else {
         val isInLoginPopup = request.cookies.get(IsInLoginPopupCookieName).nonEmpty
         def loginPopupCallback =
-          Ok(views.html.login.loginPopupCallback(user.displayName).body) as HTML
+          Ok(views.html.login.loginPopupCallback().body) as HTML
 
         request.cookies.get(ReturnToUrlCookieName) match {
           case Some(returnToUrlCookie) =>
@@ -414,9 +414,9 @@ object LoginWithOpenAuthController extends Controller {
         allowAnyone = true) { request: JsonPostRequest =>
     val body = request.body
 
-    val fullName = (body \ "fullName").as[String]
-    val email = (body \ "email").as[String]
-    val username = (body \ "username").as[String]
+    val fullName = (body \ "fullName").asOptStringNoneIfBlank
+    val email = (body \ "email").as[String].trim
+    val username = (body \ "username").as[String].trim
     val anyReturnToUrl = (body \ "returnToUrl").asOpt[String]
 
     val oauthDetailsCacheKey = (body \ "authDataCacheKey").asOpt[String] getOrElse

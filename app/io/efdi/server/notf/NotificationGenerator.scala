@@ -61,7 +61,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
 
     // Mentions
     val mentionedUsernames: Seq[String] = findMentions(newPost.approvedSource getOrDie "DwE82FK4")
-    val mentionedUsers = mentionedUsernames.flatMap(transaction.loadUserByEmailOrUsername)
+    val mentionedUsers = mentionedUsernames.flatMap(transaction.loadMemberByEmailOrUsername)
     for {
       user <- mentionedUsers
       // Right now ignore self-mentions. Later, allow? Could work like a personal to-do item?
@@ -145,8 +145,8 @@ case class NotificationGenerator(transaction: SiteTransaction) {
     val deletedMentions = oldMentions -- newMentions
     val createdMentions = newMentions -- oldMentions
 
-    val mentionsDeletedForUsers = deletedMentions.flatMap(transaction.loadUserByEmailOrUsername)
-    val mentionsCreatedForUsers = createdMentions.flatMap(transaction.loadUserByEmailOrUsername)
+    val mentionsDeletedForUsers = deletedMentions.flatMap(transaction.loadMemberByEmailOrUsername)
+    val mentionsCreatedForUsers = createdMentions.flatMap(transaction.loadMemberByEmailOrUsername)
 
     // Delete mentions.
     for (user <- mentionsDeletedForUsers) {

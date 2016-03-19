@@ -283,7 +283,7 @@ class AntiSpam {
         val user = request.user
         p.Logger.info(i"""Spam (?) detected [DwM5JKF0]:
            | - client ip: ${request.ip}
-           | - user name: ${user.map(_.prettyUsernameFullName) orElse nameAndEmail.map(_._1) }
+           | - user/guest name: ${user.map(_.usernameOrGuestName) orElse nameAndEmail.map(_._1) }
            | - user email: ${user.map(_.email) orElse nameAndEmail.map(_._2) }
            | - user id: ${user.map(_.id)}
            | - request uri: ${request.uri}
@@ -664,7 +664,7 @@ class AntiSpam {
       }
       else anyName getOrElse {
         // Check both the username and the full name, by combining them.
-        theUser.username.map(_ + " ").getOrElse("") + theUser.displayName
+        theUser.anyUsername.map(_ + " ").getOrElse("") + theUser.anyName
       }
     body.append("&comment_author=" + encode(theName))
 

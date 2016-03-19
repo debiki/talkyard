@@ -76,7 +76,6 @@ var GuestPreferences = createComponent({
     var prefs = {
       guestId: this.props.guest.id,
       name: form.find('#fullName').val(),
-      url: form.find('#url').val()
     };
     Server.saveGuest(prefs, () => {
       this.setState({ savingStatus: 'Saved' });
@@ -108,12 +107,6 @@ var GuestPreferences = createComponent({
           r.input({ type: 'email', className: 'form-control', id: 'emailAddress',
               defaultValue: guest.email, disabled: true }),
           r.p({ className: 'help-block' }, 'Not shown publicly. Cannot be changed.')),
-
-        r.div({ className: 'form-group' },
-          r.label({ htmlFor: 'url' }, 'URL'),
-          r.input({ className: 'form-control', id: 'url',
-              defaultValue: guest.url }),
-          r.p({ className: 'help-block' }, 'Any website or page that this guest has specified.')),
 
         Button({ type: 'submit' }, 'Save'),
         savingInfo));

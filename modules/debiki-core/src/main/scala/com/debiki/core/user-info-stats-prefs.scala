@@ -50,12 +50,13 @@ object UserStats {
 
 case class UserPreferences(
   userId: UserId,
-  fullName: String,
+  fullName: Option[String],
   username: String,
   emailAddress: String,
   url: String = "",
   emailForEveryNewPost: Boolean = false) {
 
+  require(!fullName.map(_.trim).contains(""), "DwE4FUKW049")
   require(userId >= User.LowestNonGuestId, "DwE56KX2")
 }
 

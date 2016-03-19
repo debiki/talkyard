@@ -107,7 +107,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       val userIdsBySiteId: Map[String, List[SiteId]] =
         notfsBySiteId.mapValues(_.map(_.recipientUserId))
       val usersBySiteAndId: Map[(SiteId, UserId), User] = loadUsers(userIdsBySiteId) */
-      val anyUser = systemDao.loadUser(siteId, userId = userId)
+      val anyUser = siteDao.loadMember(userId)
 
       // Send email, or remember why we didn't and don't try again.
       val anyProblem = trySendToSingleUser(userId, anyUser, userNotfs, siteDao)
@@ -122,7 +122,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
   /** Tries to send an email with one or many notifications to a single user.
     * Returns any issue that prevented the email from being sent.
     */
-  private def trySendToSingleUser(userId: UserId, anyUser: Option[User],
+  private def trySendToSingleUser(userId: UserId, anyUser: Option[Member],
         notfs: Seq[Notification], siteDao: SiteDao): Option[String] = {
 
     def logWarning(message: String) =
@@ -158,7 +158,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
 
 
   private def constructAndSendEmail(siteDao: SiteDao, site: Site,
-        user: User, userNotfs: Seq[Notification]) {
+        user: Member, userNotfs: Seq[Notification]) {
     // Save the email in the db, before sending it, so even if the server
     // crashes it'll always be found, should the receiver attempt to
     // unsubscribe. (But if you first send it, then save it, the server
@@ -167,7 +167,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     val anyOrigin = originOf(site)
 
     val email = constructEmail(siteDao, anyOrigin, user, userNotfs) getOrElse {
-      logger.debug(o"""Not sending any email to ${user.displayName} because the page
+      logger.debug(o"""Not sending any email to ${user.theUsername} because the page
         or the comment is gone or not approved or something like that.""")
       return
     }
@@ -182,8 +182,8 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
         notfs: Seq[Notification]): Option[Email] = {
 
     val subject: String =
-      if (notfs.size == 1) "You have a reply, to one of your comments"
-      else "You have replies, to comments of yours"
+      if (notfs.size == 1) "You have a reply to one of your comments"
+      else "You have replies to comments of yours"
 
     val email = Email(EmailType.Notification, sendTo = user.email, toUserId = Some(user.id),
       subject = subject, bodyHtmlText = (emailId: String) => "?")
@@ -205,7 +205,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
 
     val htmlContent =
       <div>
-        <p>Dear {user.displayName},</p>
+        <p>Dear {user.usernameOrGuestName},</p>
         {contents}
         <p>
           Kind regards,<br/>

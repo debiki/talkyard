@@ -48,12 +48,12 @@ object ResetPasswordController extends mvc.Controller {
   def handleResetPasswordForm = JsonOrFormDataPostAction(RateLimits.ResetPassword,
         maxBytes = 200, allowAnyone = true) { request =>
     val emailOrUsername = request.body.getOrThrowBadReq("email") // WOULD rename 'email' param
-    val anyUser = request.dao.loadUserByEmailOrUsername(emailOrUsername)
+    val anyUser = request.dao.loadMemberByEmailOrUsername(emailOrUsername)
     val isEmailAddress = emailOrUsername contains "@"
 
     anyUser match {
       case Some(user) =>
-        dieIf(user.email != emailOrUsername && !user.username.contains(emailOrUsername), "DwE0F21")
+        dieIf(user.email != emailOrUsername && user.theUsername != emailOrUsername, "DwE0F21")
         user.passwordHash match {
           case Some(_) =>
             Logger.info(s"Sending password reset email to: $emailOrUsername")
@@ -79,7 +79,7 @@ object ResetPasswordController extends mvc.Controller {
   }
 
 
-  private def sendResetPasswordEmailTo(user: User, request: ApiRequest[_]) {
+  private def sendResetPasswordEmailTo(user: Member, request: ApiRequest[_]) {
     val email = Email(
       EmailType.ResetPassword,
       sendTo = user.email,
@@ -87,7 +87,7 @@ object ResetPasswordController extends mvc.Controller {
       subject = "Reset Password",
       bodyHtmlText = (emailId: String) => {
         views.html.resetpassword.resetPasswordEmail(
-          userName = user.displayName,
+          userName = user.theUsername,
           emailId = emailId,
           siteAddress = request.host,
           expirationTimeInHours = MaxResetPasswordEmailAgeInHours).body
@@ -98,7 +98,7 @@ object ResetPasswordController extends mvc.Controller {
 
 
   private def sendNoPasswordToResetEmail(
-        user: User, emailAddress: String, request: ApiRequest[_]) {
+        user: Member, emailAddress: String, request: ApiRequest[_]) {
     val email = Email(
       EmailType.Notification,
       sendTo = emailAddress,
@@ -106,7 +106,7 @@ object ResetPasswordController extends mvc.Controller {
       subject = "There is no password to reset",
       bodyHtmlText = (emailId: String) => {
         views.html.resetpassword.noPasswordToResetEmail(
-          userName = user.displayName,
+          userName = user.theUsername,
           emailAddress = emailAddress,
           siteAddress = request.host).body
       })

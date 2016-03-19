@@ -242,7 +242,7 @@ export function completeReviewTask(id: number, revisionNr: number, action: Revie
   });
 }
 
-
+  /*
 export function loadRecentPosts(doneCallback: (posts: PostToModerate[]) => void) {
   $.get(origin + '/-/list-recent-posts')
     .done(response => {
@@ -252,8 +252,10 @@ export function loadRecentPosts(doneCallback: (posts: PostToModerate[]) => void)
       console.error('Error loading recent posts: ' + JSON.stringify([x, y, z]));
       doneCallback(null);
     });
-}
+} */
 
+
+// ---- Currently not in use, but perhaps soon again ----------------------
 
 export function approvePost(post: PostToModerate, doneCallback: () => void) {
   doSomethingWithPost(post, '/-/approve', doneCallback);
@@ -291,6 +293,8 @@ function doSomethingWithPost(post: PostToModerate, actionUrl: string, success: (
     postId: post.id,
   });
 }
+
+// ---- /END currently not in use, but perhaps soon again ----------------------
 
 
 export function createOauthUser(data, success: (response) => void,

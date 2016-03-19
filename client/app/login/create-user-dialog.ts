@@ -143,7 +143,7 @@ export var CreateUserDialogContent = createClassAndFactory({
   getInitialState: function() {
     return {
       okayStatuses: {
-        fullName: this.props.name && this.props.name.length,
+        fullName: true,
         email: this.props.providerId && this.props.email && this.props.email.length,
         username: false,
         password: !this.props.createPasswordUser,
@@ -243,17 +243,12 @@ export var CreateUserDialogContent = createClassAndFactory({
     var state = this.state;
     var hasEmailAddressAlready = props.email && props.email.length;
 
-    var fullNameInput =
-        FullNameInput({ label: "Your name: (the long version)", ref: 'fullName',
-            id: 'e2eFullName', defaultValue: props.name, minLength: 1, tabIndex: 1,
-            onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
-
     var emailHelp = props.providerId && hasEmailAddressAlready ?
         "Your email has been verified by " + props.providerId + "." : null;
 
     var emailInput =
         EmailInput({ label: "Email: (will be kept private)", ref: 'email', id: 'e2eEmail',
-          onChangeValueOk: (value, isOk) => this.setEmailOk(value, isOk), tabIndex: 2,
+          onChangeValueOk: (value, isOk) => this.setEmailOk(value, isOk), tabIndex: 1,
           // If email already provided by e.g. Google, don't let the user change it.
           disabled: hasEmailAddressAlready, defaultValue: props.email, help: emailHelp,
           error: this.state.userData.email !== this.state.theWrongEmailAddress ?
@@ -277,14 +272,19 @@ export var CreateUserDialogContent = createClassAndFactory({
               setPasswordOk: (isOk) => this.updateValueOk('password', 'dummy', isOk) })
         : null;
 
+    var fullNameInput =
+      FullNameInput({ label: "Your full name: (optional)", ref: 'fullName',
+        id: 'e2eFullName', defaultValue: props.name, tabIndex: 2,
+        onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
+
     var disableSubmit = _.includes(_.values(this.state.okayStatuses), false);
 
     return (
       r.form({ className: 'esCreateUser' },
-        fullNameInput,
         emailInput,
         usernameInput,
         passwordInput,
+        fullNameInput,
         Button({ onClick: this.doCreateUser, disabled: disableSubmit, id: 'e2eSubmit',
             className: 'btn-primary', tabIndex: 2 }, "Create User"),
         Button({ onClick: props.closeDialog, id: 'e2eCancel', tabIndex: 2 }, "Cancel")));

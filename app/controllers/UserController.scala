@@ -51,7 +51,7 @@ object UserController extends mvc.Controller {
         onlyPendingApproval = onlyPendingApproval)
       val approverIds = usersPendingApproval.flatMap(_.approvedById)
       val suspenderIds = usersPendingApproval.flatMap(_.suspendedById)
-      val usersById = transaction.loadUsersAsMap(approverIds ++ suspenderIds)
+      val usersById = transaction.loadMembersAsMap(approverIds ++ suspenderIds)
       val usersJson = JsArray(usersPendingApproval.map(
         jsonForCompleteUser(_, usersById, callerIsAdmin = request.theUser.isAdmin,
           callerIsStaff = true)))
@@ -73,7 +73,7 @@ object UserController extends mvc.Controller {
             callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
         }
         else {
-          val user = transaction.loadTheUser(userIdInt)
+          val user = transaction.loadTheGuest(userIdInt)
           jsonForGuest(user, Map.empty, callerIsStaff = callerIsStaff,
             callerIsAdmin = callerIsAdmin)
 
@@ -83,7 +83,7 @@ object UserController extends mvc.Controller {
   }
 
 
-  private def jsonForCompleteUser(user: CompleteUser, usersById: Map[UserId, User],
+  private def jsonForCompleteUser(user: CompleteUser, usersById: Map[UserId, Member],
       callerIsAdmin: Boolean, callerIsStaff: Boolean = false, callerIsUserHerself: Boolean = false)
         : JsObject = {
     var userJson = Json.obj(
@@ -111,7 +111,7 @@ object UserController extends mvc.Controller {
       userJson += "isApproved" -> JsBooleanOrNull(user.isApproved)
       userJson += "approvedAtEpoch" -> DateEpochOrNull(user.approvedAt)
       userJson += "approvedById" -> JsNumberOrNull(user.approvedById)
-      userJson += "approvedByName" -> JsStringOrNull(anyApprover.map(_.displayName))
+      userJson += "approvedByName" -> JsStringOrNull(anyApprover.flatMap(_.fullName))
       userJson += "approvedByUsername" -> JsStringOrNull(anyApprover.flatMap(_.username))
       userJson += "suspendedAtEpoch" -> DateEpochOrNull(user.suspendedAt)
       userJson += "suspendedById" -> JsNumberOrNull(user.suspendedById)
@@ -123,12 +123,12 @@ object UserController extends mvc.Controller {
   }
 
 
-  private def jsonForGuest(user: User, usersById: Map[UserId, User],
+  private def jsonForGuest(user: Guest, usersById: Map[UserId, User],
         callerIsStaff: Boolean, callerIsAdmin: Boolean): JsObject = {
     val safeEmail = callerIsAdmin ? user.email | hideEmailLocalPart(user.email)
     var userJson = Json.obj(
       "id" -> user.id,
-      "fullName" -> user.displayName,
+      "fullName" -> user.guestName,
       "country" -> user.country,
       "url" -> user.website)
       // += ipSuspendedTill
@@ -357,18 +357,6 @@ object UserController extends mvc.Controller {
   def saveUserPreferences = PostJsonAction(RateLimits.ConfigUser, maxLength = 1000) { request =>
     val prefs = userPrefsFromJson(request.body)
     checkUserPrefsAccess(request, prefs.userId)
-
-    // For now, don't allow people to change their username. In the future, changing
-    // it should be alloowed, but only very infrequently? Or only the very first few days.
-    if (request.theUser.username != Some(prefs.username))
-      throwForbidden("DwE44ELK9", "Must not modify one's username")
-
-    // For now, don't allow the user to change his/her email. I haven't
-    // implemented any related security checks, e.g. verifying with the old address
-    // that this is okay, or sending an address confirmation email to the new address.
-    if (request.theUser.email != prefs.emailAddress)
-      throwForbidden("DwE44ELK9", "Must not modify one's email")
-
     request.dao.saveRolePreferences(prefs)
     Ok
   }
@@ -377,12 +365,10 @@ object UserController extends mvc.Controller {
   def saveGuest = PostJsonAction(RateLimits.ConfigUser, maxLength = 300) { request =>
     val guestId = (request.body \ "guestId").as[UserId]
     val name = (request.body \ "name").as[String].trim
-    val url = (request.body \ "url").as[String].trim
-
     if (name.isEmpty)
       throwForbidden("DwE4KWP9", "No name specified")
 
-    try { request.dao.saveGuest(guestId, name = name, url = url) }
+    try { request.dao.saveGuest(guestId, name = name) }
     catch {
       case DbDao.DuplicateGuest =>
         throwForbidden("DwE5KQP4", o"""There is another guest with the exact same name
@@ -402,8 +388,8 @@ object UserController extends mvc.Controller {
   private def userInfoToJson(userInfo: UserInfoAndStats): JsObject = {
     Json.obj(
       "userId" -> userInfo.info.id,
-      "displayName" -> userInfo.info.displayName,
-      "username" -> userInfo.info.username.getOrElse(null),
+      "displayName" -> userInfo.info.anyName,
+      "username" -> JsStringOrNull(userInfo.info.anyUsername),
       "isAdmin" -> userInfo.info.isAdmin,
       "isModerator" -> userInfo.info.isModerator,
       "numPages" -> userInfo.stats.numPages,
@@ -509,7 +495,7 @@ object UserController extends mvc.Controller {
 
     UserPreferences(
       userId = (json \ "userId").as[UserId],
-      fullName = (json \ "fullName").as[String],
+      fullName = (json \ "fullName").asOptStringNoneIfBlank,
       username = username,
       emailAddress = (json \ "emailAddress").as[String],
       url = (json \ "url").as[String],

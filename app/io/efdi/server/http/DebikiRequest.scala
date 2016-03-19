@@ -61,6 +61,11 @@ abstract class DebikiRequest[A] {
   def user_! : User =
     user getOrElse throwForbidden("DwE86Wb7", "Not logged in")
 
+  def theMember = theUser match {
+    case m: Member => m
+    case g: Guest => throwForbidden("EsE5YKJ37", "Not authenticated")
+  }
+
   def anyRoleId = user.flatMap(_.anyRoleId)
   def theRoleId = anyRoleId getOrElse throwForbidden("DwE86Wb7", "Not authenticated")
 
@@ -68,13 +73,6 @@ abstract class DebikiRequest[A] {
   def isAuthenticated = user.exists(_.isAuthenticated)
   def isApprovedOrStaff = user.exists(_.isApprovedOrStaff)
   def isStaff = user.exists(_.isStaff)
-
-  /**
-   * The display name of the user making the request. Throws 403 Forbidden
-   * if not available, i.e. if not logged in (shouldn't happen normally).
-   */
-  def displayName_! : String =
-    sid.displayName getOrElse throwForbidden("DwE97Ik3", "Not logged in")
 
   def session: mvc.Session = request.session
 

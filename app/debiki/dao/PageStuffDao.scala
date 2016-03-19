@@ -39,7 +39,6 @@ case class PageStuff(
   bodyExcerptIfPinned: Option[String],
   author: Option[User],
   // author* below are deprecated.
-  authorDisplayName: String,
   authorUserId: UserId,
   authorUsername: Option[String],
   authorFullName: Option[String],
@@ -127,10 +126,9 @@ trait PageStuffDao {
         title = anyTitle.flatMap(_.approvedSource) getOrElse "(No title)",
         bodyExcerptIfPinned = anyExcerpt,
         author = anyAuthor,
-        authorDisplayName = anyAuthor.map(_.displayName) getOrElse "(Author absent, DwE7SKF2)",
         authorUserId = pageMeta.authorId,
-        authorUsername = anyAuthor.flatMap(_.username),
-        authorFullName = anyAuthor.map(_.fullName),
+        authorUsername = anyAuthor.flatMap(_.anyUsername),
+        authorFullName = anyAuthor.flatMap(_.anyName),
         // When listing pages, we show many users: creator, last reply, etc. and many pages,
         // so we'll use the tiny avatar image. Should I rename to tinyAuthorAvatarUrl?
         authorAvatarUrl = anyAuthor.flatMap(_.tinyAvatar.map(_.url)),

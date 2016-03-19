@@ -121,20 +121,7 @@ object ModerationController extends mvc.Controller {
     PagePostNr(pageId, postNr)
   }
 
-
-  /** Lists posts that require attention, e.g. because they've been flagged or edited
-    * or needs to be approved. And after that, list recently modified posts.
-    */
-  def listRecentPosts = StaffGetAction { request =>
-    val thingsToReview = request.dao.loadThingsToReview()
-    val postsJson = JsArray(thingsToReview.posts.map(makeJsonSinglePost(_, thingsToReview)))
-    OkSafeJson(toJson(Map(
-      "actions" -> postsJson,
-      "postTextLengthLimit" -> JsNumber(PostTextLengthLimit),
-      "actionCountApproxLimit" -> JsNumber(ActionCountLimit))))
-  }
-
-
+  /*
   private def makeJsonSinglePost(post: Post, thingsToReview: ThingsToReview): JsValue = {
     //val pageMeta = thingsToReview.thePage(post.pageId)
     val author = thingsToReview.theUser(post.createdById)
@@ -197,7 +184,7 @@ object ModerationController extends mvc.Controller {
     if (post.numPendingFlags > 0) {
       val jsFlags = flags map { flag => // .filter(_.deletedAt.isEmpty) // TODO add deletedAt
         val flagger = thingsToReview.theUser(flag.flaggerId)
-        val flaggerName = flagger.displayName
+        val flaggerName = flagger.usernameOrGuestName
         Json.obj(
           "flaggerId" -> flag.flaggerId,
           "flaggerDisplayName" -> flaggerName,
@@ -208,7 +195,7 @@ object ModerationController extends mvc.Controller {
     }
 
     toJson(data)
-  }
+  }*/
 
 }
 

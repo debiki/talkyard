@@ -80,7 +80,7 @@ case class Invite(
 
   def makeUser(userId: UserId, currentTime: ju.Date) = CompleteUser(
     id = userId,
-    fullName = "",
+    fullName = None,
     username = deriveUsername,
     createdAt = currentTime,
     isApproved = None,
@@ -109,7 +109,7 @@ object Invite {
 
 // Rename to NewMemberData?
 sealed abstract class NewUserData {
-  def name: String
+  def name: Option[String]
   def username: String
   def email: String
   def emailVerifiedAt: Option[ju.Date]
@@ -141,7 +141,7 @@ sealed abstract class NewUserData {
 
 
 case class NewPasswordUserData(
-  name: String,
+  name: Option[String],
   username: String,
   email: String,
   password: String,
@@ -175,7 +175,7 @@ case class NewPasswordUserData(
 
 
 object NewPasswordUserData {
-  def create(name: String, username: String, email: String, password: String,
+  def create(name: Option[String], username: String, email: String, password: String,
         isAdmin: Boolean, isOwner: Boolean)
         : NewPasswordUserData Or ErrorMessage = {
     for {
@@ -194,7 +194,7 @@ object NewPasswordUserData {
 
 
 case class NewOauthUserData(
-  name: String,
+  name: Option[String],
   username: String,
   email: String,
   emailVerifiedAt: Option[ju.Date],
@@ -208,7 +208,7 @@ case class NewOauthUserData(
 
 
 object NewOauthUserData {
-  def create(name: String, email: String, emailVerifiedAt: Option[ju.Date], username: String,
+  def create(name: Option[String], email: String, emailVerifiedAt: Option[ju.Date], username: String,
         identityData: OpenAuthDetails, isAdmin: Boolean, isOwner: Boolean)
         : NewOauthUserData Or ErrorMessage = {
     for {
@@ -261,7 +261,8 @@ case object User {
     */
   val LowestAuthenticatedUserId = 100
 
-  val LowestNonGuestId = -1
+  val LowestMemberId = SystemUserId // -1
+  val LowestNonGuestId = -1 // later: rename to LowestMemberId
   assert(LowestNonGuestId == SystemUserId)
   assert(LowestNonGuestId == MaxGuestId + 1)
 
@@ -340,54 +341,22 @@ case object User {
 }
 
 
-/**
- *
- * @param id Starts with "-" for guest users. COULD replace with UserId (see above).
- * @param displayName
- * @param username Is None for guests, and some old users created before usernames had
- *    been implemented.
- * @param email
- * @param emailNotfPrefs
- * @param emailVerifiedAt
- * @param country
- * @param website COULD rename to url, that's more generic.
- * @param isOwner
- * @param isAdmin
- * @param isModerator
- */
-case class User(
-  id: UserId,
-  displayName: String,
-  username: Option[String],
-  guestCookie: Option[String],
-  email: String,  // COULD rename to emailAddr
-  emailNotfPrefs: EmailNotfPrefs,
-  emailVerifiedAt: Option[ju.Date] = None,
-  passwordHash: Option[String] = None,
-  country: String = "",
-  website: String = "",
-  tinyAvatar: Option[UploadRef] = None,
-  smallAvatar: Option[UploadRef] = None,
-  isApproved: Option[Boolean],
-  suspendedTill: Option[ju.Date],
-  isAdmin: Boolean = false,
-  isOwner: Boolean = false,
-  isModerator: Boolean = false) {
-
-  require(User.isOkayUserId(id), "DwE02k12R5")
-  require(username.isEmpty || username.get.length >= 2)
-  require(!isGuest || displayName.trim.nonEmpty, "DwE4KEPF8")
-  require(!isGuest || User.isOkayGuestCookie(guestCookie), "DwE5QF7")
-  require(!isGuest || (
-    username.isEmpty && !isOwner && !isAdmin && !isModerator &&
-      isApproved.isEmpty && suspendedTill.isEmpty &&
-      emailVerifiedAt.isEmpty && passwordHash.isEmpty && website.isEmpty), "DwE0GUEST426")
-  require(!isAuthenticated || (
-    username.isDefined &&
-    guestCookie.isEmpty), "DwE0AUTH6U82")
-  require(!isEmailLocalPartHidden(email), "DwE6kJ23")
-  require(!isGuest || tinyAvatar.isEmpty, "EdE7YGM2")
-  require(tinyAvatar.isDefined == smallAvatar.isDefined, "EdE5YPU2")
+// Try to remove all fields unique for only Member and only Guest.
+sealed trait User {
+  def id: UserId
+  def email: String  // COULD rename to emailAddr
+  def emailNotfPrefs: EmailNotfPrefs
+  def emailVerifiedAt: Option[ju.Date]
+  def passwordHash: Option[String]
+  def country: String
+  def website: String
+  def tinyAvatar: Option[UploadRef]
+  def smallAvatar: Option[UploadRef]
+  def isApproved: Option[Boolean]
+  def suspendedTill: Option[ju.Date]
+  def isAdmin: Boolean
+  def isOwner: Boolean
+  def isModerator: Boolean
 
   def isAuthenticated = isRoleId(id)
   def isApprovedOrStaff = isApproved.contains(true) || isStaff
@@ -400,20 +369,85 @@ case class User(
 
   def isSuspendedAt(when: ju.Date) = User.isSuspendedAt(when, suspendedTill = suspendedTill)
 
-  def theUsername = username getOrDie "DwE4GKS2"
-  def fullName: String = displayName
-
-  def prettyUsernameFullName = username match {
-    case Some(un) => s"$un ($displayName)"
-    case None => s"($displayName)"
-  }
+  def anyName: Option[String] = None
+  def anyUsername: Option[String] = None
+  def theUsername: String
+  def usernameOrGuestName: String
 }
 
 
-// Rename to CompleteMember?
+case class Member(
+  id: UserId,
+  fullName: Option[String],
+  theUsername: String,
+  email: String,  // COULD rename to emailAddr
+  emailNotfPrefs: EmailNotfPrefs,
+  emailVerifiedAt: Option[ju.Date] = None,
+  passwordHash: Option[String] = None,
+  country: String = "",
+  website: String = "",
+  tinyAvatar: Option[UploadRef] = None,
+  smallAvatar: Option[UploadRef] = None,
+  isApproved: Option[Boolean],
+  suspendedTill: Option[ju.Date],
+  isAdmin: Boolean = false,
+  isOwner: Boolean = false,
+  isModerator: Boolean = false) extends User {
+
+  override def anyName = fullName
+  override def anyUsername = username
+  def username: Option[String] = Some(theUsername)
+  def usernameOrGuestName = theUsername
+
+  def usernameParensFullName: String = fullName match {
+    case Some(name) => s"$theUsername ($name)"
+    case None => theUsername
+  }
+
+  require(!fullName.map(_.trim).contains(""), "DwE4GUK28")
+  require(User.isOkayUserId(id), "DwE02k12R5")
+  require(theUsername.length >= 2, "EsE7YKW3")
+  require(!isEmailLocalPartHidden(email), "DwE6kJ23")
+  require(tinyAvatar.isDefined == smallAvatar.isDefined, "EdE5YPU2")
+}
+
+
+case class Guest(
+  id: UserId,
+  guestName: String,
+  guestCookie: Option[String],
+  email: String,  // COULD rename to emailAddr
+  emailNotfPrefs: EmailNotfPrefs,
+  country: String = "") extends User {
+
+  def theUsername = die("EsE7YKWP4")
+  def username = None
+  def emailVerifiedAt: Option[ju.Date] = None
+  def passwordHash: Option[String] = None
+  def tinyAvatar: Option[UploadRef] = None
+  def smallAvatar: Option[UploadRef] = None
+  def website: String = ""
+  def isApproved: Option[Boolean] = None
+  def isAdmin: Boolean = false
+  def isOwner: Boolean = false
+  def isModerator: Boolean = false
+  def suspendedTill: Option[ju.Date] = None
+
+  override def anyName = Some(guestName)
+  def usernameOrGuestName = guestName
+
+  require(id <= MaxCustomGuestId, "DwE4GYUK21")
+  require(guestName == guestName.trim, "EsE5YGUK3")
+  require(guestName.nonEmpty, "DwE4KEPF8")
+  require(User.isOkayGuestCookie(guestCookie), "DwE5QF7")
+  require(!isEmailLocalPartHidden(email), "DwE6kJ23")
+}
+
+
+// Rename to MemberInclDetails?
 case class CompleteUser(
   id: UserId,
-  fullName: String,
+  fullName: Option[String],
   username: String,
   createdAt: ju.Date,
   isApproved: Option[Boolean],
@@ -481,11 +515,10 @@ case class CompleteUser(
       emailForEveryNewPost = preferences.emailForEveryNewPost)
   }
 
-  def briefUser = User(
+  def briefUser = Member(
     id = id,
-    displayName = fullName,
-    username = Some(username),
-    guestCookie = None,
+    fullName = fullName,
+    theUsername = username,
     email = emailAddress,
     emailNotfPrefs = emailNotfPrefs,
     emailVerifiedAt = emailVerifiedAt,
@@ -662,7 +695,7 @@ case class OpenAuthProviderIdKey(providerId: String, providerKey: String)
 
 case class LoginGrant(
    identity: Option[Identity],
-   user: User,
+   user: Member,
    isNewIdentity: Boolean,
    isNewRole: Boolean) {
 

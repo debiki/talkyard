@@ -20,8 +20,8 @@ package com.debiki.core
 import java.net.InetAddress
 import java.{util => ju}
 import com.debiki.core.EmailNotfPrefs._
-
 import scala.collection.immutable
+import Prelude._
 
 
 trait SiteTransaction {
@@ -220,10 +220,20 @@ trait SiteTransaction {
     loadCompleteUser(userId).getOrElse(throw UserNotFoundException(userId))
 
   def updateCompleteUser(user: CompleteUser): Boolean
-  def updateGuest(guest: User): Boolean
+  def updateGuest(guest: Guest): Boolean
 
   def loadUser(userId: UserId): Option[User]
   def loadTheUser(userId: UserId) = loadUser(userId).getOrElse(throw UserNotFoundException(userId))
+  def loadTheGuest(userId: UserId): Guest = {
+    dieIf(userId > User.MaxGuestId, "EsE6YKWU2")
+    loadTheUser(userId).asInstanceOf[Guest]
+  }
+  def loadMember(userId: UserId): Option[Member] = {
+    dieIf(userId <= User.MaxGuestId, "EsE6YKWU2")
+    loadUser(userId).map(_.asInstanceOf[Member])
+  }
+  def loadTheMember(userId: UserId): Member = loadMember(userId).getOrDie(
+    "EsEFK320FG", s"Member $userId missing")
 
   def loadUsers(userIds: Iterable[UserId]): immutable.Seq[User]
   def loadTheUsers(userIds: UserId*): immutable.Seq[User] = {
@@ -235,7 +245,13 @@ trait SiteTransaction {
 
   def loadUsersOnPageAsMap2(pageId: PageId, siteId: Option[SiteId] = None): Map[UserId, User]
   def loadUsersAsMap(userIds: Iterable[UserId]): Map[UserId, User]
-  def loadUserByEmailOrUsername(emailOrUsername: String): Option[User]
+
+  def loadMembersAsMap(userIds: Iterable[UserId]): Map[UserId, Member] = {
+    dieIf(userIds.exists(_ <= User.MaxGuestId), "EsE5YKG2")
+    loadUsersAsMap(userIds).mapValues(_.asInstanceOf[Member])
+  }
+
+  def loadMemberByEmailOrUsername(emailOrUsername: String): Option[Member]
 
   def loadUsers(): immutable.Seq[User]
   def loadCompleteUsers(

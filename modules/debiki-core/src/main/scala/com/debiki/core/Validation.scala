@@ -28,12 +28,11 @@ object Validation {
   private val UsernameOkFirstCharRegex = "[A-Za-z0-9]".r
 
 
-  def checkName(name: String): String Or ErrorMessage = {
-    // "Bo" and "Ek", 2 chars each, are valid Swedish names.
-    if (name.length <= 1)
-      return Bad("The name is too short")
+  def checkName(name: Option[String]): Option[String] Or ErrorMessage = {
+    if (name.map(_.trim) != name)
+      return Bad("Name starts or ends with blanks")
 
-    if (name.length > 100)
+    if (name.exists(_.length > 100))
       return Bad("The name is too long")
 
     Good(name)

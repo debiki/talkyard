@@ -91,7 +91,7 @@ object LoginWithPasswordController extends mvc.Controller {
   def handleCreateUserDialog = AsyncPostJsonAction(RateLimits.CreateUser, maxLength = 1000,
         allowAnyone = true) { request: JsonPostRequest =>
     val body = request.body
-    val fullName = (body \ "fullName").as[String].trim
+    val fullName = (body \ "fullName").asOptStringNoneIfBlank
     val emailAddress = (body \ "email").as[String].trim
     val username = (body \ "username").as[String].trim
     val password = (body \ "password").asOpt[String] getOrElse
@@ -119,8 +119,8 @@ object LoginWithPasswordController extends mvc.Controller {
 
       val dao = daoFor(request.request)
       try {
-        val newUser = dao.createPasswordUserCheckPasswordStrong(userData)
-        sendEmailAddressVerificationEmail(newUser, anyReturnToUrl, request.host, request.dao)
+        val newMember = dao.createPasswordUserCheckPasswordStrong(userData)
+        sendEmailAddressVerificationEmail(newMember, anyReturnToUrl, request.host, request.dao)
       }
       catch {
         case DbDao.DuplicateUsername =>
@@ -140,7 +140,7 @@ object LoginWithPasswordController extends mvc.Controller {
 
   val RedirectFromVerificationEmailOnly = "_RedirFromVerifEmailOnly_"
 
-  def sendEmailAddressVerificationEmail(user: User, anyReturnToUrl: Option[String],
+  def sendEmailAddressVerificationEmail(user: Member, anyReturnToUrl: Option[String],
         host: String, dao: SiteDao) {
     val returnToUrl = anyReturnToUrl match {
       case Some(url) => url.replaceAllLiterally(RedirectFromVerificationEmailOnly, "")
@@ -154,7 +154,7 @@ object LoginWithPasswordController extends mvc.Controller {
       bodyHtmlText = (emailId: String) => {
         views.html.createaccount.createAccountLinkEmail(
           siteAddress = host,
-          username = user.username.getOrElse(user.displayName),
+          username = user.theUsername,
           emailId = emailId,
           returnToUrl = returnToUrl,
           expirationTimeInHours = MaxAddressVerificationEmailAgeInHours).body

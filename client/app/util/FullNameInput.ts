@@ -47,7 +47,6 @@ export var FullNameInput = createClassAndFactory({
       utils.PatternInput({ label: this.props.label, ref: 'patternInput', id: this.props.id,
         className: this.props.className, placeholder: this.props.placeholder,
         help: this.props.help, tabIndex: this.props.tabIndex,
-        regex: /.+/, message: "Name required",
         notRegex: /^\s+$/, notMessage: "Not just spaces please",
         notRegexTwo: /@/, notMessageTwo: "No @ please",
         notRegexThree: BadSymbolsRegex, notMessageThree: "No weird characters please",

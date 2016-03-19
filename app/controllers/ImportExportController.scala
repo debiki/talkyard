@@ -225,7 +225,7 @@ object ImportExportController extends mvc.Controller {
       Good(CompleteUser(
         id = id,
         username = username,
-        fullName = readString(jsObj, "fullName"),
+        fullName = readOptString(jsObj, "fullName"),
         createdAt = readDateMs(jsObj, "createdAtMs"),
         isApproved = readOptBool(jsObj, "isApproved"),
         approvedAt = readOptDateMs(jsObj, "approvedAtMs"),

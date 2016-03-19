@@ -98,6 +98,7 @@ object UnsubscriptionController extends mvc.Controller {
           throwForbidden("DwE530KI37", "Email not found")
       }
 
+    ??? /*
     import loginGrant.{identity, user}
     val idtyEmailId: IdentityEmailId = identity.getOrDie("DwE4YPF8").asInstanceOf[IdentityEmailId]
 
@@ -122,6 +123,7 @@ object UnsubscriptionController extends mvc.Controller {
 
     // Tell user what happened.
     SeeOther(nextPage(request))
+    */
   }
 
 }

@@ -88,7 +88,6 @@ POST  /-/delete                 controllers.ModerationController.deletePost
 POST  /-/delete-flagged         controllers.ModerationController.deleteFlaggedPost
 POST  /-/clear-flags            controllers.ModerationController.clearFlags
 POST  /-/reject-edits           controllers.ModerationController.rejectEdits
-GET   /-/list-recent-posts      controllers.ModerationController.listRecentPosts
 
 GET   /-/users/                 controllers.UserController.viewUserPage(whatever = "")
 GET   /-/users/*whatever        controllers.UserController.viewUserPage(whatever)

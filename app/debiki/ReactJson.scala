@@ -560,8 +560,8 @@ object ReactJson {
     Json.obj(
       "id" -> JsNumber(user.id),
       "userId" -> JsNumber(user.id), // try to remove, use 'id' instead
-      "username" -> JsStringOrNull(user.username),
-      "fullName" -> JsString(user.displayName),
+      "username" -> JsStringOrNull(user.anyUsername),
+      "fullName" -> JsStringOrNull(user.anyName),
       "isLoggedIn" -> JsBoolean(true),
       "isAdmin" -> JsBoolean(user.isAdmin),
       "isModerator" -> JsBoolean(user.isModerator),
@@ -734,6 +734,7 @@ object ReactJson {
 
 
   def reviewStufToJson(stuff: ReviewStuff, usersById: Map[UserId, User]): JsValue = {
+    // Also see nowadays no-longer-in-use ModerationController.makeJsonSinglePost.
     val anyPost = stuff.post match {
       case None => JsNull
       case Some(post) =>
@@ -882,8 +883,8 @@ object ReactJson {
   def JsUser(user: User): JsObject = {
     var json = Json.obj(
       "id" -> JsNumber(user.id),
-      "username" -> JsStringOrNull(user.username),
-      "fullName" -> JsString(user.displayName))
+      "username" -> JsStringOrNull(user.anyUsername),
+      "fullName" -> JsStringOrNull(user.anyName))
     user.tinyAvatar foreach { uploadRef =>
       json += "avatarUrl" -> JsString(uploadRef.url)
     }
