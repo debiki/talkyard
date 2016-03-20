@@ -258,6 +258,7 @@ export var CreateUserDialogContent = createClassAndFactory({
 
     var usernameInput =
         PatternInput({ label: "Username:", ref: 'username', id: 'e2eUsername', tabIndex: 2,
+          addonBefore: '@',
           minLength: 3, maxLength: 20,
           notRegex: / /, notMessage: "No spaces please",
           notRegexTwo: /-/, notMessageTwo: "No hypens (-) please",
@@ -265,7 +266,7 @@ export var CreateUserDialogContent = createClassAndFactory({
           notRegexFour: /[^a-zA-Z0-9_]/,
           notMessageFour: "Only letters a-z A-Z and 0-9 and _",
           onChange: (value, isOk) => this.updateValueOk('username', value, isOk),
-          help: r.span({}, "Your ", r.code({}, "@username"), ", keep it short") });
+          help: r.span({}, "Your ", r.code({}, "@username"), ", unique and short") });
 
     var passwordInput = props.createPasswordUser
         ? NewPasswordInput({ newPasswordData: state.userData, ref: 'password', tabIndex: 2,
@@ -273,7 +274,7 @@ export var CreateUserDialogContent = createClassAndFactory({
         : null;
 
     var fullNameInput =
-      FullNameInput({ label: "Your full name: (optional)", ref: 'fullName',
+      FullNameInput({ label: "Full name: (optional)", ref: 'fullName',
         id: 'e2eFullName', defaultValue: props.name, tabIndex: 2,
         onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) });
 
@@ -286,8 +287,7 @@ export var CreateUserDialogContent = createClassAndFactory({
         passwordInput,
         fullNameInput,
         Button({ onClick: this.doCreateUser, disabled: disableSubmit, id: 'e2eSubmit',
-            className: 'btn-primary', tabIndex: 2 }, "Create User"),
-        Button({ onClick: props.closeDialog, id: 'e2eCancel', tabIndex: 2 }, "Cancel")));
+            className: 'btn-primary', tabIndex: 2 }, "Create Account")));
   }
 });
 

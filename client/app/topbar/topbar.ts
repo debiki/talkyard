@@ -129,9 +129,12 @@ export var TopBar = createComponent({
     });
   },
 
+  onSignUpClick: function() {
+    login.getLoginDialog().openToSignUp(this.props.purpose || 'LoginToLogin');
+  },
+
   onLoginClick: function() {
-    // COULD call new fn ReactActions.login() instead?
-    login.getLoginDialog().open(this.props.purpose || 'LoginToLogin');
+    login.getLoginDialog().openToLogIn(this.props.purpose || 'LoginToLogin');
   },
 
   onLogoutClick: function() {
@@ -270,8 +273,12 @@ export var TopBar = createComponent({
 
     // ------- Login button
 
+    var signupButton = me.isLoggedIn ? null :
+      Button({ className: 'dw-login esTopbar_signUp btn-primary', onClick: this.onSignUpClick },
+        r.span({}, "Sign Up"));
+
     var loginButton = me.isLoggedIn ? null :
-        Button({ className: 'dw-login btn-primary', onClick: this.onLoginClick },
+        Button({ className: 'dw-login esTopbar_logIn btn-primary', onClick: this.onLoginClick },
             r.span({ className: 'icon-user' }, 'Log In'));
 
     // ------- Tools button
@@ -412,6 +419,7 @@ export var TopBar = createComponent({
     var topbar =
       r.div({ className: 'esTopBar' + extraMarginClass },
         r.div({ className: 'dw-topbar-btns' },
+          signupButton,
           loginButton,
           toolsButton,
           searchButton,

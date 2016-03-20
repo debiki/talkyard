@@ -43,7 +43,7 @@ export var NameLoginBtns = createComponent({
   },
 
   onLoginClick: function() {
-    login.getLoginDialog().open(this.props.purpose || 'LoginToLogin');
+    login.getLoginDialog().openToLogIn(this.props.purpose || 'LoginToLogin');
   },
 
   onLogoutClick: function() {

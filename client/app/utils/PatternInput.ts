@@ -24,6 +24,8 @@
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
+var ReactBootstrap: any = window['ReactBootstrap'];
+var Input = reactCreateFactory(ReactBootstrap.Input);
 
 
 export var PatternInput = createClassAndFactory({
@@ -61,6 +63,11 @@ export var PatternInput = createClassAndFactory({
         onChangeValuOk(this.state.value, !hasError);
       }
     }
+  },
+
+  showErrorsSoon: function() {
+    clearTimeout(this.showErrorsTimeoutHandle);
+    this.showErrorsTimeoutHandle = setTimeout(this.showErrors, 3000);
   },
 
   showErrors: function() {
@@ -128,14 +135,19 @@ export var PatternInput = createClassAndFactory({
       }
     }
     return (
-      r.div({ className: 'form-group' + (anyError ? ' has-error' : ''), style: this.props.style },
-        r.label({ htmlFor: this.props.id }, this.props.label),
-        r.br(),
-        r.input({ type: 'text', id: this.props.id, className: 'form-control', ref: 'theInput',
-            placeholder: this.props.placeholder, onChange: this.onChange,
-            tabIndex: this.props.tabIndex, onBlur: this.props.onBlur,
-            disabled: this.props.disabled, value: this.state.value, onFocus: this.showErrors }),
-        r.p({ className: 'help-block' }, this.props.help),
+      r.div({},
+        Input({ type: 'text', id: this.props.id, className: 'form-control', ref: 'theInput',
+          // wrapperClassName: anyError ? ' has-error' : '', — no don't, makes the input lose focus
+          style: this.props.style,
+          label: this.props.label,
+          addonBefore: this.props.addonBefore,
+          placeholder: this.props.placeholder, onChange: this.onChange,
+          tabIndex: this.props.tabIndex, onBlur: () => {
+            this.showErrors();
+            if (this.props.onBlur) this.props.onBlur();
+          },
+          disabled: this.props.disabled, value: this.state.value, onFocus: this.showErrorsSoon,
+          help: this.props.help }),
         anyError));
   }
 });

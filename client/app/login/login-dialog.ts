@@ -54,6 +54,7 @@ var EmailInput = util.EmailInput;
   'LoginToCreateTopic'
 */
 
+var signUpDialog;
 var loginDialog;
 
 // From before React.js.
@@ -67,7 +68,7 @@ export function loginIfNeeded(loginReason: LoginReason | string, anyReturnToUrl?
     success();
   }
   else {
-    getLoginDialog().open(loginReason, anyReturnToUrl, success);
+    getLoginDialog().openToLogIn(loginReason, anyReturnToUrl, success);
   }
 }
 
@@ -92,6 +93,7 @@ var LoginDialog = createClassAndFactory({
     return {
       isOpen: false,
       childDialog: null,
+      logInOrSignUp: null,
     };
   },
 
@@ -108,8 +110,18 @@ var LoginDialog = createClassAndFactory({
     }
   },
 
-  open: function(loginReason: LoginReason | string, anyReturnToUrl?: string, callback?: () => void,
-        preventClose?: boolean) {
+  openToLogIn: function(loginReason: LoginReason | string,
+        anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
+    this.open(false, loginReason, anyReturnToUrl, callback, preventClose);
+  },
+
+  openToSignUp: function(loginReason: LoginReason | string,
+        anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
+    this.open(true, loginReason, anyReturnToUrl, callback, preventClose);
+  },
+
+  open: function(isSignUp: boolean, loginReason: LoginReason | string,
+        anyReturnToUrl?: string, callback?: () => void, preventClose?: boolean) {
     this.clearLoginRelatedCookies();
     if (!anyReturnToUrl) {
       anyReturnToUrl = window.location.toString();
@@ -124,6 +136,7 @@ var LoginDialog = createClassAndFactory({
       anyContinueAfterLoginCallback = callback;
       this.setState({
         isOpen: true,
+        isSignUp: isSignUp,
         loginReason: loginReason,
         anyReturnToUrl: anyReturnToUrl,
         preventClose: preventClose || loginReason === 'LoginToAuthenticate' ||
@@ -173,10 +186,10 @@ var LoginDialog = createClassAndFactory({
         title = "Login to Like this post";
         break;
       default:
-        title = "Who are you?";
+        title = this.state.isSignUp ? "Create account" : "Log in";
     }
 
-    var content = LoginDialogContent({ loginReason: state.loginReason,
+    var content = LoginDialogContent({ isSignUp: state.isSignUp, loginReason: state.loginReason,
         anyReturnToUrl: state.anyReturnToUrl, setChildDialog: this.setChildDialog,
         childDialog: state.childDialog, close: this.close, isLoggedIn: state.isLoggedIn });
 
@@ -205,6 +218,7 @@ var LoginDialog = createClassAndFactory({
 export var LoginDialogContent = createClassAndFactory({
   render: function() {
     var loginReason = this.props.loginReason;
+    var isSignUp = this.props.isSignUp;
 
     var openChildDialog = (whichDialog) => {
       return (clickEvent) => {
@@ -262,23 +276,16 @@ export var LoginDialogContent = createClassAndFactory({
             "to this part of the site. Please login below, as someone with access.")
         : null;
 
-    var createAccountButton;
-    if (loginReason !== 'LoginAsAdmin' && loginReason !== 'LoginToAdministrate') { // both really used? Can I remove one?
-      createAccountButton =
-          Button({ onClick: openChildDialog(CreateUserDialogContent),
-              id: 'e2eCreateNewAccount' }, "Create Password Account");
-    }
+    var typePasswordForm = isSignUp ? null :
+        PasswordLoginDialogContent(childDialogProps);
 
-    var loginWithPasswordButton;
-    if (loginReason !== LoginReason.BecomeAdmin) {
-      loginWithPasswordButton =
-          Button({ onClick: openChildDialog(PasswordLoginDialogContent) }, "Login with Password");
-    }
+    var createUserForm = !isSignUp ? null :
+        CreateUserDialogContent(childDialogProps);
 
     var loginAsGuestButton;
     if (loginReason !== LoginReason.BecomeAdmin && loginReason !== 'LoginAsAdmin' &&
         loginReason !== 'LoginToAdministrate' && loginReason !== 'LoginToAuthenticate' &&
-        loginReason !== LoginReason.LoginToChat &&
+        loginReason !== LoginReason.LoginToChat && !isSignUp &&
         debiki2.ReactStore.isGuestLoginAllowed()) {
       loginAsGuestButton =
           Button({ onClick: openChildDialog(GuestLoginDialogContent),
@@ -288,7 +295,8 @@ export var LoginDialogContent = createClassAndFactory({
     var termsAndPrivacy = loginReason === LoginReason.BecomeAdmin
       ? null // the owner doesn't need to agree to his/her own terms of use
       : r.p({ id: 'dw-lgi-tos' },
-          "By logging in, you agree to our ", r.a({ href: "/-/terms-of-use" }, "Terms of Use"),
+          (isSignUp ? "By proceeding" : "By logging in") +
+          ", you agree to our ", r.a({ href: "/-/terms-of-use" }, "Terms of Use"),
           " and ", r.a({ href: '/-/privacy-policy' }, "Privacy Policy"));
 
     return (
@@ -300,20 +308,22 @@ export var LoginDialogContent = createClassAndFactory({
         becomeAdminInstructions,
         termsAndPrivacy,
         r.p({ id: 'dw-lgi-or-login-using' },
-          "Login via:"),
+          isSignUp ? "Create account with:" : "Login with:"),
         r.div({ id: 'dw-lgi-other-sites' },
           OpenAuthButton(makeOauthProps('icon-google-plus', 'Google')),
           OpenAuthButton(makeOauthProps('icon-facebook', 'Facebook')),
           OpenAuthButton(makeOauthProps('icon-twitter', 'Twitter')),
-          OpenAuthButton(makeOauthProps('icon-github', 'GitHub'))),
+          OpenAuthButton(makeOauthProps('icon-github', 'GitHub')),
           // OpenID doesn't work right now, skip for now:  icon-yahoo Yahoo!
+          loginAsGuestButton),
 
-        r.p({ id: 'dw-lgi-or-login-using' }, "Or instead:"),
+        r.p({ id: 'dw-lgi-or-login-using' },
+          isSignUp
+              ? "Or create an account here:"
+              : "Or fill in:"),
 
-        ButtonGroup({ vertical: true },
-          createAccountButton,
-          loginWithPasswordButton,
-          loginAsGuestButton)));
+        typePasswordForm,
+        createUserForm));
   }
 });
 
@@ -439,11 +449,10 @@ var PasswordLoginDialogContent = createClassAndFactory({
 
     return (
       r.form({},
-        Input({ type: 'text', label: "Email or username:", ref: 'whoInput', onChange: this.clearError }),
+        Input({ type: 'text', label: "Username or email:", ref: 'whoInput', onChange: this.clearError }),
         Input({ type: 'password', label: "Password:", ref: 'passwordInput', onChange: this.clearError }),
         badPasswordMessage,
-        Button({ onClick: this.doLogin }, "Login" + inOrderTo(this.props.loginReason)),
-        Button({ onClick: this.props.closeDialog }, "Cancel"),
+        Button({ onClick: this.doLogin, bsStyle: 'primary' }, "Login" + inOrderTo(this.props.loginReason)),
         r.br(),
         r.a({ href: debiki.internal.serverOrigin + '/-/reset-password/specify-email',
             target: '_blank', className: 'dw-reset-pswd',
