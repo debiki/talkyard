@@ -402,8 +402,6 @@ export function togglePagebarOpen() {
 }
 
 export function setPagebarOpen(open: boolean) {
-  if (open) $('html').addClass('es-pagebar-open');
-  else $('html').removeClass('es-pagebar-open');
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.SetContextbarOpen,
     open: open,
@@ -419,8 +417,6 @@ export function toggleWatchbarOpen() {
 }
 
 export function setWatchbarOpen(open: boolean) {
-  if (open) $('html').addClass('es-watchbar-open');
-  else $('html').removeClass('es-watchbar-open');
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.SetWatchbarOpen,
     open: open,

@@ -12,6 +12,7 @@
 //==============================
 
 $watchbarWidth = 230px  // dupl value, in css too [7GYK42]
+$sidebarZIndex = 1010
 
 body
   overflow: hidden;
@@ -19,14 +20,19 @@ body
 #esPageColumn
   top: 0;
   bottom: 0;
-  left: $watchbarWidth;
-  right: 25vw;
   position: fixed;
   // Native scrollbars look different in different browsers. Use js scrollbars instead?
   // E.g.: http://stackoverflow.com/a/25480648/694469
   // or http://jscrollpane.kelvinluck.com/index.html
   overflow-y: scroll;
   overflow-x: visible;
+  // Move the contents a bit to the left/right if sidebars open...
+  left: $watchbarWidth;
+  right: 25vw;
+html.esSidebarsOverlayPage #esPageColumn
+  // ...but if the screen too small, let the sidebars overlay the page instead.
+  left: 0;
+  right: 0;
 
 #esWatchbarColumn
   position: fixed;
@@ -34,7 +40,7 @@ body
   left: 0;
   bottom: 0;
   width: $watchbarWidth;
-  z-index: 1010;
+  z-index: $sidebarZIndex;
 
 #esThisbarColumn
   position: fixed;
@@ -42,7 +48,29 @@ body
   right: 0;
   bottom: 0;
   width: 25vw;
-  z-index: 1010;
+  z-index: $sidebarZIndex;
+html.esSidebarsOverlayPage
+  #esThisbarColumn
+    width: 280px;
+
+// Dims the page if any sidebar open, and screen small. Closes the sidebar on click.
+html.esSidebarsOverlayPage
+  &.es-pagebar-open,
+  &.es-watchbar-open
+    #theSidebarPageOverlay
+      display: block;
+
+#theSidebarPageOverlay
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: $sidebarZIndex - 1;
+  background: black;
+  opacity: 0.5;
+  display: none;
+
 
 html:not(.es-pagebar-open)
   #esThisbarColumn
@@ -74,7 +102,7 @@ html:not(.es-watchbar-open)
   padding-left: 20px;
   padding-right: 20px;
 
-html.es-watchbar-open
+html.es-watchbar-open:not(.esSidebarsOverlayPage)
   #topbar > .container,
   #dwPosts > .container,
   #dwPosts > div > .container,

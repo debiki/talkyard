@@ -55,7 +55,8 @@ var docElem = document.documentElement;
 docElem.className += ' js';
 
 @* So that we can avoid iOS CSS bugs. *@
-if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream)
+var isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+if (isIos)
   docElem.className += ' ios';
 
   @* See https://stackoverflow.com/a/1912522/694469. The <div> isn't added to the document
@@ -88,15 +89,21 @@ if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream)
     docElem.className += ' dw-hide-forum-intro';
   }
 
+var _narrow = window.innerWidth < 780 || isIos; @{/* dupl constant, see ReactStore.ts [5YKT42] */}
+if (_narrow) {
+  docElem.className += ' esSidebarsOverlayPage';
+  __reactStore.shallSidebarsOverlayPage = true;
+}
+
   var __isInfoPage = !__reactStore.pageRole || __reactStore.pageRole <= 2;
-  if (localStorage.getItem('isWatchbarOpen') !== 'false' &&
+  if (!_narrow && localStorage.getItem('isWatchbarOpen') !== 'false' &&
       location.search.search('&hideWatchbar') === -1 && !__isInfoPage) {
     docElem.className += ' es-watchbar-open';
     __reactStore.isWatchbarOpen = true;
   }
 
   @{/* Hide by default, or new users will be overwhelmed by everything there is to see */}
-  if (localStorage.getItem('isContextbarOpen') === 'true' &&
+  if (!_narrow && localStorage.getItem('isContextbarOpen') === 'true' &&
       location.search.search('&hideContextbar') === -1 && !__isInfoPage) {
     docElem.className += ' es-pagebar-open';
     __reactStore.isContextbarOpen = true;

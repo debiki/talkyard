@@ -342,6 +342,7 @@ interface Store {
   topLevelCommentIdsSorted: number[];
   isWatchbarOpen: boolean;
   isContextbarOpen: boolean;
+  shallSidebarsOverlayPage?: boolean;
   siteSections: SiteSection[];
   horizontalLayout: boolean;
   is2dTreeDefault: boolean;

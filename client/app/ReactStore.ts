@@ -215,13 +215,11 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.SetWatchbarOpen:
-      putInLocalStorage('isWatchbarOpen', action.open);
-      store.isWatchbarOpen = action.open;
+      setWatchbarOpen(action.open);
       break;
 
     case ReactActions.actionTypes.SetContextbarOpen:
-      putInLocalStorage('isContextbarOpen', action.open);
-      store.isContextbarOpen = action.open;
+      setContextbarOpen(action.open);
       break;
 
     case ReactActions.actionTypes.SetHorizontalLayout:
@@ -295,6 +293,14 @@ ReactDispatcher.register(function(payload) {
 ReactStore.initialize = function() {
   findAnyAcceptedAnswerPostNr();
   store.usersByIdBrief = store.usersByIdBrief || {};
+
+  // Init page overlay, shown if sidebars open.
+  debiki.v0.util.addZoomOrResizeListener(updateShallSidebarsOverlayPage);
+  $('#theSidebarPageOverlay').click(function() {
+    setWatchbarOpen(false);
+    setContextbarOpen(false);
+    ReactStore.emitChange();
+  });
 };
 
 
@@ -1075,6 +1081,36 @@ function stopGifsPlayOnClick() {
   setTimeout(window['Gifffer'], 50);
 }
 
+
+function setWatchbarOpen(open: boolean) {
+  if (open) $html.addClass('es-watchbar-open');
+  else $html.removeClass('es-watchbar-open');
+  putInLocalStorage('isWatchbarOpen', open);
+  store.isWatchbarOpen = open;
+}
+
+
+function setContextbarOpen(open: boolean) {
+  if (open) $html.addClass('es-pagebar-open');
+  else $html.removeClass('es-pagebar-open');
+  putInLocalStorage('isContextbarOpen', open);
+  store.isContextbarOpen = open;
+}
+
+
+function updateShallSidebarsOverlayPage() {
+  if (window.innerWidth < 780) { // dupl constant, see debikiScriptsHead.scala.html [5YKT42]
+    if (store.shallSidebarsOverlayPage) return;
+    $('html').addClass('esSidebarsOverlayPage');
+    store.shallSidebarsOverlayPage = true;
+  }
+  else {
+    if (!store.shallSidebarsOverlayPage) return;
+    $('html').removeClass('esSidebarsOverlayPage');
+    store.shallSidebarsOverlayPage = false;
+  }
+  ReactStore.emitChange();
+}
 
 //------------------------------------------------------------------------------
    }

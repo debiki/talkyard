@@ -268,10 +268,15 @@ export var Sidebar = createComponent({
   },
 
   focusPost: function(post: Post) {
+    var store: Store = this.state.store;
     this.setState({
       currentPostId: post.postId
     });
     ReactActions.loadAndShowPost(post.postId);
+    if (store.shallSidebarsOverlayPage) {
+      // Won't see the post unless we first close the contextbar.
+      ReactActions.closePagebar();
+    }
   },
 
   render: function() {

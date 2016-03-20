@@ -40,7 +40,7 @@ function addAnySidebarWidth(options) {
 }
 
 
-d.i.showAndHighlightPost = function($post, options) {
+debiki.internal.showAndHighlightPost = function($post, options) {
   options = addAnySidebarWidth(options);
   // Add space for position-fixed stuff at the top: Forw/Back btns and open-sidebar btn.
   options.marginTop = options.marginTop || 60;
