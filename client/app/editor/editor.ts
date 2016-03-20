@@ -741,6 +741,36 @@ export var Editor = createComponent({
     debiki2.edithistory.getEditHistoryDialog().open(this.state.editingPostUid);
   },
 
+  makeTextBold: function() {
+    var newText = wrapSelectedText(this.refs.textarea, "bold text", '**');
+    this.setState({ text: newText });
+    this.updatePreview();
+  },
+
+  makeTextItalic: function() {
+    var newText = wrapSelectedText(this.refs.textarea, "emphasized text", '*');
+    this.setState({ text: newText });
+    this.updatePreview();
+  },
+
+  markupAsCode: function() {
+    var newText = wrapSelectedText(this.refs.textarea, "preformatted text", '`');
+    this.setState({ text: newText });
+    this.updatePreview();
+  },
+
+  quoteText: function() {
+    var newText = wrapSelectedText(this.refs.textarea, "quoted text", '> ', null, '\n\n');
+    this.setState({ text: newText });
+    this.updatePreview();
+  },
+
+  addHeading: function() {
+    var newText = wrapSelectedText(this.refs.textarea, "Heading", '### ', null, '\n\n');
+    this.setState({ text: newText });
+    this.updatePreview();
+  },
+
   render: function() {
     var state = this.state;
     var store: Store = state.store;
@@ -909,13 +939,22 @@ export var Editor = createComponent({
     }
 
     var textareaButtons =
-        r.div({ className: 'esEdtr_txtBtns' },
-          r.button({ onClick: this.selectAndUploadFile, title: "Upload a file or image",
-              className: 'esEdtr_txtBtn' },
-            r.span({ className: 'icon-upload' })),
-          r.input({ name: 'files', type: 'file', multiple: false, // dupl code [2UK503]
-            ref: 'uploadFileInput', style: { width: 0, height: 0, float: 'left' }}),
-          r.i({ style: { marginLeft: '1ex', color: '#777' }}, " (More buttons here later...)"));
+      r.div({ className: 'esEdtr_txtBtns' },
+        r.button({ onClick: this.selectAndUploadFile, title: "Upload a file or image",
+            className: 'esEdtr_txtBtn' },
+          r.span({ className: 'icon-upload' })),
+        r.input({ name: 'files', type: 'file', multiple: false, // dupl code [2UK503]
+          ref: 'uploadFileInput', style: { width: 0, height: 0, float: 'left' }}),
+        r.button({ onClick: this.makeTextBold, title: "Make text bold",
+            className: 'esEdtr_txtBtn' }, 'B'),
+        r.button({ onClick: this.makeTextItalic, title: "Emphasize",
+          className: 'esEdtr_txtBtn esEdtr_txtBtn-em' }, r.i({}, 'I')),
+        r.button({ onClick: this.quoteText, title: "Quote",
+          className: 'esEdtr_txtBtn' }, '"'),
+        r.button({ onClick: this.markupAsCode, title: "Preformatted text",
+          className: 'esEdtr_txtBtn' }, r.span({ className: 'icon-code' })),
+        r.button({ onClick: this.addHeading, title: "Heading",
+            className: 'esEdtr_txtBtn' }, 'H'));
 
     var textErrorClass = this.state.showTextErrors && !this.isTextOk() ? ' esError' : '';
     var textarea =
@@ -1023,6 +1062,22 @@ var SelectCategoryInput = createClassAndFactory({
         categoryOptions));
   }
 });
+
+
+function wrapSelectedText(textarea, content: string, wrap: string, wrapAfter?: string,
+      newlines?: string) {
+  var startIndex = textarea.selectionStart;
+  var endIndex = textarea.selectionEnd;
+  var selectedText = textarea.value.substring(startIndex, endIndex);
+  var textBefore = textarea.value.substring(0, startIndex);
+  var textAfter = textarea.value.substring(endIndex);
+
+  if (_.isUndefined(wrapAfter)) wrapAfter = wrap;
+  if (selectedText) content = selectedText;
+  if (!newlines) newlines = '';
+
+  return textBefore + newlines + wrap + content + (wrapAfter || '') + newlines + textAfter;
+}
 
 
 var previewHelpMessage = {
