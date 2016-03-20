@@ -43,6 +43,7 @@ var ExplainingListItem = util.ExplainingListItem;
 type ExplainingTitleText = util.ExplainingTitleText;
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 var Input = reactCreateFactory(ReactBootstrap.Input);
+var HelpMessageBox = debiki2.help.HelpMessageBox;
 
 var ReactRouter = window['ReactRouter'];
 var Route = reactCreateFactory(ReactRouter.Route);
@@ -212,6 +213,10 @@ var ForumComponent = React.createClass(<any> {
       params: this.props.params,
     });
 
+    var topsAndCatsHelp = this.props.routes[SortOrderRouteIndex].path === RoutePathCategories
+      ? HelpMessageBox({ message: topicsAndCatsHelpMessage, className: 'esForum_topicsCatsHelp' })
+      : null;
+
     return (
      r.div({},
       debiki2.reactelements.TopBar({}),
@@ -221,10 +226,19 @@ var ForumComponent = React.createClass(<any> {
         ForumIntroText(this.state),
         helpMessage,
         ForumButtons(forumButtonProps),
+        topsAndCatsHelp,
         React.cloneElement(this.props.children, childProps))));
   }
 });
 
+
+var topicsAndCatsHelpMessage = {
+  id: 'EsH4YKG81',
+  version: 1,
+  content: r.span({},
+    "A ", r.i({}, r.b({}, "category")), " is a group of topics. " +
+    "A ", r.i({}, r.b({}, "topic")), " is a discussion or question."),
+};
 
 
 var ForumIntroText = createComponent({
@@ -413,8 +427,7 @@ var ForumButtons = createComponent({
       activeClassName: 'active' }, text);
 
     var showCategoryTreeButton =
-      makeCategoryLink(RoutePathCategories,
-          r.span({}, "Categories", r.span({ className: 'caret' })), 'esForum_catsTreeBtn');
+      makeCategoryLink(RoutePathCategories, "Categories", 'esForum_catsTreeBtn');
 
     var categoryMenuItems = [];
     _.each(props.categories, (category: Category) => {

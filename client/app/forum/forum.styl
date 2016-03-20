@@ -83,12 +83,7 @@ $forumNavBtnGroupLeft = 14px;
   box-shadow: none;
   border: none;
   margin-left: 0 !important;
-  .caret
-    transform: rotate(-90deg) scale(1.15,1.6);
-    margin-left: 4px;
   &.active
-    .caret
-      display: none
     cursor: default;
     font-weight: bold;
     background: none !important;
@@ -111,14 +106,13 @@ $forumNavBtnGroupLeft = 14px;
     box-shadow: none;
     margin-left: 2px !important;
   .caret
-    transform: rotate(-90deg) scale(1.2,1.8);
-    margin-left: 3px;
     position: relative;
     color: #333 !important;
-    //--
     transform: scale(1.1, 1.1);
     margin-left: 2px;
 
+.esForum_topicsCatsHelp
+  max-width: 500px !important;
 
 .DW.DW.DW .esForum_filterBtn
   border: none;
@@ -161,15 +155,17 @@ $forumNavBtnGroupLeft = 14px;
         //background: hsl($uiNavHue, $uiNavSaturation + 20, 89%);
         background: hsl($uiHue, 100%, 92%);
         color: hsl($uiHue, 100%, 22%);
-        text-decoration: underline;
+        text-shadow: 0.5px 0 hsl(0, 0%, 22%);
       &.active
         //color: white;
         cursor: default;
         //background: hsl($uiNavHue, $uiNavSaturation, 53%);
-        color: #222;
+        //color: #222;
         font-weight: bold;
         background: none;
-        text-decoration: underline;
+        //text-decoration: underline;
+        color: hsl(0, 0%, 22%);
+        text-shadow: 0.5px 0 hsl(0, 0%, 22%);
 
       min-width: 60px;
       padding-left: 15px;

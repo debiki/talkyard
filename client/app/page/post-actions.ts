@@ -201,7 +201,7 @@ export var PostActions = createComponent({
       var closeReopenTooltip;
       if (!store.pageClosedAtMs) {
         closeReopenTitle = "Close";
-        closeReopenIcon = 'icon-cancel-circled';
+        closeReopenIcon = 'icon-block';
         switch (store.pageRole) {
           case PageRole.Question:
             if (isOwnPage)

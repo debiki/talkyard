@@ -117,12 +117,6 @@ var CreateUserDialog = createClassAndFactory({
   close: function() {
     this.setState({ isOpen: false, userData: {} });
   },
-  focusFirstInput: function() {
-    // How can it be absent??
-    if (this.refs.content) {
-      this.refs.content.focusFirstInput();
-    }
-  },
   render: function () {
     var childProps = _.clone(this.state.userData);
     childProps.anyReturnToUrl = this.state.anyReturnToUrl;
@@ -130,9 +124,7 @@ var CreateUserDialog = createClassAndFactory({
     childProps.ref = 'content';
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, keyboard: false,
-          dialogClassName: 'esCreateUserDlg',
-          // This has no effect. Why not.
-          onEntered: this.focusFirstInput },
+          dialogClassName: 'esCreateUserDlg' },
         ModalHeader({}, ModalTitle({}, "Create User")),
         ModalBody({}, CreateUserDialogContent(childProps))));
   }
@@ -154,15 +146,6 @@ export var CreateUserDialogContent = createClassAndFactory({
         username: ''
       },
     };
-  },
-
-  componentDidMount: function() {
-    // Since onEntered above doesn't work, I'll do this instead.
-    setTimeout(this.focusFirstInput, 500);
-  },
-
-  focusFirstInput: function() {
-    this.refs.fullName.focus();
   },
 
   updateValueOk: function(what, value, isOk) {

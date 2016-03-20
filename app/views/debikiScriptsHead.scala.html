@@ -91,7 +91,8 @@ docElem.className += ' js';
     __reactStore.isWatchbarOpen = true;
   }
 
-  if (localStorage.getItem('isContextbarOpen') !== 'false' &&
+  @{/* Hide by default, or new users will be overwhelmed by everything there is to see */}
+  if (localStorage.getItem('isContextbarOpen') === 'true' &&
       location.search.search('&hideContextbar') === -1 && !__isInfoPage) {
     docElem.className += ' es-pagebar-open';
     __reactStore.isContextbarOpen = true;
