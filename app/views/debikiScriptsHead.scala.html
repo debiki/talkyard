@@ -54,6 +54,10 @@ occurrence of the magic string with volatile + user specific data. *@
 var docElem = document.documentElement;
 docElem.className += ' js';
 
+@* So that we can avoid iOS CSS bugs. *@
+if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream)
+  docElem.className += ' ios';
+
   @* See https://stackoverflow.com/a/1912522/694469. The <div> isn't added to the document
    so no <script> would be executed. — But yes it would indeed?
    Test this in Dev Tools:

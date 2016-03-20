@@ -159,22 +159,26 @@ html.es-watchbar-open
 // Footer
 //==============================
 
+// 'flex' apparently doesn't work on iOS, so disable it on iOS. [5YKJ24]
+
 // Make the footer stick to the bottom.
 // See: http://philipwalton.github.io/solved-by-flexbox/demos/sticky-footer/
-#esPageScrollable
+html:not(.ios) #esPageScrollable // not iOS: see [5YKJ24] above
   display: flex;
   flex-direction: column;
   height: 100%; // supposedly avoid some IE 10-11 min-height bug
+
 #dw-react-user-page,
 #dwPosts
   flex: 1 0 auto;
 // This avoids some other bug that shrinks these to 0,
 // see: https://github.com/philipwalton/flexbugs#1-minimum-content-sizing-of-flex-items-not-honored
-#topbar,
-footer
-  flex: none;
-.footer
-  margin-top: 0;
+html:not(.ios) // not iOS: see [5YKJ24] above
+  #topbar,
+  footer
+    flex: none;
+  .footer
+    margin-top: 0;
 
 
 footer, .footer
