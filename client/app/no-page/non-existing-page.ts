@@ -95,8 +95,9 @@ export var SignUpAsAdmin = createComponent({
       : null;
 
     var loginBtn =
-        reactelements.NameLoginBtns({ title: "Continue", purpose: LoginReason.BecomeAdmin,
-            id: 'e2eLogin', disabled: !!anyEmailProblem });
+        Button({ id: 'e2eLogin', disabled: !!anyEmailProblem, bsStyle: 'primary',
+            onClick: () => login.getLoginDialog().openToSignUp(LoginReason.BecomeAdmin) },
+          "Continue");
 
     return debiki.siteId === debiki.FirstSiteId
       ? r.div({},

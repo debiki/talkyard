@@ -135,10 +135,9 @@ export var PatternInput = createClassAndFactory({
       }
     }
     return (
-      r.div({},
+      r.div({ style: this.props.style },
         Input({ type: 'text', id: this.props.id, className: 'form-control', ref: 'theInput',
           // wrapperClassName: anyError ? ' has-error' : '', — no don't, makes the input lose focus
-          style: this.props.style,
           label: this.props.label,
           addonBefore: this.props.addonBefore,
           placeholder: this.props.placeholder, onChange: this.onChange,
