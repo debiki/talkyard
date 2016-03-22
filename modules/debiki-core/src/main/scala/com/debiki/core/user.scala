@@ -146,7 +146,8 @@ case class NewPasswordUserData(
   email: String,
   password: String,
   isAdmin: Boolean,
-  isOwner: Boolean) {
+  isOwner: Boolean,
+  isModerator: Boolean = false) {
 
   val passwordHash: String =
     DbDao.saltAndHashPassword(password)
@@ -165,7 +166,7 @@ case class NewPasswordUserData(
     passwordHash = Some(passwordHash),
     isOwner = isOwner,
     isAdmin = isAdmin,
-    isModerator = false)
+    isModerator = isModerator)
 
   Validation.checkName(name)
   Validation.checkUsername(username)
@@ -176,7 +177,7 @@ case class NewPasswordUserData(
 
 object NewPasswordUserData {
   def create(name: Option[String], username: String, email: String, password: String,
-        isAdmin: Boolean, isOwner: Boolean)
+        isAdmin: Boolean, isOwner: Boolean, isModerator: Boolean = false)
         : NewPasswordUserData Or ErrorMessage = {
     for {
       okName <- Validation.checkName(name)
@@ -186,7 +187,7 @@ object NewPasswordUserData {
     }
     yield {
       NewPasswordUserData(name = okName, username = okUsername, email = okEmail,
-        password = okPassword, isAdmin = isAdmin, isOwner = isOwner)
+        password = okPassword, isAdmin = isAdmin, isOwner = isOwner, isModerator = isModerator)
     }
   }
 }

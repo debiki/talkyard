@@ -43,8 +43,15 @@ class DaoAppSuite(disableScripts: Boolean = false, disableBackgroundJobs: Boolea
     */
   def createPasswordAdmin(password: String, dao: SiteDao): User = {
     dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
-      name = s"Admin $password", username = s"admin_$password", email = s"admin-$password@x.co",
-      password = password, isAdmin = true, isOwner = false).get)
+      name = Some(s"Admin $password"), username = s"admin_$password",
+      email = s"admin-$password@x.co", password = password, isAdmin = true, isOwner = false).get)
+  }
+
+
+  def createPasswordModerator(password: String, dao: SiteDao): User = {
+    dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
+      name = Some(s"Mod $password"), username = s"mod_$password", email = s"mod-$password@x.co",
+      password = password, isAdmin = false, isModerator = true, isOwner = false).get)
   }
 
 
@@ -52,7 +59,7 @@ class DaoAppSuite(disableScripts: Boolean = false, disableBackgroundJobs: Boolea
     */
   def createPasswordUser(password: String, dao: SiteDao): User = {
     dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
-      name = s"User $password", username = s"user_$password", email = s"user-$password@x.c",
+      name = Some(s"User $password"), username = s"user_$password", email = s"user-$password@x.c",
       password = password, isAdmin = false, isOwner = false).get)
   }
 

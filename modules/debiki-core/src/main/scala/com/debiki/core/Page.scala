@@ -188,7 +188,7 @@ case class PageMeta(
   lockedAt: Option[ju.Date] = None,
   frozenAt: Option[ju.Date] = None,
   // unwantedAt: Option[ju.Date] = None, -- when enough core members voted Unwanted
-  // deletedAt: Option[ju.Date] = None,
+  deletedAt: Option[ju.Date] = None,
   htmlTagCssClasses: String = "",  // try to move to EditedSettings, so will be inherited
   htmlHeadTitle: String = "",
   htmlHeadDescription: String = "",
@@ -447,6 +447,7 @@ sealed abstract class PageFilter
 object PageFilter {
   case object ShowAll extends PageFilter
   case object ShowWaiting extends PageFilter
+  case object ShowDeleted extends PageFilter
 }
 
 

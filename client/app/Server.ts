@@ -795,6 +795,14 @@ export function togglePageClosed(success: (closedAtMs: number) => void) {
   postJsonSuccess('/-/toggle-page-closed', success, { pageId: d.i.pageId });
 }
 
+export function deletePages(pageIds: PageId[], success: () => void) {
+  postJsonSuccess('/-/delete-pages', success, { pageIds: pageIds });
+}
+
+export function undeletePages(pageIds: PageId[], success: () => void) {
+  postJsonSuccess('/-/undelete-pages', success, { pageIds: pageIds });
+}
+
 
 export function markCurrentPageAsSeen() {
   postJsonSuccess('/-/mark-as-seen?pageId=' + d.i.pageId, () => {}, {});

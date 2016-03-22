@@ -21,7 +21,6 @@ import com.debiki.core.Prelude._
 import java.{util => ju}
 
 
-
 /** Derived from the browser ip address, via something like http://ipinfo.io/.
   */
 case class BrowserLocation(
@@ -30,16 +29,32 @@ case class BrowserLocation(
   city: Option[String])
 
 
-sealed abstract class AuditLogEntryType
+sealed abstract class AuditLogEntryType(protected val IntVal: Int) { def toInt = IntVal }
 object AuditLogEntryType {
-  case object CreateSite extends AuditLogEntryType
-  case object ThisSiteCreated extends AuditLogEntryType
-  case object NewPage extends AuditLogEntryType
-  case object NewPost extends AuditLogEntryType
-  case object NewChatMessage extends AuditLogEntryType
-  case object EditPost extends AuditLogEntryType
-  case object ChangePostType extends AuditLogEntryType
-  case object UploadFile extends AuditLogEntryType
+  case object CreateSite extends AuditLogEntryType(1)
+  case object ThisSiteCreated extends AuditLogEntryType(2)
+  case object NewPage extends AuditLogEntryType(3)
+  case object NewPost extends AuditLogEntryType(4)
+  case object NewChatMessage extends AuditLogEntryType(5)
+  case object EditPost extends AuditLogEntryType(6)
+  case object ChangePostType extends AuditLogEntryType(7)
+  case object UploadFile extends AuditLogEntryType(8)
+  case object DeletePage extends AuditLogEntryType(9)
+  case object UndeletePage extends AuditLogEntryType(10)
+
+  def fromInt(value: Int): Option[AuditLogEntryType] = Some(value match {
+    case AuditLogEntryType.CreateSite.IntVal => AuditLogEntryType.CreateSite
+    case AuditLogEntryType.ThisSiteCreated.IntVal => AuditLogEntryType.ThisSiteCreated
+    case AuditLogEntryType.NewPage.IntVal => AuditLogEntryType.NewPage
+    case AuditLogEntryType.NewPost.IntVal => AuditLogEntryType.NewPost
+    case AuditLogEntryType.NewChatMessage.IntVal => AuditLogEntryType.NewChatMessage
+    case AuditLogEntryType.EditPost.IntVal => AuditLogEntryType.EditPost
+    case AuditLogEntryType.ChangePostType.IntVal => AuditLogEntryType.ChangePostType
+    case AuditLogEntryType.UploadFile.IntVal => AuditLogEntryType.UploadFile
+    case AuditLogEntryType.DeletePage.IntVal => AuditLogEntryType.DeletePage
+    case AuditLogEntryType.UndeletePage.IntVal => AuditLogEntryType.UndeletePage
+    case _ => return None
+  })
 }
 
 

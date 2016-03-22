@@ -33,6 +33,8 @@ export var actionTypes = {
   CreateEditForumCategory: 'CreateEditForumCategory',
   PinPage: 'PinPage',
   UnpinPage: 'UnpinPage',
+  DeletePages: 'DeletePages',
+  UndeletePages: 'UndeletePages',
   SetPageNotfLevel: 'SetPageNotfLevel',
   AcceptAnswer: 'AcceptAnswer',
   UnacceptAnswer: 'UnacceptAnswer',
@@ -140,6 +142,28 @@ export function unpinPage(success: () => void) {
     success();
     ReactDispatcher.handleViewAction({
       actionType: actionTypes.UnpinPage,
+    });
+  });
+}
+
+
+export function deletePages(pageIds: PageId[], success: () => void) {
+  Server.deletePages(pageIds, () => {
+    success();
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.DeletePages,
+      pageIds: pageIds,
+    });
+  });
+}
+
+
+export function undeletePages(pageIds: PageId[], success: () => void) {
+  Server.undeletePages(pageIds, () => {
+    success();
+    ReactDispatcher.handleViewAction({
+      actionType: actionTypes.UndeletePages,
+      pageIds: pageIds,
     });
   });
 }

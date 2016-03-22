@@ -109,6 +109,19 @@ object PageController extends mvc.Controller {
     OkSafeJson(JsLongOrNull(closedAt.map(_.getTime)))
   }
 
+  def deletePages = StaffPostJsonAction(maxLength = 1000) { request =>
+    val pageIds = (request.body \ "pageIds").as[Seq[PageId]]
+    request.dao.deletePagesIfAuth(pageIds, deleterId = request.theUserId, request.theBrowserIdData,
+      undelete = false)
+    Ok
+  }
+
+  def undeletePages = StaffPostJsonAction(maxLength = 1000) { request =>
+    val pageIds = (request.body \ "pageIds").as[Seq[PageId]]
+    request.dao.deletePagesIfAuth(pageIds, deleterId = request.theUserId, request.theBrowserIdData,
+      undelete = true)
+    Ok
+  }
 
   def joinPage = PostJsonAction(RateLimits.JoinSomething, maxLength = 100) { request =>
     val pageId = (request.body \ "pageId").as[PageId]

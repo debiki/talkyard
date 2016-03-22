@@ -116,6 +116,25 @@ export function store_getUsersHere(store: Store): UsersHere {
 }
 
 
+export function store_canDeletePage(store: Store): boolean {
+  return !store.pageDeletedAtMs && isStaff(store.me);
+}
+
+
+export function store_canUndeletePage(store: Store): boolean {
+  return store.pageDeletedAtMs && isStaff(store.me);
+}
+
+
+export function store_canSelectPosts(store: Store): boolean {
+  return isStaff(store.me) && !store_isSection(store) && store.pageRole !== PageRole.CustomHtmlPage;
+}
+
+
+export function store_isSection(store: Store): boolean {
+  return store.pageRole !== PageRole.Blog && store.pageRole !== PageRole.Forum;
+}
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

@@ -129,6 +129,8 @@ GET   /-/load-category          controllers.ForumController.loadCategory(id)
 POST  /-/create-page            controllers.PageController.createPage
 POST  /-/cycle-page-done        controllers.PageController.cyclePageDone
 POST  /-/toggle-page-closed     controllers.PageController.togglePageClosed
+POST  /-/delete-pages           controllers.PageController.deletePages
+POST  /-/undelete-pages         controllers.PageController.undeletePages
 POST  /-/accept-answer          controllers.PageController.acceptAnswer
 POST  /-/unaccept-answer        controllers.PageController.unacceptAnswer
 POST  /-/join-page              controllers.PageController.joinPage

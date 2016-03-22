@@ -132,6 +132,18 @@ ReactDispatcher.register(function(payload) {
       store.pageClosedAtMs = action.closedAtMs;
       break;
 
+    case ReactActions.actionTypes.DeletePages:
+      if (_.includes(action.pageIds, store.pageId)) {
+        store.pageDeletedAtMs = 1; // for now
+      }
+      break;
+
+    case ReactActions.actionTypes.UndeletePages:
+      if (_.includes(action.pageIds, store.pageId)) {
+        store.pageDeletedAtMs = undefined;
+      }
+      break;
+
     case ReactActions.actionTypes.EditTitleAndSettings:
       if (action.htmlTagCssClasses) {
         $html.removeClass(store.pageHtmlTagCssClasses);

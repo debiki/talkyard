@@ -65,6 +65,7 @@ export var RoutePathCategories = 'categories';
 
 var FilterShowAll = 'ShowAll';
 var FilterShowWaiting = 'ShowWaiting';
+var FilterShowDeleted = 'ShowDeleted';
 
 
 export function buildForumRoutes() {
@@ -357,6 +358,7 @@ var ForumButtons = createComponent({
     switch (filterKey) {
       case FilterShowAll: return '';
       case FilterShowWaiting: return 'is:open is:question-or-todo';
+      case FilterShowDeleted: ...
     }
   },
 
@@ -474,6 +476,7 @@ var ForumButtons = createComponent({
       switch (filter) {
         case FilterShowAll: return "Show all";
         case FilterShowWaiting: return "Show waiting";
+        case FilterShowDeleted: return "Show deleted";
       }
       die('EsE4JK85');
     }
@@ -482,6 +485,12 @@ var ForumButtons = createComponent({
       Button({ onClick: this.openTopicFilterDropdown,
           className: 'esForum_filterBtn esForum_catsNav_btn', ref: 'topicFilterButton' },
         makeTopicFilterText(topicFilterValue) + ' ', r.span({ className: 'caret' }));
+
+    var showDeletedFilterItem = !isStaff(me) ? null :
+      ExplainingListItem({ onSelect: this.setTopicFilter,
+        activeEventKey: topicFilterValue, eventKey: FilterShowDeleted,
+        title: makeTopicFilterText(FilterShowDeleted),
+        text: "Shows all topics, including deleted topics" });
 
     var topicFilterDropdownModal =
       DropdownModal({ show: state.isTopicFilterDropdownOpen, pullLeft: true,
@@ -497,7 +506,8 @@ var ForumButtons = createComponent({
               title: makeTopicFilterText(FilterShowWaiting),
               text: r.span({},
                 "Shows only questions ", r.b({}, r.i({}, "waiting")), " for an answer, " +
-                "plus ideas and problems not yet handled" ) })));
+                "plus ideas and problems not yet handled" ) }),
+          showDeletedFilterItem));
 
     /* A filter dropdown and search box instead of the <select> above:
     var makeFilterItemProps = (key: string) => {
@@ -1021,6 +1031,10 @@ function makeTitle(topic: Topic, className: string) {
   else if (topic.pageRole === PageRole.PrivateChat) {
     var tooltip = "This is a private chat channel";
     title = r.span({}, r.span({ className: 'icon-lock' }), title);
+  }
+  if (topic.deletedAtMs) {
+    title = r.span({ className: 'esForum_topics_topic-deleted' },
+        r.span({ className: 'icon-trash' }), title);
   }
   return (
       r.a({ href: topic.url, title: tooltip, className: className }, title));

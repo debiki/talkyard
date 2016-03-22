@@ -237,7 +237,7 @@ object ReactJson {
       "pageClosedAtMs" -> dateOrNull(page.meta.closedAt),
       "pageLockedAtMs" -> dateOrNull(page.meta.lockedAt),
       "pageFrozenAtMs" -> dateOrNull(page.meta.frozenAt),
-      //"pageDeletedAtMs" -> ...
+      "pageDeletedAtMs" -> dateOrNull(page.meta.deletedAt),
       "numPosts" -> numPosts,
       "numPostsRepliesSection" -> numPostsRepliesSection,
       "numPostsChatSection" -> numPostsChatSection,

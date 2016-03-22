@@ -70,8 +70,20 @@ var PageToolsDialog = createComponent({
     this.setState({ isOpen: false });
   },
 
+  selectPosts: function() {
+    // page.openSelectPostsDialog();
+  },
+
   unpinPage: function() {
     ReactActions.unpinPage(this.close);
+  },
+
+  deletePage: function() {
+    ReactActions.deletePages([this.state.store.pageId], this.close);
+  },
+
+  undeletePage: function() {
+    ReactActions.undeletePages([this.state.store.pageId], this.close);
   },
 
   render: function () {
@@ -80,6 +92,9 @@ var PageToolsDialog = createComponent({
       store: store,
       closeAllDialogs: this.close
     };
+
+    var selectPostsButton = !store_canSelectPosts(store) ? null :
+      Button({ onClick: this.selectPosts }, "Select posts");
 
     var pinPageButton;
     var pinPageDialog;
@@ -93,9 +108,18 @@ var PageToolsDialog = createComponent({
     var unpinPageButton = (!canPinPage(store) || !store.pinWhere) ? null :
       Button({ onClick: this.unpinPage }, "Unpin Topic");
 
+    var deletePageButton = !store_canDeletePage(store) ?  null :
+      Button({ onClick: this.deletePage }, "Delete Topic");
+
+    var undeletePageButton = !store_canUndeletePage(store) ?  null :
+      Button({ onClick: this.undeletePage }, "Restore Topic");
+
     var buttons = r.div({},
+      selectPostsButton,
       pinPageButton,
-      unpinPageButton);
+      unpinPageButton,
+      deletePageButton,
+      undeletePageButton);
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close },

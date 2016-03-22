@@ -178,7 +178,7 @@ object ForumController extends mvc.Controller {
       case orderOffset: PageOrderOffset.ByBumpTime if orderOffset.offset.isEmpty =>
         val pinnedTopics = dao.listPagesInCategory(
           categoryId, includeDescendantCategories, includeHiddenInForum = includeHiddenInForum,
-          PageQuery(PageOrderOffset.ByPinOrderLoadOnlyPinned, pageQuery.pageFilter), limit)
+          pageQuery.copy(orderOffset = PageOrderOffset.ByPinOrderLoadOnlyPinned), limit)
         val notPinned = topics.filterNot(topic => pinnedTopics.exists(_.id == topic.id))
         val topicsSorted = (pinnedTopics ++ notPinned) sortBy { topic =>
           val meta = topic.meta
@@ -231,6 +231,10 @@ object ForumController extends mvc.Controller {
       case None => PageFilter.ShowAll
       case Some("ShowAll") => PageFilter.ShowAll
       case Some("ShowWaiting") => PageFilter.ShowWaiting
+      case Some("ShowDeleted") =>
+        if (!request.isStaff)
+          throwForbidden2("EsE5YKP3", "Only staff may list deleted topics")
+        PageFilter.ShowDeleted
       case Some(x) => throwBadRequest("DwE5KGP8", s"Bad topic filter: $x")
     }
 
@@ -279,7 +283,8 @@ object ForumController extends mvc.Controller {
       "doneAtMs" -> dateOrNull(topic.meta.doneAt),
       "closedAtMs" -> dateOrNull(topic.meta.closedAt),
       "lockedAtMs" -> dateOrNull(topic.meta.lockedAt),
-      "frozenAtMs" -> dateOrNull(topic.meta.frozenAt))
+      "frozenAtMs" -> dateOrNull(topic.meta.frozenAt),
+      "deletedAtMs" -> JsDateMsOrNull(topic.meta.deletedAt))
   }
 
 }

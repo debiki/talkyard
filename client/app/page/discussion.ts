@@ -370,11 +370,19 @@ export var Title = createComponent({
         case PinPageWhere.InCategory: tooltip += "Pinned in this category."; break;
         default:
       }
+
+      var deletedIcon = !store.pageDeletedAtMs ? null :
+        r.span({ className: 'icon-trash', title: "This page has been deleted." });
+
+      if (store.pageDeletedAtMs) {
+        titleText = r.span({ className: 'esOP_title-deleted' }, titleText);
+      }
+
       contents =
           r.div({ className: 'dw-p-bd' },
             r.div({ className: 'dw-p-bd-blk' },
               r.h1({ className: 'dw-p-ttl' + pinClass, title: tooltip },
-                icon, titleText, anyShowForumInroBtn, anyEditTitleBtn)));
+                deletedIcon, icon, titleText, anyShowForumInroBtn, anyEditTitleBtn)));
     }
     return (
       r.div({ className: 'dw-t', id: 'dw-t-0' },

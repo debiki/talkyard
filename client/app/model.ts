@@ -247,6 +247,7 @@ interface Topic {
   closedAtMs?: string;
   lockedAtMs?: string;
   frozenAtMs?: string;
+  deletedAtMs?: string;
 }
 
 
@@ -322,7 +323,7 @@ interface Store {
   pageClosedAtMs?: number;
   pageLockedAtMs?: number;
   pageFrozenAtMs?: number;
-  //pageDeletedAtMs: number;
+  pageDeletedAtMs?: number;
   numPosts: number;
   numPostsRepliesSection: number;
   numPostsChatSection: number;

@@ -130,7 +130,7 @@ class UploadsDaoAppSpec extends DaoAppSuite {
       info("create user")
       val magic = "55JMU2456"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
-        name = s"User $magic", username = s"user_$magic", email = s"user-$magic@x.c",
+        name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
         password = magic, isAdmin = false, isOwner = false).get)
 
       info("upload avatar images, no quota used")
@@ -167,7 +167,7 @@ class UploadsDaoAppSpec extends DaoAppSuite {
       info("create user")
       val magic = "77PKW2PKW2"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
-        name = s"User $magic", username = s"user_$magic", email = s"user-$magic@x.c",
+        name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
         password = magic, isAdmin = false, isOwner = false).get)
 
       info("set avatar")
@@ -213,7 +213,7 @@ class UploadsDaoAppSpec extends DaoAppSuite {
       info("create user")
       val magic = "7GMYK253"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
-        name = s"User $magic", username = s"user_$magic", email = s"user-$magic@x.c",
+        name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
         password = magic, isAdmin = true, isOwner = false).get)
 
       info("upload files, no quota used")
@@ -270,7 +270,7 @@ class UploadsDaoAppSpec extends DaoAppSuite {
       info("create user")
       val magic = "6J35MK21"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
-        name = s"User $magic", username = s"user_$magic", email = s"user-$magic@x.c",
+        name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
         password = magic, isAdmin = true, isOwner = false).get)
 
       info("create page, link missing file, no quota used")
@@ -314,7 +314,7 @@ class UploadsDaoAppSpec extends DaoAppSuite {
       info("create user, site 1")
       val magic = "Site1_6KMF2"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
-        name = s"User $magic", username = s"user_$magic", email = s"user-$magic@x.c",
+        name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
         password = magic, isAdmin = true, isOwner = false).get)
 
       info("create site 2")
@@ -326,7 +326,7 @@ class UploadsDaoAppSpec extends DaoAppSuite {
       info("create user, site 2")
       val dao2 = Globals.siteDao(site2.id)
       val user2 = dao2.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
-        name = s"User $magic", username = s"user_$magic", email = s"user-$magic@x.c",
+        name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
         password = magic, isAdmin = true, isOwner = false).get)
 
       info("upload files, no quota used")
@@ -398,7 +398,7 @@ class UploadsDaoAppSpec extends DaoAppSuite {
       info("create user")
       val magic = "7MPFKU23"
       val user = dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
-        name = s"User $magic", username = s"user_$magic", email = s"user-$magic@x.c",
+        name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
         password = magic, isAdmin = false, isOwner = false).get)
 
       info("upload files, as long as haven't uploaded too much")

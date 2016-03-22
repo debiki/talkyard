@@ -409,6 +409,46 @@ trait PagesDao {
   }
 
 
+  def deletePagesIfAuth(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
+        undelete: Boolean) {
+    readWriteTransaction { transaction =>
+      val deleter = transaction.loadTheUser(deleterId)
+      if (!deleter.isStaff)
+        throwForbidden("EsE7YKP424_", "Only staff may (un)delete pages")
+
+      for (pageId <- pageIds ; pageMeta <- transaction.loadPageMeta(pageId)) {
+        if ((pageMeta.pageRole.isSection || pageMeta.pageRole == PageRole.CustomHtmlPage) &&
+            !deleter.isAdmin)
+          throwForbidden("EsE5GKF23_", "Only admin may (un)delete sections and HTML pages")
+
+        val baseAuditEntry = AuditLogEntry(
+          siteId = siteId,
+          id = transaction.nextAuditLogEntryId,
+          didWhat = AuditLogEntryType.DeletePage,
+          doerId = deleterId,
+          doneAt = transaction.currentTime,
+          browserIdData = browserIdData,
+          pageId = Some(pageId),
+          pageRole = Some(pageMeta.pageRole))
+
+        val (newMeta, auditLogEntry) =
+          if (undelete) {
+            (pageMeta.copy(deletedAt = None, version = pageMeta.version + 1),
+              baseAuditEntry.copy(didWhat = AuditLogEntryType.UndeletePage))
+          }
+          else {
+            (pageMeta.copy(deletedAt = Some(transaction.currentTime),
+              version = pageMeta.version + 1), baseAuditEntry)
+          }
+
+        transaction.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
+        transaction.insertAuditLogEntry(auditLogEntry)
+      }
+    }
+    pageIds foreach refreshPageInAnyCache
+  }
+
+
   def joinPageIfAuth(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
         : Option[BareWatchbar] = {
     if (User.isGuestId(userId))
