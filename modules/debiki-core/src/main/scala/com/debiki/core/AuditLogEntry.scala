@@ -79,7 +79,8 @@ case class AuditLogEntry(
   targetSiteId: Option[SiteId] = None, // ought to rename to otherSiteId, rename db column too
   targetPageId: Option[PageId] = None,
   targetPostNr: Option[PostNr] = None,
-  targetUserId: Option[UserId] = None) {
+  targetUserId: Option[UserId] = None,
+  batchId: Option[AuditLogEntryId] = None) {
 
   emailAddress.foreach(Validation.requireOkEmail(_, "EsE5YJK2"))
   require(pageRole.isEmpty || pageId.isDefined, "DwE4PFKW7")
@@ -91,6 +92,8 @@ case class AuditLogEntry(
   require(!sizeBytes.exists(_ < 0), "DwE7UMF4")
   require(targetPostNr.isDefined == targetUniquePostId.isDefined, "DwE4QU38")
   require(targetPostNr.isEmpty || targetPageId.isDefined, "DwE5PFK2")
+  require(!batchId.exists(_ > id), "EsE5PK2L8")
+  require(!batchId.exists(_ <= 0), "EsE8YJK52")
 }
 
 

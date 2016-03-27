@@ -64,6 +64,7 @@ trait CreateSiteDao {
         targetSiteId = Some(newSite.id)), transaction)
 
       transaction.setSiteId(newSite.id)
+      transaction.startAuditLogBatch()
 
       transaction.upsertSiteSettings(SettingsToSave(
         orgFullName = Some(Some(organizationName))))

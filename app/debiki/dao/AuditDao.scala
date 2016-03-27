@@ -31,8 +31,8 @@ trait AuditDao {
 
   protected def insertAuditLogEntry(entry: AuditLogEntry, transaction: SiteTransaction) {
     require(entry.siteId == transaction.siteId, "EsE5GMKW2")
-    val entryId = transaction.nextAuditLogEntryId
-    val entryWithId = entry.copy(id = entryId)
+    val (entryId, batchId) = transaction.nextAuditLogEntryId()
+    val entryWithId = entry.copy(id = entryId, batchId = batchId)
     transaction.insertAuditLogEntry(entryWithId)
   }
 

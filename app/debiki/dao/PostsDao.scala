@@ -1144,7 +1144,7 @@ trait PostsDao {
 
       val moveTreeAuditEntry = AuditLogEntry(
         siteId = siteId,
-        id = transaction.nextAuditLogEntryId,
+        id = AuditLogEntry.UnassignedId,
         didWhat = AuditLogEntryType.MovePost,
         doerId = moverId,
         doneAt = transaction.currentTime,
@@ -1165,6 +1165,7 @@ trait PostsDao {
         }
         else {
           transaction.deferConstraints()
+          transaction.startAuditLogBatch()
 
           val descendants = fromPage.parts.descendantsOf(postToMove.nr)
           val newNrsMap = mutable.HashMap[PostNr, PostNr]()
@@ -1184,7 +1185,7 @@ trait PostsDao {
           var postsAfter = ArrayBuffer[Post](postAfter)
           var auditEntries = ArrayBuffer[AuditLogEntry](moveTreeAuditEntry)
 
-          descendants.zipWithIndex foreach { case (descendant, index) =>
+          descendants foreach { descendant =>
             val descendantAfter = descendant.copy(
               pageId = toPage.id,
               nr = newNrsMap.get(descendant.nr) getOrDie "EsE7YKL32",
@@ -1193,7 +1194,7 @@ trait PostsDao {
             postsAfter += descendantAfter
             auditEntries += AuditLogEntry(
               siteId = siteId,
-              id = moveTreeAuditEntry.id + 1 + index,
+              id = AuditLogEntry.UnassignedId,
               didWhat = AuditLogEntryType.MovePost,
               doerId = moverId,
               doneAt = transaction.currentTime,

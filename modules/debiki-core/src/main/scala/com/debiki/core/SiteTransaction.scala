@@ -299,7 +299,9 @@ trait SiteTransaction {
     upToWhen: Option[ju.Date] = None): Seq[Notification]
 
 
-  def nextAuditLogEntryId: AuditLogEntryId
+  def startAuditLogBatch()
+  /** Returns (entry-id, Option(batch-id)). */
+  def nextAuditLogEntryId(): (AuditLogEntryId, Option[AuditLogEntryId])
   def insertAuditLogEntry(entry: AuditLogEntry)
   def loadCreatePostAuditLogEntry(postId: UniquePostId): Option[AuditLogEntry]
   def loadAuditLogEntriesRecentFirst(userId: UserId, tyype: AuditLogEntryType, limit: Int)

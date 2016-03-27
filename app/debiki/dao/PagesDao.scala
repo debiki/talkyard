@@ -423,7 +423,7 @@ trait PagesDao {
 
         val baseAuditEntry = AuditLogEntry(
           siteId = siteId,
-          id = transaction.nextAuditLogEntryId,
+          id = AuditLogEntry.UnassignedId,
           didWhat = AuditLogEntryType.DeletePage,
           doerId = deleterId,
           doneAt = transaction.currentTime,
