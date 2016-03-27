@@ -8,5 +8,5 @@ ENTRYPOINT ["/opt/docker-entrypoint.sh"]
 
 WORKDIR /opt/debiki/server/
 
-CMD ["npm install && bower install && gulp watch"]
+CMD ["npm install --ignore-scripts && bower install && gulp watch"]
 
