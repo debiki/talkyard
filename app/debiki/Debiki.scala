@@ -28,7 +28,7 @@ import play.api.Play.current
 object Debiki {
 
 
-  def createPostgresHikariDataSource(): HikariDataSource = {
+  def createPostgresHikariDataSource(readOnly: Boolean): HikariDataSource = {
 
     def configStr(path: String) =
       Play.configuration.getString(path) getOrElse
@@ -86,7 +86,7 @@ object Debiki {
     // network problems". Seconds.
     config.addDataSourceProperty("socketTimeout", TooSlowQuerySeconds)
 
-    //config.setReadOnly(true) — then Flyway can no longer migrate.
+    config.setReadOnly(readOnly)
     config.setTransactionIsolation("TRANSACTION_SERIALIZABLE")
 
     // Weird:

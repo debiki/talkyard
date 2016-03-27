@@ -235,8 +235,9 @@ class Globals {
       while (_state.isBad) {
         p.Logger.info("Connecting to services... [EsM200CTS]")
         try {
-          val dataSource = Debiki.createPostgresHikariDataSource()
-          val newState = new State(dataSource)
+          val readOnlyDataSource = Debiki.createPostgresHikariDataSource(readOnly = true)
+          val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false)
+          val newState = new State(readOnlyDataSource, readWriteDataSource)
           // Apply evolutions before we make the state available in _state, so nothing can
           // access the database (via _state) before all evolutions have completed.
           newState.systemDao.applyEvolutions()
@@ -285,7 +286,8 @@ class Globals {
       return
 
     p.Logger.info("Shutting down... [EsM200BYE]")
-    state.dataSource.close()
+    state.readOnlyDataSource.close()
+    state.readWriteDataSource.close()
     // Shutdown the notifier before the mailer, so no notifications are lost
     // because there was no mailer that could send them.
     shutdownActorAndWait(state.notifierActorRef)
@@ -303,7 +305,9 @@ class Globals {
   }
 
 
-  private class State(val dataSource: HikariDataSource) {
+  private class State(
+    val readOnlyDataSource: HikariDataSource,
+    val readWriteDataSource: HikariDataSource) {
 
     val ShutdownTimeout = 30 seconds
 
@@ -329,7 +333,7 @@ class Globals {
     val mostMetrics = new MostMetrics(metricRegistry)
 
     val dbDaoFactory = new RdbDaoFactory(
-      new Rdb(dataSource), ScalaBasedMigrations, Akka.system,
+      new Rdb(readOnlyDataSource, readWriteDataSource), ScalaBasedMigrations, Akka.system,
       anyFullTextSearchDbPath, Play.isTest, fastStartSkipSearch = fastStartSkipSearch)
 
     val siteDaoFactory = new CachingSiteDaoFactory(dbDaoFactory)
