@@ -38,6 +38,7 @@ object AuditLogEntryType {
   case object NewChatMessage extends AuditLogEntryType(5)
   case object EditPost extends AuditLogEntryType(6)
   case object ChangePostType extends AuditLogEntryType(7)
+  case object MovePost extends AuditLogEntryType(11)
   case object UploadFile extends AuditLogEntryType(8)
   case object DeletePage extends AuditLogEntryType(9)
   case object UndeletePage extends AuditLogEntryType(10)
@@ -89,7 +90,7 @@ case class AuditLogEntry(
   require(!uploadFileName.exists(_.trim.isEmpty), "DwE7UPM1")
   require(!sizeBytes.exists(_ < 0), "DwE7UMF4")
   require(targetPostNr.isDefined == targetUniquePostId.isDefined, "DwE4QU38")
-  require(targetPostNr.isEmpty || targetUserId.isDefined, "DwE5PFK2")
+  require(targetPostNr.isEmpty || targetPageId.isDefined, "DwE5PFK2")
 }
 
 

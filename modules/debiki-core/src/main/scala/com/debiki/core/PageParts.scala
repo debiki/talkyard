@@ -119,6 +119,8 @@ abstract class PageParts extends People {
   def post(postNr: PostNr): Option[Post] = postsByNr.get(postNr)
   def post(postNr: Option[PostNr]): Option[Post] = postNr.flatMap(postsByNr.get)
   def thePost(postNr: PostNr): Post = post(postNr) getOrDie "DwE9PKG3"
+  def postById(postId: UniquePostId): Option[Post] = postsByNr.values.find(_.uniqueId == postId)
+  def thePostById(postId: UniquePostId): Post = postById(postId) getOrDie "EsE6YKG72"
   def theBody = thePost(BodyNr)
   def theTitle = thePost(TitleNr)
 
@@ -130,6 +132,36 @@ abstract class PageParts extends People {
 
   lazy val numOrigPostRepliesVisible = allPosts count { post =>
     post.isOrigPostReply && post.isVisible
+  }
+
+
+  lazy val (numLikes, numWrongs, numBurys, numUnwanteds) = {
+    var likes = 0
+    var wrongs = 0
+    var burys = 0
+    var unwanteds = 0
+    allPosts.filter(_.isVisible) foreach { post =>
+      likes += post.numLikeVotes
+      wrongs += post.numWrongVotes
+      burys += post.numBuryVotes
+      unwanteds += post.numUnwantedVotes
+    }
+    (likes, wrongs, burys, unwanteds)
+  }
+
+
+  lazy val lastVisibleReply: Option[Post] = {
+    val replies = allPosts.filter(post => post.isReply && post.isVisible)
+    if (replies.isEmpty) None
+    else Some(replies.maxBy(_.createdAt.getTime))
+  }
+
+
+  def frequentPosterIds = {
+    // Ignore the page creator and the last replyer, because they have their own first-&-last
+    // entries in the Users column in the forum topic list. [7UKPF26]
+    PageParts.findFrequentPosters(this.allPosts,
+      ignoreIds = Set(theBody.createdById) ++ lastVisibleReply.map(_.createdById).toSet)
   }
 
 
@@ -167,14 +199,13 @@ abstract class PageParts extends People {
     childrenBestFirstByParentNr.getOrElse(postNr, Nil)
 
 
-  def successorsOf(postNr: PostNr): immutable.Seq[Post] = {
+  def descendantsOf(postNr: PostNr): immutable.Seq[Post] = {
     val pending = ArrayBuffer[Post](childrenBestFirstByParentNr.getOrElse(postNr, Nil): _*)
     val successors = ArrayBuffer[Post]()
     while (pending.nonEmpty) {
       val next = pending.remove(0)
-      if (successors.find(_.nr == next.nr).nonEmpty) {
-        die("DwE9FKW3", s"Cycle detected on page '$pageId'; it includes post '${next.nr}'")
-      }
+      dieIf(successors.exists(_.nr == next.nr),
+        "DwE9FKW3", s"Cycle detected on page '$pageId'; it includes post nr ${next.nr}")
       successors.append(next)
       pending.append(childrenBestFirstOf(next.nr): _*)
     }
@@ -201,14 +232,20 @@ abstract class PageParts extends People {
 
 
   /** Ancestors, starting with postId's parent. */
-  def ancestorsOf(postNr: PostNr): List[Post] = {
+  def ancestorsOf(postNr: PostNr): List[Post] = {   // COULD change to Vector
     var ancestors: List[Post] = Nil
     var curPost: Option[Post] = Some(thePost(postNr))
+    var numLaps = 0
     while ({
       curPost = parentOf(curPost.get.nr)
       curPost.nonEmpty
     }) {
-      ancestors ::= curPost.get
+      numLaps += 1
+      val theCurPost = curPost.get
+      // To mostly avoid O(n^2) time, don't check for cycles so very often.
+      dieIf((numLaps % 1000) == 0 && ancestors.exists(_.nr == theCurPost.nr),
+        "EsE7YKW2", s"Post cycle on page $pageId around post nr ${theCurPost.nr}")
+      ancestors ::= theCurPost
     }
     ancestors.reverse
   }

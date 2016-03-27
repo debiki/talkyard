@@ -20,6 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.EditedSettings.MaxNumFirstPosts
 import com.debiki.core.Prelude._
+import com.debiki.core.PageParts.FirstReplyNr
 import controllers.EditController
 import debiki._
 import debiki.DebikiHttp._
@@ -28,6 +29,7 @@ import io.efdi.server.pubsub.StorePatchMessage
 import play.api.libs.json.JsValue
 import play.{api => p}
 import scala.collection.{mutable, immutable}
+import scala.collection.mutable.ArrayBuffer
 import PostsDao._
 
 
@@ -151,6 +153,7 @@ trait PostsDao {
         pageId = Some(pageId),
         uniquePostId = Some(newPost.uniqueId),
         postNr = Some(newPost.nr),
+        targetPageId = anyParent.map(_.pageId),
         targetUniquePostId = anyParent.map(_.uniqueId),
         targetPostNr = anyParent.map(_.nr),
         targetUserId = anyParent.map(_.createdById))
@@ -459,7 +462,7 @@ trait PostsDao {
           val currentRevStartMs = postToEdit.currentRevStaredAt.getTime
           val flags = transaction.loadFlagsFor(immutable.Seq(PagePostNr(pageId, postNr)))
           val anyNewFlag = flags.exists(_.flaggedAt.getTime > currentRevStartMs)
-          val successors = page.parts.successorsOf(postNr)
+          val successors = page.parts.descendantsOf(postNr)
           val anyNewComment = successors.exists(_.createdAt.getTime > currentRevStartMs)
         !anyNewComment && !anyNewFlag
       }
@@ -809,7 +812,7 @@ trait PostsDao {
 
       // Update any indirectly affected posts, e.g. subsequent comments in the same
       // thread that are being deleted recursively.
-      for (successor <- page.parts.successorsOf(postNr)) {
+      for (successor <- page.parts.descendantsOf(postNr)) {
         val anyUpdatedSuccessor: Option[Post] = action match {
           case PSA.CloseTree =>
             if (successor.closedStatus.areAncestorsClosed) None
@@ -1103,11 +1106,134 @@ trait PostsDao {
   }
 
 
+  def movePostIfAuth(whichPost: PagePostId, newParent: PagePostNr, moverId: UserId,
+        browserIdData: BrowserIdData): (Post, JsValue) = {
+
+    if (newParent.postNr == PageParts.TitleNr)
+      throwForbidden("EsE4YKJ8_", "Cannot place a post below the title")
+
+    val (postAfter, storePatch) = readWriteTransaction { transaction =>
+      val mover = transaction.loadTheMember(moverId)
+      if (!mover.isStaff)
+        throwForbidden("EsE6YKG2_", "Only staff may move posts")
+
+      val postToMove = transaction.loadThePost(whichPost.postId)
+      if (postToMove.nr == PageParts.TitleNr || postToMove.nr == PageParts.BodyNr)
+        throwForbidden("EsE7YKG25_", "Cannot move page title or body")
+
+      val newParentPost = transaction.loadPost(newParent) getOrElse throwForbidden(
+        "EsE7YKG42_", "New parent post not found")
+
+      dieIf(postToMove.collapsedStatus.isCollapsed, "EsE5KGV4", "Unimpl")
+      dieIf(postToMove.closedStatus.isClosed, "EsE9GKY03", "Unimpl")
+      dieIf(postToMove.deletedStatus.isDeleted, "EsE4PKW12", "Unimpl")
+      dieIf(newParentPost.collapsedStatus.isCollapsed, "EsE7YKG32", "Unimpl")
+      dieIf(newParentPost.closedStatus.isClosed, "EsE2GLK83", "Unimpl")
+      dieIf(newParentPost.deletedStatus.isDeleted, "EsE8KFG1", "Unimpl")
+
+      val fromPage = PageDao(postToMove.pageId, transaction)
+      val toPage = PageDao(newParent.pageId, transaction)
+
+      // Don't create cycles.
+      if (newParentPost.pageId == postToMove.pageId) {
+        val ancestorsOfNewParent = fromPage.parts.ancestorsOf(newParentPost.nr)
+        if (ancestorsOfNewParent.exists(_.uniqueId == postToMove.uniqueId))
+          throwForbidden("EsE7KCCL_", o"""Cannot move a post to after one of its descendants
+              — doing that, would create a cycle""")
+      }
+
+      val moveTreeAuditEntry = AuditLogEntry(
+        siteId = siteId,
+        id = transaction.nextAuditLogEntryId,
+        didWhat = AuditLogEntryType.MovePost,
+        doerId = moverId,
+        doneAt = transaction.currentTime,
+        browserIdData = browserIdData,
+        pageId = Some(postToMove.pageId),
+        uniquePostId = Some(postToMove.uniqueId),
+        postNr = Some(postToMove.nr),
+        targetPageId = Some(newParentPost.pageId),
+        targetUniquePostId = Some(newParentPost.uniqueId),
+        targetPostNr = Some(newParentPost.nr))
+
+      val postAfter =
+        if (postToMove.pageId == newParentPost.pageId) {
+          val postAfter = postToMove.copy(parentNr = Some(newParentPost.nr))
+          transaction.updatePost(postAfter)
+          transaction.insertAuditLogEntry(moveTreeAuditEntry)
+          postAfter
+        }
+        else {
+          transaction.deferConstraints()
+
+          val descendants = fromPage.parts.descendantsOf(postToMove.nr)
+          val newNrsMap = mutable.HashMap[PostNr, PostNr]()
+          val firstFreePostNr = toPage.parts.highestReplyNr.map(_ + 1) getOrElse FirstReplyNr
+          var nextPostNr = firstFreePostNr
+          newNrsMap.put(postToMove.nr, nextPostNr)
+          for (descendant <- descendants) {
+            nextPostNr += 1
+            newNrsMap.put(descendant.nr, nextPostNr)
+          }
+
+          val postAfter = postToMove.copy(
+            pageId = newParentPost.pageId,
+            nr = firstFreePostNr,
+            parentNr = Some(newParentPost.nr))
+
+          var postsAfter = ArrayBuffer[Post](postAfter)
+          var auditEntries = ArrayBuffer[AuditLogEntry](moveTreeAuditEntry)
+
+          descendants.zipWithIndex foreach { case (descendant, index) =>
+            val descendantAfter = descendant.copy(
+              pageId = toPage.id,
+              nr = newNrsMap.get(descendant.nr) getOrDie "EsE7YKL32",
+              parentNr = Some(newNrsMap.get(
+                descendant.parentNr getOrDie "EsE8YKHF2") getOrDie "EsE2PU79"))
+            postsAfter += descendantAfter
+            auditEntries += AuditLogEntry(
+              siteId = siteId,
+              id = moveTreeAuditEntry.id + 1 + index,
+              didWhat = AuditLogEntryType.MovePost,
+              doerId = moverId,
+              doneAt = transaction.currentTime,
+              browserIdData = browserIdData,
+              pageId = Some(descendant.pageId),
+              uniquePostId = Some(descendant.uniqueId),
+              postNr = Some(descendant.nr),
+              targetPageId = Some(descendantAfter.pageId))
+              // (leave target post blank — we didn't place decendantAfter at any
+              // particular post on the target page)
+          }
+
+          postsAfter foreach transaction.updatePost
+          auditEntries foreach transaction.insertAuditLogEntry
+          transaction.movePostsReadStats(fromPage.id, toPage.id, Map(newNrsMap.toSeq: _*))
+          // Mark both fromPage and toPage sections as stale, in case they're different forums.
+          refreshPageMetaBumpVersion(fromPage.id, markSectionPageStale = true, transaction)
+          refreshPageMetaBumpVersion(toPage.id, markSectionPageStale = true, transaction)
+
+          postAfter
+        }
+
+      val notfs = NotificationGenerator(transaction).generateForNewPost(
+        toPage, postAfter, skipMentions = true)
+      SHOULD // transaction.saveDeleteNotifications(notfs) — but would cause unique key errors
+
+      val patch = ReactJson.makeStorePatch2(postAfter.uniqueId, toPage.id, transaction)
+      (postAfter, patch)
+    }
+
+    refreshPageInAnyCache(newParent.pageId)
+    (postAfter, storePatch)
+  }
+
+
   def loadThingsToReview(): ThingsToReview = {
     readOnlyTransaction { transaction =>
       val posts = transaction.loadPostsToReview()
       val pageMetas = transaction.loadPageMetas(posts.map(_.pageId))
-      val flags = transaction.loadFlagsFor(posts.map(_.pagePostId))
+      val flags = transaction.loadFlagsFor(posts.map(_.pagePostNr))
       val userIds = mutable.HashSet[UserId]()
       userIds ++= posts.map(_.createdById)
       userIds ++= posts.map(_.currentRevisionById)

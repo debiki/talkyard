@@ -757,6 +757,23 @@ export function changePostType(postId: number, newType: PostType, success: () =>
 }
 
 
+export function movePost(postId: PostId, newHost: SiteId, newPageId: PageId,
+      newParentNr: PostNr, success: (post: Post) => void) {
+  postJsonSuccess('/-/move-post', (patch: StorePatch) => {
+    ReactActions.patchTheStore(patch);
+    var post = _.values(patch.postsByPageId)[0][0];
+    dieIf(!post, 'EsE7YKGW2');
+    success(post);
+  }, {
+    pageId: d.i.pageId,
+    postId: postId,
+    newHost: newHost,
+    newPageId: newPageId,
+    newParentNr: newParentNr,
+  });
+}
+
+
 export function saveCategory(data, success: (response: any) => void, error?: () => void) {
   postJsonSuccess('/-/save-category', success, data, error);
 }

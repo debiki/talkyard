@@ -36,6 +36,11 @@ trait Page {
   def thePath: PagePath
   def path: Option[PagePath]
   def parts: PageParts
+  def version: PageVersion
+
+  def anyAnswerPost: Option[Post] = {
+    meta.answerPostUniqueId.flatMap(parts.postById)
+  }
 
 }
 
@@ -166,7 +171,7 @@ case class PageMeta(
   categoryId: Option[CategoryId] = None,
   embeddingPageUrl: Option[String],
   authorId: UserId,
-  frequentPosterIds: Seq[UserId] = Nil,
+  frequentPosterIds: Seq[UserId] = Seq.empty,
   pinOrder: Option[Int] = None,
   pinWhere: Option[PinPageWhere] = None,
   numLikes: Int = 0,
@@ -450,6 +455,8 @@ object PageFilter {
   case object ShowDeleted extends PageFilter
 }
 
+
+case class PagePostId(pageId: PageId, postId: UniquePostId)
 
 case class PagePostNr(pageId: PageId, postNr: PostNr) {
   def toList: List[AnyRef] = List(pageId, postNr.asInstanceOf[AnyRef])

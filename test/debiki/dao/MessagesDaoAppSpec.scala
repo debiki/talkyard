@@ -66,7 +66,6 @@ class MessagesDaoAppSpec extends DaoAppSuite {
         notf match {
           case newPotsNotf: Notification.NewPost =>
             newPotsNotf.byUserId mustBe userOne.id
-            newPotsNotf.pageId mustBe page.id
             newPotsNotf.uniquePostId mustBe page.parts.theBody.uniqueId
           case x =>
             fail(s"Bad notf type: ${classNameOf(x)}")

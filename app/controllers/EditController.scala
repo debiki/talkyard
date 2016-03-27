@@ -175,6 +175,21 @@ object EditController extends mvc.Controller {
   }
 
 
+  def movePost = StaffPostJsonAction(maxLength = 100) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    val postId = (request.body \ "postId").as[UniquePostId]
+    val newHost = (request.body \ "newHost").as[SiteId] // ignore for now though
+    val newPageId = (request.body \ "newPageId").as[PageId]
+    val newParentNr = (request.body \ "newParentNr").as[PostNr]
+
+    val (_, storePatch) = request.dao.movePostIfAuth(PagePostId(pageId, postId),
+      newParent = PagePostNr(newPageId, newParentNr), moverId = request.theMember.id,
+      request.theBrowserIdData)
+
+    OkSafeJson(storePatch)
+  }
+
+
   private def _throwIfTooMuchData(text: String, request: DebikiRequest[_]) {
     val postSize = text.length
     val user = request.user_!

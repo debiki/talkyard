@@ -487,6 +487,32 @@ trait PagesDao {
     }
     else None
   }
+
+
+  def refreshPageMetaBumpVersion(pageId: PageId, markSectionPageStale: Boolean,
+        transaction: SiteTransaction) {
+    val page = PageDao(pageId, transaction)
+    val newMeta = page.meta.copy(
+      lastReplyAt = page.parts.lastVisibleReply.map(_.createdAt),
+      lastReplyById = page.parts.lastVisibleReply.map(_.createdById),
+      frequentPosterIds = page.parts.frequentPosterIds,
+      numLikes = page.parts.numLikes,
+      numWrongs = page.parts.numWrongs,
+      numBurys = page.parts.numBurys,
+      numUnwanteds = page.parts.numUnwanteds,
+      numRepliesVisible = page.parts.numRepliesVisible,
+      numRepliesTotal = page.parts.numRepliesTotal,
+      numOrigPostLikeVotes = page.parts.theBody.numLikeVotes,
+      numOrigPostWrongVotes = page.parts.theBody.numWrongVotes,
+      numOrigPostBuryVotes = page.parts.theBody.numBuryVotes,
+      numOrigPostUnwantedVotes = page.parts.theBody.numUnwantedVotes,
+      numOrigPostRepliesVisible = page.parts.numOrigPostRepliesVisible,
+      answeredAt = page.anyAnswerPost.map(_.createdAt),
+      answerPostUniqueId = page.anyAnswerPost.map(_.uniqueId),
+      version = page.version + 1)
+    transaction.updatePageMeta(newMeta, oldMeta = page.meta,
+      markSectionPageStale = markSectionPageStale)
+  }
 }
 
 

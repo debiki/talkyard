@@ -84,14 +84,14 @@ export var StupidDialog = createComponent({
   render: function () {
     var stuff: StupidDialogStuff = this.state.stuff || {};
     var body = stuff.body;
-    if (_.isString(body)) {
+    //if (_.isString(body)) {  -- why this if?
       body = ModalBody({},
-        r.p({ style: { marginBottom: '2em' }}, body),
+        r.div({ style: { marginBottom: '2em' }}, body),
         Button({ onClick: this.close }, stuff.closeButtonTitle || "Okay"));
-    }
+    /*}
     else if (body) {
-      die("Non-string content not implemented [EsE7KYKW2]")
-    }
+      die("Non-string content not implemented [EsE7KYKW2]");
+    }*/
     // var defaultFooter = () => ModalFooter({}, Button({ onClick: this.close }, 'Okay'));
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: stuff.dialogClassName },

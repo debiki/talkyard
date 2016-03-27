@@ -49,48 +49,53 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     }*/
 
 
-  private def postUrl(pageMeta: PageMeta, notf: Notification.NewPost): Option[String] =
+  private def postUrl(pageMeta: PageMeta, post: Post): Option[String] =
     pageMeta.embeddingPageUrl match {
       case Some(url) =>
         // Include both topic and comment id, because it's possible to embed
         // many different discussions (topics) on the same page.
-        Some(s"$url#debiki-topic-${pageMeta.pageId}-comment-${notf.postNr}")
+        Some(s"$url#debiki-topic-${pageMeta.pageId}-comment-${post.nr}")
       case None =>
         // The page is hosted by Debiki so its url uniquely identifies the topic.
         anyOrigin map { origin =>
-          val pageUrl = s"$origin/-${notf.pageId}"
-          s"$pageUrl#post-${notf.postNr}"
+          val pageUrl = s"$origin/-${post.pageId}"
+          s"$pageUrl#post-${post.nr}"
         }
     }
 
 
   def render(notfs: Seq[Notification]): NodeSeq = {
     require(notfs.nonEmpty, "DwE7KYG3")
-    // WOULD load page stuff inside the transaction, if I had an infinite amount of time.
-    val pageStuffById = siteDao.loadPageStuff(pageIdsFor(notfs))
-    var maxNotificationLength = Notifier.MaxEmailBodyLength / notfs.length
     siteDao.readOnlyTransaction { transaction =>
+      val postIds: Seq[UniquePostId] = notfs flatMap {
+        case notf: Notification.NewPost => Some(notf.uniquePostId)
+        case _ => None
+      }
+      val postsById = transaction.loadPostsByUniqueId(postIds)
+      val pageIds = postsById.values.map(_.pageId)
+      val pageStuffById = siteDao.loadPageStuffImpl(pageIds, transaction)
+      val maxNotificationLength = Notifier.MaxEmailBodyLength / notfs.length
       // Later: do support reply-via-email.
       var result: NodeSeq = <p>(If you want to reply, follow the links below — but don't reply to this email.)</p>
       for (notf <- notfs) {
-        result ++= (notf match {
+        val anyHtmlNotf = notf match {
           case newPostNotf: Notification.NewPost =>
-            val pageTitle =
-              pageStuffById.get(newPostNotf.pageId).map(_.title) getOrElse "(Page with no title)"
-            renderNewPostNotf(newPostNotf, pageTitle, maxNotificationLength, transaction)
-        })
+            postsById.get(newPostNotf.uniquePostId) map { post =>
+              val pageTitle = pageStuffById.get(post.pageId).map(_.title).getOrElse(
+                "No title [EsM7YKF2]")
+              renderNewPostNotf(newPostNotf, post, pageTitle, maxNotificationLength, transaction)
+            }
+        }
+        anyHtmlNotf.foreach(result ++= _)
       }
       result
     }
   }
 
 
-  private def renderNewPostNotf(notf: Notification.NewPost, pageTitle: String,
+  private def renderNewPostNotf(notf: Notification.NewPost, post: Post, pageTitle: String,
         maxNotificationLength: Int, transaction: SiteTransaction): NodeSeq = {
-    val pageMeta = transaction.loadPageMeta(notf.pageId) getOrElse {
-      return Nil
-    }
-    val post = transaction.loadPost(pageId = notf.pageId, postNr = notf.postNr) getOrElse {
+    val pageMeta = transaction.loadPageMeta(post.pageId) getOrElse {
       return Nil
     }
     val markupSource = post.approvedSource getOrElse {
@@ -102,7 +107,10 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
 
     val date = toIso8601Day(post.createdAt)
 
-    val url = postUrl(pageMeta, notf) getOrElse {
+    COULD // instead add a /-/view-notf?id=... endpoint that redirects to the correct
+    // page & post nr, even if the post has been moved to another page. And tells the user if
+    // the post was deleted or heavily edited or whatever.
+    val url = postUrl(pageMeta, post) getOrElse {
       // Not an embedded discussion, and the site has no canonical host, so we
       // cannot construct any address.
       return Nil
@@ -123,7 +131,7 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
       case NotificationType.DirectReply =>
         ("You have a reply", "written by")
       case NotificationType.NewPost =>
-        if (notf.postNr == PageParts.BodyNr)
+        if (post.nr == PageParts.BodyNr)
           ("A new topic has been started", "by")
         else
           ("A new comment has been posted", "by")
@@ -154,9 +162,4 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     </p>
   }*/
 
-
-  def pageIdsFor(notfs: Seq[Notification]): Seq[PageId] = notfs.flatMap {
-    case newPost: Notification.NewPost =>
-      Some(newPost.pageId)
-  }
 }

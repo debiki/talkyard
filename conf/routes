@@ -145,6 +145,7 @@ POST  /-/edit-title-save-settings controllers.PageTitleSettingsController.editTi
 GET   /-/onebox                 controllers.EditController.onebox(url)
 POST  /-/change-post-type       controllers.EditController.changePostType
 POST  /-/delete-post            controllers.EditController.deletePost
+POST  /-/move-post              controllers.EditController.movePost
 
 GET   /-/load-post-revisions    controllers.EditController.loadPostRevisions(postId, revisionNr)
 

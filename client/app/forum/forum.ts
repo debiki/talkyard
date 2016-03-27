@@ -841,7 +841,7 @@ var TopicRow = createComponent({
     var categoryName = category ? category.name : '';
     var activityAgo = prettyLetterTimeAgo(topic.bumpedEpoch || topic.createdEpoch);
 
-    // Avatars: Original Poster, some frequent posters, most recent poster.
+    // Avatars: Original Poster, some frequent posters, most recent poster. [7UKPF26]
     var userAvatars = [
         avatar.Avatar({ key: 'OP', tiny: true, user: topic.author, title: "created the topic" })];
     for (var i = 0; i < topic.frequentPosters.length; ++i) {

@@ -72,7 +72,9 @@ trait SiteTransaction {
   def loadThePost(uniquePostId: UniquePostId): Post =
     loadPost(uniquePostId).getOrElse(throw PostNotFoundByIdException(uniquePostId))
 
+  def loadPost(which: PagePostNr): Option[Post] = loadPost(which.pageId, which.postNr)
   def loadPost(pageId: PageId, postNr: PostNr): Option[Post]
+  def loadThePost(which: PagePostNr): Post = loadThePost(which.pageId, which.postNr)
   def loadThePost(pageId: PageId, postNr: PostNr): Post =
     loadPost(pageId, postNr).getOrElse(throw PostNotFoundException(pageId, postNr))
 
@@ -118,6 +120,8 @@ trait SiteTransaction {
 
   def loadPostsReadStats(pageId: PageId, postNr: Option[PostNr]): PostsReadStats
   def loadPostsReadStats(pageId: PageId): PostsReadStats
+  def movePostsReadStats(oldPageId: PageId, newPageId: PageId,
+    newPostNrsByOldNrs: Map[PostNr, PostNr])
 
 
   def loadFlagsFor(pagePostNrs: immutable.Seq[PagePostNr]): immutable.Seq[PostFlag]
@@ -308,8 +312,12 @@ trait SiteTransaction {
 }
 
 
-case class UserNotFoundException(userId: UserId) extends QuickException
-case class PageNotFoundException(pageId: PageId) extends QuickException
-case class PostNotFoundException(pageId: PageId, postNr: PostNr) extends QuickException
-case class PostNotFoundByIdException(postId: UniquePostId) extends QuickException
+case class UserNotFoundException(userId: UserId) extends QuickMessageException(
+  s"User found by id: $userId")
+case class PageNotFoundException(pageId: PageId) extends QuickMessageException(
+  s"Page found by id: $pageId")
+case class PostNotFoundException(pageId: PageId, postNr: PostNr) extends QuickMessageException(
+  s"Post not found by nr, page, post: $pageId, $postNr")
+case class PostNotFoundByIdException(postId: UniquePostId) extends QuickMessageException(
+  s"Post not found by id: $postId")
 

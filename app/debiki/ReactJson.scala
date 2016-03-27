@@ -146,7 +146,7 @@ object ReactJson {
         numPostsChatSection += 1
       else if (!post.isOrigPost && !post.isTitle)
         numPostsRepliesSection += 1
-      post.nr.toString -> postToJsonImpl(post, page, transaction.currentTime)
+      post.nr.toString -> postToJsonImpl(post, page)
     }
 
     val usersById = mutable.HashMap[UserId, User](page.parts.usersById.toSeq: _*)
@@ -354,7 +354,7 @@ object ReactJson {
     dao.readOnlyTransaction { transaction =>
       // COULD optimize: don't load the whole page, load only postNr and the author and last editor.
       val page = PageDao(pageId, transaction)
-      val json = postToJsonImpl(page.parts.thePost(postNr), page, transaction.currentTime,
+      val json = postToJsonImpl(page.parts.thePost(postNr), page,
         includeUnapproved = includeUnapproved)
       (json, page.version)
     }
@@ -363,7 +363,7 @@ object ReactJson {
 
   /** Private, so it cannot be called outside a transaction.
     */
-  private def postToJsonImpl(post: Post, page: Page, currentTime: ju.Date,
+  private def postToJsonImpl(post: Post, page: Page,
         includeUnapproved: Boolean = false): JsObject = {
     val people = page.parts
 
@@ -614,15 +614,22 @@ object ReactJson {
 
   def notificationsToJson(notfs: Seq[Notification], transaction: SiteTransaction)
         : NotfsAndCounts = {
-    val pageIds = ArrayBuffer[PageId]()
     val userIds = ArrayBuffer[UserId]()
     var numTalkToMe = 0
     var numTalkToOthers = 0
     var numOther = 0
 
+    val postIds: Seq[UniquePostId] = notfs flatMap {
+      case notf: Notification.NewPost => Some(notf.uniquePostId)
+      case _ => None
+    }
+    val postsById = transaction.loadPostsByUniqueId(postIds)
+
+    val pageIds = postsById.values.map(_.pageId)
+    val pageTitlesById = transaction.loadTitlesPreferApproved(pageIds)
+
     notfs.foreach {
       case notf: Notification.NewPost =>
-        pageIds.append(notf.pageId)
         userIds.append(notf.byUserId)
         import NotificationType._
         if (notf.seenAt.isEmpty) notf.tyype match {
@@ -637,7 +644,6 @@ object ReactJson {
     // Unseen notfs are sorted first, so if the last one is unseen, there might be more unseen.
     val thereAreMoreUnseen = notfs.lastOption.exists(_.seenAt.isEmpty)
 
-    val pageTitlesById = transaction.loadTitlesPreferApproved(pageIds)
     val usersById = transaction.loadUsersAsMap(userIds)
 
     NotfsAndCounts(
@@ -645,24 +651,29 @@ object ReactJson {
       numTalkToOthers = numTalkToOthers,
       numOther = numOther,
       thereAreMoreUnseen = thereAreMoreUnseen,
-      notfsJson = JsArray(notfs.map(makeNotificationsJson(_, pageTitlesById, usersById))))
+      notfsJson = JsArray(notfs.flatMap(
+        makeNotificationsJson(_, pageTitlesById, postsById, usersById))))
   }
 
 
   private def makeNotificationsJson(notf: Notification, pageTitlesById: Map[PageId, String],
-        usersById: Map[UserId, User]): JsObject = {
-    notf match {
+        postsById: Map[UniquePostId, Post], usersById: Map[UserId, User]): Option[JsObject] = {
+    Some(notf match {
       case notf: Notification.NewPost =>
+        val post = postsById.getOrElse(notf.uniquePostId, {
+          return None
+        })
+        var title = pageTitlesById.get(post.pageId)
         Json.obj(
           "id" -> notf.id,
           "type" -> notf.tyype.toInt,
           "createdAtMs" -> notf.createdAt.getTime,
-          "pageId" -> notf.pageId,
-          "pageTitle" -> JsStringOrNull(pageTitlesById.get(notf.pageId)),
-          "postNr" -> notf.postNr,
+          "pageId" -> post.pageId,
+          "pageTitle" -> JsStringOrNull(title),
+          "postNr" -> post.nr,
           "byUser" -> JsUserOrNull(usersById.get(notf.byUserId)),
           "seen" -> notf.seenAt.nonEmpty)
-    }
+    })
   }
 
 
@@ -857,12 +868,26 @@ object ReactJson {
 
 
   def makeStorePatch(post: Post, author: User, dao: SiteDao): JsValue = {
+    // Warning: some similar code below [89fKF2]
     require(post.createdById == author.id, "EsE5PKY2")
     val (postJson, pageVersion) = ReactJson.postToJson(
       post.nr, pageId = post.pageId, dao, includeUnapproved = true)
     makeStorePatch(PageIdVersion(post.pageId, pageVersion),
       posts = Seq(postJson), users = Seq(JsUser(author)))
+  }
 
+
+  def makeStorePatch2(postId: UniquePostId, pageId: PageId, transaction: SiteTransaction)
+        : JsValue = {
+    // Warning: some similar code above [89fKF2]
+    // Load the page so we'll get a version that includes postId, in case it was just added.
+    val page = PageDao(pageId, transaction)
+    val post = page.parts.postById(postId) getOrDie "EsE8YKPW2"
+    val author = transaction.loadTheUser(post.createdById)
+    require(post.createdById == author.id, "EsE4JHKX1")
+    val postJson = postToJsonImpl(post, page, includeUnapproved = true)
+    makeStorePatch(PageIdVersion(post.pageId, page.version),
+      posts = Seq(postJson), users = Seq(JsUser(author)))
   }
 
 

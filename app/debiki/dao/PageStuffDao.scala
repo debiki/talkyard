@@ -68,13 +68,15 @@ trait PageStuffDao {
     if (pageIds.isEmpty)
       return Map.empty
     readOnlyTransaction { transaction =>
-      loadStuffImpl(pageIds, transaction)
+      loadPageStuffImpl(pageIds, transaction)
     }
   }
 
 
-  private def loadStuffImpl(pageIds: Iterable[PageId], transaction: SiteTransaction)
+  def loadPageStuffImpl(pageIds: Iterable[PageId], transaction: SiteTransaction)
         : Map[PageId, PageStuff] = {
+    if (pageIds.isEmpty)
+      return Map.empty
     var stuffById = Map[PageId, PageStuff]()
     val pageMetasById = transaction.loadPageMetasAsMap(pageIds)
 

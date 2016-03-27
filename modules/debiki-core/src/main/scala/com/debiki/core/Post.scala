@@ -261,10 +261,11 @@ case class Post(
   def isDeleted = deletedStatus.isDeleted
   def isSomeVersionApproved = approvedRevisionNr.isDefined
   def isCurrentVersionApproved = approvedRevisionNr == Some(currentRevisionNr)
-  def isVisible = isSomeVersionApproved && !isHidden && !isDeleted
+  def isVisible = isSomeVersionApproved && !isHidden && !isDeleted  // rename to isActive? isInUse?
   def isWiki = tyype.isWiki
 
-  def pagePostId = PagePostNr(pageId, nr)
+  def pagePostId = PagePostId(pageId, uniqueId)
+  def pagePostNr = PagePostNr(pageId, nr)
   def hasAnId = nr >= PageParts.LowestPostNr
 
   def newChildCollapsedStatus = new CollapsedStatus(

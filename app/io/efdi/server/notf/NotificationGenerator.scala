@@ -41,7 +41,8 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       toDelete = notfsToDelete.toSeq)
 
 
-  def generateForNewPost(page: Page, newPost: Post): Notifications = {
+  def generateForNewPost(page: Page, newPost: Post, skipMentions: Boolean = false)
+        : Notifications = {
     require(page.id == newPost.pageId, "DwE4KEW9")
 
     val approverId = newPost.approvedById getOrElse {
@@ -60,16 +61,18 @@ case class NotificationGenerator(transaction: SiteTransaction) {
     }
 
     // Mentions
-    val mentionedUsernames: Seq[String] = findMentions(newPost.approvedSource getOrDie "DwE82FK4")
-    val mentionedUsers = mentionedUsernames.flatMap(transaction.loadMemberByEmailOrUsername)
-    for {
-      user <- mentionedUsers
-      // Right now ignore self-mentions. Later, allow? Could work like a personal to-do item?
-      // Then would have to remove a db constraint. Could do later. Right now feels best
-      // to keep it so it'll catch bugs.
-      if user.id != newPost.createdById  // poster mentions him/herself?
-    } {
-      makeNewPostNotf(NotificationType.Mention, newPost, user)
+    if (!skipMentions) {
+      val mentionedUsernames: Seq[String] = findMentions(newPost.approvedSource getOrDie "DwE82FK4")
+      val mentionedUsers = mentionedUsernames.flatMap(transaction.loadMemberByEmailOrUsername)
+      for {
+        user <- mentionedUsers
+        // Right now ignore self-mentions. Later, allow? Could work like a personal to-do item?
+        // Then would have to remove a db constraint. Could do later. Right now feels best
+        // to keep it so it'll catch bugs.
+        if user.id != newPost.createdById  // poster mentions him/herself?
+      } {
+        makeNewPostNotf(NotificationType.Mention, newPost, user)
+      }
     }
 
     // People watching this topic or category
@@ -83,6 +86,14 @@ case class NotificationGenerator(transaction: SiteTransaction) {
 
     generatedNotifications
   }
+
+
+  /*
+  def generateForDeletedPost(page: Page, post: Post, skipMentions: Boolean): Notifications = {
+    dieIf(!skipMentions, "EsE6YKG567", "Unimplemented: deleting mentions")
+    Notifications(
+      toDelete = Seq(NotificationToDelete.NewPostToDelete(transaction.siteId, post.uniqueId)))
+  }*/
 
 
   /** Private messages are sent to all toUserIds, but not to any user mentioned in the
@@ -127,8 +138,6 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       id = bumpAndGetNextNotfId(),
       createdAt = newPost.createdAt,
       uniquePostId = newPost.uniqueId,
-      pageId = newPost.pageId,
-      postNr = newPost.nr,
       byUserId = newPost.createdById,
       toUserId = toUser.id)
   }
@@ -137,7 +146,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
   /** Creates and deletes mentions, if the edits creates or deletes mentions.
     */
   def generateForEdits(oldPost: Post, newPost: Post): Notifications = {
-    require(oldPost.pagePostId == newPost.pagePostId)
+    require(oldPost.pagePostNr == newPost.pagePostNr)
 
     val oldMentions = findMentions(oldPost.approvedSource getOrDie "DwE0YKW3").toSet
     val newMentions = findMentions(newPost.approvedSource getOrDie "DwE2BF81").toSet
@@ -152,8 +161,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
     for (user <- mentionsDeletedForUsers) {
       notfsToDelete += NotificationToDelete.MentionToDelete(
         siteId = transaction.siteId,
-        pageId = newPost.pageId,
-        postNr = oldPost.nr,
+        uniquePostId = newPost.uniqueId,
         toUserId = user.id)
     }
 

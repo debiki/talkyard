@@ -495,9 +495,6 @@ export function clonePost(postId: number): Post {
 
 
 function updatePost(post: Post, isCollapsing?: boolean) {
-  // (Could here remove any old version of the post, if it's being moved to
-  // elsewhere in the tree.)
-
   store.now = new Date().getTime();
 
   var oldVersion = store.allPosts[post.postId];
@@ -912,10 +909,31 @@ function patchTheStore(storePatch: StorePatch) {
   }
 
   // Highligt pages with new posts, in the watchbar.
+  // And find out if some post was moved to elsewhere.
   _.each(storePatch.postsByPageId, (posts: Post[], pageId: PageId) => {
     if (pageId !== store.pageId) {
       watchbar_markAsUnread(store.me.watchbar, pageId);
     }
+
+    // Remove the post from its former parent, if we're moving it to elsewhere on this page,
+    // or to another page.
+    _.each(posts, (patchedPost: Post) => {
+      _.each(store.allPosts, (oldPost: Post) => {
+        if (oldPost.uniqueId === patchedPost.uniqueId) {
+          var movedToNewPage = store.pageId !== pageId;
+          var movedOnThisPage = !movedToNewPage && oldPost.parentId !== patchedPost.parentId;
+          if (movedToNewPage || movedOnThisPage) {
+            var oldParent = store.allPosts[oldPost.parentId];
+            if (oldParent && oldParent.childIdsSorted) {
+              var index = oldParent.childIdsSorted.indexOf(oldPost.postId);
+              if (index !== -1) {
+                oldParent.childIdsSorted.splice(index, 1);
+              }
+            }
+          }
+        }
+      });
+    });
   });
 
   // Update the current page.

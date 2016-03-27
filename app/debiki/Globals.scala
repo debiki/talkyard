@@ -129,7 +129,9 @@ class Globals {
   def endToEndTestMailer = state.mailerActorRef
 
   def renderPageContentInBackground(sitePageId: SitePageId) {
-    state.renderContentActorRef ! sitePageId
+    if (!isTestDisableBackgroundJobs) {
+      state.renderContentActorRef ! sitePageId
+    }
   }
 
   def antiSpam: AntiSpam = state.antiSpam
