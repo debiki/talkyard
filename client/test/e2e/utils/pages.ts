@@ -46,7 +46,6 @@ pages.createSomething.createForum = function(forumTitle) {
 
 
 pages.loginDialog.createPasswordAccount = function(data) {
-  browser.waitAndClick('#e2eCreateNewAccount');
   browser.waitAndSetValue('#e2eFullName', data.fullName);
   browser.waitAndSetValue('#e2eUsername', data.username);
   browser.waitAndSetValue('#e2eEmail', data.email);
@@ -66,12 +65,16 @@ pages.loginDialog.createGmailAccount = function(data) {
 
 
 pages.loginDialog.loginWithGmail = function(data) {
+  // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
+  browser.pause(100);
   browser.waitAndClick('#e2eLoginGoogle');
 
   // In Google's login popup window:
   browser.swithToOtherTabOrWindow();
   browser.waitAndSetValue('#Email', data.email);
-  // browser.click('#next'); -- Oops now it's gone
+  if (browser.isExisting('#next')) {
+    browser.click('#next');
+  }
   browser.waitAndSetValue('#Passwd', data.password);
   browser.click('#signIn');
   browser.waitForEnabled('#submit_approve_access');
@@ -91,6 +94,8 @@ pages.loginDialog.createFacebookAccount = function(data) {
 
 
 pages.loginDialog.loginWithFacebook = function(data) {
+  // Pause or sometimes the click misses the button. Is the browser doing some re-layout?
+  browser.pause(100);
   browser.waitAndClick('#e2eLoginFacebook');
 
   // In Facebook's login popup window:
