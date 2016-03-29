@@ -79,6 +79,15 @@
 .icon-history:before { content: '\e847'; } /* '' */
 .icon-meh:before { content: '\e848'; } /* '' */
 .icon-flash:before { content: '\e849'; } /* '' */
+.icon-th-list:before { content: '\e84a'; } /* '' */
+.icon-picture:before { content: '\e84b'; } /* '' */
+.icon-link-ext:before { content: '\e84c'; } /* '' */
+.icon-quote-right:before { content: '\e84d'; } /* '' */
+.icon-logout:before { content: '\e84e'; } /* '' */
+.icon-paper-plane-empty:before { content: '\e84f'; } /* '' */
+.icon-cloud-sun:before { content: '\e850'; } /* '' */
+.icon-drizzle:before { content: '\e851'; } /* '' */
+.icon-cloud-flash:before { content: '\e852'; } /* '' */
 .icon-facebook:before { content: '\f09a'; } /* '' */
 .icon-google-plus:before { content: '\f0d5'; } /* '' */
 .icon-linkedin:before { content: '\f0e1'; } /* '' */

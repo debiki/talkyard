@@ -503,6 +503,60 @@
       "css": "cancel-circled-empty",
       "code": 59453,
       "src": "elusive"
+    },
+    {
+      "uid": "f805bb95d40c7ef2bc51b3d50d4f2e5c",
+      "css": "th-list",
+      "code": 59466,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "381da2c2f7fd51f8de877c044d7f439d",
+      "css": "picture",
+      "code": 59467,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "e15f0d620a7897e2035c18c80142f6d9",
+      "css": "link-ext",
+      "code": 59468,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "d745d7c05b94e609decabade2cae12cb",
+      "css": "quote-right",
+      "code": 59469,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "0d20938846444af8deb1920dc85a29fb",
+      "css": "logout",
+      "code": 59470,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "4b2321afcbe0505a70b80abd5c25e09b",
+      "css": "paper-plane-empty",
+      "code": 59471,
+      "src": "fontawesome"
+    },
+    {
+      "uid": "ac10a3a3077eab1b9d66509eb25fb9b4",
+      "css": "cloud-sun",
+      "code": 59472,
+      "src": "typicons"
+    },
+    {
+      "uid": "6f200a5a449259c51cd0ccf56b4c1e93",
+      "css": "drizzle",
+      "code": 59473,
+      "src": "typicons"
+    },
+    {
+      "uid": "3cac7625657b10cf706e7f332749c912",
+      "css": "cloud-flash",
+      "code": 59474,
+      "src": "typicons"
     }
   ]
 }
