@@ -21,6 +21,7 @@
   reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
 
 @import play.api.Play.current
+@import com.debiki.core.PageRole.InfoPageMaxId
 
 @asset(file: String) = @{
   routes.Assets.at(path = "/public/res", file)
@@ -81,7 +82,9 @@ if (isIos)
     return result;
   }
 
-  var __reactStore = JSON.parse(unencodeHtmlContent(document.getElementById('thePageJson').text));
+var __reactStore = JSON.parse(unencodeHtmlContent(document.getElementById('thePageJson').text));
+var _volatileData = JSON.parse(unencodeHtmlContent(document.getElementById('theVolatileJson').text));
+var _me = _volatileData.me || __reactStore.me || {};
 
   var hideIntro = localStorage.getItem('hideForumIntro');
   __reactStore.hideForumIntro = hideIntro && hideIntro !== 'false';
@@ -95,19 +98,23 @@ if (_narrow) {
   __reactStore.shallSidebarsOverlayPage = true;
 }
 
-  var __isInfoPage = !__reactStore.pageRole || __reactStore.pageRole <= 2;
-  if (!_narrow && localStorage.getItem('isWatchbarOpen') !== 'false' &&
-      location.search.search('&hideWatchbar') === -1 && !__isInfoPage) {
-    docElem.className += ' es-watchbar-open';
-    __reactStore.isWatchbarOpen = true;
-  }
+var __isInfoPage = !__reactStore.pageRole || __reactStore.pageRole <= @InfoPageMaxId;
+if (!_narrow && localStorage.getItem('isWatchbarOpen') !== 'false' &&
+    location.search.search('&hideWatchbar') === -1 && !__isInfoPage) {
+  docElem.className += ' es-watchbar-open';
+  __reactStore.isWatchbarOpen = true;
+}
 
-  @{/* Hide by default, or new users will be overwhelmed by everything there is to see */}
-  if (!_narrow && localStorage.getItem('isContextbarOpen') === 'true' &&
-      location.search.search('&hideContextbar') === -1 && !__isInfoPage) {
-    docElem.className += ' es-pagebar-open';
-    __reactStore.isContextbarOpen = true;
-  }
+@{/* Hide the contextbar  by default, or new users will be overwhelmed by everything there is
+to see. But do show the Admin Getting Started Guide (it's in the sidebar [8YKFW32]) for
+new admins. */}
+var _showAdmGuide = localStorage.getItem('showAdminGuide') !== 'false' && _me.isAdmin &&
+        localStorage.getItem('isContextbarOpen') !== 'false';
+if (_showAdmGuide || (!_narrow && localStorage.getItem('isContextbarOpen') === 'true' &&
+    location.search.search('&hideContextbar') === -1 && !__isInfoPage)) {
+  docElem.className += ' es-pagebar-open';
+  __reactStore.isContextbarOpen = true;
+}
 
   var debiki = {
     siteId: '@siteId',
@@ -115,7 +122,7 @@ if (_narrow) {
     cachedVersion: '@tpi.cachedVersionString',
     secure: @{debiki.Globals.secure},
     pageDataFromServer: __reactStore,
-    volatileDataFromServer: JSON.parse(unencodeHtmlContent(document.getElementById('theVolatileJson').text)),
+    volatileDataFromServer: _volatileData,
     getPageId: function() { return @Html(pageIdQuotedOrUndefined); },
     isDev: @{ if (play.api.Play.isDev) "true" else "false" },
     v0: { util: {} },

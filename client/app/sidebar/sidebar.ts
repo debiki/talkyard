@@ -45,7 +45,8 @@ export var Sidebar = createComponent({
   mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
-    var store = debiki2.ReactStore.allData();
+    var store: Store = debiki2.ReactStore.allData();
+    var me = store.me;
     // Show sidebar by default, in 1D layout, otherwise people will never notice
     // that it exists.
 
@@ -67,11 +68,19 @@ export var Sidebar = createComponent({
      localStorage.setItem('debikiShowSidebar', this.state.showSidebar ? 'true' : 'false');
     */
 
+    // If is admin, show the admin guide, unless the admin has clicked away from it.
+    // If is chat, then we want to see online users (however, showing recent comments makes no
+    // sense, because the chat messages (= comments) are already sorted chronologically).
+    var commentsType = me.isAdmin && getFromLocalStorage('showAdminGuide') !== 'false'
+        ? 'AdminGuide'
+        : isPageWithComments(store.pageRole) && !page_isChatChannel(store.pageRole)
+          ? 'Recent'
+          : 'Users';
+
     return {
       store: store,
       lastLoadedOnlineUsersAsId: null,
-      commentsType: isPageWithComments(store.pageRole) && !page_isChatChannel(store.pageRole) ?
-          'Recent' : 'Users',
+      commentsType: commentsType,
       // showPerhapsUnread: false,
     };
   },
@@ -88,35 +97,29 @@ export var Sidebar = createComponent({
   },
 
   showRecent: function() {
-    this.setState({
-      commentsType: 'Recent'
-    });
+    this.setState({ commentsType: 'Recent' });
   },
 
   /*
   showUnread: function() {
-    this.setState({
-      commentsType: 'Unread'
-    });
+    this.setState({ commentsType: 'Unread' });
   },*/
 
   showStarred: function() {
-    this.setState({
-      commentsType: 'Starred'
-    });
+    this.setState({ commentsType: 'Starred' });
   },
 
   /*
   togglePerhapsUnread: function() {
-    this.setState({
-      showPerhapsUnread: !this.state.showPerhapsUnread
-    });
+    this.setState({ showPerhapsUnread: !this.state.showPerhapsUnread });
   }, */
 
   showUsers: function() {
-    this.setState({
-      commentsType: 'Users'
-    });
+    this.setState({ commentsType: 'Users' });
+  },
+
+  showAdminGuide: function() {
+    this.setState({ commentsType: 'AdminGuide' });
   },
 
   componentDidMount: function() {
@@ -129,6 +132,15 @@ export var Sidebar = createComponent({
 
   componentWillUnmount: function() {
     keymaster.unbind('s', 'all');
+  },
+
+  componentWillUpdate: function(newProps, newState) {
+    // Stop always-showing-the-admin-guide-on-page-load if the admin clicks away from it.
+    var store: Store = this.state.store;
+    if (store.me.isAdmin && this.state.commentsType !== newState.commentsType) {
+      putInLocalStorage(
+          'showAdminGuide', newState.commentsType === 'AdminGuide' ? 'true' : 'false');
+    }
   },
 
   componentDidUpdate: function() {
@@ -281,6 +293,7 @@ export var Sidebar = createComponent({
 
   render: function() {
     var store: Store = this.state.store;
+    var me: Myself = store.me;
 
     var minimapProps = $.extend({ ref: 'minimap' }, store);
     var commentsFound = isPageWithComments(store.pageRole) ? this.findComments() : null;
@@ -309,6 +322,7 @@ export var Sidebar = createComponent({
     var recentClass = '';
     var starredClass = '';
     var usersClass = '';
+    var adminGuideActiveClass = '';
     var listItems: any[];
     switch (this.state.commentsType) {
       case 'Recent':
@@ -350,11 +364,15 @@ export var Sidebar = createComponent({
         usersClass = ' active';
         listItems = makeUsersContent(store, usersHere.users, store.me.id, numOnlineStrangers);
         break;
+      case 'AdminGuide':
+        title = "Getting Started Guide";
+        adminGuideActiveClass = ' active';
+        break;
       default:
         console.error('[DwE4PM091]');
     }
 
-    var tipsOrExtraConfig;
+    var tipsGuideOrExtraConfig;
     if (this.state.commentsType === 'Recent') {
       /* Skip this, I think people won't read it anyway and it makes the page look very
           cluttered and complicated.
@@ -366,7 +384,7 @@ export var Sidebar = createComponent({
       */
     }
     if (this.state.commentsType === 'Starred') {
-      tipsOrExtraConfig =
+      tipsGuideOrExtraConfig =
           r.p({}, 'To star a comment, click the star in its upper left ' +
             "corner, so the star turns blue or yellow. (You can use these two colors in " +
             'any way you want.)');
@@ -387,11 +405,15 @@ export var Sidebar = createComponent({
             'Let the computer try to determine when you have read a comment.'),
           tips);
     }*/
+    else if (this.state.commentsType === 'AdminGuide') {
+      tipsGuideOrExtraConfig = TheAdminGuide;
+    }
 
     var wide = ($(window).width() > 1000);
     var recentButton;
     var starredButton;
     var unreadButton;
+    var adminGuideButton;
     if (commentsFound) {
       if (wide) {
         recentButton = isChat ? null :
@@ -411,6 +433,16 @@ export var Sidebar = createComponent({
       }
     }
 
+    if (me.isAdmin) {
+      if (wide) {
+        adminGuideButton = r.button({ className: 'btn btn-default' + adminGuideActiveClass,
+          onClick: this.showAdminGuide }, "Guide");
+      }
+      else {
+        adminGuideButton = MenuItem({ eventKey: 'showAdminGuide' }, "Admin Guide");
+      }
+    }
+
     var tabButtons;
     if (wide) {
       tabButtons =
@@ -419,7 +451,8 @@ export var Sidebar = createComponent({
           unreadButton,
           starredButton,
           r.button({ className: 'btn btn-default' + usersClass, onClick: this.showUsers },
-              usersBtnTitle));
+              usersBtnTitle),
+          adminGuideButton);
     }
     else {
       tabButtons =
@@ -428,7 +461,8 @@ export var Sidebar = createComponent({
           recentButton,
           unreadButton,
           starredButton,
-          MenuItem({ eventKey: 'showUsers' }, usersBtnTitle));
+          MenuItem({ eventKey: 'showUsers' }, usersBtnTitle),
+          adminGuideButton);
     }
 
     // Show four help messages: first no. 1, then 2, 3, 4, one at a time, which clarify
@@ -458,12 +492,14 @@ export var Sidebar = createComponent({
           null : { opacity: '0.6' };
     }
 
+    sidebarClasses += adminGuideActiveClass ? ' esCtxbar-adminGuide' : '';
+
     return (
       r.div({ className: 'dw-sidebar-z-index' },
       r.div({ id: 'dw-minimap-holder', className: 'dw-sidebar-is-open' },
         r.div({ className: 'dw-upper-right-corner' },
           MiniMap(minimapProps))),
-      r.div({ id: 'dw-sidebar', className: sidebarClasses, ref: 'sidebar' },
+      r.div({ id: 'dw-sidebar', className: 'esCtxbar' + sidebarClasses, ref: 'sidebar' },
         ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar }),
         tabButtons,
         r.div({ className: 'dw-comments esCtxbar_list' },
@@ -473,8 +509,8 @@ export var Sidebar = createComponent({
           helpMessageBoxFour,
           r.div({ style: dimCommentsStyle },
             r.div({ ref: 'commentsScrollable' },
-              r.h3({}, title),
-              tipsOrExtraConfig,
+              r.h3({ className: 'esCtxbar_list_title' }, title),
+              tipsGuideOrExtraConfig,
               r.div({},
                 ReactCSSTransitionGroup({ transitionName: 'comment', key: this.state.commentsType,
                     // Is 600 correct? Haven't checked, could do later
@@ -593,6 +629,35 @@ var ToggleSidebarButton = createComponent({
   }
 });
 
+
+// The admin guide is placed in the sidebar [8YKFW32], because then it'll be accessible from
+// everywhere, and the admin can read & look in the guide at the same time as s/he looks at
+// the admin buttons and settings to the left.
+var TheAdminGuide =
+  r.div({ className: 'esAdminGuide' },
+    r.p({}, "Welcome! You're an admin, and as an admin, you can edit forum settings, define what this community is about, and invite people."),
+    r.h2({}, "Edit settings"),
+    r.p({}, "Go to the admin area by clicking ", r.span({ className: 'icon-menu' }), " to the upper left, then click ", r.strong({}, "Admin"), ". Have a look at the settings, in case there's something you'd like to change. For example:"),
+    r.h4({}, "Copyright"),
+    r.p({}, "By default, people may copy material from the forum, and they must then give credit to the authors, and indicate if they have modified it. They must also in turn allow others to copy and edit their modified material. This is ", r.a({ href: 'http://creativecommons.org/licenses/by-sa/4.0/', target: '_blank' }, "Creative Commons' CC BY-SA 4.0", r.span({ className: 'icon-link-ext' })), ". — All this is a bit configurable, in the ", r.strong({}, "Legal"), " settings section."),
+    r.h4({}, "Private or public?"),
+    r.p({}, "You can make the forum private, by enabling these: ", r.em({}, "Login required"), " and ", r.em({}, "Approve users"), ", in the ", r.strong({}, "Login"), " settings section."),
+    r.h4({}, "Customize colors and logo"),
+    r.p({}, "In the ", r.strong({}, "Customize"), " section, you can customize colors, add a logo and a top navigation bar. ", r.strong({}, "However"), ", your customizations might break in the future, because this functionality is a bit experimental right now. Also, right now you need to know some CSS and HTML, unfortunately."),
+    r.h2({}, "Clarify what this community is about"),
+    r.p({}, "On ", r.a({ href: "/" }, "the forum main page"), ", edit the community intro text (just below the forum title). And edit the ", r.em({}, "Welcome to this community"), " topic. And ", r.a({ href: '/about' }, "the about page"), "."),
+    r.h2({}, "Create categories"),
+    r.p({}, "On ", r.a({ href: "/" }, "the forum main page"), ", click ", r.strong({}, "Categories"), ", then ", r.strong({}, "Create Category"), ". Edit the about-this-category topic that you'll find in each category you create. Don't create too many categories (if you do, they might look rather empty)."),
+    r.h2({}, "Build your community"),
+    r.p({}, "Building a community is hard. Before launching:"),
+    r.ul({},
+      r.li({}, "Make sure people will understand what this community is about — see the ", r.em({}, "Clarify what this community is about"), " section above."),
+      r.li({}, "Create some interesting topics, so people won't find an empty forum."),
+      r.li({}, "Commit to visiting your forum regularly and participating in the discussions."),
+      r.li({}, "Tell a few people to have a look at this new community. Ask them if they understand its purpose. Edit and improve the welcome topic and intro text, until everything is clear.")),
+    r.p({}, "Then start promoting your community: link to it \"everywhere\" and tell people about it. You can invite people via email: click your name in the upper right, then click ", r.strong({}, "View Profile"), " then ", r.strong({}, "Invite")),
+    r.h2({}, "Need help?"),
+    r.p({}, "For help, go to EffectiveDiscussion's ", r.a({ href: 'http://www.effectivediscussions.org/forum/latest/support', target: '_blank' }, "support forum", r.span({ className: 'icon-link-ext' })), ". Over there, there's an ", r.em({}, "Ideas"), " category too, and you're welcome to make suggestions."));
 
 //------------------------------------------------------------------------------
    }

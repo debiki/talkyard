@@ -121,20 +121,6 @@ trait ForumDao {
       authorId = SystemUserId,
       browserIdData,
       transaction)
-
-    // Create admin quick start guide.
-    createPageImpl(
-      PageRole.Discussion, PageStatus.Published, anyCategoryId = Some(staffCategoryId),
-      anyFolder = None, anySlug = Some("admin-quick-start-guide"), showId = true,
-      titleSource = AdminQuickStartGuideTitle,
-      titleHtmlSanitized = AdminQuickStartGuideTitle,
-      bodySource = adminQuickStartGuide.source,
-      bodyHtmlSanitized = adminQuickStartGuide.html,
-      pinOrder = None,
-      pinWhere = None,
-      authorId = SystemUserId,
-      browserIdData,
-      transaction)
   }
 
 
@@ -170,59 +156,6 @@ object ForumDao {
     |- Link to additional info, for example:  [the about page](/about); any FAQ; any main website of yours.
     |
     |To edit this, click <span class="icon-menu"></span> just below and then <b class="icon-edit">Edit</b>.
-    |""")
-
-
-  val AdminQuickStartGuideTitle = "READ FIRST: Admin Quick Start Guide"
-
-  lazy val adminQuickStartGuide = renderCommonMark(i"""
-    |As an admin, you can edit forum settings, define what this community is about, and invite people.
-    |
-    |Edit settings
-    |------------------
-    |
-    |Go to the admin area by clicking <span class="icon-menu"></span> to the upper right, then click **Admin**. (The admin area is a bit unfinished right now.)
-    |
-    |Have a look at the settings, in case there's something you'd like to change. For example:
-    |
-    |#### Copyright
-    |
-    |By default, people may copy material from the forum, and they must then give credit to the authors, and indicate if they have modified it. They must also in turn allow others to copy and edit their modified material. This is [Creative Commons' CC BY-SA 4.0](http://creativecommons.org/licenses/by-sa/4.0/). — All this is a bit configurable, in the **Legal** settings section.
-    |
-    |#### Private or public?
-    |
-    |You can make the forum private, by enabling these: _Login required_ and _Approve users_, in the **Login** settings section.
-    |
-    |#### Customize colors and logo
-    |
-    |In the **Customize** section, you can customize colors, add a logo and a top navigation bar. **However**, your customizations might break in the future, because this functionality is a bit experimental right now. Also, right now you need to know some CSS and HTML, unfortunately.
-    |
-    |Clarify what this community is about
-    |------------------
-    |
-    |Edit the community intro text (just below the forum title). And edit the _Welcome to this community_ topic. And [the about page](/about).
-    |
-    |Create categories
-    |------------------
-    |
-    |On [the forum main page](/), click **Categories**, then **Create Category**. Edit the about-this-category topic that you'll find in each category you create. Don't create too many categories (if you do, they might look rather empty).
-    |
-    |Build your community
-    |------------------
-    |
-    |Building a community is hard. Before launching:
-    |
-    | - Make sure people will understand what this community is about — see the _Clarify what the site is about_ section above.
-    | - Create some interesting topics, so people won't find an empty forum.
-    | - Commit to visiting your forum regularly and participating in the discussions.
-    | - Tell a few people to have a look at this new community. Ask them if they understand its purpose. Edit and improve the welcome topic or intro text, until everything is clear.
-    |
-    |Then start promoting your community: link to it "everywhere" and tell people about it. You can invite people via email: click your name in the upper right, then click **View Profile**, then **Invite**.
-    |
-    |Need help?
-    |------------------
-    |
-    |For help, go to EffectiveDiscussion's [support forum](http://www.effectivediscussions.org/forum/latest/support). Over there, there's an _Ideas_ category too, and you're welcome to make suggestions.
     |""")
 
 

@@ -127,7 +127,7 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
   font-style: italic;
 
 
-#dw-sidebar
+.esCtxbar
 
   z-index: 1001; // not above dialogs, but above resize-columns handle (1000)
   $paddingLeft = 11px;
@@ -236,7 +236,21 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
 
     .comment-leave.comment-leave-active
       opacity: 0.1;
-      max-height: 0px;
+      max-height: 0;
+
+.esCtxbar-adminGuide
+  &,
+  .esCtxbar_list
+    background: hsl(0,100%,95%);
+
+  .esCtxbar_list_title
+    font-size: 28px !important;
+    font-weight: normal !important;
+    margin: 5px 0 10px 0 !important;
+
+.esAdminGuide
+  h2, h3, h4
+    margin: 20px 0 10px;
 
 .es-editor-help-one,
 .es-editor-help-two,

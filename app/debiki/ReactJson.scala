@@ -284,6 +284,8 @@ object ReactJson {
       "settings" -> Json.obj(
         "allowGuestLogin" -> JsBoolean(siteSettings.isGuestLoginAllowed),
         "showComplicatedStuff" -> JsBoolean(siteSettings.showComplicatedStuff)),
+      // (WOULD move 'me' to the volatile json; suddenly having it here in the main json is
+      // a bit surprising.)
       "me" -> userNoPageToJson(request),
       "maxUploadSizeBytes" -> Globals.maxUploadSizeBytes,
       "siteSections" -> makeSiteSectionsJson(dao))
