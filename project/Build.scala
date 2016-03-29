@@ -44,9 +44,9 @@ object ApplicationBuild extends Build {
     "com.mohiva" %% "play-silhouette" % "3.0.4",
     // PostgreSQL JDBC client driver
     // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
-    "org.postgresql" % "postgresql" % "9.3-1104-jdbc41",
+    "org.postgresql" % "postgresql" % "9.4.1208",  // there's no 9.5 right now
     // HikariCP — "A solid high-performance JDBC connection pool at last"
-    "com.zaxxer" % "HikariCP" % "2.4.3",
+    "com.zaxxer" % "HikariCP" % "2.4.5",
     "org.apache.commons" % "commons-email" % "1.3.3",
     "com.google.guava" % "guava" % "13.0.1",
     "org.owasp.encoder" % "encoder" % "1.1.1",
