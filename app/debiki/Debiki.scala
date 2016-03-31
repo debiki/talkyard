@@ -72,6 +72,7 @@ object Debiki {
     config.setConnectionTimeout(WaitForConnectionMillis)
     // The validation timeout must be less than the connection timeout.
     config.setValidationTimeout(WaitForConnectionMillis - 1000)
+    config.setIsolateInternalQueries(true)
 
     // Set these to a little bit more than Hikari's connection timeout, so by default
     // Hikari will complain rather than the driver (Hikari works better I guess).
