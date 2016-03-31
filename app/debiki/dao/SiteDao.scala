@@ -19,7 +19,9 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import controllers.ViewPageController
 import debiki._
+import io.efdi.server.http._
 import play.api.Play.current
 import scala.collection.mutable
 import scala.concurrent.Future
@@ -210,6 +212,54 @@ abstract class SiteDao
 
   def loadEmailById(emailId: String): Option[Email] =
     readOnlyTransaction(_.loadEmailById(emailId))
+
+
+  // ----- Authorization
+  // (move to separate mixin, later?)
+
+  def throwIfMayNotSeePost(post: Post, author: Option[User])(transaction: SiteTransaction) {
+    val pageMeta = transaction.loadPageMeta(post.pageId) getOrElse
+      throwIndistinguishableNotFound("EsE8YJK40")
+    throwIfMayNotSeePage(pageMeta, author)(transaction)
+    def isStaffOrAuthor = author.exists(_.isStaff) || author.exists(_.id == post.createdById)
+    if (post.isDeleted && !isStaffOrAuthor)
+      throwIndistinguishableNotFound("EsE8YK04W")
+  }
+
+
+  def throwIfMayNotSeePage(page: Page, user: Option[User])(transaction: SiteTransaction) {
+    throwIfMayNotSeePage(page.meta, user)(transaction)
+  }
+
+
+  def throwIfMayNotSeePage(pageMeta: PageMeta, user: Option[User])(transaction: SiteTransaction) {
+    if (!user.exists(_.isStaff)) {
+      val ancestors = pageMeta.categoryId match {
+        case Some(id) =>
+          throwIfMayNotSeeCategory(id, user)(transaction)
+        case None =>
+          io.efdi.server.http.throwIndistinguishableNotFound("EsE0YK25")
+      }
+    }
+  }
+
+
+  def throwIfMayNotSeeCategory(categoryId: CategoryId, user: Option[User])(
+        transaction: SiteTransaction) {
+    if (user.exists(_.isStaff))
+      return
+
+    val categories = transaction.loadCategoryPathRootLast(categoryId)
+    if (categories.exists(_.staffOnly))
+      throwIndistinguishableNotFound("EsE7YKG25")
+  }
+
+
+  def throwIfMayNotPostTo(page: Page, author: User)(transaction: SiteTransaction) {
+    throwIfMayNotSeePage(page, Some(author))(transaction)
+    if (!page.role.canHaveReplies)
+      throwForbidden2("EsE8YGK42", s"Cannot post to page type ${page.role}")
+  }
 
 }
 

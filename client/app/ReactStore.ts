@@ -375,6 +375,22 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     updatePost(post);
   });
 
+  if (_.isArray(store.topics)) {
+    _.each(store.me.restrictedTopics, (topic: Topic) => {
+      store.topics.push(topic);
+    });
+    store.topics.sort((t: Topic, t2: Topic) => t.createdAtMs - t2.createdAtMs);
+    // later: COULD try to avoid gaps, e.g. don't load restricted topics back to year 2000
+    // but public topics back to 2010 only.
+    // BUG we always sort by time, but in some rare cases, we want to sort by most-popular-first,
+    // *and* at the same time call activateMyself() — then here we'll sort by the wrong thing.
+  }
+
+  _.each(store.me.restrictedCategories, (category: Category) => {
+    store.categories.push(category);
+  });
+  store.categories.sort((c: Category, c2: Category) => c.position - c2.position);
+
   debiki2.pubsub.subscribeToServerEvents();
   store.quickUpdate = false;
 };
@@ -1013,13 +1029,17 @@ function makeStranger(): Myself {
     numOtherNotfs: 0,
     thereAreMoreUnseenNotfs: false,
     notifications: [],
+
+    watchbar: loadWatchbarFromSessionStorage(),
+
+    restrictedTopics: [],
+    restrictedCategories: [],
+
     votes: {},
     unapprovedPosts: {},
     postIdsAutoReadLongAgo: [],
     postIdsAutoReadNow: [],
     marksByPostId: {},
-
-    watchbar: loadWatchbarFromSessionStorage(),
 
     closedHelpMessages: {},
   };

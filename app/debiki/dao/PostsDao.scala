@@ -67,7 +67,10 @@ trait PostsDao {
         Multireplies temporarily disabled, sorry""")
 
     val (newPost, author, notifications) = readWriteTransaction { transaction =>
+      val author = transaction.loadUser(authorId) getOrElse throwNotFound("DwE404UF3", "Bad user")
       val page = PageDao(pageId, transaction)
+      throwIfMayNotPostTo(page, author)(transaction)
+
       if (page.role.isChat)
         throwForbidden("EsE50WG4", s"Page '${page.id}' is a chat page; cannot post normal replies")
 
@@ -95,8 +98,6 @@ trait PostsDao {
       if (anyParent.exists(_.deletedStatus.isDeleted))
         throwForbidden(
           "The parent post has been deleted; cannot reply to a deleted post", "DwE5KDE7")
-
-      val author = transaction.loadUser(authorId) getOrElse throwNotFound("DwE404UF3", "Bad user")
 
       val (reviewReasons: Seq[ReviewReason], shallApprove) =
         throwOrFindReviewPostReasons(page, author, transaction)
@@ -254,13 +255,14 @@ trait PostsDao {
       throwBadReq("DwE2U3K8", "Empty chat message")
 
     val (post, author, notifications) = readWriteTransaction { transaction =>
+      val author = transaction.loadUser(authorId) getOrElse
+        throwNotFound("DwE8YK32", "Author not found")
       val page = PageDao(pageId, transaction)
+      throwIfMayNotPostTo(page, author)(transaction)
+
       val pageMemberIds = transaction.loadMessageMembers(pageId)
       if (!pageMemberIds.contains(authorId))
         throwForbidden("EsE4UGY7", "You are not a member of this chat channel")
-
-      val author = transaction.loadUser(authorId) getOrElse
-        throwNotFound("DwE8YK32", "Author not found")
 
       // Try to append to the last message, instead of creating a new one. That looks
       // better in the browser (fewer avatars & sent-by info), + we'll save disk and
@@ -417,7 +419,11 @@ trait PostsDao {
       throwBadReq("DwE4KEL7", EditController.EmptyPostErrorMessage)
 
     readWriteTransaction { transaction =>
+      val editor = transaction.loadUser(editorId).getOrElse(
+        throwNotFound("DwE30HY21", s"User not found, id: '$editorId'"))
       val page = PageDao(pageId, transaction)
+      throwIfMayNotSeePage(page, Some(editor))(transaction)
+
       val postToEdit = page.parts.post(postNr) getOrElse {
         page.meta // this throws page-not-fount if the page doesn't exist
         throwNotFound("DwE404GKF2", s"Post not found, id: '$postNr'")
@@ -428,9 +434,6 @@ trait PostsDao {
 
       if (postToEdit.currentSource == newTextAndHtml.text)
         return
-
-      val editor = transaction.loadUser(editorId).getOrElse(
-        throwNotFound("DwE30HY21", s"User not found, id: '$editorId'"))
 
       // For now: (add back edit suggestions later. And should perhaps use PermsOnPage.)
       if (!userMayEdit(editor, postToEdit))
@@ -617,11 +620,16 @@ trait PostsDao {
   }
 
 
-  def loadSomeRevisionsRecentFirst(postId: UniquePostId, revisionNr: Int, atLeast: Int)
-        : (Seq[PostRevision], Map[UserId, User]) = {
+  def loadSomeRevisionsRecentFirst(postId: UniquePostId, revisionNr: Int, atLeast: Int,
+        userId: Option[UserId]): (Seq[PostRevision], Map[UserId, User]) = {
     val revisionsRecentFirst = mutable.ArrayStack[PostRevision]()
     var usersById: Map[UserId, User] = null
     readOnlyTransaction { transaction =>
+      val post = transaction.loadThePost(postId)
+      val page = PageDao(post.pageId, transaction)
+      val user = userId.flatMap(transaction.loadUser)
+      throwIfMayNotSeePage(page, user)(transaction)
+
       loadSomeRevisionsWithSourceImpl(postId, revisionNr, revisionsRecentFirst,
         atLeast, transaction)
       if (revisionNr == PostRevision.LastRevisionMagicNr) {
@@ -693,8 +701,10 @@ trait PostsDao {
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
       val postBefore = page.parts.thePost(postNr)
-      val postAfter = postBefore.copy(tyype = newType)
       val Seq(author, changer) = transaction.loadTheUsers(postBefore.createdById, changerId)
+      throwIfMayNotSeePage(page, Some(changer))(transaction)
+
+      val postAfter = postBefore.copy(tyype = newType)
 
       // Test if the changer is allowed to change the post type in this way.
       if (changer.isStaff) {
@@ -755,9 +765,10 @@ trait PostsDao {
     import com.debiki.core.{PostStatusAction => PSA}
 
       val page = PageDao(pageId, transaction)
+      val user = transaction.loadUser(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
+      throwIfMayNotSeePage(page, Some(user))(transaction)
 
       val postBefore = page.parts.thePost(postNr)
-      val user = transaction.loadUser(userId) getOrElse throwForbidden("DwE3KFW2", "Bad user id")
 
       // Authorization.
       if (!user.isStaff) {
@@ -1032,6 +1043,9 @@ trait PostsDao {
 
   def deleteVote(pageId: PageId, postNr: PostNr, voteType: PostVoteType, voterId: UserId) {
     readWriteTransaction { transaction =>
+      throwIfMayNotSeePost(transaction.loadThePost(pageId, postNr),
+        Some(transaction.loadTheUser(voterId)))(transaction)
+
       transaction.deleteVote(pageId, postNr, voteType, voterId = voterId)
       updateVoteCounts(pageId, postNr = postNr, transaction)
       /* FRAUD SHOULD delete by cookie too, like I did before:
@@ -1057,8 +1071,10 @@ trait PostsDao {
         voterId: UserId, voterIp: String, postNrsRead: Set[PostNr]) {
     readWriteTransaction { transaction =>
       val page = PageDao(pageId, transaction)
-      val post = page.parts.thePost(postNr)
       val voter = transaction.loadTheUser(voterId)
+      throwIfMayNotSeePage(page, Some(voter))(transaction)
+
+      val post = page.parts.thePost(postNr)
 
       if (voteType == PostVoteType.Bury && !voter.isStaff)
         throwForbidden("DwE2WU74", "Only staff and regular members may Bury-vote")
@@ -1248,6 +1264,9 @@ trait PostsDao {
   def flagPost(pageId: PageId, postNr: PostNr, flagType: PostFlagType, flaggerId: UserId) {
     readWriteTransaction { transaction =>
       val postBefore = transaction.loadThePost(pageId, postNr)
+      val flagger = transaction.loadTheUser(flaggerId)
+      throwIfMayNotSeePost(postBefore, Some(flagger))(transaction)
+
       // SHOULD if >= 2 pending flags, then hide post until reviewed? And unhide, if flags cleared.
       val postAfter = postBefore.copy(numPendingFlags = postBefore.numPendingFlags + 1)
       val reviewTask = makeReviewTask(flaggerId, postAfter,
@@ -1263,6 +1282,10 @@ trait PostsDao {
 
   def clearFlags(pageId: PageId, postNr: PostNr, clearedById: UserId): Unit = {
     readWriteTransaction { transaction =>
+      val clearer = transaction.loadTheUser(clearedById)
+      if (!clearer.isStaff)
+        throwForbidden("EsE7YKG59", "Only staff may clear flags")
+
       val postBefore = transaction.loadThePost(pageId, postNr)
       val postAfter = postBefore.copy(
         numPendingFlags = 0,

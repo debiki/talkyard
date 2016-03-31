@@ -107,21 +107,27 @@ trait PagesDao {
       transaction: SiteTransaction, hidePageBody: Boolean = false,
       bodyPostType: PostType = PostType.Normal): (PagePath, Post) = {
 
+    val author = transaction.loadUser(authorId) getOrElse throwForbidden(
+      "DwE9GK32", s"User not found, id: $authorId")
+    anyCategoryId match {
+      case None =>
+        if (!author.isStaff)
+          throwForbidden("EsE8GY32", "Only staff may create pages outside any category")
+      case Some(categoryId) =>
+        throwIfMayNotSeeCategory(categoryId, Some(author))(transaction)
+    }
+
     require(!anyFolder.exists(_.isEmpty), "EsE6JGKE3")
     // (Empty slug ok though, e.g. homepage.)
     require(!titleSource.isEmpty && !titleHtmlSanitized.isEmpty, "EsE7MGK24")
     require(!bodySource.isEmpty && !bodyHtmlSanitized.isEmpty, "EsE1WKUQ5")
     require(pinOrder.isDefined == pinWhere.isDefined, "Ese5MJK2")
 
-    // Authorize and determine approver user id. For now:
-    val author = transaction.loadUser(authorId) getOrElse throwForbidden(
-      "DwE9GK32", s"User not found, id: $authorId")
-
     // Don't allow more than ... 10 topics with no critique? For now only.
     if (pageRole == PageRole.Critique) { // [plugin] [85SKW32]
       anyCategoryId foreach { categoryId =>
         val pages = listPagesInCategory(categoryId, includeDescendants = true,
-          includeHiddenInForum = false,
+          isStaff = false, restrictedOnly = false,
           PageQuery(PageOrderOffset.Any, PageFilter.ShowWaiting), limit = 20)
         // Client side, the limit is 10. Let's allow a few more topics in case people start
         // writing before the limit is reached but submit afterwards.
@@ -389,6 +395,8 @@ trait PagesDao {
     val newClosedAt = readWriteTransaction { transaction =>
       val user = transaction.loadTheUser(userId)
       val oldMeta = transaction.loadThePageMeta(pageId)
+      throwIfMayNotSeePage(oldMeta, Some(user))(transaction)
+
       if (!oldMeta.pageRole.canClose)
         throwBadRequest("DwE4PKF7", s"Cannot close pages of type ${oldMeta.pageRole}")
 
@@ -457,6 +465,9 @@ trait PagesDao {
     val pageMeta = readWriteTransaction { transaction =>
       val pageMeta = transaction.loadPageMeta(pageId) getOrElse
         throwIndistinguishableNotFound("4GYX7")
+
+      val user = transaction.loadTheUser(userId)
+      throwIfMayNotSeePage(pageMeta, Some(user))(transaction)
 
       // Private chat channels are joined via user-to-user-invites only.
       if (pageMeta.pageRole == PageRole.PrivateChat)

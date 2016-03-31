@@ -64,6 +64,7 @@ trait SiteTransaction {
 
   def loadCategory(categoryId: CategoryId): Option[Category]
   def loadCategoryMap(): Map[CategoryId, Category]
+  def loadCategoryPathRootLast(categoryId: CategoryId): Seq[Category]
   def nextCategoryId(): Int
   def insertCategoryMarkSectionPageStale(category: Category)
   def updateCategoryMarkSectionPageStale(category: Category)

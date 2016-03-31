@@ -38,11 +38,12 @@ trait CategoriesDao {
     * Sorts by Category.position (which doesn't make much sense if there are sub categories).
     * Excludes the root of the category tree.
     */
-  def listSectionCategories(pageId: PageId, includeHiddenInForum: Boolean): Seq[Category] = {
+  def listSectionCategories(pageId: PageId, isStaff: Boolean, restrictedOnly: Boolean)
+        : Seq[Category] = {
     loadRootCategory(pageId) match {
       case Some(rootCategory) =>
         listCategoriesInTree(rootCategory.id, includeRoot = false,
-          includeHiddenInForum = includeHiddenInForum).sortBy(_.position)
+          isStaff = isStaff, restrictedOnly = restrictedOnly).sortBy(_.position)
       case None =>
         Nil
     }
@@ -51,13 +52,13 @@ trait CategoriesDao {
 
   /** List categories with categoryId as their immediate parent.
     */
-  def listChildCategories(categoryId: CategoryId, includeHiddenInForum: Boolean)
+  def listChildCategories(categoryId: CategoryId, includeUnlisted: Boolean)
         : immutable.Seq[Category] = {
     val categoriesByParentId = loadBuildRememberCategoryMaps()._2
     val children = categoriesByParentId.getOrElse(categoryId, {
       return Nil
     })
-    unimplementedIf(!includeHiddenInForum, "!incl hidden in forum [EsE4KPKM2]")
+    unimplementedIf(!includeUnlisted, "excluding unlisted [EsE4KPKM2]")
     children.to[immutable.Seq]
   }
 
@@ -65,10 +66,10 @@ trait CategoriesDao {
   /** List all categories in the sub tree with categoryId as root.
     */
   def listCategoriesInTree(categoryId: CategoryId, includeRoot: Boolean,
-        includeHiddenInForum: Boolean): Seq[Category] = {
+        isStaff: Boolean, restrictedOnly: Boolean): Seq[Category] = {
     val categories = ArrayBuffer[Category]()
-    appendCategoriesInTree(categoryId, includeRoot, includeHiddenInForum = includeHiddenInForum,
-      categories)
+    appendCategoriesInTree(categoryId, includeRoot, isStaff = isStaff,
+      restrictedOnly = restrictedOnly, categories)
     categories.to[immutable.Seq]
   }
 
@@ -84,13 +85,14 @@ trait CategoriesDao {
   /** Lists pages placed in categoryId, optionally including its descendant categories.
     */
   def listPagesInCategory(categoryId: CategoryId, includeDescendants: Boolean,
-        includeHiddenInForum: Boolean, pageQuery: PageQuery, limit: Int): Seq[PagePathAndMeta] = {
+        isStaff: Boolean, restrictedOnly: Boolean, pageQuery: PageQuery, limit: Int)
+        : Seq[PagePathAndMeta] = {
     val categoryIds =
       if (includeDescendants)
         listCategoriesInTree(categoryId, includeRoot = true,
-          includeHiddenInForum = includeHiddenInForum).map(_.id)
+          isStaff = isStaff, restrictedOnly = restrictedOnly).map(_.id)
       else {
-        unimplementedIf(!includeHiddenInForum, "!incl hidden in forum [EsE2PGJ4]")
+        unimplementedIf(!isStaff, "!incl hidden in forum [EsE2PGJ4]")
         Seq(categoryId)
       }
     listPagesInCategories(categoryIds, pageQuery, limit)
@@ -145,7 +147,7 @@ trait CategoriesDao {
 
 
   private def appendCategoriesInTree(rootCategoryId: CategoryId, includeRoot: Boolean,
-      includeHiddenInForum: Boolean, categoryList: ArrayBuffer[Category]) {
+      isStaff: Boolean, restrictedOnly: Boolean, categoryList: ArrayBuffer[Category]) {
     if (categoryList.exists(_.id == rootCategoryId)) {
       // COULD log cycle error
       return
@@ -154,10 +156,10 @@ trait CategoriesDao {
     val startCategory = categoriesById.getOrElse(rootCategoryId, {
       return
     })
-    if (startCategory.hideInForum && !includeHiddenInForum) {
+    val isRestricted = startCategory.unlisted || startCategory.staffOnly
+    if (isRestricted && !isStaff)
       return
-    }
-    if (includeRoot) {
+    if (includeRoot && (!restrictedOnly || isRestricted)) {
       categoryList.append(startCategory)
     }
     val childCategories = categoriesByParentId.getOrElse(rootCategoryId, {
@@ -165,7 +167,7 @@ trait CategoriesDao {
     })
     for (childCategory <- childCategories) {
       appendCategoriesInTree(childCategory.id, includeRoot = true,
-        includeHiddenInForum = includeHiddenInForum, categoryList)
+        isStaff = isStaff, restrictedOnly = restrictedOnly, categoryList)
     }
   }
 
@@ -204,7 +206,8 @@ trait CategoriesDao {
         slug = editCategoryData.slug,
         position = editCategoryData.position,
         newTopicTypes = editCategoryData.newTopicTypes,
-        hideInForum = editCategoryData.hideInForum,
+        unlisted = editCategoryData.unlisted,
+        staffOnly = editCategoryData.staffOnly,
         updatedAt = transaction.currentTime)
       transaction.updateCategoryMarkSectionPageStale(editedCategory)
       (oldCategory, editedCategory)

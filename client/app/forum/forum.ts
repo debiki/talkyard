@@ -431,12 +431,8 @@ var ForumButtons = createComponent({
     var showCategoryTreeButton =
       makeCategoryLink(RoutePathCategories, "Categories", 'esForum_catsTreeBtn');
 
-    var categoryMenuItems = [];
-    _.each(props.categories, (category: Category) => {
-      if (!category.hideInForum || isStaff(me)) {
-        categoryMenuItems.push(
-            MenuItem({ eventKey: category.slug, key: category.id }, category.name));
-      }
+    var categoryMenuItems = props.categories.map((category: Category) => {
+      return MenuItem({ eventKey: category.slug, key: category.id }, category.name);
     });
     categoryMenuItems.unshift(
       MenuItem({ eventKey: null, key: -1 }, 'All Categories'));
@@ -700,17 +696,11 @@ var ForumTopicListComponent = React.createClass(<any> {
     if (!this.state.topics.length)
       return r.p({}, 'No topics.');
 
-    var topics = [];
-    _.each(this.state.topics, (topic: Topic) => {
-      var category = _.find(this.props.categories, (category: Category) => {
-        return category.id === topic.categoryId;
-      });
-      if (!category.hideInForum || isStaff(this.props.me)) {
-        topics.push(TopicRow({
+    var topics = this.state.topics.map((topic: Topic) => {
+      return TopicRow({
           topic: topic, categories: this.props.categories,
           activeCategory: this.props.activeCategory, now: this.props.now,
-          key: topic.pageId }));
-      }
+          key: topic.pageId });
     });
 
     var loadMoreTopicsBtn;

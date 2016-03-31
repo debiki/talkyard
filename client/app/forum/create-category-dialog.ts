@@ -84,7 +84,8 @@ var EditCategoryDialog = createClassAndFactory({
           slug: category.slug,
           newTopicTypes: category.newTopicTypes,
           position: category.position,
-          hideInForum: category.hideInForum,
+          unlisted: category.unlisted,
+          staffOnly: category.staffOnly,
         });
       });
     }
@@ -94,7 +95,8 @@ var EditCategoryDialog = createClassAndFactory({
         slug: '',
         newTopicTypes: [PageRole.Discussion],
         position: DefaultPosition,
-        hideInForum: false,
+        unlisted: false,
+        staffOnly: false,
       });
     }
   },
@@ -130,8 +132,12 @@ var EditCategoryDialog = createClassAndFactory({
     this.setState({ newTopicTypes: topicTypes });
   },
 
-  toggleHideInForum: function() {
-    this.setState({ hideInForum: !this.state.hideInForum });
+  toggleUnlisted: function() {
+    this.setState({ unlisted: !this.state.unlisted });
+  },
+
+  toggleStaffOnly: function() {
+    this.setState({ staffOnly: !this.state.staffOnly });
   },
 
   save: function() {
@@ -144,7 +150,8 @@ var EditCategoryDialog = createClassAndFactory({
       slug: this.state.slug,
       position: this.state.position || DefaultPosition,
       newTopicTypes: this.state.newTopicTypes,
-      hideInForum: this.state.hideInForum,
+      unlisted: this.state.unlisted,
+      staffOnly: this.state.staffOnly,
     };
     ReactActions.saveCategory(category, this.close, () => {
       this.setState({ isSaving: false });
@@ -193,16 +200,23 @@ var EditCategoryDialog = createClassAndFactory({
             help: "Categories with lower positions are listed first. Default: " +
                 DefaultPosition }));
 
-    var hideInForumTitle = "Unlisted (" + (this.state.hideInForum ?  "yes)" : "no)");
-    var hideInForumInput =
-        utils.FadeInOnClick({ clickToShowText: hideInForumTitle },
+    var unlistedTitle = "Unlisted (" + (this.state.unlisted ?  "yes)" : "no)");
+    var unlistedInput =
+        utils.FadeInOnClick({ clickToShowText: unlistedTitle },
             Input({ type: 'checkbox', label: "Unlisted",
-              checked: this.state.hideInForum, onChange: this.toggleHideInForum,
+              checked: this.state.unlisted, onChange: this.toggleUnlisted,
               help: "Hides this category and all topics herein, in the forum topic lists — " +
                   "only staff will see them. However, when accessed directly, the pages " +
                   "will be visible. This is useful for pages like a homepage or about-this-" +
                   "website page, which you might not want people to see in the forum. " +
                   "Default: false" }));
+
+    var staffOnlyTitle = "Staff only (" + (this.state.staffOnly ?  "yes)" : "no)");
+    var staffOnlyInput =
+      utils.FadeInOnClick({ clickToShowText: staffOnlyTitle },
+        Input({ type: 'checkbox', label: "Staff only",
+          checked: this.state.staffOnly, onChange: this.toggleStaffOnly,
+          help: "Shall topics in this category be accessible to admins and moderators only?" }));
 
     var body = this.state.isLoading
         ? r.div({}, "Loading...")
@@ -211,7 +225,8 @@ var EditCategoryDialog = createClassAndFactory({
             topicTypesInput,
             slugInput,
             positionInput,
-            hideInForumInput);
+            unlistedInput,
+            staffOnlyInput);
 
     var saveButtonTitle = this.state.isCreating ? "Create Category" : "Save Edits";
     var dialogTitle = this.state.isCreating ? saveButtonTitle : "Edit Category";

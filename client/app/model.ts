@@ -172,6 +172,9 @@ interface Myself {
   watchbarTopics?: WatchbarTopics;
   watchbar: Watchbar;
 
+  restrictedTopics: Topic[];
+  restrictedCategories: Category[];
+
   votes: any;
   unapprovedPosts: any;
   postIdsAutoReadLongAgo: number[];
@@ -209,7 +212,8 @@ interface Category {
   position?: number;
   description: string;
   recentTopics?: Topic[];
-  hideInForum?: boolean;
+  unlisted?: boolean;
+  staffOnly?: boolean;
   isTheUncategorizedCategory?: boolean;
   isForumItself?: boolean;
 }
@@ -235,7 +239,8 @@ interface Topic {
   numPosts: number;
   numLikes: number;
   numWrongs: number;
-  createdEpoch: string;
+  createdEpoch: string; // try to remove
+  createdAtMs: number;
   bumpedEpoch: string;
   lastReplyEpoch: string;
   numOrigPostReplies: number;
@@ -333,6 +338,7 @@ interface Store {
   categories: Category[];
   newCategoryId: string; // would like to remove. Later, when everything is one SPA and there's just one router available from everywhere. Then I can transition directly to the new category without this variable.
   newCategorySlug: string; // would like to remove
+  topics: Topic[];
   user: Myself; // try to remove, use 'me' instead:
   me: Myself;
   userSpecificDataAdded?: boolean; // is always false, server side
@@ -376,7 +382,8 @@ interface Ancestor {
   categoryId: number;
   title: string;
   path: string;
-  hideInForum?: boolean;
+  unlisted?: boolean;
+  staffOnly?: boolean;
 }
 
 

@@ -146,9 +146,20 @@ object ViewPageController extends mvc.Controller {
   }
 
 
-  def maySeePage(pageMeta: PageMeta, user: Option[User], dao: SiteDao): Boolean = {
+  private def maySeePage(pageMeta: PageMeta, user: Option[User], dao: SiteDao): Boolean = {
     if (user.exists(_.isAdmin))
       return true
+
+    if (!user.exists(_.isStaff)) {
+      val categoriesRootLast = pageMeta.categoryId match {
+        case Some(categoryId) =>
+          val categories = dao.loadCategoriesRootLast(categoryId)
+          if (categories.exists(_.staffOnly))
+            throwIndistinguishableNotFound("EsE8YGK25")
+        case None =>
+          // Fine, as of now, let everyone view pages not placed in any category, by default.
+      }
+    }
 
     if (pageMeta.pageRole == PageRole.Message) {
       val theUser = user getOrElse {

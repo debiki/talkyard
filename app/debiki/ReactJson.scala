@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import controllers.ForumController
 import debiki.dao.{ReviewStuff, PageStuff, SiteDao, PageDao}
 import debiki.DebikiHttp.throwNotFound
-import io.efdi.server.http.{DebikiRequest, PageRequest}
+import io.efdi.server.http._
 import java.{util => ju}
 import play.api.libs.json._
 import scala.collection.{mutable, immutable}
@@ -185,10 +185,7 @@ object ReactJson {
           PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll))
         val topics = ForumController.listTopicsInclPinned(rootCategoryId, orderOffset, dao,
           includeDescendantCategories = true,
-          // For now, filter out hidden-in-forum client side if !isStaff.
-          // [redux] Rewrite later by loading topics in hidden-in-forum cats only if isStaff,
-          // and adding them into the react-flux-redux state tree.
-          includeHiddenInForum = true,
+          isStaff = false, restrictedOnly = false,
           limit = ForumController.NumTopicsToList)
         val pageStuffById = dao.loadPageStuff(topics.map(_.pageId))
         topics.map(controllers.ForumController.topicToJson(_, pageStuffById))
@@ -244,11 +241,8 @@ object ReactJson {
       "numPostsExclTitle" -> numPostsExclTitle,
       "maxUploadSizeBytes" -> Globals.maxUploadSizeBytes,
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
-      "categories" -> anyForumId.map(categoriesJson(_,
-        // For now, filter out hidden-in-forum client side if !isStaff.
-        // [redux] Rewrite later by loading all catetgories if isStaff, and adding
-        // them into the react-flux-redux state tree.
-         includeHiddenInForum = true, dao)),
+      "categories" -> anyForumId.map(
+        categoriesJson(_, isStaff = false, restrictedOnly = false, dao)),
       "topics" -> JsArray(anyLatestTopics),
       "me" -> NoUserSpecificData,
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
@@ -343,7 +337,8 @@ object ReactJson {
       "categoryId" -> category.id,
       "title" -> name,
       "path" -> path,
-      "hideInForum" -> category.hideInForum)
+      "unlisted" -> category.unlisted,
+      "staffOnly" -> category.staffOnly)
   }
 
 
@@ -523,8 +518,10 @@ object ReactJson {
       pageRequest.dao.pubSub.userWatchesPages(pageRequest.siteId, user.id, watchbar.watchedPageIds)
     }
     val watchbarWithTitles = pageRequest.dao.fillInWatchbarTitlesEtc(watchbar)
+    val (restrictedCategories, restrictedTopics) = listRestrictedCategoriesAndTopics(pageRequest)
     pageRequest.dao.readOnlyTransaction { transaction =>
-      Some(userDataJsonImpl(user, pageRequest.pageId, watchbarWithTitles, transaction))
+      Some(userDataJsonImpl(user, pageRequest.pageId, watchbarWithTitles, restrictedCategories,
+        restrictedTopics, transaction))
     }
   }
 
@@ -535,12 +532,14 @@ object ReactJson {
     }
     val watchbar = request.dao.loadWatchbar(user.id)
     val watchbarWithTitles = request.dao.fillInWatchbarTitlesEtc(watchbar)
-    request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles, _))
+    request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles,
+      restrictedCategories = JsArray(), restrictedTopics = Nil, _))
   }
 
 
   private def userDataJsonImpl(user: User, anyPageId: Option[PageId],
-        watchbar: WatchbarWithTitles, transaction: SiteTransaction): JsObject = {
+        watchbar: WatchbarWithTitles, restrictedCategories: JsArray,
+        restrictedTopics: Seq[JsValue], transaction: SiteTransaction): JsObject = {
 
     val reviewTasksAndCounts =
       if (user.isStaff) transaction.loadReviewTaskCounts(user.isAdmin)
@@ -583,6 +582,8 @@ object ReactJson {
 
       "watchbar" -> watchbar.toJsonWithTitles,
 
+      "restrictedTopics" -> restrictedTopics,
+      "restrictedCategories" -> restrictedCategories,
       "votes" -> anyVotes,
       "unapprovedPosts" -> anyUnapprovedPosts,
       "postIdsAutoReadLongAgo" -> JsArray(Nil),
@@ -596,6 +597,39 @@ object ReactJson {
   private def rolePageSettingsToJson(settings: RolePageSettings): JsObject = {
     Json.obj(
       "notfLevel" -> JsString(settings.notfLevel.toString))
+  }
+
+
+  def listRestrictedCategoriesAndTopics(request: PageRequest[_]): (JsArray, Seq[JsValue]) = {
+    if (request.thePageRole != PageRole.Forum)
+      return (JsArray(), Nil)
+
+    // Currently there're only 2 types of "personal" topics: unlisted, & staff-only.
+    if (!request.isStaff)
+      return (JsArray(), Nil)
+
+    val rootCategoryId = request.thePageMeta.categoryId.getOrDie(
+      "DwE5JY026", s"Forum page '${request.thePageId}' has no category id")
+
+    val categories = request.dao.listCategoriesInTree(rootCategoryId, includeRoot = false,
+      isStaff = true, restrictedOnly = true)
+
+    val orderOffset = PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll)
+    // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
+    // (We're passing request.dao to ForumController below.)
+    val topics = ForumController.listTopicsInclPinned(
+      rootCategoryId, orderOffset, request.dao,
+      includeDescendantCategories = true,
+      isStaff = true,
+      restrictedOnly = true,
+      limit = ForumController.NumTopicsToList)
+    val pageStuffById = request.dao.loadPageStuff(topics.map(_.pageId))
+
+    // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
+    // (We're passing request.dao to categoriesJson)
+    (categoriesJson(
+        sectionId = request.thePageId, isStaff = true, restrictedOnly = true, request.dao),
+      topics.map(ForumController.topicToJson(_, pageStuffById)))
   }
 
 
@@ -717,8 +751,10 @@ object ReactJson {
   }
 
 
-  def categoriesJson(sectionId: PageId, includeHiddenInForum: Boolean, dao: SiteDao): JsArray = {
-    val categories: Seq[Category] = dao.listSectionCategories(sectionId, includeHiddenInForum)
+  def categoriesJson(sectionId: PageId, isStaff: Boolean, restrictedOnly: Boolean, dao: SiteDao)
+        : JsArray = {
+    val categories: Seq[Category] = dao.listSectionCategories(sectionId, isStaff = isStaff,
+      restrictedOnly = restrictedOnly)
     val pageStuffById = dao.loadPageStuff(categories.map(_.sectionPageId))
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
       categoryJson(category)
@@ -733,7 +769,8 @@ object ReactJson {
       "name" -> category.name,
       "slug" -> category.slug,
       "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
-      "hideInForum" -> JsBoolean(category.hideInForum),
+      "unlisted" -> JsBoolean(category.unlisted),
+      "staffOnly" -> JsBoolean(category.staffOnly),
       "position" -> category.position,
       "description" -> JsStringOrNull(category.description))
     if (recentTopicsJson ne null) {

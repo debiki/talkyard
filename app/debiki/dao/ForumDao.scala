@@ -76,7 +76,8 @@ trait ForumDao {
       position = 1,
       description = None,
       newTopicTypes = Nil,
-      hideInForum = false,
+      unlisted = false,
+      staffOnly = false,
       createdAt = transaction.currentTime,
       updatedAt = transaction.currentTime))
 
@@ -90,7 +91,8 @@ trait ForumDao {
       position = UncategorizedPosition,
       description = Some(Category.UncategorizedDescription),
       newTopicTypes = immutable.Seq(PageRole.Discussion),
-      hideInForum = false,
+      unlisted = false,
+      staffOnly = false,
       createdAt = transaction.currentTime,
       updatedAt = transaction.currentTime))
 
@@ -104,7 +106,8 @@ trait ForumDao {
       position = Category.DefaultPosition + 10,
       description = Some("Private category for staff discussions"),
       newTopicTypes = immutable.Seq(PageRole.Discussion),
-      hideInForum = false,
+      unlisted = false,
+      staffOnly = true,
       createdAt = transaction.currentTime,
       updatedAt = transaction.currentTime))
 

@@ -68,6 +68,11 @@ object Debiki {
     val WaitForConnectionMillis = 3000
     val TooSlowQuerySeconds = 5 // very long in the context of a web app
 
+    // Using too-many-connections temp hack  [7YKG25P]
+    if (readOnly) {
+      config.setMaximumPoolSize(20)
+      config.setMinimumIdle(20)
+    }
     config.setAutoCommit(false)
     config.setConnectionTimeout(WaitForConnectionMillis)
     // The validation timeout must be less than the connection timeout.

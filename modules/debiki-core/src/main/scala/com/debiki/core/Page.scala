@@ -267,6 +267,8 @@ sealed abstract class PageRole(protected val IntValue: Int, val staffOnly: Boole
 
   def canClose = !isSection
 
+  def canHaveReplies = true
+
   def toInt = IntValue
 
 }
@@ -278,26 +280,33 @@ object PageRole {
 
   case object CustomHtmlPage extends PageRole(1) {
     override def isWidelyEditable = false
+    override def canHaveReplies = false
   }
 
   case object WebPage extends PageRole(2) {
     override def isWidelyEditable = false
   }
 
-  case object Code extends PageRole(3)
+  case object Code extends PageRole(3) {
+    override def canHaveReplies = false // for now
+  }
 
-  case object SpecialContent extends PageRole(4)
+  case object SpecialContent extends PageRole(4) {
+    override def canHaveReplies = false
+  }
 
   case object EmbeddedComments extends PageRole(5, staffOnly = false)
 
   /** Lists blog posts. */
   case object Blog extends PageRole(6) {
     override def isSection = true
+    override def canHaveReplies = false
   }
 
   /** Lists forum topics and categories. */
   case object Forum extends PageRole(7) {
     override def isSection = true
+    override def canHaveReplies = false
   }
 
   /** About a forum category (Discourse's forum category about topic). Shown as a per
