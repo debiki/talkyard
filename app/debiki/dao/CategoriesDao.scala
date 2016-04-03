@@ -156,6 +156,8 @@ trait CategoriesDao {
     val startCategory = categoriesById.getOrElse(rootCategoryId, {
       return
     })
+    // Do include even if startCategory.onlyStaffMayCreate — because category still visible.
+    // COULD rename restrictedOnly to ... visibleOnly? Or add a real permissions system.
     val isRestricted = startCategory.unlisted || startCategory.staffOnly
     if (isRestricted && !isStaff)
       return
@@ -208,6 +210,7 @@ trait CategoriesDao {
         newTopicTypes = editCategoryData.newTopicTypes,
         unlisted = editCategoryData.unlisted,
         staffOnly = editCategoryData.staffOnly,
+        onlyStaffMayCreateTopics = editCategoryData.onlyStaffMayCreateTopics,
         updatedAt = transaction.currentTime)
       transaction.updateCategoryMarkSectionPageStale(editedCategory)
       (oldCategory, editedCategory)

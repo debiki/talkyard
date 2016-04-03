@@ -64,6 +64,7 @@ object ForumController extends mvc.Controller {
     val sectionPageId = (body \ "sectionPageId").as[PageId]
     val unlisted = (body \ "unlisted").asOpt[Boolean].getOrElse(false)
     val staffOnly = (body \ "staffOnly").asOpt[Boolean].getOrElse(false)
+    val onlyStaffMayCreateTopics = (body \ "onlyStaffMayCreateTopics").asOpt[Boolean].getOrElse(false)
     val newTopicTypeInts = (body \ "newTopicTypes").as[List[Int]]
     val newTopicTypes = newTopicTypeInts map { typeInt =>
       PageRole.fromInt(typeInt) getOrElse throwBadReq(
@@ -79,7 +80,8 @@ object ForumController extends mvc.Controller {
       position = (body \ "position").as[Int],
       newTopicTypes = newTopicTypes,
       unlisted = unlisted,
-      staffOnly = staffOnly)
+      staffOnly = staffOnly,
+      onlyStaffMayCreateTopics = onlyStaffMayCreateTopics)
 
     import Category._
 

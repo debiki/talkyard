@@ -214,6 +214,7 @@ interface Category {
   recentTopics?: Topic[];
   unlisted?: boolean;
   staffOnly?: boolean;
+  onlyStaffMayCreateTopics?: boolean;
   isTheUncategorizedCategory?: boolean;
   isForumItself?: boolean;
 }

@@ -86,6 +86,7 @@ var EditCategoryDialog = createClassAndFactory({
           position: category.position,
           unlisted: category.unlisted,
           staffOnly: category.staffOnly,
+          onlyStaffMayCreateTopics: category.onlyStaffMayCreateTopics,
         });
       });
     }
@@ -97,6 +98,7 @@ var EditCategoryDialog = createClassAndFactory({
         position: DefaultPosition,
         unlisted: false,
         staffOnly: false,
+        onlyStaffMayCreateTopics: false,
       });
     }
   },
@@ -140,6 +142,10 @@ var EditCategoryDialog = createClassAndFactory({
     this.setState({ staffOnly: !this.state.staffOnly });
   },
 
+  toggleOnlyStaffMayCreateTopics: function() {
+    this.setState({ onlyStaffMayCreateTopics: !this.state.onlyStaffMayCreateTopics });
+  },
+
   save: function() {
     this.setState({ isSaving: true });
     var category = {
@@ -152,6 +158,7 @@ var EditCategoryDialog = createClassAndFactory({
       newTopicTypes: this.state.newTopicTypes,
       unlisted: this.state.unlisted,
       staffOnly: this.state.staffOnly,
+      onlyStaffMayCreateTopics: this.state.onlyStaffMayCreateTopics,
     };
     ReactActions.saveCategory(category, this.close, () => {
       this.setState({ isSaving: false });
@@ -218,6 +225,14 @@ var EditCategoryDialog = createClassAndFactory({
           checked: this.state.staffOnly, onChange: this.toggleStaffOnly,
           help: "Shall topics in this category be accessible to admins and moderators only?" }));
 
+    var onlyStaffMayCreateTopicsTitle = "Only staff may create topics (" +
+          (this.state.onlyStaffMayCreateTopics ?  "yes)" : "no)");
+    var onlyStaffMayCreateTopicsInput =
+      utils.FadeInOnClick({ clickToShowText: onlyStaffMayCreateTopicsTitle },
+        Input({ type: 'checkbox', label: "Only staff may create topics",
+          checked: this.state.onlyStaffMayCreateTopics, onChange: this.toggleOnlyStaffMayCreateTopics,
+          help: "May no one but admins and moderators create topics in this category?" }));
+
     var body = this.state.isLoading
         ? r.div({}, "Loading...")
         : r.div({},
@@ -226,7 +241,8 @@ var EditCategoryDialog = createClassAndFactory({
             slugInput,
             positionInput,
             unlistedInput,
-            staffOnlyInput);
+            staffOnlyInput,
+            onlyStaffMayCreateTopicsInput);
 
     var saveButtonTitle = this.state.isCreating ? "Create Category" : "Save Edits";
     var dialogTitle = this.state.isCreating ? saveButtonTitle : "Edit Category";

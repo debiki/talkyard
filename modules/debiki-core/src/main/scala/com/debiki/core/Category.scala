@@ -33,6 +33,7 @@ case class Category(
   newTopicTypes: immutable.Seq[PageRole],
   unlisted: Boolean,
   staffOnly: Boolean,
+  onlyStaffMayCreateTopics: Boolean,
   createdAt: ju.Date,
   updatedAt: ju.Date,
   lockedAt: Option[ju.Date] = None,
@@ -82,6 +83,7 @@ case class CreateEditCategoryData(
   newTopicTypes: immutable.Seq[PageRole],
   unlisted: Boolean,
   staffOnly: Boolean,
+  onlyStaffMayCreateTopics: Boolean,
   anyId: Option[CategoryId] = None) { // Some() if editing
 
   def makeCategory(id: CategoryId, createdAt: ju.Date) = Category(
@@ -95,6 +97,7 @@ case class CreateEditCategoryData(
     newTopicTypes = newTopicTypes,
     unlisted = unlisted,
     staffOnly = staffOnly,
+    onlyStaffMayCreateTopics = onlyStaffMayCreateTopics,
     createdAt = createdAt,
     updatedAt = createdAt)
 

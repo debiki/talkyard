@@ -361,6 +361,7 @@ object ImportExportController extends mvc.Controller {
         newTopicTypes = Nil, // fix later
         unlisted = readOptBool(jsObj, "unlisted").getOrElse(false),
         staffOnly = readOptBool(jsObj, "staffOnly").getOrElse(false),
+        onlyStaffMayCreateTopics = readOptBool(jsObj, "onlyStaffMayCreateTopics").getOrElse(false),
         createdAt = readDateMs(jsObj, "createdAtMs"),
         updatedAt = readDateMs(jsObj, "updatedAtMs"),
         lockedAt = readOptDateMs(jsObj, "lockedAtMs"),

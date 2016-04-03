@@ -255,6 +255,18 @@ abstract class SiteDao
   }
 
 
+  def throwIfMayNotCreatePageIn(categoryId: CategoryId, user: Option[User])(
+        transaction: SiteTransaction) {
+    if (user.exists(_.isStaff))
+      return
+
+    val categories = transaction.loadCategoryPathRootLast(categoryId)
+    if (categories.exists(_.staffOnly))
+      throwIndistinguishableNotFound("EsE5PWX29")
+    if (categories.exists(_.onlyStaffMayCreateTopics))
+      throwForbidden2("EsE8YK3W2", "You may not start new topics in this category")
+  }
+
   def throwIfMayNotPostTo(page: Page, author: User)(transaction: SiteTransaction) {
     throwIfMayNotSeePage(page, Some(author))(transaction)
     if (!page.role.canHaveReplies)

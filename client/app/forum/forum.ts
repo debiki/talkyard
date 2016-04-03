@@ -527,7 +527,8 @@ var ForumButtons = createComponent({
     var sortOrderRoutePath = this.props.routes[SortOrderRouteIndex].path;
 
     var createTopicBtn;
-    if (sortOrderRoutePath !== RoutePathCategories) {
+    if (sortOrderRoutePath !== RoutePathCategories && !(
+          activeCategory.onlyStaffMayCreateTopics && !isStaff(me))) {
      if (this.props.numWaitingForCritique < MaxWaitingForCritique)  // for now only [plugin]
       createTopicBtn = Button({ onClick: this.createTopic, bsStyle: 'primary', id: 'e2eCreateSth' },
         createTopicBtnTitle(activeCategory));

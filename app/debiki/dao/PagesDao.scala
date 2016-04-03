@@ -114,7 +114,7 @@ trait PagesDao {
         if (!author.isStaff)
           throwForbidden("EsE8GY32", "Only staff may create pages outside any category")
       case Some(categoryId) =>
-        throwIfMayNotSeeCategory(categoryId, Some(author))(transaction)
+        throwIfMayNotCreatePageIn(categoryId, Some(author))(transaction)
     }
 
     require(!anyFolder.exists(_.isEmpty), "EsE6JGKE3")

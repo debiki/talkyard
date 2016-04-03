@@ -85,6 +85,7 @@ trait ForumDao {
       newTopicTypes = Nil,
       unlisted = false,
       staffOnly = false,
+      onlyStaffMayCreateTopics = false,
       createdAt = transaction.currentTime,
       updatedAt = transaction.currentTime))
 
@@ -100,6 +101,7 @@ trait ForumDao {
       newTopicTypes = immutable.Seq(PageRole.Discussion),
       unlisted = false,
       staffOnly = false,
+      onlyStaffMayCreateTopics = false,
       createdAt = transaction.currentTime,
       updatedAt = transaction.currentTime))
 
@@ -115,6 +117,7 @@ trait ForumDao {
       newTopicTypes = immutable.Seq(PageRole.Discussion),
       unlisted = false,
       staffOnly = true,
+      onlyStaffMayCreateTopics = false,
       createdAt = transaction.currentTime,
       updatedAt = transaction.currentTime))
 

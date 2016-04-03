@@ -338,7 +338,8 @@ object ReactJson {
       "title" -> name,
       "path" -> path,
       "unlisted" -> category.unlisted,
-      "staffOnly" -> category.staffOnly)
+      "staffOnly" -> category.staffOnly,
+      "onlyStaffMayCreateTopics" -> category.onlyStaffMayCreateTopics)
   }
 
 
@@ -771,6 +772,7 @@ object ReactJson {
       "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
       "unlisted" -> JsBoolean(category.unlisted),
       "staffOnly" -> JsBoolean(category.staffOnly),
+      "onlyStaffMayCreateTopics" -> JsBoolean(category.onlyStaffMayCreateTopics),
       "position" -> category.position,
       "description" -> JsStringOrNull(category.description))
     if (recentTopicsJson ne null) {
