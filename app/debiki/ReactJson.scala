@@ -811,7 +811,7 @@ object ReactJson {
       "completedAtMs" -> JsDateMsOrNull(stuff.completedAt),
       "completedBy" -> JsUserOrNull(stuff.completedBy),
       "invalidatedAt" -> JsDateMsOrNull(stuff.invalidatedAt),
-      "resolution" -> JsNumberOrNull(stuff.resolution),
+      "resolution" -> JsNumberOrNull(stuff.resolution.map(_.toInt)),
       "user" -> JsUserOrNull(stuff.user),
       "pageId" -> JsStringOrNull(stuff.pageId),
       "pageTitle" -> JsStringOrNull(stuff.pageTitle),

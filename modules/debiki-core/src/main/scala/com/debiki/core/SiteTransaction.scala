@@ -288,6 +288,7 @@ trait SiteTransaction {
   def upsertReviewTask(reviewTask: ReviewTask)
   def loadReviewTask(id: ReviewTaskId): Option[ReviewTask]
   def loadReviewTasks(olderOrEqualTo: ju.Date, limit: Int): Seq[ReviewTask]
+  def loadReviewTaskCausedBy(userId: UserId, limit: Int, orderBy: OrderBy): Seq[ReviewTask]
   def loadReviewTaskCounts(isAdmin: Boolean): ReviewTaskCounts
   def loadPendingPostReviewTask(postId: UniquePostId): Option[ReviewTask]
   def loadPendingPostReviewTask(postId: UniquePostId, causedById: UserId): Option[ReviewTask]

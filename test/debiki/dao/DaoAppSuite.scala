@@ -66,8 +66,8 @@ class DaoAppSuite(disableScripts: Boolean = false, disableBackgroundJobs: Boolea
 
   def createPage(pageRole: PageRole, titleTextAndHtml: TextAndHtml,
         bodyTextAndHtml: TextAndHtml, authorId: UserId, browserIdData: BrowserIdData,
-        dao: SiteDao): PageId = {
-    dao.createPage(pageRole, PageStatus.Published, anyCategoryId = None,
+        dao: SiteDao, anyCategoryId: Option[CategoryId] = None): PageId = {
+    dao.createPage(pageRole, PageStatus.Published, anyCategoryId = anyCategoryId,
       anyFolder = Some("/"), anySlug = Some(""),
       titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
       showId = true, authorId = authorId, browserIdData = browserIdData).thePageId

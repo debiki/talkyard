@@ -85,11 +85,11 @@ package object core {
     def fromDate(date: java.util.Date) = new When(date.getTime)
   }
 
-  sealed trait OrderBy
+  sealed trait OrderBy { def isDescending: Boolean = false }
 
   object OrderBy {
     object OldestFirst extends OrderBy
-    object MostRecentFirst extends OrderBy
+    object MostRecentFirst extends OrderBy { override def isDescending = true }
   }
 
   val HomepageUrlPath = "/"

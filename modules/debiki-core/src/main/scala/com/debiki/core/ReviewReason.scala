@@ -37,6 +37,7 @@ sealed abstract class ReviewReason(val IntVal: Int, val isOnPage: Boolean = true
   def toInt = IntVal
 }
 
+// WOULD change this to be like ReviewTaskResolution(value: Int) extends AnyVal & magic bits
 object ReviewReason {
 
   // DON'T FORGET to update fromLong(..) below if adding/commenting-in a reason.

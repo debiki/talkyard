@@ -65,7 +65,7 @@ case class ReviewTask(
   completedAtRevNr: Option[Int] = None,
   completedById: Option[UserId] = None,
   invalidatedAt: Option[ju.Date] = None,
-  resolution: Option[Int] = None,
+  resolution: Option[ReviewTaskResolution] = None,
   userId: Option[UserId] = None,
   pageId: Option[PageId] = None,
   postId: Option[UniquePostId] = None,
@@ -85,6 +85,7 @@ case class ReviewTask(
   require(postId.isDefined == postNr.isDefined, "EsE6JUM13")
   require(postId.isDefined == createdAtRevNr.isDefined, "EsE5PUY0")
   require(postId.isEmpty || completedAt.isDefined == completedAtRevNr.isDefined, "EsE4PU2")
+  resolution.foreach(ReviewTaskResolution.requireIsValid)
 
 
   def doneOrGone = completedAt.isDefined || invalidatedAt.isDefined
@@ -116,3 +117,33 @@ case class ReviewTask(
 
 
 
+object ReviewTaskResolution {
+
+  val Fine = new ReviewTaskResolution(1)
+
+  // ...Other was-approved-because-... details bits?
+
+  val Harmful = new ReviewTaskResolution(1 << 10)
+
+  // Other was-rejected-because-... details bits?
+  // 1 << 20 ... = more details, like user banned, or marked as threat or whatever else one can do?
+
+  def requireIsValid(resolution: ReviewTaskResolution) {
+    val value = resolution.value
+    require(value != 0, "EsE5JUK020")
+    require(!(resolution.isFine && resolution.isHarmful), "EsE8YKJF2")
+    // for now: (change later when needed)
+    require(value == Fine.value, "EsE7YKP02")
+  }
+}
+
+
+class ReviewTaskResolution(val value: Int) extends AnyVal {
+  import ReviewTaskResolution._
+
+  def toInt = value
+
+  def isFine = (value & Fine.value) != 0
+  def isHarmful = (value & Harmful.value) != 0
+
+}

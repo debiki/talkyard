@@ -46,7 +46,7 @@ object ForumController extends mvc.Controller {
     val title = (request.body \ "title").as[String]
     val folder = (request.body \ "folder").as[String]
     val pagePath = request.dao.createForum(title, folder = folder,
-      creatorId = request.theUserId, request.theBrowserIdData)
+      creatorId = request.theUserId, request.theBrowserIdData).pagePath
     OkSafeJson(JsString(pagePath.value))
   }
 

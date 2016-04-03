@@ -232,7 +232,7 @@ package object http {
     */
   def throwIndistinguishableNotFound(devModeErrCode: String = "") = {
     val suffix =
-      if (Play.isDev && devModeErrCode.nonEmpty) s"-$devModeErrCode"
+      if (!Play.isProd && devModeErrCode.nonEmpty) s"-$devModeErrCode"
       else ""
     throwNotFound("EsE404" + suffix, "Page not found")
   }

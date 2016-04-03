@@ -33,7 +33,7 @@ import scala.collection.mutable.ArrayBuffer
 import PostsDao._
 
 
-case class InsertPostResult(storePatchJson: JsValue, post: Post)
+case class InsertPostResult(storePatchJson: JsValue, post: Post, reviewTask: Option[ReviewTask])
 
 
 /** Loads and saves pages and page parts (e.g. posts and patches).
@@ -66,7 +66,7 @@ trait PostsDao {
       throwNotImplemented("EsE7GKX2", o"""Please reply to one single person only.
         Multireplies temporarily disabled, sorry""")
 
-    val (newPost, author, notifications) = readWriteTransaction { transaction =>
+    val (newPost, author, notifications, anyReviewTask) = readWriteTransaction { transaction =>
       val author = transaction.loadUser(authorId) getOrElse throwNotFound("DwE404UF3", "Bad user")
       val page = PageDao(pageId, transaction)
       throwIfMayNotPostTo(page, author)(transaction)
@@ -180,7 +180,7 @@ trait PostsDao {
       val notifications = NotificationGenerator(transaction).generateForNewPost(page, newPost)
       transaction.saveDeleteNotifications(notifications)
 
-      (newPost, author, notifications)
+      (newPost, author, notifications, anyReviewTask)
     }
 
     refreshPageInAnyCache(pageId)
@@ -189,20 +189,41 @@ trait PostsDao {
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
       byId = author.id)
 
-    InsertPostResult(storePatchJson, newPost)
+    InsertPostResult(storePatchJson, newPost, anyReviewTask)
   }
 
 
   def throwOrFindReviewPostReasons(page: PageDao, author: User, transaction: SiteTransaction)
         : (Seq[ReviewReason], Boolean) = {
-    throwOrFindReviewReasonsImpl(author, Some(page), transaction)
+    throwOrFindReviewReasonsImpl(author, Some(page), newPageRole = None, transaction)
   }
 
 
   def throwOrFindReviewReasonsImpl(author: User, page: Option[PageDao],
-        transaction: SiteTransaction): (Seq[ReviewReason], Boolean) = {
+        newPageRole: Option[PageRole], transaction: SiteTransaction)
+        : (Seq[ReviewReason], Boolean) = {
     if (author.isStaff)
       return (Nil, true)
+
+    // Don't review, but auto-approve, user-to-user messages. Staff aren't supposed to read
+    // those, unless the receiver reports the message.
+    // Later: Create a review task anyway, for admins only, if the user is considered a mild threat?
+    // And throw-forbidden if considered a moderate threat.
+    if (newPageRole.contains(PageRole.Message)) {
+      // For now, just this basic check to prevent too-often-flagged people from posting priv msgs
+      // to non-staff. COULD allow messages to staff, but currently we here don't have access
+      // to the page members, so we don't know if they are staff.
+      val tasks = transaction.loadReviewTaskCausedBy(author.id, limit = MaxNumFirstPosts,
+        OrderBy.MostRecentFirst)
+      val numLoaded = tasks.length
+      val numPending = tasks.count(_.resolution.isEmpty)
+      val numRejected = tasks.count(_.resolution.exists(_.isHarmful))
+      if (numLoaded >= 2 && numRejected > (numLoaded / 2)) // for now
+        throwForbidden("EsE7YKG2", "Too many rejected comments or edits or something")
+      if (numPending > 5) // for now
+        throwForbidden("EsE5JK20", "Too many pending review tasks")
+      return (Nil, true)
+    }
 
     // SECURITY COULD analyze the author's trust level and past actions, and
     // based on that, approve, reject or review later.
@@ -216,20 +237,23 @@ trait PostsDao {
     var autoApprove = true
 
     if ((numFirstToAllow > 0 && numFirstToApprove > 0) || numFirstToNotify > 0) {
-      val firstPosts = transaction.loadPostsBy(author.id, includeTitles = false,
-        includeChatMessages = false, limit = MaxNumFirstPosts, OrderBy.OldestFirst)
+      val tasks = transaction.loadReviewTaskCausedBy(author.id, limit = MaxNumFirstPosts,
+        OrderBy.OldestFirst)
+      val numApproved = tasks.count(_.resolution.exists(_.isFine))
+      val numLoaded = tasks.length
 
-      val numApproved = firstPosts.count(_.isSomeVersionApproved)
-      val numFirst = firstPosts.length
       if (numApproved < numFirstToApprove) {
         // This user is still under evaluation (is s/he a spammer or not?).
         autoApprove = false
-        if (numFirst >= numFirstToAllow)
+        if (numLoaded >= numFirstToAllow)
           throwForbidden("_EsE6YKF2_", o"""You cannot post more posts until a moderator has
               approved your first posts""")
       }
 
-      if (numFirst < math.min(MaxNumFirstPosts, numFirstToApprove + numFirstToNotify)) {
+      if (numLoaded < math.min(MaxNumFirstPosts, numFirstToApprove + numFirstToNotify)) {
+        reviewReasons.append(ReviewReason.IsByNewUser, ReviewReason.NewPost)
+      }
+      else if (!autoApprove) {
         reviewReasons.append(ReviewReason.IsByNewUser, ReviewReason.NewPost)
       }
     }
@@ -287,7 +311,7 @@ trait PostsDao {
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
       byId = author.id)
 
-    InsertPostResult(storePatchJson, post)
+    InsertPostResult(storePatchJson, post, reviewTask = None)
   }
 
 
@@ -884,7 +908,6 @@ trait PostsDao {
 
   def approvePostImpl(pageId: PageId, postNr: PostNr, approverId: UserId,
         transaction: SiteTransaction) {
-    var pageIdsToRefresh = Set[PageId](pageId)
 
       val page = PageDao(pageId, transaction)
       val pageMeta = page.meta
@@ -954,29 +977,7 @@ trait PostsDao {
         }
       transaction.saveDeleteNotifications(notifications)
 
-      // ------ Cascade approval?
-
-      // If we will now have approved all the required first posts (numFirstToApprove below),
-      // then auto-approve all remaining first posts, because now we trust the post author
-      // that much.
-      val settings = loadWholeSiteSettings(transaction)
-      val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numFirstPostsToAllow)
-      val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
-      if (numFirstToAllow > 0 && numFirstToApprove > 0) {
-        val firstPosts = transaction.loadPostsBy(postBefore.createdById, includeTitles = false,
-          includeChatMessages = false, limit = MaxNumFirstPosts, OrderBy.OldestFirst)
-        // BUG approvedById will be changed to not-a-human after an edit (that gets auto-approved).
-        val numApprovedByHuman = firstPosts.count(_.approvedById.exists(User.isHumanMember))
-        val shallApproveRemainingFirstPosts = numApprovedByHuman >= numFirstToApprove
-        if (shallApproveRemainingFirstPosts) {
-          val unapprovedFirstPosts = firstPosts.filter(!_.isSomeVersionApproved)
-          pageIdsToRefresh ++= unapprovedFirstPosts.map(
-            autoApprovePendingEarlyPost(_, transaction))
-        }
-      }
-
-
-    refreshPagesInAnyCache(pageIdsToRefresh)
+    refreshPagesInAnyCache(Set[PageId](pageId))
   }
 
 
@@ -1000,12 +1001,6 @@ trait PostsDao {
       currentSourcePatch = None)
     transaction.updatePost(postAfter)
 
-    // ----- Review tasks
-
-    // Don't think there're any review tasks to delete . They should have been
-    // generated only for the num-first-posts-to-approve posts, and they should have been
-    // handled already. We want to keep any review tasks created for num-first-posts-to-notify.
-
     // ----- The page
 
     // We're making an unapproved post visible, so the page will change.
@@ -1018,6 +1013,8 @@ trait PostsDao {
       version = pageMeta.version + 1)
 
     transaction.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
+
+    // ------ Notifications
 
     val notfs = NotificationGenerator(transaction).generateForNewPost(page, postAfter)
     transaction.saveDeleteNotifications(notfs)

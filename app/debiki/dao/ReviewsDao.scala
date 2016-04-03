@@ -19,6 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import com.debiki.core.EditedSettings.MaxNumFirstPosts
 import debiki.DebikiHttp.{throwNotFound, throwForbidden}
 import java.{util => ju}
 import scala.collection.mutable.ArrayBuffer
@@ -36,11 +37,14 @@ case class ReviewStuff(
   completedAt: Option[ju.Date],
   completedBy: Option[User],
   invalidatedAt: Option[ju.Date],
-  resolution: Option[Int],
+  resolution: Option[ReviewTaskResolution],
   user: Option[User],
   pageId: Option[PageId],
   pageTitle: Option[String],
-  post: Option[Post])
+  post: Option[Post]) {
+
+  resolution.foreach(ReviewTaskResolution.requireIsValid)
+}
 
 
 
@@ -59,7 +63,7 @@ trait ReviewsDao {
             e.g. because the-thing-to-review was deleted""")
       val completedTask = task.copy(completedAt = Some(transaction.currentTime),
         completedById = Some(completedById), completedAtRevNr = anyRevNr,
-        resolution = Some(100)) // for now
+        resolution = Some(ReviewTaskResolution.Fine)) // hmm, need some Rejected btn too (!)
       transaction.upsertReviewTask(completedTask)
 
       dieIf(task.postNr.isEmpty, "Only posts can be reviewed right now [EsE7YGK29]")
@@ -73,6 +77,7 @@ trait ReviewsDao {
           case ReviewAction.Accept =>
             if (!post.isCurrentVersionApproved) {
               approvePostImpl(post.pageId, post.nr, approverId = completedById, transaction)
+              perhapsCascadeApproval(post.createdById)(transaction)
             }
           case ReviewAction.DeletePostOrPage =>
             // Later: if nr = BodyId, & not approved, then delete the whole page
@@ -82,6 +87,32 @@ trait ReviewsDao {
         }
       }
     }
+  }
+
+
+  /** If we have approved all the required first review tasks caused by userId, then
+    * this method auto-approves all remaining first review tasks — because now we trust
+    * the user that much.
+    */
+  private def perhapsCascadeApproval(userId: UserId)(transaction: SiteTransaction) {
+    var pageIdsToRefresh = Set[PageId]()
+    val settings = loadWholeSiteSettings(transaction)
+    val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numFirstPostsToAllow)
+    val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
+    if (numFirstToAllow > 0 && numFirstToApprove > 0) {
+      val tasks = transaction.loadReviewTaskCausedBy(userId,
+        limit = MaxNumFirstPosts, OrderBy.OldestFirst)
+      val numApproved = tasks.count(_.resolution.exists(_.isFine))
+      val shallApproveRemainingFirstPosts = numApproved >= numFirstToApprove
+      if (shallApproveRemainingFirstPosts) {
+        val pendingTasks = tasks.filter(!_.doneOrGone)
+        val postIdsToApprove = pendingTasks.flatMap(_.postId)
+        val postsToApprove = transaction.loadPostsByUniqueId(postIdsToApprove).values
+        pageIdsToRefresh ++= postsToApprove.map(
+          autoApprovePendingEarlyPost(_, transaction))
+      }
+    }
+    refreshPagesInAnyCache(pageIdsToRefresh)
   }
 
 

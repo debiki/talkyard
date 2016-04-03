@@ -25,6 +25,11 @@ import scala.collection.{immutable, mutable}
 import ForumDao._
 
 
+case class CreateForumResult(
+  pagePath: PagePath,
+  uncategorizedCategoryId: CategoryId)
+
+
 /** Creates forums.
   */
 trait ForumDao {
@@ -32,7 +37,7 @@ trait ForumDao {
 
 
   def createForum(title: String, folder: String, creatorId: UserId,
-        browserIdData: BrowserIdData): PagePath = {
+        browserIdData: BrowserIdData): CreateForumResult = {
     val titleHtmlSanitized = commonmarkRenderer.sanitizeHtml(title)
     readWriteTransaction { transaction =>
 
@@ -52,16 +57,18 @@ trait ForumDao {
 
       val forumPageId = forumPagePath.pageId getOrDie "DwE5KPFW2"
 
-      createDefaultCategoriesAndTopics(forumPageId, rootCategoryId, browserIdData, transaction)
+      val partialResult = createDefaultCategoriesAndTopics(
+        forumPageId, rootCategoryId, browserIdData, transaction)
 
       // COULD create audit log entries.
-      forumPagePath
+
+      partialResult.copy(pagePath = forumPagePath)
     }
   }
 
 
   private def createDefaultCategoriesAndTopics(forumPageId: PageId, rootCategoryId: CategoryId,
-        browserIdData: BrowserIdData, transaction: SiteTransaction) {
+        browserIdData: BrowserIdData, transaction: SiteTransaction): CreateForumResult = {
 
     val uncategorizedCategoryId = rootCategoryId + 1
     val staffCategoryId = rootCategoryId + 2
@@ -124,6 +131,8 @@ trait ForumDao {
       authorId = SystemUserId,
       browserIdData,
       transaction)
+
+    CreateForumResult(null, uncategorizedCategoryId)
   }
 
 

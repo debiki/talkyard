@@ -29,15 +29,17 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
 
   class nestedPostsSuite extends FreeSpec with MustMatchers with BeforeAndAfterAll {
     var thePageId: PageId = null
-    var theAdmin: User = null
+    lazy val theAdmin: User =  createPasswordAdmin(s"aaddmm_$nextNameNr", dao)
     lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
+    lazy val categoryId: CategoryId =
+      dao.createForum("Forum", s"/forum-$nextNameNr/",
+        theAdmin.id, browserIdData).uncategorizedCategoryId
 
     def nextNameNr = { nameCounter += 1; nameCounter }
 
     def newAdminAndPage() = {
-      theAdmin = createPasswordAdmin(s"aaddmm_$nextNameNr", dao)
       thePageId = dao.createPage(PageRole.Discussion, PageStatus.Published,
-        anyCategoryId = None, anyFolder = Some("/"), anySlug = Some(""),
+        anyCategoryId = Some(categoryId), anyFolder = Some("/"), anySlug = Some(""),
         titleTextAndHtml = TextAndHtml.testTitle("title_62952"),
         bodyTextAndHtml = TextAndHtml.testBody("discussion_230593"),
         showId = true, authorId = theAdmin.id, browserIdData = browserIdData).thePageId
@@ -53,10 +55,15 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
       }
     }
 
-    def reply(memberId: UserId, text: String): Post = {
+    def reply(memberId: UserId, text: String): InsertPostResult = {
       dao.insertReply(TextAndHtml.testBody(text), thePageId,
         replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, authorId = memberId,
-        browserIdData = browserIdData).post
+        browserIdData = browserIdData)
+    }
+
+    def approve(reviewTask: ReviewTask): Unit = {
+      dao.completeReviewTask(reviewTask.id, theAdmin.id, anyRevNr = Some(FirstRevisionNr),
+        ReviewAction.Accept, browserIdData)
     }
 
     def checkReviewTaskGenerated(post: Post) {
@@ -91,9 +98,9 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
       }
       "allow new members by default" in {
         val member = createPasswordUser(s"mem_78201", dao)
-        reply(member.id, "reply_04285_a").approvedById mustBe Some(SystemUserId)
-        reply(member.id, "reply_04285_b").approvedById mustBe Some(SystemUserId)
-        reply(member.id, "reply_04285_c").approvedById mustBe Some(SystemUserId)
+        reply(member.id, "reply_04285_a").post.approvedById mustBe Some(SystemUserId)
+        reply(member.id, "reply_04285_b").post.approvedById mustBe Some(SystemUserId)
+        reply(member.id, "reply_04285_c").post.approvedById mustBe Some(SystemUserId)
       }
     },
 
@@ -116,9 +123,9 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           val member = createPasswordUser(s"mem_863439", dao)
 
           info("allow one")
-          val firstReply = reply(member.id, "reply_863439_a")
-          firstReply.isSomeVersionApproved mustBe false
-          checkReviewTaskGenerated(firstReply)
+          val firstReplyResult = reply(member.id, "reply_863439_a")
+          firstReplyResult.post.isSomeVersionApproved mustBe false
+          checkReviewTaskGenerated(firstReplyResult.post)
 
           info("then reject")
           intercept[ResultException] {
@@ -127,11 +134,11 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
 
           info("accept one more when allow = 2")
           dao.saveSiteSettings(SettingsToSave(numFirstPostsToAllow = Some(Some(2))))
-          val secondReply = reply(member.id, "reply_863439_d")
-          secondReply.isSomeVersionApproved mustBe false
+          val secondReplyResult = reply(member.id, "reply_863439_d")
+          secondReplyResult.post.isSomeVersionApproved mustBe false
 
           info("but generate no review task, because Approve + Notify = 1 + 0 = only 1st reviewed")
-          checkNoReviewTask(secondReply)
+          checkReviewTaskGenerated(secondReplyResult.post)
 
           info("then reject again")
           intercept[ResultException] {
@@ -139,40 +146,42 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           }.getMessage must include("_EsE6YKF2_")
 
           info("approve the very first post...")
-          dao.approvePost(thePageId, firstReply.nr, theAdmin.id)
-          val firstReply2 = dao.loadPost(thePageId, firstReply.nr).get
+          approve(firstReplyResult.reviewTask.get)
+          val firstReply2 = dao.loadPost(thePageId, firstReplyResult.post.nr).get
           firstReply2.approvedById mustBe Some(theAdmin.id)
 
           info("...and then also auto-approve all early posts")
-          val secondReply2 = dao.loadPost(thePageId, secondReply.nr).get
+          val secondReply2 = dao.loadPost(thePageId, secondReplyResult.post.nr).get
           secondReply2.isCurrentVersionApproved mustBe true
           secondReply2.approvedById mustBe Some(SystemUserId)
 
           info("allow & auto-approve more posts, since the first post has been approved")
-          val thirdReply = reply(member.id, "reply_863439_f")
-          thirdReply.approvedById mustBe Some(SystemUserId)
-          checkNoReviewTask(thirdReply)
+          val thirdReplyResult = reply(member.id, "reply_863439_f")
+          thirdReplyResult.post.approvedById mustBe Some(SystemUserId)
+          checkNoReviewTask(thirdReplyResult.post)
 
+          /* No longer works because no review tasks generated for auto-approved posts.
           info("allow, if approve bumped to 3 (2 + 1 approved by admin & system = 3 in total)")
           dao.saveSiteSettings(SettingsToSave(
             numFirstPostsToApprove = Some(Some(3)),
             numFirstPostsToAllow = Some(Some(3))))
-          val fourthReply = reply(member.id, "reply_863439_g")
-          fourthReply.approvedById mustBe Some(SystemUserId)
-          checkNoReviewTask(fourthReply)
+          val fourthReplyResult = reply(member.id, "reply_863439_g")
+          fourthReplyResult.post.approvedById mustBe Some(SystemUserId)
+          checkNoReviewTask(fourthReplyResult.post)
 
           info("allow but not approve, if Approve & Approve bumped to 5")
           dao.saveSiteSettings(SettingsToSave(
             numFirstPostsToAllow = Some(Some(5)),
             numFirstPostsToApprove = Some(Some(5))))
-          val fifthReply = reply(member.id, "reply_863439_h")
-          fifthReply.isSomeVersionApproved mustBe false
-          checkReviewTaskGenerated(fifthReply)
+          val fifthReplyResult = reply(member.id, "reply_863439_h")
+          fifthReplyResult.post.isSomeVersionApproved mustBe false
+          checkReviewTaskGenerated(fifthReplyResult.post)
 
           info("then reject")
           intercept[ResultException] {
             reply(member.id, "reply_863439_i")
           }.getMessage must include("_EsE6YKF2_")
+          */
         }
       }
     },
@@ -185,7 +194,7 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           numFirstPostsToReview = Some(Some(0))))
       }
 
-      "PostsDao will, with allow = 4, approve = 2:" - {
+      "PostsDao will, with allow = 5, approve = 3:" - {
         "approve all replies by a new admin" in {
           newAdminAndPage()
           testAdminsRepliesApproved(theAdmin.id, thePageId)
@@ -195,25 +204,25 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           val member = createPasswordUser(s"mem_77025", dao)
 
           info("allow 1,2,3,4 but not approve")
-          val firstReply = reply(member.id, "reply_77025_a")
-          val secondReply = reply(member.id, "reply_77025_b")
-          val thirdReply = reply(member.id, "reply_77025_c")
-          val fourthReply = reply(member.id, "reply_77025_d")
-          val fifthReply = reply(member.id, "reply_77025_e")
+          val firstReplyResult = reply(member.id, "reply_77025_a")
+          val secondReplyResult = reply(member.id, "reply_77025_b")
+          val thirdReplyResult = reply(member.id, "reply_77025_c")
+          val fourthReplyResult = reply(member.id, "reply_77025_d")
+          val fifthReplyResult = reply(member.id, "reply_77025_e")
 
-          firstReply.isSomeVersionApproved mustBe false
-          secondReply.isSomeVersionApproved mustBe false
-          thirdReply.isSomeVersionApproved mustBe false
-          fourthReply.isSomeVersionApproved mustBe false
-          fifthReply.isSomeVersionApproved mustBe false
+          firstReplyResult.post.isSomeVersionApproved mustBe false
+          secondReplyResult.post.isSomeVersionApproved mustBe false
+          thirdReplyResult.post.isSomeVersionApproved mustBe false
+          fourthReplyResult.post.isSomeVersionApproved mustBe false
+          fifthReplyResult.post.isSomeVersionApproved mustBe false
 
           // Only the 3 first because Approve + Notify = 3 + 0 = the three first.
-          info("review tasks for 1,2,3, but not 4,5")
-          checkReviewTaskGenerated(firstReply)
-          checkReviewTaskGenerated(secondReply)
-          checkReviewTaskGenerated(thirdReply)
-          checkNoReviewTask(fourthReply)
-          checkNoReviewTask(fifthReply)
+          info("review tasks for 1,2,3,4,5")
+          checkReviewTaskGenerated(firstReplyResult.post)
+          checkReviewTaskGenerated(secondReplyResult.post)
+          checkReviewTaskGenerated(thirdReplyResult.post)
+          checkReviewTaskGenerated(fourthReplyResult.post)
+          checkReviewTaskGenerated(fifthReplyResult.post)
 
           info("then reject")
           intercept[ResultException] {
@@ -221,8 +230,8 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           }.getMessage must include("_EsE6YKF2_")
 
           info("approve reply no 1")
-          dao.approvePost(thePageId, firstReply.nr, theAdmin.id)
-          val firstReply2 = dao.loadPost(thePageId, firstReply.nr).get
+          approve(firstReplyResult.reviewTask.get)
+          val firstReply2 = dao.loadPost(thePageId, firstReplyResult.post.nr).get
           firstReply2.approvedById mustBe Some(theAdmin.id)
 
           info("still reject")
@@ -231,8 +240,8 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           }.getMessage must include("_EsE6YKF2_")
 
           info("approve reply no 3")
-          dao.approvePost(thePageId, thirdReply.nr, theAdmin.id)
-          val thirdReply2 = dao.loadPost(thePageId, thirdReply.nr).get
+          approve(thirdReplyResult.reviewTask.get)
+          val thirdReply2 = dao.loadPost(thePageId, thirdReplyResult.post.nr).get
           thirdReply2.approvedById mustBe Some(theAdmin.id)
 
           info("still reject")
@@ -241,32 +250,32 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           }.getMessage must include("_EsE6YKF2_")
 
           info("approve reply no 2 (now 1,2,3 are appproved)...")
-          dao.approvePost(thePageId, secondReply.nr, theAdmin.id)
-          val secondReply2 = dao.loadPost(thePageId, secondReply.nr).get
+          approve(secondReplyResult.reviewTask.get)
+          val secondReply2 = dao.loadPost(thePageId, secondReplyResult.post.nr).get
           secondReply2.approvedById mustBe Some(theAdmin.id)
 
           info("...and then auto-approve no 4 and 5")
-          val fourthReply2 = dao.loadPost(thePageId, fourthReply.nr).get
+          val fourthReply2 = dao.loadPost(thePageId, fourthReplyResult.post.nr).get
           fourthReply2.approvedById mustBe Some(SystemUserId)
-          val fifthReply2 = dao.loadPost(thePageId, fifthReply.nr).get
+          val fifthReply2 = dao.loadPost(thePageId, fifthReplyResult.post.nr).get
           fifthReply2.approvedById mustBe Some(SystemUserId)
 
           info("...but no 3 remains approved by admin")
-          val thirdReply3 = dao.loadPost(thePageId, thirdReply.nr).get
+          val thirdReply3 = dao.loadPost(thePageId, thirdReplyResult.post.nr).get
           thirdReply3.approvedById mustBe Some(theAdmin.id)
 
           info("allow subsequent replies")
-          val sixthReply = reply(member.id, "reply_77025_i")
-          val seventhReply = reply(member.id, "reply_77025_j")
-          checkNoReviewTask(sixthReply)
-          checkNoReviewTask(seventhReply)
+          val sixthReplyResult = reply(member.id, "reply_77025_i")
+          val seventhReplyResult = reply(member.id, "reply_77025_j")
+          checkNoReviewTask(sixthReplyResult.post)
+          checkNoReviewTask(seventhReplyResult.post)
 
           info("still allow, after Approve & Allow disabled")
           dao.saveSiteSettings(SettingsToSave(
             numFirstPostsToAllow = Some(Some(0)),
             numFirstPostsToApprove = Some(Some(0))))
-          val eightReply = reply(member.id, "reply_77025_k")
-          checkNoReviewTask(eightReply)
+          val eightReplyResult = reply(member.id, "reply_77025_k")
+          checkNoReviewTask(eightReplyResult.post)
         }
       }
     },
@@ -289,20 +298,20 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           val member = createPasswordUser(s"mem_55032", dao)
 
           info("auto-approve 1,2,3,4")
-          val firstReply = reply(member.id, "reply_55032_a")
-          val secondReply = reply(member.id, "reply_55032_b")
-          val thirdReply = reply(member.id, "reply_55032_c")
-          val fourthReply = reply(member.id, "reply_55032_d")
-          firstReply.approvedById mustBe Some(SystemUserId)
-          secondReply.approvedById mustBe Some(SystemUserId)
-          thirdReply.approvedById mustBe Some(SystemUserId)
-          fourthReply.approvedById mustBe Some(SystemUserId)
+          val firstReplyResult = reply(member.id, "reply_55032_a")
+          val secondReplyResult = reply(member.id, "reply_55032_b")
+          val thirdReplyResult = reply(member.id, "reply_55032_c")
+          val fourthReplyResult = reply(member.id, "reply_55032_d")
+          firstReplyResult.post.approvedById mustBe Some(SystemUserId)
+          secondReplyResult.post.approvedById mustBe Some(SystemUserId)
+          thirdReplyResult.post.approvedById mustBe Some(SystemUserId)
+          fourthReplyResult.post.approvedById mustBe Some(SystemUserId)
 
           info("generate review tasks for 1,2 but not 3,4")
-          checkReviewTaskGenerated(firstReply)
-          checkReviewTaskGenerated(secondReply)
-          checkNoReviewTask(thirdReply)
-          checkNoReviewTask(fourthReply)
+          checkReviewTaskGenerated(firstReplyResult.post)
+          checkReviewTaskGenerated(secondReplyResult.post)
+          checkNoReviewTask(thirdReplyResult.post)
+          checkNoReviewTask(fourthReplyResult.post)
         }
       }
     },
@@ -320,17 +329,17 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           newAdminAndPage()
           val member = createPasswordUser(s"mem_33951", dao)
 
-          val firstReply = reply(member.id, "reply_33951_a")
-          val secondReply = reply(member.id, "reply_33951_b")
-          val thirdReply = reply(member.id, "reply_33951_c")
-          firstReply.isSomeVersionApproved mustBe false
-          secondReply.isSomeVersionApproved mustBe false
-          thirdReply.isSomeVersionApproved mustBe false
+          val firstReplyResult = reply(member.id, "reply_33951_a")
+          val secondReplyResult = reply(member.id, "reply_33951_b")
+          val thirdReplyResult = reply(member.id, "reply_33951_c")
+          firstReplyResult.post.isSomeVersionApproved mustBe false
+          secondReplyResult.post.isSomeVersionApproved mustBe false
+          thirdReplyResult.post.isSomeVersionApproved mustBe false
 
           info("generate review tasks for 1,2 but not 3")
-          checkReviewTaskGenerated(firstReply)
-          checkReviewTaskGenerated(secondReply)
-          checkNoReviewTask(thirdReply)
+          checkReviewTaskGenerated(firstReplyResult.post)
+          checkReviewTaskGenerated(secondReplyResult.post)
+          checkReviewTaskGenerated(thirdReplyResult.post)
 
           info("reject reply nr 4")
           intercept[ResultException] {
@@ -338,18 +347,18 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           }.getMessage must include("_EsE6YKF2_")
 
           info("approve nr 1, auto-approve 2 & 3")
-          dao.approvePost(thePageId, firstReply.nr, theAdmin.id)
-          val firstReply2 = dao.loadPost(thePageId, firstReply.nr).get
-          val secondReply2 = dao.loadPost(thePageId, secondReply.nr).get
-          val thirdReply2 = dao.loadPost(thePageId, thirdReply.nr).get
+          approve(firstReplyResult.reviewTask.get)
+          val firstReply2 = dao.loadPost(thePageId, firstReplyResult.post.nr).get
+          val secondReply2 = dao.loadPost(thePageId, secondReplyResult.post.nr).get
+          val thirdReply2 = dao.loadPost(thePageId, thirdReplyResult.post.nr).get
           firstReply2.approvedById mustBe Some(theAdmin.id)
           secondReply2.approvedById mustBe Some(SystemUserId)
           thirdReply2.approvedById mustBe Some(SystemUserId)
 
           info("now auto-approve, but no review task")
-          val fourthReply = reply(member.id, "reply_33951_c")
-          fourthReply.approvedById mustBe Some(SystemUserId)
-          checkNoReviewTask(fourthReply)
+          val fourthReplyResult = reply(member.id, "reply_33951_c")
+          fourthReplyResult.post.approvedById mustBe Some(SystemUserId)
+          checkNoReviewTask(fourthReplyResult.post)
         }
       }
     },
@@ -366,7 +375,8 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
         "auto-approves chat messages, and doesn't let them interfere with discussion replies" in {
           newAdminAndPage()
           val chatPageId = createPage(PageRole.OpenChat, TextAndHtml.testTitle("Chat Page 594284"),
-            TextAndHtml.testBody("Purpose: 594284"), theAdmin.id, browserIdData, dao)
+            TextAndHtml.testBody("Purpose: 594284"), theAdmin.id, browserIdData, dao,
+            anyCategoryId = Some(categoryId))
 
           val member = createPasswordUser(s"mem_740331", dao)
           dao.joinPageIfAuth(chatPageId, member.id, browserIdData)
@@ -377,9 +387,9 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           firstChat.approvedById mustBe Some(SystemUserId)
 
           info("can still insert a reply")
-          val firstReply = reply(member.id, "reply_740331_a")
-          firstReply.isSomeVersionApproved mustBe false
-          checkReviewTaskGenerated(firstReply)
+          val firstReplyResult = reply(member.id, "reply_740331_a")
+          firstReplyResult.post.isSomeVersionApproved mustBe false
+          checkReviewTaskGenerated(firstReplyResult.post)
 
           info("another chat message")
           val secondChat = dao.insertChatMessage(TextAndHtml.testBody("chat_740331_d"), chatPageId,
@@ -387,9 +397,9 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           secondChat.approvedById mustBe Some(SystemUserId)
 
           info("can nevertheless insert reply 2")
-          val secondReply = reply(member.id, "reply_740331_b")
-          secondReply.isSomeVersionApproved mustBe false
-          checkReviewTaskGenerated(secondReply)
+          val secondReplyResult = reply(member.id, "reply_740331_b")
+          secondReplyResult.post.isSomeVersionApproved mustBe false
+          checkReviewTaskGenerated(secondReplyResult.post)
 
           info("yet another chat message")
           val thirdChat = dao.insertChatMessage(TextAndHtml.testBody("chat_740331_f"), chatPageId,
@@ -402,15 +412,15 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           }.getMessage must include("_EsE6YKF2_")
 
           info("allow more replies, once first reply approved")
-          dao.approvePost(thePageId, firstReply.nr, theAdmin.id)
+          approve(firstReplyResult.reviewTask.get)
 
-          val thirdReply = reply(member.id, "reply_740331_d")
-          thirdReply.approvedById mustBe Some(SystemUserId)
-          checkNoReviewTask(thirdReply)
+          val thirdReplyResult = reply(member.id, "reply_740331_d")
+          thirdReplyResult.post.approvedById mustBe Some(SystemUserId)
+          checkNoReviewTask(thirdReplyResult.post)
 
-          val fourthReply = reply(member.id, "reply_740331_e")
-          fourthReply.approvedById mustBe Some(SystemUserId)
-          checkNoReviewTask(fourthReply)
+          val fourthReplyResult = reply(member.id, "reply_740331_e")
+          fourthReplyResult.post.approvedById mustBe Some(SystemUserId)
+          checkNoReviewTask(fourthReplyResult.post)
         }
       }
     },
@@ -429,15 +439,18 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
 
           info("create Allow = 2 pages, pending approval since Approve > 0")
           val first = createPage(PageRole.Discussion, TextAndHtml.testTitle("Member Page 4ZM2"),
-            TextAndHtml.testBody("Page body 4ZM2."), member.id, browserIdData, dao)
+            TextAndHtml.testBody("Page body 4ZM2."), member.id, browserIdData, dao,
+            anyCategoryId = Some(categoryId))
 
           val second = createPage(PageRole.Discussion, TextAndHtml.testTitle("Member Page 4ZM2 b"),
-            TextAndHtml.testBody("Page body 4ZM2 b."), member.id, browserIdData, dao)
+            TextAndHtml.testBody("Page body 4ZM2 b."), member.id, browserIdData, dao,
+            anyCategoryId = Some(categoryId))
 
           info("rejct page 3")
           intercept[ResultException] {
             createPage(PageRole.Discussion, TextAndHtml.testTitle("Member Page 4ZM2 c"),
-                TextAndHtml.testBody("Page body 4ZM2 c."), member.id, browserIdData, dao)
+                TextAndHtml.testBody("Page body 4ZM2 c."), member.id, browserIdData, dao,
+                anyCategoryId = Some(categoryId))
           }.getMessage must include("_EsE6YKF2_")
         }
       }

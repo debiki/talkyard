@@ -234,7 +234,7 @@ var EditCategoryDialog = createClassAndFactory({
     var saveCancel = this.state.isSaving
         ? r.div({}, "Saving...")
         : r.div({},
-            Button({ onClick: this.save }, saveButtonTitle),
+            Button({ onClick: this.save, bsStyle: 'primary' }, saveButtonTitle),
             Button({ onClick: this.close }, "Cancel"));
 
     return (

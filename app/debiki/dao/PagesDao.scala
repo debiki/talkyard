@@ -147,7 +147,7 @@ trait PagesDao {
     }).take(PagePath.MaxSlugLength).dropRightWhile(_ == '-').dropWhile(_ == '-')
 
     val (reviewReasons: Seq[ReviewReason], shallApprove) =
-      throwOrFindReviewNewPageReasons(author, transaction)
+      throwOrFindReviewNewPageReasons(author, pageRole, transaction)
 
     val approvedById =
       if (author.isStaff) {
@@ -265,9 +265,9 @@ trait PagesDao {
   }
 
 
-  def throwOrFindReviewNewPageReasons(author: User, transaction: SiteTransaction)
-        : (Seq[ReviewReason], Boolean) = {
-    throwOrFindReviewReasonsImpl(author, page = None, transaction)
+  def throwOrFindReviewNewPageReasons(author: User, pageRole: PageRole,
+        transaction: SiteTransaction): (Seq[ReviewReason], Boolean) = {
+    throwOrFindReviewReasonsImpl(author, page = None, newPageRole = Some(pageRole), transaction)
   }
 
 
