@@ -86,7 +86,7 @@ class UploadsDaoSpec extends FreeSpec with MustMatchers {
 }
 
 
-class UploadsDaoAppSpec extends DaoAppSuite {
+class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
   case class FileNameRef(name: String, file: jio.File, ref: UploadRef)
 
@@ -319,7 +319,7 @@ class UploadsDaoAppSpec extends DaoAppSuite {
         password = magic, isAdmin = true, isOwner = false).get)
 
       info("create site 2")
-      val site2 = dao.createSite("Site Two", hostname = "site-two",
+      val site2 = dao.createSite("site-two-name", hostname = "site-two",
         embeddingSiteUrl = None, organizationName = "Test Org Name",
         creatorEmailAddress = "t@x.c", creatorId = user.id, browserIdData: BrowserIdData,
         isTestSiteOkayToDelete = false, skipMaxSitesCheck = true)

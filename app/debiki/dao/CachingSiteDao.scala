@@ -26,17 +26,21 @@ import CachingDao.{CacheKey, CacheValue}
 
 /** Builds site specific data access objects that cache stuff in-memory.
   */
-class CachingSiteDaoFactory(private val _dbDaoFactory: DbDaoFactory)
-  extends SiteDaoFactory {
+class CachingSiteDaoFactory(
+  private val _dbDaoFactory: DbDaoFactory,
+  private val cache: net.sf.ehcache.Ehcache) extends SiteDaoFactory {
 
-  def newSiteDao(siteId: SiteId): SiteDao = {
-    new CachingSiteDao(siteId, _dbDaoFactory)
+  def newSiteDao(siteId: SiteId): CachingSiteDao = {
+    new CachingSiteDao(siteId, _dbDaoFactory, cache)
   }
 
 }
 
 
-class CachingSiteDao(val siteId: SiteId, val dbDaoFactory: DbDaoFactory)
+class CachingSiteDao(
+  val siteId: SiteId,
+  val dbDaoFactory: DbDaoFactory,
+  val ehcache: net.sf.ehcache.Ehcache)
   extends SiteDao
   with CachingDao
   with CachingAssetBundleDao

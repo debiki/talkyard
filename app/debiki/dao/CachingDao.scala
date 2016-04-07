@@ -89,32 +89,26 @@ object CachingDao {
   private val IgnoreSiteCacheVersion = 0
   private val FirstSiteCacheVersion = 1
 
-  /** An EhCache instance. Right now, all caches use the same instance, could change that.
-    * However doesn't matter? Won't have 2 applications running in the same JVM.
-    * I suppose/guess it's good w.r.t. performance to have only 1 EhCache instance?
-    * So might as well reuse Play's?
-    *
-    * In class EhCachePlugin in play/api/cache/Cache.scala you'll see how Play
-    * creates its per-application cache, namely exactly like below.
-    */
-  private lazy val ehcache: net.sf.ehcache.Ehcache = {
-    // Ensure Play has created its default cache:
-    import play.api.Play.current
-    play.api.cache.Cache.get("dummy")
-    // Then fetch and reuse that default cache:
-    val playCache = net.sf.ehcache.CacheManager.create().getCache("play")
-    // Results in "java.lang.NoSuchMethodError: net.sf.ehcache.Ehcache.getStatistics":
-    //com.codahale.metrics.ehcache.InstrumentedEhcache.instrument(Globals.metricRegistry, playCache)
-    playCache
-  }
+}
 
-  def putInCache[A](key: CacheKey, value: CacheValue[A], expiration: Int = 0) {
-    ehcache.put(cacheElem(key, value, expiration))
-  }
 
-  def removeFromCache(key: CacheKey) {
-    ehcache.remove(key)
-  }
+
+/**
+  * Functions that lookup, add and remove stuff to/from a cache.
+  *
+  * Cache keys must contain a '|' (otherwise CachingDao believes you've
+  * accidentally passed in a raw string, not yet converted to a cache key).
+  * Use e.g. this key format:  (tenant-id)|(page-id)|(cache-entry-type).
+  */
+trait CachingDao extends CacheEvents {
+  self: {
+    def siteId: SiteId
+    def ehcache: net.sf.ehcache.Ehcache
+  } =>
+
+  private var _thisSitesCacheVersionNow: Option[Long] = None
+
+
 
   private def cacheElem(key: Any, value: CacheValue[_], expiration: Int = 0) = {
     val elem = new net.sf.ehcache.Element(key, value.value)
@@ -126,22 +120,6 @@ object CachingDao {
     elem.setTimeToLive(expiration)
     elem
   }
-
-}
-
-
-
-/**
- * Functions that lookup, add and remove stuff to/from a cache.
- *
- * Cache keys must contain a '|' (otherwise CachingDao believes you've
- * accidentally passed in a raw string, not yet converted to a cache key).
- * Use e.g. this key format:  (tenant-id)|(page-id)|(cache-entry-type).
- */
-trait CachingDao extends CacheEvents {
-  self: { def siteId: SiteId } =>
-
-  private var _thisSitesCacheVersionNow: Option[Long] = None
 
 
   /** Remembers the current site's cache version, so we don't need to look it up in the cache.
@@ -238,7 +216,7 @@ trait CachingDao extends CacheEvents {
 
 
   def putInCache[A](key: CacheKey, value: CacheValue[A], expiration: Int = 0) {
-    CachingDao.putInCache(key, value, expiration)
+    ehcache.put(cacheElem(key, value, expiration))
   }
 
 
@@ -259,7 +237,7 @@ trait CachingDao extends CacheEvents {
 
 
   def removeFromCache(key: CacheKey) {
-    CachingDao.removeFromCache(key)
+    ehcache.remove(key)
   }
 
 

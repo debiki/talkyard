@@ -26,7 +26,7 @@ import org.scalatestplus.play.OneAppPerSuite
 import play.api.test.FakeApplication
 
 
-class DaoAppSuite(disableScripts: Boolean = false, disableBackgroundJobs: Boolean = false)
+class DaoAppSuite(disableScripts: Boolean = true, disableBackgroundJobs: Boolean = true)
   extends FreeSpec with MustMatchers with OneAppPerSuite {
 
   implicit override lazy val app = FakeApplication(

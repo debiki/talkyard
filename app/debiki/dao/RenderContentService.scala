@@ -35,7 +35,7 @@ object RenderContentService {
 
   /** PERFORMANCE COULD create one thread/actor per processor instead.
     */
-  def startNewActor(actorSystem: ActorSystem, daoFactory: SiteDaoFactory): ActorRef = {
+  def startNewActor(actorSystem: ActorSystem, daoFactory: CachingSiteDaoFactory): ActorRef = {
     actorSystem.actorOf(
       Props(new RenderContentActor(daoFactory)),
       name = s"RenderContentActor")
@@ -50,7 +50,7 @@ object RenderContentService {
   * for that page. Otherwise, it continuously keeps looking for any out-of-date cached
   * content html and makes them up-to-date.
   */
-class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
+class RenderContentActor(val daoFactory: CachingSiteDaoFactory) extends Actor {
 
   override def receive: Receive = {
     case sitePageId: SitePageId =>
@@ -139,7 +139,7 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
     p.Logger.debug(message)
 
     // Remove cached whole-page-html, so we'll generate a new page with the new content.
-    CachingDao.removeFromCache(
+    dao.removeFromCache(
       CachingRenderedPageHtmlDao.renderedPageKey(sitePageId))
   }
 

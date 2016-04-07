@@ -336,7 +336,20 @@ class Globals {
       new Rdb(readOnlyDataSource, readWriteDataSource), ScalaBasedMigrations, Akka.system,
       anyFullTextSearchDbPath, Play.isTest, fastStartSkipSearch = fastStartSkipSearch)
 
-    val siteDaoFactory = new CachingSiteDaoFactory(dbDaoFactory)
+    // In class EhCachePlugin in play/api/cache/Cache.scala you'll see how Play
+    // creates its per-application cache, namely exactly like below.
+    val ehcache: net.sf.ehcache.Ehcache = {
+      // Ensure Play has created its default cache:
+      import play.api.Play.current
+      play.api.cache.Cache.get("dummy")
+      // Then fetch and reuse that default cache:
+      val playCache = net.sf.ehcache.CacheManager.create().getCache("play")
+      // Results in "java.lang.NoSuchMethodError: net.sf.ehcache.Ehcache.getStatistics":
+      //com.codahale.metrics.ehcache.InstrumentedEhcache.instrument(Globals.metricRegistry, playCache)
+      playCache
+    }
+
+    val siteDaoFactory = new CachingSiteDaoFactory(dbDaoFactory, ehcache)
 
     val mailerActorRef = Mailer.startNewActor(Akka.system, siteDaoFactory)
 
@@ -349,7 +362,7 @@ class Globals {
     val antiSpam = new AntiSpam()
     antiSpam.start()
 
-    def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory) // [rename] to newSystemDao()?
+    def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory, ehcache) // [rename] to newSystemDao()?
 
     private def fastStartSkipSearch =
       Play.configuration.getBoolean("crazyFastStartSkipSearch") getOrElse false

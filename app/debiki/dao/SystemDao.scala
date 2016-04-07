@@ -105,7 +105,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory) {
  *
  * Thread safe.
  */
-class CachingSystemDao(dbDaoFactory: DbDaoFactory)
+class CachingSystemDao(dbDaoFactory: DbDaoFactory, val ehcache: net.sf.ehcache.Ehcache)
   extends SystemDao(dbDaoFactory) with CachingDao {
 
   def siteId = "?"
