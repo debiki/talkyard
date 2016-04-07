@@ -509,6 +509,7 @@ interface Blocks {
   reason?: string;
   blockedForever?: boolean;
   blockedTillMs?: number;
+  blocks?: Block[];
   ipBlock?: Block;
   browserBlock?: Block;
 }

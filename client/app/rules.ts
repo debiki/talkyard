@@ -167,4 +167,27 @@ function isWikiPost(postOrPostType: any) {
 }
 
 
+function trustLevel_toString(trustLevel: TrustLevel): string {
+  switch (trustLevel) {
+    case TrustLevel.New: return "New";
+    case TrustLevel.Basic: return "Basic";
+    case TrustLevel.Member: return "Regular";
+    case TrustLevel.Regular: return "Long time";
+    case TrustLevel.CoreMember: return "Core";
+    default: debiki2.die('EsE5PYK25')
+  }
+}
+
+
+function threatLevel_toString(threatLevel: ThreatLevel): string {
+  switch (threatLevel) {
+    case ThreatLevel.HopefullySafe: return "Allow";
+    case ThreatLevel.MildThreat: return "Review after";
+    case ThreatLevel.ModerateThreat: return "Review before";
+    case ThreatLevel.SevereThreat: return "Block completely";
+    default: debiki2.die('EsE5PYK25')
+  }
+}
+
+
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

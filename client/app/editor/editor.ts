@@ -419,6 +419,7 @@ export var Editor = createComponent({
       messageToUserIds: [userId],
       text: '',
     });
+    this.loadGuidelines(WritingWhat.NewPage, null, PageRole.Message);
     this.showAndFadeOutBackdrop();
   },
 

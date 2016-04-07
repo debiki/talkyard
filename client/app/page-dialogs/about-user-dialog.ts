@@ -102,7 +102,7 @@ var AboutUserDialog = createComponent({
           if (block.browserIdCookie) {
             browserBlock = block;
           }
-        })
+        });
         this.setState({
           user: user,
           blocks: {
@@ -222,7 +222,7 @@ var AboutGuest = createComponent({
       else {
         blockButton =
             Button({ title: "Prevent this guest from posting more comments",
-                onClick: this.openBlockGuestModal }, 'Block This Guest');
+                onClick: this.openBlockGuestModal }, "Block or surveil");
       }
       blockModal = BlockGuestDialog({ postId: postId, reload: this.props.reload,
           show: this.state.isBlockGuestModalOpen, close: this.closeBlockGuestModal });
@@ -237,11 +237,12 @@ var AboutGuest = createComponent({
       else {
         text += 'until ' + moment(blocks.blockedTillMs).format('YYYY-MM-DD HH:mm');
       }
-      text += ". IP threat level: " + blocks.ipBlock.threatLevel;
-      text += ". Guest id cookie threat level: " + blocks.browserBlock.threatLevel;
       blockedInfo =
         r.p({ className: 'dw-guest-blocked' },
-          text, r.br());
+          text, r.br(),
+          "IP block level: " + threatLevel_toString(blocks.ipBlock.threatLevel), r.br(),
+          "Guest id cookie block level: " +
+              threatLevel_toString(blocks.browserBlock.threatLevel), r.br());
     }
 
     var anyCannotBeContactedMessage = guest.isEmailUnknown
@@ -252,7 +253,7 @@ var AboutGuest = createComponent({
       r.div({ className: 'clearfix' },
         blockModal,
         r.div({ className: 'dw-about-user-actions' },
-          Button({ onClick: this.props.viewUserProfile }, 'View Other Comments'),
+          Button({ onClick: this.props.viewUserProfile }, 'View other comments'),
           blockButton),
         r.p({},
           'Name: ' + guest.fullName, r.br(),
@@ -287,33 +288,34 @@ var BlockGuestDialog = createComponent({
   render: function() {
     return (
       Modal({ show: this.props.show, onHide: this.props.close },
-        ModalHeader({}, ModalTitle({}, "Block Guest")),
+        ModalHeader({}, ModalTitle({}, "Block or surveil guest")),
         ModalBody({},
           r.div({ className: 'form-group' },
             Button({ onClick: () => this.setThreatLevel(ThreatLevel.MildThreat) },
               "Review comments after"),
-            r.div({ className: 'help-block' }, "Replies and topics by this user will be shown " +
-              "directly, but also added to the moderation queue for review.")),
+            r.div({ className: 'help-block' }, "Replies and topics by this guest will be shown " +
+              "directly — and they will be added to the moderation queue for review afterwards.")),
 
           r.div({ className: 'form-group' },
             Button({ onClick: () => this.setThreatLevel(ThreatLevel.ModerateThreat) },
               "Review comments before"),
-            r.div({ className: 'help-block' }, "Replies and topics by this user won't be shown " +
-              "until they've been approved by staff.")),
+            r.div({ className: 'help-block' }, "Replies and topics by this guest won't " +
+              "be shown until they've been approved by staff. Choose this, if the guest " +
+              "has post rather unpolite things that you want to edit or delete before " +
+              "anyone else sees it.")),
 
           r.div({ className: 'form-group' },
             Button({ onClick: () => this.setThreatLevel(ThreatLevel.SevereThreat) },
               "Block completely"),
-            r.div({ className: 'help-block' }, "Prevents this user from posting any comments, " +
-              "or casting any votes. But the user can, however, still authenticate " +
-              "himself / herself and sign up as a real user."))
+            r.div({ className: 'help-block' }, "Prevents this guest from posting any comments, " +
+              "or casting any votes. But the guest can, however, still sign up and become " +
+              "a real member."))
           /*
           Input({ type: 'number', label: 'Block for how many days?', ref: 'daysInput' })
           Input({ type: 'text', label: 'Why block this guest? (Optional)',
               help: "This will be visible to everyone. Keep it short.", ref: 'reasonInput' })),
              */ ),
       ModalFooter({},
-          Button({ onClick: () => this.setThreatLevel(ThreatLevel.SevereThreat) }, 'Block'),
           Button({ onClick: this.props.close }, 'Cancel'))));
   }
 });

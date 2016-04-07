@@ -42,14 +42,11 @@ object EditController extends mvc.Controller {
         and staff members can do this."""
 
 
-  def loadDraftAndGuidelines(writingWhat: String, categoryId: String, pageRole: String) =
+  def loadDraftAndGuidelines(writingWhat: String, categoryId: Option[Int], pageRole: String) =
         GetAction { request =>
 
     val writeWhat = writingWhat.toIntOption.flatMap(WriteWhat.fromInt) getOrElse throwBadArgument(
       "DwE4P6CK0", "writingWhat")
-
-    val categoryIdInt = categoryId.toIntOption getOrElse throwBadArgument(
-      "DwE5PFKQ2", "categoryId")
 
     val thePageRole = pageRole.toIntOption.flatMap(PageRole.fromInt) getOrElse throwBadArgument(
       "DwE6PYK8", "pageRole")
@@ -64,7 +61,10 @@ object EditController extends mvc.Controller {
         else Some(ReplyGuidelines)
       case WriteWhat.OriginalPost =>
         if (thePageRole == PageRole.Critique) Some(AskForCritiqueGuidelines) // [plugin]
-        else None // Some(OriginalPostGuidelines)
+        else {
+          if (thePageRole == PageRole.Message) Some(DirectMessageGuidelines)
+          else None // Some(OriginalPostGuidelines)
+        }
     }
 
     OkSafeJson(Json.obj(
@@ -222,8 +222,9 @@ object EditController extends mvc.Controller {
     |"""
 
   val DirectMessageGuidelines = i"""
-    |<p>The direct messages you're about to write, is not totally private.
-    |For example, the forum staff might review offensive messages.
+    |<p>Messages to other users are <b>not totally private</b> —
+    |the forum staff might review any offensive messages (if the recipient
+    |reports the message).
     |</p>
     |"""
 

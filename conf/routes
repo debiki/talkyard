@@ -140,7 +140,7 @@ POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/chat                   controllers.ReplyController.handleChatMessage
 POST  /-/vote                   controllers.VoteController.handleVotes
 POST  /-/flag                   controllers.Application.flag
-GET   /-/load-draft-and-guidelines controllers.EditController.loadDraftAndGuidelines(writingWhat, categoryId, pageRole)
+GET   /-/load-draft-and-guidelines controllers.EditController.loadDraftAndGuidelines(writingWhat, categoryId: Option[Int], pageRole)
 GET   /-/edit                   controllers.EditController.loadCurrentText(pageId, postId)
 POST  /-/edit                   controllers.EditController.edit
 POST  /-/edit-title-save-settings controllers.PageTitleSettingsController.editTitleSaveSettings

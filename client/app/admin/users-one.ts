@@ -147,12 +147,14 @@ export var AdminUserPageComponent = React.createClass(<any> {
         : r.p({}, 'Moderator: ' + user.isModerator, ' ', toggleModeratorButton);
 
     var trustLevelText = user.lockedTrustLevel
-      ? "Locked at: " + user.lockedTrustLevel + ", would otherwise have been: " + user.trustLevel
-      : '' + user.trustLevel;
+        ? "Locked at: " + trustLevel_toString(user.lockedTrustLevel) + " member, " +
+            "would otherwise have been: " + trustLevel_toString(user.trustLevel) + " member"
+        : '' + trustLevel_toString(user.trustLevel) + " member";
 
     var threatLevelText = user.lockedThreatLevel
-        ? "Locked at: " + user.lockedThreatLevel + ", would otherwise have been: " + user.threatLevel
-        : '' + user.threatLevel;
+        ? "Locked at: " + threatLevel_toString(user.lockedThreatLevel) +
+            ", would otherwise have been: " + threatLevel_toString(user.threatLevel)
+        : threatLevel_toString(user.threatLevel);
 
     var threatButton = Button({ onClick: () => openThreatLevelDialog(user, this.reloadUser) },
       "Change");
@@ -271,9 +273,9 @@ var MemberThreatLevelDialog = createComponent({
     var user: CompleteUser = this.state.user;
 
     var threatLevelText = user.lockedThreatLevel
-      ? "Threat level locked at: " + user.lockedThreatLevel + ", would otherwise have been: " +
-          user.threatLevel
-      : "Threat level: " + user.threatLevel;
+      ? "Threat level locked at: " + threatLevel_toString(user.lockedThreatLevel) +
+          ", would otherwise have been: " + threatLevel_toString(user.threatLevel)
+      : "Threat level: " + threatLevel_toString(user.threatLevel);
 
     var actionContent = user.lockedThreatLevel
         ? Button({ onClick: () => this.lockThreatLevelAt(null),
