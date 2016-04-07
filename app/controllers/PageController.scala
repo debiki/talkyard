@@ -67,8 +67,7 @@ object PageController extends mvc.Controller {
       }
 
       val pagePath = request.dao.createPage(pageRole, pageStatus, anyCategoryId, anyFolder,
-        anySlug, titleTextAndHtml, bodyTextAndHtml, showId, authorId = request.theUserId,
-        request.theBrowserIdData)
+        anySlug, titleTextAndHtml, bodyTextAndHtml, showId, request.who)
 
       OkSafeJson(Json.obj("newPageId" -> pagePath.pageId.getOrDie("DwE8GIK9")))
     }

@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
 import debiki.ReactRenderer
+import io.efdi.server.Who
 import scala.collection.{immutable, mutable}
 import ForumDao._
 
@@ -36,8 +37,7 @@ trait ForumDao {
   self: SiteDao =>
 
 
-  def createForum(title: String, folder: String, creatorId: UserId,
-        browserIdData: BrowserIdData): CreateForumResult = {
+  def createForum(title: String, folder: String, byWho: Who): CreateForumResult = {
     val titleHtmlSanitized = commonmarkRenderer.sanitizeHtml(title)
     readWriteTransaction { transaction =>
 
@@ -53,12 +53,12 @@ trait ForumDao {
         titleSource = title, titleHtmlSanitized = titleHtmlSanitized,
         bodySource = introText.source, bodyHtmlSanitized = introText.html,
         pinOrder = None, pinWhere = None,
-        authorId = creatorId, browserIdData, transaction)
+        byWho, transaction)
 
       val forumPageId = forumPagePath.pageId getOrDie "DwE5KPFW2"
 
       val partialResult = createDefaultCategoriesAndTopics(
-        forumPageId, rootCategoryId, browserIdData, transaction)
+        forumPageId, rootCategoryId, byWho.browserIdData, transaction)
 
       // COULD create audit log entries.
 
@@ -131,8 +131,7 @@ trait ForumDao {
       bodyHtmlSanitized = welcomeTopic.html,
       pinOrder = Some(WelcomeToForumTopicPinOrder),
       pinWhere = Some(PinPageWhere.Globally),
-      authorId = SystemUserId,
-      browserIdData,
+      Who(SystemUserId, browserIdData),
       transaction)
 
     CreateForumResult(null, uncategorizedCategoryId)

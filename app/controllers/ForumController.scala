@@ -45,8 +45,7 @@ object ForumController extends mvc.Controller {
   def createForum = StaffPostJsonAction(maxLength = 200) { request =>
     val title = (request.body \ "title").as[String]
     val folder = (request.body \ "folder").as[String]
-    val pagePath = request.dao.createForum(title, folder = folder,
-      creatorId = request.theUserId, request.theBrowserIdData).pagePath
+    val pagePath = request.dao.createForum(title, folder = folder, request.who).pagePath
     OkSafeJson(JsString(pagePath.value))
   }
 
@@ -102,11 +101,9 @@ object ForumController extends mvc.Controller {
 
     val category = categoryData.anyId match {
       case Some(categoryId) =>
-        request.dao.editCategory(categoryData, editorId = request.theUserId,
-          request.theBrowserIdData)
+        request.dao.editCategory(categoryData, request.who)
       case None =>
-        val (category, _) = request.dao.createCategory(
-          categoryData, creatorId = request.theUserId, request.theBrowserIdData)
+        val (category, _) = request.dao.createCategory(categoryData, request.who)
         category
     }
 

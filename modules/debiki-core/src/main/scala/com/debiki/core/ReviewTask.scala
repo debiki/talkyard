@@ -133,7 +133,7 @@ object ReviewTaskResolution {
     require(value != 0, "EsE5JUK020")
     require(!(resolution.isFine && resolution.isHarmful), "EsE8YKJF2")
     // for now: (change later when needed)
-    require(value == Fine.value, "EsE7YKP02")
+    require(value == Fine.value, s"Bad value: $value [EsE7YKP02]")
   }
 }
 

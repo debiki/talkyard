@@ -105,6 +105,8 @@ GET   /-/list-complete-users    controllers.UserController.listCompleteUsers(whi
 GET   /-/load-complete-user     controllers.UserController.loadCompleteUser(userId)
 POST  /-/approve-reject-user    controllers.UserController.approveRejectUser
 POST  /-/set-is-admin-or-moderator controllers.UserController.setIsAdminOrModerator
+POST  /-/lock-threat-level      controllers.UserController.lockThreatLevel
+POST  /-/unlock-threat-level    controllers.UserController.unlockThreatLevel
 POST  /-/suspend-user           controllers.UserController.suspendUser
 POST  /-/unsuspend-user         controllers.UserController.unsuspendUser
 POST  /-/block-guest            controllers.UserController.blockGuest

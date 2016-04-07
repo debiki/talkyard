@@ -21,6 +21,7 @@ import com.debiki.core._
 import debiki.DebikiHttp.{throwNotFound, throwForbidden}
 import java.{util => ju}
 import debiki.{BrowserId, SidStatus, DebikiSecurity}
+import io.efdi.server.{UserAndLevels, Who}
 import scala.collection.immutable
 import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs
@@ -133,6 +134,23 @@ trait UserDao {
   }
 
 
+  def lockMemberThreatLevel(memberId: UserId, newThreatLevel: Option[ThreatLevel]) {
+    readWriteTransaction { transaction =>
+      val member: CompleteUser = transaction.loadTheCompleteUser(memberId)
+      val memberAfter = member.copy(lockedThreatLevel = newThreatLevel)
+      transaction.updateCompleteUser(memberAfter)
+    }
+  }
+
+
+  def lockGuestThreatLevel(guestId: UserId, newThreatLevel: Option[ThreatLevel]) {
+    readWriteTransaction { transaction =>
+      val guest = transaction.loadTheGuest(guestId)
+      ??? // lock both ips and guest cookie
+    }
+  }
+
+
   def suspendUser(userId: UserId, numDays: Int, reason: String, suspendedById: UserId) {
     require(numDays >= 1, "DwE4PKF8")
     readWriteTransaction { transaction =>
@@ -163,36 +181,53 @@ trait UserDao {
   }
 
 
-  def blockGuest(postId: UniquePostId, numDays: Int, blockerId: UserId) {
+  def blockGuest(postId: UniquePostId, numDays: Int, threatLevel: ThreatLevel, blockerId: UserId) {
     readWriteTransaction { transaction =>
       val auditLogEntry: AuditLogEntry = transaction.loadCreatePostAuditLogEntry(postId) getOrElse {
-        throwForbidden("DwE2WKF5", "Cannot block user: No audit log entry, IP unknown")
+        throwForbidden("DwE2WKF5", "Cannot block user: No audit log entry, so no ip and id cookie")
       }
 
       if (!User.isGuestId(auditLogEntry.doerId))
         throwForbidden("DwE4WKQ2", "Cannot block authenticated users. Suspend them instead")
 
-      val blockedTill =
-        Some(new ju.Date(transaction.currentTime.getTime + MillisPerDay * numDays))
+      // Hardcode 2 & 6 weeks for now. Asking the user to choose # days –> too much for him/her
+      // to think about. Block the ip for a little bit shorter time, because might affect
+      // "innocent" people.
+      val ipBlockedTill =
+        Some(new ju.Date(transaction.currentTime.getTime + OneWeekInMillis * 2))
+
+      val cookieBlockedTill =
+        Some(new ju.Date(transaction.currentTime.getTime + OneWeekInMillis * 6))
 
       val ipBlock = Block(
+        threatLevel = threatLevel,
         ip = Some(auditLogEntry.browserIdData.inetAddress),
-        browserIdCookie = None,
+        browserIdCookie = Some(auditLogEntry.browserIdData.idCookie),
         blockedById = blockerId,
         blockedAt = transaction.currentTime,
-        blockedTill = blockedTill)
+        blockedTill = ipBlockedTill)
 
       val browserIdCookieBlock = Block(
+        threatLevel = threatLevel,
         ip = None,
         browserIdCookie = Some(auditLogEntry.browserIdData.idCookie),
         blockedById = blockerId,
         blockedAt = transaction.currentTime,
-        blockedTill = blockedTill)
+        blockedTill = cookieBlockedTill)
 
-      // COULD catch dupl key error when inserting IP block, and continue anyway
-      // with inserting browser id cookie block.
+      // COULD catch dupl key error when inserting IP block, and update it instead, if new
+      // threat level is *worse* [6YF42]. Aand continue anyway with inserting browser id
+      // cookie block.
       transaction.insertBlock(ipBlock)
       transaction.insertBlock(browserIdCookieBlock)
+
+      // Also set the user's threat level, if the new level is worse.
+      transaction.loadGuest(auditLogEntry.doerId) foreach { guest =>
+        if (!guest.lockedThreatLevel.exists(_.toInt > threatLevel.toInt)) {
+          transaction.updateGuest(
+            guest.copy(lockedThreatLevel = Some(threatLevel)))
+        }
+      }
     }
   }
 
@@ -204,6 +239,11 @@ trait UserDao {
       }
       transaction.unblockIp(auditLogEntry.browserIdData.inetAddress)
       transaction.unblockBrowser(auditLogEntry.browserIdData.idCookie)
+      transaction.loadGuest(auditLogEntry.doerId) foreach { guest =>
+        if (guest.lockedThreatLevel.isDefined) {
+          transaction.updateGuest(guest.copy(lockedThreatLevel = None))
+        }
+      }
     }
   }
 
@@ -223,6 +263,26 @@ trait UserDao {
     readOnlyTransactionNotSerializable { transaction =>
       transaction.loadBlocks(ip = ip, browserIdCookie = browserIdCookie)
     }
+  }
+
+
+  def loadUserAndLevels(who: Who, transaction: SiteTransaction) = {
+    val user = transaction.loadTheUser(who.id)
+    val trustLevel = user match {
+      case member: Member => member.effectiveTrustLevel
+      case _: Guest => TrustLevel.New
+    }
+    val threatLevel = user match {
+      case member: Member => member.effectiveThreatLevel
+      case guest: Guest =>
+        val blocks = transaction.loadBlocks(ip = who.ip, browserIdCookie = who.idCookie)
+        val baseThreatLevel = guest.lockedThreatLevel getOrElse ThreatLevel.HopefullySafe
+        val levelInt = blocks.foldLeft(baseThreatLevel.toInt) { (maxSoFar, block) =>
+          math.max(maxSoFar, block.threatLevel.toInt)
+        }
+        ThreatLevel.fromInt(levelInt) getOrDie "EsE8GY25"
+    }
+    UserAndLevels(user, trustLevel, threatLevel)
   }
 
 
@@ -285,9 +345,9 @@ trait UserDao {
   }
 
 
-  def loginAsGuest(loginAttempt: GuestLoginAttempt): User = {
+  def loginAsGuest(loginAttempt: GuestLoginAttempt): Guest = {
     readWriteTransaction { transaction =>
-      transaction.loginAsGuest(loginAttempt).user
+      transaction.loginAsGuest(loginAttempt).guest
     }
   }
 
@@ -558,10 +618,9 @@ trait UserDao {
 
     val nowMillis = System.currentTimeMillis
     for (block <- blocks) {
-      if (block.isActiveAt(nowMillis)) {
-        throwForbidden(
-          "DwE403BK01", "Not allowed. Please authenticate yourself by creating a real account.")
-      }
+      if (block.isActiveAt(nowMillis) && block.threatLevel == ThreatLevel.SevereThreat)
+        throwForbidden("DwE403BK01", o"""Not allowed. Please sign up with a username
+            and password, or login with Google or Facebook, for example.""")
     }
   }
 
@@ -591,7 +650,7 @@ trait CachingUserDao extends UserDao {
   }
 
 
-  override def loginAsGuest(loginAttempt: GuestLoginAttempt): User = {
+  override def loginAsGuest(loginAttempt: GuestLoginAttempt): Guest = {
     val user = super.loginAsGuest(loginAttempt)
     putInCache(
       key(user.id),

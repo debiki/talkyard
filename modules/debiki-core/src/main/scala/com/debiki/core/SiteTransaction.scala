@@ -229,6 +229,10 @@ trait SiteTransaction {
 
   def loadUser(userId: UserId): Option[User]
   def loadTheUser(userId: UserId) = loadUser(userId).getOrElse(throw UserNotFoundException(userId))
+  def loadGuest(userId: UserId): Option[Guest] = {
+    dieIf(userId > User.MaxGuestId, "EsE8FY032")
+    loadUser(userId).map(_.asInstanceOf[Guest])
+  }
   def loadTheGuest(userId: UserId): Guest = {
     dieIf(userId > User.MaxGuestId, "EsE6YKWU2")
     loadTheUser(userId).asInstanceOf[Guest]

@@ -22,6 +22,7 @@ import debiki.DebikiHttp._
 import debiki._
 import debiki.dao.SiteDao
 import java.{util => ju}
+import io.efdi.server.Who
 import play.api.mvc
 import play.api.mvc.{Action => _, _}
 
@@ -49,6 +50,8 @@ abstract class DebikiRequest[A] {
   def domain = request.domain
 
   def siteSettings: EffectiveSettings = dao.loadWholeSiteSettings()
+
+  def who = Who(theUserId, theBrowserIdData)
 
   def theBrowserIdData = BrowserIdData(ip = ip, idCookie = browserId.cookieValue,
     fingerprint = 0) // skip for now

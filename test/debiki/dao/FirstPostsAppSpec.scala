@@ -19,77 +19,16 @@ package debiki.dao
 
 import com.debiki.core._
 import debiki.DebikiHttp.ResultException
-import debiki.{Globals, TextAndHtml}
-import org.scalatest.{BeforeAndAfterAll, MustMatchers, FreeSpec}
+import debiki.TextAndHtml
+import io.efdi.server.Who
 
 
-class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgroundJobs = true) {
+class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
 
-  var nameCounter = 0
-
-  class nestedPostsSuite extends FreeSpec with MustMatchers with BeforeAndAfterAll {
-    var thePageId: PageId = null
-    lazy val theAdmin: User =  createPasswordAdmin(s"aaddmm_$nextNameNr", dao)
-    lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
-    lazy val categoryId: CategoryId =
-      dao.createForum("Forum", s"/forum-$nextNameNr/",
-        theAdmin.id, browserIdData).uncategorizedCategoryId
-
-    def nextNameNr = { nameCounter += 1; nameCounter }
-
-    def newAdminAndPage() = {
-      thePageId = dao.createPage(PageRole.Discussion, PageStatus.Published,
-        anyCategoryId = Some(categoryId), anyFolder = Some("/"), anySlug = Some(""),
-        titleTextAndHtml = TextAndHtml.testTitle("title_62952"),
-        bodyTextAndHtml = TextAndHtml.testBody("discussion_230593"),
-        showId = true, authorId = theAdmin.id, browserIdData = browserIdData).thePageId
-    }
-
-    def testAdminsRepliesApproved(adminId: UserId, pageId: PageId) {
-      for (i <- 1 to 10) {
-        val result = dao.insertReply(TextAndHtml.testBody(s"reply_9032372, i = $i"), pageId,
-          replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, authorId = adminId,
-          browserIdData = browserIdData)
-        result.post.isCurrentVersionApproved mustBe true
-        result.post.approvedById mustBe Some(adminId)
-      }
-    }
-
-    def reply(memberId: UserId, text: String): InsertPostResult = {
-      dao.insertReply(TextAndHtml.testBody(text), thePageId,
-        replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal, authorId = memberId,
-        browserIdData = browserIdData)
-    }
-
-    def approve(reviewTask: ReviewTask): Unit = {
-      dao.completeReviewTask(reviewTask.id, theAdmin.id, anyRevNr = Some(FirstRevisionNr),
-        ReviewAction.Accept, browserIdData)
-    }
-
-    def checkReviewTaskGenerated(post: Post) {
-      dao.readOnlyTransaction { transaction =>
-        val task = transaction.loadPendingPostReviewTask(post.uniqueId) getOrElse {
-          fail("No review task generated for post with text: " + post.currentSource)
-        }
-        task.causedById mustBe post.createdById
-        task.reasons must contain(ReviewReason.NewPost)
-        task.reasons must contain(ReviewReason.IsByNewUser)
-        task.createdAtRevNr mustBe Some(FirstRevisionNr)
-        task.postId mustBe Some(post.uniqueId)
-        task.postNr mustBe Some(post.nr)
-      }
-    }
-
-    def checkNoReviewTask(post: Post) {
-      dao.readOnlyTransaction { transaction =>
-        transaction.loadPendingPostReviewTask(post.uniqueId) mustBe None
-      }
-    }
-  }
-
+  val reviewReasons = Seq(ReviewReason.NewPost, ReviewReason.IsByNewUser)
 
   override def nestedSuites = Vector(
-    new nestedPostsSuite {
+    new NestedPostsSuite {
       "PostsDao will, by default:" - {
         "approve replies by a new admin" in {
           newAdminAndPage()
@@ -104,7 +43,7 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
       }
     },
 
-    new nestedPostsSuite {
+    new NestedPostsSuite {
       override def beforeAll {
         dao.saveSiteSettings(SettingsToSave(
           orgFullName = Some(Some("Test Org Name")),
@@ -125,7 +64,7 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           info("allow one")
           val firstReplyResult = reply(member.id, "reply_863439_a")
           firstReplyResult.post.isSomeVersionApproved mustBe false
-          checkReviewTaskGenerated(firstReplyResult.post)
+          checkReviewTaskGenerated(firstReplyResult.post, reviewReasons)
 
           info("then reject")
           intercept[ResultException] {
@@ -138,7 +77,7 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           secondReplyResult.post.isSomeVersionApproved mustBe false
 
           info("but generate no review task, because Approve + Notify = 1 + 0 = only 1st reviewed")
-          checkReviewTaskGenerated(secondReplyResult.post)
+          checkReviewTaskGenerated(secondReplyResult.post, reviewReasons)
 
           info("then reject again")
           intercept[ResultException] {
@@ -175,7 +114,7 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
             numFirstPostsToApprove = Some(Some(5))))
           val fifthReplyResult = reply(member.id, "reply_863439_h")
           fifthReplyResult.post.isSomeVersionApproved mustBe false
-          checkReviewTaskGenerated(fifthReplyResult.post)
+          checkReviewTaskGenerated(fifthReplyResult.post, reviewReasons)
 
           info("then reject")
           intercept[ResultException] {
@@ -186,7 +125,7 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
       }
     },
 
-    new nestedPostsSuite {
+    new NestedPostsSuite {
       override def beforeAll {
         dao.saveSiteSettings(SettingsToSave(
           numFirstPostsToAllow = Some(Some(5)),
@@ -218,11 +157,11 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
 
           // Only the 3 first because Approve + Notify = 3 + 0 = the three first.
           info("review tasks for 1,2,3,4,5")
-          checkReviewTaskGenerated(firstReplyResult.post)
-          checkReviewTaskGenerated(secondReplyResult.post)
-          checkReviewTaskGenerated(thirdReplyResult.post)
-          checkReviewTaskGenerated(fourthReplyResult.post)
-          checkReviewTaskGenerated(fifthReplyResult.post)
+          checkReviewTaskGenerated(firstReplyResult.post, reviewReasons)
+          checkReviewTaskGenerated(secondReplyResult.post, reviewReasons)
+          checkReviewTaskGenerated(thirdReplyResult.post, reviewReasons)
+          checkReviewTaskGenerated(fourthReplyResult.post, reviewReasons)
+          checkReviewTaskGenerated(fifthReplyResult.post, reviewReasons)
 
           info("then reject")
           intercept[ResultException] {
@@ -280,7 +219,7 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
       }
     },
 
-    new nestedPostsSuite {
+    new NestedPostsSuite {
       override def beforeAll {
         dao.saveSiteSettings(SettingsToSave(
           numFirstPostsToAllow = Some(Some(0)),
@@ -308,15 +247,15 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           fourthReplyResult.post.approvedById mustBe Some(SystemUserId)
 
           info("generate review tasks for 1,2 but not 3,4")
-          checkReviewTaskGenerated(firstReplyResult.post)
-          checkReviewTaskGenerated(secondReplyResult.post)
+          checkReviewTaskGenerated(firstReplyResult.post, reviewReasons)
+          checkReviewTaskGenerated(secondReplyResult.post, reviewReasons)
           checkNoReviewTask(thirdReplyResult.post)
           checkNoReviewTask(fourthReplyResult.post)
         }
       }
     },
 
-    new nestedPostsSuite {
+    new NestedPostsSuite {
       override def beforeAll {
         dao.saveSiteSettings(SettingsToSave(
           numFirstPostsToAllow = Some(Some(3)),
@@ -337,9 +276,9 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
           thirdReplyResult.post.isSomeVersionApproved mustBe false
 
           info("generate review tasks for 1,2 but not 3")
-          checkReviewTaskGenerated(firstReplyResult.post)
-          checkReviewTaskGenerated(secondReplyResult.post)
-          checkReviewTaskGenerated(thirdReplyResult.post)
+          checkReviewTaskGenerated(firstReplyResult.post, reviewReasons)
+          checkReviewTaskGenerated(secondReplyResult.post, reviewReasons)
+          checkReviewTaskGenerated(thirdReplyResult.post, reviewReasons)
 
           info("reject reply nr 4")
           intercept[ResultException] {
@@ -363,7 +302,7 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
       }
     },
 
-    new nestedPostsSuite {
+    new NestedPostsSuite {
       override def beforeAll {
         dao.saveSiteSettings(SettingsToSave(
           numFirstPostsToAllow = Some(Some(2)),
@@ -383,27 +322,27 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
 
           info("insert a chat messages, it gets auto-approved")
           val firstChat = dao.insertChatMessage(TextAndHtml.testBody("chat_740331_a"), chatPageId,
-            member.id, browserIdData).post
+            Who(member.id, browserIdData)).post
           firstChat.approvedById mustBe Some(SystemUserId)
 
           info("can still insert a reply")
           val firstReplyResult = reply(member.id, "reply_740331_a")
           firstReplyResult.post.isSomeVersionApproved mustBe false
-          checkReviewTaskGenerated(firstReplyResult.post)
+          checkReviewTaskGenerated(firstReplyResult.post, reviewReasons)
 
           info("another chat message")
           val secondChat = dao.insertChatMessage(TextAndHtml.testBody("chat_740331_d"), chatPageId,
-            member.id, browserIdData).post
+            Who(member.id, browserIdData)).post
           secondChat.approvedById mustBe Some(SystemUserId)
 
           info("can nevertheless insert reply 2")
           val secondReplyResult = reply(member.id, "reply_740331_b")
           secondReplyResult.post.isSomeVersionApproved mustBe false
-          checkReviewTaskGenerated(secondReplyResult.post)
+          checkReviewTaskGenerated(secondReplyResult.post, reviewReasons)
 
           info("yet another chat message")
           val thirdChat = dao.insertChatMessage(TextAndHtml.testBody("chat_740331_f"), chatPageId,
-            member.id, browserIdData).post
+            Who(member.id, browserIdData)).post
           thirdChat.approvedById mustBe Some(SystemUserId)
 
           info("rejct reply 3")
@@ -425,7 +364,7 @@ class FirstPostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
       }
     },
 
-    new nestedPostsSuite {
+    new NestedPostsSuite {
       override def beforeAll {
         dao.saveSiteSettings(SettingsToSave(
           numFirstPostsToAllow = Some(Some(2)),

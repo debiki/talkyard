@@ -20,9 +20,9 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.TextAndHtml
+import io.efdi.server.Who
 import org.scalatest._
 import org.scalatestplus.play.OneAppPerSuite
-import java.{util => ju, io => jio}
 import play.api.test.FakeApplication
 
 
@@ -70,7 +70,7 @@ class DaoAppSuite(disableScripts: Boolean = false, disableBackgroundJobs: Boolea
     dao.createPage(pageRole, PageStatus.Published, anyCategoryId = anyCategoryId,
       anyFolder = Some("/"), anySlug = Some(""),
       titleTextAndHtml = titleTextAndHtml, bodyTextAndHtml = bodyTextAndHtml,
-      showId = true, authorId = authorId, browserIdData = browserIdData).thePageId
+      showId = true, Who(authorId, browserIdData)).thePageId
   }
 
 }

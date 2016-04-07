@@ -115,6 +115,23 @@ enum WatchbarSection {
 }
 
 
+enum TrustLevel {
+  New = 1,
+  Basic = 2,
+  Member = 3,
+  Regular = 4,
+  CoreMember = 5,
+}
+
+
+enum ThreatLevel {
+  HopefullySafe = 3,
+  MildThreat = 4,
+  ModerateThreat = 5,
+  SevereThreat = 6,
+}
+
+
 /** The review reasons are a 64 bit bitflag. See this Scala file for their meanings:
   *   modules/debiki-core/src/main/scala/com/debiki/core/ReviewReason.scala
   */

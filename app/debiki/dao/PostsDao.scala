@@ -24,6 +24,7 @@ import com.debiki.core.PageParts.FirstReplyNr
 import controllers.EditController
 import debiki._
 import debiki.DebikiHttp._
+import io.efdi.server.{Who, UserAndLevels}
 import io.efdi.server.notf.NotificationGenerator
 import io.efdi.server.pubsub.StorePatchMessage
 import play.api.libs.json.JsValue
@@ -51,7 +52,9 @@ trait PostsDao {
 
 
   def insertReply(textAndHtml: TextAndHtml, pageId: PageId, replyToPostNrs: Set[PostNr],
-        postType: PostType, authorId: UserId, browserIdData: BrowserIdData): InsertPostResult = {
+        postType: PostType, byWho: Who): InsertPostResult = {
+
+    val authorId = byWho.id
 
     // Note: Fairly similar to createNewChatMessage() just below. [4UYKF21]
 
@@ -67,7 +70,8 @@ trait PostsDao {
         Multireplies temporarily disabled, sorry""")
 
     val (newPost, author, notifications, anyReviewTask) = readWriteTransaction { transaction =>
-      val author = transaction.loadUser(authorId) getOrElse throwNotFound("DwE404UF3", "Bad user")
+      val authorAndLevels = loadUserAndLevels(byWho, transaction)
+      val author = authorAndLevels.user
       val page = PageDao(pageId, transaction)
       throwIfMayNotPostTo(page, author)(transaction)
 
@@ -100,7 +104,7 @@ trait PostsDao {
           "The parent post has been deleted; cannot reply to a deleted post", "DwE5KDE7")
 
       val (reviewReasons: Seq[ReviewReason], shallApprove) =
-        throwOrFindReviewPostReasons(page, author, transaction)
+        throwOrFindReviewPostReasons(page, authorAndLevels, transaction)
 
       val approverId =
         if (author.isStaff) {
@@ -150,7 +154,7 @@ trait PostsDao {
         didWhat = AuditLogEntryType.NewPost,
         doerId = authorId,
         doneAt = transaction.currentTime,
-        browserIdData = browserIdData,
+        browserIdData = byWho.browserIdData,
         pageId = Some(pageId),
         uniquePostId = Some(newPost.uniqueId),
         postNr = Some(newPost.nr),
@@ -193,17 +197,34 @@ trait PostsDao {
   }
 
 
-  def throwOrFindReviewPostReasons(page: PageDao, author: User, transaction: SiteTransaction)
-        : (Seq[ReviewReason], Boolean) = {
+  def throwOrFindReviewPostReasons(page: PageDao, author: UserAndLevels,
+        transaction: SiteTransaction): (Seq[ReviewReason], Boolean) = {
     throwOrFindReviewReasonsImpl(author, Some(page), newPageRole = None, transaction)
   }
 
 
-  def throwOrFindReviewReasonsImpl(author: User, page: Option[PageDao],
+  def throwOrFindReviewReasonsImpl(author: UserAndLevels, page: Option[PageDao],
         newPageRole: Option[PageRole], transaction: SiteTransaction)
         : (Seq[ReviewReason], Boolean) = {
     if (author.isStaff)
       return (Nil, true)
+
+    val reviewReasons = mutable.ArrayBuffer[ReviewReason]()
+    var autoApprove = true
+
+    author.threatLevel match {
+      case ThreatLevel.HopefullySafe =>
+        // Fine
+      case ThreatLevel.MildThreat =>
+        reviewReasons.append(ReviewReason.IsByThreatUser)
+      case ThreatLevel.ModerateThreat =>
+        reviewReasons.append(ReviewReason.IsByThreatUser)
+        autoApprove = false
+      case ThreatLevel.SevereThreat =>
+        // This can happen if the threat level was changed during the processing of the current
+        // request (after the initial security checks).
+        throwForbidden("EsE5Y80G2_", "Forbidden")
+    }
 
     // Don't review, but auto-approve, user-to-user messages. Staff aren't supposed to read
     // those, unless the receiver reports the message.
@@ -213,6 +234,8 @@ trait PostsDao {
       // For now, just this basic check to prevent too-often-flagged people from posting priv msgs
       // to non-staff. COULD allow messages to staff, but currently we here don't have access
       // to the page members, so we don't know if they are staff.
+      // Later: auto bump threat level to ModerateThreat, then MessagesDao will do all this
+      // automatically.
       val tasks = transaction.loadReviewTaskCausedBy(author.id, limit = MaxNumFirstPosts,
         OrderBy.MostRecentFirst)
       val numLoaded = tasks.length
@@ -225,16 +248,10 @@ trait PostsDao {
       return (Nil, true)
     }
 
-    // SECURITY COULD analyze the author's trust level and past actions, and
-    // based on that, approve, reject or review later.
-
     val settings = loadWholeSiteSettings(transaction)
     val numFirstToAllow = math.min(MaxNumFirstPosts, settings.numFirstPostsToAllow)
     val numFirstToApprove = math.min(MaxNumFirstPosts, settings.numFirstPostsToApprove)
     val numFirstToNotify = math.min(MaxNumFirstPosts, settings.numFirstPostsToReview)
-
-    val reviewReasons = mutable.ArrayBuffer[ReviewReason]()
-    var autoApprove = true
 
     if ((numFirstToAllow > 0 && numFirstToApprove > 0) || numFirstToNotify > 0) {
       val tasks = transaction.loadReviewTaskCausedBy(author.id, limit = MaxNumFirstPosts,
@@ -272,8 +289,8 @@ trait PostsDao {
     * messages in between — then we'll append this new message to the old one, instead
     * of creating a new different chat message.
     */
-  def insertChatMessage(textAndHtml: TextAndHtml, pageId: PageId,
-        authorId: UserId, browserIdData: BrowserIdData): InsertPostResult = {
+  def insertChatMessage(textAndHtml: TextAndHtml, pageId: PageId, byWho: Who): InsertPostResult = {
+    val authorId = byWho.id
 
     if (textAndHtml.safeHtml.trim.isEmpty)
       throwBadReq("DwE2U3K8", "Empty chat message")
@@ -298,9 +315,9 @@ trait PostsDao {
       }
       val (postNr, notfs) = anyLastMessageSameUserRecently match {
         case Some(lastMessage) =>
-          appendToLastChatMessage(lastMessage, textAndHtml, authorId, browserIdData, transaction)
+          appendToLastChatMessage(lastMessage, textAndHtml, byWho, transaction)
         case None =>
-          createNewChatMessage(page, textAndHtml, authorId, browserIdData, transaction)
+          createNewChatMessage(page, textAndHtml, byWho, transaction)
       }
       (postNr, author, notfs)
     }
@@ -315,11 +332,11 @@ trait PostsDao {
   }
 
 
-  private def createNewChatMessage(page: PageDao, textAndHtml: TextAndHtml, authorId: UserId,
-        browserIdData: BrowserIdData, transaction: SiteTransaction)
-        : (Post, Notifications) = {
+  private def createNewChatMessage(page: PageDao, textAndHtml: TextAndHtml, who: Who,
+        transaction: SiteTransaction): (Post, Notifications) = {
 
     // Note: Farily similar to insertReply() a bit above. [4UYKF21]
+    val authorId = who.id
 
     val uniqueId = transaction.nextPostId()
     val postNr = page.parts.highestReplyNr.map(_ + 1) getOrElse PageParts.FirstReplyNr
@@ -366,7 +383,7 @@ trait PostsDao {
       didWhat = AuditLogEntryType.NewChatMessage,
       doerId = authorId,
       doneAt = transaction.currentTime,
-      browserIdData = browserIdData,
+      browserIdData = who.browserIdData,
       pageId = Some(page.id),
       uniquePostId = Some(newPost.uniqueId),
       postNr = Some(newPost.nr),
@@ -392,10 +409,11 @@ trait PostsDao {
   }
 
 
-  private def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml, authorId: UserId,
-    browserIdData: BrowserIdData, transaction: SiteTransaction): (Post, Notifications) = {
+  private def appendToLastChatMessage(lastPost: Post, textAndHtml: TextAndHtml, byWho: Who,
+    transaction: SiteTransaction): (Post, Notifications) = {
 
     // Note: Farily similar to editPostIfAuth() just below. [2GLK572]
+    val authorId = byWho.id
 
     if (lastPost.tyype != PostType.ChatMessage)
       throwForbidden("EsE6YUW2", o"""Cannot append more chat text; post id ${lastPost.uniqueId}
@@ -434,8 +452,8 @@ trait PostsDao {
 
   /** Edits the post, if authorized to edit it.
     */
-  def editPostIfAuth(pageId: PageId, postNr: PostNr, editorId: UserId, browserIdData: BrowserIdData,
-        newTextAndHtml: TextAndHtml) {
+  def editPostIfAuth(pageId: PageId, postNr: PostNr, who: Who, newTextAndHtml: TextAndHtml) {
+    val editorId = who.id
 
     // Note: Farily similar to appendChatMessageToLastMessage() just above. [2GLK572]
 
@@ -579,7 +597,7 @@ trait PostsDao {
         didWhat = AuditLogEntryType.EditPost,
         doerId = editorId,
         doneAt = transaction.currentTime,
-        browserIdData = browserIdData,
+        browserIdData = who.browserIdData,
         pageId = Some(pageId),
         uniquePostId = Some(postToEdit.uniqueId),
         postNr = Some(postNr),

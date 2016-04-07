@@ -93,6 +93,10 @@ export var AdminUserPageComponent = React.createClass(<any> {
     });
   },
 
+  reloadUser: function() {
+    this.loadCompleteUser();
+  },
+
   render: function() {
     var user: CompleteUser = this.state.user;
     var loggedInUser: Myself = this.props.loggedInUser;
@@ -142,6 +146,17 @@ export var AdminUserPageComponent = React.createClass(<any> {
         ? null  // then moderator settings have no effect
         : r.p({}, 'Moderator: ' + user.isModerator, ' ', toggleModeratorButton);
 
+    var trustLevelText = user.lockedTrustLevel
+      ? "Locked at: " + user.lockedTrustLevel + ", would otherwise have been: " + user.trustLevel
+      : '' + user.trustLevel;
+
+    var threatLevelText = user.lockedThreatLevel
+        ? "Locked at: " + user.lockedThreatLevel + ", would otherwise have been: " + user.threatLevel
+        : '' + user.threatLevel;
+
+    var threatButton = Button({ onClick: () => openThreatLevelDialog(user, this.reloadUser) },
+      "Change");
+
     return (
       r.div({},
         r.div({ className: 'pull-right' },
@@ -150,7 +165,9 @@ export var AdminUserPageComponent = React.createClass(<any> {
         r.p({}, 'Username: ' + usernameAndFullName, thatIsYou),
         r.p({}, 'Admin: ' + user.isAdmin, ' ', toggleAdminButton),
         moderatorInfo,
-        r.p({}, 'Suspended: ' + suspendedText, ' ', suspendButton)));
+        r.p({}, 'Suspended: ' + suspendedText, ' ', suspendButton),
+        r.p({}, 'Trust level: ' + trustLevelText),
+        r.p({}, 'Threat level: ' + threatLevelText, ' ', threatButton)));
   }
 });
 
@@ -211,6 +228,74 @@ var SuspendDialog = createComponent({
               "Keep it short.", ref: 'reasonInput' })),
         ModalFooter({},
           Button({ onClick: this.doSuspend }, 'Suspend'),
+          Button({ onClick: this.close }, 'Cancel'))));
+  }
+});
+
+
+
+var threatLevelDialog;
+
+function openThreatLevelDialog(user: CompleteUser, refreshCallback) {
+  if (!threatLevelDialog) {
+    threatLevelDialog = ReactDOM.render(MemberThreatLevelDialog(), utils.makeMountNode());
+  }
+  threatLevelDialog.open(user, refreshCallback);
+}
+
+
+var MemberThreatLevelDialog = createComponent({
+  getInitialState: function() {
+    return { isOpen: false };
+  },
+
+  open: function(user: CompleteUser, refreshCallback) {
+    this.setState({ isOpen: true, user: user, refreshCallback: refreshCallback });
+  },
+
+  close: function() {
+    this.setState({ isOpen: false, user: null, refreshCallback: null });
+  },
+
+  lockThreatLevelAt: function(threatLevel: ThreatLevel) {
+    Server.lockThreatLevel(this.state.user.id, threatLevel, () => {
+      this.state.refreshCallback(threatLevel);
+      this.close();
+    })
+  },
+
+  render: function() {
+    if (!this.state.isOpen)
+      return null;
+
+    var user: CompleteUser = this.state.user;
+
+    var threatLevelText = user.lockedThreatLevel
+      ? "Threat level locked at: " + user.lockedThreatLevel + ", would otherwise have been: " +
+          user.threatLevel
+      : "Threat level: " + user.threatLevel;
+
+    var actionContent = user.lockedThreatLevel
+        ? Button({ onClick: () => this.lockThreatLevelAt(null),
+              help: "Clears the manually assigned threat level." }, "Unlock")
+        : r.div({},
+            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.MildThreat),
+                help: "Marks this user as a mild threat, which means all comments s/he post " +
+                  "will be added to the review list. But they'll be shown directly to other " +
+                  "users." },
+              "Mild threat"),
+            Button({ onClick: () => this.lockThreatLevelAt(ThreatLevel.ModerateThreat),
+              help: "Marks this user as a moderate threat, which means that all comments " +
+                  "s/he post won't be visible until they've been approved by the staff." },
+              "Moderate threat"));
+
+    return (
+      Modal({ show: this.state.isOpen, onHide: this.close },
+        ModalTitle({}, "Change threat level"),
+        ModalBody({},
+          r.div({}, threatLevelText),
+          actionContent),
+        ModalFooter({},
           Button({ onClick: this.close }, 'Cancel'))));
   }
 });

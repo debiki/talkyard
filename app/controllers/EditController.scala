@@ -113,8 +113,7 @@ object EditController extends mvc.Controller {
     Globals.antiSpam.detectPostSpam(request, pageId, newTextAndHtml) map { isSpamReason =>
       throwForbiddenIfSpam(isSpamReason, "DwE6PYU4")
 
-      request.dao.editPostIfAuth(pageId = pageId, postNr = postNr, editorId = request.theUser.id,
-        request.theBrowserIdData, newTextAndHtml)
+      request.dao.editPostIfAuth(pageId = pageId, postNr = postNr, request.who, newTextAndHtml)
 
       OkSafeJson(ReactJson.postToJson2(postNr = postNr, pageId = pageId,
         request.dao, includeUnapproved = true))
@@ -222,6 +221,12 @@ object EditController extends mvc.Controller {
     |</ul>
     |"""
 
+  val DirectMessageGuidelines = i"""
+    |<p>The direct messages you're about to write, is not totally private.
+    |For example, the forum staff might review offensive messages.
+    |</p>
+    |"""
+
   val GiveCritiqueGuidelines = /* [plugin] */ i"""
     |<p>This is a public forum — anyone can read your critique.
     |You give critique to help the poster improve his/her work:
@@ -241,9 +246,8 @@ object EditController extends mvc.Controller {
   val OriginalPostGuidelines = i"""
     |<p>In order for more people to reply to you:
     |<ul>
-    |<li>Try to come up with a good topic title, so others will understand what the topic is about
-    |  and read it.
-    |<li>Including good search words might help others find your topic.
+    |<li>Choose a good title, so others will understand what this is about.
+    |<li>Including good search words can help others find your topic.
     |</ul>
     |"""
 }

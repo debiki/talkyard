@@ -20,6 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import debiki.DebikiHttp.ResultException
 import debiki._
+import io.efdi.server.Who
 
 
 class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgroundJobs = true) {
@@ -28,7 +29,7 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
     lazy val dao: SiteDao = Globals.siteDao(Site.FirstSiteId)
 
     lazy val forumId = dao.createForum(title = "Forum to delete", folder = "/",
-      creatorId = SystemUserId, browserIdData).pagePath.thePageId
+      Who(SystemUserId, browserIdData)).pagePath.thePageId
 
     lazy val discussionId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
       TextAndHtml.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)

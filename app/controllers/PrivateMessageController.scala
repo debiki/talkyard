@@ -66,7 +66,7 @@ object PrivateMessageController extends mvc.Controller {
         isSpamReason =>
       throwForbiddenIfSpam(isSpamReason, "DwE5G5F3")
       val pagePath = request.dao.sendMessage(
-        titleTextAndHtml, bodyTextAndHtml, toUserIds, sender.id, request.theBrowserIdData)
+        titleTextAndHtml, bodyTextAndHtml, toUserIds, sentByWho = request.who)
       OkSafeJson(JsString(pagePath.pageId.getOrDie("DwE5JKY2")))
     }
   }

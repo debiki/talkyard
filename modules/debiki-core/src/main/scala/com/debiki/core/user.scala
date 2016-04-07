@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2011-2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2011-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -392,6 +392,10 @@ case class Member(
   smallAvatar: Option[UploadRef] = None,
   isApproved: Option[Boolean],
   suspendedTill: Option[ju.Date],
+  trustLevel: TrustLevel = TrustLevel.New,
+  lockedTrustLevel: Option[TrustLevel] = None,
+  threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,
+  lockedThreatLevel: Option[ThreatLevel] = None,
   isAdmin: Boolean = false,
   isOwner: Boolean = false,
   isModerator: Boolean = false) extends User {
@@ -405,6 +409,9 @@ case class Member(
     case Some(name) => s"$theUsername ($name)"
     case None => theUsername
   }
+
+  def effectiveTrustLevel = lockedTrustLevel getOrElse trustLevel
+  def effectiveThreatLevel = lockedThreatLevel getOrElse threatLevel
 
   require(!fullName.map(_.trim).contains(""), "DwE4GUK28")
   require(User.isOkayUserId(id), "DwE02k12R5")
@@ -420,7 +427,8 @@ case class Guest(
   guestCookie: Option[String],
   email: String,  // COULD rename to emailAddr
   emailNotfPrefs: EmailNotfPrefs,
-  country: String = "") extends User {
+  country: String = "",
+  lockedThreatLevel: Option[ThreatLevel] = None) extends User {
 
   def theUsername = die("EsE7YKWP4")
   def username = None
@@ -471,7 +479,11 @@ case class CompleteUser(
   suspendedAt: Option[ju.Date] = None,
   suspendedTill: Option[ju.Date] = None,
   suspendedById: Option[UserId] = None,
-  suspendedReason: Option[String] = None) {
+  suspendedReason: Option[String] = None,
+  trustLevel: TrustLevel = TrustLevel.New,
+  lockedTrustLevel: Option[TrustLevel] = None,
+  threatLevel: ThreatLevel = ThreatLevel.HopefullySafe,
+  lockedThreatLevel: Option[ThreatLevel] = None) {
 
   require(User.isOkayUserId(id), "DwE077KF2")
   require(username.length >= 2, "DwE6KYU9")
@@ -529,6 +541,10 @@ case class CompleteUser(
     website = website,
     isApproved = isApproved,
     suspendedTill = suspendedTill,
+    trustLevel = trustLevel,
+    lockedTrustLevel = lockedTrustLevel,
+    threatLevel = threatLevel,
+    lockedThreatLevel = lockedThreatLevel,
     isAdmin = isAdmin,
     isOwner = isOwner)
 }
@@ -574,7 +590,7 @@ case class GuestLoginAttempt(
   require(guestCookie == guestCookie.trim && guestCookie.nonEmpty && guestCookie != "-", "DwE0FYF8")
 }
 
-case class GuestLoginResult(user: User, isNewUser: Boolean)
+case class GuestLoginResult(guest: Guest, isNewUser: Boolean)
 
 
 case class PasswordLoginAttempt(
@@ -711,13 +727,14 @@ case class LoginGrant(
   * post comments or vote.
   */
 case class Block(
+  threatLevel: ThreatLevel,
   ip: Option[jn.InetAddress],
   browserIdCookie: Option[String],
   blockedById: UserId,
   blockedAt: ju.Date,
   blockedTill: Option[ju.Date]) {
 
-  require(ip.isDefined != browserIdCookie.isDefined, "DwE5KGU8")
+  require(browserIdCookie.isDefined, "DwE5KGU8") // change to String then, not Option[String]?
   require(blockedTill.isEmpty || blockedTill.get.getTime >= blockedAt.getTime, "Dwe2KWC8")
   require(browserIdCookie.map(_.trim.isEmpty) != Some(true), "DwE4FUK7")
 

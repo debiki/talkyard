@@ -80,8 +80,10 @@ case class AuditLogEntry(
   targetPageId: Option[PageId] = None,
   targetPostNr: Option[PostNr] = None,
   targetUserId: Option[UserId] = None,
-  batchId: Option[AuditLogEntryId] = None) {
+  batchId: Option[AuditLogEntryId] = None,
+  isLoading: Boolean = false) {
 
+  if (!isLoading) {
   emailAddress.foreach(Validation.requireOkEmail(_, "EsE5YJK2"))
   require(pageRole.isEmpty || pageId.isDefined, "DwE4PFKW7")
   require(postNr.isEmpty || pageId.isDefined, "DwE3574FK2")
@@ -94,6 +96,7 @@ case class AuditLogEntry(
   require(targetPostNr.isEmpty || targetPageId.isDefined, "DwE5PFK2")
   require(!batchId.exists(_ > id), "EsE5PK2L8")
   require(!batchId.exists(_ <= 0), "EsE8YJK52")
+  }
 }
 
 

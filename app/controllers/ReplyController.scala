@@ -68,7 +68,7 @@ object ReplyController extends mvc.Controller {
       throwForbiddenIfSpam(isSpamReason, "DwE5JGY0")
 
       val result = pageReq.dao.insertReply(textAndHtml, pageId = pageId, replyToPostNrs,
-        postType, authorId = pageReq.theUser.id, pageReq.theBrowserIdData)
+        postType, pageReq.who)
 
       OkSafeJson(result.storePatchJson)
     }
@@ -97,8 +97,7 @@ object ReplyController extends mvc.Controller {
         isSpamReason =>
       throwForbiddenIfSpam(isSpamReason, "EsE4J7U27")
 
-      val result = pageReq.dao.insertChatMessage(textAndHtml, pageId = pageId,
-        authorId = pageReq.theUser.id, pageReq.theBrowserIdData)
+      val result = pageReq.dao.insertChatMessage(textAndHtml, pageId = pageId, pageReq.who)
 
       OkSafeJson(result.storePatchJson)
     }

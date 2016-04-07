@@ -20,7 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import io.efdi.server.notf.NotificationGenerator
-import io.efdi.server.pubsub
+import io.efdi.server.{Who, pubsub}
 import debiki.DebikiHttp.throwForbidden
 import debiki.TextAndHtml
 
@@ -30,7 +30,7 @@ trait MessagesDao {
 
 
   def sendMessage(title: TextAndHtml, body: TextAndHtml, toUserIds: Set[UserId],
-        sentById: UserId, browserIdData: BrowserIdData): PagePath = {
+        sentByWho: Who): PagePath = {
 
     if (toUserIds.contains(SystemUserId))
       throwForbidden("EsE2WUY0", "Cannot send messages to the System user")
@@ -38,14 +38,24 @@ trait MessagesDao {
     if (toUserIds.exists(_ <= MaxGuestId))
       throwForbidden("EsE6UPY2", "Cannot send messages to guests")
 
+    val sentById = sentByWho.id
     if (sentById <= MaxGuestId)
       throwForbidden("EsE5JGKU9", "Guests cannot send messages")
 
     val (pagePath, notfs) = readWriteTransaction { transaction =>
-      val sender = transaction.loadTheUser(sentById)
+      val sender = loadUserAndLevels(sentByWho, transaction)
+
+      if (sender.threatLevel == ThreatLevel.ModerateThreat) {
+        // Don't let unpolite users start private-messaging other well behaved users.
+        // But do let them talk with staff, e.g. ask "why am I not allowed to ...".
+        // COULD hide send-message button in the UI too.
+        val toUsers = transaction.loadUsers(toUserIds)
+        if (toUsers.exists(!_.isStaff))
+          throwForbidden("EsE8GY2F4_", "You may send direct messages to staff only")
+      }
 
       val (pagePath, bodyPost) = createPageImpl2(PageRole.Message, title, body,
-        authorId = sentById, browserIdData = browserIdData, transaction = transaction)
+        byWho = sentByWho, transaction = transaction)
 
       (toUserIds + sentById) foreach { userId =>
         transaction.insertMessageMember(pagePath.pageId.getOrDie("EsE6JMUY2"), userId,
@@ -53,7 +63,7 @@ trait MessagesDao {
       }
 
       val notifications = NotificationGenerator(transaction).generateForMessage(
-        sender, bodyPost, toUserIds)
+        sender.user, bodyPost, toUserIds)
 
       transaction.saveDeleteNotifications(notifications)
       (pagePath, notifications)

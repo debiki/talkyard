@@ -463,6 +463,10 @@ interface CompleteUser {
   suspendedById?: number;
   suspendedByUsername?: string;
   suspendedReason?: string;
+  trustLevel: TrustLevel;
+  lockedTrustLevel?: TrustLevel;
+  threatLevel: ThreatLevel;
+  lockedThreatLevel?: ThreatLevel;
 }
 
 
@@ -505,11 +509,13 @@ interface Blocks {
   reason?: string;
   blockedForever?: boolean;
   blockedTillMs?: number;
-  blocks?: Block[];
+  ipBlock?: Block;
+  browserBlock?: Block;
 }
 
 
 interface Block {
+  threatLevel: ThreatLevel,
   ip?: string;
   browserIdCookie?: string;
   blockedById: number;

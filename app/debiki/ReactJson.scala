@@ -177,6 +177,9 @@ object ReactJson {
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
       makeForumIdAndAncestorsJson(page.meta, dao)
 
+    val categories = anyForumId.map(
+      categoriesJson(_, isStaff = false, restrictedOnly = false, dao)).getOrElse(JsArray())
+
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
         val rootCategoryId = page.meta.categoryId.getOrDie(
@@ -241,8 +244,7 @@ object ReactJson {
       "numPostsExclTitle" -> numPostsExclTitle,
       "maxUploadSizeBytes" -> Globals.maxUploadSizeBytes,
       "isInEmbeddedCommentsIframe" -> JsBoolean(page.role == PageRole.EmbeddedComments),
-      "categories" -> anyForumId.map(
-        categoriesJson(_, isStaff = false, restrictedOnly = false, dao)),
+      "categories" -> categories,
       "topics" -> JsArray(anyLatestTopics),
       "me" -> NoUserSpecificData,
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),

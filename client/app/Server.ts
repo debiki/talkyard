@@ -403,6 +403,22 @@ export function unsuspendUser(userId: number, success: () => void) {
 }
 
 
+export function lockThreatLevel(userId: number, threatLevel: ThreatLevel, success: () => void) {
+  if (threatLevel) {
+    postJsonSuccess('/-/lock-threat-level', () => {
+      // ReactActions.patchTheStore();
+      success();
+    }, {
+      userId: userId,
+      threatLevel: threatLevel,
+    });
+  }
+  else {
+    postJsonSuccess('/-/unlock-threat-level', success, { userId: userId, });
+  }
+}
+
+
 export function savePageNoftLevel(newNotfLevel) {
   postJsonSuccess('/-/save-page-notf-level', null, {
     pageId: d.i.pageId,
@@ -491,8 +507,13 @@ export function saveGuest(guest, success: () => void) {
 }
 
 
-export function blockGuest(postId: number, numDays: number, success: () => void) {
-  postJsonSuccess('/-/block-guest', success, { postId: postId, numDays: numDays });
+export function blockGuest(postId: number, numDays: number, threatLevel: ThreatLevel,
+      success: () => void) {
+  postJsonSuccess('/-/block-guest', success, {
+    postId: postId,
+    numDays: numDays,
+    threatLevel: threatLevel,
+  });
 }
 
 

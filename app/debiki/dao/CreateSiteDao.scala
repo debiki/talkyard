@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.CreateSiteController
 import debiki._
+import io.efdi.server.Who
 import io.efdi.server.http.throwForbidden2
 import java.{util => ju}
 import play.{api => p}
@@ -118,8 +119,7 @@ trait CreateSiteDao {
       bodyHtmlSanitized = aboutPage.html,
       pinOrder = None,
       pinWhere = None,
-      authorId = SystemUserId,
-      browserIdData,
+      Who(SystemUserId, browserIdData),
       transaction,
       bodyPostType = PostType.StaffWiki)
   }

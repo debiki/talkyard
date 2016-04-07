@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.{BodyNr, TitleNr}
 import debiki.DebikiHttp.ResultException
 import debiki.{TextAndHtml, Globals}
+import io.efdi.server.Who
 import java.{util => ju}
 
 
@@ -34,7 +35,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
   def reply(memberId: UserId, text: String, parentNr: Option[PostNr] = None): Post = {
     dao.insertReply(TextAndHtml.testBody(text), thePageId,
       replyToPostNrs = Set(parentNr getOrElse PageParts.BodyNr), PostType.Normal,
-      authorId = memberId, browserIdData = browserIdData).post
+      Who(memberId, browserIdData)).post
   }
 
   "The Dao can move posts" - {
@@ -174,7 +175,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         TextAndHtml.testBody("Body two."), SystemUserId, browserIdData, dao)
       val postOnPageTwo = dao.insertReply(TextAndHtml.testBody("Post on page 2."), pageTwoId,
         replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
-        authorId = SystemUserId, browserIdData = browserIdData).post
+        Who(SystemUserId, browserIdData = browserIdData)).post
 
       // Create after page 2 so becomes the most recent one.
       val post = reply(theModerator.id, "A post.")
@@ -235,7 +236,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         TextAndHtml.testBody("Body two."), SystemUserId, browserIdData, dao)
       val postOnPageTwo = dao.insertReply(TextAndHtml.testBody("Post on page 2."), pageTwoId,
         replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
-        authorId = SystemUserId, browserIdData = browserIdData).post
+        Who(SystemUserId, browserIdData = browserIdData)).post
 
       info("can move the tree")
       val postAfterMove = dao.movePostIfAuth(postA.pagePostId, postOnPageTwo.pagePostNr,
@@ -277,8 +278,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
 
       info("can add replies to the new page")
       val lastPostPageTwo = dao.insertReply(TextAndHtml.testBody("Last post, page 2."), pageTwoId,
-        replyToPostNrs = Set(maxNewNr), PostType.Normal,
-        authorId = SystemUserId, browserIdData = browserIdData).post
+        replyToPostNrs = Set(maxNewNr), PostType.Normal, Who(SystemUserId, browserIdData)).post
       lastPostPageTwo.nr mustBe (maxNewNr + 1)
     }
 
@@ -294,7 +294,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         TextAndHtml.testBody("Body two."), SystemUserId, browserIdData, dao)
       val postOnPageTwo = dao.insertReply(TextAndHtml.testBody("Post on page 2."), pageTwoId,
         replyToPostNrs = Set(PageParts.BodyNr), PostType.Normal,
-        authorId = SystemUserId, browserIdData = browserIdData).post
+        Who(SystemUserId, browserIdData = browserIdData)).post
 
       val fromPageMetaBefore = dao.readOnlyTransaction(_.loadThePageMeta(thePageId))
       val toPageMetaBefore = dao.readOnlyTransaction(_.loadThePageMeta(pageTwoId))

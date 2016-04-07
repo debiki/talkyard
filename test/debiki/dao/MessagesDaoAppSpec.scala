@@ -23,6 +23,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp.ResultException
 import debiki.{TextAndHtml, Globals}
+import io.efdi.server.Who
 import org.scalatest._
 import org.scalatestplus.play.OneAppPerSuite
 import java.{util => ju, io => jio}
@@ -30,7 +31,7 @@ import java.{util => ju, io => jio}
 import play.api.test.FakeApplication
 
 
-class MessagesDaoAppSpec extends DaoAppSuite {
+class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackgroundJobs = true) {
 
   "MessagesDao can" - {
 
@@ -40,7 +41,7 @@ class MessagesDaoAppSpec extends DaoAppSuite {
       val userTwo = createPasswordUser("qqwwffpp", dao)
       val pagePath = dao.sendMessage(title = TextAndHtml.testTitle("title_558206"),
         body = TextAndHtml.testBody("message_2749"), toUserIds = Set(userTwo.id),
-        sentById = userOne.id, browserIdData = browserIdData)
+        sentByWho = Who(userOne.id, browserIdData))
 
       dao.readOnlyTransaction { transaction =>
         val page = PageDao(pagePath.pageId getOrDie "EsE6GMUK2", transaction)
@@ -70,6 +71,46 @@ class MessagesDaoAppSpec extends DaoAppSuite {
           case x =>
             fail(s"Bad notf type: ${classNameOf(x)}")
         }
+      }
+    }
+
+    "only send message to staff if is moderate threat" in {
+      val dao = Globals.siteDao(Site.FirstSiteId)
+      val admin = createPasswordAdmin("9403dfpw", dao)
+      val badUser = createPasswordUser("btk3rr40", dao)
+      val otherUser = createPasswordUser("r90t4gdf", dao)
+
+      dao.lockMemberThreatLevel(badUser.id, Some(ThreatLevel.ModerateThreat))
+
+      info("a moderate threat can message admin"); {
+        val pagePath = dao.sendMessage(title = TextAndHtml.testTitle("title_0482745"),
+          body = TextAndHtml.testBody("body_0482745"), toUserIds = Set(admin.id),
+          sentByWho = Who(badUser.id, browserIdData))
+
+        val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.thePageId))
+        pageMeta.pageRole mustBe PageRole.Message
+      }
+
+      def sendMessageTo(toWhom: Set[UserId]): PagePath =
+        dao.sendMessage(title = TextAndHtml.testTitle("title_0482745"),
+          body = TextAndHtml.testBody("body_0482745"), toUserIds = toWhom,
+          sentByWho = Who(badUser.id, browserIdData))
+
+      info("but may not message non-staff")
+      intercept[Exception] {
+        sendMessageTo(Set(otherUser.id))
+      }.getMessage must include("EsE8GY2F4_")
+
+      info("and may not message staff + non-staff")
+      intercept[Exception] {
+        sendMessageTo(Set(admin.id, otherUser.id))
+      }.getMessage must include("EsE8GY2F4_")
+
+      info("but a mild threat may message non-staff users"); {
+        dao.lockMemberThreatLevel(badUser.id, Some(ThreatLevel.MildThreat))
+        val pagePath = sendMessageTo(Set(otherUser.id))
+        val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.thePageId))
+        pageMeta.pageRole mustBe PageRole.Message
       }
     }
   }

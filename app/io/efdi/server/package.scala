@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016 Kaj Magnus Lindberg
+ * Copyright (C) 2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -15,16 +15,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package debiki
+package io.efdi
+
+import com.debiki.core._
 
 
-object DatabaseUtils {
+package object server {
 
-  def isConnectionClosed(exception: java.sql.SQLException) =
-    exception.getMessage.endsWith("has been closed.")
+  case class Who(id: UserId, browserIdData: BrowserIdData) {
+    def ip: String = browserIdData.ip
+    def idCookie: String = browserIdData.idCookie
+    def browserFingerprint = browserIdData.fingerprint
+  }
 
-  def isConnectionClosedBecauseTestsDone(exception: java.sql.SQLException) =
-    isConnectionClosed(exception) && Globals.testsDoneServerGone
+  case class UserAndLevels(user: User, trustLevel: TrustLevel, threatLevel: ThreatLevel) {
+    def id = user.id
+    def isStaff = user.isStaff
+  }
 
 }
 

@@ -23,6 +23,7 @@ import com.debiki.core.PageParts.MaxTitleLength
 import com.debiki.core.User.SystemUserId
 import debiki._
 import debiki.DebikiHttp._
+import io.efdi.server.{Who, UserAndLevels}
 import io.efdi.server.http.throwIndistinguishableNotFound
 import io.efdi.server.notf.NotificationGenerator
 import java.{util => ju}
@@ -45,8 +46,7 @@ trait PagesDao {
 
   def createPage(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
         anyFolder: Option[String], anySlug: Option[String], titleTextAndHtml: TextAndHtml,
-        bodyTextAndHtml: TextAndHtml, showId: Boolean, authorId: UserId,
-        browserIdData: BrowserIdData): PagePath = {
+        bodyTextAndHtml: TextAndHtml, showId: Boolean, byWho: Who): PagePath = {
 
     if (pageRole.isSection) {
       // Should use e.g. ForumController.createForum() instead.
@@ -67,8 +67,7 @@ trait PagesDao {
         anyFolder = anyFolder, anySlug = anySlug, showId = showId,
         titleSource = titleTextAndHtml.text, titleHtmlSanitized = titleTextAndHtml.safeHtml,
         bodySource = bodyTextAndHtml.text, bodyHtmlSanitized = bodyTextAndHtml.safeHtml,
-        pinOrder = None, pinWhere = None, authorId = authorId,
-        browserIdData, transaction)
+        pinOrder = None, pinWhere = None, byWho, transaction)
 
       val notifications = NotificationGenerator(transaction)
         .generateForNewPost(PageDao(pagePath.pageId getOrDie "DwE5KWI2", transaction), bodyPost)
@@ -88,14 +87,14 @@ trait PagesDao {
         anyCategoryId: Option[CategoryId] = None,
         anyFolder: Option[String] = None, anySlug: Option[String] = None, showId: Boolean = true,
         pinOrder: Option[Int] = None, pinWhere: Option[PinPageWhere] = None,
-        authorId: UserId, browserIdData: BrowserIdData,
+        byWho: Who,
         transaction: SiteTransaction): (PagePath, Post) =
     createPageImpl(pageRole, pageStatus, anyCategoryId = anyCategoryId,
       anyFolder = anyFolder, anySlug = anySlug, showId = showId,
       titleSource = title.text, titleHtmlSanitized = title.safeHtml,
       bodySource = body.text, bodyHtmlSanitized = body.safeHtml,
       pinOrder = pinOrder, pinWhere = pinWhere,
-      authorId = authorId, browserIdData = browserIdData, transaction = transaction)
+      byWho, transaction = transaction)
 
 
   def createPageImpl(pageRole: PageRole, pageStatus: PageStatus, anyCategoryId: Option[CategoryId],
@@ -103,15 +102,17 @@ trait PagesDao {
       titleSource: String, titleHtmlSanitized: String,
       bodySource: String, bodyHtmlSanitized: String,
       pinOrder: Option[Int], pinWhere: Option[PinPageWhere],
-      authorId: UserId, browserIdData: BrowserIdData,
+      byWho: Who,
       transaction: SiteTransaction, hidePageBody: Boolean = false,
       bodyPostType: PostType = PostType.Normal): (PagePath, Post) = {
 
+    val authorId = byWho.id
+    val authorAndLevels = loadUserAndLevels(byWho, transaction)
     val author = transaction.loadUser(authorId) getOrElse throwForbidden(
       "DwE9GK32", s"User not found, id: $authorId")
     anyCategoryId match {
       case None =>
-        if (!author.isStaff)
+        if (pageRole != PageRole.Message && !author.isStaff)
           throwForbidden("EsE8GY32", "Only staff may create pages outside any category")
       case Some(categoryId) =>
         throwIfMayNotCreatePageIn(categoryId, Some(author))(transaction)
@@ -147,7 +148,7 @@ trait PagesDao {
     }).take(PagePath.MaxSlugLength).dropRightWhile(_ == '-').dropWhile(_ == '-')
 
     val (reviewReasons: Seq[ReviewReason], shallApprove) =
-      throwOrFindReviewNewPageReasons(author, pageRole, transaction)
+      throwOrFindReviewNewPageReasons(authorAndLevels, pageRole, transaction)
 
     val approvedById =
       if (author.isStaff) {
@@ -241,7 +242,7 @@ trait PagesDao {
       didWhat = AuditLogEntryType.NewPage,
       doerId = authorId,
       doneAt = transaction.currentTime,
-      browserIdData = browserIdData,
+      browserIdData = byWho.browserIdData,
       pageId = Some(pageId),
       pageRole = Some(pageRole))
 
@@ -265,7 +266,7 @@ trait PagesDao {
   }
 
 
-  def throwOrFindReviewNewPageReasons(author: User, pageRole: PageRole,
+  def throwOrFindReviewNewPageReasons(author: UserAndLevels, pageRole: PageRole,
         transaction: SiteTransaction): (Seq[ReviewReason], Boolean) = {
     throwOrFindReviewReasonsImpl(author, page = None, newPageRole = Some(pageRole), transaction)
   }
@@ -535,10 +536,9 @@ trait CachingPagesDao extends PagesDao {
   override def createPage(pageRole: PageRole, pageStatus: PageStatus,
         anyCategoryId: Option[CategoryId], anyFolder: Option[String], anySlug: Option[String],
         titleTextAndHtml: TextAndHtml, bodyTextAndHtml: TextAndHtml,
-        showId: Boolean, authorId: UserId, browserIdData: BrowserIdData)
-        : PagePath = {
+        showId: Boolean, byWho: Who): PagePath = {
     val pagePath = super.createPage(pageRole, pageStatus, anyCategoryId,
-      anyFolder, anySlug, titleTextAndHtml, bodyTextAndHtml, showId, authorId, browserIdData)
+      anyFolder, anySlug, titleTextAndHtml, bodyTextAndHtml, showId, byWho)
     firePageCreated(pagePath)
     pagePath
   }

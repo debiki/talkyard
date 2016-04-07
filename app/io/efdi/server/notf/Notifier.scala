@@ -20,6 +20,7 @@ package io.efdi.server.notf
 import akka.actor._
 import com.debiki.core.Prelude._
 import com.debiki.core._
+import debiki.DatabaseUtils.isConnectionClosedBecauseTestsDone
 import debiki.Globals
 import debiki.Globals.originOf
 import debiki.dao.{SiteDao, SiteDaoFactory, SystemDao}
@@ -78,14 +79,24 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
 
   def receive = {
     case "SendNotfs" if Globals.isInitialized =>
-      // COULD use ninjaEdit ninja edit timeout/delay setting here instead (that is, num minutes
-      // one is allowed to edit a post directly after having posted it, without the edits appearing
-      // in the version history. Usually a few minutes. Google for "Discourse ninja edit")
-      val delay = sys.props.get("debiki.notifier.delayInMinutes").map(_.toInt) getOrElse 0
-      val notfsBySiteId: Map[SiteId, Seq[Notification]] =
-        systemDao.loadNotificationsToMailOut(delayInMinutes = delay, numToLoad = 11)
-      logger.trace(s"Found notifications for ${notfsBySiteId.size} sites.")
-      trySendEmailNotfs(notfsBySiteId)
+      try loadAndSend()
+      catch {
+        case ex: java.sql.SQLException =>
+          if (!isConnectionClosedBecauseTestsDone(ex))
+            throw ex
+      }
+  }
+
+
+  private def loadAndSend() {
+    // COULD use ninjaEdit ninja edit timeout/delay setting here instead (that is, num minutes
+    // one is allowed to edit a post directly after having posted it, without the edits appearing
+    // in the version history. Usually a few minutes. Google for "Discourse ninja edit")
+    val delay = sys.props.get("debiki.notifier.delayInMinutes").map(_.toInt) getOrElse 0
+    val notfsBySiteId: Map[SiteId, Seq[Notification]] =
+      systemDao.loadNotificationsToMailOut(delayInMinutes = delay, numToLoad = 11)
+    logger.trace(s"Found notifications for ${notfsBySiteId.size} sites.")
+    trySendEmailNotfs(notfsBySiteId)
   }
 
 

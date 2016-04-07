@@ -107,7 +107,7 @@ object PageTitleSettingsController extends mvc.Controller {
       throwForbiddenIfSpam(isSpamReason, "DwE6JG20")
 
       request.dao.editPostIfAuth(pageId = pageId, postNr = PageParts.TitleNr,
-        editorId = request.theUser.id, request.theBrowserIdData, newTextAndHtml)
+        request.who, newTextAndHtml)
 
       // Load old section page id before changing it.
       val oldSectionPageId: Option[PageId] = oldMeta.categoryId map request.dao.loadTheSectionPageId

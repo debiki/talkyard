@@ -28,7 +28,7 @@ import play.api.mvc
 import play.api.libs.json._
 import play.api.mvc.{Action => _, _}
 import scala.util.Try
-import DebikiHttp.{throwForbidden, throwNotImplemented, throwNotFound, throwBadReq}
+import DebikiHttp._
 
 
 /** Handles requests related to users.
@@ -101,7 +101,6 @@ object UserController extends mvc.Controller {
 
     if (callerIsStaff || callerIsUserHerself) {
       val anyApprover = user.approvedById.flatMap(usersById.get)
-      val anySuspender = user.suspendedById.flatMap(usersById.get)
       val safeEmail =
         if (callerIsAdmin || callerIsUserHerself) user.emailAddress
         else hideEmailLocalPart(user.emailAddress)
@@ -114,11 +113,18 @@ object UserController extends mvc.Controller {
       userJson += "approvedByName" -> JsStringOrNull(anyApprover.flatMap(_.fullName))
       userJson += "approvedByUsername" -> JsStringOrNull(anyApprover.flatMap(_.username))
       userJson += "suspendedAtEpoch" -> DateEpochOrNull(user.suspendedAt)
-      userJson += "suspendedById" -> JsNumberOrNull(user.suspendedById)
-      userJson += "suspendedByUsername" -> JsStringOrNull(anySuspender.flatMap(_.username))
       userJson += "suspendedReason" -> JsStringOrNull(user.suspendedReason)
     }
 
+    if (callerIsStaff) {
+      val anySuspender = user.suspendedById.flatMap(usersById.get)
+      userJson += "suspendedById" -> JsNumberOrNull(user.suspendedById)
+      userJson += "suspendedByUsername" -> JsStringOrNull(anySuspender.flatMap(_.username))
+      userJson += "trustLevel" -> JsNumber(user.trustLevel.toInt)
+      userJson += "lockedTrustLevel" -> JsNumberOrNull(user.lockedTrustLevel.map(_.toInt))
+      userJson += "threatLevel" -> JsNumber(user.threatLevel.toInt)
+      userJson += "lockedThreatLevel" -> JsNumberOrNull(user.lockedThreatLevel.map(_.toInt))
+    }
     userJson
   }
 
@@ -176,6 +182,33 @@ object UserController extends mvc.Controller {
   }
 
 
+  def lockThreatLevel = StaffPostJsonAction(maxLength = 100) { request =>
+    val userId = (request.body \ "userId").as[UserId]
+    val threatLevelInt = (request.body \ "threatLevel").as[Int]
+    val threatLevel = ThreatLevel.fromInt(threatLevelInt) getOrElse throwBadRequest(
+        "EsE2FW40C", s"Bad threat level: $threatLevelInt")
+    if (User.isMember(userId)) {
+      request.dao.lockMemberThreatLevel(userId, Some(threatLevel))
+    }
+    else {
+      request.dao.lockGuestThreatLevel(userId, Some(threatLevel))
+    }
+    Ok
+  }
+
+
+  def unlockThreatLevel = StaffPostJsonAction(maxLength = 100) { request =>
+    val userId = (request.body \ "userId").as[UserId]
+    if (User.isMember(userId)) {
+      request.dao.lockMemberThreatLevel(userId, None)
+    }
+    else {
+      request.dao.lockGuestThreatLevel(userId, None)
+    }
+    Ok
+  }
+
+
   def suspendUser = StaffPostJsonAction(maxLength = 300) { request =>
     val userId = (request.body \ "userId").as[UserId]
     val numDays = (request.body \ "numDays").as[Int]
@@ -203,8 +236,10 @@ object UserController extends mvc.Controller {
 
   def blockGuest = StaffPostJsonAction(maxLength = 100) { request =>
     val postId = (request.body \ "postId").as[UniquePostId]
-    val numDays = (request.body \ "numDays").as[Int]
-    request.dao.blockGuest(postId, numDays = numDays, blockerId = request.theUserId)
+    val numDays = -1 // (request.body \ "numDays").as[Int] // currently no longer in use
+    val threatLevel = ThreatLevel.fromInt((request.body \ "threatLevel").as[Int]).getOrElse(
+      throwBadArgument("EsE8GY2W", "threatLevel"))
+    request.dao.blockGuest(postId, numDays = numDays, threatLevel, blockerId = request.theUserId)
     Ok
   }
 
@@ -253,6 +288,7 @@ object UserController extends mvc.Controller {
 
   private def blockToJson(block: Block): JsObject = {
     Json.obj(
+      "threatLevel" -> JsNumber(block.threatLevel.toInt),
       "ip" -> JsStringOrNull(block.ip.map(_.toString)),
       "browserIdCookie" -> block.browserIdCookie,
       "blockedById" -> block.blockedById,

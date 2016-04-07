@@ -94,6 +94,9 @@ object UploadsController extends mvc.Controller {
   def uploadAvatar = PostFilesAction(RateLimits.UploadFile, maxLength = MaxAvatarUploadSizeBytes) {
         request =>
 
+    BUG ; COULD // specify target user id, so admins won't change their own pic always when
+          // uploading for *another* user
+
     if (!request.theUser.isAuthenticated)
       throwForbidden("EdE8YWM2", o"""Only authenticated users (but not guests) may upload avatars.
         Please login via for example Google or Facebook, or create a password account""")

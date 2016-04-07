@@ -20,6 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp.throwNotFound
+import io.efdi.server.Who
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
 
@@ -194,8 +195,7 @@ trait CategoriesDao {
     readOnlyTransaction(_.loadCategoryMap())
 
 
-  def editCategory(editCategoryData: CreateEditCategoryData,
-        editorId: UserId, browserIdData: BrowserIdData): Category = {
+  def editCategory(editCategoryData: CreateEditCategoryData, who: Who): Category = {
     val (oldCategory, editedCategory) = readWriteTransaction { transaction =>
       val categoryId = editCategoryData.anyId getOrDie "DwE7KPE0"
       val oldCategory = transaction.loadCategory(categoryId).getOrElse(throwNotFound(
@@ -232,8 +232,7 @@ trait CategoriesDao {
   }
 
 
-  def createCategory(newCategoryData: CreateEditCategoryData, creatorId: UserId,
-        browserIdData: BrowserIdData): (Category, PagePath) = {
+  def createCategory(newCategoryData: CreateEditCategoryData, byWho: Who): (Category, PagePath) = {
 
     val bodyHtmlSanitized = commonmarkRenderer.renderAndSanitizeCommonMark(
       CategoryDescriptionSource, allowClassIdDataAttrs = false, followLinks = true)
@@ -255,7 +254,7 @@ trait CategoriesDao {
         bodyHtmlSanitized = bodyHtmlSanitized,
         pinOrder = Some(ForumDao.AboutCategoryTopicPinOrder),
         pinWhere = Some(PinPageWhere.InCategory),
-        authorId = creatorId, browserIdData, transaction)
+        byWho, transaction)
 
       // COULD create audit log entry
       (category, aboutPagePath)
