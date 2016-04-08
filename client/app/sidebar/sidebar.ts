@@ -312,7 +312,7 @@ export var Sidebar = createComponent({
     var numOnlineTextSlash = usersHere.onlyMeOnline ? "you / " : usersHere.numOnline + "/";
 
     //var unreadBtnTitle = commentsFound ? 'Unread (' + commentsFound.unread.length + ')' : null;
-    var starredBtnTitle = commentsFound ? 'Starred (' + commentsFound.starred.length + ')' : null;
+    var starredBtnTitle = commentsFound ? 'Bookmarks (' + commentsFound.starred.length + ')' : null;
     var usersBtnTitle = usersHere.areChatChannelMembers || usersHere.areTopicContributors
         ? "Users (" + numOnlineTextSlash + usersHere.users.length + ")"
         : "Users (" + usersHere.numOnline + ")";
@@ -327,7 +327,7 @@ export var Sidebar = createComponent({
     switch (this.state.commentsType) {
       case 'Recent':
         title = commentsFound.recent.length ?
-            'Recent Comments: (click to show)' : 'No comments.';
+            'Recent comments in this topic:' : 'No comments.';
         recentClass = ' active';
         listItems = makeCommentsContent(commentsFound.recent, this.state.currentPostId, store,
             this.onPostClick);
@@ -341,8 +341,7 @@ export var Sidebar = createComponent({
         break;
         */
       case 'Starred':
-        title = commentsFound.starred.length ?
-            'Starred Comments: (click to show)' : 'No starred comments.';
+        title = "Your bookmarks:";
         starredClass = ' active';
         listItems = makeCommentsContent(commentsFound.starred, this.state.currentPostId, store,
             this.onPostClick);
@@ -357,7 +356,9 @@ export var Sidebar = createComponent({
           title = "Users online:";
         }
         else {
-          title = "Users in this " + (isChat ? "chat: " : "topic:");
+          title = r.div({},
+            "Users in this " + (isChat ? "chat: " : "topic:"),
+            r.span({ className: 'esCtxbar_onlineCol' }, "Online"));
           // Don't show num online strangers, when listing post authors for the current topic only.
           numOnlineStrangers = 0;
         }
@@ -385,9 +386,13 @@ export var Sidebar = createComponent({
     }
     if (this.state.commentsType === 'Starred') {
       tipsGuideOrExtraConfig =
-          r.p({}, 'To star a comment, click the star in its upper left ' +
+        r.div({},
+          r.p({}, "Not implemented.")); /*
+          r.p({}, "You have not bookmarked any comments on this page."),
+          r.p({}, 'To bookmark a comment, click the star in its upper left ' +
             "corner, so the star turns blue or yellow. (You can use these two colors in " +
-            'any way you want.)');
+            'any way you want.)'));
+            */
     }
     /*
     else if (this.state.commentsType === 'Unread') {
@@ -409,7 +414,7 @@ export var Sidebar = createComponent({
       tipsGuideOrExtraConfig = TheAdminGuide;
     }
 
-    var wide = ($(window).width() > 1000);
+    var wide = ($(window).width() > 1010);
     var recentButton;
     var starredButton;
     var unreadButton;
@@ -473,6 +478,9 @@ export var Sidebar = createComponent({
     var helpMessageBoxFour;
     var dimCommentsStyle: { opacity: string; };
     if (this.state.commentsType === 'Recent' && listItems.length >= 6) {
+      // People think 4 tips are too many, and the first two are a bit redundant, so
+      // remove them for now.
+      /*
       helpMessageBoxOne =
           help.HelpMessageBox({ className: 'es-editor-help-one', message: helpMessageOne });
       if (help.isHelpMessageClosed(this.state.store, helpMessageOne)) {
@@ -480,9 +488,9 @@ export var Sidebar = createComponent({
             help.HelpMessageBox({ className: 'es-editor-help-two', message: helpMessageTwo });
       }
       if (help.isHelpMessageClosed(this.state.store, helpMessageTwo)) {
-        helpMessageBoxTree =
+      */
+      helpMessageBoxTree =
             help.HelpMessageBox({ className: 'es-editor-help-three', message: helpMessageThree });
-      }
       if (help.isHelpMessageClosed(this.state.store, helpMessageThree)) {
         helpMessageBoxFour =
             help.HelpMessageBox({ className: 'es-editor-help-four', message: helpMessageFour });
@@ -500,8 +508,9 @@ export var Sidebar = createComponent({
         r.div({ className: 'dw-upper-right-corner' },
           MiniMap(minimapProps))),
       r.div({ id: 'dw-sidebar', className: 'esCtxbar' + sidebarClasses, ref: 'sidebar' },
-        ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar }),
-        tabButtons,
+        r.div({ className: 'esCtxbar_btns' },
+          ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar }),
+          tabButtons),
         r.div({ className: 'dw-comments esCtxbar_list' },
           helpMessageBoxOne,
           helpMessageBoxTwo,
@@ -585,6 +594,7 @@ function makeUsersContent(store: Store, users: BriefUser[], myId: UserId,
 }
 
 
+/*
 var helpMessageOne = {
   id: 'EsH2QMUW1',
   version: 1,
@@ -599,23 +609,23 @@ var helpMessageTwo = {
   content: r.span({}, "Don't try to read them here — only the first words are shown."),
   okayText: "I won't",
   moreHelpAwaits: true,
-};
+}; */
 
 var helpMessageThree = {
   id: 'EsH7UGY2',
   version: 1,
-  content: r.span({}, "Click a comment here, and it'll be focused in the main view, " +
-      "to the left — read it there instead."),
-  okayText: "Yes",
+  content: r.span({}, "Click a comment in this list, to focus it in the main view " +
+      "to the left — and read it ", r.i({}, "there"), " instead."),
+  okayText: "Okay",
   moreHelpAwaits: true,
 };
 
 var helpMessageFour = {
   id: 'EsH6GJYu8',
   version: 1,
-  content: r.span({}, "So although the comments to the left are sorted by best-first, " +
-      "you can easily find the most recent comments."),
-  okayText: "Good to know",
+  content: r.span({}, "The comments to the left are sorted by best-first. " +
+      "But you can use this list to find the newest comments."),
+  okayText: "Thanks, bye",
   moreHelpAwaits: false,
 };
 

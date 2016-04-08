@@ -187,8 +187,8 @@ var ShowAndEditPreferences = createComponent({
           r.div({ className: 'checkbox' },
             r.label({},
               r.input({ type: 'checkbox', id: 'emailForEveryNewPost',
-                defaultChecked: user.emailForEveryNewPost },
-                'Be notified about every new post (unless you mute the topic or category)')))),
+                defaultChecked: user.emailForEveryNewPost }),
+              "Be notified about every new post (unless you mute the topic or category)"))),
 
         Button({ type: 'submit' }, 'Save'),
         savingInfo));
