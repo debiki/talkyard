@@ -35,6 +35,7 @@ enum HttpStatusCode {
 }
 
 var BadNameOrPasswordErrorCode = 'EsE403BPWD';
+declare var theStore: Store; // for assertions only
 
 
 interface OngoingRequest {
@@ -542,8 +543,13 @@ export function createForum(title: string, folder: string, success: (urlPath: st
 
 
 export function loadForumCategories(forumPageId: string,
-      success: (categories: Category[]) => void) {
-  get('/-/list-categories?forumId=' + forumPageId, success);
+      success?: (categories: Category[]) => void) {
+  // Perhaps should remove the forum id param? Since saves cats in the store cats list always.
+  dieIf(forumPageId !== theStore.pageId, 'EsE7YPK24');
+  get('/-/list-categories?forumId=' + forumPageId, (categories: Category[]) => {
+    ReactActions.setCategories(categories);
+    !success || success(categories);
+  });
 }
 
 

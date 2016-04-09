@@ -31,6 +31,7 @@ export var actionTypes = {
   Logout: 'Logout',
   NewUserAccountCreated: 'NewUserAccountCreated',
   CreateEditForumCategory: 'CreateEditForumCategory',
+  SetCategories: 'SetCategories',
   PinPage: 'PinPage',
   UnpinPage: 'UnpinPage',
   DeletePages: 'DeletePages',
@@ -122,6 +123,14 @@ export function saveCategory(category, success: () => void, error: () => void) {
     });
     success();
   }, error);
+}
+
+
+export function setCategories(categories: Category[]) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.SetCategories,
+    categories: categories,
+  });
 }
 
 

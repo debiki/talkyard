@@ -20,6 +20,7 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="SelectCategoryDropdown.ts" />
 /// <reference path="editor-utils.ts" />
 
 //------------------------------------------------------------------------------
@@ -34,6 +35,7 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var Input = reactCreateFactory(ReactBootstrap.Input);
 var $: any = window['jQuery'];
+var SelectCategoryDropdown = editor.SelectCategoryDropdown;
 
 
 export var TitleEditor = createComponent({
@@ -42,6 +44,7 @@ export var TitleEditor = createComponent({
       showComplicated: false,
       isSaving: false,
       pageRole: this.props.pageRole,
+      categoryId: this.props.categoryId,
     };
   },
 
@@ -82,6 +85,10 @@ export var TitleEditor = createComponent({
     this.setState({ slug: slugMatchingTitle });
   },
 
+  onCategoryChanged: function(categoryId: CategoryId) {
+    this.setState({ categoryId: categoryId });
+  },
+
   onPageRoleChanged: function(event) {
     this.setState({ pageRole: parseInt(event.target.value) });
   },
@@ -108,9 +115,8 @@ export var TitleEditor = createComponent({
   },
 
   getSettings: function() {
-    var categoryInput = this.refs.categoryInput;
     var settings: any = {
-      categoryId: categoryInput ? parseInt(categoryInput.getValue()) : null,
+      categoryId: this.state.categoryId,
       pageRole: this.state.pageRole,
       folder: addFolderSlashes(this.state.folder),
       slug: this.state.slug,
@@ -212,15 +218,11 @@ export var TitleEditor = createComponent({
       // About-category pages cannot be moved to other categories.
     }
     else if (this.props.forumId) {
-      var categoryOptions = this.props.categories.map((category: Category) => {
-        return r.option({ value: category.id, key: category.id }, category.name);
-      });
-
       selectCategoryInput =
-        Input({ type: 'select', label: 'Category', ref: 'categoryInput', title: 'Category',
-            labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
-            defaultValue: this.props.categoryId },
-          categoryOptions);
+        Input({ label: "Category", labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10' },
+          SelectCategoryDropdown({ store: this.props, pullLeft: true,
+            selectedCategoryId: this.state.categoryId,
+            onCategorySelected: this.onCategoryChanged }));
     }
 
     var customHtmlPageOption = user.isAdmin

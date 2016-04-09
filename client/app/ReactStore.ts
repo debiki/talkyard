@@ -95,6 +95,10 @@ ReactDispatcher.register(function(payload) {
       store.newCategorySlug = action.newCategorySlug;
       break;
 
+    case ReactActions.actionTypes.SetCategories:
+      store.categories = action.categories;
+      break;
+
     case ReactActions.actionTypes.PinPage:
       store.pinOrder = action.pinOrder;
       store.pinWhere = action.pinWhere;

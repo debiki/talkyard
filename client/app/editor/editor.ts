@@ -24,6 +24,7 @@
 /// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="commonmark.ts" />
+/// <reference path="SelectCategoryDropdown.ts" />
 /// <reference path="editor-utils.ts" />
 
 //------------------------------------------------------------------------------
@@ -579,8 +580,8 @@ export var Editor = createComponent({
     }, anyCallback);
   },
 
-  changeCategory: function(event) {
-    this.setState({ newForumTopicCategoryId: parseInt(event.target.value) });
+  changeCategory: function(categoryId: CategoryId) {
+    this.setState({ newForumTopicCategoryId: categoryId });
   },
 
   changeNewForumPageRole: function(event) {
@@ -819,9 +820,10 @@ export var Editor = createComponent({
 
       if (this.state.newForumPageRole)
         categoriesDropdown =
-          SelectCategoryInput({ className: 'esEdtr_titleEtc_category',
-              categories: this.state.store.categories, onChange: this.changeCategory,
-              categoryId: this.state.newForumTopicCategoryId });
+          SelectCategoryDropdown({ className: 'esEdtr_titleEtc_category',
+              store: store,
+              selectedCategoryId: this.state.newForumTopicCategoryId,
+              onCategorySelected: this.changeCategory });
 
       if (isStaff(me)) {
         pageRoleDropdown = PageRoleInput({ me: me, value: this.state.newForumPageRole,

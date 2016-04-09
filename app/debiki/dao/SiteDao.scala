@@ -238,7 +238,13 @@ abstract class SiteDao
         case Some(id) =>
           throwIfMayNotSeeCategory(id, user)(transaction)
         case None =>
-          io.efdi.server.http.throwIndistinguishableNotFound("EsE0YK25")
+          // Deny access unless this is a private messages page.
+          if (pageMeta.pageRole != PageRole.Message || user.isEmpty)
+            throwIndistinguishableNotFound("EsE0YK25")
+
+          val pageMembers = transaction.loadMessageMembers(pageMeta.pageId)
+          if (!pageMembers.contains(user.getOrDie("EsE2WY50F3").id))
+            throwIndistinguishableNotFound("EsE5GYK0V")
       }
     }
   }
