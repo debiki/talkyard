@@ -79,6 +79,7 @@ trait SiteTransaction {
   def loadThePost(pageId: PageId, postNr: PostNr): Post =
     loadPost(pageId, postNr).getOrElse(throw PostNotFoundException(pageId, postNr))
 
+  def loadOrigPostAndLatestPosts(pageId: PageId, limit: Int): Seq[Post]
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
   def loadPosts(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]
   def loadPostsByUniqueId(postIds: Iterable[UniquePostId]): immutable.Map[UniquePostId, Post]

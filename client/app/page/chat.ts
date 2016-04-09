@@ -106,12 +106,19 @@ var TitleAndLastChatMessages = createComponent({
     headerProps.post = originalPost;
     var origPostHeader = PostHeader(headerProps); // { store: _, post: _ } would be better?
     var origPostBody = PostBody({ store: store, post: originalPost });
+    var canScrollUpToFetchOlder = true;
 
     var messages = [];
     _.each(store.allPosts, (post: Post) => {
       if (post.postId === TitleId || post.postId === BodyId) {
         // We show the title & body elsewhere.
         return;
+      }
+      if (post.postId === FirstReplyNr) {
+        // (COULD make this work also if post nr FirstReplyNr has been moved to another page
+        // and hence will never be found. Fix by scrolling up, noticing that nothing was found,
+        // and remove the you-can-scroll-up indicator?)
+        canScrollUpToFetchOlder = false;
       }
       messages.push(
         ChatMessage({ key: post.uniqueId, store: store, post: post }));
@@ -129,6 +136,10 @@ var TitleAndLastChatMessages = createComponent({
       perhapsHidden = { display: 'none' };
     }
 
+    var scrollUpTips = !canScrollUpToFetchOlder ? false :
+      r.div({ className: 'esChat_scrollUpTips' },
+        "Scroll up to view older comments", r.br(), "(Not implemented though. So don't)");
+
     return (
       r.div({ className: 'esLastChatMsgs', style: perhapsHidden },
         title,
@@ -136,6 +147,7 @@ var TitleAndLastChatMessages = createComponent({
           thisIsTheWhat,
           r.div({}, "Purpose:"),
           origPostBody),
+        scrollUpTips,
         messages,
         r.div({ id: 'dw-the-end' })));
   }

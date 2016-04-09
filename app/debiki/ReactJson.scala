@@ -131,13 +131,21 @@ object ReactJson {
     val socialLinksHtml = dao.loadWholeSiteSettings().socialLinksHtml
     val page = PageDao(pageId, transaction)
     val pageParts = page.parts
-    pageParts.loadAllPosts()
+    val posts =
+      if (page.role.isChat) {
+        // Load the latest chat messages only. We'll load earlier posts from the browser, on demand.
+        transaction.loadOrigPostAndLatestPosts(page.id, limit = 100)
+      }
+      else {
+        pageParts.loadAllPosts()
+        pageParts.allPosts
+      }
 
     var numPosts = 0
     var numPostsRepliesSection = 0
     var numPostsChatSection = 0
 
-    var allPostsJson = pageParts.allPosts filter { post =>
+    var allPostsJson = posts filter { post =>
       !post.deletedStatus.isDeleted || (
         post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.nr))
     } map { post: Post =>
@@ -249,7 +257,7 @@ object ReactJson {
       "me" -> NoUserSpecificData,
       "rootPostId" -> JsNumber(BigDecimal(anyPageRoot getOrElse PageParts.BodyNr)),
       "usersByIdBrief" -> usersByIdJson,
-      "allPosts" -> JsObject(allPostsJson),
+      "allPosts" -> JsObject(allPostsJson), // COULD rename — doesn't contain all posts, if is chat
       "topLevelCommentIdsSorted" -> JsArray(topLevelCommentIdsSorted),
       "siteSections" -> makeSiteSectionsJson(dao),
       "horizontalLayout" -> JsBoolean(horizontalLayout),

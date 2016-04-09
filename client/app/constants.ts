@@ -20,8 +20,10 @@ var ReactStartedClass = 'dw-react-started';
 var EmptyPageId = '0';
 var FirstSiteId = '1';
 
-var BodyId = 1;
 var NoPostId = -1;  // dupl in reply.js
+var TitleNr = 0;
+var BodyId = 1;
+var FirstReplyNr = 2;
 
 var SystemUserId = -1;
 var MinMemberId = SystemUserId;
