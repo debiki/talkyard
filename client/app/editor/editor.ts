@@ -25,7 +25,7 @@
 /// <reference path="../Server.ts" />
 /// <reference path="commonmark.ts" />
 /// <reference path="SelectCategoryDropdown.ts" />
-/// <reference path="editor-utils.ts" />
+/// <reference path="PageRoleDropdown.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.editor {
@@ -584,8 +584,8 @@ export var Editor = createComponent({
     this.setState({ newForumTopicCategoryId: categoryId });
   },
 
-  changeNewForumPageRole: function(event) {
-    this.setState({ newForumPageRole: parseInt(event.target.value) });
+  changeNewForumPageRole: function(pageRole: PageRole) {
+    this.setState({ newForumPageRole: pageRole });
   },
 
   onCancelClick: function() {
@@ -820,15 +820,14 @@ export var Editor = createComponent({
 
       if (this.state.newForumPageRole)
         categoriesDropdown =
-          SelectCategoryDropdown({ className: 'esEdtr_titleEtc_category',
-              store: store,
+          SelectCategoryDropdown({ className: 'esEdtr_titleEtc_category', store: store,
               selectedCategoryId: this.state.newForumTopicCategoryId,
               onCategorySelected: this.changeCategory });
 
       if (isStaff(me)) {
-        pageRoleDropdown = PageRoleInput({ me: me, value: this.state.newForumPageRole,
+        pageRoleDropdown = PageRoleDropdown({ store: store, pageRole: this.state.newForumPageRole,
             complicated: store.settings.showComplicatedStuff,
-            onChange: this.changeNewForumPageRole,
+            onSelect: this.changeNewForumPageRole,
             title: 'Page type', className: 'esEdtr_titleEtc_pageRole' });
       }
     }

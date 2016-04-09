@@ -21,7 +21,7 @@
 /// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="SelectCategoryDropdown.ts" />
-/// <reference path="editor-utils.ts" />
+/// <reference path="PageRoleDropdown.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.titleeditor {
@@ -89,8 +89,8 @@ export var TitleEditor = createComponent({
     this.setState({ categoryId: categoryId });
   },
 
-  onPageRoleChanged: function(event) {
-    this.setState({ pageRole: parseInt(event.target.value) });
+  onPageRoleChanged: function(pageRole) {
+    this.setState({ pageRole: pageRole });
   },
 
   onFolderChanged: function(event) {
@@ -196,13 +196,15 @@ export var TitleEditor = createComponent({
           r.div({ className: 'dw-compl-stuff form-horizontal', key: 'compl-stuff-key' },
             anyMetaTitleAndDescription,
             isForumOrAbout ? null :
-              editor.PageRoleInput({ me: store.me, value: this.state.pageRole,
-                label: "Page type", labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
-                onChange: this.onPageRoleChanged,
-                complicated: store.settings.showComplicatedStuff,
-                title: 'Page type', className: 'esEdtr_titleEtc_pageRole',
-                help: "Makes the page behave differently. For example, pages of type Question " +
-                  "can be marked as solved, and Idea pages can be New, Planned or Implemented." }),
+              Input({ label: "Page type", labelClassName: 'col-xs-2',
+                  wrapperClassName: 'col-xs-10' },
+                editor.PageRoleDropdown({ store: store, pageRole: this.state.pageRole,
+                  onSelect: this.onPageRoleChanged, pullLeft: true,
+                  complicated: store.settings.showComplicatedStuff,
+                  title: 'Page type', className: 'esEdtr_titleEtc_pageRole',
+                  help: "Makes the page behave differently. For example, pages of type " +
+                    "Question can be marked as solved, and Idea pages can be New, " +
+                    "Planned or Implemented." })),
             anyUrlAndCssClassEditor));
     }
 

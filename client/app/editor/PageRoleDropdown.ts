@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../page-methods.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.editor {
@@ -28,56 +29,122 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
-var Input = reactCreateFactory(ReactBootstrap.Input);
+var DropdownModal = utils.DropdownModal;
+var ExplainingListItem = util.ExplainingListItem;
 
 
-export var PageRoleInput = createComponent({
+// Some dupl code, see SelectCategoryDropdown [7GKDF25]
+// BEM name: esPageRole
+export var PageRoleDropdown = createComponent({
+  getInitialState: function() {
+    return {
+      open: false,
+      buttonX: -1,
+      buttonY: -1,
+    };
+  },
+
+  open: function() {
+    // Dupl code [7GKDF25]
+    var rect = ReactDOM.findDOMNode(this.refs.dropdownButton).getBoundingClientRect();
+    this.setState({
+      open: true,
+      buttonX: this.props.pullLeft ? rect.left : rect.right,
+      buttonY: rect.bottom
+    });
+  },
+
+  close: function() {
+    this.setState({ open: false });
+  },
+
+  onSelect: function(listItem) {
+    this.props.onSelect(listItem.eventKey);
+    this.close();
+  },
+
   render: function() {
-    var me: Myself = this.props.me;
-    var complicated = this.props.complicated;
+    var props = this.props;
+    var state = this.state;
+    var pageRole = props.pageRole;
+    var complicated = props.complicated;
+    var store: Store = this.props.store;
+    var me: Myself = store.me;
 
-    var wikiMindMap = complicated ? r.option({ value: PageRole.MindMap }, "Wiki Mind Map") : null;
+    var dropdownButton =
+      Button({ onClick: this.open, ref: 'dropdownButton' },
+        pageRole_toString(pageRole) + ' ', r.span({ className: 'caret' }));
 
-    var divider;
+    var wikiMindMap = !complicated ? false :
+      ExplainingListItem({ onSelect: this.onSelect,
+        activeEventKey: pageRole, eventKey: PageRole.MindMap,
+        title: "Mind map", text: "" });
+
+    var adminOnlyDivider;
     var openChatOption;
     var privateChatOption;
     var webPageOption;
     var customHtmlPageOption;
     if (me.isAdmin) {
-      openChatOption = r.option({ value: PageRole.OpenChat }, "Chat room");
-      webPageOption = r.option({ value: PageRole.WebPage }, "Info web page");
+      adminOnlyDivider = r.div({ className: 'esDropModal_header' }, "Only staff can create these:");
+      openChatOption =
+        ExplainingListItem({ onSelect: this.onSelect,
+          activeEventKey: pageRole, eventKey: PageRole.OpenChat,
+          title: "Chat channel", text: "" });
+
+      webPageOption =
+        ExplainingListItem({ onSelect: this.onSelect,
+          activeEventKey: pageRole, eventKey: PageRole.WebPage,
+          title: "Info page", text: "A normal discussion page with comments enabled, " +
+              "but with no page author name shown. Use for about-this-site like pages." });
+
       // Not yet implemented:
       // privateChatOption = r.option({ value: PageRole.PrivateChat }, "Private chat");
 
       if (complicated) {
-        divider = r.option({ disabled: true }, "");
-        customHtmlPageOption = r.option({ value: PageRole.CustomHtmlPage }, "Custom HTML page");
+        customHtmlPageOption =
+          ExplainingListItem({ onSelect: this.onSelect,
+            activeEventKey: pageRole, eventKey: PageRole.CustomHtmlPage,
+            title: "Custom HTML page", text: "Create your own page in HTML and CSS." });
       }
     }
 
+    var dropdownModal =
+      DropdownModal({ show: state.open, onHide: this.close, pullLeft: this.props.pullLeft,
+          atX: state.buttonX, atY: state.buttonY },
+        r.div({ className: 'esDropModal_header'}, "Select page type:"),
+        r.ul({},
+          ExplainingListItem({ onSelect: this.onSelect,
+            activeEventKey: pageRole, eventKey: PageRole.Discussion,
+            title: "Discussion", text: "The default. Use if there's no better fit." }),
+
+          ExplainingListItem({ onSelect: this.onSelect,
+            activeEventKey: pageRole, eventKey: PageRole.Question,
+            title: "Question", text: "" }),
+
+          ExplainingListItem({ onSelect: this.onSelect,
+            activeEventKey: pageRole, eventKey: PageRole.Problem,
+            title: "Problem", text: "If something is broken or doesn't work." }),
+
+          ExplainingListItem({ onSelect: this.onSelect,
+            activeEventKey: pageRole, eventKey: PageRole.Idea,
+            title: "Idea", text: "" }),
+
+          ExplainingListItem({ onSelect: this.onSelect,
+            activeEventKey: pageRole, eventKey: PageRole.ToDo,
+            title: "Todo", text: "Something that should be done or fixed." }),
+
+          wikiMindMap,
+          adminOnlyDivider,
+          webPageOption,
+          customHtmlPageOption,
+          openChatOption,
+          privateChatOption));
+
     return (
-      Input({
-          type: 'select',
-          title: this.props.title || "Page type",
-          label: this.props.label,
-          labelClassName: this.props.labelClassName,
-          wrapperClassName: this.props.wrapperClassName,
-          value: this.props.value,
-          defaultValue: this.props.defaultValue,
-          onChange: this.props.onChange,
-        },
-        r.option({ value: PageRole.Discussion }, 'Discussion'),
-        r.option({ value: PageRole.Question }, 'Question'),
-        r.option({ value: PageRole.Problem }, 'Problem'),
-        r.option({ value: PageRole.Idea }, 'Idea'),
-        r.option({ value: PageRole.ToDo }, 'Todo'),
-        // r.option({ value: PageRole.WikiPage }, 'Wiki'), -- if 1d layout is default?
-        wikiMindMap,
-        divider,
-        webPageOption,
-        customHtmlPageOption,
-        openChatOption,
-        privateChatOption));
+      r.div({},
+        dropdownButton,
+        dropdownModal));
   }
 });
 

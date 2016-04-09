@@ -16,17 +16,12 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../../typedefs/modernizr/modernizr.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
-/// <reference path="../util/stupid-dialog.ts" />
 /// <reference path="../utils/react-utils.ts" />
-/// <reference path="../utils/PageUnloadAlerter.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../util/ExplainingDropdown.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
-/// <reference path="commonmark.ts" />
-/// <reference path="editor-utils.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.editor {
@@ -42,6 +37,7 @@ var ExplainingListItem = util.ExplainingListItem;
 
 
 
+// Some dupl code, see PageRoleDropdown [7GKDF25]
 export var SelectCategoryDropdown = createClassAndFactory({
   getInitialState: function() {
     return {
@@ -52,6 +48,7 @@ export var SelectCategoryDropdown = createClassAndFactory({
   },
 
   open: function() {
+    // Dupl code [7GKDF25]
     var rect = ReactDOM.findDOMNode(this.refs.dropdownButton).getBoundingClientRect();
     this.setState({
       open: true,
@@ -91,7 +88,7 @@ export var SelectCategoryDropdown = createClassAndFactory({
     var dropdownModal =
       DropdownModal({ show: state.open, onHide: this.close, pullLeft: this.props.pullLeft,
           atX: state.buttonX, atY: state.buttonY },
-        r.div({ className: 'esSelectCategory_header' }, "Select category:"),
+        r.div({ className: 'esDropModal_header' }, "Select category:"),
         r.ul({},
           categoryListItems));
 

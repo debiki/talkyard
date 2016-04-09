@@ -92,7 +92,7 @@ export var DropdownModal = createComponent({
 
     return (
       Modal({ show: this.props.show, onHide: this.props.onHide, dialogClassName: 'esDropModal',
-          backdropStyle: { opacity: 0.04 } },
+          backdropStyle: { opacity: 0.08 } },
         content));
   }
 });
