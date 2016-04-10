@@ -276,7 +276,7 @@ sealed abstract class PageRole(protected val IntValue: Int, val staffOnly: Boole
 
 object PageRole {
 
-  val InfoPageMaxId = WebPage.toInt
+  def InfoPageMaxId = WebPage.toInt
 
   case object CustomHtmlPage extends PageRole(1) {
     override def isWidelyEditable = false

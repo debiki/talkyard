@@ -176,6 +176,9 @@ class Globals {
   def originOf(host: SiteHost): String = originOf(host.hostname)
   def originOf(hostOrHostname: String): String = {
     val (hostname, port) = hostOrHostname.span(_ != ':')
+    // COULD throw a user-friendly error, like "You're accessing the server via non-standard
+    // port NNNN, but then you need to edit/add config value `debiki.port=NNNN` otherwise
+    // I won't know for sure which port to include in URLs I generate."
     dieIf(port.nonEmpty && port != colonPort, "DwE47SK2", s"Bad port: '$hostOrHostname'")
     s"$scheme://$hostname$colonPort"
   }
