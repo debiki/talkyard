@@ -16,6 +16,7 @@
  */
 
 /// <reference path="plain-old-javascript.d.ts" />
+/// <reference path="../typedefs/react/react.d.ts" />
 
 /**
  * Basic stuff needed by essentially all modules / files.
@@ -24,7 +25,11 @@
    module debiki2 {
 //------------------------------------------------------------------------------
 
-var reactCreateFactory = React['createFactory'];
+// E2e tests won't compile without this. Why not, React.js already included above? Oh well.
+declare var React;
+declare var ReactRouter;
+
+  var reactCreateFactory = React['createFactory'];
 export var Link = reactCreateFactory(ReactRouter.Link);
 
 

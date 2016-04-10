@@ -19,6 +19,8 @@
 // Would have been member functions, had it been possible to amend the React
 // state tree with functions.
 
+/// <reference path="prelude.ts" />
+
 
 // Tells if a user may do something, and why s/he may do that, or why not.
 interface MayMayNot {
