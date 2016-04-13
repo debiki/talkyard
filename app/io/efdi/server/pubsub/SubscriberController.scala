@@ -72,7 +72,7 @@ object SubscriberController extends mvc.Controller {
     // browser cannot specify the wrong host url param and in that way subscribe with the same
     // user id but at a different site.
 
-    Globals.pubSub.onUserSubscribed(request.siteId, request.theUser, request.theBrowserIdData)
+    Globals.pubSub.userSubscribed(request.siteId, request.theUser, request.theBrowserIdData)
     Ok
   }
 

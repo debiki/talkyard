@@ -19,9 +19,9 @@ package debiki
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import com.github.benmanes.caffeine
 import debiki.DebikiHttp.throwTooManyRequests
 import io.efdi.server.http.DebikiRequest
-import net.sf.ehcache.{Element => EhcacheElement}
 import java.util.concurrent.atomic.AtomicReference
 import RateLimits._
 
@@ -29,11 +29,15 @@ import RateLimits._
 
 object RateLimiter {
 
-  private val ehcache: net.sf.ehcache.Cache = {
-    val cache = buildCache()
-    net.sf.ehcache.CacheManager.create().addCache(cache)
-    cache
-  }
+  /** Don't place this cache in Redis because 1) the rate limiter should be really fast,
+    * not do any calls to other processes. And 2) it's just fine if sometimes a bit too
+    * many requests are allowed, because they hit different rate limit caches on different
+    * app servers.
+    */
+  private val timestampsCache: caffeine.cache.Cache[String, TimestampsHolder] =
+    caffeine.cache.Caffeine.newBuilder()
+    .maximumSize(100*1000)
+    .build()
 
   private val VeryLongAgo: UnixTime = 0
 
@@ -48,17 +52,8 @@ object RateLimiter {
   }
 
 
-  private def buildCache() = {
-    val config = new net.sf.ehcache.config.CacheConfiguration()
-    config.setName("DebikiRateLimiter")
-    // Let's out-of-memory die, and buy more memory, if needed.
-    config.setMaxEntriesLocalHeap(0) // 0 means no limit
-    new net.sf.ehcache.Cache(config)
-  }
-
-
   def rateLimit(rateLimits: RateLimits, request: DebikiRequest[_]) {
-    if (request.user.map(_.isAdmin) == Some(true))
+    if (request.user.exists(_.isAdmin))
       return
 
     if (rateLimits.isUnlimited(isNewUser = false))
@@ -79,18 +74,16 @@ object RateLimiter {
       .getOrElse(request.ip)
     val key = s"$roleIdOrIp|${rateLimits.key}"
 
-    var elem: EhcacheElement = ehcache.get(key)
-    if (elem eq null) {
-      elem = createAndCacheNewCacheElem(key, rateLimits)
+    var timestampsHolder: TimestampsHolder = timestampsCache.getIfPresent(key)
+    if (timestampsHolder eq null) {
+      timestampsHolder = insertUpdateCache(key, rateLimits)
     }
 
-    var timestampsHolder = elem.getObjectValue().asInstanceOf[TimestampsHolder]
     var requestTimestamps: Array[UnixTime] = timestampsHolder.timestamps.get
 
     // If the rate limits have been changed, we need a new properly sized cache elem.
     if (requestTimestamps.length != rateLimits.numRequestsToRemember(isNewUser = false)) {
-      elem = createAndCacheNewCacheElem(key, rateLimits)
-      timestampsHolder = elem.getObjectValue().asInstanceOf[TimestampsHolder]
+      timestampsHolder = insertUpdateCache(key, rateLimits)
       requestTimestamps = timestampsHolder.timestamps.get
     }
 
@@ -107,15 +100,13 @@ object RateLimiter {
   }
 
 
-  private def createAndCacheNewCacheElem(key: String, rateLimits: RateLimits) = {
+  private def insertUpdateCache(key: String, rateLimits: RateLimits) = {
     require(rateLimits != NoRateLimits, "DwE293Z14")
     val numRequestsToRemember = rateLimits.numRequestsToRemember(isNewUser = false)
     val oldTimestamps = Array.fill[UnixTime](numRequestsToRemember)(VeryLongAgo)
-    val elem = new EhcacheElement(key, new TimestampsHolder(oldTimestamps))
-    elem.setEternal(true)
-    elem.setTimeToIdle(rateLimits.numSecondsToRemember)
-    ehcache.put(elem)
-    elem
+    val value = new TimestampsHolder(oldTimestamps)
+    timestampsCache.put(key, value)
+    value
   }
 
 

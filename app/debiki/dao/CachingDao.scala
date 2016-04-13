@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{CacheMetric, Globals}
 import nl.grons.metrics.scala.Meter
+import java.{util => ju}
 import scala.reflect.ClassTag
 import CachingDao._
 
@@ -79,11 +80,12 @@ trait CacheEvents {  // COULD move to separate file
 
 object CachingDao {
 
-  case class CacheKey(siteId: SiteId, rest: String)
+  case class CacheKey(siteId: SiteId, rest: String) {
+    override def toString = s"$siteId|$rest"
+  }
 
   def CacheKeyAnySite(value: String) = CacheKey(siteId = "?", value)
 
-  case class CacheValue[A](value: A, siteCacheVersion: Long)
   def CacheValueIgnoreVersion[A](value: A) = CacheValue(value, IgnoreSiteCacheVersion)
 
   private val IgnoreSiteCacheVersion = 0
@@ -103,23 +105,10 @@ object CachingDao {
 trait CachingDao extends CacheEvents {
   self: {
     def siteId: SiteId
-    def ehcache: net.sf.ehcache.Ehcache
+    def cache: DaoMemCache
   } =>
 
   private var _thisSitesCacheVersionNow: Option[Long] = None
-
-
-
-  private def cacheElem(key: Any, value: CacheValue[_], expiration: Int = 0) = {
-    val elem = new net.sf.ehcache.Element(key, value.value)
-    elem.setVersion(value.siteCacheVersion)
-    // This is what Play Framework does, see class  EhCachePlugin
-    // in play/api/cache/Cache.scala. Without this code, I think EHCache removes
-    // the elem after a few seconds or minutes.
-    if (expiration == 0) elem.setEternal(true)
-    elem.setTimeToLive(expiration)
-    elem
-  }
 
 
   /** Remembers the current site's cache version, so we don't need to look it up in the cache.
@@ -151,8 +140,7 @@ trait CachingDao extends CacheEvents {
         key: CacheKey,
         orCacheAndReturn: => Option[A] = null,
         metric: CacheMetric = null,
-        ignoreSiteCacheVersion: Boolean = false,
-        expiration: Int = 0)(
+        ignoreSiteCacheVersion: Boolean = false)(
         implicit classTag: ClassTag[A]): Option[A] = time(metric) { hitMeter =>
 
     lookupInCacheToReplace(key) foreach { case CacheValue(value, version) =>
@@ -176,7 +164,7 @@ trait CachingDao extends CacheEvents {
     // overwrite it, because `newValue` is probably more recent.
     // – For now, don't store info on cache misses.
     newValueOpt foreach { newValue =>
-      putInCache(key, CacheValue(newValue, siteCacheVersion), expiration = expiration)
+      putInCache(key, CacheValue(newValue, siteCacheVersion))
     }
     newValueOpt
   }
@@ -189,8 +177,8 @@ trait CachingDao extends CacheEvents {
         : Option[CacheValue[A]] = {
     // (See class EhCachePlugin in play/api/cache/Cache.scala, for how Play Framework
     // does with `getObjectValue`. Namely exactly as on the next line.)
-    Option(ehcache.get(key)) foreach { ehCacheElement =>
-      val cachedValue = ehCacheElement.getObjectValue
+    Option(cache.getIfPresent(key.toString)) foreach { item =>
+      val cachedValue = item.value
 
       if (!classTag.runtimeClass.isInstance(cachedValue))
         throwNoSuchElem("DwE8ZX02", s"""Found a ${classNameOf(cachedValue)},
@@ -198,14 +186,14 @@ trait CachingDao extends CacheEvents {
 
       // Is the cached value up-to-date or has the site recently been modified somehow,
       // and we need to discard it?
-      var upToDate = ehCacheElement.getVersion == IgnoreSiteCacheVersion
+      var upToDate = item.siteCacheVersion == IgnoreSiteCacheVersion
       if (!upToDate) {
         val siteCacheVersion = siteCacheVersionNow(key.siteId)
-        upToDate = siteCacheVersion <= ehCacheElement.getVersion
+        upToDate = siteCacheVersion <= item.siteCacheVersion
       }
 
       if (upToDate)
-        return Some(CacheValue[A](cachedValue.asInstanceOf[A], ehCacheElement.getVersion))
+        return Some(CacheValue[A](cachedValue.asInstanceOf[A], item.siteCacheVersion))
 
       // Cached value is stale.
       removeFromCache(key)
@@ -215,29 +203,22 @@ trait CachingDao extends CacheEvents {
   }
 
 
-  def putInCache[A](key: CacheKey, value: CacheValue[A], expiration: Int = 0) {
-    ehcache.put(cacheElem(key, value, expiration))
+  def putInCache(key: CacheKey, value: DaoMemCacheAnyItem) {
+    cache.put(key.toString, value)
   }
 
 
-  def putInCacheIfAbsent[A](key: CacheKey, value: CacheValue[A], expiration: Int = 0): Boolean = {
-    val anyOldElem = ehcache.putIfAbsent(cacheElem(key, value, expiration))
-    val wasInserted = anyOldElem eq null
-    wasInserted
-  }
-
-
-  def replaceInCache[A](key: CacheKey, oldValue: CacheValue[A], newValue: CacheValue[A])
-        : Boolean = {
-    val oldElem = cacheElem(key, oldValue)
-    val newElem = cacheElem(key, newValue)
-    val wasReplaced = ehcache.replace(oldElem, newElem)
-    wasReplaced
+  def putInCacheIfAbsent[A](key: CacheKey, value: DaoMemCacheAnyItem): Boolean = {
+    val javaFn = new ju.function.Function[String, DaoMemCacheAnyItem] {
+      override def apply(dummy: String): DaoMemCacheAnyItem = value
+    }
+    val itemInCacheAfter = cache.get(key.toString, javaFn)
+    itemInCacheAfter eq value
   }
 
 
   def removeFromCache(key: CacheKey) {
-    ehcache.remove(key)
+    cache.invalidate(key.toString)
   }
 
 
@@ -246,10 +227,7 @@ trait CachingDao extends CacheEvents {
   def emptyCache(siteId: String) {
     val siteCacheVersion = siteCacheVersionNow(siteId)
     val nextVersion = siteCacheVersion + 1  // BUG Race condition.
-    val elem = new net.sf.ehcache.Element(siteCacheVersionKey(siteId), nextVersion)
-    elem.setEternal(true) // see comments in `cacheElem()` above.
-    elem.setTimeToLive(0) //
-    ehcache.put(elem)
+    cache.put(siteCacheVersionKey(siteId), CacheValue(nextVersion, -1))
     _thisSitesCacheVersionNow = None
   }
 
@@ -266,12 +244,13 @@ trait CachingDao extends CacheEvents {
 
 
   private def lookupSiteCacheVersion(siteId: SiteId): Long = {
-    val elem = ehcache.get(siteCacheVersionKey(siteId))
-    if (elem eq null)
+    val item = cache.getIfPresent(siteCacheVersionKey(siteId))
+    if (item eq null)
       return FirstSiteCacheVersion
 
-    val value = elem.getObjectValue
-    alwaysAssert(value.isInstanceOf[Long], "DwE996F2")
+    val value = item.value
+    dieIf(!value.isInstanceOf[Long], "EsE996F2")
+    dieIf(item.siteCacheVersion != -1, "EsE4GKW20")
     value.asInstanceOf[Long]
   }
 

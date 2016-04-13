@@ -23,6 +23,7 @@ import com.codahale.metrics
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
+import com.github.benmanes.caffeine
 import com.zaxxer.hikari.HikariDataSource
 import debiki.Globals.NoStateError
 import debiki.antispam.AntiSpam
@@ -339,20 +340,20 @@ class Globals {
       new Rdb(readOnlyDataSource, readWriteDataSource), ScalaBasedMigrations, Akka.system,
       anyFullTextSearchDbPath, Play.isTest, fastStartSkipSearch = fastStartSkipSearch)
 
-    // In class EhCachePlugin in play/api/cache/Cache.scala you'll see how Play
-    // creates its per-application cache, namely exactly like below.
-    val ehcache: net.sf.ehcache.Ehcache = {
-      // Ensure Play has created its default cache:
-      import play.api.Play.current
-      play.api.cache.Cache.get("dummy")
-      // Then fetch and reuse that default cache:
-      val playCache = net.sf.ehcache.CacheManager.create().getCache("play")
-      // Results in "java.lang.NoSuchMethodError: net.sf.ehcache.Ehcache.getStatistics":
-      //com.codahale.metrics.ehcache.InstrumentedEhcache.instrument(Globals.metricRegistry, playCache)
-      playCache
-    }
+    // Caffeine is a lot faster than EhCache, and it doesn't have annoying problems with
+    // a singleton that causes weird classloader related errors on Play app stop-restart.
+    // (For a super large out-of-process survive-restarts cache, we use Redis not EhCache.)
+    private val cache: DaoMemCache = caffeine.cache.Caffeine.newBuilder()
+      .maximumWeight(10*1000)  // change to config value, e.g. 1e9 = 1GB mem cache. Default to 50M?
+      .weigher[String, DaoMemCacheAnyItem](new caffeine.cache.Weigher[String, DaoMemCacheAnyItem] {
+        override def weigh(key: String, value: DaoMemCacheAnyItem): Int = {
+          // For now. Later, use e.g. size of cached HTML page + X bytes for fixed min size?
+          1
+        }
+      })
+      .build()
 
-    val siteDaoFactory = new CachingSiteDaoFactory(dbDaoFactory, ehcache)
+    val siteDaoFactory = new CachingSiteDaoFactory(dbDaoFactory, cache)
 
     val mailerActorRef = Mailer.startNewActor(Akka.system, siteDaoFactory)
 
@@ -365,7 +366,7 @@ class Globals {
     val antiSpam = new AntiSpam()
     antiSpam.start()
 
-    def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory, ehcache) // [rename] to newSystemDao()?
+    def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory, cache) // [rename] to newSystemDao()?
 
     private def fastStartSkipSearch =
       Play.configuration.getBoolean("crazyFastStartSkipSearch") getOrElse false

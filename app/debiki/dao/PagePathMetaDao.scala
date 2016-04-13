@@ -20,7 +20,7 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
-import CachingDao.{CacheKey, CacheValue}
+import CachingDao.CacheKey
 
 
 

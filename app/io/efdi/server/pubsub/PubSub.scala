@@ -87,7 +87,7 @@ class PubSubApi(private val actorRef: ActorRef) {
 
   private val timeout = 10 seconds
 
-  def onUserSubscribed(siteId: SiteId, user: User, browserIdData: BrowserIdData) {
+  def userSubscribed(siteId: SiteId, user: User, browserIdData: BrowserIdData) {
     actorRef ! UserSubscribed(siteId, user, browserIdData)
   }
 

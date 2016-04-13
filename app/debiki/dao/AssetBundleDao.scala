@@ -22,7 +22,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}
 import CachingAssetBundleDao._
-import CachingDao.{CacheKey, CacheValue}
+import CachingDao.CacheKey
 
 
 case class AssetBundle(body: String, version: String)

@@ -21,14 +21,14 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
 import play.{api => p}
-import CachingDao.{CacheKey, CacheValue}
+import CachingDao.CacheKey
 
 
 /** Builds site specific data access objects that cache stuff in-memory.
   */
 class CachingSiteDaoFactory(
   private val _dbDaoFactory: DbDaoFactory,
-  private val cache: net.sf.ehcache.Ehcache) extends SiteDaoFactory {
+  private val cache: DaoMemCache) extends SiteDaoFactory {
 
   def newSiteDao(siteId: SiteId): CachingSiteDao = {
     new CachingSiteDao(siteId, _dbDaoFactory, cache)
@@ -40,7 +40,7 @@ class CachingSiteDaoFactory(
 class CachingSiteDao(
   val siteId: SiteId,
   val dbDaoFactory: DbDaoFactory,
-  val ehcache: net.sf.ehcache.Ehcache)
+  val cache: DaoMemCache)
   extends SiteDao
   with CachingDao
   with CachingAssetBundleDao

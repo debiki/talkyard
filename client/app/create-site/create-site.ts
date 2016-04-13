@@ -194,8 +194,8 @@ var CreateWebsiteComponent = React.createClass(<any> {
 
           LocalHostnameInput({ label: 'Site Address:', placeholder: 'your-forum-name',
               style: { display: state.showHostname ? 'block' : 'none' },
-              help: "The address of your new site. (Want a custom domain name? " +
-                  "You can customize that later.)",
+              help: "The address of your new site. (You can change this later,  " +
+                  "e.g. to a custom domain. Only partly implemented though.)",
               ref: 'localHostname',
               onChangeValueOk: (isOk) => this.reportOkay('hostname', isOk) }),
 

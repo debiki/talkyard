@@ -187,8 +187,12 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
           if (cachedForumIds contains forumPageId)
             return
           val newForumIds = forumPageId :: cachedForumIds
+          /* No longer supported, with Caffeine cache. Perhaps use a dedicater Actor
+              to insert into the cache, per site? To avoid races.
           done = replaceInCache(key, CacheValueIgnoreVersion(cachedForumIds),
             newValue = CacheValueIgnoreVersion(newForumIds))
+          instead: */
+          putInCache(key, CacheValueIgnoreVersion(newForumIds))
       }
     }
     while (!done)

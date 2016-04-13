@@ -38,7 +38,6 @@ object ApplicationBuild extends Build {
 
 
   val appDependencies = Seq(
-    play.Play.autoImport.cache,
     play.Play.autoImport.filters,
     // OpenAuth and OpenID etc Authentication.
     "com.mohiva" %% "play-silhouette" % "3.0.4",
@@ -47,6 +46,8 @@ object ApplicationBuild extends Build {
     "org.postgresql" % "postgresql" % "9.4.1208",  // there's no 9.5 right now
     // HikariCP — "A solid high-performance JDBC connection pool at last"
     "com.zaxxer" % "HikariCP" % "2.4.5",
+    // We use both a in-the-JVM-memory cache, and Redis:
+    "com.github.ben-manes.caffeine" % "caffeine" % "2.2.6",
     "org.apache.commons" % "commons-email" % "1.3.3",
     "com.google.guava" % "guava" % "13.0.1",
     "org.owasp.encoder" % "encoder" % "1.1.1",

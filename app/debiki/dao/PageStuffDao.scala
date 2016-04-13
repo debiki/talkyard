@@ -20,12 +20,9 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.{TitleNr, BodyNr}
-import debiki.ReactJson.{htmlToTextWithNewlines, ToTextResult}
 import debiki._
-import java.{util => ju}
 import scala.collection.mutable
-import CachingDao.{CacheKey, CacheValue}
-import org.jsoup.Jsoup
+import CachingDao.CacheKey
 
 
 /** Page stuff, e.g. title, body excerpt (for pinned topics), author name.
