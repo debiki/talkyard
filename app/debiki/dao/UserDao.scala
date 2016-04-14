@@ -107,7 +107,7 @@ trait UserDao {
         approvedById = Some(approverId))
       transaction.updateCompleteUser(user)
     }
-    refreshUserInAnyCache(userId)
+    removeUserFromMemCache(userId)
   }
 
 
@@ -130,7 +130,7 @@ trait UserDao {
       // COULD update audit log.
       transaction.updateCompleteUser(user)
     }
-    refreshUserInAnyCache(userId)
+    removeUserFromMemCache(userId)
   }
 
 
@@ -166,7 +166,7 @@ trait UserDao {
         suspendedReason = Some(reason.trim))
       transaction.updateCompleteUser(user)
     }
-    refreshUserInAnyCache(userId)
+    removeUserFromMemCache(userId)
   }
 
 
@@ -177,7 +177,7 @@ trait UserDao {
         suspendedReason = None)
       transaction.updateCompleteUser(user)
     }
-    refreshUserInAnyCache(userId)
+    removeUserFromMemCache(userId)
   }
 
 
@@ -287,7 +287,7 @@ trait UserDao {
 
 
   def createIdentityUserAndLogin(newUserData: NewUserData): LoginGrant = {
-    readWriteTransaction { transaction =>
+    val loginGrant = readWriteTransaction { transaction =>
       val userId = transaction.nextAuthenticatedUserId
       val user = newUserData.makeUser(userId, transaction.currentTime)
       val identityId = transaction.nextIdentityId
@@ -296,6 +296,8 @@ trait UserDao {
       transaction.insertIdentity(identity)
       LoginGrant(Some(identity), user.briefUser, isNewIdentity = true, isNewRole = true)
     }
+    fireUserCreated(loginGrant.user)
+    loginGrant
   }
 
 
@@ -323,12 +325,14 @@ trait UserDao {
     DebikiSecurity.throwErrorIfPasswordTooWeak(
       password = userData.password, username = userData.username,
       fullName = userData.name, email = userData.email)
-    readWriteTransaction { transaction =>
+    val user = readWriteTransaction { transaction =>
       val userId = transaction.nextAuthenticatedUserId
       val user = userData.makeUser(userId, transaction.currentTime)
       transaction.insertAuthenticatedUser(user)
       user.briefUser
     }
+    fireUserCreated(user)
+    user
   }
 
 
@@ -346,14 +350,18 @@ trait UserDao {
 
 
   def loginAsGuest(loginAttempt: GuestLoginAttempt): Guest = {
-    readWriteTransaction { transaction =>
+    val user = readWriteTransaction { transaction =>
       transaction.loginAsGuest(loginAttempt).guest
     }
+    memCache.putInCache(
+      key(user.id),
+      CacheValueIgnoreVersion(user))
+    user
   }
 
 
   def tryLogin(loginAttempt: LoginAttempt): LoginGrant = {
-    readWriteTransaction { transaction =>
+    val loginGrant = readWriteTransaction { transaction =>
       val loginGrant = transaction.tryLogin(loginAttempt)
       if (!loginGrant.user.isSuspendedAt(loginAttempt.date))
         return loginGrant
@@ -371,6 +379,14 @@ trait UserDao {
       }
       loginGrant
     }
+
+    // Don't save any site cache version, because user specific data doesn't change
+    // when site specific data changes.
+    memCache.putInCache(
+      key(loginGrant.user.id),
+      CacheValueIgnoreVersion(loginGrant.user))
+
+    loginGrant
   }
 
 
@@ -402,9 +418,14 @@ trait UserDao {
 
 
   def loadUser(userId: UserId): Option[User] = {
-    readOnlyTransaction { transaction =>
-      transaction.loadUser(userId)
-    }
+    memCache.lookupInCache[User](
+      key(userId),
+      orCacheAndReturn = {
+        readOnlyTransaction { transaction =>
+          transaction.loadUser(userId)
+        }
+      },
+      ignoreSiteCacheVersion = true)
   }
 
 
@@ -454,7 +475,7 @@ trait UserDao {
       user = user.copy(emailVerifiedAt = Some(verifiedAt))
       transaction.updateCompleteUser(user)
     }
-    refreshUserInAnyCache(userId)
+    removeUserFromMemCache(userId)
   }
 
 
@@ -499,13 +520,14 @@ trait UserDao {
         userAfter.mediumAvatar.foreach(transaction.updateUploadedFileReferenceCount)
         transaction.markPagesWithUserAvatarAsStale(userId)
       }
+      removeUserFromMemCache(userId)
+
+      // Clear the PageStuff cache (by clearing the whole in-mem cache), because
+      // PageStuff includes avatar urls.
+      // COULD have above markPagesWithUserAvatarAsStale() return a page id list and
+      // uncache only those pages.
+      emptyCacheImpl(transaction)
     }
-    refreshUserInAnyCache(userId)
-    // Clear the PageStuff cache (by clearing the whole in-mem cache), because
-    // PageStuff includes avatar urls.
-    // COULD have above markPagesWithUserAvatarAsStale() return a page id list and
-    // uncache only those pages.
-    emptyCache()
   }
 
 
@@ -526,7 +548,7 @@ trait UserDao {
       }
       transaction.updateCompleteUser(user)
     }
-    refreshUserInAnyCache(userId)
+    removeUserFromMemCache(userId)
   }
 
 
@@ -563,7 +585,7 @@ trait UserDao {
   def saveRolePreferences(preferences: UserPreferences) = {
     // BUG: the lost update bug.
     readWriteTransaction { transaction =>
-      var user = transaction.loadTheCompleteUser(preferences.userId)
+      val user = transaction.loadTheCompleteUser(preferences.userId)
 
       // For now, don't allow people to change their username. In the future, changing
       // it should be alloowed, but only very infrequently? Or only the very first few days.
@@ -576,10 +598,17 @@ trait UserDao {
       if (user.emailAddress != preferences.emailAddress)
         throwForbidden("DwE44ELK9", "Must not modify one's email")
 
-      user = user.copyWithNewPreferences(preferences)
-      transaction.updateCompleteUser(user)
+      val userAfter = user.copyWithNewPreferences(preferences)
+      transaction.updateCompleteUser(userAfter)
+
+      removeUserFromMemCache(preferences.userId)
+      // Clear the page cache (by clearing all caches), if we changed the user's name.
+      // COULD have above markPagesWithUserAvatarAsStale() return a page id list and
+      // uncache only those pages.
+      if (preferences.changesStuffIncludedEverywhere(user)) {
+        emptyCacheImpl(transaction)
+      }
     }
-    refreshUserInAnyCache(preferences.userId)
   }
 
 
@@ -590,7 +619,7 @@ trait UserDao {
       guest = guest.copy(guestName = name)
       transaction.updateGuest(guest)
     }
-    refreshUserInAnyCache(guestId)
+    removeUserFromMemCache(guestId)
   }
 
 
@@ -625,66 +654,11 @@ trait UserDao {
   }
 
 
-  def refreshUserInAnyCache(userId: UserId) {
+  private def removeUserFromMemCache(userId: UserId) {
+    memCache.removeFromCache(key(userId))
   }
-
-}
-
-
-
-trait CachingUserDao extends UserDao {
-  self: CachingSiteDao =>
-
-
-  override def createIdentityUserAndLogin(newUserData: NewUserData): LoginGrant = {
-    val loginGrant = super.createIdentityUserAndLogin(newUserData)
-    fireUserCreated(loginGrant.user)
-    loginGrant
-  }
-
-
-  override def createPasswordUserCheckPasswordStrong(userData: NewPasswordUserData): Member = {
-    val user = super.createPasswordUserCheckPasswordStrong(userData)
-    fireUserCreated(user)
-    user
-  }
-
-
-  override def loginAsGuest(loginAttempt: GuestLoginAttempt): Guest = {
-    val user = super.loginAsGuest(loginAttempt)
-    putInCache(
-      key(user.id),
-      CacheValueIgnoreVersion(user))
-    user
-  }
-
-
-  override def tryLogin(loginAttempt: LoginAttempt): LoginGrant = {
-    // Don't save any site cache version, because user specific data doesn't change
-    // when site specific data changes.
-    val loginGrant = super.tryLogin(loginAttempt)
-    putInCache(
-      key(loginGrant.user.id),
-      CacheValueIgnoreVersion(loginGrant.user))
-    loginGrant
-  }
-
-
-  override def loadUser(userId: UserId): Option[User] = {
-    lookupInCache[User](
-      key(userId),
-      orCacheAndReturn = super.loadUser(userId),
-      ignoreSiteCacheVersion = true)
-  }
-
-
-  override def refreshUserInAnyCache(userId: UserId) {
-    removeFromCache(key(userId))
-  }
-
 
   private def key(userId: UserId) = CacheKey(siteId, s"$userId|UserById")
 
 }
-
 

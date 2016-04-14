@@ -24,18 +24,6 @@ import play.{api => p}
 import CachingDao.CacheKey
 
 
-/** Builds site specific data access objects that cache stuff in-memory.
-  */
-class CachingSiteDaoFactory(
-  private val _dbDaoFactory: DbDaoFactory,
-  private val cache: DaoMemCache) extends SiteDaoFactory {
-
-  def newSiteDao(siteId: SiteId): CachingSiteDao = {
-    new CachingSiteDao(siteId, _dbDaoFactory, cache)
-  }
-
-}
-
 
 class CachingSiteDao(
   val siteId: SiteId,
@@ -44,7 +32,6 @@ class CachingSiteDao(
   extends SiteDao
   with CachingDao
   with CachingAssetBundleDao
-  with CachingSettingsDao
   with CachingSpecialContentDao
   with CachingCategoriesDao
   with CachingPagesDao
@@ -52,10 +39,12 @@ class CachingSiteDao(
   with CachingPageStuffDao
   with CachingPostsDao
   with CachingRenderedPageHtmlDao
-  with CachingUserDao
   with CachingWatchbarDao {
 
   def dbDao2 = dbDaoFactory.newDbDao2()
+
+  protected def memCache = new MemCache(siteId, cache)
+
 
   onUserCreated { user =>
     if (loadSiteStatus().isInstanceOf[SiteStatus.OwnerCreationPending] && user.isOwner) {
@@ -81,6 +70,12 @@ class CachingSiteDao(
   }
 
 
+  def emptyCacheImpl(transaction: SiteTransaction) {
+    transaction.bumpSiteVersion()
+    emptyCache(siteId)
+  }
+
+
   override def updateSite(changedSite: Site) = {
     super.updateSite(changedSite)
     uncacheSiteStatus()
@@ -100,5 +95,41 @@ class CachingSiteDao(
 
 
   private def siteStatusKey = CacheKey(this.siteId, "|SiteId")
+
+
+  // ---- For now only, whilst migrating to separate MemCache field:
+  override def onPageCreated(callback: (PagePath => Unit)) {
+    memCache.onPageCreated(callback)
+    super.onPageCreated(callback)
+  }
+  override def firePageCreated(pagePath: PagePath) {
+    memCache.firePageCreated(pagePath)
+    super.firePageCreated(pagePath)
+  }
+  override def onPageSaved(callback: (SitePageId => Unit)) {
+    memCache.onPageSaved(callback)
+    super.onPageSaved(callback)
+  }
+  override def firePageSaved(sitePageId: SitePageId) {
+    memCache.firePageSaved(sitePageId)
+    super.firePageSaved(sitePageId)
+  }
+  override def onPageMoved(callback: (PagePath => Unit)) {
+    memCache.onPageMoved(callback)
+    super.onPageMoved(callback)
+  }
+  override def firePageMoved(newPath: PagePath) {
+    memCache.firePageMoved(newPath)
+    super.firePageMoved(newPath)
+  }
+  override def onUserCreated(callback: (User => Unit)) {
+    memCache.onUserCreated(callback)
+    super.onUserCreated(callback)
+  }
+  override def fireUserCreated(user: User) {
+    memCache.fireUserCreated(user)
+    super.fireUserCreated(user)
+  }
+  // ---- /End for-now-only
 
 }

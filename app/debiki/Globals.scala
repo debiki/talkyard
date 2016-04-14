@@ -353,7 +353,7 @@ class Globals {
       })
       .build()
 
-    val siteDaoFactory = new CachingSiteDaoFactory(dbDaoFactory, cache)
+    val siteDaoFactory = new SiteDaoFactory(dbDaoFactory, cache)
 
     val mailerActorRef = Mailer.startNewActor(Akka.system, siteDaoFactory)
 

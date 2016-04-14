@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2014-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -31,9 +31,13 @@ trait SettingsDao {
   self: SiteDao =>
 
   def loadWholeSiteSettings(): EffectiveSettings = {
-    readOnlyTransaction { transaction =>
-      loadWholeSiteSettings(transaction)
-    }
+    memCache.lookupInCache(
+      siteSettingsKey,
+      orCacheAndReturn = {
+        readOnlyTransaction { transaction =>
+          Some(loadWholeSiteSettings(transaction))
+        }
+      }) getOrDie "DwE52WK8"
   }
 
 
@@ -51,27 +55,10 @@ trait SettingsDao {
         // This'll rollback the transaction.
         throwForbidden2("EsE40GY28", s"Bad settings: $error")
       }
+      memCache.emptyCache(siteId)
     }
   }
-}
 
-
-
-trait CachingSettingsDao extends SettingsDao {
-  self: CachingSiteDao =>
-
-
-  override def loadWholeSiteSettings(): EffectiveSettings = {
-    lookupInCache(
-      siteSettingsKey,
-      orCacheAndReturn =
-        Some(super.loadWholeSiteSettings())) getOrDie "DwE52WK8"
-  }
-
-  override def saveSiteSettings(settings: SettingsToSave) {
-    readWriteTransaction(_.upsertSiteSettings(settings))
-    emptyCache(siteId)
-  }
 
 
   private def siteSettingsKey = CacheKey(siteId, "SiteSettingsKey")

@@ -58,5 +58,11 @@ case class UserPreferences(
 
   require(!fullName.map(_.trim).contains(""), "DwE4FUKW049")
   require(userId >= User.LowestNonGuestId, "DwE56KX2")
+
+  def changesStuffIncludedEverywhere(member: CompleteUser) = {
+    // Email is shown to admins only, not cached anywhere. Url shown on profile page only.
+    username != member.username || fullName != member.fullName
+  }
+
 }
 

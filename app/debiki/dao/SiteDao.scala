@@ -29,22 +29,12 @@ import SiteDao._
 
 
 
-abstract class SiteDaoFactory {
-  def newSiteDao(siteId: SiteId): SiteDao
-}
+class SiteDaoFactory (
+  private val _dbDaoFactory: DbDaoFactory,
+  private val cache: DaoMemCache) {
 
-
-
-object SiteDaoFactory {
-
-  /** Creates a non-caching SiteDaoFactory.
-    */
-  def apply(dbDaoFactory: DbDaoFactory) = new SiteDaoFactory {
-    private val _dbDaoFactory = dbDaoFactory
-
-    def newSiteDao(siteId: SiteId): SiteDao = {
-      new NonCachingSiteDao(siteId, _dbDaoFactory)
-    }
+  def newSiteDao(siteId: SiteId): CachingSiteDao = {
+    new CachingSiteDao(siteId, _dbDaoFactory, cache)
   }
 
 }
@@ -63,6 +53,7 @@ object SiteDaoFactory {
   */
 abstract class SiteDao
   extends AnyRef
+  with CacheEvents // remove later, once all mem cache stuff migrated to MemCache
   with AssetBundleDao
   with SettingsDao
   with SpecialContentDao
@@ -80,6 +71,14 @@ abstract class SiteDao
   with ReviewsDao
   with AuditDao
   with CreateSiteDao {
+
+  protected def memCache: MemCache
+
+  def memCache_test = {
+    require(Globals.wasTest, "EsE7YKP42B")
+    memCache
+  }
+
 
   def dbDao2: DbDao2
 
@@ -116,7 +115,8 @@ abstract class SiteDao
     pageIds.foreach(refreshPageInAnyCache)
   }
 
-  def emptyCache() {}
+  def emptyCache()
+  def emptyCacheImpl(transaction: SiteTransaction)
 
 
   // ----- Tenant
@@ -279,12 +279,6 @@ abstract class SiteDao
       throwForbidden2("EsE8YGK42", s"Cannot post to page type ${page.role}")
   }
 
-}
-
-
-
-class NonCachingSiteDao(val siteId: SiteId, val dbDaoFactory: DbDaoFactory) extends SiteDao {
-  def dbDao2 = dbDaoFactory.newDbDao2()
 }
 
 
