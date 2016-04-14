@@ -56,7 +56,7 @@ trait PageStuffDao {
   val logger = play.api.Logger
 
   memCache.onPageSaved { sitePageId =>
-    memCache.removeFromCache(cacheKey(sitePageId))
+    memCache.remove(cacheKey(sitePageId))
   }
 
 
@@ -72,7 +72,7 @@ trait PageStuffDao {
 
     // Look up summaries in cache.
     for (pageId <- pageIds) {
-      val anySummary = memCache.lookupInCache[PageStuff](cacheKey(pageId))
+      val anySummary = memCache.lookup[PageStuff](cacheKey(pageId))
       anySummary match {
         case Some(summary) => summariesById += pageId -> summary
         case None => idsNotCached.append(pageId)
@@ -88,7 +88,7 @@ trait PageStuffDao {
     val siteCacheVersion = memCache.siteCacheVersionNow()
     for ((pageId, summary) <- reaminingSummaries) {
       summariesById += pageId -> summary
-      memCache.putInCache(cacheKey(pageId), MemCacheItem(summary, siteCacheVersion))
+      memCache.put(cacheKey(pageId), MemCacheItem(summary, siteCacheVersion))
     }
 
     summariesById

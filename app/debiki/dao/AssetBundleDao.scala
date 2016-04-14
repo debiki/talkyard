@@ -74,7 +74,7 @@ trait AssetBundleDao {
       : AssetBundleAndDependencies = {
     val bundleName = s"$nameNoSuffix.$suffix"
     val bundleKey = makeBundleKey(bundleName, tenantId = siteId)
-    val cachedBundleAndDeps = memCache.lookupInCache[AssetBundleAndDependencies](bundleKey)
+    val cachedBundleAndDeps = memCache.lookup[AssetBundleAndDependencies](bundleKey)
     if (cachedBundleAndDeps.isDefined)
       return cachedBundleAndDeps.get
 
@@ -104,7 +104,7 @@ trait AssetBundleDao {
     val siteCacheVersion = memCache.siteCacheVersionNow()
     val bundleAndDeps = AssetBundleLoader(nameNoSuffix, suffix, this).loadAssetBundle()
     cacheDependencies(bundleName, bundleAndDeps, siteCacheVersion)
-    memCache.putInCache(bundleKey, MemCacheItem(bundleAndDeps, siteCacheVersion))
+    memCache.put(bundleKey, MemCacheItem(bundleAndDeps, siteCacheVersion))
 
     bundleAndDeps
   }
@@ -121,18 +121,18 @@ trait AssetBundleDao {
     val bundleDeps = BundleDependencyData(bundleName, bundleAndDeps, siteId = siteId)
     for (sitePageId <- bundleDeps.dependeePageIds) {
       val depKey = makeDependencyKey(sitePageId)
-      memCache.putInCache(depKey, MemCacheItem(bundleDeps, siteCacheVersion))
+      memCache.put(depKey, MemCacheItem(bundleDeps, siteCacheVersion))
     }
 
     for (sitePath <- bundleDeps.missingOptAssetPaths) {
       val depKey = makeSitePathDependencyKey(sitePath)
-      memCache.putInCache(depKey, MemCacheItem(bundleDeps, siteCacheVersion))
+      memCache.put(depKey, MemCacheItem(bundleDeps, siteCacheVersion))
     }
   }
 
 
   private def tryUncacheAll(dependencyKey: MemCacheKey) {
-    memCache.lookupInCache[BundleDependencyData](dependencyKey) foreach { depsData =>
+    memCache.lookup[BundleDependencyData](dependencyKey) foreach { depsData =>
       doUncacheAll(depsData)
     }
   }
@@ -145,16 +145,16 @@ trait AssetBundleDao {
     // same dependencies!)
 
     for (depSitePageIds <- bundleDeps.dependeePageIds) {
-      memCache.removeFromCache(
+      memCache.remove(
         makeDependencyKey(depSitePageIds))
     }
 
     for (depSitePath <- bundleDeps.missingOptAssetPaths) {
-      memCache.removeFromCache(
+      memCache.remove(
         makeSitePathDependencyKey(depSitePath))
     }
 
-    memCache.removeFromCache(
+    memCache.remove(
       makeBundleKey(
         bundleDeps.bundleName, tenantId = bundleDeps.siteId))
   }

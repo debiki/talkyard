@@ -225,8 +225,8 @@ trait CategoriesDao {
 
     // Do this even if we just emptied the cache above, because then the forum page
     // will be regenerated earlier.
-    refreshPageInAnyCache(oldCategory.sectionPageId)
-    refreshPageInAnyCache(editedCategory.sectionPageId)
+    refreshPageInMemCache(oldCategory.sectionPageId)
+    refreshPageInMemCache(editedCategory.sectionPageId)
 
     editedCategory
   }
@@ -261,7 +261,7 @@ trait CategoriesDao {
     }
     // The forum needs to be refreshed because it has cached the category list
     // (in JSON in the cached HTML).
-    refreshPageInAnyCache(result._1.sectionPageId)
+    refreshPageInMemCache(result._1.sectionPageId)
     result
   }
 

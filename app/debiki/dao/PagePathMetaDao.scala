@@ -44,7 +44,7 @@ trait PagePathMetaDao {
 
     // I don't know how this could happen, but in case there's already an
     // entry that maps `newPath` to something, remove it.
-    memCache.removeFromCache(_pathWithIdByPathKey(newPath))
+    memCache.remove(_pathWithIdByPathKey(newPath))
 
     memCache.firePageMoved(newPath)
     newPath
@@ -53,7 +53,7 @@ trait PagePathMetaDao {
 
   def checkPagePath(pathToCheck: PagePath): Option[PagePath] = {
     val key = _pathWithIdByPathKey(pathToCheck)
-    memCache.lookupInCache[PagePath](key) foreach { path =>
+    memCache.lookup[PagePath](key) foreach { path =>
       return Some(path)
     }
     val siteCacheVersion = memCache.siteCacheVersionNow()
@@ -65,7 +65,7 @@ trait PagePathMetaDao {
       // and cache it, if found, regardless of if id shown in url.
       // Or better & much simpler: Cache SitePageId —> correctPath.
       if (!pathToCheck.showId || correctPath.value == pathToCheck.value)
-        memCache.putInCache(key, MemCacheItem(correctPath, siteCacheVersion))
+        memCache.put(key, MemCacheItem(correctPath, siteCacheVersion))
       return Some(correctPath)
     }
     None
@@ -73,7 +73,7 @@ trait PagePathMetaDao {
 
 
   def lookupPagePath(pageId: PageId): Option[PagePath] = {
-    memCache.lookupInCache(
+    memCache.lookup(
       _pathByPageIdKey(pageId),
       orCacheAndReturn =
         readOnlyTransaction(_.loadPagePath(pageId)))
@@ -85,7 +85,7 @@ trait PagePathMetaDao {
 
 
   def loadPageMeta(pageId: PageId): Option[PageMeta] = {
-    memCache.lookupInCache[PageMeta](
+    memCache.lookup[PageMeta](
       pageMetaByIdKey(SitePageId(siteId, pageId)),
       orCacheAndReturn = readOnlyTransaction(_.loadPageMeta(pageId)))
   }
@@ -113,8 +113,8 @@ trait PagePathMetaDao {
     // Remove cache entries from id to path,
     // and from a browser's specified path to the correct path with id.
     readOnlyTransaction(_.loadPagePath(pageId)) foreach { oldPath =>
-      memCache.removeFromCache(_pathWithIdByPathKey(oldPath))
-      memCache.removeFromCache(_pathByPageIdKey(pageId))
+      memCache.remove(_pathWithIdByPathKey(oldPath))
+      memCache.remove(_pathByPageIdKey(pageId))
     }
 
     // ---- Obsolete comment:
@@ -130,8 +130,8 @@ trait PagePathMetaDao {
 
 
   private def uncacheMetaAndAncestors(sitePageId: SitePageId) {
-    memCache.removeFromCache(ancestorIdsKey(sitePageId))
-    memCache.removeFromCache(pageMetaByIdKey(sitePageId))
+    memCache.remove(ancestorIdsKey(sitePageId))
+    memCache.remove(pageMetaByIdKey(sitePageId))
   }
 
 

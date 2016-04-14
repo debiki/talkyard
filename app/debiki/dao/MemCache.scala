@@ -110,14 +110,14 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache) {
    * if `orCacheAndReturn` has been specified, evaluates it,
    * and caches the resulting value (if any) and returns it.
    */
-  def lookupInCache[A](
+  def lookup[A](
         key: MemCacheKey,
         orCacheAndReturn: => Option[A] = null,
         metric: CacheMetric = null,
         ignoreSiteCacheVersion: Boolean = false)(
         implicit classTag: ClassTag[A]): Option[A] = time(metric) { hitMeter =>
 
-    lookupInCacheToReplace(key) foreach { case MemCacheItem(value, version) =>
+    lookupToReplace(key) foreach { case MemCacheItem(value, version) =>
       hitMeter.mark()
       return Some(value)
     }
@@ -138,7 +138,7 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache) {
     // overwrite it, because `newValue` is probably more recent.
     // – For now, don't store info on cache misses.
     newValueOpt foreach { newValue =>
-      putInCache(key, MemCacheItem(newValue, siteCacheVersion))
+      put(key, MemCacheItem(newValue, siteCacheVersion))
     }
     newValueOpt
   }
@@ -147,7 +147,7 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache) {
   /** Returns a cached value, if any, including the site cache version number,
     * so the value can be replaced atomically.
     */
-  def lookupInCacheToReplace[A](key: MemCacheKey)(implicit classTag: ClassTag[A])
+  def lookupToReplace[A](key: MemCacheKey)(implicit classTag: ClassTag[A])
         : Option[MemCacheItem[A]] = {
     // (See class EhCachePlugin in play/api/cache/Cache.scala, for how Play Framework
     // does with `getObjectValue`. Namely exactly as on the next line.)
@@ -170,19 +170,19 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache) {
         return Some(MemCacheItem[A](cachedValue.asInstanceOf[A], item.siteCacheVersion))
 
       // Cached value is stale.
-      removeFromCache(key)
+      remove(key)
     }
 
     None
   }
 
 
-  def putInCache(key: MemCacheKey, value: DaoMemCacheAnyItem) {
+  def put(key: MemCacheKey, value: DaoMemCacheAnyItem) {
     cache.put(key.toString, value)
   }
 
 
-  def putInCacheIfAbsent[A](key: MemCacheKey, value: DaoMemCacheAnyItem): Boolean = {
+  def putIfAbsent[A](key: MemCacheKey, value: DaoMemCacheAnyItem): Boolean = {
     val javaFn = new ju.function.Function[String, DaoMemCacheAnyItem] {
       override def apply(dummy: String): DaoMemCacheAnyItem = value
     }
@@ -191,14 +191,20 @@ class MemCache(val siteId: SiteId, val cache: DaoMemCache) {
   }
 
 
-  def removeFromCache(key: MemCacheKey) {
+  /** Iff oldValue is in the map, replaces it with newValue, atomically, and returns true.
+    */
+  def replace(key: MemCacheKey, oldValue: DaoMemCacheAnyItem, newValue: DaoMemCacheAnyItem)
+        : Boolean = {
+    cache.asMap().replace(key.toString, oldValue, newValue)
+  }
+
+
+  def remove(key: MemCacheKey) {
     cache.invalidate(key.toString)
   }
 
 
-  /** Removes from the cache all things cached on behalf of siteId.
-    */
-  def emptyCache(siteId: String) {
+  def clearSingleSite(siteId: String) {
     val siteCacheVersion = siteCacheVersionNow(siteId)
     val nextVersion = siteCacheVersion + 1  // BUG Race condition.
     cache.put(siteCacheVersionKey(siteId), MemCacheItem(nextVersion, -1))

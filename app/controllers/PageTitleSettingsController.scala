@@ -192,7 +192,7 @@ object PageTitleSettingsController extends mvc.Controller {
       // (Forum pages cache category JSON and a latest topics list, includes titles.)
       val newSectionPageId = newMeta.categoryId map request.dao.loadTheSectionPageId
       val idsToRefresh = (pageId :: oldSectionPageId.toList ::: newSectionPageId.toList).distinct
-      idsToRefresh.foreach(request.dao.refreshPageInAnyCache)
+      idsToRefresh.foreach(request.dao.refreshPageInMemCache)
 
       val (_, newAncestorsJson) = ReactJson.makeForumIdAndAncestorsJson(newMeta, request.dao)
 

@@ -89,7 +89,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
     require(!hostname.contains(":"), "EsE5KYUU7")
 
     val key = _tenantLookupByOriginKey(hostname)
-    memCache.lookupInCache[CanonicalHostLookup](key) foreach { result => CanonicalHostLookup
+    memCache.lookup[CanonicalHostLookup](key) foreach { result => CanonicalHostLookup
       return Some(result)
     }
     readOnlyTransaction(_.lookupCanonicalHost(hostname)) match {
@@ -99,7 +99,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
         // maps a wildcard like *.example.com to this server.
         None
       case Some(result) =>
-        memCache.putInCache(key, MemCacheValueIgnoreVersion(result))
+        memCache.put(key, MemCacheValueIgnoreVersion(result))
         Some(result)
     }
   }

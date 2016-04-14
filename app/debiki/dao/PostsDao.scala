@@ -187,7 +187,7 @@ trait PostsDao {
       (newPost, author, notifications, anyReviewTask)
     }
 
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
 
     val storePatchJson = ReactJson.makeStorePatch(newPost, author, this)
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
@@ -322,7 +322,7 @@ trait PostsDao {
       (postNr, author, notfs)
     }
 
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
 
     val storePatchJson = ReactJson.makeStorePatch(post, author, this)
     pubSub.publish(StorePatchMessage(siteId, pageId, storePatchJson, notifications),
@@ -633,7 +633,7 @@ trait PostsDao {
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, makesSectionPageHtmlStale)
     }
 
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
   }
 
 
@@ -793,7 +793,7 @@ trait PostsDao {
       // COULD generate some notification? E.g. "Your post was made wiki-editable."
     }
 
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
   }
 
 
@@ -915,7 +915,7 @@ trait PostsDao {
       // In the future: if is a forum topic, and we're restoring the OP, then bump the topic.
 
 
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
   }
 
 
@@ -1078,7 +1078,7 @@ trait PostsDao {
       }
       */
     }
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
   }
 
 
@@ -1133,7 +1133,7 @@ trait PostsDao {
 
       updateVoteCounts(post, transaction)
     }
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
   }
 
 
@@ -1256,7 +1256,7 @@ trait PostsDao {
       (postAfter, patch)
     }
 
-    refreshPageInAnyCache(newParent.pageId)
+    refreshPageInMemCache(newParent.pageId)
     (postAfter, storePatch)
   }
 
@@ -1291,7 +1291,7 @@ trait PostsDao {
       transaction.upsertReviewTask(reviewTask)
       // Need not update page version: flags aren't shown (except perhaps for staff users).
     }
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
   }
 
 
@@ -1310,7 +1310,7 @@ trait PostsDao {
       // Need not update page version: flags aren't shown (except perhaps for staff users).
     }
     // In case the post gets unhidden now when flags gone:
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
   }
 
 

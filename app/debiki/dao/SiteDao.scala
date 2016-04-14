@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2012-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -92,7 +92,7 @@ class SiteDao(val siteId: SiteId, val dbDaoFactory: DbDaoFactory, val cache: Dao
   }
 
   private def uncacheSiteStatus() {
-    memCache.removeFromCache(siteStatusKey)
+    memCache.remove(siteStatusKey)
   }
 
   private def siteStatusKey = MemCacheKey(this.siteId, "|SiteId")
@@ -121,29 +121,28 @@ class SiteDao(val siteId: SiteId, val dbDaoFactory: DbDaoFactory, val cache: Dao
     dbDao2.readOnlySiteTransaction(siteId, mustBeSerializable = false) { fn(_) }
 
 
-  def refreshPageInAnyCache(pageId: PageId) {
+  def refreshPageInMemCache(pageId: PageId) {
     memCache.firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
   }
 
   def refreshPagesInAnyCache(pageIds: Set[PageId]) {
-    // Hmm can this be optimized? If using Redis, yes? By batching many changes in just 1 request?
-    pageIds.foreach(refreshPageInAnyCache)
+    pageIds.foreach(refreshPageInMemCache)
   }
 
   def emptyCache() {
     readWriteTransaction(_.bumpSiteVersion())
-    memCache.emptyCache(siteId)
+    memCache.clearSingleSite(siteId)
   }
 
 
   def emptyCacheImpl(transaction: SiteTransaction) {
     transaction.bumpSiteVersion()
-    memCache.emptyCache(siteId)
+    memCache.clearSingleSite(siteId)
   }
 
 
   def removeFromMemCache(key: MemCacheKey) {
-    memCache.removeFromCache(key)
+    memCache.remove(key)
   }
 
 
@@ -166,7 +165,7 @@ class SiteDao(val siteId: SiteId, val dbDaoFactory: DbDaoFactory, val cache: Dao
   def loadTenant(): Site = loadSite()
 
   def loadSiteStatus(): SiteStatus = {
-    memCache.lookupInCache(
+    memCache.lookup(
       siteStatusKey,
       orCacheAndReturn = Some(readOnlyTransaction(_.loadSiteStatus()))) getOrDie "DwE5CB50"
   }

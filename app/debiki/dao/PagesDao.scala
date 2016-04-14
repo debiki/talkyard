@@ -281,7 +281,7 @@ trait PagesDao {
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // (COULD update audit log)
     }
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
   }
 
 
@@ -293,7 +293,7 @@ trait PagesDao {
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // (COULD update audit log)
     }
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
   }
 
 
@@ -330,7 +330,7 @@ trait PagesDao {
       // to the author of the answer)
       answeredAt
     }
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
     answeredAt
   }
 
@@ -347,7 +347,7 @@ trait PagesDao {
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = true)
       // (COULD update audit log)
     }
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
   }
 
 
@@ -388,7 +388,7 @@ trait PagesDao {
       // (COULD update audit log)
       newMeta
     }
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
     newMeta
   }
 
@@ -415,7 +415,7 @@ trait PagesDao {
       // (COULD update audit log)
       newClosedAt
     }
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
     newClosedAt
   }
 
@@ -456,7 +456,7 @@ trait PagesDao {
         transaction.insertAuditLogEntry(auditLogEntry)
       }
     }
-    pageIds foreach refreshPageInAnyCache
+    pageIds foreach refreshPageInMemCache
   }
 
 
@@ -487,7 +487,7 @@ trait PagesDao {
     // todo: push new member notf to browsers
 
     // The page JSON includes a list of all page members, so:
-    refreshPageInAnyCache(pageId)
+    refreshPageInMemCache(pageId)
 
     if (pageMeta.pageRole.isChat) {
       // Race condition, if the same user e.g. also leaves the page right now.

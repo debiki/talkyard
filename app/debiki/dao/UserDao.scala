@@ -352,7 +352,7 @@ trait UserDao {
     val user = readWriteTransaction { transaction =>
       transaction.loginAsGuest(loginAttempt).guest
     }
-    memCache.putInCache(
+    memCache.put(
       key(user.id),
       MemCacheValueIgnoreVersion(user))
     user
@@ -381,7 +381,7 @@ trait UserDao {
 
     // Don't save any site cache version, because user specific data doesn't change
     // when site specific data changes.
-    memCache.putInCache(
+    memCache.put(
       key(loginGrant.user.id),
       MemCacheValueIgnoreVersion(loginGrant.user))
 
@@ -417,7 +417,7 @@ trait UserDao {
 
 
   def loadUser(userId: UserId): Option[User] = {
-    memCache.lookupInCache[User](
+    memCache.lookup[User](
       key(userId),
       orCacheAndReturn = {
         readOnlyTransaction { transaction =>
@@ -654,7 +654,7 @@ trait UserDao {
 
 
   private def removeUserFromMemCache(userId: UserId) {
-    memCache.removeFromCache(key(userId))
+    memCache.remove(key(userId))
   }
 
   private def key(userId: UserId) = MemCacheKey(siteId, s"$userId|UserById")

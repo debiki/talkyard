@@ -114,7 +114,7 @@ trait RenderedPageHtmlDao {
       return loadPageFromDatabaseAndRender(pageReq)
 
     val key = renderedPageKey(pageReq.theSitePageId)
-    memCache.lookupInCache(key, orCacheAndReturn = {
+    memCache.lookup(key, orCacheAndReturn = {
       if (pageReq.thePageRole == PageRole.Forum) {
         rememberForum(pageReq.thePageId)
       }
@@ -165,19 +165,15 @@ trait RenderedPageHtmlDao {
     var done = false
     do {
       val key = this.forumsKey(siteId)
-      memCache.lookupInCache[List[PageId]](key) match {
+      memCache.lookup[List[PageId]](key) match {
         case None =>
-          done = memCache.putInCacheIfAbsent(key, MemCacheValueIgnoreVersion(List(forumPageId)))
+          done = memCache.putIfAbsent(key, MemCacheValueIgnoreVersion(List(forumPageId)))
         case Some(cachedForumIds) =>
           if (cachedForumIds contains forumPageId)
             return
           val newForumIds = forumPageId :: cachedForumIds
-          /* No longer supported, with Caffeine cache. Perhaps use a dedicater Actor
-              to insert into the cache, per site? To avoid races.
-          done = replaceInCache(key, CacheValueIgnoreVersion(cachedForumIds),
-            newValue = CacheValueIgnoreVersion(newForumIds))
-          instead: */
-          memCache.putInCache(key, MemCacheValueIgnoreVersion(newForumIds))
+          done = memCache.replace(key, MemCacheValueIgnoreVersion(cachedForumIds),
+            newValue = MemCacheValueIgnoreVersion(newForumIds))
       }
     }
     while (!done)
@@ -185,7 +181,7 @@ trait RenderedPageHtmlDao {
 
 
   private def uncacheRenderedPage(sitePageId: SitePageId) {
-    memCache.removeFromCache(renderedPageKey(sitePageId))
+    memCache.remove(renderedPageKey(sitePageId))
 
     // Don't remove the cached contents, because it takes long to regenerate. [6KP368]
     // Instead, send old stale cached content html to the browsers,
@@ -214,9 +210,9 @@ trait RenderedPageHtmlDao {
     * For simplicity, we here uncache all forums.
     */
   private def uncacheForums(siteId: SiteId) {
-    val forumIds = memCache.lookupInCache[List[String]](forumsKey(siteId)) getOrElse Nil
+    val forumIds = memCache.lookup[List[String]](forumsKey(siteId)) getOrElse Nil
     for (forumId <- forumIds) {
-      memCache.removeFromCache(renderedPageKey(SitePageId(siteId, forumId)))
+      memCache.remove(renderedPageKey(SitePageId(siteId, forumId)))
     }
     // Don't remove any cached content, see comment above. [6KP368]
   }

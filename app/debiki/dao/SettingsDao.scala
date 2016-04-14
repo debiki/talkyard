@@ -30,7 +30,7 @@ trait SettingsDao {
   self: SiteDao =>
 
   def loadWholeSiteSettings(): EffectiveSettings = {
-    memCache.lookupInCache(
+    memCache.lookup(
       siteSettingsKey,
       orCacheAndReturn = {
         readOnlyTransaction { transaction =>
@@ -54,7 +54,7 @@ trait SettingsDao {
         // This'll rollback the transaction.
         throwForbidden2("EsE40GY28", s"Bad settings: $error")
       }
-      memCache.emptyCache(siteId)
+      memCache.clearSingleSite(siteId)
     }
   }
 

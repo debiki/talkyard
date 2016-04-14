@@ -32,7 +32,7 @@ trait WatchbarDao {
 
 
   def loadWatchbar(userId: UserId): BareWatchbar = {
-    memCache.lookupInCache[BareWatchbar](
+    memCache.lookup[BareWatchbar](
       key(userId),
       orCacheAndReturn = Some({
         readOnlyTransaction { transaction =>
@@ -55,7 +55,7 @@ trait WatchbarDao {
 
 
   def saveWatchbar(userId: UserId, watchbar: Watchbar) {
-    memCache.putInCache(
+    memCache.put(
       key(userId),
       MemCacheValueIgnoreVersion(watchbar))
   }
