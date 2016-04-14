@@ -26,16 +26,33 @@ import io.efdi.server.http.PageRequest
 import play.{api => p}
 import play.api.Play.current
 import CachingDao._
-import CachingRenderedPageHtmlDao._
+import RenderedPageHtmlDao._
 
+
+object RenderedPageHtmlDao {
+
+  def renderedPageKey(sitePageId: SitePageId) =
+    CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|PageHtml")
+
+}
 
 
 trait RenderedPageHtmlDao {
   self: SiteDao =>
 
-  def renderPage(pageRequest: PageRequest[_]): String = {
+  onPageCreated { page =>
+    uncacheForums(this.siteId)
+  }
+
+  onPageSaved { sitePageId =>
+    uncacheRenderedPage(sitePageId)
+    uncacheForums(sitePageId.siteId)
+  }
+
+
+  def loadPageFromDatabaseAndRender(pageRequest: PageRequest[_]): String = {
     if (!pageRequest.pageExists) {
-      if (pageRequest.pageRole == Some(PageRole.EmbeddedComments))
+      if (pageRequest.pageRole.contains(PageRole.EmbeddedComments))
         throwNotImplemented("DwE5KFW2", "Embedded comments disabled right now")
 
       if (pageRequest.pagePath.value != HomepageUrlPath)
@@ -68,41 +85,7 @@ trait RenderedPageHtmlDao {
   }
 
 
-  def renderContent(pageId: PageId, currentVersion: CachedPageVersion, reactStore: String)
-        : (String, CachedPageVersion) = {
-    val html = ReactRenderer.renderPage(reactStore) getOrElse throwInternalError(
-      "DwE500RNDR", "Error rendering page")
-    (html, currentVersion)
-  }
-
-}
-
-
-
-object CachingRenderedPageHtmlDao {
-
-  def renderedPageKey(sitePageId: SitePageId) =
-    CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|PageHtml")
-
-}
-
-
-
-trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
-  self: CachingSiteDao =>
-
-
-  onPageCreated { page =>
-    uncacheForums(this.siteId)
-  }
-
-  onPageSaved { sitePageId =>
-    uncacheRenderedPage(sitePageId)
-    uncacheForums(sitePageId.siteId)
-  }
-
-
-  override def renderPage(pageReq: PageRequest[_]): String = {
+  def renderPage(pageReq: PageRequest[_]): String = {
     // Bypass the cache if the page doesn't yet exist (it's being created),
     // because in the past there was some error because non-existing pages
     // had no ids (so feels safer to bypass).
@@ -129,19 +112,19 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     useMemCache &= ForumController.parsePageQuery(pageReq).isEmpty
 
     if (!useMemCache)
-      return super.renderPage(pageReq)
+      return loadPageFromDatabaseAndRender(pageReq)
 
     val key = renderedPageKey(pageReq.theSitePageId)
-    lookupInCache(key, orCacheAndReturn = {
+    memCache.lookupInCache(key, orCacheAndReturn = {
       if (pageReq.thePageRole == PageRole.Forum) {
         rememberForum(pageReq.thePageId)
       }
-      Some(super.renderPage(pageReq))
+      Some(loadPageFromDatabaseAndRender(pageReq))
     }, metric = Globals.mostMetrics.renderPageCacheMetrics) getOrDie "DwE93IB7"
   }
 
 
-  override def renderContent(pageId: PageId, currentVersion: CachedPageVersion,
+  def renderContent(pageId: PageId, currentVersion: CachedPageVersion,
         reactStore: String): (String, CachedPageVersion) = {
     // COULD reuse the caller's transaction, but the caller currently uses > 1  :-(
     // Or could even do this outside any transaction.
@@ -164,10 +147,13 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
         return (cachedHtml, cachedVersion)
       }
     }
+
     // Now we'll have to render the page contents [5KWC58], so we have some html to send back
     // to the client, in case the client is a search engine bot — I suppose those
     // aren't happy with only up-to-date json (but no html) + running React.js.
-    val (newHtml, _) = super.renderContent(pageId, currentVersion, reactStore)
+    val newHtml = ReactRenderer.renderPage(reactStore) getOrElse throwInternalError(
+      "DwE500RNDR", "Error rendering page")
+
     readWriteTransaction { transaction =>
       transaction.saveCachedPageContentHtmlPerhapsBreakTransaction(
         pageId, currentVersion, newHtml)
@@ -180,9 +166,9 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     var done = false
     do {
       val key = this.forumsKey(siteId)
-      lookupInCache[List[PageId]](key) match {
+      memCache.lookupInCache[List[PageId]](key) match {
         case None =>
-          done = putInCacheIfAbsent(key, CacheValueIgnoreVersion(List(forumPageId)))
+          done = memCache.putInCacheIfAbsent(key, CacheValueIgnoreVersion(List(forumPageId)))
         case Some(cachedForumIds) =>
           if (cachedForumIds contains forumPageId)
             return
@@ -192,7 +178,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
           done = replaceInCache(key, CacheValueIgnoreVersion(cachedForumIds),
             newValue = CacheValueIgnoreVersion(newForumIds))
           instead: */
-          putInCache(key, CacheValueIgnoreVersion(newForumIds))
+          memCache.putInCache(key, CacheValueIgnoreVersion(newForumIds))
       }
     }
     while (!done)
@@ -200,7 +186,7 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
 
 
   private def uncacheRenderedPage(sitePageId: SitePageId) {
-    removeFromCache(renderedPageKey(sitePageId))
+    memCache.removeFromCache(renderedPageKey(sitePageId))
 
     // Don't remove the cached contents, because it takes long to regenerate. [6KP368]
     // Instead, send old stale cached content html to the browsers,
@@ -229,9 +215,9 @@ trait CachingRenderedPageHtmlDao extends RenderedPageHtmlDao {
     * For simplicity, we here uncache all forums.
     */
   private def uncacheForums(siteId: SiteId) {
-    val forumIds = lookupInCache[List[String]](forumsKey(siteId)) getOrElse Nil
+    val forumIds = memCache.lookupInCache[List[String]](forumsKey(siteId)) getOrElse Nil
     for (forumId <- forumIds) {
-      removeFromCache(renderedPageKey(SitePageId(siteId, forumId)))
+      memCache.removeFromCache(renderedPageKey(SitePageId(siteId, forumId)))
     }
     // Don't remove any cached content, see comment above. [6KP368]
   }

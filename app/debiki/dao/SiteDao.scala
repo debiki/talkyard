@@ -21,6 +21,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.ViewPageController
 import debiki._
+import debiki.dao.CachingDao.CacheKey
 import io.efdi.server.http._
 import play.api.Play.current
 import scala.collection.mutable
@@ -84,6 +85,26 @@ abstract class SiteDao
 
   def commonmarkRenderer = ReactRenderer
 
+
+  onUserCreated { user =>
+    if (loadSiteStatus().isInstanceOf[SiteStatus.OwnerCreationPending] && user.isOwner) {
+      uncacheSiteStatus()
+    }
+  }
+
+  onPageCreated { page =>
+    if (loadSiteStatus() == SiteStatus.ContentCreationPending) {
+      uncacheSiteStatus()
+    }
+  }
+
+  private def uncacheSiteStatus() {
+    memCache.removeFromCache(siteStatusKey)
+  }
+
+  private def siteStatusKey = CacheKey(this.siteId, "|SiteId")
+
+
   def readWriteTransaction[R](fn: SiteTransaction => R, allowOverQuota: Boolean = false): R = {
     // Serialize writes per site. This avoids all? transaction rollbacks because of
     // serialization errors in Postgres (e.g. if 2 people post 2 comments at the same time).
@@ -107,16 +128,27 @@ abstract class SiteDao
     dbDao2.readOnlySiteTransaction(siteId, mustBeSerializable = false) { fn(_) }
 
 
-  // Later on I'll cache always, then these two will be implemented directy here.
-  def refreshPageInAnyCache(pageId: PageId) {}
+  def refreshPageInAnyCache(pageId: PageId) {
+    firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
+  }
 
   def refreshPagesInAnyCache(pageIds: Set[PageId]) {
     // Hmm can this be optimized? If using Redis, yes? By batching many changes in just 1 request?
     pageIds.foreach(refreshPageInAnyCache)
   }
 
-  def emptyCache()
-  def emptyCacheImpl(transaction: SiteTransaction)
+  def emptyCache() {
+    readWriteTransaction(_.bumpSiteVersion())
+    memCache.emptyCache(siteId)
+  }
+
+
+  def emptyCacheImpl(transaction: SiteTransaction) {
+    transaction.bumpSiteVersion()
+    memCache.emptyCache(siteId)
+  }
+
+
 
 
   // ----- Tenant
@@ -138,11 +170,18 @@ abstract class SiteDao
   @deprecated("use loadSite() instead", "now")
   def loadTenant(): Site = loadSite()
 
-  def loadSiteStatus(): SiteStatus =
-    readOnlyTransaction(_.loadSiteStatus())
+  def loadSiteStatus(): SiteStatus = {
+    memCache.lookupInCache(
+      siteStatusKey,
+      orCacheAndReturn = Some(readOnlyTransaction(_.loadSiteStatus()))) getOrDie "DwE5CB50"
+  }
 
-  def updateSite(changedSite: Site) =
+
+  def updateSite(changedSite: Site) = {
     readWriteTransaction(_.updateSite(changedSite))
+    uncacheSiteStatus()
+  }
+
 
   def addTenantHost(host: SiteHost) = {
     readWriteTransaction { transaction =>

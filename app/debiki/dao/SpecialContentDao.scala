@@ -36,6 +36,12 @@ import SpecialContentPages._
 trait SpecialContentDao {
   self: SiteDao =>
 
+  onPageSaved { sitePageId =>
+    // if page id == some special content page id, uncache it.
+  }
+
+  // override def loadSpecialContentPage(...) ...
+
 
   def loadSpecialContentPage(pageId: PageId, replaceNamesApplyMarkup: Boolean): Option[Content] = {
     readOnlyTransaction { transaction =>
@@ -123,6 +129,14 @@ trait SpecialContentDao {
 
     transaction.insertPageMetaMarkSectionPageStale(pageMeta)
     transaction.insertPost(bodyPost)
+
+    val dummyPagePath = PagePath(siteId, "/", Some(pageId), showId = true, pageSlug = "dummy")
+    if (affectsWholeSite(pageId)) {
+      emptyCacheImpl(transaction)
+    }
+    else {
+      firePageCreated(dummyPagePath)
+    }
   }
 
 
@@ -149,6 +163,13 @@ trait SpecialContentDao {
       approvedRevisionNr = Some(nextRevisionNr))
 
     transaction.updatePost(editedPost)
+
+    if (affectsWholeSite(oldPost.pageId)) {
+      emptyCacheImpl(transaction)
+    }
+    else {
+      firePageSaved(SitePageId(siteId = siteId, pageId = oldPost.pageId))
+    }
   }
 
 
@@ -158,46 +179,6 @@ trait SpecialContentDao {
     val nodeSeq = ReactRenderer.renderAndSanitizeCommonMark(
       text, allowClassIdDataAttrs = false, followLinks = false)
     nodeSeq.toString
-  }
-
-}
-
-
-
-trait CachingSpecialContentDao extends SpecialContentDao {
-  self: CachingSiteDao =>
-
-  onPageSaved { sitePageId =>
-    // if page id == some special content page id, uncache it.
-  }
-
-  // override def loadSpecialContentPage(...) ...
-
-
-  override def createSpecialContentPage(pageId: PageId, authorId: UserId,
-        source: String, htmlSanitized: String, transaction: SiteTransaction): Unit = {
-    super.createSpecialContentPage(pageId, authorId, source = source,
-      htmlSanitized = htmlSanitized, transaction)
-    val dummyPagePath = PagePath(siteId, "/", Some(pageId), showId = true, pageSlug = "dummy")
-    if (affectsWholeSite(pageId)) {
-      emptyCache(siteId)
-    }
-    else {
-      firePageCreated(dummyPagePath)
-    }
-  }
-
-
-  override def updateSpecialContentPage(oldPost: Post, newSource: String, htmlSanitized: String,
-        editorId: UserId, transaction: SiteTransaction) {
-    super.updateSpecialContentPage(oldPost, newSource, htmlSanitized = htmlSanitized,
-      editorId = editorId, transaction)
-    if (affectsWholeSite(oldPost.pageId)) {
-      emptyCache(siteId)
-    }
-    else {
-      firePageSaved(SitePageId(siteId = siteId, pageId = oldPost.pageId))
-    }
   }
 
 

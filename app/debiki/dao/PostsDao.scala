@@ -1414,11 +1414,3 @@ object PostsDao {
 
 
 
-trait CachingPostsDao extends PagesDao {
-  self: CachingSiteDao =>
-
-  // We cache all html already, that might be enough actually. For now, don't cache posts too.
-  // So I've removed all cache-posts code from here.
-
-}
-

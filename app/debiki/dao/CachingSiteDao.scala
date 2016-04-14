@@ -21,7 +21,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
 import play.{api => p}
-import CachingDao.CacheKey
 
 
 
@@ -30,71 +29,13 @@ class CachingSiteDao(
   val dbDaoFactory: DbDaoFactory,
   val cache: DaoMemCache)
   extends SiteDao
-  with CachingDao
-  with CachingAssetBundleDao
-  with CachingSpecialContentDao
-  with CachingCategoriesDao
-  with CachingPagesDao
-  with CachingPagePathMetaDao
-  with CachingPageStuffDao
-  with CachingPostsDao
-  with CachingRenderedPageHtmlDao
-  with CachingWatchbarDao {
+  with CachingDao {
 
   def dbDao2 = dbDaoFactory.newDbDao2()
 
   protected def memCache = new MemCache(siteId, cache)
 
 
-  onUserCreated { user =>
-    if (loadSiteStatus().isInstanceOf[SiteStatus.OwnerCreationPending] && user.isOwner) {
-      uncacheSiteStatus()
-    }
-  }
-
-  onPageCreated { page =>
-    if (loadSiteStatus() == SiteStatus.ContentCreationPending) {
-      uncacheSiteStatus()
-    }
-  }
-
-
-  override def refreshPageInAnyCache(pageId: PageId) {
-    firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
-  }
-
-
-  override def emptyCache() {
-    readWriteTransaction(_.bumpSiteVersion())
-    emptyCache(siteId)
-  }
-
-
-  def emptyCacheImpl(transaction: SiteTransaction) {
-    transaction.bumpSiteVersion()
-    emptyCache(siteId)
-  }
-
-
-  override def updateSite(changedSite: Site) = {
-    super.updateSite(changedSite)
-    uncacheSiteStatus()
-  }
-
-
-  override def loadSiteStatus(): SiteStatus = {
-    lookupInCache(
-      siteStatusKey,
-      orCacheAndReturn = Some(super.loadSiteStatus())) getOrDie "DwE5CB50"
-  }
-
-
-  private def uncacheSiteStatus() {
-    removeFromCache(siteStatusKey)
-  }
-
-
-  private def siteStatusKey = CacheKey(this.siteId, "|SiteId")
 
 
   // ---- For now only, whilst migrating to separate MemCache field:

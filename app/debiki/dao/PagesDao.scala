@@ -62,7 +62,7 @@ trait PagesDao {
     if (titleTextAndHtml.safeHtml.trim.isEmpty)
       throwForbidden("DwE5KPEF21", "Page title should not be empty")
 
-    readWriteTransaction { transaction =>
+    val pagePath = readWriteTransaction { transaction =>
       val (pagePath, bodyPost) = createPageImpl(pageRole, pageStatus, anyCategoryId,
         anyFolder = anyFolder, anySlug = anySlug, showId = showId,
         titleSource = titleTextAndHtml.text, titleHtmlSanitized = titleTextAndHtml.safeHtml,
@@ -75,6 +75,8 @@ trait PagesDao {
       pagePath
     }
 
+    firePageCreated(pagePath)
+    pagePath
     // Don't start rendering any html. See comment below [5KWC58]
   }
 
@@ -525,23 +527,5 @@ trait PagesDao {
     transaction.updatePageMeta(newMeta, oldMeta = page.meta,
       markSectionPageStale = markSectionPageStale)
   }
-}
-
-
-
-trait CachingPagesDao extends PagesDao {
-  self: CachingSiteDao =>
-
-
-  override def createPage(pageRole: PageRole, pageStatus: PageStatus,
-        anyCategoryId: Option[CategoryId], anyFolder: Option[String], anySlug: Option[String],
-        titleTextAndHtml: TextAndHtml, bodyTextAndHtml: TextAndHtml,
-        showId: Boolean, byWho: Who): PagePath = {
-    val pagePath = super.createPage(pageRole, pageStatus, anyCategoryId,
-      anyFolder, anySlug, titleTextAndHtml, bodyTextAndHtml, showId, byWho)
-    firePageCreated(pagePath)
-    pagePath
-  }
-
 }
 

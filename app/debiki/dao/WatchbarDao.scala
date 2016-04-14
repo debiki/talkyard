@@ -29,27 +29,22 @@ import CachingDao.{CacheKey, CacheValueIgnoreVersion}
   * whenever the user visits a new page).
   */
 trait WatchbarDao {
-  self: SiteDao =>
+  self: SiteDao with PageStuffDao =>
 
-  def loadWatchbar(userId: UserId) = {
-    readOnlyTransaction { transaction =>
-      val chatChannelIds = transaction.loadPageIdsUserIsMemberOf(
-        userId, Set(PageRole.OpenChat, PageRole.PrivateChat))
-      val directMessageIds = transaction.loadPageIdsUserIsMemberOf(userId, Set(PageRole.Message))
-      BareWatchbar.withChatChannelAndDirectMessageIds(chatChannelIds, directMessageIds)
-    }
+
+  def loadWatchbar(userId: UserId): BareWatchbar = {
+    memCache.lookupInCache[BareWatchbar](
+      key(userId),
+      orCacheAndReturn = Some({
+        readOnlyTransaction { transaction =>
+          val chatChannelIds = transaction.loadPageIdsUserIsMemberOf(
+            userId, Set(PageRole.OpenChat, PageRole.PrivateChat))
+          val directMessageIds = transaction.loadPageIdsUserIsMemberOf(userId, Set(PageRole.Message))
+          BareWatchbar.withChatChannelAndDirectMessageIds(chatChannelIds, directMessageIds)
+        }
+      }),
+      ignoreSiteCacheVersion = true) getOrDie "EsE4UYKF5"
   }
-
-  def saveWatchbar(userId: UserId, watchbar: Watchbar) {}
-
-  def markPageAsUnreadInWatchbar(userId: UserId, pageId: PageId): Unit =
-    die("EsE5JKF21", "CachingWatchbarDao method should be called instead")
-
-  def fillInWatchbarTitlesEtc(watchbar: BareWatchbar): WatchbarWithTitles =
-    die("EsE4GYKF2", "CachingWatchbarDao method should be called instead")
-
-}
-
 
 
 /** Stores in-memory each member's watchbar. Lost on server restart. Later: use Redis?
@@ -58,33 +53,23 @@ trait WatchbarDao {
   * BUG race conditions, if e.g. saveWatchbar & markPageAsUnreadInWatchbar called at the
   * same time. Could perhaps solve by creating a Watchbar actor that serializes access?
   */
-trait CachingWatchbarDao extends WatchbarDao {
-  self: CachingSiteDao with CachingPageStuffDao =>
 
 
-  override def saveWatchbar(userId: UserId, watchbar: Watchbar) {
-    putInCache(
+  def saveWatchbar(userId: UserId, watchbar: Watchbar) {
+    memCache.putInCache(
       key(userId),
       CacheValueIgnoreVersion(watchbar))
   }
 
 
-  override def loadWatchbar(userId: UserId): BareWatchbar = {
-    lookupInCache[BareWatchbar](
-      key(userId),
-      orCacheAndReturn = Some(super.loadWatchbar(userId)),
-      ignoreSiteCacheVersion = true) getOrDie "EsE4UYKF5"
-  }
-
-
-  override def markPageAsUnreadInWatchbar(userId: UserId, pageId: PageId) {
+  def markPageAsUnreadInWatchbar(userId: UserId, pageId: PageId) {
     val watchbar = loadWatchbar(userId)
     val newWatchbar = watchbar.markPageAsUnread(pageId)
     saveWatchbar(userId, newWatchbar)
   }
 
 
-  override def fillInWatchbarTitlesEtc(watchbar: BareWatchbar): WatchbarWithTitles = {
+  def fillInWatchbarTitlesEtc(watchbar: BareWatchbar): WatchbarWithTitles = {
     val pageStuffById = loadPageStuff(watchbar.watchedPageIds)
     watchbar.addTitlesEtc(pageStuffById)
   }

@@ -27,6 +27,11 @@ import CachingDao.CacheKey
 trait PagePathMetaDao {
   self: SiteDao =>
 
+  onPageSaved { sitePageId =>
+    uncacheMetaAndAncestors(sitePageId)
+  }
+
+
   /*
   def movePages(pageIds: Seq[PageId], fromFolder: String, toFolder: String) =
     siteDbDao.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
@@ -34,26 +39,58 @@ trait PagePathMetaDao {
 
 
   def moveRenamePage(pageId: PageId, newFolder: Option[String] = None,
-        showId: Option[Boolean] = None, newSlug: Option[String] = None)
-        : PagePath =
-    readWriteTransaction(_.moveRenamePage(pageId = pageId, newFolder = newFolder,
+        showId: Option[Boolean] = None, newSlug: Option[String] = None): PagePath = {
+    _removeCachedPathsTo(pageId)
+    val newPath = readWriteTransaction(_.moveRenamePage(pageId = pageId, newFolder = newFolder,
       showId = showId, newSlug = newSlug))
 
+    // I don't know how this could happen, but in case there's already an
+    // entry that maps `newPath` to something, remove it.
+    memCache.removeFromCache(_pathWithIdByPathKey(newPath))
 
-  def checkPagePath(pathToCheck: PagePath): Option[PagePath] =
-    readOnlyTransaction(_.checkPagePath(pathToCheck))
+    firePageMoved(newPath)
+    newPath
+  }
 
 
-  def lookupPagePath(pageId: PageId): Option[PagePath] =
-    readOnlyTransaction(_.loadPagePath(pageId))
+  def checkPagePath(pathToCheck: PagePath): Option[PagePath] = {
+    val key = _pathWithIdByPathKey(pathToCheck)
+    memCache.lookupInCache[PagePath](key) foreach { path =>
+      return Some(path)
+    }
+    val siteCacheVersion = memCache.siteCacheVersionNow()
+    readOnlyTransaction(_.checkPagePath(pathToCheck)) map { correctPath =>
+      // Don't cache non-exact paths if page id shown, since there are
+      // infinitely many such paths.
+      // Performance, caching: COULD let checkPagePath() clarify whether
+      // pathToCheck was actually found in the database (in DW1_PAGE_PATHS),
+      // and cache it, if found, regardless of if id shown in url.
+      // Or better & much simpler: Cache SitePageId —> correctPath.
+      if (!pathToCheck.showId || correctPath.value == pathToCheck.value)
+        memCache.putInCache(key, CacheValue(correctPath, siteCacheVersion))
+      return Some(correctPath)
+    }
+    None
+  }
+
+
+  def lookupPagePath(pageId: PageId): Option[PagePath] = {
+    memCache.lookupInCache(
+      _pathByPageIdKey(pageId),
+      orCacheAndReturn =
+        readOnlyTransaction(_.loadPagePath(pageId)))
+  }
 
 
   def lookupPagePathAndRedirects(pageId: PageId): List[PagePath] =
     readOnlyTransaction(_.lookupPagePathAndRedirects(pageId))
 
 
-  def loadPageMeta(pageId: PageId): Option[PageMeta] =
-    readOnlyTransaction(_.loadPageMeta(pageId))
+  def loadPageMeta(pageId: PageId): Option[PageMeta] = {
+    memCache.lookupInCache[PageMeta](
+      pageMetaByIdKey(SitePageId(siteId, pageId)),
+      orCacheAndReturn = readOnlyTransaction(_.loadPageMeta(pageId)))
+  }
 
 
   // COULD override and use the page meta cache, but currently only called
@@ -72,80 +109,14 @@ trait PagePathMetaDao {
       yield PagePathAndMeta(path, meta)
   }
 
-}
-
-
-
-trait CachingPagePathMetaDao extends PagePathMetaDao {
-  self: CachingSiteDao =>
-
-
-  /*
-  @deprecated("Cannot fire page moved events?", since = "now")
-  override def movePages(pageIds: Seq[String], fromFolder: String,
-        toFolder: String) = {
-    unimplemented("Firing page moved events")
-    pageIds foreach (_removeCachedPathsTo _)
-    super.movePages(pageIds, fromFolder = fromFolder, toFolder = toFolder)
-  }*/
-
-
-  onPageSaved { sitePageId =>
-    uncacheMetaAndAncestors(sitePageId)
-  }
-
-
-  override def moveRenamePage(pageId: PageId, newFolder: Option[String] = None,
-        showId: Option[Boolean] = None, newSlug: Option[String] = None)
-        : PagePath = {
-    _removeCachedPathsTo(pageId)
-
-    val newPath = super.moveRenamePage(pageId = pageId, newFolder = newFolder,
-      showId = showId, newSlug = newSlug)
-
-    // I don't know how this could happen, but in case there's already an
-    // entry that maps `newPath` to something, remove it.
-    removeFromCache(_pathWithIdByPathKey(newPath))
-
-    firePageMoved(newPath)
-    newPath
-  }
-
-
-  override def checkPagePath(pathToCheck: PagePath): Option[PagePath] = {
-    val key = _pathWithIdByPathKey(pathToCheck)
-    lookupInCache[PagePath](key) foreach { path =>
-      return Some(path)
-    }
-    val siteCacheVersion = siteCacheVersionNow()
-    super.checkPagePath(pathToCheck) map { correctPath =>
-      // Don't cache non-exact paths if page id shown, since there are
-      // infinitely many such paths.
-      // Performance, caching: COULD let checkPagePath() clarify whether
-      // pathToCheck was actually found in the database (in DW1_PAGE_PATHS),
-      // and cache it, if found, regardless of if id shown in url.
-      // Or better & much simpler: Cache SitePageId —> correctPath.
-      if (!pathToCheck.showId || correctPath.value == pathToCheck.value)
-        putInCache(key, CacheValue(correctPath, siteCacheVersion))
-      return Some(correctPath)
-    }
-    None
-  }
-
-
-  override def lookupPagePath(pageId: PageId): Option[PagePath] =
-    lookupInCache(
-      _pathByPageIdKey(pageId),
-      orCacheAndReturn =
-        super.lookupPagePath(pageId = pageId))
 
 
   private def _removeCachedPathsTo(pageId: PageId) {
     // Remove cache entries from id to path,
     // and from a browser's specified path to the correct path with id.
-    super.lookupPagePath(pageId) foreach { oldPath =>
-      removeFromCache(_pathWithIdByPathKey(oldPath))
-      removeFromCache(_pathByPageIdKey(pageId))
+    readOnlyTransaction(_.loadPagePath(pageId)) foreach { oldPath =>
+      memCache.removeFromCache(_pathWithIdByPathKey(oldPath))
+      memCache.removeFromCache(_pathByPageIdKey(pageId))
     }
 
     // ---- Obsolete comment:
@@ -160,15 +131,9 @@ trait CachingPagePathMetaDao extends PagePathMetaDao {
   }
 
 
-  override def loadPageMeta(pageId: PageId): Option[PageMeta] =
-    lookupInCache[PageMeta](
-      pageMetaByIdKey(SitePageId(siteId, pageId)),
-      orCacheAndReturn = super.loadPageMeta(pageId))
-
-
   private def uncacheMetaAndAncestors(sitePageId: SitePageId) {
-    removeFromCache(ancestorIdsKey(sitePageId))
-    removeFromCache(pageMetaByIdKey(sitePageId))
+    memCache.removeFromCache(ancestorIdsKey(sitePageId))
+    memCache.removeFromCache(pageMetaByIdKey(sitePageId))
   }
 
 

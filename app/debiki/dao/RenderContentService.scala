@@ -140,7 +140,7 @@ class RenderContentActor(val daoFactory: SiteDaoFactory) extends Actor {
 
     // Remove cached whole-page-html, so we'll generate a new page with the new content.
     dao.removeFromCache(
-      CachingRenderedPageHtmlDao.renderedPageKey(sitePageId))
+      RenderedPageHtmlDao.renderedPageKey(sitePageId))
   }
 
 

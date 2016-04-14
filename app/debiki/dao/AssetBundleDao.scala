@@ -28,6 +28,10 @@ import CachingDao.CacheKey
 case class AssetBundle(body: String, version: String)
 
 
+/** BUG if server running and you edit the _stylesheet page, and update it, this has no
+  * effect, until you restart the server. But if the page exists when the server is stated,
+  * updates do refresh the cache. Fix this by listening for changes of page SiteCssPageId only?
+  */
 trait AssetBundleDao {
   self: SiteDao =>
 
@@ -42,20 +46,6 @@ trait AssetBundleDao {
     AssetBundle(bundleAndDeps.assetBundleText, version = bundleAndDeps.version)
   }
 
-
-  protected def loadBundleAndDependencies(nameNoSuffix: String, suffix: String)
-      : AssetBundleAndDependencies =
-    AssetBundleLoader(nameNoSuffix, suffix, this).loadAssetBundle()
-
-}
-
-
-/** BUG if server running and you edit the _stylesheet page, and update it, this has no
-  * effect, until you restart the server. But if the page exists when the server is stated,
-  * updates do refresh the cache. Fix this by listening for changes of page SiteCssPageId only?
-  */
-trait CachingAssetBundleDao extends AssetBundleDao {
-  self: SiteDao with CachingDao =>
 
   onPageCreated { pagePath =>
     tryUncacheAll(
@@ -81,11 +71,11 @@ trait CachingAssetBundleDao extends AssetBundleDao {
   // Could add, when that functionality exists: onGroupPermissionsChanged { ... }
 
 
-  protected override def loadBundleAndDependencies(nameNoSuffix: String, suffix: String)
+  protected def loadBundleAndDependencies(nameNoSuffix: String, suffix: String)
       : AssetBundleAndDependencies = {
     val bundleName = s"$nameNoSuffix.$suffix"
     val bundleKey = makeBundleKey(bundleName, tenantId = siteId)
-    val cachedBundleAndDeps = lookupInCache[AssetBundleAndDependencies](bundleKey)
+    val cachedBundleAndDeps = memCache.lookupInCache[AssetBundleAndDependencies](bundleKey)
     if (cachedBundleAndDeps.isDefined)
       return cachedBundleAndDeps.get
 
@@ -112,10 +102,10 @@ trait CachingAssetBundleDao extends AssetBundleDao {
     // E.g. _site.conf, some-script.js, some-style.css, some-template.tpl.
     // But not blog posts or the homepage or other "normal pages".
 
-    val siteCacheVersion = siteCacheVersionNow()
-    val bundleAndDeps = super.loadBundleAndDependencies(nameNoSuffix, suffix)
+    val siteCacheVersion = memCache.siteCacheVersionNow()
+    val bundleAndDeps = AssetBundleLoader(nameNoSuffix, suffix, this).loadAssetBundle()
     cacheDependencies(bundleName, bundleAndDeps, siteCacheVersion)
-    putInCache(bundleKey, CacheValue(bundleAndDeps, siteCacheVersion))
+    memCache.putInCache(bundleKey, CacheValue(bundleAndDeps, siteCacheVersion))
 
     bundleAndDeps
   }
@@ -132,18 +122,18 @@ trait CachingAssetBundleDao extends AssetBundleDao {
     val bundleDeps = BundleDependencyData(bundleName, bundleAndDeps, siteId = siteId)
     for (sitePageId <- bundleDeps.dependeePageIds) {
       val depKey = makeDependencyKey(sitePageId)
-      putInCache(depKey, CacheValue(bundleDeps, siteCacheVersion))
+      memCache.putInCache(depKey, CacheValue(bundleDeps, siteCacheVersion))
     }
 
     for (sitePath <- bundleDeps.missingOptAssetPaths) {
       val depKey = makeSitePathDependencyKey(sitePath)
-      putInCache(depKey, CacheValue(bundleDeps, siteCacheVersion))
+      memCache.putInCache(depKey, CacheValue(bundleDeps, siteCacheVersion))
     }
   }
 
 
   private def tryUncacheAll(dependencyKey: CacheKey) {
-    lookupInCache[BundleDependencyData](dependencyKey) foreach { depsData =>
+    memCache.lookupInCache[BundleDependencyData](dependencyKey) foreach { depsData =>
       doUncacheAll(depsData)
     }
   }
@@ -156,16 +146,16 @@ trait CachingAssetBundleDao extends AssetBundleDao {
     // same dependencies!)
 
     for (depSitePageIds <- bundleDeps.dependeePageIds) {
-      removeFromCache(
+      memCache.removeFromCache(
         makeDependencyKey(depSitePageIds))
     }
 
     for (depSitePath <- bundleDeps.missingOptAssetPaths) {
-      removeFromCache(
+      memCache.removeFromCache(
         makeSitePathDependencyKey(depSitePath))
     }
 
-    removeFromCache(
+    memCache.removeFromCache(
       makeBundleKey(
         bundleDeps.bundleName, tenantId = bundleDeps.siteId))
   }

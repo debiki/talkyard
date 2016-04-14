@@ -275,22 +275,3 @@ trait CategoriesDao {
 
 }
 
-
-
-trait CachingCategoriesDao extends CategoriesDao {
-  self: CachingSiteDao =>
-
-  /*
-  override def createPage(pageRole: PageRole, pageStatus: PageStatus,
-        anyCategoryId: Option[CategoryId], anyFolder: Option[String], anySlug: Option[String],
-        titleSource: String, bodySource: String,
-        showId: Boolean, authorId: UserId, browserIdData: BrowserIdData)
-        : PagePath = {
-    val pagePath = super.createPage(pageRole, pageStatus, anyCategoryId,
-      anyFolder, anySlug, titleSource, bodySource, showId, authorId, browserIdData)
-    firePageCreated(pagePath)
-    pagePath
-  } */
-
-}
-

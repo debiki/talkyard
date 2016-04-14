@@ -24,6 +24,8 @@ import debiki._
 import scala.collection.mutable
 import CachingDao.CacheKey
 
+import scala.collection.mutable.ArrayBuffer
+
 
 /** Page stuff, e.g. title, body excerpt (for pinned topics), author name.
   * We might not load all stuff inside a transaction, so sometimes some data might
@@ -54,6 +56,10 @@ trait PageStuffDao {
 
   val logger = play.api.Logger
 
+  onPageSaved { sitePageId =>
+    memCache.removeFromCache(cacheKey(sitePageId))
+  }
+
 
   def loadPageStuffAsList(pageIds: Iterable[PageId]): Seq[Option[PageStuff]] = {
     val stuffByPageId = loadPageStuff(pageIds)
@@ -62,11 +68,31 @@ trait PageStuffDao {
 
 
   def loadPageStuff(pageIds: Iterable[PageId]): Map[PageId, PageStuff] = {
-    if (pageIds.isEmpty)
-      return Map.empty
-    readOnlyTransaction { transaction =>
-      loadPageStuffImpl(pageIds, transaction)
+    var summariesById = Map[PageId, PageStuff]()
+    val idsNotCached = ArrayBuffer[PageId]()
+
+    // Look up summaries in cache.
+    for (pageId <- pageIds) {
+      val anySummary = memCache.lookupInCache[PageStuff](cacheKey(pageId))
+      anySummary match {
+        case Some(summary) => summariesById += pageId -> summary
+        case None => idsNotCached.append(pageId)
+      }
     }
+
+    // Ask the database for any remaining summaries.
+    val reaminingSummaries = if (idsNotCached.isEmpty) Nil else {
+      readOnlyTransaction { transaction =>
+        loadPageStuffImpl(idsNotCached, transaction)
+      }
+    }
+    val siteCacheVersion = memCache.siteCacheVersionNow()
+    for ((pageId, summary) <- reaminingSummaries) {
+      summariesById += pageId -> summary
+      memCache.putInCache(cacheKey(pageId), CacheValue(summary, siteCacheVersion))
+    }
+
+    summariesById
   }
 
 
@@ -140,42 +166,6 @@ trait PageStuffDao {
     stuffById
   }
 
-}
-
-
-
-trait CachingPageStuffDao extends PageStuffDao {
-  self: SiteDao with CachingDao =>
-
-  onPageSaved { sitePageId =>
-    removeFromCache(cacheKey(sitePageId))
-  }
-
-
-  override def loadPageStuff(pageIds: Iterable[PageId]): Map[PageId, PageStuff] = {
-    var summariesById = Map[PageId, PageStuff]()
-    var idsNotCached = List[PageId]()
-
-    // Look up summaries in cache.
-    for (pageId <- pageIds) {
-      val anySummary = lookupInCache[PageStuff](cacheKey(pageId))
-      anySummary match {
-        case Some(summary) => summariesById += pageId -> summary
-        case None => idsNotCached ::= pageId
-      }
-    }
-
-    // Ask the database for any remaining summaries.
-    val siteCacheVersion = siteCacheVersionNow()
-    val reaminingSummaries = super.loadPageStuff(idsNotCached)
-    for ((pageId, summary) <- reaminingSummaries) {
-      summariesById += pageId -> summary
-      putInCache(cacheKey(pageId), CacheValue(summary, siteCacheVersion))
-    }
-
-    summariesById
-  }
-
 
   private def cacheKey(pageId: PageId, otherSiteId: SiteId = null): CacheKey = {
     val theSiteId = if (otherSiteId ne null) otherSiteId else siteId
@@ -188,8 +178,3 @@ trait CachingPageStuffDao extends PageStuffDao {
 
 }
 
-
-
-object CachingPageStuffDao {
-
-}
