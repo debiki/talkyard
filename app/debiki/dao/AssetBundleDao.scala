@@ -22,7 +22,6 @@ import com.debiki.core.Prelude._
 import debiki._
 import java.{util => ju}
 import CachingAssetBundleDao._
-import CachingDao.CacheKey
 
 
 case class AssetBundle(body: String, version: String)
@@ -47,17 +46,17 @@ trait AssetBundleDao {
   }
 
 
-  onPageCreated { pagePath =>
+  memCache.onPageCreated { pagePath =>
     tryUncacheAll(
       makeSitePathDependencyKey(pagePath.siteId, path = pagePath.value))
   }
 
-  onPageSaved { sitePageId =>
+  memCache.onPageSaved { sitePageId =>
     tryUncacheAll(
       makeDependencyKey(sitePageId))
   }
 
-  onPageMoved { (newPath: PagePath) =>
+  memCache.onPageMoved { (newPath: PagePath) =>
     tryUncacheAll(
       makeDependencyKey(newPath.sitePageId getOrDie "DwE54BI3"))
   }
@@ -105,7 +104,7 @@ trait AssetBundleDao {
     val siteCacheVersion = memCache.siteCacheVersionNow()
     val bundleAndDeps = AssetBundleLoader(nameNoSuffix, suffix, this).loadAssetBundle()
     cacheDependencies(bundleName, bundleAndDeps, siteCacheVersion)
-    memCache.putInCache(bundleKey, CacheValue(bundleAndDeps, siteCacheVersion))
+    memCache.putInCache(bundleKey, MemCacheItem(bundleAndDeps, siteCacheVersion))
 
     bundleAndDeps
   }
@@ -122,17 +121,17 @@ trait AssetBundleDao {
     val bundleDeps = BundleDependencyData(bundleName, bundleAndDeps, siteId = siteId)
     for (sitePageId <- bundleDeps.dependeePageIds) {
       val depKey = makeDependencyKey(sitePageId)
-      memCache.putInCache(depKey, CacheValue(bundleDeps, siteCacheVersion))
+      memCache.putInCache(depKey, MemCacheItem(bundleDeps, siteCacheVersion))
     }
 
     for (sitePath <- bundleDeps.missingOptAssetPaths) {
       val depKey = makeSitePathDependencyKey(sitePath)
-      memCache.putInCache(depKey, CacheValue(bundleDeps, siteCacheVersion))
+      memCache.putInCache(depKey, MemCacheItem(bundleDeps, siteCacheVersion))
     }
   }
 
 
-  private def tryUncacheAll(dependencyKey: CacheKey) {
+  private def tryUncacheAll(dependencyKey: MemCacheKey) {
     memCache.lookupInCache[BundleDependencyData](dependencyKey) foreach { depsData =>
       doUncacheAll(depsData)
     }
@@ -162,15 +161,15 @@ trait AssetBundleDao {
 
 
   private def makeBundleKey(bundleName: String, tenantId: String) =
-    CacheKey(siteId, s"$bundleName|AssetBundle")
+    MemCacheKey(siteId, s"$bundleName|AssetBundle")
 
   private def makeDependencyKey(sitePageId: SitePageId) =
-    CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|BundleSitePageIdDep")
+    MemCacheKey(sitePageId.siteId, s"${sitePageId.pageId}|BundleSitePageIdDep")
 
-  private def makeSitePathDependencyKey(siteId: String, path: String): CacheKey =
-    CacheKey(siteId, s"$path|BundleSitePathDep")
+  private def makeSitePathDependencyKey(siteId: String, path: String): MemCacheKey =
+    MemCacheKey(siteId, s"$path|BundleSitePathDep")
 
-  private def makeSitePathDependencyKey(sitePath: SitePath): CacheKey =
+  private def makeSitePathDependencyKey(sitePath: SitePath): MemCacheKey =
     makeSitePathDependencyKey(sitePath.siteId, path = sitePath.path)
 
 }

@@ -23,11 +23,18 @@ import debiki.{CacheMetric, Globals}
 import nl.grons.metrics.scala.Meter
 import java.{util => ju}
 import scala.reflect.ClassTag
-import CachingDao._
+import MemCache._
 
 
 
-trait CacheEvents {  // COULD move to separate file
+object MemCache {
+  val IgnoreSiteCacheVersion = 0
+  val FirstSiteCacheVersion = 1
+}
+
+
+
+class MemCache(val siteId: SiteId, val cache: DaoMemCache) {
 
   private var pageCreatedListeners = List[(PagePath => Unit)]()
   private var pageSavedListeners = List[(SitePageId => Unit)]()
@@ -74,39 +81,6 @@ trait CacheEvents {  // COULD move to separate file
     userCreatedListeners foreach (_(user))
   }
 
-}
-
-
-
-object CachingDao {
-
-  case class CacheKey(siteId: SiteId, rest: String) {
-    override def toString = s"$siteId|$rest"
-  }
-
-  def CacheKeyAnySite(value: String) = CacheKey(siteId = "?", value)
-
-  def CacheValueIgnoreVersion[A](value: A) = CacheValue(value, IgnoreSiteCacheVersion)
-
-  private val IgnoreSiteCacheVersion = 0
-  private val FirstSiteCacheVersion = 1
-
-}
-
-
-
-/**
-  * Functions that lookup, add and remove stuff to/from a cache.
-  *
-  * Cache keys must contain a '|' (otherwise CachingDao believes you've
-  * accidentally passed in a raw string, not yet converted to a cache key).
-  * Use e.g. this key format:  (tenant-id)|(page-id)|(cache-entry-type).
-  */
-trait CachingDao extends CacheEvents {
-  self: {
-    def siteId: SiteId
-    def cache: DaoMemCache
-  } =>
 
   private var _thisSitesCacheVersionNow: Option[Long] = None
 
@@ -137,13 +111,13 @@ trait CachingDao extends CacheEvents {
    * and caches the resulting value (if any) and returns it.
    */
   def lookupInCache[A](
-        key: CacheKey,
+        key: MemCacheKey,
         orCacheAndReturn: => Option[A] = null,
         metric: CacheMetric = null,
         ignoreSiteCacheVersion: Boolean = false)(
         implicit classTag: ClassTag[A]): Option[A] = time(metric) { hitMeter =>
 
-    lookupInCacheToReplace(key) foreach { case CacheValue(value, version) =>
+    lookupInCacheToReplace(key) foreach { case MemCacheItem(value, version) =>
       hitMeter.mark()
       return Some(value)
     }
@@ -164,7 +138,7 @@ trait CachingDao extends CacheEvents {
     // overwrite it, because `newValue` is probably more recent.
     // – For now, don't store info on cache misses.
     newValueOpt foreach { newValue =>
-      putInCache(key, CacheValue(newValue, siteCacheVersion))
+      putInCache(key, MemCacheItem(newValue, siteCacheVersion))
     }
     newValueOpt
   }
@@ -173,8 +147,8 @@ trait CachingDao extends CacheEvents {
   /** Returns a cached value, if any, including the site cache version number,
     * so the value can be replaced atomically.
     */
-  def lookupInCacheToReplace[A](key: CacheKey)(implicit classTag: ClassTag[A])
-        : Option[CacheValue[A]] = {
+  def lookupInCacheToReplace[A](key: MemCacheKey)(implicit classTag: ClassTag[A])
+        : Option[MemCacheItem[A]] = {
     // (See class EhCachePlugin in play/api/cache/Cache.scala, for how Play Framework
     // does with `getObjectValue`. Namely exactly as on the next line.)
     Option(cache.getIfPresent(key.toString)) foreach { item =>
@@ -193,7 +167,7 @@ trait CachingDao extends CacheEvents {
       }
 
       if (upToDate)
-        return Some(CacheValue[A](cachedValue.asInstanceOf[A], item.siteCacheVersion))
+        return Some(MemCacheItem[A](cachedValue.asInstanceOf[A], item.siteCacheVersion))
 
       // Cached value is stale.
       removeFromCache(key)
@@ -203,12 +177,12 @@ trait CachingDao extends CacheEvents {
   }
 
 
-  def putInCache(key: CacheKey, value: DaoMemCacheAnyItem) {
+  def putInCache(key: MemCacheKey, value: DaoMemCacheAnyItem) {
     cache.put(key.toString, value)
   }
 
 
-  def putInCacheIfAbsent[A](key: CacheKey, value: DaoMemCacheAnyItem): Boolean = {
+  def putInCacheIfAbsent[A](key: MemCacheKey, value: DaoMemCacheAnyItem): Boolean = {
     val javaFn = new ju.function.Function[String, DaoMemCacheAnyItem] {
       override def apply(dummy: String): DaoMemCacheAnyItem = value
     }
@@ -217,7 +191,7 @@ trait CachingDao extends CacheEvents {
   }
 
 
-  def removeFromCache(key: CacheKey) {
+  def removeFromCache(key: MemCacheKey) {
     cache.invalidate(key.toString)
   }
 
@@ -227,7 +201,7 @@ trait CachingDao extends CacheEvents {
   def emptyCache(siteId: String) {
     val siteCacheVersion = siteCacheVersionNow(siteId)
     val nextVersion = siteCacheVersion + 1  // BUG Race condition.
-    cache.put(siteCacheVersionKey(siteId), CacheValue(nextVersion, -1))
+    cache.put(siteCacheVersionKey(siteId), MemCacheItem(nextVersion, -1))
     _thisSitesCacheVersionNow = None
   }
 

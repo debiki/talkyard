@@ -366,7 +366,7 @@ class Globals {
     val antiSpam = new AntiSpam()
     antiSpam.start()
 
-    def systemDao: SystemDao = new CachingSystemDao(dbDaoFactory, cache) // [rename] to newSystemDao()?
+    def systemDao: SystemDao = new SystemDao(dbDaoFactory, cache) // [rename] to newSystemDao()?
 
     private def fastStartSkipSearch =
       Play.configuration.getBoolean("crazyFastStartSkipSearch") getOrElse false

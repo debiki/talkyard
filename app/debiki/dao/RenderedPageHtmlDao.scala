@@ -25,14 +25,13 @@ import debiki.DebikiHttp._
 import io.efdi.server.http.PageRequest
 import play.{api => p}
 import play.api.Play.current
-import CachingDao._
 import RenderedPageHtmlDao._
 
 
 object RenderedPageHtmlDao {
 
   def renderedPageKey(sitePageId: SitePageId) =
-    CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|PageHtml")
+    MemCacheKey(sitePageId.siteId, s"${sitePageId.pageId}|PageHtml")
 
 }
 
@@ -40,11 +39,11 @@ object RenderedPageHtmlDao {
 trait RenderedPageHtmlDao {
   self: SiteDao =>
 
-  onPageCreated { page =>
+  memCache.onPageCreated { page =>
     uncacheForums(this.siteId)
   }
 
-  onPageSaved { sitePageId =>
+  memCache.onPageSaved { sitePageId =>
     uncacheRenderedPage(sitePageId)
     uncacheForums(sitePageId.siteId)
   }
@@ -168,7 +167,7 @@ trait RenderedPageHtmlDao {
       val key = this.forumsKey(siteId)
       memCache.lookupInCache[List[PageId]](key) match {
         case None =>
-          done = memCache.putInCacheIfAbsent(key, CacheValueIgnoreVersion(List(forumPageId)))
+          done = memCache.putInCacheIfAbsent(key, MemCacheValueIgnoreVersion(List(forumPageId)))
         case Some(cachedForumIds) =>
           if (cachedForumIds contains forumPageId)
             return
@@ -178,7 +177,7 @@ trait RenderedPageHtmlDao {
           done = replaceInCache(key, CacheValueIgnoreVersion(cachedForumIds),
             newValue = CacheValueIgnoreVersion(newForumIds))
           instead: */
-          memCache.putInCache(key, CacheValueIgnoreVersion(newForumIds))
+          memCache.putInCache(key, MemCacheValueIgnoreVersion(newForumIds))
       }
     }
     while (!done)
@@ -224,7 +223,7 @@ trait RenderedPageHtmlDao {
 
 
   private def forumsKey(siteId: SiteId) =
-    CacheKey(siteId, "|ForumIds") // "|" is required by a debug check function
+    MemCacheKey(siteId, "|ForumIds") // "|" is required by a debug check function
 
 }
 

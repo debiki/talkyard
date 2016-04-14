@@ -20,7 +20,6 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import debiki.dao.CachingDao.CacheKey
 import io.efdi.server.http.throwForbidden2
 
 
@@ -61,7 +60,7 @@ trait SettingsDao {
 
 
 
-  private def siteSettingsKey = CacheKey(siteId, "SiteSettingsKey")
+  private def siteSettingsKey = MemCacheKey(siteId, "SiteSettingsKey")
   /* Later?
   private def pageTreeSettingsKey(rootId: PageId) = CacheKey(siteId, s"$rootId|PgTrStngsKey")
   private def singlePageSettingsKey(pageId: PageId) = CacheKey(siteId, s"$pageId|SnglPgStngsKey")

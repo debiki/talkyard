@@ -20,8 +20,6 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
-import java.{util => ju}
-import debiki.dao.CachingDao.CacheKey
 import debiki.DebikiHttp._
 import SpecialContentPages._
 
@@ -36,7 +34,7 @@ import SpecialContentPages._
 trait SpecialContentDao {
   self: SiteDao =>
 
-  onPageSaved { sitePageId =>
+  memCache.onPageSaved { sitePageId =>
     // if page id == some special content page id, uncache it.
   }
 
@@ -135,7 +133,7 @@ trait SpecialContentDao {
       emptyCacheImpl(transaction)
     }
     else {
-      firePageCreated(dummyPagePath)
+      memCache.firePageCreated(dummyPagePath)
     }
   }
 
@@ -168,7 +166,7 @@ trait SpecialContentDao {
       emptyCacheImpl(transaction)
     }
     else {
-      firePageSaved(SitePageId(siteId = siteId, pageId = oldPost.pageId))
+      memCache.firePageSaved(SitePageId(siteId = siteId, pageId = oldPost.pageId))
     }
   }
 

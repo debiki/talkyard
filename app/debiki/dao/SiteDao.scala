@@ -19,9 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import controllers.ViewPageController
 import debiki._
-import debiki.dao.CachingDao.CacheKey
 import io.efdi.server.http._
 import play.api.Play.current
 import scala.collection.mutable
@@ -34,8 +32,8 @@ class SiteDaoFactory (
   private val _dbDaoFactory: DbDaoFactory,
   private val cache: DaoMemCache) {
 
-  def newSiteDao(siteId: SiteId): CachingSiteDao = {
-    new CachingSiteDao(siteId, _dbDaoFactory, cache)
+  def newSiteDao(siteId: SiteId): SiteDao = {
+    new SiteDao(siteId, _dbDaoFactory, cache)
   }
 
 }
@@ -45,16 +43,11 @@ class SiteDaoFactory (
 /** A data access object for site specific data. Data could be loaded
   * from database, or fetched from some in-memory cache.
   *
-  * Delegates most requests to SiteDbDao. However, hides some
-  * SiteDbDao methods, because calling them directly would mess up
-  * the cache in SiteDao's subclass CachingSiteDao.
-  *
   * Don't use for more than one http request — it might cache things,
   * in private fields, and is perhaps not thread safe.
   */
-abstract class SiteDao
+class SiteDao(val siteId: SiteId, val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache)
   extends AnyRef
-  with CacheEvents // remove later, once all mem cache stuff migrated to MemCache
   with AssetBundleDao
   with SettingsDao
   with SpecialContentDao
@@ -73,7 +66,7 @@ abstract class SiteDao
   with AuditDao
   with CreateSiteDao {
 
-  protected def memCache: MemCache
+  protected def memCache = new MemCache(siteId, cache)
 
   def memCache_test = {
     require(Globals.wasTest, "EsE7YKP42B")
@@ -81,18 +74,18 @@ abstract class SiteDao
   }
 
 
-  def dbDao2: DbDao2
+  def dbDao2 = dbDaoFactory.newDbDao2()
 
   def commonmarkRenderer = ReactRenderer
 
 
-  onUserCreated { user =>
+  memCache.onUserCreated { user =>
     if (loadSiteStatus().isInstanceOf[SiteStatus.OwnerCreationPending] && user.isOwner) {
       uncacheSiteStatus()
     }
   }
 
-  onPageCreated { page =>
+  memCache.onPageCreated { page =>
     if (loadSiteStatus() == SiteStatus.ContentCreationPending) {
       uncacheSiteStatus()
     }
@@ -102,7 +95,7 @@ abstract class SiteDao
     memCache.removeFromCache(siteStatusKey)
   }
 
-  private def siteStatusKey = CacheKey(this.siteId, "|SiteId")
+  private def siteStatusKey = MemCacheKey(this.siteId, "|SiteId")
 
 
   def readWriteTransaction[R](fn: SiteTransaction => R, allowOverQuota: Boolean = false): R = {
@@ -129,7 +122,7 @@ abstract class SiteDao
 
 
   def refreshPageInAnyCache(pageId: PageId) {
-    firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
+    memCache.firePageSaved(SitePageId(siteId = siteId, pageId = pageId))
   }
 
   def refreshPagesInAnyCache(pageIds: Set[PageId]) {
@@ -149,11 +142,13 @@ abstract class SiteDao
   }
 
 
+  def removeFromMemCache(key: MemCacheKey) {
+    memCache.removeFromCache(key)
+  }
+
 
 
   // ----- Tenant
-
-  def siteId: SiteId
 
   def loadSite(): Site = {
     var site = readOnlyTransaction(_.loadTenant())

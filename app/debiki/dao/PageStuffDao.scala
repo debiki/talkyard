@@ -22,7 +22,6 @@ import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.{TitleNr, BodyNr}
 import debiki._
 import scala.collection.mutable
-import CachingDao.CacheKey
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -56,7 +55,7 @@ trait PageStuffDao {
 
   val logger = play.api.Logger
 
-  onPageSaved { sitePageId =>
+  memCache.onPageSaved { sitePageId =>
     memCache.removeFromCache(cacheKey(sitePageId))
   }
 
@@ -89,7 +88,7 @@ trait PageStuffDao {
     val siteCacheVersion = memCache.siteCacheVersionNow()
     for ((pageId, summary) <- reaminingSummaries) {
       summariesById += pageId -> summary
-      memCache.putInCache(cacheKey(pageId), CacheValue(summary, siteCacheVersion))
+      memCache.putInCache(cacheKey(pageId), MemCacheItem(summary, siteCacheVersion))
     }
 
     summariesById
@@ -167,13 +166,13 @@ trait PageStuffDao {
   }
 
 
-  private def cacheKey(pageId: PageId, otherSiteId: SiteId = null): CacheKey = {
+  private def cacheKey(pageId: PageId, otherSiteId: SiteId = null): MemCacheKey = {
     val theSiteId = if (otherSiteId ne null) otherSiteId else siteId
-    CacheKey(theSiteId, s"$pageId|PageStuff")
+    MemCacheKey(theSiteId, s"$pageId|PageStuff")
   }
 
 
-  private def cacheKey(sitePageId: SitePageId): CacheKey =
+  private def cacheKey(sitePageId: SitePageId): MemCacheKey =
     cacheKey(otherSiteId = sitePageId.siteId, pageId = sitePageId.pageId)
 
 }

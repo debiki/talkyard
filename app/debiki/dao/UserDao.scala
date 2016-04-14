@@ -25,7 +25,6 @@ import io.efdi.server.{UserAndLevels, Who}
 import scala.collection.immutable
 import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs
-import CachingDao.{CacheKey, CacheValueIgnoreVersion}
 
 
 trait UserDao {
@@ -296,7 +295,7 @@ trait UserDao {
       transaction.insertIdentity(identity)
       LoginGrant(Some(identity), user.briefUser, isNewIdentity = true, isNewRole = true)
     }
-    fireUserCreated(loginGrant.user)
+    memCache.fireUserCreated(loginGrant.user)
     loginGrant
   }
 
@@ -331,7 +330,7 @@ trait UserDao {
       transaction.insertAuthenticatedUser(user)
       user.briefUser
     }
-    fireUserCreated(user)
+    memCache.fireUserCreated(user)
     user
   }
 
@@ -355,7 +354,7 @@ trait UserDao {
     }
     memCache.putInCache(
       key(user.id),
-      CacheValueIgnoreVersion(user))
+      MemCacheValueIgnoreVersion(user))
     user
   }
 
@@ -384,7 +383,7 @@ trait UserDao {
     // when site specific data changes.
     memCache.putInCache(
       key(loginGrant.user.id),
-      CacheValueIgnoreVersion(loginGrant.user))
+      MemCacheValueIgnoreVersion(loginGrant.user))
 
     loginGrant
   }
@@ -658,7 +657,7 @@ trait UserDao {
     memCache.removeFromCache(key(userId))
   }
 
-  private def key(userId: UserId) = CacheKey(siteId, s"$userId|UserById")
+  private def key(userId: UserId) = MemCacheKey(siteId, s"$userId|UserById")
 
 }
 

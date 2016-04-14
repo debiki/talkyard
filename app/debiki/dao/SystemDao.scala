@@ -22,19 +22,15 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
 import play.api.Play.current
-import CachingDao.{CacheKeyAnySite, CacheValueIgnoreVersion}
 
 
-/**
- * Delegates most requests to SystemDbDao. However, hides some
- * SystemDbDao methods, because calling them directly would mess up
- * the cache in SystemDao's subclass CachingSystemDao.
- *
- * Thread safe.
+/** Database and cache queries that take all sites in mind.
  */
-class SystemDao(private val dbDaoFactory: DbDaoFactory) {
+class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) {
 
   def dbDao2 = dbDaoFactory.newDbDao2()
+
+  val memCache = new MemCache("?", cache)
 
   protected def readOnlyTransaction[R](fn: SystemTransaction => R): R =
     dbDao2.readOnlySystemTransaction(fn)
@@ -56,11 +52,6 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory) {
 
   def loadSite(siteId: SiteId): Option[Site] =
     readOnlyTransaction(_.loadTenants(Seq(siteId)).headOption)
-
-  def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup] = {
-    require(!hostname.contains(":"), "EsE5KYUU7")
-    readOnlyTransaction(_.lookupCanonicalHost(hostname))
-  }
 
 
   // ----- Notifications
@@ -93,37 +84,22 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory) {
     }
   }
 
-}
 
+  def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup] = {
+    require(!hostname.contains(":"), "EsE5KYUU7")
 
-
-/**
- * Caches tenant ids by server address and port.
- * Currently never removes anything from the cache, because it's not possible
- * to programmatically remove/reassign a tenant's origins (for example,
- * remove http://some-host-addr.com, or have it point to another tenant)
- *
- * Thread safe.
- */
-class CachingSystemDao(dbDaoFactory: DbDaoFactory, val cache: DaoMemCache)
-  extends SystemDao(dbDaoFactory) with CachingDao {
-
-  def siteId = "?"
-
-
-  override def lookupCanonicalHost(host: String): Option[CanonicalHostLookup] = {
-    val key = _tenantLookupByOriginKey(host)
-    lookupInCache[CanonicalHostLookup](key) foreach { result => CanonicalHostLookup
+    val key = _tenantLookupByOriginKey(hostname)
+    memCache.lookupInCache[CanonicalHostLookup](key) foreach { result => CanonicalHostLookup
       return Some(result)
     }
-    super.lookupCanonicalHost(host) match {
+    readOnlyTransaction(_.lookupCanonicalHost(hostname)) match {
       case None =>
         // Don't cache this.
         // There would be infinitely many origins that maps to nothing, if the DNS server
         // maps a wildcard like *.example.com to this server.
         None
       case Some(result) =>
-        putInCache(key, CacheValueIgnoreVersion(result))
+        memCache.putInCache(key, MemCacheValueIgnoreVersion(result))
         Some(result)
     }
   }
@@ -131,7 +107,7 @@ class CachingSystemDao(dbDaoFactory: DbDaoFactory, val cache: DaoMemCache)
 
   private def _tenantLookupByOriginKey(host: String) =
     // Site id unknown, that's what we're about to lookup.
-    CacheKeyAnySite(s"$host|TenantByOrigin")
+    MemCacheKeyAnySite(s"$host|TenantByOrigin")
 
 }
 

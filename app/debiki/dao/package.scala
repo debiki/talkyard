@@ -19,17 +19,23 @@ package debiki
 
 import com.debiki.core._
 import com.github.benmanes.caffeine
-import play.api.libs.json.JsArray
 
 
 package object dao {
 
   type DaoMemCache = caffeine.cache.Cache[String, DaoMemCacheAnyItem]
 
-  // COULD rename to DaoMemCacheItem
-  case class CacheValue[A](value: A, siteCacheVersion: Long)
+  case class MemCacheItem[A](value: A, siteCacheVersion: Long)
 
-  type DaoMemCacheAnyItem = CacheValue[Any]
+  type DaoMemCacheAnyItem = MemCacheItem[Any]
+
+  case class MemCacheKey(siteId: SiteId, rest: String) {
+    override def toString = s"$siteId|$rest"
+  }
+
+  def MemCacheKeyAnySite(value: String) = MemCacheKey(siteId = "?", value)
+
+  def MemCacheValueIgnoreVersion[A](value: A) = MemCacheItem(value, MemCache.IgnoreSiteCacheVersion)
 
 }
 

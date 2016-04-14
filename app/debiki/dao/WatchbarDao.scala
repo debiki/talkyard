@@ -19,7 +19,6 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import CachingDao.{CacheKey, CacheValueIgnoreVersion}
 
 
 /** Returns an empty watchbar. Only the CachingWatchbarDao does something useful.
@@ -58,7 +57,7 @@ trait WatchbarDao {
   def saveWatchbar(userId: UserId, watchbar: Watchbar) {
     memCache.putInCache(
       key(userId),
-      CacheValueIgnoreVersion(watchbar))
+      MemCacheValueIgnoreVersion(watchbar))
   }
 
 
@@ -75,7 +74,7 @@ trait WatchbarDao {
   }
 
 
-  private def key(userId: UserId) = CacheKey(siteId, s"$userId|Watchbar")
+  private def key(userId: UserId) = MemCacheKey(siteId, s"$userId|Watchbar")
 
 }
 

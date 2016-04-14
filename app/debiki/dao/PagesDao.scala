@@ -75,7 +75,7 @@ trait PagesDao {
       pagePath
     }
 
-    firePageCreated(pagePath)
+    memCache.firePageCreated(pagePath)
     pagePath
     // Don't start rendering any html. See comment below [5KWC58]
   }

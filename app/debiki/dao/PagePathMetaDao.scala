@@ -19,15 +19,13 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import java.{util => ju}
-import CachingDao.CacheKey
 
 
 
 trait PagePathMetaDao {
   self: SiteDao =>
 
-  onPageSaved { sitePageId =>
+  memCache.onPageSaved { sitePageId =>
     uncacheMetaAndAncestors(sitePageId)
   }
 
@@ -48,7 +46,7 @@ trait PagePathMetaDao {
     // entry that maps `newPath` to something, remove it.
     memCache.removeFromCache(_pathWithIdByPathKey(newPath))
 
-    firePageMoved(newPath)
+    memCache.firePageMoved(newPath)
     newPath
   }
 
@@ -67,7 +65,7 @@ trait PagePathMetaDao {
       // and cache it, if found, regardless of if id shown in url.
       // Or better & much simpler: Cache SitePageId —> correctPath.
       if (!pathToCheck.showId || correctPath.value == pathToCheck.value)
-        memCache.putInCache(key, CacheValue(correctPath, siteCacheVersion))
+        memCache.putInCache(key, MemCacheItem(correctPath, siteCacheVersion))
       return Some(correctPath)
     }
     None
@@ -141,16 +139,16 @@ trait PagePathMetaDao {
   // an URL to find which page to include in an asset bundle — the page
   // could be a public stylesheet from e.g. www.debik.com.)
   private def _pathWithIdByPathKey(pagePath: PagePath) =
-    CacheKey(pagePath.siteId, s"${pagePath.value}|PagePathByPath")
+    MemCacheKey(pagePath.siteId, s"${pagePath.value}|PagePathByPath")
 
   private def _pathByPageIdKey(pageId: PageId) =
-    CacheKey(siteId, s"$pageId|PagePathById")
+    MemCacheKey(siteId, s"$pageId|PagePathById")
 
   private def pageMetaByIdKey(sitePageId: SitePageId) =
-    CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|PageMetaById")
+    MemCacheKey(sitePageId.siteId, s"${sitePageId.pageId}|PageMetaById")
 
   private def ancestorIdsKey(sitePageId: SitePageId) =
-    CacheKey(sitePageId.siteId, s"${sitePageId.pageId}|AncestorIdsById")
+    MemCacheKey(sitePageId.siteId, s"${sitePageId.pageId}|AncestorIdsById")
 
 }
 
