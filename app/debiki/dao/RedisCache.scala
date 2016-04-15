@@ -1,0 +1,104 @@
+/**
+ * Copyright (c) 2016 Kaj Magnus Lindberg
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package debiki.dao
+
+import akka.util.ByteString
+import com.debiki.core._
+import com.debiki.core.Prelude._
+import java.{util => ju}
+import redis.RedisClient
+import redis.api.Limit
+import scala.concurrent._
+import scala.concurrent.duration._
+
+
+object RedisCache {
+  def forSite( siteId: SiteId, redisClient: RedisClient) = new RedisCache(siteId, redisClient)
+}
+
+
+
+class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
+
+  // Is 3 times faster than String.toInt, according to the parseInt() docs.
+  import _root_.redis.protocol.ParseNumber.parseInt
+
+
+  def markUserOnlineRemoveStranger(userId: UserId, browserIdData: BrowserIdData) {
+    // Could do this in a transaction. Barely matters.
+    redis.zadd(usersOnlineKey(siteId), When.now().toDouble -> userId)
+    redis.zrem(strangersOnlineByIpKey(siteId), browserIdData.ip)
+  }
+
+
+  def markUserOffline(userId: UserId) {
+    redis.zrem(usersOnlineKey(siteId), userId)
+    // As of now we don't know if the user left, or if s/he is still online.
+    // Let's assume s/he left — so don't add any stranger-online here.
+    // (SECURITY Hmm, is it a privacy issue, if one sees user X online, and then X goes
+    // offline but the stranger counter changes from say 1 to 2? Then "everyone"
+    // sees that X is in fact still online, although s/he went offline.
+    // How solve that? Perhaps show a num-strangers interval, like "less than 5 online"
+    // or "around 10 strangers online", "around 20", "around 100", but no exact numbers?)
+  }
+
+
+  def markStrangerOnline(browserIdData: BrowserIdData) {
+    // Could consider browser id cookie too (instead of just ip), but then take care
+    // to avoid DoS attacks if someone generates 9^99 unique ids and requests.
+    redis.zadd(strangersOnlineByIpKey(siteId), When.now().toDouble -> browserIdData.ip)
+  }
+
+
+  def loadOnlineUserIds(): (Seq[UserId], Int) = {
+    removeNoLongerOnlineUserIds()
+    val idStringsFuture: Future[Seq[ByteString]] = redis.zrange(usersOnlineKey(siteId), 0, -1)
+    val idStrings: Seq[ByteString] =
+      try Await.result(idStringsFuture, 1 second)
+      catch {
+        case _: TimeoutException => die("EsE7YKFJ2", "Redis timeout")
+      }
+    val userIds = idStrings.map(parseInt)
+    val numStrangersFuture: Future[Long] = redis.zcard(strangersOnlineByIpKey(siteId))
+    val numStrangers = try Await.result(numStrangersFuture, 1 second)
+      catch {
+        case _: TimeoutException => die("EsE4GKF20W", "Redis timeout")
+      }
+    (userIds, numStrangers.toInt)
+  }
+
+
+  def removeNoLongerOnlineUserIds() {
+    // Could make the time set:table, for tests. But for now:
+    val aWhileAgo = When.now().minusMinutes(10).toDouble
+    redis.zremrangebyscore(usersOnlineKey(siteId), Limit(0.0), Limit(aWhileAgo))
+    redis.zremrangebyscore(strangersOnlineByIpKey(siteId), Limit(0.0), Limit(aWhileAgo))
+  }
+
+
+  // Key names
+  //-------------
+
+  // Use fairly short key names because it's so boring to type many chars when debug-test
+  // inspecting Redis via redis-cli.
+
+  private def usersOnlineKey(siteId: SiteId) = s"$siteId-uo"
+  private def strangersOnlineByIpKey(siteId: SiteId) = s"$siteId-soip"
+
+}
+

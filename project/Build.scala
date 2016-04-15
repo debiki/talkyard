@@ -48,6 +48,7 @@ object ApplicationBuild extends Build {
     "com.zaxxer" % "HikariCP" % "2.4.5",
     // We use both a in-the-JVM-memory cache, and Redis:
     "com.github.ben-manes.caffeine" % "caffeine" % "2.2.6",
+    "com.github.etaty" %% "rediscala" % "1.6.0",
     "org.apache.commons" % "commons-email" % "1.3.3",
     "com.google.guava" % "guava" % "13.0.1",
     "org.owasp.encoder" % "encoder" % "1.1.1",

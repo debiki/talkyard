@@ -74,16 +74,18 @@ object RateLimiter {
       .getOrElse(request.ip)
     val key = s"$roleIdOrIp|${rateLimits.key}"
 
-    var timestampsHolder: TimestampsHolder = timestampsCache.getIfPresent(key)
-    if (timestampsHolder eq null) {
-      timestampsHolder = insertUpdateCache(key, rateLimits)
-    }
+    var timestampsHolder: TimestampsHolder =
+      timestampsCache.get(key, new java.util.function.Function[String, TimestampsHolder] {
+        override def apply(key: String) = makeCacheItem(key, rateLimits)
+      })
+
 
     var requestTimestamps: Array[UnixTime] = timestampsHolder.timestamps.get
 
     // If the rate limits have been changed, we need a new properly sized cache elem.
     if (requestTimestamps.length != rateLimits.numRequestsToRemember(isNewUser = false)) {
-      timestampsHolder = insertUpdateCache(key, rateLimits)
+      timestampsHolder = makeCacheItem(key, rateLimits)
+      timestampsCache.put(key, timestampsHolder)
       requestTimestamps = timestampsHolder.timestamps.get
     }
 
@@ -100,13 +102,11 @@ object RateLimiter {
   }
 
 
-  private def insertUpdateCache(key: String, rateLimits: RateLimits) = {
+  private def makeCacheItem(key: String, rateLimits: RateLimits): TimestampsHolder = {
     require(rateLimits != NoRateLimits, "DwE293Z14")
     val numRequestsToRemember = rateLimits.numRequestsToRemember(isNewUser = false)
     val oldTimestamps = Array.fill[UnixTime](numRequestsToRemember)(VeryLongAgo)
-    val value = new TimestampsHolder(oldTimestamps)
-    timestampsCache.put(key, value)
-    value
+    new TimestampsHolder(oldTimestamps)
   }
 
 

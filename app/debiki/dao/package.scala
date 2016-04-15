@@ -19,6 +19,7 @@ package debiki
 
 import com.debiki.core._
 import com.github.benmanes.caffeine
+import play.api.libs.json.JsArray
 
 
 package object dao {
@@ -36,6 +37,11 @@ package object dao {
   def MemCacheKeyAnySite(value: String) = MemCacheKey(siteId = "?", value)
 
   def MemCacheValueIgnoreVersion[A](value: A) = MemCacheItem(value, MemCache.IgnoreSiteCacheVersion)
+
+
+  type UsersOnlineCache = caffeine.cache.Cache[SiteId, UsersOnlineStuff]
+
+  case class UsersOnlineStuff(users: Seq[User], usersJson: JsArray, numStrangers: Int)
 
 }
 

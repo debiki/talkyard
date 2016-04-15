@@ -24,6 +24,11 @@ services:
     links:
       - db:database
 
+  redis:
+    image: redis:3.0.7-alpine
+    ports:
+      - '6379:6379'
+
   db:
     image: postgres:9.5.2
     ports:

@@ -22,6 +22,7 @@ import com.debiki.core.Prelude._
 import debiki._
 import io.efdi.server.http._
 import play.api.Play.current
+import redis.RedisClient
 import scala.collection.mutable
 import scala.concurrent.Future
 import SiteDao._
@@ -30,10 +31,12 @@ import SiteDao._
 
 class SiteDaoFactory (
   private val _dbDaoFactory: DbDaoFactory,
-  private val cache: DaoMemCache) {
+  private val redisClient: RedisClient,
+  private val cache: DaoMemCache,
+  private val usersOnlineCache: UsersOnlineCache) {
 
   def newSiteDao(siteId: SiteId): SiteDao = {
-    new SiteDao(siteId, _dbDaoFactory, cache)
+    new SiteDao(siteId, _dbDaoFactory, redisClient, cache, usersOnlineCache)
   }
 
 }
@@ -46,7 +49,12 @@ class SiteDaoFactory (
   * Don't use for more than one http request — it might cache things,
   * in private fields, and is perhaps not thread safe.
   */
-class SiteDao(val siteId: SiteId, val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache)
+class SiteDao(
+  val siteId: SiteId,
+  private val dbDaoFactory: DbDaoFactory,
+  private val redisClient: RedisClient,
+  private val cache: DaoMemCache,
+  val usersOnlineCache: UsersOnlineCache)
   extends AnyRef
   with AssetBundleDao
   with SettingsDao
@@ -67,6 +75,7 @@ class SiteDao(val siteId: SiteId, val dbDaoFactory: DbDaoFactory, val cache: Dao
   with CreateSiteDao {
 
   protected def memCache = new MemCache(siteId, cache)
+  protected def redisCache = new RedisCache(siteId, redisClient)
 
   def memCache_test = {
     require(Globals.wasTest, "EsE7YKP42B")

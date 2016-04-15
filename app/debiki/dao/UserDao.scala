@@ -22,6 +22,7 @@ import debiki.DebikiHttp.{throwNotFound, throwForbidden}
 import java.{util => ju}
 import debiki.{BrowserId, SidStatus, DebikiSecurity}
 import io.efdi.server.{UserAndLevels, Who}
+import play.api.libs.json.JsArray
 import scala.collection.immutable
 import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs
@@ -628,7 +629,7 @@ trait UserDao {
       return
 
     // Authenticated users are ignored here. Suspend them instead.
-    if (sidStatus.userId.map(User.isRoleId) == Some(true))
+    if (sidStatus.userId.exists(User.isRoleId))
       return
 
     // Ignore not-logged-in people, unless they attempt to login as guests.
@@ -650,6 +651,22 @@ trait UserDao {
         throwForbidden("DwE403BK01", o"""Not allowed. Please sign up with a username
             and password, or login with Google or Facebook, for example.""")
     }
+  }
+
+
+  def loadUsersOnlineStuff(): UsersOnlineStuff = {
+    usersOnlineCache.get(siteId, new ju.function.Function[String, UsersOnlineStuff] {
+      override def apply(dummySiteId: String): UsersOnlineStuff = {
+        val (userIds, numStrangers) = redisCache.loadOnlineUserIds()
+        val users = readOnlyTransaction { transaction =>
+          transaction.loadUsers(userIds)
+        }
+        UsersOnlineStuff(
+          users,
+          usersJson = JsArray(users.map(debiki.ReactJson.JsUser)),
+          numStrangers = numStrangers)
+      }
+    })
   }
 
 

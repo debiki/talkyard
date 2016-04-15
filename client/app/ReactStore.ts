@@ -68,6 +68,7 @@ ReactDispatcher.register(function(payload) {
 
     case ReactActions.actionTypes.NewMyself:
       ReactStore.activateMyself(action.user);
+      store.numOnlineStrangers = Math.max(0, store.numOnlineStrangers - 1);
       theStore_addOnlineUser(me_toBriefUser(action.user));
       break;
 
@@ -279,7 +280,6 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.UpdateUserPresence:
-      store.numOnlineStrangers = action.numOnlineStrangers;
       if (action.presence === Presence.Active) {
         theStore_addOnlineUser(action.user);
       }

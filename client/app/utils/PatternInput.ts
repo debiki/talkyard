@@ -65,9 +65,16 @@ export var PatternInput = createClassAndFactory({
     }
   },
 
+  componentWillUnmount: function() {
+    this.hasUnmounted = true;
+  },
+
   showErrorsSoon: function() {
     clearTimeout(this.showErrorsTimeoutHandle);
-    this.showErrorsTimeoutHandle = setTimeout(this.showErrors, 3000);
+    this.showErrorsTimeoutHandle = setTimeout(() => {
+      if (this.hasUnmounted) return;
+      this.showErrors();
+    }, 3000);
   },
 
   showErrors: function() {

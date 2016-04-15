@@ -78,6 +78,15 @@ package object core {
     def toJavaData = new java.util.Date(unixMillis)
     def toUnixMillis = unixMillis
     def millisSince(other: When) = unixMillis - other.unixMillis
+    def minusMinutes(minutes: Int) = new When(unixMillis - minutes * OneMinuteInMillis)
+    def minusSeconds(seconds: Int) = new When(unixMillis - seconds * 1000)
+    def minusMillis(millis: UnixMillis) = new When(unixMillis - millis)
+
+    /** Unix millis can safely be cast to a Double: (but perhaps not back again?)
+      * 100 years * 365 * 24 * 3600 * 1000 = 3153600000000 = 13 digits, and doubles in Java
+      * have more precision than that.
+      */
+    def toDouble = unixMillis.toDouble
   }
 
   object When {

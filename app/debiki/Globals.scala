@@ -31,12 +31,14 @@ import debiki.dao._
 import debiki.dao.migrations.ScalaBasedMigrations
 import io.efdi.server.notf.Notifier
 import java.{lang => jl, util => ju}
+import java.util.concurrent.TimeUnit
 import io.efdi.server.pubsub.{PubSubApi, PubSub, StrangerCounterApi}
 import org.scalactic._
 import play.{api => p}
 import play.api.libs.concurrent.Akka
 import play.api.Play
 import play.api.Play.current
+import redis.RedisClient
 import scala.concurrent.duration._
 import scala.concurrent.{Future, Await, TimeoutException}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -298,6 +300,7 @@ class Globals {
     shutdownActorAndWait(state.mailerActorRef)
     shutdownActorAndWait(state.renderContentActorRef)
     state.dbDaoFactory.shutdown()
+    state.redisClient.quit()
     _state = null
   }
 
@@ -336,6 +339,11 @@ class Globals {
     val metricRegistry = new metrics.MetricRegistry()
     val mostMetrics = new MostMetrics(metricRegistry)
 
+    // This connects to Redis on localhost.
+    // (A Redis client pool makes sense if we haven't saturate the CPU on localhost, or
+    // if there're many Redis servers and we want to round robin between them. Not needed, now.)
+    val redisClient = RedisClient()(Akka.system)
+
     val dbDaoFactory = new RdbDaoFactory(
       new Rdb(readOnlyDataSource, readWriteDataSource), ScalaBasedMigrations, Akka.system,
       anyFullTextSearchDbPath, Play.isTest, fastStartSkipSearch = fastStartSkipSearch)
@@ -348,18 +356,33 @@ class Globals {
       .weigher[String, DaoMemCacheAnyItem](new caffeine.cache.Weigher[String, DaoMemCacheAnyItem] {
         override def weigh(key: String, value: DaoMemCacheAnyItem): Int = {
           // For now. Later, use e.g. size of cached HTML page + X bytes for fixed min size?
+          // Can use to measure size: http://stackoverflow.com/a/30021105/694469
+          //   --> http://openjdk.java.net/projects/code-tools/jol/
           1
         }
       })
       .build()
 
-    val siteDaoFactory = new SiteDaoFactory(dbDaoFactory, cache)
+    // Online user ids are cached in Redis so they'll be remembered accross server restarts,
+    // and will be available to all app servers. But we cache them again with more details here
+    // in-process mem too. (More details = we've looked up username etc in the database, but
+    // in Redis we cache only user ids.) Not for longer than a few seconds though,
+    // so that the online-users-json sent to the browsers on page load will be mostly up-to-date.
+    // (It'll get patched, later, via pubsub events. SHOULD implement this, otherwise
+    // race conditions can cause the online-users list in the browser to become incorrect.)
+    private val usersOnlineCache: UsersOnlineCache =
+      caffeine.cache.Caffeine.newBuilder()
+        .expireAfterWrite(3, TimeUnit.SECONDS)
+        .maximumSize(Int.MaxValue)
+        .build()
+
+    val siteDaoFactory = new SiteDaoFactory(dbDaoFactory, redisClient, cache, usersOnlineCache)
 
     val mailerActorRef = Mailer.startNewActor(Akka.system, siteDaoFactory)
 
     val notifierActorRef = Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory)
 
-    val (pubSub, strangerCounter) = PubSub.startNewActor(Akka.system)
+    val (pubSub, strangerCounter) = PubSub.startNewActor(Akka.system, redisClient)
 
     val renderContentActorRef = RenderContentService.startNewActor(Akka.system, siteDaoFactory)
 

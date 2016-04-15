@@ -18,18 +18,18 @@
 package io.efdi.server.pubsub
 
 import akka.actor._
-import akka.pattern.ask
 import com.debiki.core.Prelude._
 import com.debiki.core._
+import debiki.dao.RedisCache
 import debiki.{ReactJson, Globals}
 import play.api.libs.json.{JsNull, JsValue}
 import play.{api => p}
 import play.api.libs.json.Json
 import play.api.libs.ws.{WSResponse, WS}
 import play.api.Play.current
+import redis.RedisClient
 import scala.collection.{mutable, immutable}
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.duration._
 import ReactJson.JsUser
 import PubSubActor._
@@ -71,9 +71,10 @@ object PubSub {
 
   /** Starts a PubSub actor (only one is needed in the whole app).
     */
-  def startNewActor(actorSystem: ActorSystem): (PubSubApi, StrangerCounterApi) = {
+  def startNewActor(actorSystem: ActorSystem, redisClient: RedisClient)
+        : (PubSubApi, StrangerCounterApi) = {
     val actorRef = actorSystem.actorOf(Props(
-      new PubSubActor()), name = s"PubSub-$testInstanceCounter")
+      new PubSubActor(redisClient)), name = s"PubSub-$testInstanceCounter")
     actorSystem.scheduler.schedule(60 seconds, 10 seconds, actorRef, DeleteInactiveSubscriptions)
     testInstanceCounter += 1
     (new PubSubApi(actorRef), new StrangerCounterApi(actorRef))
@@ -103,11 +104,6 @@ class PubSubApi(private val actorRef: ActorRef) {
   def publish(message: Message, byId: UserId) {
     actorRef ! PublishMessage(message, byId)
   }
-
-  def listOnlineUsers(siteId: SiteId): Future[(immutable.Seq[User], Int)] = {
-    val response: Future[Any] = (actorRef ? ListOnlineUsers(siteId))(timeout)
-    response.map(_.asInstanceOf[(immutable.Seq[User], Int)])
-  }
 }
 
 
@@ -125,7 +121,6 @@ private case class PublishMessage(message: Message, byId: UserId)
 private case class UserWatchesPages(siteId: SiteId, userId: UserId, pageIds: Set[PageId])
 private case class UserSubscribed(siteId: SiteId, user: User, browserIdData: BrowserIdData)
 private case class UnsubscribeUser(siteId: SiteId, user: User, browserIdData: BrowserIdData)
-private case class ListOnlineUsers(siteId: SiteId)
 private case object DeleteInactiveSubscriptions
 
 private case class StrangerSeen(siteId: SiteId, browserIdData: BrowserIdData)
@@ -145,7 +140,7 @@ object PubSubActor {
   * Later:? Poll nchan each minute? to find out which users have disconnected?
   * ((Could add an nchan feature that tells the appserver about this, push not poll?))
   */
-class PubSubActor extends Actor {
+class PubSubActor(val redisClient: RedisClient) extends Actor {
 
   /** Tells when subscriber subscribed. Subscribers are sorted by perhaps-inactive first.
     * We'll push messages only to users who have subscribed (i.e. are online and have
@@ -167,31 +162,25 @@ class PubSubActor extends Actor {
   // Could check what is Nchan's long-polling inactive timeout, if any?
   private val DeleteAfterInactiveMillis = 10 * OneMinuteInMillis
 
-  private val strangerCounter = new io.efdi.server.stranger.StrangerCounter()
-
 
   def receive = {
     case UserWatchesPages(siteId, userId, pageIds) =>
       updateWatchedPages(siteId, userId, pageIds)
     case UserSubscribed(siteId, user, browserIdData) =>
-      strangerCounter.removeStranger(siteId, browserIdData)
+      // Mark as online even if this has been done already, to bump it's timestamp.
+      RedisCache.forSite(siteId, redisClient).markUserOnlineRemoveStranger(user.id, browserIdData)
       publishUserPresence(siteId, user, Presence.Active)
       subscribeUser(siteId, user)
     case UnsubscribeUser(siteId, user, browserIdData) =>
-      // Don't bump the stranger counter, it's fairly likely that the user left for real?
-      // Also, increasing it gives everyone the impression that the server knows the user
-      // didn't really leave, but rather says, reading, but logged out.
+      RedisCache.forSite(siteId, redisClient).markUserOffline(user.id)
       unsubscribeUser(siteId, user)
       publishUserPresence(siteId, user, Presence.Away)
     case PublishMessage(message: Message, byId: UserId) =>
       publishStorePatchAndNotfs(message, byId)
-    case ListOnlineUsers(siteId) =>
-      sender ! listUsersOnline(siteId)
     case DeleteInactiveSubscriptions =>
       deleteInactiveSubscriptions()
-      strangerCounter.deleteOldStrangers()
     case StrangerSeen(siteId, browserIdData) =>
-      strangerCounter.addStranger(siteId, browserIdData)
+      RedisCache.forSite(siteId, redisClient).markStrangerOnline(browserIdData)
   }
 
 
@@ -222,11 +211,12 @@ class PubSubActor extends Actor {
     if (userAndWhenById.contains(user.id))
       return
 
+    // Don't send num-online-strangers. Instead, let it be a little bit inexact so that
+    // other people won't know if a user that logged out, stays online or not.
     val toUserIds = userAndWhenById.values.map(_.user.id).toSet - user.id
     sendPublishRequest(canonicalHost.hostname, toUserIds, "presence", Json.obj(
       "user" -> JsUser(user),
-      "presence" -> presence.toInt,
-      "numOnlineStrangers" -> strangerCounter.countStrangers(siteId)))
+      "presence" -> presence.toInt))
   }
 
 
@@ -318,13 +308,6 @@ class PubSubActor extends Actor {
 
   private def isUserOnline(siteId: SiteId, userId: UserId): Boolean =
     perSiteSubscribers(siteId).contains(userId)
-
-
-  private def listUsersOnline(siteId: SiteId): (immutable.Seq[User], Int) = {
-    val onlineUsers = perSiteSubscribers(siteId).values.map(_.user).to[immutable.Seq]
-    val numStrangers = strangerCounter.countStrangers(siteId)
-    (onlineUsers, numStrangers)
-  }
 
 
   private def deleteInactiveSubscriptions() {

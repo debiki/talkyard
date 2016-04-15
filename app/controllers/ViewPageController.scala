@@ -178,14 +178,13 @@ object ViewPageController extends mvc.Controller {
 
   private def doRenderPage(request: PageGetRequest): Future[Result] = {
     var pageHtml = request.dao.renderPage(request)
-    for {
-      (usersOnline, numStrangers) <- request.dao.pubSub.listOnlineUsers(request.dao.siteId)
-    } yield {
-      val usersJson = usersOnline.map(user => JsUser(user))
+
+    {
+      val usersOnlineStuff = request.dao.loadUsersOnlineStuff() // could do asynchronously later
       val anyUserSpecificDataJson = ReactJson.userDataJson(request)
       val volatileJson = Json.obj(
-        "usersOnline" -> usersJson,
-        "numStrangersOnline" -> numStrangers,
+        "usersOnline" -> usersOnlineStuff.usersJson,
+        "numStrangersOnline" -> usersOnlineStuff.numStrangers,
         "me" -> anyUserSpecificDataJson.getOrElse(JsNull).asInstanceOf[JsValue])
 
       // Insert volatile and user specific data into the HTML.
@@ -196,7 +195,7 @@ object ViewPageController extends mvc.Controller {
       pageHtml = org.apache.commons.lang3.StringUtils.replaceOnce(
           pageHtml, HtmlEncodedVolatileJsonMagicString, htmlEncodedJson)
 
-      Ok(pageHtml) as HTML
+      Future.successful(Ok(pageHtml) as HTML)
     }
   }
 

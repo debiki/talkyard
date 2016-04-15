@@ -77,14 +77,13 @@ object SubscriberController extends mvc.Controller {
   }
 
 
-  def loadOnlineUsers() = AsyncGetActionRateLimited(RateLimits.ExpensiveGetRequest) {
+  def loadOnlineUsers() = GetActionRateLimited(RateLimits.ExpensiveGetRequest) {
         request =>
-    Globals.pubSub.listOnlineUsers(request.siteId) map { case (onlineUsers, numStrangers) =>
-      OkSafeJson(
-        Json.obj(
-          "numOnlineStrangers" -> numStrangers,
-          "onlineUsers" -> JsArray(onlineUsers.map(JsUser))))
-    }
+    val stuff = request.dao.loadUsersOnlineStuff()
+    OkSafeJson(
+      Json.obj(
+        "numOnlineStrangers" -> stuff.numStrangers,
+        "onlineUsers" -> stuff.usersJson))
   }
 
 

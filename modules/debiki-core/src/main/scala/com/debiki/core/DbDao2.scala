@@ -38,6 +38,9 @@ class DbDao2(val dbDaoFactory: DbDaoFactory) {
   }
 
 
+  /** Throws OverQuotaException if we insert/edit stuff in the database so that the
+    * site uses too much disk space.
+    */
   def readWriteSiteTransaction[R](siteId: SiteId, allowOverQuota: Boolean = false)(
         fn: (SiteTransaction) => R): R = {
     val transaction = dbDaoFactory.newSiteTransaction(siteId, readOnly = false,
@@ -76,6 +79,8 @@ class DbDao2(val dbDaoFactory: DbDaoFactory) {
   }
 
 
+  /** Unlike readWriteSystemTransaction, this one doesn't throw OverQuotaException.
+    */
   def readWriteSystemTransaction[R](fn: (SystemTransaction) => R): R = {
     val transaction = dbDaoFactory.newSystemTransaction(readOnly = false)
     var committed = false
