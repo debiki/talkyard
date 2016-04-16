@@ -24,7 +24,8 @@ body
   // Native scrollbars look different in different browsers. Use js scrollbars instead?
   // E.g.: http://stackoverflow.com/a/25480648/694469
   // or http://jscrollpane.kelvinluck.com/index.html
-  overflow-y: scroll;
+  // — but fixed now? I added -webkit-scrollbar-... styles a bit below.
+  overflow-y: auto;
   overflow-x: visible;
   // Move the contents a bit to the left/right if sidebars open...
   left: $watchbarWidth;
@@ -238,6 +239,53 @@ footer p
 .footer p small
   font-size: 10px;
   color: #ddd;
+
+
+// Scrollbars
+//==============================
+// They'd otherwise be hidden in Safari (shown only if the user scrolls).
+
+.es-pagebar-open #esPageColumn
+  $scrollbarTrackColor = hsl(0, 0%, 93%);
+  $scrollbarThumbColor = hsl(0, 0%, 79%);
+  $scrollbarThumbHoverColor = hsl(0, 0%, 66%);
+  $scrollbarArrowColor = hsl(0, 0%, 55%);
+
+  // Show, because is the border between the page contents and the contextbar (which is open;
+  // we checked for .es-pagebar-open above).
+  overflow-y: scroll;
+
+  &::-webkit-scrollbar
+    -webkit-appearance: none; // none? Weird but works.
+    width: 13px;
+
+  // The ^ and v buttons at the top and bottom of the scrollbar.
+  &::-webkit-scrollbar-button:vertical:increment,
+  &::-webkit-scrollbar-button:vertical:decrement
+    display: block;
+    background-color: $scrollbarTrackColor;
+    border: 7px solid $scrollbarTrackColor;
+    &:hover
+      border-color: hsl(0, 0%, 80%);
+    &:increment
+      border-top: 7px solid $scrollbarArrowColor;
+      &:start
+        display: none; // otherwise there'll be both an up & down btn at the top
+    &:decrement
+      border-bottom: 7px solid $scrollbarArrowColor;
+      &:end
+        display: none; // see comment above
+
+  &::-webkit-scrollbar-track
+    background-color: $scrollbarTrackColor;
+    border-radius: 0;
+    padding: 10px 0 3px;
+
+  &::-webkit-scrollbar-thumb
+    border-radius: 0;
+    background-color: $scrollbarThumbColor;
+    &:hover
+      background-color: $scrollbarThumbHoverColor;
 
 
 // Code pages and templates
