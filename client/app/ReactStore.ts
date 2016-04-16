@@ -17,7 +17,7 @@
 
 /// <reference path="ReactDispatcher.ts" />
 /// <reference path="ReactActions.ts" />
-/// <reference path="store-getters.ts" />
+/// <reference path="oop-methods.ts" />
 /// <reference path="prelude.ts" />
 /// <reference path="utils/utils.ts" />
 /// <reference path="../typedefs/lodash/lodash.d.ts" />
@@ -383,7 +383,8 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     _.each(store.me.restrictedTopics, (topic: Topic) => {
       store.topics.push(topic);
     });
-    store.topics.sort((t: Topic, t2: Topic) => t.createdAtMs - t2.createdAtMs);
+    store.topics.sort((t: Topic, t2: Topic) =>
+      topic_sortOrderBasedOnLatestActivity(t, t2, store.categoryId));
     // later: COULD try to avoid gaps, e.g. don't load restricted topics back to year 2000
     // but public topics back to 2010 only.
     // BUG we always sort by time, but in some rare cases, we want to sort by most-popular-first,

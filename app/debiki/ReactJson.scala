@@ -566,7 +566,7 @@ object ReactJson {
         }) getOrElse JsNull
         (rolePageSettings,
           votesJson(user.id, pageId, transaction),
-          unapprovedPostsJson(user.id, pageId, transaction))
+          unapprovedPostsJson(user, pageId, transaction))
       } getOrElse (JsNull, JsNull, JsNull)
 
     Json.obj(
@@ -740,24 +740,26 @@ object ReactJson {
   }
 
 
-  private def unapprovedPostsJson(userId: UserId, pageId: PageId, transaction: SiteTransaction)
+  private def unapprovedPostsJson(user: User, pageId: PageId, transaction: SiteTransaction)
         : JsObject = {
-    // I'm rewriting/refactoring and right now all posts are approved directly, so for now:
-    JsObject(Nil)
-    /* Previously:
-    val relevantPosts =
-      if (request.theUser.isAdmin) request.thePageParts.getAllPosts
-      else request.thePageParts.postsByUser(request.theUser.id)
-
-    val unapprovedPosts = relevantPosts filter { post =>
-      !post.currentVersionApproved
+    JsObject(Nil) // for now
+    /*
+    // TOO slow! does a db req each http req. Fix by caching user ids with unappr posts, per page?
+    val page = PageDao(pageId, transaction)
+    val posts = page.parts.allPosts filter { post =>
+      (user.isAdmin || post.createdById == user.id) && !post.isCurrentVersionApproved
     }
+    /* doesn't work currently, because (unfortunately) the whole page is needed:
+    val byId = user.isStaff ? Option(user.id) | None
+    val posts = transaction.loadPosts(authorId = byId, includeTitles = true,
+      includeChatMessages = false, onPageId = Some(pageId), onlyUnapproved = true,
+      orderBy = OrderBy.OldestFirst, limit = 99)
+      */
 
-    val json = JsObject(unapprovedPosts.map { post =>
-      post.id.toString -> postToJson(post, includeUnapproved = true)
-    })
-
-    json
+    val postIdsAndJson: Seq[(String, JsValue)] = posts.toSeq.map { post =>
+      post.nr.toString -> postToJsonImpl(post, page, includeUnapproved = true)
+    }
+    JsObject(postIdsAndJson)
     */
   }
 

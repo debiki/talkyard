@@ -242,8 +242,10 @@ interface Topic {
   numWrongs: number;
   createdEpoch: string; // try to remove
   createdAtMs: number;
-  bumpedEpoch: string;
-  lastReplyEpoch: string;
+  bumpedEpoch: string; // try to remove
+  bumpedAtMs: number;
+  lastReplyAtMs: string;
+  lastReplyEpoch: string; // try to remove
   numOrigPostReplies: number;
   numOrigPostLikes: number;
   answeredAtMs?: string;

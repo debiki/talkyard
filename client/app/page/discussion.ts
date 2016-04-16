@@ -258,9 +258,10 @@ export var Title = createComponent({
     if (!titlePost)
       return null;
 
-    var titleText = titlePost.isApproved
-        ? titlePost.sanitizedHtml
-        : r.i({}, '(Title pending approval)');
+    var titlePendingApprovalMessage = titlePost.isApproved ? false :
+        r.span({ className: 'esPendingApproval' }, '(Title pending approval)', r.br());
+
+    var titleText = titlePost.sanitizedHtml;
 
     var anyShowForumInroBtn;
     if (!this.props.hideButtons && store.pageRole === PageRole.Forum && store.hideForumIntro) {
@@ -382,6 +383,7 @@ export var Title = createComponent({
           r.div({ className: 'dw-p-bd' },
             r.div({ className: 'dw-p-bd-blk' },
               r.h1({ className: 'dw-p-ttl' + pinClass, title: tooltip },
+                titlePendingApprovalMessage,
                 deletedIcon, icon, titleText, anyShowForumInroBtn, anyEditTitleBtn)));
     }
     return (
@@ -444,9 +446,8 @@ var RootPostAndComments = createComponent({
         pageRole !== PageRole.Blog &&
         pageRole !== PageRole.SpecialContent; // && pageRole !== PageRole.WikiMainPage
 
-    var sanitizedHtml = rootPost.isApproved
-        ? rootPost.sanitizedHtml
-        : '<p>(Text pending approval.)</p>';
+    var bodyPendingApprovalMessage = rootPost.isApproved ? false :
+        r.div({ className: 'esPendingApproval' }, '(Text pending approval)');
 
     var body = null;
     if (pageRole !== PageRole.EmbeddedComments) {
@@ -454,7 +455,7 @@ var RootPostAndComments = createComponent({
         r.div({ className: postClass, id: postIdAttr },
           r.div({ className: postBodyClass },
             r.div({ className: 'dw-p-bd-blk esOrigPost',
-              dangerouslySetInnerHTML: { __html: sanitizedHtml }})));
+              dangerouslySetInnerHTML: { __html: rootPost.sanitizedHtml }})));
     }
 
     if (!showComments) {
@@ -569,6 +570,7 @@ var RootPostAndComments = createComponent({
 
     return (
       r.div({ className: threadClass },
+        bodyPendingApprovalMessage,
         body,
         solvedBy,
         PostActions({ store: this.props, post: rootPost }),

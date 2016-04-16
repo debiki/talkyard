@@ -49,7 +49,7 @@ trait RenderedPageHtmlDao {
   }
 
 
-  def loadPageFromDatabaseAndRender(pageRequest: PageRequest[_]): String = {
+  private def loadPageFromDatabaseAndRender(pageRequest: PageRequest[_]): String = {
     if (!pageRequest.pageExists) {
       if (pageRequest.pageRole.contains(PageRole.EmbeddedComments))
         throwNotImplemented("DwE5KFW2", "Embedded comments disabled right now")

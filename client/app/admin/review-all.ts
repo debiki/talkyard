@@ -90,7 +90,7 @@ var ReviewTask = createComponent({
     if (ReviewReasons.isByNewUser(reviewTask)) {
       who = "a new user";
       if (ReviewReasons.isByThreatUser(reviewTask)) {
-        who += "that sometimes misbehaves";
+        who += " that sometimes misbehaves";
       }
     }
     else if (ReviewReasons.isByThreatUser(reviewTask)) {

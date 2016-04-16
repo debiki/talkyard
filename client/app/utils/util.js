@@ -72,6 +72,8 @@ debiki.prettyDuration = function(then, now) {  // i18n
 };
 
 
+var currentYear = new Date().getUTCFullYear();
+
 debiki.prettyLetterDuration = function(then, now) {  // i18n
   var thenMillis = then.getTime ? then.getTime() : then;
   var nowMillis = now.getTime ? now.getTime() : now;
@@ -80,18 +82,22 @@ debiki.prettyLetterDuration = function(then, now) {  // i18n
   var minute = second * 60;
   var hour = second * 3600;
   var day = hour * 24;
-  var week = day * 7;
   var year = day * 365;
   var month = year / 12;
-  // I prefer `30 hours ago' to `1 day ago', but `2 days ago' to `50 hours ago'.
-  if (diff > 2 * year) return trunc(diff / year) + "y";
-  if (diff > 2 * month) return trunc(diff / month) + "m";
+  // Don't use 'm' for months, because it's used for 'minutes' already. Also, dates and
+  // years like "Jan 4, 2015" are more user friendly than 17m (months)?
+  if (diff > month) {
+    var m = moment(then);
+    if (m.year() !== currentYear) {
+      return m.format('ll'); // e.g. "Sep 4 2015"
+    }
+    return m.format('MMM D'); // e.g. "Sep 4"
+  }
   // Skip "w" (weeks), it makes me confused.
-  // Discourse also doesn't use "w".
-  // skip: if (diff > 2 * week) return trunc(diff / week) + "w";
-  if (diff > 2 * day) return trunc(diff / day) + "d";
-  if (diff > 2 * hour) return trunc(diff / hour) + "h";
-  if (diff > 2 * minute) return trunc(diff / minute) + "m";
+  if (diff >= 2 * day) return trunc(diff / day) + "d";
+  // "90 minutes ago" is ok, but "105 minutes ago" — then "2 hours" sounds better I think.
+  if (diff >= 100 * minute) return trunc(Math.max(2, diff / hour)) + "h";
+  if (diff >= minute) return trunc(diff / minute) + "m";
   return trunc(diff / second) + "s";
 };
 

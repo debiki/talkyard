@@ -275,9 +275,11 @@ object ForumController extends mvc.Controller {
       "authorFullName" -> JsStringOrNull(topicStuff.authorFullName),
       "authorAvatarUrl" -> JsStringOrNull(topicStuff.authorAvatarUrl),
       "createdEpoch" -> date(topic.meta.createdAt), // try to remove
-      "createdMs" -> JsDateMs(topic.meta.createdAt),
-      "bumpedEpoch" -> dateOrNull(topic.meta.bumpedAt),
-      "lastReplyEpoch" -> dateOrNull(topic.meta.lastReplyAt),
+      "createdAtMs" -> JsDateMs(topic.meta.createdAt),
+      "bumpedEpoch" -> dateOrNull(topic.meta.bumpedAt), // try to remove
+      "bumpedAtMs" -> JsDateMsOrNull(topic.meta.bumpedAt),
+      "lastReplyEpoch" -> dateOrNull(topic.meta.lastReplyAt), // try to remove
+      "lastReplyAtMs" -> JsDateMsOrNull(topic.meta.lastReplyAt),
       "lastReplyer" -> JsUserOrNull(topicStuff.lastReplyer),
       "frequentPosters" -> JsArray(topicStuff.frequentPosters.map(JsUser)),
       "answeredAtMs" -> dateOrNull(topic.meta.answeredAt),
