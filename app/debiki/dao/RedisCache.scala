@@ -23,6 +23,8 @@ import com.debiki.core.Prelude._
 import java.{util => ju}
 import redis.RedisClient
 import redis.api.Limit
+import scala.collection.immutable
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent._
 import scala.concurrent.duration._
 
@@ -37,6 +39,22 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
 
   // Is 3 times faster than String.toInt, according to the parseInt() docs.
   import _root_.redis.protocol.ParseNumber.parseInt
+
+
+  def loadWatchbar(userId: UserId): Option[BareWatchbar] = {
+    val futureString: Future[Option[ByteString]] = redis.get(watchbarKey(siteId, userId))
+    val anyString: Option[ByteString] =
+      try Await.result(futureString, 1 second)
+      catch {
+        case _: TimeoutException => die("EsE5GK2F9", "Redis timeout")
+      }
+    anyString.map(s => BareWatchbar.fromCompactString(s.utf8String))
+  }
+
+
+  def saveWatchbar(userId: UserId, watchbar: Watchbar) {
+    redis.set(watchbarKey(siteId, userId), watchbar.toCompactBareWatchbarString)
+  }
 
 
   def markUserOnlineRemoveStranger(userId: UserId, browserIdData: BrowserIdData) {
@@ -96,6 +114,12 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
 
   // Use fairly short key names because it's so boring to type many chars when debug-test
   // inspecting Redis via redis-cli.
+
+  // All keys should be like:  <siteId>-
+  // and then, if for a user: u<userId>-
+  // e.g.  3-u456-w = site 3, user 456, then 'w' (watchbar).
+
+  private def watchbarKey(siteId: SiteId, userId: UserId) = s"$siteId-u$userId-w"
 
   private def usersOnlineKey(siteId: SiteId) = s"$siteId-uo"
   private def strangersOnlineByIpKey(siteId: SiteId) = s"$siteId-soip"

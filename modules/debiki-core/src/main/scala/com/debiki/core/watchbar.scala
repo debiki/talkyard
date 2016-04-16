@@ -19,6 +19,7 @@ package com.debiki.core
 
 import play.api.libs.json._
 import scala.collection.immutable
+import scala.collection.mutable.ArrayBuffer
 import BareWatchbar.MaxRecentTopics
 
 
@@ -71,6 +72,27 @@ sealed trait Watchbar {
   lazy val watchedPageIds: Set[PageId] = {
     (recentTopics.map(_.pageId) ++ notifications.map(_.pageId) ++
       chatChannels.map(_.pageId) ++ directMessages.map(_.pageId)).toSet
+  }
+
+  /** Creates a string like: "12:1,34:1,56abc,de:2|..."
+    */
+  def toCompactBareWatchbarString: String = {
+    val sb = StringBuilder.newBuilder
+    def append(topics: immutable.Seq[WatchbarTopic]) {
+      for (topic <- topics) {
+        if (sb.nonEmpty && sb.last != '|') sb.append(",")
+        sb.append(topic.pageId)
+        if (topic.unread) sb.append(":1")
+      }
+    }
+    append(recentTopics)
+    sb.append('|')
+    append(notifications)
+    sb.append('|')
+    append(chatChannels)
+    sb.append('|')
+    append(directMessages)
+    sb.toString()
   }
 }
 
@@ -208,4 +230,33 @@ object BareWatchbar {
     BareWatchbar(recentTopics = recentTopics, Nil, Nil, Nil)
   }
 
+
+  def fromCompactString(string: String): BareWatchbar = {
+    if (string == "|||")
+      return BareWatchbar.empty
+    def toTopics(topicsString: String): immutable.Seq[WatchbarTopic] = {
+      val topics = ArrayBuffer[WatchbarTopic]()
+      for (string <- topicsString.split(',') ; if string.nonEmpty) {
+        val (pageId, flagsString) = string.span(_ != ':')
+        val unread = flagsString == ":1"
+        topics.append(WatchbarTopic(pageId, unread = unread))
+      }
+      topics.toVector
+    }
+    try {
+      val parts = string.split('|')
+      BareWatchbar(
+        // (String.split(char) is a bit weird in that it discards all trailing empty fragments,
+        // hence the if >= X and parts(X-1) here.)
+        recentTopics = if (parts.length >= 1) toTopics(parts(0)) else Nil,
+        notifications = if (parts.length >= 2) toTopics(parts(1)) else Nil,
+        chatChannels = if (parts.length >= 3) toTopics(parts(2)) else Nil,
+        directMessages = if (parts.length >= 4) toTopics(parts(3)) else Nil)
+    }
+    catch {
+      case _: Exception =>
+        // Oh well, Seems I've changed the serialization format.
+        BareWatchbar.empty
+    }
+  }
 }

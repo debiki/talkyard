@@ -32,9 +32,11 @@ trait WatchbarDao {
 
 
   def loadWatchbar(userId: UserId): BareWatchbar = {
+    // Hmm, double caching? Mem + Redis. This doesn't make sense? Let's keep it like this for
+    // a while and see what'll happen. At least it's fast. And lasts across Play app restarts.
     memCache.lookup[BareWatchbar](
       key(userId),
-      orCacheAndReturn = Some({
+      orCacheAndReturn = redisCache.loadWatchbar(userId) orElse Some({
         readOnlyTransaction { transaction =>
           val chatChannelIds = transaction.loadPageIdsUserIsMemberOf(
             userId, Set(PageRole.OpenChat, PageRole.PrivateChat))
@@ -46,18 +48,14 @@ trait WatchbarDao {
   }
 
 
-/** Stores in-memory each member's watchbar. Lost on server restart. Later: use Redis?
-  * So won't vanish when the server restarts.
-  *
-  * BUG race conditions, if e.g. saveWatchbar & markPageAsUnreadInWatchbar called at the
+  /* BUG race conditions, if e.g. saveWatchbar & markPageAsUnreadInWatchbar called at the
   * same time. Could perhaps solve by creating a Watchbar actor that serializes access?
   */
-
-
   def saveWatchbar(userId: UserId, watchbar: Watchbar) {
     memCache.put(
       key(userId),
       MemCacheValueIgnoreVersion(watchbar))
+    redisCache.saveWatchbar(userId, watchbar)
   }
 
 
