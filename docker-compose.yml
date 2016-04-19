@@ -23,6 +23,7 @@ services:
       - '3333:3333' # JMX
     links:
       - db:database
+      - redis
 
   redis:
     image: redis:3.0.7-alpine

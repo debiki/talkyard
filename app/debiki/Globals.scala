@@ -339,10 +339,10 @@ class Globals {
     val metricRegistry = new metrics.MetricRegistry()
     val mostMetrics = new MostMetrics(metricRegistry)
 
-    // This connects to Redis on localhost.
-    // (A Redis client pool makes sense if we haven't saturate the CPU on localhost, or
+    // Redis. (A Redis client pool makes sense if we haven't saturate the CPU on localhost, or
     // if there're many Redis servers and we want to round robin between them. Not needed, now.)
-    val redisClient = RedisClient()(Akka.system)
+    val redisHost = Play.configuration.getString("debiki.redis.host") getOrElse "localhost"
+    val redisClient = RedisClient(host = redisHost)(Akka.system)
 
     val dbDaoFactory = new RdbDaoFactory(
       new Rdb(readOnlyDataSource, readWriteDataSource), ScalaBasedMigrations, Akka.system,
@@ -382,7 +382,8 @@ class Globals {
 
     val notifierActorRef = Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory)
 
-    val (pubSub, strangerCounter) = PubSub.startNewActor(Akka.system, redisClient)
+    val nginxHost = Play.configuration.getString("debiki.nginx.host") getOrElse "localhost"
+    val (pubSub, strangerCounter) = PubSub.startNewActor(Akka.system, nginxHost, redisClient)
 
     val renderContentActorRef = RenderContentService.startNewActor(Akka.system, siteDaoFactory)
 

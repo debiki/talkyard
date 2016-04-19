@@ -71,10 +71,10 @@ object PubSub {
 
   /** Starts a PubSub actor (only one is needed in the whole app).
     */
-  def startNewActor(actorSystem: ActorSystem, redisClient: RedisClient)
+  def startNewActor(actorSystem: ActorSystem, nginxHost: String, redisClient: RedisClient)
         : (PubSubApi, StrangerCounterApi) = {
     val actorRef = actorSystem.actorOf(Props(
-      new PubSubActor(redisClient)), name = s"PubSub-$testInstanceCounter")
+      new PubSubActor(nginxHost, redisClient)), name = s"PubSub-$testInstanceCounter")
     actorSystem.scheduler.schedule(60 seconds, 10 seconds, actorRef, DeleteInactiveSubscriptions)
     testInstanceCounter += 1
     (new PubSubApi(actorRef), new StrangerCounterApi(actorRef))
@@ -134,13 +134,13 @@ object PubSubActor {
 
 
 /** Publishes events to browsers via e.g. long polling or WebSocket. Reqiures nginx and nchan.
-  * Assumes an nginx-nchan publish endpoint is available at: 127.0.0.1:80/-/pubsub/publish/
-  * (and nginx should have been configured to allow access from localhost only).
+  * Assumes an nginx-nchan publish endpoint is available at:
+  *   [debiki.nginx.host]:80/-/pubsub/publish/
   *
   * Later:? Poll nchan each minute? to find out which users have disconnected?
   * ((Could add an nchan feature that tells the appserver about this, push not poll?))
   */
-class PubSubActor(val redisClient: RedisClient) extends Actor {
+class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends Actor {
 
   /** Tells when subscriber subscribed. Subscribers are sorted by perhaps-inactive first.
     * We'll push messages only to users who have subscribed (i.e. are online and have
@@ -285,7 +285,7 @@ class PubSubActor(val redisClient: RedisClient) extends Actor {
     COULD // create an issue about supporting that? What about each post data text line = a channel,
     // and a blank line separates channels from the message that will be sent to all these channels?
     toUserIds foreach { userId =>
-      WS.url(s"http://localhost/-/pubsub/publish/$userId")
+      WS.url(s"http://$nginxHost/-/pubsub/publish/$userId")
         .withVirtualHost(hostname)
         .post(Json.obj("type" -> tyype, "data" -> json).toString)
         .map(handlePublishResponse)
