@@ -563,37 +563,40 @@ object LoginWithOpenAuthController extends Controller {
 
   private def googleProvider(request: Request[Unit])
         : GoogleProvider with CommonSocialProfileBuilder = {
+    def getGoogle(confValName: String) = getConfValOrThrowDisabled(confValName, "Google")
     new GoogleProvider(HttpLayer, Oauth2StateProvider, OAuth2Settings(
       authorizationURL = Play.configuration.getString("silhouette.google.authorizationURL"),
-      accessTokenURL = Play.configuration.getString("silhouette.google.accessTokenURL").get,
+      accessTokenURL = getGoogle("silhouette.google.accessTokenURL"),
       redirectURL = buildRedirectUrl(request, "google"),
-      clientID = Play.configuration.getString("silhouette.google.clientID").get,
-      clientSecret = Play.configuration.getString("silhouette.google.clientSecret").get,
+      clientID = getGoogle("silhouette.google.clientID"),
+      clientSecret = getGoogle("silhouette.google.clientSecret"),
       scope = Play.configuration.getString("silhouette.google.scope")))
   }
 
 
   private def facebookProvider(request: Request[Unit])
         : FacebookProvider with CommonSocialProfileBuilder = {
+    def getFacebook(confValName: String) = getConfValOrThrowDisabled(confValName, "Facebook")
     new FacebookProvider(HttpLayer, Oauth2StateProvider, OAuth2Settings(
       authorizationURL = Play.configuration.getString("silhouette.facebook.authorizationURL"),
-      accessTokenURL = Play.configuration.getString("silhouette.facebook.accessTokenURL").get,
+      accessTokenURL = getFacebook("silhouette.facebook.accessTokenURL"),
       redirectURL = buildRedirectUrl(request, "facebook"),
-      clientID = Play.configuration.getString("silhouette.facebook.clientID").get,
-      clientSecret = Play.configuration.getString("silhouette.facebook.clientSecret").get,
+      clientID = getFacebook("silhouette.facebook.clientID"),
+      clientSecret = getFacebook("silhouette.facebook.clientSecret"),
       scope = Play.configuration.getString("silhouette.facebook.scope")))
   }
 
 
   private def twitterProvider(request: Request[Unit])
         : TwitterProvider with CommonSocialProfileBuilder = {
+    def getTwitter(confValName: String) = getConfValOrThrowDisabled(confValName, "Twitter")
     val settings = OAuth1Settings(
-      requestTokenURL = Play.configuration.getString("silhouette.twitter.requestTokenURL").get,
-      accessTokenURL = Play.configuration.getString("silhouette.twitter.accessTokenURL").get,
-      authorizationURL = Play.configuration.getString("silhouette.twitter.authorizationURL").get,
+      requestTokenURL = getTwitter("silhouette.twitter.requestTokenURL"),
+      accessTokenURL = getTwitter("silhouette.twitter.accessTokenURL"),
+      authorizationURL = getTwitter("silhouette.twitter.authorizationURL"),
       callbackURL = buildRedirectUrl(request, "twitter"),
-      consumerKey = Play.configuration.getString("silhouette.twitter.consumerKey").get,
-      consumerSecret = Play.configuration.getString("silhouette.twitter.consumerSecret").get)
+      consumerKey = getTwitter("silhouette.twitter.consumerKey"),
+      consumerSecret = getTwitter("silhouette.twitter.consumerSecret"))
     new TwitterProvider(
       HttpLayer, new PlayOAuth1Service(settings), OAuth1TokenSecretProvider, settings)
   }
@@ -601,15 +604,21 @@ object LoginWithOpenAuthController extends Controller {
 
   private def githubProvider(request: Request[Unit])
         : GitHubProvider with CommonSocialProfileBuilder = {
+    def getGitHub(confValName: String) = getConfValOrThrowDisabled(confValName, "GitHub")
     new GitHubProvider(HttpLayer, Oauth2StateProvider, OAuth2Settings(
       authorizationURL = Play.configuration.getString("silhouette.github.authorizationURL"),
-      accessTokenURL = Play.configuration.getString("silhouette.github.accessTokenURL").get,
+      accessTokenURL = getGitHub("silhouette.github.accessTokenURL"),
       redirectURL = buildRedirectUrl(request, "github"),
-      clientID = Play.configuration.getString("silhouette.github.clientID").get,
-      clientSecret = Play.configuration.getString("silhouette.github.clientSecret").get,
+      clientID = getGitHub("silhouette.github.clientID"),
+      clientSecret = getGitHub("silhouette.github.clientSecret"),
       scope = Play.configuration.getString("silhouette.github.scope")))
   }
 
+
+  private def getConfValOrThrowDisabled(confValName: String, providerName: String): String = {
+    Play.configuration.getString(confValName) getOrElse throwForbidden(
+      "EsE5YFK02", s"Login via $providerName not possible: Config value missing: $confValName")
+  }
 
   private def buildRedirectUrl(request: Request[_], provider: String) = {
     originOf(request) + routes.LoginWithOpenAuthController.finishAuthentication(provider).url

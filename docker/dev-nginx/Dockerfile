@@ -1,3 +1,11 @@
+# Copyright (c) NGINX, Inc.
+# License: Unknown open source license, see:
+#  https://github.com/nginxinc/docker-nginx/issues/80
+#
+# Parts Copyright (c) 2016 Kaj Magnus Lindberg
+# License: MIT (Kaj Magnus's changes in this file only).
+
+
 FROM alpine:3.3
 
 MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com"
@@ -23,31 +31,45 @@ ENV CONFIG "\
 	--group=nginx \
 	--with-http_ssl_module \
 	--with-http_realip_module \
-	--with-http_addition_module \
-	--with-http_sub_module \
-	--with-http_dav_module \
-	--with-http_flv_module \
+	# adds text before and after a response
+	# --with-http_addition_module \
+	# modifies a response by replacing one specified string by another
+	# --with-http_sub_module \
+	# file management automation via the WebDAV.
+	# --with-http_dav_module \
+	# streaming Flash
+	# --with-http_flv_module \
 	--with-http_mp4_module \
-	--with-http_gunzip_module \
+	# decompresses gzip, if client doesn't support it
+	# --with-http_gunzip_module \
+	# sends precompressed files with the '.gz' suffix
 	--with-http_gzip_static_module \
-	--with-http_random_index_module \
-	--with-http_secure_link_module \
+	#--with-http_random_index_module \
+	# what?
+	# --with-http_secure_link_module \
 	--with-http_stub_status_module \
-	--with-http_auth_request_module \
-	--with-http_xslt_module=dynamic \
-	--with-http_image_filter_module=dynamic \
-	--with-http_geoip_module=dynamic \
-	--with-http_perl_module=dynamic \
+	# client authorization based on the result of a subrequest
+	# --with-http_auth_request_module \
+	# --with-http_xslt_module=dynamic \
+	# --with-http_image_filter_module=dynamic \
+	# --with-http_geoip_module=dynamic \
+	# --with-http_perl_module=dynamic \
 	--with-threads \
 	--with-stream \
 	--with-stream_ssl_module \
-	--with-http_slice_module \
-	--with-mail \
-	--with-mail_ssl_module \
+	# splits a request into subrequests, each returning a certain range of response -> effective caching of big responses
+	# --with-http_slice_module \
+	# --with-mail \
+	# --with-mail_ssl_module \
+	# asynchronous file I/O (AIO) on FreeBSD and Linux
 	--with-file-aio \
 	--with-http_v2_module \
 	--with-ipv6 \
+	--add-module=/tmp/nginx-modules/nchan \
 	"
+
+# Copy nchan source code
+COPY modules /tmp/nginx-modules/
 
 RUN \
 	addgroup -S nginx \
@@ -62,9 +84,10 @@ RUN \
 		linux-headers \
 		curl \
 		gnupg \
-		libxslt-dev \
-		gd-dev \
-		geoip-dev \
+		# libxslt-dev \
+		# some graphics lib, needed for ? http_image_filter_module ?
+		# gd-dev \
+		# geoip-dev \
 		perl-dev \
 	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
 	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc \
@@ -79,26 +102,27 @@ RUN \
 	&& ./configure $CONFIG --with-debug \
 	&& make \
 	&& mv objs/nginx objs/nginx-debug \
-	&& mv objs/ngx_http_xslt_filter_module.so objs/ngx_http_xslt_filter_module-debug.so \
-	&& mv objs/ngx_http_image_filter_module.so objs/ngx_http_image_filter_module-debug.so \
-	&& mv objs/ngx_http_geoip_module.so objs/ngx_http_geoip_module-debug.so \
-	&& mv objs/ngx_http_perl_module.so objs/ngx_http_perl_module-debug.so \
+	# && mv objs/ngx_http_xslt_filter_module.so objs/ngx_http_xslt_filter_module-debug.so \
+	# && mv objs/ngx_http_image_filter_module.so objs/ngx_http_image_filter_module-debug.so \
+	# && mv objs/ngx_http_geoip_module.so objs/ngx_http_geoip_module-debug.so \
+	# && mv objs/ngx_http_perl_module.so objs/ngx_http_perl_module-debug.so \
 	&& ./configure $CONFIG \
 	&& make \
 	&& make install \
 	&& rm -rf /etc/nginx/html/ \
 	&& mkdir /etc/nginx/conf.d/ \
-	&& mkdir -p /usr/share/nginx/html/ \
-	&& install -m644 html/index.html /usr/share/nginx/html/ \
-	&& install -m644 html/50x.html /usr/share/nginx/html/ \
+	# && mkdir -p /usr/share/nginx/html/ \
+	# && install -m644 html/index.html /usr/share/nginx/html/ \
+	# && install -m644 html/50x.html /usr/share/nginx/html/ \
 	&& install -m755 objs/nginx-debug /usr/sbin/nginx-debug \
-	&& install -m755 objs/ngx_http_xslt_filter_module-debug.so /usr/lib/nginx/modules/ngx_http_xslt_filter_module-debug.so \
-	&& install -m755 objs/ngx_http_image_filter_module-debug.so /usr/lib/nginx/modules/ngx_http_image_filter_module-debug.so \
-	&& install -m755 objs/ngx_http_geoip_module-debug.so /usr/lib/nginx/modules/ngx_http_geoip_module-debug.so \
-	&& install -m755 objs/ngx_http_perl_module-debug.so /usr/lib/nginx/modules/ngx_http_perl_module-debug.so \
-	&& ln -s ../../usr/lib/nginx/modules /etc/nginx/modules \
+	# && install -m755 objs/ngx_http_xslt_filter_module-debug.so /usr/lib/nginx/modules/ngx_http_xslt_filter_module-debug.so \
+	# && install -m755 objs/ngx_http_image_filter_module-debug.so /usr/lib/nginx/modules/ngx_http_image_filter_module-debug.so \
+	# && install -m755 objs/ngx_http_geoip_module-debug.so /usr/lib/nginx/modules/ngx_http_geoip_module-debug.so \
+	# && install -m755 objs/ngx_http_perl_module-debug.so /usr/lib/nginx/modules/ngx_http_perl_module-debug.so \
+	# && ln -s ../../usr/lib/nginx/modules /etc/nginx/modules \
 	&& strip /usr/sbin/nginx* \
-	&& strip /usr/lib/nginx/modules/*.so \
+	# All modules above commented out.
+	# && strip /usr/lib/nginx/modules/*.so \
 	&& runDeps="$( \
 		scanelf --needed --nobanner /usr/sbin/nginx /usr/lib/nginx/modules/*.so \
 			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
@@ -116,9 +140,13 @@ RUN \
 	&& ln -sf /dev/stderr /var/log/nginx/error.log
 
 COPY nginx.conf /etc/nginx/nginx.conf
-COPY nginx.vh.default.conf /etc/nginx/conf.d/default.conf
+COPY 502.html   /opt/nginx/html/502.html
 
 EXPOSE 80 443
 
 CMD ["nginx", "-g", "daemon off;"]
+
+
+# Add 'bash' so we can 'docker exec' into the container, + some tools. (wget & less already works)
+RUN apk add --no-cache bash tree curl
 
