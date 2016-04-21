@@ -141,7 +141,7 @@ object ImageUtils {
 
   val MimeTypeJpeg = "image/jpeg"
 
-  def throwUnlessJpegWithSideBetween(file: jio.File, minSide: Int, maxSide: Int) {
+  def throwUnlessJpegWithSideBetween(file: jio.File, which: String, minSide: Int, maxSide: Int) {
     val mimeType = java.nio.file.Files.probeContentType(file.toPath.toAbsolutePath)
     if (mimeType != MimeTypeJpeg)
       throwBadRequest("DwE2YUF0", s"Not a jpeg image")
@@ -150,15 +150,15 @@ object ImageUtils {
     val (width, height) = (image.getWidth, image.getHeight)
 
     if (width < minSide)
-      throwBadRequest("DwE8FMEF2", s"Image too small: width is $width, min is: $minSide")
+      throwBadRequest("DwE8FMEF1", s"$which image too small: width is $width, min is: $minSide")
 
     if (height < minSide)
-      throwBadRequest("DwE8FMEF2", s"Image too small: height is $height, min is: $minSide")
+      throwBadRequest("DwE8FMEF2", s"$which image too small: height is $height, min is: $minSide")
 
     if (width > maxSide)
-      throwBadRequest("DwE8FMEF2", s"Image too wide: width is $width, max is: $maxSide")
+      throwBadRequest("DwE8FMEF3", s"$which image too wide: width is $width, max is: $maxSide")
 
     if (height > maxSide)
-      throwBadRequest("DwE8FMEF2", s"Image too tall: height is $height, max is: $maxSide")
+      throwBadRequest("DwE8FMEF4", s"$which image too tall: height is $height, max is: $maxSide")
   }
 }

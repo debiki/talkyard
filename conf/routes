@@ -39,7 +39,7 @@ POST  /-/login-oauth-create-user  controllers.LoginWithOpenAuthController.handle
 GET   /-/api/logout             controllers.LoginController.logout
 POST  /-/api/logout             controllers.LoginController.logout
 
-GET   /-/pubsub/authorize-subscriber/:userId  io.efdi.server.pubsub.SubscriberController.authorizeSubscriber(userId)
+GET   /-/pubsub/authorize-subscriber/:channelId  io.efdi.server.pubsub.SubscriberController.authorizeSubscriber(channelId)
 GET   /-/load-online-users                    io.efdi.server.pubsub.SubscriberController.loadOnlineUsers
 
 GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic

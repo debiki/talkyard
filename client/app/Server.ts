@@ -879,8 +879,12 @@ export function sendLongPollingRequest(userId: number, success: (event: any) => 
       'If-None-Match': longPollingState.lastEtag,
     };
   }
+  // This is an easy-to-guess channel id, but in order to subscribe, the session cookie
+  // must also be included in the request. So this should be safe.
+  // The site id is included, because users at different sites can have the same id. [7YGK082]
+  var channelId = debiki.siteId + '-' + userId;
   longPollingState.ongoingRequest =
-      get('/-/pubsub/subscribe/' + userId, options, (response, xhr) => {
+      get('/-/pubsub/subscribe/' + channelId, options, (response, xhr) => {
         longPollingState.ongoingRequest = null;
         longPollingState.lastModified = xhr.getResponseHeader('Last-Modified');
         longPollingState.lastEtag = xhr.getResponseHeader('Etag');

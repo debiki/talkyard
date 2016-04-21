@@ -273,8 +273,8 @@ object UploadsDao {
   }
 
 
-  /** The hash path starts with video/ for video files, so e.g. nginx can be configured
-    * to serve video files from video/.
+  /** [disabled: The hash path starts with video/ for video files, so e.g. nginx can be configured
+    * to serve video files from video/.]
     * Then comes floor(log4(size-in-bytes / 1000)), i.e. 0 for < 4k files,
     * 1 for < 16k files, 2 for < 64k, 3 for < 256k, 4 for <= 1M, 5 < 4M, 6 < 16M, .. 9 <= 1G.
     * This lets us easily backup small files often, and large files infrequently. E.g.
@@ -285,8 +285,10 @@ object UploadsDao {
     val sizeDigit = sizeKiloBase4(sizeBytes)
     val (hash0, hash1, hash2, theRest) = (hash.head, hash.charAt(1), hash.charAt(2), hash.drop(3))
     val anyTypePrefix =
+      "" /* skip this separate-video-folder for now. Won't totally work anyway, because
+        would need to do the same for audio? and won't work for new / other video formats anyway.
       if (mimeType.startsWith("video") || dotSuffix == HlsVideoMediaSegmentsSuffix) "video/"
-      else ""
+      else ""  */
     s"$anyTypePrefix$sizeDigit/$hash0/$hash1$hash2/$theRest$dotSuffix"
   }
 

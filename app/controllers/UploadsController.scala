@@ -136,9 +136,9 @@ object UploadsController extends mvc.Controller {
     throwIfTooLarge("small avatar image", smallFile.ref.file, MaxAvatarSmallSizeBytes)
     throwIfTooLarge("medium avatar image", mediumFile.ref.file, MaxAvatarMediumSizeBytes)
 
-    ImageUtils.throwUnlessJpegWithSideBetween(tinyFile.ref.file, 20, 35)
-    ImageUtils.throwUnlessJpegWithSideBetween(smallFile.ref.file, 40, 60)
-    ImageUtils.throwUnlessJpegWithSideBetween(mediumFile.ref.file, 200, 800)
+    ImageUtils.throwUnlessJpegWithSideBetween(tinyFile.ref.file, "Tiny", 20, 35)
+    ImageUtils.throwUnlessJpegWithSideBetween(smallFile.ref.file, "Small", 40, 60)
+    ImageUtils.throwUnlessJpegWithSideBetween(mediumFile.ref.file, "Medium", 150, 800)
 
     // First add metadata entries for the files and move them in place.
     // Then, if there were no errors, update the user so that it starts using the new

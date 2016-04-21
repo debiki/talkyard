@@ -3,6 +3,8 @@ services:
   nginx:
     build: docker/dev-nginx/
     command: nginx
+    volumes:
+      - ../uploads/:/opt/debiki/uploads/:ro
     ports:
       - '80:80'
       - '443:443'
@@ -24,6 +26,8 @@ services:
     links:
       - db:database
       - redis
+    environment:
+      PLAY_MEM_MB: 1048
 
   redis:
     image: redis:3.0.7-alpine
@@ -40,3 +44,4 @@ services:
     volumes:
       - ../:/opt/debiki/
 
+# vim: et ts=2 sw=2

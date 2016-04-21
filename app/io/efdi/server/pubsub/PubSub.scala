@@ -68,6 +68,7 @@ object PubSub {
   // Not thread safe; only needed in integration tests.
   var testInstanceCounter = 1
 
+  val NchanPublishPort = 81  // [47BKFG2] in docker/dev-nginx/nginx.conf
 
   /** Starts a PubSub actor (only one is needed in the whole app).
     */
@@ -201,12 +202,6 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
 
 
   private def publishUserPresence(siteId: SiteId, user: User, presence: Presence) {
-    // dupl code [7UKY74]
-    val siteDao = Globals.siteDao(siteId)
-    val site = siteDao.loadSite()
-    val canonicalHost = site.canonicalHost.getOrDie(
-      "EsE2WUV43", s"Site lacks canonical host: $site")
-
     val userAndWhenById = perSiteSubscribers(siteId)
     if (userAndWhenById.contains(user.id))
       return
@@ -214,18 +209,14 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
     // Don't send num-online-strangers. Instead, let it be a little bit inexact so that
     // other people won't know if a user that logged out, stays online or not.
     val toUserIds = userAndWhenById.values.map(_.user.id).toSet - user.id
-    sendPublishRequest(canonicalHost.hostname, toUserIds, "presence", Json.obj(
+    sendPublishRequest(siteId, toUserIds, "presence", Json.obj(
       "user" -> JsUser(user),
       "presence" -> presence.toInt))
   }
 
 
   private def publishStorePatchAndNotfs(message: Message, byId: UserId) {
-    // dupl code [7UKY74]
     val siteDao = Globals.siteDao(message.siteId)
-    val site = siteDao.loadSite()
-    val canonicalHost = site.canonicalHost.getOrDie(
-      "EsE7UKFW2", s"Site lacks canonical host: $site")
 
     COULD // publish notifications.toDelete too (e.g. an accidental mention that gets edited out).
     val notfsReceiverIsOnline = message.notifications.toCreate filter { notf =>
@@ -236,7 +227,7 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
       val notfsJson = siteDao.readOnlyTransaction { transaction =>
         ReactJson.notificationsToJson(Seq(notf), transaction).notfsJson
       }
-      sendPublishRequest(canonicalHost.hostname, Set(notf.toUserId), "notifications", notfsJson)
+      sendPublishRequest(message.siteId, Set(notf.toUserId), "notifications", notfsJson)
     }
 
     message match {
@@ -244,7 +235,7 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
         val userIds = usersWatchingPage(
           patchMessage.siteId, pageId = patchMessage.toUsersViewingPage).filter(_ != byId)
         userIds.foreach(siteDao.markPageAsUnreadInWatchbar(_, patchMessage.toUsersViewingPage))
-        sendPublishRequest(canonicalHost.hostname, userIds, "storePatch", patchMessage.json)
+        sendPublishRequest(patchMessage.siteId, userIds, "storePatch", patchMessage.json)
       case x =>
         unimplemented(s"Publishing ${classNameOf(x)} [EsE4GPYU2]")
     }
@@ -277,16 +268,21 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
   }
 
 
-  private def sendPublishRequest(hostname: String, toUserIds: Iterable[UserId], tyype: String,
+  private def sendPublishRequest(siteId: SiteId, toUserIds: Iterable[UserId], tyype: String,
         json: JsValue) {
-    // Currently nchan doesn't support publishing to many channels with one single request.
-    // (See the Channel Multiplexing section here: https://nchan.slact.net/
-    // it says: "Publishing to multiple channels from one location is not supported")
-    COULD // create an issue about supporting that? What about each post data text line = a channel,
-    // and a blank line separates channels from the message that will be sent to all these channels?
-    toUserIds foreach { userId =>
-      WS.url(s"http://$nginxHost/-/pubsub/publish/$userId")
-        .withVirtualHost(hostname)
+    dieIf(siteId contains '.', "EsE7UWY0", "Site id looks like a hostname")
+    // Nchan supports publishing to at most 255 channels in one single request, so split in
+    // groups of 255 channels. However, for now, split in groups of only 3 channels,
+    // to find out if all this seems to work (255 channels -> would never be split, there
+    // aren't that many concurrent users right now).
+    // (Docs: https://nchan.slact.net/#channel-multiplexing )
+    toUserIds.grouped(3 /* later: 255 */) foreach { userIds =>
+      // All channels are in the same namespace (regardless of in which Nginx server {..} block
+      // the subscription endpoints were declared), therefore we pefix them with the site id,
+      // so we won't send any messages to browsers connected to the wrong site. [7YGK082]
+      val channelIds = userIds.map(id => s"$siteId-$id")
+      val channelsString = channelIds.mkString(",")
+      WS.url(s"http://$nginxHost:${PubSub.NchanPublishPort}/-/pubsub/publish/$channelsString")
         .post(Json.obj("type" -> tyype, "data" -> json).toString)
         .map(handlePublishResponse)
         .recover({

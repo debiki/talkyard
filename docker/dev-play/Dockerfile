@@ -21,7 +21,7 @@ RUN unzip /tmp/$ACTIVATOR.zip -d /tmp/ && \
     chmod -R ugo+x /opt/typesafe-activator/activator
 
 # We'll map ~/.ivy2 and ~/.m2 to here, so the JAR cache won't vanish on container restart.
-VOLUME ["/home/owner/.ivy2", "/home/owner/.sbt"]
+VOLUME ["/home/owner/.ivy2", "/home/owner/.sbt", "/opt/debiki"]
 
 # Play's HTTP and HTTPS listen ports, Java debugger port, JMX port 3333.
 EXPOSE 9000 9443 9999 3333
@@ -36,8 +36,11 @@ COPY entrypoint.sh /opt/docker-entrypoint.sh
 RUN  chmod ugo+x   /opt/docker-entrypoint.sh
 ENTRYPOINT ["/opt/docker-entrypoint.sh"]
 
+# overriden in docker-compose.yml
+ENV PLAY_MEM_MB 2048
+
 CMD ["/opt/typesafe-activator/activator", \
-  "-mem 2048", \
+  "-mem $PLAY_MEM_MB", \
   "-jvm-debug 9999", \
   "-Dcom.sun.management.jmxremote.port=3333", \
   "-Dcom.sun.management.jmxremote.ssl=false", \

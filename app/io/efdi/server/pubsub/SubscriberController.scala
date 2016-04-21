@@ -37,7 +37,7 @@ object SubscriberController extends mvc.Controller {
     * it concerns (because the normal functionality that looks at the hostname doesn't work).
     * However we get the hostname (an user id) in the url.
     */
-  def authorizeSubscriber(userId: String) = GetAction { request =>
+  def authorizeSubscriber(channelId: String) = GetAction { request =>
     SECURITY ; COULD // include a xsrf token? They're normally used for post requests only,
     // but perhaps it makes sense to prevent someone from tricking a browser to subscribe
     // to events? Not sure what harm that could do, but ... add xsrf token just in case?
@@ -47,12 +47,21 @@ object SubscriberController extends mvc.Controller {
     // (nchan will subscribe the browser to all events the server sends to a channel
     // with id = userId)
 
-    val userIdInt = userId.toIntOption getOrElse throwForbidden(
-      "EsE26GKW2", s"Invalid user id list: $userId")
+    // The channel contains the site id, so we won't accidentally send messages to browser
+    // at the wrong site. [7YGK082]
+    val (siteId, dashUserId) = channelId.span(_ != '-')
+    if (dashUserId.isEmpty)
+      throwForbidden("EsE5GU0W2", s"Bad channel id: $channelId")
+    if (siteId != request.siteId)
+      throwForbidden("EsE4FK20X", s"Bad site id: $siteId, should be: ${request.siteId}")
+
+    val userIdString = dashUserId.drop(1)
+    val userId = userIdString.toIntOption getOrElse throwForbidden(
+      "EsE26GKW2", s"Bad user id in channel id: $channelId")
 
     // (This'd be suspect. Perhaps log something in some suspicious ip addresses log?)
-    if (request.theUserId != userIdInt)
-      throwForbidden("EsE7UMJ2", s"Wrong user id, cookie: ${request.theUserId} != url: $userIdInt")
+    if (request.theUserId != userId)
+      throwForbidden("EsE7UMJ2", s"Wrong user id, cookie: ${request.theUserId} != url: $userId")
 
     /*
     if (request.sidStatus == SidAbsent)

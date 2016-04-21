@@ -232,6 +232,7 @@ class Globals {
     DeadlockDetector.ensureStarted()
 
     _state = Bad(None)
+    var firsAttempt = true
 
     // Let the server start, whilst we try to connect to services like the database and Redis.
     // If we're unable to connect to a service, then we'll set _state to a
@@ -239,6 +240,12 @@ class Globals {
     // inaccessible, and some tips about how troubleshoot this and how to start it.
     val createStateFuture = Future {
       while (_state.isBad) {
+        if (!firsAttempt) {
+          // Don't attempt to connect to everything too quickly, because then 100 MB log data
+          // with "Error connecting to database ..." are quickly generated.
+          Thread.sleep(1500)
+        }
+        firsAttempt = false
         p.Logger.info("Connecting to services... [EsM200CTS]")
         try {
           val readOnlyDataSource = Debiki.createPostgresHikariDataSource(readOnly = true)
