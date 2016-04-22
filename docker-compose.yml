@@ -5,9 +5,12 @@ services:
     command: nginx
     volumes:
       - ../uploads/:/opt/debiki/uploads/:ro
+      - ../letsencrypt/:/etc/letsencrypt/:ro
     ports:
       - '80:80'
       - '443:443'
+      # Don't expose port 81 (for publishing WebSocket events)  — it should be reachable only
+      # from inside the Docker network.
     depends_on:
       - play
 

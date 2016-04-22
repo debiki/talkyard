@@ -1,6 +1,6 @@
-# Copyright (c) NGINX, Inc.
-# License: Unknown open source license, see:
-#  https://github.com/nginxinc/docker-nginx/issues/80
+# Parts Copyright (c) NGINX Inc.
+# License: the same License as NGINX itself, 2-clause BSD
+# (See: https://github.com/nginxinc/docker-nginx/issues/80)
 #
 # Parts Copyright (c) 2016 Kaj Magnus Lindberg
 # License: MIT (Kaj Magnus's changes in this file only).
@@ -110,7 +110,14 @@ RUN \
 	&& make \
 	&& make install \
 	&& rm -rf /etc/nginx/html/ \
-	&& mkdir /etc/nginx/conf.d/ \
+	# apparently this stuff is installed by default, but we don't use it.
+	&& rm -f /etc/nginx/fastcgi* \
+             /etc/nginx/koi-* \
+             /etc/nginx/scgi_params* \
+             /etc/nginx/uwsgi_params* \
+             /etc/nginx/win-utf \
+	&& mkdir /etc/nginx/sites-available \
+	         /etc/nginx/sites-enabled \
 	# && mkdir -p /usr/share/nginx/html/ \
 	# && install -m644 html/index.html /usr/share/nginx/html/ \
 	# && install -m644 html/50x.html /usr/share/nginx/html/ \
@@ -139,14 +146,17 @@ RUN \
 	&& ln -sf /dev/stdout /var/log/nginx/access.log \
 	&& ln -sf /dev/stderr /var/log/nginx/error.log
 
+# Add 'bash' so we can 'docker exec' into the container, + some tools. (wget & less already works)
+RUN apk add --no-cache bash tree curl
+
 COPY nginx.conf /etc/nginx/nginx.conf
+COPY vhost.conf /etc/nginx/vhost.conf
 COPY 502.html   /opt/nginx/html/502.html
 
+# Don't expose port 81 (the publish-websocket-messages port) — it should be accessible from
+# inside the Docker network only, so that only Play Framework (located inside the network)
+# can publish events.
 EXPOSE 80 443
 
 CMD ["nginx", "-g", "daemon off;"]
-
-
-# Add 'bash' so we can 'docker exec' into the container, + some tools. (wget & less already works)
-RUN apk add --no-cache bash tree curl
 
