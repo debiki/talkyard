@@ -8,7 +8,7 @@
 
 FROM alpine:3.3
 
-MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com"
+# MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com"
 
 ENV NGINX_VERSION 1.9.14
 
