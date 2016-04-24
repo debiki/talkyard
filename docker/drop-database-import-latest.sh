@@ -63,6 +63,7 @@ if [ -n "$any_prod_row" ]; then
   $psql -c 'drop user if exists debiki_dev;'
   $psql -c 'alter database debiki_prod rename to debiki_dev;'
   $psql -c 'alter user debiki_prod rename to debiki_dev;'
+  $psql -c "alter user debiki_dev with password 'public';"
 fi
 
 echo "Done. If the Play server isn't running, you can start it now:"

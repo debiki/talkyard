@@ -196,6 +196,7 @@ object SafeActions {
       loopLimit -= 1
     }
     val roleMissing = isRoleNotFoundException(rootCause)
+    val badPassword = isBadPasswordException(rootCause)
     val (errorMessage, errorCode, orQueryTooLong) =
       if (roleMissing) {
         if (startingUp)
@@ -203,6 +204,10 @@ object SafeActions {
               "EsE500DBUM", "")
         else
           ("The database user has suddenly disappeared", "EsE500DBUD", "")
+      }
+      else if (badPassword) {
+        ("Play Framework cannot connect to the database — the database password is wrong?",
+          "EsE500BPWD", "")
       }
       else {
         if (startingUp)
@@ -235,6 +240,10 @@ object SafeActions {
   def isRoleNotFoundException(throwable: Throwable) =
     throwable.isInstanceOf[org.postgresql.util.PSQLException] &&
       RoleMissingRexec.matches(throwable.getMessage)
+
+  def isBadPasswordException(throwable: Throwable) =
+    throwable.isInstanceOf[org.postgresql.util.PSQLException] &&
+      throwable.getMessage.contains("assword")
 
   private val RoleMissingRexec = ".* role .+ does not exist.*".r
 

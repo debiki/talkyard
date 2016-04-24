@@ -34,13 +34,34 @@ services:
 
   redis:
     image: redis:3.0.7-alpine
+    volumes:
+      - ../redis/:/data/
     ports:
       - '6379:6379'
 
   db:
-    image: postgres:9.5.2
+    build: docker/postgres/
+    volumes:
+      - ../db/:/var/lib/postgresql/data/
     ports:
       - '5432:5432'
+    environment:
+      POSTGRES_PASSWORD: 'public-69KF24KYU53XW2'
+      PEER_HOST: 'db2'
+      PEER_PORT: '5432'
+      PEER_PASSWORD: 'public-24KPY0594YKF'
+
+  # An extra database, so you can experiment with Postgres replication and failover.
+  # You don't need to start it.
+  db2:
+    build: docker/postgres/
+    volumes:
+      - ../db2/:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_PASSWORD: 'public-24KPY0594YKF'
+      PEER_HOST: 'db'
+      PEER_PORT: '5432'
+      PEER_PASSWORD: 'public-69KF24KYU53XW2'
 
   gulp:
     build: docker/dev-gulp/
