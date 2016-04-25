@@ -9,14 +9,13 @@ cd /opt/debiki/server
 # 'gulp build' creates will be owned by that person (otherwise they'll be owned by root
 # on the host machine. Which makes them invisible & unusable, on the host machine).
 # But skip this if we're root already (perhaps we're root in a virtual machine).
-file_owner_id=`ls -adn | cut -f 3 -d " "`
+file_owner_id=`ls -adn | awk '{ print $3 }'`
 id -u owner >> /dev/null 2>&1
 if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
   # $? -eq 1 means that the last command failed, that is, user 'owner' not yet created.
   # So create it:
   # (--home-dir needs to be specified, because `npm install` and `bower install` write to
   #   cache dirs in the home dir.
-  # `ls -adn | cut -f 3 -d ' '` finds the user id of the above-mentioned directory owner. )
   useradd --home-dir /opt/debiki/server/.docker-dev-gulp-home --uid $file_owner_id owner
 fi
 

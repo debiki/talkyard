@@ -9,16 +9,14 @@ cd /opt/debiki/server
 # 'gulp build' creates will be owned by that person (otherwise they'll be owned by root
 # on the host machine. Which makes them invisible & unusable, on the host machine).
 # But skip this if we're root already (perhaps we're root in a virtual machine).
-file_owner_id=`ls -adn | cut -f 3 -d " "`
+file_owner_id=`ls -adn | awk '{ print $3 }'`
 id -u owner >> /dev/null 2>&1
 if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
   # $? -eq 1 means that the last command failed, that is, user 'owner' not yet created.
   # So create it:
-  # `ls -adn | cut -f 3 -d ' '` finds the user id of the above-mentioned directory owner. )
-  useradd --uid $file_owner_id owner
   # We map /home/owner/.ivy and .m2 to the host user's .ivy and .m2 (in the Dockerfile).
-  mkdir /home/owner
-  chown -R owner:owner /home/owner
+  # -D = don't assign password (would block Docker waiting for input).
+  adduser -u $file_owner_id -h /home/owner/ -D owner
 fi
 
 

@@ -1,14 +1,17 @@
-FROM java:8-jdk
+FROM java:openjdk-8u77-jdk-alpine
 
-RUN apt-get update && apt-get install -y \
-  unzip \
-  postgresql-client  \
-  tree less wget curl net-tools
+RUN apk add --no-cache \
+  # Required:
+  curl unzip \
+  # Nice to have: (why telnet not found?)
+  tree less wget net-tools bash
 
 ENV ACVERSION 1.3.7
 ENV ACTIVATOR activator-$ACVERSION
-#RUN curl http://downloads.typesafe.com/typesafe-activator/1.2.10/$ACTIVATOR.zip > /tmp/$ACTIVATOR.zip
-RUN curl https://downloads.typesafe.com/typesafe-activator/$ACVERSION/typesafe-$ACTIVATOR-minimal.zip > /tmp/$ACTIVATOR.zip
+
+RUN \
+  curl https://downloads.typesafe.com/typesafe-activator/$ACVERSION/typesafe-$ACTIVATOR-minimal.zip \
+    > /tmp/$ACTIVATOR.zip
 
 # Concerning +rw for /opt/typesafe-activator/: Play writes some files to directories
 # within the archive. Otherwise:
@@ -16,6 +19,7 @@ RUN curl https://downloads.typesafe.com/typesafe-activator/$ACVERSION/typesafe-$
 #   see: http://stackoverflow.com/questions/10559313/play-framework-installation
 RUN unzip /tmp/$ACTIVATOR.zip -d /tmp/ && \
     rm -f /tmp/$ACTIVATOR.zip && \
+    mkdir /opt/ && \
     mv /tmp/activator-$ACVERSION-minimal /opt/typesafe-activator && \
     chmod -R ugo+rw /opt/typesafe-activator/ && \
     chmod -R ugo+x /opt/typesafe-activator/activator
@@ -32,9 +36,9 @@ RUN mkdir -p /opt/debiki/uploads/ && \
 
 WORKDIR /opt/debiki/server/
 
-COPY entrypoint.sh /opt/docker-entrypoint.sh
-RUN  chmod ugo+x   /opt/docker-entrypoint.sh
-ENTRYPOINT ["/opt/docker-entrypoint.sh"]
+COPY entrypoint.sh /docker-entrypoint.sh
+RUN  chmod ugo+x   /docker-entrypoint.sh
+ENTRYPOINT ["/docker-entrypoint.sh"]
 
 # overriden in docker-compose.yml
 ENV PLAY_MEM_MB 2048
