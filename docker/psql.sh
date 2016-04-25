@@ -6,10 +6,8 @@ if [ $? -eq 1 ] ; then
   exit 1
 fi
 
-container='server_db_1'
-
-docker inspect -f '{{.State.Running}}' $container >> /dev/null
-if [ $? -ne 0 ]; then
+up_line=`docker-compose ps db | egrep '\<Up\>'`
+if [ -z "$up_line" ]; then
   echo "Error: The database Docker container $container is not running."
   echo "You can start it:"
   echo "  docker-compose start db"
@@ -22,5 +20,5 @@ if [ "$#" -ne 2 ]; then
   exit 1
 fi
 
-docker exec -it $container psql $1 $2
+docker-compose exec db psql $1 $2
 

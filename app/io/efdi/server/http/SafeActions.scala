@@ -206,7 +206,8 @@ object SafeActions {
           ("The database user has suddenly disappeared", "EsE500DBUD", "")
       }
       else if (badPassword) {
-        ("Play Framework cannot connect to the database — the database password is wrong?",
+        (o"""Play Framework cannot connect to the database. Wrong database password?
+             Or the database user doesn't exist?""",
           "EsE500BPWD", "")
       }
       else {
@@ -218,14 +219,15 @@ object SafeActions {
     p.Logger.error(s"Replying database-not-reachable error to: $url [$errorCode]", throwable)
     val (hasItStoppedPerhaps, fixProblemTips) =
       if (!Play.isDev) ("", "")
-      else if (roleMissing) ("", i"""If you use Docker-Compose: You can create the database user like so:
+      else if (roleMissing || badPassword) (
+        "", i"""If you use Docker-Compose: You can create the database user like so:
         |  'docker/drop-database-create-empty.sh'
         |""")
       else (s"\nHas the database stopped or is there a network problem? $orQueryTooLong", i"""
         |If you use Docker-Compose: run 'docker-compose ps' to see if the database container is running.
         |If not running, start it:  'docker-compose start db'
-        |If running, then check logs:  'docker-compose logs'
-        |Or login with Bash:  'docker exec -it server_db_1 bash'
+        |If running, then check logs:  'docker-compose logs -f'
+        |Or login with Bash:  'docker-compose exec db bash'
         |""")
     Results.InternalServerError(i"""500 Internal Server Error
       |

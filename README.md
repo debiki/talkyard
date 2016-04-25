@@ -16,21 +16,20 @@ Getting Started
 
 This not so very tested. You might run into problems.
 
+If this is the master branch, something might be very broken because I don't test if this readme works after each commit. You might be better of checking out a stable branch or tag instead. Currently there is none.
+
 #### Before you start
 
 You'll need some GB memory; 4GB might be enough, not sure. And you need a somewhat fast internet connection — you'll be downloading like 0.5 (?) GB Docker images (in total).
 
-Install Docker-Compose, version 1.6.0+: https://docs.docker.com/compose/install/
+Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/
 
-#### Two tips
+#### Tips
 
-Two tips about Vagrant and Linux (just ignore, if you're not familiar with Vagrant or Linux):
+A tips about Vagrant and Linux (just ignore, if you're not familiar with Vagrant or Linux):
 
 - As of now, don't use Vagrant because then I think you cannot run any end-to-end tests (or at least it would be complicated).
   <!-- If you want to run the server in a Vagrant virtual machine, you can use this one: `vagrant init phusion/ubuntu-14.04-amd64` — it supports Docker, but you still need to install Docker-Compose (inside the vm). And it seems you'll need to follow the _"Note: If your company is behind a filtering proxy"_ instructions on https://docs.docker.com/linux/step_one/. -->
-
-- On Linux the docker-compose installation instructions tell you to cURL and save docker-compose to `/usr/local/bin/docker-compose`, but that results in a permission-denied error. You can instead:<br>
-   `sudo sh -c 'curl -L https://github.com/docker/compose/... > /usr/local/bin/docker-compose'`
 
 #### The instructions
 
@@ -111,7 +110,7 @@ Technology
 
 Client: React.js, TypeScript. Gulp. Webdriver.io.
 Server: Scala and Play Framework. Nginx and Nchan. React.js in Java 8's Nashorn Javascript engine.
-Databases: PostgreSQL, ElasticSearch, Redis (soon).
+Databases: PostgreSQL, Redis, ElasticSearch (soon).
 
 
 Contributing
@@ -133,6 +132,9 @@ This project looks like so:
 
     server/
      |
+     +-docker-compose.yml   <-- tells Docker how to run EffectiveDiscussions
+     +-docker-compose.override.yml  <-- development config
+     |
      +-client/         <-- Javascript, CSS, React.js components
      | +-app/          <-- Client side code
      | +-server/       <-- React.js components rendered server side
@@ -150,6 +152,12 @@ This project looks like so:
      |                 has bundled and minified from the client/ dir above.
      |
      +-docker/     <-- Dockerfiles for all docker-compose containers
+     | +-compose-prod-2g.yml  <-- production config, one server 2G memory
+     | +-compose-prod-8g.yml  <-- production config, one server 8G memory
+     | +-...
+     | |
+     | +-nginx/    <-- Docker build stuff for the Nginx container
+     | +-...       <-- More containers...
      |
      +-scripts/    <-- Utility scripts
      |

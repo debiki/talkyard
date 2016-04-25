@@ -147,7 +147,7 @@ RUN \
 	&& ln -sf /dev/stderr /var/log/nginx/error.log
 
 # Add 'bash' so we can 'docker exec' into the container, + some tools. (wget & less already works)
-RUN apk add --no-cache bash tree curl
+RUN apk add --no-cache bash tree curl net-tools telnet
 
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY vhost.conf /etc/nginx/vhost.conf
