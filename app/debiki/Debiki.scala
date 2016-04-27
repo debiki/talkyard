@@ -51,7 +51,8 @@ object Debiki {
       if (Play.isTest) "debiki_test"
       else configStr("debiki.postgresql.database")
 
-    val server = configStr("debiki.postgresql.server")
+    val server = Play.configuration.getString("debiki.postgresql.host").getOrElse(
+      configStr("debiki.postgresql.server"))  // deprecated name
     val port = configStr("debiki.postgresql.port").toInt
 
     play.Logger.info(s"Connecting to database: $server:$port/$database as user $user")

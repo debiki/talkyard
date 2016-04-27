@@ -2,20 +2,22 @@ version: '2'
 services:
   nginx:
     build: docker/dev-nginx/
+    image: debiki/ed-nginx
     command: nginx
     volumes:
       - ../uploads/:/opt/debiki/uploads/:ro
       - ../letsencrypt/:/etc/letsencrypt/:ro
     ports:
-      - '80:80'
-      - '443:443'
       # Don't expose port 81 (for publishing WebSocket events)  — it should be reachable only
       # from inside the Docker network.
+      - '80:80'
+      - '443:443'
     depends_on:
       - play
 
   play:
     build: docker/dev-play/
+    # image debiki/ed-play instead built & tagged in docker/build-play-prod.sh.
     stdin_open: true  # otherwise Play exits
     volumes:
       - ../:/opt/debiki/
@@ -41,6 +43,7 @@ services:
 
   db:
     build: docker/postgres/
+    image: debiki/ed-postgres
     volumes:
       - ../db/:/var/lib/postgresql/data/
     ports:

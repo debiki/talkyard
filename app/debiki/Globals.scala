@@ -96,6 +96,26 @@ class Globals {
   }
 
 
+  @volatile var killed = false
+
+  /** For now (forever?), ignore platforms that don't send Linux signals.
+    */
+  sun.misc.Signal.handle(new sun.misc.Signal("TERM"), new sun.misc.SignalHandler () {
+    def handle(signal: sun.misc.Signal) {
+      p.Logger.info("Got SIGTERM, exiting with status 0 [EsMSIGTERM]")
+      killed = true
+      System.exit(0)  // doing this here instead of [9KYKW25] although leaves PID file [65YKFU02]
+    }
+  })
+
+  sun.misc.Signal.handle(new sun.misc.Signal("INT"), new sun.misc.SignalHandler () {
+    def handle(signal: sun.misc.Signal) {
+      p.Logger.info("Got SIGINT, exiting with status 0 [EsMSIGINT]")
+      killed = true
+      System.exit(0)  // doing this here instead of [9KYKW25] although leaves PID file [65YKFU02]
+    }
+  })
+
   def metricRegistry = state.metricRegistry
 
   def mostMetrics: MostMetrics = state.mostMetrics
@@ -178,11 +198,12 @@ class Globals {
   def originOf(site: Site): Option[String] = site.canonicalHost.map(originOf)
   def originOf(host: SiteHost): String = originOf(host.hostname)
   def originOf(hostOrHostname: String): String = {
-    val (hostname, port) = hostOrHostname.span(_ != ':')
-    // COULD throw a user-friendly error, like "You're accessing the server via non-standard
-    // port NNNN, but then you need to edit/add config value `debiki.port=NNNN` otherwise
-    // I won't know for sure which port to include in URLs I generate."
-    dieIf(port.nonEmpty && port != colonPort, "DwE47SK2", s"Bad port: '$hostOrHostname'")
+    val (hostname, colonPortParam) = hostOrHostname.span(_ != ':')
+    def portParam = colonPortParam drop 1
+    dieIf(colonPortParam.nonEmpty && colonPortParam != colonPort,
+      "DwE47SK2", o"""Bad port: $portParam. You're accessing the server via non-standard
+        port $portParam, but then you need to edit/add config value `debiki.port=$portParam`,
+        otherwise I won't know for sure which port to include in URLs I generate.""")
     s"$scheme://$hostname$colonPort"
   }
   def originOf(request: p.mvc.Request[_]): String = s"$scheme://${request.host}"
@@ -231,64 +252,91 @@ class Globals {
     p.Logger.info("Search disabled, see debiki-dao-rdb [DwM4KEWKB2]")
     DeadlockDetector.ensureStarted()
 
-    _state = Bad(None)
-    var firsAttempt = true
-
     // Let the server start, whilst we try to connect to services like the database and Redis.
     // If we're unable to connect to a service, then we'll set _state to a
     // developer / operations-team friendly error message about the service being
     // inaccessible, and some tips about how troubleshoot this and how to start it.
     val createStateFuture = Future {
-      while (_state.isBad) {
-        if (!firsAttempt) {
-          // Don't attempt to connect to everything too quickly, because then 100 MB log data
-          // with "Error connecting to database ..." are quickly generated.
-          Thread.sleep(1500)
-        }
-        firsAttempt = false
-        p.Logger.info("Connecting to services... [EsM200CTS]")
-        try {
-          val readOnlyDataSource = Debiki.createPostgresHikariDataSource(readOnly = true)
-          val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false)
-          val newState = new State(readOnlyDataSource, readWriteDataSource)
-          // Apply evolutions before we make the state available in _state, so nothing can
-          // access the database (via _state) before all evolutions have completed.
-          newState.systemDao.applyEvolutions()
-          if (Play.isTest &&
-              Play.configuration.getBoolean("isTestShallEmptyDatabase").contains(true)) {
-            newState.systemDao.emptyDatabase()
-          }
-          _state = Good(newState)
-        }
-        catch {
-          case ex: com.zaxxer.hikari.pool.HikariPool.PoolInitializationException =>
-            _state = Bad(Some(new DatabasePoolInitializationException(ex)))
-          case ex: Exception =>
-            p.Logger.error("Unknown state creation error [EsE4GY67]", ex)
-            _state = Bad(Some(ex))
-        }
-      }
-
-      // The render engines might be needed by some Java (Scala) evolutions.
-      // Let's create them in this parallel thread rather than blocking the whole server.
-      // (Takes 2? 5? seconds.)
-      debiki.ReactRenderer.startCreatingRenderEngines()
-
-      if (!isTestDisableBackgroundJobs) {
-        Akka.system.scheduler.scheduleOnce(
-          5 seconds, state.renderContentActorRef, RenderContentService.RegenerateStaleHtml)
-      }
+      tryCreateStateUntilKilled()
     }
+
 
     try {
       Await.ready(createStateFuture, (Play.isTest ? 99 | 5) seconds)
-      p.Logger.info("Started. [EsM200RDY]")
+      if (killed) {
+        p.Logger.info("Killed. Bye. [EsM200KLD]")
+        // Play.stop() has no effect, not from here directly, nor from within a Future {},
+        // and Future { sleep(100ms); stop() } also doesn't work.
+        //  play.api.Play.stop(app)  <-- nope
+        // instead:
+        System.exit(0)
+        // However this leaves a RUNNING_PID file. So the docker container deletes it
+        // before start, see docker/play-prod/Dockerfile [65YKFU02]
+
+        // However this block won't run if we've started already. So exiting directly
+        // in the signal handler instea, right now, see [9KYKW25] above. Not sure why Play
+        // apparently ignores signals, once we've started (i.e. returned from this function).
+      }
+      else {
+        p.Logger.info("Started. [EsM200RDY]")
+      }
     }
     catch {
       case _: TimeoutException =>
         // We'll show a message in any browser that the server is starting, please wait
         // — that's better than a blank page? In case this takes long.
         p.Logger.info("Still connecting to other services, starting anyway. [EsM200CRZY]")
+    }
+  }
+
+
+  private def tryCreateStateUntilKilled() {
+    _state = Bad(None)
+    var firsAttempt = true
+
+    while (_state.isBad && !killed) {
+      if (!firsAttempt) {
+        // Don't attempt to connect to everything too quickly, because then 100 MB log data
+        // with "Error connecting to database ..." are quickly generated.
+        Thread.sleep(1500)
+        if (killed)
+          return
+      }
+      firsAttempt = false
+      p.Logger.info("Connecting to services... [EsM200CTS]")
+      try {
+        val readOnlyDataSource = Debiki.createPostgresHikariDataSource(readOnly = true)
+        val readWriteDataSource = Debiki.createPostgresHikariDataSource(readOnly = false)
+        val newState = new State(readOnlyDataSource, readWriteDataSource)
+        // Apply evolutions before we make the state available in _state, so nothing can
+        // access the database (via _state) before all evolutions have completed.
+        newState.systemDao.applyEvolutions()
+        if (Play.isTest &&
+          Play.configuration.getBoolean("isTestShallEmptyDatabase").contains(true)) {
+          newState.systemDao.emptyDatabase()
+        }
+        _state = Good(newState)
+      }
+      catch {
+        case ex: com.zaxxer.hikari.pool.HikariPool.PoolInitializationException =>
+          _state = Bad(Some(new DatabasePoolInitializationException(ex)))
+        case ex: Exception =>
+          p.Logger.error("Unknown state creation error [EsE4GY67]", ex)
+          _state = Bad(Some(ex))
+      }
+    }
+
+    if (killed)
+      return
+
+    // The render engines might be needed by some Java (Scala) evolutions.
+    // Let's create them in this parallel thread rather than blocking the whole server.
+    // (Takes 2? 5? seconds.)
+    debiki.ReactRenderer.startCreatingRenderEngines()
+
+    if (!isTestDisableBackgroundJobs) {
+      Akka.system.scheduler.scheduleOnce(
+        5 seconds, state.renderContentActorRef, RenderContentService.RegenerateStaleHtml)
     }
   }
 

@@ -262,7 +262,9 @@ export var LoginDialogContent = createClassAndFactory({
 
     var becomeAdminInstructions = loginReason === LoginReason.BecomeAdmin
       ? r.div({ className: 'esLoginDlg_becomeAdminInstr' },
-          r.p({}, "Use the email address you specified previously"))
+          r.p({},
+            "Create admin account.", r.br(),
+            "Use the email address you specified previously."))
       : null;
 
     var loggedInAlreadyInfo = this.props.isLoggedIn

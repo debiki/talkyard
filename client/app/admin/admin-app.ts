@@ -502,7 +502,7 @@ var CustomizePanelComponent = React.createClass(<any> {
     return (
       r.div({ className: 'form-horizontal esAdmin_customize' },
         Alert({ bsStyle: 'info' },
-          r.p({}, r.b({}, "Ignore everything below,"), " if you don't know HTML and CSS."),
+          r.p({}, r.b({}, "Ignore everything below,"), " especially if you don't know HTML and CSS."),
           r.p({}, "We'll try to build something for you that's easier to use, later.")),
 
         /* People seem to not understand what this one does, so better reomve it.
