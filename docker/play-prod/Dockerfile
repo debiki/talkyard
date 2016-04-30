@@ -18,12 +18,10 @@ COPY localhost.conf  /opt/ed/play-conf/localhost.conf
 
 VOLUME ["/opt/ed/play-conf", "/opt/ed/uploads"]
 
-# overriden in docker-compose.yml
-ENV PLAY_MEM_MB 2048
+ENV PLAY_HEAP_MEMORY_MB 1000
 ENV CONFIG_FILE /opt/ed/play-conf/localhost.conf
 
-#WORKDIR /opt/ed/play
-WORKDIR /
+WORKDIR /opt/ed/play
 
 # this —> "Bad root server path: /opt/ed/play/-jvm-debug 9999", no idea why...
 CMD ["/opt/ed/play/bin/debiki-server", \
@@ -38,13 +36,16 @@ CMD ["/opt/ed/play/bin/debiki-server", \
 # ...but this identical command works fine:
 # the PID file might not get deleted if we shutdown during startup, see Globals.scala [65YKFU02]
 CMD rm -f /opt/ed/play/RUNNING_PID && exec /opt/ed/play/bin/debiki-server \
+  -J-Xms${PLAY_HEAP_MEMORY_MB}m \
+  -J-Xmx${PLAY_HEAP_MEMORY_MB}m \
   -jvm-debug 9999 \
   -Dcom.sun.management.jmxremote.port=3333 \
   -Dcom.sun.management.jmxremote.ssl=false \
   -Dcom.sun.management.jmxremote.authenticate=false \
   -Dhttp.port=9000 \
   -Dhttps.port=9443 \
-  -Dconfig.file=$CONFIG_FILE
+  -Dconfig.file=${CONFIG_FILE}
 
-  # -Dconfig.file=$CONFIG_FILE/opt/ed/play-conf/prod.conf
+# and?
+# -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${DOMAIN_HOME}/logs/mps + PID
 

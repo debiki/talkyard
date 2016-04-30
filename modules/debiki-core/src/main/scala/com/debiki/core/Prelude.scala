@@ -477,6 +477,11 @@ object Prelude {
     def toInt: Int = if (option.isDefined) 1 else 0
   }
 
+  implicit class BlankStringToNone(underlying: Option[String]) {
+    def noneIfBlank: Option[String] =
+      if (underlying.exists(_.trim.isEmpty)) None else underlying
+  }
+
   /**
    * Pimps `String` with `matches(regex): Boolean` and `misses(regex)`
    * and `dropRightWhile(Char => Boolean)` and `takeRightWhile`.

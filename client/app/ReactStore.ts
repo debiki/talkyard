@@ -352,7 +352,7 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
   var newMe = anyNewMe;
   if (!newMe) {
     // For now only. Later on, this data should be kept server side instead?
-    addLocalStorageData(store.me);
+    addLocalStorageDataTo(store.me);
     debiki2.pubsub.subscribeToServerEvents();
     this.emitChange();
     return;
@@ -370,7 +370,8 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
 
   store.user = newMe; // try to remove
   store.me = newMe;
-  addLocalStorageData(store.me);
+  addLocalStorageDataTo(store.me);
+  theStore_addOnlineUser(me_toBriefUser(newMe));
 
   watchbar_markAsRead(store.me.watchbar, store.pageId);
 
@@ -1055,7 +1056,7 @@ function makeStranger(): Myself {
  * This data should be stored server side, but right now I'm prototyping only and
  * storing it client side only.
  */
-function addLocalStorageData(me: Myself) {
+function addLocalStorageDataTo(me: Myself) {
   me.postIdsAutoReadLongAgo = sidebar.UnreadCommentsTracker.getPostIdsAutoReadLongAgo();
   me.marksByPostId = {}; // not implemented: loadMarksFromLocalStorage();
   me.closedHelpMessages = getFromLocalStorage('closedHelpMessages') || {};

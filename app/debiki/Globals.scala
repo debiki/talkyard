@@ -543,7 +543,7 @@ class Globals {
     val anyPublicUploadsDir = anyUploadsDir.map(_ + "public/")
 
     val securityComplaintsEmailAddress = Play.configuration.getString(
-      "debiki.securityComplaintsEmailAddress")
+      "debiki.securityComplaintsEmailAddress").noneIfBlank
   }
 
 }

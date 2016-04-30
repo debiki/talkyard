@@ -481,6 +481,13 @@ trait PagesDao {
         throwForbidden("EsE6YPK2", "Cannot join pages of type " + pageMeta.pageRole)
 
       transaction.insertMessageMember(pageId, userId = userId, addedById = userId)
+
+      // Bump the page version, so the cached page json will be regenerated, now including
+      // this new page member.
+      // COULD add a numMembers field, and show # members, instead of # comments,
+      // in forum topic list? (becaus # comments in a chat channel is rather pointless,
+      // it's a stream of comments rather than a collection with a size)
+      transaction.updatePageMeta(pageMeta, oldMeta = pageMeta, markSectionPageStale = false)
       pageMeta
     }
 

@@ -45,15 +45,13 @@ object Mailer {
     */
   def startNewActor(actorSystem: ActorSystem, daoFactory: SiteDaoFactory): ActorRef = {
     val config = p.Play.configuration
-    val anySmtpServerName = config.getString("debiki.smtp.server")
+    val anySmtpServerName = config.getString("debiki.smtp.host").orElse(
+      config.getString("debiki.smtp.server")).noneIfBlank // old deprecated name
     val anySmtpPort = config.getInt("debiki.smtp.port")
-    val anySmtpUserName = config.getString("debiki.smtp.user")
-    val anySmtpPassword = config.getString("debiki.smtp.password")
+    val anySmtpUserName = config.getString("debiki.smtp.user").noneIfBlank
+    val anySmtpPassword = config.getString("debiki.smtp.password").noneIfBlank
     val anyUseSslOrTls = config.getBoolean("debiki.smtp.useSslOrTls")
-    val anyFromAddress = config.getString("debiki.smtp.fromAddress")
-
-    val anyAccessKeyId = p.Play.configuration.getString("aws.accessKeyId")
-    val anySecretKey = p.Play.configuration.getString("aws.secretKey")
+    val anyFromAddress = config.getString("debiki.smtp.fromAddress").noneIfBlank
 
     val actorRef =
         (anySmtpServerName, anySmtpPort, anySmtpUserName, anySmtpPassword, anyFromAddress) match {
@@ -76,7 +74,7 @@ object Mailer {
           name = s"MailerActor-$testInstanceCounter")
       case _ =>
         var message = "I won't send emails, because:"
-        if (anySmtpServerName.isEmpty) message += " No debiki.smtp.server configured."
+        if (anySmtpServerName.isEmpty) message += " No debiki.smtp.host configured."
         if (anySmtpPort.isEmpty) message += " No debiki.smtp.port configured."
         if (anySmtpUserName.isEmpty) message += " No debiki.smtp.user configured."
         if (anySmtpPassword.isEmpty) message += " No debiki.smtp.password configured."

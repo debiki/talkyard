@@ -34,18 +34,18 @@ if [[ $response =~ ^(no|n)$ ]] ; then
   exit 0
 fi
 
-up_line=`docker-compose ps db | egrep '\<Up\>'`
+up_line=`docker-compose ps postgres | egrep '\<Up\>'`
 if [ -z "$up_line" ]; then
   echo "Error: The database container is not running."
   echo "You can start it:"
-  echo "  docker-compose start db"
+  echo "  docker-compose start postgres"
   exit 1
 fi
 
 
 # Create a psql command that runs in the container.
 # But 'docker-compose exec ...' apparently doesn't read from stdin. Instead use 'docker exec ...':
-container=`sudo docker-compose ps db | grep ' Up ' | awk '{print $1}'`
+container=`sudo docker-compose ps postgres | grep ' Up ' | awk '{print $1}'`
 if [ -z "$container" ]; then
   echo "Error: Database container not found."
   exit 1

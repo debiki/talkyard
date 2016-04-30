@@ -6,11 +6,11 @@ if [ $? -eq 1 ] ; then
   exit 1
 fi
 
-up_line=`docker-compose ps db | egrep '\<Up\>'`
+up_line=`docker-compose ps postgres | egrep '\<Up\>'`
 if [ -z "$up_line" ]; then
   echo "Error: The database container is not running."
   echo "You can start it:"
-  echo "  docker-compose start db"
+  echo "  docker-compose start postgres"
   exit 1
 fi
 
@@ -21,7 +21,7 @@ if [[ $response =~ ^(no|n)$ ]] ; then
   exit 0
 fi
 
-psql="docker-compose exec db psql postgres postgres"
+psql="docker-compose exec postgres psql postgres postgres"
 
 echo 'Dropping dev and test databases...'
 
