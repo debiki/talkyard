@@ -53,6 +53,9 @@ object ApplicationBuild extends Build {
     "com.google.guava" % "guava" % "13.0.1",
     "org.owasp.encoder" % "encoder" % "1.1.1",
     "org.jsoup" % "jsoup" % "1.8.2",
+    // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
+    // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
+    "org.apache.tika" % "tika-core" % "1.12",
     "io.dropwizard.metrics" % "metrics-core" % "3.1.2",
     //"io.dropwizard.metrics" % "metrics-ehcache" % "3.1.2", -- doesn't work right now
     "nl.grons" %% "metrics-scala" % "3.5.2_a2.3",

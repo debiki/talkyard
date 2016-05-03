@@ -70,16 +70,11 @@ class UploadsDaoSpec extends FreeSpec with MustMatchers {
     }
 
     "make hash paths" in {
-      UploadsDao.makeHashPath("mimetype", 16000, "abczzwwqq", ".jpg") mustBe "2/a/bc/zzwwqq.jpg"
-      UploadsDao.makeHashPath("mimetype", 16000, "abczzwwqq", "") mustBe "2/a/bc/zzwwqq"
-      UploadsDao.makeHashPath("mimetype", 0, "abczzwwqq", ".tgz") mustBe "0/a/bc/zzwwqq.tgz"
-      UploadsDao.makeHashPath("mimetype", 3999, "abczzwwqq", ".tgz") mustBe "0/a/bc/zzwwqq.tgz"
-      UploadsDao.makeHashPath("mimetype", 4000, "abczzwwqq", ".tgz") mustBe "1/a/bc/zzwwqq.tgz"
-    }
-
-    "make video hash paths" in {
-      UploadsDao.makeHashPath("video/cats", 4000, "abccats", ".zzz") mustBe "video/1/a/bc/cats.zzz"
-      UploadsDao.makeHashPath("whatever", 4000, "abcrats", ".m3u8") mustBe "video/1/a/bc/rats.m3u8"
+      UploadsDao.makeHashPath(16000, "abczzwwqq", ".jpg") mustBe "2/a/bc/zzwwqq.jpg"
+      UploadsDao.makeHashPath(16000, "abczzwwqq", "") mustBe "2/a/bc/zzwwqq"
+      UploadsDao.makeHashPath(0, "abczzwwqq", ".tgz") mustBe "0/a/bc/zzwwqq.tgz"
+      UploadsDao.makeHashPath(3999, "abczzwwqq", ".tgz") mustBe "0/a/bc/zzwwqq.tgz"
+      UploadsDao.makeHashPath(4000, "abczzwwqq", ".tgz") mustBe "1/a/bc/zzwwqq.tgz"
     }
   }
 

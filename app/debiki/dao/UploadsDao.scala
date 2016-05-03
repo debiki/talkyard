@@ -102,7 +102,10 @@ trait UploadsDao {
       }
     }
 
-    val mimeType = java.nio.file.Files.probeContentType(optimizedFile.toPath.toAbsolutePath)
+    // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8. Instead, use Tika.
+    // (This detects mime type based on actual document content, not just the suffix.)
+    val tika = new org.apache.tika.Tika()
+    val mimeType: String = tika.detect(optimizedFile)
     val sizeBytes = {
       val sizeAsLong = optimizedFile.length
       if (sizeAsLong >= maxUploadSizeBytes) {
@@ -113,7 +116,7 @@ trait UploadsDao {
 
     throwIfUploadedTooMuchRecently(uploadedById, sizeBytes = sizeBytes)
 
-    val hashPathSuffix = makeHashPath(mimeType, optimizedFile, optimizedDotSuffix)
+    val hashPathSuffix = makeHashPath(optimizedFile, optimizedDotSuffix)
     val destinationFile = new java.io.File(s"$publicUploadsDir$hashPathSuffix")
     destinationFile.getParentFile.mkdirs()
 
@@ -256,6 +259,7 @@ object UploadsDao {
   // - optionally, recalculate disk quotas (since files deleted)
   val OldHashPathSuffixRegex = """^[a-z0-9]/[a-z0-9]/[a-z0-9]+\.[a-z0-9]+$""".r
 
+  @deprecated("now", "removed video/ prefix")
   val HashPathSuffixRegex =
     """^(video/)?[0-9][0-9]?/[a-z0-9]/[a-z0-9]{2}/[a-z0-9]+\.[a-z0-9]+$""".r
 
@@ -264,32 +268,35 @@ object UploadsDao {
   private val Log4 = math.log(4)
 
 
-  def makeHashPath(mimeType: String, file: jio.File, dotSuffix: String): String = {
+  def makeHashPath(file: jio.File, dotSuffix: String): String = {
     // (It's okay to truncate the hash, see e.g.:
     // http://crypto.stackexchange.com/questions/9435/is-truncating-a-sha512-hash-to-the-first-160-bits-as-secure-as-using-sha1 )
     val hashCode = guava.io.Files.hash(file, guava.hash.Hashing.sha256)
     val hashString = base32lowercaseEncoder.encode(hashCode.asBytes) take HashLength
-    makeHashPath(mimeType, file.length().toInt, hashString, dotSuffix)
+    makeHashPath(file.length().toInt, hashString, dotSuffix)
   }
 
 
-  /** [disabled: The hash path starts with video/ for video files, so e.g. nginx can be configured
-    * to serve video files from video/.]
-    * Then comes floor(log4(size-in-bytes / 1000)), i.e. 0 for < 4k files,
+  /** The hash path starts with floor(log4(size-in-bytes / 1000)), i.e. 0 for < 4k files,
     * 1 for < 16k files, 2 for < 64k, 3 for < 256k, 4 for <= 1M, 5 < 4M, 6 < 16M, .. 9 <= 1G.
     * This lets us easily backup small files often, and large files infrequently. E.g.
     * backup directories with < 1M files hourly, but larger files only daily?
     * Or keep large files on other types of disks?
+    *
+    * For a while I prefixed video files with video/, to avoid regexes in Nginx because
+    * handling videos differently (special Nginx video directives), but this didn't result in
+    * any easily measurable performance improvements, so I removed it. Another reason
+    * to place videos in videos/ is that then Google Cloud Engine's (GCE) load balancer can
+    * do content based load balancing, in this case we could serve all video uploads from
+    * a dedicated video server. But I think the size digit (floor-log-size) can be used for
+    * this as well: just send all requests > X MB to a video streaming server,
+    * because large files = videos, usually (and the video server will have to serve the
+    * occasional large image, should be just fine). (GCE can cache stuff < 4MB in its CDN.)
     */
-  def makeHashPath(mimeType: String, sizeBytes: Int, hash: String, dotSuffix: String): String = {
+  def makeHashPath(sizeBytes: Int, hash: String, dotSuffix: String): String = {
     val sizeDigit = sizeKiloBase4(sizeBytes)
     val (hash0, hash1, hash2, theRest) = (hash.head, hash.charAt(1), hash.charAt(2), hash.drop(3))
-    val anyTypePrefix =
-      "" /* skip this separate-video-folder for now. Won't totally work anyway, because
-        would need to do the same for audio? and won't work for new / other video formats anyway.
-      if (mimeType.startsWith("video") || dotSuffix == HlsVideoMediaSegmentsSuffix) "video/"
-      else ""  */
-    s"$anyTypePrefix$sizeDigit/$hash0/$hash1$hash2/$theRest$dotSuffix"
+    s"$sizeDigit/$hash0/$hash1$hash2/$theRest$dotSuffix"
   }
 
 

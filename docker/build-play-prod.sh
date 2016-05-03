@@ -32,6 +32,11 @@ date --utc --iso-8601=seconds > build-info/docker-image-build-date.txt
 # usually be pushed/pulled.
 mkdir play-lib-debiki
 mv play/lib/*debiki* play-lib-debiki/
+mv play/bin play-bin
+mv play/conf play-conf
+
+# This readme is for the development repo. Create another one, if any, for prod.
+rm play/README.md
 
 docker build --tag=debiki/ed-play:latest .
 

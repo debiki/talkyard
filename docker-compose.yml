@@ -5,7 +5,7 @@ services:
     image: debiki/ed-nginx
     command: nginx
     volumes:
-      - ../uploads/:/opt/debiki/uploads/:ro
+      - ../uploads/:/opt/ed/uploads/:ro
       - ../letsencrypt/:/etc/letsencrypt/:ro
     ports:
       # Don't expose port 81 (for publishing WebSocket events)  — it should be reachable only
@@ -20,7 +20,7 @@ services:
     # image debiki/ed-play instead built & tagged in docker/build-play-prod.sh.
     stdin_open: true  # otherwise Play exits
     volumes:
-      - ../:/opt/debiki/
+      - ../:/opt/ed/
       # Without this it takes forever to start because sbt would always download all dependencies.
       - ~/.ivy2/:/home/owner/.ivy2/
       - ~/.sbt/:/home/owner/.sbt/

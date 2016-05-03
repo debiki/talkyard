@@ -14,6 +14,10 @@ RUN mkdir -p /opt/ed/uploads/ && \
 # separate step, so only that step will have to be pushed/pulled to/from Docker Hub.
 COPY play            /opt/ed/play
 COPY play-lib-debiki /opt/ed/play/lib/
+COPY play-bin        /opt/ed/play/bin/
+COPY play-conf       /opt/ed/play/conf/
+
+# what? this one isn't being used?
 COPY localhost.conf  /opt/ed/play-conf/localhost.conf
 
 VOLUME ["/opt/ed/play-conf", "/opt/ed/uploads"]
