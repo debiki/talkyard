@@ -7,15 +7,14 @@ cat <<EOF
 s/s.sh clean
 gulp release
 s/s.sh dist
-docker/build-play-prod.sh 
+sudo docker/build-play-prod.sh
 
 # Build other images:
-docker-compose stop
-docker-compose down
-docker-compose build
+sudo docker-compose down
+sudo docker-compose build
 
 # Push:
-docker push debiki/ed-play
-docker push debiki/ed-nginx
-docker push debiki/ed-postgres
+sudo docker push debiki/ed-play
+sudo docker push debiki/ed-nginx
+sudo docker push debiki/ed-postgres
 EOF
