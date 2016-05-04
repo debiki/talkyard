@@ -36,6 +36,11 @@ object MemCache {
 
 class MemCache(val siteId: SiteId, val cache: DaoMemCache) {
 
+  // COULD delete & rewrite this listener stuff. It's error prone & complicated, bug just killed.
+  // Something like this?
+  // - change firePageCreated() to uncacheStuffBecausePageCreated(pageId)
+  // - change firePageSaved() to uncacheStuffBecausePageSaved(pageId)
+  // ... etc
   private var pageCreatedListeners = List[(PagePath => Unit)]()
   private var pageSavedListeners = List[(SitePageId => Unit)]()
   private var pageMovedListeners = List[(PagePath => Unit)]()

@@ -82,6 +82,7 @@ object ApplicationBuild extends Build {
   val main = Project(appName, file(".")).enablePlugins(play.PlayScala, BuildInfoPlugin)
     .settings(mainSettings: _*)
     .dependsOn(debikiCore % "test->test;compile->compile", debikiDaoRdb)
+    .aggregate(debikiCore) // skip debikiDaoRdb for now, because old broken should-delete-them tests
 
 
   def mainSettings = List(

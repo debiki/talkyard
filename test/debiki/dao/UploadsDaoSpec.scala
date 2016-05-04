@@ -90,7 +90,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
     val file = new jio.File(s"target/tmp/$fileName")
     val raf = new RandomAccessFile(file, "rw")
     raf.setLength(sizeBytes)
-    val ref = UploadRef(Globals.localhostUploadsBaseUrl, UploadsDao.makeHashPath("x", file, ".jpg"))
+    val ref = UploadRef(Globals.localhostUploadsBaseUrl, UploadsDao.makeHashPath(file, ".jpg"))
     FileNameRef(fileName, file, ref)
   }
 

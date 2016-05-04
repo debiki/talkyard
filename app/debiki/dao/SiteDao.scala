@@ -74,8 +74,8 @@ class SiteDao(
   with AuditDao
   with CreateSiteDao {
 
-  protected def memCache = new MemCache(siteId, cache)
-  protected def redisCache = new RedisCache(siteId, redisClient)
+  protected lazy val memCache = new MemCache(siteId, cache)
+  protected lazy val redisCache = new RedisCache(siteId, redisClient)
 
   def memCache_test = {
     require(Globals.wasTest, "EsE7YKP42B")

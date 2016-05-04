@@ -47,14 +47,17 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
       dao.loadPageMeta(forumId).get.deletedAt mustBe None
       dao.loadPageMeta(htmlPageId).get.deletedAt mustBe None
 
+      // Delete all pages.
       dao.deletePagesIfAuth(Seq(discussionId, forumId, htmlPageId),
         admin.id, browserIdData, undelete = false)
 
+      // Verify marked as deleted.
       dao.loadPageMeta(discussionId).get.deletedAt mustBe defined
       dao.loadPageMeta(forumId).get.deletedAt mustBe defined
       dao.loadPageMeta(htmlPageId).get.deletedAt mustBe defined
       dao.loadPageMeta(otherPageId).get.deletedAt mustBe None
 
+      // Undelete, verify no longer marked as deleted.
       dao.deletePagesIfAuth(Seq(discussionId, forumId, htmlPageId),
         admin.id, browserIdData, undelete = true)
       dao.loadPageMeta(discussionId).get.deletedAt mustBe None
