@@ -2,7 +2,8 @@ FROM java:openjdk-8u77-jdk-alpine
 
 RUN apk add --no-cache \
   # Required:
-  curl unzip \
+  # (git needed so can include Git revision in the build, and show at http://server/-/build-info.)
+  curl unzip git \
   # Nice to have: (why telnet not found?)
   tree less wget net-tools bash
 
@@ -23,6 +24,12 @@ RUN unzip /tmp/$ACTIVATOR.zip -d /tmp/ && \
     mv /tmp/activator-$ACVERSION-minimal /opt/typesafe-activator && \
     chmod -R ugo+rw /opt/typesafe-activator/ && \
     chmod -R ugo+x /opt/typesafe-activator/activator
+
+# Install 'gosu' so we can use it instead of 'su'.
+# For unknown reasons, '  exec su ...' no longer works, but 'exec gosu ...' works fine.
+RUN apk add --no-cache \
+  --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing/ \
+  gosu
 
 # We'll map ~/.ivy2 and ~/.m2 to here, so the JAR cache won't vanish on container restart.
 VOLUME ["/home/owner/.ivy2", "/home/owner/.sbt", "/opt/ed"]

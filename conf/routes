@@ -177,8 +177,11 @@ POST  /-/import-site            controllers.ImportExportController.importSiteJso
 
 POST /-/log-browser-error       controllers.DebugTestController.logBrowserError
 GET  /-/metrics                 controllers.DebugTestController.showMetrics
+GET  /-/build-info              controllers.DebugTestController.showBuildInfo
 GET  /-/ping-exception-action   controllers.DebugTestController.pingExceptionAction
 GET  /-/ping-session-action     controllers.DebugTestController.pingApiAction
+GET  /-/ping-cache              controllers.DebugTestController.pingCache
+GET  /-/ping-database-and-cache controllers.DebugTestController.pingDatabaseAndCache
 GET  /-/origin                  controllers.DebugTestController.origin
 GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
 GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(sentTo)

@@ -94,6 +94,25 @@ object DebugTestController extends mvc.Controller {
   }
 
 
+  def showBuildInfo = AdminGetAction { request =>
+    import generatedcode.BuildInfo
+    val infoTextBuilder = StringBuilder.newBuilder
+      .append("Build info:")
+      .append("\n")
+      .append("\nversion: ").append(BuildInfo.version)
+      .append("\nbuilt at: ").append(BuildInfo.builtAtString)
+      .append("\n")
+      .append("\ngit revision: ").append(BuildInfo.gitRevision)
+      .append("\ngit branch: ").append(BuildInfo.gitBranch)
+      .append("\ngit status: ========================================\n")
+      .append(BuildInfo.gitStatus)
+      .append("\n====================================================\n")
+      .append("\nscala version: ").append(BuildInfo.scalaVersion)
+      .append("\nsbt version: ").append(BuildInfo.sbtVersion)
+    Ok(infoTextBuilder.toString) as TEXT
+  }
+
+
   /** For performance tests. */
   def pingExceptionAction = ExceptionAction(empty) { request =>
     Ok("exception-action-pong")
@@ -103,6 +122,23 @@ object DebugTestController extends mvc.Controller {
   /** For performance tests. */
   def pingApiAction = GetAction { request =>
     Ok("session-action-pong")
+  }
+
+
+  /** For performance tests. */
+  def pingCache = GetAction { request =>
+    ??? // Redis get whatever sth ...
+    Ok("pong, from Play and Redis")
+  }
+
+
+  /** For load balancers (and performance tests too) */
+  def pingDatabaseAndCache = GetAction { request =>
+    request.dao.readOnlyTransaction { transaction =>
+      ??? // transaction.pingDatabase()
+      ??? // ping Redis too
+    }
+    Ok("pong, from Play, Postgres and Redis")
   }
 
 

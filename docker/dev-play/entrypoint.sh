@@ -3,7 +3,7 @@
 # *** Dupl code *** see dev-gulp/entrypoint.sh too [7GY8F2]
 # (Cannot fix, Docker doesn't support symlinks in build dirs.)
 
-cd /opt/debiki/server
+cd /opt/ed/server
 
 # Create user 'owner' with the same id as the person who runs docker, so that file
 # 'gulp build' creates will be owned by that person (otherwise they'll be owned by root
@@ -27,15 +27,13 @@ fi
 
 echo Running the Play CMD:
 
-# Without exec, Docker wouldn't be able to stop the container normally.
-# See: https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/#entrypoint
-# """uses the exec Bash command so final running application becomes container’s PID 1"""
-# — they use 'gosu' instead of 'su':  exec gosu postgres "$@"
-# but for me 'su' works fine.
 if [ $file_owner_id -ne 0 ] ; then
-  # Use user owner, which has the same user id as the file owner on the Docker host.
   set -x
-  exec su -c "$*" owner
+  # Here, 'exec gosu owner $*' will:
+  # 1) run $* as user owner, which has the same user id as the file owner on the Docker host
+  # 2) use our current process id, namely 1. Then the Scala app will receive any shutdown signal,
+  #    see: https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/#entrypoint
+  exec gosu owner $*
 else
   # We're root (user id 0), both on the Docker host and here in the container.
   set -x

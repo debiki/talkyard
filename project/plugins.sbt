@@ -40,3 +40,9 @@ addSbtPlugin("com.github.mpeltonen" % "sbt-idea" % "1.6.0")
 // Dependency tree, https://github.com/jrudolph/sbt-dependency-graph
 // ---------------------------------------------------------------
 addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.8.2")
+
+
+// Makes e.g. Git SHA1 available to the Scala code at runtime.
+// ---------------------------------------------------------------
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.6.1")
+

@@ -19,11 +19,17 @@ import sbt._
 import Keys._
 import java.{net => jn}
 import play.sbt.PlayImport._
+import sbtbuildinfo._
 
 object ApplicationBuild extends Build {
 
-  val appName         = "debiki-server"
-  val appVersion      = "1.0-SNAPSHOT"
+  val appName = "EffectiveDiscussions"
+  val appVersion = {
+    val source = scala.io.Source.fromFile("version.txt")
+    try source.mkString.trim
+    finally source.close()
+  }
+
 
   lazy val debikiCore =
     Project("debiki-core", file("modules/debiki-core"))
@@ -73,7 +79,7 @@ object ApplicationBuild extends Build {
     "org.scalatestplus" %% "play" % "1.4.0-M4" % "test")
 
 
-  val main = Project(appName, file(".")).enablePlugins(play.PlayScala)
+  val main = Project(appName, file(".")).enablePlugins(play.PlayScala, BuildInfoPlugin)
     .settings(mainSettings: _*)
     .dependsOn(debikiCore % "test->test;compile->compile", debikiDaoRdb)
 
@@ -93,6 +99,24 @@ object ApplicationBuild extends Build {
     resolvers :=
       ("Atlassian Releases" at "https://maven.atlassian.com/public/") +:
         Keys.resolvers.value,
+
+
+    BuildInfoKeys.buildInfoPackage := "generatedcode",
+    BuildInfoKeys.buildInfoOptions += BuildInfoOption.BuildTime,
+    BuildInfoKeys.buildInfoKeys := Seq[BuildInfoKey](
+      name,
+      version,
+      scalaVersion,
+      sbtVersion,
+      BuildInfoKey.action("gitRevision") {
+        "git rev-parse HEAD".!!.trim
+      },
+      BuildInfoKey.action("gitBranch") {
+        "git rev-parse --abbrev-ref HEAD".!!.trim
+      },
+      BuildInfoKey.action("gitStatus") {
+        "git status".!!.trim
+      }),
 
     // Disable ScalaDoc generation, it breaks seemingly because I'm compiling some Javascript
     // files to Java, and ScalaDoc complains the generated classes don't exist and breaks
