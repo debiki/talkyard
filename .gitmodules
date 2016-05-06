@@ -13,7 +13,9 @@
 [submodule "docker/debiki-dev-nginx/nginx-modules/nchan"]
 	path = docker/dev-nginx/modules/nchan
 	url = https://github.com/slact/nchan.git
-
 [submodule "modules/ed-prod-one-test"]
 	path = modules/ed-prod-one-test
 	url = https://github.com/debiki/ed-prod-one.git
+[submodule "modules/ed-versions"]
+	path = modules/ed-versions
+	url = https://github.com/debiki/ed-versions.git
