@@ -1,0 +1,26 @@
+# Configures a server that uses about 1G RAM, and to which you can connect a debugger,
+# and with a end-to-end tests password.
+
+version: '2'
+services:
+  nginx:
+    mem_limit: 60M
+
+  play:
+    mem_limit: 700M
+    environment:
+      PLAY_HEAP_MEMORY_MB: 500
+      E2E_TEST_PASSWORD: public
+      FORBIDDEN_PASSWORD: public
+    ports:
+      - '9000:9000' # Play's HTTP listen port, for bypasssing Nginx (to debug)
+      - '9443:9443' # Play's HTTPS port
+      - '9999:9999' # Java debugger port
+      - '3333:3333' # JMX
+
+  redis:
+    mem_limit: 30M
+
+  postgres:
+    mem_limit: 140M
+

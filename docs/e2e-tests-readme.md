@@ -33,6 +33,11 @@ Run tests like so:
 
         scripts/wdio target/e2e/wdio.conf.js --skip3 --only 'links'
 
+    If you get this error: "Cannot find module '.../target/e2e/wdio.conf.js'", then
+    fix that by building the end-to-end test code:
+
+        gulp build-e2e
+
 
 ### Browsers other than Chrome
 

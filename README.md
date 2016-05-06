@@ -145,6 +145,7 @@ This project looks like so:
      +-modules/
      | +-debiki-dao-rdb/    <-- A database access object (DAO), for PostgreSQL
      | +-debiki-core/       <-- Code shared by the DAO and by the ./app/ code
+     | +-ed-prod-one-test/  <-- A production installation, for automatic tests
      | |
      | ...Third party modules
      |
@@ -152,10 +153,6 @@ This project looks like so:
      |                 has bundled and minified from the client/ dir above.
      |
      +-docker/     <-- Dockerfiles for all docker-compose containers
-     | +-compose-prod-2g.yml  <-- production config, one server 2G memory
-     | +-compose-prod-8g.yml  <-- production config, one server 8G memory
-     | +-...
-     | |
      | +-nginx/    <-- Docker build stuff for the Nginx container
      | +-...       <-- More containers...
      |

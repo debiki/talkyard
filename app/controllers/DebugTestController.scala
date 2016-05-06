@@ -99,7 +99,8 @@ object DebugTestController extends mvc.Controller {
     val infoTextBuilder = StringBuilder.newBuilder
       .append("Build info:")
       .append("\n")
-      .append("\nversion: ").append(BuildInfo.version)
+      .append("\ndocker tag: ").append(BuildInfo.dockerTag)
+      .append("\napp version: ").append(BuildInfo.version)
       .append("\nbuilt at: ").append(BuildInfo.builtAtString)
       .append("\n")
       .append("\ngit revision: ").append(BuildInfo.gitRevision)

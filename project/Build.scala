@@ -23,11 +23,16 @@ import sbtbuildinfo._
 
 object ApplicationBuild extends Build {
 
-  val appName = "EffectiveDiscussions"
-  val appVersion = {
+  val versionFileContents = {
     val source = scala.io.Source.fromFile("version.txt")
     try source.mkString.trim
     finally source.close()
+  }
+
+  val appName = "EffectiveDiscussions"
+  val appVersion = {
+    // Change from WIP (work-in-progress) to SNAPSHOT, suitable for the Java/Scala world.
+    versionFileContents.replaceAllLiterally("WIP", "SNAPSHOT")
   }
 
 
@@ -109,6 +114,10 @@ object ApplicationBuild extends Build {
       version,
       scalaVersion,
       sbtVersion,
+      BuildInfoKey.action("dockerTag") {
+        // Also in release.sh: [8GKB4W2]
+        versionFileContents + '-' + "git rev-parse --short HEAD".!!.trim
+      },
       BuildInfoKey.action("gitRevision") {
         "git rev-parse HEAD".!!.trim
       },
@@ -126,9 +135,6 @@ object ApplicationBuild extends Build {
     publishArtifact in (Compile, packageDoc) := false,  // don't generate doc JAR
 
     Keys.fork in Test := false, // or cannot place breakpoints in test suites
-    unmanagedClasspath in Compile <+= (baseDirectory) map { bd =>
-      Attributed.blank(bd / "target/scala-2.10/compiledjs-classes")
-    },
 
     // ScalaTest full stack traces:
     testOptions in Test += Tests.Argument("-oF"),

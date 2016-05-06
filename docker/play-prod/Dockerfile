@@ -16,6 +16,7 @@ COPY play            /opt/ed/play
 COPY play-lib-debiki /opt/ed/play/lib/
 COPY play-bin        /opt/ed/play/bin/
 COPY play-conf       /opt/ed/play/conf/
+COPY build-info      /opt/ed/build-info/
 
 # what? this one isn't being used?
 COPY localhost.conf  /opt/ed/play-conf/localhost.conf
@@ -28,7 +29,7 @@ ENV CONFIG_FILE /opt/ed/play-conf/localhost.conf
 WORKDIR /opt/ed/play
 
 # this —> "Bad root server path: /opt/ed/play/-jvm-debug 9999", no idea why...
-CMD ["/opt/ed/play/bin/debiki-server", \
+CMD ["/opt/ed/play/bin/effectivediscussions", \
   "-jvm-debug 9999", \
   "-Dcom.sun.management.jmxremote.port=3333", \
   "-Dcom.sun.management.jmxremote.ssl=false", \
@@ -39,7 +40,7 @@ CMD ["/opt/ed/play/bin/debiki-server", \
 
 # ...but this identical command works fine:
 # the PID file might not get deleted if we shutdown during startup, see Globals.scala [65YKFU02]
-CMD rm -f /opt/ed/play/RUNNING_PID && exec /opt/ed/play/bin/debiki-server \
+CMD rm -f /opt/ed/play/RUNNING_PID && exec /opt/ed/play/bin/effectivediscussions \
   -J-Xms${PLAY_HEAP_MEMORY_MB}m \
   -J-Xmx${PLAY_HEAP_MEMORY_MB}m \
   -jvm-debug 9999 \
