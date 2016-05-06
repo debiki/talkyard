@@ -65,7 +65,7 @@ ENV CONFIG "\
 	--with-file-aio \
 	--with-http_v2_module \
 	--with-ipv6 \
-	# won't ever need to show any auto index?
+	# won't ever need to show any auto index? If adding it back, add 'autoindex off' here: [5KUP293]
 	--without-http_autoindex_module \
 	# skip server-side-includes module
 	--without-http_ssi_module \

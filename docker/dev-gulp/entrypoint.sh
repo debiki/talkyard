@@ -16,7 +16,7 @@ if [ $? -eq 1 -a $file_owner_id -ne 0 ] ; then
   # So create it:
   # (--home-dir needs to be specified, because `npm install` and `bower install` write to
   #   cache dirs in the home dir.
-  useradd --home-dir /opt/debiki/server/.docker-dev-gulp-home --uid $file_owner_id owner
+  useradd --home-dir /opt/debiki/server/docker/gulp-home --uid $file_owner_id owner
 fi
 
 if [ -z "$*" ] ; then

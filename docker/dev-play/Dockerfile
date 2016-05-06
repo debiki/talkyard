@@ -46,8 +46,8 @@ COPY entrypoint.sh /docker-entrypoint.sh
 RUN  chmod ugo+x   /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
-# overriden in docker-compose.yml
-ENV PLAY_HEAP_MEMORY_MB: 1048
+# Overriden in docker-compose.yml
+ENV PLAY_HEAP_MEMORY_MB 1048
 
 CMD ["/opt/typesafe-activator/activator", \
   "-mem $PLAY_HEAP_MEMORY_MB", \
@@ -57,7 +57,5 @@ CMD ["/opt/typesafe-activator/activator", \
   "-Dcom.sun.management.jmxremote.authenticate=false", \
   "-Dhttp.port=9000", \
   "-Dhttps.port=9443", \
-  "-Dconfig.file=../conf/dev-test-localhost.conf", \
-  "-DcrazyFastStartSkipSearch=true", \
   "run"]
 

@@ -90,7 +90,7 @@ export var SignUpAsAdmin = createComponent({
 
     var anyEmailProblem = this.props.siteStatus === 'FirstSiteAdminPendingButNoEmailSpecified'
       ? r.p({ style: { color: 'hsl(0, 100%, 45%)', fontWeight: 'bold' }},
-          "But you haven't specified any ", r.code({}, 'becomeOwnerEmailAddress'),
+          "But you haven't specified any ", r.code({}, 'debiki.becomeOwnerEmailAddress'),
           " value in the config file — please edit it and do so, then restart Play Framework")
       : null;
 

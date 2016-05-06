@@ -5,8 +5,8 @@ services:
     image: debiki/ed-nginx
     command: nginx
     volumes:
-      - ../uploads/:/opt/ed/uploads/:ro
-      - ../letsencrypt/:/etc/letsencrypt/:ro
+      - ./docker/data/uploads/:/opt/ed/uploads/:ro
+      - ./docker/data/letsencrypt/:/etc/letsencrypt/:ro
     ports:
       # Don't expose port 81 (for publishing WebSocket events)  — it should be reachable only
       # from inside the Docker network.
@@ -20,7 +20,7 @@ services:
     # image debiki/ed-play instead built & tagged in docker/build-play-prod.sh.
     stdin_open: true  # otherwise Play exits
     volumes:
-      - ../:/opt/ed/
+      - ./:/opt/ed/server/
       # Without this it takes forever to start because sbt would always download all dependencies.
       - ~/.ivy2/:/home/owner/.ivy2/
       - ~/.sbt/:/home/owner/.sbt/
@@ -37,7 +37,7 @@ services:
   redis:
     image: redis:3.0.7-alpine
     volumes:
-      - ../redis/:/data/
+      - ./docker/data/redis/:/data/
     ports:
       - '6379:6379'
 
@@ -45,7 +45,7 @@ services:
     build: docker/postgres/
     image: debiki/ed-postgres
     volumes:
-      - ../postgres-data/:/var/lib/postgresql/data/
+      - ./docker/data/postgres/:/var/lib/postgresql/data/
     ports:
       - '5432:5432'
     environment:
@@ -59,7 +59,7 @@ services:
   postgres2:
     build: docker/postgres/
     volumes:
-      - ../postgres-data2/:/var/lib/postgresql/data/
+      - ./docker/data/postgres2/:/var/lib/postgresql/data/
     environment:
       POSTGRES_PASSWORD: 'public2'
       PEER_HOST: 'postgres'
@@ -69,6 +69,6 @@ services:
   gulp:
     build: docker/dev-gulp/
     volumes:
-      - ../:/opt/debiki/
+      - ./:/opt/debiki/server/
 
 # vim: et ts=2 sw=2
