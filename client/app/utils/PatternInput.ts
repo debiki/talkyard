@@ -37,7 +37,7 @@ export var PatternInput = createClassAndFactory({
   },
 
   focus: function() {
-    this.refs.theInput.focus();
+    this.refs.theInput.getInputDOMNode().focus();
   },
 
   getValue: function() {

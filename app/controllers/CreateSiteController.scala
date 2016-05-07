@@ -132,7 +132,7 @@ object CreateSiteController extends Controller {
       case None =>
         throwForbidden("DwE4KEGG0", "This server is not configured to allow creation of new sites")
       case Some(createSiteHostname) =>
-        if (createSiteHostname != request.hostname)
+        if (createSiteHostname != request.hostname && !hasOkForbiddenPassword(request))
           throwForbidden("DwE093AQ2", "You cannot create new sites from this address")
     }
   }

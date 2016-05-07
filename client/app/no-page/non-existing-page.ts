@@ -110,7 +110,9 @@ export var SignUpAsAdmin = createComponent({
           loginBtn)
       : r.div({},
           r.h1({}, 'Welcome'),
-          r.p({}, 'This is your new website.'),
+          r.p({}, "This is your new website"),
+          r.p({}, "Look at the address bar above — it starts with the address " +
+              "you specified: ", r.code({}, location.hostname)),
           r.br(),
           loginBtn);
   }
