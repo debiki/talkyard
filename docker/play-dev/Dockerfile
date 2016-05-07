@@ -40,7 +40,7 @@ EXPOSE 9000 9443 9999 3333
 RUN mkdir -p /opt/ed/uploads/ && \
     chmod -R ugo+rw /opt/ed/uploads/
 
-WORKDIR /opt/ed/server/
+WORKDIR /opt/ed/play/
 
 COPY entrypoint.sh /docker-entrypoint.sh
 RUN  chmod ugo+x   /docker-entrypoint.sh

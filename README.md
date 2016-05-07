@@ -1,13 +1,13 @@
 Debiki Server
 =============================
 
-Debiki (now I've renamed it to EffectiveDiscussions though) is a
-combined forum and question & answers platform.
+Debiki (now I've renamed it to EffectiveDiscussions (ED) though) is a
+combined forum, chat and question & answers platform.
 
 See it live: http://www.effectivediscussions.org/forum/latest<br>
 Read about it: http://www.effectivediscussions.org/
 
-Debiki is under development and there is currently no stable version or simple
+ED is under development and there is currently no stable version or simple
 installation instructions.
 
 
@@ -35,21 +35,13 @@ A tips about Vagrant and Linux (just ignore, if you're not familiar with Vagrant
 
 Now, let's get started for real:
 
-1. Clone **another** project, [debiki-site-seed](https://github.com/debiki/debiki-site-seed). In that project, this project is a submodule.
+1. Update submodules:
 
-        git clone https://github.com/debiki/debiki-site-seed.git
-        cd debiki-site-seed
-
-1. Then fetch this project (debiki-server) to a subdirectory `server/`, checkout the master branch and fetch submodules:
-
-        git submodule update --init
-        cd server/
-        git checkout master
         git submodule update --init
 
 1. Start everything: (this will take a while, the first time: some Docker images will be downloaded and built)
 
-        docker-compose up   # use 'sudo' if needed
+        docker-compose up nginx  # use 'sudo' if needed
 
 1. Create an empty database:
 
@@ -149,17 +141,27 @@ This project looks like so:
      | |
      | ...Third party modules
      |
-     +-public/     <-- Some images and libs, plus JS and CSS that Gulp
-     |                 has bundled and minified from the client/ dir above.
+     +-public/         <-- Some images and libs, plus JS and CSS that Gulp
+     |                     has bundled and minified from the client/ dir above.
      |
-     +-docker/     <-- Dockerfiles for all docker-compose containers
-     | +-nginx/    <-- Docker build stuff for the Nginx container
-     | +-...       <-- More containers...
+     +-docker/         <-- Dockerfiles for all docker-compose containers
+     | +-nginx/        <-- Docker build stuff for the Nginx container
+     | | +-modules/
+     | |   +-nchan/    <-- WebSocket and PubSub for Nginx (a Git submodule)
+     | +-gulp/         <-- Container that runs Node.js and bundles JS and CSS
+     | +-gulp-home/    <-- Mounted as Gulp container home-dir = disk cache
+     | +-...           <-- More containers...
+     | +-data/
+     |   +-postgres    <-- Mounted as a volume in the Postgres container
+     |   +-redis       <-- Mounted in the Redis container
+     |   +-uploads     <-- Mounted read-write in the Play container, but
+     |   |                 read-only in Nginx (to serve static files)
+     |   ...
      |
-     +-scripts/    <-- Utility scripts
+     +-scripts/        <-- Utility scripts
      |
-     +-conf/       <-- Default config files that assume everything
-                       is installed on localohost, and dev mode
+     +-conf/           <-- Default config files that assume everything
+                           is installed on localohost, and dev mode
 
 Old Code
 -----------------------------

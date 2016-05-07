@@ -1,7 +1,7 @@
 version: '2'
 services:
   nginx:
-    build: docker/dev-nginx/
+    build: docker/nginx/
     image: debiki/ed-nginx
     command: nginx
     volumes:
@@ -16,11 +16,11 @@ services:
       - play
 
   play:
-    build: docker/dev-play/
+    build: docker/play-dev/
     # image debiki/ed-play instead built & tagged in docker/build-play-prod.sh.
     stdin_open: true  # otherwise Play exits
     volumes:
-      - ./:/opt/ed/server/
+      - ./:/opt/ed/play/
       # Without this it takes forever to start because sbt would always download all dependencies.
       - ~/.ivy2/:/home/owner/.ivy2/
       - ~/.sbt/:/home/owner/.sbt/
@@ -67,7 +67,7 @@ services:
       PEER_PASSWORD: 'public'
 
   gulp:
-    build: docker/dev-gulp/
+    build: docker/gulp/
     volumes:
       - ./:/opt/debiki/server/
 
