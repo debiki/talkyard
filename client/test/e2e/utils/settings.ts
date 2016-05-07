@@ -12,7 +12,7 @@ var settings: any = {
   host: 'localhost',
   testLocalHostnamePrefix: 'e2e-test--',
   testEmailAddressPrefix: 'e2e-test--',
-  // Try the default dev-test-localhost.conf passwords, if nothing else specified:
+  // Default passwords, for testing on localhost.
   e2eTestPassword: 'public',
   forbiddenPassword: 'public',
 };

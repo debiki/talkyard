@@ -7,8 +7,10 @@ combined forum, chat and question & answers platform.
 See it live: http://www.effectivediscussions.org/forum/latest<br>
 Read about it: http://www.effectivediscussions.org/
 
-ED is under development and there is currently no stable version or simple
-installation instructions.
+This repository is for writing ED source code, but not for installing
+ED on a production server. For the latter, instead see:
+https://github.com/debiki/ed-prod-one
+(production installation on one single server).
 
 
 Getting Started
@@ -24,18 +26,9 @@ You'll need some GB memory; 4GB might be enough, not sure. And you need a somewh
 
 Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/
 
-#### Tips
-
-A tips about Vagrant and Linux (just ignore, if you're not familiar with Vagrant or Linux):
-
-- As of now, don't use Vagrant because then I think you cannot run any end-to-end tests (or at least it would be complicated).
-  <!-- If you want to run the server in a Vagrant virtual machine, you can use this one: `vagrant init phusion/ubuntu-14.04-amd64` — it supports Docker, but you still need to install Docker-Compose (inside the vm). And it seems you'll need to follow the _"Note: If your company is behind a filtering proxy"_ instructions on https://docs.docker.com/linux/step_one/. -->
-
 #### The instructions
 
-Now, let's get started for real:
-
-1. Update submodules:
+1. Clone this repository, `cd` into it. Then update submodules:
 
         git submodule update --init
 
@@ -45,25 +38,14 @@ Now, let's get started for real:
 
 1. Create an empty database:
 
-        docker/drop-database-create-empty.sh
-
-1. Specify your email address in the config file:
-
-        vi ../conf/dev-test-localhost.conf
-        # edit this config value:
-        # debiki.becomeOwnerEmailAddress=""  # fill in your email address
-
-1. Restart Play Framework so the config values will be reloaded:
-
-        docker-compose restart play
+        docker/drop-database-create-empty.sh  # 'sudo' if needed
 
 1. Point your browser to http://localhost/ and follow the instructions, namely to sign up
-   as admin, with the email address you just specified. Create a password account —
-   Gmail login won't work because you haven't configured any OpenAuth credentials.
+   as admin, with the email address `admin@example.com`. Create a password account.
 
-   However when you're asked to confirm your email address by clicking a link in an email
-   that was sent to you — in fact the email couldn't be sent, because you haven't configured
-   any email server.
+   You'll be asked to confirm your email address, by clicking a link in an email
+   that was sent to you — but in fact the email couldn't be sent, because you haven't configured
+   any email server. (And `admin@example.com` isn't your address anyway.)
 
    Instead look in the Play log file: `docker-compose logs play`. There you'll find
    the email — it's written to the log files, in development mode. Copy the
@@ -125,7 +107,6 @@ This project looks like so:
     server/
      |
      +-docker-compose.yml   <-- tells Docker how to run EffectiveDiscussions
-     +-docker-compose.override.yml  <-- development config
      |
      +-client/         <-- Javascript, CSS, React.js components
      | +-app/          <-- Client side code
@@ -139,6 +120,10 @@ This project looks like so:
      | +-debiki-core/       <-- Code shared by the DAO and by the ./app/ code
      | +-ed-prod-one-test/  <-- A production installation, for automatic tests
      | |
+     | +-local/        <-- Ignored by .gitignore. Here you can override the
+     | |                   default config values. If you want to, turn it into
+     | |                   a Git repo.
+     | |
      | ...Third party modules
      |
      +-public/         <-- Some images and libs, plus JS and CSS that Gulp
@@ -148,9 +133,12 @@ This project looks like so:
      | +-nginx/        <-- Docker build stuff for the Nginx container
      | | +-modules/
      | |   +-nchan/    <-- WebSocket and PubSub for Nginx (a Git submodule)
+     | |
      | +-gulp/         <-- Container that runs Node.js and bundles JS and CSS
      | +-gulp-home/    <-- Mounted as Gulp container home-dir = disk cache
+     | |
      | +-...           <-- More containers...
+     | |
      | +-data/
      |   +-postgres    <-- Mounted as a volume in the Postgres container
      |   +-redis       <-- Mounted in the Redis container

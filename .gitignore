@@ -14,6 +14,7 @@ tmp
 RUNNING_PID
 nashorn-ok-delete.js
 downloads/
+modules/local/
 
 # TypeScript: grunt-ts cache, and HTML files compiled to .ts by grunt-ts.
 .tscache/

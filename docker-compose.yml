@@ -33,6 +33,11 @@ services:
       - redis
     environment:
       PLAY_HEAP_MEMORY_MB: 1048
+      HOSTNAME: "localhost"
+      CREATE_SITE_HOSTNAME: "localhost"
+      BECOME_OWNER_EMAIL_ADDRESS: "admin@example.com"
+      E2E_TEST_PASSWORD: "public"
+      FORBIDDEN_PASSWORD: "public"
 
   redis:
     image: redis:3.0.7-alpine
