@@ -32,7 +32,6 @@ client/forum/html/*.ts
 # Ignore softlinks to the Play installation directory, e.g. scripts/play-2.1.sh,
 # and scripts that shouldn't be checked in.
 scripts/activator-1.*
-scripts/nightwatch-runner.js
 
 # NPM and Bower package folders.
 node_modules/
@@ -59,11 +58,6 @@ public/res/zxcvbn.*
 # seems it's location is hardcoded,
 #   see: http://code.google.com/p/selenium/issues/detail?id=3475
 /chromedriver.log
-
-# Ignore my shorthand softlinks (to ./scripts/ and ./scripts/local/).
-s
-scripts/l
-scripts/s.sh
 
 # Play's auto generated self signed cert.
 conf/generated.keystore

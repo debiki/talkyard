@@ -6,6 +6,10 @@
 # Abort on any error
 set -e
 
+echo "Not so very tested. Do manually instead. Bye"
+exit 1
+
+
 # Check preconditions
 # ----------------------
 
