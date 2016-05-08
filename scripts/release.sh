@@ -21,7 +21,7 @@ exit 1
 # ----------------------
 
 version="`cat version.txt`"
-docker_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala [8GKB4W2]
+version_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala [8GKB4W2]
 
 # COULD: verify version nr changed since last time
 # COULD: verify version nr matches vX.YY.ZZ
@@ -32,26 +32,41 @@ docker_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala [8GKB4
 # Build Docker images
 # ----------------------
 
-docker-compose down
-docker-compose build
+sudo docker-compose down
+sudo docker-compose build
 
-# Run tests and build the 'play' container.
+# Optimize assets, run tests and build the 'play' container.
 # (We'll run e2e tests later, against the modules/ed-prod-one-tests containers.)
-s/s.sh clean test
 gulp release
-s/s.sh dist
+scripts/cli.sh clean test dist
+sudo docker-compose down
 docker/build-play-prod.sh
 
 
 # Test the images
 # ----------------------
 
-test_containers="docker-compose -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test-override.yml"
-$test_containers down
-$test_containers up -d
+# Run the 'latest' tag — it's for the images we just built above.
+# '-p edt' = EffectiveDiscussions Test project.
+test_containers="VERSION_TAG=latest docker-compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml"
+sudo $test_containers down
+# TODO move data stuff to data/whatever/ instead of whatever-data/?
+sudo rm -fr modules/ed-prod-one-test/postgres-data
+sudo rm -fr modules/ed-prod-one-test/redis-data
+sudo rm -fr modules/ed-prod-one-test/uploads
+sudo $test_containers up -d
+
 # todo: wait until everything up and running
+node_modules/selenium-standalone/bin/selenium-standalone start &
+selenium_pid=$!
+
+gulp build-e2e
+# hmm this fails the first time — seems the Play container is too slow, directly
+# after startup. Needs some kind of warmup?
 scripts/wdio target/e2e/wdio.conf.js --skip3
-$test_containers down
+
+kill $selenium_pid
+sudo $test_containers down
 
 
 # All fine, so publish images and new version number.
@@ -59,22 +74,25 @@ $test_containers down
 
 # todo: don't do this if WIP version
 
-docker tag debiki/ed-play debiki/ed-play:$docker_tag
-docker tag debiki/ed-nginx debiki/ed-nginx:$docker_tag
-docker tag debiki/ed-postgres debiki/ed-postgres:$docker_tag
+sudo docker tag debiki/ed-play debiki/ed-play:$version_tag
+sudo docker tag debiki/ed-nginx debiki/ed-nginx:$version_tag
+sudo docker tag debiki/ed-postgres debiki/ed-postgres:$version_tag
 
-docker push debiki/ed-play:$docker_tag
-docker push debiki/ed-nginx:$docker_tag
-docker push debiki/ed-postgres:$docker_tag
+sudo docker push debiki/ed-play:$version_tag
+sudo docker push debiki/ed-nginx:$version_tag
+sudo docker push debiki/ed-postgres:$version_tag
 
-echo $docker_tag >> modules/ed-versions/versions.log
+echo $version_tag >> modules/ed-versions/version-tags.log
 pushd .
 cd modules/ed-versions/
+git checkout master
 git add --update
-git commit -m "Adding verrsion $docker_tag."
+git commit -m "Add $docker_tag."
 git push origin master
 popd
 
+git tag $version_tag
+scripts/bump-assets-version.sh
 
 # no: Custom Git log message
 # todo: bump patch number in version.txt, add -SNAPSHOT

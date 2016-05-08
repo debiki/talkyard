@@ -38,6 +38,6 @@ mv play/conf play-conf
 # This readme is for the development repo. Create another one, if any, for prod.
 rm play/README.md
 
-docker build --tag=debiki/ed-play:latest .
+sudo docker build --tag=debiki/ed-play:latest .
 
 echo "Image tag: debiki/ed-play:latest"

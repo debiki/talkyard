@@ -17,7 +17,7 @@ services:
 
   play:
     build: docker/play-dev/
-    image: debiki/ed-play
+    # image debiki/ed-play instead created and tagged by docker/build-play-prod.sh.
     stdin_open: true  # otherwise Play exits
     volumes:
       - ./:/opt/ed/play/

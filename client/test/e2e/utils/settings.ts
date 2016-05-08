@@ -28,7 +28,12 @@ settings.mainSiteOrigin = settings.scheme + '://' + settings.host;
 settings.newSiteDomain = settings.newSiteDomain || settings.host;
 
 settings.debugAfterwards = args.debugAfterwards || args.da;
-settings.waitforTimeout = settings.debugAfterwards || args.noTimeout || args.nt ? 2147483647 : 10*1000;
+
+// (The default 10 seconds timeout is not enough. When a fresh Docker JVM & Play Framework
+// container is started for the very first time, it's rather slow — it takes 5-10 seconds
+// for Nashorn to compile all JS,/ that could be why. Or some other Java JIT compilation?
+// Whatever. Wait 30 seconds by default.)
+settings.waitforTimeout = settings.debugAfterwards || args.noTimeout || args.nt ? 2147483647 : 30*1000;
 
 if (settings.skip3) settings.skip3rdPartyDependentTests = true;
 

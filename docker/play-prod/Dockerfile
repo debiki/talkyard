@@ -18,9 +18,6 @@ COPY play-bin        /opt/ed/play/bin/
 COPY play-conf       /opt/ed/play/conf/
 COPY build-info      /opt/ed/build-info/
 
-# what? this one isn't being used?
-COPY localhost.conf  /opt/ed/play-conf/localhost.conf
-
 VOLUME ["/opt/ed/play-conf", "/opt/ed/uploads"]
 
 ENV PLAY_HEAP_MEMORY_MB 1000
