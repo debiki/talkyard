@@ -74,7 +74,7 @@ trait CreateSiteDao {
       transaction.insertSiteHost(newSiteHost)
 
       createSystemUser(transaction)
-      transaction.createUnknownUser()
+      transaction.createUnknownUser(transaction.currentTime)
 
       createAboutPage(browserIdData, transaction)
 

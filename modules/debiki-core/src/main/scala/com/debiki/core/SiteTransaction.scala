@@ -52,7 +52,7 @@ trait SiteTransaction {
 
 
   // Try to remove, use sth more generic like insertUser()? or insertGuest() instead?
-  def createUnknownUser()
+  def createUnknownUser(date: ju.Date)
 
   def addSiteHost(host: SiteHost)
   def loadSiteVersion(): Int

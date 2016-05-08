@@ -36,10 +36,10 @@ object Debiki {
 
     // I've hardcoded credentials to the test database here, so that it
     // cannot possibly happen, that you accidentally connect to the prod
-    // database. (You'll never name the prod schema "debiki_test",
+    // database. (You'll never name the prod schema "ed_test",
     // with "auto-deleted" as password?)
     def user =
-      if (Play.isTest) "debiki_test"
+      if (Play.isTest) "ed_test"
       else configStr("debiki.postgresql.user")
 
     def password =
@@ -48,7 +48,7 @@ object Debiki {
         configStr("debiki.postgresql.password")
 
     def database =
-      if (Play.isTest) "debiki_test"
+      if (Play.isTest) "ed_test"
       else configStr("debiki.postgresql.database")
 
     val server = Play.configuration.getString("debiki.postgresql.host").getOrElse(

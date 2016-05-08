@@ -87,14 +87,14 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
 
   def makeRandomFile(name: String, dotSuffix: String, sizeBytes: Int): FileNameRef = {
     val fileName = s"$name-" + System.currentTimeMillis() + dotSuffix
-    val file = new jio.File(s"target/tmp/$fileName")
+    val file = new jio.File(s"$tempFileDir/$fileName")
     val raf = new RandomAccessFile(file, "rw")
     raf.setLength(sizeBytes)
     val ref = UploadRef(Globals.localhostUploadsBaseUrl, UploadsDao.makeHashPath(file, ".jpg"))
     FileNameRef(fileName, file, ref)
   }
 
-  val tempFileDir = "target/tmp"
+  val tempFileDir = "/tmp/UploadsDaoAppSpec"
   new jio.File(s"$tempFileDir/dummy").getParentFile.mkdirs()
 
 

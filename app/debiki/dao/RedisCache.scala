@@ -23,7 +23,6 @@ import com.debiki.core.Prelude._
 import java.{util => ju}
 import redis.RedisClient
 import redis.api.Limit
-import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -40,11 +39,15 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
   // Is 3 times faster than String.toInt, according to the parseInt() docs.
   import _root_.redis.protocol.ParseNumber.parseInt
 
+  // Sometimes the request takes long, perhaps because of a Java GC pause? Or because of
+  // some page being swapped to disk?
+  val DefaultTimeout = 10 seconds
+
 
   def loadWatchbar(userId: UserId): Option[BareWatchbar] = {
     val futureString: Future[Option[ByteString]] = redis.get(watchbarKey(siteId, userId))
     val anyString: Option[ByteString] =
-      try Await.result(futureString, 1 second)
+      try Await.result(futureString, DefaultTimeout)
       catch {
         case _: TimeoutException => die("EsE5GK2F9", "Redis timeout")
       }
@@ -87,13 +90,13 @@ class RedisCache(val siteId: SiteId, private val redis: RedisClient) {
     removeNoLongerOnlineUserIds()
     val idStringsFuture: Future[Seq[ByteString]] = redis.zrange(usersOnlineKey(siteId), 0, -1)
     val idStrings: Seq[ByteString] =
-      try Await.result(idStringsFuture, 1 second)
+      try Await.result(idStringsFuture, DefaultTimeout)
       catch {
         case _: TimeoutException => die("EsE7YKFJ2", "Redis timeout")
       }
     val userIds = idStrings.map(parseInt)
     val numStrangersFuture: Future[Long] = redis.zcard(strangersOnlineByIpKey(siteId))
-    val numStrangers = try Await.result(numStrangersFuture, 1 second)
+    val numStrangers = try Await.result(numStrangersFuture, DefaultTimeout)
       catch {
         case _: TimeoutException => die("EsE4GKF20W", "Redis timeout")
       }

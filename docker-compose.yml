@@ -17,10 +17,11 @@ services:
 
   play:
     build: docker/play-dev/
-    # image debiki/ed-play instead built & tagged in docker/build-play-prod.sh.
+    image: debiki/ed-play
     stdin_open: true  # otherwise Play exits
     volumes:
       - ./:/opt/ed/play/
+      - ./docker/data/uploads/:/opt/ed/uploads/
       # Without this it takes forever to start because sbt would always download all dependencies.
       - ~/.ivy2/:/home/owner/.ivy2/
       - ~/.sbt/:/home/owner/.sbt/
@@ -58,6 +59,7 @@ services:
       PEER_HOST: 'postgres2'
       PEER_PORT: '5432'
       PEER_PASSWORD: 'public2'
+      CREATE_TEST_USER: 'yes'
 
   # An extra database, so you can experiment with Postgres replication and failover.
   # You don't need to start it.

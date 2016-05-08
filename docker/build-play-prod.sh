@@ -5,7 +5,7 @@
 set -e # exit on any error.
 set -x
 
-version="`cat version.txt`"
+version="`cat version.txt | sed s/WIP/SNAPSHOT/`"
 
 rm -fr target/docker-play-prod
 cp -a docker/play-prod target/docker-play-prod
