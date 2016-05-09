@@ -587,6 +587,13 @@ trait UserDao {
     readWriteTransaction { transaction =>
       val user = transaction.loadTheCompleteUser(preferences.userId)
 
+      // Perhaps there's some security problem that would results in a non-staff user
+      // getting an email about each and every new post. So, for now:
+      SECURITY // (Later, do some security review, add more tests, and remove this restriction.)
+      if (preferences.emailForEveryNewPost && !user.isStaff)
+        throwForbidden("EsE7YKF24", o"""Currently only staff may choose be notified about
+          every new post""")
+
       // For now, don't allow people to change their username. In the future, changing
       // it should be alloowed, but only very infrequently? Or only the very first few days.
       if (user.username != preferences.username)
