@@ -35,7 +35,7 @@ version_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala [8GKB
 sudo docker-compose down
 sudo docker-compose build
 
-# Optimize assets, run tests and build the 'play' container.
+# Optimize assets, run unit & integration tests and build the Play Framework image
 # (We'll run e2e tests later, against the modules/ed-prod-one-tests containers.)
 gulp release
 scripts/cli.sh clean test dist
@@ -87,7 +87,7 @@ pushd .
 cd modules/ed-versions/
 git checkout master
 git add --update
-git commit -m "Add $docker_tag."
+git commit -m "Add $version_tag."
 git push origin master
 popd
 
