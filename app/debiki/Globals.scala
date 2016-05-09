@@ -71,6 +71,8 @@ object Globals extends Globals {
   */
 class Globals {
 
+  def config = Play.configuration
+
   /** Can be accessed also after the test is done and Play.maybeApplication is None.
     */
   lazy val wasTest = Play.isTest
@@ -218,6 +220,7 @@ class Globals {
 
   /** New sites may be created only from this hostname. */
   def anyCreateSiteHostname = state.anyCreateSiteHostname
+  def anyCreateTestSiteHostname = state.anyCreateTestSiteHostname
 
 
   def poweredBy = s"$scheme://www.debiki.com"
@@ -396,7 +399,7 @@ class Globals {
 
     // Redis. (A Redis client pool makes sense if we haven't saturate the CPU on localhost, or
     // if there're many Redis servers and we want to round robin between them. Not needed, now.)
-    val redisHost = Play.configuration.getString("debiki.redis.host") getOrElse "localhost"
+    val redisHost = config.getString("debiki.redis.host").noneIfBlank getOrElse "localhost"
     val redisClient = RedisClient(host = redisHost)(Akka.system)
 
     val dbDaoFactory = new RdbDaoFactory(
@@ -437,7 +440,7 @@ class Globals {
 
     val notifierActorRef = Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory)
 
-    val nginxHost = Play.configuration.getString("debiki.nginx.host") getOrElse "localhost"
+    val nginxHost = config.getString("debiki.nginx.host").noneIfBlank getOrElse "localhost"
     val (pubSub, strangerCounter) = PubSub.startNewActor(Akka.system, nginxHost, redisClient)
 
     val renderContentActorRef = RenderContentService.startNewActor(Akka.system, siteDaoFactory)
@@ -451,19 +454,19 @@ class Globals {
       Play.configuration.getBoolean("crazyFastStartSkipSearch") getOrElse false
 
     private def anyFullTextSearchDbPath =
-      Play.configuration.getString("fullTextSearchDb.dataPath")
+      config.getString("fullTextSearchDb.dataPath").noneIfBlank
 
     val applicationVersion = "0.00.24"  // later, read from some build config file
 
     val applicationSecret =
-      Play.configuration.getString("play.crypto.secret").getOrDie(
+      config.getString("play.crypto.secret").noneIfBlank.getOrDie(
         "Config value 'play.crypto.secret' missing [DwE75FX0]")
 
     val e2eTestPassword: Option[String] =
-      Play.configuration.getString("debiki.e2eTestPassword")
+      config.getString("debiki.e2eTestPassword").noneIfBlank
 
     val forbiddenPassword: Option[String] =
-      Play.configuration.getString("debiki.forbiddenPassword")
+      config.getString("debiki.forbiddenPassword").noneIfBlank
 
     val secure = Play.configuration.getBoolean("debiki.secure") getOrElse {
       p.Logger.info("Config value 'debiki.secure' missing; defaulting to true. [DwM3KEF2]")
@@ -490,7 +493,7 @@ class Globals {
 
     val baseDomainNoPort =
       if (Play.isTest) "localhost"
-      else Play.configuration.getString("debiki.baseDomain") getOrElse "localhost"
+      else config.getString("debiki.baseDomain").noneIfBlank getOrElse "localhost"
 
     val baseDomainWithPort =
       if (secure && port == 443) baseDomainNoPort
@@ -499,14 +502,15 @@ class Globals {
 
 
     /** The hostname of the site created by default when setting up a new server. */
-    val firstSiteHostname = Play.configuration.getString(FirstSiteHostnameConfigValue)
+    val firstSiteHostname = config.getString(FirstSiteHostnameConfigValue).noneIfBlank
 
     if (firstSiteHostname.exists(_ contains ':'))
       p.Logger.error("Config value debiki.hostname contains ':' [DwE4KUWF7]")
 
-    val becomeFirstSiteOwnerEmail = Play.configuration.getString(BecomeOwnerEmailConfigValue)
+    val becomeFirstSiteOwnerEmail = config.getString(BecomeOwnerEmailConfigValue).noneIfBlank
 
-    val anyCreateSiteHostname = Play.configuration.getString("debiki.createSiteHostname")
+    val anyCreateSiteHostname = config.getString("debiki.createSiteHostname").noneIfBlank
+    val anyCreateTestSiteHostname = config.getString("debiki.createTestSiteHostname").noneIfBlank
 
     // The hostname must be directly below the base domain, otherwise
     // wildcard HTTPS certificates won't work: they cover 1 level below the
@@ -520,7 +524,7 @@ class Globals {
 
     val anyUploadsDir = {
       import Globals.LocalhostUploadsDirConfigValueName
-      val value = Play.configuration.getString(LocalhostUploadsDirConfigValueName)
+      val value = config.getString(LocalhostUploadsDirConfigValueName).noneIfBlank
       val pathSlash = if (value.exists(_.endsWith("/"))) value else value.map(_ + "/")
       pathSlash match {
         case None =>

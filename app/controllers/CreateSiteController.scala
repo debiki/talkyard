@@ -40,7 +40,7 @@ object CreateSiteController extends Controller {
 
   // Let people use hostnames that start with 'test-' — good to know which sites are
   // in fact just people's test sites.
-  // But reserve 'test--' (see if statement further below) and these prefixes:
+  // But reserve 'test--' (see if statement further below [7UKPwF2]) and these prefixes:
   private val TestSitePrefixes = Seq("smoke-test-", "smoketest-", "delete-", "e2e-")
 
   // Don't allow names like x2345.example.com — x2345 is shorter than 6 chars (x23456 is ok though).
@@ -48,20 +48,20 @@ object CreateSiteController extends Controller {
 
   def showPage(isTest: String) = GetAction { request =>
     val isTestBool = Try(isTest.toBoolean).toOption getOrElse throwBadArgument("EsE5JUM2", "isTest")
-    throwIfMayNotCreateSite(request)
+    throwIfMayNotCreateSite(request, isTestBool)
     Ok(views.html.createsite.createSitePage(isTestBool, SiteTpi(request)).body) as HTML
   }
 
 
   def createSite = AsyncPostJsonAction(RateLimits.CreateSite, maxLength = 500) { request =>
-    throwIfMayNotCreateSite(request)
+    val isTestSiteOkayToDelete = (request.body \ "testSiteOkDelete").asOpt[Boolean].contains(true)
+    throwIfMayNotCreateSite(request, isTestSiteOkayToDelete)
 
     val acceptTermsAndPrivacy = (request.body \ "acceptTermsAndPrivacy").as[Boolean]
     val emailAddress = (request.body \ "emailAddress").as[String]
     val localHostname = (request.body \ "localHostname").as[String]
     val anyEmbeddingSiteAddress = (request.body \ "embeddingSiteAddress").asOpt[String]
     val organizationName = (request.body \ "organizationName").as[String].trim
-    val isTestSiteOkayToDelete = (request.body \ "testSiteOkDelete").asOpt[Boolean].contains(true)
     val okE2ePassword = hasOkE2eTestPassword(request.request)
 
     if (!acceptTermsAndPrivacy)
@@ -77,7 +77,7 @@ object CreateSiteController extends Controller {
     if (!isValidNonLocalEmailAddress(emailAddress))
       throwForbidden("DwE8FKJ4", "Bad email address")
 
-    // Test sites have a certain prefix, so I know it's okay to delete them.
+    // Test sites have a certain prefix, so I know it's okay to delete them. [7UKPwF2]
     if (TestSitePrefixes.exists(localHostname startsWith) && !isTestSiteOkayToDelete)
       throwForbidden("DwE48WK3", o"""Please choose another hostname; it must not
           start with any of: ${ TestSitePrefixes.mkString(", ") }""")
@@ -127,12 +127,16 @@ object CreateSiteController extends Controller {
   private val OkWebsiteNameRegex = """[a-z][a-z0-9\-]{0,38}[a-z0-9]""".r
 
 
-  private def throwIfMayNotCreateSite(request: DebikiRequest[_]) {
+  private def throwIfMayNotCreateSite(request: DebikiRequest[_], isTest: Boolean) {
+    if (isTest && Globals.anyCreateTestSiteHostname.contains(request.hostname)) {
+      // We're creating a test site with a test address, fine.
+      return
+    }
     Globals.anyCreateSiteHostname match {
       case None =>
         throwForbidden("DwE4KEGG0", "This server is not configured to allow creation of new sites")
       case Some(createSiteHostname) =>
-        if (createSiteHostname != request.hostname && !hasOkForbiddenPassword(request))
+        if (createSiteHostname != request.hostname)
           throwForbidden("DwE093AQ2", "You cannot create new sites from this address")
     }
   }

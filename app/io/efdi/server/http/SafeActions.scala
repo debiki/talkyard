@@ -147,19 +147,25 @@ object SafeActions {
         case ex: Error =>
           internalError(request, ex, "DwE500ERRA")
       }
+
       val anyNewFakeIp = request.queryString.get("fakeIp").flatMap(_.headOption)
       anyNewFakeIp foreach { fakeIp =>
         futureResult = futureResult map { result =>
           result.withCookies(SecureCookie("dwCoFakeIp", fakeIp))
         }
       }
-      val anyNewE2eTestPassword = request.queryString.get("e2eTestPassword").flatMap(_.headOption)
-      anyNewE2eTestPassword foreach { password =>
-        futureResult = futureResult map { result =>
-          result.withCookies(SecureCookie("esCoE2eTestPassword", password,
-            maxAgeSeconds = Some(600)))
+
+      def setTestPasswordCookie(paramName: String, cookieName: String) {
+        val anyPassword = request.queryString.get(paramName).flatMap(_.headOption)
+        anyPassword foreach { password =>
+          futureResult = futureResult map { result =>
+            result.withCookies(SecureCookie(cookieName, password, maxAgeSeconds = Some(600)))
+          }
         }
       }
+      setTestPasswordCookie("e2eTestPassword", "esCoE2eTestPassword")
+      setTestPasswordCookie("forbiddenPassword", "esCoForbiddenPassword")
+
       futureResult
     }
   }
