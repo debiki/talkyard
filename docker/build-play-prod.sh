@@ -32,6 +32,7 @@ set -e
 # usually have to be pushed (and pulled by others).
 mkdir play-lib-debiki
 mv play/lib/*debiki* play-lib-debiki/
+mv play/lib/*effectivediscussions* play-lib-debiki/
 mv play/bin play-bin
 mv play/conf play-conf
 

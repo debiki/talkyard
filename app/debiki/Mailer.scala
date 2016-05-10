@@ -48,7 +48,7 @@ object Mailer {
     val anySmtpServerName = config.getString("debiki.smtp.host").orElse(
       config.getString("debiki.smtp.server")).noneIfBlank // old deprecated name
     val anySmtpPort = config.getInt("debiki.smtp.port")
-    val anySmtpSslPort = config.getInt("debiki.smtp.sslport")
+    val anySmtpSslPort = config.getInt("debiki.smtp.sslPort")
     val anySmtpUserName = config.getString("debiki.smtp.user").noneIfBlank
     val anySmtpPassword = config.getString("debiki.smtp.password").noneIfBlank
     val anyUseSslOrTls = config.getBoolean("debiki.smtp.useSslOrTls")

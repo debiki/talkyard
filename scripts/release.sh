@@ -25,6 +25,8 @@ version_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala [8GKB
 
 # COULD: verify version nr changed since last time
 # COULD: verify version nr matches vX.YY.ZZ
+# COULD: verify has git-pushed to origin
+# COULD: verify is master branch?
 # COULD ask confirm if major or minor bumped (but not if patch bumped)
 # COULD ask confirm if version nr less than previous nr
 
@@ -38,6 +40,8 @@ sudo docker-compose build
 # Optimize assets, run unit & integration tests and build the Play Framework image
 # (We'll run e2e tests later, against the modules/ed-prod-one-tests containers.)
 gulp release
+# Delete min.js & min.css (keep min.js/css.gz), so Docker diffs a few MB smaller.
+rm public/res/*.min.js public/res/*.min.css
 scripts/cli.sh clean test dist
 sudo docker-compose down
 docker/build-play-prod.sh
