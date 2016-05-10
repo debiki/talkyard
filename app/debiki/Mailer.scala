@@ -48,14 +48,15 @@ object Mailer {
     val anySmtpServerName = config.getString("debiki.smtp.host").orElse(
       config.getString("debiki.smtp.server")).noneIfBlank // old deprecated name
     val anySmtpPort = config.getInt("debiki.smtp.port")
+    val anySmtpSslPort = config.getInt("debiki.smtp.sslport")
     val anySmtpUserName = config.getString("debiki.smtp.user").noneIfBlank
     val anySmtpPassword = config.getString("debiki.smtp.password").noneIfBlank
     val anyUseSslOrTls = config.getBoolean("debiki.smtp.useSslOrTls")
     val anyFromAddress = config.getString("debiki.smtp.fromAddress").noneIfBlank
 
     val actorRef =
-        (anySmtpServerName, anySmtpPort, anySmtpUserName, anySmtpPassword, anyFromAddress) match {
-      case (Some(serverName), Some(port), Some(userName), Some(password), Some(fromAddress)) =>
+        (anySmtpServerName, anySmtpPort, anySmtpSslPort, anySmtpUserName, anySmtpPassword, anyFromAddress) match {
+      case (Some(serverName), Some(port), Some(sslPort), Some(userName), Some(password), Some(fromAddress)) =>
         val useSslOrTls = anyUseSslOrTls getOrElse {
           p.Logger.info(o"""Email config value debiki.smtp.useSslOrTls not configured,
             defaulting to true.""")
@@ -66,6 +67,7 @@ object Mailer {
             daoFactory,
             serverName = serverName,
             port = port,
+            sslPort = sslPort,
             useSslOrTls = useSslOrTls,
             userName = userName,
             password = password,
@@ -76,13 +78,14 @@ object Mailer {
         var message = "I won't send emails, because:"
         if (anySmtpServerName.isEmpty) message += " No debiki.smtp.host configured."
         if (anySmtpPort.isEmpty) message += " No debiki.smtp.port configured."
+        if (anySmtpSslPort.isEmpty) message += " No debiki.smtp.sslPort configured."
         if (anySmtpUserName.isEmpty) message += " No debiki.smtp.user configured."
         if (anySmtpPassword.isEmpty) message += " No debiki.smtp.password configured."
         if (anyFromAddress.isEmpty) message += " No debiki.smtp.fromAddress configured."
         p.Logger.info(message)
         actorSystem.actorOf(
           Props(new Mailer(
-            daoFactory, serverName = "", port = -1, useSslOrTls = false,
+            daoFactory, serverName = "", port = -1, sslPort = -1, useSslOrTls = false,
             userName = "", password = "", fromAddress = "", broken = true)),
           name = s"BrokenMailerActor-$testInstanceCounter")
     }
@@ -110,6 +113,7 @@ class Mailer(
   val daoFactory: SiteDaoFactory,
   val serverName: String,
   val port: Int,
+  val sslPort: Int,
   val useSslOrTls: Boolean,
   val userName: String,
   val password: String,
@@ -194,6 +198,7 @@ class Mailer(
     val apacheCommonsEmail = new acm.HtmlEmail()
     apacheCommonsEmail.setHostName(serverName)
     apacheCommonsEmail.setSmtpPort(port)
+    apacheCommonsEmail.setSslSmtpPort(sslPort.toString)
     apacheCommonsEmail.setAuthenticator(new acm.DefaultAuthenticator(userName, password))
     apacheCommonsEmail.setSSLOnConnect(useSslOrTls)
 
