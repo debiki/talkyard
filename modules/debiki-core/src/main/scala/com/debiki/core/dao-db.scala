@@ -176,11 +176,49 @@ object DbDao {
   }
 
 
+  // COULD break out all this scrypt stuff to a separate Crypto class.
+
+  @volatile var warmUpScryptDone = false
+
+  def warmUpScrypt(many: Boolean = true) {
+    // This line takes about 4 minutes (!) in a Google Compute Engine small instance, 1 vCPU
+    // but on my laptop, only like 0.1 seconds. [8GY2KG4]
+    System.out.println(s"... ${System.currentTimeMillis()} warming up scrypt, step 1: scrypt(2, 1, 1)")
+    SCryptUtil.scrypt("dummy password 1", 2, 1, 1) // 2 = 2^1
+    if (many) {
+      System.out.println(s"... ${System.currentTimeMillis()} warming up scrypt, step 1.5")
+      SCryptUtil.scrypt("dummy password 4", 2, 8, 1)
+      // These lines < 0.1 seconds in total (in GCE).
+      System.out.println(s"... ${System.currentTimeMillis()} warming up scrypt, step 2")
+      SCryptUtil.scrypt("dummy password 4", 16, 8, 1)
+      System.out.println(s"... ${System.currentTimeMillis()} warming up scrypt, step 3")
+      SCryptUtil.scrypt("dummy password 8", 256, 8, 1) // 2^8
+      System.out.println(s"... ${System.currentTimeMillis()} warming up scrypt, step 4")
+      SCryptUtil.scrypt("dummy password 14", 16384, 8, 1) // 2^14
+      // This about 0.2 seconds (in GCE).
+      System.out.println(s"... ${System.currentTimeMillis()} warming up scrypt, step last")
+      SCryptUtil.scrypt("dummy password 16", 65536, 8, 1) // 2^16
+    }
+    warmUpScryptDone = true
+  }
+
+  object ScryptNotWarmedUpException extends QuickMessageException(
+    "Scrypt not warmed up [_EsESCRYPT_]")
+
   def saltAndHashPassword(plainTextPassword: String): String = {
+    // The first call to scrypt can take up to 4 minutes in Google Compute Cloud, 1vCPU.
+    // So throw an error so we can show an info dialog "please wait a minute" in the browser.
+    // (This'll happen if someone attempts to sign up just after server restart.)
+    if (!warmUpScryptDone)
+      throw ScryptNotWarmedUpException
+
     // This is what I was using for bcrypt previously: val logRounds = 13 // 10 is the default.
     // Now, scrypt though, with: n = 2^17 = 131072, r = 8, p = 1  -- no, use 2^16 = 65536
     // (2^14 was recommended in 2009 for web apps, and 2^20 for files
     // if waiting 5 seconds was okay. 2^17 is overkill I would think.)
+    // This takes long, perhaps one minute, the very first time in Google Cloud Engine
+    // on a small instance (1 vCPU). Thereafter, it's fast, like 0.1 seconds? So, I'm
+    // calling scrypt() on server start, in order to warm up this code, see [8GY2KG4].
     val hash = SCryptUtil.scrypt(plainTextPassword, 65536, 8, 1)
     s"$ScryptPrefix$hash"
   }

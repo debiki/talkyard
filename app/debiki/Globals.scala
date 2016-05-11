@@ -24,6 +24,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
 import com.github.benmanes.caffeine
+import com.lambdaworks.crypto.SCryptUtil
 import com.zaxxer.hikari.HikariDataSource
 import debiki.Globals.NoStateError
 import debiki.antispam.AntiSpam
@@ -263,6 +264,14 @@ class Globals {
       tryCreateStateUntilKilled()
     }
 
+    // Warm up / just-in-time compile scrypt(), which is very CPU intensive. [8GY2KG4]
+    // Otherwise, the server will seem to totally stop for some minutes, for the very first user
+    // who signs up (and thus gets her password hashed).
+    Future {
+      p.Logger.info("Warming up scrypt...")
+      DbDao.warmUpScrypt(config.getBoolean("scryptMany").getOrElse(true))
+      p.Logger.info("... Done warming up scrypt.")
+    }
 
     try {
       Await.ready(createStateFuture, (Play.isTest ? 99 | 5) seconds)

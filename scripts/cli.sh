@@ -8,6 +8,10 @@ cd ..
 # cli = comman line interface. That is, starts a prompt where you can type
 # things like 'clean', 'test', 'compile', 'run', 'dist', 'console'.
 
+# (Don't start nginx — apparently it won't find the Play container, because Play
+# is started with 'run' not 'up' I would think, so it doesn't get the correct
+# network address?)
+
 sudo docker-compose run --rm --service-ports play /opt/typesafe-activator/activator \
   -jvm-debug 9999 \
   -Dcom.sun.management.jmxremote.port=3333 \

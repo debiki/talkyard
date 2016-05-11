@@ -14,7 +14,7 @@ exit 1
 # ----------------------
 
 # COULD: Check is in project root, & is git repository, & no outstanding changes.
-# COULD: Check all required ports open
+# COULD: Check all required ports open: 80, 443, 900, 9443, 9999, 3333
 
 
 # Derive version number
@@ -54,10 +54,7 @@ docker/build-play-prod.sh
 # '-p edt' = EffectiveDiscussions Test project.
 test_containers="VERSION_TAG=latest docker-compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml"
 sudo $test_containers down
-# TODO move data stuff to data/whatever/ instead of whatever-data/?
-sudo rm -fr modules/ed-prod-one-test/postgres-data
-sudo rm -fr modules/ed-prod-one-test/redis-data
-sudo rm -fr modules/ed-prod-one-test/uploads
+sudo rm -fr modules/ed-prod-one-test/data
 sudo $test_containers up -d
 
 # todo: wait until everything up and running
@@ -90,7 +87,7 @@ echo $version_tag >> modules/ed-versions/version-tags.log
 pushd .
 cd modules/ed-versions/
 git checkout master
-git add --update
+git add version-tags.log
 git commit -m "Add $version_tag."
 git push origin master
 popd
