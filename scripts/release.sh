@@ -93,7 +93,7 @@ git push origin master
 popd
 
 git tag $version_tag
-scripts/bump-assets-version.sh
+scripts/bump-versions.sh
 
 # no: Custom Git log message
 # todo: bump patch number in version.txt, add -SNAPSHOT

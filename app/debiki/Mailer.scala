@@ -159,7 +159,7 @@ class Mailer(
     // — don't send those emails, to keep down the bounce rate.
     if (broken || emailToSend.sentTo.endsWith("example.com") ||
         emailToSend.sentTo.endsWith("ex.com") ||
-        emailToSend.sentTo.endsWith("x.c")) {
+        emailToSend.sentTo.endsWith("x.co")) {
       fakeSendAndRememberForE2eTests(emailToSend, tenantDao)
       return
     }

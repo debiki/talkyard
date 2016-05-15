@@ -65,19 +65,20 @@ object ImageUtils {
 
   /** Compresses large files more.
     */
-  def jpgCompressionQualityForSizeBytes(sizeBytes: Int): Float = {
+  def jpgCompressionQualityForSizeBytes(sizeBytes: Int, origSizeBytes: Int): Float = {
     // Don't know how much sense these numbers make.
     val Kilobytes = 1000
-    if (sizeBytes > 7000 * Kilobytes) 0.30f
-    else if (sizeBytes > 5000 * Kilobytes) 0.35f
-    else if (sizeBytes > 4000 * Kilobytes) 0.40f
-    else if (sizeBytes > 3000 * Kilobytes) 0.50f
-    else if (sizeBytes > 2100 * Kilobytes) 0.60f
-    else if (sizeBytes > 1500 * Kilobytes) 0.70f
-    else if (sizeBytes > 1000 * Kilobytes) 0.75f
-    else if (sizeBytes > 600 * Kilobytes) 0.80f
-    else if (sizeBytes > 400 * Kilobytes) 0.85f
-    else if (sizeBytes > 40 * Kilobytes) 0.90f
+    if (origSizeBytes > 7000 * Kilobytes) 0.30f
+    else if (origSizeBytes > 5000 * Kilobytes) 0.35f
+    else if (origSizeBytes > 4000 * Kilobytes) 0.40f
+    else if (origSizeBytes > 3000 * Kilobytes) 0.50f
+    else if (origSizeBytes > 2000 * Kilobytes) 0.60f
+    else if (origSizeBytes > 1400 * Kilobytes) 0.65f
+    else if (origSizeBytes > 900 * Kilobytes) 0.70f
+    else if (origSizeBytes > 600 * Kilobytes) 0.75f
+    else if (origSizeBytes > 300 * Kilobytes) 0.80f
+    else if (origSizeBytes > 100 * Kilobytes) 0.85f
+    else if (origSizeBytes > 30 * Kilobytes) 0.90f
     else 0.95f
   }
 
@@ -85,7 +86,8 @@ object ImageUtils {
   /** Makes images smaller so they won't waste disk space.
     * Based on: http://stackoverflow.com/a/26319958/694469
     */
-  def convertToCompressedJpeg(imagePerhapsAlpha: BufferedImage, destination: jio.File) {
+  def convertToCompressedJpeg(imagePerhapsAlpha: BufferedImage, origSizeBytes: Int,
+        destination: jio.File) {
     var writer: ImageWriter = null
     if (destination.exists)
       die("DwE6MPF2", "Destination image file already exists: " + destination.toPath.toString)
@@ -116,7 +118,8 @@ object ImageUtils {
         // I think that without explicit mode, the compression quality will be ignored.
         params.setCompressionMode(ImageWriteParam.MODE_EXPLICIT)
         val approxSizeBytes = imageSizeBytes(imageRgb)
-        params.setCompressionQuality(jpgCompressionQualityForSizeBytes(approxSizeBytes))
+        params.setCompressionQuality(
+          jpgCompressionQualityForSizeBytes(approxSizeBytes, origSizeBytes))
 
         val outputStream = new FileImageOutputStream(destination)
         writer.setOutput(outputStream)

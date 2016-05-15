@@ -87,7 +87,7 @@ trait UploadsDao {
           }
           else {
             tempCompressedFile = Some(new jio.File(tempFile.toPath + ".compressed.jpg"))
-            ImageUtils.convertToCompressedJpeg(image, tempCompressedFile.get)
+            ImageUtils.convertToCompressedJpeg(image, origSize.toInt, tempCompressedFile.get)
             val compressedSize = tempCompressedFile.get.length
             val tempFileSize = tempFile.length
             if (compressedSize < tempFileSize) {
