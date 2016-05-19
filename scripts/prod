@@ -1,0 +1,7 @@
+#!/bin/bash
+
+test_containers="VERSION_TAG=latest docker-compose -p edt -f modules/ed-prod-one-test/docker-compose.yml -f modules/ed-prod-one-test/debug.yml -f modules/ed-prod-one-test-override.yml"
+
+sudo $test_containers "$@"
+
+# vim: et ts=2 sw=2 tw=0 fo=r

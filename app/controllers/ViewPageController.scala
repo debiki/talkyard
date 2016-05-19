@@ -64,6 +64,7 @@ object ViewPageController extends mvc.Controller {
 
   private def viewPageImpl(request: GetRequest): Future[Result] = {
     dieIfAssetsMissingIfDevTest()
+    Globals.throwForbiddenIfSecretNotChanged()
 
     val specifiedPagePath = PagePath.fromUrlPath(request.siteId, request.request.path) match {
       case PagePath.Parsed.Good(path) => path

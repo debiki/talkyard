@@ -10,9 +10,10 @@ services:
     mem_limit: 700M
     environment:
       PLAY_HEAP_MEMORY_MB: 500
-      E2E_TEST_PASSWORD: public
-      FORBIDDEN_PASSWORD: public
-      CREATE_SITE_HOSTNAME: localhost
+      CREATE_SITE_HOSTNAME: 'localhost'
+      E2E_TEST_PASSWORD: 'public'
+      FORBIDDEN_PASSWORD: 'public'
+      CRYPTO_SECRET: 'public'
       POSTGRES_PASSWORD: 'public'
 
   redis:

@@ -26,6 +26,7 @@ import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
 import com.github.benmanes.caffeine
 import com.lambdaworks.crypto.SCryptUtil
 import com.zaxxer.hikari.HikariDataSource
+import debiki.DebikiHttp.throwForbidden
 import debiki.Globals.NoStateError
 import debiki.antispam.AntiSpam
 import debiki.dao._
@@ -126,8 +127,16 @@ class Globals {
 
   def applicationVersion = state.applicationVersion
 
-  def applicationSecret = state.applicationSecret
+  def applicationSecret = {
+    throwForbiddenIfSecretNotChanged()
+    state.applicationSecret
+  }
 
+  def throwForbiddenIfSecretNotChanged() {
+    if (state.applicationSecretNotChanged && Play.isProd)
+      throwForbidden("EsE4UK20F", o"""Please edit the 'play.crypto.secret' config value,
+          its still set to 'changeme'""")
+  }
 
   /** Lets people do weird things, namely fake their ip address (&fakeIp=... url param)
     * in order to create many e2e test sites — also in prod mode, for smoke tests.
@@ -470,6 +479,8 @@ class Globals {
     val applicationSecret =
       config.getString("play.crypto.secret").noneIfBlank.getOrDie(
         "Config value 'play.crypto.secret' missing [DwE75FX0]")
+
+    val applicationSecretNotChanged = applicationSecret == "changeme"
 
     val e2eTestPassword: Option[String] =
       config.getString("debiki.e2eTestPassword").noneIfBlank

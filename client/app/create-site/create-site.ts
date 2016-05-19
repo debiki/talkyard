@@ -135,10 +135,12 @@ var CreateWebsiteComponent = React.createClass(<any> {
   },
 
   handleSubmit: function(event) {
+    var testSitePrefix = // dupl code [5UKF03]
+      location.pathname.indexOf('create-test-site') !== -1 ? 'test--' : '';
     event.preventDefault();
     Server.createSite(
         this.refs.emailAddress.getValue(),
-        this.refs.localHostname.getValue(),
+        testSitePrefix + this.refs.localHostname.getValue(),
         null,
         this.refs.organizationName.getValue(),
         (newSiteOrigin) => {
@@ -195,7 +197,7 @@ var CreateWebsiteComponent = React.createClass(<any> {
           LocalHostnameInput({ label: 'Site Address:', placeholder: 'your-forum-name',
               style: { display: state.showHostname ? 'block' : 'none' },
               help: "The address of your new site. (You can change this later,  " +
-                  "e.g. to a custom domain. Only partly implemented though.)",
+                  "e.g. to a custom domain.)",
               ref: 'localHostname',
               onChangeValueOk: (isOk) => this.reportOkay('hostname', isOk) }),
 
@@ -352,6 +354,10 @@ var AcceptTerms = createClassAndFactory({
  * Then they can return to the default-domain address, if they mess up, and fix things.
  */
 var LocalHostnameInput = createClassAndFactory({
+  contextTypes: {
+    router: React.PropTypes.object.isRequired
+  },
+
   getInitialState: function() {
     return { value: '' }
   },
@@ -416,11 +422,15 @@ var LocalHostnameInput = createClassAndFactory({
         anyError = r.b({ style: { color: 'red' }}, anyError);
       }
     }
+    // Check the router state, not location pathname, later after having upgr to react-router-
+    // -some-version-for-which-the-docs-works.
+    var testSitePrefix = // dupl code [5UKF03]
+        location.pathname.indexOf('create-test-site') !== -1 ? 'test--' : '';
     return (
       r.div({ className: 'form-group' + (anyError ? ' has-error' : ''), style: this.props.style },
         r.label({ htmlFor: 'dwLocalHostname' }, this.props.label),
         r.br(),
-        r.kbd({}, location.protocol + '//'),
+        r.kbd({}, location.protocol + '//' + testSitePrefix),
         r.input({ type: 'text', id: 'dwLocalHostname', className: 'form-control',
             placeholder: this.props.placeholder, ref: 'input', onChange: this.onChange,
             value: value, onFocus: this.showErrors }),

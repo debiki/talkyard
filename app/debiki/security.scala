@@ -290,7 +290,7 @@ object Sid {
   val CookieName = "dwCoSid"
 
   private val sidHashLength = 14
-  private val secretSalt = debiki.Globals.applicationSecret
+  private def secretSalt = debiki.Globals.applicationSecret
   private val _sidMaxMillis = 2 * 31 * 24 * 3600 * 1000  // two months
   //private val _sidExpireAgeSecs = 5 * 365 * 24 * 3600  // five years
 
