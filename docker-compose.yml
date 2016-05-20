@@ -7,6 +7,7 @@ services:
     volumes:
       - ./docker/data/uploads/:/opt/ed/uploads/:ro
       - ./docker/data/letsencrypt/:/etc/letsencrypt/:ro
+      - ./docker/default-nginx-server.conf:/etc/nginx/default-site/default-server.conf:ro
     ports:
       # Don't expose port 81 (for publishing WebSocket events)  — it should be reachable only
       # from inside the Docker network.

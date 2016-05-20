@@ -155,6 +155,7 @@ RUN apk add --no-cache bash tree curl net-tools
 
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY vhost.conf /etc/nginx/vhost.conf
+COPY default-site /etc/nginx/default-site/
 COPY 502.html   /opt/nginx/html/502.html
 
 # Don't expose port 81 (the publish-websocket-messages port) — it should be accessible from
