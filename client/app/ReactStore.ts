@@ -392,10 +392,13 @@ ReactStore.activateMyself = function(anyNewMe: Myself) {
     // *and* at the same time call activateMyself() — then here we'll sort by the wrong thing.
   }
 
-  _.each(store.me.restrictedCategories, (category: Category) => {
-    store.categories.push(category);
-  });
-  store.categories.sort((c: Category, c2: Category) => c.position - c2.position);
+  // Absent on about-user pages.
+  if (store.categories) {
+    _.each(store.me.restrictedCategories, (category:Category) => {
+      store.categories.push(category);
+    });
+    store.categories.sort((c:Category, c2:Category) => c.position - c2.position);
+  }
 
   debiki2.pubsub.subscribeToServerEvents();
   store.quickUpdate = false;

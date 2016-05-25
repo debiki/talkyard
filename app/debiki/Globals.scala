@@ -273,13 +273,6 @@ class Globals {
       tryCreateStateUntilKilled()
     }
 
-    // Delete. [8GY2KG4]
-    Future {
-      p.Logger.info("Warming up scrypt...")
-      DbDao.warmUpScrypt(config.getBoolean("scryptMany").getOrElse(true))
-      p.Logger.info("... Done warming up scrypt.")
-    }
-
     try {
       Await.ready(createStateFuture, (Play.isTest ? 99 | 5) seconds)
       if (killed) {

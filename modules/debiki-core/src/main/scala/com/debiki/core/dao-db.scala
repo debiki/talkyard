@@ -175,33 +175,12 @@ object DbDao {
     }
   }
 
-  // Delete. I'll just verify that /dev/./urandom works.
-  def warmUpScrypt(many: Boolean = true) {
-    // This line takes about 4 minutes (!) in a Google Compute Engine small instance, 1 vCPU
-    // but on my laptop, only like 0.1 seconds. [8GY2KG4]
-    System.out.println(s"... ${System.currentTimeMillis()} warming up scrypt, step 1: scrypt(2, 1, 1)")
-    SCryptUtil.scrypt("dummy password 1", 2, 1, 1) // 2 = 2^1
-    if (many) {
-      System.out.println(s"... ${System.currentTimeMillis()} warming up scrypt, step 1.5")
-      SCryptUtil.scrypt("dummy password 4", 2, 8, 1)
-      // These lines < 0.1 seconds in total (in GCE).
-      System.out.println(s"... ${System.currentTimeMillis()} warming up scrypt, step 2")
-      SCryptUtil.scrypt("dummy password 4", 16, 8, 1)
-      System.out.println(s"... ${System.currentTimeMillis()} warming up scrypt, step 3")
-      SCryptUtil.scrypt("dummy password 8", 256, 8, 1) // 2^8
-      System.out.println(s"... ${System.currentTimeMillis()} warming up scrypt, step 4")
-      SCryptUtil.scrypt("dummy password 14", 16384, 8, 1) // 2^14
-      // This about 0.2 seconds (in GCE).
-      System.out.println(s"... ${System.currentTimeMillis()} warming up scrypt, step last")
-      SCryptUtil.scrypt("dummy password 16", 65536, 8, 1) // 2^16
-    }
-  }
-
   def saltAndHashPassword(plainTextPassword: String): String = {
     // Notes:
     // 1) In Dockerfile [30PUK42] Java has been configured to use /dev/urandom — otherwise,
     // the first call to scrypt() here might block for up to 30 minutes, when scrypt
-    // waits for "enough entropy".
+    // blocks when reading for /dev/random, which waits for "enough entropy" (but urandom is fine,
+    // see the Dockerfile).
     // 2) This is what I was using for bcrypt previously: val logRounds = 13 // 10 is the default.
     // Now, scrypt though, with: n = 2^17 = 131072, r = 8, p = 1  -- no, use 2^16 = 65536
     // (2^14 was recommended in 2009 for web apps, and 2^20 for files
