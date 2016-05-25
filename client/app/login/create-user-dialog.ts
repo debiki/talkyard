@@ -219,16 +219,6 @@ export var CreateUserDialogContent = createClassAndFactory({
       });
       return IgnoreThisError;
     }
-    if (hasErrorCode(failedRequest, '_EsESCRYPT_')) {
-      util.openDefaultStupidDialog({
-        body: r.div({},
-          r.p({}, "Please wait one minute, then try again. That is, click " +
-            "Create Account again."),
-          r.p({}, "(The server was recently started, and it is warming up. " +
-            "This might take one or a few minutes.)"))
-      });
-      return IgnoreThisError;
-    }
   },
 
   render: function() {

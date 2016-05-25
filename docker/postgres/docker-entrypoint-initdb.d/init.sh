@@ -62,6 +62,25 @@ max_wal_senders = 4
 # archive_command = ...
 
 hot_standby = on
+
+# Logging
+#--------------------------
+
+logging_collector = on
+log_directory = '/var/log/postgres/'
+
+log_rotation_age = 1d     # defualt = 1d
+log_rotation_size = 50MB  # default = 10MB
+
+# Logs statements running at least this number of milliseconds.
+log_min_duration_statement = 2000
+
+# %m = timestamp with milliseconds, %c = session id, %x = transaction id.
+log_line_prefix = '%m session-%c tx-%x: '
+
+# Log all data definition statements, such as CREATE, ALTER, and DROP.
+log_statement = 'ddl'
+
 EOF
 
 

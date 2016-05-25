@@ -273,9 +273,7 @@ class Globals {
       tryCreateStateUntilKilled()
     }
 
-    // Warm up / just-in-time compile scrypt(), which is very CPU intensive. [8GY2KG4]
-    // Otherwise, the server will seem to totally stop for some minutes, for the very first user
-    // who signs up (and thus gets her password hashed).
+    // Delete. [8GY2KG4]
     Future {
       p.Logger.info("Warming up scrypt...")
       DbDao.warmUpScrypt(config.getBoolean("scryptMany").getOrElse(true))

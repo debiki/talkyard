@@ -46,6 +46,13 @@ CMD rm -f /opt/ed/play/RUNNING_PID && exec /opt/ed/play/bin/effectivediscussions
   -Dcom.sun.management.jmxremote.authenticate=false \
   -Dhttp.port=9000 \
   -Dhttps.port=9443 \
+  # Apparently it's ok to use urandom, see:   [30PUK42]
+  # - http://www.2uo.de/myths-about-urandom/
+  # - http://sockpuppet.org/blog/2014/02/25/safely-generate-random-numbers/
+  # - http://security.stackexchange.com/a/7074/9487
+  # and we need it, because otherwise the server might block up to 30 minutes
+  # when running scrypt the first time, waiting for "enough entropy".
+  -Djava.security.egd=file:/dev/./urandom \
   -Dconfig.file=${CONFIG_FILE}
 
 # and?

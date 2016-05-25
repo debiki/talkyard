@@ -52,6 +52,8 @@ ENV PLAY_HEAP_MEMORY_MB 1048
 CMD ["/opt/typesafe-activator/activator", \
   "-mem $PLAY_HEAP_MEMORY_MB", \
   "-jvm-debug 9999", \
+  # see [30PUK42] in play-prod/Dockerfile
+  "-Djava.security.egd=file:/dev/./urandom", \
   "-Dcom.sun.management.jmxremote.port=3333", \
   "-Dcom.sun.management.jmxremote.ssl=false", \
   "-Dcom.sun.management.jmxremote.authenticate=false", \
