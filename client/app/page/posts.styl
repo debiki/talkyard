@@ -241,6 +241,8 @@ h1.dw-p-ttl
       outline: 2px solid hsl($uiHue, 100%, 90%);
       background-color: hsl($uiHue, 100%, 96%);
       cursor: pointer;
+    &.icon-ok-circled-empty:before
+      color: hsl($solvedHue, 78%, 40%);
 
   .dw-forum-intro-show
     margin-left: 10px;
@@ -269,13 +271,6 @@ h1.dw-p-ttl
   // A forum title has some margin/paddin-bottom, so unset bottom: 0.
   bottom: auto;
   padding-top: 2px;
-
-.dw-solved-by
-  float: left;
-  margin-top: 15px;
-  font-weight: bold;
-  z-index: 1;
-  position: relative;
 
 .dw-p-unapproved > .dw-p-hd,
 .dw-p-dl > .dw-p-hd
@@ -478,6 +473,46 @@ span.dw-p-e-by
   .dw-p-bd-blk:first-child
     // There's no head so move the body up a bit.
     margin-top: -6px
+
+
+// Solution/answer
+//===========================
+
+.esP-solution
+  margin-top: -4px;
+  padding-top: 4px;
+
+.esP-solution,
+.esP-solution .dw-p-hd,
+.esP-solution .dw-p-bd
+  background-color: hsl($solvedHue, 68%, 96%);
+  color: black;
+
+.esH_solution
+  left: -1px;
+  font-size: 27px;
+  color: hsl(120, 50%, 50%);
+  line-height: 0;
+  position: relative;
+  top: -6px;
+  display: inline-block;
+  float: left;
+  padding: 0;
+  &.icon-ok-circled:before
+    margin-left: 0;
+
+.dw-solved-by
+  float: left;
+  margin-top: 15px;
+  font-weight: bold;
+  z-index: 1;
+  position: relative;
+  color: hsl($solvedHue, 100%, 30%) !important;
+  font-size: 115%;
+  &.icon-ok-circled:before
+    font-size: 125%;
+    margin: 0 6px 0 0;
+    color: hsl($solvedHue, 100%, 36%) !important;
 
 
 // Chat comments

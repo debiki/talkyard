@@ -9,13 +9,36 @@
 
 .dw-help
   max-width: 730px;
-  background-color: hsl($uiHue, 100%, 90%);
-  padding: 9px 12px 9px;
+  background-color: hsl($uiHue, 100%, 95%);
+  padding: 10px 13px 7px 12px;
   border-radius: 2px;
   clearfix()
 
   .dw-hide
     float: right;
+    position: relative;
+    top: -2px;
+
+  // ---- Page type icons
+  // (Could wrap this in some esHelp-pageTypeIcon later if needed?)
+
+  // Make icons look like they do in front of the title, so people realize that the (?)
+  // in "This is a (?) question, ..." is the same (?) as the one just in front of the
+  // page title.
+  .icon-help-circled
+    font-size: 139%;
+    color: hsl(0, 0%, 48%);
+    position: relative;
+    top: 1px;
+    margin-right: -1px;
+
+  .icon-ok-circled-empty
+    font-size: 127%;
+    color: hsl(0, 0%, 37%);
+
+  .esHelp-solved
+    .icon-ok-circled-empty
+      color: hsl($solvedHue, 47%, 35%);
 
 .dw-how-to-show-help-again
   .dw-hamburger-menu

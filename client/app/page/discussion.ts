@@ -75,12 +75,12 @@ export var TitleBodyComments = createComponent({
 
     if (store.pageRole === PageRole.Question) {
       if (store.pageAnsweredAtMs) {
-        return { id: 'EsH5JV8', version: 1, content: r.div({},
-            "This is a question and it has been ", solvedIcon, " answered.") };
+        return { id: 'EsH5JV8', version: 1, content: r.div({ className: 'esHelp-solved' },
+            "This is a question and it has been ", solvedIcon, "answered.") };
       }
       else {
         return { id: 'EsH2YK03', version: 1, content: r.div({},
-            "This is a ", questionIcon, " question, waiting for an ", solvedIcon, " answer.") };
+            "This is a ", questionIcon, "question, waiting for an ", solvedIcon, "answer.") };
       }
     }
 
@@ -470,7 +470,7 @@ var RootPostAndComments = createComponent({
       // onClick:... handled in ../utils/show-and-highlight.js currently (scrolls to solution).
       solvedBy = r.a({ className: 'dw-solved-by icon-ok-circled',
           href: '#post-' + store.pageAnswerPostNr },
-        "Solved in post #" + store.pageAnswerPostNr);
+        "Solved in post #" + store.pageAnswerPostNr + ", click to view");
     }
 
     var anyHorizontalArrowToChildren = null;
@@ -899,6 +899,9 @@ export var Post = createComponent({
     if (isWikiPost(post))
       extraClasses += ' dw-wiki';
 
+    if (store.pageRole === PageRole.Question && post.uniqueId === store.pageAnswerPostUniqueId)
+      extraClasses += ' esP-solution';
+
     if (isFlat)
       extraClasses += ' dw-p-flat';
 
@@ -1008,6 +1011,11 @@ export var PostHeader = createComponent({
     var me: Myself = this.props.me;
     var linkFn = this.props.abbreviate ? 'span' : 'a';
 
+    var anySolutionIcon = store.pageRole === PageRole.Question &&
+        post.uniqueId === store.pageAnswerPostUniqueId
+      ? r.span({ className: 'esH_solution icon-ok-circled', title: "Solution" })
+      : null;
+
     // (Dupl code, for anyAvatar [503KP25])
     var author: BriefUser = store_authorOf(store, post);
     var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
@@ -1112,6 +1120,7 @@ export var PostHeader = createComponent({
           anyPin,
           postId,
           anyMark,
+          anySolutionIcon,
           anyAvatar,
           by,
           r[linkFn](userLinkProps, namePart1, namePart2),

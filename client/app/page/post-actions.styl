@@ -63,12 +63,9 @@
   .dw-a-close,
   .dw-a-reopen
     margin-left: 10px;
-  .dw-a
-    top: 0; // undo [8MUFW2] below
 
 .DW.DW .dw-ar-t > .dw-p-as > .dw-a-reply
   padding: 8px 17px 8px 13px !important;
-  top: 4px;
   color: white;
   background-color: hsl($uiHue, 80%, 54%);
   &:hover
@@ -98,13 +95,10 @@
 
 .esDropModal .dw-a,
 .dw-t > .dw-p-as .dw-a
-  padding: 12px 9px 10px 9px;
+  padding: 8px 9px 14px 9px;
   background: #fff;
   color: hsl($uiHue, 0%, 55%);
   border: none;
-  // Looks better if placed closer the post: (don't remove padding-top, then hard to touch-click)
-  position: relative;
-  top: -5px;  // [8MUFW2]
 
   &.dw-a-reply
     color: hsl(0, 0%, 51%);
@@ -118,7 +112,7 @@
 
   // Make the "Solved" text dark so it's easy to see which post is the answer.
   &.dw-a-unsolve
-    color: hsl($uiHue, 100%, 24%);
+    color: hsl($solvedHue, 100%, 22%);
     font-weight: bold;
 
   &.dw-a-solve,
