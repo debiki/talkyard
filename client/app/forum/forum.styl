@@ -281,7 +281,7 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
           margin-left: 0;
 
         .icon-help-circled:before
-          font-size: 14px;
+          font-size: 15px;
           color: #555;
           margin: 0 5px 0 0;
 
@@ -311,6 +311,9 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
           color: hsl(0, 0%, 15%);
           margin-right: 3px; // there's some whitespace to the right inside the icon
 
+        .icon-ok-circled:before
+          color: hsl(0, 0%, 39%);
+        .icon-ok-circled:before,
         .icon-ok-circled-empty:before
           margin: 0 7px 0 0;
           position: relative;
@@ -392,11 +395,14 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
 
     .icon-pin:before,
     .icon-ok-circled-empty:before
-      opacity: 0.85;
+      opacity: 0.87;
 
+    .icon-ok-circled:before
+      opacity: 0.83;
     .icon-help-circled:before,
     .icon-block:before
-      opacity: 0.8;
+      opacity: 0.83;
+      font-size: 105%;
 
 
 .forum-table > tbody > tr > td {

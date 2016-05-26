@@ -45,7 +45,7 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var closedIcon = r.span({ className: 'icon-block' });
 var questionIcon = r.span({ className: 'icon-help-circled' });
 var problemIcon = r.span({ className: 'icon-attention-circled' });
-var solvedIcon = r.span({ className: 'icon-ok-circled-empty' });
+var solvedIcon = r.span({ className: 'icon-ok-circled' });
 var todoIcon = r.span({ className: 'icon-check-empty' });
 var ideaIcon = r.span({ className: 'icon-idea' });
 var plannedIcon = r.span({ className: 'icon-check-empty' });
@@ -300,8 +300,8 @@ export var Title = createComponent({
       }
       else if (store.pageRole === PageRole.Question) {
         var icon = store.pageAnsweredAtMs
-            ? r.a({ className: 'icon-ok-circled-empty dw-clickable', onClick: this.scrollToAnswer })
-            : r.span({ className: 'icon-help-circled' });;
+            ? r.a({ className: 'icon-ok-circled dw-clickable', onClick: this.scrollToAnswer })
+            : r.span({ className: 'icon-help-circled' });
         tooltip = makeQuestionTooltipText(store.pageAnsweredAtMs) + ".\n";
       }
       else if (store.pageRole === PageRole.Problem || store.pageRole === PageRole.Idea ||

@@ -164,6 +164,8 @@ var SingleTopic = createComponent({
     var unreadClass = topic.unread ? ' esWatchbar_topic-unread' : '';
     var url = topic.url || linkToPageId(topic.pageId);
     var moreClasses = isCurrentTopicClass + unreadClass;
+    // Could show num unread posts / chat messages. But would be rather complicated:
+    // need to track num unread, + last visit date too, in the watchbar data.
     return (
         r.li({ className: 'esWatchbar_li esWatchbar_topic-' + flavor + moreClasses },
           r.a({ className: 'esWatchbar_topic_link', href: url },

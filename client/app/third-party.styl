@@ -208,6 +208,15 @@ input, textarea {
   a
     padding: 10px 20px;
 
+// Change active dropdown menu items from white-text-on-blue, to black-on-light-blue.
+.dropdown-menu > .active
+  > a,
+  > a:hover,
+  > a:focus
+    outline: 0;
+    color: hsl(207, 0%, 16%);
+    background-color: hsl(207, 94%, 91%);
+
 html.touch .dropdown-menu > li
   margin: 20px 0 15px 0;
   &:first-child

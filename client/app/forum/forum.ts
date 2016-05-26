@@ -56,7 +56,8 @@ var MaxWaitingForCritique = 10; // for now only [plugin]
 /** Keep in sync with app/controllers/ForumController.NumTopicsToList. */
 var NumNewTopicsPerRequest = 40;
 
-// The route with path 'latest' or 'top' or 'categories'.
+// The route with path 'latest' or 'top' or 'categories'. It determines the sort order
+// (latest first, or best first).
 var SortOrderRouteIndex = 1;
 
 export var RoutePathLatest = 'latest';
@@ -139,7 +140,7 @@ var ForumComponent = React.createClass(<any> {
     }
     if (!activeCategory) {
       var name = this.props.routes[SortOrderRouteIndex].path === RoutePathCategories ?
-          "Select category" : "All categories";
+          "Select category" : "All";
       activeCategory = {
         name: name,
         id: this.state.categoryId, // the forum root category id
@@ -432,10 +433,19 @@ var ForumButtons = createComponent({
       makeCategoryLink(RoutePathCategories, "Categories", 'esForum_catsTreeBtn');
 
     var categoryMenuItems = props.categories.map((category: Category) => {
-      return MenuItem({ eventKey: category.slug, key: category.id }, category.name);
+      return MenuItem({ eventKey: category.slug, key: category.id,
+          active: activeCategory.id === category.id }, category.name);
     });
+
+    var listsTopicsInAllCats =
+        // We list topics? (We're not on the Categories route? which lists categories)
+        this.props.routes[SortOrderRouteIndex].path !== RoutePathCategories &&
+        // No category selected?
+        activeCategory.isForumItself;
+
     categoryMenuItems.unshift(
-      MenuItem({ eventKey: null, key: -1 }, 'All Categories'));
+        MenuItem({ eventKey: null, key: -1, active: listsTopicsInAllCats },
+          "List topics in all categories"));
 
     var catsDropActiveClass = isShowingCategoryTree ? '' : ' active';
 
@@ -470,7 +480,7 @@ var ForumButtons = createComponent({
     var topicFilterValue = this.props.location.query.filter || FilterShowAll;
     function makeTopicFilterText(filter) {
       switch (filter) {
-        case FilterShowAll: return "Show all";
+        case FilterShowAll: return "All topics";
         case FilterShowWaiting: return "Show waiting";
         case FilterShowDeleted: return "Show deleted";
       }
@@ -495,7 +505,7 @@ var ForumButtons = createComponent({
         r.ul({},
           ExplainingListItem({ onSelect: this.setTopicFilter,
               activeEventKey: topicFilterValue, eventKey: FilterShowAll,
-              title: makeTopicFilterText(FilterShowAll),
+              title: "Show all topics",
               text: "Shows all forum topics" }),
           ExplainingListItem({ onSelect: this.setTopicFilter,
               activeEventKey: topicFilterValue, eventKey: FilterShowWaiting,
@@ -684,6 +694,7 @@ var ForumTopicListComponent = React.createClass(<any> {
   },
 
   render: function() {
+    var store: Store = this.props.store;
     if (!this.state.topics) {
       // The min height preserves scrollTop, even though the topic list becomes empty
       // for a short while (which would otherwise reduce the windows height which
@@ -701,7 +712,8 @@ var ForumTopicListComponent = React.createClass(<any> {
       return TopicRow({
           topic: topic, categories: this.props.categories,
           activeCategory: this.props.activeCategory, now: this.props.now,
-          key: topic.pageId });
+          key: topic.pageId, routes: this.props.routes, location: this.props.location,
+          pagePath: store.pagePath });
     });
 
     var loadMoreTopicsBtn;
@@ -734,6 +746,10 @@ var ForumTopicListComponent = React.createClass(<any> {
 
 
 var TopicRow = createComponent({
+  contextTypes: {
+    router: React.PropTypes.object.isRequired
+  },
+
   styleFeeeling: function(num, total): any {
     if (!total)
       return null;
@@ -785,6 +801,15 @@ var TopicRow = createComponent({
     return lowerBound;
   },
 
+  switchCategory: function(category: Category) {
+    dieIf(this.props.routes.length < 2, 'EsE5U2Z');
+    var sortOrderPath = this.props.routes[SortOrderRouteIndex].path;
+    this.context.router.push({
+      pathname: this.props.pagePath.value + sortOrderPath + '/' + category.slug,
+      query: this.props.location.query,
+    });
+  },
+
   render: function() {
     var topic: Topic = this.props.topic;
     var category = _.find(this.props.categories, (category: Category) => {
@@ -829,7 +854,9 @@ var TopicRow = createComponent({
         ? r.p({ className: 'dw-p-excerpt' }, topic.excerpt, r.a({ href: topic.url }, 'read more'))
         : null;
 
-    var categoryName = category ? category.name : '';
+    var categoryName = !category ? null :
+      r.a({ onClick: () => this.switchCategory(category) }, category.name);
+
     var activityAgo = prettyLetterTimeAgo(topic.bumpedEpoch || topic.createdEpoch);
 
     // Avatars: Original Poster, some frequent posters, most recent poster. [7UKPF26]
@@ -970,7 +997,7 @@ function makeTitle(topic: Topic, className: string) {
   }
   else if (topic.pageRole === PageRole.Question) {
     var tooltip = page.makeQuestionTooltipText(topic.answeredAtMs);
-    var questionIconClass = topic.answeredAtMs ? 'icon-ok-circled-empty' : 'icon-help-circled';
+    var questionIconClass = topic.answeredAtMs ? 'icon-ok-circled' : 'icon-help-circled';
     var questionIcon = r.span({ className: questionIconClass });
     var answerIcon;
     var answerCount;
