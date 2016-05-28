@@ -86,8 +86,8 @@ export var DropdownModal = createComponent({
         top: this.props.atY,
       };
       content =
-        r.div({ className: 'esDropModal_content', style: styles, ref: 'content' },
-          this.props.children);
+        r.div({ className: 'esDropModal_content ' + this.props.className, style: styles,
+            ref: 'content' }, this.props.children);
     }
 
     return (

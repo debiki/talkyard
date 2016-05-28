@@ -22,6 +22,7 @@
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
+/// <reference path="../util/ExplainingDropdown.ts" />
 /// <reference path="../dialogs.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../editor/title-editor.ts" />
@@ -44,6 +45,7 @@ var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
 var ReactBootstrap: any = window['ReactBootstrap'];
 var DropdownModal = utils.DropdownModal;
+var ExplainingListItem = util.ExplainingListItem;
 
 var moreVotesDropdownModal;
 var moreDialog;
@@ -248,8 +250,8 @@ export var PostActions = createComponent({
           post.numUnwantedVotes === 1 ? "1 Unwanted" : post.numUnwantedVotes + " Unwanteds");
     }
 
-    var otherVotesDropdown = null;
-    var likeVoteButton = null;
+    var downvotesDropdown;
+    var likeVoteButton;
     if (!deletedOrCollapsed && !isOwnPost) {
       var myLikeVote = votes.indexOf('VoteLike') !== -1 ? ' dw-my-vote' : '';
       var myWrongVote = votes.indexOf('VoteWrong') !== -1 ? ' dw-my-vote' : '';
@@ -257,7 +259,9 @@ export var PostActions = createComponent({
       var myUnwantedVote = votes.indexOf('VoteUnwanted') !== -1 ? ' dw-my-vote' : '';
       var myOtherVotes = myWrongVote || myBuryVote || myUnwantedVote ? ' dw-my-vote' : '';
 
-      otherVotesDropdown = post.postId === BodyPostId || !me_isAuthenticated(me) ? null :
+      // Always hide the downvotes inside this dropdown, so one has to click one
+      // extra time (to open the dropdown), before one can downvote.
+      downvotesDropdown = post.postId === BodyPostId ? null :
           r.span({ className: 'dropdown navbar-right', title: "More votes...",
               onClick: this.openMoreVotesDropdown },
             r.a({ className: 'dw-a dw-a-votes' + myOtherVotes }, ''));
@@ -277,9 +281,20 @@ export var PostActions = createComponent({
         : r.a({ className: 'dw-a dw-a-link icon-link', title: "Link to this post",
               onClick: this.onLinkClick });
 
-    var moreDropdown =
-      r.span({ className: 'dropdown navbar-right', onClick: this.openMoreDropdown },
-        r.a({ className: 'dw-a dw-a-more icon-menu', title: "More..." }));
+    // Build a More... dropdown, but if it would have only one single menu item, inline
+    // that menu item instead.
+    var flagBtn;
+    var moreDropdown;
+    if (me.isLoggedIn) {
+      moreDropdown =
+        r.span({className: 'dropdown navbar-right', onClick: this.openMoreDropdown},
+          r.a({className: 'dw-a dw-a-more icon-menu', title: "More..."}));
+    }
+    else if (!isOwnPost) {
+      flagBtn =
+        r.a({ className: 'dw-a dw-a-flag icon-flag', onClick: () => flagPost(post),
+          title: "Report this post" });
+    }
 
     return (
       r.div({ className: 'dw-p-as dw-as', onClick: this.props.onClick },
@@ -287,10 +302,11 @@ export var PostActions = createComponent({
         //suggestionsOld,
         replyButton,
         closeReopenButton,
+        flagBtn,
         moreDropdown,
         link,
         editOwnPostButton,
-        otherVotesDropdown,
+        downvotesDropdown,
         likeVoteButton,
         numBurysText,
         numWrongsText,
@@ -360,7 +376,8 @@ var MoreVotesDropdownModal = createComponent({
     var store = this.state.store;
     var isFlat = store.isFlat; // hmm shouldn't place in the store object, oh well
     var me: Myself = store.me;
-    var votes = me.votes[this.state.post.postId] || [];
+    var post: Post = this.state.post;
+    var votes = me.votes[post.postId] || [];
     var isOwnPage = store_thisIsMyPage(store);
     var isStaffOrOwnPage: boolean = isStaff(me) || isOwnPage;
 
@@ -369,19 +386,27 @@ var MoreVotesDropdownModal = createComponent({
     var myUnwantedVote = votes.indexOf('VoteUnwanted') !== -1 ? ' dw-my-vote' : '';
 
     var wrongVoteButton =
-      r.a({ className: 'dw-a dw-a-wrong icon-warning' + myWrongVote,
-        title: 'Click if you think this post is wrong, for example, factual errors, ' +
-        " or because you disagree.", onClick: this.onWrongClick }, 'Wrong');
-    var buryVoteButton =
-      isFlat
-        ? null // cannot change sort order or collapse flat comments, Bury vote is pointless
-        : r.a({ className: 'dw-a dw-a-bury icon-bury' + myBuryVote,
-        title: "Click if you think it's better that people spend their time " +
-        "reading other things instead.", onClick: this.onBuryClick }, 'Bury');
+      ExplainingListItem({
+        title: r.span({ className: 'dw-a-wrong icon-warning' + myWrongVote }, "Wrong"),
+        text: r.span({}, "Cast a ", r.i({}, "Wrong"), " vote if you disagree with this post, " +
+            "or to warn others about factual errors."),
+        onClick: this.onWrongClick, key: 'w' });
+
+    // Skip if flat, because then cannot change sort order or collapse, so Bury would be pointless.
+    var buryVoteButton = isFlat ? null :
+      ExplainingListItem({
+        title: r.span({ className: 'dw-a-bury icon-bury' + myBuryVote }, "Bury"),
+        text: r.span({}, "If you and others cast ", r.i({}, "Bury"),
+            " votes sorts other posts before this one — " +
+            "unless people cast ", r.i({}, "Like"), " votes."),
+        onClick: this.onBuryClick, key: 'b' });
+
     var unwantedVoteButton = isGuest(me) || !isStaffOrOwnPage ? null :
-      r.a({ className: 'dw-a dw-a-unwanted icon-cancel' + myUnwantedVote,
-        title: "Click if you do not want this comment on this site.",
-        onClick: this.onUnwantedClick }, "Unwanted");
+      ExplainingListItem({
+        title: r.span({ className: 'dw-a-unwanted icon-cancel' + myUnwantedVote }, "Unwanted"),
+        text: "If you do not want this post on this website. This would reduce the trust I have " +
+            "in the post author.",
+        onClick: this.onUnwantedClick, key: 'u' });
 
     return [wrongVoteButton, buryVoteButton, unwantedVoteButton];
   },
@@ -390,8 +415,8 @@ var MoreVotesDropdownModal = createComponent({
     var state = this.state;
     var content = state.isOpen ? this.makeVoteButtons() : null;
     return (
-      DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY },
-        content));
+      DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY,
+          className: 'esDwnvts' }, content));
   }
 });
 
@@ -423,9 +448,7 @@ var MoreDropdownModal = createComponent({
     this.close();
   },
   onFlagClick: function(event) {
-    loginIfNeededThen('LoginToFlag', this.state.post.postNr, () => {
-      debiki2.getFlagDialog().open(this.state.post.postId);
-    });
+    flagPost(this.state.post);
     this.close();
   },
   onDeleteClick: function(event) {
@@ -583,6 +606,13 @@ var MoreDropdownModal = createComponent({
         content));
   }
 });
+
+
+function flagPost(post: Post) {
+  loginIfNeededThen('LoginToFlag', post.postId, () => {
+    debiki2.getFlagDialog().open(post.postId);
+  });
+}
 
 
 function loginIfNeededThen(loginToWhat, postNr: PostNr, callback) {

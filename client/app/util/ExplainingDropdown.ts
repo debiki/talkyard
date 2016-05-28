@@ -56,7 +56,8 @@ export var ExplainingListItem = createComponent({
 
   render: function() {
     var entry: ExplainingTitleText = this.props;
-    var activeClass = this.props.activeEventKey === this.props.eventKey ? ' active' : '';
+    var activeClass = this.props.onSelect && this.props.activeEventKey === this.props.eventKey ?
+        ' active' : '';
     return (
       r.li({ className: 'esExplDrp_entry' + activeClass, key: entry.key },
         r.a({ onClick: this.onClick, id: this.props.id, className: this.props.className },

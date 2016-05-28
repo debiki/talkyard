@@ -38,7 +38,7 @@
 .dw-depth-0 > .dw-p-as
   // Always show actions for the article / root post.
   visibility: visible !important;
-  margin: 9px 0 0
+  margin: 16px 0 0;
 
 .DW.DW .dw-depth-0 > .dw-p-as
   > .dw-a,
@@ -54,10 +54,6 @@
   .dw-a-collapse-post,
   .dw-a-close-tree
     display: none !important
-
-.dw-ar-t > .dw-p-as > .dw-a-wrong
-  // Don't make it possible to vote "Wrong" for the forum question or blog post.
-  display: none !important
 
 .DW.DW .dw-ar-t > .dw-p-as
   .dw-a-close,
@@ -96,7 +92,6 @@
 .esDropModal .dw-a,
 .dw-t > .dw-p-as .dw-a
   padding: 8px 9px 14px 9px;
-  background: #fff;
   color: hsl($uiHue, 0%, 55%);
   border: none;
 
@@ -187,6 +182,9 @@
   &.dw-my-vote:after
     opacity: 0.84;
 
+.esDwnvts .esExplDrp_entry_title
+  font-size: 13px;
+  margin-bottom: 3px;
 
 .dw-ar-t > .dw-p-as
   .dw-a-reply:before,
@@ -207,7 +205,7 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
 .DW.DW .dw-p-as .dw-a.dw-my-vote
   padding-left: 9px;
   &.dw-a-votes
-    padding-left: 0px;  // was already 0 ...
+    padding-left: 0;  // was already 0 ...
     &:after
       padding-right: 12px; // ... so reduce padding-right instead
 
@@ -223,15 +221,26 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
   &:before
     opacity: 0.63; // or icon too not-opaque
 
-// Later on, give Bury access to all regular member who has been introduced to how it works.
-html:not(.dw-is-staff) .dw-a-bury
-  display: none !important;
-
 // Highlight the heart and other vote symbols if the user has voted Like or whatever.
-.dw-a.dw-my-vote:before,
-.dw-a-votes.dw-my-vote:after
+.dw-my-vote:before,
+.dw-my-vote:after
   color: hsl(8, 100%, 60%)  // red-red-orange-red
   font-size: 110%;
+
+.esDwnvts
+  max-width: 380px;
+
+.esDwnvts
+  .dw-a-wrong,
+  .dw-a-bury,
+  .dw-a-unwanted
+    &:before
+      margin-left: 0;
+
+.esDwnvts .dw-my-vote:before
+  font-size: 110%;
+  &.icon-bury
+    font-size: 120%;  // it's already set to 110% because fairly small
 
 // Show a ▾ icon as open-more-votes-dropdown-button. Same as
 // class .icon-down-dir, but :after. Don't use "▾" directly though; it breaks on my mobile.
