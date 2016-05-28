@@ -16,7 +16,7 @@
  */
 
 
-$forumNavBtnGroupLeft = 14px;
+$forumNavBtnGroupLeft = 8px;
 
 .esForumIntro
   clearfix()
@@ -55,7 +55,7 @@ $forumNavBtnGroupLeft = 14px;
 
 // Fix this long error prone list later.
 .dw-sort-order .btn,
-.esForum_catsTreeBtn,
+.esForum_navLink,
 .dw-main-category-dropdown .btn,
 .esForum_filterBtn
   font-size: 15px;
@@ -76,23 +76,12 @@ $forumNavBtnGroupLeft = 14px;
     background: none;
     margin-left: 0 !important;
 
-.esForum_catsTreeBtn
+.esForum_navLink
   float: left;
-  color: #222 !important;
-  background: none;
-  box-shadow: none;
-  border: none;
-  margin-left: 0 !important;
-  &.active
-    cursor: default;
-    font-weight: bold;
-    background: none !important;
-    box-shadow: none;
-    color: #222;
-    padding-left: 0;
-    margin-right: 4px;
-  &:not(.active)
-    padding-right: 6px !important;
+  text-decoration: underline;
+  background: none !important;
+  color: #333 !important;
+  margin-left: 10px !important;
 
 .esForum_catsDrop
   color: hsl(0, 0%, 8%) !important;
@@ -102,7 +91,6 @@ $forumNavBtnGroupLeft = 14px;
   //--
   background: none;
   &.active
-    font-weight: bold;
     box-shadow: none;
     margin-left: 2px !important;
   .caret
@@ -115,12 +103,15 @@ $forumNavBtnGroupLeft = 14px;
   max-width: 500px !important;
 
 .DW.DW.DW .esForum_filterBtn
+  float: left;
   border: none;
   margin-left: $forumNavBtnGroupLeft;
+  &:first-child
+    margin-left: 0;
 
 .dw-forum-actionbar
   clear: both
-  padding 0 0 14px;
+  padding 0 0 18px;
 
   .form-group
     margin-bottom: 0;
@@ -167,7 +158,7 @@ $forumNavBtnGroupLeft = 14px;
         color: hsl(0, 0%, 22%);
         text-shadow: 0.5px 0 hsl(0, 0%, 22%);
 
-      min-width: 60px;
+      min-width: 50px;
       padding-left: 15px;
       padding-right: 15px;
       @media (max-width: 801px)
@@ -176,14 +167,6 @@ $forumNavBtnGroupLeft = 14px;
 
   .btn-default
     border: 1px solid #ccc;
-
-  .esForum_filterBtn
-    float: left;
-    margin-left: 10px;
-    @media (max-width: 801px)
-      margin-left: 8px
-    @media (max-width: 651px)
-      margin-left: 5px
 
   button
     margin: 0;
@@ -213,6 +196,19 @@ $forumNavBtnGroupLeft = 14px;
       padding-right: 8px;
 
 
+$tablePaddingLeft = 8px
+$tableFontSize = 14px;
+
+
+.dw-topic-list,
+.forum-table
+  th
+    padding: 8px $tablePaddingLeft 8px;
+    font-weight: normal;
+    font-size: $tableFontSize;
+    color: hsl(0, 0%, 55%);
+
+
 // Topics
 //===========================
 
@@ -224,15 +220,6 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
 
 .dw-topic-list
   width: 100%
-
-  $paddingLeft = 8px
-  $fontSize = 14px
-
-  th
-    padding: 0 $paddingLeft 8px;
-    font-weight: normal;
-    font-size: $fontSize;
-    color: hsl(0, 0%, 60%);
 
   .num
     text-align: center
@@ -262,8 +249,8 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
         border-top-width: 3px;
 
       td
-        padding: 10px $paddingLeft
-        font-size: $fontSize;
+        padding: 10px $tablePaddingLeft
+        font-size: $tableFontSize;
         a
           color: hsl(0, 0%, 13%);
           padding: 3px 6px 5px 0; // makes it easier to click
@@ -375,9 +362,6 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
 
 
 .forum-table
-  th
-    color: hsl(0, 0%, 55%)
-
   & > tbody > tr > td:first-child
     width: 45%; // or sometimes 80-90% wide
 

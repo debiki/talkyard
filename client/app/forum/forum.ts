@@ -139,10 +139,8 @@ var ForumComponent = React.createClass(<any> {
       }
     }
     if (!activeCategory) {
-      var name = this.props.routes[SortOrderRouteIndex].path === RoutePathCategories ?
-          "Select category" : "All";
       activeCategory = {
-        name: name,
+        name: "All categories",
         id: this.state.categoryId, // the forum root category id
         isForumItself: true,
         newTopicTypes: [],
@@ -422,15 +420,21 @@ var ForumButtons = createComponent({
         "Category not found. Did you just create it? Then reload the page please. [EsE04PK27]");
     }
 
-    var isShowingCategoryTree = this.props.routes[SortOrderRouteIndex].path === RoutePathCategories;
+    var showsCategoryTree = this.props.routes[SortOrderRouteIndex].path === RoutePathCategories;
+    var showsTopicList = !showsCategoryTree;
 
     var makeCategoryLink = (where, text, extraClass?) => Link({
       to: this.props.pagePath.value + where, query: this.props.location.query,
       className: 'btn esForum_catsNav_btn ' + (extraClass || ''),
       activeClassName: 'active' }, text);
 
-    var showCategoryTreeButton =
-      makeCategoryLink(RoutePathCategories, "Categories", 'esForum_catsTreeBtn');
+    var categoryTreeLink = showsCategoryTree ? null :
+      makeCategoryLink(RoutePathCategories, "View categories", 'esForum_navLink');
+
+    // COULD remember which topics were listed previously and return to that view.
+    // Or would a Back btn somewhere be better?
+    var topicListLink = showsTopicList ? null :
+      makeCategoryLink(RoutePathLatest, "Topic list", 'esForum_navLink');
 
     var categoryMenuItems = props.categories.map((category: Category) => {
       return MenuItem({ eventKey: category.slug, key: category.id,
@@ -444,12 +448,11 @@ var ForumButtons = createComponent({
         activeCategory.isForumItself;
 
     categoryMenuItems.unshift(
-        MenuItem({ eventKey: null, key: -1, active: listsTopicsInAllCats },
-          "List topics in all categories"));
+        MenuItem({ eventKey: null, key: -1, active: listsTopicsInAllCats }, "All categories"));
 
-    var catsDropActiveClass = isShowingCategoryTree ? '' : ' active';
+    var catsDropActiveClass = showsCategoryTree ? '' : ' active';
 
-    var categoriesDropdown =
+    var categoriesDropdown = showsCategoryTree ? null :
         r.div({ className: 'dw-main-category-dropdown' },
         DropdownButton({ title: activeCategory.name, onSelect: this.onSwitchCategory, id: '4p59',
             className: 'esForum_catsNav_btn esForum_catsDrop' + catsDropActiveClass},
@@ -457,7 +460,7 @@ var ForumButtons = createComponent({
 
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
     var latestTopCategories;
-    if (isShowingCategoryTree) {
+    if (showsCategoryTree) {
       // Then hide the sort topics buttons.
     }
     else if (state.compact) {
@@ -481,7 +484,7 @@ var ForumButtons = createComponent({
     function makeTopicFilterText(filter) {
       switch (filter) {
         case FilterShowAll: return "All topics";
-        case FilterShowWaiting: return "Show waiting";
+        case FilterShowWaiting: return "Only waiting";
         case FilterShowDeleted: return "Show deleted";
       }
       die('EsE4JK85');
@@ -558,11 +561,12 @@ var ForumButtons = createComponent({
     return (
         r.div({ className: 'dw-forum-actionbar clearfix' },
           r.div({ className: 'esForum_catsNav' },
-            showCategoryTreeButton,
             categoriesDropdown,
             latestTopCategories,
             topicFilterButton,
-            topicFilterDropdownModal),
+            topicFilterDropdownModal,
+            categoryTreeLink,
+            topicListLink),
           createTopicBtn,
           createCategoryBtn,
           editCategoryBtn));
