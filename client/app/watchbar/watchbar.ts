@@ -105,7 +105,7 @@ var RecentTopicsAndNotfs = createComponent({
     return (
         r.div({ className: 'esWatchbar_topics' },
           // Not "recent topics", because contains non-topics too, e.g. forum itself.
-          r.h3({}, "Recent"),
+          r.h3({ style: { wordSpacing: '2px' }}, "Recently viewed"),
           r.ul({},
             topicElems)));
   }

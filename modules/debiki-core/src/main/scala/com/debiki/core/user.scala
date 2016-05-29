@@ -567,7 +567,7 @@ case class RolePageSettings(
   notfLevel: PageNotfLevel)
 
 object RolePageSettings {
-  val Default = RolePageSettings(PageNotfLevel.Regular)
+  val Default = RolePageSettings(PageNotfLevel.Normal)
 }
 
 

@@ -62,7 +62,7 @@ export var TitleBodyComments = createComponent({
     // e.g. "... is waiting for an answer..."
     if (store.pageClosedAtMs && !store.pageDoneAtMs && !store.pageAnsweredAtMs)
       return { id: 'EdH7UMPW', version: 1, content: r.div({},
-          "This topic has been ", closedIcon, " closed. You can still post comments, " +
+          "This topic has been ", closedIcon, "closed. You can still post comments, " +
           "but that won't make this topic bump to the top of the latest-topics list.") };
 
     /*
@@ -130,7 +130,7 @@ export var TitleBodyComments = createComponent({
     if (store.pageRole === PageRole.Critique) {  // [plugin]
       if (store.pageClosedAtMs) {
         return { id: 'EdH4KDPU2', version: 1, content: r.span({},
-          "This topic has been ", closedIcon, " closed. People won't get any additional " +
+          "This topic has been ", closedIcon, "closed. People won't get any additional " +
           "credits for posting more critique here.") };
       }
       if (!me.isAuthenticated) {

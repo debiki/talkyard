@@ -42,10 +42,13 @@ export function resetAvatars() {
 
 
 export var Avatar = createComponent({
-  onClick: function() {
-    if (this.props.ignoreClicks) {
-    }
-    else if (this.props.clickOpensUserProfilePage) {
+  onClick: function(event) {
+    if (this.props.ignoreClicks)
+      return;
+
+    event.stopPropagation();
+    event.preventDefault();
+    if (this.props.clickOpensUserProfilePage) {
       ReactActions.openUserProfile(this.props.user.id);
     }
     else {

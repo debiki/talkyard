@@ -146,7 +146,7 @@ object PageNotfLevel {
   case object Tracking extends PageNotfLevel
 
   /** Notified of @mentions and direct replies. */
-  case object Regular extends PageNotfLevel
+  case object Normal extends PageNotfLevel
 
   /** No notifications for this page.  */
   case object Muted extends PageNotfLevel
@@ -154,7 +154,7 @@ object PageNotfLevel {
   def fromString(value: String) = value match {
     case "Watching" => Watching
     case "Tracking" => Tracking
-    case "Regular" => Regular
+    case "Normal" => Normal
     case "Muted" => Muted
     case x => illArgErr("DwE73kFG2", s"Bad PageNotfLevel: `$x'")
   }

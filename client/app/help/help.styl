@@ -25,22 +25,25 @@
   // Make icons look like they do in front of the title, so people realize that the (?)
   // in "This is a (?) question, ..." is the same (?) as the one just in front of the
   // page title.
-  .icon-help-circled
-    font-size: 139%;
+  .icon-help-circled:before
+    font-size: 142%;
     color: hsl(0, 0%, 48%);
     position: relative;
     top: 1px;
-    margin-right: -1px;
 
-  .icon-ok-circled,
-  .icon-ok-circled-empty
+  .icon-ok-circled:before,
+  .icon-ok-circled-empty:before
     font-size: 127%;
-    color: hsl(0, 0%, 37%);
+    color: hsl(0, 0%, 46%);
 
   .esHelp-solved
-    .icon-ok-circled,
-    .icon-ok-circled-empty
+    .icon-ok-circled:before,
+    .icon-ok-circled-empty:before
       color: hsl($solvedHue, 57%, 43%);
+
+  .icon-block:before
+    font-size: 130%;
+    color: hsl(0, 0%, 41%);
 
 .dw-how-to-show-help-again
   .dw-hamburger-menu

@@ -19,7 +19,7 @@ services:
 
   # rename to app?
   play:
-    mem_limit: 2200M
+    mem_limit: 2600M
     build: docker/play-dev/
     # image debiki/ed-play instead created and tagged by docker/build-play-prod.sh.
     stdin_open: true  # otherwise Play exits
@@ -37,7 +37,7 @@ services:
       - postgres
       - redis
     environment:
-      PLAY_HEAP_MEMORY_MB: 1500
+      PLAY_HEAP_MEMORY_MB: 1700
       HOSTNAME: "localhost"
       CREATE_SITE_HOSTNAME: "localhost"
       BECOME_OWNER_EMAIL_ADDRESS: "admin@example.com"
@@ -72,16 +72,16 @@ services:
   # An extra database, so you can experiment with Postgres replication and failover.
   # You don't need to start it.
   # rename to db2?
-  postgres2:
-    mem_limit: 20M
-    build: docker/postgres/
-    volumes:
-      - ./docker/data/postgres2/:/var/lib/postgresql/data/
-    environment:
-      POSTGRES_PASSWORD: 'public2'
-      PEER_HOST: 'postgres'
-      PEER_PORT: '5432'
-      PEER_PASSWORD: 'public'
+  #postgres2:
+  #  mem_limit: 30M
+  #  build: docker/postgres/
+  #  volumes:
+  #    - ./docker/data/postgres2/:/var/lib/postgresql/data/
+  #  environment:
+  #    POSTGRES_PASSWORD: 'public2'
+  #    PEER_HOST: 'postgres'
+  #    PEER_PORT: '5432'
+  #    PEER_PASSWORD: 'public'
 
   gulp:
     mem_limit: 900M

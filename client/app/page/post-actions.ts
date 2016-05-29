@@ -317,6 +317,7 @@ export var PostActions = createComponent({
 });
 
 
+// some dupl code [6KUW24]
 var MoreVotesDropdownModal = createComponent({
   mixins: [StoreListenerMixin],
 
@@ -396,9 +397,8 @@ var MoreVotesDropdownModal = createComponent({
     var buryVoteButton = isFlat ? null :
       ExplainingListItem({
         title: r.span({ className: 'dw-a-bury icon-bury' + myBuryVote }, "Bury"),
-        text: r.span({}, "If you and others cast ", r.i({}, "Bury"),
-            " votes sorts other posts before this one — " +
-            "unless people cast ", r.i({}, "Like"), " votes."),
+        text: r.span({}, r.i({}, "Bury"), " votes sort other posts before this post, and " +
+            "collapses it — unless people cast ", r.i({}, "Like"), " votes."),
         onClick: this.onBuryClick, key: 'b' });
 
     var unwantedVoteButton = isGuest(me) || !isStaffOrOwnPage ? null :
@@ -421,6 +421,7 @@ var MoreVotesDropdownModal = createComponent({
 });
 
 
+// some dupl code [6KUW24]
 var MoreDropdownModal = createComponent({
   getInitialState: function () {
     return {
@@ -428,6 +429,7 @@ var MoreDropdownModal = createComponent({
     };
   },
 
+  // dupl code [6KUW24]
   openForAt: function(store, post, at) {
     var rect = at.getBoundingClientRect();
     this.setState({

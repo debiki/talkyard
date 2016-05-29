@@ -131,7 +131,7 @@ interface Post {
   pinnedPosition: number;
   likeScore: number;
   childIdsSorted: number[];
-  sanitizedHtml: string;
+  sanitizedHtml?: string;
 }
 
 

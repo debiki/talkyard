@@ -232,3 +232,6 @@ restart server -
   can post comment:
   complicated setting still enabled:
 
+
+Tests to create:
+  Login with pwd here: /-/users/id/109/activity, no .categories bug

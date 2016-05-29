@@ -18,6 +18,8 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../react-elements/name-login-btns.ts" />
+/// <reference path="../utils/DropdownModal.ts" />
+/// <reference path="../util/ExplainingDropdown.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.page {
@@ -28,8 +30,19 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
-var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
+var DropdownModal = utils.DropdownModal;
+var ExplainingListItem = util.ExplainingListItem;
+
+
+var notfsLevelDropdownModal;
+
+export function openNotfsLevelDropdown(openButton) {
+  if (!notfsLevelDropdownModal) {
+    notfsLevelDropdownModal = ReactDOM.render(NotfsLevelDropdownModal(), utils.makeMountNode());
+  }
+  notfsLevelDropdownModal.openAt(openButton);
+}
 
 
 /**
@@ -40,7 +53,8 @@ export var Metabar = createComponent({
   getInitialState: function() {
     return {
       store: debiki2.ReactStore.allData(),
-      ui: { showDetails: false }
+      ui: { showDetails: false },
+      numRepliesSummarized: null,
     };
   },
 
@@ -66,6 +80,13 @@ export var Metabar = createComponent({
   onToggleDetailsClick: function() {
     this.state.ui.showDetails = !this.state.ui.showDetails;
     this.setState(this.state);
+  },
+
+  summarizeReplies: function() {
+    ReactActions.summarizeReplies();
+    setTimeout(() => {
+      this.setState({ numRepliesSummarized: $('.dw-p.dw-x').length });
+    }, 1);
   },
 
   render: function() {
@@ -94,7 +115,7 @@ export var Metabar = createComponent({
           toggleDetailsBtn);
 
     var detailsElem = ui.showDetails
-      ? MetabarDetails(store)
+      ? MetabarDetails({ store: store })
       : null;
 
     var anyExtraMeta;
@@ -112,6 +133,28 @@ export var Metabar = createComponent({
             r.div({ className: 'esMetabar_msgMmbrs' },
               memberList));
     }
+
+    // ----- Summarize replies section
+
+    var summarizeStuff;
+    if (store.numPostsRepliesSection >= 10) {
+      var doneSummarizing = !_.isNumber(this.state.numRepliesSummarized) ? null :
+          r.span({ style: { marginLeft: '1em' }},
+            "Done.");
+          // Don't show num summarized — only visiblie replies are summarized, so
+          // the count would be confusingly low.
+          // So don't:  Summarized " + this.state.numRepliesSummarized + " replies.");
+      var minutes = estimateReadingTimeMinutesSkipOrigPost(<Post[]> _.values(store.allPosts));
+      if (minutes >= 10 || store.numPostsRepliesSection >= 20) {
+        summarizeStuff =
+          r.div({ className: 'esMetabar_summarize' },
+            r.p({}, "There are " + store.numPostsRepliesSection + " replies. " +
+              "Estimated reading time: " + Math.ceil(minutes) + " minutes"),
+            Button({onClick: this.summarizeReplies}, "Summarize Replies"), doneSummarizing);
+      }
+    }
+
+    // ----- Put everything together
 
     var result;
     if (store.isInEmbeddedCommentsIframe) {
@@ -140,7 +183,8 @@ export var Metabar = createComponent({
         r.div({ className: 'dw-cmts-tlbr esMetabar', id: 'dw-cmts-tlbr' },
           summaryElem,
           detailsElem,
-          anyExtraMeta);
+          anyExtraMeta,
+          summarizeStuff);
     }
 
     return result;
@@ -149,49 +193,120 @@ export var Metabar = createComponent({
 
 
 var MetabarDetails = createComponent({
-  getInitialState: function() {
-    return { numRepliesSummarized: null };
-  },
-
-  onNewNotfLevel: function(event, newLevel) {
-    ReactActions.setPageNoftLevel(newLevel);
-  },
-
-  summarizeReplies: function() {
-    ReactActions.summarizeReplies();
-    setTimeout(() => {
-      this.setState({ numRepliesSummarized: $('.dw-p.dw-x').length });
-    }, 1);
-  },
-
   render: function() {
-    var user = this.props.user;
+    var store: Store = this.props.store;
+    var user = store.user;
     var userAuthenticated = user && user.isAuthenticated;
 
-    var notificationsElem = userAuthenticated
-        ? DropdownButton({ title: user.rolePageSettings.notfLevel, id: '7bw3gz5',
-              className: 'dw-notf-level', onSelect: this.onNewNotfLevel },
-            MenuItem({ eventKey: 'Watching' }, 'Watching'),
-            MenuItem({ eventKey: 'Tracking' }, 'Tracking'),
-            MenuItem({ eventKey: 'Regular' }, 'Regular'),
-            MenuItem({ eventKey: 'Muted' }, 'Muted'))
-        : null;
-
-    var doneSummarizing = _.isNumber(this.state.numRepliesSummarized)
-      ? r.span({ style: { marginLeft: '1em' }}, "Done. Summarized " +
-            this.state.numRepliesSummarized + " replies.")
-      : null;
-
-    var summarizeButton =
-        r.div({ className: 'dw-tlbr-sctn' },
-          Button({ onClick: this.summarizeReplies }, "Summarize Replies"), doneSummarizing);
+    var notificationsElem = !userAuthenticated ? null :
+        Button({ id: '7bw3gz5', className: 'dw-notf-level',
+            onClick: event => openNotfsLevelDropdown(event.target) },
+          r.span({}, user.rolePageSettings.notfLevel + ' ', r.span({ className: 'caret' })));
 
     return (
       r.div({ className: 'dw-cmts-tlbr-details' },
-          notificationsElem,
-          summarizeButton));
+          notificationsElem));
   }
 });
+
+
+// some dupl code [6KUW24]
+var NotfsLevelDropdownModal = createComponent({
+  mixins: [StoreListenerMixin],
+
+  getInitialState: function () {
+    return {
+      isOpen: false,
+      store: debiki2.ReactStore.allData(),
+    };
+  },
+
+  onChange: function() {
+    this.setState({ store: debiki2.ReactStore.allData() });
+  },
+
+  // dupl code [6KUW24]
+  openAt: function(at) {
+    var rect = at.getBoundingClientRect();
+    this.setState({
+      isOpen: true,
+      atX: rect.left,
+      atY: rect.bottom,
+    });
+  },
+
+  closeSoon: function() {
+    setTimeout(this.close, 330);
+  },
+
+  close: function() {
+    this.setState({ isOpen: false });
+  },
+
+  setNotfLevel: function(newLevel) {
+    ReactActions.setPageNoftLevel(newLevel);
+    this.closeSoon();
+  },
+
+  render: function() {
+    var state = this.state;
+    var store: Store = this.state.store;
+    var me: Myself = store.me;
+
+    return (
+      DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY,
+          pullLeft: true },
+        ExplainingListItem({
+          active: me.rolePageSettings.notfLevel === 'Watching',
+          title: r.span({ className: '' }, "Watching"),
+          text: "You'll be notified of all new replies in this topic.",
+          onSelect: () => this.setNotfLevel('Watching') }),
+        /*
+        ExplainingListItem({
+          active: me.rolePageSettings.notfLevel === 'Tracking',
+          title: r.span({ className: '' }, "Tracking"),
+          text: r.span({}, "??"),
+          onSelect: () => this.setNotfLevel('Tracking') }),
+          */
+        ExplainingListItem({
+          active: me.rolePageSettings.notfLevel === 'Normal',
+          title: r.span({ className: '' }, "Normal"),
+          text: r.span({}, "You'll be notified if someone replies to you or mentions your ",
+              r.samp({}, "@name"), "."),
+          onSelect: () => this.setNotfLevel('Normal') }),
+        ExplainingListItem({
+          active: me.rolePageSettings.notfLevel === 'Muted',
+          title: r.span({ className: '' }, "Muted"),
+          text: "No notifications at all about this topic.",
+          onSelect: () => this.setNotfLevel('Muted') })));
+  }
+});
+
+
+function estimateReadingTimeMinutesSkipOrigPost(posts: Post[]): number {
+  // People read 200 English words per minute, with 60% reading comprehension.
+  // But 60% is rather low. Let's improve that, and assume a few distractions –> 120? wpm instead.
+  var wordsPerMinute = 120;
+  // Google "average word length" –> "English, French, Spanish and German are approximately
+  // 5.10, 5.13, 5.22 and 6.26" (www.puchu.net/doc/Average_Word_Length),
+  // Russian: 5.3 (http://arxiv.org/pdf/1208.6109.pdf)
+  //    — so let's use 5.2.
+  // But what about Chinese and Japanese?
+  var averageWordLength = 5.2;
+  // % html chars varies between 60% and 95% ? fairly much depending on how many <a href=...>
+  // there are in comparison to the amount of visible text.
+  var removeHtml = 0.8; // guessing that 20% chars is html tags and classes and href=...
+  var numChars = _.sumBy(posts, (post: Post) => {
+    // Exclude the original post.
+    if (post.postId === BodyId || post.postId === TitleId) return 0;
+    return post.sanitizedHtml ? post.sanitizedHtml.length : 0
+  });
+  var numWords = numChars * removeHtml / averageWordLength;
+  return numWords / wordsPerMinute;
+}
+
+// Don't use, only for testing.
+export var debugEstimateReadingTime = estimateReadingTimeMinutesSkipOrigPost;
 
 
 //------------------------------------------------------------------------------
