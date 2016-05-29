@@ -27,10 +27,11 @@ var r = React.DOM;
 // COULD change to a pure function instead.
 export var MenuItemLink = createComponent({
   render: function() {
-    // Copy react-bootstrap's MenuItem html.
+    // Based on react-bootstrap's MenuItem html.
     return (
         r.li({ role: 'presentation' },
-          r.a({ role: 'button', href: this.props.href, tabIndex: this.props.tabindex || -1 },
+          r.a({ role: 'button', href: this.props.href, tabIndex: this.props.tabindex || -1,
+              target: this.props.target },
             this.props.children)));
   }
 });

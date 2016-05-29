@@ -190,7 +190,7 @@ var AdminAppComponent = React.createClass(<any> {
           Button({ onClick: this.saveSettings, bsStyle: 'primary',
             className: 'esAdmin_savebar_saveBtn' }, "Save changes" ),
           Button({ onClick: this.undoSettings,
-            className: 'esAdmin_savebar_undoBtn' }, "Undo changes" )));
+            className: 'esAdmin_savebar_undoBtn' }, "Undo all changes" )));
 
     return (
       r.div({ className: 'esAdminArea' },

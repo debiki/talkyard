@@ -64,15 +64,12 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
   clear: right;
   right: 0;
 
-#dw-toggle-sidebar
+.esCtxbar_close.esCloseCross
   float: right;
-  clear: right;
-  background: #ddd;
-  border: none;
-  font-size: 130%;
-  padding: 8px 7px;
-  z-index: 10;
-
+  padding: 8px 13px 8px 8px;
+  margin: 0 0 10px; // prevents the Unread/Recent/Starred buttons from floating-left below
+  @media (max-width: 510px)
+    margin-bottom: 0;
 
 .dw-hz #dw-sidebar
   background: white;
@@ -154,13 +151,10 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
     &.active
       background: hsl(0, 0%, 74%);
       color: #000;
+      cursor: default;
 
-  #dw-toggle-sidebar
-    margin-bottom: 15px; // prevents the Unread/Recent/Starred buttons from floating-left below
-    @media (max-width: 510px)
-      margin-bottom: 0;
-    top: 0;
-    right: 0;
+    &:hover:not(.active)
+      background-color: hsl(0, 0%, 92%);
 
   .dw-comments
     clear: both;
@@ -256,6 +250,8 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
 .esAdminGuide
   h2, h3, h4
     margin: 20px 0 10px;
+  h2
+    font-size: 20px;
 
 .es-editor-help-one,
 .es-editor-help-two,

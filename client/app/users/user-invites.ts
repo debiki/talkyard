@@ -227,7 +227,8 @@ var InviteDialog = createComponent({  // COULD break out to separate debiki2.inv
           EmailInput({ label: 'Email Address', placeholder: 'Enter email',
               ref: 'emailInput', error: this.state.error, onChangeValueOk: this.onEmailChanged })),
         ModalFooter({},
-          Button({ onClick: this.sendInvite, disabled: !this.state.maySubmit }, 'Send Invite'),
+          Button({ onClick: this.sendInvite, disabled: !this.state.maySubmit,
+              bsStyle: 'primary' }, 'Send Invite'),
           Button({ onClick: this.close }, 'Cancel'))));
   }
 });

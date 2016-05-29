@@ -76,8 +76,8 @@ export var Watchbar = createComponent({
 
     return (
         r.div({ className: 'esWatchbar', ref: 'watchbar' },
-          Button({ className: 'esCloseWatchbarBtn', onClick: ReactActions.closeWatchbar },
-            r.span({ className: 'icon-left-open' })),
+          r.button({ className: 'esWatchbar_close esCloseCross',
+              onClick: ReactActions.closeWatchbar }),
         recentTopicsAndNotfs,
         chatChannels,
         directMessages));

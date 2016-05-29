@@ -828,7 +828,7 @@ export var Editor = createComponent({
         pageRoleDropdown = PageRoleDropdown({ store: store, pageRole: this.state.newForumPageRole,
             complicated: store.settings.showComplicatedStuff,
             onSelect: this.changeNewForumPageRole,
-            title: 'Page type', className: 'esEdtr_titleEtc_pageRole' });
+            title: 'Topic type', className: 'esEdtr_titleEtc_pageRole' });
       }
     }
 
@@ -989,6 +989,7 @@ export var Editor = createComponent({
         anyBackdrop,
         r.div({ id: 'debiki-editor-controller', ref: 'editor', style: maxHeightCss,
             className: editorClasses },
+          r.button({ className: 'esEdtr_close esCloseCross', onClick: this.onCancelClick }),
           guidelinesElem,
           r.div({ id: 'editor-after-borders' },
             r.div({ className: 'editor-area', style: editorStyles },

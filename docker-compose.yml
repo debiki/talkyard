@@ -1,6 +1,8 @@
 version: '2'
 services:
+  # rename to web?
   nginx:
+    mem_limit: 200M
     build: docker/nginx/
     image: debiki/ed-nginx
     command: nginx
@@ -15,7 +17,9 @@ services:
     depends_on:
       - play
 
+  # rename to app?
   play:
+    mem_limit: 2200M
     build: docker/play-dev/
     # image debiki/ed-play instead created and tagged by docker/build-play-prod.sh.
     stdin_open: true  # otherwise Play exits
@@ -33,21 +37,25 @@ services:
       - postgres
       - redis
     environment:
-      PLAY_HEAP_MEMORY_MB: 1048
+      PLAY_HEAP_MEMORY_MB: 1500
       HOSTNAME: "localhost"
       CREATE_SITE_HOSTNAME: "localhost"
       BECOME_OWNER_EMAIL_ADDRESS: "admin@example.com"
       E2E_TEST_PASSWORD: "public"
       FORBIDDEN_PASSWORD: "public"
 
+  # rename to cache?
   redis:
+    mem_limit: 50M
     image: redis:3.0.7-alpine
     volumes:
       - ./docker/data/redis/:/data/
     ports:
       - '6379:6379'
 
+  # rename to db?
   postgres:
+    mem_limit: 200M
     build: docker/postgres/
     image: debiki/ed-postgres
     volumes:
@@ -63,7 +71,9 @@ services:
 
   # An extra database, so you can experiment with Postgres replication and failover.
   # You don't need to start it.
+  # rename to db2?
   postgres2:
+    mem_limit: 20M
     build: docker/postgres/
     volumes:
       - ./docker/data/postgres2/:/var/lib/postgresql/data/
@@ -74,6 +84,7 @@ services:
       PEER_PASSWORD: 'public'
 
   gulp:
+    mem_limit: 900M
     build: docker/gulp/
     volumes:
       - ./:/opt/debiki/server/

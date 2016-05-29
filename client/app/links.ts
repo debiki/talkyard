@@ -85,6 +85,11 @@ export function goBackToSite() {
   window.location.replace(previousUrl);
 }
 
+
+export function externalLinkToAdminHelp(): string {
+  return 'https://www.effectivediscussions.org/forum/latest/support';
+}
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

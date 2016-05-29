@@ -112,7 +112,7 @@ export var PageRoleDropdown = createComponent({
     var dropdownModal =
       DropdownModal({ show: state.open, onHide: this.close, pullLeft: this.props.pullLeft,
           atX: state.buttonX, atY: state.buttonY },
-        r.div({ className: 'esDropModal_header'}, "Select page type:"),
+        r.div({ className: 'esDropModal_header'}, "Select topic type:"),
         r.ul({},
           ExplainingListItem({ onSelect: this.onSelect,
             activeEventKey: pageRole, eventKey: PageRole.Discussion,

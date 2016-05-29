@@ -316,6 +316,11 @@ export var TopBar = createComponent({
       quickLinks.push(MenuItem({ key: section.pageId, divider: true }));
     });
 
+    var adminHelpLink = !isStaff(me) ? null :
+      MenuItemLink({ href: externalLinkToAdminHelp(), target: '_blank' },
+        r.span({}, (me.isAdmin ? "Admin" : "Staff") + " help ",
+          r.span({ className: 'icon-link-ext' })));
+
     var menuDropdown =
         DropdownButton({ title: menuTitle, className: 'dw-menu esMenu', pullRight: true,
             noCaret: true, id: '9uk4j2' },
@@ -327,7 +332,8 @@ export var TopBar = createComponent({
           MenuItem({ onSelect: ReactActions.showHelpMessagesAgain },
               r.span({ className: 'icon-help' }, "Unhide help messages")),
           MenuItemLink({ href: linkToAboutPage() }, "About this site"),
-          MenuItemLink({ href: linkToTermsOfUse() }, "Terms and Privacy"));
+          MenuItemLink({ href: linkToTermsOfUse() }, "Terms and Privacy"),
+          adminHelpLink);
 
     // ------- Search button
 
@@ -391,7 +397,11 @@ export var TopBar = createComponent({
       contextbarTipsBrief = r.span({}, '0', r.span({ className: 'icon-comment-empty' }));
     }
     else {
+      /* don't:
       var numOthers = usersHere.numOnline - (usersHere.iAmHere ? 1 : 0);
+      because then people get confused when inside the contextbar they see: sth like '1 user, you'
+      although when collapsed, says '0 users'. So for now: */
+      var numOthers = usersHere.numOnline;
       var inThisWhat = usersHere.areChatChannelMembers ? "chat"  : "forum";
       contextbarTipsDetailed = numOthers + " online in this " + inThisWhat;
       contextbarTipsBrief = r.span({}, '' + numOthers, r.span({ className: 'icon-user' }));

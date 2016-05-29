@@ -56,6 +56,18 @@ $showPreviewMinWidth = 900px;
   font-family: monospace;
   font-size: 90%;
 
+.esEdtr_close
+  position: absolute;
+  right: 0;
+  padding: 1px 13px;
+  font-size: 24px;
+  color: hsl(0, 0%, 27%);
+  z-index: 2;
+  &:hover
+    color: hsl(0, 0%, 8%);
+    background-color: hsl(0,0%,80%);
+    cursor: pointer;
+
 #debiki-editor-controller
   position: fixed !important; // !important so jQuery.resizable() won't overwrite
   top: initial;

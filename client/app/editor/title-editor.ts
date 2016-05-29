@@ -196,14 +196,14 @@ export var TitleEditor = createComponent({
           r.div({ className: 'dw-compl-stuff form-horizontal', key: 'compl-stuff-key' },
             anyMetaTitleAndDescription,
             isForumOrAbout ? null :
-              Input({ label: "Page type", labelClassName: 'col-xs-2',
+              Input({ label: "Topic type", labelClassName: 'col-xs-2',
                   wrapperClassName: 'col-xs-10' },
                 editor.PageRoleDropdown({ store: store, pageRole: this.state.pageRole,
                   onSelect: this.onPageRoleChanged, pullLeft: true,
                   complicated: store.settings.showComplicatedStuff,
-                  title: 'Page type', className: 'esEdtr_titleEtc_pageRole',
-                  help: "Makes the page behave differently. For example, pages of type " +
-                    "Question can be marked as solved, and Idea pages can be New, " +
+                  title: 'Topic type', className: 'esEdtr_titleEtc_pageRole',
+                  help: "Makes the topic behave differently. For example, topics of type " +
+                    "Question can be marked as solved, and Idea topics can be New, " +
                     "Planned or Implemented." })),
             anyUrlAndCssClassEditor));
     }

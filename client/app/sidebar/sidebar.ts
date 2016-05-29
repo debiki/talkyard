@@ -509,7 +509,7 @@ export var Sidebar = createComponent({
           MiniMap(minimapProps))),
       r.div({ id: 'dw-sidebar', className: 'esCtxbar' + sidebarClasses, ref: 'sidebar' },
         r.div({ className: 'esCtxbar_btns' },
-          ToggleSidebarButton({ isSidebarOpen: true, onClick: this.closeSidebar }),
+          CloseSidebarButton({ onClick: this.closeSidebar }),
           tabButtons),
         r.div({ className: 'dw-comments esCtxbar_list' },
           helpMessageBoxOne,
@@ -630,12 +630,11 @@ var helpMessageFour = {
 };
 
 
-var ToggleSidebarButton = createComponent({
+var CloseSidebarButton = createComponent({
   render: function() {
     return (
-      r.button({ id: 'dw-toggle-sidebar', onClick: this.props.onClick,
-            title: 'Keyboard shortcut: S' },
-        r.span({ className: this.props.isSidebarOpen ? 'icon-right-open' : 'icon-left-open' })));
+      r.button({ className: 'esCtxbar_close esCloseCross', onClick: this.props.onClick,
+          title: "Close (keyboard shortcut: S)" }));
   }
 });
 
@@ -647,13 +646,15 @@ var TheAdminGuide =
   r.div({ className: 'esAdminGuide' },
     r.p({}, "Welcome! You're an admin, and as an admin, you can edit forum settings, define what this community is about, and invite people."),
     r.h2({}, "Edit settings"),
-    r.p({}, "Go to the admin area by clicking ", r.span({ className: 'icon-menu' }), " to the upper left, then click ", r.strong({}, "Admin"), ". Have a look at the settings, in case there's something you'd like to change. For example:"),
+    r.p({}, "Go to the admin area by clicking ", r.span({ className: 'icon-menu' }), " to the upper left, then click ", r.strong({}, "Admin"), ". Have a look at the settings, in case there's something you'd like to change. You can edit the settings in the ", r.strong({}, "Login"), " section, to make the forum private. And edit colors and fonts in the ", r.strong({}, "Customize"), " section."),
+    /*  Tooo much text! I'm afraid people won't read. At least one usability tester totally didn't.
     r.h4({}, "Copyright"),
     r.p({}, "By default, people may copy material from the forum, and they must then give credit to the authors, and indicate if they have modified it. They must also in turn allow others to copy and edit their modified material. This is ", r.a({ href: 'http://creativecommons.org/licenses/by-sa/4.0/', target: '_blank' }, "Creative Commons' CC BY-SA 4.0", r.span({ className: 'icon-link-ext' })), ". — All this is a bit configurable, in the ", r.strong({}, "Legal"), " settings section."),
     r.h4({}, "Private or public?"),
     r.p({}, "You can make the forum private, by enabling these: ", r.em({}, "Login required"), " and ", r.em({}, "Approve users"), ", in the ", r.strong({}, "Login"), " settings section."),
     r.h4({}, "Customize colors and logo"),
     r.p({}, "In the ", r.strong({}, "Customize"), " section, you can customize colors, add a logo and a top navigation bar. ", r.strong({}, "However"), ", your customizations might break in the future, because this functionality is a bit experimental right now. Also, right now you need to know some CSS and HTML, unfortunately."),
+    */
     r.h2({}, "Clarify what this community is about"),
     r.p({}, "On ", r.a({ href: "/" }, "the forum main page"), ", edit the forum intro text (just below the forum title). And edit the ", r.em({}, "Welcome to this community"), " topic. And ", r.a({ href: '/about' }, "the about page"), "."),
     r.h2({}, "Create categories"),
@@ -664,8 +665,8 @@ var TheAdminGuide =
       r.li({}, "Make sure people will understand what this community is about — see the ", r.em({}, "Clarify what this community is about"), " section above."),
       r.li({}, "Create some interesting topics, so people won't find an empty forum."),
       r.li({}, "Set aside time to visit your forum regularly and participate in the discussions."),
-      r.li({}, "Tell a few people to have a look at your forum. Ask them if they understand its purpose. Edit the forum intro text and the welcome topic, until everything is clear.")),
-    r.p({}, "Then start promoting your community: link to it \"everywhere\" and tell people about it. You can invite people via email: click your name at the top of this page, then click ", r.strong({}, "View Profile"), " then ", r.strong({}, "Invite")),
+      r.li({}, "Tell a few people to have a look at your forum. Ask if they understand its purpose. Edit the forum intro text and the welcome topic, until everything is clear.")),
+    r.p({}, "Then start promoting your community: link to it on the Internet, and tell people about it. You can invite people via email: click your name at the top of this page, then click ", r.strong({}, "View Profile"), " then ", r.strong({}, "Invite")),
     r.h2({}, "Need help?"),
     r.p({}, "For help, go to EffectiveDiscussion's ", r.a({ href: 'http://www.effectivediscussions.org/forum/latest/support', target: '_blank' }, "support forum", r.span({ className: 'icon-link-ext' })), ". Over there, there's an ", r.em({}, "Ideas"), " category too, and you're welcome to make suggestions."));
 

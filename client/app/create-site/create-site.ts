@@ -163,7 +163,7 @@ var CreateWebsiteComponent = React.createClass(<any> {
       r.div({},
         r.h1({}, 'Create Forum'),
         r.form({ className: 'esCreateSite', onSubmit: this.handleSubmit },
-          EmailInput({ label: 'Email:', id: 'e2eEmail', className: 'esCreateSite_email',
+          EmailInput({ label: "Your email:", id: 'e2eEmail', className: 'esCreateSite_email',
               placeholder: 'your-email@example.com',
               help: 'Your email address, which you will use to login and ' +
                 'administrate the site.', ref: 'emailAddress',
@@ -196,8 +196,8 @@ var CreateWebsiteComponent = React.createClass(<any> {
 
           LocalHostnameInput({ label: 'Site Address:', placeholder: 'your-forum-name',
               style: { display: state.showHostname ? 'block' : 'none' },
-              help: "The address of your new site. (You can change this later,  " +
-                  "e.g. to a custom domain.)",
+              help: "The address of your new site. You can change this later,  " +
+                  "e.g. to a custom domain.",
               ref: 'localHostname',
               onChangeValueOk: (isOk) => this.reportOkay('hostname', isOk) }),
 

@@ -739,8 +739,8 @@ var ForumTopicListComponent = React.createClass(<any> {
               r.th({}, "Category"),
               r.th({}, "Users"),
               r.th({ className: 'num dw-tpc-replies' }, "Replies"),
-              r.th({ className: 'num' }, "Activity"),
-              r.th({ className: 'num' }, "Feelings"))),
+              r.th({ className: 'num' }, "Activity"))),
+              // skip for now:  r.th({ className: 'num' }, "Feelings"))),  [8PKY25]
           r.tbody({},
             topics)),
         loadMoreTopicsBtn));
@@ -754,6 +754,7 @@ var TopicRow = createComponent({
     router: React.PropTypes.object.isRequired
   },
 
+  // Currently not in use, see [8PKY25].
   styleFeeeling: function(num, total): any {
     if (!total)
       return null;
@@ -820,6 +821,8 @@ var TopicRow = createComponent({
       return category.id === topic.categoryId;
     });
 
+    /* Skip Feelings for now, mostly empty anyway, doesn't look good. Test to add back  [8PKY25]
+    later if people start using Like and Wrong fairly much.
     var feelingsIcons = [];
     var heartStyle = this.styleFeeeling(topic.numLikes, topic.numPosts);
     if (heartStyle) {
@@ -840,6 +843,7 @@ var TopicRow = createComponent({
       feelings =
         r.span({ title: title }, feelingsIcons);
     }
+     */
 
     var activityTitle =
       'Created on ' + dateTimeFix(topic.createdEpoch);
@@ -884,8 +888,8 @@ var TopicRow = createComponent({
         r.td({}, categoryName),
         r.td({}, userAvatars),
         r.td({ className: 'num dw-tpc-replies' }, topic.numPosts - 1),
-        r.td({ className: 'num dw-tpc-activity', title: activityTitle }, activityAgo),
-        r.td({ className: 'num dw-tpc-feelings' }, feelings)));
+        r.td({ className: 'num dw-tpc-activity', title: activityTitle }, activityAgo)));
+        // skip for now:  r.td({ className: 'num dw-tpc-feelings' }, feelings)));  [8PKY25]
   }
 });
 
