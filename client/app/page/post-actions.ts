@@ -32,6 +32,7 @@
 /// <reference path="../page-dialogs/delete-post-dialog.ts" />
 /// <reference path="../page-dialogs/move-posts-dialog.ts" />
 /// <reference path="../page-dialogs/see-wrench-dialog.ts" />
+/// <reference path="../page-dialogs/share-dialog.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="chat.ts" />
@@ -108,10 +109,8 @@ export var PostActions = createComponent({
   onEditClick: function(event) {
     debiki2.ReactActions.editPostWithNr(this.props.post.postId);
   },
-  onLinkClick: function() {
-    var hash = '#post-' + this.props.post.postId;
-    var url = window.location.host + '/-' + debiki.getPageId() + hash;
-    window.prompt('To copy a link to this post, press Ctrl+C then Enter', url);
+  onLinkClick: function(event) {
+    pagedialogs.openShareDialog(this.props.post, event.target);
   },
   onLikeClick: function(event) {
     loginIfNeededThen(LoginReason.LoginToLike, this.props.post.postNr, () => {
@@ -337,7 +336,7 @@ var MoreVotesDropdownModal = createComponent({
     this.setState({
       isOpen: true,
       post: post,
-      atX: rect.right,
+      atX: rect.left - 140,
       atY: rect.bottom,
     });
   },
@@ -416,7 +415,7 @@ var MoreVotesDropdownModal = createComponent({
     var content = state.isOpen ? this.makeVoteButtons() : null;
     return (
       DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY,
-          className: 'esDwnvts' }, content));
+          pullLeft: true, className: 'esDwnvts' }, content));
   }
 });
 
