@@ -388,7 +388,7 @@ var MoreVotesDropdownModal = createComponent({
     var wrongVoteButton =
       ExplainingListItem({
         title: r.span({ className: 'dw-a-wrong icon-warning' + myWrongVote }, "Wrong"),
-        text: r.span({}, "Cast a ", r.i({}, "Wrong"), " vote if you disagree with this post, " +
+        text: r.span({}, "Click ", r.i({}, "Wrong"), " if you disagree with this post, " +
             "or to warn others about factual errors."),
         onClick: this.onWrongClick, key: 'w' });
 
@@ -396,8 +396,7 @@ var MoreVotesDropdownModal = createComponent({
     var buryVoteButton = isFlat ? null :
       ExplainingListItem({
         title: r.span({ className: 'dw-a-bury icon-bury' + myBuryVote }, "Bury"),
-        text: r.span({}, r.i({}, "Bury"), " votes sort other posts before this post, and " +
-            "collapses it — unless people cast ", r.i({}, "Like"), " votes."),
+        text: r.span({}, "Click", r.i({}, "Bury"), " to sort other posts before this post."),
         onClick: this.onBuryClick, key: 'b' });
 
     var unwantedVoteButton = isGuest(me) || !isStaffOrOwnPage ? null :
