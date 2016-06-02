@@ -158,13 +158,13 @@ export var TitleEditor = createComponent({
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
             value: this.state.htmlHeadTitle,
             onChange: (event) => this.setState({ htmlHeadTitle: event.target.value }),
-            help: "Optional custom title for Search Engine Optimization (SEO). Will be inserted " +
+            help: "Custom title for Search Engine Optimization (SEO). Will be inserted " +
               "into the <html><head><title> tag."}),
           Input({ label: "SERP description", type: 'textarea',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
             value: this.state.htmlHeadDescription,
             onChange: (event) => this.setState({ htmlHeadDescription: event.target.value }),
-            help: "Optional description, for Search Engine Result Pages (SERP). Will be inserted " +
+            help: "Page description, for Search Engine Result Pages (SERP). Will be inserted " +
                 "into the <html><head><meta name='description' content='...'> attribute." }));
 
 
@@ -178,7 +178,7 @@ export var TitleEditor = createComponent({
           Input({ label: 'Folder', type: 'text', ref: 'folderInput', className: 'dw-i-folder',
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
             value: this.state.folder, onChange: this.onFolderChanged,
-            help: "Any /url/path/segments/ to this page." }),
+            help: "Any /url/path/ to this page." }),
           Input({ label: 'Show page ID in URL', type: 'checkbox', ref: 'showIdInput',
             wrapperClassName: 'col-xs-offset-2 col-xs-10',
             className: 'dw-i-showid', checked: this.state.showId,
@@ -188,23 +188,13 @@ export var TitleEditor = createComponent({
             labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10',
             value: this.state.htmlTagCssClasses,
             onChange: (event) => this.setState({ htmlTagCssClasses: event.target.value }),
-            help: r.span({}, "A space plus the text you type here will be appended to the ",
+            help: r.span({}, "The CSS classes you type here will be added to the ",
                 r.kbd({}, '<html class="...">'), " attribute.") }));
 
       complicatedStuff =
         r.div({},
           r.div({ className: 'dw-compl-stuff form-horizontal', key: 'compl-stuff-key' },
             anyMetaTitleAndDescription,
-            isForumOrAbout ? null :
-              Input({ label: "Topic type", labelClassName: 'col-xs-2',
-                  wrapperClassName: 'col-xs-10' },
-                editor.PageRoleDropdown({ store: store, pageRole: this.state.pageRole,
-                  onSelect: this.onPageRoleChanged, pullLeft: true,
-                  complicated: store.settings.showComplicatedStuff,
-                  title: 'Topic type', className: 'esEdtr_titleEtc_pageRole',
-                  help: "Makes the topic behave differently. For example, topics of type " +
-                    "Question can be marked as solved, and Idea topics can be New, " +
-                    "Planned or Implemented." })),
             anyUrlAndCssClassEditor));
     }
 
@@ -212,7 +202,7 @@ export var TitleEditor = createComponent({
     // the whole dialog. Because if hiding it, then what about any changes made? Save or ignore?
     var showAdvancedButton = this.state.showComplicated || !user.isAdmin
         ? null
-        : r.a({ className: 'dw-toggle-compl-stuff icon-settings',
+        : r.a({ className: 'esTtlEdtr_openAdv icon-settings',
             onClick: this.showComplicated }, 'Advanced');
 
     var selectCategoryInput;
@@ -226,6 +216,17 @@ export var TitleEditor = createComponent({
             selectedCategoryId: this.state.categoryId,
             onCategorySelected: this.onCategoryChanged }));
     }
+
+    var selectTopicType = isForumOrAbout ? null :
+      Input({ label: "Topic type", labelClassName: 'col-xs-2',
+          wrapperClassName: 'col-xs-10' },
+        editor.PageRoleDropdown({ store: store, pageRole: this.state.pageRole,
+          onSelect: this.onPageRoleChanged, pullLeft: true,
+          complicated: store.settings.showComplicatedStuff,
+          title: 'Topic type', className: 'esEdtr_titleEtc_pageRole',
+          help: "Makes the topic behave differently. For example, topics of type " +
+          "Question can be marked as solved, and Idea topics can be New, " +
+          "Planned or Implemented." }));
 
     var customHtmlPageOption = user.isAdmin
         ? r.option({ value: PageRole.CustomHtmlPage }, 'Custom HTML page')
@@ -248,15 +249,16 @@ export var TitleEditor = createComponent({
       ? r.div({}, 'Saving...')
       : r.div({ className: 'dw-save-btns-etc' },
           Button({ onClick: this.save, bsStyle: 'primary', className: 'e2eSaveBtn' }, 'Save'),
-          Button({ onClick: this.props.closeEditor, className: 'e2eCancelBtn' }, 'Cancel'),
-          showAdvancedButton, addBackForumIntroButton);
+          Button({ onClick: this.props.closeEditor, className: 'e2eCancelBtn' }, 'Cancel'));
 
     return (
       r.div({ className: 'dw-p-ttl-e' },
         Input({ type: 'text', ref: 'titleInput', className: 'dw-i-title', id: 'e2eTitleInput',
             defaultValue: titleText, onChange: this.onTitleChanged }),
-        r.div({ className: 'dw-page-category-role form-horizontal' },
-          selectCategoryInput),
+        r.div({ className: 'form-horizontal' }, selectCategoryInput),
+        r.div({ className: 'form-horizontal' }, selectTopicType),
+        addBackForumIntroButton,
+        showAdvancedButton,
         ReactCSSTransitionGroup({ transitionName: 'compl-stuff',
             transitionAppear: true, transitionAppearTimeout: 600,
             transitionEnterTimeout: 600, transitionLeaveTimeout: 500 },

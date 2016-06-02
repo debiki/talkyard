@@ -1,0 +1,25 @@
+
+.esScrollBack_fixedBar
+  position: fixed;
+  top: auto;
+  bottom: 0;
+  pointer-events: none;
+  background: none !important; // IE11
+
+.esScrollBack
+  pointer-events: auto;
+  padding: 5px 10px 5px 12px;
+  font-size: 15px;
+  border: none;
+  font-weight: bold;
+  float: right;
+  color: white;
+  background: hsl($uiHue, 80%, 54%);
+  &:hover
+    color: white;
+    background: hsl($uiHue, 90%, 70%);
+
+.esScrollBack_shortcut
+  text-decoration: underline;
+  font-size: 17px;
+

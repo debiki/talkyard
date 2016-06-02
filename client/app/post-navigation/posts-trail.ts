@@ -34,6 +34,7 @@ export var addVisitedPositionAndPost: (nextPostId: number) => void = _.noop;
 export var addVisitedPosition: () => void = _.noop;
 
 
+// Later: Rename to ScrollBackButton
 export var PostNavigation = debiki2.utils.createClassAndFactory({
   getInitialState: function() {
     return {
@@ -170,14 +171,16 @@ export var PostNavigation = debiki2.utils.createClassAndFactory({
 
     var backHelp = "Scroll back to your previous position on this page";
 
+    // Don't show num steps one can scroll back, don't: "Back (4)" — because people
+    // sometimes think 4 is a post number.
     var scrollBackButton =
-          Button({ className: 'dw-scrollback dw-goto', onClick: this.goBack, title: backHelp },
-              r.span({ className: 'icon-down-dir' },
-                r.span({ style: { fontWeight: 'bold' }}, "B"), "ack (" +
-                    this.state.currentVisitedPostIndex + ")"));
+          Button({ className: 'esScrollBack', onClick: this.goBack, title: backHelp },
+              "Scroll ", r.span({ className: 'esScrollBack_shortcut' }, "B"), "ack");
 
     return (
-      r.span({}, scrollBackButton));
+      r.div({ className: 'esScrollBack_fixedBar' },
+        r.div({ className: 'container' },
+          scrollBackButton)));
   }
 });
 

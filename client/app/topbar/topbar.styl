@@ -1,5 +1,5 @@
 /*!
- * Copyright (C) 2015 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2015-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -16,10 +16,13 @@
  */
 
 $topbarButtonPaddingTop = 7px
+$gotoButtonSidePadding = 8px;
 
 html:not(.dw-react-started)
   .esTopbar_ancestors,
-  #dw-topbar-btns
+  .esTopbar_scroll,
+  // Avoid flash-of-login-button when already logged in.
+  .esTopbar_right
     visibility: hidden;  // display:none not good, because then other elems too close
 
 .esTopbarWrap
@@ -27,15 +30,15 @@ html:not(.dw-react-started)
   z-index: 3;
 
 // New:
-.esTopBar
+.esTopbar
   clearfix()
   pointer-events: none;
   background: none !important; // IE11
 
-  .dw-topbar-btns,
   .esTopbar_ancestors,
-  .dw-goto-btns,
+  .esTopbar_scroll,
   .esTopbar_custom,
+  .esTopbar_right,
   .dw-topbar-title,
   .esOpenPagebarBtn,
   .esOpenWatchbarBtn
@@ -48,11 +51,6 @@ html:not(.dw-react-started)
     margin-left: 6px;
     .btn
       padding-right: 0;
-
-  .dw-menu
-    .icon-menu
-      font-size: 130%;
-      color: hsl(0, 0%, 50%);
 
   .dw-login.dw-login.dw-login // oh well
     padding-top: 3px;
@@ -92,6 +90,13 @@ html:not(.dw-react-started)
     top: 0;
     margin-top: 0;
     padding-top: 9px;
+
+.esOpenWatchbarBtn .icon-eye
+  font-size: 15px;
+  line-height: 0;
+  position: relative;
+  top: -1px;
+  left: -3px;
 
 .esOpenPagebarBtn
   float: right;
@@ -148,28 +153,31 @@ html.es-watchbar-open
   .esOpenWatchbarBtn
     display: none;
 
-.esTopbar_ancestors
+.esTopbar_ancestors,
+.esTopbar_scroll
   float: left;
   font-size: 15px;
   padding-top: 4px;
+  position: relative;
+  left: - $gotoButtonSidePadding;
+
+.esTopbar_ancestors
   > li
     margin: 0;
     list-style-type: none;
     display: inline-block;
     &::after
-      content: " → ";
+      content: "→";
       color: #666;
       font-size: 19px;
       vertical-align: middle;
+      position: relative;
+      top: -1px;
     > a
       color: #444;
       padding: $topbarButtonPaddingTop 8px 7px 8px;
       border: none;
       background: none;
-    &:first-child > .btn
-      padding-left: 5px;
-      left: -5px;
-      position: relative;
 
 .esTopbar_custom
   margin-top: 12px;
@@ -199,12 +207,7 @@ html.es-watchbar-open
     margin-top: 0;
 
 
-// Avoid flash-of-login-button when already logged in.
-html:not(.dw-react-started)
-  .dw-topbar-btns
-    visibility: hidden;
-
-.esTopBar .esAvtrName // hmm rename to .esAvtrYourName?
+.esTopbar .esAvtrName // hmm rename to .esAvtrYourName?
   display: inline-block;
 
   .btn
@@ -265,6 +268,7 @@ html:not(.dw-react-started)
   &:last-child
     margin-right: 3px;
 
+.esNotfIcon + .edAvtr,
 .esAvtrName_name + .esNotfIcon
   margin-left: 6px;
 
@@ -280,8 +284,19 @@ html:not(.dw-react-started)
 .esNotfIcon-reviewOther
   background: hsl(0, 100%, 75%);
 
+// These are placed to the left of the avatar.
+.esNotfIcon-reviewUrgent,
+.esNotfIcon-reviewOther
+  margin: 0 3px 0 0;  // otherwise only margin-left
 
-.esTopBar,
+.esMyMenu .esAvtr
+  margin-right: 5px;
+
+.esMyMenu_admin
+  .icon-settings::before
+    margin-left: 0;
+
+.esTopbar,
 #theTopbar
   position: relative;
   z-index: 5;
@@ -291,7 +306,7 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
     min-height: 52px; // avoids height changes when filled with contents
 
 // Old:
-.esTopBar
+.esTopbar
   .dw-topbar-title
     float: left; // needed if window narrow
     .dw-t, .dw-p, .dw-p-bd, .dw-p-bd-blk
@@ -323,10 +338,7 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
       box-sizing: content-box;
       color: hsl(0, 0%, 23%);
       border: none;
-      padding: $topbarButtonPaddingTop 8px 7px 8px;
-
-      &.dw-scrollback
-        padding-left: 2px;
+      padding: $topbarButtonPaddingTop $gotoButtonSidePadding 7px $gotoButtonSidePadding;
 
       &:hover
         color: hsl($uiHue, 100%, 20%);
@@ -334,30 +346,12 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
 
       min-width: 40px;
 
-    &.dw-scrollback .icon-down-dir:before
-      font-size: 16px;
-      // rotate so points leftwards not down
-      -webkit-transform: rotate(90deg);
-      -moz-transform: rotate(90deg);
-      -ms-transform: rotate(90deg);
-      -o-transform: rotate(90deg);
-      transform: rotate(90deg);
-      position: relative;
-      top: 1px;
-      margin: 0;
-
-    &.dw-scrollback
-      padding-left: 3px;
-      margin-left: 0;
-
-  .dw-goto-btns
-    float: left;
-
   .esTopbar_ancestors,
-  .dw-topbar-btns
+  .esTopbar_scroll,
+  .esTopbar_right
     margin-top: 15px;
 
-  .dw-topbar-btns
+  .esTopbar_right
     float: right;
 
     .btn
@@ -377,20 +371,12 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
         position: relative;
         top: 1px;
 
-      &.dw-search,
-      &.dw-menu
+      &.dw-search
         font-size: 130%;
         color: #666;
 
         span:before
           font-weight: bold;
-
-      &.dw-menu
-        margin-left: 0;
-
-        .caret
-          display: none;
-
 
   #dw-search-form
     position: absolute;
@@ -416,16 +402,14 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
   background: white;
   box-shadow: 0 14px 20px white;
 
-  .esTopBar
+  .esTopbar
     min-height: auto;
-    margin: 4px 0;
+    margin: 3px 0 5px;
 
-    @media (max-height: 550px)
-      margin: 2px 0;
     @media (max-height: 420px)
-      margin: 1px 0;
+      margin: 2px 0 3px;
     @media (max-height: 220px)
-      margin: 0;
+      margin: 0 0 2px;
 
     &.esTopbar-extraMargin
       margin: 8px 0 12px;
@@ -438,22 +422,25 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
       font-size: 18px;
 
     .btn
-      font-size: 13px;
+      font-size: 14px;
+      @media (max-width: 1000px)
+        font-size: 13.5px;
+      @media (max-width: 850px)
+        font-size: 13px;
 
     /* Make buttons easier to click on small screens.
-    .dw-scrollback,
     .dw-login,
     .dw-admin,
     .dw-a-tools
       padding-top: $topbarButtonPaddingTop;
 
     .dw-goto,
-    .dw-scrollback
       padding-top: $topbarButtonPaddingTop;
       */
 
     .esTopbar_ancestors,
-    .dw-topbar-btns
+    .esTopbar_scroll,
+    .esTopbar_right
       margin-top: 0;
       padding-top: 0;
 

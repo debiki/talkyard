@@ -340,7 +340,7 @@ object ReactJson {
     val forumPathSlash = forumPath.value.endsWith("/") ? forumPath.value | forumPath.value + "/"
     val (name, path) =
       if (category.isRoot)
-        ("Forum", s"${forumPathSlash}latest")   // [i18n]
+        ("Home", s"${forumPathSlash}latest")   // [i18n]
       else
         (category.name, s"${forumPathSlash}latest/${category.slug}")
     Json.obj(

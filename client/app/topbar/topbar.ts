@@ -160,7 +160,7 @@ export var TopBar = createComponent({
 
   goToTop: function() {
     debiki2.postnavigation.addVisitedPosition();
-    utils.scrollIntoViewInPageColumn($('.dw-page'), { marginTop: 30, marginBottom: 9999 });
+    utils.scrollIntoViewInPageColumn($('.dw-page'), { marginTop: 90, marginBottom: 9999 });
   },
 
   goToReplies: function() {
@@ -213,8 +213,8 @@ export var TopBar = createComponent({
     // ------- Top, Replies, Bottom, Back buttons
 
     var goToButtons;
-    if (this.state.fixed && pageRole && pageRole !== PageRole.CustomHtmlPage &&
-        pageRole !== PageRole.Forum) {
+    var scrollBackButton;
+    if (pageRole && pageRole !== PageRole.CustomHtmlPage && pageRole !== PageRole.Forum) {
       var topHelp = "Go to the top of the page. Shortcut: 1 (on the keyboard)";
       var repliesHelp = "Go to the replies section. There are " + store.numPostsRepliesSection +
         " replies. Shortcut: 2";
@@ -226,7 +226,7 @@ export var TopBar = createComponent({
 
       var goToTop = isChat ? null :
           Button({ className: 'dw-goto', onClick: this.goToTop, title: topHelp,
-              disabled: !this.state.enableGotoTopBtn }, "Top");
+              disabled: !this.state.enableGotoTopBtn }, "Scroll to Top");
       var goToReplies = isChat ? null :
           Button({ className: 'dw-goto', onClick: this.goToReplies,
             title: repliesHelp }, "Replies (" + store.numPostsRepliesSection + ")");
@@ -236,13 +236,32 @@ export var TopBar = createComponent({
             title: chatHelp }, "Chat (" + store.numPostsChatSection + ")");
             */
       var goToEnd = Button({ className: 'dw-goto', onClick: this.goToEnd, title: endHelp,
-          disabled: !this.state.enableGotoEndBtn }, "End");
+          disabled: !this.state.enableGotoEndBtn }, "Bottom");
 
-      goToButtons = r.span({ className: 'dw-goto-btns' },
-          goToTop, goToReplies, goToChat, goToEnd, debiki2.postnavigation.PostNavigation());
+      goToButtons = r.span({ className: 'esTopbar_scroll' },
+          goToTop, goToReplies, goToEnd);
+      scrollBackButton = debiki2.postnavigation.PostNavigation();
     }
 
-    // ------- Avatar & username dropdown, + notf icons
+    // ------- Staff link, notfs, help
+
+    var urgentReviewTasks = makeNotfIcon('reviewUrgent', me.numUrgentReviewTasks);
+    var otherReviewTasks = makeNotfIcon('reviewOther', me.numOtherReviewTasks);
+    var adminMenuItem = !isStaff(me) ? null :
+      MenuItemLink({ href: linkToAdminPage(), className: 'esMyMenu_admin' },
+        r.span({ className: 'icon-settings' }, "Admin"));
+    var reviewMenuItem = !urgentReviewTasks && !otherReviewTasks ? null :
+      MenuItemLink({ href: linkToReviewPage() },
+        "Needs review ", urgentReviewTasks, otherReviewTasks);
+
+    var adminHelpLink = !isStaff(me) ? null :
+      MenuItemLink({ href: externalLinkToAdminHelp(), target: '_blank',
+          className: 'esMyMenu_adminHelp' },
+        r.span({}, (me.isAdmin ? "Admin" : "Staff") + " help ",
+          r.span({ className: 'icon-link-ext' })));
+
+
+    // ------- Personal notf icons
 
     var talkToMeNotfs = makeNotfIcon('toMe', me.numTalkToMeNotfs);
     var talkToOthersNotfs = makeNotfIcon('toOthers', me.numTalkToOthersNotfs);
@@ -256,21 +275,33 @@ export var TopBar = createComponent({
       notfsElems.push(
           MenuItem({ key: 'More', onSelect: this.viewOlderNotfs }, "View more notifications..."));
     }
-    var avatarNameAndNotfs =
+
+    // ------- Avatar & username dropdown
+
+    var avatarMenuButtonInclNotfIcons =
         r.span({},
+          urgentReviewTasks, otherReviewTasks,
           avatar.Avatar({ user: me, tiny: true, ignoreClicks: true }),
           r.span({ className: 'esAvtrName_name' }, me.username || me.fullName),
           r.span({ className: 'esAvtrName_you' }, "You"), // if screen too narrow
           talkToMeNotfs,
           talkToOthersNotfs,
           otherNotfs);
+
     var avatarNameDropdown = !me.isLoggedIn ? null :
-        DropdownButton({ title: avatarNameAndNotfs, className: 'esAvtrName', pullRight: true,
-            noCaret: true, id: '2k5f39' },
-          MenuItemLink({ href: linkToMyProfilePage(store) }, "View your profile"),
+        DropdownButton({ title: avatarMenuButtonInclNotfIcons, className: 'esAvtrName esMyMenu',
+            pullRight: true, noCaret: true, id: '2k5f39' },
+          adminMenuItem,
+          adminHelpLink,
+          reviewMenuItem,
+          (adminMenuItem || reviewMenuItem) ? MenuItem({ divider: true }) : null,
+          MenuItemLink({ href: linkToMyProfilePage(store) }, "View/edit your profile"),
           MenuItem({ onSelect: this.onLogoutClick }, "Log out"),
           anyDivider,
-          notfsElems);
+          notfsElems,
+          MenuItem({ divider: true }),
+          MenuItem({ onSelect: ReactActions.showHelpMessagesAgain },
+            r.span({ className: 'icon-help' }, "Unhide help messages")));
 
     // ------- Login button
 
@@ -283,57 +314,12 @@ export var TopBar = createComponent({
             r.span({ className: 'icon-user' }, 'Log In'));
 
     // ------- Tools button
+    // Placed here so it'll be available also when one has scrolled down a bit.
 
     // (Is it ok to call another React component from here? I.e. the page tools dialog.)
     var toolsButton = !isStaff(me) || pagetools.getPageToolsDialog().isEmpty() ? null :
         Button({ className: 'dw-a-tools', onClick: this.showTools },
           r.a({ className: 'icon-wrench' }, 'Tools'));
-
-    // ------- Hamburger dropdown, + review task icons
-
-    var urgentReviewTasks = makeNotfIcon('reviewUrgent', me.numUrgentReviewTasks);
-    var otherReviewTasks = makeNotfIcon('reviewOther', me.numOtherReviewTasks);
-    var menuTitle = r.span({ className: 'icon-menu' }, urgentReviewTasks, otherReviewTasks);
-    var adminMenuItem = !isStaff(me) ? null :
-        MenuItemLink({ href: linkToAdminPage() },
-          r.span({ className: 'icon-settings' }, "Admin"));
-    var reviewMenuItem = !urgentReviewTasks && !otherReviewTasks ? null :
-        MenuItemLink({ href: linkToReviewPage() },
-          "Needs review ", urgentReviewTasks, otherReviewTasks);
-
-    var quickLinks = [];
-    _.each(store.siteSections, (section: SiteSection) => {
-      dieIf(section.pageRole !== PageRole.Forum, 'EsE5JTK20');
-      // COULD if > 1 section, then add tabs, one for each section.
-      var pathSlash = section.path + (_.last(section.path) === '/' ? '' : '/');
-      var url;
-      url = pathSlash + forum.RoutePathLatest;
-      quickLinks.push(MenuItemLink({ key: url, href: url }, "Latest"));
-      url = pathSlash + forum.RoutePathTop;
-      quickLinks.push(MenuItemLink({ key: url, href: url }, "Top"));
-      url = pathSlash + forum.RoutePathCategories;
-      quickLinks.push(MenuItemLink({ key: url, href: url }, "Categories"));
-      quickLinks.push(MenuItem({ key: section.pageId, divider: true }));
-    });
-
-    var adminHelpLink = !isStaff(me) ? null :
-      MenuItemLink({ href: externalLinkToAdminHelp(), target: '_blank' },
-        r.span({}, (me.isAdmin ? "Admin" : "Staff") + " help ",
-          r.span({ className: 'icon-link-ext' })));
-
-    var menuDropdown =
-        DropdownButton({ title: menuTitle, className: 'dw-menu esMenu', pullRight: true,
-            noCaret: true, id: '9uk4j2' },
-          adminMenuItem,
-          reviewMenuItem,
-          (adminMenuItem || reviewMenuItem) && quickLinks.length ?
-              MenuItem({ divider: true }) : null,
-          quickLinks,
-          MenuItem({ onSelect: ReactActions.showHelpMessagesAgain },
-              r.span({ className: 'icon-help' }, "Unhide help messages")),
-          MenuItemLink({ href: linkToAboutPage() }, "About this site"),
-          MenuItemLink({ href: linkToTermsOfUse() }, "Terms and Privacy"),
-          adminHelpLink);
 
     // ------- Search button
 
@@ -367,7 +353,7 @@ export var TopBar = createComponent({
     var backToSiteButton;
     if (this.props.showBackToSite) {
       backToSiteButton = r.a({ className: 'esTopbar_custom_backToSite btn icon-reply',
-          onClick: goBackToSite }, "Back to forum");
+          onClick: goBackToSite }, "Back from admin area");
     }
 
     // ------- Open Contextbar button
@@ -420,7 +406,16 @@ export var TopBar = createComponent({
 
     var openWatchbarButton =
         Button({ className: 'esOpenWatchbarBtn', onClick: ReactActions.openWatchbar },
-            r.span({ className: 'icon-right-open' }));
+          r.span({ className: 'icon-right-open' }),
+          // An eye icon makes sense? because the first list is "Recently *viewed*".
+          // And one kind of uses that whole sidebar to *watch* / get-updated-about topics
+          // one is interested in.
+          r.span({ className: 'icon-eye' }));
+          /* Old:
+          // Let's call it "Activity"? since highlights topics with new posts.
+          // (Better give it a label, then easier for people to remember what it does.)
+          r.span({ className: 'esOpenWatchbarBtn_text' }, "Activity"));
+          */
 
 
     // ------- The result
@@ -428,13 +423,12 @@ export var TopBar = createComponent({
     var extraMarginClass = this.props.extraMargin ? ' esTopbar-extraMargin' : '';
 
     var topbar =
-      r.div({ className: 'esTopBar' + extraMarginClass },
-        r.div({ className: 'dw-topbar-btns' },
+      r.div({ className: 'esTopbar' + extraMarginClass },
+        r.div({ className: 'esTopbar_right' },
           signupButton,
           loginButton,
           toolsButton,
           searchButton,
-          menuDropdown,
           avatarNameDropdown),
         searchForm,
         r.div({ className: 'esTopbar_custom' },
@@ -455,7 +449,8 @@ export var TopBar = createComponent({
           openWatchbarButton,
           openContextbarButton,
           r.div({ className: 'container' },
-            topbar)));
+            topbar),
+          scrollBackButton));
   }
 });
 

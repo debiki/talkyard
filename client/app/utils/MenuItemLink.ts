@@ -29,7 +29,7 @@ export var MenuItemLink = createComponent({
   render: function() {
     // Based on react-bootstrap's MenuItem html.
     return (
-        r.li({ role: 'presentation' },
+        r.li({ role: 'presentation', className: this.props.className },
           r.a({ role: 'button', href: this.props.href, tabIndex: this.props.tabindex || -1,
               target: this.props.target },
             this.props.children)));

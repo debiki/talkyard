@@ -17,23 +17,28 @@ $sidebarZIndex = 1010
 body
   overflow: hidden;
 
+.esScrollBack_fixedBar,
 #esPageColumn
   top: 0;
   bottom: 0;
   position: fixed;
+  // Move the contents a bit to the left/right if sidebars open...
+  left: $watchbarWidth;
+  right: 25vw;
+html.esSidebarsOverlayPage
+  .esScrollBack_fixedBar,
+  #esPageColumn
+    // ...but if the screen too small, let the sidebars overlay the page instead.
+    left: 0;
+    right: 0;
+
+#esPageColumn
   // Native scrollbars look different in different browsers. Use js scrollbars instead?
   // E.g.: http://stackoverflow.com/a/25480648/694469
   // or http://jscrollpane.kelvinluck.com/index.html
   // — but fixed now? I added -webkit-scrollbar-... styles a bit below.
   overflow-y: auto;
   overflow-x: visible;
-  // Move the contents a bit to the left/right if sidebars open...
-  left: $watchbarWidth;
-  right: 25vw;
-html.esSidebarsOverlayPage #esPageColumn
-  // ...but if the screen too small, let the sidebars overlay the page instead.
-  left: 0;
-  right: 0;
 
 #esWatchbarColumn
   position: fixed;
@@ -77,12 +82,14 @@ html.esSidebarsOverlayPage
 html:not(.es-pagebar-open)
   #esThisbarColumn
     display: none;
+  .esScrollBack_fixedBar,
   #esPageColumn
     right: 0;
 
 html:not(.es-watchbar-open)
   #esWatchbarColumn
     display: none;
+  .esScrollBack_fixedBar,
   #esPageColumn
     left: 0;
 
@@ -90,6 +97,7 @@ html:not(.es-watchbar-open)
 // Page width & padding
 //==============================
 
+.esScrollBack_fixedBar,
 #esPageColumn
   .container
     width: 100%;
@@ -213,32 +221,17 @@ html:not(.ios) // not iOS: see [5YKJ24] above
   .footer
     margin-top: 0;
 
-
-footer, .footer
-  text-align: center;
-  font-size: 12px;
-  color: #ddd;
-  bottom:0;
-  position: relative;
-  clear: both;
-
+// For the default <footer><p><a>Terms of use<a>Privacy policy:  [5UK62W]
 footer
-  margin-top: 4em;
+  margin-top: 2em;
+  p
+    text-align: center;
+    margin: 1em 0;
+  a:link
+    color: #444;
+    text-decoration: underline;
+    margin: 0 1ex;
 
-.footer
-  padding: 3.7em 0 3em;
-
-footer p
-  color: #ddd;
-  line-height: 8px;
-
-.footer a, .footer a:visited
-  color: #ddd;
-  text-decoration: underline;
-
-.footer p small
-  font-size: 10px;
-  color: #ddd;
 
 
 // Scrollbars
@@ -298,4 +291,34 @@ footer p
 .dw-page[data-page_role=Code] > h1
 .dw-page[data-page_role=Code] p
   font-family: monospace
+
+
+// Terms, Privacy
+//==============================
+
+.esLegal
+  margin-top: 50px;
+
+.esLegal_home
+  margin-bottom: 25px;
+
+.esLegal_home_link
+  color: #444;
+
+.esLegal_home_arw
+  font-size: 19px;
+  line-height: 0;
+
+.esLegal_home,
+.esLegal .nav-pills a
+  font-size: 14px;
+
+.esLegal .nav-pills a
+  background: hsl(0, 0%, 94%);
+  color: hsl(0, 0%, 23%);
+  &:hover
+    background: hsl(0, 0%, 80%);
+    color: hsl(0, 0%, 13%);
+  &.active a
+    cursor: default
 

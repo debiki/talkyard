@@ -480,7 +480,6 @@ var MoreDropdownModal = createComponent({
     pagedialogs.openMovePostsDialog(this.state.store, this.state.post, this.close);
   },
   onSeeWrenchClick: function(event) {
-    ReactActions.hideHelpMessageWithId('seeWrench');
     debiki2.pagedialogs.openSeeWrenchDialog();
     this.close();
   },
@@ -589,10 +588,12 @@ var MoreDropdownModal = createComponent({
           "Move"));
     }
 
-    if (isPageBody && isStaff(me) && !help.isHelpMessageClosedAnyVersion(store, 'seeWrench')) {
+    // Pin/delete/etc is placed in the topbar, not here, so that it'll be available also
+    // once one has scrolled down past the orig post.
+    if (isPageBody && isStaff(me)) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-help-circled', onClick: this.onSeeWrenchClick, key: 'sw' },
-          'Pin topic, move posts, etc'));
+          "Pin / Delete / Category ..."));
     }
 
     return moreLinks;

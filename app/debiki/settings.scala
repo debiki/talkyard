@@ -101,7 +101,11 @@ object AllSettings {
     val headScriptsHtml = ""
     val endOfBodyHtml = ""
     val headerHtml = ""
-    val footerHtml = ""
+    val footerHtml = /* default CSS here: [5UK62W] */ o"""
+      <footer><p>
+        <a href="/-/terms-of-use" rel="nofollow">Terms of use</a>
+        <a href="/-/privacy-policy" rel="nofollow">Privacy policy</a>
+      </p></footer>"""
     val showForumCategories = false
     val horizontalComments = false
     val socialLinksHtml = ""

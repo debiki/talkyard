@@ -66,9 +66,12 @@ var SeeWrenchDialog = createComponent({
   render: function () {
     var content =
       r.div({},
-        r.p({}, "To pin this topic, or to move posts, or do other stuff, click ",
+        r.p({}, "Click ",
           r.a({ className: 'icon-wrench fake-tools-button' }, "Tools"),
-          " to the upper right, instead."));
+          " to the upper right, to pin this topic, or delete it, or ..."),
+        r.p({}, "Click ",
+          r.a({ className: 'dw-a dw-a-edit icon-edit fake-tools-button' }),
+          " just after the page title, to change category, or topic type."));
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esSeeWrenchDlg' },
         ModalHeader({}, ModalTitle({}, "Look elsewhere")),

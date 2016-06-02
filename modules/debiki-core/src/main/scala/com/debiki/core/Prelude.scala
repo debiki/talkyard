@@ -598,6 +598,7 @@ object Prelude {
   implicit class OneLineStringInterpolator(val stringContext: StringContext) {
     // Find test cases in StringInterpolatorsTest.
 
+    // One line: everything on one line, newlines converted to spaces.
     def o(args: Any*): String = {
       stringContext.checkLengths(args)
       val stringBuilder = new StringBuilder()
