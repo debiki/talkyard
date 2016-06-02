@@ -1,3 +1,6 @@
+# Now (June 2016) Alpine 3.4 is out, supports Postgres 9.5. Try to switch to Alpine later
+# when someone has made such a Dockerfile.
+
 FROM postgres:9.5.2
 
 RUN apt-get update && \

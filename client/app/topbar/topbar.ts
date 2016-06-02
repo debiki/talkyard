@@ -157,28 +157,6 @@ export var TopBar = createComponent({
     });
   },
 
-  goToTop: function() {
-    debiki2.postnavigation.addVisitedPosition();
-    utils.scrollIntoViewInPageColumn($('.dw-page'), { marginTop: 90, marginBottom: 9999 });
-  },
-
-  goToReplies: function() {
-    debiki2.postnavigation.addVisitedPosition();
-    utils.scrollIntoViewInPageColumn(
-        $('.dw-depth-0 > .dw-p-as'), { marginTop: 60, marginBottom: 9999 });
-  },
-
-  /*
-  goToChat: function() {  Chat comments disabled for now [8KB42]
-    debiki2.postnavigation.addVisitedPosition();
-    utils.scrollIntoViewInPageColumn($('#dw-chat'), { marginTop: 60, marginBottom: 9999 });
-  }, */
-
-  goToEnd: function() {
-    debiki2.postnavigation.addVisitedPosition();
-    utils.scrollIntoViewInPageColumn($('#dw-the-end'), { marginTop: 60, marginBottom: 30 });
-  },
-
   viewOlderNotfs: function() {
     ReactActions.goToUsersNotifications(this.state.store.user.userId);
   },
@@ -204,42 +182,9 @@ export var TopBar = createComponent({
           store.ancestorsRootFirst.map((ancestor: Ancestor) => {
             return (
                 r.li({ key: ancestor.categoryId },
-                  r.a({ className: 'esTopbar_ancestors_link dw-goto btn', href: ancestor.path },
+                  r.a({ className: 'esTopbar_ancestors_link btn', href: ancestor.path },
                     ancestor.title)));
           }));
-    }
-
-    // ------- Top, Replies, Bottom, Back buttons
-
-    var goToButtons;
-    var scrollBackButton;
-    if (pageRole && pageRole !== PageRole.CustomHtmlPage && pageRole !== PageRole.Forum) {
-      var topHelp = "Go to the top of the page. Shortcut: 1 (on the keyboard)";
-      var repliesHelp = "Go to the replies section. There are " + store.numPostsRepliesSection +
-        " replies. Shortcut: 2";
-      /* Chat comments disabled for now [8KB42]
-      var chatHelp = "Go to the chat section. There are " + store.numPostsChatSection +
-        " comments. Shortcut: 3";
-        */
-      var endHelp = "Go to the bottom of the page. Shortcut: 4";
-
-      var goToTop = isChat ? null :
-          Button({ className: 'dw-goto', onClick: this.goToTop, title: topHelp,
-              disabled: !this.state.enableGotoTopBtn }, "Scroll to Top");
-      var goToReplies = isChat ? null :
-          Button({ className: 'dw-goto', onClick: this.goToReplies,
-            title: repliesHelp }, "Replies (" + store.numPostsRepliesSection + ")");
-      var goToChat = null; /*  disable chat comments for now  [8KB42]
-      var goToChat = !hasChatSection(store.pageRole) ? null :
-          Button({ className: 'dw-goto', onClick: this.goToChat,
-            title: chatHelp }, "Chat (" + store.numPostsChatSection + ")");
-            */
-      var goToEnd = Button({ className: 'dw-goto', onClick: this.goToEnd, title: endHelp,
-          disabled: !this.state.enableGotoEndBtn }, "Bottom");
-
-      goToButtons = r.span({ className: 'esTopbar_scroll' },
-          goToTop, goToReplies, goToEnd);
-      scrollBackButton = debiki2.postnavigation.PostNavigation();
     }
 
     // ------- Staff link, notfs, help
@@ -434,8 +379,7 @@ export var TopBar = createComponent({
           customTitle,
           backToSiteButton),
         pageTitle,
-        ancestorCategories,
-        goToButtons);
+        ancestorCategories);
 
     var fixItClass = '';
     var styles = {};
@@ -448,8 +392,7 @@ export var TopBar = createComponent({
           openWatchbarButton,
           openContextbarButton,
           r.div({ className: 'container' },
-            topbar),
-          scrollBackButton));
+            topbar)));
   }
 });
 

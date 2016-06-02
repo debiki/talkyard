@@ -1,5 +1,5 @@
 
-.esScrollBack_fixedBar
+.esScrollBtns_fixedBar
   position: fixed;
   top: auto;
   bottom: 0;
@@ -7,20 +7,32 @@
   pointer-events: none;
   background: none !important; // IE11
 
-.esScrollBack
+.esScrollBtns
+  float: right;
+
+.esScrollBtns_menu,
+.esScrollBtns_back
   pointer-events: auto;
-  padding: 5px 10px 5px 12px;
+  padding: 5px 9px;
+  height: 33px;
   font-size: 15px;
   border: none;
   font-weight: bold;
-  float: right;
   color: white;
   background: hsl($uiHue, 80%, 54%);
   &:hover
     color: white;
     background: hsl($uiHue, 90%, 70%);
 
-.esScrollBack_shortcut
+.esScrollBtns_back
+  border-left: 1px solid white;
+
+.esScrollBtns_back_shortcut
   text-decoration: underline;
   font-size: 17px;
 
+.esScrollDlg
+  padding: 12px 19px 12px 12px;
+
+.esScrollDlg_title
+  margin-bottom: 4px;

@@ -17,7 +17,7 @@ $sidebarZIndex = 1010
 body
   overflow: hidden;
 
-.esScrollBack_fixedBar,
+.esScrollBtns_fixedBar,
 #esPageColumn
   top: 0;
   bottom: 0;
@@ -26,7 +26,7 @@ body
   left: $watchbarWidth;
   right: 25vw;
 html.esSidebarsOverlayPage
-  .esScrollBack_fixedBar,
+  .esScrollBtns_fixedBar,
   #esPageColumn
     // ...but if the screen too small, let the sidebars overlay the page instead.
     left: 0;
@@ -82,14 +82,14 @@ html.esSidebarsOverlayPage
 html:not(.es-pagebar-open)
   #esThisbarColumn
     display: none;
-  .esScrollBack_fixedBar,
+  .esScrollBtns_fixedBar,
   #esPageColumn
     right: 0;
 
 html:not(.es-watchbar-open)
   #esWatchbarColumn
     display: none;
-  .esScrollBack_fixedBar,
+  .esScrollBtns_fixedBar,
   #esPageColumn
     left: 0;
 
@@ -97,7 +97,7 @@ html:not(.es-watchbar-open)
 // Page width & padding
 //==============================
 
-.esScrollBack_fixedBar,
+.esScrollBtns_fixedBar,
 #esPageColumn
   .container
     width: 100%;

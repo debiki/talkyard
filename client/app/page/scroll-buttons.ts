@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 /// <reference path="../utils/react-utils.ts" />
+/// <reference path="../utils/DropdownModal.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.page {
@@ -32,6 +33,16 @@ var Button = React.createFactory(ReactBootstrap.Button);
 export var addVisitedPosts: (currentPostId: number, nextPostId: number) => void = _.noop;
 export var addVisitedPositionAndPost: (nextPostId: number) => void = _.noop;
 export var addVisitedPosition: () => void = _.noop;
+
+
+var scrollButtonsDialog;
+
+function openScrollButtonsDialog(openButton) {
+  if (!scrollButtonsDialog) {
+    scrollButtonsDialog = ReactDOM.render(ScrollButtonsDropdownModal(), utils.makeMountNode());
+  }
+  scrollButtonsDialog.openAt(openButton);
+}
 
 
 export var ScrollButtons = debiki2.utils.createClassAndFactory({
@@ -102,6 +113,10 @@ export var ScrollButtons = debiki2.utils.createClassAndFactory({
     keymaster.unbind('f', 'all');
   },
 
+  openScrollButtonsDialog: function(event) {
+    openScrollButtonsDialog(event.target);
+  },
+
   goBack: function() {
     if (!this.canGoBack()) return;
     var backPost = this.state.visitedPosts[this.state.currentVisitedPostIndex - 1];
@@ -165,21 +180,97 @@ export var ScrollButtons = debiki2.utils.createClassAndFactory({
   },
 
   render: function() {
-    if (this.state.currentVisitedPostIndex <= 0 && this.state.hideIfTotallyBack)
-      return null;
+    var openScrollMenuButton = Button({ className: 'esScrollBtns_menu', ref: 'scrollMenuButton',
+        onClick: this.openScrollButtonsDialog }, "Scroll");
 
-    var backHelp = "Scroll back to your previous position on this page";
-
-    // Don't show num steps one can scroll back, don't: "Back (4)" — because people
-    // sometimes think 4 is a post number.
-    var scrollBackButton =
-          Button({ className: 'esScrollBack', onClick: this.goBack, title: backHelp },
-              "Scroll ", r.span({ className: 'esScrollBack_shortcut' }, "B"), "ack");
+    var scrollBackButton;
+    if (this.state.currentVisitedPostIndex >= 1 || !this.state.hideIfTotallyBack) {
+      var backHelp = "Scroll back to your previous position on this page";
+      // Don't show num steps one can scroll back, don't: "Back (4)" — because people
+      // sometimes think 4 is a post number.
+      scrollBackButton =
+          Button({ className: 'esScrollBtns_back', onClick: this.goBack, title: backHelp },
+              r.span({ className: 'esScrollBtns_back_shortcut' }, "B"), "ack");
+    }
 
     return (
-      r.div({ className: 'esScrollBack_fixedBar' },
+      r.div({ className: 'esScrollBtns_fixedBar' },
         r.div({ className: 'container' },
-          scrollBackButton)));
+          r.div({ className: 'esScrollBtns' },
+            openScrollMenuButton, scrollBackButton))));
+  }
+});
+
+
+// some dupl code [6KUW24]
+var ScrollButtonsDropdownModal = createComponent({
+  getInitialState: function () {
+    return {
+      isOpen: false,
+      enableGotoTopBtn: false,
+      enableGotoEndBtn: true,
+    };
+  },
+
+  openAt: function(at) {
+    var rect = at.getBoundingClientRect();
+    var calcCoords = utils.calcScrollIntoViewCoordsInPageColumn;
+    this.setState({
+      isOpen: true,
+      atX: rect.left - 160,
+      atY: rect.bottom,
+      enableGotoTopBtn: $('#esPageColumn').scrollTop() > 0,
+      enableGotoEndBtn: calcCoords($('#dw-the-end')).needsToScroll,
+    });
+  },
+
+  close: function() {
+    this.setState({ isOpen: false });
+  },
+
+  scrollToTop: function() {
+    addVisitedPosition();
+    utils.scrollIntoViewInPageColumn($('.dw-page'), { marginTop: 90, marginBottom: 9999 });
+    this.close();
+  },
+
+  scrollToReplies: function() {
+    addVisitedPosition();
+    utils.scrollIntoViewInPageColumn(
+        $('.dw-depth-0 > .dw-p-as'), { marginTop: 65, marginBottom: 9999 });
+    this.close();
+  },
+
+  scrollToEnd: function() {
+    addVisitedPosition();
+    utils.scrollIntoViewInPageColumn($('#dw-the-end'), { marginTop: 60, marginBottom: 45 });
+    this.close();
+  },
+
+  render: function() {
+    var state = this.state;
+    var isChat = this.props.isChat;
+    var content;
+    if (state.isOpen) {
+      var topHelp = "Go to the top of the page. Shortcut: 1 (on the keyboard)";
+      var repliesHelp = "Go to the start of replies section. Shortcut: 2";
+      var endHelp = "Go to the bottom of the page. Shortcut: 4";
+      var scrollToTop = isChat ? null :
+        Button({ className: '', onClick: this.scrollToTop, title: topHelp,
+          disabled: !state.enableGotoTopBtn }, "Page top");
+      var scrollToReplies = isChat ? null :
+        Button({ className: '', onClick: this.scrollToReplies, title: repliesHelp }, "Replies");
+      var scrollToEnd = Button({ className: '', onClick: this.scrollToEnd, title: endHelp,
+        disabled: !state.enableGotoEndBtn }, "Bottom");
+
+      content = r.div({ className: 'esScrollDlg_title'},
+        r.p({}, "Scroll to:"),
+        scrollToTop, scrollToReplies, scrollToEnd);
+    }
+
+    return (
+      utils.DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY,
+          pullLeft: true, className: 'esScrollDlg' }, content));
   }
 });
 

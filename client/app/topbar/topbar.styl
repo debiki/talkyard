@@ -20,7 +20,6 @@ $gotoButtonSidePadding = 8px;
 
 html:not(.dw-react-started)
   .esTopbar_ancestors,
-  .esTopbar_scroll,
   // Avoid flash-of-login-button when already logged in.
   .esTopbar_right
     visibility: hidden;  // display:none not good, because then other elems too close
@@ -36,7 +35,6 @@ html:not(.dw-react-started)
   background: none !important; // IE11
 
   .esTopbar_ancestors,
-  .esTopbar_scroll,
   .esTopbar_custom,
   .esTopbar_right,
   .dw-topbar-title,
@@ -153,8 +151,7 @@ html.es-watchbar-open
   .esOpenWatchbarBtn
     display: none;
 
-.esTopbar_ancestors,
-.esTopbar_scroll
+.esTopbar_ancestors
   float: left;
   font-size: 15px;
   padding-top: 4px;
@@ -325,9 +322,8 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
         width: 600px;
 
   .btn
-    &.dw-goto,
+    &.esTopbar_ancestors_link,
     &.dw-login,
-    &.dw-admin,
     &.dw-a-tools
       font-size: 1em;
       &.dw-a-tools
@@ -347,7 +343,6 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
       min-width: 40px;
 
   .esTopbar_ancestors,
-  .esTopbar_scroll,
   .esTopbar_right
     margin-top: 15px;
 
@@ -430,16 +425,14 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
 
     /* Make buttons easier to click on small screens.
     .dw-login,
-    .dw-admin,
     .dw-a-tools
       padding-top: $topbarButtonPaddingTop;
 
-    .dw-goto,
+    .esTopbar_ancestors_link
       padding-top: $topbarButtonPaddingTop;
       */
 
     .esTopbar_ancestors,
-    .esTopbar_scroll,
     .esTopbar_right
       margin-top: 0;
       padding-top: 0;
