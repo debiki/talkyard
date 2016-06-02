@@ -31,6 +31,7 @@
 /// <reference path="../model.ts" />
 /// <reference path="discussion.ts" />
 /// <reference path="chat.ts" />
+/// <reference path="scroll-buttons.ts" />
 
 // Wrapping in a module causes an ArrayIndexOutOfBoundsException: null error, see:
 //  http://stackoverflow.com/questions/26189940/java-8-nashorn-arrayindexoutofboundsexception
@@ -81,6 +82,7 @@ var Page = createComponent({
     return (
       r.div({ className: 'esPage' },
         page_isChatChannel(store.pageRole) ? null : debiki2.reactelements.TopBar({}),
+        debiki2.page.ScrollButtons(),
         r.div({ className: 'container' },
           r.article({},
             content))));

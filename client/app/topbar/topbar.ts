@@ -24,7 +24,6 @@
 /// <reference path="../utils/scroll-into-view.ts" />
 /// <reference path="../utils/MenuItemLink.ts" />
 /// <reference path="../utils/utils.ts" />
-/// <reference path="../post-navigation/posts-trail.ts" />
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../notification/Notification.ts" />
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />

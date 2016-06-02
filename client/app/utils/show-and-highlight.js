@@ -86,7 +86,7 @@ $(document).on('click', '.dw-rr, .dw-solved-by', function(event) {
   d.i.showAndHighlightPost(referencedPost);
   var currentPostId = $(this).closest('.dw-t').dwPostId();
   var nextPostId = referencedPost.dwPostId();
-  debiki2.postnavigation.addVisitedPosts(currentPostId, nextPostId);
+  debiki2.page.addVisitedPosts(currentPostId, nextPostId);
   return false; // prevent browser's default action (jump-place post in upper left corner)
 });
 
@@ -138,7 +138,7 @@ $(document).on('click', '.dw-arw-vt-handle', function(event) {
   var parentPost = $(this).closest('.dw-t').parent().closest('.dw-t').children('.dw-p');
   var parentPostId = parentPost.dwPostId();
   if (!d.i.elemIsVisible(parentPost)) {
-    debiki2.postnavigation.addVisitedPositionAndPost(parentPostId);
+    debiki2.page.addVisitedPositionAndPost(parentPostId);
     d.i.showAndHighlightPost(parentPost);
   }
 });

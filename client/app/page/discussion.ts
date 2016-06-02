@@ -236,7 +236,7 @@ export var Title = createComponent({
 
   scrollToAnswer: function() {
     debiki2.ReactActions.loadAndShowPost(this.props.pageAnswerPostNr);
-    debiki2['postnavigation'].addVisitedPosts(TitleId, this.props.pageAnswerPostNr);
+    debiki2['page'].addVisitedPosts(TitleId, this.props.pageAnswerPostNr);
   },
 
   editTitle: function(event) {

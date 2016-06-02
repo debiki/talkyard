@@ -1,5 +1,5 @@
 /* Buttons that go to the next/previous post or backwards and forwards.
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (C) 2014-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -20,7 +20,7 @@
 /// <reference path="../utils/react-utils.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.postnavigation {
+   module debiki2.page {
 //------------------------------------------------------------------------------
 
 var keymaster: Keymaster = window['keymaster'];
@@ -34,8 +34,7 @@ export var addVisitedPositionAndPost: (nextPostId: number) => void = _.noop;
 export var addVisitedPosition: () => void = _.noop;
 
 
-// Later: Rename to ScrollBackButton
-export var PostNavigation = debiki2.utils.createClassAndFactory({
+export var ScrollButtons = debiki2.utils.createClassAndFactory({
   getInitialState: function() {
     return {
       visitedPosts: [],
