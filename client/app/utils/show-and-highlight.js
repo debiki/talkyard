@@ -97,6 +97,9 @@ function getLinkedPost(elem) {
 }
 
 
+// Highlight an arrow on hover, if the parent post is not visible, because then
+// clicking the arrow scrolls the parent into view. (Otherwise don't highlight
+// though, because that'd be annoying.)
 $(document).on('mouseenter mouseleave', '.dw-arw-vt-handle', function(event) {
   var allArrowHandles = $(this).closest('.dw-res').find('> .dw-t > .dw-arw-vt-handle');
   var parentPost = $(this).closest('.dw-res').closest('.dw-t').children('.dw-p');
@@ -139,8 +142,12 @@ $(document).on('click', '.dw-arw-vt-handle', function(event) {
   var parentPostId = parentPost.dwPostId();
   if (!d.i.elemIsVisible(parentPost)) {
     debiki2.page.addVisitedPositionAndPost(parentPostId);
-    d.i.showAndHighlightPost(parentPost);
   }
+
+  // UX: Always highlight the post, even if it's on screen already, because otherwise
+  // some people who test-click the arrows after having watched the click-arrows demo video,
+  // think the arrows are broken.
+  d.i.showAndHighlightPost(parentPost);
 });
 
 

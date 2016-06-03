@@ -29,10 +29,40 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = React.createFactory(ReactBootstrap.Button);
+var calcScrollIntoViewCoordsInPageColumn = debiki2.utils.calcScrollIntoViewCoordsInPageColumn;
 
 export var addVisitedPosts: (currentPostId: number, nextPostId: number) => void = _.noop;
 export var addVisitedPositionAndPost: (nextPostId: number) => void = _.noop;
-export var addVisitedPosition: () => void = _.noop;
+export var addVisitedPosition: (whereNext?) => void = _.noop;
+
+var WhereTop = 'T';
+var WhereReplies = 'R';
+var WhereBottom = 'B';
+
+function scrollToTop(addBackStep?) {
+  if (addBackStep !== false) {
+    addVisitedPosition(WhereTop);
+  }
+  // wrong code [ZZ2KU35]
+  utils.scrollIntoViewInPageColumn($('.dw-page'), { marginTop: 90, marginBottom: 9999 });
+}
+
+function scrollToReplies(addBackStep?) {
+  if (addBackStep !== false) {
+    addVisitedPosition(WhereReplies);
+  }
+  utils.scrollIntoViewInPageColumn(
+    // dupl code [5UKP20]
+    $('.dw-depth-0 > .dw-p-as'), { marginTop: 65, marginBottom: 9999 });
+}
+
+function scrollToBottom(addBackStep?) {
+  if (addBackStep !== false) {
+    addVisitedPosition(WhereBottom);
+  }
+  // dupl code [5UKP20]
+  utils.scrollIntoViewInPageColumn($('#dw-the-end'), { marginTop: 60, marginBottom: 45 });
+}
 
 
 var scrollButtonsDialog;
@@ -50,33 +80,79 @@ export var ScrollButtons = debiki2.utils.createClassAndFactory({
     return {
       visitedPosts: [],
       currentVisitedPostIndex: -1,
-      hideIfTotallyBack: true,
     };
   },
 
-  addVisitedPosts: function(currentPostId: number, nextPostId: number) {
+  // Crazy with number | string. Oh well, fix later [3KGU02]
+  addVisitedPosts: function(currentPostId: number, nextPostId: number | string) {
     var visitedPosts = this.state.visitedPosts; // TODO clone, don't modify visitedPosts directly below [immutablejs]
     visitedPosts.splice(this.state.currentVisitedPostIndex + 1, 999999);
     // Don't duplicate the last post, and also remove it if it is empty, which happens when
     // a position without any post is added via this.addVisitedPosition().
     var lastPost = visitedPosts[visitedPosts.length - 1];
+    var lastPosHasCoords;
     if (lastPost) {
-      var isSameAsCurrent = lastPost.postId === currentPostId;
-      var isNothing = !lastPost.postId && !lastPost.windowLeft && !lastPost.windowTop;
+      lastPosHasCoords = _.isNumber(lastPost.windowLeft) && _.isNumber(lastPost.windowTop);
+      var lastPosHasPostNr = !isNullOrUndefined(lastPost.postId);
+      var isSameAsCurrent = lastPosHasPostNr && lastPost.postId === currentPostId;
+      var isNothing = !lastPosHasPostNr && !lastPosHasCoords;
       if (isSameAsCurrent || isNothing) {
         visitedPosts.splice(visitedPosts.length - 1, 1);
+        lastPost = undefined;
+        lastPosHasCoords = undefined;
       }
     }
-    visitedPosts.push({
+    var currentPos = {
       windowLeft: $('#esPageColumn').scrollLeft(),
       windowTop: $('#esPageColumn').scrollTop(),
       postId: currentPostId
-    });
+    };
+    var lastPosTop = lastPost ? lastPost.windowTop : undefined;
+    var lastPosLeft = lastPost ? lastPost.windowLeft : undefined;
+    if (lastPost && _.isString(lastPost.postId)) {
+      lastPosLeft = _.isNumber(lastPosLeft) ? lastPosLeft : currentPos.windowLeft;
+      switch(lastPost.postId) {
+        case WhereTop:
+          // wrong code [ZZ2KU35], isn't 0 elsewhere
+          lastPosTop = 0;
+          break;
+        case WhereBottom:
+          // DUPL CODE, fix  [5UKP20]
+          lastPosTop = calcScrollIntoViewCoordsInPageColumn($('#dw-the-end')).desiredParentTop;
+          break;
+        case WhereReplies:
+          // DUPL CODE, fix  [5UKP20]
+          lastPosTop =
+            calcScrollIntoViewCoordsInPageColumn(
+                $('.dw-depth-0 > .dw-p-as'), { marginTop: 65, marginBottom: 9999 }).desiredParentTop;
+          break;
+        default: die('EsE2YWK4X8');
+      }
+    }
+    if (isNullOrUndefined(currentPostId) && lastPost && _.isNumber(lastPost.postId) &&
+        !_.isNumber(lastPosTop)) {
+      var $post = $('#post-' + lastPost.postId);
+      var scrollCoords = calcScrollIntoViewCoordsInPageColumn($post);
+      lastPosTop = scrollCoords.desiredParentTop;
+      lastPosLeft = scrollCoords.desiredParentLeft;
+    }
+    if (_.isNumber(currentPostId) || !_.isNumber(lastPosTop)) {
+      visitedPosts.push(currentPos);
+    }
+    else {
+      // If currentPos is almost the same as lastPost, skip currentPos.
+      var distX = currentPos.windowLeft - lastPosLeft;
+      var distY = currentPos.windowTop - lastPosTop;
+      var distSquared = distX * distX + distY * distY;
+      // 60 pixels is nothing, only add new pos if has scrolled further away than that.
+      if (distSquared > 60*60) {  // COULD use 160 px instead if wide screen
+        visitedPosts.push(currentPos);
+      }
+    }
     visitedPosts.push({ postId: nextPostId });
     this.setState({
       visitedPosts: visitedPosts,
       currentVisitedPostIndex: visitedPosts.length - 1,
-      hideIfTotallyBack: false,
     });
   },
 
@@ -84,8 +160,8 @@ export var ScrollButtons = debiki2.utils.createClassAndFactory({
     this.addVisitedPosts(null, nextPostId);
   },
 
-  addVisitedPosition: function() {
-    this.addVisitedPosts(null, null);
+  addVisitedPosition: function(whereNext?) {
+    this.addVisitedPosts(null, whereNext);
   },
 
   canGoBack: function() {
@@ -103,6 +179,9 @@ export var ScrollButtons = debiki2.utils.createClassAndFactory({
     addVisitedPosition = this.addVisitedPosition;
     keymaster('b', this.goBack);
     keymaster('f', this.goForward);
+    keymaster('1', scrollToTop);
+    keymaster('2', scrollToReplies);
+    keymaster('3', scrollToBottom);
   },
 
   componentWillUnmount: function() {
@@ -111,6 +190,9 @@ export var ScrollButtons = debiki2.utils.createClassAndFactory({
     addVisitedPosition = _.noop;
     keymaster.unbind('b', 'all');
     keymaster.unbind('f', 'all');
+    keymaster.unbind('1', 'all');
+    keymaster.unbind('2', 'all');
+    keymaster.unbind('3', 'all');
   },
 
   openScrollButtonsDialog: function(event) {
@@ -124,17 +206,8 @@ export var ScrollButtons = debiki2.utils.createClassAndFactory({
     this.setState({
       currentVisitedPostIndex: nextIndex,
     });
-    if (nextIndex === 0) {
-      // Don't hide direcltly, wait half a second so "0" shows so one understands
-      // that the scroll back list has ended.
-      setTimeout(() => {
-        if (this.isMounted() && this.state.currentVisitedPostIndex === 0) {
-          this.setState({ hideIfTotallyBack: true });
-        }
-      }, 600);
-    }
     var pageColumn = $('#esPageColumn');
-    if (typeof backPost.windowLeft !== 'undefined' && (
+    if (_.isNumber(backPost.windowLeft) && (
         backPost.windowLeft !== pageColumn.scrollLeft() ||
         backPost.windowTop !== pageColumn.scrollTop())) {
       // Restore the original window top and left coordinates, so the Back button
@@ -148,6 +221,14 @@ export var ScrollButtons = debiki2.utils.createClassAndFactory({
           ReactActions.loadAndShowPost(backPost.postId);
           next();
         });
+      }
+    }
+    else if (_.isString(backPost.postId)) {  // crazy, oh well [3KGU02]
+      switch (backPost.postId) {
+        case WhereTop: scrollToTop(false); break;
+        case WhereReplies: scrollToReplies(false); break;
+        case WhereBottom: scrollToBottom(false); break;
+        default: die('EsE4KGU02');
       }
     }
     else {
@@ -175,7 +256,6 @@ export var ScrollButtons = debiki2.utils.createClassAndFactory({
     }
     this.setState({
       currentVisitedPostIndex: this.state.currentVisitedPostIndex + 1,
-      hideIfTotallyBack: false,
     });
   },
 
@@ -183,15 +263,13 @@ export var ScrollButtons = debiki2.utils.createClassAndFactory({
     var openScrollMenuButton = Button({ className: 'esScrollBtns_menu', ref: 'scrollMenuButton',
         onClick: this.openScrollButtonsDialog }, "Scroll");
 
-    var scrollBackButton;
-    if (this.state.currentVisitedPostIndex >= 1 || !this.state.hideIfTotallyBack) {
-      var backHelp = "Scroll back to your previous position on this page";
-      // Don't show num steps one can scroll back, don't: "Back (4)" — because people
-      // sometimes think 4 is a post number.
-      scrollBackButton =
-          Button({ className: 'esScrollBtns_back', onClick: this.goBack, title: backHelp },
-              r.span({ className: 'esScrollBtns_back_shortcut' }, "B"), "ack");
-    }
+    // UX: Don't show num steps one can scroll back, don't: "Back (4)" — because people
+    // sometimes think 4 is a post number.
+    var scrollBackButton =
+        Button({ className: 'esScrollBtns_back', onClick: this.goBack,
+            title: "Scroll back to your previous position on this page",
+            disabled: this.state.currentVisitedPostIndex <= 0 },
+          r.span({ className: 'esScrollBtns_back_shortcut' }, "B"), "ack");
 
     return (
       r.div({ className: 'esScrollBtns_fixedBar' },
@@ -214,7 +292,7 @@ var ScrollButtonsDropdownModal = createComponent({
 
   openAt: function(at) {
     var rect = at.getBoundingClientRect();
-    var calcCoords = utils.calcScrollIntoViewCoordsInPageColumn;
+    var calcCoords = calcScrollIntoViewCoordsInPageColumn;
     this.setState({
       isOpen: true,
       atX: rect.left - 160,
@@ -229,21 +307,17 @@ var ScrollButtonsDropdownModal = createComponent({
   },
 
   scrollToTop: function() {
-    addVisitedPosition();
-    utils.scrollIntoViewInPageColumn($('.dw-page'), { marginTop: 90, marginBottom: 9999 });
+    scrollToTop();
     this.close();
   },
 
   scrollToReplies: function() {
-    addVisitedPosition();
-    utils.scrollIntoViewInPageColumn(
-        $('.dw-depth-0 > .dw-p-as'), { marginTop: 65, marginBottom: 9999 });
+    scrollToReplies();
     this.close();
   },
 
   scrollToEnd: function() {
-    addVisitedPosition();
-    utils.scrollIntoViewInPageColumn($('#dw-the-end'), { marginTop: 60, marginBottom: 45 });
+    scrollToBottom();
     this.close();
   },
 
@@ -254,18 +328,25 @@ var ScrollButtonsDropdownModal = createComponent({
     if (state.isOpen) {
       var topHelp = "Go to the top of the page. Shortcut: 1 (on the keyboard)";
       var repliesHelp = "Go to the start of replies section. Shortcut: 2";
-      var endHelp = "Go to the bottom of the page. Shortcut: 4";
-      var scrollToTop = isChat ? null :
-        Button({ className: '', onClick: this.scrollToTop, title: topHelp,
-          disabled: !state.enableGotoTopBtn }, "Page top");
-      var scrollToReplies = isChat ? null :
-        Button({ className: '', onClick: this.scrollToReplies, title: repliesHelp }, "Replies");
-      var scrollToEnd = Button({ className: '', onClick: this.scrollToEnd, title: endHelp,
-        disabled: !state.enableGotoEndBtn }, "Bottom");
+      var endHelp = "Go to the bottom of the page. Shortcut: 3";
 
-      content = r.div({ className: 'esScrollDlg_title'},
-        r.p({}, "Scroll to:"),
-        scrollToTop, scrollToReplies, scrollToEnd);
+      var scrollToTopButton = isChat ? null :
+        Button({ className: '', onClick: this.scrollToTop, title: topHelp,
+            disabled: !state.enableGotoTopBtn, bsStyle: 'primary' }, "Page top");
+
+      var scrollToRepliesButton = isChat ? null :
+        Button({ className: '', onClick: this.scrollToReplies, title: repliesHelp,
+            bsStyle: 'primary' }, "Replies");
+
+      var scrollToEndButton = Button({ className: '', onClick: this.scrollToEnd, title: endHelp,
+          disabled: !state.enableGotoEndBtn, bsStyle: 'primary' }, "Bottom");
+
+      content =
+          r.div({},
+            r.p({ className: 'esScrollDlg_title' }, "Scroll to:"),
+              scrollToTopButton, scrollToRepliesButton, scrollToEndButton,
+            r.p({ className: 'esScrollDlg_shortcuts' },
+              "Keyboard shortcuts: '1', '2', '3', and 'B' for back"));
     }
 
     return (

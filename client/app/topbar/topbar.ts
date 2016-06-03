@@ -64,23 +64,12 @@ export var TopBar = createComponent({
   },
 
   componentDidMount: function() {
-    keymaster('1', this.goToTop);
-    keymaster('2', this.goToReplies);
-    // keymaster('3', this.goToChat);   disable chat comments for now [8KB42]
-    keymaster('4', this.goToEnd);
     var rect = this.getThisRect();
     var pageTop = getPageScrollableRect().top;
     this.setState({
       initialOffsetTop: rect.top - pageTop,
       fixed: rect.top < -FixedTopDist,
     });
-  },
-
-  componentWillUnmount: function() {
-    keymaster.unbind('1', 'all');
-    keymaster.unbind('2', 'all');
-    keymaster.unbind('3', 'all');
-    keymaster.unbind('4', 'all');
   },
 
   getThisRect: function() {

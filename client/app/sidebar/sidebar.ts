@@ -20,6 +20,7 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../page/discussion.ts" />
+/// <reference path="../page/scroll-buttons.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
 /// <reference path="minimap.ts" />
@@ -284,6 +285,7 @@ export var Sidebar = createComponent({
     this.setState({
       currentPostId: post.postId
     });
+    page.addVisitedPosts(null, post.postId);
     ReactActions.loadAndShowPost(post.postId);
     if (store.shallSidebarsOverlayPage) {
       // Won't see the post unless we first close the contextbar.

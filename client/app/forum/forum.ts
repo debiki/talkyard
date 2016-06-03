@@ -998,13 +998,14 @@ var CategoryRow = createComponent({
 
 function makeTitle(topic: Topic, className: string) {
   var title = topic.title;
+  var tooltip;
   if (topic.closedAtMs && !isDone(topic) && !isAnswered(topic)) {
-    var tooltip = page.makePageClosedTooltipText(topic.pageRole);
+    tooltip = page.makePageClosedTooltipText(topic.pageRole);
     var closedIcon = r.span({ className: 'icon-block' });
     title = r.span({}, closedIcon, title);
   }
   else if (topic.pageRole === PageRole.Question) {
-    var tooltip = page.makeQuestionTooltipText(topic.answeredAtMs);
+    tooltip = page.makeQuestionTooltipText(topic.answeredAtMs);
     var questionIconClass = topic.answeredAtMs ? 'icon-ok-circled' : 'icon-help-circled';
     var questionIcon = r.span({ className: questionIconClass });
     var answerIcon;
@@ -1045,23 +1046,33 @@ function makeTitle(topic: Topic, className: string) {
   }
   else if (topic.pageRole === PageRole.ToDo) {
     var iconClass = topic.doneAtMs ? 'icon-check' : 'icon-check-empty';
-    var tooltip = topic.doneAtMs
+    tooltip = topic.doneAtMs
         ? "This has been done or fixed"
         : "This is something to do or to fix";
     title = r.span({}, r.span({ className: iconClass }, title));
   }
   else if (topic.pageRole === PageRole.OpenChat) {
-    var tooltip = "This is a chat channel";
+    tooltip = "This is a chat channel";
     title = r.span({}, '# ', title);
   }
   else if (topic.pageRole === PageRole.PrivateChat) {
-    var tooltip = "This is a private chat channel";
+    tooltip = "This is a private chat channel";
     title = r.span({}, r.span({ className: 'icon-lock' }), title);
+  }
+  else {
+    tooltip = "A discussion";
   }
   if (topic.deletedAtMs) {
     title = r.span({ className: 'esForum_topics_topic-deleted' },
         r.span({ className: 'icon-trash' }), title);
   }
+
+  if (topic.pinWhere) {
+    tooltip += topic.pinWhere == PinPageWhere.Globally
+      ? "\nIt has been pinned, so it's listed first."
+      : "\nIt has been pinned in its category, so is listed first, in its category.";
+  }
+
   return (
       r.a({ href: topic.url, title: tooltip, className: className }, title));
 }

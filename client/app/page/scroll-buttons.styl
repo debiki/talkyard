@@ -20,19 +20,36 @@
   font-weight: bold;
   color: white;
   background: hsl($uiHue, 80%, 54%);
-  &:hover
+  &:hover,
+  &:focus
     color: white;
-    background: hsl($uiHue, 90%, 70%);
+  &:hover
+    background: hsl($uiHue, 80%, 70%);
+  &:focus
+    background: hsl($uiHue, 80%, 63%);
 
 .esScrollBtns_back
   border-left: 1px solid white;
+  &[disabled]
+    // Use the same color for background and text, to in effect remove the text.
+    // That'll make people wonder "what's this?" And they'll click Scroll nearby,
+    // and then this button (because then it becomes enabled), and then they learn
+    // how this works. Or?
+    background: hsl($uiHue, 30%, 50%);
+    color: hsl($uiHue, 30%, 50%);
+    opacity: 0.3;
 
 .esScrollBtns_back_shortcut
   text-decoration: underline;
   font-size: 17px;
 
 .esScrollDlg
-  padding: 12px 19px 12px 12px;
+  padding: 12px 19px 10px 12px !important;
+  .btn
+    margin-right: 1px;
 
 .esScrollDlg_title
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+
+.esScrollDlg_shortcuts
+  margin-top: 12px;

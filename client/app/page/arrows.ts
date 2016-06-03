@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2014 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -38,10 +38,6 @@
 
 var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
-
-
-var TitleId = 0;
-var BodyPostId = 1;
 
 
 export function drawHorizontalArrowFromRootPost(rootPost) {
