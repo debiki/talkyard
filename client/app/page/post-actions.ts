@@ -179,7 +179,9 @@ export var PostActions = createComponent({
       var solutionTooltip = isStaffOrOwnPage
           ? "Click to un-accept this answer"
           : "This post has been accepted as the answer";
-      acceptAnswerButton = r.a({ className: 'dw-a dw-a-unsolve icon-ok-circled',
+      var elemType = isStaffOrOwnPage ? 'a' : 'span';
+      var unsolveClass = isStaffOrOwnPage ? ' dw-a-unsolve' : '';
+      acceptAnswerButton = r[elemType]({ className: 'dw-a dw-a-solved icon-ok-circled' + unsolveClass,
           onClick: isStaffOrOwnPage ? this.onUnacceptAnswerClick : null, title: solutionTooltip },
         "Solution");
     }
@@ -396,7 +398,7 @@ var MoreVotesDropdownModal = createComponent({
     var buryVoteButton = isFlat ? null :
       ExplainingListItem({
         title: r.span({ className: 'dw-a-bury icon-bury' + myBuryVote }, "Bury"),
-        text: r.span({}, "Click", r.i({}, "Bury"), " to sort other posts before this post."),
+        text: r.span({}, "Click ", r.i({}, "Bury"), " to sort other posts before this post."),
         onClick: this.onBuryClick, key: 'b' });
 
     var unwantedVoteButton = isGuest(me) || !isStaffOrOwnPage ? null :

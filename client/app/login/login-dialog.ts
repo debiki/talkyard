@@ -146,6 +146,10 @@ var LoginDialog = createClassAndFactory({
     }
   },
 
+  switchBetweenLoginAndSignUp: function() {
+    this.setState({ isSignUp: !this.state.isSignUp });
+  },
+
   /**
    * Clears login related cookies so e.g. any lingering return-to-url won't cause troubles.
    */
@@ -191,7 +195,8 @@ var LoginDialog = createClassAndFactory({
 
     var content = LoginDialogContent({ isSignUp: state.isSignUp, loginReason: state.loginReason,
         anyReturnToUrl: state.anyReturnToUrl, setChildDialog: this.setChildDialog,
-        childDialog: state.childDialog, close: this.close, isLoggedIn: state.isLoggedIn });
+        childDialog: state.childDialog, close: this.close, isLoggedIn: state.isLoggedIn,
+        switchBetweenLoginAndSignUp: this.switchBetweenLoginAndSignUp });
 
     var modalHeader = state.loginReason === LoginReason.BecomeAdmin
       ? null // then there's an instruction text, that's enough
@@ -295,6 +300,21 @@ export var LoginDialogContent = createClassAndFactory({
           ", you agree to our ", r.a({ href: "/-/terms-of-use" }, "Terms of Use"),
           " and ", r.a({ href: '/-/privacy-policy' }, "Privacy Policy"));
 
+    var switchToOtherDialogInstead;
+    if (isSignUp) {
+      // Then the user clicked Sign Up explicitly, so need not show a switch-to-login
+      // dialog?
+    }
+    else {
+      // The login dialog opens not only via the Log In button, but also if one clicks
+      // e.g. Create Topic. So it's important to be able to switch to sign-up.
+      switchToOtherDialogInstead =
+        r.div({ className: 'form-group esLoginDlg_switch' },
+          "(", r.i({}, "New user? ",
+          r.a({ onClick: this.props.switchBetweenLoginAndSignUp }, "Create account"),
+          " instead"), " )");
+    }
+
     return (
       r.div({ className: 'dw-login-dialog' },
         createUserDialog,
@@ -318,6 +338,7 @@ export var LoginDialogContent = createClassAndFactory({
               ? "Or create an account here:"
               : "Or fill in:"),
 
+        switchToOtherDialogInstead,
         typePasswordForm,
         createUserForm));
   }

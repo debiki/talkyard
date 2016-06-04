@@ -255,9 +255,12 @@ var ForumIntroText = createComponent({
     return r.div({ className: 'esForumIntro' },
       r.div({ dangerouslySetInnerHTML: { __html: introPost.sanitizedHtml }}),
       r.div({ className: 'esForumIntro_btns' },
-        r.a({ className: 'esForumIntro_close icon-cancel',
-            onClick: () => ReactActions.showForumIntro(false) }, "Hide")),
-        anyEditIntroBtn);
+        anyEditIntroBtn,
+        r.a({ className: 'esForumIntro_close', onClick: () => ReactActions.showForumIntro(false) },
+          r.span({ className: 'icon-cancel' }, "Hide"),
+          r.span({ className: 'esForumIntro_close_reopen' },
+            ", click ", r.span({ className: 'icon-info-circled dw-forum-intro-show' }),
+              " to reopen"))));
   }
 });
 
@@ -514,7 +517,7 @@ var ForumButtons = createComponent({
               activeEventKey: topicFilterValue, eventKey: FilterShowWaiting,
               title: makeTopicFilterText(FilterShowWaiting),
               text: r.span({},
-                "Shows only questions ", r.b({}, r.i({}, "waiting")), " for an answer, " +
+                "Shows only questions ", r.b({}, r.i({}, "waiting")), " for a solution, " +
                 "plus ideas and problems not yet handled" ) }),
           showDeletedFilterItem));
 
@@ -1026,8 +1029,8 @@ function makeTitle(topic: Topic, className: string) {
     // (Some dupl code, see [5KEFEW2] in discussion.ts.
     if (!topic.plannedAtMs) {
       tooltip = topic.pageRole === PageRole.Problem
-          ? "This is a new problem"
-          : "This is a new idea";
+          ? "This is an unsolved problem"
+          : "This is an idea";
       iconClass = topic.pageRole === PageRole.Problem ? 'icon-attention-circled' : 'icon-idea';
     }
     else if (!topic.doneAtMs) {

@@ -53,6 +53,7 @@ html:not(.dw-react-started)
   .dw-login.dw-login.dw-login // oh well
     padding-top: 3px;
     padding-bottom: 4px;
+    margin-top: 4px;
     top: 1px;
     position: relative;
     font-weight: bold;
@@ -78,9 +79,10 @@ html:not(.dw-react-started)
 .esOpenWatchbarBtn
   border: none;
   position: relative;
-  top: 5px;
-  margin-top: 6px;
-  padding: 12px 12px 12px 9px;
+  margin-top: 11px;
+  padding: 12px 12px 9px 9px;
+  &.esOpenWatchbarBtn
+    padding-right: 0;
   z-index: 1;
 .dw-fixed-topbar-wrap
   .esOpenPagebarBtn,
@@ -95,6 +97,7 @@ html:not(.dw-react-started)
   position: relative;
   top: -1px;
   left: -3px;
+  color: hsl(0, 0%, 31%);
 
 .esOpenPagebarBtn
   float: right;
@@ -302,6 +305,20 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
   #theTopbar
     min-height: 52px; // avoids height changes when filled with contents
 
+// Place the title on a separate line, if narrow screen, so the open-watchbar btn won't
+// push it to the right.
+html:not(.es-watchbar-open)
+  .esTopbarWrap:not(.dw-fixed-topbar-wrap)
+    @media (max-width: 1179px)
+      .dw-topbar-title
+        clear: both;
+        h1
+          margin: 7px 0 6px;
+      .esTopbar_ancestors
+        clear: both;
+        margin: 0;
+        padding: 0;
+
 // Old:
 .esTopbar
   .dw-topbar-title
@@ -397,6 +414,9 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
   background: white;
   box-shadow: 0 14px 20px white;
 
+  .esOpenWatchbarBtn
+    margin-right: 9px; // because now Home –> Category, or forum title, on same line
+
   .esTopbar
     min-height: auto;
     margin: 3px 0 5px;
@@ -413,15 +433,18 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
       @media (max-width: 610px)
         display: none;
     h1.dw-p-ttl
-      margin: 5px 0 0;
+      margin: 7px 0 0;
       font-size: 18px;
 
-    .btn
+    .esTopbar_ancestors .btn
       font-size: 14px;
       @media (max-width: 1000px)
         font-size: 13.5px;
       @media (max-width: 850px)
         font-size: 13px;
+
+    .dw-login
+      margin-top: 0 !important;
 
     /* Make buttons easier to click on small screens.
     .dw-login,

@@ -824,7 +824,7 @@ export var Editor = createComponent({
               selectedCategoryId: this.state.newForumTopicCategoryId,
               onCategorySelected: this.changeCategory });
 
-      if (isStaff(me)) {
+      if (isStaff(me) && this.state.newForumPageRole) {
         pageRoleDropdown = PageRoleDropdown({ store: store, pageRole: this.state.newForumPageRole,
             complicated: store.settings.showComplicatedStuff,
             onSelect: this.changeNewForumPageRole,

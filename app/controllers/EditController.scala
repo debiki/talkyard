@@ -222,8 +222,8 @@ object EditController extends mvc.Controller {
     |"""
 
   val DirectMessageGuidelines = i"""
-    |<p>Forum admins can view private messages — they need to be able to do that,
-    |in case someone posts offensive messages to others. Then the admins
+    |<p>Administrators can view private messages. They need to be able to do that,
+    |in case someone posts offensive messages — then the admins
     |can review the messages and suspend that user.
     |</p>
     |"""

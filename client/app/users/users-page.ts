@@ -181,13 +181,13 @@ var UserBar = createComponent({
     var preferencesNavItem = null;
     if (showPrivateStuff) {
       preferencesNavItem = NavItem({ eventKey: 'preferences' }, 'Preferences');
-      if (!isGuest(user)) {
+      if (maySendInvites(user).value) {
         invitesNavItem = NavItem({ eventKey: 'invites' }, 'Invites');
       }
     }
 
     var adminButton = isStaff(loggedInUser)
-        ? r.li({}, r.a({ href: linkToUserInAdminArea(user.id) }, 'Admin'))
+        ? r.li({}, r.a({ href: linkToUserInAdminArea(user.id) }, "View in Admin Area"))
         : null;
 
     var sendMessageButton = loggedInUser.isAuthenticated && !isMe && !user_isGuest(user)
@@ -369,7 +369,7 @@ var UserNav = createComponent({
 var UserAllComponent = React.createClass(<any> {
   render: function() {
     return (
-      r.p({}, 'UserAll'));
+      r.p({}, "Not yet implemented"));
   }
 });
 
@@ -377,7 +377,7 @@ var UserAllComponent = React.createClass(<any> {
 var UserTopicsComponent = React.createClass(<any> {
   render: function() {
     return (
-      r.p({}, 'UserTopics'));
+      r.p({}, "Not yet implemented"));
   }
 });
 
@@ -385,7 +385,7 @@ var UserTopicsComponent = React.createClass(<any> {
 var UserPostsComponent = React.createClass(<any> {
   render: function() {
     return (
-      r.p({}, 'UserPosts'));
+      r.p({}, "Not yet implemented"));
   }
 });
 
@@ -393,7 +393,7 @@ var UserPostsComponent = React.createClass(<any> {
 var UserLikesGivenComponent = React.createClass(<any> {
   render: function() {
     return (
-      r.p({}, 'UserLikesGiven'));
+      r.p({}, "Not yet implemented"));
   }
 });
 
@@ -401,7 +401,7 @@ var UserLikesGivenComponent = React.createClass(<any> {
 var UserLikesReceivedComponent = React.createClass(<any> {
   render: function() {
     return (
-      r.p({}, 'UserLikesReceived'));
+      r.p({}, "Not yet implemented"));
   }
 });
 

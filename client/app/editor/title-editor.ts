@@ -137,7 +137,8 @@ export var TitleEditor = createComponent({
     var titlePost: Post = this.props.allPosts[TitleId];
     var titleText = titlePost.sanitizedHtml; // for now. TODO only allow plain text?
     var user = this.props.user;
-    var isForumOrAbout = pageRole === PageRole.Forum || pageRole === PageRole.About;
+    var isForumOrAboutOrMessage =
+      pageRole === PageRole.Forum || pageRole === PageRole.About || pageRole === PageRole.Message;
 
     if (!this.state.editorScriptsLoaded) {
       // The title is not shown, so show some whitespace to avoid the page jumping upwards.
@@ -200,13 +201,14 @@ export var TitleEditor = createComponent({
 
     // Once the complicated stuff has been shown, one cannot hide it, except by cancelling
     // the whole dialog. Because if hiding it, then what about any changes made? Save or ignore?
-    var showAdvancedButton = this.state.showComplicated || !user.isAdmin
+    var showAdvancedButton =
+        this.state.showComplicated || !user.isAdmin || pageRole === PageRole.Message
         ? null
         : r.a({ className: 'esTtlEdtr_openAdv icon-settings',
             onClick: this.showComplicated }, 'Advanced');
 
     var selectCategoryInput;
-    if (isForumOrAbout) {
+    if (isForumOrAboutOrMessage) {
       // About-category pages cannot be moved to other categories.
     }
     else if (this.props.forumId) {
@@ -217,7 +219,7 @@ export var TitleEditor = createComponent({
             onCategorySelected: this.onCategoryChanged }));
     }
 
-    var selectTopicType = isForumOrAbout ? null :
+    var selectTopicType = isForumOrAboutOrMessage ? null :
       Input({ label: "Topic type", labelClassName: 'col-xs-2',
           wrapperClassName: 'col-xs-10' },
         editor.PageRoleDropdown({ store: store, pageRole: this.state.pageRole,

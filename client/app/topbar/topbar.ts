@@ -266,7 +266,7 @@ export var TopBar = createComponent({
     var searchForm = !this.state.showSearchForm ? null :
         SearchForm({ onClose: this.closeSearchForm });
 
-    // ------- Title
+    // ------- Forum title
 
     var pageTitle;
     if (pageRole === PageRole.Forum) {

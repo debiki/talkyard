@@ -263,6 +263,11 @@ export var Title = createComponent({
 
     var titleText = titlePost.sanitizedHtml;
 
+    // Make forum titles link back to the forum default view.
+    if (store.pageRole === PageRole.Forum) {
+      titleText = r.a({ href: store.pagePath.value }, titleText);
+    }
+
     var anyShowForumInroBtn;
     if (!this.props.hideButtons && store.pageRole === PageRole.Forum && store.hideForumIntro) {
       var introPost = store.allPosts[BodyId];
@@ -291,7 +296,7 @@ export var Title = createComponent({
     }
     else {
       var pinClass = this.props.pinWhere ? ' icon-pin' : '';
-      var tooltip;
+      var tooltip = '';
       var icon;
       // (Some dupl code, see PostActions below and isDone() and isAnswered() in forum.ts [4KEPW2]
       if (store.pageClosedAtMs && !store.pageDoneAtMs && !store.pageAnsweredAtMs) {
@@ -312,8 +317,8 @@ export var Title = createComponent({
         if (store.pageRole === PageRole.Problem || store.pageRole === PageRole.Idea) {
           if (!store.pagePlannedAtMs) {
             tooltip = store.pageRole === PageRole.Problem
-                ? "This is a new problem"
-                : "This is a new idea";
+                ? "This is an unsolved problem"
+                : "This is an idea";
             iconClass = store.pageRole === PageRole.Problem ?
                 'icon-attention-circled' : 'icon-idea';
             iconTooltip = "Click to change status to planned";
@@ -366,9 +371,10 @@ export var Title = createComponent({
         icon = r.span({ className: 'icon-lock' });
         tooltip = "This is a private chat channel";
       }
+
       switch (this.props.pinWhere) {
-        case PinPageWhere.Globally: tooltip += "Pinned globally."; break;
-        case PinPageWhere.InCategory: tooltip += "Pinned in this category."; break;
+        case PinPageWhere.Globally: tooltip += "\nPinned globally."; break;
+        case PinPageWhere.InCategory: tooltip += "\nPinned in this category."; break;
         default:
       }
 

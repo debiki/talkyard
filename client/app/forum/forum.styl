@@ -22,23 +22,44 @@ $forumNavBtnGroupLeft = 8px;
   clearfix()
   margin: 0.4em 0;
   max-width: 125ex;
-  background: hsl($uiHue, 89%, 94%);
-  padding: 0.7em 1em 0.3em;
+  background: hsl($uiHue, 89%, 95%);
+  padding: 0.8em 1.15em 0.35em;
   p
     margin-bottom: 0.8em;
-    color: hsl(0, 0%, 3%);
+    // Large font and line-height makes the intro text easier to read —> more people read it (?).
+    color: hsl(0, 0%, 6%);
+    font-size: 14px;
+    line-height: 1.65;
+
+.esForumIntro_btns
+  float: right;
 
 .esForumIntro_edit,
 .esForumIntro_close
-  display: block;
-  padding: 2px 5px 8px 0;
+  display: inline-block;
+  padding: 2px 0 8px 12px;
   position: relative;
   left: -3px;
   color: hsl($uiHue, 77%, 42%);
-  float: left; // else underline appears although mouse far away
-  font-size: 95%;
-  &:before
+  font-weight: bold;
+  font-size: 14px;
+  .icon-cancel:before
     opacity: 0.8;
+  .esForumIntro_close_reopen
+    font-weight: normal;
+    .icon-info-circled
+      text-shadow: 0 0 2px hsl($uiHue, 100%, 20%);
+      color: hsl($uiHue, 89%, 95%);
+      font-size: 15px;
+      margin: 0;
+      padding: 0;
+      position: relative;
+      line-height: 0;
+      top: 1px;
+
+.esForumIntro_close_reopen
+  font-weight: normal;
+  font-size: 13px;
 
 .esForumIntro_edit
   padding-left: 4px;
@@ -197,7 +218,10 @@ $forumNavBtnGroupLeft = 8px;
 
 
 $tablePaddingLeft = 8px
-$tableFontSize = 14px;
+$tableFontSize = 13.4px;
+$tableTopicTitleFontSize = 15px;
+$tableTopicExcerptFontSize = 14px;
+$tableHeaderFontSize = 14px;
 
 
 .dw-topic-list,
@@ -205,7 +229,7 @@ $tableFontSize = 14px;
   th
     padding: 8px $tablePaddingLeft 8px;
     font-weight: normal;
-    font-size: $tableFontSize;
+    font-size: $tableHeaderFontSize;
     color: hsl(0, 0%, 55%);
 
 
@@ -251,6 +275,10 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
       td
         padding: 10px $tablePaddingLeft
         font-size: $tableFontSize;
+        &.dw-tpc-title
+          font-size: $tableTopicTitleFontSize;
+          .dw-p-excerpt
+            font-size: $tableTopicExcerptFontSize;
         a
           color: hsl(0, 0%, 13%);
           padding: 3px 6px 5px 0; // makes it easier to click

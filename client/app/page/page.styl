@@ -152,6 +152,9 @@ html.es-watchbar-open:not(.esSidebarsOverlayPage)
   .dw-p-ttl
     margin-top: 0
 
+.dw-p-ttl .icon-trash::before
+  // If it's too dark, people think they should click it.
+  color: hsl(0, 0%, 61%);
 
 .dw-ar-p
   padding-bottom: 0.8em
@@ -168,6 +171,11 @@ html.es-watchbar-open:not(.esSidebarsOverlayPage)
   float: none
   // Left align the title.
   margin-left: 0
+
+h1.dw-p-ttl a:not(.icon-edit):not(.dw-forum-intro-show)
+  color: $h1Color; // but not link color
+  &:hover
+    text-decoration: underline;
 
 
 // The chat comments section

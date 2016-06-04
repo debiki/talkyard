@@ -101,20 +101,26 @@
       opacity: 0.47;
 
   &.dw-a-solve,
-  &.dw-a-unsolve
+  &.dw-a-solved
     padding-right: 0.45em;
     margin-right: 0.15em;
 
   // Make the "Solved" text dark so it's easy to see which post is the answer.
-  &.dw-a-unsolve
+  &.dw-a-solved
     color: hsl($solvedHue, 100%, 28%);
     font-weight: bold;
     font-size: 106%;
+    &:not(.dw-a-unsolve):hover
+      // Undo on-hover. Dupl code, kind of. Oh well.
+      background: none;
+      outline: none;
+      cursor: default;
+      color: hsl($solvedHue, 100%, 28%);
 
   &.dw-a-solve,
-  &.dw-a-unsolve
+  &.dw-a-solved
     &:before
-      opacity: 0.6;
+      opacity: 0.7;
 
   // Make the Like buttom smaller to the right, so it gets closer to the other-votes-dropdown.
   // But larger to the left, so it's easier to click (since people will click the left part of it,
