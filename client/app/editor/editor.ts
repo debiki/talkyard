@@ -21,6 +21,7 @@
 /// <reference path="../util/stupid-dialog.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/PageUnloadAlerter.ts" />
+/// <reference path="../topbar/topbar.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="commonmark.ts" />
@@ -31,7 +32,8 @@
    module debiki2.editor {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
+import scrollIntoViewInPageColumn = debiki2.utils.scrollIntoViewInPageColumn;
+  var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
@@ -436,6 +438,14 @@ export var Editor = createComponent({
       }
     };
     setTimeout(fadeBackdrop, 1400);
+  },
+
+  scrollPostIntoView: function(postId) {
+    debiki.internal.showAndHighlightPost($('#post-' + postId), {
+      marginTop: reactelements.getTopbarHeightInclShadow(),
+      // Add + X so one sees the Reply button and a bit below the post.
+      marginBottom: this.refs.editor.clientHeight + 90,
+    })
   },
 
   alertBadState: function(wantsToDoWhat = null) {
@@ -887,7 +897,7 @@ export var Editor = createComponent({
             return (
               r.span({ key: postId },
                 anyAnd,
-                r.a({ href: '#post-' + postId }, whichPost)));
+                r.a({ onClick: () => this.scrollPostIntoView(postId) }, whichPost)));
           }),
           ':');
     }

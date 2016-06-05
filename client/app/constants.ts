@@ -38,7 +38,7 @@ var FirstStarMark = 2;
 var BlueStarMark = 3;
 var LastStarMark = 3;
 
-// Sync with Scala [6KG2W57]
+// Sync with Scala, and an input error checker [6KG2W57]
 var MaxNumFirstPosts = 10;
 
 

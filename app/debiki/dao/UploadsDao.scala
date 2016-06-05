@@ -58,7 +58,11 @@ trait UploadsDao {
 
     val uploadedDotSuffix = '.' + checkAndGetFileSuffix(uploadedFileName)
 
-    val origMimeType = java.nio.file.Files.probeContentType(tempFile.toPath.toAbsolutePath)
+    // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8. Instead, use Tika.
+    // (This detects mime type based on actual document content, not just the suffix.) dupl [7YKW23]
+    val tika = new org.apache.tika.Tika()
+
+    val origMimeType: String = tika.detect(tempFile.toPath.toAbsolutePath)
     val origSize = tempFile.length
     if (origSize >= maxUploadSizeBytes)
       throwForbidden("DwE5YFK2", s"File too large, more than $origSize bytes")
@@ -102,9 +106,6 @@ trait UploadsDao {
       }
     }
 
-    // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8. Instead, use Tika.
-    // (This detects mime type based on actual document content, not just the suffix.)
-    val tika = new org.apache.tika.Tika()
     val mimeType: String = tika.detect(optimizedFile)
     val sizeBytes = {
       val sizeAsLong = optimizedFile.length

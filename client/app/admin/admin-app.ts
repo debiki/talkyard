@@ -305,32 +305,41 @@ var ModerationSettingsComponent = React.createClass(<any> {
     var valueOf = (getter: (s: Settings) => any) =>
       firstDefinedOf(getter(editedSettings), getter(currentSettings));
 
+    // Makes a number smaller than MaxNumFirstPosts — and keeps the last typed digit,
+    // otherwise people get totally confused. (So if it's 4, and you type 5, it'll become 5.)
+    function makeSmall(value: number) {
+      dieIf(MaxNumFirstPosts !== 10, 'EsE5YKYW2');
+      return value % 10;  // [6KG2W57]
+    }
+
     return (
       r.div({},
-        Setting2(props, { type: 'number', label: "Num first posts to review",
+        Setting2(props, { type: 'number', min: 0, max: MaxNumFirstPosts,
+          label: "Num first posts to review",
           help: "How many of a new member's first posts the staff will be notified about " +
             "so they can review them. The posts will become visible directly, before " +
-            "they've been reviewed.",
+            "they've been reviewed. Max " + MaxNumFirstPosts + ".",
           getter: (s: Settings) => s.numFirstPostsToReview,
           update: (newSettings: Settings, target) => {
             var num = parseInt(target.value);
             if (_.isNaN(num)) num = currentSettings.numFirstPostsToReview;
             if (num < 0) num = 0;
-            if (num > MaxNumFirstPosts) num = MaxNumFirstPosts;
+            if (num > MaxNumFirstPosts) num = makeSmall(num);
             newSettings.numFirstPostsToReview = num;
           }
         }),
 
-        Setting2(props, { type: 'number', label: "Num first posts to approve",
+        Setting2(props, { type: 'number', min: 0, max: MaxNumFirstPosts,
+          label: "Num first posts to approve",
           help: "How many of a new member's first posts need to be approved by staff, " +
             "before they'll be shown. They'll be hidden, until approved. " +
-            "Set to 0 to disable. Max is 10.",
+            "Set to 0 to disable. Max is " + MaxNumFirstPosts + ".",
           getter: (s: Settings) => s.numFirstPostsToApprove,
           update: (newSettings: Settings, target) => {
             var num = parseInt(target.value);
             if (_.isNaN(num)) num = currentSettings.numFirstPostsToApprove;
             if (num < 0) num = 0;
-            if (num > MaxNumFirstPosts) num = MaxNumFirstPosts;
+            if (num > MaxNumFirstPosts) num = makeSmall(num);
             newSettings.numFirstPostsToApprove = num;
             if (valueOf(s => s.numFirstPostsToAllow) < num) {
               newSettings.numFirstPostsToAllow = num;
@@ -338,7 +347,8 @@ var ModerationSettingsComponent = React.createClass(<any> {
           },
         }),
 
-        Setting2(props, { type: 'number', label: "Num first posts to allow",
+        Setting2(props, { type: 'number', min: 0, max: MaxNumFirstPosts,
+          label: "Num first posts to allow",
           help: "How many posts a new member may post, before s/he has to wait with " +
               "posting anything more, until the first posts have been approved by staff.",
           getter: (s: Settings) => s.numFirstPostsToAllow,
@@ -346,7 +356,7 @@ var ModerationSettingsComponent = React.createClass(<any> {
             var num = parseInt(target.value);
             if (_.isNaN(num)) num = currentSettings.numFirstPostsToAllow;
             if (num < 0) num = 0;
-            if (num > MaxNumFirstPosts) num = MaxNumFirstPosts;
+            if (num > MaxNumFirstPosts) num = makeSmall(num);
             newSettings.numFirstPostsToAllow = num;
             if (valueOf(s => s.numFirstPostsToApprove) > num) {
               newSettings.numFirstPostsToApprove = num;

@@ -29,7 +29,7 @@
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.reactelements {
+   module debiki2.reactelements {  // rename to debiki2.topbar
 //------------------------------------------------------------------------------
 
 var keymaster: Keymaster = window['keymaster'];
@@ -43,6 +43,12 @@ var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 var MenuItemLink = utils.MenuItemLink;
 
 var FixedTopDist = 8;
+
+
+export function getTopbarHeightInclShadow(): number {
+  return $('.dw-fixed-topbar-wrap').height() + 14; // shadow size (the '+ X') dupl here: [5YKW25]
+}
+
 
 export var TopBar = createComponent({
   mixins: [debiki2.StoreListenerMixin, debiki2.utils.PageScrollMixin],

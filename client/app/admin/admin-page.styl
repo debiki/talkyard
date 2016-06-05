@@ -38,7 +38,11 @@
     font-weight: bold;
 
 .esAdmin_settings_setting-unsaved
-  background: hsl(60, 95%, 77%);  // yellow background
+  background: hsl($uiHue, 100%, 96%);  // don't use yellow, some think that means error/warning
+  input
+    border: 1px solid hsl($uiHue, 27%, 67%);
+  .help-block
+    color: hsl($uiHue, 20%, 38%);
 
 .esAdmin_settings_setting
   padding-top: 10px;  // so there'll be some yellow background also above unsaved fileds [930KPU12]
