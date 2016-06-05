@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (C) 2015-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -26,29 +26,16 @@
   module debiki2.help {
 //------------------------------------------------------------------------------
 
-
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
+var Input = reactCreateFactory(ReactBootstrap.Input);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-
-/* show an inline unhide-help help box instead?
-
-var howToShowHelpAgainDialog;
-
-
-export function getHowToShowHelpAgainDialog() {
-  if (!howToShowHelpAgainDialog) {
-    howToShowHelpAgainDialog = ReactDOM.render(HowToShowHelpAgainDialog(), utils.makeMountNode());
-  }
-  return howToShowHelpAgainDialog;
-} */
 
 
 export function isHelpMessageClosedAnyVersion(store, messageId: string) {
@@ -58,6 +45,20 @@ export function isHelpMessageClosedAnyVersion(store, messageId: string) {
 export function isHelpMessageClosed(store, message) {
   var closedVersion = store.user.closedHelpMessages[message.id];
   return closedVersion && closedVersion === message.version;
+}
+
+export function openHelpDialogUnlessHidden(message) {
+  getHelpDialog().open(message);
+}
+
+
+var helpDialog;
+
+function getHelpDialog() {
+  if (!helpDialog) {
+    helpDialog = ReactDOM.render(HelpDialog(), utils.makeMountNode());
+  }
+  return helpDialog;
 }
 
 
@@ -86,12 +87,11 @@ export var HelpMessageBox = createComponent({
 
   hideThisHelp: function() {
     ReactActions.hideHelpMessages(this.props.message);
-    /* This dialog feels annoying! I'd better just replace this help box with
-       a show-help-again help box, in a different color? Rather than poppuing up a dialog.
-    if (!localStorage.getItem('hasShownShowHelpAgainHelp')) {
-      localStorage.setItem('hasShownShowHelpAgainHelp', 'true');
-      getHowToShowHelpAgainDialog().open();
-    } */
+    openHelpDialogUnlessHidden({
+      content: r.span({}, "You can show help messages again, if you are logged in, by " +
+        "clicking your name and then ", r.b({}, "Unhide help messages"), "."),
+      id: '5YK7EW3',
+    });
   },
 
   render: function() {
@@ -119,41 +119,49 @@ export var HelpMessageBox = createComponent({
 });
 
 
-/*
-var HowToShowHelpAgainDialog = createClassAndFactory({
+
+var HelpDialog = createComponent({
   getInitialState: function () {
     return { isOpen: false };
   },
 
-  open: function() {
-    this.setState({ isOpen: true });
+  open: function(message: HelpMessage) {
+    dieIf(!message.content, 'EsE6YK02W');
+    // Bad practice to access the store like this? Oh well. Will rewrite anyway, in [redux] (?).
+    var store = ReactStore.allData();
+    if (!isHelpMessageClosedAnyVersion(store, message.id)) {
+      this.setState({ isOpen: true, message: message });
+    }
   },
 
   close: function() {
-    this.setState({ isOpen: false });
+    if (this.refs.hideMeCheckbox && this.refs.hideMeCheckbox.getChecked()) {
+      ReactActions.hideHelpMessageWithId(this.state.message.id);
+    }
+    this.setState({ isOpen: false, message: null });
   },
 
   render: function () {
-    var hamburgerMenuIcon =
-      r.span({ className: 'dw-hamburger-menu' },
-        r.span({ className: 'icon-menu' }),
-        r.span({ className: 'caret' }));
+    var message: HelpMessage = this.state.message;
+    var content = message ? message.content : null;
 
-    var body = r.div({},
-      r.p({}, "You have hidden a help message! How do you get it back?"),
-      r.p({},
-        "Like so: 1) click the hamburger menu ", hamburgerMenuIcon,
-        " in the upper right corner of the page, ",
-        "and then 2) click ", r.b({}, "Show Help Messages"), "."));
+    var hideThisHelpTipsCheckbox = !message || !message.id ? null :
+      Input({ type: 'checkbox', inline: true, defaultChecked: true, ref: 'hideMeCheckbox' },
+        r.span({}, "Do not show this tips again"));
+
+    content = !content ? null :
+        ModalBody({},
+          r.div({ className: 'esHelpDlg_body_wrap'},
+            r.div({ className: 'esHelpDlg_body' }, content),
+            r.div({ className: 'esHelpDlg_btns' },
+              hideThisHelpTipsCheckbox,
+              Button({ onClick: this.close, bsStyle: 'primary' }, "Okay"))));
 
     return (
-      Modal({ show: this.state.isOpen, onHide: this.close,
-          dialogClassName: 'dw-how-to-show-help-again' },
-        ModalHeader({}, ModalTitle({}, "Help Hidden!")),
-        ModalBody({}, body),
-        ModalFooter({}, Button({ onClick: this.close }, "I will remember this"))));
+      Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esHelpDlg' },
+       content));
   }
-}); */
+});
 
 
 //------------------------------------------------------------------------------

@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../utils/react-utils.ts" />
+/// <reference path="../help/help.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 
@@ -163,6 +164,12 @@ var PinPageDialog = createComponent({
     ReactActions.pinPage(pinOrder, pinWhere, () => {
       this.close();
       this.props.closeAllDialogs();
+      help.openHelpDialogUnlessHidden({
+        content: r.span({ className: 'esPinnedOk' },
+          "Pinned. Now there's a pin icon ", r.span({className: 'icon-pin'}),
+          " in front of the topic title."),
+        id: '32MYKP02',
+      });
     });
   },
 
