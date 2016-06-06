@@ -223,7 +223,8 @@ var InviteDialog = createComponent({  // COULD break out to separate debiki2.inv
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esUsrDlg' },
         ModalBody({},
           r.p({}, "We'll send your friend a brief email, and he or she then clicks a link " +
-              "to join immediately, no login required."),
+              "to join immediately, no login required. " +
+              "He or she will become a normal member, not a moderator or admin."),
           EmailInput({ label: 'Email Address', placeholder: 'Enter email',
               ref: 'emailInput', error: this.state.error, onChangeValueOk: this.onEmailChanged })),
         ModalFooter({},

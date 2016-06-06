@@ -82,7 +82,6 @@ var DeletePostDialog = createComponent({
       content =
         r.div({},
           r.div({ className: 'dw-delete-btns' },
-            Input({ type: 'Button', value: "Yes delete it", onClick: this.doDelete }),
             Input({ type: 'checkbox', label: "Delete replies too",
                 id: 'deleteRepliesTooInput' })));  // cannot use 'ref:' because not in render()
     }
@@ -90,7 +89,9 @@ var DeletePostDialog = createComponent({
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'dw-delete-post-dialog' },
         ModalHeader({}, ModalTitle({}, title)),
         ModalBody({}, content),
-        ModalFooter({}, Button({ onClick: this.close }, 'Cancel'))));
+        ModalFooter({},
+          Button({ onClick: this.doDelete, bsStyle: 'primary' }, "Yes delete it"),
+          Button({ onClick: this.close }, "Cancel"))));
   }
 });
 

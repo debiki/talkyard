@@ -126,11 +126,8 @@ var CreateWebsiteComponent = React.createClass(<any> {
     if (this.state.showHostname && !prevState.showHostname) {
       this.refs.localHostname.focus();
     }
-    if (this.state.showOrgName && !prevState.showOrgName) {
+    if (this.state.showRemaining && !prevState.showRemaining) {
       this.refs.organizationName.focus();
-    }
-    if (this.state.showSubmit && !prevState.showSubmit) {
-      this.refs.acceptTerms.focus();
     }
   },
 
@@ -201,13 +198,13 @@ var CreateWebsiteComponent = React.createClass(<any> {
               ref: 'localHostname',
               onChangeValueOk: (isOk) => this.reportOkay('hostname', isOk) }),
 
-          Button({ onFocus: () => this.setState({ showOrgName: true }), bsStyle: 'primary',
-              style: { display: okayStatuses.hostname && !state.showOrgName ? 'block' : 'none' },
+          Button({ onFocus: () => this.setState({ showRemaining: true }), bsStyle: 'primary',
+              style: { display: okayStatuses.hostname && !state.showRemaining ? 'block' : 'none' },
               id: 'e2eNext3' },
-            "Next"),
+            "Next (the last)"),
 
           PatternInput({ label: "Organization name:", placeholder: "Your Organization Name",
-              style: { display: state.showOrgName ? 'block' : 'none' },
+              style: { display: state.showRemaining ? 'block' : 'none' },
               help: "The name of your organization, if any. Otherwise, you " +
                 "can use your own name. Will be used in your Terms of Use " +
                 "and Privacy Policy documents.",
@@ -215,12 +212,7 @@ var CreateWebsiteComponent = React.createClass(<any> {
               regex: /\S/, message: "Name required",
               onChangeValueOk: (value, isOk) => this.reportOkay('orgName', isOk) }),
 
-          Button({ onFocus: () => this.setState({ showSubmit: true }), bsStyle: 'primary',
-              style: { display: okayStatuses.orgName && !state.showSubmit ? 'block' : 'none' },
-              id: 'e2eNext4' },
-            "Next"),
-
-          r.div({ style: { display: state.showSubmit ? 'block' : 'none' }},
+          r.div({ style: { display: state.showRemaining ? 'block' : 'none' }},
             AcceptTerms({ reportOkay: (isOk) => this.reportOkay('terms', isOk),
                 ref: 'acceptTerms' }),
 

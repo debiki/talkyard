@@ -39,9 +39,14 @@ export function addReplaceWarning(key: string, message: string) {
 }
 
 
+export function wouldWarn(key: string): boolean {
+  return !!warningsByKey[key];
+}
+
+
 export function removeWarning(key: string) {
   delete warningsByKey[key];
-  if (_.isEmpty(warningsByKey[key])) {
+  if (_.isEmpty(warningsByKey)) {
     window.onbeforeunload = null;
   }
 }
