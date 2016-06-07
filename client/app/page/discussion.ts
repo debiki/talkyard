@@ -449,6 +449,7 @@ var RootPostAndComments = createComponent({
     }
 
     var showComments = pageRole !== PageRole.CustomHtmlPage && pageRole !== PageRole.Forum &&
+        pageRole !== PageRole.WebPage &&
         pageRole !== PageRole.Blog &&
         pageRole !== PageRole.SpecialContent; // && pageRole !== PageRole.WikiMainPage
 

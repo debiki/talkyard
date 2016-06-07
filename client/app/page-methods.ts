@@ -30,30 +30,41 @@
    module debiki2 {
 //------------------------------------------------------------------------------
 
+var r = React.DOM;
 
-export function pageRole_toString(pageRole: PageRole): string {
+
+export function pageRole_toIconString(pageRole: PageRole) {
   switch (pageRole) {
-    case PageRole.CustomHtmlPage: return "Custom html page";
-    case PageRole.WebPage: return "Web page";
+    case PageRole.CustomHtmlPage: return "Custom HTML page";
+    case PageRole.WebPage: return "Info page";
     case PageRole.Code: return "Code";
     case PageRole.SpecialContent: return "Special content";
     case PageRole.EmbeddedComments: return "Embedded comments";
     case PageRole.Blog: return "Blog";
     case PageRole.Forum: return "Forum";
     case PageRole.About: return "About";
-    case PageRole.Question: return "Question";
-    case PageRole.Problem: return "Problem";
-    case PageRole.Idea: return "Idea";
-    case PageRole.ToDo: return "To Do";
+    case PageRole.Question: return PageRole_Question_IconString;
+    case PageRole.Problem: return PageRole_Problem_IconString;
+    case PageRole.Idea: return PageRole_Idea_IconString;
+    case PageRole.ToDo: return PageRole_Todo_IconString;
     case PageRole.MindMap: return "Mind map";
-    case PageRole.Discussion: return "Discussion";
-    case PageRole.OpenChat: return "Chat channel";
+    case PageRole.Discussion: return PageRole_Discussion_IconString;
+    case PageRole.OpenChat: return PageRole_Chat_IconString;
     case PageRole.PrivateChat: return "Private chat";
     case PageRole.Message: return "Message";
-    case PageRole.Critique: return "Critique";
+    case PageRole.Critique: return "Critique";  // [plugin]
     default: die('EsE4GUK75Z');
   }
 }
+
+export var PageRole_Discussion_IconString =
+  r.span({ className: 'icon-comment-empty' }, "Discussion");
+export var PageRole_Question_IconString = r.span({ className: 'icon-help-circled' }, "Question");
+export var PageRole_Problem_IconString = r.span({ className: 'icon-attention-circled' }, "Problem");
+export var PageRole_Idea_IconString = r.span({ className: 'icon-idea' }, "Idea");
+
+export var PageRole_Todo_IconString = r.span({ className: 'icon-check-empty' }, "Todo");
+export var PageRole_Chat_IconString = r.span({ className: 'icon-chat' }, "Chat");
 
 
 //------------------------------------------------------------------------------

@@ -86,7 +86,8 @@
 //===========================
 
 // Dummy icon that makes a character behave a bit like a Fontello icon.
-.icon-char
+.icon-char,
+.icon-chat:before  // a char too, see .icon-chat:before below
   font-style: normal;
   font-weight: normal;
   speak: none;
@@ -99,6 +100,15 @@
   text-transform: none;
   line-height: 1em;
   margin-left: .2em;
+
+// Slack and Discord uses '#' for chat channels. So let's do that?
+.icon-chat:before
+  content: '#';
+  font-size: 125%;
+  position: relative;
+  top: 1ex;
+  width: auto;
+  padding: 0 1ex 0 0;
 
 
 // Twitter Bootstrap

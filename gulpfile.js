@@ -250,6 +250,10 @@ function compileClientSideTypescript() {
 }
 
 
+// Can speed up this:
+// Recompile only changed file, https://github.com/ivogabe/gulp-typescript/issues/228
+// (and use the IDE for type checking, + when building release)
+//
 gulp.task('compile-typescript', function () {
   return es.merge(
       compileServerSideTypescript(),

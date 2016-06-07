@@ -39,7 +39,8 @@ export var DropdownModal = createComponent({
   },
 
   componentDidUpdate: function() {
-    if (!this.props.show) return;
+    if (!this.props.show || !this.refs.content)
+      return;
     var rect = this.refs.content.getBoundingClientRect();
     if (rect.bottom > $(window).height()) {
       this.fitInWindowVertically();

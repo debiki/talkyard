@@ -204,8 +204,8 @@ var EditCategoryDialog = createClassAndFactory({
         utils.FadeInOnClick({ clickToShowText: sortPositionText },
           Input({ type: 'number', label: "Position",
             value: this.state.position || '', onChange: this.onPositionChanged,
-            help: "Categories with lower positions are listed first. Default: " +
-                DefaultPosition }));
+            help: "On the category list page, categories with a lower value are listed first. " +
+              "Default: " + DefaultPosition }));
 
     var unlistedTitle = "Unlisted (" + (this.state.unlisted ?  "yes)" : "no)");
     var unlistedInput =
