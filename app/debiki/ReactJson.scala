@@ -781,6 +781,10 @@ object ReactJson {
       "id" -> category.id,
       "name" -> category.name,
       "slug" -> category.slug,
+      // [refactor] [5YKW294] There should be only one default type.
+      "defaultTopicType" -> JsNumber(
+          category.newTopicTypes.headOption.getOrElse(PageRole.Discussion).toInt),
+      // [refactor] [5YKW294] delete this later:
       "newTopicTypes" -> JsArray(category.newTopicTypes.map(t => JsNumber(t.toInt))),
       "unlisted" -> JsBoolean(category.unlisted),
       "staffOnly" -> JsBoolean(category.staffOnly),

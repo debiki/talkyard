@@ -599,6 +599,13 @@ export var Editor = createComponent({
   },
 
   onCancelClick: function() {
+    if (PageUnloadAlerter.wouldWarn(WritingSomethingWarningKey)) {
+      help.openHelpDialogUnlessHidden({
+        content: "You can continue editing your text, if you open the editor again. " +
+        "(But the text will currently be lost if you leave this page.)",  // [issue-62YKUw2]
+        id: '7YK35W1',
+      });
+    }
     this.closeEditor();
   },
 
@@ -713,13 +720,6 @@ export var Editor = createComponent({
   },
 
   closeEditor: function() {
-    if (PageUnloadAlerter.wouldWarn(WritingSomethingWarningKey)) {
-      help.openHelpDialogUnlessHidden({
-        content: "You can continue editing your text, if you open the editor again. " +
-          "(But the text will currently be lost if you leave this page.)",  // [issue-62YKUw2]
-        id: '7YK35W1',
-      });
-    }
     PageUnloadAlerter.removeWarning(WritingSomethingWarningKey);
     this.returnSpaceAtBottomForEditor();
     this.setState({
@@ -841,7 +841,7 @@ export var Editor = createComponent({
               selectedCategoryId: this.state.newForumTopicCategoryId,
               onCategorySelected: this.changeCategory });
 
-      if (isStaff(me) && this.state.newForumPageRole) {
+      if (this.state.newForumPageRole) {
         pageRoleDropdown = PageRoleDropdown({ store: store, pageRole: this.state.newForumPageRole,
             complicated: store.settings.showComplicatedStuff,
             onSelect: this.changeNewForumPageRole,

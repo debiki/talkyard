@@ -19,6 +19,7 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/fade-in-on-click.ts" />
+/// <reference path="../editor/PageRoleDropdown.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 
@@ -40,6 +41,7 @@ var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 var ReactSelect; // lazy loaded
+var PageRoleDropdown = editor.PageRoleDropdown;
 
 var DefaultPosition = 50; // also in Scala [7KBYW2]
 
@@ -59,11 +61,13 @@ export function getEditCategoryDialog(success: (dialog) => void) {
 }
 
 
+// BEM base name: esCatDlg
 var EditCategoryDialog = createClassAndFactory({
   getInitialState: function () {
     return {
       isOpen: false,
-      newTopicTypes: [],
+      store: ReactStore.allData(),
+      defaultTopicType: PageRole.Discussion,
     };
   },
 
@@ -82,7 +86,7 @@ var EditCategoryDialog = createClassAndFactory({
           isLoading: false,
           name: category.name,
           slug: category.slug,
-          newTopicTypes: category.newTopicTypes,
+          defaultTopicType: category.defaultTopicType,
           position: category.position,
           unlisted: category.unlisted,
           staffOnly: category.staffOnly,
@@ -94,7 +98,7 @@ var EditCategoryDialog = createClassAndFactory({
       this.setState({
         name: '',
         slug: '',
-        newTopicTypes: [PageRole.Discussion],
+        defaultTopicType: PageRole.Discussion,
         position: DefaultPosition,
         unlisted: false,
         staffOnly: false,
@@ -124,14 +128,13 @@ var EditCategoryDialog = createClassAndFactory({
     this.setState({ slug: event.target.value });
   },
 
+  setDefaultTopicType: function(topicType: PageRole) {
+    this.setState({ defaultTopicType: topicType });
+  },
+
   onPositionChanged: function(event) {
     var newPosition = parseInt(event.target.value);
     this.setState({ position: isNaN(newPosition) ? '' : newPosition });
-  },
-
-  onTopicTypesChange: function(topicTypesText: string, selectedOptions) {
-    var topicTypes = selectedOptions.map((x: any) => x.value);
-    this.setState({ newTopicTypes: topicTypes });
   },
 
   toggleUnlisted: function() {
@@ -155,7 +158,7 @@ var EditCategoryDialog = createClassAndFactory({
       name: this.state.name,
       slug: this.state.slug,
       position: this.state.position || DefaultPosition,
-      newTopicTypes: this.state.newTopicTypes,
+      defaultTopicType: this.state.defaultTopicType,
       unlisted: this.state.unlisted,
       staffOnly: this.state.staffOnly,
       onlyStaffMayCreateTopics: this.state.onlyStaffMayCreateTopics,
@@ -166,6 +169,8 @@ var EditCategoryDialog = createClassAndFactory({
   },
 
   render: function () {
+    var store: Store = this.state.store;
+
     var nameInput =
         Input({ type: 'text', label: "Name", ref: 'nameInput',
             value: this.state.name, onChange: this.onNameChanged,
@@ -180,21 +185,24 @@ var EditCategoryDialog = createClassAndFactory({
       topicTypes.push({ value: PageRole.Critique, label: 'Critique' }); // [plugin]
     }
 
-    var topicTypesInput =
+    var defaultTopicTypeInput =
       r.div({ className: 'form-group' },
-        r.label({ className: 'control-label' }, "Topic types"),
-        ReactSelect({ value: this.state.newTopicTypes.join(), options: topicTypes, multi: true,
-            onChange: this.onTopicTypesChange, className: 'dw-topic-types' }),
+        r.label({ className: 'control-label' }, "Default topic type"),
+        PageRoleDropdown({ store: store, pageRole: this.state.defaultTopicType,
+          complicated: false, hideMore: true, onSelect: this.setDefaultTopicType,
+          title: 'Topic type', className: 'esEdtr_titleEtc_pageRole', pullLeft: true }),
         r.span({ className: 'help-block' },
-          "The topic types to choose among, when creating a new topic. ",
-          r.i({}, "Discussion"), " is the default. ",
-          r.i({}, "Problem"), " is if something is broken or doesn't work, needs to be fixed."));
+          "New topics in this category will be of this type, by default."));
 
     var slugInput =
         utils.FadeInOnClick({ clickToShowText: "Click to change how the name looks in URLs" },
-          Input({ type: 'text', label: "Slug",
+          Input({ type: 'text', label: "URL slug",
               ref: 'slugInput', value: this.state.slug, onChange: this.onSlugChanged,
-              help: "The slug is shown in the URL in the browser address bar." }));
+              help: r.div({ className: 'esCatDlg_slug_help' },
+                "Included in the computer address (URL) to this category. The address " +
+                "would be: ",
+                r.samp({}, location.origin + store.pagePath.value + RoutePathLatest + '/',
+                  r.span({ className: 'esCatDlg_slug_help_addr_slug' }, this.state.slug))) }));
 
     var sortPositionText = "Click to set sort position";
     if (this.state.position !== DefaultPosition) {
@@ -204,7 +212,7 @@ var EditCategoryDialog = createClassAndFactory({
         utils.FadeInOnClick({ clickToShowText: sortPositionText },
           Input({ type: 'number', label: "Position",
             value: this.state.position || '', onChange: this.onPositionChanged,
-            help: "On the category list page, categories with a lower value are listed first. " +
+            help: "On the category list page, categories with lower values are listed first. " +
               "Default: " + DefaultPosition }));
 
     var unlistedTitle = "Unlisted (" + (this.state.unlisted ?  "yes)" : "no)");
@@ -215,15 +223,14 @@ var EditCategoryDialog = createClassAndFactory({
               help: "Hides this category and all topics herein, in the forum topic lists — " +
                   "only staff will see them. However, when accessed directly, the pages " +
                   "will be visible. This is useful for pages like a homepage or about-this-" +
-                  "website page, which you might not want people to see in the forum. " +
-                  "Default: false" }));
+                  "website page, which people shouldn't see in the forum topic list." }));
 
     var staffOnlyTitle = "Staff only (" + (this.state.staffOnly ?  "yes)" : "no)");
     var staffOnlyInput =
       utils.FadeInOnClick({ clickToShowText: staffOnlyTitle },
         Input({ type: 'checkbox', label: "Staff only",
           checked: this.state.staffOnly, onChange: this.toggleStaffOnly,
-          help: "Shall topics in this category be accessible to admins and moderators only?" }));
+          help: "Shall topics in this category be accessible only to admins and moderators?" }));
 
     var onlyStaffMayCreateTopicsTitle = "Only staff may create topics (" +
           (this.state.onlyStaffMayCreateTopics ?  "yes)" : "no)");
@@ -231,13 +238,13 @@ var EditCategoryDialog = createClassAndFactory({
       utils.FadeInOnClick({ clickToShowText: onlyStaffMayCreateTopicsTitle },
         Input({ type: 'checkbox', label: "Only staff may create topics",
           checked: this.state.onlyStaffMayCreateTopics, onChange: this.toggleOnlyStaffMayCreateTopics,
-          help: "May no one but admins and moderators create topics in this category?" }));
+          help: "May only admins and moderators create topics in this category?" }));
 
     var body = this.state.isLoading
         ? r.div({}, "Loading...")
         : r.div({},
             nameInput,
-            topicTypesInput,
+            defaultTopicTypeInput,
             slugInput,
             positionInput,
             unlistedInput,
@@ -255,7 +262,7 @@ var EditCategoryDialog = createClassAndFactory({
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close,
-          dialogClassName: 'dw-dlg-save-category' },
+          dialogClassName: 'esCatDlg' },
         ModalHeader({}, ModalTitle({}, dialogTitle)),
         ModalBody({}, body),
         ModalFooter({}, saveCancel)));

@@ -161,6 +161,12 @@ function isReviewPostTask(reviewTask: ReviewTask): boolean {
 
 var ApiUrlPathPrefix = '/-/';
 
+
+var RoutePathLatest = 'latest';
+var RoutePathTop = 'top';
+var RoutePathCategories = 'categories';
+
+
 // Enable some hard-to-use features for me only right now.
 declare var debiki: any;
 var IsEffectiveDiscussionsDotOrg = (typeof debiki !== 'undefined') && debiki.siteId === '3';

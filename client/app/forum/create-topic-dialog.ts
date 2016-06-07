@@ -47,7 +47,7 @@ export function getCreateTopicDialog() {
 }
 
 
-var CreateTopicDialog = createClassAndFactory({
+var CreateTopicDialog = createClassAndFactory({ // [refactor] [5YKW294] Delete :->
   getInitialState: function () {
     return {
       isOpen: false,

@@ -38,11 +38,12 @@ var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 
 
-export function isHelpMessageClosedAnyVersion(store, messageId: string) {
-  return !!store.user.closedHelpMessages[messageId];
+export function isHelpMessageClosedAnyVersion(store, messageId: string): boolean {
+  return store.user && !!store.user.closedHelpMessages[messageId];
 }
 
 export function isHelpMessageClosed(store, message) {
+  if (!store.user) return false;
   var closedVersion = store.user.closedHelpMessages[message.id];
   return closedVersion && closedVersion === message.version;
 }

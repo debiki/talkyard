@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/lodash/lodash.d.ts" />
 /// <reference path="../prelude.ts" />
+/// <reference path="../constants.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../editor/editor.ts" />
 /// <reference path="../login/login-dialog.ts" />
@@ -59,10 +60,6 @@ var NumNewTopicsPerRequest = 40;
 // The route with path 'latest' or 'top' or 'categories'. It determines the sort order
 // (latest first, or best first).
 var SortOrderRouteIndex = 1;
-
-export var RoutePathLatest = 'latest';
-export var RoutePathTop = 'top';
-export var RoutePathCategories = 'categories';
 
 var FilterShowAll = 'ShowAll';
 var FilterShowWaiting = 'ShowWaiting';

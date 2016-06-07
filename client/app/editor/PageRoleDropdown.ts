@@ -62,7 +62,9 @@ export var PageRoleDropdown = createComponent({
   },
 
   onSelect: function(listItem) {
-    this.props.onSelect(listItem.eventKey);
+    if (this.props.onSelect) {
+      this.props.onSelect(listItem.eventKey);
+    }
     this.close();
   },
 
@@ -94,7 +96,7 @@ export var PageRoleDropdown = createComponent({
         activeEventKey: pageRole, eventKey: PageRole.MindMap,
         title: "Mind map", text: "" });
 
-    var showMore = !isStaff(me) || showAllOptions ? null :
+    var showMore = !isStaff(me) || showAllOptions || props.hideMore ? null :
       ExplainingListItem({ onClick: this.showAllOptions,
         title: r.span({ className: 'esPageRole_showMore' }, "More...") });
 
@@ -151,22 +153,22 @@ export var PageRoleDropdown = createComponent({
           ExplainingListItem({ onSelect: this.onSelect,
             activeEventKey: pageRole, eventKey: PageRole.Discussion,
             title: PageRole_Discussion_IconString,
-            text: "The default topic type." }),
+            text: "A discussion about something." }),
 
           ExplainingListItem({ onSelect: this.onSelect,
             activeEventKey: pageRole, eventKey: PageRole.Question,
             title: PageRole_Question_IconString,
-            text: r.span({}, "You can mark an answer as ", r.i({}, "Accepted"), ".") }),
+            text: r.span({}, "One answer can be marked as the accepted answer.") }),
 
           ExplainingListItem({ onSelect: this.onSelect,
             activeEventKey: pageRole, eventKey: PageRole.Problem,
             title: PageRole_Problem_IconString,
-            text: "If something is broken or doesn't work." }),
+            text: "If something is broken or doesn't work. Can be marked as fixed/solved." }),
 
           ExplainingListItem({ onSelect: this.onSelect,
             activeEventKey: pageRole, eventKey: PageRole.Idea,
             title: PageRole_Idea_IconString,
-            text: "If you want to suggest something." }),
+            text: "A suggestion. Can be marked as done/implemented." }),
 
           showMore,
 

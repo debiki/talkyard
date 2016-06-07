@@ -208,7 +208,8 @@ interface Category {
   id: number;
   name: string;
   slug: string;
-  newTopicTypes: PageRole[];
+  defaultTopicType: PageRole,
+  newTopicTypes: PageRole[];  // [refactor] [5YKW294] delete, use defaultTopicType instead
   position?: number;
   description: string;
   recentTopics?: Topic[];

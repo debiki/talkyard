@@ -64,11 +64,9 @@ object ForumController extends mvc.Controller {
     val unlisted = (body \ "unlisted").asOpt[Boolean].getOrElse(false)
     val staffOnly = (body \ "staffOnly").asOpt[Boolean].getOrElse(false)
     val onlyStaffMayCreateTopics = (body \ "onlyStaffMayCreateTopics").asOpt[Boolean].getOrElse(false)
-    val newTopicTypeInts = (body \ "newTopicTypes").as[List[Int]]
-    val newTopicTypes = newTopicTypeInts map { typeInt =>
-      PageRole.fromInt(typeInt) getOrElse throwBadReq(
-        "DwE7KUP3", s"Bad new topic type int: $typeInt")
-    }
+    val defaultTopicTypeInt = (body \ "defaultTopicType").as[Int]
+    val defaultTopicType = PageRole.fromInt(defaultTopicTypeInt) getOrElse throwBadReq(
+        "DwE7KUP3", s"Bad new topic type int: $defaultTopicTypeInt")
 
     val categoryData = CreateEditCategoryData(
       anyId = (body \ "categoryId").asOpt[CategoryId],
@@ -77,7 +75,7 @@ object ForumController extends mvc.Controller {
       name = (body \ "name").as[String],
       slug = (body \ "slug").as[String],
       position = (body \ "position").as[Int],
-      newTopicTypes = newTopicTypes,
+      newTopicTypes = List(defaultTopicType),
       unlisted = unlisted,
       staffOnly = staffOnly,
       onlyStaffMayCreateTopics = onlyStaffMayCreateTopics)
@@ -95,9 +93,6 @@ object ForumController extends mvc.Controller {
 
     if (categoryData.slug.length > MaxSlugLength)
       throwBadRequest("EsE9MFU4", s"Too long category slug: '${categoryData.slug}'")
-
-    if (categoryData.newTopicTypes.size > MaxTopicTypes)
-      throwBadRequest("EsE1GKU6", s"Too many topic types")
 
     val category = categoryData.anyId match {
       case Some(categoryId) =>

@@ -30,6 +30,7 @@ case class Category(
   slug: String,
   position: Int,
   description: Option[String],
+  // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageRole],
   unlisted: Boolean,
   staffOnly: Boolean,
@@ -48,7 +49,6 @@ case class Category(
   require(name.length <= MaxNameLength, "EsE2KPE8")
   require(!description.exists(_.isEmpty), "EsE2KPU7")
   require(!description.exists(_.length > MaxDescriptionLength), "EsE2PFU4")
-  require(newTopicTypes.size <= MaxTopicTypes, "EsE7MJKF2")
   require(updatedAt.getTime >= createdAt.getTime, "EsE8UF9")
   require(!lockedAt.exists(_.getTime < createdAt.getTime), "EsE5MPK2")
   require(!frozenAt.exists(_.getTime < createdAt.getTime), "EsE2KPU4c")
@@ -67,7 +67,6 @@ object Category {
   val MaxNameLength = 50
   val MaxSlugLength = 50
   val MaxDescriptionLength = 1000
-  val MaxTopicTypes = 20
   val DescriptionExcerptLength = 280
   val UncategorizedDescription = "__uncategorized__"
   val DefaultPosition = 50 // also in Typescript [7KBYW2]
@@ -80,6 +79,7 @@ case class CreateEditCategoryData(
   name: String,
   slug: String,
   position: Int,
+  // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageRole],
   unlisted: Boolean,
   staffOnly: Boolean,

@@ -141,6 +141,7 @@ var editorEtceteraScripts = [
       'bower_components/markdown-it/dist/markdown-it.js',
       'bower_components/Caret.js/dist/jquery.caret.js',
       'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
+       // [refactor] [5YKW294] Delete these 3 react-select rows: (+ from bower.json)
       'bower_components/classnames/index.js', // needed by react-select
       'bower_components/react-input-autosize/dist/react-input-autosize.min.js', // needed by react-select
       'bower_components/react-select/dist/react-select.min.js',
