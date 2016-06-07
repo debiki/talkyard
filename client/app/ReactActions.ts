@@ -59,6 +59,7 @@ export var actionTypes = {
   ChangeSiteStatus: 'ChangeSiteStatus',
   HideHelpMessage: 'HideHelpMessage',
   ShowHelpAgain: 'ShowHelpAgain',
+  ShowSingleHelpMessageAgain: 'ShowSingleHelpMessageAgain',
   AddNotifications: 'AddNotifications',
   MarkAnyNotificationAsSeen: 'MarkAnyNotificationAsSeen',
   AddMeAsPageMember: 'AddMeAsPageMember',
@@ -493,6 +494,14 @@ export function hideHelpMessages(message) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.HideHelpMessage,
     message: message,
+  });
+}
+
+
+export function showSingleHelpMessageAgain(messageId: string) {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.ShowHelpAgain,
+    messageId: messageId,
   });
 }
 

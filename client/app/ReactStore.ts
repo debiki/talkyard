@@ -258,8 +258,15 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.ShowHelpAgain:
-      putInLocalStorage('closedHelpMessages',  {});
-      store.me.closedHelpMessages = {};
+      if (action.messageId) {
+        // Could mark as visible in local storage? Or not (simpler) — the user has
+        // soon read it anyway.
+        delete store.me.closedHelpMessages[action.messageId];
+      }
+      else {
+        putInLocalStorage('closedHelpMessages', {});
+        store.me.closedHelpMessages = {};
+      }
       break;
 
     case ReactActions.actionTypes.AddNotifications:

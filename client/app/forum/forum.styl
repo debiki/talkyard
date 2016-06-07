@@ -272,6 +272,10 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
         border-top-color: hsl(0, 0%, 91%);
         border-top-width: 3px;
 
+      td > .dw-help
+        margin: 11px;
+
+    tr.esForum_topics_topic
       td
         padding: 10px $tablePaddingLeft
         font-size: $tableFontSize;
@@ -371,6 +375,47 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
   crossGray();
 
 
+.esForum_topics_openIconsHelp
+  padding: 11px 0 10px 12px;
+  display: block;
+  font-size: 15px;
+  color: hsl($uiHue, 100%, 39%);
+  float: left;
+  &.icon-info-circled:before
+    opacity: 0.75;
+  &:hover
+    text-decoration: none;
+    color: hsl($uiHue, 100%, 22%);
+
+.esTopicIconHelp
+  li
+    list-style: none;
+    display: inline-block;
+    margin: 0 0 3px 10px;
+    width: 300px;
+    vertical-align: top;
+
+  [class^=icon-]:before
+    width: 20px;
+    margin: 0 6px 0 0;
+    padding: 0;
+    font-size: 16px;
+    color: #555;
+
+  .icon-check-empty:before
+    color: #222;  // or hard to see, so thin borders
+
+  .icon-idea:before
+    font-size: 18px;
+    color: #333;
+
+.esTopicIconHelp_intro
+  margin-bottom: 8px;
+
+.esTopicIconHelp_noIcon
+  margin: 3px 0 0;
+
+
 // Categories tree
 //===========================
 
@@ -423,7 +468,7 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
 
 .forum-table .forum-title-wrap {
   font-size: 17px;
-  margin: 5px 10px 11px 0;
+  margin: 5px 10px 9px 0;
 }
 
 .DW.DW .forum-table td {

@@ -700,6 +700,11 @@ var ForumTopicListComponent = React.createClass(<any> {
     return orderOffset;
   },
 
+  openIconsHelp: function() {
+    this.setState({ helpOpened: true });
+    ReactActions.showSingleHelpMessageAgain(IconHelpMessage.id);
+  },
+
   render: function() {
     var store: Store = this.props.store;
     if (!this.state.topics) {
@@ -722,6 +727,25 @@ var ForumTopicListComponent = React.createClass(<any> {
           key: topic.pageId, routes: this.props.routes, location: this.props.location,
           pagePath: store.pagePath });
     });
+
+    // Insert an icon explanation help message in the topic list. Anywhere else, and
+    // people won't see it at the right time, won't understand what the icons mean.
+    // It'll be closed by default (click to open) if there are only a few topics.
+    // (Because if people haven't seen some icons and started wondering "what's that",
+    // they're just going to be annoyed by the icon help tips?)
+    var numFewTopics = 10;
+    var iconsHelpClosed =
+        // User has clicked Hide?
+        help.isHelpMessageClosed(store, IconHelpMessage) ||
+        // Too few topics, then right now no one cares about the icons?
+        (topics.length < numFewTopics && !this.state.helpOpened);
+    var iconsHelpStuff = iconsHelpClosed
+        ? r.a({ className: 'esForum_topics_openIconsHelp icon-info-circled',
+              onClick: this.openIconsHelp }, "Explain icons...")
+        : HelpMessageBox({ message: IconHelpMessage, showUnhideTips: false });
+    topics.splice(Math.min(topics.length, numFewTopics), 0,
+      r.tr({ key: 'ExplIcns'},
+        r.td({ colSpan: 5 }, iconsHelpStuff)));
 
     var loadMoreTopicsBtn;
     if (this.state.showLoadMoreButton) {
@@ -749,6 +773,42 @@ var ForumTopicListComponent = React.createClass(<any> {
         loadMoreTopicsBtn));
   }
 });
+
+
+var IconHelpMessage = {
+  id: '5KY0W347',
+  version: 1,
+  content:
+    r.div({ className: 'esTopicIconHelp' },
+      r.p({ className: 'esTopicIconHelp_intro' }, "Icon explanation:"),
+      r.ul({},
+        r.li({},
+          r.span({ className: 'icon-help-circled' },
+            "A question with no accepted answer.")),
+        r.li({},
+          r.span({ className: 'icon-ok-circled' },
+            "A question with an accepted answer.")),
+        r.li({},
+          r.span({ className: 'icon-idea' },
+            "An idea.")),
+        r.li({},
+          r.span({ className: 'icon-attention-circled' },
+            "A problem someone has encountered.")),
+        r.li({},
+          r.span({ className: 'icon-check-empty' },
+            "Something planned, or being done or fixed.")),
+        r.li({},
+          r.span({ className: 'icon-check' },
+            "Something that's been done or fixed.")),
+        r.li({},
+          r.span({ className: 'icon-block' },
+            "Topic closed.")),
+        r.li({},
+          r.span({ className: 'icon-pin' },
+            "Topic always listed first (perhaps only in its own category)"))),
+      r.p({ className: 'esTopicIconHelp_noIcon' },
+        "A topic ", r.i({}, "without"), " any icon, is a general discussion.")),
+};
 
 
 
@@ -884,7 +944,7 @@ var TopicRow = createComponent({
     }
 
     return (
-      r.tr({},
+      r.tr({ className: 'esForum_topics_topic' },
         r.td({ className: 'dw-tpc-title' },
           makeTitle(topic, anyPinIconClass),
           excerptIfPinned),

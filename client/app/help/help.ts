@@ -87,15 +87,16 @@ export var HelpMessageBox = createComponent({
 
   hideThisHelp: function() {
     ReactActions.hideHelpMessages(this.props.message);
-    openHelpDialogUnlessHidden({
+    // Wait a short while with opening this, so one first sees the effect of clicking Close.
+    if (this.props.showUnhideTips !== false) setTimeout(() => openHelpDialogUnlessHidden({
       content: r.span({}, "You can show help messages again, if you are logged in, by " +
         "clicking your name and then ", r.b({}, "Unhide help messages"), "."),
       id: '5YK7EW3',
-    });
+    }), 550);
   },
 
   render: function() {
-    if (this.state.hidden && !this.props.message.alwaysShow)
+    if (this.state.hidden && !(this.props.alwaysShow || this.props.message.alwaysShow))
       return null;
 
     // If there are more help dialogs afterwards, show a comment icon instead to give
