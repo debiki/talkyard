@@ -333,7 +333,7 @@ export var Editor = createComponent({
     var suffix = parts.length > 1 ? _.last(parts) : '';
 
     // (SVG doesn't work in old browsers, fine. tif doesn't work for me.)
-    var isImage = suffix === 'png' || suffix === 'jpg' || suffix === 'gif' ||
+    var isImage = suffix === 'png' || suffix === 'jpg' || suffix === 'jpeg' || suffix === 'gif' ||
         suffix === 'mpo' || suffix === 'bmp' || suffix === 'svg';
 
     // Only .mp4 is supported by all browsers.

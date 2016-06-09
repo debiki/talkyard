@@ -353,9 +353,14 @@ trait PagesDao {
 
   /** Changes status from New to Planned to Done, and back to New again.
     */
-  def cyclePageDone(pageId: PageId, userId: UserId, browserIdData: BrowserIdData): PageMeta = {
+  def cyclePageDoneIfAuth(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
+        : PageMeta = {
     val newMeta = readWriteTransaction { transaction =>
+      val user = transaction.loadTheUser(userId)
       val oldMeta = transaction.loadThePageMeta(pageId)
+      if (!user.isStaff && user.id != oldMeta.authorId)
+        throwForbidden("EsE4YK0W2", "Only the page author and staff may change the page status")
+
       val pageRole = oldMeta.pageRole
       if (pageRole != PageRole.Problem && pageRole != PageRole.Idea && pageRole != PageRole.ToDo)
         throwBadReq("DwE6KEW2", "This page cannot be marked as planned or done")

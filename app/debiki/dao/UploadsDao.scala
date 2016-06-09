@@ -100,7 +100,7 @@ trait UploadsDao {
             else {
               tempCompressedFile.get.delete()
               tempCompressedFile = None
-              (tempFile, uploadedDotSuffix)
+              (tempFile, simplifySuffix(uploadedDotSuffix))
             }
           }
       }
@@ -169,6 +169,14 @@ trait UploadsDao {
     tempCompressedFile.foreach(_.delete)
 
     UploadRef(localhostUploadsBaseUrl, hashPathSuffix)
+  }
+
+
+  def simplifySuffix(dotSuffix: String): String = {
+    dotSuffix match {
+      case ".jpeg" => ".jpg"
+      case _ => dotSuffix
+    }
   }
 
 

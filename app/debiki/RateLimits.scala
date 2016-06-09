@@ -252,13 +252,15 @@ object RateLimits {
   }
 
 
+  // COULD rate limit this more, per page, though. And lower the limits, if we start
+  // generating status-changed-posts.
   object TogglePage extends RateLimits {
     val key = "TgPg"
     val what = "changed the page state too many times"
-    val maxPerFifteenSeconds = 6
-    val maxPerFifteenMinutes = 50
-    val maxPerDay = 150
-    val maxPerDayNewUser = 30
+    val maxPerFifteenSeconds = 10
+    val maxPerFifteenMinutes = 100
+    val maxPerDay = 500
+    val maxPerDayNewUser = 150
   }
 
 

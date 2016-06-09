@@ -253,10 +253,13 @@ export var Title = createComponent({
 
   render: function() {
     var store: Store = this.props;
-    var me: Myself = store.me;
-    var titlePost = this.props.allPosts[TitleId];
+    var titlePost = store.allPosts[TitleId];
     if (!titlePost)
       return null;
+
+    var me: Myself = store.me;
+    var isMyPage = store_thisIsMyPage(store);
+    var isStaffOrMyPage: boolean = isStaff(me) || isMyPage;
 
     var titlePendingApprovalMessage = titlePost.isApproved ? false :
         r.span({ className: 'esPendingApproval' }, '(Title pending approval)', r.br());
@@ -283,7 +286,7 @@ export var Title = createComponent({
     }
 
     var anyEditTitleBtn;
-    if (!this.props.hideButtons && (isStaff(me) || me.userId === titlePost.authorId)) {
+    if (!this.props.hideButtons && isStaffOrMyPage) {
       anyEditTitleBtn =
         r.a({ className: 'dw-a dw-a-edit icon-edit', id: 'e2eEditTitle', onClick: this.editTitle });
     }
@@ -347,15 +350,15 @@ export var Title = createComponent({
               ? "Click to change status to not-yet-done"
               : "Click to mark as done";
         }
-        if (!isStaff(me)) iconTooltip = null;
-        var clickableClass = isStaff(me) ? ' dw-clickable' : '';
-        var onClick = isStaff(me) ? this.cycleIsDone : null;
+        if (!isStaffOrMyPage) iconTooltip = null;
+        var clickableClass = isStaffOrMyPage ? ' dw-clickable' : '';
+        var onClick = isStaffOrMyPage ? this.cycleIsDone : null;
         icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
             title: iconTooltip });
       }
       else if (store.pageRole === PageRole.ToDo) {
-        var clickableClass = isStaff(me) ? ' dw-clickable' : '';
-        var onClick = isStaff(me) ? this.cycleIsDone : null;
+        var clickableClass = isStaffOrMyPage ? ' dw-clickable' : '';
+        var onClick = isStaffOrMyPage ? this.cycleIsDone : null;
         icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
             title: iconTooltip });
       }

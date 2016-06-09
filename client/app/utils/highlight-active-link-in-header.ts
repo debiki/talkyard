@@ -30,6 +30,7 @@ export function highlightActiveLinkInHeader() {
   $('.esPageHeader a').each(function() {
     var $a = $(this);
     var href = $a.attr('href');
+    if (!href) return;
     var currentHref = href.indexOf('://') === -1
       ? location.pathname + location.search + location.hash
       : location.href.toString();

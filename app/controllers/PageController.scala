@@ -90,9 +90,9 @@ object PageController extends mvc.Controller {
   }
 
 
-  def cyclePageDone = StaffPostJsonAction(maxLength = 100) { request =>
+  def cyclePageDone = PostJsonAction(RateLimits.TogglePage, maxLength = 100) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
-    val newMeta = request.dao.cyclePageDone(pageId, userId = request.theUserId,
+    val newMeta = request.dao.cyclePageDoneIfAuth(pageId, userId = request.theUserId,
       request.theBrowserIdData)
     OkSafeJson(Json.obj(
       "plannedAtMs" -> JsLongOrNull(newMeta.plannedAt.map(_.getTime)),
