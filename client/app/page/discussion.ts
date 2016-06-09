@@ -465,11 +465,14 @@ var RootPostAndComments = createComponent({
               dangerouslySetInnerHTML: { __html: rootPost.sanitizedHtml }})));
     }
 
+    var theEnd = r.div({ id: 'dw-the-end', style: { clear: 'both' } });
+
     if (!showComments) {
       return (
         r.div({ className: threadClass },
           body,
-          NoCommentsPageActions({ post: rootPost, me: me })));
+          NoCommentsPageActions({ post: rootPost, me: me }),
+          theEnd));
     }
 
     var solvedBy;
@@ -589,7 +592,7 @@ var RootPostAndComments = createComponent({
           r.ol({ className: 'dw-res dw-singlereplies' },
             threadedChildren)),
         chatSection,
-        r.div({ id: 'dw-the-end', style: { clear: 'both' } })));
+        theEnd));
   },
 });
 

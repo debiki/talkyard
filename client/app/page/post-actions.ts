@@ -79,11 +79,11 @@ export var NoCommentsPageActions = createComponent({
     if (!post.isApproved && !post.sanitizedHtml)
       return null;
 
-    var actions;
-    if (me.isAdmin) {
-      actions =
+    if (!me.isAdmin)
+      return null;
+
+    var actions =
           r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick }, 'Edit');
-    }
 
     return (
       r.div({ className: 'dw-p-as dw-as' }, actions));

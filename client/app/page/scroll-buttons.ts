@@ -44,7 +44,7 @@ function scrollToTop(addBackStep?) {
     addVisitedPosition(WhereTop);
   }
   // wrong code [ZZ2KU35]
-  utils.scrollIntoViewInPageColumn($('.dw-page'), { marginTop: 90, marginBottom: 9999 });
+  utils.scrollIntoViewInPageColumn($('.dw-page'), { marginTop: 399, marginBottom: 9999 });
 }
 
 function scrollToReplies(addBackStep?) {
@@ -287,7 +287,12 @@ var ScrollButtonsDropdownModal = createComponent({
       isOpen: false,
       enableGotoTopBtn: false,
       enableGotoEndBtn: true,
+      store: ReactStore.allData(),
     };
+  },
+
+  onChange: function() {
+    this.setState({ store: debiki2.ReactStore.allData() });
   },
 
   openAt: function(at) {
@@ -297,8 +302,10 @@ var ScrollButtonsDropdownModal = createComponent({
       isOpen: true,
       atX: rect.left - 160,
       atY: rect.bottom,
-      enableGotoTopBtn: $('#esPageColumn').scrollTop() > 0,
+      enableGotoTopBtn: $('#esPageColumn').scrollTop() > 5,
       enableGotoEndBtn: calcCoords($('#dw-the-end')).needsToScroll,
+      enableGotoRepliesBtn:
+        calcCoords($('.dw-depth-0 > .dw-p-as'), { marginTop: 65, marginBottom: 200 }).needsToScroll,
     });
   },
 
@@ -323,7 +330,11 @@ var ScrollButtonsDropdownModal = createComponent({
 
   render: function() {
     var state = this.state;
-    var isChat = this.props.isChat;
+    var store: Store = this.state.store;
+    var pageRole: PageRole = store.pageRole;
+    var isChat = page_isChatChannel(pageRole);
+    var neverHasReplies = pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.WebPage;
+
     var content;
     if (state.isOpen) {
       var topHelp = "Go to the top of the page. Shortcut: 1 (on the keyboard)";
@@ -334,12 +345,13 @@ var ScrollButtonsDropdownModal = createComponent({
         Button({ className: '', onClick: this.scrollToTop, title: topHelp,
             disabled: !state.enableGotoTopBtn, bsStyle: 'primary' }, "Page top");
 
-      var scrollToRepliesButton = isChat ? null :
+      var scrollToRepliesButton = isChat || neverHasReplies ? null :
         Button({ className: '', onClick: this.scrollToReplies, title: repliesHelp,
-            bsStyle: 'primary' }, "Replies");
+            disabled: !state.enableGotoRepliesBtn, bsStyle: 'primary' }, "Replies");
 
       var scrollToEndButton = Button({ className: '', onClick: this.scrollToEnd, title: endHelp,
-          disabled: !state.enableGotoEndBtn, bsStyle: 'primary' }, "Bottom");
+          disabled: !state.enableGotoEndBtn, bsStyle: 'primary' },
+        isChat ? "Page bottom" : "Bottom");
 
       content =
           r.div({},
