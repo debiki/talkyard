@@ -40,8 +40,10 @@ sudo docker-compose build
 # Optimize assets, run unit & integration tests and build the Play Framework image
 # (We'll run e2e tests later, against the modules/ed-prod-one-tests containers.)
 gulp release
-# Delete min.js & min.css (keep min.js/css.gz), so Docker diffs a few MB smaller.
-rm public/res/*.min.js public/res/*.min.css
+# Delete unminified files, so Docker diffs a few MB smaller.
+find public/res/ -type f -name '*\.js' -not -name '*\.min\.js' -not -name 'zxcvbn\.js' | xargs rm
+find public/res/ -type f -name '*\.css' -not -name '*\.min\.css' | xargs rm
+# COULD add tests that verifies the wrong css & js haven't been deleted?
 scripts/cli.sh clean test dist
 sudo docker-compose down
 docker/build-play-prod.sh
@@ -64,7 +66,8 @@ selenium_pid=$!
 gulp build-e2e
 # hmm this fails the first time — seems the Play container is too slow, directly
 # after startup. Needs some kind of warmup?
-scripts/wdio target/e2e/wdio.conf.js --skip3
+scripts/wdio target/e2e/wdio.conf.js --skip3 --only all-links
+scripts/wdio target/e2e/wdio.conf.js --skip3 --only create-site
 
 kill $selenium_pid
 sudo $test_containers down

@@ -26,7 +26,6 @@ pages.createSite.fillInFieldsAndSubmit = function(data) {
   browser.setValue('#dwLocalHostname', data.localHostname);
   browser.click('#e2eNext3');
   browser.setValue('#e2eOrgName', data.localHostname);
-  browser.click('#e2eNext4');
   browser.click('#e2eAcceptTerms');
   browser.click('input[type=submit]');
   browser.waitForVisible('#e2eLogin');
