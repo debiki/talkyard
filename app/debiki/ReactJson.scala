@@ -612,35 +612,46 @@ object ReactJson {
 
 
   def listRestrictedCategoriesAndTopics(request: PageRequest[_]): (JsArray, Seq[JsValue]) = {
-    if (request.thePageRole != PageRole.Forum)
-      return (JsArray(), Nil)
-
     // Currently there're only 2 types of "personal" topics: unlisted, & staff-only.
     if (!request.isStaff)
       return (JsArray(), Nil)
 
-    val rootCategoryId = request.thePageMeta.categoryId.getOrDie(
+    val categoryId = request.thePageMeta.categoryId.getOrDie(
       "DwE5JY026", s"Forum page '${request.thePageId}' has no category id")
 
-    val categories = request.dao.listCategoriesInTree(rootCategoryId, includeRoot = false,
+    val rootCategory = request.dao.loadRootCategory(categoryId).getOrDie(
+      "EsE4YK8F2", s"Category $categoryId has no root category")
+
+    // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
+    // (request.dao might start a new transaction)
+    val categories = request.dao.listCategoriesInTree(rootCategory.id, includeRoot = false,
       isStaff = true, restrictedOnly = true)
 
-    val orderOffset = PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll)
-    // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
-    // (We're passing request.dao to ForumController below.)
-    val topics = ForumController.listTopicsInclPinned(
-      rootCategoryId, orderOffset, request.dao,
-      includeDescendantCategories = true,
-      isStaff = true,
-      restrictedOnly = true,
-      limit = ForumController.NumTopicsToList)
-    val pageStuffById = request.dao.loadPageStuff(topics.map(_.pageId))
+    // A tiny bit dupl code [5YK03W5]
+    val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
+      categoryJson(category)
+    })
 
-    // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
-    // (We're passing request.dao to categoriesJson)
-    (categoriesJson(
-        sectionId = request.thePageId, isStaff = true, restrictedOnly = true, request.dao),
-      topics.map(ForumController.topicToJson(_, pageStuffById)))
+    val (topics, pageStuffById) =
+      if (request.thePageRole != PageRole.Forum) {
+        // Then won't list topics; no need to load any.
+        (Nil, Map[PageId, PageStuff]())
+      }
+      else {
+        val orderOffset = PageQuery(PageOrderOffset.ByBumpTime(None), PageFilter.ShowAll)
+        // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
+        // (We're passing request.dao to ForumController below.)
+        val topics = ForumController.listTopicsInclPinned(
+          rootCategory.id, orderOffset, request.dao,
+          includeDescendantCategories = true,
+          isStaff = true,
+          restrictedOnly = true,
+          limit = ForumController.NumTopicsToList)
+        val pageStuffById = request.dao.loadPageStuff(topics.map(_.pageId))
+        (topics, pageStuffById)
+      }
+
+    (categoriesJson, topics.map(ForumController.topicToJson(_, pageStuffById)))
   }
 
 
@@ -768,7 +779,7 @@ object ReactJson {
         : JsArray = {
     val categories: Seq[Category] = dao.listSectionCategories(sectionId, isStaff = isStaff,
       restrictedOnly = restrictedOnly)
-    val pageStuffById = dao.loadPageStuff(categories.map(_.sectionPageId))
+    // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
       categoryJson(category)
     })

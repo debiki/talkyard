@@ -465,7 +465,7 @@ var ForumButtons = createComponent({
     }
     else if (state.compact) {
       latestTopCategories =
-        r.div({ className: 'dw-sort-order esForum_catsNav_btn' },
+        r.div({ className: 'esForum_catsNav_btn' },
           DropdownButton({ title: this.getSortOrderName(), onSelect: this.onSwitchSortOrder,
               id: '6wkp3p5' },
             MenuItem({ eventKey: RoutePathLatest }, this.getSortOrderName(RoutePathLatest)),
@@ -474,7 +474,7 @@ var ForumButtons = createComponent({
     else {
       var slashSlug = this.slashCategorySlug();
       latestTopCategories =
-          r.ul({ className: 'nav nav-pills dw-sort-order esForum_catsNav_sort' },
+          r.ul({ className: 'nav esForum_catsNav_sort' },
             makeCategoryLink(RoutePathLatest + slashSlug, 'Latest'),
             makeCategoryLink(RoutePathTop + slashSlug, 'Top'));
     }
@@ -754,8 +754,15 @@ var ForumTopicListComponent = React.createClass(<any> {
               href: queryString }, 'Load more ...'));
     }
 
+    var sortingHowTips;
+    if (this.getOrderOffset().sortOrder === TopicSortOrder.LikesAndBumpTime) {
+      sortingHowTips =
+          r.p({ className: 'esForum_sortInfo' }, "Topics with the most Like votes:");
+    }
+
     return (
       r.div({},
+        sortingHowTips,
         r.table({ className: 'dw-topic-list' },
           r.thead({},
             r.tr({},

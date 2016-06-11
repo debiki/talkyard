@@ -315,36 +315,53 @@ html:not(.mouse) .dw-rr
   &.dw-very-wrong
     font-size: 100%;
 
+// [refactor] remove:
+// dw-fullname
+// dw-username
+// dw-lg-t-spl
 
-// Users with links to more info, e.g. website or blog
-.dw-pri a.dw-p-by,
-.dw-pri a.dw-p-e-by
-  color: hsl(0, 0%, 20%);
+
+
+.esP_By,
+.dw-p-hd .dw-ago,
+.esP_viewHist
+  margin-right: 8px;
+
+.esP_By_F,
+.esP_By_U
   font-size: 13px;
-  font-weight: bold
 
-.dw-p-show-hist
-  cursor: pointer;
-  font-weight: bold;
+.esP_By_F
+  font-weight: bold !important;
   color: hsl(0, 0%, 26%);
+
+.esP_By_U
+  font-weight: normal !important;
+  color: hsl(0, 0%, 17%);
+  &:not(:first-child)
+    margin-left: 6px;
+
+.esP_By_U_at
+  padding-right: 1px;
+
+.dw-p-hd
+  .dw-ago,
+  .esP_viewHist
+    color: hsl(0, 0%, 27%) !important;
+
+.esP_By,
+.esP_viewHist,
+.dw-a-clps:hover
+  cursor: pointer;
   &:hover
-    text-decoration: underline;
+    text-decoration: none;
+    color: black;
+    background: hsl($uiHue, 100%, 97%);
+    outline: 2px solid hsl($uiHue, 100%, 87%)
 
-// Users with no links to more info
-span.dw-p-by,
-span.dw-p-e-by
-  color: #555
-  font-weight: bold
-
-.DW .dw-p-by .dw-fullname
-  font-weight: normal;
 
 .dw-p-by.dw-suspended
   text-decoration: line-through;
-
-// Make authorship info easy to read
-:not(.dw-p-hd-e) > .dw-p-by
-  margin-right: 0.9ex
 
 .dw-lg-t-spl
   font-weight: normal;
@@ -372,10 +389,6 @@ span.dw-p-e-by
 .dw-a-clps.icon-left-open,
 .dw-a-clps.icon-right-open
   padding-top: 1px;
-
-.dw-a-clps:hover
-  background: hsl($uiHue, 100%, 99%);
-  outline: 2px solid hsl($uiHue, 100%, 86%);
 
 .dw-2dcol.dw-zd > .dw-p .dw-a-clps
   float: none;
@@ -526,8 +539,7 @@ span.dw-p-e-by
     background-color: white;
     border: none;
 
-  .dw-p-hd,
-  .dw-fullname
+  .dw-p-hd
     color: hsl(0, 0%, 40%);
 
   .dw-p-by,
@@ -543,6 +555,16 @@ span.dw-p-e-by
   .dw-mrrs
     display: inline !important;
 
+
+.esChatMsg
+  .esP_By_U
+    text-shadow: none;
+    font-weight: bold !important;
+    letter-spacing: 0;
+    color: hsl(0, 0%, 13%);
+
+  .dw-rrs
+    font-size: 12px;
 
 // Post info
 //===========================

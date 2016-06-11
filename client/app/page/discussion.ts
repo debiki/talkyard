@@ -981,7 +981,7 @@ var ReplyReceivers = createComponent({
     var elem = this.props.comma ? 'span' : 'div';
     return (
       r[elem]({ className: 'dw-rrs' + multireplyClass }, // rrs = reply receivers
-        (this.props.comma ? ', i' : 'I') + 'n reply to', receivers, ':'));
+        (this.props.comma ? '— i' : 'I') + 'n reply to', receivers, ':'));
   }
 });
 
@@ -1036,33 +1036,27 @@ export var PostHeader = createComponent({
 
     // Username link: Some dupl code, see edit-history-dialog.ts & avatar.ts [88MYU2]
     var authorUrl = '/-/users/#/id/' + post.authorId;
-    var namePart1;
-    var namePart2;
-    if (author.fullName && author.username) {
-      namePart1 = r.span({ className: 'dw-username' }, author.username);
-      namePart2 = r.span({ className: 'dw-fullname' }, ' (' + author.fullName + ')');
-    }
-    else if (author.fullName) {
-      namePart1 = r.span({ className: 'dw-fullname' }, author.fullName);
-      namePart2 = r.span({ className: 'dw-lg-t-spl' }, author.isEmailUnknown ? '??' : '?');
-    }
-    else if (author.username) {
-      namePart1 = r.span({ className: 'dw-username' }, author.username);
-    }
-    else {
-      namePart1 = r.span({}, '(Unknown author)');
+    var fullName = !author.fullName ? undefined :
+        r.span({ className: 'esP_By_F' },
+          author.fullName + ' ',
+          (user_isGuest(author) ? r.span({ className: 'esP_By_F-G' }, '?') : null));
+
+    var username = !author.username ? null :
+        r.span({ className: 'esP_By_U' },
+          r.span({ className: 'esP_By_U_at' }, '@'), author.username);
+
+    if (!fullName && !username) {
+      fullName = '(Unknown author)';
     }
 
     var editInfo = null;
     if (post.lastApprovedEditAt) {
-      var editedAt = timeAgo(post.lastApprovedEditAt);
-      var byVariousPeople = post.numEditors > 1 ? ' by various people' : null;
+      var editedAt = prettyLetterTimeAgo(post.lastApprovedEditAt);
+      //var byVariousPeople = post.numEditors > 1 ? ' by various people' : null;
       editInfo =
-          r.span({},
-            ', ',
-            r.span({ onClick: this.showEditHistory, className: 'dw-p-show-hist' },
-              'edited ', editedAt),
-            byVariousPeople);
+          r.span({ onClick: this.showEditHistory, className: 'esP_viewHist icon-edit',
+              title: "Click to view old edits"},
+            editedAt);
     }
 
     var anyPin;
@@ -1100,7 +1094,7 @@ export var PostHeader = createComponent({
     var suspendedClass = ''; // post.authorSuspendedTill ? ' dw-suspended' : ''; // see below
 
     var userLinkProps: any = {
-      className: 'dw-p-by' + suspendedClass,
+      className: 'dw-p-by esP_By' + suspendedClass,
       onClick: this.props.abbreviate ? null : this.onUserClick,
       href: authorUrl
     };
@@ -1136,7 +1130,7 @@ export var PostHeader = createComponent({
           anySolutionIcon,
           anyAvatar,
           by,
-          r[linkFn](userLinkProps, namePart1, namePart2),
+          r[linkFn](userLinkProps, fullName, username),
           this.props.exactTime ? timeExact(post.createdAt) : timeAgo(post.createdAt),
           editInfo,
           inReplyTo,

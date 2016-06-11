@@ -151,6 +151,20 @@ This project looks like so:
      +-conf/           <-- Default config files that assume everything
                            is installed on localohost, and dev mode
 
+Naming style
+-----------------------------
+
+CSS classes: Example: `esP_By_FN-Gst`. Here, `es` is a prefix used everywhere, namely
+the first and last letters in EffectiveDiscussions. `P` means Post. `By` means
+who-was-it-written-By. `FN` means Full Name. `Gst` means Guest.
+
+So, this is BEM (Block Element Modifier) with a few tweaks: 1) Blocks/elements are separated with
+only one underscore. 2) And modifiers with only one dash. 3) Blocks, elems and modifiers always
+start with uppercase — because then it's easy to tell if we're dealing with an _abbreviation_
+or not. For example, `FN` is an abbreviation. But `By` is not (since it continues with
+lowercase letters).
+
+
 Old Code
 -----------------------------
 

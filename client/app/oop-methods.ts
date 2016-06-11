@@ -40,7 +40,7 @@ export function topic_lastActivityAtMs(topic: Topic): number {
 
 /** Returns < 0, or > 0, or === 0, if t should be listed before t2, after t2, or if same position.
   */
-export function topic_sortOrderBasedOnLatestActivity(t: Topic, t2: Topic, categoryId: CategoryId)
+export function topic_sortByLatestActivity(t: Topic, t2: Topic, categoryId: CategoryId)
       : number {
   if (t.pinWhere === PinPageWhere.Globally && t2.pinWhere === PinPageWhere.Globally) {
     if (t.pinOrder !== t2.pinOrder) {

@@ -75,7 +75,7 @@ $forumNavBtnGroupLeft = 8px;
 //===========================
 
 // Fix this long error prone list later.
-.dw-sort-order .btn,
+.esForum_catsNav_btn .btn,
 .esForum_navLink,
 .dw-main-category-dropdown .btn,
 .esForum_filterBtn
@@ -93,9 +93,38 @@ $forumNavBtnGroupLeft = 8px;
 
 .esForum_catsNav_sort
   margin-left: $forumNavBtnGroupLeft;
+  float: left;
   .btn
     background: none;
     margin-left: 0 !important;
+    min-width: 50px;
+    $sideWithBorder = 8px;
+    $border = 1px solid hsl(0, 0%, 87%);
+    padding: 5px 9px !important;
+    &:not(.active)
+      padding: 5px $sideWithBorder !important;
+      border: $border;
+      color: hsl(0, 0%, 28%);
+      box-shadow: 0 1px 2px hsl(0, 0%, 93%);
+      &:not(:first-child)
+        border-left: none;
+      &:hover
+        background: hsl(0, 0%, 96%);
+        color: hsl(0, 0%, 25%);
+        border-color = hsl(0, 0%, 80%);
+    &.active
+      padding: $sideNoBorder 9px !important;
+      cursor: default;
+      background: hsl(0, 0%, 93%);
+      border-top: $border;
+      border-bottom: $border;
+      border-left: none;
+      border-right: none;
+      padding-left: $sideWithBorder + 1;
+      padding-right: $sideWithBorder + 1;
+      font-weight: normal;
+      box-shadow: 0 1px 2px hsl(0, 0%, 84%) inset;
+      color: hsl(0, 0%, 25%);
 
 .esForum_navLink
   float: left;
@@ -149,43 +178,6 @@ $forumNavBtnGroupLeft = 8px;
     a
       cursor: pointer
 
-  .dw-sort-order
-    float: left
-    .btn
-      border: none;
-
-  .nav
-    float: left
-
-    .btn
-      float: left;
-      border: none;
-      box-shadow: none;
-      color: black;
-      border-radius: 0;
-      &:hover:not(.active)
-        //background: hsl($uiNavHue, $uiNavSaturation + 20, 89%);
-        background: hsl($uiHue, 100%, 92%);
-        color: hsl($uiHue, 100%, 22%);
-        text-shadow: 0.5px 0 hsl(0, 0%, 22%);
-      &.active
-        //color: white;
-        cursor: default;
-        //background: hsl($uiNavHue, $uiNavSaturation, 53%);
-        //color: #222;
-        font-weight: bold;
-        background: none;
-        //text-decoration: underline;
-        color: hsl(0, 0%, 22%);
-        text-shadow: 0.5px 0 hsl(0, 0%, 22%);
-
-      min-width: 50px;
-      padding-left: 15px;
-      padding-right: 15px;
-      @media (max-width: 801px)
-        padding-left: 12px;
-        padding-right: 12px;
-
   .btn-default
     border: 1px solid #ccc;
 
@@ -216,6 +208,12 @@ $forumNavBtnGroupLeft = 8px;
       padding-left: 8px;
       padding-right: 8px;
 
+
+.esForum_sortInfo
+  margin: 4px 0 1em 4px;
+  color: hsl(0, 0%, 32%);
+  font-style: italic;
+  font-size: 14px;
 
 $tablePaddingLeft = 8px
 $tableFontSize = 13.4px;
