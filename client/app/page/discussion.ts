@@ -451,11 +451,6 @@ var RootPostAndComments = createComponent({
       postBodyClass += ' dw-ar-p-bd';
     }
 
-    var showComments = pageRole !== PageRole.CustomHtmlPage && pageRole !== PageRole.Forum &&
-        pageRole !== PageRole.WebPage &&
-        pageRole !== PageRole.Blog &&
-        pageRole !== PageRole.SpecialContent; // && pageRole !== PageRole.WikiMainPage
-
     var bodyPendingApprovalMessage = rootPost.isApproved ? false :
         r.div({ className: 'esPendingApproval' }, '(Text pending approval)');
 
@@ -470,7 +465,7 @@ var RootPostAndComments = createComponent({
 
     var theEnd = r.div({ id: 'dw-the-end', style: { clear: 'both' } });
 
-    if (!showComments) {
+    if (!page_isDiscussion(pageRole)) {
       return (
         r.div({ className: threadClass },
           body,
@@ -1036,10 +1031,10 @@ export var PostHeader = createComponent({
 
     // Username link: Some dupl code, see edit-history-dialog.ts & avatar.ts [88MYU2]
     var authorUrl = '/-/users/#/id/' + post.authorId;
+    var guestClass = user_isGuest(author) ? ' esP_By_F-G' : '';
+    var guestMark = user_isGuest(author) ? '? ' : '';
     var fullName = !author.fullName ? undefined :
-        r.span({ className: 'esP_By_F' },
-          author.fullName + ' ',
-          (user_isGuest(author) ? r.span({ className: 'esP_By_F-G' }, '?') : null));
+        r.span({ className: 'esP_By_F' + guestClass }, author.fullName + ' ' + guestMark);
 
     var username = !author.username ? null :
         r.span({ className: 'esP_By_U' },
@@ -1152,7 +1147,7 @@ export var PostBody = createComponent({
     if (this.props.abbreviate) {
       this.textDiv = this.textDiv || $('<div></div>');
       this.textDiv.html(post.sanitizedHtml);
-      var length = Math.min(screen.width, screen.height) < 500 ? 100 : 150;
+      var length = Math.min(screen.width, screen.height) < 500 ? 90 : 120;
       if (screen.height < 300) {
         length = 60;
       }

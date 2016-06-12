@@ -264,7 +264,6 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
   box-shadow: 6px 6px 8px #777;
   left: 25px;
   max-width: 380px !important;
-  font-size: 105%;
   .dw-help-text
     padding: 1ex 1ex 0;
   .icon-comment:before
@@ -282,5 +281,30 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
 .es-editor-help-four
   top: 95px;
   left: 35px;
+
+.esCB_Help
+  p
+    font-size: 14px;
+
+.esCB_Help_Large
+  font-size: 16px;
+
+.esCB_Help_ArwLeft,
+.esCB_Help_ArwDown
+  display: inline-block;
+  font-size: 30px;
+  vertical-align: top;
+  padding: 0 3px;
+  position: relative;
+  top: -2px;
+
+.esCB_Help_ArwLeft
+  flip()
+  // Don't let any line-wrapped text continue directly below the arrow.
+  float: left;
+  padding-bottom: 10px;
+
+.esCB_Help_ArwDown
+  rotateFn(90deg)
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

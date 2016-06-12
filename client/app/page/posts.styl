@@ -325,21 +325,25 @@ html:not(.mouse) .dw-rr
 .esP_By,
 .dw-p-hd .dw-ago,
 .esP_viewHist
-  margin-right: 8px;
+  margin-right: 7px;
 
 .esP_By_F,
 .esP_By_U
   font-size: 13px;
 
 .esP_By_F
-  font-weight: bold !important;
+  font-weight: bold;
   color: hsl(0, 0%, 26%);
 
+.esP_By_F-G
+  font-weight: normal;
+  color: hsl(0, 0%, 16%);
+
 .esP_By_U
-  font-weight: normal !important;
-  color: hsl(0, 0%, 17%);
+  font-weight: normal;
+  color: hsl(0, 0%, 16%);
   &:not(:first-child)
-    margin-left: 6px;
+    margin-left: 4px;
 
 .esP_By_U_at
   padding-right: 1px;
@@ -359,6 +363,9 @@ html:not(.mouse) .dw-rr
     background: hsl($uiHue, 100%, 97%);
     outline: 2px solid hsl($uiHue, 100%, 87%)
 
+.esP_viewHist
+  &:before
+    opacity: 0.7;
 
 .dw-p-by.dw-suspended
   text-decoration: line-through;

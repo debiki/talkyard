@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../links.ts" />
+/// <reference path="../page-methods.ts" />
 /// <reference path="../login/login-dialog.ts" />
 /// <reference path="../page-tools/page-tools.ts" />
 /// <reference path="../utils/page-scroll-mixin.ts" />
@@ -167,6 +168,11 @@ export var TopBar = createComponent({
     if (pageRole === PageRole.CustomHtmlPage && (!this.state.fixed || !me || !me.isLoggedIn))
       return r.div();
 
+    // Sidebars just make newcomers confused, if shown on some About Us page. However, if logged
+    // in already, then one likely knows how they work —> then one would instead be confused,
+    // if the open-sidebars buttons were suddenly gone?
+    var hideSidebarBtns = page_isInfoPage(pageRole) && !me.isLoggedIn;
+
     // ------- Forum --> Category --> Sub Category
 
     var ancestorCategories;
@@ -244,11 +250,15 @@ export var TopBar = createComponent({
 
     // ------- Login button
 
-    var signupButton = me.isLoggedIn ? null :
+    // Don't show Log In on info pages, like a custom HTML homepage or About pages — that
+    // has so far only made people confused.
+    var hideLogInAndSignUp = me.isLoggedIn || page_isInfoPage(pageRole);
+
+    var signupButton = hideLogInAndSignUp ? null :
       Button({ className: 'dw-login esTopbar_signUp btn-primary', onClick: this.onSignUpClick },
         r.span({}, "Sign Up"));
 
-    var loginButton = me.isLoggedIn ? null :
+    var loginButton = hideLogInAndSignUp ? null :
         Button({ className: 'dw-login esTopbar_logIn btn-primary', onClick: this.onLoginClick },
             r.span({ className: 'icon-user' }, 'Log In'));
 
@@ -336,25 +346,28 @@ export var TopBar = createComponent({
           r.span({ className: 'detailed' }, contextbarTipsDetailed),
           r.span({ className: 'brief' }, contextbarTipsBrief));
 
-    var openContextbarButton =
+    var openContextbarButton = hideSidebarBtns ? null :
         Button({ className: 'esOpenPagebarBtn', onClick: ReactActions.openPagebar,
             title: contextbarTipsDetailed },
           contextbarTips, r.span({ className: 'icon-left-open' }));
 
     // ------- Open Watchbar button
 
-    var openWatchbarButton =
-        Button({ className: 'esOpenWatchbarBtn', onClick: ReactActions.openWatchbar },
+    var openWatchbarButton = hideSidebarBtns ? null :
+        Button({ className: 'esOpenWatchbarBtn', onClick: ReactActions.openWatchbar,
+            title: "Your recent topics, joined chats, direct messages" },
           r.span({ className: 'icon-right-open' }),
           // An eye icon makes sense? because the first list is "Recently *viewed*".
           // And one kind of uses that whole sidebar to *watch* / get-updated-about topics
           // one is interested in.
-          r.span({ className: 'icon-eye' }));
+          // — no, hmm, someone remembers it from Photoshop and view-layers.
+          // r.span({ className: 'icon-eye' }));
           /* Old:
           // Let's call it "Activity"? since highlights topics with new posts.
           // (Better give it a label, then easier for people to remember what it does.)
           r.span({ className: 'esOpenWatchbarBtn_text' }, "Activity"));
           */
+          r.span({ className: 'esOpenWatchbarBtn_text' }, "Your topics"));
 
 
     // ------- The result

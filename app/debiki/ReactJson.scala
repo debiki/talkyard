@@ -616,8 +616,10 @@ object ReactJson {
     if (!request.isStaff)
       return (JsArray(), Nil)
 
-    val categoryId = request.thePageMeta.categoryId.getOrDie(
-      "DwE5JY026", s"Forum page '${request.thePageId}' has no category id")
+    val categoryId = request.thePageMeta.categoryId getOrElse {
+      // Not a forum topic. Could instead show an option to add the page to the / a forum?
+      return (JsArray(), Nil)
+    }
 
     val rootCategory = request.dao.loadRootCategory(categoryId).getOrDie(
       "EsE4YK8F2", s"Category $categoryId has no root category")

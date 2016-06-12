@@ -39,6 +39,13 @@ crossGray()
   visibility: hidden
 
 
+flip()
+  -webkit-transform: scale(-1, 1)
+  -moz-transform: scale(-1, 1)
+  -ms-transform: scale(-1, 1)
+  -o-transform: scale(-1, 1)
+  transform: scale(-1, 1)
+
 .dw-mirror
   -webkit-transform: scale(-1, 1)
   -moz-transform: scale(-1, 1)
@@ -46,6 +53,12 @@ crossGray()
   -o-transform: scale(-1, 1)
   transform: scale(-1, 1)
 
+rotateFn(degrees)
+  -webkit-transform: rotate(degrees);
+  -moz-transform: rotate(degrees);
+  -o-transform: rotate(degrees);
+  -ms-transform: rotate(degrees);
+  transform: rotate(degrees);
 
 // Inverted icons (changes e.g. a black disc with a white question mark to a black circle,
 // filled with white and a black question mark). This supposedly does *not* work in IE9,

@@ -56,10 +56,14 @@ function page_isChatChannel(pageRole: PageRole): boolean {
   return pageRole === PageRole.OpenChat || pageRole === PageRole.PrivateChat;
 }
 
+// Hmm now there's a Discussion topic type (= page role), then page_isDiscussion is an a
+// bit confusing name?
 function page_isDiscussion(pageRole: PageRole): boolean {
   return pageRole && !isSection(pageRole) &&
       pageRole !== PageRole.SpecialContent &&
-      pageRole !== PageRole.CustomHtmlPage;
+      pageRole !== PageRole.CustomHtmlPage &&
+      pageRole !== PageRole.WebPage;
+      // pageRole !== PageRole.WikiMainPage;
 }
 
 function isPageWithComments(pageRole: PageRole): boolean {
@@ -78,6 +82,7 @@ function pageRole_shallListInRecentTopics(pageRole: PageRole): boolean {
   switch (pageRole) {
     case PageRole.EmbeddedComments:
     case PageRole.CustomHtmlPage:
+    case PageRole.WebPage:
     case PageRole.Code:
     case PageRole.SpecialContent:
       return false;

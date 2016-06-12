@@ -1,0 +1,14 @@
+[refactor] rename esForum_ to esF_ and esForum_Nav to esF_BB
+esForum_cats_cat     to esF_Cs_C?
+esForum_topics_topic to esF_Ts_T?
+
+esF             = the forum main page, incl sort & filter buttons, and topic list and category list
+esF_BB          = forum button bar: sort & filter buttons
+esF_Ts          = forum topic list
+esF_Ts_T        = a topic in the topic list
+esF_Cs          = forum category list
+esF_Cs_C        = a category in the category list
+
+esCB            = context bar (the right sidebar)
+esWB            = watchbar (the left sidebar)
+esTB            = top bar (with the breadcrump and login & signup, or user name)

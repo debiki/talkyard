@@ -99,13 +99,13 @@ $forumNavBtnGroupLeft = 8px;
     margin-left: 0 !important;
     min-width: 50px;
     $sideWithBorder = 8px;
-    $border = 1px solid hsl(0, 0%, 87%);
-    padding: 5px 9px !important;
+    $border = 1px solid hsl(0, 0%, 91%);
+    padding: 6px 9px !important;
     &:not(.active)
-      padding: 5px $sideWithBorder !important;
+      padding: 6px $sideWithBorder !important;
       border: $border;
       color: hsl(0, 0%, 28%);
-      box-shadow: 0 1px 2px hsl(0, 0%, 93%);
+      //box-shadow: -1px -1px 2px hsl(0, 0%, 87%) inset
       &:not(:first-child)
         border-left: none;
       &:hover
@@ -113,7 +113,6 @@ $forumNavBtnGroupLeft = 8px;
         color: hsl(0, 0%, 25%);
         border-color = hsl(0, 0%, 80%);
     &.active
-      padding: $sideNoBorder 9px !important;
       cursor: default;
       background: hsl(0, 0%, 93%);
       border-top: $border;
@@ -148,6 +147,10 @@ $forumNavBtnGroupLeft = 8px;
     color: #333 !important;
     transform: scale(1.1, 1.1);
     margin-left: 2px;
+
+.esF_BB_CreateBtn
+  padding-top: 7px;
+  padding-bottom: 7px;
 
 .esForum_topicsCatsHelp
   max-width: 500px !important;

@@ -465,7 +465,7 @@ class Globals {
     private def anyFullTextSearchDbPath =
       config.getString("fullTextSearchDb.dataPath").noneIfBlank
 
-    val applicationVersion = "0.00.26"  // later, read from some build config file
+    val applicationVersion = "0.00.27"  // later, read from some build config file
 
     val applicationSecret =
       config.getString("play.crypto.secret").noneIfBlank.getOrDie(

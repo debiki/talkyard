@@ -492,10 +492,14 @@ export var Sidebar = createComponent({
       if (help.isHelpMessageClosed(this.state.store, helpMessageTwo)) {
       */
       helpMessageBoxTree =
-            help.HelpMessageBox({ className: 'es-editor-help-three', message: helpMessageThree });
+          help.HelpMessageBox({ className: 'es-editor-help-three', message: helpMessageThree,
+            showUnhideTips: false });
       if (help.isHelpMessageClosed(this.state.store, helpMessageThree)) {
         helpMessageBoxFour =
-            help.HelpMessageBox({ className: 'es-editor-help-four', message: helpMessageFour });
+            help.HelpMessageBox({ className: 'es-editor-help-four', message: helpMessageFour,
+              // Don't show, because would cause them to forget what they just read about
+              // the recent comments list. This is complicated enough already.
+              showUnhideTips: false });
       }
       // Dim the comments list until all help messages have been closed.
       var dimCommentsStyle = help.isHelpMessageClosed(this.state.store, helpMessageFour) ?
@@ -616,18 +620,26 @@ var helpMessageTwo = {
 var helpMessageThree = {
   id: 'EsH7UGY2',
   version: 1,
-  content: r.span({}, "Click a comment in this list, to focus it in the main view " +
-      "to the left — and read it ", r.i({}, "there"), " instead."),
-  okayText: "Okay",
+  content: r.div({ className: 'esCB_Help' },
+    r.p({},
+      r.span({ className: 'esCB_Help_ArwLeft' }, "➜"),
+      "The replies to the left are sorted by ", r.b({}, "best-first.")),
+    r.p({},
+      "But below ", r.span({ className: 'esCB_Help_ArwDown' }, "➜"),
+      " the same replies are instead sorted by ", r.b({}, "newest-first."))),
+  okayText: "Okay ...",
   moreHelpAwaits: true,
 };
 
 var helpMessageFour = {
   id: 'EsH6GJYu8',
   version: 1,
-  content: r.span({}, "The comments to the left are sorted by best-first. " +
-      "But you can use this list to find the newest comments."),
-  okayText: "Thanks, bye",
+  content: r.div({ className: 'esCB_Help' },
+    r.p({}, "So if you leave, and get back later, below you'll find ",
+      r.strong({ className: 'esCB_Help_Large' }, "all new replies.")),
+    r.p({}, r.strong({ className: 'esCB_Help_Large' }, "Click"),
+      " a reply below to read it — because only the first words are shown.")),
+  okayText: "Okay.",
   moreHelpAwaits: false,
 };
 

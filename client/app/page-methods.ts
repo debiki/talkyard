@@ -33,6 +33,11 @@
 var r = React.DOM;
 
 
+export function page_isInfoPage(pageRole: PageRole): boolean {
+  return pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.WebPage;
+}
+
+
 export function pageRole_toIconString(pageRole: PageRole) {
   switch (pageRole) {
     case PageRole.CustomHtmlPage: return "Custom HTML page";

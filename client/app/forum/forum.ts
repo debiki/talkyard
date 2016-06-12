@@ -543,7 +543,8 @@ var ForumButtons = createComponent({
     if (sortOrderRoutePath !== RoutePathCategories && !(
           activeCategory.onlyStaffMayCreateTopics && !isStaff(me))) {
      if (this.props.numWaitingForCritique < MaxWaitingForCritique)  // for now only [plugin]
-      createTopicBtn = Button({ onClick: this.createTopic, bsStyle: 'primary', id: 'e2eCreateSth' },
+      createTopicBtn = Button({ onClick: this.createTopic, bsStyle: 'primary', id: 'e2eCreateSth',
+          className: 'esF_BB_CreateBtn'},
         createTopicBtnTitle(activeCategory));
     }
 
