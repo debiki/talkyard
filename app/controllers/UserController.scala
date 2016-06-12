@@ -337,14 +337,12 @@ object UserController extends mvc.Controller {
   }
 
 
+  SECURITY // rate limit
   def loadNotifications(userId: String, upToWhenMs: String) = GetAction { request =>
     val userIdInt = userId.toIntOrThrow("EsE5GYK2", "Bad userId")
     val upToWhenMsLong = upToWhenMs.toLongOrThrow("EsE2FUY7", "Bad upToWhenMs")
     val upToWhenDate = new ju.Date(upToWhenMsLong)
-    val notfsAndCounts = request.dao.readOnlyTransaction { transaction =>
-      ReactJson.loadNotifications(userIdInt, transaction, unseenFirst = false, limit = 100,
-        upToWhen = None) // later: Some(upToWhenDate), and change to limit = 50 above?
-    }
+    val notfsAndCounts = request.dao.loadNotifications(userIdInt, upToWhen = None, request.who)
     OkSafeJson(notfsAndCounts.notfsJson)
   }
 

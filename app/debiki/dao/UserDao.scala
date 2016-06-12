@@ -469,6 +469,18 @@ trait UserDao {
     readOnlyTransaction(_.listUserActions(userId))
 
 
+  def loadNotifications(userId: UserId, upToWhen: Option[When], me: Who) = {
+    readOnlyTransaction { transaction =>
+      if (me.id != userId) {
+        if (!transaction.loadUser(me.id).exists(_.isStaff))
+          throwForbidden("EsE5YKF20", "May not list other users' notifications")
+      }
+      debiki.ReactJson.loadNotifications(userId, transaction, unseenFirst = false, limit = 100,
+        upToWhen = None) // later: Some(upToWhenDate), and change to limit = 50 above?
+    }
+  }
+
+
   def verifyEmail(userId: UserId, verifiedAt: ju.Date) {
     readWriteTransaction { transaction =>
       var user = transaction.loadTheCompleteUser(userId)
@@ -479,6 +491,7 @@ trait UserDao {
   }
 
 
+  SECURITY // Harmless right now, but should pass Who and authz.
   def setUserAvatar(userId: UserId, tinyAvatar: Option[UploadRef], smallAvatar: Option[UploadRef],
         mediumAvatar: Option[UploadRef], browserIdData: BrowserIdData) {
     require(smallAvatar.isDefined == tinyAvatar.isDefined, "EsE9PYM2")

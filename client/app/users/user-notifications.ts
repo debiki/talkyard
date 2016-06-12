@@ -55,6 +55,14 @@ export var UserNotificationsComponent = React.createClass({
   },
 
   loadNotifications: function(userId: number) {
+    var me: Myself = this.props.loggedInUser;
+    if (me.id !== userId && !isStaff(me)) {
+      this.setState({
+        error: "May not list an other user's notifications.",
+        notfs: null,
+      });
+      return;
+    }
     Server.loadNotifications(userId, Date.now(), (notfs: Notification[]) => {
       this.setState({ notfs: notfs });
     }, () => {
@@ -65,7 +73,7 @@ export var UserNotificationsComponent = React.createClass({
 
   render: function() {
     if (this.state.error)
-      return r.p({}, "Error [EsE7YKW2].");
+      return r.p({}, _.isString(this.state.error) ? this.state.error : "Error [EsE7YKW2].");
 
     if (!this.state.notfs)
       return r.p({}, "Loading...");

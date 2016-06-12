@@ -732,11 +732,14 @@ var ForumTopicListComponent = React.createClass(<any> {
     // (Because if people haven't seen some icons and started wondering "what's that",
     // they're just going to be annoyed by the icon help tips?)
     var numFewTopics = 10;
-    var iconsHelpClosed =
+    var iconsHelpClosed = !this.state.helpOpened; /* always start closed, for now,
+                                                    because doesn't look nice otherwise
+        [refactor] So remove this stuff then:
         // User has clicked Hide?
         help.isHelpMessageClosed(store, IconHelpMessage) ||
         // Too few topics, then right now no one cares about the icons?
         (topics.length < numFewTopics && !this.state.helpOpened);
+        */
     var iconsHelpStuff = iconsHelpClosed
         ? r.a({ className: 'esForum_topics_openIconsHelp icon-info-circled',
               onClick: this.openIconsHelp }, "Explain icons...")

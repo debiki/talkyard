@@ -480,6 +480,11 @@ ReactStore.getPageTitle = function(): string { // dupl code [5GYK2]
 };
 
 
+ReactStore.getMe = function(): Myself {
+  return store.me;
+};
+
+// [refactor] Remove, use getMe instead
 ReactStore.getUser = function(): Myself {
   return store.me;
 };

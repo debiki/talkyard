@@ -63,7 +63,7 @@ var UsersHomeComponent = React.createClass(<any> {
   componentDidMount: function() {
     if (window.location.hash.indexOf('#writeMessage') !== -1) {
       var toUserId = parseInt(this.props.params.userId);
-      var myUserId = ReactStore.getUser().userId;
+      var myUserId = ReactStore.getMe().userId;
       dieIf(toUserId === myUserId, 'EsE7UMKW2');
       dieIf(userId_isGuest(toUserId), 'EsE6JKY20');
       editor.openToWriteMessage(toUserId);
@@ -95,18 +95,18 @@ var UserPageComponent = React.createClass(<any> {
 
   getInitialState: function() {
     return {
-      loggedInUser: debiki2.ReactStore.getUser(),
+      loggedInUser: debiki2.ReactStore.getMe(),
       user: null,
     };
   },
 
   onChange: function() {
-    if (this.state.loggedInUser === debiki2.ReactStore.getUser())
+    if (this.state.loggedInUser === debiki2.ReactStore.getMe())
       return;
 
     // Also reload the user we're showing, because now we might/might-no-longer have access
     // to data about him/her.
-    this.setState({ loggedInUser: debiki2.ReactStore.getUser(), });
+    this.setState({ loggedInUser: debiki2.ReactStore.getMe(), });
     this.loadCompleteUser();
   },
 
@@ -350,6 +350,11 @@ var UserInfo = createComponent({
 var UserNav = createComponent({
   render: function() {
     var messages = null;
+    var user: BriefUser = this.props.user;
+    var me: Myself = this.props.loggedInUser;
+    var viewNotfsNavItem = isStaff(me) || me.id === user.id
+        ? NavItem({ eventKey: 'notifications' }, 'Notifications')
+        : null;
     return (
       r.div({ className: 'dw-user-nav' },
         Nav({ bsStyle: 'pills', activeKey: this.props.activeRouteName,
@@ -359,7 +364,7 @@ var UserNav = createComponent({
           NavItem({ eventKey: 'posts' }, 'Posts'),
           NavItem({ eventKey: 'likes-given' }, 'Likes Given'),
           NavItem({ eventKey: 'likes-received' }, 'Likes Received'),
-          NavItem({ eventKey: 'notifications' }, 'Notifications'),
+          viewNotfsNavItem,
           messages)));
   }
 });

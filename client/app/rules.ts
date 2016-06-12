@@ -112,7 +112,7 @@ function maySendInvites(user: Myself | CompleteUser): MayMayNot {
 }
 
 
-function user_isMember(user: CompleteUser | BriefUser): boolean {
+function user_isMember(user: CompleteUser | BriefUser | Myself): boolean {
   return user.id > MaxGuestId;
 }
 
