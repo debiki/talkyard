@@ -286,7 +286,10 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
             font-size: $tableTopicExcerptFontSize;
         a
           color: hsl(0, 0%, 13%);
-          padding: 3px 6px 5px 0; // makes it easier to click
+          $leftPadding = 5px;
+          padding: 3px 6px 5px $leftPadding; // makes it easier to click
+          position: relative;
+          left: - $leftPadding;
           &:hover
             text-decoration: none;
             background: hsl($uiHue, 100%, 97%);
@@ -296,14 +299,20 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
           white-space: nowrap;
 
         &.dw-tpc-title .icon-pin:before
-          color: #555;
-          padding-right: 17px;
+          color: hsl(0, 0%, 63%);
+          padding-right: 19px;
           margin-left: 0;
+          vertical-align: middle;
+
+        .icon-comment-empty:before
+          font-size: 14px;
+          margin: 0 9px 0 0;
+          color: hsl(0, 0%, 65%);
 
         .icon-help-circled:before
-          font-size: 15px;
-          color: #555;
-          margin: 0 5px 0 0;
+          margin: 0 7px 0 0;
+          color: hsl(0, 0%, 70%);
+          font-size: 16px;
 
         .dw-qa-ans-count
           font-size: 85%;
@@ -312,7 +321,7 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
         .icon-check-empty:before
           font-weight: bold;
           font-size: 105%;
-          margin: 0 5px 0 0;
+          margin: 0 8px 0 0;
           position: relative;
           top: 1px;
 
@@ -321,25 +330,41 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
         .icon-block:before, // closed topics
         .icon-ok-circled-empty:before, // solved questions
         .icon-check:before  // fixed todos
-          color: hsl(0, 0%, 40%);
-          margin: 0 5px 0 0;
+          color: hsl(0, 0%, 40%); // is this line in use any more?
+          margin: 0 8px 0 0;
+
+        .icon-block:before  // closed topics
+          color: hsl(0, 0%, 76%);
 
         .icon-attention-circled:before
-          color: hsl(0, 0%, 37%);
+          color: hsl(0, 0%, 70%);
+          font-size: 16px;
 
         .icon-idea:before
-          color: hsl(0, 0%, 15%);
+          font-size: 17px;
+          color: hsl(0, 0%, 60%);
           margin-right: 3px; // there's some whitespace to the right inside the icon
+          // There's some whitespace to the left, it's not a square.
+          position: relative;
+          left: -1px;
 
-        .icon-ok-circled:before
-          color: hsl(0, 0%, 39%);
-        .icon-ok-circled:before,
+        .icon-check:before
         .icon-ok-circled-empty:before
-          margin: 0 7px 0 0;
+          color: hsl(0, 0%, 71%);
+
+        .icon-ok-circled-empty:before
+          margin: 0 9px 0 0;
           position: relative;
           left: 1px;
 
+        .icon-ok:before
+          color: hsl(0, 0%, 78%);
+          margin: 0 6px 0 0;
+          position: relative;
+          left: -1px;
+
         .icon-check:before
+          color: hsl(0, 0%, 74%);
           font-size: 17px;
           position: relative;
           top: 2px;
@@ -364,6 +389,9 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
               outline: none;
               text-decoration: underline;
 
+.dw-tpc-title .icon-pin [class^=icon-]:before
+  display: none; // hide topic type icon, if pin icon shown [6YK320W]
+
 .load-more
   text-align: center
   width: 100%
@@ -377,7 +405,7 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
 
 
 .esForum_topics_openIconsHelp
-  padding: 11px 0 10px 12px;
+  padding: 11px 0 10px 16px;
   display: block;
   font-size: 15px;
   color: hsl($uiHue, 100%, 39%);
@@ -412,9 +440,6 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
 
 .esTopicIconHelp_intro
   margin-bottom: 8px;
-
-.esTopicIconHelp_noIcon
-  margin: 3px 0 0;
 
 
 // Categories tree

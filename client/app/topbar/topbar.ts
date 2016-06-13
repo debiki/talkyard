@@ -47,7 +47,7 @@ var FixedTopDist = 8;
 
 
 export function getTopbarHeightInclShadow(): number {
-  return $('.dw-fixed-topbar-wrap').height() + 14; // shadow size (the '+ X') dupl here: [5YKW25]
+  return $('.dw-fixed-topbar-wrap').height() + 4; // shadow size (the '+ X') dupl here: [5YKW25]
 }
 
 

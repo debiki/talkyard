@@ -353,12 +353,19 @@ var ScrollButtonsDropdownModal = createComponent({
           disabled: !state.enableGotoEndBtn, bsStyle: 'primary' },
         isChat ? "Page bottom" : "Bottom");
 
+      var shortcutsArray = [];
+      if (scrollToTopButton) shortcutsArray.push("1");
+      if (scrollToRepliesButton) shortcutsArray.push("2");
+      if (scrollToEndButton) shortcutsArray.push("3");
+      var shortcutsText = shortcutsArray.join(", ");
+
       content =
           r.div({},
             r.p({ className: 'esScrollDlg_title' }, "Scroll to:"),
               scrollToTopButton, scrollToRepliesButton, scrollToEndButton,
             r.p({ className: 'esScrollDlg_shortcuts' },
-              "Keyboard shortcuts: '1', '2', '3', and 'B' for back"));
+              "Keyboard shortcuts: ", r.b({}, shortcutsText),
+              ", and ", r.b({}, "B"), " to scroll back"));
     }
 
     return (

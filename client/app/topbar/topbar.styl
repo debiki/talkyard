@@ -432,22 +432,33 @@ html:not(.es-watchbar-open)
   position: relative;
   z-index: 1010;
   background: white;
-  box-shadow: 0 14px 20px white;  // shadow size dupl here: [5YKW25]
+  box-shadow: 0 4px 11px rgba(0, 0, 0, 0.14);  // shadow size dupl here: [5YKW25]
 
   .esOpenWatchbarBtn
     margin-right: 14px; // because now Home –> Category, or forum title, on same line
 
-  .esOpenWatchbarBtn_text
+  .esOpenWatchbarBtn_text,
+  .esOpenCtxbarBtn_numOnline
+    max-width: none; // otherwise a line wrap might make the topbar twice as tall
+    font-size: 13px;
+    color: hsl(0, 0%, 30%);
+
+  .esOpenWatchbarBtn_text,
+  .esOpenCtxbarBtn_numOnline .detailed
     vertical-align: middle;
+
+  .icon-left-open,
+  .icon-right-open
+    color: hsl(0, 0%, 30%);
 
   .esTopbar
     min-height: auto;
-    margin: 3px 0 5px;
 
+    margin: 4px 0;
+    @media (max-height: 550px)
+      margin: 3px 0;
     @media (max-height: 420px)
-      margin: 2px 0 3px;
-    @media (max-height: 220px)
-      margin: 0 0 2px;
+      margin: 2px 0;
 
     &.esTopbar-extraMargin
       margin: 8px 0 12px;

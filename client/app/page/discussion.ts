@@ -1126,6 +1126,7 @@ export var PostHeader = createComponent({
           anyAvatar,
           by,
           r[linkFn](userLinkProps, fullName, username),
+          // COULD add "Posted on ..." tooltip.
           this.props.exactTime ? timeExact(post.createdAt) : timeAgo(post.createdAt),
           editInfo,
           inReplyTo,

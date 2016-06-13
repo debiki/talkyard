@@ -791,20 +791,23 @@ var IconHelpMessage = {
       r.p({ className: 'esTopicIconHelp_intro' }, "Icon explanation:"),
       r.ul({},
         r.li({},
+          r.span({ className: 'icon-comment' },
+            "A general discussion.")),
+        r.li({},
           r.span({ className: 'icon-help-circled' },
             "A question with no accepted answer.")),
         r.li({},
-          r.span({ className: 'icon-ok-circled' },
+          r.span({ className: 'icon-ok' },
             "A question with an accepted answer.")),
         r.li({},
           r.span({ className: 'icon-idea' },
-            "An idea.")),
+            "An idea / suggestion.")),
         r.li({},
           r.span({ className: 'icon-attention-circled' },
-            "A problem someone has encountered.")),
+            "A problem.")),
         r.li({},
           r.span({ className: 'icon-check-empty' },
-            "Something planned, or being done or fixed.")),
+            "Something we're planning to do or fix.")),
         r.li({},
           r.span({ className: 'icon-check' },
             "Something that's been done or fixed.")),
@@ -813,9 +816,7 @@ var IconHelpMessage = {
             "Topic closed.")),
         r.li({},
           r.span({ className: 'icon-pin' },
-            "Topic always listed first (perhaps only in its own category)"))),
-      r.p({ className: 'esTopicIconHelp_noIcon' },
-        "A topic ", r.i({}, "without"), " any icon, is a general discussion.")),
+            "Topic always listed first (perhaps only in its own category).")))),
 };
 
 
@@ -916,8 +917,12 @@ var TopicRow = createComponent({
     }
      */
 
-    var activityTitle =
-      'Created on ' + dateTimeFix(topic.createdEpoch);
+    // COULD change to:
+    //  "Created " + debiki.prettyDuration(topic.createdAtMs, Date.now()) + ", on <exact date>"
+    // but that won't work server side, because Date.now() changes all the time.
+    // Would instead need to generate the tooltip dynamically (rather than include it in the html).
+    // [compress]
+    var activityTitle = "Created on " + dateTimeFix(topic.createdEpoch);
 
     if (topic.lastReplyEpoch) {
       activityTitle += '\nLast reply on ' + dateTimeFix(topic.lastReplyEpoch);
@@ -1069,6 +1074,7 @@ var CategoryRow = createComponent({
 
 function makeTitle(topic: Topic, className: string) {
   var title = topic.title;
+  var iconClass = '';
   var tooltip;
   if (topic.closedAtMs && !isDone(topic) && !isAnswered(topic)) {
     tooltip = page.makePageClosedTooltipText(topic.pageRole);
@@ -1077,7 +1083,7 @@ function makeTitle(topic: Topic, className: string) {
   }
   else if (topic.pageRole === PageRole.Question) {
     tooltip = page.makeQuestionTooltipText(topic.answeredAtMs);
-    var questionIconClass = topic.answeredAtMs ? 'icon-ok-circled' : 'icon-help-circled';
+    var questionIconClass = topic.answeredAtMs ? 'icon-ok' : 'icon-help-circled';
     var questionIcon = r.span({ className: questionIconClass });
     var answerIcon;
     var answerCount;
@@ -1088,8 +1094,8 @@ function makeTitle(topic: Topic, className: string) {
       answerCount = r.span({ className: 'dw-qa-ans-count' }, topic.numOrigPostReplies);
       */
       tooltip += " with " + topic.numOrigPostReplies;
-      if (topic.numOrigPostReplies > 1) tooltip += "answers";
-      else tooltip += "answer";
+      if (topic.numOrigPostReplies > 1) tooltip += " answers";
+      else tooltip += " answer";
     }
     title = r.span({}, questionIcon, answerCount, answerIcon, title);
   }
@@ -1116,7 +1122,7 @@ function makeTitle(topic: Topic, className: string) {
     title = r.span({}, r.span({ className: iconClass }, title));
   }
   else if (topic.pageRole === PageRole.ToDo) {
-    var iconClass = topic.doneAtMs ? 'icon-check' : 'icon-check-empty';
+    iconClass = topic.doneAtMs ? 'icon-check' : 'icon-check-empty';
     tooltip = topic.doneAtMs
         ? "This has been done or fixed"
         : "This is something to do or to fix";
@@ -1131,6 +1137,7 @@ function makeTitle(topic: Topic, className: string) {
     title = r.span({}, r.span({ className: 'icon-lock' }), title);
   }
   else {
+    title = r.span({}, r.span({ className: 'icon-comment-empty' }), title);
     tooltip = "A discussion";
   }
   if (topic.deletedAtMs) {
@@ -1144,6 +1151,9 @@ function makeTitle(topic: Topic, className: string) {
       : "\nIt has been pinned in its category, so is listed first, in its category.";
   }
 
+  // COULD remove the HTML for the topic type icon, if topic pinned — because showing both
+  // the pin icon, + topic type icon, looks ugly. But for now, just hide the topic type
+  // icon in CSS instead: [6YK320W].
   return (
       r.a({ href: topic.url, title: tooltip, className: className }, title));
 }

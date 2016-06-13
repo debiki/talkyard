@@ -82,45 +82,37 @@ function timeExact(isoDate: string) {
  */
 function processTimeAgo(selector?: string) {
   selector = selector || '';
+  var timeDoneClass = 'esTimeDone';
   // First handle all long version timestamps (don't end with -ltr ("letter")).
   // Result: e.g. "5 hours ago"
-  $(selector + ' .dw-ago').each(function() {
+  $(selector + ' .dw-ago:not(.' + timeDoneClass + ')').each(function() {
     var $this = $(this);
-    if ($this.attr('title')) {
-      // Already converted to "x ago" format
-      return;
-    }
     var isoDate = $this.text();
     var timeAgoString = moment(isoDate).fromNow();
     $this.text(timeAgoString);
-    $this.attr('title', isoDate);
+    $this.addClass(timeDoneClass);
+    // But don't add any title tooltip attr, see [85YKW20] above.
   });
 
   // Then handle all one-letter timestamps (end with -ltr ("letter")).
   // Result: e.g. "5h" (instead of "5 hours ago").
-  $(selector + ' .dw-ago-ltr').each(function() {
+  $(selector + ' .dw-ago-ltr:not(.' + timeDoneClass + ')').each(function() {
     var $this = $(this);
-    if ($this.attr('title')) {
-      // Already converted to "x<letter>" format
-      return;
-    }
     var isoDate = $this.text();
     var then = new Date(isoDate);
     var now = Date.now();
     var durationLetter = debiki.prettyLetterDuration(then, now);
-    var durationWords = debiki.prettyDuration(then, now);
     $this.text(durationLetter);
-    $this.attr('title', durationWords + ": " + isoDate);
+    // Don't add any title tooltip [85YKW20]. That's better done by the React.js components
+    // that knows what this date is about, so the tooltip can be e.g. "Last edited on <date>" or
+    // "Created on <date>" rather than just the date.
+    $this.addClass(timeDoneClass);
   });
 
   // & all exact timestamps (end with -exact).
   // Result: e.g. "Yesterday 12:59 am", or, if today, only "13:59".
-  $(selector + ' .esTimeExact').each(function() {
+  $(selector + ' .esTimeExact:not(.' + timeDoneClass + ')').each(function() {
     var $this = $(this);
-    if ($this.attr('title')) {
-      // Already converted to "HH:MI" format
-      return;
-    }
     var isoDate = $this.text();
     var when = moment(isoDate);
     var includeDay = when.isBefore(moment().startOf('day'));
@@ -128,7 +120,8 @@ function processTimeAgo(selector?: string) {
     //when = when.subtract((new Date()).getTimezoneOffset(), 'minutes'); -- Oops not needed.
     var dayHourMinute = includeDay ? when.calendar() : when.format('LT');
     $this.text(dayHourMinute);
-    $this.attr('title', isoDate);
+    $this.addClass(timeDoneClass);
+    // But don't add any title tooltip attr, see [85YKW20] above.
   });
 }
 
