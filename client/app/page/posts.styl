@@ -377,6 +377,7 @@ html:not(.mouse) .dw-rr
   padding-right: 2px
 
 // Toggle collapsed
+// [refactor] rename dw-a-clps to esP_Z (Z = fold/collapse)
 .dw-a-clps.icon-up-open,
 .dw-a-clps.icon-down-open,
 .dw-a-clps.icon-left-open
@@ -392,6 +393,12 @@ html:not(.mouse) .dw-rr
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+  // Only show if the thread is tall/wide enough [4KY0S2]  — although people just get confused
+  // when they collapse a post, and it has no particular effect (because it's so small already).
+  display: none;
+
+.dw-a-clps.esP_Z-Show
+  display: inline-block;
 
 .dw-a-clps.icon-left-open,
 .dw-a-clps.icon-right-open

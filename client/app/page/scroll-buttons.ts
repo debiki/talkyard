@@ -38,13 +38,13 @@ export var addVisitedPosition: (whereNext?) => void = _.noop;
 var WhereTop = 'T';
 var WhereReplies = 'R';
 var WhereBottom = 'B';
+var SmallDistancePx = 5;
 
 function scrollToTop(addBackStep?) {
   if (addBackStep !== false) {
     addVisitedPosition(WhereTop);
   }
-  // wrong code [ZZ2KU35]
-  utils.scrollIntoViewInPageColumn($('.dw-page'), { marginTop: 399, marginBottom: 9999 });
+  utils.scrollIntoViewInPageColumn($('#thePageTop'));
 }
 
 function scrollToReplies(addBackStep?) {
@@ -61,7 +61,7 @@ function scrollToBottom(addBackStep?) {
     addVisitedPosition(WhereBottom);
   }
   // dupl code [5UKP20]
-  utils.scrollIntoViewInPageColumn($('#dw-the-end'), { marginTop: 60, marginBottom: 45 });
+  utils.scrollIntoViewInPageColumn($('#thePageBottom'));
 }
 
 
@@ -113,12 +113,11 @@ export var ScrollButtons = debiki2.utils.createClassAndFactory({
       lastPosLeft = _.isNumber(lastPosLeft) ? lastPosLeft : currentPos.windowLeft;
       switch(lastPost.postId) {
         case WhereTop:
-          // wrong code [ZZ2KU35], isn't 0 elsewhere
           lastPosTop = 0;
           break;
         case WhereBottom:
           // DUPL CODE, fix  [5UKP20]
-          lastPosTop = calcScrollIntoViewCoordsInPageColumn($('#dw-the-end')).desiredParentTop;
+          lastPosTop = calcScrollIntoViewCoordsInPageColumn($('#thePageBottom')).desiredParentTop;
           break;
         case WhereReplies:
           // DUPL CODE, fix  [5UKP20]
@@ -298,12 +297,16 @@ var ScrollButtonsDropdownModal = createComponent({
   openAt: function(at) {
     var rect = at.getBoundingClientRect();
     var calcCoords = calcScrollIntoViewCoordsInPageColumn;
+    var bottomCoords = calcCoords($('#thePageBottom'), {
+      marginTop: SmallDistancePx,
+      marginBottom: -SmallDistancePx,
+    });
     this.setState({
       isOpen: true,
       atX: rect.left - 160,
       atY: rect.bottom,
-      enableGotoTopBtn: $('#esPageColumn').scrollTop() > 5,
-      enableGotoEndBtn: calcCoords($('#dw-the-end')).needsToScroll,
+      enableGotoTopBtn: $('#esPageColumn').scrollTop() > SmallDistancePx,
+      enableGotoEndBtn: bottomCoords.needsToScroll,
       enableGotoRepliesBtn:
         calcCoords($('.dw-depth-0 > .dw-p-as'), { marginTop: 65, marginBottom: 200 }).needsToScroll,
     });
@@ -333,7 +336,8 @@ var ScrollButtonsDropdownModal = createComponent({
     var store: Store = this.state.store;
     var pageRole: PageRole = store.pageRole;
     var isChat = page_isChatChannel(pageRole);
-    var neverHasReplies = pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.WebPage;
+    var neverHasReplies = pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.WebPage ||
+        isSection(pageRole);
 
     var content;
     if (state.isOpen) {

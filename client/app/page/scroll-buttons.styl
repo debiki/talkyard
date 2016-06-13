@@ -31,13 +31,8 @@
 .esScrollBtns_back
   border-left: 1px solid white;
   &[disabled]
-    // Use the same color for background and text, to in effect remove the text.
-    // That'll make people wonder "what's this?" And they'll click Scroll nearby,
-    // and then this button (because then it becomes enabled), and then they learn
-    // how this works. Or?
     background: hsl($uiHue, 30%, 50%);
-    color: hsl($uiHue, 30%, 50%);
-    opacity: 0.3;
+    opacity: 0.33;
 
 .esScrollBtns_back_shortcut
   text-decoration: underline;

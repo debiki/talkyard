@@ -163,13 +163,16 @@ var SingleTopic = createComponent({
     var isCurrentTopicClass = this.props.isCurrent ? ' esWatchbar_topic-current' : '';
     var unreadClass = topic.unread ? ' esWatchbar_topic-unread' : '';
     var url = topic.url || linkToPageId(topic.pageId);
+    var title = topic.title || url;
+    // Roughly 30 chars fits. For now, to usually avoid unneeded tooltips: (dupl width [4YK0F2])
+    var tooltip = title.length > 21 ? title : undefined;
     var moreClasses = isCurrentTopicClass + unreadClass;
     // Could show num unread posts / chat messages. But would be rather complicated:
     // need to track num unread, + last visit date too, in the watchbar data.
     return (
         r.li({ className: 'esWatchbar_li esWatchbar_topic-' + flavor + moreClasses },
-          r.a({ className: 'esWatchbar_topic_link', href: url },
-            r.span({ className: 'esWatchbar_topic_title' }, topic.title || url))));
+          r.a({ className: 'esWatchbar_topic_link', href: url, title: tooltip },
+            r.span({ className: 'esWatchbar_topic_title' }, title))));
   }
 });
 

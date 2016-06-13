@@ -463,14 +463,11 @@ var RootPostAndComments = createComponent({
               dangerouslySetInnerHTML: { __html: rootPost.sanitizedHtml }})));
     }
 
-    var theEnd = r.div({ id: 'dw-the-end', style: { clear: 'both' } });
-
     if (!page_isDiscussion(pageRole)) {
       return (
         r.div({ className: threadClass },
           body,
-          NoCommentsPageActions({ post: rootPost, me: me }),
-          theEnd));
+          NoCommentsPageActions({ post: rootPost, me: me })));
     }
 
     var solvedBy;
@@ -589,8 +586,7 @@ var RootPostAndComments = createComponent({
         r.div({ className: 'dw-single-and-multireplies' + flatRepliesClass },
           r.ol({ className: 'dw-res dw-singlereplies' },
             threadedChildren)),
-        chatSection,
-        theEnd));
+        chatSection));
   },
 });
 

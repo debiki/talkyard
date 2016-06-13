@@ -133,6 +133,12 @@
     padding-right: 4px;
     padding-left: 0;
     white-space: nowrap;
+    &:hover
+      // For now only, until show-voters-on-click implemented:
+      background: none !important;
+      outline: none !important;
+      color: hsl(0, 0%, 55%) !important;
+      cursor: default;
 
     // Add space between e.g. "1 Like" and "2 Wrongs":
     + .dw-vote-count

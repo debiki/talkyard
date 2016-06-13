@@ -148,8 +148,7 @@ var TitleAndLastChatMessages = createComponent({
           r.div({}, "Purpose:"),
           origPostBody),
         scrollUpTips,
-        messages,
-        r.div({ id: 'dw-the-end' })));
+        messages));
   }
 });
 

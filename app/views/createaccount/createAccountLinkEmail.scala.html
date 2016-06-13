@@ -8,18 +8,23 @@
   returnToUrl.replaceAllLiterally("#", "__dwHash__")
 }
 
+@* For links you don't want people to click, unless they know what they're doing. *@
+@grayBoringLink(host: String) = {
+  <a href="@{debiki.Globals.scheme + "://" + host}" style="text-decoration: none !important; color: #555 !important;">@host</a>
+}
+
 <div>
 <p>Hello,</p>
 
 <p>
-To finish creation of your account with username <tt>@username</tt> at <tt>@siteAddress</tt>, please click
+To finish creation of your account with username @username at @grayBoringLink(siteAddress), please click
 <a href="@origin@routes.LoginWithPasswordController.confirmEmailAddressAndLogin(emailId, returnToUrlEscapedHash)">
   this link</a>.  It expires in @{expirationTimeInHours - 1} hours.
 </p>
 
 <p>
 Kind regards,<br>
-Debiki
+Effective Discussions
 </p>
 </div>
 

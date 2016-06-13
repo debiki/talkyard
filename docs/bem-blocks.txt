@@ -1,3 +1,8 @@
+BEM = Block-Element-Modifier (web-search it, if you don't know what it is).
+
+These short names are (for me at least) more readable than long not-abbreviated names.
+You just need to get used to the abbreviations :-) And not forget them. Hence this file.
+
 [refactor] rename esForum_ to esF_ and esForum_Nav to esF_BB
 esForum_cats_cat     to esF_Cs_C?
 esForum_topics_topic to esF_Ts_T?
@@ -12,3 +17,10 @@ esF_Cs_C        = a category in the category list
 esCB            = context bar (the right sidebar)
 esWB            = watchbar (the left sidebar)
 esTB            = top bar (with the breadcrump and login & signup, or user name)
+esMB            = topic metabar (just below the Orig Post, before all replies)
+
+esT             = a thread (i.e. a comment thread: a post and descendant replies)
+
+esP             = a post
+esP_Z           = collapse thread button (Z = fold = collapse. Placed inside the post.)
+

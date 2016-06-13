@@ -99,7 +99,7 @@ export var Metabar = createComponent({
           'Notifications: ' + me.rolePageSettings.notfLevel)
       : null;
 
-    var toggleDetailsBtn =
+    var toggleDetailsBtn = !me.isLoggedIn ? null :
         r.button({ className: 'dw-cmts-tlbr-open', onClick: this.onToggleDetailsClick },
           r.span({ className: (ui.showDetails ? 'icon-up-open' : 'icon-down-open') }))
 
@@ -199,9 +199,11 @@ var MetabarDetails = createComponent({
     var userAuthenticated = user && user.isAuthenticated;
 
     var notificationsElem = !userAuthenticated ? null :
+      r.div({},
+        r.div({ className: 'esMB_Dtls_Ntfs_Lbl' }, "Notifications about this topic:"),
         Button({ id: '7bw3gz5', className: 'dw-notf-level',
             onClick: event => openNotfsLevelDropdown(event.target) },
-          r.span({}, user.rolePageSettings.notfLevel + ' ', r.span({ className: 'caret' })));
+          r.span({}, user.rolePageSettings.notfLevel + ' ', r.span({ className: 'caret' }))));
 
     return (
       r.div({ className: 'dw-cmts-tlbr-details' },

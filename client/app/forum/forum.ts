@@ -28,6 +28,7 @@
 /// <reference path="../Server.ts" />
 /// <reference path="../ServerApi.ts" />
 /// <reference path="../page/discussion.ts" />
+/// <reference path="../page/scroll-buttons.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.forum {
@@ -217,6 +218,7 @@ var ForumComponent = React.createClass(<any> {
     return (
      r.div({},
       debiki2.reactelements.TopBar({}),
+      debiki2.page.ScrollButtons(),
       r.div({ className: 'container dw-forum' },
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
         r.div({ className: 'dw-page' }),

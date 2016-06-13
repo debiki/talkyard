@@ -580,7 +580,7 @@ function updatePost(post: Post, isCollapsing?: boolean) {
   rememberPostsToQuickUpdate(post.postId);
   stopGifsPlayOnClick();
   setTimeout(() => {
-    processTimeAgo();
+    page.Hacks.processPosts();
     if (!oldVersion && post.authorIdInt === store.me.id) {
       // Show the user his/her new post.
       ReactActions.loadAndShowPost(post.postId);
@@ -717,7 +717,7 @@ function unsquashTrees(postId: number) {
     if (numLeftToUnsquash === 0)
       break;
   }
-  setTimeout(processTimeAgo);
+  setTimeout(page.Hacks.processPosts);
 }
 
 
@@ -742,7 +742,7 @@ function showPost(postNr: PostNr, showChildrenToo?: boolean) {
   }
   setTimeout(() => {
     debiki.internal.showAndHighlightPost($('#post-' + postNr));
-    processTimeAgo();
+    page.Hacks.processPosts();
   }, 1);
 }
 
@@ -764,7 +764,7 @@ function uncollapsePostAndChildren(post: Post) {
       uncollapseOne(grandchild);
     }
   }
-  setTimeout(processTimeAgo);
+  setTimeout(page.Hacks.processPosts);
 }
 
 

@@ -715,6 +715,7 @@ export var Editor = createComponent({
     setTimeout(() => {
       if (this.isMounted()) {
         this.focusInputFields();
+        this.updatePreview();
       }
     }, 1);
   },
@@ -928,7 +929,24 @@ export var Editor = createComponent({
       saveButtonTitle = "Send message";
     }
     else if (this.state.newForumPageRole) {
-      saveButtonTitle = 'Create topic';
+      switch (this.state.newForumPageRole) {
+        case PageRole.CustomHtmlPage:
+        case PageRole.WebPage:
+        case PageRole.Code:
+          saveButtonTitle = "Create page";
+          break;
+        case PageRole.OpenChat:
+        case PageRole.PrivateChat:
+          saveButtonTitle = "Create chat";
+          break;
+        case PageRole.Question: saveButtonTitle = "Post question"; break;
+        case PageRole.Problem: saveButtonTitle = "Submit problem"; break;
+        case PageRole.Idea: saveButtonTitle = "Create idea"; break;
+        case PageRole.ToDo: saveButtonTitle = "Create to-do"; break;
+        case PageRole.MindMap: saveButtonTitle = "Create mind map"; break;
+        default:
+          saveButtonTitle = 'Create topic';
+      }
     }
 
     var anyViewHistoryButton;
