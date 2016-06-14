@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../topbar/topbar.ts" />
+/// <reference path="../avatar/Avatar.ts" />
 /// <reference path="../links.ts" />
 /// <reference path="user-details-actions.ts" />
 
@@ -153,7 +154,7 @@ var UserPageComponent = React.createClass(<any> {
     };
 
     return (
-      r.div({ className: 'container' },
+      r.div({ className: 'container esUP' },
         UserBar(childProps),
         r.div({ style: { display: 'table', width: '100%' }},
           r.div({ style: { display: 'table-row' }},
@@ -290,7 +291,7 @@ var UserInfo = createComponent({
 
   render: function() {
     var user = this.props.user;
-    var loggedInUser = this.props.loggedInUser;
+    var me: Myself = this.props.loggedInUser;
     var suspendedInfo;
     if (user.suspendedAtEpoch) {
       var whatAndUntilWhen = user.suspendedTillEpoch === 'Forever'
@@ -301,7 +302,7 @@ var UserInfo = createComponent({
           'Reason: ' + user.suspendedReason);
     }
 
-    var isMe = loggedInUser.userId === user.id;
+    var isMe = me.userId === user.id;
     var isGuestInfo = null;
     if (isGuest(user)) {
       isGuestInfo = ' — a guest user, could be anyone';
@@ -319,14 +320,18 @@ var UserInfo = createComponent({
     var thatIsYou = !isMe ? null :
       r.span({ className: 'esProfile_isYou' }, "(you)");
 
+    var avatar = user.mediumAvatarUrl
+        ? r.img({ src: user.mediumAvatarUrl })
+        : debiki2.avatar.Avatar({ user: user, large: true, ignoreClicks: true });
+
     var uploadAvatarBtnText = user.mediumAvatarUrl ? "Change photo" : "Upload photo";
     var avatarMissingClass = user.mediumAvatarUrl ? '' : ' esMedAvtr-missing';
 
-    var anyUploadPhotoBtn = (isMe || isStaff(loggedInUser))
+    var anyUploadPhotoBtn = (isMe || isStaff(me)) && !isGuest(user)
       ? r.div({},
           // File inputs are ugly, so we hide the file input (size 0 x 0) and activate
           // it by clicking a beautiful button instead:
-          Button({ id: 'e2eChooseAvatarInput', className: 'esMedAvtr_uplBtn',
+          Button({ id: 'e2eChooseAvatarInput', className: 'esMedAvtr_uplBtn', bsStyle: 'primary',
               onClick: this.selectAndUploadAvatar }, uploadAvatarBtnText),
           r.input({ name: 'files', type: 'file', multiple: false, // dupl code [2UK503]
              ref: 'chooseAvatarInput', style: { width: 0, height: 0 }}))
@@ -336,7 +341,7 @@ var UserInfo = createComponent({
       r.div({ className: 'user-info' },
         r.div({ className: 'user-info-col' },
           r.div({ className: 'esMedAvtr' + avatarMissingClass },
-            r.img({ src: user.mediumAvatarUrl }),
+            avatar,
             anyUploadPhotoBtn)),
         r.div({ className: 'user-info-col' },
           r.div({ style: { display: 'table-cell' }},

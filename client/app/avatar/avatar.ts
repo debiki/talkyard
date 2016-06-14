@@ -144,6 +144,7 @@ export var Avatar = createComponent({
   render: function() {
     var user: BriefUser = this.props.user;
     var extraClasses = this.props.tiny ? ' esAvtr-tny' : '';
+    extraClasses += this.props.ignoreClicks ? ' esAv-IgnoreClicks' : '';
     var content;
     var styles;
     if (this.props.large && user['mediumAvatarUrl']) {

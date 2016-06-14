@@ -2,6 +2,8 @@
 .esProfile_isYou
   font-size: 18px;
   margin-left: 1ex;
+h1:first-child .esProfile_isYou
+  margin-left: 0;
 
 .dw-user-bar
   padding: 15px;
@@ -61,6 +63,20 @@
     list-style: none;
     padding: 8px 0;
 
+.esUP
+  .esMedAvtr-missing
+    background: white;
+  .esAvtr-ltr
+    width: 124px;
+    height: 124px;
+    font-size: 65px;
+    line-height: 120px;
+    vertical-align: middle;
+    margin: 23px;
+    position: relative;
+    top: -5px;
+    cursor: default;
+
 .esMedAvtr // medium sized avatar
   position: relative;
   $maxWidth = 180px;
@@ -83,7 +99,10 @@
   transform: translateX(-50%);
 
 
+.esMedAvtr_uplBtn
+  color: white;
+  border-top: 1px solid white;
+
 .esMedAvtr-missing  // no avatar uploaded, it's misssing
-  border: 1px solid gray;
   .esMedAvtr_uplBtn
     visibility: visible;

@@ -7,6 +7,9 @@ You just need to get used to the abbreviations :-) And not forget them. Hence th
 esForum_cats_cat     to esF_Cs_C?
 esForum_topics_topic to esF_Ts_T?
 
+esAv            = Avatar (user profile pic or letter)
+esAw            = Arrow to a post from its parent
+
 esF             = the forum main page, incl sort & filter buttons, and topic list and category list
 esF_BB          = forum button bar: sort & filter buttons
 esF_Ts          = forum topic list
@@ -18,6 +21,8 @@ esCB            = context bar (the right sidebar)
 esWB            = watchbar (the left sidebar)
 esTB            = top bar (with the breadcrump and login & signup, or user name)
 esMB            = topic metabar (just below the Orig Post, before all replies)
+
+esUP            = A user's public profile page
 
 esT             = a thread (i.e. a comment thread: a post and descendant replies)
 

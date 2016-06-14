@@ -60,6 +60,14 @@ rotateFn(degrees)
   -ms-transform: rotate(degrees);
   transform: rotate(degrees);
 
+noUserSelect()
+  -webkit-touch-callout: none; // iOS Safari
+  -webkit-user-select: none;   // Chrome/Safari/Opera
+  -khtml-user-select: none;    // Konqueror
+  -moz-user-select: none;      // Firefox
+  -ms-user-select: none;       // Internet Explorer/Edge
+  user-select: none;
+
 // Inverted icons (changes e.g. a black disc with a white question mark to a black circle,
 // filled with white and a black question mark). This supposedly does *not* work in IE9,
 // in IE9 I suppose the icon will just disappear (color: white). So be it.

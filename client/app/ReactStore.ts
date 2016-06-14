@@ -76,6 +76,12 @@ ReactDispatcher.register(function(payload) {
       if (store.userMustBeAuthenticated !== false || store.userMustBeApproved !== false)
         location.reload();
 
+      // SECURITY SHOULD go to / if in staff-only category, too.
+      if (store.pageRole === PageRole.Message) {
+        // We may not see it any longer.
+        location.assign('/');
+      }
+
       $html.removeClass('dw-is-admin, dw-is-staff, dw-is-authenticated');
 
       if (store.userIdsOnline) delete store.userIdsOnline[store.me.id];
