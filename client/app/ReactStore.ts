@@ -270,7 +270,7 @@ ReactDispatcher.register(function(payload) {
       break;
 
     case ReactActions.actionTypes.AddNotifications:
-      addNotifications(action.notifications);
+      handleNotifications(action.notifications);
       break;
 
     case ReactActions.actionTypes.MarkAnyNotificationAsSeen:
@@ -892,15 +892,19 @@ function sortPostIdsInPlace(postIds: number[], allPosts) {
 }
 
 
-function addNotifications(newNotfs: Notification[]) {
+function handleNotifications(newNotfs: Notification[]) {
   var oldNotfs = store.me.notifications;
   for (var i = 0; i < newNotfs.length; ++i) {
     var newNotf = newNotfs[i];
+
+    // Update notification list in the username menu.
     if (_.every(oldNotfs, n => n.id !== newNotf.id)) {
       // Modifying state directly, oh well [redux]
       store.me.notifications.unshift(newNotf);
       updateNotificationCounts(newNotf, true);
     }
+
+    watchbar_handleNotification(store.me.watchbar, newNotf);
   }
 }
 
@@ -949,6 +953,9 @@ function patchTheStore(storePatch: StorePatch) {
   // And find out if some post was moved to elsewhere.
   _.each(storePatch.postsByPageId, (posts: Post[], pageId: PageId) => {
     if (pageId !== store.pageId) {
+      // Could look at the new posts to find out if there are any direct replies to the current
+      // user, or @mentions, and update the watchbar accordingly. But probably
+      // better to do this elsewhere, namely when handling notifications [4YK2E5]?
       watchbar_markAsUnread(store.me.watchbar, pageId);
     }
 
@@ -1016,6 +1023,44 @@ function watchbar_markReadUnread(watchbar: Watchbar, pageId: PageId, read: boole
       watchbarTopic.unread = !read;
     }
   })
+}
+
+
+function watchbar_handleNotification(watchbar: Watchbar, notf: Notification) {
+  var alreadyThere = false;
+  if (notf.type === NotificationType.Message) {
+    _.each(watchbar[WatchbarSection.DirectMessages], (watchbarTopic: WatchbarTopic) => {
+      if (watchbarTopic.pageId === notf.pageId) {
+        watchbarTopic.unread = true; // modifying store in place, oh well [redux]
+        alreadyThere = true;
+      }
+    });
+    if (!alreadyThere) {
+      // Modifying store in place, oh well [redux]
+      watchbar[WatchbarSection.DirectMessages].unshift(notf_toWatchbarTopic(notf));
+    }
+  }
+  if (notf.type === NotificationType.DirectReply || notf.type === NotificationType.Mention) {
+    // Fix later. Like so?
+    // If topic not in watchbar, add it to the appropriate section (chat, messages, or recent).
+    // Then bump the notfsToMe or notfsToMany count, for the WatchbarTopic,
+    // and mark it as unread.
+    // Or do this elsewhere? [4YK2E5] Probably better to do here? because here we'll get notfs
+    // also about pages not currently listed in the watchbar.
+  }
+}
+
+
+function notf_toWatchbarTopic(notf: Notification): WatchbarTopic {
+  return {
+    pageId: notf.pageId,
+    title: notf.pageTitle,
+    // url?: string;
+    unread: true,
+    // We don't know about these two, info currently not included in the json: [4Y2KF8S]
+    notfsToMe: 1,
+    // notfsToMany: number;
+  };
 }
 
 

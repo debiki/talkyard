@@ -164,6 +164,16 @@ case class BareWatchbar(
     }
   }
 
+  def addDirectMessage(pageId: PageId, hasSeenIt: Boolean): BareWatchbar = {
+    if (directMessages.exists(_.pageId == pageId)) {
+      if (!hasSeenIt) markPageAsSeen(pageId)
+      else this
+    }
+    else {
+      copy(directMessages = WatchbarTopic(pageId, unread = !hasSeenIt) +: directMessages)
+    }
+  }
+
   def markPageAsSeen(pageId: PageId): BareWatchbar = {
     markSeenUnseen(pageId, seen = true)
   }

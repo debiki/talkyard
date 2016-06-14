@@ -723,7 +723,9 @@ object ReactJson {
         val post = postsById.getOrElse(notf.uniquePostId, {
           return None
         })
-        var title = pageTitlesById.get(post.pageId)
+        val title = pageTitlesById.get(post.pageId)
+        // COULD include number recipients for this notf, so the user will know if this is
+        // for him/her only, or for other people too. [4Y2KF8S]
         Json.obj(
           "id" -> notf.id,
           "type" -> notf.tyype.toInt,

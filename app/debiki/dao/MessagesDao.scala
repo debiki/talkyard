@@ -69,6 +69,13 @@ trait MessagesDao {
       (pagePath, notifications)
     }
 
+    (toUserIds + sentById) foreach { userId =>
+      // BUG. Race condition.
+      var watchbar: BareWatchbar = loadWatchbar(userId)
+      watchbar = watchbar.addDirectMessage(pagePath.thePageId, hasSeenIt = userId == sentByWho.id)
+      saveWatchbar(userId, watchbar)
+    }
+
     pubSub.publish(
       // pagePath.thePageId is pointless (since the page is new) — send the forum page id instead?
       pubsub.NewPageMessage(siteId, pagePath.thePageId, PageRole.Message, notfs), byId = sentById)

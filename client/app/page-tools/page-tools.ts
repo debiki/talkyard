@@ -60,7 +60,7 @@ var PageToolsDialog = createComponent({
 
   isEmpty: function() {
     var store: Store = this.state.store;
-    return !canPinPage(store);
+    return !canPinPage(store) && !store_canDeletePage(store) && !store_canUndeletePage(store);
   },
 
   open: function(post: Post) {
