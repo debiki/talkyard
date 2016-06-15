@@ -75,21 +75,28 @@ $forumNavBtnGroupLeft = 8px;
 //===========================
 
 // Fix this long error prone list later.
-.esForum_catsNav_btn .btn,
+.esF_BB_SortBtn,
 .esForum_navLink,
-.dw-main-category-dropdown .btn,
-.esForum_filterBtn
+.esForum_catsDrop,
+.esForum_filterBtn,
+.esF_BB_CreateBtn
   font-size: 15px;
+  margin-bottom: 7px; // place here (but not on .esF_BB) in case btns line wrap
 
 .esForum_catsNav
   margin-top: 20px;
   .btn
     background: hsl(0, 0%, 92%);
-    padding: 6px 10px !important;
+    padding: 7px 10px !important;
     &:hover
       background: hsl(0, 0%, 81%);
-  .esForum_catsNav_btn:not(:first-child)
-    margin: 0 0 0 3px;
+
+.esForum_catsNav_btn.btn
+  float: left;
+
+.esF_BB_SortBtn
+  margin-left: $forumNavBtnGroupLeft !important;
+  border: none !important;
 
 .esForum_catsNav_sort
   margin-left: $forumNavBtnGroupLeft;
@@ -130,7 +137,6 @@ $forumNavBtnGroupLeft = 8px;
   text-decoration: underline;
   background: none !important;
   color: #333 !important;
-  margin-left: 10px !important;
 
 .esForum_catsDrop
   color: hsl(0, 0%, 8%) !important;
@@ -159,6 +165,7 @@ $forumNavBtnGroupLeft = 8px;
   float: left;
   border: none;
   margin-left: $forumNavBtnGroupLeft;
+  margin-right: $forumNavBtnGroupLeft;
   &:first-child
     margin-left: 0;
 
@@ -172,33 +179,20 @@ $forumNavBtnGroupLeft = 8px;
   li
     margin-left: 0
 
-  .dw-main-category-dropdown  // old name, use .esForum_catsDrop instead now
-    float: left
-    .dropdown-toggle
-      margin 0
-      padding-left: 13px;
-      padding-right: 10px;
-    a
-      cursor: pointer
-
   .btn-default
     border: 1px solid #ccc;
-
-  button
-    margin: 0;
 
   button
     float: right
     border: none;
 
-  button:not(.btn-primary):not(.active),
-  span
+  button:not(.btn-primary):not(.active)
     color: hsl(0, 0%, 13%);
 
   @media (max-width: 801px)
     select.form-control,
     .btn
-      font-size: 13px;
+      font-size: 14px;
 
     .dw-forum-actionbar .nav button
       min-width: 50px;

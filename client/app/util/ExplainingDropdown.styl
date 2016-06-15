@@ -9,6 +9,8 @@
     display: block;
     text-decoration: none;
     padding: 9px 20px;
+    @media (max-width: 500px)
+      padding-right: 0; // the DropModal has padding-right itself already [5YKF20]
 
   &:hover
     background: hsl($uiHue, 100%, 97%);

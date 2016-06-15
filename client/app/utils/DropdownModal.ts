@@ -69,6 +69,8 @@ export var DropdownModal = createComponent({
     var $content = $(this.refs.content);
     if ($content.outerWidth() > winWidth) {
       // Better show the left side, that's where any titles and texts start.
+      // However, this should never happen, because max-width always leaves some
+      // space outside to click to close. [4YK8ST2]
       $content.css('left', 0);
     }
     else {
@@ -91,9 +93,10 @@ export var DropdownModal = createComponent({
             ref: 'content' }, this.props.children);
     }
 
+    var notTooWideClass = this.props.allowFullWidth ? '' : ' esDropModal-NotTooWide';
     return (
-      Modal({ show: this.props.show, onHide: this.props.onHide, dialogClassName: 'esDropModal',
-          backdropStyle: { opacity: 0.08 } },
+      Modal({ show: this.props.show, onHide: this.props.onHide,
+          dialogClassName: 'esDropModal' + notTooWideClass, backdropStyle: { opacity: 0.08 } },
         content));
   }
 });

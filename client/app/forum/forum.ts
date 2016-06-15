@@ -275,6 +275,12 @@ var ForumButtons = createComponent({
   getInitialState: function() {
     return {
       compact: false,
+      isCategoryDropdownOpen: false,
+      categoryDropdownX: -1,
+      categoryDropdownY: -1,
+      isSortOrderDropdownOpen: false,
+      sortOrderDropdownX: -1,
+      sortOrderDropdownY: -1,
       isTopicFilterDropdownOpen: false,
       topicFilterX: -1,
       topicFilterY: -1,
@@ -288,9 +294,19 @@ var ForumButtons = createComponent({
     }
   },
 
-  onSwitchCategory: function(event, newCategorySlug) {
-    event.preventDefault();
+  openCategoryDropdown: function() {
+    var rect = ReactDOM.findDOMNode(this.refs.selectCategoryButton).getBoundingClientRect();
+    this.setState({ isCategoryDropdownOpen: true, categoryDropdownX: rect.left,
+      categoryDropdownY: rect.bottom });
+  },
+
+  closeCategoryDropdown: function() {
+    this.setState({ isCategoryDropdownOpen: false });
+  },
+
+  setCategory: function(newCategorySlug) {
     dieIf(this.props.routes.length < 2, 'EsE6YPKU2');
+    this.closeCategoryDropdown();
     var currentPath = this.props.routes[SortOrderRouteIndex].path;
     var nextPath = currentPath === RoutePathCategories ? RoutePathLatest : currentPath;
     var slashSlug = newCategorySlug ? '/' + newCategorySlug : '';
@@ -306,8 +322,18 @@ var ForumButtons = createComponent({
     });
   },
 
-  onSwitchSortOrder: function(event, newPath: string) {
-    event.preventDefault();
+  openSortOrderDropdown: function() {
+    var rect = ReactDOM.findDOMNode(this.refs.sortOrderButton).getBoundingClientRect();
+    this.setState({ isSortOrderDropdownOpen: true, sortOrderDropdownX: rect.left,
+      sortOrderDropdownY: rect.bottom });
+  },
+
+  closeSortOrderDropdown: function() {
+    this.setState({ isSortOrderDropdownOpen: false });
+  },
+
+  setSortOrder: function(newPath: string) {
+    this.closeSortOrderDropdown();
     this.context.router.push({
       pathname: this.props.pagePath.value + newPath + this.slashCategorySlug(),
       query: this.props.location.query,
@@ -431,7 +457,7 @@ var ForumButtons = createComponent({
       activeClassName: 'active' }, text);
 
     var categoryTreeLink = showsCategoryTree ? null :
-      makeCategoryLink(RoutePathCategories, "View categories", 'esForum_navLink');
+      makeCategoryLink(RoutePathCategories, "Categories", 'esForum_navLink');
 
     // COULD remember which topics were listed previously and return to that view.
     // Or would a Back btn somewhere be better?
@@ -440,7 +466,8 @@ var ForumButtons = createComponent({
 
     var categoryMenuItems = props.categories.map((category: Category) => {
       return MenuItem({ eventKey: category.slug, key: category.id,
-          active: activeCategory.id === category.id }, category.name);
+          active: activeCategory.id === category.id,
+          onClick: () => this.setCategory(category.slug) }, category.name);
     });
 
     var listsTopicsInAllCats =
@@ -450,32 +477,51 @@ var ForumButtons = createComponent({
         activeCategory.isForumItself;
 
     categoryMenuItems.unshift(
-        MenuItem({ eventKey: null, key: -1, active: listsTopicsInAllCats }, "All categories"));
-
-    var catsDropActiveClass = showsCategoryTree ? '' : ' active';
+        MenuItem({ eventKey: null, key: -1, active: listsTopicsInAllCats,
+          onClick: () => this.setCategory('') }, "All categories"));
 
     var categoriesDropdown = showsCategoryTree ? null :
-        r.div({ className: 'dw-main-category-dropdown' },
-        DropdownButton({ title: activeCategory.name, onSelect: this.onSwitchCategory, id: '4p59',
-            className: 'esForum_catsNav_btn esForum_catsDrop' + catsDropActiveClass},
-          categoryMenuItems));
+        Button({ onClick: this.openCategoryDropdown,
+            className: 'esForum_catsNav_btn esForum_catsDrop active',
+            ref: 'selectCategoryButton' },
+          activeCategory.name + ' ', r.span({ className: 'caret' }));
+
+    var categoriesDropdownModal =
+        DropdownModal({ show: state.isCategoryDropdownOpen, pullLeft: true,
+            onHide: this.closeCategoryDropdown, atX: state.categoryDropdownX,
+            atY: state.categoryDropdownY },
+          r.ul({ className: 'dropdown-menu' },
+            categoryMenuItems));
 
     // The Latest/Top/Categories buttons, but use a dropdown if there's not enough space.
-    var latestTopCategories;
+    var currentSortOrderPath = this.props.routes[SortOrderRouteIndex].path;
+    var latestTopButton;
+    var latestTopDropdownModal;
     if (showsCategoryTree) {
       // Then hide the sort topics buttons.
     }
     else if (state.compact) {
-      latestTopCategories =
-        r.div({ className: 'esForum_catsNav_btn' },
-          DropdownButton({ title: this.getSortOrderName(), onSelect: this.onSwitchSortOrder,
-              id: '6wkp3p5' },
-            MenuItem({ eventKey: RoutePathLatest }, this.getSortOrderName(RoutePathLatest)),
-            MenuItem({ eventKey: RoutePathTop }, this.getSortOrderName(RoutePathTop))));
+      latestTopButton =
+          Button({ onClick: this.openSortOrderDropdown, ref: 'sortOrderButton',
+              className: 'esForum_catsNav_btn esF_BB_SortBtn' },
+            this.getSortOrderName() + ' ', r.span({ className: 'caret' }));
+      latestTopDropdownModal =
+        DropdownModal({ show: state.isSortOrderDropdownOpen, pullLeft: true,
+            onHide: this.closeSortOrderDropdown, atX: state.sortOrderDropdownX,
+            atY: state.sortOrderDropdownY },
+          r.ul({},
+            ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathLatest),
+                active: currentSortOrderPath === RoutePathLatest,
+                title: this.getSortOrderName(RoutePathLatest),
+                text: "Shows latest topics first" }),
+            ExplainingListItem({ onClick: () => this.setSortOrder(RoutePathTop),
+                active: currentSortOrderPath === RoutePathTop,
+                title: this.getSortOrderName(RoutePathTop),
+                text: "Shows popular topics first" })));
     }
     else {
       var slashSlug = this.slashCategorySlug();
-      latestTopCategories =
+      latestTopButton =
           r.ul({ className: 'nav esForum_catsNav_sort' },
             makeCategoryLink(RoutePathLatest + slashSlug, 'Latest'),
             makeCategoryLink(RoutePathTop + slashSlug, 'Top'));
@@ -565,7 +611,9 @@ var ForumButtons = createComponent({
         r.div({ className: 'dw-forum-actionbar clearfix' },
           r.div({ className: 'esForum_catsNav' },
             categoriesDropdown,
-            latestTopCategories,
+            categoriesDropdownModal,
+            latestTopButton,
+            latestTopDropdownModal,
             topicFilterButton,
             topicFilterDropdownModal,
             categoryTreeLink,
@@ -1164,7 +1212,7 @@ function makeTitle(topic: Topic, className: string) {
 function createTopicBtnTitle(category: Category) {
   var title = "Create Topic";
   if (_.isEqual([PageRole.Idea], category.newTopicTypes)) {
-    title = "Submit an Idea";
+    title = "Post an Idea";
   }
   else if (_.isEqual([PageRole.Question], category.newTopicTypes)) {
     title = "Ask a Question";

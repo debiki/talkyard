@@ -5,13 +5,17 @@
   .modal-content
     width: 0;
 
+.esDropModal-NotTooWide
+  .esDropModal_content
+    max-width: 75%; // so always some emptiness outside that one can click to close. [4YK8ST2]
+
 .esDropModal_content
   position: fixed;
-  padding: 11px 12px 15px 4px;
+  padding: 7px 7px 11px 4px;  // esExplDrp_entry assumes padding-right here [5YKF20]
   box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.37);
   background: white;
   min-width: 150px;
-  margin-right: 11px;
+  margin-right: 6px;
 
 .esDropModal_header
   font-style: italic;
@@ -19,4 +23,19 @@
   margin: 14px 0 4px 11px;
   &:first-child
     margin-top: 3px;
+
+// If a Bootstrap dropdown converted to DropModal and placed inside:
+.esDropModal_content > .dropdown-menu
+  display: block; // else none, until some open class added too
+  position: static; // otherwise absolute
+  z-index: 0;
+  float: none;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  li
+    margin: 0;
 

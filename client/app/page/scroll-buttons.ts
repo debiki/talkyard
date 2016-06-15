@@ -372,9 +372,11 @@ var ScrollButtonsDropdownModal = createComponent({
               ", and ", r.b({}, "B"), " to scroll back"));
     }
 
+    // (allowFullWidth, because this dialog isn't tall, so will be space above/below to click
+    // to close.)
     return (
       utils.DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY,
-          pullLeft: true, className: 'esScrollDlg' }, content));
+          pullLeft: true, className: 'esScrollDlg', allowFullWidth: true }, content));
   }
 });
 

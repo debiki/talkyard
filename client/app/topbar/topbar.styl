@@ -17,8 +17,11 @@
 
 $topbarButtonPaddingTop = 7px
 $gotoButtonSidePadding = 8px;
+$gotoButtonSidePaddingNarrow = 3px;
 
 $titleOwnLineMaxWidth = 1230px;
+
+$narrowLimit = 500px;
 
 html:not(.dw-react-started)
   .esTopbar_ancestors,
@@ -180,6 +183,8 @@ html.es-watchbar-open
   padding-top: 4px;
   position: relative;
   left: - $gotoButtonSidePadding;
+  @media (max-width: $narrowLimit)
+    left: - $gotoButtonSidePaddingNarrow;
 
 .esTopbar_ancestors
   > li
@@ -372,6 +377,9 @@ html:not(.es-watchbar-open)
       color: hsl(0, 0%, 23%);
       border: none;
       padding: $topbarButtonPaddingTop $gotoButtonSidePadding 7px $gotoButtonSidePadding;
+      @media (max-width: $narrowLimit)
+        padding-left: $gotoButtonSidePaddingNarrow;
+        padding-right: $gotoButtonSidePaddingNarrow;
 
       &:hover
         color: hsl($uiHue, 100%, 20%);
