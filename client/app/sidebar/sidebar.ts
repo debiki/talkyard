@@ -636,10 +636,10 @@ var helpMessageFour = {
   id: 'EsH6GJYu8',
   version: 1,
   content: r.div({ className: 'esCB_Help' },
-    r.p({}, "So if you leave, and get back later, below you'll find ",
+    r.p({}, "So if you leave, and come back here later, below you'll find ",
       r.strong({ className: 'esCB_Help_Large' }, "all new replies.")),
     r.p({}, r.strong({ className: 'esCB_Help_Large' }, "Click"),
-      " a reply below to read it — because only the first words are shown.")),
+      " a reply below to read it — because only an excerpt is shown, below.")),
   okayText: "Okay.",
   moreHelpAwaits: false,
 };

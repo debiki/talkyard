@@ -146,8 +146,9 @@ object ReactJson {
     var numPostsChatSection = 0
 
     var allPostsJson = posts filter { post =>
+      post.tyype != PostType.Flat && ( // flat comments disabled [8KB42]
       !post.deletedStatus.isDeleted || (
-        post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.nr))
+        post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.nr)))
     } map { post: Post =>
       numPosts += 1
       if (post.tyype == PostType.Flat)
