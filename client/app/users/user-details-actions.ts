@@ -125,7 +125,7 @@ var SingleAction = createComponent({
     var pageLink = r.a({ href: action.pageUrl }, action.pageTitle);
 
     var actingUserLink =
-        r.a({ href: '/-/users/#/id/' + action.actingUserId }, action.actingUserDisplayName);
+        r.a({ href: '/-/users/' + action.actingUserId }, action.actingUserDisplayName);
 
     var didWhat = 'did something with';
     if (action.repliedToPostId) {
@@ -163,7 +163,7 @@ var SingleAction = createComponent({
         r.a({ href: action.pageUrl + '#post-' + action.postId }, 'post #' + action.postId);
 
     var targetUserName =
-        r.a({ href: '/-/users/#/id/' + action.targetUserId }, action.targetUserDisplayName);
+        r.a({ href: '/-/users/' + action.targetUserId }, action.targetUserDisplayName);
 
     var timeAgo = moment(action.createdAt).fromNow();
 

@@ -1026,7 +1026,7 @@ export var PostHeader = createComponent({
     var anyAvatar = !showAvatar ? null : avatar.Avatar({ tiny: true, user: author });
 
     // Username link: Some dupl code, see edit-history-dialog.ts & avatar.ts [88MYU2]
-    var authorUrl = '/-/users/#/id/' + post.authorId;
+    var authorUrl = '/-/users/' + post.authorId;
     var guestClass = user_isGuest(author) ? ' esP_By_F-G' : '';
     var guestMark = user_isGuest(author) ? '? ' : '';
     var fullName = !author.fullName ? undefined :

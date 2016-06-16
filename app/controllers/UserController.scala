@@ -60,8 +60,17 @@ object UserController extends mvc.Controller {
   }
 
 
-  def loadCompleteUser(userId: String) = GetAction { request =>
-    val userIdInt = Try(userId.toInt) getOrElse throwBadReq("DwE6FWV0", "Bad user id")
+  def loadUserInclDetails(who: String) = GetAction { request =>
+    val userJson = Try(who.toInt).toOption match {
+      case Some(userId) => loadUserInclDetailsById(userId, request)
+      case None => loadMemberInclDetailsByEmailOrUsername(who, request)
+    }
+    OkSafeJson(Json.toJson(Map("user" -> userJson)))
+  }
+
+
+  // A tiny bit dupl code [5YK02F4]
+  private def loadUserInclDetailsById(userIdInt: UserId, request: DebikiRequest[_]) = {
     val callerIsStaff = request.user.exists(_.isStaff)
     val callerIsAdmin = request.user.exists(_.isAdmin)
     val callerIsUserHerself = request.user.map(_.id == userIdInt) == Some(true)
@@ -78,7 +87,31 @@ object UserController extends mvc.Controller {
             callerIsAdmin = callerIsAdmin)
 
         }
-      OkSafeJson(Json.toJson(Map("user" -> usersJson)))
+      usersJson
+    }
+  }
+
+
+  // A tiny bit dupl code [5YK02F4]
+  private def loadMemberInclDetailsByEmailOrUsername(emailOrUsername: String,
+        request: DebikiRequest[_]) = {
+    val callerIsStaff = request.user.exists(_.isStaff)
+    val callerIsAdmin = request.user.exists(_.isAdmin)
+
+    // For now, unless admin, don't allow emails, so cannot brut-force test email addresses.
+    if (emailOrUsername.contains("@") && !callerIsAdmin)
+      throwForbidden("EsE4UPYW2", "Lookup by email not allowed")
+
+    if (emailOrUsername.contains("@"))
+      throwNotImplemented("EsE5KY02", "Lookup by email not implemented")
+
+    request.dao.readOnlyTransaction { transaction =>
+      val member = transaction.loadMemberInclDetailsByUsername(emailOrUsername) getOrElse {
+        throwNotFound("EsE4PYW20", "User not found")
+      }
+      val callerIsUserHerself = request.user.exists(_.id == member.id)
+      jsonForCompleteUser(member, Map.empty, callerIsAdmin = callerIsAdmin,
+          callerIsStaff = callerIsStaff, callerIsUserHerself = callerIsUserHerself)
     }
   }
 

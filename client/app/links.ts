@@ -43,7 +43,7 @@ export function linkToReviewPage(): string {
 
 
 export function linkToUserProfilePage(userId: UserId): string {
-  return '/-/users/id/' + userId;
+  return '/-/users/' + userId;
 }
 
 export function linkToInvitesFromUser(userId: UserId): string {
@@ -51,7 +51,7 @@ export function linkToInvitesFromUser(userId: UserId): string {
 }
 
 export function linkToMyProfilePage(store: Store): string {
-  return '/-/users/id/' + store.me.id;
+  return '/-/users/' + store.me.id;
 }
 
 

@@ -102,7 +102,7 @@ GET   /-/load-user-preferences  controllers.UserController.loadUserPreferences(u
 POST  /-/save-user-preferences  controllers.UserController.saveUserPreferences
 POST  /-/save-guest             controllers.UserController.saveGuest
 GET   /-/list-complete-users    controllers.UserController.listCompleteUsers(whichUsers)
-GET   /-/load-complete-user     controllers.UserController.loadCompleteUser(userId)
+GET   /-/load-user-incl-details controllers.UserController.loadUserInclDetails(who)
 POST  /-/approve-reject-user    controllers.UserController.approveRejectUser
 POST  /-/set-is-admin-or-moderator controllers.UserController.setIsAdminOrModerator
 POST  /-/lock-threat-level      controllers.UserController.lockThreatLevel

@@ -338,9 +338,9 @@ export function logout(success: () => void) {
 }
 
 
-export function loadCompleteUser(userId: number, doneCallback: (user: CompleteUser) => void,
-        error?: () => void) {
-  get('/-/load-complete-user?userId=' + userId, (response) => {
+export function loadCompleteUser(userIdOrUsername: UserId | string,
+        doneCallback: (user: CompleteUser) => void, error?: () => void) {
+  get('/-/load-user-incl-details?who=' + userIdOrUsername, (response) => {
     doneCallback(response.user);
   }, error);
 }

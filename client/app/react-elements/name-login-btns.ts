@@ -97,7 +97,7 @@ export function goToUserPage(userId) {
   // page won't change: it'll show details for one user, but the URL will be
   // for another (namely the currently logged in user). Workaround: update
   // window.location — this rerenders the React components.
-  window.location.assign('/-/users/#/id/' + userId);
+  window.location.assign('/-/users/' + userId);
 }
 
 

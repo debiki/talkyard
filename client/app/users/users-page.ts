@@ -45,9 +45,12 @@ export function routes() {
   return (
     Route({ path: '/-/users/', component: UsersHomeComponent },
       IndexRoute({ component: DefaultComponent }),
-      Redirect({ from: 'id/:userId', to: 'id/:userId/activity' }),
-      Redirect({ from: 'id/:userId/', to: 'id/:userId/activity' }),
-      Route({ path: 'id/:userId', component: UserPageComponent },
+      // [delete] Remove the two 'id/:userId...' links in Jan 2017, they're no longer in use.
+      Redirect({ from: 'id/:userId', to: ':userId/activity' }),   // delete later
+      Redirect({ from: 'id/:userId/', to: ':userId/activity' }),  // delete later
+      Redirect({ from: ':userId', to: ':userId/activity' }),
+      Redirect({ from: ':userId/', to: ':userId/activity' }),
+      Route({ path: ':username', component: UserPageComponent },
         Route({ path: 'activity', component: UserAllComponent }),
         Route({ path: 'topics', component: UserTopicsComponent }),
         Route({ path: 'posts', component: UserPostsComponent }),
@@ -122,19 +125,27 @@ var UserPageComponent = React.createClass(<any> {
   },
 
   componentWillUnmount: function() {
-    this.ignoreServerResponse = true;
+    this.willUnmount = true;
   },
 
   transitionToRouteName: function(routeName) {
-    this.context.router.push('/-/users/id/' + this.props.params.userId + '/' + routeName);
+    this.context.router.push('/-/users/' + this.props.params.username + '/' + routeName);
   },
 
   loadCompleteUser: function() {
-    Server.loadCompleteUser(this.props.params.userId, (user) => {
-      if (this.ignoreServerResponse) return;
+    var userIdOrUsername = this.props.params.username;
+    Server.loadCompleteUser(userIdOrUsername, (user) => {
+      if (this.willUnmount) return;
       this.setState({ user: user });
+      // 1) In case the user has changed his/her username, and userIdOrUsername is his/her *old*
+      // name, user.username will be the current name — then show the current name in the url.
+      // Also 2) if user id specified, and the user is a member (they have usernames) show
+      // username instead,
+      if (user.username && user.username !== userIdOrUsername) {
+        this.context.router.replace('/-/users/' + user.username);
+      }
     }, () => {
-      if (this.ignoreServerResponse) return;
+      if (this.willUnmount) return;
       // Error. We might not be allowed to see this user, so null it even if it was shown before.
       this.setState({ user: null });
     });

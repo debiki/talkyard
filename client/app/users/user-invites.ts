@@ -148,7 +148,7 @@ var InviteRow = createComponent({
     var userEmailOrLink;
     var acceptedAt = "Not yet";
     if (invite.userId) {
-      userEmailOrLink = r.a({ href: '/-/users/id/' + invite.userId }, invite.invitedEmailAddress);
+      userEmailOrLink = r.a({ href: '/-/users/' + invite.userId }, invite.invitedEmailAddress);
       acceptedAt = moment(invite.acceptedAtEpoch).from(this.props.now);
     }
     else {

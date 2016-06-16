@@ -90,8 +90,7 @@ MentionsMarkdownItPlugin.prototype.render = function(tokens, id, options, env) {
   // The username is [a-zA-Z_0-9] so we don't need to escape it. And besides we sanitize
   // everything later on anyway.
   var username = tokens[id].username;
-  var url = '/-/users/#!/username/' + username;
-  return '<a class="dw-mention" href="' + url + '">@' + username + '</a>';
+  return '<a class="esMention" href="/-/users/' + username + '">@' + username + '</a>';
 };
 
 

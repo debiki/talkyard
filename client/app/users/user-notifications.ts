@@ -78,8 +78,9 @@ export var UserNotificationsComponent = React.createClass({
     if (!this.state.notfs)
       return r.p({}, "Loading...");
 
-    var isMe = this.props.user.id === this.props.loggedInUser.userId;
-    var toWho = isMe ? "you" : this.props.user.username;
+    var user: CompleteUser = this.props.user;
+    var isMe = user.id === this.props.loggedInUser.userId;
+    var toWho = isMe ? "you" : user.username || user.fullName;
 
     var notfsElems = this.state.notfs.map((notf: Notification) =>
         r.li({ key: notf.id },

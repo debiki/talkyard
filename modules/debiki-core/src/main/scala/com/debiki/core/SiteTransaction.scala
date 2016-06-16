@@ -223,6 +223,7 @@ trait SiteTransaction {
   def configIdtySimple(ctime: ju.Date, emailAddr: String, emailNotfPrefs: EmailNotfPrefs)
 
   def loadCompleteUser(userId: UserId): Option[CompleteUser]
+  def loadMemberInclDetailsByUsername(username: String): Option[CompleteUser]
 
   def loadTheCompleteUser(userId: UserId): CompleteUser =
     loadCompleteUser(userId).getOrElse(throw UserNotFoundException(userId))

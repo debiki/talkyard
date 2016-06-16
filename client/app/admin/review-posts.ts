@@ -252,7 +252,7 @@ var Post = createComponent({
         return (
           r.li({ key: flag.flaggerId },
               'Type: ' + flag.flagType + ', reason: ' + flag.flagReason + ', by: ',
-              r.a({ href: '/-/users/#/id/' + flag.flaggerId }, flag.flaggerDisplayName)));
+              r.a({ href: '/-/users/' + flag.flaggerId }, flag.flaggerDisplayName)));
       });
 
       flagsAndFlagActions =
@@ -284,7 +284,7 @@ var Post = createComponent({
           inlineMessage),
 
         r.td({},
-          r.a({ href: '/-/users/#/id/' + post.userId }, post.userDisplayName)),
+          r.a({ href: '/-/users/' + post.userId }, post.userDisplayName)),
 
         r.td({ title: post.cdati }, moment(post.cdati).from(this.props.now)),
 
