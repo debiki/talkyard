@@ -398,14 +398,16 @@ var MoreVotesDropdownModal = createComponent({
     var buryVoteButton = isFlat ? null :
       ExplainingListItem({
         title: r.span({ className: 'dw-a-bury icon-bury' + myBuryVote }, "Bury"),
-        text: r.span({}, "Click ", r.i({}, "Bury"), " to sort other posts before this post."),
+        text: r.span({}, "If the post is correct, but you want to show other more interesting " +
+            "posts instead. Only moderators know if you have ", r.i({}, "Bury"), "voted."),
+            // "If the post is correct, but not interesting to read."
         onClick: this.onBuryClick, key: 'b' });
 
     var unwantedVoteButton = isGuest(me) || !isStaffOrOwnPage ? null :
       ExplainingListItem({
         title: r.span({ className: 'dw-a-unwanted icon-cancel' + myUnwantedVote }, "Unwanted"),
         text: "If you do not want this post on this website. This would reduce the trust I have " +
-            "in the post author.",
+            "in the post author. Only moderators can see these votes.",
         onClick: this.onUnwantedClick, key: 'u' });
 
     return [wrongVoteButton, buryVoteButton, unwantedVoteButton];

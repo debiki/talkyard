@@ -24,6 +24,7 @@
 /// <reference path="../utils/page-scroll-mixin.ts" />
 /// <reference path="../utils/scroll-into-view.ts" />
 /// <reference path="../utils/MenuItemLink.ts" />
+/// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../notification/Notification.ts" />
@@ -234,8 +235,9 @@ export var TopBar = createComponent({
           otherNotfs);
 
     var avatarNameDropdown = !me.isLoggedIn ? null :
-        DropdownButton({ title: avatarMenuButtonInclNotfIcons, className: 'esAvtrName esMyMenu',
-            pullRight: true, noCaret: true, id: '2k5f39' },
+      utils.ModalDropdownButton({ title: avatarMenuButtonInclNotfIcons,
+          className: 'esAvtrName esMyMenu' },
+        r.ul({ className: 'dropdown-menu' },
           adminMenuItem,
           adminHelpLink,
           reviewMenuItem,
@@ -246,7 +248,7 @@ export var TopBar = createComponent({
           notfsElems,
           MenuItem({ divider: true }),
           MenuItem({ onSelect: ReactActions.showHelpMessagesAgain },
-            r.span({ className: 'icon-help' }, "Unhide help messages")));
+            r.span({ className: 'icon-help' }, "Unhide help messages"))));
 
     // ------- Login button
 

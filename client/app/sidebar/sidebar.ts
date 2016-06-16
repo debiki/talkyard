@@ -22,6 +22,7 @@
 /// <reference path="../page/discussion.ts" />
 /// <reference path="../page/scroll-buttons.ts" />
 /// <reference path="../help/help.ts" />
+/// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
 /// <reference path="minimap.ts" />
 //xx <reference path="unread-comments-tracker.ts" />
@@ -36,7 +37,7 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactCSSTransitionGroup = reactCreateFactory(React.addons.CSSTransitionGroup);
 var ReactBootstrap: any = window['ReactBootstrap'];
-var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
+var ModalDropdownButton = utils.ModalDropdownButton;
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 var SidebarNumCommentsLimit = 5 + 1;  // 5 + page body
@@ -434,9 +435,9 @@ export var Sidebar = createComponent({
               starredBtnTitle);
       }
       else {
-        recentButton = isChat ? null : MenuItem({ eventKey: 'showRecent' }, 'Recent');
-        //unreadButton = MenuItem({ eventKey: 'showUnread' }, 'Unread'),
-        starredButton = MenuItem({ eventKey: 'showStarred' }, starredBtnTitle);
+        recentButton = isChat ? null : MenuItem({ onClick: this.showRecent }, "Recent");
+        //unreadButton = MenuItem({ onClick: this.showUnread }, "Unread"),
+        starredButton = MenuItem({ onClick: this.showStarred }, starredBtnTitle);
       }
     }
 
@@ -446,7 +447,7 @@ export var Sidebar = createComponent({
           onClick: this.showAdminGuide }, "Guide");
       }
       else {
-        adminGuideButton = MenuItem({ eventKey: 'showAdminGuide' }, "Admin Guide");
+        adminGuideButton = MenuItem({ onClick: this.showAdminGuide }, "Admin Guide");
       }
     }
 
@@ -463,13 +464,13 @@ export var Sidebar = createComponent({
     }
     else {
       tabButtons =
-        DropdownButton({ title: this.state.commentsType, key: 'showRecent', pullRight: true,
-            onSelect: (event, key) => { this[key](); }, id: '2wu4bg7' },
-          recentButton,
-          unreadButton,
-          starredButton,
-          MenuItem({ eventKey: 'showUsers' }, usersBtnTitle),
-          adminGuideButton);
+        ModalDropdownButton({ title: this.state.commentsType, key: 'showRecent', pullRight: true },
+          r.ul({ className: 'dropdown-menu' },
+            recentButton,
+            unreadButton,
+            starredButton,
+            MenuItem({ onClick: this.showUsers }, usersBtnTitle),
+            adminGuideButton));
     }
 
     // Show four help messages: first no. 1, then 2, 3, 4, one at a time, which clarify

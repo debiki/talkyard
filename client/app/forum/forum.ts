@@ -39,7 +39,6 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
-var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
 var DropdownModal = utils.DropdownModal;
 var ExplainingListItem = util.ExplainingListItem;
 type ExplainingTitleText = util.ExplainingTitleText;
@@ -275,6 +274,7 @@ var ForumButtons = createComponent({
   getInitialState: function() {
     return {
       compact: false,
+      // [refactor] use ModalDropdownButton instead of all these 3 x open/X/Y fields.
       isCategoryDropdownOpen: false,
       categoryDropdownX: -1,
       categoryDropdownY: -1,
@@ -480,6 +480,7 @@ var ForumButtons = createComponent({
         MenuItem({ eventKey: null, key: -1, active: listsTopicsInAllCats,
           onClick: () => this.setCategory('') }, "All categories"));
 
+    // [refactor] use ModalDropdownButton instead
     var categoriesDropdown = showsCategoryTree ? null :
         Button({ onClick: this.openCategoryDropdown,
             className: 'esForum_catsNav_btn esForum_catsDrop active',
@@ -501,6 +502,7 @@ var ForumButtons = createComponent({
       // Then hide the sort topics buttons.
     }
     else if (state.compact) {
+      // [refactor] use ModalDropdownButton instead
       latestTopButton =
           Button({ onClick: this.openSortOrderDropdown, ref: 'sortOrderButton',
               className: 'esForum_catsNav_btn esF_BB_SortBtn' },
@@ -538,6 +540,7 @@ var ForumButtons = createComponent({
       die('EsE4JK85');
     }
 
+    // [refactor] use ModalDropdownButton instead
     var topicFilterButton =
       Button({ onClick: this.openTopicFilterDropdown,
           className: 'esForum_filterBtn esForum_catsNav_btn', ref: 'topicFilterButton' },

@@ -332,7 +332,10 @@ html:not(.dw-react-started):not(.es-forum)  // (skip forum because it renders th
 
 // Place the title on a separate line, if narrow screen, so the open-watchbar btn won't
 // push it to the right.
-html:not(.es-watchbar-open)
+html:not(.es-watchbar-open),
+// If screen very narrow, always place title on separate line, so won't jump up/down when
+// opening/closing  the watchbar.
+html.esSidebarsOverlayPage
   .esTopbarWrap:not(.dw-fixed-topbar-wrap)
     @media (max-width: $titleOwnLineMaxWidth)
       .dw-topbar-title

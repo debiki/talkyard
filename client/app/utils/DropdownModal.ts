@@ -27,12 +27,61 @@
 var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
 var ReactBootstrap: any = window['ReactBootstrap'];
+var Button = reactCreateFactory(ReactBootstrap.Button);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
+
+
+export var ModalDropdownButton = createComponent({
+  getInitialState: function () {
+    return {
+      isOpen: false,
+      buttonX: -1,
+      buttonY: -1,
+      modalCreated: false,
+    };
+  },
+
+  openDropdown: function() {
+    var rect = ReactDOM.findDOMNode(this.refs.openButton).getBoundingClientRect();
+    this.setState({ modalCreated: true, isOpen: true,
+      buttonX: this.props.pullLeft ? rect.left : rect.right, buttonY: rect.bottom });
+  },
+
+  closeDropdown: function() {
+    // Don't set created: false though, because then React breaks.
+    this.setState({ isOpen: false });
+  },
+
+  render: function() {
+    var props = this.props;
+    var state = this.state;
+
+    // Don't create immediately, because creating all dropdowns and dialogs directly on
+    // page load makes the page load slower (a few millis per dialog I think, adding up to
+    // 30ms? 70ms? which is a lot).
+    var dropdownModal;
+    if (state.modalCreated) {
+      dropdownModal =
+          DropdownModal({ show: state.isOpen, pullLeft: props.pullLeft,
+            onHide: this.closeDropdown, atX: state.buttonX, atY: state.buttonY,
+            className: props.dialogClassName, id: props.dialogId,
+            allowFullWidth: props.allowFullWidth, onContentClick: this.closeDropdown },
+          props.children);
+    }
+
+    return (
+      Button({ onClick: this.openDropdown, className: props.className, id: props.id,
+          key: props.key, ref: 'openButton' },
+        this.props.title, dropdownModal));
+  }
+});
+
 
 /**
  * Places a dropdown at (this.props.atX, this.props.atY) and tries to fit it inside the
  * current viewport. Dims everything outside the dropdown just a little bit.
  */
+// [refactor] Rename to ModalDropdownDialog
 export var DropdownModal = createComponent({
   getInitialState: function () {
     return {};
@@ -89,8 +138,8 @@ export var DropdownModal = createComponent({
         top: this.props.atY,
       };
       content =
-        r.div({ className: 'esDropModal_content ' + this.props.className, style: styles,
-            ref: 'content' }, this.props.children);
+        r.div({ className: 'esDropModal_content ' + (this.props.className || ''), style: styles,
+            ref: 'content', onClick: this.props.onContentClick }, this.props.children);
     }
 
     var notTooWideClass = this.props.allowFullWidth ? '' : ' esDropModal-NotTooWide';
