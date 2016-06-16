@@ -20,6 +20,12 @@ var $ = d.i.$;
 
 
 d.u.postJson = function(options) {
+  showLoadingOverlay();
+  var timeoutHandle = setTimeout(function() {
+    showServerJustStartedMessage();
+    timeoutHandle = setTimeout(showErrorIfNotComplete, 23 * 1000);
+  }, 7 * 1000);
+
   // Interpret the response using the data type specified by the server. Don't
   // specify 'json' because then jQuery complains if the server sends back nothing
   // (an empty string isn't ok JSON).
@@ -30,9 +36,42 @@ d.u.postJson = function(options) {
     contentType: 'application/json; charset=utf-8',
     headers: { 'X-XSRF-TOKEN': $.cookie('XSRF-TOKEN') },
     error: options.error,
-    success: options.success
+    success: options.success,
+    complete: function() {
+      clearTimeout(timeoutHandle);
+      removeLoadingOverlay();
+    }
   });
 };
 
+
+function showLoadingOverlay() {
+  $('body').append(
+    $.parseHTML('<div id="theLoadingOverlay"><div class="icon-loading"></div></div>'));
+}
+
+
+function showServerJustStartedMessage() {
+  var messageText = "Sorry that this takes long. Perhaps the server was " +
+      "just started, and is slow right now.";
+  var messageElem = $($.parseHTML('<div id="theServerJustStarted"></div>')).text(messageText);
+  $('#theLoadingOverlay').addClass('esLoadingSlow').append(messageElem);
+}
+
+
+function removeLoadingOverlay() {
+  $('#theLoadingOverlay').remove();
+}
+
+
+function showErrorIfNotComplete() {
+  var complete = !$('#theLoadingOverlay').length;
+  if (!complete) {
+    // Remove the spinner before showing the dialog.
+    $('#theLoadingOverlay .icon-loading').remove();
+    alert("Error: Server too slow [EsE5YK0W24]");
+    removeLoadingOverlay();
+  }
+}
 
 // vim: fdm=marker et ts=2 sw=2 tw=80 fo=tcqwn list
