@@ -307,20 +307,39 @@ html:not(.mouse) .dw-rr
 .dw-p-flat .dw-rr
   padding-bottom: 0;
 
-.dw-wrong
+.esWrong
+  clearfix();
+  margin: 0 0 7px;
+  max-width: 270px;
+  position: relative;
+  top: -7px;
+  z-index: 1;
+
+.esWrong_Txt
+  float: left;
+  display: inline-block;
+  color: hsl($heartAndErrorHue, 60%, 52%);
+  font-weight: bold;
   font-style: italic;
-  font-size: 90%;
-  margin-bottom: 5px;
-  &:before
-    color: #999 // gray warning icon instead of black
-  &.dw-very-wrong
-    font-size: 100%;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+  word-spacing: 0.5px;
+  &:before // the wrong/disagree icon
+    color: hsl($heartAndErrorHue, 79%, 72%);
+    font-size: 24px;
+    margin: 0 4px 0 1px;
+
+@media (min-width: $minShowAvatarWidth)
+  .dw-id0 > .esWrong
+    margin: 4px 0 11px 58px;
+    left: 0;
+    top: 0;
+
 
 // [refactor] remove:
 // dw-fullname
 // dw-username
 // dw-lg-t-spl
-
 
 
 .esP_By,

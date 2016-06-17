@@ -234,7 +234,8 @@ export var PostActions = createComponent({
     var numWrongsText;
     if (post.numWrongVotes) {
       numWrongsText = r.a({ className: 'dw-a dw-vote-count' },
-          post.numWrongVotes === 1 ? "1 Wrong" : post.numWrongVotes + " Wrongs");
+          post.numWrongVotes + " Disagree");
+          //post.numWrongVotes === 1 ? "1 Wrong" : post.numWrongVotes + " Wrongs");
     }
 
     // Bury votes aren't downvotes or bad in any way, so don't show them, except for
@@ -389,8 +390,8 @@ var MoreVotesDropdownModal = createComponent({
 
     var wrongVoteButton =
       ExplainingListItem({
-        title: r.span({ className: 'dw-a-wrong icon-warning' + myWrongVote }, "Wrong"),
-        text: r.span({}, "Click ", r.i({}, "Wrong"), " if you disagree with this post, " +
+        title: r.span({ className: 'dw-a-wrong icon-warning' + myWrongVote }, "Disagree"),
+        text: r.span({}, "Click ", r.i({}, "Disagree"), " if you disagree with this post, " +
             "or to warn others about factual errors."),
         onClick: this.onWrongClick, key: 'w' });
 
@@ -398,8 +399,8 @@ var MoreVotesDropdownModal = createComponent({
     var buryVoteButton = isFlat ? null :
       ExplainingListItem({
         title: r.span({ className: 'dw-a-bury icon-bury' + myBuryVote }, "Bury"),
-        text: r.span({}, "If the post is correct, but you want to show other more interesting " +
-            "posts instead. Only moderators know if you have ", r.i({}, "Bury"), "voted."),
+        text: r.span({}, "Click to show other posts before this post. " +
+          "Only the forum staff can see your vote."),
             // "If the post is correct, but not interesting to read."
         onClick: this.onBuryClick, key: 'b' });
 
@@ -407,7 +408,7 @@ var MoreVotesDropdownModal = createComponent({
       ExplainingListItem({
         title: r.span({ className: 'dw-a-unwanted icon-cancel' + myUnwantedVote }, "Unwanted"),
         text: "If you do not want this post on this website. This would reduce the trust I have " +
-            "in the post author. Only moderators can see these votes.",
+            "in the post author. Only the forum staff can see your vote.",
         onClick: this.onUnwantedClick, key: 'u' });
 
     return [wrongVoteButton, buryVoteButton, unwantedVoteButton];
@@ -572,7 +573,7 @@ var MoreDropdownModal = createComponent({
     // r.a({ className:'dw-a dw-a-collapse-suggs icon-collapse-post dw-a-pending-review',
     // r.a({ className: 'dw-a dw-a-collapse-suggs icon-collapse-tree dw-a-pending-review',
 
-    if (!isPageBody && isStaff(me)) {
+    if (!isPageBody && (isStaff(me) || isOwnPost)) {
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-delete icon-trash', onClick: this.onDeleteClick, key: 'dl' },
           'Delete'));

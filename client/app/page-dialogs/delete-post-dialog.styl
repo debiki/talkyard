@@ -5,3 +5,11 @@
 
   input[type="checkbox"]
     margin-top: 2px;
+
+  // Sometimes there's no "Delete replies too?" question, then two borders with nothing
+  // between just looks weird.
+  .modal-header
+    border-bottom: none;
+  .modal-footer
+    border-top: none;
+

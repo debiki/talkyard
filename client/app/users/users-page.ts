@@ -48,9 +48,9 @@ export function routes() {
       // [delete] Remove the two 'id/:userId...' links in Jan 2017, they're no longer in use.
       Redirect({ from: 'id/:userId', to: ':userId/activity' }),   // delete later
       Redirect({ from: 'id/:userId/', to: ':userId/activity' }),  // delete later
-      Redirect({ from: ':userId', to: ':userId/activity' }),
-      Redirect({ from: ':userId/', to: ':userId/activity' }),
-      Route({ path: ':username', component: UserPageComponent },
+      Redirect({ from: ':usernameOrId', to: ':usernameOrId/activity' }),
+      Redirect({ from: ':usernameOrId/', to: ':usernameOrId/activity' }),
+      Route({ path: ':usernameOrId', component: UserPageComponent },
         Route({ path: 'activity', component: UserAllComponent }),
         Route({ path: 'topics', component: UserTopicsComponent }),
         Route({ path: 'posts', component: UserPostsComponent }),
@@ -66,7 +66,9 @@ export function routes() {
 var UsersHomeComponent = React.createClass(<any> {
   componentDidMount: function() {
     if (window.location.hash.indexOf('#writeMessage') !== -1) {
-      var toUserId = parseInt(this.props.params.userId);
+      var usernameOrId = this.props.params.usernameOrId;
+      dieIf(/[^0-9]/.test(usernameOrId), 'Not a user id [EsE5YK0P2]');
+      var toUserId = parseInt(usernameOrId);
       var myUserId = ReactStore.getMe().userId;
       dieIf(toUserId === myUserId, 'EsE7UMKW2');
       dieIf(userId_isGuest(toUserId), 'EsE6JKY20');
@@ -129,19 +131,19 @@ var UserPageComponent = React.createClass(<any> {
   },
 
   transitionToRouteName: function(routeName) {
-    this.context.router.push('/-/users/' + this.props.params.username + '/' + routeName);
+    this.context.router.push('/-/users/' + this.props.params.usernameOrId + '/' + routeName);
   },
 
   loadCompleteUser: function() {
-    var userIdOrUsername = this.props.params.username;
-    Server.loadCompleteUser(userIdOrUsername, (user) => {
+    var usernameOrId = this.props.params.usernameOrId;
+    Server.loadCompleteUser(usernameOrId, (user) => {
       if (this.willUnmount) return;
       this.setState({ user: user });
       // 1) In case the user has changed his/her username, and userIdOrUsername is his/her *old*
       // name, user.username will be the current name — then show the current name in the url.
       // Also 2) if user id specified, and the user is a member (they have usernames) show
       // username instead,
-      if (user.username && user.username !== userIdOrUsername) {
+      if (user.username && user.username !== usernameOrId) {
         this.context.router.replace('/-/users/' + user.username);
       }
     }, () => {

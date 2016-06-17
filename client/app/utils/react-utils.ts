@@ -80,6 +80,7 @@ function timeExact(isoDate: string) {
  * Takes 25-30ms for 80 unprocessed comments on my computer, and 2ms for 160
  * that have been processed already.
  */
+// COULD move to page/hacks.ts
 function processTimeAgo(selector?: string) {
   selector = selector || '';
   var timeDoneClass = 'esTimeDone';

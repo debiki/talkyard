@@ -98,9 +98,13 @@ if (_narrow) {
   __reactStore.shallSidebarsOverlayPage = true;
 }
 
+@{/* Show the watchbar, unless we're on an info page. But do show it, if it's open already,
+ also on info pages. Otherwise people get confused when they click a recent page in the
+ watchbar, and then it (the watchbar) just disappears (closes). */}
 var __isInfoPage = !__reactStore.pageRole || __reactStore.pageRole <= @InfoPageMaxId;
-if (!_narrow && localStorage.getItem('isWatchbarOpen') !== 'false' &&
-    location.search.search('&hideWatchbar') === -1 && !__isInfoPage) {
+var __wbOpen = localStorage.getItem('isWatchbarOpen');
+if (!_narrow && __wbOpen !== 'false' && location.search.search('&hideWatchbar') === -1 && (
+    !__isInfoPage || __wbOpen === 'true')) {
   docElem.className += ' es-watchbar-open';
   __reactStore.isWatchbarOpen = true;
 }
@@ -108,10 +112,11 @@ if (!_narrow && localStorage.getItem('isWatchbarOpen') !== 'false' &&
 @{/* Hide the contextbar  by default, or new users will be overwhelmed by everything there is
 to see. But do show the Admin Getting Started Guide (it's in the sidebar [8YKFW32]) for
 new admins. */}
+var __cbOpen = localStorage.getItem('isContextbarOpen');
 var _showAdmGuide = localStorage.getItem('showAdminGuide') !== 'false' && _me.isAdmin &&
-        localStorage.getItem('isContextbarOpen') !== 'false';
-if (_showAdmGuide || (!_narrow && localStorage.getItem('isContextbarOpen') === 'true' &&
-    location.search.search('&hideContextbar') === -1 && !__isInfoPage)) {
+        __cbOpen !== 'false';
+if (_showAdmGuide || (!_narrow && __cbOpen === 'true' &&
+    location.search.search('&hideContextbar') === -1)) {
   docElem.className += ' es-pagebar-open';
   __reactStore.isContextbarOpen = true;
 }

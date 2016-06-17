@@ -100,6 +100,7 @@ export var Sidebar = createComponent({
 
   showRecent: function() {
     this.setState({ commentsType: 'Recent' });
+    setTimeout(() => processTimeAgo('.esCtxbar_list'));
   },
 
   /*

@@ -726,6 +726,8 @@ var Thread = createComponent({
         // and rendered in a flat list.
         !this.props.abbreviate;
 
+    var anyWrongWarning = this.props.abbreviate ? null : makeWrongWarning(post);
+
     var showAvatar = !renderCollapsed && this.props.depth === 1 && !this.props.is2dTreeColumn;
     var anyAvatar = !showAvatar ? null : avatar.Avatar({ user: store_authorOf(store, post) });
     var avatarClass = showAvatar ? ' ed-w-avtr' : '';
@@ -752,6 +754,7 @@ var Thread = createComponent({
       baseElem({ className: 'dw-t' + depthClass + indentationDepthClass + multireplyClass +
           is2dColumnClass + collapsedClass + avatarClass },
         arrows,
+        anyWrongWarning,
         anyAvatar,
         Post(postProps),
         actions,
@@ -760,6 +763,27 @@ var Thread = createComponent({
             children))));
   },
 });
+
+
+function makeWrongWarning(post: Post) {
+  if (post.numWrongVotes <= 1)
+    return null;
+
+  var wrongWarning = null;
+  var wrongness = post.numWrongVotes / (post.numLikeVotes || 1);
+  // One, two, three, many.
+  if (post.numWrongVotes > 3 && wrongness > 1) {
+    wrongWarning =
+      r.div({ className: 'esWrong esWrong-Very' },
+        r.div({ className: 'esWrong_Txt icon-warning' }, "Many disagree with this:"));
+  }
+  else if (wrongness > 0.33) {
+    wrongWarning =
+      r.div({ className: 'esWrong' },
+        r.div({ className: 'esWrong_Txt icon-warning' }, "Some disagree with this:"));
+  }
+  return wrongWarning;
+}
 
 
 export var Post = createComponent({
@@ -804,7 +828,6 @@ export var Post = createComponent({
       return r.p({}, '(Post missing [DwE4UPK7])');
 
     var pendingApprovalElem;
-    var wrongWarning;
     var headerElem;
     var bodyElem;
     var clickToExpand;
@@ -856,21 +879,6 @@ export var Post = createComponent({
         extraClasses += ' dw-x';
         clickToExpand = r.div({ className: 'dw-x-show' }, "click to show");
         clickCover = r.div({ className: 'dw-x-cover' });
-      }
-
-      if (post.numWrongVotes >= 2 && !this.props.abbreviate) {
-        var wrongness = post.numWrongVotes / (post.numLikeVotes || 1);
-        // One, two, three, many.
-        if (post.numWrongVotes > 3 && wrongness > 1) {
-          wrongWarning =
-            r.div({ className: 'dw-wrong dw-very-wrong icon-warning' },
-              'Many think this comment is wrong:');
-        }
-        else if (wrongness > 0.33) {
-          wrongWarning =
-            r.div({ className: 'dw-wrong icon-warning' },
-              'Some think this comment is wrong:');
-        }
       }
     }
 
@@ -925,7 +933,6 @@ export var Post = createComponent({
       r.div({ className: 'dw-p ' + extraClasses, id: id,
             onMouseEnter: this.props.onMouseEnter, onClick: this.onClick },
         pendingApprovalElem,
-        wrongWarning,
         replyReceivers,
         headerElem,
         bodyElem,

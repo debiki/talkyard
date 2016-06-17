@@ -330,7 +330,7 @@ export var TopBar = createComponent({
       // COULD show click-to-see-recent-comments tips, if the user doesn't seem to know about that.
       // For now, show this dummy text, because otherwise people get confused when the
       // "X users online" text disappears:
-      contextbarTipsDetailed = "? new posts";
+      contextbarTipsDetailed = "Recent posts";
       contextbarTipsBrief = r.span({}, '0', r.span({ className: 'icon-comment-empty' }));
     }
     else {

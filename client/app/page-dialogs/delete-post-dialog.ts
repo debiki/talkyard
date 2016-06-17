@@ -76,19 +76,22 @@ var DeletePostDialog = createComponent({
     var title;
     var content;
     if (this.state.isOpen) {
+      var me: Myself = this.state.loggedInUser;
       var post: Post = this.state.post;
-      var yourOrThis = this.state.loggedInUser.userId === post.authorId ? "your" : "this";
+      var isMyPost = me.id === post.authorIdInt;
+      var yourOrThis = isMyPost ? "your" : "this";
       title = "Delete " + yourOrThis + " post?";
-      content =
-        r.div({},
-          r.div({ className: 'dw-delete-btns' },
-            Input({ type: 'checkbox', label: "Delete replies too",
-                id: 'deleteRepliesTooInput' })));  // cannot use 'ref:' because not in render()
+      content = !isStaff(me) ? null :
+        r.div({ className: 'dw-delete-btns' },
+          isStaff(me)
+              ? Input({ type: 'checkbox', label: "Delete replies too",
+                    id: 'deleteRepliesTooInput' }) // cannot use 'ref:' because not in render()
+              : null);
     }
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'dw-delete-post-dialog' },
         ModalHeader({}, ModalTitle({}, title)),
-        ModalBody({}, content),
+        content ? ModalBody({}, content) : null,
         ModalFooter({},
           Button({ onClick: this.doDelete, bsStyle: 'primary' }, "Yes delete it"),
           Button({ onClick: this.close }, "Cancel"))));
