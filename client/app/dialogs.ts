@@ -18,6 +18,7 @@
 /// <reference path="../typedefs/react/react.d.ts" />
 /// <reference path="plain-old-javascript.d.ts" />
 /// <reference path="utils/react-utils.ts" />
+/// <reference path="util/stupid-dialog.ts" />
 /// <reference path="ReactStore.ts" />
 /// <reference path="Server.ts" />
 
@@ -77,10 +78,10 @@ var FlagDialog = createComponent({
   submit: function() {
     Server.flagPost(this.state.postId, this.state.flagType, this.state.reason, () => {
       this.close();
-      setTimeout(() => {
-        alert("Thanks. You have reported it. Someone will review it and "+
-          "perhaps delete it or remove parts of it.");
-      }, 0);
+      util.openDefaultStupidDialog({
+        body: "Thanks. You have reported it. The forum staff will take a look.",
+        small: true,
+      });
     });
   },
 
@@ -128,8 +129,8 @@ var FlagDialog = createComponent({
           anyReasonInput,
 
         ModalFooter({},
-          Button({ onClick: this.submit }, 'Submit'),
-          Button({ onClick: this.close }, 'Cancel'))));
+          Button({ onClick: this.submit, disabled: !flagType, bsStyle: 'primary' }, "Submit"),
+          Button({ onClick: this.close }, "Cancel"))));
   }
 });
 

@@ -399,7 +399,7 @@ var MoreVotesDropdownModal = createComponent({
     var buryVoteButton = isFlat ? null :
       ExplainingListItem({
         title: r.span({ className: 'dw-a-bury icon-bury' + myBuryVote }, "Bury"),
-        text: r.span({}, "Click to show other posts before this post. " +
+        text: r.span({}, "Click to sort other posts before this post. " +
           "Only the forum staff can see your vote."),
             // "If the post is correct, but not interesting to read."
         onClick: this.onBuryClick, key: 'b' });

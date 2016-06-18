@@ -166,7 +166,7 @@ case class SettingsToSave(
 
   if (contribAgreement.contains(Some(ContribAgreement.UseOnThisSiteOnly)) &&
       contentLicense.isDefined) {
-    require(contentLicense.get.contains(ContentLicense.AllRightsReserved), "EsE5YKF2")
+    require(contentLicense.get.contains(ContentLicense.AllRightsReserved), "EsE8YKF2")
   }
 
   // For now, disable license-to-us-for-use-on-this-site-only, see [6UK2F4X] in admin-app.ts(?).
