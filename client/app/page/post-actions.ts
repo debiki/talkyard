@@ -490,14 +490,15 @@ var MoreDropdownModal = createComponent({
   },
 
   makeButtons: function() {
-    var store = this.state.store;
-    var isFlat = store.isFlat; // hmm shouldn't place in the store object, oh well
+    var store: Store = this.state.store;
+    var isFlat = store['isFlat']; // hmm shouldn't place in the store object, oh well
     var me: Myself = store.me;
     var post: Post = this.state.post;
     var isPageBody = post.postId === BodyPostId;
 
     var moreLinks = [];
     var isOwnPost = post.authorIdInt === me.userId;
+    var isMindMap = store.pageRole === PageRole.MindMap;
 
     if (!isOwnPost) {
       var mayEdit = isStaff(me) || (
@@ -581,7 +582,7 @@ var MoreDropdownModal = createComponent({
 
     // Wikified posts no longer looks good, because of the avatar icon to the left.
     // Only the orig post looks ok, therefore: `isPageBody &&`.
-    if (isPageBody && isStaff(me) && !isFlat) {
+    if ((isPageBody || isMindMap) && (isStaff(me) || isOwnPost) && !isFlat) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-users', onClick: this.onWikifyClick, key: 'wf' },
           isWikiPost(post) ? 'Un-Wikify' : 'Wikify'));

@@ -214,20 +214,26 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     val unsubscriptionUrl =
       origin + controllers.routes.UnsubscriptionController.showForm(email.id).url
 
+    def makeBoringLink(title: String, url: String) =
+      <a href={url} style="text-decoration: none !important; color: #333 !important;">{title}</a>
+
+    def makeUnderlinedLink(title: String, url: String) =
+      <a href={url} style="color: #333 !important;">{title}</a>
+
     val htmlContent =
       <div>
         <p>Dear {user.usernameOrGuestName},</p>
         {contents}
         <p>
           Kind regards,<br/>
-          <a href={origin}>{name}</a>
+          { makeBoringLink(name, url = origin) }
         </p>
         <p style='font-size: 85%; opacity: 0.68; margin-top: 2em;'>
-          <a href={unsubscriptionUrl}>Unsubscribe</a>
+          { makeUnderlinedLink("Unsubscribe", url = unsubscriptionUrl) }
         </p>
         <p style='font-size: 85%; opacity: 0.68;'>
-          Powered by <a href={Globals.scheme + "://www.effectivediscussions.org"}>
-            EffectiveDiscussions</a>
+          Powered by {
+            makeBoringLink("EffectiveDiscussions", url = "https://www.effectivediscussions.org") }
         </p>
       </div>.toString
 

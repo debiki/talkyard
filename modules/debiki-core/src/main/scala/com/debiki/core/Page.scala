@@ -325,7 +325,8 @@ object PageRole {
   case object Idea extends PageRole(15, staffOnly = false)
 
   /** Something that's been planned, perhaps done, but perhaps not an Idea or Problem. */
-  case object ToDo extends PageRole(13, staffOnly = false)
+  // [refactor] remove. Use Idea instead, bumped to "doing" state.
+  case object ToDo extends PageRole(13, staffOnly = false)  // remove [4YK0F24]
 
   /** Mind maps use 2D layout, even if the site is configured to use 1D layout. */
   case object MindMap extends PageRole(11, staffOnly = false)

@@ -865,6 +865,9 @@ var IconHelpMessage = {
           r.span({ className: 'icon-check' },
             "Something that's been done or fixed.")),
         r.li({},
+          r.span({ className: 'icon-sitemap' },
+            "A mind map.")),
+        r.li({},
           r.span({ className: 'icon-block' },
             "Topic closed.")),
         r.li({},
@@ -1188,6 +1191,10 @@ function makeTitle(topic: Topic, className: string) {
   else if (topic.pageRole === PageRole.PrivateChat) {
     tooltip = "This is a private chat channel";
     title = r.span({}, r.span({ className: 'icon-lock' }), title);
+  }
+  else if (topic.pageRole === PageRole.MindMap) {
+    tooltip = "This is a mind map";
+    title = r.span({}, r.span({ className: 'icon-sitemap' }), title);
   }
   else {
     title = r.span({}, r.span({ className: 'icon-comment-empty' }), title);

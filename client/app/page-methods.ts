@@ -52,7 +52,7 @@ export function pageRole_toIconString(pageRole: PageRole) {
     case PageRole.Problem: return PageRole_Problem_IconString;
     case PageRole.Idea: return PageRole_Idea_IconString;
     case PageRole.ToDo: return PageRole_Todo_IconString;
-    case PageRole.MindMap: return "Mind map";
+    case PageRole.MindMap: return PageRole_MindMap_IconString;
     case PageRole.Discussion: return PageRole_Discussion_IconString;
     case PageRole.OpenChat: return PageRole_Chat_IconString;
     case PageRole.PrivateChat: return "Private chat";
@@ -67,6 +67,7 @@ export var PageRole_Discussion_IconString =
 export var PageRole_Question_IconString = r.span({ className: 'icon-help-circled' }, "Question");
 export var PageRole_Problem_IconString = r.span({ className: 'icon-attention-circled' }, "Problem");
 export var PageRole_Idea_IconString = r.span({ className: 'icon-idea' }, "Idea");
+export var PageRole_MindMap_IconString = r.span({ className: 'icon-sitemap' }, "Mind Map");
 
 export var PageRole_Todo_IconString = r.span({ className: 'icon-check-empty' }, "Todo");
 export var PageRole_Chat_IconString = r.span({ className: 'icon-chat' }, "Chat");

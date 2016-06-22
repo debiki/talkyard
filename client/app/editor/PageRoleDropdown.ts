@@ -94,7 +94,8 @@ export var PageRoleDropdown = createComponent({
     var wikiMindMap = !complicated || !showAllOptions || !isStaff(me) ? false :
       ExplainingListItem({ onSelect: this.onSelect,
         activeEventKey: pageRole, eventKey: PageRole.MindMap,
-        title: "Mind map", text: "" });
+        title: PageRole_MindMap_IconString,
+        text: "Comments laid out in a mind map tree." });
 
     var showMore = !isStaff(me) || showAllOptions || props.hideMore ? null :
       ExplainingListItem({ onClick: this.showAllOptions,
@@ -108,11 +109,13 @@ export var PageRoleDropdown = createComponent({
     if (isStaff(me) && showAllOptions) {
       staffOnlyDivider = r.div({ className: 'esDropModal_header' }, "Only staff can create these:");
 
+      /* [refactor] remove, use Icon status Planned / Doing instead  [4YK0F24]
       todoOption =
         ExplainingListItem({ onSelect: this.onSelect,
           activeEventKey: pageRole, eventKey: PageRole.ToDo,
           title: PageRole_Todo_IconString,
           text: "Something that should be done or fixed." });
+        */
 
       openChatOption =
         ExplainingListItem({ onSelect: this.onSelect,
