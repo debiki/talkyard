@@ -451,6 +451,11 @@ var ForumButtons = createComponent({
     var showsCategoryTree = this.props.routes[SortOrderRouteIndex].path === RoutePathCategories;
     var showsTopicList = !showsCategoryTree;
 
+    // A tester got a little bit confused in the categories view, because it starts with
+    // the filter-*topics* button. So insert this title, before, instead.
+    var anyPageTitle = showsCategoryTree ?
+        r.div({ className: 'esF_BB_PageTitle' }, "Categories") : null;
+
     var makeCategoryLink = (where, text, extraClass?) => Link({
       to: this.props.pagePath.value + where, query: this.props.location.query,
       className: 'btn esForum_catsNav_btn ' + (extraClass || ''),
@@ -607,12 +612,14 @@ var ForumButtons = createComponent({
 
     var editCategoryBtn;
     if (!activeCategory.isForumItself && me.isAdmin) {
-      editCategoryBtn = Button({ onClick: this.editCategory }, 'Edit Category');
+      editCategoryBtn = Button({ onClick: this.editCategory, className: 'esF_BB_EditCat' },
+        "Edit Category");
     }
 
     return (
         r.div({ className: 'dw-forum-actionbar clearfix' },
           r.div({ className: 'esForum_catsNav' },
+            anyPageTitle,
             categoriesDropdown,
             categoriesDropdownModal,
             latestTopButton,
@@ -793,7 +800,7 @@ var ForumTopicListComponent = React.createClass(<any> {
         // Too few topics, then right now no one cares about the icons?
         (topics.length < numFewTopics && !this.state.helpOpened);
         */
-    var iconsHelpStuff = iconsHelpClosed
+    var iconsHelpStuff = iconsHelpClosed || help.isHelpMessageClosed(store, IconHelpMessage)
         ? r.a({ className: 'esForum_topics_openIconsHelp icon-info-circled',
               onClick: this.openIconsHelp }, "Explain icons...")
         : HelpMessageBox({ message: IconHelpMessage, showUnhideTips: false });
@@ -1065,12 +1072,24 @@ var ForumCategoriesComponent = React.createClass(<any> {
           category: category, key: category.id });
     });
 
+    var recentTopicsColumnTitle;
+    switch (this.props.location.query.filter) {
+      case FilterShowWaiting:
+        recentTopicsColumnTitle = "Recent topics (those waiting)";
+        break;
+      case FilterShowDeleted:
+        recentTopicsColumnTitle = "Recent topics (including deleted)";
+        break;
+      default:
+        recentTopicsColumnTitle = "Recent topics (no filter)";
+    }
+
     return (
       r.table({ className: 'forum-table table' },
         r.thead({},
           r.tr({},
             r.th({}, 'Category'),
-            r.th({}, 'Recent Topics'))),
+            r.th({}, recentTopicsColumnTitle))),
         r.tbody({},
           categoryRows)));
     }
@@ -1186,7 +1205,7 @@ function makeTitle(topic: Topic, className: string) {
   }
   else if (topic.pageRole === PageRole.OpenChat) {
     tooltip = "This is a chat channel";
-    title = r.span({}, '# ', title);
+    title = r.span({}, r.span({ className: 'icon-chat' }), title);
   }
   else if (topic.pageRole === PageRole.PrivateChat) {
     tooltip = "This is a private chat channel";

@@ -321,6 +321,9 @@ export var Sidebar = createComponent({
         ? "Users (" + numOnlineTextSlash + usersHere.users.length + ")"
         : "Users (" + usersHere.numOnline + ")";
 
+    // COULD show a "Recent searches" on the search results page. Click a recent search, to
+    // use it again.
+
     var title;
     var unreadClass = '';
     var recentClass = '';
@@ -662,7 +665,7 @@ var TheAdminGuide =
   r.div({ className: 'esAdminGuide' },
     r.p({}, "Welcome! You're an admin, so you can edit settings, define what this community is about, and invite people."),
     r.h2({}, "Edit settings"),
-    r.p({}, "Go to the admin area by clicking your name to the upper left, then click ", r.strong({}, "Admin"), ". Have a look at the settings, in case there's something you'd like to change. To make the forum private, edit settings in the ", r.strong({}, "Login"), " section. You can edit colors and fonts in the ", r.strong({}, "Customize"), " section."),
+    r.p({}, "Go to the admin area by clicking your name to the upper right, then click ", r.strong({}, "Admin"), ". Have a look at the settings, in case there's something you'd like to change. To make the forum private, edit settings in the ", r.strong({}, "Login"), " section. You can edit colors and fonts in the ", r.strong({}, "Customize"), " section."),
     /*  Tooo much text! I'm afraid people won't read. At least one usability tester totally didn't.
     r.h4({}, "Copyright"),
     r.p({}, "By default, people may copy material from the forum, and they must then give credit to the authors, and indicate if they have modified it. They must also in turn allow others to copy and edit their modified material. This is ", r.a({ href: 'http://creativecommons.org/licenses/by-sa/4.0/', target: '_blank' }, "Creative Commons' CC BY-SA 4.0", r.span({ className: 'icon-link-ext' })), ". — All this is a bit configurable, in the ", r.strong({}, "Legal"), " settings section."),

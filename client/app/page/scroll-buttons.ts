@@ -346,16 +346,21 @@ var ScrollButtonsDropdownModal = createComponent({
       var endHelp = "Go to the bottom of the page. Shortcut: 3";
 
       var scrollToTopButton = isChat ? null :
-        Button({ className: '', onClick: this.scrollToTop, title: topHelp,
-            disabled: !state.enableGotoTopBtn, bsStyle: 'primary' }, "Page top");
+        Button({ className: 'esScrollDlg_Up', onClick: this.scrollToTop, title: topHelp,
+            disabled: !state.enableGotoTopBtn, bsStyle: 'primary' },
+          r.span({},
+            r.span({ className: 'esScrollDlg_Up_Arw' }, '➜'), "Page top"));
 
       var scrollToRepliesButton = isChat || neverHasReplies ? null :
-        Button({ className: '', onClick: this.scrollToReplies, title: repliesHelp,
-            disabled: !state.enableGotoRepliesBtn, bsStyle: 'primary' }, "Replies");
+        Button({ className: 'esScrollDlg_Replies', onClick: this.scrollToReplies,
+            title: repliesHelp, disabled: !state.enableGotoRepliesBtn, bsStyle: 'primary' },
+          r.span({ className: 'icon-comment' }, "Replies"));
 
-      var scrollToEndButton = Button({ className: '', onClick: this.scrollToEnd, title: endHelp,
+      var scrollToEndButton = Button({ className: 'esScrollDlg_Down',
+          onClick: this.scrollToEnd, title: endHelp,
           disabled: !state.enableGotoEndBtn, bsStyle: 'primary' },
-        isChat ? "Page bottom" : "Bottom");
+        r.span({},
+          r.span({ className: 'esScrollDlg_Down_Arw' }, '➜'), isChat ? "Page bottom" : "Bottom"));
 
       var shortcutsArray = [];
       if (scrollToTopButton) shortcutsArray.push("1");

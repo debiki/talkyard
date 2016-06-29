@@ -176,6 +176,18 @@ export var TopBar = createComponent({
           }));
     }
 
+    // Add a Home link for direct messages. They aren't placed in any category, so the above
+    // code block ignores them.
+    if (!ancestorCategories && store.pageRole === PageRole.Message) {
+      // Currently there's always just one site section, namely the forum.
+      var homePath = store.siteSections[0].path;
+      ancestorCategories =
+        r.ol({ className: 'esTopbar_ancestors' },
+          r.li({},
+            r.a({ className: 'esTopbar_ancestors_link btn', href: homePath }, "Home")));
+    }
+
+
     // ------- Staff link, notfs, help
 
     var urgentReviewTasks = makeNotfIcon('reviewUrgent', me.numUrgentReviewTasks);

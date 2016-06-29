@@ -66,6 +66,7 @@ function page_isDiscussion(pageRole: PageRole): boolean {
       // pageRole !== PageRole.WikiMainPage;
 }
 
+// [refactor] Move to page-methods.ts and rename to page_hmmHmmWhat? + isSection too, below.
 function isPageWithComments(pageRole: PageRole): boolean {
   return page_isDiscussion(pageRole) && pageRole !== PageRole.Message;
 }

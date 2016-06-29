@@ -263,12 +263,23 @@ var ChatMessageEditor = createComponent({
     });
   },
 
+  onKeyDown: function(event) {
+    // In my Chrome, Ctrl + Enter won't fire onKeyPress (only onKeyDown), and won't append
+    // any newline. Why? Append the newline ourselves.
+    if (event_isCtrlEnter(event)) {
+      this.setState({ text: this.state.text + '\n' });
+      // Prevent FF, Edge, Safari from adding yet another newline in onKeyPress().
+      event.preventDefault();
+    }
+  },
+
   onKeyPress: function(event) {
-    if (event.charCode === 13 && !event.shiftKey && !event.ctrlKey) {
+    if (event_isEnter(event) && !event_isCtrlEnter(event) && !event_isShiftEnter(event)) {
       // Enter or Return without Shift or Ctrl down means "post chat message".
       var isNotEmpty = /\S/.test(this.state.text);
       if (isNotEmpty) {
         this.postChatMessage();
+        event.preventDefault();
       }
     }
   },
@@ -289,6 +300,7 @@ var ChatMessageEditor = createComponent({
         r.textarea({ className: 'esChatMsgEdtr_textarea', ref: 'textarea',
           value: this.state.text, onChange: this.onTextEdited,
           onKeyPress: this.onKeyPress,
+          onKeyDown: this.onKeyDown,
           placeholder: "Type here. You can use Markdown and HTML.",
           disabled: this.state.isSaving,
           rows: this.state.rows })));

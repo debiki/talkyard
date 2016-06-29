@@ -101,6 +101,28 @@ export function getPageRect(): ClientRect {
   return document.getElementById('dwPosts').getBoundingClientRect();
 }
 
+
+export function event_isCtrlEnter(event) {
+  return event.ctrlKey && event_isEnter(event);
+}
+
+export function event_isShiftEnter(event) {
+  return event.shiftKey && event_isEnter(event);
+}
+
+export function event_isEnter(event) {
+  // In Chrome on Windows, Ctrl + Enter supposedly results in key code = Line Feed, not Enter.
+  // Because Windows expect a line feed char apparently —
+  // see: https://bugs.chromium.org/p/chromium/issues/detail?id=79407
+  // Try all fields, hopefully will work for all browsers and for both onKeyPress and onKeyDown.
+  var code = event.which || event.charCode || event.keyCode;
+  return code === KeyCodeEnter || code === KeyCodeLineFeed;
+}
+
+var KeyCodeEnter = 13;
+var KeyCodeLineFeed = 10;
+
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

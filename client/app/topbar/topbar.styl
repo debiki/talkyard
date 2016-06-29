@@ -190,7 +190,7 @@ html.es-watchbar-open
     margin: 0;
     list-style-type: none;
     display: inline-block;
-    &::after
+    &:not(:last-child)::after
       content: "→";
       color: #666;
       font-size: 19px;
@@ -232,11 +232,11 @@ html.es-watchbar-open
 
 
 .esTB_SearchBtn
-  padding: 3px 7px;
+  padding: 1px 5px 3px 4px;
   margin: 0 0 0 2px;
   .icon-search
     color: hsl(0, 0%, 50%);
-    font-size: 19px;
+    font-size: 21px;
     margin: 0;
     padding: 0;
 

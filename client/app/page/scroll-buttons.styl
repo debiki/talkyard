@@ -42,9 +42,34 @@
   padding: 12px 19px 10px 12px !important;
   .btn
     margin-right: 1px;
+    padding-left: 10px; // else too much
 
 .esScrollDlg_title
   margin-bottom: 6px;
+
+.esScrollDlg_Up_Arw,
+.esScrollDlg_Down_Arw
+  display: inline-block;
+  font-size: 20px;
+  line-height: 14px;
+  position: relative;
+
+.esScrollDlg_Up_Arw
+  rotateFn(-90deg);
+  top: 3px;
+  width: 14px;
+  left: -3px;
+
+.esScrollDlg_Replies
+  .icon-comment:before
+    position: relative;
+    left: -2px;
+
+.esScrollDlg_Down_Arw
+  rotateFn(90deg);
+  top: 2px;
+  width: 15px;
+  left: -2px;
 
 .esScrollDlg_shortcuts
   margin-top: 12px;

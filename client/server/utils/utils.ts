@@ -23,6 +23,18 @@ export function getPageRect(): ClientRect {
   throw new Error('getPageRect called server side [DwE7UYKW2]');
 }
 
+export function event_isEnter(event) {
+  throw new Error('event_isEnter called server side [DwE5KYF204]');
+}
+
+export function event_isCtrlEnter(event) {
+  throw new Error('event_isCtrlEnter called server side [DwE3U83Y2]');
+}
+
+export function event_isShiftEnter(event) {
+  throw new Error('event_isShiftEnter called server side [DwE5YU80]');
+}
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

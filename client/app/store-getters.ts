@@ -117,7 +117,8 @@ export function store_getUsersHere(store: Store): UsersHere {
 
 
 export function store_canDeletePage(store: Store): boolean {
-  return !store.pageDeletedAtMs && isStaff(store.me);
+  // For now, don't let people delete sections = their forum — that just makes them confused.
+  return !store.pageDeletedAtMs && isStaff(store.me) && !isSection(store.pageRole);
 }
 
 

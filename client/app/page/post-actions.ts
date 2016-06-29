@@ -391,7 +391,7 @@ var MoreVotesDropdownModal = createComponent({
     var wrongVoteButton =
       ExplainingListItem({
         title: r.span({ className: 'dw-a-wrong icon-warning' + myWrongVote }, "Disagree"),
-        text: r.span({}, "Click ", r.i({}, "Disagree"), " if you disagree with this post, " +
+        text: r.span({}, "Click here to disagree with this post, " +
             "or to warn others about factual errors."),
         onClick: this.onWrongClick, key: 'w' });
 

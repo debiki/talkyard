@@ -94,8 +94,8 @@ var PageToolsDialog = createComponent({
       closeAllDialogs: this.close
     };
 
-    var selectPostsButton = !store_canSelectPosts(store) ? null :
-      Button({ onClick: this.selectPosts }, "Select posts");
+    var selectPostsButton; // = !store_canSelectPosts(store) ? null :
+      //Button({ onClick: this.selectPosts }, "Select posts");
 
     var pinPageButton;
     var pinPageDialog;

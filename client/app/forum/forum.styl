@@ -83,6 +83,14 @@ $forumNavBtnGroupLeft = 8px;
   font-size: 15px;
   margin-bottom: 7px; // place here (but not on .esF_BB) in case btns line wrap
 
+.esF_BB_PageTitle
+  display: inline-block;
+  float: left;
+  font-size: 17px;
+  padding: 7px 5px 0;
+  font-weight: bold;
+  margin-right: 5px;
+
 .esForum_catsNav
   margin-top: 20px;
   .btn
@@ -107,9 +115,9 @@ $forumNavBtnGroupLeft = 8px;
     min-width: 50px;
     $sideWithBorder = 8px;
     $border = 1px solid hsl(0, 0%, 91%);
-    padding: 6px 9px !important;
+    padding: 7px 9px 6px !important;
     &:not(.active)
-      padding: 6px $sideWithBorder !important;
+      padding: 7px $sideWithBorder 6px !important;
       border: $border;
       color: hsl(0, 0%, 28%);
       box-shadow: 0 -1px 2px hsl(0, 0%, 91%) inset;
@@ -157,6 +165,9 @@ $forumNavBtnGroupLeft = 8px;
 .esF_BB_CreateBtn
   padding-top: 7px;
   padding-bottom: 7px;
+
+.esF_BB_EditCat
+  padding-top: 7px;
 
 .esForum_topicsCatsHelp
   max-width: 500px !important;
@@ -302,6 +313,11 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
           font-size: 14px;
           margin: 0 9px 0 0;
           color: hsl(0, 0%, 65%);
+
+        .icon-chat:before
+          color: hsl(0, 0%, 70%);
+          font-weight: bold;
+          margin-right: 9px;
 
         .icon-help-circled:before
           margin: 0 7px 0 0;
@@ -471,6 +487,17 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
     [class^="icon-"]:before, [class*=" icon-"]:before
       margin: 0 4px 0 0;
       font-size: 95%;
+
+    // Don't show both pinned icon + topic type icon. [6YK320W]
+    &.icon-pin [class^='icon-']:before
+      display: none;
+
+    .icon-chat:before
+      opacity: 0.87;
+      font-size: 16px;
+      margin: 0 6px 0 0;
+      padding-left: 2px;
+      font-weight: bold;
 
     .icon-check-empty:before
       position: relative;
