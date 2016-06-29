@@ -31,7 +31,6 @@ import Prelude._
 abstract class DbDaoFactory {
 
   def migrations: ScalaBasedDatabaseMigrations
-  def shutdown()
 
   final def newDbDao2(): DbDao2 =
     new DbDao2(this)

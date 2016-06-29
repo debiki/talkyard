@@ -57,6 +57,13 @@ trait SystemTransaction {
   def loadCachedPageVersion(sitePageId: SitePageId): Option[(CachedPageVersion, SitePageVersion)]
   def loadPageIdsToRerender(limit: Int): Seq[PageIdToRerender]
 
+  // ----- Indexing
+
+  def loadStuffToIndex(limit: Int): StuffToIndex
+  def deleteFromIndexQueue(post: Post, siteId: SiteId)
+  def addEverythingInLanguagesToIndexQueue(languages: Set[String])
+
+
   // ----- Testing
 
   /** Deletes all data from the database. For example, for a RDBMS,

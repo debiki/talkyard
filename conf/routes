@@ -46,10 +46,10 @@ GET   /-/embedded-comments      controllers.EmbeddedTopicsController.showTopic
 GET   /-/embedded-editor        controllers.EmbeddedTopicsController.showEmbeddedEditor
 GET   /-/embedded-comments-help controllers.EmbeddedTopicsController.showSetupInstructions
 
-POST  /-/search/site                        controllers.FullTextSearchController.searchWholeSite()
-GET   /-/search/site/for/:phrase            controllers.FullTextSearchController.searchWholeSiteFor(phrase)
-POST  /-/search/section/:pageId             controllers.FullTextSearchController.searchSiteSection(pageId)
-GET   /-/search/section/:pageId/for/:phrase controllers.FullTextSearchController.searchSiteSectionFor(phrase, pageId)
+POST  /-/search                             controllers.SearchController.searchWholeSite()
+GET   /-/search                             controllers.SearchController.searchWholeSiteFor(phrase)
+POST  /-/search-section/:pageId             controllers.SearchController.searchSiteSection(pageId)
+GET   /-/search-section/:pageId/for/:phrase controllers.SearchController.searchSiteSectionFor(phrase, pageId)
 
 GET   /-/reset-password                  controllers.ResetPasswordController.start
 GET   /-/reset-password/specify-email    controllers.ResetPasswordController.showResetPasswordPage

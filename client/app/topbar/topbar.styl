@@ -52,7 +52,6 @@ html:not(.dw-react-started)
     display: none;
 
   .esAvtrName
-    margin-left: 6px;
     .btn
       padding-right: 0;
 
@@ -231,6 +230,29 @@ html.es-watchbar-open
   .esTopbar_custom
     margin-top: 0;
 
+
+.esTB_SearchBtn
+  padding: 3px 7px;
+  margin: 0 0 0 2px;
+  .icon-search
+    color: hsl(0, 0%, 50%);
+    font-size: 19px;
+    margin: 0;
+    padding: 0;
+
+.esTB_SearchDlg
+  padding: 5px 5px 0 12px;
+  $marginBottom = 7px;
+  input[type='text']
+    padding-left: 3px;
+    width: 40vw;
+    min-width: 250px;
+    max-width: 500px;
+    vertical-align: middle;
+    height: 34px; // the submit btn is 34px, today
+    margin: 0 9px $marginBottom 0;
+  .btn
+    margin-bottom: $marginBottom;
 
 .esTopbar .esAvtrName // hmm rename to .esAvtrYourName?
   display: inline-block;
@@ -414,29 +436,8 @@ html.esSidebarsOverlayPage
         position: relative;
         top: 1px;
 
-      &.dw-search
-        font-size: 130%;
-        color: #666;
-
         span:before
           font-weight: bold;
-
-  #dw-search-form
-    position: absolute;
-    right: 0px;
-    top: 0px;
-    z-index: 1001;  // above sidebar
-    background: white;
-    width: 360px;
-    border: 2px solid rgb(187, 187, 187);
-    padding: 20px 15px 10px 10px;
-
-    input
-      width: 100%;
-
-
-.dw-lower-right-corner
-  position: absolute; bottom: 0px; right: 0px;
 
 
 .dw-fixed-topbar-wrap

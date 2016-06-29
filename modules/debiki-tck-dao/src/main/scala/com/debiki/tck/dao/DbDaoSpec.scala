@@ -55,6 +55,6 @@ trait DbDaoSpecShutdown extends BeforeAndAfterAll {
 
   override def afterAll() {
     super.afterAll()
-    self.daoFactory.shutdown()
+    //self.daoFactory.shutdown()
   }
 }

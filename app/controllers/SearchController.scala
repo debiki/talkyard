@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2013, 2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -19,10 +19,12 @@ package controllers
 
 import com.debiki.core._
 import debiki.RateLimits
+import ed.server.search.PageAndHits
 import io.efdi.server.http._
-import java.{util => ju}
 import play.api._
 import play.api.mvc.Result
+import scala.collection.immutable.Seq
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import Prelude._
 
@@ -30,7 +32,7 @@ import Prelude._
 /** Full text search, for a whole site, or for a site section, e.g. a single
   * forum (including all sub forums and topics), a single blog, or wiki.
   */
-object FullTextSearchController extends mvc.Controller {
+object SearchController extends mvc.Controller {
 
   private val SearchPhraseFieldName = "searchPhrase"
 
@@ -61,19 +63,14 @@ object FullTextSearchController extends mvc.Controller {
 
   private def searchImpl(phrase: String, anyRootPageId: Option[String],
         apiReq:  DebikiRequest[_]): Future[Result] = {
-
-    import scala.concurrent.ExecutionContext.Implicits.global
-
-    val futureSearchResult = apiReq.dao.fullTextSearch(phrase, anyRootPageId)
-    val futureResponse = futureSearchResult map { searchResult =>
+    apiReq.dao.fullTextSearch(phrase, anyRootPageId) map { searchResults: Seq[PageAndHits] =>
       val siteTpi = debiki.SiteTpi(apiReq)
       val htmlStr = views.html.templates.searchResults(
-        siteTpi, anyRootPageId, phrase, searchResult).body
+          siteTpi, anyRootPageId, phrase, searchResults).body
       Ok(htmlStr) as HTML
     }
-
-    futureResponse
   }
+
 
 }
 

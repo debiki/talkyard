@@ -100,6 +100,10 @@ trait SiteTransaction {
   def insertPost(newPost: Post)
   def updatePost(newPost: Post)
 
+  def indexPostsSoon(posts: Post*)
+  def indexAllPostsOnPage(pageId: PageId)
+  def indexPagesSoon(pageMeta: PageMeta*)
+
   // Rename to insert/loadPageMemberIds? [rename]
   def insertMessageMember(pageId: PageId, userId: UserId, addedById: UserId)
   def loadMessageMembers(pageId: PageId): Set[UserId]

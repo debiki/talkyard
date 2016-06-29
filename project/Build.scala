@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012-2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2012-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -60,6 +60,10 @@ object ApplicationBuild extends Build {
     // We use both a in-the-JVM-memory cache, and Redis:
     "com.github.ben-manes.caffeine" % "caffeine" % "2.2.6",
     "com.github.etaty" %% "rediscala" % "1.6.0",
+    // Search engine, in https://mvnrepository.com.
+    "org.elasticsearch" % "elasticsearch" % "5.0.0-alpha3",
+    // ElasticSearch needs log4j
+    "log4j" % "log4j" % "1.2.17",
     "org.apache.commons" % "commons-email" % "1.3.3",
     "com.google.guava" % "guava" % "13.0.1",
     "org.owasp.encoder" % "encoder" % "1.1.1",
@@ -68,7 +72,6 @@ object ApplicationBuild extends Build {
     // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
     "org.apache.tika" % "tika-core" % "1.12",
     "io.dropwizard.metrics" % "metrics-core" % "3.1.2",
-    //"io.dropwizard.metrics" % "metrics-ehcache" % "3.1.2", -- doesn't work right now
     "nl.grons" %% "metrics-scala" % "3.5.2_a2.3",
     // JSR 305 is requried by Guava, at build time only (so specify "provided"
     // so it won't be included in the JAR), or there's this weird error: """

@@ -243,6 +243,7 @@ case class PageMeta(
 
   def isPinned = pinOrder.isDefined
   def isClosed = closedAt.isDefined
+  def isDeleted = deletedAt.isDefined
 
   def status: PageStatus =
     if (publishedAt.isDefined) PageStatus.Published

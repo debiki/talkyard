@@ -19,9 +19,13 @@ package com.debiki
 
 import org.apache.commons.validator.routines.EmailValidator
 import org.scalactic.Or
+import scala.collection.immutable
 
 
 package object core {
+
+  // "Vector" is so very long, for such a good & please-use-frequently collection.
+  type Vec[+A] = scala.collection.immutable.Vector[A]
 
   type ActionId = Int
 
@@ -156,6 +160,21 @@ package object core {
     def computerString =
       s"site: $siteVersion, page: $pageVersion | app: $appVersion, hash: $dataHash"
   }
+
+
+  case class StuffToIndex(
+    postsBySite: Map[SiteId, immutable.Seq[Post]],
+    pagesBySitePageId: Map[SitePageId, PageMeta]) {
+
+    def page(siteId: SiteId, pageId: PageId): Option[PageMeta] =
+      pagesBySitePageId.get(SitePageId(siteId, pageId))
+
+    def isPageDeleted(siteId: SiteId, pageId: PageId) = {
+      val p = page(siteId, pageId)
+      p.isEmpty || p.exists(_.isDeleted)
+    }
+  }
+
 
   def ifThenSome[A](condition: Boolean, value: A) =
     if (condition) Some(value) else None

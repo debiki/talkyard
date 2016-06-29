@@ -1,0 +1,28 @@
+network.host: 0.0.0.0
+
+# Required, because network.host specified.
+# Should be a quorum of master-eligible nodes: (num_master_eligible_nodes / 2) + 1
+discovery.zen.minimum_master_nodes: 1
+
+# 1) Use a single index for all sites, but many shards, and route to the shard
+# derived from the site id. Then only one shard will be touched, when indexing
+# or querying. Therefore it's okay with 50 or 100 shards.
+# 2) If a single site becomes super large, we can migrate it into its own index.
+# See: https://www.elastic.co/videos/big-data-search-and-analytics/ (a video)
+# 3) (Could keep current hot data in one index, and move old discussions that have
+# been closed, to an old & slow index on cheaper hardware. Combine time & user data flow?)
+
+
+# settings docs:
+# https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-configuration.html
+
+# default index:
+# https://discuss.elastic.co/t/setting-up-default-analyzer-using-elasticsearch-yml/10278
+
+# ix mods:
+# https://www.elastic.co/guide/en/elasticsearch/reference/master/index-modules.html
+
+# shared index:
+# https://www.elastic.co/guide/en/elasticsearch/guide/current/shared-index.html
+
+action.auto_create_index: false

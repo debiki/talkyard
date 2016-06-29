@@ -32,6 +32,12 @@ Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/
 
         git submodule update --init
 
+1. Make ElasticSearch work:
+
+        sudo sysctl -w vm.max_map_count=262144
+
+    (`max_map_count` docs: https://www.kernel.org/doc/Documentation/sysctl/vm.txt)
+
 1. Start everything: (this will take a while, the first time: some Docker images will be downloaded and built)
 
         docker-compose up nginx  # use 'sudo' if needed

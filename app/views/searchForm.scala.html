@@ -1,5 +1,5 @@
 @**
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2013, 2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -16,19 +16,18 @@
  *@
 
 
-@(tpi: debiki.SiteTpi, id: String,
+@(tpi: debiki.SiteTpi,
   oldSearchPhrase: Option[String] = None, placeholderText: String ="",
   sectionId: Option[String] = None, autofocus: Boolean = false)
 
 @actionUrlPath = @{
   sectionId match {
-    case None => routes.FullTextSearchController.searchWholeSite
-    case Some(id) => routes.FullTextSearchController.searchSiteSection(id)
+    case None => routes.SearchController.searchWholeSite
+    case Some(id) => routes.SearchController.searchSiteSection(id)
   }
 }
 
-<form id="@id"
-      class="debiki-search-form form-search"
+<form class="esSERP_SearchForm"
       action="@actionUrlPath"
       accept-charset="UTF-8"
       method="post">
@@ -38,7 +37,7 @@
   Search:
   <input type="text"
          name="searchPhrase"
-         class="input-medium search-query"
+         class="esSERP_SearchForm_Input"
          placeholder="@placeholderText"
          value="@{ oldSearchPhrase getOrElse ""}"
          tabindex="1"

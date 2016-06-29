@@ -58,7 +58,6 @@ export var TopBar = createComponent({
   getInitialState: function() {
     return {
       store: debiki2.ReactStore.allData(),
-      showSearchForm: false,
       fixed: false,
       initialOffsetTop: -1,
       enableGotoTopBtn: false,
@@ -140,18 +139,6 @@ export var TopBar = createComponent({
 
   showTools: function() {
     pagetools.getPageToolsDialog().open();
-  },
-
-  closeSearchForm: function() {
-    this.setState({
-      showSearchForm: false
-    });
-  },
-
-  onSearchClick: function() {
-    this.setState({
-      showSearchForm: !this.state.showSearchForm
-    });
   },
 
   viewOlderNotfs: function() {
@@ -275,14 +262,9 @@ export var TopBar = createComponent({
     // ------- Search button
 
     var searchButton =
-        null;
-    /* Hide for now, search broken, after I rewrote from dw1_posts to dw2_posts.
-     Button({ className: 'dw-search', onClick: this.onSearchClick },
-     r.span({ className: 'icon-search' }));
-     */
-
-    var searchForm = !this.state.showSearchForm ? null :
-        SearchForm({ onClose: this.closeSearchForm });
+       utils.ModalDropdownButton({ title: r.span({ className: 'icon-search' }),
+            className: 'esTB_SearchBtn', allowFullWidth: true, closeOnClick: false },
+         SearchForm({}));
 
     // ------- Forum title
 
@@ -384,7 +366,6 @@ export var TopBar = createComponent({
           toolsButton,
           searchButton,
           avatarNameDropdown),
-        searchForm,
         r.div({ className: 'esTopbar_custom' },
           customTitle,
           backToSiteButton),
@@ -432,13 +413,13 @@ var SearchForm = createComponent({
 
   render: function() {
     return (
-        r.div({ className: 'dw-lower-right-corner' },
-          r.form({ id: 'dw-search-form', ref: 'form', className: 'debiki-search-form form-search',
-              method: 'post', acceptCharset: 'UTF-8', action: '/-/search/site',
-              onSubmit: this.search },
-            r.input({ type: 'hidden', ref: 'xsrfToken', name: 'dw-fi-xsrf' }),
-            r.input({ type: 'text', tabIndex: '1', placeholder: 'Text to search for',
-                ref: 'input', className: 'input-medium search-query', name: 'searchPhrase' }))));
+        r.form({ className: 'esTB_SearchDlg', ref: 'form',
+            method: 'post', acceptCharset: 'UTF-8', action: '/-/search',
+            onSubmit: this.search },
+          r.input({ type: 'hidden', ref: 'xsrfToken', name: 'dw-fi-xsrf' }),
+          r.input({ type: 'text', tabIndex: '1', placeholder: 'Text to search for',
+              ref: 'input', className: 'input-medium', name: 'searchPhrase' }),
+          Button({ type: 'submit', bsStyle: 'primary' }, "Search")));
   }
 });
 

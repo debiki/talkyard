@@ -20,7 +20,9 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki._
+import ed.server.search.{PageAndHits, SearchHit, SearchEngine}
 import io.efdi.server.http._
+import org.{elasticsearch => es}
 import play.api.Play.current
 import redis.RedisClient
 import scala.collection.mutable
@@ -33,10 +35,11 @@ class SiteDaoFactory (
   private val _dbDaoFactory: DbDaoFactory,
   private val redisClient: RedisClient,
   private val cache: DaoMemCache,
-  private val usersOnlineCache: UsersOnlineCache) {
+  private val usersOnlineCache: UsersOnlineCache,
+  private val elasticSearchClient: es.client.Client) {
 
   def newSiteDao(siteId: SiteId): SiteDao = {
-    new SiteDao(siteId, _dbDaoFactory, redisClient, cache, usersOnlineCache)
+    new SiteDao(siteId, _dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient)
   }
 
 }
@@ -54,7 +57,8 @@ class SiteDao(
   private val dbDaoFactory: DbDaoFactory,
   private val redisClient: RedisClient,
   private val cache: DaoMemCache,
-  val usersOnlineCache: UsersOnlineCache)
+  val usersOnlineCache: UsersOnlineCache,
+  private val elasticSearchClient: es.client.Client)
   extends AnyRef
   with AssetBundleDao
   with SettingsDao
@@ -66,6 +70,7 @@ class SiteDao(
   with PageStuffDao
   with RenderedPageHtmlDao
   with PostsDao
+  with SearchDao
   with UploadsDao
   with UserDao
   with MessagesDao
@@ -76,6 +81,8 @@ class SiteDao(
 
   protected lazy val memCache = new MemCache(siteId, cache)
   protected lazy val redisCache = new RedisCache(siteId, redisClient)
+  protected lazy val searchEngine = new SearchEngine(siteId, elasticSearchClient)
+
 
   def memCache_test = {
     require(Globals.wasTest, "EsE7YKP42B")
@@ -196,19 +203,6 @@ class SiteDao(
     readWriteTransaction { transaction =>
       transaction.loadResourceUsage()
     }
-  }
-
-
-  // ----- Full text search
-
-  def fullTextSearch(phrase: String, anyRootPageId: Option[PageId]): Future[FullTextSearchResult] =
-    ??? // siteDbDao.fullTextSearch(phrase, anyRootPageId)
-
-  /** Unindexes everything on some pages. Intended for test suites only.
-    * Returns the number of *posts* that were unindexed.
-    */
-  def debugUnindexPosts(pageAndPostIds: PagePostNr*): Unit = {
-    ???
   }
 
 

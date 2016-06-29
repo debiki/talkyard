@@ -24,17 +24,18 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
 import com.github.benmanes.caffeine
-import com.lambdaworks.crypto.SCryptUtil
 import com.zaxxer.hikari.HikariDataSource
 import debiki.DebikiHttp.throwForbidden
 import debiki.Globals.NoStateError
 import debiki.antispam.AntiSpam
 import debiki.dao._
 import debiki.dao.migrations.ScalaBasedMigrations
+import ed.server.search.SearchEngineIndexer
 import io.efdi.server.notf.Notifier
-import java.{lang => jl, util => ju}
+import java.{lang => jl, net => jn}
 import java.util.concurrent.TimeUnit
 import io.efdi.server.pubsub.{PubSubApi, PubSub, StrangerCounterApi}
+import org.{elasticsearch => es}
 import org.scalactic._
 import play.{api => p}
 import play.api.libs.concurrent.Akka
@@ -262,7 +263,6 @@ class Globals {
       throw new jl.IllegalStateException(o"""Server already running, was it not properly
         shut down last time? Please hit CTRL+C to kill it. [DwE83KJ9]""")
 
-    p.Logger.info("Search disabled, see debiki-dao-rdb [DwM4KEWKB2]")
     DeadlockDetector.ensureStarted()
 
     // Let the server start, whilst we try to connect to services like the database and Redis.
@@ -366,7 +366,8 @@ class Globals {
     shutdownActorAndWait(state.notifierActorRef)
     shutdownActorAndWait(state.mailerActorRef)
     shutdownActorAndWait(state.renderContentActorRef)
-    state.dbDaoFactory.shutdown()
+    shutdownActorAndWait(state.indexerActorRef)
+    state.elasticSearchClient.close()
     state.redisClient.quit()
     _state = null
   }
@@ -412,8 +413,7 @@ class Globals {
     val redisClient = RedisClient(host = redisHost)(Akka.system)
 
     val dbDaoFactory = new RdbDaoFactory(
-      new Rdb(readOnlyDataSource, readWriteDataSource), ScalaBasedMigrations, Akka.system,
-      anyFullTextSearchDbPath, Play.isTest, fastStartSkipSearch = fastStartSkipSearch)
+      new Rdb(readOnlyDataSource, readWriteDataSource), ScalaBasedMigrations, Play.isTest)
 
     // Caffeine is a lot faster than EhCache, and it doesn't have annoying problems with
     // a singleton that causes weird classloader related errors on Play app stop-restart.
@@ -443,11 +443,37 @@ class Globals {
         .maximumSize(Int.MaxValue)
         .build()
 
-    val siteDaoFactory = new SiteDaoFactory(dbDaoFactory, redisClient, cache, usersOnlineCache)
+    // ElasticSearch clients are thread safe. Their lifecycle should be the application lifecycle.
+    // (see https://discuss.elastic.co/t/is-nodeclient-thread-safe/4231/3 )
+    // (Later, could enable a certain 'client.transport.sniff' setting)
+    //
+    // old comment:
+    // The client might throw: org.elasticsearch.action.search.SearchPhaseExecutionException
+    // if the ElasticSearch database has not yet started up properly.
+    // If you wait for:
+    //   newClient.admin().cluster().prepareHealth().setWaitForGreenStatus().execute().actionGet()
+    // then the newClient apparently works fine — but waiting for that (once at
+    // server startup) takes 30 seconds, on my computer, today 2013-07-20.
+    //
+    val elasticSearchHost = "search"
+
+    val elasticSearchClient = es.client.transport.TransportClient.builder().build()
+      .addTransportAddress(
+        new es.common.transport.InetSocketTransportAddress(
+          jn.InetAddress.getByName(elasticSearchHost), 9300))
+
+    val siteDaoFactory = new SiteDaoFactory(
+      dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient)
 
     val mailerActorRef = Mailer.startNewActor(Akka.system, siteDaoFactory)
 
     val notifierActorRef = Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory)
+
+    def indexerBatchSize = config.getInt("ed.search.indexer.batchSize") getOrElse 100
+    def indexerIntervalSeconds = config.getInt("ed.search.indexer.intervalSeconds") getOrElse 5
+
+    val indexerActorRef = SearchEngineIndexer.startNewActor(
+      indexerBatchSize, indexerIntervalSeconds, elasticSearchClient, Akka.system, systemDao)
 
     val nginxHost = config.getString("debiki.nginx.host").noneIfBlank getOrElse "localhost"
     val (pubSub, strangerCounter) = PubSub.startNewActor(Akka.system, nginxHost, redisClient)
@@ -458,12 +484,6 @@ class Globals {
     antiSpam.start()
 
     def systemDao: SystemDao = new SystemDao(dbDaoFactory, cache) // [rename] to newSystemDao()?
-
-    private def fastStartSkipSearch =
-      Play.configuration.getBoolean("crazyFastStartSkipSearch") getOrElse false
-
-    private def anyFullTextSearchDbPath =
-      config.getString("fullTextSearchDb.dataPath").noneIfBlank
 
     val applicationVersion = "0.00.28"  // later, read from some build config file
 

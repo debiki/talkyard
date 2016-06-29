@@ -1,6 +1,6 @@
 version: '2'
 services:
-  # rename to web?
+  # rename to web? or, http?
   nginx:
     mem_limit: 200M
     build: docker/nginx/
@@ -52,6 +52,18 @@ services:
       - ./docker/data/redis/:/data/
     ports:
       - '6379:6379'
+
+  search:
+    mem_limit: 500M
+    image: elasticsearch:5.0.0-alpha3
+    volumes:
+      - ./docker/search/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./docker/data/search/:/usr/share/elasticsearch/data/
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+    environment:
+      ES_JAVA_OPTS: '-Xms350m -Xmx350m'
 
   # rename to db?
   postgres:

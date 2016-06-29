@@ -50,6 +50,7 @@ object DeletedStatus {
   val NotDeleted = new DeletedStatus(0)
 }
 class DeletedStatus(val underlying: Int) extends AnyVal {
+  def toInt = underlying
   def isDeleted = underlying != 0
   def onlyThisDeleted = underlying == SelfBit
   def isPostDeleted = (underlying & SelfBit) != 0
@@ -267,6 +268,8 @@ case class Post(
   def pagePostId = PagePostId(pageId, uniqueId)
   def pagePostNr = PagePostNr(pageId, nr)
   def hasAnId = nr >= PageParts.LowestPostNr
+
+  def createdAtUnixSeconds = createdAt.getTime / 1000
 
   def newChildCollapsedStatus = new CollapsedStatus(
     if ((collapsedStatus.underlying & (SuccessorsBit | AncestorsBit)) != 0) AncestorsBit else 0)

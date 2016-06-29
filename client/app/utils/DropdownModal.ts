@@ -65,7 +65,8 @@ export var ModalDropdownButton = createComponent({
           DropdownModal({ show: state.isOpen, pullLeft: props.pullLeft,
             onHide: this.closeDropdown, atX: state.buttonX, atY: state.buttonY,
             className: props.dialogClassName, id: props.dialogId,
-            allowFullWidth: props.allowFullWidth, onContentClick: this.closeDropdown },
+            allowFullWidth: props.allowFullWidth,
+            onContentClick: props.closeOnClick === false ? null : this.closeDropdown },
           props.children);
     }
 

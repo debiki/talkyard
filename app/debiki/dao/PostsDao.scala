@@ -174,6 +174,7 @@ trait PostsDao {
         postNr = Some(newPost.nr)))
 
       transaction.insertPost(newPost)
+      transaction.indexPostsSoon(newPost)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = shallApprove)
       uploadRefs foreach { uploadRef =>
         transaction.insertUploadedFileReference(newPost.uniqueId, uploadRef, authorId)
@@ -435,6 +436,7 @@ trait PostsDao {
       approvedHtmlSanitized = Some(newHtml))
 
     transaction.updatePost(editedPost)
+    transaction.indexPostsSoon(editedPost)
     saveDeleteUploadRefs(lastPost, editedPost = editedPost, authorId, transaction)
 
     val oldMeta = transaction.loadThePageMeta(lastPost.pageId)
@@ -604,6 +606,7 @@ trait PostsDao {
         targetUserId = Some(postToEdit.createdById))
 
       transaction.updatePost(editedPost)
+      transaction.indexPostsSoon(editedPost)
       newRevision.foreach(transaction.insertPostRevision)
       saveDeleteUploadRefs(postToEdit, editedPost = editedPost, editorId, transaction)
 
@@ -787,6 +790,7 @@ trait PostsDao {
       val oldMeta = page.meta
       val newMeta = oldMeta.copy(version = oldMeta.version + 1)
 
+      // (Don't reindex)
       transaction.updatePost(postAfter)
       transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = false)
       insertAuditLogEntry(auditLogEntry, transaction)
@@ -862,6 +866,9 @@ trait PostsDao {
       SHOULD // delete any review tasks.
 
       transaction.updatePost(postAfter)
+      if (postBefore.isDeleted != postAfter.isDeleted) {
+        transaction.indexPostsSoon(postAfter)
+      }
 
       // Update any indirectly affected posts, e.g. subsequent comments in the same
       // thread that are being deleted recursively.
@@ -894,9 +901,14 @@ trait PostsDao {
             die("DwE8FMU3", "PostAction not implemented: " + x)
         }
 
+        var postsToReindex = Vector[Post]()
         anyUpdatedSuccessor foreach { updatedSuccessor =>
           transaction.updatePost(updatedSuccessor)
+          if (successor.isDeleted != updatedSuccessor.isDeleted) {
+            postsToReindex :+= updatedSuccessor
+          }
         }
+        transaction.indexPostsSoon(postsToReindex: _*)
       }
 
       val oldMeta = page.meta
@@ -954,6 +966,7 @@ trait PostsDao {
           commonmarkRenderer, pageMeta.pageRole)),
         currentSourcePatch = None)
       transaction.updatePost(postAfter)
+      transaction.indexPostsSoon(postAfter)
 
       SHOULD // delete any review tasks.
 
@@ -1018,6 +1031,7 @@ trait PostsDao {
         commonmarkRenderer, pageMeta.pageRole)),
       currentSourcePatch = None)
     transaction.updatePost(postAfter)
+    transaction.indexPostsSoon(postAfter)
 
     // ----- The page
 
@@ -1191,6 +1205,7 @@ trait PostsDao {
         if (postToMove.pageId == newParentPost.pageId) {
           val postAfter = postToMove.copy(parentNr = Some(newParentPost.nr))
           transaction.updatePost(postAfter)
+          // (Need not reindex.)
           transaction.insertAuditLogEntry(moveTreeAuditEntry)
           postAfter
         }
@@ -1239,6 +1254,7 @@ trait PostsDao {
           }
 
           postsAfter foreach transaction.updatePost
+          transaction.indexPostsSoon(postsAfter: _*)
           auditEntries foreach transaction.insertAuditLogEntry
           transaction.movePostsReadStats(fromPage.id, toPage.id, Map(newNrsMap.toSeq: _*))
           // Mark both fromPage and toPage sections as stale, in case they're different forums.
@@ -1374,6 +1390,7 @@ trait PostsDao {
       numOrigPostUnwantedVotes = pageMetaBefore.numOrigPostUnwantedVotes + numNewOpUnwanteds,
       version = pageMetaBefore.version + 1)
 
+    // (Don't reindex)
     transaction.updatePost(postAfter)
     transaction.updatePageMeta(pageMetaAfter, oldMeta = pageMetaBefore,
       markSectionPageStale = true)

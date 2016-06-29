@@ -75,6 +75,27 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
   }
 
 
+  // ----- Indexing
+
+  def loadStuffToIndex(limit: Int): StuffToIndex = {
+    readOnlyTransaction { transaction =>
+      transaction.loadStuffToIndex(limit)
+    }
+  }
+
+  def deleteFromIndexQueue(post: Post, siteId: SiteId) {
+    readWriteTransaction { transaction =>
+      transaction.deleteFromIndexQueue(post, siteId)
+    }
+  }
+
+  def addEverythingInLanguagesToIndexQueue(languages: Set[String]) {
+    readWriteTransaction { transaction =>
+      transaction.addEverythingInLanguagesToIndexQueue(languages)
+    }
+  }
+
+
   // ----- Testing
 
   def emptyDatabase() {

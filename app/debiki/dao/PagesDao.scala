@@ -258,6 +258,8 @@ trait PagesDao {
     reviewTask.foreach(transaction.upsertReviewTask)
     insertAuditLogEntry(auditLogEntry, transaction)
 
+    transaction.indexPostsSoon(titlePost, bodyPost)
+
     // Don't start rendering html for this page in the background. [5KWC58]
     // (Instead, when the user requests the page, we'll render it directly in
     // the request thread. Otherwise either 1) the request thread would have to wait
@@ -459,6 +461,7 @@ trait PagesDao {
 
         transaction.updatePageMeta(newMeta, oldMeta = pageMeta, markSectionPageStale = true)
         transaction.insertAuditLogEntry(auditLogEntry)
+        transaction.indexAllPostsOnPage(pageId)
       }
     }
     pageIds foreach refreshPageInMemCache

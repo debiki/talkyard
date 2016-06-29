@@ -1,5 +1,5 @@
 @**
- * Copyright (C) 2013 Kaj Magnus Lindberg (born 1979)
+ * Copyright (c) 2013, 2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -16,54 +16,44 @@
  *@
 
 @(tpi: debiki.SiteTpi, anySectionId: Option[String], searchPhrase: String,
-  searchResult: com.debiki.core.FullTextSearchResult)
-
-@* reimplement in React instead, right? Broken anyway, uses old postId, not postNr.
+  pagesAndHits: Seq[ed.server.search.PageAndHits])
 
 @import com.debiki.core._
+@import ed.server.search._
 
 
-@foundWhere(hit: FullTextSearchHit) = @{
-  hit.post.id match {
-    case PageParts.TitleId => "In the title"
-    case PageParts.BodyId => "In the page text"
-    case _ => "In a comment"
+@foundWhere(hit: SearchHit) = @{
+  hit.postNr match {
+    case PageParts.TitleNr => "the title"
+    case PageParts.BodyNr => "the page text"
+    case _ => "a comment"
   }
 }
 
 
-@* Add later:   , by { hit.post.user_!.displayName }:</em>   * @
+@* Add later:   , by { hit.post.user_!.displayName }:</em>   *@
 
 @searchResultsHtml = @{
-  if (searchResult.isEmpty) <p>I found nothing.</p>
+  if (pagesAndHits.isEmpty) <p>Nothing found.</p>
   else <div>{
-    // This groups hits by page; the best hit is listed first.
-
-    val pageMetaAndHits: Seq[(Option[PageMeta], Seq[FullTextSearchHit])] =
-      SearchResultsTemplateCode.groupHitsByPageDescScore(searchResult)
-
     var tabindex = 1 // this (1) starts on 2. (The search phrase field has id 1.)
 
-    for {
-      (anyPageMeta, hits) <- pageMetaAndHits
-      if anyPageMeta.nonEmpty && hits.nonEmpty
-      pageMeta = anyPageMeta.get
-    }
-    yield {
-      val pageId = pageMeta.pageId
-      val pageTitle = "(SHOULD load title from database or cache)"
+    for (pageAndHits <- pagesAndHits) yield {
+      val pageId = pageAndHits.pageId
+      val pageTitle = pageAndHits.pageTitle
       tabindex += 1
-      <h3 class="search-result-page-title">
+      <h3 class="esSERP_Hit_PageTitle">
         <a href={s"/-$pageId"} tabindex={tabindex.toString}>{pageTitle}</a>
       </h3> ++
-      (for (hit <- hits) yield {
+      (for (hit <- pageAndHits.hitsByScoreDesc) yield {
         tabindex += 1
-        <em>{ foundWhere(hit) }:</em>
-        <p class="search-result-post-text">
-          <a href={s"/-$pageId#post-${hit.post.id}"} tabindex={tabindex.toString}>{
-            xml.Unparsed(hit.safeHighlightsHtml mkString " <b>...</b> ")
-          }</a>
-        </p>
+        <span class="esSERP_Hit_In">In <a href={s"/-$pageId#post-${hit.postNr}"}
+              class="esSERP_Hit_In_Where" tabindex={tabindex.toString}>{
+          foundWhere(hit)
+        }</a>:</span>
+        <p class="esSERP_Hit_Text">{
+          xml.Unparsed(hit.approvedTextWithHighligtsHtml mkString " <b>...</b> ")
+        }</p>
       })
     }
   }</div>
@@ -76,7 +66,7 @@
 
   <br>
   <br>
-  @views.html.searchForm(tpi, id = "search-again", oldSearchPhrase = Some(searchPhrase),
+  @views.html.searchForm(tpi, oldSearchPhrase = Some(searchPhrase),
     sectionId = anySectionId, autofocus = true)
 
   <br>
@@ -84,4 +74,3 @@
   </div>
 }
 
-*@
