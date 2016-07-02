@@ -16,3 +16,6 @@
 [submodule "modules/ed-versions"]
 	path = modules/ed-versions
 	url = https://github.com/debiki/ed-versions.git
+[submodule "docker/web/modules/nchan"]
+	path = docker/web/modules/nchan
+	url = https://github.com/slact/nchan.git
