@@ -10,7 +10,7 @@ FROM alpine:3.3
 
 # MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com"
 
-ENV NGINX_VERSION 1.9.14
+ENV NGINX_VERSION 1.9.15
 
 ENV GPG_KEYS B0F4253373F8F6F510D42178520A9993A1C052F8
 ENV CONFIG "\
@@ -154,9 +154,17 @@ RUN \
 RUN apk add --no-cache bash tree curl net-tools
 
 COPY nginx.conf /etc/nginx/nginx.conf
-COPY vhost.conf /etc/nginx/vhost.conf
-COPY listen.conf /etc/nginx/listen.conf
-COPY ssl-hardening.conf /etc/nginx/ssl-hardening.conf
+COPY http-limits.conf /etc/nginx/
+# old, remove once I've edited edm & edc
+COPY server.conf /etc/nginx/vhost.conf
+COPY server.conf /etc/nginx/
+# old, remove once I've edited edm & edc
+COPY server-listen.conf /etc/nginx/listen.conf
+COPY server-listen.conf /etc/nginx/
+# old, remove once I've edited edm & edc
+COPY server-ssl.conf /etc/nginx/ssl-hardening.conf
+COPY server-ssl.conf /etc/nginx/
+COPY server-limits.conf /etc/nginx/
 COPY default-site /etc/nginx/default-site/
 COPY 502.html   /opt/nginx/html/502.html
 

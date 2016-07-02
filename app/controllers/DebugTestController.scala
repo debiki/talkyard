@@ -20,7 +20,7 @@ package controllers
 import java.lang.management.ManagementFactory
 
 import akka.pattern.ask
-import com.debiki.core.Email
+import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.{RateLimits, Globals}
 import debiki.DebikiHttp._

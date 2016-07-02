@@ -74,7 +74,7 @@ object Globals extends Globals {
   */
 class Globals {
 
-  def config = Play.configuration
+  private def conf = Play.configuration
 
   /** Can be accessed also after the test is done and Play.maybeApplication is None.
     */
@@ -233,6 +233,8 @@ class Globals {
   def anyCreateSiteHostname = state.anyCreateSiteHostname
   def anyCreateTestSiteHostname = state.anyCreateTestSiteHostname
 
+  // Hmm, in this way there'll be just one conf field:
+  def config = state.config
 
   def poweredBy = s"$scheme://www.debiki.com"
 
@@ -386,6 +388,8 @@ class Globals {
 
     val ShutdownTimeout = 30 seconds
 
+    val config = new Config(conf)
+
     val isTestDisableScripts = {
       val disable =
         Play.isTest && Play.configuration.getBoolean("isTestDisableScripts").getOrElse(false)
@@ -409,7 +413,7 @@ class Globals {
 
     // Redis. (A Redis client pool makes sense if we haven't saturate the CPU on localhost, or
     // if there're many Redis servers and we want to round robin between them. Not needed, now.)
-    val redisHost = config.getString("debiki.redis.host").noneIfBlank getOrElse "localhost"
+    val redisHost = conf.getString("debiki.redis.host").noneIfBlank getOrElse "localhost"
     val redisClient = RedisClient(host = redisHost)(Akka.system)
 
     val dbDaoFactory = new RdbDaoFactory(
@@ -463,19 +467,19 @@ class Globals {
           jn.InetAddress.getByName(elasticSearchHost), 9300))
 
     val siteDaoFactory = new SiteDaoFactory(
-      dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient)
+      dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient, config)
 
     val mailerActorRef = Mailer.startNewActor(Akka.system, siteDaoFactory)
 
     val notifierActorRef = Notifier.startNewActor(Akka.system, systemDao, siteDaoFactory)
 
-    def indexerBatchSize = config.getInt("ed.search.indexer.batchSize") getOrElse 100
-    def indexerIntervalSeconds = config.getInt("ed.search.indexer.intervalSeconds") getOrElse 5
+    def indexerBatchSize = conf.getInt("ed.search.indexer.batchSize") getOrElse 100
+    def indexerIntervalSeconds = conf.getInt("ed.search.indexer.intervalSeconds") getOrElse 5
 
     val indexerActorRef = SearchEngineIndexer.startNewActor(
       indexerBatchSize, indexerIntervalSeconds, elasticSearchClient, Akka.system, systemDao)
 
-    val nginxHost = config.getString("debiki.nginx.host").noneIfBlank getOrElse "localhost"
+    val nginxHost = conf.getString("debiki.nginx.host").noneIfBlank getOrElse "localhost"
     val (pubSub, strangerCounter) = PubSub.startNewActor(Akka.system, nginxHost, redisClient)
 
     val renderContentActorRef = RenderContentService.startNewActor(Akka.system, siteDaoFactory)
@@ -485,19 +489,19 @@ class Globals {
 
     def systemDao: SystemDao = new SystemDao(dbDaoFactory, cache) // [rename] to newSystemDao()?
 
-    val applicationVersion = "0.00.28"  // later, read from some build config file
+    val applicationVersion = "0.00.29"  // later, read from some build config file
 
     val applicationSecret =
-      config.getString("play.crypto.secret").noneIfBlank.getOrDie(
+      conf.getString("play.crypto.secret").noneIfBlank.getOrDie(
         "Config value 'play.crypto.secret' missing [DwE75FX0]")
 
     val applicationSecretNotChanged = applicationSecret == "changeme"
 
     val e2eTestPassword: Option[String] =
-      config.getString("debiki.e2eTestPassword").noneIfBlank
+      conf.getString("debiki.e2eTestPassword").noneIfBlank
 
     val forbiddenPassword: Option[String] =
-      config.getString("debiki.forbiddenPassword").noneIfBlank
+      conf.getString("debiki.forbiddenPassword").noneIfBlank
 
     val secure = Play.configuration.getBoolean("debiki.secure") getOrElse {
       p.Logger.info("Config value 'debiki.secure' missing; defaulting to true. [DwM3KEF2]")
@@ -522,7 +526,7 @@ class Globals {
 
     val baseDomainNoPort =
       if (Play.isTest) "localhost"
-      else config.getString("debiki.baseDomain").noneIfBlank getOrElse "localhost"
+      else conf.getString("debiki.baseDomain").noneIfBlank getOrElse "localhost"
 
     val baseDomainWithPort =
       if (secure && port == 443) baseDomainNoPort
@@ -531,15 +535,15 @@ class Globals {
 
 
     /** The hostname of the site created by default when setting up a new server. */
-    val firstSiteHostname = config.getString(FirstSiteHostnameConfigValue).noneIfBlank
+    val firstSiteHostname = conf.getString(FirstSiteHostnameConfigValue).noneIfBlank
 
     if (firstSiteHostname.exists(_ contains ':'))
       p.Logger.error("Config value debiki.hostname contains ':' [DwE4KUWF7]")
 
-    val becomeFirstSiteOwnerEmail = config.getString(BecomeOwnerEmailConfigValue).noneIfBlank
+    val becomeFirstSiteOwnerEmail = conf.getString(BecomeOwnerEmailConfigValue).noneIfBlank
 
-    val anyCreateSiteHostname = config.getString("debiki.createSiteHostname").noneIfBlank
-    val anyCreateTestSiteHostname = config.getString("debiki.createTestSiteHostname").noneIfBlank
+    val anyCreateSiteHostname = conf.getString("debiki.createSiteHostname").noneIfBlank
+    val anyCreateTestSiteHostname = conf.getString("debiki.createTestSiteHostname").noneIfBlank
 
     // The hostname must be directly below the base domain, otherwise
     // wildcard HTTPS certificates won't work: they cover 1 level below the
@@ -553,7 +557,7 @@ class Globals {
 
     val anyUploadsDir = {
       import Globals.LocalhostUploadsDirConfigValueName
-      val value = config.getString(LocalhostUploadsDirConfigValueName).noneIfBlank
+      val value = conf.getString(LocalhostUploadsDirConfigValueName).noneIfBlank
       val pathSlash = if (value.exists(_.endsWith("/"))) value else value.map(_ + "/")
       pathSlash match {
         case None =>
@@ -577,6 +581,25 @@ class Globals {
 
     val securityComplaintsEmailAddress = Play.configuration.getString(
       "debiki.securityComplaintsEmailAddress").noneIfBlank
+  }
+
+}
+
+
+object Config {
+  val CreateSitePath = "ed.createSite"
+}
+
+
+class Config(conf: play.api.Configuration) {
+
+  object createSite {
+    val path = Config.CreateSitePath
+    val tooManyTryLaterPagePath = conf.getString(s"$path.tooManyTryLaterPagePath")
+    val maxSitesPerPerson = conf.getInt(s"$path.maxSitesPerIp") getOrElse 10
+    val maxSitesTotal = conf.getInt(s"$path.maxSitesTotal") getOrElse 1000
+    // Later: rename from debiki.newSite.
+    val quotaLimitMegabytes = conf.getInt("debiki.newSite.quotaLimitMegabytes")
   }
 
 }

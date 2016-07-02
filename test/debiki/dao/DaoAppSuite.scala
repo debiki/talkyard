@@ -26,14 +26,25 @@ import org.scalatestplus.play.OneAppPerSuite
 import play.api.test.FakeApplication
 
 
-class DaoAppSuite(disableScripts: Boolean = true, disableBackgroundJobs: Boolean = true)
+class DaoAppSuite(
+  disableScripts: Boolean = true,
+  disableBackgroundJobs: Boolean = true,
+  maxSitesTotal: Option[Int] = None)
   extends FreeSpec with MustMatchers with OneAppPerSuite {
 
-  implicit override lazy val app = FakeApplication(
-    additionalConfiguration = Map(
+  private val extraConfig: Map[String, String] = {
+    var config = Map[String, String](
       "isTestShallEmptyDatabase" -> "true",
       "isTestDisableScripts" -> (disableScripts ? "true" | "false"),
-      "isTestDisableBackgroundJobs" -> (disableBackgroundJobs ? "true" | "false")))
+      "isTestDisableBackgroundJobs" -> (disableBackgroundJobs ? "true" | "false"))
+    import debiki.Config._
+    maxSitesTotal foreach { max =>
+      config = config.updated(s"$CreateSitePath.maxSitesTotal", max.toString)
+    }
+    config
+  }
+
+  implicit override lazy val app = FakeApplication(additionalConfiguration = extraConfig)
 
   def browserIdData = BrowserIdData("1.2.3.4", idCookie = "dummy_id_cookie", fingerprint = 334455)
 
@@ -57,7 +68,7 @@ class DaoAppSuite(disableScripts: Boolean = true, disableBackgroundJobs: Boolean
 
   /** Its name will be "User $password", username "user_$password" and email "user-$password@x.c",
     */
-  def createPasswordUser(password: String, dao: SiteDao): User = {
+  def createPasswordUser(password: String, dao: SiteDao): Member = {
     dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"User $password"), username = s"user_$password", email = s"user-$password@x.c",
       password = password, isAdmin = false, isOwner = false).get)

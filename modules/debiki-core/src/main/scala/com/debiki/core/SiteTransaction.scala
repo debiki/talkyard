@@ -33,14 +33,17 @@ trait SiteTransaction {
 
   def deferConstraints()
 
+  def countWebsites(createdFromIp: String, creatorEmailAddress: String, testSites: Boolean): Int
+  def countWebsitesTotal(testSites: Boolean): Int
+
   /** Throws SiteAlreadyExistsException if the site already exists.
     * Throws TooManySitesCreatedException if you've created too many websites already
     * (from the same IP or email address).
     */
   def createSite(name: String, hostname: String, embeddingSiteUrl: Option[String],
     creatorIp: String, creatorEmailAddress: String,
-    quotaLimitMegabytes: Option[Int], isTestSiteOkayToDelete: Boolean,
-    skipMaxSitesCheck: Boolean): Site
+    quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
+    isTestSiteOkayToDelete: Boolean): Site
 
   def loadTenant(): Site
 

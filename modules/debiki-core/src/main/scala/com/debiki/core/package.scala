@@ -193,5 +193,22 @@ package object core {
     def isTrimmedNonEmpty = underlying.trim == underlying && underlying.nonEmpty
   }
 
+
+  /** If you're short of time, add e.g. an UNTESTED statement. The compiler
+    * ensures you don't do a typo. Then, before a release:
+    *   egrep -Ir 'UNTESTED|SECURITY|MUST|TODO' app/ test/ client/ modules/ *
+    * (remove spaces around *) and add test cases and fix security issues.
+    */
+  def UNTESTED = ()       // If the code might not work, e.g. has never been run.
+  def TESTS_MISSING = ()  // It'd be nice with unit/integration/whatever tests.
+  def SECURITY = ()       // Some security issue, not necessarily so very important
+  def BUG = ()            // Need not be a terribly important bug.
+  def RACE = ()           // A race condition bug / situation.
+  def MUST = ()           // Fix before next release.
+  def SHOULD = ()         // Fix before release, unless short of time, or it's too boring.
+  def COULD = ()          // Could do this, but not important right now, can wait a year or two.
+  def REFACTOR = ()       // This code can be refactored. Also search for "[refactor]".
+  def COULD_OPTIMIZE = ()
+
 }
 

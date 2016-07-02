@@ -17,12 +17,11 @@
 
 package debiki.dao
 
+import com.debiki.core.DbDao.TooManySitesCreatedInTotalException
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.CreateSiteController
 import io.efdi.server.http.throwForbidden2
-import play.{api => p}
-import play.api.Play.current
 
 
 
@@ -32,22 +31,42 @@ import play.api.Play.current
 trait CreateSiteDao {
   self: SiteDao =>
 
+
+  class NumSites(val byYou: Int, val total: Int)
+
+  def countSites(testSites: Boolean, browserIdData: BrowserIdData): NumSites = {
+    readOnlyTransaction { transaction =>
+      new NumSites(
+        byYou = transaction.countWebsites(createdFromIp = browserIdData.ip,
+          creatorEmailAddress = "dummy_ignore", testSites),
+        total = transaction.countWebsitesTotal(testSites))
+    }
+  }
+
+
   def createSite(name: String, hostname: String,
         embeddingSiteUrl: Option[String], organizationName: String,
         creatorEmailAddress: String, creatorId: UserId, browserIdData: BrowserIdData,
         isTestSiteOkayToDelete: Boolean, skipMaxSitesCheck: Boolean) : Site = {
 
     if (!CreateSiteController.isOkaySiteName(name))
-      throwForbidden2("DwE7UKF2", s"Bad site name: '$name'")
+      throwForbidden2("EsE7UZF2_", s"Bad site name: '$name'")
 
     dieIf(hostname contains ":", "DwE3KWFE7")
-    val quotaLimitMegabytes = p.Play.configuration.getInt("debiki.newSite.quotaLimitMegabytes")
+    val maxSitesPerIp = skipMaxSitesCheck ? 999999 | config.createSite.maxSitesPerPerson
+    val maxSitesTotal = skipMaxSitesCheck ? 999999 | {
+      // Allow a little bit more than maxSitesTotal sites, in case Alice starts creating
+      // a site, then Bo and Bob finish creating theirs so that the total limit is reached
+      // — then it'd be annoying if Alice gets an error message.
+      config.createSite.maxSitesTotal + 5
+    }
 
     readWriteTransaction { transaction =>
       val newSite = transaction.createSite(name = name, hostname = hostname,
         embeddingSiteUrl, creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
-        quotaLimitMegabytes = quotaLimitMegabytes,
-        isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = skipMaxSitesCheck)
+        quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
+        maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,
+        isTestSiteOkayToDelete = isTestSiteOkayToDelete)
 
       insertAuditLogEntry(AuditLogEntry(
         siteId = this.siteId,

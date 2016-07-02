@@ -17,6 +17,7 @@
 
 package debiki
 
+import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.CommonMarkRenderer
 import scala.collection.immutable

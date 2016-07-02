@@ -36,10 +36,12 @@ class SiteDaoFactory (
   private val redisClient: RedisClient,
   private val cache: DaoMemCache,
   private val usersOnlineCache: UsersOnlineCache,
-  private val elasticSearchClient: es.client.Client) {
+  private val elasticSearchClient: es.client.Client,
+  private val config: Config) {
 
   def newSiteDao(siteId: SiteId): SiteDao = {
-    new SiteDao(siteId, _dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient)
+    new SiteDao(siteId, _dbDaoFactory, redisClient, cache, usersOnlineCache, elasticSearchClient,
+      config)
   }
 
 }
@@ -58,7 +60,8 @@ class SiteDao(
   private val redisClient: RedisClient,
   private val cache: DaoMemCache,
   val usersOnlineCache: UsersOnlineCache,
-  private val elasticSearchClient: es.client.Client)
+  private val elasticSearchClient: es.client.Client,
+  val config: Config)
   extends AnyRef
   with AssetBundleDao
   with SettingsDao

@@ -90,11 +90,15 @@ object SerializingSiteDbDao {
 
 object DbDao {
 
+  val TestSiteIdPrefix = "test__"
+
   case class SiteAlreadyExistsException(name: String) extends QuickException
 
-  case class TooManySitesCreatedException(ip: String) extends QuickException {
+  case class TooManySitesCreatedByYouException(ip: String) extends QuickException {
     override def getMessage = "Website creation limit exceeded"
   }
+
+  case object TooManySitesCreatedInTotalException extends QuickException
 
   case class EmailNotFoundException(emailId: String)
     extends RuntimeException("No email with id: "+ emailId)

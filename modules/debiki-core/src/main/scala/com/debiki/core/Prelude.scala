@@ -88,23 +88,6 @@ object Prelude {
   def unimplementedIf(condition: Boolean, what: String) =
     if (condition) unimplemented(what)
 
-  /**
-   * If you're short of time, add an UNTESTED statement. The compiler
-   * ensures you don't do a typo. Then, before a release:
-   *   egrep -Ir 'UNTESTED|XSS_?!|XSRF_?!|TODO' app/ client/ modules/ * /src/
-   * (remove spaces around *) and add test cases and fix security issues.
-   */
-  def UNTESTED = ()  // If the code might not work, e.g. has never been run.
-  def SECURITY = ()  // Some security issue, not necessarily very important
-  def XSRF_! = ()  // Cross site request forgery issue (or bug risk).
-  def XSS_! = ()  // Cross site scripting.
-  def BUG = ()  // Need not be a terribly important bug.
-  def MUST = ()  // Fix before next release.
-  def SHOULD = ()  // Fix before release, unless short of time, or too boring.
-  def COULD = ()  // Could do this, but it's not that important.
-  def TESTS_MISSING = ()  // Could add test cases for this code
-  def COULD_OPTIMIZE = ()
-
   def throwNoSuchElem(errorCode: String, message: => String) =
     throw new NoSuchElementException(s"$message [error $errorCode]")
 

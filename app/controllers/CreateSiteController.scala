@@ -46,9 +46,24 @@ object CreateSiteController extends Controller {
   // Don't allow names like x2345.example.com — x2345 is shorter than 6 chars (x23456 is ok though).
   private val MinLocalHostnameLength = 6
 
+
   def showPage(isTest: String) = GetAction { request =>
     val isTestBool = Try(isTest.toBoolean).toOption getOrElse throwBadArgument("EsE5JUM2", "isTest")
     throwIfMayNotCreateSite(request, isTestBool)
+
+    val numSites = request.dao.countSites(isTestBool, request.theBrowserIdData)
+    if (numSites.byYou >= Globals.config.createSite.maxSitesPerPerson)
+      throwForbidden("EsE7KU20W", "You have created too many forums already, sorry.")
+
+    if (numSites.total >= Globals.config.createSite.maxSitesTotal) {
+      Globals.config.createSite.tooManyTryLaterPagePath match {
+        case None =>
+          throwForbidden("EsE8VK2F4", "People have created too many forums already, sorry.")
+        case Some(path) =>
+          throwTemporaryRedirect(path)
+      }
+    }
+
     Ok(views.html.createsite.createSitePage(isTestBool, SiteTpi(request)).body) as HTML
   }
 
@@ -95,7 +110,7 @@ object CreateSiteController extends Controller {
 
       val hostname = s"$localHostname.${Globals.baseDomainNoPort}"
 
-      val newSite: Site =
+      val goToUrl: String =
         try {
           request.dao.createSite(
             name = localHostname, hostname = hostname, embeddingSiteUrl = anyEmbeddingSiteAddress,
@@ -103,16 +118,24 @@ object CreateSiteController extends Controller {
             creatorId = request.user.map(_.id) getOrElse UnknownUserId,
             browserIdData = request.theBrowserIdData, organizationName = organizationName,
             isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = okE2ePassword)
+          Globals.originOf(hostname)
         }
         catch {
           case _: DbDao.SiteAlreadyExistsException =>
             throwForbidden("DwE039K2", "A site with that name has already been created")
-          case _: DbDao.TooManySitesCreatedException =>
+          case _: DbDao.TooManySitesCreatedByYouException =>
             throwForbidden("DwE7IJ08", "You have created too many sites already, sorry.")
+          case DbDao.TooManySitesCreatedInTotalException =>
+            Globals.config.createSite.tooManyTryLaterPagePath match {
+              case None =>
+                throwForbidden("EsE3YK5U8", "People have created too many forums already, sorry.")
+              case Some(path) =>
+                path
+            }
         }
 
-      OkSafeJson(
-        Json.obj("newSiteOrigin" -> Globals.originOf(hostname)))
+      COULD ; REFACTOR // rename newSiteOrigin to 'nextUrl'?
+      OkSafeJson(Json.obj("newSiteOrigin" -> goToUrl))
     }
   }
 
