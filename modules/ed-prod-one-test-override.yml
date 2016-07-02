@@ -3,10 +3,10 @@
 
 version: '2'
 services:
-  nginx:
-    mem_limit: 60M
+  web:
+    mem_limit: 100M
 
-  play:
+  app:
     mem_limit: 700M
     environment:
       PLAY_HEAP_MEMORY_MB: 500
@@ -16,10 +16,15 @@ services:
       CRYPTO_SECRET: 'public'
       POSTGRES_PASSWORD: 'public'
 
-  redis:
+  cache:
     mem_limit: 30M
 
-  postgres:
+  search:
+    mem_limit: 450M
+    environment:
+      ES_JAVA_OPTS: '-Xms310m -Xmx310m'
+
+  rdb:
     mem_limit: 140M
     environment:
       POSTGRES_PASSWORD: 'public'

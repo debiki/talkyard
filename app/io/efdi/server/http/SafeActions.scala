@@ -231,9 +231,9 @@ object SafeActions {
         |""")
       else (s"\nHas the database stopped or is there a network problem? $orQueryTooLong", i"""
         |If you use Docker-Compose: run 'docker-compose ps' to see if the database container is running.
-        |If not running, start it:  'docker-compose start db'
+        |If not running, start it:  'docker-compose start rdb'
         |If running, then check logs:  'docker-compose logs -f'
-        |Or login with Bash:  'docker-compose exec db bash'
+        |Or login with Bash:  'docker-compose exec rdb bash'
         |""")
     Results.InternalServerError(i"""500 Internal Server Error
       |

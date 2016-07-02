@@ -7,12 +7,12 @@ set -x
 
 version="`cat version.txt | sed s/WIP/SNAPSHOT/`"
 
-rm -fr target/docker-play-prod
-cp -a docker/play-prod target/docker-play-prod
-cd target/docker-play-prod
+rm -fr target/docker-app-prod
+cp -a docker/app-prod target/docker-app-prod
+cd target/docker-app-prod
 cp ../universal/effectivediscussions-$version.zip ./
 unzip -q effectivediscussions-$version.zip
-mv effectivediscussions-$version play
+mv effectivediscussions-$version app
 
 # ( &> redirects both stderr and stdout.)
 mkdir build-info
@@ -30,15 +30,15 @@ set -e
 # Move our own JARs do a separate folder, so they can be copied in a separate Dockerfile
 # COPY step, so that when pushing/pulling to/from Docker Hub, only the very last COPY will
 # usually have to be pushed (and pulled by others).
-mkdir play-lib-debiki
-mv play/lib/*debiki* play-lib-debiki/
-mv play/lib/*effectivediscussions* play-lib-debiki/
-mv play/bin play-bin
-mv play/conf play-conf
+mkdir app-lib-debiki
+mv app/lib/*debiki* app-lib-debiki/
+mv app/lib/*effectivediscussions* app-lib-debiki/
+mv app/bin app-bin
+mv app/conf app-conf
 
 # This readme is for the development repo. Create another one, if any, for prod.
-rm play/README.md
+rm app/README.md
 
-sudo docker build --tag=debiki/ed-play:latest .
+sudo docker build --tag=debiki/ed-app:latest .
 
-echo "Image tag: debiki/ed-play:latest"
+echo "Image tag: debiki/ed-app:latest"

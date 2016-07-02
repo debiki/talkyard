@@ -6,11 +6,11 @@ if [ $? -eq 1 ] ; then
   exit 1
 fi
 
-up_line=`docker-compose ps postgres | egrep '\<Up\>'`
+up_line=`docker-compose ps rdb | egrep '\<Up\>'`
 if [ -z "$up_line" ]; then
-  echo "Error: The database Docker container $container is not running."
+  echo "Error: The database Docker container 'rdb' is not running."
   echo "You can start it:"
-  echo "  docker-compose start postgres"
+  echo "  docker-compose start rdb"
   exit 1
 fi
 
@@ -20,5 +20,5 @@ if [ "$#" -ne 2 ]; then
   exit 1
 fi
 
-docker-compose exec postgres psql $1 $2
+docker-compose exec rdb psql $1 $2
 

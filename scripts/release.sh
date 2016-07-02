@@ -46,7 +46,7 @@ find public/res/ -type f -name '*\.css' -not -name '*\.min\.css' | xargs rm
 # COULD add tests that verifies the wrong css & js haven't been deleted?
 scripts/cli.sh clean test dist
 sudo docker-compose down
-docker/build-play-prod.sh
+docker/build-app-prod.sh
 
 
 # Test the images
@@ -64,7 +64,7 @@ node_modules/selenium-standalone/bin/selenium-standalone start &
 selenium_pid=$!
 
 gulp build-e2e
-# hmm this fails the first time — seems the Play container is too slow, directly
+# hmm this fails the first time — seems the app container is too slow, directly
 # after startup. Needs some kind of warmup?
 scripts/wdio target/e2e/wdio.conf.js --skip3 --only all-links
 scripts/wdio target/e2e/wdio.conf.js --skip3 --only create-site
@@ -78,13 +78,13 @@ sudo $test_containers down
 
 # todo: don't do this if WIP version
 
-sudo docker tag debiki/ed-play debiki/ed-play:$version_tag
-sudo docker tag debiki/ed-nginx debiki/ed-nginx:$version_tag
-sudo docker tag debiki/ed-postgres debiki/ed-postgres:$version_tag
+sudo docker tag debiki/ed-app debiki/ed-app:$version_tag
+sudo docker tag debiki/ed-web debiki/ed-web:$version_tag
+sudo docker tag debiki/ed-rdb debiki/ed-rdb:$version_tag
 
-sudo docker push debiki/ed-play:$version_tag
-sudo docker push debiki/ed-nginx:$version_tag
-sudo docker push debiki/ed-postgres:$version_tag
+sudo docker push debiki/ed-app:$version_tag
+sudo docker push debiki/ed-web:$version_tag
+sudo docker push debiki/ed-rdb:$version_tag
 
 echo $version_tag >> modules/ed-versions/version-tags.log
 pushd .

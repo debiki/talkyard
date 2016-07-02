@@ -40,7 +40,7 @@ EXPOSE 9000 9443 9999 3333
 RUN mkdir -p /opt/ed/uploads/ && \
     chmod -R ugo+rw /opt/ed/uploads/
 
-WORKDIR /opt/ed/play/
+WORKDIR /opt/ed/app/
 
 COPY entrypoint.sh /docker-entrypoint.sh
 RUN  chmod ugo+x   /docker-entrypoint.sh
@@ -52,7 +52,7 @@ ENV PLAY_HEAP_MEMORY_MB 1048
 CMD ["/opt/typesafe-activator/activator", \
   "-mem $PLAY_HEAP_MEMORY_MB", \
   "-jvm-debug 9999", \
-  # see [30PUK42] in play-prod/Dockerfile
+  # see [30PUK42] in app-prod/Dockerfile
   "-Djava.security.egd=file:/dev/./urandom", \
   "-Dcom.sun.management.jmxremote.port=3333", \
   "-Dcom.sun.management.jmxremote.ssl=false", \
