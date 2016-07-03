@@ -6,16 +6,17 @@
 
 Nginx cannot connect to Play Framework. Is Play not running, or is there some network error?
 
-If you use Docker-Compose, please check if the Play container is running:  'docker-compose ps'
+If you use Docker-Compose, please check if the app container (which runs Play Framework)
+is running:  'docker-compose ps'
 
 If it's not running:
-- Start it:  'docker-compose start play'. Then wait a few seconds and reload this page.
-- Or login in a Bash shell:  'docker-compose run --rm --service-ports play bash'
+- Start it:  'docker-compose start app'. Then wait a few seconds and reload this page.
+- Or login in a Bash shell:  'docker-compose run --rm --service-ports app bash'
 
 If it is running:
 - Check the logs:  'docker-compose logs'
-- Only Play's logs: 'docker-compose logs play'
-- Or jump into the container:  'docker-compose exec play bash'
+- Only Play's logs: 'docker-compose logs app'
+- Or jump into the container:  'docker-compose exec app bash'
 
 
 </pre>

@@ -67,6 +67,11 @@ hot_standby = on
 #--------------------------
 
 logging_collector = on
+
+# Don't use the default, /var/lib/postgresql/data/pg_log/, because then when mounting
+# the logs at /var/log/postgres on the *host* (so that standard Postgres monitoring
+# tools will find the logs), Postgres will refuse to create the database, because
+# data/ wouldn't be empty — pg_log/ would be inside.
 log_directory = '/var/log/postgres/'
 
 log_rotation_age = 1d     # defualt = 1d
