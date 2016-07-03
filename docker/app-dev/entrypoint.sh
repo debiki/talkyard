@@ -3,7 +3,7 @@
 # *** Dupl code *** see dev-gulp/entrypoint.sh too [7GY8F2]
 # (Cannot fix, Docker doesn't support symlinks in build dirs.)
 
-cd /opt/ed/play
+cd /opt/ed/app
 
 # Create user 'owner' with the same id as the person who runs docker, so that file
 # 'gulp build' creates will be owned by that person (otherwise they'll be owned by root

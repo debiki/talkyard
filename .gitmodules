@@ -10,12 +10,12 @@
 [submodule "modules/google-diff-match-patch"]
 	path = modules/google-diff-match-patch
 	url = https://github.com/JanX2/google-diff-match-patch-git-svn.git
-[submodule "docker/debiki-dev-nginx/nginx-modules/nchan"]
-	path = docker/nginx/modules/nchan
-	url = https://github.com/slact/nchan.git
 [submodule "modules/ed-prod-one-test"]
 	path = modules/ed-prod-one-test
 	url = https://github.com/debiki/ed-prod-one.git
 [submodule "modules/ed-versions"]
 	path = modules/ed-versions
 	url = https://github.com/debiki/ed-versions.git
+[submodule "docker/web/modules/nchan"]
+	path = docker/web/modules/nchan
+	url = https://github.com/slact/nchan.git

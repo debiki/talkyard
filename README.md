@@ -40,7 +40,7 @@ Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/
 
 1. Start everything: (this will take a while, the first time: some Docker images will be downloaded and built)
 
-        docker-compose up nginx  # use 'sudo' if needed
+        docker-compose up web  # use 'sudo' if needed
 
 1. Create an empty database:
 
@@ -53,7 +53,7 @@ Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/
    that was sent to you — but in fact the email couldn't be sent, because you haven't configured
    any email server. (And `admin@example.com` isn't your address anyway.)
 
-   Instead look in the Play log file: `docker-compose logs play`. There you'll find
+   Instead look in the app server log file: `docker-compose logs app`. There you'll find
    the email — it's written to the log files, in development mode. Copy the
    confirmation link from the `<a href=...>` and paste it in the browser's address bar.
 
@@ -136,7 +136,7 @@ This project looks like so:
      |                     has bundled and minified from the client/ dir above.
      |
      +-docker/         <-- Dockerfiles for all docker-compose containers
-     | +-nginx/        <-- Docker build stuff for the Nginx container
+     | +-web/          <-- Docker build stuff for the Nginx container
      | | +-modules/
      | |   +-nchan/    <-- WebSocket and PubSub for Nginx (a Git submodule)
      | |
@@ -146,8 +146,8 @@ This project looks like so:
      | +-...           <-- More containers...
      | |
      | +-data/
-     |   +-postgres    <-- Mounted as a volume in the Postgres container
-     |   +-redis       <-- Mounted in the Redis container
+     |   +-rdb         <-- Mounted as a volume in the Postgres container
+     |   +-cache       <-- Mounted in the Redis container
      |   +-uploads     <-- Mounted read-write in the Play container, but
      |   |                 read-only in Nginx (to serve static files)
      |   ...

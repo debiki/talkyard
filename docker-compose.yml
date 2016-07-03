@@ -1,10 +1,9 @@
 version: '2'
 services:
-  # rename to web? or, http?
-  nginx:
+  web:
     mem_limit: 200M
-    build: docker/nginx/
-    image: debiki/ed-nginx
+    build: docker/web/
+    image: debiki/ed-web
     command: nginx
     volumes:
       - ./docker/data/uploads/:/opt/ed/uploads/:ro
@@ -15,16 +14,15 @@ services:
       - '80:80'
       - '443:443'
     depends_on:
-      - play
+      - app
 
-  # rename to app?
-  play:
+  app:
     mem_limit: 2600M
-    build: docker/play-dev/
-    # image debiki/ed-play instead created and tagged by docker/build-play-prod.sh.
+    build: docker/app-dev/
+    # image debiki/ed-app instead created and tagged by docker/build-app-prod.sh.
     stdin_open: true  # otherwise Play exits
     volumes:
-      - ./:/opt/ed/play/
+      - ./:/opt/ed/app/
       - ./docker/data/uploads/:/opt/ed/uploads/
       # Without this it takes forever to start because sbt would always download all dependencies.
       - ~/.ivy2/:/home/owner/.ivy2/
@@ -34,9 +32,9 @@ services:
       - '9999:9999' # Java debugger port
       - '3333:3333' # JMX
     links:
-      - postgres
-      - redis
+      - cache
       - search
+      - rdb
     environment:
       PLAY_HEAP_MEMORY_MB: 1700
       HOSTNAME: "localhost"
@@ -45,12 +43,11 @@ services:
       E2E_TEST_PASSWORD: "public"
       FORBIDDEN_PASSWORD: "public"
 
-  # rename to cache?
-  redis:
+  cache:
     mem_limit: 50M
     image: redis:3.0.7-alpine
     volumes:
-      - ./docker/data/redis/:/data/
+      - ./docker/data/cache/:/data/
     ports:
       - '6379:6379'
 
@@ -66,33 +63,31 @@ services:
     environment:
       ES_JAVA_OPTS: '-Xms350m -Xmx350m'
 
-  # rename to db?
-  postgres:
+  rdb:
     mem_limit: 200M
-    build: docker/postgres/
-    image: debiki/ed-postgres
+    build: docker/rdb/
+    image: debiki/ed-rdb
     volumes:
-      - ./docker/data/postgres/:/var/lib/postgresql/data/
+      - ./docker/data/rdb/:/var/lib/postgresql/data/
     ports:
       - '5432:5432'
     environment:
       POSTGRES_PASSWORD: 'public'
-      PEER_HOST: 'postgres2'
+      PEER_HOST: 'rdb2'
       PEER_PORT: '5432'
       PEER_PASSWORD: 'public2'
       CREATE_TEST_USER: 'yes'
 
   # An extra database, so you can experiment with Postgres replication and failover.
   # You don't need to start it.
-  # rename to db2?
-  #postgres2:
+  #rdb2:
   #  mem_limit: 30M
-  #  build: docker/postgres/
+  #  build: docker/rdb/
   #  volumes:
-  #    - ./docker/data/postgres2/:/var/lib/postgresql/data/
+  #    - ./docker/data/rdb2/:/var/lib/postgresql/data/
   #  environment:
   #    POSTGRES_PASSWORD: 'public2'
-  #    PEER_HOST: 'postgres'
+  #    PEER_HOST: 'rdb'
   #    PEER_PORT: '5432'
   #    PEER_PASSWORD: 'public'
 
