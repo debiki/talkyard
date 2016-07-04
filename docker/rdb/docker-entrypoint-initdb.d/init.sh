@@ -40,7 +40,7 @@ sed -i '/host all all 0.0.0.0/i \
 host replication repl 0.0.0.0/0 md5' $PGDATA/pg_hba.conf
 
 
-# Enables streaming replication from this server
+# Streaming replication and logging
 # ------------------------
 
 cat << EOF >> $PGDATA/postgresql.conf
@@ -48,6 +48,9 @@ cat << EOF >> $PGDATA/postgresql.conf
 #======================================================================
 # EDITED SETTINGS
 #======================================================================
+
+# Enable streaming replication from this server
+#--------------------------
 
 wal_level = hot_standby
 
@@ -69,10 +72,10 @@ hot_standby = on
 logging_collector = on
 
 # Don't use the default, /var/lib/postgresql/data/pg_log/, because then when mounting
-# the logs at /var/log/postgres on the *host* (so that standard Postgres monitoring
+# the logs at /var/log/postgresql on the *host* (so that standard Postgres monitoring
 # tools will find the logs), Postgres will refuse to create the database, because
 # data/ wouldn't be empty — pg_log/ would be inside.
-log_directory = '/var/log/postgres/'
+log_directory = '/var/log/postgresql/'
 
 log_rotation_age = 1d     # defualt = 1d
 log_rotation_size = 50MB  # default = 10MB
@@ -87,6 +90,9 @@ log_line_prefix = '%m session-%c tx-%x: '
 log_statement = 'ddl'
 
 EOF
+
+# Let Postgres write to the log directory specified above.
+chown postgres /var/log/postgresql/
 
 
 # Help file about how to rsync to slave

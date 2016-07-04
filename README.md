@@ -34,7 +34,8 @@ Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/
 
 1. Make ElasticSearch work:
 
-        sudo sysctl -w vm.max_map_count=262144
+        echo 'vm.max_map_count=262144  # ElasticSearch requires (at least) this, default = 65530' \
+           >> /etc/sysctl.conf
 
     (`max_map_count` docs: https://www.kernel.org/doc/Documentation/sysctl/vm.txt)
 
