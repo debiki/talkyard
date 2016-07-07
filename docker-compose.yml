@@ -8,6 +8,9 @@ services:
     volumes:
       - ./docker/data/uploads/:/opt/ed/uploads/:ro
       - ./docker/data/letsencrypt/:/etc/letsencrypt/:ro
+      # Mount the Lua scripts, rather than relying on Docker's COPY, so Nginx can
+      # auto reload them after edits.
+      - ./docker/web/ed-lua/:/opt/ed/lua/:ro
     ports:
       # Don't expose port 81 (for publishing WebSocket events)  — it should be reachable only
       # from inside the Docker network.

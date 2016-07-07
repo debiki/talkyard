@@ -12,6 +12,29 @@ FROM alpine:3.3
 
 ENV NGINX_VERSION 1.9.15
 
+# Do this first, because we need 'make' early, and also it's boring to wait for Nginx
+# to download.
+RUN \
+	addgroup -S nginx \
+	&& adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx \
+	&& apk add --no-cache --virtual .build-deps \
+		gcc \
+		libc-dev \
+		make \
+		openssl-dev \
+		pcre-dev \
+		zlib-dev \
+		linux-headers \
+		curl \
+		gnupg \
+		# libxslt-dev \
+		# some graphics lib, needed for ? http_image_filter_module ?
+		# gd-dev \
+		# geoip-dev \
+		perl-dev \
+	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
+	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc
+
 ENV GPG_KEYS B0F4253373F8F6F510D42178520A9993A1C052F8
 ENV CONFIG "\
 	--prefix=/etc/nginx \
@@ -69,33 +92,28 @@ ENV CONFIG "\
 	--without-http_autoindex_module \
 	# skip server-side-includes module
 	--without-http_ssi_module \
+	# LuaJIT wants this;
+	--with-ld-opt="-Wl,-rpath,/opt/luajit/lib" \
+	# LuaJIT needs the devel kit.
+	--add-module=/tmp/nginx-modules/ngx_devel_kit \
+	--add-module=/tmp/nginx-modules/lua-nginx-module \
 	--add-module=/tmp/nginx-modules/nchan \
 	"
 
 # Copy nchan source code
 COPY modules /tmp/nginx-modules/
 
+# Build LuaJIT
+RUN cd /tmp/nginx-modules/luajit && \
+    make PREFIX=/opt/luajit && \
+    make install PREFIX=/opt/luajit
+
+# Tell nginx's build system where to find LuaJIT 2.1:
+ENV LUAJIT_LIB /opt/luajit/lib
+ENV LUAJIT_INC /opt/luajit/include/luajit-2.1
+
 RUN \
-	addgroup -S nginx \
-	&& adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx \
-	&& apk add --no-cache --virtual .build-deps \
-		gcc \
-		libc-dev \
-		make \
-		openssl-dev \
-		pcre-dev \
-		zlib-dev \
-		linux-headers \
-		curl \
-		gnupg \
-		# libxslt-dev \
-		# some graphics lib, needed for ? http_image_filter_module ?
-		# gd-dev \
-		# geoip-dev \
-		perl-dev \
-	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
-	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc \
-	&& export GNUPGHOME="$(mktemp -d)" \
+	export GNUPGHOME="$(mktemp -d)" \
 	&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$GPG_KEYS" \
 	&& gpg --batch --verify nginx.tar.gz.asc nginx.tar.gz \
 	&& rm -r "$GNUPGHOME" nginx.tar.gz.asc \
@@ -150,23 +168,34 @@ RUN \
 	&& ln -sf /dev/stdout /var/log/nginx/access.log \
 	&& ln -sf /dev/stderr /var/log/nginx/error.log
 
+
+RUN rm -fr /tmp/nginx-modules/
+
+COPY lua-packages /opt/lua-packages/
+
+
 # Add 'bash' so we can 'docker exec' into the container, + some tools. (wget & less already works)
 RUN apk add --no-cache bash tree curl net-tools
 
-COPY nginx.conf /etc/nginx/nginx.conf
-COPY http-limits.conf /etc/nginx/
+COPY 502.html             /opt/nginx/html/502.html
+COPY 503.html             /opt/nginx/html/503.html
+COPY default-site         /etc/nginx/default-site/
 # old, remove once I've edited edm & edc
-COPY server.conf /etc/nginx/vhost.conf
-COPY server.conf /etc/nginx/
+COPY server-listen.conf   /etc/nginx/listen.conf
+COPY server-listen.conf   /etc/nginx/
 # old, remove once I've edited edm & edc
-COPY server-listen.conf /etc/nginx/listen.conf
-COPY server-listen.conf /etc/nginx/
+COPY server-ssl.conf      /etc/nginx/ssl-hardening.conf
+COPY server-ssl.conf      /etc/nginx/
+COPY http-limits.conf     /etc/nginx/
+COPY server-limits.conf   /etc/nginx/
 # old, remove once I've edited edm & edc
-COPY server-ssl.conf /etc/nginx/ssl-hardening.conf
-COPY server-ssl.conf /etc/nginx/
-COPY server-limits.conf /etc/nginx/
-COPY default-site /etc/nginx/default-site/
-COPY 502.html   /opt/nginx/html/502.html
+COPY server.conf          /etc/nginx/vhost.conf
+COPY server.conf          /etc/nginx/
+COPY nginx.conf           /etc/nginx/
+
+# Frequently edited, so do last.
+COPY ed-lua /opt/ed/lua/
+
 
 # Don't expose port 81 (the publish-websocket-messages port) — it should be accessible from
 # inside the Docker network only, so that only Play Framework (located inside the network)
