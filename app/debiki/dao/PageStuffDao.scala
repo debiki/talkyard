@@ -42,8 +42,9 @@ case class PageStuff(
   authorFullName: Option[String],
   authorAvatarUrl: Option[String],
   lastReplyer: Option[User],
-  frequentPosters: Seq[User]) extends PageTitleRole {
+  frequentPosters: Seq[User])(val pageMeta: PageMeta) extends PageTitleRole {
   def role = pageRole
+  def categoryId = pageMeta.categoryId
 }
 
 
@@ -157,7 +158,7 @@ trait PageStuffDao {
         // so we'll use the tiny avatar image. Should I rename to tinyAuthorAvatarUrl?
         authorAvatarUrl = anyAuthor.flatMap(_.tinyAvatar.map(_.url)),
         lastReplyer = pageMeta.lastReplyById.flatMap(usersById.get),
-        frequentPosters = pageMeta.frequentPosterIds.flatMap(usersById.get))
+        frequentPosters = pageMeta.frequentPosterIds.flatMap(usersById.get))(pageMeta)
 
       stuffById += pageMeta.pageId -> summary
     }

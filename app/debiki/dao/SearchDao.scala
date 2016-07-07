@@ -19,8 +19,10 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import controllers.ViewPageController
 import debiki._
 import ed.server.search.{PageAndHits, SearchHit, SearchEngine}
+import io.efdi.server.Who
 import io.efdi.server.http._
 import org.{elasticsearch => es}
 import play.api.Play.current
@@ -36,14 +38,16 @@ trait SearchDao {
   this: SiteDao =>
 
 
-  def fullTextSearch(phrase: String, anyRootPageId: Option[PageId]): Future[Seq[PageAndHits]] = {
+  def fullTextSearch(phrase: String, anyRootPageId: Option[PageId], user: Option[User])
+        : Future[Seq[PageAndHits]] = {
     searchEngine.fullTextSearch(phrase, anyRootPageId) map { hits: Seq[SearchHit] =>
-      groupAndSortBestFirst(hits)
+      groupByPageFilterAndSort(hits, user)
     }
   }
 
 
-  private def groupAndSortBestFirst(searchHits: Seq[SearchHit]): Seq[PageAndHits] = {
+  private def groupByPageFilterAndSort(searchHits: Seq[SearchHit], user: Option[User])
+        : Seq[PageAndHits] = {
     val hitsByPageId: Map[PageId, Seq[SearchHit]] =
       searchHits.groupBy(hit => hit.pageId)
 
@@ -54,7 +58,14 @@ trait SearchDao {
         - hits.map(_.score).max
       }
 
-    val pageStuffByPageId = loadPageStuff(hitsByPageId.keys)
+    // Later: Have ElasticSearch do as much filtering as possible instead, to e.g. filter
+    // out private messages the user isn't not allowed to see, earlier. Better performance,
+    // and we'll get as many search hits as we want.
+    val pageStuffByPageIdInclForbidden = loadPageStuff(hitsByPageId.keys)
+    val pageStuffByPageId = pageStuffByPageIdInclForbidden filter { case (pageId, pageStuff) =>
+      val (maySee, _) = ViewPageController.maySeePage(pageStuff.pageMeta, user, this)
+      maySee
+    }
 
     // Add page meta and also sort hits by score, desc.
     val pageStuffAndHitsTotallySorted: Seq[PageAndHits] =

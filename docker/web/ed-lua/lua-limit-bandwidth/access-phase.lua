@@ -26,11 +26,11 @@ end
 -- For now, hardcode limits here. Later, load from Postgres, cache in-mem?
 -- About how to configure in Nginx: https://github.com/openresty/lua-nginx-module#ngxvarvariable
 
-if used_ip_bw > 5e6 then
+if used_ip_bw > 10e6 then   -- or 5e6?
     slow_down(normal_speed)
-elseif used_ip_bw > 30e6 then
+elseif used_ip_bw > 60e6 then -- or 30e6?
     slow_down(slow_speed)
-elseif used_ip_bw > 50e6 then
+elseif used_ip_bw > 100e6 then  -- or 50e6?
     ngx.log(ngx.WARN, "Per ip bandwidth exceeded, replying Forbidden, ip: " ..
             ip .. ", server: " .. server_name .. " [EsE5GUK20]")
     forbiddenMessage = "You, or someone at your Internet address, " ..

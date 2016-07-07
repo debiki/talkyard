@@ -598,7 +598,7 @@ class Config(conf: play.api.Configuration) {
     val tooManyTryLaterPagePath = conf.getString(s"$path.tooManyTryLaterPagePath")
     val maxSitesPerPerson = conf.getInt(s"$path.maxSitesPerIp") getOrElse 10
     val maxSitesTotal = conf.getInt(s"$path.maxSitesTotal") getOrElse 1000
-    // Later: rename from debiki.newSite.
+    REFACTOR; RENAME // Later: rename to ed.createSite.newSiteQuotaMBs?
     val quotaLimitMegabytes = conf.getInt("debiki.newSite.quotaLimitMegabytes")
   }
 

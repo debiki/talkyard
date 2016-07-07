@@ -63,7 +63,8 @@ object SearchController extends mvc.Controller {
 
   private def searchImpl(phrase: String, anyRootPageId: Option[String],
         apiReq:  DebikiRequest[_]): Future[Result] = {
-    apiReq.dao.fullTextSearch(phrase, anyRootPageId) map { searchResults: Seq[PageAndHits] =>
+    apiReq.dao.fullTextSearch(phrase, anyRootPageId, apiReq.user) map {
+        searchResults: Seq[PageAndHits] =>
       val siteTpi = debiki.SiteTpi(apiReq)
       val htmlStr = views.html.templates.searchResults(
           siteTpi, anyRootPageId, phrase, searchResults).body

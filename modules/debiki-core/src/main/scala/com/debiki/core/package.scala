@@ -208,6 +208,7 @@ package object core {
   def SHOULD = ()         // Fix before release, unless short of time, or it's too boring.
   def COULD = ()          // Could do this, but not important right now, can wait a year or two.
   def REFACTOR = ()       // This code can be refactored. Also search for "[refactor]".
+  def RENAME = ()         // This ought to be renamed.
   def COULD_OPTIMIZE = ()
 
 }
