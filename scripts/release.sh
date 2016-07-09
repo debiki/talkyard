@@ -44,7 +44,9 @@ gulp release
 find public/res/ -type f -name '*\.js' -not -name '*\.min\.js' -not -name 'zxcvbn\.js' | xargs rm
 find public/res/ -type f -name '*\.css' -not -name '*\.min\.css' | xargs rm
 # COULD add tests that verifies the wrong css & js haven't been deleted?
-scripts/cli.sh clean test dist
+# One at a time, or out-of-memory:
+scripts/cli.sh clean compile
+scripts/cli.sh test dist
 sudo docker-compose down
 docker/build-app-prod.sh
 

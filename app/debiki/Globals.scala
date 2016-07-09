@@ -595,6 +595,7 @@ class Config(conf: play.api.Configuration) {
 
   object createSite {
     val path = Config.CreateSitePath
+    REFACTOR; RENAME // to ...tooManyTryLaterUrl
     val tooManyTryLaterPagePath = conf.getString(s"$path.tooManyTryLaterPagePath")
     val maxSitesPerPerson = conf.getInt(s"$path.maxSitesPerIp") getOrElse 10
     val maxSitesTotal = conf.getInt(s"$path.maxSitesTotal") getOrElse 1000
