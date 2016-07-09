@@ -43,7 +43,6 @@ var DropdownModal = utils.DropdownModal;
 var ExplainingListItem = util.ExplainingListItem;
 type ExplainingTitleText = util.ExplainingTitleText;
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
-var Input = reactCreateFactory(ReactBootstrap.Input);
 var HelpMessageBox = debiki2.help.HelpMessageBox;
 
 var ReactRouter = window['ReactRouter'];
@@ -353,7 +352,7 @@ var ForumButtons = createComponent({
 
   setTopicFilter: function(entry: ExplainingTitleText) {
     var newQuery = _.clone(this.props.location.query);
-    if (entry.key === FilterShowAll) {
+    if (entry.eventKey === FilterShowAll) {
       delete newQuery.filter;
     }
     else {
@@ -457,7 +456,7 @@ var ForumButtons = createComponent({
         r.div({ className: 'esF_BB_PageTitle' }, "Categories") : null;
 
     var makeCategoryLink = (where, text, extraClass?) => Link({
-      to: this.props.pagePath.value + where, query: this.props.location.query,
+      to: { pathname: this.props.pagePath.value + where, query: this.props.location.query },
       className: 'btn esForum_catsNav_btn ' + (extraClass || ''),
       activeClassName: 'active' }, text);
 
@@ -1134,8 +1133,9 @@ var CategoryRow = createComponent({
       r.tr({ className: 'esForum_cats_cat' + isNewClass },
         r.td({ className: 'forum-info' }, // [rename] to esForum_cats_cat_meta
           r.div({ className: 'forum-title-wrap' },
-            Link({ to: store.pagePath.value + RoutePathLatest + '/' + this.props.category.slug,
-                query: this.props.location.query, className: 'forum-title' },
+            Link({ to: {
+                pathname: store.pagePath.value + RoutePathLatest + '/' + this.props.category.slug,
+                query: this.props.location.query }, className: 'forum-title' },
               category.name)),
           description),
         r.td({},  // class to esForum_cats_cat_topics?

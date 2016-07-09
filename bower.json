@@ -19,11 +19,10 @@
     "lodash": "=4.1.0",
     "markdown-it": "=4.4.0",
     "moment": "=2.11.1",
-    "react": "=0.14.3",
-    "react-bootstrap": "=0.28.2",
-    "react-router": "https://npmcdn.com/react-router@2.0.0-rc5/umd/ReactRouter.js",
+    "react": "=15.2.1",
+    "react-bootstrap": "=0.28.5",
+    "react-router": "https://npmcdn.com/react-router@2.5.2/umd/ReactRouter.js",
     "react-router-active-component": "https://npmcdn.com/react-router-active-component@4.0.0-rc.0/umd/react-router-active-component.js",
-    "react-select": "=0.6.7",
     "yepnope": "=v1.5.4"
   }
 }

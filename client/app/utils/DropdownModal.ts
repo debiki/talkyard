@@ -72,7 +72,7 @@ export var ModalDropdownButton = createComponent({
 
     return (
       Button({ onClick: this.openDropdown, className: props.className, id: props.id,
-          key: props.key, ref: 'openButton' },
+          ref: 'openButton' },
         this.props.title, dropdownModal));
   }
 });

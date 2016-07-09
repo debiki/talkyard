@@ -29,7 +29,6 @@ var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var ButtonGroup = reactCreateFactory(ReactBootstrap.ButtonGroup);
-var Input = reactCreateFactory(ReactBootstrap.Input);
 var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);

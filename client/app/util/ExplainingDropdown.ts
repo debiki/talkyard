@@ -35,7 +35,6 @@ var r = React.DOM;
 
 export interface ExplainingTitleText {
   onClick?: any;
-  key: any;
   eventKey?: any;
   iconUrl?: string;
   title: string;
@@ -61,7 +60,7 @@ export var ExplainingListItem = createComponent({
           this.props.onSelect && this.props.activeEventKey === this.props.eventKey) ?
         ' active' : '';
     return (
-      r.li({ className: 'esExplDrp_entry' + activeClass, key: entry.key },
+      r.li({ className: 'esExplDrp_entry' + activeClass },
         r.a({ onClick: this.onClick, id: this.props.id, className: this.props.className },
           r.div({ className: 'esExplDrp_entry_title' }, entry.title),
           r.div({ className: 'esExplDrp_entry_expl' }, entry.text))));
