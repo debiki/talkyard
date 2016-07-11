@@ -44,14 +44,16 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
   }
 
 
-  // ----- Websites (a.k.a. tenants)
+  // ----- Sites
 
-  // COULD rename to loadWebsitesByIds
-  def loadTenants(tenantIds: Seq[SiteId]): Seq[Site] =
-    readOnlyTransaction(_.loadTenants(tenantIds))
+  def loadSites(): Seq[Site] =
+    readOnlyTransaction(_.loadSites())
+
+  def loadSitesWithIds(siteIds: Seq[SiteId]): Seq[Site] =
+    readOnlyTransaction(_.loadSitesWithIds(siteIds))
 
   def loadSite(siteId: SiteId): Option[Site] =
-    readOnlyTransaction(_.loadTenants(Seq(siteId)).headOption)
+    readOnlyTransaction(_.loadSitesWithIds(Seq(siteId)).headOption)
 
 
   // ----- Notifications

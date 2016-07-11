@@ -47,6 +47,9 @@ private[http] object PlainApiActions {
   val PlainApiActionAdminOnly =
     PlainApiActionImpl(NoRateLimits, adminOnly = true, staffOnly = false)
 
+  val PlainApiActionSuperAdminOnly =
+    PlainApiActionImpl(NoRateLimits, adminOnly = false, staffOnly = false, superAdminOnly = true)
+
 
 
 
@@ -60,8 +63,12 @@ private[http] object PlainApiActions {
     * The SidStatusRequest.sidStatus passed to the action is either SidAbsent or a SidOk.
     */
   def PlainApiActionImpl(rateLimits: RateLimits, adminOnly: Boolean,
-        staffOnly: Boolean, allowAnyone: Boolean = false) =
+        staffOnly: Boolean, allowAnyone: Boolean = false, superAdminOnly: Boolean = false) =
       new ActionBuilder[ApiRequest] {
+
+    def numOnly = adminOnly.toZeroOne + superAdminOnly.toZeroOne + staffOnly.toZeroOne
+    require(numOnly <= 1, "EsE4KYF02")
+    require(!allowAnyone || numOnly == 0, "EsE8KU24K")
 
     override def composeAction[A](action: Action[A]) = {
       ExceptionAction.async(action.parser) { request: Request[A] =>
@@ -142,6 +149,28 @@ private[http] object PlainApiActions {
 
       if (adminOnly && !anyUser.exists(_.isAdmin))
         throwForbidden("DwE1GfK7", "Please login as admin")
+
+      if (superAdminOnly) {
+        Globals.config.superAdmin.siteId match {
+          case Some(site.id) => // fine
+          case Some(_) => throwForbidden("EsE4KGU0", s"Not the superadmin site id: ${site.id}")
+          case None => throwForbidden("EsE17KFE2", "No superadmin site id configured")
+        }
+        Globals.config.superAdmin.hostname match {
+          case Some(request.host) => // fine
+          case Some(superAdminHostname) =>
+            throwForbidden(
+              "EsE2KPU04", s"Wrong hostname. Please instead access via: $superAdminHostname")
+          case None =>
+            // Fine, this double check hasn't been enabled.
+        }
+        val user = anyUser getOrElse {
+          throwForbidden("EsE81GfK7", "Please login as a super admin")
+        }
+        if (!Globals.config.superAdmin.emailAddresses.contains(user.email)) {
+          throwForbidden("EsE5KY024", "Please logout and login as a super admin")
+        }
+      }
 
       if (!allowAnyone) {
         // ViewPageController has allow-anyone = true.

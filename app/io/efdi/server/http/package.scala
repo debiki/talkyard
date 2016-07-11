@@ -114,6 +114,9 @@ package object http {
   def AdminGetAction(f: GetRequest => Result) =
     PlainApiActionAdminOnly(BodyParsers.parse.empty)(f)
 
+  def SuperAdminGetAction(f: GetRequest => Result) =
+    PlainApiActionSuperAdminOnly(BodyParsers.parse.empty)(f)
+
 
   def JsonOrFormDataPostAction
         (rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)
@@ -144,6 +147,10 @@ package object http {
 
   def AdminPostJsonAction(maxLength: Int)(f: JsonPostRequest => Result) =
     PlainApiActionAdminOnly(
+      BodyParsers.parse.json(maxLength = maxLength))(f)
+
+  def SuperAdminPostJsonAction(maxLength: Int)(f: JsonPostRequest => Result) =
+    PlainApiActionSuperAdminOnly(
       BodyParsers.parse.json(maxLength = maxLength))(f)
 
 

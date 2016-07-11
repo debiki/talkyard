@@ -947,12 +947,17 @@ function updateNotificationCounts(notf: Notification, add: boolean) {
 
 
 function patchTheStore(storePatch: StorePatch) {
+  var patch = storePatch;
   if (storePatch.appVersion !== store.appVersion) {
     // COULD show dialog, like Discourse does: (just once)
     //   The server has been updated. Reload the page please?
     //   [Reload this page now]  [No, not now]
     // For now though:
     return;
+  }
+
+  if (storePatch.superadmin) {
+    store.superadmin = storePatch.superadmin;
   }
 
   // Highligt pages with new posts, in the watchbar.
@@ -987,6 +992,12 @@ function patchTheStore(storePatch: StorePatch) {
   });
 
   // Update the current page.
+  if (!storePatch.pageVersionsByPageId) {
+    // No page. Currently storePatch.usersBrief is for the current page (but there is none)
+    // so ignore it too.
+    return;
+  }
+
   var storePatchPageVersion = storePatch.pageVersionsByPageId[store.pageId];
   if (!storePatchPageVersion || storePatchPageVersion <= store.pageVersion) {
     // The store includes these changes already.

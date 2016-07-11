@@ -188,6 +188,14 @@ GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestE
 
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
 
+GET   /-/sa                      controllers.SuperAdminController.redirect
+GET   /-/super-admin             controllers.SuperAdminController.redirect
+GET   /-/super-admin/            controllers.SuperAdminController.redirect
+GET   /-/superadmin              controllers.SuperAdminController.redirect
+GET   /-/superadmin/             controllers.SuperAdminController.superAdminApp(clientRoute = "")
+GET   /-/superadmin/*clientRoute controllers.SuperAdminController.superAdminApp(clientRoute)
+GET   /-/list-sites              controllers.SuperAdminController.listSites
+
 # Don't change the URL on the next line. The /-/assets/<version-number>/ is
 # updated by the deployment script (asset fingerprinting).
 GET   /-/assets/155/*file       controllers.Assets.at(path = "/public/res", file)

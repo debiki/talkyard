@@ -55,6 +55,7 @@ object SiteStatus {
 case class Site(
   id: SiteId,
   name: String,
+  createdAt: When,
   creatorIp: String,
   creatorEmailAddress: String,
   embeddingSiteUrl: Option[String],

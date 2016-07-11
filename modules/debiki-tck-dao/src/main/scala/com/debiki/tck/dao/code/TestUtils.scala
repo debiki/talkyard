@@ -30,6 +30,7 @@ class TestUtils(val daoFactory: DbDaoFactory) {
     Site(
       Site.FirstSiteId,
       name = "First Site",
+      createdAt = When.fromMillis(1234567890),
       creatorIp = "0.0.0.0",
       creatorEmailAddress = "unknown@example.com",
       embeddingSiteUrl = None,

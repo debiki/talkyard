@@ -33,15 +33,17 @@ trait SystemTransaction {
   def siteTransaction(siteId: SiteId): SiteTransaction
 
   def loadSites(): immutable.Seq[Site]
-  // COULD rename to loadWebsitesByIds
-  def loadTenants(tenantIds: Seq[SiteId]): Seq[Site]
+
+  def loadSitesWithIds(tenantIds: Seq[SiteId]): Seq[Site]
 
   def loadSite(siteId: SiteId): Option[Site] =
-    loadTenants(Seq(siteId)).headOption
+    loadSitesWithIds(Seq(siteId)).headOption
 
   def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup]
 
   def insertSiteHost(tenantId: String, host: SiteHost)
+
+  def deleteSite(siteId: SiteId)
 
   // ----- Users
 

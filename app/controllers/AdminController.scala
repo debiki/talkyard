@@ -51,7 +51,7 @@ object AdminController extends mvc.Controller {
     }
     else {
       val siteTpi = SiteTpi(apiReq)
-      val adminPageBody = views.html.adminPage(siteTpi).body
+      val adminPageBody = views.html.adminPage(siteTpi, appId = "dw-react-admin-app").body
       Ok(adminPageBody) as HTML withCookies (
         SecureCookie(
           DebikiSecurity.XsrfCookieName, apiReq.xsrfToken.value))

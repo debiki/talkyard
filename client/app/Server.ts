@@ -916,6 +916,13 @@ export function loadOnlineUsers() {
 }
 
 
+export function listSites() {
+  get('/-/list-sites', (patch) => {
+    ReactActions.patchTheStore(patch);
+  });
+}
+
+
 export function logBrowserError(errorMessage: string) {  // rename to logError
   postJsonSuccess('/-/log-browser-error', () => {}, errorMessage);
 }

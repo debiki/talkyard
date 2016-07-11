@@ -96,6 +96,7 @@ package object core {
   object When {
     def now() = new When(System.currentTimeMillis())
     def fromDate(date: java.util.Date) = new When(date.getTime)
+    def fromMillis(millis: UnixMillis) = new When(millis)
   }
 
   sealed trait OrderBy { def isDescending: Boolean = false }
@@ -186,6 +187,11 @@ package object core {
 
   implicit class GetOrBadMap[G, B](val underlying: Or[G, B]) {
     def getOrIfBad(fn: B => Nothing): G = underlying.badMap(fn).get
+  }
+
+
+  implicit class RichBoolean(underlying: Boolean) {
+    def toZeroOne = if (underlying) 1 else 0
   }
 
 

@@ -365,6 +365,8 @@ interface Store {
   // If quickUpdate is true only posts in postsToUpdate will be updated.
   quickUpdate: boolean;
   postsToUpdate: { [postId: number]: boolean };
+
+  superadmin?: SuperAdminStuff;
 }
 
 
@@ -538,6 +540,7 @@ interface StorePatch {
   // rename to postAuthorsBrief? So one sees they can be ignored if the posts are
   // ignored (because the page version is too old).
   usersBrief?: BriefUser[];
+  superadmin?: SuperAdminStuff;
 }
 
 
@@ -586,6 +589,20 @@ interface Settings {
   googleUniversalAnalyticsTrackingId: string;
 
   showComplicatedStuff: boolean;
+}
+
+
+interface SuperAdminStuff {
+  baseDomain: string;
+  sites: SASite[];
+}
+
+
+interface SASite {
+  id: string;
+  name: string;
+  canonicalHostname: string;
+  createdAtMs: number;
 }
 
 // vim: et ts=2 sw=2 tw=0 fo=r list

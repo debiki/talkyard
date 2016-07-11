@@ -241,19 +241,22 @@ case object User {
   val SystemUserUsername = "system"
   val SystemUserFullName = "System"
 
-  // Perhaps in the future:
-  // /** A user that has logged in and can post comments, but is anonymous. */
-  // val AnonymousUserId = -2
+  // Later ...  [4KYFU02]
+  val SuperAdminId = -2
 
   /** A user that did something, e.g. voted on a comment, but was not logged in. */
   val UnknownUserId = -3
   val UnknownUserName = "Unknown"
   val UnknownUserGuestCookie = "UU"
 
+  // Perhaps in the future:
+  // /** A user that has logged in and can post comments, but is anonymous. */
+  // val AnonymousUserId = -4
+
   /** Guests with custom name and email, but not guests with magic ids like the Unknown user. */
   val MaxCustomGuestId = -10
 
-  val MaxGuestId = -2
+  val MaxGuestId = -2  // no, -3  [4KYFU02]
   //assert(MaxGuestId == AnonymousUserId)
   assert(UnknownUserId.toInt <= MaxGuestId)
 
@@ -262,8 +265,8 @@ case object User {
     */
   val LowestAuthenticatedUserId = 100
 
-  val LowestMemberId = SystemUserId // -1
-  val LowestNonGuestId = -1 // later: rename to LowestMemberId
+  val LowestMemberId = SystemUserId // -1    No, change to -2  [4KYFU02]
+  val LowestNonGuestId = -1  // later: rename to LowestMemberId   change to -2  [4KYFU02]
   assert(LowestNonGuestId == SystemUserId)
   assert(LowestNonGuestId == MaxGuestId + 1)
 
@@ -359,6 +362,7 @@ sealed trait User {
   def isAdmin: Boolean
   def isOwner: Boolean
   def isModerator: Boolean
+  def isSuperAdmin: Boolean
 
   def isAuthenticated = isRoleId(id)
   def isApprovedOrStaff = isApproved.contains(true) || isStaff
@@ -398,7 +402,8 @@ case class Member(
   lockedThreatLevel: Option[ThreatLevel] = None,
   isAdmin: Boolean = false,
   isOwner: Boolean = false,
-  isModerator: Boolean = false) extends User {
+  isModerator: Boolean = false,
+  isSuperAdmin: Boolean = false) extends User {
 
   override def anyName = fullName
   override def anyUsername = username
@@ -441,6 +446,7 @@ case class Guest(
   def isAdmin: Boolean = false
   def isOwner: Boolean = false
   def isModerator: Boolean = false
+  def isSuperAdmin: Boolean = false
   def suspendedTill: Option[ju.Date] = None
 
   override def anyName = Some(guestName)

@@ -39,6 +39,11 @@ export function startRemainingReactRoots() {
     ReactDOM.render(
         Router({ history: ReactRouter.browserHistory }, admin.routes()), adminAppElem);
 
+  var superAdminAppElem = document.getElementById('theSuperAdminApp');
+  if (superAdminAppElem)
+    ReactDOM.render(
+      Router({ history: ReactRouter.browserHistory }, superadmin.routes()), superAdminAppElem);
+
   var nonExistingPageElem = document.getElementById('dw-non-existing-page');
   if (nonExistingPageElem)
     ReactDOM.render(
