@@ -65,9 +65,10 @@ object LoginController extends mvc.Controller {
     * be made admin if s/he has the correct email address.
     */
   def shallBecomeOwner(request: JsonPostRequest, emailAddress: String): Boolean = {
-    val ownerEmailInDatabase = request.dao.loadSiteStatus() match {
-      case SiteStatus.OwnerCreationPending(email) =>
-        email
+    val site = request.dao.getSite()
+    val ownerEmailInDatabase = site.status match {
+      case SiteStatus.NoAdmin =>
+        site.creatorEmailAddress
       case _ =>
         // The very first signup has happened already, owner already created.
         return false

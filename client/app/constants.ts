@@ -42,6 +42,17 @@ var LastStarMark = 3;
 var MaxNumFirstPosts = 10;
 
 
+enum SiteStatus {
+  NoAdmin = 1,
+  Active = 2,
+  ReadAndCleanOnly = 3,
+  HiddenUnlessStaff = 4,
+  HiddenUnlessAdmin = 5,
+  Deleted = 6,
+  Purged = 7,
+}
+
+
 enum LoginReason {
   LoginToChat = 10,
   LoginToLike = 11,

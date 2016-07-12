@@ -29,6 +29,7 @@ class TestUtils(val daoFactory: DbDaoFactory) {
     // Nowadays it exists already, so:
     Site(
       Site.FirstSiteId,
+      status = SiteStatus.Active,
       name = "First Site",
       createdAt = When.fromMillis(1234567890),
       creatorIp = "0.0.0.0",

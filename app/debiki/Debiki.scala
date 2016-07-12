@@ -43,7 +43,7 @@ object Debiki {
       else configStr("debiki.postgresql.user")
 
     def password =
-      if (Play.isTest) "auto-deleted"
+      if (Play.isTest) "public"
       else sys.env.get("DEBIKI_POSTGRESQL_PASSWORD") getOrElse
         configStr("debiki.postgresql.password")
 

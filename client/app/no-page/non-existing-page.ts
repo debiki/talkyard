@@ -59,18 +59,19 @@ export var NonExistingPage = createComponent({
     var store: Store = this.state.store;
     var me: Myself = store.me;
     var siteStatus = store.siteStatus;
-    var adminPendingMatch = siteStatus === 'AdminCreationPending' ||
-        siteStatus === 'FirstSiteAdminPendingButNoEmailSpecified';
+    var adminPendingMatch = siteStatus === SiteStatus.NoAdmin ||
+        store.isFirstSiteAdminEmailMissing;
     if (adminPendingMatch && !me.isLoggedIn && !store.newUserAccountCreated) {
       return SignUpAsAdmin(this.state.store);
     }
     else if (me.isAdmin) {
-      if (siteStatus === 'IsEmbeddedSite') {
+      /*
+      if (siteStatus === 'IsEmbeddedSite') {  -- embedded comments disabled [5EU0232]
         return EmbeddedCommentsLinks(this.state.store);
       }
       else {
-        return CreateSomethingHere(this.state.store);
-      }
+      */
+      return CreateSomethingHere(this.state.store);
     }
     else {
       return LoginToCreateSomething(this.state.store);
@@ -88,7 +89,7 @@ export var SignUpAsAdmin = createComponent({
         r.span({}, 'That is, ', r.samp({}, this.props.obfuscatedAminEmail + '...@...'));
     }
 
-    var anyEmailProblem = this.props.siteStatus === 'FirstSiteAdminPendingButNoEmailSpecified'
+    var anyEmailProblem = this.props.isFirstSiteAdminEmailMissing
       ? r.p({ style: { color: 'hsl(0, 100%, 45%)', fontWeight: 'bold' }},
           "But you haven't specified any ", r.code({}, 'debiki.becomeOwnerEmailAddress'),
           " value in the config file — please edit it and do so.", r.br(),
@@ -253,10 +254,6 @@ export var CreateEmbeddedCommentsPanel = createComponent({
       newValue: this.refs.embeddingAddress.getValue(),
     };
     die("Unimplemented [EsE4KUPKFW2]"); // the old complicated settings stuff is now gone
-    /*
-    Server.saveSetting(setting, () => {
-      ReactActions.changeSiteStatus('IsEmbeddedSite');
-    }); */
   },
 
   render: function() {

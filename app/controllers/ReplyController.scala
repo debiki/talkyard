@@ -105,7 +105,7 @@ object ReplyController extends mvc.Controller {
 
 
   /*
-  private def tryCreateEmbeddedCommentsPage(
+  private def tryCreateEmbeddedCommentsPage(  -- embedded comments disabled [5EU0232]
         request: DebikiRequest[_], pageId: PageId, anyPageUrl: Option[String]): Option[Page] = {
 
     if (anyPageUrl.isEmpty)

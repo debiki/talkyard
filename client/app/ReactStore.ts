@@ -251,10 +251,6 @@ ReactDispatcher.register(function(payload) {
       stopGifsPlayOnClick();
       break;
 
-    case ReactActions.actionTypes.ChangeSiteStatus:
-      store.siteStatus = action.newStatus;
-      break;
-
     case ReactActions.actionTypes.HideHelpMessage:
       dieIf(!store.me, 'EsE8UGM5');
       var messageId = action.message ? action.message.id : action.messageId;

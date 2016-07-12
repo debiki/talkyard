@@ -246,4 +246,8 @@ package object http {
 
   def throwForbidden2 = DebikiHttp.throwForbidden _
 
+  def throwForbiddenIf(test: Boolean, errorCode: String, message: => String) {
+    if (test) throwForbidden2(errorCode, message)
+  }
+
 }

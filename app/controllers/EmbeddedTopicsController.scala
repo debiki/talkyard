@@ -142,11 +142,13 @@ object EmbeddedTopicsController extends mvc.Controller {
 
 
   def showSetupInstructions = AdminGetAction { request =>
+    ??? /*
     if (request.dao.loadSiteStatus() != SiteStatus.IsEmbeddedSite)
       throwForbidden("DwE21FG4", "This is currently not an embedded comments site")
 
     Ok(views.html.createsite.embeddingSiteInstructionsPage(
       SiteTpi(request), request.dao.loadSite()).body) as HTML
+      */
   }
 
 }

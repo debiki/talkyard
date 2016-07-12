@@ -56,7 +56,6 @@ export var actionTypes = {
   SetWatchbarOpen: 'SetWatchbarOpen',
   SetContextbarOpen: 'SetContextbarOpen',
   SetHorizontalLayout: 'SetHorizontalLayout',
-  ChangeSiteStatus: 'ChangeSiteStatus',
   HideHelpMessage: 'HideHelpMessage',
   ShowHelpAgain: 'ShowHelpAgain',
   ShowSingleHelpMessageAgain: 'ShowSingleHelpMessageAgain',
@@ -470,14 +469,6 @@ export function setHorizontalLayout(enabled: boolean) {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.SetHorizontalLayout,
     enabled: enabled
-  });
-}
-
-
-export function changeSiteStatus(newStatus: string) {
-  ReactDispatcher.handleViewAction({
-    actionType: actionTypes.ChangeSiteStatus,
-    newStatus: newStatus
   });
 }
 

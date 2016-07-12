@@ -53,6 +53,10 @@ class SiteDaoFactory (
   *
   * Don't use for more than one http request — it might cache things,
   * in private fields, and is perhaps not thread safe.
+  *
+  * Naming convention: dao.getWhatever() when a cache (in-process or Redis) is used.
+  * But dao.loadWhatever() when no cache is used, the db is always accessed.
+  * COULD REFACTOR RENAME according to above naming convention.
   */
 class SiteDao(
   val siteId: SiteId,
@@ -99,22 +103,18 @@ class SiteDao(
 
 
   memCache.onUserCreated { user =>
-    if (loadSiteStatus().isInstanceOf[SiteStatus.OwnerCreationPending] && user.isOwner) {
-      uncacheSiteStatus()
+    if (getSite().status == SiteStatus.NoAdmin) {
+      dieIf(!user.isOwner, "EsE6YK20")
+      dieIf(!user.isAdmin, "EsE2KU80")
+      uncacheSite()
     }
   }
 
-  memCache.onPageCreated { page =>
-    if (loadSiteStatus() == SiteStatus.ContentCreationPending) {
-      uncacheSiteStatus()
-    }
+  private def uncacheSite() {
+    memCache.remove(siteStateKey)
   }
 
-  private def uncacheSiteStatus() {
-    memCache.remove(siteStatusKey)
-  }
-
-  private def siteStatusKey = MemCacheKey(this.siteId, "|SiteId")
+  private def siteStateKey = MemCacheKey(this.siteId, "|SiteId")
 
 
   def readWriteTransaction[R](fn: SiteTransaction => R, allowOverQuota: Boolean = false): R = {
@@ -166,10 +166,16 @@ class SiteDao(
 
 
 
-  // ----- Tenant
+  // ----- Site
 
-  def loadSite(): Site = {
-    var site = readOnlyTransaction(_.loadTenant())
+  def getSite(): Site = {
+    memCache.lookup(
+      siteStateKey,
+      orCacheAndReturn = Some(loadSiteNoCache())) getOrDie "DwE5CB50"
+  }
+
+  private def loadSiteNoCache(): Site = {
+    var site = readOnlyTransaction(_.loadSite())
     if (siteId == FirstSiteId && site.canonicalHost.isEmpty) {
       // No hostname specified in the database. Fallback to the config file.
       val hostname = Globals.firstSiteHostname.getOrDie(
@@ -180,21 +186,38 @@ class SiteDao(
     site
   }
 
-  @deprecated("use loadSite() instead", "now")
-  def loadTenant(): Site = loadSite()
-
-  def loadSiteStatus(): SiteStatus = {
-    memCache.lookup(
-      siteStatusKey,
-      orCacheAndReturn = Some(readOnlyTransaction(_.loadSiteStatus()))) getOrDie "DwE5CB50"
+  def ensureSiteActiveOrThrow(newMember: CompleteUser, transaction: SiteTransaction) {
+    // The throwForbidden exceptions can be triggered for example if someone starts signing up,
+    // then the site gets deleted, and then the person clicks the submit button in
+    // the signup form. (I.e. a race condition, and that's fine.)
+    val site = transaction.loadSite()
+    site.status match {
+      case SiteStatus.NoAdmin =>
+        // We're creating an admin, therefore the site should now be activated.
+        dieIf(!newMember.isOwner, "EsE5KYF0", "Trying to create a non-owner for a NoAdmin site")
+        dieIf(!newMember.isAdmin, "EsE7RU82", "Trying to create a non-admin for a NoAdmin site")
+        transaction.updateSite(
+          site.copy(status = SiteStatus.Active))
+      case SiteStatus.Active =>
+        // Fine.
+      case SiteStatus.ReadAndCleanOnly =>
+        if (!newMember.isStaff)
+          throwForbidden2("EsE3KUG54", o"""Trying to create a non-staff user for
+              a ${site.status} site""")
+      case SiteStatus.HiddenUnlessAdmin =>
+        if (!newMember.isAdmin)
+          throwForbidden2("EsE9YK24S", o"""Trying to create a non-admin user for
+              a ${site.status} site""")
+      case _ =>
+        dieUnless(site.status.isDeleted, "EsE4FEI29")
+        throwForbidden2("EsE5KUFW2", "This site has been deleted. Cannot add new users.")
+    }
   }
-
 
   def updateSite(changedSite: Site) = {
     readWriteTransaction(_.updateSite(changedSite))
-    uncacheSiteStatus()
+    uncacheSite()
   }
-
 
   def addTenantHost(host: SiteHost) = {
     readWriteTransaction { transaction =>

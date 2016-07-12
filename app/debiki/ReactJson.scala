@@ -76,13 +76,17 @@ object ReactJson {
   def emptySiteJson(pageReq: PageRequest[_]): JsObject = {
     require(!pageReq.pageExists, "DwE7KEG2")
     require(pageReq.pagePath.value == HomepageUrlPath, "DwE8UPY4")
-    val siteStatusString = loadSiteStatusString(pageReq.dao)
+    val site = pageReq.dao.getSite()
     val siteSettings = pageReq.dao.loadWholeSiteSettings()
+    val isFirstSiteAdminEmailMissing = site.status == SiteStatus.NoAdmin &&
+      site.id == FirstSiteId && Globals.becomeFirstSiteOwnerEmail.isEmpty
+
     Json.obj(
       "appVersion" -> Globals.applicationVersion,
       "now" -> JsNumber((new ju.Date).getTime),
       "siteId" -> JsString(pageReq.siteId),
-      "siteStatus" -> JsString(siteStatusString),
+      "siteStatus" -> pageReq.dao.getSite().status.toInt,
+      "isFirstSiteAdminEmailMissing" -> isFirstSiteAdminEmailMissing,
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> Json.obj(
@@ -107,18 +111,6 @@ object ReactJson {
       "horizontalLayout" -> JsBoolean(false),
       "socialLinksHtml" -> JsNull)
   }
-
-
-  def loadSiteStatusString(dao: SiteDao): String =
-    dao.loadSiteStatus() match {
-      case SiteStatus.OwnerCreationPending(adminEmail) =>
-        if (dao.siteId != FirstSiteId) "AdminCreationPending"
-        else {
-          if (Globals.becomeFirstSiteOwnerEmail.exists(_.nonEmpty)) "AdminCreationPending"
-          else "FirstSiteAdminPendingButNoEmailSpecified"
-        }
-      case x => x.toString
-    }
 
 
   private def pageToJsonImpl(
@@ -206,7 +198,6 @@ object ReactJson {
         Nil
       }
 
-    val siteStatusString = loadSiteStatusString(dao)
     val siteSettings = dao.loadWholeSiteSettings()
     //val pageSettings = dao.loadSinglePageSettings(pageId)
     val horizontalLayout = page.role == PageRole.MindMap // || pageSettings.horizontalComments
@@ -219,7 +210,7 @@ object ReactJson {
       "appVersion" -> Globals.applicationVersion,
       "pageVersion" -> page.meta.version,
       "siteId" -> JsString(dao.siteId),
-      "siteStatus" -> JsString(siteStatusString),
+      "siteStatus" -> dao.getSite().status.toInt,
       // Later: move these two userMustBe... to settings {} too.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
@@ -278,12 +269,11 @@ object ReactJson {
 
   def adminAreaOrUserProfileJson(request: DebikiRequest[_]): JsObject = {
     val dao = request.dao
-    val siteStatusString = loadSiteStatusString(dao)
     val siteSettings = dao.loadWholeSiteSettings()
     Json.obj(
       "appVersion" -> Globals.applicationVersion,
       "siteId" -> JsString(dao.siteId),
-      "siteStatus" -> JsString(siteStatusString),
+      "siteStatus" -> request.dao.getSite().status.toInt,
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> Json.obj(

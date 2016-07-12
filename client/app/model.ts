@@ -306,7 +306,8 @@ interface Store {
   appVersion: string;
   pageVersion: PageVersion;
   now: number;
-  siteStatus: string;
+  siteStatus: SiteStatus;
+  isFirstSiteAdminEmailMissing?: boolean;
   userMustBeAuthenticated: boolean;
   userMustBeApproved: boolean;
   settings: SiteSettings;

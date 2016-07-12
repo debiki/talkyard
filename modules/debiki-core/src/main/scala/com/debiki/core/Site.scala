@@ -40,20 +40,99 @@ case class SiteIdHostname(id: SiteId, hostname: String)
 
 
 
-sealed abstract class SiteStatus
-object SiteStatus {
-  case class OwnerCreationPending(ownerEmail: String) extends SiteStatus
-  case object ContentCreationPending extends SiteStatus
-  case object IsEmbeddedSite extends SiteStatus
-  case object IsSimpleSite extends SiteStatus
+sealed abstract class SiteStatus(val IntValue: Int) {
+  def toInt = IntValue
+  def mayAddAdmins: Boolean
+  def mayAddModerators: Boolean
+  def mayAddUsers: Boolean
+  def isDeleted: Boolean = false
 }
 
+
+object SiteStatus {
+
+  /** No site admin has been created.
+    */
+  case object NoAdmin extends SiteStatus(1) {
+    def mayAddAdmins = true
+    def mayAddModerators = false
+    def mayAddUsers = false
+  }
+
+  /** "Normal" status. The site is in active use.
+    */
+  case object Active extends SiteStatus(2) {
+    def mayAddAdmins = true
+    def mayAddModerators = true
+    def mayAddUsers = true
+  }
+
+  /** No content can be added, but content can be deleted, by staff, if it's reported as
+    * offensive, for example. And more staff can be added, to help deleting any bad content.
+    */
+  case object ReadAndCleanOnly extends SiteStatus(3) {
+    def mayAddAdmins = true
+    def mayAddModerators = true
+    def mayAddUsers = false
+  }
+
+  case object HiddenUnlessStaff extends SiteStatus(4) {
+    def mayAddAdmins = true
+    def mayAddModerators = true
+    def mayAddUsers = false
+  }
+
+  case object HiddenUnlessAdmin extends SiteStatus(5) {
+    def mayAddAdmins = true
+    def mayAddModerators = false
+    def mayAddUsers = false
+  }
+
+  /** Can be undeleted. Only visible to superadmins.
+    */
+  case object Deleted extends SiteStatus(6) {
+    def mayAddAdmins = false
+    def mayAddModerators = false
+    def mayAddUsers = false
+    override def isDeleted = true
+  }
+
+  /** Will be erased from disk, after a grace period.
+    */
+  case object WillBePurged extends SiteStatus(7) {
+    def mayAddAdmins = false
+    def mayAddModerators = false
+    def mayAddUsers = false
+    override def isDeleted = true
+  }
+
+  /** All contents has been erased from disk, except for a sites table entry.
+    * Cannot be undeleted.
+    */
+  case object Purged extends SiteStatus(8) {
+    def mayAddAdmins = false
+    def mayAddModerators = false
+    def mayAddUsers = false
+    override def isDeleted = true
+  }
+
+  def fromInt(value: Int): Option[SiteStatus] = Some(value match {
+    case SiteStatus.NoAdmin.IntValue => SiteStatus.NoAdmin
+    case SiteStatus.Active.IntValue => SiteStatus.Active
+    case SiteStatus.ReadAndCleanOnly.IntValue => SiteStatus.ReadAndCleanOnly
+    case SiteStatus.HiddenUnlessAdmin.IntValue => SiteStatus.HiddenUnlessAdmin
+    case SiteStatus.Deleted.IntValue => SiteStatus.Deleted
+    case SiteStatus.Purged.IntValue => SiteStatus.Purged
+    case _ => return None
+  })
+}
 
 
 /** A website.
   */
 case class Site(
   id: SiteId,
+  status: SiteStatus,
   name: String,
   createdAt: When,
   creatorIp: String,

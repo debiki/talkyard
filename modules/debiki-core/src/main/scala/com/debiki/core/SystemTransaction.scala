@@ -43,7 +43,7 @@ trait SystemTransaction {
 
   def insertSiteHost(tenantId: String, host: SiteHost)
 
-  def deleteSite(siteId: SiteId)
+  //def deleteSite(siteId: SiteId)
 
   // ----- Users
 

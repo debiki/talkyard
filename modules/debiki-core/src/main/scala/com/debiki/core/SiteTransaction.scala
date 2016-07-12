@@ -45,11 +45,9 @@ trait SiteTransaction {
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
     isTestSiteOkayToDelete: Boolean): Site
 
-  def loadTenant(): Site
-
   def insertSiteHost(host: SiteHost)
 
-  def loadSiteStatus(): SiteStatus
+  def loadSite(): Site
   def bumpSiteVersion()
   def updateSite(changedSite: Site)
 

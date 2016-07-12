@@ -292,6 +292,7 @@ trait UserDao {
       val user = newUserData.makeUser(userId, transaction.currentTime)
       val identityId = transaction.nextIdentityId
       val identity = newUserData.makeIdentity(userId = userId, identityId = identityId)
+      ensureSiteActiveOrThrow(user, transaction)
       transaction.insertAuthenticatedUser(user)
       transaction.insertIdentity(identity)
       LoginGrant(Some(identity), user.briefUser, isNewIdentity = true, isNewRole = true)
@@ -328,6 +329,7 @@ trait UserDao {
     val user = readWriteTransaction { transaction =>
       val userId = transaction.nextAuthenticatedUserId
       val user = userData.makeUser(userId, transaction.currentTime)
+      ensureSiteActiveOrThrow(user, transaction)
       transaction.insertAuthenticatedUser(user)
       user.briefUser
     }
