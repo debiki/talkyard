@@ -134,6 +134,7 @@ object Onebox {
   private val engines = Seq[OneboxEngine](
     new ImageOnebox,
     new VideoOnebox,
+    new GiphyOnebox,
     new YouTubeOnebox)
 
 
