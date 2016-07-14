@@ -38,8 +38,9 @@ import scala.util.{Failure, Success}
 private[http] object PlainApiActions {
 
 
-  def PlainApiAction(rateLimits: RateLimits, allowAnyone: Boolean = false) =
-    PlainApiActionImpl(rateLimits, adminOnly = false, staffOnly = false, allowAnyone)
+  def PlainApiAction(rateLimits: RateLimits, allowAnyone: Boolean = false, isLogin: Boolean = false) =
+    PlainApiActionImpl(rateLimits, adminOnly = false, staffOnly = false,
+        allowAnyone = allowAnyone, isLogin = isLogin)
 
   def PlainApiActionStaffOnly =
     PlainApiActionImpl(NoRateLimits, adminOnly = false, staffOnly = true)
@@ -49,7 +50,6 @@ private[http] object PlainApiActions {
 
   val PlainApiActionSuperAdminOnly =
     PlainApiActionImpl(NoRateLimits, adminOnly = false, staffOnly = false, superAdminOnly = true)
-
 
 
 
@@ -63,7 +63,9 @@ private[http] object PlainApiActions {
     * The SidStatusRequest.sidStatus passed to the action is either SidAbsent or a SidOk.
     */
   def PlainApiActionImpl(rateLimits: RateLimits, adminOnly: Boolean,
-        staffOnly: Boolean, allowAnyone: Boolean = false, superAdminOnly: Boolean = false) =
+        staffOnly: Boolean,
+        allowAnyone: Boolean = false,  // try to delete 'allowAnyone'? REFACTOR
+        isLogin: Boolean = false, superAdminOnly: Boolean = false) =
       new ActionBuilder[ApiRequest] {
 
     def numOnly = adminOnly.toZeroOne + superAdminOnly.toZeroOne + staffOnly.toZeroOne
@@ -132,7 +134,7 @@ private[http] object PlainApiActions {
     }
 
 
-    def runBlockIfAuthOk[A](request: Request[A], site: SiteIdHostname, sidStatus: SidStatus,
+    def runBlockIfAuthOk[A](request: Request[A], site: SiteBrief, sidStatus: SidStatus,
           xsrfOk: XsrfOk, browserId: BrowserId, block: ApiRequest[A] => Future[Result]) = {
       val dao = Globals.siteDao(site.id)
       dao.perhapsBlockGuest(request, sidStatus, browserId)
@@ -144,40 +146,77 @@ private[http] object PlainApiActions {
         logoutBecauseSuspended = true
       }
 
-      if (staffOnly && !anyUser.exists(_.isStaff))
-        throwForbidden("DwE7BSW3", "Please login as admin or moderator")
+      // Re the !superAdminOnly test: Do allow access for superadmin endpoints,
+      // so they can reactivate this site, in case this site is the superadmin site itself.
+      if (!superAdminOnly) site.status match {
+        case SiteStatus.NoAdmin | SiteStatus.Active | SiteStatus.ReadAndCleanOnly =>
+          // Fine
+        case SiteStatus.HiddenUnlessStaff =>
+          if (!anyUser.exists(_.isStaff) && !isLogin)
+            throwLoginAsStaff(request)
+        case SiteStatus.HiddenUnlessAdmin =>
+          if (!anyUser.exists(_.isAdmin) && !isLogin)
+            throwLoginAsAdmin(request)
+        case SiteStatus.Deleted | SiteStatus.Purged =>
+          throwForbidden("DwE8Y0F2", "This site has been deleted.")
+      }
 
-      if (adminOnly && !anyUser.exists(_.isAdmin))
-        throwForbidden("DwE1GfK7", "Please login as admin")
+      if (staffOnly && !anyUser.exists(_.isStaff) && !isLogin)
+        throwLoginAsStaff(request)
+
+      if (adminOnly && !anyUser.exists(_.isAdmin) && !isLogin)
+        throwLoginAsAdmin(request)
 
       if (superAdminOnly) {
         Globals.config.superAdmin.siteId match {
-          case Some(site.id) => // fine
-          case Some(_) => throwForbidden("EsE4KGU0", s"Not the superadmin site id: ${site.id}")
-          case None => throwForbidden("EsE17KFE2", "No superadmin site id configured")
+          case Some(site.id) =>
+            // Fine: this (i.e. 'site') is the superadmin site, so we're allowed to access
+            // the superadmin endpoints.
+          case Some(_) =>
+            throwForbidden("EsE4KGU0", o"""This is site id ${site.id} but
+                that's not the superadmin site id""")
+          case None =>
+            throwForbidden("EsE17KFE2", "No superadmin site id configured")
         }
+
         Globals.config.superAdmin.hostname match {
-          case Some(request.host) => // fine
+          case Some(request.host) =>
+            // Fine: we're accessing the superadmin endpoints via the correct hostname.
           case Some(superAdminHostname) =>
             throwForbidden(
-              "EsE2KPU04", s"Wrong hostname. Please instead access via: $superAdminHostname")
+              "EsE2KPU04", o"""Wrong hostname. Please instead access the super admin area
+                  via: $superAdminHostname""")
           case None =>
             // Fine, this double check hasn't been enabled.
         }
-        val user = anyUser getOrElse {
-          throwForbidden("EsE81GfK7", "Please login as a super admin")
+
+        COULD /* Show this message in the login dialog somehow:
+        def thatIs__ = o"""That is, as a user whose email address is listed in the
+           '${Config.SuperAdminEmailAddressesPath}' config value in the config file 'play.conf'."""
+           */
+
+        if (Globals.config.superAdmin.emailAddresses.isEmpty) {
+          throwForbidden("EsE5KU02Y", o"""To access the super admin area, you first need to add
+              your email address to the '${Config.SuperAdminEmailAddressesPath}' config value
+              in the config file 'play.conf'. Thereafter, sign up or login as a user
+              with that email.""")
         }
-        if (!Globals.config.superAdmin.emailAddresses.contains(user.email)) {
-          throwForbidden("EsE5KY024", "Please logout and login as a super admin")
+
+        anyUser match {
+          case None =>
+            throwLoginAsSuperAdmin(request)
+          case Some(user) =>
+            if (!Globals.config.superAdmin.emailAddresses.contains(user.email))
+              throwLoginAsSuperAdmin(request)
         }
       }
 
-      if (!allowAnyone) {
+      if (!allowAnyone && !isLogin) {
         // ViewPageController has allow-anyone = true.
         val isXhr = DebikiHttp.isAjax(request)
         def goToHomepageOrIfXhrThen(block: => Unit) {
           if (isXhr) block
-          else throwTemporaryRedirect("/")
+          else throwTemporaryRedirect("/")  ;COULD // throwLoginAsTo but undef error [5KUP02]
         }
         val siteSettings = dao.loadWholeSiteSettings()
 

@@ -71,6 +71,10 @@ export function topic_sortByLatestActivity(t: Topic, t2: Topic, categoryId: Cate
   return topic_lastActivityAtMs(t2) - topic_lastActivityAtMs(t);
 }
 
+export function siteStatusToString(siteStatus: SiteStatus): string {
+  return SiteStatusStrings[siteStatus - 1];
+}
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

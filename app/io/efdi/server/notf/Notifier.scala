@@ -156,7 +156,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
       return Some("User has no email address")
     }
 
-    val site = siteDao.getSite()
+    val site = siteDao.theSite()
     if (site.canonicalHost.isEmpty && site.embeddingSiteUrl.isEmpty) {
       val problem = "neither chost nor embedding site url specified"
       logWarning(problem)
@@ -203,7 +203,7 @@ class Notifier(val systemDao: SystemDao, val siteDaoFactory: SiteDaoFactory)
     if (contents isEmpty)
       return None
 
-    val site = dao.getSite()
+    val site = dao.theSite()
     val anyPrettyHostname = site.canonicalHost.map(_.hostname)
     val anyPrettyOrigin = site.canonicalHost.map(Globals.schemeColonSlashSlash + _.hostname)
     val name = anyPrettyHostname getOrElse site.name

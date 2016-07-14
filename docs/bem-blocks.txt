@@ -29,3 +29,5 @@ esT             = a thread (i.e. a comment thread: a post and descendant replies
 esP             = a post
 esP_Z           = collapse thread button (Z = fold = collapse. Placed inside the post.)
 
+esSA            = super admin
+

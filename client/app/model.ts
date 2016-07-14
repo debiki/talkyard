@@ -594,6 +594,7 @@ interface Settings {
 
 
 interface SuperAdminStuff {
+  firstSiteHostname?: string;
   baseDomain: string;
   sites: SASite[];
 }
@@ -601,6 +602,7 @@ interface SuperAdminStuff {
 
 interface SASite {
   id: string;
+  status: SiteStatus;
   name: string;
   canonicalHostname: string;
   createdAtMs: number;

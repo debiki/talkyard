@@ -144,7 +144,7 @@ object DebugTestController extends mvc.Controller {
 
 
   def origin = GetAction { request =>
-    val canonicalHost = request.dao.getSite().canonicalHost
+    val canonicalHost = request.dao.theSite().canonicalHost
     val isFirstSite = Some(request.hostname) == Globals.firstSiteHostname
     val response =
       s"""Globals.secure: ${Globals.secure}

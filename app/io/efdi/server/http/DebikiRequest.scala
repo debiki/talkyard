@@ -31,7 +31,7 @@ import play.api.mvc.{Action => _, _}
  */
 abstract class DebikiRequest[A] {
 
-  def siteIdAndCanonicalHostname: SiteIdHostname
+  def siteIdAndCanonicalHostname: SiteBrief
   def sid: SidStatus
   def xsrfToken: XsrfOk
   def browserId: BrowserId

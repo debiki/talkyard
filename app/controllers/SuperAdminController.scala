@@ -18,14 +18,15 @@
 package controllers
 
 import com.debiki.core._
-import debiki.SiteTpi
+import debiki.{RateLimits, SiteTpi}
 import debiki.ReactJson._
+import debiki.DebikiHttp.throwBadRequest
 import io.efdi.server.http._
-import play.api._
-import play.api.libs.json.Json
+import play.{api => p}
+import play.api.libs.json.{JsObject, Json}
 
 
-object SuperAdminController extends mvc.Controller {
+object SuperAdminController extends p.mvc.Controller {
 
   def redirect = GetAction { apiReq =>
     Redirect(routes.SuperAdminController.superAdminApp("").url)
@@ -52,12 +53,33 @@ object SuperAdminController extends mvc.Controller {
   }
 
 
-  def listSites() = SuperAdminGetAction { apiReq =>
+  def listSites() = SuperAdminGetAction { request =>
+    listSitesImpl()
+  }
+
+
+  def updateSites() = SuperAdminPostJsonAction(maxLength = 10*1000) { request =>
+    val jsObjs = request.body.as[Seq[JsObject]]
+    val siteData = jsObjs.map(jsObj => {
+      val siteId = (jsObj \ "id").as[SiteId]
+      val newStatusInt = (jsObj \ "status").as[Int]
+      val newStatus = SiteStatus.fromInt(newStatusInt) getOrElse {
+        throwBadRequest("EsE402KU2", s"Bad status: $newStatusInt")
+      }
+      (siteId, newStatus)
+    })
+    debiki.Globals.systemDao.updateSites(siteData)
+    listSitesImpl()
+  }
+
+
+  def listSitesImpl(): p.mvc.Result = {
     // The most recent first.
     val sites: Seq[Site] = debiki.Globals.systemDao.loadSites().sortBy(-_.createdAt.toUnixMillis)
     OkSafeJson(Json.obj(
       "appVersion" -> debiki.Globals.applicationVersion,
       "superadmin" -> Json.obj(
+        "firstSiteHostname" -> JsStringOrNull(debiki.Globals.firstSiteHostname),
         "baseDomain" -> debiki.Globals.baseDomainWithPort,
         "sites" -> sites.map(siteToJson))))
   }
@@ -66,6 +88,7 @@ object SuperAdminController extends mvc.Controller {
   def siteToJson(site: Site) = {
     Json.obj(
       "id" -> site.id,
+      "status" -> site.status.toInt,
       "canonicalHostname" -> JsStringOrNull(site.canonicalHost.map(_.hostname)),
       "name" -> site.name,
       "createdAtMs" -> site.createdAt.toUnixMillis)

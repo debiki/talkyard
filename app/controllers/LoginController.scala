@@ -36,6 +36,55 @@ object LoginController extends mvc.Controller {
   val DiscardingSessionCookie = DiscardingSecureCookie("dwCoSid")
 
 
+  val AsSuperadmin = "superadmin"
+  val AsAdmin = "admin"
+  val AsStaff = "staff"
+
+  def showLoginPage(as: Option[String], to: Option[String]) = GetActionIsLogin { apiReq =>
+    // `thenGoTo` must be an URL relative the same origin.
+    val path = to getOrElse "/"
+    val badNextUrl = path.contains("//") || path.contains(':') || path.contains("..") ||
+      path.isEmpty || path.charAt(0) != '/'
+    if (badNextUrl)
+      throwForbidden("EsE5YK02", s"Bad next URL: $path")
+
+    val loginReason =
+      if (as.contains(AsSuperadmin)) {
+        "LoginToAdministrate"  // later: LoginReason.SuperAdminArea   xx
+      }
+      else if (as.contains(AsAdmin)) {
+        "LoginToAdministrate"
+      }
+      else if (as.contains(AsStaff)) {
+        "LoginToAdministrate"  // COULD add LoginReason.StaffOnly
+      }
+      else if (as.contains("member")) {
+        throwNotImplemented("EsE5ES20", "Not impl: ?as=member")
+      }
+      else if (path.startsWith("/-/admin/")) {
+        "LoginToAdministrate"
+      }
+      else if (path.startsWith("/-/superadmin/")) {
+        COULD // check if is superadmin site id, if not, throw forbidden
+        "LoginToAdministrate"  // later: LoginReason.SuperAdminArea   xx
+      }
+      else { // incl if (path.startsWith("/-/users/")) {
+        // The loginPopup template doesn't include any React store JSON and this results
+        // in a JS exception in ReactStore.isGuestLoginAllowed() when accessing
+        // store.settings.allowGuestLogin.  [5KUP02]
+        throwNotImplemented("EsE4KU67", "Logging in via /-/login to view pages or users")
+      }
+
+    COULD // find out if already logged in with enough perms, then go to `path` directly instead.
+
+    dieIfAssetsMissingIfDevTest()
+    Ok(views.html.login.loginPopup(
+      mode = loginReason,
+      serverAddress = s"//${apiReq.host}",
+      returnToUrl = apiReq.origin + path)) as HTML
+  }
+
+
   /** Opens a popup and a login dialog inside that popup. Useful when logging in
     * in an iframe, because it's not feasible to open modal dialogs from inside
     * iframes — only the iframe would be disabled by the modal dialog, but not
@@ -65,7 +114,7 @@ object LoginController extends mvc.Controller {
     * be made admin if s/he has the correct email address.
     */
   def shallBecomeOwner(request: JsonPostRequest, emailAddress: String): Boolean = {
-    val site = request.dao.getSite()
+    val site = request.dao.theSite()
     val ownerEmailInDatabase = site.status match {
       case SiteStatus.NoAdmin =>
         site.creatorEmailAddress

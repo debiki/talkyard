@@ -39,6 +39,8 @@ trait SystemTransaction {
   def loadSite(siteId: SiteId): Option[Site] =
     loadSitesWithIds(Seq(siteId)).headOption
 
+  def updateSites(sites: Seq[(SiteId, SiteStatus)])
+
   def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup]
 
   def insertSiteHost(tenantId: String, host: SiteHost)

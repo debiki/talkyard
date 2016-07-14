@@ -194,6 +194,7 @@ object ImportExportController extends mvc.Controller {
     val localHostname = readString(jsObject, "localHostname")
     Site(
       id = "?",
+      status = ???, // todo SiteStatus.fromInt(...)
       name = localHostname,
       createdAt = ???, // todo readWhenMs(jsObject, "creatorAtMs"),
       creatorIp = "0.0.0.0",

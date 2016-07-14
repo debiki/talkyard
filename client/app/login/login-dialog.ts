@@ -94,11 +94,14 @@ var LoginDialog = createClassAndFactory({
       isOpen: false,
       childDialog: null,
       logInOrSignUp: null,
+      store: debiki2.ReactStore.allData(),
     };
   },
 
   onChange: function() {
-    var loggedInUser = debiki2.ReactStore.allData().me;
+    var newStore = debiki2.ReactStore.allData();
+    this.setState({ store: newStore });
+    var loggedInUser = newStore.me;
     if (loggedInUser) {
       // Might have just logged in in another tab. Then cancel any login happening in this tab.
       // Or, if we logged in in this tab, just close the dialog.
@@ -196,7 +199,8 @@ var LoginDialog = createClassAndFactory({
     var content = LoginDialogContent({ isSignUp: state.isSignUp, loginReason: state.loginReason,
         anyReturnToUrl: state.anyReturnToUrl, setChildDialog: this.setChildDialog,
         childDialog: state.childDialog, close: this.close, isLoggedIn: state.isLoggedIn,
-        switchBetweenLoginAndSignUp: this.switchBetweenLoginAndSignUp });
+        switchBetweenLoginAndSignUp: this.switchBetweenLoginAndSignUp,
+        store: state.store });
 
     var modalHeader = state.loginReason === LoginReason.BecomeAdmin
       ? null // then there's an instruction text, that's enough
@@ -222,6 +226,7 @@ var LoginDialog = createClassAndFactory({
  */
 export var LoginDialogContent = createClassAndFactory({
   render: function() {
+    var store: Store = this.props.store;
     var loginReason = this.props.loginReason;
     var isSignUp = this.props.isSignUp;
 
@@ -304,6 +309,14 @@ export var LoginDialogContent = createClassAndFactory({
     if (isSignUp) {
       // Then the user clicked Sign Up explicitly, so need not show a switch-to-login
       // dialog?
+    }
+    else if (!store.siteStatus) {
+      // We're probably at /-/login and I haven't added any React store json on this page,
+      // so just hide create-new-account stuff. Currently not needed here anyway. [5PY8FD2]
+    }
+    else if (store.siteStatus > SiteStatus.Active) {
+      // Right now, don't allow creation of new accounts, for deactivated sites. Later, though,
+      // let admins invite new staff, if the site is in ReadAndCleanOnly mode. [5PY8FD2]
     }
     else {
       // The login dialog opens not only via the Log In button, but also if one clicks

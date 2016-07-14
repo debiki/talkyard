@@ -94,7 +94,7 @@ object LoginWithOpenAuthController extends Controller {
 
 
   def startAuthentication(provider: String, returnToUrl: String) =
-        AsyncGetActionAllowAnyone { request =>
+        AsyncGetActionIsLogin { request =>
     startAuthenticationImpl(provider, returnToUrl, request)
   }
 
@@ -126,7 +126,7 @@ object LoginWithOpenAuthController extends Controller {
   }
 
 
-  def finishAuthentication(provider: String) = AsyncGetActionAllowAnyone { request =>
+  def finishAuthentication(provider: String) = AsyncGetActionIsLogin { request =>
     authenticate(provider, request)
   }
 
@@ -309,7 +309,9 @@ object LoginWithOpenAuthController extends Controller {
               }
               else {
                 // COULD show a nice error dialog instead.
-                throwForbidden("DwE5FK9R2", "Access denied")
+                throwForbidden("DwE5FK9R2", o"""Access denied. You don't have an account
+                    at this site with ${oauthDetails.providerId} login. And you may not
+                    create a new account to access this resource.""")
               }
           }
       }
@@ -411,6 +413,8 @@ object LoginWithOpenAuthController extends Controller {
 
 
   def handleCreateUserDialog = AsyncPostJsonAction(RateLimits.CreateUser, maxLength = 1000,
+        // Could set isLogin = true instead, see handleCreateUserDialog(..) in
+        // LoginWithPasswordController, + login-dialog.ts [5PY8FD2]
         allowAnyone = true) { request: JsonPostRequest =>
     val body = request.body
 
@@ -516,7 +520,7 @@ object LoginWithOpenAuthController extends Controller {
     * OAuth 1 and 2 providers supposedly have been configured to use.
     */
   def loginThenReturnToOriginalSite(provider: String, returnToOrigin: String, xsrfToken: String)
-        = AsyncGetActionAllowAnyone { request =>
+        = AsyncGetActionIsLogin { request =>
     // The actual redirection back to the returnToOrigin happens in handleAuthenticationData()
     // — it checks the value of the return-to-origin cookie.
     if (anyLoginOrigin.map(_ == originOf(request)) != Some(true))
@@ -533,7 +537,7 @@ object LoginWithOpenAuthController extends Controller {
 
 
   def continueAtOriginalSite(oauthDetailsCacheKey: String, xsrfToken: String) =
-        GetActionAllowAnyone { request =>
+        GetActionIsLogin { request =>
     val anyXsrfTokenInSession = request.cookies.get(ReturnToSiteXsrfTokenCookieName)
     anyXsrfTokenInSession match {
       case Some(xsrfCookie) =>

@@ -36,7 +36,7 @@ object Site {
 /**
   * @param hostname — doesn't include any port number.
   */
-case class SiteIdHostname(id: SiteId, hostname: String)
+case class SiteBrief(id: SiteId, hostname: String, status: SiteStatus)
 
 
 
@@ -97,19 +97,10 @@ object SiteStatus {
     override def isDeleted = true
   }
 
-  /** Will be erased from disk, after a grace period.
-    */
-  case object WillBePurged extends SiteStatus(7) {
-    def mayAddAdmins = false
-    def mayAddModerators = false
-    def mayAddUsers = false
-    override def isDeleted = true
-  }
-
   /** All contents has been erased from disk, except for a sites table entry.
     * Cannot be undeleted.
     */
-  case object Purged extends SiteStatus(8) {
+  case object Purged extends SiteStatus(7) {
     def mayAddAdmins = false
     def mayAddModerators = false
     def mayAddUsers = false
@@ -120,6 +111,7 @@ object SiteStatus {
     case SiteStatus.NoAdmin.IntValue => SiteStatus.NoAdmin
     case SiteStatus.Active.IntValue => SiteStatus.Active
     case SiteStatus.ReadAndCleanOnly.IntValue => SiteStatus.ReadAndCleanOnly
+    case SiteStatus.HiddenUnlessStaff.IntValue => SiteStatus.HiddenUnlessStaff
     case SiteStatus.HiddenUnlessAdmin.IntValue => SiteStatus.HiddenUnlessAdmin
     case SiteStatus.Deleted.IntValue => SiteStatus.Deleted
     case SiteStatus.Purged.IntValue => SiteStatus.Purged
@@ -146,8 +138,8 @@ case class Site(
   def canonicalHost: Option[SiteHost] = hosts.find(_.role == SiteHost.RoleCanonical)
   def theCanonicalHost = canonicalHost getOrDie "EsE7YKF2"
 
-  def idAndCanonicalHostname =
-    SiteIdHostname(id, canonicalHost.getOrDie("EsE2GUY5").hostname)
+  def brief =
+    SiteBrief(id, canonicalHost.getOrDie("EsE2GUY5").hostname, status)
 }
 
 
@@ -174,11 +166,8 @@ case class SiteHost(
 case class CanonicalHostLookup(
   siteId: SiteId,
   thisHost: SiteHost,
-  canonicalHost: SiteHost) {
+  canonicalHost: SiteHost)
 
-  def siteIdAndCanonicalHostname =
-    SiteIdHostname(siteId, canonicalHost.hostname)
-}
 
 
 abstract class NewSiteData {

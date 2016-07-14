@@ -20,6 +20,7 @@
 # dependency ? see:
 #   https://groups.google.com/forum/?fromgroups=#!topic/play-framework/cVqBvywCs4k
 
+GET   /-/login                  controllers.LoginController.showLoginPage(as: Option[String], to: Option[String])
 GET   /-/login-popup            controllers.LoginController.showLoginPopup(mode, returnToUrl)
 POST  /-/logout                 controllers.LoginController.logout
 
@@ -195,6 +196,7 @@ GET   /-/superadmin              controllers.SuperAdminController.redirect
 GET   /-/superadmin/             controllers.SuperAdminController.superAdminApp(clientRoute = "")
 GET   /-/superadmin/*clientRoute controllers.SuperAdminController.superAdminApp(clientRoute)
 GET   /-/list-sites              controllers.SuperAdminController.listSites
+POST  /-/update-sites            controllers.SuperAdminController.updateSites
 
 # Don't change the URL on the next line. The /-/assets/<version-number>/ is
 # updated by the deployment script (asset fingerprinting).

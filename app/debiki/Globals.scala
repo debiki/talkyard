@@ -589,6 +589,7 @@ class Globals {
 object Config {
   val CreateSitePath = "ed.createSite"
   val SuperAdminPath = "ed.superAdmin"
+  val SuperAdminEmailAddressesPath = s"$SuperAdminPath.emailAddresses"
 }
 
 
@@ -608,7 +609,7 @@ class Config(conf: play.api.Configuration) {
     val path = Config.SuperAdminPath
     val hostname = conf.getString(s"$path.hostname")
     val siteId = conf.getString(s"$path.siteId")
-    val emailAddresses = conf.getString(s"$path.emailAddresses") match {
+    val emailAddresses = conf.getString(Config.SuperAdminEmailAddressesPath) match {
       case None => Nil
       case Some(emails) => emails.split(',').map(_.trim).toVector
     }

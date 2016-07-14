@@ -52,6 +52,15 @@ enum SiteStatus {
   Purged = 7,
 }
 
+var SiteStatusStrings = [
+  'NoAdmin',
+  'Active',
+  'ReadAndCleanOnly',
+  'HiddenUnlessStaff',
+  'HiddenUnlessAdmin',
+  'Deleted',
+  'Purged'];
+
 
 enum LoginReason {
   LoginToChat = 10,

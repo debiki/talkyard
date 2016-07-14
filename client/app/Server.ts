@@ -923,6 +923,13 @@ export function listSites() {
 }
 
 
+export function updateSites(sites: SASite[]) {
+  postJsonSuccess('/-/update-sites', (patch) => {
+    ReactActions.patchTheStore(patch);
+  }, sites);
+}
+
+
 export function logBrowserError(errorMessage: string) {  // rename to logError
   postJsonSuccess('/-/log-browser-error', () => {}, errorMessage);
 }

@@ -119,7 +119,7 @@ object PageRequest {
   * "pageParts".
   */
 class PageRequest[A](
-  val siteIdAndCanonicalHostname: SiteIdHostname,
+  val siteIdAndCanonicalHostname: SiteBrief,
   val sid: SidStatus,
   val xsrfToken: XsrfOk,
   val browserId: BrowserId,
@@ -220,7 +220,7 @@ class PageRequest[A](
   * when showing comments for an URL for which no page has yet been created.
   */
 class DummyPageRequest[A](
-  siteIdAndCanonicalHostname: SiteIdHostname,
+  siteIdAndCanonicalHostname: SiteBrief,
   sid: SidStatus,
   xsrfToken: XsrfOk,
   browserId: BrowserId,

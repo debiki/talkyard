@@ -56,6 +56,8 @@ class SiteDaoFactory (
   *
   * Naming convention: dao.getWhatever() when a cache (in-process or Redis) is used.
   * But dao.loadWhatever() when no cache is used, the db is always accessed.
+  * And dao.theWhatever(), when the cache is used, and the Whatever must exist otherwise
+  * a runtime exception will be thrown.
   * COULD REFACTOR RENAME according to above naming convention.
   */
 class SiteDao(
@@ -103,7 +105,7 @@ class SiteDao(
 
 
   memCache.onUserCreated { user =>
-    if (getSite().status == SiteStatus.NoAdmin) {
+    if (theSite().status == SiteStatus.NoAdmin) {
       dieIf(!user.isOwner, "EsE6YK20")
       dieIf(!user.isAdmin, "EsE2KU80")
       uncacheSite()
@@ -111,10 +113,10 @@ class SiteDao(
   }
 
   private def uncacheSite() {
-    memCache.remove(siteStateKey)
+    memCache.remove(thisSiteCacheKey)
   }
 
-  private def siteStateKey = MemCacheKey(this.siteId, "|SiteId")
+  private def thisSiteCacheKey = siteCacheKey(this.siteId)
 
 
   def readWriteTransaction[R](fn: SiteTransaction => R, allowOverQuota: Boolean = false): R = {
@@ -168,10 +170,12 @@ class SiteDao(
 
   // ----- Site
 
-  def getSite(): Site = {
+  def theSite(): Site = getSite getOrDie "DwE5CB50"
+
+  def getSite(): Option[Site] = {
     memCache.lookup(
-      siteStateKey,
-      orCacheAndReturn = Some(loadSiteNoCache())) getOrDie "DwE5CB50"
+      thisSiteCacheKey,
+      orCacheAndReturn = Some(loadSiteNoCache()))
   }
 
   private def loadSiteNoCache(): Site = {
@@ -198,6 +202,10 @@ class SiteDao(
         dieIf(!newMember.isAdmin, "EsE7RU82", "Trying to create a non-admin for a NoAdmin site")
         transaction.updateSite(
           site.copy(status = SiteStatus.Active))
+        BUG; RACE // if reloaded before transaction committed, old state will be reinserted
+        // into the cache. Have the caller call uncacheSite() instead? But how ensure it'll
+        // remember to do that??
+        uncacheSite()
       case SiteStatus.Active =>
         // Fine.
       case SiteStatus.ReadAndCleanOnly =>
@@ -348,6 +356,8 @@ class SiteDao(
 object SiteDao {
 
   private val locksBySiteId = mutable.HashMap[SiteId, Object]()
+
+  def siteCacheKey(siteId: SiteId) = MemCacheKey(siteId, "|SiteId")
 
   def synchronizeOnSiteId[R](siteId: SiteId)(block: => R): R = {
     val lock = locksBySiteId.getOrElseUpdate(siteId, new Object)

@@ -46,6 +46,13 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
 
   // ----- Sites
 
+  def theSite(siteId: SiteId) = getSite(siteId) getOrDie "EsE2WUY5"
+
+  def getSite(siteId: SiteId): Option[Site] = {
+    COULD_OPTIMIZE // move getSite() to SystemDao instead so won't need to create temp SiteDao obj.
+    debiki.Globals.siteDao(siteId).getSite()
+  }
+
   def loadSites(): Seq[Site] =
     readOnlyTransaction(_.loadSites())
 
@@ -54,6 +61,13 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
 
   def loadSite(siteId: SiteId): Option[Site] =
     readOnlyTransaction(_.loadSitesWithIds(Seq(siteId)).headOption)
+
+  def updateSites(sites: Seq[(SiteId, SiteStatus)]) {
+    readWriteTransaction(_.updateSites(sites))
+    for ((siteId, _) <- sites) {
+      debiki.Globals.siteDao(siteId).emptyCache()
+    }
+  }
 
 
   // ----- Notifications

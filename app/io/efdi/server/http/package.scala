@@ -19,6 +19,7 @@ package io.efdi.server
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import controllers.{routes, LoginController}
 import debiki._
 import debiki.DebikiHttp._
 import debiki.RateLimits.NoRateLimits
@@ -63,7 +64,7 @@ package object http {
 
 
   case class ApiRequest[A](
-    siteIdAndCanonicalHostname: SiteIdHostname,
+    siteIdAndCanonicalHostname: SiteBrief,
     sid: SidStatus,
     xsrfToken: XsrfOk,
     browserId: BrowserId,
@@ -78,6 +79,7 @@ package object http {
   type PageGetRequest = PageRequest[Unit]
 
   /** A request with form data.
+    *
     * @deprecated Use ApiRequest[JsonOrFormDataBody] instead — no, use JsonPostRequest.
     */
   type FormDataPostRequest = ApiRequest[Map[String, Seq[String]]]
@@ -94,6 +96,9 @@ package object http {
   def AsyncGetActionAllowAnyone(f: GetRequest => Future[Result]): mvc.Action[Unit] =
     PlainApiAction(NoRateLimits, allowAnyone = true).async(BodyParsers.parse.empty)(f)
 
+  def AsyncGetActionIsLogin(f: GetRequest => Future[Result]): mvc.Action[Unit] =
+    PlainApiAction(NoRateLimits, isLogin = true).async(BodyParsers.parse.empty)(f)
+
   def AsyncGetActionRateLimited(rateLimits: RateLimits)(f: GetRequest => Future[Result])
         : mvc.Action[Unit] =
     PlainApiAction(rateLimits).async(BodyParsers.parse.empty)(f)
@@ -103,6 +108,9 @@ package object http {
 
   def GetActionAllowAnyone(f: GetRequest => Result) =
     PlainApiAction(NoRateLimits, allowAnyone = true)(BodyParsers.parse.empty)(f)
+
+  def GetActionIsLogin(f: GetRequest => Result) =
+    PlainApiAction(NoRateLimits, isLogin = true)(BodyParsers.parse.empty)(f)
 
   def GetActionRateLimited(rateLimits: RateLimits, allowAnyone: Boolean = false)(
         f: GetRequest => Result) =
@@ -119,15 +127,17 @@ package object http {
 
 
   def JsonOrFormDataPostAction
-        (rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)
+        (rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false,
+         isLogin: Boolean = false)
         (f: ApiRequest[JsonOrFormDataBody] => Result) =
-    PlainApiAction(rateLimits, allowAnyone = allowAnyone)(
+    PlainApiAction(rateLimits, allowAnyone = allowAnyone, isLogin = isLogin)(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
   def AsyncJsonOrFormDataPostAction
-        (rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false)
+        (rateLimits: RateLimits, maxBytes: Int, allowAnyone: Boolean = false,
+         isLogin: Boolean = false)
         (f: ApiRequest[JsonOrFormDataBody] => Future[Result]): mvc.Action[JsonOrFormDataBody] =
-    PlainApiAction(rateLimits, allowAnyone = allowAnyone).async(
+    PlainApiAction(rateLimits, allowAnyone = allowAnyone, isLogin = isLogin).async(
       JsonOrFormDataBody.parser(maxBytes = maxBytes))(f)
 
 
@@ -249,5 +259,33 @@ package object http {
   def throwForbiddenIf(test: Boolean, errorCode: String, message: => String) {
     if (test) throwForbidden2(errorCode, message)
   }
+
+
+  def throwLoginAsSuperAdmin(request: Request[_]) =
+    if (DebikiHttp.isAjax(request)) throwForbidden2("EsE54YK2", "Not super admin")
+    else throwLoginAsSuperAdminTo(request.uri)
+
+  def throwLoginAsSuperAdminTo(path: String) =
+    throwLoginAsTo(LoginController.AsSuperadmin, path)
+
+
+  def throwLoginAsAdmin(request: Request[_]) =
+    if (DebikiHttp.isAjax(request)) throwForbidden2("EsE6GP21", "Not admin")
+    else throwLoginAsAdminTo(request.uri)
+
+  def throwLoginAsAdminTo(path: String) =
+    throwLoginAsTo(LoginController.AsAdmin, path)
+
+
+  def throwLoginAsStaff(request: Request[_]) =
+    if (DebikiHttp.isAjax(request)) throwForbidden2("EsE4GP6D", "Not staff")
+    else throwLoginAsStaffTo(request.uri)
+
+  def throwLoginAsStaffTo(path: String) =
+    throwLoginAsTo(LoginController.AsStaff, path)
+
+
+  private def throwLoginAsTo(as: String, to: String) =
+    throwTemporaryRedirect(routes.LoginController.showLoginPage(as = Some(as), to = Some(to)).url)
 
 }

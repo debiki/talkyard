@@ -167,7 +167,7 @@ object ForumDao {
     |Here, below the first paragraph, add details like:
     |- Who is this community for?
     |- What can they do or find here?
-    |- Link to additional info, for example:  [the about page](/about); any FAQ; any main website of yours.
+    |- Link to additional info, for example, any FAQ, or main website of yours.
     |
     |To edit this, click <span class="icon-menu"></span> just below and then <b class="icon-edit">Edit</b>.
     |""")

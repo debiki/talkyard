@@ -41,7 +41,7 @@ object LoginWithPasswordController extends mvc.Controller {
 
 
   def login = JsonOrFormDataPostAction(RateLimits.Login, maxBytes = 1000,
-        allowAnyone = true) { request =>
+        isLogin = true) { request =>
     val email = request.body.getOrThrowBadReq("email")
     val password = request.body.getOrThrowBadReq("password")
     val anyReturnToUrl = request.body.getFirst("returnToUrl")
@@ -89,6 +89,9 @@ object LoginWithPasswordController extends mvc.Controller {
 
 
   def handleCreateUserDialog = AsyncPostJsonAction(RateLimits.CreateUser, maxLength = 1000,
+        // COULD set isLogin (or isLoginOrSignup)= true but currently that'd mean people
+        // could sign up for SiteStatus.HiddenUnlessStaff/Admin. So, not right now.
+        // Perhaps later though, if staff can be invited directly via invite emails. [5PY8FD2]
         allowAnyone = true) { request: JsonPostRequest =>
     val body = request.body
     val fullName = (body \ "fullName").asOptStringNoneIfBlank

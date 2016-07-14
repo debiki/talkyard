@@ -81,7 +81,7 @@ var AdminAppComponent = React.createClass(<any> {
 
   render: function() {
     return (
-      r.div({ className: "container" },
+      r.div({ className: "container esSA" },
         React.cloneElement(this.props.children, { store: this.state.store })));
   }
 });
@@ -94,18 +94,7 @@ var DashboardPanelComponent = React.createClass(<any> {
     if (!stuff)
       return r.p({}, "Loading ...");
 
-    var sites = stuff.sites.map((site: SASite) => {
-      return (
-          r.tr({},
-            r.td({},
-              r.a({ href: '//site-' + site.id + '.' + stuff.baseDomain }, site.id)),
-            r.td({},
-              r.a({ href: '//' + site.canonicalHostname }, site.canonicalHostname)),
-            r.td({},
-              site.name),
-            r.td({},
-              moment(site.createdAtMs).toISOString().replace('T', ' '))));
-    });
+    var sites = stuff.sites.map(site => SiteTableRow({ site: site, superAdminStuff: stuff }));
 
     return (
       r.div({},
@@ -114,6 +103,7 @@ var DashboardPanelComponent = React.createClass(<any> {
           r.thead({},
             r.tr({},
               r.th({}, "ID"),
+              r.th({}, "Status"),
               r.th({}, "Address"),
               r.th({}, "Name"),
               r.th({}, "Created At"))),
@@ -122,6 +112,48 @@ var DashboardPanelComponent = React.createClass(<any> {
   }
 });
 
+
+var SiteTableRow = createComponent({
+  changeStatus: function(newStatus: SiteStatus) {
+    var site: SASite = _.clone(this.props.site);
+    site.status = newStatus;
+    Server.updateSites([site]);
+  },
+
+  render: function() {
+    var stuff: SuperAdminStuff = this.props.superAdminStuff;
+    var site: SASite = this.props.site;
+    var newStatusButtonStatus: SiteStatus;
+    var newStatusButtonText: string;
+    if (site.status === SiteStatus.Active) {
+      newStatusButtonStatus = SiteStatus.HiddenUnlessStaff;
+      newStatusButtonText = "Hide unless staff";
+    }
+    else {
+      newStatusButtonStatus = SiteStatus.Active;
+      newStatusButtonText = "Activate again";
+    }
+    var hostname = site.canonicalHostname;
+    if (!hostname && site.id === FirstSiteId) {
+      hostname = stuff.firstSiteHostname;
+    }
+    return (
+      r.tr({},
+        r.td({},
+          r.a({ href: '//site-' + site.id + '.' + stuff.baseDomain }, site.id)),
+        r.td({},
+          siteStatusToString(site.status),
+          Button({ className: 'esSA_StatusBtn',
+              onClick: () => this.changeStatus(newStatusButtonStatus) },
+            newStatusButtonText)),
+        r.td({},
+          r.a({ href: '//' + hostname }, hostname)),
+        r.td({},
+          site.name),
+        r.td({},
+          moment(site.createdAtMs).toISOString().replace('T', ' '))));
+  }
+});
 
 //------------------------------------------------------------------------------
    }

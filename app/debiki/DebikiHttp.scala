@@ -242,11 +242,11 @@ object DebikiHttp {
     * them via site id, we don't need to ask the side admin to come up with any
     * site address.
     */
-  def lookupSiteOrThrow(request: RequestHeader, systemDao: SystemDao): SiteIdHostname = {
+  def lookupSiteOrThrow(request: RequestHeader, systemDao: SystemDao): SiteBrief = {
     lookupSiteOrThrow(request.secure, request.host, request.uri, systemDao)
   }
 
-  def lookupSiteOrThrow(url: String, systemDao: SystemDao): SiteIdHostname = {
+  def lookupSiteOrThrow(url: String, systemDao: SystemDao): SiteBrief = {
     val (scheme, separatorHostPathQuery) = url.span(_ != ':')
     val secure = scheme == "https"
     val (host, pathAndQuery) =
@@ -255,15 +255,15 @@ object DebikiHttp {
   }
 
   def lookupSiteOrThrow(secure: Boolean, host: String, pathAndQuery: String,
-        systemDao: SystemDao): SiteIdHostname = {
+        systemDao: SystemDao): SiteBrief = {
 
     // Play supports one HTTP and one HTTPS port only, so it makes little sense
     // to include any port number when looking up a site.
     val hostname = if (host contains ':') host.span(_ != ':')._1 else host
     def firstSiteIdAndHostname =
-      SiteIdHostname(Site.FirstSiteId, hostname = Globals.firstSiteHostname getOrElse {
+      SiteBrief(Site.FirstSiteId, hostname = Globals.firstSiteHostname getOrElse {
         throwForbidden("EsE5UYK2", "No first site hostname configured (debiki.hostname)")
-      })
+      }, systemDao.theSite(FirstSiteId).status)
 
     if (Globals.firstSiteHostname.contains(hostname))
       return firstSiteIdAndHostname
@@ -271,24 +271,28 @@ object DebikiHttp {
     // If the hostname is like "site-123.example.com" then we'll just lookup id 123.
     hostname match {
       case debiki.Globals.siteByIdHostnameRegex(siteId) =>
-        systemDao.loadSite(siteId) match {
+        systemDao.getSite(siteId) match {
           case None =>
             throwNotFound("DwE72SF6", s"No site with id `$siteId'")
           case Some(site) =>
             COULD // link to canonical host if (site.hosts.exists(_.role == SiteHost.RoleCanonical))
-            return site.idAndCanonicalHostname
+            // Let the config file hostname have precedence over the database.
+            if (site.id == FirstSiteId && Globals.firstSiteHostname.isDefined)
+              return site.brief.copy(hostname = Globals.firstSiteHostname.get)
+            else
+              return site.brief
         }
       case _ =>
     }
 
     // Id unknown so we'll lookup the hostname instead.
-    systemDao.lookupCanonicalHost(hostname) match {
+    val lookupResult = systemDao.lookupCanonicalHost(hostname) match {
       case Some(result) =>
         if (result.thisHost == result.canonicalHost)
-          result.siteIdAndCanonicalHostname
+          result
         else result.thisHost.role match {
           case SiteHost.RoleDuplicate =>
-            result.siteIdAndCanonicalHostname
+            result
           case SiteHost.RoleRedirect =>
             throwPermanentRedirect(Globals.originOf(result.canonicalHost.hostname) + pathAndQuery)
           case SiteHost.RoleLink =>
@@ -304,6 +308,8 @@ object DebikiHttp {
         }
         throwNotFound("DwE0NSS0", "There is no site with that hostname")
     }
+    val site = systemDao.getSite(lookupResult.siteId) getOrDie "EsE2KU503"
+    site.brief
   }
 
 

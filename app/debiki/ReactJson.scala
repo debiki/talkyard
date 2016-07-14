@@ -76,7 +76,7 @@ object ReactJson {
   def emptySiteJson(pageReq: PageRequest[_]): JsObject = {
     require(!pageReq.pageExists, "DwE7KEG2")
     require(pageReq.pagePath.value == HomepageUrlPath, "DwE8UPY4")
-    val site = pageReq.dao.getSite()
+    val site = pageReq.dao.theSite()
     val siteSettings = pageReq.dao.loadWholeSiteSettings()
     val isFirstSiteAdminEmailMissing = site.status == SiteStatus.NoAdmin &&
       site.id == FirstSiteId && Globals.becomeFirstSiteOwnerEmail.isEmpty
@@ -85,7 +85,7 @@ object ReactJson {
       "appVersion" -> Globals.applicationVersion,
       "now" -> JsNumber((new ju.Date).getTime),
       "siteId" -> JsString(pageReq.siteId),
-      "siteStatus" -> pageReq.dao.getSite().status.toInt,
+      "siteStatus" -> pageReq.dao.theSite().status.toInt,
       "isFirstSiteAdminEmailMissing" -> isFirstSiteAdminEmailMissing,
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
@@ -210,7 +210,7 @@ object ReactJson {
       "appVersion" -> Globals.applicationVersion,
       "pageVersion" -> page.meta.version,
       "siteId" -> JsString(dao.siteId),
-      "siteStatus" -> dao.getSite().status.toInt,
+      "siteStatus" -> dao.theSite().status.toInt,
       // Later: move these two userMustBe... to settings {} too.
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
@@ -273,7 +273,7 @@ object ReactJson {
     Json.obj(
       "appVersion" -> Globals.applicationVersion,
       "siteId" -> JsString(dao.siteId),
-      "siteStatus" -> request.dao.getSite().status.toInt,
+      "siteStatus" -> request.dao.theSite().status.toInt,
       "userMustBeAuthenticated" -> JsBoolean(siteSettings.userMustBeAuthenticated),
       "userMustBeApproved" -> JsBoolean(siteSettings.userMustBeApproved),
       "settings" -> Json.obj(
