@@ -31,3 +31,6 @@ esP_Z           = collapse thread button (Z = fold = collapse. Placed inside the
 
 esSA            = super admin
 
+esPw            = password
+esOb            = onebox
+

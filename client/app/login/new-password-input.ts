@@ -32,7 +32,8 @@ var Input = reactCreateFactory(ReactBootstrap.Input);
 
 // zxcvbn's strongest level is 4, but that makes people confused: they are often
 // unable to come up with strong password.
-var MinPasswordStrength = 2;
+// In fact, level 2 is too high for many people.
+var MinPasswordStrength = 1;
 var BadPasswordStrength = 3;
 
 
@@ -42,6 +43,7 @@ export var NewPasswordInput = createClassAndFactory({
       zxcvbnLoaded: false,
       passwordWeakReason: 'too short',
       passwordCrackTimeText: 'instant',
+      passwordLength: 0,
       passwordStrength: 0,
       showErrors: false,
     };
@@ -88,19 +90,23 @@ export var NewPasswordInput = createClassAndFactory({
 
     // Don't blindly trust zxcvbn — do some basic tests of our own as well.
     var problem = null;
-    if (password.length < 8) {
-      problem = 'Too short. Should be at least 8 characters';
+    if (password.length < 10) {
+      problem = 'Too short. Should be at least 10 characters';
     }
-    else if (!password.match(/[0-9!@#$%^&*()_+`=;:{}[\]\\]+/)) {
+    else if (!password.match(/[0-9!@#$%^&*()_\-+`'"=\.,;:{}[\]\\]+/)) {
       problem = 'Please include a digit or special character';
     }
     else if (passwordStrength.score < MinPasswordStrength) {
       problem = 'Too weak';
+      if (password.length >= 6) {
+        problem += ". Don't use passwords like '12345' or 'abcde'."
+      }
     }
     this.setState({
       passwordWeakReason: problem,
       passwordCrackTime: crackTimeSecs,
       passwordCrackTimeText: crackTimeText,
+      passwordLength: password.length,
       passwordStrength: passwordStrength.score,
     });
     this.props.setPasswordOk(!problem);
@@ -109,29 +115,57 @@ export var NewPasswordInput = createClassAndFactory({
   render: function() {
     var passwordWarning;
     var makeItStrongerSuggestion;
-    var passwordHelp;
     var tooWeakReason = this.state.passwordWeakReason;
-    if (this.state.showErrors) {
+    var strength: number = this.state.passwordStrength;
+    var weakClass = '';
+    var length: number = this.state.passwordLength;
+
+    if (this.state.showErrors && length > 0) {
       if (tooWeakReason) {
         passwordWarning = r.b({ style: { color: 'red' } }, tooWeakReason);
       }
-      else if (this.state.passwordStrength <= BadPasswordStrength) {
+      else if (strength <= BadPasswordStrength) {
         // Unfortunately it seems we cannot force people to choose strong passwords,
         // seems they'll just feel annoyed and quit. So this tips will have to do.
-        makeItStrongerSuggestion = r.b({ style: { color: 'hsl(25, 100%, 45%)' } },
-            "Fairly weak. Consider making it longer, or more random.");
+        makeItStrongerSuggestion = r.b({ className: 'esPw_StrongerTips' },
+            "Fairly weak.");
       }
+
+      if (strength < MinPasswordStrength) {
+        weakClass = 'esPw_Strength-TooWeak';
+      }
+      else if (strength < BadPasswordStrength) {
+        weakClass = 'esPw_Strength-FairlyWeak';
+      }
+      else if (strength == BadPasswordStrength) {
+        weakClass = 'esPw_Strength-OkWeak';
+      }
+
       // 100 computers in the message below? Well, zxcvbn assumes 10ms per guess and 100 cores.
       // My scrypt settings are more like 100-200 ms per guess. So, say 100 ms,
       // and 1 000 cores = 100 computers  -->  can use zxcvbn's default crack time.
-      passwordHelp = r.span({},
-          passwordWarning, makeItStrongerSuggestion);
           /*  this might be just confusing:
           r.br(), "Offline crack time: " + this.state.passwordCrackTimeText +
           ", with 1e10 attempts per second"); */
     }
+
+    // Strength 4 is max.
+    var strengthPercent = 25 * strength;
+    if (!strengthPercent && length > 0) {
+      // Show some progress, since something has been typed.
+      strengthPercent = 10;
+    }
+    var strengthIndicator = r.div({ className: 'esPw_Strength ' + weakClass },
+      r.span({className: 'esPw_Strength_Lbl' }, "Strength: ",
+        r.div({ className: 'esPw_Strength_Border' },
+          r.div({ className: 'esPw_Strength_Fill', style: { width: strengthPercent + '%' }}))));
+
+    var passwordHelp = r.div({},
+      strengthIndicator,
+      passwordWarning, makeItStrongerSuggestion);
+
     return (
-      r.div({ className: 'form-group' + (passwordWarning ? ' has-error' : '') },
+      r.div({ className: 'form-group esPw' + (passwordWarning ? ' has-error' : '') },
         Input({ type: 'password', label: "Password:", name: 'newPassword', ref: 'passwordInput',
             id: 'e2ePassword', onChange: this.checkPasswordStrength, help: passwordHelp,
             tabIndex: this.props.tabIndex,
