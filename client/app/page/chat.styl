@@ -38,8 +38,8 @@ html.es-chat
   font-size: 15px;
   font-style: italic;
 
-.esChatMsg
-  margin-bottom: 8px;
+.esC_M
+  margin-bottom: 12px;
 
   .dw-p-hd .dw-p-by
     color: #444;
@@ -70,9 +70,31 @@ html.es-chat
   position: relative;
   z-index: 1111;
 
+.esC_M_EdB
+  padding: 3px 6px 3px 3px;
+  margin: -3px 0;
+  color: hsl($uiHue, 70%, 48%);
+  font-weight: bold;
+  font-size: 108%;
+  background: none;
+  border: none;
+  position: relative;
+  left: -5px;
+  &:hover
+    background: hsl($uiHue, 100%, 97%);
+    outline: 1px solid hsl($uiHue, 100%, 93%);
+
+.esP_H_At + .esC_M_EdB
+  margin-left: 7px;  // or too close
+
+
+.esC_Edtr_Bs
+  text-align: right;
+  .btn
+    padding: 5px 11px;
 
 .esJoinChat
-.esChatMsgEdtr
+.esC_Edtr
   width: calc(100% + 10px);
   position: relative;
   left: -5px;
@@ -91,12 +113,12 @@ html.es-chat
   border-radius: 2px;
 
 
-.esChatMsgEdtr
+.esC_Edtr
   margin-top: 15px;
-  padding-bottom: 15px;
+  padding-bottom: 7px;
   background: white;
 
-.esChatMsgEdtr_textarea
+.esC_Edtr_textarea
   width: 100%;
   border-radius: 4px;
 

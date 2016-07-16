@@ -24,6 +24,7 @@
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
 /// <reference path="../login/login.ts" />
+/// <reference path="../editor/editor.ts" />
 /// <reference path="discussion.ts" />
 
 //------------------------------------------------------------------------------
@@ -155,16 +156,34 @@ var TitleAndLastChatMessages = createComponent({
 
 
 var ChatMessage = createComponent({
+  getInitialState: function() {
+    return { isEditing: false };
+  },
+
+  edit: function() {
+    this.setState({ isEditing: true });
+    var post: Post = this.props.post;
+    editor.openEditorToEditPost(post.postId, (wasSaved, text) => {
+      this.setState({ isEditing: false });
+    });
+  },
+
   render: function () {
+    var state = this.state;
     var store: Store = this.props.store;
+    var me: Myself = store.me;
     var post: Post = this.props.post;
     var author: BriefUser = store.usersByIdBrief[post.authorId];
     var headerProps: any = _.clone(store);
     headerProps.post = post;
     headerProps.isFlat = true;
     headerProps.exactTime = true;
+    headerProps.stuffToAppend = (me.id !== author.id || state.isEditing) ? [] :
+      [r.button({ className: 'esC_M_EdB icon-edit', key: 'e', onClick: this.edit }, "edit")];
+    //headerProps.stuffToAppend.push(
+    //  r.button({ className: 'esC_M_MoreB icon-ellipsis', key: 'm' }, "more"));
     return (
-      r.div({ className: 'esChatMsg' },
+      r.div({ className: 'esC_M' },
         avatar.Avatar({ user: author }),
         PostHeader(headerProps), // { store: _, post: _, ... } would be better?
         PostBody({ store: store, post: post })));
@@ -214,7 +233,9 @@ var FixedAtBottom = createComponent({
     }
     return (
       r.div({ className: 'esFixAtBottom', style: offsetBottomStyle },
-        this.props.children));
+        React.cloneElement(this.props.children, {
+          refreshFixedAtBottom: this.onScroll,
+        })));
   }
 });
 
@@ -248,23 +269,37 @@ var ChatMessageEditor = createComponent({
   getInitialState: function() {
     return {
       text: '',
-      editingPostId: null,
-      editingPostUid: null,
       rows: DefaultEditorRows,
+      advancedEditorInstead: false,
     };
   },
 
   onTextEdited: function(event) {
+    this.updateText(event.target.value);
+  },
+
+  updateText: function(text) {
     // numLines won't work with wrapped lines, oh well, fix some other day.
-    var numLines = event.target.value.split(/\r\n|\r|\n/).length;
+    // COULD use https://github.com/andreypopp/react-textarea-autosize instead.
+    var numLines = text.split(/\r\n|\r|\n/).length;
     this.setState({
-      text: event.target.value,
+      text: text,
       rows: Math.max(DefaultEditorRows, Math.min(8, numLines)),
     });
+    // In case lines were deleted, we need to move the editor a bit downwards, so it
+    // remains fixed at the bottom — because now it's smaller.
+    if (this.props.refreshFixedAtBottom) {
+      // In case the advanced editor is currently shown, use setTimeout() so we'll
+      // refresh after the current render phase.
+      setTimeout(() => {
+        if (!this.isMounted()) return;
+        this.props.refreshFixedAtBottom();
+      }, 0);
+    }
   },
 
   onKeyDown: function(event) {
-    // In my Chrome, Ctrl + Enter won't fire onKeyPress (only onKeyDown), and won't append
+    // In my Chrome, Ctrl + Enter won't fire onKeyPress (only onKeyDown) [5KU8W2], and won't append
     // any newline. Why? Append the newline ourselves.
     if (event_isCtrlEnter(event)) {
       this.setState({ text: this.state.text + '\n' });
@@ -278,13 +313,13 @@ var ChatMessageEditor = createComponent({
       // Enter or Return without Shift or Ctrl down means "post chat message".
       var isNotEmpty = /\S/.test(this.state.text);
       if (isNotEmpty) {
-        this.postChatMessage();
+        this.saveChatMessage();
         event.preventDefault();
       }
     }
   },
 
-  postChatMessage: function() {
+  saveChatMessage: function() {
     this.setState({ isSaving: true });
     Server.insertChatMessage(this.state.text, () => {
       if (!this.isMounted()) return;
@@ -294,16 +329,44 @@ var ChatMessageEditor = createComponent({
     });
   },
 
+  useAdvancedEditor: function() {
+    this.setState({ advancedEditorInstead: true });
+    editor.openToWriteChatMessage(this.state.text, (wasSaved, text) => {
+      // Now the advanced editor has been closed.
+      this.setState({
+        advancedEditorInstead: false,
+      });
+      this.updateText(wasSaved ? '' : text);
+      if (wasSaved) {
+        this.props.scrollDownToViewNewMessage();
+      }
+    });
+  },
+
   render: function () {
+    if (this.state.advancedEditorInstead)
+      return null;
+
+    var disabled = this.state.isLoading || this.state.isSaving;
+    var buttons =
+        r.div({ className: 'esC_Edtr_Bs' },
+          r.button({ className: 'esC_Edtr_SaveB btn btn-primary', onClick: this.saveChatMessage,
+              disabled: disabled },
+            "↵ Post message"),
+          r.button({ className: 'esC_Edtr_AdvB btn btn-default', onClick: this.useAdvancedEditor,
+              disabled: disabled },
+            "Advanced editor"));
+
     return (
-      r.div({ className: 'esChatMsgEdtr' },
-        r.textarea({ className: 'esChatMsgEdtr_textarea', ref: 'textarea',
+      r.div({ className: 'esC_Edtr' },
+        r.textarea({ className: 'esC_Edtr_textarea', ref: 'textarea',
           value: this.state.text, onChange: this.onTextEdited,
           onKeyPress: this.onKeyPress,
           onKeyDown: this.onKeyDown,
           placeholder: "Type here. You can use Markdown and HTML.",
-          disabled: this.state.isSaving,
-          rows: this.state.rows })));
+          disabled: disabled,
+          rows: this.state.rows }),
+        buttons));
   }
 });
 

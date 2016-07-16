@@ -423,17 +423,25 @@ trait PostsDao {
     require(lastPost.currentRevisionById == authorId, "EsE5JKU0")
     require(lastPost.currentSourcePatch.isEmpty, "EsE7YGKU2")
     require(lastPost.currentRevisionNr == FirstRevisionNr, "EsE2FWY2")
-    require(lastPost.lastApprovedEditAt.isEmpty, "EsE2ZXF5")
+    require(lastPost.isCurrentVersionApproved, "EsE4GK7Y2")
+    // The system user auto approves all chat messages and edits of chat messages. [7YKU24]
     require(lastPost.approvedById.contains(SystemUserId), "EsE4GBF3")
     require(lastPost.approvedRevisionNr.contains(FirstRevisionNr), "EsE4PKW1")
     require(lastPost.deletedAt.isEmpty, "EsE2GKY8")
 
-    val newText = lastPost.approvedSource.getOrDie("EsE5GYKF2") + "\n\n\n" + textAndHtml.text
-    val newHtml = lastPost.approvedHtmlSanitized.getOrDie("EsE2PU8") + "\n\n" + textAndHtml.safeHtml
+    val theApprovedSource = lastPost.approvedSource.getOrDie("EsE5GYKF2")
+    val theApprovedHtmlSanitized = lastPost.approvedHtmlSanitized.getOrDie("EsE2PU8")
+    val newText = textEndingWithNumNewlines(theApprovedSource, 2) + textAndHtml.text
+    val newHtml = textEndingWithNumNewlines(theApprovedHtmlSanitized, 2) + textAndHtml.safeHtml
 
     val editedPost = lastPost.copy(
       approvedSource = Some(newText),
-      approvedHtmlSanitized = Some(newHtml))
+      approvedHtmlSanitized = Some(newHtml),
+      approvedAt = Some(transaction.currentTime),
+      // Leave approvedById = SystemUserId and approvedRevisionNr = FirstRevisionNr unchanged.
+      currentRevLastEditedAt = Some(transaction.currentTime),
+      lastApprovedEditAt = Some(transaction.currentTime),
+      lastApprovedEditById = Some(authorId))
 
     transaction.updatePost(editedPost)
     transaction.indexPostsSoon(editedPost)
@@ -449,6 +457,12 @@ trait PostsDao {
     transaction.saveDeleteNotifications(notfs)
 
     (editedPost, notfs)
+  }
+
+
+  def textEndingWithNumNewlines(text: String, num: Int): String = {
+    val numAlready = text.takeRightWhile(_ == '\n').length
+    text + "\n" * math.max(0, num - numAlready)
   }
 
 
@@ -483,7 +497,11 @@ trait PostsDao {
       if (!userMayEdit(editor, postToEdit))
         throwForbidden("DwE8KF32", "You may not edit that post")
 
-      val approverId = if (editor.isStaff) editor.id else SystemUserId
+      // The system user auto approves all chat messages; always use SystemUserId for chat.
+      val approverId =
+        if (postToEdit.tyype == PostType.ChatMessage) SystemUserId  // [7YKU24]
+        else if (editor.isStaff) editor.id
+        else SystemUserId
 
       // COULD don't allow sbd else to edit until 3 mins after last edit by sbd else?
       // so won't create too many revs quickly because 2 edits.

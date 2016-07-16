@@ -1120,6 +1120,8 @@ export var PostHeader = createComponent({
       inReplyTo = ReplyReceivers({ store: store, post: post, comma: true });
     }
 
+    var timeClass = 'esP_H_At';
+
     return (
         r.div({ className: 'dw-p-hd' + isBodyPostClass },
           anyPin,
@@ -1130,10 +1132,12 @@ export var PostHeader = createComponent({
           by,
           r[linkFn](userLinkProps, fullName, username),
           // COULD add "Posted on ..." tooltip.
-          this.props.exactTime ? timeExact(post.createdAt) : timeAgo(post.createdAt),
+          this.props.exactTime ?
+              timeExact(post.createdAt, timeClass) : timeAgo(post.createdAt, timeClass),
           editInfo,
           inReplyTo,
-          toggleCollapsedButton));
+          toggleCollapsedButton,
+          this.props.stuffToAppend));
   }
 });
 

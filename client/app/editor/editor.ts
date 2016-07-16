@@ -77,9 +77,9 @@ export function toggleWriteReplyToPost(postId: number, anyPostType?: number) {
 }
 
 
-export function openEditorToEditPost(postId: number) {
+export function openEditorToEditPost(postId: number, onDone?) {
   ensureEditorCreated(() => {
-    theEditor.editPost(postId);
+    theEditor.editPost(postId, onDone);
   });
 }
 
@@ -89,6 +89,14 @@ export function editNewForumPage(categoryId: number, role: PageRole) {
     theEditor.editNewForumPage(categoryId, role);
   });
 }
+
+
+export function openToWriteChatMessage(text: string, onDone) {
+  ensureEditorCreated(() => {
+    theEditor.openToWriteChatMessage(text || '', onDone);
+  });
+}
+
 
 export function openToWriteMessage(userId: number) {
   ensureEditorCreated(() => {
@@ -126,7 +134,7 @@ export var Editor = createComponent({
   },
 
   componentWillMount: function() {
-     this.updatePreview = _.debounce(this.updatePreview, 333);
+    this.updatePreview = _.debounce(this.updatePreview, 333);
   },
 
   componentDidMount: function() {
@@ -383,7 +391,7 @@ export var Editor = createComponent({
     this.loadGuidelines(writingWhat);
   },
 
-  editPost: function(postId: number) {
+  editPost: function(postId: number, onDone?) {
     if (this.alertBadState())
       return;
     Server.loadCurrentPostText(postId, (text: string, postUid: number, revisionNr: number) => {
@@ -393,7 +401,8 @@ export var Editor = createComponent({
         editingPostId: postId,
         editingPostUid: postUid,
         editingPostRevisionNr: revisionNr,
-        text: text
+        text: text,
+        onDone: onDone,
       });
       this.updatePreview();
     });
@@ -412,6 +421,18 @@ export var Editor = createComponent({
     });
     this.loadGuidelines(WritingWhat.NewPage, categoryId, role);
     this.updatePreview();
+  },
+
+  openToWriteChatMessage: function(text: string, onDone?) {
+    if (this.alertBadState())
+      return;
+    this.showEditor();
+    this.setState({
+      isWritingChatMessage: true,
+      text: text || '',
+      onDone: onDone,
+    });
+    // No guidelines for chat messages, because usually a smaller "inline" editor is used instead.
   },
 
   openToWriteMessage: function(userId: number) {
@@ -451,6 +472,10 @@ export var Editor = createComponent({
   alertBadState: function(wantsToDoWhat = null) {
     if (wantsToDoWhat !== 'WriteReply' && this.state.replyToPostIds.length > 0) {
       alert('Please first finish writing your post');
+      return true;
+    }
+    if (this.state.isWritingChatMessage) {
+      alert('Please first finish writing your chat message');
       return true;
     }
     if (this.state.messageToUserIds.length) {
@@ -567,6 +592,21 @@ export var Editor = createComponent({
     this.updatePreview();
   },
 
+  onKeyDown: function(event) {
+    // In my Chrome, Ctrl + Enter won't fire onKeyPress, only onKeyDown. [5KU8W2]
+    if (event_isCtrlEnter(event)) {
+      event.preventDefault();
+      this.saveStuff();
+    }
+  },
+
+  onKeyPress: function(event) {
+    if (event_isCtrlEnter(event)) {
+      event.preventDefault();
+      this.saveStuff();
+    }
+  },
+
   isTextOk: function() {
     // For now
     var text = this.state.text ? this.state.text.trim() : null;
@@ -606,15 +646,23 @@ export var Editor = createComponent({
         id: '7YK35W1',
       });
     }
+    this.callOnDoneCallback(false);
     this.closeEditor();
   },
 
   onSaveClick: function() {
+    this.saveStuff();
+  },
+
+  saveStuff: function() {
     if (this.state.newForumPageRole) {
       this.saveNewForumPage();
     }
     else if (_.isNumber(this.state.editingPostId)) {
       this.saveEdits();
+    }
+    else if (this.state.isWritingChatMessage) {
+      this.postChatMessage();
     }
     else if (this.state.messageToUserIds.length) {
       this.sendPrivateMessage();
@@ -627,6 +675,7 @@ export var Editor = createComponent({
   saveEdits: function() {
     this.throwIfBadTitleOrText(null, "Please don't delete all text. Write something.");
     Server.saveEdits(this.state.editingPostId, this.state.text, () => {
+      this.callOnDoneCallback(true);
       this.clearTextAndClose();
     });
   },
@@ -634,6 +683,7 @@ export var Editor = createComponent({
   saveNewPost: function() {
     this.throwIfBadTitleOrText(null, "Please write something.");
     Server.saveReply(this.state.replyToPostIds, this.state.text, this.state.anyPostType, () => {
+      this.callOnDoneCallback(true);
       this.clearTextAndClose();
     });
   },
@@ -650,6 +700,13 @@ export var Editor = createComponent({
     Server.createPage(data, (newPageId: string) => {
       this.clearTextAndClose();
       window.location.assign('/-' + newPageId);
+    });
+  },
+
+  postChatMessage: function() {
+    Server.insertChatMessage(this.state.text, () => {
+      this.callOnDoneCallback(true);
+      this.clearTextAndClose();
     });
   },
 
@@ -728,6 +785,7 @@ export var Editor = createComponent({
       replyToPostIds: [],
       editingPostId: null,
       editingPostUid: null,
+      isWritingChatMessage: false,
       messageToUserIds: [],
       newForumTopicCategoryId: null,
       newForumPageRole: null,
@@ -738,6 +796,7 @@ export var Editor = createComponent({
       showTextErrors: false,
       draft: _.isNumber(this.state.editingPostId) ? '' : this.state.text,
       safePreviewHtml: '',
+      onDone: null,
       guidelines: null,
       backdropOpacity: 0,
     });
@@ -748,6 +807,12 @@ export var Editor = createComponent({
     else {
       // (Old jQuery code.)
       $('.dw-replying').removeClass('dw-replying');
+    }
+  },
+
+  callOnDoneCallback: function(saved: boolean) {
+    if (this.state.onDone) {
+      this.state.onDone(saved, this.state.text);
     }
   },
 
@@ -861,6 +926,9 @@ export var Editor = createComponent({
         r.span({},
           'Edit ', r.a({ href: '#post-' + editingPostId }, 'post ' + editingPostId + ':'));
     }
+    else if (this.state.isWritingChatMessage) {
+      doingWhatInfo = "Type a chat message:";
+    }
     else if (this.state.messageToUserIds.length) {
       doingWhatInfo = "Your message:";
     }
@@ -910,7 +978,8 @@ export var Editor = createComponent({
           ':');
     }
 
-    var saveButtonTitle = 'Save';
+    var saveButtonTitle = "Save";
+    var cancelButtonTitle = "Cancel";
     if (_.isNumber(this.state.editingPostId)) {
       saveButtonTitle = 'Save edits';
     }
@@ -924,6 +993,10 @@ export var Editor = createComponent({
           saveButtonTitle = "Submit critique";
         }
       }
+    }
+    else if (this.state.isWritingChatMessage) {
+      saveButtonTitle = "Post message";
+      cancelButtonTitle = "Simple editor";
     }
     else if (this.state.messageToUserIds.length) {
       saveButtonTitle = "Send message";
@@ -998,6 +1071,8 @@ export var Editor = createComponent({
         r.textarea({ className: 'editor form-control esEdtr_textarea' +  textErrorClass,
             ref: 'textarea', value: this.state.text,
             onChange: this.onTextEdited, tabIndex: 1,
+            onKeyPress: this.onKeyPress,
+            onKeyDown: this.onKeyDown,
             placeholder: "Type here. You can use Markdown and HTML. " +
                 "Drag and drop to paste images." });
 
@@ -1050,7 +1125,7 @@ export var Editor = createComponent({
                   className: 'e2eSaveBtn' },
                 saveButtonTitle),
               Button({ onClick: this.onCancelClick, tabIndex: 1,
-                  className: 'e2eCancelBtn' }, "Cancel"),
+                  className: 'e2eCancelBtn' }, cancelButtonTitle),
               Button({ onClick: this.cycleMaxHorizBack, className: 'esEdtr_cycleMaxHzBtn',
                   tabIndex: 4 }, maximizeAndHorizSplitBtnTitle),
               // These two buttons are hidden via CSS if the window is wide. Higher tabIndex

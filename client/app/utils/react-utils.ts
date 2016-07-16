@@ -56,20 +56,20 @@ function dateTimeFix(isoDate: string) {
  * just below.  The server inculdes only ISO dates, not "x time ago", in its HTML,
  * so that it can be cached.
  */
-function timeAgo(isoDate: string) {
-  return r.span({ className: 'dw-ago' }, isoDate);
+function timeAgo(isoDate: string, clazz?: string) {
+  return r.span({ className: 'dw-ago ' + (clazz || '') }, isoDate);
 }
 
 /**
  * Like timeAgo(isoDate) but results in just "5h" instead of "5 hours ago".
  * That is, uses only one single letter, instead of many words.
  */
-function prettyLetterTimeAgo(isoDate: string) {
-  return r.span({ className: 'dw-ago-ltr' }, isoDate);
+function prettyLetterTimeAgo(isoDate: string, clazz?: string) {
+  return r.span({ className: 'dw-ago-ltr ' + (clazz || '') }, isoDate);
 }
 
-function timeExact(isoDate: string) {
-  return r.span({ className: 'esTimeExact' }, isoDate);
+function timeExact(isoDate: string, clazz?: string) {
+  return r.span({ className: 'esTimeExact ' + (clazz || '') }, isoDate);
 }
 
 
