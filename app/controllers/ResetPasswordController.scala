@@ -143,7 +143,7 @@ object ResetPasswordController extends mvc.Controller {
     SECURITY // SHOULD mark reset password email as used, so cannot be used again
 
     // Log the user in and show password changed message.
-    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(request.siteId, loginGrant.user)
+    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(request.siteId, loginGrant.user.id)
     val newSessionCookies = sidAndXsrfCookies
     Ok(views.html.resetpassword.passwordHasBeenChanged(SiteTpi(request)))
       .withCookies(newSessionCookies: _*)

@@ -158,6 +158,9 @@ class Globals {
     state.siteDaoFactory.newSiteDao(siteId)
 
 
+  def redisClient: RedisClient = state.redisClient
+
+
   def sendEmail(email: Email, websiteId: String) {
     state.mailerActorRef ! (email, websiteId)
   }

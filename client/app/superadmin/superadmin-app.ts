@@ -120,12 +120,19 @@ var SiteTableRow = createComponent({
     Server.updateSites([site]);
   },
 
+  loginAtSite: function() {
+    var site: SASite = this.props.site;
+    Server.makeImpersionateUserAtOtherSiteUrl(site.id, SystemUserId, (url) => {
+      location.assign(url);
+    });
+  },
+
   render: function() {
     var stuff: SuperAdminStuff = this.props.superAdminStuff;
     var site: SASite = this.props.site;
     var newStatusButtonStatus: SiteStatus;
     var newStatusButtonText: string;
-    if (site.status === SiteStatus.Active) {
+    if (site.status <= SiteStatus.Active) {
       newStatusButtonStatus = SiteStatus.HiddenUnlessStaff;
       newStatusButtonText = "Hide unless staff";
     }
@@ -137,17 +144,24 @@ var SiteTableRow = createComponent({
     if (!hostname && site.id === FirstSiteId) {
       hostname = stuff.firstSiteHostname;
     }
+
+    // (Don't show a login button for the superadmin site itself, because already logged in.)
+    var loginButton = site.id === debiki.siteId
+        ? r.span({ className: 'esSA_ThisSite' }, "(this site)")
+        : Button({ className: 'esSA_LoginB', onClick: this.loginAtSite }, "Super admin");
+
     return (
       r.tr({},
         r.td({},
           r.a({ href: '//site-' + site.id + '.' + stuff.baseDomain }, site.id)),
         r.td({},
           siteStatusToString(site.status),
-          Button({ className: 'esSA_StatusBtn',
+          Button({ className: 'esSA_StatusB',
               onClick: () => this.changeStatus(newStatusButtonStatus) },
             newStatusButtonText)),
         r.td({},
-          r.a({ href: '//' + hostname }, hostname)),
+          r.a({ href: '//' + hostname }, hostname),
+          loginButton),
         r.td({},
           site.name),
         r.td({},

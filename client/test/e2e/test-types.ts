@@ -51,6 +51,8 @@ interface SiteMeta {
   id?: string;
   localHostname: string;
   creatorEmailAddress: string;
+  status: SiteStatus,
+  createdAtMs: number,
 }
 
 

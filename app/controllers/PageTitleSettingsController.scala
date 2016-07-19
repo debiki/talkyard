@@ -130,7 +130,7 @@ object PageTitleSettingsController extends mvc.Controller {
           case Some(PageRole.Problem) | Some(PageRole.Idea) => oldMeta.plannedAt
           case Some(PageRole.ToDo) =>
             // To-Do:s are always either planned or done.
-            oldMeta.plannedAt orElse Some(When.now().toJavaData)
+            oldMeta.plannedAt orElse Some(When.now().toJavaDate)
           case _ =>
             if (oldMeta.plannedAt.isDefined) {
               // Reopen it since changing type.

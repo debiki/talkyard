@@ -192,11 +192,16 @@ object ImportExportController extends mvc.Controller {
 
   def readSiteMeta(jsObject: JsObject): Site = {
     val localHostname = readString(jsObject, "localHostname")
+    val siteStatusInt = readInt(jsObject, "status")
+    val siteStatus = SiteStatus.fromInt(siteStatusInt) getOrElse {
+      throwBadRequest("EsE6YK2W4", s"Bad site status int: $siteStatusInt")
+    }
+    val createdAtMs = readLong(jsObject, "createdAtMs")
     Site(
       id = "?",
-      status = ???, // todo SiteStatus.fromInt(...)
+      status = siteStatus,
       name = localHostname,
-      createdAt = ???, // todo readWhenMs(jsObject, "creatorAtMs"),
+      createdAt = When.fromMillis(createdAtMs),
       creatorIp = "0.0.0.0",
       creatorEmailAddress = readString(jsObject, "creatorEmailAddress"),
       embeddingSiteUrl = None,

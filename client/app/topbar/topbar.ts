@@ -233,6 +233,9 @@ export var TopBar = createComponent({
           talkToOthersNotfs,
           otherNotfs);
 
+    var stopImpersonatingMenuItem = !store.isImpersonating ? null :
+        MenuItem({ onSelect: Server.stopImpersonatingReloadPage }, "Stop impersonating");
+
     var avatarNameDropdown = !me.isLoggedIn ? null :
       utils.ModalDropdownButton({ title: avatarMenuButtonInclNotfIcons,
           className: 'esAvtrName esMyMenu' },
@@ -243,6 +246,7 @@ export var TopBar = createComponent({
           (adminMenuItem || reviewMenuItem) ? MenuItem({ divider: true }) : null,
           MenuItemLink({ href: linkToMyProfilePage(store) }, "View/edit your profile"),
           MenuItem({ onSelect: this.onLogoutClick }, "Log out"),
+          stopImpersonatingMenuItem,
           anyDivider,
           notfsElems,
           MenuItem({ divider: true }),

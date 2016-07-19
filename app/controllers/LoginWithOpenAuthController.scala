@@ -203,7 +203,11 @@ object LoginWithOpenAuthController extends Controller {
       case Some(originalSiteOrigin) =>
         val xsrfToken = anyReturnToSiteXsrfToken getOrDie "DwE0F4C2"
         val oauthDetailsCacheKey = nextRandomString()
-        play.api.cache.Cache.set(oauthDetailsCacheKey, oauthDetails) //, SECURITY: expiration = 10)
+        SHOULD // use Redis instead, so logins won't fail because the app server was restarted.
+        COULD // search for any other usages of play.api.cache.Cache, change to Redis.
+        // Set a short expiration time, to prevent Mallory from stealing and using the key,
+        // if it's leaked somehow, e.g. via log files that includes URLs.
+        play.api.cache.Cache.set(oauthDetailsCacheKey, oauthDetails, expiration = 10)
         val continueAtOriginalSiteUrl =
           originalSiteOrigin + routes.LoginWithOpenAuthController.continueAtOriginalSite(
             oauthDetailsCacheKey, xsrfToken)
@@ -224,7 +228,11 @@ object LoginWithOpenAuthController extends Controller {
     val oauthDetails: OpenAuthDetails =
       anyOauthDetails.getOrElse(play.api.cache.Cache.get(cacheKey) match {
         case None => throwForbidden("DwE76fE50", "OAuth cache value not found")
-        case Some(value) => value.asInstanceOf[OpenAuthDetails]
+        case Some(value) =>
+          // Remove to prevent another login with the same key, in case it gets leaked,
+          // e.g. via a log file.
+          play.api.cache.Cache.remove(cacheKey)
+          value.asInstanceOf[OpenAuthDetails]
       })
 
     val loginAttempt = OpenAuthLoginAttempt(
@@ -335,7 +343,7 @@ object LoginWithOpenAuthController extends Controller {
 
   private def createCookiesAndFinishLogin(request: DebikiRequest[_], siteId: SiteId, user: User)
         : Result = {
-    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(siteId, user)
+    val (_, _, sidAndXsrfCookies) = debiki.Xsrf.newSidAndXsrf(siteId, user.id)
 
     val response =
       if (isAjax(request.underlying)) {
@@ -427,6 +435,7 @@ object LoginWithOpenAuthController extends Controller {
       throwBadReq("DwE08GM6", "Auth data cache key missing")
     val oauthDetails = play.api.cache.Cache.get(oauthDetailsCacheKey) match {
       case Some(details: OpenAuthDetails) =>
+        play.api.cache.Cache.remove(oauthDetailsCacheKey)
         details
       case None =>
         throwForbidden("DwE50VC4", o"""Bad auth data cache key — was the server just restarted?

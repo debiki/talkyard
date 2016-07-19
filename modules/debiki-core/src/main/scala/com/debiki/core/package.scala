@@ -79,7 +79,7 @@ package object core {
 
   /** I'll use this instead of whatever-date-time-stuff-there-is. */
   class When(val unixMillis: UnixMillis) extends AnyVal {
-    def toJavaData = new java.util.Date(unixMillis)
+    def toJavaDate = new java.util.Date(unixMillis)
     def toUnixMillis = unixMillis
     def millisSince(other: When) = unixMillis - other.unixMillis
     def minusMinutes(minutes: Int) = new When(unixMillis - minutes * OneMinuteInMillis)
@@ -91,6 +91,7 @@ package object core {
       * have more precision than that.
       */
     def toDouble = unixMillis.toDouble
+    def numSeconds = unixMillis / 1000
   }
 
   object When {

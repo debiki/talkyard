@@ -68,7 +68,7 @@ function postOrDie(url, data) {
 
 
 function getOrDie(url) {
-  dieIf(!settings.e2eTestPassword, "No E2E test password specified [EsE7YKF2]");
+  dieIf(!settings.e2eTestPassword, "No E2E test password specified [EsE2KU603]");
   logMessage('GET ' + url);
 
   var passwordParam =

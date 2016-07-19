@@ -348,6 +348,7 @@ interface Store {
   me: Myself;
   userSpecificDataAdded?: boolean; // is always false, server side
   newUserAccountCreated?: boolean;
+  isImpersonating?: boolean;
   rootPostId: number;
   usersByIdBrief: { [userId: number]: BriefUser };
   allPosts: { [postNr: number]: Post };

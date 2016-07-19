@@ -47,7 +47,7 @@ trait SiteTransaction {
 
   def insertSiteHost(host: SiteHost)
 
-  def loadSite(): Site
+  def loadSite(): Option[Site]
   def bumpSiteVersion()
   def updateSite(changedSite: Site)
 

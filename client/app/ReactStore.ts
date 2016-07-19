@@ -318,6 +318,7 @@ ReactDispatcher.register(function(payload) {
 ReactStore.initialize = function() {
   findAnyAcceptedAnswerPostNr();
   store.usersByIdBrief = store.usersByIdBrief || {};
+  store.isImpersonating = !!$.cookie(ImpersonationCookieName);
 
   // Init page overlay, shown if sidebars open.
   debiki.v0.util.addZoomOrResizeListener(updateShallSidebarsOverlayPage);

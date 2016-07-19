@@ -319,11 +319,11 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
         creatorEmailAddress = "t@x.c", creatorId = user.id, browserIdData: BrowserIdData,
         isTestSiteOkayToDelete = false, skipMaxSitesCheck = true)
 
-      info("create user, site 2")
+      info("create user (owner), site 2")
       val dao2 = Globals.siteDao(site2.id)
       val user2 = dao2.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
         name = Some(s"User $magic"), username = s"user_$magic", email = s"user-$magic@x.c",
-        password = magic, isAdmin = true, isOwner = false).get)
+        password = magic, isAdmin = true, isOwner = true).get)
 
       info("upload files, no quota used")
 

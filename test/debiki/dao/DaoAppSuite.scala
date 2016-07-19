@@ -49,13 +49,21 @@ class DaoAppSuite(
   def browserIdData = BrowserIdData("1.2.3.4", idCookie = "dummy_id_cookie", fingerprint = 334455)
 
 
+  def createPasswordOwner(password: String, dao: SiteDao): User = {
+    createPasswordAdminOrOwner(password: String, dao: SiteDao, isOwner = true)
+  }
+
   /** Its name will be "Admin $password", username "admin_$password" and email
     * "admin-$password@x.co",
     */
   def createPasswordAdmin(password: String, dao: SiteDao): User = {
+    createPasswordAdminOrOwner(password: String, dao: SiteDao, isOwner = false)
+  }
+
+  private def createPasswordAdminOrOwner(password: String, dao: SiteDao, isOwner: Boolean): User = {
     dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Admin $password"), username = s"admin_$password",
-      email = s"admin-$password@x.co", password = password, isAdmin = true, isOwner = false).get)
+      email = s"admin-$password@x.co", password = password, isAdmin = true, isOwner = isOwner).get)
   }
 
 

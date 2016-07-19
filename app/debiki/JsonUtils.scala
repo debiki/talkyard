@@ -70,8 +70,23 @@ object JsonUtils {
     readOptInt(json, fieldName) getOrElse throwMissing("EsE5KPU3", fieldName)
 
 
-  def readOptInt(json: JsValue, fieldName: String): Option[Int] =
-    (json \ fieldName).validateOpt[Int] match {
+  def readOptInt(json: JsValue, fieldName: String): Option[Int] = {
+    readOptLong(json, fieldName) map { valueAsLong =>
+      if (valueAsLong > Int.MaxValue)
+        throwBadJson("EsE5YKP02", s"$fieldName is too large for an Int: $valueAsLong")
+      if (valueAsLong < Int.MinValue)
+        throwBadJson("EsE2PK6S3", s"$fieldName is too small for an Int: $valueAsLong")
+      valueAsLong.toInt
+    }
+  }
+
+
+  def readLong(json: JsValue, fieldName: String): Long =
+    readOptLong(json, fieldName) getOrElse throwMissing("EsE6Y8FW2", fieldName)
+
+
+  def readOptLong(json: JsValue, fieldName: String): Option[Long] =
+    (json \ fieldName).validateOpt[Long] match {
       case JsSuccess(value, _) => value
       case JsError(errors) =>
         // Will this be readable? Perhaps use json.value[fieldName] match ... instead, above.

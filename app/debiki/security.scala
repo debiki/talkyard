@@ -240,10 +240,10 @@ object Xsrf {
       (new ju.Date).getTime +"."+ nextRandomString().take(10))
 
 
-  def newSidAndXsrf(siteId: SiteId, user: User): (SidOk, XsrfOk, List[Cookie]) = {
+  def newSidAndXsrf(siteId: SiteId, userId: UserId): (SidOk, XsrfOk, List[Cookie]) = {
     // Note that the xsrf token is created using the non-base64 encoded
     // cookie value.
-    val sidOk = Sid.create(siteId, user)
+    val sidOk = Sid.create(siteId, userId)
     val xsrfOk = create()
     val sidCookie = urlEncodeCookie(Sid.CookieName, sidOk.value)
     val xsrfCookie = urlEncodeCookie(XsrfCookieName, xsrfOk.value)
@@ -322,12 +322,12 @@ object Sid {
   /**
    * Creates and returns a new SID.
    */
-  def create(siteId: SiteId, user: User): SidOk = {
+  def create(siteId: SiteId, userId: UserId): SidOk = {
     // For now, create a SID value and *parse* it to get a SidOk.
     // This is stupid and inefficient.
     val uid = "" // for now
     val useridDateRandom =
-         user.id +"."+
+         userId +"."+
          (new ju.Date).getTime +"."+
          (nextRandomString() take 10)
     // If the site id wasn't included in the hash, then an admin from site A would

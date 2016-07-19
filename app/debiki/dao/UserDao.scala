@@ -414,7 +414,7 @@ trait UserDao {
 
 
   def loadMember(userId: UserId): Option[Member] = {
-    require(userId >= User.LowestMemberId, "EsE7YKF2")
+    require(userId >= User.LowestMemberId, "EsE4GKX24")
     loadUser(userId).map(_.asInstanceOf[Member])
   }
 

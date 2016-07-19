@@ -63,7 +63,7 @@ object LoginAsGuestController extends mvc.Controller {
 
       val guestUser = request.dao.loginAsGuest(loginAttempt)
 
-      val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(request.siteId, guestUser)
+      val (_, _, sidAndXsrfCookies) = Xsrf.newSidAndXsrf(request.siteId, guestUser.id)
 
       // Could include a <a href=last-page>Okay</a> link, see the
       // Logout dialog below. Only needed if javascript disabled though,

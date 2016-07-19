@@ -269,7 +269,7 @@ class MovePostsAppSpec extends DaoAppSuite(disableScripts = true, disableBackgro
         secondPage.parts.ancestorsOf(postD2After.nr).map(_.nr) mustBe Seq(
           postCAfter.nr, postBAfter.nr, postAAfter.nr, postOnPageTwo.nr, BodyNr)
 
-        secondPage.parts.highestReplyNr getOrDie "EsE7YKF2"
+        secondPage.parts.highestReplyNr getOrDie "EsE6Y8WQ0"
       }
 
       info("can add replies to the original page")

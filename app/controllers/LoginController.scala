@@ -102,6 +102,11 @@ object LoginController extends mvc.Controller {
     * from any event channel.
     */
   def logout = GetActionAllowAnyone { request =>
+    doLogout(request)
+  }
+
+
+  def doLogout(request: GetRequest): Result = {
     request.user foreach { user =>
       request.dao.pubSub.unsubscribeUser(request.siteId, user, request.theBrowserIdData)
     }

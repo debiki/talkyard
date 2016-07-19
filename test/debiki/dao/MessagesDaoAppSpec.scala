@@ -76,7 +76,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
 
     "only send message to staff if is moderate threat" in {
       val dao = Globals.siteDao(Site.FirstSiteId)
-      val admin = createPasswordAdmin("9403dfpw", dao)
+      val admin = createPasswordOwner("9403dfpw", dao)
       val badUser = createPasswordUser("btk3rr40", dao)
       val otherUser = createPasswordUser("r90t4gdf", dao)
 

@@ -41,7 +41,7 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
       TextAndHtml.testBody("Body text"), authorId = SystemUserId, browserIdData, dao)
 
     "admin can delete and undelete pages of all types" in {
-      val admin = createPasswordAdmin(s"dltr_admn", dao)
+      val admin = createPasswordOwner(s"dltr_admn", dao)
 
       dao.loadPageMeta(discussionId).get.deletedAt mustBe None
       dao.loadPageMeta(forumId).get.deletedAt mustBe None
@@ -84,7 +84,7 @@ class DeletePageAppSpec extends DaoAppSuite(disableScripts = true, disableBackgr
     }
 
     "do nothing if page doesn't exist" in {
-      val admin = createPasswordAdmin(s"dltr_adm2", dao)
+      val admin = createPasswordOwner(s"dltr_adm2", dao)
       val badPageId = "zzwwffpp"
       dao.deletePagesIfAuth(Seq(badPageId), admin.id, browserIdData, undelete = false)
       dao.loadPageMeta(badPageId) mustBe None

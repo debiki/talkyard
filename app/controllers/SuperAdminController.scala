@@ -35,24 +35,13 @@ object SuperAdminController extends p.mvc.Controller {
 
   def superAdminApp(clientRoute: String) = SuperAdminGetAction { apiReq =>
     _root_.controllers.dieIfAssetsMissingIfDevTest()
-
-    if (!debiki.Globals.config.superAdmin.hostname.contains(apiReq.hostname))
-      throwForbidden2("EsE2KG8U0", "Not a superadmin site")
-
-    if (!apiReq.user.exists(_.isStaff)) {
-      Ok(views.html.login.loginPopup(
-        mode = "LoginToAdministrate",
-        serverAddress = s"//${apiReq.host}",
-        returnToUrl = apiReq.uri)) as HTML
-    }
-    else {
-      val siteTpi = SiteTpi(apiReq)
-      val pageBody = views.html.adminPage(siteTpi, appId = "theSuperAdminApp").body
-      Ok(pageBody) as HTML
-    }
+    val siteTpi = SiteTpi(apiReq)
+    val pageBody = views.html.adminPage(siteTpi, appId = "theSuperAdminApp").body
+    Ok(pageBody) as HTML
   }
 
 
+  // (Rename to getDashboardData() ?)
   def listSites() = SuperAdminGetAction { request =>
     listSitesImpl()
   }

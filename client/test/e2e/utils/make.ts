@@ -20,6 +20,8 @@ var emptySite: SiteData = {
     id: null,
     localHostname: null,
     creatorEmailAddress: "e2e-test-owner@ex.com",
+    status: 2,
+    createdAtMs: DefaultCreatedAtMs,
   },
   settings: [],
   groups: [],

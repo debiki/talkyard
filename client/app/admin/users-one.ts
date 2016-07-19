@@ -100,6 +100,7 @@ export var AdminUserPageComponent = React.createClass(<any> {
   render: function() {
     var user: CompleteUser = this.state.user;
     var loggedInUser: Myself = this.props.loggedInUser;
+    var me = loggedInUser;
     if (!user)
       return r.p({}, 'Loading...');
 
@@ -159,6 +160,9 @@ export var AdminUserPageComponent = React.createClass(<any> {
     var threatButton = Button({ onClick: () => openThreatLevelDialog(user, this.reloadUser) },
       "Change");
 
+    var impersonateButton = !me.isAdmin ? null :
+        Button({ onClick: () => Server.impersonateGoToHomepage(user.id) }, "Impersonate");
+
     return (
       r.div({},
         r.div({ className: 'pull-right' },
@@ -169,7 +173,8 @@ export var AdminUserPageComponent = React.createClass(<any> {
         moderatorInfo,
         r.p({}, 'Suspended: ' + suspendedText, ' ', suspendButton),
         r.p({}, 'Trust level: ' + trustLevelText),
-        r.p({}, 'Threat level: ' + threatLevelText, ' ', threatButton)));
+        r.p({}, 'Threat level: ' + threatLevelText, ' ', threatButton),
+        impersonateButton));
   }
 });
 

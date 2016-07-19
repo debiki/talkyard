@@ -338,6 +338,27 @@ export function logout(success: () => void) {
 }
 
 
+export function makeImpersionateUserAtOtherSiteUrl(siteId: SiteId, userId: UserId,
+      success: (url: string) => void) {
+  var url = '/-/make-impersonate-other-site-url?siteId=' + siteId + '&userId=' + userId;
+  postJsonSuccess(url, success, null);
+}
+
+
+export function impersonateGoToHomepage(userId: UserId) {
+  postJsonSuccess('/-/impersonate?userId=' + userId, () => {
+    location.assign('/');
+  }, null);
+}
+
+
+export function stopImpersonatingReloadPage() {
+  postJsonSuccess('/-/stop-impersonating', () => {
+    location.reload();
+  }, null);
+}
+
+
 export function loadCompleteUser(userIdOrUsername: UserId | string,
         doneCallback: (user: CompleteUser) => void, error?: () => void) {
   get('/-/load-user-incl-details?who=' + userIdOrUsername, (response) => {

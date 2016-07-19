@@ -58,6 +58,7 @@ class SiteDaoFactory (
   * But dao.loadWhatever() when no cache is used, the db is always accessed.
   * And dao.theWhatever(), when the cache is used, and the Whatever must exist otherwise
   * a runtime exception will be thrown.
+  * And dao.loadTheWhatever() when the cache is not used, and the whatever must exist.
   * COULD REFACTOR RENAME according to above naming convention.
   */
 class SiteDao(
@@ -170,16 +171,18 @@ class SiteDao(
 
   // ----- Site
 
-  def theSite(): Site = getSite getOrDie "DwE5CB50"
+  def theSite(): Site = getSite().getOrDie("DwE5CB50", s"Site $siteId not found")
 
   def getSite(): Option[Site] = {
     memCache.lookup(
       thisSiteCacheKey,
-      orCacheAndReturn = Some(loadSiteNoCache()))
+      orCacheAndReturn = loadSiteNoCache())
   }
 
-  private def loadSiteNoCache(): Site = {
-    var site = readOnlyTransaction(_.loadSite())
+  private def loadSiteNoCache(): Option[Site] = {
+    var site = readOnlyTransaction(_.loadSite()) getOrElse {
+      return None
+    }
     if (siteId == FirstSiteId && site.canonicalHost.isEmpty) {
       // No hostname specified in the database. Fallback to the config file.
       val hostname = Globals.firstSiteHostname.getOrDie(
@@ -187,14 +190,14 @@ class SiteDao(
       val canonicalHost = SiteHost(hostname, SiteHost.RoleCanonical)
       site = site.copy(hosts = canonicalHost :: site.hosts)
     }
-    site
+    Some(site)
   }
 
   def ensureSiteActiveOrThrow(newMember: CompleteUser, transaction: SiteTransaction) {
     // The throwForbidden exceptions can be triggered for example if someone starts signing up,
     // then the site gets deleted, and then the person clicks the submit button in
     // the signup form. (I.e. a race condition, and that's fine.)
-    val site = transaction.loadSite()
+    val site = transaction.loadSite().getOrDie("EsE5YKW0", s"Site gone: ${transaction.siteId}")
     site.status match {
       case SiteStatus.NoAdmin =>
         // We're creating an admin, therefore the site should now be activated.
