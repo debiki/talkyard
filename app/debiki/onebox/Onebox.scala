@@ -65,6 +65,17 @@ abstract class OneboxEngine {
     */
   protected def alreadySanitized = false
 
+  // (?:...) is a non-capturing group.
+  val uploadsLinkRegex =
+    """=['"](?:(?:(?:https?:)?//[^/]+)?/-/(?:u|uploads/public)/)([a-zA-Z0-9/\._-]+)['"]""".r
+
+  private def pointUrlsToCdn(safeHtml: String): String = {
+    val prefix = Globals.config.cdn.uploadsUrlPrefix getOrElse {
+      return safeHtml
+    }
+    uploadsLinkRegex.replaceAllIn(safeHtml, s"""="$prefix$$1"""")
+  }
+
   final def loadRenderSanitize(url: String, javascriptEngine: Option[js.Invocable])
         : Future[String] = {
     def sanitizeAndWrap(html: String): String = {
@@ -78,6 +89,7 @@ abstract class OneboxEngine {
       if (Globals.secure) {
         safeHtml = safeHtml.replaceAllLiterally("http:", "https:")
       }
+      safeHtml = pointUrlsToCdn(safeHtml)
       s"""<aside class="onebox $cssClassName clearfix">$safeHtml</aside>"""
     }
     // futureHtml.map apparently isn't executed directly, even if the future has been

@@ -177,7 +177,15 @@ object UploadsController extends mvc.Controller {
     * directly from the file system (bypassing Play), so don't bother about trying
     * to optimize this.
     */
-  def servePublicFile(relativePath: String) = ExceptionAction { request =>
+  def servePublicFile(relativePath: String) = ExceptionAction { (request: mvc.Request[_]) =>
+    servePublicFileImpl(relativePath, request)
+  }
+
+  def servePublicFileLong(relativePath: String) = ExceptionAction { (request: mvc.Request[_]) =>
+    servePublicFileImpl(relativePath, request)
+  }
+
+  def servePublicFileImpl(relativePath: String, request: mvc.Request[_]) = {
     val publicUploadsDir = anyPublicUploadsDir getOrElse throwNotFound(
       "DwE8MEF2", o"""File not found because config value $LocalhostUploadsDirConfigValueName
         missing""")

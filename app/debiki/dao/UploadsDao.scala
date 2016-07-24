@@ -50,7 +50,7 @@ trait UploadsDao {
   def addUploadedFile(uploadedFileName: String, tempFile: jio.File, uploadedById: UserId,
         browserIdData: BrowserIdData): UploadRef = {
 
-    import Globals.{LocalhostUploadsDirConfigValueName, maxUploadSizeBytes, localhostUploadsBaseUrl}
+    import Globals.{LocalhostUploadsDirConfigValueName, maxUploadSizeBytes, uploadsUrlPath}
 
     val publicUploadsDir = Globals.anyPublicUploadsDir getOrElse throwForbidden(
       "DwE5KFY9", "File uploads disabled, config value missing: " +
@@ -128,7 +128,7 @@ trait UploadsDao {
     // delete the metadata entries later. [9YMU2Y])
     readWriteTransaction { transaction =>
       // The file will be accessible on localhost, it hasn't yet been moved to e.g. any CDN.
-      val uploadRef = UploadRef(localhostUploadsBaseUrl, hashPathSuffix)
+      val uploadRef = UploadRef(uploadsUrlPath, hashPathSuffix)
       transaction.insertUploadedFileMeta(uploadRef, sizeBytes, mimeType, dimensions)
       insertAuditLogEntry(AuditLogEntry(
         siteId = siteId,
@@ -168,7 +168,7 @@ trait UploadsDao {
     // COULD wrap in try...finally, so will be deleted for sure.
     tempCompressedFile.foreach(_.delete)
 
-    UploadRef(localhostUploadsBaseUrl, hashPathSuffix)
+    UploadRef(uploadsUrlPath, hashPathSuffix)
   }
 
 
@@ -353,14 +353,14 @@ object UploadsDao {
               return
           }
         }
-      import Globals.localhostUploadsBaseUrl
-      if (urlPath startsWith localhostUploadsBaseUrl) {
-        val hashPathSuffix = urlPath drop localhostUploadsBaseUrl.length
+      import Globals.uploadsUrlPath
+      if (urlPath startsWith uploadsUrlPath) {
+        val hashPathSuffix = urlPath drop uploadsUrlPath.length
         if (OldHashPathSuffixRegex.matches(hashPathSuffix) ||
             HashPathSuffixRegex.matches(hashPathSuffix)) {
           // Don't add any hostname, because files stored locally are accessible from any hostname
           // that maps to this server — only the file content hash matters.
-          references.append(UploadRef(localhostUploadsBaseUrl, hashPathSuffix))
+          references.append(UploadRef(uploadsUrlPath, hashPathSuffix))
         }
       }
       /* Later, if serving uploads via a CDN:

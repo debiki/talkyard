@@ -162,7 +162,8 @@ POST  /-/send-private-message   controllers.PrivateMessageController.sendMessage
 POST  /-/upload-public-file     controllers.UploadsController.uploadPublicFile
 POST  /-/upload-avatar          controllers.UploadsController.uploadAvatar
 POST  /-/remove-avatar          controllers.UploadsController.removeAvatar
-GET   /-/uploads/public/*relativePath controllers.UploadsController.servePublicFile(relativePath)
+GET   /-/u/*relativePath        controllers.UploadsController.servePublicFile(relativePath)
+GET   /-/uploads/public/*relativePath controllers.UploadsController.servePublicFileLong(relativePath)
 
 POST  /-/pin-at-position        controllers.PinController.pinAtPosition
 POST  /-/pin-page               controllers.PinController.pinPage
@@ -192,6 +193,7 @@ GET  /-/origin                  controllers.DebugTestController.origin
 GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
 GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(sentTo)
 
+GET   /-/site/:siteId/*file      controllers.SiteAssetBundlesController.customAsset(siteId, file)
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
 
 GET   /-/sa                      controllers.SuperAdminController.redirect
@@ -205,7 +207,7 @@ POST  /-/update-sites            controllers.SuperAdminController.updateSites
 
 # Don't change the URL on the next line. The /-/assets/<version-number>/ is
 # updated by the deployment script (asset fingerprinting).
-GET   /-/assets/155/*file       controllers.Assets.at(path = "/public/res", file)
+GET   /-/assets/156/*file       controllers.Assets.at(path = "/public/res", file)
 GET   /robots.txt               controllers.Assets.at(path = "/public", file = "robots.txt")
 GET   /-/debiki-embedded-comments.js   controllers.Assets.at(path = "/public/res", file = "embedded-comments.js")
 GET   /-/debiki-embedded-comments.css  controllers.Assets.at(path = "/public/res", file = "debiki-embedded-comments.css")

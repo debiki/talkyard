@@ -16,16 +16,12 @@
  *@
 
 @(tpi: debiki.SiteTpi, siteId: String, anyPageId: Option[String],
-  serverAddress: String, pageUriPath: String,
+  pageUriPath: String,
   anyPageRole: Option[com.debiki.core.PageRole], anyPagePath: Option[com.debiki.core.PagePath],
   reactStoreSafeJsonString: String, minMaxJs: String, minMaxCss: String)
 
 @import play.api.Play.current
 @import com.debiki.core.PageRole.InfoPageMaxId
-
-@asset(file: String) = @{
-  routes.Assets.at(path = "/public/res", file)
-}
 
 @pageIdQuotedOrUndefined = @{
   anyPageId.map(id => s"'$id'") getOrElse "undefined"
@@ -134,16 +130,17 @@ if (_showAdmGuide || (!_narrow && __cbOpen === 'true' &&
     internal: {
       minMaxJs: '@minMaxJs',
       isInIframe: self !== top,
-      serverOrigin: '//@serverAddress',
-      pageUri: '//@serverAddress@pageUriPath',
+      serverOrigin: '//@tpi.serverAddress',
+      pageUri: '//@tpi.serverAddress@pageUriPath',
       pageId: @Html(pageIdQuotedOrUndefined),
       pageRole: @{ anyPageRole.map(_.toInt) getOrElse "undefined" },
       isInEmbeddedCommentsIframe: @{
         if (anyPageRole.contains(com.debiki.core.PageRole.EmbeddedComments)) "true" else "false"
       },
       pagePath: '@{ anyPagePath.map(_.value) getOrElse "" }',
-      assetsUrlPathStart: '//@serverAddress@asset("")'
-    }
+      assetUrlPrefix: '@tpi.assetUrlPrefix'
+    },
+    uploadsUrlPrefix: '@tpi.uploadsUrlPrefix'
   };
 
 </script>

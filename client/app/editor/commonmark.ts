@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/// <reference path="CdnLinkifyer.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.editor {
@@ -48,6 +49,7 @@ function markdownToUnsafeHtml(commonmarkSource, hostAndPort) {
   var md = window['markdownit']({ html: true, linkify: true, breaks: true });
   md.use(d.i.MentionsMarkdownItPlugin());
   md.use(d.i.oneboxMarkdownItPlugin);
+  ed.editor.CdnLinkifyer.replaceLinks(md);
   var htmlTextUnsafe = md.render(commonmarkSource);
   return htmlTextUnsafe;
 }

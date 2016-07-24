@@ -199,7 +199,7 @@ export var TitleBodyComments = createComponent({
     var anyPostHeader = null;
     var anySocialLinks = null;
     if (pageRole === PageRole.CustomHtmlPage || pageRole === PageRole.Forum ||
-        pageRole === PageRole.About || // pageRole === PageRole.WikiMainPage ||
+        pageRole === PageRole.About || pageRole === PageRole.WebPage ||
         pageRole === PageRole.SpecialContent || pageRole === PageRole.Blog ||
         pageRole === PageRole.EmbeddedComments ||
         store.rootPostId !== BodyPostId) {
@@ -403,6 +403,7 @@ export var Title = createComponent({
 });
 
 
+// (DELETE_LATER year 2017? not in use anywhere any longer, + delete all related stuff.)
 var SocialLinks = createComponent({
   render: function() {
     if (!this.props.socialLinksHtml)

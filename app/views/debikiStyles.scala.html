@@ -15,14 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(minMaxJs: String, minMaxCss: String)
+@(tpi: debiki.SiteTpi)
 
-@asset(file: String) = @{
-  routes.Assets.at(path = "/public/res", file)
-}
-
-<link rel="stylesheet" href="@asset("fontello/css/fontello-embedded.css")"/>
-<link rel="stylesheet" href="@asset(s"combined-debiki.$minMaxCss")"/>
+<link rel="stylesheet" href="@tpi.assetUrl("fontello/css/fontello-embedded.css")"/>
+<link rel="stylesheet" href="@tpi.assetUrl(s"combined-debiki.${tpi.minMaxCss}")"/>
 
 @* For now, use this font always, so if people create a new forum they'll get what they
 saw at www.debiki.com. Later on, make this configurable somehow.

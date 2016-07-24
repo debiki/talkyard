@@ -217,6 +217,7 @@ package object core {
   def REFACTOR = ()       // This code can be refactored. Also search for "[refactor]".
   def RENAME = ()         // This ought to be renamed.
   def COULD_OPTIMIZE = ()
+  def DELETE_LATER = ()
 
 }
 

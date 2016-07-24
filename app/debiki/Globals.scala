@@ -25,6 +25,7 @@ import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
 import com.github.benmanes.caffeine
 import com.zaxxer.hikari.HikariDataSource
+import controllers.routes
 import debiki.DebikiHttp.throwForbidden
 import debiki.Globals.NoStateError
 import debiki.antispam.AntiSpam
@@ -255,7 +256,7 @@ class Globals {
   def maxUploadSizeBytes = state.maxUploadSizeBytes
   def anyUploadsDir = state.anyUploadsDir
   def anyPublicUploadsDir = state.anyPublicUploadsDir
-  val localhostUploadsBaseUrl = controllers.routes.UploadsController.servePublicFile("").url
+  val uploadsUrlPath = controllers.routes.UploadsController.servePublicFile("").url
 
   def pubSub: PubSubApi = state.pubSub
   def strangerCounter: StrangerCounterApi = state.strangerCounter
@@ -597,6 +598,11 @@ object Config {
 
 
 class Config(conf: play.api.Configuration) {
+
+  object cdn {
+    val origin = conf.getString("ed.cdn.origin").noneIfBlank
+    def uploadsUrlPrefix = origin.map(_ + Globals.uploadsUrlPath)
+  }
 
   object createSite {
     val path = Config.CreateSitePath

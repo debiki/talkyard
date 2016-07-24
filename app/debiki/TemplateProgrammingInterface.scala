@@ -20,13 +20,11 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import controllers.{SiteAssetBundlesController, routes}
-import debiki.dao._
 import io.efdi.server.http.DebikiRequest
 import io.efdi.server.http.PageRequest
 import java.{util => ju}
 import play.{api => p}
 import play.api.Play.current
-import play.api.libs.json._
 import SiteAssetBundlesController.{AssetBundleNameRegex, assetBundleFileName}
 
 
@@ -94,17 +92,13 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
   def xsrfToken: String = debikiRequest.xsrfToken.value
 
 
-  import TemplateProgrammingInterface._
-
-  def debikiStyles = xml.Unparsed(
-    views.html.debikiStyles(minMaxJs, minMaxCss).body)
+  def debikiStyles = xml.Unparsed(views.html.debikiStyles(this).body)
 
   def debikiScriptsInHead = xml.Unparsed(
     views.html.debikiScriptsHead(
       this, // Could remove all params below, use 'this' instead in the template.
       siteId = siteId,
       anyPageId = anyCurrentPageId,
-      serverAddress = debikiRequest.request.host,
       pageUriPath = debikiRequest.request.path,
       anyPageRole = anyCurrentPageRole,
       anyPagePath = anyCurrentPagePath,
@@ -117,7 +111,7 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
 
   def debikiScriptsEndOfBodyCustomStartupCode(startupCode: String) = xml.Unparsed(
     views.html.debikiScriptsEndOfBody(
-      startupCode = startupCode, minMaxJs = minMaxJs).body)
+      this, startupCode = startupCode).body)
 
 
   def hostname = debikiRequest.host
@@ -137,6 +131,8 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
     else ""
   }
 
+  def minMaxCss = TemplateProgrammingInterface.minMaxCss
+  def minMaxJs = TemplateProgrammingInterface.minMaxJs
 
   def stylesheetBundle(bundleName: String): xml.NodeSeq = {
 
@@ -152,7 +148,9 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
     try {
       val version = debikiRequest.dao.loadAssetBundleVersion(nameNoSuffix, suffix)
       val fileName = assetBundleFileName(nameNoSuffix, version, suffix)
-        <link rel="stylesheet" href={ routes.SiteAssetBundlesController.at(fileName).url }/>
+        <link rel="stylesheet" href={
+          cdnOrServerOrigin + routes.SiteAssetBundlesController.customAsset(siteId, fileName).url
+        }/>
     }
     catch {
       case ex: DebikiException =>
@@ -172,6 +170,23 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
   /** The initial data in the React-Flux model, a.k.a. store. */
   def reactStoreSafeJsonString: String =
     json getOrElse ReactJson.adminAreaOrUserProfileJson(debikiRequest).toString()
+
+
+  def assetUrl(fileName: String) = assetUrlPrefix + fileName
+
+  def assetUrlPrefix =
+    cdnOrServerOrigin + routes.Assets.at(path = "/public/res", "")
+
+  def uploadsUrlPrefix =
+    cdnOrServerOrigin + routes.UploadsController.servePublicFile("")
+
+  /** Even if there's no CDN, we use the full server address so works also in
+    * embedded comments iframes.
+    */
+  def cdnOrServerOrigin =
+    Globals.config.cdn.origin.getOrElse(Globals.schemeColonSlashSlash + serverAddress)
+
+  def serverAddress = debikiRequest.request.host
 
 }
 

@@ -11,6 +11,22 @@ local forbiddenMessage = false
 
 -- COULD avoid logging > 1 per ip or server, per minute? hour? day?
 
+
+-- Skip bandwidth checks if the request is from a CDN server that fetches data to put in its cache.
+local x_pull_header = ngx.req.get_headers()["X-Pull"]
+if x_pull_header then
+    if x_pull_header ~= globals.x_pull_key then
+        ngx.status = 403
+        ngx.header.content_type = 'text/plain'
+        ngx.say("403 Forbidden\n\nIncorrect X-Pull header value. [EsE7PK4WS2]")
+        return ngx.exit(ngx.HTTP_OK)
+    end
+
+    -- Correct password, so this request should be from a CDN server. Don't slow down.
+    return ngx.exit(ngx.OK)
+end
+
+
 -- Bandwidth in bytes per second:
 local full_speed = 300e3
 local normal_speed = 150e3

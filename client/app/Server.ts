@@ -153,9 +153,8 @@ export function loadEditorEtceteraScripts() {
   };
 
   loadEditorScriptsStatus = $.Deferred();
-  var assetsPrefix = d.i.assetsUrlPathStart;
   window['yepnope']({
-    both: [assetsPrefix + 'editor-etcetera.' + d.i.minMaxJs],
+    both: [d.i.assetUrlPrefix + 'editor-etcetera.' + d.i.minMaxJs],
     complete: () => {
       loadEditorScriptsStatus.resolve();
     }

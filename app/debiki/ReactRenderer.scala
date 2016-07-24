@@ -186,7 +186,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
       oneboxRenderer.javascriptEngine = Some(engine)
       val safeHtml = engine.invokeFunction("renderAndSanitizeCommonMark", commonMarkSource,
           allowClassIdDataAttrs.asInstanceOf[Object], followLinks.asInstanceOf[Object],
-          oneboxRenderer)
+          oneboxRenderer, Globals.config.cdn.uploadsUrlPrefix getOrElse "")
       oneboxRenderer.javascriptEngine = None
       safeHtml.asInstanceOf[String]
     })
@@ -394,6 +394,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     |  md = markdownit({ html: true, linkify: true, breaks: true });
     |  md.use(debiki.internal.MentionsMarkdownItPlugin());
     |  md.use(debiki.internal.oneboxMarkdownItPlugin);
+    |  ed.editor.CdnLinkifyer.replaceLinks(md);
     |}
     |catch (e) {
     |  printStackTrace(e);
@@ -401,8 +402,9 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     |}
     |
     |function renderAndSanitizeCommonMark(source, allowClassIdDataAttrs, followLinks,
-    |       instantOneboxRenderer) {
+    |       instantOneboxRenderer, uploadsUrlPrefix) {
     |  try {
+    |    debiki.uploadsUrlPrefix = uploadsUrlPrefix;
     |    debiki.internal.oneboxMarkdownItPlugin.instantRenderer = instantOneboxRenderer;
     |    var unsafeHtml = md.render(source);
     |    var allowClassAndIdAttr = allowClassIdDataAttrs;

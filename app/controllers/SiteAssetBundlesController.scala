@@ -47,8 +47,19 @@ object SiteAssetBundlesController extends mvc.Controller {
    * by proxy servers.
    */
   def at(file: String) = GetAction { request =>
-    // `file` is like: bundle-name.<version>.css.
-    file match {
+    customAssetImpl(siteId = request.siteId, fileName = file, request)
+  }
+
+
+  def customAsset(siteId: SiteId, fileName: String) = GetAction { request =>
+    customAssetImpl(siteId = siteId, fileName = fileName, request)
+  }
+
+
+  private def customAssetImpl(siteId: SiteId, fileName: String, request: DebikiRequest[_]) = {
+    val dao = Globals.siteDao(siteId)
+    // `fileName` is like: bundle-name.<version>.css.
+    fileName match {
       case AssetBundleFileNameRegex(nameNoSuffix, version, suffix) =>
         // Ignore `version` for now. It's only used for asset versioning —
         // but we always serve the most recent version of the bundle.
@@ -56,7 +67,7 @@ object SiteAssetBundlesController extends mvc.Controller {
           // SECURITY don't load foreign tenant stuff from any private
           // other-site/_hidden-underscore-folder/, or if read access restricted
           // in some other manner. (Fix later, in AssetBundleLoader?)
-          request.dao.loadAssetBundle(nameNoSuffix, suffix)
+          dao.loadAssetBundle(nameNoSuffix, suffix)
         }
         catch {
           case ex: DebikiException =>
@@ -74,14 +85,14 @@ object SiteAssetBundlesController extends mvc.Controller {
             else if (request.uri endsWith "js") JAVASCRIPT
             else TEXT
           Ok(bundle.body).withHeaders(
-            CACHE_CONTROL -> "max-age=31536000",
+            CACHE_CONTROL -> "max-age=31536000, s-maxage=31536000, public",
             ETAG -> etag,
             // Really don't set any new cookies (don't know from where they
             // could come, but remove any anyway).
             SET_COOKIE -> "") as contentType
         }
       case _ =>
-        NotFoundResult("DwE93BY1", s"Bad asset bundle URL path: $file")
+        NotFoundResult("DwE93BY1", s"Not found: $fileName")
     }
   }
 

@@ -15,15 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *@
 
-@(startupCode: String, minMaxJs: String)
+@(tpi: debiki.SiteTpi, startupCode: String)
 
-@import play.api.Play.current
 
-@asset(file: String) = @{
-  routes.Assets.at(path = "/public/res", file)
-}
-
-<script src="@asset(s"combined-debiki.$minMaxJs")"></script>
+<script src="@tpi.assetUrl(s"combined-debiki.${tpi.minMaxJs}")"></script>
 <script>
 @startupCode
 </script>
