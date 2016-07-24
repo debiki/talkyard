@@ -41,7 +41,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
       embeddingSiteUrl = None, organizationName = s"Org Name $thePrefix",
       creatorEmailAddress = theEmail, creatorId = user.id,
       BrowserIdData(ip = theIp, idCookie = theIdCookie, fingerprint = theFingerprint),
-      isTestSiteOkayToDelete = isTestSite, skipMaxSitesCheck = false)
+      isTestSiteOkayToDelete = isTestSite, skipMaxSitesCheck = false, pricePlan = "Unknown")
   }
 
 
