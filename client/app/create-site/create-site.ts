@@ -134,12 +134,19 @@ var CreateWebsiteComponent = React.createClass(<any> {
   handleSubmit: function(event) {
     var testSitePrefix = // dupl code [5UKF03]
       location.pathname.indexOf('create-test-site') !== -1 ? 'test--' : '';
+
+    // Later: add Non-Commercial or Hobby / Business checkbox.
+    var pricePlan = PricePlan.Unknown;
+    if (location.hash.indexOf('non-commercial') !== -1) pricePlan = PricePlan.NonCommercial;
+    if (location.hash.indexOf('business') !== -1) pricePlan = PricePlan.Business;
+
     event.preventDefault();
     Server.createSite(
         this.refs.emailAddress.getValue(),
         testSitePrefix + this.refs.localHostname.getValue(),
         null,
         this.refs.organizationName.getValue(),
+        pricePlan,
         (newSiteOrigin) => {
           window.location.assign(newSiteOrigin);
         });

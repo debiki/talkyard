@@ -43,7 +43,7 @@ trait SiteTransaction {
   def createSite(name: String, hostname: String, embeddingSiteUrl: Option[String],
     creatorIp: String, creatorEmailAddress: String,
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
-    isTestSiteOkayToDelete: Boolean): Site
+    isTestSiteOkayToDelete: Boolean, pricePlan: PricePlan): Site
 
   def insertSiteHost(host: SiteHost)
 

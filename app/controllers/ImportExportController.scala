@@ -157,7 +157,8 @@ object ImportExportController extends mvc.Controller {
       creatorId = SystemUserId,
       browserIdData = request.theBrowserIdData,
       isTestSiteOkayToDelete = true,
-      skipMaxSitesCheck = true)
+      skipMaxSitesCheck = true,
+      pricePlan = "Unknown")  // [4GKU024S]
 
     val newDao = Globals.siteDao(site.id)
     newDao.readWriteTransaction { transaction =>

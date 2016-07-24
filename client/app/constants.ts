@@ -61,6 +61,11 @@ var SiteStatusStrings = [
   'Deleted',
   'Purged'];
 
+enum PricePlan {  // [4GKU024S]
+  Unknown = 0,
+  NonCommercial = 1,
+  Business = 2,
+}
 
 enum LoginReason {
   LoginToChat = 10,

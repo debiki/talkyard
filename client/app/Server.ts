@@ -164,7 +164,8 @@ export function loadEditorEtceteraScripts() {
 
 
 export function createSite(emailAddress: string, localHostname: string,
-    anyEmbeddingSiteAddress: string, organizationName: string, doneCallback: (string) => void) {
+    anyEmbeddingSiteAddress: string, organizationName: string,
+    pricePlan: PricePlan, doneCallback: (string) => void) {
   var url = '/-/create-site';
   var isTestSite = window.location.search.indexOf('testSiteOkDelete=true') !== -1 ||
     window.location.pathname === '/-/create-test-site';
@@ -176,6 +177,7 @@ export function createSite(emailAddress: string, localHostname: string,
       embeddingSiteAddress: anyEmbeddingSiteAddress,
       organizationName: organizationName,
       testSiteOkDelete: isTestSite,
+      pricePlan: pricePlan,
     },
     success: (response) => {
       doneCallback(response.newSiteOrigin);

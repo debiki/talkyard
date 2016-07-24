@@ -47,7 +47,8 @@ trait CreateSiteDao {
   def createSite(name: String, hostname: String,
         embeddingSiteUrl: Option[String], organizationName: String,
         creatorEmailAddress: String, creatorId: UserId, browserIdData: BrowserIdData,
-        isTestSiteOkayToDelete: Boolean, skipMaxSitesCheck: Boolean) : Site = {
+        isTestSiteOkayToDelete: Boolean, skipMaxSitesCheck: Boolean, pricePlan: PricePlan)
+        : Site = {
 
     if (!CreateSiteController.isOkaySiteName(name))
       throwForbidden2("EsE7UZF2_", s"Bad site name: '$name'")
@@ -66,7 +67,7 @@ trait CreateSiteDao {
         embeddingSiteUrl, creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
         quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
         maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,
-        isTestSiteOkayToDelete = isTestSiteOkayToDelete)
+        isTestSiteOkayToDelete = isTestSiteOkayToDelete, pricePlan = pricePlan)
 
       insertAuditLogEntry(AuditLogEntry(
         siteId = this.siteId,

@@ -77,6 +77,7 @@ object CreateSiteController extends Controller {
     val localHostname = (request.body \ "localHostname").as[String]
     val anyEmbeddingSiteAddress = (request.body \ "embeddingSiteAddress").asOpt[String]
     val organizationName = (request.body \ "organizationName").as[String].trim
+    val pricePlanInt = (request.body \ "pricePlan").as[Int]
     val okE2ePassword = hasOkE2eTestPassword(request.request)
 
     if (!acceptTermsAndPrivacy)
@@ -104,6 +105,13 @@ object CreateSiteController extends Controller {
     if (organizationName.length > 100)
       throwForbidden("DwE7KEP36", "Too long organization name: more than 100 characters")
 
+    val pricePlan = pricePlanInt match {  // [4GKU024S]
+      case 0 => "Unknown"
+      case 1 => "NonCommercial"
+      case 2 => "Business"
+      case x => throwBadArgument("EsE7YKW28", "pricePlan", "not 0, 1 or 2")
+    }
+
     Globals.antiSpam.detectRegistrationSpam(request, name = localHostname,
         email = emailAddress) map { isSpamReason =>
       throwForbiddenIfSpam(isSpamReason, "DwE4KG28")
@@ -117,7 +125,8 @@ object CreateSiteController extends Controller {
             creatorEmailAddress = emailAddress,
             creatorId = request.user.map(_.id) getOrElse UnknownUserId,
             browserIdData = request.theBrowserIdData, organizationName = organizationName,
-            isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = okE2ePassword)
+            isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = okE2ePassword,
+            pricePlan = pricePlan)
           Globals.originOf(hostname)
         }
         catch {
