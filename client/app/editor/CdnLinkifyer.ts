@@ -22,10 +22,17 @@
    module ed.editor.CdnLinkifyer {
 //------------------------------------------------------------------------------
 
+// SECURITY regex & evil input
 // COULD match any origin too: (and (?:...) is a non capturing group)
 //    (?:(?:https?:)\/\/[^\/]+)?
-var uploadsLinkRegex =                  /\/-\/(u|uploads\/public)\/([a-zA-Z0-9\/\._-]+)/;
-var uploadsLinkRegexInclEqQuotes = /=['"]\/-\/(u|uploads\/public)\/([a-zA-Z0-9\/\._-]+)['"]/;
+var uploadsLinkRegex = /\/-\/(u|uploads\/public)\/([a-zA-Z0-9\/\._-]+)/;
+
+// SECURITY regex & evil input
+// A tiny tiny bit buggy: matches this:
+//   <a weird="<tag-in-attr" href="/-/u/....">
+// although I don't want it to match if there're 2 '<' like that.
+// Barely matters though; works fine in real life.
+var uploadsRegexInTag = /(\<[^\<\>]+\s[a-z]+=['"])\/-\/(u|uploads\/public)\/([a-zA-Z0-9\/\._-]+['"][^\<\>]*\>)/;
 
 
 export function replaceLinks(md: any) {
@@ -40,6 +47,13 @@ export function replaceLinks(md: any) {
 
   md.renderer.rules.html_inline =
     makeHtmlUrlReplacerRule(md, md.renderer.rules.html_inline);
+
+  // This might in some rare cases also transforms html tag text contents that
+  // matches /-/u/... to cdn-origin/-/u/...,
+  // COULD use an HTML parser to ensure only tag attributes are considered, instead.
+  // Not so very important though — we sanitize the resulting html anyway.
+  md.renderer.rules.html_block =
+    makeHtmlUrlReplacerRule(md, md.renderer.rules.html_block);
 }
 
 
@@ -79,8 +93,7 @@ function makeHtmlUrlReplacerRule(md, defaultInlineRule) {
     // Inside an html tag, replace any /-/u/... (uploads) match with the CDN address.
     var token = tokens[idx];
     var content = token.content;
-    token.content = content.replace(
-        uploadsLinkRegexInclEqQuotes, '="' + debiki.uploadsUrlPrefix + '$2"');
+    token.content = content.replace(uploadsRegexInTag, '$1' + debiki.uploadsUrlPrefix + '$3');
     return defaultInlineRule(tokens, idx, options, env, self);
   };
 }

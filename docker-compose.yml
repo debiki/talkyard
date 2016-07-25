@@ -19,7 +19,7 @@ services:
     depends_on:
       - app
     environment:
-      X_PULL_PASSWORD: "public"
+      CDN_PULL_KEY: "public"
 
   app:
     mem_limit: 2600M

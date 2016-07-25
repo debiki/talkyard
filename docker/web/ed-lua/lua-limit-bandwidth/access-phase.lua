@@ -13,9 +13,9 @@ local forbiddenMessage = false
 
 
 -- Skip bandwidth checks if the request is from a CDN server that fetches data to put in its cache.
-local x_pull_header = ngx.req.get_headers()["X-Pull"]
-if x_pull_header then
-    if x_pull_header ~= globals.x_pull_key then
+local cdn_pull_header = ngx.req.get_headers()["X-Pull"]
+if cdn_pull_header then
+    if cdn_pull_header ~= globals.cdn_pull_key then
         ngx.status = 403
         ngx.header.content_type = 'text/plain'
         ngx.say("403 Forbidden\n\nIncorrect X-Pull header value. [EsE7PK4WS2]")
