@@ -37,7 +37,7 @@ object AuditLogEntryType {
   case object NewPost extends AuditLogEntryType(4)
   case object NewChatMessage extends AuditLogEntryType(5)
   case object EditPost extends AuditLogEntryType(6)
-  case object ChangePostType extends AuditLogEntryType(7)
+  case object ChangePostSettings extends AuditLogEntryType(7)
   case object MovePost extends AuditLogEntryType(11)
   case object UploadFile extends AuditLogEntryType(8)
   case object DeletePage extends AuditLogEntryType(9)
@@ -50,7 +50,7 @@ object AuditLogEntryType {
     case AuditLogEntryType.NewPost.IntVal => AuditLogEntryType.NewPost
     case AuditLogEntryType.NewChatMessage.IntVal => AuditLogEntryType.NewChatMessage
     case AuditLogEntryType.EditPost.IntVal => AuditLogEntryType.EditPost
-    case AuditLogEntryType.ChangePostType.IntVal => AuditLogEntryType.ChangePostType
+    case AuditLogEntryType.ChangePostSettings.IntVal => AuditLogEntryType.ChangePostSettings
     case AuditLogEntryType.UploadFile.IntVal => AuditLogEntryType.UploadFile
     case AuditLogEntryType.DeletePage.IntVal => AuditLogEntryType.DeletePage
     case AuditLogEntryType.UndeletePage.IntVal => AuditLogEntryType.UndeletePage

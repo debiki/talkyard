@@ -66,6 +66,17 @@ object JsonUtils {
     }
 
 
+  def readOptByte(json: JsValue, fieldName: String): Option[Byte] = {
+    readOptLong(json, fieldName) map { valueAsLong =>
+      if (valueAsLong > Byte.MaxValue)
+        throwBadJson("EsE4GK2W0", s"$fieldName is too large for a Byte: $valueAsLong")
+      if (valueAsLong < Byte.MinValue)
+        throwBadJson("EsE4GKUP02", s"$fieldName is too small for a Byte: $valueAsLong")
+      valueAsLong.toByte
+    }
+  }
+
+
   def readInt(json: JsValue, fieldName: String): Int =
     readOptInt(json, fieldName) getOrElse throwMissing("EsE5KPU3", fieldName)
 

@@ -53,7 +53,9 @@ export function drawHorizontalArrowFromRootPost(rootPost) {
 
 
 export function drawArrowsFromParent(allPosts, parentPost, depth: number,
-      index: number, horizontalLayout: boolean, rootPostId: number) {
+      index: number, horizontalLayout: boolean, rootPostId: number,
+      // COULD REFACTOR: don't send both horizontalLayout and hmmIs2dTreeColumn.
+      hmmIs2dTreeColumn: boolean) {
 
   var postId = parentPost.childIdsSorted[index];
   var post = allPosts[postId];
@@ -85,6 +87,10 @@ export function drawArrowsFromParent(allPosts, parentPost, depth: number,
       }
       numRemainingWithArrows += 1;
     }
+  }
+
+  if (hmmIs2dTreeColumn) {
+    return drawHorizontalArrows(index === 0, numRemainingWithArrows);
   }
 
   if (parentPost && horizontalLayout && parentPost.postId === rootPostId) {

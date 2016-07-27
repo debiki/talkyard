@@ -489,6 +489,14 @@ var MoreDropdownModal = createComponent({
     this.close();
   },
 
+  toggleBranchSideways: function(event) {
+    var post: Post = this.state.post;
+    Server.editPostSettings(post.uniqueId, {
+      branchSideways: post.branchSideways ? 0 : 100,
+    }, () => {});
+    this.close();
+  },
+
   makeButtons: function() {
     var store: Store = this.state.store;
     var isFlat = store['isFlat']; // hmm shouldn't place in the store object, oh well
@@ -600,6 +608,13 @@ var MoreDropdownModal = createComponent({
       moreLinks.push(
         r.a({ className: 'dw-a icon-help-circled', onClick: this.onSeeWrenchClick, key: 'sw' },
           "Pin / Delete / Category ..."));
+    }
+
+    if (!isPageBody && isStaff(me)) {
+      var sidewaysTitle = post.branchSideways ? "Don't branch sideways" : "→ Branch sideways";
+      moreLinks.push(
+        r.a({ className: 'dw-a', onClick: this.toggleBranchSideways, key: 'bs' },
+          sidewaysTitle));
     }
 
     return moreLinks;

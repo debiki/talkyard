@@ -448,6 +448,7 @@ object ImportExportController extends mvc.Controller {
         deletedAt = readOptDateMs(jsObj, "deletedAtMs"),
         deletedById = readOptInt(jsObj, "deletedById"),
         pinnedPosition = readOptInt(jsObj, "pinnedPosition"),
+        branchSideways = readOptByte(jsObj, "branchSideways"),
         numPendingFlags = readOptInt(jsObj, "numPendingFlags").getOrElse(0),
         numHandledFlags = readOptInt(jsObj, "numHandledFlags").getOrElse(0),
         numPendingEditSuggestions = readOptInt(jsObj, "numEditSuggestions").getOrElse(0),

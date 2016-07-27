@@ -64,8 +64,8 @@
 
 .dw-hz > .dw-single-and-multireplies > .dw-res,
 .dw-hz > .dw-single-and-multireplies > .dw-res > li
-  display: table-cell
-  padding: 11px 0 10px 0px
+  display: table-cell;  // [4GKUF02]
+  padding: 11px 0 10px 0;
   // Don't let the Reply form push other <li>s down, would offset PNG arrows incorrectly.
   vertical-align: top
 
@@ -156,6 +156,21 @@
   // Don't indent multireplies
   .dw-depth-1 .dw-mr
     padding-left: 0
+
+
+// Branch sideways
+// -------------------
+
+.dw-res .dw-t.dw-hz
+  width: auto !important;
+  max-width: none !important;
+  > .dw-p,
+  > .dw-p-as
+    max-width: 500px;
+
+.dw-res .dw-hz > .dw-single-and-multireplies > .dw-res > li > .dw-t .dw-p:not(.dw-zd)
+  width: 410px !important;
+
 
 // Resizable handle
 // -------------------

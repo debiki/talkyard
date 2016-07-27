@@ -86,7 +86,7 @@ var WikifyDialog = createComponent({
       // Nothing.
     }
     else if (isWiki) {
-      title = "Cancel Wiki status?"
+      title = "Cancel Wiki status?";
       var whichPeople = post.postType === PostType.StaffWiki ? "staff" : "community";
       content =
         r.div({},
@@ -99,7 +99,7 @@ var WikifyDialog = createComponent({
                   "with any like votes."}, "Change back to normal")));
     }
     else {
-      title = "Change to Wiki?"
+      title = "Change to Wiki?";
       content =
         r.div({},
           r.p({}, "Change this post to a Wiki post so many people can edit it? " +

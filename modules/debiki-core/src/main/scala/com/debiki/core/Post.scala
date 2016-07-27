@@ -78,6 +78,35 @@ object PostStatusBits {
 }
 
 
+/*
+object PostBitFlags {
+  val ChronologicalBitMask = 1 << 0
+  val ChatBitMask = 1 << 1
+  val ThreadedChatBitMask = ChatBitMask
+  val ChronologicalChatBitMask = ChatBitMask | ChronologicalBitMask
+
+  val AuthorHiddenBitMask = 1 << 2
+
+  val GuestWikiBitMask = 1 << 3
+  val MemberWikiBitMask = 1 << 4
+  val StaffWikiBitMask = 1 << 5
+
+  val BranchSidewaysBitMask = 1 << 6  // but what about showing the first X children only?
+}
+
+
+class PostBitFlags(val bits: Int) extends AnyVal {
+  import PostBitFlags._
+
+  def isChronologicalChat = (bits & ChronologicalChatBitMask) != 0   // 3
+  def isAuthorHidden = (bits & AuthorHiddenBitMask) != 0             // 4
+  def isGuestWiki = (bits & GuestWikiBitMask) != 0                   // 8
+  def isMemberWiki = (bits & MemberWikiBitMask) != 0                 // 16
+  def isStaffWiki = (bits & StaffWikiBitMask) != 0                   // 32
+  def isBranchSideways = (bits & BranchSidewaysBitMask) != 0         // 64
+
+} */
+
 
 sealed abstract class PostType(protected val IntValue: Int) {
   def toInt = IntValue
@@ -165,6 +194,7 @@ case class Post(
   deletedAt: Option[ju.Date],
   deletedById: Option[UserId],
   pinnedPosition: Option[Int],
+  branchSideways: Option[Byte],
   numPendingFlags: Int,
   numHandledFlags: Int,
   numPendingEditSuggestions: Int,
@@ -175,7 +205,7 @@ case class Post(
   numTimesRead: Int) {
 
   require(uniqueId >= 1, "DwE4WEKQ8")
-  require(parentNr != Some(nr), "DwE5BK4")
+  require(!parentNr.contains(nr), "DwE5BK4")
   require(!multireplyPostNrs.contains(nr), "DwE4kWW2")
   require(multireplyPostNrs.size != 1, "DwE2KFE7") // size 1 = does not reply to many people
   require(multireplyPostNrs.isEmpty || parentNr.isDefined || isFlat, "DwE5GKF2")
@@ -559,6 +589,7 @@ object Post {
       deletedAt = None,
       deletedById = None,
       pinnedPosition = None,
+      branchSideways = None,
       numPendingFlags = 0,
       numHandledFlags = 0,
       numPendingEditSuggestions = 0,

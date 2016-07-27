@@ -129,11 +129,16 @@ interface Post {
   isTreeClosed: boolean;
   isApproved: boolean;
   pinnedPosition: number;
+  branchSideways: number;
   likeScore: number;
   childIdsSorted: number[];
   sanitizedHtml?: string;
 }
 
+
+interface PostSettings {
+  branchSideways: number;
+}
 
 interface PostRevision {
   revisionNr: number;

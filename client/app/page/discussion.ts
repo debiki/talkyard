@@ -615,7 +615,7 @@ var SquashedThreads = createComponent({
 
     var arrows = debiki2.renderer.drawArrowsFromParent(
       allPosts, parentPost, this.props.depth, this.props.index,
-      this.props.horizontalLayout, this.props.rootPostId);
+      this.props.horizontalLayout, this.props.rootPostId, !!post.branchSideways);
 
     var baseElem = r[this.props.elemType];
     var depthClass = ' dw-depth-' + this.props.depth;
@@ -655,6 +655,8 @@ var Thread = createComponent({
     var parentPost = allPosts[post.parentId];
     var deeper = this.props.depth + 1;
     var isFlat = this.props.isFlat;
+    var childrenSideways = !!post.branchSideways;
+    var thisPostSideways = !!parentPost.branchSideways;
 
     // Draw arrows, but not to multireplies, because we don't know if they reply to `post`
     // or to other posts deeper in the thread.
@@ -662,7 +664,13 @@ var Thread = createComponent({
     if (!post.multireplyPostIds.length && !isFlat) {
       arrows = debiki2.renderer.drawArrowsFromParent(
         allPosts, parentPost, this.props.depth, this.props.index,
-        this.props.horizontalLayout, this.props.rootPostId);
+        this.props.horizontalLayout, this.props.rootPostId, thisPostSideways);
+    }
+
+    var anyHorizontalArrowToChildren;
+    if (childrenSideways) {
+      anyHorizontalArrowToChildren =
+        debiki2.renderer.drawHorizontalArrowFromRootPost(post);
     }
 
     var numDeletedChildren = 0;
@@ -697,23 +705,31 @@ var Thread = createComponent({
         if (isIndented) {
           childIndentationDepth += 1;
         }
+        if (childrenSideways) {
+          childIndentationDepth = 0;
+        }
         var threadProps = _.clone(this.props);
-        threadProps.elemType = 'li';
+        threadProps.elemType = childrenSideways ? 'div' : 'li';
         threadProps.postId = childId;
         threadProps.index = childIndex;
         threadProps.depth = deeper;
         threadProps.indentationDepth = childIndentationDepth;
-        threadProps.is2dTreeColumn = false;
+        threadProps.is2dTreeColumn = childrenSideways;
         threadProps.key = childId;
+        var thread;
         if (child.squash) {
           isSquashingChildren = true;
-          return (
-            SquashedThreads(threadProps));
+          thread = SquashedThreads(threadProps);
         }
         else {
-          return (
-            Thread(threadProps));
+          thread = Thread(threadProps);
         }
+        if (threadProps.is2dTreeColumn) {
+          // Need a <div> inside the <li> so margin-left can be added (margin-left otherwise
+          // won't work, because: display table-cell [4GKUF02]).
+          thread = r.li({ key: childId }, thread);
+        }
+        return thread;
       });
     }
 
@@ -751,14 +767,17 @@ var Thread = createComponent({
     var multireplyClass = post.multireplyPostIds.length ? ' dw-mr' : '';
     var collapsedClass = renderCollapsed ? ' dw-zd' : '';
 
+    var branchSidewaysClass = horizontalCss(!!post.branchSideways);
+
     return (
       baseElem({ className: 'dw-t' + depthClass + indentationDepthClass + multireplyClass +
-          is2dColumnClass + collapsedClass + avatarClass },
+          is2dColumnClass + branchSidewaysClass + collapsedClass + avatarClass },
         arrows,
         anyWrongWarning,
         anyAvatar,
         Post(postProps),
         actions,
+        anyHorizontalArrowToChildren,
         r.div({ className: 'dw-single-and-multireplies' },
           r.ol({ className: 'dw-res dw-singlereplies' },
             children))));

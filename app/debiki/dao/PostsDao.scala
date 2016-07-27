@@ -759,6 +759,42 @@ trait PostsDao {
   }
 
 
+  def editPostSettings(postId: UniquePostId, branchSideways: Option[Byte], me: Who): JsValue = {
+    val (post, patch) = readWriteTransaction { transaction =>
+      val postBefore = transaction.loadPostsByUniqueId(Seq(postId)).headOption.getOrElse({
+        throwNotFound("EsE5KJ8W2", s"Post not found: $postId")
+      })._2
+      val postAfter = postBefore.copy(branchSideways = branchSideways)
+
+      val auditLogEntry = AuditLogEntry(
+        siteId = siteId,
+        id = AuditLogEntry.UnassignedId,
+        didWhat = AuditLogEntryType.ChangePostSettings,
+        doerId = me.id,
+        doneAt = transaction.currentTime,
+        browserIdData = me.browserIdData,
+        pageId = Some(postBefore.pageId),
+        uniquePostId = Some(postBefore.uniqueId),
+        postNr = Some(postBefore.nr),
+        targetUserId = Some(postBefore.createdById))
+
+      val oldMeta = transaction.loadThePageMeta(postAfter.pageId)
+      val newMeta = oldMeta.copy(version = oldMeta.version + 1)
+
+      // (Don't reindex. For now, don't send any notifications (since currently just toggling
+      // branch-sideways))
+      transaction.updatePost(postAfter)
+      transaction.updatePageMeta(newMeta, oldMeta = oldMeta, markSectionPageStale = false)
+      insertAuditLogEntry(auditLogEntry, transaction)
+
+      COULD_OPTIMIZE // try not to load the whole page in makeStorePatch2
+      (postAfter, ReactJson.makeStorePatch2(postId, postAfter.pageId, transaction))
+    }
+    refreshPageInMemCache(post.pageId)
+    patch
+  }
+
+
   def changePostType(pageId: PageId, postNr: PostNr, newType: PostType,
         changerId: UserId, browserIdData: BrowserIdData) {
     readWriteTransaction { transaction =>
@@ -796,7 +832,7 @@ trait PostsDao {
       val auditLogEntry = AuditLogEntry(
         siteId = siteId,
         id = AuditLogEntry.UnassignedId,
-        didWhat = AuditLogEntryType.ChangePostType,
+        didWhat = AuditLogEntryType.ChangePostSettings,
         doerId = changerId,
         doneAt = transaction.currentTime,
         browserIdData = browserIdData,

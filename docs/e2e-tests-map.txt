@@ -12,7 +12,10 @@ might be listed at many places in the tree, if it tests different things.
 Run all tests in different resolutions? Desktop, laptop, tablet, mobile.
 
 
-create site & forum:  create-site.test.js
+create site & forum -
+  create: create-site.test.js
+  not too many per ip / email:
+  not too many in total:
 
 create account -
   password:  create-site.test.js

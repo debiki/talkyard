@@ -152,6 +152,7 @@ POST  /-/edit                   controllers.EditController.edit
 POST  /-/edit-title-save-settings controllers.PageTitleSettingsController.editTitleSaveSettings
 GET   /-/onebox                 controllers.EditController.onebox(url)
 POST  /-/change-post-type       controllers.EditController.changePostType
+POST  /-/edit-post-settings     controllers.EditController.editPostSettings
 POST  /-/delete-post            controllers.EditController.deletePost
 POST  /-/move-post              controllers.EditController.movePost
 

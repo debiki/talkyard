@@ -159,6 +159,15 @@ object EditController extends mvc.Controller {
   }
 
 
+  // Staff only, *for now*.
+  def editPostSettings = StaffPostJsonAction(maxLength = 100) { request =>
+    val postId = (request.body \ "postId").as[UniquePostId]
+    val branchSideways = (request.body \ "branchSideways").asOpt[Byte]
+    val patch = request.dao.editPostSettings(postId, branchSideways, request.who)
+    OkSafeJson(patch) // or skip? [5GKU0234]
+  }
+
+
   def deletePost = PostJsonAction(RateLimits.DeletePost, maxLength = 5000) { request =>
     val pageId = (request.body \ "pageId").as[PageId]
     val postNr = (request.body \ "postNr").as[PostNr]
@@ -170,7 +179,7 @@ object EditController extends mvc.Controller {
 
     request.dao.changePostStatus(postNr, pageId = pageId, action, userId = request.theUserId)
 
-    OkSafeJson(ReactJson.postToJson2(postNr = postNr, pageId = pageId, // COULD: don't include post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open?
+    OkSafeJson(ReactJson.postToJson2(postNr = postNr, pageId = pageId, // COULD: don't include post in reply? It'd be annoying if other unrelated changes were loaded just because the post was toggled open? [5GKU0234]
       request.dao, includeUnapproved = request.theUser.isStaff))
   }
 

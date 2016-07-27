@@ -798,6 +798,12 @@ export function deletePostInPage(postId: number, repliesToo: boolean,
 }
 
 
+export function editPostSettings(postId: PostId, settings: PostSettings, success: () => void) {
+  var data = _.assign({ postId: postId }, settings);
+  postJsonSuccess('/-/edit-post-settings', ReactActions.patchTheStore, data);
+}
+
+
 export function changePostType(postId: number, newType: PostType, success: () => void) {
   postJsonSuccess('/-/change-post-type', success, {
     pageId: d.i.pageId,
@@ -872,6 +878,7 @@ export function undeletePages(pageIds: PageId[], success: () => void) {
 
 
 export function markCurrentPageAsSeen() {
+  // COULD avoid showing the is-POSTing-data overlay.
   postJsonSuccess('/-/mark-as-seen?pageId=' + d.i.pageId, () => {}, {});
 }
 
