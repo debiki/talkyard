@@ -655,8 +655,9 @@ var Thread = createComponent({
     var parentPost = allPosts[post.parentId];
     var deeper = this.props.depth + 1;
     var isFlat = this.props.isFlat;
-    var childrenSideways = !!post.branchSideways;
-    var thisPostSideways = !!parentPost.branchSideways;
+    var isMindMap = store.pageRole === PageRole.MindMap;
+    var childrenSideways = isMindMap && !!post.branchSideways;
+    var thisPostSideways = isMindMap && !!parentPost.branchSideways;
 
     // Draw arrows, but not to multireplies, because we don't know if they reply to `post`
     // or to other posts deeper in the thread.

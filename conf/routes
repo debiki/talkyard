@@ -38,6 +38,7 @@ GET   /-/login-oauth-continue           controllers.LoginWithOpenAuthController.
 POST  /-/login-oauth-create-user  controllers.LoginWithOpenAuthController.handleCreateUserDialog
 
 POST  /-/make-impersonate-other-site-url controllers.ImpersonateController.makeImpersonateOtherSiteUrl(siteId, userId: Int)
+GET   /-/make-impersonate-other-site-url controllers.ImpersonateController.makeImpersonateOtherSiteUrl(siteId, userId: Int)
 GET   /-/impersonate-with-key   controllers.ImpersonateController.impersonateWithKey(key: String)
 POST  /-/impersonate            controllers.ImpersonateController.impersonate(userId: Int)
 POST  /-/stop-impersonating     controllers.ImpersonateController.stopImpersonating

@@ -610,7 +610,7 @@ var MoreDropdownModal = createComponent({
           "Pin / Delete / Category ..."));
     }
 
-    if (!isPageBody && isStaff(me)) {
+    if (!isPageBody && isMindMap && isStaff(me)) {
       var sidewaysTitle = post.branchSideways ? "Don't branch sideways" : "→ Branch sideways";
       moreLinks.push(
         r.a({ className: 'dw-a', onClick: this.toggleBranchSideways, key: 'bs' },
