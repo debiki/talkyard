@@ -10,6 +10,11 @@ esForum_topics_topic to esF_Ts_T?
 esAv            = Avatar (user profile pic or letter)
 esAw            = Arrow to a post from its parent
 
+esA             = Admin Area
+esA_Ss          = Admin Area, settings section
+
+esSA            = Super Admin area
+
 esF             = the forum main page, incl sort & filter buttons, and topic list and category list
 esF_BB          = forum button bar: sort & filter buttons
 esF_Ts          = forum topic list

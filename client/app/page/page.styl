@@ -17,6 +17,7 @@ $sidebarZIndex = 1010
 body
   overflow: hidden;
 
+.dw-fixed-topbar-wrap,
 .esScrollBtns_fixedBar,
 #esPageColumn
   top: 0;
@@ -25,7 +26,10 @@ body
   // Move the contents a bit to the left/right if sidebars open...
   left: $watchbarWidth;
   right: 25vw;
+  &.dw-fixed-topbar-wrap
+    bottom: auto;
 html.esSidebarsOverlayPage
+  .dw-fixed-topbar-wrap,
   .esScrollBtns_fixedBar,
   #esPageColumn
     // ...but if the screen too small, let the sidebars overlay the page instead.
@@ -82,6 +86,7 @@ html.esSidebarsOverlayPage
 html:not(.es-pagebar-open)
   #esThisbarColumn
     display: none;
+  .dw-fixed-topbar-wrap,
   .esScrollBtns_fixedBar,
   #esPageColumn
     right: 0;
@@ -89,6 +94,7 @@ html:not(.es-pagebar-open)
 html:not(.es-watchbar-open)
   #esWatchbarColumn
     display: none;
+  .dw-fixed-topbar-wrap,
   .esScrollBtns_fixedBar,
   #esPageColumn
     left: 0;
@@ -218,6 +224,7 @@ h1.dw-p-ttl a:not(.icon-edit):not(.dw-forum-intro-show)
 //==============================
 
 // 'flex' apparently doesn't work on iOS, so disable it on iOS. [5YKJ24]
+// But does work on Safari
 
 // Make the footer stick to the bottom.
 // See: http://philipwalton.github.io/solved-by-flexbox/demos/sticky-footer/
@@ -229,14 +236,15 @@ html:not(.ios) #esPageScrollable // not iOS: see [5YKJ24] above
 #dw-react-user-page,
 #dwPosts
   flex: 1 0 auto;
-// This avoids some other bug that shrinks these to 0,
+
+// This works around a Safari bug that lets flex elems shrink smaller than min-height/width,
 // see: https://github.com/philipwalton/flexbugs#1-minimum-content-sizing-of-flex-items-not-honored
-html:not(.ios) // not iOS: see [5YKJ24] above
-  #topbar,
-  footer
-    flex: none;
-  .footer
-    margin-top: 0;
+.esPageHeader,
+#topbar,
+footer
+  flex: none;
+.footer
+  margin-top: 0;
 
 // For the default <footer><p><a>Terms of use<a>Privacy policy:  [5UK62W]
 footer
@@ -267,7 +275,7 @@ footer
 
   &::-webkit-scrollbar
     -webkit-appearance: none; // none? Weird but works.
-    width: 13px;
+    width: $pageScrollbarWidth;
 
   // The ^ and v buttons at the top and bottom of the scrollbar.
   &::-webkit-scrollbar-button:vertical:increment,

@@ -137,14 +137,16 @@ var AdminAppComponent = React.createClass(<any> {
   // Quick hack that makes the settings area smaller so the savebar won't occlude its lower part.
   // Later: Use Redux, then the is-savebar-visible state will be accessible to whatever so it
   // can adjust the .esPageColumn in the React.js way.
+  // Disable for now, because now position; static, not fixed. [5GK3FW0]
+  /*
   componentDidUpdate: function() {
     if (this.hasUnsavedSettings()) {
-      $('#esPageColumn').css('bottom', $('.esAdmin_savebar').outerHeight());
+      $('#esPageColumn').css('bottom', $('.esA_SaveBar').outerHeight());
     }
     else {
       $('#esPageColumn').css('bottom', 0);
     }
-  },
+  }, */
 
   hasUnsavedSettings: function() {
     return !_.isEmpty(this.state.editedSettings);
@@ -185,12 +187,12 @@ var AdminAppComponent = React.createClass(<any> {
         NavItem({ eventKey: 'customize' }, 'Customize') : null;
 
     var saveBar = _.isEmpty(this.state.editedSettings) ? null :
-      r.div({ className: 'esAdmin_savebar' },
+      r.div({ className: 'esA_SaveBar' },
         r.div({ className: 'container' },
           Button({ onClick: this.saveSettings, bsStyle: 'primary',
-            className: 'esAdmin_savebar_saveBtn' }, "Save changes" ),
+            className: 'esA_SaveBar_SaveAllB' }, "Save all changes" ),
           Button({ onClick: this.undoSettings,
-            className: 'esAdmin_savebar_undoBtn' }, "Undo all changes" )));
+            className: 'esA_SaveBar_UndoAllB' }, "Undo all changes" )));
 
     return (
       r.div({ className: 'esAdminArea' },
@@ -229,7 +231,7 @@ var SettingsPanelComponent = React.createClass(<any> {
       return r.p({}, 'Loading...');
 
     return (
-      r.div({},
+      r.div({ className: 'esA_Ss' },
         r.ul({ className: 'esAdmin_settings_nav col-sm-2 nav nav-pills nav-stacked' },
           NavLink({ to: AdminRoot + 'settings/legal' }, "Legal"),
           NavLink({ to: AdminRoot + 'settings/login' }, "Login"),

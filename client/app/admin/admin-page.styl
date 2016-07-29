@@ -20,7 +20,10 @@
   p
     font-style: italic;
 
-.esAdmin_settings,
+.esA_Ss
+  clearfix();
+
+.esAdmin_settings,  // rename to esA_Ss_Ss (settings tab, and the actual settings)
 .esAdmin_customize
   padding-bottom: 40px;
   .form-group
@@ -32,6 +35,7 @@
 .esAdmin_settings_nav
   background: #eee;
   padding-right: 0;
+  margin-bottom: 20px; // so the .esA_SaveBar won't be immediately below
   li:not(.active) a
     color: hsl(0, 0%, 16%);
   li.active a
@@ -53,21 +57,40 @@
   position: relative;
   left: 4px;
   margin-bottom: 8px;
-
 .esAdmin_savebar
+
+.esA_SaveBar
+  // Remove position:fixed for now, [5GK3FW0] because if fixed at the bottom, people sometimes
+  // won't find it until after a while. Later: make it fixed, if would otherwise be off-screen
+  // (below the lower window edge).
+  /*
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 10px;
-  background: hsl(0, 0%, 97%);
   box-shadow: 0 0 25px 10px hsl(0, 0%, 34%);
+  */
+  background: hsl(0, 0%, 95%);
+  padding: 11px;
+  border: 1px solid hsl(0, 0%, 92%);
+  border-left: none;
+  border-right: none;
+
   // Center the buttons:
   text-align: center;
   .container
     display: inline-block;
     .btn
       margin-right: 10px;
+
+.esA_SaveBar_SaveAllB
+  background: hsl($uiHue, 100%, 53%);
+  border-color: hsl($uiHue, 100%, 53%);
+  font-weight: bold;
+
+.esA_SaveBar_SaveAllB,
+.esA_SaveBar_UndoAllB
+  height: 38px; // makes them a bit larger
 
 .dw-main-nav
   margin: 30px auto 12px;

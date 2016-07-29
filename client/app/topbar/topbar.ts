@@ -392,7 +392,8 @@ export var TopBar = createComponent({
     var styles = {};
     if (this.state.fixed) {
       fixItClass = ' dw-fixed-topbar-wrap';
-      styles = { top: this.state.top, left: this.state.left }
+      // No, use position: fixed instead. CLEAN_UP 2016-10: remove `styles` + this.state.top & left
+      //styles = { top: this.state.top, left: this.state.left }
     }
     return (
         r.div({ className: 'esTopbarWrap' + fixItClass, style: styles },

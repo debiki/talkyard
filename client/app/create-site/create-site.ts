@@ -176,11 +176,8 @@ var CreateWebsiteComponent = React.createClass(<any> {
                 this.reportOkay('email', isOk)
               } }),
 
-          // onFocus, not onClick, so the next field will appear directly when one tabs
-          // away from the previous field. (onFocus apparently works with mouse & touch too)
-          Button({ onFocus: () => this.setState({ showEmail2: true }), bsStyle: 'primary',
-              style: { display: okayStatuses.email && !state.showEmail2 ? 'block' : 'none' },
-              id: 'e2eNext1' },
+          NextStepButton({ onShowNextStep: () => this.setState({ showEmail2: true }),
+              showThisStep: okayStatuses.email && !state.showEmail2, id: 'e2eNext1' },
             "Next"),
 
           PatternInput({ label: 'Verify email:', id: 'e2eEmail2', className: 'esCreateSite_email',
@@ -193,9 +190,8 @@ var CreateWebsiteComponent = React.createClass(<any> {
               this.reportOkay('email2', isOk && value === this.state.email)
             } }),
 
-          Button({ onFocus: () => this.setState({ showHostname: true }), bsStyle: 'primary',
-              style: { display: emailTypedOkTwice && !state.showHostname ? 'block' : 'none' },
-              id: 'e2eNext2' },
+          NextStepButton({ onShowNextStep: () => this.setState({ showHostname: true }),
+              showThisStep: emailTypedOkTwice && !state.showHostname, id: 'e2eNext2' },
             "Next"),
 
           LocalHostnameInput({ label: 'Site Address:', placeholder: 'your-forum-name',
@@ -205,9 +201,8 @@ var CreateWebsiteComponent = React.createClass(<any> {
               ref: 'localHostname',
               onChangeValueOk: (isOk) => this.reportOkay('hostname', isOk) }),
 
-          Button({ onFocus: () => this.setState({ showRemaining: true }), bsStyle: 'primary',
-              style: { display: okayStatuses.hostname && !state.showRemaining ? 'block' : 'none' },
-              id: 'e2eNext3' },
+          NextStepButton({ onShowNextStep: () => this.setState({ showRemaining: true }),
+              showThisStep: okayStatuses.hostname && !state.showRemaining, id: 'e2eNext3' },
             "Next (the last)"),
 
           PatternInput({ label: "Organization name:", placeholder: "Your Organization Name",
@@ -227,6 +222,18 @@ var CreateWebsiteComponent = React.createClass(<any> {
                 disabled: disableSubmit })))));
   }
 });
+
+
+function NextStepButton(props, text) {
+  // Listen to onFocus, so the next field will appear directly when one tabs
+  // away from the previous field. onFocus apparently works with mouse & touch too.
+  // However, onFocus apparently does *not* work in Safari, so listen to onClick too.
+  return (
+      Button({ onClick: props.onShowNextStep, onFocus: props.onShowNextStep,
+          bsStyle: 'primary', style: { display: props.showThisStep ? 'block' : 'none' },
+          id: props.id },
+        text));
+}
 
 
 
