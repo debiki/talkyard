@@ -103,7 +103,6 @@ export var PageRoleDropdown = createComponent({
 
     var staffOnlyDivider;
     var todoOption;
-    var openChatOption;
     var privateChatOption;
 
     if (isStaff(me) && showAllOptions) {
@@ -116,12 +115,6 @@ export var PageRoleDropdown = createComponent({
           title: PageRole_Todo_IconString,
           text: "Something that should be done or fixed." });
         */
-
-      openChatOption =
-        ExplainingListItem({ onSelect: this.onSelect,
-          activeEventKey: pageRole, eventKey: PageRole.OpenChat,
-          title: PageRole_Chat_IconString,
-          text: "" });
 
       // Not yet implemented:
       // privateChatOption = r.option({ value: PageRole.PrivateChat }, "Private chat");
@@ -173,13 +166,18 @@ export var PageRoleDropdown = createComponent({
             title: PageRole_Idea_IconString,
             text: "A suggestion. Can be marked as done/implemented." }),
 
+          ExplainingListItem({ onSelect: this.onSelect,
+            activeEventKey: pageRole, eventKey: PageRole.OpenChat,
+            title: PageRole_Chat_IconString,
+            text: "A possibly never-ending conversation." }),
+
           showMore,
 
           staffOnlyDivider,
-          todoOption,
-          openChatOption,
-          privateChatOption,
+
           wikiMindMap,
+          todoOption,
+          privateChatOption,
 
           adminOnlyDivider,
           webPageOption,

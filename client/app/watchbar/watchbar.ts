@@ -75,8 +75,8 @@ export var Watchbar = createComponent({
     var directMessages = DirectMessages({ store: store });
 
     return (
-        r.div({ className: 'esWatchbar', ref: 'watchbar' },
-          r.button({ className: 'esWatchbar_close esCloseCross',
+        r.div({ className: 'esWB', ref: 'watchbar' },
+          r.button({ className: 'esWB_CloseB esCloseCross',
               onClick: ReactActions.closeWatchbar }),
         recentTopicsAndNotfs,
         chatChannels,
@@ -103,7 +103,7 @@ var RecentTopicsAndNotfs = createComponent({
             isCurrent: topic.pageId === store.pageId }));
     });
     return (
-        r.div({ className: 'esWatchbar_topics' },
+        r.div({ className: 'esWB_Ts' },
           // Not "recent topics", because contains non-topics too, e.g. forum itself.
           r.h3({ style: { wordSpacing: '2px' }}, "Recently viewed"),
           r.ul({},
@@ -113,6 +113,11 @@ var RecentTopicsAndNotfs = createComponent({
 
 
 var ChatChannels = createComponent({
+  createChatChannel: function() {
+    var store: Store = this.props.store;
+    editor.editNewForumPage(store.categoryId, PageRole.OpenChat);
+  },
+
   render: function() {
     var store: Store = this.props.store;
     var topics: WatchbarTopic[] = store.me.watchbar[WatchbarSection.ChatChannels];
@@ -126,7 +131,9 @@ var ChatChannels = createComponent({
               isCurrent: topic.pageId === store.pageId }));
     }
     return (
-      r.div({ className: 'esWatchbar_topics' },
+      r.div({ className: 'esWB_Ts' },
+        r.button({ className: 'esWB_CreateB', onClick: this.createChatChannel,
+            title: "Create chat channel" }, '+'),
         r.h3({}, "Joined Chats"),
         r.ul({},
           topicElems)));
@@ -148,7 +155,7 @@ var DirectMessages = createComponent({
             isCurrent: topic.pageId === store.pageId }));
     }
     return (
-      r.div({ className: 'esWatchbar_topics' },
+      r.div({ className: 'esWB_Ts' },
         r.h3({}, "Direct Messages"),
         r.ul({},
           topicElems)));
@@ -160,8 +167,8 @@ var SingleTopic = createComponent({
   render: function() {
     var topic: WatchbarTopic = this.props.topic;
     var flavor: string = this.props.flavor;
-    var isCurrentTopicClass = this.props.isCurrent ? ' esWatchbar_topic-current' : '';
-    var unreadClass = topic.unread ? ' esWatchbar_topic-unread' : '';
+    var isCurrentTopicClass = this.props.isCurrent ? ' esWB_T-Current' : '';
+    var unreadClass = topic.unread ? ' esWB_T-Unread' : '';
     var url = topic.url || linkToPageId(topic.pageId);
     var title = topic.title || url;
     // Roughly 30 chars fits. For now, to usually avoid unneeded tooltips: (dupl width [4YK0F2])
@@ -170,18 +177,18 @@ var SingleTopic = createComponent({
     // Could show num unread posts / chat messages. But would be rather complicated:
     // need to track num unread, + last visit date too, in the watchbar data.
     return (
-        r.li({ className: 'esWatchbar_li esWatchbar_topic-' + flavor + moreClasses },
-          r.a({ className: 'esWatchbar_topic_link', href: url, title: tooltip },
-            r.span({ className: 'esWatchbar_topic_title' }, title))));
+        r.li({ className: 'esWB_LI esWB_T-' + flavor + moreClasses },
+          r.a({ className: 'esWB_T_Link', href: url, title: tooltip },
+            r.span({ className: 'esWB_T_Title' }, title))));
   }
 });
 
 
 var NoTopics = function() {
   return (
-    r.li({ className: 'esWatchbar_li esWatchbar_topic-none' },
-      r.span({ className: 'esWatchbar_topic_link' },
-        r.i({ className: 'esWatchbar_topic_title' }, "None" ))));
+    r.li({ className: 'esWB_LI esWB_T-None' },
+      r.span({ className: 'esWB_T_Link' },
+        r.i({ className: 'esWB_T_Title' }, "None" ))));
 };
 
 

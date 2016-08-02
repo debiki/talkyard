@@ -24,9 +24,14 @@ esF_Cs          = forum category list
 esF_Cs_C        = a category in the category list
 
 esCB            = context bar (the right sidebar)
+
 esWB            = watchbar (the left sidebar)
+esWB_T          = watchbar topic
+
 esTB            = top bar (with the breadcrump and login & signup, or user name)
 esMB            = topic metabar (just below the Orig Post, before all replies)
+
+esLD            = login/signup dialog
 
 esUP            = A user's public profile page
 
@@ -51,4 +56,8 @@ esPw            = password
 esOb            = onebox
 
 ...WhateverB    = B means Button
+...WhateverL    = L means Link
+...WhateverLI   = List item
+
+
 

@@ -17,14 +17,14 @@
 .dw-login-modal
   max-width: 520px; // else like 600, too wide
 
-.dw-login-dialog
+.esLD
   .btn-group-vertical
     margin: 0 auto;
     display: block;
     width: 19em;
 
   $width = 350px;
-  .esLoginDlg_switch
+  .esLD_Switch
     max-width: $width;
     margin-left: auto;
     margin-right: auto;
@@ -32,6 +32,13 @@
   form
     max-width: $width;
     margin: 0 auto;
+
+.esLD_Switch_L
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  word-spacing: 1px;
+  padding: 0 1px 0 2px;
+  color: hsl(207, 100%, 45%);
 
 // Add this class to modal dialogs that have opened modal child dialogs.
 // This fades the modal dialog by placing an opaque gray layer above.

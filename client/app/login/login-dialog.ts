@@ -322,14 +322,15 @@ export var LoginDialogContent = createClassAndFactory({
       // The login dialog opens not only via the Log In button, but also if one clicks
       // e.g. Create Topic. So it's important to be able to switch to sign-up.
       switchToOtherDialogInstead =
-        r.div({ className: 'form-group esLoginDlg_switch' },
+        r.div({ className: 'form-group esLD_Switch' },
           "(", r.i({}, "New user? ",
-          r.a({ onClick: this.props.switchBetweenLoginAndSignUp }, "Create account"),
+          r.a({ className: 'esLD_Switch_L', onClick: this.props.switchBetweenLoginAndSignUp },
+            "Create account"),
           " instead"), " )");
     }
 
     return (
-      r.div({ className: 'dw-login-dialog' },
+      r.div({ className: 'esLD' },
         createUserDialog,
         passwordLoginDialog,
         guestLoginDialog,

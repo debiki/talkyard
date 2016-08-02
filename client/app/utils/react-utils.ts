@@ -100,7 +100,7 @@ function processTimeAgo(selector?: string) {
   $(selector + ' .dw-ago-ltr:not(.' + timeDoneClass + ')').each(function() {
     var $this = $(this);
     var isoDate = $this.text();
-    var then = new Date(isoDate);
+    var then = moment(isoDate).valueOf();
     var now = Date.now();
     var durationLetter = debiki.prettyLetterDuration(then, now);
     $this.text(durationLetter);

@@ -1,20 +1,22 @@
 $watchbarHue = $uiHue; // or 0 (red) looks ok too;
+$sectionMarginTop = 2rem;
+$buttonColor = #919191;
 
 #esWatchbarColumn
   background: hsl(0, 0%, 13%);
 
-.esWatchbar
+.esWB
   height: 100%;
   padding: 10px 17px 10px 10px
   overflow-y: auto;
 
-  .esWatchbar_topic_link
+  .esWB_T_Link
     display: inline-block;
     width: 100%; // or nothing happens when clicks right part of hover-highlighted <li>
     padding: 3px 0 1px 6px;
 
   h3,
-  .esWatchbar_topic_title
+  .esWB_T_Title
     color: hsl(0, 0%, 57%);
 
     white-space: nowrap;
@@ -27,42 +29,65 @@ $watchbarHue = $uiHue; // or 0 (red) looks ok too;
   h3
     text-transform: uppercase;
     font-size: 1.4rem;
-    margin: 2rem 0 0.2rem;
+    margin: $sectionMarginTop 0 0.2rem;
     cursor: default;
     word-spacing: 1px;
 
-  .esWatchbar_li
+  .esWB_LI
     list-style: none;
     margin: 0 0 2px;
     cursor: pointer;
-    &.esWatchbar_topic-none
+    &.esWB_T-None
       cursor: default;
-    &:not(.esWatchbar_topic-none):hover
+    &:not(.esWB_T-None):hover
       background: hsl($watchbarHue, 70%, 22%);
-      .esWatchbar_topic_title
+      .esWB_T_Title
         color: hsl(0, 0%, 80%);
 
-    &.esWatchbar_topic-current
+    &.esWB_T-Current
       background: hsl($uiHue, 70%, 33%);
-      .esWatchbar_topic_title
+      .esWB_T_Title
         color: white;
 
-    &.esWatchbar_topic-unread
-      .esWatchbar_topic_title
+    &.esWB_T-Unread
+      .esWB_T_Title
         color: hsl(0, 0%, 87%);
         font-weight: bold;
         text-shadow: 0.7px 0 0 hsl(0, 0%, 87%);
         letter-spacing: 0.4px;
 
-.esWatchbar_close
+.esWB_CloseB
   float: right;
   position: relative;
   top: -5px;
   right: -14px;
-  color: #919191;
+  color: $buttonColor;
   border-radius: 0;
   padding: 4px 13px 2px 10px;
+
+.esWB_CreateB
+  float: right;
+  padding: 0;
+  margin-top: $sectionMarginTop;
+  top: -1px;
+  position: relative;
+  border: 1px solid $buttonColor;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 17px;
+  font-weight: bold;
+  line-height: 0;
+  background: none;
+  color: $buttonColor;
+
+.esWB_CloseB,
+.esWB_CreateB
   &:hover
-    background: hsl($watchbarHue, 80%, 20%);
-    color: hsl(0, 0%, 70%);
+    background: hsl($watchbarHue, 85%, 22%);
+    color: hsl(0, 0%, 80%);
+
+.esWB_CreateB
+  &:hover
+    box-shadow: 0 0 0 8px hsl(207, 85%, 22%);
 
