@@ -11,7 +11,8 @@ esAv            = Avatar (user profile pic or letter)
 esAw            = Arrow to a post from its parent
 
 esA             = Admin Area
-esA_Ss          = Admin Area, settings section
+esA_Ss          = Admin Area, settings
+esA_Ss_S        = Admin Area, a single setting
 
 esSA            = Super Admin area
 

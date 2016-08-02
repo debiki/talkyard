@@ -114,7 +114,9 @@ class SiteDao(
   }
 
   private def uncacheSite() {
+    val thisSite = memCache.lookup[Site](thisSiteCacheKey)
     memCache.remove(thisSiteCacheKey)
+    thisSite.foreach(SystemDao.removeCanonicalHostCacheEntries(_, memCache))
   }
 
   private def thisSiteCacheKey = siteCacheKey(this.siteId)
@@ -230,9 +232,27 @@ class SiteDao(
     uncacheSite()
   }
 
-  def addTenantHost(host: SiteHost) = {
+  def listHostnames(): Seq[SiteHost] = {
+    readOnlyTransaction(_.listHostnames)
+  }
+
+  def changeSiteHostname(newHostname: String) {
     readWriteTransaction { transaction =>
-      transaction.addSiteHost(host)
+      val site = transaction.loadSite() getOrDie "EsE2PK4Y8X"
+      if (site.hosts.sortBy(_.hostname).length > MaxOldHostnames) {
+        // COULD check last week? month? only, and show a warning before forbidding.
+        throwForbidden2("EsE3KYP2", "You've changed hostname too many times")
+      }
+      transaction.changeCanonicalHostRoleToExtra()
+      transaction.insertSiteHost(SiteHost(newHostname, SiteHost.RoleCanonical))
+      uncacheSite()
+    }
+  }
+
+  def changeExtraHostsRole(newRole: SiteHost.Role) {
+    readWriteTransaction { transaction =>
+      transaction.changeExtraHostsRole(newRole)
+      uncacheSite()
     }
   }
 
@@ -357,6 +377,8 @@ class SiteDao(
 
 
 object SiteDao {
+
+  private val MaxOldHostnames = 5  // dupl in JS [7GK8W2Z]
 
   private val locksBySiteId = mutable.HashMap[SiteId, Object]()
 

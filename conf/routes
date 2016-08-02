@@ -79,6 +79,8 @@ GET   /-/admin/*whatever        controllers.AdminController.viewAdminPage(whatev
 
 GET   /-/load-site-settings     controllers.SettingsController.loadSiteSettings
 POST  /-/save-site-settings     controllers.SettingsController.saveSiteSettings
+POST  /-/change-hostname        controllers.SettingsController.changeHostname
+POST  /-/update-extra-hostnames controllers.SettingsController.updateExtraHostnames
 
 GET   /-/terms-of-use           controllers.LegalController.viewTermsOfUsePage
 GET   /-/privacy-policy         controllers.LegalController.viewPrivacyPolicyPage

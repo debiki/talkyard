@@ -45,8 +45,6 @@ trait SiteTransaction {
     quotaLimitMegabytes: Option[Int], maxSitesPerIp: Int, maxSitesTotal: Int,
     isTestSiteOkayToDelete: Boolean, pricePlan: PricePlan): Site
 
-  def insertSiteHost(host: SiteHost)
-
   def loadSite(): Option[Site]
   def bumpSiteVersion()
   def updateSite(changedSite: Site)
@@ -55,11 +53,15 @@ trait SiteTransaction {
   // Try to remove, use sth more generic like insertUser()? or insertGuest() instead?
   def createUnknownUser(date: ju.Date)
 
-  def addSiteHost(host: SiteHost)
   def loadSiteVersion(): Int
 
   def loadSiteSettings(): Option[EditedSettings]
   def upsertSiteSettings(settings: SettingsToSave)
+
+  def listHostnames(): Seq[SiteHost]
+  def insertSiteHost(host: SiteHost)
+  def changeCanonicalHostRoleToExtra()
+  def changeExtraHostsRole(newRole: SiteHost.Role)
 
   def loadResourceUsage(): ResourceUse
 

@@ -29,8 +29,14 @@ export function linkToPageId(pageId: PageId): string {
 }
 
 
-export function linkToAdminPage(): string {
-  return '/-/admin/';
+export function linkToAdminPage(hostname?: string): string {
+  var origin = hostname ? '//' + hostname : '';
+  return origin + '/-/admin/';
+}
+
+export function linkToAdminPageAdvancedSettings(hostname?: string): string {
+  var origin = hostname ? '//' + hostname : '';
+  return origin + '/-/admin/settings/advanced';
 }
 
 export function linkToUserInAdminArea(userId: UserId): string {

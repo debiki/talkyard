@@ -105,6 +105,26 @@ class PostBitFlags(val bits: Int) extends AnyVal {
   def isStaffWiki = (bits & StaffWikiBitMask) != 0                   // 32
   def isBranchSideways = (bits & BranchSidewaysBitMask) != 0         // 64
 
+  def isSelfCollapsed = bits & 10
+  def isSuccessorsCollapsed = bits & 11
+  def isAncestorCollapsed = bits & 12
+
+  def isSelfClosed = bits & 10
+  def isSuccessorsClosed = bits & 11
+  def isAncestorClosed = bits & 12
+
+  def isSelfHidden = bits & 10
+  def isSuccessorsHidden = bits & 11
+  def isAncestorHidden = bits & 12
+
+  def isSelfDeleted = bits & 10
+  def isSuccessorsDeleted = bits & 11
+  def isAncestorDeleted = bits & 12
+
+? def isFrozen = bits & 10
+? def isSuccessorsFrozen = bits & 11
+? def isAncestorFrozen = bits & 12
+
 } */
 
 

@@ -67,6 +67,7 @@ export function routes() {
         Route({ path: 'login', component: LoginSettingsComponent }),
         Route({ path: 'moderation', component: ModerationSettingsComponent }),
         Route({ path: 'analytics', component: AnalyticsSettingsComponent }),
+        Route({ path: 'advanced', component: AdvancedSettingsComponent }),
         Route({ path: 'experimental', component: ExperimentalSettingsComponent })),
       Route({ path: 'users', component: UsersTabComponent },
         Route({ path: 'active', component: ActiveUsersPanelComponent }),
@@ -129,6 +130,9 @@ var AdminAppComponent = React.createClass(<any> {
       this.setState({
         defaultSettings: currentAndDefaultSettings.defaultSettings,
         currentSettings: currentAndDefaultSettings.effectiveSettings,
+        baseDomain: currentAndDefaultSettings.baseDomain,
+        cnameTargetHost: currentAndDefaultSettings.cnameTargetHost,
+        hosts: currentAndDefaultSettings.hosts,
         editedSettings: {},
       });
     });
@@ -210,6 +214,7 @@ var AdminAppComponent = React.createClass(<any> {
           defaultSettings: this.state.defaultSettings,
           currentSettings: this.state.currentSettings,
           editedSettings: this.state.editedSettings,
+          hosts: this.state.hosts,
           removeUnchangedSettings: this.removeUnchangedSettings,
           setEditedSettings: this.setEditedSettings,
         }),
@@ -237,6 +242,7 @@ var SettingsPanelComponent = React.createClass(<any> {
           NavLink({ to: AdminRoot + 'settings/login' }, "Login"),
           NavLink({ to: AdminRoot + 'settings/moderation'  }, "Moderation"),
           NavLink({ to: AdminRoot + 'settings/analytics' }, "Analytics"),
+          NavLink({ to: AdminRoot + 'settings/advanced' }, "Advanced"),
           NavLink({ to: AdminRoot + 'settings/experimental' }, "Experimental")),
         r.div({ className: 'form-horizontal esAdmin_settings col-sm-10' },
           React.cloneElement(this.props.children, this.props))));
@@ -383,6 +389,88 @@ var AnalyticsSettingsComponent = React.createClass(<any> {
             newSettings.googleUniversalAnalyticsTrackingId = target.value;
           }
         })));
+  }
+});
+
+
+
+var AdvancedSettingsComponent = React.createClass(<any> {
+  redirectExtraHostnames: function() {
+    Server.redirectExtraHostnames(() => {
+      util.openDefaultStupidDialog({
+        small: true,
+        // COULD move state to here and update it, so no need to reload.
+        body: r.span({}, "Done. All old hostnames now redirect to here, i.e. to ",
+          r.samp({}, this.getCanonicalHostname()), ". **Reload** this page please"),
+      });
+    });
+  },
+
+  getCanonicalHostname: function() {
+    var host = _.find(this.props.hosts, (host: Host) => host.role == HostRole.Canonical);
+    return host ? host.hostname : null;
+  },
+
+  render: function() {
+    var props = this.props;
+    var hosts: Host[] = props.hosts;
+    var canonicalHostname = this.getCanonicalHostname();
+    if (!canonicalHostname)
+      return (
+        r.p({},
+          "No canonical host [EsM4KP0FYK2].", r.br(),
+          "All hosts: " + JSON.stringify(hosts)));
+
+    var RedirectButtonTitle = "Redirect old hostnames"; // dupl [5KFU2R0]
+    var canonicalHostnameSamp = r.samp({}, canonicalHostname);
+    var isDuplicate = location.hostname !== canonicalHostname;
+
+    var duplicateHostnames =
+      _.filter(hosts, (h: Host) => h.role == HostRole.Duplicate).map((h: Host) => h.hostname);
+    var redirectingHostnames =
+      _.filter(hosts, (h: Host) => h.role == HostRole.Redirect).map((h: Host) => h.hostname);
+
+    var changeHostnameFormGroup =
+      r.div({ className: 'form-group' },
+        r.label({ className: 'control-label col-sm-3' }, "Hostname"),
+        r.div({ className: 'col-sm-9 esA_Ss_S esAdmin_settings_setting' },
+          location.protocol + "//", r.code({ className: 'esA_Ss_S_Hostname' }, canonicalHostname),
+          r.div({ className: 'help-block' },
+            "This is the address people type in the browser address bar to go to this forum."),
+          Button({ onClick: openHostnameEditor }, "Change hostname ...")));
+
+    var duplicatingHostsFormGroup = duplicateHostnames.length === 0 ? null :
+      r.div({ className: 'form-group has-error' },
+        r.label({ className: 'control-label col-sm-3' }, "Duplicating hostnames"),
+        r.div({ className: 'col-sm-9 esA_Ss_S-Hostnames esAdmin_settings_setting' },
+          r.pre({}, duplicateHostnames.join('\n')),
+          r.span({ className: 'help-block' },
+            "This forum is still accessible at the old hostnames listed above. " +
+            "Search engines (like Google, Baidu, and Yandex) don't like that — they want your " +
+            "forum to be accessible via ", r.i({}, "one"), " hostname only. You should " +
+            "therefore ", r.i({}, "redirect"), " all the old hostnames to ",
+            canonicalHostnameSamp, ':'),
+          isDuplicate
+            ? r.p({}, "Go to ",
+                r.a({ href: linkToAdminPageAdvancedSettings(canonicalHostname), target: '_blank' },
+                  canonicalHostname, r.span({ className: 'icon-link-ext' })),
+                ", login, and click ", r.b({}, RedirectButtonTitle))
+            : Button({ onClick: this.redirectExtraHostnames }, RedirectButtonTitle)));
+
+    var redirectingHostsFormGroup = redirectingHostnames.length === 0 ? null :
+      r.div({ className: 'form-group' },
+        r.label({ className: 'control-label col-sm-3' }, "Redirecting hostnames"),
+        r.div({ className: 'col-sm-9 esA_Ss_S-Hostnames esAdmin_settings_setting' },
+          r.span({ className: 'help-block' }, "These old hostnames redirect to ",
+            canonicalHostnameSamp, " (with status 302 Found):"),
+          r.pre({}, redirectingHostnames.join('\n'))));
+
+    return (
+      r.div({},
+        changeHostnameFormGroup,
+        duplicatingHostsFormGroup,
+        redirectingHostsFormGroup));
+
   }
 });
 

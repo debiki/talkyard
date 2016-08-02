@@ -117,6 +117,9 @@ export var PatternInput = createClassAndFactory({
     if (this.props.notRegexFour && this.props.notRegexFour.test(value))
       return this.props.notMessageFour;
 
+    if (this.props.lastRegex && !this.props.lastRegex.test(value))
+      return this.props.lastMessage;
+
     if (lengthError)
       return lengthError;
 

@@ -594,10 +594,13 @@ object Config {
   val CreateSitePath = "ed.createSite"
   val SuperAdminPath = "ed.superAdmin"
   val SuperAdminEmailAddressesPath = s"$SuperAdminPath.emailAddresses"
+  val CnameTargetHostConfValName = "ed.cnameTargetHost"
 }
 
 
 class Config(conf: play.api.Configuration) {
+
+  val cnameTargetHost = conf.getString(Config.CnameTargetHostConfValName).noneIfBlank
 
   object cdn {
     val origin = conf.getString("ed.cdn.origin").noneIfBlank

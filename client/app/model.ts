@@ -598,6 +598,10 @@ interface Settings {
   showComplicatedStuff: boolean;
 }
 
+interface Host {
+  hostname: string;
+  role: HostRole;
+}
 
 interface SuperAdminStuff {
   firstSiteHostname?: string;

@@ -22,6 +22,7 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import java.{util => ju}
 import play.api.Play.current
+import SystemDao._
 
 
 /** Database and cache queries that take all sites in mind.
@@ -125,7 +126,7 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
   def lookupCanonicalHost(hostname: String): Option[CanonicalHostLookup] = {
     require(!hostname.contains(":"), "EsE5KYUU7")
 
-    val key = _tenantLookupByOriginKey(hostname)
+    val key = canonicalHostKey(hostname)
     memCache.lookup[CanonicalHostLookup](key) foreach { result => CanonicalHostLookup
       return Some(result)
     }
@@ -140,11 +141,21 @@ class SystemDao(private val dbDaoFactory: DbDaoFactory, val cache: DaoMemCache) 
         Some(result)
     }
   }
+}
 
 
-  private def _tenantLookupByOriginKey(host: String) =
+object SystemDao {
+
+  private def canonicalHostKey(host: String) =
     // Site id unknown, that's what we're about to lookup.
-    MemCacheKeyAnySite(s"$host|TenantByOrigin")
+    MemCacheKeyAnySite(s"$host|SiteByOrigin")
+
+
+  def removeCanonicalHostCacheEntries(site: Site, memCache: MemCache) {
+    site.hosts foreach { host =>
+      memCache.remove(canonicalHostKey(host.hostname))
+    }
+  }
 
 }
 

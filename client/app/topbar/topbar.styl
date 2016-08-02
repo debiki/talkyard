@@ -435,8 +435,16 @@ html.esSidebarsOverlayPage
   background: white;
   // shrink -2px so won't overlap #esPageScrollable scrollbar
   box-shadow: 0 6px 9px -2px rgba(0,0,0,0.14); // shadow size dupl here: [5YKW25]
-  // Don't overlap scrollbar.
-  margin-right: 14px; // 14px works with FF, $pageScrollbarWidth only 13px.
+
+  // Don't let topbar overlap scrollbar — but if window narrow, then probably a mobile, with
+  // scrollbars hidden when not scrolling. Then leave margin as is = 0.
+  // COULD use Modernizr's hiddenscroll test to find out:
+  //   https://github.com/Modernizr/Modernizr/blob/master/feature-detects/hiddenscroll.js
+  // COULD find the real scrollbar width:
+  //   http://stackoverflow.com/questions/13382516/getting-scroll-bar-width-using-javascript
+  //   http://stackoverflow.com/questions/986937/how-can-i-get-the-browsers-scrollbar-sizes
+  @media (min-width: 800px)
+    margin-right: 14px; // 14px works with FF, $pageScrollbarWidth only 13px.
 
   .esOpenWatchbarBtn
     margin-right: 14px; // because now Home –> Category, or forum title, on same line

@@ -148,11 +148,11 @@ case class Site(
   * (Should be renamed to SiteHost.)
   */
 object SiteHost {
-  sealed abstract class Role
-  case object RoleCanonical extends Role
-  case object RoleRedirect extends Role
-  case object RoleLink extends Role
-  case object RoleDuplicate extends Role
+  sealed abstract class Role(val IntVal: Int) { def toInt = IntVal }
+  case object RoleCanonical extends Role(1)
+  case object RoleRedirect extends Role(2)
+  case object RoleLink extends Role(3)
+  case object RoleDuplicate extends Role(4)
 }
 
 

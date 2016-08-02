@@ -62,7 +62,7 @@ object SuperAdminController extends p.mvc.Controller {
   }
 
 
-  def listSitesImpl(): p.mvc.Result = {
+  private def listSitesImpl(): p.mvc.Result = {
     // The most recent first.
     val sites: Seq[Site] = debiki.Globals.systemDao.loadSites().sortBy(-_.createdAt.toUnixMillis)
     OkSafeJson(Json.obj(
@@ -74,7 +74,7 @@ object SuperAdminController extends p.mvc.Controller {
   }
 
 
-  def siteToJson(site: Site) = {
+  private def siteToJson(site: Site) = {
     Json.obj(
       "id" -> site.id,
       "status" -> site.status.toInt,

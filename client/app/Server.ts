@@ -187,8 +187,11 @@ export function createSite(emailAddress: string, localHostname: string,
 
 
 interface LoadSettingsResult {
-  effectiveSettings: Settings
+  effectiveSettings: Settings;
   defaultSettings: Settings;
+  baseDomain: string,
+  cnameTargetHost: string,
+  hosts: Host[];
 }
 
 
@@ -199,6 +202,21 @@ export function loadSiteSettings(success: (s: LoadSettingsResult) => void) {
 
 export function saveSiteSettings(settings: Settings, success: (s: LoadSettingsResult) => void) {
   postJsonSuccess('/-/save-site-settings', success, settings);
+}
+
+
+export function changeHostname(newHostname: string, success: () => void) {
+  postJsonSuccess('/-/change-hostname', success, { newHostname: newHostname });
+}
+
+
+export function redirectExtraHostnames(success: () => void) {
+  postJsonSuccess('/-/update-extra-hostnames', success, { redirect: true });
+}
+
+
+export function stopRedirectingExtraHostnames(success: () => void) {
+  postJsonSuccess('/-/update-extra-hostnames', success, { redirect: false });
 }
 
 

@@ -44,7 +44,14 @@ object SettingsController extends mvc.Controller {
     dieIf(settings.editedSettingsChain.length > 1, "EsE4GJKU0", "not tested")
     OkSafeJson(Json.obj(
       "effectiveSettings" -> settings.toJson,
-      "defaultSettings" -> settings.default.toJson))
+      "defaultSettings" -> settings.default.toJson,
+      "baseDomain" -> Globals.baseDomainNoPort,
+      "cnameTargetHost" -> JsString(Globals.config.cnameTargetHost.getOrElse(
+          s"? (config value ${Config.CnameTargetHostConfValName} missing [EsM5KGCJ2]) ?")),
+      "hosts" -> request.dao.listHostnames().sortBy(_.hostname).map(host => {
+        Json.obj("hostname" -> host.hostname, "role" -> host.role.IntVal)
+      })
+    ))
   }
 
 
@@ -52,6 +59,21 @@ object SettingsController extends mvc.Controller {
     val settingsToSave = debiki.Settings2.settingsToSaveFromJson(request.body)
     request.dao.saveSiteSettings(settingsToSave)
     loadSiteSettingsImpl(request)
+  }
+
+
+  def changeHostname = AdminPostJsonAction(maxLength = 100) { request: JsonPostRequest =>
+    val newHostname = (request.body \ "newHostname").as[String]
+    request.dao.changeSiteHostname(newHostname)
+    Ok
+  }
+
+
+  def updateExtraHostnames = AdminPostJsonAction(maxLength = 50) { request: JsonPostRequest =>
+    val redirect = (request.body \ "redirect").as[Boolean]
+    val role = if (redirect) SiteHost.RoleRedirect else SiteHost.RoleDuplicate
+    request.dao.changeExtraHostsRole(newRole = role)
+    Ok
   }
 
 }

@@ -230,10 +230,21 @@ admin -
   approve stuff:  (2WY0)
   ... lots of stuff ...
 
+superadmin -
+  ... lots of stuff ...
+
 restart server -
-  verify still logged in:
-  can post comment:
-  complicated setting still enabled:
+  restart app -
+    verify still logged in:
+    can post comment:
+    complicated setting still enabled:
+  restart nginx, redis, postgres -
+    verify still logged in:
+    can post comment:
+    can create site:
+    chat works:
+  restart everything at once -
+    ... same tests as above ...
 
 
 Tests to create:

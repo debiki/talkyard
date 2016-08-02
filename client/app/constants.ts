@@ -61,6 +61,13 @@ var SiteStatusStrings = [
   'Deleted',
   'Purged'];
 
+enum HostRole {
+  Canonical = 1,
+  Redirect = 2,
+  Link = 3,
+  Duplicate = 4,
+}
+
 enum PricePlan {  // [4GKU024S]
   Unknown = 0,
   NonCommercial = 1,
