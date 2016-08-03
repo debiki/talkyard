@@ -132,6 +132,18 @@ export function store_canSelectPosts(store: Store): boolean {
 }
 
 
+// Returns the current category, or if none, the Uncategorized category.
+//
+export function store_getCurrOrUncatCat(store: Store): Category {
+  var currCat = _.find(store.categories, (c: Category) => c.id === store.categoryId);
+  if (currCat)
+    return currCat;
+
+  // Apparently we're showing all categories. Find the uncategorized category instead.
+  return _.find(store.categories, (c: Category) => c.isTheUncategorizedCategory);
+}
+
+
 export function store_isSection(store: Store): boolean {
   return store.pageRole !== PageRole.Blog && store.pageRole !== PageRole.Forum;
 }

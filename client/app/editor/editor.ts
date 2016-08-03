@@ -947,6 +947,8 @@ export var Editor = createComponent({
         case PageRole.Problem: what = "Report a problem"; break;
         case PageRole.Idea: what = "Suggest an idea"; break;
         case PageRole.ToDo: what = "Create a todo"; break;
+        case PageRole.OpenChat: what = "New chat channel title and purpose"; break;
+        case PageRole.PrivateChat: what = "New private chat title and purpose"; break;
         case PageRole.MindMap: what = "Create a mind map page"; break;
         case PageRole.Discussion: break; // use default
         case PageRole.Message: die('EsE2KFE78'); break;

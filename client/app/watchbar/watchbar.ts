@@ -20,6 +20,7 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../help/help.ts" />
+/// <reference path="../store-getters.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.watchbar {
@@ -115,7 +116,9 @@ var RecentTopicsAndNotfs = createComponent({
 var ChatChannels = createComponent({
   createChatChannel: function() {
     var store: Store = this.props.store;
-    editor.editNewForumPage(store.categoryId, PageRole.OpenChat);
+    var category = store_getCurrOrUncatCat(store);
+    dieIf(!category, 'EsE4KPE02');
+    editor.editNewForumPage(category.id, PageRole.OpenChat);
   },
 
   render: function() {

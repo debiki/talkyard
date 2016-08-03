@@ -89,6 +89,7 @@ function processTimeAgo(selector?: string) {
   $(selector + ' .dw-ago:not(.' + timeDoneClass + ')').each(function() {
     var $this = $(this);
     var isoDate = $this.text();
+    // Try to remove moment() from the default JS bundle? [6KFW02] Use instead: http://stackoverflow.com/a/9363445/694469 ?
     var timeAgoString = moment(isoDate).fromNow();
     $this.text(timeAgoString);
     $this.addClass(timeDoneClass);
@@ -100,7 +101,7 @@ function processTimeAgo(selector?: string) {
   $(selector + ' .dw-ago-ltr:not(.' + timeDoneClass + ')').each(function() {
     var $this = $(this);
     var isoDate = $this.text();
-    var then = moment(isoDate).valueOf();
+    var then = moment(isoDate).valueOf(); // or exclude Moment from default JS bundle? [6KFW02]
     var now = Date.now();
     var durationLetter = debiki.prettyLetterDuration(then, now);
     $this.text(durationLetter);
@@ -115,7 +116,7 @@ function processTimeAgo(selector?: string) {
   $(selector + ' .esTimeExact:not(.' + timeDoneClass + ')').each(function() {
     var $this = $(this);
     var isoDate = $this.text();
-    var when = moment(isoDate);
+    var when = moment(isoDate);  // or exclude Moment from default JS bundle? [6KFW02]
     var includeDay = when.isBefore(moment().startOf('day'));
     // getTimezoneOffset() returns -60 (not +60) for UTC+1. Weird. So use subtract(..).
     //when = when.subtract((new Date()).getTimezoneOffset(), 'minutes'); -- Oops not needed.
