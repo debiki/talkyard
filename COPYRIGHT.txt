@@ -1,5 +1,5 @@
-Debiki is a discussion system for fruitful discussions.
-Copyright (C) 2010-2015 Kaj Magnus Lindberg (born 1979)
+EffectiveDiscussions is a discussion system with forum, chat, question & answers.
+Copyright (c) 2010-2016 Kaj Magnus Lindberg
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as
@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
                         ***
 
 
-Some components of Debiki are copyrighted by other people and licensed
+Some components of EffectiveDiscussions are copyrighted by other people and licensed
 under licenses that are compatible to the terms of the GNU Affero
 General Public License, e.g. Apache 2 and MIT. See the respective
 components, including:
@@ -43,6 +43,12 @@ Javascript and CSS:
     ./client/third-party/non-angular-slugify.js
     Copyright © 2013 Paul Smith <paulsmith@pobox.com>
     MIT license
+
+  - Bootstrap
+    ./modules/twitter-bootstrap/
+    Copyright 2012 Twitter, Inc.
+    Apache License v2.0
+    http://twitter.github.io/bootstrap/
 
   - Caret.js
     ./bower_components/Caret.js/LICENSE-MIT
@@ -78,11 +84,11 @@ Javascript and CSS:
     MIT license
     https://github.com/krasimir/gifffer
 
-  - Twitter Bootstrap
-    ./modules/twitter-bootstrap/
-    Copyright 2012 Twitter, Inc.
-    Apache License v2.0
-    http://twitter.github.io/bootstrap/
+  - markdown-it
+    ./bower_components/...
+    Copyright (c) 2014 Vitaly Puzrin, Alex Kocharin
+    MIT license
+    https://github.com/markdown-it/markdown-it
 
   - JsHtmlSanitizer from Google Caja
     ./client/third-party/html-css-sanitizer-bundle.js
@@ -94,6 +100,13 @@ Javascript and CSS:
     ./bower_components/jquery/
     Copyright (c) 2011 John Resig, http://jquery.com/
     MIT license
+
+  - jQuery Browser Plugin
+    ./client/third-party/jquery.browser.js
+    Original code Copyright 2005, 2013 jQuery Foundation, Inc. and other contributors, http://jquery.org/license
+    Modifications Copyright 2013 Gabriel Cebrian, https://github.com/gabceb
+    The MIT license
+    https://github.com/gabceb/jquery-browser-plugin
 
   - jQuery Cookie plugin
     ./client/vendor/jquery-cookie.js
@@ -141,11 +154,6 @@ Javascript and CSS:
     bower_components/moment/
     Copyright (c) 2011-2013 Tim Wood, Iskren Chernev, Moment.js contributors
 
-  - NiceScroll
-    ./bower_components/nicescroll/
-    Copyright (c) 2011 InuYaksa
-    MIT license
-
   - pretty-bytes
     client/app/utils/utils.ts
     Copyright (c) Sindre Sorhus
@@ -161,23 +169,15 @@ Javascript and CSS:
   - React Router
     Copyright (c) 2014 Ryan Florence, Michael Jackson
 
+  - react-router-active-component
+    Copyright (c) 2016, Jonny Buchanan
+    The MIT License (MIT)
+    https://github.com/insin/react-router-active-component
+
   - React-Select
     Copyright (c) 2015 Jed Watson
     MIT license
     https://github.com/JedWatson/react-select
-
-  - markdown-it
-    ./bower_components/...
-    Copyright (c) 2014 Vitaly Puzrin, Alex Kocharin
-    MIT license
-    https://github.com/markdown-it/markdown-it
-
-  - jQuery Browser Plugin
-    ./client/third-party/jquery.browser.js
-    Original code Copyright 2005, 2013 jQuery Foundation, Inc. and other contributors, http://jquery.org/license
-    Modifications Copyright 2013 Gabriel Cebrian, https://github.com/gabceb
-    The MIT license
-    https://github.com/gabceb/jquery-browser-plugin
 
   - YepNope
     ./bower_components/yepnope/
