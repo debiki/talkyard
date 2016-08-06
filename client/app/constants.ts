@@ -105,6 +105,7 @@ enum PageRole {
   OpenChat = 18,
   PrivateChat = 19,
   Message = 17,
+  Form = 20,
   Critique = 16, // [plugin]
 }
 
@@ -114,6 +115,7 @@ enum PostType {
   Flat = 2,
   StaffWiki = 11,
   CommunityWiki = 12,
+  CompletedForm = 21,
 }
 
 

@@ -20,6 +20,7 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../page-methods.ts" />
 /// <reference path="SelectCategoryDropdown.ts" />
 /// <reference path="PageRoleDropdown.ts" />
 
@@ -219,7 +220,7 @@ export var TitleEditor = createComponent({
             onCategorySelected: this.onCategoryChanged }));
     }
 
-    var selectTopicType = isForumOrAboutOrMessage ? null :
+    var selectTopicType = !page_mayChangeRole(pageRole) ? null :
       Input({ label: "Topic type", labelClassName: 'col-xs-2',
           wrapperClassName: 'col-xs-10' },
         editor.PageRoleDropdown({ store: store, pageRole: this.state.pageRole,

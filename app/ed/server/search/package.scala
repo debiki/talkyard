@@ -145,6 +145,7 @@ package object search {
       // JsonKeys.TagIds -> list of tag ids
       Fields.PostId -> post.uniqueId,
       Fields.PostNr -> post.nr,
+      Fields.PostType -> post.tyype.toInt,
       Fields.ApprovedRevisionNr -> post.approvedRevisionNr,
       Fields.ApprovedPlainText -> JsStringOrNull(approvedPlainText),
       Fields.CurrentRevisionNr -> post.currentRevisionNr,
@@ -190,6 +191,7 @@ package object search {
     val PageId = "pageId"
     val PostId = "postId"
     val PostNr = "postNr"
+    val PostType = "postType"
     val ApprovedRevisionNr = "approvedRevNr"
     val ApprovedPlainText = "approvedText"
     val CurrentRevisionNr = "currentRevNr"

@@ -1,0 +1,38 @@
+
+.dw-p-bd form,
+.preview-area form
+  margin: 13px auto;
+  width: 600px;
+  max-width: 100%;
+
+  input
+    width: 400px;
+    max-width: 100%;
+
+  textarea
+    margin: 0;
+    height: 60px;
+    width: 100%;
+
+  button[type='submit']
+    //@extends .btn
+    //@extends .btn-primary
+    display: block;
+    padding: 11px 34px 10px;
+    margin: 34px auto;
+    border: none;
+    font-weight: bold;
+    font-size: 21px;
+    color: #fff;
+    background-color: hsl($uiHue, 90%, 54%);
+    &:hover
+      background-color: hsl($uiHue, 90%, 40%);
+    &[disabled]
+      background-color: hsl(0, 0%, 63%) !important;
+
+
+.esFormThanks
+  text-align: center;
+  margin: 60px auto 40px;
+  font-size: 25px;
+

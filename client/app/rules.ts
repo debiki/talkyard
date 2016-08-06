@@ -60,6 +60,7 @@ function page_isChatChannel(pageRole: PageRole): boolean {
 // bit confusing name?
 function page_isDiscussion(pageRole: PageRole): boolean {
   return pageRole && !isSection(pageRole) &&
+      pageRole !== PageRole.Form &&
       pageRole !== PageRole.SpecialContent &&
       pageRole !== PageRole.CustomHtmlPage &&
       pageRole !== PageRole.WebPage;

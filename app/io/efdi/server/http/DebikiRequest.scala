@@ -53,6 +53,11 @@ abstract class DebikiRequest[A] {
 
   def who = Who(theUserId, theBrowserIdData)
 
+  def whoOrUnknown = {
+    val id = user.map(_.id) getOrElse UnknownUserId
+    Who(id, theBrowserIdData)
+  }
+
   def theBrowserIdData = BrowserIdData(ip = ip, idCookie = browserId.cookieValue,
     fingerprint = 0) // skip for now
 
@@ -62,7 +67,7 @@ abstract class DebikiRequest[A] {
   def theUserId = theUser.id
 
   def user_! : User =
-    user getOrElse throwForbidden("DwE86Wb7", "Not logged in")
+    user getOrElse throwForbidden("DwE5PK2W0", "Not logged in")
 
   def theMember = theUser match {
     case m: Member => m

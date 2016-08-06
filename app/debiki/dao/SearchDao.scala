@@ -40,7 +40,7 @@ trait SearchDao {
 
   def fullTextSearch(phrase: String, anyRootPageId: Option[PageId], user: Option[User])
         : Future[Seq[PageAndHits]] = {
-    searchEngine.fullTextSearch(phrase, anyRootPageId) map { hits: Seq[SearchHit] =>
+    searchEngine.fullTextSearch(phrase, anyRootPageId, user) map { hits: Seq[SearchHit] =>
       groupByPageFilterAndSort(hits, user)
     }
   }

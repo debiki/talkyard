@@ -19,6 +19,8 @@ package com.debiki.core
 
 import com.debiki.core.Prelude._
 import java.{util => ju}
+import org.scalactic.{Good, Bad}
+
 import scala.collection.immutable
 import PostStatusBits._
 
@@ -92,6 +94,8 @@ object PostBitFlags {
   val StaffWikiBitMask = 1 << 5
 
   val BranchSidewaysBitMask = 1 << 6  // but what about showing the first X children only?
+
+  val FormBitMask = 1 << 8
 }
 
 
@@ -104,6 +108,7 @@ class PostBitFlags(val bits: Int) extends AnyVal {
   def isMemberWiki = (bits & MemberWikiBitMask) != 0                 // 16
   def isStaffWiki = (bits & StaffWikiBitMask) != 0                   // 32
   def isBranchSideways = (bits & BranchSidewaysBitMask) != 0         // 64
+  def isForm = (bits & FormBitMask) != 0                             // 256
 
   def isSelfCollapsed = bits & 10
   def isSuccessorsCollapsed = bits & 11
@@ -153,6 +158,8 @@ object PostType {
     override def isWiki = true
   }
 
+  case object CompletedForm extends PostType(21)
+
   // Later:
   // - FormSubmission(21)? Shown only to the page author(s) + admins? Cannot be voted on. Sorted by
   //    date. For FormSubmission pages only.
@@ -164,6 +171,7 @@ object PostType {
     case ChatMessage.IntValue => ChatMessage
     case StaffWiki.IntValue => StaffWiki
     case CommunityWiki.IntValue => CommunityWiki
+    case CompletedForm.IntValue => CompletedForm
     case _ => return None
   })
 }
@@ -339,8 +347,17 @@ case class Post(
   }
 
   def currentHtmlSanitized(commonMarkRenderer: CommonMarkRenderer, pageRole: PageRole): String = {
-    if (nr == PageParts.TitleNr) {
+    if (isCurrentVersionApproved && approvedHtmlSanitized.isDefined) {
+      approvedHtmlSanitized.get
+    }
+    else if (nr == PageParts.TitleNr) {
       commonMarkRenderer.sanitizeHtml(currentSource)
+    }
+    else if (tyype == PostType.CompletedForm) {
+      CompletedFormRenderer.renderJsonToSafeHtml(currentSource) getMakeGood { errorMessage =>
+        val unsafeText = s"Error rendering source to html: $errorMessage [EsE7Y4KW8]"
+        org.owasp.encoder.Encode.forHtmlContent(unsafeText)
+      }
     }
     else {
       val isBody = nr == PageParts.BodyNr

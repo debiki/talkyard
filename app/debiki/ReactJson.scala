@@ -128,6 +128,10 @@ object ReactJson {
         // Load the latest chat messages only. We'll load earlier posts from the browser, on demand.
         transaction.loadOrigPostAndLatestPosts(page.id, limit = 100)
       }
+      else if (page.role == PageRole.Form) {
+        // Don't load any comments on form pages. [5GDK02]
+        transaction.loadOrigPost(page.id)
+      }
       else {
         pageParts.loadAllPosts()
         pageParts.allPosts
@@ -138,6 +142,10 @@ object ReactJson {
     var numPostsChatSection = 0
 
     var allPostsJson = posts filter { post =>
+      // In case a page contains both form replies and "normal" comments, don't load any
+      // form replies, because they might contain private stuff. (Page type might have
+      // been changed to/from Form.) [5GDK02]
+      post.tyype != PostType.CompletedForm &&
       post.tyype != PostType.Flat && ( // flat comments disabled [8KB42]
       !post.deletedStatus.isDeleted || (
         post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.nr)))
@@ -347,6 +355,7 @@ object ReactJson {
   def postToJson2(postNr: PostNr, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false)
       : JsObject =
     postToJson(postNr, pageId, dao, includeUnapproved)._1
+
 
   def postToJson(postNr: PostNr, pageId: PageId, dao: SiteDao, includeUnapproved: Boolean = false)
         : (JsObject, PageVersion) = {
@@ -749,6 +758,23 @@ object ReactJson {
 
   private def unapprovedPostsJson(user: User, pageId: PageId, transaction: SiteTransaction)
         : JsObject = {
+
+    REFACTOR // Load form replies. For now: (a bit hacky)   (& could rename this fn + more stuff)
+    COULD_OPTIMIZE // don't load the whole page when is-not Form
+    COULD_OPTIMIZE // only load unapproved posts and form replies. [3PF4GK]
+    if (user.isAdmin) {
+      val page = PageDao(pageId, transaction)
+      if (page.exists && (
+            page.meta.pageRole == PageRole.Form ||
+            page.meta.pageRole == PageRole.WebPage)) {  // hack. Try to remove + fix [3PF4GK] above
+        val posts = page.parts.allPosts
+        val postIdsAndJson: Seq[(String, JsValue)] = posts.toSeq.map { post =>
+          post.nr.toString -> postToJsonImpl(post, page, includeUnapproved = true)
+        }
+        return JsObject(postIdsAndJson)
+      }
+    }
+
     JsObject(Nil) // for now
     /*
     // TOO slow! does a db req each http req. Fix by caching user ids with unappr posts, per page?

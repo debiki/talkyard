@@ -18,7 +18,7 @@
 package com.debiki
 
 import org.apache.commons.validator.routines.EmailValidator
-import org.scalactic.Or
+import org.scalactic.{Good, Bad, Or}
 import scala.collection.immutable
 
 
@@ -190,6 +190,10 @@ package object core {
 
   implicit class GetOrBadMap[G, B](val underlying: Or[G, B]) {
     def getOrIfBad(fn: B => Nothing): G = underlying.badMap(fn).get
+    def getMakeGood(errorFixFn: B => G): G = underlying match {
+      case Good(value) => value
+      case Bad(bad) => errorFixFn(bad)
+    }
   }
 
 

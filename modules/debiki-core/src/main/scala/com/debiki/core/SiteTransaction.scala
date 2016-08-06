@@ -82,6 +82,9 @@ trait SiteTransaction {
   def loadThePost(pageId: PageId, postNr: PostNr): Post =
     loadPost(pageId, postNr).getOrElse(throw PostNotFoundException(pageId, postNr))
 
+  def loadOrigPost(pageId: PageId): Seq[Post] =
+    loadPosts(Seq(PagePostNr(pageId, PageParts.TitleNr), PagePostNr(pageId, PageParts.BodyNr)))
+
   def loadOrigPostAndLatestPosts(pageId: PageId, limit: Int): Seq[Post]
   def loadPostsOnPage(pageId: PageId, siteId: Option[SiteId] = None): immutable.Seq[Post]
   def loadPosts(pagePostNrs: Iterable[PagePostNr]): immutable.Seq[Post]
@@ -154,7 +157,13 @@ trait SiteTransaction {
   def loadPageMetas(pageIds: Seq[PageId]): immutable.Seq[PageMeta]
   def loadPageMetasAsMap(pageIds: Iterable[PageId]): Map[PageId, PageMeta]
   def insertPageMetaMarkSectionPageStale(newMeta: PageMeta)
-  def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean)
+
+  final def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean) {
+    dieIf(newMeta.pageRole != oldMeta.pageRole && !oldMeta.pageRole.mayChangeRole, "EsE4KU0W2")
+    updatePageMetaImpl(newMeta, oldMeta = oldMeta, markSectionPageStale)
+  }
+  protected def updatePageMetaImpl(newMeta: PageMeta, oldMeta: PageMeta,
+        markSectionPageStale: Boolean)
 
   def markPagesWithUserAvatarAsStale(userId: UserId)
   def markSectionPageContentHtmlAsStale(categoryId: CategoryId)

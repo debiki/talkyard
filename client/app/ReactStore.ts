@@ -571,13 +571,14 @@ function updatePost(post: Post, isCollapsing?: boolean) {
         _.find(parentPost.childIdsSorted, childId => childId === post.postId);
     if (!alreadyAChild) {
       parentPost.childIdsSorted.unshift(post.postId);
-      sortPostIdsInPlace(parentPost.childIdsSorted, store.allPosts);
+      sortPostIdsInPlaceBestFirst(parentPost.childIdsSorted, store.allPosts);
     }
   }
 
-  // Update list of top level comments, for embedded comment pages.
+  // Update list of top level comments, for embedded comment pages, and custom form pages.
   if (!post.parentId && post.postId != BodyPostId && post.postId !== TitleId) {
-    store.topLevelCommentIdsSorted = topLevelCommentIdsSorted(store.allPosts);
+    store.topLevelCommentIdsSorted = findTopLevelCommentIds(store.allPosts);
+    sortPostIdsInPlaceBestFirst(store.topLevelCommentIdsSorted, store.allPosts);
   }
 
   rememberPostsToQuickUpdate(post.postId);
@@ -783,15 +784,14 @@ function uncollapseOne(post: Post) {
 }
 
 
-function topLevelCommentIdsSorted(allPosts): number[] {
-  var idsSorted: number[] = [];
+function findTopLevelCommentIds(allPosts): number[] {
+  var ids: number[] = [];
   _.each(allPosts, (post: Post) => {
     if (!post.parentId && post.postId !== BodyPostId && post.postId !== TitleId) {
-      idsSorted.push(post.postId);
+      ids.push(post.postId);
     }
   });
-  sortPostIdsInPlace(idsSorted, allPosts);
-  return idsSorted;
+  return ids;
 }
 
 
@@ -799,7 +799,7 @@ function topLevelCommentIdsSorted(allPosts): number[] {
  * NOTE: Keep in sync with sortPostsFn() in
  *   modules/debiki-core/src/main/scala/com/debiki/core/Post.scala
  */
-function sortPostIdsInPlace(postIds: number[], allPosts) {
+function sortPostIdsInPlaceBestFirst(postIds: PostNr[], allPosts: { [id: number]: Post }) {
   postIds.sort((idA: number, idB: number) => {
     var postA = allPosts[idA];
     var postB = allPosts[idB];
@@ -884,13 +884,18 @@ function sortPostIdsInPlace(postIds: number[], allPosts) {
       return -1;
 
     if (postA.likeScore < postB.likeScore)
-      return +1
+      return +1;
 
     // Newest posts first. No, last
+    // In Scala, a certain sortWith function is used, but it wants a Bool from the comparison
+    // function, not a +-1 or 0 number. True means "should be sorted before".
+    // But return 0 instead here to indicate that sort order doesn't matter.
     if (postA.createdAt < postB.createdAt)
       return -1;
-    else
+    else if (postA.createdAt > postB.createdAt)
       return +1;
+    else
+      return 0;
   });
 }
 

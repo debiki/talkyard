@@ -38,6 +38,16 @@ export function page_isInfoPage(pageRole: PageRole): boolean {
 }
 
 
+export function page_mayChangeRole(pageRole: PageRole): boolean {
+  // Sync with Scala [6KUW204]
+  return !isSection(pageRole) && !page_isChatChannel(pageRole) &&
+      pageRole !== PageRole.About &&
+      pageRole !== PageRole.Code &&
+      pageRole !== PageRole.SpecialContent &&
+      pageRole !== PageRole.Message;
+}
+
+
 export function pageRole_toIconString(pageRole: PageRole) {
   switch (pageRole) {
     case PageRole.CustomHtmlPage: return "Custom HTML page";
@@ -57,6 +67,7 @@ export function pageRole_toIconString(pageRole: PageRole) {
     case PageRole.OpenChat: return PageRole_Chat_IconString;
     case PageRole.PrivateChat: return "Private chat";
     case PageRole.Message: return "Message";
+    case PageRole.Form: return PageRole_Form_IconString;
     case PageRole.Critique: return "Critique";  // [plugin]
     default: die('EsE4GUK75Z');
   }
@@ -71,6 +82,8 @@ export var PageRole_MindMap_IconString = r.span({ className: 'icon-sitemap' }, "
 
 export var PageRole_Todo_IconString = r.span({ className: 'icon-check-empty' }, "Todo");
 export var PageRole_Chat_IconString = r.span({ className: 'icon-chat' }, "Chat");
+
+export var PageRole_Form_IconString = r.span({ className: 'icon-th-list' }, "Form");
 
 
 //------------------------------------------------------------------------------

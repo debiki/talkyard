@@ -35,12 +35,20 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction) extend
 
   override def siteId = transaction.siteId
 
+  def exists: Boolean = {
+    if (_meta eq null) {
+      _meta = transaction.loadPageMeta(id)
+    }
+    _meta.isDefined
+  }
+
   def version = meta.version
   def isClosed = meta.isClosed
 
   override def meta: PageMeta = {
     if (_meta eq null) {
-      _meta = transaction.loadPageMeta(id)
+      exists // this loads the page meta
+      dieIf(_meta eq null, "EsE7K5UF2")
     }
     _meta getOrElse throwPageNotFound()
   }

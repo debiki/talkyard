@@ -237,12 +237,12 @@ case object User {
   val LowestHumanMemberId = 1
 
   /** Used when things are inserted or updated automatically in the database. */
-  val SystemUserId = -1
+  val SystemUserId = -1   // change to +1
   val SystemUserUsername = "system"
   val SystemUserFullName = "System"
 
   // Later ...  [4KYFU02]
-  val SuperAdminId = -2
+  val SuperAdminId = -2  // no, change to +2
 
   /** A user that did something, e.g. voted on a comment, but was not logged in. */
   val UnknownUserId = -3
@@ -285,6 +285,8 @@ case object User {
       id == UnknownUserId ||
       id <= MaxCustomGuestId
 
+  def isOkayGuestId(id: UserId) =
+    id == UnknownUserId || id <= MaxCustomGuestId
 
   val MinUsernameLength = 3
 
@@ -452,7 +454,7 @@ case class Guest(
   override def anyName = Some(guestName)
   def usernameOrGuestName = guestName
 
-  require(id <= MaxCustomGuestId, "DwE4GYUK21")
+  require(isOkayGuestId(id), "DwE4GYUK21")
   require(guestName == guestName.trim, "EsE5YGUK3")
   require(guestName.nonEmpty, "DwE4KEPF8")
   require(User.isOkayGuestCookie(guestCookie), "DwE5QF7")

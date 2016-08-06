@@ -270,7 +270,12 @@ sealed abstract class PageRole(protected val IntValue: Int, val staffOnly: Boole
 
   def canHaveReplies = true
 
+  // Sync with JS [6KUW204]
+  def mayChangeRole: Boolean = true
+
   def toInt = IntValue
+
+  dieIf(isSection && mayChangeRole, "EsE7KUP2")
 
 }
 
@@ -290,10 +295,12 @@ object PageRole {
 
   case object Code extends PageRole(3) {
     override def canHaveReplies = false // for now
+    override def mayChangeRole = false
   }
 
   case object SpecialContent extends PageRole(4) {
     override def canHaveReplies = false
+    override def mayChangeRole = false
   }
 
   case object EmbeddedComments extends PageRole(5, staffOnly = false)
@@ -301,19 +308,23 @@ object PageRole {
   /** Lists blog posts. */
   case object Blog extends PageRole(6) {
     override def isSection = true
+    override def mayChangeRole = false
     override def canHaveReplies = false
   }
 
   /** Lists forum topics and categories. */
   case object Forum extends PageRole(7) {
     override def isSection = true
+    override def mayChangeRole = false
     override def canHaveReplies = false
   }
 
   /** About a forum category (Discourse's forum category about topic). Shown as a per
     * category welcome page, and by editing the page body you edit the forum category
     * description. */
-  case object AboutCategory extends PageRole(9)
+  case object AboutCategory extends PageRole(9) {
+    override def mayChangeRole = false
+  }
 
   /** A question is considered answered when the author (or the staff) has marked some
     * reply as being the answer to the question. */
@@ -336,17 +347,26 @@ object PageRole {
   case object Discussion extends PageRole(12, staffOnly = false)
 
   /** Any forum member with access to the page can join. */
-  case object OpenChat extends PageRole(18, staffOnly = false) { override def isChat = true }
+  case object OpenChat extends PageRole(18, staffOnly = false) {
+    override def isChat = true
+    override def mayChangeRole = false
+  }
 
   /** Users added explicitly. Topic not shown in forum unless already member. */
-  case object PrivateChat extends PageRole(19, staffOnly = false) { override def isChat = true }
+  case object PrivateChat extends PageRole(19, staffOnly = false) {
+    override def isChat = true
+    override def mayChangeRole = false
+  }
 
   /** Direct messages between two users, or a group of users. */
   // Rename to MessageTopic? or DirectMessages? So won't be confused with
   // ChatMessage:s in ChatChannel:s? [rename]
   case object Message extends PageRole(17, staffOnly = false) {
     override def canClose = false // lock them instead
+    override def mayChangeRole = false
   }
+
+  case object Form extends PageRole(20, staffOnly = false)
 
   case object Critique extends PageRole(16, staffOnly = false) // [plugin]
 
@@ -369,6 +389,7 @@ object PageRole {
     case Message.IntValue => Message
     case OpenChat.IntValue => OpenChat
     case PrivateChat.IntValue => PrivateChat
+    case Form.IntValue => Form
     case Critique.IntValue => Critique
     //case WikiMainPage.IntValue => WikiMainPage
     //case WikiPage.IntValue => WikiPage

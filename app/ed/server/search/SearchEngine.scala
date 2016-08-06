@@ -34,20 +34,26 @@ class SearchEngine(
   private val siteId: SiteId,
   private val elasticSearchClient: Client) {
 
-  def fullTextSearch(phrase: String, anyRootPageId: Option[String])
+  def fullTextSearch(phrase: String, anyRootPageId: Option[String], user: Option[User])
         : Future[immutable.Seq[SearchHit]] = {
 
     if (phrase.isEmpty)
       return Future.successful(Nil)
 
     // For filter-by-category-id, see [4FYK85] below.
-    val query = QueryBuilders.boolQuery()
+    var query = QueryBuilders.boolQuery()
       .must(
         // If is staff, could search unapproved html too, something like:
         // .setQuery(QueryBuilders.multiMatchQuery(phrase, "approvedHtml", "unapprovedSource"))
         QueryBuilders.matchQuery(PostDocFields.ApprovedPlainText, phrase))
       .filter(
         QueryBuilders.termQuery(PostDocFields.SiteId, siteId))
+
+    // Form submissions are private, currently for admins only. [5GDK02]
+    if (!user.exists(_.isAdmin)) {
+      query = query.mustNot(
+        QueryBuilders.termQuery(PostDocFields.PostType, PostType.CompletedForm.toInt))
+    }
 
     val highlighter = new HighlightBuilder()
       .field(PostDocFields.ApprovedPlainText)

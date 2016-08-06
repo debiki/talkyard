@@ -24,6 +24,7 @@ import debiki.DebikiHttp._
 import debiki.antispam.AntiSpam.throwForbiddenIfSpam
 import io.efdi.server.http._
 import play.api._
+import play.api.libs.json.JsArray
 import play.api.mvc.{Action => _, _}
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -101,6 +102,19 @@ object ReplyController extends mvc.Controller {
 
       OkSafeJson(result.storePatchJson)
     }
+  }
+
+
+  def handleCustomForm = PostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
+        request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    val formInputs = (request.body \ "formInputs").as[JsArray]
+    val textAndHtml = TextAndHtml.withCompletedFormData(formInputs) getOrIfBad { errorMessage =>
+      throwBadRequest("EsE7YK4W0", s"Bad form inputs JSON: $errorMessage")
+    }
+    request.dao.insertReply(textAndHtml, pageId, Set.empty, PostType.CompletedForm,
+        request.whoOrUnknown)
+    Ok
   }
 
 

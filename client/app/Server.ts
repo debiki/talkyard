@@ -791,6 +791,14 @@ export function sendMessage(title: string, text: string, userIds: number[],
 }
 
 
+export function submitCustomForm(formInputNameValues, success: () => void) {
+  postJsonSuccess('/-/submit-custom-form', success, {
+    pageId: d.i.pageId,
+    formInputs: formInputNameValues,
+  });
+}
+
+
 export function flagPost(postId: string, flagType: string, reason: string, success: () => void) {
   postJsonSuccess('/-/flag', success, {
     pageId: d.i.pageId,

@@ -64,6 +64,9 @@ object PageTitleSettingsController extends mvc.Controller {
     val oldMeta = request.dao.loadPageMeta(pageId) getOrElse throwNotFound(
       "DwE4KEF20", "The page was deleted just now")
 
+    if (anyNewRole.exists(_ != oldMeta.pageRole) && !oldMeta.pageRole.mayChangeRole)
+      throwForbidden("DwE5KGU02", s"Cannot change page role ${oldMeta.pageRole} to something else")
+
     // Authorization.
     if (!request.theUser.isStaff && request.theUserId != oldMeta.authorId)
       throwForbidden("DwE4KEP2", "You may not rename this page")

@@ -66,7 +66,6 @@ object ApplicationBuild extends Build {
     "log4j" % "log4j" % "1.2.17",
     "org.apache.commons" % "commons-email" % "1.3.3",
     "com.google.guava" % "guava" % "13.0.1",
-    "org.owasp.encoder" % "encoder" % "1.1.1",
     "org.jsoup" % "jsoup" % "1.8.2",
     // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
     // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.

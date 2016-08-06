@@ -122,6 +122,7 @@ export var PageRoleDropdown = createComponent({
 
     var adminOnlyDivider;
     var webPageOption;
+    var formOption;
     var customHtmlPageOption;
     if (me.isAdmin && showAllOptions) {
       adminOnlyDivider = r.div({ className: 'esDropModal_header' }, "Only for admins:");
@@ -131,6 +132,12 @@ export var PageRoleDropdown = createComponent({
           activeEventKey: pageRole, eventKey: PageRole.WebPage,
           title: "Info page",
           text: "A page without comments and author name." });
+
+      formOption =  // [6JK8WHI3]
+        ExplainingListItem({ onSelect: this.onSelect,
+          activeEventKey: pageRole, eventKey: PageRole.Form,
+          title: "Form",
+          text: "A contact form" });
 
       if (complicated) {
         customHtmlPageOption =
@@ -180,6 +187,7 @@ export var PageRoleDropdown = createComponent({
           privateChatOption,
 
           adminOnlyDivider,
+          formOption,
           webPageOption,
           customHtmlPageOption));
 

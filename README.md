@@ -4,8 +4,8 @@ Debiki Server
 Debiki (now I've renamed it to EffectiveDiscussions (ED) though) is a
 combined forum, chat and question & answers platform.
 
-See it live: http://www.effectivediscussions.org/forum/latest<br>
-Read about it: http://www.effectivediscussions.org/
+See it live: https://www.effectivediscussions.org/forum/latest<br>
+Read about it: https://www.effectivediscussions.org/
 
 This repository is for writing ED source code, but not for installing
 ED on a production server. For the latter, instead see:
@@ -75,7 +75,7 @@ And, if you want to test in a browser other than Chrome, see [Making *.localhost
 
 #### Unit tests
 
-... Soon ...
+Stop everything: `docker-compose down` and then: `scripts/cli.sh` then type `test` + hit Enter.
 
 
 #### Performance tests
@@ -89,16 +89,16 @@ Append to `/etc/security/limits.conf` ... hmm but now with Docker-Compose, which
 Technology
 -----------------------------
 
-Client: React.js, TypeScript. Gulp. Webdriver.io.
-Server: Scala and Play Framework. Nginx and Nchan. React.js in Java 8's Nashorn Javascript engine.
-Databases: PostgreSQL, Redis, ElasticSearch (soon).
+- Client: React.js, TypeScript, Webdriver.io.
+- Server: Scala and Play Framework. Nginx and Nchan. React.js in Java's Nashorn Javascript engine.
+- Databases: PostgreSQL, Redis, ElasticSearch.
 
 
 Contributing
 -----------------------------
 
 If you'd like to contribute, read more
-[at the end of this page](http://www.effectivediscussions.org/-81n25/source-code) about contributing.
+[at the end of this page](https://www.effectivediscussions.org/dev/-81n25/technical-information) about contributing.
 
 In the future, I suppose there will be a Contributor License Agreement (CLA), similar to
 [Google's CLA](https://developers.google.com/open-source/cla/individual) — you'd open
@@ -161,14 +161,14 @@ This project looks like so:
 Naming style
 -----------------------------
 
-CSS classes: Example: `esP_By_FN-Gst`. Here, `es` is a prefix used everywhere, namely
+CSS classes: *Example*: `esP_By_FN-Gst`. Here, `es` is a prefix used everywhere, namely
 the first and last letters in EffectiveDiscussions. `P` means Post. `By` means
 who-was-it-written-By. `FN` means Full Name. `Gst` means Guest.
 
-So, this is BEM (Block Element Modifier) with a few tweaks: 1) Blocks/elements are separated with
-only one underscore. 2) And modifiers with only one dash. 3) Blocks, elems and modifiers always
+So, this is BEM (Block Element Modifier) with a few tweaks: Blocks/elements are separated with
+only one underscore, and modifiers with only one dash. Blocks, elems and modifiers always
 start with uppercase — because then it's easy to tell if we're dealing with an _abbreviation_
-or not. For example, `FN` is an abbreviation. But `By` is not (since it continues with
+or not. For example, `FN` (full name) is an abbreviation. But `By` is not (since it continues with
 lowercase letters).
 
 
@@ -192,7 +192,7 @@ forum software.
 License
 -----------------------------
 
-Currently AGPL — please let me know if you want me to change to GPL, contact info here: http://www.effectivediscussions.org/about/
+Currently AGPL — please let me know if you want me to change to GPL, contact info here: https://www.effectivediscussions.org/contact
 
 
     Copyright (c) 2010-2016  Kaj Magnus Lindberg

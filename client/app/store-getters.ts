@@ -148,6 +148,14 @@ export function store_isSection(store: Store): boolean {
   return store.pageRole !== PageRole.Blog && store.pageRole !== PageRole.Forum;
 }
 
+
+export function store_thereAreFormReplies(store: Store): boolean {
+  return _.some(store.allPosts, (post: Post) => {
+    return post.postType === PostType.CompletedForm;
+  });
+}
+
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

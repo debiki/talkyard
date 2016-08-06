@@ -20,6 +20,8 @@ package debiki
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.CommonMarkRenderer
+import org.scalactic.{Bad, Or, ErrorMessage}
+import play.api.libs.json.JsArray
 import scala.collection.immutable
 
 
@@ -95,6 +97,23 @@ object TextAndHtml {
 
   val DefaultCommonMarkRenderer: CommonMarkRenderer = ReactRenderer
   val Ipv4AddressRegex = """[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+""".r
+
+
+  def withCompletedFormData(formInputs: String): TextAndHtml Or ErrorMessage = {
+    CompletedFormRenderer.renderJsonToSafeHtml(formInputs) map { htmlString =>
+      new TextAndHtmlImpl(text = formInputs.toString, safeHtml = htmlString,
+          Nil, Nil, Nil, false, false, false)
+    }
+  }
+
+
+  def withCompletedFormData(formInputs: JsArray): TextAndHtml Or ErrorMessage = {
+    CompletedFormRenderer.renderJsonToSafeHtml(formInputs) map { htmlString =>
+      new TextAndHtmlImpl(text = formInputs.toString, safeHtml = htmlString,
+          Nil, Nil, Nil, false, false, false)
+    }
+  }
+
 
   def apply(
     text: String,

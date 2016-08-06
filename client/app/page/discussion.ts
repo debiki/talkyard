@@ -58,6 +58,10 @@ export var TitleBodyComments = createComponent({
     var me: Myself = store.me;
     var bodyPost = store.allPosts[BodyId];
 
+    if (store.pageRole === PageRole.Form && store.pageClosedAtMs)
+      return { id: 'EsH4PK04', version: 1, content: r.div({},
+        "This form has been ", closedIcon, "closed; you can no longer fill it in and post it.") };
+
     // If this page was closed prematurely, show "... has been closed ..." instead of
     // e.g. "... is waiting for an answer..."
     if (store.pageClosedAtMs && !store.pageDoneAtMs && !store.pageAnsweredAtMs)
@@ -465,7 +469,11 @@ var RootPostAndComments = createComponent({
     }
 
     if (!page_isDiscussion(pageRole)) {
-      return (
+      if (store_thereAreFormReplies(store) && me.isAdmin) {
+        // Show the completed forms for the admin (i.e. don't return here).
+        // COULD show for page creator too — but currently s/he is always an admin. [6JK8WHI3]
+      }
+      else return (
         r.div({ className: threadClass },
           body,
           NoCommentsPageActions({ post: rootPost, me: me })));
@@ -486,11 +494,12 @@ var RootPostAndComments = createComponent({
     }
 
     var repliesAreFlat = false;
-    var childIds = pageRole === PageRole.EmbeddedComments ?
+    var childIds = pageRole === PageRole.EmbeddedComments || pageRole === PageRole.Form ?
         this.props.topLevelCommentIdsSorted : rootPost.childIdsSorted;
 
     // On message pages, most likely max a few people talk — then threads make no sense.
-    if (store.pageRole === PageRole.Message) {
+    // On form submission pages, people don't see each others submissions, won't talk at all.
+    if (store.pageRole === PageRole.Message || store.pageRole === PageRole.Form) {
       repliesAreFlat = true;
       childIds = _.values(store.allPosts).map((post: Post) => post.postId);
     }

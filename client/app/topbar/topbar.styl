@@ -231,18 +231,22 @@ html.es-watchbar-open
     padding: 0;
 
 .esTB_SearchDlg
-  padding: 5px 5px 0 12px;
+  padding: 10px 5px 0 12px;
   $marginBottom = 7px;
+  $height = 34px;
   input[type='text']
     padding-left: 3px;
     width: 40vw;
     min-width: 250px;
     max-width: 500px;
     vertical-align: middle;
-    height: 34px; // the submit btn is 34px, today
+    height: $height;
     margin: 0 9px $marginBottom 0;
   .btn
     margin-bottom: $marginBottom;
+    min-width: 80px;
+    font-size: 15px;
+    height: $height;
 
 .esTopbar .esAvtrName // hmm rename to .esAvtrYourName?
   display: inline-block;

@@ -111,10 +111,11 @@ export var Avatar = createComponent({
 
     // Append a number to make the letters unique on this page.
     // Possibly different numbers on different pages, for the same user.
+    var isUnknownUser = user.id === UnknownUserId;
     var number = 1;
-    var text = firstLetterInName;
+    var text = isUnknownUser ? '?' : firstLetterInName;
     var textAndColor = text + colorIndex;
-    var alreadyInUse = textAvatarsTaken[textAndColor];
+    var alreadyInUse = !isUnknownUser && textAvatarsTaken[textAndColor];
     while (alreadyInUse) {
       number += 1;
       if (number >= 10) {

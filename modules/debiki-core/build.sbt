@@ -14,6 +14,7 @@ libraryDependencies ++= Seq(
   "commons-codec" % "commons-codec" % "1.5",
   "commons-validator" % "commons-validator" % "1.5.0",
   "nu.validator.htmlparser" % "htmlparser" % "1.2.1",
+  "org.owasp.encoder" % "encoder" % "1.1.1",
   "com.typesafe.play" %% "play" % "2.3.1", // for parsing JSON, unfortunately brings in all other Play stuff
   //"com.typesafe.play" %% "play-json" % "2.4.6",
   "com.lambdaworks" % "scrypt" % "1.4.0", // COULD move to debiki-server, see comments in src/main/scala/com/debiki/core/dao-db.scala

@@ -147,6 +147,7 @@ POST  /-/unaccept-answer        controllers.PageController.unacceptAnswer
 POST  /-/join-page              controllers.PageController.joinPage
 POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/chat                   controllers.ReplyController.handleChatMessage
+POST  /-/submit-custom-form     controllers.ReplyController.handleCustomForm
 POST  /-/vote                   controllers.VoteController.handleVotes
 POST  /-/flag                   controllers.Application.flag
 GET   /-/load-draft-and-guidelines controllers.EditController.loadDraftAndGuidelines(writingWhat, categoryId: Option[Int], pageRole)

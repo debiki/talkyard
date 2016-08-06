@@ -235,6 +235,7 @@ function renderDiscussionPage() {
       d.i.makeThreadResizableForPost(this);
     });
     debiki2.ReactActions.loadAndScrollToAnyUrlAnchorPost();
+    debiki2.form.activateAnyCustomForm();
   });
 
   // Disable for now, I'll rewrite it to consider timestamps.
