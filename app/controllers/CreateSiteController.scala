@@ -157,10 +157,13 @@ object CreateSiteController extends Controller {
   }
 
   private val OkWebsiteNameRegex = """[a-z][a-z0-9\-]{0,38}[a-z0-9]""".r
+  private val AnySiteMagicHostname = "*"
 
 
   private def throwIfMayNotCreateSite(request: DebikiRequest[_], isTest: Boolean) {
-    if (isTest && Globals.anyCreateTestSiteHostname.contains(request.hostname)) {
+    if (isTest && (
+        Globals.anyCreateTestSiteHostname.contains(AnySiteMagicHostname) ||
+        Globals.anyCreateTestSiteHostname.contains(request.hostname))) {
       // We're creating a test site with a test address, fine.
       return
     }
@@ -168,7 +171,7 @@ object CreateSiteController extends Controller {
       case None =>
         throwForbidden("DwE4KEGG0", "This server is not configured to allow creation of new sites")
       case Some(createSiteHostname) =>
-        if (createSiteHostname != request.hostname)
+        if (createSiteHostname != AnySiteMagicHostname && createSiteHostname != request.hostname)
           throwForbidden("DwE093AQ2", "You cannot create new sites from this address")
     }
   }
