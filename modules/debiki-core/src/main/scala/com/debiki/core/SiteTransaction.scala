@@ -137,6 +137,16 @@ trait SiteTransaction {
   def movePostsReadStats(oldPageId: PageId, newPageId: PageId,
     newPostNrsByOldNrs: Map[PostNr, PostNr])
 
+  def loadAllTagsAsSet(): Set[TagLabel]
+  def loadTagsAndStats(): Seq[TagAndStats]
+  def loadTagsByPostId(postIds: Iterable[UniquePostId]): Map[UniquePostId, Set[TagLabel]]
+  def loadTagsForPost(postId: UniquePostId): Set[TagLabel] =
+    loadTagsByPostId(Seq(postId)).getOrElse(postId, Set.empty)
+  def removeTagsFromPost(labels: Set[TagLabel], postId: UniquePostId)
+  def addTagsToPost(labels: Set[TagLabel], postId: UniquePostId, isPage: Boolean)
+  def renameTag(from: String, to: String)
+  def setTagNotfLevel(userId: UserId, tagLabel: TagLabel, notfLevel: NotfLevel)
+  def loadTagNotfLevels(userId: UserId): Map[TagLabel, NotfLevel]
 
   def loadFlagsFor(pagePostNrs: immutable.Seq[PagePostNr]): immutable.Seq[PostFlag]
   def insertFlag(uniquePostId: UniquePostId, pageId: PageId, postNr: PostNr, flagType: PostFlagType, flaggerId: UserId)
@@ -160,6 +170,7 @@ trait SiteTransaction {
 
   final def updatePageMeta(newMeta: PageMeta, oldMeta: PageMeta, markSectionPageStale: Boolean) {
     dieIf(newMeta.pageRole != oldMeta.pageRole && !oldMeta.pageRole.mayChangeRole, "EsE4KU0W2")
+    dieIf(newMeta.version < oldMeta.version, "EsE6JKU0D4")
     updatePageMetaImpl(newMeta, oldMeta = oldMeta, markSectionPageStale)
   }
   protected def updatePageMetaImpl(newMeta: PageMeta, oldMeta: PageMeta,

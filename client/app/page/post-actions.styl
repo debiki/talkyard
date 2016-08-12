@@ -285,18 +285,6 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
 .dropdown-menu.dw-p-as-more
   background: white
 
-
-.DW .dw-t > .dw-as > .dw-a-edit-suggs,
-.DW .dw-t > .dw-as > .dw-a-collapse-suggs,
-.DW .dw-t > .dw-as > .dw-a-delete-suggs
-  margin: 0 0 0 12px
-  color: #888
-
-.DW .dw-t > .dw-as > .dw-a.dw-a-pending-review
-  // Show these pending-suggestion links, even when not hovering posts,
-  // so people are encouraged to consider each other's suggestions.
-  visibility: visible
-
 .dw-replying
   opacity: 1 !important
 
@@ -319,6 +307,33 @@ html:not(.mouse) .dw-t > .dw-p-as .dw-a
   // by making the actions <div> at least this tall. (It's empty, currently
   // if the post is collapsed or deleted.)
   min-height: 17px
+
+
+// Tags
+//---------------------------
+
+.esPA_Ts
+  clear: left;
+
+.esPA_Ts li
+  display: inline-block;
+  list-style: none;
+  margin: 6px 8px 0 0;
+  // If there are tags, ensure they won't be too close to the next comment just below.
+  &:last-child
+    margin-bottom: 15px;
+
+// Create a tags folder, move to there? & move the dialog too then.
+.esTg
+  padding: 2px 6px;
+  background: hsl(0, 0%, 95%);
+  color: hsl(0, 0%, 36%);
+
+  &:hover
+    text-decoration: none;
+    background: hsl($uiHue, 40%, 84%);
+    color: hsl($uiHue, 80%, 8%);
+
 
 
 // Inline action menu — currently not in use

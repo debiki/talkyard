@@ -949,8 +949,7 @@ function updateNotificationCounts(notf: Notification, add: boolean) {
 
 
 function patchTheStore(storePatch: StorePatch) {
-  var patch = storePatch;
-  if (storePatch.appVersion !== store.appVersion) {
+  if (storePatch.appVersion && storePatch.appVersion !== store.appVersion) {
     // COULD show dialog, like Discourse does: (just once)
     //   The server has been updated. Reload the page please?
     //   [Reload this page now]  [No, not now]
@@ -960,6 +959,16 @@ function patchTheStore(storePatch: StorePatch) {
 
   if (storePatch.superadmin) {
     store.superadmin = storePatch.superadmin;
+  }
+
+  if (storePatch.me) {
+    // [redux] modifying the store in place, again.
+    store.me = <Myself> _.extend(store.me || {}, storePatch.me);
+  }
+
+  if (storePatch.tagsStuff) {
+    // [redux] modifying the store in place, again.
+    store.tagsStuff = _.extend(store.tagsStuff || {}, storePatch.tagsStuff);
   }
 
   // Highligt pages with new posts, in the watchbar.

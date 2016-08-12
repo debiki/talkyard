@@ -390,8 +390,9 @@ object UserController extends mvc.Controller {
   def savePageNotfLevel = PostJsonAction(RateLimits.ConfigUser, maxLength = 500) { request =>
     val body = request.body
     val pageId = (body \ "pageId").as[PageId]
-    val newNotfLevelStr = (body \ "pageNotfLevel").as[String]
-    val newNotfLevel = PageNotfLevel.fromString(newNotfLevelStr)
+    val newNotfLevelInt = (body \ "pageNotfLevel").as[Int]
+    val newNotfLevel = NotfLevel.fromInt(newNotfLevelInt) getOrElse throwBadRequest(
+      "EsE6JP2SK", s"Bad page notf level: $newNotfLevelInt")
     request.dao.saveRolePageSettings(roleId = request.theRoleId, pageId = pageId,
       RolePageSettings(newNotfLevel))
     Ok

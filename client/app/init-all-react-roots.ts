@@ -44,6 +44,11 @@ export function startRemainingReactRoots() {
     ReactDOM.render(
       Router({ history: ReactRouter.browserHistory }, superadmin.routes()), superAdminAppElem);
 
+  var tagsAppElem = document.getElementById('theTagsApp');
+  if (tagsAppElem)
+    ReactDOM.render(
+      Router({ history: ReactRouter.browserHistory }, tags.routes()), tagsAppElem);
+
   var nonExistingPageElem = document.getElementById('dw-non-existing-page');
   if (nonExistingPageElem)
     ReactDOM.render(

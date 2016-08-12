@@ -75,6 +75,19 @@ export function siteStatusToString(siteStatus: SiteStatus): string {
   return SiteStatusStrings[siteStatus - 1];
 }
 
+
+export function notfLevel_title(notfLevel: NotfLevel): string {
+  switch (notfLevel) {
+    case NotfLevel.WatchingAll: return "Watching Alll";
+    case NotfLevel.WatchingFirst: return "Watching First";
+    case NotfLevel.Tracking: return "Tracking";
+    case NotfLevel.Normal: return "Normal";
+    case NotfLevel.Muted: return "Muted";
+    default: return "?";
+  }
+}
+
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

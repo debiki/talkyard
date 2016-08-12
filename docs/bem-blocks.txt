@@ -45,6 +45,12 @@ esP_H_At        = at which time the post was posted
 esP_H_By        = author
 esP_B           = post body (the actual text)
 
+esPA            = post actions (actually located outside the post (esP) there fore esPA not esP_A)
+
+esTs            = page/post tags
+
+esTg            = a single tag
+
 esC             = chat
 esC_M           = chat message
 esC_M_Ed        = chat message edit button
@@ -56,8 +62,10 @@ esPw            = password
 esOb            = onebox
 
 ...WhateverB    = B means Button
+...WhateverD    = D means Dialog
 ...WhateverL    = L means Link
 ...WhateverLI   = List item
+...WhateverS    = S means Select (usually react-select)
 
 
 

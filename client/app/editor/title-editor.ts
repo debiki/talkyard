@@ -51,7 +51,7 @@ export var TitleEditor = createComponent({
 
   componentDidMount: function() {
     var store: Store = this.props;
-    Server.loadEditorEtceteraScripts().done(() => {
+    Server.loadEditorEtcScriptsAndLater(() => {
       if (!this.isMounted()) return;
       this.setState({ editorScriptsLoaded: true });
     });

@@ -80,6 +80,7 @@ class SiteDao(
   with PageStuffDao
   with RenderedPageHtmlDao
   with PostsDao
+  with TagsDao
   with SearchDao
   with UploadsDao
   with UserDao
@@ -333,11 +334,11 @@ class SiteDao(
         case None =>
           // Deny access unless this is a private messages page.
           if (pageMeta.pageRole != PageRole.Message || user.isEmpty)
-            throwIndistinguishableNotFound("EsE0YK25")
+            throwIndistinguishableNotFound("EsE0YK25-No-Category")
 
           val pageMembers = transaction.loadMessageMembers(pageMeta.pageId)
           if (!pageMembers.contains(user.getOrDie("EsE2WY50F3").id))
-            throwIndistinguishableNotFound("EsE5GYK0V")
+            throwIndistinguishableNotFound("EsE5GYK0V-Not-Message-Member")
       }
     }
   }

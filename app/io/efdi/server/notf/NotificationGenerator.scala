@@ -126,7 +126,7 @@ case class NotificationGenerator(transaction: SiteTransaction) {
       // depending on the user's preferences.)
       val settings: RolePageSettings = transaction.loadRolePageSettingsOrDefault(
         toUser.id, newPost.pageId)
-      if (settings.notfLevel == PageNotfLevel.Muted) {
+      if (settings.notfLevel == NotfLevel.Muted) {
         return
       }
     }

@@ -20,6 +20,7 @@
 /// <reference path="../react-elements/name-login-btns.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../util/ExplainingDropdown.ts" />
+/// <reference path="../oop-methods.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.page {
@@ -37,11 +38,11 @@ var ExplainingListItem = util.ExplainingListItem;
 
 var notfsLevelDropdownModal;
 
-export function openNotfsLevelDropdown(openButton) {
+export function openNotfsLevelDropdown(openButton, subject: NotfSubject, currentLevel: NotfLevel) {
   if (!notfsLevelDropdownModal) {
     notfsLevelDropdownModal = ReactDOM.render(NotfsLevelDropdownModal(), utils.makeMountNode());
   }
-  notfsLevelDropdownModal.openAt(openButton);
+  notfsLevelDropdownModal.openAtForSubject(openButton, subject, currentLevel);
 }
 
 
@@ -96,7 +97,7 @@ export var Metabar = createComponent({
 
     var notfLevelElem = me.isAuthenticated && !ui.showDetails
       ? r.span({ className: 'dw-page-notf-level', onClick: this.onToggleDetailsClick },
-          'Notifications: ' + me.rolePageSettings.notfLevel)
+          'Notifications: ' + notfLevel_title(me.rolePageSettings.notfLevel))
       : null;
 
     var toggleDetailsBtn = !me.isLoggedIn ? null :
@@ -197,13 +198,15 @@ var MetabarDetails = createComponent({
     var store: Store = this.props.store;
     var user = store.user;
     var userAuthenticated = user && user.isAuthenticated;
+    var notfLevel: NotfLevel = user.rolePageSettings.notfLevel;
 
     var notificationsElem = !userAuthenticated ? null :
       r.div({},
         r.div({ className: 'esMB_Dtls_Ntfs_Lbl' }, "Notifications about this topic:"),
-        Button({ id: '7bw3gz5', className: 'dw-notf-level',
-            onClick: event => openNotfsLevelDropdown(event.target) },
-          r.span({}, user.rolePageSettings.notfLevel + ' ', r.span({ className: 'caret' }))));
+        Button({ id: '7bw3gz5', className: 'dw-notf-level', onClick: event => {
+              openNotfsLevelDropdown(event.target, { pageId: d.i.pageId }, notfLevel)
+            }},
+          r.span({}, notfLevel_title(notfLevel) + ' ', r.span({ className: 'caret' }))));
 
     return (
       r.div({ className: 'dw-cmts-tlbr-details' },
@@ -228,17 +231,15 @@ var NotfsLevelDropdownModal = createComponent({
   },
 
   // dupl code [6KUW24]
-  openAt: function(at) {
+  openAtForSubject: function(at, subject: NotfSubject, currentLevel: NotfLevel) {
     var rect = at.getBoundingClientRect();
     this.setState({
       isOpen: true,
       atX: rect.left,
       atY: rect.bottom,
+      subject: subject,
+      currentLevel: currentLevel,
     });
-  },
-
-  closeSoon: function() {
-    setTimeout(this.close, 330);
   },
 
   close: function() {
@@ -246,41 +247,70 @@ var NotfsLevelDropdownModal = createComponent({
   },
 
   setNotfLevel: function(newLevel) {
-    ReactActions.setPageNoftLevel(newLevel);
-    this.closeSoon();
+    var subject: NotfSubject = this.state.subject;
+    if (subject.pageId) {
+      ReactActions.setPageNoftLevel(newLevel);
+    }
+    else if (subject.tagLabel) {
+      Server.setTagNotfLevel(subject.tagLabel, newLevel);
+    }
+    else {
+      die('EsE4KG8F2');
+    }
+    this.close();
   },
 
   render: function() {
     var state = this.state;
     var store: Store = this.state.store;
     var me: Myself = store.me;
+    var subject: NotfSubject = this.state.subject;
+    var currentLevel: NotfLevel = this.state.currentLevel || NotfLevel.Normal;
+    var watchingAllText: string;
+    var watchingFirstListItem;
+
+    if (state.isOpen) {
+      dieIf(!subject.pageId && !subject.tagLabel, 'EsE4GK02');
+      watchingAllText = subject.tagLabel
+        ? "You'll be notified of new topics with this tag, and every post in those topics"
+        : "You'll be notified of all new replies in this topic.";
+
+      watchingFirstListItem = !subject.tagLabel ? null :
+        ExplainingListItem({
+          active: currentLevel === NotfLevel.WatchingFirst,
+          title: r.span({className: ''}, "Watching First"),
+          text: "You'll be notified of new topics with this tag",
+          onSelect: () => this.setNotfLevel(NotfLevel.WatchingFirst)
+        });
+    }
 
     return (
       DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY,
           pullLeft: true },
         ExplainingListItem({
-          active: me.rolePageSettings.notfLevel === 'Watching',
-          title: r.span({ className: '' }, "Watching"),
-          text: "You'll be notified of all new replies in this topic.",
-          onSelect: () => this.setNotfLevel('Watching') }),
+          active: currentLevel === NotfLevel.WatchingAll,
+          title: r.span({ className: '' }, "Watching All"),
+          text: watchingAllText,
+          onSelect: () => this.setNotfLevel(NotfLevel.WatchingAll) }),
+        watchingFirstListItem,
         /*
         ExplainingListItem({
-          active: me.rolePageSettings.notfLevel === 'Tracking',
+          active: currentLevel === NotfLevel.Tracking,
           title: r.span({ className: '' }, "Tracking"),
           text: r.span({}, "??"),
-          onSelect: () => this.setNotfLevel('Tracking') }),
+          onSelect: () => this.setNotfLevel(NotfLevel.Tracking) }),
           */
         ExplainingListItem({
-          active: me.rolePageSettings.notfLevel === 'Normal',
+          active: currentLevel === NotfLevel.Normal,
           title: r.span({ className: '' }, "Normal"),
           text: r.span({}, "You'll be notified if someone replies to you or mentions your ",
               r.samp({}, "@name"), "."),
-          onSelect: () => this.setNotfLevel('Normal') }),
+          onSelect: () => this.setNotfLevel(NotfLevel.Normal) }),
         ExplainingListItem({
-          active: me.rolePageSettings.notfLevel === 'Muted',
+          active: currentLevel === NotfLevel.Muted,
           title: r.span({ className: '' }, "Muted"),
           text: "No notifications at all about this topic.",
-          onSelect: () => this.setNotfLevel('Muted') })));
+          onSelect: () => this.setNotfLevel(NotfLevel.Muted) })));
   }
 });
 

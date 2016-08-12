@@ -63,14 +63,15 @@ class DaoAppSuite(
   private def createPasswordAdminOrOwner(password: String, dao: SiteDao, isOwner: Boolean): User = {
     dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Admin $password"), username = s"admin_$password",
-      email = s"admin-$password@x.co", password = password, isAdmin = true, isOwner = isOwner).get)
+      email = s"admin-$password@x.co", password = s"public-$password",
+      isAdmin = true, isOwner = isOwner).get)
   }
 
 
   def createPasswordModerator(password: String, dao: SiteDao): User = {
     dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"Mod $password"), username = s"mod_$password", email = s"mod-$password@x.co",
-      password = password, isAdmin = false, isModerator = true, isOwner = false).get)
+      password = s"public-$password", isAdmin = false, isModerator = true, isOwner = false).get)
   }
 
 
@@ -79,7 +80,7 @@ class DaoAppSuite(
   def createPasswordUser(password: String, dao: SiteDao): Member = {
     dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"User $password"), username = s"user_$password", email = s"user-$password@x.c",
-      password = password, isAdmin = false, isOwner = false).get)
+      password = s"public-$password", isAdmin = false, isOwner = false).get)
   }
 
 

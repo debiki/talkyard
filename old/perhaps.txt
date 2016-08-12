@@ -1,0 +1,56 @@
+Tags
+================================
+
+
+/*  Complicated tags.
+--------------------------------
+*/
+
+
+If tags are ints, in the database:
+--------------------------------
+
+  def addRemoveTagsIfAuth(pageId: Option[PageId], postId: Option[UniquePostId],
+        labels: Set[TagLabel], who: Who) {
+    dieIf(pageId.isDefined == postId.isDefined, "EsE7KUF0W2")
+    readWriteTransaction { transaction =>
+      val me = transaction.loadTheUser(who.id)
+      val pageMeta = pageId.map(transaction.loadThePageMeta)
+      val post = postId.map(transaction.loadThePost)
+
+      val oldLabelIds: Set[TagLabelId] =
+        pageMeta.map({ meta =>
+          throwForbiddenIf(meta.authorId != me.id && !me.isStaff,
+              "EsE6JKF0", "Not your page and not staff")
+          transaction.loadTagLabelIdsForPage(meta.pageId)
+        }).orElse(
+          post map { post =>
+            throwForbiddenIf(post.createdById != me.id && !me.isStaff,
+                "EsE2GKY5", "Not your post and not staff")
+            transaction.loadTagLabelIdsForPost(post.uniqueId)
+          })
+          .getOrDie("EsE7YKPU")
+
+      val labelIdsByText = transaction.loadTagLabelIdsByTextMap()
+      val labelTextsById = Map[TagLabelId, TagLabel](labelIdsByText.iterator.map({ textAndId =>
+        textAndId._2 -> textAndId._1
+      }).toSeq: _*)
+
+      val oldLabelTexts =
+
+      val labelTextsToCreate = labels -- labelIdsByText.keySet
+      val labelTextsToDeleteFromPageOrPost = oldLabelIds -- labels
+      val labelIdsToDeleteFromPageOrPost = oldLabelIds -- labels
+      val labelsToAddToPageOrPost = labels -- oldLabelIds
+      transaction.createTagLabels(labelsToCreate)
+      pageId.foreach(transaction.addTagLabelsToPage(labelsToAddToPageOrPost, _))
+      postId.foreach(transaction.addTagLabelsToPost(labelsToAddToPageOrPost, _))
+    }
+  }
+
+
+ public | tag_group_memberships           | table    | vagrant
+ public | tag_groups                      | table    | vagrant
+ public | tag_users                       | table    | vagrant
+ public | tags                            | table    | vagrant
+

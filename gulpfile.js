@@ -141,10 +141,10 @@ var editorEtceteraScripts = [
       'bower_components/markdown-it/dist/markdown-it.js',
       'bower_components/Caret.js/dist/jquery.caret.js',
       'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
-       // [refactor] [5YKW294] Delete these 3 react-select rows: (+ from bower.json)
-      'bower_components/classnames/index.js', // needed by react-select
-      'bower_components/react-input-autosize/dist/react-input-autosize.min.js', // needed by react-select
-      'bower_components/react-select/dist/react-select.min.js',
+      'node_modules/classnames/index.js', // needed by react-select
+      'node_modules/react-input-autosize/dist/react-input-autosize.js', // needed by react-select
+      'node_modules/blacklist/dist/blacklist.js',
+      'node_modules/react-select/dist/react-select.js',
       'bower_components/fileapi/dist/FileAPI.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/html-css-sanitizer-bundle.js',
@@ -371,7 +371,7 @@ gulp.task('compile-stylus', function () {
     makeStyleStream('public/res/', 'combined-debiki.css', [
         'bower_components/bootstrap/dist/css/bootstrap.css',
         'bower_components/jquery.atwho/dist/css/jquery.atwho.css',
-        'bower_components/react-select/dist/default.css',
+        'node_modules/react-select/dist/react-select.css',
         'node_modules/jquery-resizable/resizable.css',
         'client/third-party/stupid-lightbox.css',
         'client/app/theme.styl',

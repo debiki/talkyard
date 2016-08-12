@@ -30,11 +30,17 @@
 // React-select
 //===========================
 
-.Select-item
-  background-color: hsl($uiHue, 63%, 97%);
-  border: 1px solid hsl($uiHue, 61%, 87%);
-  color: hsl($uiHue, 80%, 35%);
+.Select--multi .Select-value
+  background-color: hsla($uiHue, 100%, 55%, 0.08);
+  border-color: hsla($uiHue, 100%, 50%, 0.24);
+  color: hsl($uiHue, 100%, 45%);
 
+// Add 1px more padding –> easier to touch.
+.Select--multi .Select-value-label,
+.Select--multi .Select-value-icon
+  padding: 2px 6px;
+
+// These are broken now, after react-select has been upgraded?
 .Select-control
   border-color: hsl(0, 0%, 90%) hsl(0, 0%, 83%) hsl(0, 0%, 80%);
 

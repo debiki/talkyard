@@ -105,7 +105,7 @@ GET   /-/list-user-actions      controllers.UserController.listUserActions(userI
 GET   /-/load-notifications     controllers.UserController.loadNotifications(userId, upToWhenMs)
 POST  /-/mark-notf-as-seen      controllers.UserController.markNotificationAsSeen
 GET   /-/load-user-info         controllers.UserController.loadUserInfo(userId)
-POST  /-/save-page-notf-level   controllers.UserController.savePageNotfLevel
+POST  /-/set-page-notf-level    controllers.UserController.savePageNotfLevel
 GET   /-/list-usernames         controllers.UserController.listUsernames(pageId, prefix)
 GET   /-/load-user-preferences  controllers.UserController.loadUserPreferences(userId)
 POST  /-/save-user-preferences  controllers.UserController.saveUserPreferences
@@ -198,8 +198,17 @@ GET  /-/origin                  controllers.DebugTestController.origin
 GET  /-/create-deadlock         controllers.DebugTestController.createDeadlock
 GET  /-/last-e2e-test-email     controllers.DebugTestController.showLastE2eTestEmailSent(sentTo)
 
-GET   /-/site/:siteId/*file      controllers.SiteAssetBundlesController.customAsset(siteId, file)
+GET   /-/site/:siteId/*file     controllers.SiteAssetBundlesController.customAsset(siteId, file)
 GET   /-/site/*file             controllers.SiteAssetBundlesController.at(file)
+
+GET   /-/tags                   controllers.TagsController.redirect
+GET   /-/tags/                  controllers.TagsController.tagsApp(clientRoute = "")
+GET   /-/tags/*clientRoute      controllers.TagsController.tagsApp(clientRoute)
+GET   /-/load-all-tags          controllers.TagsController.loadAllTags
+GET   /-/load-tags-and-stats    controllers.TagsController.loadTagsAndStats
+POST  /-/set-tag-notf-level     controllers.TagsController.setTagNotfLevel
+GET   /-/load-my-tag-notf-levels controllers.TagsController.loadMyTagNotfLevels
+POST  /-/add-remove-tags        controllers.TagsController.addRemoveTags
 
 GET   /-/sa                      controllers.SuperAdminController.redirect
 GET   /-/super-admin             controllers.SuperAdminController.redirect

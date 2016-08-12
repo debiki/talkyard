@@ -34,6 +34,7 @@ type IdentityId = String;
 type IpAddress = String;
 type EmailId = String;
 type AuditLogEntryId = number;
+type TagLabel = string;
 
 type HttpRequest = XMLHttpRequest
 
@@ -133,6 +134,7 @@ interface Post {
   likeScore: number;
   childIdsSorted: number[];
   sanitizedHtml?: string;
+  tags?: string[];
 }
 
 
@@ -199,6 +201,12 @@ interface Notification {
   pageId?: string;
   pageTitle?: string;
   postNr?: number;
+}
+
+
+interface NotfSubject {
+  tagLabel?: string;
+  pageId?: PageId;
 }
 
 
@@ -373,6 +381,7 @@ interface Store {
   quickUpdate: boolean;
   postsToUpdate: { [postId: number]: boolean };
 
+  tagsStuff?: TagsStuff;
   superadmin?: SuperAdminStuff;
 }
 
@@ -405,6 +414,15 @@ interface SiteSection {
   path: string;
   pageRole: PageRole;
   name: string;
+}
+
+
+interface TagAndStats {
+  label: string;
+  numTotal: number;
+  numPages: number;
+  numSubscribers?: number;
+  numMuted?: number;
 }
 
 
@@ -541,13 +559,17 @@ interface Block {
  * Describes how to update parts of the store. Can be e.g. a new chat message and the author.
  */
 interface StorePatch {
-  appVersion: string;
+  // Specified by the server, so old messages (that arive after the browser has been upgraded)
+  // can be discarded.
+  appVersion?: string;
   pageVersionsByPageId?: { [pageId: string]: PageVersion };
   postsByPageId?: { [pageId: string]: Post[] };
   // rename to postAuthorsBrief? So one sees they can be ignored if the posts are
   // ignored (because the page version is too old).
   usersBrief?: BriefUser[];
   superadmin?: SuperAdminStuff;
+  me?: Myself;
+  tagsStuff?: TagsStuff;
 }
 
 
@@ -598,10 +620,18 @@ interface Settings {
   showComplicatedStuff: boolean;
 }
 
+
+interface TagsStuff {
+  tagsAndStats?: TagAndStats[];
+  myTagNotfLevels?: { [tagLabel: string]: NotfLevel };
+}
+
+
 interface Host {
   hostname: string;
   role: HostRole;
 }
+
 
 interface SuperAdminStuff {
   firstSiteHostname?: string;

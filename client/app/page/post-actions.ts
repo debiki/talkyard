@@ -33,8 +33,10 @@
 /// <reference path="../page-dialogs/move-posts-dialog.ts" />
 /// <reference path="../page-dialogs/see-wrench-dialog.ts" />
 /// <reference path="../page-dialogs/share-dialog.ts" />
+/// <reference path="../page-dialogs/tags-dialog.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../server.ts" />
 /// <reference path="chat.ts" />
 
 //------------------------------------------------------------------------------
@@ -118,9 +120,6 @@ export var PostActions = createComponent({
       debiki.internal.toggleVote(this.props.post.postId, 'VoteLike', toggleOn);
     });
   },
-  onEditSuggestionsClick: function(event) {
-    debiki.internal.$showEditsDialog.call(event.target, event);
-  },
 
   makeReplyBtnTitle: function(post: Post) {
     if (post.postId !== BodyId)
@@ -141,7 +140,7 @@ export var PostActions = createComponent({
   },
 
   render: function() {
-    var post = this.props.post;
+    var post: Post = this.props.post;
     var store: Store = this.props.store;
     var isQuestion = store.pageRole === PageRole.Question;
     var isFlat = this.props.store.isFlat; // hmm isFlat shouldn't be placed in store, oh well
@@ -298,10 +297,16 @@ export var PostActions = createComponent({
           title: "Report this post" });
     }
 
+    var tagList;
+    if (post.tags && post.tags.length) {
+      var tags = post.tags.map((label) => {
+        return r.li({}, r.a({ className: 'esTg' }, label));
+      });
+      tagList = r.ul({ className: 'esPA_Ts' }, tags);
+    }
+
     return (
-      r.div({ className: 'dw-p-as dw-as', onClick: this.props.onClick },
-        //suggestionsNew,
-        //suggestionsOld,
+      r.div({ className: 'dw-p-as dw-as esPA', onClick: this.props.onClick },
         replyButton,
         closeReopenButton,
         flagBtn,
@@ -314,7 +319,8 @@ export var PostActions = createComponent({
         numWrongsText,
         numLikesText,
         numUnwantedsText,
-        acceptAnswerButton));
+        acceptAnswerButton,
+        tagList));
   }
 });
 
@@ -452,18 +458,27 @@ var MoreDropdownModal = createComponent({
     debiki2.ReactActions.editPostWithNr(this.state.post.postId);
     this.close();
   },
+
   onFlagClick: function(event) {
     flagPost(this.state.post);
     this.close();
   },
+
+  openTagsDialog: function(event) {
+    pagedialogs.openTagsDialog(this.state.store, this.state.post);
+    this.close();
+  },
+
   onDeleteClick: function(event) {
     debiki2.pagedialogs.getDeletePostDialog().open(this.state.post);
     this.close();
   },
+
   onWikifyClick: function(event) {
     debiki2.pagedialogs.getWikifyDialog().open(this.state.post);
     this.close();
   },
+
   /*
   onCollapsePostClick: function(event) {
     debiki.internal.$showActionDialog('CollapsePost').call(event.target, event);
@@ -514,26 +529,22 @@ var MoreDropdownModal = createComponent({
       if (mayEdit) {
         moreLinks.push(
           r.a({ className: 'dw-a dw-a-edit icon-edit', onClick: this.onEditClick, key: 'ed' },
-            'Edit'));
+            "Edit"));
       }
     }
 
+    // ----- Report
+
     moreLinks.push(
       r.a({ className: 'dw-a dw-a-flag icon-flag', onClick: this.onFlagClick, key: 'rp' },
-        'Report'));
+        "Report"));
+
+    // ----- Pin post
 
     /* Doesn't work right now, after Post2 rewrite
      if (user.isAdmin && !isPageBody)
      moreLinks.push(
      r.a({ className: 'dw-a dw-a-pin icon-pin', onClick: this.onPinClick, key: 'pn' }, 'Pin'));
-     */
-
-    /* Suggestions code removed, I'll rewrite and add back later.
-     if (post.numPendingEditSuggestions > 0)
-     suggestionsNew.push(
-     r.a({ className: 'dw-a dw-a-edit-suggs icon-edit dw-a-pending-review',
-     title: 'View edit suggestions', onClick: this.onEditSuggestionsClick },
-     '×', post.numPendingEditSuggestions));
      */
 
     /*  Find some better way to do this. And also, don't show so many buttons below More.
@@ -570,37 +581,41 @@ var MoreDropdownModal = createComponent({
      }
      */
 
-    // ----- Move links
+    // ----- Tags
 
-    // ? <a class="dw-a dw-a-move">Move</a>
+    if (isStaff(me) || isOwnPost) {
+      moreLinks.push(
+        r.a({ className: 'dw-a icon-plus', onClick: this.openTagsDialog, key: 'ts' },
+          "Add/remove tags"));
+    }
 
-    // ----- Delete links
-
-    // remove classes:
-    // r.a({ className: 'dw-a dw-a-delete-suggs icon-delete-tree dw-a-pending-review',
-    // r.a({ className: 'dw-a dw-a-delete-suggs icon-delete-post dw-a-pending-review',
-    // r.a({ className:'dw-a dw-a-collapse-suggs icon-collapse-post dw-a-pending-review',
-    // r.a({ className: 'dw-a dw-a-collapse-suggs icon-collapse-tree dw-a-pending-review',
+    // ----- Delete
 
     if (!isPageBody && (isStaff(me) || isOwnPost)) {
       moreLinks.push(
         r.a({ className: 'dw-a dw-a-delete icon-trash', onClick: this.onDeleteClick, key: 'dl' },
-          'Delete'));
+          "Delete"));
     }
+
+    // ----- Post settings
 
     // Wikified posts no longer looks good, because of the avatar icon to the left.
     // Only the orig post looks ok, therefore: `isPageBody &&`.
     if ((isPageBody || isMindMap) && (isStaff(me) || isOwnPost) && !isFlat) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-users', onClick: this.onWikifyClick, key: 'wf' },
-          isWikiPost(post) ? 'Un-Wikify' : 'Wikify'));
+          isWikiPost(post) ? "Un-Wikify" : "Wikify"));
     }
+
+    // ----- Move post
 
     if (!isPageBody && isStaff(me)) {
       moreLinks.push(
         r.a({ className: 'dw-a icon-paper-plane-empty', onClick: this.onMoveClick, key: 'mp' },
           "Move"));
     }
+
+    // ----- Look elsewhere button
 
     // Pin/delete/etc is placed in the topbar, not here, so that it'll be available also
     // once one has scrolled down past the orig post.
@@ -609,6 +624,8 @@ var MoreDropdownModal = createComponent({
         r.a({ className: 'dw-a icon-help-circled', onClick: this.onSeeWrenchClick, key: 'sw' },
           "Pin / Delete / Category ..."));
     }
+
+    // ----- Mind map branch sideways
 
     if (!isPageBody && isMindMap && isStaff(me)) {
       var sidewaysTitle = post.branchSideways ? "Don't branch sideways" : "→ Branch sideways";

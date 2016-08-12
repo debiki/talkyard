@@ -44,7 +44,7 @@ export function loadDiffMatchPatch(fn) {
     fn(diffMatchPatch);
   }
   else {
-    Server.loadEditorEtceteraScripts().done(() => {
+    Server.loadEditorEtcScriptsAndLater(() => {
       // For now: (see [7UMFK2] above)
       diff_match_patch = window['diff_match_patch'];
       DIFF_INSERT = window['DIFF_INSERT'];

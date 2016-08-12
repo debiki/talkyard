@@ -136,27 +136,37 @@ object NotfEmailStatus {
 
 
 
-sealed abstract class PageNotfLevel
-object PageNotfLevel {
-
-  /** Notified about @mentions and all new posts. */
-  case object Watching extends PageNotfLevel
-
-  /** Notified about @mentions and new posts in threads started by the user him/herself.  */
-  case object Tracking extends PageNotfLevel
-
-  /** Notified of @mentions and direct replies. */
-  case object Normal extends PageNotfLevel
-
-  /** No notifications for this page.  */
-  case object Muted extends PageNotfLevel
-
-  def fromString(value: String) = value match {
-    case "Watching" => Watching
-    case "Tracking" => Tracking
-    case "Normal" => Normal
-    case "Muted" => Muted
-    case x => illArgErr("DwE73kFG2", s"Bad PageNotfLevel: `$x'")
-  }
+sealed abstract class NotfLevel(val IntVal: Int) {
+  def toInt = IntVal
 }
 
+
+/** Sync with database constraint function in `r__functions.sql`. [7KJE0W3]
+  */
+object NotfLevel {
+
+  /** Notified about @mentions and all new posts. */
+  case object WatchingAll extends NotfLevel(1)
+
+  /** Notified about the first new post, plus @mentions. */
+  case object WatchingFirst extends NotfLevel(2)
+
+  /** Notified about @mentions and new posts in threads started by the user him/herself.  */
+  case object Tracking extends NotfLevel(3)
+
+  /** Notified of @mentions and direct replies. */
+  case object Normal extends NotfLevel(4)
+
+  /** No notifications for this page.  */
+  case object Muted extends NotfLevel(5)
+
+  def fromInt(value: Int): Option[NotfLevel] = Some(value match {
+    case WatchingAll.IntVal => WatchingAll
+    case WatchingFirst.IntVal => WatchingFirst
+    case Tracking.IntVal => Tracking
+    case Normal.IntVal => Normal
+    case Muted.IntVal => Muted
+    case _ => return None
+  })
+
+}

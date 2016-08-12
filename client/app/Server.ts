@@ -140,6 +140,17 @@ function appendE2eAndForbiddenPassword(url: string) {
 
 var loadEditorScriptsStatus;
 
+
+// Won't call callback() until a bit later — so if you call React's setState(..), the
+// state will have changed.
+//
+export function loadEditorEtcScriptsAndLater(callback?) {
+  setTimeout(function() {
+    loadEditorEtceteraScripts().done(callback || _.noop)
+  }, 0);
+}
+
+
 export function loadEditorEtceteraScripts() {
   if (loadEditorScriptsStatus)
     return loadEditorScriptsStatus;
@@ -156,6 +167,7 @@ export function loadEditorEtceteraScripts() {
   window['yepnope']({
     both: [d.i.assetUrlPrefix + 'editor-etcetera.' + d.i.minMaxJs],
     complete: () => {
+      window['ReactSelect'] = reactCreateFactory(window['Select']);
       loadEditorScriptsStatus.resolve();
     }
   });
@@ -461,7 +473,11 @@ export function lockThreatLevel(userId: number, threatLevel: ThreatLevel, succes
 
 
 export function savePageNoftLevel(newNotfLevel) {
-  postJsonSuccess('/-/save-page-notf-level', null, {
+  postJsonSuccess('/-/set-page-notf-level', () => {
+    var me: Myself = ReactStore.allData().me;
+    me.rolePageSettings = { notfLevel: newNotfLevel };  // [redux] modifying state in place
+    ReactActions.patchTheStore({ me: me });
+  }, {
     pageId: d.i.pageId,
     pageNotfLevel: newNotfLevel
   });
@@ -522,6 +538,22 @@ export function loadNotifications(userId: number, upToWhenMs: number,
 export function markNotificationAsSeen(notfId: number, success?: () => void, error?: () => void) {
   postJsonSuccess('/-/mark-notf-as-seen', success, error, { notfId: notfId });
 }
+
+
+export function setTagNotfLevel(tagLabel: TagLabel, newNotfLevel: NotfLevel) {
+  postJsonSuccess('/-/set-tag-notf-level', () => {
+    var store: Store = ReactStore.allData();
+    var newLevels = _.clone(store.tagsStuff.myTagNotfLevels);
+    newLevels[tagLabel] = newNotfLevel;
+    ReactActions.patchTheStore({
+      tagsStuff: { myTagNotfLevels: newLevels }
+    });
+  }, {
+    tagLabel: tagLabel,
+    notfLevel: newNotfLevel
+  });
+}
+
 
 
 export function loadUserPreferences(userId,
@@ -827,6 +859,33 @@ export function deletePostInPage(postId: number, repliesToo: boolean,
 export function editPostSettings(postId: PostId, settings: PostSettings, success: () => void) {
   var data = _.assign({ postId: postId }, settings);
   postJsonSuccess('/-/edit-post-settings', ReactActions.patchTheStore, data);
+}
+
+
+export function loadAllTags(success: (tags: string[]) => void) {
+  get('/-/load-all-tags', success);
+}
+
+
+export function loadTagsAndStats() {
+  get('/-/load-tags-and-stats', ReactActions.patchTheStore);
+}
+
+
+export function loadMyTagNotfLevels() {
+  get('/-/load-my-tag-notf-levels', ReactActions.patchTheStore);
+}
+
+
+export function addRemovePostTags(postId: PostId, tags: string[], success: () => void) {
+  postJsonSuccess('/-/add-remove-tags', (response) => {
+    ReactActions.patchTheStore(response);
+    success();
+  }, {
+    pageId: d.i.pageId,
+    postId: postId,
+    tags: tags
+  });
 }
 
 

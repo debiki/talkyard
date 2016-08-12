@@ -61,7 +61,7 @@ function ensureEditorCreated(success) {
     success();
   }
   else {
-    Server.loadEditorEtceteraScripts().done(() => {
+    Server.loadEditorEtcScriptsAndLater(() => {
       FileAPI = window['FileAPI'];
       theEditor = ReactDOM.render(Editor({}), utils.makeMountNode());
       success();

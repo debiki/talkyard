@@ -229,7 +229,7 @@ var UserInfo = createComponent({
   },
 
   componentDidMount: function() {
-    Server.loadEditorEtceteraScripts().then(this.createUploadAvatarButton);
+    Server.loadEditorEtcScriptsAndLater(this.createUploadAvatarButton);
   },
 
   selectAndUploadAvatar: function() {

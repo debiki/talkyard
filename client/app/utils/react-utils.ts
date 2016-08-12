@@ -23,6 +23,8 @@
 var reactCreateFactory = React['createFactory'];
 var isServerSide = debiki2.isServerSide;
 
+var ReactSelect; // lazy loaded.
+
 
 function createComponent(componentDefinition) { // oops should obviously be named createFactory
   if (isServerSide()) {

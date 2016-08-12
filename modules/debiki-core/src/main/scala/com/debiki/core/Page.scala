@@ -250,6 +250,8 @@ case class PageMeta(
     else PageStatus.Draft
 
   def bumpedOrPublishedOrCreatedAt = bumpedAt orElse publishedAt getOrElse createdAt
+
+  def copyWithNewVersion = copy(version = version + 1)
 }
 
 

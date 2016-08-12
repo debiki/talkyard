@@ -141,7 +141,7 @@ object ReactJson {
     var numPostsRepliesSection = 0
     var numPostsChatSection = 0
 
-    var allPostsJson = posts filter { post =>
+    var interestingPosts = posts filter { post =>
       // In case a page contains both form replies and "normal" comments, don't load any
       // form replies, because they might contain private stuff. (Page type might have
       // been changed to/from Form.) [5GDK02]
@@ -149,13 +149,18 @@ object ReactJson {
       post.tyype != PostType.Flat && ( // flat comments disabled [8KB42]
       !post.deletedStatus.isDeleted || (
         post.deletedStatus.onlyThisDeleted && pageParts.hasNonDeletedSuccessor(post.nr)))
-    } map { post: Post =>
+    }
+
+    val tagsByPostId = transaction.loadTagsByPostId(interestingPosts.map(_.uniqueId))
+
+    var allPostsJson = interestingPosts map { post: Post =>
       numPosts += 1
       if (post.tyype == PostType.Flat)
         numPostsChatSection += 1
       else if (!post.isOrigPost && !post.isTitle)
         numPostsRepliesSection += 1
-      post.nr.toString -> postToJsonImpl(post, page)
+      val tags = tagsByPostId(post.uniqueId)
+      post.nr.toString -> postToJsonImpl(post, page, tags)
     }
 
     val usersById = mutable.HashMap[UserId, User](page.parts.usersById.toSeq: _*)
@@ -362,7 +367,9 @@ object ReactJson {
     dao.readOnlyTransaction { transaction =>
       // COULD optimize: don't load the whole page, load only postNr and the author and last editor.
       val page = PageDao(pageId, transaction)
-      val json = postToJsonImpl(page.parts.thePost(postNr), page,
+      val post = page.parts.thePost(postNr)
+      val tags = transaction.loadTagsForPost(post.uniqueId)
+      val json = postToJsonImpl(post, page, tags,
         includeUnapproved = includeUnapproved)
       (json, page.version)
     }
@@ -371,7 +378,7 @@ object ReactJson {
 
   /** Private, so it cannot be called outside a transaction.
     */
-  private def postToJsonImpl(post: Post, page: Page,
+  private def postToJsonImpl(post: Post, page: Page, tags: Set[TagLabel],
         includeUnapproved: Boolean = false): JsObject = {
     val people = page.parts
 
@@ -464,7 +471,8 @@ object ReactJson {
       "branchSideways" -> JsNumberOrNull(post.branchSideways.map(_.toInt)),
       "likeScore" -> JsNumber(decimal(post.likeScore)),
       "childIdsSorted" -> JsArray(childrenSorted.map(reply => JsNumber(reply.nr))),
-      "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml))
+      "sanitizedHtml" -> JsStringOrNull(anySanitizedHtml),
+      "tags" -> JsArray(tags.toSeq.map(JsString)))
 
     if (post.isHidden) fields :+= "isPostHidden" -> JsTrue
     if (author.email.isEmpty) fields :+= "authorEmailUnknown" -> JsTrue
@@ -608,7 +616,7 @@ object ReactJson {
 
   private def rolePageSettingsToJson(settings: RolePageSettings): JsObject = {
     Json.obj(
-      "notfLevel" -> JsString(settings.notfLevel.toString))
+      "notfLevel" -> JsNumber(settings.notfLevel.toInt))
   }
 
 
@@ -768,8 +776,10 @@ object ReactJson {
             page.meta.pageRole == PageRole.Form ||
             page.meta.pageRole == PageRole.WebPage)) {  // hack. Try to remove + fix [3PF4GK] above
         val posts = page.parts.allPosts
+        val tagsByPostId = transaction.loadTagsByPostId(posts.map(_.uniqueId))
         val postIdsAndJson: Seq[(String, JsValue)] = posts.toSeq.map { post =>
-          post.nr.toString -> postToJsonImpl(post, page, includeUnapproved = true)
+          val tags = tagsByPostId(post.uniqueId)
+          post.nr.toString -> postToJsonImpl(post, page, tags, includeUnapproved = true)
         }
         return JsObject(postIdsAndJson)
       }
@@ -973,9 +983,10 @@ object ReactJson {
     // Load the page so we'll get a version that includes postId, in case it was just added.
     val page = PageDao(pageId, transaction)
     val post = page.parts.postById(postId) getOrDie "EsE8YKPW2"
+    val tags = transaction.loadTagsForPost(post.uniqueId)
     val author = transaction.loadTheUser(post.createdById)
     require(post.createdById == author.id, "EsE4JHKX1")
-    val postJson = postToJsonImpl(post, page, includeUnapproved = true)
+    val postJson = postToJsonImpl(post, page, tags, includeUnapproved = true)
     makeStorePatch(PageIdVersion(post.pageId, page.version),
       posts = Seq(postJson), users = Seq(JsUser(author)))
   }
@@ -989,6 +1000,16 @@ object ReactJson {
       "pageVersionsByPageId" -> Json.obj(pageIdVersion.pageId -> pageIdVersion.version),
       "usersBrief" -> users,
       "postsByPageId" -> Json.obj(pageIdVersion.pageId -> posts))
+  }
+
+
+  def makeTagsStuffPatch(json: JsObject): JsValue = {
+    makeStorePatch(Json.obj("tagsStuff" -> json))
+  }
+
+
+  def makeStorePatch(json: JsObject): JsValue = {
+    json + ("appVersion" -> JsString(Globals.applicationVersion))
   }
 
 

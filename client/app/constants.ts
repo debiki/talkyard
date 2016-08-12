@@ -23,6 +23,7 @@ var FirstSiteId = '1';
 var NoPostId = -1;  // dupl in reply.js
 var TitleNr = 0;
 var BodyId = 1;
+var BodyNr = 1;
 var FirstReplyNr = 2;
 
 var SystemUserId = -1;
@@ -140,6 +141,15 @@ enum NotificationType {
   // Quote = 3,
   Message = 4,
   NewPost = 5,
+}
+
+
+enum NotfLevel {
+  WatchingAll = 1,
+  WatchingFirst = 2,
+  Tracking = 3,
+  Normal = 4,
+  Muted = 5,
 }
 
 

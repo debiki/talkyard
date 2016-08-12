@@ -52,7 +52,7 @@ export function getEditCategoryDialog(success: (dialog) => void) {
     success(editCategoryDialog);
   }
   else {
-    Server.loadEditorEtceteraScripts().done(() => {
+    Server.loadEditorEtcScriptsAndLater(() => {
       ReactSelect = reactCreateFactory(window['Select']); // react-select
       editCategoryDialog = ReactDOM.render(EditCategoryDialog(), debiki2.utils.makeMountNode());
       success(editCategoryDialog);

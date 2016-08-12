@@ -572,10 +572,10 @@ object EmailNotfPrefs extends Enumeration {
 
 
 case class RolePageSettings(
-  notfLevel: PageNotfLevel)
+  notfLevel: NotfLevel)
 
 object RolePageSettings {
-  val Default = RolePageSettings(PageNotfLevel.Normal)
+  val Default = RolePageSettings(NotfLevel.Normal)
 }
 
 
@@ -649,6 +649,7 @@ sealed abstract class Identity {
  * By specifying an id of an email that has been sent to you,
  * you can login. This login type is insecure (email transmission is
  * not secure) and only used for unsubscriptions.
+ *
  * @param id The email id. Should refer to an email that has already
  *  been saved in the database.
  * @param userId The user that received the email. Not known before

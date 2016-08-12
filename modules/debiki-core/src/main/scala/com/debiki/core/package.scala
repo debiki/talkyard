@@ -31,8 +31,10 @@ package object core {
 
   // TODO rename to PostId.
   type UniquePostId = Int
+  val NoPostId = 0
 
   type PostNr = Int
+  val NoPostNr = -1
 
   type PageId = String
 
@@ -53,6 +55,10 @@ package object core {
   type NotificationId = Int
 
   type ReviewTaskId = Int
+
+  type Tag = String
+  type TagLabelId = Int
+  type TagLabel = String
 
   /** Email identities are strings, all others are numbers but converted to strings. */
   type IdentityId = String
@@ -179,6 +185,13 @@ package object core {
     }
   }
 
+
+  case class TagAndStats(
+    label: TagLabel,
+    numTotal: Int,
+    numPages: Int,
+    numSubscribers: Int,
+    numMuted: Int)
 
   def ifThenSome[A](condition: Boolean, value: A) =
     if (condition) Some(value) else None

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,12 +17,16 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../oop-methods.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.notification {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
+var reactCreateFactory = React['createFactory'];
+var ReactBootstrap: any = window['ReactBootstrap'];
+var Button = reactCreateFactory(ReactBootstrap.Button);
 
 
 export var Notification = createComponent({
@@ -55,6 +59,21 @@ export var Notification = createComponent({
         when));
   }
 });
+
+
+
+export var NotfLevelButton = createComponent({
+  render: function() {
+    var subject: NotfSubject = this.props.subject;
+    var notfLevel: NotfLevel = this.props.notfLevel;
+    return (
+      Button({ id: '7bw3gz5', className: 'dw-notf-level',
+          onClick: event => page.openNotfsLevelDropdown(event.target, subject, notfLevel ) },
+        r.span({}, notfLevel_title(notfLevel) + ' ', r.span({className: 'caret'}))));
+  }
+});
+
+
 
 //------------------------------------------------------------------------------
    }
