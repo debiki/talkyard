@@ -22,6 +22,8 @@ import com.debiki.core.Prelude._
 import debiki.ReactJson
 import io.efdi.server.Who
 import io.efdi.server.http._
+import io.efdi.server.notf.NotificationGenerator
+import io.efdi.server.pubsub.StorePatchMessage
 import play.api.libs.json.JsValue
 import TagsDao._
 
@@ -55,8 +57,10 @@ trait TagsDao {
 
   def addRemoveTagsIfAuth(pageId: PageId, postId: UniquePostId, tags: Set[Tag], who: Who)
         : JsValue = {
-    if (tags.size > MaxNumTags)
+
+    if (tags.size > MaxNumTags) {
       throwForbidden2("EsE5KG0F3", s"Too many tags: ${tags.size}, max is $MaxNumTags")
+    }
     tags.find(_.length > MaxTagLength) foreach { tooLongTag =>
       throwForbidden2("EsE7KPU4R2", s"Tag label too long: '$tooLongTag'")
     }
@@ -64,10 +68,11 @@ trait TagsDao {
       throwForbidden2("EsE4GE8I2", s"Bad tag label: '$badLabel'")
     }
 
-    readWriteTransaction { transaction =>
+    val (post, notifications, postAuthor) = readWriteTransaction { transaction =>
       val me = transaction.loadTheUser(who.id)
       val pageMeta = transaction.loadThePageMeta(pageId)
       val post = transaction.loadThePost(postId)
+      val postAuthor = transaction.loadTheUser(post.createdById)
 
       throwForbiddenIf(post.nr == PageParts.TitleNr, "EsE5JK8S4", "Cannot tag page titles")
 
@@ -88,13 +93,25 @@ trait TagsDao {
       transaction.updatePageMeta(pageMeta.copyWithNewVersion, oldMeta = pageMeta,
           markSectionPageStale = false)
 
-      ReactJson.makeStorePatch2(postId, pageId, transaction)
+      val notifications = NotificationGenerator(transaction).generateForTags(post, tagsToAdd)
+      transaction.saveDeleteNotifications(notifications)
+
+      (post, notifications, postAuthor)
     }
+
+    refreshPageInMemCache(post.pageId)
+
+    val storePatch = ReactJson.makeStorePatch(post, postAuthor, this)
+    pubSub.publish(
+      StorePatchMessage(siteId, pageId, storePatch, notifications), byId = postAuthor.id)
+    storePatch
   }
 
 
   def setTagNotfLevelIfAuth(userId: UserId, tagLabel: TagLabel, notfLevel: NotfLevel,
         byWho: Who) {
+    throwForbiddenIf(notfLevel != NotfLevel.WatchingFirst && notfLevel != NotfLevel.Normal,
+      "EsE5GK02", s"Only ${NotfLevel.WatchingFirst} and ${NotfLevel.Normal} supported, for tags")
     readWriteTransaction { transaction =>
       val me = transaction.loadTheMember(byWho.id)
       if (me.id != userId && !me.isStaff)

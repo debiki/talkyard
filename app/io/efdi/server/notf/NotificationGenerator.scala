@@ -182,6 +182,21 @@ case class NotificationGenerator(transaction: SiteTransaction) {
   } */
 
 
+  def generateForTags(post: Post, tagsAdded: Set[TagLabel]): Notifications = {
+    val userIdsWatching = transaction.listUsersWatchingTags(tagsAdded)
+    val userIdsNotified = transaction.listUsersNotifiedAboutPost(post.uniqueId)
+    val userIdsToNotify = userIdsWatching -- userIdsNotified
+    val usersToNotify = transaction.loadUsers(userIdsToNotify.to[immutable.Seq])
+    for {
+      user <- usersToNotify
+      if user.id != post.createdById
+    } {
+      makeNewPostNotf(NotificationType.PostTagged, post, user)
+    }
+    generatedNotifications
+  }
+
+
   private def bumpAndGetNextNotfId(): NotificationId = {
     nextNotfId match {
       case None =>

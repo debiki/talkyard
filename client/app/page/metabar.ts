@@ -266,32 +266,40 @@ var NotfsLevelDropdownModal = createComponent({
     var me: Myself = store.me;
     var subject: NotfSubject = this.state.subject;
     var currentLevel: NotfLevel = this.state.currentLevel || NotfLevel.Normal;
-    var watchingAllText: string;
+    var watchingAllListItem;
     var watchingFirstListItem;
+    var mutedListItem;
 
     if (state.isOpen) {
       dieIf(!subject.pageId && !subject.tagLabel, 'EsE4GK02');
-      watchingAllText = subject.tagLabel
+      var watchingAllText = subject.tagLabel
         ? "You'll be notified of new topics with this tag, and every post in those topics"
         : "You'll be notified of all new replies in this topic.";
 
+      watchingAllListItem = !subject.pageId ? null :
+        ExplainingListItem({
+          active: currentLevel === NotfLevel.WatchingAll,
+          title: r.span({ className: '' }, "Watching All"),
+          text: watchingAllText,
+          onSelect: () => this.setNotfLevel(NotfLevel.WatchingAll) });
       watchingFirstListItem = !subject.tagLabel ? null :
         ExplainingListItem({
           active: currentLevel === NotfLevel.WatchingFirst,
           title: r.span({className: ''}, "Watching First"),
           text: "You'll be notified of new topics with this tag",
-          onSelect: () => this.setNotfLevel(NotfLevel.WatchingFirst)
-        });
+          onSelect: () => this.setNotfLevel(NotfLevel.WatchingFirst) });
+      mutedListItem =
+        ExplainingListItem({
+          active: currentLevel === NotfLevel.Muted,
+          title: r.span({ className: '' }, "Muted"),
+          text: "No notifications at all about this topic.",
+          onSelect: () => this.setNotfLevel(NotfLevel.Muted) });
     }
 
     return (
       DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY,
           pullLeft: true },
-        ExplainingListItem({
-          active: currentLevel === NotfLevel.WatchingAll,
-          title: r.span({ className: '' }, "Watching All"),
-          text: watchingAllText,
-          onSelect: () => this.setNotfLevel(NotfLevel.WatchingAll) }),
+        watchingAllListItem,
         watchingFirstListItem,
         /*
         ExplainingListItem({
@@ -306,11 +314,7 @@ var NotfsLevelDropdownModal = createComponent({
           text: r.span({}, "You'll be notified if someone replies to you or mentions your ",
               r.samp({}, "@name"), "."),
           onSelect: () => this.setNotfLevel(NotfLevel.Normal) }),
-        ExplainingListItem({
-          active: currentLevel === NotfLevel.Muted,
-          title: r.span({ className: '' }, "Muted"),
-          text: "No notifications at all about this topic.",
-          onSelect: () => this.setNotfLevel(NotfLevel.Muted) })));
+        mutedListItem));
   }
 });
 

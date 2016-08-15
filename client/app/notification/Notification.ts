@@ -43,6 +43,7 @@ export var Notification = createComponent({
       case NotificationType.Mention: iconClass = 'icon-char'; textContent = '@'; break;
       case NotificationType.Message: iconClass = 'icon-mail-empty'; break;
       case NotificationType.NewPost: iconClass = 'icon-comment-empty'; toMeClass = ''; break;
+      case NotificationType.PostTagged: iconClass = 'icon-tag'; toMeClass = ''; break;
       default: die("Unknown notification type [EsE4GUF2]")
     }
     var when;

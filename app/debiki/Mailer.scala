@@ -216,7 +216,7 @@ class Mailer(
     */
   def fakeSendAndRememberForE2eTests(email: Email, siteDao: SiteDao) {
     play.api.Logger.debug(i"""
-      |Fake-sending email (only logging it to the console):
+      |Fake-sending email (only logging it to the console): [EsM6LK4J2]
       |  $email
       |""")
     val emailSent = email.copy(sentOn = Some(new ju.Date))

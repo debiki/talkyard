@@ -147,6 +147,7 @@ trait SiteTransaction {
   def renameTag(from: String, to: String)
   def setTagNotfLevel(userId: UserId, tagLabel: TagLabel, notfLevel: NotfLevel)
   def loadTagNotfLevels(userId: UserId): Map[TagLabel, NotfLevel]
+  def listUsersWatchingTags(tags: Set[TagLabel]): Set[UserId]
 
   def loadFlagsFor(pagePostNrs: immutable.Seq[PagePostNr]): immutable.Seq[PostFlag]
   def insertFlag(uniquePostId: UniquePostId, pageId: PageId, postNr: PostNr, flagType: PostFlagType, flaggerId: UserId)
@@ -334,6 +335,7 @@ trait SiteTransaction {
   def markNotfAsSeenSkipEmail(userId: UserId, notfId: NotificationId)
   def loadNotificationsForRole(roleId: RoleId, limit: Int, unseenFirst: Boolean,
     upToWhen: Option[ju.Date] = None): Seq[Notification]
+  def listUsersNotifiedAboutPost(postId: UniquePostId): Set[UserId]
 
 
   def startAuditLogBatch()

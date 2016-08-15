@@ -123,22 +123,27 @@ case class NotfHtmlRenderer(siteDao: SiteDao, anyOrigin: Option[String]) {
     val ellipsis = (markupSource.length > maxNotificationLength) ? "..." | ""
     val html = Text(markupSource.take(maxNotificationLength) + ellipsis)
 
-    val (whatHappened, inPostWrittenBy) = notf.notfType match {
+    val (whatHappened, dotOrComma, inPostWrittenBy) = notf.notfType match {
       case NotificationType.Message =>
-        ("You have been sent a personal message", "from")
+        ("You have been sent a personal message", ",", "from")
       case NotificationType.Mention =>
-        ("You have been mentioned", "in a post written by")
+        ("You have been mentioned", ",", "in a post written by")
       case NotificationType.DirectReply =>
-        ("You have a reply", "written by")
+        ("You have a reply", ",", "written by")
       case NotificationType.NewPost =>
         if (post.nr == PageParts.BodyNr)
-          ("A new topic has been started", "by")
+          ("A new topic has been started", ",", "by")
         else
-          ("A new comment has been posted", "by")
+          ("A new comment has been posted", ",", "by")
+      case NotificationType.NewPost =>
+        if (post.nr == PageParts.BodyNr)
+          ("A topic has been tagged with a tag you're watching", ".", "The topic was written by")
+        else
+          ("A comment has been tagged with a tag you're watching", ".", "The comment was written by")
     }
 
     <p>
-      { whatHappened }, <a href={url}>here</a>, on page <i>{pageTitle}</i>,<br/>
+      { whatHappened }, <a href={url}>here</a>, on page <i>{pageTitle}</i>{dotOrComma}<br/>
       { inPostWrittenBy } <i>{byUserName}</i>. On {date}, he or she wrote:
     </p>
     <blockquote>{html}</blockquote>

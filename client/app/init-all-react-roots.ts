@@ -24,6 +24,9 @@
 /// <reference path="users/users-page.ts" />
 /// <reference path="page-dialogs/wikify-dialog.ts" />
 /// <reference path="dialogs.ts" />
+/// <reference path="tags/tags-app.ts" />
+/// <reference path="admin/admin-app.ts" />
+/// <reference path="superadmin/superadmin-app.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2 {

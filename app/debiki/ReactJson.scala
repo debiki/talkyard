@@ -706,6 +706,8 @@ object ReactJson {
             numTalkToMe += 1
           case NewPost =>
             numTalkToOthers += 1
+          case PostTagged =>
+            numOther += 1
         }
       case _ => ()
     }

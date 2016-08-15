@@ -18,10 +18,11 @@
 package debiki.dao
 
 import com.debiki.core._
-import debiki.DebikiHttp.{throwNotFound, throwForbidden}
-import java.{util => ju}
+import debiki.DebikiHttp.throwForbidden
 import debiki.{BrowserId, SidStatus, DebikiSecurity}
+import io.efdi.server.http.throwForbiddenIf
 import io.efdi.server.{UserAndLevels, Who}
+import java.{util => ju}
 import play.api.libs.json.JsArray
 import scala.collection.immutable
 import Prelude._
@@ -580,6 +581,10 @@ trait UserDao {
     readOnlyTransaction(_.loadUsers())
 
 
+  def listUsersNotifiedAboutPost(postId: UniquePostId): Set[UserId] =
+    readOnlyTransaction(_.listUsersNotifiedAboutPost(postId))
+
+
   def listUsernames(pageId: PageId, prefix: String): Seq[NameAndUsername] =
     readOnlyTransaction(_.listUsernames(pageId = pageId, prefix = prefix))
 
@@ -593,8 +598,13 @@ trait UserDao {
       RolePageSettings.Default
 
 
-  def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings) =
+  def saveRolePageSettings(roleId: RoleId, pageId: PageId, settings: RolePageSettings) = {
+    throwForbiddenIf(settings.notfLevel == NotfLevel.WatchingFirst,
+      "EsE6SRK02", s"${NotfLevel.WatchingFirst} not supported, for pages")
+    throwForbiddenIf(settings.notfLevel == NotfLevel.Tracking,
+      "EsE7DKS85", s"${NotfLevel.Tracking} not yet implemented")
     readWriteTransaction(_.saveRolePageSettings(roleId = roleId, pageId = pageId, settings))
+  }
 
 
   def saveRolePreferences(preferences: UserPreferences) = {

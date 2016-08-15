@@ -1076,6 +1076,10 @@ function watchbar_handleNotification(watchbar: Watchbar, notf: Notification) {
     // Or do this elsewhere? [4YK2E5] Probably better to do here? because here we'll get notfs
     // also about pages not currently listed in the watchbar.
   }
+  if (notf.type === NotificationType.PostTagged) {
+    // Skip? A notification should be enough, needn't appear in the watcbar _too_?
+    // *Or* add it to a new Events or Watching section?
+  }
 }
 
 

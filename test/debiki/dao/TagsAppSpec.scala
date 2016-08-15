@@ -29,9 +29,9 @@ class TagsAppSpec extends DaoAppSuite() {
 
   lazy val categoryId: CategoryId =
     dao.createForum("Forum", "/tag-test-forum/",
-      Who(theAdmin.id, browserIdData)).uncategorizedCategoryId
+      Who(theOwner.id, browserIdData)).uncategorizedCategoryId
 
-  lazy val theAdmin: User = createPasswordAdmin("tag_adm", dao)
+  lazy val theOwner: User = createPasswordOwner("tag_adm", dao)
   lazy val theModerator: User = createPasswordModerator("tag_mod", dao)
   lazy val theMember: User = createPasswordUser("tag_mbr", dao)
   lazy val theWrongMember: User = createPasswordUser("wr_tg_mbr", dao)
@@ -47,6 +47,24 @@ class TagsAppSpec extends DaoAppSuite() {
     dao.addRemoveTagsIfAuth(post.pageId, post.uniqueId, tags, Who(memberId, browserIdData))
   }
 
+  def watchTag(memberId: UserId, tagLabel: TagLabel) {
+    dao.setTagNotfLevelIfAuth(theMember.id, tagLabel, NotfLevel.WatchingFirst,
+      Who(memberId, browserIdData))
+  }
+
+  def stopWatchingTag(memberId: UserId, tagLabel: TagLabel) {
+    dao.setTagNotfLevelIfAuth(theMember.id, tagLabel, NotfLevel.Normal,
+      Who(memberId, browserIdData))
+  }
+
+  def countNotificationsToAbout(userId: UserId, postId: UniquePostId): Int = {
+    var notfs = dao.loadNotificationsForRole(userId, limit = 999, unseenFirst = true)
+    notfs.count({
+      case notf: Notification.NewPost => notf.uniquePostId == postId
+      case x => fail(s"Bad notf type: ${classNameOf(x)}")
+    })
+  }
+
   val TagLabel1 = "TagLabel1"
   val TagLabel2 = "TagLabel2"
   val TagLabel3 = "TagLabel3"
@@ -57,13 +75,15 @@ class TagsAppSpec extends DaoAppSuite() {
   val TagsOneThree = Set(TagLabel1, TagLabel3)
   val TagsTwoFour = Set(TagLabel2, TagLabel4)
 
+  val WatchedTag = "WatchedTag"
+  val WatchedTag2 = "WatchedTag2"
 
   "The Dao can tag pages and posts" - {
     val now = new ju.Date()
 
     "load, add, remove tags" in {
       thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title"),
-        TextAndHtml.testBody("body"), SystemUserId, browserIdData, dao, Some(categoryId))
+        TextAndHtml.testBody("body"), theOwner.id, browserIdData, dao, Some(categoryId))
       val postNoTags = reply(theMember.id, "No tags")
       val postWithTags = reply(theMember.id, "With tags")
       val postWithTagsLater = reply(theMember.id, "With tags, later")
@@ -127,7 +147,48 @@ class TagsAppSpec extends DaoAppSuite() {
 
       info("Moderators and admins may always edit tags")
       addRemoveTags(post, TagsOneTwoThreeFour, theModerator.id)
-      addRemoveTags(post, TagsTwoFour, theAdmin.id)
+      addRemoveTags(post, TagsTwoFour, theOwner.id)
+    }
+
+
+    "people can watch tags" in {
+      watchTag(theMember.id, WatchedTag)
+      watchTag(theMember.id, WatchedTag2)
+      val moderatorWho = Who(theModerator.id, browserIdData)
+
+      // No notfs will be sent to the system user.
+      thePageId = createPage(PageRole.Discussion, TextAndHtml.testTitle("Title2"),
+        TextAndHtml.testBody("body2"), SystemUserId, browserIdData, dao, Some(categoryId))
+
+      val post = dao.readOnlyTransaction(_.loadThePost(thePageId, PageParts.BodyNr))
+
+      info("gets notified about tagged topics")
+      countNotificationsToAbout(theMember.id, post.uniqueId) mustBe 0
+      addRemoveTags(post, Set(WatchedTag), theModerator.id)
+      dao.listUsersNotifiedAboutPost(post.uniqueId) mustEqual Set(theMember.id)
+      countNotificationsToAbout(theMember.id, post.uniqueId) mustBe 1
+
+      info("only notified once of each post")
+      addRemoveTags(post, Set(WatchedTag2), theModerator.id)
+      countNotificationsToAbout(theMember.id, post.uniqueId) mustBe 1
+
+      info("gets notified about tagged comments")
+      val comment = reply(theModerator.id, "A comment")
+      countNotificationsToAbout(theMember.id, comment.uniqueId) mustBe 0
+      addRemoveTags(comment, Set(WatchedTag), theModerator.id)
+      countNotificationsToAbout(theMember.id, comment.uniqueId) mustBe 1
+
+      info("only notified once of each comment")
+      addRemoveTags(comment, Set(WatchedTag2), theModerator.id)
+      countNotificationsToAbout(theMember.id, comment.uniqueId) mustBe 1
+
+      info("can stop watching a tag")
+      stopWatchingTag(theMember.id, WatchedTag)
+
+      info("no longer gets notified about that tag")
+      val comment2 = reply(theModerator.id, "Comment 2")
+      addRemoveTags(comment2, Set(WatchedTag), theModerator.id)
+      countNotificationsToAbout(theMember.id, comment2.uniqueId) mustBe 0
     }
 
   }

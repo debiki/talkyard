@@ -43,12 +43,14 @@ object NotificationType {
   // Quote 3
   case object Message extends NotificationType(4)
   case object NewPost extends NotificationType(5)
+  case object PostTagged extends NotificationType(6)
 
   def fromInt(value: Int): Option[NotificationType] = Some(value match {
     case DirectReply.IntValue => DirectReply
     case Mention.IntValue => Mention
     case Message.IntValue => Message
     case NewPost.IntValue => NewPost
+    case PostTagged.IntValue => PostTagged
     case _ => return None
   })
 }

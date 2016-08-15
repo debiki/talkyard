@@ -141,6 +141,7 @@ enum NotificationType {
   // Quote = 3,
   Message = 4,
   NewPost = 5,
+  PostTagged = 6,
 }
 
 
