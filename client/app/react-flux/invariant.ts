@@ -27,11 +27,12 @@ module debiki2.reactflux {
  */
 
 export function invariant(condition, format, a, b, c, d, e, f) {
+  /* what's this? Weird. Commenting out. [kajmagnus]
   if (false) {
     if (format === undefined) {
       throw new Error('invariant requires an error message argument');
     }
-  }
+  } */
 
   if (!condition) {
     var error;

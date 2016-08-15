@@ -17,7 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../topbar/topbar.ts" />
-/// <reference path="../avatar/Avatar.ts" />
+/// <reference path="../avatar/avatar.ts" />
 /// <reference path="../links.ts" />
 /// <reference path="user-details-actions.ts" />
 

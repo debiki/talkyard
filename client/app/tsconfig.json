@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "module": "amd",
+    "target": "ES5",
+    "outFile": "../../target/client/typescript.js"
+  }
+}

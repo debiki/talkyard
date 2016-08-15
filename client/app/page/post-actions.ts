@@ -36,7 +36,7 @@
 /// <reference path="../page-dialogs/tags-dialog.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../model.ts" />
-/// <reference path="../server.ts" />
+/// <reference path="../Server.ts" />
 /// <reference path="chat.ts" />
 
 //------------------------------------------------------------------------------

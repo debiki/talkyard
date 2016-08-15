@@ -172,6 +172,7 @@ export var CreateSomethingHere = createComponent({
     // if s/he wanted to create an embedded comments site, and s/he didn't.
     var message;
     var anyCreateEmbeddedCommentsButton;
+    /*
     if (false) { // if (debiki.siteId === debiki.FirstSiteId) { // embedded comments broken now
       anyCreateEmbeddedCommentsButton =
           Button({ active: createWhat === PageRole.EmbeddedComments,
@@ -179,9 +180,10 @@ export var CreateSomethingHere = createComponent({
               'Setup Embedded Comments');
       message = 'This site is empty right now. What do you want to do?';
     }
-    else {
+    else { */
       message = 'This site is empty right now. Do you want to create a forum?';
-    }
+    //}
+
 
     return (
       r.div({},
