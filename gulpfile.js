@@ -132,7 +132,7 @@ var debikiJavascriptFiles = [
       'target/client/app/utterscroll/utterscroll-init-tips.js',//
       'client/app/utterscroll/utterscroll.js',//
       'target/client/app/utils/post-json.js',
-      'target/client/typescript.js',
+      'target/client/all-typescript.js',
       'target/client/app/startup.js'];
 
 
@@ -217,9 +217,6 @@ function compileServerSideTypescript() {
 
   return es.merge(typescriptStream, javascriptStream)
       .pipe(concat('renderer.js'))
-      .pipe(gulp.dest('public/res/'))
-      .pipe(uglify())
-      .pipe(rename('renderer.min.js'))
       .pipe(gulp.dest('public/res/'));
 }
 
@@ -256,8 +253,8 @@ function compileClientSideTypescript() {
 //
 gulp.task('compile-typescript', function () {
   return es.merge(
-      compileServerSideTypescript());
-      //compileClientSideTypescript()); see [6KGEF02] below
+      compileServerSideTypescript(),
+      compileClientSideTypescript());
 });
 
 
@@ -396,14 +393,8 @@ function logChangeFn(fileType) {
 
 gulp.task('watch', ['default'], function() {
   watchAndLiveForever = true;
-
-  // Compile Typescript like so instead:  tsc -w -p client/app/tsconfig.json   [6KGEF02]
-  // (now done in the docker/gulp/Dockerfile CMD)
-  // — that takes 1 second, but the next line takes more than 20 seconds (!) each time:
-  //gulp.watch(['client/**/*.ts', '!client/test/**/*.ts'] ,['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
-
-  gulp.watch(['client/server/**/*.ts'] ,['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
-  gulp.watch(['client/**/*.js', 'target/client/typescript.js'], ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
+  gulp.watch(['client/**/*.ts', '!client/test/**/*.ts'] ,['compile-typescript-concat-scripts']).on('change', logChangeFn('TypeScript'));
+  gulp.watch('client/**/*.js', ['wrap-javascript-concat-scripts']).on('change', logChangeFn('Javascript'));
   gulp.watch('client/**/*.styl', ['compile-stylus']).on('change', logChangeFn('Stylus'));
   gulp.watch('client/test/e2e/**/*.ts', ['build-e2e']).on('change', logChangeFn('TypeScript test files'));
 });

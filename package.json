@@ -45,7 +45,6 @@
     "request": "^2.64.0",
     "selenium-standalone": "^4.9.0",
     "sync-request": "^3.0.0",
-    "typescript": "=1.8.10",
     "wdio-mocha-framework": "^0.2.8",
     "webdriverio": "^4.2.3"
   }
