@@ -57,6 +57,10 @@ export function drawArrowsFromParent(allPosts, parentPost, depth: number,
       // COULD REFACTOR: don't send both horizontalLayout and hmmIs2dTreeColumn.
       hmmIs2dTreeColumn: boolean) {
 
+  // Some posts have no parent, e.g. form replies and embedded comments.
+  if (!parentPost)
+    return [];
+
   var postId = parentPost.childIdsSorted[index];
   var post = allPosts[postId];
   if (!post)

@@ -494,8 +494,7 @@ var RootPostAndComments = createComponent({
     }
 
     var repliesAreFlat = false;
-    var childIds = pageRole === PageRole.EmbeddedComments || pageRole === PageRole.Form ?
-        this.props.topLevelCommentIdsSorted : rootPost.childIdsSorted;
+    var childIds = rootPost.childIdsSorted.concat(this.props.topLevelCommentIdsSorted);
 
     // On message pages, most likely max a few people talk — then threads make no sense.
     // On form submission pages, people don't see each others submissions, won't talk at all.
@@ -670,7 +669,7 @@ var Thread = createComponent({
 
     // Draw arrows, but not to multireplies, because we don't know if they reply to `post`
     // or to other posts deeper in the thread.
-    var arrows = [];
+    var arrows;
     if (!post.multireplyPostIds.length && !isFlat) {
       arrows = debiki2.renderer.drawArrowsFromParent(
         allPosts, parentPost, this.props.depth, this.props.index,
