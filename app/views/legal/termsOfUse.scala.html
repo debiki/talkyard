@@ -19,7 +19,7 @@
   else s"""("${tpi.companyShortName}")"""
 }
 @companyShortName = @{ tpi.companyShortName orIfEmpty tpi.companyFullName }
-@privacyUrl = @{ routes.LegalController.viewPrivacyPolicyPage.url }
+@privacyUrl = @{ controllers.routes.LegalController.viewPrivacyPolicyPage.url }
 @faqUrl = @{ "/-/there-is-not-yet-any-FAQ-page--sorry" }
 
 @agreesToCcBy = @{ tpi.siteSettings.contribAgreement == ContribAgreement.CcBy3And4 }

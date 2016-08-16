@@ -25,7 +25,6 @@ import com.debiki.core.Prelude._
 import com.debiki.dao.rdb.{RdbDaoFactory, Rdb}
 import com.github.benmanes.caffeine
 import com.zaxxer.hikari.HikariDataSource
-import controllers.routes
 import debiki.DebikiHttp.throwForbidden
 import debiki.Globals.NoStateError
 import debiki.antispam.AntiSpam

@@ -4,7 +4,7 @@ organization := "com.debiki"
 
 version := "0.0.2-SNAPSHOT"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "junit" % "junit" % "4.7",

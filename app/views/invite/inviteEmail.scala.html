@@ -4,7 +4,7 @@
 
 @acceptInviteUrl = @{
   val origin = debiki.Globals.originOf(siteHostname)
-  s"$origin${routes.InviteController.acceptInvite(secretKey)}"
+  s"$origin${controllers.routes.InviteController.acceptInvite(secretKey)}"
 }
 
 <p>Hi,</p>

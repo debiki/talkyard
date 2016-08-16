@@ -25,8 +25,7 @@
 @returnToUrlUnescapedHash = @{
   returnToUrl.map(_.replaceAllLiterally("__dwHash__", "#"))
 }
-
-@createsite.main(tpi, css = css) {
+@views.html.createsite.main(tpi, css = css) {
   <h1>Welcome!</h1>
 
   <br>

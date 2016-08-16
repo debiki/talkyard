@@ -18,7 +18,7 @@
 @(serverAddress: String)(content: Html)
 
 @asset(file: String) = @{
-  routes.Assets.at(path = "/public/res", file)
+  controllers.routes.Assets.at(path = "/public/res", file)
 }
 
 @minMaxCss = @{ "min.css" }

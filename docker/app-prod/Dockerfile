@@ -1,4 +1,4 @@
-FROM java:openjdk-8u77-jre-alpine
+FROM openjdk:8u92-jre-alpine
 
 # Nice to have: (but why telnet not found?)
 RUN apk add --no-cache \

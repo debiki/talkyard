@@ -24,7 +24,7 @@
 
 
 @* For now only, use `createsite.main`. *@
-@createsite.main(tpi, css = css) {
+@views.html.createsite.main(tpi, css = css) {
 
 <h1>Reset Password</h1>
 
@@ -34,7 +34,7 @@
       <br>
       <p>Please specify the email address or username for which to reset the password:</p>
 
-      <form action="@routes.ResetPasswordController.handleResetPasswordForm"
+      <form action="@controllers.routes.ResetPasswordController.handleResetPasswordForm"
           class="form" autocomplete="off" method="POST">
 
         <input name='dw-fi-xsrf' type='hidden' value='@xsrfToken'>

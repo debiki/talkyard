@@ -41,7 +41,7 @@ object ApplicationBuild extends Build {
 
   lazy val debikiTckDao =
     (Project("debiki-tck-dao", file("modules/debiki-tck-dao"))
-    dependsOn(debikiCore ))
+    dependsOn debikiCore)
 
   lazy val debikiDaoRdb =
     (Project("debiki-dao-rdb", file("modules/debiki-dao-rdb"))
@@ -56,7 +56,7 @@ object ApplicationBuild extends Build {
     // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
     "org.postgresql" % "postgresql" % "9.4.1208",  // there's no 9.5 right now
     // HikariCP — "A solid high-performance JDBC connection pool at last"
-    "com.zaxxer" % "HikariCP" % "2.4.5",
+    "com.zaxxer" % "HikariCP" % "2.4.7",
     // We use both a in-the-JVM-memory cache, and Redis:
     "com.github.ben-manes.caffeine" % "caffeine" % "2.2.6",
     "com.github.etaty" %% "rediscala" % "1.6.0",
@@ -66,7 +66,7 @@ object ApplicationBuild extends Build {
     "log4j" % "log4j" % "1.2.17",
     "org.apache.commons" % "commons-email" % "1.3.3",
     "com.google.guava" % "guava" % "13.0.1",
-    "org.jsoup" % "jsoup" % "1.8.2",
+    "org.jsoup" % "jsoup" % "1.9.2",
     // java.nio.file.Files.probeContentType doesn't work in Alpine Linux + JRE 8, so use
     // Tika instead. It'll be useful anyway later if indexing PDF or MS Word docs.
     "org.apache.tika" % "tika-core" % "1.12",
@@ -86,7 +86,7 @@ object ApplicationBuild extends Build {
     "org.scalatestplus" %% "play" % "1.4.0-M4" % "test")
 
 
-  val main = Project(appName, file(".")).enablePlugins(play.PlayScala, BuildInfoPlugin)
+  val main = Project(appName, file(".")).enablePlugins(play.sbt.Play, BuildInfoPlugin)
     .settings(mainSettings: _*)
     .dependsOn(debikiCore % "test->test;compile->compile", debikiDaoRdb)
     .aggregate(debikiCore) // skip debikiDaoRdb for now, because old broken should-delete-them tests
@@ -95,7 +95,7 @@ object ApplicationBuild extends Build {
   def mainSettings = List(
     version := appVersion,
     libraryDependencies ++= appDependencies,
-    scalaVersion := "2.11.7",
+    scalaVersion := "2.11.8",
 
     // Silhouette needs com.atlassian.jwt:jwt-core and jwt-api, but there's a problem:
     // """the problem is that the jwt-lib is hosted on bintray.com and then mirrored to

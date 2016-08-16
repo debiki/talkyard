@@ -1,4 +1,4 @@
-FROM java:openjdk-8u77-jdk-alpine
+FROM openjdk:8u92-jdk-alpine
 
 RUN apk add --no-cache \
   # Required:
@@ -7,7 +7,7 @@ RUN apk add --no-cache \
   # Nice to have: (why telnet not found?)
   tree less wget net-tools bash
 
-ENV ACVERSION 1.3.7
+ENV ACVERSION 1.3.10
 ENV ACTIVATOR activator-$ACVERSION
 
 RUN \
@@ -23,7 +23,7 @@ RUN unzip /tmp/$ACTIVATOR.zip -d /tmp/ && \
     mkdir /opt/ && \
     mv /tmp/activator-$ACVERSION-minimal /opt/typesafe-activator && \
     chmod -R ugo+rw /opt/typesafe-activator/ && \
-    chmod -R ugo+x /opt/typesafe-activator/activator
+    chmod -R ugo+x /opt/typesafe-activator/bin/activator
 
 # Install 'gosu' so we can use it instead of 'su'.
 # For unknown reasons, '  exec su ...' no longer works, but 'exec gosu ...' works fine.
@@ -49,7 +49,7 @@ ENTRYPOINT ["/docker-entrypoint.sh"]
 # Overriden in docker-compose.yml
 ENV PLAY_HEAP_MEMORY_MB 1048
 
-CMD ["/opt/typesafe-activator/activator", \
+CMD ["/opt/typesafe-activator/bin/activator", \
   "-mem $PLAY_HEAP_MEMORY_MB", \
   "-jvm-debug 9999", \
   # see [30PUK42] in app-prod/Dockerfile
