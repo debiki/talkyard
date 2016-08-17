@@ -114,11 +114,22 @@ var RecentTopicsAndNotfs = createComponent({
 
 
 var ChatChannels = createComponent({
+  componentWillUnmount: function() {
+    this.isUnmounted = true;
+  },
+
+  componentWillMount: function() {
+    delete this.isUnmounted;
+  },
+
   createChatChannel: function() {
-    var store: Store = this.props.store;
-    var category = store_getCurrOrUncatCat(store);
-    dieIf(!category, 'EsE4KPE02');
-    editor.editNewForumPage(category.id, PageRole.OpenChat);
+    login.loginIfNeeded(LoginReason.LoginToChat, location.toString(), () => {
+      if (this.isUnmounted) return;
+      var store: Store = this.props.store;
+      var category = store_getCurrOrUncatCat(store);
+      dieIf(!category, 'EsE4KPE02');
+      editor.editNewForumPage(category.id, PageRole.OpenChat);
+    });
   },
 
   render: function() {
@@ -135,8 +146,8 @@ var ChatChannels = createComponent({
     }
     return (
       r.div({ className: 'esWB_Ts' },
-        r.button({ className: 'esWB_CreateB', onClick: this.createChatChannel,
-            title: "Create chat channel" }, '+'),
+        r.button({ className: 'esWB_CreateB', id: 'e2eCreateChatB',
+            onClick: this.createChatChannel, title: "Create chat channel" }, '+'),
         r.h3({}, "Joined Chats"),
         r.ul({},
           topicElems)));
