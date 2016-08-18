@@ -79,6 +79,7 @@ class Globals {
   /** Can be accessed also after the test is done and Play.maybeApplication is None.
     */
   lazy val wasTest = Play.isTest
+  lazy val isProd = Play.isProd
 
   def testsDoneServerGone = Play.isTest && (!isInitialized || Play.maybeApplication.isEmpty)
 

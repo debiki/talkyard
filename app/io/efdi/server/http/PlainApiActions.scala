@@ -24,6 +24,7 @@ import controllers.Utils
 import debiki._
 import debiki.DebikiHttp._
 import debiki.RateLimits.NoRateLimits
+import ed.server._
 import java.{util => ju}
 import play.api._
 import play.{api => p}
@@ -172,8 +173,12 @@ private[http] object PlainApiActions {
           case Some(site.id) =>
             // Fine: this (i.e. 'site') is the superadmin site, so we're allowed to access
             // the superadmin endpoints.
+          case Some(Whatever) =>
+            if (Globals.isProd)
+              throwForbidden("EsE4KS2YR",
+                s"The superadmin site id may not be set to '$Whatever' in prod mode")
           case Some(_) =>
-            throwForbidden("EsE4KGU0", o"""This is site id ${site.id} but
+            throwForbidden("EsE8Y0KR2", o"""This is site id ${site.id} but
                 that's not the superadmin site id""")
           case None =>
             throwForbidden("EsE17KFE2", "No superadmin site id configured")
@@ -182,6 +187,10 @@ private[http] object PlainApiActions {
         Globals.config.superAdmin.hostname match {
           case Some(request.host) =>
             // Fine: we're accessing the superadmin endpoints via the correct hostname.
+          case Some(Whatever) =>
+            if (Globals.isProd)
+              throwForbidden("EsE5GKTS",
+                s"The superadmin hostname may not be set to '$Whatever' in prod mode")
           case Some(superAdminHostname) =>
             throwForbidden(
               "EsE2KPU04", o"""Wrong hostname. Please instead access the super admin area
