@@ -10,7 +10,10 @@
 var $overlay;
 var $image;
 
-function createLightbox() {
+function createLightbox(event) {
+  // In case wrapped in an <a> tag, don't navigate away.
+  event.preventDefault();
+
   // Abort if we're already showing a lightboxed image.
   if ($('.stupid-lightbox-image').length)
     return;

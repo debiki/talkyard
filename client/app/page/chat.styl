@@ -41,6 +41,12 @@ html.es-chat
 .esC_M
   margin-bottom: 12px;
 
+  // This is a simple & good way to prevent large images from almost going full screen
+  // and steal all attention. One can click it to view it full screen.
+  // UX COULD add click-to-view tips?
+  img
+    max-height: 400px;
+
   .dw-p-hd .dw-p-by
     color: #444;
     text-shadow: 1px 0 0 #444; // makes it even bolder

@@ -236,6 +236,7 @@ package object core {
   def REFACTOR = ()       // This code can be refactored. Also search for "[refactor]".
   def RENAME = ()         // This ought to be renamed.
   def COULD_OPTIMIZE = ()
+  def UX = ()             // Usability can be improved.
   def DELETE_LATER = ()   // ... hmm. Rename to CLEANUP.
   def CLEAN_UP = ()       // Unused stuff that should be deleted after a grace period.
 
