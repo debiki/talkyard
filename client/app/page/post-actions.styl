@@ -84,6 +84,14 @@
 .dw-p-as > .dropdown
   float: right;
 
+// Without this, the rightmost action button might float a bit higher up than the others,
+// which get pushed down by contents in the post.
+.esPA
+  & > .dropdown:first-child,
+  & > .dw-a-reply:first-child
+    clear: both;
+
+
 .esDropModal
   .dw-a
     margin: 0 !important;

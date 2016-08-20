@@ -186,7 +186,10 @@ export var PostActions = createComponent({
     }
 
     var replyButton = null;
-    if (!deletedOrCollapsed) {
+    if (store.pageRole === PageRole.MindMap && !isStaffOrOwnPage) {
+      // Currently only staff & the mind map page author may edit a mind map. [7KUE20]
+    }
+    else if (!deletedOrCollapsed) {
       replyButton =
           r.a({ className: 'dw-a dw-a-reply icon-reply', onClick: this.onReplyClick },
             this.makeReplyBtnTitle(post));

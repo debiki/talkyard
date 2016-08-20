@@ -19,6 +19,7 @@ package debiki.dao
 
 import com.debiki.core._
 import com.debiki.core.Prelude._
+import debiki.DebikiHttp._
 import debiki._
 import ed.server.search.{PageAndHits, SearchHit, SearchEngine}
 import io.efdi.server.http._
@@ -367,10 +368,18 @@ class SiteDao(
       throwForbidden2("EsE8YK3W2", "You may not start new topics in this category")
   }
 
-  def throwIfMayNotPostTo(page: Page, author: User)(transaction: SiteTransaction) {
-    throwIfMayNotSeePage(page, Some(author))(transaction)
+  def throwIfMayNotPostTo(page: Page, postAuthor: User)(transaction: SiteTransaction) {
+    throwIfMayNotSeePage(page, Some(postAuthor))(transaction)
     if (!page.role.canHaveReplies)
       throwForbidden2("EsE8YGK42", s"Cannot post to page type ${page.role}")
+
+    // Mind maps can easily get messed up by people posting comments. So, for now, only
+    // allow the page author + staff to add stuff to a mind map. [7KUE20]
+    if (page.role == PageRole.MindMap) {
+      if (postAuthor.id != page.meta.authorId && !postAuthor.isStaff)
+        throwForbidden("EsE6JK4I0", s"Only the page author and staff may edit this mind map")
+    }
+
   }
 
 }
