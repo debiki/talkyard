@@ -3,6 +3,7 @@
 import _ = require('lodash');
 import settings = require('./utils/settings');
 import server = require('./utils/server');
+import addCommandsToBrowser = require('./utils/commands');
 
 server.initOrDie();
 
@@ -12,6 +13,8 @@ if (settings.only) {
 }
 
 var api = { config: {
+
+  debug: settings.debug,
 
   // ==================
   // Specify Test Files
@@ -137,7 +140,14 @@ var api = { config: {
   // Gets executed before test execution begins. At this point you can access to all global
   // variables like `browser`. It is the perfect place to define custom commands.
   before: function (capabilties, specs) {
-    require('./utils/commands');
+    addCommandsToBrowser(global['browser']);
+    if (_.isObject(capabilties)) {
+      var browserNames = _.keys(capabilties);
+      _.each(browserNames, (browserName) => {
+        console.log("Adding custom commands to '" + browserName + "' [EsM4GKT5]");
+        addCommandsToBrowser(global[browserName]);
+      });
+    }
   },
 
   // Hook that gets executed before the suite starts

@@ -38,7 +38,7 @@ describe('all links', function() {
       id: 'fmp',
       role: <PageRole> 7,  // [commonjs] PageRole.Forum
       categoryId: rootCategoryId,
-      authorId: -1,    // [commonjs] SystemUserId
+      authorId: -1,    // [commonjs] SystemUserId  [5KGEP02]
     });
     site.pages.push(forumPage);
 
@@ -65,6 +65,7 @@ describe('all links', function() {
     uncategorizedCategory.parentId = rootCategory.id;
     uncategorizedCategory.name = "Uncatigorized";
     uncategorizedCategory.slug = "uncatigorized";
+    uncategorizedCategory.description = '__uncategorized__';
     site.categories.push(uncategorizedCategory);
 
     var staffCategory = make.categoryWithIdFor(3, forumPage);

@@ -480,10 +480,13 @@ var PasswordLoginDialogContent = createClassAndFactory({
 
     return (
       r.form({},
-        Input({ type: 'text', label: "Username or email:", ref: 'whoInput', onChange: this.clearError }),
-        Input({ type: 'password', label: "Password:", ref: 'passwordInput', onChange: this.clearError }),
+        Input({ type: 'text', label: "Username or email:", ref: 'whoInput',
+            onChange: this.clearError, id: 'e2eUsername' }),
+        Input({ type: 'password', label: "Password:", ref: 'passwordInput',
+            onChange: this.clearError, id: 'e2ePassword' }),
         badPasswordMessage,
-        Button({ onClick: this.doLogin, bsStyle: 'primary' }, "Login" + inOrderTo(this.props.loginReason)),
+        Button({ onClick: this.doLogin, bsStyle: 'primary', id: 'e2eSubmit' },
+          "Login" + inOrderTo(this.props.loginReason)),
         r.br(),
         r.a({ href: debiki.internal.serverOrigin + '/-/reset-password/specify-email',
             target: '_blank', className: 'dw-reset-pswd',

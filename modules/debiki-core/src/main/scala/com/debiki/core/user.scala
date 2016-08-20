@@ -237,7 +237,7 @@ case object User {
   val LowestHumanMemberId = 1
 
   /** Used when things are inserted or updated automatically in the database. */
-  val SystemUserId = -1   // change to +1
+  val SystemUserId = -1   // change to +1  [5KGEP02]
   val SystemUserUsername = "system"
   val SystemUserFullName = "System"
 

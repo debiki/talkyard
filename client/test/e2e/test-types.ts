@@ -3,6 +3,7 @@
 
 
 interface TestSettings {
+  debug: boolean;
   secure: boolean;
   host: string;
   scheme: string;

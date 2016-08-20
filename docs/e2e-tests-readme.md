@@ -38,6 +38,10 @@ Run tests like so:
 
         gulp build-e2e
 
+1. But some tests, e.g. `chat.2browsers.test.ts`, require two browsers. Then use the 2whatever config files, e.g.:
+
+        scripts/wdio target/e2e/wdio.2chrome.conf.js --skip3 --only 'chat.2browsers' --da
+
 
 ### Browsers other than Chrome
 

@@ -27,6 +27,7 @@ settings.scheme = settings.secure ? 'https' : 'http';
 settings.mainSiteOrigin = settings.scheme + '://' + settings.host;
 settings.newSiteDomain = settings.newSiteDomain || settings.host;
 
+settings.debug = args.debug || args.d;
 settings.debugAfterwards = args.debugAfterwards || args.da;
 
 // (The default 10 seconds timeout is not enough. When a fresh Docker JVM & Play Framework

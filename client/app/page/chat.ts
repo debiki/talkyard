@@ -257,7 +257,7 @@ var JoinChatButton = createComponent({
   render: function() {
     return (
       r.div({ className: 'esJoinChat' },
-        Button({ id: 'theJonChatBtn', className: 'esJoinChat_btn',
+        Button({ id: 'theJonChatBtn', className: 'esJoinChat_btn', id: 'e2eJoinChatB',
             onClick: this.joinChannel, bsStyle: 'primary' },
           "Join this chat")));
   }
