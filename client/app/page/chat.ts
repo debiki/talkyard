@@ -243,7 +243,7 @@ var FixedAtBottom = createComponent({
 
 var JoinChatButton = createComponent({
   joinChannel: function() {
-    login.loginIfNeededReturnToHash(LoginReason.LoginToChat, '#theJonChatBtn', () => {
+    login.loginIfNeededReturnToHash(LoginReason.LoginToChat, '#theJoinChatB', () => {
       if (this.props.isChatMember) {
         // Now after having logged in, we know that this user is a channel member already.
         // Need do nothing.
@@ -257,7 +257,7 @@ var JoinChatButton = createComponent({
   render: function() {
     return (
       r.div({ className: 'esJoinChat' },
-        Button({ id: 'theJonChatBtn', className: 'esJoinChat_btn', id: 'e2eJoinChatB',
+        Button({ id: 'theJoinChatB', className: 'esJoinChat_btn',
             onClick: this.joinChannel, bsStyle: 'primary' },
           "Join this chat")));
   }

@@ -90,6 +90,7 @@ case class ReviewTask(
 
   def doneOrGone = completedAt.isDefined || invalidatedAt.isDefined
 
+  def isForBothTitleAndBody = pageId.isDefined
 
   def mergeWithAny(anyOldTask: Option[ReviewTask]): ReviewTask = {
     val oldTask = anyOldTask getOrElse {

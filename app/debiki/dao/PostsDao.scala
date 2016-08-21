@@ -1027,6 +1027,7 @@ trait PostsDao {
 
       // ------ The page
 
+      val isApprovingPageTitle = postNr == PageParts.TitleNr
       val isApprovingPageBody = postNr == PageParts.BodyNr
       val isApprovingNewPost = postBefore.approvedRevisionNr.isEmpty
 
@@ -1055,7 +1056,11 @@ trait PostsDao {
       // ------ Notifications
 
       val notifications =
-        if (isApprovingNewPost) {
+        if (isApprovingPageTitle && isApprovingNewPost) {
+          // Notifications will be generated for the page body, that should be enough?
+          Notifications.None
+        }
+        else if (isApprovingNewPost) {
           NotificationGenerator(transaction).generateForNewPost(page, postAfter)
         }
         else {

@@ -235,6 +235,7 @@ trait PagesDao {
       causedById = author.id,
       createdAt = transaction.currentTime,
       createdAtRevNr = Some(bodyPost.currentRevisionNr),
+      pageId = Some(pageId),
       postId = Some(bodyPost.uniqueId),
       postNr = Some(bodyPost.nr)))
 
@@ -430,6 +431,14 @@ trait PagesDao {
   def deletePagesIfAuth(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
         undelete: Boolean) {
     readWriteTransaction { transaction =>
+      deletePagesImpl(pageIds, deleterId, browserIdData, undelete = false)(transaction)
+    }
+  }
+
+
+  def deletePagesImpl(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
+        undelete: Boolean = false)(transaction: SiteTransaction) {
+
       val deleter = transaction.loadTheUser(deleterId)
       if (!deleter.isStaff)
         throwForbidden("EsE7YKP424_", "Only staff may (un)delete pages")
@@ -463,7 +472,7 @@ trait PagesDao {
         transaction.insertAuditLogEntry(auditLogEntry)
         transaction.indexAllPostsOnPage(pageId)
       }
-    }
+
     pageIds foreach refreshPageInMemCache
   }
 

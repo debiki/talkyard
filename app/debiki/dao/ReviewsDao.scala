@@ -75,15 +75,26 @@ trait ReviewsDao {
         }
         action match {
           case ReviewAction.Accept =>
+            if (task.isForBothTitleAndBody) {
+              // This is for a new page. Approve the title here, and the body in the `if` below.
+              dieIf(!task.postNr.contains(PageParts.BodyNr), "EsE5TK0I2")
+              dieIf(post.isCurrentVersionApproved, "EsE4PK04")
+              approvePostImpl(post.pageId, PageParts.TitleNr, approverId = completedById,
+                transaction)
+            }
             if (!post.isCurrentVersionApproved) {
               approvePostImpl(post.pageId, post.nr, approverId = completedById, transaction)
               perhapsCascadeApproval(post.createdById)(transaction)
             }
           case ReviewAction.DeletePostOrPage =>
-            // Later: if nr = BodyId, & not approved, then delete the whole page
-            // (no one has seen it anyway).
-            deletePostImpl(post.pageId, postNr = post.nr, deletedById = completedById,
-              browserIdData, transaction)
+            if (task.isForBothTitleAndBody) {
+              deletePagesImpl(Seq(task.pageId getOrDie "EsE4K85R2"), deleterId = completedById,
+                  browserIdData)(transaction)
+            }
+            else {
+              deletePostImpl(post.pageId, postNr = post.nr, deletedById = completedById,
+                browserIdData, transaction)
+            }
         }
       }
     }

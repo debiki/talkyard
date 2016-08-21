@@ -75,7 +75,7 @@ var ReviewTask = createComponent({
 
   formatWhatAndWhys: function() {
     var reviewTask: ReviewTask = this.props.reviewTask;
-    var what = "The post below ";
+    var what = reviewTask.pageId ? "The page below " : "The post below ";
     var whys = [];
 
     var post = this.props.reviewTask.post;
@@ -161,7 +161,7 @@ var ReviewTask = createComponent({
     var acceptButton;
     var rejectButton;
     if (this.state.completed || reviewTask.completedAtMs) {
-      acceptButton = r.span({}, " Has been reviewed already.");
+      acceptButton = r.span({}, " Has been reviewed.");
     }
     else if (reviewTask.invalidatedAtMs) {
       // Hmm could improve on this somehow.
@@ -193,6 +193,9 @@ var ReviewTask = createComponent({
     var manyWhysClass = whys.length > 1 ? ' esReviewTask-manyWhys' : '';
     var hereIsThePost = whys.length > 1 ? 'Here it is:' : '';
 
+    var anyPageTitleToReview = !reviewTask.pageId ? null :
+      r.div({ className: 'esRT_TitleToReview' }, reviewTask.pageTitle);
+
     return (
       r.div({ className: 'esReviewTask' + manyWhysClass },
         r.div({},
@@ -203,6 +206,7 @@ var ReviewTask = createComponent({
         r.div({},
           hereIsThePost,
           r.div({ className: 'esReviewTask_it' },
+            anyPageTitleToReview,
             r.div({ dangerouslySetInnerHTML: { __html: safeHtml }}))),
         r.div({ className: 'esReviewTask_btns' },
           openPostButton,

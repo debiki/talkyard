@@ -85,7 +85,7 @@ describe('chat', function() {
     owen.rememberCurrentUrl();
     owen.waitAndClick('.e2eSaveBtn');
     owen.waitForNewUrl();
-    owen.waitAndClick('#e2eJoinChatB');
+    owen.waitAndClick('#theJoinChatB');
   });
 
   it("Owen writes a chat message", function() {
@@ -101,7 +101,7 @@ describe('chat', function() {
   });
 
   it("Maria joins the chat topic", function() {
-    maria.waitAndClick('#e2eJoinChatB');
+    maria.waitAndClick('#theJoinChatB');
     mariasPages.loginDialog.loginWithPassword({ username: 'maria', password: 'publicMaria' });
   });
 

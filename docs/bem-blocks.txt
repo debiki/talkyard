@@ -47,6 +47,8 @@ esP_B           = post body (the actual text)
 
 esPA            = post actions (actually located outside the post (esP) there fore esPA not esP_A)
 
+esRT            = review task
+
 esTs            = page/post tags
 
 esTg            = a single tag
