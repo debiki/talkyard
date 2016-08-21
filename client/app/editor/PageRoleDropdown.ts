@@ -91,7 +91,41 @@ export var PageRoleDropdown = createComponent({
       Button({ onClick: this.open, ref: 'dropdownButton', className: 'esTopicType_dropdown' },
         pageRole_toIconString(pageRole), ' ', r.span({ className: 'caret' }));
 
-    var wikiMindMap = !complicated || !showAllOptions || !isStaff(me) ? false :
+    var discussionOption =
+      ExplainingListItem({ onSelect: this.onSelect,
+        activeEventKey: pageRole, eventKey: PageRole.Discussion,
+        title: PageRole_Discussion_IconString,
+        text: "A discussion about something." });
+
+    // HACK bjj... wants only Discussion & MindMap. Later, COULD add a show-only-these-
+    // topic-types category & site setting, instead of hardcoding one site settings here.
+    var isBjjNotStaff = debiki.siteId === '12' && !isStaff(me);
+
+    var questionOption = isBjjNotStaff ? null :
+      ExplainingListItem({ onSelect: this.onSelect,
+        activeEventKey: pageRole, eventKey: PageRole.Question,
+        title: PageRole_Question_IconString,
+        text: r.span({}, "One answer can be marked as the accepted answer.") });
+
+    var problemOption = isBjjNotStaff ? null :
+      ExplainingListItem({ onSelect: this.onSelect,
+        activeEventKey: pageRole, eventKey: PageRole.Problem,
+        title: PageRole_Problem_IconString,
+        text: "If something is broken or doesn't work. Can be marked as fixed/solved." });
+
+    var ideaOption = isBjjNotStaff ? null :
+      ExplainingListItem({ onSelect: this.onSelect,
+        activeEventKey: pageRole, eventKey: PageRole.Idea,
+        title: PageRole_Idea_IconString,
+        text: "A suggestion. Can be marked as done/implemented." });
+
+    var chatOption = isBjjNotStaff ? null :
+      ExplainingListItem({ onSelect: this.onSelect,
+        activeEventKey: pageRole, eventKey: PageRole.OpenChat,
+        title: PageRole_Chat_IconString,
+        text: "A possibly never-ending conversation." });
+
+    var wikiMindMap = !complicated ? false :
       ExplainingListItem({ onSelect: this.onSelect,
         activeEventKey: pageRole, eventKey: PageRole.MindMap,
         title: PageRole_MindMap_IconString,
@@ -153,36 +187,18 @@ export var PageRoleDropdown = createComponent({
           atX: state.buttonX, atY: state.buttonY, ref: 'dropdownModal' },
         r.div({ className: 'esDropModal_header'}, "Select topic type:"),
         r.ul({ className: 'esTopicType' },
-          ExplainingListItem({ onSelect: this.onSelect,
-            activeEventKey: pageRole, eventKey: PageRole.Discussion,
-            title: PageRole_Discussion_IconString,
-            text: "A discussion about something." }),
 
-          ExplainingListItem({ onSelect: this.onSelect,
-            activeEventKey: pageRole, eventKey: PageRole.Question,
-            title: PageRole_Question_IconString,
-            text: r.span({}, "One answer can be marked as the accepted answer.") }),
-
-          ExplainingListItem({ onSelect: this.onSelect,
-            activeEventKey: pageRole, eventKey: PageRole.Problem,
-            title: PageRole_Problem_IconString,
-            text: "If something is broken or doesn't work. Can be marked as fixed/solved." }),
-
-          ExplainingListItem({ onSelect: this.onSelect,
-            activeEventKey: pageRole, eventKey: PageRole.Idea,
-            title: PageRole_Idea_IconString,
-            text: "A suggestion. Can be marked as done/implemented." }),
-
-          ExplainingListItem({ onSelect: this.onSelect,
-            activeEventKey: pageRole, eventKey: PageRole.OpenChat,
-            title: PageRole_Chat_IconString,
-            text: "A possibly never-ending conversation." }),
+          discussionOption,
+          questionOption,
+          problemOption,
+          ideaOption,
+          chatOption,
+          wikiMindMap,
 
           showMore,
 
           staffOnlyDivider,
 
-          wikiMindMap,
           todoOption,
           privateChatOption,
 

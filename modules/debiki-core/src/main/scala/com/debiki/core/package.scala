@@ -237,6 +237,7 @@ package object core {
   def RENAME = ()         // This ought to be renamed.
   def COULD_OPTIMIZE = ()
   def UX = ()             // Usability can be improved.
+  def HACK = ()           // Quick crazy fix, probably should be redone later in a better way.
   def DELETE_LATER = ()   // ... hmm. Rename to CLEANUP.
   def CLEAN_UP = ()       // Unused stuff that should be deleted after a grace period.
 
