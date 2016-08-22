@@ -113,6 +113,22 @@ object ForumController extends mvc.Controller {
   }
 
 
+  /** Later, I'll add about user pages? About tag? So category-id is optional, might
+    * be user-id or tag-id instead.
+    */
+  def redirectToAboutPage(categoryId: Option[CategoryId]) = StaffGetAction { request =>
+    val pageId =
+      categoryId map { id =>
+        request.dao.loadAboutCategoryPageId(id) getOrElse {
+          throwNotFound("EsE5GK2F7", s"No about page found for category $categoryId")
+        }
+      } getOrElse {
+        throwBadRequest("EsE7KPE0", "No category id")
+      }
+    DebikiHttp.throwTemporaryRedirect("/-" + pageId)
+  }
+
+
   def listTopics(categoryId: String) = GetAction { request =>
     val categoryIdInt: CategoryId = Try(categoryId.toInt) getOrElse throwBadReq(
       "DwE4KG08", "Bat category id")

@@ -71,6 +71,7 @@ trait SiteTransaction {
   def nextCategoryId(): Int
   def insertCategoryMarkSectionPageStale(category: Category)
   def updateCategoryMarkSectionPageStale(category: Category)
+  def loadAboutCategoryPageId(categoryId: CategoryId): Option[PageId]
 
   def loadPost(uniquePostId: UniquePostId): Option[Post]
   def loadThePost(uniquePostId: UniquePostId): Post =

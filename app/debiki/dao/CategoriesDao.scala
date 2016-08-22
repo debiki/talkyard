@@ -145,6 +145,11 @@ trait CategoriesDao {
   }
 
 
+  def loadAboutCategoryPageId(categoryId: CategoryId): Option[PageId] = {
+    readOnlyTransaction(_.loadAboutCategoryPageId(categoryId))
+  }
+
+
   private def loadRootCategory(pageId: PageId): Option[Category] = {
     val categoriesById = loadBuildRememberCategoryMaps()._1
     for ((categoryId, category) <- categoriesById) {

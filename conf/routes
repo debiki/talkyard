@@ -137,6 +137,8 @@ GET   /-/list-categories-topics controllers.ForumController.listCategoriesAndTop
 POST  /-/save-category          controllers.ForumController.saveCategory
 GET   /-/load-category          controllers.ForumController.loadCategory(id)
 
+GET   /-/redir-to-about         controllers.ForumController.redirectToAboutPage(categoryId: Option[Int])
+
 POST  /-/create-page            controllers.PageController.createPage
 POST  /-/cycle-page-done        controllers.PageController.cyclePageDone
 POST  /-/toggle-page-closed     controllers.PageController.togglePageClosed

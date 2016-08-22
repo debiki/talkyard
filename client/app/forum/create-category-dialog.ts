@@ -185,6 +185,15 @@ var EditCategoryDialog = createClassAndFactory({
             value: this.state.name, onChange: this.onNameChanged,
             help: "Keep it short, only one word, if possible." });
 
+    var editDescriptionLink =
+      r.div({ className: 'form-group' },
+        r.label({ className: 'control-label' }, "Description"),
+        r.div({},
+          r.a({ href: linkToRedirToAboutCategoryPage(this.state.categoryId), target: '_blank' },
+            "Edit description ", r.span({ className: 'icon-link-ext' }))),
+        r.span({ className: 'help-block' },
+          "Opens the category description page. Edit the first paragraph on that page."));
+
     var topicTypes = [   // [i18n]
         { value: PageRole.Question, label: 'Question' },
         { value: PageRole.Problem, label: 'Problem' },
@@ -259,6 +268,7 @@ var EditCategoryDialog = createClassAndFactory({
         ? r.div({}, "Loading...")
         : r.div({},
             nameInput,
+            editDescriptionLink,
             defaultTopicTypeInput,
             isDefaultInput,
             slugInput,

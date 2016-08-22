@@ -71,6 +71,11 @@ export function linkToNotificationSource(notf: Notification): string {
 }
 
 
+export function linkToRedirToAboutCategoryPage(categoryId: CategoryId): string {
+  return '/-/redir-to-about?categoryId=' + categoryId;
+}
+
+
 export function linkToTermsOfUse(): string {
   return '/-/terms-of-use';
 }
