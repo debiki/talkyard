@@ -75,14 +75,17 @@ trait ReviewsDao {
         }
         action match {
           case ReviewAction.Accept =>
-            if (task.isForBothTitleAndBody) {
-              // This is for a new page. Approve the title here, and the body in the `if` below.
-              dieIf(!task.postNr.contains(PageParts.BodyNr), "EsE5TK0I2")
-              dieIf(post.isCurrentVersionApproved, "EsE4PK04")
-              approvePostImpl(post.pageId, PageParts.TitleNr, approverId = completedById,
-                transaction)
+            if (post.isCurrentVersionApproved) {
+              // The System user has apparently approved the post already. We're reviewing
+              // the post, after it's been shown already.
             }
-            if (!post.isCurrentVersionApproved) {
+            else {
+              if (task.isForBothTitleAndBody) {
+                // This is for a new page. Approve the title here, and the body in the `if` below.
+                dieIf(!task.postNr.contains(PageParts.BodyNr), "EsE5TK0I2")
+                approvePostImpl(post.pageId, PageParts.TitleNr, approverId = completedById,
+                  transaction)
+              }
               approvePostImpl(post.pageId, post.nr, approverId = completedById, transaction)
               perhapsCascadeApproval(post.createdById)(transaction)
             }

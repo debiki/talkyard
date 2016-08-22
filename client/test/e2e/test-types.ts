@@ -84,7 +84,7 @@ interface TestCategory {  // try to merge with Category in model.ts?
   id: number;
   sectionPageId: string;
   parentId?: number;
-  defaultChildId?: number;
+  defaultCategoryId?: number;
   name: string;
   slug: string;
   position?: number;

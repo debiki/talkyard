@@ -201,8 +201,8 @@ trait CategoriesDao {
       siblings.append(category)
     }
 
-    val rootCategory = categoriesById.values.find(_.isRoot).getOrDie("EsE4KEG02")
-    defaultCategoryId = rootCategory.defaultCategoryId getOrDie "EsE5GKE02"
+    val anyRoot = categoriesById.values.find(_.isRoot)
+    defaultCategoryId = anyRoot.flatMap(_.defaultCategoryId) getOrElse NoCategoryId
     (categoriesById, categoriesByParentId, defaultCategoryId)
   }
 

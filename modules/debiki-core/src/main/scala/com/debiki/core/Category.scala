@@ -48,7 +48,8 @@ case class Category(
   require(slug.length <= MaxSlugLength, "EsE4ZXW2")
   require(name.nonEmpty, "EsE8GKP6")
   require(name.length <= MaxNameLength, "EsE2KPE8")
-  require(!isRoot || defaultCategoryId.isDefined, "EsE7GJIK10")
+  require(!isRoot || defaultCategoryId.isDefined,
+    s"No defult category specified for root category '$name' with id $id [EsE7GJIK10]")
   require(!description.exists(_.isEmpty), "EsE2KPU7")
   require(!description.exists(_.length > MaxDescriptionLength), "EsE2PFU4")
   require(updatedAt.getTime >= createdAt.getTime, "EsE8UF9")

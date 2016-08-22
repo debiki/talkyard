@@ -60,7 +60,7 @@ describe('all links', function() {
     }));
 
     var rootCategory = make.rootCategoryWithIdFor(rootCategoryId, forumPage);
-    rootCategory.defaultChildId = 2;
+    rootCategory.defaultCategoryId = 2;
     site.categories.push(rootCategory);
 
     var uncategorizedCategory = make.categoryWithIdFor(2, forumPage);

@@ -142,6 +142,12 @@ var api = { config: {
   before: function (capabilties, specs) {
     addCommandsToBrowser(global['browser']);
     if (_.isObject(capabilties)) {
+      if (capabilties['browserName']) {
+        // The keys are not browser names, but browser properties. This happens if capabilities =
+        // [{ browserName: 'chrome' }], i.e. one single browser, instead of
+        // { browserA: { browserName: ... }, browserB: { ... }}, i.e. many browsers.
+        return;
+      }
       var browserNames = _.keys(capabilties);
       _.each(browserNames, (browserName) => {
         console.log("Adding custom commands to '" + browserName + "' [EsM4GKT5]");

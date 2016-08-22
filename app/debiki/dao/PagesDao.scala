@@ -431,7 +431,7 @@ trait PagesDao {
   def deletePagesIfAuth(pageIds: Seq[PageId], deleterId: UserId, browserIdData: BrowserIdData,
         undelete: Boolean) {
     readWriteTransaction { transaction =>
-      deletePagesImpl(pageIds, deleterId, browserIdData, undelete = false)(transaction)
+      deletePagesImpl(pageIds, deleterId, browserIdData, undelete = undelete)(transaction)
     }
   }
 
