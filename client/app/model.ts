@@ -229,7 +229,7 @@ interface Category {
   unlisted?: boolean;
   staffOnly?: boolean;
   onlyStaffMayCreateTopics?: boolean;
-  isTheUncategorizedCategory?: boolean;
+  isDefaultCategory?: boolean;
   isForumItself?: boolean;
 }
 

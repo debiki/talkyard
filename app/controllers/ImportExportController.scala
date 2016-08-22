@@ -362,6 +362,7 @@ object ImportExportController extends mvc.Controller {
         id = id,
         sectionPageId = readString(jsObj, "sectionPageId"),
         parentId = readOptInt(jsObj, "parentId"),
+        defaultCategoryId = readOptInt(jsObj, "defaultCategoryId"),
         name = readString(jsObj, "name"),
         slug = readString(jsObj, "slug"),
         position = readOptInt(jsObj, "position") getOrElse Category.DefaultPosition,

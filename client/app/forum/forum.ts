@@ -315,9 +315,9 @@ var ForumButtons = createComponent({
     });
   },
 
-  findTheUncategorizedCategory: function() {
+  findTheDefaultCategory: function() {
     return _.find(this.props.categories, (category: Category) => {
-        return category.isTheUncategorizedCategory;
+        return category.isDefaultCategory;
     });
   },
 
@@ -413,7 +413,7 @@ var ForumButtons = createComponent({
     login.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       var category: Category = this.props.activeCategory;
       if (category.isForumItself) {
-        category = this.findTheUncategorizedCategory();
+        category = this.findTheDefaultCategory();
         dieIf(!category, "No Uncategorized category [DwE5GKY8]");
       }
       var newTopicTypes = category.newTopicTypes || [];
@@ -1107,6 +1107,7 @@ var CategoryRow = createComponent({
 
   render: function() {
     var store: Store = this.props.store;
+    var me: Myself = store.me;
     var category: Category = this.props.category;
     var recentTopicRows = category.recentTopics.map((topic: Topic) => {
       var pinIconClass = topic.pinWhere ? ' icon-pin' : '';
@@ -1121,13 +1122,12 @@ var CategoryRow = createComponent({
               prettyLetterTimeAgo(topic.bumpedEpoch || topic.createdEpoch)))));
     });
 
-    var description = category.isTheUncategorizedCategory
-        ? null
-        : r.p({ className: 'forum-description' }, category.description);
-
     // This will briefly highlight a newly created category.
-    var isNewClass = this.props.category.slug === store.newCategorySlug ?
+    var isNewClass = category.slug === store.newCategorySlug ?
       ' esForum_cats_cat-new' : '';
+
+    var isDefault = category.isDefaultCategory && isStaff(me) ?
+        r.small({}, " (default category)") : null;
 
     return (
       r.tr({ className: 'esForum_cats_cat' + isNewClass },
@@ -1136,8 +1136,8 @@ var CategoryRow = createComponent({
             Link({ to: {
                 pathname: store.pagePath.value + RoutePathLatest + '/' + this.props.category.slug,
                 query: this.props.location.query }, className: 'forum-title' },
-              category.name)),
-          description),
+              category.name, isDefault)),
+          r.p({ className: 'forum-description' }, category.description)),
         r.td({},  // class to esForum_cats_cat_topics?
           r.table({ className: 'topic-table-excerpt table table-condensed' },
             r.tbody({},

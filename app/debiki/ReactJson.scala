@@ -632,6 +632,7 @@ object ReactJson {
 
     val rootCategory = request.dao.loadRootCategory(categoryId).getOrDie(
       "EsE4YK8F2", s"Category $categoryId has no root category")
+    val defaultCategoryId = rootCategory.defaultCategoryId getOrDie "EsE4GKR47"
 
     // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
     // (request.dao might start a new transaction)
@@ -640,7 +641,7 @@ object ReactJson {
 
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
-      categoryJson(category)
+      makeCategoryJson(category, category.id == defaultCategoryId)
     })
 
     val (topics, pageStuffById) =
@@ -811,17 +812,18 @@ object ReactJson {
 
   def categoriesJson(sectionId: PageId, isStaff: Boolean, restrictedOnly: Boolean, dao: SiteDao)
         : JsArray = {
-    val categories: Seq[Category] = dao.listSectionCategories(sectionId, isStaff = isStaff,
+    val (categories, defaultCategoryId) = dao.listSectionCategories(sectionId, isStaff = isStaff,
       restrictedOnly = restrictedOnly)
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
-      categoryJson(category)
+      makeCategoryJson(category, category.id == defaultCategoryId)
     })
     categoriesJson
   }
 
 
-  def categoryJson(category: Category, recentTopicsJson: Seq[JsObject] = null) = {
+  def makeCategoryJson(category: Category, isDefaultCategory: Boolean,
+        recentTopicsJson: Seq[JsObject] = null) = {
     var json = Json.obj(
       "id" -> category.id,
       "name" -> category.name,
@@ -839,8 +841,8 @@ object ReactJson {
     if (recentTopicsJson ne null) {
       json += "recentTopics" -> JsArray(recentTopicsJson)
     }
-    if (category.isTheUncategorizedCategory) {
-      json += "isTheUncategorizedCategory" -> JsBoolean(true)
+    if (isDefaultCategory) {
+      json += "isDefaultCategory" -> JsBoolean(true)
     }
     json
   }

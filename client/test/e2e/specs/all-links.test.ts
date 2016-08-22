@@ -32,6 +32,7 @@ describe('all links', function() {
 
     // later?: site.pagePaths.push(make.path('/', 'fmp'));
 
+    // Dupl test code below [6FKR4D0]
     var rootCategoryId = 1;
 
     var forumPage = make.page({
@@ -59,13 +60,14 @@ describe('all links', function() {
     }));
 
     var rootCategory = make.rootCategoryWithIdFor(rootCategoryId, forumPage);
+    rootCategory.defaultChildId = 2;
     site.categories.push(rootCategory);
 
     var uncategorizedCategory = make.categoryWithIdFor(2, forumPage);
     uncategorizedCategory.parentId = rootCategory.id;
     uncategorizedCategory.name = "Uncatigorized";
     uncategorizedCategory.slug = "uncatigorized";
-    uncategorizedCategory.description = '__uncategorized__';
+    uncategorizedCategory.description = "The uncategorized category";
     site.categories.push(uncategorizedCategory);
 
     var staffCategory = make.categoryWithIdFor(3, forumPage);

@@ -126,7 +126,7 @@ var ChatChannels = createComponent({
     login.loginIfNeeded(LoginReason.LoginToChat, location.toString(), () => {
       if (this.isUnmounted) return;
       var store: Store = this.props.store;
-      var category = store_getCurrOrUncatCat(store);
+      var category = store_getCurrOrDefaultCat(store);
       dieIf(!category, 'EsE4KPE02');
       editor.editNewForumPage(category.id, PageRole.OpenChat);
     });

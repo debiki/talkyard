@@ -84,11 +84,13 @@ interface TestCategory {  // try to merge with Category in model.ts?
   id: number;
   sectionPageId: string;
   parentId?: number;
+  defaultChildId?: number;
   name: string;
   slug: string;
   position?: number;
   description?: string;
   newTopicTypes?: string;
+  defaultTopicType: number;
   createdAtMs: number;
   updatedAtMs: number;
   lockedAtMs?: number;

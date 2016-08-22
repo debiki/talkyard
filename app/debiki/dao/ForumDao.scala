@@ -70,7 +70,7 @@ trait ForumDao {
   private def createDefaultCategoriesAndTopics(forumPageId: PageId, rootCategoryId: CategoryId,
         browserIdData: BrowserIdData, transaction: SiteTransaction): CreateForumResult = {
 
-    val uncategorizedCategoryId = rootCategoryId + 1
+    val defaultCategoryId = rootCategoryId + 1
     val staffCategoryId = rootCategoryId + 2
 
     // Create forum root category.
@@ -78,6 +78,7 @@ trait ForumDao {
       id = rootCategoryId,
       sectionPageId = forumPageId,
       parentId = None,
+      defaultCategoryId = Some(defaultCategoryId),
       name = RootCategoryName,
       slug = RootCategorySlug,
       position = 1,
@@ -89,15 +90,16 @@ trait ForumDao {
       createdAt = transaction.currentTime,
       updatedAt = transaction.currentTime))
 
-    // Create the Uncategorized category.
+    // Create the default category.
     transaction.insertCategoryMarkSectionPageStale(Category(
-      id = uncategorizedCategoryId,
+      id = defaultCategoryId,
       sectionPageId = forumPageId,
       parentId = Some(rootCategoryId),
-      name = UncategorizedName,
-      slug = UncategorizedSlug,
-      position = UncategorizedPosition,
-      description = Some(Category.UncategorizedDescription),
+      defaultCategoryId = None,
+      name = DefaultCategoryName,
+      slug = DefaultCategorySlug,
+      position = DefaultCategoryPosition,
+      description = Some("New topics get placed here, unless another category is selected."),
       newTopicTypes = immutable.Seq(PageRole.Discussion),
       unlisted = false,
       staffOnly = false,
@@ -110,6 +112,7 @@ trait ForumDao {
       id = staffCategoryId,
       sectionPageId = forumPageId,
       parentId = Some(rootCategoryId),
+      defaultCategoryId = None,
       name = "Staff",
       slug = "staff",
       position = Category.DefaultPosition + 10,
@@ -123,7 +126,7 @@ trait ForumDao {
 
     // Create forum welcome topic.
     createPageImpl(
-      PageRole.Discussion, PageStatus.Published, anyCategoryId = Some(uncategorizedCategoryId),
+      PageRole.Discussion, PageStatus.Published, anyCategoryId = Some(defaultCategoryId),
       anyFolder = None, anySlug = Some("welcome"), showId = true,
       titleSource = WelcomeTopicTitle,
       titleHtmlSanitized = WelcomeTopicTitle,
@@ -134,16 +137,16 @@ trait ForumDao {
       Who(SystemUserId, browserIdData),
       transaction)
 
-    CreateForumResult(null, uncategorizedCategoryId)
+    CreateForumResult(null, defaultCategoryId)
   }
 
 
   private val RootCategoryName = "(Root Category)"  // In Typescript test code too [7UKPX5]
   private val RootCategorySlug = "(root-category)"  //
 
-  private val UncategorizedName = "Uncategorized"
-  private val UncategorizedSlug = "uncategorized"
-  private val UncategorizedPosition = 1000
+  private val DefaultCategoryName = "Uncategorized"
+  private val DefaultCategorySlug = "uncategorized"
+  private val DefaultCategoryPosition = 1000
 
 }
 

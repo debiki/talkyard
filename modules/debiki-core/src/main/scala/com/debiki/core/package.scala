@@ -41,6 +41,7 @@ package object core {
   type PageVersion = Int
 
   type CategoryId = Int
+  val NoCategoryId = 0
 
   type SiteId = String
 

@@ -33,20 +33,22 @@ trait CategoriesDao {
   // The dao shouldn't live past the current HTTP request anyway.
   private var categoriesById: Map[CategoryId, Category] = null
   private var categoriesByParentId: mutable.HashMap[CategoryId, ArrayBuffer[Category]] = null
+  private var defaultCategoryId = NoCategoryId
 
 
   /** List categories in the site section (forum/blog/whatever) at page pageId.
     * Sorts by Category.position (which doesn't make much sense if there are sub categories).
-    * Excludes the root of the category tree.
+    * Returns (categories, default-category-id).
     */
   def listSectionCategories(pageId: PageId, isStaff: Boolean, restrictedOnly: Boolean)
-        : Seq[Category] = {
+        : (Seq[Category], CategoryId) = {
     loadRootCategory(pageId) match {
       case Some(rootCategory) =>
-        listCategoriesInTree(rootCategory.id, includeRoot = false,
+        val categories = listCategoriesInTree(rootCategory.id, includeRoot = false,
           isStaff = isStaff, restrictedOnly = restrictedOnly).sortBy(_.position)
+        (categories, rootCategory.defaultCategoryId getOrDie "EsE4GK02")
       case None =>
-        Nil
+        (Nil, NoCategoryId)
     }
   }
 
@@ -112,11 +114,17 @@ trait CategoriesDao {
   }
 
 
-  def loadCategory(id: CategoryId): Option[Category] =
-    loadBuildRememberCategoryMaps()._1.get(id)
+  /** Returns (category, is-default).
+    */
+  def loadCategory(id: CategoryId): Option[(Category, Boolean)] = {
+    val catsStuff = loadBuildRememberCategoryMaps()
+    val anyCategory = catsStuff._1.get(id)
+    val defaultId = catsStuff._3
+    anyCategory.map(category => (category, category.id == defaultId))
+  }
 
 
-  def loadTheCategory(id: CategoryId): Category =
+  def loadTheCategory(id: CategoryId): (Category, Boolean) =
     loadCategory(id) getOrElse throwNotFound("DwE8YUF0", s"No category with id $id")
 
 
@@ -153,7 +161,7 @@ trait CategoriesDao {
       // COULD log cycle error
       return
     }
-    val (categoriesById, categoriesByParentId) = loadBuildRememberCategoryMaps()
+    val (categoriesById, categoriesByParentId, defaultId) = loadBuildRememberCategoryMaps()
     val startCategory = categoriesById.getOrElse(rootCategoryId, {
       return
     })
@@ -176,9 +184,9 @@ trait CategoriesDao {
 
 
   private def loadBuildRememberCategoryMaps(): (Map[CategoryId, Category],
-        mutable.HashMap[CategoryId, ArrayBuffer[Category]]) = {
+        mutable.HashMap[CategoryId, ArrayBuffer[Category]], CategoryId) = {
     if (categoriesById ne null)
-      return (categoriesById, categoriesByParentId)
+      return (categoriesById, categoriesByParentId, defaultCategoryId)
 
     categoriesByParentId = mutable.HashMap[CategoryId, ArrayBuffer[Category]]()
     categoriesById = loadCategoryMap()
@@ -188,7 +196,9 @@ trait CategoriesDao {
       siblings.append(category)
     }
 
-    (categoriesById, categoriesByParentId)
+    val rootCategory = categoriesById.values.find(_.isRoot).getOrDie("EsE4KEG02")
+    defaultCategoryId = rootCategory.defaultCategoryId getOrDie "EsE5GKE02"
+    (categoriesById, categoriesByParentId, defaultCategoryId)
   }
 
   protected def loadCategoryMap() =
@@ -212,6 +222,11 @@ trait CategoriesDao {
         staffOnly = editCategoryData.staffOnly,
         onlyStaffMayCreateTopics = editCategoryData.onlyStaffMayCreateTopics,
         updatedAt = transaction.currentTime)
+
+      if (editCategoryData.shallBeDefaultCategory) {
+        setDefaultCategory(editedCategory, transaction)
+      }
+
       transaction.updateCategoryMarkSectionPageStale(editedCategory)
       (oldCategory, editedCategory)
       // COULD create audit log entry
@@ -256,6 +271,10 @@ trait CategoriesDao {
         pinWhere = Some(PinPageWhere.InCategory),
         byWho, transaction)
 
+      if (newCategoryData.shallBeDefaultCategory) {
+        setDefaultCategory(category, transaction)
+      }
+
       // COULD create audit log entry
       (category, aboutPagePath)
     }
@@ -263,6 +282,17 @@ trait CategoriesDao {
     // (in JSON in the cached HTML).
     refreshPageInMemCache(result._1.sectionPageId)
     result
+  }
+
+
+  private def setDefaultCategory(category: Category, transaction: SiteTransaction) {
+    val rootCategoryId = category.parentId getOrDie "EsE2PK8O4"
+    val rootCategory = transaction.loadCategory(rootCategoryId) getOrDie "EsE5KG02"
+    if (rootCategory.defaultCategoryId.contains(category.id))
+      return
+    val rootWithNewDefault = rootCategory.copy(defaultCategoryId = Some(category.id))
+    // (The section page will be marked as stale anyway, doesn't matter if we do it here too.)
+    transaction.updateCategoryMarkSectionPageStale(rootWithNewDefault)
   }
 
 

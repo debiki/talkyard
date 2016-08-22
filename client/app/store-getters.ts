@@ -132,15 +132,15 @@ export function store_canSelectPosts(store: Store): boolean {
 }
 
 
-// Returns the current category, or if none, the Uncategorized category.
+// Returns the current category, or if none, the default category.
 //
-export function store_getCurrOrUncatCat(store: Store): Category {
+export function store_getCurrOrDefaultCat(store: Store): Category {
   var currCat = _.find(store.categories, (c: Category) => c.id === store.categoryId);
   if (currCat)
     return currCat;
 
-  // Apparently we're showing all categories. Find the uncategorized category instead.
-  return _.find(store.categories, (c: Category) => c.isTheUncategorizedCategory);
+  // Apparently we're showing all categories, haven't selected any specific category.
+  return _.find(store.categories, (c: Category) => c.isDefaultCategory);
 }
 
 

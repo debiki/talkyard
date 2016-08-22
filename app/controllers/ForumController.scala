@@ -52,8 +52,8 @@ object ForumController extends mvc.Controller {
 
   def loadCategory(id: String) = StaffGetAction { request =>
     val categoryId = Try(id.toInt) getOrElse throwBadRequest("DwE6PU1", "Invalid category id")
-    val category = request.dao.loadTheCategory(categoryId)
-    val json = categoryToJson(category, recentTopics = Nil, pageStuffById = Map.empty)
+    val (category, isDefault) = request.dao.loadTheCategory(categoryId)
+    val json = categoryToJson(category, isDefault, recentTopics = Nil, pageStuffById = Map.empty)
     OkSafeJson(json)
   }
 
@@ -68,6 +68,8 @@ object ForumController extends mvc.Controller {
     val defaultTopicType = PageRole.fromInt(defaultTopicTypeInt) getOrElse throwBadReq(
         "DwE7KUP3", s"Bad new topic type int: $defaultTopicTypeInt")
 
+    val shallBeDefaultCategory = (body \ "isDefault").as[Boolean]
+
     val categoryData = CreateEditCategoryData(
       anyId = (body \ "categoryId").asOpt[CategoryId],
       sectionPageId = sectionPageId,
@@ -76,6 +78,7 @@ object ForumController extends mvc.Controller {
       slug = (body \ "slug").as[String],
       position = (body \ "position").as[Int],
       newTopicTypes = List(defaultTopicType),
+      shallBeDefaultCategory = shallBeDefaultCategory,
       unlisted = unlisted,
       staffOnly = staffOnly,
       onlyStaffMayCreateTopics = onlyStaffMayCreateTopics)
@@ -124,17 +127,18 @@ object ForumController extends mvc.Controller {
 
 
   def listCategories(forumId: PageId) = GetAction { request =>
-    val categories = request.dao.listSectionCategories(forumId,
+    val (categories, defaultCategoryId) = request.dao.listSectionCategories(forumId,
       isStaff = request.isStaff, restrictedOnly = false)
     val json = JsArray(categories.map({ category =>
-      categoryToJson(category, recentTopics = Nil, pageStuffById = Map.empty)
+      categoryToJson(category, category.id == defaultCategoryId, recentTopics = Nil,
+          pageStuffById = Map.empty)
     }))
     OkSafeJson(json)
   }
 
 
   def listCategoriesAndTopics(forumId: PageId) = GetAction { request =>
-    val categories = request.dao.listSectionCategories(forumId,
+    val (categories, defaultCategoryId) = request.dao.listSectionCategories(forumId,
       isStaff = request.isStaff, restrictedOnly = false)
 
     val recentTopicsByCategoryId =
@@ -155,7 +159,8 @@ object ForumController extends mvc.Controller {
       request.dao.loadPageStuff(pageIds)
 
     val json = JsArray(categories.map({ category =>
-      categoryToJson(category, recentTopicsByCategoryId(category.id), pageStuffById)
+      categoryToJson(category, category.id == defaultCategoryId,
+          recentTopicsByCategoryId(category.id), pageStuffById)
     }))
 
     OkSafeJson(json)
@@ -236,12 +241,13 @@ object ForumController extends mvc.Controller {
     }
 
 
-  private def categoryToJson(category: Category, recentTopics: Seq[PagePathAndMeta],
-      pageStuffById: Map[PageId, debiki.dao.PageStuff]): JsObject = {
+  private def categoryToJson(category: Category, isDefault: Boolean,
+        recentTopics: Seq[PagePathAndMeta], pageStuffById: Map[PageId, debiki.dao.PageStuff])
+        : JsObject = {
     require(recentTopics.isEmpty || pageStuffById.nonEmpty, "DwE8QKU2")
     val topicsNoAboutCategoryPage = recentTopics.filter(_.pageRole != PageRole.AboutCategory)
     val recentTopicsJson = topicsNoAboutCategoryPage.map(topicToJson(_, pageStuffById))
-    ReactJson.categoryJson(category, recentTopicsJson)
+    ReactJson.makeCategoryJson(category, isDefault, recentTopicsJson)
   }
 
 

@@ -26,6 +26,7 @@ case class Category(
   id: CategoryId,
   sectionPageId: PageId,
   parentId: Option[CategoryId],
+  defaultCategoryId: Option[CategoryId],
   name: String,
   slug: String,
   position: Int,
@@ -47,6 +48,7 @@ case class Category(
   require(slug.length <= MaxSlugLength, "EsE4ZXW2")
   require(name.nonEmpty, "EsE8GKP6")
   require(name.length <= MaxNameLength, "EsE2KPE8")
+  require(!isRoot || defaultCategoryId.isDefined, "EsE7GJIK10")
   require(!description.exists(_.isEmpty), "EsE2KPU7")
   require(!description.exists(_.length > MaxDescriptionLength), "EsE2PFU4")
   require(updatedAt.getTime >= createdAt.getTime, "EsE8UF9")
@@ -55,7 +57,6 @@ case class Category(
   require(!deletedAt.exists(_.getTime < createdAt.getTime), "EsE7GUM4")
 
   def isRoot = parentId.isEmpty
-  def isTheUncategorizedCategory = description.contains(Category.UncategorizedDescription)
   def isLocked = lockedAt.isDefined
   def isFrozen = frozenAt.isDefined
   def isDeleted = deletedAt.isDefined
@@ -68,11 +69,23 @@ object Category {
   val MaxSlugLength = 50
   val MaxDescriptionLength = 1000
   val DescriptionExcerptLength = 280
-  val UncategorizedDescription = "__uncategorized__"
   val DefaultPosition = 50 // also in Typescript [7KBYW2]
 }
 
 
+/** @param sectionPageId
+  * @param parentId
+  * @param name
+  * @param slug
+  * @param position
+  * @param newTopicTypes
+  * @param shallBeDefaultCategory — if set, the root category's default category id will be
+  *     updated to point to this category.
+  * @param unlisted
+  * @param staffOnly
+  * @param onlyStaffMayCreateTopics
+  * @param anyId
+  */
 case class CreateEditCategoryData(
   sectionPageId: PageId,
   parentId: CategoryId,
@@ -81,6 +94,7 @@ case class CreateEditCategoryData(
   position: Int,
   // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
   newTopicTypes: immutable.Seq[PageRole],
+  shallBeDefaultCategory: Boolean,
   unlisted: Boolean,
   staffOnly: Boolean,
   onlyStaffMayCreateTopics: Boolean,
@@ -90,6 +104,7 @@ case class CreateEditCategoryData(
     id = id,
     sectionPageId = sectionPageId,
     parentId = Some(parentId),
+    defaultCategoryId = None,
     name = name,
     slug = slug,
     position = position,

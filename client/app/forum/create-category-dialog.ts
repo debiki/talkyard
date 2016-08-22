@@ -87,6 +87,8 @@ var EditCategoryDialog = createClassAndFactory({
           name: category.name,
           slug: category.slug,
           defaultTopicType: category.defaultTopicType,
+          canChangeDefault: !category.isDefaultCategory,
+          isDefault: category.isDefaultCategory,
           position: category.position,
           unlisted: category.unlisted,
           staffOnly: category.staffOnly,
@@ -99,6 +101,8 @@ var EditCategoryDialog = createClassAndFactory({
         name: '',
         slug: '',
         defaultTopicType: PageRole.Discussion,
+        canChangeDefault: true,
+        isDefault: false,
         position: DefaultPosition,
         unlisted: false,
         staffOnly: false,
@@ -132,6 +136,10 @@ var EditCategoryDialog = createClassAndFactory({
     this.setState({ defaultTopicType: topicType });
   },
 
+  onIsDefaultChanged: function(event) {
+    this.setState({ isDefault: event.target.checked });
+  },
+
   onPositionChanged: function(event) {
     var newPosition = parseInt(event.target.value);
     this.setState({ position: isNaN(newPosition) ? '' : newPosition });
@@ -157,6 +165,7 @@ var EditCategoryDialog = createClassAndFactory({
       sectionPageId: debiki.internal.pageId,
       name: this.state.name,
       slug: this.state.slug,
+      isDefault: this.state.isDefault,
       position: this.state.position || DefaultPosition,
       defaultTopicType: this.state.defaultTopicType,
       unlisted: this.state.unlisted,
@@ -193,6 +202,12 @@ var EditCategoryDialog = createClassAndFactory({
           title: 'Topic type', className: 'esEdtr_titleEtc_pageRole', pullLeft: true }),
         r.span({ className: 'help-block' },
           "New topics in this category will be of this type, by default."));
+
+    var isDefaultInput =
+      Input({ type: 'checkbox', label: "Set as default category",
+        checked: this.state.isDefault, onChange: this.onIsDefaultChanged,
+        disabled: !this.state.canChangeDefault,
+        help: "Places new topics in this category, if no other category selected." });
 
     var slugInput =
         utils.FadeInOnClick({ clickToShowText: "Click to change how the name looks in URLs" },
@@ -245,6 +260,7 @@ var EditCategoryDialog = createClassAndFactory({
         : r.div({},
             nameInput,
             defaultTopicTypeInput,
+            isDefaultInput,
             slugInput,
             positionInput,
             unlistedInput,
