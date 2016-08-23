@@ -79,6 +79,9 @@ object SafeActions {
 
     def invokeBlock[A](request: Request[A], block: Request[A] => Future[Result]): Future[Result] = {
       var futureResult = try {
+        SECURITY ; COULD /* add back this extra check.
+        // No longer works, even when HTTPS is used. Something happenend when upgrading
+        // Play from 2.4.0 to 2.4.8?
         if (Globals.secure && !request.secure) {
           // Reject this request, unless an 'insecure' param is set and we're on localhost.
           val insecureOk = request.queryString.get("insecure").nonEmpty &&
@@ -95,6 +98,7 @@ object SafeActions {
               ${"\n\n"}You can also append '?insecure' to the URL if you want
               to proceed nevertheless — this works from localhost only. [DwE8KNW2]"""))
         }
+        */
         block(request)
       }
       catch {
