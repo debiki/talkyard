@@ -17,8 +17,6 @@
 
 import sbt._
 import Keys._
-import java.{net => jn}
-import play.sbt.PlayImport._
 import sbtbuildinfo._
 
 object ApplicationBuild extends Build {
@@ -49,9 +47,9 @@ object ApplicationBuild extends Build {
 
 
   val appDependencies = Seq(
-    play.Play.autoImport.filters,
+    play.sbt.Play.autoImport.filters,
     // OpenAuth and OpenID etc Authentication.
-    "com.mohiva" %% "play-silhouette" % "3.0.4",
+    "com.mohiva" %% "play-silhouette" % "3.0.5",
     // PostgreSQL JDBC client driver
     // see: http://mvnrepository.com/artifact/org.postgresql/postgresql/
     "org.postgresql" % "postgresql" % "9.4.1208",  // there's no 9.5 right now
