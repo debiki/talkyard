@@ -24,6 +24,22 @@ function addCommandsToBrowser(browser) {
   });
 
 
+  browser.addCommand('waitForAtLeast', function(num, selector) {
+    browser.waitUntil(function () {
+      var elems = browser.elements(selector);
+      return elems.value.length >= num;
+    });
+  });
+
+
+  browser.addCommand('waitForAtMost', function(num, selector) {
+    browser.waitUntil(function () {
+      var elems = browser.elements(selector);
+      return elems.value.length <= num;
+    });
+  });
+
+
   browser.addCommand('waitAndSetValue', function(selector, value) {
     browser.waitForVisible(selector);
     browser.waitForEnabled(selector);

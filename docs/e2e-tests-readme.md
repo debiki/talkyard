@@ -62,14 +62,15 @@ transpile typescript manually, instead of via the container, then open yet anoth
 
 ### Debugging
 
-To debug in node.js: (this **does not work** though, because Webdriver.io forks many processes
-somehow and they all try to debug-listen on the debug port --> address-already-in-use error.
-The webdriver.io main developer said in the Gitter chat that they haven't yet decided how
-to use node-debug + webdriver.io)
+To debug in node.js:
 
     npm install -g node-inspector  # do once only
 
-    node-debug scripts/wdio target/e2e/wdio.conf.js --skip3
+    # This'll tell you to open a http://127.0.0.1:8080/... in a browser — that's the debugger GUI.
+    node-inspector --debug-port 5859 --no-preload
+
+    # Run the tests, but add --debug = -d, e.g.:
+    scripts/wdio target/e2e/wdio.3chrome.conf.js -d --skip3 --only 'categories.3browsers'
 
 
 ### Decisions

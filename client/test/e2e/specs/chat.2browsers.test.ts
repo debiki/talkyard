@@ -110,12 +110,12 @@ describe('chat', function() {
   it("Maria posts a chat message, and sees it", function() {
     maria.waitAndSetValue('.esC_Edtr_textarea', "Hi, I'm Maria.");
     maria.waitAndClick('.esC_Edtr_SaveB');
+    maria.waitForAtLeast(2, '.esC_M');
     maria.assertNthTextMatches('.esC_M', 2, /Maria/);
   });
 
   it("Owen sees it", function() {
-    //owen.waitForVisible('.esC_M:nth-child(2)');  <-- nth-child apparently not yet supported
-    //owen.assertTextMatches('.esC_M:nth-child(2)', /Maria/);
+    owen.waitForAtLeast(2, '.esC_M');
     owen.assertNthTextMatches('.esC_M', 2, /Maria/);
   });
 

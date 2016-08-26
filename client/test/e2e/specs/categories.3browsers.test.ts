@@ -53,6 +53,7 @@ describe("categories", function() {
     owensPages.topbar.clickLogin();
     owensPages.loginDialog.loginWithPassword({ username: 'owen_owner', password: 'publicOwen' });
     owensPages.forumButtons.clickViewCategories();
+    owen.waitForAtLeast(1, '.esForum_cats_cat .forum-title');
     owen.assertTextMatches('.esForum_cats_cat .forum-title', /Uncategorized/, /default/);
   });
 
