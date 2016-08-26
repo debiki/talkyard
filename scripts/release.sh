@@ -70,7 +70,8 @@ gulp build-e2e
 # after startup. Needs some kind of warmup?
 scripts/wdio target/e2e/wdio.conf.js --skip3 --only all-links
 scripts/wdio target/e2e/wdio.conf.js --skip3 --only create-site
-scripts/wdio target/e2e/wdio.2chrome.conf.js --skip3 --only 'chat.2browsers'
+scripts/wdio target/e2e/wdio.2chrome.conf.js --skip3 --only chat.2browsers
+scripts/wdio target/e2e/wdio.3chrome.conf.js --skip3 --only categories.3browsers
 
 kill $selenium_pid
 sudo $test_containers down

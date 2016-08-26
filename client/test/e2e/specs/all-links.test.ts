@@ -25,8 +25,8 @@ describe('all links', function() {
 
     site.members.push(make.memberAdminAdam());
     site.members.push(make.memberAdminAlice());
+    site.members.push(make.memberModeratorMons());
     site.members.push(make.memberMaria());
-    site.members.push(make.memberMons());
     site.guests.push(make.guestGreta());
     site.guests.push(make.guestGunnar());
 

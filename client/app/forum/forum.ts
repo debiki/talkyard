@@ -455,18 +455,19 @@ var ForumButtons = createComponent({
     var anyPageTitle = showsCategoryTree ?
         r.div({ className: 'esF_BB_PageTitle' }, "Categories") : null;
 
-    var makeCategoryLink = (where, text, extraClass?) => Link({
+    var makeCategoryLink = (where, text, linkId, extraClass?) => Link({
       to: { pathname: this.props.pagePath.value + where, query: this.props.location.query },
+      id: linkId,
       className: 'btn esForum_catsNav_btn ' + (extraClass || ''),
       activeClassName: 'active' }, text);
 
     var categoryTreeLink = showsCategoryTree ? null :
-      makeCategoryLink(RoutePathCategories, "Categories", 'esForum_navLink');
+      makeCategoryLink(RoutePathCategories, "Categories", 'e2eViewCategoriesB', 'esForum_navLink');
 
     // COULD remember which topics were listed previously and return to that view.
     // Or would a Back btn somewhere be better?
     var topicListLink = showsTopicList ? null :
-      makeCategoryLink(RoutePathLatest, "Topic list", 'esForum_navLink');
+      makeCategoryLink(RoutePathLatest, "Topic list", 'e2eViewTopicsB', 'esForum_navLink');
 
     var categoryMenuItems = props.categories.map((category: Category) => {
       return MenuItem({ eventKey: category.slug, key: category.id,
@@ -529,8 +530,8 @@ var ForumButtons = createComponent({
       var slashSlug = this.slashCategorySlug();
       latestTopButton =
           r.ul({ className: 'nav esForum_catsNav_sort' },
-            makeCategoryLink(RoutePathLatest + slashSlug, 'Latest'),
-            makeCategoryLink(RoutePathTop + slashSlug, 'Top'));
+            makeCategoryLink(RoutePathLatest + slashSlug, "Latest", 'e2eSortLatestB'),
+            makeCategoryLink(RoutePathTop + slashSlug, "Top", 'e2eSortTopB'));
     }
 
     // The filter topics select.
@@ -605,8 +606,8 @@ var ForumButtons = createComponent({
 
     var createCategoryBtn;
     if (sortOrderRoutePath === RoutePathCategories && me.isAdmin) {
-      createCategoryBtn = Button({ onClick: this.createCategory, bsStyle: 'primary' },
-        'Create Category');
+      createCategoryBtn = Button({ onClick: this.createCategory, bsStyle: 'primary',
+          id: 'e2eCreateCategoryB' }, "Create Category");
     }
 
     var editCategoryBtn;

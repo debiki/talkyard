@@ -245,7 +245,7 @@ object RateLimits {
   object CreateTopic extends RateLimits {
     val key = "CrTp"
     val what = "created too many topics"
-    val maxPerFifteenSeconds = 1
+    val maxPerFifteenSeconds = 1  // COULD change to 2 so an e2e test won't have to wait? [7KEF02]
     val maxPerFifteenMinutes = 8
     val maxPerDay = 20
     val maxPerDayNewUser = 5

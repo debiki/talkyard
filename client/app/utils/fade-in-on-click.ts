@@ -42,7 +42,8 @@ export var FadeInOnClick = createClassAndFactory({
   render: function() {
     var contents = this.state.show ? this.props.children : null;
     var clickToShowButton = this.state.show ? null :
-        r.a({ className: 'dw-click-to-show', onClick: this.show }, this.props.clickToShowText);
+        r.a({ className: 'dw-click-to-show', onClick: this.show, id: this.props.clickToShowId },
+          this.props.clickToShowText);
 
     return (
       r.div({ id: this.props.id, className: this.props.className },

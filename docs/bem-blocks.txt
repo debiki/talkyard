@@ -14,8 +14,6 @@ esA             = Admin Area
 esA_Ss          = Admin Area, settings
 esA_Ss_S        = Admin Area, a single setting
 
-esSA            = Super Admin area
-
 esF             = the forum main page, incl sort & filter buttons, and topic list and category list
 esF_BB          = forum button bar: sort & filter buttons
 esF_Ts          = forum topic list
@@ -25,17 +23,15 @@ esF_Cs_C        = a category in the category list
 
 esCB            = context bar (the right sidebar)
 
-esWB            = watchbar (the left sidebar)
-esWB_T          = watchbar topic
-
-esTB            = top bar (with the breadcrump and login & signup, or user name)
-esMB            = topic metabar (just below the Orig Post, before all replies)
-
 esLD            = login/signup dialog
+
+esMB            = topic metabar (just below the Orig Post, before all replies)
 
 esUP            = A user's public profile page
 
 esT             = a thread (i.e. a comment thread: a post and descendant replies)
+
+esSA            = Super Admin area
 
 esP             = a post
 esP_Z           = collapse thread button (Z = fold = collapse. Placed inside the post.)
@@ -48,6 +44,8 @@ esP_B           = post body (the actual text)
 esPA            = post actions (actually located outside the post (esP) there fore esPA not esP_A)
 
 esRT            = review task
+
+esTB            = top bar (with the breadcrump and login & signup, or user name)
 
 esTs            = page/post tags
 
@@ -63,11 +61,15 @@ esSA            = super admin
 esPw            = password
 esOb            = onebox
 
+esWB            = watchbar (the left sidebar)
+esWB_T          = watchbar topic
+
+
 ...WhateverB    = B means Button
 ...WhateverD    = D means Dialog
+...WhateverI    = I means Input
 ...WhateverL    = L means Link
 ...WhateverLI   = List item
 ...WhateverS    = S means Select (usually react-select)
-
-
+...WhateverTA   = TA means textarea
 

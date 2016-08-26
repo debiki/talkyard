@@ -87,8 +87,8 @@ var EditCategoryDialog = createClassAndFactory({
           name: category.name,
           slug: category.slug,
           defaultTopicType: category.defaultTopicType,
-          canChangeDefault: !category.isDefaultCategory,
-          isDefault: category.isDefaultCategory,
+          canChangeDefault: !category.isDefaultCategory || false,
+          isDefault: category.isDefaultCategory || false,
           position: category.position,
           unlisted: category.unlisted,
           staffOnly: category.staffOnly,
@@ -181,7 +181,7 @@ var EditCategoryDialog = createClassAndFactory({
     var store: Store = this.state.store;
 
     var nameInput =
-        Input({ type: 'text', label: "Name", ref: 'nameInput',
+        Input({ type: 'text', label: "Name", ref: 'nameInput', id: 'e2eCatNameI',
             value: this.state.name, onChange: this.onNameChanged,
             help: "Keep it short, only one word, if possible." });
 
@@ -213,14 +213,15 @@ var EditCategoryDialog = createClassAndFactory({
           "New topics in this category will be of this type, by default."));
 
     var isDefaultInput =
-      Input({ type: 'checkbox', label: "Set as default category",
+      Input({ type: 'checkbox', label: "Set as default category", id: 'e2eSetDefCat',
         checked: this.state.isDefault, onChange: this.onIsDefaultChanged,
         disabled: !this.state.canChangeDefault,
         help: "Places new topics in this category, if no other category selected." });
 
     var slugInput =
-        utils.FadeInOnClick({ clickToShowText: "Click to change how the name looks in URLs" },
-          Input({ type: 'text', label: "URL slug",
+        utils.FadeInOnClick({ clickToShowText: "Click to change how the name looks in URLs",
+            clickToShowId: 'e2eShowCatSlug' },
+          Input({ type: 'text', label: "URL slug", id: 'e2eCatSlug',
               ref: 'slugInput', value: this.state.slug, onChange: this.onSlugChanged,
               help: r.div({ className: 'esCatDlg_slug_help' },
                 "Included in the computer address (URL) to this category. The address " +
@@ -233,16 +234,16 @@ var EditCategoryDialog = createClassAndFactory({
       sortPositionText += " (" + this.state.position + ")";
     }
     var positionInput =
-        utils.FadeInOnClick({ clickToShowText: sortPositionText },
-          Input({ type: 'number', label: "Position",
+        utils.FadeInOnClick({ clickToShowText: sortPositionText, clickToShowId: 'e2eShowCatPos' },
+          Input({ type: 'number', label: "Position", id: 'e2eCatPos',
             value: this.state.position || '', onChange: this.onPositionChanged,
             help: "On the category list page, categories with lower values are listed first. " +
               "Default: " + DefaultPosition }));
 
     var unlistedTitle = "Unlisted (" + (this.state.unlisted ?  "yes)" : "no)");
     var unlistedInput =
-        utils.FadeInOnClick({ clickToShowText: unlistedTitle },
-            Input({ type: 'checkbox', label: "Unlisted",
+        utils.FadeInOnClick({ clickToShowText: unlistedTitle, clickToShowId: 'e2eShowUnlistedCB' },
+            Input({ type: 'checkbox', label: "Unlisted", id: 'e2eUnlistedCB',
               checked: this.state.unlisted, onChange: this.toggleUnlisted,
               help: "Hides this category and all topics herein, in the forum topic lists — " +
                   "only staff will see them. However, when accessed directly, the pages " +
@@ -251,16 +252,17 @@ var EditCategoryDialog = createClassAndFactory({
 
     var staffOnlyTitle = "Staff only (" + (this.state.staffOnly ?  "yes)" : "no)");
     var staffOnlyInput =
-      utils.FadeInOnClick({ clickToShowText: staffOnlyTitle },
-        Input({ type: 'checkbox', label: "Staff only",
+      utils.FadeInOnClick({ clickToShowText: staffOnlyTitle, clickToShowId: 'e2eShowStaffOnlyCB' },
+        Input({ type: 'checkbox', label: "Staff only", id: 'e2eStaffOnlyCB',
           checked: this.state.staffOnly, onChange: this.toggleStaffOnly,
           help: "Shall topics in this category be accessible only to admins and moderators?" }));
 
     var onlyStaffMayCreateTopicsTitle = "Only staff may create topics (" +
           (this.state.onlyStaffMayCreateTopics ?  "yes)" : "no)");
     var onlyStaffMayCreateTopicsInput =
-      utils.FadeInOnClick({ clickToShowText: onlyStaffMayCreateTopicsTitle },
-        Input({ type: 'checkbox', label: "Only staff may create topics",
+      utils.FadeInOnClick({ clickToShowText: onlyStaffMayCreateTopicsTitle,
+          clickToShowId: 'e2eShowOnlyStaffCreateCB' },
+        Input({ type: 'checkbox', label: "Only staff may create topics", id: 'e2eOnlyStaffCreateCB',
           checked: this.state.onlyStaffMayCreateTopics, onChange: this.toggleOnlyStaffMayCreateTopics,
           help: "May only admins and moderators create topics in this category?" }));
 
@@ -283,8 +285,8 @@ var EditCategoryDialog = createClassAndFactory({
     var saveCancel = this.state.isSaving
         ? r.div({}, "Saving...")
         : r.div({},
-            Button({ onClick: this.save, bsStyle: 'primary' }, saveButtonTitle),
-            Button({ onClick: this.close }, "Cancel"));
+            Button({ onClick: this.save, bsStyle: 'primary', id: 'e2eSaveCatB' }, saveButtonTitle),
+            Button({ onClick: this.close, id: 'e2eCancelCatB' }, "Cancel"));
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close,

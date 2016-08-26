@@ -13,6 +13,7 @@ var logMessage = logAndDie.logMessage;
 //
 function pagesFor(browser) {
   var api = {
+
     createSite: {
       fillInFieldsAndSubmit: function(data) {
         browser.waitAndSetValue('#e2eEmail', data.email);
@@ -29,6 +30,7 @@ function pagesFor(browser) {
       }
     },
 
+
     createSomething: {
       createForum: function(forumTitle) {
         // Button gone, I'll add it back if there'll be Blog & Wiki too.
@@ -41,6 +43,18 @@ function pagesFor(browser) {
         assert.equal(actualTitle, forumTitle);
       },
     },
+
+
+    topbar: {
+      clickLogin: function() {
+        browser.waitAndClick('.esTopbar_logIn');
+      },
+
+      clickSignUp: function() {
+        browser.waitAndClick('.esTopbar_signUp');
+      }
+    },
+
 
     loginDialog: {
       createPasswordAccount: function(data) {
@@ -56,6 +70,7 @@ function pagesFor(browser) {
         browser.waitAndSetValue('#e2eUsername', data.username);
         browser.waitAndSetValue('#e2ePassword', data.password);
         browser.waitAndClick('#e2eSubmit');
+        browser.waitUntilModalGone();
       },
 
       createGmailAccount: function(data) {
@@ -64,6 +79,7 @@ function pagesFor(browser) {
         // to choose a username.
         browser.waitAndSetValue('#e2eUsername', data.username);
         browser.waitAndClick('#e2eSubmit');
+        browser.waitUntilModalGone();
       },
 
       loginWithGmail: function(data) {
@@ -91,6 +107,7 @@ function pagesFor(browser) {
         // to choose a username.
         browser.waitAndSetValue('#e2eUsername', data.username);
         browser.waitAndClick('#e2eSubmit');
+        browser.waitUntilModalGone();
       },
 
       loginWithFacebook: function(data) {
@@ -114,6 +131,88 @@ function pagesFor(browser) {
         browser.switchBackToFirstTabOrWindow();
       },
     },
+
+
+    forumButtons: {
+      clickViewCategories: function() {
+        browser.waitAndClick('#e2eViewCategoriesB');
+      },
+
+      clickViewTopics: function() {
+        browser.waitAndClick('#e2eViewTopicsB');
+      },
+
+      clickCreateCategory: function() {
+        browser.waitAndClick('#e2eCreateCategoryB');
+      },
+
+      clickEditCategory: function() {
+        browser.waitAndClick('.esF_BB_EditCat');
+      },
+
+      clickCreateTopic: function() {
+        browser.waitAndClick('#e2eCreateSth');
+      },
+
+      assertNoCreateTopicButton: function() {
+        // Wait until the button bar has loaded.
+        browser.waitForVisible('#e2eViewCategoriesB');
+        assert(!browser.isVisible('#e2eCreateSth'));
+      },
+    },
+
+
+    categoryDialog: {
+      fillInFields: function(data) {
+        browser.waitAndSetValue('#e2eCatNameI', data.name);
+        if (data.setAsDefault) {
+          browser.waitAndClick('#e2eSetDefCat');
+        }
+        /*
+         browser.waitAndSetValue('#e2eUsername', data.username);
+         browser.waitAndSetValue('#e2eEmail', data.email);
+         browser.waitAndSetValue('#e2ePassword', data.password);
+         browser.waitAndClick('#e2eSubmit');
+         browser.waitForVisible('#e2eNeedVerifyEmailDialog');
+         */
+      },
+
+      submit: function() {
+        browser.waitAndClick('#e2eSaveCatB');
+        browser.waitUntilModalGone();
+        browser.waitUntilLoadingOverlayGone();
+      },
+    },
+
+
+    editor: {
+      editTitle: function(title) {
+        browser.waitAndSetValue('.esEdtr_titleEtc_title', title);
+      },
+
+      editText: function(text) {
+        browser.waitAndSetValue('.esEdtr_textarea', text);
+      },
+
+      save: function() {
+        browser.click('.e2eSaveBtn');
+        browser.waitUntilLoadingOverlayGone();
+      }
+    },
+
+
+    complex: {
+      createAndSaveTopic: function(data: { title: string, body: string }) {
+        api.forumButtons.clickCreateTopic();
+        api.editor.editTitle(data.title);
+        api.editor.editText(data.body);
+        browser.rememberCurrentUrl();
+        api.editor.save();
+        browser.waitForNewUrl();
+        browser.assertPageTitleMatches(data.title);
+        browser.assertPageBodyMatches(data.body);
+      }
+    }
   };
 
   return api;

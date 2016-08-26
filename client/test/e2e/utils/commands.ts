@@ -1,6 +1,7 @@
 /// <reference path="../../../../modules/definitely-typed/lodash/lodash.d.ts"/>
 /// <reference path="../../../../modules/definitely-typed/node/node.d.ts"/>
 
+import * as _ from 'lodash';
 import assert = require('assert');
 import logMessageModule = require('./log-and-die');
 import settings = require('./settings');
@@ -10,9 +11,23 @@ var logWarning = logMessageModule.logWarning;
 
 function addCommandsToBrowser(browser) {
 
+  browser.addCommand('waitUntilLoadingOverlayGone', function() {
+    browser.waitUntil(function () {
+      return !browser.isVisible('#theLoadingOverlay');
+    });
+  });
+
+  browser.addCommand('waitUntilModalGone', function() {
+    browser.waitUntil(function () {
+      return !browser.isVisible('.modal-backdrop');
+    });
+  });
+
+
   browser.addCommand('waitAndSetValue', function(selector, value) {
     browser.waitForVisible(selector);
     browser.waitForEnabled(selector);
+    browser.waitUntilLoadingOverlayGone();
     browser.setValue(selector, value);
   });
 
@@ -20,6 +35,7 @@ function addCommandsToBrowser(browser) {
   browser.addCommand('waitAndClick', function(selector) {
     browser.waitForVisible(selector);
     browser.waitForEnabled(selector);
+    browser.waitUntilLoadingOverlayGone();
     if (!selector.startsWith('#')) {
       var elems = browser.elements(selector);
       assert.equal(elems.value.length, 1, "Too many elems to click: " + elems.value.length +
@@ -102,16 +118,33 @@ function addCommandsToBrowser(browser) {
   });
 
 
-  browser.addCommand('assertTextMatches', function(selector, regex) {
+  browser.addCommand('assertTextMatches', function(selector, regex, regex2) {
+    if (_.isString(regex)) {
+      regex = new RegExp(regex);
+    }
+    if (_.isString(regex2)) {
+      regex2 = new RegExp(regex2);
+    }
     var text = browser.getText(selector);
     assert(regex.test(text), "Elem selected by '" + selector + "' didn't match " + regex.toString() +
       ", actual text: '" + text + "'");
+    // COULD use 'arguments' & a loop instead
+    if (regex2) {
+      assert(regex2.test(text), "Elem selected by '" + selector + "' didn't match " +
+          regex2.toString() + ", actual text: '" + text + "'");
+    }
   });
 
 
   // n starts on 1 not 0.
-  browser.addCommand('assertNthTextMatches', function(selector, n, regex) {
+  browser.addCommand('assertNthTextMatches', function(selector, n, regex, regex2) {
     browser.pause(500); // for now
+    if (_.isString(regex)) {
+      regex = new RegExp(regex);
+    }
+    if (_.isString(regex2)) {
+      regex2 = new RegExp(regex2);
+    }
     assert(n >= 1, "n starts on 1, change from 0 to 1 please");
     var items = browser.elements(selector).value;
     assert(items.length >= n, "Only " + items.length + " elems found, there's no elem no " + n);
@@ -121,13 +154,53 @@ function addCommandsToBrowser(browser) {
     var text = response.value;
     assert(regex.test(text), "Elem " + n + " selected by '" + selector + "' doesn't match " +
         regex.toString() + ", actual text: '" + text + "'");
+    // COULD use 'arguments' & a loop instead
+    if (regex2) {
+      assert(regex2.test(text), "Elem " + n + " selected by '" + selector + "' doesn't match " +
+          regex2.toString() + ", actual text: '" + text + "'");
+    }
+  });
+
+
+  browser.addCommand('assertPageTitleMatches', function(regex) {
+    browser.waitForVisible('h1.dw-p-ttl');
+    browser.assertTextMatches('h1.dw-p-ttl', regex);
+  });
+
+
+  browser.addCommand('assertPageBodyMatches', function(regex) {
+    browser.waitForVisible('.esOrigPost');
+    browser.assertTextMatches('.esOrigPost', regex);
+  });
+
+
+  browser.addCommand('clickLinkToNewPage', function(selector) {
+    browser.rememberCurrentUrl();
+    browser.waitAndClick(selector);
+    browser.waitForNewUrl();
+  });
+
+
+  browser.addCommand('assertNotFoundError', function() {
+    var source = browser.getSource();
+    assert(/404 Not Found[\s\S]+EsE404/.test(source));
+    assert(source.length < 200); // if the page is larger, it's probably the wrong page
   });
 
 
   browser.addCommand('perhapsDebug', function(selector, regex) {
     if (settings.debugAfterwards) {
+      console.log("*** Done. Now you can debug. ***");
       browser.debug();
     }
+  });
+
+
+  browser.addCommand('logAndDebug', function(logMessage) {
+    if (logMessage) {
+      console.log(logMessage);
+    }
+    browser.debug();
   });
 
 }

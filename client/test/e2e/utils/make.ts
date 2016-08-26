@@ -91,6 +91,32 @@ var make = {
     };
   },
 
+  memberModeratorModya: function(): Member {
+    return {
+      id: 201,
+      username: "mod_modya",
+      fullName: "Mod Modya",
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: "mod-modya@ex.com",
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: "cleartext:publicModya",
+      isModerator: true,
+    };
+  },
+
+  memberModeratorMons: function(): Member {
+    return {
+      id: 201,
+      username: "mod_mons",
+      fullName: "Mod Mons",
+      createdAtMs: DefaultCreatedAtMs,
+      emailAddress: "mod-mons@ex.com",
+      emailVerifiedAtMs: DefaultCreatedAtMs,
+      passwordHash: "cleartext:publicMons",
+      isModerator: true,
+    };
+  },
+
   memberMaria: function(): Member {
     return {
       id: 201,
@@ -103,15 +129,15 @@ var make = {
     };
   },
 
-  memberMons: function(): Member {
+  memberMichael: function(): Member {
     return {
       id: 201,
-      username: "mons",
-      fullName: "Mons",
+      username: "michael",
+      fullName: "Michael",
       createdAtMs: DefaultCreatedAtMs,
-      emailAddress: "mons@ex.com",
+      emailAddress: "michael@ex.com",
       emailVerifiedAtMs: DefaultCreatedAtMs,
-      passwordHash: "cleartext:publicMons",
+      passwordHash: "cleartext:publicMichael",
     };
   },
 
@@ -251,6 +277,51 @@ var make = {
       type: undefined,
       prevRevNr: undefined,
     };
+  },
+
+  forumOwnedByOwen: function(namePrefix: string): SiteData {
+    var site: SiteData = make.emptySiteOwnedByOwen();
+    site.meta.localHostname = namePrefix + Date.now();
+
+    // Dupl test code below [6FKR4D0]
+    var rootCategoryId = 1;
+
+    var forumPage = make.page({
+      id: 'fmp',
+      role: <PageRole> 7,  // [commonjs] PageRole.Forum
+      categoryId: rootCategoryId,
+      authorId: -1,    // [commonjs] SystemUserId   [5KGEP02]
+    });
+    site.pages.push(forumPage);
+
+    site.pagePaths.push({ folder: '/', pageId: forumPage.id, showId: false, slug: '' });
+
+    // Forum title and intro text page.
+    site.posts.push(make.post({
+      page: forumPage,
+      nr: 0,
+      approvedSource: "Forum Title",
+      approvedHtmlSanitized: "Forum Title",
+    }));
+    site.posts.push(make.post({
+      page: forumPage,
+      nr: 1,
+      approvedSource: "Forum intro text.",
+      approvedHtmlSanitized: "<p>Forum intro text.</p>",
+    }));
+
+    var rootCategory = make.rootCategoryWithIdFor(rootCategoryId, forumPage);
+    rootCategory.defaultCategoryId = 2;
+    site.categories.push(rootCategory);
+
+    var uncategorizedCategory = make.categoryWithIdFor(2, forumPage);
+    uncategorizedCategory.parentId = rootCategory.id;
+    uncategorizedCategory.name = "Uncategorized";
+    uncategorizedCategory.slug = "uncategorized";
+    uncategorizedCategory.description = "The default category.";
+    site.categories.push(uncategorizedCategory);
+
+    return site;
   }
 };
 
