@@ -59,6 +59,9 @@ object RateLimiter {
     if (rateLimits.isUnlimited(isNewUser = false))
       return
 
+    if (io.efdi.server.http.hasOkE2eTestPassword(request.underlying))
+      return
+
     if (rateLimits.noRequestsAllowed(isNewUser = false)) {
       val message =
         if (rateLimits.maxPerDay > 0)

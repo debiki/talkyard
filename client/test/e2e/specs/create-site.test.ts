@@ -66,14 +66,15 @@ describe('/-/create-site  @createsite', function() {
     browser.perhapsDebug();
   });
 
-  if (settings.skip3rdPartyDependentTests)
+  if (!settings.include3rdPartyDependentTests)
     return;
 
-  it('can create a new site as a Gmail user  @login @gmail', function() {
+  it('can create a new site as a Gmail user  @login @gmail @google', function() {
     var data = createPasswordTestData();
     data.email = settings.gmailEmail;
     data.password = settings.gmailPassword;
     browser.go(utils.makeCreateSiteWithFakeIpUrl());
+    browser.disableRateLimits(); // there're signup rate limits
     pages.createSite.fillInFieldsAndSubmit(data);
     browser.click('#e2eLogin');
     pages.loginDialog.createGmailAccount(data);
@@ -86,6 +87,7 @@ describe('/-/create-site  @createsite', function() {
     data.email = settings.facebookAdminEmail;
     data.password = settings.facebookAdminPassword;
     browser.go(utils.makeCreateSiteWithFakeIpUrl());
+    browser.disableRateLimits(); // there're signup rate limits
     pages.createSite.fillInFieldsAndSubmit(data);
     browser.click('#e2eLogin');
     pages.loginDialog.createFacebookAccount(data);

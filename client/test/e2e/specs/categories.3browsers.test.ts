@@ -150,7 +150,7 @@ describe("categories", function() {
 
   it("Mons can post a new topic", function() {
     mons.go(idAddress.siteIdOrigin + '/latest/wasteland');
-    mons.pause(15*1000); // rate limits: max 1 topic per 15 seconds [7KEF02]
+    mons.disableRateLimits(); // otherwise max 1 topic per 15 seconds
     monsPages.complex.createAndSaveTopic({
       title: "Mons Only Staff Create Topic",
       body: "Mons Only Staff Create text text text.",
@@ -190,7 +190,6 @@ describe("categories", function() {
 
   it("Mons sees it and can create a 2nd topic", function() {
     mons.go(idAddress.siteIdOrigin + '/categories');
-    mons.pause(15*1000); // rate limits: max 1 topic per 15 seconds [7KEF02]
     mons.clickLinkToNewPage(WastelandCategorySelector);
     monsPages.complex.createAndSaveTopic({ title: "Mons Topic", body: "Mons text text text." });
     urlToMonsPage3 = mons.url().value;

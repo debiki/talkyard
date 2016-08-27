@@ -100,40 +100,11 @@ selenium_pid=$!
 
 gulp build-e2e
 
-# If we start running the tests too early, they will need to wait for Nashorn, and might then timeout and fail.
-echo "Waiting for Nashorn to compile Javascript code..."
-until $(curl --output /dev/null --silent --head --fail http://localhost/-/are-scripts-ready); do
-  printf '.'
-  sleep 1
-done
+scripts/run-e2e-tests.sh $@
 
-function runEndToEndTest {
-  cmd="$@"
-  echo "Running end-to-end test: $cmd ..."
-  $cmd
-  if [ $? -ne 0 ]; then
-    echo
-    echo "***ERROR*** [EsE5KPY02]"
-    echo
-    echo "This end-to-end test failed: (the whole next line)"
-    echo "  $cmd"
-    die_if_in_script
-  else
-    echo "... Done."
-  fi
-}
-
-function runAllEndToEndTests {
-  browser=$1
-  echo "Running all end-to-end tests in $browser..."
-  runEndToEndTest scripts/wdio target/e2e/wdio.conf.js          --skip3 --browser $browser --only all-links
-  runEndToEndTest scripts/wdio target/e2e/wdio.conf.js          --skip3 --browser $browser --only create-site
-  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js  --skip3 --browser $browser --only chat.2browsers
-  runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js  --skip3 --browser $browser --only categories.3browsers
-}
-
-runAllEndToEndTests chrome
-runAllEndToEndTests firefox
+if [ $? -ne 0 ]; then
+  die_if_in_script
+fi
 
 kill $selenium_pid
 sudo $test_containers down

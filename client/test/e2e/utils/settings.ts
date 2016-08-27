@@ -40,7 +40,9 @@ settings.browserName = 'chrome';
 if (args.ff) settings.browserName = 'firefox';
 if (args.firefox) settings.browserName = 'firefox';
 
-if (settings.skip3) settings.skip3rdPartyDependentTests = true;
+if (args['3'] || args.include3rdPartyDependentTests) {
+  settings.include3rdPartyDependentTests = true;
+}
 
 if (settings.password) {
   settings.e2eTestPassword = settings.password;
@@ -57,7 +59,7 @@ if (secretsPath) {
   try {
     var secrets = JSON.parse(fileText);
     settings = _.extend({}, secrets, settings); // command line stuff overrides file
-    if (!settings.skip3rdPartyDependentTests) {
+    if (settings.include3rdPartyDependentTests) {
       if (!settings.gmailEmail) logWarning("No gmailEmail in " + secretsPath);
       if (!settings.gmailPassword) logWarning("No gmailPassword in " + secretsPath);
       if (!settings.facebookAdminPassword) logWarning("No facebookAdminPassword in " + secretsPath);
@@ -70,8 +72,8 @@ if (secretsPath) {
     die("Error parsing secret file: " + error);
   }
 }
-else if (!settings.skip3rdPartyDependentTests) {
-  die("Neither --secretsPath nor --skip3rdPartyDependentTests specified [EsE5G5P8]");
+else if (settings.include3rdPartyDependentTests) {
+  die("--include3rdPartyDependentTests (or -3) specified, but no --secretsPath [EsE5G5P8]");
 }
 
 /*

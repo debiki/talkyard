@@ -204,6 +204,11 @@ function addCommandsToBrowser(browser) {
   });
 
 
+  browser.addCommand('disableRateLimits', function() {
+    browser.setCookie({ name: 'esCoE2eTestPassword', value: settings.e2eTestPassword });
+  });
+
+
   browser.addCommand('perhapsDebug', function(selector, regex) {
     if (settings.debugAfterwards) {
       console.log("*** Done. Now you can debug. ***");

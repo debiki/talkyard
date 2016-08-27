@@ -15,7 +15,7 @@ interface TestSettings {
   newSiteDomain: string;
   waitforTimeout: string;
   debugAfterwards: boolean;
-  skip3rdPartyDependentTests?: boolean;
+  include3rdPartyDependentTests?: boolean;
   grep: string;
   only: string;
   browserName: string;
