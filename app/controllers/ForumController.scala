@@ -17,7 +17,7 @@
 
 package controllers
 
-import debiki.dao.PageStuff
+import debiki.dao.{CategoriesDao, CategoryToSave, PageStuff}
 import collection.mutable
 import com.debiki.core._
 import com.debiki.core.Prelude._
@@ -70,12 +70,13 @@ object ForumController extends mvc.Controller {
 
     val shallBeDefaultCategory = (body \ "isDefault").as[Boolean]
 
-    val categoryData = CreateEditCategoryData(
+    val categoryData = CategoryToSave(
       anyId = (body \ "categoryId").asOpt[CategoryId],
       sectionPageId = sectionPageId,
       parentId = (body \ "parentCategoryId").as[CategoryId],
       name = (body \ "name").as[String],
       slug = (body \ "slug").as[String],
+      description = CategoriesDao.CategoryDescriptionSource,
       position = (body \ "position").as[Int],
       newTopicTypes = List(defaultTopicType),
       shallBeDefaultCategory = shallBeDefaultCategory,

@@ -86,6 +86,7 @@ var EditCategoryDialog = createClassAndFactory({
           isLoading: false,
           name: category.name,
           slug: category.slug,
+          isCreatingNewCategory: false,
           defaultTopicType: category.defaultTopicType,
           canChangeDefault: !category.isDefaultCategory || false,
           isDefault: category.isDefaultCategory || false,
@@ -100,6 +101,7 @@ var EditCategoryDialog = createClassAndFactory({
       this.setState({
         name: '',
         slug: '',
+        isCreatingNewCategory: true,
         defaultTopicType: PageRole.Discussion,
         canChangeDefault: true,
         isDefault: false,
@@ -185,7 +187,7 @@ var EditCategoryDialog = createClassAndFactory({
             value: this.state.name, onChange: this.onNameChanged,
             help: "Keep it short, only one word, if possible." });
 
-    var editDescriptionLink =
+    var editDescriptionLink = this.state.isCreatingNewCategory ? null :
       r.div({ className: 'form-group' },
         r.label({ className: 'control-label' }, "Description"),
         r.div({},

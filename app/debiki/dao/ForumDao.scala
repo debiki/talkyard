@@ -58,7 +58,7 @@ trait ForumDao {
       val forumPageId = forumPagePath.pageId getOrDie "DwE5KPFW2"
 
       val partialResult = createDefaultCategoriesAndTopics(
-        forumPageId, rootCategoryId, byWho.browserIdData, transaction)
+        forumPageId, rootCategoryId, byWho, transaction)
 
       // COULD create audit log entries.
 
@@ -68,10 +68,11 @@ trait ForumDao {
 
 
   private def createDefaultCategoriesAndTopics(forumPageId: PageId, rootCategoryId: CategoryId,
-        browserIdData: BrowserIdData, transaction: SiteTransaction): CreateForumResult = {
+        byWho: Who, transaction: SiteTransaction): CreateForumResult = {
 
     val defaultCategoryId = rootCategoryId + 1
     val staffCategoryId = rootCategoryId + 2
+    val bySystem = Who(SystemUserId, byWho.browserIdData)
 
     // Create forum root category.
     transaction.insertCategoryMarkSectionPageStale(Category(
@@ -91,38 +92,34 @@ trait ForumDao {
       updatedAt = transaction.currentTime))
 
     // Create the default category.
-    transaction.insertCategoryMarkSectionPageStale(Category(
-      id = defaultCategoryId,
+    createCategoryImpl(CategoryToSave(
+      anyId = Some(defaultCategoryId),
       sectionPageId = forumPageId,
-      parentId = Some(rootCategoryId),
-      defaultCategoryId = None,
+      parentId = rootCategoryId,
+      shallBeDefaultCategory = true,
       name = DefaultCategoryName,
       slug = DefaultCategorySlug,
       position = DefaultCategoryPosition,
-      description = Some("New topics get placed here, unless another category is selected."),
+      description = "New topics get placed here, unless another category is selected.",
       newTopicTypes = immutable.Seq(PageRole.Discussion),
       unlisted = false,
       staffOnly = false,
-      onlyStaffMayCreateTopics = false,
-      createdAt = transaction.currentTime,
-      updatedAt = transaction.currentTime))
+      onlyStaffMayCreateTopics = false), bySystem)(transaction)
 
     // Create the Staff category.
-    transaction.insertCategoryMarkSectionPageStale(Category(
-      id = staffCategoryId,
+    createCategoryImpl(CategoryToSave(
+      anyId = Some(staffCategoryId),
       sectionPageId = forumPageId,
-      parentId = Some(rootCategoryId),
-      defaultCategoryId = None,
+      parentId = rootCategoryId,
+      shallBeDefaultCategory = false,
       name = "Staff",
       slug = "staff",
       position = Category.DefaultPosition + 10,
-      description = Some("Private category for staff discussions"),
+      description = "Private category for staff discussions",
       newTopicTypes = immutable.Seq(PageRole.Discussion),
       unlisted = false,
       staffOnly = true,
-      onlyStaffMayCreateTopics = false,
-      createdAt = transaction.currentTime,
-      updatedAt = transaction.currentTime))
+      onlyStaffMayCreateTopics = false), bySystem)(transaction)
 
     // Create forum welcome topic.
     createPageImpl(
@@ -134,7 +131,7 @@ trait ForumDao {
       bodyHtmlSanitized = welcomeTopic.html,
       pinOrder = Some(WelcomeToForumTopicPinOrder),
       pinWhere = Some(PinPageWhere.Globally),
-      Who(SystemUserId, browserIdData),
+      bySystem,
       transaction)
 
     CreateForumResult(null, defaultCategoryId)

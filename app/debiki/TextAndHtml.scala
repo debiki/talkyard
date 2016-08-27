@@ -115,6 +115,15 @@ object TextAndHtml {
   }
 
 
+  def forTitle(title: String) = apply(title, isTitle = true)
+
+
+  def forBodyOrComment(text: String, followLinks: Boolean = false,
+        allowClassIdDataAttrs: Boolean = false) =
+    apply(text, isTitle = false, followLinks = followLinks,
+      allowClassIdDataAttrs = allowClassIdDataAttrs)
+
+
   def apply(
     text: String,
     isTitle: Boolean,

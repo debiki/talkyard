@@ -20,9 +20,64 @@ package debiki.dao
 import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp.throwNotFound
+import debiki.TextAndHtml
 import io.efdi.server.Who
+import java.{util => ju}
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ArrayBuffer
+
+
+
+
+/** @param sectionPageId
+  * @param parentId
+  * @param name
+  * @param slug
+  * @param position
+  * @param newTopicTypes
+  * @param shallBeDefaultCategory — if set, the root category's default category id will be
+  *     updated to point to this category.
+  * @param unlisted
+  * @param staffOnly
+  * @param onlyStaffMayCreateTopics
+  * @param anyId
+  */
+case class CategoryToSave(
+  sectionPageId: PageId,
+  parentId: CategoryId,
+  name: String,
+  slug: String,
+  position: Int,
+  // [refactor] [5YKW294] [rename] Should no longer be a list. Change db too, from "nnn,nnn,nnn" to single int.
+  newTopicTypes: immutable.Seq[PageRole],
+  shallBeDefaultCategory: Boolean,
+  unlisted: Boolean,
+  staffOnly: Boolean,
+  onlyStaffMayCreateTopics: Boolean,
+  description: String,
+  anyId: Option[CategoryId] = None) { // Some() if editing
+
+  val aboutTopicTitle = TextAndHtml.forTitle(s"About the $name category")
+  val aboutTopicBody = TextAndHtml.forBodyOrComment(description)
+
+  def makeCategory(id: CategoryId, createdAt: ju.Date) = Category(
+    id = id,
+    sectionPageId = sectionPageId,
+    parentId = Some(parentId),
+    defaultCategoryId = None,
+    name = name,
+    slug = slug,
+    position = position,
+    description = None,
+    newTopicTypes = newTopicTypes,
+    unlisted = unlisted,
+    staffOnly = staffOnly,
+    onlyStaffMayCreateTopics = onlyStaffMayCreateTopics,
+    createdAt = createdAt,
+    updatedAt = createdAt)
+
+}
+
 
 
 /** Loads and saves categories.
@@ -210,7 +265,7 @@ trait CategoriesDao {
     readOnlyTransaction(_.loadCategoryMap())
 
 
-  def editCategory(editCategoryData: CreateEditCategoryData, who: Who): Category = {
+  def editCategory(editCategoryData: CategoryToSave, who: Who): Category = {
     val (oldCategory, editedCategory) = readWriteTransaction { transaction =>
       val categoryId = editCategoryData.anyId getOrDie "DwE7KPE0"
       val oldCategory = transaction.loadCategory(categoryId).getOrElse(throwNotFound(
@@ -252,41 +307,42 @@ trait CategoriesDao {
   }
 
 
-  def createCategory(newCategoryData: CreateEditCategoryData, byWho: Who): (Category, PagePath) = {
+  def createCategory(newCategoryData: CategoryToSave, byWho: Who): (Category, PagePath) = {
+    readWriteTransaction { transaction =>
+      createCategoryImpl(newCategoryData, byWho)(transaction)
+    }
+  }
 
-    val bodyHtmlSanitized = commonmarkRenderer.renderAndSanitizeCommonMark(
-      CategoryDescriptionSource, allowClassIdDataAttrs = false, followLinks = true)
 
-    val titleSource = s"About the ${newCategoryData.name} category"
-    val titleHtmlSanitized = commonmarkRenderer.sanitizeHtml(titleSource)
+  def createCategoryImpl(newCategoryData: CategoryToSave, byWho: Who)(
+        transaction: SiteTransaction): (Category, PagePath) = {
 
-    val result = readWriteTransaction { transaction =>
-      val categoryId = transaction.nextCategoryId()
-      val category = newCategoryData.makeCategory(categoryId, transaction.currentTime)
-      transaction.insertCategoryMarkSectionPageStale(category)
+    val categoryId = transaction.nextCategoryId()
+    val category = newCategoryData.makeCategory(categoryId, transaction.currentTime)
+    transaction.insertCategoryMarkSectionPageStale(category)
 
-      val (aboutPagePath, _) = createPageImpl(
+    val (aboutPagePath, _) = createPageImpl(
         PageRole.AboutCategory, PageStatus.Published, anyCategoryId = Some(categoryId),
         anyFolder = None, anySlug = Some("about-" + newCategoryData.slug), showId = true,
-        titleSource = titleSource,
-        titleHtmlSanitized = titleHtmlSanitized,
-        bodySource = CategoryDescriptionSource,
-        bodyHtmlSanitized = bodyHtmlSanitized,
+        titleSource = newCategoryData.aboutTopicTitle.text,
+        titleHtmlSanitized = newCategoryData.aboutTopicTitle.safeHtml,
+        bodySource = newCategoryData.aboutTopicBody.text,
+        bodyHtmlSanitized = newCategoryData.aboutTopicBody.safeHtml,
         pinOrder = Some(ForumDao.AboutCategoryTopicPinOrder),
         pinWhere = Some(PinPageWhere.InCategory),
         byWho, transaction)
 
-      if (newCategoryData.shallBeDefaultCategory) {
-        setDefaultCategory(category, transaction)
-      }
-
-      // COULD create audit log entry
-      (category, aboutPagePath)
+    if (newCategoryData.shallBeDefaultCategory) {
+      setDefaultCategory(category, transaction)
     }
+
+    // COULD create audit log entry
+
     // The forum needs to be refreshed because it has cached the category list
     // (in JSON in the cached HTML).
-    refreshPageInMemCache(result._1.sectionPageId)
-    result
+    refreshPageInMemCache(category.sectionPageId)
+
+    (category, aboutPagePath)
   }
 
 
@@ -300,6 +356,11 @@ trait CategoriesDao {
     transaction.updateCategoryMarkSectionPageStale(rootWithNewDefault)
   }
 
+}
+
+
+
+object CategoriesDao {
 
   val CategoryDescriptionSource =  // [i18n]
     i"""[Replace this paragraph with a description of the category. Keep it short;
