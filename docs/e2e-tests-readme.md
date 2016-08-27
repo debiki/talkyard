@@ -50,6 +50,24 @@ If you want to use a browser other than Chrome, then see [Making *.localhost add
 (In Chrome, though, ``*.localhost` addresses seem to work fine by default.)
 
 
+### Invisible (headless) tests
+
+If you don't want browser windows to pop up when running the automatic tests, you can run
+the tests in invisible windows instead. So that you won't get distracted.
+
+On Linux, do this: (other platforms? no idea)
+
+    # Install X Virtual Frame Buffer. It can create invisible windows.
+    sudo apt-get install xvfb  # do once only.
+
+    # Start Selenium, via Xvbf, so the browsers Selenium will spawn, will be invisible.
+    # (Also, specify a not-super-small screen size, otherwise tests will fail.)
+    xvfb-run -s '-screen 0 1280x1024x8' node_modules/selenium-standalone/bin/selenium-standalone start
+
+    # Run some tests, e.g.:
+    scripts/wdio target/e2e/wdio.conf.js --skip3 --only create-site
+
+
 ### Typescript
 
 The tests are written in Typescript. When you run `docker-compose start` (see above), a Docker container

@@ -75,6 +75,12 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     override def createBindings(): js.Bindings = null
   }
 
+  /** Initializing engines takes rather long, so create only two in dev mode:
+    * one for the RenderContentService background actor, and one for
+    * http request handler threads that need to render content directly.
+    */
+  val MinNumEngines = 2
+
   @volatile private var firstCreateEngineError: Option[Throwable] = None
 
 
@@ -106,18 +112,20 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
     }
     Future {
       val numEngines =
-        if (Play.isProd) Runtime.getRuntime.availableProcessors
+        if (Play.isProd) {
+          math.max(MinNumEngines, Runtime.getRuntime.availableProcessors)
+        }
         else {
-          // Initializing engines takes rather long, so create only two in dev mode:
-          // one for the RenderContentService background actor, and one for
-          // http request handler threads that need to render content directly.
-          2
+          MinNumEngines
         }
       for (i <- 1 to numEngines) {
         createOneMoreJavascriptEngine(isVeryFirstEngine = i == 1)
       }
     }
   }
+
+
+  def numEnginesCreated = javascriptEngines.size()
 
 
   private def createOneMoreJavascriptEngine(isVeryFirstEngine: Boolean = false) {

@@ -85,6 +85,9 @@ object DebikiHttp {
   def NotFoundResult(errCode: String, message: String): Result =
     R.NotFound("404 Not Found\n"+ message +" [error "+ errCode +"]")
 
+  def ServiceUnavailableResult(errorCode: String, message: String): Result =
+    R.ServiceUnavailable(s"503 Service Unavailable\n$message [$errorCode] [EsE5GK0Y2]")
+
   def MethodNotAllowedResult: Result =
     R.MethodNotAllowed("405 Method Not Allowed\nTry POST or GET instead please [DwE7KEF2]")
 
@@ -176,6 +179,9 @@ object DebikiHttp {
 
   def throwNotImplemented(errorCode: String, message: String = "") =
     throw ResultException(NotImplementedResult(errorCode, message))
+
+  def throwServiceUnavailable(errorCode: String, message: String = "") =
+    throw ResultException(ServiceUnavailableResult(errorCode, message))
 
   def throwNotFound(errCode: String, message: String = "") =
     throw ResultException(NotFoundResult(errCode, message))

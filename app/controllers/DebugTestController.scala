@@ -22,7 +22,7 @@ import java.lang.management.ManagementFactory
 import akka.pattern.ask
 import com.debiki.core._
 import com.debiki.core.Prelude._
-import debiki.{RateLimits, Globals}
+import debiki.{ReactRenderer, RateLimits, Globals}
 import debiki.DebikiHttp._
 import io.efdi.server.http._
 import java.{util => ju, io => jio}
@@ -165,6 +165,16 @@ object DebugTestController extends mvc.Controller {
          |Site canonical host origin: ${canonicalHost.map(Globals.originOf)}
        """.stripMargin
     Ok(response)
+  }
+
+
+  def areScriptsReady = ExceptionAction(empty) { request =>
+    val numEnginesCreated = ReactRenderer.numEnginesCreated
+    val numMissing = ReactRenderer.MinNumEngines - numEnginesCreated
+    if (numMissing > 0)
+      throwServiceUnavailable("EsE7KJ0F", o"""Only $numEnginesCreated engines created thus far,
+          waiting for $numMissing more engines""")
+    Ok(s"$numEnginesCreated script engines have been created, fine")
   }
 
 

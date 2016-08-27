@@ -133,6 +133,21 @@ function pagesFor(browser) {
     },
 
 
+    pageTitle: {
+      clickEdit: function() {
+        browser.waitAndClick('#e2eEditTitle');
+      },
+
+      editTitle: function(title: string) {
+        browser.waitAndSetValue('#e2eTitleInput', title);
+      },
+
+      save: function() {
+        browser.click('.e2eSaveBtn');
+      }
+    },
+
+
     forumButtons: {
       clickViewCategories: function() {
         browser.waitAndClick('#e2eViewCategoriesB');

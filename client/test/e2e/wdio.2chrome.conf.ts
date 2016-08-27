@@ -1,4 +1,5 @@
 import wdioConf = require('./wdio.conf');
+import settings = require('./utils/settings');
 var config = <any> wdioConf.config;
 
 // This makes Webdriver.io start 2 instances of Chrome, so that they can be tested at the
@@ -6,12 +7,12 @@ var config = <any> wdioConf.config;
 config.capabilities = {
   browserA: {
     desiredCapabilities: {
-      browserName: 'chrome'
+      browserName: settings.browserName,
     }
   },
   browserB: {
     desiredCapabilities: {
-      browserName: 'chrome'
+      browserName: settings.browserName,
     }
   }
 };

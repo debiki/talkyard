@@ -3,6 +3,9 @@
 # finish writing:
 #   /home/kajmagnus/Dropbox/debiki/docs/deploy-docker-todo-and-blog-post.txt
 
+# This'll make us call `exit 1` if there's an error. Don't run this if testing this script manually.
+is_in_script=true
+
 # Abort on any error
 set -e
 
@@ -15,6 +18,15 @@ exit 1
 
 # COULD: Check is in project root, & is git repository, & no outstanding changes.
 # COULD: Check all required ports open: 80, 443, 900, 9443, 9999, 3333
+
+# Won't exit if we're doing stuff manually on the command line (because it's annoying
+# if the terminal suddenly disappears).
+function die_if_in_script {
+  if [ -n "$is_in_script" ]; then
+    echo "Bye."
+    exit 1
+  fi
+}
 
 
 # Derive version number
@@ -31,10 +43,30 @@ version_tag="$version-`git rev-parse --short HEAD`"  # also in Build.scala [8GKB
 # COULD ask confirm if version nr less than previous nr
 
 
-# Build Docker images
+# Check everything is OK
 # ----------------------
 
 sudo docker-compose down
+
+if [ -n "`sudo docker ps -q`" ]; then
+  echo "Docker containers are running, please stop them."
+  die_if_in_script
+fi
+
+
+if [ -z "`which xvfb-run`" ]; then
+  echo
+  echo 'Note:'
+  echo 'xvfb not installed, cannot run tests headlessly. To install it:'
+  echo 'run:  sudo apt-get install xvfb'
+  echo '(works on Linux only, perhaps Mac)'
+  echo
+fi
+
+
+# Build Docker images
+# ----------------------
+
 sudo docker-compose build
 
 # Optimize assets, run unit & integration tests and build the Play Framework image
@@ -61,26 +93,59 @@ sudo $test_containers down
 sudo rm -fr modules/ed-prod-one-test/data
 sudo $test_containers up -d
 
-# todo: wait until everything up and running
-node_modules/selenium-standalone/bin/selenium-standalone start &
+xvfb-run -s '-screen 0 1280x1024x8' \
+  node_modules/selenium-standalone/bin/selenium-standalone start &
+
 selenium_pid=$!
 
 gulp build-e2e
-# hmm this fails the first time — seems the app container is too slow, directly
-# after startup. Needs some kind of warmup?
-scripts/wdio target/e2e/wdio.conf.js --skip3 --only all-links
-scripts/wdio target/e2e/wdio.conf.js --skip3 --only create-site
-scripts/wdio target/e2e/wdio.2chrome.conf.js --skip3 --only chat.2browsers
-scripts/wdio target/e2e/wdio.3chrome.conf.js --skip3 --only categories.3browsers
+
+# If we start running the tests too early, they will need to wait for Nashorn, and might then timeout and fail.
+echo "Waiting for Nashorn to compile Javascript code..."
+until $(curl --output /dev/null --silent --head --fail http://localhost/-/are-scripts-ready); do
+  printf '.'
+  sleep 1
+done
+
+function runEndToEndTest {
+  cmd="$@"
+  echo "Running end-to-end test: $cmd ..."
+  $cmd
+  if [ $? -ne 0 ]; then
+    echo
+    echo "***ERROR*** [EsE5KPY02]"
+    echo
+    echo "This end-to-end test failed: (the whole next line)"
+    echo "  $cmd"
+    die_if_in_script
+  else
+    echo "... Done."
+  fi
+}
+
+function runAllEndToEndTests {
+  browser=$1
+  echo "Running all end-to-end tests in $browser..."
+  runEndToEndTest scripts/wdio target/e2e/wdio.conf.js          --skip3 --browser $browser --only all-links
+  runEndToEndTest scripts/wdio target/e2e/wdio.conf.js          --skip3 --browser $browser --only create-site
+  runEndToEndTest scripts/wdio target/e2e/wdio.2chrome.conf.js  --skip3 --browser $browser --only chat.2browsers
+  runEndToEndTest scripts/wdio target/e2e/wdio.3chrome.conf.js  --skip3 --browser $browser --only categories.3browsers
+}
+
+runAllEndToEndTests chrome
+runAllEndToEndTests firefox
 
 kill $selenium_pid
 sudo $test_containers down
+
+sudo docker ps # if anything is running, something is amiss?
 
 
 # All fine, so publish images and new version number.
 # ----------------------
 
 # todo: don't do this if WIP version
+
 
 sudo docker tag debiki/ed-app debiki/ed-app:$version_tag
 sudo docker tag debiki/ed-web debiki/ed-web:$version_tag
@@ -104,3 +169,4 @@ scripts/bump-versions.sh
 
 # no: Custom Git log message
 # todo: bump patch number in version.txt, add -SNAPSHOT
+# vim: et ts=2 sw=2 tw=0 list

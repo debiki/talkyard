@@ -18,6 +18,7 @@ interface TestSettings {
   skip3rdPartyDependentTests?: boolean;
   grep: string;
   only: string;
+  browserName: string;
   gmailEmail?: string;
   gmailPassword?: string;
   facebookAdminPassword?: string;

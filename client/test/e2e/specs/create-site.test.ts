@@ -47,11 +47,13 @@ describe('/-/create-site  @createsite', function() {
 
     // Done with create site stuff. But let's test a little bit more, so we know the forum can
     // actually be used, once it's been created: Edit forum title and post a topic.
-    // --- Edit title.  (Later: break out this as a page object)
-    browser.click('#e2eEditTitle');
-    browser.waitAndSetValue('#e2eTitleInput', "Pwd Frm Edtd");
-    browser.click('.e2eSaveBtn');
-    browser.waitAndAssertVisibleTextMatches('h1.dw-p-ttl', /Pwd Frm Edtd/);
+
+    // --- Edit title
+    pages.pageTitle.clickEdit();
+    pages.pageTitle.editTitle("Pwd Frm Edtd");
+    pages.pageTitle.save();
+    browser.assertPageTitleMatches(/Pwd Frm Edtd/);
+
     // --- Post a topic.  (Later: break out this as a page object)
     browser.click('#e2eCreateSth');
     browser.waitAndSetValue('.esEdtr_titleEtc_title', "New tpc ttl");

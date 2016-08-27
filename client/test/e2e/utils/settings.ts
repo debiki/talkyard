@@ -36,6 +36,10 @@ settings.debugAfterwards = args.debugAfterwards || args.da;
 // Whatever. Wait 30 seconds by default.)
 settings.waitforTimeout = settings.debugAfterwards || args.noTimeout || args.nt ? 2147483647 : 30*1000;
 
+settings.browserName = 'chrome';
+if (args.ff) settings.browserName = 'firefox';
+if (args.firefox) settings.browserName = 'firefox';
+
 if (settings.skip3) settings.skip3rdPartyDependentTests = true;
 
 if (settings.password) {
