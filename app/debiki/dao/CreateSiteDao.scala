@@ -44,7 +44,7 @@ trait CreateSiteDao {
   }
 
 
-  def createSite(name: String, hostname: String,
+  def createSite(name: String, status: SiteStatus, hostname: String,
         embeddingSiteUrl: Option[String], organizationName: String,
         creatorEmailAddress: String, creatorId: UserId, browserIdData: BrowserIdData,
         isTestSiteOkayToDelete: Boolean, skipMaxSitesCheck: Boolean, pricePlan: PricePlan)
@@ -63,7 +63,7 @@ trait CreateSiteDao {
     }
 
     readWriteTransaction { transaction =>
-      val newSite = transaction.createSite(name = name, hostname = hostname,
+      val newSite = transaction.createSite(name = name, status, hostname = hostname,
         embeddingSiteUrl, creatorIp = browserIdData.ip, creatorEmailAddress = creatorEmailAddress,
         quotaLimitMegabytes = config.createSite.quotaLimitMegabytes,
         maxSitesPerIp = maxSitesPerIp, maxSitesTotal = maxSitesTotal,

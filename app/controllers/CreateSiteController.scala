@@ -121,8 +121,8 @@ object CreateSiteController extends Controller {
       val goToUrl: String =
         try {
           request.dao.createSite(
-            name = localHostname, hostname = hostname, embeddingSiteUrl = anyEmbeddingSiteAddress,
-            creatorEmailAddress = emailAddress,
+            name = localHostname, SiteStatus.NoAdmin, hostname = hostname,
+            embeddingSiteUrl = anyEmbeddingSiteAddress, creatorEmailAddress = emailAddress,
             creatorId = request.user.map(_.id) getOrElse UnknownUserId,
             browserIdData = request.theBrowserIdData, organizationName = organizationName,
             isTestSiteOkayToDelete = isTestSiteOkayToDelete, skipMaxSitesCheck = okE2ePassword,

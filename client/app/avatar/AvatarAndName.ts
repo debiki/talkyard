@@ -48,7 +48,7 @@ export var AvatarAndName = createComponent({
       namePart1 = r.span({ className: 'esAvtrName' }, '(Unknown author)');
     }
     var onClick = this.props.ignoreClicks ?
-        null : () => debiki2.pagedialogs.getAboutUserDialog().openForUserId(user.id);
+        null : () => debiki2.pagedialogs.getAboutUserDialog().openForUserIdOrUsername(user.id);
     return (
         r.span({ className: 'esAvtrName', onClick: onClick },
           avatar, namePart1, namePart2));

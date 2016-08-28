@@ -317,6 +317,18 @@ Gifffer();
 // Show large images on click.
 StupidLightbox.start('.dw-p-bd', ':not(.giffferated, .no-lightbox)');
 
+
+// Open about-user dialog if one clicks a @username mention (instead of navigating away to
+// the about-user page).
+$(document).on('click', 'a.esMention', function(event) {
+  event.preventDefault();
+  var $this = $(this);
+  var url = $this.attr('href');
+  var username = url.replace('/-/users/', '');
+  debiki2.pagedialogs.getAboutUserDialog().openForUserIdOrUsername(username);
+});
+
+
 debiki2.dieIf(location.port && debiki.internal.serverOrigin.indexOf(':' + location.port) === -1,
     "Wrong port or origin? The server thinks its origin is " + debiki.internal.serverOrigin +
     " and it'll use that address when sending POST requests and loading scripts. " +

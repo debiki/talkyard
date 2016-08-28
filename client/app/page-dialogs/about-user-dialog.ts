@@ -63,9 +63,9 @@ var AboutUserDialog = createComponent({
     this.loadUser(post.authorIdInt);
   },
 
-  openForUserId: function(userId: number) {
+  openForUserIdOrUsername: function(idOrUsername: number | string) {
     this.setState({ isOpen: true, user: null, post: null, blocks: {} });
-    this.loadUser(userId);
+    this.loadUser(idOrUsername);
   },
 
   openForUser: function(user: BriefUser) {
@@ -82,8 +82,8 @@ var AboutUserDialog = createComponent({
     this.setState({ user: null, blocks: {} });
   },
 
-  loadUser: function(userId: number) {
-    Server.loadCompleteUser(userId, (user: CompleteUser) => {
+  loadUser: function(idOrUsername: number | string) {
+    Server.loadCompleteUser(idOrUsername, (user: CompleteUser) => {
       if (!this.isMounted()) return;
       if (!this.state.post) {
         this.setState({ user: user });

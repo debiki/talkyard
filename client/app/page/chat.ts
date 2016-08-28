@@ -183,7 +183,7 @@ var ChatMessage = createComponent({
     //headerProps.stuffToAppend.push(
     //  r.button({ className: 'esC_M_MoreB icon-ellipsis', key: 'm' }, "more"));
     return (
-      r.div({ className: 'esC_M' },
+      r.div({ className: 'esC_M', id: 'post-' + post.postId },
         avatar.Avatar({ user: author }),
         PostHeader(headerProps), // { store: _, post: _, ... } would be better?
         PostBody({ store: store, post: post })));
@@ -272,6 +272,17 @@ var ChatMessageEditor = createComponent({
       rows: DefaultEditorRows,
       advancedEditorInstead: false,
     };
+  },
+
+  componentDidMount: function() {
+    Server.loadEditorEtcScriptsAndLater(() => {
+      if (this.isUnmounted) return;
+      editor.startMentionsParser(this.refs.textarea, this.onTextEdited);
+    });
+  },
+
+  componentDidUnmount: function() {
+    this.isUnmounted = true;
   },
 
   onTextEdited: function(event) {

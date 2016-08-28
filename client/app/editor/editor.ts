@@ -70,6 +70,22 @@ function ensureEditorCreated(success) {
 }
 
 
+export function startMentionsParser(textarea, onTextEdited) {
+  $(textarea).atwho({
+    at: "@",
+    search_key: 'username',
+    tpl: "<li data-value='${atwho-at}${username}'>${username} (${fullName})</li>",
+    callbacks: {
+      remote_filter: (prefix, callback) => {
+        Server.listUsernames(prefix, callback);
+      }
+    }
+  }).on('inserted.atwho', (event, flag, query) => {
+    onTextEdited(event);
+  });
+}
+
+
 export function toggleWriteReplyToPost(postId: number, anyPostType?: number) {
   ensureEditorCreated(() => {
     theEditor.toggleWriteReplyToPost(postId, anyPostType);
@@ -139,7 +155,7 @@ export var Editor = createComponent({
 
   componentDidMount: function() {
     this.$columns = $('#esPageColumn, #esWatchbarColumn, #dw-sidebar .dw-comments');
-    this.startMentionsParser();
+    startMentionsParser(this.refs.textarea, this.onTextEdited);
     this.makeEditorResizable();
     this.initUploadFileStuff();
     this.perhapsShowGuidelineModal();
@@ -164,21 +180,6 @@ export var Editor = createComponent({
     if (elemToFocus) {
       elemToFocus.focus();
     }
-  },
-
-  startMentionsParser: function() {
-    $(this.refs.textarea).atwho({
-      at: "@",
-      search_key: 'username',
-      tpl: "<li data-value='${atwho-at}${username}'>${username} (${fullName})</li>",
-      callbacks: {
-        remote_filter: (prefix, callback) => {
-          Server.listUsernames(prefix, callback);
-        }
-      }
-    }).on('inserted.atwho', (event, flag, query) => {
-      this.onTextEdited(event);
-    });
   },
 
   makeEditorResizable: function() {
@@ -621,7 +622,9 @@ export var Editor = createComponent({
     // (COULD verify still edits same post/thing, or not needed?)
     var isEditingBody = this.state.editingPostId === d.i.BodyId;
     var sanitizerOpts = {
-      allowClassAndIdAttr: isEditingBody,
+      allowClassAndIdAttr: true, // isEditingBody, SECURITY SHOULD use another sanitizer [7FPKE02]
+      // and whitelist CSS classes and ids? Right now it'll be a little bit possible to
+      // make the post look annoyingly weird by adding the wrong CSS classes?
       allowDataAttr: isEditingBody
     };
     var htmlText = markdownToSafeHtml(this.state.text, window.location.host, sanitizerOpts);

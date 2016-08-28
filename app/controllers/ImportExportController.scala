@@ -150,6 +150,7 @@ object ImportExportController extends mvc.Controller {
     val siteToSave = siteData.site
     val site = request.dao.createSite(
       siteToSave.name,
+      siteToSave.status,
       siteToSave.canonicalHost.getOrDie("EsE2FUPFY7").hostname,
       embeddingSiteUrl = siteToSave.embeddingSiteUrl,
       organizationName = "Dummy organization name [EsM8YKWP3]",  // fix later

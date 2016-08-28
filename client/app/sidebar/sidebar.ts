@@ -582,7 +582,7 @@ function makeUsersContent(store: Store, users: BriefUser[], myId: UserId,
     var presenceTitle = isUserOnline ? 'Active' : 'Away';
     return (
         r.div({ key: user.id, className: 'esPresence esPresence-' + presenceClass,
-            onClick: () => pagedialogs.getAboutUserDialog().openForUserId(user.id) },
+            onClick: () => pagedialogs.getAboutUserDialog().openForUserIdOrUsername(user.id) },
           avatar.AvatarAndName({ user: user, ignoreClicks: true }),
           thatsYou,
           r.span({ className: 'esPresence_icon', title: presenceTitle })));

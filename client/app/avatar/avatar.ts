@@ -52,7 +52,7 @@ export var Avatar = createComponent({
       ReactActions.openUserProfile(this.props.user.id);
     }
     else {
-      pagedialogs.getAboutUserDialog().openForUserId(this.props.user.id);
+      pagedialogs.getAboutUserDialog().openForUserIdOrUsername(this.props.user.id);
     }
   },
 
