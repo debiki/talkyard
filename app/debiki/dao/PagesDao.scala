@@ -497,7 +497,14 @@ trait PagesDao {
       if (pageMeta.pageRole != PageRole.OpenChat)
         throwForbidden("EsE6YPK2", "Cannot join pages of type " + pageMeta.pageRole)
 
-      transaction.insertMessageMember(pageId, userId = userId, addedById = userId)
+      val wasInserted = transaction.insertMessageMember(pageId, userId = userId, addedById = userId)
+      if (!wasInserted) {
+        // This would happen if a user opens two tabs and clicks Join Chat in both.
+        COULD // push-update the other tab, so the Join button gets removed automaticall, so this
+        // cannot happen. (Returning OK from here and doing nothing, results in the chat page
+        // not being added to the watchbar.)
+        throwForbidden("EsE4KG0I2", "Already joined this chat channel")
+      }
 
       // Bump the page version, so the cached page json will be regenerated, now including
       // this new page member.

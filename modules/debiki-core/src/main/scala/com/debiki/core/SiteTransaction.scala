@@ -112,7 +112,7 @@ trait SiteTransaction {
   def indexPagesSoon(pageMeta: PageMeta*)
 
   // Rename to insert/loadPageMemberIds? [rename]
-  def insertMessageMember(pageId: PageId, userId: UserId, addedById: UserId)
+  def insertMessageMember(pageId: PageId, userId: UserId, addedById: UserId): Boolean
   def loadMessageMembers(pageId: PageId): Set[UserId]
   // Returns recently active pages first.
   def loadPageIdsUserIsMemberOf(userId: UserId, onlyPageRoles: Set[PageRole]): immutable.Seq[PageId]

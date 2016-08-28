@@ -524,24 +524,8 @@ function continueAfterLoginImpl(anyReturnToUrl?: string) {
   }
   else {
     // We're on a normal page (but not in a login popup window for an embedded comments page).
-    debiki2.ReactActions.loadMyself();
-    // COULD: Hmm, should I delay anyContinueAfterLoginCallback below
-    // until after loadMyself is done?
-
-    // Continue with whatever caused the login to happen.
-    // Old comment, perhaps obsolete:
-    //   If the login happens because the user submits a reply,
-    //   then, if the reply is submitted (from within
-    //   continueAnySubmission) before the dialog is closed, then,
-    //   when the browser moves the viewport to focus the new reply,
-    //   the welcome dialog might no longer be visible in the viewport.
-    //   But the viewport will still be dimmed, because the welcome
-    //   dialog is modal. So don't continueAnySubmission until
-    //   the user has closed the response dialog.
-    if (anyContinueAfterLoginCallback) {
-      anyContinueAfterLoginCallback();
-    }
-    // The login dialogs close themselves when the login event is fired (above).
+    // (The login dialogs close themselves when the login event gets fired.)
+    debiki2.ReactActions.loadMyself(anyContinueAfterLoginCallback);
   }
 }
 

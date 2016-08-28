@@ -58,7 +58,7 @@ export var ChatMessages = createComponent({
     var isChatMember = _.some(store.pageMemberIds, id => id === store.me.id);
     var editorOrJoinButton = isChatMember
         ? ChatMessageEditor({ store: this.props, scrollDownToViewNewMessage: this.scrollDown })
-        : JoinChatButton({ store: this.props, isChatMember: isChatMember });
+        : JoinChatButton({});
     return (
       r.div({ className: 'esChatPage dw-page' },
         TitleAndLastChatMessages({ store: this.props, ref: 'titleAndMessages' }),
@@ -242,15 +242,18 @@ var FixedAtBottom = createComponent({
 
 
 var JoinChatButton = createComponent({
+  componentWillUnmount: function() {
+    this.isUnmounted = true;
+  },
+
   joinChannel: function() {
     login.loginIfNeededReturnToHash(LoginReason.LoginToChat, '#theJoinChatB', () => {
-      if (this.props.isChatMember) {
-        // Now after having logged in, we know that this user is a channel member already.
-        // Need do nothing.
+      if (this.isUnmounted) {
+        // Now after having logged in, this join chat button got removed (unmounted) — that's
+        // because we've joined the chat already (some time long ago). So, need do nothing, now.
+        return;
       }
-      else {
-        Server.joinChatChannel();
-      }
+      Server.joinChatChannel();
     });
   },
 
@@ -281,7 +284,7 @@ var ChatMessageEditor = createComponent({
     });
   },
 
-  componentDidUnmount: function() {
+  componentWillUnmount: function() {
     this.isUnmounted = true;
   },
 

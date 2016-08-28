@@ -68,7 +68,7 @@ export var actionTypes = {
 };
 
 
-export function loadMyself() {
+export function loadMyself(afterwardsCallback?) {
   // The server has set new XSRF (and SID) cookie, and we need to
   // ensure old legacy <form> XSRF <input>:s are synced with the new cookie. But 1) the
   // $.ajaxSetup complete() handler that does tnis (in debiki.js) won't
@@ -90,6 +90,9 @@ export function loadMyself() {
       actionType: actionTypes.NewMyself,
       user: user
     });
+    if (afterwardsCallback) {
+      afterwardsCallback();
+    }
   });
 }
 
