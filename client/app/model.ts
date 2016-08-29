@@ -166,6 +166,8 @@ interface Myself {
   fullName?: string;
   avatarUrl?: string;
   rolePageSettings: any;
+  trustLevel: TrustLevel;
+  threatLevel: ThreatLevel;
 
   numUrgentReviewTasks: number;
   numOtherReviewTasks: number;

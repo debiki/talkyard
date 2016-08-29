@@ -32,6 +32,7 @@ trait MessagesDao {
   def sendMessage(title: TextAndHtml, body: TextAndHtml, toUserIds: Set[UserId],
         sentByWho: Who): PagePath = {
 
+    // The system user can send (internally, from within the server), but not receive, messages.
     if (toUserIds.contains(SystemUserId))
       throwForbidden("EsE2WUY0", "Cannot send messages to the System user")
 
@@ -42,13 +43,19 @@ trait MessagesDao {
     if (sentById <= MaxGuestId)
       throwForbidden("EsE5JGKU9", "Guests cannot send messages")
 
+    if (toUserIds.contains(sentById))
+      throwForbidden("EsE6GK0I2", o"""Cannot send a message to yourself. You are: $sentById,
+          sending to: ${ toUserIds.mkString(", ") }""")
+
     val (pagePath, notfs) = readWriteTransaction { transaction =>
       val sender = loadUserAndLevels(sentByWho, transaction)
 
-      if (sender.threatLevel == ThreatLevel.ModerateThreat) {
-        // Don't let unpolite users start private-messaging other well behaved users.
-        // But do let them talk with staff, e.g. ask "why am I not allowed to ...".
-        // COULD hide send-message button in the UI too.
+      // 1) Don't let unpolite users start private-messaging other well behaved users.
+      // But do let them talk with staff, e.g. ask "why am I not allowed to ...".
+      // 2) TrustLevle.New members haven't spent much time at the site, and it's a bit risky to
+      // let them start sending PMs directly.
+      if ((sender.threatLevel.toInt >= ThreatLevel.ModerateThreat.toInt ||
+          sender.trustLevel == TrustLevel.New) && !sender.isStaff) {
         val toUsers = transaction.loadUsers(toUserIds)
         if (toUsers.exists(!_.isStaff))
           throwForbidden("EsE8GY2F4_", "You may send direct messages to staff only")

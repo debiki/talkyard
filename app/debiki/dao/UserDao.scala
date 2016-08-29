@@ -135,6 +135,15 @@ trait UserDao {
   }
 
 
+  def lockMemberTrustLevel(memberId: UserId, newTrustLevel: Option[TrustLevel]) {
+    readWriteTransaction { transaction =>
+      val member = transaction.loadTheCompleteUser(memberId)
+      val memberAfter = member.copy(lockedTrustLevel = newTrustLevel)
+      transaction.updateCompleteUser(memberAfter)
+    }
+  }
+
+
   def lockMemberThreatLevel(memberId: UserId, newThreatLevel: Option[ThreatLevel]) {
     readWriteTransaction { transaction =>
       val member: CompleteUser = transaction.loadTheCompleteUser(memberId)
@@ -269,10 +278,7 @@ trait UserDao {
 
   def loadUserAndLevels(who: Who, transaction: SiteTransaction) = {
     val user = transaction.loadTheUser(who.id)
-    val trustLevel = user match {
-      case member: Member => member.effectiveTrustLevel
-      case _: Guest => TrustLevel.New
-    }
+    val trustLevel = user.effectiveTrustLevel
     val threatLevel = user match {
       case member: Member => member.effectiveThreatLevel
       case guest: Guest =>

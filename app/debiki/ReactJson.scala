@@ -578,6 +578,14 @@ object ReactJson {
           unapprovedPostsJson(user, pageId, transaction))
       } getOrElse (JsNull, JsNull, JsNull)
 
+    val threatLevel = user match {
+      case member: Member => member.threatLevel
+      case guest: Guest =>
+        COULD // load or get-from-cache IP bans ("blocks") for this guest and derive the
+        // correct threat level. However, for now, since this is for the brower only, this'll do:
+        ThreatLevel.HopefullySafe
+    }
+
     Json.obj(
       "id" -> JsNumber(user.id),
       "userId" -> JsNumber(user.id), // try to remove, use 'id' instead
@@ -590,6 +598,8 @@ object ReactJson {
       "isEmailKnown" -> JsBoolean(user.email.nonEmpty),
       "isAuthenticated" -> JsBoolean(user.isAuthenticated),
       "rolePageSettings" -> rolePageSettings,
+      "trustLevel" -> JsNumber(user.effectiveTrustLevel.toInt),
+      "threatLevel" -> JsNumber(threatLevel.toInt),
 
       "numUrgentReviewTasks" -> reviewTasksAndCounts.numUrgent,
       "numOtherReviewTasks" -> reviewTasksAndCounts.numOther,

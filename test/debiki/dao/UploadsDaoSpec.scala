@@ -25,10 +25,7 @@ import debiki.DebikiHttp.ResultException
 import debiki.{TextAndHtml, Globals}
 import io.efdi.server.Who
 import org.scalatest._
-import org.scalatestplus.play.OneAppPerSuite
 import java.{util => ju, io => jio}
-
-import play.api.test.FakeApplication
 
 
 class UploadsDaoSpec extends FreeSpec with MustMatchers {
@@ -314,7 +311,7 @@ class UploadsDaoAppSpec extends DaoAppSuite(disableScripts = false) {
         password = magic, isAdmin = true, isOwner = false).get)
 
       info("create site 2")
-      val site2 = dao.createSite("site-two-name", hostname = "site-two",
+      val site2 = dao.createSite("site-two-name", status = SiteStatus.Active, hostname = "site-two",
         embeddingSiteUrl = None, organizationName = "Test Org Name",
         creatorEmailAddress = "t@x.c", creatorId = user.id, browserIdData: BrowserIdData,
         isTestSiteOkayToDelete = false, skipMaxSitesCheck = true, pricePlan = "Unknown")

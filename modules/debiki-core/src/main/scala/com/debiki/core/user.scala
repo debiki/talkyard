@@ -147,7 +147,9 @@ case class NewPasswordUserData(
   password: String,
   isAdmin: Boolean,
   isOwner: Boolean,
-  isModerator: Boolean = false) {
+  isModerator: Boolean = false,
+  trustLevel: TrustLevel = TrustLevel.New,
+  threatLevel: ThreatLevel = ThreatLevel.HopefullySafe) {
 
   val passwordHash: String =
     DbDao.saltAndHashPassword(password)
@@ -166,7 +168,9 @@ case class NewPasswordUserData(
     passwordHash = Some(passwordHash),
     isOwner = isOwner,
     isAdmin = isAdmin,
-    isModerator = isModerator)
+    isModerator = isModerator,
+    trustLevel = trustLevel,
+    threatLevel = threatLevel)
 
   Validation.checkName(name)
   Validation.checkUsername(username)
@@ -177,7 +181,9 @@ case class NewPasswordUserData(
 
 object NewPasswordUserData {
   def create(name: Option[String], username: String, email: String, password: String,
-        isAdmin: Boolean, isOwner: Boolean, isModerator: Boolean = false)
+        isAdmin: Boolean, isOwner: Boolean, isModerator: Boolean = false,
+        trustLevel: TrustLevel = TrustLevel.New,
+        threatLevel: ThreatLevel = ThreatLevel.HopefullySafe)
         : NewPasswordUserData Or ErrorMessage = {
     for {
       okName <- Validation.checkName(name)
@@ -187,7 +193,8 @@ object NewPasswordUserData {
     }
     yield {
       NewPasswordUserData(name = okName, username = okUsername, email = okEmail,
-        password = okPassword, isAdmin = isAdmin, isOwner = isOwner, isModerator = isModerator)
+        password = okPassword, isAdmin = isAdmin, isOwner = isOwner, isModerator = isModerator,
+        trustLevel, threatLevel)
     }
   }
 }
@@ -201,7 +208,9 @@ case class NewOauthUserData(
   emailVerifiedAt: Option[ju.Date],
   identityData: OpenAuthDetails,
   isAdmin: Boolean,
-  isOwner: Boolean) extends NewUserData {
+  isOwner: Boolean,
+  trustLevel: TrustLevel = TrustLevel.New,
+  threatLevel: ThreatLevel = ThreatLevel.HopefullySafe) extends NewUserData {
 
   def makeIdentity(userId: UserId, identityId: IdentityId): Identity =
     OpenAuthIdentity(id = identityId, userId = userId, openAuthDetails = identityData)
@@ -210,7 +219,9 @@ case class NewOauthUserData(
 
 object NewOauthUserData {
   def create(name: Option[String], email: String, emailVerifiedAt: Option[ju.Date], username: String,
-        identityData: OpenAuthDetails, isAdmin: Boolean, isOwner: Boolean)
+        identityData: OpenAuthDetails, isAdmin: Boolean, isOwner: Boolean,
+        trustLevel: TrustLevel = TrustLevel.New,
+        threatLevel: ThreatLevel = ThreatLevel.HopefullySafe)
         : NewOauthUserData Or ErrorMessage = {
     for {
       okName <- Validation.checkName(name)
@@ -220,7 +231,8 @@ object NewOauthUserData {
     yield {
       NewOauthUserData(name = okName, username = okUsername, email = okEmail,
         emailVerifiedAt = emailVerifiedAt, identityData = identityData,
-        isAdmin = isAdmin, isOwner = isOwner)
+        isAdmin = isAdmin, isOwner = isOwner, trustLevel = trustLevel,
+        threatLevel = threatLevel)
     }
   }
 }
@@ -376,6 +388,7 @@ sealed trait User {
   def anyRoleId: Option[RoleId] = if (isRoleId(id)) Some(id) else None
 
   def isSuspendedAt(when: ju.Date) = User.isSuspendedAt(when, suspendedTill = suspendedTill)
+  def effectiveTrustLevel: TrustLevel
 
   def anyName: Option[String] = None
   def anyUsername: Option[String] = None
@@ -450,6 +463,7 @@ case class Guest(
   def isModerator: Boolean = false
   def isSuperAdmin: Boolean = false
   def suspendedTill: Option[ju.Date] = None
+  def effectiveTrustLevel = TrustLevel.New
 
   override def anyName = Some(guestName)
   def usernameOrGuestName = guestName

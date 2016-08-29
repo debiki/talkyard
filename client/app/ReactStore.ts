@@ -1119,6 +1119,9 @@ function makeStranger(): Myself {
   return {
     rolePageSettings: {},
 
+    trustLevel: TrustLevel.New,
+    threatLevel: ThreatLevel.HopefullySafe,
+
     numUrgentReviewTasks: 0,
     numOtherReviewTasks: 0,
 

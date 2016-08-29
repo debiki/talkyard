@@ -184,7 +184,7 @@ var UserBar = createComponent({
   },
 
   render: function() {
-    var loggedInUser = this.props.loggedInUser;
+    var loggedInUser: Myself = this.props.loggedInUser;
     var user = this.props.user;
     var isMe = loggedInUser.userId === user.id;
 
@@ -204,7 +204,7 @@ var UserBar = createComponent({
         ? r.li({}, r.a({ href: linkToUserInAdminArea(user.id) }, "View in Admin Area"))
         : null;
 
-    var sendMessageButton = loggedInUser.isAuthenticated && !isMe && !user_isGuest(user)
+    var sendMessageButton = me_maySendDirectMessageTo(loggedInUser, user)
         ? Button({ onClick: this.sendMessage, bsStyle: 'primary' }, "Send Message")
         : null;
 

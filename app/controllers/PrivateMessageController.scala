@@ -56,6 +56,8 @@ object PrivateMessageController extends mvc.Controller {
     throwBadRequestIf(toUserIds contains sender.id, "EsE7UKF2", "Cannot send message to yourself")
     throwEntityTooLargeIf(!sender.isStaff && text.length > MaxPostSizeForAuUsers,
       "EsE9PU0", "Message too long")
+    throwForbiddenIf(sender.id == SystemUserId, "EsE4GK8F4",
+      "The System user cannot send private messages")
 
     val bodyTextAndHtml = TextAndHtml(text, isTitle = false,
       allowClassIdDataAttrs = true, followLinks = false)

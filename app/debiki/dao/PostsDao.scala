@@ -199,6 +199,8 @@ trait PostsDao {
   }
 
 
+  /** Returns (review-reasons, shall-approve).
+    */
   def throwOrFindReviewPostReasons(page: PageDao, author: UserAndLevels,
         transaction: SiteTransaction): (Seq[ReviewReason], Boolean) = {
     throwOrFindReviewReasonsImpl(author, Some(page), newPageRole = None, transaction)
@@ -209,6 +211,11 @@ trait PostsDao {
         newPageRole: Option[PageRole], transaction: SiteTransaction)
         : (Seq[ReviewReason], Boolean) = {
     if (author.isStaff)
+      return (Nil, true)
+
+    // Don't review direct messages — then all staff would see them. Instead, only non-threat
+    // users with level >= Basic may post private messages to non-staff people.
+    if (page.map(_.role).contains(PageRole.Message))
       return (Nil, true)
 
     val reviewReasons = mutable.ArrayBuffer[ReviewReason]()

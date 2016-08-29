@@ -39,7 +39,7 @@ abstract class DebikiRequest[A] {
   def dao: SiteDao
   def request: Request[A]
 
-  def underlying = request
+  def underlying: Request[A] = request
 
   require(siteIdAndCanonicalHostname.id == dao.siteId, "EsE76YW2")
   require(user.map(_.id) == sid.userId, "EsE7PUUY2")

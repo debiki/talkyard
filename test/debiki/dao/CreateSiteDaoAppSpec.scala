@@ -37,7 +37,7 @@ class CreateSiteDaoAppSpec extends DaoAppSuite(maxSitesTotal = Some(75)) {
     val theEmail = email getOrElse s"$thePrefix@example.com"
     val theIdCookie = if (browserIdCookie eq null) s"$thePrefix-cookie" else browserIdCookie
     val theIp = if (ip eq null) s"$prefix.0.0.$number" else ip
-    dao.createSite(name = theLocalHostname, hostname = theHostname,
+    dao.createSite(name = theLocalHostname, status = SiteStatus.Active, hostname = theHostname,
       embeddingSiteUrl = None, organizationName = s"Org Name $thePrefix",
       creatorEmailAddress = theEmail, creatorId = user.id,
       BrowserIdData(ip = theIp, idCookie = theIdCookie, fingerprint = theFingerprint),

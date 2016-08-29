@@ -55,6 +55,22 @@ export function me_hasVoted(me: Myself, postId: PostId, what: string): boolean {
 }
 
 
+export function me_maySendDirectMessageTo(me: Myself, user: CompleteUser): boolean {
+  if (!user_isMember(me) || !user_isMember(user))
+    return false;
+
+  if (me.id === SystemUserId || user.id === SystemUserId)
+    return false;
+
+  if (me.id === user.id)
+    return false;
+
+  if (isStaff(me) || isStaff(user))
+    return true;
+
+  return me.trustLevel >= TrustLevel.Basic && me.threatLevel <= ThreatLevel.HopefullySafe;
+}
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

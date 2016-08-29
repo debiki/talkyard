@@ -25,6 +25,7 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.OneAppPerSuite
 import org.mockito.Mockito._
 import play.api.http.Status.TOO_MANY_REQUEST
+import play.{api => p}
 import java.{util => ju}
 
 
@@ -54,6 +55,8 @@ class RateLimiterSpec extends FreeSpec with MustMatchers with MockitoSugar
     when(requestMock.ip).thenReturn(theIp)
     when(requestMock.user).thenReturn(anyUser)
     when(requestMock.siteId).thenReturn(theSiteId)
+    when(requestMock.underlying).thenReturn(new p.test.FakeRequest[Unit](
+        method = "GET", uri = "/dummy", headers = p.mvc.Headers(), (), remoteAddress = theIp))
     requestMock
   }
 

@@ -77,10 +77,13 @@ class DaoAppSuite(
 
   /** Its name will be "User $password", username "user_$password" and email "user-$password@x.c",
     */
-  def createPasswordUser(password: String, dao: SiteDao): Member = {
+  def createPasswordUser(password: String, dao: SiteDao,
+        trustLevel: TrustLevel = TrustLevel.New,
+        threatLevel: ThreatLevel = ThreatLevel.HopefullySafe): Member = {
     dao.createPasswordUserCheckPasswordStrong(NewPasswordUserData.create(
       name = Some(s"User $password"), username = s"user_$password", email = s"user-$password@x.c",
-      password = s"public-$password", isAdmin = false, isOwner = false).get)
+      password = s"public-$password", isAdmin = false, isOwner = false,
+      trustLevel = trustLevel, threatLevel = threatLevel).get)
   }
 
 

@@ -140,7 +140,7 @@ function isMember(user: Myself | CompleteUser): boolean {
   return member;
 }
 
-function isStaff(user: Myself) {
+function isStaff(user: Myself | CompleteUser) {
   return user.isAdmin || user.isModerator;
 }
 

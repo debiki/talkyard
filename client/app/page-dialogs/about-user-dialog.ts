@@ -170,8 +170,8 @@ var AboutUser = createComponent({
     if (user.isAdmin) {
       isStaffInfo = 'Is administrator.';
     }
-    var sendMessageButton = !user_isMember(me) || user.id === SystemUserId || isCurrentUser ?
-        null : Button({ onClick: this.sendMessage, bsStyle: 'primary' }, 'Send Message');
+    var sendMessageButton = !me_maySendDirectMessageTo(me, user) ? null :
+        Button({ onClick: this.sendMessage, bsStyle: 'primary' }, 'Send Message');
     return (
       r.div({},
         r.div({ className: 'dw-about-user-actions' },
