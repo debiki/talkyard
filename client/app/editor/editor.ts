@@ -107,6 +107,13 @@ export function editNewForumPage(categoryId: number, role: PageRole) {
 }
 
 
+export function openToEditChatTitleAndPurpose() {
+  ensureEditorCreated(() => {
+    theEditor.openToEditChatTitleAndPurpose();
+  });
+}
+
+
 export function openToWriteChatMessage(text: string, onDone) {
   ensureEditorCreated(() => {
     theEditor.openToWriteChatMessage(text || '', onDone);
@@ -422,6 +429,24 @@ export var Editor = createComponent({
     });
     this.loadGuidelines(WritingWhat.NewPage, categoryId, role);
     this.updatePreview();
+  },
+
+  openToEditChatTitleAndPurpose: function() {
+    if (this.alertBadState())
+      return;
+    Server.loadCurrentPostText(BodyNr, (text: string, postUid: number, revisionNr: number) => {
+      this.showEditor();
+      // TODO edit title too
+      this.setState({
+        anyPostType: null,
+        editingPostId: BodyNr,
+        editingPostUid: postUid,
+        editingPostRevisionNr: revisionNr,
+        text: text,
+        onDone: null,
+      });
+      this.updatePreview();
+    });
   },
 
   openToWriteChatMessage: function(text: string, onDone?) {

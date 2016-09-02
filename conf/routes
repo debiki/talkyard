@@ -147,6 +147,7 @@ POST  /-/undelete-pages         controllers.PageController.undeletePages
 POST  /-/accept-answer          controllers.PageController.acceptAnswer
 POST  /-/unaccept-answer        controllers.PageController.unacceptAnswer
 POST  /-/join-page              controllers.PageController.joinPage
+POST  /-/leave-page             controllers.PageController.leavePage
 POST  /-/reply                  controllers.ReplyController.handleReply
 POST  /-/chat                   controllers.ReplyController.handleChatMessage
 POST  /-/submit-custom-form     controllers.ReplyController.handleCustomForm

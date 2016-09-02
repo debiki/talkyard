@@ -42,6 +42,13 @@ var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 var SidebarNumCommentsLimit = 5 + 1;  // 5 + page body
 
+// Or should one interact with it via Actions instead? For now, this is simpler & faster:
+export var contextBar;
+
+export function createContextbar(elem) {
+  contextBar = ReactDOM.render(sidebar.Sidebar({}), elem);
+}
+
 
 export var Sidebar = createComponent({
   mixins: [debiki2.StoreListenerMixin],

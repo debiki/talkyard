@@ -284,6 +284,10 @@ ReactDispatcher.register(function(payload) {
       userIdList_add(store.pageMemberIds, store.me.id);
       break;
 
+    case ReactActions.actionTypes.RemoveMeAsPageMember:
+      userIdList_remove(store.pageMemberIds, store.me.id);
+      break;
+
     case ReactActions.actionTypes.PatchTheStore:
       patchTheStore(action.storePatch);
       break;

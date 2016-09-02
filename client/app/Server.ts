@@ -810,8 +810,20 @@ export function insertChatMessage(text: string, success: () => void) {
 
 export function joinChatChannel() {
   postJsonSuccess('/-/join-page', (newWatchbar) => {
-    ReactActions.setWatchbar(newWatchbar);
+    if (newWatchbar) {
+      ReactActions.setWatchbar(newWatchbar);
+    }
     ReactActions.addMeAsPageMember();
+  }, { pageId: d.i.pageId });
+}
+
+
+export function leaveChatChannel() {
+  postJsonSuccess('/-/leave-page', (newWatchbar) => {
+    if (newWatchbar) {
+      ReactActions.setWatchbar(newWatchbar);
+    }
+    ReactActions.removeMeAsPageMember();
   }, { pageId: d.i.pageId });
 }
 

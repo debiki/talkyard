@@ -334,8 +334,11 @@ class SiteDao(
           throwIfMayNotSeeCategory(id, user)(transaction)
         case None =>
           // Deny access unless this is a private messages page.
-          if (pageMeta.pageRole != PageRole.Message || user.isEmpty)
+          if (pageMeta.pageRole != PageRole.Message)
             throwIndistinguishableNotFound("EsE0YK25-No-Category")
+
+          if (user.isEmpty)
+            throwIndistinguishableNotFound("EsE5PK4Z-No-User")
 
           val pageMembers = transaction.loadMessageMembers(pageMeta.pageId)
           if (!pageMembers.contains(user.getOrDie("EsE2WY50F3").id))

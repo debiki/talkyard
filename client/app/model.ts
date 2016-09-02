@@ -302,6 +302,7 @@ interface WatchbarTopic {
   unread?: boolean;
   notfsToMe?: number;
   notfsToMany?: number;
+  // pageType: PageRole;  // [4KW0Y2] add later
 }
 
 

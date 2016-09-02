@@ -122,9 +122,21 @@ object PageController extends mvc.Controller {
     Ok
   }
 
+
   def joinPage = PostJsonAction(RateLimits.JoinSomething, maxLength = 100) { request =>
+    joinOrLeavePage(join = true, request)
+  }
+
+
+  def leavePage = PostJsonAction(RateLimits.JoinSomething, maxLength = 100) { request =>
+    joinOrLeavePage(join = false, request)
+  }
+
+
+  private def joinOrLeavePage(join: Boolean, request: JsonPostRequest) = {
     val pageId = (request.body \ "pageId").as[PageId]
-    request.dao.joinPageIfAuth(pageId, userId = request.theUserId, request.theBrowserIdData) match {
+    request.dao.joinOrLeavePageIfAuth(pageId, join = join, userId = request.theUserId,
+        request.theBrowserIdData) match {
       case Some(newWatchbar) =>
         val watchbarWithTitles = request.dao.fillInWatchbarTitlesEtc(newWatchbar)
         Ok(watchbarWithTitles.toJsonWithTitles)

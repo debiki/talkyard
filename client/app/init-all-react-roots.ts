@@ -87,8 +87,7 @@ export function startRemainingReactRoots() {
 export function createSidebar() {
   var sidebarElem = document.getElementById('dw-any-sidebar');
   if (sidebarElem)
-    ReactDOM.render(
-        sidebar.Sidebar({}), sidebarElem);
+    sidebar.createContextbar(sidebarElem);
 }
 
 

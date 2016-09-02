@@ -62,6 +62,7 @@ export var actionTypes = {
   AddNotifications: 'AddNotifications',
   MarkAnyNotificationAsSeen: 'MarkAnyNotificationAsSeen',
   AddMeAsPageMember: 'AddMeAsPageMember',
+  RemoveMeAsPageMember: 'RemoveMeAsPageMember',
   UpdateOnlineUsersLists: 'UpdateOnlineUsersLists',
   UpdateUserPresence: 'UpdateUserPresence',
   PatchTheStore: 'PatchTheStore',
@@ -518,6 +519,13 @@ export function addNotifications(notfs: Notification[]) {
 export function addMeAsPageMember() {
   ReactDispatcher.handleViewAction({
     actionType: actionTypes.AddMeAsPageMember,
+  });
+}
+
+
+export function removeMeAsPageMember() {
+  ReactDispatcher.handleViewAction({
+    actionType: actionTypes.RemoveMeAsPageMember,
   });
 }
 

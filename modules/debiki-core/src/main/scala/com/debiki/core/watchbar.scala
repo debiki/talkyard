@@ -164,6 +164,10 @@ case class BareWatchbar(
     }
   }
 
+  def removeChatChannel(pageId: PageId): BareWatchbar = {
+    copy(chatChannels = chatChannels.filterNot(_.pageId == pageId))
+  }
+
   def addDirectMessage(pageId: PageId, hasSeenIt: Boolean): BareWatchbar = {
     if (directMessages.exists(_.pageId == pageId)) {
       if (!hasSeenIt) markPageAsSeen(pageId)

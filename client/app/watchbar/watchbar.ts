@@ -21,6 +21,9 @@
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../store-getters.ts" />
+/// <reference path="../utils/DropdownModal.ts" />
+/// <reference path="../editor/editor.ts" />
+/// <reference path="../sidebar/sidebar.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.watchbar {
@@ -32,6 +35,8 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
+var ModalDropdownButton = utils.ModalDropdownButton;
+var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 var watchbar;
 
@@ -100,7 +105,7 @@ var RecentTopicsAndNotfs = createComponent({
       if (_.some(chatChannels, c => c.pageId === topic.pageId)) return;
       if (_.some(directMessages, m => m.pageId === topic.pageId)) return;
       topicElems.push(
-        SingleTopic({ key: topic.pageId, topic: topic, flavor: 'recent',
+        SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'recent',
             isCurrent: topic.pageId === store.pageId }));
     });
     return (
@@ -141,7 +146,7 @@ var ChatChannels = createComponent({
     }
     else {
       topicElems = topics.map((topic: WatchbarTopic) =>
-          SingleTopic({ key: topic.pageId, topic: topic, flavor: 'chat',
+          SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'chat',
               isCurrent: topic.pageId === store.pageId }));
     }
     return (
@@ -165,7 +170,7 @@ var DirectMessages = createComponent({
     }
     else {
       topicElems = topics.map((topic: WatchbarTopic) =>
-          SingleTopic({ key: topic.pageId, topic: topic, flavor: 'direct',
+          SingleTopic({ key: topic.pageId, store: store, topic: topic, flavor: 'direct',
             isCurrent: topic.pageId === store.pageId }));
     }
     return (
@@ -178,9 +183,36 @@ var DirectMessages = createComponent({
 
 
 var SingleTopic = createComponent({
+  // If this topic is clicked, when it's the current topic already, then open the dropdown.
+  onClick: function(event) {
+    if (!this.props.isCurrent)
+      return;
+    event.preventDefault();
+    this.refs.topicActionsB.openDropdown();
+  },
+
+  editChatTitleAndPurpose: function() {
+    editor.openToEditChatTitleAndPurpose();
+  },
+
+  viewChatMembers: function() {
+    // This is a bit weird: interacting with the contextbar in two different ways. Oh well.
+    // Which approach is best? Perhaps wait until after [redux] rewrite.
+    ReactActions.setPagebarOpen(true);
+    sidebar.contextBar.showUsers();
+  },
+
+  openLeaveChatDialog: function() {
+    // For now: (Later, ask: Really? Why? No.)
+    Server.leaveChatChannel();
+  },
+
   render: function() {
+    var store: Store = this.props.store;
+    var me: Myself = store.me;
     var topic: WatchbarTopic = this.props.topic;
     var flavor: string = this.props.flavor;
+    var isChat = flavor === 'chat';
     var isCurrentTopicClass = this.props.isCurrent ? ' esWB_T-Current' : '';
     var unreadClass = topic.unread ? ' esWB_T-Unread' : '';
     var url = topic.url || linkToPageId(topic.pageId);
@@ -188,12 +220,42 @@ var SingleTopic = createComponent({
     // Roughly 30 chars fits. For now, to usually avoid unneeded tooltips: (dupl width [4YK0F2])
     var tooltip = title.length > 21 ? title : undefined;
     var moreClasses = isCurrentTopicClass + unreadClass;
+
+    // COULD add a WatchbarTopic.createdByMe field? or .mayAddMembers and .mayRemoveMembers?
+    // (Or load lazily, when opening the dropdown?)
+    var isAuthorOrStaff = isStaff(me);
+
+    var viewMembersButtonTitle = !isChat ? "View people here" : (
+        isAuthorOrStaff ? "View / add / remove members" : "View chat members");
+
+    // Would want to know if the *page* is of type chat, so can edit title etc, without
+    // having to join. [4KW0Y2]
+    var editChatInfoButton = !isChat || !isAuthorOrStaff || !this.props.isCurrent ? null :
+        MenuItem({ onSelect: this.editChatTitleAndPurpose },
+            r.span({ className: 'icon-help' }, "Edit chat title and purpose"));
+
+    var leaveChatButton = !isChat ? null :
+        MenuItem({ onSelect: this.openLeaveChatDialog },
+            r.span({ className: 'icon-help' }, "Leave this chat"));
+
+    var topicActionsButton = !this.props.isCurrent ? null :
+      ModalDropdownButton({ title: r.span({ className: 'icon-settings', title: "Topic actions" }),
+          className: 'esWB_T_B', id: 'e2eTopicActionsB', ref: 'topicActionsB', pullLeft: true,
+          dialogClassName: 'esWB_T_D' },
+        r.ul({ className: 'dropdown-menu' },
+          MenuItem({ onSelect: this.viewChatMembers },
+            r.span({ className: 'icon-help' }, viewMembersButtonTitle)),
+          editChatInfoButton,
+          leaveChatButton
+        ));
+
     // Could show num unread posts / chat messages. But would be rather complicated:
     // need to track num unread, + last visit date too, in the watchbar data.
     return (
-        r.li({ className: 'esWB_LI esWB_T-' + flavor + moreClasses },
+        r.li({ className: 'esWB_LI esWB_T-' + flavor + moreClasses, onClick: this.onClick },
           r.a({ className: 'esWB_T_Link', href: url, title: tooltip },
-            r.span({ className: 'esWB_T_Title' }, title))));
+            r.span({ className: 'esWB_T_Title' }, title)),
+          topicActionsButton));
   }
 });
 

@@ -318,7 +318,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
             anyCategoryId = Some(categoryId))
 
           val member = createPasswordUser(s"mem_740331", dao)
-          dao.joinPageIfAuth(chatPageId, member.id, browserIdData)
+          dao.joinOrLeavePageIfAuth(chatPageId, join = true, member.id, browserIdData)
 
           info("insert a chat messages, it gets auto-approved")
           val firstChat = dao.insertChatMessage(TextAndHtml.testBody("chat_740331_a"), chatPageId,

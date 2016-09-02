@@ -481,10 +481,10 @@ trait PagesDao {
   }
 
 
-  def joinPageIfAuth(pageId: PageId, userId: UserId, browserIdData: BrowserIdData)
-        : Option[BareWatchbar] = {
+  def joinOrLeavePageIfAuth(pageId: PageId, join: Boolean, userId: UserId,
+        browserIdData: BrowserIdData): Option[BareWatchbar] = {
     if (User.isGuestId(userId))
-      throwForbidden("EsE3GBS5", "Guest users cannot join topics or chat channels")
+      throwForbidden("EsE3GBS5", "Guest users cannot join/leave pages")
 
     val pageMeta = readWriteTransaction { transaction =>
       val pageMeta = transaction.loadPageMeta(pageId) getOrElse
@@ -494,20 +494,30 @@ trait PagesDao {
       throwIfMayNotSeePage(pageMeta, Some(user))(transaction)
 
       // Private chat channels are joined via user-to-user-invites only.
-      if (pageMeta.pageRole == PageRole.PrivateChat)
+      if (pageMeta.pageRole == PageRole.PrivateChat && !user.isStaff)
         throwIndistinguishableNotFound("50PU3")
 
       SECURITY // if user may not see the page, then throwIndistinguishableNotFound() [7C2KF24]
-      if (pageMeta.pageRole != PageRole.OpenChat)
+              // ...what? but that's done already a little bit above? Old comment.
+
+      if (!pageMeta.pageRole.isChat && join)
         throwForbidden("EsE6YPK2", "Cannot join pages of type " + pageMeta.pageRole)
 
-      val wasInserted = transaction.insertMessageMember(pageId, userId = userId, addedById = userId)
-      if (!wasInserted) {
-        // This would happen if a user opens two tabs and clicks Join Chat in both.
-        COULD // push-update the other tab, so the Join button gets removed automaticall, so this
-        // cannot happen. (Returning OK from here and doing nothing, results in the chat page
-        // not being added to the watchbar.)
-        throwForbidden("EsE4KG0I2", "Already joined this chat channel")
+      if (join) {
+        val wasInserted = transaction.insertMessageMember(
+          pageId, userId = userId, addedById = userId)
+        if (!wasInserted) {
+          // This would happen if a user opens two tabs and clicks Join Chat in both.
+          COULD // push-update the other tab, so the Join button gets removed automaticall, so this
+          // cannot happen. (Returning OK from here and doing nothing, results in the chat page
+          // not being added to the watchbar.)
+          throwForbidden("EsE4KG0I2", "Already joined this chat channel")
+        }
+      }
+      else {
+        val wasRemoved = transaction.removePageMember(pageId, userId = userId)
+        if (!wasRemoved)
+          return None
       }
 
       // Bump the page version, so the cached page json will be regenerated, now including
@@ -528,10 +538,19 @@ trait PagesDao {
       // Race condition, if the same user e.g. also leaves the page right now.
       // Fairly harmless though, since humans are single threaded.
       var watchbar: BareWatchbar = loadWatchbar(userId)
-      watchbar = watchbar.addChatChannelMarkSeen(pageId)
+      watchbar =
+        if (join) watchbar.addChatChannelMarkSeen(pageId)
+        else watchbar.removeChatChannel(pageId)
       saveWatchbar(userId, watchbar)
       // Another race condition.
-      pubSub.userWatchesPages(siteId, userId, watchbar.watchedPageIds)
+      if (join) {
+        pubSub.userWatchesPages(siteId, userId, watchbar.watchedPageIds)
+      }
+      else {
+        // Don't stop watching the chat channel. It'll probably appear in the recent-topics
+        // list, and remain visible there for a while, so we still want to be notified about it.
+        // But ... when stop watching it? SHOULD think about that.
+      }
       Some(watchbar)
     }
     else None
