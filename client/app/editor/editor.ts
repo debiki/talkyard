@@ -474,6 +474,7 @@ export var Editor = createComponent({
   },
 
   showAndFadeOutBackdrop: function() {
+    // Later: Start using util.FadingBackdrop instead. [4KEF0YUU2]
     this.setState({ backdropOpacity: 0.83 });
     var fadeBackdrop = () => {
       if (!this.isMounted()) return;

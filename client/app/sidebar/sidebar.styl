@@ -130,7 +130,8 @@ html:not(.dw-hz):not(.mouse) #dw-comment-counts
   display: flex;
   flex-flow: column;
 
-  z-index: 1001; // not above dialogs, but above resize-columns handle (1000)
+  position: relative;
+  z-index: 1; // so placed above a certain FadingBackdrop [6KEP0W2]
   $paddingLeft = 11px;
   padding: 0 0 0 $paddingLeft;
   width: 100%;

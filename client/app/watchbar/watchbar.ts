@@ -188,7 +188,7 @@ var SingleTopic = createComponent({
     if (!this.props.isCurrent)
       return;
     event.preventDefault();
-    this.refs.topicActionsB.openDropdown();
+    this.refs.actionsDropdown.openDropdown();
   },
 
   editChatTitleAndPurpose: function() {
@@ -198,8 +198,10 @@ var SingleTopic = createComponent({
   viewChatMembers: function() {
     // This is a bit weird: interacting with the contextbar in two different ways. Oh well.
     // Which approach is best? Perhaps wait until after [redux] rewrite.
-    ReactActions.setPagebarOpen(true);
-    sidebar.contextBar.showUsers();
+    ReactActions.setPagebarOpen(true);  // way 1
+    sidebar.contextBar.showUsers();     // way 2
+    this.refs.actionsDropdown.hideBackdrop();
+    sidebar.contextBar.highligtDuringMillis(700);
   },
 
   openLeaveChatDialog: function() {
@@ -240,7 +242,7 @@ var SingleTopic = createComponent({
 
     var topicActionsButton = !this.props.isCurrent ? null :
       ModalDropdownButton({ title: r.span({ className: 'icon-settings', title: "Topic actions" }),
-          className: 'esWB_T_B', id: 'e2eTopicActionsB', ref: 'topicActionsB', pullLeft: true,
+          className: 'esWB_T_B', id: 'e2eTopicActionsB', ref: 'actionsDropdown', pullLeft: true,
           dialogClassName: 'esWB_T_D' },
         r.ul({ className: 'dropdown-menu' },
           MenuItem({ onSelect: this.viewChatMembers },

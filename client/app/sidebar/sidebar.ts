@@ -24,6 +24,7 @@
 /// <reference path="../help/help.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
+/// <reference path="../util/FadingBackdrop.ts" />
 /// <reference path="minimap.ts" />
 //xx <reference path="unread-comments-tracker.ts" />
 
@@ -130,6 +131,10 @@ export var Sidebar = createComponent({
 
   showAdminGuide: function() {
     this.setState({ commentsType: 'AdminGuide' });
+  },
+
+  highligtDuringMillis: function(millis: number) {
+    this.refs.fadingBackdrop.showForMillis(millis);
   },
 
   componentDidMount: function() {
@@ -543,7 +548,8 @@ export var Sidebar = createComponent({
                     // Is 600 correct? Haven't checked, could do later
                     transitionAppearTimeout: 600, transitionEnterTimeout: 600,
                     transitionLeaveTimeout: 600 },
-                  listItems))))))));
+                  listItems)))))),
+      util.FadingBackdrop({ ref: 'fadingBackdrop' })));  // [6KEP0W2]
   }
 });
 
