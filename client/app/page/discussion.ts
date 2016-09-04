@@ -367,7 +367,7 @@ export var Title = createComponent({
         icon = r.span({ className: iconClass + clickableClass, onClick: onClick,
             title: iconTooltip });
       }
-      else if (store.pageRole === PageRole.Message) {
+      else if (store.pageRole === PageRole.FormalMessage) {
         icon = r.span({ className: 'icon-mail' });
         tooltip = "Personal message";
       }
@@ -501,7 +501,7 @@ var RootPostAndComments = createComponent({
 
     // On message pages, most likely max a few people talk — then threads make no sense.
     // On form submission pages, people don't see each others submissions, won't talk at all.
-    if (store.pageRole === PageRole.Message || store.pageRole === PageRole.Form) {
+    if (store.pageRole === PageRole.FormalMessage || store.pageRole === PageRole.Form) {
       repliesAreFlat = true;
       childIds = _.values(store.allPosts).map((post: Post) => post.postId);
     }

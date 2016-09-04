@@ -40,7 +40,7 @@ trait WatchbarDao {
         readOnlyTransaction { transaction =>
           val chatChannelIds = transaction.loadPageIdsUserIsMemberOf(
             userId, Set(PageRole.OpenChat, PageRole.PrivateChat))
-          val directMessageIds = transaction.loadPageIdsUserIsMemberOf(userId, Set(PageRole.Message))
+          val directMessageIds = transaction.loadPageIdsUserIsMemberOf(userId, Set(PageRole.FormalMessage))
           BareWatchbar.withChatChannelAndDirectMessageIds(chatChannelIds, directMessageIds)
         }
       }),

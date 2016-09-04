@@ -106,6 +106,7 @@ GET   /-/load-notifications     controllers.UserController.loadNotifications(use
 POST  /-/mark-notf-as-seen      controllers.UserController.markNotificationAsSeen
 GET   /-/load-user-info         controllers.UserController.loadUserInfo(userId)
 POST  /-/set-page-notf-level    controllers.UserController.savePageNotfLevel
+GET   /-/list-all-users         controllers.UserController.listAllUsers(usernamePrefix)
 GET   /-/list-usernames         controllers.UserController.listUsernames(pageId, prefix)
 GET   /-/load-user-preferences  controllers.UserController.loadUserPreferences(userId)
 POST  /-/save-user-preferences  controllers.UserController.saveUserPreferences
@@ -146,6 +147,7 @@ POST  /-/delete-pages           controllers.PageController.deletePages
 POST  /-/undelete-pages         controllers.PageController.undeletePages
 POST  /-/accept-answer          controllers.PageController.acceptAnswer
 POST  /-/unaccept-answer        controllers.PageController.unacceptAnswer
+POST  /-/add-users-to-page      controllers.PageController.addUsersToPage
 POST  /-/join-page              controllers.PageController.joinPage
 POST  /-/leave-page             controllers.PageController.leavePage
 POST  /-/reply                  controllers.ReplyController.handleReply
@@ -165,7 +167,7 @@ POST  /-/move-post              controllers.EditController.movePost
 
 GET   /-/load-post-revisions    controllers.EditController.loadPostRevisions(postId, revisionNr)
 
-POST  /-/send-private-message   controllers.PrivateMessageController.sendMessage
+POST  /-/start-private-group-talk controllers.PrivateMessageController.sendMessage
 
 POST  /-/upload-public-file     controllers.UploadsController.uploadPublicFile
 POST  /-/upload-avatar          controllers.UploadsController.uploadAvatar

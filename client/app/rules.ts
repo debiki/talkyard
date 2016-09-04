@@ -44,13 +44,9 @@ function mayIndeed() {
 function hasChatSection(pageRole: PageRole) {
   // On message pages, replies are flat already, so an additional flat section makes no sense.
   // Chat channels don't have any chat comments section (the whole page is nothing but chat msgs).
-  return pageRole !== PageRole.Message && !page_isChatChannel(pageRole);
+  return pageRole !== PageRole.FormalMessage && !page_isChatChannel(pageRole);
 }
 
-function canClose(pageRole: PageRole) {
-  // Lock messages instead so no new replies can be added.
-  return pageRole !== PageRole.Message;
-}
 
 function page_isChatChannel(pageRole: PageRole): boolean {
   return pageRole === PageRole.OpenChat || pageRole === PageRole.PrivateChat;
@@ -69,7 +65,7 @@ function page_isDiscussion(pageRole: PageRole): boolean {
 
 // [refactor] Move to page-methods.ts and rename to page_hmmHmmWhat? + isSection too, below.
 function isPageWithComments(pageRole: PageRole): boolean {
-  return page_isDiscussion(pageRole) && pageRole !== PageRole.Message;
+  return page_isDiscussion(pageRole) && pageRole !== PageRole.FormalMessage;
 }
 
 function isSection(pageRole: PageRole): boolean {

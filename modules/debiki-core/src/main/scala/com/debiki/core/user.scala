@@ -239,7 +239,7 @@ object NewOauthUserData {
 
 
 
-case class NameAndUsername(fullName: String, username: String)
+case class NameAndUsername(id: UserId, fullName: String, username: String)
 
 
 
@@ -247,6 +247,9 @@ case object User {
 
   /** The only other member is the System user. But it's a computer. */
   val LowestHumanMemberId = 1
+
+  /** Cannot talk with members with lower ids (System and SuperAdmin). */
+  val LowestTalkToMemberId = 3
 
   /** Used when things are inserted or updated automatically in the database. */
   val SystemUserId = -1   // change to +1  [5KGEP02]

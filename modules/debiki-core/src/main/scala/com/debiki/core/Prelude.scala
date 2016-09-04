@@ -68,10 +68,17 @@ object Prelude {
   import java.lang.{UnsupportedOperationException => UOE}
 
   implicit class GetOrDie[A](val underlying: Option[A]) {
-    def getOrDie(errorCode: String, message: String = ""): A = underlying.getOrElse(
+    def getOrDie(errorCode: String, message: => String = ""): A = underlying.getOrElse(
       throw new ju.NoSuchElementException(
         if (message.nonEmpty) s"$message [$errorCode]"
         else s"Element missing: None.get [$errorCode]"))
+  }
+
+  implicit class GetOrDieMap[K, V](val underlying: Map[K, V]) {
+    def getOrDie(key: K, errorCode: String, message: => String = ""): V = underlying.getOrElse(key,
+      throw new ju.NoSuchElementException(
+        if (message.nonEmpty) s"$message [$errorCode]"
+        else s"Element missing: Map.get [$errorCode]"))
   }
 
   // Error codes should be formatted like so:
@@ -87,6 +94,12 @@ object Prelude {
     throw new UOE("Not implemented: "+ what +" [error "+ errorCode +"]")
   def unimplementedIf(condition: Boolean, what: String) =
     if (condition) unimplemented(what)
+
+  def untested(errorCode: String, what: String) =
+    throw new UOE(s"Not tested: $what [$errorCode]")
+
+  def untestedIf(condition: Boolean, errorCode: String, what: => String = "") =
+    if (condition) untested(errorCode, what)
 
   def throwNoSuchElem(errorCode: String, message: => String) =
     throw new NoSuchElementException(s"$message [error $errorCode]")

@@ -143,7 +143,7 @@ export var Editor = createComponent({
       editingPostUid: null,
       messageToUserIds: [],
       newForumTopicCategoryId: null,
-      newForumPageRole: null,
+      newPageRole: null,
       guidelines: null,
       backdropOpacity: 0,
       isUploadingFile: false,
@@ -419,12 +419,16 @@ export var Editor = createComponent({
   editNewForumPage: function(categoryId: number, role: PageRole) {
     if (this.alertBadState())
       return;
+    // Private chat topics shouldn't be placed in any category.
+    dieIf(role === PageRole.PrivateChat && categoryId, 'EsE5KF024');
+    // But other topics should be placed in a category.
+    dieIf(role !== PageRole.PrivateChat && !categoryId, 'EsE8PE2B');
     this.showEditor();
     var text = this.state.text || this.state.draft || '';
     this.setState({
       anyPostType: null,
       newForumTopicCategoryId: categoryId,
-      newForumPageRole: role,
+      newPageRole: role,
       text: text
     });
     this.loadGuidelines(WritingWhat.NewPage, categoryId, role);
@@ -469,7 +473,7 @@ export var Editor = createComponent({
       messageToUserIds: [userId],
       text: '',
     });
-    this.loadGuidelines(WritingWhat.NewPage, null, PageRole.Message);
+    this.loadGuidelines(WritingWhat.NewPage, null, PageRole.FormalMessage);
     this.showAndFadeOutBackdrop();
   },
 
@@ -523,8 +527,8 @@ export var Editor = createComponent({
       }
       return true;
     }
-    if (this.state.newForumPageRole) {
-      alert("Please first either save or cancel your new forum topic");
+    if (this.state.newPageRole) {
+      alert("Please first either save or cancel your new topic");
       d.i.clearIsReplyingMarks();
       return true;
     }
@@ -664,7 +668,7 @@ export var Editor = createComponent({
   },
 
   changeNewForumPageRole: function(pageRole: PageRole) {
-    this.setState({ newForumPageRole: pageRole });
+    this.setState({ newPageRole: pageRole });
   },
 
   onCancelClick: function() {
@@ -684,7 +688,10 @@ export var Editor = createComponent({
   },
 
   saveStuff: function() {
-    if (this.state.newForumPageRole) {
+    if (page_isPrivateGroup(this.state.newPageRole)) {
+      this.startPrivateGroupTalk();
+    }
+    else if (this.state.newForumTopicCategoryId) {
       this.saveNewForumPage();
     }
     else if (_.isNumber(this.state.editingPostId)) {
@@ -693,10 +700,8 @@ export var Editor = createComponent({
     else if (this.state.isWritingChatMessage) {
       this.postChatMessage();
     }
-    else if (this.state.messageToUserIds.length) {
-      this.sendPrivateMessage();
-    }
     else {
+      // Probably replying to someone.
       this.saveNewPost();
     }
   },
@@ -721,7 +726,7 @@ export var Editor = createComponent({
     this.throwIfBadTitleOrText("Please write a topic title.", "Please write something.");
     var data = {
       categoryId: this.state.newForumTopicCategoryId,
-      pageRole: this.state.newForumPageRole,
+      pageRole: this.state.newPageRole,
       pageStatus: 'Published',
       pageTitle: this.state.title,
       pageBody: this.state.text
@@ -739,10 +744,11 @@ export var Editor = createComponent({
     });
   },
 
-  sendPrivateMessage: function() {
+  startPrivateGroupTalk: function() {
     this.throwIfBadTitleOrText("Please write a message title.", "Please write a message.");
     var state = this.state;
-    Server.sendMessage(state.title, state.text, state.messageToUserIds, (pageId: string) => {
+    Server.startPrivateGroupTalk(state.title, state.text, this.state.newPageRole,
+        state.messageToUserIds, (pageId: PageId) => {
       this.clearTextAndClose();
       window.location.assign('/-' + pageId);
     });
@@ -817,7 +823,7 @@ export var Editor = createComponent({
       isWritingChatMessage: false,
       messageToUserIds: [],
       newForumTopicCategoryId: null,
-      newForumPageRole: null,
+      newPageRole: null,
       editingPostRevisionNr: null,
       text: '',
       title: '',
@@ -889,6 +895,7 @@ export var Editor = createComponent({
     var state = this.state;
     var store: Store = state.store;
     var me: Myself = store.me;
+    var isPrivateGroup = page_isPrivateGroup(this.state.newPageRole);
 
     var guidelines = state.guidelines;
     var guidelinesElem;
@@ -923,21 +930,21 @@ export var Editor = createComponent({
     var titleInput;
     var pageRoleDropdown;
     var categoriesDropdown;
-    if (this.state.newForumPageRole || this.state.messageToUserIds.length) {
+    if (this.state.newForumTopicCategoryId || isPrivateGroup) {
       var titleErrorClass = this.state.showTitleErrors && !this.isTitleOk() ? ' esError' : '';
       titleInput =
           r.input({ className: 'title-input esEdtr_titleEtc_title form-control' + titleErrorClass,
               type: 'text', ref: 'titleInput', tabIndex: 1, onChange: this.onTitleEdited,
               placeholder: "Type a title — what is this about, in one brief sentence?" });
 
-      if (this.state.newForumPageRole)
+      if (this.state.newForumTopicCategoryId && !isPrivateGroup)
         categoriesDropdown =
           SelectCategoryDropdown({ className: 'esEdtr_titleEtc_category', store: store,
               selectedCategoryId: this.state.newForumTopicCategoryId,
               onCategorySelected: this.changeCategory });
 
-      if (this.state.newForumPageRole) {
-        pageRoleDropdown = PageRoleDropdown({ store: store, pageRole: this.state.newForumPageRole,
+      if (this.state.newPageRole) {
+        pageRoleDropdown = PageRoleDropdown({ store: store, pageRole: this.state.newPageRole,
             complicated: store.settings.showComplicatedStuff,
             onSelect: this.changeNewForumPageRole,
             title: 'Topic type', className: 'esEdtr_titleEtc_pageRole' });
@@ -961,9 +968,9 @@ export var Editor = createComponent({
     else if (this.state.messageToUserIds.length) {
       doingWhatInfo = "Your message:";
     }
-    else if (this.state.newForumPageRole) {
+    else if (this.state.newPageRole) {
       var what = "Create new topic";
-      switch (this.state.newForumPageRole) {
+      switch (this.state.newPageRole) {
         case PageRole.CustomHtmlPage: what = "Create a custom HTML page (add your own <h1> title)"; break;
         case PageRole.WebPage: what = "Create an info page"; break;
         case PageRole.Code: what = "Create a source code page"; break;
@@ -980,7 +987,7 @@ export var Editor = createComponent({
         case PageRole.PrivateChat: what = "New private chat title and purpose"; break;
         case PageRole.MindMap: what = "Create a mind map page"; break;
         case PageRole.Discussion: break; // use default
-        case PageRole.Message: die('EsE2KFE78'); break;
+        case PageRole.FormalMessage: die('EsE2KFE78'); break;
         case PageRole.Critique: what = "Ask for critique"; break; // [plugin]
       }
       doingWhatInfo = what + ":";
@@ -1032,8 +1039,8 @@ export var Editor = createComponent({
     else if (this.state.messageToUserIds.length) {
       saveButtonTitle = "Send message";
     }
-    else if (this.state.newForumPageRole) {
-      switch (this.state.newForumPageRole) {
+    else if (this.state.newPageRole) {
+      switch (this.state.newPageRole) {
         case PageRole.CustomHtmlPage:
         case PageRole.WebPage:
         case PageRole.Code:
@@ -1072,7 +1079,7 @@ export var Editor = createComponent({
     };
 
     var anyTextareaInstructions;
-    if (this.state.newForumPageRole === PageRole.Critique) {  // [plugin]
+    if (this.state.newPageRole === PageRole.Critique) {  // [plugin]
       anyTextareaInstructions =
           r.div({ className: 'editor-instructions' },
               "Add a link to your work, or upload an image. " +

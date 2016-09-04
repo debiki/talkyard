@@ -139,7 +139,7 @@ export var TitleEditor = createComponent({
     var titleText = titlePost.sanitizedHtml; // for now. TODO only allow plain text?
     var user = this.props.user;
     var isForumOrAboutOrMessage =
-      pageRole === PageRole.Forum || pageRole === PageRole.About || pageRole === PageRole.Message;
+      pageRole === PageRole.Forum || pageRole === PageRole.About || pageRole === PageRole.FormalMessage;
 
     if (!this.state.editorScriptsLoaded) {
       // The title is not shown, so show some whitespace to avoid the page jumping upwards.
@@ -203,7 +203,7 @@ export var TitleEditor = createComponent({
     // Once the complicated stuff has been shown, one cannot hide it, except by cancelling
     // the whole dialog. Because if hiding it, then what about any changes made? Save or ignore?
     var showAdvancedButton =
-        this.state.showComplicated || !user.isAdmin || pageRole === PageRole.Message
+        this.state.showComplicated || !user.isAdmin || pageRole === PageRole.FormalMessage
         ? null
         : r.a({ className: 'esTtlEdtr_openAdv icon-settings',
             onClick: this.showComplicated }, 'Advanced');

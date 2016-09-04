@@ -645,7 +645,13 @@ export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
 }
 
 
-export function listUsernames(prefix: string, doneCallback: (usernames: string[]) => void) {
+export function listAllUsernames(prefix: string, doneCallback: (usernames: BriefUser) => void) {
+  var url = '/-/list-all-users?usernamePrefix='+ prefix;
+  get(url, doneCallback);
+}
+
+
+export function listUsernames(prefix: string, doneCallback: (usernames: BriefUser) => void) {
   var url = origin + '/-/list-usernames?pageId='+ d.i.pageId + '&prefix='+ prefix;
   $.get(url)
     .done((response: any) => {
@@ -663,7 +669,7 @@ export function listUsernames(prefix: string, doneCallback: (usernames: string[]
 //
 export function loadDraftAndGuidelines(writingWhat: WritingWhat, categoryId: number,
       pageRole: PageRole, success: (guidelinesSafeHtml: string) => void) {
-  if (!categoryId && pageRole !== PageRole.Message) {
+  if (!categoryId && pageRole !== PageRole.FormalMessage) {
     // For now just cancel. There's no draft to load, and there're no guidelines, since
     // we got no category id.
     success(null);
@@ -808,6 +814,14 @@ export function insertChatMessage(text: string, success: () => void) {
 }
 
 
+export function addUsersToPage(userIds: UserId[], success) {
+  postJsonSuccess('/-/add-users-to-page', () => {
+    // Send new store data in the reply? [5FKE0WY2]
+    success();
+  }, { pageId: d.i.pageId, userIds: userIds });
+}
+
+
 export function joinChatChannel() {
   postJsonSuccess('/-/join-page', (newWatchbar) => {
     if (newWatchbar) {
@@ -828,10 +842,10 @@ export function leaveChatChannel() {
 }
 
 
-export function sendMessage(title: string, text: string, userIds: number[],
-    success: (pageId: string) => void) {
-  postJsonSuccess('/-/send-private-message', success,
-      { title: title, text: text, userIds: userIds });
+export function startPrivateGroupTalk(title: string, text: string, pageRole: PageRole,
+    userIds: number[], success: (pageId: PageId) => void) {
+  postJsonSuccess('/-/start-private-group-talk', success,
+      { title: title, text: text, pageRole: pageRole, userIds: userIds });
 }
 
 

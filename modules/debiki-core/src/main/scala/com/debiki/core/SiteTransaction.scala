@@ -296,6 +296,8 @@ trait SiteTransaction {
 
   def loadMemberByEmailOrUsername(emailOrUsername: String): Option[Member]
 
+  def loadMembersWithPrefix(usernamePrefix: String): immutable.Seq[Member]
+
   def loadUsers(): immutable.Seq[User]
   def loadCompleteUsers(
     onlyApproved: Boolean = false,

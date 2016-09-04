@@ -40,14 +40,26 @@
 .Select--multi .Select-value-icon
   padding: 2px 6px;
 
-// These are broken now, after react-select has been upgraded?
+// This one is broken now, after react-select has been upgraded?
 .Select-control
   border-color: hsl(0, 0%, 90%) hsl(0, 0%, 83%) hsl(0, 0%, 80%);
 
+// Does this one work?
 .Select-option.is-focused
   background-color: hsl($uiHue, 80%, 97%);
-  color: hsl($uiHue, 80%, 28%);
+  color: hsl($uiHue, 100%, 23%);
 
+// Works.
+// Make option texts darker so easier to read.
+.Select-option
+  color: hsl($uiHue, 50%, 28%);
+.Select-option.is-disabled
+  color: hsl(0, 0%, 60%);
+
+// Make the select-item dropdown push the stuff below downwards, so that stuff remains visible
+// instead of getting hidden by the dropdown.
+.Select-menu-outer
+  position: relative; // instead of absolute
 
 
 // The Stupid Lightbox

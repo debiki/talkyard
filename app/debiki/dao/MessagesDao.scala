@@ -29,8 +29,14 @@ trait MessagesDao {
   self: SiteDao =>
 
 
-  def sendMessage(title: TextAndHtml, body: TextAndHtml, toUserIds: Set[UserId],
-        sentByWho: Who): PagePath = {
+  /** COULD perhaps this method be used to create OpenChat pages too? So that the creator
+    * gets auto added to the page? [5KTE02Z]
+    */
+  def startGroupTalk(title: TextAndHtml, body: TextAndHtml, pageRole: PageRole,
+        toUserIds: Set[UserId], sentByWho: Who): PagePath = {
+
+    if (!pageRole.isPrivateGroupTalk)
+      throwForbidden("EsE5FKU02", s"Not a private group talk page role: $pageRole")
 
     // The system user can send (internally, from within the server), but not receive, messages.
     if (toUserIds.contains(SystemUserId))
@@ -61,7 +67,7 @@ trait MessagesDao {
           throwForbidden("EsE8GY2F4_", "You may send direct messages to staff only")
       }
 
-      val (pagePath, bodyPost) = createPageImpl2(PageRole.Message, title, body,
+      val (pagePath, bodyPost) = createPageImpl2(pageRole, title, body,
         byWho = sentByWho, transaction = transaction)
 
       (toUserIds + sentById) foreach { userId =>
@@ -69,8 +75,15 @@ trait MessagesDao {
           addedById = sentById)
       }
 
-      val notifications = NotificationGenerator(transaction).generateForMessage(
-        sender.user, bodyPost, toUserIds)
+      val notifications =
+        if (pageRole.isChat) {
+          unimplementedIf(toUserIds.nonEmpty, "EsE7PKW02")
+          Notifications.None
+        }
+        else {
+          NotificationGenerator(transaction).generateForMessage(
+            sender.user, bodyPost, toUserIds)
+        }
 
       transaction.saveDeleteNotifications(notifications)
       (pagePath, notifications)
@@ -79,13 +92,16 @@ trait MessagesDao {
     (toUserIds + sentById) foreach { userId =>
       // BUG. Race condition.
       var watchbar: BareWatchbar = loadWatchbar(userId)
-      watchbar = watchbar.addDirectMessage(pagePath.thePageId, hasSeenIt = userId == sentByWho.id)
+      val hasSeenIt = userId == sentByWho.id
+      watchbar =
+        if (pageRole.isChat) watchbar.addChatChannel(pagePath.thePageId, hasSeenIt)
+        else watchbar.addDirectMessage(pagePath.thePageId, hasSeenIt)
       saveWatchbar(userId, watchbar)
     }
 
     pubSub.publish(
       // pagePath.thePageId is pointless (since the page is new) — send the forum page id instead?
-      pubsub.NewPageMessage(siteId, pagePath.thePageId, PageRole.Message, notfs), byId = sentById)
+      pubsub.NewPageMessage(siteId, pagePath.thePageId, pageRole, notfs), byId = sentById)
 
     pagePath
   }

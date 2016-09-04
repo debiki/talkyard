@@ -177,17 +177,17 @@ object ViewPageController extends mvc.Controller {
         return (false, "EsE5GK702")
     }
 
-    if (pageMeta.pageRole == PageRole.Message || pageMeta.pageRole == PageRole.PrivateChat) {
+    if (pageMeta.pageRole.isPrivateGroupTalk) {
       val theUser = user getOrElse {
-        return (false, "EsE4YK032")
+        return (false, "EsE4YK032-No-User")
       }
 
       if (!theUser.isAuthenticated)
-        return (false, "EsE2GYF04")
+        return (false, "EsE2GYF04-Is-Guest")
 
       val memberIds = dao.loadMessageMembers(pageMeta.pageId)
       if (!memberIds.contains(theUser.id))
-        return (false, "EsE5K8W27")
+        return (false, "EsE5K8W27-Not-Page-Member")
     }
 
     (true, "")

@@ -32,13 +32,13 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
       val dao = Globals.siteDao(Site.FirstSiteId)
       val userOne = createPasswordUser("zzxxffgg", dao, trustLevel = TrustLevel.Basic)
       val userTwo = createPasswordUser("qqwwffpp", dao, trustLevel = TrustLevel.Basic)
-      val pagePath = dao.sendMessage(title = TextAndHtml.testTitle("title_558206"),
-        body = TextAndHtml.testBody("message_2749"), toUserIds = Set(userTwo.id),
-        sentByWho = Who(userOne.id, browserIdData))
+      val pagePath = dao.startGroupTalk(title = TextAndHtml.testTitle("title_558206"),
+        body = TextAndHtml.testBody("message_2749"), PageRole.FormalMessage,
+        toUserIds = Set(userTwo.id), sentByWho = Who(userOne.id, browserIdData))
 
       dao.readOnlyTransaction { transaction =>
         val page = PageDao(pagePath.pageId getOrDie "EsE6GMUK2", transaction)
-        page.role mustBe PageRole.Message
+        page.role mustBe PageRole.FormalMessage
         page.categoryId mustBe None
         page.parts.theTitle.approvedSource mustBe Some("title_558206")
         page.parts.theBody.approvedSource mustBe Some("message_2749")
@@ -81,7 +81,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
         dao.lockMemberThreatLevel(badUser.id, Some(ThreatLevel.MildThreat))
         val pagePath = sendMessageTo(Set(otherUser.id), fromUserId = badUser.id, dao)
         val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.thePageId))
-        pageMeta.pageRole mustBe PageRole.Message
+        pageMeta.pageRole mustBe PageRole.FormalMessage
       }
     }
 
@@ -99,19 +99,19 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
         dao.lockMemberTrustLevel(newUser.id, Some(TrustLevel.Basic))
         val pagePath = sendMessageTo(Set(otherUser.id), fromUserId = newUser.id, dao)
         val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.thePageId))
-        pageMeta.pageRole mustBe PageRole.Message
+        pageMeta.pageRole mustBe PageRole.FormalMessage
       }
     }
 
 
     def testMayNotMessage(dao: SiteDao, admin: User, sender: User, otherUser: User) {
       info("a moderate threat can message admin"); {
-        val pagePath = dao.sendMessage(title = TextAndHtml.testTitle("title_0482745"),
+        val pagePath = dao.startGroupTalk(title = TextAndHtml.testTitle("title_0482745"),
           body = TextAndHtml.testBody("body_0482745"), toUserIds = Set(admin.id),
           sentByWho = Who(sender.id, browserIdData))
 
         val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.thePageId))
-        pageMeta.pageRole mustBe PageRole.Message
+        pageMeta.pageRole mustBe PageRole.FormalMessage
       }
 
       info("but may not message non-staff")
@@ -127,7 +127,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
 
 
     def sendMessageTo(toWhom: Set[UserId], fromUserId: UserId, dao: SiteDao): PagePath =
-      dao.sendMessage(title = TextAndHtml.testTitle("title_0482745"),
+      dao.startGroupTalk(title = TextAndHtml.testTitle("title_0482745"),
         body = TextAndHtml.testBody("body_0482745"), toUserIds = toWhom,
         sentByWho = Who(fromUserId, browserIdData))
 

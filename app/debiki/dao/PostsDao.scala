@@ -215,7 +215,7 @@ trait PostsDao {
 
     // Don't review direct messages — then all staff would see them. Instead, only non-threat
     // users with level >= Basic may post private messages to non-staff people.
-    if (page.map(_.role).contains(PageRole.Message))
+    if (page.map(_.role).contains(PageRole.FormalMessage))
       return (Nil, true)
 
     val reviewReasons = mutable.ArrayBuffer[ReviewReason]()
@@ -239,7 +239,7 @@ trait PostsDao {
     // those, unless the receiver reports the message.
     // Later: Create a review task anyway, for admins only, if the user is considered a mild threat?
     // And throw-forbidden if considered a moderate threat.
-    if (newPageRole.contains(PageRole.Message)) {
+    if (newPageRole.contains(PageRole.FormalMessage)) {
       // For now, just this basic check to prevent too-often-flagged people from posting priv msgs
       // to non-staff. COULD allow messages to staff, but currently we here don't have access
       // to the page members, so we don't know if they are staff.

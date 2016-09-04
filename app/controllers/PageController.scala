@@ -62,7 +62,7 @@ object PageController extends mvc.Controller {
       // COULD make the Dao transaction like, and run this inside the transaction. [transaction]
       // Non-staff users shouldn't be able to create anything outside the forum section(s)
       // — except for private messages.
-      if (!request.theUser.isStaff && anyCategoryId.isEmpty && pageRole != PageRole.Message) {
+      if (!request.theUser.isStaff && anyCategoryId.isEmpty && pageRole != PageRole.FormalMessage) {
         throwForbidden("DwE8GKE4", "No category specified")
       }
 
@@ -123,6 +123,14 @@ object PageController extends mvc.Controller {
   }
 
 
+  def addUsersToPage = PostJsonAction(RateLimits.JoinSomething, maxLength = 100) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    val userIds = (request.body \ "userIds").as[Set[UserId]]
+    request.dao.addUsersToPage(userIds, pageId, request.who)
+    Ok
+  }
+
+
   def joinPage = PostJsonAction(RateLimits.JoinSomething, maxLength = 100) { request =>
     joinOrLeavePage(join = true, request)
   }
@@ -135,8 +143,7 @@ object PageController extends mvc.Controller {
 
   private def joinOrLeavePage(join: Boolean, request: JsonPostRequest) = {
     val pageId = (request.body \ "pageId").as[PageId]
-    request.dao.joinOrLeavePageIfAuth(pageId, join = join, userId = request.theUserId,
-        request.theBrowserIdData) match {
+    request.dao.joinOrLeavePageIfAuth(pageId, join = join, who = request.who) match {
       case Some(newWatchbar) =>
         val watchbarWithTitles = request.dao.fillInWatchbarTitlesEtc(newWatchbar)
         Ok(watchbarWithTitles.toJsonWithTitles)

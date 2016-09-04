@@ -420,6 +420,11 @@ trait UserDao {
   }
 
 
+  def loadMembersWithPrefix(prefix: String): immutable.Seq[Member] = {
+    readOnlyTransaction(_.loadMembersWithPrefix(prefix))
+  }
+
+
   def loadMember(userId: UserId): Option[Member] = {
     require(userId >= User.LowestMemberId, "EsE4GKX24")
     loadUser(userId).map(_.asInstanceOf[Member])

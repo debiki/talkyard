@@ -77,7 +77,7 @@ ReactDispatcher.register(function(payload) {
         location.reload();
 
       // SECURITY SHOULD go to / if in staff-only category, too.
-      if (store.pageRole === PageRole.Message) {
+      if (store.pageRole === PageRole.FormalMessage) {
         // We may not see it any longer.
         location.assign('/');
       }

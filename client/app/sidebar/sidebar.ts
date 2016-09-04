@@ -21,6 +21,7 @@
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../page/discussion.ts" />
 /// <reference path="../page/scroll-buttons.ts" />
+/// <reference path="../page-dialogs/add-remove-people-dialogs.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
@@ -314,6 +315,7 @@ export var Sidebar = createComponent({
     var minimapProps = $.extend({ ref: 'minimap' }, store);
     var commentsFound = isPageWithComments(store.pageRole) ? this.findComments() : null;
     var isChat = page_isChatChannel(store.pageRole);
+    var isStaffOrMyPage = isStaff(me) || store_thisIsMyPage(store);
 
     var sidebarClasses = '';
     if (store.horizontalLayout) {
@@ -523,6 +525,10 @@ export var Sidebar = createComponent({
           null : { opacity: '0.6' };
     }
 
+    var addMorePeopleButton = !page_isGroupTalk(store.pageRole) || !isStaffOrMyPage ? null :
+        r.button({ className: 'btn btn-default', onClick: pagedialogs.openAddPeopleDialog },
+          "Add more people");
+
     sidebarClasses += adminGuideActiveClass ? ' esCtxbar-adminGuide' : '';
 
     return (
@@ -548,7 +554,8 @@ export var Sidebar = createComponent({
                     // Is 600 correct? Haven't checked, could do later
                     transitionAppearTimeout: 600, transitionEnterTimeout: 600,
                     transitionLeaveTimeout: 600 },
-                  listItems)))))),
+                  listItems)),
+              addMorePeopleButton)))),
       util.FadingBackdrop({ ref: 'fadingBackdrop' })));  // [6KEP0W2]
   }
 });

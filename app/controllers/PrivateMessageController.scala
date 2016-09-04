@@ -29,10 +29,7 @@ import play.api.libs.json.{JsString, Json}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-/** Sends a private message from a user one or more other users. Admins have
-  * access to all messages, and also (not yet impl though) if the messages are
-  * placed in a certain forum category, then everyone in a group with the
-  * "correct" permissions on this category have access to the messages therein.
+/** Sends a private message from a user one or more other users.
   *
   * Read more about how to build a good message handling system here:
   *   https://meta.discourse.org/t/discourse-as-a-private-email-support-portal/34444
@@ -47,11 +44,18 @@ object PrivateMessageController extends mvc.Controller {
     val text = (body \ "text").as[String].trim
     val toUserIds = (body \ "userIds").as[Set[UserId]]
     val sender = request.theUser
+    val pageRoleInt = (body \ "pageRole").as[Int]
+    val pageRole = PageRole.fromInt(pageRoleInt) getOrElse throwBadRequest(
+      "EsE4KGP0W", "No page role specified")
 
+    throwBadRequestIf(!pageRole.isPrivateGroupTalk, "EsE5PK0R", s"Not private group talk: $pageRole")
     throwBadRequestIf(request.isGuest, "EsE6PGKB2", "Guests may not send private messages")
     throwBadRequestIf(title.isEmpty, "EsE2FKUp8", "No message title")
     throwBadRequestIf(text.trim.isEmpty, "EsE5JGU8", "Empty message")
-    throwBadRequestIf(toUserIds.isEmpty, "EsE7GMUW2", "No recipient")
+    // Private chat members can be added later, but a formal message starts by clicking "Message"
+    // on an about-user dialog or page, so then there'll always be a receiver.
+    throwBadRequestIf(toUserIds.isEmpty && pageRole != PageRole.PrivateChat,
+      "EsE7GMUW2", "No recipient")
     throwBadRequestIf(toUserIds.size > 5, "EsE3FKT5", "More than 5 recipients") // safest, for now
     throwBadRequestIf(toUserIds contains sender.id, "EsE7UKF2", "Cannot send message to yourself")
     throwEntityTooLargeIf(!sender.isStaff && text.length > MaxPostSizeForAuUsers,
@@ -67,8 +71,8 @@ object PrivateMessageController extends mvc.Controller {
     Globals.antiSpam.detectNewPageSpam(request, titleTextAndHtml, bodyTextAndHtml) map {
         isSpamReason =>
       throwForbiddenIfSpam(isSpamReason, "DwE5G5F3")
-      val pagePath = request.dao.sendMessage(
-        titleTextAndHtml, bodyTextAndHtml, toUserIds, sentByWho = request.who)
+      val pagePath = request.dao.startGroupTalk(
+        titleTextAndHtml, bodyTextAndHtml, pageRole, toUserIds, sentByWho = request.who)
       OkSafeJson(JsString(pagePath.pageId.getOrDie("DwE5JKY2")))
     }
   }

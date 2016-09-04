@@ -36,7 +36,7 @@ var ExplainingListItem = util.ExplainingListItem;
 
 
 // Some dupl code, see SelectCategoryDropdown [7GKDF25]
-// BEM name: esTopicType
+// BEM name: esTopicType -- no. Instead, esPTD = Page-Type-Dropdown?
 export var PageRoleDropdown = createComponent({
   getInitialState: function() {
     return {
@@ -122,8 +122,14 @@ export var PageRoleDropdown = createComponent({
     var chatOption = isBjjNotStaff ? null :
       ExplainingListItem({ onSelect: this.onSelect,
         activeEventKey: pageRole, eventKey: PageRole.OpenChat,
-        title: PageRole_Chat_IconString,
-        text: "A possibly never-ending conversation." });
+        title: PageRole_OpenChat_IconString,
+        text: "A perhaps never-ending conversation." });
+
+    var privateChatOption = !isStaff(me) ? null :
+      ExplainingListItem({ onSelect: this.onSelect,
+        activeEventKey: pageRole, eventKey: PageRole.PrivateChat,
+        title: PageRole_PrivateChat_IconString,
+        text: "Only visible to people that get invited to join the chat." });
 
     var wikiMindMap = !complicated ? false :
       ExplainingListItem({ onSelect: this.onSelect,
@@ -135,24 +141,8 @@ export var PageRoleDropdown = createComponent({
       ExplainingListItem({ onClick: this.showAllOptions,
         title: r.span({ className: 'esPageRole_showMore' }, "More...") });
 
-    var staffOnlyDivider;
-    var todoOption;
-    var privateChatOption;
-
-    if (isStaff(me) && showAllOptions) {
-      staffOnlyDivider = r.div({ className: 'esDropModal_header' }, "Only staff can create these:");
-
-      /* [refactor] remove, use Icon status Planned / Doing instead  [4YK0F24]
-      todoOption =
-        ExplainingListItem({ onSelect: this.onSelect,
-          activeEventKey: pageRole, eventKey: PageRole.ToDo,
-          title: PageRole_Todo_IconString,
-          text: "Something that should be done or fixed." });
-        */
-
-      // Not yet implemented:
-      // privateChatOption = r.option({ value: PageRole.PrivateChat }, "Private chat");
-    }
+    var staffOnlyDivider = !isStaff(me) ? null :
+        r.div({ className: 'esDropModal_header' }, "Only staff can create these:");
 
     var adminOnlyDivider;
     var webPageOption;
@@ -195,12 +185,10 @@ export var PageRoleDropdown = createComponent({
           chatOption,
           wikiMindMap,
 
-          showMore,
-
           staffOnlyDivider,
-
-          todoOption,
           privateChatOption,
+
+          showMore,
 
           adminOnlyDivider,
           formOption,

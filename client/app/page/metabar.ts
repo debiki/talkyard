@@ -120,7 +120,7 @@ export var Metabar = createComponent({
       : null;
 
     var anyExtraMeta;
-    if (store.pageRole === PageRole.Message) {
+    if (store.pageRole === PageRole.FormalMessage) {
       var members = store_getPageMembersList(store);
       var memberList = members.map((user) => {
         return (

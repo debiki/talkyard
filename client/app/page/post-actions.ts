@@ -28,6 +28,7 @@
 /// <reference path="../editor/title-editor.ts" />
 /// <reference path="../edit-history/edit-history-dialog.ts" />
 /// <reference path="../topbar/topbar.ts" />
+/// <reference path="../page-methods.ts" />
 /// <reference path="../page-dialogs/wikify-dialog.ts" />
 /// <reference path="../page-dialogs/delete-post-dialog.ts" />
 /// <reference path="../page-dialogs/move-posts-dialog.ts" />
@@ -200,7 +201,7 @@ export var PostActions = createComponent({
     // answered/fixed, the way to reopen it is to click the answered/fixed icon, to
     // mark it as not-answered/not-fixed again.)
     var closeReopenButton;
-    var canCloseOrReopen = !isDone && !isAnswered && canClose(store.pageRole);
+    var canCloseOrReopen = !isDone && !isAnswered && page_canBeClosed(store.pageRole);
     if (isPageBody && canCloseOrReopen && isStaffOrOwnPage) {
       var closeReopenTitle = "Reopen";
       var closeReopenIcon = 'icon-circle-empty';

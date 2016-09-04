@@ -57,6 +57,11 @@ trait PagesDao {
       throwBadRequest("DwE4FKW8", s"Bad page role: $pageRole")
     }
 
+    if (pageRole.isPrivateGroupTalk) {
+      throwForbidden("EsE5FKE0I2", "Use MessagesDao instead")
+      // Perhaps OpenChat pages should be created via MessagesDao too? [5KTE02Z]
+    }
+
     if (bodyTextAndHtml.safeHtml.trim.isEmpty)
       throwForbidden("DwE3KFE29", "Page body should not be empty")
 
@@ -118,7 +123,7 @@ trait PagesDao {
       "DwE9GK32", s"User not found, id: $authorId")
     anyCategoryId match {
       case None =>
-        if (pageRole != PageRole.Message && !author.isStaff)
+        if (pageRole != PageRole.FormalMessage && !author.isStaff)
           throwForbidden("EsE8GY32", "Only staff may create pages outside any category")
       case Some(categoryId) =>
         throwIfMayNotCreatePageIn(categoryId, Some(author))(transaction)
@@ -481,79 +486,133 @@ trait PagesDao {
   }
 
 
-  def joinOrLeavePageIfAuth(pageId: PageId, join: Boolean, userId: UserId,
-        browserIdData: BrowserIdData): Option[BareWatchbar] = {
-    if (User.isGuestId(userId))
+  def joinOrLeavePageIfAuth(pageId: PageId, join: Boolean, who: Who): Option[BareWatchbar] = {
+    if (User.isGuestId(who.id))
       throwForbidden("EsE3GBS5", "Guest users cannot join/leave pages")
 
-    val pageMeta = readWriteTransaction { transaction =>
+    val (pageMeta, couldntAdd) = addRemoveUsersToPageImpl(Set(who.id), pageId, add = join, who)
+    if (join && couldntAdd.nonEmpty) {
+      dieIf(couldntAdd.size != 1, "EsE7KPU02")
+      dieIf(couldntAdd.head.id != who.id, "EsE5PKT8")
+      // Couldn't add the user to the page: s/he has already been added.
+      // This would happen if a user opens two tabs and clicks Join Chat in both.
+      // Or if someone adds the user, which then clicks Join in an old tab in his/her browser.
+      // (This is OK.)
+    }
+
+    val oldWatchbar = loadWatchbar(who.id)
+    val newWatchbar =
+      if (pageMeta.pageRole.isChat) {
+        // Race condition, if the same user e.g. also leaves the page right now.
+        // Fairly harmless though, since humans are single threaded.
+        if (join) oldWatchbar.addChatChannelMarkSeen(pageId)
+        else oldWatchbar.removeChatChannel(pageId)
+      }
+      else {
+        // Later: could be group direct messages too (not just FormalMessage)
+        dieIf(pageMeta.pageRole != PageRole.FormalMessage, "EsE4FK02")
+        if (join) oldWatchbar.addDirectMessage(pageId, hasSeenIt = true)
+        else oldWatchbar.removeDirectMessage(pageId)
+      }
+
+    // Race.
+    saveWatchbar(who.id, newWatchbar)
+    if (join) {
+      // Another race condition.
+      pubSub.userWatchesPages(siteId, who.id, newWatchbar.watchedPageIds)
+    }
+    else {
+      // Don't stop watching the page. It'll probably appear in the recent-topics
+      // list, and remain visible there for a while, so we still want to be notified about it.
+      // But ... when stop watching it? SHOULD think about that.
+    }
+
+    Some(newWatchbar)
+  }
+
+
+  def addUsersToPage(userIds: Set[UserId], pageId: PageId, byWho: Who) {
+    addRemoveUsersToPageImpl(userIds, pageId, add = true, byWho)
+  }
+
+
+  private def addRemoveUsersToPageImpl(userIds: Set[UserId], pageId: PageId, add: Boolean,
+        byWho: Who): (PageMeta, Set[User]) = {
+    if (byWho.isGuest)
+      throwForbidden("EsE2GK7S", "Guests cannot add/remove people to pages")
+
+    if (userIds.size > 50)
+      throwForbidden("EsE5DKTW02", "Cannot add/remove more than 50 people at a time")
+
+    if (userIds.exists(User.isGuestId) && add)
+      throwForbidden("EsE5PKW1", "Cannot add guests to a page")
+
+    var couldntAdd: Set[User] = Set.empty
+
+    val result = readWriteTransaction { transaction =>
       val pageMeta = transaction.loadPageMeta(pageId) getOrElse
-        throwIndistinguishableNotFound("4GYX7")
+        throwIndistinguishableNotFound("42PKD0")
 
-      val user = transaction.loadTheUser(userId)
-      throwIfMayNotSeePage(pageMeta, Some(user))(transaction)
+      val usersById = transaction.loadMembersAsMap(userIds + byWho.id)
+      val me = usersById.getOrElse(byWho.id, throwForbidden(
+        "EsE6KFE0X", s"Your user cannot be found, id: ${byWho.id}"))
 
-      // Private chat channels are joined via user-to-user-invites only.
-      if (pageMeta.pageRole == PageRole.PrivateChat && !user.isStaff)
-        throwIndistinguishableNotFound("50PU3")
+      val numMembersAlready = transaction.loadUsersOnPageAsMap2(pageId).size
+      if (numMembersAlready > 200) {
+        // I guess something, not sure what?, would break if there are too many people watching
+        // the same page.
+        throwForbidden("EsE4FK0Y2", "Sorry but currently more than 200 page members isn't allowed")
+      }
 
-      SECURITY // if user may not see the page, then throwIndistinguishableNotFound() [7C2KF24]
-              // ...what? but that's done already a little bit above? Old comment.
+      throwIfMayNotSeePage(pageMeta, Some(me))(transaction)
 
-      if (!pageMeta.pageRole.isChat && join)
-        throwForbidden("EsE6YPK2", "Cannot join pages of type " + pageMeta.pageRole)
+      val addingRemovingMyselfOnly = userIds.size == 1 && userIds.head == me.id
 
-      if (join) {
-        val wasInserted = transaction.insertMessageMember(
-          pageId, userId = userId, addedById = userId)
-        if (!wasInserted) {
-          // This would happen if a user opens two tabs and clicks Join Chat in both.
-          COULD // push-update the other tab, so the Join button gets removed automaticall, so this
-          // cannot happen. (Returning OK from here and doing nothing, results in the chat page
-          // not being added to the watchbar.)
-          throwForbidden("EsE4KG0I2", "Already joined this chat channel")
+      if (!me.isStaff && me.id != pageMeta.authorId && !addingRemovingMyselfOnly)
+        throwForbidden(
+          "EsE28PDW9", "Only staff and the page author may add/remove people to/from the page")
+
+      if (add) {
+        if (!pageMeta.pageRole.isGroupTalk)
+          throwForbidden("EsE8TBP0", s"Cannot add people to pages of type ${pageMeta.pageRole}")
+
+        userIds.find(!usersById.contains(_)) foreach { missingUserId =>
+          throwForbidden("EsE5PKS40", s"User not found, id: $missingUserId, cannot add to page")
+        }
+
+        userIds foreach { id =>
+          COULD_OPTIMIZE // batch insert all users at once
+          val wasAdded = transaction.insertMessageMember(pageId, userId = id, addedById = me.id)
+          if (!wasAdded) {
+            // Someone else has added that user already.
+            couldntAdd += usersById.getOrDie(id, "EsE5PK02")
+          }
         }
       }
       else {
-        val wasRemoved = transaction.removePageMember(pageId, userId = userId)
-        if (!wasRemoved)
-          return None
+        userIds foreach { id =>
+          transaction.removePageMember(pageId, userId = id)
+        }
       }
 
       // Bump the page version, so the cached page json will be regenerated, now including
       // this new page member.
       // COULD add a numMembers field, and show # members, instead of # comments,
-      // in forum topic list? (becaus # comments in a chat channel is rather pointless,
-      // it's a stream of comments rather than a collection with a size)
+      // for chat topics, in the forum topic list? (because # comments in a chat channel is
+      // rather pointless, instead, # new comments per time unit matters more, but then it's
+      // simpler to instead show # users?)
       transaction.updatePageMeta(pageMeta, oldMeta = pageMeta, markSectionPageStale = false)
-      pageMeta
+      (pageMeta, couldntAdd)
     }
 
-    // todo: push new member notf to browsers
+    SHOULD // push new member notf to browsers, so that this gets updated: [5FKE0WY2]
+    // - new members' watchbars
+    // - everyone's context bar (the users list)
+    // - the Join Chat button (disappears/appears)
 
     // The page JSON includes a list of all page members, so:
     refreshPageInMemCache(pageId)
-
-    if (pageMeta.pageRole.isChat) {
-      // Race condition, if the same user e.g. also leaves the page right now.
-      // Fairly harmless though, since humans are single threaded.
-      var watchbar: BareWatchbar = loadWatchbar(userId)
-      watchbar =
-        if (join) watchbar.addChatChannelMarkSeen(pageId)
-        else watchbar.removeChatChannel(pageId)
-      saveWatchbar(userId, watchbar)
-      // Another race condition.
-      if (join) {
-        pubSub.userWatchesPages(siteId, userId, watchbar.watchedPageIds)
-      }
-      else {
-        // Don't stop watching the chat channel. It'll probably appear in the recent-topics
-        // list, and remain visible there for a while, so we still want to be notified about it.
-        // But ... when stop watching it? SHOULD think about that.
-      }
-      Some(watchbar)
-    }
-    else None
+    result
   }
 
 

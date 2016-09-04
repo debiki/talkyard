@@ -100,13 +100,14 @@ enum PageRole {
   Question = 10,
   Problem = 14,
   Idea = 15,
-  ToDo = 13,
+  ToDo = 13,  // remove? [4YK0F24]
   MindMap = 11,
   Discussion = 12,
+  FormalMessage = 17,
   OpenChat = 18,
   PrivateChat = 19,
-  Message = 17,
-  Form = 20,
+  // DirectMessage = 20,
+  Form = 20,  // try to remove?
   Critique = 16, // [plugin]
 }
 

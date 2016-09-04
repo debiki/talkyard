@@ -399,11 +399,31 @@ object UserController extends mvc.Controller {
   }
 
 
+  def listAllUsers(usernamePrefix: String) = GetAction { request =>
+    // Authorization check: Is a member? Add MemberGetAction?  [4KFRP01]
+    request.theMember
+
+    val members = request.dao.loadMembersWithPrefix(usernamePrefix)
+    val json = JsArray(
+      members map { member =>
+        Json.obj(
+          "id" -> member.id,
+          "username" -> member.username,
+          "fullName" -> member.fullName)
+      })
+    OkSafeJson(json)
+  }
+
+
   def listUsernames(pageId: PageId, prefix: String) = GetAction { request =>
+    // Authorization check: Is a member? Add MemberGetAction?  [4KFRP01]
+    request.theMember
+
     val names = request.dao.listUsernames(pageId = pageId, prefix = prefix)
     val json = JsArray(
       names map { nameAndUsername =>
         Json.obj(
+          "id" -> nameAndUsername.id,
           "username" -> nameAndUsername.username,
           "fullName" -> nameAndUsername.fullName)
       })

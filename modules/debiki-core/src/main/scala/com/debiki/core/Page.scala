@@ -265,6 +265,12 @@ sealed abstract class PageRole(protected val IntValue: Int, val staffOnly: Boole
 
   def isChat: Boolean = false
 
+  /** If the topic is a discussion between a closed group of people, and visible only to them.
+    */
+  def isPrivateGroupTalk: Boolean = false
+
+  def isGroupTalk = isChat || isPrivateGroupTalk
+
   /** Should use nofollow links if many people can edit a page. */
   def isWidelyEditable: Boolean = true
 
@@ -357,18 +363,25 @@ object PageRole {
   /** Users added explicitly. Topic not shown in forum unless already member. */
   case object PrivateChat extends PageRole(19, staffOnly = false) {
     override def isChat = true
-    override def mayChangeRole = false
-  }
-
-  /** Direct messages between two users, or a group of users. */
-  // Rename to MessageTopic? or DirectMessages? So won't be confused with
-  // ChatMessage:s in ChatChannel:s? [rename]
-  case object Message extends PageRole(17, staffOnly = false) {
+    override def isPrivateGroupTalk = true
     override def canClose = false // lock them instead
     override def mayChangeRole = false
   }
 
-  case object Form extends PageRole(20, staffOnly = false)
+  /** Formal direct messages between two users, or a group of users. Formal = not chat,
+    * instead the full editor + preview are shown, so the sender is encouraged
+    * to proofread and preview, rather than just typing lost of chatty verbose noise.
+    *
+    * If a FormalMessage topic is placed in a forum category, then everyone in a group
+    * with the "correct" permissions on this category has access to the topic. (Not yet impl.)
+    */
+  case object FormalMessage extends PageRole(17, staffOnly = false) {
+    override def isPrivateGroupTalk = true
+    override def canClose = false // lock them instead
+    override def mayChangeRole = false
+  }
+
+  case object Form extends PageRole(20, staffOnly = false)  // try to remove?
 
   case object Critique extends PageRole(16, staffOnly = false) // [plugin]
 
@@ -388,7 +401,7 @@ object PageRole {
     case ToDo.IntValue => ToDo
     case MindMap.IntValue => MindMap
     case Discussion.IntValue => Discussion
-    case Message.IntValue => Message
+    case FormalMessage.IntValue => FormalMessage
     case OpenChat.IntValue => OpenChat
     case PrivateChat.IntValue => PrivateChat
     case Form.IntValue => Form

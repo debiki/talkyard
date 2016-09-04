@@ -260,6 +260,9 @@ package object http {
     if (test) throwForbidden2(errorCode, message)
   }
 
+  def throwNotImplementedIf(test: Boolean, errorCode: String, message: => String = "") {
+    if (test) DebikiHttp.throwNotImplemented(errorCode, message)
+  }
 
   def throwLoginAsSuperAdmin(request: Request[_]) =
     if (DebikiHttp.isAjax(request)) throwForbidden2("EsE54YK2", "Not super admin")

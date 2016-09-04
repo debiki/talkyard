@@ -178,7 +178,7 @@ export var TopBar = createComponent({
 
     // Add a Home link for direct messages. They aren't placed in any category, so the above
     // code block ignores them.
-    if (!ancestorCategories && store.pageRole === PageRole.Message) {
+    if (!ancestorCategories && store.pageRole === PageRole.FormalMessage) {
       // Currently there's always just one site section, namely the forum.
       var homePath = store.siteSections[0].path;
       ancestorCategories =

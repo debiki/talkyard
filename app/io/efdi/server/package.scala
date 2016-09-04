@@ -26,6 +26,7 @@ package object server {
     def ip: String = browserIdData.ip
     def idCookie: String = browserIdData.idCookie
     def browserFingerprint = browserIdData.fingerprint
+    def isGuest = User.isGuestId(id)
   }
 
   case class UserAndLevels(user: User, trustLevel: TrustLevel, threatLevel: ThreatLevel) {

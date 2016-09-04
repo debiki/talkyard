@@ -62,7 +62,7 @@ object EditController extends mvc.Controller {
       case WriteWhat.OriginalPost =>
         if (thePageRole == PageRole.Critique) Some(AskForCritiqueGuidelines) // [plugin]
         else {
-          if (thePageRole == PageRole.Message) Some(DirectMessageGuidelines)
+          if (thePageRole == PageRole.FormalMessage) Some(DirectMessageGuidelines)
           else None // Some(OriginalPostGuidelines)
         }
     }
