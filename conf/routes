@@ -148,6 +148,7 @@ POST  /-/undelete-pages         controllers.PageController.undeletePages
 POST  /-/accept-answer          controllers.PageController.acceptAnswer
 POST  /-/unaccept-answer        controllers.PageController.unacceptAnswer
 POST  /-/add-users-to-page      controllers.PageController.addUsersToPage
+POST  /-/remove-users-from-page controllers.PageController.removeUsersFromPage
 POST  /-/join-page              controllers.PageController.joinPage
 POST  /-/leave-page             controllers.PageController.leavePage
 POST  /-/reply                  controllers.ReplyController.handleReply

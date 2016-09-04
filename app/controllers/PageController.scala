@@ -131,6 +131,14 @@ object PageController extends mvc.Controller {
   }
 
 
+  def removeUsersFromPage = PostJsonAction(RateLimits.JoinSomething, maxLength = 100) { request =>
+    val pageId = (request.body \ "pageId").as[PageId]
+    val userIds = (request.body \ "userIds").as[Set[UserId]]
+    request.dao.removeUsersFromPage(userIds, pageId, request.who)
+    Ok
+  }
+
+
   def joinPage = PostJsonAction(RateLimits.JoinSomething, maxLength = 100) { request =>
     joinOrLeavePage(join = true, request)
   }

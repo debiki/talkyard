@@ -822,6 +822,14 @@ export function addUsersToPage(userIds: UserId[], success) {
 }
 
 
+export function removeUsersFromPage(userIds: UserId[], success) {
+  postJsonSuccess('/-/remove-users-from-page', () => {
+    // Send new store data in the reply? [5FKE0WY2]
+    success();
+  }, { pageId: d.i.pageId, userIds: userIds });
+}
+
+
 export function joinChatChannel() {
   postJsonSuccess('/-/join-page', (newWatchbar) => {
     if (newWatchbar) {

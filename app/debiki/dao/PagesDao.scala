@@ -536,6 +536,11 @@ trait PagesDao {
   }
 
 
+  def removeUsersFromPage(userIds: Set[UserId], pageId: PageId, byWho: Who) {
+    addRemoveUsersToPageImpl(userIds, pageId, add = false, byWho)
+  }
+
+
   private def addRemoveUsersToPageImpl(userIds: Set[UserId], pageId: PageId, add: Boolean,
         byWho: Who): (PageMeta, Set[User]) = {
     if (byWho.isGuest)
@@ -557,11 +562,12 @@ trait PagesDao {
       val me = usersById.getOrElse(byWho.id, throwForbidden(
         "EsE6KFE0X", s"Your user cannot be found, id: ${byWho.id}"))
 
-      val numMembersAlready = transaction.loadUsersOnPageAsMap2(pageId).size
-      if (numMembersAlready > 200) {
-        // I guess something, not sure what?, would break if there are too many people watching
+      lazy val numMembersAlready = transaction.loadUsersOnPageAsMap2(pageId).size
+      if (add && numMembersAlready + userIds.size > 200) {
+        // I guess something, not sure what?, would break if too many people join
         // the same page.
-        throwForbidden("EsE4FK0Y2", "Sorry but currently more than 200 page members isn't allowed")
+        throwForbidden("EsE4FK0Y2", o"""Sorry but currently more than 200 page members
+            isn't allowed. There are $numMembersAlready page members already""")
       }
 
       throwIfMayNotSeePage(pageMeta, Some(me))(transaction)

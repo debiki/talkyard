@@ -54,7 +54,7 @@ var AboutUserDialog = createComponent({
       isOpen: false,
       user: null,
       post: null,
-      loggedInUser: debiki2.ReactStore.getUser()
+      store: ReactStore.allData(),
     };
   },
 
@@ -126,12 +126,13 @@ var AboutUserDialog = createComponent({
     if (this.state.isOpen) {
       var user: CompleteUser = this.state.user;
       var childProps = $.extend({
+        store: this.state.store,
         reload: this.reload,
-        loggedInUser: this.state.loggedInUser,
         post: this.state.post,
         user: user,
         viewUserProfile: this.viewUserProfile,
-        blocks: this.state.blocks
+        blocks: this.state.blocks,
+        close: this.close,
       }, this.props);
 
       if (!user) {
@@ -158,25 +159,54 @@ var AboutUser = createComponent({
     ReactActions.writeMessage(this.props.user.id);
   },
 
-  render: function() {
+  componentWillMount: function() {
+    this.isUnmounted = false;
+  },
+
+  componentWillUnmount: function() {
+    this.isUnmounted = true;
+  },
+
+  removeFromPage: function() {
     var user: CompleteUser = this.props.user;
-    var me: Myself = this.props.loggedInUser;
-    var isCurrentUser = user.id === me.id;
+    Server.removeUsersFromPage([user.id], () => {
+      if (!this.isUnmounted) this.props.close();
+      // [redux] send a page-members patch [5FKE0WY2]
+      util.openDefaultStupidDialog({ body: "Now I've removed him/her from this topic. " +
+          "Currently you need to refresh the page (hit F5) now, to see this change." })
+    });
+  },
+
+  render: function() {
+    var store: Store = this.props.store;
+    var user: CompleteUser = this.props.user;
+    var me: Myself = store.me;
+    var userIsMe = user.id === me.id;
 
     var isStaffInfo = null;
     if (user.isModerator) {
-      isStaffInfo = 'Is moderator.';
+      isStaffInfo = "Is moderator.";
     }
     if (user.isAdmin) {
-      isStaffInfo = 'Is administrator.';
+      isStaffInfo = "Is administrator.";
     }
+
     var sendMessageButton = !me_maySendDirectMessageTo(me, user) ? null :
-        Button({ onClick: this.sendMessage, bsStyle: 'primary' }, 'Send Message');
+        Button({ onClick: this.sendMessage, bsStyle: 'primary' }, "Send Message");
+
+    var userIsPageMember = page_isGroupTalk(store.pageRole) &&
+        _.includes(store.pageMemberIds, user.id);
+    var removeFromPageButton = userIsPageMember &&
+        (isStaff(me) || store_thisIsMyPage(store)) && !userIsMe
+      ? Button({ onClick: this.removeFromPage }, "Remove from topic")
+      : null;
+
     return (
       r.div({},
         r.div({ className: 'dw-about-user-actions' },
           sendMessageButton,
-          Button({ onClick: this.props.viewUserProfile }, 'View Profile')),
+          Button({ onClick: this.props.viewUserProfile }, "View Profile"),
+          removeFromPageButton),
         avatar.Avatar({ user: user, large: true, clickOpensUserProfilePage: true }),
         r.div({},
           r.b({}, user.username), r.br(),
@@ -206,14 +236,15 @@ var AboutGuest = createComponent({
   },
 
   render: function() {
+    var store: Store = this.props.store;
+    var me: Myself = store.me;
     var guest: Guest = this.props.user;
-    var loggedInUser: Myself = this.props.loggedInUser;
     var blocks: Blocks = this.props.blocks;
     var postId = this.props.post ? this.props.post.uniqueId : null;
 
     var blockButton;
     var blockModal;
-    if (loggedInUser.isAdmin && postId) {
+    if (isStaff(me) && postId) {
       if (blocks.isBlocked) {
         blockButton =
           Button({ title: 'Let this guest post comments again', onClick: this.unblockGuest },
