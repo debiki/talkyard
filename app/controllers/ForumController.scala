@@ -107,7 +107,7 @@ object ForumController extends mvc.Controller {
     }
 
     OkSafeJson(Json.obj(
-      "allCategories" -> ReactJson.categoriesJson(category.sectionPageId,
+      "allCategories" -> ReactJson.makeCategoriesJson(
         isStaff = true, restrictedOnly = false, request.dao),
       "newCategoryId" -> category.id,
       "newCategorySlug" -> category.slug))

@@ -86,9 +86,10 @@ trait CategoriesDao {
   self: SiteDao =>
 
   // The dao shouldn't live past the current HTTP request anyway.
-  private var categoriesById: Map[CategoryId, Category] = null
-  private var categoriesByParentId: mutable.HashMap[CategoryId, ArrayBuffer[Category]] = null
+  private var categoriesById: Map[CategoryId, Category] = _
+  private var categoriesByParentId: mutable.HashMap[CategoryId, ArrayBuffer[Category]] = _
   private var defaultCategoryId = NoCategoryId
+  private var rootCategories: Seq[Category] = _
 
 
   /** List categories in the site section (forum/blog/whatever) at page pageId.
@@ -105,6 +106,26 @@ trait CategoriesDao {
       case None =>
         (Nil, NoCategoryId)
     }
+  }
+
+
+  /** Sometimes the section page id is undefined — for example, when talking with someone
+    * in a personal chat. That chat topic isn't placed in any blog or forum. Then we want
+    * to list all categories, not just all categories in some (undefined) section.
+    *
+    * Returns (categories, default-category-id).  (Currently there can be only 1 default category)
+    */
+  def listAllCategories(isStaff: Boolean, restrictedOnly: Boolean): (Seq[Category], CategoryId) = {
+    if (rootCategories eq null) {
+      loadBuildRememberCategoryMaps()
+      dieIf(rootCategories eq null, "EsE4KG0W2")
+    }
+    unimplementedIf(rootCategories.length > 1, "EsU4KT2R8")
+    dieIf(rootCategories.isEmpty, "EsU5DT0R2")
+    val rootCategory = rootCategories.head
+    val categories = listCategoriesInTree(rootCategory.id, includeRoot = false,
+      isStaff = isStaff, restrictedOnly = restrictedOnly).sortBy(_.position)
+    (categories, rootCategory.defaultCategoryId getOrDie "EsE4GK02")
   }
 
 
@@ -146,9 +167,14 @@ trait CategoriesDao {
         isStaff: Boolean, restrictedOnly: Boolean, pageQuery: PageQuery, limit: Int)
         : Seq[PagePathAndMeta] = {
     val categoryIds =
-      if (includeDescendants)
+      if (includeDescendants) {
+        // (Include the start ("root") category because it might not be the root of the
+        // whole section (e.g. the whole forum) but only the root of a sub section (e.g.
+        // a category in the forum). The top root shouldn't contain any pages, but subtree roots
+        // usually contain pages. )
         listCategoriesInTree(categoryId, includeRoot = true,
           isStaff = isStaff, restrictedOnly = restrictedOnly).map(_.id)
+      }
       else {
         unimplementedIf(!isStaff, "!incl hidden in forum [EsE2PGJ4]")
         Seq(categoryId)
@@ -256,6 +282,7 @@ trait CategoriesDao {
       siblings.append(category)
     }
 
+    rootCategories = categoriesById.values.filter(_.isRoot).toVector
     val anyRoot = categoriesById.values.find(_.isRoot)
     defaultCategoryId = anyRoot.flatMap(_.defaultCategoryId) getOrElse NoCategoryId
     (categoriesById, categoriesByParentId, defaultCategoryId)

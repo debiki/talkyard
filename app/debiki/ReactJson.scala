@@ -191,8 +191,7 @@ object ReactJson {
     val (anyForumId: Option[PageId], ancestorsJsonRootFirst: Seq[JsObject]) =
       makeForumIdAndAncestorsJson(page.meta, dao)
 
-    val categories = anyForumId.map(
-      categoriesJson(_, isStaff = false, restrictedOnly = false, dao)).getOrElse(JsArray())
+    val categories = makeCategoriesJson(isStaff = false, restrictedOnly = false, dao)
 
     val anyLatestTopics: Seq[JsObject] =
       if (page.role == PageRole.Forum) {
@@ -635,24 +634,20 @@ object ReactJson {
     if (!request.isStaff)
       return (JsArray(), Nil)
 
-    val categoryId = request.thePageMeta.categoryId getOrElse {
-      // Not a forum topic. Could instead show an option to add the page to the / a forum?
-      return (JsArray(), Nil)
-    }
-
-    val rootCategory = request.dao.loadRootCategory(categoryId).getOrDie(
-      "EsE4YK8F2", s"Category $categoryId has no root category")
-    val defaultCategoryId = rootCategory.defaultCategoryId getOrDie "EsE4GKR47"
-
     // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
     // (request.dao might start a new transaction)
-    val categories = request.dao.listCategoriesInTree(rootCategory.id, includeRoot = false,
-      isStaff = true, restrictedOnly = true)
+    val (categories, defaultCategoryId) =
+      request.dao.listAllCategories(isStaff = true, restrictedOnly = true)
 
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
       makeCategoryJson(category, category.id == defaultCategoryId)
     })
+
+    val categoryId = request.thePageMeta.categoryId getOrElse {
+      // Not a forum topic. Could instead show an option to add the page to the / a forum?
+      return (categoriesJson, Nil)
+    }
 
     val (topics, pageStuffById) =
       if (request.thePageRole != PageRole.Forum) {
@@ -664,7 +659,7 @@ object ReactJson {
         // SHOULD avoid starting a new transaction, so can remove workaround [7YKG25P].
         // (We're passing request.dao to ForumController below.)
         val topics = ForumController.listTopicsInclPinned(
-          rootCategory.id, orderOffset, request.dao,
+          categoryId, orderOffset, request.dao,
           includeDescendantCategories = true,
           isStaff = true,
           restrictedOnly = true,
@@ -820,9 +815,9 @@ object ReactJson {
   }
 
 
-  def categoriesJson(sectionId: PageId, isStaff: Boolean, restrictedOnly: Boolean, dao: SiteDao)
+  def makeCategoriesJson(isStaff: Boolean, restrictedOnly: Boolean, dao: SiteDao)
         : JsArray = {
-    val (categories, defaultCategoryId) = dao.listSectionCategories(sectionId, isStaff = isStaff,
+    val (categories, defaultCategoryId) = dao.listAllCategories(isStaff = isStaff,
       restrictedOnly = restrictedOnly)
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
