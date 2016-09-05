@@ -29,12 +29,12 @@ import play.api.libs.json.{JsString, Json}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-/** Sends a private message from a user one or more other users.
+/** Starts discussions for a group of people: chat channels, or personal messages.
   *
   * Read more about how to build a good message handling system here:
   *   https://meta.discourse.org/t/discourse-as-a-private-email-support-portal/34444
   */
-object PrivateMessageController extends mvc.Controller {
+object GroupTalkController extends mvc.Controller {
 
 
   def sendMessage = AsyncPostJsonAction(RateLimits.PostReply, maxLength = MaxPostSize) {
@@ -54,7 +54,7 @@ object PrivateMessageController extends mvc.Controller {
     throwBadRequestIf(text.trim.isEmpty, "EsE5JGU8", "Empty message")
     // Private chat members can be added later, but a formal message starts by clicking "Message"
     // on an about-user dialog or page, so then there'll always be a receiver.
-    throwBadRequestIf(toUserIds.isEmpty && pageRole != PageRole.PrivateChat,
+    throwBadRequestIf(toUserIds.isEmpty && pageRole != PageRole.PrivateChat,   // test
       "EsE7GMUW2", "No recipient")
     throwBadRequestIf(toUserIds.size > 5, "EsE3FKT5", "More than 5 recipients") // safest, for now
     throwBadRequestIf(toUserIds contains sender.id, "EsE7UKF2", "Cannot send message to yourself")

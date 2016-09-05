@@ -168,7 +168,7 @@ POST  /-/move-post              controllers.EditController.movePost
 
 GET   /-/load-post-revisions    controllers.EditController.loadPostRevisions(postId, revisionNr)
 
-POST  /-/start-private-group-talk controllers.PrivateMessageController.sendMessage
+POST  /-/start-private-group-talk controllers.GroupTalkController.sendMessage
 
 POST  /-/upload-public-file     controllers.UploadsController.uploadPublicFile
 POST  /-/upload-avatar          controllers.UploadsController.uploadAvatar
