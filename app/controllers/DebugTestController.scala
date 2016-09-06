@@ -94,7 +94,8 @@ object DebugTestController extends mvc.Controller {
   }
 
 
-  def showBuildInfo = AdminGetAction { request =>
+  SECURITY; COULD // make this accessible only for admins + if ok forbidden-password specified.
+  def showBuildInfo = GetAction { request =>
     import generatedcode.BuildInfo
     val infoTextBuilder = StringBuilder.newBuilder
       .append("Build info:")

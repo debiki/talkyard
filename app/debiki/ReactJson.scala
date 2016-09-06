@@ -641,7 +641,7 @@ object ReactJson {
 
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
-      makeCategoryJson(category, category.id == defaultCategoryId)
+      makeCategoryJson(category, defaultCategoryId.contains(category.id))
     })
 
     val categoryId = request.thePageMeta.categoryId getOrElse {
@@ -821,7 +821,7 @@ object ReactJson {
       restrictedOnly = restrictedOnly)
     // A tiny bit dupl code [5YK03W5]
     val categoriesJson = JsArray(categories.filterNot(_.isRoot) map { category =>
-      makeCategoryJson(category, category.id == defaultCategoryId)
+      makeCategoryJson(category, defaultCategoryId.contains(category.id))
     })
     categoriesJson
   }

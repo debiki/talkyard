@@ -107,8 +107,8 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
     def testMayNotMessage(dao: SiteDao, admin: User, sender: User, otherUser: User) {
       info("a moderate threat can message admin"); {
         val pagePath = dao.startGroupTalk(title = TextAndHtml.testTitle("title_0482745"),
-          body = TextAndHtml.testBody("body_0482745"), toUserIds = Set(admin.id),
-          sentByWho = Who(sender.id, browserIdData))
+          body = TextAndHtml.testBody("body_0482745"), PageRole.FormalMessage,
+          toUserIds = Set(admin.id), sentByWho = Who(sender.id, browserIdData))
 
         val pageMeta = dao.readOnlyTransaction(_.loadThePageMeta(pagePath.thePageId))
         pageMeta.pageRole mustBe PageRole.FormalMessage
@@ -128,7 +128,7 @@ class MessagesDaoAppSpec extends DaoAppSuite(disableScripts = true, disableBackg
 
     def sendMessageTo(toWhom: Set[UserId], fromUserId: UserId, dao: SiteDao): PagePath =
       dao.startGroupTalk(title = TextAndHtml.testTitle("title_0482745"),
-        body = TextAndHtml.testBody("body_0482745"), toUserIds = toWhom,
+        body = TextAndHtml.testBody("body_0482745"), PageRole.FormalMessage, toUserIds = toWhom,
         sentByWho = Who(fromUserId, browserIdData))
 
   }

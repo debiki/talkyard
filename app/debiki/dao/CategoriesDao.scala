@@ -115,17 +115,20 @@ trait CategoriesDao {
     *
     * Returns (categories, default-category-id).  (Currently there can be only 1 default category)
     */
-  def listAllCategories(isStaff: Boolean, restrictedOnly: Boolean): (Seq[Category], CategoryId) = {
+  def listAllCategories(isStaff: Boolean, restrictedOnly: Boolean)
+        : (Seq[Category], Option[CategoryId]) = {
     if (rootCategories eq null) {
       loadBuildRememberCategoryMaps()
       dieIf(rootCategories eq null, "EsE4KG0W2")
     }
     unimplementedIf(rootCategories.length > 1, "EsU4KT2R8")
-    dieIf(rootCategories.isEmpty, "EsU5DT0R2")
+    if (rootCategories.isEmpty)
+      return (Nil, None)
+
     val rootCategory = rootCategories.head
     val categories = listCategoriesInTree(rootCategory.id, includeRoot = false,
       isStaff = isStaff, restrictedOnly = restrictedOnly).sortBy(_.position)
-    (categories, rootCategory.defaultCategoryId getOrDie "EsE4GK02")
+    (categories, Some(rootCategory.defaultCategoryId getOrDie "EsE4GK02"))
   }
 
 

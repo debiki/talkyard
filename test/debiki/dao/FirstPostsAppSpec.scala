@@ -318,11 +318,12 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
             anyCategoryId = Some(categoryId))
 
           val member = createPasswordUser(s"mem_740331", dao)
-          dao.joinOrLeavePageIfAuth(chatPageId, join = true, member.id, browserIdData)
+          val who = Who(member.id, browserIdData)
+          dao.joinOrLeavePageIfAuth(chatPageId, join = true, who)
 
           info("insert a chat messages, it gets auto-approved")
           val firstChat = dao.insertChatMessage(TextAndHtml.testBody("chat_740331_a"), chatPageId,
-            Who(member.id, browserIdData)).post
+            who).post
           firstChat.approvedById mustBe Some(SystemUserId)
 
           info("can still insert a reply")
@@ -332,7 +333,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
 
           info("another chat message")
           val secondChat = dao.insertChatMessage(TextAndHtml.testBody("chat_740331_d"), chatPageId,
-            Who(member.id, browserIdData)).post
+            who).post
           secondChat.approvedById mustBe Some(SystemUserId)
 
           info("can nevertheless insert reply 2")
@@ -342,7 +343,7 @@ class FirstPostsAppSpec extends ReviewStuffAppSuite("4FY2") {
 
           info("yet another chat message")
           val thirdChat = dao.insertChatMessage(TextAndHtml.testBody("chat_740331_f"), chatPageId,
-            Who(member.id, browserIdData)).post
+            who).post
           thirdChat.approvedById mustBe Some(SystemUserId)
 
           info("rejct reply 3")
