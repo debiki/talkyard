@@ -562,7 +562,7 @@ trait PagesDao {
       val me = usersById.getOrElse(byWho.id, throwForbidden(
         "EsE6KFE0X", s"Your user cannot be found, id: ${byWho.id}"))
 
-      lazy val numMembersAlready = transaction.loadUsersOnPageAsMap2(pageId).size
+      lazy val numMembersAlready = transaction.loadMessageMembers(pageId).size
       if (add && numMembersAlready + userIds.size > 200) {
         // I guess something, not sure what?, would break if too many people join
         // the same page.

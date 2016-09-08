@@ -21,7 +21,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.DebikiHttp._
 import debiki._
-import debiki.ReactJson.JsUser
 import io.efdi.server.http._
 import play.api._
 import play.api.libs.json.{JsArray, JsString, Json}

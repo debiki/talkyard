@@ -975,6 +975,10 @@ function patchTheStore(storePatch: StorePatch) {
     store.tagsStuff = _.extend(store.tagsStuff || {}, storePatch.tagsStuff);
   }
 
+  _.each(storePatch.usersBrief || [], (user: BriefUser) => {
+    store.usersByIdBrief[user.id] = user;
+  });
+
   // Highligt pages with new posts, in the watchbar.
   // And find out if some post was moved to elsewhere.
   _.each(storePatch.postsByPageId, (posts: Post[], pageId: PageId) => {
@@ -1022,9 +1026,6 @@ function patchTheStore(storePatch: StorePatch) {
   }
   store.pageVersion = storePatchPageVersion;
 
-  _.each(storePatch.usersBrief || [], (user: BriefUser) => {
-    store.usersByIdBrief[user.id] = user;
-  });
   var posts = storePatch.postsByPageId[store.pageId];
   _.each(posts || [], (post: Post) => {
     updatePost(post);

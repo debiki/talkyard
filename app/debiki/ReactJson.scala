@@ -141,7 +141,7 @@ object ReactJson {
     var numPostsRepliesSection = 0
     var numPostsChatSection = 0
 
-    var interestingPosts = posts filter { post =>
+    val interestingPosts = posts filter { post =>
       // In case a page contains both form replies and "normal" comments, don't load any
       // form replies, because they might contain private stuff. (Page type might have
       // been changed to/from Form.) [5GDK02]
@@ -163,18 +163,12 @@ object ReactJson {
       post.nr.toString -> postToJsonImpl(post, page, tags)
     }
 
-    val usersById = mutable.HashMap[UserId, User](page.parts.usersById.toSeq: _*)
-
     // Topic members (e.g. chat channel members) join/leave infrequently, so better cache them
     // than to lookup them each request.
     val pageMemberIds = transaction.loadMessageMembers(pageId)
-    val missingMemberIds = pageMemberIds filterNot usersById.contains
-    val missingMembers = transaction.loadUsers(missingMemberIds)
-    usersById ++= missingMembers.map(member => member.id -> member)
 
-    val usersByIdJson = JsObject(usersById map { idAndUser =>
-      idAndUser._1.toString -> JsUser(idAndUser._2)
-    })
+    val userIdsToLoad = mutable.Set[UserId]()
+    userIdsToLoad ++= pageMemberIds
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 
@@ -204,11 +198,17 @@ object ReactJson {
           isStaff = false, restrictedOnly = false,
           limit = ForumController.NumTopicsToList)
         val pageStuffById = dao.loadPageStuff(topics.map(_.pageId))
+        topics.foreach(_.meta.addUserIdsTo(userIdsToLoad))
         topics.map(controllers.ForumController.topicToJson(_, pageStuffById))
       }
       else {
         Nil
       }
+
+    val usersById = transaction.loadUsersAsMap(userIdsToLoad)
+    val usersByIdJson = JsObject(usersById map { idAndUser =>
+      idAndUser._1.toString -> JsUser(idAndUser._2)
+    })
 
     val siteSettings = dao.loadWholeSiteSettings()
     //val pageSettings = dao.loadSinglePageSettings(pageId)
@@ -430,7 +430,6 @@ object ReactJson {
       }
 
     val childrenSorted = page.parts.childrenBestFirstOf(post.nr)
-    val author = post.createdByUser(people)
     val postType: Option[Int] = if (post.tyype == PostType.Normal) None else Some(post.tyype.toInt)
 
     // For now, ignore ninja edits of the very first revision, because otherwise if
@@ -474,7 +473,6 @@ object ReactJson {
       "tags" -> JsArray(tags.toSeq.map(JsString)))
 
     if (post.isHidden) fields :+= "isPostHidden" -> JsTrue
-    if (author.email.isEmpty) fields :+= "authorEmailUnknown" -> JsTrue
 
     JsObject(fields)
   }

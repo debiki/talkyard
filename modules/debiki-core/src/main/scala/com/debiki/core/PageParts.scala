@@ -72,7 +72,7 @@ object PageParts {
   *
   * TODO move to debiki-server instead?
   */
-abstract class PageParts extends People {
+abstract class PageParts {
 
   private lazy val postsByNr: collection.Map[PostNr, Post] = {
     val postsMap = mutable.HashMap[PostNr, Post]()
@@ -163,11 +163,6 @@ abstract class PageParts extends People {
     PageParts.findFrequentPosters(this.allPosts,
       ignoreIds = Set(theBody.createdById) ++ lastVisibleReply.map(_.createdById).toSet)
   }
-
-
-  def usersById: Map[UserId, User]
-
-  def theUser(userId: UserId): User
 
 
   /** Returns the index of `post` among its siblings, the first sibling is no 0.

@@ -27,13 +27,6 @@ import User._
 
 
 
-abstract class People {
-
-  def theUser(id: UserId): User
-
-}
-
-
 sealed abstract class Presence(val IntVal: Int) { def toInt = IntVal }
 object Presence {
   case object Active extends Presence(1)

@@ -53,7 +53,7 @@ var doneIcon = r.span({ className: 'icon-check' });
 
 
 export var TitleBodyComments = createComponent({
-  makeHelpMessage: function() {
+  makeHelpMessage: function(): HelpMessage {
     var store: Store = this.props;
     var me: Myself = store.me;
     var bodyPost = store.allPosts[BodyId];

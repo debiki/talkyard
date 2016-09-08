@@ -380,9 +380,6 @@ case class Post(
 
   def numFlags = numPendingFlags + numHandledFlags
 
-  def createdByUser(people: People): User =
-    people.theUser(createdById)
-
 
   /** The lower bound of an 80% confidence interval for the number of people that like this post.
     */

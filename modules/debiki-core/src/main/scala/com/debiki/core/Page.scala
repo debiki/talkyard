@@ -19,7 +19,7 @@ package com.debiki.core
 
 import com.debiki.core.Prelude._
 import java.{util => ju}
-import scala.collection.immutable
+import scala.collection.mutable
 
 
 
@@ -250,6 +250,12 @@ case class PageMeta(
     else PageStatus.Draft
 
   def bumpedOrPublishedOrCreatedAt = bumpedAt orElse publishedAt getOrElse createdAt
+
+  def addUserIdsTo(ids: mutable.Set[UserId]) {
+    ids += authorId
+    ids ++= frequentPosterIds
+    lastReplyById.foreach(ids += _)
+  }
 
   def copyWithNewVersion = copy(version = version + 1)
 }

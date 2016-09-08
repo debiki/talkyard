@@ -73,14 +73,7 @@ case class PageDao(override val id: PageId, transaction: SiteTransaction) extend
 case class PagePartsDao(override val pageId: PageId, transaction: SiteTransaction)
   extends PageParts {
 
-  private var _usersById: Map[UserId, User] = null
-  private var _allPosts: immutable.Seq[Post] = null
-
-  override def theUser(userId: UserId): User = {
-    loadUsersOnPage()
-    _usersById.get(userId) getOrDie
-      s"User not found, id: '$userId', page: '$pageId' [DwE4BYW2]"
-  }
+  private var _allPosts: immutable.Seq[Post] = _
 
   def loadAllPosts() {
     if (_allPosts eq null) {
@@ -93,16 +86,5 @@ case class PagePartsDao(override val pageId: PageId, transaction: SiteTransactio
       loadAllPosts()
     }
     _allPosts
-  }
-
-  def usersById: Map[UserId, User] = {
-    loadUsersOnPage()
-    _usersById
-  }
-
-  def loadUsersOnPage() {
-    if (_usersById eq null) {
-      _usersById = transaction.loadUsersOnPageAsMap2(pageId)
-    }
   }
 }

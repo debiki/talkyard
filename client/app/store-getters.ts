@@ -41,7 +41,20 @@ export function store_thisIsMyPage(store: Store): boolean {
 
 export function store_authorOf(store: Store, post: Post): BriefUser {
   var user = store.usersByIdBrief[post.authorIdInt];
-  dieIf(!user, "Author " + post.authorIdInt + " missing on page " + store.pageId + " [EsE5GK92]");
+  dieIf(!user, "Post author " + post.authorIdInt +
+      " missing on page " + store.pageId + " [EsE5GK92]");
+  return user;
+}
+
+
+export function store_getUserOrMissing(store: Store, userId: UserId): BriefUser {
+  var user = store.usersByIdBrief[userId];
+  if (!user) return {
+    id: userId,
+    // The first char is shown in the avatar image. Use a square, not a character, so
+    // it'll be easier to debug-find-out that something is amiss. Could log a warning/error too?
+    fullName: "□ missing, id: " + userId + " [EsE4FK07]",
+  };
   return user;
 }
 

@@ -27,6 +27,7 @@ import play.api.libs.json.JsArray
 import scala.collection.immutable
 import Prelude._
 import EmailNotfPrefs.EmailNotfPrefs
+import scala.collection.mutable.ArrayBuffer
 
 
 trait UserDao {
@@ -403,6 +404,21 @@ trait UserDao {
     readOnlyTransaction { transaction =>
       transaction.loadUsers()
     }
+  }
+
+
+  def getUsersAsSeq(userIds: Iterable[UserId]): immutable.Seq[User] = {
+    val usersFound = ArrayBuffer[User]()
+    val missingIds = ArrayBuffer[UserId]()
+    userIds foreach { id =>
+      memCache.lookup[User](key(id)) match {
+        case Some(user) => usersFound.append(user)
+        case None => missingIds.append(id)
+      }
+    }
+    val moreUsers = readOnlyTransaction(_.loadUsers(missingIds))
+    usersFound.appendAll(moreUsers)
+    usersFound.toVector
   }
 
 

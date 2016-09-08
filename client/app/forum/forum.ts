@@ -780,7 +780,7 @@ var ForumTopicListComponent = React.createClass(<any> {
 
     var topics = this.state.topics.map((topic: Topic) => {
       return TopicRow({
-          topic: topic, categories: this.props.categories,
+          store: store, topic: topic, categories: this.props.categories,
           activeCategory: this.props.activeCategory, now: this.props.now,
           key: topic.pageId, routes: this.props.routes, location: this.props.location,
           pagePath: store.pagePath });
@@ -951,6 +951,7 @@ var TopicRow = createComponent({
   },
 
   render: function() {
+    var store: Store = this.props.store;
     var topic: Topic = this.props.topic;
     var category = _.find(this.props.categories, (category: Category) => {
       return category.id === topic.categoryId;
@@ -1007,15 +1008,17 @@ var TopicRow = createComponent({
     var activityAgo = prettyLetterTimeAgo(topic.bumpedEpoch || topic.createdEpoch);
 
     // Avatars: Original Poster, some frequent posters, most recent poster. [7UKPF26]
+    var author = store_getUserOrMissing(store, topic.authorId);
     var userAvatars = [
-        avatar.Avatar({ key: 'OP', tiny: true, user: topic.author, title: "created the topic" })];
-    for (var i = 0; i < topic.frequentPosters.length; ++i) {
-      var poster = topic.frequentPosters[i];
+        avatar.Avatar({ key: 'OP', tiny: true, user: author, title: "created the topic" })];
+    for (var i = 0; i < topic.frequentPosterIds.length; ++i) {
+      var poster = store_getUserOrMissing(store, topic.frequentPosterIds[i]);
       userAvatars.push(avatar.Avatar({ key: poster.id, tiny: true, user: poster,
             title: "frequent poster" }));
     }
-    if (topic.lastReplyer) {
-      userAvatars.push(avatar.Avatar({ key: 'MR', tiny: true, user: topic.lastReplyer,
+    if (topic.lastReplyerId) {
+      var lastReplyer = store_getUserOrMissing(store, topic.lastReplyerId);
+      userAvatars.push(avatar.Avatar({ key: 'MR', tiny: true, user: lastReplyer,
             title: "most recent poster" }));
     }
 

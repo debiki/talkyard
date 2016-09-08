@@ -286,7 +286,6 @@ trait SiteTransaction {
     }
   }
 
-  def loadUsersOnPageAsMap2(pageId: PageId, siteId: Option[SiteId] = None): Map[UserId, User]
   def loadUsersAsMap(userIds: Iterable[UserId]): Map[UserId, User]
 
   def loadMembersAsMap(userIds: Iterable[UserId]): Map[UserId, Member] = {

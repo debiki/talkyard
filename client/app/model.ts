@@ -216,6 +216,7 @@ interface HelpMessage {
   id: string;
   version: number;
   content: any;
+  className?: string;
 }
 
 
@@ -242,14 +243,9 @@ interface Topic {
   title: string;
   url: string;
   categoryId: number;
-  author?: BriefUser;
-  // The other author* fields below are deprecated.
-  authorId: number;
-  authorUsername?: number;
-  authorFullName?: number;
-  authorAvatarUrl?: string;
-  lastReplyer?: BriefUser;
-  frequentPosters: BriefUser[];
+  authorId: UserId;
+  lastReplyerId?: UserId;
+  frequentPosterIds: UserId[];
   pinOrder?: number;
   pinWhere?: PinPageWhere;
   excerpt?: string;

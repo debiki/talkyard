@@ -137,13 +137,17 @@ object ForumController extends mvc.Controller {
     val topics = listTopicsInclPinned(categoryIdInt, pageQuery, request.dao,
       includeDescendantCategories = true, isStaff = request.isStaff, restrictedOnly = false)
     val pageStuffById = request.dao.loadPageStuff(topics.map(_.pageId))
+    val users = request.dao.getUsersAsSeq(pageStuffById.values.flatMap(_.userIds))
     val topicsJson: Seq[JsObject] = topics.map(topicToJson(_, pageStuffById))
-    val json = Json.obj("topics" -> topicsJson)
+    val json = Json.obj(
+      "topics" -> topicsJson,
+      "users" -> users.map(JsUser))
     OkSafeJson(json)
   }
 
 
   def listCategories(forumId: PageId) = GetAction { request =>
+    unused("EsE4KFC02")
     val (categories, defaultCategoryId) = request.dao.listSectionCategories(forumId,
       isStaff = request.isStaff, restrictedOnly = false)
     val json = JsArray(categories.map({ category =>
@@ -287,19 +291,15 @@ object ForumController extends mvc.Controller {
       "numUnwanteds" -> topic.meta.numUnwanteds,
       "numOrigPostLikes" -> topic.meta.numOrigPostLikeVotes,
       "numOrigPostReplies" -> topic.meta.numOrigPostRepliesVisible,
-      "author" -> JsUserOrNull(topicStuff.author),
       "authorId" -> JsNumber(topic.meta.authorId),
-      "authorUsername" -> JsStringOrNull(topicStuff.authorUsername),
-      "authorFullName" -> JsStringOrNull(topicStuff.authorFullName),
-      "authorAvatarUrl" -> JsStringOrNull(topicStuff.authorAvatarUrl),
       "createdEpoch" -> date(topic.meta.createdAt), // try to remove
       "createdAtMs" -> JsDateMs(topic.meta.createdAt),
       "bumpedEpoch" -> dateOrNull(topic.meta.bumpedAt), // try to remove
       "bumpedAtMs" -> JsDateMsOrNull(topic.meta.bumpedAt),
       "lastReplyEpoch" -> dateOrNull(topic.meta.lastReplyAt), // try to remove
       "lastReplyAtMs" -> JsDateMsOrNull(topic.meta.lastReplyAt),
-      "lastReplyer" -> JsUserOrNull(topicStuff.lastReplyer),
-      "frequentPosters" -> JsArray(topicStuff.frequentPosters.map(JsUser)),
+      "lastReplyerId" -> JsNumberOrNull(topicStuff.lastReplyerId),
+      "frequentPosterIds" -> JsArray(topicStuff.frequentPosterIds.map(JsNumber(_))),
       "answeredAtMs" -> dateOrNull(topic.meta.answeredAt),
       "answerPostUniqueId" -> JsNumberOrNull(topic.meta.answerPostUniqueId),
       "plannedAtMs" -> dateOrNull(topic.meta.plannedAt),

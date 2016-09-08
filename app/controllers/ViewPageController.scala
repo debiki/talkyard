@@ -21,7 +21,6 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import debiki.RateLimits.NoRateLimits
 import debiki._
-import debiki.ReactJson.JsUser
 import io.efdi.server.http._
 import java.{util => ju}
 import debiki.dao.SiteDao

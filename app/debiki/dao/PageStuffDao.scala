@@ -21,30 +21,31 @@ import com.debiki.core._
 import com.debiki.core.Prelude._
 import com.debiki.core.PageParts.{TitleNr, BodyNr}
 import debiki._
+import scala.collection.immutable
 import scala.collection.mutable
-
 import scala.collection.mutable.ArrayBuffer
 
 
-/** Page stuff, e.g. title, body excerpt (for pinned topics), author name.
-  * We might not load all stuff inside a transaction, so sometimes some data might
-  * suddenly have vanished — that's why e.g. the author is an Option[User].
+/** Page stuff, e.g. title, body excerpt (for pinned topics), user ids.
   */
 case class PageStuff(
   pageId: PageId,
   pageRole: PageRole,
   title: String,
   bodyExcerptIfPinned: Option[String],
-  author: Option[User],
-  // author* below are deprecated.
   authorUserId: UserId,
-  authorUsername: Option[String],
-  authorFullName: Option[String],
-  authorAvatarUrl: Option[String],
-  lastReplyer: Option[User],
-  frequentPosters: Seq[User])(val pageMeta: PageMeta) extends PageTitleRole {
+  lastReplyerId: Option[UserId],
+  frequentPosterIds: Seq[UserId])(val pageMeta: PageMeta) extends PageTitleRole {
+
   def role = pageRole
+
   def categoryId = pageMeta.categoryId
+
+  def userIds: immutable.Seq[UserId] = {
+    var ids = frequentPosterIds.toVector :+ authorUserId
+    if (lastReplyerId.isDefined) ids :+= lastReplyerId.get
+    ids
+  }
 }
 
 
@@ -150,15 +151,9 @@ trait PageStuffDao {
         pageMeta.pageRole,
         title = anyTitle.flatMap(_.approvedSource) getOrElse "(No title)",
         bodyExcerptIfPinned = anyExcerpt,
-        author = anyAuthor,
         authorUserId = pageMeta.authorId,
-        authorUsername = anyAuthor.flatMap(_.anyUsername),
-        authorFullName = anyAuthor.flatMap(_.anyName),
-        // When listing pages, we show many users: creator, last reply, etc. and many pages,
-        // so we'll use the tiny avatar image. Should I rename to tinyAuthorAvatarUrl?
-        authorAvatarUrl = anyAuthor.flatMap(_.tinyAvatar.map(_.url)),
-        lastReplyer = pageMeta.lastReplyById.flatMap(usersById.get),
-        frequentPosters = pageMeta.frequentPosterIds.flatMap(usersById.get))(pageMeta)
+        lastReplyerId = pageMeta.lastReplyById,
+        frequentPosterIds = pageMeta.frequentPosterIds)(pageMeta)
 
       stuffById += pageMeta.pageId -> summary
     }

@@ -614,17 +614,6 @@ export function createForum(title: string, folder: string, success: (urlPath: st
 }
 
 
-export function loadForumCategories(forumPageId: string,
-      success?: (categories: Category[]) => void) {
-  // Perhaps should remove the forum id param? Since saves cats in the store cats list always.
-  dieIf(forumPageId !== theStore.pageId, 'EsE7YPK24');
-  get('/-/list-categories?forumId=' + forumPageId, (categories: Category[]) => {
-    ReactActions.setCategories(categories);
-    !success || success(categories);
-  });
-}
-
-
 export function loadForumCategoriesTopics(forumPageId: string, topicFilter: string,
       success: (categories: Category[]) => void) {
   var url = '/-/list-categories-topics?forumId=' + forumPageId;
@@ -640,6 +629,7 @@ export function loadForumTopics(categoryId: string, orderOffset: OrderOffset,
   var url = '/-/list-topics?categoryId=' + categoryId + '&' +
       ServerApi.makeForumTopicsQueryParams(orderOffset);
   get(url, (response: any) => {
+    ReactActions.patchTheStore({ usersBrief: response.users });
     doneCallback(response.topics);
   });
 }

@@ -95,7 +95,13 @@ object Prelude {
   def unimplementedIf(condition: Boolean, what: String) =
     if (condition) unimplemented(what)
 
-  def untested(errorCode: String, what: String) =
+  /** Useful code but currently not in use. Abort, so I'll notice, and test it again before
+    * starting using it again.
+    */
+  def unused(errorCode: String, what: => String = "") =
+    throw new UOE(s"Not in use: $what [$errorCode]")
+
+  def untested(errorCode: String, what: => String = "") =
     throw new UOE(s"Not tested: $what [$errorCode]")
 
   def untestedIf(condition: Boolean, errorCode: String, what: => String = "") =
