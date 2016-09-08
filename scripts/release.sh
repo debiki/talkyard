@@ -93,6 +93,13 @@ sudo $test_containers down
 sudo rm -fr modules/ed-prod-one-test/data
 sudo $test_containers up -d
 
+if [ -n "`jobs`" ]; then
+  echo 'Other jobs running:'
+  jobs
+  echo 'Please stop them.'
+  die_if_in_script
+fi
+
 xvfb-run -s '-screen 0 1280x1024x8' \
   node_modules/selenium-standalone/bin/selenium-standalone start &
 selenium_pid=$!
@@ -105,7 +112,10 @@ if [ $? -ne 0 ]; then
   die_if_in_script
 fi
 
-kill $selenium_pid
+# This nills xvfb-run only:  kill $selenium_pid
+# Instead:
+kill %1
+
 sudo $test_containers down
 
 sudo docker ps # if anything is running, something is amiss?

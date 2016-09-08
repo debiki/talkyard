@@ -90,16 +90,16 @@ export var TitleBodyComments = createComponent({
 
     if (store.pageRole === PageRole.Problem) {
       if (store.pageDoneAtMs) {
-        return { id: 'EsH5GKU0', version: 1, content: r.div({},
+        return { id: 'EsH5GKU0', version: 1, className: 'esH_ProblemSolved', content: r.div({},
             "This is a problem and it has been ", doneIcon, " solved.") };
       }
       else if (store.pagePlannedAtMs) {
-        return { id: 'EsH2PK40', version: 1, content: r.div({},
+        return { id: 'EsH2PK40', version: 1, className: 'esH_ProblemFixing', content: r.div({},
             "This is a problem. Someone is ", plannedIcon, " fixing it, but it's not yet ",
             doneIcon, " done.") };
       }
       else {
-        return { id: 'EsH1WKG5', version: 1, content: r.div({},
+        return { id: 'EsH1WKG5', version: 1, className: 'esH_ProblemNew', content: r.div({},
             "This is a ", problemIcon, " problem. It's not yet ", doneIcon, " solved.") };
       }
     }

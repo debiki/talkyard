@@ -110,9 +110,10 @@ export var HelpMessageBox = createComponent({
         : r.a({ className: okayIcon + ' dw-hide', onClick: this.hideThisHelp },
             this.props.message.okayText || "Hide");
 
+    var className = this.props.className || this.props.message.className || '';
     var largeClass = this.props.large ? ' dwHelp-large' : '';
     var warningClass = this.props.message.isWarning ? ' esHelp-warning' : '';
-    var classes = (this.props.className || '') + ' dw-help' + largeClass + warningClass;
+    var classes = className + ' dw-help' + largeClass + warningClass;
     return (
       r.div({ className: classes },
         r.div({ className: 'dw-help-text' },

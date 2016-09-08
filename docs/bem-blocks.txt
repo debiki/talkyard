@@ -14,6 +14,8 @@ esA             = Admin Area
 esA_Ss          = Admin Area, settings
 esA_Ss_S        = Admin Area, a single setting
 
+esCB            = context bar (the right sidebar)
+
 esF             = the forum main page, incl sort & filter buttons, and topic list and category list
 esF_BB          = forum button bar: sort & filter buttons
 esF_Ts          = forum topic list
@@ -21,7 +23,7 @@ esF_Ts_T        = a topic in the topic list
 esF_Cs          = forum category list
 esF_Cs_C        = a category in the category list
 
-esCB            = context bar (the right sidebar)
+esH             = help
 
 esLD            = login/signup dialog
 
