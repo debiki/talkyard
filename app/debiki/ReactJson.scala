@@ -446,8 +446,8 @@ object ReactJson {
       "postType" -> JsNumberOrNull(postType),
       "authorId" -> JsString(post.createdById.toString),  // COULD remove, but be careful when converting to int client side
       "authorIdInt" -> JsNumber(post.createdById),  // Rename to authorId when it's been converted to int (the line above)
-      "createdAt" -> date(post.createdAt),
-      "lastApprovedEditAt" -> dateOrNull(lastApprovedEditAtNoNinja),
+      "createdAtMs" -> JsDateMs(post.createdAt),
+      "lastApprovedEditAtMs" -> JsDateMsOrNull(lastApprovedEditAtNoNinja),
       "numEditors" -> JsNumber(post.numDistinctEditors),
       "numLikeVotes" -> JsNumber(post.numLikeVotes),
       "numWrongVotes" -> JsNumber(post.numWrongVotes),

@@ -32,19 +32,6 @@ function trunc(number) {
 // ------- Time utils
 
 
-// Converts an ISO 8601 date string to a milliseconds date since 1970,
-// and handles MSIE 7 and 8 issues (they don't understand ISO strings).
-d.u.isoDateToMillis = function(dateStr) {
-  if (!dateStr) return NaN;
-  // For IE 7 and 8, change from e.g. '2011-12-15T11:34:56Z' to
-  // '2011/12/15 11:34:56Z'.
-  if ($.browser.msie && $.browser.version < '9') {
-    dateStr = dateStr.replace('-', '/').replace('T', ' ');
-  }
-  return Date.parse(dateStr);
-};
-
-
 // `then' and `now' can be Date:s or milliseconds.
 debiki.prettyDuration = function(then, now) {  // i18n
   var thenMillis = then.getTime ? then.getTime() : then;
@@ -72,7 +59,7 @@ debiki.prettyDuration = function(then, now) {  // i18n
 };
 
 
-var currentYear = new Date().getUTCFullYear();
+debiki.currentYear = new Date().getUTCFullYear();
 
 debiki.prettyLetterDuration = function(then, now) {  // i18n
   var thenMillis = then.getTime ? then.getTime() : then;
@@ -88,7 +75,7 @@ debiki.prettyLetterDuration = function(then, now) {  // i18n
   // years like "Jan 4, 2015" are more user friendly than 17m (months)?
   if (diff > month) {
     var m = moment(then);
-    if (m.year() !== currentYear) {
+    if (m.year() !== debiki.currentYear) {
       return m.format('ll'); // e.g. "Sep 4 2015"
     }
     return m.format('MMM D'); // e.g. "Sep 4"

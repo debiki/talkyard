@@ -893,7 +893,7 @@ export var Post = createComponent({
       headerElem =
           r.div({ className: 'dw-p-hd' },
             anyAvatar,
-            'Hidden comment pending approval, posted ', timeAgo(post.createdAt), '.');
+            'Hidden comment pending approval, posted ', timeAgo(post.createdAtMs), '.');
       extraClasses += ' dw-p-unapproved';
     }
     else {
@@ -1080,8 +1080,8 @@ export var PostHeader = createComponent({
     }
 
     var editInfo = null;
-    if (post.lastApprovedEditAt) {
-      var editedAt = prettyLetterTimeAgo(post.lastApprovedEditAt);
+    if (post.lastApprovedEditAtMs) {
+      var editedAt = prettyLetterTimeAgo(post.lastApprovedEditAtMs);
       //var byVariousPeople = post.numEditors > 1 ? ' by various people' : null;
       editInfo =
           r.span({ onClick: this.showEditHistory, className: 'esP_viewHist icon-edit',
@@ -1165,7 +1165,7 @@ export var PostHeader = createComponent({
           r[linkFn](userLinkProps, fullName, username),
           // COULD add "Posted on ..." tooltip.
           this.props.exactTime ?
-              timeExact(post.createdAt, timeClass) : timeAgo(post.createdAt, timeClass),
+              timeExact(post.createdAtMs, timeClass) : timeAgo(post.createdAtMs, timeClass),
           editInfo,
           inReplyTo,
           toggleCollapsedButton,

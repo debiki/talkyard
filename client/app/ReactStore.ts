@@ -805,8 +805,8 @@ function findTopLevelCommentIds(allPosts): number[] {
  */
 function sortPostIdsInPlaceBestFirst(postIds: PostNr[], allPosts: { [id: number]: Post }) {
   postIds.sort((idA: number, idB: number) => {
-    var postA = allPosts[idA];
-    var postB = allPosts[idB];
+    var postA: Post = allPosts[idA];
+    var postB: Post = allPosts[idB];
 
     // Perhaps the server shouldn't include deleted comments in the children list?
     // Is that why they're null sometimes? COULD try to find out
@@ -839,9 +839,9 @@ function sortPostIdsInPlaceBestFirst(postIds: PostNr[], allPosts: { [id: number]
 
     // Place multireplies after normal replies. See Post.scala.
     if (postA.multireplyPostIds.length && postB.multireplyPostIds.length) {
-      if (postA.createdAt < postB.createdAt)
+      if (postA.createdAtMs < postB.createdAtMs)
         return -1;
-      if (postA.createdAt > postB.createdAt)
+      if (postA.createdAtMs > postB.createdAtMs)
         return +1;
     }
     else if (postA.multireplyPostIds.length) {
@@ -894,9 +894,9 @@ function sortPostIdsInPlaceBestFirst(postIds: PostNr[], allPosts: { [id: number]
     // In Scala, a certain sortWith function is used, but it wants a Bool from the comparison
     // function, not a +-1 or 0 number. True means "should be sorted before".
     // But return 0 instead here to indicate that sort order doesn't matter.
-    if (postA.createdAt < postB.createdAt)
+    if (postA.createdAtMs < postB.createdAtMs)
       return -1;
-    else if (postA.createdAt > postB.createdAt)
+    else if (postA.createdAtMs > postB.createdAtMs)
       return +1;
     else
       return 0;

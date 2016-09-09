@@ -267,13 +267,12 @@ export var Sidebar = createComponent({
       }
     });
 
-    recentComments.sort((a, b) => {
-      if (a.createdAt < b.createdAt)
+    recentComments.sort((a: Post, b: Post) => {
+      // Newest first.
+      if (a.createdAtMs < b.createdAtMs)
         return +1;
-
-      if (a.createdAt < b.createdAt)
+      if (a.createdAtMs > b.createdAtMs)
         return -1;
-
       return a.postId < b.postId ? +1 : -1;
     });
     recentComments = _.take(recentComments, 50);

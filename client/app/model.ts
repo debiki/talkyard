@@ -64,9 +64,9 @@ interface PostToModerate {
   numPendingFlags?: number;
   numPendingEditSuggestions?: number;
   pendingFlags?: any[];
-  postHiddenAt?: string;
-  postDeletedAt?: string;
-  treeDeletedAt?: string;
+  postHiddenAt?: string;  // change to millis
+  postDeletedAt?: string;  // change to millis
+  treeDeletedAt?: string;  // change to millis
 }
 
 
@@ -110,8 +110,8 @@ interface Post {
   // these author* are deprecated, should add an author: {...} object instead.
   authorId: string; // COULD change to int and then rename authorIdInt below to authorId.
   authorIdInt: number;
-  createdAt: string;
-  lastApprovedEditAt: string;
+  createdAtMs: number;
+  lastApprovedEditAtMs: number;
   numEditors: number;
   numLikeVotes: number;
   numWrongVotes: number;
@@ -252,12 +252,9 @@ interface Topic {
   numPosts: number;
   numLikes: number;
   numWrongs: number;
-  createdEpoch: string; // try to remove
   createdAtMs: number;
-  bumpedEpoch: string; // try to remove
   bumpedAtMs: number;
-  lastReplyAtMs: string;
-  lastReplyEpoch: string; // try to remove
+  lastReplyAtMs: number;
   numOrigPostReplies: number;
   numOrigPostLikes: number;
   answeredAtMs?: string;
@@ -276,7 +273,7 @@ enum TopicSortOrder { BumpTime = 1, LikesAndBumpTime };
 
 interface OrderOffset {  // COULD rename to TopicQuery? (because includes filter too now)
   sortOrder: TopicSortOrder;
-  time?: number;
+  whenMs?: number;
   numLikes?: number;
   topicFilter?: string;
 }
@@ -471,7 +468,7 @@ interface BriefUser {
 
 interface CompleteUser {
   id: any;  // TODO change to number, and User.userId too
-  createdAtEpoch: number;
+  createdAtEpoch: number;  // change to millis
   username: string;
   fullName: string;
   email: string;
@@ -483,11 +480,11 @@ interface CompleteUser {
   isAdmin: boolean;
   isModerator: boolean;
   isApproved: boolean;
-  approvedAtEpoch: number;
+  approvedAtEpoch: number;  // change to millis
   approvedById: number;
   approvedByName: string;
   approvedByUsername: string;
-  suspendedAtEpoch?: number;
+  suspendedAtEpoch?: number;  // change to millis
   suspendedTillEpoch?: number;
   suspendedById?: number;
   suspendedByUsername?: string;
@@ -512,17 +509,17 @@ interface UsersHere {
 interface Invite {
   invitedEmailAddress: string;
   invitedById: number;
-  createdAtEpoch: number;
-  acceptedAtEpoch?: number;
-  invalidatedAtEpoch?: number;
-  deletedAtEpoch?: number;
+  createdAtEpoch: number;  // change to millis
+  acceptedAtEpoch?: number;  // change to millis
+  invalidatedAtEpoch?: number;  // change to millis
+  deletedAtEpoch?: number;  // change to millis
   deletedById?: number;
   userId?: number;
   // Later:
   /*
   userFullName?: string;
   userUsername?: string;
-  userLastSeenAtEpoch?: number;
+  userLastSeenAtEpoch?: number;  // change to millis
   userNumTopicsViewed?: number;
   userNumPostsRead?: number;
   userReadTime?: number;

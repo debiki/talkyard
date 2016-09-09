@@ -129,7 +129,7 @@ var TitleAndLastChatMessages = createComponent({
         r.p({},
           "This is the " + ReactStore.getPageTitle() + " chat channel, created by ",
           avatar.AvatarAndName({ user: origPostAuthor, hideAvatar: true }),
-          ", ", timeExact(originalPost.createdAt));
+          ", ", timeExact(originalPost.createdAtMs));
 
     var perhapsHidden;
     if (!this.state.hasScrolledDown) {

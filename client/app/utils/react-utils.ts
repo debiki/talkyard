@@ -43,13 +43,8 @@ function createClassAndFactory(componentDefinition) { // rename createComponent 
 }
 
 
-/**
- * An ISO date that shall not be converted to "X time ago" format.
- * It doesn't really do anything, but use it so that it'll be easy to find all
- * date formatting code.
- */
-function dateTimeFix(isoDate: string) {
-  return isoDate;
+function whenMsToIsoDate(whenMs: number) {
+  return new Date(whenMs).toISOString().replace(/T/, ' ')
 }
 
 /**
@@ -58,7 +53,8 @@ function dateTimeFix(isoDate: string) {
  * just below.  The server inculdes only ISO dates, not "x time ago", in its HTML,
  * so that it can be cached.
  */
-function timeAgo(isoDate: string, clazz?: string) {
+function timeAgo(whenMs: number, clazz?: string) {
+  var isoDate = whenMsToIsoDate(whenMs);
   return r.span({ className: 'dw-ago ' + (clazz || '') }, isoDate);
 }
 
@@ -66,11 +62,13 @@ function timeAgo(isoDate: string, clazz?: string) {
  * Like timeAgo(isoDate) but results in just "5h" instead of "5 hours ago".
  * That is, uses only one single letter, instead of many words.
  */
-function prettyLetterTimeAgo(isoDate: string, clazz?: string) {
+function prettyLetterTimeAgo(whenMs: number, clazz?: string) {
+  var isoDate = whenMsToIsoDate(whenMs);
   return r.span({ className: 'dw-ago-ltr ' + (clazz || '') }, isoDate);
 }
 
-function timeExact(isoDate: string, clazz?: string) {
+function timeExact(whenMs: number, clazz?: string) {
+  var isoDate = whenMsToIsoDate(whenMs);
   return r.span({ className: 'esTimeExact ' + (clazz || '') }, isoDate);
 }
 
@@ -118,12 +116,20 @@ function processTimeAgo(selector?: string) {
   $(selector + ' .esTimeExact:not(.' + timeDoneClass + ')').each(function() {
     var $this = $(this);
     var isoDate = $this.text();
-    var when = moment(isoDate);  // or exclude Moment from default JS bundle? [6KFW02]
-    var includeDay = when.isBefore(moment().startOf('day'));
+    var m = moment(isoDate);  // or exclude Moment from default JS bundle? [6KFW02]
+    var whenText;
+    if (m.year() !== debiki.currentYear) {
+      whenText = m.format('ll'); // e.g. "Sep 4 2015"
+    }
+    else if (m.isBefore(moment().startOf('day'))) {
+      whenText = m.format('MMM D'); // e.g. "Sep 4"  (MMMM = September, not Sep)
+    }
+    else {
+      whenText = m.format('LT');  // e.g. 8:30 PM
+    }
     // getTimezoneOffset() returns -60 (not +60) for UTC+1. Weird. So use subtract(..).
-    //when = when.subtract((new Date()).getTimezoneOffset(), 'minutes'); -- Oops not needed.
-    var dayHourMinute = includeDay ? when.calendar() : when.format('LT');
-    $this.text(dayHourMinute);
+    //m = m.subtract((new Date()).getTimezoneOffset(), 'minutes'); -- Oops not needed.
+    $this.text(whenText);
     $this.addClass(timeDoneClass);
     // But don't add any title tooltip attr, see [85YKW20] above.
   });

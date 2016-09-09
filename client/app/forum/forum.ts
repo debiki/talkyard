@@ -700,7 +700,7 @@ var ForumTopicListComponent = React.createClass(<any> {
         showLoadMoreButton: false
       });
       // Load from the start, no offset. Keep any topic filter though.
-      delete orderOffset.time;
+      delete orderOffset.whenMs;
       delete orderOffset.numLikes;
     }
     var categoryId = nextProps.activeCategory.id;
@@ -742,18 +742,18 @@ var ForumTopicListComponent = React.createClass(<any> {
     var anyLastTopic: any = _.last(this.state.topics);
     if (anyLastTopic) {
       // If we're loading more topics, we should continue with this offset.
-      anyTimeOffset = anyLastTopic.bumpedEpoch || anyLastTopic.createdEpoch;
+      anyTimeOffset = anyLastTopic.bumpedAtMs || anyLastTopic.createdAtMs;
       anyLikesOffset = anyLastTopic.numLikes;
     }
     var orderOffset: OrderOffset = { sortOrder: -1 };
     if (props.routes[SortOrderRouteIndex].path === RoutePathTop) {
       orderOffset.sortOrder = TopicSortOrder.LikesAndBumpTime;
-      orderOffset.time = anyTimeOffset;
+      orderOffset.whenMs = anyTimeOffset;
       orderOffset.numLikes = anyLikesOffset;
     }
     else {
       orderOffset.sortOrder = TopicSortOrder.BumpTime;
-      orderOffset.time = anyTimeOffset;
+      orderOffset.whenMs = anyTimeOffset;
     }
     return orderOffset;
   },
@@ -986,13 +986,13 @@ var TopicRow = createComponent({
     // but that won't work server side, because Date.now() changes all the time.
     // Would instead need to generate the tooltip dynamically (rather than include it in the html).
     // [compress]
-    var activityTitle = "Created on " + dateTimeFix(topic.createdEpoch);
+    var activityTitle = "Created on " + whenMsToIsoDate(topic.createdAtMs);
 
-    if (topic.lastReplyEpoch) {
-      activityTitle += '\nLast reply on ' + dateTimeFix(topic.lastReplyEpoch);
+    if (topic.lastReplyAtMs) {
+      activityTitle += '\nLast reply on ' + whenMsToIsoDate(topic.lastReplyAtMs);
     }
-    if (topic.bumpedEpoch && topic.bumpedEpoch !== topic.lastReplyEpoch) {
-      activityTitle += '\nEdited on ' + dateTimeFix(topic.bumpedEpoch);
+    if (topic.bumpedAtMs && topic.bumpedAtMs !== topic.lastReplyAtMs) {
+      activityTitle += '\nEdited on ' + whenMsToIsoDate(topic.bumpedAtMs);
     }
 
     var anyPinIconClass = topic.pinWhere ? 'icon-pin' : undefined;
@@ -1005,7 +1005,7 @@ var TopicRow = createComponent({
     var categoryName = !category ? null :
       r.a({ onClick: () => this.switchCategory(category) }, category.name);
 
-    var activityAgo = prettyLetterTimeAgo(topic.bumpedEpoch || topic.createdEpoch);
+    var activityAgo = prettyLetterTimeAgo(topic.bumpedAtMs || topic.createdAtMs);
 
     // Avatars: Original Poster, some frequent posters, most recent poster. [7UKPF26]
     var author = store_getUserOrMissing(store, topic.authorId);
@@ -1123,7 +1123,7 @@ var CategoryRow = createComponent({
             r.span({ className: 'topic-details' },
               r.span({ title: numReplies + " replies" },
                 numReplies, r.span({ className: 'icon-comment-empty' })),
-              prettyLetterTimeAgo(topic.bumpedEpoch || topic.createdEpoch)))));
+              prettyLetterTimeAgo(topic.bumpedAtMs || topic.createdAtMs)))));
     });
 
     // This will briefly highlight a newly created category.

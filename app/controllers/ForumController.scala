@@ -292,11 +292,8 @@ object ForumController extends mvc.Controller {
       "numOrigPostLikes" -> topic.meta.numOrigPostLikeVotes,
       "numOrigPostReplies" -> topic.meta.numOrigPostRepliesVisible,
       "authorId" -> JsNumber(topic.meta.authorId),
-      "createdEpoch" -> date(topic.meta.createdAt), // try to remove
       "createdAtMs" -> JsDateMs(topic.meta.createdAt),
-      "bumpedEpoch" -> dateOrNull(topic.meta.bumpedAt), // try to remove
       "bumpedAtMs" -> JsDateMsOrNull(topic.meta.bumpedAt),
-      "lastReplyEpoch" -> dateOrNull(topic.meta.lastReplyAt), // try to remove
       "lastReplyAtMs" -> JsDateMsOrNull(topic.meta.lastReplyAt),
       "lastReplyerId" -> JsNumberOrNull(topicStuff.lastReplyerId),
       "frequentPosterIds" -> JsArray(topicStuff.frequentPosterIds.map(JsNumber(_))),

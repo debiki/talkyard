@@ -32,15 +32,15 @@ export function makeForumTopicsQueryParams(orderOffset: OrderOffset): string {
   var params = '';
   if (orderOffset.sortOrder === TopicSortOrder.BumpTime) {
     params += 'sortOrder=ByBumpTime';
-    if (orderOffset.time) {
-      params += '&epoch=' + orderOffset.time;
+    if (orderOffset.whenMs) {
+      params += '&epoch=' + orderOffset.whenMs;
     }
   }
   else if (orderOffset.sortOrder === TopicSortOrder.LikesAndBumpTime) {
     params += 'sortOrder=ByLikesAndBumpTime';
-    if (_.isNumber(orderOffset.numLikes) && orderOffset.time) {
+    if (_.isNumber(orderOffset.numLikes) && orderOffset.whenMs) {
       params += '&num=' + orderOffset.numLikes;
-      params += '&epoch=' + orderOffset.time;
+      params += '&epoch=' + orderOffset.whenMs;
     }
   }
   else {
