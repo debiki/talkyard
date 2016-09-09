@@ -42,7 +42,7 @@ type HttpRequest = XMLHttpRequest
 // continue with its default error handling — it'll ignore the error.
 // Send back undefined or anything else to the caller, and the error will be considered.
 type ErrorPolicy = number | void;
-var IgnoreThisError = -112233;
+var IgnoreThisError: ErrorPolicy = -112233;
 
 var TitleId = 0;
 var BodyPostId = 1;
@@ -463,6 +463,7 @@ interface BriefUser {
   isGuest?: boolean;  // = !isAuthenticated
   isEmailUnknown?: boolean;
   avatarUrl?: string;
+  isMissing?: boolean;
 }
 
 

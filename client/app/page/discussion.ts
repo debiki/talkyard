@@ -758,8 +758,9 @@ var Thread = createComponent({
     var anyWrongWarning = this.props.abbreviate ? null : makeWrongWarning(post);
 
     var showAvatar = !renderCollapsed && this.props.depth === 1 && !this.props.is2dTreeColumn;
-    var anyAvatar = !showAvatar ? null : avatar.Avatar({ user: store_authorOf(store, post) });
     var avatarClass = showAvatar ? ' ed-w-avtr' : '';
+    var anyAvatar = !showAvatar ? null :
+        avatar.Avatar({ user: store_getAuthorOrMissing(store, post) });
 
     var postProps = _.clone(this.props);
     postProps.post = post;
@@ -888,7 +889,7 @@ export var Post = createComponent({
     else if (!post.isApproved && !post.sanitizedHtml) {
       // (Dupl code, for anyAvatar [503KP25])
       var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
-      var author: BriefUser = store_authorOf(store, post);
+      var author: BriefUser = store_getAuthorOrMissing(store, post);
       var anyAvatar = !showAvatar ? null : avatar.Avatar({ tiny: true, user: author });
       headerElem =
           r.div({ className: 'dw-p-hd' },
@@ -999,7 +1000,7 @@ var ReplyReceivers = createComponent({
         receivers.push(r.i({ key: repliedToId }, 'Unknown [DwE4KFYW2]'));
         continue;
       }
-      var author = store_authorOf(store, post);
+      var author = store_getAuthorOrMissing(store, post);
       var link =
         r.a({ href: '#post-' + post.postId, className: 'dw-rr', key: post.postId },
           author.username || author.fullName);
@@ -1060,7 +1061,7 @@ export var PostHeader = createComponent({
       : null;
 
     // (Dupl code, for anyAvatar [503KP25])
-    var author: BriefUser = store_authorOf(store, post);
+    var author: BriefUser = store_getAuthorOrMissing(store, post);
     var showAvatar = this.props.depth > 1 || this.props.is2dTreeColumn;
     var anyAvatar = !showAvatar ? null : avatar.Avatar({ tiny: true, user: author });
 

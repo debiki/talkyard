@@ -71,6 +71,7 @@ export var ModalDropdownButton = createComponent({
             onHide: this.closeDropdown, atX: state.buttonX, atY: state.buttonY,
             className: props.dialogClassName, id: props.dialogId,
             allowFullWidth: props.allowFullWidth, ref: 'dropdownModal',
+            showCloseButton: props.showCloseButton,
             onContentClick: props.closeOnClick === false ? null : this.closeDropdown },
           props.children);
     }
@@ -140,6 +141,9 @@ export var DropdownModal = createComponent({
   render: function() {
     var content;
     if (this.props.show) {
+      var closeButton = !this.props.showCloseButton ? null :
+        r.div({ className: 'esDropModal_CloseB esCloseCross', onClick: this.props.onHide });
+
       var left = this.props.pullLeft ? this.props.atX : undefined;
       var right = this.props.pullLeft ? undefined : 'calc(100% - ' + this.props.atX + 'px)';
       var styles = {
@@ -149,7 +153,7 @@ export var DropdownModal = createComponent({
       };
       content =
         r.div({ className: 'esDropModal_content ' + (this.props.className || ''), style: styles,
-            ref: 'content', onClick: this.props.onContentClick }, this.props.children);
+            ref: 'content', onClick: this.props.onContentClick }, closeButton, this.props.children);
     }
 
     var backdropStyle: any = { opacity: 0.08 };

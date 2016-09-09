@@ -1008,16 +1008,16 @@ var TopicRow = createComponent({
     var activityAgo = prettyLetterTimeAgo(topic.bumpedAtMs || topic.createdAtMs);
 
     // Avatars: Original Poster, some frequent posters, most recent poster. [7UKPF26]
-    var author = store_getUserOrMissing(store, topic.authorId);
+    var author = store_getUserOrMissing(store, topic.authorId, 'EsE5KPF0');
     var userAvatars = [
         avatar.Avatar({ key: 'OP', tiny: true, user: author, title: "created the topic" })];
     for (var i = 0; i < topic.frequentPosterIds.length; ++i) {
-      var poster = store_getUserOrMissing(store, topic.frequentPosterIds[i]);
+      var poster = store_getUserOrMissing(store, topic.frequentPosterIds[i], 'EsE2WK0F');
       userAvatars.push(avatar.Avatar({ key: poster.id, tiny: true, user: poster,
             title: "frequent poster" }));
     }
     if (topic.lastReplyerId) {
-      var lastReplyer = store_getUserOrMissing(store, topic.lastReplyerId);
+      var lastReplyer = store_getUserOrMissing(store, topic.lastReplyerId, 'EsE4GTZ7');
       userAvatars.push(avatar.Avatar({ key: 'MR', tiny: true, user: lastReplyer,
             title: "most recent poster" }));
     }

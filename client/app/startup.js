@@ -329,6 +329,9 @@ $(document).on('click', 'a.esMention', function(event) {
 });
 
 
+d.u.addZoomOrResizeListener(debiki2.page.Hacks.addCanScrollHintsSoon);
+
+
 debiki2.dieIf(location.port && debiki.internal.serverOrigin.indexOf(':' + location.port) === -1,
     "Wrong port or origin? The server thinks its origin is " + debiki.internal.serverOrigin +
     " and it'll use that address when sending POST requests and loading scripts. " +

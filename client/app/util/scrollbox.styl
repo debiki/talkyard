@@ -1,0 +1,25 @@
+
+// (Doesn't work on mobile phones? :-(  Only in Chrome Desktop?)
+//
+// In an elem with overflow-x: scroll, shows a shadow to the right, if the rightmost part
+// of the elem is hidden, because of overflow-x: scroll. And shows a shadow to the left too,
+// if one needs to scroll leftwards.
+// Inspired by:  http://lea.verou.me/2012/04/background-attachment-local/
+// found via: http://stackoverflow.com/a/34299947/694469
+// (I don't use radial-gradient though, because in a tall div, on a mobile phone,
+// only the upper part of the radial-gradient would be shown, and it might be hard to
+// notice, because it gets more and more narrow. However a linear gradient has the
+// same width also close to the top of the elem; it's easy to notice.)
+.esScrollHint-X {
+  overflow-x: scroll;
+  overflow-y: hidden;
+  background:
+    linear-gradient(90deg, white 50%, rgba(255, 255, 255, 0.4)),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.4), white 50%) 100% 0,
+    linear-gradient(90deg, rgba(0, 0, 0, 0.3), white),
+    linear-gradient(90deg, white, rgba(0, 0, 0, 0.5)) 100% 0;
+  background-size: 54px 100%, 54px 100%, 27px 100%, 27px 100%;
+  background-repeat: no-repeat;
+  background-attachment: local, local, scroll, scroll;
+}
+

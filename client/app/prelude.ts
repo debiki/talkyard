@@ -43,7 +43,7 @@ export function die(errorMessage: string) {
   var dialogs: any = debiki2['pagedialogs'];
   // I don't remember why I added setTimeout() but there was a good reason.
   setTimeout(() => {
-    debiki2['Server'].logBrowserError(errorMessage);
+    debiki2['Server'].logError(errorMessage);
   });
   if (dialogs && dialogs.showAndThrowClientSideError) {
     dialogs.showAndThrowClientSideError(errorMessage);
@@ -64,7 +64,7 @@ export function dieIf(condition, errorMessage: string) {
 export function logError(errorMessage: string) {
   // Why setTimeout()? I don't remember, see above in die(errorMessage).
   setTimeout(() => {
-    debiki2['Server'].logBrowserError(errorMessage);
+    debiki2['Server'].logError(errorMessage);
   });
 }
 

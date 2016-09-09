@@ -21,8 +21,6 @@ $gotoButtonSidePaddingNarrow = 3px;
 
 $titleOwnLineMaxWidth = 1230px;
 
-$narrowLimit = 500px;
-
 html:not(.dw-react-started)
   .esTopbar_ancestors,
   // Avoid flash-of-login-button when already logged in.
@@ -336,6 +334,14 @@ html.es-watchbar-open
 .esMyMenu_admin
   .icon-settings::before
     margin-left: 0;
+
+// Shouldn't be too large, because it's better if *nothing* happens, when clicking in between
+// these links and the close X button (see .esCloseCross just above).
+// Hmm, what happens, is that the dialog closes though, because onContentClick calls
+// this.closeDropdown. Oh well, barely matters.
+.esMyMenu_admin,
+.esMyMenu_adminHelp
+  max-width: 200px;
 
 .esTopbar,
 #theTopbar

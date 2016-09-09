@@ -429,7 +429,7 @@ var MoreVotesDropdownModal = createComponent({
     var content = state.isOpen ? this.makeVoteButtons() : null;
     return (
       DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY,
-          pullLeft: true, className: 'esDwnvts' }, content));
+          pullLeft: true, className: 'esDwnvts', showCloseButton: true }, content));
   }
 });
 
@@ -645,7 +645,8 @@ var MoreDropdownModal = createComponent({
     var state = this.state;
     var content = state.isOpen ? this.makeButtons() : null;
     return (
-      DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY },
+      DropdownModal({ show: state.isOpen, onHide: this.close, showCloseButton: true,
+          atX: state.atX, atY: state.atY },
         content));
   }
 });

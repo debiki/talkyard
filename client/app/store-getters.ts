@@ -38,23 +38,27 @@ export function store_thisIsMyPage(store: Store): boolean {
   return store.me.userId === pageBody.authorIdInt;
 }
 
-
-export function store_authorOf(store: Store, post: Post): BriefUser {
-  var user = store.usersByIdBrief[post.authorIdInt];
-  dieIf(!user, "Post author " + post.authorIdInt +
-      " missing on page " + store.pageId + " [EsE5GK92]");
+export function store_getAuthorOrMissing(store: Store, post: Post): BriefUser {
+  var user = store_getUserOrMissing(store, post.authorIdInt, false);
+  if (user.isMissing) logError("Author " + post.authorIdInt + " missing, page: " +
+      debiki.pageId + ", post: " + post.postId + " [EsE6TK2R0]");
   return user;
 }
 
 
-export function store_getUserOrMissing(store: Store, userId: UserId): BriefUser {
+export function store_getUserOrMissing(store: Store, userId: UserId, errorCode2): BriefUser {
   var user = store.usersByIdBrief[userId];
-  if (!user) return {
-    id: userId,
-    // The first char is shown in the avatar image. Use a square, not a character, so
-    // it'll be easier to debug-find-out that something is amiss. Could log a warning/error too?
-    fullName: "□ missing, id: " + userId + " [EsE4FK07]",
-  };
+  if (!user) {
+    if (errorCode2) logError("User " + userId + " missing, page: " + debiki.pageId +
+        ' [EsE38GT2R-' + errorCode2 + ']');
+    return {
+      id: userId,
+      // The first char is shown in the avatar image. Use a square, not a character, so
+      // it'll be easier to debug-find-out that something is amiss.
+      fullName: "□ missing, id: " + userId + " [EsE4FK07]",
+      isMissing: true,
+    };
+  }
   return user;
 }
 
@@ -65,11 +69,7 @@ export function store_isUserOnline(store: Store, userId: UserId): boolean {
 
 
 export function store_getPageMembersList(store: Store): BriefUser[] {
-  return store.pageMemberIds.map(id => {
-    var user = store.usersByIdBrief[id];
-    dieIf(!user, "Member " + id + " missing on page " + store.pageId + " [EsE5KW2]");
-    return user;
-  });
+  return store.pageMemberIds.map(id => store_getUserOrMissing(store, id, 'EsE4UY2S'));
 }
 
 
@@ -77,8 +77,7 @@ export function store_getUsersOnThisPage(store: Store): BriefUser[] {
   var users: BriefUser[] = [];
   _.each(store.allPosts, (post: Post) => {
     if (_.every(users, u => u.id !== post.authorIdInt)) {
-      var user = store.usersByIdBrief[post.authorIdInt];
-      dieIf(!user, "Author missing, post id " + post.uniqueId + " [EsE4UGY2]");
+      var user = store_getAuthorOrMissing(store, post);
       users.push(user);
     }
   });
@@ -88,10 +87,10 @@ export function store_getUsersOnThisPage(store: Store): BriefUser[] {
 
 export function store_getUsersOnline(store: Store): BriefUser[] {
   var users = [];
-  _.forOwn(store.userIdsOnline, (alwaysTrue, userId) => {
+  // (Using userId:any, otherwise Typescript thinks it's a string)
+  _.forOwn(store.userIdsOnline, (alwaysTrue, userId: any) => {
     dieIf(!alwaysTrue, 'EsE7YKW2');
-    var user = store.usersByIdBrief[userId];
-    logErrorIf(!user, 'EsE5JYK02');
+    var user = store_getUserOrMissing(store, userId, 'EsE5GK0Y');
     if (user) users.push(user);
   });
   return users;

@@ -1068,7 +1068,7 @@ export function updateSites(sites: SASite[]) {
 }
 
 
-export function logBrowserError(errorMessage: string) {  // rename to logError
+export function logError(errorMessage: string) {
   postJsonSuccess('/-/log-browser-error', () => {}, errorMessage);
 }
 

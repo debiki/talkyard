@@ -238,7 +238,7 @@ export var TopBar = createComponent({
 
     var avatarNameDropdown = !me.isLoggedIn ? null :
       utils.ModalDropdownButton({ title: avatarMenuButtonInclNotfIcons,
-          className: 'esAvtrName esMyMenu' },
+          className: 'esAvtrName esMyMenu', showCloseButton: true },
         r.ul({ className: 'dropdown-menu' },
           adminMenuItem,
           adminHelpLink,

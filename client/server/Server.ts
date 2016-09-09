@@ -2,7 +2,7 @@
 module debiki2 {
 
   export var Server: any = {
-    logBrowserError: function(errorMessage: string) {  // rename to logError
+    logError: function(errorMessage: string) {
       console.error(errorMessage);
     }
   };

@@ -169,6 +169,7 @@ object ReactJson {
 
     val userIdsToLoad = mutable.Set[UserId]()
     userIdsToLoad ++= pageMemberIds
+    userIdsToLoad ++= interestingPosts.map(_.createdById)
 
     val numPostsExclTitle = numPosts - (if (pageParts.titlePost.isDefined) 1 else 0)
 

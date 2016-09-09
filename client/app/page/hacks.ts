@@ -24,9 +24,9 @@
 
 
 export function processPosts() {
-   processTimeAgo();
-   hideShowCollapseButtons();
-
+  processTimeAgo();
+  hideShowCollapseButtons();
+  addCanScrollHintsSoon();
 }
 
 
@@ -50,6 +50,25 @@ function hideShowCollapseButtons() {
       }
    });
 }
+
+
+function addCanScrollHintsImpl() {
+  $('.dw-p-bd.esScrollHint-X').each(function() {
+    var overflowsX = this.scrollWidth > this.clientWidth;
+    if (!overflowsX) {
+      // (Some of these will be checked again in the 2nd $('.dw-p-bd...') call below.)
+      $(this).removeClass('esScrollHint-X');
+    }
+  });
+  $('.dw-p-bd:not(.esScrollHint-X)').each(function() {
+    var overflowsX = this.scrollWidth > this.clientWidth;
+    if (overflowsX) {
+      $(this).addClass('esScrollHint-X');
+    }
+  });
+}
+
+export var addCanScrollHintsSoon = _.debounce(addCanScrollHintsImpl, 1100);
 
 
 //------------------------------------------------------------------------------
