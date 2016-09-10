@@ -23,7 +23,9 @@
 .DW.DW .dw-p-hd.dw-highlight-off,
 .dw-p-hd,
 .dw-p.dw-zd  // folded comment
-  padding: 0 0 0 3px;
+  margin: 0;
+  padding: 0;
+  top: 0;
   font-size: 11px
   color: hsl(0, 0%, 8%);
   line-height: 15px // or test w 120%
@@ -36,10 +38,18 @@
 .DW.DW .dw-p-bd.dw-highlight-off,
 .dw-p-bd,
 .dw-p-diff // COULD place -bd on -diff too, remove this -diff row?
-  padding: 12px 1px 0 3px // 3px aligns w .dw-p-hd (also padded left 3px)
+  padding: 1px 1px 0 0
   position: relative
   background-color: white
   min-width: 5em
+  margin: 0 0 14px; // !important;
+  clear: both;
+  overflow-y: hidden;
+  overflow-x: auto;
+
+.dw-depth-1 > .dw-p > .dw-p-bd
+  padding-left: 1px;  // looks more aligned with .dw-p-hd for some reason
+  padding-top: 8px;
 
 // Place debug-reading-progress outline above the .dw-p.
 .dw-p-hd
@@ -331,7 +341,7 @@ html:not(.mouse) .dw-rr
     font-size: 24px;
     margin: 0 4px 0 1px;
 
-@media (min-width: $minShowAvatarWidth)
+@media (min-width: $fairlyNarrowLimit)
   .dw-id0 > .esWrong
     margin: 4px 0 11px 58px;
     left: 0;
@@ -506,11 +516,6 @@ html:not(.mouse) .dw-rr
 .dw-ar-t > .dw-p > .dw-p-bd > .dw-p-bd-blk > :first-child:not(h2)
   margin-top: 26px
 
-
-.dw-p-bd
-  overflow-y: hidden;
-  overflow-x: auto;
-
 .dw-p-bd-blk
   margin: 0
   float: left
@@ -529,6 +534,38 @@ html:not(.mouse) .dw-rr
   .dw-p-bd-blk:first-child
     // There's no head so move the body up a bit.
     margin-top: -6px
+
+
+// Narrow screens
+//===========================
+
+@media (max-width: $fairlyNarrowLimit - 1)
+  .dw-depth-1
+    .dw-p
+      margin-left: 0 !important;
+      background: none;
+
+    > .dw-p > .dw-p-hd
+      margin-left: 48px;
+      top: 10px;
+
+    > .dw-p > .dw-p-bd
+      margin-top: 30px !important;
+      padding-top: 0;
+
+    > .esAvtr
+      width: 36px;
+      height: 36px;
+      img
+        width: 36px;
+        height: 36px;
+
+    > .esAvtr-ltr
+      font-size: 22px;
+      line-height: 36px;
+
+  .dw-single-and-multireplies
+    margin: 0 !important;
 
 
 // Solution/answer
@@ -627,7 +664,7 @@ html:not(.mouse) .dw-rr
   // so better hide here. COULD use another stylesheet if javascript disabled.
   display: none
 
-.dw-p-hd .dw-p-by-me,
+.dw-p-hd .dw-p-by-me
   font-weight: bold
   color: #151515
 

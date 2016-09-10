@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (c) 2015-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -24,66 +24,50 @@
     width: 48px;
     height: 48px;
 
-.esAvtr-ltr  // avatar with a letter, no image uploaded
-  color: white;
-  border-radius: 50%;
-  font-style: normal;
-  noUserSelect();
-
-
-@media (max-width: $minShowAvatarWidth - 1)
-  .edAvtr
-    display: none;
-
-
-.esAvtr-ltr  // avatar with a letter, no image uploaded
-  text-align: center;
-
-.edAvtr-manyLetters
-  letter-spacing: 0.1ex;
-
-
-@media (min-width: $minShowAvatarWidth)
-  .edAvtr // avatar
-    float: left;
-    position: absolute;
-    left: -1px;
+  float: left;
+  position: absolute;
+  left: -1px;
+  width: 48px;
+  height: 48px;
+  img
     width: 48px;
     height: 48px;
 
-    img
-      width: 48px;
-      height: 48px;
+.esAvtr-ltr  // avatar with a letter, no image uploaded
+  font-size: 25px;
+  // The letter avatars look so large (because they're a bulb of color?),
+  // so make them a few pixels smaller:
+  width: 46px;
+  height: 46px;
+  line-height: 46px;
+  color: white;
+  border-radius: 50%;
+  font-style: normal;
+  text-align: center;
+  noUserSelect();
 
-  .esAvtr-ltr  // avatar with a letter, no image uploaded
-    font-size: 25px;
-    // The letter avatars look so large (because they're a bulb of color?),
-    // so make them a few pixels smaller:
-    width: 46px;
-    height: 46px;
-    line-height: 46px;
+.edAvtr-manyLetters
+  letter-spacing: 0.1ex;
+  font-size: 21px;
 
-  .edAvtr-manyLetters
-    font-size: 21px;
+.esAvtr-gst
+  background: hsl(0, 0%, 92%);
+  color: hsl(0, 0%, 57%);
+  font-weight: normal;
 
-  .esAvtr-gst
-    background: hsl(0, 0%, 92%);
-    color: hsl(0, 0%, 57%);
-    font-weight: normal;
+// w-avtr = "with avatar"
+.ed-w-avtr > .dw-p,
+.ed-w-avtr > .esPA,
+.ed-w-avtr > .dw-single-and-multireplies
+  margin-left: 56px;
 
-  // w-avtr = "with avatar"
-  .ed-w-avtr > .dw-p,
-  .ed-w-avtr > .esPA,
-  .ed-w-avtr > .dw-single-and-multireplies
-    margin-left: 56px;
-
-  // Without this, the avatars won't align vertically with the post header, because of
-  // some line-height.
-  .dw-chat
-    .edAvtr
-      top: 15px;
-    & > .dw-res > li:first-child .edAvtr
-      top: 10px;
+// Without this, the avatars won't align vertically with the post header, because of
+// some line-height.
+.dw-chat
+  .edAvtr
+    top: 15px;
+  & > .dw-res > li:first-child .edAvtr
+    top: 10px;
 
 
 .esAvtr-sys
@@ -98,7 +82,7 @@
   width: 25px;
   height: 25px;
   line-height: 25px;
-  margin-right: 7px;
+  margin-right: 6px;
   &.esAvtr-ltr
     font-size: 15px;
     font-weight: bold; // small low contrast font, otherwise hard to read
