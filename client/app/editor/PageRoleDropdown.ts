@@ -19,6 +19,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../utils/utils.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../page-methods.ts" />
 
@@ -35,7 +36,6 @@ var DropdownModal = utils.DropdownModal;
 var ExplainingListItem = util.ExplainingListItem;
 
 
-// Some dupl code, see SelectCategoryDropdown [7GKDF25]
 // BEM name: esTopicType -- no. Instead, esPTD = Page-Type-Dropdown?
 export var PageRoleDropdown = createComponent({
   getInitialState: function() {
@@ -48,12 +48,10 @@ export var PageRoleDropdown = createComponent({
   },
 
   open: function() {
-    // Dupl code [7GKDF25]
-    var rect = ReactDOM.findDOMNode(this.refs.dropdownButton).getBoundingClientRect();
     this.setState({
       open: true,
-      buttonX: this.props.pullLeft ? rect.left : rect.right,
-      buttonY: rect.bottom
+      windowWidth: window.innerWidth,
+      buttonRect: reactGetRefRect(this.refs.dropdownButton),
     });
   },
 
@@ -173,8 +171,9 @@ export var PageRoleDropdown = createComponent({
     }
 
     var dropdownModal =
-      DropdownModal({ show: state.open, onHide: this.close, pullLeft: this.props.pullLeft,
-          atX: state.buttonX, atY: state.buttonY, ref: 'dropdownModal' },
+      DropdownModal({ show: state.open, onHide: this.close, showCloseButton: true,
+          atRect: this.state.buttonRect, windowWidth: this.state.windowWidth,
+          ref: 'dropdownModal' },
         r.div({ className: 'esDropModal_header'}, "Select topic type:"),
         r.ul({ className: 'esTopicType' },
 
@@ -196,7 +195,7 @@ export var PageRoleDropdown = createComponent({
           customHtmlPageOption));
 
     return (
-      r.div({},
+      r.div({ style: { display: 'inline-block' } },
         dropdownButton,
         dropdownModal));
   }

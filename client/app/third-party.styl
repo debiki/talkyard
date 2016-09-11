@@ -227,6 +227,11 @@ input, textarea {
 .modal-backdrop
   z-index: 1050;
 
+// Scrollbars appear sometimes although not needed, in the editor dialog, when full screen,
+// and opening the category dropdown. (Sep 2016)
+.modal.fade.in
+  overflow: auto;
+
 .dropdown-menu > li
   margin: 0 5px;
   &:first-child

@@ -345,12 +345,14 @@ var MoreVotesDropdownModal = createComponent({
   },
 
   openForAt: function(post: Post, at) {
-    var rect = at.getBoundingClientRect();
+    var rect = cloneRect(at.getBoundingClientRect());
+    rect.left -= 140; // then modal position looks better
+    rect.right += 100;
     this.setState({
       isOpen: true,
       post: post,
-      atX: rect.left - 140,
-      atY: rect.bottom,
+      windowWidth: window.innerWidth,
+      buttonRect: rect,
     });
   },
 
@@ -428,8 +430,9 @@ var MoreVotesDropdownModal = createComponent({
     var state = this.state;
     var content = state.isOpen ? this.makeVoteButtons() : null;
     return (
-      DropdownModal({ show: state.isOpen, onHide: this.close, atX: state.atX, atY: state.atY,
-          pullLeft: true, className: 'esDwnvts', showCloseButton: true }, content));
+      DropdownModal({ show: state.isOpen, onHide: this.close,
+          atRect: state.buttonRect, windowWidth: state.windowWidth,
+          className: 'esDwnvts', showCloseButton: true }, content));
   }
 });
 
@@ -444,13 +447,12 @@ var MoreDropdownModal = createComponent({
 
   // dupl code [6KUW24]
   openForAt: function(store, post, at) {
-    var rect = at.getBoundingClientRect();
     this.setState({
       isOpen: true,
       store: store,
       post: post,
-      atX: rect.right,
-      atY: rect.bottom,
+      windowWidth: window.innerWidth,
+      buttonRect: cloneRect(at.getBoundingClientRect()),
     });
   },
 
@@ -646,7 +648,7 @@ var MoreDropdownModal = createComponent({
     var content = state.isOpen ? this.makeButtons() : null;
     return (
       DropdownModal({ show: state.isOpen, onHide: this.close, showCloseButton: true,
-          atX: state.atX, atY: state.atY },
+          atRect: state.buttonRect, windowWidth: state.windowWidth },
         content));
   }
 });

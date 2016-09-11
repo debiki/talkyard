@@ -23,6 +23,14 @@ export function getPageRect(): ClientRect {
   throw new Error('getPageRect called server side [DwE7UYKW2]');
 }
 
+export function reactGetRefRect(ref): Rect {
+  throw new Error('reactGetRefRect called server side [DwE7GDY20C]');
+}
+
+export function cloneRect(rect: ClientRect | Rect): Rect {
+  throw new Error('cloneRect called server side [DwE8PK0GW1]');
+}
+
 export function event_isEnter(event) {
   throw new Error('event_isEnter called server side [DwE5KYF204]');
 }

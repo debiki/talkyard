@@ -1016,19 +1016,24 @@ export var Editor = createComponent({
           ':');
     }
 
+    function makeSaveTitle(brief, extra) {
+      if (!extra) return brief;
+      return r.span({}, brief, r.span({ className: 'esE_SaveB_Verbose' }, extra));
+    }
+
     var saveButtonTitle = "Save";
     var cancelButtonTitle = "Cancel";
     if (_.isNumber(this.state.editingPostId)) {
-      saveButtonTitle = 'Save edits';
+      saveButtonTitle = makeSaveTitle("Save", " edits");
     }
     else if (replyToPostIds.length) {
       if (isChatComment) {
-        saveButtonTitle = "Post comment";
+        saveButtonTitle = makeSaveTitle("Post", " comment");
       }
       else {
         saveButtonTitle = "Post reply";
         if (_.isEqual([BodyId], replyToPostIds) && isCritiquePage()) { // [plugin]
-          saveButtonTitle = "Submit critique";
+          saveButtonTitle = makeSaveTitle("Submit", " critique");
         }
       }
     }
@@ -1037,26 +1042,26 @@ export var Editor = createComponent({
       cancelButtonTitle = "Simple editor";
     }
     else if (this.state.messageToUserIds.length) {
-      saveButtonTitle = "Send message";
+      saveButtonTitle = makeSaveTitle("Send", " message");
     }
     else if (this.state.newPageRole) {
       switch (this.state.newPageRole) {
         case PageRole.CustomHtmlPage:
         case PageRole.WebPage:
         case PageRole.Code:
-          saveButtonTitle = "Create page";
+          saveButtonTitle = makeSaveTitle("Create", " page");
           break;
         case PageRole.OpenChat:
         case PageRole.PrivateChat:
-          saveButtonTitle = "Create chat";
+          saveButtonTitle = makeSaveTitle("Create", " chat");
           break;
-        case PageRole.Question: saveButtonTitle = "Post question"; break;
-        case PageRole.Problem: saveButtonTitle = "Submit problem"; break;
-        case PageRole.Idea: saveButtonTitle = "Create idea"; break;
-        case PageRole.ToDo: saveButtonTitle = "Create to-do"; break;
-        case PageRole.MindMap: saveButtonTitle = "Create mind map"; break;
+        case PageRole.Question: saveButtonTitle = makeSaveTitle("Post", " question"); break;
+        case PageRole.Problem: saveButtonTitle = makeSaveTitle("Submit", " problem"); break;
+        case PageRole.Idea: saveButtonTitle = makeSaveTitle("Create", " idea"); break;
+        case PageRole.ToDo: saveButtonTitle = makeSaveTitle("Create", " to-do"); break;
+        case PageRole.MindMap: saveButtonTitle = makeSaveTitle("Create", " mind map"); break;
         default:
-          saveButtonTitle = 'Create topic';
+          saveButtonTitle = makeSaveTitle("Create", " topic");
       }
     }
 
@@ -1074,9 +1079,10 @@ export var Editor = createComponent({
     };
 
     // Make space for the soft keyboard on touch devices.
-    var maxHeightCss = !Modernizr.touchevents || debiki2.utils.isMouseDetected ? undefined : {
+    // Doesn't work well. Remove for now. CLEAN_UP
+    var maxHeightCss; /*= !Modernizr.touchevents || debiki2.utils.isMouseDetected ? undefined : {
       maxHeight: screen.height / 2.5
-    };
+    }; */
 
     var anyTextareaInstructions;
     if (this.state.newPageRole === PageRole.Critique) {  // [plugin]
@@ -1148,8 +1154,10 @@ export var Editor = createComponent({
                   // COULD use https://github.com/marcj/css-element-queries here so that
                   // this will wrap to many lines also when screen wide but the editor is narrow.
                   titleInput,
-                  categoriesDropdown,
-                  pageRoleDropdown),
+                  // Wrap in a div so will appear on the same line also when flex-dir = column.
+                  r.div({},
+                    categoriesDropdown,
+                    pageRoleDropdown)),
                 anyTextareaInstructions,
                 textareaButtons,
                 textarea)),

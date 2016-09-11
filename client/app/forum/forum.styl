@@ -457,6 +457,12 @@ html.js:not(.dw-react-started) #dw-topic-list tbody
 .esTopicIconHelp_intro
   margin-bottom: 8px;
 
+// Avoid flash of ISO dates in activity column (e.g. 2016-09-10 23:59:59Z)
+html.js:not(.dw-react-started) .dw-tpc-activity .dw-ago-ltr
+  visibility: hidden;
+  width: 75px;
+  display: block;
+
 
 // Categories tree
 //===========================

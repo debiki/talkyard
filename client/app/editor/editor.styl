@@ -1,6 +1,8 @@
 
 $spaceForButtons = 45px;
 $showPreviewMinWidth = 900px;
+$spacyButtonsMinWidth = 450px;
+$spacyYMinHeight = 400px;
 
 .dw-embedded-editor
   #debiki-editor-controller
@@ -19,7 +21,9 @@ $showPreviewMinWidth = 900px;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  margin-bottom: 7px;
+  margin-bottom: 4px;
+  @media (min-height: $spacyYMinHeight)
+    margin-bottom: 7px;
   .form-group
     margin-bottom: 0;
 
@@ -82,7 +86,15 @@ $showPreviewMinWidth = 900px;
     border-top: 1px solid hsl(0, 0%, 94%);
 
   &.editor-maximized
+    // --- dupl [5KETW02]
     height: 100% !important;
+    #editor-after-borders
+      top: -1px !important;
+      left: 5px !important;
+      right: 5px !important;
+    &.editor-box-shadow
+      border: none !important;
+  // --- /dupl
 
   @media (min-width: $showPreviewMinWidth + 1)
     &.editor-split-hz
@@ -97,7 +109,16 @@ $showPreviewMinWidth = 900px;
 
   @media (max-width: $showPreviewMinWidth)
     top: 0;
+
+    // --- dupl [5KETW02]
     height: 100% !important;
+    #editor-after-borders
+      top: -1px !important;
+      left: 5px !important;
+      right: 5px !important;
+    &.editor-box-shadow
+      border: none !important;
+    // --- /dupl
 
     .esEdtr_cycleMaxHzBtn
       display: none;
@@ -155,7 +176,9 @@ $showPreviewMinWidth = 900px;
     width: 50%
     position: absolute
     top: 12px
-    bottom: $spaceForButtons;
+    bottom: $spaceForButtons - 4;
+    @media (min-height: $spacyYMinHeight)
+      bottom: $spaceForButtons;
 
     .editor-area-after-borders
       position: absolute;
@@ -168,7 +191,8 @@ $showPreviewMinWidth = 900px;
 
     .dw-doing-what
       position: relative;
-      margin-bottom: 4px;
+      @media (min-height: $spacyYMinHeight)
+        margin-bottom: 4px;
 
     .icon-info-circled
       color: white;
@@ -247,14 +271,20 @@ $showPreviewMinWidth = 900px;
     @media (max-width: $showPreviewMinWidth)
       width: 100%;
     position: absolute;
-    bottom: 6px;
+    bottom: 3px;
+    @media (min-height: $spacyYMinHeight)
+      bottom: 6px;
     button
-      margin-right: 5px;
+      margin: 0;
+      @media (min-width: $spacyButtonsMinWidth)
+        margin-right: 5px;
     .esEdtr_cycleMaxHzBtn,
     #esPreviewBtn,
     #esMinimizeBtn
       float: right;
-      margin: 0 0 0 5px;
+      margin: 0;
+      @media (min-width: $spacyButtonsMinWidth)
+        margin-left: 5px;
     @media (min-width: $showPreviewMinWidth + 1)
       #esPreviewBtn,
       #esMinimizeBtn
@@ -263,6 +293,20 @@ $showPreviewMinWidth = 900px;
   .view-edit-history
     margin-left: 1em;
     vertical-align: middle;
+
+// Compact buttons if narrow screen, so won't wrap to 2nd line.
+@media (max-width: $spacyButtonsMinWidth - 1)
+  #esMinimizeBtn
+    padding-left: 6px;  // instead of 12px
+    padding-right: 6px;
+  #esPreviewBtn
+    padding-left: 7px;
+    padding-right: 7px;
+
+.esE_SaveB_Verbose
+  display: none;
+  @media (min-width: $spacyButtonsMinWidth)
+    display: inline;
 
 
 

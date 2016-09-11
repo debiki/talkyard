@@ -102,6 +102,23 @@ export function getPageRect(): ClientRect {
 }
 
 
+export function reactGetRefRect(reactRef): Rect {
+  return cloneRect(ReactDOM.findDOMNode(reactRef).getBoundingClientRect());
+}
+
+
+// A ClientRect is frozen, so need to clone it before modifying it.
+//
+export function cloneRect(rect: ClientRect | Rect): Rect {
+  return {
+    top: rect.top,
+    left: rect.left,
+    right: rect.right,
+    bottom: rect.bottom,
+  };
+}
+
+
 export function event_isCtrlEnter(event) {
   return event.ctrlKey && event_isEnter(event);
 }

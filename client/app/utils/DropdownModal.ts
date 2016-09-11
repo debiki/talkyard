@@ -144,12 +144,27 @@ export var DropdownModal = createComponent({
       var closeButton = !this.props.showCloseButton ? null :
         r.div({ className: 'esDropModal_CloseB esCloseCross', onClick: this.props.onHide });
 
-      var left = this.props.pullLeft ? this.props.atX : undefined;
-      var right = this.props.pullLeft ? undefined : 'calc(100% - ' + this.props.atX + 'px)';
+      // Try to remove props.atX & .pullLeft, use betweenX everywhere instead. CLEAN_UP
+      var atX = this.props.atX;
+      var atY = this.props.atY;
+      var pullLeft = this.props.pullLeft;
+
+      var rect: ClientRect = this.props.atRect;
+      if (rect) {
+        var windowMiddle = this.props.windowWidth / 2;
+        var spaceLeft = windowMiddle - rect.left;
+        var spaceRight = rect.right - windowMiddle;
+        pullLeft = spaceLeft > spaceRight;
+        atX = pullLeft ? rect.left : rect.right;
+        atY = rect.bottom;
+      }
+
+      var left = pullLeft ? atX : undefined;
+      var right = pullLeft ? undefined : 'calc(100% - ' + atX + 'px)';
       var styles = {
         left: left,
         right: right,
-        top: this.props.atY,
+        top: atY,
       };
       content =
         r.div({ className: 'esDropModal_content ' + (this.props.className || ''), style: styles,

@@ -645,4 +645,12 @@ interface SASite {
   createdAtMs: number;
 }
 
+
+interface Rect {
+  top: number;
+  left: number;
+  right: number;
+  bottom: number;
+}
+
 // vim: et ts=2 sw=2 tw=0 fo=r list

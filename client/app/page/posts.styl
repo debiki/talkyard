@@ -20,32 +20,38 @@
   background-color: white
   position: relative;
 
-.DW.DW .dw-p-hd.dw-highlight-off,
 .dw-p-hd,
 .dw-p.dw-zd  // folded comment
   margin: 0;
   padding: 0;
   top: 0;
   font-size: 11px
-  color: hsl(0, 0%, 8%);
   line-height: 15px // or test w 120%
+
+.dw-p-hd,
+.dw-p.dw-zd,  // folded comment
+.DW.DW .dw-p-hd.dw-highlight-off
+  color: hsl(0, 0%, 8%);
   background-color: white
 
 .dw-p.dw-zd  // folded comment
   margin-bottom: 25px;
   cursor: pointer;
 
-.DW.DW .dw-p-bd.dw-highlight-off,
 .dw-p-bd,
 .dw-p-diff // COULD place -bd on -diff too, remove this -diff row?
   padding: 1px 1px 0 0
   position: relative
-  background-color: white
   min-width: 5em
   margin: 0 0 14px; // !important;
   clear: both;
   overflow-y: hidden;
   overflow-x: auto;
+
+.dw-p-bd,
+.dw-p-diff,
+.DW.DW .dw-p-bd.dw-highlight-off
+  background-color: white
 
 .dw-depth-1 > .dw-p > .dw-p-bd
   padding-left: 1px;  // looks more aligned with .dw-p-hd for some reason
@@ -546,7 +552,7 @@ html:not(.mouse) .dw-rr
       background: none;
 
     > .dw-p > .dw-p-hd
-      margin-left: 48px;
+      margin-left: 44px;
       top: 10px;
 
     > .dw-p > .dw-p-bd
@@ -750,11 +756,10 @@ html.touch .dw-p-mark-click
 //===========================
 
 .DW .dw-highlight-on
-  &.dw-p-hd
-    background-color: hsl($uiHue, 100%, 76%);
+  &.dw-p-hd,
   &.dw-p-bd
-    background-color: hsl($uiHue, 100%, 86%);
-    // Place background above action buttons.
+    background-color: hsl($uiHue, 100%, 83%);
+    // Place -bd background above action buttons.
     z-index: 1;
 
 .dw-highlight-off
