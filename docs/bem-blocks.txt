@@ -20,10 +20,14 @@ esE             = The editor
 
 esF             = the forum main page, incl sort & filter buttons, and topic list and category list
 esF_BB          = forum button bar: sort & filter buttons
-esF_Ts          = forum topic list
+esF_TsT         = forum topic list, COULD rename Ts_... below to TsT...
 esF_Ts_T        = a topic in the topic list
+esF_Ts_T_CName  = topic category name
 esF_Cs          = forum category list
 esF_Cs_C        = a category in the category list
+
+esF_TsL         = forum topics list (not table)
+esF_TsL_T       = topic in forum topics list
 
 esH             = help
 

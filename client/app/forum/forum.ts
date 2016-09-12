@@ -102,19 +102,38 @@ export var ForumScrollBehavior = {
 
 
 var ForumComponent = React.createClass(<any> {
-  mixins: [debiki2.StoreListenerMixin],
+  mixins: [debiki2.StoreListenerMixin, utils.WindowZoomResizeMixin],
 
   getInitialState: function() {
-    return debiki2.ReactStore.allData();
+    return {
+      store: debiki2.ReactStore.allData(),
+      topicsInStoreMightBeOld: false,
+      useTable: this.shallUseTable(),
+    }
   },
 
   onChange: function() {
-    this.setState(debiki2.ReactStore.allData());
-    // Now some time has passed since this page was loaded, so:
-    this.setState({ topicsInStoreMightBeOld: true });
+    this.setState({
+      store: debiki2.ReactStore.allData(),
+      // Now some time has passed since this page was loaded, so:
+      topicsInStoreMightBeOld: true,
+    });
+  },
+
+  onWindowZoomOrResize: function() {
+    var useTable = this.shallUseTable();
+    if (this.state.useTable !== useTable) {
+      this.setState({ useTable: useTable });
+    }
+  },
+
+  shallUseTable: function() {
+    var useTablesMinWidth = 625;
+    return isClientSide() && window.innerWidth >= useTablesMinWidth;
   },
 
   getActiveCategory: function() {
+    var store: Store = this.state.store;
     var activeCategory: any;
     var activeCategorySlug = this.props.params.categorySlug;
     if (activeCategorySlug) {
@@ -122,14 +141,14 @@ var ForumComponent = React.createClass(<any> {
       // Don't know why, but sometimes after having edited or created a category and
       // then transitioned to its edited/new slug, then getParams().categorySlug
       // still points to the old previous slug. Therefore, if we didn't find
-      // activeCategorySlug, try this.state.newCategorySlug instead. ))
-      activeCategory = _.find(this.state.categories, (category: Category) => {
+      // activeCategorySlug, try store.newCategorySlug instead. ))
+      activeCategory = _.find(store.categories, (category: Category) => {
         return category.slug === activeCategorySlug;
       });
       if (!activeCategory) {
-        activeCategory = _.find(this.state.categories, (category: Category) => {
-          var match = category.slug === this.state.newCategorySlug;
-          console.warn("Weird this.state.categories code is needed [EsE5GUKS2]");
+        activeCategory = _.find(store.categories, (category: Category) => {
+          var match = category.slug === store.newCategorySlug;
+          console.warn("Weird store.categories code is needed [EsE5GUKS2]");
           return match;
         });
       }
@@ -137,7 +156,7 @@ var ForumComponent = React.createClass(<any> {
     if (!activeCategory) {
       activeCategory = {
         name: "All categories",
-        id: this.state.categoryId, // the forum root category id
+        id: store.categoryId, // the forum root category id
         isForumItself: true,
         newTopicTypes: [],
       };
@@ -146,7 +165,7 @@ var ForumComponent = React.createClass(<any> {
   },
 
   makeHelpMessage: function(category: Category): any {
-    var store: Store = this.state;
+    var store: Store = this.state.store;
     var me: Myself = store.me;
     if (!_.isEqual(category.newTopicTypes, [PageRole.Critique])) // [plugin] ...
       return null;
@@ -181,15 +200,16 @@ var ForumComponent = React.createClass(<any> {
   },
 
   render: function() {
-    var store: Store = this.state;
+    var store: Store = this.state.store;
     var activeCategory = this.getActiveCategory();
     var helpMessage = this.makeHelpMessage(activeCategory);
     helpMessage = helpMessage
         ? debiki2.help.HelpMessageBox({ message: helpMessage })
         : null;
 
-    var childProps = _.assign({}, this.state, {
+    var childProps = _.assign({}, {
       store: store,
+      useTable: this.state.useTable,
       route: this.props.route,
       location: this.props.location,
       activeCategory: activeCategory,
@@ -220,7 +240,7 @@ var ForumComponent = React.createClass(<any> {
       r.div({ className: 'container dw-forum' },
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
         r.div({ className: 'dw-page' }),
-        ForumIntroText(this.state),
+        ForumIntroText({ store: store }),
         helpMessage,
         ForumButtons(forumButtonProps),
         topsAndCatsHelp,
@@ -240,8 +260,9 @@ var topicsAndCatsHelpMessage = {
 
 var ForumIntroText = createComponent({
   render: function() {
-    var user: Myself = this.props.me;
-    var introPost = this.props.allPosts[BodyId];
+    var store: Store = this.props.store;
+    var user: Myself = store.me;
+    var introPost = store.allPosts[BodyId];
     if (!introPost || introPost.isPostHidden)
       return null;
 
@@ -304,19 +325,21 @@ var ForumButtons = createComponent({
   },
 
   setCategory: function(newCategorySlug) {
+    var store: Store = this.props.store;
     dieIf(this.props.routes.length < 2, 'EsE6YPKU2');
     this.closeCategoryDropdown();
     var currentPath = this.props.routes[SortOrderRouteIndex].path;
     var nextPath = currentPath === RoutePathCategories ? RoutePathLatest : currentPath;
     var slashSlug = newCategorySlug ? '/' + newCategorySlug : '';
     this.context.router.push({
-      pathname: this.props.pagePath.value + nextPath + slashSlug,
+      pathname: store.pagePath.value + nextPath + slashSlug,
       query: this.props.location.query,
     });
   },
 
   findTheDefaultCategory: function() {
-    return _.find(this.props.categories, (category: Category) => {
+    var store: Store = this.props.store;
+    return _.find(store.categories, (category: Category) => {
         return category.isDefaultCategory;
     });
   },
@@ -332,9 +355,10 @@ var ForumButtons = createComponent({
   },
 
   setSortOrder: function(newPath: string) {
+    var store: Store = this.props.store;
     this.closeSortOrderDropdown();
     this.context.router.push({
-      pathname: this.props.pagePath.value + newPath + this.slashCategorySlug(),
+      pathname: store.pagePath.value + newPath + this.slashCategorySlug(),
       query: this.props.location.query,
     });
   },
@@ -435,8 +459,8 @@ var ForumButtons = createComponent({
 
   render: function() {
     var state = this.state;
-    var props: Store = this.props;
-    var me = props.me;
+    var store: Store = this.props.store;
+    var me: Myself = store.me;
     var activeCategory: Category = this.props.activeCategory;
     if (!activeCategory) {
       // The user has typed a non-existing category slug in the URL. Or she has just created
@@ -456,7 +480,7 @@ var ForumButtons = createComponent({
         r.div({ className: 'esF_BB_PageTitle' }, "Categories") : null;
 
     var makeCategoryLink = (where, text, linkId, extraClass?) => Link({
-      to: { pathname: this.props.pagePath.value + where, query: this.props.location.query },
+      to: { pathname: store.pagePath.value + where, query: this.props.location.query },
       id: linkId,
       className: 'btn esForum_catsNav_btn ' + (extraClass || ''),
       activeClassName: 'active' }, text);
@@ -469,7 +493,7 @@ var ForumButtons = createComponent({
     var topicListLink = showsTopicList ? null :
       makeCategoryLink(RoutePathLatest, "Topic list", 'e2eViewTopicsB', 'esForum_navLink');
 
-    var categoryMenuItems = props.categories.map((category: Category) => {
+    var categoryMenuItems = store.categories.map((category: Category) => {
       return MenuItem({ eventKey: category.slug, key: category.id,
           active: activeCategory.id === category.id,
           onClick: () => this.setCategory(category.slug) }, category.name);
@@ -641,10 +665,11 @@ var ForumTopicListComponent = React.createClass(<any> {
     // The server has included in the Flux store a list of the most recent topics, and we
     // can use that lis when rendering the topic list server side, or for the first time
     // in the browser (but not after that, because then new topics might have appeared).
+    var store: Store = this.props.store;
     if (!this.props.topicsInStoreMightBeOld && this.isAllLatestTopicsView()) {
       return {
-        topics: this.props.topics,
-        showLoadMoreButton: this.props.topics.length >= NumNewTopicsPerRequest
+        topics: store.topics,
+        showLoadMoreButton: store.topics.length >= NumNewTopicsPerRequest
       };
     }
     else {
@@ -771,19 +796,21 @@ var ForumTopicListComponent = React.createClass(<any> {
       // in turn might reduce scrollTop).
       // COULD make minHeight work when switching to the Categories view too? But should
       // then probably scroll the top of the categories list into view.
-      // COULD use this.props.topics, used when rendering server side, but for now:
+      // COULD use store.topics, used when rendering server side, but for now:
       return r.p({ style: { minHeight: this.state.minHeight } }, 'Loading...');
     }
 
     if (!this.state.topics.length)
       return r.p({}, 'No topics.');
 
+    var useTable = this.props.useTable;
+
     var topics = this.state.topics.map((topic: Topic) => {
       return TopicRow({
-          store: store, topic: topic, categories: this.props.categories,
-          activeCategory: this.props.activeCategory, now: this.props.now,
+          store: store, topic: topic, categories: store.categories,
+          activeCategory: this.props.activeCategory, now: store.now,
           key: topic.pageId, routes: this.props.routes, location: this.props.location,
-          pagePath: store.pagePath });
+          pagePath: store.pagePath, inTable: useTable });
     });
 
     // Insert an icon explanation help message in the topic list. Anywhere else, and
@@ -805,8 +832,9 @@ var ForumTopicListComponent = React.createClass(<any> {
               onClick: this.openIconsHelp }, "Explain icons...")
         : HelpMessageBox({ message: IconHelpMessage, showUnhideTips: false });
     topics.splice(Math.min(topics.length, numFewTopics), 0,
-      r.tr({ key: 'ExplIcns'},
-        r.td({ colSpan: 5 }, iconsHelpStuff)));
+      useTable
+        ? r.tr({ key: 'ExplIcns' }, r.td({ colSpan: 5 }, iconsHelpStuff))
+        : r.li({ key: 'ExplIcns', className: 'esF_TsL_T clearfix' }, iconsHelpStuff));
 
     var loadMoreTopicsBtn;
     if (this.state.showLoadMoreButton) {
@@ -824,10 +852,8 @@ var ForumTopicListComponent = React.createClass(<any> {
           r.p({ className: 'esForum_sortInfo' }, "Topics with the most Like votes:");
     }
 
-    return (
-      r.div({},
-        sortingHowTips,
-        r.table({ className: 'dw-topic-list' },
+    var topicsTable = !useTable ? null :
+        r.table({ className: 'esF_TsT dw-topic-list' },
           r.thead({},
             r.tr({},
               r.th({}, "Topic"),
@@ -837,7 +863,16 @@ var ForumTopicListComponent = React.createClass(<any> {
               r.th({ className: 'num' }, "Activity"))),
               // skip for now:  r.th({ className: 'num' }, "Feelings"))),  [8PKY25]
           r.tbody({},
-            topics)),
+            topics));
+
+    var topicRows = useTable ? null :
+        r.ol({ className: 'esF_TsL' },
+          topics);
+
+    return (
+      r.div({},
+        sortingHowTips,
+        topicsTable || topicRows,
         loadMoreTopicsBtn));
   }
 });
@@ -942,10 +977,11 @@ var TopicRow = createComponent({
   },
 
   switchCategory: function(category: Category) {
+    var store: Store = this.props.store;
     dieIf(this.props.routes.length < 2, 'EsE5U2Z');
     var sortOrderPath = this.props.routes[SortOrderRouteIndex].path;
     this.context.router.push({
-      pathname: this.props.pagePath.value + sortOrderPath + '/' + category.slug,
+      pathname: store.pagePath.value + sortOrderPath + '/' + category.slug,
       query: this.props.location.query,
     });
   },
@@ -953,7 +989,7 @@ var TopicRow = createComponent({
   render: function() {
     var store: Store = this.props.store;
     var topic: Topic = this.props.topic;
-    var category = _.find(this.props.categories, (category: Category) => {
+    var category = _.find(store.categories, (category: Category) => {
       return category.id === topic.categoryId;
     });
 
@@ -1003,7 +1039,8 @@ var TopicRow = createComponent({
         : null;
 
     var categoryName = !category ? null :
-      r.a({ onClick: () => this.switchCategory(category) }, category.name);
+      r.a({ onClick: () => this.switchCategory(category), className: 'esF_Ts_T_CName' },
+        category.name);
 
     var activityAgo = prettyLetterTimeAgo(topic.bumpedAtMs || topic.createdAtMs);
 
@@ -1022,7 +1059,8 @@ var TopicRow = createComponent({
             title: "most recent poster" }));
     }
 
-    return (
+    // We use a table layout, only for wide screens, because table columns = spacy.
+    if (this.props.inTable) return (
       r.tr({ className: 'esForum_topics_topic' },
         r.td({ className: 'dw-tpc-title' },
           makeTitle(topic, anyPinIconClass),
@@ -1032,6 +1070,19 @@ var TopicRow = createComponent({
         r.td({ className: 'num dw-tpc-replies' }, topic.numPosts - 1),
         r.td({ className: 'num dw-tpc-activity', title: activityTitle }, activityAgo)));
         // skip for now:  r.td({ className: 'num dw-tpc-feelings' }, feelings)));  [8PKY25]
+    else return (
+      r.li({ className: 'esF_TsL_T' },
+        r.div({ className: 'esF_TsL_T_Title' },
+          makeTitle(topic, anyPinIconClass)),
+        r.div({ className: 'esF_TsL_T_NumRepls' },
+          topic.numPosts - 1, r.span({ className: 'icon-comment-empty' })),
+        excerptIfPinned,
+        r.div({ className: 'esF_TsL_T_Row2' },
+          r.div({ className: 'esF_TsL_T_Row2_Users' }, userAvatars),
+          r.div({ className: 'esF_TsL_T_Row2_Cat' },
+            r.span({ className: 'esF_TsL_T_Row2_Cat_Expl' }, "in: "), categoryName),
+          r.span({ className: 'esF_TsL_T_Row2_When' },
+            prettyLetterTimeAgo(topic.bumpedAtMs || topic.createdAtMs)))));
   }
 });
 
@@ -1059,7 +1110,8 @@ var ForumCategoriesComponent = React.createClass(<any> {
   },
 
   loadCategories: function(props) {
-    debiki2.Server.loadForumCategoriesTopics(this.props.pageId, props.location.query.filter,
+    var store: Store = props.store;
+    debiki2.Server.loadForumCategoriesTopics(store.pageId, props.location.query.filter,
         (categories: Category[]) => {
       if (this.ignoreServerResponse) return;
       this.setState({ categories: categories });
