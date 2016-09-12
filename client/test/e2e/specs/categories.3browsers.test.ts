@@ -68,7 +68,7 @@ describe("categories", function() {
     maria.clickLinkToNewPage(WastelandCategorySelector);
     mariasPages.topbar.clickLogin();
     mariasPages.loginDialog.loginWithPassword({ username: 'maria', password: 'publicMaria' });
-    maria.assertTextMatches('.esForum_topics_topic', /About/, /Wasteland/);
+    maria.assertTextMatches('.e2eF_T', /About/, /Wasteland/);
   });
 
   var mariasFirstTopicTitle = "Marias topic";
@@ -97,8 +97,8 @@ describe("categories", function() {
     owen.waitAndClick('#e2eShowUnlistedCB');
     owen.waitAndClick('#e2eUnlistedCB');
     owensPages.categoryDialog.submit();
-    owen.assertNthTextMatches('.esForum_topics_topic', 1, /Wasteland Unlisted/);
-    owen.assertNthTextMatches('.esForum_topics_topic', 2, /Wasteland Unlisted/);
+    owen.assertNthTextMatches('.e2eF_T', 1, /Wasteland Unlisted/);
+    owen.assertNthTextMatches('.e2eF_T', 2, /Wasteland Unlisted/);
   });
 
   it("Mons doesn't sees it, he hasn't logged in", function() {
@@ -144,8 +144,8 @@ describe("categories", function() {
     owen.waitAndClick('#e2eShowOnlyStaffCreateCB');
     owen.waitAndClick('#e2eOnlyStaffCreateCB');
     owensPages.categoryDialog.submit();
-    owen.assertNthTextMatches('.esForum_topics_topic', 1, /Wasteland Only Staff Create/);
-    owen.assertNthTextMatches('.esForum_topics_topic', 2, /Wasteland Only Staff Create/);
+    owen.assertNthTextMatches('.e2eF_T', 1, /Wasteland Only Staff Create/);
+    owen.assertNthTextMatches('.e2eF_T', 2, /Wasteland Only Staff Create/);
   });
 
   it("Mons can post a new topic", function() {
@@ -183,9 +183,9 @@ describe("categories", function() {
     owen.waitAndClick('#e2eShowStaffOnlyCB');
     owen.waitAndClick('#e2eStaffOnlyCB');
     owensPages.categoryDialog.submit();
-    owen.assertNthTextMatches('.esForum_topics_topic', 1, /Wasteland Staff Only/);
-    owen.assertNthTextMatches('.esForum_topics_topic', 2, /Wasteland Staff Only/);
-    owen.assertNthTextMatches('.esForum_topics_topic', 3, /Wasteland Staff Only/);
+    owen.assertNthTextMatches('.e2eF_T', 1, /Wasteland Staff Only/);
+    owen.assertNthTextMatches('.e2eF_T', 2, /Wasteland Staff Only/);
+    owen.assertNthTextMatches('.e2eF_T', 3, /Wasteland Staff Only/);
   });
 
   it("Mons sees it and can create a 2nd topic", function() {
