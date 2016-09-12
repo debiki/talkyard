@@ -20,6 +20,7 @@
 /// <reference path="../prelude.ts" />
 /// <reference path="../constants.ts" />
 /// <reference path="../utils/react-utils.ts" />
+/// <reference path="../utils/utils.ts" />
 /// <reference path="../editor/editor.ts" />
 /// <reference path="../login/login-dialog.ts" />
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
@@ -102,13 +103,15 @@ export var ForumScrollBehavior = {
 
 
 var ForumComponent = React.createClass(<any> {
-  mixins: [debiki2.StoreListenerMixin, utils.WindowZoomResizeMixin],
+  mixins: [debiki2.StoreListenerMixin],
 
   getInitialState: function() {
     return {
       store: debiki2.ReactStore.allData(),
       topicsInStoreMightBeOld: false,
-      useTable: this.shallUseTable(),
+      useWideLayout: isServerSide() ? true :
+          // (contextbar closed by default)
+          window.innerWidth >= UseWideForumLayoutMinWidth + WatchbarWidth,
     }
   },
 
@@ -120,16 +123,29 @@ var ForumComponent = React.createClass(<any> {
     });
   },
 
-  onWindowZoomOrResize: function() {
-    var useTable = this.shallUseTable();
-    if (this.state.useTable !== useTable) {
-      this.setState({ useTable: useTable });
+  componentDidMount: function() {
+    // Dupl code [5KFEWR7]
+    this.checkSizeChangeLayout();
+    this.timerHandle = setInterval(this.checkSizeChangeLayout, 200);
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
+    clearInterval(this.timerHandle);
+  },
+
+  checkSizeChangeLayout: function() {
+    // Dupl code [5KFEWR7]
+    if (this.isGone) return;
+    var isWide = this.isPageWide();
+    if (isWide !== this.state.useWideLayout) {
+      this.setState({ useWideLayout: isWide });
     }
   },
 
-  shallUseTable: function() {
-    var useTablesMinWidth = 625;
-    return isClientSide() && window.innerWidth >= useTablesMinWidth;
+  isPageWide: function() {
+    var rect = reactGetRefRect(this.refs.outer);
+    return rect.right - rect.left >= UseWideForumLayoutMinWidth;
   },
 
   getActiveCategory: function() {
@@ -209,7 +225,7 @@ var ForumComponent = React.createClass(<any> {
 
     var childProps = _.assign({}, {
       store: store,
-      useTable: this.state.useTable,
+      useTable: this.state.useWideLayout,
       route: this.props.route,
       location: this.props.location,
       activeCategory: activeCategory,
@@ -239,7 +255,7 @@ var ForumComponent = React.createClass(<any> {
       debiki2.page.ScrollButtons(),
       r.div({ className: 'container dw-forum' },
         // Include .dw-page to make renderDiscussionPage() in startup.js run: (a bit hacky)
-        r.div({ className: 'dw-page' }),
+        r.div({ className: 'dw-page', ref: 'outer' }),
         ForumIntroText({ store: store }),
         helpMessage,
         ForumButtons(forumButtonProps),

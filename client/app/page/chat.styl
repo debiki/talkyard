@@ -64,21 +64,6 @@ html.es-chat
   .dw-p-bd
     margin-left: 50px; // leaves space for the avatar
 
-  @media (max-width: $fairlyNarrowLimit - 1)
-    // Show avatars anyway, here in the chat.
-    .edAvtr
-      display: block;
-      position: absolute;
-    // Place the post header in the middle of the avatar ...
-    .dw-p-hd
-      margin: 0 0 0 44px;
-      top: 9px;
-      padding: 0;
-    // ... and let the text start on the next line, so no need to indent it (screen to small).
-    // Add some vertical space too so easier to see to which avatar the text belowngs.
-    .dw-p-bd
-      margin: 25px 0 20px !important;
-
   .esAvtr-ltr,
   .edAvtr img
     width: 36px;
@@ -86,6 +71,17 @@ html.es-chat
   .esAvtr-ltr
     line-height: 36px;
     font-size: 20px;
+
+.esPage-Compact .esC_M
+  // Place the post header in the middle of the avatar ...
+  .dw-p-hd
+    margin: 0 0 0 44px;
+    top: 9px;
+    padding: 0;
+  // ... and let the text start on the next line, so no need to indent it (screen to small).
+  // Add some vertical space too so easier to see to which avatar the text belowngs.
+  .dw-p-bd
+    margin: 25px 0 20px !important;
 
 
 .esFixAtBottom

@@ -75,12 +75,52 @@ var PageWithState = createComponent({
 
 
 var Page = createComponent({
+  getInitialState: function() {
+    return {
+      // Use compact by default, so mobile phones won't have to rerender anything,
+      // they're much slower than laptops & desktops.
+      // (Cannot check the actual size here — the component hasn't been mounted yet.)
+      useWideLayout: debiki2.isServerSide() ? false :
+          // (contextbar closed by default)
+          window.innerWidth >= UseWidePageLayoutMinWidth + WatchbarWidth,
+    };
+  },
+
+  componentDidMount: function() {
+    // Could use https://github.com/marcj/css-element-queries/, but why?
+    // This works fine and is less code.
+    // A tiny bit dupl code though, perhaps break out... what? a mixin? [5KFEWR7]
+    this.checkSizeChangeLayout();
+    this.timerHandle = setInterval(this.checkSizeChangeLayout, 200);
+  },
+
+  componentWillUnmount: function() {
+    this.isGone = true;
+    clearInterval(this.timerHandle);
+  },
+
+  checkSizeChangeLayout: function() {
+    // Dupl code [5KFEWR7]
+    if (this.isGone) return;
+    var isWide = this.isPageWide();
+    if (isWide !== this.state.useWideLayout) {
+      this.setState({ useWideLayout: isWide });
+    }
+  },
+
+  isPageWide: function(): boolean {
+    var rect = debiki2.reactGetRefRect(this.refs.outer);
+    return rect.right - rect.left > UseWidePageLayoutMinWidth;
+  },
+
   render: function() {
     var store: Store = this.props;
-    var content = page_isChatChannel(store.pageRole) ?
-        debiki2.page.ChatMessages(this.props) : debiki2.page.TitleBodyComments(this.props);
+    var content = page_isChatChannel(store.pageRole)
+        ? debiki2.page.ChatMessages({ store: store })
+        : debiki2.page.TitleBodyComments({ store: store });
+    var compactClass = this.state.useWideLayout ? '' : ' esPage-Compact';
     return (
-      r.div({ className: 'esPage' },
+      r.div({ className: 'esPage' + compactClass, ref: 'outer' },
         page_isChatChannel(store.pageRole) ? null : debiki2.reactelements.TopBar({}),
         debiki2.page.ScrollButtons(),
         r.div({ className: 'container' },

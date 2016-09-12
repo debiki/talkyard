@@ -54,14 +54,14 @@ export var ChatMessages = createComponent({
   },
 
   render: function() {
-    var store: Store = this.props;
+    var store: Store = this.props.store;
     var isChatMember = _.some(store.pageMemberIds, id => id === store.me.id);
     var editorOrJoinButton = isChatMember
-        ? ChatMessageEditor({ store: this.props, scrollDownToViewNewMessage: this.scrollDown })
+        ? ChatMessageEditor({ store: store, scrollDownToViewNewMessage: this.scrollDown })
         : JoinChatButton({});
     return (
       r.div({ className: 'esChatPage dw-page' },
-        TitleAndLastChatMessages({ store: this.props, ref: 'titleAndMessages' }),
+        TitleAndLastChatMessages({ store: store, ref: 'titleAndMessages' }),
         FixedAtBottom({ ref: 'fixedAtBottom' },
           editorOrJoinButton)));
   }

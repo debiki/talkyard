@@ -96,7 +96,7 @@ export var TopBar = createComponent({
     var pageRect = getPageScrollableRect();
     var pageLeft = pageRect.left;
     if (store.isWatchbarOpen && !store.shallSidebarsOverlayPage) {
-      pageLeft -= 230; // dupl value, in css too [7GYK42]
+      pageLeft -= WatchbarWidth;
     }
     var pageTop = pageRect.top;
     var newTop = -pageTop - this.state.initialOffsetTop;

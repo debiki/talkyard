@@ -216,8 +216,11 @@ var RoutePathCategories = 'categories';
 var ImpersonationCookieName = 'esCoImp';
 
 
-// Enable some hard-to-use features for me only right now.
-declare var debiki: any;
-var IsEffectiveDiscussionsDotOrg = (typeof debiki !== 'undefined') && debiki.siteId === '3';
+// Some CSS and layout related constants. [6PFDS3]
+var UseWideForumLayoutMinWidth = 625;
+var UseWidePageLayoutMinWidth = 750;
+var WatchbarWidth = 230;  // dupl in css [7GYK42]
+var ContextbarMinWidth = 270;  // dupl in css [4FK0ZD]
+
 
 // vim: fdm=marker et ts=2 sw=2 tw=0 fo=r list

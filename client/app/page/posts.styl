@@ -181,6 +181,9 @@
   .dw-p-ttl > .dw-p-bd
     margin-left: 0
     padding-left: 0
+    // Wrap long titles.
+    overflow: hidden;
+    word-break: break-word;
 
 
 .esPendingApproval
@@ -347,7 +350,7 @@ html:not(.mouse) .dw-rr
     font-size: 24px;
     margin: 0 4px 0 1px;
 
-@media (min-width: $fairlyNarrowLimit)
+.esPage-Compact
   .dw-id0 > .esWrong
     margin: 4px 0 11px 58px;
     left: 0;
@@ -545,7 +548,7 @@ html:not(.mouse) .dw-rr
 // Narrow screens
 //===========================
 
-@media (max-width: $fairlyNarrowLimit - 1)
+.esPage-Compact
   .dw-depth-1
     .dw-p
       margin-left: 0 !important;
