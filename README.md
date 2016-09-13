@@ -32,23 +32,28 @@ Install Docker-Compose, version 1.7.0+: https://docs.docker.com/compose/install/
 
         git submodule update --init
 
-1. Make ElasticSearch work:
+1. Edit the system config so that ElasticSearch will work: (run this as one single command, not one line at a time)
 
-        echo 'vm.max_map_count=262144  # ElasticSearch requires (at least) this, default = 65530' \
-           >> /etc/sysctl.conf
+        sudo tee -a /etc/sysctl.conf <<EOF
+
+        ###################################################################
+        # EffectiveDiscussions settings
+        net.core.somaxconn=8192    # Up the max backlog queue size (num connections per port), default = 128
+        vm.max_map_count=262144    # ElasticSearch requires (at least) this, default = 65530
+        EOF
 
     (`max_map_count` docs: https://www.kernel.org/doc/Documentation/sysctl/vm.txt)
 
+    Reload the system config:
+
+        sudo sysctl --system
+
 1. Start everything: (this will take a while, the first time: some Docker images will be downloaded and built)
 
-        docker-compose up web  # use 'sudo' if needed
+        docker-compose up  # use 'sudo' if needed
 
-1. Create an empty database:
-
-        docker/drop-database-create-empty.sh  # 'sudo' if needed
-
-1. Point your browser to http://localhost/ and follow the instructions, namely to sign up
-   as admin, with the email address `admin@example.com`. Create a password account.
+1. Point your browser to http://localhost/ and sign up as admin, with email `admin@example.com`.
+   As username, you can type `admin`, and password e.g. `public1234`.
 
    You'll be asked to confirm your email address, by clicking a link in an email
    that was sent to you — but in fact the email couldn't be sent, because you haven't configured

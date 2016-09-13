@@ -78,8 +78,8 @@ var thisIsAConcatenationMessage =
 //   block Google's CDN.
 var debikiJavascriptFiles = [
       // Place React first so we can replace it at index 0 & 1 with the optimized min.js versions.
-      'bower_components/react/react-with-addons.js',
-      'bower_components/react/react-dom.js',
+      'node_modules/react/dist/react-with-addons.js',
+      'node_modules/react-dom/dist/react-dom.js',
       // About Modernizr:
       // Concerning when/how to use a CDN for Modernizr, see:
       // http://www.modernizr.com/news/modernizr-and-cdns
@@ -103,7 +103,7 @@ var debikiJavascriptFiles = [
       'bower_components/moment/min/moment.min.js',
       'bower_components/eventemitter2/lib/eventemitter2.js',
       'bower_components/react-bootstrap/react-bootstrap.js',
-      'bower_components/react-router/index.js',
+      'node_modules/react-router/umd/ReactRouter.js',
       'bower_components/react-router-active-component/index.js',
       'node_modules/jquery-resizable/resizable.js',
       'client/third-party/gifffer/gifffer.js',
@@ -181,7 +181,6 @@ gulp.task('wrap-javascript', function () {
 
 var serverSideTypescriptProject = typeScript.createProject({
     target: 'ES5',
-    allowBool: true,
     noExternalResolve: true,
     out: 'renderer.js'
 });
@@ -203,10 +202,10 @@ function compileServerSideTypescript() {
 
   var javascriptStream = gulp.src([
         // Don't need any React addons server side (e.g. CSS transitions or performance measurements).
-        'bower_components/react/react.min.js',
-        'bower_components/react/react-dom-server.min.js',
+        'node_modules/react/dist/react.min.js',
+        'node_modules/react-dom/dist/react-dom-server.min.js',
         'bower_components/react-bootstrap/react-bootstrap.js',
-        'bower_components/react-router/index.js',
+        'node_modules/react-router/umd/ReactRouter.js',
         'bower_components/markdown-it/dist/markdown-it.js',
         'bower_components/lodash/dist/lodash.js',
         'client/third-party/html-css-sanitizer-bundle.js',
@@ -223,7 +222,6 @@ function compileServerSideTypescript() {
 
 var clientSideTypescriptProject = typeScript.createProject({
     target: 'ES5',
-    allowBool: true,
     noExternalResolve: true,
     out: 'all-typescript.js'
 });
@@ -312,8 +310,8 @@ function makeConcatAllScriptsStream() {
 
 gulp.task('insert-prod-scripts', function() {
   // This script isn't just a minified script — it contains lots of optimizations.
-  debikiJavascriptFiles[0] = 'bower_components/react/react-with-addons.min.js';
-  debikiJavascriptFiles[1] = 'bower_components/react/react-dom.min.js';
+  debikiJavascriptFiles[0] = 'node_modules/react/dist/react-with-addons.min.js';
+  debikiJavascriptFiles[1] = 'node_modules/react-dom/dist/react-dom.min.js';
 });
 
 

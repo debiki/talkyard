@@ -80,6 +80,7 @@ function postJsonSuccess(urlPath, success: (response: any) => void, data: any, e
     data = error;
     error = tmp;
   }
+  options = options || {};
   postJson(urlPath, {
     data: data,
     success: success,

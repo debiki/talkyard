@@ -17,11 +17,9 @@
     "jquery.atwho": "=0.5.2",
     "keymaster": "=1.6.3",
     "lodash": "=4.1.0",
-    "markdown-it": "=7.0.0",
+    "markdown-it": "=7.0.1",
     "moment": "=2.11.1",
-    "react": "=15.2.1",
     "react-bootstrap": "=0.28.5",
-    "react-router": "https://npmcdn.com/react-router@2.5.2/umd/ReactRouter.js",
     "react-router-active-component": "https://npmcdn.com/react-router-active-component@4.0.0-rc.0/umd/react-router-active-component.js",
     "yepnope": "=v1.5.4"
   }
