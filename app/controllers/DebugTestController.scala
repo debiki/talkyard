@@ -46,13 +46,18 @@ object DebugTestController extends mvc.Controller {
   /** If a JS error happens in the browser, it'll post the error message to this
     * endpoint, which logs it, so we'll get to know about client side errors.
     */
-  def logBrowserError = PostJsonAction(RateLimits.BrowserError, maxLength = 1000) { request =>
-    val errorMessage = request.body.toString()
-    p.Logger.warn(o"""Browser error: $errorMessage,
+  def logBrowserErrors = PostJsonAction(RateLimits.BrowserError, maxLength = 10000) { request =>
+    val allErrorMessages = request.body.as[Seq[String]]
+    // If there are super many errors, perhaps all of them is the same error. Don't log too many.
+    val firstErrors = allErrorMessages take 20
+    firstErrors foreach { message =>
+      p.Logger.warn(o"""Browser error,
       ip: ${request.ip},
       user: ${request.user.map(_.id)},
       site: ${request.siteId}
+      message: $message
       [DwE4KF6]""")
+    }
     Ok
   }
 

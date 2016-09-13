@@ -193,7 +193,7 @@ POST  /-/close-tree             controllers.CloseCollapseController.closeTree
 
 POST  /-/import-site            controllers.ImportExportController.importSiteJson
 
-POST /-/log-browser-error       controllers.DebugTestController.logBrowserError
+POST /-/log-browser-errors      controllers.DebugTestController.logBrowserErrors
 GET  /-/metrics                 controllers.DebugTestController.showMetrics
 GET  /-/build-info              controllers.DebugTestController.showBuildInfo
 GET  /-/ping-exception-action   controllers.DebugTestController.pingExceptionAction

@@ -20,7 +20,9 @@ var $ = d.i.$;
 
 
 d.u.postJson = function(options) {
-  showLoadingOverlay();
+  if (options.showLoadingOverlay !== false) {
+    showLoadingOverlay();
+  }
   var timeoutHandle = setTimeout(function() {
     showServerJustStartedMessage();
     timeoutHandle = setTimeout(showErrorIfNotComplete, 23 * 1000);
@@ -39,7 +41,9 @@ d.u.postJson = function(options) {
     success: options.success,
     complete: function() {
       clearTimeout(timeoutHandle);
-      removeLoadingOverlay();
+      if (options.showLoadingOverlay !== false) {
+        removeLoadingOverlay();
+      }
     }
   });
 };

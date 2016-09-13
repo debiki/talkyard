@@ -118,7 +118,8 @@ object RateLimits {
   object BrowserError extends RateLimits {
     val key = "BrEr"
     val what = "uploaded too many errors"
-    def maxPerFifteenSeconds = 15
+    // Shouldn't need more than this, because browsers throttle log-error http requests.
+    def maxPerFifteenSeconds = 5
     def maxPerFifteenMinutes = 50
     def maxPerDay = 100
     def maxPerDayNewUser = 100

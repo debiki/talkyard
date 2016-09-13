@@ -46,12 +46,15 @@ interface RequestData {
   data: any;
   success: (response: any) => void;
   error?: (jqXhr: any, textStatus?: string, errorThrown?: string) => any;
+  showLoadingOverlay?: boolean;
 }
 
 
 function postJson(urlPath: string, requestData: RequestData) {
   var url = appendE2eAndForbiddenPassword(origin + urlPath);
+  var options = options || {};
   d.u.postJson({
+    showLoadingOverlay: options.showLoadingOverlay,
     url: url,
     data: requestData.data,
     success: requestData.success,
@@ -69,7 +72,8 @@ function postJson(urlPath: string, requestData: RequestData) {
 
 
 /** Return Server.IgnoreThisError from error(..) to suppress a log message and error dialog. */
-function postJsonSuccess(urlPath, success: (response: any) => void, data: any, error?) {
+function postJsonSuccess(urlPath, success: (response: any) => void, data: any, error?,
+        options?: { showLoadingOverlay?: boolean }) {
   // Make postJsonSuccess(..., error, data) work:
   if (!data || _.isFunction(data)) {
     var tmp = data;
@@ -79,7 +83,8 @@ function postJsonSuccess(urlPath, success: (response: any) => void, data: any, e
   postJson(urlPath, {
     data: data,
     success: success,
-    error: error
+    error: error,
+    showLoadingOverlay: options.showLoadingOverlay,
   });
 }
 
@@ -1068,9 +1073,23 @@ export function updateSites(sites: SASite[]) {
 }
 
 
+var pendingErrors = [];
+
 export function logError(errorMessage: string) {
-  postJsonSuccess('/-/log-browser-error', () => {}, errorMessage);
+  pendingErrors.push(errorMessage);
+  postPendingErrorsThrottled();
 }
+
+
+var postPendingErrorsThrottled = _.throttle(function() {
+  if (!pendingErrors.length)
+    return;
+  postJsonSuccess('/-/log-browser-errors', () => {}, pendingErrors, null, { showLoadingOverlay: false });
+  pendingErrors = [];
+}, 5000);
+
+// Will this work? Doesn't seem to work. Why not? Oh well.
+window.addEventListener('unload', postPendingErrorsThrottled.flush);
 
 
 //------------------------------------------------------------------------------
