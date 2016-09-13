@@ -239,18 +239,18 @@ case class NameAndUsername(id: UserId, fullName: String, username: String)
 case object User {
 
   /** The only other member is the System user. But it's a computer. */
-  val LowestHumanMemberId = 1
+  val LowestHumanMemberId = 2
 
   /** Cannot talk with members with lower ids (System and SuperAdmin). */
   val LowestTalkToMemberId = 3
 
   /** Used when things are inserted or updated automatically in the database. */
-  val SystemUserId = -1   // change to +1  [5KGEP02]
+  val SystemUserId = 1
   val SystemUserUsername = "system"
   val SystemUserFullName = "System"
 
   // Later ...  [4KYFU02]
-  val SuperAdminId = -2  // no, change to +2
+  val SuperAdminId = 2
 
   /** A user that did something, e.g. voted on a comment, but was not logged in. */
   val UnknownUserId = -3
@@ -259,12 +259,12 @@ case object User {
 
   // Perhaps in the future:
   // /** A user that has logged in and can post comments, but is anonymous. */
-  // val AnonymousUserId = -4
+  // val AnonymousUserId = -1
 
   /** Guests with custom name and email, but not guests with magic ids like the Unknown user. */
   val MaxCustomGuestId = -10
 
-  val MaxGuestId = -2  // no, -3  [4KYFU02]
+  val MaxGuestId = -1
   //assert(MaxGuestId == AnonymousUserId)
   assert(UnknownUserId.toInt <= MaxGuestId)
 
@@ -274,9 +274,8 @@ case object User {
   val LowestAuthenticatedUserId = 100
 
   val LowestMemberId = SystemUserId // -1    No, change to -2  [4KYFU02]
-  val LowestNonGuestId = -1  // later: rename to LowestMemberId   change to -2  [4KYFU02]
+  val LowestNonGuestId = 1  // later: rename to LowestMemberId?
   assert(LowestNonGuestId == SystemUserId)
-  assert(LowestNonGuestId == MaxGuestId + 1)
 
   def isGuestId(userId: UserId) =
     userId <= MaxGuestId
@@ -290,6 +289,8 @@ case object User {
   def isOkayUserId(id: UserId) =
     id >= LowestAuthenticatedUserId ||
       id == SystemUserId ||
+      //id == SuperAdminId ||     later
+      //id == AnonymousUserId ||  later
       id == UnknownUserId ||
       id <= MaxCustomGuestId
 

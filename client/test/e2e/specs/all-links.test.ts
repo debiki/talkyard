@@ -39,7 +39,7 @@ describe('all links', function() {
       id: 'fmp',
       role: <PageRole> 7,  // [commonjs] PageRole.Forum
       categoryId: rootCategoryId,
-      authorId: -1,    // [commonjs] SystemUserId  [5KGEP02]
+      authorId: 1,    // [commonjs] SystemUserId
     });
     site.pages.push(forumPage);
 

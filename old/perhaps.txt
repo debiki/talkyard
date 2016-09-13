@@ -54,3 +54,23 @@ If tags are ints, in the database:
  public | tag_users                       | table    | vagrant
  public | tags                            | table    | vagrant
 
+
+
+
+=== Unknown user id from -3 to -1:
+-- This'll force a check of all constraints, so we'll know that -1 is gone for sure.
+commit;
+-- Now change the Unknown user's id from -3 to -1, because I like -1 better.
+-- First delete 2 tests posts by mine.
+delete from audit_log3 where doer_id = -3 and did_what = 4;  -- 4 = create post
+delete from review_tasks3 where caused_by_id = -3;
+delete from posts3 where created_by_id = -3;
+-- Then change the id.
+set constraints all deferred;
+update audit_log3 set doer_id = -1 where doer_id = -3;
+update post_actions3 set created_by_id = -1 where created_by_id = -3;
+update post_read_stats3 set user_id = -1 where user_id = -3;
+update users3 set user_id = -1 where user_id = -3;
+
+
+
