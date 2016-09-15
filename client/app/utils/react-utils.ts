@@ -21,13 +21,11 @@
 
 
 var reactCreateFactory = React['createFactory'];
-var isServerSide = debiki2.isServerSide;
-
 var ReactSelect; // lazy loaded.
 
 
 function createComponent(componentDefinition) { // oops should obviously be named createFactory
-  if (isServerSide()) {
+  if (debiki2.isServerSide()) {
     // The mere presence of these functions cause an unknown error when rendering
     // React-Router server side. So remove them; they're never called server side anyway.
     // The error logs the message '{}' to console.error(); no idea what that means.

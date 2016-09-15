@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../react-bootstrap-old/Input.ts" />
 /// <reference path="../links.ts" />
 
 //------------------------------------------------------------------------------
@@ -32,7 +33,6 @@ var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
-var Input = reactCreateFactory(ReactBootstrap.Input);
 
 var ReactRouter = window['ReactRouter'];
 var RouterNavigation = ReactRouter.Navigation;

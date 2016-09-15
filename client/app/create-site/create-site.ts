@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../react-bootstrap-old/Input.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
@@ -34,7 +35,6 @@ var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var ButtonGroup = reactCreateFactory(ReactBootstrap.ButtonGroup);
 var Panel = reactCreateFactory(ReactBootstrap.Panel);
-var Input = reactCreateFactory(ReactBootstrap.Input);
 var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 var EmailInput = util.EmailInput;
 var PatternInput = utils.PatternInput;

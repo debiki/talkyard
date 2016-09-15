@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../react-bootstrap-old/Input.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
@@ -25,7 +26,6 @@
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Input = reactCreateFactory(ReactBootstrap.Input);
 
 
 export var PatternInput = createClassAndFactory({

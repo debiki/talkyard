@@ -17,6 +17,7 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../react-bootstrap-old/Input.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/fade-in-on-click.ts" />
 /// <reference path="../editor/PageRoleDropdown.ts" />
@@ -33,7 +34,6 @@ var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var ButtonGroup = reactCreateFactory(ReactBootstrap.ButtonGroup);
-var Input = reactCreateFactory(ReactBootstrap.Input);
 var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
@@ -207,7 +207,7 @@ var EditCategoryDialog = createClassAndFactory({
 
     var defaultTopicTypeInput =
       r.div({ className: 'form-group' },
-        r.label({ className: 'control-label' }, "Default topic type"),
+        r.label({ className: 'control-label', style: { display: 'block' }}, "Default topic type"),
         PageRoleDropdown({ store: store, pageRole: this.state.defaultTopicType,
           complicated: false, hideMore: true, onSelect: this.setDefaultTopicType,
           title: 'Topic type', className: 'esEdtr_titleEtc_pageRole', pullLeft: true }),

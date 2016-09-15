@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../react-bootstrap-old/Input.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../ReactStore.ts" />
@@ -30,7 +31,6 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
-var Input = reactCreateFactory(ReactBootstrap.Input);
 var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);

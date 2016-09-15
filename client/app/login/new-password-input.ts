@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../react-bootstrap-old/Input.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
@@ -26,9 +27,6 @@
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Input = reactCreateFactory(ReactBootstrap.Input);
 
 // zxcvbn's strongest level is 4, but that makes people confused: they are often
 // unable to come up with strong password.

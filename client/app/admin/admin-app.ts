@@ -16,12 +16,12 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../react-bootstrap-old/Input.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../topbar/topbar.ts" />
 /// <reference path="../utils/PageUnloadAlerter.ts" />
-/// <reference path="../utils/PatternInput.ts" />
 /// <reference path="settings.ts" />
 /// <reference path="review.ts" />
 /// <reference path="review-all.ts" />
@@ -44,13 +44,11 @@ var TabbedArea = reactCreateFactory(ReactBootstrap.TabbedArea);
 var TabPane = reactCreateFactory(ReactBootstrap.TabPane);
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var Alert = reactCreateFactory(ReactBootstrap.Alert);
-var Input = reactCreateFactory(ReactBootstrap.Input);
 
 var ReactRouter = window['ReactRouter'];
 var Route = reactCreateFactory(ReactRouter.Route);
 var Redirect = reactCreateFactory(ReactRouter.Redirect);
 var PageUnloadAlerter = utils.PageUnloadAlerter;
-var PatternInput = utils.PatternInput;
 
 
 var AdminRoot = '/-/admin/';

@@ -102,7 +102,7 @@ var debikiJavascriptFiles = [
       'bower_components/lodash/dist/lodash.js',
       'bower_components/moment/min/moment.min.js',
       'bower_components/eventemitter2/lib/eventemitter2.js',
-      'bower_components/react-bootstrap/react-bootstrap.js',
+      'node_modules/react-bootstrap/dist/react-bootstrap.js',
       'node_modules/react-router/umd/ReactRouter.js',
       'bower_components/react-router-active-component/index.js',
       'node_modules/jquery-resizable/resizable.js',
@@ -204,7 +204,7 @@ function compileServerSideTypescript() {
         // Don't need any React addons server side (e.g. CSS transitions or performance measurements).
         'node_modules/react/dist/react.min.js',
         'node_modules/react-dom/dist/react-dom-server.min.js',
-        'bower_components/react-bootstrap/react-bootstrap.js',
+        'node_modules/react-bootstrap/dist/react-bootstrap.js',
         'node_modules/react-router/umd/ReactRouter.js',
         'bower_components/markdown-it/dist/markdown-it.js',
         'bower_components/lodash/dist/lodash.js',

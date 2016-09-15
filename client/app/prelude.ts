@@ -29,7 +29,7 @@
 declare var React;
 declare var ReactRouter;
 
-var reactCreateFactory = React['createFactory'];
+export var reactCreateFactory = React['createFactory'];
 export var Link = reactCreateFactory(ReactRouter.Link);
 
 

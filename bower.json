@@ -19,7 +19,6 @@
     "lodash": "=4.1.0",
     "markdown-it": "=7.0.1",
     "moment": "=2.11.1",
-    "react-bootstrap": "=0.28.5",
     "react-router-active-component": "https://npmcdn.com/react-router-active-component@4.0.0-rc.0/umd/react-router-active-component.js",
     "yepnope": "=v1.5.4"
   }

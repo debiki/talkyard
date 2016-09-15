@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../react-bootstrap-old/Input.ts" />
 /// <reference path="../../typedefs/modernizr/modernizr.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../util/stupid-dialog.ts" />
@@ -38,7 +39,6 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
-var Input = reactCreateFactory(ReactBootstrap.Input);
 var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);

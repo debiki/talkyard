@@ -598,6 +598,11 @@
       "from": "diff@1.4.0",
       "resolved": "https://registry.npmjs.org/diff/-/diff-1.4.0.tgz"
     },
+    "dom-helpers": {
+      "version": "2.4.0",
+      "from": "dom-helpers@>=2.4.0 <3.0.0",
+      "resolved": "https://registry.npmjs.org/dom-helpers/-/dom-helpers-2.4.0.tgz"
+    },
     "duplexer": {
       "version": "0.1.1",
       "from": "duplexer@>=0.1.1 <0.2.0",
@@ -1461,6 +1466,11 @@
       "from": "kew@>=0.3.1 <0.4.0",
       "resolved": "https://registry.npmjs.org/kew/-/kew-0.3.4.tgz"
     },
+    "keycode": {
+      "version": "2.1.4",
+      "from": "keycode@>=2.1.0 <3.0.0",
+      "resolved": "https://registry.npmjs.org/keycode/-/keycode-2.1.4.tgz"
+    },
     "kind-of": {
       "version": "3.0.4",
       "from": "kind-of@>=3.0.2 <4.0.0",
@@ -2119,6 +2129,38 @@
       "from": "react@15.3.1",
       "resolved": "https://registry.npmjs.org/react/-/react-15.3.1.tgz"
     },
+    "react-bootstrap": {
+      "version": "0.30.3",
+      "from": "react-bootstrap@0.30.3",
+      "resolved": "https://registry.npmjs.org/react-bootstrap/-/react-bootstrap-0.30.3.tgz",
+      "dependencies": {
+        "babel-runtime": {
+          "version": "6.11.6",
+          "from": "babel-runtime@>=6.11.6 <7.0.0",
+          "resolved": "https://registry.npmjs.org/babel-runtime/-/babel-runtime-6.11.6.tgz"
+        },
+        "core-js": {
+          "version": "2.4.1",
+          "from": "core-js@>=2.4.0 <3.0.0",
+          "resolved": "https://registry.npmjs.org/core-js/-/core-js-2.4.1.tgz"
+        },
+        "react-prop-types": {
+          "version": "0.4.0",
+          "from": "react-prop-types@>=0.4.0 <0.5.0",
+          "resolved": "https://registry.npmjs.org/react-prop-types/-/react-prop-types-0.4.0.tgz"
+        },
+        "uncontrollable": {
+          "version": "4.0.3",
+          "from": "uncontrollable@>=4.0.1 <5.0.0",
+          "resolved": "https://registry.npmjs.org/uncontrollable/-/uncontrollable-4.0.3.tgz"
+        },
+        "warning": {
+          "version": "3.0.0",
+          "from": "warning@>=3.0.0 <4.0.0",
+          "resolved": "https://registry.npmjs.org/warning/-/warning-3.0.0.tgz"
+        }
+      }
+    },
     "react-dom": {
       "version": "15.3.1",
       "from": "react-dom@15.3.1",
@@ -2133,6 +2175,23 @@
       "version": "1.1.0",
       "from": "react-input-autosize@>=1.1.0 <2.0.0",
       "resolved": "https://registry.npmjs.org/react-input-autosize/-/react-input-autosize-1.1.0.tgz"
+    },
+    "react-overlays": {
+      "version": "0.6.6",
+      "from": "react-overlays@>=0.6.0 <0.7.0",
+      "resolved": "https://registry.npmjs.org/react-overlays/-/react-overlays-0.6.6.tgz",
+      "dependencies": {
+        "react-prop-types": {
+          "version": "0.4.0",
+          "from": "react-prop-types@>=0.4.0 <0.5.0",
+          "resolved": "https://registry.npmjs.org/react-prop-types/-/react-prop-types-0.4.0.tgz"
+        },
+        "warning": {
+          "version": "3.0.0",
+          "from": "warning@>=3.0.0 <4.0.0",
+          "resolved": "https://registry.npmjs.org/warning/-/warning-3.0.0.tgz"
+        }
+      }
     },
     "react-router": {
       "version": "2.5.2",

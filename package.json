@@ -4,6 +4,7 @@
   "description": "Javascripts and styles for Debiki",
   "version": "0.0.1",
   "homepage": "http://www.debiki.com",
+  "license": "AGPL-3.0",
   "repository": {
     "type": "git",
     "url": ""
@@ -16,6 +17,7 @@
     "classnames": "^2.2.5",
     "jquery-resizable": "=1.0.3",
     "react": "=15.3.1",
+    "react-bootstrap": "=0.30.3",
     "react-dom": "=15.3.1",
     "react-input-autosize": "=1.1.0",
     "react-router": "=2.5.2",

@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../react-bootstrap-old/Input.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
@@ -38,7 +39,6 @@ var TabbedArea = reactCreateFactory(ReactBootstrap.TabbedArea);
 var TabPane = reactCreateFactory(ReactBootstrap.TabPane);
 var Button = reactCreateFactory(ReactBootstrap.Button);
 var Alert = reactCreateFactory(ReactBootstrap.Alert);
-var Input = reactCreateFactory(ReactBootstrap.Input);
 
 var ReactRouter = window['ReactRouter'];
 var Route = reactCreateFactory(ReactRouter.Route);

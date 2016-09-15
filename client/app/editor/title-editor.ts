@@ -16,6 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../react-bootstrap-old/Input.ts" />
 /// <reference path="../../typedefs/modernizr/modernizr.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../model.ts" />
@@ -34,7 +35,6 @@ var reactCreateFactory = React['createFactory'];
 var ReactCSSTransitionGroup = reactCreateFactory(React.addons.CSSTransitionGroup);
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
-var Input = reactCreateFactory(ReactBootstrap.Input);
 var $: any = window['jQuery'];
 var SelectCategoryDropdown = editor.SelectCategoryDropdown;
 
