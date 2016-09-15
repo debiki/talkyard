@@ -91,20 +91,19 @@ var debikiJavascriptFiles = [
       // Evaluating all Modernizr tests takes long (~70ms on my core i7) so use a custom
       // build with only what's needed.
       'client/third-party/modernizr-custom.min.js',
-      'bower_components/yepnope/yepnope.1.5.4-min.js',
-      'bower_components/jquery/dist/jquery.js',
+      'modules/yepnope.js/yepnope.1.5.4-min.js',
+      'node_modules/jquery/dist/jquery.js',
       'client/third-party/abbreviate-jquery.js',
       'client/third-party/stupid-lightbox.js',
-      'bower_components/keymaster/keymaster.js',
+      'node_modules/keymaster/keymaster.js',
       // keymaster.js declares window.key, rename it to window.keymaster instead,
       // see comment in file for details.
       'client/third-party/rename-key-to-keymaster.js',
-      'bower_components/lodash/dist/lodash.js',
-      'bower_components/moment/min/moment.min.js',
-      'bower_components/eventemitter2/lib/eventemitter2.js',
+      'node_modules/lodash/lodash.min.js',
+      'node_modules/moment/min/moment.min.js',
+      'node_modules/eventemitter2/lib/eventemitter2.js',
       'node_modules/react-bootstrap/dist/react-bootstrap.js',
       'node_modules/react-router/umd/ReactRouter.js',
-      'bower_components/react-router-active-component/index.js',
       'node_modules/jquery-resizable/resizable.js',
       'client/third-party/gifffer/gifffer.js',
       'client/third-party/jquery-cookie.js',
@@ -137,14 +136,14 @@ var debikiJavascriptFiles = [
 
 
 var editorEtceteraScripts = [
-      'bower_components/markdown-it/dist/markdown-it.js',
-      'bower_components/Caret.js/dist/jquery.caret.js',
-      'bower_components/jquery.atwho/dist/js/jquery.atwho.js',
+      'node_modules/markdown-it/dist/markdown-it.js',
+      'node_modules/jquery.caret/dist/jquery.caret.min.js', // needed by jquery.atwho (next line)
+      'node_modules/at.js/dist/js/jquery.atwho.js',
       'node_modules/classnames/index.js', // needed by react-select
       'node_modules/react-input-autosize/dist/react-input-autosize.js', // needed by react-select
       'node_modules/blacklist/dist/blacklist.js',
       'node_modules/react-select/dist/react-select.js',
-      'bower_components/fileapi/dist/FileAPI.js',
+      'node_modules/fileapi/dist/FileAPI.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/html-css-sanitizer-bundle.js',
       'client/third-party/non-angular-slugify.js'];
@@ -206,8 +205,8 @@ function compileServerSideTypescript() {
         'node_modules/react-dom/dist/react-dom-server.min.js',
         'node_modules/react-bootstrap/dist/react-bootstrap.js',
         'node_modules/react-router/umd/ReactRouter.js',
-        'bower_components/markdown-it/dist/markdown-it.js',
-        'bower_components/lodash/dist/lodash.js',
+        'node_modules/markdown-it/dist/markdown-it.min.js',
+        'node_modules/lodash/lodash.min.js',
         'client/third-party/html-css-sanitizer-bundle.js',
         'client/third-party/non-angular-slugify.js',
         'client/app/editor/mentions-markdown-it-plugin.js',
@@ -363,8 +362,8 @@ gulp.task('compile-stylus', function () {
 
   return es.merge(
     makeStyleStream('public/res/', 'combined-debiki.css', [
-        'bower_components/bootstrap/dist/css/bootstrap.css',
-        'bower_components/jquery.atwho/dist/css/jquery.atwho.css',
+        'node_modules/bootstrap/dist/css/bootstrap.css',
+        'node_modules/at.js/dist/css/jquery.atwho.css',
         'node_modules/react-select/dist/react-select.css',
         'node_modules/jquery-resizable/resizable.css',
         'client/third-party/stupid-lightbox.css',

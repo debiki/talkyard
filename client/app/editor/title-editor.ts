@@ -214,14 +214,15 @@ export var TitleEditor = createComponent({
     }
     else if (this.props.forumId) {
       selectCategoryInput =
-        Input({ label: "Category", labelClassName: 'col-xs-2', wrapperClassName: 'col-xs-10' },
+        Input({ type: 'custom', label: "Category", labelClassName: 'col-xs-2',
+            wrapperClassName: 'col-xs-10' },
           SelectCategoryDropdown({ store: this.props, pullLeft: true,
             selectedCategoryId: this.state.categoryId,
             onCategorySelected: this.onCategoryChanged }));
     }
 
     var selectTopicType = !page_mayChangeRole(pageRole) ? null :
-      Input({ label: "Topic type", labelClassName: 'col-xs-2',
+      Input({ type: 'custom', label: "Topic type", labelClassName: 'col-xs-2',
           wrapperClassName: 'col-xs-10' },
         editor.PageRoleDropdown({ store: store, pageRole: this.state.pageRole,
           onSelect: this.onPageRoleChanged, pullLeft: true,

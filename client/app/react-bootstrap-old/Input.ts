@@ -45,6 +45,13 @@ export var Input = createComponent({
             r.span({ className: 'help-block' },
               props.help))));
     }
+    else if (props.type === 'custom') {
+      result = (
+        FormGroup({controlId: props.id},
+          props.label && ControlLabel({ className: props.labelClassName }, props.label),
+          r.div({ className: props.wrapperClassName },
+            props.children)));
+    }
     else {
       result = (
         FormGroup({controlId: props.id},

@@ -22,6 +22,7 @@
 
 var reactCreateFactory = React['createFactory'];
 var ReactSelect; // lazy loaded.
+var Link = reactCreateFactory(ReactRouter.Link);
 
 
 function createComponent(componentDefinition) { // oops should obviously be named createFactory
@@ -39,6 +40,23 @@ function createComponent(componentDefinition) { // oops should obviously be name
 function createClassAndFactory(componentDefinition) { // rename createComponent to this
   return createComponent(componentDefinition);
 }
+
+
+var NavLink = createComponent({
+  contextTypes: {
+    router: React.PropTypes.object
+  },
+
+  render: function () {
+    var isActive = this.context.router.isActive(this.props.to, true);
+    var className = isActive ? 'active ' : '';
+    if (this.props.listItemClassName) className += this.props.listItemClassName;
+
+    return (
+      r.li({ className: className },
+        Link(this.props, this.props.children)));
+  }
+});
 
 
 function whenMsToIsoDate(whenMs: number) {

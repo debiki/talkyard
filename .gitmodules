@@ -34,3 +34,6 @@
 [submodule "docker/web/lua-packages/lua-resty-lrucache"]
 	path = docker/web/lua-packages/lua-resty-lrucache
 	url = https://github.com/openresty/lua-resty-lrucache.git
+[submodule "modules/yepnope.js"]
+	path = modules/yepnope.js
+	url = https://github.com/SlexAxton/yepnope.js

@@ -21,6 +21,7 @@
 /// <reference path="prelude.ts" />
 /// <reference path="utils/utils.ts" />
 /// <reference path="../typedefs/lodash/lodash.d.ts" />
+/// <reference path="../typedefs/eventemitter2/eventemitter2.d.ts" />
 
 
 /* This Flux store is perhaps a bit weird, not sure. I'll switch to Redux or
@@ -35,12 +36,11 @@
 
 // DefinitelyTyped has defined EventEmitter2 in the wrong module? Unusable when
 // not using AMD/CommonJS, see https://github.com/borisyankov/DefinitelyTyped/issues/3075.
-var EventEmitter2: any = window['EventEmitter2'];
 
 var ChangeEvent = 'ChangeEvent';
 var $html = $('html');
 
-export var ReactStore = new EventEmitter2();
+export var ReactStore: any = new EventEmitter2();
 
 // Avoid a harmless "possible EventEmitter memory leak detected" warning.
 ReactStore.setMaxListeners(20);

@@ -73,10 +73,11 @@ function ensureEditorCreated(success) {
 export function startMentionsParser(textarea, onTextEdited) {
   $(textarea).atwho({
     at: "@",
-    search_key: 'username',
-    tpl: "<li data-value='${atwho-at}${username}'>${username} (${fullName})</li>",
+    searchKey: 'username',
+    displayTpl: "<li data-value='${atwho-at}${username}'>${username} (${fullName})</li>",
+    insertTpl: '@${username}',
     callbacks: {
-      remote_filter: (prefix, callback) => {
+      remoteFilter: (prefix, callback) => {
         Server.listUsernames(prefix, callback);
       }
     }
