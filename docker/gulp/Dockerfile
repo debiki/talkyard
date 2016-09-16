@@ -8,5 +8,7 @@ ENTRYPOINT ["/opt/docker-entrypoint.sh"]
 
 WORKDIR /opt/debiki/server/
 
-CMD ["npm install --ignore-scripts && bower install && gulp watch"]
+# --cache-min 9999999 makes npm not try to download again and again libs that are
+# cached locally already. Versions are locked anyway via npm-shrinkwrap.
+CMD ["npm install --cache-min 99999999 --ignore-scripts && gulp watch"]
 
