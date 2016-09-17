@@ -20,7 +20,13 @@
 /// <reference path="../prelude.ts" />
 
 
-var reactCreateFactory = React['createFactory'];
+// Let this be a function, not a variable, so it can be used directly.
+// (Otherwise there's a server side reactCreateFactory-not-yet-inited error)
+function reactCreateFactory(x) {
+  return React['createFactory'](x);
+}
+
+
 var ReactSelect; // lazy loaded.
 var Link = reactCreateFactory(ReactRouter.Link);
 

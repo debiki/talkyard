@@ -51,7 +51,6 @@ var React = window['React']; // TypeScript file doesn't work
 var ReactDOM = window['ReactDOM'];
 var ReactDOMServer = window['ReactDOMServer'];
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var ReactRouter = window['ReactRouter'];
 var Router = reactCreateFactory(ReactRouter.Router);

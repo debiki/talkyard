@@ -136,6 +136,10 @@ var debikiJavascriptFiles = [
 
 
 var editorEtceteraScripts = [
+      // We use two different sanitizers, in case there's a security bug in one of them. [5FKEW2]
+      // Find the code that "combines" them here: googleCajaSanitizeHtml [6FKP40]
+      'modules/sanitize-html/dist/sanitize-html.js',     // 1
+      'client/third-party/html-css-sanitizer-bundle.js', // 2
       'node_modules/markdown-it/dist/markdown-it.js',
       'node_modules/jquery.caret/dist/jquery.caret.min.js', // needed by jquery.atwho (next line)
       'node_modules/at.js/dist/js/jquery.atwho.js',
@@ -145,7 +149,6 @@ var editorEtceteraScripts = [
       'node_modules/react-select/dist/react-select.js',
       'node_modules/fileapi/dist/FileAPI.js',
       'client/third-party/diff_match_patch.js',
-      'client/third-party/html-css-sanitizer-bundle.js',
       'client/third-party/non-angular-slugify.js'];
 
 
@@ -200,6 +203,10 @@ function compileServerSideTypescript() {
   }
 
   var javascriptStream = gulp.src([
+        // Two different sanitizers. [5FKEW2]
+        // Needs to be first. There's some missing ';' at the start of the script bug?
+        'modules/sanitize-html/dist/sanitize-html.min.js',
+        'client/third-party/html-css-sanitizer-bundle.js',
         // Don't need any React addons server side (e.g. CSS transitions or performance measurements).
         'node_modules/react/dist/react.min.js',
         'node_modules/react-dom/dist/react-dom-server.min.js',
@@ -207,7 +214,6 @@ function compileServerSideTypescript() {
         'node_modules/react-router/umd/ReactRouter.js',
         'node_modules/markdown-it/dist/markdown-it.min.js',
         'node_modules/lodash/lodash.min.js',
-        'client/third-party/html-css-sanitizer-bundle.js',
         'client/third-party/non-angular-slugify.js',
         'client/app/editor/mentions-markdown-it-plugin.js',
         'client/app/editor/onebox-markdown-it-plugin.js'])
