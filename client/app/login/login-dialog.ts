@@ -204,7 +204,8 @@ var LoginDialog = createClassAndFactory({
 
     var modalHeader = state.loginReason === LoginReason.BecomeAdmin
       ? null // then there's an instruction text, that's enough
-      : ModalHeader({ closeButton: !state.preventClose }, ModalTitle({}, title));
+      : ModalHeader({ closeButton: !state.preventClose },
+          ModalTitle({ id: 'e2eLoginDialogTitle' }, title));
 
     var modalFooter = state.preventClose ? ModalFooter({}) :
         ModalFooter({}, Button({ onClick: this.close }, 'Cancel'));

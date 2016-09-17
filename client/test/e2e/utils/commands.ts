@@ -141,14 +141,20 @@ function addCommandsToBrowser(browser) {
     if (_.isString(regex2)) {
       regex2 = new RegExp(regex2);
     }
-    var text = browser.getText(selector);
-    assert(regex.test(text), "Elem selected by '" + selector + "' didn't match " + regex.toString() +
-      ", actual text: '" + text + "'");
-    // COULD use 'arguments' & a loop instead
-    if (regex2) {
-      assert(regex2.test(text), "Elem selected by '" + selector + "' didn't match " +
-          regex2.toString() + ", actual text: '" + text + "'");
+    var textByBrowserName = browser.getText(selector);
+    if (_.isString(textByBrowserName)) {
+      textByBrowserName = { onlyOneBrowser: textByBrowserName };
     }
+    _.forOwn(textByBrowserName, function(text, browserName) {
+      var whichBrowser = browserName === 'onlyOneBrowser' ? '' : ", browser: " + browserName;
+      assert(regex.test(text), "Elem selected by '" + selector + "' didn't match " +
+          regex.toString() + ", actual text: '" + text + whichBrowser);
+      // COULD use 'arguments' & a loop instead
+      if (regex2) {
+        assert(regex2.test(text), "Elem selected by '" + selector + "' didn't match " +
+          regex2.toString() + ", actual text: '" + text + whichBrowser);
+      }
+    });
   });
 
 

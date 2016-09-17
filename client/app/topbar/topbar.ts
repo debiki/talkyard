@@ -196,7 +196,7 @@ export var TopBar = createComponent({
       MenuItemLink({ href: linkToAdminPage(), className: 'esMyMenu_admin' },
         r.span({ className: 'icon-settings' }, "Admin"));
     var reviewMenuItem = !urgentReviewTasks && !otherReviewTasks ? null :
-      MenuItemLink({ href: linkToReviewPage() },
+      MenuItemLink({ href: linkToReviewPage(), id: 'e2eMM_Review' },
         "Needs review ", urgentReviewTasks, otherReviewTasks);
 
     var adminHelpLink = !isStaff(me) ? null :
@@ -244,8 +244,9 @@ export var TopBar = createComponent({
           adminHelpLink,
           reviewMenuItem,
           (adminMenuItem || reviewMenuItem) ? MenuItem({ divider: true }) : null,
-          MenuItemLink({ href: linkToMyProfilePage(store) }, "View/edit your profile"),
-          MenuItem({ onSelect: this.onLogoutClick }, "Log out"),
+          MenuItemLink({ href: linkToMyProfilePage(store), id: 'e2eMM_Profile' },
+            "View/edit your profile"),
+          MenuItem({ onSelect: this.onLogoutClick, id: 'e2eMM_Logout' }, "Log out"),
           stopImpersonatingMenuItem,
           anyDivider,
           notfsElems,

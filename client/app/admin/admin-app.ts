@@ -263,7 +263,7 @@ var LoginSettingsComponent = React.createClass(<any> {
 
     return (
       r.div({},
-        Setting2(props, { type: 'checkbox', label: 'Login required',
+        Setting2(props, { type: 'checkbox', label: 'Login required', inputId: 'e2eLoginRequiredCB',
           help: r.span({}, "Require authentication to read content. Users must then login " +
             "with password or via ", r.i({}, "for example "), "Google or Facebook, but " +
             "anonymous access is disabled.)"),
@@ -276,7 +276,7 @@ var LoginSettingsComponent = React.createClass(<any> {
           }
         }),
 
-        Setting2(props, { type: 'checkbox', label: "Approve users",
+        Setting2(props, { type: 'checkbox', label: "Approve users", inputId: 'e2eApproveUsersCB',
           help: "New user need to be approved by staff before they can access the site.",
           getter: (s: Settings) => s.userMustBeApproved,
           update: (newSettings: Settings, target) => {
@@ -287,7 +287,7 @@ var LoginSettingsComponent = React.createClass(<any> {
           }
         }),
 
-        Setting2(props, { type: 'checkbox', label: "Allow guest login",
+        Setting2(props, { type: 'checkbox', label: "Allow guest login", inputId: 'e2eAllowGuestsCB',
           help: "Lets people post comments and create topics, without specifying any " +
             "email address. They wouldn't be notified about replies, and " +
             "you cannot contact them. Not recommended.",

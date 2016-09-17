@@ -52,11 +52,40 @@ function pagesFor(browser) {
 
       clickSignUp: function() {
         browser.waitAndClick('.esTopbar_signUp');
+      },
+
+      clickLogout: function(options?: { waitForLoginButton?: boolean }) {
+        options = options || {};
+        browser.waitAndClick('.esMyMenu');
+        browser.waitAndClick('#e2eMM_Logout');
+        if (options.waitForLoginButton !== false) {
+          // Then a login dialog will probably have opened now in full screen, with a modal
+          // backdrop, so don't wait for any backdrop to disappear.
+          browser.waitUntilModalGone();
+          browser.waitForVisible('.esTopbar_logIn');
+        }
       }
     },
 
 
     loginDialog: {
+      waitAssertFullScreen: function() {
+        browser.waitForVisible('.dw-login-modal');
+        browser.waitForText('#e2eLoginDialogTitle');
+        // Forum not shown.
+        assert(!browser.isVisible('.dw-forum'));
+        assert(!browser.isVisible('.dw-forum-actionbar'));
+        // No forum topic shown.
+        assert(!browser.isVisible('h1'));
+        assert(!browser.isVisible('.dw-p'));
+        assert(!browser.isVisible('.dw-p-ttl'));
+        // Admin area not shown.
+        assert(!browser.isVisible('.esTopbar_custom_backToSite'));
+        assert(!browser.isVisible('#dw-react-admin-app'));
+        // User profile not shown.
+        assert(!browser.isVisible('.user-info'));
+      },
+
       createPasswordAccount: function(data) {
         browser.waitAndSetValue('#e2eFullName', data.fullName);
         browser.waitAndSetValue('#e2eUsername', data.username);
@@ -215,6 +244,17 @@ function pagesFor(browser) {
       }
     },
 
+
+    adminArea: {
+      waitAssertVisible: function() {
+        browser.waitForVisible('h1');
+        browser.assertTextMatches('h1', "Admin Area");
+      },
+
+      goToLoginSettings: function(siteIdOrigin) {
+        browser.go(siteIdOrigin + '/-/admin/settings/login');
+      }
+    },
 
     complex: {
       createAndSaveTopic: function(data: { title: string, body: string }) {

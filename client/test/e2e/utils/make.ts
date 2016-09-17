@@ -7,7 +7,7 @@ import _ = require('lodash');
 import assert = require('assert');
 
 var DefaultCreatedAtMs = 1449198824000;
-var SystemUserId = -1;
+var SystemUserId = 1; // [commonjs]
 
 var nextPostId = 101;
 function getAndBumpNextPostId() {
@@ -260,7 +260,7 @@ var make = {
       approvedSource: values.approvedSource,
       approvedHtmlSanitized: approvedHtmlSanitized,
       approvedAtMs: values.page.createdAtMs,
-      approvedById: -1, // [commonjs]
+      approvedById: SystemUserId,
       approvedRevNr: 1,
       currRevSourcePatch: undefined,
       currRevNr: 1,
@@ -279,9 +279,11 @@ var make = {
     };
   },
 
-  forumOwnedByOwen: function(namePrefix: string): SiteData {
+  forumOwnedByOwen: function(namePrefix: string, options?): SiteData {
     var site: SiteData = make.emptySiteOwnedByOwen();
     site.meta.localHostname = namePrefix + Date.now();
+
+    options = options || {};
 
     // Dupl test code below [6FKR4D0]
     var rootCategoryId = 1;
@@ -300,8 +302,8 @@ var make = {
     site.posts.push(make.post({
       page: forumPage,
       nr: 0,
-      approvedSource: "Forum Title",
-      approvedHtmlSanitized: "Forum Title",
+      approvedSource: options.title || "Forum Title",
+      approvedHtmlSanitized: options.title || "Forum Title",
     }));
     site.posts.push(make.post({
       page: forumPage,

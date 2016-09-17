@@ -175,8 +175,10 @@ post -
     send message:
 
 chat -
-  create channel:
-  two users chat:   (4FE2)
+  create channel,
+  two users chat:  chat.2browsers.test.ts  (4FE2)
+  add/remove member,
+  join/leave channel:
   shows last 50 messages:
 
 uploads -  (7KFC2)
@@ -207,7 +209,7 @@ watchbar -
 live updates -  (4FE2)
   forum latest topic list:
   discussion:
-  chat:
+  chat: chat.2browsers.test.ts
 
 links -
   forum category:
@@ -223,6 +225,16 @@ links -
     notification:
     to admin:
   back to site:
+
+site settings:
+  login -
+    login to read content:  settings-login-to-read.3browsers.test.ts
+    new users need approval:
+    guest login allowed:
+  moderation -
+    num to review,
+    num to approve,
+    num to allow:
 
 admin -
   delete flagged:   — also see (6JS3)

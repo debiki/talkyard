@@ -27,7 +27,8 @@ export var Input = createComponent({
 
     var childProps = _.clone(props);
     childProps.ref = 'theInput';
-    delete childProps.id;
+    childProps.id = props.inputId;
+    delete childProps.inputId;
     delete childProps.label;
     delete childProps.children;
     delete childProps.help;
