@@ -37,3 +37,6 @@
 [submodule "modules/yepnope.js"]
 	path = modules/yepnope.js
 	url = https://github.com/SlexAxton/yepnope.js
+[submodule "modules/sanitize-html"]
+	path = modules/sanitize-html
+	url = https://github.com/debiki/sanitize-html.git
