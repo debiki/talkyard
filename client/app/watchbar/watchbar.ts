@@ -233,11 +233,11 @@ var SingleTopic = createComponent({
     // Would want to know if the *page* is of type chat, so can edit title etc, without
     // having to join. [4KW0Y2]
     var editChatInfoButton = !isChat || !isAuthorOrStaff || !this.props.isCurrent ? null :
-        MenuItem({ onSelect: this.editChatTitleAndPurpose },
+        MenuItem({ onSelect: this.editChatTitleAndPurpose, id: 'e2eWB_EditTitlePurposeB' },
             r.span({ className: 'icon-help' }, "Edit chat title and purpose"));
 
     var leaveChatButton = !isChat ? null :
-        MenuItem({ onSelect: this.openLeaveChatDialog },
+        MenuItem({ onSelect: this.openLeaveChatDialog, id: 'e2eWB_LeaveB' },
             r.span({ className: 'icon-help' }, "Leave this chat"));
 
     var topicActionsButton = !this.props.isCurrent ? null :
@@ -245,7 +245,7 @@ var SingleTopic = createComponent({
           className: 'esWB_T_B', id: 'e2eTopicActionsB', ref: 'actionsDropdown', pullLeft: true,
           dialogClassName: 'esWB_T_D' },
         r.ul({ className: 'dropdown-menu' },
-          MenuItem({ onSelect: this.viewChatMembers },
+          MenuItem({ onSelect: this.viewChatMembers, id: 'e2eWB_ViewPeopleB' },
             r.span({ className: 'icon-help' }, viewMembersButtonTitle)),
           editChatInfoButton,
           leaveChatButton
@@ -266,7 +266,7 @@ var NoTopics = function() {
   return (
     r.li({ className: 'esWB_LI esWB_T-None' },
       r.span({ className: 'esWB_T_Link' },
-        r.i({ className: 'esWB_T_Title' }, "None" ))));
+        r.i({ className: 'esWB_T_None' }, "None" ))));
 };
 
 

@@ -245,6 +245,9 @@ case class PageMeta(
   def isClosed = closedAt.isDefined
   def isDeleted = deletedAt.isDefined
 
+  def isGroupTalk = pageRole.isGroupTalk
+  def isPrivateGroupTalk = pageRole.isPrivateGroupTalk
+
   def status: PageStatus =
     if (publishedAt.isDefined) PageStatus.Published
     else PageStatus.Draft
@@ -275,6 +278,8 @@ sealed abstract class PageRole(protected val IntValue: Int, val staffOnly: Boole
     */
   def isPrivateGroupTalk: Boolean = false
 
+  /** If one needs to join the page before one can say anything.
+    */
   def isGroupTalk = isChat || isPrivateGroupTalk
 
   /** Should use nofollow links if many people can edit a page. */

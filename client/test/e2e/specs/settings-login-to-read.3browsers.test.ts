@@ -49,7 +49,7 @@ describe("settings-login-to-read", function() {
     idAddress = server.importSiteData(site);
   });
 
-  it("Owen, Maria and Michael sees nothing, when not logged in", function() {
+  it("Owen, Maria and Michael sees the forum, when not logged in", function() {
     everyone.go(idAddress.siteIdOrigin);
     everyone.assertPageTitleMatches(forumTitle);
   });

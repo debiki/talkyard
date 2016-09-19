@@ -54,7 +54,7 @@ object ViewPageController extends mvc.Controller {
 
 
   def markPageAsSeen(pageId: PageId) = PostJsonAction(NoRateLimits, maxLength = 2) { request =>
-    val watchbar = request.dao.loadWatchbar(request.theUserId)
+    val watchbar = request.dao.getOrCreateWatchbar(request.theUserId)
     val newWatchbar = watchbar.markPageAsSeen(pageId)
     request.dao.saveWatchbar(request.theUserId, newWatchbar)
     Ok

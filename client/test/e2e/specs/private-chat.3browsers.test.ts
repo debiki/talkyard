@@ -1,0 +1,188 @@
+/// <reference path="../test-types.ts"/>
+/// <reference path="../../../../modules/definitely-typed/lodash/lodash.d.ts"/>
+/// <reference path="../../../../modules/definitely-typed/mocha/mocha.d.ts"/>
+
+import * as _ from 'lodash';
+import server = require('../utils/server');
+import utils = require('../utils/utils');
+import pagesFor = require('../utils/pages-for');
+import settings = require('../utils/settings');
+import make = require('../utils/make');
+import assert = require('assert');
+import logAndDie = require('../utils/log-and-die');
+
+declare var browser: any;
+declare var browserA: any;
+declare var browserB: any;
+declare var browserC: any;
+
+var everyone;
+var everyonesPages;
+var owen;
+var owensPages;
+var michael;
+var michaelsPages;
+var maria;
+var mariasPages;
+var guest;
+var guestsPages;
+
+var idAddress;
+var forumTitle = "Forum with Private Chat";
+var chatName = "Chat Name";
+var chatPurpose = "Chat purpose";
+var chatUrl;
+
+
+describe("private chat", function() {
+
+  it("initialize people", function() {
+    everyone = browser;
+    everyonesPages = pagesFor(everyone);
+    owen = browserA;
+    owensPages = pagesFor(owen);
+    michael = browserB;
+    michaelsPages = pagesFor(michael);
+    maria = browserC;
+    mariasPages = pagesFor(maria);
+    // Let's reuse the same browser.
+    guest = maria;
+    guestsPages = mariasPages;
+  });
+
+  it("import a site", function() {
+    var site: SiteData = make.forumOwnedByOwen('login-to-read', { title: forumTitle });
+    site.members.push(make.memberMichael());
+    site.members.push(make.memberMaria());
+    idAddress = server.importSiteData(site);
+  });
+
+  it("Owen creates a private chat", function() {
+    owen.go(idAddress.siteIdOrigin);
+    owen.debug();
+    owen.assertPageTitleMatches(forumTitle);
+    owensPages.complex.loginWithPasswordViaTopbar('owen_owner', 'publicOwen');
+    owensPages.complex.createChatChannelViaWatchbar(
+        { name: chatName, purpose: chatPurpose, public_: false });
+    chatUrl = owen.url().value;
+  });
+
+  it("Maria, when not logged in, cannot access it via direct link", function() {
+    maria.go(chatUrl);
+    maria.assertNotFoundError();
+  });
+
+  it("... and doesn't see it listed in the forum", function() {
+    maria.go(idAddress.siteIdOrigin);
+    mariasPages.forumTopicList.waitUntilKnowsIsEmpty();
+  });
+
+  it("Maria logs in, still cannot access it, doesn't see it listed", function() {
+    mariasPages.complex.loginWithPasswordViaTopbar('maria', 'publicMaria');
+    maria.go(chatUrl);
+    maria.assertNotFoundError();
+    maria.go(idAddress.siteIdOrigin);
+    mariasPages.forumTopicList.waitUntilKnowsIsEmpty();
+  });
+
+  it("Owen adds Maria to the chat", function() {
+    owensPages.watchbar.clickViewPeople();
+    owensPages.complex.addPeopleToPageViaContextbar(['maria']);
+  });
+
+  it("Now Maria sees the chat in her watchbar, but not in the forum topic list", function() {
+    maria.refresh();
+    mariasPages.watchbar.assertTopicVisible(chatName);
+    mariasPages.forumTopicList.waitUntilKnowsIsEmpty();
+    mariasPages.watchbar.goToTopic(chatName);
+  });
+
+  it("Michael logs in, cannot access it", function() {
+    michael.go(idAddress.siteIdOrigin);
+    michaelsPages.complex.loginWithPasswordViaTopbar('michael', 'publicMichael');
+    michael.go(chatUrl);
+    michael.assertNotFoundError();
+  });
+
+  it("Owen adds Michael to the chat", function() {
+    owensPages.complex.addPeopleToPageViaContextbar(['michael']);
+  });
+
+  it("Now Michael can access it", function() {
+    michael.refresh();
+    michael.assertPageTitleMatches(chatName);
+  });
+
+  it("All three post a chat message, which all of them see", function() {
+    owensPages.chat.addChatMessage("I'm Owen.");
+    mariasPages.chat.addChatMessage("I'm Maria.");
+    michaelsPages.chat.addChatMessage("I'm Michael.");
+    everyonesPages.chat.waitForNumMessages(3);
+  });
+
+  it("Maria leaves the chat", function() {
+    mariasPages.watchbar.clickLeaveChat();
+  });
+
+  it("... and thereafter no longer sees the chat page", function() {
+    // For now. Should probably redirect to / instead, after refresh?
+    maria.refresh();  // dupl code, see below 4KWEP03
+    maria.assertNotFoundError();
+    maria.go(idAddress.siteIdOrigin);
+    mariasPages.forumTopicList.waitUntilKnowsIsEmpty();
+    mariasPages.watchbar.assertTopicAbsent(chatName);
+    mariasPages.watchbar.assertTopicVisible(forumTitle);
+    mariasPages.watchbar.asserExactlyNumTopics(1); // the forum
+  });
+
+  it("... she logs out, still doesn't see the chat", function() {
+    mariasPages.topbar.clickLogout();
+    maria.refresh();
+    mariasPages.forumTopicList.waitUntilKnowsIsEmpty();
+    mariasPages.watchbar.asserExactlyNumTopics(1);
+    maria.go(chatUrl);
+    maria.assertNotFoundError();
+  });
+
+  it("But Michael still sees it", function() {
+    michael.refresh();
+    michael.assertPageTitleMatches(chatName);
+  });
+
+  it("Owen remvose Michael from the chat", function() {
+    owensPages.contextbar.clickUser('michael');
+    owensPages.aboutUserDialog.clickRemoveFromPage();
+  });
+
+  it("Now Michael no longer sees it", function() {
+    // For now. Later, SHOULD kick user via pub/sub-message [pubsub]
+    michael.refresh();  // dupl code, see above 4KWEP03
+    michael.assertNotFoundError();
+    michael.go(idAddress.siteIdOrigin);
+    michaelsPages.forumTopicList.waitUntilKnowsIsEmpty();
+    michaelsPages.watchbar.assertTopicAbsent(chatName);
+    michaelsPages.watchbar.assertTopicVisible(forumTitle);
+    michaelsPages.watchbar.asserExactlyNumTopics(1); // the forum
+  });
+
+  it("A guest logs in (in Maria's browser)", function() {
+    assert(guest === maria, 'EsE4FKG6FY0');
+    // Later: guestsPages.complex.loginAsGuestViaTopbar("Guest Name"); TEST_TODO
+    guest.go(idAddress.siteIdOrigin);
+  });
+
+  it("The guest doesn't see the chat in the forum topic list", function() {
+    guest.forumTopicList.waitUntilKnowsIsEmpty();
+  });
+
+  it("... and cannot access it via a direct link", function() {
+    guest.go(chatUrl);
+    guest.assertNotFoundError();
+  });
+
+  it("Done", function() {
+    everyone.perhapsDebug();
+  });
+
+});
+

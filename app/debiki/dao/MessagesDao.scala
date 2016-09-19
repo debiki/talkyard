@@ -91,12 +91,16 @@ trait MessagesDao {
 
     (toUserIds + sentById) foreach { userId =>
       // BUG. Race condition.
-      var watchbar: BareWatchbar = loadWatchbar(userId)
+      var watchbar: BareWatchbar = getOrCreateWatchbar(userId)
       val hasSeenIt = userId == sentByWho.id
-      watchbar =
-        if (pageRole.isChat) watchbar.addChatChannel(pagePath.thePageId, hasSeenIt)
-        else watchbar.addDirectMessage(pagePath.thePageId, hasSeenIt)
+      watchbar = watchbar.addPage(pagePath.thePageId, pageRole, hasSeenIt)
       saveWatchbar(userId, watchbar)
+
+      // We know that the sender is online currently, so s/he should start watching the
+      // page immediately. Other page members, however, might be offline. Ignore them.
+      if (userId == sentById) {
+        pubSub.userWatchesPages(siteId, sentById, watchbar.watchedPageIds) ;RACE
+      }
     }
 
     pubSub.publish(

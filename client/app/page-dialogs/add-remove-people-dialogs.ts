@@ -97,7 +97,7 @@ var AddPeopleDialog = createComponent({
       if (this.isUnmounted) return;
       this.close();
       util.openDefaultStupidDialog({ body: "Now I've added him/her/them. Currently you need " +
-        "to reload the page (hit F5) to see them in the users list." }); // [5FKE0WY2]
+        "to reload the page (hit F5) to see them in the users list." }); // [5FKE0WY2] also in e2e
     });
   },
 
@@ -114,9 +114,9 @@ var AddPeopleDialog = createComponent({
     }
     else {
       content =
-        r.div({ className: 'esTsD_CreateTs' },
+        r.div({ id: 'e2eAddUsD'},
           ReactSelect({ multi: true, value: this.state.selectedLabelValues,
-            className: 'esTsD_TsS', placeholder: "Select users",
+            placeholder: "Select users",
             options: makeLabelValues(this.state.allUsers, store.pageMemberIds),
             onChange: this.onSelectChange }));
     }
@@ -126,7 +126,7 @@ var AddPeopleDialog = createComponent({
         ModalHeader({}, ModalTitle({}, "Select users")),
         ModalBody({}, content),
         ModalFooter({},
-          Button({ onClick: this.save, bsStyle: 'primary',
+          Button({ onClick: this.save, bsStyle: 'primary', id: 'e2eAddUsD_SubmitB',
               disabled: !this.state.selectedLabelValues.length }, "Add users"),
           Button({ onClick: this.close }, "Cancel"))));
   }

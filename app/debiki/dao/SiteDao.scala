@@ -334,7 +334,7 @@ class SiteDao(
           throwIfMayNotSeeCategory(id, user)(transaction)
         case None =>
           // Deny access unless this is a private messages page.
-          if (pageMeta.pageRole != PageRole.FormalMessage)
+          if (!pageMeta.pageRole.isPrivateGroupTalk)
             throwIndistinguishableNotFound("EsE0YK25-No-Category")
 
           if (user.isEmpty)

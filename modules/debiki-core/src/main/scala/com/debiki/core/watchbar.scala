@@ -17,6 +17,7 @@
 
 package com.debiki.core
 
+import com.debiki.core.Prelude._
 import play.api.libs.json._
 import scala.collection.immutable
 import scala.collection.mutable.ArrayBuffer
@@ -142,24 +143,53 @@ case class BareWatchbar(
   chatChannels: immutable.Seq[WatchbarTopic],
   directMessages: immutable.Seq[WatchbarTopic]) extends Watchbar {
 
+
   def addTitlesEtc(titlesEtcById: Map[PageId, PageTitleRole]) = WatchbarWithTitles(
     recentTopics, notifications, chatChannels, directMessages, titlesEtcById)
 
 
-  def addRecentTopicMarkSeen(pageId: PageId): BareWatchbar = {
-    val newWatchbar =
-      if (recentTopics.exists(_.pageId == pageId)) this
-      else copy(recentTopics =
-        (WatchbarTopic(pageId, unread = false) +: recentTopics).take(MaxRecentTopics))
-    // The page might be in the notfs list or chat channels etc too, so always do:
-    newWatchbar.markPageAsSeen(pageId)
+  /** Returns None, if wasn't changed, or Some(new-watchbar).
+    */
+  def tryAddRecentTopicMarkSeen(pageMeta: PageMeta): Option[BareWatchbar] = {
+    val pageId = pageMeta.pageId
+    val watchbarWithTopic =
+      if (pageMeta.isPrivateGroupTalk) {
+        // Don't add private group talk pages to the recent topics list — they should never be
+        // shown in the recent list, because they're private. They are only listed in the
+        // Channels and Direct Messages sections.
+        // Only try to mark the topic as seen. (Should be in the Channels or Private Messages
+        // section already.)
+        this
+      }
+      else {
+        copy(recentTopics = placeFirstMarkSeen(pageMeta, recentTopics))
+      }
+    // The page might be in the Channels or Direct Messages sections, so always do:
+    val newWatchbar = watchbarWithTopic.markPageAsSeen(pageId)
+    if (newWatchbar != this) Some(newWatchbar)
+    else None
   }
 
-  def addChatChannelMarkSeen(pageId: PageId): BareWatchbar = {
-    addChatChannel(pageId: PageId, hasSeenIt = true)
+
+  def addPage(pageMeta: PageMeta, hasSeenIt: Boolean): BareWatchbar =
+    addPage(pageMeta.pageId, pageMeta.pageRole, hasSeenIt)
+
+
+  def addPage(pageId: PageId, pageRole: PageRole, hasSeenIt: Boolean): BareWatchbar = {
+    if (pageRole.isChat) {
+      addChatChannel(pageId, hasSeenIt)
+    }
+    else if (pageRole.isPrivateGroupTalk) {
+      addDirectMessage(pageId, hasSeenIt)
+    }
+    else {
+      // Add to recent list? Or do what? This cannot happen right now.
+      unimplemented("EsE3PK04W")
+    }
   }
 
-  def addChatChannel(pageId: PageId, hasSeenIt: Boolean): BareWatchbar = {
+
+  private def addChatChannel(pageId: PageId, hasSeenIt: Boolean): BareWatchbar = {
     if (chatChannels.exists(_.pageId == pageId)) {
       if (hasSeenIt) markPageAsSeen(pageId)
       else this
@@ -169,13 +199,10 @@ case class BareWatchbar(
     }
   }
 
-  def removeChatChannel(pageId: PageId): BareWatchbar = {
-    copy(chatChannels = chatChannels.filterNot(_.pageId == pageId))
-  }
 
-  def addDirectMessage(pageId: PageId, hasSeenIt: Boolean): BareWatchbar = {
+  private def addDirectMessage(pageId: PageId, hasSeenIt: Boolean): BareWatchbar = {
     if (directMessages.exists(_.pageId == pageId)) {
-      if (!hasSeenIt) markPageAsSeen(pageId)
+      if (hasSeenIt) markPageAsSeen(pageId)
       else this
     }
     else {
@@ -183,17 +210,30 @@ case class BareWatchbar(
     }
   }
 
-  def removeDirectMessage(pageId: PageId): BareWatchbar = {
-    copy(directMessages = directMessages.filterNot(_.pageId == pageId))
+
+  def removePageTryKeepInRecent(pageMeta: PageMeta): BareWatchbar = {
+    // Private pages shouldn't be shown in the recent list, because once one has left them,
+    // they are no longer accessible (because they're private).
+    // COULD keep them in the recent list, if is admin?
+    val newRecent =
+      if (pageMeta.isPrivateGroupTalk) recentTopics.filter(_.pageId != pageMeta.pageId)
+      else placeFirstMarkSeen(pageMeta, recentTopics)
+    copy(
+      recentTopics = newRecent,
+      chatChannels = chatChannels.filter(_.pageId != pageMeta.pageId),
+      directMessages = directMessages.filter(_.pageId != pageMeta.pageId))
   }
+
 
   def markPageAsSeen(pageId: PageId): BareWatchbar = {
     markSeenUnseen(pageId, seen = true)
   }
 
+
   def markPageAsUnread(pageId: PageId): BareWatchbar = {
     markSeenUnseen(pageId, seen = false)
   }
+
 
   private def markSeenUnseen(pageId: PageId, seen: Boolean): BareWatchbar = {
     def mark(topic: WatchbarTopic) =
@@ -205,6 +245,15 @@ case class BareWatchbar(
       chatChannels = chatChannels.map(mark),
       directMessages = directMessages.map(mark))
   }
+
+
+  private def placeFirstMarkSeen(pageMeta: PageMeta, recentTopics: immutable.Seq[WatchbarTopic])
+        : immutable.Seq[WatchbarTopic] = {
+    val recentWithout = recentTopics.filter(_.pageId != pageMeta.pageId)
+    val newRecent = WatchbarTopic(pageMeta.pageId, unread = false) +: recentWithout
+    newRecent take MaxRecentTopics
+  }
+
 
   def toJsonNoTitles: JsValue = {
     import WatchbarTopic.topicWritesNoTitles

@@ -31,7 +31,7 @@ trait WatchbarDao {
   self: SiteDao with PageStuffDao =>
 
 
-  def loadWatchbar(userId: UserId): BareWatchbar = {
+  def getOrCreateWatchbar(userId: UserId): BareWatchbar = {
     // Hmm, double caching? Mem + Redis. This doesn't make sense? Let's keep it like this for
     // a while and see what'll happen. At least it's fast. And lasts across Play app restarts.
     memCache.lookup[BareWatchbar](
@@ -60,7 +60,7 @@ trait WatchbarDao {
 
 
   def markPageAsUnreadInWatchbar(userId: UserId, pageId: PageId) {
-    val watchbar = loadWatchbar(userId)
+    val watchbar = getOrCreateWatchbar(userId)
     val newWatchbar = watchbar.markPageAsUnread(pageId)
     saveWatchbar(userId, newWatchbar)
   }

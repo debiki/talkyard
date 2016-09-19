@@ -525,7 +525,8 @@ export var Sidebar = createComponent({
     }
 
     var addMorePeopleButton = !page_isGroupTalk(store.pageRole) || !isStaffOrMyPage ? null :
-        r.button({ className: 'btn btn-default', onClick: pagedialogs.openAddPeopleDialog },
+        r.button({ className: 'btn btn-default', onClick: pagedialogs.openAddPeopleDialog,
+            id: 'e2eCB_AddPeopleB' },
           "Add more people");
 
     sidebarClasses += adminGuideActiveClass ? ' esCtxbar-adminGuide' : '';

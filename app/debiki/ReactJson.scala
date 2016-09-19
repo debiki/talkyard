@@ -526,18 +526,22 @@ object ReactJson {
       return None
     }
 
-    var watchbar: BareWatchbar = pageRequest.dao.loadWatchbar(user.id)
+    val dao = pageRequest.dao
+    var watchbar: BareWatchbar = dao.getOrCreateWatchbar(user.id)
     if (pageRequest.pageExists) {
       // (See comment above about ought-to-rename this whole function / stuff.)
-      BUG // Fairly harmless race condition: If the user opens two pages roughly at once.
-      watchbar = watchbar.addRecentTopicMarkSeen(pageRequest.thePageId)
-      pageRequest.dao.saveWatchbar(user.id, watchbar)
-      // Another race condition.
-      pageRequest.dao.pubSub.userWatchesPages(pageRequest.siteId, user.id, watchbar.watchedPageIds)
+      RACE // if the user opens a page, and someone adds her to a chat at the same time.
+      watchbar.tryAddRecentTopicMarkSeen(pageRequest.thePageMeta) match {
+        case None => // watchbar wasn't modified
+        case Some(modifiedWatchbar) =>
+          watchbar = modifiedWatchbar
+          dao.saveWatchbar(user.id, watchbar)
+          dao.pubSub.userWatchesPages(pageRequest.siteId, user.id, watchbar.watchedPageIds) ;RACE
+      }
     }
-    val watchbarWithTitles = pageRequest.dao.fillInWatchbarTitlesEtc(watchbar)
+    val watchbarWithTitles = dao.fillInWatchbarTitlesEtc(watchbar)
     val (restrictedCategories, restrictedTopics) = listRestrictedCategoriesAndTopics(pageRequest)
-    pageRequest.dao.readOnlyTransaction { transaction =>
+    dao.readOnlyTransaction { transaction =>
       Some(userDataJsonImpl(user, pageRequest.pageId, watchbarWithTitles, restrictedCategories,
         restrictedTopics, transaction))
     }
@@ -548,7 +552,7 @@ object ReactJson {
     val user = request.user getOrElse {
       return JsNull
     }
-    val watchbar = request.dao.loadWatchbar(user.id)
+    val watchbar = request.dao.getOrCreateWatchbar(user.id)
     val watchbarWithTitles = request.dao.fillInWatchbarTitlesEtc(watchbar)
     request.dao.readOnlyTransaction(userDataJsonImpl(user, anyPageId = None, watchbarWithTitles,
       restrictedCategories = JsArray(), restrictedTopics = Nil, _))

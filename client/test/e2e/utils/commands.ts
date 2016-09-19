@@ -9,6 +9,27 @@ var logMessage = logMessageModule.logMessage;
 var logWarning = logMessageModule.logWarning;
 
 
+function count(elems): number {
+  return elems && elems.value ? elems.value.length : 0;
+}
+
+
+function byBrowser(result) {
+  if (_.isObject(result))
+    return result;
+  return { onlyOneBrowser: result };
+}
+
+function isTheOnly(browserName) {
+  return browserName === 'onlyOneBrowser';
+}
+
+function allBrowserValues(result) {
+  var resultByBrowser = byBrowser(result);
+  return _.values(resultByBrowser);
+}
+
+
 function addCommandsToBrowser(browser) {
 
   browser.addCommand('waitUntilLoadingOverlayGone', function() {
@@ -26,8 +47,10 @@ function addCommandsToBrowser(browser) {
 
   browser.addCommand('waitForAtLeast', function(num, selector) {
     browser.waitUntil(function () {
-      var elems = browser.elements(selector);
-      return elems.value.length >= num;
+      var elemsList = allBrowserValues(browser.elements(selector));
+      return _.every(elemsList, (elems) => {
+        return count(elems) >= num;
+      });
     });
   });
 
@@ -35,8 +58,15 @@ function addCommandsToBrowser(browser) {
   browser.addCommand('waitForAtMost', function(num, selector) {
     browser.waitUntil(function () {
       var elems = browser.elements(selector);
-      return elems.value.length <= num;
+      return count(elems) <= num;
     });
+  });
+
+
+  browser.addCommand('assertExactly', function(num, selector) {
+    var elems = browser.elements(selector);
+    assert(count(elems) === num, "Selector '" + selector + "' matches " + count(elems) +
+        " elems, but there should be exactly " + num);
   });
 
 
@@ -54,10 +84,38 @@ function addCommandsToBrowser(browser) {
     browser.waitUntilLoadingOverlayGone();
     if (!selector.startsWith('#')) {
       var elems = browser.elements(selector);
-      assert.equal(elems.value.length, 1, "Too many elems to click: " + elems.value.length +
+      assert.equal(count(elems), 1, "Too many elems to click: " + count(elems) +
         " elems matches selector: " + selector + " [EsE5JKP82]");
     }
     browser.click(selector);
+  });
+
+
+  browser.addCommand('waitForThenClickText', function(selector, regex) {
+    var elemId = browser.waitAndGetElemIdWithText(selector, regex);
+    browser.elementIdClick(elemId);
+  });
+
+
+  browser.addCommand('waitAndGetElemIdWithText', function(selector, regex) {
+    if (_.isString(regex)) {
+      regex = new RegExp(regex);
+    }
+    var elemIdFound;
+    browser.waitUntil(() => {
+      var elems = browser.elements(selector).value;
+      for (var i = 0; i < elems.length; ++i) {
+        var elem = elems[i];
+        var text = browser.elementIdText(elem.ELEMENT).value;
+        var matches = regex.test(text);
+        if (matches) {
+          elemIdFound = elem.ELEMENT;
+          return true;
+        }
+      }
+      return false;
+    });
+    return elemIdFound;
   });
 
 
@@ -141,12 +199,9 @@ function addCommandsToBrowser(browser) {
     if (_.isString(regex2)) {
       regex2 = new RegExp(regex2);
     }
-    var textByBrowserName = browser.getText(selector);
-    if (_.isString(textByBrowserName)) {
-      textByBrowserName = { onlyOneBrowser: textByBrowserName };
-    }
+    var textByBrowserName = byBrowser(browser.getText(selector));
     _.forOwn(textByBrowserName, function(text, browserName) {
-      var whichBrowser = browserName === 'onlyOneBrowser' ? '' : ", browser: " + browserName;
+      var whichBrowser = isTheOnly(browserName) ? '' : ", browser: " + browserName;
       assert(regex.test(text), "Elem selected by '" + selector + "' didn't match " +
           regex.toString() + ", actual text: '" + text + whichBrowser);
       // COULD use 'arguments' & a loop instead
@@ -184,6 +239,37 @@ function addCommandsToBrowser(browser) {
   });
 
 
+  browser.addCommand('assertAnyTextMatches', function(selector, regex) {
+    assertAnyOrNoneMatches(selector, regex, true);
+  });
+
+
+  browser.addCommand('assertNoTextMatches', function(selector, regex) {
+    assertAnyOrNoneMatches(selector, regex, false);
+  });
+
+
+  function assertAnyOrNoneMatches(selector: string, regex, shallMatch: boolean) {
+    if (_.isString(regex)) {
+      regex = new RegExp(regex);
+    }
+    var elems = browser.elements(selector).value;
+    assert(!shallMatch || elems.length, "No elems found matching " + selector);
+    for (var i = 0; i < elems.length; ++i) {
+      var elem = elems[i];
+      var text = browser.elementIdText(elem.ELEMENT).value;
+      var matches = regex.test(text);
+      if (matches) {
+        if (shallMatch)
+          return;
+        assert(false, "Elem found matching '" + selector + "' and regex: " + regex.toString());
+      }
+    }
+    assert(!shallMatch, "No elem selected by '" + selector + "' matches regex: " +
+        regex.toString());
+  }
+
+
   browser.addCommand('assertPageTitleMatches', function(regex) {
     browser.waitForVisible('h1.dw-p-ttl');
     browser.assertTextMatches('h1.dw-p-ttl', regex);
@@ -206,7 +292,9 @@ function addCommandsToBrowser(browser) {
   browser.addCommand('assertNotFoundError', function() {
     var source = browser.getSource();
     assert(/404 Not Found[\s\S]+EsE404/.test(source));
-    assert(source.length < 200); // if the page is larger, it's probably the wrong page
+    // If the page is larger than this, it's probably the wrong page. (There're some
+    // <html><head><body><pre> tags too, otherwise 400 wold have been too much.)
+    assert(source.length < 400);
   });
 
 

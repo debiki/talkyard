@@ -165,6 +165,11 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
 
 
   def receive = {
+    case x => dontRestartIfException(x)
+  }
+
+
+  def dontRestartIfException(message: Any) = try message match {
     case UserWatchesPages(siteId, userId, pageIds) =>
       updateWatchedPages(siteId, userId, pageIds)
     case UserSubscribed(siteId, user, browserIdData) =>
@@ -182,6 +187,12 @@ class PubSubActor(val nginxHost: String, val redisClient: RedisClient) extends A
       deleteInactiveSubscriptions()
     case StrangerSeen(siteId, browserIdData) =>
       RedisCache.forSite(siteId, redisClient).markStrangerOnline(browserIdData)
+  }
+  catch {
+    case ex: Exception =>
+      // Akka would otherwise discard this actor and create another one, but then
+      // its state (which is probably fine) gets lost.
+      play.api.Logger.error("Error in PubSub actor, not killing it though", ex)
   }
 
 

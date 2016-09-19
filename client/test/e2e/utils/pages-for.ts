@@ -68,6 +68,76 @@ function pagesFor(browser) {
     },
 
 
+    watchbar: {
+      titleSelector: '.esWB_T_Title',
+
+      assertTopicVisible: function(title: string) {
+        browser.waitForVisible(api.watchbar.titleSelector);
+        browser.assertAnyTextMatches(api.watchbar.titleSelector, title);
+      },
+
+      assertTopicAbsent: function(title: string) {
+        browser.waitForVisible(api.watchbar.titleSelector);
+        browser.assertNoTextMatches(api.watchbar.titleSelector, title);
+      },
+
+      asserExactlyNumTopics: function(num: number) {
+        if (num > 0) {
+          browser.waitForVisible(api.watchbar.titleSelector);
+        }
+        browser.assertExactly(num, api.watchbar.titleSelector);
+      },
+
+      goToTopic: function(title: string) {
+        browser.rememberCurrentUrl();
+        browser.waitForThenClickText(api.watchbar.titleSelector, title);
+        browser.waitForNewUrl();
+        browser.assertPageTitleMatches(title);
+      },
+
+      clickCreateChat: function() {
+        browser.waitAndClick('#e2eCreateChatB');
+        browser.waitForVisible('.esEdtr_titleEtc');
+      },
+
+      clickViewPeople: function() {
+        browser.waitAndClick('.esWB_T-Current .esWB_T_Link');
+        browser.waitAndClick('#e2eWB_ViewPeopleB');
+        browser.waitForVisible('.esCtxbar_list_title');
+      },
+
+      clickLeaveChat: function() {
+        browser.waitAndClick('.esWB_T-Current .esWB_T_Link');
+        browser.waitAndClick('#e2eWB_LeaveB');
+        browser.waitForVisible('#theJoinChatB');
+      },
+    },
+
+
+    contextbar: {
+      clickAddPeople: function() {
+        browser.waitAndClick('#e2eCB_AddPeopleB');
+        browser.waitForVisible('#e2eAddUsD');
+      },
+
+      clickUser: function(username: string) {
+        browser.waitForThenClickText('.esCtxbar_list .esAvtrName_username', username);
+      },
+
+      assertUserPresent: function(username: string) {
+        browser.waitForVisible('.esCtxbar_onlineCol');
+        browser.waitForVisible('.esCtxbar_list .esAvtrName_username');
+        var elems = browser.elements('.esCtxbar_list .esAvtrName_username').value;
+        var usernamesPresent = elems.map((elem) => {
+          return browser.elementIdText(elem.ELEMENT).value;
+        });
+        assert(usernamesPresent.length, "No users listed at all");
+        assert(_.includes(usernamesPresent, username), "User missing: " + username +
+            ", those present are: " + usernamesPresent.join(', '));
+      },
+    },
+
+
     loginDialog: {
       waitAssertFullScreen: function() {
         browser.waitForVisible('.dw-login-modal');
@@ -206,6 +276,18 @@ function pagesFor(browser) {
     },
 
 
+    forumTopicList: {
+      waitUntilKnowsIsEmpty: function() {
+        browser.waitForVisible('#e2eF_NoTopics');
+      }
+    },
+
+
+    forumCategories: {
+
+    },
+
+
     categoryDialog: {
       fillInFields: function(data) {
         browser.waitAndSetValue('#e2eCatNameI', data.name);
@@ -229,6 +311,41 @@ function pagesFor(browser) {
     },
 
 
+    aboutUserDialog: {
+      clickSendMessage: function() {
+        browser.waitAndClick('#e2eUD_MessageB');
+      },
+
+      clickViewProfile: function() {
+        browser.waitAndClick('#e2eUD_ProfileB');
+      },
+
+      clickRemoveFromPage: function() {
+        browser.waitAndClick('#e2eUD_RemoveB');
+      },
+    },
+
+
+    addUsersToPageDialog: {
+      addOneUser: function(username: string) {
+        browser.waitAndClick('#e2eAddUsD .Select-placeholder');
+        browser.waitAndSetValue('#e2eAddUsD .Select-input > input', username);
+        browser.keys(['Return']);
+        // Weird. The react-select dropdown is open and needs to be closed, otherwise
+        // a modal overlay hides everything? Can be closed like so:
+        browser.click('#e2eAddUsD_SubmitB');
+      },
+
+      submit: function() {
+        browser.click('#e2eAddUsD_SubmitB');
+        // Later: browser.waitUntilModalGone();
+        // But for now:  [5FKE0WY2]
+        browser.waitForVisible('.esStupidDlg');
+        browser.refresh();
+      }
+    },
+
+
     editor: {
       editTitle: function(title) {
         browser.waitAndSetValue('.esEdtr_titleEtc_title', title);
@@ -238,9 +355,29 @@ function pagesFor(browser) {
         browser.waitAndSetValue('.esEdtr_textarea', text);
       },
 
+      setTopicTypePrivateChat: function() {
+        browser.waitAndClick('.esTopicType_dropdown');
+        browser.waitAndClick('#e2ePrivChatO');
+        browser.waitUntilModalGone();
+      },
+
       save: function() {
         browser.click('.e2eSaveBtn');
         browser.waitUntilLoadingOverlayGone();
+      }
+    },
+
+
+    chat: {
+      addChatMessage: function(text: string) {
+        browser.waitAndSetValue('.esC_Edtr_textarea', text);
+        browser.waitAndClick('.esC_Edtr_SaveB');
+        browser.waitUntilLoadingOverlayGone();
+        // could verify visible
+      },
+
+      waitForNumMessages: function(howMany: number) {
+        browser.waitForAtLeast(howMany, '.esC_M');
       }
     },
 
@@ -257,6 +394,11 @@ function pagesFor(browser) {
     },
 
     complex: {
+      loginWithPasswordViaTopbar: function(username: string, password: string) {
+        api.topbar.clickLogin();
+        api.loginDialog.loginWithPassword({ username: username, password: password });
+      },
+
       createAndSaveTopic: function(data: { title: string, body: string }) {
         api.forumButtons.clickCreateTopic();
         api.editor.editTitle(data.title);
@@ -266,6 +408,27 @@ function pagesFor(browser) {
         browser.waitForNewUrl();
         browser.assertPageTitleMatches(data.title);
         browser.assertPageBodyMatches(data.body);
+      },
+
+      createChatChannelViaWatchbar: function(
+            data: { name: string, purpose: string, public_?: boolean }) {
+        api.watchbar.clickCreateChat();
+        api.editor.editTitle(data.name);
+        api.editor.editText(data.purpose);
+        if (data.public_ === false) {
+          api.editor.setTopicTypePrivateChat();
+        }
+        browser.rememberCurrentUrl();
+        api.editor.save();
+        browser.waitForNewUrl();
+        browser.assertPageTitleMatches(data.name);
+      },
+
+      addPeopleToPageViaContextbar(usernames: string[]) {
+        api.contextbar.clickAddPeople();
+        _.each(usernames, api.addUsersToPageDialog.addOneUser);
+        api.addUsersToPageDialog.submit();
+        _.each(usernames, api.contextbar.assertUserPresent);
       }
     }
   };

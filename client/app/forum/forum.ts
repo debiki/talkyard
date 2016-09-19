@@ -817,7 +817,7 @@ var ForumTopicListComponent = React.createClass(<any> {
     }
 
     if (!this.state.topics.length)
-      return r.p({}, 'No topics.');
+      return r.p({ id: 'e2eF_NoTopics' }, 'No topics.');
 
     var useTable = this.props.useTable;
 

@@ -124,7 +124,7 @@ export var PageRoleDropdown = createComponent({
         text: "A perhaps never-ending conversation." });
 
     var privateChatOption = !isStaff(me) ? null :
-      ExplainingListItem({ onSelect: this.onSelect,
+      ExplainingListItem({ onSelect: this.onSelect, id: 'e2ePrivChatO',
         activeEventKey: pageRole, eventKey: PageRole.PrivateChat,
         title: PageRole_PrivateChat_IconString,
         text: "Only visible to people that get invited to join the chat." });

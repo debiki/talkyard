@@ -192,20 +192,21 @@ var AboutUser = createComponent({
     }
 
     var sendMessageButton = !me_maySendDirectMessageTo(me, user) ? null :
-        Button({ onClick: this.sendMessage, bsStyle: 'primary' }, "Send Message");
+        Button({ onClick: this.sendMessage, bsStyle: 'primary', id: 'e2eUD_MessageB' },
+          "Send Message");
 
     var userIsPageMember = page_isGroupTalk(store.pageRole) &&
         _.includes(store.pageMemberIds, user.id);
     var removeFromPageButton = userIsPageMember &&
         (isStaff(me) || store_thisIsMyPage(store)) && !userIsMe
-      ? Button({ onClick: this.removeFromPage }, "Remove from topic")
+      ? Button({ onClick: this.removeFromPage, id: 'e2eUD_RemoveB' }, "Remove from topic")
       : null;
 
     return (
       r.div({},
         r.div({ className: 'dw-about-user-actions' },
           sendMessageButton,
-          Button({ onClick: this.props.viewUserProfile }, "View Profile"),
+          Button({ onClick: this.props.viewUserProfile, id: 'e2eUD_ProfileB' }, "View Profile"),
           removeFromPageButton),
         avatar.Avatar({ user: user, large: true, clickOpensUserProfilePage: true }),
         r.div({},

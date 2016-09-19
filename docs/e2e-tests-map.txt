@@ -180,6 +180,7 @@ chat -
   add/remove member,
   join/leave channel:
   shows last 50 messages:
+  private chat - private-chat.3browsers.test.ts
 
 uploads -  (7KFC2)
   upload profile pic:  (8PK2)
