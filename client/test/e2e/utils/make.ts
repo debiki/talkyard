@@ -23,7 +23,7 @@ var emptySite: SiteData = {
     status: 2,
     createdAtMs: DefaultCreatedAtMs,
   },
-  settings: [],
+  settings: {},
   groups: [],
   members: [],
   identities: [],

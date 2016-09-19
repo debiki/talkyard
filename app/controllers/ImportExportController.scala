@@ -68,6 +68,7 @@ object ImportExportController extends mvc.Controller {
 
   private case class ImportSiteData(
     site: Site,
+    settings: SettingsToSave,
     users: Seq[CompleteUser],
     pages: Seq[PageMeta],
     pagePaths: Seq[PagePathWithId],
@@ -78,9 +79,10 @@ object ImportExportController extends mvc.Controller {
   private def parseSiteJson(request: JsonPostRequest, isE2eTest: Boolean): ImportSiteData = {
     val bodyJson = request.body
 
-    val (siteMetaJson, membersJson, pagesJson, pathsJson, categoriesJson, postsJson) =
+    val (siteMetaJson, settingsJson, membersJson, pagesJson, pathsJson, categoriesJson, postsJson) =
       try {
         (readJsObject(bodyJson, "meta"),
+          readJsObject(bodyJson, "settings"),
           readJsArray(bodyJson, "members"),
           readJsArray(bodyJson, "pages"),
           readJsArray(bodyJson, "pagePaths"),
@@ -98,6 +100,8 @@ object ImportExportController extends mvc.Controller {
         case ex: IllegalArgumentException =>
           throwBadRequest("EsE6UJM2", s"Invalid 'site' object json: ${ex.getMessage}")
       }
+
+    val settings = Settings2.settingsToSaveFromJson(settingsJson)
 
     val users: Seq[CompleteUser] = membersJson.value.zipWithIndex map { case (json, index) =>
       readMemberOrBad(json, isE2eTest).getOrIfBad(errorMessage =>
@@ -134,7 +138,7 @@ object ImportExportController extends mvc.Controller {
               json: $json"""))
     }
 
-    ImportSiteData(siteToSave, users, pages, paths, categories, posts)
+    ImportSiteData(siteToSave, settings, users, pages, paths, categories, posts)
   }
 
 
@@ -166,6 +170,8 @@ object ImportExportController extends mvc.Controller {
       // We might import a forum or a forum category, and then the categories reference the
       // forum page, and the forum page references to the root category.
       transaction.deferConstraints()
+
+      transaction.upsertSiteSettings(siteData.settings)
 
       siteData.users foreach { user =>
         val newId = transaction.nextAuthenticatedUserId

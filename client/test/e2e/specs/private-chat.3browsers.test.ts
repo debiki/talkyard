@@ -52,6 +52,7 @@ describe("private chat", function() {
 
   it("import a site", function() {
     var site: SiteData = make.forumOwnedByOwen('login-to-read', { title: forumTitle });
+    site.settings = { allowGuestLogin: true };
     site.members.push(make.memberMichael());
     site.members.push(make.memberMaria());
     idAddress = server.importSiteData(site);
@@ -59,7 +60,6 @@ describe("private chat", function() {
 
   it("Owen creates a private chat", function() {
     owen.go(idAddress.siteIdOrigin);
-    owen.debug();
     owen.assertPageTitleMatches(forumTitle);
     owensPages.complex.loginWithPasswordViaTopbar('owen_owner', 'publicOwen');
     owensPages.complex.createChatChannelViaWatchbar(
@@ -125,8 +125,8 @@ describe("private chat", function() {
   });
 
   it("... and thereafter no longer sees the chat page", function() {
-    // For now. Should probably redirect to / instead, after refresh?
-    maria.refresh();  // dupl code, see below 4KWEP03
+    // For now. Should probably redirect to / instead, after refresh? COULD
+    maria.refresh();
     maria.assertNotFoundError();
     maria.go(idAddress.siteIdOrigin);
     mariasPages.forumTopicList.waitUntilKnowsIsEmpty();
@@ -154,12 +154,18 @@ describe("private chat", function() {
     owensPages.aboutUserDialog.clickRemoveFromPage();
   });
 
-  it("Now Michael no longer sees it", function() {
-    // For now. Later, SHOULD kick user via pub/sub-message [pubsub]
-    michael.refresh();  // dupl code, see above 4KWEP03
+  it("Now Michael can no longer access the page", function() {
+    // For now. Later, SECURITY SHOULD kick user via pub/sub-message [pubsub]
+    michael.refresh();
     michael.assertNotFoundError();
+  });
+
+  it("... doesn't see it in the topic list", function() {
     michael.go(idAddress.siteIdOrigin);
     michaelsPages.forumTopicList.waitUntilKnowsIsEmpty();
+  });
+
+  it("... and doesn't see it in the watchbar", function() {
     michaelsPages.watchbar.assertTopicAbsent(chatName);
     michaelsPages.watchbar.assertTopicVisible(forumTitle);
     michaelsPages.watchbar.asserExactlyNumTopics(1); // the forum
@@ -167,17 +173,24 @@ describe("private chat", function() {
 
   it("A guest logs in (in Maria's browser)", function() {
     assert(guest === maria, 'EsE4FKG6FY0');
-    // Later: guestsPages.complex.loginAsGuestViaTopbar("Guest Name"); TEST_TODO
     guest.go(idAddress.siteIdOrigin);
+    guestsPages.complex.loginAsGuestViaTopbar("Gunnar Guest");
   });
 
-  it("The guest doesn't see the chat in the forum topic list", function() {
-    guest.forumTopicList.waitUntilKnowsIsEmpty();
-  });
-
-  it("... and cannot access it via a direct link", function() {
+  it("... the guest cannot access it via a direct link", function() {
     guest.go(chatUrl);
     guest.assertNotFoundError();
+  });
+
+  it("... and doesn't see the chat in the forum topic list", function() {
+    guest.go(idAddress.siteIdOrigin);
+    guestsPages.forumTopicList.waitUntilKnowsIsEmpty();
+  });
+
+  it("... and it won't appear in the watchbar", function() {
+    guestsPages.watchbar.assertTopicAbsent(chatName);
+    guestsPages.watchbar.assertTopicVisible(forumTitle);
+    guestsPages.watchbar.asserExactlyNumTopics(1); // the forum
   });
 
   it("Done", function() {

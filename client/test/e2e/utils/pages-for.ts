@@ -172,6 +172,18 @@ function pagesFor(browser) {
         browser.waitUntilModalGone();
       },
 
+      loginAsGuest: function(name: string, email?: string) {
+        browser.waitAndClick('.esLoginDlg_guestBtn');
+        browser.waitAndSetValue('#e2eLD_G_Name', name);
+        if (email) {
+          browser.waitAndSetValue('#e2eLD_G_Email', email);
+        }
+        browser.waitAndClick('#e2eLD_G_Submit');
+        browser.waitUntilModalGone();
+        var nameInHtml = browser.waitAndGetVisibleText('.esTopbar .esAvtrName_name');
+        assert(nameInHtml === name);
+      },
+
       createGmailAccount: function(data) {
         api.loginDialog.loginWithGmail(data);
         // This should be the first time we login with Gmail at this site, so we'll be asked
@@ -313,15 +325,23 @@ function pagesFor(browser) {
 
     aboutUserDialog: {
       clickSendMessage: function() {
+        browser.rememberCurrentUrl();
         browser.waitAndClick('#e2eUD_MessageB');
+        browser.waitForNewUrl();
       },
 
       clickViewProfile: function() {
+        browser.rememberCurrentUrl();
         browser.waitAndClick('#e2eUD_ProfileB');
+        browser.waitForNewUrl();
       },
 
       clickRemoveFromPage: function() {
         browser.waitAndClick('#e2eUD_RemoveB');
+        // Later: browser.waitUntilModalGone();
+        // But for now:  [5FKE0WY2]
+        browser.waitForVisible('.esStupidDlg');
+        browser.refresh();
       },
     },
 
@@ -397,6 +417,11 @@ function pagesFor(browser) {
       loginWithPasswordViaTopbar: function(username: string, password: string) {
         api.topbar.clickLogin();
         api.loginDialog.loginWithPassword({ username: username, password: password });
+      },
+
+      loginAsGuestViaTopbar: function(name: string, email?: string) {
+        api.topbar.clickLogin();
+        api.loginDialog.loginAsGuest(name, email);
       },
 
       createAndSaveTopic: function(data: { title: string, body: string }) {

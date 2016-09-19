@@ -439,12 +439,12 @@ var GuestLoginDialogContent = createClassAndFactory({
     var disableSubmit = _.includes(_.values(this.state.okayStatuses), false);
     return (
       r.form({},
-        FullNameInput({ type: 'text', label: "Your name:", ref: 'nameInput', id: 'e2eName',
+        FullNameInput({ type: 'text', label: "Your name:", ref: 'nameInput', id: 'e2eLD_G_Name',
             onChangeValueOk: (value, isOk) => this.updateValueOk('fullName', value, isOk) }),
         EmailInput({ label: "Email: (optional, not shown)", ref: 'emailInput', required: false,
-            help: "If you want to be notified about replies to your comments.",
+            help: "If you want to be notified about replies to your comments.", id: 'e2eLD_G_Email',
             onChangeValueOk: (value, isOk) => this.updateValueOk('email', value, isOk) }),
-        Button({ onClick: this.doLogin, disabled: disableSubmit },
+        Button({ onClick: this.doLogin, disabled: disableSubmit, id: 'e2eLD_G_Submit' },
           "Login" + inOrderTo(this.props.loginReason)),
         Button({ onClick: this.props.closeDialog }, "Cancel")));
   }

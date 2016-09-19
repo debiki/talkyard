@@ -34,6 +34,7 @@ esF_TsL_T       = topic in forum topics list
 esH             = help
 
 esLD            = login/signup dialog
+esLD_G          = guest login
 
 esMB            = topic metabar (just below the Orig Post, before all replies)
 
