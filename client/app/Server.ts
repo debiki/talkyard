@@ -18,6 +18,7 @@
 /// <reference path="../typedefs/jquery/jquery.d.ts" />
 /// <reference path="users/user-info/UserInfo.ts" />
 /// <reference path="model.ts" />
+/// <reference path="rules.ts" />
 /// <reference path="ServerApi.ts" />
 
 //------------------------------------------------------------------------------
@@ -145,6 +146,8 @@ function appendE2eAndForbiddenPassword(url: string) {
 
 
 var loadEditorScriptsStatus;
+var slowBundleStatus;
+var staffBundleStatus;
 
 
 // Won't call callback() until a bit later — so if you call React's setState(..), the
@@ -154,6 +157,37 @@ export function loadEditorEtcScriptsAndLater(callback?) {
   setTimeout(function() {
     loadEditorEtceteraScripts().done(callback || _.noop)
   }, 0);
+}
+
+
+export function loadSlowScriptBundle(callback) {
+  if (slowBundleStatus) {
+    slowBundleStatus.done(callback);
+    return;
+  }
+  slowBundleStatus = $.Deferred();
+  window['yepnope']({
+    both: [d.i.assetUrlPrefix + 'slow-bundle.' + d.i.minMaxJs],
+    complete: () => {
+      window['ReactSelect'] = reactCreateFactory(window['Select']);
+      slowBundleStatus.resolve();
+    }
+  });
+  return slowBundleStatus;
+}
+
+
+export function loadStaffScriptBundle(callback) {
+  if (staffBundleStatus) {
+    staffBundleStatus.done(callback);
+    return;
+  }
+  staffBundleStatus = $.Deferred();
+  window['yepnope']({
+    both: [d.i.assetUrlPrefix + 'staff-bundle.' + d.i.minMaxJs],
+    complete: staffBundleStatus.resolve,
+  });
+  return staffBundleStatus;
 }
 
 
@@ -171,9 +205,8 @@ export function loadEditorEtceteraScripts() {
 
   loadEditorScriptsStatus = $.Deferred();
   window['yepnope']({
-    both: [d.i.assetUrlPrefix + 'editor-etcetera.' + d.i.minMaxJs],
+    both: [d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs],
     complete: () => {
-      window['ReactSelect'] = reactCreateFactory(window['Select']);
       loadEditorScriptsStatus.resolve();
     }
   });

@@ -22,6 +22,7 @@
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../dialogs.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../rules.ts" />
 
 //------------------------------------------------------------------------------
   module debiki2.avatar {

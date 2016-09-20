@@ -21,6 +21,7 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../rules.ts" />
 /// <reference path="../page-methods.ts" />
 
 //------------------------------------------------------------------------------

@@ -22,7 +22,7 @@
 /// <reference path="../help/help.ts" />
 /// <reference path="../store-getters.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
-/// <reference path="../editor/editor.ts" />
+/// <reference path="../editor/editor-api.ts" />
 /// <reference path="../sidebar/sidebar.ts" />
 
 //------------------------------------------------------------------------------

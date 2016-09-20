@@ -23,6 +23,7 @@
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../rules.ts" />
 
 //------------------------------------------------------------------------------
   module debiki2.help {

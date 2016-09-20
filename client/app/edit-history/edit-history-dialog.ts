@@ -22,6 +22,7 @@
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../rules.ts" />
 
 //------------------------------------------------------------------------------
   module debiki2.edithistory {

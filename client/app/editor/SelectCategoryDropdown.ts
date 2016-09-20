@@ -22,6 +22,7 @@
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../util/ExplainingDropdown.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />
 
 //------------------------------------------------------------------------------

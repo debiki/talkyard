@@ -18,7 +18,6 @@
 /// <reference path="../typedefs/react/react.d.ts" />
 /// <reference path="sidebar/sidebar.ts" />
 /// <reference path="watchbar/watchbar.ts" />
-/// <reference path="editor/editor.ts" />
 /// <reference path="page/metabar.ts" />
 /// <reference path="react-elements/name-login-btns.ts" />
 /// <reference path="users/users-page.ts" />

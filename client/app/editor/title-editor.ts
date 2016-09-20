@@ -20,6 +20,7 @@
 /// <reference path="../../typedefs/modernizr/modernizr.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../page-methods.ts" />
 /// <reference path="SelectCategoryDropdown.ts" />

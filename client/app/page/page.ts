@@ -29,6 +29,7 @@
 /// <reference path="../page-dialogs/delete-post-dialog.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../rules.ts" />
 /// <reference path="discussion.ts" />
 /// <reference path="chat.ts" />
 /// <reference path="scroll-buttons.ts" />

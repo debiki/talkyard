@@ -24,7 +24,7 @@
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
 /// <reference path="../login/login.ts" />
-/// <reference path="../editor/editor.ts" />
+/// <reference path="../editor/editor-api.ts" />
 /// <reference path="discussion.ts" />
 
 //------------------------------------------------------------------------------

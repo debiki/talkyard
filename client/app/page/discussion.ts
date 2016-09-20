@@ -30,6 +30,7 @@
 /// <reference path="../page-dialogs/see-wrench-dialog.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../model.ts" />
+/// <reference path="../rules.ts" />
 /// <reference path="post-actions.ts" />
 /// <reference path="chat.ts" />
 

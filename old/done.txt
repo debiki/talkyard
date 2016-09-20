@@ -1,0 +1,38 @@
+Bundle sizes, *before* fast/slow/staff/editor-bundle.js:
+
+-rw-r--r-- 1 kajmagnus kajmagnus  439K Sep 19 11:15 combined-debiki.css
+-rw-r--r-- 1 kajmagnus kajmagnus  3,0M Sep 19 11:48 combined-debiki.js
+-rw-r--r-- 1 kajmagnus kajmagnus  210K Sep 19 11:15 combined-debiki.min.css
+-rw-r--r-- 1 kajmagnus kajmagnus   40K Sep 19 11:15 combined-debiki.min.css.gz
+-rw-r--r-- 1 kajmagnus kajmagnus  1,1M Sep 19 12:57 combined-debiki.min.js
+-rw-r--r-- 1 kajmagnus kajmagnus  312K Sep 19 12:58 combined-debiki.min.js.gz
+-rw-r--r-- 1 kajmagnus kajmagnus  926K Sep 19 11:49 editor-bundle.js
+-rw-r--r-- 1 kajmagnus kajmagnus  414K Sep 19 12:57 editor-bundle.min.js
+-rw-r--r-- 1 kajmagnus kajmagnus  132K Sep 19 12:58 editor-bundle.min.js.gz
+-rw-r--r-- 1 kajmagnus kajmagnus  926K Sep 19 11:48 editor-etcetera.js
+-rw-r--r-- 1 kajmagnus kajmagnus  414K Sep 19 12:58 editor-etcetera.min.js
+-rw-r--r-- 1 kajmagnus kajmagnus  132K Sep 19 12:58 editor-etcetera.min.js.gz
+-rw-r--r-- 1 kajmagnus kajmagnus   44K Sep 19 12:56 embedded-comments.js
+-rw-r--r-- 1 kajmagnus kajmagnus   13K Sep 19 12:58 embedded-comments.min.js
+-rw-r--r-- 1 kajmagnus kajmagnus  5,1K Sep 19 12:58
+embedded-comments.min.js.gz
+-rw-r--r-- 1 kajmagnus kajmagnus  2,4M Sep 19 12:56 fast-bundle.js
+-rw-r--r-- 1 kajmagnus kajmagnus 1023K Sep 19 12:58 fast-bundle.min.js
+-rw-r--r-- 1 kajmagnus kajmagnus  290K Sep 19 12:58 fast-bundle.min.js.gz
+lrwxrwxrwx 1 kajmagnus kajmagnus    22 May  7 03:49 fontello ->
+../../modules/fontello/
+drwxr-xr-x 3 kajmagnus kajmagnus  4,0K May  7 03:49 img/
+-rw-r--r-- 1 kajmagnus kajmagnus  1,7M Sep 19 12:56 renderer.js
+-rw-r--r-- 1 kajmagnus kajmagnus  875K Sep 19 12:58 renderer.min.js
+-rw-r--r-- 1 kajmagnus kajmagnus  252K Sep 19 12:58 renderer.min.js.gz
+-rw-r--r-- 1 kajmagnus kajmagnus  1,4K Sep 19 12:56 slow-bundle.js
+-rw-r--r-- 1 kajmagnus kajmagnus   479 Sep 19 12:58 slow-bundle.min.js
+-rw-r--r-- 1 kajmagnus kajmagnus   318 Sep 19 12:58 slow-bundle.min.js.gz
+-rw-r--r-- 1 kajmagnus kajmagnus  462K Sep 19 12:56 styles-bundle.css
+-rw-r--r-- 1 kajmagnus kajmagnus  210K Sep 19 12:56 styles-bundle.min.css
+-rw-r--r-- 1 kajmagnus kajmagnus   40K Sep 19 12:56 styles-bundle.min.css.gz
+-rw-r--r-- 1 kajmagnus kajmagnus  803K Sep 19 12:56 zxcvbn.js
+-rw-r--r-- 1 kajmagnus kajmagnus  801K Sep 19 12:58 zxcvbn.min.js
+-rw-r--r-- 1 kajmagnus kajmagnus  389K Sep 19 12:58 zxcvbn.min.js.gz
+
+

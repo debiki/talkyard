@@ -16,7 +16,6 @@
  */
 
 /// <reference path="constants.ts" />
-/// <reference path="rules.ts" />
 
 type PageId = string;
 type PostId = number;

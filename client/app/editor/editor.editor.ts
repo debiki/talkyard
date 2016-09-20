@@ -16,30 +16,21 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../react-bootstrap-old/Input.ts" />
 /// <reference path="../../typedefs/modernizr/modernizr.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
-/// <reference path="../util/stupid-dialog.ts" />
-/// <reference path="../utils/react-utils.ts" />
-/// <reference path="../utils/PageUnloadAlerter.ts" />
-/// <reference path="../topbar/topbar.ts" />
 /// <reference path="../model.ts" />
-/// <reference path="../Server.ts" />
-/// <reference path="commonmark.ts" />
-/// <reference path="SelectCategoryDropdown.ts" />
-/// <reference path="PageRoleDropdown.ts" />
+/// <reference path="../fast-bundle.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.editor {
 //------------------------------------------------------------------------------
 
 import scrollIntoViewInPageColumn = debiki2.utils.scrollIntoViewInPageColumn;
-  var d = { i: debiki.internal, u: debiki.v0.util };
+var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Button = reactCreateFactory(ReactBootstrap.Button);
-var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
@@ -53,24 +44,22 @@ var $: any = window['jQuery'];
 var WritingSomethingWarningKey = 'WritingSth';
 var WritingSomethingWarning = "You were writing something?";
 
-var getErrorDialog = util.makeStupidDialogGetter();
+var getErrorDialog = debiki2.util.makeStupidDialogGetter();
 
 
-function ensureEditorCreated(success) {
+export function getOrCreateEditor(success) {
   if (theEditor) {
-    success();
+    success(theEditor);
   }
   else {
-    Server.loadEditorEtcScriptsAndLater(() => {
-      FileAPI = window['FileAPI'];
-      theEditor = ReactDOM.render(Editor({}), utils.makeMountNode());
-      success();
-    });
+    FileAPI = window['FileAPI'];
+    theEditor = ReactDOM.render(Editor({}), utils.makeMountNode());
+    success(theEditor);
   }
 }
 
 
-export function startMentionsParser(textarea, onTextEdited) {
+export function startMentionsParserImpl(textarea, onTextEdited) {
   $(textarea).atwho({
     at: "@",
     searchKey: 'username',
@@ -83,48 +72,6 @@ export function startMentionsParser(textarea, onTextEdited) {
     }
   }).on('inserted.atwho', (event, flag, query) => {
     onTextEdited(event);
-  });
-}
-
-
-export function toggleWriteReplyToPost(postId: number, anyPostType?: number) {
-  ensureEditorCreated(() => {
-    theEditor.toggleWriteReplyToPost(postId, anyPostType);
-  });
-}
-
-
-export function openEditorToEditPost(postId: number, onDone?) {
-  ensureEditorCreated(() => {
-    theEditor.editPost(postId, onDone);
-  });
-}
-
-
-export function editNewForumPage(categoryId: number, role: PageRole) {
-  ensureEditorCreated(() => {
-    theEditor.editNewForumPage(categoryId, role);
-  });
-}
-
-
-export function openToEditChatTitleAndPurpose() {
-  ensureEditorCreated(() => {
-    theEditor.openToEditChatTitleAndPurpose();
-  });
-}
-
-
-export function openToWriteChatMessage(text: string, onDone) {
-  ensureEditorCreated(() => {
-    theEditor.openToWriteChatMessage(text || '', onDone);
-  });
-}
-
-
-export function openToWriteMessage(userId: number) {
-  ensureEditorCreated(() => {
-    theEditor.openToWriteMessage(userId);
   });
 }
 
@@ -163,7 +110,7 @@ export var Editor = createComponent({
 
   componentDidMount: function() {
     this.$columns = $('#esPageColumn, #esWatchbarColumn, #dw-sidebar .dw-comments');
-    startMentionsParser(this.refs.textarea, this.onTextEdited);
+    startMentionsParserImpl(this.refs.textarea, this.onTextEdited);
     this.makeEditorResizable();
     this.initUploadFileStuff();
     this.perhapsShowGuidelineModal();

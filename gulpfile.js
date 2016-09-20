@@ -76,7 +76,7 @@ var thisIsAConcatenationMessage =
 // - Testing that fallbacks to locally served files work is boring.
 // - Plus I read in comments in some blog that some countries actually sometimes
 //   block Google's CDN.
-var debikiJavascriptFiles = [
+var fastJsFiles = [
       // Place React first so we can replace it at index 0 & 1 with the optimized min.js versions.
       'node_modules/react/dist/react-with-addons.js',
       'node_modules/react-dom/dist/react-dom.js',
@@ -131,11 +131,16 @@ var debikiJavascriptFiles = [
       'target/client/app/utterscroll/utterscroll-init-tips.js',//
       'client/app/utterscroll/utterscroll.js',//
       'target/client/app/utils/post-json.js',
-      'target/client/all-typescript.js',
+      'target/client/fast-typescript.js',
       'target/client/app/startup.js'];
 
+var slowJsFiles = [
+      'target/client/slow-typescript.js'];
 
-var editorEtceteraScripts = [
+var staffJsFiles = [
+      'target/client/staff-typescript.js'];
+
+var editorJsFiles = [
       // We use two different sanitizers, in case there's a security bug in one of them. [5FKEW2]
       // Find the code that "combines" them here: googleCajaSanitizeHtml [6FKP40]
       'modules/sanitize-html/dist/sanitize-html.js',     // 1
@@ -149,13 +154,14 @@ var editorEtceteraScripts = [
       'node_modules/react-select/dist/react-select.js',
       'node_modules/fileapi/dist/FileAPI.js',
       'client/third-party/diff_match_patch.js',
-      'client/third-party/non-angular-slugify.js'];
+      'client/third-party/non-angular-slugify.js',
+      'target/client/editor-typescript.js'];
 
 
 // For both touch devices and desktops.
 // (parten-header.js and parent-footer.js wraps and lazy loads the files inbetween,
 // see client/embedded-comments/readme.txt.)
-var debikiEmbeddedCommentsFiles = [
+var embeddedJsFiles = [
       'client/embedded-comments/parent-header.js',  // not ^target/client/...
       'client/third-party/jquery-scrollable.js',
       'client/third-party/jquery.browser.js',
@@ -188,7 +194,7 @@ var serverSideTypescriptProject = typeScript.createProject({
 });
 
 
-function compileServerSideTypescript() {
+function compileServerTypescript() {
   var typescriptStream = gulp.src([
         'client/server/**/*.ts',
         'client/shared/plain-old-javascript.d.ts',
@@ -225,39 +231,77 @@ function compileServerSideTypescript() {
 }
 
 
-var clientSideTypescriptProject = typeScript.createProject({
+var fastTypescriptProject = typeScript.createProject({
     target: 'ES5',
     noExternalResolve: true,
-    out: 'all-typescript.js'
+    out: 'fast-typescript.js'
+});
+
+var slowTypescriptProject = typeScript.createProject({
+  target: 'ES5',
+  noExternalResolve: true,
+  out: 'slow-typescript.js'
+});
+
+var staffTypescriptProject = typeScript.createProject({
+  target: 'ES5',
+  noExternalResolve: true,
+  out: 'staff-typescript.js'
+});
+
+var editorTypescriptProject = typeScript.createProject({
+  target: 'ES5',
+  noExternalResolve: true,
+  out: 'editor-typescript.js'
 });
 
 
-function compileClientSideTypescript() {
+function compileFastTypescript() {
   var stream = gulp.src([
         'client/app/**/*.ts',
+        '!client/app/**/*.slow.ts',
+        '!client/app/**/*.editor.ts',
+        '!client/app/**/*.staff.ts',
+        '!client/app/fast-bundle.d.ts',
         'client/shared/plain-old-javascript.d.ts',
         'client/typedefs/**/*.ts'])
     .pipe(wrap(nextFileTemplate))
-    .pipe(typeScript(clientSideTypescriptProject));
-
+    .pipe(typeScript(fastTypescriptProject));
   if (watchAndLiveForever) {
     stream.on('error', function() {
-      console.log('\n!!! Error compiling TypeScript !!!\n');
+      console.log('\n!!! Error compiling fast TypeScript [EsE4GDTX8]!!!\n');
     });
   }
+  return stream.pipe(gulp.dest('target/client/'));
+}
 
+function compileMoreTypescript(what, project) {
+  var stream = gulp.src([
+    'client/app/**/*.d.ts',
+    '!client/app/**/*.' + what + '.d.ts',
+    'client/app/constants.ts',   // for now COULD_OPTIMIZE, don't need to incl all vars here too
+    'client/app/model.ts',       // for now
+    'client/app/**/*.' + what + '.ts',
+    'client/shared/plain-old-javascript.d.ts',
+    'client/typedefs/**/*.ts'])
+    .pipe(wrap(nextFileTemplate))
+    .pipe(typeScript(project));
+  if (watchAndLiveForever) {
+    stream.on('error', function() {
+      console.log('\n!!! Error compiling ' + what + ' TypeScript [EsE3G6P8S]!!!\n');
+    });
+  }
   return stream.pipe(gulp.dest('target/client/'));
 }
 
 
-// Can speed up this:
-// Recompile only changed file, https://github.com/ivogabe/gulp-typescript/issues/228
-// (and use the IDE for type checking, + when building release)
-//
 gulp.task('compile-typescript', function () {
   return es.merge(
-      compileServerSideTypescript(),
-      compileClientSideTypescript());
+      compileServerTypescript(),
+      compileFastTypescript(),
+      compileMoreTypescript('slow', slowTypescriptProject),
+      compileMoreTypescript('staff', staffTypescriptProject),
+      compileMoreTypescript('editor', editorTypescriptProject));
 });
 
 
@@ -283,9 +327,11 @@ function makeConcatDebikiScriptsStream() {
   }
 
   return es.merge(
-      makeConcatStream('combined-debiki.js', debikiJavascriptFiles, 'DoCheckNewer'),
-      makeConcatStream('editor-etcetera.js', editorEtceteraScripts),
-      makeConcatStream('embedded-comments.js', debikiEmbeddedCommentsFiles),
+      makeConcatStream('fast-bundle.js', fastJsFiles, 'DoCheckNewer'),
+      makeConcatStream('slow-bundle.js', slowJsFiles, 'DoCheckNewer'),
+      makeConcatStream('staff-bundle.js', staffJsFiles, 'DoCheckNewer'),
+      makeConcatStream('editor-bundle.js', editorJsFiles, 'DoCheckNewer'),
+      makeConcatStream('embedded-comments.js', embeddedJsFiles),
       gulp.src('node_modules/zxcvbn/dist/zxcvbn.js').pipe(gulp.dest('public/res/')));
 };
 
@@ -315,8 +361,9 @@ function makeConcatAllScriptsStream() {
 
 gulp.task('insert-prod-scripts', function() {
   // This script isn't just a minified script — it contains lots of optimizations.
-  debikiJavascriptFiles[0] = 'node_modules/react/dist/react-with-addons.min.js';
-  debikiJavascriptFiles[1] = 'node_modules/react-dom/dist/react-dom.min.js';
+  // So we want to use react-with-addons.min.js, rather than minifying the .js ourselves.
+  fastJsFiles[0] = 'node_modules/react/dist/react-with-addons.min.js';
+  fastJsFiles[1] = 'node_modules/react-dom/dist/react-dom.min.js';
 });
 
 
@@ -367,7 +414,7 @@ gulp.task('compile-stylus', function () {
   }
 
   return es.merge(
-    makeStyleStream('public/res/', 'combined-debiki.css', [
+    makeStyleStream('public/res/', 'styles-bundle.css', [
         'node_modules/bootstrap/dist/css/bootstrap.css',
         'node_modules/at.js/dist/css/jquery.atwho.css',
         'node_modules/react-select/dist/react-select.css',
