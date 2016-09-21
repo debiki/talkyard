@@ -18,12 +18,12 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../links.ts" />
+/// <reference path="../widgets.ts" />
 /// <reference path="../page-methods.ts" />
 /// <reference path="../login/login-dialog.ts" />
 /// <reference path="../page-tools/page-tools.ts" />
 /// <reference path="../utils/page-scroll-mixin.ts" />
 /// <reference path="../utils/scroll-into-view.ts" />
-/// <reference path="../utils/MenuItemLink.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../avatar/avatar.ts" />
@@ -35,14 +35,7 @@
 //------------------------------------------------------------------------------
 
 var keymaster: Keymaster = window['keymaster'];
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
-var DropdownButton = reactCreateFactory(ReactBootstrap.DropdownButton);
-var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
-var MenuItemLink = utils.MenuItemLink;
 
 var FixedTopDist = 8;
 
@@ -211,14 +204,14 @@ export var TopBar = createComponent({
     var talkToMeNotfs = makeNotfIcon('toMe', me.numTalkToMeNotfs);
     var talkToOthersNotfs = makeNotfIcon('toOthers', me.numTalkToOthersNotfs);
     var otherNotfs = makeNotfIcon('other', me.numOtherNotfs);
-    var anyDivider = me.notifications.length ? MenuItem({ divider: true }) : null;
+    var anyDivider = me.notifications.length ? MenuItemDivider() : null;
     var notfsElems = me.notifications.map((notf: Notification) =>
         MenuItemLink({ key: notf.id, href: linkToNotificationSource(notf),
             className: notf.seen ? '' : 'esNotf-unseen' },
           notification.Notification({ notification: notf })));
     if (me.thereAreMoreUnseenNotfs) {
       notfsElems.push(
-          MenuItem({ key: 'More', onSelect: this.viewOlderNotfs }, "View more notifications..."));
+          MenuItem({ key: 'More', onClick: this.viewOlderNotfs }, "View more notifications..."));
     }
 
     // ------- Avatar & username dropdown
@@ -234,7 +227,7 @@ export var TopBar = createComponent({
           otherNotfs);
 
     var stopImpersonatingMenuItem = !store.isImpersonating ? null :
-        MenuItem({ onSelect: Server.stopImpersonatingReloadPage }, "Stop impersonating");
+        MenuItem({ onClick: Server.stopImpersonatingReloadPage }, "Stop impersonating");
 
     var avatarNameDropdown = !me.isLoggedIn ? null :
       utils.ModalDropdownButton({ title: avatarMenuButtonInclNotfIcons,
@@ -243,15 +236,15 @@ export var TopBar = createComponent({
           adminMenuItem,
           adminHelpLink,
           reviewMenuItem,
-          (adminMenuItem || reviewMenuItem) ? MenuItem({ divider: true }) : null,
+          (adminMenuItem || reviewMenuItem) ? MenuItemDivider() : null,
           MenuItemLink({ href: linkToMyProfilePage(store), id: 'e2eMM_Profile' },
             "View/edit your profile"),
-          MenuItem({ onSelect: this.onLogoutClick, id: 'e2eMM_Logout' }, "Log out"),
+          MenuItem({ onClick: this.onLogoutClick, id: 'e2eMM_Logout' }, "Log out"),
           stopImpersonatingMenuItem,
           anyDivider,
           notfsElems,
-          MenuItem({ divider: true }),
-          MenuItem({ onSelect: ReactActions.showHelpMessagesAgain },
+          MenuItemDivider(),
+          MenuItem({ onClick: ReactActions.showHelpMessagesAgain },
             r.span({ className: 'icon-help' }, "Unhide help messages"))));
 
     // ------- Login button
@@ -261,11 +254,11 @@ export var TopBar = createComponent({
     var hideLogInAndSignUp = me.isLoggedIn || page_isInfoPage(pageRole);
 
     var signupButton = hideLogInAndSignUp ? null :
-      Button({ className: 'dw-login esTopbar_signUp btn-primary', onClick: this.onSignUpClick },
+      PrimaryButton({ className: 'dw-login esTopbar_signUp', onClick: this.onSignUpClick },
         r.span({}, "Sign Up"));
 
     var loginButton = hideLogInAndSignUp ? null :
-        Button({ className: 'dw-login esTopbar_logIn btn-primary', onClick: this.onLoginClick },
+        PrimaryButton({ className: 'dw-login esTopbar_logIn', onClick: this.onLoginClick },
             r.span({ className: 'icon-user' }, 'Log In'));
 
     // ------- Tools button

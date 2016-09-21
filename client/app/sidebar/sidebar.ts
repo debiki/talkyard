@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014-2015 Kaj Magnus Lindberg
+ * Copyright (C) 2014-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -34,13 +34,8 @@
 //------------------------------------------------------------------------------
 
 var keymaster: Keymaster = window['keymaster'];
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactCSSTransitionGroup = reactCreateFactory(React.addons.CSSTransitionGroup);
-var ReactBootstrap: any = window['ReactBootstrap'];
 var ModalDropdownButton = utils.ModalDropdownButton;
-var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 var SidebarNumCommentsLimit = 5 + 1;  // 5 + page body
 

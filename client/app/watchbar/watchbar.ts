@@ -30,13 +30,8 @@
 //------------------------------------------------------------------------------
 
 var keymaster: Keymaster = window['keymaster'];
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var ModalDropdownButton = utils.ModalDropdownButton;
-var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 var watchbar;
 

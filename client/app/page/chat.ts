@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Kaj Magnus Lindberg
+ * Copyright (C) 2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -31,12 +31,7 @@
    module debiki2.page {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
-var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 
 var EditorBecomeFixedDist = 5;
 var DefaultEditorRows = 2;
@@ -260,8 +255,8 @@ var JoinChatButton = createComponent({
   render: function() {
     return (
       r.div({ className: 'esJoinChat' },
-        Button({ id: 'theJoinChatB', className: 'esJoinChat_btn',
-            onClick: this.joinChannel, bsStyle: 'primary' },
+        PrimaryButton({ id: 'theJoinChatB', className: 'esJoinChat_btn',
+            onClick: this.joinChannel },
           "Join this chat")));
   }
 });

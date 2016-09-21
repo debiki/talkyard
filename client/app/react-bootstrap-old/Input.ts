@@ -6,6 +6,7 @@
    module debiki2 {
 //------------------------------------------------------------------------------
 
+var ReactBootstrap: any = window['ReactBootstrap'];
 var FormGroup = reactCreateFactory(ReactBootstrap.FormGroup);
 var ControlLabel = reactCreateFactory(ReactBootstrap.ControlLabel);
 var FormControl = reactCreateFactory(ReactBootstrap.FormControl);

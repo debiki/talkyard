@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
 /// <reference path="../utils/react-utils.ts" />
+/// <reference path="../widgets.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 
 //------------------------------------------------------------------------------
@@ -25,10 +26,7 @@
 //------------------------------------------------------------------------------
 
 var keymaster: Keymaster = window['keymaster'];
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = React.createFactory(ReactBootstrap.Button);
 var calcScrollIntoViewCoordsInPageColumn = debiki2.utils.calcScrollIntoViewCoordsInPageColumn;
 
 export var addVisitedPosts: (currentPostId: number, nextPostId: number) => void = _.noop;
@@ -346,19 +344,19 @@ var ScrollButtonsDropdownModal = createComponent({
       var endHelp = "Go to the bottom of the page. Shortcut: 3";
 
       var scrollToTopButton = isChat ? null :
-        Button({ className: 'esScrollDlg_Up', onClick: this.scrollToTop, title: topHelp,
-            disabled: !state.enableGotoTopBtn, bsStyle: 'primary' },
+        PrimaryButton({ className: 'esScrollDlg_Up', onClick: this.scrollToTop, title: topHelp,
+            disabled: !state.enableGotoTopBtn },
           r.span({},
             r.span({ className: 'esScrollDlg_Up_Arw' }, '➜'), "Page top"));
 
       var scrollToRepliesButton = isChat || neverHasReplies ? null :
-        Button({ className: 'esScrollDlg_Replies', onClick: this.scrollToReplies,
-            title: repliesHelp, disabled: !state.enableGotoRepliesBtn, bsStyle: 'primary' },
+        PrimaryButton({ className: 'esScrollDlg_Replies', onClick: this.scrollToReplies,
+            title: repliesHelp, disabled: !state.enableGotoRepliesBtn },
           r.span({ className: 'icon-comment' }, "Replies"));
 
-      var scrollToEndButton = Button({ className: 'esScrollDlg_Down',
+      var scrollToEndButton = PrimaryButton({ className: 'esScrollDlg_Down',
           onClick: this.scrollToEnd, title: endHelp,
-          disabled: !state.enableGotoEndBtn, bsStyle: 'primary' },
+          disabled: !state.enableGotoEndBtn },
         r.span({},
           r.span({ className: 'esScrollDlg_Down_Arw' }, '➜'), isChat ? "Page bottom" : "Bottom"));
 

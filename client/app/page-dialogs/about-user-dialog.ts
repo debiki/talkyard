@@ -29,7 +29,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
@@ -192,7 +191,7 @@ var AboutUser = createComponent({
     }
 
     var sendMessageButton = !me_maySendDirectMessageTo(me, user) ? null :
-        Button({ onClick: this.sendMessage, bsStyle: 'primary', id: 'e2eUD_MessageB' },
+        PrimaryButton({ onClick: this.sendMessage, id: 'e2eUD_MessageB' },
           "Send Message");
 
     var userIsPageMember = page_isGroupTalk(store.pageRole) &&

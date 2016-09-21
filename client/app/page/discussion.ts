@@ -41,7 +41,6 @@
 var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
-var ReactBootstrap: any = window['ReactBootstrap'];
 
 var closedIcon = r.span({ className: 'icon-block' });
 var questionIcon = r.span({ className: 'icon-help-circled' });

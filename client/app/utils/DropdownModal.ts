@@ -20,6 +20,7 @@
 /// <reference path="../prelude.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../rules.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.utils {
@@ -28,7 +29,6 @@
 var r = React.DOM;
 var $: JQueryStatic = debiki.internal.$;
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 
 

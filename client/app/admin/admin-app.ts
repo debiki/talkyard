@@ -53,6 +53,7 @@ var PageUnloadAlerter = utils.PageUnloadAlerter;
 
 var AdminRoot = '/-/admin/';
 
+// Make the components async? So works also if slow-bundle.js hasn't yet been loaded? [4WP7GU5]
 export function routes() {
   return [
     Redirect({ key: 'redir', from: AdminRoot, to: AdminRoot + 'settings' }), // later: --> /dashboard
