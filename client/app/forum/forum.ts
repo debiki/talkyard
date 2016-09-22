@@ -36,14 +36,10 @@
    module debiki2.forum {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
 var DropdownModal = utils.DropdownModal;
 var ExplainingListItem = util.ExplainingListItem;
 type ExplainingTitleText = util.ExplainingTitleText;
-var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem); // try to remove, but: [5FKW02]
 var HelpMessageBox = debiki2.help.HelpMessageBox;
 
 var ReactRouter = window['ReactRouter'];
@@ -510,8 +506,7 @@ var ForumButtons = createComponent({
       makeCategoryLink(RoutePathLatest, "Topic list", 'e2eViewTopicsB', 'esForum_navLink');
 
     var categoryMenuItems = store.categories.map((category: Category) => {
-      return MenuItem({ eventKey: category.slug, key: category.id,  // [5FKW02]
-          active: activeCategory.id === category.id,
+      return MenuItem({ key: category.id, active: activeCategory.id === category.id,
           onClick: () => this.setCategory(category.slug) }, category.name);
     });
 
@@ -522,7 +517,7 @@ var ForumButtons = createComponent({
         activeCategory.isForumItself;
 
     categoryMenuItems.unshift(
-        MenuItem({ eventKey: null, key: -1, active: listsTopicsInAllCats,
+        MenuItem({ key: -1, active: listsTopicsInAllCats,
           onClick: () => this.setCategory('') }, "All categories"));
 
     // [refactor] use ModalDropdownButton instead

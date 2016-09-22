@@ -25,9 +25,6 @@
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
 var DropdownModal = utils.DropdownModal;
 
 

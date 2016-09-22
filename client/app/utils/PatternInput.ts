@@ -23,9 +23,7 @@
    module debiki2.utils {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
 
 
 export var PatternInput = createClassAndFactory({

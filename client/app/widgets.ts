@@ -46,10 +46,13 @@ function makeWidget(what, spaceWidgetClasses: string) {
 
 
 export function MenuItem(props, ...children) {
-  // props.active?  [5FKW02]
+  var className = props.className || '';
+  if (props.active) {
+    className += ' active';
+  }
   return (
-    r.li({ role: 'presentation', className: props.wrapperClassName, key: props.key },
-      r.a({ role: 'button', className: props.className, id: props.id,
+    r.li({ role: 'presentation', className: className, key: props.key },
+      r.a({ role: 'button', id: props.id,
           onClick: props.onClick || props.onSelect, tabIndex: props.tabindex || -1 },
         children)));
 }

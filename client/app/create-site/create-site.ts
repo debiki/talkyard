@@ -33,8 +33,6 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 
 var ReactBootstrap: any = window['ReactBootstrap'];
-var ButtonGroup = reactCreateFactory(ReactBootstrap.ButtonGroup);
-var Panel = reactCreateFactory(ReactBootstrap.Panel);
 var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 var EmailInput = util.EmailInput;
 var PatternInput = utils.PatternInput;
