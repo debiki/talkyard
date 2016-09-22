@@ -15,22 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../typedefs/react/react.d.ts" />
-/// <reference path="react-bootstrap-old/Input.ts" />
-/// <reference path="plain-old-javascript.d.ts" />
-/// <reference path="utils/react-utils.ts" />
-/// <reference path="util/stupid-dialog.ts" />
-/// <reference path="ReactStore.ts" />
-/// <reference path="Server.ts" />
-/// <reference path="widgets.ts" />
+/// <reference path="../../typedefs/react/react.d.ts" />
+/// <reference path="../react-bootstrap-old/Input.ts" />
+/// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../utils/react-utils.ts" />
+/// <reference path="../util/stupid-dialog.ts" />
+/// <reference path="../ReactStore.ts" />
+/// <reference path="../Server.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2 {
+   module debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
@@ -41,12 +39,11 @@ var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 
 var flagDialog;
 
-
-export function getFlagDialog() {
+export function openFlagDialog(postId: PostId) {
   if (!flagDialog) {
     flagDialog = ReactDOM.render(FlagDialog(), utils.makeMountNode());
   }
-  return flagDialog;
+  flagDialog.open(postId);
 }
 
 

@@ -23,7 +23,6 @@
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../util/ExplainingDropdown.ts" />
-/// <reference path="../dialogs.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../editor/title-editor.ts" />
 /// <reference path="../edit-history/edit-history-dialog.ts" />
@@ -31,6 +30,7 @@
 /// <reference path="../page-methods.ts" />
 /// <reference path="../page-dialogs/wikify-dialog.ts" />
 /// <reference path="../page-dialogs/delete-post-dialog.ts" />
+/// <reference path="../page-dialogs/flag-dialog.ts" />
 /// <reference path="../page-dialogs/move-posts-dialog.ts" />
 /// <reference path="../page-dialogs/see-wrench-dialog.ts" />
 /// <reference path="../page-dialogs/share-dialog.ts" />
@@ -656,7 +656,7 @@ var MoreDropdownModal = createComponent({
 
 function flagPost(post: Post) {
   loginIfNeededThen('LoginToFlag', post.postId, () => {
-    debiki2.getFlagDialog().open(post.postId);
+    debiki2.pagedialogs.openFlagDialog(post.postId);
   });
 }
 
