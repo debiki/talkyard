@@ -24,6 +24,7 @@
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../rules.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
   module debiki2.help {
@@ -32,7 +33,6 @@
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
@@ -160,7 +160,7 @@ var HelpDialog = createComponent({
             r.div({ className: 'esHelpDlg_body' }, content),
             r.div({ className: 'esHelpDlg_btns' },
               hideThisHelpTipsCheckbox,
-              Button({ onClick: this.close, bsStyle: 'primary' }, "Okay"))));
+              PrimaryButton({ onClick: this.close }, "Okay"))));
 
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esHelpDlg' },

@@ -21,6 +21,7 @@
 /// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../util/EmailInput.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.users {
@@ -31,7 +32,6 @@ var $: JQueryStatic = d.i.$;
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
@@ -100,7 +100,7 @@ export var UserInvitesComponent = React.createClass({
             : 'You have not invited anyone yet.'));
     if (user.id === loggedInUser.userId && mayInvite.yes) {
       inviteButton =
-          Button({ onClick: () => openInviteSomeoneDialog(this.addInvite) }, 'Send an Invite');
+          Button({ onClick: () => openInviteSomeoneDialog(this.addInvite) }, "Send an Invite");
     }
     else {
       introText = "Here you can see any invites sent by " + user.username + ".";
@@ -228,9 +228,9 @@ var InviteDialog = createComponent({  // COULD break out to separate debiki2.inv
           EmailInput({ label: 'Email Address', placeholder: 'Enter email',
               ref: 'emailInput', error: this.state.error, onChangeValueOk: this.onEmailChanged })),
         ModalFooter({},
-          Button({ onClick: this.sendInvite, disabled: !this.state.maySubmit,
-              bsStyle: 'primary' }, 'Send Invite'),
-          Button({ onClick: this.close }, 'Cancel'))));
+          PrimaryButton({ onClick: this.sendInvite, disabled: !this.state.maySubmit },
+            "Send Invite"),
+          Button({ onClick: this.close }, "Cancel"))));
   }
 });
 

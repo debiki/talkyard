@@ -25,18 +25,13 @@
 /// <reference path="../page-methods.ts" />
 /// <reference path="SelectCategoryDropdown.ts" />
 /// <reference path="PageRoleDropdown.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.titleeditor {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactCSSTransitionGroup = reactCreateFactory(React.addons.CSSTransitionGroup);
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
-var $: any = window['jQuery'];
 var SelectCategoryDropdown = editor.SelectCategoryDropdown;
 
 
@@ -233,10 +228,6 @@ export var TitleEditor = createComponent({
           "Question can be marked as solved, and Idea topics can be New, " +
           "Planned or Implemented." }));
 
-    var customHtmlPageOption = user.isAdmin
-        ? r.option({ value: PageRole.CustomHtmlPage }, 'Custom HTML page')
-        : null;
-
     var addBackForumIntroButton;
     if (this.props.pageRole === PageRole.Forum) {
       var introPost = this.props.allPosts[BodyId];
@@ -253,8 +244,8 @@ export var TitleEditor = createComponent({
     var saveCancel = this.state.isSaving
       ? r.div({}, 'Saving...')
       : r.div({ className: 'dw-save-btns-etc' },
-          Button({ onClick: this.save, bsStyle: 'primary', className: 'e2eSaveBtn' }, 'Save'),
-          Button({ onClick: this.props.closeEditor, className: 'e2eCancelBtn' }, 'Cancel'));
+          PrimaryButton({ onClick: this.save, className: 'e2eSaveBtn' }, "Save"),
+          Button({ onClick: this.props.closeEditor, className: 'e2eCancelBtn' }, "Cancel"));
 
     return (
       r.div({ className: 'dw-p-ttl-e' },

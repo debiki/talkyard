@@ -21,6 +21,7 @@
 /// <reference path="../editor/commonmark.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
@@ -30,7 +31,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 
 
 export var ReviewAllPanelComponent = React.createClass(<any> {

@@ -23,16 +23,13 @@
 /// <reference path="../model.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="../page-methods.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.editor {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var DropdownModal = utils.DropdownModal;
 var ExplainingListItem = util.ExplainingListItem;
 

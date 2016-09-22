@@ -18,7 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../Server.ts" />
-
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.users {
@@ -29,7 +29,6 @@ var $: JQueryStatic = d.i.$;
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var RouterState = window['ReactRouter'].State;
 var RouterNavigation = window['ReactRouter'].Navigation;
 import UserPreferences = debiki2.users.UserPreferences;

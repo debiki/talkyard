@@ -29,7 +29,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 
 Now I use ReviewTask instead. But keep this for a while, have a look at the approve/reject
 edits code for example. Probably useless but ... perhaps

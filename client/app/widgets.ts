@@ -28,14 +28,17 @@ export var ReactCSSTransitionGroup = isServerSide() ? null :
     reactCreateFactory(React.addons.CSSTransitionGroup);
 
 export var PrimaryButton: any = makeWidget(r.button, ' btn btn-primary');
-export var NormalButton: any = makeWidget(r.button, ' btn btn-default');
-export var Button = NormalButton;
+export var Button: any = makeWidget(r.button, ' btn btn-default');
 
 
 function makeWidget(what, spaceWidgetClasses: string) {
   return function(props, ...children) {
     var props2 = _.assign({}, props || {});
     props2.className = (props.className || '') + spaceWidgetClasses;
+    if (props.primary) {
+      dieIf(what !== r.button, 'EsE4FK0Y2');
+      props2.className = props2.className + ' btn-primary';
+    }
     var args = [props2].concat(children);
     return what.apply(undefined, args);
   }
@@ -43,6 +46,7 @@ function makeWidget(what, spaceWidgetClasses: string) {
 
 
 export function MenuItem(props, ...children) {
+  // props.active?  [5FKW02]
   return (
     r.li({ role: 'presentation', className: props.wrapperClassName, key: props.key },
       r.a({ role: 'button', className: props.className, id: props.id,

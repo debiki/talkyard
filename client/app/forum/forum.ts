@@ -30,6 +30,7 @@
 /// <reference path="../ServerApi.ts" />
 /// <reference path="../page/discussion.ts" />
 /// <reference path="../page/scroll-buttons.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.forum {
@@ -39,11 +40,10 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var DropdownModal = utils.DropdownModal;
 var ExplainingListItem = util.ExplainingListItem;
 type ExplainingTitleText = util.ExplainingTitleText;
-var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem);
+var MenuItem = reactCreateFactory(ReactBootstrap.MenuItem); // try to remove, but: [5FKW02]
 var HelpMessageBox = debiki2.help.HelpMessageBox;
 
 var ReactRouter = window['ReactRouter'];
@@ -464,7 +464,7 @@ var ForumButtons = createComponent({
         debiki2.editor.editNewForumPage(category.id, newTopicTypes[0]);
       }
       else {
-        forum['getCreateTopicDialog']().open(category);
+        die('EsE4FU0W2'); // I deleted the choose-topic-type dialog: UX hostile, no longer needed.
       }
     });
   },
@@ -510,7 +510,7 @@ var ForumButtons = createComponent({
       makeCategoryLink(RoutePathLatest, "Topic list", 'e2eViewTopicsB', 'esForum_navLink');
 
     var categoryMenuItems = store.categories.map((category: Category) => {
-      return MenuItem({ eventKey: category.slug, key: category.id,
+      return MenuItem({ eventKey: category.slug, key: category.id,  // [5FKW02]
           active: activeCategory.id === category.id,
           onClick: () => this.setCategory(category.slug) }, category.name);
     });
@@ -639,15 +639,15 @@ var ForumButtons = createComponent({
     if (sortOrderRoutePath !== RoutePathCategories && !(
           activeCategory.onlyStaffMayCreateTopics && !isStaff(me))) {
      if (this.props.numWaitingForCritique < MaxWaitingForCritique)  // for now only [plugin]
-      createTopicBtn = Button({ onClick: this.createTopic, bsStyle: 'primary', id: 'e2eCreateSth',
+      createTopicBtn = PrimaryButton({ onClick: this.createTopic, id: 'e2eCreateSth',
           className: 'esF_BB_CreateBtn'},
         createTopicBtnTitle(activeCategory));
     }
 
     var createCategoryBtn;
     if (sortOrderRoutePath === RoutePathCategories && me.isAdmin) {
-      createCategoryBtn = Button({ onClick: this.createCategory, bsStyle: 'primary',
-          id: 'e2eCreateCategoryB' }, "Create Category");
+      createCategoryBtn = PrimaryButton({ onClick: this.createCategory, id: 'e2eCreateCategoryB' },
+        "Create Category");
     }
 
     var editCategoryBtn;

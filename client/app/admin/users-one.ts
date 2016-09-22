@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../react-bootstrap-old/Input.ts" />
 /// <reference path="../links.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
@@ -28,7 +29,6 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
@@ -303,7 +303,7 @@ var MemberThreatLevelDialog = createComponent({
           r.div({}, threatLevelText),
           actionContent),
         ModalFooter({},
-          Button({ onClick: this.close }, 'Cancel'))));
+          Button({ onClick: this.close }, "Cancel"))));
   }
 });
 

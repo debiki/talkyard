@@ -22,6 +22,7 @@
 /// <reference path="../utils/PatternInput.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.pagedialogs {
@@ -31,7 +32,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
@@ -150,7 +150,7 @@ var TagsDialog = createComponent({
         ModalHeader({}, ModalTitle({}, title)),
         ModalBody({}, content),
         ModalFooter({},
-          Button({ onClick: this.save, bsStyle: 'primary' }, "Save"),
+          PrimaryButton({ onClick: this.save }, "Save"),
           Button({ onClick: this.close }, "Cancel"))));
   }
 });

@@ -23,6 +23,7 @@
 /// <reference path="../editor/PageRoleDropdown.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.forum {
@@ -32,9 +33,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
-var ButtonGroup = reactCreateFactory(ReactBootstrap.ButtonGroup);
-var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
@@ -287,7 +285,7 @@ var EditCategoryDialog = createClassAndFactory({
     var saveCancel = this.state.isSaving
         ? r.div({}, "Saving...")
         : r.div({},
-            Button({ onClick: this.save, bsStyle: 'primary', id: 'e2eSaveCatB' }, saveButtonTitle),
+            PrimaryButton({ onClick: this.save, id: 'e2eSaveCatB' }, saveButtonTitle),
             Button({ onClick: this.close, id: 'e2eCancelCatB' }, "Cancel"));
 
     return (

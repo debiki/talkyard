@@ -20,6 +20,7 @@
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.util {
@@ -29,7 +30,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
@@ -88,7 +88,7 @@ export var StupidDialog = createComponent({
     //if (_.isString(body)) {  -- why this if?
       body = ModalBody({ className: 'clearfix' },
         r.div({ style: { marginBottom: '2em' }}, body),
-        Button({ onClick: this.close, bsStyle: 'primary' }, stuff.closeButtonTitle || "Okay"));
+        PrimaryButton({ onClick: this.close }, stuff.closeButtonTitle || "Okay"));
     /*}
     else if (body) {
       die("Non-string content not implemented [EsE7KYKW2]");

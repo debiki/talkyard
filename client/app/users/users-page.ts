@@ -20,6 +20,7 @@
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../links.ts" />
 /// <reference path="user-details-actions.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.users {
@@ -30,7 +31,6 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var Nav = reactCreateFactory(ReactBootstrap.Nav);
 var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
 
@@ -41,7 +41,7 @@ var Redirect = reactCreateFactory(ReactRouter.Redirect);
 var DefaultRoute = reactCreateFactory(ReactRouter.DefaultRoute);
 
 
-// Make the components async? So works also if slow-bundle.js hasn't yet been loaded? [4WP7GU5]
+// Make the components async? So works also if more-bundle.js not yet loaded? [4WP7GU5]
 export function routes() {
   return (
     Route({ path: '/-/users/', component: UsersHomeComponent },
@@ -206,7 +206,7 @@ var UserBar = createComponent({
         : null;
 
     var sendMessageButton = me_maySendDirectMessageTo(loggedInUser, user)
-        ? Button({ onClick: this.sendMessage, bsStyle: 'primary' }, "Send Message")
+        ? PrimaryButton({ onClick: this.sendMessage }, "Send Message")
         : null;
 
     return (
@@ -345,7 +345,7 @@ var UserInfo = createComponent({
       ? r.div({},
           // File inputs are ugly, so we hide the file input (size 0 x 0) and activate
           // it by clicking a beautiful button instead:
-          Button({ id: 'e2eChooseAvatarInput', className: 'esMedAvtr_uplBtn', bsStyle: 'primary',
+          PrimaryButton({ id: 'e2eChooseAvatarInput', className: 'esMedAvtr_uplBtn',
               onClick: this.selectAndUploadAvatar }, uploadAvatarBtnText),
           r.input({ name: 'files', type: 'file', multiple: false, // dupl code [2UK503]
              ref: 'chooseAvatarInput', style: { width: 0, height: 0 }}))

@@ -19,12 +19,12 @@
 @(tpi: debiki.SiteTpi, startupCode: String)
 
 
-<script src="@tpi.assetUrl(s"fast-bundle.${tpi.minMaxJs}")"></script>
+<script src="@tpi.assetUrl(s"slim-bundle.${tpi.minMaxJs}")"></script>
 @* If in a forum, or the admin area or about user section, then load more scripts directly,
 for now. Later, use the Server.ts loadSlowScriptBundle etc functions. But that requires
 rendering async react-router components [4WP7GU5]*@
 @if(tpi.anyCurrentPageRole.contains(PageRole.Forum) || tpi.anyCurrentPageId.isEmpty) {
-  <script src="@tpi.assetUrl(s"slow-bundle.${tpi.minMaxJs}")"></script>
+  <script src="@tpi.assetUrl(s"more-bundle.${tpi.minMaxJs}")"></script>
 }
 <script>
 @startupCode

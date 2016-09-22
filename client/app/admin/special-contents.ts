@@ -21,6 +21,7 @@
 /// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../utils/PageUnloadAlerter.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
@@ -30,7 +31,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var PageUnloadAlerter = utils.PageUnloadAlerter;
 
 
@@ -98,7 +98,7 @@ export var SpecialContent = createComponent({
     if (textChanged) {
       saveResetBtns =
         r.div({},
-          Button({ onClick: this.saveEdits, bsStyle: 'primary' }, "Save"),
+          PrimaryButton({ onClick: this.saveEdits }, "Save"),
           Button({ onClick: this.cancelEdits }, 'Cancel'));
     }
     else if (!textChanged && !hasDefaultText) {

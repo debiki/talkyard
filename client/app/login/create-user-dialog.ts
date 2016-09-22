@@ -24,6 +24,7 @@
 /// <reference path="../util/stupid-dialog.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.login {
@@ -33,7 +34,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
@@ -269,8 +269,8 @@ export var CreateUserDialogContent = createClassAndFactory({
         usernameInput,
         passwordInput,
         fullNameInput,
-        Button({ onClick: this.doCreateUser, disabled: disableSubmit, id: 'e2eSubmit',
-            className: 'btn-primary', tabIndex: 2 }, "Create Account")));
+        PrimaryButton({ onClick: this.doCreateUser, disabled: disableSubmit, id: 'e2eSubmit',
+            tabIndex: 2 }, "Create Account")));
   }
 });
 
@@ -329,7 +329,7 @@ var AddressVerificationEmailSentDialog = createComponent({
               "sent an email to you. Please click the link in the email to activate " +
               "your account. You can close this page.")),
         ModalFooter({},
-          Button({ onClick: this.close }, 'Okay'))));
+          Button({ onClick: this.close }, "Okay"))));
   }
 });
 

@@ -22,6 +22,7 @@
 /// <reference path="../util/stupid-dialog.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.pagedialogs {
@@ -31,7 +32,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
@@ -118,7 +118,7 @@ var MovePostsDialog = createComponent({
         regex: /^((https?:\/\/)?[^/]+)?\/-[a-zA-Z0-9_]+#post-[0-9]+/,
         message: "Invalid new parent post link, should be like: " + location.hostname +
             "/-[page_id]/#post-[post_nr]" }),
-      Button({ onClick: this.doMove, bsStyle: 'primary', disabled: !this.state.ok }, "Move"),
+      PrimaryButton({ onClick: this.doMove, disabled: !this.state.ok }, "Move"),
       Button({ onClick: this.previewNewParent }, "Preview"));
 
     return (

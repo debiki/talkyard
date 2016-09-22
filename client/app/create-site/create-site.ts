@@ -22,6 +22,7 @@
 /// <reference path="../Server.ts" />
 /// <reference path="../util/EmailInput.ts" />
 /// <reference path="../utils/PatternInput.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.createsite {
@@ -32,7 +33,6 @@ var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var ButtonGroup = reactCreateFactory(ReactBootstrap.ButtonGroup);
 var Panel = reactCreateFactory(ReactBootstrap.Panel);
 var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
@@ -229,9 +229,8 @@ function NextStepButton(props, text) {
   // away from the previous field. onFocus apparently works with mouse & touch too.
   // However, onFocus apparently does *not* work in Safari, so listen to onClick too.
   return (
-      Button({ onClick: props.onShowNextStep, onFocus: props.onShowNextStep,
-          bsStyle: 'primary', style: { display: props.showThisStep ? 'block' : 'none' },
-          id: props.id },
+      PrimaryButton({ onClick: props.onShowNextStep, onFocus: props.onShowNextStep,
+          style: { display: props.showThisStep ? 'block' : 'none' }, id: props.id },
         text));
 }
 

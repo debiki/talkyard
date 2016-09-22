@@ -19,7 +19,7 @@
 /// <reference path="../../typedefs/modernizr/modernizr.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../model.ts" />
-/// <reference path="../fast-bundle.d.ts" />
+/// <reference path="../slim-bundle.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.editor {
@@ -30,7 +30,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
@@ -1115,17 +1114,16 @@ export var Editor = createComponent({
               r.div({ className: 'preview', ref: 'preview',
                   dangerouslySetInnerHTML: { __html: this.state.safePreviewHtml }})),
             r.div({ className: 'submit-cancel-btns' },
-              Button({ onClick: this.onSaveClick, bsStyle: 'primary', tabIndex: 1,
-                  className: 'e2eSaveBtn' },
+              PrimaryButton({ onClick: this.onSaveClick, tabIndex: 1, className: 'e2eSaveBtn' },
                 saveButtonTitle),
-              Button({ onClick: this.onCancelClick, tabIndex: 1,
-                  className: 'e2eCancelBtn' }, cancelButtonTitle),
+              Button({ onClick: this.onCancelClick, tabIndex: 1, className: 'e2eCancelBtn' },
+                cancelButtonTitle),
               Button({ onClick: this.cycleMaxHorizBack, className: 'esEdtr_cycleMaxHzBtn',
                   tabIndex: 4 }, maximizeAndHorizSplitBtnTitle),
               // These two buttons are hidden via CSS if the window is wide. Higher tabIndex
               // because float right.
               Button({ onClick: this.toggleMinimized, id: 'esMinimizeBtn',
-                  bsStyle: (this.state.showMinimized ? 'primary' : undefined), tabIndex: 3 },
+                  primary: this.state.showMinimized, tabIndex: 3 },
                 this.state.showMinimized ? 'Show editor again' : 'Minimize'),
               Button({ onClick: this.togglePreview, id: 'esPreviewBtn', tabIndex: 2 },
                 this.state.showOnlyPreview ? 'Edit' : 'Preview'),

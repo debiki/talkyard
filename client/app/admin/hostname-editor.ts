@@ -21,6 +21,7 @@
 /// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../utils/PatternInput.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
@@ -31,7 +32,6 @@ var $: JQueryStatic = d.i.$;
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
@@ -106,8 +106,8 @@ var HostnameEditorDialog = createComponent({
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esUsrDlg' },
         ModalBody({}, content),
         ModalFooter({},
-          Button({ onClick: this.submitHostname, disabled: !this.state.maySubmit,
-              bsStyle: 'primary' }, "Change hostname"),
+          PrimaryButton({ onClick: this.submitHostname, disabled: !this.state.maySubmit },
+            "Change hostname"),
           Button({ onClick: this.close }, "Cancel"))));
   }
 });

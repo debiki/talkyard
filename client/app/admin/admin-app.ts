@@ -28,6 +28,7 @@
 /// <reference path="review-posts.ts" />
 /// <reference path="users.ts" />
 /// <reference path="users-one.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
@@ -42,7 +43,6 @@ var Nav = reactCreateFactory(ReactBootstrap.Nav);
 var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
 var TabbedArea = reactCreateFactory(ReactBootstrap.TabbedArea);
 var TabPane = reactCreateFactory(ReactBootstrap.TabPane);
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var Alert = reactCreateFactory(ReactBootstrap.Alert);
 
 var ReactRouter = window['ReactRouter'];
@@ -53,7 +53,7 @@ var PageUnloadAlerter = utils.PageUnloadAlerter;
 
 var AdminRoot = '/-/admin/';
 
-// Make the components async? So works also if slow-bundle.js hasn't yet been loaded? [4WP7GU5]
+// Make the components async? So works also if more-bundle.js hasn't yet been loaded? [4WP7GU5]
 export function routes() {
   return [
     Redirect({ key: 'redir', from: AdminRoot, to: AdminRoot + 'settings' }), // later: --> /dashboard
@@ -192,7 +192,7 @@ var AdminAppComponent = React.createClass(<any> {
     var saveBar = _.isEmpty(this.state.editedSettings) ? null :
       r.div({ className: 'esA_SaveBar' },
         r.div({ className: 'container' },
-          Button({ onClick: this.saveSettings, bsStyle: 'primary',
+          PrimaryButton({ onClick: this.saveSettings,
             className: 'esA_SaveBar_SaveAllB' }, "Save all changes" ),
           Button({ onClick: this.undoSettings,
             className: 'esA_SaveBar_UndoAllB' }, "Undo all changes" )));

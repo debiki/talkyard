@@ -17,16 +17,15 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.forum {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);

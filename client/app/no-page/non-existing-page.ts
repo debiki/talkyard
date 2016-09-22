@@ -21,6 +21,7 @@
 /// <reference path="../react-elements/name-login-btns.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.nopage {
@@ -30,7 +31,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 
 
 /**
@@ -97,7 +97,7 @@ export var SignUpAsAdmin = createComponent({
       : null;
 
     var loginBtn =
-        Button({ id: 'e2eLogin', disabled: !!anyEmailProblem, bsStyle: 'primary',
+        PrimaryButton({ id: 'e2eLogin', disabled: !!anyEmailProblem,
             onClick: () => login.getLoginDialog().openToSignUp(LoginReason.BecomeAdmin) },
           "Continue");
 
@@ -192,8 +192,8 @@ export var CreateSomethingHere = createComponent({
         /* Add this back later if there'll be Blog and Wiki options too [8GYK34]
         r.p({}, message),
         r.div({ className: 'do-what-options' },
-          Button({ active: createWhat === PageRole.Forum, id: 'e2eCreateForum',
-              bsStyle: 'primary', disabled: anyCreateForumPanel || anyCreateEmbeddedCommentsPanel,
+          PrimaryButton({ active: createWhat === PageRole.Forum, id: 'e2eCreateForum',
+              disabled: anyCreateForumPanel || anyCreateEmbeddedCommentsPanel,
               onClick: () => this.setState({ createWhat: PageRole.Forum })},
               'Create a Forum'),
           anyCreateEmbeddedCommentsButton),
@@ -227,10 +227,10 @@ export var CreateForumPanel = createComponent({
   render: function() {
     return (
       r.div({},
-        Input({ type: 'text', label: 'Forum name:', placeholder: 'Enter forum name here',
+        Input({ type: 'text', label: "Forum name:", placeholder: "Enter forum name here",
             ref: 'forumName', onChange: this.handleChange }),
-        Button({ onClick: this.createForum, disabled: !this.state.forumName.length,
-            id: 'e2eDoCreateForum', bsStyle: 'primary' }, 'Create Forum')));
+        PrimaryButton({ onClick: this.createForum, disabled: !this.state.forumName.length,
+            id: 'e2eDoCreateForum' }, "Create Forum")));
   }
 });
 

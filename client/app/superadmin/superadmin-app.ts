@@ -23,6 +23,7 @@
 /// <reference path="../topbar/topbar.ts" />
 /// <reference path="../utils/PageUnloadAlerter.ts" />
 /// <reference path="../utils/PatternInput.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.superadmin {
@@ -37,7 +38,6 @@ var Nav = reactCreateFactory(ReactBootstrap.Nav);
 var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
 var TabbedArea = reactCreateFactory(ReactBootstrap.TabbedArea);
 var TabPane = reactCreateFactory(ReactBootstrap.TabPane);
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var Alert = reactCreateFactory(ReactBootstrap.Alert);
 
 var ReactRouter = window['ReactRouter'];

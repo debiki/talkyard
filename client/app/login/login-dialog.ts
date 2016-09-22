@@ -24,6 +24,7 @@
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="create-user-dialog.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.login {
@@ -33,7 +34,6 @@ var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 var ButtonGroup = reactCreateFactory(ReactBootstrap.ButtonGroup);
 var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
@@ -208,7 +208,7 @@ var LoginDialog = createClassAndFactory({
           ModalTitle({ id: 'e2eLoginDialogTitle' }, title));
 
     var modalFooter = state.preventClose ? ModalFooter({}) :
-        ModalFooter({}, Button({ onClick: this.close }, 'Cancel'));
+        ModalFooter({}, Button({ onClick: this.close }, "Cancel"));
 
     return (
       Modal({ show: state.isOpen, onHide: this.close, dialogClassName: 'dw-login-modal' + fade,
@@ -486,7 +486,7 @@ var PasswordLoginDialogContent = createClassAndFactory({
         Input({ type: 'password', label: "Password:", ref: 'passwordInput',
             onChange: this.clearError, id: 'e2ePassword' }),
         badPasswordMessage,
-        Button({ onClick: this.doLogin, bsStyle: 'primary', id: 'e2eSubmit' },
+        PrimaryButton({ onClick: this.doLogin, id: 'e2eSubmit' },
           "Login" + inOrderTo(this.props.loginReason)),
         r.br(),
         r.a({ href: debiki.internal.serverOrigin + '/-/reset-password/specify-email',

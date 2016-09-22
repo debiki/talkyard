@@ -19,15 +19,13 @@
 /// <reference path="../model.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="../oop-methods.ts" />
+/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.notification {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Button = reactCreateFactory(ReactBootstrap.Button);
 
 
 export var Notification = createComponent({

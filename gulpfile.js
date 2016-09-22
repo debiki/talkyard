@@ -76,7 +76,7 @@ var thisIsAConcatenationMessage =
 // - Testing that fallbacks to locally served files work is boring.
 // - Plus I read in comments in some blog that some countries actually sometimes
 //   block Google's CDN.
-var fastJsFiles = [
+var slimJsFiles = [
       // Place React first so we can replace it at index 0 & 1 with the optimized min.js versions.
       'node_modules/react/dist/react-with-addons.js',
       'node_modules/react-dom/dist/react-dom.js',
@@ -131,11 +131,11 @@ var fastJsFiles = [
       'target/client/app/utterscroll/utterscroll-init-tips.js',//
       'client/app/utterscroll/utterscroll.js',//
       'target/client/app/utils/post-json.js',
-      'target/client/fast-typescript.js',
+      'target/client/slim-typescript.js',
       'target/client/app/startup.js'];
 
-var slowJsFiles = [
-      'target/client/slow-typescript.js'];
+var moreJsFiles = [
+      'target/client/more-typescript.js'];
 
 var staffJsFiles = [
       'target/client/staff-typescript.js'];
@@ -231,16 +231,16 @@ function compileServerTypescript() {
 }
 
 
-var fastTypescriptProject = typeScript.createProject({
+var slimTypescriptProject = typeScript.createProject({
     target: 'ES5',
     noExternalResolve: true,
-    out: 'fast-typescript.js'
+    out: 'slim-typescript.js'
 });
 
-var slowTypescriptProject = typeScript.createProject({
+var moreTypescriptProject = typeScript.createProject({
   target: 'ES5',
   noExternalResolve: true,
-  out: 'slow-typescript.js'
+  out: 'more-typescript.js'
 });
 
 var staffTypescriptProject = typeScript.createProject({
@@ -259,17 +259,17 @@ var editorTypescriptProject = typeScript.createProject({
 function compileFastTypescript() {
   var stream = gulp.src([
         'client/app/**/*.ts',
-        '!client/app/**/*.slow.ts',
+        '!client/app/**/*.more.ts',
         '!client/app/**/*.editor.ts',
         '!client/app/**/*.staff.ts',
-        '!client/app/fast-bundle.d.ts',
+        '!client/app/slim-bundle.d.ts',
         'client/shared/plain-old-javascript.d.ts',
         'client/typedefs/**/*.ts'])
     .pipe(wrap(nextFileTemplate))
-    .pipe(typeScript(fastTypescriptProject));
+    .pipe(typeScript(slimTypescriptProject));
   if (watchAndLiveForever) {
     stream.on('error', function() {
-      console.log('\n!!! Error compiling fast TypeScript [EsE4GDTX8]!!!\n');
+      console.log('\n!!! Error compiling slim TypeScript [EsE4GDTX8]!!!\n');
     });
   }
   return stream.pipe(gulp.dest('target/client/'));
@@ -299,7 +299,7 @@ gulp.task('compile-typescript', function () {
   return es.merge(
       compileServerTypescript(),
       compileFastTypescript(),
-      compileMoreTypescript('slow', slowTypescriptProject),
+      compileMoreTypescript('more', moreTypescriptProject),
       compileMoreTypescript('staff', staffTypescriptProject),
       compileMoreTypescript('editor', editorTypescriptProject));
 });
@@ -327,8 +327,8 @@ function makeConcatDebikiScriptsStream() {
   }
 
   return es.merge(
-      makeConcatStream('fast-bundle.js', fastJsFiles, 'DoCheckNewer'),
-      makeConcatStream('slow-bundle.js', slowJsFiles, 'DoCheckNewer'),
+      makeConcatStream('slim-bundle.js', slimJsFiles, 'DoCheckNewer'),
+      makeConcatStream('more-bundle.js', moreJsFiles, 'DoCheckNewer'),
       makeConcatStream('staff-bundle.js', staffJsFiles, 'DoCheckNewer'),
       makeConcatStream('editor-bundle.js', editorJsFiles, 'DoCheckNewer'),
       makeConcatStream('embedded-comments.js', embeddedJsFiles),
@@ -362,8 +362,8 @@ function makeConcatAllScriptsStream() {
 gulp.task('insert-prod-scripts', function() {
   // This script isn't just a minified script — it contains lots of optimizations.
   // So we want to use react-with-addons.min.js, rather than minifying the .js ourselves.
-  fastJsFiles[0] = 'node_modules/react/dist/react-with-addons.min.js';
-  fastJsFiles[1] = 'node_modules/react-dom/dist/react-dom.min.js';
+  slimJsFiles[0] = 'node_modules/react/dist/react-with-addons.min.js';
+  slimJsFiles[1] = 'node_modules/react-dom/dist/react-dom.min.js';
 });
 
 

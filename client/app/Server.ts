@@ -160,14 +160,14 @@ export function loadEditorEtcScriptsAndLater(callback?) {
 }
 
 
-export function loadSlowScriptBundle(callback) {
+export function loadMoreScriptsBundle(callback) {
   if (slowBundleStatus) {
-    slowBundleStatus.done(callback);
+    setTimeout(() => slowBundleStatus.done(callback), 0);
     return;
   }
   slowBundleStatus = $.Deferred();
   window['yepnope']({
-    both: [d.i.assetUrlPrefix + 'slow-bundle.' + d.i.minMaxJs],
+    both: [d.i.assetUrlPrefix + 'more-bundle.' + d.i.minMaxJs],
     complete: () => {
       window['ReactSelect'] = reactCreateFactory(window['Select']);
       slowBundleStatus.resolve();
@@ -177,9 +177,9 @@ export function loadSlowScriptBundle(callback) {
 }
 
 
-export function loadStaffScriptBundle(callback) {
+export function loadStaffScriptsBundle(callback) {
   if (staffBundleStatus) {
-    staffBundleStatus.done(callback);
+    setTimeout(() => staffBundleStatus.done(callback), 0);
     return;
   }
   staffBundleStatus = $.Deferred();

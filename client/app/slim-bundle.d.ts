@@ -44,4 +44,10 @@ declare namespace debiki2 {
   var SelectCategoryDropdown: any;
   var PageRoleDropdown: any;
 
+  // From widgets.ts:
+  var PrimaryButton;
+  var Button;
+  var MenuItem;
+  var MenuItemLink;
+  var MenuItemDivider;
 }
