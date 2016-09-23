@@ -32,14 +32,29 @@ export var Button: any = makeWidget(r.button, ' btn btn-default');
 
 
 function makeWidget(what, spaceWidgetClasses: string) {
-  return function(props, ...children) {
-    var props2 = _.assign({}, props || {});
-    props2.className = (props.className || '') + spaceWidgetClasses;
-    if (props.primary) {
-      dieIf(what !== r.button, 'EsE4FK0Y2');
-      props2.className = props2.className + ' btn-primary';
+  return function(origProps, ...children) {
+    var newProps = _.assign({}, origProps || {});
+    newProps.className = (origProps.className || '') + spaceWidgetClasses;
+
+    // Prevent automatic submission of Button when placed in a <form>.
+    // And, if primary button, add Bootstrap's primary button color class.
+    if (what === r.button || what === r.input && r.type === 'submit') {
+      newProps.onClick = function(event) {
+        event.preventDefault();
+        if (origProps.disabled) {
+          event.stopPropagation();
+        }
+        if (origProps.onClick) {
+          origProps.onClick();
+        }
+      };
+
+      if (origProps.primary) {
+        newProps.className = newProps.className + ' btn-primary';
+      }
     }
-    var args = [props2].concat(children);
+
+    var args = [newProps].concat(children);
     return what.apply(undefined, args);
   }
 }
