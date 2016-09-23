@@ -10,13 +10,13 @@ declare function reactCreateFactory(x);
 
 declare namespace debiki2 {
 
+  var Link; // ReactRouter.Link
   var NavLink: any;
   var createComponent: any;
   var createClassAndFactory: any;
 
   namespace utils {
     var scrollIntoViewInPageColumn;
-    var PageUnloadAlerter;
     var makeMountNode;
     var loadDiffMatchPatch;
     var makeHtmlDiff;
@@ -55,8 +55,13 @@ declare namespace debiki2 {
   var putInLocalStorage: any;
   var event_isCtrlEnter: any;
   var page_isPrivateGroup: any;
-  var isBlank: any;
   var page_isPrivateGroup: any;
+
+  function firstDefinedOf(x, y, z?): any;
+  function isNullOrUndefined(x): boolean;
+  function isDefined2(x): boolean;
+  function nonEmpty(x): boolean;
+  function isBlank(x: string): boolean;
 
   var isWikiPost;
   var isStaff;
@@ -72,11 +77,14 @@ declare namespace debiki2 {
   var userId_isGuest;
   var store_canDeletePage;
   var store_canUndeletePage;
+  var trustLevel_toString;
+  var siteStatusToString;
 
   var linkToNotificationSource;
   var linkToAdminPageAdvancedSettings;
   var linkToRedirToAboutCategoryPage;
   var linkToUserInAdminArea;
+  var linkToUserProfilePage;
 
   var anyForbiddenPassword;
 

@@ -16,21 +16,14 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
-/// <reference path="../model.ts" />
-/// <reference path="../rules.ts" />
-/// <reference path="../Server.ts" />
-/// <reference path="../utils/PageUnloadAlerter.ts" />
-/// <reference path="../widgets.ts" />
+/// <reference path="../slim-bundle.d.ts" />
+/// <reference path="../more-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.admin {
+   namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
 var PageUnloadAlerter = utils.PageUnloadAlerter;
 
 

@@ -20,9 +20,8 @@
 /// <reference path="watchbar/watchbar.ts" />
 /// <reference path="page/metabar.ts" />
 /// <reference path="react-elements/name-login-btns.ts" />
-/// <reference path="admin/admin-app.ts" />
-/// <reference path="superadmin/superadmin-app.ts" />
 /// <reference path="more-bundle-already-loaded.d.ts" />
+/// <reference path="staff-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2 {
@@ -46,7 +45,7 @@ export function startRemainingReactRoots() {
   var tagsAppElem = document.getElementById('theTagsApp');
   if (tagsAppElem)
     ReactDOM.render(
-      Router({ history: ReactRouter.browserHistory }, window['tags'].routes()), tagsAppElem);
+      Router({ history: ReactRouter.browserHistory }, tags.routes()), tagsAppElem);
 
   var nonExistingPageElem = document.getElementById('dw-non-existing-page');
   if (nonExistingPageElem)
@@ -71,7 +70,7 @@ export function startRemainingReactRoots() {
     ReactDOM.render(
         // .routes() always available, because the more-bundle.js is loaded on non-pages.
         // But unknown at compile time ... currently. Later: incl about user page in slim-bundle.js?
-        Router({ history: ReactRouter.browserHistory }, users['routes']()), userPageElem);
+        Router({ history: ReactRouter.browserHistory }, users.routes()), userPageElem);
   }
 
   var createSiteElem = document.getElementById('dw-react-create-site');

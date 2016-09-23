@@ -3,6 +3,11 @@ declare namespace debiki2 {
 
   var Input;
 
+  namespace utils {
+    var PatternInput;  // REFACTOR RENAME move to debiki2
+    var PageUnloadAlerter;
+  }
+
 }
 
 
@@ -53,6 +58,10 @@ declare namespace debiki2.createsite {
   var routes;
 }
 
+declare namespace debiki2.tags {
+  var routes;
+}
+
 declare namespace debiki2.titleeditor {
   var TitleEditor;
 }
@@ -64,6 +73,7 @@ declare namespace debiki2.forum {
 }
 
 declare namespace debiki2.users {
+  var routes;
   function openInviteSomeoneDialog(addInvite);
 }
 

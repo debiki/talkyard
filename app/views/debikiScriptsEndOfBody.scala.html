@@ -16,7 +16,7 @@
  *@
 
 @import com.debiki.core.PageRole
-@(tpi: debiki.SiteTpi, startupCode: String)
+@(tpi: debiki.SiteTpi, startupCode: String, loadStaffBundle: Boolean)
 
 
 <script src="@tpi.assetUrl(s"slim-bundle.${tpi.minMaxJs}")"></script>
@@ -24,7 +24,10 @@
 for now. Later, use the Server.ts loadSlowScriptBundle etc functions. But that requires
 rendering async react-router components [4WP7GU5]*@
 @if(tpi.anyCurrentPageRole.contains(PageRole.Forum) || tpi.anyCurrentPageId.isEmpty) {
-  <script src="@tpi.assetUrl(s"more-bundle.${tpi.minMaxJs}")"></script>
+<script src="@tpi.assetUrl(s"more-bundle.${tpi.minMaxJs}")"></script>
+}
+@if(loadStaffBundle) {
+<script src="@tpi.assetUrl(s"staff-bundle.${tpi.minMaxJs}")"></script>
 }
 <script>
 @startupCode

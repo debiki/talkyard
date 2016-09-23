@@ -16,28 +16,19 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
-/// <reference path="../ReactStore.ts" />
-/// <reference path="../Server.ts" />
-/// <reference path="../topbar/topbar.ts" />
-/// <reference path="../utils/PageUnloadAlerter.ts" />
-/// <reference path="settings.ts" />
-/// <reference path="review.ts" />
-/// <reference path="review-all.ts" />
-/// <reference path="review-posts.ts" />
-/// <reference path="users.ts" />
-/// <reference path="users-one.ts" />
-/// <reference path="../widgets.ts" />
+/// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../more-bundle-already-loaded.d.ts" />
+/// <reference path="review.staff.ts" />
+/// <reference path="review-all.staff.ts" />
+/// <reference path="review-posts.staff.ts" />
+/// <reference path="users.staff.ts" />
+/// <reference path="users-one.staff.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Nav = reactCreateFactory(ReactBootstrap.Nav);
 var NavItem = reactCreateFactory(ReactBootstrap.NavItem);

@@ -109,9 +109,10 @@ class SiteTpi protected (val debikiRequest: DebikiRequest[_], val json: Option[S
   def debikiScriptsEndOfBody =
     debikiScriptsEndOfBodyCustomStartupCode("debiki.internal.startDiscussionPage();")
 
-  def debikiScriptsEndOfBodyCustomStartupCode(startupCode: String) = xml.Unparsed(
+  def debikiScriptsEndOfBodyCustomStartupCode(startupCode: String,
+        loadStaffBundle: Boolean = false) = xml.Unparsed(
     views.html.debikiScriptsEndOfBody(
-      this, startupCode = startupCode).body)
+      this, startupCode = startupCode, loadStaffBundle = loadStaffBundle).body)
 
 
   def hostname = debikiRequest.host

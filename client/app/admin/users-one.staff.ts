@@ -16,27 +16,19 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../links.ts" />
-/// <reference path="../widgets.ts" />
+/// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../more-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
-
-var ReactRouter = window['ReactRouter'];
-var RouterNavigation = ReactRouter.Navigation;
-var RouterState = ReactRouter.State;
 
 
 export var AdminUserPageComponent = React.createClass(<any> {

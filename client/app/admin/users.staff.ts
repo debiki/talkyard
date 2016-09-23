@@ -17,21 +17,15 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/moment/moment.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
-/// <reference path="../ReactStore.ts" />
-/// <reference path="../Server.ts" />
-/// <reference path="../links.ts" />
-/// <reference path="review-posts.ts" />
-/// <reference path="../widgets.ts" />
+/// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../more-bundle-already-loaded.d.ts" />
+/// <reference path="review-posts.staff.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.admin {
+   namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Nav = reactCreateFactory(ReactBootstrap.Nav);
 var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
@@ -100,8 +94,6 @@ export var InvitedUsersPanelComponent = React.createClass({
 
 
 var UserList = createComponent({
-  mixins: [SaveSettingMixin],
-
   componentDidMount: function() {
     Server.listCompleteUsers(this.props.whichUsers, users => {
       this.setState({ users: users });

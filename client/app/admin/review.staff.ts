@@ -16,12 +16,9 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../../typedefs/moment/moment.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
-/// <reference path="../ReactStore.ts" />
-/// <reference path="../Server.ts" />
-/// <reference path="review-all.ts" />
-/// <reference path="review-posts.ts" />
+/// <reference path="../slim-bundle.d.ts" />
+/// <reference path="review-all.staff.ts" />
+/// <reference path="review-posts.staff.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {

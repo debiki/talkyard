@@ -46,7 +46,7 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
           event.stopPropagation();
         }
         if (origProps.onClick) {
-          origProps.onClick();
+          origProps.onClick(event);
         }
       };
 

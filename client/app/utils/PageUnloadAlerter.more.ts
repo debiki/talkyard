@@ -15,9 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../prelude.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
+/// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../../typedefs/jquery/jquery.d.ts" />
+/// <reference path="../slim-bundle.d.ts" />
+/// <reference path="../plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.utils.PageUnloadAlerter {

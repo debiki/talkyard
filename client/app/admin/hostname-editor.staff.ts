@@ -16,16 +16,14 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
-/// <reference path="../utils/PatternInput.more.ts" />
+/// <reference path="../more-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
