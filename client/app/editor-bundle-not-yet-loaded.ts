@@ -15,15 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../Server.ts" />
-
-// Things in editor-bundle.js that we can access from outside the bundle,
-// once it's been loaded already.
-declare namespace  debiki2.editor {
-  function getOrCreateEditor(success: (editor: any) => void);
-  function startMentionsParserImpl(textarea, onTextEdited);
-}
-
+/// <reference path="Server.ts" />
+/// <reference path="editor-bundle-already-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.editor {

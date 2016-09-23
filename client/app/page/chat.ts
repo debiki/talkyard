@@ -23,9 +23,9 @@
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
-/// <reference path="../editor/editor-api.ts" />
 /// <reference path="discussion.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
+/// <reference path="../editor-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.page {

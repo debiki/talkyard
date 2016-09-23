@@ -30,7 +30,7 @@
 /// <reference path="../page/scroll-buttons.ts" />
 /// <reference path="../widgets.ts" />
 /// <reference path="../more-bundle-not-yet-loaded.ts" />
-/// <reference path="../editor/editor-api.ts" />
+/// <reference path="../editor-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.forum {

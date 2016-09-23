@@ -22,8 +22,8 @@
 /// <reference path="../help/help.ts" />
 /// <reference path="../store-getters.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
-/// <reference path="../editor/editor-api.ts" />
 /// <reference path="../sidebar/sidebar.ts" />
+/// <reference path="../editor-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.watchbar {
