@@ -102,7 +102,6 @@ var slimJsFiles = [
       'node_modules/lodash/lodash.min.js',
       'node_modules/moment/min/moment.min.js',
       'node_modules/eventemitter2/lib/eventemitter2.js',
-      'node_modules/react-bootstrap/dist/react-bootstrap.js',
       'node_modules/react-router/umd/ReactRouter.js',
       'node_modules/jquery-resizable/resizable.js',
       'client/third-party/gifffer/gifffer.js',
@@ -116,7 +115,6 @@ var slimJsFiles = [
       'target/client/app/utils/jquery-find.js',
       'target/client/app/page/layout-threads.js',
       'target/client/app/page/resize-threads.js',
-      'target/client/app/login/login.js',
       'target/client/app/editor/mentions-markdown-it-plugin.js',
       'target/client/app/editor/onebox-markdown-it-plugin.js',
       //'target/client/app/posts/monitor-reading-progress-unused.js',
@@ -125,7 +123,6 @@ var slimJsFiles = [
       //'target/client/app/posts/unread-unused.js',
       'target/client/app/utils/util.js',
       'target/client/app/utils/util-browser.js',
-      'target/client/app/utils/util-play.js',
       'target/client/app/utterscroll/utterscroll-init-tips.js',//
       'client/app/utterscroll/utterscroll.js',//
       'target/client/app/utils/post-json.js',
@@ -133,6 +130,7 @@ var slimJsFiles = [
       'target/client/app/startup.js'];
 
 var moreJsFiles = [
+      'node_modules/react-bootstrap/dist/react-bootstrap.js',
       'client/third-party/popuplib.js',
       'target/client/app/login/login-popup.js',
       'target/client/more-typescript.js'];
