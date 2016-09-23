@@ -20,8 +20,6 @@
 /// <reference path="../links.ts" />
 /// <reference path="../widgets.ts" />
 /// <reference path="../page-methods.ts" />
-/// <reference path="../login/login-dialog.ts" />
-/// <reference path="../page-tools/page-tools.ts" />
 /// <reference path="../utils/page-scroll-mixin.ts" />
 /// <reference path="../utils/scroll-into-view.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
@@ -29,6 +27,7 @@
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../notification/Notification.ts" />
 /// <reference path="../../typedefs/keymaster/keymaster.d.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.reactelements {  // rename to debiki2.topbar
@@ -59,8 +58,6 @@ export var TopBar = createComponent({
   },
 
   componentWillMount: function() {
-    // We call it from render(). (Is that ok?)
-    pagetools.getPageToolsDialog();
   },
 
   componentDidMount: function() {
@@ -119,11 +116,11 @@ export var TopBar = createComponent({
   },
 
   onSignUpClick: function() {
-    login.getLoginDialog().openToSignUp(this.props.purpose || 'LoginToLogin');
+    morebundle.openLoginDialogToSignUp(this.props.purpose || 'LoginToLogin');
   },
 
   onLoginClick: function() {
-    login.getLoginDialog().openToLogIn(this.props.purpose || 'LoginToLogin');
+    morebundle.openLoginDialog(this.props.purpose || 'LoginToLogin');
   },
 
   onLogoutClick: function() {
@@ -131,7 +128,7 @@ export var TopBar = createComponent({
   },
 
   showTools: function() {
-    pagetools.getPageToolsDialog().open();
+    morebundle.openPageToolsDialog();
   },
 
   viewOlderNotfs: function() {
@@ -265,9 +262,10 @@ export var TopBar = createComponent({
     // Placed here so it'll be available also when one has scrolled down a bit.
 
     // (Is it ok to call another React component from here? I.e. the page tools dialog.)
-    var toolsButton = !isStaff(me) || pagetools.getPageToolsDialog().isEmpty() ? null :
+    var toolsButton; /* EsE_MORE_UNIMPL  !isStaff(me) || pagetools.getPageToolsDialog().isEmpty() ? null :
         Button({ className: 'dw-a-tools', onClick: this.showTools },
           r.a({ className: 'icon-wrench' }, 'Tools'));
+          */
 
     // ------- Search button
 

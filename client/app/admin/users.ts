@@ -23,6 +23,7 @@
 /// <reference path="../links.ts" />
 /// <reference path="review-posts.ts" />
 /// <reference path="../widgets.ts" />
+/// <reference path="../more-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {

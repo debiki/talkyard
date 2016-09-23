@@ -259,8 +259,7 @@ export function showForumIntro(visible: boolean) {
 
 
 export function editPostWithNr(postNr: number) {
-  var anyReturnToUrl = d.i.makeReturnToPostUrlForVerifEmail(postNr);
-  login.loginIfNeeded('LoginToEdit', anyReturnToUrl, () => {
+  morebundle.loginIfNeededReturnToPost('LoginToEdit', postNr, () => {
     if (d.i.isInEmbeddedCommentsIframe) {
       sendToEditorIframe(['editorEditPost', postNr]);
     }

@@ -21,13 +21,13 @@
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../page/discussion.ts" />
 /// <reference path="../page/scroll-buttons.ts" />
-/// <reference path="../page-dialogs/add-remove-people-dialogs.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
 /// <reference path="../util/FadingBackdrop.ts" />
 /// <reference path="minimap.ts" />
 //xx <reference path="unread-comments-tracker.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.sidebar {
@@ -519,10 +519,11 @@ export var Sidebar = createComponent({
           null : { opacity: '0.6' };
     }
 
-    var addMorePeopleButton = !page_isGroupTalk(store.pageRole) || !isStaffOrMyPage ? null :
+    var addMorePeopleButton = 'EsE_MORE_UNIMPL'; /* !page_isGroupTalk(store.pageRole) || !isStaffOrMyPage ? null :
         r.button({ className: 'btn btn-default', onClick: pagedialogs.openAddPeopleDialog,
             id: 'e2eCB_AddPeopleB' },
           "Add more people");
+          */
 
     sidebarClasses += adminGuideActiveClass ? ' esCtxbar-adminGuide' : '';
 
@@ -597,7 +598,7 @@ function makeUsersContent(store: Store, users: BriefUser[], myId: UserId,
     var presenceTitle = isUserOnline ? 'Active' : 'Away';
     return (
         r.div({ key: user.id, className: 'esPresence esPresence-' + presenceClass,
-            onClick: () => pagedialogs.getAboutUserDialog().openForUserIdOrUsername(user.id) },
+            onClick: () => morebundle.openAboutUserDialog(user.id) },
           avatar.AvatarAndName({ user: user, ignoreClicks: true }),
           thatsYou,
           r.span({ className: 'esPresence_icon', title: presenceTitle })));

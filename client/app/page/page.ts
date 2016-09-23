@@ -21,7 +21,6 @@
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../help/help.ts" />
-/// <reference path="../editor/title-editor.ts" />
 /// <reference path="../topbar/topbar.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../model.ts" />
@@ -35,21 +34,10 @@
 // The bug has supposedly been fixed in Java 8u40. Once I'm using that version,
 // remove `var exports = {};` from app/debiki/ReactRenderer.scala.
 //------------------------------------------------------------------------------
-  // module debiki2.renderer {
-module boo {
-    export var buu = 'vovvar';
-};
+   module debiki2 {
 //------------------------------------------------------------------------------
 
-var MaxGuestId = -2; // place where?
-
-
-var React = window['React']; // TypeScript file doesn't work
-var ReactDOM = window['ReactDOM'];
-var ReactDOMServer = window['ReactDOMServer'];
 var r = React.DOM;
-var ReactRouter = window['ReactRouter'];
-var Router = reactCreateFactory(ReactRouter.Router);
 
 
 var PageWithState = createComponent({
@@ -125,7 +113,7 @@ var Page = createComponent({
 });
 
 
-function renderTitleBodyComments() {
+export function renderTitleBodyComments() {
   var root = document.getElementById('dwPosts');
   if (!root)
     return;
@@ -144,7 +132,7 @@ function renderTitleBodyComments() {
 }
 
 
-function renderTitleBodyCommentsToString() {
+export function renderTitleBodyCommentsToString() {
   debiki2.avatar.resetAvatars();
 
   // Comment in the next line to skip React server side and debug in browser only.
@@ -166,6 +154,6 @@ function renderTitleBodyCommentsToString() {
 }
 
 //------------------------------------------------------------------------------
-
+   }
 //------------------------------------------------------------------------------
 // vim: fdm=marker et ts=2 sw=2 tw=0 list

@@ -73,7 +73,7 @@ function openScrollButtonsDialog(openButton) {
 }
 
 
-export var ScrollButtons = debiki2.utils.createClassAndFactory({
+export var ScrollButtons = createClassAndFactory({
   getInitialState: function() {
     return {
       visitedPosts: [],

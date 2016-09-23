@@ -16,25 +16,19 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../prelude.ts" />
-/// <reference path="../utils/react-utils.ts" />
-/// <reference path="../ReactStore.ts" />
-/// <reference path="../Server.ts" />
-/// <reference path="../widgets.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
+/* var ReactBootstrap: any = window['ReactBootstrap'];
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
+*/
 
 
 var serverErrorDialog;
@@ -143,6 +137,8 @@ var ServerErrorDialog = createComponent({
     message = this.state.dialogMessagePrefix + message;
 
     return (
+      r.p('EsE_MORE_UNIMPL')); /*
+      This stuff is in the more bundle, but cannot load it if server broken
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'dw-server-error',
           bsSize: 'large' },
         ModalHeader({}, ModalTitle({}, title)),
@@ -150,6 +146,7 @@ var ServerErrorDialog = createComponent({
           r.div({ style: { whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}, message)),
         ModalFooter({},
           Button({ onClick: this.close }, 'Close'))));
+          */
   }
 });
 

@@ -26,6 +26,9 @@
  * inside ../forum/forum.ts instead.
  */
 
+// (Could move to more-bundle.js — but it's nice to be able to create the menu
+// items inline, directly in slim-bundle.js.)
+
 //------------------------------------------------------------------------------
    module debiki2.util {
 //------------------------------------------------------------------------------

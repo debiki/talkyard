@@ -20,6 +20,7 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../slim-bundle.d.ts" />
+/// <reference path="../more-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.editor {
@@ -43,7 +44,11 @@ var $: any = window['jQuery'];
 var WritingSomethingWarningKey = 'WritingSth';
 var WritingSomethingWarning = "You were writing something?";
 
-var getErrorDialog = debiki2.util.makeStupidDialogGetter();
+var getErrorDialog = function(): any {
+  die('EsE_MORE_UNIMPL'); /*
+  debiki2.util.makeStupidDialogGetter();
+  */
+};
 
 
 export function getOrCreateEditor(success) {
@@ -208,26 +213,34 @@ export var Editor = createComponent({
       fileprogress: (event, file, xhr, options) => {
         if (!this.state.isUploadingFile) {
           this.setState({ isUploadingFile: true });
+          die('EsE_MORE_UNIMPL'); /*
           pagedialogs.getProgressBarDialog().open("Uploading...", () => {
             this.setState({ uploadCancelled: true });
             xhr.abort("Intentionally cancelled [EsM3GU05]");
           });
+          */
         }
         else {
           var percent = event.loaded / event.total * 100;
+          die('EsE_MORE_UNIMPL'); /*
           pagedialogs.getProgressBarDialog().setDonePercent(percent);
+          */
         }
       },
       // This is when all files have been uploaded — but we're uploading just one.
       complete: (error, xhr) => {
+        die('EsE_MORE_UNIMPL'); /*
         pagedialogs.getProgressBarDialog().close();
+        */
         this.setState({
           isUploadingFile: false,
           uploadCancelled: false
         });
         if (error) {
           if (!this.state.uploadCancelled) {
+            die('EsE_MORE_UNIMPL'); /*
             pagedialogs.getServerErrorDialog().open(xhr);
+            */
           }
           return;
         }
@@ -265,6 +278,7 @@ export var Editor = createComponent({
   },
 
   showUploadProgress: function(percent) {
+    die('EsE_MORE_UNIMPL'); /*
     if (percent === 0) {
       pagedialogs.getProgressBarDialog().open("Uploading...", this.cancelUpload);
     }
@@ -275,15 +289,18 @@ export var Editor = createComponent({
       isUploadingFile: true,
       fileUploadProgress: percent,
     });
+    */
   },
 
   hideUploadProgress: function() {
+    die('EsE_MORE_UNIMPL'); /*
     pagedialogs.getProgressBarDialog().close();
     this.setState({
       uploadFileXhr: null,
       isUploadingFile: false,
       fileUploadProgress: 0,
     });
+    */
   },
 
   makeUploadLink: function(file, url) {
@@ -620,11 +637,13 @@ export var Editor = createComponent({
 
   onCancelClick: function() {
     if (PageUnloadAlerter.wouldWarn(WritingSomethingWarningKey)) {
+      die('EsE_MORE_UNIMPL'); /*
       help.openHelpDialogUnlessHidden({
         content: "You can continue editing your text, if you open the editor again. " +
         "(But the text will currently be lost if you leave this page.)",  // [issue-62YKUw2]
         id: '7YK35W1',
       });
+      */
     }
     this.callOnDoneCallback(false);
     this.closeEditor();
@@ -1067,9 +1086,10 @@ export var Editor = createComponent({
             placeholder: "Type here. You can use Markdown and HTML. " +
                 "Drag and drop to paste images." });
 
-    var previewHelp =
+    var previewHelp;   /* EsE_MORE_UNIMPL
         r.div({ className: 'dw-preview-help' },
           help.HelpMessageBox({ message: previewHelpMessage }));
+          */
 
     // (The $.resizable plugin needs class 'resizable' here. [7UGM27])
     var editorClasses = d.i.isInEmbeddedEditor ? '' : 'editor-box-shadow resizable';

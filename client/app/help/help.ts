@@ -16,7 +16,7 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../react-bootstrap-old/Input.ts" />
+//  <r xx  nce path="../react-bootstrap-old/Input.more.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../prelude.ts" />
 /// <reference path="../ReactStore.ts" />
@@ -31,13 +31,14 @@
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
+  /*
 var ReactBootstrap: any = window['ReactBootstrap'];
 var Modal = reactCreateFactory(ReactBootstrap.Modal);
 var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
 var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
 var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
 var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+*/
 
 
 export function isHelpMessageClosedAnyVersion(store, messageId: string): boolean {
@@ -59,7 +60,8 @@ var helpDialog;
 
 function getHelpDialog() {
   if (!helpDialog) {
-    helpDialog = ReactDOM.render(HelpDialog(), utils.makeMountNode());
+    die('EsE_MORE_UNIMPL');
+    // helpDialog = ReactDOM.render(HelpDialog(), utils.makeMountNode());
   }
   return helpDialog;
 }
@@ -124,7 +126,7 @@ export var HelpMessageBox = createComponent({
 });
 
 
-
+ /*  EsE_MORE_UNIMPL
 var HelpDialog = createComponent({
   getInitialState: function () {
     return { isOpen: false };
@@ -167,7 +169,7 @@ var HelpDialog = createComponent({
        content));
   }
 });
-
+       */
 
 //------------------------------------------------------------------------------
    }

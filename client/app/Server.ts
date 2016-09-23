@@ -16,7 +16,6 @@
  */
 
 /// <reference path="../typedefs/jquery/jquery.d.ts" />
-/// <reference path="users/user-info/UserInfo.ts" />
 /// <reference path="model.ts" />
 /// <reference path="rules.ts" />
 /// <reference path="ServerApi.ts" />
@@ -171,6 +170,7 @@ export function loadMoreScriptsBundle(callback) {
     complete: () => {
       window['ReactSelect'] = reactCreateFactory(window['Select']);
       slowBundleStatus.resolve();
+      setTimeout(callback, 0);
     }
   });
   return slowBundleStatus;
@@ -185,7 +185,10 @@ export function loadStaffScriptsBundle(callback) {
   staffBundleStatus = $.Deferred();
   window['yepnope']({
     both: [d.i.assetUrlPrefix + 'staff-bundle.' + d.i.minMaxJs],
-    complete: staffBundleStatus.resolve,
+    complete: () => {
+      staffBundleStatus.resolve();
+      setTimeout(callback, 0);
+    }
   });
   return staffBundleStatus;
 }
@@ -535,7 +538,8 @@ export function loadMyself(callback: (user: any) => void) {
 }
 
 
-export function loadUserInfo(userId, callback: (info: debiki2.users.UserInfo) => void) {
+export function loadUserInfo(userId, callback: (info: any) => void) { // 'any' was: debiki2.users.UserInfo
+  die('EsE_MORE_UNIMPL'); /*
   $.get(origin + '/-/load-user-info?userId=' + userId)
     .done((response: any) => {
       var userInfo = debiki2.users.UserInfo.fromJson(response.userInfo);
@@ -544,12 +548,13 @@ export function loadUserInfo(userId, callback: (info: debiki2.users.UserInfo) =>
     .fail((x, y, z) => {
       console.error('Error loading user info: ' + JSON.stringify([x, y, z]));
       callback(null);
-    });
+    });  */
 }
 
 
 export function loadUserActions(userId,
-      callback: (actions: debiki2.users.ActionListItem[]) => void) {
+      callback: (actions: any[]) => void) {  // debiki2.users.ActionListItem[]
+  die('EsE_MORE_UNIMPL'); /*
   $.get(origin + '/-/list-user-actions?userId=' + userId)
     .done((response: any) => {
       var actionItems: debiki2.users.ActionListItem[] = [];
@@ -564,6 +569,7 @@ export function loadUserActions(userId,
       console.error('Error loading user actions: ' + JSON.stringify([x, y, z]));
       callback(null);
     });
+    */
 }
 
 
@@ -596,7 +602,8 @@ export function setTagNotfLevel(tagLabel: TagLabel, newNotfLevel: NotfLevel) {
 
 
 export function loadUserPreferences(userId,
-      callback: (info: debiki2.users.UserPreferences) => void) {
+      callback: (info: any) => void) {  // 'any' was: debiki2.users.UserPreferences
+  die('EsE_MORE_UNIMPL'); /*
   $.get(origin + '/-/load-user-preferences?userId=' + userId)
     .done((response: any) => {
       var userPrefs = debiki2.users.UserPreferences.fromJson(response.userPreferences);
@@ -606,6 +613,7 @@ export function loadUserPreferences(userId,
       console.error('Error loading user preferences: ' + JSON.stringify([x, y, z]));
       callback(null);
     });
+    */
 }
 
 

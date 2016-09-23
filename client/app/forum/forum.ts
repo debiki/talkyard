@@ -21,8 +21,6 @@
 /// <reference path="../constants.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../utils/utils.ts" />
-/// <reference path="../editor/editor-api.ts" />
-/// <reference path="../login/login-dialog.ts" />
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../util/ExplainingDropdown.ts" />
@@ -31,6 +29,8 @@
 /// <reference path="../page/discussion.ts" />
 /// <reference path="../page/scroll-buttons.ts" />
 /// <reference path="../widgets.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
+/// <reference path="../editor/editor-api.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.forum {
@@ -279,7 +279,8 @@ var ForumIntroText = createComponent({
       return null;
 
     var anyEditIntroBtn = user.isAdmin
-        ? r.a({ className: 'esForumIntro_edit icon-edit', onClick: openEditIntroDialog }, "Edit")
+        ? r.a({ className: 'esForumIntro_edit icon-edit',
+              onClick: morebundle.openEditIntroDialog }, "Edit")
         : null;
 
     return r.div({ className: 'esForumIntro' },
@@ -429,23 +430,28 @@ var ForumButtons = createComponent({
   }, */
 
   editCategory: function() {
+    die('EsE_MORE_UNIMPL'); /*
     debiki2.forum['getEditCategoryDialog'](dialog => {
       if (this.isMounted()) {
         dialog.open(this.props.activeCategory.id);
       }
     });
+    */
   },
 
   createCategory: function() {
+    die('EsE_MORE_UNIMPL'); /*
     debiki2.forum['getEditCategoryDialog'](dialog => {
       if (this.isMounted()) {
         dialog.open();
       }
     });
+    */
   },
 
   createTopic: function() {
     var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
+    die('EsE_MORE_UNIMPL'); /*
     login.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       var category: Category = this.props.activeCategory;
       if (category.isForumItself) {
@@ -463,6 +469,7 @@ var ForumButtons = createComponent({
         die('EsE4FU0W2'); // I deleted the choose-topic-type dialog: UX hostile, no longer needed.
       }
     });
+    */
   },
 
   slashCategorySlug: function() {

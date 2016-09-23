@@ -18,6 +18,22 @@
 /// <reference path="plain-old-javascript.d.ts" />
 /// <reference path="../typedefs/react/react.d.ts" />
 
+var React = window['React'];
+var ReactDOM = window['ReactDOM'];
+var ReactDOMServer = window['ReactDOMServer'];
+var ReactRouter = window['ReactRouter'];
+var Router = reactCreateFactory(ReactRouter.Router);
+
+// backw compat, later, do once per file instead (don't want a global 'r').
+var r = React.DOM;
+
+// Let this be a function, not a variable, so it can be used directly.
+// (Otherwise there's a server side reactCreateFactory-not-yet-inited error)
+function reactCreateFactory(x) {
+  return React['createFactory'](x);
+}
+
+
 /**
  * Basic stuff needed by essentially all modules / files.
  */
@@ -26,10 +42,9 @@
 //------------------------------------------------------------------------------
 
 // E2e tests won't compile without this. Why not, React.js already included above? Oh well.
-declare var React;
-declare var ReactRouter;
+//declare var React;
+// declare var ReactRouter;
 
-export var reactCreateFactory = React['createFactory'];
 export var Link = reactCreateFactory(ReactRouter.Link);
 
 

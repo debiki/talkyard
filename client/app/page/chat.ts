@@ -23,9 +23,9 @@
 /// <reference path="../utils/window-zoom-resize-mixin.ts" />
 /// <reference path="../avatar/avatar.ts" />
 /// <reference path="../avatar/AvatarAndName.ts" />
-/// <reference path="../login/login.ts" />
 /// <reference path="../editor/editor-api.ts" />
 /// <reference path="discussion.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.page {
@@ -242,7 +242,7 @@ var JoinChatButton = createComponent({
   },
 
   joinChannel: function() {
-    login.loginIfNeededReturnToHash(LoginReason.LoginToChat, '#theJoinChatB', () => {
+    morebundle.loginIfNeededReturnToAnchor(LoginReason.LoginToChat, '#theJoinChatB', () => {
       if (this.isUnmounted) {
         // Now after having logged in, this join chat button got removed (unmounted) — that's
         // because we've joined the chat already (some time long ago). So, need do nothing, now.

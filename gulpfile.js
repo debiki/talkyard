@@ -109,7 +109,6 @@ var slimJsFiles = [
       'client/third-party/jquery-cookie.js',
       'client/third-party/jquery-scrollable.js', //
       'client/third-party/jquery.browser.js', //
-      'client/third-party/popuplib.js',
       'target/client/app/actions/edit/edit.js',
       'target/client/app/actions/vote.js',
       'target/client/app/actions/reply.js',
@@ -118,7 +117,6 @@ var slimJsFiles = [
       'target/client/app/page/layout-threads.js',
       'target/client/app/page/resize-threads.js',
       'target/client/app/login/login.js',
-      'target/client/app/login/login-popup.js',
       'target/client/app/editor/mentions-markdown-it-plugin.js',
       'target/client/app/editor/onebox-markdown-it-plugin.js',
       //'target/client/app/posts/monitor-reading-progress-unused.js',
@@ -135,6 +133,8 @@ var slimJsFiles = [
       'target/client/app/startup.js'];
 
 var moreJsFiles = [
+      'client/third-party/popuplib.js',
+      'target/client/app/login/login-popup.js',
       'target/client/more-typescript.js'];
 
 var staffJsFiles = [
@@ -216,7 +216,6 @@ function compileServerTypescript() {
         // Don't need any React addons server side (e.g. CSS transitions or performance measurements).
         'node_modules/react/dist/react.min.js',
         'node_modules/react-dom/dist/react-dom-server.min.js',
-        'node_modules/react-bootstrap/dist/react-bootstrap.js',
         'node_modules/react-router/umd/ReactRouter.js',
         'node_modules/markdown-it/dist/markdown-it.min.js',
         'node_modules/lodash/lodash.min.js',
@@ -279,6 +278,7 @@ function compileMoreTypescript(what, project) {
   var stream = gulp.src([
     'client/app/**/*.d.ts',
     '!client/app/**/*.' + what + '.d.ts',
+    '!client/app/**/' + what + '-bundle-already-loaded.d.ts',
     'client/app/constants.ts',   // for now COULD_OPTIMIZE, don't need to incl all vars here too
     'client/app/model.ts',       // for now
     'client/app/**/*.' + what + '.ts',

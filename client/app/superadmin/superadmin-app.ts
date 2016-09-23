@@ -16,14 +16,13 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../react-bootstrap-old/Input.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../ReactStore.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="../topbar/topbar.ts" />
 /// <reference path="../utils/PageUnloadAlerter.ts" />
-/// <reference path="../utils/PatternInput.ts" />
 /// <reference path="../widgets.ts" />
+/// <reference path="../more-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.superadmin {

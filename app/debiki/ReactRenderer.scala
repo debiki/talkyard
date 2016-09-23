@@ -330,7 +330,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
         |
         |function renderReactServerSide() {
         |  try {
-        |    return renderTitleBodyCommentsToString();
+        |    return debiki2.renderTitleBodyCommentsToString();
         |  }
         |  catch (e) {
         |    printStackTrace(e);

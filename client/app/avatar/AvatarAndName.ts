@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="avatar.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.avatar {
@@ -48,7 +49,7 @@ export var AvatarAndName = createComponent({
       namePart1 = r.span({ className: 'esAvtrName' }, '(Unknown author)');
     }
     var onClick = this.props.ignoreClicks ?
-        null : () => debiki2.pagedialogs.getAboutUserDialog().openForUserIdOrUsername(user.id);
+        null : () => morebundle.openAboutUserDialog(user.id);
     return (
         r.span({ className: 'esAvtrName', onClick: onClick },
           avatar, namePart1, namePart2));

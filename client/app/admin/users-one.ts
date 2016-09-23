@@ -16,9 +16,9 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../react-bootstrap-old/Input.ts" />
 /// <reference path="../links.ts" />
 /// <reference path="../widgets.ts" />
+/// <reference path="../more-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.admin {

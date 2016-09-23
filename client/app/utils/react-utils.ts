@@ -19,19 +19,15 @@
 /// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../prelude.ts" />
 
-
-// Let this be a function, not a variable, so it can be used directly.
-// (Otherwise there's a server side reactCreateFactory-not-yet-inited error)
-function reactCreateFactory(x) {
-  return React['createFactory'](x);
-}
+//------------------------------------------------------------------------------
+   namespace debiki2 {
+//------------------------------------------------------------------------------
 
 
-var ReactSelect; // lazy loaded.
-var Link = reactCreateFactory(ReactRouter.Link);
+export var Link = reactCreateFactory(ReactRouter.Link);
 
 
-function createComponent(componentDefinition) { // oops should obviously be named createFactory
+export function createComponent(componentDefinition) { // oops should obviously be named createFactory
   if (debiki2.isServerSide()) {
     // The mere presence of these functions cause an unknown error when rendering
     // React-Router server side. So remove them; they're never called server side anyway.
@@ -43,12 +39,12 @@ function createComponent(componentDefinition) { // oops should obviously be name
 }
 
 
-function createClassAndFactory(componentDefinition) { // rename createComponent to this
+export function createClassAndFactory(componentDefinition) { // rename createComponent to this
   return createComponent(componentDefinition);
 }
 
 
-var NavLink = createComponent({
+export var NavLink = createComponent({
   contextTypes: {
     router: React.PropTypes.object
   },
@@ -65,7 +61,7 @@ var NavLink = createComponent({
 });
 
 
-function whenMsToIsoDate(whenMs: number) {
+export function whenMsToIsoDate(whenMs: number) {
   return new Date(whenMs).toISOString().replace(/T/, ' ')
 }
 
@@ -75,7 +71,7 @@ function whenMsToIsoDate(whenMs: number) {
  * just below.  The server inculdes only ISO dates, not "x time ago", in its HTML,
  * so that it can be cached.
  */
-function timeAgo(whenMs: number, clazz?: string) {
+export function timeAgo(whenMs: number, clazz?: string) {
   var isoDate = whenMsToIsoDate(whenMs);
   return r.span({ className: 'dw-ago ' + (clazz || '') }, isoDate);
 }
@@ -84,12 +80,12 @@ function timeAgo(whenMs: number, clazz?: string) {
  * Like timeAgo(isoDate) but results in just "5h" instead of "5 hours ago".
  * That is, uses only one single letter, instead of many words.
  */
-function prettyLetterTimeAgo(whenMs: number, clazz?: string) {
+export function prettyLetterTimeAgo(whenMs: number, clazz?: string) {
   var isoDate = whenMsToIsoDate(whenMs);
   return r.span({ className: 'dw-ago-ltr ' + (clazz || '') }, isoDate);
 }
 
-function timeExact(whenMs: number, clazz?: string) {
+export function timeExact(whenMs: number, clazz?: string) {
   var isoDate = whenMsToIsoDate(whenMs);
   return r.span({ className: 'esTimeExact ' + (clazz || '') }, isoDate);
 }
@@ -103,7 +99,7 @@ function timeExact(whenMs: number, clazz?: string) {
  * that have been processed already.
  */
 // COULD move to page/hacks.ts
-function processTimeAgo(selector?: string) {
+export function processTimeAgo(selector?: string) {
   selector = selector || '';
   var timeDoneClass = 'esTimeDone';
   // First handle all long version timestamps (don't end with -ltr ("letter")).
@@ -157,14 +153,13 @@ function processTimeAgo(selector?: string) {
   });
 }
 
+//------------------------------------------------------------------------------
+   }
+//------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
    module debiki2.utils {
 //------------------------------------------------------------------------------
-
-export var createComponent = window['createComponent'];
-export var createClassAndFactory = window['createClassAndFactory'];
-export var reactCreateFactory = React['createFactory'];
 
 export function makeMountNode() {
   return $('<div>').appendTo('body')[0];

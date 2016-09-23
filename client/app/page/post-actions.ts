@@ -24,22 +24,14 @@
 /// <reference path="../utils/DropdownModal.ts" />
 /// <reference path="../util/ExplainingDropdown.ts" />
 /// <reference path="../help/help.ts" />
-/// <reference path="../editor/title-editor.ts" />
-/// <reference path="../edit-history/edit-history-dialog.ts" />
 /// <reference path="../topbar/topbar.ts" />
 /// <reference path="../page-methods.ts" />
-/// <reference path="../page-dialogs/wikify-dialog.ts" />
-/// <reference path="../page-dialogs/delete-post-dialog.ts" />
-/// <reference path="../page-dialogs/flag-dialog.ts" />
-/// <reference path="../page-dialogs/move-posts-dialog.ts" />
-/// <reference path="../page-dialogs/see-wrench-dialog.ts" />
-/// <reference path="../page-dialogs/share-dialog.ts" />
-/// <reference path="../page-dialogs/tags-dialog.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />
 /// <reference path="chat.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.page {
@@ -47,7 +39,6 @@
 
 var React = window['React']; // TypeScript file doesn't work
 var r = React.DOM;
-var $: JQueryStatic = debiki.internal.$;
 var DropdownModal = utils.DropdownModal;
 var ExplainingListItem = util.ExplainingListItem;
 
@@ -116,10 +107,12 @@ export var PostActions = createComponent({
     pagedialogs.openShareDialog(this.props.post, event.target);
   },
   onLikeClick: function(event) {
+    die('EsE_MORE_UNIMPL'); /*
     loginIfNeededThen(LoginReason.LoginToLike, this.props.post.postNr, () => {
       var toggleOn = !me_hasVoted(this.props.store.me, this.props.post.postId, 'VoteLike');
       debiki.internal.toggleVote(this.props.post.postId, 'VoteLike', toggleOn);
     });
+    */
   },
 
   makeReplyBtnTitle: function(post: Post) {
@@ -369,22 +362,25 @@ var MoreVotesDropdownModal = createComponent({
   },
 
   onWrongClick: function(event) {
+    die('EsE_MORE_UNIMPL'); /*
     loginIfNeededThen('LoginToVote', this.state.post.postNr, () => {
       debiki.internal.toggleVote(this.state.post.postId, 'VoteWrong', !this.hasVoted('VoteWrong'));
       this.closeSoon();
-    });
+    }); */
   },
   onBuryClick: function(event) {
+    die('EsE_MORE_UNIMPL'); /*
     loginIfNeededThen('LoginToVote', this.state.post.postNr, () => {
       debiki.internal.toggleVote(this.state.post.postId, 'VoteBury', !this.hasVoted('VoteBury'));
       this.closeSoon();
-    });
+    }); */
   },
   onUnwantedClick: function(event) {
+    die('EsE_MORE_UNIMPL'); /*
     loginIfNeededThen('LoginToVote', this.state.post.postNr, () => {
       debiki.internal.toggleVote(this.state.post.postId, 'VoteUnwanted', !this.hasVoted('VoteUnwanted'));
       this.closeSoon();
-    });
+    }); */
   },
 
   makeVoteButtons: function() {
@@ -471,17 +467,17 @@ var MoreDropdownModal = createComponent({
   },
 
   openTagsDialog: function(event) {
-    pagedialogs.openTagsDialog(this.state.store, this.state.post);
+    morebundle.openTagsDialog(this.state.store, this.state.post);
     this.close();
   },
 
   onDeleteClick: function(event) {
-    debiki2.pagedialogs.getDeletePostDialog().open(this.state.post);
+    morebundle.openDeletePostDialog(this.state.post);
     this.close();
   },
 
   onWikifyClick: function(event) {
-    debiki2.pagedialogs.getWikifyDialog().open(this.state.post);
+    morebundle.openWikifyDialog(this.state.post);
     this.close();
   },
 
@@ -503,7 +499,7 @@ var MoreDropdownModal = createComponent({
     this.close();
   }, */
   onMoveClick: function(event) {
-    pagedialogs.openMovePostsDialog(this.state.store, this.state.post, this.close);
+    morebundle.openMovePostsDialog(this.state.store, this.state.post, this.close);
   },
   onSeeWrenchClick: function(event) {
     debiki2.pagedialogs.openSeeWrenchDialog();
@@ -655,15 +651,16 @@ var MoreDropdownModal = createComponent({
 
 
 function flagPost(post: Post) {
+  die('EsE_MORE_UNIMPL');
+  /*
   loginIfNeededThen('LoginToFlag', post.postId, () => {
     debiki2.pagedialogs.openFlagDialog(post.postId);
-  });
+  }); */
 }
 
 
-function loginIfNeededThen(loginToWhat, postNr: PostNr, callback) {
-  login.loginIfNeeded(
-    loginToWhat, debiki.internal.makeReturnToPostUrlForVerifEmail(postNr), callback);
+function loginIfNeededThen(loginToWhat, postNr: PostNr, success: () => void) {
+  morebundle.loginIfNeededReturnToPost(loginToWhat, postNr, success);
 }
 
 //------------------------------------------------------------------------------

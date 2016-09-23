@@ -21,13 +21,13 @@
 /// <reference path="../utils/utils.ts" />
 /// <reference path="../utils/react-utils.ts" />
 /// <reference path="../help/help.ts" />
-/// <reference path="../editor/title-editor.ts" />
 /// <reference path="../topbar/topbar.ts" />
 /// <reference path="../help/help.ts" />
 /// <reference path="../model.ts" />
 /// <reference path="../rules.ts" />
 /// <reference path="post-actions.ts" />
 /// <reference path="chat.ts" />
+/// <reference path="../more-bundle-not-yet-loaded.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.page {
@@ -295,7 +295,7 @@ export var Title = createComponent({
     if (this.state.isEditing) {
       var editorProps = _.clone(this.props);
       editorProps.closeEditor = this.closeEditor;
-      contents = debiki2.titleeditor.TitleEditor(editorProps);
+      contents = morebundle.TitleEditor(editorProps);
     }
     else {
       var pinClass = this.props.pinWhere ? ' icon-pin' : '';
@@ -1015,7 +1015,7 @@ var ReplyReceivers = createComponent({
 
 export var PostHeader = createComponent({
   onUserClick: function(event) {
-    debiki2.pagedialogs.getAboutUserDialog().open(this.props.post);
+    morebundle.openAboutUserDialogForAuthor(this.props.post);
     event.preventDefault();
     event.stopPropagation();
   },
@@ -1181,6 +1181,12 @@ export var PostBody = createComponent({
     }
     var body;
     if (this.props.abbreviate) {
+      // SHOULD OPTIMIZE COULD_OPTIMIZE don't create new <div>s here over and over again.
+      // COULD Rename 'length' below to maxCharsToShow?
+      // Include the first maxCharsToShow chars, but don't count chars inside tags, e.g.
+      // <a href="......."> because a URL can sometimes be 120 chars and then nothing
+      // would be shown at all (if we counted the tokens inside the <a> tag).
+      // Do this by parsing the sanitized html and then calling text().
       this.textDiv = this.textDiv || $('<div></div>');
       this.textDiv.html(post.sanitizedHtml);
       var length = Math.min(screen.width, screen.height) < 500 ? 90 : 120;

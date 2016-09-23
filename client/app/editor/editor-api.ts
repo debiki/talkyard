@@ -15,20 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../react-bootstrap-old/Input.ts" />
-/// <reference path="../../typedefs/modernizr/modernizr.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
-/// <reference path="../util/stupid-dialog.ts" />
-/// <reference path="../utils/react-utils.ts" />
-/// <reference path="../topbar/topbar.ts" />
-/// <reference path="../model.ts" />
-/// <reference path="../rules.ts" />
 /// <reference path="../Server.ts" />
-/// <reference path="commonmark.ts" />
-/// <reference path="SelectCategoryDropdown.ts" />
-/// <reference path="PageRoleDropdown.ts" />
-/// <reference path="bundle-api.editor.d.ts" />
+
+// Things in editor-bundle.js that we can access from outside the bundle,
+// once it's been loaded already.
+declare namespace  debiki2.editor {
+  function getOrCreateEditor(success: (editor: any) => void);
+  function startMentionsParserImpl(textarea, onTextEdited);
+}
+
 
 //------------------------------------------------------------------------------
    module debiki2.editor {
