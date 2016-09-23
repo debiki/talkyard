@@ -106,6 +106,7 @@ declare namespace debiki2 {
   // From widgets.ts:
   var PrimaryButton;
   var Button;
+  var InputTypeSubmit; // could move to more-bundle.js, but is just 1 line
   var MenuItem;
   var MenuItemLink;
   var MenuItemDivider;

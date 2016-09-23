@@ -29,11 +29,12 @@ export var ReactCSSTransitionGroup = isServerSide() ? null :
 
 export var PrimaryButton: any = makeWidget(r.button, ' btn btn-primary');
 export var Button: any = makeWidget(r.button, ' btn btn-default');
+export var InputTypeSubmit: any = makeWidget(r.input, ' btn btn-primary', { type: 'submit' });
 
 
-function makeWidget(what, spaceWidgetClasses: string) {
+function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
   return function(origProps, ...children) {
-    var newProps = _.assign({}, origProps || {});
+    var newProps = _.assign({}, origProps || {}, extraProps);
     newProps.className = (origProps.className || '') + spaceWidgetClasses;
 
     // Prevent automatic submission of Button when placed in a <form>.

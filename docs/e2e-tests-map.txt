@@ -11,6 +11,7 @@ might be listed at many places in the tree, if it tests different things.
 
 Run all tests in different resolutions? Desktop, laptop, tablet, mobile.
 
+! reset password
 
 create site & forum -
   create: create-site.test.js

@@ -28,8 +28,6 @@
 var r = React.DOM;
 var reactCreateFactory = React['createFactory'];
 
-var ReactBootstrap: any = window['ReactBootstrap'];
-var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 var EmailInput = util.EmailInput;
 var PatternInput = utils.PatternInput;
 
@@ -212,8 +210,7 @@ var CreateWebsiteComponent = React.createClass(<any> {
             AcceptTerms({ reportOkay: (isOk) => this.reportOkay('terms', isOk),
                 ref: 'acceptTerms' }),
 
-            ButtonInput({ type: 'submit', value: 'Create Site', bsStyle: 'primary',
-                disabled: disableSubmit })))));
+            InputTypeSubmit({ value: 'Create Site', disabled: disableSubmit })))));
   }
 });
 
@@ -283,7 +280,7 @@ var CreateEmbeddedSiteComponent = React.createClass(<any> {
 
           AcceptTerms({ ref: 'terms' }),
 
-          ButtonInput({ type: 'submit', value: 'Create Site', bsStyle: 'primary' }))));
+          InputTypeSubmit({ value: "Create Site" }))));
   }
 });
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Kaj Magnus Lindberg
+ * Copyright (C) 2015-2016 Kaj Magnus Lindberg
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -17,18 +17,14 @@
 
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
+/// <reference path="../react-bootstrap-old/Input.more.ts" />
 /// <reference path="new-password-input.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.login {
+   namespace debiki2.login {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Input = reactCreateFactory(ReactBootstrap.Input);
-var ButtonInput = reactCreateFactory(ReactBootstrap.ButtonInput);
 
 
 export function renderNewPasswordPage(secretKey: string) {
@@ -61,7 +57,7 @@ var NewPasswordPage = createClassAndFactory({
         Input({ type: 'hidden', name: 'emailId', value: this.props.resetPasswordEmailId }),
         oldPasswordInput,
         NewPasswordInput({ newPasswordData: this.props, setPasswordOk: this.setPasswordOk }),
-        ButtonInput({ type: 'submit', disabled: !this.state.passwordOk }, "Submit")));
+        InputTypeSubmit({ disabled: !this.state.passwordOk, value: "Submit" })));
   }
 });
 
