@@ -185,10 +185,10 @@ gulp.task('wrap-javascript', function () {
 });
 
 
-var serverSideTypescriptProject = typeScript.createProject({
+var serverTypescriptProject = typeScript.createProject({
     target: 'ES5',
     noExternalResolve: true,
-    out: 'renderer.js'
+    out: 'server-bundle.js'
 });
 
 
@@ -198,7 +198,7 @@ function compileServerTypescript() {
         'client/shared/plain-old-javascript.d.ts',
         'client/typedefs/**/*.ts'])
     .pipe(wrap(nextFileTemplate))
-    .pipe(typeScript(serverSideTypescriptProject));
+    .pipe(typeScript(serverTypescriptProject));
 
   if (watchAndLiveForever) {
     typescriptStream.on('error', function() {
@@ -223,7 +223,7 @@ function compileServerTypescript() {
       .pipe(wrap(nextFileTemplate));
 
   return es.merge(typescriptStream, javascriptStream)
-      .pipe(concat('renderer.js'))
+      .pipe(concat('server-bundle.js'))
       .pipe(gulp.dest('public/res/'));
 }
 

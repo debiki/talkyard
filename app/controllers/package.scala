@@ -37,7 +37,7 @@ package object controllers {
   def dieIfAssetsMissingIfDevTest() {
     if (Play.isProd) return
 
-    val serverJavascriptPath = "/public/res/renderer.js"
+    val serverJavascriptPath = "/public/res/server-bundle.js"
     val clientJavascriptPath = "/public/res/slim-bundle.js"
     val stylesPath = "/public/res/styles-bundle.css"
 

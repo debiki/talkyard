@@ -343,7 +343,7 @@ object ReactRenderer extends com.debiki.core.CommonMarkRenderer {
 
     var javascriptStream: jio.InputStream = null
     try {
-      val path = s"/public/res/renderer$min.js"
+      val path = s"/public/res/server-bundle$min.js"
       javascriptStream = getClass.getResourceAsStream(path)
       if (javascriptStream eq null) {
         val message = s"Script not found: $path, 'gulp build' has not been run or isn't done?"
