@@ -16,10 +16,8 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../model.ts" />
-/// <reference path="../rules.ts" />
-/// <reference path="../oop-methods.ts" />
-/// <reference path="../widgets.ts" />
+/// <reference path="../../typedefs/moment/moment.d.ts" />
+/// <reference path="../slim-bundle.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.notification {

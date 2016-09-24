@@ -161,6 +161,8 @@ export function loadEditorEtcScriptsAndLater(callback?) {
 
 export function loadMoreScriptsBundle(callback) {
   if (slowBundleStatus) {
+    // Never call callback() immediately, because it's easier to write caller source code,
+    // if one knows that callback() will never be invoked immediately.
     setTimeout(() => slowBundleStatus.done(callback), 0);
     return;
   }
@@ -179,16 +181,21 @@ export function loadMoreScriptsBundle(callback) {
 
 export function loadStaffScriptsBundle(callback) {
   if (staffBundleStatus) {
+    // Never call callback() immediately, because it's easier to write caller source code,
+    // if one knows that callback() will never be invoked immediately.
     setTimeout(() => staffBundleStatus.done(callback), 0);
     return;
   }
   staffBundleStatus = $.Deferred();
-  window['yepnope']({
-    both: [d.i.assetUrlPrefix + 'staff-bundle.' + d.i.minMaxJs],
-    complete: () => {
-      staffBundleStatus.resolve();
-      setTimeout(callback, 0);
-    }
+  // The staff scripts bundle requires more-bundle.js.
+  loadMoreScriptsBundle(() => {
+    window['yepnope']({
+      both: [d.i.assetUrlPrefix + 'staff-bundle.' + d.i.minMaxJs],
+      complete: () => {
+        staffBundleStatus.resolve();
+        callback();  // setTimeout(..., 0) not needed — done by loadMoreScriptsBundle() already
+      }
+    });
   });
   return staffBundleStatus;
 }

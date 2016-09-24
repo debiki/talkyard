@@ -150,6 +150,16 @@ export function loginIfNeededReturnToPost(loginReason: LoginReason | string, pos
 }
 
 
+// Lazy loaded menus
+//========================
+
+export function openMyMenu(store, where) {
+  Server.loadMoreScriptsBundle(() => {
+    debiki2.topbar.openMyMenu(store, where);
+  });
+}
+
+
 // Lazy loaded components
 //========================
 

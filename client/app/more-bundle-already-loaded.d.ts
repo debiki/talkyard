@@ -8,6 +8,10 @@ declare namespace debiki2 {
     var PageUnloadAlerter;
   }
 
+  namespace topbar {
+    function openMyMenu(store, where);
+  }
+
 }
 
 

@@ -79,35 +79,38 @@ declare namespace debiki2 {
   var store_canUndeletePage;
   var trustLevel_toString;
   var siteStatusToString;
+  var cloneRect;
 
   var linkToNotificationSource;
   var linkToAdminPageAdvancedSettings;
   var linkToRedirToAboutCategoryPage;
   var linkToUserInAdminArea;
   var linkToUserProfilePage;
+  var linkToAdminPage;
+  var linkToReviewPage;
+  var externalLinkToAdminHelp;
+  var linkToMyProfilePage;
 
   var anyForbiddenPassword;
 
   var avatar;
 
-  // Later: move to more-bundle.js
-  namespace notification {
-    var Notification;
-  }
+  // should move to more-bundle.js.
+  var notfLevel_title;
+
   namespace edithistory {
 
   }
   namespace help {
 
   }
+  namespace page {
+    var openNotfsLevelDropdown;
+  }
   namespace pagedialogs {
     var getServerErrorDialog;
   }
 
-  namespace notification {
-    var Notification;
-    var NotfLevelButton;
-  }
   var SelectCategoryDropdown: any;
   var PageRoleDropdown: any;
 
