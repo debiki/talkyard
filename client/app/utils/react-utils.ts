@@ -16,8 +16,8 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../prelude.ts" />
+/// <reference path="utils.ts" />
 
 //------------------------------------------------------------------------------
    namespace debiki2 {
@@ -102,13 +102,15 @@ export function timeExact(whenMs: number, clazz?: string) {
 export function processTimeAgo(selector?: string) {
   selector = selector || '';
   var timeDoneClass = 'esTimeDone';
+
   // First handle all long version timestamps (don't end with -ltr ("letter")).
   // Result: e.g. "5 hours ago"
   $(selector + ' .dw-ago:not(.' + timeDoneClass + ')').each(function() {
     var $this = $(this);
     var isoDate = $this.text();
-    // Try to remove moment() from the default JS bundle? [6KFW02] Use instead: http://stackoverflow.com/a/9363445/694469 ?
-    var timeAgoString = moment(isoDate).fromNow();
+    var then = debiki2['isoDateStringToMillis'](isoDate); // typescript compilation error without []
+    var now = Date.now();
+    var timeAgoString = debiki.prettyDuration(then, now);
     $this.text(timeAgoString);
     $this.addClass(timeDoneClass);
     // But don't add any title tooltip attr, see [85YKW20] above.
@@ -119,7 +121,7 @@ export function processTimeAgo(selector?: string) {
   $(selector + ' .dw-ago-ltr:not(.' + timeDoneClass + ')').each(function() {
     var $this = $(this);
     var isoDate = $this.text();
-    var then = moment(isoDate).valueOf(); // or exclude Moment from default JS bundle? [6KFW02]
+    var then = debiki2['isoDateStringToMillis'](isoDate); // typescript compilation error without []
     var now = Date.now();
     var durationLetter = debiki.prettyLetterDuration(then, now);
     $this.text(durationLetter);
@@ -131,6 +133,7 @@ export function processTimeAgo(selector?: string) {
 
   // & all exact timestamps (end with -exact).
   // Result: e.g. "Yesterday 12:59 am", or, if today, only "13:59".
+  /*  EsE_MORE_UNIMPL
   $(selector + ' .esTimeExact:not(.' + timeDoneClass + ')').each(function() {
     var $this = $(this);
     var isoDate = $this.text();
@@ -151,6 +154,7 @@ export function processTimeAgo(selector?: string) {
     $this.addClass(timeDoneClass);
     // But don't add any title tooltip attr, see [85YKW20] above.
   });
+  */
 }
 
 //------------------------------------------------------------------------------

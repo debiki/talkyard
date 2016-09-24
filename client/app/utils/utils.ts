@@ -15,14 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/jquery/jquery.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2 {
+   namespace debiki2 {
 //------------------------------------------------------------------------------
-
-var d: any = { i: debiki.internal, u: debiki.v0.util };
 
 
 export function putInLocalStorage(key, value) {
@@ -91,6 +87,35 @@ export function prettyBytes(num: number): string {
   return (neg ? '-' : '') + rounded + ' ' + unit;
 }
 
+
+var shortMonthNames = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// Returns e.g. "Jan 25, 2015"
+// Better than moment.js, whose .min.js.gz is 20kb (too large for the slim-bundle.js).
+export function prettyMonthDayYear(when: number, includeCurrentYear): string {
+  var date = new Date(when);
+  var day = date.getDate();
+  var month = shortMonthNames[date.getMonth()];
+  var commaYear = includeCurrentYear ? ', ' + date.getFullYear() : '';
+  return month + ' ' + day + commaYear;
+}
+
+export function isoDateStringToDate(dateString: string) {
+  // 1) Split "2015-12-30 23:59:59" to year, month etc numbers, and split on 'TZ' too,
+  // in case ISO 8601 'T' not ' ' separates the date from the timestamp, and if the
+  // UTC timezone ('Z') is specified.
+  // Split on '.' too because millis might be separated from seconds, by '.'.
+  // 2) Use +x to convert to int — but don't use parseInt(num, radix) because it'll get
+  // the date fragment index as arg 2 == the radix == invalid.
+  var parts: number[] = dateString.split(/[-TZ\. :]/).map((x) => +x);
+  // Date wants months starting on index 0 not 1, so subtract 1.
+  return new Date(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]);
+}
+
+export function isoDateStringToMillis(dateString: string): number {
+  return isoDateStringToDate(dateString).getTime();
+}
 
 export function getPageScrollableRect(): ClientRect {
   return document.getElementById('esPageScrollable').getBoundingClientRect();

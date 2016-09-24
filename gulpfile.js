@@ -100,7 +100,6 @@ var slimJsFiles = [
       // see comment in file for details.
       'client/third-party/rename-key-to-keymaster.js',
       'client/third-party/lodash-custom.js',
-      'node_modules/moment/min/moment.min.js',
       'node_modules/eventemitter2/lib/eventemitter2.js',
       'node_modules/react-router/umd/ReactRouter.js',
       'node_modules/jquery-resizable/resizable.js',
@@ -131,6 +130,7 @@ var slimJsFiles = [
 
 var moreJsFiles = [
       'node_modules/react-bootstrap/dist/react-bootstrap.js',
+      'node_modules/moment/min/moment.min.js',
       'client/third-party/popuplib.js',
       'target/client/app/login/login-popup.js',
       'target/client/more-typescript.js'];
