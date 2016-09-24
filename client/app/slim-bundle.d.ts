@@ -18,14 +18,12 @@ declare namespace debiki2 {
   namespace utils {
     var scrollIntoViewInPageColumn;
     var makeMountNode;
-    var loadDiffMatchPatch;
-    var makeHtmlDiff;
     var DropdownModal;
     var FadeInOnClick;
   }
 
   namespace util {
-
+    var ExplainingListItem;
   }
 
   namespace help {
@@ -36,9 +34,9 @@ declare namespace debiki2 {
   namespace editor {
     var markdownToSafeHtml: any;
     var SelectCategoryDropdown;
-    var PageRoleDropdown;
   }
 
+  function reactGetRefRect(ref): Rect;
   var Server: any;
   var StoreListenerMixin: any;
   var ReactActions: any;
@@ -112,7 +110,6 @@ declare namespace debiki2 {
   }
 
   var SelectCategoryDropdown: any;
-  var PageRoleDropdown: any;
 
   // From widgets.ts:
   var PrimaryButton;

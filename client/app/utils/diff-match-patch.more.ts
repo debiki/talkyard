@@ -15,14 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/// <reference path="../../typedefs/jquery/jquery.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.utils {
 //------------------------------------------------------------------------------
-
-var d = { i: debiki.internal, u: debiki.v0.util };
 
 var diffMatchPatch;
 
@@ -33,7 +29,7 @@ var DIFF_DELETE;
 var DIFF_EQUAL;
 
 
-export function getDiffMatchPatch() {
+function getDiffMatchPatch() {
   dieIf(!diffMatchPatch, 'DwE7UMF4');
   return diffMatchPatch;
 }

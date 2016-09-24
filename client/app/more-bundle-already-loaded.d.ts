@@ -12,6 +12,9 @@ declare namespace debiki2 {
     function openMyMenu(store, where);
   }
 
+  namespace editor {
+    var PageRoleDropdown;
+  }
 }
 
 

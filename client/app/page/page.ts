@@ -63,7 +63,7 @@ var Page = createComponent({
       // Use compact by default, so mobile phones won't have to rerender anything,
       // they're much slower than laptops & desktops.
       // (Cannot check the actual size here — the component hasn't been mounted yet.)
-      useWideLayout: debiki2.isServerSide() ? false :
+      useWideLayout: isServerSide() ? false :
           // (contextbar closed by default)
           window.innerWidth >= UseWidePageLayoutMinWidth + WatchbarWidth,
     };

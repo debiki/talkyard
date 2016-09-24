@@ -24,9 +24,6 @@
 
 var r = React.DOM;
 
-export var ReactCSSTransitionGroup = isServerSide() ? null :
-    reactCreateFactory(React.addons.CSSTransitionGroup);
-
 export var PrimaryButton: any = makeWidget(r.button, ' btn btn-primary');
 export var Button: any = makeWidget(r.button, ' btn btn-default');
 export var InputTypeSubmit: any = makeWidget(r.input, ' btn btn-primary', { type: 'submit' });

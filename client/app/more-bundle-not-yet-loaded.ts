@@ -192,8 +192,10 @@ var LazyMoreBundleComponent = createComponent({
 
 
 export function TitleEditor(editorProps) {
-  LazyMoreBundleComponent({
-    lazyContent: () => debiki2.titleeditor.TitleEditor(editorProps)
+  return LazyMoreBundleComponent({
+    lazyContent: function() {
+      return debiki2.titleeditor.TitleEditor(editorProps)
+    }
   });
 }
 

@@ -28,7 +28,7 @@ export var Link = reactCreateFactory(ReactRouter.Link);
 
 
 export function createComponent(componentDefinition) { // oops should obviously be named createFactory
-  if (debiki2.isServerSide()) {
+  if (isServerSide()) {
     // The mere presence of these functions cause an unknown error when rendering
     // React-Router server side. So remove them; they're never called server side anyway.
     // The error logs the message '{}' to console.error(); no idea what that means.

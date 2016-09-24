@@ -21,6 +21,8 @@
 var React = window['React'];
 var ReactDOM = window['ReactDOM'];
 var ReactDOMServer = window['ReactDOMServer'];
+var ReactCSSTransitionGroup = isServerSide() ? null :
+  reactCreateFactory(React.addons.CSSTransitionGroup);
 var ReactRouter = window['ReactRouter'];
 var Router = reactCreateFactory(ReactRouter.Router);
 
@@ -31,6 +33,11 @@ var r = React.DOM;
 // (Otherwise there's a server side reactCreateFactory-not-yet-inited error)
 function reactCreateFactory(x) {
   return React['createFactory'](x);
+}
+
+
+function isServerSide(): boolean {
+  return !!window['ReactDOMServer'];
 }
 
 
@@ -100,18 +107,8 @@ export function anyForbiddenPassword() {
 }
 
 
-export function isServerSide(): boolean {
-  return !!window['ReactDOMServer'];
-}
-
-
-export function isClientSide(): boolean {
-  return !isServerSide();
-}
-
-
 export var findDOMNode = isServerSide() ? null : window['ReactDOM'].findDOMNode;
-dieIf(isClientSide() && !findDOMNode, 'EsE6UMGY2');
+dieIf(!isServerSide() && !findDOMNode, 'EsE6UMGY2');
 
 
 export function hasErrorCode(request: HttpRequest, statusCode: string) {
