@@ -99,7 +99,7 @@ var slimJsFiles = [
       // keymaster.js declares window.key, rename it to window.keymaster instead,
       // see comment in file for details.
       'client/third-party/rename-key-to-keymaster.js',
-      'node_modules/lodash/lodash.min.js',
+      'client/third-party/lodash-custom.js',
       'node_modules/moment/min/moment.min.js',
       'node_modules/eventemitter2/lib/eventemitter2.js',
       'node_modules/react-router/umd/ReactRouter.js',
@@ -216,7 +216,7 @@ function compileServerTypescript() {
         'node_modules/react-dom/dist/react-dom-server.min.js',
         'node_modules/react-router/umd/ReactRouter.js',
         'node_modules/markdown-it/dist/markdown-it.min.js',
-        'node_modules/lodash/lodash.min.js',
+        'client/third-party/lodash-custom.js',
         'client/third-party/non-angular-slugify.js',
         'client/app/editor/mentions-markdown-it-plugin.js',
         'client/app/editor/onebox-markdown-it-plugin.js'])

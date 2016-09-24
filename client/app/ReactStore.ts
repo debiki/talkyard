@@ -967,12 +967,12 @@ function patchTheStore(storePatch: StorePatch) {
 
   if (storePatch.me) {
     // [redux] modifying the store in place, again.
-    store.me = <Myself> _.extend(store.me || {}, storePatch.me);
+    store.me = <Myself> _.assign(store.me || {}, storePatch.me);
   }
 
   if (storePatch.tagsStuff) {
     // [redux] modifying the store in place, again.
-    store.tagsStuff = _.extend(store.tagsStuff || {}, storePatch.tagsStuff);
+    store.tagsStuff = _.assign(store.tagsStuff || {}, storePatch.tagsStuff);
   }
 
   _.each(storePatch.usersBrief || [], (user: BriefUser) => {
