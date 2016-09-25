@@ -32,7 +32,10 @@ function ensureEditorCreated(success: (editor: any) => void) {
 
 export function startMentionsParser(textarea, onTextEdited) {
   Server.loadEditorEtcScriptsAndLater(() => {
-    debiki2.editor.startMentionsParserImpl(textarea, onTextEdited);
+    // The calling component might have been unmounted; then, `textarea` is gone.
+    if (document.body.contains(textarea)) {
+      debiki2.editor.startMentionsParserImpl(textarea, onTextEdited);
+    }
   });
 }
 

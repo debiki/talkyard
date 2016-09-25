@@ -170,7 +170,6 @@ export function loadMoreScriptsBundle(callback) {
   window['yepnope']({
     both: [d.i.assetUrlPrefix + 'more-bundle.' + d.i.minMaxJs],
     complete: () => {
-      window['ReactSelect'] = reactCreateFactory(window['Select']);
       slowBundleStatus.resolve();
       setTimeout(callback, 0);
     }
@@ -214,11 +213,14 @@ export function loadEditorEtceteraScripts() {
   };
 
   loadEditorScriptsStatus = $.Deferred();
-  window['yepnope']({
-    both: [d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs],
-    complete: () => {
-      loadEditorScriptsStatus.resolve();
-    }
+  // The editor scripts bundle requires more-bundle.js.
+  loadMoreScriptsBundle(() => {
+    window['yepnope']({
+      both: [d.i.assetUrlPrefix + 'editor-bundle.' + d.i.minMaxJs],
+      complete: () => {
+        loadEditorScriptsStatus.resolve();
+      }
+    });
   });
   return loadEditorScriptsStatus;
 }

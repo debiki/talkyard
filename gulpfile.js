@@ -130,6 +130,9 @@ var slimJsFiles = [
 
 var moreJsFiles = [
       'node_modules/react-bootstrap/dist/react-bootstrap.js',
+      'node_modules/classnames/index.js',                               // needed by react-select
+      'node_modules/react-input-autosize/dist/react-input-autosize.js', // needed by react-select
+      'node_modules/react-select/dist/react-select.js',                 // <– react-select
       'node_modules/moment/min/moment.min.js',
       'client/third-party/popuplib.js',
       'target/client/app/login/login-popup.js',
@@ -146,10 +149,7 @@ var editorJsFiles = [
       'node_modules/markdown-it/dist/markdown-it.js',
       'node_modules/jquery.caret/dist/jquery.caret.min.js', // needed by jquery.atwho (next line)
       'node_modules/at.js/dist/js/jquery.atwho.js',
-      'node_modules/classnames/index.js', // needed by react-select
-      'node_modules/react-input-autosize/dist/react-input-autosize.js', // needed by react-select
-      'node_modules/blacklist/dist/blacklist.js',
-      'node_modules/react-select/dist/react-select.js',
+      'node_modules/blacklist/dist/blacklist.js',  // needed by what?
       'node_modules/fileapi/dist/FileAPI.js',
       'client/third-party/diff_match_patch.js',
       'client/third-party/non-angular-slugify.js',

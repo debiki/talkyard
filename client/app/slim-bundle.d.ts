@@ -1,6 +1,5 @@
 
 
-declare var ReactSelect; // move to more-bundle.js
 declare var React: any;
 declare var ReactDOM: any;
 declare var ReactCSSTransitionGroup: any;

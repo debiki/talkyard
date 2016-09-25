@@ -16,23 +16,19 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../plain-old-javascript.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.forum {
+   namespace debiki2.forum {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
 var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-var ReactSelect; // lazy loaded
+var Modal = rb.Modal;
+var ModalBody = rb.ModalBody;
+var ModalFooter = rb.ModalFooter;
+var ModalHeader = rb.ModalHeader;
+var ModalTitle = rb.ModalTitle;
 var PageRoleDropdown = editor.PageRoleDropdown;
 
 var DefaultPosition = 50; // also in Scala [7KBYW2]
@@ -45,7 +41,6 @@ export function getEditCategoryDialog(success: (dialog) => void) {
   }
   else {
     Server.loadEditorEtcScriptsAndLater(() => {
-      ReactSelect = reactCreateFactory(window['Select']); // react-select
       editCategoryDialog = ReactDOM.render(EditCategoryDialog(), debiki2.utils.makeMountNode());
       success(editCategoryDialog);
     });
@@ -55,6 +50,8 @@ export function getEditCategoryDialog(success: (dialog) => void) {
 
 // BEM base name: esCatDlg
 var EditCategoryDialog = createClassAndFactory({
+  displayName: 'EditCategoryDialog',
+
   getInitialState: function () {
     return {
       isOpen: false,

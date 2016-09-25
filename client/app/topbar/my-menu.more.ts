@@ -38,6 +38,8 @@ export function openMyMenu(store: Store, where) {
 
 
 var MyMenuDropdownModal = createComponent({
+  displayName: 'MyMenuDropdownModal',
+
   getInitialState: function() {
     return {
       isOpen: false,

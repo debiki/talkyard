@@ -19,20 +19,18 @@
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
 /// <reference path="../util/stupid-dialog.more.ts" />
+/// <reference path="../widgets.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.pagedialogs {
+   namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
-
+var Modal = rb.Modal;
+var ModalHeader = rb.ModalHeader;
+var ModalTitle = rb.ModalTitle;
+var ModalBody = rb.ModalBody;
+var ModalFooter = rb.ModalFooter;
 
 var addPeopleDialog;
 
@@ -46,6 +44,8 @@ export function openAddPeopleDialog() {
 
 
 var AddPeopleDialog = createComponent({
+  displayName: 'AddPeopleDialog',
+
   getInitialState: function () {
     return {
       isOpen: false,
@@ -110,7 +110,7 @@ var AddPeopleDialog = createComponent({
     else {
       content =
         r.div({ id: 'e2eAddUsD'},
-          ReactSelect({ multi: true, value: this.state.selectedLabelValues,
+          rb.ReactSelect({ multi: true, value: this.state.selectedLabelValues,
             placeholder: "Select users",
             options: makeLabelValues(this.state.allUsers, store.pageMemberIds),
             onChange: this.onSelectChange }));
@@ -121,7 +121,7 @@ var AddPeopleDialog = createComponent({
         ModalHeader({}, ModalTitle({}, "Select users")),
         ModalBody({}, content),
         ModalFooter({},
-          Button({ onClick: this.save, bsStyle: 'primary', id: 'e2eAddUsD_SubmitB',
+          PrimaryButton({ onClick: this.save, id: 'e2eAddUsD_SubmitB',
               disabled: !this.state.selectedLabelValues.length }, "Add users"),
           Button({ onClick: this.close }, "Cancel"))));
   }

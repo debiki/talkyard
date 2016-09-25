@@ -19,19 +19,18 @@
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
 /// <reference path="../utils/PatternInput.more.ts" />
+/// <reference path="../widgets.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.pagedialogs {
+   namespace debiki2.pagedialogs {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
+var Modal = rb.Modal;
+var ModalHeader = rb.ModalHeader;
+var ModalTitle = rb.ModalTitle;
+var ModalBody = rb.ModalBody;
+var ModalFooter = rb.ModalFooter;
 var PatternInput = utils.PatternInput;
 
 
@@ -47,6 +46,8 @@ export function openTagsDialog(store: Store, post: Post) {
 
 
 var TagsDialog = createComponent({
+  displayName: 'TagsDialog',
+
   getInitialState: function () {
     return {
       isOpen: false,
@@ -126,7 +127,7 @@ var TagsDialog = createComponent({
       title = post.postId === BodyNr ? "Page tags" : "Post tags";
       content =
         r.div({ className: 'esTsD_CreateTs' },
-          ReactSelect({ multi: true, value: makeLabelValues(this.state.tags),
+          rb.ReactSelect({ multi: true, value: makeLabelValues(this.state.tags),
             className: 'esTsD_TsS', placeholder: "Select tags",
             options: makeLabelValues(this.state.allTags), onChange: this.onSelectChange }),
           r.div({},

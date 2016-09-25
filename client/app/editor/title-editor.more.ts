@@ -29,6 +29,8 @@ var SelectCategoryDropdown = editor.SelectCategoryDropdown;
 
 
 export var TitleEditor = createComponent({
+  displayName: 'TitleEditor',
+
   getInitialState: function() {
     return {
       showComplicated: false,

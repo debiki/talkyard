@@ -64,20 +64,25 @@ export function MenuItem(props, ...children) {
   if (props.active) {
     className += ' active';
   }
+  // Don't do  r.a(props, children)  because that'd result in an """an array or iterator
+  // should have a unique "key" prop""" React.js warning.
+  var linkProps = { role: 'button', id: props.id,
+    onClick: props.onClick || props.onSelect, tabIndex: props.tabindex || -1 };
   return (
     r.li({ role: 'presentation', className: className, key: props.key },
-      r.a({ role: 'button', id: props.id,
-          onClick: props.onClick || props.onSelect, tabIndex: props.tabindex || -1 },
-        children)));
+      r.a.apply(null, [linkProps].concat(children))));
+
 }
 
 
 export function MenuItemLink(props, ...children) {
+  // Don't do  r.a(props, children)  because that'd result in an """an array or iterator
+  // should have a unique "key" prop""" React.js warning.
+  var linkProps = { role: 'button', href: props.href, tabIndex: props.tabindex || -1,
+    target: props.target };
   return (
-    r.li({ role: 'presentation', className: props.className },
-      r.a({ role: 'button', href: props.href, tabIndex: props.tabindex || -1,
-          target: props.target },
-        children)));
+    r.li({ role: 'presentation', className: props.className, key: props.key },
+      r.a.apply(null, [linkProps].concat(children))));
 }
 
 
