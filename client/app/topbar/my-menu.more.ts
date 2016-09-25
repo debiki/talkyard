@@ -20,7 +20,7 @@
 /// <reference path="../notification/Notification.more.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.topbar {
+   namespace debiki2.topbar {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
@@ -109,7 +109,7 @@ var MyMenuDropdownModal = createComponent({
       // ------- The menu
 
       menuContent =
-        r.ul({ className: 'dropdown-menu' },
+        r.ul({ className: 'dropdown-menu', onClick: this.close },
           adminMenuItem,
           adminHelpLink,
           reviewMenuItem,

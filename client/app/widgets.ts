@@ -19,7 +19,7 @@
 /// <reference path="prelude.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2 {
+   namespace debiki2 {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
@@ -48,6 +48,7 @@ function makeWidget(what, spaceWidgetClasses: string, extraProps?) {
       };
 
       if (origProps.primary) {
+        delete newProps.primary;
         newProps.className = newProps.className + ' btn-primary';
       }
     }

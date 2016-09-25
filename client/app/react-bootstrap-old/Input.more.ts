@@ -24,7 +24,7 @@ export var Input = createComponent({
 
   render: function() {
     var props = this.props;
-    dieIf(props.type === 'radio', 'EsE45WWP9');
+    dieIf(props.type === 'radio', 'EsE45WWP9');  // EsE_MORE_UNIMPL
 
     var childProps = _.clone(props);
     childProps.ref = 'theInput';

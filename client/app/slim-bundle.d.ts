@@ -27,7 +27,8 @@ declare namespace debiki2 {
   }
 
   namespace help {
-
+    var HelpMessageBox;
+    function isHelpMessageClosedAnyVersion(store: Store, messageId: string): boolean;
   }
 
   // should be moved to inside the editor bundle

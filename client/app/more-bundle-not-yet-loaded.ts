@@ -68,6 +68,13 @@ export function openEditIntroDialog() {
 }
 
 
+export function openHelpDialogUnlessHidden(message) {
+  Server.loadMoreScriptsBundle(() => {
+    debiki2.help.openHelpDialogUnlessHidden(message);
+  });
+}
+
+
 export function openLoginDialog(purpose: LoginReason | string) {
   Server.loadMoreScriptsBundle(() => {
     debiki2.login.getLoginDialog().openToLogIn(purpose);
@@ -92,6 +99,13 @@ export function openMovePostsDialog(store: Store, post: Post, closeCaller) {
 export function openPageToolsDialog() {
   Server.loadMoreScriptsBundle(() => {
     debiki2.pagetools.getPageToolsDialog().open();
+  });
+}
+
+
+export function getProgressBarDialog(handler: (dialog) => void) {
+  Server.loadMoreScriptsBundle(() => {
+    handler(pagedialogs.getProgressBarDialog());
   });
 }
 
@@ -197,14 +211,6 @@ export function TitleEditor(editorProps) {
       return debiki2.titleeditor.TitleEditor(editorProps)
     }
   });
-}
-
-
-// for now
-namespace pagedialogs {
-  function getProgressBarDialog() {
-    die('EsE_MORE_UNIMPL');
-  }
 }
 
 //------------------------------------------------------------------------------

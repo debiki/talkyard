@@ -50,12 +50,11 @@ public/res/more-bundle.*
 public/res/staff-bundle.*
 public/res/editor-bundle.*
 public/res/styles-bundle.*
-public/res/combined-debiki.*
+public/res/server-bundle.*
 public/res/editor-etcetera.*
 public/res/debiki-embedded-comments.*
 public/res/embedded-comments.*
 public/res/login-popup.*
-public/res/renderer.*
 public/res/zxcvbn.*
 
 # When running Chrome browser tests, ChromeDriver generates this file and it

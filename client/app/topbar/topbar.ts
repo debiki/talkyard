@@ -190,8 +190,7 @@ export var TopBar = createComponent({
     var otherNotfs = makeNotfIcon('other', me.numOtherNotfs);
 
     var avatarNameDropdown = !me.isLoggedIn ? null :
-      Button({ onClick: this.openMyMenu,
-          className: 'esAvtrName esMyMenu', showCloseButton: true, ref: 'myMenuButton' },
+      Button({ onClick: this.openMyMenu, className: 'esAvtrName esMyMenu', ref: 'myMenuButton' },
         urgentReviewTasks,
         otherReviewTasks,
         avatar.Avatar({ user: me, tiny: true, ignoreClicks: true }),

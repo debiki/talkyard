@@ -8,12 +8,20 @@ declare namespace debiki2 {
     var PageUnloadAlerter;
   }
 
+  namespace util {
+    function makeStupidDialogGetter();
+  }
+
   namespace topbar {
     function openMyMenu(store, where);
   }
 
   namespace editor {
     var PageRoleDropdown;
+  }
+
+  namespace help {
+    function openHelpDialogUnlessHidden(message);
   }
 }
 
