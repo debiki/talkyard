@@ -24,16 +24,10 @@
    module debiki2.users {
 //------------------------------------------------------------------------------
 
-var d = { i: debiki.internal, u: debiki.v0.util };
-var $: JQueryStatic = d.i.$;
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
+var Modal = rb.Modal;
+var ModalBody = rb.ModalBody;
+var ModalFooter = rb.ModalFooter;
 // var EmailInput = util.EmailInput;
 
 
@@ -214,7 +208,7 @@ var InviteDialog = createComponent({  // COULD break out to separate debiki2.inv
   },
 
   render: function() {
-    var props = $.extend({}, this.props);
+    var props = _.assign({}, this.props);
     props.title = 'Send an Invite';
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, dialogClassName: 'esUsrDlg' },

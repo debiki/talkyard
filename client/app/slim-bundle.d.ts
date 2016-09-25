@@ -35,6 +35,14 @@ declare namespace debiki2 {
   namespace editor {
     var markdownToSafeHtml: any;
     var SelectCategoryDropdown;
+
+    // from editor-bundle-not-yet-loaded.ts:
+    function toggleWriteReplyToPost(postId: number, anyPostType?: number);
+    function openEditorToEditPost(postId: number, onDone?);
+    function editNewForumPage(categoryId: number, role: PageRole);
+    function openToEditChatTitleAndPurpose();
+    function openToWriteChatMessage(text: string, onDone);
+    function openToWriteMessage(userId: number);
   }
 
   function reactGetRefRect(ref): Rect;

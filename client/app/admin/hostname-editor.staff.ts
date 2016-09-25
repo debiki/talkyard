@@ -20,16 +20,13 @@
 /// <reference path="../more-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.admin {
+   namespace debiki2.admin {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
+var Modal = rb.Modal;
+var ModalBody = rb.ModalBody;
+var ModalFooter = rb.ModalFooter;
 var PatternInput = utils.PatternInput;
 
 
@@ -86,7 +83,7 @@ var HostnameEditorDialog = createComponent({
           r.b({}, "Redirect old hostnames"),  // dupl button name [5KFU2R0]
           " button to redirect visitors from the old address to the new."),
         r.p({}, "You can change hostname at most 5 times."), // dupl in Scala [7GK8W2Z]
-        utils.PatternInput({ label: "Hostname", ref: 'hostnameInput',
+        PatternInput({ label: "Hostname", ref: 'hostnameInput',
           placeholder: 'forum.example.com',
           notRegex: /\s/, notMessage: "No spaces please",
           notRegexTwo: /^https?:/, notMessageTwo: "Don't include http://",

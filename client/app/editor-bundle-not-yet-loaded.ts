@@ -16,7 +16,7 @@
  */
 
 /// <reference path="Server.ts" />
-/// <reference path="editor-bundle-already-loaded.ts" />
+/// <reference path="editor-bundle-already-loaded.d.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.editor {

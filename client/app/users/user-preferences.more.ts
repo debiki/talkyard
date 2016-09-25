@@ -16,21 +16,15 @@
  */
 
 /// <reference path="../../typedefs/react/react.d.ts" />
-/// <reference path="../../typedefs/moment/moment.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 
 //------------------------------------------------------------------------------
-   module debiki2.users {
+   namespace debiki2.users {
 //------------------------------------------------------------------------------
 
 var d = { i: debiki.internal, u: debiki.v0.util };
 var $: JQueryStatic = d.i.$;
 var r = React.DOM;
-var reactCreateFactory = React['createFactory'];
-var ReactBootstrap: any = window['ReactBootstrap'];
-var RouterState = window['ReactRouter'].State;
-var RouterNavigation = window['ReactRouter'].Navigation;
-import UserPreferences = debiki2.users.UserPreferences;
 
 
 export var UserPreferencesComponent = React.createClass({
@@ -42,7 +36,7 @@ export var UserPreferencesComponent = React.createClass({
         loggedInUser.isAuthenticated && loggedInUser.userId === user.id);
 
     if (!mayViewPrefs)
-      return r.p({}, 'Forbidden');
+      return r.p({}, "Forbidden");
 
     var anyNotYourPrefsInfo = null;
     if (loggedInUser.userId !== user.id) {

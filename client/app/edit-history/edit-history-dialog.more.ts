@@ -125,10 +125,8 @@ var EditHistoryDialog = createClassAndFactory({
         }
       }
       body = r.div({},
-        'EsE_MORE_UNIMPL'); /*
         help.HelpMessageBox({ message: diffHelpMessage }),
         revisionElems);
-        */
     }
     return (
       Modal({ show: this.state.isOpen, onHide: this.close, bsSize: 'large',

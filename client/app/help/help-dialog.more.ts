@@ -18,18 +18,15 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 //  <reference path="../react-bootstrap-old/Input.more.ts" />
+//  <reference path="../widgets.more.ts" />
 
 //------------------------------------------------------------------------------
   namespace debiki2.help {
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Modal = reactCreateFactory(ReactBootstrap.Modal);
-var ModalBody = reactCreateFactory(ReactBootstrap.ModalBody);
-var ModalFooter = reactCreateFactory(ReactBootstrap.ModalFooter);
-var ModalHeader = reactCreateFactory(ReactBootstrap.ModalHeader);
-var ModalTitle = reactCreateFactory(ReactBootstrap.ModalTitle);
+var Modal = rb.Modal;
+var ModalBody = rb.ModalBody;
 
 
 export function openHelpDialogUnlessHidden(message) {

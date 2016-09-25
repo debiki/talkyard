@@ -427,9 +427,7 @@ var AdvancedSettingsComponent = React.createClass(<any> {
           location.protocol + "//", r.code({ className: 'esA_Ss_S_Hostname' }, canonicalHostname),
           r.div({ className: 'help-block' },
             "This is the address people type in the browser address bar to go to this forum."),
-          'EsE_MORE_UNIMPL')); /*
           Button({ onClick: openHostnameEditor }, "Change hostname ...")));
-          */
 
     var duplicatingHostsFormGroup = duplicateHostnames.length === 0 ? null :
       r.div({ className: 'form-group has-error' },

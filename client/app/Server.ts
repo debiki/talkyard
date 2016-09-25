@@ -545,41 +545,6 @@ export function loadMyself(callback: (user: any) => void) {
 }
 
 
-export function loadUserInfo(userId, callback: (info: any) => void) { // 'any' was: debiki2.users.UserInfo
-  die('EsE_MORE_UNIMPL'); /*
-  $.get(origin + '/-/load-user-info?userId=' + userId)
-    .done((response: any) => {
-      var userInfo = debiki2.users.UserInfo.fromJson(response.userInfo);
-      callback(userInfo);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading user info: ' + JSON.stringify([x, y, z]));
-      callback(null);
-    });  */
-}
-
-
-export function loadUserActions(userId,
-      callback: (actions: any[]) => void) {  // debiki2.users.ActionListItem[]
-  die('EsE_MORE_UNIMPL'); /*
-  $.get(origin + '/-/list-user-actions?userId=' + userId)
-    .done((response: any) => {
-      var actionItems: debiki2.users.ActionListItem[] = [];
-      for (var i = 0; i < response.actions.length; ++i) {
-        var json = response.actions[i];
-        var c = debiki2.users.ActionListItem.fromJson(json);
-        actionItems.push(c);
-      }
-      callback(actionItems);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading user actions: ' + JSON.stringify([x, y, z]));
-      callback(null);
-    });
-    */
-}
-
-
 export function loadNotifications(userId: number, upToWhenMs: number,
       success: (notfs: Notification[]) => void, error: () => void) {
   var query = '?userId=' + userId + '&upToWhenMs=' + upToWhenMs;
@@ -604,23 +569,6 @@ export function setTagNotfLevel(tagLabel: TagLabel, newNotfLevel: NotfLevel) {
     tagLabel: tagLabel,
     notfLevel: newNotfLevel
   });
-}
-
-
-
-export function loadUserPreferences(userId,
-      callback: (info: any) => void) {  // 'any' was: debiki2.users.UserPreferences
-  die('EsE_MORE_UNIMPL'); /*
-  $.get(origin + '/-/load-user-preferences?userId=' + userId)
-    .done((response: any) => {
-      var userPrefs = debiki2.users.UserPreferences.fromJson(response.userPreferences);
-      callback(userPrefs);
-    })
-    .fail((x, y, z) => {
-      console.error('Error loading user preferences: ' + JSON.stringify([x, y, z]));
-      callback(null);
-    });
-    */
 }
 
 

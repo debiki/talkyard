@@ -24,9 +24,8 @@
 //------------------------------------------------------------------------------
 
 var r = React.DOM;
-var ReactBootstrap: any = window['ReactBootstrap'];
-var Nav = reactCreateFactory(ReactBootstrap.Nav);
-var NavItem = reactCreateFactory(ReactBootstrap.NavItem);
+var Nav = rb.Nav;
+var NavItem = rb.NavItem;
 
 var ReactRouter = window['ReactRouter'];
 var Route = reactCreateFactory(ReactRouter.Route);
@@ -67,9 +66,7 @@ var UsersHomeComponent = React.createClass(<any> {
       var myUserId = ReactStore.getMe().userId;
       dieIf(toUserId === myUserId, 'EsE7UMKW2');
       dieIf(userId_isGuest(toUserId), 'EsE6JKY20');
-      die('EsE_MORE_UNIMPL'); /*
       editor.openToWriteMessage(toUserId);
-      */
     }
   },
 

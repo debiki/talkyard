@@ -1,4 +1,20 @@
 
+declare namespace rb {
+  var ReactBootstrap;
+  var Modal;
+  var ModalHeader;
+  var ModalTitle;
+  var ModalBody;
+  var ModalFooter;
+
+  var Nav;
+  var NavItem;
+  var TabbedArea;
+  var TabPane;
+  var Alert;
+}
+
+
 declare namespace debiki2 {
 
   var Input;
