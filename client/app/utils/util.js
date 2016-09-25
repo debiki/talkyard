@@ -43,13 +43,9 @@ debiki.prettyDuration = function(then, now) {  // i18n
   var minute = second * 60;
   var hour = second * 3600;
   var day = hour * 24;
-  var week = day * 7;
-  var year = day * 365;
-  var month = year / 12;
   var round = Math.round;
+  if (diff >= 30 * day) return monthDayYear(then);
   // I prefer `30 hours ago' to `1 day ago', but `2 days ago' to `50 hours ago'.
-  if (diff >= 20 * month) return round(diff / year) +" years ago";
-  if (diff >= 50 * day) return round(diff / month) +" months ago";
   // Skip weeks, because prettyLetterDuration() skips weeks.
   // if (diff > 2 * week) return trunc(diff / week) +" weeks ago";
   if (diff >= 40 * hour) return round(diff / day) +" days ago";
@@ -77,9 +73,7 @@ debiki.prettyLetterDuration = function(then, now) {  // i18n
   // Don't use 'm' for months, because it's used for 'minutes' already. Also, dates and
   // years like "Jan 4, 2015" are more user friendly than 17m (months)?
   if (diff > month) {
-    var dateThen = new Date(then);
-    var yearThen = dateThen.getFullYear();
-    return debiki2.prettyMonthDayYear(dateThen, yearThen !== debiki.currentYear);
+    return monthDayYear(then);
   }
   // Skip "w" (weeks), it makes me confused.
   if (diff >= 2 * day) return trunc(diff / day) + "d";
@@ -90,6 +84,10 @@ debiki.prettyLetterDuration = function(then, now) {  // i18n
 };
 
 
+function monthDayYear(when) {
+  var date = _.isNumber(when) ? new Date(when) : when;
+  return debiki2.prettyMonthDayYear(date, date.getFullYear() !== debiki.currentYear);
+}
 
 // ------- Bug functions
 

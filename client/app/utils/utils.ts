@@ -101,7 +101,7 @@ export function prettyMonthDayYear(when: number, includeCurrentYear): string {
   return month + ' ' + day + commaYear;
 }
 
-export function isoDateStringToDate(dateString: string) {
+export function isoDateStringToMillis(dateString: string) {
   // 1) Split "2015-12-30 23:59:59" to year, month etc numbers, and split on 'TZ' too,
   // in case ISO 8601 'T' not ' ' separates the date from the timestamp, and if the
   // UTC timezone ('Z') is specified.
@@ -109,12 +109,9 @@ export function isoDateStringToDate(dateString: string) {
   // 2) Use +x to convert to int — but don't use parseInt(num, radix) because it'll get
   // the date fragment index as arg 2 == the radix == invalid.
   var parts: number[] = dateString.split(/[-TZ\. :]/).map((x) => +x);
-  // Date wants months starting on index 0 not 1, so subtract 1.
-  return new Date(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]);
-}
-
-export function isoDateStringToMillis(dateString: string): number {
-  return isoDateStringToDate(dateString).getTime();
+  // Date.UTC(..) returns milliseconds since 1970, and assumes the input is in UTC.
+  // It wants months starting on index 0 not 1, so subtract 1.
+  return Date.UTC(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]);
 }
 
 export function getPageScrollableRect(): ClientRect {

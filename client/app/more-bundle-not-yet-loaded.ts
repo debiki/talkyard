@@ -117,6 +117,13 @@ export function openPageToolsDialog() {
 }
 
 
+export function getEditCategoryDialog(handler: (dialog) => void) {
+  Server.loadMoreScriptsBundle(() => {
+    debiki2.forum.getEditCategoryDialog(handler);
+  });
+}
+
+
 export function getProgressBarDialog(handler: (dialog) => void) {
   Server.loadMoreScriptsBundle(() => {
     handler(pagedialogs.getProgressBarDialog());

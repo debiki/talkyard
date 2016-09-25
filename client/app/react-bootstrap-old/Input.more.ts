@@ -24,7 +24,7 @@ export var Input = createComponent({
 
   render: function() {
     var props = this.props;
-    dieIf(props.type === 'radio', 'EsE45WWP9');  // EsE_MORE_UNIMPL
+    dieIf(props.type === 'radio', 'no radio [EsE45WWP9]');  // EsE_MORE_UNIMPL
 
     var childProps = _.clone(props);
     childProps.ref = 'theInput';
@@ -42,7 +42,7 @@ export var Input = createComponent({
     if (props.type === 'checkbox') {
       result = (
         r.div({ className: 'form-group' },
-          r.div({ className: 'checkbox ' + props.wrapperClassName },
+          r.div({ className: props.wrapperClassName },
             Checkbox(childProps, props.label),
             r.span({ className: 'help-block' },
               props.help))));

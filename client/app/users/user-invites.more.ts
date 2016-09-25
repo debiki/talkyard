@@ -28,7 +28,7 @@ var r = React.DOM;
 var Modal = rb.Modal;
 var ModalBody = rb.ModalBody;
 var ModalFooter = rb.ModalFooter;
-// var EmailInput = util.EmailInput;
+var EmailInput = util.EmailInput;
 
 
 export var UserInvitesComponent = React.createClass({
@@ -216,10 +216,8 @@ var InviteDialog = createComponent({  // COULD break out to separate debiki2.inv
           r.p({}, "We'll send your friend a brief email, and he or she then clicks a link " +
               "to join immediately, no login required. " +
               "He or she will become a normal member, not a moderator or admin."),
-          'EsE_MORE_UNIMPL'), /*
           EmailInput({ label: 'Email Address', placeholder: 'Enter email',
               ref: 'emailInput', error: this.state.error, onChangeValueOk: this.onEmailChanged })),
-              */
         ModalFooter({},
           PrimaryButton({ onClick: this.sendInvite, disabled: !this.state.maySubmit },
             "Send Invite"),

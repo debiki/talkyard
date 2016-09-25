@@ -19,6 +19,10 @@ declare namespace debiki2 {
 
   var Input;
 
+  namespace forum {
+    function getEditCategoryDialog(handler: (dialog) => void);
+  }
+
   namespace utils {
     var PatternInput;  // REFACTOR RENAME move to debiki2
     var PageUnloadAlerter;

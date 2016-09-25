@@ -86,8 +86,12 @@ export function prettyLetterTimeAgo(whenMs: number, clazz?: string) {
 }
 
 export function timeExact(whenMs: number, clazz?: string) {
+  return timeAgo(whenMs, clazz); /*
+  // This no longer works, because moment.js was moved to more-bundle.js, so    [E5F29V]
+  // cannot convert to e.g. "Yesterday 05:30 PM". Instead, show "4 hours ago" or sth like that.
   var isoDate = whenMsToIsoDate(whenMs);
   return r.span({ className: 'esTimeExact ' + (clazz || '') }, isoDate);
+  */
 }
 
 
@@ -131,9 +135,10 @@ export function processTimeAgo(selector?: string) {
     $this.addClass(timeDoneClass);
   });
 
+  // This no longer works, here in slim-bundle.js, because moment.js moved to more-bundle.js [E5F29V]
   // & all exact timestamps (end with -exact).
   // Result: e.g. "Yesterday 12:59 am", or, if today, only "13:59".
-  /*  EsE_MORE_UNIMPL
+  /*
   $(selector + ' .esTimeExact:not(.' + timeDoneClass + ')').each(function() {
     var $this = $(this);
     var isoDate = $this.text();

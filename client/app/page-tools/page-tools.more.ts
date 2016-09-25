@@ -18,6 +18,7 @@
 /// <reference path="../../typedefs/react/react.d.ts" />
 /// <reference path="../slim-bundle.d.ts" />
 /// <reference path="../react-bootstrap-old/Input.more.ts" />
+/// <reference path="../help/help-dialog.more.ts" />
 
 //------------------------------------------------------------------------------
    module debiki2.pagetools {
@@ -147,14 +148,12 @@ var PinPageDialog = createComponent({
     ReactActions.pinPage(pinOrder, pinWhere, () => {
       this.close();
       this.props.closeAllDialogs();
-      die('EsE_MORE_UNIMPL'); /*
       help.openHelpDialogUnlessHidden({
         content: r.span({ className: 'esPinnedOk' },
           "Pinned. Now there's a pin icon ", r.span({className: 'icon-pin'}),
           " in front of the topic title."),
         id: '32MYKP02',
       });
-      */
     });
   },
 
@@ -167,7 +166,6 @@ var PinPageDialog = createComponent({
         ModalHeader({}, ModalTitle({}, "Pin Page")),
         ModalBody({},
           r.p({}, "Pin this topic to make it show up first in the forum topic list."),
-          'EsE_MORE_UNIMPL'), /*
           r.p({}, r.b({}, "Pin where?")),
           r.form({},
             Input({ type: 'radio', name: 'pinWhere', label: "In this category only",
@@ -178,7 +176,6 @@ var PinPageDialog = createComponent({
           Input({ type: 'number', label: "Pin order (you can ignore this)", ref: 'pinOrderInput',
               help: "Sort order if many topics are pinned, 1 is first.",
               defaultValue: store.pinOrder || DefaultPinOrder })),
-              */
         ModalFooter({},
           Button({ onClick: this.doPin }, store.pinWhere ? 'Save' : 'Pin'),
           Button({ onClick: this.close }, 'Cancel'))));

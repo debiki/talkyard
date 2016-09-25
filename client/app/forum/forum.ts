@@ -430,29 +430,24 @@ var ForumButtons = createComponent({
   }, */
 
   editCategory: function() {
-    die('EsE_MORE_UNIMPL'); /*
-    debiki2.forum['getEditCategoryDialog'](dialog => {
+    morebundle.getEditCategoryDialog(dialog => {
       if (this.isMounted()) {
         dialog.open(this.props.activeCategory.id);
       }
     });
-    */
   },
 
   createCategory: function() {
-    die('EsE_MORE_UNIMPL'); /*
-    debiki2.forum['getEditCategoryDialog'](dialog => {
+    morebundle.getEditCategoryDialog(dialog => {
       if (this.isMounted()) {
         dialog.open();
       }
     });
-    */
   },
 
   createTopic: function() {
     var anyReturnToUrl = window.location.toString().replace(/#/, '__dwHash__');
-    die('EsE_MORE_UNIMPL'); /*
-    login.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
+    morebundle.loginIfNeeded('LoginToCreateTopic', anyReturnToUrl, () => {
       var category: Category = this.props.activeCategory;
       if (category.isForumItself) {
         category = this.findTheDefaultCategory();
@@ -469,7 +464,6 @@ var ForumButtons = createComponent({
         die('EsE4FU0W2'); // I deleted the choose-topic-type dialog: UX hostile, no longer needed.
       }
     });
-    */
   },
 
   slashCategorySlug: function() {

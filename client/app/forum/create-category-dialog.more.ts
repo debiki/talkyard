@@ -36,14 +36,13 @@ var DefaultPosition = 50; // also in Scala [7KBYW2]
 var editCategoryDialog;
 
 export function getEditCategoryDialog(success: (dialog) => void) {
+  // Could just return the dialog instead of sending to a callback. Old code.
   if (editCategoryDialog) {
     success(editCategoryDialog);
   }
   else {
-    Server.loadEditorEtcScriptsAndLater(() => {
-      editCategoryDialog = ReactDOM.render(EditCategoryDialog(), debiki2.utils.makeMountNode());
-      success(editCategoryDialog);
-    });
+    editCategoryDialog = ReactDOM.render(EditCategoryDialog(), debiki2.utils.makeMountNode());
+    success(editCategoryDialog);
   }
 }
 

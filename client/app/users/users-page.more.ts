@@ -174,9 +174,7 @@ var UserPageComponent = React.createClass(<any> {
 
 var UserBar = createComponent({
   sendMessage: function() {
-    die('EsE_MORE_UNIMPL'); /*
     editor.openToWriteMessage(this.props.user.id);
-    */
   },
 
   render: function() {
