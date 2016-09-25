@@ -55,10 +55,8 @@ var EditIntroDialog = createClassAndFactory({
   },
 
   editIntroText: function() {
-    die('EsE_MORE_UNIMPL'); /*
     editor.openEditorToEditPost(BodyId);
     this.close();
-    */
   },
 
   removeIntroText: function() {

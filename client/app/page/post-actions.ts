@@ -107,12 +107,10 @@ export var PostActions = createComponent({
     pagedialogs.openShareDialog(this.props.post, event.target);
   },
   onLikeClick: function(event) {
-    die('EsE_MORE_UNIMPL'); /*
     loginIfNeededThen(LoginReason.LoginToLike, this.props.post.postNr, () => {
       var toggleOn = !me_hasVoted(this.props.store.me, this.props.post.postId, 'VoteLike');
       debiki.internal.toggleVote(this.props.post.postId, 'VoteLike', toggleOn);
     });
-    */
   },
 
   makeReplyBtnTitle: function(post: Post) {
@@ -362,25 +360,22 @@ var MoreVotesDropdownModal = createComponent({
   },
 
   onWrongClick: function(event) {
-    die('EsE_MORE_UNIMPL'); /*
     loginIfNeededThen('LoginToVote', this.state.post.postNr, () => {
       debiki.internal.toggleVote(this.state.post.postId, 'VoteWrong', !this.hasVoted('VoteWrong'));
       this.closeSoon();
-    }); */
+    });
   },
   onBuryClick: function(event) {
-    die('EsE_MORE_UNIMPL'); /*
     loginIfNeededThen('LoginToVote', this.state.post.postNr, () => {
       debiki.internal.toggleVote(this.state.post.postId, 'VoteBury', !this.hasVoted('VoteBury'));
       this.closeSoon();
-    }); */
+    });
   },
   onUnwantedClick: function(event) {
-    die('EsE_MORE_UNIMPL'); /*
     loginIfNeededThen('LoginToVote', this.state.post.postNr, () => {
       debiki.internal.toggleVote(this.state.post.postId, 'VoteUnwanted', !this.hasVoted('VoteUnwanted'));
       this.closeSoon();
-    }); */
+    });
   },
 
   makeVoteButtons: function() {
@@ -651,11 +646,9 @@ var MoreDropdownModal = createComponent({
 
 
 function flagPost(post: Post) {
-  die('EsE_MORE_UNIMPL');
-  /*
   loginIfNeededThen('LoginToFlag', post.postId, () => {
-    debiki2.pagedialogs.openFlagDialog(post.postId);
-  }); */
+    morebundle.openFlagDialog(post.postId);
+  });
 }
 
 

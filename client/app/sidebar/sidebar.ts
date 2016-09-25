@@ -534,11 +534,10 @@ export var Sidebar = createComponent({
           null : { opacity: '0.6' };
     }
 
-    var addMorePeopleButton = 'EsE_MORE_UNIMPL'; /* !page_isGroupTalk(store.pageRole) || !isStaffOrMyPage ? null :
-        r.button({ className: 'btn btn-default', onClick: pagedialogs.openAddPeopleDialog,
+    var addMorePeopleButton = !page_isGroupTalk(store.pageRole) || !isStaffOrMyPage ? null :
+        r.button({ className: 'btn btn-default', onClick: morebundle.openAddPeopleDialog,
             id: 'e2eCB_AddPeopleB' },
           "Add more people");
-          */
 
     sidebarClasses += adminGuideActiveClass ? ' esCtxbar-adminGuide' : '';
 

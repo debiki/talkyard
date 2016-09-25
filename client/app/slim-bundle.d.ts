@@ -84,6 +84,7 @@ declare namespace debiki2 {
   var userId_isGuest;
   var store_canDeletePage;
   var store_canUndeletePage;
+  function store_canPinPage(store: Store);
   var trustLevel_toString;
   var siteStatusToString;
   var cloneRect;

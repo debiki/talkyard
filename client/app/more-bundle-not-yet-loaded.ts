@@ -47,6 +47,13 @@ export function openAboutUserDialogForAuthor(post: Post) {
 }
 
 
+export function openAddPeopleDialog() {
+  Server.loadMoreScriptsBundle(() => {
+    debiki2.pagedialogs.openAddPeopleDialog();
+  });
+}
+
+
 export function openDeletePostDialog(post: Post) {
   Server.loadMoreScriptsBundle(() => {
     debiki2.pagedialogs.openDeletePostDialog(post);
@@ -64,6 +71,13 @@ export function openEditHistoryDialog(postId: number) {
 export function openEditIntroDialog() {
   Server.loadMoreScriptsBundle(() => {
     debiki2.forum.openEditIntroDialog();
+  });
+}
+
+
+export function openFlagDialog(postId: PostId) {
+  Server.loadMoreScriptsBundle(() => {
+    debiki2.pagedialogs.openFlagDialog(postId);
   });
 }
 

@@ -219,10 +219,9 @@ export var TopBar = createComponent({
     // Placed here so it'll be available also when one has scrolled down a bit.
 
     // (Is it ok to call another React component from here? I.e. the page tools dialog.)
-    var toolsButton; /* EsE_MORE_UNIMPL  !isStaff(me) || pagetools.getPageToolsDialog().isEmpty() ? null :
+    var toolsButton = !isStaff(me) || !store_shallShowPageToolsButton(store) ? null :
         Button({ className: 'dw-a-tools', onClick: this.showTools },
           r.a({ className: 'icon-wrench' }, 'Tools'));
-          */
 
     // ------- Search button
 

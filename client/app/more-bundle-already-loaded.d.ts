@@ -44,7 +44,9 @@ declare namespace debiki2 {
 
 declare namespace debiki2.pagedialogs {
 
+  function openAddPeopleDialog();
   function openDeletePostDialog(post: Post);
+  function openFlagDialog(postId: PostId);
   function openMovePostsDialog(store: Store, post: Post, closeCaller);
   function openSeeWrenchDialog();
   function openShareDialog(post: Post, button);

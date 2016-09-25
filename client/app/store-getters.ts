@@ -168,6 +168,16 @@ export function store_thereAreFormReplies(store: Store): boolean {
 }
 
 
+export function store_shallShowPageToolsButton(store: Store) {
+  return store_canPinPage(store) || store_canDeletePage(store) || store_canUndeletePage(store);
+}
+
+
+export function store_canPinPage(store: Store) {
+  return store.categoryId && store.pageRole !== PageRole.Forum;
+}
+
+
 //------------------------------------------------------------------------------
    }
 //------------------------------------------------------------------------------

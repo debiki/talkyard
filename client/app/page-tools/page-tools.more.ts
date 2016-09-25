@@ -51,11 +51,6 @@ var PageToolsDialog = createComponent({
     };
   },
 
-  isEmpty: function() {
-    var store: Store = this.state.store;
-    return !canPinPage(store) && !store_canDeletePage(store) && !store_canUndeletePage(store);
-  },
-
   open: function() {
     this.setState({ isOpen: true });
   },
@@ -92,14 +87,14 @@ var PageToolsDialog = createComponent({
 
     var pinPageButton;
     var pinPageDialog;
-    if (canPinPage(store)) {
+    if (store_canPinPage(store)) {
       pinPageDialog = PinPageDialog($.extend({ ref: 'pinPageDialog' }, childProps));
       pinPageButton =
           Button({ onClick: () => this.refs.pinPageDialog.open() },
             store.pinWhere ? "Edit Pin" : "Pin Topic");
     }
 
-    var unpinPageButton = (!canPinPage(store) || !store.pinWhere) ? null :
+    var unpinPageButton = (!store_canPinPage(store) || !store.pinWhere) ? null :
       Button({ onClick: this.unpinPage }, "Unpin Topic");
 
     var deletePageButton = !store_canDeletePage(store) ?  null :
@@ -123,11 +118,6 @@ var PageToolsDialog = createComponent({
         ModalFooter({}, Button({ onClick: this.close }, 'Close'))));
   }
 });
-
-
-function canPinPage(store: Store) {
-  return store.categoryId && store.pageRole !== PageRole.Forum;
-}
 
 
 var DefaultPinOrder = 5;
